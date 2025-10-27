@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mi Cuenta - RazoConnect</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    .tabs {
+      display: flex;
+      gap: 0.5rem;
+      border-bottom: 2px solid var(--border-color);
+      margin-bottom: 2rem;
+    }
+
+    .tab {
+      padding: 1rem 1.5rem;
+      background: none;
+      border: none;
+      border-bottom: 3px solid transparent;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      transition: all 0.3s;
+    }
+
+    .tab:hover {
+      color: var(--primary-color);
+    }
+
+    .tab.active {
+      color: var(--primary-color);
+      border-bottom-color: var(--primary-color);
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .direccion-card {
+      background: var(--surface);
+      border: 1px solid var(--border-color);
+      border-radius: 0.5rem;
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+      transition: box-shadow 0.3s;
+    }
+
+    .direccion-card:hover {
+      box-shadow: var(--shadow);
+    }
+
+    .direccion-card.selectable {
+      cursor: pointer;
+    }
+
+    .direccion-card.selected {
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+
+    .pedido-card {
+      background: var(--surface);
+      border: 1px solid var(--border-color);
+      border-radius: 0.5rem;
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .pedido-items {
+      display: grid;
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
+
+    .pedido-item {
+      display: grid;
+      grid-template-columns: 60px 1fr auto;
+      gap: 1rem;
+      padding: 0.75rem;
+      background: var(--background);
+      border-radius: 0.375rem;
+    }
+
+    .pedido-item-img {
+      width: 60px;
+      height: 60px;
+      object-fit: cover;
+      border-radius: 0.25rem;
+    }
+
+    .estatus-badge {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      border-radius: 1rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .estatus-pendiente {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .estatus-confirmado {
+      background: #d1fae5;
+      color: #065f46;
+    }
+
+    .estatus-enviado {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal.show {
+      display: flex;
+    }
+
+    .modal-content {
+      background: var(--surface);
+      border-radius: 0.5rem;
+      padding: 2rem;
+      max-width: 600px;
+      width: 90%;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="container navbar-content">
+      <a href="/catalogo.html" class="navbar-brand">🌹 RazoConnect</a>
+      <ul class="navbar-menu">
+        <li><a href="/catalogo.html" class="navbar-link">Productos</a></li>
+        <li><a href="/carrito.html" class="navbar-link">Carrito</a></li>
+        <li><a href="/dashboard.html" class="navbar-link" style="color: var(--primary-color); font-weight: 600;">Mi Cuenta</a></li>
+        <li><a href="#" class="navbar-link" id="logoutBtn">Cerrar Sesión</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <div class="container" style="padding-top: 2rem; padding-bottom: 3rem;">
+    <h1 style="font-size: 2rem; font-weight: bold; margin-bottom: 2rem;">Mi Cuenta</h1>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab active" data-tab="perfil">👤 Perfil</button>
+      <button class="tab" data-tab="direcciones">📍 Direcciones</button>
+      <button class="tab" data-tab="pedidos">📦 Historial de Pedidos</button>
+    </div>
+
+    <!-- Tab: Perfil -->
+    <div class="tab-content active" id="perfil">
+      <div class="card">
+        <h2 class="card-header">Información Personal</h2>
+        <div id="perfilContent"></div>
+      </div>
+    </div>
+
+    <!-- Tab: Direcciones -->
+    <div class="tab-content" id="direcciones">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <h2 style="font-size: 1.5rem; font-weight: 600;">Mis Direcciones</h2>
+        <button class="btn btn-primary" id="btnNuevaDireccion">+ Nueva Dirección</button>
+      </div>
+
+      <div id="loadingDirecciones" class="loading">
+        <div class="spinner"></div>
+      </div>
+
+      <div id="direccionesList"></div>
+
+      <div id="emptyDirecciones" class="empty-state" style="display: none;">
+        <div class="empty-state-icon">📍</div>
+        <h3 class="empty-state-title">No tienes direcciones guardadas</h3>
+        <p class="empty-state-text">Agrega una dirección para realizar tus pedidos</p>
+      </div>
+    </div>
+
+    <!-- Tab: Pedidos -->
+    <div class="tab-content" id="pedidos">
+      <h2 style="font-size: 1.5rem; font-weight: 600; margin-bottom: 1.5rem;">Historial de Pedidos</h2>
+
+      <div id="loadingPedidos" class="loading">
+        <div class="spinner"></div>
+      </div>
+
+      <div id="pedidosList"></div>
+
+      <div id="emptyPedidos" class="empty-state" style="display: none;">
+        <div class="empty-state-icon">📦</div>
+        <h3 class="empty-state-title">No tienes pedidos aún</h3>
+        <p class="empty-state-text">Explora nuestro catálogo y realiza tu primer pedido</p>
+        <a href="/catalogo.html" class="btn btn-primary">Ver Productos</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Nueva Dirección -->
+  <div id="modalDireccion" class="modal">
+    <div class="modal-content">
+      <h2 style="font-size: 1.5rem; font-weight: bold; margin-bottom: 1.5rem;">Nueva Dirección</h2>
+      
+      <form id="formDireccion">
+        <div class="form-group">
+          <label class="form-label" for="etiqueta">Etiqueta (opcional)</label>
+          <input type="text" id="etiqueta" class="form-input" placeholder="Ej: Casa, Oficina, Bodega">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="receptor">Receptor *</label>
+          <input type="text" id="receptor" class="form-input" placeholder="Nombre completo del receptor" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="calle">Calle *</label>
+          <input type="text" id="calle" class="form-input" placeholder="Nombre de la calle" required>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div class="form-group">
+            <label class="form-label" for="numeroExt">Número Exterior</label>
+            <input type="text" id="numeroExt" class="form-input" placeholder="123">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="numeroInt">Número Interior</label>
+            <input type="text" id="numeroInt" class="form-input" placeholder="A">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="colonia">Colonia</label>
+          <input type="text" id="colonia" class="form-input" placeholder="Nombre de la colonia">
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div class="form-group">
+            <label class="form-label" for="ciudad">Ciudad *</label>
+            <input type="text" id="ciudad" class="form-input" placeholder="Ciudad" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="estado">Estado *</label>
+            <input type="text" id="estado" class="form-input" placeholder="Estado" required>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div class="form-group">
+            <label class="form-label" for="codigoPostal">Código Postal *</label>
+            <input type="text" id="codigoPostal" class="form-input" placeholder="12345" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="telefonoContacto">Teléfono</label>
+            <input type="tel" id="telefonoContacto" class="form-input" placeholder="5551234567">
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+          <button type="submit" class="btn btn-primary" style="flex: 1;" id="btnGuardarDireccion">
+            <span id="btnGuardarText">Guardar Dirección</span>
+            <div class="spinner" id="btnGuardarSpinner" style="display: none; width: 20px; height: 20px; border-width: 2px;"></div>
+          </button>
+          <button type="button" class="btn btn-secondary" style="flex: 1;" id="btnCancelarDireccion">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script>
+    // Check authentication
+    if (!requireAuth()) {
+      // User is not authenticated
+    }
+
+    const userData = getUserData();
+    const perfilContent = document.getElementById('perfilContent');
+    const direccionesList = document.getElementById('direccionesList');
+    const pedidosList = document.getElementById('pedidosList');
+    const loadingDirecciones = document.getElementById('loadingDirecciones');
+    const loadingPedidos = document.getElementById('loadingPedidos');
+    const emptyDirecciones = document.getElementById('emptyDirecciones');
+    const emptyPedidos = document.getElementById('emptyPedidos');
+    const modalDireccion = document.getElementById('modalDireccion');
+    const formDireccion = document.getElementById('formDireccion');
+    const btnNuevaDireccion = document.getElementById('btnNuevaDireccion');
+    const btnCancelarDireccion = document.getElementById('btnCancelarDireccion');
+    const btnGuardarDireccion = document.getElementById('btnGuardarDireccion');
+    const btnGuardarText = document.getElementById('btnGuardarText');
+    const btnGuardarSpinner = document.getElementById('btnGuardarSpinner');
+    const logoutBtn = document.getElementById('logoutBtn');
+
+    // Tab switching
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        const tabName = tab.dataset.tab;
+        
+        // Update tabs
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        
+        // Update content
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        document.getElementById(tabName).classList.add('active');
+        
+        // Load data for tab
+        if (tabName === 'direcciones') {
+          loadDirecciones();
+        } else if (tabName === 'pedidos') {
+          loadPedidos();
+        }
+      });
+    });
+
+    // Display profile data
+    function displayPerfil() {
+      const nombre = userData.nombre || 'N/A';
+      const apellido = userData.apellido || '';
+      const email = userData.email || 'N/A';
+      const telefono = userData.telefono || 'No especificado';
+      const fechaRegistro = userData.fechaderegistro || userData.fechaDeRegistro || 'N/A';
+
+      perfilContent.innerHTML = `
+        <div style="display: grid; gap: 1rem;">
+          <div style="display: grid; grid-template-columns: 150px 1fr; align-items: center; padding: 0.75rem; border-bottom: 1px solid var(--border-color);">
+            <strong>Nombre:</strong>
+            <span>${nombre} ${apellido}</span>
+          </div>
+          <div style="display: grid; grid-template-columns: 150px 1fr; align-items: center; padding: 0.75rem; border-bottom: 1px solid var(--border-color);">
+            <strong>Email:</strong>
+            <span>${email}</span>
+          </div>
+          <div style="display: grid; grid-template-columns: 150px 1fr; align-items: center; padding: 0.75rem; border-bottom: 1px solid var(--border-color);">
+            <strong>Teléfono:</strong>
+            <span>${telefono}</span>
+          </div>
+          <div style="display: grid; grid-template-columns: 150px 1fr; align-items: center; padding: 0.75rem;">
+            <strong>Miembro desde:</strong>
+            <span>${new Date(fechaRegistro).toLocaleDateString('es-MX')}</span>
+          </div>
+        </div>
+      `;
+    }
+
+    // Format currency
+    function formatCurrency(amount) {
+      return new Intl.NumberFormat('es-MX', {
+        style: 'currency',
+        currency: 'MXN'
+      }).format(amount);
+    }
+
+    // Load direcciones
+    async function loadDirecciones() {
+      try {
+        loadingDirecciones.style.display = 'flex';
+        direccionesList.style.display = 'none';
+        emptyDirecciones.style.display = 'none';
+
+        const response = await API.getDirecciones();
+
+        if (response.ok && response.data.success) {
+          const direcciones = response.data.data.direcciones;
+
+          if (direcciones.length === 0) {
+            loadingDirecciones.style.display = 'none';
+            emptyDirecciones.style.display = 'block';
+          } else {
+            direccionesList.innerHTML = direcciones.map(d => `
+              <div class="direccion-card">
+                ${d.etiqueta ? `<div style="color: var(--primary-color); font-weight: 600; margin-bottom: 0.5rem;">📍 ${d.etiqueta}</div>` : ''}
+                <div style="margin-bottom: 0.5rem;"><strong>Receptor:</strong> ${d.receptor}</div>
+                <div style="color: var(--text-secondary); font-size: 0.875rem;">
+                  ${d.calle} ${d.numeroExt || ''} ${d.numeroInt ? 'Int. ' + d.numeroInt : ''}<br>
+                  ${d.colonia ? d.colonia + ', ' : ''}${d.ciudad}, ${d.estado}<br>
+                  CP: ${d.codigoPostal}
+                  ${d.telefonoContacto ? '<br>Tel: ' + d.telefonoContacto : ''}
+                </div>
+              </div>
+            `).join('');
+
+            loadingDirecciones.style.display = 'none';
+            direccionesList.style.display = 'block';
+          }
+        }
+      } catch (error) {
+        console.error('Error loading direcciones:', error);
+        loadingDirecciones.style.display = 'none';
+        showToast('Error al cargar direcciones', 'error');
+      }
+    }
+
+    // Load pedidos
+    async function loadPedidos() {
+      try {
+        loadingPedidos.style.display = 'flex';
+        pedidosList.style.display = 'none';
+        emptyPedidos.style.display = 'none';
+
+        const response = await API.getPedidos();
+
+        if (response.ok && response.data.success) {
+          const pedidos = response.data.data.pedidos;
+
+          if (pedidos.length === 0) {
+            loadingPedidos.style.display = 'none';
+            emptyPedidos.style.display = 'block';
+          } else {
+            pedidosList.innerHTML = pedidos.map(p => {
+              const estatusClass = `estatus-${p.estatus.toLowerCase()}`;
+              return `
+                <div class="pedido-card">
+                  <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
+                    <div>
+                      <h3 style="font-weight: 600; margin-bottom: 0.25rem;">Pedido #${p.pedidoId}</h3>
+                      <p style="color: var(--text-secondary); font-size: 0.875rem;">
+                        ${new Date(p.fechaPedido).toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' })}
+                      </p>
+                    </div>
+                    <span class="estatus-badge ${estatusClass}">${p.estatus}</span>
+                  </div>
+
+                  <div class="pedido-items">
+                    ${p.items.map(item => `
+                      <div class="pedido-item">
+                        <img src="${item.imagenUrl || 'https://via.placeholder.com/60'}" alt="${item.nombreProducto}" class="pedido-item-img">
+                        <div>
+                          <div style="font-weight: 600; margin-bottom: 0.25rem;">${item.nombreProducto}</div>
+                          <div style="color: var(--text-secondary); font-size: 0.75rem;">
+                            SKU: ${item.sku}<br>
+                            ${item.cantidadPaquetes} paquete(s) × ${formatCurrency(item.precioPorPaquete)}<br>
+                            Total piezas: ${item.piezasTotales}
+                          </div>
+                        </div>
+                        <div style="text-align: right; font-weight: 600;">
+                          ${formatCurrency(item.cantidadPaquetes * item.precioPorPaquete)}
+                        </div>
+                      </div>
+                    `).join('')}
+                  </div>
+
+                  <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                      <span style="color: var(--text-secondary); font-size: 0.875rem;">Envío a:</span>
+                      <span style="font-size: 0.875rem;">${p.direccion.receptor} - ${p.direccion.ciudad}, ${p.direccion.estado}</span>
+                    </div>
+                    ${p.agente ? `
+                      <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <span style="color: var(--text-secondary); font-size: 0.875rem;">Agente:</span>
+                        <span style="font-size: 0.875rem;">${p.agente.nombre} ${p.agente.apellido} (${p.agente.codigoAgente})</span>
+                      </div>
+                    ` : ''}
+                    <div style="display: flex; justify-content: space-between; font-size: 1.125rem; font-weight: 700; color: var(--primary-color);">
+                      <span>Total:</span>
+                      <span>${formatCurrency(p.montoTotal)}</span>
+                    </div>
+                  </div>
+                </div>
+              `;
+            }).join('');
+
+            loadingPedidos.style.display = 'none';
+            pedidosList.style.display = 'block';
+          }
+        }
+      } catch (error) {
+        console.error('Error loading pedidos:', error);
+        loadingPedidos.style.display = 'none';
+        showToast('Error al cargar pedidos', 'error');
+      }
+    }
+
+    // Modal handlers
+    btnNuevaDireccion.addEventListener('click', () => {
+      modalDireccion.classList.add('show');
+    });
+
+    btnCancelarDireccion.addEventListener('click', () => {
+      modalDireccion.classList.remove('show');
+      formDireccion.reset();
+    });
+
+    // Save direccion
+    formDireccion.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      btnGuardarDireccion.disabled = true;
+      btnGuardarText.style.display = 'none';
+      btnGuardarSpinner.style.display = 'block';
+
+      try {
+        const formData = {
+          Etiqueta: document.getElementById('etiqueta').value.trim() || null,
+          Receptor: document.getElementById('receptor').value.trim(),
+          Calle: document.getElementById('calle').value.trim(),
+          NumeroExt: document.getElementById('numeroExt').value.trim() || null,
+          NumeroInt: document.getElementById('numeroInt').value.trim() || null,
+          Colonia: document.getElementById('colonia').value.trim() || null,
+          Ciudad: document.getElementById('ciudad').value.trim(),
+          Estado: document.getElementById('estado').value.trim(),
+          CodigoPostal: document.getElementById('codigoPostal').value.trim(),
+          TelefonoContacto: document.getElementById('telefonoContacto').value.trim() || null
+        };
+
+        const response = await API.crearDireccion(formData);
+
+        if (response.ok && response.data.success) {
+          showToast('Dirección guardada exitosamente', 'success');
+          modalDireccion.classList.remove('show');
+          formDireccion.reset();
+          loadDirecciones();
+        } else {
+          showToast(response.data.message || 'Error al guardar dirección', 'error');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        showToast('Error al conectar con el servidor', 'error');
+      } finally {
+        btnGuardarDireccion.disabled = false;
+        btnGuardarText.style.display = 'inline';
+        btnGuardarSpinner.style.display = 'none';
+      }
+    });
+
+    // Logout
+    logoutBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      clearAuthData();
+      showToast('Sesión cerrada exitosamente', 'success');
+      setTimeout(() => {
+        window.location.href = '/login.html';
+      }, 500);
+    });
+
+    // Initialize
+    displayPerfil();
+  </script>
+</body>
+</html>

@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pedido Confirmado - RazoConnect</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="container navbar-content">
+      <a href="/catalogo.html" class="navbar-brand">🌹 RazoConnect</a>
+      <ul class="navbar-menu">
+        <li><a href="/catalogo.html" class="navbar-link">Productos</a></li>
+        <li><a href="/carrito.html" class="navbar-link">Carrito</a></li>
+        <li><a href="/dashboard.html" class="navbar-link">Mi Cuenta</a></li>
+        <li><a href="#" class="navbar-link" id="logoutBtn">Cerrar Sesión</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <div class="container" style="padding-top: 3rem; padding-bottom: 3rem;">
+    <!-- Success Animation -->
+    <div style="text-align: center; margin-bottom: 2rem;">
+      <div style="width: 100px; height: 100px; background: var(--success-color); border-radius: 50%; margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center; font-size: 3rem;">
+        ✓
+      </div>
+      <h1 style="font-size: 2rem; font-weight: bold; color: var(--success-color); margin-bottom: 0.5rem;">
+        ¡Pedido Confirmado!
+      </h1>
+      <p style="color: var(--text-secondary); font-size: 1.125rem;">
+        Tu pedido ha sido recibido exitosamente
+      </p>
+    </div>
+
+    <!-- Order Details -->
+    <div class="card" style="max-width: 800px; margin: 0 auto;">
+      <div id="loadingOrder" class="loading">
+        <div class="spinner"></div>
+      </div>
+
+      <div id="orderDetails" style="display: none;">
+        <div style="text-align: center; padding: 1.5rem; background: var(--background); border-radius: 0.5rem; margin-bottom: 2rem;">
+          <p style="color: var(--text-secondary); margin-bottom: 0.5rem;">Número de Pedido</p>
+          <h2 style="font-size: 2rem; font-weight: bold; color: var(--primary-color);" id="pedidoNumero">#0000</h2>
+          <p style="color: var(--text-secondary); font-size: 0.875rem; margin-top: 0.5rem;" id="pedidoFecha"></p>
+        </div>
+
+        <div style="margin-bottom: 2rem;">
+          <h3 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem;">Resumen del Pedido</h3>
+          <div id="pedidoItems"></div>
+        </div>
+
+        <div style="border-top: 2px solid var(--border-color); padding-top: 1.5rem; margin-bottom: 2rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; font-size: 1.5rem; font-weight: bold; color: var(--primary-color);">
+            <span>Total:</span>
+            <span id="pedidoTotal">$0.00</span>
+          </div>
+        </div>
+
+        <div style="margin-bottom: 2rem;">
+          <h3 style="font-size: 1.125rem; font-weight: 600; margin-bottom: 0.75rem;">Dirección de Envío</h3>
+          <div id="pedidoDireccion" style="background: var(--background); padding: 1rem; border-radius: 0.375rem;"></div>
+        </div>
+
+        <div id="pedidoAgente" style="display: none; margin-bottom: 2rem;">
+          <h3 style="font-size: 1.125rem; font-weight: 600; margin-bottom: 0.75rem;">Código de Agente</h3>
+          <div id="agenteInfo" style="background: var(--background); padding: 1rem; border-radius: 0.375rem;"></div>
+        </div>
+
+        <div class="alert alert-info">
+          <strong>📧 Confirmación enviada:</strong> Hemos enviado un correo electrónico con los detalles de tu pedido.
+        </div>
+
+        <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+          <a href="/dashboard.html" class="btn btn-primary" style="flex: 1; text-align: center;">
+            Ver Mis Pedidos
+          </a>
+          <a href="/catalogo.html" class="btn btn-secondary" style="flex: 1; text-align: center;">
+            Seguir Comprando
+          </a>
+        </div>
+      </div>
+
+      <div id="errorOrder" class="empty-state" style="display: none;">
+        <div class="empty-state-icon">❌</div>
+        <h3 class="empty-state-title">Error al cargar el pedido</h3>
+        <p class="empty-state-text">No se pudo obtener la información del pedido</p>
+        <a href="/dashboard.html" class="btn btn-primary">Ver Mis Pedidos</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script>
+    // Check authentication
+    if (!requireAuth()) {
+      // User is not authenticated
+    }
+
+    const loadingOrder = document.getElementById('loadingOrder');
+    const orderDetails = document.getElementById('orderDetails');
+    const errorOrder = document.getElementById('errorOrder');
+    const pedidoNumero = document.getElementById('pedidoNumero');
+    const pedidoFecha = document.getElementById('pedidoFecha');
+    const pedidoItems = document.getElementById('pedidoItems');
+    const pedidoTotal = document.getElementById('pedidoTotal');
+    const pedidoDireccion = document.getElementById('pedidoDireccion');
+    const pedidoAgente = document.getElementById('pedidoAgente');
+    const agenteInfo = document.getElementById('agenteInfo');
+    const logoutBtn = document.getElementById('logoutBtn');
+
+    // Get order ID from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const pedidoId = urlParams.get('id');
+
+    if (!pedidoId) {
+      loadingOrder.style.display = 'none';
+      errorOrder.style.display = 'block';
+    }
+
+    // Format currency
+    function formatCurrency(amount) {
+      return new Intl.NumberFormat('es-MX', {
+        style: 'currency',
+        currency: 'MXN'
+      }).format(amount);
+    }
+
+    // Load order details
+    async function loadOrderDetails() {
+      try {
+        loadingOrder.style.display = 'flex';
+        orderDetails.style.display = 'none';
+        errorOrder.style.display = 'none';
+
+        const response = await API.getPedidos();
+
+        if (response.ok && response.data.success) {
+          const pedidos = response.data.data.pedidos;
+          const pedido = pedidos.find(p => p.pedidoId === parseInt(pedidoId));
+
+          if (!pedido) {
+            throw new Error('Pedido no encontrado');
+          }
+
+          // Display order number and date
+          pedidoNumero.textContent = `#${pedido.pedidoId}`;
+          pedidoFecha.textContent = new Date(pedido.fechaPedido).toLocaleDateString('es-MX', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          });
+
+          // Display items
+          pedidoItems.innerHTML = pedido.items.map(item => `
+            <div style="display: grid; grid-template-columns: 80px 1fr auto; gap: 1rem; padding: 1rem; background: var(--background); border-radius: 0.375rem; margin-bottom: 0.75rem;">
+              <img src="${item.imagenUrl || 'https://via.placeholder.com/80'}" alt="${item.nombreProducto}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 0.25rem;">
+              <div>
+                <div style="font-weight: 600; margin-bottom: 0.25rem;">${item.nombreProducto}</div>
+                <div style="color: var(--text-secondary); font-size: 0.875rem;">
+                  SKU: ${item.sku}<br>
+                  ${item.cantidadPaquetes} paquete(s) × ${formatCurrency(item.precioPorPaquete)}<br>
+                  Total: ${item.piezasTotales} piezas
+                </div>
+              </div>
+              <div style="text-align: right; font-weight: 600;">
+                ${formatCurrency(item.cantidadPaquetes * item.precioPorPaquete)}
+              </div>
+            </div>
+          `).join('');
+
+          // Display total
+          pedidoTotal.textContent = formatCurrency(pedido.montoTotal);
+
+          // Display address
+          pedidoDireccion.innerHTML = `
+            <strong>${pedido.direccion.receptor}</strong><br>
+            <span style="color: var(--text-secondary);">
+              ${pedido.direccion.calle}<br>
+              ${pedido.direccion.ciudad}, ${pedido.direccion.estado}
+            </span>
+          `;
+
+          // Display agent if present
+          if (pedido.agente) {
+            pedidoAgente.style.display = 'block';
+            agenteInfo.innerHTML = `
+              <strong>${pedido.agente.nombre} ${pedido.agente.apellido}</strong><br>
+              <span style="color: var(--text-secondary);">Código: ${pedido.agente.codigoAgente}</span><br>
+              <span style="color: var(--success-color); font-size: 0.875rem;">✓ Comisión del 20% aplicada</span>
+            `;
+          }
+
+          loadingOrder.style.display = 'none';
+          orderDetails.style.display = 'block';
+
+        } else {
+          throw new Error('Error al cargar pedido');
+        }
+      } catch (error) {
+        console.error('Error loading order:', error);
+        loadingOrder.style.display = 'none';
+        errorOrder.style.display = 'block';
+      }
+    }
+
+    // Logout
+    logoutBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      clearAuthData();
+      showToast('Sesión cerrada exitosamente', 'success');
+      setTimeout(() => {
+        window.location.href = '/login.html';
+      }, 500);
+    });
+
+    // Load order on page load
+    if (pedidoId) {
+      loadOrderDetails();
+    }
+  </script>
+</body>
+</html>

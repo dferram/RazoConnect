@@ -129,7 +129,7 @@
 
     // Check if user is already logged in
     if (isAuthenticated()) {
-      window.location.href = '/dashboard.html';
+      window.location.href = '/catalogo.html';
     }
 
     // Show alert message
@@ -242,9 +242,9 @@
           // Show success message
           showToast('¡Registro exitoso! Bienvenido a RazoConnect', 'success');
           
-          // Redirect to dashboard
+          // Redirect to catalog
           setTimeout(() => {
-            window.location.href = '/dashboard.html';
+            window.location.href = '/catalogo.html';
           }, 500);
         } else {
           // Show error message

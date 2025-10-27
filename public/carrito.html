@@ -5,14 +5,66 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mi Carrito - RazoConnect</title>
   <link rel="stylesheet" href="css/styles.css">
+  <style>
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal.show {
+      display: flex;
+    }
+
+    .modal-content {
+      background: var(--surface);
+      border-radius: 0.5rem;
+      padding: 2rem;
+      max-width: 600px;
+      width: 90%;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .direccion-option {
+      background: var(--surface);
+      border: 2px solid var(--border-color);
+      border-radius: 0.5rem;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .direccion-option:hover {
+      border-color: var(--primary-color);
+    }
+
+    .direccion-option.selected {
+      border-color: var(--primary-color);
+      background: rgba(37, 99, 235, 0.05);
+    }
+
+    .direccion-option input[type="radio"] {
+      margin-right: 1rem;
+    }
+  </style>
 </head>
 <body>
   <nav class="navbar">
     <div class="container navbar-content">
-      <a href="/dashboard.html" class="navbar-brand">🌹 RazoConnect</a>
+      <a href="/catalogo.html" class="navbar-brand">🌹 RazoConnect</a>
       <ul class="navbar-menu">
-        <li><a href="/dashboard.html" class="navbar-link">Productos</a></li>
+        <li><a href="/catalogo.html" class="navbar-link">Productos</a></li>
         <li><a href="/carrito.html" class="navbar-link" style="color: var(--primary-color); font-weight: 600;">Carrito</a></li>
+        <li><a href="/dashboard.html" class="navbar-link">Mi Cuenta</a></li>
         <li><a href="#" class="navbar-link" id="logoutBtn">Cerrar Sesión</a></li>
       </ul>
     </div>
@@ -31,7 +83,7 @@
       <div class="empty-state-icon">🛒</div>
       <h2 class="empty-state-title">Tu carrito está vacío</h2>
       <p class="empty-state-text">Agrega productos para comenzar tu compra</p>
-      <a href="/dashboard.html" class="btn btn-primary">Ver Productos</a>
+      <a href="/catalogo.html" class="btn btn-primary">Ver Productos</a>
     </div>
 
     <!-- Cart Content -->
@@ -66,13 +118,62 @@
               Proceder al Pago
             </button>
             
-            <a href="/dashboard.html" class="btn btn-secondary btn-block mt-2">
+            <a href="/catalogo.html" class="btn btn-secondary btn-block mt-2">
               Continuar Comprando
             </a>
           </div>
 
           <div class="alert alert-info mt-3" style="font-size: 0.875rem;">
             💡 <strong>Nota:</strong> Los precios son por paquete. Cada paquete contiene múltiples piezas según el producto.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Checkout -->
+  <div id="modalCheckout" class="modal">
+    <div class="modal-content">
+      <h2 style="font-size: 1.5rem; font-weight: bold; margin-bottom: 1.5rem;">Finalizar Pedido</h2>
+      
+      <div id="checkoutContent">
+        <!-- Step 1: Select Address -->
+        <div id="stepDireccion">
+          <h3 style="font-weight: 600; margin-bottom: 1rem;">Selecciona tu dirección de envío</h3>
+          
+          <div id="loadingDirecciones" class="loading">
+            <div class="spinner"></div>
+          </div>
+
+          <div id="direccionesList"></div>
+
+          <div id="noDirecciones" style="display: none;">
+            <div class="alert alert-info">
+              No tienes direcciones guardadas. <a href="/dashboard.html" style="color: var(--primary-color); font-weight: 600;">Agregar una dirección</a>
+            </div>
+          </div>
+
+          <!-- Optional Agent Code -->
+          <div class="form-group" style="margin-top: 1.5rem;">
+            <label class="form-label" for="codigoAgente">Código de Agente (opcional)</label>
+            <input 
+              type="text" 
+              id="codigoAgente" 
+              class="form-input" 
+              placeholder="Ingresa el código de tu agente de ventas"
+            >
+            <p style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 0.25rem;">
+              Si cuentas con un código de agente, tu agente recibirá una comisión del 20%
+            </p>
+          </div>
+
+          <!-- Buttons -->
+          <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+            <button class="btn btn-success" style="flex: 1;" id="btnConfirmarPedido">
+              <span id="btnConfirmarText">Confirmar Pedido</span>
+              <div class="spinner" id="btnConfirmarSpinner" style="display: none; width: 20px; height: 20px; border-width: 2px;"></div>
+            </button>
+            <button class="btn btn-secondary" style="flex: 1;" id="btnCancelarCheckout">Cancelar</button>
           </div>
         </div>
       </div>
@@ -96,7 +197,20 @@
     const checkoutBtn = document.getElementById('checkoutBtn');
     const logoutBtn = document.getElementById('logoutBtn');
 
+    // Modal elements
+    const modalCheckout = document.getElementById('modalCheckout');
+    const loadingDirecciones = document.getElementById('loadingDirecciones');
+    const direccionesList = document.getElementById('direccionesList');
+    const noDirecciones = document.getElementById('noDirecciones');
+    const codigoAgenteInput = document.getElementById('codigoAgente');
+    const btnConfirmarPedido = document.getElementById('btnConfirmarPedido');
+    const btnCancelarCheckout = document.getElementById('btnCancelarCheckout');
+    const btnConfirmarText = document.getElementById('btnConfirmarText');
+    const btnConfirmarSpinner = document.getElementById('btnConfirmarSpinner');
+
     let carritoData = null;
+    let direcciones = [];
+    let selectedDireccionId = null;
 
     // Format currency
     function formatCurrency(amount) {
@@ -180,6 +294,55 @@
       }
     }
 
+    // Load direcciones for checkout
+    async function loadDireccionesCheckout() {
+      try {
+        loadingDirecciones.style.display = 'flex';
+        direccionesList.innerHTML = '';
+        noDirecciones.style.display = 'none';
+
+        const response = await API.getDirecciones();
+
+        if (response.ok && response.data.success) {
+          direcciones = response.data.data.direcciones;
+
+          if (direcciones.length === 0) {
+            loadingDirecciones.style.display = 'none';
+            noDirecciones.style.display = 'block';
+          } else {
+            direccionesList.innerHTML = direcciones.map(d => `
+              <label class="direccion-option" data-id="${d.direccionId}">
+                <input type="radio" name="direccion" value="${d.direccionId}">
+                ${d.etiqueta ? `<strong style="color: var(--primary-color);">📍 ${d.etiqueta}</strong><br>` : ''}
+                <strong>${d.receptor}</strong><br>
+                <span style="color: var(--text-secondary); font-size: 0.875rem;">
+                  ${d.calle} ${d.numeroExt || ''} ${d.numeroInt ? 'Int. ' + d.numeroInt : ''}<br>
+                  ${d.colonia ? d.colonia + ', ' : ''}${d.ciudad}, ${d.estado} - CP: ${d.codigoPostal}
+                  ${d.telefonoContacto ? '<br>Tel: ' + d.telefonoContacto : ''}
+                </span>
+              </label>
+            `).join('');
+
+            // Add click handlers
+            document.querySelectorAll('.direccion-option').forEach(option => {
+              option.addEventListener('click', function() {
+                document.querySelectorAll('.direccion-option').forEach(o => o.classList.remove('selected'));
+                this.classList.add('selected');
+                this.querySelector('input[type="radio"]').checked = true;
+                selectedDireccionId = parseInt(this.dataset.id);
+              });
+            });
+
+            loadingDirecciones.style.display = 'none';
+          }
+        }
+      } catch (error) {
+        console.error('Error loading direcciones:', error);
+        loadingDirecciones.style.display = 'none';
+        showToast('Error al cargar direcciones', 'error');
+      }
+    }
+
     // Handle checkout
     checkoutBtn.addEventListener('click', () => {
       if (!carritoData || carritoData.items.length === 0) {
@@ -187,12 +350,53 @@
         return;
       }
 
-      // TODO: Implement checkout flow
-      // For now, show a message
-      showToast('La funcionalidad de checkout se implementará próximamente', 'info');
-      
-      // In a real implementation, you would redirect to checkout page
-      // window.location.href = '/checkout.html';
+      modalCheckout.classList.add('show');
+      loadDireccionesCheckout();
+    });
+
+    // Cancel checkout
+    btnCancelarCheckout.addEventListener('click', () => {
+      modalCheckout.classList.remove('show');
+      selectedDireccionId = null;
+      codigoAgenteInput.value = '';
+    });
+
+    // Confirm order
+    btnConfirmarPedido.addEventListener('click', async () => {
+      if (!selectedDireccionId) {
+        showToast('Por favor selecciona una dirección de envío', 'warning');
+        return;
+      }
+
+      btnConfirmarPedido.disabled = true;
+      btnConfirmarText.style.display = 'none';
+      btnConfirmarSpinner.style.display = 'block';
+
+      try {
+        const codigoAgente = codigoAgenteInput.value.trim() || null;
+        const response = await API.crearPedido(selectedDireccionId, codigoAgente);
+
+        if (response.ok && response.data.success) {
+          const pedidoId = response.data.data.pedido.pedidoId;
+          showToast('¡Pedido creado exitosamente!', 'success');
+          
+          // Redirect to confirmation page
+          setTimeout(() => {
+            window.location.href = `/pedido-confirmado.html?id=${pedidoId}`;
+          }, 1000);
+        } else {
+          showToast(response.data.message || 'Error al crear el pedido', 'error');
+          btnConfirmarPedido.disabled = false;
+          btnConfirmarText.style.display = 'inline';
+          btnConfirmarSpinner.style.display = 'none';
+        }
+      } catch (error) {
+        console.error('Error creating order:', error);
+        showToast('Error al conectar con el servidor. Intenta nuevamente.', 'error');
+        btnConfirmarPedido.disabled = false;
+        btnConfirmarText.style.display = 'inline';
+        btnConfirmarSpinner.style.display = 'none';
+      }
     });
 
     // Handle logout
