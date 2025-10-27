@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Detalle del Producto - RazoConnect</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="container navbar-content">
+      <a href="/dashboard.html" class="navbar-brand">🌹 RazoConnect</a>
+      <ul class="navbar-menu">
+        <li><a href="/dashboard.html" class="navbar-link">Productos</a></li>
+        <li><a href="/carrito.html" class="navbar-link">Carrito</a></li>
+        <li><a href="#" class="navbar-link" id="logoutBtn">Cerrar Sesión</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <div class="container" style="padding-top: 2rem; padding-bottom: 3rem;">
+    <!-- Loading State -->
+    <div id="loadingState" class="loading">
+      <div class="spinner"></div>
+    </div>
+
+    <!-- Product Details -->
+    <div id="productDetails" style="display: none;">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: start;">
+        <!-- Images Section -->
+        <div>
+          <div style="margin-bottom: 1rem;">
+            <img id="mainImage" src="" alt="" style="width: 100%; height: 500px; object-fit: cover; border-radius: 0.5rem; box-shadow: var(--shadow-lg);">
+          </div>
+          
+          <!-- Thumbnail Gallery -->
+          <div id="thumbnailGallery" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 0.5rem;"></div>
+        </div>
+
+        <!-- Product Info Section -->
+        <div>
+          <div style="background-color: var(--surface); padding: 2rem; border-radius: 0.5rem; box-shadow: var(--shadow);">
+            <p id="productCategory" style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 0.5rem;"></p>
+            
+            <h1 id="productName" style="font-size: 2rem; font-weight: bold; margin-bottom: 0.5rem; color: var(--text-primary);"></h1>
+            
+            <p id="productSKU" style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 1.5rem;"></p>
+
+            <!-- Price Section -->
+            <div style="background-color: var(--background); padding: 1.5rem; border-radius: 0.5rem; margin-bottom: 1.5rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                <span style="font-size: 1.125rem; color: var(--text-secondary);">Precio por paquete:</span>
+                <span id="precioPaquete" style="font-size: 2rem; font-weight: bold; color: var(--primary-color);"></span>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 0.75rem; border-top: 1px solid var(--border-color);">
+                <span style="color: var(--text-secondary); font-size: 0.875rem;">Precio por pieza:</span>
+                <span id="precioPieza" style="font-weight: 600; color: var(--text-primary);"></span>
+              </div>
+            </div>
+
+            <!-- Product Details -->
+            <div style="margin-bottom: 1.5rem;">
+              <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem;">Detalles del Producto</h3>
+              <div style="display: grid; gap: 0.5rem; font-size: 0.875rem;">
+                <div style="display: flex; justify-content: space-between;">
+                  <span style="color: var(--text-secondary);">Piezas por paquete:</span>
+                  <span id="piezasPorPaquete" style="font-weight: 600;"></span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span style="color: var(--text-secondary);">Dimensiones:</span>
+                  <span id="dimensiones" style="font-weight: 600;"></span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span style="color: var(--text-secondary);">Stock disponible:</span>
+                  <span id="stock" style="font-weight: 600; color: var(--success-color);"></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Description -->
+            <div style="margin-bottom: 1.5rem;">
+              <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem;">Descripción</h3>
+              <p id="productDescription" style="color: var(--text-secondary); line-height: 1.6;"></p>
+            </div>
+
+            <!-- Add to Cart Section -->
+            <div style="border-top: 1px solid var(--border-color); padding-top: 1.5rem;">
+              <div style="margin-bottom: 1rem;">
+                <label class="form-label" for="cantidad">Cantidad de Paquetes:</label>
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                  <button id="decreaseBtn" class="btn btn-secondary" style="padding: 0.5rem 1rem;">-</button>
+                  <input 
+                    type="number" 
+                    id="cantidad" 
+                    class="form-input" 
+                    value="1" 
+                    min="1" 
+                    max="999"
+                    style="text-align: center; width: 100px;"
+                  >
+                  <button id="increaseBtn" class="btn btn-secondary" style="padding: 0.5rem 1rem;">+</button>
+                </div>
+                <p id="totalPiezas" style="color: var(--text-secondary); font-size: 0.875rem; margin-top: 0.5rem;"></p>
+              </div>
+
+              <button id="addToCartBtn" class="btn btn-success btn-block" style="font-size: 1.125rem; padding: 1rem;">
+                <span id="btnText">🛒 Agregar al Carrito</span>
+                <div class="spinner" id="btnSpinner" style="display: none; width: 20px; height: 20px; border-width: 2px;"></div>
+              </button>
+
+              <a href="/dashboard.html" class="btn btn-secondary btn-block mt-2">
+                ← Volver a Productos
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Error State -->
+    <div id="errorState" class="empty-state" style="display: none;">
+      <div class="empty-state-icon">❌</div>
+      <h2 class="empty-state-title">Producto no encontrado</h2>
+      <p class="empty-state-text">El producto que buscas no existe o no está disponible</p>
+      <a href="/dashboard.html" class="btn btn-primary">Ver Productos</a>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script>
+    // Check authentication
+    if (!requireAuth()) {
+      // User is not authenticated, redirected to login
+    }
+
+    const loadingState = document.getElementById('loadingState');
+    const productDetails = document.getElementById('productDetails');
+    const errorState = document.getElementById('errorState');
+    const logoutBtn = document.getElementById('logoutBtn');
+
+    // Product elements
+    const mainImage = document.getElementById('mainImage');
+    const thumbnailGallery = document.getElementById('thumbnailGallery');
+    const productCategory = document.getElementById('productCategory');
+    const productName = document.getElementById('productName');
+    const productSKU = document.getElementById('productSKU');
+    const precioPaquete = document.getElementById('precioPaquete');
+    const precioPieza = document.getElementById('precioPieza');
+    const piezasPorPaquete = document.getElementById('piezasPorPaquete');
+    const dimensiones = document.getElementById('dimensiones');
+    const stock = document.getElementById('stock');
+    const productDescription = document.getElementById('productDescription');
+    const cantidadInput = document.getElementById('cantidad');
+    const totalPiezas = document.getElementById('totalPiezas');
+    const addToCartBtn = document.getElementById('addToCartBtn');
+    const decreaseBtn = document.getElementById('decreaseBtn');
+    const increaseBtn = document.getElementById('increaseBtn');
+    const btnText = document.getElementById('btnText');
+    const btnSpinner = document.getElementById('btnSpinner');
+
+    let producto = null;
+
+    // Get product ID from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const productoId = urlParams.get('id');
+
+    if (!productoId) {
+      loadingState.style.display = 'none';
+      errorState.style.display = 'block';
+    }
+
+    // Format currency
+    function formatCurrency(amount) {
+      return new Intl.NumberFormat('es-MX', {
+        style: 'currency',
+        currency: 'MXN'
+      }).format(amount);
+    }
+
+    // Update total pieces display
+    function updateTotalPiezas() {
+      const cantidad = parseInt(cantidadInput.value) || 1;
+      if (producto) {
+        const total = cantidad * producto.piezasPorPaquete;
+        totalPiezas.textContent = `Total: ${total} piezas`;
+      }
+    }
+
+    // Load product details
+    async function loadProducto() {
+      try {
+        loadingState.style.display = 'flex';
+        productDetails.style.display = 'none';
+        errorState.style.display = 'none';
+
+        const response = await API.getProductoById(productoId);
+
+        if (response.ok && response.data.success) {
+          producto = response.data.data.producto;
+
+          // Set main image
+          const mainImageUrl = producto.imagenes[0]?.url || 'https://via.placeholder.com/500x500?text=Sin+Imagen';
+          mainImage.src = mainImageUrl;
+          mainImage.alt = producto.imagenes[0]?.alt || producto.nombreProducto;
+
+          // Set thumbnails
+          if (producto.imagenes.length > 1) {
+            thumbnailGallery.innerHTML = producto.imagenes.map(img => `
+              <img 
+                src="${img.url}" 
+                alt="${img.alt || producto.nombreProducto}"
+                style="width: 100%; height: 100px; object-fit: cover; border-radius: 0.375rem; cursor: pointer; border: 2px solid var(--border-color);"
+                onclick="mainImage.src='${img.url}'"
+              >
+            `).join('');
+          }
+
+          // Set product info
+          productCategory.textContent = producto.categoria?.nombre || 'Sin categoría';
+          productName.textContent = producto.nombreProducto;
+          productSKU.textContent = `SKU: ${producto.sku}`;
+          precioPaquete.textContent = formatCurrency(producto.precioPaquete);
+          precioPieza.textContent = formatCurrency(producto.precioPorPieza);
+          piezasPorPaquete.textContent = producto.piezasPorPaquete;
+          dimensiones.textContent = producto.dimensiones || 'No especificado';
+          stock.textContent = `${producto.stock} paquetes`;
+          productDescription.textContent = producto.descripcion || 'Sin descripción disponible.';
+
+          // Set max quantity
+          cantidadInput.max = producto.stock;
+
+          // Update total pieces
+          updateTotalPiezas();
+
+          // Show product details
+          loadingState.style.display = 'none';
+          productDetails.style.display = 'block';
+        } else {
+          throw new Error(response.data.message || 'Producto no encontrado');
+        }
+      } catch (error) {
+        console.error('Error loading product:', error);
+        loadingState.style.display = 'none';
+        errorState.style.display = 'block';
+      }
+    }
+
+    // Handle quantity changes
+    decreaseBtn.addEventListener('click', () => {
+      const current = parseInt(cantidadInput.value) || 1;
+      if (current > 1) {
+        cantidadInput.value = current - 1;
+        updateTotalPiezas();
+      }
+    });
+
+    increaseBtn.addEventListener('click', () => {
+      const current = parseInt(cantidadInput.value) || 1;
+      const max = parseInt(cantidadInput.max);
+      if (current < max) {
+        cantidadInput.value = current + 1;
+        updateTotalPiezas();
+      }
+    });
+
+    cantidadInput.addEventListener('input', () => {
+      const value = parseInt(cantidadInput.value);
+      const max = parseInt(cantidadInput.max);
+      
+      if (value < 1) {
+        cantidadInput.value = 1;
+      } else if (value > max) {
+        cantidadInput.value = max;
+      }
+      
+      updateTotalPiezas();
+    });
+
+    // Handle add to cart
+    addToCartBtn.addEventListener('click', async () => {
+      if (!producto) return;
+
+      const cantidad = parseInt(cantidadInput.value) || 1;
+
+      if (cantidad < 1) {
+        showToast('La cantidad debe ser mayor a 0', 'warning');
+        return;
+      }
+
+      if (cantidad > producto.stock) {
+        showToast(`Stock insuficiente. Disponible: ${producto.stock} paquetes`, 'warning');
+        return;
+      }
+
+      // Show loading state
+      addToCartBtn.disabled = true;
+      btnText.style.display = 'none';
+      btnSpinner.style.display = 'block';
+
+      try {
+        const response = await API.agregarAlCarrito(producto.productoId, cantidad);
+
+        if (response.ok && response.data.success) {
+          showToast('✅ Producto agregado al carrito exitosamente', 'success');
+          
+          // Reset quantity
+          cantidadInput.value = 1;
+          updateTotalPiezas();
+
+          // Optional: Show redirect option
+          setTimeout(() => {
+            if (confirm('¿Deseas ir al carrito para finalizar tu compra?')) {
+              window.location.href = '/carrito.html';
+            }
+          }, 1000);
+        } else {
+          showToast(response.data.message || 'Error al agregar al carrito', 'error');
+        }
+      } catch (error) {
+        console.error('Error adding to cart:', error);
+        showToast('Error al conectar con el servidor. Intenta nuevamente.', 'error');
+      } finally {
+        // Reset button state
+        addToCartBtn.disabled = false;
+        btnText.style.display = 'inline';
+        btnSpinner.style.display = 'none';
+      }
+    });
+
+    // Handle logout
+    logoutBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      clearAuthData();
+      showToast('Sesión cerrada exitosamente', 'success');
+      setTimeout(() => {
+        window.location.href = '/login.html';
+      }, 500);
+    });
+
+    // Load product on page load
+    if (productoId) {
+      loadProducto();
+    }
+  </script>
+
+  <style>
+    @media (max-width: 968px) {
+      #productDetails > div {
+        grid-template-columns: 1fr !important;
+      }
+    }
+  </style>
+</body>
+</html>

@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Registro - RazoConnect</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="container navbar-content">
+      <a href="/" class="navbar-brand">🌹 RazoConnect</a>
+      <ul class="navbar-menu">
+        <li><a href="/login.html" class="navbar-link">Iniciar Sesión</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="form-container">
+      <h1 class="form-title">Crear Cuenta</h1>
+      <p class="form-subtitle">Regístrate como cliente en RazoConnect</p>
+
+      <div id="alert" style="display: none;"></div>
+
+      <form id="registroForm">
+        <div class="form-group">
+          <label class="form-label" for="nombre">Nombre</label>
+          <input 
+            type="text" 
+            id="nombre" 
+            name="nombre" 
+            class="form-input" 
+            placeholder="Juan"
+            required
+          >
+          <div class="form-error" id="nombreError"></div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="apellido">Apellido</label>
+          <input 
+            type="text" 
+            id="apellido" 
+            name="apellido" 
+            class="form-input" 
+            placeholder="Pérez"
+            required
+          >
+          <div class="form-error" id="apellidoError"></div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="email">Correo Electrónico</label>
+          <input 
+            type="email" 
+            id="email" 
+            name="email" 
+            class="form-input" 
+            placeholder="tu@email.com"
+            required
+          >
+          <div class="form-error" id="emailError"></div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="telefono">Teléfono (opcional)</label>
+          <input 
+            type="tel" 
+            id="telefono" 
+            name="telefono" 
+            class="form-input" 
+            placeholder="5551234567"
+          >
+          <div class="form-error" id="telefonoError"></div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="password">Contraseña</label>
+          <input 
+            type="password" 
+            id="password" 
+            name="password" 
+            class="form-input" 
+            placeholder="Mínimo 6 caracteres"
+            required
+          >
+          <div class="form-error" id="passwordError"></div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="confirmPassword">Confirmar Contraseña</label>
+          <input 
+            type="password" 
+            id="confirmPassword" 
+            name="confirmPassword" 
+            class="form-input" 
+            placeholder="Repite tu contraseña"
+            required
+          >
+          <div class="form-error" id="confirmPasswordError"></div>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block" id="submitBtn">
+          <span id="btnText">Crear Cuenta</span>
+          <div class="spinner" id="btnSpinner" style="display: none; width: 20px; height: 20px; border-width: 2px;"></div>
+        </button>
+      </form>
+
+      <p class="text-center mt-3" style="color: var(--text-secondary);">
+        ¿Ya tienes cuenta? <a href="/login.html" style="color: var(--primary-color); text-decoration: none;">Inicia sesión aquí</a>
+      </p>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script>
+    const registroForm = document.getElementById('registroForm');
+    const nombreInput = document.getElementById('nombre');
+    const apellidoInput = document.getElementById('apellido');
+    const emailInput = document.getElementById('email');
+    const telefonoInput = document.getElementById('telefono');
+    const passwordInput = document.getElementById('password');
+    const confirmPasswordInput = document.getElementById('confirmPassword');
+    const submitBtn = document.getElementById('submitBtn');
+    const btnText = document.getElementById('btnText');
+    const btnSpinner = document.getElementById('btnSpinner');
+    const alertDiv = document.getElementById('alert');
+
+    // Check if user is already logged in
+    if (isAuthenticated()) {
+      window.location.href = '/dashboard.html';
+    }
+
+    // Show alert message
+    function showAlert(message, type = 'error') {
+      alertDiv.className = `alert alert-${type}`;
+      alertDiv.textContent = message;
+      alertDiv.style.display = 'block';
+      
+      setTimeout(() => {
+        alertDiv.style.display = 'none';
+      }, 5000);
+    }
+
+    // Validate email format
+    function validateEmail(email) {
+      const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      return re.test(email);
+    }
+
+    // Handle form submission
+    registroForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      // Clear previous errors
+      document.querySelectorAll('.form-error').forEach(el => el.classList.remove('show'));
+      document.querySelectorAll('.form-input').forEach(el => el.classList.remove('error'));
+
+      const nombre = nombreInput.value.trim();
+      const apellido = apellidoInput.value.trim();
+      const email = emailInput.value.trim();
+      const telefono = telefonoInput.value.trim();
+      const password = passwordInput.value.trim();
+      const confirmPassword = confirmPasswordInput.value.trim();
+
+      // Validation
+      let hasError = false;
+
+      if (!nombre) {
+        document.getElementById('nombreError').textContent = 'El nombre es requerido';
+        document.getElementById('nombreError').classList.add('show');
+        nombreInput.classList.add('error');
+        hasError = true;
+      }
+
+      if (!apellido) {
+        document.getElementById('apellidoError').textContent = 'El apellido es requerido';
+        document.getElementById('apellidoError').classList.add('show');
+        apellidoInput.classList.add('error');
+        hasError = true;
+      }
+
+      if (!email) {
+        document.getElementById('emailError').textContent = 'El correo es requerido';
+        document.getElementById('emailError').classList.add('show');
+        emailInput.classList.add('error');
+        hasError = true;
+      } else if (!validateEmail(email)) {
+        document.getElementById('emailError').textContent = 'Formato de correo inválido';
+        document.getElementById('emailError').classList.add('show');
+        emailInput.classList.add('error');
+        hasError = true;
+      }
+
+      if (!password) {
+        document.getElementById('passwordError').textContent = 'La contraseña es requerida';
+        document.getElementById('passwordError').classList.add('show');
+        passwordInput.classList.add('error');
+        hasError = true;
+      } else if (password.length < 6) {
+        document.getElementById('passwordError').textContent = 'La contraseña debe tener al menos 6 caracteres';
+        document.getElementById('passwordError').classList.add('show');
+        passwordInput.classList.add('error');
+        hasError = true;
+      }
+
+      if (!confirmPassword) {
+        document.getElementById('confirmPasswordError').textContent = 'Confirma tu contraseña';
+        document.getElementById('confirmPasswordError').classList.add('show');
+        confirmPasswordInput.classList.add('error');
+        hasError = true;
+      } else if (password !== confirmPassword) {
+        document.getElementById('confirmPasswordError').textContent = 'Las contraseñas no coinciden';
+        document.getElementById('confirmPasswordError').classList.add('show');
+        confirmPasswordInput.classList.add('error');
+        hasError = true;
+      }
+
+      if (hasError) return;
+
+      // Show loading state
+      submitBtn.disabled = true;
+      btnText.style.display = 'none';
+      btnSpinner.style.display = 'block';
+
+      try {
+        const formData = {
+          Nombre: nombre,
+          Apellido: apellido,
+          Email: email,
+          Password: password,
+          Telefono: telefono || null
+        };
+
+        const response = await API.registroCliente(formData);
+
+        if (response.ok && response.data.success) {
+          // Save auth data
+          saveAuthData(response.data.data.token, response.data.data.cliente);
+          
+          // Show success message
+          showToast('¡Registro exitoso! Bienvenido a RazoConnect', 'success');
+          
+          // Redirect to dashboard
+          setTimeout(() => {
+            window.location.href = '/dashboard.html';
+          }, 500);
+        } else {
+          // Show error message
+          const errorMessage = response.data.message || 'Error al registrar la cuenta';
+          
+          // Show validation errors if present
+          if (response.data.errors && Array.isArray(response.data.errors)) {
+            const errorList = response.data.errors.join('\n');
+            showAlert(errorList, 'error');
+          } else {
+            showAlert(errorMessage, 'error');
+          }
+        }
+      } catch (error) {
+        console.error('Registro error:', error);
+        showAlert('Error al conectar con el servidor. Intenta nuevamente.', 'error');
+      } finally {
+        // Reset button state
+        submitBtn.disabled = false;
+        btnText.style.display = 'inline';
+        btnSpinner.style.display = 'none';
+      }
+    });
+
+    // Real-time validation
+    emailInput.addEventListener('blur', () => {
+      const email = emailInput.value.trim();
+      if (email && !validateEmail(email)) {
+        document.getElementById('emailError').textContent = 'Formato de correo inválido';
+        document.getElementById('emailError').classList.add('show');
+        emailInput.classList.add('error');
+      } else {
+        document.getElementById('emailError').classList.remove('show');
+        emailInput.classList.remove('error');
+      }
+    });
+
+    passwordInput.addEventListener('input', () => {
+      const password = passwordInput.value;
+      if (password.length > 0 && password.length < 6) {
+        document.getElementById('passwordError').textContent = 'Mínimo 6 caracteres';
+        document.getElementById('passwordError').classList.add('show');
+        passwordInput.classList.add('error');
+      } else {
+        document.getElementById('passwordError').classList.remove('show');
+        passwordInput.classList.remove('error');
+      }
+    });
+
+    confirmPasswordInput.addEventListener('input', () => {
+      const password = passwordInput.value;
+      const confirmPassword = confirmPasswordInput.value;
+      if (confirmPassword.length > 0 && password !== confirmPassword) {
+        document.getElementById('confirmPasswordError').textContent = 'Las contraseñas no coinciden';
+        document.getElementById('confirmPasswordError').classList.add('show');
+        confirmPasswordInput.classList.add('error');
+      } else {
+        document.getElementById('confirmPasswordError').classList.remove('show');
+        confirmPasswordInput.classList.remove('error');
+      }
+    });
+  </script>
+</body>
+</html>

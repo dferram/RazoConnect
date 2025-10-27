@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Productos - RazoConnect</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="container navbar-content">
+      <a href="/dashboard.html" class="navbar-brand">🌹 RazoConnect</a>
+      <ul class="navbar-menu">
+        <li><a href="/dashboard.html" class="navbar-link" style="color: var(--primary-color); font-weight: 600;">Productos</a></li>
+        <li><a href="/carrito.html" class="navbar-link">Carrito</a></li>
+        <li>
+          <span id="userGreeting" style="color: var(--text-secondary); font-size: 0.875rem;"></span>
+        </li>
+        <li><a href="#" class="navbar-link" id="logoutBtn">Cerrar Sesión</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <div class="container" style="padding-top: 2rem; padding-bottom: 3rem;">
+    <!-- Header -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+      <div>
+        <h1 style="font-size: 2rem; font-weight: bold; margin-bottom: 0.5rem;">Catálogo de Productos</h1>
+        <p style="color: var(--text-secondary);">Explora nuestra colección de rosas y arreglos florales</p>
+      </div>
+      <a href="/carrito.html" class="btn btn-primary">
+        🛒 Ver Carrito
+      </a>
+    </div>
+
+    <!-- Loading State -->
+    <div id="loadingState" class="loading">
+      <div class="spinner"></div>
+    </div>
+
+    <!-- Product Grid -->
+    <div id="productGrid" class="product-grid" style="display: none;"></div>
+
+    <!-- Empty State -->
+    <div id="emptyState" class="empty-state" style="display: none;">
+      <div class="empty-state-icon">📦</div>
+      <h2 class="empty-state-title">No hay productos disponibles</h2>
+      <p class="empty-state-text">Vuelve pronto para ver nuestros nuevos productos</p>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script>
+    // Check authentication
+    if (!requireAuth()) {
+      // User is not authenticated, redirected to login
+    }
+
+    const loadingState = document.getElementById('loadingState');
+    const productGrid = document.getElementById('productGrid');
+    const emptyState = document.getElementById('emptyState');
+    const userGreeting = document.getElementById('userGreeting');
+    const logoutBtn = document.getElementById('logoutBtn');
+
+    // Display user greeting
+    const userData = getUserData();
+    if (userData) {
+      const nombre = userData.nombre || userData.Nombre || 'Usuario';
+      userGreeting.textContent = `Hola, ${nombre}`;
+    }
+
+    // Format currency
+    function formatCurrency(amount) {
+      return new Intl.NumberFormat('es-MX', {
+        style: 'currency',
+        currency: 'MXN'
+      }).format(amount);
+    }
+
+    // Render product card
+    function renderProductCard(producto) {
+      const imageSrc = producto.imagenPrincipal?.url || 'https://via.placeholder.com/300x200?text=Sin+Imagen';
+      const imageAlt = producto.imagenPrincipal?.alt || producto.nombreProducto;
+      const stockStatus = producto.stock > 0 ? 
+        `<span style="color: var(--success-color);">✓ En stock (${producto.stock})</span>` : 
+        `<span style="color: var(--danger-color);">✗ Sin stock</span>`;
+
+      return `
+        <div class="product-card" onclick="window.location.href='/producto-detalle.html?id=${producto.productoId}'">
+          <img src="${imageSrc}" alt="${imageAlt}" class="product-image">
+          <div class="product-info">
+            <div style="margin-bottom: 0.5rem;">
+              <span style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase;">
+                ${producto.categoria?.nombre || 'Sin categoría'}
+              </span>
+            </div>
+            <h3 class="product-title">${producto.nombreProducto}</h3>
+            <p style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.5rem;">
+              SKU: ${producto.sku}
+            </p>
+            <div class="product-price">${formatCurrency(producto.precioPaquete)}</div>
+            <div class="product-details">
+              ${producto.piezasPorPaquete} piezas por paquete<br>
+              ${producto.dimensiones || 'Sin dimensiones'}
+            </div>
+            <div style="margin-top: 0.75rem; font-size: 0.875rem;">
+              ${stockStatus}
+            </div>
+            <button 
+              class="btn btn-primary btn-block mt-2" 
+              onclick="event.stopPropagation(); goToProduct(${producto.productoId})"
+              ${producto.stock === 0 ? 'disabled' : ''}
+            >
+              ${producto.stock > 0 ? 'Ver Detalles' : 'Sin Stock'}
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    // Navigate to product details
+    function goToProduct(id) {
+      window.location.href = `/producto-detalle.html?id=${id}`;
+    }
+
+    // Load products
+    async function loadProductos() {
+      try {
+        loadingState.style.display = 'flex';
+        productGrid.style.display = 'none';
+        emptyState.style.display = 'none';
+
+        const response = await API.getProductos();
+
+        if (response.ok && response.data.success) {
+          const productos = response.data.data.productos;
+
+          if (productos.length === 0) {
+            loadingState.style.display = 'none';
+            emptyState.style.display = 'block';
+          } else {
+            // Render products
+            productGrid.innerHTML = productos
+              .map(producto => renderProductCard(producto))
+              .join('');
+
+            loadingState.style.display = 'none';
+            productGrid.style.display = 'grid';
+          }
+        } else {
+          throw new Error(response.data.message || 'Error al cargar productos');
+        }
+      } catch (error) {
+        console.error('Error loading products:', error);
+        loadingState.style.display = 'none';
+        showToast('Error al cargar los productos. Intenta recargar la página.', 'error');
+      }
+    }
+
+    // Handle logout
+    logoutBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      clearAuthData();
+      showToast('Sesión cerrada exitosamente', 'success');
+      setTimeout(() => {
+        window.location.href = '/login.html';
+      }, 500);
+    });
+
+    // Load products on page load
+    loadProductos();
+  </script>
+</body>
+</html>

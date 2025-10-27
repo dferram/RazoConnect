@@ -1,10 +1,15 @@
 const express = require('express');
+const path = require('path');
 const cors = require('cors');
 require('dotenv').config();
 const db = require('./db');
 
 // Importar rutas
 const authRoutes = require('./routes/auth');
+const productosRoutes = require('./routes/productos');
+const carritoRoutes = require('./routes/carrito');
+const pedidosRoutes = require('./routes/pedidos');
+const direccionesRoutes = require('./routes/direcciones');
 
 // Inicializar la aplicación Express
 const app = express();
@@ -14,6 +19,9 @@ const PORT = process.env.PORT || 3000;
 app.use(cors()); // Habilitar CORS
 app.use(express.json()); // Parsear JSON en el body de las peticiones
 app.use(express.urlencoded({ extended: true })); // Parsear datos de formularios
+
+// Servir archivos estáticos del frontend
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Middleware de logging simple
 app.use((req, res, next) => {
@@ -51,13 +59,22 @@ app.get('/api/health', async (req, res) => {
 
 // Rutas de la API
 app.use('/api', authRoutes);
+app.use('/api', productosRoutes);
+app.use('/api', carritoRoutes);
+app.use('/api', pedidosRoutes);
+app.use('/api', direccionesRoutes);
 
-// Manejo de rutas no encontradas
-app.use((req, res) => {
+// Manejo de rutas no encontradas solo para API
+app.use('/api/*', (req, res) => {
   res.status(404).json({
     error: 'Ruta no encontrada',
     path: req.path
   });
+});
+
+// Redirigir rutas no encontradas a index
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // Manejo de errores global

@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mi Carrito - RazoConnect</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="container navbar-content">
+      <a href="/dashboard.html" class="navbar-brand">🌹 RazoConnect</a>
+      <ul class="navbar-menu">
+        <li><a href="/dashboard.html" class="navbar-link">Productos</a></li>
+        <li><a href="/carrito.html" class="navbar-link" style="color: var(--primary-color); font-weight: 600;">Carrito</a></li>
+        <li><a href="#" class="navbar-link" id="logoutBtn">Cerrar Sesión</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <div class="container" style="padding-top: 2rem; padding-bottom: 3rem;">
+    <h1 style="font-size: 2rem; font-weight: bold; margin-bottom: 2rem;">Mi Carrito de Compras</h1>
+
+    <!-- Loading State -->
+    <div id="loadingState" class="loading">
+      <div class="spinner"></div>
+    </div>
+
+    <!-- Empty State -->
+    <div id="emptyState" class="empty-state" style="display: none;">
+      <div class="empty-state-icon">🛒</div>
+      <h2 class="empty-state-title">Tu carrito está vacío</h2>
+      <p class="empty-state-text">Agrega productos para comenzar tu compra</p>
+      <a href="/dashboard.html" class="btn btn-primary">Ver Productos</a>
+    </div>
+
+    <!-- Cart Content -->
+    <div id="cartContent" style="display: none;">
+      <div style="display: grid; grid-template-columns: 1fr 350px; gap: 2rem; align-items: start;">
+        <!-- Cart Items -->
+        <div>
+          <div id="cartItems"></div>
+        </div>
+
+        <!-- Summary -->
+        <div style="position: sticky; top: 100px;">
+          <div class="summary">
+            <h3 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem;">Resumen del Pedido</h3>
+            
+            <div class="summary-row">
+              <span>Total de Items:</span>
+              <span id="summaryTotalItems">0</span>
+            </div>
+            
+            <div class="summary-row">
+              <span>Subtotal:</span>
+              <span id="summarySubtotal">$0.00</span>
+            </div>
+            
+            <div class="summary-row total">
+              <span>Total:</span>
+              <span id="summaryTotal">$0.00</span>
+            </div>
+
+            <button class="btn btn-success btn-block mt-3" id="checkoutBtn">
+              Proceder al Pago
+            </button>
+            
+            <a href="/dashboard.html" class="btn btn-secondary btn-block mt-2">
+              Continuar Comprando
+            </a>
+          </div>
+
+          <div class="alert alert-info mt-3" style="font-size: 0.875rem;">
+            💡 <strong>Nota:</strong> Los precios son por paquete. Cada paquete contiene múltiples piezas según el producto.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script>
+    // Check authentication
+    if (!requireAuth()) {
+      // User is not authenticated, redirected to login
+    }
+
+    const loadingState = document.getElementById('loadingState');
+    const emptyState = document.getElementById('emptyState');
+    const cartContent = document.getElementById('cartContent');
+    const cartItemsContainer = document.getElementById('cartItems');
+    const summaryTotalItems = document.getElementById('summaryTotalItems');
+    const summarySubtotal = document.getElementById('summarySubtotal');
+    const summaryTotal = document.getElementById('summaryTotal');
+    const checkoutBtn = document.getElementById('checkoutBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+
+    let carritoData = null;
+
+    // Format currency
+    function formatCurrency(amount) {
+      return new Intl.NumberFormat('es-MX', {
+        style: 'currency',
+        currency: 'MXN'
+      }).format(amount);
+    }
+
+    // Render cart item
+    function renderCartItem(item) {
+      const imageSrc = item.imagenPrincipal?.url || 'https://via.placeholder.com/100x100?text=Sin+Imagen';
+      const imageAlt = item.imagenPrincipal?.alt || item.nombreProducto;
+      
+      return `
+        <div class="cart-item">
+          <img src="${imageSrc}" alt="${imageAlt}" class="cart-item-image">
+          <div class="cart-item-info">
+            <h3 class="cart-item-title">${item.nombreProducto}</h3>
+            <p class="cart-item-details">
+              <strong>SKU:</strong> ${item.sku}<br>
+              <strong>Cantidad:</strong> ${item.cantidadPaquetes} paquete(s)<br>
+              <strong>Piezas por paquete:</strong> ${item.piezasPorPaquete}<br>
+              <strong>Total piezas:</strong> ${item.cantidadPaquetes * item.piezasPorPaquete}
+            </p>
+            <p class="cart-item-details" style="margin-top: 0.5rem;">
+              ${item.dimensiones || 'Sin dimensiones'}
+            </p>
+          </div>
+          <div class="cart-item-price">
+            <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 0.25rem;">
+              ${formatCurrency(item.precioPaquete)} / paquete
+            </p>
+            <p class="cart-item-subtotal">${formatCurrency(item.subtotal)}</p>
+            <p style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 0.5rem;">
+              Stock disponible: ${item.stock}
+            </p>
+          </div>
+        </div>
+      `;
+    }
+
+    // Load cart data
+    async function loadCarrito() {
+      try {
+        loadingState.style.display = 'flex';
+        emptyState.style.display = 'none';
+        cartContent.style.display = 'none';
+
+        const response = await API.getCarrito();
+
+        if (response.ok && response.data.success) {
+          carritoData = response.data.data;
+
+          if (carritoData.items.length === 0) {
+            // Show empty state
+            loadingState.style.display = 'none';
+            emptyState.style.display = 'block';
+          } else {
+            // Render cart items
+            cartItemsContainer.innerHTML = carritoData.items
+              .map(item => renderCartItem(item))
+              .join('');
+
+            // Update summary
+            summaryTotalItems.textContent = carritoData.totalItems;
+            summarySubtotal.textContent = formatCurrency(carritoData.montoTotal);
+            summaryTotal.textContent = formatCurrency(carritoData.montoTotal);
+
+            // Show cart content
+            loadingState.style.display = 'none';
+            cartContent.style.display = 'block';
+          }
+        } else {
+          throw new Error(response.data.message || 'Error al cargar el carrito');
+        }
+      } catch (error) {
+        console.error('Error loading cart:', error);
+        loadingState.style.display = 'none';
+        showToast('Error al cargar el carrito. Intenta recargar la página.', 'error');
+      }
+    }
+
+    // Handle checkout
+    checkoutBtn.addEventListener('click', () => {
+      if (!carritoData || carritoData.items.length === 0) {
+        showToast('Tu carrito está vacío', 'warning');
+        return;
+      }
+
+      // TODO: Implement checkout flow
+      // For now, show a message
+      showToast('La funcionalidad de checkout se implementará próximamente', 'info');
+      
+      // In a real implementation, you would redirect to checkout page
+      // window.location.href = '/checkout.html';
+    });
+
+    // Handle logout
+    logoutBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      clearAuthData();
+      showToast('Sesión cerrada exitosamente', 'success');
+      setTimeout(() => {
+        window.location.href = '/login.html';
+      }, 500);
+    });
+
+    // Load cart on page load
+    loadCarrito();
+  </script>
+
+  <style>
+    @media (max-width: 968px) {
+      #cartContent > div {
+        grid-template-columns: 1fr !important;
+      }
+      
+      #cartContent > div > div:last-child {
+        position: static !important;
+      }
+    }
+  </style>
+</body>
+</html>

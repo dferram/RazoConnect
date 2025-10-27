@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bienvenido - RazoConnect</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="container navbar-content">
+      <a href="/" class="navbar-brand">🌹 RazoConnect</a>
+      <ul class="navbar-menu">
+        <li><a href="/login.html" class="navbar-link">Iniciar Sesión</a></li>
+        <li><a href="/registro.html" class="btn btn-primary" style="padding: 0.5rem 1rem;">Registrarse</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <div class="container" style="padding-top: 4rem; padding-bottom: 4rem;">
+    <!-- Hero Section -->
+    <div style="text-align: center; max-width: 800px; margin: 0 auto 4rem;">
+      <h1 style="font-size: 3rem; font-weight: bold; margin-bottom: 1rem; color: var(--text-primary);">
+        Bienvenido a RazoConnect
+      </h1>
+      <p style="font-size: 1.25rem; color: var(--text-secondary); margin-bottom: 2rem;">
+        Tu plataforma para comprar rosas y arreglos florales al por mayor
+      </p>
+      <div style="display: flex; gap: 1rem; justify-content: center;">
+        <a href="/registro.html" class="btn btn-primary" style="font-size: 1.125rem; padding: 1rem 2rem;">
+          Crear Cuenta
+        </a>
+        <a href="/login.html" class="btn btn-secondary" style="font-size: 1.125rem; padding: 1rem 2rem;">
+          Iniciar Sesión
+        </a>
+      </div>
+    </div>
+
+    <!-- Features Section -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 2rem; margin-bottom: 4rem;">
+      <div class="card" style="text-align: center;">
+        <div style="font-size: 3rem; margin-bottom: 1rem;">🌹</div>
+        <h3 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem;">Productos de Calidad</h3>
+        <p style="color: var(--text-secondary);">
+          Amplio catálogo de rosas y arreglos florales frescos y de la mejor calidad
+        </p>
+      </div>
+
+      <div class="card" style="text-align: center;">
+        <div style="font-size: 3rem; margin-bottom: 1rem;">📦</div>
+        <h3 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem;">Compra por Paquetes</h3>
+        <p style="color: var(--text-secondary);">
+          Precios al mayoreo con paquetes diseñados para tu negocio
+        </p>
+      </div>
+
+      <div class="card" style="text-align: center;">
+        <div style="font-size: 3rem; margin-bottom: 1rem;">🚚</div>
+        <h3 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem;">Envío Rápido</h3>
+        <p style="color: var(--text-secondary);">
+          Entrega oportuna para mantener tus productos siempre frescos
+        </p>
+      </div>
+
+      <div class="card" style="text-align: center;">
+        <div style="font-size: 3rem; margin-bottom: 1rem;">💼</div>
+        <h3 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem;">Programa de Agentes</h3>
+        <p style="color: var(--text-secondary);">
+          Únete como agente de ventas y gana comisiones atractivas
+        </p>
+      </div>
+    </div>
+
+    <!-- CTA Section -->
+    <div class="card" style="background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%); color: white; text-align: center; padding: 3rem;">
+      <h2 style="font-size: 2rem; font-weight: bold; margin-bottom: 1rem;">
+        ¿Listo para comenzar?
+      </h2>
+      <p style="font-size: 1.125rem; margin-bottom: 2rem; opacity: 0.9;">
+        Crea tu cuenta ahora y descubre nuestro catálogo completo
+      </p>
+      <a href="/registro.html" class="btn" style="background-color: white; color: var(--primary-color); font-size: 1.125rem; padding: 1rem 2rem;">
+        Registrarse Gratis
+      </a>
+    </div>
+  </div>
+
+  <footer style="background-color: var(--surface); padding: 2rem 0; margin-top: 4rem; border-top: 1px solid var(--border-color);">
+    <div class="container" style="text-align: center; color: var(--text-secondary);">
+      <p>&copy; 2025 RazoConnect. Todos los derechos reservados.</p>
+      <p style="margin-top: 0.5rem; font-size: 0.875rem;">
+        Tu plataforma confiable para compra de flores al mayoreo
+      </p>
+    </div>
+  </footer>
+
+  <script src="js/api.js"></script>
+  <script>
+    // Redirect to dashboard if already logged in
+    if (isAuthenticated()) {
+      window.location.href = '/dashboard.html';
+    }
+  </script>
+</body>
+</html>
