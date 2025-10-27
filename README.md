@@ -150,6 +150,10 @@ Proyecto Pedidos/
 8. Añadir paginación y filtros
 9. Añadir tests unitarios
 
+## Descripción
+
+RazoConnect es una plataforma web completa para la venta al mayoreo de cajas de fashion. Permite a los clientes comprar productos por paquetes, gestionar pedidos y a los agentes de ventas generar comisiones.
+
 ## 👥 Autor
 
 Desarrollado por el equipo de RazoConnect

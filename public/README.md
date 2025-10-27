@@ -1,6 +1,6 @@
 # RazoConnect - Frontend
 
-Frontend web para la plataforma de venta de rosas y arreglos florales al mayoreo.
+Frontend web para la plataforma de venta de cajas de fashion al mayoreo.
 
 ## Estructura de Archivos
 
