@@ -180,6 +180,58 @@ const getAdminProfile = async (req, res) => {
 };
 
 /**
+ * Renovar token de admin
+ * POST /api/admin/refresh-token
+ */
+const refreshAdminToken = async (req, res) => {
+  try {
+    // El middleware authenticate ya verificó el token actual
+    const adminId = req.user.userId;
+    const email = req.user.email;
+    const tipo = req.user.tipo;
+
+    // Verificar que el admin aún existe
+    const result = await db.query(
+      `SELECT AdminID FROM Administradores WHERE AdminID = $1`,
+      [adminId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Administrador no encontrado'
+      });
+    }
+
+    // Generar un nuevo token con el mismo payload
+    const { generateToken } = require('../utils/jwtHelper');
+    const newToken = generateToken({
+      userId: adminId,
+      tipo: tipo,
+      rol: req.user.rol,
+      email: email
+    });
+
+    console.log('🔄 Token de admin renovado:', { adminId, email });
+
+    res.json({
+      success: true,
+      message: 'Token renovado exitosamente',
+      data: {
+        token: newToken
+      }
+    });
+
+  } catch (error) {
+    console.error('Error refreshing admin token:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al renovar token'
+    });
+  }
+};
+
+/**
  * Obtener estadísticas del dashboard
  * GET /api/admin/dashboard-stats
  */
@@ -193,13 +245,13 @@ const getDashboardStats = async (req, res) => {
     // Total de comisiones pendientes
     const comisionesPendientes = await db.query(
       `SELECT COALESCE(SUM(MontoComision), 0) as total 
-       FROM Comisiones_Agentes 
+       FROM Comisiones 
        WHERE Estatus = 'Pendiente'`
     );
 
     // Productos con stock bajo (<=5)
     const productosStockBajo = await db.query(
-      `SELECT COUNT(*) as total FROM Productos WHERE Stock <= 5 AND Activo = TRUE`
+      `SELECT COUNT(*) as total FROM Productos WHERE Stock <= 5`
     );
 
     // Total de pedidos (para estadística general)
@@ -212,14 +264,14 @@ const getDashboardStats = async (req, res) => {
       `SELECT COALESCE(SUM(MontoTotal), 0) as total FROM Pedidos`
     );
 
-    // Clientes activos
+    // Clientes totales (tabla Clientes no tiene columna Activo)
     const clientesActivos = await db.query(
-      `SELECT COUNT(*) as total FROM Clientes WHERE Activo = TRUE`
+      `SELECT COUNT(*) as total FROM Clientes`
     );
 
     // Agentes activos
     const agentesActivos = await db.query(
-      `SELECT COUNT(*) as total FROM Agentes WHERE Activo = TRUE`
+      `SELECT COUNT(*) as total FROM AgentesDeVentas WHERE Activo = TRUE`
     );
 
     res.json({
@@ -260,17 +312,17 @@ const getAllPedidos = async (req, res) => {
         p.MontoTotal,
         p.Estatus,
         p.DireccionEnvioID,
-        cd.Calle || ', ' || cd.Ciudad || ', ' || cd.Estado as DireccionCompleta,
+        d.Calle || ', ' || d.Ciudad || ', ' || d.Estado as DireccionCompleta,
         p.AgenteID,
         CASE 
           WHEN a.AgenteID IS NOT NULL THEN a.Nombre || ' ' || a.Apellido 
           ELSE NULL 
         END as AgenteNombre,
-        (SELECT COUNT(*) FROM Pedido_Detalles pd WHERE pd.PedidoID = p.PedidoID) as TotalItems
+        (SELECT COUNT(*) FROM DetallesDelPedido dp WHERE dp.PedidoID = p.PedidoID) as TotalItems
       FROM Pedidos p
       INNER JOIN Clientes c ON p.ClienteID = c.ClienteID
-      INNER JOIN Cliente_Direcciones cd ON p.DireccionEnvioID = cd.DireccionID
-      LEFT JOIN Agentes a ON p.AgenteID = a.AgenteID
+      LEFT JOIN Cliente_Direcciones d ON p.DireccionEnvioID = d.DireccionID
+      LEFT JOIN AgentesDeVentas a ON p.AgenteID = a.AgenteID
       ORDER BY p.FechaPedido DESC`
     );
 
@@ -619,20 +671,23 @@ const getAllProductos = async (req, res) => {
       `SELECT 
         p.ProductoID,
         p.SKU,
-        p.Nombre,
+        p.NombreProducto,
         p.Descripcion,
         p.CostoUnitario,
         p.PiezasPorPaquete,
         p.PrecioPaquete,
         p.Stock,
-        p.ImagenURL,
-        p.Activo,
-        p.FechaCreacion,
-        c.Nombre as CategoriaNombre
+        p.CategoriaID
       FROM Productos p
-      LEFT JOIN Categorias c ON p.CategoriaID = c.CategoriaID
-      ORDER BY p.FechaCreacion DESC`
+      ORDER BY p.ProductoID DESC`
     );
+
+    // Obtener categorías para mapear
+    const categorias = await db.query('SELECT CategoriaID, Nombre FROM Categorias');
+    const categoriasMap = {};
+    categorias.rows.forEach(cat => {
+      categoriasMap[cat.categoriaid] = cat.nombre;
+    });
 
     res.json({
       success: true,
@@ -640,16 +695,13 @@ const getAllProductos = async (req, res) => {
         productos: result.rows.map(row => ({
           productoId: row.productoid,
           sku: row.sku,
-          nombre: row.nombre,
+          nombre: row.nombreproducto,
           descripcion: row.descripcion,
           costoUnitario: parseFloat(row.costounitario),
           piezasPorPaquete: row.piezasporpaquete,
           precioPaquete: parseFloat(row.preciopaquete),
           stock: row.stock,
-          imagenUrl: row.imagenurl,
-          activo: row.activo,
-          fechaCreacion: row.fechacreacion,
-          categoriaNombre: row.categorianombre
+          categoriaNombre: categoriasMap[row.categoriaid] || 'Sin categoría'
         }))
       }
     });
@@ -711,7 +763,7 @@ const crearAgente = async (req, res) => {
 
     // Verificar si el email ya existe
     const emailCheck = await db.query(
-      'SELECT AgenteID FROM Agentes WHERE Email = $1',
+      'SELECT AgenteID FROM AgentesDeVentas WHERE Email = $1',
       [email]
     );
 
@@ -724,7 +776,7 @@ const crearAgente = async (req, res) => {
 
     // Verificar si el código de agente ya existe
     const codigoCheck = await db.query(
-      'SELECT AgenteID FROM Agentes WHERE CodigoAgente = $1',
+      'SELECT AgenteID FROM AgentesDeVentas WHERE CodigoAgente = $1',
       [codigoAgente]
     );
 
@@ -741,11 +793,11 @@ const crearAgente = async (req, res) => {
 
     // Insertar el agente
     const result = await db.query(
-      `INSERT INTO Agentes 
-        (Nombre, Apellido, Email, Password, CodigoAgente, Telefono, Activo)
-       VALUES ($1, $2, $3, $4, $5, $6, TRUE)
+      `INSERT INTO AgentesDeVentas 
+        (Nombre, Apellido, Email, PasswordHash, CodigoAgente, Activo)
+       VALUES ($1, $2, $3, $4, $5, TRUE)
        RETURNING AgenteID, Nombre, Apellido, Email, CodigoAgente`,
-      [nombre, apellido, email, hashedPassword, codigoAgente, telefono || null]
+      [nombre, apellido, email, hashedPassword, codigoAgente]
     );
 
     const agente = result.rows[0];
@@ -785,17 +837,15 @@ const getAllAgentes = async (req, res) => {
         a.Apellido,
         a.Email,
         a.CodigoAgente,
-        a.Telefono,
         a.Activo,
-        a.FechaCreacion,
         COUNT(DISTINCT p.PedidoID) as TotalVentas,
         COALESCE(SUM(p.MontoTotal), 0) as MontoTotalVentas,
         COALESCE(SUM(c.MontoComision), 0) as ComisionesTotales
-      FROM Agentes a
+      FROM AgentesDeVentas a
       LEFT JOIN Pedidos p ON a.AgenteID = p.AgenteID
-      LEFT JOIN Comisiones_Agentes c ON a.AgenteID = c.AgenteID
+      LEFT JOIN Comisiones c ON a.AgenteID = c.AgenteID
       GROUP BY a.AgenteID
-      ORDER BY a.FechaCreacion DESC`
+      ORDER BY a.AgenteID DESC`
     );
 
     res.json({
@@ -837,8 +887,8 @@ const getAgenteDetalle = async (req, res) => {
     // Obtener información del agente
     const agenteResult = await db.query(
       `SELECT 
-        AgenteID, Nombre, Apellido, Email, CodigoAgente, Telefono, Activo, FechaCreacion
-      FROM Agentes
+        AgenteID, Nombre, Apellido, Email, CodigoAgente, Activo
+      FROM AgentesDeVentas
       WHERE AgenteID = $1`,
       [agenteId]
     );
@@ -874,11 +924,10 @@ const getAgenteDetalle = async (req, res) => {
         PedidoID,
         MontoComision,
         Estatus,
-        FechaGeneracion,
-        FechaPago
-      FROM Comisiones_Agentes
+        FechaCalculo
+      FROM Comisiones
       WHERE AgenteID = $1
-      ORDER BY FechaGeneracion DESC`,
+      ORDER BY FechaCalculo DESC`,
       [agenteId]
     );
 
@@ -931,7 +980,7 @@ const desactivarAgente = async (req, res) => {
     const agenteId = parseInt(req.params.id);
 
     const result = await db.query(
-      `UPDATE Agentes 
+      `UPDATE AgentesDeVentas 
        SET Activo = FALSE 
        WHERE AgenteID = $1
        RETURNING AgenteID, Nombre, Apellido`,
@@ -981,11 +1030,10 @@ const getAllComisiones = async (req, res) => {
         a.CodigoAgente,
         c.MontoComision,
         c.Estatus,
-        c.FechaGeneracion,
-        c.FechaPago,
+        c.FechaCalculo,
         p.MontoTotal as MontoVenta
-      FROM Comisiones_Agentes c
-      INNER JOIN Agentes a ON c.AgenteID = a.AgenteID
+      FROM Comisiones c
+      INNER JOIN AgentesDeVentas a ON c.AgenteID = a.AgenteID
       INNER JOIN Pedidos p ON c.PedidoID = p.PedidoID
     `;
 
@@ -995,7 +1043,7 @@ const getAllComisiones = async (req, res) => {
       params.push(estatus);
     }
 
-    query += ' ORDER BY c.FechaGeneracion DESC';
+    query += ' ORDER BY c.FechaCalculo DESC';
 
     const result = await db.query(query, params);
 
@@ -1010,8 +1058,7 @@ const getAllComisiones = async (req, res) => {
           codigoAgente: row.codigoagente,
           montoComision: parseFloat(row.montocomision),
           estatus: row.estatus,
-          fechaGeneracion: row.fechageneracion,
-          fechaPago: row.fechapago,
+          fechaCalculo: row.fechacalculo,
           montoVenta: parseFloat(row.montoventa)
         }))
       }
@@ -1036,7 +1083,7 @@ const pagarComision = async (req, res) => {
 
     // Verificar que la comisión existe y está pendiente
     const checkResult = await db.query(
-      'SELECT * FROM Comisiones_Agentes WHERE ComisionID = $1',
+      'SELECT * FROM Comisiones WHERE ComisionID = $1',
       [comisionId]
     );
 
@@ -1056,10 +1103,10 @@ const pagarComision = async (req, res) => {
       });
     }
 
-    // Actualizar el estatus a Pagada y registrar fecha de pago
+    // Actualizar el estatus a Pagada
     const result = await db.query(
-      `UPDATE Comisiones_Agentes 
-       SET Estatus = 'Pagada', FechaPago = CURRENT_TIMESTAMP
+      `UPDATE Comisiones 
+       SET Estatus = 'Pagada'
        WHERE ComisionID = $1
        RETURNING *`,
       [comisionId]
@@ -1073,7 +1120,7 @@ const pagarComision = async (req, res) => {
       data: {
         comisionId: comisionActualizada.comisionid,
         montoComision: parseFloat(comisionActualizada.montocomision),
-        fechaPago: comisionActualizada.fechapago
+        estatus: comisionActualizada.estatus
       }
     });
 
@@ -1155,17 +1202,17 @@ const getPedidoDetalle = async (req, res) => {
         a.Apellido as AgenteApellido,
         a.CodigoAgente,
         d.Calle,
-        d.NumeroExterior,
-        d.NumeroInterior,
+        d.NumeroExt,
+        d.NumeroInt,
         d.Colonia,
         d.Ciudad,
         d.Estado,
         d.CodigoPostal,
-        d.Referencias
+        d.TelefonoContacto as Referencias
       FROM Pedidos p
       INNER JOIN Clientes c ON p.ClienteID = c.ClienteID
-      LEFT JOIN Agentes a ON p.AgenteID = a.AgenteID
-      LEFT JOIN Direcciones_Envio d ON p.DireccionEnvioID = d.DireccionID
+      LEFT JOIN AgentesDeVentas a ON p.AgenteID = a.AgenteID
+      LEFT JOIN Cliente_Direcciones d ON p.DireccionEnvioID = d.DireccionID
       WHERE p.PedidoID = $1`,
       [pedidoId]
     );
@@ -1183,10 +1230,14 @@ const getPedidoDetalle = async (req, res) => {
     const detallesResult = await db.query(
       `SELECT 
         dp.*,
-        pr.Nombre as ProductoNombre,
+        pr.NombreProducto,
         pr.SKU,
-        pr.PiezasPorPaquete
-      FROM Detalle_Pedidos dp
+        pr.PiezasPorPaquete,
+        COALESCE(
+          dp.PrecioUnitario, 
+          ROUND(dp.PrecioPorPaquete / NULLIF((dp.PiezasTotales / NULLIF(dp.CantidadPaquetes, 0)), 0), 2)
+        ) as PrecioUnitarioCalculado
+      FROM DetallesDelPedido dp
       INNER JOIN Productos pr ON dp.ProductoID = pr.ProductoID
       WHERE dp.PedidoID = $1`,
       [pedidoId]
@@ -1211,8 +1262,8 @@ const getPedidoDetalle = async (req, res) => {
           } : null,
           direccion: {
             calle: pedido.calle,
-            numeroExterior: pedido.numeroexterior,
-            numeroInterior: pedido.numerointerior,
+            numeroExterior: pedido.numeroext,
+            numeroInterior: pedido.numeroint,
             colonia: pedido.colonia,
             ciudad: pedido.ciudad,
             estado: pedido.estado,
@@ -1222,12 +1273,14 @@ const getPedidoDetalle = async (req, res) => {
         },
         productos: detallesResult.rows.map(row => ({
           productoId: row.productoid,
-          nombre: row.productonombre,
+          nombre: row.nombreproducto,
           sku: row.sku,
           cantidadPaquetes: row.cantidadpaquetes,
           piezasPorPaquete: row.piezasporpaquete,
-          precioUnitario: parseFloat(row.preciounitario),
-          subtotal: parseFloat(row.subtotal)
+          precioPorPaquete: parseFloat(row.precioporpaquete),
+          precioUnitario: parseFloat(row.preciounitariocalculado),
+          piezasTotales: row.piezastotales,
+          subtotal: parseFloat(row.cantidadpaquetes * row.precioporpaquete)
         }))
       }
     });
@@ -1245,6 +1298,7 @@ module.exports = {
   loginAdmin,
   verifyAdmin,
   getAdminProfile,
+  refreshAdminToken,
   getDashboardStats,
   getAllPedidos,
   updatePedidoEstatus,

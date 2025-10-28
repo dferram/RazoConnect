@@ -13,6 +13,7 @@ router.post('/login', adminController.loginAdmin);
  */
 router.get('/verify', authenticate, authorizeAdmin, adminController.verifyAdmin);
 router.get('/profile', authenticate, authorizeAdmin, adminController.getAdminProfile);
+router.post('/refresh-token', authenticate, authorizeAdmin, adminController.refreshAdminToken);
 
 /**
  * Dashboard y estadísticas

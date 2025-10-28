@@ -125,17 +125,21 @@ const crearPedido = async (req, res) => {
     // 8. Crear los detalles del pedido y actualizar inventario
     const detallesPedido = [];
     for (const item of items) {
+      // Calcular precio unitario (precio por pieza)
+      const precioUnitario = parseFloat(item.preciopaquete) / item.piezasporpaquete;
+      
       // Insertar detalle del pedido
       const detalleResult = await client.query(
-        `INSERT INTO DetallesDelPedido (PedidoID, ProductoID, CantidadPaquetes, PrecioPorPaquete, PiezasTotales)
-         VALUES ($1, $2, $3, $4, $5)
+        `INSERT INTO DetallesDelPedido (PedidoID, ProductoID, CantidadPaquetes, PrecioPorPaquete, PiezasTotales, PrecioUnitario)
+         VALUES ($1, $2, $3, $4, $5, $6)
          RETURNING DetalleID`,
         [
           pedidoId,
           item.productoid,
           item.cantidadpaquetes,
           item.preciopaquete,
-          item.cantidadpaquetes * item.piezasporpaquete
+          item.cantidadpaquetes * item.piezasporpaquete,
+          precioUnitario.toFixed(2)
         ]
       );
 
@@ -165,6 +169,7 @@ const crearPedido = async (req, res) => {
         nombreProducto: item.nombreproducto,
         cantidadPaquetes: item.cantidadpaquetes,
         precioPorPaquete: parseFloat(item.preciopaquete),
+        precioUnitario: precioUnitario,
         piezasTotales: item.cantidadpaquetes * item.piezasporpaquete,
         subtotal: item.cantidadpaquetes * parseFloat(item.preciopaquete)
       });
@@ -267,6 +272,10 @@ const obtenerPedidos = async (req, res) => {
           dp.CantidadPaquetes,
           dp.PrecioPorPaquete,
           dp.PiezasTotales,
+          COALESCE(
+            dp.PrecioUnitario, 
+            ROUND(dp.PrecioPorPaquete / NULLIF((dp.PiezasTotales / NULLIF(dp.CantidadPaquetes, 0)), 0), 2)
+          ) as PrecioUnitario,
           p.ProductoID,
           p.SKU,
           p.NombreProducto,
@@ -301,6 +310,7 @@ const obtenerPedidos = async (req, res) => {
           nombreProducto: item.nombreproducto,
           cantidadPaquetes: item.cantidadpaquetes,
           precioPorPaquete: parseFloat(item.preciorporpaquete),
+          precioUnitario: parseFloat(item.preciounitario),
           piezasTotales: item.piezastotales,
           imagenUrl: item.url_imagen
         }))

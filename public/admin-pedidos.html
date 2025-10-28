@@ -1,421 +1,822 @@
 <!DOCTYPE html>
 <html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gestión de Pedidos - Admin RazoConnect</title>
-  <link rel="stylesheet" href="css/styles.css">
-  <link rel="stylesheet" href="css/admin.css">
-</head>
-<body>
-  <div class="admin-layout">
-    <!-- Sidebar -->
-    <aside class="admin-sidebar">
-      <div class="admin-brand">
-        <a href="/admin-dashboard.html" class="admin-brand-logo">
-          📦 RazoConnect
-        </a>
-        <div class="admin-brand-subtitle">Panel Admin</div>
-      </div>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gestión de Pedidos - Admin RazoConnect</title>
 
-      <nav class="admin-nav">
-        <div class="admin-nav-section">
-          <div class="admin-nav-title">Principal</div>
-          <a href="/admin-dashboard.html" class="admin-nav-link">
-            <span class="admin-nav-icon">📊</span>
-            <span>Dashboard</span>
+    <!-- PROTECCIÓN DE AUTENTICACIÓN ADMIN -->
+    <script src="js/auth-guard-admin.js"></script>
+
+    <!-- SISTEMA DE RENOVACIÓN DE TOKENS -->
+    <script src="js/token-refresh.js"></script>
+
+    <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/admin.css" />
+  </head>
+  <body>
+    <div class="admin-layout">
+      <!-- Sidebar -->
+      <aside class="admin-sidebar">
+        <div class="admin-brand">
+          <a href="/admin-dashboard.html" class="admin-brand-logo">
+            📦 RazoConnect
           </a>
+          <div class="admin-brand-subtitle">Panel Admin</div>
         </div>
 
-        <div class="admin-nav-section">
-          <div class="admin-nav-title">Gestión</div>
-          <a href="/admin-pedidos.html" class="admin-nav-link active">
-            <span class="admin-nav-icon">📦</span>
-            <span>Pedidos</span>
-          </a>
-          <a href="/admin-agregar-producto.html" class="admin-nav-link">
-            <span class="admin-nav-icon">🎁</span>
-            <span>Productos</span>
-          </a>
-          <a href="#" class="admin-nav-link" data-module="clientes">
-            <span class="admin-nav-icon">👥</span>
-            <span>Clientes</span>
-          </a>
-          <a href="/admin-agentes.html" class="admin-nav-link">
-            <span class="admin-nav-icon">💼</span>
-            <span>Agentes</span>
-          </a>
-        </div>
+        <nav class="admin-nav">
+          <div class="admin-nav-section">
+            <div class="admin-nav-title">Principal</div>
+            <a href="/admin-dashboard.html" class="admin-nav-link">
+              <span class="admin-nav-icon">📊</span>
+              <span>Dashboard</span>
+            </a>
+          </div>
 
-        <div class="admin-nav-section">
-          <div class="admin-nav-title">Financiero</div>
-          <a href="/admin-comisiones.html" class="admin-nav-link">
-            <span class="admin-nav-icon">💰</span>
-            <span>Comisiones</span>
-          </a>
-          <a href="/admin-inventario.html" class="admin-nav-link">
-            <span class="admin-nav-icon">📈</span>
-            <span>Inventario</span>
-          </a>
-        </div>
+          <div class="admin-nav-section">
+            <div class="admin-nav-title">Gestión</div>
+            <a href="/admin-pedidos.html" class="admin-nav-link active">
+              <span class="admin-nav-icon">📦</span>
+              <span>Pedidos</span>
+            </a>
+            <a href="/admin-agregar-producto.html" class="admin-nav-link">
+              <span class="admin-nav-icon">🎁</span>
+              <span>Productos</span>
+            </a>
+            <a href="#" class="admin-nav-link" data-module="clientes">
+              <span class="admin-nav-icon">👥</span>
+              <span>Clientes</span>
+            </a>
+            <a href="/admin-agentes.html" class="admin-nav-link">
+              <span class="admin-nav-icon">💼</span>
+              <span>Agentes</span>
+            </a>
+          </div>
 
-        <div class="admin-nav-section">
-          <div class="admin-nav-title">Configuración</div>
-          <a href="#" class="admin-nav-link" data-module="configuracion">
-            <span class="admin-nav-icon">⚙️</span>
-            <span>Configuración</span>
-          </a>
-        </div>
-      </nav>
-    </aside>
+          <div class="admin-nav-section">
+            <div class="admin-nav-title">Financiero</div>
+            <a href="/admin-comisiones.html" class="admin-nav-link">
+              <span class="admin-nav-icon">💰</span>
+              <span>Comisiones</span>
+            </a>
+            <a href="/admin-inventario.html" class="admin-nav-link">
+              <span class="admin-nav-icon">📈</span>
+              <span>Inventario</span>
+            </a>
+          </div>
 
-    <!-- Main Content -->
-    <main class="admin-main">
-      <header class="admin-header">
-        <h1 class="admin-header-title">Gestión de Pedidos</h1>
-        
-        <div class="admin-header-actions">
-          <div class="admin-user-info">
-            <div class="admin-user-avatar" id="userAvatar">A</div>
-            <div class="admin-user-details">
-              <div class="admin-user-name" id="userName">Administrador</div>
-              <div class="admin-user-role" id="userRole">Admin</div>
+          <div class="admin-nav-section">
+            <div class="admin-nav-title">Configuración</div>
+            <a href="#" class="admin-nav-link" data-module="configuracion">
+              <span class="admin-nav-icon">⚙️</span>
+              <span>Configuración</span>
+            </a>
+          </div>
+        </nav>
+      </aside>
+
+      <!-- Main Content -->
+      <main class="admin-main">
+        <header class="admin-header">
+          <h1 class="admin-header-title">Gestión de Pedidos</h1>
+
+          <div class="admin-header-actions">
+            <div class="admin-user-info">
+              <div class="admin-user-avatar" id="userAvatar">A</div>
+              <div class="admin-user-details">
+                <div class="admin-user-name" id="userName">Administrador</div>
+                <div class="admin-user-role" id="userRole">Admin</div>
+              </div>
+            </div>
+            <button class="admin-logout-btn" id="logoutBtn">
+              Cerrar Sesión
+            </button>
+          </div>
+        </header>
+
+        <div class="admin-content">
+          <!-- Filters -->
+          <div
+            class="admin-table-container"
+            style="margin-bottom: 1.5rem; padding: 1rem"
+          >
+            <div style="display: flex; gap: 1rem; align-items: center">
+              <label style="font-weight: 600">Filtrar por estatus:</label>
+              <select
+                id="statusFilter"
+                style="
+                  padding: 0.5rem 1rem;
+                  border: 2px solid var(--razo-gray-light);
+                  border-radius: 0.5rem;
+                  font-family: 'Inter', sans-serif;
+                "
+              >
+                <option value="">Todos</option>
+                <option value="Pendiente">Pendiente</option>
+                <option value="Confirmado">Confirmado</option>
+                <option value="Enviado">Enviado</option>
+                <option value="Entregado">Entregado</option>
+                <option value="Cancelado">Cancelado</option>
+              </select>
+              <button
+                class="btn btn-secondary"
+                onclick="loadOrders()"
+                style="padding: 0.5rem 1.5rem"
+              >
+                🔄 Actualizar
+              </button>
             </div>
           </div>
-          <button class="admin-logout-btn" id="logoutBtn">Cerrar Sesión</button>
-        </div>
-      </header>
 
-      <div class="admin-content">
-        <!-- Filters -->
-        <div class="admin-table-container" style="margin-bottom: 1.5rem; padding: 1rem;">
-          <div style="display: flex; gap: 1rem; align-items: center;">
-            <label style="font-weight: 600;">Filtrar por estatus:</label>
-            <select id="statusFilter" style="padding: 0.5rem 1rem; border: 2px solid var(--razo-gray-light); border-radius: 0.5rem; font-family: 'Inter', sans-serif;">
-              <option value="">Todos</option>
+          <!-- Orders Table -->
+          <div class="admin-table-container">
+            <div class="admin-table-header">
+              <h2 class="admin-table-title">Todos los Pedidos</h2>
+            </div>
+
+            <div id="loadingOrders" class="loading">
+              <div class="spinner"></div>
+            </div>
+
+            <div style="overflow-x: auto">
+              <table class="admin-table" id="ordersTable" style="display: none">
+                <thead>
+                  <tr>
+                    <th>#ID</th>
+                    <th>Cliente</th>
+                    <th>Fecha</th>
+                    <th>Items</th>
+                    <th>Total</th>
+                    <th>Agente</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="ordersTableBody">
+                  <!-- Orders will be loaded here -->
+                </tbody>
+              </table>
+            </div>
+
+            <div id="emptyOrders" class="empty-state" style="display: none">
+              <div class="empty-state-icon">📦</div>
+              <h3 class="empty-state-title">No hay pedidos</h3>
+              <p class="empty-state-text">
+                Los pedidos aparecerán aquí cuando los clientes realicen compras
+              </p>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- Modal para cambiar estatus -->
+    <div id="statusModal" class="modal" style="display: none">
+      <div class="modal-content" style="max-width: 500px">
+        <div class="modal-header">
+          <h2>Cambiar Estatus del Pedido</h2>
+          <button class="modal-close" onclick="closeStatusModal()">
+            &times;
+          </button>
+        </div>
+        <div class="modal-body">
+          <p style="margin-bottom: 1rem">
+            <strong>Pedido #<span id="modalPedidoId"></span></strong><br />
+            <span style="color: var(--razo-gray-warm)"
+              >Cliente: <span id="modalClienteNombre"></span
+            ></span>
+          </p>
+
+          <div class="form-group">
+            <label class="form-label">Nuevo Estatus:</label>
+            <select id="modalNuevoEstatus" class="form-input">
               <option value="Pendiente">Pendiente</option>
-              <option value="Confirmado">Confirmado</option>
+              <option value="Confirmado">Confirmado ⚠️ (Reduce Stock)</option>
               <option value="Enviado">Enviado</option>
               <option value="Entregado">Entregado</option>
               <option value="Cancelado">Cancelado</option>
             </select>
-            <button class="btn btn-secondary" onclick="loadOrders()" style="padding: 0.5rem 1.5rem;">
-              🔄 Actualizar
+          </div>
+
+          <div class="alert alert-info" style="font-size: 0.875rem">
+            <strong>⚠️ Importante:</strong> Al cambiar a "Confirmado", se
+            reducirá automáticamente el stock de los productos y se registrará
+            en el log de inventario.
+          </div>
+
+          <div style="display: flex; gap: 1rem; margin-top: 1.5rem">
+            <button
+              class="btn btn-primary"
+              onclick="updateOrderStatus()"
+              id="btnConfirmar"
+              style="flex: 1"
+            >
+              <span id="btnConfirmarText">Confirmar Cambio</span>
+              <div
+                class="spinner"
+                id="btnConfirmarSpinner"
+                style="display: none"
+              ></div>
+            </button>
+            <button
+              class="btn btn-secondary"
+              onclick="closeStatusModal()"
+              style="flex: 1"
+            >
+              Cancelar
             </button>
           </div>
         </div>
-
-        <!-- Orders Table -->
-        <div class="admin-table-container">
-          <div class="admin-table-header">
-            <h2 class="admin-table-title">Todos los Pedidos</h2>
-          </div>
-
-          <div id="loadingOrders" class="loading">
-            <div class="spinner"></div>
-          </div>
-
-          <div style="overflow-x: auto;">
-            <table class="admin-table" id="ordersTable" style="display: none;">
-              <thead>
-                <tr>
-                  <th>#ID</th>
-                  <th>Cliente</th>
-                  <th>Fecha</th>
-                  <th>Items</th>
-                  <th>Total</th>
-                  <th>Agente</th>
-                  <th>Estado</th>
-                  <th>Acciones</th>
-                </tr>
-              </thead>
-              <tbody id="ordersTableBody">
-                <!-- Orders will be loaded here -->
-              </tbody>
-            </table>
-          </div>
-
-          <div id="emptyOrders" class="empty-state" style="display: none;">
-            <div class="empty-state-icon">📦</div>
-            <h3 class="empty-state-title">No hay pedidos</h3>
-            <p class="empty-state-text">Los pedidos aparecerán aquí cuando los clientes realicen compras</p>
-          </div>
-        </div>
       </div>
-    </main>
-  </div>
+    </div>
 
-  <!-- Modal para cambiar estatus -->
-  <div id="statusModal" class="modal" style="display: none;">
-    <div class="modal-content" style="max-width: 500px;">
-      <div class="modal-header">
-        <h2>Cambiar Estatus del Pedido</h2>
-        <button class="modal-close" onclick="closeStatusModal()">&times;</button>
-      </div>
-      <div class="modal-body">
-        <p style="margin-bottom: 1rem;">
-          <strong>Pedido #<span id="modalPedidoId"></span></strong><br>
-          <span style="color: var(--razo-gray-warm);">Cliente: <span id="modalClienteNombre"></span></span>
-        </p>
-        
-        <div class="form-group">
-          <label class="form-label">Nuevo Estatus:</label>
-          <select id="modalNuevoEstatus" class="form-input">
-            <option value="Pendiente">Pendiente</option>
-            <option value="Confirmado">Confirmado ⚠️ (Reduce Stock)</option>
-            <option value="Enviado">Enviado</option>
-            <option value="Entregado">Entregado</option>
-            <option value="Cancelado">Cancelado</option>
-          </select>
-        </div>
-
-        <div class="alert alert-info" style="font-size: 0.875rem;">
-          <strong>⚠️ Importante:</strong> Al cambiar a "Confirmado", se reducirá automáticamente el stock de los productos y se registrará en el log de inventario.
-        </div>
-
-        <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
-          <button class="btn btn-primary" onclick="updateOrderStatus()" id="btnConfirmar" style="flex: 1;">
-            <span id="btnConfirmarText">Confirmar Cambio</span>
-            <div class="spinner" id="btnConfirmarSpinner" style="display: none;"></div>
+    <!-- Modal para ver detalle del pedido -->
+    <div id="detalleModal" class="modal">
+      <div
+        class="modal-content"
+        style="
+          background: white;
+          padding: 2rem;
+          border-radius: 1rem;
+          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+          max-width: 900px;
+        "
+      >
+        <div
+          class="modal-header"
+          style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #f5f1ed;
+          "
+        >
+          <h2 style="margin: 0; font-size: 1.5rem; color: #2d3748">
+            Detalle del Pedido #<span id="detallePedidoId"></span>
+          </h2>
+          <button
+            class="modal-close"
+            onclick="closeDetalleModal()"
+            style="
+              background: none;
+              border: none;
+              font-size: 2rem;
+              cursor: pointer;
+              color: #6b5d57;
+              line-height: 1;
+              padding: 0;
+              width: 32px;
+              height: 32px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              border-radius: 50%;
+              transition: all 0.2s;
+            "
+          >
+            &times;
           </button>
-          <button class="btn btn-secondary" onclick="closeStatusModal()" style="flex: 1;">
-            Cancelar
-          </button>
+        </div>
+        <div id="detalleModalBody" class="modal-body">
+          <!-- El contenido se llenará dinámicamente -->
         </div>
       </div>
     </div>
-  </div>
 
-  <script src="js/api.js"></script>
-  <script>
-    // Authentication check
-    const adminToken = localStorage.getItem('razoconnect_admin_token');
-    if (!adminToken) {
-      window.location.href = '/admin-login.html';
-    }
-
-    let currentOrders = [];
-    let selectedOrderId = null;
-
-    // Verify admin token
-    async function verifyAndLoadAdmin() {
-      try {
-        const response = await fetch(`${API_BASE_URL}/admin/verify`, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${adminToken}`,
-            'Content-Type': 'application/json'
-          }
-        });
-
-        if (!response.ok) {
-          throw new Error('Invalid token');
-        }
-
-        const data = await response.json();
-        if (data.success) {
-          const admin = data.data.admin;
-          document.getElementById('userName').textContent = admin.nombre;
-          document.getElementById('userRole').textContent = admin.rol === 'superadmin' ? 'Super Admin' : 'Admin';
-          
-          const words = admin.nombre.split(' ');
-          const initials = words.length >= 2 
-            ? `${words[0].charAt(0)}${words[1].charAt(0)}` 
-            : admin.nombre.substring(0, 2);
-          document.getElementById('userAvatar').textContent = initials.toUpperCase();
-        }
-      } catch (error) {
-        console.error('Error verifying admin:', error);
-        localStorage.removeItem('razoconnect_admin_token');
-        localStorage.removeItem('razoconnect_admin');
-        window.location.href = '/admin-login.html';
+    <script src="js/api.js"></script>
+    <script>
+      // Authentication check
+      const adminToken = localStorage.getItem("razoconnect_admin_token");
+      if (!adminToken) {
+        window.location.href = "/admin-login.html";
       }
-    }
 
-    // Load orders
-    async function loadOrders() {
-      const loadingOrders = document.getElementById('loadingOrders');
-      const ordersTable = document.getElementById('ordersTable');
-      const emptyOrders = document.getElementById('emptyOrders');
-      const ordersTableBody = document.getElementById('ordersTableBody');
-      const statusFilter = document.getElementById('statusFilter').value;
+      let currentOrders = [];
+      let selectedOrderId = null;
 
-      try {
-        loadingOrders.style.display = 'flex';
-        ordersTable.style.display = 'none';
-        emptyOrders.style.display = 'none';
+      // Verify admin token
+      async function verifyAndLoadAdmin() {
+        try {
+          const response = await fetch(`${API_BASE_URL}/admin/verify`, {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${adminToken}`,
+              "Content-Type": "application/json",
+            },
+          });
 
-        const response = await fetch(`${API_BASE_URL}/admin/pedidos`, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${adminToken}`,
-            'Content-Type': 'application/json'
+          if (!response.ok) {
+            throw new Error("Invalid token");
           }
-        });
 
-        if (!response.ok) {
-          throw new Error('Error al cargar pedidos');
+          const data = await response.json();
+          if (data.success) {
+            const admin = data.data.admin;
+            document.getElementById("userName").textContent = admin.nombre;
+            document.getElementById("userRole").textContent =
+              admin.rol === "superadmin" ? "Super Admin" : "Admin";
+
+            const words = admin.nombre.split(" ");
+            const initials =
+              words.length >= 2
+                ? `${words[0].charAt(0)}${words[1].charAt(0)}`
+                : admin.nombre.substring(0, 2);
+            document.getElementById("userAvatar").textContent =
+              initials.toUpperCase();
+          }
+        } catch (error) {
+          console.error("Error verifying admin:", error);
+          localStorage.removeItem("razoconnect_admin_token");
+          localStorage.removeItem("razoconnect_admin");
+          window.location.href = "/admin-login.html";
         }
+      }
 
-        const data = await response.json();
-        if (data.success) {
-          currentOrders = data.data.pedidos;
+      // Load orders
+      async function loadOrders() {
+        const loadingOrders = document.getElementById("loadingOrders");
+        const ordersTable = document.getElementById("ordersTable");
+        const emptyOrders = document.getElementById("emptyOrders");
+        const ordersTableBody = document.getElementById("ordersTableBody");
+        const statusFilter = document.getElementById("statusFilter").value;
 
-          // Filter by status if selected
-          let filteredOrders = currentOrders;
-          if (statusFilter) {
-            filteredOrders = currentOrders.filter(order => order.estatus === statusFilter);
+        try {
+          loadingOrders.style.display = "flex";
+          ordersTable.style.display = "none";
+          emptyOrders.style.display = "none";
+
+          const response = await fetch(`${API_BASE_URL}/admin/pedidos`, {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${adminToken}`,
+              "Content-Type": "application/json",
+            },
+          });
+
+          if (!response.ok) {
+            throw new Error("Error al cargar pedidos");
           }
 
-          if (filteredOrders.length === 0) {
-            emptyOrders.style.display = 'block';
-          } else {
-            ordersTableBody.innerHTML = filteredOrders.map(order => {
-              let badgeClass = 'info';
-              if (order.estatus === 'Confirmado') badgeClass = 'success';
-              else if (order.estatus === 'Enviado') badgeClass = 'warning';
-              else if (order.estatus === 'Entregado') badgeClass = 'success';
-              else if (order.estatus === 'Cancelado') badgeClass = 'danger';
+          const data = await response.json();
+          if (data.success) {
+            currentOrders = data.data.pedidos;
 
-              const fecha = new Date(order.fechaPedido).toLocaleDateString('es-MX');
-              
-              return `
+            // Filter by status if selected
+            let filteredOrders = currentOrders;
+            if (statusFilter) {
+              filteredOrders = currentOrders.filter(
+                (order) => order.estatus === statusFilter
+              );
+            }
+
+            if (filteredOrders.length === 0) {
+              emptyOrders.style.display = "block";
+            } else {
+              ordersTableBody.innerHTML = filteredOrders
+                .map((order) => {
+                  let badgeClass = "info";
+                  if (order.estatus === "Confirmado") badgeClass = "success";
+                  else if (order.estatus === "Enviado") badgeClass = "warning";
+                  else if (order.estatus === "Entregado")
+                    badgeClass = "success";
+                  else if (order.estatus === "Cancelado") badgeClass = "danger";
+
+                  const fecha = new Date(order.fechaPedido).toLocaleDateString(
+                    "es-MX"
+                  );
+
+                  return `
                 <tr>
                   <td><strong>#${order.pedidoId}</strong></td>
                   <td>
                     <div style="font-weight: 600;">${order.clienteNombre}</div>
-                    <div style="font-size: 0.875rem; color: var(--razo-gray-warm);">${order.clienteEmail}</div>
+                    <div style="font-size: 0.875rem; color: var(--razo-gray-warm);">${
+                      order.clienteEmail
+                    }</div>
                   </td>
                   <td>${fecha}</td>
                   <td>${order.totalItems} items</td>
                   <td><strong>${formatCurrency(order.montoTotal)}</strong></td>
-                  <td>${order.agenteNombre || '-'}</td>
-                  <td><span class="admin-badge ${badgeClass}">${order.estatus}</span></td>
+                  <td>${order.agenteNombre || "-"}</td>
+                  <td><span class="admin-badge ${badgeClass}">${
+                    order.estatus
+                  }</span></td>
                   <td>
-                    <button 
-                      class="btn btn-primary" 
-                      style="padding: 0.5rem 1rem; font-size: 0.875rem;"
-                      onclick="openStatusModal(${order.pedidoId}, '${order.clienteNombre}', '${order.estatus}')">
-                      Cambiar Estatus
-                    </button>
+                    <div style="display: flex; gap: 0.5rem;">
+                      <button 
+                        class="btn btn-secondary" 
+                        style="padding: 0.5rem 1rem; font-size: 0.875rem;"
+                        onclick="verDetallePedido(${order.pedidoId})">
+                        Ver Detalle
+                      </button>
+                      <button 
+                        class="btn btn-primary" 
+                        style="padding: 0.5rem 1rem; font-size: 0.875rem;"
+                        onclick="openStatusModal(${order.pedidoId}, '${
+                    order.clienteNombre
+                  }', '${order.estatus}')">
+                        Cambiar Estatus
+                      </button>
+                    </div>
                   </td>
                 </tr>
               `;
-            }).join('');
-            
-            ordersTable.style.display = 'table';
+                })
+                .join("");
+
+              ordersTable.style.display = "table";
+            }
           }
+        } catch (error) {
+          console.error("Error loading orders:", error);
+          showToast("Error al cargar pedidos", "error");
+          emptyOrders.style.display = "block";
+        } finally {
+          loadingOrders.style.display = "none";
         }
-      } catch (error) {
-        console.error('Error loading orders:', error);
-        showToast('Error al cargar pedidos', 'error');
-        emptyOrders.style.display = 'block';
-      } finally {
-        loadingOrders.style.display = 'none';
       }
-    }
 
-    // Format currency
-    function formatCurrency(amount) {
-      return new Intl.NumberFormat('es-MX', {
-        style: 'currency',
-        currency: 'MXN'
-      }).format(amount || 0);
-    }
+      // Format currency
+      function formatCurrency(amount) {
+        return new Intl.NumberFormat("es-MX", {
+          style: "currency",
+          currency: "MXN",
+        }).format(amount || 0);
+      }
 
-    // Open status modal
-    function openStatusModal(pedidoId, clienteNombre, estatusActual) {
-      selectedOrderId = pedidoId;
-      document.getElementById('modalPedidoId').textContent = pedidoId;
-      document.getElementById('modalClienteNombre').textContent = clienteNombre;
-      document.getElementById('modalNuevoEstatus').value = estatusActual;
-      document.getElementById('statusModal').style.display = 'flex';
-    }
+      // Open status modal
+      function openStatusModal(pedidoId, clienteNombre, estatusActual) {
+        selectedOrderId = pedidoId;
+        document.getElementById("modalPedidoId").textContent = pedidoId;
+        document.getElementById("modalClienteNombre").textContent =
+          clienteNombre;
+        document.getElementById("modalNuevoEstatus").value = estatusActual;
+        document.getElementById("statusModal").style.display = "flex";
+      }
 
-    // Close status modal
-    function closeStatusModal() {
-      document.getElementById('statusModal').style.display = 'none';
-      selectedOrderId = null;
-    }
+      // Close status modal
+      function closeStatusModal() {
+        document.getElementById("statusModal").style.display = "none";
+        selectedOrderId = null;
+      }
 
-    // Update order status
-    async function updateOrderStatus() {
-      if (!selectedOrderId) return;
+      // Update order status
+      async function updateOrderStatus() {
+        if (!selectedOrderId) return;
 
-      const nuevoEstatus = document.getElementById('modalNuevoEstatus').value;
-      const btnConfirmar = document.getElementById('btnConfirmar');
-      const btnConfirmarText = document.getElementById('btnConfirmarText');
-      const btnConfirmarSpinner = document.getElementById('btnConfirmarSpinner');
+        const nuevoEstatus = document.getElementById("modalNuevoEstatus").value;
+        const btnConfirmar = document.getElementById("btnConfirmar");
+        const btnConfirmarText = document.getElementById("btnConfirmarText");
+        const btnConfirmarSpinner = document.getElementById(
+          "btnConfirmarSpinner"
+        );
 
-      try {
-        btnConfirmar.disabled = true;
-        btnConfirmarText.style.display = 'none';
-        btnConfirmarSpinner.style.display = 'block';
+        try {
+          btnConfirmar.disabled = true;
+          btnConfirmarText.style.display = "none";
+          btnConfirmarSpinner.style.display = "block";
 
-        const response = await fetch(`${API_BASE_URL}/admin/pedidos/${selectedOrderId}`, {
-          method: 'PUT',
-          headers: {
-            'Authorization': `Bearer ${adminToken}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ estatus: nuevoEstatus })
-        });
+          const response = await fetch(
+            `${API_BASE_URL}/admin/pedidos/${selectedOrderId}`,
+            {
+              method: "PUT",
+              headers: {
+                Authorization: `Bearer ${adminToken}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ estatus: nuevoEstatus }),
+            }
+          );
 
-        const data = await response.json();
+          const data = await response.json();
 
-        if (response.ok && data.success) {
-          showToast(`Pedido #${selectedOrderId} actualizado a ${nuevoEstatus}`, 'success');
-          closeStatusModal();
-          loadOrders(); // Reload orders
-        } else {
-          showToast(data.message || 'Error al actualizar pedido', 'error');
+          if (response.ok && data.success) {
+            showToast(
+              `Pedido #${selectedOrderId} actualizado a ${nuevoEstatus}`,
+              "success"
+            );
+            closeStatusModal();
+            loadOrders(); // Reload orders
+          } else {
+            showToast(data.message || "Error al actualizar pedido", "error");
+          }
+        } catch (error) {
+          console.error("Error updating order:", error);
+          showToast("Error al conectar con el servidor", "error");
+        } finally {
+          btnConfirmar.disabled = false;
+          btnConfirmarText.style.display = "inline";
+          btnConfirmarSpinner.style.display = "none";
         }
-      } catch (error) {
-        console.error('Error updating order:', error);
-        showToast('Error al conectar con el servidor', 'error');
-      } finally {
-        btnConfirmar.disabled = false;
-        btnConfirmarText.style.display = 'inline';
-        btnConfirmarSpinner.style.display = 'none';
       }
-    }
 
-    // Status filter change
-    document.getElementById('statusFilter').addEventListener('change', () => {
-      loadOrders();
-    });
+      // Ver detalle de pedido (abre modal)
+      async function verDetallePedido(pedidoId) {
+        try {
+          const response = await fetch(
+            `${API_BASE_URL}/admin/pedidos/${pedidoId}/detalle`,
+            {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${adminToken}`,
+                "Content-Type": "application/json",
+              },
+            }
+          );
 
-    // Logout
-    document.getElementById('logoutBtn').addEventListener('click', () => {
-      localStorage.removeItem('razoconnect_admin_token');
-      localStorage.removeItem('razoconnect_admin');
-      showToast('Sesión cerrada', 'success');
-      setTimeout(() => {
-        window.location.href = '/admin-login.html';
-      }, 500);
-    });
+          if (!response.ok) throw new Error("Error al cargar detalle");
 
-    // Navigation handling for non-implemented modules
-    const navLinks = document.querySelectorAll('.admin-nav-link[data-module]');
-    navLinks.forEach(link => {
-      link.addEventListener('click', (e) => {
-        e.preventDefault();
-        const moduleName = link.querySelector('span:last-child').textContent;
-        showToast(`Módulo "${moduleName}" próximamente disponible`, 'info');
+          const data = await response.json();
+
+          if (data.success) {
+            mostrarModalDetalle(data.data);
+          }
+        } catch (error) {
+          console.error("Error:", error);
+          showToast("Error al cargar detalle del pedido", "error");
+        }
+      }
+
+      // Mostrar modal con detalle del pedido
+      function mostrarModalDetalle(detalle) {
+        const { pedido, productos } = detalle;
+
+        // Actualizar ID del pedido en el título
+        document.getElementById("detallePedidoId").textContent =
+          pedido.pedidoId;
+
+        // Generar el contenido del modal
+        const contenido = `
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; margin-bottom: 1.5rem;">
+          <div>
+            <h3 style="margin-bottom: 0.5rem; color: #FF9966;">👤 Cliente</h3>
+            <p style="margin: 0.25rem 0;"><strong>${
+              pedido.cliente.nombre
+            }</strong></p>
+            <p style="margin: 0.25rem 0; color: #6B5D57;">${
+              pedido.cliente.email
+            }</p>
+            <p style="margin: 0.25rem 0; color: #6B5D57;">${
+              pedido.cliente.telefono || "Sin teléfono"
+            }</p>
+          </div>
+          <div>
+            <h3 style="margin-bottom: 0.5rem; color: #FF9966;">📋 Información del Pedido</h3>
+            <p style="margin: 0.25rem 0;">Fecha: <strong>${new Date(
+              pedido.fechaPedido
+            ).toLocaleDateString("es-MX", {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            })}</strong></p>
+            <p style="margin: 0.25rem 0;">Estado: <span class="admin-badge ${
+              pedido.estatus === "Confirmado"
+                ? "success"
+                : pedido.estatus === "Enviado"
+                ? "warning"
+                : pedido.estatus === "Entregado"
+                ? "success"
+                : pedido.estatus === "Cancelado"
+                ? "danger"
+                : "info"
+            }">${pedido.estatus}</span></p>
+            <p style="margin: 0.25rem 0;">Total: <strong style="font-size: 1.25rem; color: #FF9966;">${formatCurrency(
+              pedido.montoTotal
+            )}</strong></p>
+          </div>
+        </div>
+
+        ${
+          pedido.agente
+            ? `
+        <div style="margin-bottom: 1.5rem; padding: 1rem; background: #FFF8F0; border-radius: 0.5rem;">
+          <h3 style="margin-bottom: 0.5rem; color: #FF9966;">💼 Agente de Ventas</h3>
+          <p style="margin: 0;"><strong>${pedido.agente.nombre}</strong> - Código: <span style="background: #FF9966; color: white; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-weight: 600;">${pedido.agente.codigo}</span></p>
+        </div>
+        `
+            : ""
+        }
+
+        <div style="margin-bottom: 1.5rem; padding: 1rem; background: #f8f9fa; border-radius: 0.5rem;">
+          <h3 style="margin-bottom: 0.5rem; color: #FF9966;">📍 Dirección de Envío</h3>
+          <p style="margin: 0.25rem 0;"><strong>${pedido.direccion.calle} ${
+          pedido.direccion.numeroExterior
+        }${
+          pedido.direccion.numeroInterior
+            ? " Int. " + pedido.direccion.numeroInterior
+            : ""
+        }</strong></p>
+          <p style="margin: 0.25rem 0;">${pedido.direccion.colonia}, ${
+          pedido.direccion.ciudad
+        }, ${pedido.direccion.estado}</p>
+          <p style="margin: 0.25rem 0;">CP: ${pedido.direccion.codigoPostal}</p>
+          ${
+            pedido.direccion.referencias
+              ? `<p style="margin: 0.25rem 0; color: #6B5D57;"><em>📝 Referencias: ${pedido.direccion.referencias}</em></p>`
+              : ""
+          }
+        </div>
+
+        <h3 style="margin-bottom: 1rem; color: #FF9966;">🛍️ Productos del Pedido</h3>
+        <div style="overflow-x: auto;">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Producto</th>
+                <th>SKU</th>
+                <th>Paquetes</th>
+                <th>Piezas/Paq</th>
+                <th>Piezas Totales</th>
+                <th>Precio Unitario</th>
+                <th>Precio Paquete</th>
+                <th>Subtotal</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${productos
+                .map(
+                  (p) => `
+                <tr>
+                  <td><strong>${p.nombre}</strong></td>
+                  <td><code style="background: #f0f0f0; padding: 0.25rem 0.5rem; border-radius: 0.25rem;">${
+                    p.sku
+                  }</code></td>
+                  <td style="text-align: center;">${p.cantidadPaquetes}</td>
+                  <td style="text-align: center;">${p.piezasPorPaquete}</td>
+                  <td style="text-align: center;"><strong>${
+                    p.piezasTotales
+                  }</strong></td>
+                  <td>${formatCurrency(p.precioUnitario)}</td>
+                  <td>${formatCurrency(p.precioPorPaquete)}</td>
+                  <td><strong>${formatCurrency(p.subtotal)}</strong></td>
+                </tr>
+              `
+                )
+                .join("")}
+            </tbody>
+            <tfoot>
+              <tr style="background: #FFF8F0;">
+                <td colspan="7" style="text-align: right;"><strong style="font-size: 1.1rem;">Total del Pedido:</strong></td>
+                <td><strong style="font-size: 1.25rem; color: #FF9966;">${formatCurrency(
+                  pedido.montoTotal
+                )}</strong></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        <div style="padding-top: 1.5rem; margin-top: 1.5rem; text-align: right; border-top: 2px solid #F5F1ED;">
+          <button class="btn btn-secondary" onclick="closeDetalleModal()" style="padding: 0.75rem 2rem;">
+            Cerrar
+          </button>
+        </div>
+      `;
+
+        // Actualizar el contenido del modal
+        document.getElementById("detalleModalBody").innerHTML = contenido;
+
+        // Mostrar el modal
+        document.getElementById("detalleModal").style.display = "flex";
+      }
+
+      // Cerrar modal de detalle
+      function closeDetalleModal() {
+        document.getElementById("detalleModal").style.display = "none";
+      }
+
+      // Status filter change
+      document.getElementById("statusFilter").addEventListener("change", () => {
+        loadOrders();
       });
-    });
 
-    // Initialize
-    verifyAndLoadAdmin();
-    loadOrders();
+      // Logout
+      document.getElementById("logoutBtn").addEventListener("click", () => {
+        localStorage.removeItem("razoconnect_admin_token");
+        localStorage.removeItem("razoconnect_admin");
+        showToast("Sesión cerrada", "success");
+        setTimeout(() => {
+          window.location.href = "/admin-login.html";
+        }, 500);
+      });
 
-    // Close modal when clicking outside
-    window.onclick = function(event) {
-      const modal = document.getElementById('statusModal');
-      if (event.target == modal) {
-        closeStatusModal();
+      // Navigation handling for non-implemented modules
+      const navLinks = document.querySelectorAll(
+        ".admin-nav-link[data-module]"
+      );
+      navLinks.forEach((link) => {
+        link.addEventListener("click", (e) => {
+          e.preventDefault();
+          const moduleName = link.querySelector("span:last-child").textContent;
+          showToast(`Módulo "${moduleName}" próximamente disponible`, "info");
+        });
+      });
+
+      // Initialize
+      verifyAndLoadAdmin();
+      loadOrders();
+
+      // Close modal when clicking outside
+      window.onclick = function (event) {
+        const statusModal = document.getElementById("statusModal");
+        const detalleModal = document.getElementById("detalleModal");
+
+        if (event.target == statusModal) {
+          closeStatusModal();
+        }
+
+        if (event.target == detalleModal) {
+          closeDetalleModal();
+        }
+      };
+    </script>
+
+    <style>
+      /* Modal styles */
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.6);
+        -webkit-backdrop-filter: blur(4px);
+        backdrop-filter: blur(4px);
+        justify-content: center;
+        align-items: center;
+        padding: 1rem;
+        overflow-y: auto;
       }
-    }
-  </script>
-</body>
+
+      .modal-content {
+        animation: modalSlideIn 0.3s ease-out;
+        max-height: 90vh;
+        overflow-y: auto;
+        position: relative;
+      }
+
+      .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid var(--razo-gray-light);
+      }
+
+      .modal-header h2 {
+        margin: 0;
+        font-size: 1.5rem;
+        color: var(--razo-gray-dark);
+      }
+
+      .modal-close {
+        background: none;
+        border: none;
+        font-size: 2rem;
+        cursor: pointer;
+        color: var(--razo-gray-warm);
+        line-height: 1;
+        padding: 0;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        transition: all 0.2s;
+      }
+
+      .modal-close:hover {
+        background-color: var(--razo-gray-light);
+        color: var(--razo-orange);
+      }
+
+      .modal-body {
+        margin-bottom: 0;
+      }
+
+      @keyframes modalSlideIn {
+        from {
+          transform: translateY(-50px);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+
+      @media (max-width: 768px) {
+        .modal-content {
+          max-width: 95% !important;
+          padding: 1.5rem !important;
+        }
+      }
+    </style>
+  </body>
 </html>

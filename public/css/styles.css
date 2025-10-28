@@ -27,11 +27,14 @@
   --razo-orange-dark: #FF7733;
   --razo-turquoise-light: #7FEBE8;
   --razo-turquoise-dark: #2BB8B8;
+  --razo-blue: #4A90E2;
+  --razo-blue-light: #E3F2FD;
 
   /* Neutrales (NO azules) */
   --razo-cream: #FFF8F0;
   --razo-gray-warm: #6B5D57;
   --razo-gray-light: #F5F1ED;
+  --razo-gray-dark: #2D3748;
   
   /* Semantic Colors */
   --success-color: #10b981;

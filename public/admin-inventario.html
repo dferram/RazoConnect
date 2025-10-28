@@ -4,6 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Gestión de Inventario - Admin RazoConnect</title>
+  
+  <!-- PROTECCIÓN DE AUTENTICACIÓN ADMIN -->
+  <script src="js/auth-guard-admin.js"></script>
+  
+  <!-- SISTEMA DE RENOVACIÓN DE TOKENS -->
+  <script src="js/token-refresh.js"></script>
+  
   <link rel="stylesheet" href="css/styles.css">
   <link rel="stylesheet" href="css/admin.css">
 </head>
@@ -75,9 +82,6 @@
         <h1 class="admin-header-title">Gestión de Inventario</h1>
         
         <div class="admin-header-actions">
-          <button class="btn btn-primary" onclick="window.location.href='/admin-agregar-producto.html'">
-            + Agregar Producto
-          </button>
           <div class="admin-user-info">
             <div class="admin-user-avatar" id="userAvatar">A</div>
             <div class="admin-user-details">
@@ -144,13 +148,13 @@
   </div>
 
   <!-- Modal para ajustar stock -->
-  <div id="ajusteModal" class="modal" style="display: none;">
-    <div class="modal-content" style="max-width: 500px;">
-      <div class="modal-header">
-        <h2>Ajustar Stock</h2>
-        <button class="modal-close" onclick="closeAjusteModal()">&times;</button>
+  <div id="ajusteModal" class="modal">
+    <div class="modal-content" style="background: white; padding: 2rem; border-radius: 1rem; box-shadow: 0 20px 60px rgba(0,0,0,0.3); max-width: 550px;">
+      <div style="margin-bottom: 1.5rem;">
+        <h2 style="font-size: 1.5rem; font-weight: 700; color: #2D3748; margin-bottom: 0.25rem;">Ajustar Stock</h2>
+        <p style="color: #718096; font-size: 0.875rem;">Modifica el inventario del producto</p>
       </div>
-      <div class="modal-body">
+      <div>
         <p style="margin-bottom: 1rem;">
           <strong><span id="modalProductoNombre"></span></strong><br>
           <span style="color: var(--razo-gray-warm);">SKU: <span id="modalProductoSku"></span></span><br>
@@ -522,9 +526,63 @@
       }
     }
 
+    // Cerrar modal con Escape
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        const modal = document.getElementById('ajusteModal');
+        if (modal.style.display === 'flex') {
+          closeAjusteModal();
+        }
+      }
+    });
+
     // Initialize
     verifyAndLoadAdmin();
     loadProductos();
   </script>
+
+  <style>
+    /* Modal styles */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.6);
+      -webkit-backdrop-filter: blur(4px);
+      backdrop-filter: blur(4px);
+      justify-content: center;
+      align-items: center;
+      padding: 1rem;
+      overflow-y: auto;
+    }
+
+    .modal-content {
+      animation: modalSlideIn 0.3s ease-out;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    @keyframes modalSlideIn {
+      from {
+        transform: translateY(-50px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .modal-content {
+        max-width: 95% !important;
+        padding: 1.5rem !important;
+      }
+    }
+  </style>
 </body>
 </html>

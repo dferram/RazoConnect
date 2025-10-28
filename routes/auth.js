@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/authController');
+const { authenticate } = require('../middlewares/authMiddleware');
 
 /**
  * @route   POST /api/registro/cliente
@@ -25,5 +26,19 @@ router.post('/registro/agente', authController.registroAgente);
  * @body    { Email, Password }
  */
 router.post('/login', authController.login);
+
+/**
+ * @route   GET /api/clientes/verify
+ * @desc    Verificar token de cliente
+ * @access  Private (requiere token de cliente)
+ */
+router.get('/clientes/verify', authenticate, authController.verifyCliente);
+
+/**
+ * @route   POST /api/clientes/refresh-token
+ * @desc    Renovar token de cliente
+ * @access  Private (requiere token de cliente)
+ */
+router.post('/clientes/refresh-token', authenticate, authController.refreshClienteToken);
 
 module.exports = router;

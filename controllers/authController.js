@@ -307,8 +307,110 @@ const login = async (req, res) => {
   }
 };
 
+/**
+ * Verificar token de cliente
+ * GET /api/clientes/verify
+ */
+const verifyCliente = async (req, res) => {
+  try {
+    // El middleware authenticate ya verificó el token y agregó req.user
+    console.log('🔍 req.user completo:', req.user);
+    const clienteId = req.user.userId;
+    console.log('🔍 clienteId extraído:', clienteId);
+
+    // Obtener datos del cliente
+    const result = await db.query(
+      `SELECT ClienteID, Nombre, Apellido, Email, Telefono
+       FROM Clientes
+       WHERE ClienteID = $1`,
+      [clienteId]
+    );
+    console.log('🔍 Resultado query:', result.rows);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Cliente no encontrado o inactivo'
+      });
+    }
+
+    const cliente = result.rows[0];
+
+    res.json({
+      success: true,
+      data: {
+        cliente: {
+          clienteId: cliente.clienteid,
+          nombre: cliente.nombre,
+          apellido: cliente.apellido,
+          email: cliente.email,
+          telefono: cliente.telefono
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('Error verifying cliente:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error en el servidor'
+    });
+  }
+};
+
+/**
+ * Renovar token de cliente
+ * POST /api/clientes/refresh-token
+ */
+const refreshClienteToken = async (req, res) => {
+  try {
+    // El middleware authenticate ya verificó el token actual
+    const clienteId = req.user.userId;
+    const email = req.user.email;
+
+    // Verificar que el cliente aún existe y está activo
+    const result = await db.query(
+      `SELECT ClienteID FROM Clientes WHERE ClienteID = $1`,
+      [clienteId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Cliente no encontrado'
+      });
+    }
+
+    // Generar un nuevo token con el mismo payload
+    const newToken = generateToken({
+      userId: clienteId,
+      rol: 'cliente',
+      email: email
+    });
+
+    console.log('🔄 Token de cliente renovado:', { clienteId, email });
+
+    res.json({
+      success: true,
+      message: 'Token renovado exitosamente',
+      data: {
+        token: newToken
+      }
+    });
+
+  } catch (error) {
+    console.error('Error refreshing cliente token:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al renovar token'
+    });
+  }
+};
+
 module.exports = {
   registroCliente,
   registroAgente,
-  login
+  login,
+  verifyCliente,
+  refreshClienteToken
 };

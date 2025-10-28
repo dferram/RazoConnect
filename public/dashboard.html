@@ -4,6 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mi Cuenta - RazoConnect</title>
+  
+  <!-- PROTECCIÓN DE AUTENTICACIÓN - Debe cargarse PRIMERO -->
+  <script src="js/auth-guard-client.js"></script>
+  
+  <!-- SISTEMA DE RENOVACIÓN DE TOKENS -->
+  <script src="js/token-refresh.js"></script>
+  
   <link rel="stylesheet" href="css/styles.css">
   <style>
     .tabs {
@@ -43,16 +50,19 @@
     }
 
     .direccion-card {
-      background: var(--surface);
-      border: 1px solid var(--border-color);
-      border-radius: 0.5rem;
-      padding: 1.5rem;
+      background: white;
+      border: 2px solid var(--razo-gray-light);
+      border-radius: 1rem;
+      padding: 0;
       margin-bottom: 1rem;
-      transition: box-shadow 0.3s;
+      transition: all 0.3s;
+      overflow: hidden;
     }
 
     .direccion-card:hover {
-      box-shadow: var(--shadow);
+      border-color: var(--razo-turquoise);
+      box-shadow: 0 8px 24px rgba(0, 199, 190, 0.15);
+      transform: translateY(-2px);
     }
 
     .direccion-card.selectable {
@@ -65,11 +75,19 @@
     }
 
     .pedido-card {
-      background: var(--surface);
-      border: 1px solid var(--border-color);
-      border-radius: 0.5rem;
-      padding: 1.5rem;
-      margin-bottom: 1rem;
+      background: white;
+      border: 2px solid var(--razo-gray-light);
+      border-radius: 1rem;
+      padding: 0;
+      margin-bottom: 1.5rem;
+      transition: all 0.3s;
+      overflow: hidden;
+    }
+
+    .pedido-card:hover {
+      border-color: var(--razo-orange);
+      box-shadow: 0 8px 24px rgba(255, 119, 51, 0.15);
+      transform: translateY(-2px);
     }
 
     .pedido-items {
@@ -80,18 +98,30 @@
 
     .pedido-item {
       display: grid;
-      grid-template-columns: 60px 1fr auto;
+      grid-template-columns: 80px 1fr auto;
       gap: 1rem;
-      padding: 0.75rem;
-      background: var(--background);
-      border-radius: 0.375rem;
+      padding: 1rem;
+      background: var(--razo-cream);
+      border-radius: 0.75rem;
+      border: 1px solid var(--razo-gray-light);
+      transition: all 0.2s;
+    }
+
+    .pedido-item:hover {
+      background: white;
+      border-color: var(--razo-orange-light);
     }
 
     .pedido-item-img {
-      width: 60px;
-      height: 60px;
+      width: 80px;
+      height: 80px;
       object-fit: cover;
-      border-radius: 0.25rem;
+      border-radius: 0.5rem;
+      background: linear-gradient(135deg, var(--razo-orange) 0%, var(--razo-turquoise) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.5rem;
     }
 
     .estatus-badge {
@@ -374,6 +404,23 @@
       }).format(amount);
     }
 
+    // Get product emoji based on name
+    function getProductEmoji(productName) {
+      const name = productName.toLowerCase();
+      if (name.includes('short')) return '🩳';
+      if (name.includes('lente')) return '😎';
+      if (name.includes('blusa')) return '👚';
+      if (name.includes('vestido') || name.includes('dama')) return '👗';
+      if (name.includes('camisa')) return '👔';
+      if (name.includes('pantalon')) return '👖';
+      if (name.includes('jeans')) return '👖';
+      if (name.includes('falda')) return '👗';
+      if (name.includes('bolsa') || name.includes('joyeria') || name.includes('joyería')) return '👜';
+      if (name.includes('zapato')) return '👞';
+      if (name.includes('gorra')) return '🧢';
+      return '📦';
+    }
+
     // Load direcciones
     async function loadDirecciones() {
       try {
@@ -392,13 +439,59 @@
           } else {
             direccionesList.innerHTML = direcciones.map(d => `
               <div class="direccion-card">
-                ${d.etiqueta ? `<div style="color: var(--primary-color); font-weight: 600; margin-bottom: 0.5rem;">📍 ${d.etiqueta}</div>` : ''}
-                <div style="margin-bottom: 0.5rem;"><strong>Receptor:</strong> ${d.receptor}</div>
-                <div style="color: var(--text-secondary); font-size: 0.875rem;">
-                  ${d.calle} ${d.numeroExt || ''} ${d.numeroInt ? 'Int. ' + d.numeroInt : ''}<br>
-                  ${d.colonia ? d.colonia + ', ' : ''}${d.ciudad}, ${d.estado}<br>
-                  CP: ${d.codigoPostal}
-                  ${d.telefonoContacto ? '<br>Tel: ' + d.telefonoContacto : ''}
+                <!-- Header con etiqueta -->
+                <div style="background: linear-gradient(135deg, var(--razo-turquoise) 0%, var(--razo-blue) 100%); padding: 1rem 1.5rem; display: flex; align-items: center; justify-content: space-between;">
+                  <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <div style="background: rgba(255,255,255,0.2); padding: 0.5rem; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center;">
+                      <span style="font-size: 1.25rem;">📍</span>
+                    </div>
+                    <div>
+                      <div style="color: white; font-weight: 700; font-size: 1.125rem;">${d.etiqueta || 'Dirección'}</div>
+                      <div style="color: rgba(255,255,255,0.8); font-size: 0.875rem;">Dirección de envío</div>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Contenido -->
+                <div style="padding: 1.5rem;">
+                  <!-- Receptor -->
+                  <div style="display: flex; align-items: start; gap: 0.75rem; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--razo-gray-light);">
+                    <div style="background: var(--razo-orange-light); color: var(--razo-orange); padding: 0.5rem; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center; min-width: 2.5rem; height: 2.5rem;">
+                      <span style="font-size: 1.125rem;">👤</span>
+                    </div>
+                    <div>
+                      <div style="font-size: 0.75rem; color: var(--razo-gray-warm); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; margin-bottom: 0.25rem;">Receptor</div>
+                      <div style="font-weight: 600; color: var(--razo-gray-dark); font-size: 1rem;">${d.receptor}</div>
+                    </div>
+                  </div>
+                  
+                  <!-- Dirección -->
+                  <div style="display: flex; align-items: start; gap: 0.75rem; margin-bottom: 1rem;">
+                    <div style="background: var(--razo-turquoise-light); color: var(--razo-turquoise); padding: 0.5rem; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center; min-width: 2.5rem; height: 2.5rem;">
+                      <span style="font-size: 1.125rem;">🏠</span>
+                    </div>
+                    <div style="flex: 1;">
+                      <div style="font-size: 0.75rem; color: var(--razo-gray-warm); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; margin-bottom: 0.25rem;">Dirección completa</div>
+                      <div style="color: var(--razo-gray-dark); font-size: 0.9375rem; line-height: 1.6;">
+                        ${d.calle} ${d.numeroExt || ''} ${d.numeroInt ? 'Int. ' + d.numeroInt : ''}<br>
+                        ${d.colonia ? d.colonia + ', ' : ''}${d.ciudad}, ${d.estado}<br>
+                        CP: ${d.codigoPostal}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  ${d.telefonoContacto ? `
+                  <!-- Teléfono -->
+                  <div style="display: flex; align-items: start; gap: 0.75rem;">
+                    <div style="background: var(--razo-blue-light); color: var(--razo-blue); padding: 0.5rem; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center; min-width: 2.5rem; height: 2.5rem;">
+                      <span style="font-size: 1.125rem;">📞</span>
+                    </div>
+                    <div>
+                      <div style="font-size: 0.75rem; color: var(--razo-gray-warm); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; margin-bottom: 0.25rem;">Teléfono</div>
+                      <div style="font-weight: 600; color: var(--razo-gray-dark); font-size: 0.9375rem;">${d.telefonoContacto}</div>
+                    </div>
+                  </div>
+                  ` : ''}
                 </div>
               </div>
             `).join('');
@@ -434,49 +527,86 @@
               const estatusClass = `estatus-${p.estatus.toLowerCase()}`;
               return `
                 <div class="pedido-card">
-                  <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
-                    <div>
-                      <h3 style="font-weight: 600; margin-bottom: 0.25rem;">Pedido #${p.pedidoId}</h3>
-                      <p style="color: var(--text-secondary); font-size: 0.875rem;">
-                        ${new Date(p.fechaPedido).toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' })}
-                      </p>
+                  <!-- Header del pedido -->
+                  <div style="background: linear-gradient(135deg, var(--razo-orange) 0%, var(--razo-orange-dark) 100%); padding: 1.25rem 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                      <div style="background: rgba(255,255,255,0.2); padding: 0.75rem; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center;">
+                        <span style="font-size: 1.5rem;">📦</span>
+                      </div>
+                      <div>
+                        <div style="color: white; font-weight: 700; font-size: 1.25rem;">Pedido #${p.pedidoId}</div>
+                        <div style="color: rgba(255,255,255,0.9); font-size: 0.875rem;">
+                          ${new Date(p.fechaPedido).toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' })}
+                        </div>
+                      </div>
                     </div>
                     <span class="estatus-badge ${estatusClass}">${p.estatus}</span>
                   </div>
 
-                  <div class="pedido-items">
-                    ${p.items.map(item => `
-                      <div class="pedido-item">
-                        <img src="${item.imagenUrl || 'https://via.placeholder.com/60'}" alt="${item.nombreProducto}" class="pedido-item-img">
-                        <div>
-                          <div style="font-weight: 600; margin-bottom: 0.25rem;">${item.nombreProducto}</div>
-                          <div style="color: var(--text-secondary); font-size: 0.75rem;">
-                            SKU: ${item.sku}<br>
-                            ${item.cantidadPaquetes} paquete(s) × ${formatCurrency(item.precioPorPaquete)}<br>
-                            Total piezas: ${item.piezasTotales}
+                  <!-- Productos del pedido -->
+                  <div style="padding: 1.5rem;">
+                    <div style="font-size: 0.75rem; color: var(--razo-gray-warm); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; margin-bottom: 1rem;">
+                      Productos
+                    </div>
+                    <div class="pedido-items">
+                      ${p.items.map(item => `
+                        <div class="pedido-item">
+                          <div class="pedido-item-img">
+                            ${getProductEmoji(item.nombreProducto)}
+                          </div>
+                          <div>
+                            <div style="font-weight: 700; margin-bottom: 0.5rem; color: var(--razo-gray-dark); font-size: 1rem;">${item.nombreProducto}</div>
+                            <div style="display: flex; flex-wrap: wrap; gap: 1rem; font-size: 0.875rem; color: var(--razo-gray-warm);">
+                              <div><strong>SKU:</strong> ${item.sku}</div>
+                              <div><strong>${item.cantidadPaquetes}</strong> paquete(s) × ${formatCurrency(item.precioPorPaquete)}</div>
+                              <div><strong>Total piezas:</strong> ${item.piezasTotales}</div>
+                            </div>
+                          </div>
+                          <div style="text-align: right;">
+                            <div style="font-size: 0.75rem; color: var(--razo-gray-warm); margin-bottom: 0.25rem;">Subtotal</div>
+                            <div style="font-weight: 700; font-size: 1.125rem; color: var(--razo-orange);">
+                              ${formatCurrency(item.cantidadPaquetes * item.precioPorPaquete)}
+                            </div>
                           </div>
                         </div>
-                        <div style="text-align: right; font-weight: 600;">
-                          ${formatCurrency(item.cantidadPaquetes * item.precioPorPaquete)}
-                        </div>
-                      </div>
-                    `).join('')}
-                  </div>
-
-                  <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                      <span style="color: var(--text-secondary); font-size: 0.875rem;">Envío a:</span>
-                      <span style="font-size: 0.875rem;">${p.direccion.receptor} - ${p.direccion.ciudad}, ${p.direccion.estado}</span>
+                      `).join('')}
                     </div>
-                    ${p.agente ? `
-                      <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                        <span style="color: var(--text-secondary); font-size: 0.875rem;">Agente:</span>
-                        <span style="font-size: 0.875rem;">${p.agente.nombre} ${p.agente.apellido} (${p.agente.codigoAgente})</span>
+
+                    <!-- Información de envío y agente -->
+                    <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 2px solid var(--razo-gray-light);">
+                      <div style="display: grid; gap: 1rem; margin-bottom: 1.5rem;">
+                        <!-- Envío a -->
+                        <div style="display: flex; align-items: start; gap: 0.75rem;">
+                          <div style="background: var(--razo-turquoise-light); color: var(--razo-turquoise-dark); padding: 0.5rem; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center; min-width: 2.5rem; height: 2.5rem;">
+                            <span style="font-size: 1.125rem;">🚚</span>
+                          </div>
+                          <div style="flex: 1;">
+                            <div style="font-size: 0.75rem; color: var(--razo-gray-warm); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; margin-bottom: 0.25rem;">Envío a</div>
+                            <div style="font-weight: 600; color: var(--razo-gray-dark);">${p.direccion.receptor}</div>
+                            <div style="font-size: 0.875rem; color: var(--razo-gray-warm);">${p.direccion.ciudad}, ${p.direccion.estado}</div>
+                          </div>
+                        </div>
+                        
+                        ${p.agente ? `
+                        <!-- Agente -->
+                        <div style="display: flex; align-items: start; gap: 0.75rem;">
+                          <div style="background: var(--razo-blue-light); color: var(--razo-blue); padding: 0.5rem; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center; min-width: 2.5rem; height: 2.5rem;">
+                            <span style="font-size: 1.125rem;">👤</span>
+                          </div>
+                          <div style="flex: 1;">
+                            <div style="font-size: 0.75rem; color: var(--razo-gray-warm); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; margin-bottom: 0.25rem;">Agente</div>
+                            <div style="font-weight: 600; color: var(--razo-gray-dark);">${p.agente.nombre} ${p.agente.apellido}</div>
+                            <div style="font-size: 0.875rem; color: var(--razo-gray-warm);">Código: ${p.agente.codigoAgente}</div>
+                          </div>
+                        </div>
+                        ` : ''}
                       </div>
-                    ` : ''}
-                    <div style="display: flex; justify-content: space-between; font-size: 1.125rem; font-weight: 700; color: var(--primary-color);">
-                      <span>Total:</span>
-                      <span>${formatCurrency(p.montoTotal)}</span>
+
+                      <!-- Total -->
+                      <div style="background: linear-gradient(135deg, var(--razo-orange-light) 0%, var(--razo-orange) 100%); padding: 1rem 1.5rem; border-radius: 0.75rem; display: flex; justify-content: space-between; align-items: center;">
+                        <span style="color: white; font-weight: 700; font-size: 1.125rem;">Total del Pedido</span>
+                        <span style="color: white; font-weight: 700; font-size: 1.5rem;">${formatCurrency(p.montoTotal)}</span>
+                      </div>
                     </div>
                   </div>
                 </div>

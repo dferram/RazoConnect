@@ -155,7 +155,8 @@
 
           if (clientResponse.ok && clientData.success) {
             // Es un cliente - Login exitoso
-            saveAuthData(clientData.data.token, clientData.data.usuario);
+            localStorage.setItem('razoconnect_token', clientData.data.token);
+            localStorage.setItem('razoconnect_user', JSON.stringify(clientData.data.usuario));
             showToast('¡Inicio de sesión exitoso!', 'success');
             setTimeout(() => {
               window.location.href = '/catalogo.html';
