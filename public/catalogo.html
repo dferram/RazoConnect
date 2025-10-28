@@ -79,40 +79,54 @@
 
     // Render product card
     function renderProductCard(producto) {
-      const imageSrc = producto.imagenPrincipal?.url || 'https://via.placeholder.com/300x200?text=Sin+Imagen';
-      const imageAlt = producto.imagenPrincipal?.alt || producto.nombreProducto;
+      // Placeholder con gradiente y emoji según categoría
+      const categoriaEmojis = {
+        'Ropa Dama': '👗',
+        'Ropa Caballero': '👔',
+        'Accesorios': '👜',
+        'Calzado': '👟',
+        'Infantil': '👶'
+      };
+      
+      const emoji = categoriaEmojis[producto.categoria?.nombre] || '📦';
       const stockStatus = producto.stock > 0 ? 
         `<span style="color: var(--success-color);">✓ En stock (${producto.stock})</span>` : 
         `<span style="color: var(--danger-color);">✗ Sin stock</span>`;
 
       return `
         <div class="product-card" onclick="window.location.href='/producto-detalle.html?id=${producto.productoId}'">
-          <img src="${imageSrc}" alt="${imageAlt}" class="product-image">
+          <div class="product-image" style="background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%); display: flex; align-items: center; justify-content: center; font-size: 5rem; height: 200px;">
+            ${emoji}
+          </div>
           <div class="product-info">
-            <div style="margin-bottom: 0.5rem;">
-              <span style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase;">
-                ${producto.categoria?.nombre || 'Sin categoría'}
-              </span>
+            <div>
+              <div style="margin-bottom: 0.5rem;">
+                <span style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase;">
+                  ${producto.categoria?.nombre || 'Sin categoría'}
+                </span>
+              </div>
+              <h3 class="product-title">${producto.nombreProducto}</h3>
+              <p style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.5rem;">
+                SKU: ${producto.sku}
+              </p>
+              <div class="product-price">${formatCurrency(producto.precioPaquete)}</div>
+              <div class="product-details">
+                ${producto.piezasPorPaquete} piezas por paquete<br>
+                ${producto.dimensiones || 'Sin dimensiones'}
+              </div>
+              <div style="margin-top: 0.75rem; font-size: 0.875rem;">
+                ${stockStatus}
+              </div>
             </div>
-            <h3 class="product-title">${producto.nombreProducto}</h3>
-            <p style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.5rem;">
-              SKU: ${producto.sku}
-            </p>
-            <div class="product-price">${formatCurrency(producto.precioPaquete)}</div>
-            <div class="product-details">
-              ${producto.piezasPorPaquete} piezas por paquete<br>
-              ${producto.dimensiones || 'Sin dimensiones'}
+            <div style="margin-top: auto; padding-top: 1rem;">
+              <button 
+                class="btn btn-primary btn-block" 
+                onclick="event.stopPropagation(); goToProduct(${producto.productoId})"
+                ${producto.stock === 0 ? 'disabled' : ''}
+              >
+                ${producto.stock > 0 ? 'Ver Detalles' : 'Sin Stock'}
+              </button>
             </div>
-            <div style="margin-top: 0.75rem; font-size: 0.875rem;">
-              ${stockStatus}
-            </div>
-            <button 
-              class="btn btn-primary btn-block mt-2" 
-              onclick="event.stopPropagation(); goToProduct(${producto.productoId})"
-              ${producto.stock === 0 ? 'disabled' : ''}
-            >
-              ${producto.stock > 0 ? 'Ver Detalles' : 'Sin Stock'}
-            </button>
           </div>
         </div>
       `;

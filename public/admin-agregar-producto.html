@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agregar Producto - Admin RazoConnect</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+  <div class="admin-layout">
+    <!-- Sidebar -->
+    <aside class="admin-sidebar">
+      <div class="admin-brand">
+        <a href="/admin-dashboard.html" class="admin-brand-logo">
+          📦 RazoConnect
+        </a>
+        <div class="admin-brand-subtitle">Panel Admin</div>
+      </div>
+
+      <nav class="admin-nav">
+        <div class="admin-nav-section">
+          <div class="admin-nav-title">Principal</div>
+          <a href="/admin-dashboard.html" class="admin-nav-link">
+            <span class="admin-nav-icon">📊</span>
+            <span>Dashboard</span>
+          </a>
+        </div>
+
+        <div class="admin-nav-section">
+          <div class="admin-nav-title">Gestión</div>
+          <a href="/admin-pedidos.html" class="admin-nav-link">
+            <span class="admin-nav-icon">📦</span>
+            <span>Pedidos</span>
+          </a>
+          <a href="/admin-agregar-producto.html" class="admin-nav-link active">
+            <span class="admin-nav-icon">🎁</span>
+            <span>Productos</span>
+          </a>
+          <a href="#" class="admin-nav-link" data-module="clientes">
+            <span class="admin-nav-icon">👥</span>
+            <span>Clientes</span>
+          </a>
+          <a href="/admin-agentes.html" class="admin-nav-link">
+            <span class="admin-nav-icon">💼</span>
+            <span>Agentes</span>
+          </a>
+        </div>
+
+        <div class="admin-nav-section">
+          <div class="admin-nav-title">Financiero</div>
+          <a href="/admin-comisiones.html" class="admin-nav-link">
+            <span class="admin-nav-icon">💰</span>
+            <span>Comisiones</span>
+          </a>
+          <a href="/admin-inventario.html" class="admin-nav-link">
+            <span class="admin-nav-icon">📈</span>
+            <span>Inventario</span>
+          </a>
+        </div>
+
+        <div class="admin-nav-section">
+          <div class="admin-nav-title">Configuración</div>
+          <a href="#" class="admin-nav-link" data-module="configuracion">
+            <span class="admin-nav-icon">⚙️</span>
+            <span>Configuración</span>
+          </a>
+        </div>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="admin-main">
+      <header class="admin-header">
+        <h1 class="admin-header-title">Agregar Nuevo Producto</h1>
+        
+        <div class="admin-header-actions">
+          <div class="admin-user-info">
+            <div class="admin-user-avatar" id="userAvatar">A</div>
+            <div class="admin-user-details">
+              <div class="admin-user-name" id="userName">Administrador</div>
+              <div class="admin-user-role" id="userRole">Admin</div>
+            </div>
+          </div>
+          <button class="admin-logout-btn" id="logoutBtn">Cerrar Sesión</button>
+        </div>
+      </header>
+
+      <div class="admin-content">
+        <div class="admin-table-container">
+          <div class="admin-table-header">
+            <h2 class="admin-table-title">Información del Producto</h2>
+          </div>
+
+          <form id="productoForm" style="padding: 1.5rem;">
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem;">
+              <!-- SKU -->
+              <div class="form-group">
+                <label for="sku" class="form-label">SKU * <span style="font-size: 0.875rem; color: var(--razo-gray-warm);">(Código único)</span></label>
+                <input 
+                  type="text" 
+                  id="sku" 
+                  class="form-input" 
+                  placeholder="Ej: CAJA-FASHION-001"
+                  required
+                >
+              </div>
+
+              <!-- Nombre -->
+              <div class="form-group">
+                <label for="nombre" class="form-label">Nombre del Producto *</label>
+                <input 
+                  type="text" 
+                  id="nombre" 
+                  class="form-input" 
+                  placeholder="Ej: Caja Fashion Premium"
+                  required
+                >
+              </div>
+
+              <!-- Descripción (full width) -->
+              <div class="form-group" style="grid-column: 1 / -1;">
+                <label for="descripcion" class="form-label">Descripción</label>
+                <textarea 
+                  id="descripcion" 
+                  class="form-input" 
+                  rows="3"
+                  placeholder="Describe las características del producto..."
+                ></textarea>
+              </div>
+
+              <!-- Costo Unitario -->
+              <div class="form-group">
+                <label for="costoUnitario" class="form-label">Costo Unitario * <span style="font-size: 0.875rem; color: var(--razo-gray-warm);">(MXN)</span></label>
+                <input 
+                  type="number" 
+                  id="costoUnitario" 
+                  class="form-input" 
+                  placeholder="0.00"
+                  step="0.01"
+                  min="0"
+                  required
+                >
+              </div>
+
+              <!-- Piezas por Paquete -->
+              <div class="form-group">
+                <label for="piezasPorPaquete" class="form-label">Piezas por Paquete *</label>
+                <input 
+                  type="number" 
+                  id="piezasPorPaquete" 
+                  class="form-input" 
+                  placeholder="12"
+                  min="1"
+                  required
+                >
+              </div>
+
+              <!-- Precio de Paquete -->
+              <div class="form-group">
+                <label for="precioPaquete" class="form-label">Precio por Paquete * <span style="font-size: 0.875rem; color: var(--razo-gray-warm);">(MXN)</span></label>
+                <input 
+                  type="number" 
+                  id="precioPaquete" 
+                  class="form-input" 
+                  placeholder="0.00"
+                  step="0.01"
+                  min="0"
+                  required
+                >
+              </div>
+
+              <!-- Stock Inicial -->
+              <div class="form-group">
+                <label for="stock" class="form-label">Stock Inicial * <span style="font-size: 0.875rem; color: var(--razo-gray-warm);">(paquetes)</span></label>
+                <input 
+                  type="number" 
+                  id="stock" 
+                  class="form-input" 
+                  placeholder="100"
+                  min="0"
+                  required
+                >
+              </div>
+
+              <!-- Categoría -->
+              <div class="form-group">
+                <label for="categoriaId" class="form-label">Categoría</label>
+                <select id="categoriaId" class="form-input">
+                  <option value="">Sin categoría</option>
+                </select>
+              </div>
+
+              <!-- URL de Imagen -->
+              <div class="form-group" style="grid-column: 1 / -1;">
+                <label for="imagenUrl" class="form-label">URL de Imagen</label>
+                <input 
+                  type="url" 
+                  id="imagenUrl" 
+                  class="form-input" 
+                  placeholder="https://ejemplo.com/imagen.jpg"
+                >
+              </div>
+            </div>
+
+            <!-- Cálculo de margen -->
+            <div class="alert alert-info" style="margin-top: 1.5rem; margin-bottom: 1.5rem;">
+              <strong>💡 Margen de Ganancia:</strong>
+              <div id="margenInfo" style="margin-top: 0.5rem;">
+                Complete los campos de costo y precio para ver el margen
+              </div>
+            </div>
+
+            <!-- Botones -->
+            <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem;">
+              <button type="button" class="btn btn-secondary" onclick="window.history.back()">
+                Cancelar
+              </button>
+              <button type="submit" class="btn btn-primary" id="submitBtn">
+                <span id="btnText">Guardar Producto</span>
+                <div class="spinner" id="btnSpinner" style="display: none;"></div>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script>
+    // Authentication check
+    const adminToken = localStorage.getItem('razoconnect_admin_token');
+    if (!adminToken) {
+      window.location.href = '/admin-login.html';
+    }
+
+    // Verify admin and load data
+    async function init() {
+      await verifyAndLoadAdmin();
+      await loadCategorias();
+    }
+
+    async function verifyAndLoadAdmin() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/admin/verify`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${adminToken}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) throw new Error('Invalid token');
+
+        const data = await response.json();
+        if (data.success) {
+          const admin = data.data.admin;
+          document.getElementById('userName').textContent = admin.nombre;
+          document.getElementById('userRole').textContent = admin.rol === 'superadmin' ? 'Super Admin' : 'Admin';
+          
+          const words = admin.nombre.split(' ');
+          const initials = words.length >= 2 
+            ? `${words[0].charAt(0)}${words[1].charAt(0)}` 
+            : admin.nombre.substring(0, 2);
+          document.getElementById('userAvatar').textContent = initials.toUpperCase();
+        }
+      } catch (error) {
+        console.error('Error verifying admin:', error);
+        localStorage.removeItem('razoconnect_admin_token');
+        localStorage.removeItem('razoconnect_admin');
+        window.location.href = '/admin-login.html';
+      }
+    }
+
+    // Load categorías
+    async function loadCategorias() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/admin/categorias`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${adminToken}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success) {
+            const select = document.getElementById('categoriaId');
+            data.data.categorias.forEach(cat => {
+              const option = document.createElement('option');
+              option.value = cat.categoriaId;
+              option.textContent = cat.nombre;
+              select.appendChild(option);
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Error loading categorías:', error);
+      }
+    }
+
+    // Calculate margin
+    function calcularMargen() {
+      const costoUnitario = parseFloat(document.getElementById('costoUnitario').value) || 0;
+      const piezasPorPaquete = parseInt(document.getElementById('piezasPorPaquete').value) || 0;
+      const precioPaquete = parseFloat(document.getElementById('precioPaquete').value) || 0;
+
+      if (costoUnitario > 0 && piezasPorPaquete > 0 && precioPaquete > 0) {
+        const costoTotal = costoUnitario * piezasPorPaquete;
+        const ganancia = precioPaquete - costoTotal;
+        const margenPorcentaje = ((ganancia / precioPaquete) * 100).toFixed(2);
+
+        const margenInfo = document.getElementById('margenInfo');
+        margenInfo.innerHTML = `
+          <div>Costo por paquete: <strong>$${costoTotal.toFixed(2)}</strong></div>
+          <div>Precio de venta: <strong>$${precioPaquete.toFixed(2)}</strong></div>
+          <div>Ganancia: <strong style="color: ${ganancia > 0 ? 'var(--success-color)' : 'var(--danger-color)'}">$${ganancia.toFixed(2)}</strong></div>
+          <div>Margen: <strong style="color: ${margenPorcentaje > 0 ? 'var(--success-color)' : 'var(--danger-color)'}>${margenPorcentaje}%</strong></div>
+        `;
+      }
+    }
+
+    // Add event listeners for margin calculation
+    ['costoUnitario', 'piezasPorPaquete', 'precioPaquete'].forEach(id => {
+      document.getElementById(id).addEventListener('input', calcularMargen);
+    });
+
+    // Handle form submission
+    document.getElementById('productoForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const submitBtn = document.getElementById('submitBtn');
+      const btnText = document.getElementById('btnText');
+      const btnSpinner = document.getElementById('btnSpinner');
+
+      try {
+        submitBtn.disabled = true;
+        btnText.style.display = 'none';
+        btnSpinner.style.display = 'block';
+
+        const formData = {
+          sku: document.getElementById('sku').value.trim(),
+          nombre: document.getElementById('nombre').value.trim(),
+          descripcion: document.getElementById('descripcion').value.trim() || null,
+          costoUnitario: parseFloat(document.getElementById('costoUnitario').value),
+          piezasPorPaquete: parseInt(document.getElementById('piezasPorPaquete').value),
+          precioPaquete: parseFloat(document.getElementById('precioPaquete').value),
+          stock: parseInt(document.getElementById('stock').value),
+          categoriaId: document.getElementById('categoriaId').value || null,
+          imagenUrl: document.getElementById('imagenUrl').value.trim() || null
+        };
+
+        const response = await fetch(`${API_BASE_URL}/admin/productos`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${adminToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(formData)
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+          showToast('Producto creado exitosamente', 'success');
+          setTimeout(() => {
+            window.location.href = '/admin-inventario.html';
+          }, 1500);
+        } else {
+          showToast(data.message || 'Error al crear producto', 'error');
+        }
+      } catch (error) {
+        console.error('Error creating product:', error);
+        showToast('Error al conectar con el servidor', 'error');
+      } finally {
+        submitBtn.disabled = false;
+        btnText.style.display = 'inline';
+        btnSpinner.style.display = 'none';
+      }
+    });
+
+    // Logout
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      localStorage.removeItem('razoconnect_admin_token');
+      localStorage.removeItem('razoconnect_admin');
+      showToast('Sesión cerrada', 'success');
+      setTimeout(() => {
+        window.location.href = '/admin-login.html';
+      }, 500);
+    });
+
+    // Navigation handling
+    const navLinks = document.querySelectorAll('.admin-nav-link[data-module]');
+    navLinks.forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const moduleName = link.querySelector('span:last-child').textContent;
+        showToast(`Módulo "${moduleName}" próximamente disponible`, 'info');
+      });
+    });
+
+    // Initialize
+    init();
+  </script>
+</body>
+</html>

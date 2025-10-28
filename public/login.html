@@ -19,7 +19,7 @@
   <div class="container">
     <div class="form-container">
       <h1 class="form-title">Iniciar Sesión</h1>
-      <p class="form-subtitle">Accede a tu cuenta de RazoConnect</p>
+      <p class="form-subtitle">Clientes y Administradores</p>
 
       <div id="alert" style="display: none;"></div>
 
@@ -75,6 +75,12 @@
     // Check if user is already logged in
     if (isAuthenticated()) {
       window.location.href = '/catalogo.html';
+    }
+    
+    // Check if admin is already logged in
+    const adminToken = localStorage.getItem('razoconnect_admin_token');
+    if (adminToken) {
+      window.location.href = '/admin-dashboard.html';
     }
 
     // Show alert message
@@ -135,23 +141,62 @@
       btnSpinner.style.display = 'block';
 
       try {
-        const response = await API.login(email, password);
+        let loginSuccessful = false;
 
-        if (response.ok && response.data.success) {
-          // Save auth data
-          saveAuthData(response.data.data.token, response.data.data.usuario);
-          
-          // Show success message
-          showToast('¡Inicio de sesión exitoso!', 'success');
-          
-          // Redirect to catalog
-          setTimeout(() => {
-            window.location.href = '/catalogo.html';
-          }, 500);
-        } else {
-          // Show error message
-          showAlert(response.data.message || 'Error al iniciar sesión', 'error');
+        // Primero intenta login como cliente
+        try {
+          const clientResponse = await fetch(`${API_BASE_URL}/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ Email: email, Password: password })
+          });
+
+          const clientData = await clientResponse.json();
+
+          if (clientResponse.ok && clientData.success) {
+            // Es un cliente - Login exitoso
+            saveAuthData(clientData.data.token, clientData.data.usuario);
+            showToast('¡Inicio de sesión exitoso!', 'success');
+            setTimeout(() => {
+              window.location.href = '/catalogo.html';
+            }, 500);
+            loginSuccessful = true;
+          }
+        } catch (clientError) {
+          console.log('No es cliente, intentando como admin...');
         }
+
+        // Si no es cliente, intenta como administrador
+        if (!loginSuccessful) {
+          try {
+            const adminResponse = await fetch(`${API_BASE_URL}/admin/login`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email, password })
+            });
+
+            const adminData = await adminResponse.json();
+
+            if (adminResponse.ok && adminData.success) {
+              // Es un administrador - Login exitoso
+              localStorage.setItem('razoconnect_admin_token', adminData.data.token);
+              localStorage.setItem('razoconnect_admin', JSON.stringify(adminData.data.admin));
+              showToast('¡Bienvenido Administrador!', 'success');
+              setTimeout(() => {
+                window.location.href = '/admin-dashboard.html';
+              }, 500);
+              loginSuccessful = true;
+            }
+          } catch (adminError) {
+            console.error('Admin login error:', adminError);
+          }
+        }
+
+        // Si ninguno funcionó
+        if (!loginSuccessful) {
+          showAlert('Credenciales inválidas. Verifica tu correo y contraseña.', 'error');
+        }
+
       } catch (error) {
         console.error('Login error:', error);
         showAlert('Error al conectar con el servidor. Intenta nuevamente.', 'error');

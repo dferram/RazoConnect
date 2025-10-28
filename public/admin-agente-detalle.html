@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Detalle del Agente - Admin RazoConnect</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+  <div class="admin-layout">
+    <!-- Sidebar -->
+    <aside class="admin-sidebar">
+      <div class="admin-brand">
+        <a href="/admin-dashboard.html" class="admin-brand-logo">📦 RazoConnect</a>
+        <div class="admin-brand-subtitle">Panel Admin</div>
+      </div>
+      <nav class="admin-nav">
+        <div class="admin-nav-section">
+          <div class="admin-nav-title">Principal</div>
+          <a href="/admin-dashboard.html" class="admin-nav-link"><span class="admin-nav-icon">📊</span><span>Dashboard</span></a>
+        </div>
+        <div class="admin-nav-section">
+          <div class="admin-nav-title">Gestión</div>
+          <a href="/admin-pedidos.html" class="admin-nav-link"><span class="admin-nav-icon">📦</span><span>Pedidos</span></a>
+          <a href="/admin-agregar-producto.html" class="admin-nav-link"><span class="admin-nav-icon">🎁</span><span>Productos</span></a>
+          <a href="#" class="admin-nav-link" data-module="clientes"><span class="admin-nav-icon">👥</span><span>Clientes</span></a>
+          <a href="/admin-agentes.html" class="admin-nav-link active"><span class="admin-nav-icon">💼</span><span>Agentes</span></a>
+        </div>
+        <div class="admin-nav-section">
+          <div class="admin-nav-title">Financiero</div>
+          <a href="/admin-comisiones.html" class="admin-nav-link"><span class="admin-nav-icon">💰</span><span>Comisiones</span></a>
+          <a href="/admin-inventario.html" class="admin-nav-link"><span class="admin-nav-icon">📈</span><span>Inventario</span></a>
+        </div>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="admin-main">
+      <header class="admin-header">
+        <h1 class="admin-header-title">Detalle del Agente</h1>
+        <div class="admin-header-actions">
+          <button class="btn btn-secondary" onclick="window.location.href='/admin-agentes.html'">← Volver a Agentes</button>
+          <div class="admin-user-info">
+            <div class="admin-user-avatar" id="userAvatar">A</div>
+            <div class="admin-user-details">
+              <div class="admin-user-name" id="userName">Administrador</div>
+              <div class="admin-user-role" id="userRole">Admin</div>
+            </div>
+          </div>
+          <button class="admin-logout-btn" id="logoutBtn">Cerrar Sesión</button>
+        </div>
+      </header>
+
+      <div class="admin-content">
+        <div id="loadingData" class="loading"><div class="spinner"></div></div>
+
+        <div id="agentData" style="display: none;">
+          <!-- Agent Profile -->
+          <div class="admin-stats-grid" style="margin-bottom: 2rem;">
+            <div class="admin-stat-card">
+              <div class="admin-stat-header">
+                <div class="admin-stat-content">
+                  <h3>Información del Agente</h3>
+                  <div style="margin-top: 1rem;">
+                    <p style="font-size: 1.5rem; font-weight: 700; color: var(--razo-orange);" id="agentName">-</p>
+                    <p style="color: var(--razo-gray-warm); margin: 0.5rem 0;"><strong>Email:</strong> <span id="agentEmail">-</span></p>
+                    <p style="color: var(--razo-gray-warm); margin: 0.5rem 0;"><strong>Código:</strong> <span id="agentCode">-</span></p>
+                    <p style="color: var(--razo-gray-warm); margin: 0.5rem 0;"><strong>Teléfono:</strong> <span id="agentPhone">-</span></p>
+                    <p style="margin: 0.5rem 0;"><span class="admin-badge" id="agentStatus">-</span></p>
+                  </div>
+                </div>
+                <div class="admin-stat-icon purple">💼</div>
+              </div>
+            </div>
+
+            <div class="admin-stat-card">
+              <div class="admin-stat-header">
+                <div class="admin-stat-content">
+                  <h3>Estadísticas de Ventas</h3>
+                  <div class="admin-stat-value" id="totalVentas">0</div>
+                  <p style="color: var(--razo-gray-warm);">Ventas totales</p>
+                </div>
+                <div class="admin-stat-icon orange">📦</div>
+              </div>
+            </div>
+
+            <div class="admin-stat-card">
+              <div class="admin-stat-header">
+                <div class="admin-stat-content">
+                  <h3>Comisiones Totales</h3>
+                  <div class="admin-stat-value" id="totalComisiones">$0</div>
+                  <p style="color: var(--razo-gray-warm);">Acumuladas</p>
+                </div>
+                <div class="admin-stat-icon green">💰</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Ventas -->
+          <div class="admin-table-container" style="margin-bottom: 2rem;">
+            <div class="admin-table-header">
+              <h2 class="admin-table-title">Ventas Realizadas</h2>
+            </div>
+            <div style="overflow-x: auto;">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>#Pedido</th>
+                    <th>Cliente</th>
+                    <th>Fecha</th>
+                    <th>Monto</th>
+                    <th>Estado</th>
+                  </tr>
+                </thead>
+                <tbody id="ventasTableBody"></tbody>
+              </table>
+            </div>
+            <div id="emptyVentas" class="empty-state" style="display: none;">
+              <p>No hay ventas registradas</p>
+            </div>
+          </div>
+
+          <!-- Comisiones -->
+          <div class="admin-table-container">
+            <div class="admin-table-header">
+              <h2 class="admin-table-title">Comisiones del Agente</h2>
+            </div>
+            <div style="overflow-x: auto;">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>#Comisión</th>
+                    <th>#Pedido</th>
+                    <th>Monto</th>
+                    <th>Estado</th>
+                    <th>Fecha Generación</th>
+                    <th>Fecha Pago</th>
+                  </tr>
+                </thead>
+                <tbody id="comisionesTableBody"></tbody>
+              </table>
+            </div>
+            <div id="emptyComisiones" class="empty-state" style="display: none;">
+              <p>No hay comisiones registradas</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script>
+    const adminToken = localStorage.getItem('razoconnect_admin_token');
+    if (!adminToken) window.location.href = '/admin-login.html';
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const agenteId = urlParams.get('id');
+    
+    if (!agenteId) {
+      showToast('ID de agente no especificado', 'error');
+      setTimeout(() => window.location.href = '/admin-agentes.html', 1500);
+    }
+
+    async function init() {
+      await verifyAndLoadAdmin();
+      await loadAgenteDetalle();
+    }
+
+    async function verifyAndLoadAdmin() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/admin/verify`, {
+          headers: { 'Authorization': `Bearer ${adminToken}`, 'Content-Type': 'application/json' }
+        });
+        if (!response.ok) throw new Error('Invalid token');
+        const data = await response.json();
+        if (data.success) {
+          const admin = data.data.admin;
+          document.getElementById('userName').textContent = admin.nombre;
+          document.getElementById('userRole').textContent = admin.rol === 'superadmin' ? 'Super Admin' : 'Admin';
+          const words = admin.nombre.split(' ');
+          const initials = words.length >= 2 ? `${words[0].charAt(0)}${words[1].charAt(0)}` : admin.nombre.substring(0, 2);
+          document.getElementById('userAvatar').textContent = initials.toUpperCase();
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        localStorage.removeItem('razoconnect_admin_token');
+        window.location.href = '/admin-login.html';
+      }
+    }
+
+    async function loadAgenteDetalle() {
+      const loading = document.getElementById('loadingData');
+      const agentData = document.getElementById('agentData');
+
+      try {
+        loading.style.display = 'flex';
+        
+        const response = await fetch(`${API_BASE_URL}/admin/agentes/${agenteId}`, {
+          headers: { 'Authorization': `Bearer ${adminToken}`, 'Content-Type': 'application/json' }
+        });
+        
+        if (!response.ok) throw new Error('Agente no encontrado');
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          const { agente, ventas, comisiones } = data.data;
+          
+          // Perfil
+          document.getElementById('agentName').textContent = `${agente.nombre} ${agente.apellido}`;
+          document.getElementById('agentEmail').textContent = agente.email;
+          document.getElementById('agentCode').textContent = agente.codigoAgente;
+          document.getElementById('agentPhone').textContent = agente.telefono || 'No registrado';
+          
+          const statusBadge = document.getElementById('agentStatus');
+          statusBadge.textContent = agente.activo ? 'Activo' : 'Inactivo';
+          statusBadge.className = `admin-badge ${agente.activo ? 'success' : 'danger'}`;
+          
+          // Estadísticas
+          document.getElementById('totalVentas').textContent = ventas.length;
+          const totalComisiones = comisiones.reduce((sum, c) => sum + c.montoComision, 0);
+          document.getElementById('totalComisiones').textContent = `$${totalComisiones.toLocaleString()}`;
+          
+          // Ventas
+          const ventasBody = document.getElementById('ventasTableBody');
+          const emptyVentas = document.getElementById('emptyVentas');
+          if (ventas.length > 0) {
+            ventasBody.innerHTML = ventas.map(v => {
+              let badge = 'info';
+              if (v.estatus === 'Confirmado') badge = 'success';
+              else if (v.estatus === 'Enviado') badge = 'warning';
+              else if (v.estatus === 'Entregado') badge = 'success';
+              
+              return `
+                <tr>
+                  <td><strong>#${v.pedidoId}</strong></td>
+                  <td>${v.clienteNombre}</td>
+                  <td>${new Date(v.fechaPedido).toLocaleDateString('es-MX')}</td>
+                  <td><strong>$${v.montoTotal.toLocaleString()}</strong></td>
+                  <td><span class="admin-badge ${badge}">${v.estatus}</span></td>
+                </tr>
+              `;
+            }).join('');
+          } else {
+            emptyVentas.style.display = 'block';
+          }
+          
+          // Comisiones
+          const comisionesBody = document.getElementById('comisionesTableBody');
+          const emptyComisiones = document.getElementById('emptyComisiones');
+          if (comisiones.length > 0) {
+            comisionesBody.innerHTML = comisiones.map(c => `
+              <tr>
+                <td><strong>#${c.comisionId}</strong></td>
+                <td>#${c.pedidoId}</td>
+                <td><strong style="color: var(--success-color)">$${c.montoComision.toLocaleString()}</strong></td>
+                <td><span class="admin-badge ${c.estatus === 'Pagada' ? 'success' : 'warning'}">${c.estatus}</span></td>
+                <td>${new Date(c.fechaGeneracion).toLocaleDateString('es-MX')}</td>
+                <td>${c.fechaPago ? new Date(c.fechaPago).toLocaleDateString('es-MX') : '-'}</td>
+              </tr>
+            `).join('');
+          } else {
+            emptyComisiones.style.display = 'block';
+          }
+          
+          agentData.style.display = 'block';
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        showToast('Error al cargar datos del agente', 'error');
+        setTimeout(() => window.location.href = '/admin-agentes.html', 2000);
+      } finally {
+        loading.style.display = 'none';
+      }
+    }
+
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      localStorage.removeItem('razoconnect_admin_token');
+      window.location.href = '/admin-login.html';
+    });
+
+    init();
+  </script>
+</body>
+</html>

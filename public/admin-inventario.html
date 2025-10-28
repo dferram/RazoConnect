@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestión de Inventario - Admin RazoConnect</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+  <div class="admin-layout">
+    <!-- Sidebar -->
+    <aside class="admin-sidebar">
+      <div class="admin-brand">
+        <a href="/admin-dashboard.html" class="admin-brand-logo">
+          📦 RazoConnect
+        </a>
+        <div class="admin-brand-subtitle">Panel Admin</div>
+      </div>
+
+      <nav class="admin-nav">
+        <div class="admin-nav-section">
+          <div class="admin-nav-title">Principal</div>
+          <a href="/admin-dashboard.html" class="admin-nav-link">
+            <span class="admin-nav-icon">📊</span>
+            <span>Dashboard</span>
+          </a>
+        </div>
+
+        <div class="admin-nav-section">
+          <div class="admin-nav-title">Gestión</div>
+          <a href="/admin-pedidos.html" class="admin-nav-link">
+            <span class="admin-nav-icon">📦</span>
+            <span>Pedidos</span>
+          </a>
+          <a href="/admin-agregar-producto.html" class="admin-nav-link">
+            <span class="admin-nav-icon">🎁</span>
+            <span>Productos</span>
+          </a>
+          <a href="#" class="admin-nav-link" data-module="clientes">
+            <span class="admin-nav-icon">👥</span>
+            <span>Clientes</span>
+          </a>
+          <a href="/admin-agentes.html" class="admin-nav-link">
+            <span class="admin-nav-icon">💼</span>
+            <span>Agentes</span>
+          </a>
+        </div>
+
+        <div class="admin-nav-section">
+          <div class="admin-nav-title">Financiero</div>
+          <a href="/admin-comisiones.html" class="admin-nav-link">
+            <span class="admin-nav-icon">💰</span>
+            <span>Comisiones</span>
+          </a>
+          <a href="/admin-inventario.html" class="admin-nav-link active">
+            <span class="admin-nav-icon">📈</span>
+            <span>Inventario</span>
+          </a>
+        </div>
+
+        <div class="admin-nav-section">
+          <div class="admin-nav-title">Configuración</div>
+          <a href="#" class="admin-nav-link" data-module="configuracion">
+            <span class="admin-nav-icon">⚙️</span>
+            <span>Configuración</span>
+          </a>
+        </div>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="admin-main">
+      <header class="admin-header">
+        <h1 class="admin-header-title">Gestión de Inventario</h1>
+        
+        <div class="admin-header-actions">
+          <button class="btn btn-primary" onclick="window.location.href='/admin-agregar-producto.html'">
+            + Agregar Producto
+          </button>
+          <div class="admin-user-info">
+            <div class="admin-user-avatar" id="userAvatar">A</div>
+            <div class="admin-user-details">
+              <div class="admin-user-name" id="userName">Administrador</div>
+              <div class="admin-user-role" id="userRole">Admin</div>
+            </div>
+          </div>
+          <button class="admin-logout-btn" id="logoutBtn">Cerrar Sesión</button>
+        </div>
+      </header>
+
+      <div class="admin-content">
+        <!-- Products Table -->
+        <div class="admin-table-container">
+          <div class="admin-table-header">
+            <h2 class="admin-table-title">Productos en Inventario</h2>
+            <div style="display: flex; gap: 1rem;">
+              <input 
+                type="text" 
+                id="searchInput" 
+                placeholder="Buscar producto..." 
+                style="padding: 0.5rem 1rem; border: 2px solid var(--razo-gray-light); border-radius: 0.5rem; font-family: 'Inter', sans-serif; width: 250px;"
+              >
+              <button class="btn btn-secondary" onclick="loadProductos()" style="padding: 0.5rem 1.5rem;">
+                🔄 Actualizar
+              </button>
+            </div>
+          </div>
+
+          <div id="loadingProducts" class="loading">
+            <div class="spinner"></div>
+          </div>
+
+          <div style="overflow-x: auto;">
+            <table class="admin-table" id="productsTable" style="display: none;">
+              <thead>
+                <tr>
+                  <th>SKU</th>
+                  <th>Producto</th>
+                  <th>Precio/Paquete</th>
+                  <th>Piezas/Paquete</th>
+                  <th>Stock</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="productsTableBody">
+                <!-- Products will be loaded here -->
+              </tbody>
+            </table>
+          </div>
+
+          <div id="emptyProducts" class="empty-state" style="display: none;">
+            <div class="empty-state-icon">📦</div>
+            <h3 class="empty-state-title">No hay productos</h3>
+            <p class="empty-state-text">Comienza agregando tu primer producto</p>
+            <button class="btn btn-primary" onclick="window.location.href='/admin-agregar-producto.html'">
+              + Agregar Producto
+            </button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal para ajustar stock -->
+  <div id="ajusteModal" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 500px;">
+      <div class="modal-header">
+        <h2>Ajustar Stock</h2>
+        <button class="modal-close" onclick="closeAjusteModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="margin-bottom: 1rem;">
+          <strong><span id="modalProductoNombre"></span></strong><br>
+          <span style="color: var(--razo-gray-warm);">SKU: <span id="modalProductoSku"></span></span><br>
+          <span style="color: var(--razo-gray-warm);">Stock actual: <strong id="modalStockActual">0</strong> paquetes</span>
+        </p>
+        
+        <div class="form-group">
+          <label class="form-label">Tipo de Ajuste:</label>
+          <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+            <button 
+              class="btn btn-success" 
+              id="btnEntrada"
+              onclick="setTipoAjuste('entrada')"
+              style="flex: 1; padding: 0.75rem;">
+              ➕ Entrada
+            </button>
+            <button 
+              class="btn btn-danger" 
+              id="btnSalida"
+              onclick="setTipoAjuste('salida')"
+              style="flex: 1; padding: 0.75rem;">
+              ➖ Salida
+            </button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="modalCantidad" class="form-label">Cantidad (paquetes):</label>
+          <input 
+            type="number" 
+            id="modalCantidad" 
+            class="form-input" 
+            placeholder="0"
+            min="1"
+            required
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="modalMotivo" class="form-label">Motivo del Ajuste:</label>
+          <select id="modalMotivo" class="form-input">
+            <option value="">Seleccionar motivo...</option>
+            <option value="Recepción de Almacén">Recepción de Almacén</option>
+            <option value="Ajuste de Inventario">Ajuste de Inventario</option>
+            <option value="Devolución de Cliente">Devolución de Cliente</option>
+            <option value="Producto Dañado">Producto Dañado</option>
+            <option value="Merma">Merma</option>
+            <option value="Otro">Otro</option>
+          </select>
+        </div>
+
+        <div class="form-group" id="motivoOtroGroup" style="display: none;">
+          <label for="modalMotivoOtro" class="form-label">Especificar Motivo:</label>
+          <input 
+            type="text" 
+            id="modalMotivoOtro" 
+            class="form-input" 
+            placeholder="Describe el motivo..."
+          >
+        </div>
+
+        <div class="alert alert-info" style="font-size: 0.875rem;">
+          <strong>ℹ️ Nota:</strong> Este ajuste se registrará en el log de inventario con tu ID de administrador.
+        </div>
+
+        <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+          <button class="btn btn-primary" onclick="realizarAjuste()" id="btnConfirmarAjuste" style="flex: 1;">
+            <span id="btnAjusteText">Confirmar Ajuste</span>
+            <div class="spinner" id="btnAjusteSpinner" style="display: none;"></div>
+          </button>
+          <button class="btn btn-secondary" onclick="closeAjusteModal()" style="flex: 1;">
+            Cancelar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script>
+    // Authentication check
+    const adminToken = localStorage.getItem('razoconnect_admin_token');
+    if (!adminToken) {
+      window.location.href = '/admin-login.html';
+    }
+
+    let allProducts = [];
+    let selectedProduct = null;
+    let tipoAjuste = null; // 'entrada' o 'salida'
+
+    // Verify admin
+    async function verifyAndLoadAdmin() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/admin/verify`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${adminToken}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) throw new Error('Invalid token');
+
+        const data = await response.json();
+        if (data.success) {
+          const admin = data.data.admin;
+          document.getElementById('userName').textContent = admin.nombre;
+          document.getElementById('userRole').textContent = admin.rol === 'superadmin' ? 'Super Admin' : 'Admin';
+          
+          const words = admin.nombre.split(' ');
+          const initials = words.length >= 2 
+            ? `${words[0].charAt(0)}${words[1].charAt(0)}` 
+            : admin.nombre.substring(0, 2);
+          document.getElementById('userAvatar').textContent = initials.toUpperCase();
+        }
+      } catch (error) {
+        console.error('Error verifying admin:', error);
+        localStorage.removeItem('razoconnect_admin_token');
+        localStorage.removeItem('razoconnect_admin');
+        window.location.href = '/admin-login.html';
+      }
+    }
+
+    // Load products
+    async function loadProductos() {
+      const loadingProducts = document.getElementById('loadingProducts');
+      const productsTable = document.getElementById('productsTable');
+      const emptyProducts = document.getElementById('emptyProducts');
+      const productsTableBody = document.getElementById('productsTableBody');
+
+      try {
+        loadingProducts.style.display = 'flex';
+        productsTable.style.display = 'none';
+        emptyProducts.style.display = 'none';
+
+        const response = await fetch(`${API_BASE_URL}/admin/productos`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${adminToken}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Error al cargar productos');
+        }
+
+        const data = await response.json();
+        if (data.success) {
+          allProducts = data.data.productos;
+          renderProducts(allProducts);
+        }
+      } catch (error) {
+        console.error('Error loading products:', error);
+        showToast('Error al cargar productos', 'error');
+        emptyProducts.style.display = 'block';
+      } finally {
+        loadingProducts.style.display = 'none';
+      }
+    }
+
+    // Render products
+    function renderProducts(products) {
+      const productsTableBody = document.getElementById('productsTableBody');
+      const productsTable = document.getElementById('productsTable');
+      const emptyProducts = document.getElementById('emptyProducts');
+
+      if (products.length === 0) {
+        emptyProducts.style.display = 'block';
+        return;
+      }
+
+      productsTableBody.innerHTML = products.map(product => {
+        let stockBadge = 'success';
+        let stockText = 'Normal';
+        if (product.stock === 0) {
+          stockBadge = 'danger';
+          stockText = 'Sin Stock';
+        } else if (product.stock <= 5) {
+          stockBadge = 'warning';
+          stockText = 'Stock Bajo';
+        }
+
+        return `
+          <tr>
+            <td><strong>${product.sku}</strong></td>
+            <td>
+              <div style="font-weight: 600;">${product.nombre}</div>
+              <div style="font-size: 0.875rem; color: var(--razo-gray-warm);">${product.categoriaNombre || 'Sin categoría'}</div>
+            </td>
+            <td><strong>${formatCurrency(product.precioPaquete)}</strong></td>
+            <td>${product.piezasPorPaquete} pzas</td>
+            <td>
+              <div style="font-size: 1.25rem; font-weight: 700; color: var(--razo-orange);">
+                ${product.stock}
+              </div>
+            </td>
+            <td><span class="admin-badge ${stockBadge}">${stockText}</span></td>
+            <td>
+              <button 
+                class="btn btn-primary" 
+                style="padding: 0.5rem 1rem; font-size: 0.875rem;"
+                onclick='openAjusteModal(${JSON.stringify(product)})'>
+                Ajustar Stock
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+      
+      productsTable.style.display = 'table';
+    }
+
+    // Format currency
+    function formatCurrency(amount) {
+      return new Intl.NumberFormat('es-MX', {
+        style: 'currency',
+        currency: 'MXN'
+      }).format(amount || 0);
+    }
+
+    // Search filter
+    document.getElementById('searchInput').addEventListener('input', (e) => {
+      const searchTerm = e.target.value.toLowerCase();
+      const filtered = allProducts.filter(p => 
+        p.nombre.toLowerCase().includes(searchTerm) ||
+        p.sku.toLowerCase().includes(searchTerm)
+      );
+      renderProducts(filtered);
+    });
+
+    // Open ajuste modal
+    function openAjusteModal(product) {
+      selectedProduct = product;
+      tipoAjuste = null;
+      
+      document.getElementById('modalProductoNombre').textContent = product.nombre;
+      document.getElementById('modalProductoSku').textContent = product.sku;
+      document.getElementById('modalStockActual').textContent = product.stock;
+      document.getElementById('modalCantidad').value = '';
+      document.getElementById('modalMotivo').value = '';
+      document.getElementById('modalMotivoOtro').value = '';
+      document.getElementById('motivoOtroGroup').style.display = 'none';
+      
+      // Reset buttons
+      document.getElementById('btnEntrada').style.opacity = '0.6';
+      document.getElementById('btnSalida').style.opacity = '0.6';
+      
+      document.getElementById('ajusteModal').style.display = 'flex';
+    }
+
+    // Close ajuste modal
+    function closeAjusteModal() {
+      document.getElementById('ajusteModal').style.display = 'none';
+      selectedProduct = null;
+      tipoAjuste = null;
+    }
+
+    // Set tipo de ajuste
+    function setTipoAjuste(tipo) {
+      tipoAjuste = tipo;
+      
+      // Visual feedback
+      document.getElementById('btnEntrada').style.opacity = tipo === 'entrada' ? '1' : '0.6';
+      document.getElementById('btnSalida').style.opacity = tipo === 'salida' ? '1' : '0.6';
+    }
+
+    // Handle motivo change
+    document.getElementById('modalMotivo').addEventListener('change', (e) => {
+      const motivoOtroGroup = document.getElementById('motivoOtroGroup');
+      motivoOtroGroup.style.display = e.target.value === 'Otro' ? 'block' : 'none';
+    });
+
+    // Realizar ajuste
+    async function realizarAjuste() {
+      if (!selectedProduct || !tipoAjuste) {
+        showToast('Por favor selecciona el tipo de ajuste (Entrada o Salida)', 'warning');
+        return;
+      }
+
+      const cantidad = parseInt(document.getElementById('modalCantidad').value);
+      const motivoSelect = document.getElementById('modalMotivo').value;
+      const motivoOtro = document.getElementById('modalMotivoOtro').value;
+
+      if (!cantidad || cantidad <= 0) {
+        showToast('Ingresa una cantidad válida', 'warning');
+        return;
+      }
+
+      if (!motivoSelect) {
+        showToast('Selecciona un motivo', 'warning');
+        return;
+      }
+
+      if (motivoSelect === 'Otro' && !motivoOtro.trim()) {
+        showToast('Especifica el motivo', 'warning');
+        return;
+      }
+
+      const motivo = motivoSelect === 'Otro' ? motivoOtro : motivoSelect;
+      const cantidadCambio = tipoAjuste === 'entrada' ? cantidad : -cantidad;
+
+      const btnConfirmar = document.getElementById('btnConfirmarAjuste');
+      const btnText = document.getElementById('btnAjusteText');
+      const btnSpinner = document.getElementById('btnAjusteSpinner');
+
+      try {
+        btnConfirmar.disabled = true;
+        btnText.style.display = 'none';
+        btnSpinner.style.display = 'block';
+
+        const response = await fetch(`${API_BASE_URL}/admin/inventario/ajuste`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${adminToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            productoId: selectedProduct.productoId,
+            cantidadCambio,
+            motivo
+          })
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+          showToast(`Stock ajustado: ${data.data.stockAnterior} → ${data.data.stockNuevo}`, 'success');
+          closeAjusteModal();
+          loadProductos();
+        } else {
+          showToast(data.message || 'Error al ajustar inventario', 'error');
+        }
+      } catch (error) {
+        console.error('Error adjusting inventory:', error);
+        showToast('Error al conectar con el servidor', 'error');
+      } finally {
+        btnConfirmar.disabled = false;
+        btnText.style.display = 'inline';
+        btnSpinner.style.display = 'none';
+      }
+    }
+
+    // Logout
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      localStorage.removeItem('razoconnect_admin_token');
+      localStorage.removeItem('razoconnect_admin');
+      showToast('Sesión cerrada', 'success');
+      setTimeout(() => {
+        window.location.href = '/admin-login.html';
+      }, 500);
+    });
+
+    // Navigation handling
+    const navLinks = document.querySelectorAll('.admin-nav-link[data-module]');
+    navLinks.forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const moduleName = link.querySelector('span:last-child').textContent;
+        showToast(`Módulo "${moduleName}" próximamente disponible`, 'info');
+      });
+    });
+
+    // Close modal when clicking outside
+    window.onclick = function(event) {
+      const modal = document.getElementById('ajusteModal');
+      if (event.target == modal) {
+        closeAjusteModal();
+      }
+    }
+
+    // Initialize
+    verifyAndLoadAdmin();
+    loadProductos();
+  </script>
+</body>
+</html>

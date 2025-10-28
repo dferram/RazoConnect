@@ -60,7 +60,39 @@ const authorize = (roles = []) => {
   };
 };
 
+/**
+ * Middleware específico para verificar que el usuario es un administrador
+ * Verifica que el token tenga el campo 'tipo' = 'admin'
+ */
+const authorizeAdmin = (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({
+      success: false,
+      message: 'No autenticado'
+    });
+  }
+
+  // Verificar que el tipo de usuario sea 'admin'
+  if (req.user.tipo !== 'admin') {
+    return res.status(403).json({
+      success: false,
+      message: 'Acceso denegado. Solo administradores'
+    });
+  }
+
+  // Verificar que tenga un rol de admin válido
+  if (!['admin', 'superadmin'].includes(req.user.rol)) {
+    return res.status(403).json({
+      success: false,
+      message: 'Rol de administrador inválido'
+    });
+  }
+
+  next();
+};
+
 module.exports = {
   authenticate,
-  authorize
+  authorize,
+  authorizeAdmin
 };

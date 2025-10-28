@@ -218,8 +218,9 @@
 
   <!-- Modal: Nueva Dirección -->
   <div id="modalDireccion" class="modal">
-    <div class="modal-content">
-      <h2 style="font-size: 1.5rem; font-weight: bold; margin-bottom: 1.5rem;">Nueva Dirección</h2>
+    <div class="modal-content" style="background: white; padding: 2rem; border-radius: 1rem; box-shadow: 0 20px 60px rgba(0,0,0,0.3); max-width: 650px;">
+      <h2 style="font-size: 1.5rem; font-weight: bold; margin-bottom: 0.5rem; color: #2D3748;">Nueva Dirección</h2>
+      <p style="color: #718096; font-size: 0.875rem; margin-bottom: 1.5rem;">Agrega una dirección para realizar tus pedidos</p>
       
       <form id="formDireccion">
         <div class="form-group">
@@ -503,6 +504,22 @@
       formDireccion.reset();
     });
 
+    // Cerrar modal al hacer clic fuera del contenido
+    modalDireccion.addEventListener('click', (e) => {
+      if (e.target === modalDireccion) {
+        modalDireccion.classList.remove('show');
+        formDireccion.reset();
+      }
+    });
+
+    // Cerrar modal con la tecla Escape
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && modalDireccion.classList.contains('show')) {
+        modalDireccion.classList.remove('show');
+        formDireccion.reset();
+      }
+    });
+
     // Save direccion
     formDireccion.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -558,5 +575,62 @@
     // Initialize
     displayPerfil();
   </script>
+
+  <style>
+    /* Modal styles */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.6);
+      -webkit-backdrop-filter: blur(4px);
+      backdrop-filter: blur(4px);
+      justify-content: center;
+      align-items: center;
+      padding: 1rem;
+      overflow-y: auto;
+    }
+
+    .modal.show {
+      display: flex;
+    }
+
+    .modal-content {
+      animation: modalSlideIn 0.3s ease-out;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    @keyframes modalSlideIn {
+      from {
+        transform: translateY(-50px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .modal-content {
+        max-width: 95% !important;
+        padding: 1.5rem !important;
+        margin: 1rem;
+      }
+
+      .modal-content h2 {
+        font-size: 1.25rem !important;
+      }
+
+      .form-group {
+        margin-bottom: 1rem;
+      }
+    }
+  </style>
 </body>
 </html>

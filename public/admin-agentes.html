@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestión de Agentes - Admin RazoConnect</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+  <div class="admin-layout">
+    <!-- Sidebar -->
+    <aside class="admin-sidebar">
+      <div class="admin-brand">
+        <a href="/admin-dashboard.html" class="admin-brand-logo">📦 RazoConnect</a>
+        <div class="admin-brand-subtitle">Panel Admin</div>
+      </div>
+      <nav class="admin-nav">
+        <div class="admin-nav-section">
+          <div class="admin-nav-title">Principal</div>
+          <a href="/admin-dashboard.html" class="admin-nav-link"><span class="admin-nav-icon">📊</span><span>Dashboard</span></a>
+        </div>
+        <div class="admin-nav-section">
+          <div class="admin-nav-title">Gestión</div>
+          <a href="/admin-pedidos.html" class="admin-nav-link"><span class="admin-nav-icon">📦</span><span>Pedidos</span></a>
+          <a href="/admin-agregar-producto.html" class="admin-nav-link"><span class="admin-nav-icon">🎁</span><span>Productos</span></a>
+          <a href="#" class="admin-nav-link" data-module="clientes"><span class="admin-nav-icon">👥</span><span>Clientes</span></a>
+          <a href="/admin-agentes.html" class="admin-nav-link active"><span class="admin-nav-icon">💼</span><span>Agentes</span></a>
+        </div>
+        <div class="admin-nav-section">
+          <div class="admin-nav-title">Financiero</div>
+          <a href="/admin-comisiones.html" class="admin-nav-link"><span class="admin-nav-icon">💰</span><span>Comisiones</span></a>
+          <a href="/admin-inventario.html" class="admin-nav-link"><span class="admin-nav-icon">📈</span><span>Inventario</span></a>
+        </div>
+        <div class="admin-nav-section">
+          <div class="admin-nav-title">Configuración</div>
+          <a href="#" class="admin-nav-link" data-module="configuracion"><span class="admin-nav-icon">⚙️</span><span>Configuración</span></a>
+        </div>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="admin-main">
+      <header class="admin-header">
+        <h1 class="admin-header-title">Gestión de Agentes</h1>
+        <div class="admin-header-actions">
+          <div class="admin-user-info">
+            <div class="admin-user-avatar" id="userAvatar">A</div>
+            <div class="admin-user-details">
+              <div class="admin-user-name" id="userName">Administrador</div>
+              <div class="admin-user-role" id="userRole">Admin</div>
+            </div>
+          </div>
+          <button class="admin-logout-btn" id="logoutBtn">Cerrar Sesión</button>
+        </div>
+      </header>
+
+      <div class="admin-content">
+        <!-- Form to Create Agent -->
+        <div class="admin-table-container" style="margin-bottom: 2rem;">
+          <div class="admin-table-header">
+            <h2 class="admin-table-title">Agregar Nuevo Agente</h2>
+          </div>
+          <form id="agenteForm" style="padding: 1.5rem;">
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
+              <div class="form-group">
+                <label for="nombre" class="form-label">Nombre *</label>
+                <input type="text" id="nombre" class="form-input" required>
+              </div>
+              <div class="form-group">
+                <label for="apellido" class="form-label">Apellido *</label>
+                <input type="text" id="apellido" class="form-input" required>
+              </div>
+              <div class="form-group">
+                <label for="email" class="form-label">Email *</label>
+                <input type="email" id="email" class="form-input" required>
+              </div>
+              <div class="form-group">
+                <label for="password" class="form-label">Contraseña *</label>
+                <input type="password" id="password" class="form-input" required>
+              </div>
+              <div class="form-group">
+                <label for="codigoAgente" class="form-label">Código de Agente *</label>
+                <input type="text" id="codigoAgente" class="form-input" placeholder="AG001" required>
+              </div>
+              <div class="form-group">
+                <label for="telefono" class="form-label">Teléfono</label>
+                <input type="tel" id="telefono" class="form-input" placeholder="5551234567">
+              </div>
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1rem;">
+              <button type="reset" class="btn btn-secondary">Limpiar</button>
+              <button type="submit" class="btn btn-primary" id="submitBtn">
+                <span id="btnText">Crear Agente</span>
+                <div class="spinner" id="btnSpinner" style="display: none;"></div>
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Agents List -->
+        <div class="admin-table-container">
+          <div class="admin-table-header">
+            <h2 class="admin-table-title">Lista de Agentes</h2>
+            <button class="btn btn-secondary" onclick="loadAgentes()">🔄 Actualizar</button>
+          </div>
+          <div id="loadingAgents" class="loading"><div class="spinner"></div></div>
+          <div style="overflow-x: auto;">
+            <table class="admin-table" id="agentsTable" style="display: none;">
+              <thead>
+                <tr>
+                  <th>Nombre</th>
+                  <th>Email</th>
+                  <th>Código</th>
+                  <th>Total Ventas</th>
+                  <th>Monto Vendido</th>
+                  <th>Comisiones</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="agentsTableBody"></tbody>
+            </table>
+          </div>
+          <div id="emptyAgents" class="empty-state" style="display: none;">
+            <div class="empty-state-icon">💼</div>
+            <h3 class="empty-state-title">No hay agentes</h3>
+            <p class="empty-state-text">Crea tu primer agente de ventas</p>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script>
+    const adminToken = localStorage.getItem('razoconnect_admin_token');
+    if (!adminToken) window.location.href = '/admin-login.html';
+
+    async function init() {
+      await verifyAndLoadAdmin();
+      await loadAgentes();
+    }
+
+    async function verifyAndLoadAdmin() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/admin/verify`, {
+          headers: { 'Authorization': `Bearer ${adminToken}`, 'Content-Type': 'application/json' }
+        });
+        if (!response.ok) throw new Error('Invalid token');
+        const data = await response.json();
+        if (data.success) {
+          const admin = data.data.admin;
+          document.getElementById('userName').textContent = admin.nombre;
+          document.getElementById('userRole').textContent = admin.rol === 'superadmin' ? 'Super Admin' : 'Admin';
+          const words = admin.nombre.split(' ');
+          const initials = words.length >= 2 ? `${words[0].charAt(0)}${words[1].charAt(0)}` : admin.nombre.substring(0, 2);
+          document.getElementById('userAvatar').textContent = initials.toUpperCase();
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        localStorage.removeItem('razoconnect_admin_token');
+        window.location.href = '/admin-login.html';
+      }
+    }
+
+    async function loadAgentes() {
+      const loading = document.getElementById('loadingAgents');
+      const table = document.getElementById('agentsTable');
+      const empty = document.getElementById('emptyAgents');
+      const tbody = document.getElementById('agentsTableBody');
+
+      try {
+        loading.style.display = 'flex';
+        table.style.display = 'none';
+        empty.style.display = 'none';
+
+        const response = await fetch(`${API_BASE_URL}/admin/agentes`, {
+          headers: { 'Authorization': `Bearer ${adminToken}`, 'Content-Type': 'application/json' }
+        });
+        const data = await response.json();
+        
+        if (data.success && data.data.agentes.length > 0) {
+          tbody.innerHTML = data.data.agentes.map(a => `
+            <tr>
+              <td><strong>${a.nombre} ${a.apellido}</strong></td>
+              <td>${a.email}</td>
+              <td><span class="admin-badge info">${a.codigoAgente}</span></td>
+              <td>${a.totalVentas}</td>
+              <td><strong>$${a.montoTotalVentas.toLocaleString()}</strong></td>
+              <td><strong style="color: var(--success-color)">$${a.comisionesTotales.toLocaleString()}</strong></td>
+              <td><span class="admin-badge ${a.activo ? 'success' : 'danger'}">${a.activo ? 'Activo' : 'Inactivo'}</span></td>
+              <td>
+                <button class="btn btn-primary" style="padding: 0.5rem 1rem; font-size: 0.875rem; margin-right: 0.5rem;" 
+                  onclick="window.location.href='/admin-agente-detalle.html?id=${a.agenteId}'">Ver Detalle</button>
+                ${a.activo ? `<button class="btn btn-danger" style="padding: 0.5rem 1rem; font-size: 0.875rem;" 
+                  onclick="desactivarAgente(${a.agenteId}, '${a.nombre} ${a.apellido}')">Desactivar</button>` : ''}
+              </td>
+            </tr>
+          `).join('');
+          table.style.display = 'table';
+        } else {
+          empty.style.display = 'block';
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        showToast('Error al cargar agentes', 'error');
+      } finally {
+        loading.style.display = 'none';
+      }
+    }
+
+    document.getElementById('agenteForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('submitBtn');
+      const btnText = document.getElementById('btnText');
+      const btnSpinner = document.getElementById('btnSpinner');
+
+      try {
+        btn.disabled = true;
+        btnText.style.display = 'none';
+        btnSpinner.style.display = 'block';
+
+        const response = await fetch(`${API_BASE_URL}/admin/agentes`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${adminToken}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            nombre: document.getElementById('nombre').value,
+            apellido: document.getElementById('apellido').value,
+            email: document.getElementById('email').value,
+            password: document.getElementById('password').value,
+            codigoAgente: document.getElementById('codigoAgente').value,
+            telefono: document.getElementById('telefono').value || null
+          })
+        });
+        const data = await response.json();
+        
+        if (response.ok && data.success) {
+          showToast('Agente creado exitosamente', 'success');
+          e.target.reset();
+          loadAgentes();
+        } else {
+          showToast(data.message || 'Error al crear agente', 'error');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        showToast('Error al conectar con el servidor', 'error');
+      } finally {
+        btn.disabled = false;
+        btnText.style.display = 'inline';
+        btnSpinner.style.display = 'none';
+      }
+    });
+
+    async function desactivarAgente(id, nombre) {
+      if (!confirm(`¿Desactivar al agente ${nombre}?`)) return;
+      
+      try {
+        const response = await fetch(`${API_BASE_URL}/admin/agentes/${id}/desactivar`, {
+          method: 'PUT',
+          headers: { 'Authorization': `Bearer ${adminToken}`, 'Content-Type': 'application/json' }
+        });
+        const data = await response.json();
+        
+        if (response.ok && data.success) {
+          showToast(data.message, 'success');
+          loadAgentes();
+        } else {
+          showToast(data.message || 'Error', 'error');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        showToast('Error al conectar', 'error');
+      }
+    }
+
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      localStorage.removeItem('razoconnect_admin_token');
+      localStorage.removeItem('razoconnect_admin');
+      window.location.href = '/admin-login.html';
+    });
+
+    document.querySelectorAll('.admin-nav-link[data-module]').forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        showToast(`Módulo "${link.querySelector('span:last-child').textContent}" próximamente`, 'info');
+      });
+    });
+
+    init();
+  </script>
+</body>
+</html>

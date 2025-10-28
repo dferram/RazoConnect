@@ -133,7 +133,7 @@
 
   <!-- Modal: Checkout -->
   <div id="modalCheckout" class="modal">
-    <div class="modal-content">
+    <div class="modal-content" style="background: white; padding: 2rem; border-radius: 1rem; box-shadow: 0 20px 60px rgba(0,0,0,0.3); max-width: 600px;">
       <h2 style="font-size: 1.5rem; font-weight: bold; margin-bottom: 1.5rem;">Finalizar Pedido</h2>
       
       <div id="checkoutContent">
@@ -414,6 +414,27 @@
   </script>
 
   <style>
+    /* Modal styles */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.6);
+      -webkit-backdrop-filter: blur(4px);
+      backdrop-filter: blur(4px);
+      justify-content: center;
+      align-items: center;
+      padding: 1rem;
+    }
+
+    .modal.show {
+      display: flex;
+    }
+
     @media (max-width: 968px) {
       #cartContent > div {
         grid-template-columns: 1fr !important;
@@ -421,6 +442,11 @@
       
       #cartContent > div > div:last-child {
         position: static !important;
+      }
+
+      .modal-content {
+        max-width: 90% !important;
+        padding: 1.5rem !important;
       }
     }
   </style>
