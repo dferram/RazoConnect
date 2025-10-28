@@ -22,7 +22,7 @@
         <a href="/admin-dashboard.html" class="admin-brand-logo">
           📦 RazoConnect
         </a>
-        <div class="admin-brand-subtitle">Panel Admin</div>
+        <div class="admin-brand-subtitle">Panel admin</div>
       </div>
 
       <nav class="admin-nav">
@@ -95,7 +95,7 @@
     <!-- Main Content -->
     <main class="admin-main">
       <header class="admin-header">
-        <h1 class="admin-header-title">Gestión de Inventario</h1>
+        <h1 class="admin-header-title">Gestión de inventario</h1>
         
         <div class="admin-header-actions">
           <div class="admin-user-info">
@@ -105,7 +105,7 @@
               <div class="admin-user-role" id="userRole">Admin</div>
             </div>
           </div>
-          <button class="admin-logout-btn" id="logoutBtn">Cerrar Sesión</button>
+          <button class="admin-logout-btn" id="logoutBtn">Cerrar sesión</button>
         </div>
       </header>
 
@@ -113,7 +113,7 @@
         <!-- Products Table -->
         <div class="admin-table-container">
           <div class="admin-table-header">
-            <h2 class="admin-table-title">Productos en Inventario</h2>
+            <h2 class="admin-table-title">Productos en inventario</h2>
             <div style="display: flex; gap: 1rem;">
               <input 
                 type="text" 
@@ -201,7 +201,7 @@
   <div id="ajusteModal" class="modal">
     <div class="modal-content" style="background: white; padding: 2rem; border-radius: 1rem; box-shadow: 0 20px 60px rgba(0,0,0,0.3); max-width: 550px;">
       <div style="margin-bottom: 1.5rem;">
-        <h2 style="font-size: 1.5rem; font-weight: 700; color: #2D3748; margin-bottom: 0.25rem;">Ajustar Stock</h2>
+        <h2 style="font-size: 1.5rem; font-weight: 700; color: #2D3748; margin-bottom: 0.25rem;">Ajustar stock</h2>
         <p style="color: #718096; font-size: 0.875rem;">Modifica el inventario del producto</p>
       </div>
       <div>
@@ -244,7 +244,7 @@
         </div>
 
         <div class="form-group">
-          <label for="modalMotivo" class="form-label">Motivo del Ajuste:</label>
+          <label for="modalMotivo" class="form-label">Motivo del ajuste:</label>
           <select id="modalMotivo" class="form-input">
             <option value="">Seleccionar motivo...</option>
             <option value="Recepción de Almacén">Recepción de Almacén</option>
@@ -257,7 +257,7 @@
         </div>
 
         <div class="form-group" id="motivoOtroGroup" style="display: none;">
-          <label for="modalMotivoOtro" class="form-label">Especificar Motivo:</label>
+          <label for="modalMotivoOtro" class="form-label">Especificar motivo:</label>
           <input 
             type="text" 
             id="modalMotivoOtro" 
@@ -272,7 +272,7 @@
 
         <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
           <button class="btn btn-primary" onclick="realizarAjuste()" id="btnConfirmarAjuste" style="flex: 1;">
-            <span id="btnAjusteText">Confirmar Ajuste</span>
+            <span id="btnAjusteText">Confirmar ajuste</span>
             <div class="spinner" id="btnAjusteSpinner" style="display: none;"></div>
           </button>
           <button class="btn btn-secondary" onclick="closeAjusteModal()" style="flex: 1;">
@@ -423,7 +423,7 @@
                 class="btn btn-primary" 
                 style="padding: 0.5rem 1rem; font-size: 0.875rem;"
                 onclick='openAjusteModal(${JSON.stringify(product)})'>
-                Ajustar Stock
+                Ajustar stock
               </button>
             </td>
           </tr>

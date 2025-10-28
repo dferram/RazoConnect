@@ -183,26 +183,26 @@
       <ul class="navbar-menu">
         <li><a href="/catalogo.html" class="navbar-link">Productos</a></li>
         <li><a href="/carrito.html" class="navbar-link">Carrito</a></li>
-        <li><a href="/dashboard.html" class="navbar-link" style="color: var(--primary-color); font-weight: 600;">Mi Cuenta</a></li>
-        <li><a href="#" class="navbar-link" id="logoutBtn">Cerrar Sesión</a></li>
+        <li><a href="/dashboard.html" class="navbar-link" style="color: var(--primary-color); font-weight: 600;">Mi cuenta</a></li>
+        <li><a href="#" class="navbar-link" id="logoutBtn">Cerrar sesión</a></li>
       </ul>
     </div>
   </nav>
 
   <div class="container" style="padding-top: 2rem; padding-bottom: 3rem;">
-    <h1 style="font-size: 2rem; font-weight: bold; margin-bottom: 2rem;">Mi Cuenta</h1>
+    <h1 style="font-size: 2.5rem; font-weight: bold; margin-bottom: 0.5rem;">Mi cuenta</h1>
 
     <!-- Tabs -->
     <div class="tabs">
       <button class="tab active" data-tab="perfil">👤 Perfil</button>
       <button class="tab" data-tab="direcciones">📍 Direcciones</button>
-      <button class="tab" data-tab="pedidos">📦 Historial de Pedidos</button>
+      <button class="tab" data-tab="pedidos">📦 Pedidos</button>
     </div>
 
     <!-- Tab: Perfil -->
     <div class="tab-content active" id="perfil">
       <div class="card">
-        <h2 class="card-header">Información Personal</h2>
+        <h2 class="card-header">Información personal</h2>
         <div id="perfilContent"></div>
       </div>
     </div>
@@ -210,8 +210,8 @@
     <!-- Tab: Direcciones -->
     <div class="tab-content" id="direcciones">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-        <h2 style="font-size: 1.5rem; font-weight: 600;">Mis Direcciones</h2>
-        <button class="btn btn-primary" id="btnNuevaDireccion">+ Nueva Dirección</button>
+        <h2 style="font-size: 1.5rem; font-weight: 600;">Mis direcciones</h2>
+        <button class="btn btn-primary" onclick="openDireccionModal()">✝ Agregar nueva dirección</button>
       </div>
 
       <div id="loadingDirecciones" class="loading">
@@ -229,7 +229,7 @@
 
     <!-- Tab: Pedidos -->
     <div class="tab-content" id="pedidos">
-      <h2 style="font-size: 1.5rem; font-weight: 600; margin-bottom: 1.5rem;">Historial de Pedidos</h2>
+      <h2 style="font-size: 1.5rem; font-weight: 600; margin-bottom: 1rem;">Mis pedidos</h2>
 
       <div id="loadingPedidos" class="loading">
         <div class="spinner"></div>

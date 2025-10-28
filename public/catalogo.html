@@ -16,10 +16,10 @@
               href="/catalogo.html"
               class="navbar-link"
               style="color: var(--primary-color); font-weight: 600"
-              >Productos</a
+              >productos</a
             >
           </li>
-          <li><a href="/carrito.html" class="navbar-link">Carrito</a></li>
+          <li><a href="/carrito.html" class="navbar-link">carrito</a></li>
           <li>
             <a
               href="/dashboard.html"
@@ -29,11 +29,11 @@
                 font-size: 0.875rem;
                 text-decoration: none;
               "
-              title="Mi Cuenta"
+              title="mi cuenta"
             ></a>
           </li>
           <li>
-            <a href="#" class="navbar-link" id="logoutBtn">Cerrar Sesión</a>
+            <a href="#" class="navbar-link" id="logoutBtn">cerrar sesión</a>
           </li>
         </ul>
       </div>
@@ -50,14 +50,14 @@
         "
       >
         <div>
-          <h1 style="font-size: 2rem; font-weight: bold; margin-bottom: 0.5rem">
-            Catálogo de Productos
+          <h1 style="font-size: 2.5rem; font-weight: bold; margin-bottom: 1.5rem">
+            catálogo de productos
           </h1>
           <p style="color: var(--text-secondary)">
-            Explora nuestro catálogo de cajas de fashion al mayoreo
+            explora nuestro catálogo de cajas de fashion al mayoreo
           </p>
         </div>
-        <a href="/carrito.html" class="btn btn-primary"> 🛒 Ver Carrito </a>
+        <a href="/carrito.html" class="btn btn-primary"> 🛒 ver carrito </a>
       </div>
 
       <!-- Layout con Sidebar y Contenido -->
@@ -114,7 +114,7 @@
                   text-decoration: underline;
                 "
               >
-                Limpiar filtro
+                limpiar filtro
               </button>
             </div>
           </div>
@@ -134,9 +134,9 @@
           <!-- Empty State -->
           <div id="emptyState" class="empty-state" style="display: none">
             <div class="empty-state-icon">📦</div>
-            <h2 class="empty-state-title">No hay productos disponibles</h2>
+            <h2 class="empty-state-title">no hay productos disponibles</h2>
             <p class="empty-state-text">
-              Vuelve pronto para ver nuestros nuevos productos
+              vuelve pronto para ver nuestros nuevos productos
             </p>
           </div>
         </main>
@@ -166,8 +166,8 @@
       // Display user greeting
       const userData = getUserData();
       if (userData) {
-        const nombre = userData.nombre || userData.Nombre || "Usuario";
-        userGreeting.textContent = `Hola, ${nombre}`;
+        const nombre = userData.nombre || userData.Nombre || "usuario";
+        userGreeting.textContent = `hola, ${nombre}`;
       }
 
       // Format currency
@@ -182,18 +182,18 @@
       function renderProductCard(producto) {
         // Placeholder con gradiente y emoji según categoría
         const categoriaEmojis = {
-          "Ropa Dama": "👗",
-          "Ropa Caballero": "👔",
-          Accesorios: "👜",
-          Calzado: "👟",
-          Infantil: "👶",
+          "ropa dama": "👗",
+          "ropa caballero": "👔",
+          accesorios: "👜",
+          calzado: "👟",
+          infantil: "👶",
         };
 
         const emoji = categoriaEmojis[producto.categoria?.nombre] || "📦";
         const stockStatus =
           producto.stock > 0
-            ? `<span style="color: var(--success-color);">✓ En stock (${producto.stock})</span>`
-            : `<span style="color: var(--danger-color);">✗ Sin stock</span>`;
+            ? `<span style="color: var(--success-color);">✓ en stock (${producto.stock})</span>`
+            : `<span style="color: var(--danger-color);">✗ sin stock</span>`;
 
         return `
         <a href="/producto-detalle.html?id=${producto.productoId}" class="product-card" style="text-decoration: none; color: inherit; display: flex; flex-direction: column;">
@@ -204,11 +204,12 @@
             <div>
               <div style="margin-bottom: 0.5rem;">
                 <span style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase;">
-                  ${producto.categoria?.nombre || "Sin categoría"}
+                  ${producto.categoria?.nombre || "sin categoría"}
                 </span>
               </div>
               <h3 class="product-title">${producto.nombreProducto}</h3>
               <p style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.5rem;">
+                sku: ${producto.sku}
                 SKU: ${producto.sku}
               </p>
               <div class="product-price">${formatCurrency(
