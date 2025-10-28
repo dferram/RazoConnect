@@ -124,6 +124,21 @@ const API = {
     });
   },
 
+  actualizarCarrito: async (productoId, cantidadPaquetes) => {
+    return apiCall(`/carrito/${productoId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ 
+        CantidadPaquetes: cantidadPaquetes 
+      })
+    });
+  },
+
+  eliminarDelCarrito: async (productoId) => {
+    return apiCall(`/carrito/${productoId}`, {
+      method: 'DELETE'
+    });
+  },
+
   // Orders endpoints
   getPedidos: async () => {
     return apiCall('/pedidos', {
@@ -131,10 +146,10 @@ const API = {
     });
   },
 
-  crearPedido: async (direccionEnvioId, codigoAgente = null) => {
+  crearPedido: async (direccionEnvioId, agenteId = null) => {
     const body = { DireccionEnvioID: direccionEnvioId };
-    if (codigoAgente) {
-      body.CodigoAgente = codigoAgente;
+    if (agenteId) {
+      body.AgenteID = agenteId;
     }
     return apiCall('/pedidos', {
       method: 'POST',

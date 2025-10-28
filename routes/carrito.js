@@ -18,4 +18,19 @@ router.get('/carrito', authenticate, authorize(['cliente']), carritoController.o
  */
 router.post('/carrito', authenticate, authorize(['cliente']), carritoController.agregarAlCarrito);
 
+/**
+ * @route   PUT /api/carrito/:productoId
+ * @desc    Actualizar cantidad de un producto en el carrito
+ * @access  Private (Cliente)
+ * @body    { CantidadPaquetes }
+ */
+router.put('/carrito/:productoId', authenticate, authorize(['cliente']), carritoController.actualizarCarrito);
+
+/**
+ * @route   DELETE /api/carrito/:productoId
+ * @desc    Eliminar un producto del carrito
+ * @access  Private (Cliente)
+ */
+router.delete('/carrito/:productoId', authenticate, authorize(['cliente']), carritoController.eliminarDelCarrito);
+
 module.exports = router;

@@ -9,7 +9,7 @@ const crearPedido = async (req, res) => {
   
   try {
     const clienteId = req.user.userId;
-    const { DireccionEnvioID, CodigoAgente } = req.body;
+    const { DireccionEnvioID, AgenteID } = req.body;
 
     // Validar datos de entrada
     if (!DireccionEnvioID) {
@@ -95,19 +95,19 @@ const crearPedido = async (req, res) => {
       return total + (item.cantidadpaquetes * parseFloat(item.preciopaquete));
     }, 0);
 
-    // 6. Buscar el AgenteID si se proporcionó un CodigoAgente
+    // 6. Validar el AgenteID si se proporcionó
     let agenteId = null;
-    if (CodigoAgente) {
+    if (AgenteID) {
       const agenteResult = await client.query(
-        'SELECT AgenteID, Activo FROM AgentesDeVentas WHERE CodigoAgente = $1',
-        [CodigoAgente]
+        'SELECT agenteid, activo FROM agentesdeventas WHERE agenteid = $1',
+        [AgenteID]
       );
 
       if (agenteResult.rows.length > 0 && agenteResult.rows[0].activo) {
         agenteId = agenteResult.rows[0].agenteid;
       } else {
-        // Código de agente no válido o inactivo - continuar sin comisión
-        console.warn(`Código de agente inválido o inactivo: ${CodigoAgente}`);
+        // AgenteID no válido o inactivo - continuar sin comisión
+        console.warn(`AgenteID inválido o inactivo: ${AgenteID}`);
       }
     }
 

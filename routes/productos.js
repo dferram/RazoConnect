@@ -3,6 +3,20 @@ const router = express.Router();
 const productosController = require('../controllers/productosController');
 
 /**
+ * @route   GET /api/categorias
+ * @desc    Obtener todas las categorías
+ * @access  Public
+ */
+router.get('/categorias', productosController.obtenerCategorias);
+
+/**
+ * @route   GET /api/agentes/lista-publica
+ * @desc    Obtener lista pública de agentes activos (solo datos no sensibles)
+ * @access  Public
+ */
+router.get('/agentes/lista-publica', productosController.obtenerAgentesPublicos);
+
+/**
  * @route   GET /api/productos
  * @desc    Obtener todos los productos con imagen principal
  * @access  Public

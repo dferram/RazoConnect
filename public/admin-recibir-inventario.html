@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recibir Inventario - Admin RazoConnect</title>
+  
+  <!-- PROTECCIÓN DE AUTENTICACIÓN ADMIN -->
+  <script src="js/auth-guard-admin.js"></script>
+  
+  <!-- SISTEMA DE RENOVACIÓN DE TOKENS -->
+  <script src="js/token-refresh.js"></script>
+  
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+  <div class="admin-layout">
+    <!-- Sidebar -->
+    <aside class="admin-sidebar">
+      <div class="admin-brand">
+        <a href="/admin-dashboard.html" class="admin-brand-logo">
+          📦 RazoConnect
+        </a>
+        <div class="admin-brand-subtitle">Panel Admin</div>
+      </div>
+
+      <nav class="admin-nav">
+        <div class="admin-nav-section">
+          <div class="admin-nav-title">Principal</div>
+          <a href="/admin-dashboard.html" class="admin-nav-link">
+            <span class="admin-nav-icon">📊</span>
+            <span>Dashboard</span>
+          </a>
+        </div>
+
+        <div class="admin-nav-section">
+          <div class="admin-nav-title">Gestión</div>
+          <a href="/admin-pedidos.html" class="admin-nav-link">
+            <span class="admin-nav-icon">📦</span>
+            <span>Pedidos</span>
+          </a>
+          <a href="/admin-agregar-producto.html" class="admin-nav-link">
+            <span class="admin-nav-icon">🎁</span>
+            <span>Productos</span>
+          </a>
+          <a href="#" class="admin-nav-link" data-module="clientes">
+            <span class="admin-nav-icon">👥</span>
+            <span>Clientes</span>
+          </a>
+          <a href="/admin-agentes.html" class="admin-nav-link">
+            <span class="admin-nav-icon">💼</span>
+            <span>Agentes</span>
+          </a>
+        </div>
+
+        <div class="admin-nav-section">
+          <div class="admin-nav-title">Financiero</div>
+          <a href="/admin-comisiones.html" class="admin-nav-link">
+            <span class="admin-nav-icon">💰</span>
+            <span>Comisiones</span>
+          </a>
+          <a href="/admin-inventario.html" class="admin-nav-link">
+            <span class="admin-nav-icon">📈</span>
+            <span>Inventario</span>
+          </a>
+        </div>
+
+        <div class="admin-nav-section">
+          <div class="admin-nav-title">Compras</div>
+          <a href="/admin-proveedores.html" class="admin-nav-link">
+            <span class="admin-nav-icon">🏭</span>
+            <span>Proveedores</span>
+          </a>
+          <a href="/admin-crear-oc.html" class="admin-nav-link">
+            <span class="admin-nav-icon">📋</span>
+            <span>Nueva Orden de Compra</span>
+          </a>
+          <a href="/admin-recibir-inventario.html" class="admin-nav-link active">
+            <span class="admin-nav-icon">📥</span>
+            <span>Recibir Inventario</span>
+          </a>
+        </div>
+
+        <div class="admin-nav-section">
+          <div class="admin-nav-title">Configuración</div>
+          <a href="#" class="admin-nav-link" data-module="configuracion">
+            <span class="admin-nav-icon">⚙️</span>
+            <span>Configuración</span>
+          </a>
+        </div>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="admin-main">
+      <header class="admin-header">
+        <div>
+          <h1 class="admin-header-title">Recibir Inventario</h1>
+          <p style="color: var(--razo-gray-warm); margin-top: 0.5rem;">Gestiona las entregas de tus órdenes de compra</p>
+        </div>
+        
+        <div class="admin-header-actions">
+          <div class="admin-user-info">
+            <div class="admin-user-avatar" id="userAvatar">A</div>
+            <div class="admin-user-details">
+              <div class="admin-user-name" id="userName">Administrador</div>
+              <div class="admin-user-role" id="userRole">Admin</div>
+            </div>
+          </div>
+          <button class="admin-logout-btn" id="logoutBtn">Cerrar Sesión</button>
+        </div>
+      </header>
+
+      <div class="admin-content">
+        <!-- Órdenes de Compra Pendientes -->
+        <div class="admin-table-container">
+          <div style="margin-bottom: 1.5rem;">
+            <h2 style="margin: 0 0 0.5rem 0; font-size: 1.25rem; color: var(--razo-gray-dark);">📋 Órdenes Pendientes de Recepción</h2>
+            <p style="margin: 0; color: var(--razo-gray-warm); font-size: 0.875rem;">Selecciona una orden para registrar la mercancía recibida</p>
+          </div>
+
+          <div id="loadingOrdenes" class="loading">
+            <div class="spinner"></div>
+          </div>
+
+          <div style="overflow-x: auto;">
+            <table class="admin-table" id="ordenesTable" style="display: none;">
+              <thead>
+                <tr>
+                  <th>Orden #</th>
+                  <th>Proveedor</th>
+                  <th>Fecha Creación</th>
+                  <th>Fecha Esperada</th>
+                  <th>Productos</th>
+                  <th>Estatus</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="ordenesTableBody">
+                <!-- Órdenes will be loaded here -->
+              </tbody>
+            </table>
+          </div>
+
+          <div id="emptyOrdenes" class="empty-state" style="display: none;">
+            <div class="empty-state-icon">✅</div>
+            <h3 class="empty-state-title">No hay órdenes pendientes</h3>
+            <p class="empty-state-text">Todas las órdenes de compra han sido completadas</p>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal para recibir inventario -->
+  <div id="recepcionModal" class="modal">
+    <div class="modal-content" style="background: white; padding: 2rem; border-radius: 1rem; box-shadow: 0 20px 60px rgba(0,0,0,0.3); max-width: 1000px;">
+      <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 2px solid #F5F1ED;">
+        <div>
+          <h2 style="margin: 0 0 0.25rem 0; font-size: 1.5rem; color: #2D3748;">Recibir Inventario - Orden #<span id="modalOrdenId"></span></h2>
+          <p style="margin: 0; color: var(--razo-gray-warm); font-size: 0.875rem;"><strong>Proveedor:</strong> <span id="modalProveedor"></span></p>
+        </div>
+        <button class="modal-close" onclick="closeRecepcionModal()" style="background: none; border: none; font-size: 2rem; cursor: pointer; color: #6B5D57; line-height: 1; padding: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: all 0.2s;">&times;</button>
+      </div>
+      
+      <div class="modal-body">
+        <div class="alert alert-info" style="margin-bottom: 1.5rem;">
+          <strong>💡 Entregas Parciales:</strong> Si solo recibiste parte de lo solicitado, ingresa únicamente la cantidad que llegó. El sistema actualizará automáticamente el stock y el estatus de la orden.
+        </div>
+
+        <div id="loadingDetalles" class="loading" style="display: none;">
+          <div class="spinner"></div>
+        </div>
+
+        <div id="productosRecepcion" style="overflow-x: auto;">
+          <!-- La tabla de productos se cargará aquí -->
+        </div>
+
+        <div style="display: flex; gap: 1rem; justify-content: flex-end; padding-top: 1.5rem; margin-top: 1.5rem; border-top: 2px solid var(--razo-gray-light);">
+          <button type="button" class="btn btn-secondary" onclick="closeRecepcionModal()" style="padding: 0.75rem 1.5rem;">
+            Cancelar
+          </button>
+          <button type="button" class="btn btn-primary" onclick="guardarRecepcion()" id="btnGuardarRecepcion" style="padding: 0.75rem 2rem;">
+            <span id="btnGuardarText">💾 Guardar Recepción</span>
+            <div class="spinner" id="btnGuardarSpinner" style="display: none;"></div>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script>
+    // Authentication check
+    const adminToken = localStorage.getItem('razoconnect_admin_token');
+    if (!adminToken) {
+      window.location.href = '/admin-login.html';
+    }
+
+    let ordenActual = null;
+    let detallesActuales = [];
+
+    // Verify admin token
+    async function verifyAndLoadAdmin() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/admin/verify`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${adminToken}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) throw new Error('Invalid token');
+
+        const data = await response.json();
+        if (data.success) {
+          const admin = data.data.admin;
+          document.getElementById('userName').textContent = admin.nombre;
+          document.getElementById('userRole').textContent = admin.rol === 'superadmin' ? 'Super Admin' : 'Admin';
+          
+          const words = admin.nombre.split(' ');
+          const initials = words.length >= 2 
+            ? `${words[0].charAt(0)}${words[1].charAt(0)}` 
+            : admin.nombre.substring(0, 2);
+          document.getElementById('userAvatar').textContent = initials.toUpperCase();
+        }
+      } catch (error) {
+        console.error('Error verifying admin:', error);
+        localStorage.removeItem('razoconnect_admin_token');
+        localStorage.removeItem('razoconnect_admin');
+        window.location.href = '/admin-login.html';
+      }
+    }
+
+    // Cargar órdenes pendientes/parciales
+    async function loadOrdenesPendientes() {
+      const loadingOrdenes = document.getElementById('loadingOrdenes');
+      const ordenesTable = document.getElementById('ordenesTable');
+      const emptyOrdenes = document.getElementById('emptyOrdenes');
+      const ordenesTableBody = document.getElementById('ordenesTableBody');
+
+      try {
+        loadingOrdenes.style.display = 'flex';
+        ordenesTable.style.display = 'none';
+        emptyOrdenes.style.display = 'none';
+
+        const response = await fetch(`${API_BASE_URL}/admin/ordenes-compra?estatus=Pendiente,Parcial`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${adminToken}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) throw new Error('Error al cargar órdenes');
+
+        const data = await response.json();
+        if (data.success) {
+          const ordenes = data.data.ordenes;
+
+          if (ordenes.length === 0) {
+            emptyOrdenes.style.display = 'block';
+          } else {
+            ordenesTableBody.innerHTML = ordenes.map(orden => {
+              const fecha = new Date(orden.fechaCreacion).toLocaleDateString('es-MX');
+              const fechaEsperada = new Date(orden.fechaEntregaEsperada).toLocaleDateString('es-MX');
+              const badgeClass = orden.estatus === 'Pendiente' ? 'info' : 'warning';
+
+              return `
+                <tr>
+                  <td><strong>#${orden.ordenCompraId}</strong></td>
+                  <td>
+                    <div style="font-weight: 600; color: var(--razo-gray-dark);">${orden.proveedorNombre}</div>
+                  </td>
+                  <td>${fecha}</td>
+                  <td>${fechaEsperada}</td>
+                  <td style="text-align: center;">${orden.totalProductos} items</td>
+                  <td><span class="admin-badge ${badgeClass}">${orden.estatus}</span></td>
+                  <td>
+                    <button 
+                      class="btn btn-primary" 
+                      style="padding: 0.5rem 1rem; font-size: 0.875rem;"
+                      onclick="abrirRecepcion(${orden.ordenCompraId})">
+                      📥 Recibir
+                    </button>
+                  </td>
+                </tr>
+              `;
+            }).join('');
+            
+            ordenesTable.style.display = 'table';
+          }
+        }
+      } catch (error) {
+        console.error('Error loading ordenes:', error);
+        showToast('Error al cargar órdenes', 'error');
+        emptyOrdenes.style.display = 'block';
+      } finally {
+        loadingOrdenes.style.display = 'none';
+      }
+    }
+
+    // Abrir modal de recepción
+    async function abrirRecepcion(ordenCompraId) {
+      try {
+        document.getElementById('loadingDetalles').style.display = 'flex';
+        document.getElementById('productosRecepcion').innerHTML = '';
+        document.getElementById('recepcionModal').style.display = 'flex';
+
+        const response = await fetch(`${API_BASE_URL}/admin/ordenes-compra/${ordenCompraId}/detalles`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${adminToken}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) throw new Error('Error al cargar detalles');
+
+        const data = await response.json();
+        if (data.success) {
+          ordenActual = data.data.orden;
+          detallesActuales = data.data.detalles;
+
+          document.getElementById('modalOrdenId').textContent = ordenActual.ordenCompraId;
+          document.getElementById('modalProveedor').textContent = ordenActual.proveedorNombre;
+
+          mostrarProductosRecepcion();
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        showToast('Error al cargar detalles de la orden', 'error');
+        closeRecepcionModal();
+      } finally {
+        document.getElementById('loadingDetalles').style.display = 'none';
+      }
+    }
+
+    // Mostrar productos para recepción
+    function mostrarProductosRecepcion() {
+      const container = document.getElementById('productosRecepcion');
+      
+      container.innerHTML = `
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Producto</th>
+              <th>SKU</th>
+              <th style="text-align: center;">Solicitado</th>
+              <th style="text-align: center;">Ya Recibido</th>
+              <th style="text-align: center;">Pendiente</th>
+              <th style="text-align: center;">Stock Actual</th>
+              <th style="width: 150px;">Recibir Ahora</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${detallesActuales.map(detalle => {
+              const pendiente = detalle.cantidadPendiente;
+              const recibidoClass = detalle.cantidadRecibida > 0 ? 'text-success' : '';
+              const pendienteClass = pendiente > 0 ? 'text-warning' : 'text-success';
+
+              return `
+                <tr>
+                  <td><strong>${detalle.nombreProducto}</strong></td>
+                  <td><code style="background: #f0f0f0; padding: 0.25rem 0.5rem; border-radius: 0.25rem;">${detalle.sku}</code></td>
+                  <td style="text-align: center;"><strong>${detalle.cantidadSolicitada}</strong></td>
+                  <td style="text-align: center;" class="${recibidoClass}"><strong>${detalle.cantidadRecibida}</strong></td>
+                  <td style="text-align: center;" class="${pendienteClass}"><strong>${pendiente}</strong></td>
+                  <td style="text-align: center;">${detalle.stockActual} paq.</td>
+                  <td>
+                    <input 
+                      type="number" 
+                      class="form-input recibir-input" 
+                      data-detalle-id="${detalle.detalleId}"
+                      data-max="${pendiente}"
+                      min="0" 
+                      max="${pendiente}"
+                      value="0"
+                      ${pendiente === 0 ? 'disabled' : ''}
+                      placeholder="0"
+                      style="padding: 0.5rem; text-align: center;"
+                    >
+                  </td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    // Guardar recepción
+    async function guardarRecepcion() {
+      try {
+        // Recopilar productos con cantidades > 0
+        const inputs = document.querySelectorAll('.recibir-input');
+        const productos = [];
+
+        inputs.forEach(input => {
+          const cantidad = parseInt(input.value) || 0;
+          if (cantidad > 0) {
+            const max = parseInt(input.getAttribute('data-max'));
+            if (cantidad > max) {
+              throw new Error(`La cantidad recibida no puede exceder la cantidad pendiente`);
+            }
+            productos.push({
+              detalleId: parseInt(input.getAttribute('data-detalle-id')),
+              cantidadRecibidaAhora: cantidad
+            });
+          }
+        });
+
+        if (productos.length === 0) {
+          showToast('Debe ingresar al menos una cantidad recibida', 'error');
+          return;
+        }
+
+        const btnGuardar = document.getElementById('btnGuardarRecepcion');
+        const btnGuardarText = document.getElementById('btnGuardarText');
+        const btnGuardarSpinner = document.getElementById('btnGuardarSpinner');
+
+        btnGuardar.disabled = true;
+        btnGuardarText.style.display = 'none';
+        btnGuardarSpinner.style.display = 'block';
+
+        const adminData = JSON.parse(localStorage.getItem('razoconnect_admin'));
+        const adminId = adminData ? adminData.adminid : null;
+
+        const response = await fetch(`${API_BASE_URL}/admin/ordenes-compra/recibir`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${adminToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            ordenCompraId: ordenActual.ordenCompraId,
+            productos: productos,
+            adminId: adminId
+          })
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+          showToast(`✅ Inventario recibido. Estatus: ${data.data.nuevoEstatus}`, 'success');
+          closeRecepcionModal();
+          loadOrdenesPendientes();
+        } else {
+          showToast(data.message || 'Error al recibir inventario', 'error');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        showToast(error.message || 'Error al procesar la recepción', 'error');
+      } finally {
+        const btnGuardar = document.getElementById('btnGuardarRecepcion');
+        const btnGuardarText = document.getElementById('btnGuardarText');
+        const btnGuardarSpinner = document.getElementById('btnGuardarSpinner');
+        
+        btnGuardar.disabled = false;
+        btnGuardarText.style.display = 'inline';
+        btnGuardarSpinner.style.display = 'none';
+      }
+    }
+
+    // Cerrar modal
+    function closeRecepcionModal() {
+      document.getElementById('recepcionModal').style.display = 'none';
+      ordenActual = null;
+      detallesActuales = [];
+    }
+
+    // Logout
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      localStorage.removeItem('razoconnect_admin_token');
+      localStorage.removeItem('razoconnect_admin');
+      showToast('Sesión cerrada', 'success');
+      setTimeout(() => {
+        window.location.href = '/admin-login.html';
+      }, 500);
+    });
+
+    // Navigation handling for non-implemented modules
+    const navLinks = document.querySelectorAll('.admin-nav-link[data-module]');
+    navLinks.forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const moduleName = link.querySelector('span:last-child').textContent;
+        showToast(`Módulo "${moduleName}" próximamente disponible`, 'info');
+      });
+    });
+
+    // Close modal when clicking outside
+    window.onclick = function(event) {
+      const modal = document.getElementById('recepcionModal');
+      if (event.target == modal) {
+        closeRecepcionModal();
+      }
+    }
+
+    // Initialize
+    verifyAndLoadAdmin();
+    loadOrdenesPendientes();
+  </script>
+
+  <style>
+    /* Modal styles */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.6);
+      -webkit-backdrop-filter: blur(4px);
+      backdrop-filter: blur(4px);
+      justify-content: center;
+      align-items: center;
+      padding: 1rem;
+      overflow-y: auto;
+    }
+
+    .modal-content {
+      animation: modalSlideIn 0.3s ease-out;
+      max-height: 90vh;
+      overflow-y: auto;
+      position: relative;
+    }
+
+    .modal-close:hover {
+      background-color: var(--razo-gray-light);
+      color: var(--razo-orange);
+    }
+
+    @keyframes modalSlideIn {
+      from {
+        transform: translateY(-50px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    .text-success {
+      color: #10b981;
+      font-weight: 600;
+    }
+
+    .text-warning {
+      color: #f59e0b;
+      font-weight: 600;
+    }
+
+    @media (max-width: 768px) {
+      .modal-content {
+        max-width: 95% !important;
+        padding: 1.5rem !important;
+      }
+    }
+  </style>
+</body>
+</html>

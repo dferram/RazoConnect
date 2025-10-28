@@ -398,7 +398,7 @@ const updatePedidoEstatus = async (req, res) => {
     if (estatus === 'Confirmado' && estatusAnterior !== 'Confirmado') {
       // Obtener los detalles del pedido
       const detallesResult = await client.query(
-        'SELECT * FROM Pedido_Detalles WHERE PedidoID = $1',
+        'SELECT * FROM DetallesDelPedido WHERE PedidoID = $1',
         [pedidoId]
       );
 
@@ -430,6 +430,7 @@ const updatePedidoEstatus = async (req, res) => {
         }
 
         // Reducir stock
+        const nuevoStock = stockActual - cantidadRequerida;
         await client.query(
           `UPDATE Productos 
            SET Stock = Stock - $1 
@@ -439,14 +440,14 @@ const updatePedidoEstatus = async (req, res) => {
 
         // Crear registro en Log_Inventario
         await client.query(
-          `INSERT INTO Log_Inventario (ProductoID, TipoMovimiento, Cantidad, Motivo, UsuarioID)
+          `INSERT INTO Log_Inventario (ProductoID, CantidadCambiado, NuevoStock, Motivo, UsuarioID)
            VALUES ($1, $2, $3, $4, $5)`,
           [
             detalle.productoid,
-            'Salida',
-            cantidadRequerida,
+            -cantidadRequerida, // Negativo porque es una salida
+            nuevoStock,
             `Pedido #${pedidoId} confirmado`,
-            req.user.id // AdminID del usuario autenticado
+            req.user.userId // AdminID del usuario autenticado
           ]
         );
       }
@@ -535,9 +536,9 @@ const crearProducto = async (req, res) => {
 
     // Registrar en log de inventario (entrada inicial)
     await db.query(
-      `INSERT INTO Log_Inventario (ProductoID, TipoMovimiento, Cantidad, Motivo, UsuarioID)
+      `INSERT INTO Log_Inventario (ProductoID, CantidadCambiado, NuevoStock, Motivo, UsuarioID)
        VALUES ($1, $2, $3, $4, $5)`,
-      [producto.productoid, 'Entrada', stock, 'Stock inicial del producto', req.user.id]
+      [producto.productoid, stock, stock, 'Stock inicial del producto', req.user.userId]
     );
 
     res.status(201).json({
@@ -590,7 +591,7 @@ const ajustarInventario = async (req, res) => {
 
     // Verificar que el producto existe y obtener stock actual
     const productoResult = await client.query(
-      'SELECT ProductoID, SKU, Nombre, Stock FROM Productos WHERE ProductoID = $1',
+      'SELECT ProductoID, SKU, NombreProducto, Stock FROM Productos WHERE ProductoID = $1',
       [productoId]
     );
 
@@ -621,15 +622,11 @@ const ajustarInventario = async (req, res) => {
       [cantidadCambio, productoId]
     );
 
-    // Determinar tipo de movimiento
-    const tipoMovimiento = cantidadCambio > 0 ? 'Entrada' : 'Salida';
-    const cantidadAbsoluta = Math.abs(cantidadCambio);
-
     // Crear registro en log de inventario
     await client.query(
-      `INSERT INTO Log_Inventario (ProductoID, TipoMovimiento, Cantidad, Motivo, UsuarioID)
+      `INSERT INTO Log_Inventario (ProductoID, CantidadCambiado, NuevoStock, Motivo, UsuarioID)
        VALUES ($1, $2, $3, $4, $5)`,
-      [productoId, tipoMovimiento, cantidadAbsoluta, motivo, req.user.id]
+      [productoId, cantidadCambio, nuevoStock, motivo, req.user.userId]
     );
 
     await client.query('COMMIT');
@@ -640,7 +637,7 @@ const ajustarInventario = async (req, res) => {
       data: {
         productoId,
         sku: producto.sku,
-        nombre: producto.nombre,
+        nombre: producto.nombreproducto,
         stockAnterior: stockActual,
         cantidadCambio,
         stockNuevo: nuevoStock,
@@ -693,15 +690,15 @@ const getAllProductos = async (req, res) => {
       success: true,
       data: {
         productos: result.rows.map(row => ({
-          productoId: row.productoid,
+          productoid: row.productoid,
           sku: row.sku,
-          nombre: row.nombreproducto,
+          nombreproducto: row.nombreproducto,
           descripcion: row.descripcion,
-          costoUnitario: parseFloat(row.costounitario),
-          piezasPorPaquete: row.piezasporpaquete,
-          precioPaquete: parseFloat(row.preciopaquete),
-          stock: row.stock,
-          categoriaNombre: categoriasMap[row.categoriaid] || 'Sin categoría'
+          costounitario: parseFloat(row.costounitario),
+          piezasporpaquete: row.piezasporpaquete,
+          preciopaquete: parseFloat(row.preciopaquete),
+          stockpaquetes: row.stock,
+          categorianombre: categoriasMap[row.categoriaid] || 'Sin categoría'
         }))
       }
     });
@@ -923,11 +920,10 @@ const getAgenteDetalle = async (req, res) => {
         ComisionID,
         PedidoID,
         MontoComision,
-        Estatus,
-        FechaCalculo
+        Estatus
       FROM Comisiones
       WHERE AgenteID = $1
-      ORDER BY FechaCalculo DESC`,
+      ORDER BY ComisionID DESC`,
       [agenteId]
     );
 
@@ -940,9 +936,7 @@ const getAgenteDetalle = async (req, res) => {
           apellido: agente.apellido,
           email: agente.email,
           codigoAgente: agente.codigoagente,
-          telefono: agente.telefono,
-          activo: agente.activo,
-          fechaCreacion: agente.fechacreacion
+          activo: agente.activo
         },
         ventas: ventasResult.rows.map(row => ({
           pedidoId: row.pedidoid,
@@ -955,9 +949,7 @@ const getAgenteDetalle = async (req, res) => {
           comisionId: row.comisionid,
           pedidoId: row.pedidoid,
           montoComision: parseFloat(row.montocomision),
-          estatus: row.estatus,
-          fechaGeneracion: row.fechageneracion,
-          fechaPago: row.fechapago
+          estatus: row.estatus
         }))
       }
     });
@@ -1294,6 +1286,720 @@ const getPedidoDetalle = async (req, res) => {
   }
 };
 
+/**
+ * ============================================
+ * GESTIÓN DE PROVEEDORES
+ * ============================================
+ */
+
+/**
+ * Obtener todos los proveedores
+ * GET /api/admin/proveedores
+ */
+const getAllProveedores = async (req, res) => {
+  try {
+    const query = `
+      SELECT 
+        ProveedorID,
+        NombreEmpresa,
+        ContactoNombre,
+        Email,
+        Telefono
+      FROM Proveedores
+      ORDER BY NombreEmpresa ASC
+    `;
+
+    const result = await db.query(query);
+
+    res.json({
+      success: true,
+      message: 'Proveedores obtenidos exitosamente',
+      data: {
+        proveedores: result.rows,
+        total: result.rows.length
+      }
+    });
+
+  } catch (error) {
+    console.error('Error al obtener proveedores:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al obtener proveedores'
+    });
+  }
+};
+
+/**
+ * Crear un nuevo proveedor
+ * POST /api/admin/proveedores
+ */
+const crearProveedor = async (req, res) => {
+  try {
+    const { nombreEmpresa, contactoNombre, email, telefono } = req.body;
+
+    // Validaciones
+    if (!nombreEmpresa || nombreEmpresa.trim() === '') {
+      return res.status(400).json({
+        success: false,
+        message: 'El nombre de la empresa es requerido'
+      });
+    }
+
+    // Validar email si se proporciona
+    if (email && email.trim() !== '') {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return res.status(400).json({
+          success: false,
+          message: 'El email no tiene un formato válido'
+        });
+      }
+    }
+
+    const query = `
+      INSERT INTO Proveedores (NombreEmpresa, ContactoNombre, Email, Telefono)
+      VALUES ($1, $2, $3, $4)
+      RETURNING ProveedorID, NombreEmpresa, ContactoNombre, Email, Telefono
+    `;
+
+    const values = [
+      nombreEmpresa.trim(),
+      contactoNombre ? contactoNombre.trim() : null,
+      email ? email.trim() : null,
+      telefono ? telefono.trim() : null
+    ];
+
+    const result = await db.query(query, values);
+    const nuevoProveedor = result.rows[0];
+
+    console.log('✅ Proveedor creado:', nuevoProveedor);
+
+    res.status(201).json({
+      success: true,
+      message: 'Proveedor creado exitosamente',
+      data: {
+        proveedor: nuevoProveedor
+      }
+    });
+
+  } catch (error) {
+    console.error('Error al crear proveedor:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al crear el proveedor'
+    });
+  }
+};
+
+/**
+ * Actualizar un proveedor existente
+ * PUT /api/admin/proveedores/:id
+ */
+const actualizarProveedor = async (req, res) => {
+  try {
+    const proveedorId = parseInt(req.params.id);
+    const { nombreEmpresa, contactoNombre, email, telefono } = req.body;
+
+    // Validaciones
+    if (!nombreEmpresa || nombreEmpresa.trim() === '') {
+      return res.status(400).json({
+        success: false,
+        message: 'El nombre de la empresa es requerido'
+      });
+    }
+
+    // Validar email si se proporciona
+    if (email && email.trim() !== '') {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return res.status(400).json({
+          success: false,
+          message: 'El email no tiene un formato válido'
+        });
+      }
+    }
+
+    // Verificar que el proveedor existe
+    const checkQuery = 'SELECT ProveedorID FROM Proveedores WHERE ProveedorID = $1';
+    const checkResult = await db.query(checkQuery, [proveedorId]);
+
+    if (checkResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Proveedor no encontrado'
+      });
+    }
+
+    const query = `
+      UPDATE Proveedores
+      SET 
+        NombreEmpresa = $1,
+        ContactoNombre = $2,
+        Email = $3,
+        Telefono = $4
+      WHERE ProveedorID = $5
+      RETURNING ProveedorID, NombreEmpresa, ContactoNombre, Email, Telefono
+    `;
+
+    const values = [
+      nombreEmpresa.trim(),
+      contactoNombre ? contactoNombre.trim() : null,
+      email ? email.trim() : null,
+      telefono ? telefono.trim() : null,
+      proveedorId
+    ];
+
+    const result = await db.query(query, values);
+    const proveedorActualizado = result.rows[0];
+
+    console.log('✅ Proveedor actualizado:', proveedorActualizado);
+
+    res.json({
+      success: true,
+      message: 'Proveedor actualizado exitosamente',
+      data: {
+        proveedor: proveedorActualizado
+      }
+    });
+
+  } catch (error) {
+    console.error('Error al actualizar proveedor:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al actualizar el proveedor'
+    });
+  }
+};
+
+/**
+ * ============================================
+ * GESTIÓN DE ÓRDENES DE COMPRA
+ * ============================================
+ */
+
+/**
+ * Obtener todas las órdenes de compra (con filtro por estatus)
+ * GET /api/admin/ordenes-compra
+ */
+const getAllOrdenesCompra = async (req, res) => {
+  try {
+    const { estatus } = req.query;
+
+    let query = `
+      SELECT 
+        oc.OrdenCompraID,
+        oc.ProveedorID,
+        oc.FechaCreacion,
+        oc.FechaEntregaEsperada,
+        oc.Estatus,
+        p.NombreEmpresa as ProveedorNombre,
+        COUNT(doc.DetalleOC_ID) as TotalProductos
+      FROM OrdenesDeCompra oc
+      INNER JOIN Proveedores p ON oc.ProveedorID = p.ProveedorID
+      LEFT JOIN DetallesOrdenCompra doc ON oc.OrdenCompraID = doc.OrdenCompraID
+    `;
+
+    const values = [];
+    
+    // Filtrar por estatus si se proporciona
+    if (estatus) {
+      if (estatus === 'Pendiente,Parcial') {
+        query += ` WHERE oc.Estatus IN ('Pendiente', 'Parcial')`;
+      } else {
+        query += ` WHERE oc.Estatus = $1`;
+        values.push(estatus);
+      }
+    }
+
+    query += `
+      GROUP BY oc.OrdenCompraID, oc.ProveedorID, oc.FechaCreacion, 
+               oc.FechaEntregaEsperada, oc.Estatus, p.NombreEmpresa
+      ORDER BY oc.FechaCreacion DESC
+    `;
+
+    const result = await db.query(query, values);
+
+    res.json({
+      success: true,
+      message: 'Órdenes de compra obtenidas exitosamente',
+      data: {
+        ordenes: result.rows.map(row => ({
+          ordenCompraId: row.ordencompraid,
+          proveedorId: row.proveedorid,
+          proveedorNombre: row.proveedornombre,
+          fechaCreacion: row.fechacreacion,
+          fechaEntregaEsperada: row.fechaentregaesperada,
+          estatus: row.estatus,
+          totalProductos: parseInt(row.totalproductos)
+        })),
+        total: result.rows.length
+      }
+    });
+
+  } catch (error) {
+    console.error('Error al obtener órdenes de compra:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al obtener órdenes de compra'
+    });
+  }
+};
+
+/**
+ * Obtener detalles de una orden de compra específica
+ * GET /api/admin/ordenes-compra/:id/detalles
+ */
+const getDetallesOrdenCompra = async (req, res) => {
+  try {
+    const ordenCompraId = parseInt(req.params.id);
+
+    // Obtener información de la orden
+    const ordenQuery = `
+      SELECT 
+        oc.OrdenCompraID,
+        oc.ProveedorID,
+        oc.FechaCreacion,
+        oc.FechaEntregaEsperada,
+        oc.Estatus,
+        p.NombreEmpresa as ProveedorNombre,
+        p.ContactoNombre as ProveedorContacto
+      FROM OrdenesDeCompra oc
+      INNER JOIN Proveedores p ON oc.ProveedorID = p.ProveedorID
+      WHERE oc.OrdenCompraID = $1
+    `;
+
+    const ordenResult = await db.query(ordenQuery, [ordenCompraId]);
+
+    if (ordenResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Orden de compra no encontrada'
+      });
+    }
+
+    const orden = ordenResult.rows[0];
+
+    // Obtener detalles de productos
+    const detallesQuery = `
+      SELECT 
+        doc.DetalleOC_ID,
+        doc.OrdenCompraID,
+        doc.ProductoID,
+        doc.CantidadSolicitada,
+        doc.CantidadRecibida,
+        pr.NombreProducto,
+        pr.SKU,
+        pr.StockPaquetes as StockActual
+      FROM DetallesOrdenCompra doc
+      INNER JOIN Productos pr ON doc.ProductoID = pr.ProductoID
+      WHERE doc.OrdenCompraID = $1
+      ORDER BY pr.NombreProducto ASC
+    `;
+
+    const detallesResult = await db.query(detallesQuery, [ordenCompraId]);
+
+    res.json({
+      success: true,
+      message: 'Detalles obtenidos exitosamente',
+      data: {
+        orden: {
+          ordenCompraId: orden.ordencompraid,
+          proveedorId: orden.proveedorid,
+          proveedorNombre: orden.proveedornombre,
+          proveedorContacto: orden.proveedorcontacto,
+          fechaCreacion: orden.fechacreacion,
+          fechaEntregaEsperada: orden.fechaentregaesperada,
+          estatus: orden.estatus
+        },
+        detalles: detallesResult.rows.map(row => ({
+          detalleId: row.detalleoc_id,
+          productoId: row.productoid,
+          nombreProducto: row.nombreproducto,
+          sku: row.sku,
+          cantidadSolicitada: row.cantidadsolicitada,
+          cantidadRecibida: row.cantidadrecibida,
+          cantidadPendiente: row.cantidadsolicitada - row.cantidadrecibida,
+          stockActual: row.stockactual
+        }))
+      }
+    });
+
+  } catch (error) {
+    console.error('Error al obtener detalles de orden de compra:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al obtener detalles de la orden de compra'
+    });
+  }
+};
+
+/**
+ * Recibir inventario de una orden de compra
+ * POST /api/admin/ordenes-compra/recibir
+ */
+const recibirInventario = async (req, res) => {
+  const client = await db.getClient();
+  
+  try {
+    const { ordenCompraId, productos, adminId } = req.body;
+
+    // Validaciones
+    if (!ordenCompraId) {
+      return res.status(400).json({
+        success: false,
+        message: 'El ID de la orden de compra es requerido'
+      });
+    }
+
+    if (!productos || !Array.isArray(productos) || productos.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Debe incluir al menos un producto para recibir'
+      });
+    }
+
+    // Validar cada producto
+    for (const producto of productos) {
+      if (!producto.detalleId || producto.cantidadRecibidaAhora === undefined) {
+        return res.status(400).json({
+          success: false,
+          message: 'Cada producto debe tener detalleId y cantidadRecibidaAhora'
+        });
+      }
+
+      if (producto.cantidadRecibidaAhora < 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'La cantidad recibida no puede ser negativa'
+        });
+      }
+    }
+
+    // Iniciar transacción
+    await client.query('BEGIN');
+
+    // Verificar que la orden existe
+    const ordenCheck = await client.query(
+      'SELECT OrdenCompraID, Estatus FROM OrdenesDeCompra WHERE OrdenCompraID = $1',
+      [ordenCompraId]
+    );
+
+    if (ordenCheck.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({
+        success: false,
+        message: 'Orden de compra no encontrada'
+      });
+    }
+
+    const productosActualizados = [];
+
+    // Procesar cada producto
+    for (const producto of productos) {
+      const cantidadRecibida = parseInt(producto.cantidadRecibidaAhora);
+
+      if (cantidadRecibida === 0) {
+        continue; // Saltar si no se recibió nada
+      }
+
+      // 1. Obtener información del detalle actual
+      const detalleQuery = `
+        SELECT 
+          doc.DetalleOC_ID,
+          doc.ProductoID,
+          doc.CantidadSolicitada,
+          doc.CantidadRecibida,
+          pr.NombreProducto,
+          pr.StockPaquetes
+        FROM DetallesOrdenCompra doc
+        INNER JOIN Productos pr ON doc.ProductoID = pr.ProductoID
+        WHERE doc.DetalleOC_ID = $1 AND doc.OrdenCompraID = $2
+      `;
+
+      const detalleResult = await client.query(detalleQuery, [producto.detalleId, ordenCompraId]);
+
+      if (detalleResult.rows.length === 0) {
+        await client.query('ROLLBACK');
+        return res.status(404).json({
+          success: false,
+          message: `Detalle ${producto.detalleId} no encontrado en esta orden`
+        });
+      }
+
+      const detalle = detalleResult.rows[0];
+      const nuevaCantidadRecibida = detalle.cantidadrecibida + cantidadRecibida;
+
+      // Validar que no se exceda la cantidad solicitada
+      if (nuevaCantidadRecibida > detalle.cantidadsolicitada) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({
+          success: false,
+          message: `No puede recibir más de lo solicitado para ${detalle.nombreproducto}. Solicitado: ${detalle.cantidadsolicitada}, Ya recibido: ${detalle.cantidadrecibida}`
+        });
+      }
+
+      // 2. Actualizar CantidadRecibida en DetallesOrdenCompra
+      await client.query(
+        `UPDATE DetallesOrdenCompra 
+         SET CantidadRecibida = CantidadRecibida + $1 
+         WHERE DetalleOC_ID = $2`,
+        [cantidadRecibida, producto.detalleId]
+      );
+
+      // 3. Actualizar Stock en Productos
+      const nuevoStock = detalle.stockpaquetes + cantidadRecibida;
+      await client.query(
+        `UPDATE Productos 
+         SET StockPaquetes = StockPaquetes + $1 
+         WHERE ProductoID = $2`,
+        [cantidadRecibida, detalle.productoid]
+      );
+
+      // 4. Insertar en Log_Inventario
+      await client.query(
+        `INSERT INTO Log_Inventario 
+         (ProductoID, CantidadCambiado, NuevoStock, Motivo, UsuarioID) 
+         VALUES ($1, $2, $3, $4, $5)`,
+        [
+          detalle.productoid,
+          cantidadRecibida,
+          nuevoStock,
+          `Recepción de OC #${ordenCompraId}`,
+          adminId || null
+        ]
+      );
+
+      productosActualizados.push({
+        productoId: detalle.productoid,
+        nombreProducto: detalle.nombreproducto,
+        cantidadRecibidaAhora: cantidadRecibida,
+        cantidadRecibidaTotal: nuevaCantidadRecibida,
+        cantidadSolicitada: detalle.cantidadsolicitada,
+        nuevoStock: nuevoStock
+      });
+    }
+
+    // 5. Actualizar el Estatus de la OrdenDeCompra
+    // Obtener suma total de solicitado vs recibido
+    const estatusQuery = `
+      SELECT 
+        SUM(CantidadSolicitada) as TotalSolicitado,
+        SUM(CantidadRecibida) as TotalRecibido
+      FROM DetallesOrdenCompra
+      WHERE OrdenCompraID = $1
+    `;
+
+    const estatusResult = await client.query(estatusQuery, [ordenCompraId]);
+    const { totalsolicitado, totalrecibido } = estatusResult.rows[0];
+
+    let nuevoEstatus;
+    if (parseInt(totalrecibido) >= parseInt(totalsolicitado)) {
+      nuevoEstatus = 'Completada';
+    } else if (parseInt(totalrecibido) > 0) {
+      nuevoEstatus = 'Parcial';
+    } else {
+      nuevoEstatus = 'Pendiente';
+    }
+
+    await client.query(
+      'UPDATE OrdenesDeCompra SET Estatus = $1 WHERE OrdenCompraID = $2',
+      [nuevoEstatus, ordenCompraId]
+    );
+
+    // Commit de la transacción
+    await client.query('COMMIT');
+
+    console.log('✅ Inventario recibido:', {
+      ordenCompraId,
+      productosActualizados: productosActualizados.length,
+      nuevoEstatus
+    });
+
+    res.json({
+      success: true,
+      message: 'Inventario recibido exitosamente',
+      data: {
+        ordenCompraId,
+        nuevoEstatus,
+        productosActualizados,
+        totalSolicitado: parseInt(totalsolicitado),
+        totalRecibido: parseInt(totalrecibido)
+      }
+    });
+
+  } catch (error) {
+    // Rollback en caso de error
+    await client.query('ROLLBACK');
+    console.error('Error al recibir inventario:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al recibir el inventario'
+    });
+  } finally {
+    client.release();
+  }
+};
+
+/**
+ * Crear una nueva orden de compra
+ * POST /api/admin/ordenes-compra
+ */
+const crearOrdenCompra = async (req, res) => {
+  const client = await db.getClient();
+  
+  try {
+    const { proveedorId, fechaEntregaEsperada, productos } = req.body;
+
+    // Validaciones
+    if (!proveedorId) {
+      return res.status(400).json({
+        success: false,
+        message: 'El proveedor es requerido'
+      });
+    }
+
+    if (!fechaEntregaEsperada) {
+      return res.status(400).json({
+        success: false,
+        message: 'La fecha de entrega esperada es requerida'
+      });
+    }
+
+    if (!productos || !Array.isArray(productos) || productos.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Debe incluir al menos un producto'
+      });
+    }
+
+    // Validar cada producto
+    for (const producto of productos) {
+      if (!producto.productoId || !producto.cantidadSolicitada) {
+        return res.status(400).json({
+          success: false,
+          message: 'Cada producto debe tener productoId y cantidadSolicitada'
+        });
+      }
+
+      if (producto.cantidadSolicitada <= 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'La cantidad solicitada debe ser mayor a 0'
+        });
+      }
+    }
+
+    // Verificar que el proveedor existe
+    const proveedorCheck = await client.query(
+      'SELECT ProveedorID FROM Proveedores WHERE ProveedorID = $1',
+      [proveedorId]
+    );
+
+    if (proveedorCheck.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Proveedor no encontrado'
+      });
+    }
+
+    // Iniciar transacción
+    await client.query('BEGIN');
+
+    // 1. Crear la orden de compra
+    const ordenQuery = `
+      INSERT INTO OrdenesDeCompra (ProveedorID, FechaEntregaEsperada, Estatus)
+      VALUES ($1, $2, 'Pendiente')
+      RETURNING OrdenCompraID, ProveedorID, FechaCreacion, FechaEntregaEsperada, Estatus
+    `;
+
+    const ordenResult = await client.query(ordenQuery, [
+      proveedorId,
+      fechaEntregaEsperada
+    ]);
+
+    const ordenCompra = ordenResult.rows[0];
+    const ordenCompraId = ordenCompra.ordencompraid;
+
+    // 2. Insertar los detalles de la orden (productos)
+    const detallesInsertados = [];
+
+    for (const producto of productos) {
+      // Verificar que el producto existe
+      const productoCheck = await client.query(
+        'SELECT ProductoID, NombreProducto FROM Productos WHERE ProductoID = $1',
+        [producto.productoId]
+      );
+
+      if (productoCheck.rows.length === 0) {
+        await client.query('ROLLBACK');
+        return res.status(404).json({
+          success: false,
+          message: `Producto con ID ${producto.productoId} no encontrado`
+        });
+      }
+
+      // Insertar detalle
+      const detalleQuery = `
+        INSERT INTO DetallesOrdenCompra (OrdenCompraID, ProductoID, CantidadSolicitada, CantidadRecibida)
+        VALUES ($1, $2, $3, 0)
+        RETURNING DetalleOC_ID, ProductoID, CantidadSolicitada, CantidadRecibida
+      `;
+
+      const detalleResult = await client.query(detalleQuery, [
+        ordenCompraId,
+        producto.productoId,
+        producto.cantidadSolicitada
+      ]);
+
+      detallesInsertados.push({
+        ...detalleResult.rows[0],
+        nombreProducto: productoCheck.rows[0].nombreproducto
+      });
+    }
+
+    // Commit de la transacción
+    await client.query('COMMIT');
+
+    console.log('✅ Orden de compra creada:', {
+      ordenCompraId,
+      proveedorId,
+      totalProductos: detallesInsertados.length
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Orden de compra creada exitosamente',
+      data: {
+        ordenCompra: {
+          ordenCompraId: ordenCompraId,
+          proveedorId: ordenCompra.proveedorid,
+          fechaCreacion: ordenCompra.fechacreacion,
+          fechaEntregaEsperada: ordenCompra.fechaentregaesperada,
+          estatus: ordenCompra.estatus
+        },
+        detalles: detallesInsertados.map(d => ({
+          detalleId: d.detalleoc_id,
+          productoId: d.productoid,
+          nombreProducto: d.nombreProducto,
+          cantidadSolicitada: d.cantidadsolicitada,
+          cantidadRecibida: d.cantidadrecibida
+        }))
+      }
+    });
+
+  } catch (error) {
+    // Rollback en caso de error
+    await client.query('ROLLBACK');
+    console.error('Error al crear orden de compra:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al crear la orden de compra'
+    });
+  } finally {
+    client.release();
+  }
+};
+
 module.exports = {
   loginAdmin,
   verifyAdmin,
@@ -1313,5 +2019,12 @@ module.exports = {
   desactivarAgente,
   getAllComisiones,
   pagarComision,
-  getAllClientes
+  getAllClientes,
+  getAllProveedores,
+  crearProveedor,
+  actualizarProveedor,
+  getAllOrdenesCompra,
+  getDetallesOrdenCompra,
+  crearOrdenCompra,
+  recibirInventario
 };

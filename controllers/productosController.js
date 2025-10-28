@@ -171,7 +171,98 @@ const obtenerProductoPorId = async (req, res) => {
   }
 };
 
+/**
+ * Obtener todas las categorías
+ * GET /api/categorias
+ */
+const obtenerCategorias = async (req, res) => {
+  try {
+    const query = `
+      SELECT 
+        categoriaid,
+        nombre,
+        descripcion
+      FROM categorias
+      ORDER BY nombre ASC
+    `;
+
+    const result = await db.query(query);
+
+    // Formatear la respuesta
+    const categorias = result.rows.map(row => ({
+      categoriaId: row.categoriaid,
+      nombre: row.nombre,
+      descripcion: row.descripcion
+    }));
+
+    res.status(200).json({
+      success: true,
+      message: 'Categorías obtenidas exitosamente',
+      data: {
+        categorias,
+        total: categorias.length
+      }
+    });
+
+  } catch (error) {
+    console.error('Error al obtener categorías:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al obtener las categorías',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Obtener lista pública de agentes activos
+ * GET /api/agentes/lista-publica
+ */
+const obtenerAgentesPublicos = async (req, res) => {
+  try {
+    const query = `
+      SELECT 
+        agenteid,
+        codigoagente,
+        nombre,
+        apellido
+      FROM agentesdeventas
+      WHERE activo = true
+      ORDER BY codigoagente ASC
+    `;
+
+    const result = await db.query(query);
+
+    // Formatear la respuesta
+    const agentes = result.rows.map(row => ({
+      agenteId: row.agenteid,
+      codigoAgente: row.codigoagente,
+      nombre: row.nombre,
+      apellido: row.apellido
+    }));
+
+    res.status(200).json({
+      success: true,
+      message: 'Agentes obtenidos exitosamente',
+      data: {
+        agentes,
+        total: agentes.length
+      }
+    });
+
+  } catch (error) {
+    console.error('Error al obtener agentes públicos:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al obtener la lista de agentes',
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   obtenerProductos,
-  obtenerProductoPorId
+  obtenerProductoPorId,
+  obtenerCategorias,
+  obtenerAgentesPublicos
 };

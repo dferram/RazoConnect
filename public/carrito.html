@@ -62,6 +62,26 @@
     .direccion-option input[type="radio"] {
       margin-right: 1rem;
     }
+
+    .btn-quantity:disabled {
+      opacity: 0.4;
+      cursor: not-allowed !important;
+      pointer-events: none;
+    }
+
+    .cart-item {
+      position: relative;
+      padding: 1.5rem;
+      background: var(--surface);
+      border-radius: 0.75rem;
+      margin-bottom: 1rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      transition: all 0.2s;
+    }
+
+    .cart-item:hover {
+      box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+    }
   </style>
 </head>
 <body>
@@ -122,11 +142,11 @@
             </div>
 
             <button class="btn btn-success btn-block mt-3" id="checkoutBtn">
-              Proceder al Pago
+              💳 Proceder al Pago
             </button>
             
-            <a href="/catalogo.html" class="btn btn-secondary btn-block mt-2">
-              Continuar Comprando
+            <a href="/catalogo.html" class="btn btn-secondary btn-block mt-2" style="text-decoration: none; display: block; text-align: center;">
+              🛍️ Agregar Más Productos
             </a>
           </div>
 
@@ -134,6 +154,24 @@
             💡 <strong>Nota:</strong> Los precios son por paquete. Cada paquete contiene múltiples piezas según el producto.
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Success -->
+  <div id="modalSuccess" class="modal">
+    <div class="modal-content" style="background: white; padding: 3rem; border-radius: 1rem; box-shadow: 0 20px 60px rgba(0,0,0,0.3); max-width: 500px; text-align: center;">
+      <div style="font-size: 4rem; margin-bottom: 1rem;">✅</div>
+      <h2 style="font-size: 2rem; font-weight: bold; margin-bottom: 1rem; color: var(--success-color);">¡Pedido Confirmado!</h2>
+      <p style="font-size: 1rem; color: var(--text-secondary); margin-bottom: 2rem;">Tu pedido ha sido creado exitosamente. Pronto recibirás una confirmación.</p>
+      
+      <div style="display: flex; flex-direction: column; gap: 1rem;">
+        <a href="/catalogo.html" class="btn btn-primary" style="width: 100%; text-decoration: none; text-align: center;">
+          🛍️ Seguir Comprando
+        </a>
+        <a href="/dashboard.html" class="btn btn-secondary" style="width: 100%; text-decoration: none; text-align: center;">
+          📋 Ver Mis Pedidos
+        </a>
       </div>
     </div>
   </div>
@@ -160,17 +198,26 @@
             </div>
           </div>
 
-          <!-- Optional Agent Code -->
+          <!-- Optional Agent Selection -->
           <div class="form-group" style="margin-top: 1.5rem;">
-            <label class="form-label" for="codigoAgente">Código de Agente (opcional)</label>
-            <input 
-              type="text" 
-              id="codigoAgente" 
+            <label class="form-label" for="selectAgente">Agente de Ventas (opcional)</label>
+            
+            <!-- Loading agentes -->
+            <div id="loadingAgentes" style="display: none; padding: 0.5rem; text-align: center;">
+              <div class="spinner" style="width: 20px; height: 20px; border-width: 2px;"></div>
+            </div>
+            
+            <select 
+              id="selectAgente" 
               class="form-input" 
-              placeholder="Ingresa el código de tu agente de ventas"
+              style="padding: 0.75rem; font-size: 1rem;"
             >
+              <option value="">Sin agente</option>
+              <!-- Opciones se cargarán dinámicamente -->
+            </select>
+            
             <p style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 0.25rem;">
-              Si cuentas con un código de agente, tu agente recibirá una comisión del 20%
+              💰 Si seleccionas un agente, recibirá una comisión del 20% de tu compra
             </p>
           </div>
 
@@ -206,10 +253,12 @@
 
     // Modal elements
     const modalCheckout = document.getElementById('modalCheckout');
+    const modalSuccess = document.getElementById('modalSuccess');
     const loadingDirecciones = document.getElementById('loadingDirecciones');
     const direccionesList = document.getElementById('direccionesList');
     const noDirecciones = document.getElementById('noDirecciones');
-    const codigoAgenteInput = document.getElementById('codigoAgente');
+    const selectAgente = document.getElementById('selectAgente');
+    const loadingAgentes = document.getElementById('loadingAgentes');
     const btnConfirmarPedido = document.getElementById('btnConfirmarPedido');
     const btnCancelarCheckout = document.getElementById('btnCancelarCheckout');
     const btnConfirmarText = document.getElementById('btnConfirmarText');
@@ -218,6 +267,7 @@
     let carritoData = null;
     let direcciones = [];
     let selectedDireccionId = null;
+    let agentes = [];
 
     // Format currency
     function formatCurrency(amount) {
@@ -233,19 +283,43 @@
       const imageAlt = item.imagenPrincipal?.alt || item.nombreProducto;
       
       return `
-        <div class="cart-item">
+        <div class="cart-item" style="position: relative;">
           <img src="${imageSrc}" alt="${imageAlt}" class="cart-item-image">
           <div class="cart-item-info">
             <h3 class="cart-item-title">${item.nombreProducto}</h3>
             <p class="cart-item-details">
               <strong>SKU:</strong> ${item.sku}<br>
-              <strong>Cantidad:</strong> ${item.cantidadPaquetes} paquete(s)<br>
               <strong>Piezas por paquete:</strong> ${item.piezasPorPaquete}<br>
               <strong>Total piezas:</strong> ${item.cantidadPaquetes * item.piezasPorPaquete}
             </p>
             <p class="cart-item-details" style="margin-top: 0.5rem;">
               ${item.dimensiones || 'Sin dimensiones'}
             </p>
+            
+            <!-- Controles de cantidad -->
+            <div style="display: flex; align-items: center; gap: 0.75rem; margin-top: 1rem;">
+              <span style="font-weight: 600; color: var(--text-secondary); font-size: 0.875rem;">Cantidad:</span>
+              <div style="display: flex; align-items: center; gap: 0.5rem; background: var(--razo-gray-light); padding: 0.25rem; border-radius: 0.5rem;">
+                <button 
+                  onclick="actualizarCantidad(${item.productoId}, ${item.cantidadPaquetes - 1})"
+                  class="btn-quantity"
+                  style="background: white; border: none; width: 32px; height: 32px; border-radius: 0.375rem; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; font-weight: 600; color: var(--razo-orange); transition: all 0.2s;"
+                  ${item.cantidadPaquetes <= 1 ? 'disabled' : ''}
+                  onmouseover="this.style.background='var(--razo-orange)'; this.style.color='white'"
+                  onmouseout="this.style.background='white'; this.style.color='var(--razo-orange)'"
+                >−</button>
+                <span style="font-weight: 700; font-size: 1.125rem; min-width: 40px; text-align: center; color: var(--razo-gray-dark);">${item.cantidadPaquetes}</span>
+                <button 
+                  onclick="actualizarCantidad(${item.productoId}, ${item.cantidadPaquetes + 1})"
+                  class="btn-quantity"
+                  style="background: white; border: none; width: 32px; height: 32px; border-radius: 0.375rem; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; font-weight: 600; color: var(--razo-orange); transition: all 0.2s;"
+                  ${item.cantidadPaquetes >= item.stock ? 'disabled' : ''}
+                  onmouseover="this.style.background='var(--razo-orange)'; this.style.color='white'"
+                  onmouseout="this.style.background='white'; this.style.color='var(--razo-orange)'"
+                >+</button>
+              </div>
+              <span style="font-size: 0.75rem; color: var(--text-secondary);">paquete(s)</span>
+            </div>
           </div>
           <div class="cart-item-price">
             <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 0.25rem;">
@@ -256,6 +330,15 @@
               Stock disponible: ${item.stock}
             </p>
           </div>
+          
+          <!-- Botón eliminar -->
+          <button 
+            onclick="eliminarProducto(${item.productoId}, '${item.nombreProducto}')"
+            style="position: absolute; top: 1rem; right: 1rem; background: var(--danger-color); color: white; border: none; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"
+            title="Eliminar producto"
+            onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 8px rgba(220,38,38,0.3)'"
+            onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)'"
+          >🗑️</button>
         </div>
       `;
     }
@@ -298,6 +381,40 @@
         console.error('Error loading cart:', error);
         loadingState.style.display = 'none';
         showToast('Error al cargar el carrito. Intenta recargar la página.', 'error');
+      }
+    }
+
+    // Load agentes for checkout
+    async function loadAgentesCheckout() {
+      try {
+        loadingAgentes.style.display = 'block';
+        selectAgente.disabled = true;
+
+        const response = await fetch(`${API_BASE_URL}/agentes/lista-publica`);
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+          agentes = data.data.agentes;
+
+          // Limpiar opciones anteriores (excepto "Sin agente")
+          selectAgente.innerHTML = '<option value="">Sin agente</option>';
+
+          // Agregar cada agente como opción
+          agentes.forEach(agente => {
+            const option = document.createElement('option');
+            option.value = agente.agenteId; // Usar AgenteID como valor
+            option.textContent = `${agente.codigoAgente} (${agente.nombre} ${agente.apellido})`;
+            selectAgente.appendChild(option);
+          });
+
+          loadingAgentes.style.display = 'none';
+          selectAgente.disabled = false;
+        }
+      } catch (error) {
+        console.error('Error loading agentes:', error);
+        loadingAgentes.style.display = 'none';
+        selectAgente.disabled = false;
+        // Si hay error, el select queda con solo "Sin agente" y funciona igual
       }
     }
 
@@ -359,13 +476,14 @@
 
       modalCheckout.classList.add('show');
       loadDireccionesCheckout();
+      loadAgentesCheckout(); // Cargar agentes al abrir el modal
     });
 
     // Cancel checkout
     btnCancelarCheckout.addEventListener('click', () => {
       modalCheckout.classList.remove('show');
       selectedDireccionId = null;
-      codigoAgenteInput.value = '';
+      selectAgente.value = ''; // Resetear a "Sin agente"
     });
 
     // Confirm order
@@ -380,17 +498,32 @@
       btnConfirmarSpinner.style.display = 'block';
 
       try {
-        const codigoAgente = codigoAgenteInput.value.trim() || null;
-        const response = await API.crearPedido(selectedDireccionId, codigoAgente);
+        // Obtener el AgenteID del select (o null si no hay agente seleccionado)
+        const agenteId = selectAgente.value ? parseInt(selectAgente.value) : null;
+        const response = await API.crearPedido(selectedDireccionId, agenteId);
 
         if (response.ok && response.data.success) {
           const pedidoId = response.data.data.pedido.pedidoId;
-          showToast('¡Pedido creado exitosamente!', 'success');
           
-          // Redirect to confirmation page
+          // Cerrar modal de checkout
+          modalCheckout.classList.remove('show');
+          
+          // Mostrar modal de éxito
+          modalSuccess.classList.add('show');
+          
+          // Limpiar formulario
+          selectedDireccionId = null;
+          selectAgente.value = ''; // Resetear a "Sin agente"
+          
+          // Restablecer botón
+          btnConfirmarPedido.disabled = false;
+          btnConfirmarText.style.display = 'inline';
+          btnConfirmarSpinner.style.display = 'none';
+          
+          // Recargar carrito (estará vacío)
           setTimeout(() => {
-            window.location.href = `/pedido-confirmado.html?id=${pedidoId}`;
-          }, 1000);
+            loadCarrito();
+          }, 500);
         } else {
           showToast(response.data.message || 'Error al crear el pedido', 'error');
           btnConfirmarPedido.disabled = false;
@@ -415,6 +548,59 @@
         window.location.href = '/login.html';
       }, 500);
     });
+
+    // Close modals when clicking outside
+    window.addEventListener('click', (e) => {
+      if (e.target === modalCheckout) {
+        modalCheckout.classList.remove('show');
+        selectedDireccionId = null;
+        selectAgente.value = ''; // Resetear a "Sin agente"
+      }
+      // El modal de éxito NO se cierra al hacer clic fuera (forzar al usuario a elegir una acción)
+    });
+
+    // Actualizar cantidad de producto
+    async function actualizarCantidad(productoId, nuevaCantidad) {
+      if (nuevaCantidad < 1) {
+        showToast('La cantidad mínima es 1 paquete', 'warning');
+        return;
+      }
+
+      try {
+        const response = await API.actualizarCarrito(productoId, nuevaCantidad);
+        
+        if (response.ok && response.data.success) {
+          showToast('Cantidad actualizada', 'success');
+          loadCarrito();
+        } else {
+          showToast(response.data.message || 'Error al actualizar cantidad', 'error');
+        }
+      } catch (error) {
+        console.error('Error updating quantity:', error);
+        showToast('Error al conectar con el servidor', 'error');
+      }
+    }
+
+    // Eliminar producto del carrito
+    async function eliminarProducto(productoId, nombreProducto) {
+      if (!confirm(`¿Deseas eliminar "${nombreProducto}" del carrito?`)) {
+        return;
+      }
+
+      try {
+        const response = await API.eliminarDelCarrito(productoId);
+        
+        if (response.ok && response.data.success) {
+          showToast('Producto eliminado del carrito', 'success');
+          loadCarrito();
+        } else {
+          showToast(response.data.message || 'Error al eliminar producto', 'error');
+        }
+      } catch (error) {
+        console.error('Error removing product:', error);
+        showToast('Error al conectar con el servidor', 'error');
+      }
+    }
 
     // Load cart on page load
     loadCarrito();
@@ -442,6 +628,24 @@
       display: flex;
     }
 
+    #modalSuccess .modal-content {
+      animation: modalBounce 0.5s ease-out;
+    }
+
+    @keyframes modalBounce {
+      0% {
+        transform: scale(0.7);
+        opacity: 0;
+      }
+      50% {
+        transform: scale(1.05);
+      }
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
     @media (max-width: 968px) {
       #cartContent > div {
         grid-template-columns: 1fr !important;
@@ -454,6 +658,18 @@
       .modal-content {
         max-width: 90% !important;
         padding: 1.5rem !important;
+      }
+
+      #modalSuccess .modal-content {
+        padding: 2rem !important;
+      }
+
+      #modalSuccess h2 {
+        font-size: 1.5rem !important;
+      }
+
+      #modalSuccess div[style*="font-size: 4rem"] {
+        font-size: 3rem !important;
       }
     }
   </style>

@@ -67,6 +67,22 @@
         </div>
 
         <div class="admin-nav-section">
+          <div class="admin-nav-title">Compras</div>
+          <a href="/admin-proveedores.html" class="admin-nav-link">
+            <span class="admin-nav-icon">🏭</span>
+            <span>Proveedores</span>
+          </a>
+          <a href="/admin-crear-oc.html" class="admin-nav-link">
+            <span class="admin-nav-icon">📋</span>
+            <span>Nueva Orden de Compra</span>
+          </a>
+          <a href="/admin-recibir-inventario.html" class="admin-nav-link">
+            <span class="admin-nav-icon">📥</span>
+            <span>Recibir Inventario</span>
+          </a>
+        </div>
+
+        <div class="admin-nav-section">
           <div class="admin-nav-title">Configuración</div>
           <a href="#" class="admin-nav-link" data-module="configuracion">
             <span class="admin-nav-icon">⚙️</span>
@@ -138,9 +154,43 @@
             <div class="empty-state-icon">📦</div>
             <h3 class="empty-state-title">No hay productos</h3>
             <p class="empty-state-text">Comienza agregando tu primer producto</p>
-            <button class="btn btn-primary" onclick="window.location.href='/admin-agregar-producto.html'">
+            <a href="/admin-agregar-producto.html" class="btn btn-primary" style="text-decoration: none; display: inline-block;">
               + Agregar Producto
-            </button>
+            </a>
+          </div>
+          
+          <!-- Paginación -->
+          <div id="paginationContainer" style="display: none; margin-top: 1.5rem; padding: 1rem; border-top: 1px solid #E5E7EB;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+              <!-- Información de registros -->
+              <div style="color: var(--razo-gray-warm); font-size: 0.875rem;">
+                Mostrando <strong id="pageStart">1</strong> a <strong id="pageEnd">10</strong> de <strong id="totalRecords">0</strong> productos
+              </div>
+              
+              <!-- Controles de paginación -->
+              <div style="display: flex; gap: 0.5rem; align-items: center;">
+                <button 
+                  id="btnPrevPage" 
+                  onclick="cambiarPagina('prev')" 
+                  class="btn btn-secondary" 
+                  style="padding: 0.5rem 1rem; font-size: 0.875rem; display: flex; align-items: center; gap: 0.5rem;"
+                  disabled>
+                  ← Anterior
+                </button>
+                
+                <div id="pageNumbers" style="display: flex; gap: 0.25rem;">
+                  <!-- Los números de página se generarán dinámicamente -->
+                </div>
+                
+                <button 
+                  id="btnNextPage" 
+                  onclick="cambiarPagina('next')" 
+                  class="btn btn-secondary" 
+                  style="padding: 0.5rem 1rem; font-size: 0.875rem; display: flex; align-items: center; gap: 0.5rem;">
+                  Siguiente →
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -244,6 +294,10 @@
     let allProducts = [];
     let selectedProduct = null;
     let tipoAjuste = null; // 'entrada' o 'salida'
+    
+    // Variables de paginación
+    let paginaActual = 1;
+    const registrosPorPagina = 10;
 
     // Verify admin
     async function verifyAndLoadAdmin() {
@@ -305,7 +359,8 @@
         const data = await response.json();
         if (data.success) {
           allProducts = data.data.productos;
-          renderProducts(allProducts);
+          paginaActual = 1;
+          renderProducts();
         }
       } catch (error) {
         console.error('Error loading products:', error);
@@ -317,23 +372,33 @@
     }
 
     // Render products
-    function renderProducts(products) {
+    function renderProducts(products = null) {
       const productsTableBody = document.getElementById('productsTableBody');
       const productsTable = document.getElementById('productsTable');
       const emptyProducts = document.getElementById('emptyProducts');
+      const pagination = document.getElementById('paginationContainer');
 
-      if (products.length === 0) {
+      // Si no se pasan productos, usar allProducts con paginación
+      const productosAMostrar = products || allProducts;
+      
+      if (productosAMostrar.length === 0) {
         emptyProducts.style.display = 'block';
+        pagination.style.display = 'none';
         return;
       }
 
-      productsTableBody.innerHTML = products.map(product => {
+      // Calcular paginación
+      const inicio = (paginaActual - 1) * registrosPorPagina;
+      const fin = inicio + registrosPorPagina;
+      const productosPagina = productosAMostrar.slice(inicio, fin);
+
+      productsTableBody.innerHTML = productosPagina.map(product => {
         let stockBadge = 'success';
         let stockText = 'Normal';
-        if (product.stock === 0) {
+        if (product.stockpaquetes === 0) {
           stockBadge = 'danger';
           stockText = 'Sin Stock';
-        } else if (product.stock <= 5) {
+        } else if (product.stockpaquetes <= 5) {
           stockBadge = 'warning';
           stockText = 'Stock Bajo';
         }
@@ -342,14 +407,14 @@
           <tr>
             <td><strong>${product.sku}</strong></td>
             <td>
-              <div style="font-weight: 600;">${product.nombre}</div>
-              <div style="font-size: 0.875rem; color: var(--razo-gray-warm);">${product.categoriaNombre || 'Sin categoría'}</div>
+              <div style="font-weight: 600;">${product.nombreproducto}</div>
+              <div style="font-size: 0.875rem; color: var(--razo-gray-warm);">${product.categorianombre || 'Sin categoría'}</div>
             </td>
-            <td><strong>${formatCurrency(product.precioPaquete)}</strong></td>
-            <td>${product.piezasPorPaquete} pzas</td>
+            <td><strong>${formatCurrency(product.preciopaquete)}</strong></td>
+            <td>${product.piezasporpaquete} pzas</td>
             <td>
               <div style="font-size: 1.25rem; font-weight: 700; color: var(--razo-orange);">
-                ${product.stock}
+                ${product.stockpaquetes}
               </div>
             </td>
             <td><span class="admin-badge ${stockBadge}">${stockText}</span></td>
@@ -366,6 +431,77 @@
       }).join('');
       
       productsTable.style.display = 'table';
+      
+      // Mostrar paginación solo si no se pasaron productos filtrados
+      if (!products) {
+        pagination.style.display = 'block';
+        actualizarPaginacion();
+      } else {
+        pagination.style.display = 'none';
+      }
+    }
+
+    // Actualizar controles de paginación
+    function actualizarPaginacion() {
+      const totalPaginas = Math.ceil(allProducts.length / registrosPorPagina);
+      const inicio = (paginaActual - 1) * registrosPorPagina + 1;
+      const fin = Math.min(paginaActual * registrosPorPagina, allProducts.length);
+      
+      // Actualizar información
+      document.getElementById('pageStart').textContent = inicio;
+      document.getElementById('pageEnd').textContent = fin;
+      document.getElementById('totalRecords').textContent = allProducts.length;
+      
+      // Actualizar botones prev/next
+      document.getElementById('btnPrevPage').disabled = paginaActual === 1;
+      document.getElementById('btnNextPage').disabled = paginaActual === totalPaginas;
+      
+      // Generar números de página
+      const pageNumbers = document.getElementById('pageNumbers');
+      pageNumbers.innerHTML = '';
+      
+      // Mostrar máximo 5 números de página
+      let startPage = Math.max(1, paginaActual - 2);
+      let endPage = Math.min(totalPaginas, startPage + 4);
+      
+      if (endPage - startPage < 4) {
+        startPage = Math.max(1, endPage - 4);
+      }
+      
+      for (let i = startPage; i <= endPage; i++) {
+        const pageBtn = document.createElement('button');
+        pageBtn.textContent = i;
+        pageBtn.className = 'btn';
+        pageBtn.style.cssText = `
+          padding: 0.5rem 0.75rem;
+          font-size: 0.875rem;
+          min-width: 2.5rem;
+          ${i === paginaActual ? 
+            'background: var(--razo-orange); color: white; font-weight: 600;' : 
+            'background: white; color: var(--razo-gray-dark); border: 1px solid #E5E7EB;'}
+        `;
+        pageBtn.onclick = () => irAPagina(i);
+        pageNumbers.appendChild(pageBtn);
+      }
+    }
+
+    // Cambiar de página
+    function cambiarPagina(direccion) {
+      const totalPaginas = Math.ceil(allProducts.length / registrosPorPagina);
+      
+      if (direccion === 'prev' && paginaActual > 1) {
+        paginaActual--;
+      } else if (direccion === 'next' && paginaActual < totalPaginas) {
+        paginaActual++;
+      }
+      
+      renderProducts();
+    }
+
+    // Ir a página específica
+    function irAPagina(pagina) {
+      paginaActual = pagina;
+      renderProducts();
     }
 
     // Format currency
@@ -379,11 +515,19 @@
     // Search filter
     document.getElementById('searchInput').addEventListener('input', (e) => {
       const searchTerm = e.target.value.toLowerCase();
-      const filtered = allProducts.filter(p => 
-        p.nombre.toLowerCase().includes(searchTerm) ||
-        p.sku.toLowerCase().includes(searchTerm)
-      );
-      renderProducts(filtered);
+      
+      if (searchTerm === '') {
+        // Si no hay búsqueda, mostrar todos con paginación
+        paginaActual = 1;
+        renderProducts();
+      } else {
+        // Si hay búsqueda, mostrar filtrados sin paginación
+        const filtered = allProducts.filter(p => 
+          p.nombreproducto.toLowerCase().includes(searchTerm) ||
+          p.sku.toLowerCase().includes(searchTerm)
+        );
+        renderProducts(filtered);
+      }
     });
 
     // Open ajuste modal
@@ -391,9 +535,9 @@
       selectedProduct = product;
       tipoAjuste = null;
       
-      document.getElementById('modalProductoNombre').textContent = product.nombre;
+      document.getElementById('modalProductoNombre').textContent = product.nombreproducto;
       document.getElementById('modalProductoSku').textContent = product.sku;
-      document.getElementById('modalStockActual').textContent = product.stock;
+      document.getElementById('modalStockActual').textContent = product.stockpaquetes;
       document.getElementById('modalCantidad').value = '';
       document.getElementById('modalMotivo').value = '';
       document.getElementById('modalMotivoOtro').value = '';
@@ -473,7 +617,7 @@
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            productoId: selectedProduct.productoId,
+            productoId: selectedProduct.productoid,
             cantidadCambio,
             motivo
           })

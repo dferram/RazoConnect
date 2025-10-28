@@ -219,7 +219,167 @@ const agregarAlCarrito = async (req, res) => {
   }
 };
 
+/**
+ * Actualizar cantidad de un producto en el carrito
+ * PUT /api/carrito/:productoId
+ */
+const actualizarCarrito = async (req, res) => {
+  try {
+    const clienteId = req.user.userId;
+    const productoId = parseInt(req.params.productoId);
+    const { CantidadPaquetes } = req.body;
+
+    // Validar datos de entrada
+    if (!CantidadPaquetes || CantidadPaquetes <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'La cantidad debe ser mayor a 0'
+      });
+    }
+
+    // Verificar stock del producto
+    const productoResult = await db.query(
+      'SELECT ProductoID, NombreProducto, Stock, PrecioPaquete FROM Productos WHERE ProductoID = $1',
+      [productoId]
+    );
+
+    if (productoResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Producto no encontrado'
+      });
+    }
+
+    const producto = productoResult.rows[0];
+
+    if (producto.stock < CantidadPaquetes) {
+      return res.status(400).json({
+        success: false,
+        message: `Stock insuficiente. Disponible: ${producto.stock} paquetes`
+      });
+    }
+
+    // Obtener el carrito del cliente
+    const carritoResult = await db.query(
+      'SELECT CarritoID FROM CarritoDeCompra WHERE ClienteID = $1',
+      [clienteId]
+    );
+
+    if (carritoResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Carrito no encontrado'
+      });
+    }
+
+    const carritoId = carritoResult.rows[0].carritoid;
+
+    // Actualizar la cantidad del item
+    const updateResult = await db.query(
+      'UPDATE ItemsDelCarrito SET CantidadPaquetes = $1 WHERE CarritoID = $2 AND ProductoID = $3 RETURNING ItemID, ProductoID, CantidadPaquetes',
+      [CantidadPaquetes, carritoId, productoId]
+    );
+
+    if (updateResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Producto no encontrado en el carrito'
+      });
+    }
+
+    // Actualizar última modificación del carrito
+    await db.query(
+      'UPDATE CarritoDeCompra SET UltimaModificacion = NOW() WHERE CarritoID = $1',
+      [carritoId]
+    );
+
+    const item = updateResult.rows[0];
+
+    res.status(200).json({
+      success: true,
+      message: 'Cantidad actualizada exitosamente',
+      data: {
+        item: {
+          itemId: item.itemid,
+          productoId: item.productoid,
+          cantidadPaquetes: item.cantidadpaquetes,
+          precioPaquete: parseFloat(producto.preciopaquete),
+          subtotal: parseFloat((item.cantidadpaquetes * producto.preciopaquete).toFixed(2))
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('Error al actualizar carrito:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al actualizar cantidad',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Eliminar un producto del carrito
+ * DELETE /api/carrito/:productoId
+ */
+const eliminarDelCarrito = async (req, res) => {
+  try {
+    const clienteId = req.user.userId;
+    const productoId = parseInt(req.params.productoId);
+
+    // Obtener el carrito del cliente
+    const carritoResult = await db.query(
+      'SELECT CarritoID FROM CarritoDeCompra WHERE ClienteID = $1',
+      [clienteId]
+    );
+
+    if (carritoResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Carrito no encontrado'
+      });
+    }
+
+    const carritoId = carritoResult.rows[0].carritoid;
+
+    // Eliminar el item del carrito
+    const deleteResult = await db.query(
+      'DELETE FROM ItemsDelCarrito WHERE CarritoID = $1 AND ProductoID = $2 RETURNING ItemID',
+      [carritoId, productoId]
+    );
+
+    if (deleteResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Producto no encontrado en el carrito'
+      });
+    }
+
+    // Actualizar última modificación del carrito
+    await db.query(
+      'UPDATE CarritoDeCompra SET UltimaModificacion = NOW() WHERE CarritoID = $1',
+      [carritoId]
+    );
+
+    res.status(200).json({
+      success: true,
+      message: 'Producto eliminado del carrito exitosamente'
+    });
+
+  } catch (error) {
+    console.error('Error al eliminar del carrito:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al eliminar producto del carrito',
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   obtenerCarrito,
-  agregarAlCarrito
+  agregarAlCarrito,
+  actualizarCarrito,
+  eliminarDelCarrito
 };

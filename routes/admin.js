@@ -62,4 +62,19 @@ router.get('/clientes', authenticate, authorizeAdmin, adminController.getAllClie
  */
 router.get('/pedidos/:id/detalle', authenticate, authorizeAdmin, adminController.getPedidoDetalle);
 
+/**
+ * Gestión de proveedores
+ */
+router.get('/proveedores', authenticate, authorizeAdmin, adminController.getAllProveedores);
+router.post('/proveedores', authenticate, authorizeAdmin, adminController.crearProveedor);
+router.put('/proveedores/:id', authenticate, authorizeAdmin, adminController.actualizarProveedor);
+
+/**
+ * Gestión de órdenes de compra
+ */
+router.get('/ordenes-compra', authenticate, authorizeAdmin, adminController.getAllOrdenesCompra);
+router.get('/ordenes-compra/:id/detalles', authenticate, authorizeAdmin, adminController.getDetallesOrdenCompra);
+router.post('/ordenes-compra', authenticate, authorizeAdmin, adminController.crearOrdenCompra);
+router.post('/ordenes-compra/recibir', authenticate, authorizeAdmin, adminController.recibirInventario);
+
 module.exports = router;
