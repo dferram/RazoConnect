@@ -36,6 +36,9 @@
   --razo-gray-light: #f5f1ed;
   --razo-gray-dark: #2d3748;
 
+  /* Layout helpers */
+  --navbar-height: 72px;
+
   /* Semantic Colors */
   --success-color: #10b981;
   --danger-color: #ef4444;
@@ -96,6 +99,19 @@ h3 {
   max-width: 1200px;
   margin: 0 auto;
   padding: 0 1rem;
+}
+
+/* ============================================
+   CATALOGO
+   ============================================ */
+.catalog-sidebar {
+  position: sticky;
+  top: calc(var(--navbar-height) + 1.5rem);
+  align-self: start;
+  height: fit-content;
+  max-height: calc(100vh - var(--navbar-height) - 2rem);
+  overflow-y: auto;
+  padding-right: 0.5rem;
 }
 
 /* ============================================

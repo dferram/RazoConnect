@@ -154,7 +154,7 @@
       <!-- Layout con Sidebar y Contenido -->
       <div style="display: grid; grid-template-columns: 200px 1fr; gap: 3rem">
         <!-- Sidebar de Categorías estilo Nike -->
-        <aside style="height: fit-content; position: sticky; top: 1rem">
+        <aside class="catalog-sidebar">
           <!-- Loading categorías -->
           <div id="loadingCategorias" style="text-align: center; padding: 1rem">
             <div class="spinner" style="width: 30px; height: 30px"></div>
@@ -289,33 +289,14 @@
 
               <!-- Disponibilidad -->
               <div>
-                <label
-                  for="filtro-stock"
-                  style="
-                    display: flex;
-                    align-items: center;
-                    gap: 0.65rem;
-                    font-weight: 600;
-                    color: var(--text-secondary);
-                    cursor: pointer;
-                  "
-                >
+                <label for="filtro-stock" class="stock-filter">
                   <input
                     type="checkbox"
                     id="filtro-stock"
-                    style="
-                      appearance: none;
-                      width: 20px;
-                      height: 20px;
-                      border: 2px solid rgba(255, 136, 84, 0.5);
-                      border-radius: 6px;
-                      background: linear-gradient(135deg, #fff, #fff0e8);
-                      position: relative;
-                      transition: all 0.2s ease;
-                      cursor: pointer;
-                    "
+                    class="stock-filter__checkbox"
                   />
-                  <span>Solo en stock</span>
+                  <span class="check-box" aria-hidden="true"></span>
+                  <span class="stock-filter__text">Solo en stock</span>
                 </label>
               </div>
 
@@ -678,7 +659,7 @@
             <div>
               <div style="margin-bottom: 0.5rem;">
                 <span style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase;">
-                  ${producto.categoria?.nombre || "sin categoría"}
+                  ${producto.categoria?.nombre || "Sin categoría"}
                 </span>
               </div>
               <h3 class="product-title">${producto.nombreProducto}</h3>
@@ -689,7 +670,7 @@
                 producto.precioPaquete
               )}</div>
               <div class="product-details">
-                ${producto.piezasPorPaquete} piezas por paquete<br>
+                ${producto.piezasPorPaquete} Piezas por paquete<br>
                 ${producto.dimensiones || "Sin dimensiones"}
               </div>
               <div style="margin-top: 0.75rem; font-size: 0.875rem;">
@@ -909,35 +890,112 @@
     </script>
 
     <style>
-      #filtro-stock {
-        transition: box-shadow 0.2s ease;
+      .stock-filter {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.65rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        cursor: pointer;
+        -webkit-user-select: none;
+        user-select: none;
       }
 
-      #filtro-stock:hover {
-        box-shadow: 0 4px 10px rgba(255, 136, 84, 0.18);
+      .stock-filter__text {
+        line-height: 1;
       }
 
-      #filtro-stock:checked {
-        background: linear-gradient(135deg, #ff7a3a 0%, #ff974d 100%);
-        border-color: transparent;
+      .stock-filter__checkbox {
+        position: absolute;
+        opacity: 0;
+        width: 0;
+        height: 0;
       }
 
-      #filtro-stock::after {
+      .check-box {
+        --box-size: 24px;
+        --check-color: #ff7a3a;
+        width: var(--box-size);
+        height: var(--box-size);
+        border: calc(var(--box-size) * 0.1) solid rgba(255, 136, 84, 0.6);
+        border-radius: 6px;
+        background: linear-gradient(135deg, #ffffff, #fff0e8);
+        position: relative;
+        display: inline-block;
+        box-sizing: border-box;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .stock-filter:hover .check-box {
+        border-color: rgba(255, 136, 84, 0.9);
+      }
+
+      .stock-filter__checkbox:focus-visible + .check-box {
+        box-shadow: 0 0 0 3px rgba(255, 136, 84, 0.35);
+      }
+
+      .check-box::before,
+      .check-box::after {
         content: "";
         position: absolute;
-        top: 4px;
-        left: 7px;
-        width: 4px;
-        height: 8px;
-        border: solid #fff;
-        border-width: 0 2px 2px 0;
-        transform: rotate(45deg);
+        width: calc(var(--box-size) * 0.15);
+        height: 0;
+        background-color: var(--check-color);
+        border-radius: calc(var(--box-size) * 0.05);
+        display: inline-block;
+        transform-origin: left top;
         opacity: 0;
-        transition: opacity 0.15s ease;
       }
 
-      #filtro-stock:checked::after {
+      .check-box::before {
+        top: calc(var(--box-size) * 0.66);
+        left: calc(var(--box-size) * 0.45);
+        transform: rotate(-135deg);
+        box-shadow: 0 0 0 calc(var(--box-size) * 0.05) var(--razo-cream);
+      }
+
+      .check-box::after {
+        top: calc(var(--box-size) * 0.42);
+        left: calc(var(--box-size) * 0.08);
+        transform: rotate(-45deg);
+      }
+
+      @keyframes stockCheckBottom {
+        0% {
+          height: 0;
+        }
+        100% {
+          height: calc(var(--box-size) * 0.42);
+        }
+      }
+
+      @keyframes stockCheckTop {
+        0% {
+          height: 0;
+        }
+        50% {
+          height: 0;
+        }
+        100% {
+          height: calc(var(--box-size) * 0.95);
+        }
+      }
+
+      .stock-filter__checkbox:checked + .check-box {
+        border-color: var(--check-color);
+      }
+
+      .stock-filter__checkbox:checked + .check-box::after,
+      .stock-filter__checkbox:checked + .check-box::before {
         opacity: 1;
+      }
+
+      .stock-filter__checkbox:checked + .check-box::after {
+        animation: stockCheckBottom 0.2s ease forwards;
+      }
+
+      .stock-filter__checkbox:checked + .check-box::before {
+        animation: stockCheckTop 0.4s ease forwards;
       }
 
       /* Responsive layout para móviles */
