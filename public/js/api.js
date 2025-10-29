@@ -95,8 +95,14 @@ const API = {
   },
 
   // Products endpoints
-  getProductos: async () => {
-    return apiCall('/productos', {
+  getProductos: async (queryString = '') => {
+    return apiCall(`/productos${queryString}`, {
+      method: 'GET'
+    });
+  },
+
+  getDimensiones: async () => {
+    return apiCall('/productos/dimensiones', {
       method: 'GET'
     });
   },

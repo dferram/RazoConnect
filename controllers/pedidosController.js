@@ -287,6 +287,7 @@ const obtenerPedidos = async (req, res) => {
       `;
 
       const detallesResult = await db.query(detallesQuery, [pedido.pedidoid]);
+      console.log('🧾 Detalles pedido', pedido.pedidoid, detallesResult.rows);
 
       return {
         pedidoId: pedido.pedidoid,
@@ -309,7 +310,7 @@ const obtenerPedidos = async (req, res) => {
           sku: item.sku,
           nombreProducto: item.nombreproducto,
           cantidadPaquetes: item.cantidadpaquetes,
-          precioPorPaquete: parseFloat(item.preciorporpaquete),
+          precioPorPaquete: parseFloat(item.precioporpaquete),
           precioUnitario: parseFloat(item.preciounitario),
           piezasTotales: item.piezastotales,
           imagenUrl: item.url_imagen

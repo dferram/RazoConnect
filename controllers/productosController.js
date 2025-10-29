@@ -6,6 +6,43 @@ const db = require('../db');
  */
 const obtenerProductos = async (req, res) => {
   try {
+    const { search, precioMin, precioMax, dimension, stock } = req.query;
+
+    const filtros = [];
+    const valores = [];
+
+    if (search) {
+      valores.push(`%${search}%`);
+      filtros.push(`(p.NombreProducto ILIKE $${valores.length} OR p.SKU ILIKE $${valores.length})`);
+    }
+
+    if (precioMin && precioMax) {
+      valores.push(precioMin);
+      filtros.push(`p.PrecioPaquete >= $${valores.length}`);
+      valores.push(precioMax);
+      filtros.push(`p.PrecioPaquete <= $${valores.length}`);
+    } else if (precioMin) {
+      valores.push(precioMin);
+      filtros.push(`p.PrecioPaquete >= $${valores.length}`);
+    } else if (precioMax) {
+      valores.push(precioMax);
+      filtros.push(`p.PrecioPaquete <= $${valores.length}`);
+    }
+
+    if (dimension) {
+      valores.push(`%${dimension}%`);
+      filtros.push(`p.Dimensiones ILIKE $${valores.length}`);
+    }
+
+    if (stock === 'true') {
+      filtros.push('p.Stock > 0');
+    }
+
+    let whereClause = '';
+    if (filtros.length > 0) {
+      whereClause = `WHERE ${filtros.join(' AND ')}`;
+    }
+
     const query = `
       SELECT 
         p.ProductoID,
@@ -23,10 +60,11 @@ const obtenerProductos = async (req, res) => {
       FROM Productos p
       LEFT JOIN Categorias c ON p.CategoriaID = c.CategoriaID
       LEFT JOIN Producto_Imagenes pi ON p.ProductoID = pi.ProductoID AND pi.Orden = 0
+      ${whereClause}
       ORDER BY p.ProductoID DESC
     `;
 
-    const result = await db.query(query);
+    const result = await db.query(query, valores);
 
     // Formatear la respuesta
     const productos = result.rows.map(row => ({
@@ -62,6 +100,39 @@ const obtenerProductos = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error al obtener los productos',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Obtener lista de dimensiones únicas
+ * GET /api/productos/dimensiones
+ */
+const obtenerDimensiones = async (req, res) => {
+  try {
+    const result = await db.query(
+      `SELECT DISTINCT TRIM(Dimensiones) as dimension
+       FROM Productos
+       WHERE Dimensiones IS NOT NULL AND Dimensiones <> ''
+       ORDER BY dimension ASC`
+    );
+
+    const dimensiones = result.rows.map(row => row.dimension);
+
+    res.status(200).json({
+      success: true,
+      message: 'Dimensiones obtenidas exitosamente',
+      data: {
+        dimensiones,
+        total: dimensiones.length
+      }
+    });
+  } catch (error) {
+    console.error('Error al obtener dimensiones:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al obtener las dimensiones',
       error: error.message
     });
   }
@@ -264,5 +335,6 @@ module.exports = {
   obtenerProductos,
   obtenerProductoPorId,
   obtenerCategorias,
-  obtenerAgentesPublicos
+  obtenerAgentesPublicos,
+  obtenerDimensiones
 };

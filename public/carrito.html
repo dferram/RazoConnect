@@ -176,6 +176,33 @@
     </div>
   </div>
 
+  <!-- Modal: Confirm Delete -->
+  <div id="modalEliminar" class="modal">
+    <div class="modal-content" style="background: white; padding: 2.5rem; border-radius: 1.5rem; box-shadow: 0 25px 70px rgba(0, 0, 0, 0.3); max-width: 420px; text-align: center; position: relative;">
+      <div style="margin-bottom: 1.5rem;">
+        <div style="width: 70px; height: 70px; background: linear-gradient(135deg, var(--razo-orange) 0%, var(--razo-orange-dark) 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.25rem; font-size: 2rem; box-shadow: 0 10px 25px rgba(255, 119, 51, 0.35);">
+          🗑️
+        </div>
+        <h2 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 0.75rem; color: #2D3748;">
+          ¿Eliminar producto?
+        </h2>
+        <p style="color: #718096; font-size: 1rem; line-height: 1.5;">
+          ¿Deseas eliminar "<span id="modalEliminarNombre"></span>" del carrito?
+        </p>
+      </div>
+
+      <div style="display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;">
+        <button class="btn btn-secondary" id="btnCancelarEliminar" style="flex: 1; min-width: 160px; padding: 0.875rem 1.5rem; font-size: 0.9375rem;">
+          Cancelar
+        </button>
+        <button class="btn btn-danger" id="btnConfirmarEliminar" style="flex: 1; min-width: 160px; padding: 0.875rem 1.5rem; font-size: 0.9375rem;">
+          <span id="btnEliminarText">Eliminar producto</span>
+          <div class="spinner" id="btnEliminarSpinner" style="display: none; width: 20px; height: 20px; border-width: 2px;"></div>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Modal: Checkout -->
   <div id="modalCheckout" class="modal">
     <div class="modal-content" style="background: white; padding: 2rem; border-radius: 1rem; box-shadow: 0 20px 60px rgba(0,0,0,0.3); max-width: 600px;">
@@ -254,6 +281,12 @@
     // Modal elements
     const modalCheckout = document.getElementById('modalCheckout');
     const modalSuccess = document.getElementById('modalSuccess');
+    const modalEliminar = document.getElementById('modalEliminar');
+    const modalEliminarNombre = document.getElementById('modalEliminarNombre');
+    const btnCancelarEliminar = document.getElementById('btnCancelarEliminar');
+    const btnConfirmarEliminar = document.getElementById('btnConfirmarEliminar');
+    const btnEliminarText = document.getElementById('btnEliminarText');
+    const btnEliminarSpinner = document.getElementById('btnEliminarSpinner');
     const loadingDirecciones = document.getElementById('loadingDirecciones');
     const direccionesList = document.getElementById('direccionesList');
     const noDirecciones = document.getElementById('noDirecciones');
@@ -268,6 +301,7 @@
     let direcciones = [];
     let selectedDireccionId = null;
     let agentes = [];
+    let productoPendienteEliminar = null;
 
     // Format currency
     function formatCurrency(amount) {
@@ -556,7 +590,16 @@
         selectedDireccionId = null;
         selectAgente.value = ''; // Resetear a "Sin agente"
       }
+      if (e.target === modalEliminar) {
+        cerrarModalEliminar();
+      }
       // El modal de éxito NO se cierra al hacer clic fuera (forzar al usuario a elegir una acción)
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && modalEliminar.classList.contains('show')) {
+        cerrarModalEliminar();
+      }
     });
 
     // Actualizar cantidad de producto
@@ -581,17 +624,35 @@
       }
     }
 
-    // Eliminar producto del carrito
-    async function eliminarProducto(productoId, nombreProducto) {
-      if (!confirm(`¿Deseas eliminar "${nombreProducto}" del carrito?`)) {
+    function eliminarProducto(productoId, nombreProducto) {
+      productoPendienteEliminar = { id: productoId, nombre: nombreProducto };
+      modalEliminarNombre.textContent = nombreProducto;
+      modalEliminar.classList.add('show');
+    }
+
+    function cerrarModalEliminar() {
+      modalEliminar.classList.remove('show');
+      productoPendienteEliminar = null;
+      btnConfirmarEliminar.disabled = false;
+      btnEliminarText.style.display = 'inline';
+      btnEliminarSpinner.style.display = 'none';
+    }
+
+    async function confirmarEliminarProducto() {
+      if (!productoPendienteEliminar) {
         return;
       }
 
+      btnConfirmarEliminar.disabled = true;
+      btnEliminarText.style.display = 'none';
+      btnEliminarSpinner.style.display = 'inline-block';
+
       try {
-        const response = await API.eliminarDelCarrito(productoId);
+        const response = await API.eliminarDelCarrito(productoPendienteEliminar.id);
         
         if (response.ok && response.data.success) {
           showToast('Producto eliminado del carrito', 'success');
+          cerrarModalEliminar();
           loadCarrito();
         } else {
           showToast(response.data.message || 'Error al eliminar producto', 'error');
@@ -599,8 +660,17 @@
       } catch (error) {
         console.error('Error removing product:', error);
         showToast('Error al conectar con el servidor', 'error');
+      } finally {
+        if (modalEliminar.classList.contains('show')) {
+          btnConfirmarEliminar.disabled = false;
+          btnEliminarText.style.display = 'inline';
+          btnEliminarSpinner.style.display = 'none';
+        }
       }
     }
+
+    btnCancelarEliminar.addEventListener('click', cerrarModalEliminar);
+    btnConfirmarEliminar.addEventListener('click', confirmarEliminarProducto);
 
     // Load cart on page load
     loadCarrito();

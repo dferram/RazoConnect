@@ -16,10 +16,10 @@
               href="/catalogo.html"
               class="navbar-link"
               style="color: var(--primary-color); font-weight: 600"
-              >productos</a
+              >Productos</a
             >
           </li>
-          <li><a href="/carrito.html" class="navbar-link">carrito</a></li>
+          <li><a href="/carrito.html" class="navbar-link">Carrito</a></li>
           <li>
             <a
               href="/dashboard.html"
@@ -29,11 +29,11 @@
                 font-size: 0.875rem;
                 text-decoration: none;
               "
-              title="mi cuenta"
+              title="Mi cuenta"
             ></a>
           </li>
           <li>
-            <a href="#" class="navbar-link" id="logoutBtn">cerrar sesión</a>
+            <a href="#" class="navbar-link" id="logoutBtn">Cerrar sesión</a>
           </li>
         </ul>
       </div>
@@ -50,14 +50,105 @@
         "
       >
         <div>
-          <h1 style="font-size: 2.5rem; font-weight: bold; margin-bottom: 1.5rem">
-            catálogo de productos
+          <h1
+            style="font-size: 2.5rem; font-weight: bold; margin-bottom: 1.5rem"
+          >
+            Catálogo de productos
           </h1>
           <p style="color: var(--text-secondary)">
-            explora nuestro catálogo de cajas de fashion al mayoreo
+            Explora nuestro catálogo de cajas de fashion al mayoreo
           </p>
         </div>
-        <a href="/carrito.html" class="btn btn-primary"> 🛒 ver carrito </a>
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            align-items: flex-end;
+          "
+        >
+          <a href="/carrito.html" class="cart-icon-button" title="Ver carrito">
+            🛒
+            <span class="sr-only">Ver carrito</span>
+          </a>
+
+          <form
+            id="searchForm"
+            style="width: 100%; max-width: 520px"
+            onsubmit="return false;"
+          >
+            <label for="search-bar" style="display: none"
+              >Buscar producto</label
+            >
+            <div
+              style="
+                display: flex;
+                align-items: center;
+                width: 100%;
+                border: 2px solid rgba(255, 136, 84, 0.65);
+                border-radius: 2.5rem;
+                overflow: hidden;
+                background: #fff;
+                box-shadow: 0 12px 26px rgba(255, 116, 60, 0.18);
+              "
+            >
+              <input
+                type="search"
+                id="search-bar"
+                placeholder="Buscar por nombre/SKU"
+                style="
+                  flex: 1;
+                  padding: 1rem 1.5rem 1rem 1.5rem;
+                  border: none;
+                  background: transparent;
+                  font-size: 1.05rem;
+                  color: var(--text-primary);
+                  outline: none;
+                "
+              />
+              <button
+                type="button"
+                id="btnBuscarHeader"
+                style="
+                  min-width: 70px;
+                  align-self: stretch;
+                  border: none;
+                  background: linear-gradient(135deg, #ff7a3a 0%, #ff974d 100%);
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  cursor: pointer;
+                  transition: transform 0.2s ease;
+                  padding: 0 1.35rem;
+                  border-radius: 0 2.5rem 2.5rem 0;
+                "
+                title="Buscar"
+              >
+                <svg
+                  width="22"
+                  height="22"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <circle
+                    cx="11"
+                    cy="11"
+                    r="7"
+                    stroke="white"
+                    stroke-width="2"
+                  />
+                  <path
+                    d="M16.5 16.5L21 21"
+                    stroke="white"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                  />
+                </svg>
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
 
       <!-- Layout con Sidebar y Contenido -->
@@ -76,6 +167,179 @@
           >
             <!-- Las categorías se cargarán aquí dinámicamente -->
           </ul>
+
+          <!-- Controles de filtros adicionales -->
+          <div id="filtrosAdicionales" style="margin-top: 2rem; display: none">
+            <div
+              style="
+                display: flex;
+                flex-direction: column;
+                gap: 1.5rem;
+                font-size: 0.92rem;
+                color: var(--text-secondary);
+              "
+            >
+              <!-- Precio -->
+              <div>
+                <p
+                  style="
+                    font-weight: 600;
+                    margin-bottom: 0.75rem;
+                    color: var(--text-primary);
+                    letter-spacing: 0.02em;
+                  "
+                >
+                  Precio
+                </p>
+                <div
+                  style="
+                    display: grid;
+                    grid-template-columns: repeat(2, 1fr);
+                    gap: 0.75rem;
+                  "
+                >
+                  <div>
+                    <label
+                      for="precio-min"
+                      style="
+                        display: block;
+                        font-size: 0.75rem;
+                        color: var(--text-secondary);
+                        margin-bottom: 0.25rem;
+                      "
+                      >Min</label
+                    >
+                    <input
+                      type="number"
+                      id="precio-min"
+                      placeholder="Min"
+                      min="0"
+                      style="
+                        width: 100%;
+                        padding: 0.35rem 0;
+                        border: none;
+                        border-bottom: 1px solid #e5e5e5;
+                        background: transparent;
+                        font-size: 0.92rem;
+                        color: var(--text-primary);
+                        outline: none;
+                      "
+                    />
+                  </div>
+                  <div>
+                    <label
+                      for="precio-max"
+                      style="
+                        display: block;
+                        font-size: 0.75rem;
+                        color: var(--text-secondary);
+                        margin-bottom: 0.25rem;
+                      "
+                      >Max</label
+                    >
+                    <input
+                      type="number"
+                      id="precio-max"
+                      placeholder="Max"
+                      min="0"
+                      style="
+                        width: 100%;
+                        padding: 0.35rem 0;
+                        border: none;
+                        border-bottom: 1px solid #e5e5e5;
+                        background: transparent;
+                        font-size: 0.92rem;
+                        color: var(--text-primary);
+                        outline: none;
+                      "
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <!-- Dimensiones -->
+              <div>
+                <label
+                  for="filtro-dimensiones"
+                  style="
+                    display: block;
+                    font-weight: 600;
+                    margin-bottom: 0.5rem;
+                    color: var(--text-secondary);
+                  "
+                >
+                  Dimensiones
+                </label>
+                <select
+                  id="filtro-dimensiones"
+                  style="
+                    width: 100%;
+                    padding: 0.5rem 0;
+                    border: none;
+                    border-bottom: 1px solid #e5e5e5;
+                    background: transparent;
+                    font-size: 0.92rem;
+                    color: var(--text-primary);
+                    outline: none;
+                  "
+                >
+                  <option value="">Todas</option>
+                </select>
+              </div>
+
+              <!-- Disponibilidad -->
+              <div>
+                <label
+                  for="filtro-stock"
+                  style="
+                    display: flex;
+                    align-items: center;
+                    gap: 0.65rem;
+                    font-weight: 600;
+                    color: var(--text-secondary);
+                    cursor: pointer;
+                  "
+                >
+                  <input
+                    type="checkbox"
+                    id="filtro-stock"
+                    style="
+                      appearance: none;
+                      width: 20px;
+                      height: 20px;
+                      border: 2px solid rgba(255, 136, 84, 0.5);
+                      border-radius: 6px;
+                      background: linear-gradient(135deg, #fff, #fff0e8);
+                      position: relative;
+                      transition: all 0.2s ease;
+                      cursor: pointer;
+                    "
+                  />
+                  <span>Solo en stock</span>
+                </label>
+              </div>
+
+              <!-- Botón aplicar -->
+              <button
+                id="btn-aplicar-filtros"
+                class="btn btn-primary"
+                style="
+                  width: 100%;
+                  justify-content: center;
+                  padding: 0.85rem 1.5rem;
+                  border-radius: 1.75rem;
+                  background: linear-gradient(135deg, #ff7a3a 0%, #ff974d 100%);
+                  border: none;
+                  box-shadow: 0 12px 26px rgba(255, 116, 60, 0.24);
+                  font-size: 0.95rem;
+                  font-weight: 600;
+                  letter-spacing: 0.01em;
+                "
+              >
+                Aplicar filtros
+              </button>
+            </div>
+          </div>
         </aside>
 
         <!-- Contenido Principal -->
@@ -104,7 +368,7 @@
                 >
               </span>
               <button
-                onclick="filtrarPorCategoria(null)"
+                id="btnLimpiarFiltros"
                 style="
                   background: none;
                   border: none;
@@ -114,9 +378,18 @@
                   text-decoration: underline;
                 "
               >
-                limpiar filtro
+                Limpiar filtros
               </button>
             </div>
+            <div
+              id="filtroResumen"
+              style="
+                display: none;
+                gap: 0.5rem;
+                flex-wrap: wrap;
+                padding-top: 0.85rem;
+              "
+            ></div>
           </div>
 
           <!-- Loading State -->
@@ -134,9 +407,9 @@
           <!-- Empty State -->
           <div id="emptyState" class="empty-state" style="display: none">
             <div class="empty-state-icon">📦</div>
-            <h2 class="empty-state-title">no hay productos disponibles</h2>
+            <h2 class="empty-state-title">No hay productos disponibles</h2>
             <p class="empty-state-text">
-              vuelve pronto para ver nuestros nuevos productos
+              Vuelve pronto para ver nuestros nuevos productos
             </p>
           </div>
         </main>
@@ -159,15 +432,203 @@
       const categoriasList = document.getElementById("categoriasList");
       const filtroActivo = document.getElementById("filtroActivo");
       const categoriaActiva = document.getElementById("categoriaActiva");
+      const filtrosAdicionales = document.getElementById("filtrosAdicionales");
+      const filtroResumen = document.getElementById("filtroResumen");
+      const btnLimpiarFiltros = document.getElementById("btnLimpiarFiltros");
+      const productCount = document.getElementById("productCount");
+      const searchForm = document.getElementById("searchForm");
+      const searchBar = document.getElementById("search-bar");
+      const btnBuscarHeader = document.getElementById("btnBuscarHeader");
+      const precioMinInput = document.getElementById("precio-min");
+      const precioMaxInput = document.getElementById("precio-max");
+      const dimensionesSelect = document.getElementById("filtro-dimensiones");
+      const stockCheckbox = document.getElementById("filtro-stock");
+      const btnAplicarFiltros = document.getElementById("btn-aplicar-filtros");
 
       let todosLosProductos = [];
       let categoriaSeleccionada = null;
+      let filtrosQueryActual = "";
+      let nombreCategoriaSeleccionada = null;
+
+      function obtenerFiltrosSeleccionados() {
+        return {
+          search: searchBar ? searchBar.value.trim() : "",
+          precioMin: precioMinInput ? precioMinInput.value : "",
+          precioMax: precioMaxInput ? precioMaxInput.value : "",
+          dimension: dimensionesSelect ? dimensionesSelect.value : "",
+          stock: stockCheckbox ? stockCheckbox.checked : false,
+        };
+      }
+
+      function construirQueryString() {
+        const params = new URLSearchParams();
+        const filtros = obtenerFiltrosSeleccionados();
+
+        if (filtros.search) {
+          params.append("search", filtros.search);
+        }
+
+        if (filtros.precioMin) {
+          params.append("precioMin", filtros.precioMin);
+        }
+
+        if (filtros.precioMax) {
+          params.append("precioMax", filtros.precioMax);
+        }
+
+        if (filtros.dimension) {
+          params.append("dimension", filtros.dimension);
+        }
+
+        if (filtros.stock) {
+          params.append("stock", "true");
+        }
+
+        const queryString = params.toString();
+        return queryString ? `?${queryString}` : "";
+      }
+
+      function crearChip(texto, onRemove) {
+        const chip = document.createElement("button");
+        chip.type = "button";
+        chip.textContent = texto;
+        chip.style.background = "rgba(255, 136, 84, 0.12)";
+        chip.style.color = "var(--text-secondary)";
+        chip.style.border = "1px solid rgba(255, 136, 84, 0.25)";
+        chip.style.borderRadius = "999px";
+        chip.style.padding = "0.35rem 0.85rem";
+        chip.style.fontSize = "0.8rem";
+        chip.style.cursor = "pointer";
+        chip.style.display = "inline-flex";
+        chip.style.alignItems = "center";
+        chip.style.gap = "0.35rem";
+
+        const close = document.createElement("span");
+        close.textContent = "✕";
+        close.style.fontSize = "0.75rem";
+        chip.appendChild(close);
+
+        chip.addEventListener("click", (event) => {
+          event.preventDefault();
+          if (typeof onRemove === "function") {
+            onRemove();
+          }
+        });
+
+        return chip;
+      }
+
+      function actualizarFiltroActivo() {
+        const filtros = obtenerFiltrosSeleccionados();
+        const hayCategoria = categoriaSeleccionada !== null;
+        const hayOtrosFiltros =
+          filtros.search ||
+          filtros.precioMin ||
+          filtros.precioMax ||
+          filtros.dimension ||
+          filtros.stock;
+
+        if (!hayCategoria && !hayOtrosFiltros) {
+          filtroActivo.style.display = "none";
+          if (filtroResumen) {
+            filtroResumen.innerHTML = "";
+            filtroResumen.style.display = "none";
+          }
+          return;
+        }
+
+        filtroActivo.style.display = "block";
+
+        if (categoriaActiva) {
+          categoriaActiva.textContent = nombreCategoriaSeleccionada || "Todos";
+        }
+
+        if (!filtroResumen) return;
+        filtroResumen.innerHTML = "";
+
+        if (hayCategoria && nombreCategoriaSeleccionada) {
+          filtroResumen.appendChild(
+            crearChip(`Categoría: ${nombreCategoriaSeleccionada}`, () => {
+              filtrarPorCategoria(null);
+            })
+          );
+        }
+
+        if (filtros.search) {
+          filtroResumen.appendChild(
+            crearChip(`Buscar: "${filtros.search}"`, () => {
+              searchBar.value = "";
+              aplicarFiltrosDesdeUI();
+            })
+          );
+        }
+
+        if (filtros.precioMin || filtros.precioMax) {
+          const minLabel = filtros.precioMin ? `$${filtros.precioMin}` : "-";
+          const maxLabel = filtros.precioMax ? `$${filtros.precioMax}` : "-";
+          filtroResumen.appendChild(
+            crearChip(`Precio: ${minLabel} – ${maxLabel}`, () => {
+              if (precioMinInput) precioMinInput.value = "";
+              if (precioMaxInput) precioMaxInput.value = "";
+              aplicarFiltrosDesdeUI();
+            })
+          );
+        }
+
+        if (filtros.dimension) {
+          filtroResumen.appendChild(
+            crearChip(`Dimensión: ${filtros.dimension}`, () => {
+              if (dimensionesSelect) dimensionesSelect.value = "";
+              aplicarFiltrosDesdeUI();
+            })
+          );
+        }
+
+        if (filtros.stock) {
+          filtroResumen.appendChild(
+            crearChip("Solo en stock", () => {
+              if (stockCheckbox) stockCheckbox.checked = false;
+              aplicarFiltrosDesdeUI();
+            })
+          );
+        }
+
+        filtroResumen.style.display =
+          filtroResumen.childElementCount > 0 ? "flex" : "none";
+      }
+
+      async function loadDimensiones() {
+        if (!dimensionesSelect) return;
+
+        try {
+          const response = await API.getDimensiones();
+
+          if (response.ok && response.data.success) {
+            const dimensiones = response.data.data.dimensiones || [];
+            dimensionesSelect.innerHTML = '<option value="">Todas</option>';
+
+            dimensiones.forEach((dimension) => {
+              const option = document.createElement("option");
+              option.value = dimension;
+              option.textContent = dimension;
+              dimensionesSelect.appendChild(option);
+            });
+          }
+        } catch (error) {
+          console.error("Error loading dimensiones:", error);
+          showToast("No se pudieron cargar las dimensiones", "warning");
+        } finally {
+          if (filtrosAdicionales) {
+            filtrosAdicionales.style.display = "block";
+          }
+        }
+      }
 
       // Display user greeting
       const userData = getUserData();
       if (userData) {
         const nombre = userData.nombre || userData.Nombre || "usuario";
-        userGreeting.textContent = `hola, ${nombre}`;
+        userGreeting.textContent = `Hola, ${nombre}`;
       }
 
       // Format currency
@@ -189,16 +650,29 @@
           infantil: "👶",
         };
 
-        const emoji = categoriaEmojis[producto.categoria?.nombre] || "📦";
+        const categoriaNombre = producto.categoria?.nombre
+          ? producto.categoria.nombre.toLowerCase()
+          : "";
+        const emoji = categoriaEmojis[categoriaNombre] || "📦";
+        const imagenUrl = producto.imagenPrincipal?.url;
+        const imagenAlt =
+          producto.imagenPrincipal?.alt || producto.nombreProducto;
+
+        const mediaContent = imagenUrl
+          ? `<img src="${imagenUrl}" alt="${imagenAlt}" class="product-media" />`
+          : `<div class="product-media product-media--fallback">${emoji}</div>`;
+
         const stockStatus =
           producto.stock > 0
             ? `<span style="color: var(--success-color);">✓ en stock (${producto.stock})</span>`
             : `<span style="color: var(--danger-color);">✗ sin stock</span>`;
 
         return `
-        <a href="/producto-detalle.html?id=${producto.productoId}" class="product-card" style="text-decoration: none; color: inherit; display: flex; flex-direction: column;">
-          <div class="product-image" style="background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%); display: flex; align-items: center; justify-content: center; font-size: 5rem; height: 200px;">
-            ${emoji}
+        <a href="/producto-detalle.html?id=${
+          producto.productoId
+        }" class="product-card">
+          <div class="product-image">
+            ${mediaContent}
           </div>
           <div class="product-info">
             <div>
@@ -209,7 +683,6 @@
               </div>
               <h3 class="product-title">${producto.nombreProducto}</h3>
               <p style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.5rem;">
-                sku: ${producto.sku}
                 SKU: ${producto.sku}
               </p>
               <div class="product-price">${formatCurrency(
@@ -224,7 +697,9 @@
               </div>
             </div>
             <div style="margin-top: auto; padding-top: 1rem;">
-              <span class="btn btn-primary btn-block" style="display: block; text-align: center; ${producto.stock === 0 ? "opacity: 0.5; cursor: not-allowed;" : ""}">
+              <span class="btn btn-primary btn-block" style="display: block; text-align: center; ${
+                producto.stock === 0 ? "opacity: 0.5; cursor: not-allowed;" : ""
+              }">
                 ${producto.stock > 0 ? "Ver Detalles" : "Sin Stock"}
               </span>
             </div>
@@ -307,105 +782,175 @@
       // Filtrar productos por categoría
       function filtrarPorCategoria(categoriaId, nombreCategoria = null) {
         categoriaSeleccionada = categoriaId;
-
-        if (categoriaId === null) {
-          filtroActivo.style.display = "none";
-        } else {
-          filtroActivo.style.display = "block";
-          categoriaActiva.textContent = nombreCategoria;
-        }
+        nombreCategoriaSeleccionada = categoriaId ? nombreCategoria : null;
 
         // Recargar categorías para actualizar el estilo activo
         loadCategorias();
 
-    // Filtrar y mostrar productos
-    mostrarProductos();
-  }
-
-  // Mostrar productos filtrados
-  function mostrarProductos() {
-    let productosFiltrados = todosLosProductos;
-
-    // Filtrar por categoría si hay una seleccionada
-    if (categoriaSeleccionada !== null) {
-      productosFiltrados = todosLosProductos.filter(
-        (p) =>
-          p.categoria && p.categoria.categoriaId === categoriaSeleccionada
-      );
-    }
-
-    // Actualizar contador de productos
-    if (productCount) {
-      productCount.textContent = productosFiltrados.length;
-    }
-
-    if (productosFiltrados.length === 0) {
-      productGrid.style.display = "none";
-      emptyState.style.display = "block";
-    } else {
-      productGrid.innerHTML = productosFiltrados
-        .map((producto) => renderProductCard(producto))
-        .join("");
-      productGrid.style.display = "grid";
-      emptyState.style.display = "none";
-    }
-  }
-
-  // Load products
-  async function loadProductos() {
-    try {
-      loadingState.style.display = "flex";
-      productGrid.style.display = "none";
-      emptyState.style.display = "none";
-
-      const response = await API.getProductos();
-
-      if (response.ok && response.data.success) {
-        todosLosProductos = response.data.data.productos;
-        loadingState.style.display = "none";
+        // Filtrar y mostrar productos
         mostrarProductos();
-      } else {
-        throw new Error(
-          response.data.message || "Error al cargar productos"
-        );
       }
-    } catch (error) {
-      console.error("Error loading products:", error);
-      loadingState.style.display = "none";
-      showToast(
-        "Error al cargar los productos. Intenta recargar la página.",
-        "error"
-      );
-    }
-  }
 
-  // Handle logout
-  logoutBtn.addEventListener("click", (e) => {
-    e.preventDefault();
-    clearAuthData();
-    showToast("Sesión cerrada exitosamente", "success");
-    setTimeout(() => {
-      window.location.href = "/login.html";
-    }, 500);
-  });
+      // Mostrar productos filtrados
+      function mostrarProductos() {
+        let productosFiltrados = todosLosProductos;
 
-  // Load categorias and products on page load
-  loadCategorias();
-  loadProductos();
-</script>
+        // Filtrar por categoría si hay una seleccionada
+        if (categoriaSeleccionada !== null) {
+          productosFiltrados = todosLosProductos.filter(
+            (p) =>
+              p.categoria && p.categoria.categoriaId === categoriaSeleccionada
+          );
+        }
 
-<style>
-  /* Responsive layout para móviles */
-  @media (max-width: 768px) {
-    .container > div {
-      grid-template-columns: 1fr !important;
-    }
+        // Actualizar contador de productos
+        if (productCount) {
+          productCount.textContent = productosFiltrados.length;
+        }
 
-    aside {
-      position: static !important;
-      margin-bottom: 1.5rem;
-    }
-  }
-</style>
-</body>
+        if (productosFiltrados.length === 0) {
+          productGrid.style.display = "none";
+          emptyState.style.display = "block";
+        } else {
+          productGrid.innerHTML = productosFiltrados
+            .map((producto) => renderProductCard(producto))
+            .join("");
+          productGrid.style.display = "grid";
+          emptyState.style.display = "none";
+        }
+
+        actualizarFiltroActivo();
+      }
+
+      // Handle apply filters
+      async function aplicarFiltrosDesdeUI() {
+        filtrosQueryActual = construirQueryString();
+        await loadProductos(filtrosQueryActual);
+      }
+
+      if (btnAplicarFiltros) {
+        btnAplicarFiltros.addEventListener("click", async (event) => {
+          event.preventDefault();
+          aplicarFiltrosDesdeUI();
+        });
+      }
+
+      if (btnBuscarHeader) {
+        btnBuscarHeader.addEventListener("click", () => {
+          aplicarFiltrosDesdeUI();
+        });
+      }
+
+      if (searchForm) {
+        searchForm.addEventListener("submit", (event) => {
+          event.preventDefault();
+          aplicarFiltrosDesdeUI();
+        });
+      }
+
+      if (btnLimpiarFiltros) {
+        btnLimpiarFiltros.addEventListener("click", async (event) => {
+          event.preventDefault();
+          if (searchBar) searchBar.value = "";
+          if (precioMinInput) precioMinInput.value = "";
+          if (precioMaxInput) precioMaxInput.value = "";
+          if (dimensionesSelect) dimensionesSelect.value = "";
+          if (stockCheckbox) stockCheckbox.checked = false;
+          filtrosQueryActual = "";
+          categoriaSeleccionada = null;
+          nombreCategoriaSeleccionada = null;
+          await loadCategorias();
+          await loadProductos();
+        });
+      }
+
+      // Load products
+      async function loadProductos(queryString = "") {
+        try {
+          loadingState.style.display = "flex";
+          productGrid.style.display = "none";
+          emptyState.style.display = "none";
+
+          const response = await API.getProductos(queryString);
+
+          if (response.ok && response.data.success) {
+            todosLosProductos = response.data.data.productos;
+            loadingState.style.display = "none";
+            mostrarProductos();
+          } else {
+            throw new Error(
+              response.data.message || "Error al cargar productos"
+            );
+          }
+        } catch (error) {
+          console.error("Error loading products:", error);
+          loadingState.style.display = "none";
+          showToast(
+            "Error al cargar los productos. Intenta recargar la página.",
+            "error"
+          );
+        }
+      }
+
+      // Handle logout
+      logoutBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        clearAuthData();
+        showToast("Sesión cerrada exitosamente", "success");
+        setTimeout(() => {
+          window.location.href = "/login.html";
+        }, 500);
+      });
+
+      // Load categorias, dimensiones and products on page load
+      loadDimensiones();
+      loadCategorias();
+      loadProductos();
+    </script>
+
+    <style>
+      #filtro-stock {
+        transition: box-shadow 0.2s ease;
+      }
+
+      #filtro-stock:hover {
+        box-shadow: 0 4px 10px rgba(255, 136, 84, 0.18);
+      }
+
+      #filtro-stock:checked {
+        background: linear-gradient(135deg, #ff7a3a 0%, #ff974d 100%);
+        border-color: transparent;
+      }
+
+      #filtro-stock::after {
+        content: "";
+        position: absolute;
+        top: 4px;
+        left: 7px;
+        width: 4px;
+        height: 8px;
+        border: solid #fff;
+        border-width: 0 2px 2px 0;
+        transform: rotate(45deg);
+        opacity: 0;
+        transition: opacity 0.15s ease;
+      }
+
+      #filtro-stock:checked::after {
+        opacity: 1;
+      }
+
+      /* Responsive layout para móviles */
+      @media (max-width: 768px) {
+        .container > div {
+          grid-template-columns: 1fr !important;
+        }
+
+        aside {
+          position: static !important;
+          margin-bottom: 1.5rem;
+        }
+      }
+    </style>
+  </body>
 </html>

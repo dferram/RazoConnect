@@ -24,6 +24,13 @@ router.get('/agentes/lista-publica', productosController.obtenerAgentesPublicos)
 router.get('/productos', productosController.obtenerProductos);
 
 /**
+ * @route   GET /api/productos/dimensiones
+ * @desc    Obtener lista de dimensiones únicas
+ * @access  Public
+ */
+router.get('/productos/dimensiones', productosController.obtenerDimensiones);
+
+/**
  * @route   GET /api/productos/:id
  * @desc    Obtener un producto específico con todas sus imágenes
  * @access  Public

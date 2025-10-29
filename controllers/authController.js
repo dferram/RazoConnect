@@ -320,7 +320,7 @@ const verifyCliente = async (req, res) => {
 
     // Obtener datos del cliente
     const result = await db.query(
-      `SELECT ClienteID, Nombre, Apellido, Email, Telefono
+      `SELECT ClienteID, Nombre, Apellido, Email, Telefono, FechaDeRegistro
        FROM Clientes
        WHERE ClienteID = $1`,
       [clienteId]
@@ -344,7 +344,8 @@ const verifyCliente = async (req, res) => {
           nombre: cliente.nombre,
           apellido: cliente.apellido,
           email: cliente.email,
-          telefono: cliente.telefono
+          telefono: cliente.telefono,
+          fechaDeRegistro: cliente.fechaderegistro
         }
       }
     });
