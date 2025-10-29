@@ -80,6 +80,7 @@
     // Check if admin is already logged in
     const adminToken = localStorage.getItem('razoconnect_admin_token');
     if (adminToken) {
+      sessionStorage.setItem('_navigating', 'true');
       window.location.href = '/admin-dashboard.html';
     }
 
@@ -184,6 +185,7 @@
               localStorage.setItem('razoconnect_admin', JSON.stringify(adminData.data.admin));
               showToast('¡Bienvenido Administrador!', 'success');
               setTimeout(() => {
+                sessionStorage.setItem('_navigating', 'true');
                 window.location.href = '/admin-dashboard.html';
               }, 500);
               loginSuccessful = true;

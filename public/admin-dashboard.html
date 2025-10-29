@@ -222,7 +222,7 @@
     // Authentication check
     const adminToken = localStorage.getItem('razoconnect_admin_token');
     if (!adminToken) {
-      window.location.href = '/admin-login.html';
+      window.location.href = '/login.html';
     }
 
     // Verify admin token
@@ -261,7 +261,7 @@
         console.error('Error verifying admin:', error);
         localStorage.removeItem('razoconnect_admin_token');
         localStorage.removeItem('razoconnect_admin');
-        window.location.href = '/admin-login.html';
+        window.location.href = '/login.html';
       }
     }
 
@@ -530,7 +530,7 @@
       localStorage.removeItem('razoconnect_admin');
       showToast('Sesión cerrada', 'success');
       setTimeout(() => {
-        window.location.href = '/admin-login.html';
+        window.location.href = '/login.html';
       }, 500);
     });
 

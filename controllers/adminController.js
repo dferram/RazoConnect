@@ -186,7 +186,7 @@ const getAdminProfile = async (req, res) => {
 const refreshAdminToken = async (req, res) => {
   try {
     // El middleware authenticate ya verificó el token actual
-    const adminId = req.user.userId;
+    const adminId = req.user.id;
     const email = req.user.email;
     const tipo = req.user.tipo;
 
@@ -447,7 +447,7 @@ const updatePedidoEstatus = async (req, res) => {
             -cantidadRequerida, // Negativo porque es una salida
             nuevoStock,
             `Pedido #${pedidoId} confirmado`,
-            req.user.userId // AdminID del usuario autenticado
+            req.user.id // AdminID del usuario autenticado
           ]
         );
       }
@@ -499,7 +499,8 @@ const crearProducto = async (req, res) => {
       precioPaquete,
       stock,
       categoriaId,
-      imagenUrl
+      imagenUrl,
+      dimensiones
     } = req.body;
 
     // Validaciones
@@ -526,19 +527,28 @@ const crearProducto = async (req, res) => {
     // Insertar el producto
     const result = await db.query(
       `INSERT INTO Productos 
-        (SKU, Nombre, Descripcion, CostoUnitario, PiezasPorPaquete, PrecioPaquete, Stock, CategoriaID, ImagenURL, Activo)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, TRUE)
+        (SKU, NombreProducto, Descripcion, CostoUnitario, PiezasPorPaquete, PrecioPaquete, Stock, CategoriaID, Dimensiones)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
        RETURNING *`,
-      [sku, nombre, descripcion || null, costoUnitario, piezasPorPaquete, precioPaquete, stock, categoriaId || null, imagenUrl || null]
+      [sku, nombre, descripcion || null, costoUnitario, piezasPorPaquete, precioPaquete, stock, categoriaId || null, dimensiones || null]
     );
 
     const producto = result.rows[0];
+
+    // Si se proporciona una imagen, insertarla en Producto_Imagenes
+    if (imagenUrl) {
+      await db.query(
+        `INSERT INTO Producto_Imagenes (ProductoID, URL_Imagen, TextoAlternativo, Orden)
+         VALUES ($1, $2, $3, 0)`,
+        [producto.productoid, imagenUrl, nombre]
+      );
+    }
 
     // Registrar en log de inventario (entrada inicial)
     await db.query(
       `INSERT INTO Log_Inventario (ProductoID, CantidadCambiado, NuevoStock, Motivo, UsuarioID)
        VALUES ($1, $2, $3, $4, $5)`,
-      [producto.productoid, stock, stock, 'Stock inicial del producto', req.user.userId]
+      [producto.productoid, stock, stock, 'Stock inicial del producto', req.user.id]
     );
 
     res.status(201).json({
@@ -547,7 +557,7 @@ const crearProducto = async (req, res) => {
       data: {
         productoId: producto.productoid,
         sku: producto.sku,
-        nombre: producto.nombre,
+        nombre: producto.nombreproducto,
         stock: producto.stock
       }
     });
@@ -626,7 +636,7 @@ const ajustarInventario = async (req, res) => {
     await client.query(
       `INSERT INTO Log_Inventario (ProductoID, CantidadCambiado, NuevoStock, Motivo, UsuarioID)
        VALUES ($1, $2, $3, $4, $5)`,
-      [productoId, cantidadCambio, nuevoStock, motivo, req.user.userId]
+      [productoId, cantidadCambio, nuevoStock, motivo, req.user.id]
     );
 
     await client.query('COMMIT');

@@ -96,7 +96,7 @@
       if (userType === 'admin') {
         localStorage.removeItem('razoconnect_admin_token');
         localStorage.removeItem('razoconnect_admin');
-        window.location.href = '/admin-login.html';
+        window.location.href = '/login.html';
       } else {
         localStorage.removeItem('razoconnect_token');
         localStorage.removeItem('razoconnect_user');
@@ -142,9 +142,13 @@
    * Limpiar sesión SOLO al CERRAR la pestaña (NO al navegar)
    */
   function handlePageUnload(event) {
-    // Si está navegando dentro del sitio, NO limpiar
-    if (isNavigating) {
+    // Verificar si está navegando (click en enlace o redirección programática)
+    const navigatingProgrammatically = sessionStorage.getItem('_navigating');
+    
+    if (isNavigating || navigatingProgrammatically) {
       console.log('📍 Navegando dentro del sitio - NO se limpia sesión');
+      // Limpiar la marca de navegación
+      sessionStorage.removeItem('_navigating');
       return;
     }
 

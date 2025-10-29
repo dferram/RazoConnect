@@ -285,10 +285,17 @@
 
   <script src="js/api.js"></script>
   <script>
+    console.log('📄 Cargando página de inventario...');
+    
     // Authentication check
     const adminToken = localStorage.getItem('razoconnect_admin_token');
+    console.log('🔑 Token en inventario:', adminToken ? 'Present (length: ' + adminToken.length + ')' : 'Missing');
+    
     if (!adminToken) {
-      window.location.href = '/admin-login.html';
+      console.warn('⚠️ No hay token en inventario, redirigiendo a login');
+      window.location.href = '/login.html';
+    } else {
+      console.log('✅ Token encontrado, continuando carga de página');
     }
 
     let allProducts = [];
@@ -302,6 +309,8 @@
     // Verify admin
     async function verifyAndLoadAdmin() {
       try {
+        console.log('🔐 Verificando admin en página de inventario...');
+        
         const response = await fetch(`${API_BASE_URL}/admin/verify`, {
           method: 'GET',
           headers: {
@@ -310,9 +319,12 @@
           }
         });
 
+        console.log('📡 Response status desde inventario:', response.status);
+        
         if (!response.ok) throw new Error('Invalid token');
 
         const data = await response.json();
+        console.log('📥 Verify response en inventario:', data);
         if (data.success) {
           const admin = data.data.admin;
           document.getElementById('userName').textContent = admin.nombre;
@@ -328,7 +340,7 @@
         console.error('Error verifying admin:', error);
         localStorage.removeItem('razoconnect_admin_token');
         localStorage.removeItem('razoconnect_admin');
-        window.location.href = '/admin-login.html';
+        window.location.href = '/login.html';
       }
     }
 
@@ -648,7 +660,7 @@
       localStorage.removeItem('razoconnect_admin');
       showToast('Sesión cerrada', 'success');
       setTimeout(() => {
-        window.location.href = '/admin-login.html';
+        window.location.href = '/login.html';
       }, 500);
     });
 

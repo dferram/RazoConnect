@@ -12,12 +12,17 @@
   // Si no hay token, redirigir sin mostrar alerta (usuario no ha iniciado sesión)
   if (!adminToken) {
     console.warn('No admin token found. Redirecting to login...');
-    window.location.replace('/admin-login.html');
+    window.location.replace('/login.html');
     return;
   }
 
   // Verificar token con el servidor de forma asíncrona
-  fetch('http://localhost:3000/api/admin/verify', {
+  const apiBaseUrl = window.API_BASE_URL || 'http://localhost:3000/api';
+  
+  console.log('🔐 Verificando autenticación de admin...');
+  console.log('Token:', adminToken ? 'Present' : 'Missing');
+  
+  fetch(`${apiBaseUrl}/admin/verify`, {
     method: 'GET',
     headers: {
       'Authorization': `Bearer ${adminToken}`,
@@ -25,12 +30,14 @@
     }
   })
   .then(response => {
+    console.log('Response status:', response.status);
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     return response.json();
   })
   .then(data => {
+    console.log('Verify response:', data);
     if (!data.success) {
       throw new Error('Invalid token');
     }
@@ -45,6 +52,7 @@
   })
   .catch(error => {
     console.error('❌ Admin authentication failed:', error);
+    console.error('Error details:', error.message);
     
     // Limpiar tokens inválidos
     localStorage.removeItem('razoconnect_admin_token');
@@ -52,6 +60,6 @@
     
     // Solo mostrar alerta si había un token que resultó ser inválido
     alert('Tu sesión ha expirado o es inválida. Por favor, inicia sesión nuevamente.');
-    window.location.replace('/admin-login.html');
+    window.location.replace('/login.html');
   });
 })();

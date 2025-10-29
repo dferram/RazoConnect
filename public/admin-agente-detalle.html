@@ -170,7 +170,7 @@
   <script src="js/api.js"></script>
   <script>
     const adminToken = localStorage.getItem('razoconnect_admin_token');
-    if (!adminToken) window.location.href = '/admin-login.html';
+    if (!adminToken) window.location.href = '/login.html';
 
     const urlParams = new URLSearchParams(window.location.search);
     const agenteId = urlParams.get('id');
@@ -203,7 +203,7 @@
       } catch (error) {
         console.error('Error:', error);
         localStorage.removeItem('razoconnect_admin_token');
-        window.location.href = '/admin-login.html';
+        window.location.href = '/login.html';
       }
     }
 
@@ -295,7 +295,7 @@
 
     document.getElementById('logoutBtn').addEventListener('click', () => {
       localStorage.removeItem('razoconnect_admin_token');
-      window.location.href = '/admin-login.html';
+      window.location.href = '/login.html';
     });
 
     init();

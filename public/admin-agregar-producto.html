@@ -152,6 +152,17 @@
                 ></textarea>
               </div>
 
+              <!-- Dimensiones -->
+              <div class="form-group">
+                <label for="dimensiones" class="form-label">Dimensiones <span style="font-size: 0.875rem; color: var(--razo-gray-warm);">(opcional)</span></label>
+                <input 
+                  type="text" 
+                  id="dimensiones" 
+                  class="form-input" 
+                  placeholder="Ej: 10x10x5 cm"
+                >
+              </div>
+
               <!-- Costo Unitario -->
               <div class="form-group">
                 <label for="costoUnitario" class="form-label">Costo Unitario * <span style="font-size: 0.875rem; color: var(--razo-gray-warm);">(MXN)</span></label>
@@ -255,7 +266,7 @@
     // Authentication check
     const adminToken = localStorage.getItem('razoconnect_admin_token');
     if (!adminToken) {
-      window.location.href = '/admin-login.html';
+      window.location.href = '/login.html';
     }
 
     // Verify admin and load data
@@ -292,7 +303,7 @@
         console.error('Error verifying admin:', error);
         localStorage.removeItem('razoconnect_admin_token');
         localStorage.removeItem('razoconnect_admin');
-        window.location.href = '/admin-login.html';
+        window.location.href = '/login.html';
       }
     }
 
@@ -363,10 +374,14 @@
         btnText.style.display = 'none';
         btnSpinner.style.display = 'block';
 
+        console.log('📦 Iniciando creación de producto...');
+        console.log('🔑 Token presente:', !!adminToken);
+
         const formData = {
           sku: document.getElementById('sku').value.trim(),
           nombre: document.getElementById('nombre').value.trim(),
           descripcion: document.getElementById('descripcion').value.trim() || null,
+          dimensiones: document.getElementById('dimensiones').value.trim() || null,
           costoUnitario: parseFloat(document.getElementById('costoUnitario').value),
           piezasPorPaquete: parseInt(document.getElementById('piezasPorPaquete').value),
           precioPaquete: parseFloat(document.getElementById('precioPaquete').value),
@@ -374,6 +389,8 @@
           categoriaId: document.getElementById('categoriaId').value || null,
           imagenUrl: document.getElementById('imagenUrl').value.trim() || null
         };
+
+        console.log('📋 Datos del formulario:', formData);
 
         const response = await fetch(`${API_BASE_URL}/admin/productos`, {
           method: 'POST',
@@ -384,15 +401,35 @@
           body: JSON.stringify(formData)
         });
 
+        console.log('📡 Response status:', response.status);
         const data = await response.json();
+        console.log('📥 Respuesta del servidor:', data);
 
         if (response.ok && data.success) {
+          console.log('✅ Producto creado exitosamente!');
+          console.log('📍 Redirigiendo a admin-inventario.html en 1 segundo...');
           showToast('Producto creado exitosamente', 'success');
+          
+          // Marcar como navegación interna para evitar que token-refresh limpie la sesión
+          sessionStorage.setItem('_navigating', 'true');
+          
+          // Redirigir inmediatamente al inventario
           setTimeout(() => {
+            console.log('🔄 Ejecutando redirección...');
             window.location.href = '/admin-inventario.html';
-          }, 1500);
+          }, 1000);
+        } else if (response.status === 401) {
+          // Token inválido o expirado
+          showToast('Sesión expirada. Por favor, inicia sesión nuevamente.', 'error');
+          setTimeout(() => {
+            localStorage.removeItem('razoconnect_admin_token');
+            localStorage.removeItem('razoconnect_admin');
+            window.location.href = '/login.html';
+          }, 2000);
         } else {
-          showToast(data.message || 'Error al crear producto', 'error');
+          // Otro tipo de error
+          console.error('Error del servidor:', data);
+          showToast(data.message || 'Error al crear producto. Revisa los datos e intenta nuevamente.', 'error');
         }
       } catch (error) {
         console.error('Error creating product:', error);
@@ -410,7 +447,7 @@
       localStorage.removeItem('razoconnect_admin');
       showToast('Sesión cerrada', 'success');
       setTimeout(() => {
-        window.location.href = '/admin-login.html';
+        window.location.href = '/login.html';
       }, 500);
     });
 
