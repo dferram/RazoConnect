@@ -47,6 +47,15 @@
             
             <p id="productSKU" style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 1.5rem;"></p>
 
+            <!-- Variant Selection -->
+            <div style="margin-bottom: 1.5rem;">
+              <label for="variantSelect" class="form-label" style="display: block; margin-bottom: 0.5rem;">Selecciona la variante</label>
+              <select id="variantSelect" class="form-input" style="width: 100%;">
+                <option value="" disabled selected>Cargando variantes...</option>
+              </select>
+              <p id="variantAvailability" style="color: var(--text-secondary); font-size: 0.875rem; margin-top: 0.5rem;"></p>
+            </div>
+
             <!-- Price Section -->
             <div style="background-color: var(--background); padding: 1.5rem; border-radius: 0.5rem; margin-bottom: 1.5rem;">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
@@ -158,8 +167,13 @@
     const increaseBtn = document.getElementById('increaseBtn');
     const btnText = document.getElementById('btnText');
     const btnSpinner = document.getElementById('btnSpinner');
+    const variantSelect = document.getElementById('variantSelect');
+    const variantAvailability = document.getElementById('variantAvailability');
 
     let producto = null;
+    let variantes = [];
+    let varianteSeleccionada = null;
+    const placeholderImage = 'https://via.placeholder.com/500x500?text=Sin+Imagen';
 
     // Get product ID from URL
     const urlParams = new URLSearchParams(window.location.search);
@@ -180,11 +194,178 @@
 
     // Update total pieces display
     function updateTotalPiezas() {
-      const cantidad = parseInt(cantidadInput.value) || 1;
-      if (producto) {
-        const total = cantidad * producto.piezasPorPaquete;
-        totalPiezas.textContent = `Total: ${total} piezas`;
+      if (!varianteSeleccionada) {
+        totalPiezas.textContent = '';
+        return;
       }
+
+      const cantidad = parseInt(cantidadInput.value, 10) || 0;
+      const piezasPorPaqueteVariante = typeof varianteSeleccionada.piezasPorPaquete === 'number'
+        ? varianteSeleccionada.piezasPorPaquete
+        : parseInt(varianteSeleccionada.piezasPorPaquete, 10) || 0;
+
+      if (cantidad > 0 && piezasPorPaqueteVariante > 0) {
+        const total = cantidad * piezasPorPaqueteVariante;
+        totalPiezas.textContent = `Total: ${total} piezas`;
+      } else {
+        totalPiezas.textContent = '';
+      }
+    }
+
+    function renderVariantImages(variant) {
+      const imagenes = Array.isArray(variant?.imagenes) ? variant.imagenes : [];
+      thumbnailGallery.innerHTML = '';
+
+      const fallbackAlt = producto?.nombreProducto || 'Producto';
+      const primeraImagen = imagenes[0];
+
+      mainImage.src = primeraImagen?.url || placeholderImage;
+      mainImage.alt = primeraImagen?.alt || fallbackAlt;
+
+      if (imagenes.length > 1) {
+        thumbnailGallery.style.display = 'grid';
+        imagenes.forEach((img) => {
+          const thumb = document.createElement('img');
+          thumb.src = img.url;
+          thumb.alt = img.alt || fallbackAlt;
+          thumb.style.width = '100%';
+          thumb.style.height = '100px';
+          thumb.style.objectFit = 'cover';
+          thumb.style.borderRadius = '0.375rem';
+          thumb.style.cursor = 'pointer';
+          thumb.style.border = '2px solid var(--border-color)';
+          thumb.addEventListener('click', () => {
+            mainImage.src = img.url;
+            mainImage.alt = thumb.alt;
+          });
+          thumbnailGallery.appendChild(thumb);
+        });
+      } else {
+        thumbnailGallery.style.display = imagenes.length === 1 ? 'grid' : 'none';
+      }
+    }
+
+    function actualizarInformacionVariante() {
+      if (!varianteSeleccionada) {
+        productSKU.textContent = 'SKU no disponible';
+        precioPaquete.textContent = 'No disponible';
+        precioPieza.textContent = 'No disponible';
+        piezasPorPaquete.textContent = 'N/D';
+        dimensiones.textContent = 'No especificado';
+        stock.textContent = 'Sin stock';
+        stock.style.color = 'var(--error-color, #e53e3e)';
+        if (variantAvailability) {
+          variantAvailability.textContent = 'Sin variantes disponibles para este producto.';
+        }
+        addToCartBtn.disabled = true;
+        cantidadInput.disabled = true;
+        decreaseBtn.disabled = true;
+        increaseBtn.disabled = true;
+        updateTotalPiezas();
+        return;
+      }
+
+      const sku = varianteSeleccionada.sku || 'N/D';
+      const precioPaqueteValor = typeof varianteSeleccionada.precioPaquete === 'number'
+        ? varianteSeleccionada.precioPaquete
+        : parseFloat(varianteSeleccionada.precioPaquete);
+      const precioPiezaValor = typeof varianteSeleccionada.precioPorPieza === 'number'
+        ? varianteSeleccionada.precioPorPieza
+        : parseFloat(varianteSeleccionada.precioPorPieza);
+      const piezasVariante = typeof varianteSeleccionada.piezasPorPaquete === 'number'
+        ? varianteSeleccionada.piezasPorPaquete
+        : parseInt(varianteSeleccionada.piezasPorPaquete, 10) || null;
+      const stockDisponible = typeof varianteSeleccionada.stock === 'number'
+        ? varianteSeleccionada.stock
+        : parseInt(varianteSeleccionada.stock, 10) || 0;
+
+      productSKU.textContent = `SKU: ${sku}`;
+      precioPaquete.textContent = Number.isFinite(precioPaqueteValor)
+        ? formatCurrency(precioPaqueteValor)
+        : 'No disponible';
+      precioPieza.textContent = Number.isFinite(precioPiezaValor)
+        ? formatCurrency(precioPiezaValor)
+        : 'No disponible';
+      piezasPorPaquete.textContent = piezasVariante || 'N/D';
+      dimensiones.textContent = varianteSeleccionada.dimensiones || 'No especificado';
+
+      const tieneStock = stockDisponible > 0;
+      stock.textContent = tieneStock ? `${stockDisponible} paquetes` : 'Sin stock disponible';
+      stock.style.color = tieneStock ? 'var(--success-color)' : 'var(--error-color, #e53e3e)';
+
+      if (variantAvailability) {
+        variantAvailability.textContent = tieneStock
+          ? 'Stock disponible para envío inmediato.'
+          : 'Selecciona otra variante o vuelve pronto, sin stock disponible.';
+        variantAvailability.style.color = tieneStock ? 'var(--text-secondary)' : 'var(--error-color, #e53e3e)';
+      }
+
+      cantidadInput.disabled = !tieneStock;
+      decreaseBtn.disabled = !tieneStock;
+      increaseBtn.disabled = !tieneStock;
+      addToCartBtn.disabled = !tieneStock;
+
+      const stockMax = tieneStock ? stockDisponible : 0;
+      cantidadInput.max = stockMax;
+
+      if (tieneStock) {
+        const cantidadActual = parseInt(cantidadInput.value, 10) || 1;
+        if (cantidadActual > stockDisponible) {
+          cantidadInput.value = stockDisponible;
+        } else if (cantidadActual < 1) {
+          cantidadInput.value = 1;
+        }
+      } else {
+        cantidadInput.value = 0;
+      }
+
+      renderVariantImages(varianteSeleccionada);
+      updateTotalPiezas();
+    }
+
+    function renderVariantOptions() {
+      if (!variantSelect) return;
+
+      if (!Array.isArray(variantes) || variantes.length === 0) {
+        variantSelect.innerHTML = '<option value="">Sin variantes disponibles</option>';
+        variantSelect.disabled = true;
+        actualizarInformacionVariante();
+        return;
+      }
+
+      variantSelect.disabled = false;
+      variantSelect.innerHTML = variantes.map((variant) => {
+        const labelParts = [];
+        if (variant.dimensiones) {
+          labelParts.push(variant.dimensiones);
+        }
+        if (variant.sku) {
+          labelParts.push(`SKU: ${variant.sku}`);
+        }
+        const label = labelParts.length > 0 ? labelParts.join(' • ') : `Variante ${variant.varianteId}`;
+        return `<option value="${variant.varianteId}">${label}</option>`;
+      }).join('');
+
+      if (varianteSeleccionada) {
+        variantSelect.value = String(varianteSeleccionada.varianteId);
+      }
+    }
+
+    function setVarianteSeleccionada(varianteId) {
+      const varianteIdNumero = parseInt(varianteId, 10);
+      const nuevaVariante = variantes.find(v => v.varianteId === varianteIdNumero);
+
+      if (!nuevaVariante) {
+        return;
+      }
+
+      varianteSeleccionada = nuevaVariante;
+
+      if (variantSelect && variantSelect.value !== String(varianteSeleccionada.varianteId)) {
+        variantSelect.value = String(varianteSeleccionada.varianteId);
+      }
+
+      actualizarInformacionVariante();
     }
 
     // Load product details
@@ -197,41 +378,32 @@
         const response = await API.getProductoById(productoId);
 
         if (response.ok && response.data.success) {
-          producto = response.data.data.producto;
+          const data = response.data.data;
+          producto = data.producto;
+          variantes = Array.isArray(data.variantes) ? data.variantes : [];
+          varianteSeleccionada = variantes[0] || null;
 
-          // Set main image
-          const mainImageUrl = producto.imagenes[0]?.url || 'https://via.placeholder.com/500x500?text=Sin+Imagen';
-          mainImage.src = mainImageUrl;
-          mainImage.alt = producto.imagenes[0]?.alt || producto.nombreProducto;
+          // Set product info (master)
+          productCategory.textContent = producto?.categoria?.nombre || 'Sin categoría';
+          productName.textContent = producto?.nombreProducto || 'Producto sin nombre';
+          productDescription.textContent = producto?.descripcion || 'Sin descripción disponible.';
 
-          // Set thumbnails
-          if (producto.imagenes.length > 1) {
-            thumbnailGallery.innerHTML = producto.imagenes.map(img => `
-              <img 
-                src="${img.url}" 
-                alt="${img.alt || producto.nombreProducto}"
-                style="width: 100%; height: 100px; object-fit: cover; border-radius: 0.375rem; cursor: pointer; border: 2px solid var(--border-color);"
-                onclick="mainImage.src='${img.url}'"
-              >
-            `).join('');
+          renderVariantOptions();
+
+          if (variantSelect) {
+            variantSelect.addEventListener('change', (event) => {
+              setVarianteSeleccionada(event.target.value);
+            });
           }
 
-          // Set product info
-          productCategory.textContent = producto.categoria?.nombre || 'Sin categoría';
-          productName.textContent = producto.nombreProducto;
-          productSKU.textContent = `SKU: ${producto.sku}`;
-          precioPaquete.textContent = formatCurrency(producto.precioPaquete);
-          precioPieza.textContent = formatCurrency(producto.precioPorPieza);
-          piezasPorPaquete.textContent = producto.piezasPorPaquete;
-          dimensiones.textContent = producto.dimensiones || 'No especificado';
-          stock.textContent = `${producto.stock} paquetes`;
-          productDescription.textContent = producto.descripcion || 'Sin descripción disponible.';
-
-          // Set max quantity
-          cantidadInput.max = producto.stock;
-
-          // Update total pieces
-          updateTotalPiezas();
+          if (varianteSeleccionada) {
+            setVarianteSeleccionada(varianteSeleccionada.varianteId);
+          } else {
+            actualizarInformacionVariante();
+            mainImage.src = placeholderImage;
+            mainImage.alt = producto?.nombreProducto || 'Producto';
+            thumbnailGallery.style.display = 'none';
+          }
 
           // Show product details
           loadingState.style.display = 'none';
@@ -279,17 +451,23 @@
 
     // Handle add to cart
     addToCartBtn.addEventListener('click', async () => {
-      if (!producto) return;
+      if (!varianteSeleccionada) {
+        showToast('Selecciona una variante para continuar', 'warning');
+        return;
+      }
 
-      const cantidad = parseInt(cantidadInput.value) || 1;
+      const cantidad = parseInt(cantidadInput.value) || 0;
+      const stockDisponible = typeof varianteSeleccionada.stock === 'number'
+        ? varianteSeleccionada.stock
+        : parseInt(varianteSeleccionada.stock, 10) || 0;
 
       if (cantidad < 1) {
         showToast('La cantidad debe ser mayor a 0', 'warning');
         return;
       }
 
-      if (cantidad > producto.stock) {
-        showToast(`Stock insuficiente. Disponible: ${producto.stock} paquetes`, 'warning');
+      if (cantidad > stockDisponible) {
+        showToast(`Stock insuficiente. Disponible: ${stockDisponible} paquetes`, 'warning');
         return;
       }
 
@@ -299,13 +477,13 @@
       btnSpinner.style.display = 'block';
 
       try {
-        const response = await API.agregarAlCarrito(producto.productoId, cantidad);
+        const response = await API.agregarAlCarrito(varianteSeleccionada.varianteId, cantidad);
 
         if (response.ok && response.data.success) {
-          showToast('✅ Producto agregado al carrito exitosamente', 'success');
+          showToast('✅ Variante agregada al carrito exitosamente', 'success');
           
           // Reset quantity
-          cantidadInput.value = 1;
+          cantidadInput.value = Math.min(1, parseInt(cantidadInput.max, 10) || 1);
           updateTotalPiezas();
 
           // Mostrar modal personalizado para ir al carrito

@@ -13,78 +13,156 @@ const obtenerProductos = async (req, res) => {
 
     if (search) {
       valores.push(`%${search}%`);
-      filtros.push(`(p.NombreProducto ILIKE $${valores.length} OR p.SKU ILIKE $${valores.length})`);
+      const indiceSearch = valores.length;
+      filtros.push(`(
+        p.nombreproducto ILIKE $${indiceSearch}
+        OR EXISTS (
+          SELECT 1
+          FROM producto_variantes pv
+          WHERE pv.productoid = p.productoid
+            AND pv.sku ILIKE $${indiceSearch}
+        )
+      )`);
     }
 
     if (precioMin && precioMax) {
       valores.push(precioMin);
-      filtros.push(`p.PrecioPaquete >= $${valores.length}`);
+      const indiceMin = valores.length;
       valores.push(precioMax);
-      filtros.push(`p.PrecioPaquete <= $${valores.length}`);
+      const indiceMax = valores.length;
+      filtros.push(`EXISTS (
+        SELECT 1
+        FROM producto_variantes pv
+        WHERE pv.productoid = p.productoid
+          AND pv.preciopaquete BETWEEN $${indiceMin} AND $${indiceMax}
+      )`);
     } else if (precioMin) {
       valores.push(precioMin);
-      filtros.push(`p.PrecioPaquete >= $${valores.length}`);
+      const indiceMin = valores.length;
+      filtros.push(`EXISTS (
+        SELECT 1
+        FROM producto_variantes pv
+        WHERE pv.productoid = p.productoid
+          AND pv.preciopaquete >= $${indiceMin}
+      )`);
     } else if (precioMax) {
       valores.push(precioMax);
-      filtros.push(`p.PrecioPaquete <= $${valores.length}`);
+      const indiceMax = valores.length;
+      filtros.push(`EXISTS (
+        SELECT 1
+        FROM producto_variantes pv
+        WHERE pv.productoid = p.productoid
+          AND pv.preciopaquete <= $${indiceMax}
+      )`);
     }
 
     if (dimension) {
       valores.push(`%${dimension}%`);
-      filtros.push(`p.Dimensiones ILIKE $${valores.length}`);
+      const indiceDimension = valores.length;
+      filtros.push(`EXISTS (
+        SELECT 1
+        FROM producto_variantes pv
+        WHERE pv.productoid = p.productoid
+          AND pv.dimensiones ILIKE $${indiceDimension}
+      )`);
     }
 
     if (stock === 'true') {
-      filtros.push('p.Stock > 0');
+      filtros.push(`EXISTS (
+        SELECT 1
+        FROM producto_variantes pv
+        WHERE pv.productoid = p.productoid
+          AND pv.stock > 0
+      )`);
     }
 
-    let whereClause = '';
-    if (filtros.length > 0) {
-      whereClause = `WHERE ${filtros.join(' AND ')}`;
-    }
+    const whereClause = filtros.length > 0
+      ? `WHERE ${filtros.join(' AND ')}`
+      : '';
 
     const query = `
-      SELECT 
-        p.ProductoID,
-        p.SKU,
-        p.NombreProducto,
-        p.Descripcion,
-        p.Dimensiones,
-        p.PiezasPorPaquete,
-        p.PrecioPaquete,
-        p.Stock,
-        p.CategoriaID,
-        c.Nombre as CategoriaNombre,
-        pi.URL_Imagen,
-        pi.TextoAlternativo
-      FROM Productos p
-      LEFT JOIN Categorias c ON p.CategoriaID = c.CategoriaID
-      LEFT JOIN Producto_Imagenes pi ON p.ProductoID = pi.ProductoID AND pi.Orden = 0
+      SELECT
+        p.productoid,
+        p.nombreproducto,
+        p.descripcion,
+        p.activo,
+        p.categoriaid,
+        c.nombre AS categorianombre,
+        c.descripcion AS categoriadescripcion,
+        variante_min.varianteid AS varianteid_precio_min,
+        variante_min.sku AS sku_precio_min,
+        variante_min.preciopaquete AS precio_desde,
+        imagen.url_imagen,
+        imagen.textoalternativo,
+        stats.total_variantes,
+        stats.variantes_con_stock
+      FROM productos p
+      LEFT JOIN categorias c ON p.categoriaid = c.categoriaid
+      LEFT JOIN LATERAL (
+        SELECT
+          pv.varianteid,
+          pv.sku,
+          pv.dimensiones,
+          pv.stock,
+          pv.preciopaquete
+        FROM producto_variantes pv
+        WHERE pv.productoid = p.productoid
+        ORDER BY pv.preciopaquete ASC NULLS LAST, pv.varianteid ASC
+        LIMIT 1
+      ) variante_min ON TRUE
+      LEFT JOIN LATERAL (
+        SELECT
+          pi.url_imagen,
+          pi.textoalternativo
+        FROM producto_variantes pv
+        JOIN producto_imagenes pi ON pi.varianteid = pv.varianteid
+        WHERE pv.productoid = p.productoid
+        ORDER BY pv.preciopaquete ASC NULLS LAST, pi.orden ASC NULLS LAST, pi.imagenid ASC
+        LIMIT 1
+      ) imagen ON TRUE
+      LEFT JOIN (
+        SELECT
+          pv.productoid,
+          COUNT(*) AS total_variantes,
+          SUM(CASE WHEN pv.stock > 0 THEN 1 ELSE 0 END) AS variantes_con_stock
+        FROM producto_variantes pv
+        GROUP BY pv.productoid
+      ) stats ON stats.productoid = p.productoid
       ${whereClause}
-      ORDER BY p.ProductoID DESC
+      ORDER BY p.productoid DESC
     `;
 
     const result = await db.query(query, valores);
 
-    // Formatear la respuesta
-    const productos = result.rows.map(row => ({
-      productoId: row.productoid,
-      sku: row.sku,
-      nombreProducto: row.nombreproducto,
-      descripcion: row.descripcion,
-      dimensiones: row.dimensiones,
-      piezasPorPaquete: row.piezasporpaquete,
-      precioPaquete: parseFloat(row.preciopaquete),
-      stock: row.stock,
-      categoria: row.categoriaid ? {
-        categoriaId: row.categoriaid,
-        nombre: row.categorianombre
-      } : null,
-      imagenPrincipal: row.url_imagen ? {
-        url: row.url_imagen,
-        alt: row.textoalternativo
-      } : null
-    }));
+    const productos = result.rows.map(row => {
+      const totalVariantes = row.total_variantes !== null ? parseInt(row.total_variantes, 10) : 0;
+      const variantesConStock = row.variantes_con_stock !== null ? parseInt(row.variantes_con_stock, 10) : 0;
+
+      const varianteDestacada = row.varianteid_precio_min ? {
+        varianteId: row.varianteid_precio_min,
+        sku: row.sku_precio_min,
+        dimensiones: row.dimensiones,
+        stock: row.stock !== null ? parseInt(row.stock, 10) : null,
+        precioPaquete: row.precio_desde !== null ? parseFloat(row.precio_desde) : null
+      } : null;
+
+      return {
+        productoId: row.productoid,
+        nombreProducto: row.nombreproducto,
+        descripcion: row.descripcion,
+        categoria: row.categoriaid ? {
+          categoriaId: row.categoriaid,
+          nombre: row.categorianombre,
+          descripcion: row.categoriadescripcion
+        } : null,
+        precioDesde: row.precio_desde !== null ? parseFloat(row.precio_desde) : null,
+        imagenUrl: row.url_imagen || null,
+        imagenAlt: row.textoalternativo || null,
+        totalVariantes,
+        variantesConStock,
+        varianteDestacada
+      };
+    });
 
     res.status(200).json({
       success: true,
@@ -112,9 +190,9 @@ const obtenerProductos = async (req, res) => {
 const obtenerDimensiones = async (req, res) => {
   try {
     const result = await db.query(
-      `SELECT DISTINCT TRIM(Dimensiones) as dimension
-       FROM Productos
-       WHERE Dimensiones IS NOT NULL AND Dimensiones <> ''
+      `SELECT DISTINCT TRIM(dimensiones) AS dimension
+       FROM producto_variantes
+       WHERE dimensiones IS NOT NULL AND dimensiones <> ''
        ORDER BY dimension ASC`
     );
 
@@ -146,7 +224,6 @@ const obtenerProductoPorId = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Validar que el ID sea un número
     if (!id || isNaN(id)) {
       return res.status(400).json({
         success: false,
@@ -154,27 +231,20 @@ const obtenerProductoPorId = async (req, res) => {
       });
     }
 
-    // Obtener el producto
-    const productoQuery = `
-      SELECT 
-        p.ProductoID,
-        p.SKU,
-        p.NombreProducto,
-        p.Descripcion,
-        p.Dimensiones,
-        p.CostoUnitario,
-        p.PiezasPorPaquete,
-        p.PrecioPaquete,
-        p.Stock,
-        p.CategoriaID,
-        c.Nombre as CategoriaNombre,
-        c.Descripcion as CategoriaDescripcion
-      FROM Productos p
-      LEFT JOIN Categorias c ON p.CategoriaID = c.CategoriaID
-      WHERE p.ProductoID = $1
-    `;
-
-    const productoResult = await db.query(productoQuery, [id]);
+    const productoResult = await db.query(
+      `SELECT
+         p.productoid,
+         p.nombreproducto,
+         p.descripcion,
+         p.activo,
+         p.categoriaid,
+         c.nombre AS categorianombre,
+         c.descripcion AS categoriadescripcion
+       FROM productos p
+       LEFT JOIN categorias c ON p.categoriaid = c.categoriaid
+       WHERE p.productoid = $1`,
+      [id]
+    );
 
     if (productoResult.rows.length === 0) {
       return res.status(404).json({
@@ -185,50 +255,99 @@ const obtenerProductoPorId = async (req, res) => {
 
     const producto = productoResult.rows[0];
 
-    // Obtener todas las imágenes del producto
-    const imagenesQuery = `
-      SELECT 
-        ImagenID,
-        URL_Imagen,
-        TextoAlternativo,
-        Orden
-      FROM Producto_Imagenes
-      WHERE ProductoID = $1
-      ORDER BY Orden ASC
-    `;
+    const variantesResult = await db.query(
+      `SELECT
+         pv.varianteid,
+         pv.sku,
+         pv.dimensiones,
+         pv.costounitario,
+         pv.piezasporpaquete,
+         pv.preciopaquete,
+         pv.stock,
+         pv.tipoproductoid,
+         pv.medidaid,
+         COALESCE(
+           json_agg(
+             json_build_object(
+               'imagenId', pi.imagenid,
+               'url', pi.url_imagen,
+               'alt', pi.textoalternativo,
+               'orden', pi.orden
+             ) ORDER BY pi.orden ASC NULLS LAST, pi.imagenid ASC
+           ) FILTER (WHERE pi.imagenid IS NOT NULL),
+           '[]'::json
+         ) AS imagenes
+       FROM producto_variantes pv
+       LEFT JOIN producto_imagenes pi ON pi.varianteid = pv.varianteid
+       WHERE pv.productoid = $1
+       GROUP BY pv.varianteid
+       ORDER BY pv.varianteid ASC`,
+      [id]
+    );
 
-    const imagenesResult = await db.query(imagenesQuery, [id]);
+    const variantes = variantesResult.rows.map(row => {
+      const piezasPorPaquete = row.piezasporpaquete !== null ? parseInt(row.piezasporpaquete, 10) : null;
+      const precioPaquete = row.preciopaquete !== null ? parseFloat(row.preciopaquete) : null;
+      const costoUnitario = row.costounitario !== null ? parseFloat(row.costounitario) : null;
+      const stock = row.stock !== null ? parseInt(row.stock, 10) : null;
 
-    // Formatear la respuesta
+      const imagenes = Array.isArray(row.imagenes)
+        ? row.imagenes.map((img) => ({
+            imagenId: img.imagenId,
+            url: img.url,
+            alt: img.alt,
+            orden: img.orden !== null && img.orden !== undefined ? parseInt(img.orden, 10) : null
+          }))
+        : [];
+
+      return {
+        varianteId: row.varianteid,
+        productoId: row.productoid,
+        sku: row.sku,
+        dimensiones: row.dimensiones,
+        costoUnitario,
+        piezasPorPaquete,
+        precioPaquete,
+        precioPorPieza: precioPaquete !== null && piezasPorPaquete
+          ? parseFloat((precioPaquete / piezasPorPaquete).toFixed(2))
+          : null,
+        stock,
+        tipoProductoId: row.tipoproductoid !== null ? parseInt(row.tipoproductoid, 10) : null,
+        medidaId: row.medidaid !== null ? parseInt(row.medidaid, 10) : null,
+        imagenes
+      };
+    });
+
+    const totalVariantes = variantes.length;
+    const variantesConStock = variantes.filter(v => typeof v.stock === 'number' && v.stock > 0).length;
+    const precios = variantes
+      .map(v => v.precioPaquete)
+      .filter(precio => typeof precio === 'number' && !Number.isNaN(precio));
+    const precioDesde = precios.length ? Math.min(...precios) : null;
+    const precioHasta = precios.length ? Math.max(...precios) : null;
+
     const productoDetalle = {
       productoId: producto.productoid,
-      sku: producto.sku,
       nombreProducto: producto.nombreproducto,
       descripcion: producto.descripcion,
-      dimensiones: producto.dimensiones,
-      costoUnitario: parseFloat(producto.costounitario),
-      piezasPorPaquete: producto.piezasporpaquete,
-      precioPaquete: parseFloat(producto.preciopaquete),
-      precioPorPieza: parseFloat((producto.preciopaquete / producto.piezasporpaquete).toFixed(2)),
-      stock: producto.stock,
+      activo: producto.activo,
       categoria: producto.categoriaid ? {
         categoriaId: producto.categoriaid,
         nombre: producto.categorianombre,
         descripcion: producto.categoriadescripcion
       } : null,
-      imagenes: imagenesResult.rows.map(img => ({
-        imagenId: img.imagenid,
-        url: img.url_imagen,
-        alt: img.textoalternativo,
-        orden: img.orden
-      }))
+      totalVariantes,
+      variantesConStock,
+      precioDesde,
+      precioHasta
     };
 
     res.status(200).json({
       success: true,
       message: 'Producto obtenido exitosamente',
       data: {
-        producto: productoDetalle
+        producto: productoDetalle,
+        variantes
       }
     });
 

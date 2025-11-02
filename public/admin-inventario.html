@@ -207,10 +207,15 @@
       <div>
         <p style="margin-bottom: 1rem;">
           <strong><span id="modalProductoNombre"></span></strong><br>
-          <span style="color: var(--razo-gray-warm);">SKU: <span id="modalProductoSku"></span></span><br>
+          <span style="color: var(--razo-gray-warm);">Variante seleccionada: <span id="modalVarianteResumen"></span></span><br>
           <span style="color: var(--razo-gray-warm);">Stock actual: <strong id="modalStockActual">0</strong> paquetes</span>
         </p>
-        
+
+        <div class="form-group">
+          <label for="modalVariante" class="form-label">Selecciona la variante / medida</label>
+          <select id="modalVariante" class="form-input"></select>
+        </div>
+
         <div class="form-group">
           <label class="form-label">Tipo de Ajuste:</label>
           <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
@@ -405,28 +410,42 @@
       const productosPagina = productosAMostrar.slice(inicio, fin);
 
       productsTableBody.innerHTML = productosPagina.map(product => {
+        const variantes = product.variantes || [];
+        const variante = product.varianteDestacada;
+        const stockPaquetes = product.stockTotal || 0;
+        const precioPaquete = variante?.precioPaquete || product.precioDesde || 0;
+        const piezasPorPaquete = variante?.piezasPorPaquete || '—';
+        const sku = variante?.sku || 'Sin SKU asignado';
+
         let stockBadge = 'success';
         let stockText = 'Normal';
-        if (product.stockpaquetes === 0) {
+        if (stockPaquetes === 0) {
           stockBadge = 'danger';
           stockText = 'Sin Stock';
-        } else if (product.stockpaquetes <= 5) {
+        } else if (stockPaquetes <= 5) {
           stockBadge = 'warning';
           stockText = 'Stock Bajo';
         }
 
+        const productPayload = {
+          ...product,
+          varianteDestacada: variante,
+          variantes
+        };
+
         return `
           <tr>
-            <td><strong>${product.sku}</strong></td>
+            <td><strong>${sku}</strong></td>
             <td>
               <div style="font-weight: 600;">${product.nombreproducto}</div>
-              <div style="font-size: 0.875rem; color: var(--razo-gray-warm);">${product.categorianombre || 'Sin categoría'}</div>
+              <div style="font-size: 0.875rem; color: var(--razo-gray-warm);">${product.categoriaNombre || 'Sin categoría'}</div>
+              <div style="font-size: 0.75rem; color: var(--text-secondary);">${product.variantesCount} variante${product.variantesCount === 1 ? '' : 's'} registradas</div>
             </td>
-            <td><strong>${formatCurrency(product.preciopaquete)}</strong></td>
-            <td>${product.piezasporpaquete} pzas</td>
+            <td><strong>${formatCurrency(precioPaquete)}</strong></td>
+            <td>${piezasPorPaquete} ${piezasPorPaquete === '—' ? '' : 'pzas'}</td>
             <td>
               <div style="font-size: 1.25rem; font-weight: 700; color: var(--razo-orange);">
-                ${product.stockpaquetes}
+                ${stockPaquetes}
               </div>
             </td>
             <td><span class="admin-badge ${stockBadge}">${stockText}</span></td>
@@ -434,7 +453,7 @@
               <button 
                 class="btn btn-primary" 
                 style="padding: 0.5rem 1rem; font-size: 0.875rem;"
-                onclick='openAjusteModal(${JSON.stringify(product)})'>
+                onclick='openAjusteModal(${JSON.stringify(productPayload)})'>
                 Ajustar stock
               </button>
             </td>
@@ -534,10 +553,11 @@
         renderProducts();
       } else {
         // Si hay búsqueda, mostrar filtrados sin paginación
-        const filtered = allProducts.filter(p => 
-          p.nombreproducto.toLowerCase().includes(searchTerm) ||
-          p.sku.toLowerCase().includes(searchTerm)
-        );
+        const filtered = allProducts.filter(p => {
+          const matchesNombre = p.nombreproducto.toLowerCase().includes(searchTerm);
+          const matchesSku = p.varianteDestacada?.sku?.toLowerCase().includes(searchTerm);
+          return matchesNombre || matchesSku;
+        });
         renderProducts(filtered);
       }
     });
@@ -546,10 +566,30 @@
     function openAjusteModal(product) {
       selectedProduct = product;
       tipoAjuste = null;
-      
+
+      const variantes = product.variantes || [];
+      const selectVariante = document.getElementById('modalVariante');
+      selectVariante.innerHTML = '';
+
+      if (!variantes.length) {
+        selectVariante.innerHTML = '<option value="" disabled>No hay variantes registradas</option>';
+        selectVariante.disabled = true;
+      } else {
+        selectVariante.disabled = false;
+        variantes.forEach(variant => {
+          const option = document.createElement('option');
+          option.value = variant.varianteId;
+          option.dataset.stock = variant.stock ?? 0;
+          option.dataset.sku = variant.sku || 'Sin SKU';
+          option.dataset.dimensiones = variant.dimensiones || '';
+          option.textContent = `${variant.sku || 'Sin SKU'} • ${variant.dimensiones || 'Sin medidas'} • Stock: ${variant.stock ?? 0}`;
+          selectVariante.appendChild(option);
+        });
+        selectVariante.value = (product.varianteDestacada && product.varianteDestacada.varianteId) ? product.varianteDestacada.varianteId : variantes[0].varianteId;
+      }
+
+      actualizarResumenVariante();
       document.getElementById('modalProductoNombre').textContent = product.nombreproducto;
-      document.getElementById('modalProductoSku').textContent = product.sku;
-      document.getElementById('modalStockActual').textContent = product.stockpaquetes;
       document.getElementById('modalCantidad').value = '';
       document.getElementById('modalMotivo').value = '';
       document.getElementById('modalMotivoOtro').value = '';
@@ -592,8 +632,15 @@
       }
 
       const cantidad = parseInt(document.getElementById('modalCantidad').value);
+      const selectVariante = document.getElementById('modalVariante');
+      const varianteId = selectVariante.value ? parseInt(selectVariante.value, 10) : null;
       const motivoSelect = document.getElementById('modalMotivo').value;
       const motivoOtro = document.getElementById('modalMotivoOtro').value;
+
+      if (!varianteId) {
+        showToast('Selecciona la variante a ajustar', 'warning');
+        return;
+      }
 
       if (!cantidad || cantidad <= 0) {
         showToast('Ingresa una cantidad válida', 'warning');
@@ -630,6 +677,7 @@
           },
           body: JSON.stringify({
             productoId: selectedProduct.productoid,
+            varianteId,
             cantidadCambio,
             motivo
           })
@@ -663,6 +711,19 @@
         window.location.href = '/login.html';
       }, 500);
     });
+
+    document.getElementById('modalVariante').addEventListener('change', actualizarResumenVariante);
+
+    function actualizarResumenVariante() {
+      const selectVariante = document.getElementById('modalVariante');
+      const option = selectVariante.options[selectVariante.selectedIndex];
+      const sku = option?.dataset.sku || 'Sin SKU';
+      const dimensiones = option?.dataset.dimensiones || 'Sin medidas';
+      const stock = option ? parseInt(option.dataset.stock, 10) || 0 : 0;
+
+      document.getElementById('modalVarianteResumen').textContent = `${sku} • ${dimensiones}`;
+      document.getElementById('modalStockActual').textContent = stock;
+    }
 
     // Navigation handling
     const navLinks = document.querySelectorAll('.admin-nav-link[data-module]');

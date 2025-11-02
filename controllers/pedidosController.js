@@ -55,17 +55,21 @@ const crearPedido = async (req, res) => {
     // 3. Obtener los items del carrito con información de productos
     const itemsResult = await client.query(
       `SELECT 
-        ic.ItemID,
-        ic.ProductoID,
-        ic.CantidadPaquetes,
-        p.NombreProducto,
-        p.PiezasPorPaquete,
-        p.PrecioPaquete,
-        p.Stock,
-        p.CostoUnitario
-      FROM ItemsDelCarrito ic
-      INNER JOIN Productos p ON ic.ProductoID = p.ProductoID
-      WHERE ic.CarritoID = $1`,
+        ic.itemid,
+        ic.varianteid,
+        ic.cantidadpaquetes,
+        pv.productoid,
+        pv.sku,
+        pv.dimensiones,
+        pv.piezasporpaquete,
+        pv.preciopaquete,
+        pv.stock,
+        pv.costounitario,
+        p.nombreproducto
+      FROM itemsdelcarrito ic
+      INNER JOIN producto_variantes pv ON pv.varianteid = ic.varianteid
+      INNER JOIN productos p ON p.productoid = pv.productoid
+      WHERE ic.carritoid = $1`,
       [carritoId]
     );
 
@@ -81,18 +85,22 @@ const crearPedido = async (req, res) => {
 
     // 4. Validar stock para todos los productos
     for (const item of items) {
-      if (item.stock < item.cantidadpaquetes) {
+      const stockDisponible = item.stock !== null ? parseInt(item.stock, 10) : 0;
+      if (stockDisponible < item.cantidadpaquetes) {
         await client.query('ROLLBACK');
         return res.status(400).json({
           success: false,
-          message: `Stock insuficiente para ${item.nombreproducto}. Disponible: ${item.stock}, Solicitado: ${item.cantidadpaquetes}`
+          message: `Stock insuficiente para ${item.nombreproducto} (${item.sku}). Disponible: ${stockDisponible}, Solicitado: ${item.cantidadpaquetes}`
         });
       }
     }
 
     // 5. Calcular el monto total
     const montoTotal = items.reduce((total, item) => {
-      return total + (item.cantidadpaquetes * parseFloat(item.preciopaquete));
+      const precioPaquete = item.preciopaquete !== null
+        ? parseFloat(item.preciopaquete)
+        : 0;
+      return total + (item.cantidadpaquetes * precioPaquete);
     }, 0);
 
     // 6. Validar el AgenteID si se proporcionó
@@ -125,39 +133,46 @@ const crearPedido = async (req, res) => {
     // 8. Crear los detalles del pedido y actualizar inventario
     const detallesPedido = [];
     for (const item of items) {
-      // Calcular precio unitario (precio por pieza)
-      const precioUnitario = parseFloat(item.preciopaquete) / item.piezasporpaquete;
-      
+      const piezasPorPaquete = item.piezasporpaquete !== null
+        ? parseInt(item.piezasporpaquete, 10)
+        : null;
+      const precioPaquete = item.preciopaquete !== null
+        ? parseFloat(item.preciopaquete)
+        : null;
+      const precioUnitario = piezasPorPaquete && precioPaquete
+        ? precioPaquete / piezasPorPaquete
+        : null;
+
       // Insertar detalle del pedido
       const detalleResult = await client.query(
-        `INSERT INTO DetallesDelPedido (PedidoID, ProductoID, CantidadPaquetes, PrecioPorPaquete, PiezasTotales, PrecioUnitario)
+        `INSERT INTO DetallesDelPedido (PedidoID, VarianteID, CantidadPaquetes, PrecioPorPaquete, PiezasTotales, PrecioUnitario)
          VALUES ($1, $2, $3, $4, $5, $6)
          RETURNING DetalleID`,
         [
           pedidoId,
-          item.productoid,
+          item.varianteid,
           item.cantidadpaquetes,
-          item.preciopaquete,
-          item.cantidadpaquetes * item.piezasporpaquete,
-          precioUnitario.toFixed(2)
+          precioPaquete,
+          piezasPorPaquete ? item.cantidadpaquetes * piezasPorPaquete : null,
+          precioUnitario !== null ? precioUnitario.toFixed(2) : null
         ]
       );
 
       // Actualizar stock del producto
-      const nuevoStock = item.stock - item.cantidadpaquetes;
+      const nuevoStockVariante = parseInt(item.stock, 10) - item.cantidadpaquetes;
       await client.query(
-        'UPDATE Productos SET Stock = $1 WHERE ProductoID = $2',
-        [nuevoStock, item.productoid]
+        'UPDATE producto_variantes SET Stock = $1 WHERE VarianteID = $2',
+        [nuevoStockVariante, item.varianteid]
       );
 
       // Crear registro en Log_Inventario
       await client.query(
-        `INSERT INTO Log_Inventario (ProductoID, CantidadCambiado, NuevoStock, Motivo, UsuarioID)
+        `INSERT INTO Log_Inventario (VarianteID, CantidadCambiado, NuevoStock, Motivo, UsuarioID)
          VALUES ($1, $2, $3, $4, $5)`,
         [
-          item.productoid,
+          item.varianteid,
           -item.cantidadpaquetes,
-          nuevoStock,
+          nuevoStockVariante,
           `Venta Pedido #${pedidoId}`,
           clienteId
         ]
@@ -165,13 +180,16 @@ const crearPedido = async (req, res) => {
 
       detallesPedido.push({
         detalleId: detalleResult.rows[0].detalleid,
+        varianteId: item.varianteid,
         productoId: item.productoid,
         nombreProducto: item.nombreproducto,
         cantidadPaquetes: item.cantidadpaquetes,
-        precioPorPaquete: parseFloat(item.preciopaquete),
+        precioPorPaquete: precioPaquete,
         precioUnitario: precioUnitario,
-        piezasTotales: item.cantidadpaquetes * item.piezasporpaquete,
-        subtotal: item.cantidadpaquetes * parseFloat(item.preciopaquete)
+        piezasTotales: piezasPorPaquete ? item.cantidadpaquetes * piezasPorPaquete : null,
+        subtotal: precioPaquete !== null ? item.cantidadpaquetes * precioPaquete : null,
+        sku: item.sku,
+        dimensiones: item.dimensiones
       });
     }
 
@@ -268,26 +286,37 @@ const obtenerPedidos = async (req, res) => {
     // Para cada pedido, obtener sus detalles
     const pedidos = await Promise.all(result.rows.map(async (pedido) => {
       const detallesQuery = `
-        SELECT 
-          dp.CantidadPaquetes,
-          dp.PrecioPorPaquete,
-          dp.PiezasTotales,
+        SELECT
+          dp.detalleid,
+          dp.varianteid,
+          dp.cantidadpaquetes,
+          dp.precioporpaquete,
+          dp.piezastotales,
           COALESCE(
-            dp.PrecioUnitario, 
-            ROUND(dp.PrecioPorPaquete / NULLIF((dp.PiezasTotales / NULLIF(dp.CantidadPaquetes, 0)), 0), 2)
-          ) as PrecioUnitario,
-          p.ProductoID,
-          p.SKU,
-          p.NombreProducto,
-          pi.URL_Imagen
-        FROM DetallesDelPedido dp
-        INNER JOIN Productos p ON dp.ProductoID = p.ProductoID
-        LEFT JOIN Producto_Imagenes pi ON p.ProductoID = pi.ProductoID AND pi.Orden = 0
-        WHERE dp.PedidoID = $1
+            dp.preciounitario,
+            ROUND(dp.precioporpaquete / NULLIF((dp.piezastotales / NULLIF(dp.cantidadpaquetes, 0)), 0), 2)
+          ) AS preciounitario,
+          pv.productoid,
+          pv.sku,
+          pv.dimensiones,
+          pv.piezasporpaquete,
+          p.nombreproducto,
+          imagen.url_imagen
+        FROM detallesdelpedido dp
+        INNER JOIN producto_variantes pv ON pv.varianteid = dp.varianteid
+        INNER JOIN productos p ON p.productoid = pv.productoid
+        LEFT JOIN LATERAL (
+          SELECT pi.url_imagen
+          FROM producto_imagenes pi
+          WHERE pi.varianteid = pv.varianteid
+          ORDER BY pi.orden ASC NULLS LAST, pi.imagenid ASC
+          LIMIT 1
+        ) imagen ON TRUE
+        WHERE dp.pedidoid = $1
+        ORDER BY dp.detalleid ASC
       `;
 
       const detallesResult = await db.query(detallesQuery, [pedido.pedidoid]);
-      console.log('🧾 Detalles pedido', pedido.pedidoid, detallesResult.rows);
 
       return {
         pedidoId: pedido.pedidoid,
@@ -306,13 +335,17 @@ const obtenerPedidos = async (req, res) => {
           codigoAgente: pedido.codigoagente
         } : null,
         items: detallesResult.rows.map(item => ({
+          detalleId: item.detalleid,
+          varianteId: item.varianteid,
           productoId: item.productoid,
           sku: item.sku,
           nombreProducto: item.nombreproducto,
           cantidadPaquetes: item.cantidadpaquetes,
-          precioPorPaquete: parseFloat(item.precioporpaquete),
-          precioUnitario: parseFloat(item.preciounitario),
+          precioPorPaquete: item.precioporpaquete !== null ? parseFloat(item.precioporpaquete) : null,
+          precioUnitario: item.preciounitario !== null ? parseFloat(item.preciounitario) : null,
           piezasTotales: item.piezastotales,
+          piezasPorPaquete: item.piezasporpaquete,
+          dimensiones: item.dimensiones,
           imagenUrl: item.url_imagen
         }))
       };

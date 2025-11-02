@@ -1,468 +1,579 @@
 <!DOCTYPE html>
 <html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Agregar Producto - Admin RazoConnect</title>
-  
-  <!-- PROTECCIÓN DE AUTENTICACIÓN ADMIN -->
-  <script src="js/auth-guard-admin.js"></script>
-  
-  <!-- SISTEMA DE RENOVACIÓN DE TOKENS -->
-  <script src="js/token-refresh.js"></script>
-  
-  <link rel="stylesheet" href="css/styles.css">
-  <link rel="stylesheet" href="css/admin.css">
-</head>
-<body>
-  <div class="admin-layout">
-    <!-- Sidebar -->
-    <aside class="admin-sidebar">
-      <div class="admin-brand">
-        <a href="/admin-dashboard.html" class="admin-brand-logo">
-          📦 RazoConnect
-        </a>
-        <div class="admin-brand-subtitle">Panel admin</div>
-      </div>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Agregar Producto - Admin RazoConnect</title>
 
-      <nav class="admin-nav">
-        <div class="admin-nav-section">
-          <div class="admin-nav-title">Principal</div>
-          <a href="/admin-dashboard.html" class="admin-nav-link">
-            <span class="admin-nav-icon">📊</span>
-            <span>Dashboard</span>
+    <!-- PROTECCIÓN DE AUTENTICACIÓN ADMIN -->
+    <script src="js/auth-guard-admin.js"></script>
+
+    <!-- SISTEMA DE RENOVACIÓN DE TOKENS -->
+    <script src="js/token-refresh.js"></script>
+
+    <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/admin.css" />
+  </head>
+  <body>
+    <div class="admin-layout">
+      <!-- Sidebar -->
+      <aside class="admin-sidebar">
+        <div class="admin-brand">
+          <a href="/admin-dashboard.html" class="admin-brand-logo">
+            📦 RazoConnect
           </a>
+          <div class="admin-brand-subtitle">Panel admin</div>
         </div>
 
-        <div class="admin-nav-section">
-          <div class="admin-nav-title">Gestión</div>
-          <a href="/admin-pedidos.html" class="admin-nav-link">
-            <span class="admin-nav-icon">📦</span>
-            <span>Pedidos</span>
-          </a>
-          <a href="/admin-agregar-producto.html" class="admin-nav-link active">
-            <span class="admin-nav-icon">🎁</span>
-            <span>Productos</span>
-          </a>
-          <a href="#" class="admin-nav-link" data-module="clientes">
-            <span class="admin-nav-icon">👥</span>
-            <span>Clientes</span>
-          </a>
-          <a href="/admin-agentes.html" class="admin-nav-link">
-            <span class="admin-nav-icon">💼</span>
-            <span>Agentes</span>
-          </a>
-        </div>
-
-        <div class="admin-nav-section">
-          <div class="admin-nav-title">Financiero</div>
-          <a href="/admin-comisiones.html" class="admin-nav-link">
-            <span class="admin-nav-icon">💰</span>
-            <span>Comisiones</span>
-          </a>
-          <a href="/admin-inventario.html" class="admin-nav-link">
-            <span class="admin-nav-icon">📈</span>
-            <span>Inventario</span>
-          </a>
-        </div>
-
-        <div class="admin-nav-section">
-          <div class="admin-nav-title">Compras</div>
-          <a href="/admin-proveedores.html" class="admin-nav-link">
-            <span class="admin-nav-icon">🏭</span>
-            <span>Proveedores</span>
-          </a>
-          <a href="/admin-crear-oc.html" class="admin-nav-link">
-            <span class="admin-nav-icon">📋</span>
-            <span>Nueva orden de compra</span>
-          </a>
-          <a href="/admin-recibir-inventario.html" class="admin-nav-link">
-            <span class="admin-nav-icon">📥</span>
-            <span>Recibir inventario</span>
-          </a>
-        </div>
-
-        <div class="admin-nav-section">
-          <div class="admin-nav-title">Configuración</div>
-          <a href="#" class="admin-nav-link" data-module="configuracion">
-            <span class="admin-nav-icon">⚙️</span>
-            <span>Configuración</span>
-          </a>
-        </div>
-      </nav>
-    </aside>
-
-    <!-- Main Content -->
-    <main class="admin-main">
-      <header class="admin-header">
-        <h1 class="admin-header-title">Agregar producto</h1>
-        
-        <div class="admin-header-actions">
-          <div class="admin-user-info">
-            <div class="admin-user-avatar" id="userAvatar">A</div>
-            <div class="admin-user-details">
-              <div class="admin-user-name" id="userName">Administrador</div>
-              <div class="admin-user-role" id="userRole">Admin</div>
-            </div>
-          </div>
-          <button class="admin-logout-btn" id="logoutBtn">Cerrar sesión</button>
-        </div>
-      </header>
-
-      <div class="admin-content">
-        <div class="admin-table-container">
-          <div class="admin-table-header">
-            <h2 class="admin-table-title">Información del Producto</h2>
+        <nav class="admin-nav">
+          <div class="admin-nav-section">
+            <div class="admin-nav-title">Principal</div>
+            <a href="/admin-dashboard.html" class="admin-nav-link">
+              <span class="admin-nav-icon">📊</span>
+              <span>Dashboard</span>
+            </a>
           </div>
 
-          <form id="productoForm" style="padding: 1.5rem;">
-            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem;">
-              <!-- SKU -->
-              <div class="form-group">
-                <label for="sku" class="form-label">SKU * <span style="font-size: 0.875rem; color: var(--razo-gray-warm);">(Código único)</span></label>
-                <input 
-                  type="text" 
-                  id="sku" 
-                  class="form-input" 
-                  placeholder="Ej: CAJA-FASHION-001"
-                  required
-                >
-              </div>
+          <div class="admin-nav-section">
+            <div class="admin-nav-title">Gestión</div>
+            <a href="/admin-pedidos.html" class="admin-nav-link">
+              <span class="admin-nav-icon">📦</span>
+              <span>Pedidos</span>
+            </a>
+            <a
+              href="/admin-agregar-producto.html"
+              class="admin-nav-link active"
+            >
+              <span class="admin-nav-icon">🎁</span>
+              <span>Productos</span>
+            </a>
+            <a href="#" class="admin-nav-link" data-module="clientes">
+              <span class="admin-nav-icon">👥</span>
+              <span>Clientes</span>
+            </a>
+            <a href="/admin-agentes.html" class="admin-nav-link">
+              <span class="admin-nav-icon">💼</span>
+              <span>Agentes</span>
+            </a>
+          </div>
 
-              <!-- Nombre -->
-              <div class="form-group">
-                <label for="nombre" class="form-label">Nombre del Producto *</label>
-                <input 
-                  type="text" 
-                  id="nombre" 
-                  class="form-input" 
-                  placeholder="Ej: Caja Fashion Premium"
-                  required
-                >
-              </div>
+          <div class="admin-nav-section">
+            <div class="admin-nav-title">Financiero</div>
+            <a href="/admin-comisiones.html" class="admin-nav-link">
+              <span class="admin-nav-icon">💰</span>
+              <span>Comisiones</span>
+            </a>
+            <a href="/admin-inventario.html" class="admin-nav-link">
+              <span class="admin-nav-icon">📈</span>
+              <span>Inventario</span>
+            </a>
+          </div>
 
-              <!-- Descripción (full width) -->
-              <div class="form-group" style="grid-column: 1 / -1;">
-                <label for="descripcion" class="form-label">Descripción</label>
-                <textarea 
-                  id="descripcion" 
-                  class="form-input" 
-                  rows="3"
-                  placeholder="Describe las características del producto..."
-                ></textarea>
-              </div>
+          <div class="admin-nav-section">
+            <div class="admin-nav-title">Compras</div>
+            <a href="/admin-proveedores.html" class="admin-nav-link">
+              <span class="admin-nav-icon">🏭</span>
+              <span>Proveedores</span>
+            </a>
+            <a href="/admin-crear-oc.html" class="admin-nav-link">
+              <span class="admin-nav-icon">📋</span>
+              <span>Nueva orden de compra</span>
+            </a>
+            <a href="/admin-recibir-inventario.html" class="admin-nav-link">
+              <span class="admin-nav-icon">📥</span>
+              <span>Recibir inventario</span>
+            </a>
+          </div>
 
-              <!-- Dimensiones -->
-              <div class="form-group">
-                <label for="dimensiones" class="form-label">Dimensiones <span style="font-size: 0.875rem; color: var(--razo-gray-warm);">(opcional)</span></label>
-                <input 
-                  type="text" 
-                  id="dimensiones" 
-                  class="form-input" 
-                  placeholder="Ej: 10x10x5 cm"
-                >
-              </div>
+          <div class="admin-nav-section">
+            <div class="admin-nav-title">Configuración</div>
+            <a href="#" class="admin-nav-link" data-module="configuracion">
+              <span class="admin-nav-icon">⚙️</span>
+              <span>Configuración</span>
+            </a>
+          </div>
+        </nav>
+      </aside>
 
-              <!-- Costo Unitario -->
-              <div class="form-group">
-                <label for="costoUnitario" class="form-label">Costo Unitario * <span style="font-size: 0.875rem; color: var(--razo-gray-warm);">(MXN)</span></label>
-                <input 
-                  type="number" 
-                  id="costoUnitario" 
-                  class="form-input" 
-                  placeholder="0.00"
-                  step="0.01"
-                  min="0"
-                  required
-                >
-              </div>
+      <!-- Main Content -->
+      <main class="admin-main">
+        <header class="admin-header">
+          <h1 class="admin-header-title">Agregar producto</h1>
 
-              <!-- Piezas por Paquete -->
-              <div class="form-group">
-                <label for="piezasPorPaquete" class="form-label">Piezas por Paquete *</label>
-                <input 
-                  type="number" 
-                  id="piezasPorPaquete" 
-                  class="form-input" 
-                  placeholder="12"
-                  min="1"
-                  required
-                >
-              </div>
-
-              <!-- Precio de Paquete -->
-              <div class="form-group">
-                <label for="precioPaquete" class="form-label">Precio por Paquete * <span style="font-size: 0.875rem; color: var(--razo-gray-warm);">(MXN)</span></label>
-                <input 
-                  type="number" 
-                  id="precioPaquete" 
-                  class="form-input" 
-                  placeholder="0.00"
-                  step="0.01"
-                  min="0"
-                  required
-                >
-              </div>
-
-              <!-- Stock Inicial -->
-              <div class="form-group">
-                <label for="stock" class="form-label">Stock Inicial * <span style="font-size: 0.875rem; color: var(--razo-gray-warm);">(paquetes)</span></label>
-                <input 
-                  type="number" 
-                  id="stock" 
-                  class="form-input" 
-                  placeholder="100"
-                  min="0"
-                  required
-                >
-              </div>
-
-              <!-- Categoría -->
-              <div class="form-group">
-                <label for="categoriaId" class="form-label">Categoría</label>
-                <select id="categoriaId" class="form-input">
-                  <option value="">Sin categoría</option>
-                </select>
-              </div>
-
-              <!-- URL de Imagen -->
-              <div class="form-group" style="grid-column: 1 / -1;">
-                <label for="imagenUrl" class="form-label">URL de Imagen</label>
-                <input 
-                  type="url" 
-                  id="imagenUrl" 
-                  class="form-input" 
-                  placeholder="https://ejemplo.com/imagen.jpg"
-                >
+          <div class="admin-header-actions">
+            <div class="admin-user-info">
+              <div class="admin-user-avatar" id="userAvatar">A</div>
+              <div class="admin-user-details">
+                <div class="admin-user-name" id="userName">Administrador</div>
+                <div class="admin-user-role" id="userRole">Admin</div>
               </div>
             </div>
+            <button class="admin-logout-btn" id="logoutBtn">
+              Cerrar sesión
+            </button>
+          </div>
+        </header>
 
-            <!-- Cálculo de margen -->
-            <div class="alert alert-info" style="margin-top: 1.5rem; margin-bottom: 1.5rem;">
-              <strong>💡 Margen de Ganancia:</strong>
-              <div id="margenInfo" style="margin-top: 0.5rem;">
-                Complete los campos de costo y precio para ver el margen
+        <div class="admin-content">
+          <div class="admin-grid-two-columns">
+            <div class="admin-table-container">
+              <div class="admin-table-header">
+                <h2 class="admin-table-title">Información del producto</h2>
               </div>
+
+              <form id="productoForm" style="padding: 1.5rem">
+                <div style="display: grid; gap: 1.5rem">
+                  <div class="alert alert-info">
+                    <strong>Nuevo flujo maestro/variante:</strong>
+                    <p
+                      style="
+                        margin-top: 0.5rem;
+                        font-size: 0.9rem;
+                        line-height: 1.5;
+                      "
+                    >
+                      Primero crea el <strong>producto maestro</strong> con su
+                      información general. Después se te redirigirá a la
+                      pantalla para agregar las variantes (SKU, precios, stock).
+                    </p>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="nombre" class="form-label"
+                      >Nombre del Producto *</label
+                    >
+                    <input
+                      type="text"
+                      id="nombre"
+                      class="form-input"
+                      placeholder="Ej: Caja Fashion Premium"
+                      required
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="descripcion" class="form-label"
+                      >Descripción</label
+                    >
+                    <textarea
+                      id="descripcion"
+                      class="form-input"
+                      rows="4"
+                      placeholder="Describe las características generales del producto..."
+                    ></textarea>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="categoriaId" class="form-label"
+                      >Categoría</label
+                    >
+                    <select id="categoriaId" class="form-input">
+                      <option value="">Sin categoría</option>
+                    </select>
+                  </div>
+
+                  <div class="alert alert-warning" style="margin-top: 0.5rem">
+                    <strong>Después de guardar:</strong>
+                    <ul style="margin: 0.5rem 0 0 1.2rem; font-size: 0.9rem">
+                      <li>
+                        Define las variantes (SKU, precio, stock) en la
+                        siguiente pantalla.
+                      </li>
+                      <li>
+                        Puedes agregar múltiples variantes por producto maestro.
+                      </li>
+                    </ul>
+                  </div>
+
+                  <div
+                    style="
+                      display: flex;
+                      gap: 1rem;
+                      justify-content: flex-end;
+                      margin-top: 1.5rem;
+                    "
+                  >
+                    <button
+                      type="button"
+                      class="btn btn-secondary"
+                      onclick="window.history.back()"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="submit"
+                      class="btn btn-primary"
+                      id="submitBtn"
+                      style="
+                        display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
+                        gap: 0.75rem;
+                      "
+                    >
+                      <span id="btnText">Guardar producto maestro</span>
+                      <div
+                        class="spinner"
+                        id="btnSpinner"
+                        style="display: none"
+                      ></div>
+                    </button>
+                  </div>
+                </div>
+              </form>
             </div>
 
-            <!-- Botones -->
-            <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem;">
-              <button type="button" class="btn btn-secondary" onclick="window.history.back()">
-                Cancelar
-              </button>
-              <button type="submit" class="btn btn-primary" id="submitBtn">
-                <span id="btnText">Guardar Producto</span>
-                <div class="spinner" id="btnSpinner" style="display: none;"></div>
-              </button>
-            </div>
-          </form>
+            <section
+              class="admin-table-container"
+              style="min-width: 380px; margin-top: 2rem"
+            >
+              <div
+                class="admin-table-header"
+                style="
+                  display: flex;
+                  justify-content: space-between;
+                  align-items: center;
+                "
+              >
+                <h2 class="admin-table-title">Productos maestros existentes</h2>
+                <button
+                  type="button"
+                  class="btn btn-outline"
+                  id="refreshMastersBtn"
+                  style="padding: 0.35rem 0.75rem"
+                >
+                  Actualizar
+                </button>
+              </div>
+
+              <div style="padding: 1.5rem">
+                <div id="mastersLoading" class="loading" style="display: none">
+                  <div class="spinner"></div>
+                </div>
+
+                <div style="overflow-x: auto">
+                  <table
+                    class="admin-table"
+                    id="mastersTable"
+                    style="display: none"
+                  >
+                    <thead>
+                      <tr>
+                        <th>#ID</th>
+                        <th>Producto</th>
+                        <th>Categoría</th>
+                        <th>Variantes</th>
+                        <th>Precio desde</th>
+                        <th>Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody id="mastersTableBody"></tbody>
+                  </table>
+                </div>
+
+                <div
+                  class="empty-state"
+                  id="mastersEmpty"
+                  style="display: none"
+                >
+                  <div class="empty-state-icon">📦</div>
+                  <h3 class="empty-state-title">Sin productos maestros</h3>
+                  <p class="empty-state-text">
+                    Crea uno con el formulario para comenzar.
+                  </p>
+                </div>
+              </div>
+            </section>
+          </div>
         </div>
-      </div>
-    </main>
-  </div>
+      </main>
+    </div>
 
-  <script src="js/api.js"></script>
-  <script>
-    // Authentication check
-    const adminToken = localStorage.getItem('razoconnect_admin_token');
-    if (!adminToken) {
-      window.location.href = '/login.html';
-    }
-
-    // Verify admin and load data
-    async function init() {
-      await verifyAndLoadAdmin();
-      await loadCategorias();
-    }
-
-    async function verifyAndLoadAdmin() {
-      try {
-        const response = await fetch(`${API_BASE_URL}/admin/verify`, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${adminToken}`,
-            'Content-Type': 'application/json'
-          }
-        });
-
-        if (!response.ok) throw new Error('Invalid token');
-
-        const data = await response.json();
-        if (data.success) {
-          const admin = data.data.admin;
-          document.getElementById('userName').textContent = admin.nombre;
-          document.getElementById('userRole').textContent = admin.rol === 'superadmin' ? 'Super Admin' : 'Admin';
-          
-          const words = admin.nombre.split(' ');
-          const initials = words.length >= 2 
-            ? `${words[0].charAt(0)}${words[1].charAt(0)}` 
-            : admin.nombre.substring(0, 2);
-          document.getElementById('userAvatar').textContent = initials.toUpperCase();
-        }
-      } catch (error) {
-        console.error('Error verifying admin:', error);
-        localStorage.removeItem('razoconnect_admin_token');
-        localStorage.removeItem('razoconnect_admin');
-        window.location.href = '/login.html';
+    <script src="js/api.js"></script>
+    <script>
+      // Authentication check
+      const adminToken = localStorage.getItem("razoconnect_admin_token");
+      if (!adminToken) {
+        window.location.href = "/login.html";
       }
-    }
 
-    // Load categorías
-    async function loadCategorias() {
-      try {
-        const response = await fetch(`${API_BASE_URL}/admin/categorias`, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${adminToken}`,
-            'Content-Type': 'application/json'
-          }
-        });
+      // Verify admin and load data
+      async function init() {
+        await verifyAndLoadAdmin();
+        await loadCategorias();
+      }
 
-        if (response.ok) {
+      async function verifyAndLoadAdmin() {
+        try {
+          const response = await fetch(`${API_BASE_URL}/admin/verify`, {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${adminToken}`,
+              "Content-Type": "application/json",
+            },
+          });
+
+          if (!response.ok) throw new Error("Invalid token");
+
           const data = await response.json();
           if (data.success) {
-            const select = document.getElementById('categoriaId');
-            data.data.categorias.forEach(cat => {
-              const option = document.createElement('option');
+            const admin = data.data.admin;
+            document.getElementById("userName").textContent = admin.nombre;
+            document.getElementById("userRole").textContent =
+              admin.rol === "superadmin" ? "Super Admin" : "Admin";
+
+            const words = admin.nombre.split(" ");
+            const initials =
+              words.length >= 2
+                ? `${words[0].charAt(0)}${words[1].charAt(0)}`
+                : admin.nombre.substring(0, 2);
+            document.getElementById("userAvatar").textContent =
+              initials.toUpperCase();
+          }
+        } catch (error) {
+          console.error("Error verifying admin:", error);
+          localStorage.removeItem("razoconnect_admin_token");
+          localStorage.removeItem("razoconnect_admin");
+          window.location.href = "/login.html";
+        }
+      }
+
+      // Load categorías
+      async function loadCategorias() {
+        try {
+          const response = await fetch(`${API_BASE_URL}/categorias`, {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+            },
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+          }
+
+          const data = await response.json();
+          if (data.success && Array.isArray(data.data?.categorias)) {
+            const select = document.getElementById("categoriaId");
+
+            data.data.categorias.forEach((cat) => {
+              const option = document.createElement("option");
               option.value = cat.categoriaId;
               option.textContent = cat.nombre;
               select.appendChild(option);
             });
           }
+        } catch (error) {
+          console.error("Error loading categorías:", error);
+          showToast(
+            "No se pudieron cargar las categorías. Intenta nuevamente.",
+            "error"
+          );
         }
-      } catch (error) {
-        console.error('Error loading categorías:', error);
       }
-    }
 
-    // Calculate margin
-    function calcularMargen() {
-      const costoUnitario = parseFloat(document.getElementById('costoUnitario').value) || 0;
-      const piezasPorPaquete = parseInt(document.getElementById('piezasPorPaquete').value) || 0;
-      const precioPaquete = parseFloat(document.getElementById('precioPaquete').value) || 0;
+      // Handle form submission
+      document
+        .getElementById("productoForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
 
-      if (costoUnitario > 0 && piezasPorPaquete > 0 && precioPaquete > 0) {
-        const costoTotal = costoUnitario * piezasPorPaquete;
-        const ganancia = precioPaquete - costoTotal;
-        const margenPorcentaje = ((ganancia / precioPaquete) * 100).toFixed(2);
+          const submitBtn = document.getElementById("submitBtn");
+          const btnText = document.getElementById("btnText");
+          const btnSpinner = document.getElementById("btnSpinner");
 
-        const margenInfo = document.getElementById('margenInfo');
-        margenInfo.innerHTML = `
-          <div>Costo por paquete: <strong>$${costoTotal.toFixed(2)}</strong></div>
-          <div>Precio de venta: <strong>$${precioPaquete.toFixed(2)}</strong></div>
-          <div>Ganancia: <strong style="color: ${ganancia > 0 ? 'var(--success-color)' : 'var(--danger-color)'}">$${ganancia.toFixed(2)}</strong></div>
-          <div>Margen: <strong style="color: ${margenPorcentaje > 0 ? 'var(--success-color)' : 'var(--danger-color)'}>${margenPorcentaje}%</strong></div>
-        `;
-      }
-    }
+          try {
+            submitBtn.disabled = true;
+            btnText.style.display = "none";
+            btnSpinner.style.display = "block";
 
-    // Add event listeners for margin calculation
-    ['costoUnitario', 'piezasPorPaquete', 'precioPaquete'].forEach(id => {
-      document.getElementById(id).addEventListener('input', calcularMargen);
-    });
+            console.log("📦 Iniciando creación de producto maestro...");
+            console.log("🔑 Token presente:", !!adminToken);
 
-    // Handle form submission
-    document.getElementById('productoForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
+            const formData = {
+              nombre: document.getElementById("nombre").value.trim(),
+              descripcion:
+                document.getElementById("descripcion").value.trim() || null,
+              categoriaId: document.getElementById("categoriaId").value || null,
+            };
 
-      const submitBtn = document.getElementById('submitBtn');
-      const btnText = document.getElementById('btnText');
-      const btnSpinner = document.getElementById('btnSpinner');
+            console.log("📋 Datos del producto maestro:", formData);
 
-      try {
-        submitBtn.disabled = true;
-        btnText.style.display = 'none';
-        btnSpinner.style.display = 'block';
+            const response = await fetch(`${API_BASE_URL}/admin/productos`, {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${adminToken}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(formData),
+            });
 
-        console.log('📦 Iniciando creación de producto...');
-        console.log('🔑 Token presente:', !!adminToken);
+            console.log("📡 Response status:", response.status);
+            const data = await response.json();
+            console.log("📥 Respuesta del servidor:", data);
 
-        const formData = {
-          sku: document.getElementById('sku').value.trim(),
-          nombre: document.getElementById('nombre').value.trim(),
-          descripcion: document.getElementById('descripcion').value.trim() || null,
-          dimensiones: document.getElementById('dimensiones').value.trim() || null,
-          costoUnitario: parseFloat(document.getElementById('costoUnitario').value),
-          piezasPorPaquete: parseInt(document.getElementById('piezasPorPaquete').value),
-          precioPaquete: parseFloat(document.getElementById('precioPaquete').value),
-          stock: parseInt(document.getElementById('stock').value),
-          categoriaId: document.getElementById('categoriaId').value || null,
-          imagenUrl: document.getElementById('imagenUrl').value.trim() || null
-        };
+            if (response.ok && data.success) {
+              const nuevoProducto = data.data?.producto;
+              console.log("✅ Producto maestro creado!", nuevoProducto);
 
-        console.log('📋 Datos del formulario:', formData);
+              showToast(
+                "Producto maestro creado. Ahora agrega variantes.",
+                "success"
+              );
 
-        const response = await fetch(`${API_BASE_URL}/admin/productos`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${adminToken}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(formData)
+              await loadMasterProducts();
+
+              if (nuevoProducto?.productoid) {
+                sessionStorage.setItem("_navigating", "true");
+                setTimeout(() => {
+                  window.location.href = `/admin-producto-editar.html?id=${nuevoProducto.productoid}`;
+                }, 800);
+              }
+            } else if (response.status === 401) {
+              // Token inválido o expirado
+              showToast(
+                "Sesión expirada. Por favor, inicia sesión nuevamente.",
+                "error"
+              );
+              setTimeout(() => {
+                localStorage.removeItem("razoconnect_admin_token");
+                localStorage.removeItem("razoconnect_admin");
+                window.location.href = "/login.html";
+              }, 2000);
+            } else {
+              // Otro tipo de error
+              console.error("Error del servidor:", data);
+              showToast(
+                data.message ||
+                  "Error al crear producto. Revisa los datos e intenta nuevamente.",
+                "error"
+              );
+            }
+          } catch (error) {
+            console.error("Error creating product:", error);
+            showToast("Error al conectar con el servidor", "error");
+          } finally {
+            submitBtn.disabled = false;
+            btnText.style.display = "inline";
+            btnSpinner.style.display = "none";
+          }
         });
 
-        console.log('📡 Response status:', response.status);
-        const data = await response.json();
-        console.log('📥 Respuesta del servidor:', data);
-
-        if (response.ok && data.success) {
-          console.log('✅ Producto creado exitosamente!');
-          console.log('📍 Redirigiendo a admin-inventario.html en 1 segundo...');
-          showToast('Producto creado exitosamente', 'success');
-          
-          // Marcar como navegación interna para evitar que token-refresh limpie la sesión
-          sessionStorage.setItem('_navigating', 'true');
-          
-          // Redirigir inmediatamente al inventario
-          setTimeout(() => {
-            console.log('🔄 Ejecutando redirección...');
-            window.location.href = '/admin-inventario.html';
-          }, 1000);
-        } else if (response.status === 401) {
-          // Token inválido o expirado
-          showToast('Sesión expirada. Por favor, inicia sesión nuevamente.', 'error');
-          setTimeout(() => {
-            localStorage.removeItem('razoconnect_admin_token');
-            localStorage.removeItem('razoconnect_admin');
-            window.location.href = '/login.html';
-          }, 2000);
-        } else {
-          // Otro tipo de error
-          console.error('Error del servidor:', data);
-          showToast(data.message || 'Error al crear producto. Revisa los datos e intenta nuevamente.', 'error');
-        }
-      } catch (error) {
-        console.error('Error creating product:', error);
-        showToast('Error al conectar con el servidor', 'error');
-      } finally {
-        submitBtn.disabled = false;
-        btnText.style.display = 'inline';
-        btnSpinner.style.display = 'none';
-      }
-    });
-
-    // Logout
-    document.getElementById('logoutBtn').addEventListener('click', () => {
-      localStorage.removeItem('razoconnect_admin_token');
-      localStorage.removeItem('razoconnect_admin');
-      showToast('Sesión cerrada', 'success');
-      setTimeout(() => {
-        window.location.href = '/login.html';
-      }, 500);
-    });
-
-    // Navigation handling
-    const navLinks = document.querySelectorAll('.admin-nav-link[data-module]');
-    navLinks.forEach(link => {
-      link.addEventListener('click', (e) => {
-        e.preventDefault();
-        const moduleName = link.querySelector('span:last-child').textContent;
-        showToast(`Módulo "${moduleName}" próximamente disponible`, 'info');
+      // Logout
+      document.getElementById("logoutBtn").addEventListener("click", () => {
+        localStorage.removeItem("razoconnect_admin_token");
+        localStorage.removeItem("razoconnect_admin");
+        showToast("Sesión cerrada", "success");
+        setTimeout(() => {
+          window.location.href = "/login.html";
+        }, 500);
       });
-    });
 
-    // Initialize
-    init();
-  </script>
-</body>
+      // Navigation handling
+      const navLinks = document.querySelectorAll(
+        ".admin-nav-link[data-module]"
+      );
+      navLinks.forEach((link) => {
+        link.addEventListener("click", (e) => {
+          e.preventDefault();
+          const moduleName = link.querySelector("span:last-child").textContent;
+          showToast(`Módulo "${moduleName}" próximamente disponible`, "info");
+        });
+      });
+
+      // Initialize
+      init();
+
+      async function loadMasterProducts() {
+        try {
+          mastersLoading.style.display = "flex";
+          mastersTable.style.display = "none";
+          mastersEmpty.style.display = "none";
+          mastersTableBody.innerHTML = "";
+
+          const response = await API.getProductos();
+
+          if (response.ok && response.data.success) {
+            const productos = Array.isArray(response.data.data?.productos)
+              ? response.data.data.productos
+              : [];
+
+            if (!productos.length) {
+              mastersEmpty.style.display = "flex";
+              return;
+            }
+
+            productsToTable(productos);
+            mastersTable.style.display = "table";
+          } else {
+            throw new Error(
+              response.data?.message || "No se pudieron cargar productos"
+            );
+          }
+        } catch (error) {
+          console.error("Error cargando productos maestros:", error);
+          mastersEmpty.style.display = "flex";
+          mastersEmpty.querySelector(".empty-state-title").textContent =
+            "Error al cargar productos";
+          mastersEmpty.querySelector(".empty-state-text").textContent =
+            "Intenta actualizar la lista más tarde.";
+        } finally {
+          mastersLoading.style.display = "none";
+        }
+      }
+
+      function productsToTable(productos) {
+        mastersTableBody.innerHTML = "";
+        productos
+          .sort((a, b) =>
+            a.nombreProducto.localeCompare(b.nombreProducto, "es")
+          )
+          .forEach((prod) => {
+            const variantes = prod.totalVariantes ?? 0;
+            const precioDesde = Number.isFinite(prod.precioDesde)
+              ? formatCurrency(prod.precioDesde)
+              : "N/D";
+            const row = document.createElement("tr");
+            row.innerHTML = `
+            <td>#${prod.productoId}</td>
+            <td>
+              <strong>${prod.nombreProducto}</strong>
+              <div class="table-subtext">${
+                prod.descripcion || "Sin descripción"
+              }</div>
+            </td>
+            <td>${prod.categoria?.nombre || "Sin categoría"}</td>
+            <td>${variantes} variante${variantes === 1 ? "" : "s"}</td>
+            <td>${precioDesde}</td>
+            <td>
+              <a class="btn btn-primary" style="padding: 0.5rem 1.5rem; border-radius: 0.5rem; justify-content: center;" href="/admin-producto-editar.html?id=${
+                prod.productoId
+              }">Editar variantes</a>
+            </td>
+          `;
+            mastersTableBody.appendChild(row);
+          });
+        mastersEmpty.style.display = "none";
+      }
+
+      const mastersLoading = document.getElementById("mastersLoading");
+      const mastersTable = document.getElementById("mastersTable");
+      const mastersTableBody = document.getElementById("mastersTableBody");
+      const mastersEmpty = document.getElementById("mastersEmpty");
+      const refreshMastersBtn = document.getElementById("refreshMastersBtn");
+
+      refreshMastersBtn.addEventListener("click", () => {
+        loadMasterProducts();
+      });
+
+      function formatCurrency(value) {
+        return new Intl.NumberFormat("es-MX", {
+          style: "currency",
+          currency: "MXN",
+        }).format(value);
+      }
+
+      loadMasterProducts();
+    </script>
+  </body>
 </html>

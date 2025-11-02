@@ -243,7 +243,7 @@
   border: 2px solid var(--razo-orange);
   color: var(--razo-orange);
   padding: 0.5rem 1.25rem;
-  border-radius: 50px;
+  border-radius: 0.5rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s;
@@ -361,6 +361,26 @@
   overflow-x: auto;
 }
 
+.admin-card {
+  background: var(--razo-white);
+  border-radius: 1rem;
+  box-shadow: 0 12px 30px rgba(17, 24, 39, 0.06);
+  border: 1px solid rgba(20, 33, 61, 0.05);
+  overflow: hidden;
+}
+
+.admin-card + .admin-card {
+  margin-top: 1.5rem;
+}
+
+.admin-card-header {
+  padding: 1.5rem 1.5rem 0.75rem;
+}
+
+.admin-card-body {
+  padding: 0 1.5rem 1.5rem;
+}
+
 .admin-table-header {
   display: flex;
   justify-content: space-between;
@@ -368,16 +388,22 @@
   margin-bottom: 1.5rem;
 }
 
-.admin-table-title {
+.admin-table-title,
+.admin-card-title {
   font-family: 'Poppins', sans-serif;
   font-size: 1.25rem;
-  color: var(--razo-orange-dark);
-  font-weight: 600;
+  color: var(--razo-orange);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  margin: 0;
 }
 
 .admin-table {
   width: 100%;
   border-collapse: collapse;
+  border-radius: 0.85rem;
+  overflow: hidden;
+  font-size: 0.875rem;
 }
 
 .admin-table thead {
@@ -398,16 +424,26 @@
   padding: 1rem;
   border-bottom: 1px solid var(--razo-gray-light);
   color: var(--razo-gray-warm);
+  vertical-align: middle;
 }
 
 .admin-table tbody tr:hover {
   background: var(--razo-cream);
 }
 
+.admin-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.admin-table td .admin-badge {
+  margin-top: 0.25rem;
+  display: inline-block;
+}
+
 .admin-badge {
   display: inline-block;
   padding: 0.25rem 0.75rem;
-  border-radius: 50px;
+  border-radius: 0.5rem;
   font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;

@@ -120,18 +120,18 @@ const API = {
     });
   },
 
-  agregarAlCarrito: async (productoId, cantidadPaquetes) => {
+  agregarAlCarrito: async (varianteId, cantidadPaquetes) => {
     return apiCall('/carrito', {
       method: 'POST',
       body: JSON.stringify({ 
-        ProductoID: productoId, 
+        VarianteID: varianteId, 
         CantidadPaquetes: cantidadPaquetes 
       })
     });
   },
 
-  actualizarCarrito: async (productoId, cantidadPaquetes) => {
-    return apiCall(`/carrito/${productoId}`, {
+  actualizarCarrito: async (varianteId, cantidadPaquetes) => {
+    return apiCall(`/carrito/${varianteId}`, {
       method: 'PUT',
       body: JSON.stringify({ 
         CantidadPaquetes: cantidadPaquetes 
@@ -139,8 +139,8 @@ const API = {
     });
   },
 
-  eliminarDelCarrito: async (productoId) => {
-    return apiCall(`/carrito/${productoId}`, {
+  eliminarDelCarrito: async (varianteId) => {
+    return apiCall(`/carrito/${varianteId}`, {
       method: 'DELETE'
     });
   },

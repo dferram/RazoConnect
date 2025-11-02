@@ -31,6 +31,7 @@ router.put('/pedidos/:id', authenticate, authorizeAdmin, adminController.updateP
  */
 router.get('/productos', authenticate, authorizeAdmin, adminController.getAllProductos);
 router.post('/productos', authenticate, authorizeAdmin, adminController.crearProducto);
+router.post('/variantes', authenticate, authorizeAdmin, adminController.crearVariante);
 router.get('/categorias', authenticate, authorizeAdmin, adminController.getCategorias);
 
 /**

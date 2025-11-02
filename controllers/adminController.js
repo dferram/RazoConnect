@@ -249,9 +249,11 @@ const getDashboardStats = async (req, res) => {
        WHERE Estatus = 'Pendiente'`
     );
 
-    // Productos con stock bajo (<=5)
+    // Variantes con stock bajo (<=5 paquetes)
     const productosStockBajo = await db.query(
-      `SELECT COUNT(*) as total FROM Productos WHERE Stock <= 5`
+      `SELECT COUNT(*) AS total
+       FROM Producto_Variantes
+       WHERE COALESCE(Stock, 0) <= 5`
     );
 
     // Total de pedidos (para estadística general)
@@ -396,58 +398,54 @@ const updatePedidoEstatus = async (req, res) => {
 
     // Si el estatus cambia a 'Confirmado', reducir stock y crear log
     if (estatus === 'Confirmado' && estatusAnterior !== 'Confirmado') {
-      // Obtener los detalles del pedido
+      // Obtener los detalles del pedido con sus variantes
       const detallesResult = await client.query(
-        'SELECT * FROM DetallesDelPedido WHERE PedidoID = $1',
+        `SELECT 
+          dp.DetalleID,
+          dp.VarianteID,
+          dp.CantidadPaquetes,
+          pv.Stock,
+          pv.ProductoID,
+          pv.SKU,
+          pr.NombreProducto
+        FROM DetallesDelPedido dp
+        INNER JOIN Producto_Variantes pv ON dp.VarianteID = pv.VarianteID
+        INNER JOIN Productos pr ON pv.ProductoID = pr.ProductoID
+        WHERE dp.PedidoID = $1`,
         [pedidoId]
       );
 
-      // Reducir stock de cada producto y crear log
+      // Reducir stock de cada variante y crear log
       for (const detalle of detallesResult.rows) {
-        // Verificar stock disponible
-        const productoResult = await client.query(
-          'SELECT Stock FROM Productos WHERE ProductoID = $1',
-          [detalle.productoid]
-        );
-
-        if (productoResult.rows.length === 0) {
-          await client.query('ROLLBACK');
-          return res.status(400).json({
-            success: false,
-            message: `Producto con ID ${detalle.productoid} no encontrado`
-          });
-        }
-
-        const stockActual = productoResult.rows[0].stock;
+        const stockActual = detalle.stock ?? 0;
         const cantidadRequerida = detalle.cantidadpaquetes;
 
         if (stockActual < cantidadRequerida) {
           await client.query('ROLLBACK');
           return res.status(400).json({
             success: false,
-            message: `Stock insuficiente para el producto ID ${detalle.productoid}. Stock actual: ${stockActual}, requerido: ${cantidadRequerida}`
+            message: `Stock insuficiente para la variante ${detalle.sku || detalle.varianteid}. Stock actual: ${stockActual}, requerido: ${cantidadRequerida}`
           });
         }
 
-        // Reducir stock
         const nuevoStock = stockActual - cantidadRequerida;
+
         await client.query(
-          `UPDATE Productos 
-           SET Stock = Stock - $1 
-           WHERE ProductoID = $2`,
-          [cantidadRequerida, detalle.productoid]
+          `UPDATE Producto_Variantes 
+           SET Stock = $1 
+           WHERE VarianteID = $2`,
+          [nuevoStock, detalle.varianteid]
         );
 
-        // Crear registro en Log_Inventario
         await client.query(
-          `INSERT INTO Log_Inventario (ProductoID, CantidadCambiado, NuevoStock, Motivo, UsuarioID)
+          `INSERT INTO Log_Inventario (VarianteID, CantidadCambiado, NuevoStock, Motivo, UsuarioID)
            VALUES ($1, $2, $3, $4, $5)`,
           [
-            detalle.productoid,
-            -cantidadRequerida, // Negativo porque es una salida
+            detalle.varianteid,
+            -cantidadRequerida,
             nuevoStock,
-            `Pedido #${pedidoId} confirmado`,
-            req.user.id // AdminID del usuario autenticado
+            `Pedido #${pedidoId} confirmado (${detalle.nombreproducto})`,
+            req.user.id
           ]
         );
       }
@@ -490,85 +488,145 @@ const updatePedidoEstatus = async (req, res) => {
  */
 const crearProducto = async (req, res) => {
   try {
-    const {
-      sku,
-      nombre,
-      descripcion,
-      costoUnitario,
-      piezasPorPaquete,
-      precioPaquete,
-      stock,
-      categoriaId,
-      imagenUrl,
-      dimensiones
-    } = req.body;
+    const { nombre, descripcion, categoriaId } = req.body;
 
-    // Validaciones
-    if (!sku || !nombre || !costoUnitario || !piezasPorPaquete || !precioPaquete || stock === undefined) {
+    if (!nombre) {
       return res.status(400).json({
         success: false,
-        message: 'Todos los campos obligatorios deben ser proporcionados'
+        message: 'El nombre del producto es obligatorio'
       });
     }
 
-    // Verificar si el SKU ya existe
-    const skuCheck = await db.query(
-      'SELECT ProductoID FROM Productos WHERE SKU = $1',
-      [sku]
-    );
-
-    if (skuCheck.rows.length > 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'El SKU ya existe'
-      });
-    }
-
-    // Insertar el producto
     const result = await db.query(
-      `INSERT INTO Productos 
-        (SKU, NombreProducto, Descripcion, CostoUnitario, PiezasPorPaquete, PrecioPaquete, Stock, CategoriaID, Dimensiones)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-       RETURNING *`,
-      [sku, nombre, descripcion || null, costoUnitario, piezasPorPaquete, precioPaquete, stock, categoriaId || null, dimensiones || null]
+      `INSERT INTO Productos (NombreProducto, Descripcion, CategoriaID, Activo)
+       VALUES ($1, $2, $3, TRUE)
+       RETURNING ProductoID, NombreProducto, Descripcion, CategoriaID, Activo`,
+      [
+        nombre,
+        descripcion || null,
+        categoriaId || null
+      ]
     );
 
     const producto = result.rows[0];
 
-    // Si se proporciona una imagen, insertarla en Producto_Imagenes
-    if (imagenUrl) {
-      await db.query(
-        `INSERT INTO Producto_Imagenes (ProductoID, URL_Imagen, TextoAlternativo, Orden)
-         VALUES ($1, $2, $3, 0)`,
-        [producto.productoid, imagenUrl, nombre]
-      );
-    }
-
-    // Registrar en log de inventario (entrada inicial)
-    await db.query(
-      `INSERT INTO Log_Inventario (ProductoID, CantidadCambiado, NuevoStock, Motivo, UsuarioID)
-       VALUES ($1, $2, $3, $4, $5)`,
-      [producto.productoid, stock, stock, 'Stock inicial del producto', req.user.id]
-    );
-
     res.status(201).json({
       success: true,
-      message: 'Producto creado exitosamente',
+      message: 'Producto maestro creado exitosamente',
       data: {
-        productoId: producto.productoid,
-        sku: producto.sku,
-        nombre: producto.nombreproducto,
-        stock: producto.stock
+        producto
       }
     });
 
   } catch (error) {
-    console.error('Error al crear producto:', error);
+    console.error('Error al crear producto maestro:', error);
     res.status(500).json({
       success: false,
       message: 'Error en el servidor',
       error: error.message
     });
+  }
+};
+
+/**
+ * Crear una nueva variante para un producto maestro
+ * POST /api/admin/variantes
+ */
+const crearVariante = async (req, res) => {
+  const client = await db.pool.connect();
+
+  try {
+    const {
+      productoId,
+      sku,
+      dimensiones,
+      piezasPorPaquete,
+      costoUnitario,
+      precioPaquete,
+      stock,
+      tipoProductoId,
+      medidaId
+    } = req.body;
+
+    if (!productoId || !sku || !precioPaquete || !piezasPorPaquete) {
+      return res.status(400).json({
+        success: false,
+        message: 'productoId, sku, piezasPorPaquete y precioPaquete son obligatorios'
+      });
+    }
+
+    await client.query('BEGIN');
+
+    const productoResult = await client.query(
+      'SELECT ProductoID FROM Productos WHERE ProductoID = $1',
+      [productoId]
+    );
+
+    if (productoResult.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({
+        success: false,
+        message: 'Producto maestro no encontrado'
+      });
+    }
+
+    const varianteResult = await client.query(
+      `INSERT INTO Producto_Variantes (
+        ProductoID, SKU, Dimensiones, PiezasPorPaquete, CostoUnitario,
+        PrecioPaquete, Stock, TipoProductoID, MedidaID
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      RETURNING VarianteID, ProductoID, SKU, Dimensiones, PiezasPorPaquete,
+                CostoUnitario, PrecioPaquete, Stock, TipoProductoID, MedidaID`,
+      [
+        productoId,
+        sku,
+        dimensiones || null,
+        piezasPorPaquete,
+        costoUnitario !== undefined ? costoUnitario : null,
+        precioPaquete,
+        stock !== undefined ? stock : 0,
+        tipoProductoId || null,
+        medidaId || null
+      ]
+    );
+
+    const variante = varianteResult.rows[0];
+
+    if (stock && stock !== 0) {
+      await client.query(
+        `INSERT INTO Log_Inventario (VarianteID, CantidadCambiado, NuevoStock, Motivo, UsuarioID)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [
+          variante.varianteid,
+          stock,
+          stock,
+          'Stock inicial de variante',
+          req.user.id
+        ]
+      );
+    }
+
+    await client.query('COMMIT');
+
+    res.status(201).json({
+      success: true,
+      message: 'Variante creada exitosamente',
+      data: {
+        variante
+      }
+    });
+
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Error al crear variante:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error en el servidor',
+      error: error.message
+    });
+  } finally {
+    client.release();
   }
 };
 
@@ -580,13 +638,12 @@ const ajustarInventario = async (req, res) => {
   const client = await db.pool.connect();
 
   try {
-    const { productoId, cantidadCambio, motivo } = req.body;
+    const { varianteId, cantidadCambio, motivo } = req.body;
 
-    // Validaciones
-    if (!productoId || cantidadCambio === undefined || !motivo) {
+    if (!varianteId || cantidadCambio === undefined || !motivo) {
       return res.status(400).json({
         success: false,
-        message: 'ProductoID, cantidadCambio y motivo son requeridos'
+        message: 'varianteId, cantidadCambio y motivo son requeridos'
       });
     }
 
@@ -599,25 +656,25 @@ const ajustarInventario = async (req, res) => {
 
     await client.query('BEGIN');
 
-    // Verificar que el producto existe y obtener stock actual
-    const productoResult = await client.query(
-      'SELECT ProductoID, SKU, NombreProducto, Stock FROM Productos WHERE ProductoID = $1',
-      [productoId]
+    const varianteResult = await client.query(
+      `SELECT VarianteID, ProductoID, SKU, Stock
+       FROM Producto_Variantes
+       WHERE VarianteID = $1`,
+      [varianteId]
     );
 
-    if (productoResult.rows.length === 0) {
+    if (varianteResult.rows.length === 0) {
       await client.query('ROLLBACK');
       return res.status(404).json({
         success: false,
-        message: 'Producto no encontrado'
+        message: 'Variante no encontrada'
       });
     }
 
-    const producto = productoResult.rows[0];
-    const stockActual = producto.stock;
+    const variante = varianteResult.rows[0];
+    const stockActual = variante.stock || 0;
     const nuevoStock = stockActual + cantidadCambio;
 
-    // Validar que el stock no sea negativo
     if (nuevoStock < 0) {
       await client.query('ROLLBACK');
       return res.status(400).json({
@@ -626,17 +683,15 @@ const ajustarInventario = async (req, res) => {
       });
     }
 
-    // Actualizar el stock
     await client.query(
-      'UPDATE Productos SET Stock = Stock + $1 WHERE ProductoID = $2',
-      [cantidadCambio, productoId]
+      'UPDATE Producto_Variantes SET Stock = $1 WHERE VarianteID = $2',
+      [nuevoStock, varianteId]
     );
 
-    // Crear registro en log de inventario
     await client.query(
-      `INSERT INTO Log_Inventario (ProductoID, CantidadCambiado, NuevoStock, Motivo, UsuarioID)
+      `INSERT INTO Log_Inventario (VarianteID, CantidadCambiado, NuevoStock, Motivo, UsuarioID)
        VALUES ($1, $2, $3, $4, $5)`,
-      [productoId, cantidadCambio, nuevoStock, motivo, req.user.id]
+      [variante.varianteid, cantidadCambio, nuevoStock, motivo, req.user.id]
     );
 
     await client.query('COMMIT');
@@ -645,9 +700,8 @@ const ajustarInventario = async (req, res) => {
       success: true,
       message: 'Inventario ajustado exitosamente',
       data: {
-        productoId,
-        sku: producto.sku,
-        nombre: producto.nombreproducto,
+        varianteId: variante.varianteid,
+        sku: variante.sku,
         stockAnterior: stockActual,
         cantidadCambio,
         stockNuevo: nuevoStock,
@@ -677,19 +731,45 @@ const getAllProductos = async (req, res) => {
     const result = await db.query(
       `SELECT 
         p.ProductoID,
-        p.SKU,
         p.NombreProducto,
         p.Descripcion,
-        p.CostoUnitario,
-        p.PiezasPorPaquete,
-        p.PrecioPaquete,
-        p.Stock,
-        p.CategoriaID
+        p.CategoriaID,
+        COALESCE(SUM(v.Stock), 0) AS stock_total,
+        COUNT(v.VarianteID) AS variantes_count,
+        MIN(v.PrecioPaquete) FILTER (WHERE v.PrecioPaquete IS NOT NULL) AS precio_desde,
+        JSONB_BUILD_OBJECT(
+          'varianteId', v_top.VarianteID,
+          'sku', v_top.SKU,
+          'precioPaquete', v_top.PrecioPaquete,
+          'piezasPorPaquete', v_top.PiezasPorPaquete,
+          'stock', v_top.Stock,
+          'dimensiones', v_top.Dimensiones,
+          'medidaId', v_top.MedidaID
+        ) AS variante_destacada,
+        JSONB_AGG(
+          JSONB_BUILD_OBJECT(
+            'varianteId', v.VarianteID,
+            'sku', v.SKU,
+            'precioPaquete', v.PrecioPaquete,
+            'piezasPorPaquete', v.PiezasPorPaquete,
+            'stock', v.Stock,
+            'dimensiones', v.Dimensiones,
+            'medidaId', v.MedidaID
+          )
+        ) FILTER (WHERE v.VarianteID IS NOT NULL) AS variantes
       FROM Productos p
+      LEFT JOIN Producto_Variantes v ON v.ProductoID = p.ProductoID
+      LEFT JOIN LATERAL (
+        SELECT v2.*
+        FROM Producto_Variantes v2
+        WHERE v2.ProductoID = p.ProductoID
+        ORDER BY v2.Stock DESC NULLS LAST, v2.VarianteID ASC
+        LIMIT 1
+      ) v_top ON true
+      GROUP BY p.ProductoID, p.NombreProducto, p.Descripcion, p.CategoriaID, v_top.VarianteID, v_top.SKU, v_top.PrecioPaquete, v_top.PiezasPorPaquete, v_top.Stock, v_top.Dimensiones, v_top.MedidaID
       ORDER BY p.ProductoID DESC`
     );
 
-    // Obtener categorías para mapear
     const categorias = await db.query('SELECT CategoriaID, Nombre FROM Categorias');
     const categoriasMap = {};
     categorias.rows.forEach(cat => {
@@ -699,17 +779,41 @@ const getAllProductos = async (req, res) => {
     res.json({
       success: true,
       data: {
-        productos: result.rows.map(row => ({
-          productoid: row.productoid,
-          sku: row.sku,
-          nombreproducto: row.nombreproducto,
-          descripcion: row.descripcion,
-          costounitario: parseFloat(row.costounitario),
-          piezasporpaquete: row.piezasporpaquete,
-          preciopaquete: parseFloat(row.preciopaquete),
-          stockpaquetes: row.stock,
-          categorianombre: categoriasMap[row.categoriaid] || 'Sin categoría'
-        }))
+        productos: result.rows.map(row => {
+          const varianteDestacada = row.variante_destacada && row.variante_destacada.varianteId ? {
+            varianteId: row.variante_destacada.varianteId,
+            sku: row.variante_destacada.sku,
+            precioPaquete: row.variante_destacada.precioPaquete ? parseFloat(row.variante_destacada.precioPaquete) : null,
+            piezasPorPaquete: row.variante_destacada.piezasPorPaquete,
+            stock: row.variante_destacada.stock ?? 0,
+            dimensiones: row.variante_destacada.dimensiones || null,
+            medidaId: row.variante_destacada.medidaId || null
+          } : null;
+
+          const variantes = Array.isArray(row.variantes)
+            ? row.variantes.map(variant => ({
+                varianteId: variant.varianteId,
+                sku: variant.sku,
+                precioPaquete: variant.precioPaquete ? parseFloat(variant.precioPaquete) : null,
+                piezasPorPaquete: variant.piezasPorPaquete,
+                stock: variant.stock ?? 0,
+                dimensiones: variant.dimensiones || null,
+                medidaId: variant.medidaId || null
+              }))
+            : [];
+
+          return {
+            productoid: row.productoid,
+            nombreproducto: row.nombreproducto,
+            descripcion: row.descripcion,
+            stockTotal: parseInt(row.stock_total, 10) || 0,
+            variantesCount: parseInt(row.variantes_count, 10) || 0,
+            precioDesde: row.precio_desde ? parseFloat(row.precio_desde) : null,
+            categoriaNombre: categoriasMap[row.categoriaid] || 'Sin categoría',
+            varianteDestacada,
+            variantes
+          };
+        })
       }
     });
 
@@ -1033,6 +1137,7 @@ const getAllComisiones = async (req, res) => {
         c.MontoComision,
         c.Estatus,
         c.FechaCalculo,
+        NULL::timestamp AS FechaPago,
         p.MontoTotal as MontoVenta
       FROM Comisiones c
       INNER JOIN AgentesDeVentas a ON c.AgenteID = a.AgenteID
@@ -1061,6 +1166,8 @@ const getAllComisiones = async (req, res) => {
           montoComision: parseFloat(row.montocomision),
           estatus: row.estatus,
           fechaCalculo: row.fechacalculo,
+          fechaGeneracion: row.fechacalculo,
+          fechaPago: row.fechapago,
           montoVenta: parseFloat(row.montoventa)
         }))
       }
@@ -1231,16 +1338,25 @@ const getPedidoDetalle = async (req, res) => {
     // Obtener detalles de productos del pedido
     const detallesResult = await db.query(
       `SELECT 
-        dp.*,
-        pr.NombreProducto,
-        pr.SKU,
-        pr.PiezasPorPaquete,
+        dp.DetalleID,
+        dp.PedidoID,
+        dp.VarianteID,
+        dp.CantidadPaquetes,
+        dp.PrecioPorPaquete,
+        dp.PiezasTotales,
+        dp.PrecioUnitario,
         COALESCE(
           dp.PrecioUnitario, 
           ROUND(dp.PrecioPorPaquete / NULLIF((dp.PiezasTotales / NULLIF(dp.CantidadPaquetes, 0)), 0), 2)
-        ) as PrecioUnitarioCalculado
+        ) as PrecioUnitarioCalculado,
+        pv.SKU,
+        pv.PiezasPorPaquete,
+        pv.Dimensiones,
+        pv.ProductoID,
+        pr.NombreProducto
       FROM DetallesDelPedido dp
-      INNER JOIN Productos pr ON dp.ProductoID = pr.ProductoID
+      INNER JOIN Producto_Variantes pv ON dp.VarianteID = pv.VarianteID
+      INNER JOIN Productos pr ON pv.ProductoID = pr.ProductoID
       WHERE dp.PedidoID = $1`,
       [pedidoId]
     );
@@ -1274,15 +1390,18 @@ const getPedidoDetalle = async (req, res) => {
           }
         },
         productos: detallesResult.rows.map(row => ({
+          detalleId: row.detalleid,
           productoId: row.productoid,
+          varianteId: row.varianteid,
           nombre: row.nombreproducto,
           sku: row.sku,
-          cantidadPaquetes: row.cantidadpaquetes,
+          cantidadPaquetes: parseInt(row.cantidadpaquetes, 10),
           piezasPorPaquete: row.piezasporpaquete,
-          precioPorPaquete: parseFloat(row.precioporpaquete),
-          precioUnitario: parseFloat(row.preciounitariocalculado),
-          piezasTotales: row.piezastotales,
-          subtotal: parseFloat(row.cantidadpaquetes * row.precioporpaquete)
+          precioPorPaquete: row.precioporpaquete ? parseFloat(row.precioporpaquete) : 0,
+          precioUnitario: row.preciounitariocalculado ? parseFloat(row.preciounitariocalculado) : 0,
+          piezasTotales: parseInt(row.piezastotales, 10),
+          dimensiones: row.dimensiones || null,
+          subtotal: row.precioporpaquete ? parseFloat((row.cantidadpaquetes || 0) * row.precioporpaquete) : 0
         }))
       }
     });
@@ -2036,5 +2155,7 @@ module.exports = {
   getAllOrdenesCompra,
   getDetallesOrdenCompra,
   crearOrdenCompra,
-  recibirInventario
+  recibirInventario,
+  crearVariante,
+  getCategorias
 };

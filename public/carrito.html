@@ -313,18 +313,33 @@
 
     // Render cart item
     function renderCartItem(item) {
+      const producto = item.producto || {};
+      const piezasPorPaquete = typeof item.piezasPorPaquete === 'number'
+        ? item.piezasPorPaquete
+        : parseInt(item.piezasPorPaquete, 10) || 0;
+      const totalPiezas = piezasPorPaquete * item.cantidadPaquetes;
+      const stockDisponible = typeof item.stock === 'number'
+        ? item.stock
+        : parseInt(item.stock, 10) || 0;
+      const precioPaquete = item.precioPaquete !== null && item.precioPaquete !== undefined
+        ? parseFloat(item.precioPaquete)
+        : null;
+      const subtotal = item.subtotal !== null && item.subtotal !== undefined
+        ? parseFloat(item.subtotal)
+        : (precioPaquete !== null ? precioPaquete * item.cantidadPaquetes : null);
+
       const imageSrc = item.imagenPrincipal?.url || 'https://via.placeholder.com/100x100?text=Sin+Imagen';
-      const imageAlt = item.imagenPrincipal?.alt || item.nombreProducto;
-      
+      const imageAlt = item.imagenPrincipal?.alt || producto.nombreProducto || 'Variante';
+
       return `
         <div class="cart-item" style="position: relative;">
           <img src="${imageSrc}" alt="${imageAlt}" class="cart-item-image">
           <div class="cart-item-info">
-            <h3 class="cart-item-title">${item.nombreProducto}</h3>
+            <h3 class="cart-item-title">${producto.nombreProducto || 'Producto sin nombre'}</h3>
             <p class="cart-item-details">
-              <strong>SKU:</strong> ${item.sku}<br>
-              <strong>Piezas por paquete:</strong> ${item.piezasPorPaquete}<br>
-              <strong>Total piezas:</strong> ${item.cantidadPaquetes * item.piezasPorPaquete}
+              <strong>SKU:</strong> ${item.sku || 'Sin SKU'}<br>
+              <strong>Piezas por paquete:</strong> ${piezasPorPaquete || 'N/D'}<br>
+              <strong>Total piezas:</strong> ${totalPiezas || 'N/D'}
             </p>
             <p class="cart-item-details" style="margin-top: 0.5rem;">
               ${item.dimensiones || 'Sin dimensiones'}
@@ -335,7 +350,7 @@
               <span style="font-weight: 600; color: var(--text-secondary); font-size: 0.875rem;">Cantidad:</span>
               <div style="display: flex; align-items: center; gap: 0.5rem; background: var(--razo-gray-light); padding: 0.25rem; border-radius: 0.5rem;">
                 <button 
-                  onclick="actualizarCantidad(${item.productoId}, ${item.cantidadPaquetes - 1})"
+                  onclick="actualizarCantidad(${item.varianteId}, ${item.cantidadPaquetes - 1})"
                   class="btn-quantity"
                   style="background: white; border: none; width: 32px; height: 32px; border-radius: 0.375rem; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; font-weight: 600; color: var(--razo-orange); transition: all 0.2s;"
                   ${item.cantidadPaquetes <= 1 ? 'disabled' : ''}
@@ -344,10 +359,10 @@
                 >−</button>
                 <span style="font-weight: 700; font-size: 1.125rem; min-width: 40px; text-align: center; color: var(--razo-gray-dark);">${item.cantidadPaquetes}</span>
                 <button 
-                  onclick="actualizarCantidad(${item.productoId}, ${item.cantidadPaquetes + 1})"
+                  onclick="actualizarCantidad(${item.varianteId}, ${item.cantidadPaquetes + 1})"
                   class="btn-quantity"
                   style="background: white; border: none; width: 32px; height: 32px; border-radius: 0.375rem; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; font-weight: 600; color: var(--razo-orange); transition: all 0.2s;"
-                  ${item.cantidadPaquetes >= item.stock ? 'disabled' : ''}
+                  ${item.cantidadPaquetes >= stockDisponible ? 'disabled' : ''}
                   onmouseover="this.style.background='var(--razo-orange)'; this.style.color='white'"
                   onmouseout="this.style.background='white'; this.style.color='var(--razo-orange)'"
                 >+</button>
@@ -357,17 +372,17 @@
           </div>
           <div class="cart-item-price">
             <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 0.25rem;">
-              ${formatCurrency(item.precioPaquete)} / paquete
+              ${precioPaquete !== null ? formatCurrency(precioPaquete) : 'Precio no disponible'} / paquete
             </p>
-            <p class="cart-item-subtotal">${formatCurrency(item.subtotal)}</p>
+            <p class="cart-item-subtotal">${subtotal !== null ? formatCurrency(subtotal) : 'Subtotal no disponible'}</p>
             <p style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 0.5rem;">
-              Stock disponible: ${item.stock}
+              Stock disponible: ${stockDisponible}
             </p>
           </div>
           
           <!-- Botón eliminar -->
           <button 
-            onclick="eliminarProducto(${item.productoId}, '${item.nombreProducto}')"
+            onclick="eliminarProducto(${item.varianteId}, '${(producto.nombreProducto || 'Producto').replace(/"/g, '&quot;')}')"
             style="position: absolute; top: 1rem; right: 1rem; background: var(--danger-color); color: white; border: none; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"
             title="Eliminar producto"
             onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 8px rgba(220,38,38,0.3)'"
@@ -603,14 +618,14 @@
     });
 
     // Actualizar cantidad de producto
-    async function actualizarCantidad(productoId, nuevaCantidad) {
+    async function actualizarCantidad(varianteId, nuevaCantidad) {
       if (nuevaCantidad < 1) {
         showToast('La cantidad mínima es 1 paquete', 'warning');
         return;
       }
 
       try {
-        const response = await API.actualizarCarrito(productoId, nuevaCantidad);
+        const response = await API.actualizarCarrito(varianteId, nuevaCantidad);
         
         if (response.ok && response.data.success) {
           showToast('Cantidad actualizada', 'success');
@@ -624,8 +639,8 @@
       }
     }
 
-    function eliminarProducto(productoId, nombreProducto) {
-      productoPendienteEliminar = { id: productoId, nombre: nombreProducto };
+    function eliminarProducto(varianteId, nombreProducto) {
+      productoPendienteEliminar = { id: varianteId, nombre: nombreProducto };
       modalEliminarNombre.textContent = nombreProducto;
       modalEliminar.classList.add('show');
     }

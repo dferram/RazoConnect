@@ -12,25 +12,25 @@ router.get('/carrito', authenticate, authorize(['cliente']), carritoController.o
 
 /**
  * @route   POST /api/carrito
- * @desc    Añadir producto al carrito
+ * @desc    Añadir variante al carrito
  * @access  Private (Cliente)
- * @body    { ProductoID, CantidadPaquetes }
+ * @body    { VarianteID, CantidadPaquetes }
  */
 router.post('/carrito', authenticate, authorize(['cliente']), carritoController.agregarAlCarrito);
 
 /**
- * @route   PUT /api/carrito/:productoId
- * @desc    Actualizar cantidad de un producto en el carrito
+ * @route   PUT /api/carrito/:varianteId
+ * @desc    Actualizar cantidad de una variante en el carrito
  * @access  Private (Cliente)
  * @body    { CantidadPaquetes }
  */
-router.put('/carrito/:productoId', authenticate, authorize(['cliente']), carritoController.actualizarCarrito);
+router.put('/carrito/:varianteId', authenticate, authorize(['cliente']), carritoController.actualizarCarrito);
 
 /**
- * @route   DELETE /api/carrito/:productoId
- * @desc    Eliminar un producto del carrito
+ * @route   DELETE /api/carrito/:varianteId
+ * @desc    Eliminar una variante del carrito
  * @access  Private (Cliente)
  */
-router.delete('/carrito/:productoId', authenticate, authorize(['cliente']), carritoController.eliminarDelCarrito);
+router.delete('/carrito/:varianteId', authenticate, authorize(['cliente']), carritoController.eliminarDelCarrito);
 
 module.exports = router;
