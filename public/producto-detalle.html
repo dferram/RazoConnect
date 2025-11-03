@@ -169,6 +169,7 @@
     const btnSpinner = document.getElementById('btnSpinner');
     const variantSelect = document.getElementById('variantSelect');
     const variantAvailability = document.getElementById('variantAvailability');
+    const backorderMessage = document.getElementById('backorderMessage');
 
     let producto = null;
     let variantes = [];
@@ -291,32 +292,41 @@
 
       const tieneStock = stockDisponible > 0;
       stock.textContent = tieneStock ? `${stockDisponible} paquetes` : 'Sin stock disponible';
-      stock.style.color = tieneStock ? 'var(--success-color)' : 'var(--error-color, #e53e3e)';
+      stock.style.color = tieneStock ? 'var(--success-color)' : 'var(--warning-color, #DD6B20)';
 
       if (variantAvailability) {
         variantAvailability.textContent = tieneStock
-          ? 'Stock disponible para envío inmediato.'
-          : 'Selecciona otra variante o vuelve pronto, sin stock disponible.';
-        variantAvailability.style.color = tieneStock ? 'var(--text-secondary)' : 'var(--error-color, #e53e3e)';
+          ? 'En stock (envío inmediato).'
+          : 'Producto bajo pedido con tiempo de entrega extendido.';
+        variantAvailability.style.color = tieneStock ? 'var(--text-secondary)' : 'var(--warning-color, #DD6B20)';
       }
 
-      cantidadInput.disabled = !tieneStock;
-      decreaseBtn.disabled = !tieneStock;
-      increaseBtn.disabled = !tieneStock;
-      addToCartBtn.disabled = !tieneStock;
+      if (backorderMessage) {
+        backorderMessage.textContent = tieneStock
+          ? ''
+          : 'Entrega extendida: Este producto se solicitará a nuestro proveedor.';
+        backorderMessage.style.display = tieneStock ? 'none' : 'block';
+      }
 
-      const stockMax = tieneStock ? stockDisponible : 0;
+      cantidadInput.disabled = false;
+      decreaseBtn.disabled = false;
+      increaseBtn.disabled = false;
+      addToCartBtn.disabled = false;
+
+      const stockMax = tieneStock ? stockDisponible : 999;
       cantidadInput.max = stockMax;
 
+      const cantidadActual = parseInt(cantidadInput.value, 10) || 1;
       if (tieneStock) {
-        const cantidadActual = parseInt(cantidadInput.value, 10) || 1;
         if (cantidadActual > stockDisponible) {
           cantidadInput.value = stockDisponible;
         } else if (cantidadActual < 1) {
           cantidadInput.value = 1;
         }
       } else {
-        cantidadInput.value = 0;
+        if (cantidadActual < 1) {
+          cantidadInput.value = 1;
+        }
       }
 
       renderVariantImages(varianteSeleccionada);
@@ -463,11 +473,6 @@
 
       if (cantidad < 1) {
         showToast('La cantidad debe ser mayor a 0', 'warning');
-        return;
-      }
-
-      if (cantidad > stockDisponible) {
-        showToast(`Stock insuficiente. Disponible: ${stockDisponible} paquetes`, 'warning');
         return;
       }
 

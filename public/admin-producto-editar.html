@@ -440,6 +440,33 @@
       }
     }
 
+    async function loadProducto() {
+      try {
+        loadingState.style.display = 'flex';
+        contentWrapper.style.display = 'none';
+        errorState.style.display = 'none';
+
+        const response = await API.getProductoById(productoId);
+
+        if (response.ok && response.data.success) {
+          const { producto, variantes } = response.data.data;
+          productBreadcrumb.textContent = `Producto #${producto.productoId}`;
+
+          renderProductSummary(producto, variantes);
+          renderVariants(variantes);
+
+          loadingState.style.display = 'none';
+          contentWrapper.style.display = 'grid';
+        } else {
+          throw new Error(response.data?.message || 'No se pudo obtener el producto');
+        }
+      } catch (error) {
+        console.error('Error loading product:', error);
+        loadingState.style.display = 'none';
+        errorState.style.display = 'flex';
+      }
+    }
+
     function renderProductSummary(producto, variantes) {
       const totalVariantes = variantes.length;
       const variantesConStock = variantes.filter(v => (v.stock || 0) > 0).length;
@@ -490,6 +517,13 @@
           </div>
         </div>
       `;
+    }
+
+    function formatMedidaLabel(medida) {
+      if (!medida) return null;
+      const nombre = medida.nombre || '';
+      const abrev = medida.abreviatura || '';
+      return abrev ? `${nombre} (${abrev})` : nombre;
     }
 
     function renderVariants(variantes) {

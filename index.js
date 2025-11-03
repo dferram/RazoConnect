@@ -11,6 +11,7 @@ const carritoRoutes = require('./routes/carrito');
 const pedidosRoutes = require('./routes/pedidos');
 const direccionesRoutes = require('./routes/direcciones');
 const adminRoutes = require('./routes/admin');
+const reportesRoutes = require('./routes/reportes');
 
 // Inicializar la aplicación Express
 const app = express();
@@ -65,6 +66,7 @@ app.use('/api', carritoRoutes);
 app.use('/api', pedidosRoutes);
 app.use('/api', direccionesRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/admin/reportes', reportesRoutes);
 
 // Manejo de rutas no encontradas solo para API
 app.use('/api/*', (req, res) => {

@@ -81,14 +81,6 @@
             <span>Recibir inventario</span>
           </a>
         </div>
-
-        <div class="admin-nav-section">
-          <div class="admin-nav-title">Configuración</div>
-          <a href="#" class="admin-nav-link" data-module="configuracion">
-            <span class="admin-nav-icon">⚙️</span>
-            <span>Configuración</span>
-          </a>
-        </div>
       </nav>
     </aside>
 
@@ -235,6 +227,21 @@
 
     let todosLosProductos = [];
     let productosSeleccionados = [];
+    const variantesPorProducto = new Map();
+
+    function obtenerEtiquetaVariante(vari) {
+      if (!vari) return 'Sin medida';
+      if (vari.dimensiones && vari.dimensiones.trim().length > 0) {
+        return vari.dimensiones.trim();
+      }
+      if (vari.medidaNombre && vari.medidaNombre.trim().length > 0) {
+        return vari.medidaNombre.trim();
+      }
+      if (Number.isFinite(vari.medidaId)) {
+        return `Medida #${vari.medidaId}`;
+      }
+      return 'Sin medida';
+    }
 
     // Verify admin token
     async function verifyAndLoadAdmin() {
@@ -315,7 +322,23 @@
 
         const data = await response.json();
         if (data.success) {
-          todosLosProductos = data.data.productos;
+          todosLosProductos = (data.data.productos || []).map(producto => ({
+            ...producto,
+            variantes: Array.isArray(producto.variantes) ? producto.variantes.map(v => ({
+              ...v,
+              sku: v.sku || 'Sin SKU',
+              dimensiones: v.dimensiones || '',
+              medidaNombre: v.medidaNombre || ''
+            })) : []
+          }));
+
+          variantesPorProducto.clear();
+          todosLosProductos.forEach(producto => {
+            if (Array.isArray(producto.variantes)) {
+              variantesPorProducto.set(producto.productoid, producto.variantes);
+            }
+          });
+
           mostrarProductos(todosLosProductos);
         }
       } catch (error) {
@@ -329,32 +352,45 @@
     // Mostrar productos en el modal
     function mostrarProductos(productos) {
       const listaProductos = document.getElementById('listaProductos');
-      
+
       if (productos.length === 0) {
         listaProductos.innerHTML = '<div style="padding: 2rem; text-align: center; color: var(--razo-gray-warm);">No se encontraron productos</div>';
         return;
       }
 
       listaProductos.innerHTML = productos.map(producto => {
-        const yaSeleccionado = productosSeleccionados.some(p => p.productoId === producto.productoid);
-        const stockClass = producto.stockpaquetes < 10 ? 'text-danger' : '';
-        
+        const variantes = variantesPorProducto.get(producto.productoid) || [];
+        const vecesSeleccionado = productosSeleccionados.filter(p => p.productoId === producto.productoid).length;
+        const haySeleccion = vecesSeleccionado > 0;
+        const primeraVariante = variantes[0] || {};
+        const skuListado = primeraVariante.sku || producto.varianteDestacada?.sku || 'Sin SKU';
+        const stockListado = Number.isFinite(primeraVariante.stock)
+          ? primeraVariante.stock
+          : Number.isFinite(producto.stockTotal)
+            ? producto.stockTotal
+            : 0;
+        const stockClass = stockListado < 10 ? 'text-danger' : '';
+        const infoSeleccion = haySeleccion
+          ? `<div style="font-size: 0.75rem; color: var(--razo-gray-warm); margin-top: 0.35rem;">${vecesSeleccionado} variante(s) agregadas a la orden</div>`
+          : '';
+        const buttonLabel = haySeleccion ? '➕ Agregar otra medida' : '➕ Agregar';
+
         return `
-          <div style="padding: 1rem; border-bottom: 1px solid var(--razo-gray-light); display: flex; justify-content: space-between; align-items: center; ${yaSeleccionado ? 'background-color: #f0f0f0;' : ''}">
+          <div style="padding: 1rem; border-bottom: 1px solid var(--razo-gray-light); display: flex; justify-content: space-between; align-items: center; ${haySeleccion ? 'background-color: #f9f9f9;' : ''}">
             <div style="flex: 1;">
               <div style="font-weight: 600; color: var(--razo-gray-dark);">${producto.nombreproducto}</div>
               <div style="font-size: 0.875rem; color: var(--razo-gray-warm); margin-top: 0.25rem;">
-                <span>SKU: <strong>${producto.sku}</strong></span> • 
-                <span class="${stockClass}">Stock: <strong>${producto.stockpaquetes}</strong> paquetes</span>
+                <span>Variantes disponibles: <strong>${variantes.length}</strong></span> • 
+                <span class="${stockClass}">Stock de referencia: <strong>${stockListado}</strong> paquetes</span>
               </div>
+              ${infoSeleccion}
             </div>
             <button 
               type="button"
-              class="btn ${yaSeleccionado ? 'btn-secondary' : 'btn-primary'}" 
+              class="btn btn-primary" 
               onclick="seleccionarProducto(${producto.productoid})"
-              ${yaSeleccionado ? 'disabled' : ''}
               style="padding: 0.5rem 1rem; font-size: 0.875rem;">
-              ${yaSeleccionado ? '✓ Agregado' : '➕ Agregar'}
+              ${buttonLabel}
             </button>
           </div>
         `;
@@ -364,10 +400,22 @@
     // Filtrar productos
     function filtrarProductos() {
       const busqueda = document.getElementById('buscarProducto').value.toLowerCase();
-      const productosFiltrados = todosLosProductos.filter(producto => 
-        producto.nombreproducto.toLowerCase().includes(busqueda) ||
-        producto.sku.toLowerCase().includes(busqueda)
-      );
+      if (!busqueda) {
+        mostrarProductos(todosLosProductos);
+        return;
+      }
+
+      const productosFiltrados = todosLosProductos.filter(producto => {
+        const coincideNombre = producto.nombreproducto.toLowerCase().includes(busqueda);
+        const variantes = variantesPorProducto.get(producto.productoid) || [];
+        const coincideVariante = variantes.some(vari => {
+          const etiqueta = (obtenerEtiquetaVariante(vari) || '').toLowerCase();
+          const sku = (vari.sku || '').toLowerCase();
+          return etiqueta.includes(busqueda) || sku.includes(busqueda);
+        });
+        return coincideNombre || coincideVariante;
+      });
+
       mostrarProductos(productosFiltrados);
     }
 
@@ -376,12 +424,35 @@
       const producto = todosLosProductos.find(p => p.productoid === productoId);
       if (!producto) return;
 
+      const variantes = variantesPorProducto.get(producto.productoid) || [];
+
+      if (variantes.length === 0) {
+        showToast('Este producto no tiene variantes registradas.', 'warning');
+        return;
+      }
+
+      const variantesUsadas = productosSeleccionados
+        .filter(p => p.productoId === producto.productoid)
+        .map(p => p.varianteSeleccionada);
+
+      const varianteInicial = variantes.find(vari => !variantesUsadas.includes(vari.varianteId)) || variantes[0];
+
+      if (!varianteInicial) {
+        showToast('No hay variantes disponibles para agregar.', 'warning');
+        return;
+      }
+
       // Agregar a la lista de seleccionados
       productosSeleccionados.push({
         productoId: producto.productoid,
         nombreProducto: producto.nombreproducto,
-        sku: producto.sku,
-        stockActual: producto.stockpaquetes,
+        variantes,
+        varianteSeleccionada: varianteInicial.varianteId,
+        sku: varianteInicial.sku || 'Sin SKU',
+        etiquetaMedida: obtenerEtiquetaVariante(varianteInicial),
+        medidaId: varianteInicial.medidaId || null,
+        dimensiones: varianteInicial.dimensiones || '',
+        stockActual: Number.isFinite(varianteInicial.stock) ? varianteInicial.stock : 0,
         cantidadSolicitada: 1
       });
 
@@ -405,32 +476,69 @@
       emptyProductos.style.display = 'none';
       productosTable.style.display = 'block';
 
-      productosTableBody.innerHTML = productosSeleccionados.map((producto, index) => `
-        <tr>
-          <td><strong>${producto.nombreProducto}</strong></td>
-          <td><code style="background: #f0f0f0; padding: 0.25rem 0.5rem; border-radius: 0.25rem;">${producto.sku}</code></td>
-          <td style="text-align: center;">${producto.stockActual} paq.</td>
-          <td style="width: 150px;">
-            <input 
-              type="number" 
-              class="form-input" 
-              min="1" 
-              value="${producto.cantidadSolicitada}"
-              onchange="actualizarCantidad(${index}, this.value)"
-              style="padding: 0.5rem;"
-            >
-          </td>
-          <td>
-            <button 
-              type="button"
-              class="btn btn-danger" 
-              onclick="eliminarProducto(${index})"
-              style="padding: 0.5rem 1rem; font-size: 0.875rem;">
-              🗑️ Eliminar
-            </button>
-          </td>
-        </tr>
-      `).join('');
+      productosTableBody.innerHTML = productosSeleccionados.map((producto, index) => {
+        const variantesOptions = (producto.variantes || []).map(vari => {
+          const selected = vari.varianteId === producto.varianteSeleccionada ? 'selected' : '';
+          const etiqueta = obtenerEtiquetaVariante(vari);
+          return `<option value="${vari.varianteId}" data-sku="${vari.sku || ''}" data-stock="${Number.isFinite(vari.stock) ? vari.stock : 0}" data-medida="${vari.medidaId ?? ''}" data-dimensiones="${vari.dimensiones || ''}" data-label="${etiqueta}" ${selected}>${etiqueta}</option>`;
+        }).join('');
+
+        return `
+          <tr>
+            <td>
+              <strong>${producto.nombreProducto}</strong>
+              <div style="margin-top: 0.35rem;">
+                <label style="display: block; font-size: 0.75rem; color: var(--razo-gray-warm); margin-bottom: 0.25rem;">Variante / Medida</label>
+                <select class="form-input" onchange="cambiarVariante(${index}, this.value, this.selectedOptions[0])">
+                  ${variantesOptions}
+                </select>
+              </div>
+            </td>
+            <td>
+              <div style="font-weight: 600;">${producto.etiquetaMedida || 'Sin medida'}</div>
+              <div style="font-size: 0.75rem; color: var(--razo-gray-warm);">SKU: <code style="background: #f0f0f0; padding: 0.15rem 0.35rem; border-radius: 0.25rem;">${producto.sku}</code></div>
+            </td>
+            <td style="text-align: center;">${producto.stockActual} paq.</td>
+            <td style="width: 150px;">
+              <input 
+                type="number" 
+                class="form-input" 
+                min="1" 
+                value="${producto.cantidadSolicitada}"
+                onchange="actualizarCantidad(${index}, this.value)"
+                style="padding: 0.5rem;"
+              >
+            </td>
+            <td>
+              <button 
+                type="button"
+                class="btn btn-danger" 
+                onclick="eliminarProducto(${index})"
+                style="padding: 0.5rem 1rem; font-size: 0.875rem;">
+                🗑️ Eliminar
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function cambiarVariante(index, varianteId, optionEl) {
+      const varianteIdNumero = parseInt(varianteId, 10);
+      if (!Number.isInteger(varianteIdNumero)) {
+        showToast('Selecciona una variante válida', 'warning');
+        return;
+      }
+
+      const producto = productosSeleccionados[index];
+      producto.varianteSeleccionada = varianteIdNumero;
+      producto.sku = optionEl.dataset.sku || 'Sin SKU';
+      producto.stockActual = Number.isFinite(parseInt(optionEl.dataset.stock, 10)) ? parseInt(optionEl.dataset.stock, 10) : 0;
+      producto.medidaId = optionEl.dataset.medida ? parseInt(optionEl.dataset.medida, 10) : null;
+      producto.dimensiones = optionEl.dataset.dimensiones || '';
+      producto.etiquetaMedida = optionEl.dataset.label || 'Sin medida';
+
+      actualizarTablaProductos();
     }
 
     // Actualizar cantidad de un producto
@@ -506,6 +614,8 @@
             fechaEntregaEsperada,
             productos: productosSeleccionados.map(p => ({
               productoId: p.productoId,
+              varianteId: p.varianteSeleccionada,
+              medidaId: p.medidaId || null,
               cantidadSolicitada: p.cantidadSolicitada
             }))
           })
@@ -516,8 +626,13 @@
         if (response.ok && data.success) {
           showToast('Orden de compra creada exitosamente', 'success');
           setTimeout(() => {
-            window.location.href = '/admin-proveedores.html';
-          }, 1500);
+            try {
+              sessionStorage.setItem('_navigating', 'true');
+            } catch (storageError) {
+              console.warn('No se pudo registrar navegación en sessionStorage:', storageError);
+            }
+            window.location.href = '/admin-recibir-inventario.html';
+          }, 1200);
         } else {
           showToast(data.message || 'Error al crear orden de compra', 'error');
         }

@@ -86,6 +86,213 @@ const loginAdmin = async (req, res) => {
 };
 
 /**
+ * Obtener detalle de un cliente
+ * GET /api/admin/clientes/:id
+ */
+const getClienteDetalle = async (req, res) => {
+  try {
+    const clienteId = parseInt(req.params.id, 10);
+
+    if (!Number.isInteger(clienteId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'ClienteID inválido'
+      });
+    }
+
+    const clienteQuery = `
+      SELECT 
+        ClienteID,
+        Nombre,
+        Apellido,
+        Email,
+        Telefono,
+        Activo,
+        FechaDeRegistro
+      FROM Clientes
+      WHERE ClienteID = $1
+    `;
+
+    const clienteResult = await db.query(clienteQuery, [clienteId]);
+
+    if (clienteResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Cliente no encontrado'
+      });
+    }
+
+    const cliente = clienteResult.rows[0];
+
+    const pedidosQuery = `
+      SELECT 
+        PedidoID,
+        FechaPedido,
+        MontoTotal,
+        Estatus,
+        DireccionEnvioID,
+        AgenteID
+      FROM Pedidos
+      WHERE ClienteID = $1
+      ORDER BY FechaPedido DESC
+    `;
+
+    const pedidosResult = await db.query(pedidosQuery, [clienteId]);
+
+    const direccionesQuery = `
+      SELECT 
+        DireccionID,
+        Etiqueta,
+        Receptor,
+        Calle,
+        NumeroExt,
+        NumeroInt,
+        Colonia,
+        Ciudad,
+        Estado,
+        CodigoPostal,
+        TelefonoContacto
+      FROM Cliente_Direcciones
+      WHERE ClienteID = $1
+      ORDER BY DireccionID DESC
+    `;
+
+    const direccionesResult = await db.query(direccionesQuery, [clienteId]);
+
+    res.json({
+      success: true,
+      data: {
+        cliente: {
+          clienteId: cliente.clienteid,
+          nombre: cliente.nombre,
+          apellido: cliente.apellido,
+          email: cliente.email,
+          telefono: cliente.telefono,
+          activo: cliente.activo,
+          fechaRegistro: cliente.fechaderegistro
+        },
+        pedidos: pedidosResult.rows.map(pedido => ({
+          pedidoId: pedido.pedidoid,
+          fechaPedido: pedido.fechapedido,
+          montoTotal: pedido.montototal ? parseFloat(pedido.montototal) : 0,
+          estatus: pedido.estatus,
+          direccionEnvioId: pedido.direccionenvioid,
+          agenteId: pedido.agenteid
+        })),
+        direcciones: direccionesResult.rows.map(direccion => ({
+          direccionId: direccion.direccionid,
+          etiqueta: direccion.etiqueta,
+          receptor: direccion.receptor,
+          calle: direccion.calle,
+          numeroExt: direccion.numeroext,
+          numeroInt: direccion.numeroint,
+          colonia: direccion.colonia,
+          ciudad: direccion.ciudad,
+          estado: direccion.estado,
+          codigoPostal: direccion.codigopostal,
+          telefonoContacto: direccion.telefonocontacto
+        }))
+      }
+    });
+
+  } catch (error) {
+    console.error('Error al obtener detalle del cliente:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error en el servidor'
+    });
+  }
+};
+
+/**
+ * Actualizar estado activo de un cliente
+ * PUT /api/admin/clientes/:id/estado
+ */
+const actualizarEstadoCliente = async (req, res) => {
+  try {
+    const clienteId = parseInt(req.params.id, 10);
+    const { activo } = req.body;
+
+    if (!Number.isInteger(clienteId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'ClienteID inválido'
+      });
+    }
+
+    if (typeof activo !== 'boolean') {
+      return res.status(400).json({
+        success: false,
+        message: 'El campo "activo" debe ser booleano'
+      });
+    }
+
+    const result = await db.query(
+      `UPDATE Clientes
+       SET Activo = $1
+       WHERE ClienteID = $2
+       RETURNING ClienteID, Activo`,
+      [activo, clienteId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Cliente no encontrado'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Estado del cliente actualizado correctamente',
+      data: {
+        clienteId: result.rows[0].clienteid,
+        activo: result.rows[0].activo
+      }
+    });
+
+  } catch (error) {
+    console.error('Error al actualizar estado del cliente:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error en el servidor'
+    });
+  }
+};
+
+/**
+ * Obtener catálogo de medidas disponibles
+ * GET /api/admin/medidas
+ */
+const getMedidas = async (req, res) => {
+  try {
+    const result = await db.query(
+      `SELECT MedidaID, Nombre, Abreviatura
+       FROM Medidas
+       ORDER BY Nombre`
+    );
+
+    res.json({
+      success: true,
+      data: {
+        medidas: result.rows.map(row => ({
+          medidaId: row.medidaid,
+          nombre: row.nombre,
+          abreviatura: row.abreviatura
+        }))
+      }
+    });
+
+  } catch (error) {
+    console.error('Error al obtener medidas:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error en el servidor'
+    });
+  }
+};
+
+/**
  * Verificar token de admin
  * GET /api/admin/verify
  */
@@ -1256,13 +1463,13 @@ const getAllClientes = async (req, res) => {
         c.Email,
         c.Telefono,
         c.Activo,
-        c.FechaCreacion,
-        COUNT(DISTINCT p.PedidoID) as TotalPedidos,
-        COALESCE(SUM(p.MontoTotal), 0) as MontoTotalCompras
+        c.FechaDeRegistro,
+        COUNT(DISTINCT p.PedidoID) AS TotalPedidos,
+        COALESCE(SUM(p.MontoTotal), 0) AS MontoTotalCompras
       FROM Clientes c
       LEFT JOIN Pedidos p ON c.ClienteID = p.ClienteID
       GROUP BY c.ClienteID
-      ORDER BY c.FechaCreacion DESC`
+      ORDER BY c.FechaDeRegistro DESC`
     );
 
     res.json({
@@ -1275,7 +1482,7 @@ const getAllClientes = async (req, res) => {
           email: row.email,
           telefono: row.telefono,
           activo: row.activo,
-          fechaCreacion: row.fechacreacion,
+          fechaRegistro: row.fechaderegistro,
           totalPedidos: parseInt(row.totalpedidos),
           montoTotalCompras: parseFloat(row.montototalcompras)
         }))
@@ -1713,14 +1920,18 @@ const getDetallesOrdenCompra = async (req, res) => {
       SELECT 
         doc.DetalleOC_ID,
         doc.OrdenCompraID,
-        doc.ProductoID,
+        doc.VarianteID,
         doc.CantidadSolicitada,
         doc.CantidadRecibida,
-        pr.NombreProducto,
-        pr.SKU,
-        pr.StockPaquetes as StockActual
+        pv.ProductoID,
+        pv.SKU,
+        pv.Dimensiones,
+        pv.MedidaID,
+        COALESCE(pv.Stock, 0) AS StockVariante,
+        pr.NombreProducto
       FROM DetallesOrdenCompra doc
-      INNER JOIN Productos pr ON doc.ProductoID = pr.ProductoID
+      INNER JOIN Producto_Variantes pv ON doc.VarianteID = pv.VarianteID
+      INNER JOIN Productos pr ON pv.ProductoID = pr.ProductoID
       WHERE doc.OrdenCompraID = $1
       ORDER BY pr.NombreProducto ASC
     `;
@@ -1742,13 +1953,17 @@ const getDetallesOrdenCompra = async (req, res) => {
         },
         detalles: detallesResult.rows.map(row => ({
           detalleId: row.detalleoc_id,
+          ordenCompraId: row.ordencompraid,
+          varianteId: row.varianteid,
           productoId: row.productoid,
           nombreProducto: row.nombreproducto,
           sku: row.sku,
+          dimensiones: row.dimensiones,
+          medidaId: row.medidaid,
           cantidadSolicitada: row.cantidadsolicitada,
           cantidadRecibida: row.cantidadrecibida,
           cantidadPendiente: row.cantidadsolicitada - row.cantidadrecibida,
-          stockActual: row.stockactual
+          stockVariante: row.stockvariante
         }))
       }
     });
@@ -1767,7 +1982,7 @@ const getDetallesOrdenCompra = async (req, res) => {
  * POST /api/admin/ordenes-compra/recibir
  */
 const recibirInventario = async (req, res) => {
-  const client = await db.getClient();
+  const client = await db.pool.connect();
   
   try {
     const { ordenCompraId, productos, adminId } = req.body;
@@ -1825,7 +2040,7 @@ const recibirInventario = async (req, res) => {
 
     // Procesar cada producto
     for (const producto of productos) {
-      const cantidadRecibida = parseInt(producto.cantidadRecibidaAhora);
+      const cantidadRecibida = parseInt(producto.cantidadRecibidaAhora, 10);
 
       if (cantidadRecibida === 0) {
         continue; // Saltar si no se recibió nada
@@ -1835,13 +2050,18 @@ const recibirInventario = async (req, res) => {
       const detalleQuery = `
         SELECT 
           doc.DetalleOC_ID,
-          doc.ProductoID,
+          doc.VarianteID,
           doc.CantidadSolicitada,
           doc.CantidadRecibida,
-          pr.NombreProducto,
-          pr.StockPaquetes
+          pv.ProductoID,
+          pv.SKU,
+          pv.Dimensiones,
+          pv.MedidaID,
+          pv.Stock AS StockVariante,
+          pr.NombreProducto
         FROM DetallesOrdenCompra doc
-        INNER JOIN Productos pr ON doc.ProductoID = pr.ProductoID
+        INNER JOIN Producto_Variantes pv ON doc.VarianteID = pv.VarianteID
+        INNER JOIN Productos pr ON pv.ProductoID = pr.ProductoID
         WHERE doc.DetalleOC_ID = $1 AND doc.OrdenCompraID = $2
       `;
 
@@ -1875,24 +2095,24 @@ const recibirInventario = async (req, res) => {
         [cantidadRecibida, producto.detalleId]
       );
 
-      // 3. Actualizar Stock en Productos
-      const nuevoStock = detalle.stockpaquetes + cantidadRecibida;
+      // 3. Actualizar Stock en la variante seleccionada
+      const nuevoStockVariante = (detalle.stockvariante || 0) + cantidadRecibida;
       await client.query(
-        `UPDATE Productos 
-         SET StockPaquetes = StockPaquetes + $1 
-         WHERE ProductoID = $2`,
-        [cantidadRecibida, detalle.productoid]
+        `UPDATE Producto_Variantes 
+         SET Stock = COALESCE(Stock, 0) + $1 
+         WHERE VarianteID = $2`,
+        [cantidadRecibida, detalle.varianteid]
       );
 
-      // 4. Insertar en Log_Inventario
+      // 4. Registrar movimiento en Log_Inventario
       await client.query(
         `INSERT INTO Log_Inventario 
-         (ProductoID, CantidadCambiado, NuevoStock, Motivo, UsuarioID) 
+         (VarianteID, CantidadCambiado, NuevoStock, Motivo, UsuarioID) 
          VALUES ($1, $2, $3, $4, $5)`,
         [
-          detalle.productoid,
+          detalle.varianteid,
           cantidadRecibida,
-          nuevoStock,
+          nuevoStockVariante,
           `Recepción de OC #${ordenCompraId}`,
           adminId || null
         ]
@@ -1900,11 +2120,15 @@ const recibirInventario = async (req, res) => {
 
       productosActualizados.push({
         productoId: detalle.productoid,
+        varianteId: detalle.varianteid,
         nombreProducto: detalle.nombreproducto,
+        sku: detalle.sku,
+        medidaId: detalle.medidaid,
+        dimensiones: detalle.dimensiones,
         cantidadRecibidaAhora: cantidadRecibida,
         cantidadRecibidaTotal: nuevaCantidadRecibida,
         cantidadSolicitada: detalle.cantidadsolicitada,
-        nuevoStock: nuevoStock
+        stockVariante: nuevoStockVariante
       });
     }
 
@@ -1957,7 +2181,6 @@ const recibirInventario = async (req, res) => {
     });
 
   } catch (error) {
-    // Rollback en caso de error
     await client.query('ROLLBACK');
     console.error('Error al recibir inventario:', error);
     res.status(500).json({
@@ -1974,8 +2197,8 @@ const recibirInventario = async (req, res) => {
  * POST /api/admin/ordenes-compra
  */
 const crearOrdenCompra = async (req, res) => {
-  const client = await db.getClient();
-  
+  const client = await db.pool.connect();
+
   try {
     const { proveedorId, fechaEntregaEsperada, productos } = req.body;
 
@@ -2003,10 +2226,10 @@ const crearOrdenCompra = async (req, res) => {
 
     // Validar cada producto
     for (const producto of productos) {
-      if (!producto.productoId || !producto.cantidadSolicitada) {
+      if (!producto.varianteId || !producto.cantidadSolicitada) {
         return res.status(400).json({
           success: false,
-          message: 'Cada producto debe tener productoId y cantidadSolicitada'
+          message: 'Cada producto debe tener varianteId y cantidadSolicitada'
         });
       }
 
@@ -2053,36 +2276,55 @@ const crearOrdenCompra = async (req, res) => {
     const detallesInsertados = [];
 
     for (const producto of productos) {
-      // Verificar que el producto existe
-      const productoCheck = await client.query(
-        'SELECT ProductoID, NombreProducto FROM Productos WHERE ProductoID = $1',
-        [producto.productoId]
+      // Verificar que la variante existe
+      const varianteResult = await client.query(
+        `SELECT pv.VarianteID, pv.ProductoID, pv.SKU, pv.Dimensiones, pv.MedidaID, pr.NombreProducto
+         FROM Producto_Variantes pv
+         INNER JOIN Productos pr ON pv.ProductoID = pr.ProductoID
+         WHERE pv.VarianteID = $1`,
+        [producto.varianteId]
       );
 
-      if (productoCheck.rows.length === 0) {
+      if (varianteResult.rows.length === 0) {
         await client.query('ROLLBACK');
         return res.status(404).json({
           success: false,
-          message: `Producto con ID ${producto.productoId} no encontrado`
+          message: `Variante con ID ${producto.varianteId} no encontrada`
         });
       }
 
-      // Insertar detalle
+      const variante = varianteResult.rows[0];
+
+      if (producto.productoId && producto.productoId !== variante.productoid) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({
+          success: false,
+          message: 'La variante seleccionada no pertenece al producto indicado'
+        });
+      }
+
       const detalleQuery = `
-        INSERT INTO DetallesOrdenCompra (OrdenCompraID, ProductoID, CantidadSolicitada, CantidadRecibida)
+        INSERT INTO DetallesOrdenCompra (OrdenCompraID, VarianteID, CantidadSolicitada, CantidadRecibida)
         VALUES ($1, $2, $3, 0)
-        RETURNING DetalleOC_ID, ProductoID, CantidadSolicitada, CantidadRecibida
+        RETURNING DetalleOC_ID, VarianteID, CantidadSolicitada, CantidadRecibida
       `;
 
       const detalleResult = await client.query(detalleQuery, [
         ordenCompraId,
-        producto.productoId,
+        variante.varianteid,
         producto.cantidadSolicitada
       ]);
 
       detallesInsertados.push({
-        ...detalleResult.rows[0],
-        nombreProducto: productoCheck.rows[0].nombreproducto
+        detalleId: detalleResult.rows[0].detalleoc_id,
+        varianteId: detalleResult.rows[0].varianteid,
+        productoId: variante.productoid,
+        nombreProducto: variante.nombreproducto,
+        sku: variante.sku,
+        medidaId: variante.medidaid,
+        dimensiones: variante.dimensiones,
+        cantidadSolicitada: detalleResult.rows[0].cantidadsolicitada,
+        cantidadRecibida: detalleResult.rows[0].cantidadrecibida
       });
     }
 
@@ -2106,13 +2348,7 @@ const crearOrdenCompra = async (req, res) => {
           fechaEntregaEsperada: ordenCompra.fechaentregaesperada,
           estatus: ordenCompra.estatus
         },
-        detalles: detallesInsertados.map(d => ({
-          detalleId: d.detalleoc_id,
-          productoId: d.productoid,
-          nombreProducto: d.nombreProducto,
-          cantidadSolicitada: d.cantidadsolicitada,
-          cantidadRecibida: d.cantidadrecibida
-        }))
+        detalles: detallesInsertados
       }
     });
 
@@ -2142,6 +2378,8 @@ module.exports = {
   ajustarInventario,
   getAllProductos,
   getCategorias,
+  getMedidas,
+  crearVariante,
   crearAgente,
   getAllAgentes,
   getAgenteDetalle,
@@ -2149,13 +2387,13 @@ module.exports = {
   getAllComisiones,
   pagarComision,
   getAllClientes,
+  getClienteDetalle,
+  actualizarEstadoCliente,
   getAllProveedores,
   crearProveedor,
   actualizarProveedor,
   getAllOrdenesCompra,
   getDetallesOrdenCompra,
   crearOrdenCompra,
-  recibirInventario,
-  crearVariante,
-  getCategorias
+  recibirInventario
 };

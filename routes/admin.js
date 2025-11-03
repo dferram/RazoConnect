@@ -33,6 +33,7 @@ router.get('/productos', authenticate, authorizeAdmin, adminController.getAllPro
 router.post('/productos', authenticate, authorizeAdmin, adminController.crearProducto);
 router.post('/variantes', authenticate, authorizeAdmin, adminController.crearVariante);
 router.get('/categorias', authenticate, authorizeAdmin, adminController.getCategorias);
+router.get('/medidas', authenticate, authorizeAdmin, adminController.getMedidas);
 
 /**
  * Gestión de inventario
@@ -57,6 +58,8 @@ router.put('/comisiones/:id/pagar', authenticate, authorizeAdmin, adminControlle
  * Gestión de clientes
  */
 router.get('/clientes', authenticate, authorizeAdmin, adminController.getAllClientes);
+router.get('/clientes/:id', authenticate, authorizeAdmin, adminController.getClienteDetalle);
+router.put('/clientes/:id/estado', authenticate, authorizeAdmin, adminController.actualizarEstadoCliente);
 
 /**
  * Detalle de pedido

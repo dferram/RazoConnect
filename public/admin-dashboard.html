@@ -44,7 +44,7 @@
             <span class="admin-nav-icon">🎁</span>
             <span>Productos</span>
           </a>
-          <a href="#" class="admin-nav-link" data-module="clientes">
+          <a href="/admin-clientes.html" class="admin-nav-link">
             <span class="admin-nav-icon">👥</span>
             <span>Clientes</span>
           </a>
@@ -79,14 +79,6 @@
           <a href="/admin-recibir-inventario.html" class="admin-nav-link">
             <span class="admin-nav-icon">📥</span>
             <span>Recibir inventario</span>
-          </a>
-        </div>
-
-        <div class="admin-nav-section">
-          <div class="admin-nav-title">Configuración</div>
-          <a href="#" class="admin-nav-link" data-module="configuracion">
-            <span class="admin-nav-icon">⚙️</span>
-            <span>Configuración</span>
           </a>
         </div>
       </nav>
@@ -505,21 +497,24 @@
     }
 
     // Navigation handling
-    const navLinks = document.querySelectorAll('.admin-nav-link[data-module]');
-    navLinks.forEach(link => {
+    const navPlaceholderLinks = document.querySelectorAll('.admin-nav-link[data-module]');
+    navPlaceholderLinks.forEach(link => {
       link.addEventListener('click', (e) => {
         e.preventDefault();
-        const module = link.dataset.module;
-        
-        // Remove active class from all links
-        navLinks.forEach(l => l.classList.remove('active'));
+
+        // Remove active class from all placeholder links
+        navPlaceholderLinks.forEach(l => l.classList.remove('active'));
         link.classList.add('active');
-        
-        // Update page title
-        const moduleName = link.querySelector('span:last-child').textContent;
-        document.getElementById('pageTitle').textContent = moduleName;
-        
+
+        // Update page title if header exists
+        const pageTitle = document.getElementById('pageTitle');
+        if (pageTitle) {
+          const moduleName = link.querySelector('span:last-child').textContent;
+          pageTitle.textContent = moduleName;
+        }
+
         // Show toast for modules not implemented yet
+        const moduleName = link.querySelector('span:last-child').textContent;
         showToast(`Módulo "${moduleName}" próximamente disponible`, 'info');
       });
     });
