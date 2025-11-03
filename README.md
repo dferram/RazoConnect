@@ -6,9 +6,11 @@ Sistema de e-commerce desarrollado con Node.js, Express y PostgreSQL.
 
 - API RESTful con Express
 - Base de datos PostgreSQL
-- Autenticación con JWT
+- Autenticación con JWT (clientes y administradores)
 - Encriptación de contraseñas con Bcrypt
 - CORS habilitado
+- Reportes administrativos de rentabilidad, valuación de inventario y aging de backorders
+- Panel de administración completo (pedidos, productos, inventario, agentes, comisiones, clientes, reportes)
 
 ## 📋 Requisitos Previos
 
@@ -120,6 +122,13 @@ El servidor estará disponible en: `http://localhost:3000`
 
 **📖 Ver documentación completa en:** [API_AUTH_DOCS.md](./API_AUTH_DOCS.md)
 
+### Endpoints de Inventario y Compras (Admin)
+
+- **POST** `/api/admin/inventario/ajuste` — Ajustar stock con registro en log
+- **GET** `/api/admin/ordenes-compra` — Listar órdenes de compra
+- **POST** `/api/admin/ordenes-compra` — Crear orden de compra automática o manual
+- **POST** `/api/admin/ordenes-compra/recibir` — Registrar recepción parcial o total de inventario
+
 ## 📁 Estructura del Proyecto
 
 ```
@@ -156,27 +165,33 @@ RazoConnect/
 │   ├── index.html              # Landing page
 │   ├── login.html              # Login unificado (cliente/admin)
 │   ├── registro.html           # Registro de clientes
-│   ├── catalogo.html           # Catálogo de productos
+│   ├── catalogo.html           # Catálogo de productos para clientes
 │   ├── carrito.html            # Carrito de compras
-│   ├── checkout.html           # Proceso de pago
-│   ├── dashboard.html          # Dashboard del cliente
+│   ├── checkout.html           # Proceso de pago (pendiente)
+│   ├── dashboard.html          # Panel del cliente
 │   ├── pedido-confirmado.html  # Confirmación de pedido
 │   │
-│   ├── admin-login.html        # Login admin (opcional)
-│   ├── admin-dashboard.html    # Dashboard admin
-│   ├── admin-pedidos.html      # Gestión de pedidos
-│   ├── admin-agregar-producto.html # Crear productos
-│   ├── admin-inventario.html   # Gestión de inventario
-│   ├── admin-agentes.html      # Gestión de agentes
-│   ├── admin-agente-detalle.html # Detalle de agente
-│   ├── admin-comisiones.html   # Gestión de comisiones
+│   ├── admin-dashboard.html        # Dashboard admin con métricas y widget de valuación
+│   ├── admin-pedidos.html          # Gestión de pedidos y modal de detalle
+│   ├── admin-clientes.html         # Gestión de clientes (activar/desactivar)
+│   ├── admin-cliente-detalle.html  # Consulta detallada de clientes
+│   ├── admin-agentes.html          # Gestión de agentes
+│   ├── admin-agente-detalle.html   # Información detallada de agentes
+│   ├── admin-agregar-producto.html # Alta de productos y variantes
+│   ├── admin-inventario.html       # Kardex + ajustes de stock
+│   ├── admin-comisiones.html       # Pago de comisiones
+│   ├── admin-proveedores.html      # Gestión de proveedores
+│   ├── admin-crear-oc.html         # Creación de órdenes de compra
+│   ├── admin-recibir-inventario.html # Recepción de inventario (backorders)
+│   ├── admin-reportes.html         # Reportes de rentabilidad y aging de backorders
 │   │
 │   ├── css/
 │   │   ├── styles.css          # Estilos principales
-│   │   └── admin.css           # Estilos del panel admin
+│   │   └── admin.css           # Estilos del panel admin (componentes, empty states, tarjetas)
 │   │
 │   └── js/
-│       └── api.js              # Funciones de API
+│       ├── api.js              # Funciones compartidas de API
+│       └── admin-reportes.js   # Lógica de reportes administrativos
 │
 └── BD V01.sql                  # Script de base de datos
 ```

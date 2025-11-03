@@ -7,15 +7,33 @@ Frontend web para la plataforma de venta de cajas de fashion al mayoreo.
 ```
 public/
 ├── css/
-│   └── styles.css          # Estilos globales de la aplicación
+│   ├── styles.css          # Estilos globales de la aplicación
+│   └── admin.css           # Componentes y layout del panel admin
 ├── js/
-│   └── api.js              # Funciones de utilidad para llamadas API
+│   ├── api.js              # Funciones de utilidad para llamadas API
+│   ├── auth-guard-admin.js # Protección de rutas admin
+│   ├── token-refresh.js    # Renovación automática de tokens admin
+│   └── admin-reportes.js   # Lógica de reportes financieros
 ├── index.html              # Página de bienvenida
-├── login.html              # Inicio de sesión
+├── login.html              # Inicio de sesión unificado (cliente/admin)
 ├── registro.html           # Registro de clientes
-├── dashboard.html          # Catálogo de productos
+├── dashboard.html          # Catálogo de productos (cliente)
 ├── producto-detalle.html   # Detalle de producto con "Agregar al Carrito"
-└── carrito.html            # Carrito de compras
+├── carrito.html            # Carrito de compras
+│
+├── admin-dashboard.html        # Panel principal con métricas y widgets
+├── admin-pedidos.html          # Gestión de pedidos + modal de detalle
+├── admin-clientes.html         # Lista de clientes y activación/desactivación
+├── admin-cliente-detalle.html  # Perfil completo del cliente
+├── admin-agentes.html          # Alta y seguimiento de agentes
+├── admin-agente-detalle.html   # Detalle individual del agente
+├── admin-agregar-producto.html # Alta de productos y variantes
+├── admin-inventario.html       # Kardex y ajustes de stock
+├── admin-comisiones.html       # Gestión y pago de comisiones
+├── admin-proveedores.html      # Gestión de proveedores
+├── admin-crear-oc.html         # Creación de órdenes de compra
+├── admin-recibir-inventario.html # Recepción parcial/completa de inventario
+└── admin-reportes.html         # Reportes de rentabilidad y aging de backorders
 ```
 
 ## Características Implementadas
@@ -27,7 +45,7 @@ public/
 - Redirección automática al dashboard después de login/registro exitoso
 - Validación en tiempo real de formularios
 
-### 📦 Catálogo de Productos
+### 📦 Catálogo de Productos (Cliente)
 - **Dashboard (`dashboard.html`)**: Lista todos los productos disponibles
   - Llama a `GET /api/productos`
   - Muestra imagen principal, precio, stock, categoría
@@ -51,6 +69,27 @@ public/
   - Resumen del pedido
   - Botón para proceder al checkout (pendiente implementación)
 
+### 🛠️ Panel Administrador
+- **Dashboard (`admin-dashboard.html`)**
+  - Widgets de Total de pedidos, Ingresos, Clientes, Agentes y **Valor de inventario** (nuevo)
+  - Fetch a `/api/admin/reportes/valuacion-inventario` para el valor del stock
+  - Cards animadas y alertas de stock bajo
+- **Pedidos (`admin-pedidos.html`)**
+  - Tabla con filtros y modal con detalle del pedido (incluye tabla resumida de productos)
+- **Clientes y Agentes**
+  - Listados con activación/desactivación, creación y dashboards individuales
+- **Inventario y OC**
+  - Ajustes de stock, creación y recepción de órdenes de compra con backorders parciales
+- **Reportes (`admin-reportes.html`)**
+  - Reporte de rentabilidad con filtros por fecha (GET `/admin/reportes/rentabilidad`)
+  - Reporte de valuación total del inventario (GET `/admin/reportes/valuacion-inventario`)
+  - Reporte de antigüedad de backorders ordenado por días pendientes (GET `/admin/reportes/aging-backorders`)
+
+### 🎨 Componentes Reutilizables
+- **Tarjetas (stat cards)** con iconos degradados y métricas actualizadas
+- **Empty States** estilizados (icono grande, título naranja, subtítulo gris) reutilizados en todo el panel
+- **Toasts personalizados** y loaders consistentes
+
 ## API Helper (`js/api.js`)
 
 ### Funciones de Autenticación
@@ -71,7 +110,7 @@ clearAuthData()
 requireAuth()
 ```
 
-### Llamadas API
+### Llamadas API Principales
 ```javascript
 // Auth
 API.login(email, password)
@@ -85,8 +124,14 @@ API.getProductoById(id)
 API.getCarrito()
 API.agregarAlCarrito(productoId, cantidadPaquetes)
 
-// Pedidos
+// Pedidos (cliente)
 API.crearPedido(direccionEnvioId, codigoAgente)
+
+// Panel admin (ver admin-reportes.js para más)
+fetch('/api/admin/reportes/rentabilidad')
+fetch('/api/admin/reportes/valuacion-inventario')
+fetch('/api/admin/reportes/aging-backorders')
+fetch('/api/admin/pedidos')
 ```
 
 ### Utilidades
