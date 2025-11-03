@@ -6,6 +6,23 @@ const db = require('../db');
  */
 const getReporteRentabilidad = async (req, res) => {
   try {
+    const { desde, hasta } = req.query;
+
+    const filters = [];
+    const params = [];
+
+    if (desde && !Number.isNaN(Date.parse(desde))) {
+      params.push(desde);
+      filters.push(`p.FechaPedido >= $${params.length}`);
+    }
+
+    if (hasta && !Number.isNaN(Date.parse(hasta))) {
+      params.push(hasta);
+      filters.push(`p.FechaPedido <= $${params.length}`);
+    }
+
+    const whereClause = filters.length ? `WHERE ${filters.join(' AND ')}` : '';
+
     const query = `
       SELECT 
         dp.DetalleID,
@@ -14,20 +31,23 @@ const getReporteRentabilidad = async (req, res) => {
         pr.ProductoID,
         pr.NombreProducto,
         pv.SKU,
-        dp.CantidadSolicitada,
+        p.FechaPedido,
+        dp.CantidadPaquetes,
         dp.PiezasTotales,
         dp.PrecioPorPaquete,
         pv.CostoUnitario,
-        (dp.PrecioPorPaquete * dp.CantidadSolicitada) AS VentaBruta,
+        (dp.PrecioPorPaquete * dp.CantidadPaquetes) AS VentaBruta,
         (pv.CostoUnitario * dp.PiezasTotales) AS CostoTotal,
-        (dp.PrecioPorPaquete * dp.CantidadSolicitada) - (pv.CostoUnitario * dp.PiezasTotales) AS GananciaBruta
+        (dp.PrecioPorPaquete * dp.CantidadPaquetes) - (pv.CostoUnitario * dp.PiezasTotales) AS GananciaBruta
       FROM DetallesDelPedido dp
+      INNER JOIN Pedidos p ON dp.PedidoID = p.PedidoID
       INNER JOIN Producto_Variantes pv ON dp.VarianteID = pv.VarianteID
       INNER JOIN Productos pr ON pv.ProductoID = pr.ProductoID
-      ORDER BY dp.DetalleID ASC
+      ${whereClause}
+      ORDER BY p.FechaPedido DESC, dp.DetalleID ASC
     `;
 
-    const result = await db.query(query);
+    const result = await db.query(query, params);
 
     return res.json({
       success: true,
@@ -38,7 +58,8 @@ const getReporteRentabilidad = async (req, res) => {
         productoId: row.productoid,
         nombreProducto: row.nombreproducto,
         sku: row.sku,
-        cantidadSolicitada: row.cantidadsolicitada ? parseInt(row.cantidadsolicitada, 10) : 0,
+        fechaPedido: row.fechapedido,
+        cantidadPaquetes: row.cantidadpaquetes ? parseInt(row.cantidadpaquetes, 10) : 0,
         piezasTotales: row.piezastotales ? parseInt(row.piezastotales, 10) : 0,
         precioPorPaquete: row.precioporpaquete ? parseFloat(row.precioporpaquete) : 0,
         costoUnitario: row.costounitario ? parseFloat(row.costounitario) : 0,
@@ -56,6 +77,74 @@ const getReporteRentabilidad = async (req, res) => {
   }
 };
 
+/**
+ * GET /api/admin/reportes/valuacion-inventario
+ * Devuelve el valor total del inventario disponible.
+ */
+const getValuacionInventario = async (req, res) => {
+  try {
+    const query = `
+      SELECT COALESCE(SUM(Stock * (CostoUnitario * PiezasPorPaquete)), 0) AS valor_total
+      FROM Producto_Variantes
+      WHERE Stock > 0
+    `;
+
+    const result = await db.query(query);
+    const valorTotal = result.rows.length ? parseFloat(result.rows[0].valor_total) : 0;
+
+    return res.json({
+      success: true,
+      data: {
+        valorTotal
+      }
+    });
+  } catch (error) {
+    console.error('Error al calcular la valuación de inventario:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al calcular la valuación de inventario'
+    });
+  }
+};
+
+const getAgingBackorders = async (req, res) => {
+  try {
+    const query = `
+      SELECT 
+        p.PedidoID,
+        p.FechaPedido,
+        p.Estatus AS estatus_surtido,
+        DATE_PART('day', CURRENT_TIMESTAMP - p.FechaPedido) AS dias_pendiente,
+        c.Nombre || ' ' || c.Apellido AS cliente
+      FROM Pedidos p
+      INNER JOIN Clientes c ON p.ClienteID = c.ClienteID
+      WHERE p.Estatus IN ('Surtido Parcial', 'Pendiente')
+      ORDER BY dias_pendiente DESC
+    `;
+
+    const result = await db.query(query);
+
+    return res.json({
+      success: true,
+      data: result.rows.map(row => ({
+        pedidoId: row.pedidoid,
+        fechaPedido: row.fechapedido,
+        estatusSurtido: row.estatus_surtido,
+        diasPendiente: row.dias_pendiente !== null ? parseInt(row.dias_pendiente, 10) : 0,
+        cliente: row.cliente
+      }))
+    });
+  } catch (error) {
+    console.error('Error al generar reporte de aging de backorders:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al generar el reporte de aging de backorders'
+    });
+  }
+};
+
 module.exports = {
-  getReporteRentabilidad
+  getReporteRentabilidad,
+  getValuacionInventario,
+  getAgingBackorders
 };

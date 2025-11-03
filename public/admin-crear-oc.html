@@ -44,7 +44,7 @@
             <span class="admin-nav-icon">🎁</span>
             <span>Productos</span>
           </a>
-          <a href="#" class="admin-nav-link" data-module="clientes">
+          <a href="/admin-clientes.html" class="admin-nav-link">
             <span class="admin-nav-icon">👥</span>
             <span>Clientes</span>
           </a>
@@ -63,6 +63,10 @@
           <a href="/admin-inventario.html" class="admin-nav-link">
             <span class="admin-nav-icon">📈</span>
             <span>Inventario</span>
+          </a>
+          <a href="/admin-reportes.html" class="admin-nav-link">
+            <span class="admin-nav-icon">📑</span>
+            <span>Reportes</span>
           </a>
         </div>
 
@@ -87,11 +91,7 @@
     <!-- Main Content -->
     <main class="admin-main">
       <header class="admin-header">
-        <div>
-          <h1 class="admin-header-title">Nueva orden de compra</h1>
-          <p style="color: var(--razo-gray-warm); margin-top: 0.5rem;">Crea una nueva orden de compra para reabastecer tu inventario</p>
-        </div>
-        
+        <h1 class="admin-header-title">Nueva orden de compra</h1>
         <div class="admin-header-actions">
           <div class="admin-user-info">
             <div class="admin-user-avatar" id="userAvatar">A</div>
@@ -135,7 +135,7 @@
             <!-- Productos -->
             <div style="margin-bottom: 2rem;">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                <h3 style="margin: 0; color: var(--razo-gray-dark); font-size: 1.125rem;">🛍️ Productos a Solicitar</h3>
+                <h2 style="margin: 0; color: var(--razo-gray-dark); font-size: 1.125rem;">🛍️ Productos a Solicitar</h2>
                 <button type="button" class="btn btn-primary" onclick="openProductoModal()" style="padding: 0.5rem 1rem;">
                   ➕ Agregar Producto
                 </button>

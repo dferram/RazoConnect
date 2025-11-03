@@ -11,4 +11,18 @@ router.get(
   reportesController.getReporteRentabilidad
 );
 
+router.get(
+  '/valuacion-inventario',
+  authenticate,
+  authorizeAdmin,
+  reportesController.getValuacionInventario
+);
+
+router.get(
+  '/aging-backorders',
+  authenticate,
+  authorizeAdmin,
+  reportesController.getAgingBackorders
+);
+
 module.exports = router;

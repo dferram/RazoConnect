@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reportes de Rentabilidad - RazoConnect Admin</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/admin.css" />
+  <script src="js/auth-guard-admin.js"></script>
+  <script src="js/token-refresh.js"></script>
+</head>
+<body>
+  <div class="admin-layout">
+    <!-- Sidebar -->
+    <aside class="admin-sidebar">
+      <div class="admin-brand">
+        <a href="/admin-dashboard.html" class="admin-brand-logo">📦 RazoConnect</a>
+        <div class="admin-brand-subtitle">Panel admin</div>
+      </div>
+
+      <nav class="admin-nav">
+        <div class="admin-nav-section">
+          <div class="admin-nav-title">Principal</div>
+          <a href="/admin-dashboard.html" class="admin-nav-link">
+            <span class="admin-nav-icon">📊</span>
+            <span>Dashboard</span>
+          </a>
+        </div>
+
+        <div class="admin-nav-section">
+          <div class="admin-nav-title">Gestión</div>
+          <a href="/admin-pedidos.html" class="admin-nav-link">
+            <span class="admin-nav-icon">📦</span>
+            <span>Pedidos</span>
+          </a>
+          <a href="/admin-agregar-producto.html" class="admin-nav-link">
+            <span class="admin-nav-icon">🎁</span>
+            <span>Productos</span>
+          </a>
+          <a href="/admin-clientes.html" class="admin-nav-link">
+            <span class="admin-nav-icon">👥</span>
+            <span>Clientes</span>
+          </a>
+          <a href="/admin-agentes.html" class="admin-nav-link">
+            <span class="admin-nav-icon">💼</span>
+            <span>Agentes</span>
+          </a>
+        </div>
+
+        <div class="admin-nav-section">
+          <div class="admin-nav-title">Financiero</div>
+          <a href="/admin-comisiones.html" class="admin-nav-link">
+            <span class="admin-nav-icon">💰</span>
+            <span>Comisiones</span>
+          </a>
+          <a href="/admin-inventario.html" class="admin-nav-link">
+            <span class="admin-nav-icon">📈</span>
+            <span>Inventario</span>
+          </a>
+          <a href="/admin-reportes.html" class="admin-nav-link active">
+            <span class="admin-nav-icon">📑</span>
+            <span>Reportes</span>
+          </a>
+        </div>
+
+        <div class="admin-nav-section">
+          <div class="admin-nav-title">Compras</div>
+          <a href="/admin-proveedores.html" class="admin-nav-link">
+            <span class="admin-nav-icon">🏭</span>
+            <span>Proveedores</span>
+          </a>
+          <a href="/admin-crear-oc.html" class="admin-nav-link">
+            <span class="admin-nav-icon">📋</span>
+            <span>Nueva orden de compra</span>
+          </a>
+          <a href="/admin-recibir-inventario.html" class="admin-nav-link">
+            <span class="admin-nav-icon">📥</span>
+            <span>Recibir inventario</span>
+          </a>
+        </div>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="admin-main">
+      <header class="admin-header">
+        <h1 class="admin-header-title">Reportes de rentabilidad</h1>
+        <div class="admin-header-actions">
+          <div class="admin-user-info">
+            <div class="admin-user-avatar" id="userAvatar">A</div>
+            <div class="admin-user-details">
+              <div class="admin-user-name" id="userName">Administrador</div>
+              <div class="admin-user-role" id="userRole">Admin</div>
+            </div>
+          </div>
+          <button class="admin-logout-btn" id="logoutBtn">Cerrar sesión</button>
+        </div>
+      </header>
+
+      <div class="admin-content" style="display: grid; gap: 1.5rem;">
+        <!-- Filtros -->
+        <section class="admin-card" style="padding: 1.5rem; display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-end;">
+          <div>
+            <label for="fechaDesde" class="form-label">Desde</label>
+            <input type="date" id="fechaDesde" class="form-input" />
+          </div>
+          <div>
+            <label for="fechaHasta" class="form-label">Hasta</label>
+            <input type="date" id="fechaHasta" class="form-input" />
+          </div>
+          <button id="generarReporteBtn" class="btn btn-primary" style="height: fit-content; padding: 0.75rem 1.5rem;">Generar reporte</button>
+        </section>
+
+        <!-- Resumen -->
+        <section class="admin-card" style="padding: 1.5rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+          <div class="admin-stat-card" style="padding: 1rem; background: #fff7f1;">
+            <h3 style="margin: 0; font-size: 0.9rem; color: var(--razo-gray-warm);">Venta bruta total</h3>
+            <p id="totalVenta" style="margin: 0.5rem 0 0; font-size: 1.4rem; font-weight: 600; color: var(--razo-orange, #FF6B35);">$0.00</p>
+          </div>
+          <div class="admin-stat-card" style="padding: 1rem; background: #f0f7ff;">
+            <h3 style="margin: 0; font-size: 0.9rem; color: var(--razo-gray-warm);">Costo total</h3>
+            <p id="totalCosto" style="margin: 0.5rem 0 0; font-size: 1.4rem; font-weight: 600; color: #2563eb;">$0.00</p>
+          </div>
+          <div class="admin-stat-card" style="padding: 1rem; background: #f2fff5;">
+            <h3 style="margin: 0; font-size: 0.9rem; color: var(--razo-gray-warm);">Ganancia bruta total</h3>
+            <p id="totalGanancia" style="margin: 0.5rem 0 0; font-size: 1.4rem; font-weight: 600; color: #16a34a;">$0.00</p>
+          </div>
+        </section>
+
+        <!-- Tabla Rentabilidad -->
+        <section class="admin-card" style="padding: 1.5rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h2 style="margin: 0; font-size: 1.2rem; color: var(--razo-orange, #FF6B35);">Detalle por línea de pedido</h2>
+            <span id="resultadosBadge" class="admin-badge secondary">0 resultados</span>
+          </div>
+
+          <div id="loadingReporte" class="loading" style="display: none; min-height: 120px;">
+            <div class="spinner"></div>
+          </div>
+
+          <div style="overflow-x: auto;">
+            <table class="admin-table" id="reportesTable" style="display: none;">
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Pedido ID</th>
+                  <th>Producto maestro</th>
+                  <th>Variante (SKU)</th>
+                  <th>Venta bruta</th>
+                  <th>Costo total</th>
+                  <th>Ganancia bruta</th>
+                </tr>
+              </thead>
+              <tbody id="reportesTableBody"></tbody>
+            </table>
+          </div>
+
+          <div id="emptyReporte" class="empty-state" style="display: none;">
+            <div class="empty-state-icon">📑</div>
+            <h3 class="empty-state-title">Sin resultados</h3>
+            <p class="empty-state-text">Ajusta los filtros de fecha y vuelve a generar el reporte.</p>
+          </div>
+        </section>
+
+        <!-- Aging Backorders -->
+        <section class="admin-card" style="padding: 1.5rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h2 style="margin: 0; font-size: 1.2rem; color: var(--razo-orange, #FF6B35);">Reporte de Antigüedad de Backorders</h2>
+            <span id="agingResultadosBadge" class="admin-badge secondary">0 pedidos</span>
+          </div>
+
+          <div id="loadingAging" class="loading" style="display: none; min-height: 120px;">
+            <div class="spinner"></div>
+          </div>
+
+          <div style="overflow-x: auto;">
+            <table class="admin-table" id="agingTable" style="display: none;">
+              <thead>
+                <tr>
+                  <th>ID Pedido</th>
+                  <th>Cliente</th>
+                  <th>Fecha de Pedido</th>
+                  <th>Estatus de Surtido</th>
+                  <th>Días Pendiente</th>
+                </tr>
+              </thead>
+              <tbody id="agingTableBody"></tbody>
+            </table>
+          </div>
+
+          <div id="emptyAging" class="empty-state" style="display: none;">
+            <div class="empty-state-icon">⏳</div>
+            <h3 class="empty-state-title">Sin backorders pendientes</h3>
+            <p class="empty-state-text">¡Todos los pedidos están al día!</p>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/admin-reportes.js"></script>
+</body>
+</html>

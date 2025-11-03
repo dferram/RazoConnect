@@ -320,6 +320,47 @@
   color: white;
 }
 
+.admin-stat-icon.red {
+  background: linear-gradient(135deg, #fca5a5, #ef4444);
+  color: white;
+}
+
+.admin-stat-icon.indigo {
+  background: linear-gradient(135deg, #c7d2fe, #4338ca);
+  color: white;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  text-align: center;
+  padding: 1.75rem;
+  border-radius: 0.75rem;
+  background: #fff7f1;
+  color: var(--razo-gray-warm);
+  border: 1px dashed rgba(255, 153, 102, 0.4);
+}
+
+.empty-state-icon {
+  font-size: 2.75rem;
+}
+
+.empty-state-title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--razo-orange, #FF6B35);
+}
+
+.empty-state-text {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--razo-gray-warm);
+}
+
 .admin-stat-content h3 {
   font-size: 0.875rem;
   color: var(--razo-gray-warm);

@@ -64,6 +64,10 @@
             <span class="admin-nav-icon">📈</span>
             <span>Inventario</span>
           </a>
+          <a href="/admin-reportes.html" class="admin-nav-link">
+            <span class="admin-nav-icon">📑</span>
+            <span>Reportes</span>
+          </a>
         </div>
 
         <div class="admin-nav-section">
@@ -153,6 +157,19 @@
                 </div>
               </div>
               <div class="admin-stat-icon purple">💼</div>
+            </div>
+          </div>
+
+          <div class="admin-stat-card">
+            <div class="admin-stat-header">
+              <div class="admin-stat-content">
+                <h3>Valor de inventario</h3>
+                <div class="admin-stat-value" id="valorInventario">$0.00</div>
+                <div class="admin-stat-change neutral">
+                  Stock valorizado disponible
+                </div>
+              </div>
+              <div class="admin-stat-icon red">🏷️</div>
             </div>
           </div>
         </div>
@@ -308,6 +325,32 @@
       }).format(amount || 0);
     }
 
+    async function loadInventoryValuation() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/admin/reportes/valuacion-inventario`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${adminToken}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('No se pudo obtener la valuación de inventario');
+        }
+
+        const data = await response.json();
+        if (data.success && data.data && typeof data.data.valorTotal !== 'undefined') {
+          document.getElementById('valorInventario').textContent = formatCurrency(data.data.valorTotal);
+        }
+      } catch (error) {
+        console.error('Error al cargar la valuación de inventario:', error);
+        if (typeof showToast === 'function') {
+          showToast('No se pudo cargar la valuación de inventario', 'error');
+        }
+      }
+    }
+
     // Load recent orders (REAL DATA from database)
     async function loadRecentOrders() {
       const loadingOrders = document.getElementById('loadingOrders');
@@ -442,12 +485,7 @@
             <thead>
               <tr>
                 <th>Producto</th>
-                <th>SKU</th>
                 <th>Paquetes</th>
-                <th>Piezas/Paq</th>
-                <th>Piezas Totales</th>
-                <th>Precio Unitario</th>
-                <th>Precio Paquete</th>
                 <th>Subtotal</th>
               </tr>
             </thead>
@@ -455,19 +493,14 @@
               ${productos.map(p => `
                 <tr>
                   <td><strong>${p.nombre}</strong></td>
-                  <td><code style="background: #f0f0f0; padding: 0.25rem 0.5rem; border-radius: 0.25rem;">${p.sku}</code></td>
                   <td style="text-align: center;">${p.cantidadPaquetes}</td>
-                  <td style="text-align: center;">${p.piezasPorPaquete}</td>
-                  <td style="text-align: center;"><strong>${p.piezasTotales}</strong></td>
-                  <td>${formatCurrency(p.precioUnitario)}</td>
-                  <td>${formatCurrency(p.precioPorPaquete)}</td>
                   <td><strong>${formatCurrency(p.subtotal)}</strong></td>
                 </tr>
               `).join('')}
             </tbody>
             <tfoot>
               <tr style="background: #FFF8F0;">
-                <td colspan="7" style="text-align: right;"><strong style="font-size: 1.1rem;">Total del Pedido:</strong></td>
+                <td colspan="2" style="text-align: right;"><strong style="font-size: 1.1rem;">Total del Pedido:</strong></td>
                 <td><strong style="font-size: 1.25rem; color: #FF9966;">${formatCurrency(pedido.montoTotal)}</strong></td>
               </tr>
             </tfoot>
@@ -532,6 +565,7 @@
     // Initialize dashboard
     verifyAndLoadAdmin();
     loadDashboardStats();
+    loadInventoryValuation();
     loadRecentOrders();
 
     // Close modal when clicking outside
