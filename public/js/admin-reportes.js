@@ -25,7 +25,10 @@ const emptyAging = document.getElementById('emptyAging');
 
 const totalVentaEl = document.getElementById('totalVenta');
 const totalCostoEl = document.getElementById('totalCosto');
-const totalGananciaEl = document.getElementById('totalGanancia');
+const totalGananciaBrutaEl = document.getElementById('totalGananciaBruta');
+const totalComisionesEl = document.getElementById('totalComisiones');
+const totalCostoEnvioEl = document.getElementById('totalCostoEnvio');
+const totalGananciaNetaEl = document.getElementById('totalGananciaNeta');
 
 const API_REPORT_URL = `${API_BASE_URL}/admin/reportes/rentabilidad`;
 const API_AGING_URL = `${API_BASE_URL}/admin/reportes/aging-backorders`;
@@ -91,7 +94,10 @@ function renderTable(data) {
     resultadosBadge.textContent = '0 resultados';
     totalVentaEl.textContent = '$0.00';
     totalCostoEl.textContent = '$0.00';
-    totalGananciaEl.textContent = '$0.00';
+    totalGananciaBrutaEl.textContent = '$0.00';
+    totalComisionesEl.textContent = '$0.00';
+    totalCostoEnvioEl.textContent = '$0.00';
+    totalGananciaNetaEl.textContent = '$0.00';
     return;
   }
 
@@ -101,12 +107,18 @@ function renderTable(data) {
 
   let totalVenta = 0;
   let totalCosto = 0;
-  let totalGanancia = 0;
+  let totalGananciaBruta = 0;
+  let totalComisiones = 0;
+  let totalCostoEnvio = 0;
+  let totalGananciaNeta = 0;
 
   data.forEach(item => {
     totalVenta += item.ventaBruta || 0;
     totalCosto += item.costoTotal || 0;
-    totalGanancia += item.gananciaBruta || 0;
+    totalGananciaBruta += item.gananciaBruta || 0;
+    totalComisiones += item.comision || 0;
+    totalCostoEnvio += item.costoEnvio || 0;
+    totalGananciaNeta += item.gananciaNeta || 0;
 
     const tr = document.createElement('tr');
     tr.innerHTML = `
@@ -117,13 +129,19 @@ function renderTable(data) {
       <td>${formatCurrency(item.ventaBruta)}</td>
       <td>${formatCurrency(item.costoTotal)}</td>
       <td>${formatCurrency(item.gananciaBruta)}</td>
+      <td>${formatCurrency(item.comision)}</td>
+      <td>${formatCurrency(item.costoEnvio)}</td>
+      <td>${formatCurrency(item.gananciaNeta)}</td>
     `;
     tableBodyEl.appendChild(tr);
   });
 
   totalVentaEl.textContent = formatCurrency(totalVenta);
   totalCostoEl.textContent = formatCurrency(totalCosto);
-  totalGananciaEl.textContent = formatCurrency(totalGanancia);
+  totalGananciaBrutaEl.textContent = formatCurrency(totalGananciaBruta);
+  totalComisionesEl.textContent = formatCurrency(totalComisiones);
+  totalCostoEnvioEl.textContent = formatCurrency(totalCostoEnvio);
+  totalGananciaNetaEl.textContent = formatCurrency(totalGananciaNeta);
 }
 
 async function fetchReporte() {

@@ -185,19 +185,40 @@
 
     <!-- Modal para cambiar estatus -->
     <div id="statusModal" class="modal" style="display: none">
-      <div class="modal-content" style="background: white; padding: 2rem; border-radius: 1rem; box-shadow: 0 20px 60px rgba(0,0,0,0.3); max-width: 500px;">
-        <h2 style="font-size: 1.5rem; font-weight: bold; margin-bottom: 1.5rem;">Cambiar Estatus del Pedido</h2>
-        
-        <p style="margin-bottom: 1.5rem;">
-          <strong style="font-size: 1.125rem;">Pedido #<span id="modalPedidoId"></span></strong><br />
-          <span style="color: var(--text-secondary); font-size: 0.875rem;">
+      <div
+        class="modal-content"
+        style="
+          background: white;
+          padding: 2rem;
+          border-radius: 1rem;
+          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+          max-width: 500px;
+        "
+      >
+        <h2 style="font-size: 1.5rem; font-weight: bold; margin-bottom: 1.5rem">
+          Cambiar Estatus del Pedido
+        </h2>
+
+        <p style="margin-bottom: 1.5rem">
+          <strong style="font-size: 1.125rem"
+            >Pedido #<span id="modalPedidoId"></span></strong
+          ><br />
+          <span style="color: var(--text-secondary); font-size: 0.875rem">
             Cliente: <span id="modalClienteNombre"></span>
           </span>
         </p>
 
-        <div class="form-group" style="margin-bottom: 1.5rem;">
-          <label class="form-label" style="font-weight: 600; margin-bottom: 0.5rem; display: block;">Nuevo Estatus:</label>
-          <select id="modalNuevoEstatus" class="form-input" style="width: 100%; padding: 0.75rem; font-size: 1rem;">
+        <div class="form-group" style="margin-bottom: 1.5rem">
+          <label
+            class="form-label"
+            style="font-weight: 600; margin-bottom: 0.5rem; display: block"
+            >Nuevo Estatus:</label
+          >
+          <select
+            id="modalNuevoEstatus"
+            class="form-input"
+            style="width: 100%; padding: 0.75rem; font-size: 1rem"
+          >
             <option value="Pendiente">Pendiente</option>
             <option value="Confirmado">Confirmado ⚠️ (Reduce Stock)</option>
             <option value="Enviado">Enviado</option>
@@ -206,30 +227,45 @@
           </select>
         </div>
 
-        <div style="background: var(--razo-cream); padding: 1rem; border-radius: 0.5rem; border-left: 4px solid var(--razo-orange); margin-bottom: 1.5rem;">
-          <p style="font-size: 0.875rem; margin: 0;">
-            <strong>⚠️ Importante:</strong> Al cambiar a "Confirmado", se reducirá automáticamente el stock de los productos y se registrará en el log de inventario.
+        <div
+          style="
+            background: var(--razo-cream);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border-left: 4px solid var(--razo-orange);
+            margin-bottom: 1.5rem;
+          "
+        >
+          <p style="font-size: 0.875rem; margin: 0">
+            <strong>⚠️ Importante:</strong> Al cambiar a "Confirmado", se
+            reducirá automáticamente el stock de los productos y se registrará
+            en el log de inventario.
           </p>
         </div>
 
-        <div style="display: flex; gap: 1rem;">
+        <div style="display: flex; gap: 1rem">
           <button
             class="btn btn-primary"
             onclick="updateOrderStatus()"
             id="btnConfirmar"
-            style="flex: 1;"
+            style="flex: 1"
           >
             <span id="btnConfirmarText">Confirmar Cambio</span>
             <div
               class="spinner"
               id="btnConfirmarSpinner"
-              style="display: none; width: 20px; height: 20px; border-width: 2px;"
+              style="
+                display: none;
+                width: 20px;
+                height: 20px;
+                border-width: 2px;
+              "
             ></div>
           </button>
           <button
             class="btn btn-secondary"
             onclick="closeStatusModal()"
-            style="flex: 1;"
+            style="flex: 1"
           >
             Cancelar
           </button>
@@ -246,7 +282,8 @@
           padding: 2rem;
           border-radius: 1rem;
           box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-          max-width: 900px;
+          max-width: 860px;
+          width: 100%;
         "
       >
         <div
@@ -546,6 +583,128 @@
         }
       }
 
+      function setupCostoEnvioForm(pedido) {
+        const form = document.getElementById("costoEnvioForm");
+        if (!form) return;
+
+        const input = document.getElementById("costoEnvioInput");
+        const btn = document.getElementById("guardarCostoEnvioBtn");
+        const btnText = document.getElementById("guardarCostoEnvioBtnText");
+        const spinner = document.getElementById("guardarCostoEnvioSpinner");
+        const feedback = document.getElementById("costoEnvioFeedback");
+        const valorEl = document.getElementById("costoEnvioValor");
+        const resumenEl = document.getElementById("costoEnvioResumen");
+
+        const initialValue =
+          pedido.costoEnvio !== null && pedido.costoEnvio !== undefined
+            ? Number(pedido.costoEnvio)
+            : 0;
+
+        if (input) {
+          input.value = initialValue.toFixed(2);
+        }
+
+        form.addEventListener(
+          "submit",
+          async (event) => {
+            event.preventDefault();
+
+            if (!input) {
+              return;
+            }
+
+            const rawValue = input.value;
+            const parsedValue = parseFloat(rawValue);
+
+            if (feedback) {
+              feedback.style.display = "none";
+            }
+
+            if (Number.isNaN(parsedValue) || parsedValue < 0) {
+              if (feedback) {
+                feedback.textContent =
+                  "Ingresa un costo válido (mayor o igual a 0)";
+                feedback.style.color = "#dc2626";
+                feedback.style.display = "block";
+              }
+              return;
+            }
+
+            try {
+              if (btn) btn.disabled = true;
+              if (btnText) btnText.style.display = "none";
+              if (spinner) spinner.style.display = "inline-block";
+
+              const response = await fetch(
+                `${API_BASE_URL}/admin/pedidos/${pedido.pedidoId}/costo-envio`,
+                {
+                  method: "PUT",
+                  headers: {
+                    Authorization: `Bearer ${adminToken}`,
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({ costoEnvio: parsedValue }),
+                }
+              );
+
+              const data = await response.json();
+
+              if (!response.ok || !data.success) {
+                throw new Error(
+                  data.message || "No se pudo actualizar el costo de envío"
+                );
+              }
+
+              if (valorEl) {
+                valorEl.textContent = formatCurrency(parsedValue);
+              }
+
+              if (resumenEl) {
+                resumenEl.textContent = formatCurrency(parsedValue);
+              }
+
+              if (input) {
+                input.value = parsedValue.toFixed(2);
+              }
+
+              if (feedback) {
+                feedback.textContent =
+                  "Costo de envío actualizado correctamente.";
+                feedback.style.color = "#16a34a";
+                feedback.style.display = "block";
+              }
+
+              pedido.costoEnvio = parsedValue;
+
+              if (typeof loadOrders === "function") {
+                loadOrders();
+              }
+
+              if (typeof showToast === "function") {
+                showToast("Costo de envío actualizado", "success");
+              }
+            } catch (error) {
+              console.error("Error al guardar costo de envío:", error);
+              if (feedback) {
+                feedback.textContent =
+                  error.message || "No se pudo guardar el costo de envío";
+                feedback.style.color = "#dc2626";
+                feedback.style.display = "block";
+              }
+
+              if (typeof showToast === "function") {
+                showToast("Error al guardar el costo de envío", "error");
+              }
+            } finally {
+              if (btn) btn.disabled = false;
+              if (btnText) btnText.style.display = "inline";
+              if (spinner) spinner.style.display = "none";
+            }
+          },
+          { once: true }
+        );
+      }
+
       // Mostrar modal con detalle del pedido
       function mostrarModalDetalle(detalle) {
         const { pedido, productos } = detalle;
@@ -592,6 +751,9 @@
             <p style="margin: 0.25rem 0;">Total: <strong style="font-size: 1.25rem; color: #FF9966;">${formatCurrency(
               pedido.montoTotal
             )}</strong></p>
+            <p style="margin: 0.25rem 0;">Costo de envío actual: <strong id="costoEnvioResumen" style="font-size: 1rem; color: #2563eb;">
+              ${formatCurrency(pedido.costoEnvio || 0)}
+            </strong></p>
           </div>
         </div>
 
@@ -624,6 +786,33 @@
               ? `<p style="margin: 0.25rem 0; color: #6B5D57;"><em>📝 Referencias: ${pedido.direccion.referencias}</em></p>`
               : ""
           }
+        </div>
+
+        <div style="margin-bottom: 1.5rem; padding: 1rem; background: #f1f5f9; border-radius: 0.5rem;">
+          <h3 style="margin-bottom: 0.75rem; color: #0f172a;">🚚 Costo de Envío</h3>
+          <p style="margin: 0 0 0.75rem; color: #475569;">
+            Valor registrado: <strong id="costoEnvioValor" style="color: #0f172a;">${formatCurrency(
+              pedido.costoEnvio || 0
+            )}</strong>
+          </p>
+          <form id="costoEnvioForm" style="display: grid; grid-template-columns: 1fr auto; gap: 0.75rem; align-items: center;">
+            <div>
+              <label for="costoEnvioInput" class="form-label" style="display: block; margin-bottom: 0.25rem; color: #475569;">Actualizar costo</label>
+              <input 
+                type="number" 
+                id="costoEnvioInput" 
+                min="0" 
+                step="0.01" 
+                class="form-input" 
+                style="width: 100%;"
+              />
+              <small id="costoEnvioFeedback" style="display: none; margin-top: 0.5rem;"></small>
+            </div>
+            <button type="submit" id="guardarCostoEnvioBtn" class="btn btn-primary" style="align-self: flex-end; display: inline-flex; align-items: center; gap: 0.5rem;">
+              <span id="guardarCostoEnvioBtnText">Guardar costo</span>
+              <div id="guardarCostoEnvioSpinner" class="spinner" style="display: none; width: 16px; height: 16px; border-width: 2px;"></div>
+            </button>
+          </form>
         </div>
 
         <h3 style="margin-bottom: 1rem; color: #FF9966;">🛍️ Productos del Pedido</h3>
@@ -684,6 +873,9 @@
         // Actualizar el contenido del modal
         document.getElementById("detalleModalBody").innerHTML = contenido;
 
+        // Configurar formulario de costo de envío
+        setupCostoEnvioForm(pedido);
+
         // Mostrar el modal
         document.getElementById("detalleModal").style.display = "flex";
       }
@@ -723,14 +915,18 @@
       // Verificar si hay un pedidoId en la URL para abrir el modal automáticamente
       async function checkUrlParams() {
         const urlParams = new URLSearchParams(window.location.search);
-        const pedidoId = urlParams.get('pedidoId');
-        
+        const pedidoId = urlParams.get("pedidoId");
+
         if (pedidoId) {
           // Esperar un poco para que la tabla termine de cargar
           setTimeout(() => {
             verDetallePedido(parseInt(pedidoId));
             // Limpiar el parámetro de la URL sin recargar la página
-            window.history.replaceState({}, document.title, window.location.pathname);
+            window.history.replaceState(
+              {},
+              document.title,
+              window.location.pathname
+            );
           }, 500);
         }
       }

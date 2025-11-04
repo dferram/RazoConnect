@@ -86,6 +86,71 @@ const loginAdmin = async (req, res) => {
 };
 
 /**
+ * Actualizar costo de envío de un pedido
+ * PUT /api/admin/pedidos/:id/costo-envio
+ */
+const updateCostoEnvio = async (req, res) => {
+  try {
+    const pedidoId = parseInt(req.params.id);
+    const { costoEnvio } = req.body;
+
+    if (Number.isNaN(pedidoId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID de pedido inválido'
+      });
+    }
+
+    if (costoEnvio === undefined || costoEnvio === null || costoEnvio === '') {
+      return res.status(400).json({
+        success: false,
+        message: 'El costo de envío es requerido'
+      });
+    }
+
+    const costoEnvioValue = parseFloat(costoEnvio);
+
+    if (Number.isNaN(costoEnvioValue) || costoEnvioValue < 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'El costo de envío debe ser un número mayor o igual a 0'
+      });
+    }
+
+    const result = await db.query(
+      `UPDATE Pedidos
+       SET CostoEnvio = $1
+       WHERE PedidoID = $2
+       RETURNING PedidoID, CostoEnvio` ,
+      [costoEnvioValue, pedidoId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Pedido no encontrado'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Costo de envío actualizado',
+      data: {
+        pedidoId: result.rows[0].pedidoid,
+        costoEnvio: parseFloat(result.rows[0].costoenvio)
+      }
+    });
+
+  } catch (error) {
+    console.error('Error al actualizar costo de envío:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al actualizar el costo de envío'
+    });
+  }
+};
+
+/**
  * Obtener detalle de un cliente
  * GET /api/admin/clientes/:id
  */
@@ -519,6 +584,7 @@ const getAllPedidos = async (req, res) => {
         c.Email as ClienteEmail,
         p.FechaPedido,
         p.MontoTotal,
+        p.CostoEnvio,
         p.Estatus,
         p.DireccionEnvioID,
         d.Calle || ', ' || d.Ciudad || ', ' || d.Estado as DireccionCompleta,
@@ -545,6 +611,7 @@ const getAllPedidos = async (req, res) => {
           clienteEmail: row.clienteemail,
           fechaPedido: row.fechapedido,
           montoTotal: parseFloat(row.montototal),
+          costoEnvio: row.costoenvio !== null ? parseFloat(row.costoenvio) : null,
           estatus: row.estatus,
           direccionEnvioId: row.direccionenvioid,
           direccionCompleta: row.direccioncompleta,
@@ -1576,6 +1643,7 @@ const getPedidoDetalle = async (req, res) => {
           fechaPedido: pedido.fechapedido,
           estatus: pedido.estatus,
           montoTotal: parseFloat(pedido.montototal),
+          costoEnvio: pedido.costoenvio !== null ? parseFloat(pedido.costoenvio) : null,
           cliente: {
             nombre: `${pedido.clientenombre} ${pedido.clienteapellido}`,
             email: pedido.clienteemail,
@@ -2372,6 +2440,7 @@ module.exports = {
   refreshAdminToken,
   getDashboardStats,
   getAllPedidos,
+  updateCostoEnvio,
   updatePedidoEstatus,
   getPedidoDetalle,
   crearProducto,

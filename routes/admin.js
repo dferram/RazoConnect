@@ -25,6 +25,7 @@ router.get('/dashboard-stats', authenticate, authorizeAdmin, adminController.get
  */
 router.get('/pedidos', authenticate, authorizeAdmin, adminController.getAllPedidos);
 router.put('/pedidos/:id', authenticate, authorizeAdmin, adminController.updatePedidoEstatus);
+router.put('/pedidos/:id/costo-envio', authenticate, authorizeAdmin, adminController.updateCostoEnvio);
 
 /**
  * Gestión de productos
