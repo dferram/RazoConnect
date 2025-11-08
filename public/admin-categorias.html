@@ -198,6 +198,16 @@
     let categoriasCache = [];
     let categoriaEditando = null;
 
+    const applyFormDefaults = () => {
+      categoriaEditando = null;
+      guardarBtn.disabled = false;
+      guardarBtnText.textContent = 'Guardar categoría';
+      guardarBtnText.style.display = 'inline';
+      guardarBtnSpinner.style.display = 'none';
+      populateParentOptions();
+      parentSelect.value = '';
+    };
+
     const headers = {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${adminToken}`
@@ -281,9 +291,7 @@
 
     const resetForm = () => {
       categoriaForm.reset();
-      categoriaEditando = null;
-      guardarBtnText.textContent = 'Guardar categoría';
-      populateParentOptions();
+      applyFormDefaults();
     };
 
     categoriaForm.addEventListener('submit', async (event) => {
@@ -395,10 +403,10 @@
     });
 
     categoriaForm.addEventListener('reset', () => {
-      setTimeout(() => {
-        resetForm();
+      requestAnimationFrame(() => {
+        applyFormDefaults();
         showToast('Formulario limpiado', 'info');
-      }, 0);
+      });
     });
 
     // Inicialización

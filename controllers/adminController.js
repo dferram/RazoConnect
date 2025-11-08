@@ -3,6 +3,44 @@ const { enviarEmail } = require('../services/emailService');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
+let agenteAdminColumnsCache = null;
+
+const getAgenteAdminColumnsInfo = async () => {
+  if (agenteAdminColumnsCache) {
+    return agenteAdminColumnsCache;
+  }
+
+  try {
+    const columnsResult = await db.query(
+      `SELECT column_name
+       FROM information_schema.columns
+       WHERE table_name = 'agentesdeventas'
+         AND column_name IN ('esadmin', 'adminrol')`
+    );
+
+    const found = columnsResult.rows.map(row => row.column_name);
+    agenteAdminColumnsCache = {
+      esAdmin: found.includes('esadmin'),
+      adminRol: found.includes('adminrol')
+    };
+
+    if (!agenteAdminColumnsCache.esAdmin || !agenteAdminColumnsCache.adminRol) {
+      console.warn(
+        '⚠️  Columnas opcionales para admin de agentes no detectadas en AgentesDeVentas.',
+        agenteAdminColumnsCache
+      );
+    }
+  } catch (error) {
+    console.error('Error verificando columnas de agentes admin:', error);
+    agenteAdminColumnsCache = {
+      esAdmin: false,
+      adminRol: false
+    };
+  }
+
+  return agenteAdminColumnsCache;
+};
+
 /**
  * Login de administrador
  * POST /api/admin/login
@@ -40,19 +78,22 @@ const loginAdmin = async (req, res) => {
         roles: Array.from(new Set(['admin', admin.rol].filter(Boolean)))
       };
     } else {
+      const { esAdmin: hasEsAdminColumn, adminRol: hasAdminRolColumn } = await getAgenteAdminColumnsInfo();
+
+      const selectColumns = [
+        'AgenteID',
+        'Nombre',
+        'Apellido',
+        'Email',
+        'PasswordHash',
+        'CodigoAgente',
+        'Activo',
+        hasEsAdminColumn ? 'EsAdmin' : 'FALSE AS EsAdmin',
+        hasAdminRolColumn ? 'AdminRol' : 'NULL AS AdminRol'
+      ].join(', ');
+
       const agenteResult = await db.query(
-        `SELECT 
-          AgenteID,
-          Nombre,
-          Apellido,
-          Email,
-          PasswordHash,
-          CodigoAgente,
-          Activo,
-          EsAdmin,
-          AdminRol
-        FROM AgentesDeVentas
-        WHERE Email = $1 AND Activo = TRUE`,
+        `SELECT ${selectColumns} FROM AgentesDeVentas WHERE Email = $1 AND Activo = TRUE`,
         [email]
       );
 

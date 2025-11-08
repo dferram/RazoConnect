@@ -148,58 +148,55 @@
       try {
         let loginSuccessful = false;
 
-        // Primero intenta login como cliente
+        // Intentar primero como administrador para priorizar agentes con permisos de admin
         try {
-          const clientResponse = await fetch(`${API_BASE_URL}/login`, {
+          const adminResponse = await fetch(`${API_BASE_URL}/admin/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ Email: email, Password: password })
+            body: JSON.stringify({ email, password })
           });
 
-          const clientData = await clientResponse.json();
+          const adminData = await adminResponse.json();
 
-          if (clientResponse.ok && clientData.success) {
-            // Es un cliente - Login exitoso
-            localStorage.setItem('razoconnect_token', clientData.data.token);
-            localStorage.setItem('razoconnect_user', JSON.stringify(clientData.data.usuario));
-            showToast('¡Inicio de sesión exitoso!', 'success');
+          if (adminResponse.ok && adminData.success) {
+            localStorage.setItem('razoconnect_admin_token', adminData.data.token);
+            localStorage.setItem('razoconnect_admin', JSON.stringify(adminData.data.admin));
+            showToast('¡Bienvenido Administrador!', 'success');
             setTimeout(() => {
-              window.location.href = '/catalogo.html';
+              sessionStorage.setItem('_navigating', 'true');
+              window.location.href = '/admin-dashboard.html';
             }, 500);
             loginSuccessful = true;
           }
-        } catch (clientError) {
-          console.log('No es cliente, intentando como admin...');
+        } catch (adminError) {
+          console.error('Admin login error:', adminError);
         }
 
-        // Si no es cliente, intenta como administrador
+        // Si no es admin, intenta como cliente/agente
         if (!loginSuccessful) {
           try {
-            const adminResponse = await fetch(`${API_BASE_URL}/admin/login`, {
+            const clientResponse = await fetch(`${API_BASE_URL}/login`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ email, password })
+              body: JSON.stringify({ Email: email, Password: password })
             });
 
-            const adminData = await adminResponse.json();
+            const clientData = await clientResponse.json();
 
-            if (adminResponse.ok && adminData.success) {
-              // Es un administrador - Login exitoso
-              localStorage.setItem('razoconnect_admin_token', adminData.data.token);
-              localStorage.setItem('razoconnect_admin', JSON.stringify(adminData.data.admin));
-              showToast('¡Bienvenido Administrador!', 'success');
+            if (clientResponse.ok && clientData.success) {
+              localStorage.setItem('razoconnect_token', clientData.data.token);
+              localStorage.setItem('razoconnect_user', JSON.stringify(clientData.data.usuario));
+              showToast('¡Inicio de sesión exitoso!', 'success');
               setTimeout(() => {
-                sessionStorage.setItem('_navigating', 'true');
-                window.location.href = '/admin-dashboard.html';
+                window.location.href = '/catalogo.html';
               }, 500);
               loginSuccessful = true;
             }
-          } catch (adminError) {
-            console.error('Admin login error:', adminError);
+          } catch (clientError) {
+            console.log('No es cliente/agente:', clientError);
           }
         }
 
-        // Si ninguno funcionó
         if (!loginSuccessful) {
           showAlert('Credenciales inválidas. Verifica tu correo y contraseña.', 'error');
         }
