@@ -1,4 +1,5 @@
 const db = require('../db');
+const { enviarEmail } = require('../services/emailService');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
@@ -24,17 +25,67 @@ const loginAdmin = async (req, res) => {
       [email]
     );
 
-    if (result.rows.length === 0) {
+    let cuenta = null;
+
+    if (result.rows.length > 0) {
+      const admin = result.rows[0];
+      cuenta = {
+        id: admin.adminid,
+        email: admin.email,
+        nombre: admin.nombre,
+        apellido: admin.apellido || '',
+        rol: admin.rol,
+        passwordHash: admin.passwordhash,
+        adminSource: 'admin',
+        roles: Array.from(new Set(['admin', admin.rol].filter(Boolean)))
+      };
+    } else {
+      const agenteResult = await db.query(
+        `SELECT 
+          AgenteID,
+          Nombre,
+          Apellido,
+          Email,
+          PasswordHash,
+          CodigoAgente,
+          Activo,
+          EsAdmin,
+          AdminRol
+        FROM AgentesDeVentas
+        WHERE Email = $1 AND Activo = TRUE`,
+        [email]
+      );
+
+      if (agenteResult.rows.length > 0) {
+        const agente = agenteResult.rows[0];
+        const esAdmin = Boolean(agente.esadmin);
+
+        if (esAdmin) {
+          const adminRol = agente.adminrol || 'admin';
+          cuenta = {
+            id: agente.agenteid,
+            email: agente.email,
+            nombre: agente.nombre,
+            apellido: agente.apellido || '',
+            rol: adminRol,
+            passwordHash: agente.passwordhash,
+            adminSource: 'agent',
+            codigoAgente: agente.codigoagente,
+            roles: Array.from(new Set(['admin', adminRol, 'agente']))
+          };
+        }
+      }
+    }
+
+    if (!cuenta) {
       return res.status(401).json({
         success: false,
         message: 'Credenciales inválidas'
       });
     }
 
-    const admin = result.rows[0];
-
     // Verificar contraseña
-    const isPasswordValid = await bcrypt.compare(password, admin.passwordhash);
+    const isPasswordValid = await bcrypt.compare(password, cuenta.passwordHash);
 
     if (!isPasswordValid) {
       return res.status(401).json({
@@ -43,23 +94,30 @@ const loginAdmin = async (req, res) => {
       });
     }
 
-    // Nota: La columna UltimoAcceso no existe en tu tabla, comentado por ahora
-    // await db.query(
-    //   'UPDATE Administradores SET UltimoAcceso = CURRENT_TIMESTAMP WHERE AdminID = $1',
-    //   [admin.adminid]
-    // );
+    const tokenPayload = {
+      id: cuenta.id,
+      email: cuenta.email,
+      rol: cuenta.rol,
+      tipo: 'admin',
+      roles: cuenta.roles,
+      adminSource: cuenta.adminSource
+    };
+
+    if (cuenta.adminSource === 'agent') {
+      tokenPayload.agenteId = cuenta.id;
+      if (cuenta.codigoAgente) {
+        tokenPayload.codigoAgente = cuenta.codigoAgente;
+      }
+    }
 
     // Generar token JWT
     const token = jwt.sign(
-      {
-        id: admin.adminid,
-        email: admin.email,
-        rol: admin.rol,
-        tipo: 'admin' // Identificador para diferenciar de tokens de clientes
-      },
+      tokenPayload,
       process.env.JWT_SECRET,
       { expiresIn: '8h' } // Token válido por 8 horas
     );
+
+    const nombreCompleto = [cuenta.nombre, cuenta.apellido].filter(Boolean).join(' ').trim() || cuenta.nombre;
 
     // Enviar respuesta
     res.json({
@@ -68,10 +126,11 @@ const loginAdmin = async (req, res) => {
       data: {
         token,
         admin: {
-          adminId: admin.adminid,
-          nombre: admin.nombre,
-          email: admin.email,
-          rol: admin.rol
+          adminId: cuenta.id,
+          nombre: nombreCompleto,
+          email: cuenta.email,
+          rol: cuenta.rol,
+          origen: cuenta.adminSource
         }
       }
     });
@@ -366,30 +425,69 @@ const verifyAdmin = async (req, res) => {
     // El middleware ya validó el token y agregó req.user
     const adminId = req.user.id;
 
-    // Obtener datos actualizados del admin
-    const result = await db.query(
-      'SELECT AdminID, Nombre, Email, Rol FROM Administradores WHERE AdminID = $1 AND Activo = TRUE',
-      [adminId]
-    );
+    let adminInfo = null;
 
-    if (result.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: 'Administrador no encontrado'
-      });
+    if (req.user.adminSource === 'agent') {
+      const agentResult = await db.query(
+        `SELECT 
+          AgenteID,
+          Nombre,
+          Apellido,
+          Email,
+          CodigoAgente,
+          AdminRol
+        FROM AgentesDeVentas
+        WHERE AgenteID = $1 AND Activo = TRUE`,
+        [adminId]
+      );
+
+      if (agentResult.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Administrador no encontrado'
+        });
+      }
+
+      const agente = agentResult.rows[0];
+      const nombreCompleto = [agente.nombre, agente.apellido].filter(Boolean).join(' ').trim() || agente.nombre;
+
+      adminInfo = {
+        adminId: agente.agenteid,
+        nombre: nombreCompleto,
+        email: agente.email,
+        rol: agente.adminrol || req.user.rol,
+        origen: 'agent',
+        codigoAgente: agente.codigoagente || req.user.codigoAgente || null
+      };
+    } else {
+      const result = await db.query(
+        'SELECT AdminID, Nombre, Apellido, Email, Rol FROM Administradores WHERE AdminID = $1 AND Activo = TRUE',
+        [adminId]
+      );
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Administrador no encontrado'
+        });
+      }
+
+      const admin = result.rows[0];
+      const nombreCompleto = [admin.nombre, admin.apellido].filter(Boolean).join(' ').trim() || admin.nombre;
+
+      adminInfo = {
+        adminId: admin.adminid,
+        nombre: nombreCompleto,
+        email: admin.email,
+        rol: admin.rol,
+        origen: 'admin'
+      };
     }
-
-    const admin = result.rows[0];
 
     res.json({
       success: true,
       data: {
-        admin: {
-          adminId: admin.adminid,
-          nombre: admin.nombre,
-          email: admin.email,
-          rol: admin.rol
-        }
+        admin: adminInfo
       }
     });
 
@@ -410,36 +508,79 @@ const getAdminProfile = async (req, res) => {
   try {
     const adminId = req.user.id;
 
-    const result = await db.query(
-      `SELECT 
-        AdminID, 
-        Nombre, 
-        Email, 
-        Rol, 
-        FechaCreacion
-      FROM Administradores 
-      WHERE AdminID = $1 AND Activo = TRUE`,
-      [adminId]
-    );
+    let adminData = null;
 
-    if (result.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: 'Administrador no encontrado'
-      });
+    if (req.user.adminSource === 'agent') {
+      const agentResult = await db.query(
+        `SELECT 
+          AgenteID,
+          Nombre,
+          Apellido,
+          Email,
+          CodigoAgente,
+          AdminRol,
+          FechaCreacion
+        FROM AgentesDeVentas
+        WHERE AgenteID = $1 AND Activo = TRUE`,
+        [adminId]
+      );
+
+      if (agentResult.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Administrador no encontrado'
+        });
+      }
+
+      const agente = agentResult.rows[0];
+      const nombreCompleto = [agente.nombre, agente.apellido].filter(Boolean).join(' ').trim() || agente.nombre;
+
+      adminData = {
+        adminId: agente.agenteid,
+        nombre: nombreCompleto,
+        email: agente.email,
+        rol: agente.adminrol || req.user.rol,
+        fechaCreacion: agente.fechacreacion,
+        origen: 'agent',
+        codigoAgente: agente.codigoagente || req.user.codigoAgente || null
+      };
+    } else {
+      const result = await db.query(
+        `SELECT 
+          AdminID, 
+          Nombre, 
+          Apellido,
+          Email, 
+          Rol, 
+          FechaCreacion
+        FROM Administradores 
+        WHERE AdminID = $1 AND Activo = TRUE`,
+        [adminId]
+      );
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Administrador no encontrado'
+        });
+      }
+
+      const admin = result.rows[0];
+      const nombreCompleto = [admin.nombre, admin.apellido].filter(Boolean).join(' ').trim() || admin.nombre;
+
+      adminData = {
+        adminId: admin.adminid,
+        nombre: nombreCompleto,
+        email: admin.email,
+        rol: admin.rol,
+        fechaCreacion: admin.fechacreacion,
+        origen: 'admin'
+      };
     }
-
-    const admin = result.rows[0];
 
     res.json({
       success: true,
-      data: {
-        adminId: admin.adminid,
-        nombre: admin.nombre,
-        email: admin.email,
-        rol: admin.rol,
-        fechaCreacion: admin.fechacreacion
-      }
+      data: adminData
     });
 
   } catch (error) {
@@ -742,6 +883,53 @@ const updatePedidoEstatus = async (req, res) => {
         estatusNuevo: estatus
       }
     });
+
+    try {
+      const clienteInfo = await db.query(
+        `SELECT c.Email, c.Nombre
+         FROM Pedidos p
+         INNER JOIN Clientes c ON c.ClienteID = p.ClienteID
+         WHERE p.PedidoID = $1`,
+        [pedidoId]
+      );
+
+      const emailCliente = clienteInfo.rows[0]?.email;
+      const nombreCliente = clienteInfo.rows[0]?.nombre || '';
+
+      if (emailCliente) {
+        if (estatus === 'Confirmado') {
+          const asunto = `Pedido #${pedidoId} confirmado`;
+          const cuerpoHtml = `
+            <div style="font-family: Arial, sans-serif; color: #111827;">
+              <h2 style="color:#16a34a;">¡Tu pedido está confirmado!</h2>
+              <p>Hola ${nombreCliente || 'cliente'},</p>
+              <p>Hemos confirmado tu pedido <strong>#${pedidoId}</strong>. Nuestro equipo está preparando tu envío.</p>
+              <p>Te avisaremos cuando salga a ruta.</p>
+              <p style="margin-top: 1.5rem;">Equipo RazoConnect</p>
+            </div>
+          `;
+          enviarEmail(emailCliente, asunto, cuerpoHtml).catch((err) => {
+            console.error('No se pudo enviar correo de pedido confirmado:', err);
+          });
+        } else if (estatus === 'Enviado') {
+          const asunto = `Tu pedido #${pedidoId} está en camino`;
+          const cuerpoHtml = `
+            <div style="font-family: Arial, sans-serif; color: #111827;">
+              <h2 style="color:#0ea5e9;">¡Tu pedido está en camino!</h2>
+              <p>Hola ${nombreCliente || 'cliente'},</p>
+              <p>El pedido <strong>#${pedidoId}</strong> ya fue enviado y llegará muy pronto.</p>
+              <p>Gracias por confiar en RazoConnect.</p>
+              <p style="margin-top: 1.5rem;">Equipo RazoConnect</p>
+            </div>
+          `;
+          enviarEmail(emailCliente, asunto, cuerpoHtml).catch((err) => {
+            console.error('No se pudo enviar correo de pedido enviado:', err);
+          });
+        }
+      }
+    } catch (emailError) {
+      console.error('Error al notificar al cliente sobre el estatus del pedido:', emailError);
+    }
 
   } catch (error) {
     await client.query('ROLLBACK');
@@ -1107,7 +1295,15 @@ const getAllProductos = async (req, res) => {
 const getCategorias = async (req, res) => {
   try {
     const result = await db.query(
-      'SELECT CategoriaID, Nombre, Descripcion FROM Categorias ORDER BY Nombre'
+      `SELECT 
+        c.CategoriaID,
+        c.Nombre,
+        c.Descripcion,
+        c.ParentCategoriaID,
+        p.Nombre AS ParentNombre
+      FROM Categorias c
+      LEFT JOIN Categorias p ON c.ParentCategoriaID = p.CategoriaID
+      ORDER BY c.Nombre`
     );
 
     res.json({
@@ -1116,7 +1312,9 @@ const getCategorias = async (req, res) => {
         categorias: result.rows.map(row => ({
           categoriaId: row.categoriaid,
           nombre: row.nombre,
-          descripcion: row.descripcion
+          descripcion: row.descripcion,
+          parentCategoriaId: row.parentcategoriaid,
+          parentNombre: row.parentnombre || null
         }))
       }
     });
@@ -1126,6 +1324,273 @@ const getCategorias = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error en el servidor'
+    });
+  }
+};
+
+/**
+ * Crear una nueva categoría
+ * POST /api/admin/categorias
+ */
+const crearCategoria = async (req, res) => {
+  try {
+    const { nombre, descripcion, parentCategoriaId } = req.body;
+
+    if (!nombre || !nombre.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'El nombre de la categoría es requerido'
+      });
+    }
+
+    let parentCategoria = null;
+
+    if (parentCategoriaId !== undefined && parentCategoriaId !== null) {
+      const parentResult = await db.query(
+        'SELECT CategoriaID FROM Categorias WHERE CategoriaID = $1',
+        [parentCategoriaId]
+      );
+
+      if (parentResult.rows.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'La categoría padre especificada no existe'
+        });
+      }
+
+      parentCategoria = parentCategoriaId;
+    }
+
+    const nombreNormalizado = nombre.trim();
+
+    const existente = await db.query(
+      'SELECT CategoriaID FROM Categorias WHERE LOWER(Nombre) = LOWER($1)',
+      [nombreNormalizado]
+    );
+
+    if (existente.rows.length > 0) {
+      return res.status(409).json({
+        success: false,
+        message: 'Ya existe una categoría con ese nombre'
+      });
+    }
+
+    const insertResult = await db.query(
+      `INSERT INTO Categorias (Nombre, Descripcion, ParentCategoriaID)
+       VALUES ($1, $2, $3)
+       RETURNING CategoriaID, Nombre, Descripcion, ParentCategoriaID`,
+      [nombreNormalizado, descripcion?.trim() || null, parentCategoria]
+    );
+
+    const categoria = insertResult.rows[0];
+
+    res.status(201).json({
+      success: true,
+      message: 'Categoría creada exitosamente',
+      data: {
+        categoria: {
+          categoriaId: categoria.categoriaid,
+          nombre: categoria.nombre,
+          descripcion: categoria.descripcion,
+          parentCategoriaId: categoria.parentcategoriaid
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('Error al crear categoría:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al crear la categoría'
+    });
+  }
+};
+
+/**
+ * Actualizar una categoría existente
+ * PUT /api/admin/categorias/:id
+ */
+const actualizarCategoria = async (req, res) => {
+  try {
+    const categoriaId = parseInt(req.params.id, 10);
+    const { nombre, descripcion, parentCategoriaId } = req.body;
+
+    if (Number.isNaN(categoriaId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID de categoría inválido'
+      });
+    }
+
+    if (parentCategoriaId && Number(parentCategoriaId) === categoriaId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Una categoría no puede ser su propia categoría padre'
+      });
+    }
+
+    const categoriaResult = await db.query(
+      'SELECT CategoriaID FROM Categorias WHERE CategoriaID = $1',
+      [categoriaId]
+    );
+
+    if (categoriaResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Categoría no encontrada'
+      });
+    }
+
+    let parentCategoria = null;
+
+    if (parentCategoriaId !== undefined && parentCategoriaId !== null) {
+      const parentResult = await db.query(
+        'SELECT CategoriaID FROM Categorias WHERE CategoriaID = $1',
+        [parentCategoriaId]
+      );
+
+      if (parentResult.rows.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'La categoría padre especificada no existe'
+        });
+      }
+
+      parentCategoria = parentCategoriaId;
+    }
+
+    const nombreNormalizado = nombre?.trim();
+
+    if (nombreNormalizado) {
+      const existeNombre = await db.query(
+        'SELECT CategoriaID FROM Categorias WHERE LOWER(Nombre) = LOWER($1) AND CategoriaID <> $2',
+        [nombreNormalizado, categoriaId]
+      );
+
+      if (existeNombre.rows.length > 0) {
+        return res.status(409).json({
+          success: false,
+          message: 'Ya existe otra categoría con ese nombre'
+        });
+      }
+    }
+
+    const updateResult = await db.query(
+      `UPDATE Categorias
+       SET Nombre = COALESCE($1, Nombre),
+           Descripcion = $2,
+           ParentCategoriaID = $3,
+           FechaActualizacion = NOW()
+       WHERE CategoriaID = $4
+       RETURNING CategoriaID, Nombre, Descripcion, ParentCategoriaID`,
+      [nombreNormalizado || null, descripcion?.trim() || null, parentCategoria, categoriaId]
+    );
+
+    const categoriaActualizada = updateResult.rows[0];
+
+    res.json({
+      success: true,
+      message: 'Categoría actualizada correctamente',
+      data: {
+        categoria: {
+          categoriaId: categoriaActualizada.categoriaid,
+          nombre: categoriaActualizada.nombre,
+          descripcion: categoriaActualizada.descripcion,
+          parentCategoriaId: categoriaActualizada.parentcategoriaid
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('Error al actualizar categoría:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al actualizar la categoría'
+    });
+  }
+};
+
+/**
+ * Eliminar una categoría
+ * DELETE /api/admin/categorias/:id
+ */
+const eliminarCategoria = async (req, res) => {
+  try {
+    const categoriaId = parseInt(req.params.id, 10);
+
+    if (Number.isNaN(categoriaId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID de categoría inválido'
+      });
+    }
+
+    const categoriaResult = await db.query(
+      'SELECT CategoriaID FROM Categorias WHERE CategoriaID = $1',
+      [categoriaId]
+    );
+
+    if (categoriaResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Categoría no encontrada'
+      });
+    }
+
+    // Verificar si la categoría tiene subcategorías
+    const subcategoriasResult = await db.query(
+      'SELECT COUNT(*) AS total FROM Categorias WHERE ParentCategoriaID = $1',
+      [categoriaId]
+    );
+
+    if (parseInt(subcategoriasResult.rows[0].total, 10) > 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'No se puede eliminar la categoría porque tiene subcategorías asociadas'
+      });
+    }
+
+    // Verificar si hay productos asociados a la categoría
+    const productosAsociados = await db.query(
+      'SELECT COUNT(*) AS total FROM Productos WHERE CategoriaID = $1',
+      [categoriaId]
+    );
+
+    if (parseInt(productosAsociados.rows[0].total, 10) > 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'No se puede eliminar la categoría porque existen productos asociados'
+      });
+    }
+
+    // Verificar si hay variantes usando productos de esta categoría
+    const productosEnUso = await db.query(
+      `SELECT COUNT(*) AS total
+       FROM Producto_Variantes pv
+       INNER JOIN Productos p ON pv.ProductoID = p.ProductoID
+       WHERE p.CategoriaID = $1`,
+      [categoriaId]
+    );
+
+    if (parseInt(productosEnUso.rows[0].total, 10) > 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'No se puede eliminar la categoría porque existen productos asociados'
+      });
+    }
+
+    await db.query('DELETE FROM Categorias WHERE CategoriaID = $1', [categoriaId]);
+
+    res.json({
+      success: true,
+      message: 'Categoría eliminada correctamente'
+    });
+
+  } catch (error) {
+    console.error('Error al eliminar categoría:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al eliminar la categoría'
     });
   }
 };
@@ -2447,6 +2912,9 @@ module.exports = {
   ajustarInventario,
   getAllProductos,
   getCategorias,
+  crearCategoria,
+  actualizarCategoria,
+  eliminarCategoria,
   getMedidas,
   crearVariante,
   crearAgente,

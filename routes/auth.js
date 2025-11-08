@@ -40,5 +40,7 @@ router.get('/clientes/verify', authenticate, authController.verifyCliente);
  * @access  Private (requiere token de cliente)
  */
 router.post('/clientes/refresh-token', authenticate, authController.refreshClienteToken);
+router.post('/auth/forgot-password', authController.forgotPassword);
+router.post('/auth/reset-password', authController.resetPassword);
 
 module.exports = router;

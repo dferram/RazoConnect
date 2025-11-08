@@ -34,6 +34,9 @@ router.get('/productos', authenticate, authorizeAdmin, adminController.getAllPro
 router.post('/productos', authenticate, authorizeAdmin, adminController.crearProducto);
 router.post('/variantes', authenticate, authorizeAdmin, adminController.crearVariante);
 router.get('/categorias', authenticate, authorizeAdmin, adminController.getCategorias);
+router.post('/categorias', authenticate, authorizeAdmin, adminController.crearCategoria);
+router.put('/categorias/:id', authenticate, authorizeAdmin, adminController.actualizarCategoria);
+router.delete('/categorias/:id', authenticate, authorizeAdmin, adminController.eliminarCategoria);
 router.get('/medidas', authenticate, authorizeAdmin, adminController.getMedidas);
 
 /**

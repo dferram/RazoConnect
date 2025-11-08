@@ -1,4 +1,5 @@
 const db = require('../db');
+const { enviarEmail } = require('../services/emailService');
 
 /**
  * Crear un nuevo pedido desde el carrito
@@ -222,8 +223,7 @@ const crearPedido = async (req, res) => {
     // Confirmar transacción
     await client.query('COMMIT');
 
-    // Respuesta exitosa
-    res.status(201).json({
+    const respuesta = {
       success: true,
       message: 'Pedido creado exitosamente',
       data: {
@@ -236,7 +236,27 @@ const crearPedido = async (req, res) => {
           comision: comision
         }
       }
-    });
+    };
+
+    res.status(201).json(respuesta);
+
+    const emailCliente = req.user?.email;
+    if (emailCliente) {
+      const asunto = `Tu pedido RazoConnect ha sido recibido (#${pedido.pedidoid})`;
+      const cuerpoHtml = `
+        <div style="font-family: Arial, sans-serif; color: #1f2937;">
+          <h2 style="color:#f97316;">¡Gracias por tu compra!</h2>
+          <p>Hemos recibido tu pedido <strong>#${pedido.pedidoid}</strong> y ya estamos procesándolo.</p>
+          <p>Monto total: <strong>$${parseFloat(pedido.montototal).toFixed(2)}</strong></p>
+          <p>Te avisaremos cuando esté confirmado y en camino.</p>
+          <p style="margin-top: 1.5rem;">Equipo RazoConnect</p>
+        </div>
+      `;
+
+      enviarEmail(emailCliente, asunto, cuerpoHtml).catch((err) => {
+        console.error('No se pudo enviar correo de recibo de pedido:', err);
+      });
+    }
 
   } catch (error) {
     // Revertir transacción en caso de error

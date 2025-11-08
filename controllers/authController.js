@@ -1,6 +1,8 @@
 const bcrypt = require('bcrypt');
 const db = require('../db');
 const { generateToken } = require('../utils/jwtHelper');
+const crypto = require('crypto');
+const { enviarEmail } = require('../services/emailService');
 const { 
   validateClienteRegistro, 
   validateAgenteRegistro, 
@@ -408,10 +410,147 @@ const refreshClienteToken = async (req, res) => {
   }
 };
 
+const forgotPassword = async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({
+      success: false,
+      message: 'El email es requerido'
+    });
+  }
+
+  const genericResponse = {
+    success: true,
+    message: 'Si el email está registrado, recibirás instrucciones para restablecer tu contraseña.'
+  };
+
+  try {
+    const clienteResult = await db.query(
+      'SELECT ClienteID, Nombre FROM Clientes WHERE Email = $1',
+      [email]
+    );
+
+    const agenteResult = clienteResult.rows.length === 0
+      ? await db.query('SELECT AgenteID, Nombre FROM AgentesDeVentas WHERE Email = $1', [email])
+      : { rows: [] };
+
+    if (clienteResult.rows.length === 0 && agenteResult.rows.length === 0) {
+      return res.status(200).json(genericResponse);
+    }
+
+    const token = crypto.randomBytes(32).toString('hex');
+    const expiration = new Date(Date.now() + 60 * 60 * 1000);
+
+    const clienteId = clienteResult.rows[0]?.clienteid || null;
+    const agenteId = agenteResult.rows[0]?.agenteid || null;
+
+    await db.query(
+      `INSERT INTO PasswordResetTokens (Token, ClienteID, AgenteID, ExpiraEn)
+       VALUES ($1, $2, $3, $4)`,
+      [token, clienteId, agenteId, expiration]
+    );
+
+    const resetLink = `${process.env.FRONTEND_BASE_URL || 'https://tusitio.com'}/reset-password.html?token=${token}`;
+    const nombre = clienteResult.rows[0]?.nombre || agenteResult.rows[0]?.nombre || 'cliente';
+    const asunto = 'Instrucciones para restablecer tu contraseña';
+    const cuerpoHtml = `
+      <div style="font-family: Arial, sans-serif; color: #1f2937;">
+        <h2 style="color:#0ea5e9;">Hola ${nombre}</h2>
+        <p>Recibimos una solicitud para restablecer tu contraseña.</p>
+        <p>Puedes continuar haciendo clic en el siguiente enlace:</p>
+        <p><a href="${resetLink}" style="color:#f97316;">Restablecer contraseña</a></p>
+        <p>El enlace expira en 1 hora. Si no solicitaste el cambio, ignora este correo.</p>
+        <p style="margin-top: 1.5rem;">Equipo RazoConnect</p>
+      </div>
+    `;
+
+    enviarEmail(email, asunto, cuerpoHtml).catch((err) => {
+      console.error('Error enviando correo de reseteo:', err);
+    });
+
+    return res.status(200).json(genericResponse);
+
+  } catch (error) {
+    console.error('Error en forgot-password:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al iniciar proceso de recuperación'
+    });
+  }
+};
+
+const resetPassword = async (req, res) => {
+  const { token, nuevaPassword } = req.body;
+
+  if (!token || !nuevaPassword) {
+    return res.status(400).json({
+      success: false,
+      message: 'Token y nuevaPassword son requeridos'
+    });
+  }
+
+  try {
+    const tokenResult = await db.query(
+      `SELECT TokenID, ClienteID, AgenteID, ExpiraEn
+       FROM PasswordResetTokens
+       WHERE Token = $1`,
+      [token]
+    );
+
+    if (tokenResult.rows.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Token inválido o expirado'
+      });
+    }
+
+    const tokenRow = tokenResult.rows[0];
+    if (new Date(tokenRow.expiraen) <= new Date()) {
+      await db.query('DELETE FROM PasswordResetTokens WHERE TokenID = $1', [tokenRow.tokenid]);
+      return res.status(400).json({
+        success: false,
+        message: 'Token inválido o expirado'
+      });
+    }
+
+    const saltRounds = parseInt(process.env.BCRYPT_ROUNDS, 10) || 10;
+    const hashedPassword = await bcrypt.hash(nuevaPassword, saltRounds);
+
+    if (tokenRow.clienteid) {
+      await db.query(
+        'UPDATE Clientes SET PasswordHash = $1 WHERE ClienteID = $2',
+        [hashedPassword, tokenRow.clienteid]
+      );
+    } else if (tokenRow.agenteid) {
+      await db.query(
+        'UPDATE AgentesDeVentas SET PasswordHash = $1 WHERE AgenteID = $2',
+        [hashedPassword, tokenRow.agenteid]
+      );
+    }
+
+    await db.query('DELETE FROM PasswordResetTokens WHERE TokenID = $1', [tokenRow.tokenid]);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Contraseña actualizada correctamente'
+    });
+
+  } catch (error) {
+    console.error('Error en reset-password:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al restablecer la contraseña'
+    });
+  }
+};
+
 module.exports = {
   registroCliente,
   registroAgente,
   login,
   verifyCliente,
-  refreshClienteToken
+  refreshClienteToken,
+  forgotPassword,
+  resetPassword
 };

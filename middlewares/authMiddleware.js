@@ -49,11 +49,19 @@ const authorize = (roles = []) => {
       });
     }
 
-    if (roles.length && !roles.includes(req.user.rol)) {
-      return res.status(403).json({
-        success: false,
-        message: 'No tienes permisos para acceder a este recurso'
-      });
+    if (roles.length) {
+      const userRoles = Array.isArray(req.user.roles) && req.user.roles.length
+        ? req.user.roles
+        : [req.user.rol].filter(Boolean);
+
+      const hasRole = userRoles.some(role => roles.includes(role));
+
+      if (!hasRole) {
+        return res.status(403).json({
+          success: false,
+          message: 'No tienes permisos para acceder a este recurso'
+        });
+      }
     }
 
     next();
@@ -80,8 +88,14 @@ const authorizeAdmin = (req, res, next) => {
     });
   }
 
+  const userRoles = Array.isArray(req.user.roles) && req.user.roles.length
+    ? req.user.roles
+    : [req.user.rol].filter(Boolean);
+
   // Verificar que tenga un rol de admin válido
-  if (!['admin', 'superadmin'].includes(req.user.rol)) {
+  const hasAdminRole = userRoles.some(role => ['admin', 'superadmin'].includes(role));
+
+  if (!hasAdminRole) {
     return res.status(403).json({
       success: false,
       message: 'Rol de administrador inválido'
