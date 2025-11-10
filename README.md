@@ -1,652 +1,123 @@
-# RazoConnect - Sistema E-Commerce
+# RazoConnect
 
-Sistema de e-commerce desarrollado con Node.js, Express y PostgreSQL.
+RazoConnect es una plataforma de e-commerce orientada a la venta al mayoreo de cajas de fashion. Está diseñada para cubrir los flujos comerciales típicos de un negocio B2B/B2C mayorista: catálogo por paquetes, gestión de inventario con auditoría, procesamiento de pedidos, panel administrativo completo y un sistema de agentes con comisiones.
 
-## 🚀 Características
+Este README ofrece una descripción del proyecto, su arquitectura y las funcionalidades principales. No es un manual de instalación ni un tutorial.
 
-- API RESTful con Express
-- Base de datos PostgreSQL
-- Autenticación con JWT (clientes y administradores)
-- Encriptación de contraseñas con Bcrypt
-- CORS habilitado
-- Reportes administrativos de rentabilidad, valuación de inventario y aging de backorders
-- Panel de administración completo (pedidos, productos, inventario, agentes, comisiones, clientes, reportes)
+## Propósito y enfoque
+- Proveer una API RESTful y una interfaz administrativa que permitan gestionar catálogo, stock, órdenes y comisiones de agentes.
+- Facilitar operaciones mayoristas por paquetes (piezas por paquete, precio por paquete, control de stock en unidades de paquete).
+- Mantener trazabilidad y auditoría de cambios de inventario y operaciones críticas mediante transacciones atómicas y logs.
 
-## 📋 Requisitos Previos
+## Características principales
+- API RESTful construida con Node.js y Express.
+- Persistencia con PostgreSQL (modelo relacional).
+- Autenticación basada en JWT con roles diferenciados (clientes, agentes, administradores).
+- Encriptación segura de contraseñas con bcrypt.
+- Gestión completa de inventario con registro de movimientos (Log_Inventario).
+- Panel administrativo con estadísticas en tiempo real, gestión de pedidos, productos, agentes y comisiones.
+- Sistemas de validación y reglas de negocio (unicidad de SKU, códigos de agente, stock no negativo).
+- Soporte para backorders y recepción parcial/total de ordenes de compra.
+- Endpoints orientados a auditoría y operaciones atómicas (BEGIN/COMMIT/ROLLBACK).
 
-- Node.js (v14 o superior)
-- PostgreSQL (v12 o superior)
-- npm o yarn
+## Principales dominios y flujos de negocio
+- Usuarios
+  - Clientes: navegación de catálogo, carrito y proceso de pedido.
+  - Agentes: registro de ventas que generan comisiones.
+  - Administradores: control y operación del sistema (confirmar pedidos, ajustar inventario, pagar comisiones).
+- Catálogo y productos
+  - Productos con SKU, piezas por paquete, costo unitario, precio por paquete y stock.
+  - Cálculo automático de margen y ganancia a nivel de paquete.
+- Pedidos
+  - Estados: Pendiente, Confirmado, Enviado, Entregado, Cancelado.
+  - Confirmación de pedido: verificación de stock, decremento de inventario y registro en log en una transacción atómica.
+- Inventario
+  - Ajustes con motivo y tipo (Entrada/Salida), prevención de stock negativo y registro en Log_Inventario.
+  - Recepción de órdenes de compra para cubrir backorders.
+- Comisiones y agentes
+  - Registro de agentes con código único, métricas de ventas y comisiones acumuladas.
+  - Flujo para marcar comisiones como pagadas y evitar pagos duplicados.
+- Auditoría
+  - Log de movimientos de inventario con ProductoID, TipoMovimiento, Cantidad, Motivo, UsuarioID y timestamp.
 
-## 🔧 Instalación
+## Endpoints (resumen de alto nivel)
+- Salud y prueba
+  - GET /api — bienvenida
+  - GET /api/health — estado del servidor y BD
+- Autenticación
+  - POST /api/registro/cliente — registrar cliente
+  - POST /api/registro/agente — registrar agente
+  - POST /api/login — login (clientes/agentes/admins, con flujo que detecta rol)
+- Administración (protegido, JWT admin)
+  - GET /api/admin/dashboard-stats — estadísticas del dashboard
+  - GET /api/admin/pedidos — listar pedidos
+  - PUT /api/admin/pedidos/:id — cambiar estatus (incluye lógica de confirmación)
+  - POST /api/admin/productos — crear producto
+  - GET /api/admin/productos — listar productos
+  - POST /api/admin/inventario/ajuste — ajustar stock con log
+  - GET /api/admin/agentes — listar agentes
+  - POST /api/admin/agentes — crear agente
+  - GET /api/admin/comisiones — listar comisiones
+  - PUT /api/admin/comisiones/:id/pagar — marcar comisión como pagada
 
-1. **Clonar el repositorio**
-   ```bash
-   git clone <url-del-repositorio>
-   cd "Proyecto Pedidos"
-   ```
+(El proyecto contiene más endpoints y variantes; aquí se listan los puntos clave representativos.)
 
-2. **Instalar dependencias**
-   ```bash
-   npm install
-   ```
+## Estructura conceptual del código
+- index.js — punto de entrada del servidor y configuración de middlewares principales.
+- db.js — conexión y utilidades de PostgreSQL.
+- routes/ — definiciones de rutas por dominio (auth, admin, productos, carrito, direcciones, pedidos).
+- controllers/ — implementaciones de la lógica por dominio (authController, adminController, productosController, etc.).
+- middlewares/ — middlewares de autenticación y autorización (JWT + authorizeAdmin).
+- public/ — páginas estáticas y recursos para el frontend (panel admin y vistas públicas).
+- BD V01.sql — script con el esquema inicial y datos de soporte (tablas, índices, etc.).
 
-3. **Configurar variables de entorno**
-   - Copiar el archivo `.env.example` a `.env`
-   - Editar `.env` con tus credenciales de base de datos
+## Reglas críticas y garantías
+- Operaciones críticas (confirmar pedidos, ajustes de inventario) se ejecutan dentro de transacciones atómicas: se revierte todo si alguna parte falla.
+- Validaciones de negocio en backend: unicidad (SKU/email/código de agente), stock no negativo, estados válidos y permisos por rol.
+- Prevención de condiciones de carrera en la manipulación de stock (control de concurrencia a nivel de BD/restricciones según implementación).
 
-4. **Crear la base de datos**
-   ```sql
-   CREATE DATABASE razoconnect;
-   ```
+## Seguridad
+- Contraseñas hasheadas con bcrypt (configurable rounds).
+- JWT para autenticación con tokens separados por rol para evitar confusiones entre sesión cliente y admin.
+- Variables sensibles gestionadas fuera del código fuente (por ejemplo: .env).
+- CORS configurado según necesidades del frontend.
+- Registro de quién realizó cambios relevantes (UserID) en Log_Inventario para auditoría.
 
-5. **Ejecutar el script de base de datos**
-   - Ejecutar el archivo `BD V01.sql` en PostgreSQL
+## Dashboard y experiencia administrativa
+El panel de administración está diseñado para ofrecer:
+- Estadísticas en tiempo real (pedidos totales, ingresos, clientes activos, agentes, productos con stock bajo).
+- Gestión granular de pedidos con validaciones y modales para cambios de estado.
+- Gestión completa del catálogo (creación con cálculo de margen y SKU único).
+- Gestión de inventario con logs y motivos de ajuste.
+- Gestión de agentes y flujo de pago de comisiones con trazabilidad.
 
-## 🚀 Ejecución
+## Estado del proyecto y prioridades
+- Estado: Implementación completa de módulos principales (autenticación, catálogo, carrito, pedidos, inventario, agentes y comisiones), con panel administrativo funcional.
+- Prioridades sugeridas:
+  - Generación de reportes en formatos (PDF/Excel).
+  - Integración de notificaciones por email.
+  - Dashboard específico para agentes.
+  - Tracking de envíos y estados logísticos.
+  - Tests unitarios y de integración para las reglas críticas.
+  - Preparación para despliegue en entornos productivos.
 
-### Modo Desarrollo
-```bash
-npm run dev
-```
+## Tecnologías y dependencias principales
+- Node.js, Express
+- PostgreSQL, módulo pg
+- bcrypt (hashing de contraseñas)
+- jsonwebtoken (gestión de JWT)
+- cors, dotenv
+- Frontend estático en HTML/CSS/JS para paneles y vistas públicas
 
-### Modo Producción
-```bash
-npm start
-```
+## Audiencia objetivo
+- Equipos de operaciones y logística de comercios mayoristas.
+- Administradores que requieren control de inventario y trazabilidad.
+- Agentes comerciales que requieren registro de ventas y cobro de comisiones.
 
-El servidor estará disponible en: `http://localhost:3000`
-
-### 🎯 Inicio Rápido para Administrador
-
-1. **Crear administrador inicial:**
-   ```bash
-   node insert-admin.js
-   ```
-   Esto creará un administrador con:
-   - Email: `admin@razoconnect.com`
-   - Password: `Admin123!`
-
-2. **Acceder al panel:**
-   - Ir a: `http://localhost:3000/login.html`
-   - Ingresar credenciales de admin
-   - El sistema detectará automáticamente que eres admin
-   - Redirigirá a: `http://localhost:3000/admin-dashboard.html`
-
-3. **Explorar funcionalidades:**
-   - Dashboard con estadísticas
-   - Gestión de pedidos
-   - Crear productos
-   - Ajustar inventario
-   - Gestionar agentes
-   - Pagar comisiones
-
-## 📚 Endpoints Disponibles
-
-### Endpoints de Prueba
-
-- **GET** `/api` - Endpoint de bienvenida
-- **GET** `/api/health` - Verificar estado del servidor y base de datos
-
-### Endpoints de Autenticación
-
-- **POST** `/api/registro/cliente` - Registrar nuevo cliente
-  ```json
-  {
-    "Nombre": "Juan",
-    "Apellido": "Pérez",
-    "Email": "juan@example.com",
-    "Password": "password123",
-    "Telefono": "5551234567"
-  }
-  ```
-
-- **POST** `/api/registro/agente` - Registrar nuevo agente de ventas
-  ```json
-  {
-    "Nombre": "María",
-    "Apellido": "González",
-    "Email": "maria@razoconnect.com",
-    "Password": "agente123",
-    "CodigoAgente": "AG001"
-  }
-  ```
-
-- **POST** `/api/login` - Iniciar sesión (cliente o agente)
-  ```json
-  {
-    "Email": "juan@example.com",
-    "Password": "password123"
-  }
-  ```
-
-**📖 Ver documentación completa en:** [API_AUTH_DOCS.md](./API_AUTH_DOCS.md)
-
-### Endpoints de Inventario y Compras (Admin)
-
-- **POST** `/api/admin/inventario/ajuste` — Ajustar stock con registro en log
-- **GET** `/api/admin/ordenes-compra` — Listar órdenes de compra
-- **POST** `/api/admin/ordenes-compra` — Crear orden de compra automática o manual
-- **POST** `/api/admin/ordenes-compra/recibir` — Registrar recepción parcial o total de inventario
-
-## 📁 Estructura del Proyecto
-
-```
-RazoConnect/
-├── index.js                    # Archivo principal del servidor
-├── db.js                       # Configuración de PostgreSQL
-├── package.json                # Dependencias del proyecto
-├── .env                        # Variables de entorno (no versionar)
-├── .env.example                # Ejemplo de variables de entorno
-├── .gitignore                  # Archivos ignorados por git
-├── README.md                   # Documentación completa
-├── insert-admin.js             # Script para crear admin inicial
-│
-├── routes/
-│   ├── auth.js                 # Rutas de autenticación
-│   ├── admin.js                # Rutas del panel admin
-│   ├── productos.js            # Rutas de productos
-│   ├── carrito.js              # Rutas del carrito
-│   ├── direcciones.js          # Rutas de direcciones
-│   └── pedidos.js              # Rutas de pedidos
-│
-├── controllers/
-│   ├── authController.js       # Controlador de autenticación
-│   ├── adminController.js      # Controlador admin (16 funciones)
-│   ├── productosController.js  # Controlador de productos
-│   ├── carritoController.js    # Controlador del carrito
-│   ├── direccionesController.js# Controlador de direcciones
-│   └── pedidosController.js    # Controlador de pedidos
-│
-├── middlewares/
-│   └── authMiddleware.js       # JWT + authorize admin
-│
-├── public/                     # Archivos estáticos
-│   ├── index.html              # Landing page
-│   ├── login.html              # Login unificado (cliente/admin)
-│   ├── registro.html           # Registro de clientes
-│   ├── catalogo.html           # Catálogo de productos para clientes
-│   ├── carrito.html            # Carrito de compras
-│   ├── checkout.html           # Proceso de pago (pendiente)
-│   ├── dashboard.html          # Panel del cliente
-│   ├── pedido-confirmado.html  # Confirmación de pedido
-│   │
-│   ├── admin-dashboard.html        # Dashboard admin con métricas y widget de valuación
-│   ├── admin-pedidos.html          # Gestión de pedidos y modal de detalle
-│   ├── admin-clientes.html         # Gestión de clientes (activar/desactivar)
-│   ├── admin-cliente-detalle.html  # Consulta detallada de clientes
-│   ├── admin-agentes.html          # Gestión de agentes
-│   ├── admin-agente-detalle.html   # Información detallada de agentes
-│   ├── admin-agregar-producto.html # Alta de productos y variantes
-│   ├── admin-inventario.html       # Kardex + ajustes de stock
-│   ├── admin-comisiones.html       # Pago de comisiones
-│   ├── admin-proveedores.html      # Gestión de proveedores
-│   ├── admin-crear-oc.html         # Creación de órdenes de compra
-│   ├── admin-recibir-inventario.html # Recepción de inventario (backorders)
-│   ├── admin-reportes.html         # Reportes de rentabilidad y aging de backorders
-│   │
-│   ├── css/
-│   │   ├── styles.css          # Estilos principales
-│   │   └── admin.css           # Estilos del panel admin (componentes, empty states, tarjetas)
-│   │
-│   └── js/
-│       ├── api.js              # Funciones compartidas de API
-│       └── admin-reportes.js   # Lógica de reportes administrativos
-│
-└── BD V01.sql                  # Script de base de datos
-```
-
-## 🔐 Seguridad
-
-- Las contraseñas se encriptan con Bcrypt
-- Autenticación mediante JWT
-- Variables sensibles en archivo `.env`
-- CORS configurado
-
-## 🛠️ Tecnologías
-
-- **Node.js** - Entorno de ejecución
-- **Express** - Framework web
-- **PostgreSQL** - Base de datos
-- **pg** - Cliente PostgreSQL para Node.js
-- **bcrypt** - Encriptación de contraseñas
-- **jsonwebtoken** - Autenticación JWT
-- **cors** - Manejo de CORS
-- **dotenv** - Variables de entorno
-
-## 🆕 Nuevas Funcionalidades Implementadas
-
-### 🔐 Login Unificado (Cliente y Administrador)
-**URL:** `http://localhost:3000/login.html`
-
-El sistema ahora cuenta con un **login inteligente** que detecta automáticamente si el usuario es un cliente o un administrador:
-
-**Flujo de Autenticación:**
-1. Usuario ingresa email y contraseña
-2. Sistema intenta login como **Cliente**
-   - ✅ Si es exitoso → Redirige a `/catalogo.html`
-3. Si falla, intenta login como **Administrador**
-   - ✅ Si es exitoso → Redirige a `/admin-dashboard.html`
-4. Si ambos fallan → Muestra "Credenciales inválidas"
-
-**Credenciales de Administrador:**
-```
-Email: admin@razoconnect.com
-Password: Admin123!
-```
-
-**Tokens Separados:**
-- Clientes: `razoconnect_token` y `razoconnect_user`
-- Admins: `razoconnect_admin_token` y `razoconnect_admin`
+## Licencia y autoría
+- Licencia: ISC
+- Proyecto desarrollado por Fernando Ramírez
 
 ---
 
-### 📊 Panel de Administrador Completo
-
-#### 1. Dashboard (`/admin-dashboard.html`)
-**Endpoint:** `GET /api/admin/dashboard-stats`
-
-**Estadísticas en Tiempo Real:**
-- 📦 Total de pedidos
-- 💰 Ingresos totales
-- 👥 Clientes activos
-- 💼 Agentes activos
-- ⚠️ Pedidos pendientes
-- 💵 Comisiones pendientes
-- 📉 Productos con stock bajo (≤5)
-
-**Características:**
-- Cards con iconos y colores
-- Actualización automática
-- Alerta si hay productos con stock bajo
-- Tabla de pedidos recientes
-
----
-
-#### 2. Gestión de Pedidos (`/admin-pedidos.html`)
-**Endpoints:**
-- `GET /api/admin/pedidos` - Listar todos los pedidos
-- `PUT /api/admin/pedidos/:id` - Cambiar estatus
-
-**Funcionalidades:**
-- ✅ Lista completa de pedidos con información del cliente
-- ✅ Filtro por estatus (Pendiente, Confirmado, Enviado, Entregado, Cancelado)
-- ✅ Modal para cambiar estatus
-- ✅ Badges de colores según estado
-- ✅ Información de agente (si aplica)
-
-**⚠️ Lógica Crítica al Confirmar Pedido:**
-Cuando se cambia un pedido a **"Confirmado"**, el sistema automáticamente:
-1. Verifica stock disponible de cada producto
-2. Reduce `Stock` en tabla `Productos`
-3. Crea registro en `Log_Inventario`:
-   - TipoMovimiento: `'Salida'`
-   - Cantidad: Paquetes del pedido
-   - Motivo: `"Pedido #X confirmado"`
-   - UsuarioID: AdminID del usuario que confirmó
-4. Todo en una **transacción atómica** (ROLLBACK si falla)
-
-**Validaciones:**
-- No permite confirmar si no hay stock suficiente
-- No permite confirmar dos veces el mismo pedido
-- Muestra mensaje de error específico con stock actual
-
----
-
-#### 3. Gestión de Catálogo e Inventario
-
-##### A) Agregar Producto (`/admin-agregar-producto.html`)
-**Endpoint:** `POST /api/admin/productos`
-
-**Formulario Completo:**
-- SKU (único)
-- Nombre del producto
-- Descripción
-- Costo unitario (MXN)
-- Piezas por paquete
-- Precio por paquete (MXN)
-- Stock inicial
-- Categoría (selector dinámico)
-- URL de imagen
-
-**Características Especiales:**
-- ✅ **Cálculo automático de margen de ganancia:**
-  - Costo total = Costo unitario × Piezas por paquete
-  - Ganancia = Precio de paquete - Costo total
-  - Margen % = (Ganancia / Precio) × 100
-  - Actualización en tiempo real
-- ✅ Validación de SKU único
-- ✅ Registro automático en `Log_Inventario` (stock inicial)
-
-**Ejemplo de Registro en Log:**
-```sql
-INSERT INTO Log_Inventario (ProductoID, TipoMovimiento, Cantidad, Motivo, UsuarioID)
-VALUES (1, 'Entrada', 100, 'Stock inicial del producto', 1)
-```
-
-##### B) Gestión de Inventario (`/admin-inventario.html`)
-**Endpoints:**
-- `GET /api/admin/productos` - Listar productos
-- `POST /api/admin/inventario/ajuste` - Ajustar stock
-
-**Tabla de Productos:**
-- SKU
-- Nombre y categoría
-- Precio por paquete
-- Piezas por paquete
-- **Stock actual** (destacado en naranja)
-- Estado con badges:
-  - 🟢 Verde: Stock normal
-  - 🟡 Amarillo: Stock bajo (≤5)
-  - 🔴 Rojo: Sin stock (0)
-
-**Modal de Ajuste de Inventario:**
-
-Campos:
-- Tipo de ajuste: **Entrada** ➕ o **Salida** ➖
-- Cantidad (paquetes)
-- Motivo del ajuste:
-  - Recepción de Almacén
-  - Ajuste de Inventario
-  - Devolución de Cliente
-  - Producto Dañado
-  - Merma
-  - Otro (campo libre)
-
-**Ejemplo de Uso:**
-```json
-{
-  "productoId": 5,
-  "cantidadCambio": 50,  // Positivo = Entrada, Negativo = Salida
-  "motivo": "Recepción de Almacén"
-}
-```
-
-**Proceso de Ajuste:**
-1. Valida que el producto existe
-2. Calcula nuevo stock
-3. Valida que no sea negativo
-4. Actualiza `Productos.Stock`
-5. Determina `TipoMovimiento`:
-   - `cantidadCambio > 0` → `'Entrada'`
-   - `cantidadCambio < 0` → `'Salida'`
-6. Crea registro en `Log_Inventario` con AdminID
-7. Todo en transacción atómica
-
-**Búsqueda:**
-- Filtro en tiempo real por nombre o SKU
-- Sin necesidad de recargar la página
-
----
-
-#### 4. Gestión de Agentes y Comisiones
-
-##### A) Gestión de Agentes (`/admin-agentes.html`)
-**Endpoints:**
-- `GET /api/admin/agentes` - Listar agentes con estadísticas
-- `POST /api/admin/agentes` - Crear nuevo agente
-- `PUT /api/admin/agentes/:id/desactivar` - Desactivar agente (soft delete)
-
-**Formulario de Creación:**
-```json
-{
-  "nombre": "Juan",
-  "apellido": "Pérez",
-  "email": "juan@ejemplo.com",
-  "password": "password123",
-  "codigoAgente": "AG001",
-  "telefono": "5551234567"
-}
-```
-
-**Características:**
-- ✅ Hash bcrypt automático de contraseña (10 rounds)
-- ✅ Validación de email único
-- ✅ Validación de código de agente único
-- ✅ Todos los campos obligatorios excepto teléfono
-
-**Tabla de Agentes:**
-Columnas:
-- Nombre completo
-- Email
-- Código de agente
-- **Total de ventas** (número de pedidos)
-- **Monto total vendido**
-- **Comisiones acumuladas**
-- Estado (Activo/Inactivo)
-- Acciones:
-  - Botón "Ver Detalle"
-  - Botón "Desactivar" (soft delete)
-
-**Soft Delete:**
-- Cambia `Activo = FALSE`
-- No elimina físicamente el registro
-- Preserva historial de ventas y comisiones
-- Requiere confirmación del admin
-
-##### B) Detalle de Agente (`/admin-agente-detalle.html?id=X`)
-**Endpoint:** `GET /api/admin/agentes/:id`
-
-**Información Mostrada:**
-
-1. **Perfil del Agente:**
-   - Nombre completo
-   - Email
-   - Código de agente
-   - Teléfono
-   - Estado (badge)
-   - Fecha de creación
-
-2. **Estadísticas:**
-   - Total de ventas realizadas
-   - Comisiones totales acumuladas
-
-3. **Tabla de Ventas:**
-   - #Pedido
-   - Cliente que compró
-   - Fecha de la venta
-   - Monto total
-   - Estado del pedido
-   - Ordenada por fecha DESC
-
-4. **Tabla de Comisiones:**
-   - #Comisión
-   - #Pedido relacionado
-   - Monto de comisión
-   - Estado (Pendiente/Pagada)
-   - Fecha de generación
-   - Fecha de pago (si aplica)
-   - Ordenada por fecha DESC
-
-**Navegación:**
-- Botón "← Volver a Agentes" en el header
-- Links a páginas relacionadas
-
-##### C) Gestión de Comisiones (`/admin-comisiones.html`)
-**Endpoints:**
-- `GET /api/admin/comisiones?estatus=Pendiente` - Listar comisiones (con filtro)
-- `PUT /api/admin/comisiones/:id/pagar` - Marcar comisión como pagada
-
-**Estadísticas en Cards:**
-- ⏳ Comisiones pendientes (cantidad)
-- 💰 Monto total por pagar
-- ✓ Comisiones pagadas (cantidad)
-- 💵 Monto total pagado
-
-**Filtro por Estatus:**
-- Todos
-- Pendiente (default)
-- Pagada
-
-**Tabla de Comisiones:**
-Columnas:
-- #Comisión
-- Agente (nombre completo)
-- Código de agente
-- #Pedido relacionado
-- Monto de la venta
-- **Monto de la comisión** (verde, destacado)
-- Estado (badge amarillo/verde)
-- Fecha de generación
-- Fecha de pago
-
-**Acción de Pagar:**
-1. Botón "Pagar" (verde) para comisiones pendientes
-2. Confirmación: `"¿Pagar $1,000 a Juan Pérez?"`
-3. Sistema verifica:
-   - Comisión existe ✓
-   - Estado es `'Pendiente'` ✓
-4. Actualiza:
-   ```sql
-   UPDATE Comisiones_Agentes 
-   SET Estatus = 'Pagada', 
-       FechaPago = CURRENT_TIMESTAMP
-   WHERE ComisionID = X
-   ```
-5. No permite pagar dos veces la misma comisión
-6. Actualiza estadísticas automáticamente
-
----
-
-### 📁 Estructura de Archivos del Panel Admin
-
-```
-public/
-├── admin-login.html              # Login exclusivo admin (opcional ahora)
-├── admin-dashboard.html          # Dashboard principal con stats
-├── admin-pedidos.html            # Gestión de pedidos
-├── admin-agregar-producto.html   # Formulario crear producto
-├── admin-inventario.html         # Gestión de inventario
-├── admin-agentes.html            # Gestión de agentes
-├── admin-agente-detalle.html     # Detalle individual de agente
-├── admin-comisiones.html         # Gestión de comisiones
-└── css/
-    └── admin.css                 # Estilos del panel admin
-
-controllers/
-└── adminController.js            # 16 funciones de admin
-
-routes/
-└── admin.js                      # Todas las rutas protegidas
-```
-
----
-
-### 🔒 Seguridad del Panel Admin
-
-**Autenticación:**
-- JWT separado para admins
-- Middleware `authenticate` verifica token válido
-- Middleware `authorizeAdmin` verifica `tipo === 'admin'`
-- Tokens almacenados en `localStorage`
-
-**Validaciones Backend:**
-- Campos requeridos
-- Unicidad (SKU, email, código agente)
-- Stock no negativo
-- Estados válidos
-- Permisos de rol
-
-**Transacciones Atómicas:**
-- Confirmar pedidos (reduce stock)
-- Ajustar inventario
-- Todo con BEGIN/COMMIT/ROLLBACK
-
-**Auditoría:**
-- Tabla `Log_Inventario` registra:
-  - ProductoID
-  - TipoMovimiento (Entrada/Salida)
-  - Cantidad
-  - Motivo
-  - **UsuarioID** (AdminID que hizo el cambio)
-  - FechaMovimiento (automático)
-
----
-
-### 🎨 Diseño del Panel Admin
-
-**Colores de la Marca:**
-- Primario: `#FF6B35` (Naranja Razo)
-- Secundario: `#00D9C0` (Turquesa)
-- Fondo: `#F8F9FA`
-- Texto: `#2D3748`
-
-**Componentes:**
-- Sidebar fijo con navegación
-- Cards con iconos y colores
-- Badges de estado
-- Modales para acciones
-- Tablas responsivas
-- Spinners de carga
-- Toast notifications
-
-**Estados Visuales:**
-```css
-.admin-badge.success  /* Verde - Activo, Pagado, Normal */
-.admin-badge.warning  /* Amarillo - Pendiente, Stock Bajo */
-.admin-badge.danger   /* Rojo - Inactivo, Sin Stock */
-.admin-badge.info     /* Azul - Información general */
-```
-
----
-
-### 🚀 URLs del Sistema Completo
-
-#### Público
-- `http://localhost:3000/` - Landing page
-- `http://localhost:3000/login.html` - Login unificado (clientes y admins)
-- `http://localhost:3000/registro.html` - Registro de clientes
-
-#### Cliente (Requiere JWT Cliente)
-- `http://localhost:3000/catalogo.html` - Catálogo de productos
-- `http://localhost:3000/carrito.html` - Carrito de compras
-- `http://localhost:3000/checkout.html` - Proceso de pago
-- `http://localhost:3000/dashboard.html` - Dashboard del cliente
-
-#### Administrador (Requiere JWT Admin)
-- `http://localhost:3000/admin-dashboard.html` - Dashboard principal
-- `http://localhost:3000/admin-pedidos.html` - Gestión de pedidos
-- `http://localhost:3000/admin-agregar-producto.html` - Crear producto
-- `http://localhost:3000/admin-inventario.html` - Gestión de inventario
-- `http://localhost:3000/admin-agentes.html` - Gestión de agentes
-- `http://localhost:3000/admin-agente-detalle.html?id=X` - Detalle de agente
-- `http://localhost:3000/admin-comisiones.html` - Gestión de comisiones
-
----
-
-## 📝 Tareas Completadas
-
-1. ✅ Crear estructura de carpetas para routes, controllers, models
-2. ✅ Implementar autenticación de usuarios (registro y login)
-3. ✅ Crear endpoints para gestión de productos
-4. ✅ Implementar gestión del carrito de compras
-5. ✅ Implementar gestión de pedidos
-6. ✅ Crear endpoints para direcciones de envío
-7. ✅ Implementar panel de agentes (comisiones)
-8. ✅ **Panel de administrador completo**
-9. ✅ **Dashboard con estadísticas en tiempo real**
-10. ✅ **Gestión de inventario con auditoría**
-11. ✅ **Sistema de comisiones para agentes**
-12. ✅ **Login unificado inteligente**
-
-## 🔮 Próximos Pasos Sugeridos
-
-1. Reportes en PDF/Excel
-2. Notificaciones por email
-3. Gestión de clientes desde admin
-4. Dashboard de agente (ver sus propias ventas)
-5. Tracking de envíos
-6. Tests unitarios e integración
-7. Deploy en producción
-
-## Descripción
-
-RazoConnect es una plataforma web completa para la venta al mayoreo de cajas de fashion. Permite a los clientes comprar productos por paquetes, gestionar pedidos y a los agentes de ventas generar comisiones. Incluye un panel de administración completo para gestión de pedidos, inventario, agentes y comisiones con sistema de auditoría integrado.
-
-## 👥 Autor
-
-Desarrollado por el equipo de RazoConnect
-
-## 📄 Licencia
-
-ISC
+Si necesitas que este documento incluya un glosario de entidades (tablas principales) o un diagrama lógico de la base de datos para acompañar la descripción, puedo generarlo como material de referencia.  
