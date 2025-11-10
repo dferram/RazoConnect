@@ -119,5 +119,3 @@ El panel de administración está diseñado para ofrecer:
 - Proyecto desarrollado por Fernando Ramírez
 
 ---
-
-Si necesitas que este documento incluya un glosario de entidades (tablas principales) o un diagrama lógico de la base de datos para acompañar la descripción, puedo generarlo como material de referencia.  
