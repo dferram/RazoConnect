@@ -14,7 +14,7 @@ router.get('/direcciones', authenticate, authorize(['cliente']), direccionesCont
  * @route   POST /api/direcciones
  * @desc    Crear una nueva dirección
  * @access  Private (Cliente)
- * @body    { Etiqueta, Receptor, Calle, NumeroExt, NumeroInt, Colonia, Ciudad, Estado, CodigoPostal, TelefonoContacto }
+ * @body    { Etiqueta, Receptor, Calle, NumeroExt, NumeroInt, Colonia, Ciudad, EstadoID, CodigoPostal, TelefonoContacto }
  */
 router.post('/direcciones', authenticate, authorize(['cliente']), direccionesController.crearDireccion);
 

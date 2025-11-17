@@ -1,4 +1,46 @@
-const db = require('../db');
+const db = require("../db");
+
+const validateAgregarAlCarritoInput = ({ VarianteID, Cantidad, TamanoID }) => {
+  if (
+    VarianteID === undefined ||
+    Cantidad === undefined ||
+    TamanoID === undefined
+  ) {
+    return {
+      error: "VarianteID, Cantidad y TamanoID son requeridos",
+    };
+  }
+
+  const varianteId = Number.parseInt(VarianteID, 10);
+  const cantidad = Number(Cantidad);
+  const tamanoId = Number.parseInt(TamanoID, 10);
+
+  if (Number.isNaN(varianteId)) {
+    return {
+      error: "VarianteID inválido",
+    };
+  }
+
+  if (Number.isNaN(tamanoId)) {
+    return {
+      error: "TamanoID inválido",
+    };
+  }
+
+  if (!Number.isInteger(cantidad) || cantidad <= 0) {
+    return {
+      error: "La cantidad debe ser un número entero mayor a 0",
+    };
+  }
+
+  return {
+    data: {
+      varianteId,
+      cantidad: cantidad,
+      tamanoId,
+    },
+  };
+};
 
 /**
  * Obtener el carrito del cliente logueado
@@ -10,14 +52,14 @@ const obtenerCarrito = async (req, res) => {
 
     // Obtener o crear el carrito del cliente
     let carritoResult = await db.query(
-      'SELECT CarritoID FROM CarritoDeCompra WHERE ClienteID = $1',
+      "SELECT CarritoID FROM CarritoDeCompra WHERE ClienteID = $1",
       [clienteId]
     );
 
     // Si no existe carrito, crear uno nuevo
     if (carritoResult.rows.length === 0) {
       const nuevoCarrito = await db.query(
-        'INSERT INTO CarritoDeCompra (ClienteID) VALUES ($1) RETURNING CarritoID',
+        "INSERT INTO CarritoDeCompra (ClienteID) VALUES ($1) RETURNING CarritoID",
         [clienteId]
       );
       carritoResult = nuevoCarrito;
@@ -25,16 +67,16 @@ const obtenerCarrito = async (req, res) => {
 
     const carritoId = carritoResult.rows[0].carritoid;
 
-    // Obtener los items del carrito con información de productos
+    // Obtener los items del carrito con información de productos y tamaño seleccionado
     const itemsQuery = `
       SELECT
         ic.itemid,
         ic.varianteid,
-        ic.cantidadpaquetes,
+        ic.cantidad,
+        ic.tamanoid,
         pv.sku,
         pv.dimensiones,
-        pv.piezasporpaquete,
-        pv.preciopaquete,
+        pv.preciounitario,
         pv.stock,
         p.productoid,
         p.nombreproducto,
@@ -42,13 +84,15 @@ const obtenerCarrito = async (req, res) => {
         p.categoriaid,
         c.nombre AS categorianombre,
         c.descripcion AS categoriadescripcion,
+        t.cantidad AS tamano_valor,
         imagen.url_imagen,
         imagen.textoalternativo,
-        (ic.cantidadpaquetes * pv.preciopaquete) AS subtotal
+        (ic.cantidad * t.cantidad * pv.preciounitario) AS subtotal
       FROM itemsdelcarrito ic
       INNER JOIN producto_variantes pv ON pv.varianteid = ic.varianteid
       INNER JOIN productos p ON p.productoid = pv.productoid
       LEFT JOIN categorias c ON p.categoriaid = c.categoriaid
+      LEFT JOIN cat_tamanopaquetes t ON t.tamanoid = ic.tamanoid
       LEFT JOIN LATERAL (
         SELECT
           pi.url_imagen,
@@ -69,11 +113,23 @@ const obtenerCarrito = async (req, res) => {
       return total + subtotal;
     }, 0);
 
-    const items = itemsResult.rows.map(item => {
-      const precioPaquete = item.preciopaquete !== null ? parseFloat(item.preciopaquete) : null;
-      const subtotal = item.subtotal !== null ? parseFloat(item.subtotal) : null;
-      const piezasPorPaquete = item.piezasporpaquete !== null ? parseInt(item.piezasporpaquete, 10) : null;
+    const items = itemsResult.rows.map((item) => {
+      const precioUnitario =
+        item.preciounitario !== null ? parseFloat(item.preciounitario) : null;
+      const tamanoValor =
+        item.tamano_valor !== null ? parseInt(item.tamano_valor, 10) : null;
+      const cantidad = item.cantidad !== null ? parseInt(item.cantidad, 10) : 0;
+      const subtotal =
+        item.subtotal !== null ? parseFloat(item.subtotal) : null;
       const stock = item.stock !== null ? parseInt(item.stock, 10) : null;
+
+      // Compatibilidad con frontend actual: exponemos campos "por paquete" calculados
+      const piezasPorPaquete = tamanoValor;
+      const precioPaquete =
+        precioUnitario !== null && tamanoValor
+          ? parseFloat((precioUnitario * tamanoValor).toFixed(2))
+          : null;
+      const precioPorPieza = precioUnitario !== null ? precioUnitario : null;
 
       return {
         itemId: item.itemid,
@@ -82,46 +138,49 @@ const obtenerCarrito = async (req, res) => {
           productoId: item.productoid,
           nombreProducto: item.nombreproducto,
           descripcion: item.descripcion,
-          categoria: item.categoriaid ? {
-            categoriaId: item.categoriaid,
-            nombre: item.categorianombre,
-            descripcion: item.categoriadescripcion
-          } : null
+          categoria: item.categoriaid
+            ? {
+                categoriaId: item.categoriaid,
+                nombre: item.categorianombre,
+                descripcion: item.categoriadescripcion,
+              }
+            : null,
         },
         sku: item.sku,
-        cantidadPaquetes: item.cantidadpaquetes,
+        cantidadPaquetes: cantidad,
+        tamanoId: item.tamanoid,
         piezasPorPaquete,
         precioPaquete,
-        precioPorPieza: precioPaquete !== null && piezasPorPaquete
-          ? parseFloat((precioPaquete / piezasPorPaquete).toFixed(2))
-          : null,
+        precioPorPieza,
+        precioUnitario,
         stock,
         dimensiones: item.dimensiones,
         subtotal,
-        imagenPrincipal: item.url_imagen ? {
-          url: item.url_imagen,
-          alt: item.textoalternativo
-        } : null
+        imagenPrincipal: item.url_imagen
+          ? {
+              url: item.url_imagen,
+              alt: item.textoalternativo,
+            }
+          : null,
       };
     });
 
     res.status(200).json({
       success: true,
-      message: 'Carrito obtenido exitosamente',
+      message: "Carrito obtenido exitosamente",
       data: {
         carritoId,
         items,
         totalItems: items.length,
-        montoTotal: parseFloat(montoTotal.toFixed(2))
-      }
+        montoTotal: parseFloat(montoTotal.toFixed(2)),
+      },
     });
-
   } catch (error) {
-    console.error('Error al obtener carrito:', error);
+    console.error("Error al obtener carrito:", error);
     res.status(500).json({
       success: false,
-      message: 'Error al obtener el carrito',
-      error: error.message
+      message: "Error al obtener el carrito",
+      error: error.message,
     });
   }
 };
@@ -133,66 +192,73 @@ const obtenerCarrito = async (req, res) => {
 const agregarAlCarrito = async (req, res) => {
   try {
     const clienteId = req.user.userId;
-    const { VarianteID, CantidadPaquetes } = req.body;
+    const { VarianteID, Cantidad, TamanoID } = req.body;
+    const validationResult = validateAgregarAlCarritoInput({
+      VarianteID,
+      Cantidad,
+      TamanoID,
+    });
 
-    if (!VarianteID || !CantidadPaquetes) {
+    if (validationResult.error) {
       return res.status(400).json({
         success: false,
-        message: 'VarianteID y CantidadPaquetes son requeridos'
+        message: validationResult.error,
       });
     }
 
-    const varianteId = parseInt(VarianteID, 10);
+    const { varianteId, cantidad, tamanoId } = validationResult.data;
 
-    if (Number.isNaN(varianteId)) {
-      return res.status(400).json({
-        success: false,
-        message: 'VarianteID inválido'
-      });
-    }
-
-    if (CantidadPaquetes <= 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'La cantidad de paquetes debe ser mayor a 0'
-      });
-    }
+    const cantidadEntera = parseInt(cantidad, 10);
 
     const varianteResult = await db.query(
       `SELECT
          pv.varianteid,
          pv.productoid,
          pv.sku,
-         pv.piezasporpaquete,
-         pv.preciopaquete,
          pv.stock,
-         p.nombreproducto
+         pv.preciounitario,
+         p.nombreproducto,
+         t.valor AS tamano_valor
        FROM producto_variantes pv
        INNER JOIN productos p ON p.productoid = pv.productoid
+       INNER JOIN producto_tamanosdisponibles ptd ON ptd.productoid = p.productoid AND ptd.tamanoid = $2
+       INNER JOIN cat_tamanopaquetes t ON t.tamanoid = ptd.tamanoid
        WHERE pv.varianteid = $1`,
-      [varianteId]
+      [varianteId, tamanoId]
     );
 
     if (varianteResult.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        message: 'Variante no encontrada'
+        message: "Variante o tamaño no encontrado",
       });
     }
 
     const variante = varianteResult.rows[0];
-    const stockDisponible = variante.stock !== null ? parseInt(variante.stock, 10) : 0;
+    const stockDisponible =
+      variante.stock !== null ? parseInt(variante.stock, 10) : 0;
 
-    if (stockDisponible < CantidadPaquetes) {
+    const piezasPorTamano = variante.tamano_valor;
+
+    if (!piezasPorTamano || piezasPorTamano <= 0) {
       return res.status(400).json({
         success: false,
-        message: `Stock insuficiente. Disponible: ${stockDisponible} paquetes`
+        message: "El tamaño seleccionado no tiene valor válido",
+      });
+    }
+
+    const totalPiezasSolicitadas = cantidadEntera * piezasPorTamano;
+
+    if (stockDisponible < totalPiezasSolicitadas) {
+      return res.status(400).json({
+        success: false,
+        message: `Stock insuficiente. Disponible: ${stockDisponible} piezas`,
       });
     }
 
     // Obtener o crear el carrito del cliente
     let carritoResult = await db.query(
-      'SELECT CarritoID FROM CarritoDeCompra WHERE ClienteID = $1',
+      "SELECT CarritoID FROM CarritoDeCompra WHERE ClienteID = $1",
       [clienteId]
     );
 
@@ -200,7 +266,7 @@ const agregarAlCarrito = async (req, res) => {
     if (carritoResult.rows.length === 0) {
       // Crear nuevo carrito
       const nuevoCarrito = await db.query(
-        'INSERT INTO CarritoDeCompra (ClienteID, UltimaModificacion) VALUES ($1, NOW()) RETURNING CarritoID',
+        "INSERT INTO CarritoDeCompra (ClienteID, UltimaModificacion) VALUES ($1, NOW()) RETURNING CarritoID",
         [clienteId]
       );
       carritoId = nuevoCarrito.rows[0].carritoid;
@@ -208,47 +274,58 @@ const agregarAlCarrito = async (req, res) => {
       carritoId = carritoResult.rows[0].carritoid;
       // Actualizar última modificación
       await db.query(
-        'UPDATE CarritoDeCompra SET UltimaModificacion = NOW() WHERE CarritoID = $1',
+        "UPDATE CarritoDeCompra SET UltimaModificacion = NOW() WHERE CarritoID = $1",
         [carritoId]
       );
     }
 
     // Verificar si la variante ya está en el carrito
     const itemExistente = await db.query(
-      'SELECT ItemID, CantidadPaquetes FROM ItemsDelCarrito WHERE CarritoID = $1 AND VarianteID = $2',
-      [carritoId, varianteId]
+      "SELECT ItemID, Cantidad, TamanoID FROM ItemsDelCarrito WHERE CarritoID = $1 AND VarianteID = $2 AND TamanoID = $3",
+      [carritoId, varianteId, tamanoId]
     );
 
     let itemResult;
     if (itemExistente.rows.length > 0) {
       // Actualizar cantidad
-      const nuevaCantidad = itemExistente.rows[0].cantidadpaquetes + CantidadPaquetes;
-      
-      if (stockDisponible < nuevaCantidad) {
+      const nuevaCantidad = itemExistente.rows[0].cantidad + cantidadEntera;
+
+      const totalPiezas = nuevaCantidad * piezasPorTamano;
+
+      if (stockDisponible < totalPiezas) {
         return res.status(400).json({
           success: false,
-          message: `Stock insuficiente. Ya tienes ${itemExistente.rows[0].cantidadpaquetes} en el carrito. Disponible: ${stockDisponible} paquetes`
+          message: `Stock insuficiente. Disponible: ${stockDisponible} piezas`,
         });
       }
 
       itemResult = await db.query(
-        'UPDATE ItemsDelCarrito SET CantidadPaquetes = $1 WHERE ItemID = $2 RETURNING ItemID, VarianteID, CantidadPaquetes',
+        "UPDATE ItemsDelCarrito SET Cantidad = $1 WHERE ItemID = $2 RETURNING ItemID, VarianteID, Cantidad, TamanoID",
         [nuevaCantidad, itemExistente.rows[0].itemid]
       );
     } else {
       // Insertar nuevo item
       itemResult = await db.query(
-        'INSERT INTO ItemsDelCarrito (CarritoID, VarianteID, CantidadPaquetes) VALUES ($1, $2, $3) RETURNING ItemID, VarianteID, CantidadPaquetes',
-        [carritoId, varianteId, CantidadPaquetes]
+        "INSERT INTO ItemsDelCarrito (CarritoID, VarianteID, TamanoID, Cantidad) VALUES ($1, $2, $3, $4) RETURNING ItemID, VarianteID, TamanoID, Cantidad",
+        [carritoId, varianteId, tamanoId, cantidadEntera]
       );
     }
 
     const item = itemResult.rows[0];
-    const precioPaquete = variante.preciopaquete !== null ? parseFloat(variante.preciopaquete) : null;
+    const precioUnitario =
+      variante.preciounitario !== null
+        ? parseFloat(variante.preciounitario)
+        : null;
+    const subtotal =
+      precioUnitario !== null
+        ? parseFloat(
+            (item.cantidad * piezasPorTamano * precioUnitario).toFixed(2)
+          )
+        : null;
 
     res.status(200).json({
       success: true,
-      message: 'Variante agregada al carrito exitosamente',
+      message: "Variante agregada al carrito exitosamente",
       data: {
         item: {
           itemId: item.itemid,
@@ -256,21 +333,20 @@ const agregarAlCarrito = async (req, res) => {
           productoId: variante.productoid,
           nombreProducto: variante.nombreproducto,
           sku: variante.sku,
-          cantidadPaquetes: item.cantidadpaquetes,
-          precioPaquete,
-          subtotal: precioPaquete !== null
-            ? parseFloat((item.cantidadpaquetes * precioPaquete).toFixed(2))
-            : null
-        }
-      }
+          tamanoId: item.tamanoid,
+          cantidad: item.cantidad,
+          piezasPorTamano,
+          precioUnitario,
+          subtotal,
+        },
+      },
     });
-
   } catch (error) {
-    console.error('Error al agregar al carrito:', error);
+    console.error("Error al agregar al carrito:", error);
     res.status(500).json({
       success: false,
-      message: 'Error al agregar producto al carrito',
-      error: error.message
+      message: "Error al agregar producto al carrito",
+      error: error.message,
     });
   }
 };
@@ -286,10 +362,14 @@ const actualizarCarrito = async (req, res) => {
     const { CantidadPaquetes } = req.body;
 
     // Validar datos de entrada
-    if (!CantidadPaquetes || CantidadPaquetes <= 0 || Number.isNaN(varianteId)) {
+    if (
+      !CantidadPaquetes ||
+      CantidadPaquetes <= 0 ||
+      Number.isNaN(varianteId)
+    ) {
       return res.status(400).json({
         success: false,
-        message: 'La cantidad debe ser mayor a 0 y VarianteID debe ser válido'
+        message: "La cantidad debe ser mayor a 0 y VarianteID debe ser válido",
       });
     }
 
@@ -310,31 +390,32 @@ const actualizarCarrito = async (req, res) => {
     if (varianteResult.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        message: 'Variante no encontrada'
+        message: "Variante no encontrada",
       });
     }
 
     const variante = varianteResult.rows[0];
 
-    const stockDisponible = variante.stock !== null ? parseInt(variante.stock, 10) : 0;
+    const stockDisponible =
+      variante.stock !== null ? parseInt(variante.stock, 10) : 0;
 
     if (stockDisponible < CantidadPaquetes) {
       return res.status(400).json({
         success: false,
-        message: `Stock insuficiente. Disponible: ${stockDisponible} paquetes`
+        message: `Stock insuficiente. Disponible: ${stockDisponible} paquetes`,
       });
     }
 
     // Obtener el carrito del cliente
     const carritoResult = await db.query(
-      'SELECT CarritoID FROM CarritoDeCompra WHERE ClienteID = $1',
+      "SELECT CarritoID FROM CarritoDeCompra WHERE ClienteID = $1",
       [clienteId]
     );
 
     if (carritoResult.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        message: 'Carrito no encontrado'
+        message: "Carrito no encontrado",
       });
     }
 
@@ -342,20 +423,20 @@ const actualizarCarrito = async (req, res) => {
 
     // Actualizar la cantidad del item
     const updateResult = await db.query(
-      'UPDATE ItemsDelCarrito SET CantidadPaquetes = $1 WHERE CarritoID = $2 AND VarianteID = $3 RETURNING ItemID, VarianteID, CantidadPaquetes',
+      "UPDATE ItemsDelCarrito SET CantidadPaquetes = $1 WHERE CarritoID = $2 AND VarianteID = $3 RETURNING ItemID, VarianteID, CantidadPaquetes",
       [CantidadPaquetes, carritoId, varianteId]
     );
 
     if (updateResult.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        message: 'Variante no encontrada en el carrito'
+        message: "Variante no encontrada en el carrito",
       });
     }
 
     // Actualizar última modificación del carrito
     await db.query(
-      'UPDATE CarritoDeCompra SET UltimaModificacion = NOW() WHERE CarritoID = $1',
+      "UPDATE CarritoDeCompra SET UltimaModificacion = NOW() WHERE CarritoID = $1",
       [carritoId]
     );
 
@@ -363,7 +444,7 @@ const actualizarCarrito = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: 'Cantidad actualizada exitosamente',
+      message: "Cantidad actualizada exitosamente",
       data: {
         item: {
           itemId: item.itemid,
@@ -372,20 +453,27 @@ const actualizarCarrito = async (req, res) => {
           nombreProducto: variante.nombreproducto,
           sku: variante.sku,
           cantidadPaquetes: item.cantidadpaquetes,
-          precioPaquete: variante.preciopaquete !== null ? parseFloat(variante.preciopaquete) : null,
-          subtotal: variante.preciopaquete !== null
-            ? parseFloat((item.cantidadpaquetes * parseFloat(variante.preciopaquete)).toFixed(2))
-            : null
-        }
-      }
+          precioPaquete:
+            variante.preciopaquete !== null
+              ? parseFloat(variante.preciopaquete)
+              : null,
+          subtotal:
+            variante.preciopaquete !== null
+              ? parseFloat(
+                  (
+                    item.cantidadpaquetes * parseFloat(variante.preciopaquete)
+                  ).toFixed(2)
+                )
+              : null,
+        },
+      },
     });
-
   } catch (error) {
-    console.error('Error al actualizar carrito:', error);
+    console.error("Error al actualizar carrito:", error);
     res.status(500).json({
       success: false,
-      message: 'Error al actualizar cantidad',
-      error: error.message
+      message: "Error al actualizar cantidad",
+      error: error.message,
     });
   }
 };
@@ -402,20 +490,20 @@ const eliminarDelCarrito = async (req, res) => {
     if (Number.isNaN(varianteId)) {
       return res.status(400).json({
         success: false,
-        message: 'VarianteID inválido'
+        message: "VarianteID inválido",
       });
     }
 
     // Obtener el carrito del cliente
     const carritoResult = await db.query(
-      'SELECT CarritoID FROM CarritoDeCompra WHERE ClienteID = $1',
+      "SELECT CarritoID FROM CarritoDeCompra WHERE ClienteID = $1",
       [clienteId]
     );
 
     if (carritoResult.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        message: 'Carrito no encontrado'
+        message: "Carrito no encontrado",
       });
     }
 
@@ -423,34 +511,33 @@ const eliminarDelCarrito = async (req, res) => {
 
     // Eliminar el item del carrito
     const deleteResult = await db.query(
-      'DELETE FROM ItemsDelCarrito WHERE CarritoID = $1 AND VarianteID = $2 RETURNING ItemID',
+      "DELETE FROM ItemsDelCarrito WHERE CarritoID = $1 AND VarianteID = $2 RETURNING ItemID",
       [carritoId, varianteId]
     );
 
     if (deleteResult.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        message: 'Variante no encontrada en el carrito'
+        message: "Variante no encontrada en el carrito",
       });
     }
 
     // Actualizar última modificación del carrito
     await db.query(
-      'UPDATE CarritoDeCompra SET UltimaModificacion = NOW() WHERE CarritoID = $1',
+      "UPDATE CarritoDeCompra SET UltimaModificacion = NOW() WHERE CarritoID = $1",
       [carritoId]
     );
 
     res.status(200).json({
       success: true,
-      message: 'Producto eliminado del carrito exitosamente'
+      message: "Producto eliminado del carrito exitosamente",
     });
-
   } catch (error) {
-    console.error('Error al eliminar del carrito:', error);
+    console.error("Error al eliminar del carrito:", error);
     res.status(500).json({
       success: false,
-      message: 'Error al eliminar producto del carrito',
-      error: error.message
+      message: "Error al eliminar producto del carrito",
+      error: error.message,
     });
   }
 };
@@ -459,5 +546,5 @@ module.exports = {
   obtenerCarrito,
   agregarAlCarrito,
   actualizarCarrito,
-  eliminarDelCarrito
+  eliminarDelCarrito,
 };

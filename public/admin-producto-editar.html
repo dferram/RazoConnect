@@ -278,39 +278,35 @@
                   <input type="text" id="dimensiones" class="form-input" placeholder="Ej: 10x10x10 cm o 25 piezas">
                 </div>
                 <div class="form-group">
-                  <label for="stock" class="form-label">Stock inicial (paquetes)</label>
+                  <label for="stock" class="form-label">Stock inicial (piezas)</label>
                   <input type="number" id="stock" class="form-input" min="0" step="1" value="0">
                 </div>
               </div>
 
-              <div class="form-grid-3">
-                <div class="form-group">
-                  <label for="piezasPorPaquete" class="form-label">Piezas por paquete *</label>
-                  <input type="number" id="piezasPorPaquete" class="form-input" min="1" step="1" required>
-                </div>
+              <div class="form-grid-2">
                 <div class="form-group">
                   <label for="costoUnitario" class="form-label">Costo unitario (MXN)</label>
                   <input type="number" id="costoUnitario" class="form-input" min="0" step="0.01" placeholder="0.00">
                 </div>
                 <div class="form-group">
-                  <label for="precioPaquete" class="form-label">Precio por paquete (MXN) *</label>
-                  <input type="number" id="precioPaquete" class="form-input" min="0" step="0.01" placeholder="0.00" required>
+                  <label for="precioUnitario" class="form-label">Precio unitario (MXN) *</label>
+                  <input type="number" id="precioUnitario" class="form-input" min="0" step="0.01" placeholder="0.00" required>
                 </div>
               </div>
 
               <div class="variant-margin" id="variantMargin">
                 <div>
                   <h3>Resumen económico</h3>
-                  <p id="marginMessage">Ingresa costo, piezas y precio para calcular la ganancia.</p>
+                  <p id="marginMessage">Ingresa costo y precio para calcular la ganancia.</p>
                 </div>
                 <div class="margin-metrics" id="marginMetrics" style="display: none;">
                   <div>
-                    <span class="summary-label">Costo por paquete</span>
-                    <span class="summary-value" id="costPerPackage">$0.00</span>
+                    <span class="summary-label">Costo unitario</span>
+                    <span class="summary-value" id="costPerUnit">$0.00</span>
                   </div>
                   <div>
-                    <span class="summary-label">Ganancia por paquete</span>
-                    <span class="summary-value" id="profitPerPackage">$0.00</span>
+                    <span class="summary-label">Ganancia por unidad</span>
+                    <span class="summary-value" id="profitPerUnit">$0.00</span>
                   </div>
                   <div>
                     <span class="summary-label">Margen</span>
@@ -349,7 +345,6 @@
                     <tr>
                       <th>SKU</th>
                       <th>Descripción</th>
-                      <th>Pzas/paquete</th>
                       <th>Precio paquete</th>
                       <th>Costo unitario</th>
                       <th>Stock</th>
@@ -547,8 +542,7 @@
       variantsTableWrapper.style.display = 'block';
 
       variantsTableBody.innerHTML = variantes.map(variant => {
-        const piezas = variant.piezasPorPaquete ?? 'N/D';
-        const precio = variant.precioPaquete ? formatCurrency(variant.precioPaquete) : 'N/D';
+        const precio = variant.precioUnitario ? formatCurrency(variant.precioUnitario) : 'N/D';
         const costo = variant.costoUnitario ? formatCurrency(variant.costoUnitario) : 'N/D';
         const stock = Number.isFinite(variant.stock) ? variant.stock : '0';
 
@@ -556,7 +550,6 @@
           <tr>
             <td>${variant.sku || 'Sin SKU'}</td>
             <td>${variant.dimensiones || 'Sin dimensiones'}</td>
-            <td>${piezas}</td>
             <td>${precio}</td>
             <td>${costo}</td>
             <td>${stock}</td>
@@ -606,8 +599,7 @@
         productoId,
         sku: document.getElementById('sku').value.trim(),
         dimensiones: document.getElementById('dimensiones').value.trim() || null,
-        piezasPorPaquete: parseInt(document.getElementById('piezasPorPaquete').value, 10),
-        precioPaquete: parseFloat(document.getElementById('precioPaquete').value),
+        precioUnitario: parseFloat(document.getElementById('precioUnitario').value),
         costoUnitario: document.getElementById('costoUnitario').value ? parseFloat(document.getElementById('costoUnitario').value) : null,
         stock: document.getElementById('stock').value ? parseInt(document.getElementById('stock').value, 10) : 0,
         tipoProductoId: null,
@@ -619,13 +611,8 @@
         return;
       }
 
-      if (!Number.isFinite(formData.piezasPorPaquete) || formData.piezasPorPaquete <= 0) {
-        showToast('Piezas por paquete debe ser un número mayor a 0', 'warning');
-        return;
-      }
-
-      if (!Number.isFinite(formData.precioPaquete) || formData.precioPaquete <= 0) {
-        showToast('El precio por paquete debe ser mayor a 0', 'warning');
+      if (!Number.isFinite(formData.precioUnitario) || formData.precioUnitario <= 0) {
+        showToast('El precio unitario debe ser mayor a 0', 'warning');
         return;
       }
 
@@ -662,13 +649,13 @@
       }
     });
 
-    ['piezasPorPaquete', 'costoUnitario', 'precioPaquete'].forEach(id => {
+    ['costoUnitario', 'precioUnitario'].forEach(id => {
       document.getElementById(id).addEventListener('input', calculateMarginPreview);
     });
 
     resetVariantBtn.addEventListener('click', () => {
       marginMetrics.style.display = 'none';
-      marginMessage.textContent = 'Ingresa costo, piezas y precio para calcular la ganancia.';
+      marginMessage.textContent = 'Ingresa costo y precio para calcular la ganancia.';
     });
 
     logoutBtn.addEventListener('click', () => {
@@ -681,30 +668,29 @@
     });
 
     function calculateMarginPreview() {
-      const piezas = parseFloat(document.getElementById('piezasPorPaquete').value);
       const costoUnit = parseFloat(document.getElementById('costoUnitario').value);
-      const precio = parseFloat(document.getElementById('precioPaquete').value);
+      const precio = parseFloat(document.getElementById('precioUnitario').value);
 
-      if (!Number.isFinite(piezas) || piezas <= 0 || !Number.isFinite(precio) || precio <= 0 || !Number.isFinite(costoUnit) || costoUnit < 0) {
+      if (!Number.isFinite(precio) || precio <= 0 || !Number.isFinite(costoUnit) || costoUnit < 0) {
         marginMetrics.style.display = 'none';
-        marginMessage.textContent = 'Ingresa costo, piezas y precio para calcular la ganancia.';
+        marginMessage.style.display = 'block';
+        marginMessage.textContent = 'Ingresa costo y precio para calcular la ganancia.';
         return;
       }
 
-      const costoPaquete = piezas * costoUnit;
-      const ganancia = precio - costoPaquete;
+      const costoUnitarioValue = Number.isFinite(costoUnit) ? costoUnit : 0;
+      const ganancia = precio - costoUnitarioValue;
       const margen = precio > 0 ? (ganancia / precio) * 100 : 0;
 
-      costPerPackage.textContent = formatCurrency(costoPaquete);
-      profitPerPackage.textContent = formatCurrency(ganancia);
-      marginPercentage.textContent = `${margen.toFixed(2)}%`;
+      costPerUnit.textContent = formatCurrency(costoUnitarioValue);
+      profitPerUnit.textContent = formatCurrency(ganancia);
+      marginPercentage.textContent = `${margen.toFixed(1)}%`;
 
       marginMetrics.style.display = 'grid';
       marginMessage.textContent = ganancia >= 0
-        ? 'Excelente, estás generando ganancia por paquete.'
+        ? 'Excelente, estás generando ganancia por unidad.'
         : 'Atención: el costo supera al precio, revisa los datos.';
-
-      profitPerPackage.style.color = ganancia >= 0 ? 'var(--success-color)' : 'var(--danger-color)';
+      profitPerUnit.style.color = ganancia >= 0 ? 'var(--success-color)' : 'var(--danger-color)';
       marginPercentage.style.color = ganancia >= 0 ? 'var(--success-color)' : 'var(--danger-color)';
     }
 

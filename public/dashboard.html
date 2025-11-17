@@ -1,381 +1,564 @@
 <!DOCTYPE html>
 <html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mi Cuenta - RazoConnect</title>
-  
-  <!-- PROTECCIÓN DE AUTENTICACIÓN - Debe cargarse PRIMERO -->
-  <script src="js/auth-guard-client.js"></script>
-  
-  <!-- SISTEMA DE RENOVACIÓN DE TOKENS -->
-  <script src="js/token-refresh.js"></script>
-  
-  <link rel="stylesheet" href="css/styles.css">
-  <style>
-    .tabs {
-      display: flex;
-      gap: 0.5rem;
-      border-bottom: 2px solid var(--border-color);
-      margin-bottom: 2rem;
-    }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mi Cuenta - RazoConnect</title>
 
-    .tab {
-      padding: 1rem 1.5rem;
-      background: none;
-      border: none;
-      border-bottom: 3px solid transparent;
-      cursor: pointer;
-      font-size: 1rem;
-      font-weight: 500;
-      color: var(--text-secondary);
-      transition: all 0.3s;
-    }
+    <!-- PROTECCIÓN DE AUTENTICACIÓN - Debe cargarse PRIMERO -->
+    <script src="js/auth-guard-client.js"></script>
 
-    .tab:hover {
-      color: var(--primary-color);
-    }
+    <!-- SISTEMA DE RENOVACIÓN DE TOKENS -->
+    <script src="js/token-refresh.js"></script>
 
-    .tab.active {
-      color: var(--primary-color);
-      border-bottom-color: var(--primary-color);
-    }
+    <link rel="stylesheet" href="css/styles.css" />
+    <style>
+      .tabs {
+        display: flex;
+        gap: 0.5rem;
+        border-bottom: 2px solid var(--border-color);
+        margin-bottom: 2rem;
+      }
 
-    .tab-content {
-      display: none;
-    }
+      .tab {
+        padding: 1rem 1.5rem;
+        background: none;
+        border: none;
+        border-bottom: 3px solid transparent;
+        cursor: pointer;
+        font-size: 1rem;
+        font-weight: 500;
+        color: var(--text-secondary);
+        transition: all 0.3s;
+      }
 
-    .tab-content.active {
-      display: block;
-    }
+      .tab:hover {
+        color: var(--primary-color);
+      }
 
-    .direccion-card {
-      background: white;
-      border: 2px solid var(--razo-gray-light);
-      border-radius: 1rem;
-      padding: 0;
-      margin-bottom: 1rem;
-      transition: all 0.3s;
-      overflow: hidden;
-    }
+      .tab.active {
+        color: var(--primary-color);
+        border-bottom-color: var(--primary-color);
+      }
 
-    .direccion-card:hover {
-      border-color: var(--razo-turquoise);
-      box-shadow: 0 8px 24px rgba(0, 199, 190, 0.15);
-      transform: translateY(-2px);
-    }
+      .tab-content {
+        display: none;
+      }
 
-    .direccion-card.selectable {
-      cursor: pointer;
-    }
+      .tab-content.active {
+        display: block;
+      }
 
-    .direccion-card.selected {
-      border-color: var(--primary-color);
-      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-    }
+      .direccion-card {
+        background: white;
+        border: 2px solid var(--razo-gray-light);
+        border-radius: 1rem;
+        padding: 0;
+        margin-bottom: 1rem;
+        transition: all 0.3s;
+        overflow: hidden;
+      }
 
-    .pedido-card {
-      background: white;
-      border: 2px solid var(--razo-gray-light);
-      border-radius: 1rem;
-      padding: 0;
-      margin-bottom: 1.5rem;
-      transition: all 0.3s;
-      overflow: hidden;
-    }
+      .direccion-card:hover {
+        border-color: var(--razo-turquoise);
+        box-shadow: 0 8px 24px rgba(0, 199, 190, 0.15);
+        transform: translateY(-2px);
+      }
 
-    .pedido-card:hover {
-      border-color: var(--razo-orange);
-      box-shadow: 0 8px 24px rgba(255, 119, 51, 0.15);
-      transform: translateY(-2px);
-    }
+      .direccion-card.selectable {
+        cursor: pointer;
+      }
 
-    .pedido-items {
-      display: grid;
-      gap: 0.75rem;
-      margin-top: 1rem;
-    }
+      .direccion-card.selected {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+      }
 
-    .pedido-item {
-      display: grid;
-      grid-template-columns: 80px 1fr auto;
-      gap: 1rem;
-      padding: 1rem;
-      background: var(--razo-cream);
-      border-radius: 0.75rem;
-      border: 1px solid var(--razo-gray-light);
-      transition: all 0.2s;
-    }
+      .pedido-card {
+        background: white;
+        border: 2px solid var(--razo-gray-light);
+        border-radius: 1rem;
+        padding: 0;
+        margin-bottom: 1.5rem;
+        transition: all 0.3s;
+        overflow: hidden;
+      }
 
-    .pedido-item:hover {
-      background: white;
-      border-color: var(--razo-orange-light);
-    }
+      .pedido-card:hover {
+        border-color: var(--razo-orange);
+        box-shadow: 0 8px 24px rgba(255, 119, 51, 0.15);
+        transform: translateY(-2px);
+      }
 
-    .pedido-item-img {
-      width: 80px;
-      height: 80px;
-      object-fit: cover;
-      border-radius: 0.5rem;
-      background: linear-gradient(135deg, var(--razo-orange) 0%, var(--razo-turquoise) 100%);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 2.5rem;
-    }
+      .pedido-items {
+        display: grid;
+        gap: 0.75rem;
+        margin-top: 1rem;
+      }
 
-    .estatus-badge {
-      display: inline-block;
-      padding: 0.25rem 0.75rem;
-      border-radius: 1rem;
-      font-size: 0.75rem;
-      font-weight: 600;
-      text-transform: uppercase;
-    }
+      .pedido-item {
+        display: grid;
+        grid-template-columns: 80px 1fr auto;
+        gap: 1rem;
+        padding: 1rem;
+        background: var(--razo-cream);
+        border-radius: 0.75rem;
+        border: 1px solid var(--razo-gray-light);
+        transition: all 0.2s;
+      }
 
-    .estatus-pendiente {
-      background: #fef3c7;
-      color: #92400e;
-    }
+      .pedido-item:hover {
+        background: white;
+        border-color: var(--razo-orange-light);
+      }
 
-    .estatus-confirmado {
-      background: #d1fae5;
-      color: #065f46;
-    }
+      .pedido-item-img {
+        width: 80px;
+        height: 80px;
+        object-fit: cover;
+        border-radius: 0.5rem;
+        background: linear-gradient(
+          135deg,
+          var(--razo-orange) 0%,
+          var(--razo-turquoise) 100%
+        );
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.5rem;
+      }
 
-    .estatus-enviado {
-      background: #dbeafe;
-      color: #1e40af;
-    }
+      .estatus-badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 1rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+      }
 
-    .modal {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.5);
-      z-index: 1000;
-      align-items: center;
-      justify-content: center;
-    }
+      .estatus-pendiente {
+        background: #fef3c7;
+        color: #92400e;
+      }
 
-    .modal.show {
-      display: flex;
-    }
+      .estatus-confirmado {
+        background: #d1fae5;
+        color: #065f46;
+      }
 
-    .modal-content {
-      background: var(--surface);
-      border-radius: 0.5rem;
-      padding: 2rem;
-      max-width: 600px;
-      width: 90%;
-      max-height: 90vh;
-      overflow-y: auto;
-    }
-  </style>
-</head>
-<body>
-  <nav class="navbar">
-    <div class="container navbar-content">
-      <a href="/catalogo.html" class="navbar-brand">📦 RazoConnect</a>
-      <ul class="navbar-menu">
-        <li><a href="/catalogo.html" class="navbar-link">Productos</a></li>
-        <li><a href="/carrito.html" class="navbar-link">Carrito</a></li>
-        <li><a href="/dashboard.html" class="navbar-link" style="color: var(--primary-color); font-weight: 600;">Mi cuenta</a></li>
-        <li><a href="#" class="navbar-link" id="logoutBtn">Cerrar sesión</a></li>
-      </ul>
-    </div>
-  </nav>
+      .estatus-enviado {
+        background: #dbeafe;
+        color: #1e40af;
+      }
 
-  <div class="container" style="padding-top: 2rem; padding-bottom: 3rem;">
-    <h1 style="font-size: 2.5rem; font-weight: bold; margin-bottom: 0.5rem;">Mi cuenta</h1>
+      .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+      }
 
-    <!-- Tabs -->
-    <div class="tabs">
-      <button class="tab active" data-tab="perfil">👤 Perfil</button>
-      <button class="tab" data-tab="direcciones">📍 Direcciones</button>
-      <button class="tab" data-tab="pedidos">📦 Pedidos</button>
-    </div>
+      .modal.show {
+        display: flex;
+      }
 
-    <!-- Tab: Perfil -->
-    <div class="tab-content active" id="perfil">
-      <div class="card">
-        <h2 class="card-header">Información personal</h2>
-        <div id="perfilContent"></div>
+      .modal-content {
+        background: var(--surface);
+        border-radius: 0.5rem;
+        padding: 2rem;
+        max-width: 600px;
+        width: 90%;
+        max-height: 90vh;
+        overflow-y: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container navbar-content">
+        <a href="/catalogo.html" class="navbar-brand">📦 RazoConnect</a>
+        <ul class="navbar-menu">
+          <li><a href="/catalogo.html" class="navbar-link">Productos</a></li>
+          <li><a href="/carrito.html" class="navbar-link">Carrito</a></li>
+          <li>
+            <a
+              href="/dashboard.html"
+              class="navbar-link"
+              style="color: var(--primary-color); font-weight: 600"
+              >Mi cuenta</a
+            >
+          </li>
+          <li>
+            <a href="#" class="navbar-link" id="logoutBtn">Cerrar sesión</a>
+          </li>
+        </ul>
       </div>
-    </div>
+    </nav>
 
-    <!-- Tab: Direcciones -->
-    <div class="tab-content" id="direcciones">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-        <h2 style="font-size: 1.5rem; font-weight: 600;">Mis direcciones</h2>
-        <button class="btn btn-primary" id="btnNuevaDireccion" onclick="openDireccionModal()">✝ Agregar nueva dirección</button>
-      </div>
+    <div class="container" style="padding-top: 2rem; padding-bottom: 3rem">
+      <h1 style="font-size: 2.5rem; font-weight: bold; margin-bottom: 0.5rem">
+        Mi cuenta
+      </h1>
 
-      <div id="loadingDirecciones" class="loading">
-        <div class="spinner"></div>
+      <!-- Tabs -->
+      <div class="tabs">
+        <button class="tab active" data-tab="perfil">👤 Perfil</button>
+        <button class="tab" data-tab="direcciones">📍 Direcciones</button>
+        <button class="tab" data-tab="pedidos">📦 Pedidos</button>
       </div>
 
-      <div id="direccionesList"></div>
-
-      <div id="emptyDirecciones" class="empty-state" style="display: none;">
-        <div class="empty-state-icon">📍</div>
-        <h3 class="empty-state-title">No tienes direcciones guardadas</h3>
-        <p class="empty-state-text">Agrega una dirección para realizar tus pedidos</p>
-      </div>
-    </div>
-
-    <!-- Tab: Pedidos -->
-    <div class="tab-content" id="pedidos">
-      <h2 style="font-size: 1.5rem; font-weight: 600; margin-bottom: 1rem;">Mis pedidos</h2>
-
-      <div id="loadingPedidos" class="loading">
-        <div class="spinner"></div>
+      <!-- Tab: Perfil -->
+      <div class="tab-content active" id="perfil">
+        <div class="card">
+          <h2 class="card-header">Información personal</h2>
+          <div id="perfilContent"></div>
+        </div>
       </div>
 
-      <div id="pedidosList"></div>
-
-      <div id="emptyPedidos" class="empty-state" style="display: none;">
-        <div class="empty-state-icon">📦</div>
-        <h3 class="empty-state-title">No tienes pedidos aún</h3>
-        <p class="empty-state-text">Explora nuestro catálogo y realiza tu primer pedido</p>
-        <a href="/catalogo.html" class="btn btn-primary">Ver Productos</a>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal: Nueva Dirección -->
-  <div id="modalDireccion" class="modal">
-    <div class="modal-content" style="background: white; padding: 2rem; border-radius: 1rem; box-shadow: 0 20px 60px rgba(0,0,0,0.3); max-width: 650px;">
-      <h2 style="font-size: 1.5rem; font-weight: bold; margin-bottom: 0.5rem; color: #2D3748;">Nueva Dirección</h2>
-      <p style="color: #718096; font-size: 0.875rem; margin-bottom: 1.5rem;">Agrega una dirección para realizar tus pedidos</p>
-      
-      <form id="formDireccion">
-        <div class="form-group">
-          <label class="form-label" for="etiqueta">Etiqueta (opcional)</label>
-          <input type="text" id="etiqueta" class="form-input" placeholder="Ej: Casa, Oficina, Bodega">
-        </div>
-
-        <div class="form-group">
-          <label class="form-label" for="receptor">Receptor *</label>
-          <input type="text" id="receptor" class="form-input" placeholder="Nombre completo del receptor" required>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label" for="calle">Calle *</label>
-          <input type="text" id="calle" class="form-input" placeholder="Nombre de la calle" required>
-        </div>
-
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-          <div class="form-group">
-            <label class="form-label" for="numeroExt">Número Exterior</label>
-            <input type="text" id="numeroExt" class="form-input" placeholder="123">
-          </div>
-
-          <div class="form-group">
-            <label class="form-label" for="numeroInt">Número Interior</label>
-            <input type="text" id="numeroInt" class="form-input" placeholder="A">
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label" for="colonia">Colonia</label>
-          <input type="text" id="colonia" class="form-input" placeholder="Nombre de la colonia">
-        </div>
-
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-          <div class="form-group">
-            <label class="form-label" for="ciudad">Ciudad *</label>
-            <input type="text" id="ciudad" class="form-input" placeholder="Ciudad" required>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label" for="estado">Estado *</label>
-            <input type="text" id="estado" class="form-input" placeholder="Estado" required>
-          </div>
-        </div>
-
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-          <div class="form-group">
-            <label class="form-label" for="codigoPostal">Código Postal *</label>
-            <input type="text" id="codigoPostal" class="form-input" placeholder="12345" required>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label" for="telefonoContacto">Teléfono</label>
-            <input type="tel" id="telefonoContacto" class="form-input" placeholder="5551234567">
-          </div>
-        </div>
-
-        <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
-          <button type="submit" class="btn btn-primary" style="flex: 1;" id="btnGuardarDireccion">
-            <span id="btnGuardarText">Guardar Dirección</span>
-            <div class="spinner" id="btnGuardarSpinner" style="display: none; width: 20px; height: 20px; border-width: 2px;"></div>
+      <!-- Tab: Direcciones -->
+      <div class="tab-content" id="direcciones">
+        <div
+          style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+          "
+        >
+          <h2 style="font-size: 1.5rem; font-weight: 600">Mis direcciones</h2>
+          <button
+            class="btn btn-primary"
+            id="btnNuevaDireccion"
+            onclick="openDireccionModal()"
+          >
+            Agregar nueva dirección
           </button>
-          <button type="button" class="btn btn-secondary" style="flex: 1;" id="btnCancelarDireccion">Cancelar</button>
         </div>
-      </form>
+
+        <div id="loadingDirecciones" class="loading">
+          <div class="spinner"></div>
+        </div>
+
+        <div id="direccionesList"></div>
+
+        <div id="emptyDirecciones" class="empty-state" style="display: none">
+          <div class="empty-state-icon">📍</div>
+          <h3 class="empty-state-title">No tienes direcciones guardadas</h3>
+          <p class="empty-state-text">
+            Agrega una dirección para realizar tus pedidos
+          </p>
+        </div>
+      </div>
+
+      <!-- Tab: Pedidos -->
+      <div class="tab-content" id="pedidos">
+        <h2 style="font-size: 1.5rem; font-weight: 600; margin-bottom: 1rem">
+          Mis pedidos
+        </h2>
+
+        <div id="loadingPedidos" class="loading">
+          <div class="spinner"></div>
+        </div>
+
+        <div id="pedidosList"></div>
+
+        <div id="emptyPedidos" class="empty-state" style="display: none">
+          <div class="empty-state-icon">📦</div>
+          <h3 class="empty-state-title">No tienes pedidos aún</h3>
+          <p class="empty-state-text">
+            Explora nuestro catálogo y realiza tu primer pedido
+          </p>
+          <a href="/catalogo.html" class="btn btn-primary">Ver Productos</a>
+        </div>
+      </div>
     </div>
-  </div>
 
-  <script src="js/api.js"></script>
-  <script>
-    // Check authentication
-    if (!requireAuth()) {
-      // User is not authenticated
-    }
+    <!-- Modal: Nueva Dirección -->
+    <div id="modalDireccion" class="modal">
+      <div
+        class="modal-content"
+        style="
+          background: white;
+          padding: 2rem;
+          border-radius: 1rem;
+          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+          max-width: 650px;
+        "
+      >
+        <h2
+          style="
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            color: #2d3748;
+          "
+        >
+          Nueva Dirección
+        </h2>
+        <p style="color: #718096; font-size: 0.875rem; margin-bottom: 1.5rem">
+          Agrega una dirección para realizar tus pedidos
+        </p>
 
-    const perfilContent = document.getElementById('perfilContent');
-    const direccionesList = document.getElementById('direccionesList');
-    const pedidosList = document.getElementById('pedidosList');
-    const loadingDirecciones = document.getElementById('loadingDirecciones');
-    const loadingPedidos = document.getElementById('loadingPedidos');
-    const emptyDirecciones = document.getElementById('emptyDirecciones');
-    const emptyPedidos = document.getElementById('emptyPedidos');
-    const modalDireccion = document.getElementById('modalDireccion');
-    const formDireccion = document.getElementById('formDireccion');
-    const btnNuevaDireccion = document.getElementById('btnNuevaDireccion');
-    const btnCancelarDireccion = document.getElementById('btnCancelarDireccion');
-    const btnGuardarDireccion = document.getElementById('btnGuardarDireccion');
-    const btnGuardarText = document.getElementById('btnGuardarText');
-    const btnGuardarSpinner = document.getElementById('btnGuardarSpinner');
-    const logoutBtn = document.getElementById('logoutBtn');
+        <form id="formDireccion">
+          <div class="form-group">
+            <label class="form-label" for="etiqueta">Etiqueta (opcional)</label>
+            <input
+              type="text"
+              id="etiqueta"
+              class="form-input"
+              placeholder="Ej: Casa, Oficina, Bodega"
+            />
+          </div>
 
-    // Tab switching
-    document.querySelectorAll('.tab').forEach(tab => {
-      tab.addEventListener('click', () => {
-        const tabName = tab.dataset.tab;
-        
-        // Update tabs
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        tab.classList.add('active');
-        
-        // Update content
-        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-        document.getElementById(tabName).classList.add('active');
-        
-        // Load data for tab
-        if (tabName === 'direcciones') {
-          loadDirecciones();
-        } else if (tabName === 'pedidos') {
-          loadPedidos();
+          <div class="form-group">
+            <label class="form-label" for="receptor">Receptor *</label>
+            <input
+              type="text"
+              id="receptor"
+              class="form-input"
+              placeholder="Nombre completo del receptor"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="calle">Calle *</label>
+            <input
+              type="text"
+              id="calle"
+              class="form-input"
+              placeholder="Nombre de la calle"
+              required
+            />
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem">
+            <div class="form-group">
+              <label class="form-label" for="numeroExt">Número Exterior</label>
+              <input
+                type="text"
+                id="numeroExt"
+                class="form-input"
+                placeholder="123"
+              />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="numeroInt">Número Interior</label>
+              <input
+                type="text"
+                id="numeroInt"
+                class="form-input"
+                placeholder="A"
+              />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="colonia">Colonia</label>
+            <input
+              type="text"
+              id="colonia"
+              class="form-input"
+              placeholder="Nombre de la colonia"
+            />
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem">
+            <div class="form-group">
+              <label class="form-label" for="ciudad">Ciudad *</label>
+              <input
+                type="text"
+                id="ciudad"
+                class="form-input"
+                placeholder="Ciudad"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="estadoSelect">Estado *</label>
+              <select id="estadoSelect" class="form-input" required>
+                <option value="" disabled selected>Selecciona un estado</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem">
+            <div class="form-group">
+              <label class="form-label" for="codigoPostal"
+                >Código Postal *</label
+              >
+              <input
+                type="text"
+                id="codigoPostal"
+                class="form-input"
+                placeholder="12345"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="telefonoContacto">Teléfono</label>
+              <input
+                type="tel"
+                id="telefonoContacto"
+                class="form-input"
+                placeholder="5551234567"
+              />
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 1rem; margin-top: 1.5rem">
+            <button
+              type="submit"
+              class="btn btn-primary"
+              style="flex: 1"
+              id="btnGuardarDireccion"
+            >
+              <span id="btnGuardarText">Guardar Dirección</span>
+              <div
+                class="spinner"
+                id="btnGuardarSpinner"
+                style="
+                  display: none;
+                  width: 20px;
+                  height: 20px;
+                  border-width: 2px;
+                "
+              ></div>
+            </button>
+            <button
+              type="button"
+              class="btn btn-secondary"
+              style="flex: 1"
+              id="btnCancelarDireccion"
+            >
+              Cancelar
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script>
+      // Check authentication
+      if (!requireAuth()) {
+        // User is not authenticated
+      }
+
+      const perfilContent = document.getElementById("perfilContent");
+      const direccionesList = document.getElementById("direccionesList");
+      const pedidosList = document.getElementById("pedidosList");
+      const loadingDirecciones = document.getElementById("loadingDirecciones");
+      const loadingPedidos = document.getElementById("loadingPedidos");
+      const emptyDirecciones = document.getElementById("emptyDirecciones");
+      const emptyPedidos = document.getElementById("emptyPedidos");
+      const modalDireccion = document.getElementById("modalDireccion");
+      const formDireccion = document.getElementById("formDireccion");
+      const btnNuevaDireccion = document.getElementById("btnNuevaDireccion");
+      const btnCancelarDireccion = document.getElementById(
+        "btnCancelarDireccion"
+      );
+      const btnGuardarDireccion = document.getElementById(
+        "btnGuardarDireccion"
+      );
+      const btnGuardarText = document.getElementById("btnGuardarText");
+      const btnGuardarSpinner = document.getElementById("btnGuardarSpinner");
+      const logoutBtn = document.getElementById("logoutBtn");
+      const estadoSelect = document.getElementById("estadoSelect");
+
+      const estadoOptionPlaceholder =
+        '<option value="" disabled selected>Selecciona un estado</option>';
+      let estadosCatalogo = [];
+      let estadosCargados = false;
+      let estadosCargando = false;
+
+      async function loadEstados(force = false) {
+        if ((estadosCargados && !force) || estadosCargando) {
+          return;
         }
+
+        estadosCargando = true;
+        try {
+          const response = await API.getEstados();
+          if (response.ok && response.data.success) {
+            estadosCatalogo = response.data.data.estados || [];
+            estadoSelect.innerHTML =
+              estadoOptionPlaceholder +
+              estadosCatalogo
+                .map(
+                  (estado) =>
+                    `<option value="${estado.estadoId}">${estado.nombre}</option>`
+                )
+                .join("");
+            estadosCargados = true;
+          } else {
+            showToast("No se pudieron cargar los estados", "warning");
+          }
+        } catch (error) {
+          console.error("Error loading estados:", error);
+          showToast("Error al cargar los estados", "error");
+        } finally {
+          estadosCargando = false;
+        }
+      }
+
+      function resetEstadoSelect() {
+        if (!estadosCargados) {
+          estadoSelect.innerHTML = estadoOptionPlaceholder;
+        }
+        estadoSelect.value = "";
+      }
+
+      // Tab switching
+      document.querySelectorAll(".tab").forEach((tab) => {
+        tab.addEventListener("click", () => {
+          const tabName = tab.dataset.tab;
+
+          // Update tabs
+          document
+            .querySelectorAll(".tab")
+            .forEach((t) => t.classList.remove("active"));
+          tab.classList.add("active");
+
+          // Update content
+          document
+            .querySelectorAll(".tab-content")
+            .forEach((c) => c.classList.remove("active"));
+          document.getElementById(tabName).classList.add("active");
+
+          // Load data for tab
+          if (tabName === "direcciones") {
+            loadDirecciones();
+          } else if (tabName === "pedidos") {
+            loadPedidos();
+          }
+        });
       });
-    });
 
-    // Display profile data
-    function displayPerfil() {
-      const userData = getUserData() || {};
-      const nombre = userData.nombre || 'N/A';
-      const apellido = userData.apellido || '';
-      const email = userData.email || 'N/A';
-      const telefono = userData.telefono || 'No especificado';
-      const fechaRegistro = userData.fechaDeRegistro || userData.fechaderegistro || null;
-      const fechaFormateada = fechaRegistro ? new Date(fechaRegistro).toLocaleDateString('es-MX') : 'N/A';
+      // Display profile data
+      function displayPerfil() {
+        const userData = getUserData() || {};
+        const nombre = userData.nombre || "N/A";
+        const apellido = userData.apellido || "";
+        const email = userData.email || "N/A";
+        const telefono = userData.telefono || "No especificado";
+        const fechaRegistro =
+          userData.fechaDeRegistro || userData.fechaderegistro || null;
+        const fechaFormateada = fechaRegistro
+          ? new Date(fechaRegistro).toLocaleDateString("es-MX")
+          : "N/A";
 
-      perfilContent.innerHTML = `
+        perfilContent.innerHTML = `
         <div style="display: grid; gap: 1rem;">
           <div style="display: grid; grid-template-columns: 150px 1fr; align-items: center; padding: 0.75rem; border-bottom: 1px solid var(--border-color);">
             <strong>Nombre:</strong>
@@ -395,50 +578,57 @@
           </div>
         </div>
       `;
-    }
+      }
 
-    // Format currency
-    function formatCurrency(amount) {
-      return new Intl.NumberFormat('es-MX', {
-        style: 'currency',
-        currency: 'MXN'
-      }).format(amount);
-    }
+      // Format currency
+      function formatCurrency(amount) {
+        return new Intl.NumberFormat("es-MX", {
+          style: "currency",
+          currency: "MXN",
+        }).format(amount);
+      }
 
-    // Get product emoji based on name
-    function getProductEmoji(productName) {
-      const name = productName.toLowerCase();
-      if (name.includes('short')) return '🩳';
-      if (name.includes('lente')) return '😎';
-      if (name.includes('blusa')) return '👚';
-      if (name.includes('vestido') || name.includes('dama')) return '👗';
-      if (name.includes('camisa')) return '👔';
-      if (name.includes('pantalon')) return '👖';
-      if (name.includes('jeans')) return '👖';
-      if (name.includes('falda')) return '👗';
-      if (name.includes('bolsa') || name.includes('joyeria') || name.includes('joyería')) return '👜';
-      if (name.includes('zapato')) return '👞';
-      if (name.includes('gorra')) return '🧢';
-      return '📦';
-    }
+      // Get product emoji based on name
+      function getProductEmoji(productName) {
+        const name = productName.toLowerCase();
+        if (name.includes("short")) return "🩳";
+        if (name.includes("lente")) return "😎";
+        if (name.includes("blusa")) return "👚";
+        if (name.includes("vestido") || name.includes("dama")) return "👗";
+        if (name.includes("camisa")) return "👔";
+        if (name.includes("pantalon")) return "👖";
+        if (name.includes("jeans")) return "👖";
+        if (name.includes("falda")) return "👗";
+        if (
+          name.includes("bolsa") ||
+          name.includes("joyeria") ||
+          name.includes("joyería")
+        )
+          return "👜";
+        if (name.includes("zapato")) return "👞";
+        if (name.includes("gorra")) return "🧢";
+        return "📦";
+      }
 
-    // Load direcciones
-    async function loadDirecciones() {
-      try {
-        loadingDirecciones.style.display = 'flex';
-        direccionesList.style.display = 'none';
-        emptyDirecciones.style.display = 'none';
+      // Load direcciones
+      async function loadDirecciones() {
+        try {
+          loadingDirecciones.style.display = "flex";
+          direccionesList.style.display = "none";
+          emptyDirecciones.style.display = "none";
 
-        const response = await API.getDirecciones();
+          const response = await API.getDirecciones();
 
-        if (response.ok && response.data.success) {
-          const direcciones = response.data.data.direcciones;
+          if (response.ok && response.data.success) {
+            const direcciones = response.data.data.direcciones;
 
-          if (direcciones.length === 0) {
-            loadingDirecciones.style.display = 'none';
-            emptyDirecciones.style.display = 'block';
-          } else {
-            direccionesList.innerHTML = direcciones.map(d => `
+            if (direcciones.length === 0) {
+              loadingDirecciones.style.display = "none";
+              emptyDirecciones.style.display = "block";
+            } else {
+              direccionesList.innerHTML = direcciones
+                .map(
+                  (d) => `
               <div class="direccion-card">
                 <!-- Header con etiqueta -->
                 <div style="background: linear-gradient(135deg, var(--razo-turquoise) 0%, var(--razo-blue) 100%); padding: 1rem 1.5rem; display: flex; align-items: center; justify-content: space-between;">
@@ -447,7 +637,9 @@
                       <span style="font-size: 1.25rem;">📍</span>
                     </div>
                     <div>
-                      <div style="color: white; font-weight: 700; font-size: 1.125rem;">${d.etiqueta || 'Dirección'}</div>
+                      <div style="color: white; font-weight: 700; font-size: 1.125rem;">${
+                        d.etiqueta || "Dirección"
+                      }</div>
                       <div style="color: rgba(255,255,255,0.8); font-size: 0.875rem;">Dirección de envío</div>
                     </div>
                   </div>
@@ -462,7 +654,9 @@
                     </div>
                     <div>
                       <div style="font-size: 0.75rem; color: var(--razo-gray-warm); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; margin-bottom: 0.25rem;">Receptor</div>
-                      <div style="font-weight: 600; color: var(--razo-gray-dark); font-size: 1rem;">${d.receptor}</div>
+                      <div style="font-weight: 600; color: var(--razo-gray-dark); font-size: 1rem;">${
+                        d.receptor
+                      }</div>
                     </div>
                   </div>
                   
@@ -474,14 +668,20 @@
                     <div style="flex: 1;">
                       <div style="font-size: 0.75rem; color: var(--razo-gray-warm); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; margin-bottom: 0.25rem;">Dirección completa</div>
                       <div style="color: var(--razo-gray-dark); font-size: 0.9375rem; line-height: 1.6;">
-                        ${d.calle} ${d.numeroExt || ''} ${d.numeroInt ? 'Int. ' + d.numeroInt : ''}<br>
-                        ${d.colonia ? d.colonia + ', ' : ''}${d.ciudad}, ${d.estado}<br>
+                        ${d.calle} ${d.numeroExt || ""} ${
+                    d.numeroInt ? "Int. " + d.numeroInt : ""
+                  }<br>
+                        ${d.colonia ? d.colonia + ", " : ""}${d.ciudad}, ${
+                    d.estadoNombre || d.estado || ""
+                  }<br>
                         CP: ${d.codigoPostal}
                       </div>
                     </div>
                   </div>
                   
-                  ${d.telefonoContacto ? `
+                  ${
+                    d.telefonoContacto
+                      ? `
                   <!-- Teléfono -->
                   <div style="display: flex; align-items: start; gap: 0.75rem;">
                     <div style="background: var(--razo-blue-light); color: var(--razo-blue); padding: 0.5rem; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center; min-width: 2.5rem; height: 2.5rem;">
@@ -492,41 +692,46 @@
                       <div style="font-weight: 600; color: var(--razo-gray-dark); font-size: 0.9375rem;">${d.telefonoContacto}</div>
                     </div>
                   </div>
-                  ` : ''}
+                  `
+                      : ""
+                  }
                 </div>
               </div>
-            `).join('');
+            `
+                )
+                .join("");
 
-            loadingDirecciones.style.display = 'none';
-            direccionesList.style.display = 'block';
+              loadingDirecciones.style.display = "none";
+              direccionesList.style.display = "block";
+            }
           }
+        } catch (error) {
+          console.error("Error loading direcciones:", error);
+          loadingDirecciones.style.display = "none";
+          showToast("Error al cargar direcciones", "error");
         }
-      } catch (error) {
-        console.error('Error loading direcciones:', error);
-        loadingDirecciones.style.display = 'none';
-        showToast('Error al cargar direcciones', 'error');
       }
-    }
 
-    // Load pedidos
-    async function loadPedidos() {
-      try {
-        loadingPedidos.style.display = 'flex';
-        pedidosList.style.display = 'none';
-        emptyPedidos.style.display = 'none';
+      // Load pedidos
+      async function loadPedidos() {
+        try {
+          loadingPedidos.style.display = "flex";
+          pedidosList.style.display = "none";
+          emptyPedidos.style.display = "none";
 
-        const response = await API.getPedidos();
+          const response = await API.getPedidos();
 
-        if (response.ok && response.data.success) {
-          const pedidos = response.data.data.pedidos;
+          if (response.ok && response.data.success) {
+            const pedidos = response.data.data.pedidos;
 
-          if (pedidos.length === 0) {
-            loadingPedidos.style.display = 'none';
-            emptyPedidos.style.display = 'block';
-          } else {
-            pedidosList.innerHTML = pedidos.map(p => {
-              const estatusClass = `estatus-${p.estatus.toLowerCase()}`;
-              return `
+            if (pedidos.length === 0) {
+              loadingPedidos.style.display = "none";
+              emptyPedidos.style.display = "block";
+            } else {
+              pedidosList.innerHTML = pedidos
+                .map((p) => {
+                  const estatusClass = `estatus-${p.estatus.toLowerCase()}`;
+                  return `
                 <div class="pedido-card">
                   <!-- Header del pedido -->
                   <div style="background: linear-gradient(135deg, var(--razo-orange) 0%, var(--razo-orange-dark) 100%); padding: 1.25rem 1.5rem; display: flex; justify-content: space-between; align-items: center;">
@@ -535,13 +740,20 @@
                         <span style="font-size: 1.5rem;">📦</span>
                       </div>
                       <div>
-                        <div style="color: white; font-weight: 700; font-size: 1.25rem;">Pedido #${p.pedidoId}</div>
+                        <div style="color: white; font-weight: 700; font-size: 1.25rem;">Pedido #${
+                          p.pedidoId
+                        }</div>
                         <div style="color: rgba(255,255,255,0.9); font-size: 0.875rem;">
-                          ${new Date(p.fechaPedido).toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' })}
+                          ${new Date(p.fechaPedido).toLocaleDateString(
+                            "es-MX",
+                            { year: "numeric", month: "long", day: "numeric" }
+                          )}
                         </div>
                       </div>
                     </div>
-                    <span class="estatus-badge ${estatusClass}">${p.estatus}</span>
+                    <span class="estatus-badge ${estatusClass}">${
+                    p.estatus
+                  }</span>
                   </div>
 
                   <!-- Productos del pedido -->
@@ -550,27 +762,41 @@
                       Productos
                     </div>
                     <div class="pedido-items">
-                      ${p.items.map(item => `
+                      ${p.items
+                        .map(
+                          (item) => `
                         <div class="pedido-item">
                           <div class="pedido-item-img">
                             ${getProductEmoji(item.nombreProducto)}
                           </div>
                           <div>
-                            <div style="font-weight: 700; margin-bottom: 0.5rem; color: var(--razo-gray-dark); font-size: 1rem;">${item.nombreProducto}</div>
+                            <div style="font-weight: 700; margin-bottom: 0.5rem; color: var(--razo-gray-dark); font-size: 1rem;">${
+                              item.nombreProducto
+                            }</div>
                             <div style="display: flex; flex-wrap: wrap; gap: 1rem; font-size: 0.875rem; color: var(--razo-gray-warm);">
                               <div><strong>SKU:</strong> ${item.sku}</div>
-                              <div><strong>${item.cantidadPaquetes}</strong> paquete(s) × ${formatCurrency(item.precioPorPaquete)}</div>
-                              <div><strong>Total piezas:</strong> ${item.piezasTotales}</div>
+                              <div><strong>${
+                                item.cantidadPaquetes
+                              }</strong> paquete(s) × ${formatCurrency(
+                            item.precioPorPaquete
+                          )}</div>
+                              <div><strong>Total piezas:</strong> ${
+                                item.piezasTotales
+                              }</div>
                             </div>
                           </div>
                           <div style="text-align: right;">
                             <div style="font-size: 0.75rem; color: var(--razo-gray-warm); margin-bottom: 0.25rem;">Subtotal</div>
                             <div style="font-weight: 700; font-size: 1.125rem; color: var(--razo-orange);">
-                              ${formatCurrency(item.cantidadPaquetes * item.precioPorPaquete)}
+                              ${formatCurrency(
+                                item.cantidadPaquetes * item.precioPorPaquete
+                              )}
                             </div>
                           </div>
                         </div>
-                      `).join('')}
+                      `
+                        )
+                        .join("")}
                     </div>
 
                     <!-- Información de envío y agente -->
@@ -583,12 +809,18 @@
                           </div>
                           <div style="flex: 1;">
                             <div style="font-size: 0.75rem; color: var(--razo-gray-warm); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; margin-bottom: 0.25rem;">Envío a</div>
-                            <div style="font-weight: 600; color: var(--razo-gray-dark);">${p.direccion.receptor}</div>
-                            <div style="font-size: 0.875rem; color: var(--razo-gray-warm);">${p.direccion.ciudad}, ${p.direccion.estado}</div>
+                            <div style="font-weight: 600; color: var(--razo-gray-dark);">${
+                              p.direccion.receptor
+                            }</div>
+                            <div style="font-size: 0.875rem; color: var(--razo-gray-warm);">${
+                              p.direccion.ciudad
+                            }, ${p.direccion.estado}</div>
                           </div>
                         </div>
                         
-                        ${p.agente ? `
+                        ${
+                          p.agente
+                            ? `
                         <!-- Agente -->
                         <div style="display: flex; align-items: start; gap: 0.75rem;">
                           <div style="background: var(--razo-blue-light); color: var(--razo-blue); padding: 0.5rem; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center; min-width: 2.5rem; height: 2.5rem;">
@@ -600,173 +832,196 @@
                             <div style="font-size: 0.875rem; color: var(--razo-gray-warm);">Código: ${p.agente.codigoAgente}</div>
                           </div>
                         </div>
-                        ` : ''}
+                        `
+                            : ""
+                        }
                       </div>
 
                       <!-- Total -->
                       <div style="background: linear-gradient(135deg, var(--razo-orange-light) 0%, var(--razo-orange) 100%); padding: 1rem 1.5rem; border-radius: 0.75rem; display: flex; justify-content: space-between; align-items: center;">
                         <span style="color: white; font-weight: 700; font-size: 1.125rem;">Total del Pedido</span>
-                        <span style="color: white; font-weight: 700; font-size: 1.5rem;">${formatCurrency(p.montoTotal)}</span>
+                        <span style="color: white; font-weight: 700; font-size: 1.5rem;">${formatCurrency(
+                          p.montoTotal
+                        )}</span>
                       </div>
                     </div>
                   </div>
                 </div>
               `;
-            }).join('');
+                })
+                .join("");
 
-            loadingPedidos.style.display = 'none';
-            pedidosList.style.display = 'block';
+              loadingPedidos.style.display = "none";
+              pedidosList.style.display = "block";
+            }
           }
+        } catch (error) {
+          console.error("Error loading pedidos:", error);
+          loadingPedidos.style.display = "none";
+          showToast("Error al cargar pedidos", "error");
         }
-      } catch (error) {
-        console.error('Error loading pedidos:', error);
-        loadingPedidos.style.display = 'none';
-        showToast('Error al cargar pedidos', 'error');
       }
-    }
 
-    // Modal handlers
-    btnNuevaDireccion.addEventListener('click', () => {
-      modalDireccion.classList.add('show');
-    });
+      // Modal handlers
+      btnNuevaDireccion.addEventListener("click", () => {
+        modalDireccion.classList.add("show");
+        loadEstados();
+      });
 
-    btnCancelarDireccion.addEventListener('click', () => {
-      modalDireccion.classList.remove('show');
-      formDireccion.reset();
-    });
-
-    // Cerrar modal al hacer clic fuera del contenido
-    modalDireccion.addEventListener('click', (e) => {
-      if (e.target === modalDireccion) {
-        modalDireccion.classList.remove('show');
+      btnCancelarDireccion.addEventListener("click", () => {
+        modalDireccion.classList.remove("show");
         formDireccion.reset();
-      }
-    });
+        resetEstadoSelect();
+      });
 
-    // Cerrar modal con la tecla Escape
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && modalDireccion.classList.contains('show')) {
-        modalDireccion.classList.remove('show');
-        formDireccion.reset();
-      }
-    });
-
-    // Save direccion
-    formDireccion.addEventListener('submit', async (e) => {
-      e.preventDefault();
-
-      btnGuardarDireccion.disabled = true;
-      btnGuardarText.style.display = 'none';
-      btnGuardarSpinner.style.display = 'block';
-
-      try {
-        const formData = {
-          Etiqueta: document.getElementById('etiqueta').value.trim() || null,
-          Receptor: document.getElementById('receptor').value.trim(),
-          Calle: document.getElementById('calle').value.trim(),
-          NumeroExt: document.getElementById('numeroExt').value.trim() || null,
-          NumeroInt: document.getElementById('numeroInt').value.trim() || null,
-          Colonia: document.getElementById('colonia').value.trim() || null,
-          Ciudad: document.getElementById('ciudad').value.trim(),
-          Estado: document.getElementById('estado').value.trim(),
-          CodigoPostal: document.getElementById('codigoPostal').value.trim(),
-          TelefonoContacto: document.getElementById('telefonoContacto').value.trim() || null
-        };
-
-        const response = await API.crearDireccion(formData);
-
-        if (response.ok && response.data.success) {
-          showToast('Dirección guardada exitosamente', 'success');
-          modalDireccion.classList.remove('show');
+      // Cerrar modal al hacer clic fuera del contenido
+      modalDireccion.addEventListener("click", (e) => {
+        if (e.target === modalDireccion) {
+          modalDireccion.classList.remove("show");
           formDireccion.reset();
-          loadDirecciones();
-        } else {
-          showToast(response.data.message || 'Error al guardar dirección', 'error');
+          resetEstadoSelect();
         }
-      } catch (error) {
-        console.error('Error:', error);
-        showToast('Error al conectar con el servidor', 'error');
-      } finally {
-        btnGuardarDireccion.disabled = false;
-        btnGuardarText.style.display = 'inline';
-        btnGuardarSpinner.style.display = 'none';
-      }
-    });
+      });
 
-    // Logout
-    logoutBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      clearAuthData();
-      showToast('Sesión cerrada exitosamente', 'success');
-      setTimeout(() => {
-        window.location.href = '/login.html';
-      }, 500);
-    });
+      // Cerrar modal con la tecla Escape
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && modalDireccion.classList.contains("show")) {
+          modalDireccion.classList.remove("show");
+          formDireccion.reset();
+        }
+      });
 
-    // Initialize
-    window.addEventListener('razoconnect:client-updated', () => {
-      console.log('🔄 Cliente actualizado, refrescando perfil...');
+      // Save direccion
+      formDireccion.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        btnGuardarDireccion.disabled = true;
+        btnGuardarText.style.display = "none";
+        btnGuardarSpinner.style.display = "block";
+
+        try {
+          const formData = {
+            Etiqueta: document.getElementById("etiqueta").value.trim() || null,
+            Receptor: document.getElementById("receptor").value.trim(),
+            Calle: document.getElementById("calle").value.trim(),
+            NumeroExt:
+              document.getElementById("numeroExt").value.trim() || null,
+            NumeroInt:
+              document.getElementById("numeroInt").value.trim() || null,
+            Colonia: document.getElementById("colonia").value.trim() || null,
+            Ciudad: document.getElementById("ciudad").value.trim(),
+            EstadoID: document.getElementById("estadoSelect").value
+              ? parseInt(document.getElementById("estadoSelect").value, 10)
+              : null,
+            CodigoPostal: document.getElementById("codigoPostal").value.trim(),
+            TelefonoContacto:
+              document.getElementById("telefonoContacto").value.trim() || null,
+          };
+
+          if (!formData.EstadoID) {
+            showToast("Selecciona un estado válido", "warning");
+            return;
+          }
+
+          const response = await API.crearDireccion(formData);
+
+          if (response.ok && response.data.success) {
+            showToast("Dirección guardada exitosamente", "success");
+            modalDireccion.classList.remove("show");
+            formDireccion.reset();
+            loadDirecciones();
+            resetEstadoSelect();
+          } else {
+            showToast(
+              response.data.message || "Error al guardar dirección",
+              "error"
+            );
+          }
+        } catch (error) {
+          console.error("Error:", error);
+          showToast("Error al conectar con el servidor", "error");
+        } finally {
+          btnGuardarDireccion.disabled = false;
+          btnGuardarText.style.display = "inline";
+          btnGuardarSpinner.style.display = "none";
+        }
+      });
+
+      // Logout
+      logoutBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        clearAuthData();
+        showToast("Sesión cerrada exitosamente", "success");
+        setTimeout(() => {
+          window.location.href = "/login.html";
+        }, 500);
+      });
+
+      // Initialize
+      window.addEventListener("razoconnect:client-updated", () => {
+        console.log("🔄 Cliente actualizado, refrescando perfil...");
+        displayPerfil();
+      });
+
       displayPerfil();
-    });
+      loadEstados();
+    </script>
 
-    displayPerfil();
-  </script>
-
-  <style>
-    /* Modal styles */
-    .modal {
-      display: none;
-      position: fixed;
-      z-index: 1000;
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0, 0, 0, 0.6);
-      -webkit-backdrop-filter: blur(4px);
-      backdrop-filter: blur(4px);
-      justify-content: center;
-      align-items: center;
-      padding: 1rem;
-      overflow-y: auto;
-    }
-
-    .modal.show {
-      display: flex;
-    }
-
-    .modal-content {
-      animation: modalSlideIn 0.3s ease-out;
-      max-height: 90vh;
-      overflow-y: auto;
-    }
-
-    @keyframes modalSlideIn {
-      from {
-        transform: translateY(-50px);
-        opacity: 0;
+    <style>
+      /* Modal styles */
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.6);
+        -webkit-backdrop-filter: blur(4px);
+        backdrop-filter: blur(4px);
+        justify-content: center;
+        align-items: center;
+        padding: 1rem;
+        overflow-y: auto;
       }
-      to {
-        transform: translateY(0);
-        opacity: 1;
-      }
-    }
 
-    @media (max-width: 768px) {
+      .modal.show {
+        display: flex;
+      }
+
       .modal-content {
-        max-width: 95% !important;
-        padding: 1.5rem !important;
-        margin: 1rem;
+        animation: modalSlideIn 0.3s ease-out;
+        max-height: 90vh;
+        overflow-y: auto;
       }
 
-      .modal-content h2 {
-        font-size: 1.25rem !important;
+      @keyframes modalSlideIn {
+        from {
+          transform: translateY(-50px);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
       }
 
-      .form-group {
-        margin-bottom: 1rem;
+      @media (max-width: 768px) {
+        .modal-content {
+          max-width: 95% !important;
+          padding: 1.5rem !important;
+          margin: 1rem;
+        }
+
+        .modal-content h2 {
+          font-size: 1.25rem !important;
+        }
+
+        .form-group {
+          margin-bottom: 1rem;
+        }
       }
-    }
-  </style>
-</body>
+    </style>
+  </body>
 </html>

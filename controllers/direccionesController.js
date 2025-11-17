@@ -1,5 +1,53 @@
 const db = require('../db');
 
+const mapDireccionRow = (row) => ({
+  direccionId: row.direccionid,
+  etiqueta: row.etiqueta,
+  receptor: row.receptor,
+  calle: row.calle,
+  numeroExt: row.numeroext,
+  numeroInt: row.numeroint,
+  colonia: row.colonia,
+  ciudad: row.ciudad,
+  estadoId: row.estadoid !== null ? parseInt(row.estadoid, 10) : null,
+  estadoNombre: row.estadonombre || null,
+  estado: row.estadonombre || null,
+  codigoPostal: row.codigopostal,
+  telefonoContacto: row.telefonocontacto
+});
+
+const obtenerEstados = async (req, res) => {
+  try {
+    const result = await db.query(
+      `SELECT EstadoID, Nombre, Abreviatura
+       FROM Estados
+       ORDER BY Nombre ASC`
+    );
+
+    const estados = result.rows.map(row => ({
+      estadoId: row.estadoid,
+      nombre: row.nombre,
+      abreviatura: row.abreviatura
+    }));
+
+    res.status(200).json({
+      success: true,
+      message: 'Estados obtenidos exitosamente',
+      data: {
+        estados,
+        total: estados.length
+      }
+    });
+  } catch (error) {
+    console.error('Error al obtener estados:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al obtener los estados',
+      error: error.message
+    });
+  }
+};
+
 /**
  * Obtener todas las direcciones del cliente logueado
  * GET /api/direcciones
@@ -10,37 +58,27 @@ const obtenerDirecciones = async (req, res) => {
 
     const query = `
       SELECT 
-        DireccionID,
-        Etiqueta,
-        Receptor,
-        Calle,
-        NumeroExt,
-        NumeroInt,
-        Colonia,
-        Ciudad,
-        Estado,
-        CodigoPostal,
-        TelefonoContacto
-      FROM Cliente_Direcciones
-      WHERE ClienteID = $1
-      ORDER BY DireccionID DESC
+        cd.DireccionID,
+        cd.Etiqueta,
+        cd.Receptor,
+        cd.Calle,
+        cd.NumeroExt,
+        cd.NumeroInt,
+        cd.Colonia,
+        cd.Ciudad,
+        cd.EstadoID,
+        cd.CodigoPostal,
+        cd.TelefonoContacto,
+        e.Nombre AS EstadoNombre
+      FROM Cliente_Direcciones cd
+      LEFT JOIN Estados e ON cd.EstadoID = e.EstadoID
+      WHERE cd.ClienteID = $1
+      ORDER BY cd.DireccionID DESC
     `;
 
     const result = await db.query(query, [clienteId]);
 
-    const direcciones = result.rows.map(row => ({
-      direccionId: row.direccionid,
-      etiqueta: row.etiqueta,
-      receptor: row.receptor,
-      calle: row.calle,
-      numeroExt: row.numeroext,
-      numeroInt: row.numeroint,
-      colonia: row.colonia,
-      ciudad: row.ciudad,
-      estado: row.estado,
-      codigoPostal: row.codigopostal,
-      telefonoContacto: row.telefonocontacto
-    }));
+    const direcciones = result.rows.map(mapDireccionRow);
 
     res.status(200).json({
       success: true,
@@ -76,30 +114,31 @@ const crearDireccion = async (req, res) => {
       NumeroInt,
       Colonia,
       Ciudad,
-      Estado,
+      EstadoID,
       CodigoPostal,
       TelefonoContacto
     } = req.body;
 
     // Validar campos requeridos
-    if (!Receptor || !Calle || !Ciudad || !Estado || !CodigoPostal) {
+    const estadoId = parseInt(EstadoID, 10);
+
+    if (!Receptor || !Calle || !Ciudad || Number.isNaN(estadoId) || !CodigoPostal) {
       return res.status(400).json({
         success: false,
-        message: 'Receptor, Calle, Ciudad, Estado y Código Postal son requeridos'
+        message: 'Receptor, Calle, Ciudad, EstadoID y Código Postal son requeridos'
       });
     }
 
     const query = `
       INSERT INTO Cliente_Direcciones (
         ClienteID, Etiqueta, Receptor, Calle, NumeroExt, NumeroInt,
-        Colonia, Ciudad, Estado, CodigoPostal, TelefonoContacto
+        Colonia, Ciudad, EstadoID, CodigoPostal, TelefonoContacto
       )
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-      RETURNING DireccionID, Etiqueta, Receptor, Calle, NumeroExt, NumeroInt,
-                Colonia, Ciudad, Estado, CodigoPostal, TelefonoContacto
+      RETURNING DireccionID
     `;
 
-    const result = await db.query(query, [
+    const insertResult = await db.query(query, [
       clienteId,
       Etiqueta || null,
       Receptor,
@@ -108,29 +147,41 @@ const crearDireccion = async (req, res) => {
       NumeroInt || null,
       Colonia || null,
       Ciudad,
-      Estado,
+      estadoId,
       CodigoPostal,
       TelefonoContacto || null
     ]);
 
-    const direccion = result.rows[0];
+    const direccionId = insertResult.rows[0].direccionid;
+
+    const direccionResult = await db.query(
+      `SELECT 
+          cd.DireccionID,
+          cd.Etiqueta,
+          cd.Receptor,
+          cd.Calle,
+          cd.NumeroExt,
+          cd.NumeroInt,
+          cd.Colonia,
+          cd.Ciudad,
+          cd.EstadoID,
+          cd.CodigoPostal,
+          cd.TelefonoContacto,
+          e.Nombre AS EstadoNombre
+        FROM Cliente_Direcciones cd
+        LEFT JOIN Estados e ON cd.EstadoID = e.EstadoID
+        WHERE cd.DireccionID = $1`,
+      [direccionId]
+    );
+
+    const direccion = direccionResult.rows[0];
 
     res.status(201).json({
       success: true,
       message: 'Dirección creada exitosamente',
       data: {
         direccion: {
-          direccionId: direccion.direccionid,
-          etiqueta: direccion.etiqueta,
-          receptor: direccion.receptor,
-          calle: direccion.calle,
-          numeroExt: direccion.numeroext,
-          numeroInt: direccion.numeroint,
-          colonia: direccion.colonia,
-          ciudad: direccion.ciudad,
-          estado: direccion.estado,
-          codigoPostal: direccion.codigopostal,
-          telefonoContacto: direccion.telefonocontacto
+          ...mapDireccionRow(direccion)
         }
       }
     });
@@ -146,6 +197,7 @@ const crearDireccion = async (req, res) => {
 };
 
 module.exports = {
+  obtenerEstados,
   obtenerDirecciones,
   crearDireccion
 };

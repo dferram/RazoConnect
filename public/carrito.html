@@ -1,348 +1,564 @@
 <!DOCTYPE html>
 <html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mi Carrito - RazoConnect</title>
-  
-  <!-- PROTECCIÓN DE AUTENTICACIÓN - Debe cargarse PRIMERO -->
-  <script src="js/auth-guard-client.js"></script>
-  
-  <!-- SISTEMA DE RENOVACIÓN DE TOKENS -->
-  <script src="js/token-refresh.js"></script>
-  
-  <link rel="stylesheet" href="css/styles.css">
-  <style>
-    .modal {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.5);
-      z-index: 1000;
-      align-items: center;
-      justify-content: center;
-    }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mi Carrito - RazoConnect</title>
 
-    .modal.show {
-      display: flex;
-    }
+    <!-- PROTECCIÓN DE AUTENTICACIÓN - Debe cargarse PRIMERO -->
+    <script src="js/auth-guard-client.js"></script>
 
-    .modal-content {
-      background: var(--surface);
-      border-radius: 0.5rem;
-      padding: 2rem;
-      max-width: 600px;
-      width: 90%;
-      max-height: 90vh;
-      overflow-y: auto;
-    }
+    <!-- SISTEMA DE RENOVACIÓN DE TOKENS -->
+    <script src="js/token-refresh.js"></script>
 
-    .direccion-option {
-      background: var(--surface);
-      border: 2px solid var(--border-color);
-      border-radius: 0.5rem;
-      padding: 1rem;
-      margin-bottom: 1rem;
-      cursor: pointer;
-      transition: all 0.3s;
-    }
+    <link rel="stylesheet" href="css/styles.css" />
+    <style>
+      .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+      }
 
-    .direccion-option:hover {
-      border-color: var(--primary-color);
-    }
+      .modal.show {
+        display: flex;
+      }
 
-    .direccion-option.selected {
-      border-color: var(--primary-color);
-      background: rgba(37, 99, 235, 0.05);
-    }
+      .modal-content {
+        background: var(--surface);
+        border-radius: 0.5rem;
+        padding: 2rem;
+        max-width: 600px;
+        width: 90%;
+        max-height: 90vh;
+        overflow-y: auto;
+      }
 
-    .direccion-option input[type="radio"] {
-      margin-right: 1rem;
-    }
+      .direccion-option {
+        background: var(--surface);
+        border: 2px solid var(--border-color);
+        border-radius: 0.5rem;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        cursor: pointer;
+        transition: all 0.3s;
+      }
 
-    .btn-quantity:disabled {
-      opacity: 0.4;
-      cursor: not-allowed !important;
-      pointer-events: none;
-    }
+      .direccion-option:hover {
+        border-color: var(--primary-color);
+      }
 
-    .cart-item {
-      position: relative;
-      padding: 1.5rem;
-      background: var(--surface);
-      border-radius: 0.75rem;
-      margin-bottom: 1rem;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-      transition: all 0.2s;
-    }
+      .direccion-option.selected {
+        border-color: var(--primary-color);
+        background: rgba(37, 99, 235, 0.05);
+      }
 
-    .cart-item:hover {
-      box-shadow: 0 4px 12px rgba(0,0,0,0.12);
-    }
-  </style>
-</head>
-<body>
-  <nav class="navbar">
-    <div class="container navbar-content">
-      <a href="/catalogo.html" class="navbar-brand">📦 RazoConnect</a>
-      <ul class="navbar-menu">
-        <li><a href="/catalogo.html" class="navbar-link">Productos</a></li>
-        <li><a href="/carrito.html" class="navbar-link" style="color: var(--primary-color); font-weight: 600;">Carrito</a></li>
-        <li><a href="/dashboard.html" class="navbar-link">Mi Cuenta</a></li>
-        <li><a href="#" class="navbar-link" id="logoutBtn">Cerrar Sesión</a></li>
-      </ul>
-    </div>
-  </nav>
+      .direccion-option input[type="radio"] {
+        margin-right: 1rem;
+      }
 
-  <div class="container" style="padding-top: 2rem; padding-bottom: 3rem;">
-    <h1 style="font-size: 2rem; font-weight: bold; margin-bottom: 2rem;">Mi carrito de compras</h1>
+      .btn-quantity:disabled {
+        opacity: 0.4;
+        cursor: not-allowed !important;
+        pointer-events: none;
+      }
 
-    <!-- Loading State -->
-    <div id="loadingState" class="loading">
-      <div class="spinner"></div>
-    </div>
+      .cart-item {
+        position: relative;
+        padding: 1.5rem;
+        background: var(--surface);
+        border-radius: 0.75rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        transition: all 0.2s;
+      }
 
-    <!-- Empty State -->
-    <div id="emptyState" class="empty-state" style="display: none;">
-      <div class="empty-state-icon">🛒</div>
-      <h2 class="empty-state-title">Tu carrito está vacío</h2>
-      <p class="empty-state-text">Agrega productos para comenzar tu compra</p>
-      <a href="/catalogo.html" class="btn btn-primary">Ver Productos</a>
-    </div>
-
-    <!-- Cart Content -->
-    <div id="cartContent" style="display: none;">
-      <div style="display: grid; grid-template-columns: 1fr 350px; gap: 2rem; align-items: start;">
-        <!-- Cart Items -->
-        <div>
-          <div id="cartItems"></div>
-        </div>
-
-        <!-- Summary -->
-        <div style="position: sticky; top: 100px;">
-          <div class="summary">
-            <h3 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem;">Resumen del pedido</h3>
-            
-            <div class="summary-row">
-              <span>Total de Items:</span>
-              <span id="summaryTotalItems">0</span>
-            </div>
-            
-            <div class="summary-row">
-              <span>Subtotal:</span>
-              <span id="summarySubtotal">$0.00</span>
-            </div>
-            
-            <div class="summary-row total">
-              <span>Total:</span>
-              <span id="summaryTotal">$0.00</span>
-            </div>
-
-            <button class="btn btn-success btn-block mt-3" id="checkoutBtn">
-              💳 Proceder al pago
-            </button>
-            
-            <a href="/catalogo.html" class="btn btn-secondary btn-block mt-2" style="text-decoration: none; display: block; text-align: center;">
-              🛍️ Agregar más productos
-            </a>
-          </div>
-
-          <div class="alert alert-info mt-3" style="font-size: 0.875rem;">
-            💡 <strong>Nota:</strong> Los precios son por paquete. Cada paquete contiene múltiples piezas según el producto.
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal: Success -->
-  <div id="modalSuccess" class="modal">
-    <div class="modal-content" style="background: white; padding: 3rem; border-radius: 1rem; box-shadow: 0 20px 60px rgba(0,0,0,0.3); max-width: 500px; text-align: center;">
-      <div style="font-size: 4rem; margin-bottom: 1rem;">✅</div>
-      <h2 style="font-size: 2rem; font-weight: bold; margin-bottom: 1rem; color: var(--success-color);">¡Pedido confirmado!</h2>
-      <p style="font-size: 1rem; color: var(--text-secondary); margin-bottom: 2rem;">Tu pedido ha sido creado exitosamente. Pronto recibirás una confirmación.</p>
-      
-      <div style="display: flex; flex-direction: column; gap: 1rem;">
-        <a href="/catalogo.html" class="btn btn-primary" style="width: 100%; text-decoration: none; text-align: center;">
-          🛍️ Seguir comprando
-        </a>
-        <a href="/dashboard.html" class="btn btn-secondary" style="width: 100%; text-decoration: none; text-align: center;">
-          📋 Ver mis pedidos
-        </a>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal: Confirm Delete -->
-  <div id="modalEliminar" class="modal">
-    <div class="modal-content" style="background: white; padding: 2.5rem; border-radius: 1.5rem; box-shadow: 0 25px 70px rgba(0, 0, 0, 0.3); max-width: 420px; text-align: center; position: relative;">
-      <div style="margin-bottom: 1.5rem;">
-        <div style="width: 70px; height: 70px; background: linear-gradient(135deg, var(--razo-orange) 0%, var(--razo-orange-dark) 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.25rem; font-size: 2rem; box-shadow: 0 10px 25px rgba(255, 119, 51, 0.35);">
-          🗑️
-        </div>
-        <h2 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 0.75rem; color: #2D3748;">
-          ¿Eliminar producto?
-        </h2>
-        <p style="color: #718096; font-size: 1rem; line-height: 1.5;">
-          ¿Deseas eliminar "<span id="modalEliminarNombre"></span>" del carrito?
-        </p>
-      </div>
-
-      <div style="display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;">
-        <button class="btn btn-secondary" id="btnCancelarEliminar" style="flex: 1; min-width: 160px; padding: 0.875rem 1.5rem; font-size: 0.9375rem;">
-          Cancelar
-        </button>
-        <button class="btn btn-danger" id="btnConfirmarEliminar" style="flex: 1; min-width: 160px; padding: 0.875rem 1.5rem; font-size: 0.9375rem;">
-          <span id="btnEliminarText">Eliminar producto</span>
-          <div class="spinner" id="btnEliminarSpinner" style="display: none; width: 20px; height: 20px; border-width: 2px;"></div>
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal: Checkout -->
-  <div id="modalCheckout" class="modal">
-    <div class="modal-content" style="background: white; padding: 2rem; border-radius: 1rem; box-shadow: 0 20px 60px rgba(0,0,0,0.3); max-width: 600px;">
-      <h2 style="font-size: 1.5rem; font-weight: bold; margin-bottom: 1.5rem;">Finalizar pedido</h2>
-      
-      <div id="checkoutContent">
-        <!-- Step 1: Select Address -->
-        <div id="stepDireccion">
-          <h3 style="font-weight: 600; margin-bottom: 1rem;">Selecciona tu dirección de envío</h3>
-          
-          <div id="loadingDirecciones" class="loading">
-            <div class="spinner"></div>
-          </div>
-
-          <div id="direccionesList"></div>
-
-          <div id="noDirecciones" style="display: none;">
-            <div class="alert alert-info">
-              No tienes direcciones guardadas. <a href="/dashboard.html" style="color: var(--primary-color); font-weight: 600;">Agregar una dirección</a>
-            </div>
-          </div>
-
-          <!-- Optional Agent Selection -->
-          <div class="form-group" style="margin-top: 1.5rem;">
-            <label class="form-label" for="selectAgente">Agente de Ventas (opcional)</label>
-            
-            <!-- Loading agentes -->
-            <div id="loadingAgentes" style="display: none; padding: 0.5rem; text-align: center;">
-              <div class="spinner" style="width: 20px; height: 20px; border-width: 2px;"></div>
-            </div>
-            
-            <select 
-              id="selectAgente" 
-              class="form-input" 
-              style="padding: 0.75rem; font-size: 1rem;"
+      .cart-item:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container navbar-content">
+        <a href="/catalogo.html" class="navbar-brand">📦 RazoConnect</a>
+        <ul class="navbar-menu">
+          <li><a href="/catalogo.html" class="navbar-link">Productos</a></li>
+          <li>
+            <a
+              href="/carrito.html"
+              class="navbar-link"
+              style="color: var(--primary-color); font-weight: 600"
+              >Carrito</a
             >
-              <option value="">Sin agente</option>
-              <!-- Opciones se cargarán dinámicamente -->
-            </select>
-            
-            <p style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 0.25rem;">
-              💰 Si seleccionas un agente, recibirá una comisión del 20% de tu compra
-            </p>
+          </li>
+          <li><a href="/dashboard.html" class="navbar-link">Mi Cuenta</a></li>
+          <li>
+            <a href="#" class="navbar-link" id="logoutBtn">Cerrar Sesión</a>
+          </li>
+        </ul>
+      </div>
+    </nav>
+
+    <div class="container" style="padding-top: 2rem; padding-bottom: 3rem">
+      <h1 style="font-size: 2rem; font-weight: bold; margin-bottom: 2rem">
+        Mi carrito de compras
+      </h1>
+
+      <!-- Loading State -->
+      <div id="loadingState" class="loading">
+        <div class="spinner"></div>
+      </div>
+
+      <!-- Empty State -->
+      <div id="emptyState" class="empty-state" style="display: none">
+        <div class="empty-state-icon">🛒</div>
+        <h2 class="empty-state-title">Tu carrito está vacío</h2>
+        <p class="empty-state-text">Agrega productos para comenzar tu compra</p>
+        <a href="/catalogo.html" class="btn btn-primary">Ver Productos</a>
+      </div>
+
+      <!-- Cart Content -->
+      <div id="cartContent" style="display: none">
+        <div
+          style="
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 2rem;
+            align-items: start;
+          "
+        >
+          <!-- Cart Items -->
+          <div>
+            <div id="cartItems"></div>
           </div>
 
-          <!-- Buttons -->
-          <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
-            <button class="btn btn-success" style="flex: 1;" id="btnConfirmarPedido">
-              <span id="btnConfirmarText">Confirmar pedido</span>
-              <div class="spinner" id="btnConfirmarSpinner" style="display: none; width: 20px; height: 20px; border-width: 2px;"></div>
-            </button>
-            <button class="btn btn-secondary" style="flex: 1;" id="btnCancelarCheckout">Cancelar</button>
+          <!-- Summary -->
+          <div style="position: sticky; top: 100px">
+            <div class="summary">
+              <h3
+                style="
+                  font-size: 1.25rem;
+                  font-weight: 600;
+                  margin-bottom: 1rem;
+                "
+              >
+                Resumen del pedido
+              </h3>
+
+              <div class="summary-row">
+                <span>Total de Items:</span>
+                <span id="summaryTotalItems">0</span>
+              </div>
+
+              <div class="summary-row">
+                <span>Subtotal:</span>
+                <span id="summarySubtotal">$0.00</span>
+              </div>
+
+              <div class="summary-row total">
+                <span>Total:</span>
+                <span id="summaryTotal">$0.00</span>
+              </div>
+
+              <button class="btn btn-success btn-block mt-3" id="checkoutBtn">
+                Proceder al pago
+              </button>
+
+              <a
+                href="/catalogo.html"
+                class="btn btn-secondary btn-block mt-2"
+                style="
+                  text-decoration: none;
+                  display: block;
+                  text-align: center;
+                "
+              >
+                Agregar más productos
+              </a>
+            </div>
+
+            <div class="alert alert-info mt-3" style="font-size: 0.875rem">
+              💡 <strong>Nota:</strong> Los precios son por paquete. Cada
+              paquete contiene múltiples piezas según el producto.
+            </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <script src="js/api.js"></script>
-  <script>
-    // Check authentication
-    if (!requireAuth()) {
-      // User is not authenticated, redirected to login
-    }
+    <!-- Modal: Success -->
+    <div id="modalSuccess" class="modal">
+      <div
+        class="modal-content"
+        style="
+          background: white;
+          padding: 3rem;
+          border-radius: 1rem;
+          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+          max-width: 500px;
+          text-align: center;
+        "
+      >
+        <div style="font-size: 4rem; margin-bottom: 1rem">✅</div>
+        <h2
+          style="
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            color: var(--success-color);
+          "
+        >
+          ¡Pedido confirmado!
+        </h2>
+        <p
+          style="
+            font-size: 1rem;
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+          "
+        >
+          Tu pedido ha sido creado exitosamente. Pronto recibirás una
+          confirmación.
+        </p>
 
-    const loadingState = document.getElementById('loadingState');
-    const emptyState = document.getElementById('emptyState');
-    const cartContent = document.getElementById('cartContent');
-    const cartItemsContainer = document.getElementById('cartItems');
-    const summaryTotalItems = document.getElementById('summaryTotalItems');
-    const summarySubtotal = document.getElementById('summarySubtotal');
-    const summaryTotal = document.getElementById('summaryTotal');
-    const checkoutBtn = document.getElementById('checkoutBtn');
-    const logoutBtn = document.getElementById('logoutBtn');
+        <div style="display: flex; flex-direction: column; gap: 1rem">
+          <a
+            href="/catalogo.html"
+            class="btn btn-primary"
+            style="width: 100%; text-decoration: none; text-align: center"
+          >
+            Seguir comprando
+          </a>
+          <a
+            href="/dashboard.html"
+            class="btn btn-secondary"
+            style="width: 100%; text-decoration: none; text-align: center"
+          >
+            Ver mis pedidos
+          </a>
+        </div>
+      </div>
+    </div>
 
-    // Modal elements
-    const modalCheckout = document.getElementById('modalCheckout');
-    const modalSuccess = document.getElementById('modalSuccess');
-    const modalEliminar = document.getElementById('modalEliminar');
-    const modalEliminarNombre = document.getElementById('modalEliminarNombre');
-    const btnCancelarEliminar = document.getElementById('btnCancelarEliminar');
-    const btnConfirmarEliminar = document.getElementById('btnConfirmarEliminar');
-    const btnEliminarText = document.getElementById('btnEliminarText');
-    const btnEliminarSpinner = document.getElementById('btnEliminarSpinner');
-    const loadingDirecciones = document.getElementById('loadingDirecciones');
-    const direccionesList = document.getElementById('direccionesList');
-    const noDirecciones = document.getElementById('noDirecciones');
-    const selectAgente = document.getElementById('selectAgente');
-    const loadingAgentes = document.getElementById('loadingAgentes');
-    const btnConfirmarPedido = document.getElementById('btnConfirmarPedido');
-    const btnCancelarCheckout = document.getElementById('btnCancelarCheckout');
-    const btnConfirmarText = document.getElementById('btnConfirmarText');
-    const btnConfirmarSpinner = document.getElementById('btnConfirmarSpinner');
+    <!-- Modal: Confirm Delete -->
+    <div id="modalEliminar" class="modal">
+      <div
+        class="modal-content"
+        style="
+          background: white;
+          padding: 2.5rem;
+          border-radius: 1.5rem;
+          box-shadow: 0 25px 70px rgba(0, 0, 0, 0.3);
+          max-width: 420px;
+          text-align: center;
+          position: relative;
+        "
+      >
+        <div style="margin-bottom: 1.5rem">
+          <div
+            style="
+              width: 70px;
+              height: 70px;
+              background: linear-gradient(
+                135deg,
+                var(--razo-orange) 0%,
+                var(--razo-orange-dark) 100%
+              );
+              border-radius: 50%;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              margin: 0 auto 1.25rem;
+              font-size: 2rem;
+              box-shadow: 0 10px 25px rgba(255, 119, 51, 0.35);
+            "
+          >
+            🗑️
+          </div>
+          <h2
+            style="
+              font-size: 1.5rem;
+              font-weight: 700;
+              margin-bottom: 0.75rem;
+              color: #2d3748;
+            "
+          >
+            ¿Eliminar producto?
+          </h2>
+          <p style="color: #718096; font-size: 1rem; line-height: 1.5">
+            ¿Deseas eliminar "<span id="modalEliminarNombre"></span>" del
+            carrito?
+          </p>
+        </div>
 
-    let carritoData = null;
-    let direcciones = [];
-    let selectedDireccionId = null;
-    let agentes = [];
-    let productoPendienteEliminar = null;
+        <div
+          style="
+            display: flex;
+            gap: 0.75rem;
+            justify-content: center;
+            flex-wrap: wrap;
+          "
+        >
+          <button
+            class="btn btn-secondary"
+            id="btnCancelarEliminar"
+            style="
+              flex: 1;
+              min-width: 160px;
+              padding: 0.875rem 1.5rem;
+              font-size: 0.9375rem;
+            "
+          >
+            Cancelar
+          </button>
+          <button
+            class="btn btn-danger"
+            id="btnConfirmarEliminar"
+            style="
+              flex: 1;
+              min-width: 160px;
+              padding: 0.875rem 1.5rem;
+              font-size: 0.9375rem;
+            "
+          >
+            <span id="btnEliminarText">Eliminar producto</span>
+            <div
+              class="spinner"
+              id="btnEliminarSpinner"
+              style="
+                display: none;
+                width: 20px;
+                height: 20px;
+                border-width: 2px;
+              "
+            ></div>
+          </button>
+        </div>
+      </div>
+    </div>
 
-    // Format currency
-    function formatCurrency(amount) {
-      return new Intl.NumberFormat('es-MX', {
-        style: 'currency',
-        currency: 'MXN'
-      }).format(amount);
-    }
+    <!-- Modal: Checkout -->
+    <div id="modalCheckout" class="modal">
+      <div
+        class="modal-content"
+        style="
+          background: white;
+          padding: 2rem;
+          border-radius: 1rem;
+          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+          max-width: 600px;
+        "
+      >
+        <h2 style="font-size: 1.5rem; font-weight: bold; margin-bottom: 1.5rem">
+          Finalizar pedido
+        </h2>
 
-    // Render cart item
-    function renderCartItem(item) {
-      const producto = item.producto || {};
-      const piezasPorPaquete = typeof item.piezasPorPaquete === 'number'
-        ? item.piezasPorPaquete
-        : parseInt(item.piezasPorPaquete, 10) || 0;
-      const totalPiezas = piezasPorPaquete * item.cantidadPaquetes;
-      const stockDisponible = typeof item.stock === 'number'
-        ? item.stock
-        : parseInt(item.stock, 10) || 0;
-      const precioPaquete = item.precioPaquete !== null && item.precioPaquete !== undefined
-        ? parseFloat(item.precioPaquete)
-        : null;
-      const subtotal = item.subtotal !== null && item.subtotal !== undefined
-        ? parseFloat(item.subtotal)
-        : (precioPaquete !== null ? precioPaquete * item.cantidadPaquetes : null);
+        <div id="checkoutContent">
+          <!-- Step 1: Select Address -->
+          <div id="stepDireccion">
+            <h3 style="font-weight: 600; margin-bottom: 1rem">
+              Selecciona tu dirección de envío
+            </h3>
 
-      const imageSrc = item.imagenPrincipal?.url || 'https://via.placeholder.com/100x100?text=Sin+Imagen';
-      const imageAlt = item.imagenPrincipal?.alt || producto.nombreProducto || 'Variante';
+            <div id="loadingDirecciones" class="loading">
+              <div class="spinner"></div>
+            </div>
 
-      return `
+            <div id="direccionesList"></div>
+
+            <div id="noDirecciones" style="display: none">
+              <div class="alert alert-info">
+                No tienes direcciones guardadas.
+                <a
+                  href="/dashboard.html"
+                  style="color: var(--primary-color); font-weight: 600"
+                  >Agregar una dirección</a
+                >
+              </div>
+            </div>
+
+            <!-- Optional Agent Selection -->
+            <div class="form-group" style="margin-top: 1.5rem">
+              <label class="form-label" for="selectAgente"
+                >Agente de Ventas (opcional)</label
+              >
+
+              <!-- Loading agentes -->
+              <div
+                id="loadingAgentes"
+                style="display: none; padding: 0.5rem; text-align: center"
+              >
+                <div
+                  class="spinner"
+                  style="width: 20px; height: 20px; border-width: 2px"
+                ></div>
+              </div>
+
+              <select
+                id="selectAgente"
+                class="form-input"
+                style="padding: 0.75rem; font-size: 1rem"
+              >
+                <option value="">Sin agente</option>
+                <!-- Opciones se cargarán dinámicamente -->
+              </select>
+
+              <p
+                style="
+                  color: var(--text-secondary);
+                  font-size: 0.75rem;
+                  margin-top: 0.25rem;
+                "
+              >
+                💰 Si seleccionas un agente, recibirá una comisión del 20% de tu
+                compra
+              </p>
+            </div>
+
+            <!-- Buttons -->
+            <div style="display: flex; gap: 1rem; margin-top: 1.5rem">
+              <button
+                class="btn btn-success"
+                style="flex: 1"
+                id="btnConfirmarPedido"
+              >
+                <span id="btnConfirmarText">Confirmar pedido</span>
+                <div
+                  class="spinner"
+                  id="btnConfirmarSpinner"
+                  style="
+                    display: none;
+                    width: 20px;
+                    height: 20px;
+                    border-width: 2px;
+                  "
+                ></div>
+              </button>
+              <button
+                class="btn btn-secondary"
+                style="flex: 1"
+                id="btnCancelarCheckout"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script>
+      // Check authentication
+      if (!requireAuth()) {
+        // User is not authenticated, redirected to login
+      }
+
+      const loadingState = document.getElementById("loadingState");
+      const emptyState = document.getElementById("emptyState");
+      const cartContent = document.getElementById("cartContent");
+      const cartItemsContainer = document.getElementById("cartItems");
+      const summaryTotalItems = document.getElementById("summaryTotalItems");
+      const summarySubtotal = document.getElementById("summarySubtotal");
+      const summaryTotal = document.getElementById("summaryTotal");
+      const checkoutBtn = document.getElementById("checkoutBtn");
+      const logoutBtn = document.getElementById("logoutBtn");
+
+      // Modal elements
+      const modalCheckout = document.getElementById("modalCheckout");
+      const modalSuccess = document.getElementById("modalSuccess");
+      const modalEliminar = document.getElementById("modalEliminar");
+      const modalEliminarNombre = document.getElementById(
+        "modalEliminarNombre"
+      );
+      const btnCancelarEliminar = document.getElementById(
+        "btnCancelarEliminar"
+      );
+      const btnConfirmarEliminar = document.getElementById(
+        "btnConfirmarEliminar"
+      );
+      const btnEliminarText = document.getElementById("btnEliminarText");
+      const btnEliminarSpinner = document.getElementById("btnEliminarSpinner");
+      const loadingDirecciones = document.getElementById("loadingDirecciones");
+      const direccionesList = document.getElementById("direccionesList");
+      const noDirecciones = document.getElementById("noDirecciones");
+      const selectAgente = document.getElementById("selectAgente");
+      const loadingAgentes = document.getElementById("loadingAgentes");
+      const btnConfirmarPedido = document.getElementById("btnConfirmarPedido");
+      const btnCancelarCheckout = document.getElementById(
+        "btnCancelarCheckout"
+      );
+      const btnConfirmarText = document.getElementById("btnConfirmarText");
+      const btnConfirmarSpinner = document.getElementById(
+        "btnConfirmarSpinner"
+      );
+
+      let carritoData = null;
+      let direcciones = [];
+      let selectedDireccionId = null;
+      let agentes = [];
+      let productoPendienteEliminar = null;
+
+      // Format currency
+      function formatCurrency(amount) {
+        return new Intl.NumberFormat("es-MX", {
+          style: "currency",
+          currency: "MXN",
+        }).format(amount);
+      }
+
+      // Render cart item
+      function renderCartItem(item) {
+        const producto = item.producto || {};
+        const piezasPorPaquete =
+          typeof item.piezasPorPaquete === "number"
+            ? item.piezasPorPaquete
+            : parseInt(item.piezasPorPaquete, 10) || 0;
+        const totalPiezas = piezasPorPaquete * item.cantidadPaquetes;
+        const stockDisponible =
+          typeof item.stock === "number"
+            ? item.stock
+            : parseInt(item.stock, 10) || 0;
+        const precioPaquete =
+          item.precioPaquete !== null && item.precioPaquete !== undefined
+            ? parseFloat(item.precioPaquete)
+            : null;
+        const subtotal =
+          item.subtotal !== null && item.subtotal !== undefined
+            ? parseFloat(item.subtotal)
+            : precioPaquete !== null
+            ? precioPaquete * item.cantidadPaquetes
+            : null;
+
+        const imageSrc =
+          item.imagenPrincipal?.url ||
+          "https://via.placeholder.com/100x100?text=Sin+Imagen";
+        const imageAlt =
+          item.imagenPrincipal?.alt || producto.nombreProducto || "Variante";
+
+        return `
         <div class="cart-item" style="position: relative;">
           <img src="${imageSrc}" alt="${imageAlt}" class="cart-item-image">
           <div class="cart-item-info">
-            <h3 class="cart-item-title">${producto.nombreProducto || 'Producto sin nombre'}</h3>
+            <h3 class="cart-item-title">${
+              producto.nombreProducto || "Producto sin nombre"
+            }</h3>
             <p class="cart-item-details">
-              <strong>SKU:</strong> ${item.sku || 'Sin SKU'}<br>
-              <strong>Piezas por paquete:</strong> ${piezasPorPaquete || 'N/D'}<br>
-              <strong>Total piezas:</strong> ${totalPiezas || 'N/D'}
+              <strong>SKU:</strong> ${item.sku || "Sin SKU"}<br>
+              <strong>Piezas por paquete:</strong> ${
+                piezasPorPaquete || "N/D"
+              }<br>
+              <strong>Total piezas:</strong> ${totalPiezas || "N/D"}
             </p>
             <p class="cart-item-details" style="margin-top: 0.5rem;">
-              ${item.dimensiones || 'Sin dimensiones'}
+              ${item.dimensiones || "Sin dimensiones"}
             </p>
             
             <!-- Controles de cantidad -->
@@ -350,19 +566,25 @@
               <span style="font-weight: 600; color: var(--text-secondary); font-size: 0.875rem;">Cantidad:</span>
               <div style="display: flex; align-items: center; gap: 0.5rem; background: var(--razo-gray-light); padding: 0.25rem; border-radius: 0.5rem;">
                 <button 
-                  onclick="actualizarCantidad(${item.varianteId}, ${item.cantidadPaquetes - 1})"
+                  onclick="actualizarCantidad(${item.varianteId}, ${
+          item.cantidadPaquetes - 1
+        })"
                   class="btn-quantity"
                   style="background: white; border: none; width: 32px; height: 32px; border-radius: 0.375rem; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; font-weight: 600; color: var(--razo-orange); transition: all 0.2s;"
-                  ${item.cantidadPaquetes <= 1 ? 'disabled' : ''}
+                  ${item.cantidadPaquetes <= 1 ? "disabled" : ""}
                   onmouseover="this.style.background='var(--razo-orange)'; this.style.color='white'"
                   onmouseout="this.style.background='white'; this.style.color='var(--razo-orange)'"
                 >−</button>
-                <span style="font-weight: 700; font-size: 1.125rem; min-width: 40px; text-align: center; color: var(--razo-gray-dark);">${item.cantidadPaquetes}</span>
+                <span style="font-weight: 700; font-size: 1.125rem; min-width: 40px; text-align: center; color: var(--razo-gray-dark);">${
+                  item.cantidadPaquetes
+                }</span>
                 <button 
-                  onclick="actualizarCantidad(${item.varianteId}, ${item.cantidadPaquetes + 1})"
+                  onclick="actualizarCantidad(${item.varianteId}, ${
+          item.cantidadPaquetes + 1
+        })"
                   class="btn-quantity"
                   style="background: white; border: none; width: 32px; height: 32px; border-radius: 0.375rem; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; font-weight: 600; color: var(--razo-orange); transition: all 0.2s;"
-                  ${item.cantidadPaquetes >= stockDisponible ? 'disabled' : ''}
+                  ${item.cantidadPaquetes >= stockDisponible ? "disabled" : ""}
                   onmouseover="this.style.background='var(--razo-orange)'; this.style.color='white'"
                   onmouseout="this.style.background='white'; this.style.color='var(--razo-orange)'"
                 >+</button>
@@ -372,9 +594,17 @@
           </div>
           <div class="cart-item-price">
             <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 0.25rem;">
-              ${precioPaquete !== null ? formatCurrency(precioPaquete) : 'Precio no disponible'} / paquete
+              ${
+                precioPaquete !== null
+                  ? formatCurrency(precioPaquete)
+                  : "Precio no disponible"
+              } / paquete
             </p>
-            <p class="cart-item-subtotal">${subtotal !== null ? formatCurrency(subtotal) : 'Subtotal no disponible'}</p>
+            <p class="cart-item-subtotal">${
+              subtotal !== null
+                ? formatCurrency(subtotal)
+                : "Subtotal no disponible"
+            }</p>
             <p style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 0.5rem;">
               Stock disponible: ${stockDisponible}
             </p>
@@ -382,7 +612,9 @@
           
           <!-- Botón eliminar -->
           <button 
-            onclick="eliminarProducto(${item.varianteId}, '${(producto.nombreProducto || 'Producto').replace(/"/g, '&quot;')}')"
+            onclick="eliminarProducto(${item.varianteId}, '${(
+          producto.nombreProducto || "Producto"
+        ).replace(/"/g, "&quot;")}')"
             style="position: absolute; top: 1rem; right: 1rem; background: var(--danger-color); color: white; border: none; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"
             title="Eliminar producto"
             onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 8px rgba(220,38,38,0.3)'"
@@ -390,373 +622,415 @@
           >🗑️</button>
         </div>
       `;
-    }
+      }
 
-    // Load cart data
-    async function loadCarrito() {
-      try {
-        loadingState.style.display = 'flex';
-        emptyState.style.display = 'none';
-        cartContent.style.display = 'none';
+      // Load cart data
+      async function loadCarrito() {
+        try {
+          loadingState.style.display = "flex";
+          emptyState.style.display = "none";
+          cartContent.style.display = "none";
 
-        const response = await API.getCarrito();
+          const response = await API.getCarrito();
 
-        if (response.ok && response.data.success) {
-          carritoData = response.data.data;
+          if (response.ok && response.data.success) {
+            carritoData = response.data.data;
 
-          if (carritoData.items.length === 0) {
-            // Show empty state
-            loadingState.style.display = 'none';
-            emptyState.style.display = 'block';
+            if (carritoData.items.length === 0) {
+              // Show empty state
+              loadingState.style.display = "none";
+              emptyState.style.display = "block";
+            } else {
+              // Render cart items
+              cartItemsContainer.innerHTML = carritoData.items
+                .map((item) => renderCartItem(item))
+                .join("");
+
+              // Update summary
+              summaryTotalItems.textContent = carritoData.totalItems;
+              summarySubtotal.textContent = formatCurrency(
+                carritoData.montoTotal
+              );
+              summaryTotal.textContent = formatCurrency(carritoData.montoTotal);
+
+              // Show cart content
+              loadingState.style.display = "none";
+              cartContent.style.display = "block";
+            }
           } else {
-            // Render cart items
-            cartItemsContainer.innerHTML = carritoData.items
-              .map(item => renderCartItem(item))
-              .join('');
-
-            // Update summary
-            summaryTotalItems.textContent = carritoData.totalItems;
-            summarySubtotal.textContent = formatCurrency(carritoData.montoTotal);
-            summaryTotal.textContent = formatCurrency(carritoData.montoTotal);
-
-            // Show cart content
-            loadingState.style.display = 'none';
-            cartContent.style.display = 'block';
+            throw new Error(
+              response.data.message || "Error al cargar el carrito"
+            );
           }
-        } else {
-          throw new Error(response.data.message || 'Error al cargar el carrito');
+        } catch (error) {
+          console.error("Error loading cart:", error);
+          loadingState.style.display = "none";
+          showToast(
+            "Error al cargar el carrito. Intenta recargar la página.",
+            "error"
+          );
         }
-      } catch (error) {
-        console.error('Error loading cart:', error);
-        loadingState.style.display = 'none';
-        showToast('Error al cargar el carrito. Intenta recargar la página.', 'error');
       }
-    }
 
-    // Load agentes for checkout
-    async function loadAgentesCheckout() {
-      try {
-        loadingAgentes.style.display = 'block';
-        selectAgente.disabled = true;
+      // Load agentes for checkout
+      async function loadAgentesCheckout() {
+        try {
+          loadingAgentes.style.display = "block";
+          selectAgente.disabled = true;
 
-        const response = await fetch(`${API_BASE_URL}/agentes/lista-publica`);
-        const data = await response.json();
+          const response = await fetch(`${API_BASE_URL}/agentes/lista-publica`);
+          const data = await response.json();
 
-        if (response.ok && data.success) {
-          agentes = data.data.agentes;
+          if (response.ok && data.success) {
+            agentes = data.data.agentes;
 
-          // Limpiar opciones anteriores (excepto "Sin agente")
-          selectAgente.innerHTML = '<option value="">Sin agente</option>';
+            // Limpiar opciones anteriores (excepto "Sin agente")
+            selectAgente.innerHTML = '<option value="">Sin agente</option>';
 
-          // Agregar cada agente como opción
-          agentes.forEach(agente => {
-            const option = document.createElement('option');
-            option.value = agente.agenteId; // Usar AgenteID como valor
-            option.textContent = `${agente.codigoAgente} (${agente.nombre} ${agente.apellido})`;
-            selectAgente.appendChild(option);
-          });
-
-          loadingAgentes.style.display = 'none';
-          selectAgente.disabled = false;
-        }
-      } catch (error) {
-        console.error('Error loading agentes:', error);
-        loadingAgentes.style.display = 'none';
-        selectAgente.disabled = false;
-        // Si hay error, el select queda con solo "Sin agente" y funciona igual
-      }
-    }
-
-    // Load direcciones for checkout
-    async function loadDireccionesCheckout() {
-      try {
-        loadingDirecciones.style.display = 'flex';
-        direccionesList.innerHTML = '';
-        noDirecciones.style.display = 'none';
-
-        const response = await API.getDirecciones();
-
-        if (response.ok && response.data.success) {
-          direcciones = response.data.data.direcciones;
-
-          if (direcciones.length === 0) {
-            loadingDirecciones.style.display = 'none';
-            noDirecciones.style.display = 'block';
-          } else {
-            direccionesList.innerHTML = direcciones.map(d => `
-              <label class="direccion-option" data-id="${d.direccionId}">
-                <input type="radio" name="direccion" value="${d.direccionId}">
-                ${d.etiqueta ? `<strong style="color: var(--primary-color);">📍 ${d.etiqueta}</strong><br>` : ''}
-                <strong>${d.receptor}</strong><br>
-                <span style="color: var(--text-secondary); font-size: 0.875rem;">
-                  ${d.calle} ${d.numeroExt || ''} ${d.numeroInt ? 'Int. ' + d.numeroInt : ''}<br>
-                  ${d.colonia ? d.colonia + ', ' : ''}${d.ciudad}, ${d.estado} - CP: ${d.codigoPostal}
-                  ${d.telefonoContacto ? '<br>Tel: ' + d.telefonoContacto : ''}
-                </span>
-              </label>
-            `).join('');
-
-            // Add click handlers
-            document.querySelectorAll('.direccion-option').forEach(option => {
-              option.addEventListener('click', function() {
-                document.querySelectorAll('.direccion-option').forEach(o => o.classList.remove('selected'));
-                this.classList.add('selected');
-                this.querySelector('input[type="radio"]').checked = true;
-                selectedDireccionId = parseInt(this.dataset.id);
-              });
+            // Agregar cada agente como opción
+            agentes.forEach((agente) => {
+              const option = document.createElement("option");
+              option.value = agente.agenteId; // Usar AgenteID como valor
+              option.textContent = `${agente.codigoAgente} (${agente.nombre} ${agente.apellido})`;
+              selectAgente.appendChild(option);
             });
 
-            loadingDirecciones.style.display = 'none';
+            loadingAgentes.style.display = "none";
+            selectAgente.disabled = false;
+          }
+        } catch (error) {
+          console.error("Error loading agentes:", error);
+          loadingAgentes.style.display = "none";
+          selectAgente.disabled = false;
+          // Si hay error, el select queda con solo "Sin agente" y funciona igual
+        }
+      }
+
+      // Load direcciones for checkout
+      async function loadDireccionesCheckout() {
+        try {
+          loadingDirecciones.style.display = "flex";
+          direccionesList.innerHTML = "";
+          noDirecciones.style.display = "none";
+
+          const response = await API.getDirecciones();
+
+          if (response.ok && response.data.success) {
+            direcciones = response.data.data.direcciones;
+
+            if (direcciones.length === 0) {
+              loadingDirecciones.style.display = "none";
+              noDirecciones.style.display = "block";
+            } else {
+              direccionesList.innerHTML = direcciones
+                .map(
+                  (d) => `
+              <label class="direccion-option" data-id="${d.direccionId}">
+                <input type="radio" name="direccion" value="${d.direccionId}">
+                ${
+                  d.etiqueta
+                    ? `<strong style="color: var(--primary-color);">📍 ${d.etiqueta}</strong><br>`
+                    : ""
+                }
+                <strong>${d.receptor}</strong><br>
+                <span style="color: var(--text-secondary); font-size: 0.875rem;">
+                  ${d.calle} ${d.numeroExt || ""} ${
+                    d.numeroInt ? "Int. " + d.numeroInt : ""
+                  }<br>
+                  ${d.colonia ? d.colonia + ", " : ""}${d.ciudad}, ${
+                    d.estado
+                  } - CP: ${d.codigoPostal}
+                  ${d.telefonoContacto ? "<br>Tel: " + d.telefonoContacto : ""}
+                </span>
+              </label>
+            `
+                )
+                .join("");
+
+              // Add click handlers
+              document
+                .querySelectorAll(".direccion-option")
+                .forEach((option) => {
+                  option.addEventListener("click", function () {
+                    document
+                      .querySelectorAll(".direccion-option")
+                      .forEach((o) => o.classList.remove("selected"));
+                    this.classList.add("selected");
+                    this.querySelector('input[type="radio"]').checked = true;
+                    selectedDireccionId = parseInt(this.dataset.id);
+                  });
+                });
+
+              loadingDirecciones.style.display = "none";
+            }
+          }
+        } catch (error) {
+          console.error("Error loading direcciones:", error);
+          loadingDirecciones.style.display = "none";
+          showToast("Error al cargar direcciones", "error");
+        }
+      }
+
+      // Handle checkout
+      checkoutBtn.addEventListener("click", () => {
+        if (!carritoData || carritoData.items.length === 0) {
+          showToast("Tu carrito está vacío", "warning");
+          return;
+        }
+
+        modalCheckout.classList.add("show");
+        loadDireccionesCheckout();
+        loadAgentesCheckout(); // Cargar agentes al abrir el modal
+      });
+
+      // Cancel checkout
+      btnCancelarCheckout.addEventListener("click", () => {
+        modalCheckout.classList.remove("show");
+        selectedDireccionId = null;
+        selectAgente.value = ""; // Resetear a "Sin agente"
+      });
+
+      // Confirm order
+      btnConfirmarPedido.addEventListener("click", async () => {
+        if (!selectedDireccionId) {
+          showToast("Por favor selecciona una dirección de envío", "warning");
+          return;
+        }
+
+        btnConfirmarPedido.disabled = true;
+        btnConfirmarText.style.display = "none";
+        btnConfirmarSpinner.style.display = "block";
+
+        try {
+          // Obtener el AgenteID del select (o null si no hay agente seleccionado)
+          const agenteId = selectAgente.value
+            ? parseInt(selectAgente.value)
+            : null;
+          const response = await API.crearPedido(selectedDireccionId, agenteId);
+
+          if (response.ok && response.data.success) {
+            const pedidoId = response.data.data.pedido.pedidoId;
+
+            // Cerrar modal de checkout
+            modalCheckout.classList.remove("show");
+
+            // Mostrar modal de éxito
+            modalSuccess.classList.add("show");
+
+            // Limpiar formulario
+            selectedDireccionId = null;
+            selectAgente.value = ""; // Resetear a "Sin agente"
+
+            // Restablecer botón
+            btnConfirmarPedido.disabled = false;
+            btnConfirmarText.style.display = "inline";
+            btnConfirmarSpinner.style.display = "none";
+
+            // Recargar carrito (estará vacío)
+            setTimeout(() => {
+              loadCarrito();
+            }, 500);
+          } else {
+            showToast(
+              response.data.message || "Error al crear el pedido",
+              "error"
+            );
+            btnConfirmarPedido.disabled = false;
+            btnConfirmarText.style.display = "inline";
+            btnConfirmarSpinner.style.display = "none";
+          }
+        } catch (error) {
+          console.error("Error creating order:", error);
+          showToast(
+            "Error al conectar con el servidor. Intenta nuevamente.",
+            "error"
+          );
+          btnConfirmarPedido.disabled = false;
+          btnConfirmarText.style.display = "inline";
+          btnConfirmarSpinner.style.display = "none";
+        }
+      });
+
+      // Handle logout
+      logoutBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        clearAuthData();
+        showToast("Sesión cerrada exitosamente", "success");
+        setTimeout(() => {
+          window.location.href = "/login.html";
+        }, 500);
+      });
+
+      // Close modals when clicking outside
+      window.addEventListener("click", (e) => {
+        if (e.target === modalCheckout) {
+          modalCheckout.classList.remove("show");
+          selectedDireccionId = null;
+          selectAgente.value = ""; // Resetear a "Sin agente"
+        }
+        if (e.target === modalEliminar) {
+          cerrarModalEliminar();
+        }
+        // El modal de éxito NO se cierra al hacer clic fuera (forzar al usuario a elegir una acción)
+      });
+
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && modalEliminar.classList.contains("show")) {
+          cerrarModalEliminar();
+        }
+      });
+
+      // Actualizar cantidad de producto
+      async function actualizarCantidad(varianteId, nuevaCantidad) {
+        if (nuevaCantidad < 1) {
+          showToast("La cantidad mínima es 1 paquete", "warning");
+          return;
+        }
+
+        try {
+          const response = await API.actualizarCarrito(
+            varianteId,
+            nuevaCantidad
+          );
+
+          if (response.ok && response.data.success) {
+            showToast("Cantidad actualizada", "success");
+            loadCarrito();
+          } else {
+            showToast(
+              response.data.message || "Error al actualizar cantidad",
+              "error"
+            );
+          }
+        } catch (error) {
+          console.error("Error updating quantity:", error);
+          showToast("Error al conectar con el servidor", "error");
+        }
+      }
+
+      function eliminarProducto(varianteId, nombreProducto) {
+        productoPendienteEliminar = { id: varianteId, nombre: nombreProducto };
+        modalEliminarNombre.textContent = nombreProducto;
+        modalEliminar.classList.add("show");
+      }
+
+      function cerrarModalEliminar() {
+        modalEliminar.classList.remove("show");
+        productoPendienteEliminar = null;
+        btnConfirmarEliminar.disabled = false;
+        btnEliminarText.style.display = "inline";
+        btnEliminarSpinner.style.display = "none";
+      }
+
+      async function confirmarEliminarProducto() {
+        if (!productoPendienteEliminar) {
+          return;
+        }
+
+        btnConfirmarEliminar.disabled = true;
+        btnEliminarText.style.display = "none";
+        btnEliminarSpinner.style.display = "inline-block";
+
+        try {
+          const response = await API.eliminarDelCarrito(
+            productoPendienteEliminar.id
+          );
+
+          if (response.ok && response.data.success) {
+            showToast("Producto eliminado del carrito", "success");
+            cerrarModalEliminar();
+            loadCarrito();
+          } else {
+            showToast(
+              response.data.message || "Error al eliminar producto",
+              "error"
+            );
+          }
+        } catch (error) {
+          console.error("Error removing product:", error);
+          showToast("Error al conectar con el servidor", "error");
+        } finally {
+          if (modalEliminar.classList.contains("show")) {
+            btnConfirmarEliminar.disabled = false;
+            btnEliminarText.style.display = "inline";
+            btnEliminarSpinner.style.display = "none";
           }
         }
-      } catch (error) {
-        console.error('Error loading direcciones:', error);
-        loadingDirecciones.style.display = 'none';
-        showToast('Error al cargar direcciones', 'error');
-      }
-    }
-
-    // Handle checkout
-    checkoutBtn.addEventListener('click', () => {
-      if (!carritoData || carritoData.items.length === 0) {
-        showToast('Tu carrito está vacío', 'warning');
-        return;
       }
 
-      modalCheckout.classList.add('show');
-      loadDireccionesCheckout();
-      loadAgentesCheckout(); // Cargar agentes al abrir el modal
-    });
+      btnCancelarEliminar.addEventListener("click", cerrarModalEliminar);
+      btnConfirmarEliminar.addEventListener("click", confirmarEliminarProducto);
 
-    // Cancel checkout
-    btnCancelarCheckout.addEventListener('click', () => {
-      modalCheckout.classList.remove('show');
-      selectedDireccionId = null;
-      selectAgente.value = ''; // Resetear a "Sin agente"
-    });
+      // Load cart on page load
+      loadCarrito();
+    </script>
 
-    // Confirm order
-    btnConfirmarPedido.addEventListener('click', async () => {
-      if (!selectedDireccionId) {
-        showToast('Por favor selecciona una dirección de envío', 'warning');
-        return;
+    <style>
+      /* Modal styles */
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.6);
+        -webkit-backdrop-filter: blur(4px);
+        backdrop-filter: blur(4px);
+        justify-content: center;
+        align-items: center;
+        padding: 1rem;
       }
 
-      btnConfirmarPedido.disabled = true;
-      btnConfirmarText.style.display = 'none';
-      btnConfirmarSpinner.style.display = 'block';
-
-      try {
-        // Obtener el AgenteID del select (o null si no hay agente seleccionado)
-        const agenteId = selectAgente.value ? parseInt(selectAgente.value) : null;
-        const response = await API.crearPedido(selectedDireccionId, agenteId);
-
-        if (response.ok && response.data.success) {
-          const pedidoId = response.data.data.pedido.pedidoId;
-          
-          // Cerrar modal de checkout
-          modalCheckout.classList.remove('show');
-          
-          // Mostrar modal de éxito
-          modalSuccess.classList.add('show');
-          
-          // Limpiar formulario
-          selectedDireccionId = null;
-          selectAgente.value = ''; // Resetear a "Sin agente"
-          
-          // Restablecer botón
-          btnConfirmarPedido.disabled = false;
-          btnConfirmarText.style.display = 'inline';
-          btnConfirmarSpinner.style.display = 'none';
-          
-          // Recargar carrito (estará vacío)
-          setTimeout(() => {
-            loadCarrito();
-          }, 500);
-        } else {
-          showToast(response.data.message || 'Error al crear el pedido', 'error');
-          btnConfirmarPedido.disabled = false;
-          btnConfirmarText.style.display = 'inline';
-          btnConfirmarSpinner.style.display = 'none';
-        }
-      } catch (error) {
-        console.error('Error creating order:', error);
-        showToast('Error al conectar con el servidor. Intenta nuevamente.', 'error');
-        btnConfirmarPedido.disabled = false;
-        btnConfirmarText.style.display = 'inline';
-        btnConfirmarSpinner.style.display = 'none';
-      }
-    });
-
-    // Handle logout
-    logoutBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      clearAuthData();
-      showToast('Sesión cerrada exitosamente', 'success');
-      setTimeout(() => {
-        window.location.href = '/login.html';
-      }, 500);
-    });
-
-    // Close modals when clicking outside
-    window.addEventListener('click', (e) => {
-      if (e.target === modalCheckout) {
-        modalCheckout.classList.remove('show');
-        selectedDireccionId = null;
-        selectAgente.value = ''; // Resetear a "Sin agente"
-      }
-      if (e.target === modalEliminar) {
-        cerrarModalEliminar();
-      }
-      // El modal de éxito NO se cierra al hacer clic fuera (forzar al usuario a elegir una acción)
-    });
-
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && modalEliminar.classList.contains('show')) {
-        cerrarModalEliminar();
-      }
-    });
-
-    // Actualizar cantidad de producto
-    async function actualizarCantidad(varianteId, nuevaCantidad) {
-      if (nuevaCantidad < 1) {
-        showToast('La cantidad mínima es 1 paquete', 'warning');
-        return;
-      }
-
-      try {
-        const response = await API.actualizarCarrito(varianteId, nuevaCantidad);
-        
-        if (response.ok && response.data.success) {
-          showToast('Cantidad actualizada', 'success');
-          loadCarrito();
-        } else {
-          showToast(response.data.message || 'Error al actualizar cantidad', 'error');
-        }
-      } catch (error) {
-        console.error('Error updating quantity:', error);
-        showToast('Error al conectar con el servidor', 'error');
-      }
-    }
-
-    function eliminarProducto(varianteId, nombreProducto) {
-      productoPendienteEliminar = { id: varianteId, nombre: nombreProducto };
-      modalEliminarNombre.textContent = nombreProducto;
-      modalEliminar.classList.add('show');
-    }
-
-    function cerrarModalEliminar() {
-      modalEliminar.classList.remove('show');
-      productoPendienteEliminar = null;
-      btnConfirmarEliminar.disabled = false;
-      btnEliminarText.style.display = 'inline';
-      btnEliminarSpinner.style.display = 'none';
-    }
-
-    async function confirmarEliminarProducto() {
-      if (!productoPendienteEliminar) {
-        return;
-      }
-
-      btnConfirmarEliminar.disabled = true;
-      btnEliminarText.style.display = 'none';
-      btnEliminarSpinner.style.display = 'inline-block';
-
-      try {
-        const response = await API.eliminarDelCarrito(productoPendienteEliminar.id);
-        
-        if (response.ok && response.data.success) {
-          showToast('Producto eliminado del carrito', 'success');
-          cerrarModalEliminar();
-          loadCarrito();
-        } else {
-          showToast(response.data.message || 'Error al eliminar producto', 'error');
-        }
-      } catch (error) {
-        console.error('Error removing product:', error);
-        showToast('Error al conectar con el servidor', 'error');
-      } finally {
-        if (modalEliminar.classList.contains('show')) {
-          btnConfirmarEliminar.disabled = false;
-          btnEliminarText.style.display = 'inline';
-          btnEliminarSpinner.style.display = 'none';
-        }
-      }
-    }
-
-    btnCancelarEliminar.addEventListener('click', cerrarModalEliminar);
-    btnConfirmarEliminar.addEventListener('click', confirmarEliminarProducto);
-
-    // Load cart on page load
-    loadCarrito();
-  </script>
-
-  <style>
-    /* Modal styles */
-    .modal {
-      display: none;
-      position: fixed;
-      z-index: 1000;
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0, 0, 0, 0.6);
-      -webkit-backdrop-filter: blur(4px);
-      backdrop-filter: blur(4px);
-      justify-content: center;
-      align-items: center;
-      padding: 1rem;
-    }
-
-    .modal.show {
-      display: flex;
-    }
-
-    #modalSuccess .modal-content {
-      animation: modalBounce 0.5s ease-out;
-    }
-
-    @keyframes modalBounce {
-      0% {
-        transform: scale(0.7);
-        opacity: 0;
-      }
-      50% {
-        transform: scale(1.05);
-      }
-      100% {
-        transform: scale(1);
-        opacity: 1;
-      }
-    }
-
-    @media (max-width: 968px) {
-      #cartContent > div {
-        grid-template-columns: 1fr !important;
-      }
-      
-      #cartContent > div > div:last-child {
-        position: static !important;
-      }
-
-      .modal-content {
-        max-width: 90% !important;
-        padding: 1.5rem !important;
+      .modal.show {
+        display: flex;
       }
 
       #modalSuccess .modal-content {
-        padding: 2rem !important;
+        animation: modalBounce 0.5s ease-out;
       }
 
-      #modalSuccess h2 {
-        font-size: 1.5rem !important;
+      @keyframes modalBounce {
+        0% {
+          transform: scale(0.7);
+          opacity: 0;
+        }
+        50% {
+          transform: scale(1.05);
+        }
+        100% {
+          transform: scale(1);
+          opacity: 1;
+        }
       }
 
-      #modalSuccess div[style*="font-size: 4rem"] {
-        font-size: 3rem !important;
+      @media (max-width: 968px) {
+        #cartContent > div {
+          grid-template-columns: 1fr !important;
+        }
+
+        #cartContent > div > div:last-child {
+          position: static !important;
+        }
+
+        .modal-content {
+          max-width: 90% !important;
+          padding: 1.5rem !important;
+        }
+
+        #modalSuccess .modal-content {
+          padding: 2rem !important;
+        }
+
+        #modalSuccess h2 {
+          font-size: 1.5rem !important;
+        }
+
+        #modalSuccess div[style*="font-size: 4rem"] {
+          font-size: 3rem !important;
+        }
       }
-    }
-  </style>
-</body>
+    </style>
+  </body>
 </html>

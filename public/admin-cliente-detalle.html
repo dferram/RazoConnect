@@ -1,399 +1,647 @@
 <!DOCTYPE html>
 <html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Detalle del Cliente - Admin RazoConnect</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Detalle del Cliente - Admin RazoConnect</title>
 
-  <!-- PROTECCIÓN DE AUTENTICACIÓN ADMIN -->
-  <script src="js/auth-guard-admin.js"></script>
+    <!-- PROTECCIÓN DE AUTENTICACIÓN ADMIN -->
+    <script src="js/auth-guard-admin.js"></script>
 
-  <!-- SISTEMA DE RENOVACIÓN DE TOKENS -->
-  <script src="js/token-refresh.js"></script>
+    <!-- SISTEMA DE RENOVACIÓN DE TOKENS -->
+    <script src="js/token-refresh.js"></script>
 
-  <link rel="stylesheet" href="css/styles.css">
-  <link rel="stylesheet" href="css/admin.css">
-</head>
-<body>
-  <div class="admin-layout">
-    <!-- Sidebar -->
-    <aside class="admin-sidebar">
-      <div class="admin-brand">
-        <a href="/admin-dashboard.html" class="admin-brand-logo">
-          📦 RazoConnect
-        </a>
-        <div class="admin-brand-subtitle">Panel admin</div>
-      </div>
-
-      <nav class="admin-nav">
-        <div class="admin-nav-section">
-          <div class="admin-nav-title">Principal</div>
-          <a href="/admin-dashboard.html" class="admin-nav-link">
-            <span class="admin-nav-icon">📊</span>
-            <span>Dashboard</span>
+    <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/admin.css" />
+  </head>
+  <body>
+    <div class="admin-layout">
+      <!-- Sidebar -->
+      <aside class="admin-sidebar">
+        <div class="admin-brand">
+          <a href="/admin-dashboard.html" class="admin-brand-logo">
+            📦 RazoConnect
           </a>
+          <div class="admin-brand-subtitle">Panel admin</div>
         </div>
 
-        <div class="admin-nav-section">
-          <div class="admin-nav-title">Gestión</div>
-          <a href="/admin-pedidos.html" class="admin-nav-link">
-            <span class="admin-nav-icon">📦</span>
-            <span>Pedidos</span>
-          </a>
-          <a href="/admin-agregar-producto.html" class="admin-nav-link">
-            <span class="admin-nav-icon">🎁</span>
-            <span>Productos</span>
-          </a>
-          <a href="/admin-categorias.html" class="admin-nav-link">
-            <span class="admin-nav-icon">🏷️</span>
-            <span>Categorías</span>
-          </a>
-          <a href="/admin-clientes.html" class="admin-nav-link active">
-            <span class="admin-nav-icon">👥</span>
-            <span>Clientes</span>
-          </a>
-          <a href="/admin-agentes.html" class="admin-nav-link">
-            <span class="admin-nav-icon">💼</span>
-            <span>Agentes</span>
-          </a>
-        </div>
-
-        <div class="admin-nav-section">
-          <div class="admin-nav-title">Financiero</div>
-          <a href="/admin-comisiones.html" class="admin-nav-link">
-            <span class="admin-nav-icon">💰</span>
-            <span>Comisiones</span>
-          </a>
-          <a href="/admin-inventario.html" class="admin-nav-link">
-            <span class="admin-nav-icon">📈</span>
-            <span>Inventario</span>
-          </a>
-          <a href="/admin-reportes.html" class="admin-nav-link">
-            <span class="admin-nav-icon">📑</span>
-            <span>Reportes</span>
-          </a>
-        </div>
-
-        <div class="admin-nav-section">
-          <div class="admin-nav-title">Compras</div>
-          <a href="/admin-proveedores.html" class="admin-nav-link">
-            <span class="admin-nav-icon">🏭</span>
-            <span>Proveedores</span>
-          </a>
-          <a href="/admin-crear-oc.html" class="admin-nav-link">
-            <span class="admin-nav-icon">📋</span>
-            <span>Nueva orden de compra</span>
-          </a>
-          <a href="/admin-recibir-inventario.html" class="admin-nav-link">
-            <span class="admin-nav-icon">📥</span>
-            <span>Recibir inventario</span>
-          </a>
-        </div>
-      </nav>
-    </aside>
-
-    <!-- Main Content -->
-    <main class="admin-main">
-      <header class="admin-header">
-        <div>
-          <h1 class="admin-header-title" style="color: var(--razo-orange, #FF6B35);">Detalle del cliente</h1>
-          <p style="color: var(--razo-gray-warm); margin-top: 0.5rem;" id="clienteSubtitle">Consulta la información completa del cliente</p>
-        </div>
-
-        <div class="admin-header-actions">
-          <div class="admin-user-info">
-            <div class="admin-user-avatar" id="userAvatar">A</div>
-            <div class="admin-user-details">
-              <div class="admin-user-name" id="userName">Administrador</div>
-              <div class="admin-user-role" id="userRole">Admin</div>
-            </div>
+        <nav class="admin-nav">
+          <div class="admin-nav-section">
+            <div class="admin-nav-title">Principal</div>
+            <a href="/admin-dashboard.html" class="admin-nav-link">
+              <span class="admin-nav-icon">📊</span>
+              <span>Dashboard</span>
+            </a>
           </div>
-          <button class="admin-logout-btn" id="logoutBtn">Cerrar sesión</button>
+
+          <div class="admin-nav-section">
+            <div class="admin-nav-title">Gestión</div>
+            <a href="/admin-pedidos.html" class="admin-nav-link">
+              <span class="admin-nav-icon">📦</span>
+              <span>Pedidos</span>
+            </a>
+            <a href="/admin-agregar-producto.html" class="admin-nav-link">
+              <span class="admin-nav-icon">🎁</span>
+              <span>Productos</span>
+            </a>
+            <a href="/admin-categorias.html" class="admin-nav-link">
+              <span class="admin-nav-icon">🏷️</span>
+              <span>Categorías</span>
+            </a>
+            <a href="/admin-clientes.html" class="admin-nav-link active">
+              <span class="admin-nav-icon">👥</span>
+              <span>Clientes</span>
+            </a>
+            <a href="/admin-agentes.html" class="admin-nav-link">
+              <span class="admin-nav-icon">💼</span>
+              <span>Agentes</span>
+            </a>
+          </div>
+
+          <div class="admin-nav-section">
+            <div class="admin-nav-title">Financiero</div>
+            <a href="/admin-comisiones.html" class="admin-nav-link">
+              <span class="admin-nav-icon">💰</span>
+              <span>Comisiones</span>
+            </a>
+            <a href="/admin-inventario.html" class="admin-nav-link">
+              <span class="admin-nav-icon">📈</span>
+              <span>Inventario</span>
+            </a>
+            <a href="/admin-reportes.html" class="admin-nav-link">
+              <span class="admin-nav-icon">📑</span>
+              <span>Reportes</span>
+            </a>
+          </div>
+
+          <div class="admin-nav-section">
+            <div class="admin-nav-title">Compras</div>
+            <a href="/admin-proveedores.html" class="admin-nav-link">
+              <span class="admin-nav-icon">🏭</span>
+              <span>Proveedores</span>
+            </a>
+            <a href="/admin-crear-oc.html" class="admin-nav-link">
+              <span class="admin-nav-icon">📋</span>
+              <span>Nueva orden de compra</span>
+            </a>
+            <a href="/admin-recibir-inventario.html" class="admin-nav-link">
+              <span class="admin-nav-icon">📥</span>
+              <span>Recibir inventario</span>
+            </a>
+          </div>
+        </nav>
+      </aside>
+
+      <!-- Main Content -->
+      <main class="admin-main">
+        <header class="admin-header">
+          <div>
+            <h1
+              class="admin-header-title"
+              style="color: var(--razo-orange, #ff6b35)"
+            >
+              Detalle del cliente
+            </h1>
+            <p
+              style="color: var(--razo-gray-warm); margin-top: 0.5rem"
+              id="clienteSubtitle"
+            >
+              Consulta la información completa del cliente
+            </p>
+          </div>
+
+          <div class="admin-header-actions">
+            <div class="admin-user-info">
+              <div class="admin-user-avatar" id="userAvatar">A</div>
+              <div class="admin-user-details">
+                <div class="admin-user-name" id="userName">Administrador</div>
+                <div class="admin-user-role" id="userRole">Admin</div>
+              </div>
+            </div>
+            <button class="admin-logout-btn" id="logoutBtn">
+              Cerrar sesión
+            </button>
+          </div>
+        </header>
+
+        <div class="admin-content">
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              margin-bottom: 1.5rem;
+            "
+          >
+            <button
+              class="btn btn-secondary"
+              onclick="history.back()"
+              style="padding: 0.6rem 1.25rem; font-size: 0.9rem"
+            >
+              Volver a clientes
+            </button>
+            <div id="estadoBadge"></div>
+          </div>
+
+          <div id="loadingState" class="loading" style="min-height: 220px">
+            <div class="spinner"></div>
+          </div>
+
+          <div id="errorState" class="empty-state" style="display: none">
+            <div class="empty-state-icon">⚠️</div>
+            <h3 class="empty-state-title">No se pudo cargar el cliente</h3>
+            <p class="empty-state-text" id="errorMessage">
+              Intenta nuevamente más tarde.
+            </p>
+            <button
+              class="btn btn-primary"
+              onclick="loadClienteDetalle()"
+              style="margin-top: 1rem"
+            >
+              Reintentar
+            </button>
+          </div>
+
+          <div
+            id="detalleContenido"
+            style="display: none; display: grid; gap: 1.5rem"
+          >
+            <!-- Perfil del Cliente -->
+            <section
+              class="admin-card"
+              id="perfilCliente"
+              style="padding: 1.75rem"
+            >
+              <h2
+                style="
+                  margin: 0 0 1rem;
+                  font-size: 1.25rem;
+                  color: var(--razo-orange, #ff6b35);
+                "
+              >
+                🧾 Perfil del cliente
+              </h2>
+              <div
+                style="
+                  display: grid;
+                  gap: 0.75rem;
+                  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+                "
+              >
+                <div>
+                  <h3
+                    style="
+                      margin: 0;
+                      font-size: 0.85rem;
+                      color: var(--razo-gray-warm);
+                      text-transform: uppercase;
+                    "
+                  >
+                    Nombre completo
+                  </h3>
+                  <p
+                    style="
+                      margin: 0.25rem 0 0;
+                      font-weight: 600;
+                      color: var(--razo-gray-dark);
+                    "
+                    id="clienteNombre"
+                  >
+                    -
+                  </p>
+                </div>
+                <div>
+                  <h3
+                    style="
+                      margin: 0;
+                      font-size: 0.85rem;
+                      color: var(--razo-gray-warm);
+                      text-transform: uppercase;
+                    "
+                  >
+                    Email
+                  </h3>
+                  <p
+                    style="margin: 0.25rem 0 0; color: var(--razo-gray-dark)"
+                    id="clienteEmail"
+                  >
+                    -
+                  </p>
+                </div>
+                <div>
+                  <h3
+                    style="
+                      margin: 0;
+                      font-size: 0.85rem;
+                      color: var(--razo-gray-warm);
+                      text-transform: uppercase;
+                    "
+                  >
+                    Teléfono
+                  </h3>
+                  <p
+                    style="margin: 0.25rem 0 0; color: var(--razo-gray-dark)"
+                    id="clienteTelefono"
+                  >
+                    -
+                  </p>
+                </div>
+                <div>
+                  <h3
+                    style="
+                      margin: 0;
+                      font-size: 0.85rem;
+                      color: var(--razo-gray-warm);
+                      text-transform: uppercase;
+                    "
+                  >
+                    Fecha de registro
+                  </h3>
+                  <p
+                    style="margin: 0.25rem 0 0; color: var(--razo-gray-dark)"
+                    id="clienteFecha"
+                  >
+                    -
+                  </p>
+                </div>
+              </div>
+            </section>
+
+            <!-- Historial de Pedidos -->
+            <section class="admin-card" style="padding: 1.75rem">
+              <div
+                style="
+                  display: flex;
+                  justify-content: space-between;
+                  align-items: center;
+                  margin-bottom: 1rem;
+                "
+              >
+                <div>
+                  <h2
+                    style="
+                      margin: 0;
+                      font-size: 1.25rem;
+                      color: var(--razo-orange, #ff6b35);
+                    "
+                  >
+                    📦 Historial de pedidos
+                  </h2>
+                  <p
+                    style="
+                      margin: 0.35rem 0 0;
+                      color: var(--razo-gray-warm);
+                      font-size: 0.9rem;
+                    "
+                  >
+                    Pedidos registrados por este cliente
+                  </p>
+                </div>
+                <span id="totalPedidosBadge" class="admin-badge info"
+                  >0 pedidos</span
+                >
+              </div>
+
+              <div
+                id="pedidosVacio"
+                class="empty-state"
+                style="display: none; padding: 1.5rem; gap: 0.35rem"
+              >
+                <div class="empty-state-icon">🗒️</div>
+                <div>
+                  <h3 class="empty-state-title" style="margin-bottom: 0.25rem">
+                    Sin pedidos registrados
+                  </h3>
+                  <p class="empty-state-text" style="margin: 0">
+                    Cuando el cliente realice compras aparecerán aquí.
+                  </p>
+                </div>
+              </div>
+
+              <div style="overflow-x: auto" id="pedidosTablaWrapper">
+                <table class="admin-table">
+                  <thead>
+                    <tr>
+                      <th># Pedido</th>
+                      <th>Fecha</th>
+                      <th>Monto</th>
+                      <th>Estatus</th>
+                      <th>Dirección</th>
+                    </tr>
+                  </thead>
+                  <tbody id="pedidosTableBody"></tbody>
+                </table>
+              </div>
+            </section>
+
+            <!-- Direcciones guardadas -->
+            <section class="admin-card" style="padding: 1.75rem">
+              <div
+                style="
+                  display: flex;
+                  justify-content: space-between;
+                  align-items: center;
+                  margin-bottom: 1rem;
+                "
+              >
+                <div>
+                  <h2
+                    style="
+                      margin: 0;
+                      font-size: 1.25rem;
+                      color: var(--razo-orange, #ff6b35);
+                    "
+                  >
+                    🏠 Direcciones guardadas
+                  </h2>
+                  <p
+                    style="
+                      margin: 0.35rem 0 0;
+                      color: var(--razo-gray-warm);
+                      font-size: 0.9rem;
+                    "
+                  >
+                    Direcciones configuradas por el cliente
+                  </p>
+                </div>
+                <span id="totalDireccionesBadge" class="admin-badge secondary"
+                  >0 direcciones</span
+                >
+              </div>
+
+              <div
+                id="direccionesVacio"
+                class="empty-state"
+                style="display: none; padding: 1.5rem; gap: 0.35rem"
+              >
+                <div class="empty-state-icon">📭</div>
+                <div>
+                  <h3 class="empty-state-title" style="margin-bottom: 0.25rem">
+                    Sin direcciones guardadas
+                  </h3>
+                  <p class="empty-state-text" style="margin: 0">
+                    El cliente todavía no ha agregado direcciones de envío.
+                  </p>
+                </div>
+              </div>
+
+              <div id="direccionesLista" style="display: grid; gap: 1rem"></div>
+            </section>
+          </div>
         </div>
-      </header>
+      </main>
+    </div>
 
-      <div class="admin-content">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-          <button class="btn btn-secondary" onclick="history.back()" style="padding: 0.6rem 1.25rem; font-size: 0.9rem;">← Volver a clientes</button>
-          <div id="estadoBadge"></div>
-        </div>
+    <script src="js/api.js"></script>
+    <script>
+      const adminToken = localStorage.getItem("razoconnect_admin_token");
+      if (!adminToken) {
+        window.location.href = "/login.html";
+      }
 
-        <div id="loadingState" class="loading" style="min-height: 220px;">
-          <div class="spinner"></div>
-        </div>
+      const params = new URLSearchParams(window.location.search);
+      const clienteId = parseInt(params.get("id"), 10);
 
-        <div id="errorState" class="empty-state" style="display: none;">
-          <div class="empty-state-icon">⚠️</div>
-          <h3 class="empty-state-title">No se pudo cargar el cliente</h3>
-          <p class="empty-state-text" id="errorMessage">Intenta nuevamente más tarde.</p>
-          <button class="btn btn-primary" onclick="loadClienteDetalle()" style="margin-top: 1rem;">Reintentar</button>
-        </div>
+      if (!Number.isInteger(clienteId)) {
+        alert("Cliente no válido. Regresando al listado.");
+        window.location.href = "/admin-clientes.html";
+      }
 
-        <div id="detalleContenido" style="display: none; display: grid; gap: 1.5rem;">
-          <!-- Perfil del Cliente -->
-          <section class="admin-card" id="perfilCliente" style="padding: 1.75rem;">
-            <h2 style="margin: 0 0 1rem; font-size: 1.25rem; color: var(--razo-orange, #FF6B35);">🧾 Perfil del cliente</h2>
-            <div style="display: grid; gap: 0.75rem; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
-              <div>
-                <h3 style="margin: 0; font-size: 0.85rem; color: var(--razo-gray-warm); text-transform: uppercase;">Nombre completo</h3>
-                <p style="margin: 0.25rem 0 0; font-weight: 600; color: var(--razo-gray-dark);" id="clienteNombre">-</p>
-              </div>
-              <div>
-                <h3 style="margin: 0; font-size: 0.85rem; color: var(--razo-gray-warm); text-transform: uppercase;">Email</h3>
-                <p style="margin: 0.25rem 0 0; color: var(--razo-gray-dark);" id="clienteEmail">-</p>
-              </div>
-              <div>
-                <h3 style="margin: 0; font-size: 0.85rem; color: var(--razo-gray-warm); text-transform: uppercase;">Teléfono</h3>
-                <p style="margin: 0.25rem 0 0; color: var(--razo-gray-dark);" id="clienteTelefono">-</p>
-              </div>
-              <div>
-                <h3 style="margin: 0; font-size: 0.85rem; color: var(--razo-gray-warm); text-transform: uppercase;">Fecha de registro</h3>
-                <p style="margin: 0.25rem 0 0; color: var(--razo-gray-dark);" id="clienteFecha">-</p>
-              </div>
-            </div>
-          </section>
+      async function verifyAndLoadAdmin() {
+        try {
+          const response = await fetch(`${API_BASE_URL}/admin/verify`, {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${adminToken}`,
+              "Content-Type": "application/json",
+            },
+          });
 
-          <!-- Historial de Pedidos -->
-          <section class="admin-card" style="padding: 1.75rem;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-              <div>
-                <h2 style="margin: 0; font-size: 1.25rem; color: var(--razo-orange, #FF6B35);">📦 Historial de pedidos</h2>
-                <p style="margin: 0.35rem 0 0; color: var(--razo-gray-warm); font-size: 0.9rem;">Pedidos registrados por este cliente</p>
-              </div>
-              <span id="totalPedidosBadge" class="admin-badge info">0 pedidos</span>
-            </div>
+          if (!response.ok) throw new Error("Invalid token");
 
-            <div id="pedidosVacio" class="empty-state" style="display: none; padding: 1.5rem; gap: 0.35rem;">
-              <div class="empty-state-icon">🗒️</div>
-              <div>
-                <h3 class="empty-state-title" style="margin-bottom: 0.25rem;">Sin pedidos registrados</h3>
-                <p class="empty-state-text" style="margin: 0;">Cuando el cliente realice compras aparecerán aquí.</p>
-              </div>
-            </div>
-
-            <div style="overflow-x: auto;" id="pedidosTablaWrapper">
-              <table class="admin-table">
-                <thead>
-                  <tr>
-                    <th># Pedido</th>
-                    <th>Fecha</th>
-                    <th>Monto</th>
-                    <th>Estatus</th>
-                    <th>Dirección</th>
-                  </tr>
-                </thead>
-                <tbody id="pedidosTableBody"></tbody>
-              </table>
-            </div>
-          </section>
-
-          <!-- Direcciones guardadas -->
-          <section class="admin-card" style="padding: 1.75rem;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-              <div>
-                <h2 style="margin: 0; font-size: 1.25rem; color: var(--razo-orange, #FF6B35);">🏠 Direcciones guardadas</h2>
-                <p style="margin: 0.35rem 0 0; color: var(--razo-gray-warm); font-size: 0.9rem;">Direcciones configuradas por el cliente</p>
-              </div>
-              <span id="totalDireccionesBadge" class="admin-badge secondary">0 direcciones</span>
-            </div>
-
-            <div id="direccionesVacio" class="empty-state" style="display: none; padding: 1.5rem; gap: 0.35rem;">
-              <div class="empty-state-icon">📭</div>
-              <div>
-                <h3 class="empty-state-title" style="margin-bottom: 0.25rem;">Sin direcciones guardadas</h3>
-                <p class="empty-state-text" style="margin: 0;">El cliente todavía no ha agregado direcciones de envío.</p>
-              </div>
-            </div>
-
-            <div id="direccionesLista" style="display: grid; gap: 1rem;"></div>
-          </section>
-        </div>
-      </div>
-    </main>
-  </div>
-
-  <script src="js/api.js"></script>
-  <script>
-    const adminToken = localStorage.getItem('razoconnect_admin_token');
-    if (!adminToken) {
-      window.location.href = '/login.html';
-    }
-
-    const params = new URLSearchParams(window.location.search);
-    const clienteId = parseInt(params.get('id'), 10);
-
-    if (!Number.isInteger(clienteId)) {
-      alert('Cliente no válido. Regresando al listado.');
-      window.location.href = '/admin-clientes.html';
-    }
-
-    async function verifyAndLoadAdmin() {
-      try {
-        const response = await fetch(`${API_BASE_URL}/admin/verify`, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${adminToken}`,
-            'Content-Type': 'application/json'
+          const data = await response.json();
+          if (data.success) {
+            const admin = data.data.admin;
+            document.getElementById("userName").textContent = admin.nombre;
+            document.getElementById("userRole").textContent =
+              admin.rol === "superadmin" ? "Super Admin" : "Admin";
+            const words = admin.nombre.split(" ");
+            const initials =
+              words.length >= 2
+                ? `${words[0].charAt(0)}${words[1].charAt(0)}`
+                : admin.nombre.substring(0, 2);
+            document.getElementById("userAvatar").textContent =
+              initials.toUpperCase();
           }
-        });
-
-        if (!response.ok) throw new Error('Invalid token');
-
-        const data = await response.json();
-        if (data.success) {
-          const admin = data.data.admin;
-          document.getElementById('userName').textContent = admin.nombre;
-          document.getElementById('userRole').textContent = admin.rol === 'superadmin' ? 'Super Admin' : 'Admin';
-          const words = admin.nombre.split(' ');
-          const initials = words.length >= 2 ? `${words[0].charAt(0)}${words[1].charAt(0)}` : admin.nombre.substring(0, 2);
-          document.getElementById('userAvatar').textContent = initials.toUpperCase();
+        } catch (error) {
+          console.error("Error verifying admin:", error);
+          localStorage.removeItem("razoconnect_admin_token");
+          localStorage.removeItem("razoconnect_admin");
+          window.location.href = "/login.html";
         }
-      } catch (error) {
-        console.error('Error verifying admin:', error);
-        localStorage.removeItem('razoconnect_admin_token');
-        localStorage.removeItem('razoconnect_admin');
-        window.location.href = '/login.html';
       }
-    }
 
-    async function loadClienteDetalle() {
-      const loadingState = document.getElementById('loadingState');
-      const errorState = document.getElementById('errorState');
-      const detalleContenido = document.getElementById('detalleContenido');
+      async function loadClienteDetalle() {
+        const loadingState = document.getElementById("loadingState");
+        const errorState = document.getElementById("errorState");
+        const detalleContenido = document.getElementById("detalleContenido");
 
-      try {
-        loadingState.style.display = 'flex';
-        errorState.style.display = 'none';
-        detalleContenido.style.display = 'none';
+        try {
+          loadingState.style.display = "flex";
+          errorState.style.display = "none";
+          detalleContenido.style.display = "none";
 
-        const response = await fetch(`${API_BASE_URL}/admin/clientes/${clienteId}`, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${adminToken}`,
-            'Content-Type': 'application/json'
+          const response = await fetch(
+            `${API_BASE_URL}/admin/clientes/${clienteId}`,
+            {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${adminToken}`,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+
+          const data = await response.json();
+
+          if (!response.ok || !data.success) {
+            throw new Error(data.message || "No se pudo obtener el cliente");
           }
-        });
 
-        const data = await response.json();
+          renderDetalle(data.data);
+          detalleContenido.style.display = "grid";
+        } catch (error) {
+          console.error("Error loading cliente:", error);
+          document.getElementById("errorMessage").textContent =
+            error.message || "Error desconocido";
+          errorState.style.display = "block";
+        } finally {
+          loadingState.style.display = "none";
+        }
+      }
 
-        if (!response.ok || !data.success) {
-          throw new Error(data.message || 'No se pudo obtener el cliente');
+      function renderDetalle(detalle) {
+        const { cliente, pedidos, direcciones } = detalle;
+
+        const nombreCompleto = `${cliente.nombre} ${cliente.apellido}`.trim();
+        document.getElementById(
+          "clienteSubtitle"
+        ).textContent = `Consulta detalles y actividad de ${
+          nombreCompleto || "cliente"
+        } (#${cliente.clienteId})`;
+
+        document.getElementById("clienteNombre").textContent =
+          nombreCompleto || "Sin nombre";
+        document.getElementById("clienteEmail").textContent =
+          cliente.email || "Sin email";
+        document.getElementById("clienteTelefono").textContent =
+          cliente.telefono || "Sin teléfono";
+        document.getElementById("clienteFecha").textContent =
+          cliente.fechaCreacion
+            ? new Date(cliente.fechaCreacion).toLocaleDateString("es-MX", {
+                year: "numeric",
+                month: "short",
+                day: "numeric",
+              })
+            : "Sin registro";
+
+        document.getElementById("estadoBadge").innerHTML = cliente.activo
+          ? '<span class="admin-badge success">Cliente activo</span>'
+          : '<span class="admin-badge danger">Cliente inactivo</span>';
+
+        renderPedidos(pedidos || []);
+        renderDirecciones(direcciones || []);
+      }
+
+      function renderPedidos(pedidos) {
+        const pedidosTableBody = document.getElementById("pedidosTableBody");
+        const pedidosVacio = document.getElementById("pedidosVacio");
+        const pedidosTablaWrapper = document.getElementById(
+          "pedidosTablaWrapper"
+        );
+        const totalPedidosBadge = document.getElementById("totalPedidosBadge");
+
+        if (pedidos.length === 0) {
+          pedidosVacio.style.display = "flex";
+          pedidosTablaWrapper.style.display = "none";
+          totalPedidosBadge.textContent = "0 pedidos";
+          return;
         }
 
-        renderDetalle(data.data);
-        detalleContenido.style.display = 'grid';
-      } catch (error) {
-        console.error('Error loading cliente:', error);
-        document.getElementById('errorMessage').textContent = error.message || 'Error desconocido';
-        errorState.style.display = 'block';
-      } finally {
-        loadingState.style.display = 'none';
-      }
-    }
+        pedidosVacio.style.display = "none";
+        pedidosTablaWrapper.style.display = "block";
+        totalPedidosBadge.textContent = `${pedidos.length} pedido${
+          pedidos.length === 1 ? "" : "s"
+        }`;
 
-    function renderDetalle(detalle) {
-      const { cliente, pedidos, direcciones } = detalle;
+        pedidosTableBody.innerHTML = pedidos
+          .map((pedido) => {
+            const fecha = pedido.fechaPedido
+              ? new Date(pedido.fechaPedido).toLocaleDateString("es-MX", {
+                  year: "numeric",
+                  month: "short",
+                  day: "numeric",
+                })
+              : "—";
+            const monto = pedido.montoTotal
+              ? `$${Number(pedido.montoTotal).toFixed(2)}`
+              : "$0.00";
+            const badgeClass =
+              pedido.estatus === "Completado"
+                ? "success"
+                : pedido.estatus === "Pendiente"
+                ? "info"
+                : "warning";
 
-      const nombreCompleto = `${cliente.nombre} ${cliente.apellido}`.trim();
-      document.getElementById('clienteSubtitle').textContent = `Consulta detalles y actividad de ${nombreCompleto || 'cliente'} (#${cliente.clienteId})`;
-
-      document.getElementById('clienteNombre').textContent = nombreCompleto || 'Sin nombre';
-      document.getElementById('clienteEmail').textContent = cliente.email || 'Sin email';
-      document.getElementById('clienteTelefono').textContent = cliente.telefono || 'Sin teléfono';
-      document.getElementById('clienteFecha').textContent = cliente.fechaCreacion ? new Date(cliente.fechaCreacion).toLocaleDateString('es-MX', { year: 'numeric', month: 'short', day: 'numeric' }) : 'Sin registro';
-
-      document.getElementById('estadoBadge').innerHTML = cliente.activo
-        ? '<span class="admin-badge success">Cliente activo</span>'
-        : '<span class="admin-badge danger">Cliente inactivo</span>';
-
-      renderPedidos(pedidos || []);
-      renderDirecciones(direcciones || []);
-    }
-
-    function renderPedidos(pedidos) {
-      const pedidosTableBody = document.getElementById('pedidosTableBody');
-      const pedidosVacio = document.getElementById('pedidosVacio');
-      const pedidosTablaWrapper = document.getElementById('pedidosTablaWrapper');
-      const totalPedidosBadge = document.getElementById('totalPedidosBadge');
-
-      if (pedidos.length === 0) {
-        pedidosVacio.style.display = 'flex';
-        pedidosTablaWrapper.style.display = 'none';
-        totalPedidosBadge.textContent = '0 pedidos';
-        return;
-      }
-
-      pedidosVacio.style.display = 'none';
-      pedidosTablaWrapper.style.display = 'block';
-      totalPedidosBadge.textContent = `${pedidos.length} pedido${pedidos.length === 1 ? '' : 's'}`;
-
-      pedidosTableBody.innerHTML = pedidos.map(pedido => {
-        const fecha = pedido.fechaPedido ? new Date(pedido.fechaPedido).toLocaleDateString('es-MX', { year: 'numeric', month: 'short', day: 'numeric' }) : '—';
-        const monto = pedido.montoTotal ? `$${Number(pedido.montoTotal).toFixed(2)}` : '$0.00';
-        const badgeClass = pedido.estatus === 'Completado' ? 'success' : pedido.estatus === 'Pendiente' ? 'info' : 'warning';
-
-        return `
+            return `
           <tr>
             <td><strong>#${pedido.pedidoId}</strong></td>
             <td>${fecha}</td>
             <td>${monto}</td>
-            <td><span class="admin-badge ${badgeClass}">${pedido.estatus || 'Sin estatus'}</span></td>
-            <td>${pedido.direccionEnvioId ? `#${pedido.direccionEnvioId}` : '-'}</td>
+            <td><span class="admin-badge ${badgeClass}">${
+              pedido.estatus || "Sin estatus"
+            }</span></td>
+            <td>${
+              pedido.direccionEnvioId ? `#${pedido.direccionEnvioId}` : "-"
+            }</td>
           </tr>
         `;
-      }).join('');
-    }
-
-    function renderDirecciones(direcciones) {
-      const direccionesLista = document.getElementById('direccionesLista');
-      const direccionesVacio = document.getElementById('direccionesVacio');
-      const totalDireccionesBadge = document.getElementById('totalDireccionesBadge');
-
-      if (direcciones.length === 0) {
-        direccionesVacio.style.display = 'flex';
-        direccionesLista.style.display = 'none';
-        totalDireccionesBadge.textContent = '0 direcciones';
-        return;
+          })
+          .join("");
       }
 
-      direccionesVacio.style.display = 'none';
-      direccionesLista.style.display = 'grid';
-      totalDireccionesBadge.textContent = `${direcciones.length} dirección${direcciones.length === 1 ? '' : 'es'}`;
+      function renderDirecciones(direcciones) {
+        const direccionesLista = document.getElementById("direccionesLista");
+        const direccionesVacio = document.getElementById("direccionesVacio");
+        const totalDireccionesBadge = document.getElementById(
+          "totalDireccionesBadge"
+        );
 
-      direccionesLista.innerHTML = direcciones.map(direccion => {
-        const etiqueta = direccion.etiqueta ? `<span class="admin-badge secondary" style="margin-right: 0.5rem;">${direccion.etiqueta}</span>` : '';
-        const lineaDireccion = [direccion.calle, direccion.numeroExt, direccion.numeroInt ? `Int. ${direccion.numeroInt}` : null]
-          .filter(Boolean)
-          .join(' ');
-        const zona = [direccion.colonia, direccion.ciudad, direccion.estado].filter(Boolean).join(', ');
+        if (direcciones.length === 0) {
+          direccionesVacio.style.display = "flex";
+          direccionesLista.style.display = "none";
+          totalDireccionesBadge.textContent = "0 direcciones";
+          return;
+        }
 
-        return `
+        direccionesVacio.style.display = "none";
+        direccionesLista.style.display = "grid";
+        totalDireccionesBadge.textContent = `${direcciones.length} dirección${
+          direcciones.length === 1 ? "" : "es"
+        }`;
+
+        direccionesLista.innerHTML = direcciones
+          .map((direccion) => {
+            const etiqueta = direccion.etiqueta
+              ? `<span class="admin-badge secondary" style="margin-right: 0.5rem;">${direccion.etiqueta}</span>`
+              : "";
+            const lineaDireccion = [
+              direccion.calle,
+              direccion.numeroExt,
+              direccion.numeroInt ? `Int. ${direccion.numeroInt}` : null,
+            ]
+              .filter(Boolean)
+              .join(" ");
+            const zona = [direccion.colonia, direccion.ciudad, direccion.estado]
+              .filter(Boolean)
+              .join(", ");
+
+            return `
           <div style="border: 1px solid var(--razo-gray-light); border-radius: 12px; padding: 1rem 1.25rem; background: #fff;">
             <div style="display: flex; align-items: center; margin-bottom: 0.5rem;">
               ${etiqueta}
-              <strong style="color: var(--razo-gray-dark);">${direccion.receptor || 'Receptor sin definir'}</strong>
+              <strong style="color: var(--razo-gray-dark);">${
+                direccion.receptor || "Receptor sin definir"
+              }</strong>
             </div>
-            <div style="color: var(--razo-gray-dark); font-size: 0.95rem;">${lineaDireccion || 'Sin dirección completa'}</div>
-            <div style="color: var(--razo-gray-warm); font-size: 0.85rem; margin-top: 0.25rem;">${zona || 'Zona no especificada'}</div>
+            <div style="color: var(--razo-gray-dark); font-size: 0.95rem;">${
+              lineaDireccion || "Sin dirección completa"
+            }</div>
+            <div style="color: var(--razo-gray-warm); font-size: 0.85rem; margin-top: 0.25rem;">${
+              zona || "Zona no especificada"
+            }</div>
             <div style="margin-top: 0.35rem; font-size: 0.85rem; color: var(--razo-gray-warm);">
-              CP: ${direccion.codigoPostal || 's/d'} • Tel: ${direccion.telefonoContacto || 's/d'}
+              CP: ${direccion.codigoPostal || "s/d"} • Tel: ${
+              direccion.telefonoContacto || "s/d"
+            }
             </div>
           </div>
         `;
-      }).join('');
-    }
+          })
+          .join("");
+      }
 
-    document.getElementById('logoutBtn').addEventListener('click', () => {
-      localStorage.removeItem('razoconnect_admin_token');
-      localStorage.removeItem('razoconnect_admin');
-      showToast('Sesión cerrada', 'success');
-      setTimeout(() => {
-        window.location.href = '/login.html';
-      }, 500);
-    });
+      document.getElementById("logoutBtn").addEventListener("click", () => {
+        localStorage.removeItem("razoconnect_admin_token");
+        localStorage.removeItem("razoconnect_admin");
+        showToast("Sesión cerrada", "success");
+        setTimeout(() => {
+          window.location.href = "/login.html";
+        }, 500);
+      });
 
-    verifyAndLoadAdmin();
-    loadClienteDetalle();
-  </script>
-</body>
+      verifyAndLoadAdmin();
+      loadClienteDetalle();
+    </script>
+  </body>
 </html>

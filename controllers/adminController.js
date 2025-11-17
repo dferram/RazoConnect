@@ -1,7 +1,7 @@
-const db = require('../db');
-const { enviarEmail } = require('../services/emailService');
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
+const db = require("../db");
+const { enviarEmail } = require("../services/emailService");
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 
 let agenteAdminColumnsCache = null;
 
@@ -18,23 +18,23 @@ const getAgenteAdminColumnsInfo = async () => {
          AND column_name IN ('esadmin', 'adminrol')`
     );
 
-    const found = columnsResult.rows.map(row => row.column_name);
+    const found = columnsResult.rows.map((row) => row.column_name);
     agenteAdminColumnsCache = {
-      esAdmin: found.includes('esadmin'),
-      adminRol: found.includes('adminrol')
+      esAdmin: found.includes("esadmin"),
+      adminRol: found.includes("adminrol"),
     };
 
     if (!agenteAdminColumnsCache.esAdmin || !agenteAdminColumnsCache.adminRol) {
       console.warn(
-        '⚠️  Columnas opcionales para admin de agentes no detectadas en AgentesDeVentas.',
+        "⚠️  Columnas opcionales para admin de agentes no detectadas en AgentesDeVentas.",
         agenteAdminColumnsCache
       );
     }
   } catch (error) {
-    console.error('Error verificando columnas de agentes admin:', error);
+    console.error("Error verificando columnas de agentes admin:", error);
     agenteAdminColumnsCache = {
       esAdmin: false,
-      adminRol: false
+      adminRol: false,
     };
   }
 
@@ -53,13 +53,13 @@ const loginAdmin = async (req, res) => {
     if (!email || !password) {
       return res.status(400).json({
         success: false,
-        message: 'Email y contraseña son requeridos'
+        message: "Email y contraseña son requeridos",
       });
     }
 
     // Buscar administrador por email
     const result = await db.query(
-      'SELECT * FROM Administradores WHERE Email = $1 AND Activo = TRUE',
+      "SELECT * FROM Administradores WHERE Email = $1 AND Activo = TRUE",
       [email]
     );
 
@@ -71,48 +71,94 @@ const loginAdmin = async (req, res) => {
         id: admin.adminid,
         email: admin.email,
         nombre: admin.nombre,
-        apellido: admin.apellido || '',
+        apellido: admin.apellido || "",
         rol: admin.rol,
         passwordHash: admin.passwordhash,
-        adminSource: 'admin',
-        roles: Array.from(new Set(['admin', admin.rol].filter(Boolean)))
+        adminSource: "admin",
+        roles: Array.from(new Set(["admin", admin.rol].filter(Boolean))),
       };
     } else {
-      const { esAdmin: hasEsAdminColumn, adminRol: hasAdminRolColumn } = await getAgenteAdminColumnsInfo();
+      const { esAdmin: hasEsAdminColumn, adminRol: hasAdminRolColumn } =
+        await getAgenteAdminColumnsInfo();
 
-      const selectColumns = [
-        'AgenteID',
-        'Nombre',
-        'Apellido',
-        'Email',
-        'PasswordHash',
-        'CodigoAgente',
-        'Activo',
-        hasEsAdminColumn ? 'EsAdmin' : 'FALSE AS EsAdmin',
-        hasAdminRolColumn ? 'AdminRol' : 'NULL AS AdminRol'
-      ].join(', ');
+      let agenteQueryText = `
+        SELECT
+          AgenteID,
+          Nombre,
+          Apellido,
+          Email,
+          PasswordHash,
+          CodigoAgente,
+          Activo
+        FROM AgentesDeVentas
+        WHERE Email = $1 AND Activo = TRUE
+      `;
 
-      const agenteResult = await db.query(
-        `SELECT ${selectColumns} FROM AgentesDeVentas WHERE Email = $1 AND Activo = TRUE`,
-        [email]
-      );
+      if (hasEsAdminColumn && hasAdminRolColumn) {
+        agenteQueryText = `
+          SELECT
+            AgenteID,
+            Nombre,
+            Apellido,
+            Email,
+            PasswordHash,
+            CodigoAgente,
+            Activo,
+            EsAdmin,
+            AdminRol
+          FROM AgentesDeVentas
+          WHERE Email = $1 AND Activo = TRUE
+        `;
+      } else if (hasEsAdminColumn) {
+        agenteQueryText = `
+          SELECT
+            AgenteID,
+            Nombre,
+            Apellido,
+            Email,
+            PasswordHash,
+            CodigoAgente,
+            Activo,
+            EsAdmin
+          FROM AgentesDeVentas
+          WHERE Email = $1 AND Activo = TRUE
+        `;
+      } else if (hasAdminRolColumn) {
+        agenteQueryText = `
+          SELECT
+            AgenteID,
+            Nombre,
+            Apellido,
+            Email,
+            PasswordHash,
+            CodigoAgente,
+            Activo,
+            AdminRol
+          FROM AgentesDeVentas
+          WHERE Email = $1 AND Activo = TRUE
+        `;
+      }
+
+      const agenteResult = await db.query(agenteQueryText, [email]);
 
       if (agenteResult.rows.length > 0) {
         const agente = agenteResult.rows[0];
-        const esAdmin = Boolean(agente.esadmin);
+        const esAdmin = hasEsAdminColumn ? Boolean(agente.esadmin) : false;
 
         if (esAdmin) {
-          const adminRol = agente.adminrol || 'admin';
+          const adminRol = hasAdminRolColumn
+            ? agente.adminrol || "admin"
+            : "admin";
           cuenta = {
             id: agente.agenteid,
             email: agente.email,
             nombre: agente.nombre,
-            apellido: agente.apellido || '',
+            apellido: agente.apellido || "",
             rol: adminRol,
             passwordHash: agente.passwordhash,
-            adminSource: 'agent',
+            adminSource: "agent",
             codigoAgente: agente.codigoagente,
-            roles: Array.from(new Set(['admin', adminRol, 'agente']))
+            roles: Array.from(new Set(["admin", adminRol, "agente"])),
           };
         }
       }
@@ -121,7 +167,7 @@ const loginAdmin = async (req, res) => {
     if (!cuenta) {
       return res.status(401).json({
         success: false,
-        message: 'Credenciales inválidas'
+        message: "Credenciales inválidas",
       });
     }
 
@@ -131,7 +177,7 @@ const loginAdmin = async (req, res) => {
     if (!isPasswordValid) {
       return res.status(401).json({
         success: false,
-        message: 'Credenciales inválidas'
+        message: "Credenciales inválidas",
       });
     }
 
@@ -139,12 +185,12 @@ const loginAdmin = async (req, res) => {
       id: cuenta.id,
       email: cuenta.email,
       rol: cuenta.rol,
-      tipo: 'admin',
+      tipo: "admin",
       roles: cuenta.roles,
-      adminSource: cuenta.adminSource
+      adminSource: cuenta.adminSource,
     };
 
-    if (cuenta.adminSource === 'agent') {
+    if (cuenta.adminSource === "agent") {
       tokenPayload.agenteId = cuenta.id;
       if (cuenta.codigoAgente) {
         tokenPayload.codigoAgente = cuenta.codigoAgente;
@@ -155,15 +201,17 @@ const loginAdmin = async (req, res) => {
     const token = jwt.sign(
       tokenPayload,
       process.env.JWT_SECRET,
-      { expiresIn: '8h' } // Token válido por 8 horas
+      { expiresIn: "8h" } // Token válido por 8 horas
     );
 
-    const nombreCompleto = [cuenta.nombre, cuenta.apellido].filter(Boolean).join(' ').trim() || cuenta.nombre;
+    const nombreCompleto =
+      [cuenta.nombre, cuenta.apellido].filter(Boolean).join(" ").trim() ||
+      cuenta.nombre;
 
     // Enviar respuesta
     res.json({
       success: true,
-      message: 'Login exitoso',
+      message: "Login exitoso",
       data: {
         token,
         admin: {
@@ -171,16 +219,15 @@ const loginAdmin = async (req, res) => {
           nombre: nombreCompleto,
           email: cuenta.email,
           rol: cuenta.rol,
-          origen: cuenta.adminSource
-        }
-      }
+          origen: cuenta.adminSource,
+        },
+      },
     });
-
   } catch (error) {
-    console.error('Error en login de admin:', error);
+    console.error("Error en login de admin:", error);
     res.status(500).json({
       success: false,
-      message: 'Error en el servidor'
+      message: "Error en el servidor",
     });
   }
 };
@@ -197,14 +244,14 @@ const updateCostoEnvio = async (req, res) => {
     if (Number.isNaN(pedidoId)) {
       return res.status(400).json({
         success: false,
-        message: 'ID de pedido inválido'
+        message: "ID de pedido inválido",
       });
     }
 
-    if (costoEnvio === undefined || costoEnvio === null || costoEnvio === '') {
+    if (costoEnvio === undefined || costoEnvio === null || costoEnvio === "") {
       return res.status(400).json({
         success: false,
-        message: 'El costo de envío es requerido'
+        message: "El costo de envío es requerido",
       });
     }
 
@@ -213,7 +260,7 @@ const updateCostoEnvio = async (req, res) => {
     if (Number.isNaN(costoEnvioValue) || costoEnvioValue < 0) {
       return res.status(400).json({
         success: false,
-        message: 'El costo de envío debe ser un número mayor o igual a 0'
+        message: "El costo de envío debe ser un número mayor o igual a 0",
       });
     }
 
@@ -221,31 +268,30 @@ const updateCostoEnvio = async (req, res) => {
       `UPDATE Pedidos
        SET CostoEnvio = $1
        WHERE PedidoID = $2
-       RETURNING PedidoID, CostoEnvio` ,
+       RETURNING PedidoID, CostoEnvio`,
       [costoEnvioValue, pedidoId]
     );
 
     if (result.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        message: 'Pedido no encontrado'
+        message: "Pedido no encontrado",
       });
     }
 
     res.json({
       success: true,
-      message: 'Costo de envío actualizado',
+      message: "Costo de envío actualizado",
       data: {
         pedidoId: result.rows[0].pedidoid,
-        costoEnvio: parseFloat(result.rows[0].costoenvio)
-      }
+        costoEnvio: parseFloat(result.rows[0].costoenvio),
+      },
     });
-
   } catch (error) {
-    console.error('Error al actualizar costo de envío:', error);
+    console.error("Error al actualizar costo de envío:", error);
     res.status(500).json({
       success: false,
-      message: 'Error al actualizar el costo de envío'
+      message: "Error al actualizar el costo de envío",
     });
   }
 };
@@ -261,7 +307,7 @@ const getClienteDetalle = async (req, res) => {
     if (!Number.isInteger(clienteId)) {
       return res.status(400).json({
         success: false,
-        message: 'ClienteID inválido'
+        message: "ClienteID inválido",
       });
     }
 
@@ -283,7 +329,7 @@ const getClienteDetalle = async (req, res) => {
     if (clienteResult.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        message: 'Cliente no encontrado'
+        message: "Cliente no encontrado",
       });
     }
 
@@ -306,20 +352,23 @@ const getClienteDetalle = async (req, res) => {
 
     const direccionesQuery = `
       SELECT 
-        DireccionID,
-        Etiqueta,
-        Receptor,
-        Calle,
-        NumeroExt,
-        NumeroInt,
-        Colonia,
-        Ciudad,
-        Estado,
-        CodigoPostal,
-        TelefonoContacto
-      FROM Cliente_Direcciones
-      WHERE ClienteID = $1
-      ORDER BY DireccionID DESC
+        cd.DireccionID,
+        cd.Etiqueta,
+        cd.Receptor,
+        cd.Calle,
+        cd.NumeroExt,
+        cd.NumeroInt,
+        cd.Colonia,
+        cd.Ciudad,
+        cd.EstadoID,
+        e.Nombre AS EstadoNombre,
+        e.Abreviatura AS EstadoAbreviatura,
+        cd.CodigoPostal,
+        cd.TelefonoContacto
+      FROM Cliente_Direcciones cd
+      LEFT JOIN Estados e ON cd.EstadoID = e.EstadoID
+      WHERE cd.ClienteID = $1
+      ORDER BY cd.DireccionID DESC
     `;
 
     const direccionesResult = await db.query(direccionesQuery, [clienteId]);
@@ -334,17 +383,17 @@ const getClienteDetalle = async (req, res) => {
           email: cliente.email,
           telefono: cliente.telefono,
           activo: cliente.activo,
-          fechaRegistro: cliente.fechaderegistro
+          fechaRegistro: cliente.fechaderegistro,
         },
-        pedidos: pedidosResult.rows.map(pedido => ({
+        pedidos: pedidosResult.rows.map((pedido) => ({
           pedidoId: pedido.pedidoid,
           fechaPedido: pedido.fechapedido,
           montoTotal: pedido.montototal ? parseFloat(pedido.montototal) : 0,
           estatus: pedido.estatus,
           direccionEnvioId: pedido.direccionenvioid,
-          agenteId: pedido.agenteid
+          agenteId: pedido.agenteid,
         })),
-        direcciones: direccionesResult.rows.map(direccion => ({
+        direcciones: direccionesResult.rows.map((direccion) => ({
           direccionId: direccion.direccionid,
           etiqueta: direccion.etiqueta,
           receptor: direccion.receptor,
@@ -353,18 +402,23 @@ const getClienteDetalle = async (req, res) => {
           numeroInt: direccion.numeroint,
           colonia: direccion.colonia,
           ciudad: direccion.ciudad,
-          estado: direccion.estado,
+          estadoId:
+            direccion.estadoid !== null
+              ? parseInt(direccion.estadoid, 10)
+              : null,
+          estado: direccion.estadonombre || null,
+          estadoNombre: direccion.estadonombre || null,
+          estadoAbreviatura: direccion.estadoabreviatura || null,
           codigoPostal: direccion.codigopostal,
-          telefonoContacto: direccion.telefonocontacto
-        }))
-      }
+          telefonoContacto: direccion.telefonocontacto,
+        })),
+      },
     });
-
   } catch (error) {
-    console.error('Error al obtener detalle del cliente:', error);
+    console.error("Error al obtener detalle del cliente:", error);
     res.status(500).json({
       success: false,
-      message: 'Error en el servidor'
+      message: "Error en el servidor",
     });
   }
 };
@@ -381,14 +435,14 @@ const actualizarEstadoCliente = async (req, res) => {
     if (!Number.isInteger(clienteId)) {
       return res.status(400).json({
         success: false,
-        message: 'ClienteID inválido'
+        message: "ClienteID inválido",
       });
     }
 
-    if (typeof activo !== 'boolean') {
+    if (typeof activo !== "boolean") {
       return res.status(400).json({
         success: false,
-        message: 'El campo "activo" debe ser booleano'
+        message: 'El campo "activo" debe ser booleano',
       });
     }
 
@@ -403,24 +457,23 @@ const actualizarEstadoCliente = async (req, res) => {
     if (result.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        message: 'Cliente no encontrado'
+        message: "Cliente no encontrado",
       });
     }
 
     res.json({
       success: true,
-      message: 'Estado del cliente actualizado correctamente',
+      message: "Estado del cliente actualizado correctamente",
       data: {
         clienteId: result.rows[0].clienteid,
-        activo: result.rows[0].activo
-      }
+        activo: result.rows[0].activo,
+      },
     });
-
   } catch (error) {
-    console.error('Error al actualizar estado del cliente:', error);
+    console.error("Error al actualizar estado del cliente:", error);
     res.status(500).json({
       success: false,
-      message: 'Error en el servidor'
+      message: "Error en el servidor",
     });
   }
 };
@@ -440,19 +493,18 @@ const getMedidas = async (req, res) => {
     res.json({
       success: true,
       data: {
-        medidas: result.rows.map(row => ({
+        medidas: result.rows.map((row) => ({
           medidaId: row.medidaid,
           nombre: row.nombre,
-          abreviatura: row.abreviatura
-        }))
-      }
+          abreviatura: row.abreviatura,
+        })),
+      },
     });
-
   } catch (error) {
-    console.error('Error al obtener medidas:', error);
+    console.error("Error al obtener medidas:", error);
     res.status(500).json({
       success: false,
-      message: 'Error en el servidor'
+      message: "Error en el servidor",
     });
   }
 };
@@ -468,7 +520,7 @@ const verifyAdmin = async (req, res) => {
 
     let adminInfo = null;
 
-    if (req.user.adminSource === 'agent') {
+    if (req.user.adminSource === "agent") {
       const agentResult = await db.query(
         `SELECT 
           AgenteID,
@@ -485,58 +537,61 @@ const verifyAdmin = async (req, res) => {
       if (agentResult.rows.length === 0) {
         return res.status(404).json({
           success: false,
-          message: 'Administrador no encontrado'
+          message: "Administrador no encontrado",
         });
       }
 
       const agente = agentResult.rows[0];
-      const nombreCompleto = [agente.nombre, agente.apellido].filter(Boolean).join(' ').trim() || agente.nombre;
+      const nombreCompleto =
+        [agente.nombre, agente.apellido].filter(Boolean).join(" ").trim() ||
+        agente.nombre;
 
       adminInfo = {
         adminId: agente.agenteid,
         nombre: nombreCompleto,
         email: agente.email,
         rol: agente.adminrol || req.user.rol,
-        origen: 'agent',
-        codigoAgente: agente.codigoagente || req.user.codigoAgente || null
+        origen: "agent",
+        codigoAgente: agente.codigoagente || req.user.codigoAgente || null,
       };
     } else {
       const result = await db.query(
-        'SELECT AdminID, Nombre, Apellido, Email, Rol FROM Administradores WHERE AdminID = $1 AND Activo = TRUE',
+        "SELECT AdminID, Nombre, Apellido, Email, Rol FROM Administradores WHERE AdminID = $1 AND Activo = TRUE",
         [adminId]
       );
 
       if (result.rows.length === 0) {
         return res.status(404).json({
           success: false,
-          message: 'Administrador no encontrado'
+          message: "Administrador no encontrado",
         });
       }
 
       const admin = result.rows[0];
-      const nombreCompleto = [admin.nombre, admin.apellido].filter(Boolean).join(' ').trim() || admin.nombre;
+      const nombreCompleto =
+        [admin.nombre, admin.apellido].filter(Boolean).join(" ").trim() ||
+        admin.nombre;
 
       adminInfo = {
         adminId: admin.adminid,
         nombre: nombreCompleto,
         email: admin.email,
         rol: admin.rol,
-        origen: 'admin'
+        origen: "admin",
       };
     }
 
     res.json({
       success: true,
       data: {
-        admin: adminInfo
-      }
+        admin: adminInfo,
+      },
     });
-
   } catch (error) {
-    console.error('Error al verificar admin:', error);
+    console.error("Error al verificar admin:", error);
     res.status(500).json({
       success: false,
-      message: 'Error en el servidor'
+      message: "Error en el servidor",
     });
   }
 };
@@ -551,7 +606,7 @@ const getAdminProfile = async (req, res) => {
 
     let adminData = null;
 
-    if (req.user.adminSource === 'agent') {
+    if (req.user.adminSource === "agent") {
       const agentResult = await db.query(
         `SELECT 
           AgenteID,
@@ -569,12 +624,14 @@ const getAdminProfile = async (req, res) => {
       if (agentResult.rows.length === 0) {
         return res.status(404).json({
           success: false,
-          message: 'Administrador no encontrado'
+          message: "Administrador no encontrado",
         });
       }
 
       const agente = agentResult.rows[0];
-      const nombreCompleto = [agente.nombre, agente.apellido].filter(Boolean).join(' ').trim() || agente.nombre;
+      const nombreCompleto =
+        [agente.nombre, agente.apellido].filter(Boolean).join(" ").trim() ||
+        agente.nombre;
 
       adminData = {
         adminId: agente.agenteid,
@@ -582,8 +639,8 @@ const getAdminProfile = async (req, res) => {
         email: agente.email,
         rol: agente.adminrol || req.user.rol,
         fechaCreacion: agente.fechacreacion,
-        origen: 'agent',
-        codigoAgente: agente.codigoagente || req.user.codigoAgente || null
+        origen: "agent",
+        codigoAgente: agente.codigoagente || req.user.codigoAgente || null,
       };
     } else {
       const result = await db.query(
@@ -602,12 +659,14 @@ const getAdminProfile = async (req, res) => {
       if (result.rows.length === 0) {
         return res.status(404).json({
           success: false,
-          message: 'Administrador no encontrado'
+          message: "Administrador no encontrado",
         });
       }
 
       const admin = result.rows[0];
-      const nombreCompleto = [admin.nombre, admin.apellido].filter(Boolean).join(' ').trim() || admin.nombre;
+      const nombreCompleto =
+        [admin.nombre, admin.apellido].filter(Boolean).join(" ").trim() ||
+        admin.nombre;
 
       adminData = {
         adminId: admin.adminid,
@@ -615,20 +674,19 @@ const getAdminProfile = async (req, res) => {
         email: admin.email,
         rol: admin.rol,
         fechaCreacion: admin.fechacreacion,
-        origen: 'admin'
+        origen: "admin",
       };
     }
 
     res.json({
       success: true,
-      data: adminData
+      data: adminData,
     });
-
   } catch (error) {
-    console.error('Error al obtener perfil de admin:', error);
+    console.error("Error al obtener perfil de admin:", error);
     res.status(500).json({
       success: false,
-      message: 'Error en el servidor'
+      message: "Error en el servidor",
     });
   }
 };
@@ -653,34 +711,33 @@ const refreshAdminToken = async (req, res) => {
     if (result.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        message: 'Administrador no encontrado'
+        message: "Administrador no encontrado",
       });
     }
 
     // Generar un nuevo token con el mismo payload
-    const { generateToken } = require('../utils/jwtHelper');
+    const { generateToken } = require("../utils/jwtHelper");
     const newToken = generateToken({
       userId: adminId,
       tipo: tipo,
       rol: req.user.rol,
-      email: email
+      email: email,
     });
 
-    console.log('🔄 Token de admin renovado:', { adminId, email });
+    console.log("🔄 Token de admin renovado:", { adminId, email });
 
     res.json({
       success: true,
-      message: 'Token renovado exitosamente',
+      message: "Token renovado exitosamente",
       data: {
-        token: newToken
-      }
+        token: newToken,
+      },
     });
-
   } catch (error) {
-    console.error('Error refreshing admin token:', error);
+    console.error("Error refreshing admin token:", error);
     res.status(500).json({
       success: false,
-      message: 'Error al renovar token'
+      message: "Error al renovar token",
     });
   }
 };
@@ -739,15 +796,14 @@ const getDashboardStats = async (req, res) => {
         totalPedidos: parseInt(totalPedidos.rows[0].total),
         ingresosTotales: parseFloat(ingresosTotales.rows[0].total),
         clientesActivos: parseInt(clientesActivos.rows[0].total),
-        agentesActivos: parseInt(agentesActivos.rows[0].total)
-      }
+        agentesActivos: parseInt(agentesActivos.rows[0].total),
+      },
     });
-
   } catch (error) {
-    console.error('Error al obtener estadísticas:', error);
+    console.error("Error al obtener estadísticas:", error);
     res.status(500).json({
       success: false,
-      message: 'Error en el servidor'
+      message: "Error en el servidor",
     });
   }
 };
@@ -769,7 +825,9 @@ const getAllPedidos = async (req, res) => {
         p.CostoEnvio,
         p.Estatus,
         p.DireccionEnvioID,
-        d.Calle || ', ' || d.Ciudad || ', ' || d.Estado as DireccionCompleta,
+        CONCAT_WS(', ', d.Calle, d.Ciudad, e.Nombre) as DireccionCompleta,
+        d.EstadoID,
+        e.Nombre as EstadoNombre,
         p.AgenteID,
         CASE 
           WHEN a.AgenteID IS NOT NULL THEN a.Nombre || ' ' || a.Apellido 
@@ -779,6 +837,7 @@ const getAllPedidos = async (req, res) => {
       FROM Pedidos p
       INNER JOIN Clientes c ON p.ClienteID = c.ClienteID
       LEFT JOIN Cliente_Direcciones d ON p.DireccionEnvioID = d.DireccionID
+      LEFT JOIN Estados e ON d.EstadoID = e.EstadoID
       LEFT JOIN AgentesDeVentas a ON p.AgenteID = a.AgenteID
       ORDER BY p.FechaPedido DESC`
     );
@@ -786,29 +845,31 @@ const getAllPedidos = async (req, res) => {
     res.json({
       success: true,
       data: {
-        pedidos: result.rows.map(row => ({
+        pedidos: result.rows.map((row) => ({
           pedidoId: row.pedidoid,
           clienteId: row.clienteid,
           clienteNombre: row.clientenombre,
           clienteEmail: row.clienteemail,
           fechaPedido: row.fechapedido,
           montoTotal: parseFloat(row.montototal),
-          costoEnvio: row.costoenvio !== null ? parseFloat(row.costoenvio) : null,
+          costoEnvio:
+            row.costoenvio !== null ? parseFloat(row.costoenvio) : null,
           estatus: row.estatus,
           direccionEnvioId: row.direccionenvioid,
           direccionCompleta: row.direccioncompleta,
+          estadoId: row.estadoid !== null ? parseInt(row.estadoid, 10) : null,
+          estadoNombre: row.estadonombre || null,
           agenteId: row.agenteid,
           agenteNombre: row.agentenombre,
-          totalItems: parseInt(row.totalitems)
-        }))
-      }
+          totalItems: parseInt(row.totalitems),
+        })),
+      },
     });
-
   } catch (error) {
-    console.error('Error al obtener pedidos:', error);
+    console.error("Error al obtener pedidos:", error);
     res.status(500).json({
       success: false,
-      message: 'Error en el servidor'
+      message: "Error en el servidor",
     });
   }
 };
@@ -819,33 +880,39 @@ const getAllPedidos = async (req, res) => {
  */
 const updatePedidoEstatus = async (req, res) => {
   const client = await db.pool.connect();
-  
+
   try {
     const pedidoId = parseInt(req.params.id);
     const { estatus } = req.body;
 
     // Validar estatus
-    const estatusValidos = ['Pendiente', 'Confirmado', 'Enviado', 'Entregado', 'Cancelado'];
+    const estatusValidos = [
+      "Pendiente",
+      "Confirmado",
+      "Enviado",
+      "Entregado",
+      "Cancelado",
+    ];
     if (!estatusValidos.includes(estatus)) {
       return res.status(400).json({
         success: false,
-        message: 'Estatus inválido'
+        message: "Estatus inválido",
       });
     }
 
-    await client.query('BEGIN');
+    await client.query("BEGIN");
 
     // Obtener datos del pedido
     const pedidoResult = await client.query(
-      'SELECT * FROM Pedidos WHERE PedidoID = $1',
+      "SELECT * FROM Pedidos WHERE PedidoID = $1",
       [pedidoId]
     );
 
     if (pedidoResult.rows.length === 0) {
-      await client.query('ROLLBACK');
+      await client.query("ROLLBACK");
       return res.status(404).json({
         success: false,
-        message: 'Pedido no encontrado'
+        message: "Pedido no encontrado",
       });
     }
 
@@ -853,7 +920,7 @@ const updatePedidoEstatus = async (req, res) => {
     const estatusAnterior = pedido.estatus;
 
     // Si el estatus cambia a 'Confirmado', reducir stock y crear log
-    if (estatus === 'Confirmado' && estatusAnterior !== 'Confirmado') {
+    if (estatus === "Confirmado" && estatusAnterior !== "Confirmado") {
       // Obtener los detalles del pedido con sus variantes
       const detallesResult = await client.query(
         `SELECT 
@@ -877,10 +944,12 @@ const updatePedidoEstatus = async (req, res) => {
         const cantidadRequerida = detalle.cantidadpaquetes;
 
         if (stockActual < cantidadRequerida) {
-          await client.query('ROLLBACK');
+          await client.query("ROLLBACK");
           return res.status(400).json({
             success: false,
-            message: `Stock insuficiente para la variante ${detalle.sku || detalle.varianteid}. Stock actual: ${stockActual}, requerido: ${cantidadRequerida}`
+            message: `Stock insuficiente para la variante ${
+              detalle.sku || detalle.varianteid
+            }. Stock actual: ${stockActual}, requerido: ${cantidadRequerida}`,
           });
         }
 
@@ -901,19 +970,19 @@ const updatePedidoEstatus = async (req, res) => {
             -cantidadRequerida,
             nuevoStock,
             `Pedido #${pedidoId} confirmado (${detalle.nombreproducto})`,
-            req.user.id
+            req.user.id,
           ]
         );
       }
     }
 
     // Actualizar el estatus del pedido
-    await client.query(
-      'UPDATE Pedidos SET Estatus = $1 WHERE PedidoID = $2',
-      [estatus, pedidoId]
-    );
+    await client.query("UPDATE Pedidos SET Estatus = $1 WHERE PedidoID = $2", [
+      estatus,
+      pedidoId,
+    ]);
 
-    await client.query('COMMIT');
+    await client.query("COMMIT");
 
     res.json({
       success: true,
@@ -921,8 +990,8 @@ const updatePedidoEstatus = async (req, res) => {
       data: {
         pedidoId,
         estatusAnterior,
-        estatusNuevo: estatus
-      }
+        estatusNuevo: estatus,
+      },
     });
 
     try {
@@ -935,50 +1004,55 @@ const updatePedidoEstatus = async (req, res) => {
       );
 
       const emailCliente = clienteInfo.rows[0]?.email;
-      const nombreCliente = clienteInfo.rows[0]?.nombre || '';
+      const nombreCliente = clienteInfo.rows[0]?.nombre || "";
 
       if (emailCliente) {
-        if (estatus === 'Confirmado') {
+        if (estatus === "Confirmado") {
           const asunto = `Pedido #${pedidoId} confirmado`;
           const cuerpoHtml = `
             <div style="font-family: Arial, sans-serif; color: #111827;">
               <h2 style="color:#16a34a;">¡Tu pedido está confirmado!</h2>
-              <p>Hola ${nombreCliente || 'cliente'},</p>
+              <p>Hola ${nombreCliente || "cliente"},</p>
               <p>Hemos confirmado tu pedido <strong>#${pedidoId}</strong>. Nuestro equipo está preparando tu envío.</p>
               <p>Te avisaremos cuando salga a ruta.</p>
               <p style="margin-top: 1.5rem;">Equipo RazoConnect</p>
             </div>
           `;
           enviarEmail(emailCliente, asunto, cuerpoHtml).catch((err) => {
-            console.error('No se pudo enviar correo de pedido confirmado:', err);
+            console.error(
+              "No se pudo enviar correo de pedido confirmado:",
+              err
+            );
           });
-        } else if (estatus === 'Enviado') {
+        } else if (estatus === "Enviado") {
           const asunto = `Tu pedido #${pedidoId} está en camino`;
           const cuerpoHtml = `
             <div style="font-family: Arial, sans-serif; color: #111827;">
               <h2 style="color:#0ea5e9;">¡Tu pedido está en camino!</h2>
-              <p>Hola ${nombreCliente || 'cliente'},</p>
+              <p>Hola ${nombreCliente || "cliente"},</p>
               <p>El pedido <strong>#${pedidoId}</strong> ya fue enviado y llegará muy pronto.</p>
               <p>Gracias por confiar en RazoConnect.</p>
               <p style="margin-top: 1.5rem;">Equipo RazoConnect</p>
             </div>
           `;
           enviarEmail(emailCliente, asunto, cuerpoHtml).catch((err) => {
-            console.error('No se pudo enviar correo de pedido enviado:', err);
+            console.error("No se pudo enviar correo de pedido enviado:", err);
           });
         }
       }
     } catch (emailError) {
-      console.error('Error al notificar al cliente sobre el estatus del pedido:', emailError);
+      console.error(
+        "Error al notificar al cliente sobre el estatus del pedido:",
+        emailError
+      );
     }
-
   } catch (error) {
-    await client.query('ROLLBACK');
-    console.error('Error al actualizar pedido:', error);
+    await client.query("ROLLBACK");
+    console.error("Error al actualizar pedido:", error);
     res.status(500).json({
       success: false,
-      message: 'Error en el servidor',
-      error: error.message
+      message: "Error en el servidor",
+      error: error.message,
     });
   } finally {
     client.release();
@@ -990,44 +1064,341 @@ const updatePedidoEstatus = async (req, res) => {
  * POST /api/admin/productos
  */
 const crearProducto = async (req, res) => {
+  const { nombre, descripcion, categoriaId, tamanos, tamanoIds } = req.body;
+
+  if (!nombre) {
+    return res.status(400).json({
+      success: false,
+      message: "El nombre del producto es obligatorio",
+    });
+  }
+
+  const client = await db.pool.connect();
+  let transactionStarted = false;
+
   try {
-    const { nombre, descripcion, categoriaId } = req.body;
+    await client.query("BEGIN");
+    transactionStarted = true;
 
-    if (!nombre) {
-      return res.status(400).json({
-        success: false,
-        message: 'El nombre del producto es obligatorio'
-      });
-    }
-
-    const result = await db.query(
+    const result = await client.query(
       `INSERT INTO Productos (NombreProducto, Descripcion, CategoriaID, Activo)
        VALUES ($1, $2, $3, TRUE)
        RETURNING ProductoID, NombreProducto, Descripcion, CategoriaID, Activo`,
-      [
-        nombre,
-        descripcion || null,
-        categoriaId || null
-      ]
+      [nombre, descripcion || null, categoriaId || null]
     );
 
     const producto = result.rows[0];
+    let tamanosAsociados = [];
+    const tamanosRaw = Array.isArray(tamanos)
+      ? tamanos
+      : Array.isArray(tamanoIds)
+      ? tamanoIds
+      : [];
+
+    if (tamanosRaw.length) {
+      const sanitizedIds = [
+        ...new Set(
+          tamanosRaw
+            .map((id) => Number.parseInt(id, 10))
+            .filter((id) => Number.isInteger(id) && id > 0)
+        ),
+      ];
+
+      if (sanitizedIds.length) {
+        const tamanosValidosResult = await client.query(
+          "SELECT TamanoID FROM Cat_TamanoPaquetes WHERE TamanoID = ANY($1::int[])",
+          [sanitizedIds]
+        );
+
+        const tamanosValidos = tamanosValidosResult.rows.map((row) =>
+          Number.parseInt(row.tamanoid, 10)
+        );
+
+        if (tamanosValidos.length !== sanitizedIds.length) {
+          await client.query("ROLLBACK");
+          return res.status(400).json({
+            success: false,
+            message:
+              "Uno o más tamaños seleccionados no existen en el catálogo",
+          });
+        }
+
+        for (const tamanoId of tamanosValidos) {
+          await client.query(
+            `INSERT INTO Producto_TamanosDisponibles (ProductoID, TamanoID)
+             VALUES ($1, $2)`,
+            [producto.productoid, tamanoId]
+          );
+        }
+
+        tamanosAsociados = tamanosValidos;
+      }
+    }
+
+    await client.query("COMMIT");
 
     res.status(201).json({
       success: true,
-      message: 'Producto maestro creado exitosamente',
+      message: "Producto maestro creado exitosamente",
       data: {
-        producto
-      }
+        producto,
+        tamanosDisponibles: tamanosAsociados,
+      },
     });
-
   } catch (error) {
-    console.error('Error al crear producto maestro:', error);
+    if (transactionStarted) {
+      await client.query("ROLLBACK");
+    }
+    console.error("Error al crear producto maestro:", error);
     res.status(500).json({
       success: false,
-      message: 'Error en el servidor',
-      error: error.message
+      message: "Error en el servidor",
+      error: error.message,
     });
+  } finally {
+    client.release();
+  }
+};
+
+/**
+ * Obtener catálogo de tamaños de paquetes
+ * GET /api/admin/tamanos-paquetes
+ */
+const getTamanosPaquetes = async (_req, res) => {
+  try {
+    const result = await db.query(
+      `SELECT *
+       FROM Cat_TamanoPaquetes
+       ORDER BY TamanoID ASC`
+    );
+
+    const valueCandidates = [
+      "valor",
+      "piezas",
+      "piezasporpaquete",
+      "cantidad",
+      "numeropiezas",
+      "tamano",
+      "cantidadpiezas",
+    ];
+
+    const labelCandidates = ["etiqueta", "descripcion", "nombre", "label"];
+
+    const tamanos = result.rows.map((row) => {
+      const tamanoId = Number.parseInt(row.tamanoid, 10);
+
+      let valor = null;
+      for (const field of valueCandidates) {
+        if (
+          Object.prototype.hasOwnProperty.call(row, field) &&
+          row[field] !== null &&
+          row[field] !== undefined
+        ) {
+          const parsed = Number.parseInt(row[field], 10);
+          if (!Number.isNaN(parsed)) {
+            valor = parsed;
+            break;
+          }
+        }
+      }
+
+      let etiqueta = null;
+      for (const field of labelCandidates) {
+        if (
+          Object.prototype.hasOwnProperty.call(row, field) &&
+          typeof row[field] === "string" &&
+          row[field].trim()
+        ) {
+          etiqueta = row[field].trim();
+          break;
+        }
+      }
+
+      return {
+        tamanoId,
+        valor,
+        etiqueta,
+      };
+    });
+
+    tamanos.sort((a, b) => {
+      if (Number.isFinite(a.valor) && Number.isFinite(b.valor)) {
+        return a.valor - b.valor;
+      }
+      if (Number.isFinite(a.valor)) return -1;
+      if (Number.isFinite(b.valor)) return 1;
+      return a.tamanoId - b.tamanoId;
+    });
+
+    res.json({
+      success: true,
+      data: {
+        tamanos,
+        total: tamanos.length,
+      },
+    });
+  } catch (error) {
+    console.error("Error al obtener tamaños de paquetes:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error al obtener los tamaños de paquetes",
+    });
+  }
+};
+
+/**
+ * Actualizar un producto existente
+ * PUT /api/admin/productos/:id
+ */
+const actualizarProducto = async (req, res) => {
+  const productoId = Number.parseInt(req.params.id, 10);
+
+  if (!Number.isInteger(productoId) || productoId <= 0) {
+    return res.status(400).json({
+      success: false,
+      message: "ProductoID inválido",
+    });
+  }
+
+  const { nombre, descripcion, categoriaId, tamanos, tamanoIds } = req.body;
+
+  const client = await db.pool.connect();
+  let transactionStarted = false;
+
+  try {
+    await client.query("BEGIN");
+    transactionStarted = true;
+
+    const productoResult = await client.query(
+      `SELECT ProductoID, NombreProducto, Descripcion, CategoriaID
+       FROM Productos
+       WHERE ProductoID = $1`,
+      [productoId]
+    );
+
+    if (productoResult.rows.length === 0) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({
+        success: false,
+        message: "Producto maestro no encontrado",
+      });
+    }
+
+    const productoActual = productoResult.rows[0];
+
+    const nombreFinal =
+      nombre !== undefined
+        ? typeof nombre === "string"
+          ? nombre.trim()
+          : ""
+        : productoActual.nombreproducto;
+
+    if (!nombreFinal) {
+      await client.query("ROLLBACK");
+      return res.status(400).json({
+        success: false,
+        message: "El nombre del producto es obligatorio",
+      });
+    }
+
+    const descripcionFinal =
+      descripcion !== undefined
+        ? typeof descripcion === "string" && descripcion.trim()
+          ? descripcion.trim()
+          : null
+        : productoActual.descripcion;
+
+    const categoriaFinal =
+      categoriaId !== undefined
+        ? categoriaId || null
+        : productoActual.categoriaid;
+
+    const updateResult = await client.query(
+      `UPDATE Productos
+       SET NombreProducto = $1,
+           Descripcion = $2,
+           CategoriaID = $3,
+           FechaActualizacion = NOW()
+       WHERE ProductoID = $4
+       RETURNING ProductoID, NombreProducto, Descripcion, CategoriaID, Activo`,
+      [nombreFinal, descripcionFinal, categoriaFinal, productoId]
+    );
+
+    const tamanosRaw = Array.isArray(tamanos)
+      ? tamanos
+      : Array.isArray(tamanoIds)
+      ? tamanoIds
+      : [];
+
+    await client.query(
+      "DELETE FROM Producto_TamanosDisponibles WHERE ProductoID = $1",
+      [productoId]
+    );
+
+    let tamanosAsociados = [];
+
+    if (tamanosRaw.length) {
+      const sanitizedIds = [
+        ...new Set(
+          tamanosRaw
+            .map((id) => Number.parseInt(id, 10))
+            .filter((id) => Number.isInteger(id) && id > 0)
+        ),
+      ];
+
+      if (sanitizedIds.length) {
+        const tamanosValidosResult = await client.query(
+          "SELECT TamanoID FROM Cat_TamanoPaquetes WHERE TamanoID = ANY($1::int[])",
+          [sanitizedIds]
+        );
+
+        const tamanosValidos = tamanosValidosResult.rows.map((row) =>
+          Number.parseInt(row.tamanoid, 10)
+        );
+
+        if (tamanosValidos.length !== sanitizedIds.length) {
+          await client.query("ROLLBACK");
+          return res.status(400).json({
+            success: false,
+            message:
+              "Uno o más tamaños seleccionados no existen en el catálogo",
+          });
+        }
+
+        for (const tamanoId of tamanosValidos) {
+          await client.query(
+            `INSERT INTO Producto_TamanosDisponibles (ProductoID, TamanoID)
+             VALUES ($1, $2)`,
+            [productoId, tamanoId]
+          );
+        }
+
+        tamanosAsociados = tamanosValidos;
+      }
+    }
+
+    await client.query("COMMIT");
+
+    res.json({
+      success: true,
+      message: "Producto maestro actualizado correctamente",
+      data: {
+        producto: updateResult.rows[0],
+        tamanosDisponibles: tamanosAsociados,
+      },
+    });
+  } catch (error) {
+    if (transactionStarted) {
+      await client.query("ROLLBACK");
+    }
+    console.error("Error al actualizar producto maestro:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error en el servidor",
+      error: error.message,
+    });
+  } finally {
+    client.release();
   }
 };
 
@@ -1043,90 +1414,102 @@ const crearVariante = async (req, res) => {
       productoId,
       sku,
       dimensiones,
-      piezasPorPaquete,
       costoUnitario,
-      precioPaquete,
+      precioUnitario,
       stock,
       tipoProductoId,
-      medidaId
+      medidaId,
     } = req.body;
 
-    if (!productoId || !sku || !precioPaquete || !piezasPorPaquete) {
+    if (!productoId || !sku || precioUnitario === undefined) {
       return res.status(400).json({
         success: false,
-        message: 'productoId, sku, piezasPorPaquete y precioPaquete son obligatorios'
+        message: "productoId, sku y precioUnitario son obligatorios",
       });
     }
 
-    await client.query('BEGIN');
+    await client.query("BEGIN");
 
     const productoResult = await client.query(
-      'SELECT ProductoID FROM Productos WHERE ProductoID = $1',
+      "SELECT ProductoID FROM Productos WHERE ProductoID = $1",
       [productoId]
     );
 
     if (productoResult.rows.length === 0) {
-      await client.query('ROLLBACK');
+      await client.query("ROLLBACK");
       return res.status(404).json({
         success: false,
-        message: 'Producto maestro no encontrado'
+        message: "Producto maestro no encontrado",
+      });
+    }
+
+    const stockInicial = Number.isFinite(stock) ? stock : 0;
+    const costoUnitarioNormalized =
+      costoUnitario !== undefined ? costoUnitario : null;
+    const precioUnitarioNormalized = Number.isFinite(precioUnitario)
+      ? precioUnitario
+      : null;
+
+    if (precioUnitarioNormalized === null || precioUnitarioNormalized <= 0) {
+      await client.query("ROLLBACK");
+      return res.status(400).json({
+        success: false,
+        message: "El precio unitario debe ser un número mayor a 0",
       });
     }
 
     const varianteResult = await client.query(
       `INSERT INTO Producto_Variantes (
-        ProductoID, SKU, Dimensiones, PiezasPorPaquete, CostoUnitario,
-        PrecioPaquete, Stock, TipoProductoID, MedidaID
+        ProductoID, SKU, Dimensiones, CostoUnitario,
+        PrecioUnitario, Stock, TipoProductoID, MedidaID
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-      RETURNING VarianteID, ProductoID, SKU, Dimensiones, PiezasPorPaquete,
-                CostoUnitario, PrecioPaquete, Stock, TipoProductoID, MedidaID`,
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      RETURNING VarianteID, ProductoID, SKU, Dimensiones,
+                CostoUnitario, PrecioUnitario, Stock, TipoProductoID, MedidaID`,
       [
         productoId,
         sku,
         dimensiones || null,
-        piezasPorPaquete,
-        costoUnitario !== undefined ? costoUnitario : null,
-        precioPaquete,
-        stock !== undefined ? stock : 0,
+        costoUnitarioNormalized,
+        precioUnitarioNormalized,
+        stockInicial,
         tipoProductoId || null,
-        medidaId || null
+        medidaId || null,
       ]
     );
 
     const variante = varianteResult.rows[0];
 
-    if (stock && stock !== 0) {
+    if (stockInicial && stockInicial !== 0) {
       await client.query(
         `INSERT INTO Log_Inventario (VarianteID, CantidadCambiado, NuevoStock, Motivo, UsuarioID)
          VALUES ($1, $2, $3, $4, $5)`,
         [
           variante.varianteid,
-          stock,
-          stock,
-          'Stock inicial de variante',
-          req.user.id
+          stockInicial,
+          stockInicial,
+          "Stock inicial de variante (piezas)",
+          req.user.id,
         ]
       );
     }
 
-    await client.query('COMMIT');
+    await client.query("COMMIT");
 
     res.status(201).json({
       success: true,
-      message: 'Variante creada exitosamente',
+      message: "Variante creada exitosamente",
       data: {
-        variante
-      }
+        variante,
+      },
     });
-
   } catch (error) {
-    await client.query('ROLLBACK');
-    console.error('Error al crear variante:', error);
+    await client.query("ROLLBACK");
+    console.error("Error al crear variante:", error);
     res.status(500).json({
       success: false,
-      message: 'Error en el servidor',
-      error: error.message
+      message: "Error en el servidor",
+      error: error.message,
     });
   } finally {
     client.release();
@@ -1146,18 +1529,18 @@ const ajustarInventario = async (req, res) => {
     if (!varianteId || cantidadCambio === undefined || !motivo) {
       return res.status(400).json({
         success: false,
-        message: 'varianteId, cantidadCambio y motivo son requeridos'
+        message: "varianteId, cantidadCambio y motivo son requeridos",
       });
     }
 
     if (cantidadCambio === 0) {
       return res.status(400).json({
         success: false,
-        message: 'La cantidad de cambio no puede ser cero'
+        message: "La cantidad de cambio no puede ser cero",
       });
     }
 
-    await client.query('BEGIN');
+    await client.query("BEGIN");
 
     const varianteResult = await client.query(
       `SELECT VarianteID, ProductoID, SKU, Stock
@@ -1167,10 +1550,10 @@ const ajustarInventario = async (req, res) => {
     );
 
     if (varianteResult.rows.length === 0) {
-      await client.query('ROLLBACK');
+      await client.query("ROLLBACK");
       return res.status(404).json({
         success: false,
-        message: 'Variante no encontrada'
+        message: "Variante no encontrada",
       });
     }
 
@@ -1179,15 +1562,15 @@ const ajustarInventario = async (req, res) => {
     const nuevoStock = stockActual + cantidadCambio;
 
     if (nuevoStock < 0) {
-      await client.query('ROLLBACK');
+      await client.query("ROLLBACK");
       return res.status(400).json({
         success: false,
-        message: `Stock insuficiente. Stock actual: ${stockActual}, cambio solicitado: ${cantidadCambio}`
+        message: `Stock insuficiente. Stock actual: ${stockActual}, cambio solicitado: ${cantidadCambio}`,
       });
     }
 
     await client.query(
-      'UPDATE Producto_Variantes SET Stock = $1 WHERE VarianteID = $2',
+      "UPDATE Producto_Variantes SET Stock = $1 WHERE VarianteID = $2",
       [nuevoStock, varianteId]
     );
 
@@ -1197,31 +1580,182 @@ const ajustarInventario = async (req, res) => {
       [variante.varianteid, cantidadCambio, nuevoStock, motivo, req.user.id]
     );
 
-    await client.query('COMMIT');
+    await client.query("COMMIT");
 
     res.json({
       success: true,
-      message: 'Inventario ajustado exitosamente',
+      message: "Inventario ajustado exitosamente",
       data: {
         varianteId: variante.varianteid,
         sku: variante.sku,
         stockAnterior: stockActual,
         cantidadCambio,
         stockNuevo: nuevoStock,
-        motivo
-      }
+        motivo,
+      },
     });
-
   } catch (error) {
-    await client.query('ROLLBACK');
-    console.error('Error al ajustar inventario:', error);
+    await client.query("ROLLBACK");
+    console.error("Error al ajustar inventario:", error);
     res.status(500).json({
       success: false,
-      message: 'Error en el servidor',
-      error: error.message
+      message: "Error en el servidor",
+      error: error.message,
     });
   } finally {
     client.release();
+  }
+};
+
+/**
+ * Obtener resumen de inventario por producto maestro
+ * GET /api/admin/inventario
+ */
+const getInventarioResumen = async (req, res) => {
+  try {
+    const query = `
+      SELECT
+        p.ProductoID,
+        p.NombreProducto,
+        c.Nombre AS NombreCategoria,
+        COUNT(v.VarianteID) AS TotalVariantes
+      FROM Productos p
+      LEFT JOIN Categorias c ON c.CategoriaID = p.CategoriaID
+      LEFT JOIN Producto_Variantes v ON v.ProductoID = p.ProductoID
+      GROUP BY p.ProductoID, p.NombreProducto, c.Nombre
+      ORDER BY p.NombreProducto ASC
+    `;
+
+    const result = await db.query(query);
+
+    const productos = result.rows.map((row) => ({
+      productoId: row.productoid,
+      nombreProducto: row.nombreproducto,
+      nombreCategoria: row.nombrecategoria || "Sin categoría",
+      totalVariantes:
+        row.totalvariantes !== null ? parseInt(row.totalvariantes, 10) : 0,
+    }));
+
+    res.json({
+      success: true,
+      data: {
+        productos,
+        total: productos.length,
+      },
+    });
+  } catch (error) {
+    console.error("Error al obtener inventario resumido:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error en el servidor",
+    });
+  }
+};
+
+/**
+ * Obtener detalle de un producto maestro con sus variantes
+ * GET /api/admin/productos/:id
+ */
+const getProductoDetalle = async (req, res) => {
+  try {
+    const productoId = parseInt(req.params.id, 10);
+
+    if (Number.isNaN(productoId)) {
+      return res.status(400).json({
+        success: false,
+        message: "ProductoID inválido",
+      });
+    }
+
+    const productoResult = await db.query(
+      `SELECT
+         p.ProductoID,
+         p.NombreProducto,
+         p.Descripcion,
+         p.Activo,
+         p.CategoriaID,
+         c.Nombre AS CategoriaNombre,
+         c.Descripcion AS CategoriaDescripcion
+       FROM Productos p
+       LEFT JOIN Categorias c ON c.CategoriaID = p.CategoriaID
+       WHERE p.ProductoID = $1`,
+      [productoId]
+    );
+
+    if (productoResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Producto no encontrado",
+      });
+    }
+
+    const producto = productoResult.rows[0];
+
+    const variantesResult = await db.query(
+      `SELECT
+         pv.VarianteID,
+         pv.ProductoID,
+         pv.SKU,
+         pv.Dimensiones,
+         pv.CostoUnitario,
+         pv.PrecioUnitario,
+         pv.Stock,
+         pv.TipoProductoID,
+         pv.MedidaID
+       FROM Producto_Variantes pv
+       WHERE pv.ProductoID = $1
+       ORDER BY pv.VarianteID ASC`,
+      [productoId]
+    );
+
+    const variantes = variantesResult.rows.map((row) => ({
+      varianteId: row.varianteid,
+      productoId: row.productoid,
+      sku: row.sku || null,
+      dimensiones: row.dimensiones || null,
+      costoUnitario:
+        row.costounitario !== null ? parseFloat(row.costounitario) : null,
+      precioUnitario:
+        row.preciounitario !== null ? parseFloat(row.preciounitario) : null,
+      stock: row.stock !== null ? parseInt(row.stock, 10) : 0,
+      tipoProductoId:
+        row.tipoproductoid !== null ? parseInt(row.tipoproductoid, 10) : null,
+      medidaId: row.medidaid !== null ? parseInt(row.medidaid, 10) : null,
+    }));
+
+    const productoDetalle = {
+      productoId: producto.productoid,
+      nombreProducto: producto.nombreproducto,
+      descripcion: producto.descripcion,
+      activo: producto.activo,
+      categoria: producto.categoriaid
+        ? {
+            categoriaId: producto.categoriaid,
+            nombre: producto.categorianombre,
+            descripcion: producto.categoriadescripcion,
+          }
+        : null,
+      totalVariantes: variantes.length,
+      variantesConStock: variantes.filter(
+        (v) => typeof v.stock === "number" && v.stock > 0
+      ).length,
+    };
+
+    return res.json({
+      success: true,
+      message: "Producto obtenido exitosamente",
+      data: {
+        producto: productoDetalle,
+        variantes,
+      },
+    });
+  } catch (error) {
+    console.error("Error al obtener detalle de producto:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error en el servidor",
+      error: error.message,
+    });
   }
 };
 
@@ -1239,12 +1773,11 @@ const getAllProductos = async (req, res) => {
         p.CategoriaID,
         COALESCE(SUM(v.Stock), 0) AS stock_total,
         COUNT(v.VarianteID) AS variantes_count,
-        MIN(v.PrecioPaquete) FILTER (WHERE v.PrecioPaquete IS NOT NULL) AS precio_desde,
+        MIN(v.PrecioUnitario) FILTER (WHERE v.PrecioUnitario IS NOT NULL) AS precio_desde,
         JSONB_BUILD_OBJECT(
           'varianteId', v_top.VarianteID,
           'sku', v_top.SKU,
-          'precioPaquete', v_top.PrecioPaquete,
-          'piezasPorPaquete', v_top.PiezasPorPaquete,
+          'precioUnitario', v_top.PrecioUnitario,
           'stock', v_top.Stock,
           'dimensiones', v_top.Dimensiones,
           'medidaId', v_top.MedidaID
@@ -1253,8 +1786,7 @@ const getAllProductos = async (req, res) => {
           JSONB_BUILD_OBJECT(
             'varianteId', v.VarianteID,
             'sku', v.SKU,
-            'precioPaquete', v.PrecioPaquete,
-            'piezasPorPaquete', v.PiezasPorPaquete,
+            'precioUnitario', v.PrecioUnitario,
             'stock', v.Stock,
             'dimensiones', v.Dimensiones,
             'medidaId', v.MedidaID
@@ -1269,39 +1801,46 @@ const getAllProductos = async (req, res) => {
         ORDER BY v2.Stock DESC NULLS LAST, v2.VarianteID ASC
         LIMIT 1
       ) v_top ON true
-      GROUP BY p.ProductoID, p.NombreProducto, p.Descripcion, p.CategoriaID, v_top.VarianteID, v_top.SKU, v_top.PrecioPaquete, v_top.PiezasPorPaquete, v_top.Stock, v_top.Dimensiones, v_top.MedidaID
+      GROUP BY p.ProductoID, p.NombreProducto, p.Descripcion, p.CategoriaID, v_top.VarianteID, v_top.SKU, v_top.PrecioUnitario, v_top.Stock, v_top.Dimensiones, v_top.MedidaID
       ORDER BY p.ProductoID DESC`
     );
 
-    const categorias = await db.query('SELECT CategoriaID, Nombre FROM Categorias');
+    const categorias = await db.query(
+      "SELECT CategoriaID, Nombre FROM Categorias"
+    );
     const categoriasMap = {};
-    categorias.rows.forEach(cat => {
+    categorias.rows.forEach((cat) => {
       categoriasMap[cat.categoriaid] = cat.nombre;
     });
 
     res.json({
       success: true,
       data: {
-        productos: result.rows.map(row => {
-          const varianteDestacada = row.variante_destacada && row.variante_destacada.varianteId ? {
-            varianteId: row.variante_destacada.varianteId,
-            sku: row.variante_destacada.sku,
-            precioPaquete: row.variante_destacada.precioPaquete ? parseFloat(row.variante_destacada.precioPaquete) : null,
-            piezasPorPaquete: row.variante_destacada.piezasPorPaquete,
-            stock: row.variante_destacada.stock ?? 0,
-            dimensiones: row.variante_destacada.dimensiones || null,
-            medidaId: row.variante_destacada.medidaId || null
-          } : null;
+        productos: result.rows.map((row) => {
+          const varianteDestacada =
+            row.variante_destacada && row.variante_destacada.varianteId
+              ? {
+                  varianteId: row.variante_destacada.varianteId,
+                  sku: row.variante_destacada.sku,
+                  precioUnitario: row.variante_destacada.precioUnitario
+                    ? parseFloat(row.variante_destacada.precioUnitario)
+                    : null,
+                  stock: row.variante_destacada.stock ?? 0,
+                  dimensiones: row.variante_destacada.dimensiones || null,
+                  medidaId: row.variante_destacada.medidaId || null,
+                }
+              : null;
 
           const variantes = Array.isArray(row.variantes)
-            ? row.variantes.map(variant => ({
+            ? row.variantes.map((variant) => ({
                 varianteId: variant.varianteId,
                 sku: variant.sku,
-                precioPaquete: variant.precioPaquete ? parseFloat(variant.precioPaquete) : null,
-                piezasPorPaquete: variant.piezasPorPaquete,
+                precioUnitario: variant.precioUnitario
+                  ? parseFloat(variant.precioUnitario)
+                  : null,
                 stock: variant.stock ?? 0,
                 dimensiones: variant.dimensiones || null,
-                medidaId: variant.medidaId || null
+                medidaId: variant.medidaId || null,
               }))
             : [];
 
@@ -1312,19 +1851,18 @@ const getAllProductos = async (req, res) => {
             stockTotal: parseInt(row.stock_total, 10) || 0,
             variantesCount: parseInt(row.variantes_count, 10) || 0,
             precioDesde: row.precio_desde ? parseFloat(row.precio_desde) : null,
-            categoriaNombre: categoriasMap[row.categoriaid] || 'Sin categoría',
+            categoriaNombre: categoriasMap[row.categoriaid] || "Sin categoría",
             varianteDestacada,
-            variantes
+            variantes,
           };
-        })
-      }
+        }),
+      },
     });
-
   } catch (error) {
-    console.error('Error al obtener productos:', error);
+    console.error("Error al obtener productos:", error);
     res.status(500).json({
       success: false,
-      message: 'Error en el servidor'
+      message: "Error en el servidor",
     });
   }
 };
@@ -1350,21 +1888,20 @@ const getCategorias = async (req, res) => {
     res.json({
       success: true,
       data: {
-        categorias: result.rows.map(row => ({
+        categorias: result.rows.map((row) => ({
           categoriaId: row.categoriaid,
           nombre: row.nombre,
           descripcion: row.descripcion,
           parentCategoriaId: row.parentcategoriaid,
-          parentNombre: row.parentnombre || null
-        }))
-      }
+          parentNombre: row.parentnombre || null,
+        })),
+      },
     });
-
   } catch (error) {
-    console.error('Error al obtener categorías:', error);
+    console.error("Error al obtener categorías:", error);
     res.status(500).json({
       success: false,
-      message: 'Error en el servidor'
+      message: "Error en el servidor",
     });
   }
 };
@@ -1380,7 +1917,7 @@ const crearCategoria = async (req, res) => {
     if (!nombre || !nombre.trim()) {
       return res.status(400).json({
         success: false,
-        message: 'El nombre de la categoría es requerido'
+        message: "El nombre de la categoría es requerido",
       });
     }
 
@@ -1388,14 +1925,14 @@ const crearCategoria = async (req, res) => {
 
     if (parentCategoriaId !== undefined && parentCategoriaId !== null) {
       const parentResult = await db.query(
-        'SELECT CategoriaID FROM Categorias WHERE CategoriaID = $1',
+        "SELECT CategoriaID FROM Categorias WHERE CategoriaID = $1",
         [parentCategoriaId]
       );
 
       if (parentResult.rows.length === 0) {
         return res.status(400).json({
           success: false,
-          message: 'La categoría padre especificada no existe'
+          message: "La categoría padre especificada no existe",
         });
       }
 
@@ -1405,14 +1942,14 @@ const crearCategoria = async (req, res) => {
     const nombreNormalizado = nombre.trim();
 
     const existente = await db.query(
-      'SELECT CategoriaID FROM Categorias WHERE LOWER(Nombre) = LOWER($1)',
+      "SELECT CategoriaID FROM Categorias WHERE LOWER(Nombre) = LOWER($1)",
       [nombreNormalizado]
     );
 
     if (existente.rows.length > 0) {
       return res.status(409).json({
         success: false,
-        message: 'Ya existe una categoría con ese nombre'
+        message: "Ya existe una categoría con ese nombre",
       });
     }
 
@@ -1427,22 +1964,21 @@ const crearCategoria = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: 'Categoría creada exitosamente',
+      message: "Categoría creada exitosamente",
       data: {
         categoria: {
           categoriaId: categoria.categoriaid,
           nombre: categoria.nombre,
           descripcion: categoria.descripcion,
-          parentCategoriaId: categoria.parentcategoriaid
-        }
-      }
+          parentCategoriaId: categoria.parentcategoriaid,
+        },
+      },
     });
-
   } catch (error) {
-    console.error('Error al crear categoría:', error);
+    console.error("Error al crear categoría:", error);
     res.status(500).json({
       success: false,
-      message: 'Error al crear la categoría'
+      message: "Error al crear la categoría",
     });
   }
 };
@@ -1459,26 +1995,26 @@ const actualizarCategoria = async (req, res) => {
     if (Number.isNaN(categoriaId)) {
       return res.status(400).json({
         success: false,
-        message: 'ID de categoría inválido'
+        message: "ID de categoría inválido",
       });
     }
 
     if (parentCategoriaId && Number(parentCategoriaId) === categoriaId) {
       return res.status(400).json({
         success: false,
-        message: 'Una categoría no puede ser su propia categoría padre'
+        message: "Una categoría no puede ser su propia categoría padre",
       });
     }
 
     const categoriaResult = await db.query(
-      'SELECT CategoriaID FROM Categorias WHERE CategoriaID = $1',
+      "SELECT CategoriaID FROM Categorias WHERE CategoriaID = $1",
       [categoriaId]
     );
 
     if (categoriaResult.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        message: 'Categoría no encontrada'
+        message: "Categoría no encontrada",
       });
     }
 
@@ -1486,14 +2022,14 @@ const actualizarCategoria = async (req, res) => {
 
     if (parentCategoriaId !== undefined && parentCategoriaId !== null) {
       const parentResult = await db.query(
-        'SELECT CategoriaID FROM Categorias WHERE CategoriaID = $1',
+        "SELECT CategoriaID FROM Categorias WHERE CategoriaID = $1",
         [parentCategoriaId]
       );
 
       if (parentResult.rows.length === 0) {
         return res.status(400).json({
           success: false,
-          message: 'La categoría padre especificada no existe'
+          message: "La categoría padre especificada no existe",
         });
       }
 
@@ -1504,14 +2040,14 @@ const actualizarCategoria = async (req, res) => {
 
     if (nombreNormalizado) {
       const existeNombre = await db.query(
-        'SELECT CategoriaID FROM Categorias WHERE LOWER(Nombre) = LOWER($1) AND CategoriaID <> $2',
+        "SELECT CategoriaID FROM Categorias WHERE LOWER(Nombre) = LOWER($1) AND CategoriaID <> $2",
         [nombreNormalizado, categoriaId]
       );
 
       if (existeNombre.rows.length > 0) {
         return res.status(409).json({
           success: false,
-          message: 'Ya existe otra categoría con ese nombre'
+          message: "Ya existe otra categoría con ese nombre",
         });
       }
     }
@@ -1524,29 +2060,33 @@ const actualizarCategoria = async (req, res) => {
            FechaActualizacion = NOW()
        WHERE CategoriaID = $4
        RETURNING CategoriaID, Nombre, Descripcion, ParentCategoriaID`,
-      [nombreNormalizado || null, descripcion?.trim() || null, parentCategoria, categoriaId]
+      [
+        nombreNormalizado || null,
+        descripcion?.trim() || null,
+        parentCategoria,
+        categoriaId,
+      ]
     );
 
     const categoriaActualizada = updateResult.rows[0];
 
     res.json({
       success: true,
-      message: 'Categoría actualizada correctamente',
+      message: "Categoría actualizada correctamente",
       data: {
         categoria: {
           categoriaId: categoriaActualizada.categoriaid,
           nombre: categoriaActualizada.nombre,
           descripcion: categoriaActualizada.descripcion,
-          parentCategoriaId: categoriaActualizada.parentcategoriaid
-        }
-      }
+          parentCategoriaId: categoriaActualizada.parentcategoriaid,
+        },
+      },
     });
-
   } catch (error) {
-    console.error('Error al actualizar categoría:', error);
+    console.error("Error al actualizar categoría:", error);
     res.status(500).json({
       success: false,
-      message: 'Error al actualizar la categoría'
+      message: "Error al actualizar la categoría",
     });
   }
 };
@@ -1562,45 +2102,47 @@ const eliminarCategoria = async (req, res) => {
     if (Number.isNaN(categoriaId)) {
       return res.status(400).json({
         success: false,
-        message: 'ID de categoría inválido'
+        message: "ID de categoría inválido",
       });
     }
 
     const categoriaResult = await db.query(
-      'SELECT CategoriaID FROM Categorias WHERE CategoriaID = $1',
+      "SELECT CategoriaID FROM Categorias WHERE CategoriaID = $1",
       [categoriaId]
     );
 
     if (categoriaResult.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        message: 'Categoría no encontrada'
+        message: "Categoría no encontrada",
       });
     }
 
     // Verificar si la categoría tiene subcategorías
     const subcategoriasResult = await db.query(
-      'SELECT COUNT(*) AS total FROM Categorias WHERE ParentCategoriaID = $1',
+      "SELECT COUNT(*) AS total FROM Categorias WHERE ParentCategoriaID = $1",
       [categoriaId]
     );
 
     if (parseInt(subcategoriasResult.rows[0].total, 10) > 0) {
       return res.status(400).json({
         success: false,
-        message: 'No se puede eliminar la categoría porque tiene subcategorías asociadas'
+        message:
+          "No se puede eliminar la categoría porque tiene subcategorías asociadas",
       });
     }
 
     // Verificar si hay productos asociados a la categoría
     const productosAsociados = await db.query(
-      'SELECT COUNT(*) AS total FROM Productos WHERE CategoriaID = $1',
+      "SELECT COUNT(*) AS total FROM Productos WHERE CategoriaID = $1",
       [categoriaId]
     );
 
     if (parseInt(productosAsociados.rows[0].total, 10) > 0) {
       return res.status(400).json({
         success: false,
-        message: 'No se puede eliminar la categoría porque existen productos asociados'
+        message:
+          "No se puede eliminar la categoría porque existen productos asociados",
       });
     }
 
@@ -1616,22 +2158,24 @@ const eliminarCategoria = async (req, res) => {
     if (parseInt(productosEnUso.rows[0].total, 10) > 0) {
       return res.status(400).json({
         success: false,
-        message: 'No se puede eliminar la categoría porque existen productos asociados'
+        message:
+          "No se puede eliminar la categoría porque existen productos asociados",
       });
     }
 
-    await db.query('DELETE FROM Categorias WHERE CategoriaID = $1', [categoriaId]);
+    await db.query("DELETE FROM Categorias WHERE CategoriaID = $1", [
+      categoriaId,
+    ]);
 
     res.json({
       success: true,
-      message: 'Categoría eliminada correctamente'
+      message: "Categoría eliminada correctamente",
     });
-
   } catch (error) {
-    console.error('Error al eliminar categoría:', error);
+    console.error("Error al eliminar categoría:", error);
     res.status(500).json({
       success: false,
-      message: 'Error al eliminar la categoría'
+      message: "Error al eliminar la categoría",
     });
   }
 };
@@ -1642,44 +2186,45 @@ const eliminarCategoria = async (req, res) => {
  */
 const crearAgente = async (req, res) => {
   try {
-    const { nombre, apellido, email, password, codigoAgente, telefono } = req.body;
+    const { nombre, apellido, email, password, codigoAgente, telefono } =
+      req.body;
 
     // Validaciones
     if (!nombre || !apellido || !email || !password || !codigoAgente) {
       return res.status(400).json({
         success: false,
-        message: 'Todos los campos obligatorios deben ser proporcionados'
+        message: "Todos los campos obligatorios deben ser proporcionados",
       });
     }
 
     // Verificar si el email ya existe
     const emailCheck = await db.query(
-      'SELECT AgenteID FROM AgentesDeVentas WHERE Email = $1',
+      "SELECT AgenteID FROM AgentesDeVentas WHERE Email = $1",
       [email]
     );
 
     if (emailCheck.rows.length > 0) {
       return res.status(400).json({
         success: false,
-        message: 'El email ya está registrado'
+        message: "El email ya está registrado",
       });
     }
 
     // Verificar si el código de agente ya existe
     const codigoCheck = await db.query(
-      'SELECT AgenteID FROM AgentesDeVentas WHERE CodigoAgente = $1',
+      "SELECT AgenteID FROM AgentesDeVentas WHERE CodigoAgente = $1",
       [codigoAgente]
     );
 
     if (codigoCheck.rows.length > 0) {
       return res.status(400).json({
         success: false,
-        message: 'El código de agente ya existe'
+        message: "El código de agente ya existe",
       });
     }
 
     // Hash de la contraseña
-    const bcrypt = require('bcrypt');
+    const bcrypt = require("bcrypt");
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Insertar el agente
@@ -1695,22 +2240,21 @@ const crearAgente = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: 'Agente creado exitosamente',
+      message: "Agente creado exitosamente",
       data: {
         agenteId: agente.agenteid,
         nombre: agente.nombre,
         apellido: agente.apellido,
         email: agente.email,
-        codigoAgente: agente.codigoagente
-      }
+        codigoAgente: agente.codigoagente,
+      },
     });
-
   } catch (error) {
-    console.error('Error al crear agente:', error);
+    console.error("Error al crear agente:", error);
     res.status(500).json({
       success: false,
-      message: 'Error en el servidor',
-      error: error.message
+      message: "Error en el servidor",
+      error: error.message,
     });
   }
 };
@@ -1742,7 +2286,7 @@ const getAllAgentes = async (req, res) => {
     res.json({
       success: true,
       data: {
-        agentes: result.rows.map(row => ({
+        agentes: result.rows.map((row) => ({
           agenteId: row.agenteid,
           nombre: row.nombre,
           apellido: row.apellido,
@@ -1753,16 +2297,15 @@ const getAllAgentes = async (req, res) => {
           fechaCreacion: row.fechacreacion,
           totalVentas: parseInt(row.totalventas),
           montoTotalVentas: parseFloat(row.montototalventas),
-          comisionesTotales: parseFloat(row.comisionestotales)
-        }))
-      }
+          comisionesTotales: parseFloat(row.comisionestotales),
+        })),
+      },
     });
-
   } catch (error) {
-    console.error('Error al obtener agentes:', error);
+    console.error("Error al obtener agentes:", error);
     res.status(500).json({
       success: false,
-      message: 'Error en el servidor'
+      message: "Error en el servidor",
     });
   }
 };
@@ -1787,7 +2330,7 @@ const getAgenteDetalle = async (req, res) => {
     if (agenteResult.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        message: 'Agente no encontrado'
+        message: "Agente no encontrado",
       });
     }
 
@@ -1830,29 +2373,28 @@ const getAgenteDetalle = async (req, res) => {
           apellido: agente.apellido,
           email: agente.email,
           codigoAgente: agente.codigoagente,
-          activo: agente.activo
+          activo: agente.activo,
         },
-        ventas: ventasResult.rows.map(row => ({
+        ventas: ventasResult.rows.map((row) => ({
           pedidoId: row.pedidoid,
           fechaPedido: row.fechapedido,
           montoTotal: parseFloat(row.montototal),
           estatus: row.estatus,
-          clienteNombre: row.clientenombre
+          clienteNombre: row.clientenombre,
         })),
-        comisiones: comisionesResult.rows.map(row => ({
+        comisiones: comisionesResult.rows.map((row) => ({
           comisionId: row.comisionid,
           pedidoId: row.pedidoid,
           montoComision: parseFloat(row.montocomision),
-          estatus: row.estatus
-        }))
-      }
+          estatus: row.estatus,
+        })),
+      },
     });
-
   } catch (error) {
-    console.error('Error al obtener detalle de agente:', error);
+    console.error("Error al obtener detalle de agente:", error);
     res.status(500).json({
       success: false,
-      message: 'Error en el servidor'
+      message: "Error en el servidor",
     });
   }
 };
@@ -1876,7 +2418,7 @@ const desactivarAgente = async (req, res) => {
     if (result.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        message: 'Agente no encontrado'
+        message: "Agente no encontrado",
       });
     }
 
@@ -1886,15 +2428,14 @@ const desactivarAgente = async (req, res) => {
       success: true,
       message: `Agente ${agente.nombre} ${agente.apellido} desactivado exitosamente`,
       data: {
-        agenteId: agente.agenteid
-      }
+        agenteId: agente.agenteid,
+      },
     });
-
   } catch (error) {
-    console.error('Error al desactivar agente:', error);
+    console.error("Error al desactivar agente:", error);
     res.status(500).json({
       success: false,
-      message: 'Error en el servidor'
+      message: "Error en el servidor",
     });
   }
 };
@@ -1926,18 +2467,18 @@ const getAllComisiones = async (req, res) => {
 
     const params = [];
     if (estatus) {
-      query += ' WHERE c.Estatus = $1';
+      query += " WHERE c.Estatus = $1";
       params.push(estatus);
     }
 
-    query += ' ORDER BY c.FechaCalculo DESC';
+    query += " ORDER BY c.FechaCalculo DESC";
 
     const result = await db.query(query, params);
 
     res.json({
       success: true,
       data: {
-        comisiones: result.rows.map(row => ({
+        comisiones: result.rows.map((row) => ({
           comisionId: row.comisionid,
           pedidoId: row.pedidoid,
           agenteId: row.agenteid,
@@ -1948,16 +2489,15 @@ const getAllComisiones = async (req, res) => {
           fechaCalculo: row.fechacalculo,
           fechaGeneracion: row.fechacalculo,
           fechaPago: row.fechapago,
-          montoVenta: parseFloat(row.montoventa)
-        }))
-      }
+          montoVenta: parseFloat(row.montoventa),
+        })),
+      },
     });
-
   } catch (error) {
-    console.error('Error al obtener comisiones:', error);
+    console.error("Error al obtener comisiones:", error);
     res.status(500).json({
       success: false,
-      message: 'Error en el servidor'
+      message: "Error en el servidor",
     });
   }
 };
@@ -1972,23 +2512,23 @@ const pagarComision = async (req, res) => {
 
     // Verificar que la comisión existe y está pendiente
     const checkResult = await db.query(
-      'SELECT * FROM Comisiones WHERE ComisionID = $1',
+      "SELECT * FROM Comisiones WHERE ComisionID = $1",
       [comisionId]
     );
 
     if (checkResult.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        message: 'Comisión no encontrada'
+        message: "Comisión no encontrada",
       });
     }
 
     const comision = checkResult.rows[0];
 
-    if (comision.estatus === 'Pagada') {
+    if (comision.estatus === "Pagada") {
       return res.status(400).json({
         success: false,
-        message: 'Esta comisión ya ha sido pagada'
+        message: "Esta comisión ya ha sido pagada",
       });
     }
 
@@ -2005,19 +2545,18 @@ const pagarComision = async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Comisión marcada como pagada',
+      message: "Comisión marcada como pagada",
       data: {
         comisionId: comisionActualizada.comisionid,
         montoComision: parseFloat(comisionActualizada.montocomision),
-        estatus: comisionActualizada.estatus
-      }
+        estatus: comisionActualizada.estatus,
+      },
     });
-
   } catch (error) {
-    console.error('Error al pagar comisión:', error);
+    console.error("Error al pagar comisión:", error);
     res.status(500).json({
       success: false,
-      message: 'Error en el servidor'
+      message: "Error en el servidor",
     });
   }
 };
@@ -2048,7 +2587,7 @@ const getAllClientes = async (req, res) => {
     res.json({
       success: true,
       data: {
-        clientes: result.rows.map(row => ({
+        clientes: result.rows.map((row) => ({
           clienteId: row.clienteid,
           nombre: row.nombre,
           apellido: row.apellido,
@@ -2057,16 +2596,15 @@ const getAllClientes = async (req, res) => {
           activo: row.activo,
           fechaRegistro: row.fechaderegistro,
           totalPedidos: parseInt(row.totalpedidos),
-          montoTotalCompras: parseFloat(row.montototalcompras)
-        }))
-      }
+          montoTotalCompras: parseFloat(row.montototalcompras),
+        })),
+      },
     });
-
   } catch (error) {
-    console.error('Error al obtener clientes:', error);
+    console.error("Error al obtener clientes:", error);
     res.status(500).json({
       success: false,
-      message: 'Error en el servidor'
+      message: "Error en el servidor",
     });
   }
 };
@@ -2095,13 +2633,16 @@ const getPedidoDetalle = async (req, res) => {
         d.NumeroInt,
         d.Colonia,
         d.Ciudad,
-        d.Estado,
+        d.EstadoID,
+        e.Nombre as EstadoNombre,
+        e.Abreviatura as EstadoAbreviatura,
         d.CodigoPostal,
         d.TelefonoContacto as Referencias
       FROM Pedidos p
       INNER JOIN Clientes c ON p.ClienteID = c.ClienteID
       LEFT JOIN AgentesDeVentas a ON p.AgenteID = a.AgenteID
       LEFT JOIN Cliente_Direcciones d ON p.DireccionEnvioID = d.DireccionID
+      LEFT JOIN Estados e ON d.EstadoID = e.EstadoID
       WHERE p.PedidoID = $1`,
       [pedidoId]
     );
@@ -2109,7 +2650,7 @@ const getPedidoDetalle = async (req, res) => {
     if (pedidoResult.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        message: 'Pedido no encontrado'
+        message: "Pedido no encontrado",
       });
     }
 
@@ -2149,28 +2690,35 @@ const getPedidoDetalle = async (req, res) => {
           fechaPedido: pedido.fechapedido,
           estatus: pedido.estatus,
           montoTotal: parseFloat(pedido.montototal),
-          costoEnvio: pedido.costoenvio !== null ? parseFloat(pedido.costoenvio) : null,
+          costoEnvio:
+            pedido.costoenvio !== null ? parseFloat(pedido.costoenvio) : null,
           cliente: {
             nombre: `${pedido.clientenombre} ${pedido.clienteapellido}`,
             email: pedido.clienteemail,
-            telefono: pedido.clientetelefono
+            telefono: pedido.clientetelefono,
           },
-          agente: pedido.agentenombre ? {
-            nombre: `${pedido.agentenombre} ${pedido.agenteapellido}`,
-            codigo: pedido.codigoagente
-          } : null,
+          agente: pedido.agentenombre
+            ? {
+                nombre: `${pedido.agentenombre} ${pedido.agenteapellido}`,
+                codigo: pedido.codigoagente,
+              }
+            : null,
           direccion: {
             calle: pedido.calle,
             numeroExterior: pedido.numeroext,
             numeroInterior: pedido.numeroint,
             colonia: pedido.colonia,
             ciudad: pedido.ciudad,
-            estado: pedido.estado,
+            estadoId:
+              pedido.estadoid !== null ? parseInt(pedido.estadoid, 10) : null,
+            estado: pedido.estadonombre || null,
+            estadoNombre: pedido.estadonombre || null,
+            estadoAbreviatura: pedido.estadoabreviatura || null,
             codigoPostal: pedido.codigopostal,
-            referencias: pedido.referencias
-          }
+            referencias: pedido.referencias,
+          },
         },
-        productos: detallesResult.rows.map(row => ({
+        productos: detallesResult.rows.map((row) => ({
           detalleId: row.detalleid,
           productoId: row.productoid,
           varianteId: row.varianteid,
@@ -2178,20 +2726,25 @@ const getPedidoDetalle = async (req, res) => {
           sku: row.sku,
           cantidadPaquetes: parseInt(row.cantidadpaquetes, 10),
           piezasPorPaquete: row.piezasporpaquete,
-          precioPorPaquete: row.precioporpaquete ? parseFloat(row.precioporpaquete) : 0,
-          precioUnitario: row.preciounitariocalculado ? parseFloat(row.preciounitariocalculado) : 0,
+          precioPorPaquete: row.precioporpaquete
+            ? parseFloat(row.precioporpaquete)
+            : 0,
+          precioUnitario: row.preciounitariocalculado
+            ? parseFloat(row.preciounitariocalculado)
+            : 0,
           piezasTotales: parseInt(row.piezastotales, 10),
           dimensiones: row.dimensiones || null,
-          subtotal: row.precioporpaquete ? parseFloat((row.cantidadpaquetes || 0) * row.precioporpaquete) : 0
-        }))
-      }
+          subtotal: row.precioporpaquete
+            ? parseFloat((row.cantidadpaquetes || 0) * row.precioporpaquete)
+            : 0,
+        })),
+      },
     });
-
   } catch (error) {
-    console.error('Error al obtener detalle del pedido:', error);
+    console.error("Error al obtener detalle del pedido:", error);
     res.status(500).json({
       success: false,
-      message: 'Error en el servidor'
+      message: "Error en el servidor",
     });
   }
 };
@@ -2223,18 +2776,17 @@ const getAllProveedores = async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Proveedores obtenidos exitosamente',
+      message: "Proveedores obtenidos exitosamente",
       data: {
         proveedores: result.rows,
-        total: result.rows.length
-      }
+        total: result.rows.length,
+      },
     });
-
   } catch (error) {
-    console.error('Error al obtener proveedores:', error);
+    console.error("Error al obtener proveedores:", error);
     res.status(500).json({
       success: false,
-      message: 'Error al obtener proveedores'
+      message: "Error al obtener proveedores",
     });
   }
 };
@@ -2248,20 +2800,20 @@ const crearProveedor = async (req, res) => {
     const { nombreEmpresa, contactoNombre, email, telefono } = req.body;
 
     // Validaciones
-    if (!nombreEmpresa || nombreEmpresa.trim() === '') {
+    if (!nombreEmpresa || nombreEmpresa.trim() === "") {
       return res.status(400).json({
         success: false,
-        message: 'El nombre de la empresa es requerido'
+        message: "El nombre de la empresa es requerido",
       });
     }
 
     // Validar email si se proporciona
-    if (email && email.trim() !== '') {
+    if (email && email.trim() !== "") {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(email)) {
         return res.status(400).json({
           success: false,
-          message: 'El email no tiene un formato válido'
+          message: "El email no tiene un formato válido",
         });
       }
     }
@@ -2276,27 +2828,26 @@ const crearProveedor = async (req, res) => {
       nombreEmpresa.trim(),
       contactoNombre ? contactoNombre.trim() : null,
       email ? email.trim() : null,
-      telefono ? telefono.trim() : null
+      telefono ? telefono.trim() : null,
     ];
 
     const result = await db.query(query, values);
     const nuevoProveedor = result.rows[0];
 
-    console.log('✅ Proveedor creado:', nuevoProveedor);
+    console.log("✅ Proveedor creado:", nuevoProveedor);
 
     res.status(201).json({
       success: true,
-      message: 'Proveedor creado exitosamente',
+      message: "Proveedor creado exitosamente",
       data: {
-        proveedor: nuevoProveedor
-      }
+        proveedor: nuevoProveedor,
+      },
     });
-
   } catch (error) {
-    console.error('Error al crear proveedor:', error);
+    console.error("Error al crear proveedor:", error);
     res.status(500).json({
       success: false,
-      message: 'Error al crear el proveedor'
+      message: "Error al crear el proveedor",
     });
   }
 };
@@ -2311,32 +2862,33 @@ const actualizarProveedor = async (req, res) => {
     const { nombreEmpresa, contactoNombre, email, telefono } = req.body;
 
     // Validaciones
-    if (!nombreEmpresa || nombreEmpresa.trim() === '') {
+    if (!nombreEmpresa || nombreEmpresa.trim() === "") {
       return res.status(400).json({
         success: false,
-        message: 'El nombre de la empresa es requerido'
+        message: "El nombre de la empresa es requerido",
       });
     }
 
     // Validar email si se proporciona
-    if (email && email.trim() !== '') {
+    if (email && email.trim() !== "") {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(email)) {
         return res.status(400).json({
           success: false,
-          message: 'El email no tiene un formato válido'
+          message: "El email no tiene un formato válido",
         });
       }
     }
 
     // Verificar que el proveedor existe
-    const checkQuery = 'SELECT ProveedorID FROM Proveedores WHERE ProveedorID = $1';
+    const checkQuery =
+      "SELECT ProveedorID FROM Proveedores WHERE ProveedorID = $1";
     const checkResult = await db.query(checkQuery, [proveedorId]);
 
     if (checkResult.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        message: 'Proveedor no encontrado'
+        message: "Proveedor no encontrado",
       });
     }
 
@@ -2356,27 +2908,26 @@ const actualizarProveedor = async (req, res) => {
       contactoNombre ? contactoNombre.trim() : null,
       email ? email.trim() : null,
       telefono ? telefono.trim() : null,
-      proveedorId
+      proveedorId,
     ];
 
     const result = await db.query(query, values);
     const proveedorActualizado = result.rows[0];
 
-    console.log('✅ Proveedor actualizado:', proveedorActualizado);
+    console.log("✅ Proveedor actualizado:", proveedorActualizado);
 
     res.json({
       success: true,
-      message: 'Proveedor actualizado exitosamente',
+      message: "Proveedor actualizado exitosamente",
       data: {
-        proveedor: proveedorActualizado
-      }
+        proveedor: proveedorActualizado,
+      },
     });
-
   } catch (error) {
-    console.error('Error al actualizar proveedor:', error);
+    console.error("Error al actualizar proveedor:", error);
     res.status(500).json({
       success: false,
-      message: 'Error al actualizar el proveedor'
+      message: "Error al actualizar el proveedor",
     });
   }
 };
@@ -2410,10 +2961,10 @@ const getAllOrdenesCompra = async (req, res) => {
     `;
 
     const values = [];
-    
+
     // Filtrar por estatus si se proporciona
     if (estatus) {
-      if (estatus === 'Pendiente,Parcial') {
+      if (estatus === "Pendiente,Parcial") {
         query += ` WHERE oc.Estatus IN ('Pendiente', 'Parcial')`;
       } else {
         query += ` WHERE oc.Estatus = $1`;
@@ -2431,26 +2982,25 @@ const getAllOrdenesCompra = async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Órdenes de compra obtenidas exitosamente',
+      message: "Órdenes de compra obtenidas exitosamente",
       data: {
-        ordenes: result.rows.map(row => ({
+        ordenes: result.rows.map((row) => ({
           ordenCompraId: row.ordencompraid,
           proveedorId: row.proveedorid,
           proveedorNombre: row.proveedornombre,
           fechaCreacion: row.fechacreacion,
           fechaEntregaEsperada: row.fechaentregaesperada,
           estatus: row.estatus,
-          totalProductos: parseInt(row.totalproductos)
+          totalProductos: parseInt(row.totalproductos),
         })),
-        total: result.rows.length
-      }
+        total: result.rows.length,
+      },
     });
-
   } catch (error) {
-    console.error('Error al obtener órdenes de compra:', error);
+    console.error("Error al obtener órdenes de compra:", error);
     res.status(500).json({
       success: false,
-      message: 'Error al obtener órdenes de compra'
+      message: "Error al obtener órdenes de compra",
     });
   }
 };
@@ -2483,7 +3033,7 @@ const getDetallesOrdenCompra = async (req, res) => {
     if (ordenResult.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        message: 'Orden de compra no encontrada'
+        message: "Orden de compra no encontrada",
       });
     }
 
@@ -2514,7 +3064,7 @@ const getDetallesOrdenCompra = async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Detalles obtenidos exitosamente',
+      message: "Detalles obtenidos exitosamente",
       data: {
         orden: {
           ordenCompraId: orden.ordencompraid,
@@ -2523,9 +3073,9 @@ const getDetallesOrdenCompra = async (req, res) => {
           proveedorContacto: orden.proveedorcontacto,
           fechaCreacion: orden.fechacreacion,
           fechaEntregaEsperada: orden.fechaentregaesperada,
-          estatus: orden.estatus
+          estatus: orden.estatus,
         },
-        detalles: detallesResult.rows.map(row => ({
+        detalles: detallesResult.rows.map((row) => ({
           detalleId: row.detalleoc_id,
           ordenCompraId: row.ordencompraid,
           varianteId: row.varianteid,
@@ -2537,16 +3087,15 @@ const getDetallesOrdenCompra = async (req, res) => {
           cantidadSolicitada: row.cantidadsolicitada,
           cantidadRecibida: row.cantidadrecibida,
           cantidadPendiente: row.cantidadsolicitada - row.cantidadrecibida,
-          stockVariante: row.stockvariante
-        }))
-      }
+          stockVariante: row.stockvariante,
+        })),
+      },
     });
-
   } catch (error) {
-    console.error('Error al obtener detalles de orden de compra:', error);
+    console.error("Error al obtener detalles de orden de compra:", error);
     res.status(500).json({
       success: false,
-      message: 'Error al obtener detalles de la orden de compra'
+      message: "Error al obtener detalles de la orden de compra",
     });
   }
 };
@@ -2557,7 +3106,7 @@ const getDetallesOrdenCompra = async (req, res) => {
  */
 const recibirInventario = async (req, res) => {
   const client = await db.pool.connect();
-  
+
   try {
     const { ordenCompraId, productos, adminId } = req.body;
 
@@ -2565,14 +3114,14 @@ const recibirInventario = async (req, res) => {
     if (!ordenCompraId) {
       return res.status(400).json({
         success: false,
-        message: 'El ID de la orden de compra es requerido'
+        message: "El ID de la orden de compra es requerido",
       });
     }
 
     if (!productos || !Array.isArray(productos) || productos.length === 0) {
       return res.status(400).json({
         success: false,
-        message: 'Debe incluir al menos un producto para recibir'
+        message: "Debe incluir al menos un producto para recibir",
       });
     }
 
@@ -2581,32 +3130,32 @@ const recibirInventario = async (req, res) => {
       if (!producto.detalleId || producto.cantidadRecibidaAhora === undefined) {
         return res.status(400).json({
           success: false,
-          message: 'Cada producto debe tener detalleId y cantidadRecibidaAhora'
+          message: "Cada producto debe tener detalleId y cantidadRecibidaAhora",
         });
       }
 
       if (producto.cantidadRecibidaAhora < 0) {
         return res.status(400).json({
           success: false,
-          message: 'La cantidad recibida no puede ser negativa'
+          message: "La cantidad recibida no puede ser negativa",
         });
       }
     }
 
     // Iniciar transacción
-    await client.query('BEGIN');
+    await client.query("BEGIN");
 
     // Verificar que la orden existe
     const ordenCheck = await client.query(
-      'SELECT OrdenCompraID, Estatus FROM OrdenesDeCompra WHERE OrdenCompraID = $1',
+      "SELECT OrdenCompraID, Estatus FROM OrdenesDeCompra WHERE OrdenCompraID = $1",
       [ordenCompraId]
     );
 
     if (ordenCheck.rows.length === 0) {
-      await client.query('ROLLBACK');
+      await client.query("ROLLBACK");
       return res.status(404).json({
         success: false,
-        message: 'Orden de compra no encontrada'
+        message: "Orden de compra no encontrada",
       });
     }
 
@@ -2639,13 +3188,16 @@ const recibirInventario = async (req, res) => {
         WHERE doc.DetalleOC_ID = $1 AND doc.OrdenCompraID = $2
       `;
 
-      const detalleResult = await client.query(detalleQuery, [producto.detalleId, ordenCompraId]);
+      const detalleResult = await client.query(detalleQuery, [
+        producto.detalleId,
+        ordenCompraId,
+      ]);
 
       if (detalleResult.rows.length === 0) {
-        await client.query('ROLLBACK');
+        await client.query("ROLLBACK");
         return res.status(404).json({
           success: false,
-          message: `Detalle ${producto.detalleId} no encontrado en esta orden`
+          message: `Detalle ${producto.detalleId} no encontrado en esta orden`,
         });
       }
 
@@ -2654,10 +3206,10 @@ const recibirInventario = async (req, res) => {
 
       // Validar que no se exceda la cantidad solicitada
       if (nuevaCantidadRecibida > detalle.cantidadsolicitada) {
-        await client.query('ROLLBACK');
+        await client.query("ROLLBACK");
         return res.status(400).json({
           success: false,
-          message: `No puede recibir más de lo solicitado para ${detalle.nombreproducto}. Solicitado: ${detalle.cantidadsolicitada}, Ya recibido: ${detalle.cantidadrecibida}`
+          message: `No puede recibir más de lo solicitado para ${detalle.nombreproducto}. Solicitado: ${detalle.cantidadsolicitada}, Ya recibido: ${detalle.cantidadrecibida}`,
         });
       }
 
@@ -2670,7 +3222,8 @@ const recibirInventario = async (req, res) => {
       );
 
       // 3. Actualizar Stock en la variante seleccionada
-      const nuevoStockVariante = (detalle.stockvariante || 0) + cantidadRecibida;
+      const nuevoStockVariante =
+        (detalle.stockvariante || 0) + cantidadRecibida;
       await client.query(
         `UPDATE Producto_Variantes 
          SET Stock = COALESCE(Stock, 0) + $1 
@@ -2688,7 +3241,7 @@ const recibirInventario = async (req, res) => {
           cantidadRecibida,
           nuevoStockVariante,
           `Recepción de OC #${ordenCompraId}`,
-          adminId || null
+          adminId || null,
         ]
       );
 
@@ -2702,7 +3255,7 @@ const recibirInventario = async (req, res) => {
         cantidadRecibidaAhora: cantidadRecibida,
         cantidadRecibidaTotal: nuevaCantidadRecibida,
         cantidadSolicitada: detalle.cantidadsolicitada,
-        stockVariante: nuevoStockVariante
+        stockVariante: nuevoStockVariante,
       });
     }
 
@@ -2721,45 +3274,44 @@ const recibirInventario = async (req, res) => {
 
     let nuevoEstatus;
     if (parseInt(totalrecibido) >= parseInt(totalsolicitado)) {
-      nuevoEstatus = 'Completada';
+      nuevoEstatus = "Completada";
     } else if (parseInt(totalrecibido) > 0) {
-      nuevoEstatus = 'Parcial';
+      nuevoEstatus = "Parcial";
     } else {
-      nuevoEstatus = 'Pendiente';
+      nuevoEstatus = "Pendiente";
     }
 
     await client.query(
-      'UPDATE OrdenesDeCompra SET Estatus = $1 WHERE OrdenCompraID = $2',
+      "UPDATE OrdenesDeCompra SET Estatus = $1 WHERE OrdenCompraID = $2",
       [nuevoEstatus, ordenCompraId]
     );
 
     // Commit de la transacción
-    await client.query('COMMIT');
+    await client.query("COMMIT");
 
-    console.log('✅ Inventario recibido:', {
+    console.log("✅ Inventario recibido:", {
       ordenCompraId,
       productosActualizados: productosActualizados.length,
-      nuevoEstatus
+      nuevoEstatus,
     });
 
     res.json({
       success: true,
-      message: 'Inventario recibido exitosamente',
+      message: "Inventario recibido exitosamente",
       data: {
         ordenCompraId,
         nuevoEstatus,
         productosActualizados,
         totalSolicitado: parseInt(totalsolicitado),
-        totalRecibido: parseInt(totalrecibido)
-      }
+        totalRecibido: parseInt(totalrecibido),
+      },
     });
-
   } catch (error) {
-    await client.query('ROLLBACK');
-    console.error('Error al recibir inventario:', error);
+    await client.query("ROLLBACK");
+    console.error("Error al recibir inventario:", error);
     res.status(500).json({
       success: false,
-      message: 'Error al recibir el inventario'
+      message: "Error al recibir el inventario",
     });
   } finally {
     client.release();
@@ -2780,21 +3332,21 @@ const crearOrdenCompra = async (req, res) => {
     if (!proveedorId) {
       return res.status(400).json({
         success: false,
-        message: 'El proveedor es requerido'
+        message: "El proveedor es requerido",
       });
     }
 
     if (!fechaEntregaEsperada) {
       return res.status(400).json({
         success: false,
-        message: 'La fecha de entrega esperada es requerida'
+        message: "La fecha de entrega esperada es requerida",
       });
     }
 
     if (!productos || !Array.isArray(productos) || productos.length === 0) {
       return res.status(400).json({
         success: false,
-        message: 'Debe incluir al menos un producto'
+        message: "Debe incluir al menos un producto",
       });
     }
 
@@ -2803,33 +3355,33 @@ const crearOrdenCompra = async (req, res) => {
       if (!producto.varianteId || !producto.cantidadSolicitada) {
         return res.status(400).json({
           success: false,
-          message: 'Cada producto debe tener varianteId y cantidadSolicitada'
+          message: "Cada producto debe tener varianteId y cantidadSolicitada",
         });
       }
 
       if (producto.cantidadSolicitada <= 0) {
         return res.status(400).json({
           success: false,
-          message: 'La cantidad solicitada debe ser mayor a 0'
+          message: "La cantidad solicitada debe ser mayor a 0",
         });
       }
     }
 
     // Verificar que el proveedor existe
     const proveedorCheck = await client.query(
-      'SELECT ProveedorID FROM Proveedores WHERE ProveedorID = $1',
+      "SELECT ProveedorID FROM Proveedores WHERE ProveedorID = $1",
       [proveedorId]
     );
 
     if (proveedorCheck.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        message: 'Proveedor no encontrado'
+        message: "Proveedor no encontrado",
       });
     }
 
     // Iniciar transacción
-    await client.query('BEGIN');
+    await client.query("BEGIN");
 
     // 1. Crear la orden de compra
     const ordenQuery = `
@@ -2840,7 +3392,7 @@ const crearOrdenCompra = async (req, res) => {
 
     const ordenResult = await client.query(ordenQuery, [
       proveedorId,
-      fechaEntregaEsperada
+      fechaEntregaEsperada,
     ]);
 
     const ordenCompra = ordenResult.rows[0];
@@ -2860,20 +3412,20 @@ const crearOrdenCompra = async (req, res) => {
       );
 
       if (varianteResult.rows.length === 0) {
-        await client.query('ROLLBACK');
+        await client.query("ROLLBACK");
         return res.status(404).json({
           success: false,
-          message: `Variante con ID ${producto.varianteId} no encontrada`
+          message: `Variante con ID ${producto.varianteId} no encontrada`,
         });
       }
 
       const variante = varianteResult.rows[0];
 
       if (producto.productoId && producto.productoId !== variante.productoid) {
-        await client.query('ROLLBACK');
+        await client.query("ROLLBACK");
         return res.status(400).json({
           success: false,
-          message: 'La variante seleccionada no pertenece al producto indicado'
+          message: "La variante seleccionada no pertenece al producto indicado",
         });
       }
 
@@ -2886,7 +3438,7 @@ const crearOrdenCompra = async (req, res) => {
       const detalleResult = await client.query(detalleQuery, [
         ordenCompraId,
         variante.varianteid,
-        producto.cantidadSolicitada
+        producto.cantidadSolicitada,
       ]);
 
       detallesInsertados.push({
@@ -2898,41 +3450,40 @@ const crearOrdenCompra = async (req, res) => {
         medidaId: variante.medidaid,
         dimensiones: variante.dimensiones,
         cantidadSolicitada: detalleResult.rows[0].cantidadsolicitada,
-        cantidadRecibida: detalleResult.rows[0].cantidadrecibida
+        cantidadRecibida: detalleResult.rows[0].cantidadrecibida,
       });
     }
 
     // Commit de la transacción
-    await client.query('COMMIT');
+    await client.query("COMMIT");
 
-    console.log('✅ Orden de compra creada:', {
+    console.log("✅ Orden de compra creada:", {
       ordenCompraId,
       proveedorId,
-      totalProductos: detallesInsertados.length
+      totalProductos: detallesInsertados.length,
     });
 
     res.status(201).json({
       success: true,
-      message: 'Orden de compra creada exitosamente',
+      message: "Orden de compra creada exitosamente",
       data: {
         ordenCompra: {
           ordenCompraId: ordenCompraId,
           proveedorId: ordenCompra.proveedorid,
           fechaCreacion: ordenCompra.fechacreacion,
           fechaEntregaEsperada: ordenCompra.fechaentregaesperada,
-          estatus: ordenCompra.estatus
+          estatus: ordenCompra.estatus,
         },
-        detalles: detallesInsertados
-      }
+        detalles: detallesInsertados,
+      },
     });
-
   } catch (error) {
     // Rollback en caso de error
-    await client.query('ROLLBACK');
-    console.error('Error al crear orden de compra:', error);
+    await client.query("ROLLBACK");
+    console.error("Error al crear orden de compra:", error);
     res.status(500).json({
       success: false,
-      message: 'Error al crear la orden de compra'
+      message: "Error al crear la orden de compra",
     });
   } finally {
     client.release();
@@ -2949,9 +3500,13 @@ module.exports = {
   updateCostoEnvio,
   updatePedidoEstatus,
   getPedidoDetalle,
-  crearProducto,
   ajustarInventario,
+  getInventarioResumen,
+  getProductoDetalle,
   getAllProductos,
+  crearProducto,
+  actualizarProducto,
+  getTamanosPaquetes,
   getCategorias,
   crearCategoria,
   actualizarCategoria,
@@ -2973,5 +3528,5 @@ module.exports = {
   getAllOrdenesCompra,
   getDetallesOrdenCompra,
   crearOrdenCompra,
-  recibirInventario
+  recibirInventario,
 };

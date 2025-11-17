@@ -1,4 +1,4 @@
-const db = require('../db');
+const db = require("../db");
 
 /**
  * GET /api/admin/reportes/rentabilidad
@@ -6,10 +6,11 @@ const db = require('../db');
  */
 const getReporteRentabilidad = async (req, res) => {
   try {
-    const { desde, hasta } = req.query;
+    const { desde, hasta, estadoID } = req.query;
 
     const filters = [];
     const params = [];
+    let estadoJoinClause = "";
 
     if (desde && !Number.isNaN(Date.parse(desde))) {
       params.push(desde);
@@ -21,7 +22,19 @@ const getReporteRentabilidad = async (req, res) => {
       filters.push(`p.FechaPedido <= $${params.length}`);
     }
 
-    const whereClause = filters.length ? `WHERE ${filters.join(' AND ')}` : '';
+    const estadoIdParsed =
+      estadoID !== undefined && estadoID !== null
+        ? parseInt(estadoID, 10)
+        : NaN;
+    if (!Number.isNaN(estadoIdParsed)) {
+      params.push(estadoIdParsed);
+      filters.push(`cd.EstadoID = $${params.length}`);
+      estadoJoinClause = `
+        INNER JOIN Cliente_Direcciones cd ON p.DireccionEnvioID = cd.DireccionID
+      `;
+    }
+
+    const whereClause = filters.length ? `WHERE ${filters.join(" AND ")}` : "";
 
     const query = `
       SELECT 
@@ -33,19 +46,23 @@ const getReporteRentabilidad = async (req, res) => {
         pv.SKU,
         p.FechaPedido,
         p.CostoEnvio,
-        dp.CantidadPaquetes,
+        dp.TamanoID,
+        t.Cantidad AS TamanoValor,
         dp.PiezasTotales,
-        dp.PrecioPorPaquete,
+        pv.PrecioUnitario AS PrecioUnitarioAplicado,
         pv.CostoUnitario,
+        pv.PrecioUnitario AS PrecioUnitarioActual,
         c.MontoComision,
-        (dp.PrecioPorPaquete * dp.CantidadPaquetes) AS VentaBruta,
+        (pv.PrecioUnitario * dp.PiezasTotales) AS VentaBruta,
         (pv.CostoUnitario * dp.PiezasTotales) AS CostoTotal,
-        (dp.PrecioPorPaquete * dp.CantidadPaquetes) - (pv.CostoUnitario * dp.PiezasTotales) AS GananciaBruta,
-        ((dp.PrecioPorPaquete * dp.CantidadPaquetes) - (pv.CostoUnitario * dp.PiezasTotales)) - COALESCE(p.CostoEnvio, 0) - COALESCE(c.MontoComision, 0) AS GananciaNeta
+        (pv.PrecioUnitario * dp.PiezasTotales) - (pv.CostoUnitario * dp.PiezasTotales) AS GananciaBruta,
+        ((pv.PrecioUnitario * dp.PiezasTotales) - (pv.CostoUnitario * dp.PiezasTotales)) - COALESCE(p.CostoEnvio, 0) - COALESCE(c.MontoComision, 0) AS GananciaNeta
       FROM DetallesDelPedido dp
       INNER JOIN Pedidos p ON dp.PedidoID = p.PedidoID
+      ${estadoJoinClause}
       INNER JOIN Producto_Variantes pv ON dp.VarianteID = pv.VarianteID
       INNER JOIN Productos pr ON pv.ProductoID = pr.ProductoID
+      LEFT JOIN Cat_TamanoPaquetes t ON t.TamanoID = dp.TamanoID
       LEFT JOIN Comisiones c ON dp.PedidoID = c.PedidoID
       ${whereClause}
       ORDER BY p.FechaPedido DESC, dp.DetalleID ASC
@@ -55,31 +72,51 @@ const getReporteRentabilidad = async (req, res) => {
 
     return res.json({
       success: true,
-      data: result.rows.map(row => ({
-        detalleId: row.detalleid,
-        pedidoId: row.pedidoid,
-        varianteId: row.varianteid,
-        productoId: row.productoid,
-        nombreProducto: row.nombreproducto,
-        sku: row.sku,
-        fechaPedido: row.fechapedido,
-        costoEnvio: row.costoenvio !== null ? parseFloat(row.costoenvio) : 0,
-        comision: row.montocomision !== null ? parseFloat(row.montocomision) : 0,
-        cantidadPaquetes: row.cantidadpaquetes ? parseInt(row.cantidadpaquetes, 10) : 0,
-        piezasTotales: row.piezastotales ? parseInt(row.piezastotales, 10) : 0,
-        precioPorPaquete: row.precioporpaquete ? parseFloat(row.precioporpaquete) : 0,
-        costoUnitario: row.costounitario ? parseFloat(row.costounitario) : 0,
-        ventaBruta: row.ventabruta ? parseFloat(row.ventabruta) : 0,
-        costoTotal: row.costototal ? parseFloat(row.costototal) : 0,
-        gananciaBruta: row.gananciabruta ? parseFloat(row.gananciabruta) : 0,
-        gananciaNeta: row.ganancianeta ? parseFloat(row.ganancianeta) : 0
-      }))
+      data: result.rows.map((row) => {
+        const tamanoValor =
+          row.tamanovalor !== null ? parseInt(row.tamanovalor, 10) : null;
+        const piezasTotales = row.piezastotales
+          ? parseInt(row.piezastotales, 10)
+          : 0;
+        const cantidadDerivada =
+          tamanoValor && tamanoValor > 0
+            ? Math.round(piezasTotales / tamanoValor)
+            : null;
+
+        return {
+          detalleId: row.detalleid,
+          pedidoId: row.pedidoid,
+          varianteId: row.varianteid,
+          productoId: row.productoid,
+          nombreProducto: row.nombreproducto,
+          sku: row.sku,
+          fechaPedido: row.fechapedido,
+          costoEnvio: row.costoenvio !== null ? parseFloat(row.costoenvio) : 0,
+          comision:
+            row.montocomision !== null ? parseFloat(row.montocomision) : 0,
+          cantidad: cantidadDerivada !== null ? cantidadDerivada : 0,
+          tamanoId: row.tamanoid !== null ? parseInt(row.tamanoid, 10) : null,
+          tamanoValor,
+          piezasTotales,
+          precioUnitarioAplicado: row.preciounitarioaplicado
+            ? parseFloat(row.preciounitarioaplicado)
+            : 0,
+          costoUnitario: row.costounitario ? parseFloat(row.costounitario) : 0,
+          precioUnitarioActual: row.preciounitarioactual
+            ? parseFloat(row.preciounitarioactual)
+            : null,
+          ventaBruta: row.ventabruta ? parseFloat(row.ventabruta) : 0,
+          costoTotal: row.costototal ? parseFloat(row.costototal) : 0,
+          gananciaBruta: row.gananciabruta ? parseFloat(row.gananciabruta) : 0,
+          gananciaNeta: row.ganancianeta ? parseFloat(row.ganancianeta) : 0,
+        };
+      }),
     });
   } catch (error) {
-    console.error('Error al generar reporte de rentabilidad:', error);
+    console.error("Error al generar reporte de rentabilidad:", error);
     return res.status(500).json({
       success: false,
-      message: 'Error al generar el reporte de rentabilidad'
+      message: "Error al generar el reporte de rentabilidad",
     });
   }
 };
@@ -91,25 +128,33 @@ const getReporteRentabilidad = async (req, res) => {
 const getValuacionInventario = async (req, res) => {
   try {
     const query = `
-      SELECT COALESCE(SUM(Stock * (CostoUnitario * PiezasPorPaquete)), 0) AS valor_total
+      SELECT 
+        COALESCE(SUM(Stock * CostoUnitario), 0) AS valor_costo,
+        COALESCE(SUM(Stock * PrecioUnitario), 0) AS valor_venta
       FROM Producto_Variantes
       WHERE Stock > 0
     `;
 
     const result = await db.query(query);
-    const valorTotal = result.rows.length ? parseFloat(result.rows[0].valor_total) : 0;
+    const row = result.rows[0] || {};
+    const valorCosto =
+      row.valor_costo !== undefined ? parseFloat(row.valor_costo) : 0;
+    const valorVenta =
+      row.valor_venta !== undefined ? parseFloat(row.valor_venta) : 0;
 
     return res.json({
       success: true,
       data: {
-        valorTotal
-      }
+        valorTotal: valorVenta,
+        valorVenta,
+        valorCosto,
+      },
     });
   } catch (error) {
-    console.error('Error al calcular la valuación de inventario:', error);
+    console.error("Error al calcular la valuación de inventario:", error);
     return res.status(500).json({
       success: false,
-      message: 'Error al calcular la valuación de inventario'
+      message: "Error al calcular la valuación de inventario",
     });
   }
 };
@@ -133,19 +178,20 @@ const getAgingBackorders = async (req, res) => {
 
     return res.json({
       success: true,
-      data: result.rows.map(row => ({
+      data: result.rows.map((row) => ({
         pedidoId: row.pedidoid,
         fechaPedido: row.fechapedido,
         estatusSurtido: row.estatus_surtido,
-        diasPendiente: row.dias_pendiente !== null ? parseInt(row.dias_pendiente, 10) : 0,
-        cliente: row.cliente
-      }))
+        diasPendiente:
+          row.dias_pendiente !== null ? parseInt(row.dias_pendiente, 10) : 0,
+        cliente: row.cliente,
+      })),
     });
   } catch (error) {
-    console.error('Error al generar reporte de aging de backorders:', error);
+    console.error("Error al generar reporte de aging de backorders:", error);
     return res.status(500).json({
       success: false,
-      message: 'Error al generar el reporte de aging de backorders'
+      message: "Error al generar el reporte de aging de backorders",
     });
   }
 };
@@ -153,5 +199,5 @@ const getAgingBackorders = async (req, res) => {
 module.exports = {
   getReporteRentabilidad,
   getValuacionInventario,
-  getAgingBackorders
+  getAgingBackorders,
 };

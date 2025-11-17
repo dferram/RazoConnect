@@ -1,418 +1,482 @@
 <!DOCTYPE html>
 <html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gestión de Categorías - Admin RazoConnect</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gestión de Categorías - Admin RazoConnect</title>
 
-  <!-- PROTECCIÓN DE AUTENTICACIÓN ADMIN -->
-  <script src="js/auth-guard-admin.js"></script>
+    <!-- PROTECCIÓN DE AUTENTICACIÓN ADMIN -->
+    <script src="js/auth-guard-admin.js"></script>
 
-  <!-- SISTEMA DE RENOVACIÓN DE TOKENS -->
-  <script src="js/token-refresh.js"></script>
+    <!-- SISTEMA DE RENOVACIÓN DE TOKENS -->
+    <script src="js/token-refresh.js"></script>
 
-  <link rel="stylesheet" href="css/styles.css">
-  <link rel="stylesheet" href="css/admin.css">
-</head>
-<body>
-  <div class="admin-layout">
-    <!-- Sidebar -->
-    <aside class="admin-sidebar">
-      <div class="admin-brand">
-        <a href="/admin-dashboard.html" class="admin-brand-logo">📦 RazoConnect</a>
-        <div class="admin-brand-subtitle">Panel admin</div>
-      </div>
-
-      <nav class="admin-nav">
-        <div class="admin-nav-section">
-          <div class="admin-nav-title">Principal</div>
-          <a href="/admin-dashboard.html" class="admin-nav-link">
-            <span class="admin-nav-icon">📊</span>
-            <span>Dashboard</span>
-          </a>
+    <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/admin.css" />
+  </head>
+  <body>
+    <div class="admin-layout">
+      <!-- Sidebar -->
+      <aside class="admin-sidebar">
+        <div class="admin-brand">
+          <a href="/admin-dashboard.html" class="admin-brand-logo"
+            >📦 RazoConnect</a
+          >
+          <div class="admin-brand-subtitle">Panel admin</div>
         </div>
 
-        <div class="admin-nav-section">
-          <div class="admin-nav-title">Gestión</div>
-          <a href="/admin-pedidos.html" class="admin-nav-link">
-            <span class="admin-nav-icon">📦</span>
-            <span>Pedidos</span>
-          </a>
-          <a href="/admin-agregar-producto.html" class="admin-nav-link">
-            <span class="admin-nav-icon">🎁</span>
-            <span>Productos</span>
-          </a>
-          <a href="/admin-categorias.html" class="admin-nav-link active">
-            <span class="admin-nav-icon">🏷️</span>
-            <span>Categorías</span>
-          </a>
-          <a href="/admin-clientes.html" class="admin-nav-link">
-            <span class="admin-nav-icon">👥</span>
-            <span>Clientes</span>
-          </a>
-          <a href="/admin-agentes.html" class="admin-nav-link">
-            <span class="admin-nav-icon">💼</span>
-            <span>Agentes</span>
-          </a>
-        </div>
-
-        <div class="admin-nav-section">
-          <div class="admin-nav-title">Financiero</div>
-          <a href="/admin-comisiones.html" class="admin-nav-link">
-            <span class="admin-nav-icon">💰</span>
-            <span>Comisiones</span>
-          </a>
-          <a href="/admin-inventario.html" class="admin-nav-link">
-            <span class="admin-nav-icon">📈</span>
-            <span>Inventario</span>
-          </a>
-          <a href="/admin-reportes.html" class="admin-nav-link">
-            <span class="admin-nav-icon">📑</span>
-            <span>Reportes</span>
-          </a>
-        </div>
-
-        <div class="admin-nav-section">
-          <div class="admin-nav-title">Compras</div>
-          <a href="/admin-proveedores.html" class="admin-nav-link">
-            <span class="admin-nav-icon">🏭</span>
-            <span>Proveedores</span>
-          </a>
-          <a href="/admin-crear-oc.html" class="admin-nav-link">
-            <span class="admin-nav-icon">📋</span>
-            <span>Nueva orden de compra</span>
-          </a>
-          <a href="/admin-recibir-inventario.html" class="admin-nav-link">
-            <span class="admin-nav-icon">📥</span>
-            <span>Recibir inventario</span>
-          </a>
-        </div>
-      </nav>
-    </aside>
-
-    <!-- Main Content -->
-    <main class="admin-main">
-      <header class="admin-header">
-        <h1 class="admin-header-title">Gestión de categorías</h1>
-
-        <div class="admin-header-actions">
-          <div class="admin-user-info">
-            <div class="admin-user-avatar" id="userAvatar">A</div>
-            <div class="admin-user-details">
-              <div class="admin-user-name" id="userName">Administrador</div>
-              <div class="admin-user-role" id="userRole">Admin</div>
-            </div>
-          </div>
-          <button class="admin-logout-btn" id="logoutBtn">Cerrar sesión</button>
-        </div>
-      </header>
-
-      <div class="admin-content">
-        <!-- Formulario para crear categoría -->
-        <div class="admin-table-container" style="margin-bottom: 2rem;">
-          <div class="admin-table-header">
-            <h2 class="admin-table-title">Agregar nueva categoría</h2>
+        <nav class="admin-nav">
+          <div class="admin-nav-section">
+            <div class="admin-nav-title">Principal</div>
+            <a href="/admin-dashboard.html" class="admin-nav-link">
+              <span class="admin-nav-icon">📊</span>
+              <span>Dashboard</span>
+            </a>
           </div>
 
-          <form id="categoriaForm" style="padding: 1.5rem;">
-            <div class="form-group">
-              <label for="nombre" class="form-label">Nombre *</label>
-              <input type="text" id="nombre" class="form-input" required />
+          <div class="admin-nav-section">
+            <div class="admin-nav-title">Gestión</div>
+            <a href="/admin-pedidos.html" class="admin-nav-link">
+              <span class="admin-nav-icon">📦</span>
+              <span>Pedidos</span>
+            </a>
+            <a href="/admin-agregar-producto.html" class="admin-nav-link">
+              <span class="admin-nav-icon">🎁</span>
+              <span>Productos</span>
+            </a>
+            <a href="/admin-categorias.html" class="admin-nav-link active">
+              <span class="admin-nav-icon">🏷️</span>
+              <span>Categorías</span>
+            </a>
+            <a href="/admin-clientes.html" class="admin-nav-link">
+              <span class="admin-nav-icon">👥</span>
+              <span>Clientes</span>
+            </a>
+            <a href="/admin-agentes.html" class="admin-nav-link">
+              <span class="admin-nav-icon">💼</span>
+              <span>Agentes</span>
+            </a>
+          </div>
+
+          <div class="admin-nav-section">
+            <div class="admin-nav-title">Financiero</div>
+            <a href="/admin-comisiones.html" class="admin-nav-link">
+              <span class="admin-nav-icon">💰</span>
+              <span>Comisiones</span>
+            </a>
+            <a href="/admin-inventario.html" class="admin-nav-link">
+              <span class="admin-nav-icon">📈</span>
+              <span>Inventario</span>
+            </a>
+            <a href="/admin-reportes.html" class="admin-nav-link">
+              <span class="admin-nav-icon">📑</span>
+              <span>Reportes</span>
+            </a>
+          </div>
+
+          <div class="admin-nav-section">
+            <div class="admin-nav-title">Compras</div>
+            <a href="/admin-proveedores.html" class="admin-nav-link">
+              <span class="admin-nav-icon">🏭</span>
+              <span>Proveedores</span>
+            </a>
+            <a href="/admin-crear-oc.html" class="admin-nav-link">
+              <span class="admin-nav-icon">📋</span>
+              <span>Nueva orden de compra</span>
+            </a>
+            <a href="/admin-recibir-inventario.html" class="admin-nav-link">
+              <span class="admin-nav-icon">📥</span>
+              <span>Recibir inventario</span>
+            </a>
+          </div>
+        </nav>
+      </aside>
+
+      <!-- Main Content -->
+      <main class="admin-main">
+        <header class="admin-header">
+          <h1 class="admin-header-title">Gestión de categorías</h1>
+
+          <div class="admin-header-actions">
+            <div class="admin-user-info">
+              <div class="admin-user-avatar" id="userAvatar">A</div>
+              <div class="admin-user-details">
+                <div class="admin-user-name" id="userName">Administrador</div>
+                <div class="admin-user-role" id="userRole">Admin</div>
+              </div>
+            </div>
+            <button class="admin-logout-btn" id="logoutBtn">
+              Cerrar sesión
+            </button>
+          </div>
+        </header>
+
+        <div class="admin-content">
+          <!-- Formulario para crear categoría -->
+          <div class="admin-table-container" style="margin-bottom: 2rem">
+            <div class="admin-table-header">
+              <h2 class="admin-table-title">Agregar nueva categoría</h2>
             </div>
 
-            <div class="form-group">
-              <label for="descripcion" class="form-label">Descripción</label>
-              <textarea id="descripcion" class="form-input" rows="3" placeholder="Describe brevemente la categoría"></textarea>
-            </div>
+            <form id="categoriaForm" style="padding: 1.5rem">
+              <div class="form-group">
+                <label for="nombre" class="form-label">Nombre *</label>
+                <input type="text" id="nombre" class="form-input" required />
+              </div>
 
-            <div class="form-group">
-              <label for="parentCategoria" class="form-label">Categoría padre (opcional)</label>
-              <select id="parentCategoria" class="form-input">
-                <option value="">Sin categoría padre</option>
-              </select>
-            </div>
+              <div class="form-group">
+                <label for="descripcion" class="form-label">Descripción</label>
+                <textarea
+                  id="descripcion"
+                  class="form-input"
+                  rows="3"
+                  placeholder="Describe brevemente la categoría"
+                ></textarea>
+              </div>
 
-            <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.5rem;">
-              <button type="reset" class="btn btn-secondary">Limpiar</button>
-              <button type="submit" class="btn btn-primary" id="guardarBtn">
-                <span id="guardarBtnText">Guardar categoría</span>
-                <div class="spinner" id="guardarBtnSpinner" style="display: none;"></div>
+              <div class="form-group">
+                <label for="parentCategoria" class="form-label"
+                  >Categoría padre (opcional)</label
+                >
+                <select id="parentCategoria" class="form-input">
+                  <option value="">Sin categoría padre</option>
+                </select>
+              </div>
+
+              <div
+                style="
+                  display: flex;
+                  justify-content: flex-end;
+                  gap: 1rem;
+                  margin-top: 1.5rem;
+                "
+              >
+                <button type="reset" class="btn btn-secondary">Limpiar</button>
+                <button type="submit" class="btn btn-primary" id="guardarBtn">
+                  <span id="guardarBtnText">Guardar categoría</span>
+                  <div
+                    class="spinner"
+                    id="guardarBtnSpinner"
+                    style="display: none"
+                  ></div>
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Listado de categorías -->
+          <div class="admin-table-container">
+            <div class="admin-table-header">
+              <h2 class="admin-table-title">Listado de categorías</h2>
+              <button class="btn btn-secondary" id="btnRefrescar">
+                Actualizar
               </button>
             </div>
-          </form>
-        </div>
 
-        <!-- Listado de categorías -->
-        <div class="admin-table-container">
-          <div class="admin-table-header">
-            <h2 class="admin-table-title">Listado de categorías</h2>
-            <button class="btn btn-secondary" id="btnRefrescar">🔄 Actualizar</button>
-          </div>
+            <div id="loadingCategorias" class="loading">
+              <div class="spinner"></div>
+            </div>
 
-          <div id="loadingCategorias" class="loading">
-            <div class="spinner"></div>
-          </div>
+            <div style="overflow-x: auto">
+              <table
+                class="admin-table"
+                id="categoriasTable"
+                style="display: none"
+              >
+                <thead>
+                  <tr>
+                    <th>Nombre</th>
+                    <th>Descripción</th>
+                    <th>Categoría padre</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="categoriasTableBody"></tbody>
+              </table>
+            </div>
 
-          <div style="overflow-x: auto;">
-            <table class="admin-table" id="categoriasTable" style="display: none;">
-              <thead>
-                <tr>
-                  <th>Nombre</th>
-                  <th>Descripción</th>
-                  <th>Categoría padre</th>
-                  <th>Acciones</th>
-                </tr>
-              </thead>
-              <tbody id="categoriasTableBody"></tbody>
-            </table>
-          </div>
-
-          <div id="emptyCategorias" class="empty-state" style="display: none;">
-            <div class="empty-state-icon">🏷️</div>
-            <h3 class="empty-state-title">No hay categorías registradas</h3>
-            <p class="empty-state-text">Crea una categoría para iniciar la gestión del catálogo.</p>
+            <div id="emptyCategorias" class="empty-state" style="display: none">
+              <div class="empty-state-icon">🏷️</div>
+              <h3 class="empty-state-title">No hay categorías registradas</h3>
+              <p class="empty-state-text">
+                Crea una categoría para iniciar la gestión del catálogo.
+              </p>
+            </div>
           </div>
         </div>
-      </div>
-    </main>
-  </div>
+      </main>
+    </div>
 
-  <script src="js/api.js"></script>
-  <script>
-    const adminToken = localStorage.getItem('razoconnect_admin_token');
-    if (!adminToken) {
-      window.location.href = '/login.html';
-    }
+    <script src="js/api.js"></script>
+    <script>
+      const adminToken = localStorage.getItem("razoconnect_admin_token");
+      if (!adminToken) {
+        window.location.href = "/login.html";
+      }
 
-    const parentSelect = document.getElementById('parentCategoria');
-    const categoriasTable = document.getElementById('categoriasTable');
-    const categoriasTableBody = document.getElementById('categoriasTableBody');
-    const loadingCategorias = document.getElementById('loadingCategorias');
-    const emptyCategorias = document.getElementById('emptyCategorias');
-    const btnRefrescar = document.getElementById('btnRefrescar');
-    const categoriaForm = document.getElementById('categoriaForm');
-    const guardarBtn = document.getElementById('guardarBtn');
-    const guardarBtnText = document.getElementById('guardarBtnText');
-    const guardarBtnSpinner = document.getElementById('guardarBtnSpinner');
+      const parentSelect = document.getElementById("parentCategoria");
+      const categoriasTable = document.getElementById("categoriasTable");
+      const categoriasTableBody = document.getElementById(
+        "categoriasTableBody"
+      );
+      const loadingCategorias = document.getElementById("loadingCategorias");
+      const emptyCategorias = document.getElementById("emptyCategorias");
+      const btnRefrescar = document.getElementById("btnRefrescar");
+      const categoriaForm = document.getElementById("categoriaForm");
+      const guardarBtn = document.getElementById("guardarBtn");
+      const guardarBtnText = document.getElementById("guardarBtnText");
+      const guardarBtnSpinner = document.getElementById("guardarBtnSpinner");
 
-    let categoriasCache = [];
-    let categoriaEditando = null;
+      let categoriasCache = [];
+      let categoriaEditando = null;
 
-    const applyFormDefaults = () => {
-      categoriaEditando = null;
-      guardarBtn.disabled = false;
-      guardarBtnText.textContent = 'Guardar categoría';
-      guardarBtnText.style.display = 'inline';
-      guardarBtnSpinner.style.display = 'none';
-      populateParentOptions();
-      parentSelect.value = '';
-    };
-
-    const headers = {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${adminToken}`
-    };
-
-    const fetchCategorias = async () => {
-      try {
-        loadingCategorias.style.display = 'flex';
-        categoriasTable.style.display = 'none';
-        emptyCategorias.style.display = 'none';
-
-        const response = await fetch(`${API_BASE_URL}/admin/categorias`, {
-          method: 'GET',
-          headers
-        });
-
-        const result = await response.json();
-
-        if (!response.ok || !result.success) {
-          throw new Error(result.message || 'No se pudieron cargar las categorías');
-        }
-
-        categoriasCache = result.data.categorias || [];
-        renderCategorias();
+      const applyFormDefaults = () => {
+        categoriaEditando = null;
+        guardarBtn.disabled = false;
+        guardarBtnText.textContent = "Guardar categoría";
+        guardarBtnText.style.display = "inline";
+        guardarBtnSpinner.style.display = "none";
         populateParentOptions();
-
-      } catch (error) {
-        console.error('Error al cargar categorías:', error);
-        showToast(error.message || 'Error al cargar categorías', 'error');
-        categoriasTable.style.display = 'none';
-        emptyCategorias.style.display = 'flex';
-      } finally {
-        loadingCategorias.style.display = 'none';
-      }
-    };
-
-    const populateParentOptions = () => {
-      const current = categoriaEditando?.categoriaId || null;
-      parentSelect.innerHTML = '<option value="">Sin categoría padre</option>';
-
-      categoriasCache
-        .filter(cat => cat.categoriaId !== current)
-        .forEach(cat => {
-          const option = document.createElement('option');
-          option.value = cat.categoriaId;
-          option.textContent = cat.nombre;
-          parentSelect.appendChild(option);
-        });
-    };
-
-    const renderCategorias = () => {
-      if (!categoriasCache.length) {
-        categoriasTable.style.display = 'none';
-        emptyCategorias.style.display = 'flex';
-        return;
-      }
-
-      categoriasTableBody.innerHTML = categoriasCache
-        .map(cat => {
-          const parentName = cat.parentNombre ? `${cat.parentNombre}` : 'Sin padre';
-
-          return `
-            <tr>
-              <td>${cat.nombre}</td>
-              <td>${cat.descripcion || '<span class="text-muted">Sin descripción</span>'}</td>
-              <td>${parentName}</td>
-              <td>
-                <div class="table-actions">
-                  <button class="btn btn-secondary" data-action="edit" data-id="${cat.categoriaId}">Editar</button>
-                  <button class="btn btn-danger" data-action="delete" data-id="${cat.categoriaId}">Eliminar</button>
-                </div>
-              </td>
-            </tr>
-          `;
-        })
-        .join('');
-
-      categoriasTable.style.display = 'table';
-      emptyCategorias.style.display = 'none';
-    };
-
-    const resetForm = () => {
-      categoriaForm.reset();
-      applyFormDefaults();
-    };
-
-    categoriaForm.addEventListener('submit', async (event) => {
-      event.preventDefault();
-
-      const formData = {
-        nombre: categoriaForm.nombre.value.trim(),
-        descripcion: categoriaForm.descripcion.value.trim() || null,
-        parentCategoriaId: categoriaForm.parentCategoria.value || null
+        parentSelect.value = "";
       };
 
-      if (!formData.nombre) {
-        showToast('El nombre es obligatorio', 'warning');
-        return;
-      }
+      const headers = {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${adminToken}`,
+      };
 
-      guardarBtn.disabled = true;
-      guardarBtnSpinner.style.display = 'inline-block';
-      guardarBtnText.style.display = 'none';
-
-      try {
-        let response;
-
-        if (categoriaEditando) {
-          response = await fetch(`${API_BASE_URL}/admin/categorias/${categoriaEditando.categoriaId}`, {
-            method: 'PUT',
-            headers,
-            body: JSON.stringify(formData)
-          });
-        } else {
-          response = await fetch(`${API_BASE_URL}/admin/categorias`, {
-            method: 'POST',
-            headers,
-            body: JSON.stringify(formData)
-          });
-        }
-
-        const result = await response.json();
-
-        if (!response.ok || !result.success) {
-          throw new Error(result.message || 'Error al guardar la categoría');
-        }
-
-        showToast(result.message || 'Categoría guardada correctamente', 'success');
-        resetForm();
-        fetchCategorias();
-
-      } catch (error) {
-        console.error('Error al guardar la categoría:', error);
-        showToast(error.message || 'No se pudo guardar la categoría', 'error');
-      } finally {
-        guardarBtn.disabled = false;
-        guardarBtnSpinner.style.display = 'none';
-        guardarBtnText.style.display = 'inline';
-      }
-    });
-
-    categoriasTableBody.addEventListener('click', async (event) => {
-      const actionBtn = event.target.closest('button[data-action]');
-      if (!actionBtn) return;
-
-      const action = actionBtn.dataset.action;
-      const id = parseInt(actionBtn.dataset.id, 10);
-
-      const categoria = categoriasCache.find(cat => cat.categoriaId === id);
-      if (!categoria) return;
-
-      if (action === 'edit') {
-        categoriaEditando = categoria;
-        populateParentOptions();
-        categoriaForm.nombre.value = categoria.nombre;
-        categoriaForm.descripcion.value = categoria.descripcion || '';
-        categoriaForm.parentCategoria.value = categoria.parentCategoriaId || '';
-        guardarBtnText.textContent = 'Actualizar categoría';
-        showToast(`Editando categoría: ${categoria.nombre}`, 'info');
-      }
-
-      if (action === 'delete') {
-        const confirmDelete = confirm(`¿Eliminar la categoría "${categoria.nombre}"? Esta acción no se puede deshacer.`);
-        if (!confirmDelete) return;
-
+      const fetchCategorias = async () => {
         try {
-          const response = await fetch(`${API_BASE_URL}/admin/categorias/${id}`, {
-            method: 'DELETE',
-            headers
+          loadingCategorias.style.display = "flex";
+          categoriasTable.style.display = "none";
+          emptyCategorias.style.display = "none";
+
+          const response = await fetch(`${API_BASE_URL}/admin/categorias`, {
+            method: "GET",
+            headers,
           });
 
           const result = await response.json();
 
           if (!response.ok || !result.success) {
-            throw new Error(result.message || 'No se pudo eliminar la categoría');
+            throw new Error(
+              result.message || "No se pudieron cargar las categorías"
+            );
           }
 
-          showToast(result.message || 'Categoría eliminada correctamente', 'success');
-          if (categoriaEditando && categoriaEditando.categoriaId === id) {
-            resetForm();
-          }
-          fetchCategorias();
-
+          categoriasCache = result.data.categorias || [];
+          renderCategorias();
+          populateParentOptions();
         } catch (error) {
-          console.error('Error al eliminar categoría:', error);
-          showToast(error.message || 'No se pudo eliminar la categoría', 'error');
+          console.error("Error al cargar categorías:", error);
+          showToast(error.message || "Error al cargar categorías", "error");
+          categoriasTable.style.display = "none";
+          emptyCategorias.style.display = "flex";
+        } finally {
+          loadingCategorias.style.display = "none";
         }
-      }
-    });
+      };
 
-    btnRefrescar.addEventListener('click', () => {
-      fetchCategorias();
-    });
+      const populateParentOptions = () => {
+        const current = categoriaEditando?.categoriaId || null;
+        parentSelect.innerHTML =
+          '<option value="">Sin categoría padre</option>';
 
-    categoriaForm.addEventListener('reset', () => {
-      requestAnimationFrame(() => {
+        categoriasCache
+          .filter((cat) => cat.categoriaId !== current)
+          .forEach((cat) => {
+            const option = document.createElement("option");
+            option.value = cat.categoriaId;
+            option.textContent = cat.nombre;
+            parentSelect.appendChild(option);
+          });
+      };
+
+      const renderCategorias = () => {
+        if (!categoriasCache.length) {
+          categoriasTable.style.display = "none";
+          emptyCategorias.style.display = "flex";
+          return;
+        }
+
+        categoriasTableBody.innerHTML = categoriasCache
+          .map((cat) => {
+            const parentName = cat.parentNombre
+              ? `${cat.parentNombre}`
+              : "Sin padre";
+
+            return `
+            <tr>
+              <td>${cat.nombre}</td>
+              <td>${
+                cat.descripcion ||
+                '<span class="text-muted">Sin descripción</span>'
+              }</td>
+              <td>${parentName}</td>
+              <td>
+                <div class="table-actions">
+                  <button class="btn btn-secondary" data-action="edit" data-id="${
+                    cat.categoriaId
+                  }">Editar</button>
+                  <button class="btn btn-danger" data-action="delete" data-id="${
+                    cat.categoriaId
+                  }">Eliminar</button>
+                </div>
+              </td>
+            </tr>
+          `;
+          })
+          .join("");
+
+        categoriasTable.style.display = "table";
+        emptyCategorias.style.display = "none";
+      };
+
+      const resetForm = () => {
+        categoriaForm.reset();
         applyFormDefaults();
-        showToast('Formulario limpiado', 'info');
-      });
-    });
+      };
 
-    // Inicialización
-    window.addEventListener('DOMContentLoaded', () => {
-      fetchCategorias();
-    });
-  </script>
-</body>
+      categoriaForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+
+        const formData = {
+          nombre: categoriaForm.nombre.value.trim(),
+          descripcion: categoriaForm.descripcion.value.trim() || null,
+          parentCategoriaId: categoriaForm.parentCategoria.value || null,
+        };
+
+        if (!formData.nombre) {
+          showToast("El nombre es obligatorio", "warning");
+          return;
+        }
+
+        guardarBtn.disabled = true;
+        guardarBtnSpinner.style.display = "inline-block";
+        guardarBtnText.style.display = "none";
+
+        try {
+          let response;
+
+          if (categoriaEditando) {
+            response = await fetch(
+              `${API_BASE_URL}/admin/categorias/${categoriaEditando.categoriaId}`,
+              {
+                method: "PUT",
+                headers,
+                body: JSON.stringify(formData),
+              }
+            );
+          } else {
+            response = await fetch(`${API_BASE_URL}/admin/categorias`, {
+              method: "POST",
+              headers,
+              body: JSON.stringify(formData),
+            });
+          }
+
+          const result = await response.json();
+
+          if (!response.ok || !result.success) {
+            throw new Error(result.message || "Error al guardar la categoría");
+          }
+
+          showToast(
+            result.message || "Categoría guardada correctamente",
+            "success"
+          );
+          resetForm();
+          fetchCategorias();
+        } catch (error) {
+          console.error("Error al guardar la categoría:", error);
+          showToast(
+            error.message || "No se pudo guardar la categoría",
+            "error"
+          );
+        } finally {
+          guardarBtn.disabled = false;
+          guardarBtnSpinner.style.display = "none";
+          guardarBtnText.style.display = "inline";
+        }
+      });
+
+      categoriasTableBody.addEventListener("click", async (event) => {
+        const actionBtn = event.target.closest("button[data-action]");
+        if (!actionBtn) return;
+
+        const action = actionBtn.dataset.action;
+        const id = parseInt(actionBtn.dataset.id, 10);
+
+        const categoria = categoriasCache.find((cat) => cat.categoriaId === id);
+        if (!categoria) return;
+
+        if (action === "edit") {
+          categoriaEditando = categoria;
+          populateParentOptions();
+          categoriaForm.nombre.value = categoria.nombre;
+          categoriaForm.descripcion.value = categoria.descripcion || "";
+          categoriaForm.parentCategoria.value =
+            categoria.parentCategoriaId || "";
+          guardarBtnText.textContent = "Actualizar categoría";
+          showToast(`Editando categoría: ${categoria.nombre}`, "info");
+        }
+
+        if (action === "delete") {
+          const confirmDelete = confirm(
+            `¿Eliminar la categoría "${categoria.nombre}"? Esta acción no se puede deshacer.`
+          );
+          if (!confirmDelete) return;
+
+          try {
+            const response = await fetch(
+              `${API_BASE_URL}/admin/categorias/${id}`,
+              {
+                method: "DELETE",
+                headers,
+              }
+            );
+
+            const result = await response.json();
+
+            if (!response.ok || !result.success) {
+              throw new Error(
+                result.message || "No se pudo eliminar la categoría"
+              );
+            }
+
+            showToast(
+              result.message || "Categoría eliminada correctamente",
+              "success"
+            );
+            if (categoriaEditando && categoriaEditando.categoriaId === id) {
+              resetForm();
+            }
+            fetchCategorias();
+          } catch (error) {
+            console.error("Error al eliminar categoría:", error);
+            showToast(
+              error.message || "No se pudo eliminar la categoría",
+              "error"
+            );
+          }
+        }
+      });
+
+      btnRefrescar.addEventListener("click", () => {
+        fetchCategorias();
+      });
+
+      categoriaForm.addEventListener("reset", () => {
+        requestAnimationFrame(() => {
+          applyFormDefaults();
+          showToast("Formulario limpiado", "info");
+        });
+      });
+
+      // Inicialización
+      window.addEventListener("DOMContentLoaded", () => {
+        fetchCategorias();
+      });
+    </script>
+  </body>
 </html>

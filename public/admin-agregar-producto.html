@@ -13,6 +13,55 @@
 
     <link rel="stylesheet" href="css/styles.css" />
     <link rel="stylesheet" href="css/admin.css" />
+    <style>
+      .checkbox-grid {
+        display: grid;
+        gap: 0.75rem;
+        grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+        margin-top: 0.75rem;
+      }
+
+      .checkbox-card {
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.85rem 1rem;
+        border: 1px solid rgba(79, 70, 229, 0.2);
+        border-radius: 0.85rem;
+        background: rgba(79, 70, 229, 0.04);
+        cursor: pointer;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease,
+          background 0.2s ease;
+      }
+
+      .checkbox-card:hover {
+        border-color: rgba(79, 70, 229, 0.45);
+        box-shadow: 0 6px 16px rgba(79, 70, 229, 0.15);
+        background: rgba(79, 70, 229, 0.08);
+      }
+
+      .checkbox-card input[type="checkbox"] {
+        width: 1.1rem;
+        height: 1.1rem;
+      }
+
+      .checkbox-card-label {
+        font-weight: 600;
+        color: #1f2937;
+      }
+
+      .checkbox-card input[type="checkbox"]:checked + .checkbox-card-label {
+        color: #4338ca;
+      }
+
+      .form-hint {
+        display: block;
+        margin-top: 0.35rem;
+        font-size: 0.825rem;
+        color: #6b7280;
+      }
+    </style>
   </head>
   <body>
     <div class="admin-layout">
@@ -172,6 +221,22 @@
                     </select>
                   </div>
 
+                  <div class="form-group">
+                    <label class="form-label">Presentaciones Disponibles</label>
+                    <div id="presentacionesContainer" class="checkbox-grid">
+                      <div class="empty-state" id="presentacionesPlaceholder">
+                        <div class="empty-state-icon">⏳</div>
+                        <h3 class="empty-state-title">Cargando tamaños...</h3>
+                        <p class="empty-state-text">
+                          Espera un momento mientras obtenemos el catálogo.
+                        </p>
+                      </div>
+                    </div>
+                    <small class="form-hint"
+                      >Selecciona cómo se venderá este producto maestro.
+                    </small>
+                  </div>
+
                   <div class="alert alert-warning" style="margin-top: 0.5rem">
                     <strong>Después de guardar:</strong>
                     <ul style="margin: 0.5rem 0 0 1.2rem; font-size: 0.9rem">
@@ -238,7 +303,7 @@
                 <h2 class="admin-table-title">Productos maestros existentes</h2>
                 <button
                   type="button"
-                  class="btn btn-outline"
+                  class="btn btn-secondary"
                   id="refreshMastersBtn"
                   style="padding: 0.35rem 0.75rem"
                 >
@@ -372,6 +437,96 @@
         }
       }
 
+      // Load tamaños de paquetes
+      async function loadTamanos() {
+        const container = document.getElementById("presentacionesContainer");
+        const placeholder = document.getElementById(
+          "presentacionesPlaceholder"
+        );
+
+        try {
+          const response = await fetch(
+            `${API_BASE_URL}/admin/tamanos-paquetes`,
+            {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${adminToken}`,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+
+          placeholder?.remove();
+
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+          }
+
+          const data = await response.json();
+          if (!data.success || !Array.isArray(data.data?.tamanos)) {
+            throw new Error("Respuesta inválida del servidor");
+          }
+
+          if (!data.data.tamanos.length) {
+            container.innerHTML = `
+              <div class="empty-state" style="margin-top: 0.75rem">
+                <div class="empty-state-icon">📭</div>
+                <h3 class="empty-state-title">Sin tamaños disponibles</h3>
+                <p class="empty-state-text">
+                  Agrega registros en Cat_TamanoPaquetes para mostrarlos aquí.
+                </p>
+              </div>`;
+            return;
+          }
+
+          const fragment = document.createDocumentFragment();
+
+          data.data.tamanos.forEach((tamano) => {
+            const inputId = `tamano-${tamano.tamanoId}`;
+            const wrapper = document.createElement("label");
+            wrapper.className = "checkbox-card";
+            wrapper.htmlFor = inputId;
+
+            const checkbox = document.createElement("input");
+            checkbox.type = "checkbox";
+            checkbox.name = "tamanoIds";
+            checkbox.value = tamano.tamanoId;
+            checkbox.id = inputId;
+
+            const badge = document.createElement("span");
+            badge.className = "checkbox-card-label";
+            const valor = tamano.valor ?? null;
+            const etiquetaCatalogo = tamano.etiqueta?.trim();
+
+            const labelText =
+              valor === 1 ? "Venta por Pieza (Individual)" : `Pack de ${valor}`;
+
+            badge.textContent = etiquetaCatalogo || labelText;
+
+            wrapper.appendChild(checkbox);
+            wrapper.appendChild(badge);
+            fragment.appendChild(wrapper);
+          });
+
+          container.innerHTML = "";
+          container.appendChild(fragment);
+        } catch (error) {
+          console.error("Error loading tamaños:", error);
+          container.innerHTML = `
+            <div class="empty-state" style="margin-top: 0.75rem">
+              <div class="empty-state-icon">⚠️</div>
+              <h3 class="empty-state-title">No se pudieron cargar</h3>
+              <p class="empty-state-text">
+                Intenta refrescar la página o vuelve más tarde.
+              </p>
+            </div>`;
+          showToast(
+            "No se pudieron cargar los tamaños disponibles. Intenta nuevamente.",
+            "error"
+          );
+        }
+      }
+
       // Handle form submission
       document
         .getElementById("productoForm")
@@ -390,11 +545,16 @@
             console.log("📦 Iniciando creación de producto maestro...");
             console.log("🔑 Token presente:", !!adminToken);
 
+            const tamanoIdsSeleccionados = Array.from(
+              document.querySelectorAll('input[name="tamanoIds"]:checked')
+            ).map((checkbox) => Number.parseInt(checkbox.value, 10));
+
             const formData = {
               nombre: document.getElementById("nombre").value.trim(),
               descripcion:
                 document.getElementById("descripcion").value.trim() || null,
               categoriaId: document.getElementById("categoriaId").value || null,
+              tamanoIds: tamanoIdsSeleccionados,
             };
 
             console.log("📋 Datos del producto maestro:", formData);
@@ -574,6 +734,7 @@
       }
 
       loadMasterProducts();
+      loadTamanos();
     </script>
   </body>
 </html>

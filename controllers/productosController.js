@@ -1,4 +1,4 @@
-const db = require('../db');
+const db = require("../db");
 
 /**
  * Obtener todos los productos con imagen principal
@@ -34,7 +34,7 @@ const obtenerProductos = async (req, res) => {
         SELECT 1
         FROM producto_variantes pv
         WHERE pv.productoid = p.productoid
-          AND pv.preciopaquete BETWEEN $${indiceMin} AND $${indiceMax}
+          AND pv.preciounitario BETWEEN $${indiceMin} AND $${indiceMax}
       )`);
     } else if (precioMin) {
       valores.push(precioMin);
@@ -43,7 +43,7 @@ const obtenerProductos = async (req, res) => {
         SELECT 1
         FROM producto_variantes pv
         WHERE pv.productoid = p.productoid
-          AND pv.preciopaquete >= $${indiceMin}
+          AND pv.preciounitario >= $${indiceMin}
       )`);
     } else if (precioMax) {
       valores.push(precioMax);
@@ -52,7 +52,7 @@ const obtenerProductos = async (req, res) => {
         SELECT 1
         FROM producto_variantes pv
         WHERE pv.productoid = p.productoid
-          AND pv.preciopaquete <= $${indiceMax}
+          AND pv.preciounitario <= $${indiceMax}
       )`);
     }
 
@@ -67,7 +67,7 @@ const obtenerProductos = async (req, res) => {
       )`);
     }
 
-    if (stock === 'true') {
+    if (stock === "true") {
       filtros.push(`EXISTS (
         SELECT 1
         FROM producto_variantes pv
@@ -76,9 +76,8 @@ const obtenerProductos = async (req, res) => {
       )`);
     }
 
-    const whereClause = filtros.length > 0
-      ? `WHERE ${filtros.join(' AND ')}`
-      : '';
+    const whereClause =
+      filtros.length > 0 ? `WHERE ${filtros.join(" AND ")}` : "";
 
     const query = `
       SELECT
@@ -91,7 +90,7 @@ const obtenerProductos = async (req, res) => {
         c.descripcion AS categoriadescripcion,
         variante_min.varianteid AS varianteid_precio_min,
         variante_min.sku AS sku_precio_min,
-        variante_min.preciopaquete AS precio_desde,
+        variante_min.preciounitario AS precio_desde,
         imagen.url_imagen,
         imagen.textoalternativo,
         stats.total_variantes,
@@ -104,10 +103,10 @@ const obtenerProductos = async (req, res) => {
           pv.sku,
           pv.dimensiones,
           pv.stock,
-          pv.preciopaquete
+          pv.preciounitario
         FROM producto_variantes pv
         WHERE pv.productoid = p.productoid
-        ORDER BY pv.preciopaquete ASC NULLS LAST, pv.varianteid ASC
+        ORDER BY pv.preciounitario ASC NULLS LAST, pv.varianteid ASC
         LIMIT 1
       ) variante_min ON TRUE
       LEFT JOIN LATERAL (
@@ -117,7 +116,7 @@ const obtenerProductos = async (req, res) => {
         FROM producto_variantes pv
         JOIN producto_imagenes pi ON pi.varianteid = pv.varianteid
         WHERE pv.productoid = p.productoid
-        ORDER BY pv.preciopaquete ASC NULLS LAST, pi.orden ASC NULLS LAST, pi.imagenid ASC
+        ORDER BY pv.preciounitario ASC NULLS LAST, pi.orden ASC NULLS LAST, pi.imagenid ASC
         LIMIT 1
       ) imagen ON TRUE
       LEFT JOIN (
@@ -134,51 +133,60 @@ const obtenerProductos = async (req, res) => {
 
     const result = await db.query(query, valores);
 
-    const productos = result.rows.map(row => {
-      const totalVariantes = row.total_variantes !== null ? parseInt(row.total_variantes, 10) : 0;
-      const variantesConStock = row.variantes_con_stock !== null ? parseInt(row.variantes_con_stock, 10) : 0;
+    const productos = result.rows.map((row) => {
+      const totalVariantes =
+        row.total_variantes !== null ? parseInt(row.total_variantes, 10) : 0;
+      const variantesConStock =
+        row.variantes_con_stock !== null
+          ? parseInt(row.variantes_con_stock, 10)
+          : 0;
 
-      const varianteDestacada = row.varianteid_precio_min ? {
-        varianteId: row.varianteid_precio_min,
-        sku: row.sku_precio_min,
-        dimensiones: row.dimensiones,
-        stock: row.stock !== null ? parseInt(row.stock, 10) : null,
-        precioPaquete: row.precio_desde !== null ? parseFloat(row.precio_desde) : null
-      } : null;
+      const varianteDestacada = row.varianteid_precio_min
+        ? {
+            varianteId: row.varianteid_precio_min,
+            sku: row.sku_precio_min,
+            dimensiones: row.dimensiones,
+            stock: row.stock !== null ? parseInt(row.stock, 10) : null,
+            precioUnitario:
+              row.precio_desde !== null ? parseFloat(row.precio_desde) : null,
+          }
+        : null;
 
       return {
         productoId: row.productoid,
         nombreProducto: row.nombreproducto,
         descripcion: row.descripcion,
-        categoria: row.categoriaid ? {
-          categoriaId: row.categoriaid,
-          nombre: row.categorianombre,
-          descripcion: row.categoriadescripcion
-        } : null,
-        precioDesde: row.precio_desde !== null ? parseFloat(row.precio_desde) : null,
+        categoria: row.categoriaid
+          ? {
+              categoriaId: row.categoriaid,
+              nombre: row.categorianombre,
+              descripcion: row.categoriadescripcion,
+            }
+          : null,
+        precioDesde:
+          row.precio_desde !== null ? parseFloat(row.precio_desde) : null,
         imagenUrl: row.url_imagen || null,
         imagenAlt: row.textoalternativo || null,
         totalVariantes,
         variantesConStock,
-        varianteDestacada
+        varianteDestacada,
       };
     });
 
     res.status(200).json({
       success: true,
-      message: 'Productos obtenidos exitosamente',
+      message: "Productos obtenidos exitosamente",
       data: {
         productos,
-        total: productos.length
-      }
+        total: productos.length,
+      },
     });
-
   } catch (error) {
-    console.error('Error al obtener productos:', error);
+    console.error("Error al obtener productos:", error);
     res.status(500).json({
       success: false,
-      message: 'Error al obtener los productos',
-      error: error.message
+      message: "Error al obtener los productos",
+      error: error.message,
     });
   }
 };
@@ -196,22 +204,22 @@ const obtenerDimensiones = async (req, res) => {
        ORDER BY dimension ASC`
     );
 
-    const dimensiones = result.rows.map(row => row.dimension);
+    const dimensiones = result.rows.map((row) => row.dimension);
 
     res.status(200).json({
       success: true,
-      message: 'Dimensiones obtenidas exitosamente',
+      message: "Dimensiones obtenidas exitosamente",
       data: {
         dimensiones,
-        total: dimensiones.length
-      }
+        total: dimensiones.length,
+      },
     });
   } catch (error) {
-    console.error('Error al obtener dimensiones:', error);
+    console.error("Error al obtener dimensiones:", error);
     res.status(500).json({
       success: false,
-      message: 'Error al obtener las dimensiones',
-      error: error.message
+      message: "Error al obtener las dimensiones",
+      error: error.message,
     });
   }
 };
@@ -227,7 +235,7 @@ const obtenerProductoPorId = async (req, res) => {
     if (!id || isNaN(id)) {
       return res.status(400).json({
         success: false,
-        message: 'ID de producto inválido'
+        message: "ID de producto inválido",
       });
     }
 
@@ -249,7 +257,7 @@ const obtenerProductoPorId = async (req, res) => {
     if (productoResult.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        message: 'Producto no encontrado'
+        message: "Producto no encontrado",
       });
     }
 
@@ -258,11 +266,11 @@ const obtenerProductoPorId = async (req, res) => {
     const variantesResult = await db.query(
       `SELECT
          pv.varianteid,
+         pv.productoid,
          pv.sku,
          pv.dimensiones,
          pv.costounitario,
-         pv.piezasporpaquete,
-         pv.preciopaquete,
+         pv.preciounitario,
          pv.stock,
          pv.tipoproductoid,
          pv.medidaid,
@@ -285,10 +293,11 @@ const obtenerProductoPorId = async (req, res) => {
       [id]
     );
 
-    const variantes = variantesResult.rows.map(row => {
-      const piezasPorPaquete = row.piezasporpaquete !== null ? parseInt(row.piezasporpaquete, 10) : null;
-      const precioPaquete = row.preciopaquete !== null ? parseFloat(row.preciopaquete) : null;
-      const costoUnitario = row.costounitario !== null ? parseFloat(row.costounitario) : null;
+    const variantes = variantesResult.rows.map((row) => {
+      const precioUnitario =
+        row.preciounitario !== null ? parseFloat(row.preciounitario) : null;
+      const costoUnitario =
+        row.costounitario !== null ? parseFloat(row.costounitario) : null;
       const stock = row.stock !== null ? parseInt(row.stock, 10) : null;
 
       const imagenes = Array.isArray(row.imagenes)
@@ -296,33 +305,36 @@ const obtenerProductoPorId = async (req, res) => {
             imagenId: img.imagenId,
             url: img.url,
             alt: img.alt,
-            orden: img.orden !== null && img.orden !== undefined ? parseInt(img.orden, 10) : null
+            orden:
+              img.orden !== null && img.orden !== undefined
+                ? parseInt(img.orden, 10)
+                : null,
           }))
         : [];
 
       return {
         varianteId: row.varianteid,
         productoId: row.productoid,
+        productoId: row.productoid,
         sku: row.sku,
         dimensiones: row.dimensiones,
         costoUnitario,
-        piezasPorPaquete,
-        precioPaquete,
-        precioPorPieza: precioPaquete !== null && piezasPorPaquete
-          ? parseFloat((precioPaquete / piezasPorPaquete).toFixed(2))
-          : null,
+        precioUnitario,
         stock,
-        tipoProductoId: row.tipoproductoid !== null ? parseInt(row.tipoproductoid, 10) : null,
+        tipoProductoId:
+          row.tipoproductoid !== null ? parseInt(row.tipoproductoid, 10) : null,
         medidaId: row.medidaid !== null ? parseInt(row.medidaid, 10) : null,
-        imagenes
+        imagenes,
       };
     });
 
     const totalVariantes = variantes.length;
-    const variantesConStock = variantes.filter(v => typeof v.stock === 'number' && v.stock > 0).length;
+    const variantesConStock = variantes.filter(
+      (v) => typeof v.stock === "number" && v.stock > 0
+    ).length;
     const precios = variantes
-      .map(v => v.precioPaquete)
-      .filter(precio => typeof precio === 'number' && !Number.isNaN(precio));
+      .map((v) => v.precioUnitario)
+      .filter((precio) => typeof precio === "number" && !Number.isNaN(precio));
     const precioDesde = precios.length ? Math.min(...precios) : null;
     const precioHasta = precios.length ? Math.max(...precios) : null;
 
@@ -331,32 +343,33 @@ const obtenerProductoPorId = async (req, res) => {
       nombreProducto: producto.nombreproducto,
       descripcion: producto.descripcion,
       activo: producto.activo,
-      categoria: producto.categoriaid ? {
-        categoriaId: producto.categoriaid,
-        nombre: producto.categorianombre,
-        descripcion: producto.categoriadescripcion
-      } : null,
+      categoria: producto.categoriaid
+        ? {
+            categoriaId: producto.categoriaid,
+            nombre: producto.categorianombre,
+            descripcion: producto.categoriadescripcion,
+          }
+        : null,
       totalVariantes,
       variantesConStock,
       precioDesde,
-      precioHasta
+      precioHasta,
     };
 
     res.status(200).json({
       success: true,
-      message: 'Producto obtenido exitosamente',
+      message: "Producto obtenido exitosamente",
       data: {
         producto: productoDetalle,
-        variantes
-      }
+        variantes,
+      },
     });
-
   } catch (error) {
-    console.error('Error al obtener producto:', error);
+    console.error("Error al obtener producto:", error);
     res.status(500).json({
       success: false,
-      message: 'Error al obtener el producto',
-      error: error.message
+      message: "Error al obtener el producto",
+      error: error.message,
     });
   }
 };
@@ -379,27 +392,26 @@ const obtenerCategorias = async (req, res) => {
     const result = await db.query(query);
 
     // Formatear la respuesta
-    const categorias = result.rows.map(row => ({
+    const categorias = result.rows.map((row) => ({
       categoriaId: row.categoriaid,
       nombre: row.nombre,
-      descripcion: row.descripcion
+      descripcion: row.descripcion,
     }));
 
     res.status(200).json({
       success: true,
-      message: 'Categorías obtenidas exitosamente',
+      message: "Categorías obtenidas exitosamente",
       data: {
         categorias,
-        total: categorias.length
-      }
+        total: categorias.length,
+      },
     });
-
   } catch (error) {
-    console.error('Error al obtener categorías:', error);
+    console.error("Error al obtener categorías:", error);
     res.status(500).json({
       success: false,
-      message: 'Error al obtener las categorías',
-      error: error.message
+      message: "Error al obtener las categorías",
+      error: error.message,
     });
   }
 };
@@ -424,28 +436,27 @@ const obtenerAgentesPublicos = async (req, res) => {
     const result = await db.query(query);
 
     // Formatear la respuesta
-    const agentes = result.rows.map(row => ({
+    const agentes = result.rows.map((row) => ({
       agenteId: row.agenteid,
       codigoAgente: row.codigoagente,
       nombre: row.nombre,
-      apellido: row.apellido
+      apellido: row.apellido,
     }));
 
     res.status(200).json({
       success: true,
-      message: 'Agentes obtenidos exitosamente',
+      message: "Agentes obtenidos exitosamente",
       data: {
         agentes,
-        total: agentes.length
-      }
+        total: agentes.length,
+      },
     });
-
   } catch (error) {
-    console.error('Error al obtener agentes públicos:', error);
+    console.error("Error al obtener agentes públicos:", error);
     res.status(500).json({
       success: false,
-      message: 'Error al obtener la lista de agentes',
-      error: error.message
+      message: "Error al obtener la lista de agentes",
+      error: error.message,
     });
   }
 };
@@ -455,5 +466,5 @@ module.exports = {
   obtenerProductoPorId,
   obtenerCategorias,
   obtenerAgentesPublicos,
-  obtenerDimensiones
+  obtenerDimensiones,
 };

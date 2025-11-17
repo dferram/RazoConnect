@@ -1,386 +1,545 @@
 <!DOCTYPE html>
 <html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Crear Orden de Compra - Admin RazoConnect</title>
-  
-  <!-- PROTECCIÓN DE AUTENTICACIÓN ADMIN -->
-  <script src="js/auth-guard-admin.js"></script>
-  
-  <!-- SISTEMA DE RENOVACIÓN DE TOKENS -->
-  <script src="js/token-refresh.js"></script>
-  
-  <link rel="stylesheet" href="css/styles.css">
-  <link rel="stylesheet" href="css/admin.css">
-</head>
-<body>
-  <div class="admin-layout">
-    <!-- Sidebar -->
-    <aside class="admin-sidebar">
-      <div class="admin-brand">
-        <a href="/admin-dashboard.html" class="admin-brand-logo">
-          📦 RazoConnect
-        </a>
-        <div class="admin-brand-subtitle">Panel admin</div>
-      </div>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Crear Orden de Compra - Admin RazoConnect</title>
 
-      <nav class="admin-nav">
-        <div class="admin-nav-section">
-          <div class="admin-nav-title">Principal</div>
-          <a href="/admin-dashboard.html" class="admin-nav-link">
-            <span class="admin-nav-icon">📊</span>
-            <span>Dashboard</span>
+    <!-- PROTECCIÓN DE AUTENTICACIÓN ADMIN -->
+    <script src="js/auth-guard-admin.js"></script>
+
+    <!-- SISTEMA DE RENOVACIÓN DE TOKENS -->
+    <script src="js/token-refresh.js"></script>
+
+    <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/admin.css" />
+  </head>
+  <body>
+    <div class="admin-layout">
+      <!-- Sidebar -->
+      <aside class="admin-sidebar">
+        <div class="admin-brand">
+          <a href="/admin-dashboard.html" class="admin-brand-logo">
+            📦 RazoConnect
           </a>
+          <div class="admin-brand-subtitle">Panel admin</div>
         </div>
 
-        <div class="admin-nav-section">
-          <div class="admin-nav-title">Gestión</div>
-          <a href="/admin-pedidos.html" class="admin-nav-link">
-            <span class="admin-nav-icon">📦</span>
-            <span>Pedidos</span>
-          </a>
-          <a href="/admin-agregar-producto.html" class="admin-nav-link">
-            <span class="admin-nav-icon">🎁</span>
-            <span>Productos</span>
-          </a>
-          <a href="/admin-clientes.html" class="admin-nav-link">
-            <span class="admin-nav-icon">👥</span>
-            <span>Clientes</span>
-          </a>
-          <a href="/admin-agentes.html" class="admin-nav-link">
-            <span class="admin-nav-icon">💼</span>
-            <span>Agentes</span>
-          </a>
-        </div>
-
-        <div class="admin-nav-section">
-          <div class="admin-nav-title">Financiero</div>
-          <a href="/admin-comisiones.html" class="admin-nav-link">
-            <span class="admin-nav-icon">💰</span>
-            <span>Comisiones</span>
-          </a>
-          <a href="/admin-inventario.html" class="admin-nav-link">
-            <span class="admin-nav-icon">📈</span>
-            <span>Inventario</span>
-          </a>
-          <a href="/admin-reportes.html" class="admin-nav-link">
-            <span class="admin-nav-icon">📑</span>
-            <span>Reportes</span>
-          </a>
-        </div>
-
-        <div class="admin-nav-section">
-          <div class="admin-nav-title">Compras</div>
-          <a href="/admin-proveedores.html" class="admin-nav-link">
-            <span class="admin-nav-icon">🏭</span>
-            <span>Proveedores</span>
-          </a>
-          <a href="/admin-crear-oc.html" class="admin-nav-link active">
-            <span class="admin-nav-icon">📋</span>
-            <span>Nueva orden de compra</span>
-          </a>
-          <a href="/admin-recibir-inventario.html" class="admin-nav-link">
-            <span class="admin-nav-icon">📥</span>
-            <span>Recibir inventario</span>
-          </a>
-        </div>
-      </nav>
-    </aside>
-
-    <!-- Main Content -->
-    <main class="admin-main">
-      <header class="admin-header">
-        <h1 class="admin-header-title">Nueva orden de compra</h1>
-        <div class="admin-header-actions">
-          <div class="admin-user-info">
-            <div class="admin-user-avatar" id="userAvatar">A</div>
-            <div class="admin-user-details">
-              <div class="admin-user-name" id="userName">Administrador</div>
-              <div class="admin-user-role" id="userRole">Admin</div>
-            </div>
+        <nav class="admin-nav">
+          <div class="admin-nav-section">
+            <div class="admin-nav-title">Principal</div>
+            <a href="/admin-dashboard.html" class="admin-nav-link">
+              <span class="admin-nav-icon">📊</span>
+              <span>Dashboard</span>
+            </a>
           </div>
-          <button class="admin-logout-btn" id="logoutBtn">Cerrar sesión</button>
-        </div>
-      </header>
 
-      <div class="admin-content">
-        <!-- Formulario Principal -->
-        <div class="admin-table-container" style="max-width: 1000px; margin: 0 auto;">
-          <form id="ordenCompraForm">
-            <!-- Información General -->
-            <div style="background: #FFF8F0; padding: 1.5rem; border-radius: 0.75rem; margin-bottom: 2rem;">
-              <h3 style="margin: 0 0 1rem 0; color: var(--razo-orange); font-size: 1.125rem;">📋 Información General</h3>
-              
-              <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem;">
-                <div class="form-group">
-                  <label for="proveedorId" class="form-label">Proveedor <span style="color: red;">*</span></label>
-                  <select id="proveedorId" class="form-input" required>
-                    <option value="">Seleccionar proveedor...</option>
-                  </select>
-                </div>
+          <div class="admin-nav-section">
+            <div class="admin-nav-title">Gestión</div>
+            <a href="/admin-pedidos.html" class="admin-nav-link">
+              <span class="admin-nav-icon">📦</span>
+              <span>Pedidos</span>
+            </a>
+            <a href="/admin-agregar-producto.html" class="admin-nav-link">
+              <span class="admin-nav-icon">🎁</span>
+              <span>Productos</span>
+            </a>
+            <a href="/admin-clientes.html" class="admin-nav-link">
+              <span class="admin-nav-icon">👥</span>
+              <span>Clientes</span>
+            </a>
+            <a href="/admin-agentes.html" class="admin-nav-link">
+              <span class="admin-nav-icon">💼</span>
+              <span>Agentes</span>
+            </a>
+          </div>
 
-                <div class="form-group">
-                  <label for="fechaEntregaEsperada" class="form-label">Fecha de Entrega Esperada <span style="color: red;">*</span></label>
-                  <input 
-                    type="date" 
-                    id="fechaEntregaEsperada" 
-                    class="form-input"
-                    required
-                  >
-                </div>
+          <div class="admin-nav-section">
+            <div class="admin-nav-title">Financiero</div>
+            <a href="/admin-comisiones.html" class="admin-nav-link">
+              <span class="admin-nav-icon">💰</span>
+              <span>Comisiones</span>
+            </a>
+            <a href="/admin-inventario.html" class="admin-nav-link">
+              <span class="admin-nav-icon">📈</span>
+              <span>Inventario</span>
+            </a>
+            <a href="/admin-reportes.html" class="admin-nav-link">
+              <span class="admin-nav-icon">📑</span>
+              <span>Reportes</span>
+            </a>
+          </div>
+
+          <div class="admin-nav-section">
+            <div class="admin-nav-title">Compras</div>
+            <a href="/admin-proveedores.html" class="admin-nav-link">
+              <span class="admin-nav-icon">🏭</span>
+              <span>Proveedores</span>
+            </a>
+            <a href="/admin-crear-oc.html" class="admin-nav-link active">
+              <span class="admin-nav-icon">📋</span>
+              <span>Nueva orden de compra</span>
+            </a>
+            <a href="/admin-recibir-inventario.html" class="admin-nav-link">
+              <span class="admin-nav-icon">📥</span>
+              <span>Recibir inventario</span>
+            </a>
+          </div>
+        </nav>
+      </aside>
+
+      <!-- Main Content -->
+      <main class="admin-main">
+        <header class="admin-header">
+          <h1 class="admin-header-title">Nueva orden de compra</h1>
+          <div class="admin-header-actions">
+            <div class="admin-user-info">
+              <div class="admin-user-avatar" id="userAvatar">A</div>
+              <div class="admin-user-details">
+                <div class="admin-user-name" id="userName">Administrador</div>
+                <div class="admin-user-role" id="userRole">Admin</div>
               </div>
             </div>
+            <button class="admin-logout-btn" id="logoutBtn">
+              Cerrar sesión
+            </button>
+          </div>
+        </header>
 
-            <!-- Productos -->
-            <div style="margin-bottom: 2rem;">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                <h2 style="margin: 0; color: var(--razo-gray-dark); font-size: 1.125rem;">🛍️ Productos a Solicitar</h2>
-                <button type="button" class="btn btn-primary" onclick="openProductoModal()" style="padding: 0.5rem 1rem;">
-                  ➕ Agregar Producto
+        <div class="admin-content">
+          <!-- Formulario Principal -->
+          <div
+            class="admin-table-container"
+            style="max-width: 1000px; margin: 0 auto"
+          >
+            <form id="ordenCompraForm">
+              <!-- Información General -->
+              <div
+                style="
+                  background: #fff8f0;
+                  padding: 1.5rem;
+                  border-radius: 0.75rem;
+                  margin-bottom: 2rem;
+                "
+              >
+                <h3
+                  style="
+                    margin: 0 0 1rem 0;
+                    color: var(--razo-orange);
+                    font-size: 1.125rem;
+                  "
+                >
+                  📋 Información General
+                </h3>
+
+                <div
+                  style="
+                    display: grid;
+                    grid-template-columns: repeat(2, 1fr);
+                    gap: 1.5rem;
+                  "
+                >
+                  <div class="form-group">
+                    <label for="proveedorId" class="form-label"
+                      >Proveedor <span style="color: red">*</span></label
+                    >
+                    <select id="proveedorId" class="form-input" required>
+                      <option value="">Seleccionar proveedor...</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="fechaEntregaEsperada" class="form-label"
+                      >Fecha de Entrega Esperada
+                      <span style="color: red">*</span></label
+                    >
+                    <input
+                      type="date"
+                      id="fechaEntregaEsperada"
+                      class="form-input"
+                      required
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <!-- Productos -->
+              <div style="margin-bottom: 2rem">
+                <div
+                  style="
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-bottom: 1rem;
+                  "
+                >
+                  <h2
+                    style="
+                      margin: 0;
+                      color: var(--razo-gray-dark);
+                      font-size: 1.125rem;
+                    "
+                  >
+                    🛍️ Productos a Solicitar
+                  </h2>
+                  <button
+                    type="button"
+                    class="btn btn-primary"
+                    onclick="openProductoModal()"
+                    style="padding: 0.5rem 1rem"
+                  >
+                    ➕ Agregar Producto
+                  </button>
+                </div>
+
+                <div id="productosContainer">
+                  <div class="empty-state" id="emptyProductos">
+                    <div class="empty-state-icon">📦</div>
+                    <h3 class="empty-state-title">
+                      No hay productos agregados
+                    </h3>
+                    <p class="empty-state-text">
+                      Haz clic en "Agregar Producto" para comenzar
+                    </p>
+                  </div>
+
+                  <div
+                    id="productosTable"
+                    style="display: none; overflow-x: auto"
+                  >
+                    <table class="admin-table">
+                      <thead>
+                        <tr>
+                          <th>Producto</th>
+                          <th>SKU</th>
+                          <th>Stock Actual</th>
+                          <th>Cantidad Solicitada</th>
+                          <th>Acciones</th>
+                        </tr>
+                      </thead>
+                      <tbody id="productosTableBody">
+                        <!-- Productos seleccionados aparecerán aquí -->
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Botones de acción -->
+              <div
+                style="
+                  display: flex;
+                  gap: 1rem;
+                  justify-content: flex-end;
+                  padding-top: 1.5rem;
+                  border-top: 2px solid var(--razo-gray-light);
+                "
+              >
+                <a
+                  href="/admin-proveedores.html"
+                  class="btn btn-secondary"
+                  style="
+                    padding: 0.75rem 1.5rem;
+                    text-decoration: none;
+                    display: inline-block;
+                  "
+                >
+                  Cancelar
+                </a>
+                <button
+                  type="submit"
+                  class="btn btn-primary"
+                  id="btnGuardar"
+                  style="padding: 0.75rem 2rem"
+                >
+                  <span id="btnGuardarText">Guardar Orden de Compra</span>
+                  <div
+                    class="spinner"
+                    id="btnGuardarSpinner"
+                    style="display: none"
+                  ></div>
                 </button>
               </div>
-
-              <div id="productosContainer">
-                <div class="empty-state" id="emptyProductos">
-                  <div class="empty-state-icon">📦</div>
-                  <h3 class="empty-state-title">No hay productos agregados</h3>
-                  <p class="empty-state-text">Haz clic en "Agregar Producto" para comenzar</p>
-                </div>
-
-                <div id="productosTable" style="display: none; overflow-x: auto;">
-                  <table class="admin-table">
-                    <thead>
-                      <tr>
-                        <th>Producto</th>
-                        <th>SKU</th>
-                        <th>Stock Actual</th>
-                        <th>Cantidad Solicitada</th>
-                        <th>Acciones</th>
-                      </tr>
-                    </thead>
-                    <tbody id="productosTableBody">
-                      <!-- Productos seleccionados aparecerán aquí -->
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-
-            <!-- Botones de acción -->
-            <div style="display: flex; gap: 1rem; justify-content: flex-end; padding-top: 1.5rem; border-top: 2px solid var(--razo-gray-light);">
-              <a href="/admin-proveedores.html" class="btn btn-secondary" style="padding: 0.75rem 1.5rem; text-decoration: none; display: inline-block;">
-                Cancelar
-              </a>
-              <button type="submit" class="btn btn-primary" id="btnGuardar" style="padding: 0.75rem 2rem;">
-                <span id="btnGuardarText">💾 Guardar Orden de Compra</span>
-                <div class="spinner" id="btnGuardarSpinner" style="display: none;"></div>
-              </button>
-            </div>
-          </form>
+            </form>
+          </div>
         </div>
-      </div>
-    </main>
-  </div>
+      </main>
+    </div>
 
-  <!-- Modal para seleccionar producto -->
-  <div id="productoModal" class="modal">
-    <div class="modal-content" style="background: white; padding: 2rem; border-radius: 1rem; box-shadow: 0 20px 60px rgba(0,0,0,0.3); max-width: 700px;">
-      <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 2px solid #F5F1ED;">
-        <h2 style="margin: 0; font-size: 1.5rem; color: #2D3748;">Agregar Producto</h2>
-        <button class="modal-close" onclick="closeProductoModal()" style="background: none; border: none; font-size: 2rem; cursor: pointer; color: #6B5D57; line-height: 1; padding: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: all 0.2s;">&times;</button>
-      </div>
-      
-      <div class="modal-body">
-        <!-- Búsqueda de productos -->
-        <div class="form-group">
-          <label for="buscarProducto" class="form-label">Buscar Producto</label>
-          <input 
-            type="text" 
-            id="buscarProducto" 
-            class="form-input" 
-            placeholder="Buscar por nombre o SKU..."
-            oninput="filtrarProductos()"
+    <!-- Modal para seleccionar producto -->
+    <div id="productoModal" class="modal">
+      <div
+        class="modal-content"
+        style="
+          background: white;
+          padding: 2rem;
+          border-radius: 1rem;
+          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+          max-width: 700px;
+        "
+      >
+        <div
+          class="modal-header"
+          style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #f5f1ed;
+          "
+        >
+          <h2 style="margin: 0; font-size: 1.5rem; color: #2d3748">
+            Agregar Producto
+          </h2>
+          <button
+            class="modal-close"
+            onclick="closeProductoModal()"
+            style="
+              background: none;
+              border: none;
+              font-size: 2rem;
+              cursor: pointer;
+              color: #6b5d57;
+              line-height: 1;
+              padding: 0;
+              width: 32px;
+              height: 32px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              border-radius: 50%;
+              transition: all 0.2s;
+            "
           >
+            &times;
+          </button>
         </div>
 
-        <!-- Loading -->
-        <div id="loadingProductos" class="loading" style="display: none;">
-          <div class="spinner"></div>
-        </div>
+        <div class="modal-body">
+          <!-- Búsqueda de productos -->
+          <div class="form-group">
+            <label for="buscarProducto" class="form-label"
+              >Buscar Producto</label
+            >
+            <input
+              type="text"
+              id="buscarProducto"
+              class="form-input"
+              placeholder="Buscar por nombre o SKU..."
+              oninput="filtrarProductos()"
+            />
+          </div>
 
-        <!-- Lista de productos -->
-        <div id="listaProductos" style="max-height: 400px; overflow-y: auto; border: 1px solid var(--razo-gray-light); border-radius: 0.5rem;">
-          <!-- Los productos se cargarán aquí dinámicamente -->
+          <!-- Loading -->
+          <div id="loadingProductos" class="loading" style="display: none">
+            <div class="spinner"></div>
+          </div>
+
+          <!-- Lista de productos -->
+          <div
+            id="listaProductos"
+            style="
+              max-height: 400px;
+              overflow-y: auto;
+              border: 1px solid var(--razo-gray-light);
+              border-radius: 0.5rem;
+            "
+          >
+            <!-- Los productos se cargarán aquí dinámicamente -->
+          </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <script src="js/api.js"></script>
-  <script>
-    // Authentication check
-    const adminToken = localStorage.getItem('razoconnect_admin_token');
-    if (!adminToken) {
-      window.location.href = '/login.html';
-    }
-
-    let todosLosProductos = [];
-    let productosSeleccionados = [];
-    const variantesPorProducto = new Map();
-
-    function obtenerEtiquetaVariante(vari) {
-      if (!vari) return 'Sin medida';
-      if (vari.dimensiones && vari.dimensiones.trim().length > 0) {
-        return vari.dimensiones.trim();
+    <script src="js/api.js"></script>
+    <script>
+      // Authentication check
+      const adminToken = localStorage.getItem("razoconnect_admin_token");
+      if (!adminToken) {
+        window.location.href = "/login.html";
       }
-      if (vari.medidaNombre && vari.medidaNombre.trim().length > 0) {
-        return vari.medidaNombre.trim();
-      }
-      if (Number.isFinite(vari.medidaId)) {
-        return `Medida #${vari.medidaId}`;
-      }
-      return 'Sin medida';
-    }
 
-    // Verify admin token
-    async function verifyAndLoadAdmin() {
-      try {
-        const response = await fetch(`${API_BASE_URL}/admin/verify`, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${adminToken}`,
-            'Content-Type': 'application/json'
-          }
-        });
+      let todosLosProductos = [];
+      let productosSeleccionados = [];
+      const variantesPorProducto = new Map();
 
-        if (!response.ok) throw new Error('Invalid token');
-
-        const data = await response.json();
-        if (data.success) {
-          const admin = data.data.admin;
-          document.getElementById('userName').textContent = admin.nombre;
-          document.getElementById('userRole').textContent = admin.rol === 'superadmin' ? 'Super Admin' : 'Admin';
-          
-          const words = admin.nombre.split(' ');
-          const initials = words.length >= 2 
-            ? `${words[0].charAt(0)}${words[1].charAt(0)}` 
-            : admin.nombre.substring(0, 2);
-          document.getElementById('userAvatar').textContent = initials.toUpperCase();
+      function obtenerEtiquetaVariante(vari) {
+        if (!vari) return "Sin medida";
+        if (vari.dimensiones && vari.dimensiones.trim().length > 0) {
+          return vari.dimensiones.trim();
         }
-      } catch (error) {
-        console.error('Error verifying admin:', error);
-        localStorage.removeItem('razoconnect_admin_token');
-        localStorage.removeItem('razoconnect_admin');
-        window.location.href = '/login.html';
-      }
-    }
-
-    // Cargar proveedores
-    async function loadProveedores() {
-      try {
-        const response = await fetch(`${API_BASE_URL}/admin/proveedores`, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${adminToken}`,
-            'Content-Type': 'application/json'
-          }
-        });
-
-        if (!response.ok) throw new Error('Error al cargar proveedores');
-
-        const data = await response.json();
-        if (data.success) {
-          const select = document.getElementById('proveedorId');
-          data.data.proveedores.forEach(proveedor => {
-            const option = document.createElement('option');
-            option.value = proveedor.proveedorid;
-            option.textContent = proveedor.nombreempresa;
-            select.appendChild(option);
-          });
+        if (vari.medidaNombre && vari.medidaNombre.trim().length > 0) {
+          return vari.medidaNombre.trim();
         }
-      } catch (error) {
-        console.error('Error loading proveedores:', error);
-        showToast('Error al cargar proveedores', 'error');
+        if (Number.isFinite(vari.medidaId)) {
+          return `Medida #${vari.medidaId}`;
+        }
+        return "Sin medida";
       }
-    }
 
-    // Cargar productos
-    async function loadProductos() {
-      try {
-        document.getElementById('loadingProductos').style.display = 'flex';
-
-        const response = await fetch(`${API_BASE_URL}/admin/productos`, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${adminToken}`,
-            'Content-Type': 'application/json'
-          }
-        });
-
-        if (!response.ok) throw new Error('Error al cargar productos');
-
-        const data = await response.json();
-        if (data.success) {
-          todosLosProductos = (data.data.productos || []).map(producto => ({
-            ...producto,
-            variantes: Array.isArray(producto.variantes) ? producto.variantes.map(v => ({
-              ...v,
-              sku: v.sku || 'Sin SKU',
-              dimensiones: v.dimensiones || '',
-              medidaNombre: v.medidaNombre || ''
-            })) : []
-          }));
-
-          variantesPorProducto.clear();
-          todosLosProductos.forEach(producto => {
-            if (Array.isArray(producto.variantes)) {
-              variantesPorProducto.set(producto.productoid, producto.variantes);
-            }
+      // Verify admin token
+      async function verifyAndLoadAdmin() {
+        try {
+          const response = await fetch(`${API_BASE_URL}/admin/verify`, {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${adminToken}`,
+              "Content-Type": "application/json",
+            },
           });
 
-          mostrarProductos(todosLosProductos);
+          if (!response.ok) throw new Error("Invalid token");
+
+          const data = await response.json();
+          if (data.success) {
+            const admin = data.data.admin;
+            document.getElementById("userName").textContent = admin.nombre;
+            document.getElementById("userRole").textContent =
+              admin.rol === "superadmin" ? "Super Admin" : "Admin";
+
+            const words = admin.nombre.split(" ");
+            const initials =
+              words.length >= 2
+                ? `${words[0].charAt(0)}${words[1].charAt(0)}`
+                : admin.nombre.substring(0, 2);
+            document.getElementById("userAvatar").textContent =
+              initials.toUpperCase();
+          }
+        } catch (error) {
+          console.error("Error verifying admin:", error);
+          localStorage.removeItem("razoconnect_admin_token");
+          localStorage.removeItem("razoconnect_admin");
+          window.location.href = "/login.html";
         }
-      } catch (error) {
-        console.error('Error loading productos:', error);
-        showToast('Error al cargar productos', 'error');
-      } finally {
-        document.getElementById('loadingProductos').style.display = 'none';
-      }
-    }
-
-    // Mostrar productos en el modal
-    function mostrarProductos(productos) {
-      const listaProductos = document.getElementById('listaProductos');
-
-      if (productos.length === 0) {
-        listaProductos.innerHTML = '<div style="padding: 2rem; text-align: center; color: var(--razo-gray-warm);">No se encontraron productos</div>';
-        return;
       }
 
-      listaProductos.innerHTML = productos.map(producto => {
-        const variantes = variantesPorProducto.get(producto.productoid) || [];
-        const vecesSeleccionado = productosSeleccionados.filter(p => p.productoId === producto.productoid).length;
-        const haySeleccion = vecesSeleccionado > 0;
-        const primeraVariante = variantes[0] || {};
-        const skuListado = primeraVariante.sku || producto.varianteDestacada?.sku || 'Sin SKU';
-        const stockListado = Number.isFinite(primeraVariante.stock)
-          ? primeraVariante.stock
-          : Number.isFinite(producto.stockTotal)
-            ? producto.stockTotal
-            : 0;
-        const stockClass = stockListado < 10 ? 'text-danger' : '';
-        const infoSeleccion = haySeleccion
-          ? `<div style="font-size: 0.75rem; color: var(--razo-gray-warm); margin-top: 0.35rem;">${vecesSeleccionado} variante(s) agregadas a la orden</div>`
-          : '';
-        const buttonLabel = haySeleccion ? '➕ Agregar otra medida' : '➕ Agregar';
+      // Cargar proveedores
+      async function loadProveedores() {
+        try {
+          const response = await fetch(`${API_BASE_URL}/admin/proveedores`, {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${adminToken}`,
+              "Content-Type": "application/json",
+            },
+          });
 
-        return `
-          <div style="padding: 1rem; border-bottom: 1px solid var(--razo-gray-light); display: flex; justify-content: space-between; align-items: center; ${haySeleccion ? 'background-color: #f9f9f9;' : ''}">
+          if (!response.ok) throw new Error("Error al cargar proveedores");
+
+          const data = await response.json();
+          if (data.success) {
+            const select = document.getElementById("proveedorId");
+            data.data.proveedores.forEach((proveedor) => {
+              const option = document.createElement("option");
+              option.value = proveedor.proveedorid;
+              option.textContent = proveedor.nombreempresa;
+              select.appendChild(option);
+            });
+          }
+        } catch (error) {
+          console.error("Error loading proveedores:", error);
+          showToast("Error al cargar proveedores", "error");
+        }
+      }
+
+      // Cargar productos
+      async function loadProductos() {
+        try {
+          document.getElementById("loadingProductos").style.display = "flex";
+
+          const response = await fetch(`${API_BASE_URL}/admin/productos`, {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${adminToken}`,
+              "Content-Type": "application/json",
+            },
+          });
+
+          if (!response.ok) throw new Error("Error al cargar productos");
+
+          const data = await response.json();
+          if (data.success) {
+            todosLosProductos = (data.data.productos || []).map((producto) => ({
+              ...producto,
+              variantes: Array.isArray(producto.variantes)
+                ? producto.variantes.map((v) => ({
+                    ...v,
+                    sku: v.sku || "Sin SKU",
+                    dimensiones: v.dimensiones || "",
+                    medidaNombre: v.medidaNombre || "",
+                  }))
+                : [],
+            }));
+
+            variantesPorProducto.clear();
+            todosLosProductos.forEach((producto) => {
+              if (Array.isArray(producto.variantes)) {
+                variantesPorProducto.set(
+                  producto.productoid,
+                  producto.variantes
+                );
+              }
+            });
+
+            mostrarProductos(todosLosProductos);
+          }
+        } catch (error) {
+          console.error("Error loading productos:", error);
+          showToast("Error al cargar productos", "error");
+        } finally {
+          document.getElementById("loadingProductos").style.display = "none";
+        }
+      }
+
+      // Mostrar productos en el modal
+      function mostrarProductos(productos) {
+        const listaProductos = document.getElementById("listaProductos");
+
+        if (productos.length === 0) {
+          listaProductos.innerHTML =
+            '<div style="padding: 2rem; text-align: center; color: var(--razo-gray-warm);">No se encontraron productos</div>';
+          return;
+        }
+
+        listaProductos.innerHTML = productos
+          .map((producto) => {
+            const variantes =
+              variantesPorProducto.get(producto.productoid) || [];
+            const vecesSeleccionado = productosSeleccionados.filter(
+              (p) => p.productoId === producto.productoid
+            ).length;
+            const haySeleccion = vecesSeleccionado > 0;
+            const primeraVariante = variantes[0] || {};
+            const skuListado =
+              primeraVariante.sku ||
+              producto.varianteDestacada?.sku ||
+              "Sin SKU";
+            const stockListado = Number.isFinite(primeraVariante.stock)
+              ? primeraVariante.stock
+              : Number.isFinite(producto.stockTotal)
+              ? producto.stockTotal
+              : 0;
+            const stockClass = stockListado < 10 ? "text-danger" : "";
+            const infoSeleccion = haySeleccion
+              ? `<div style="font-size: 0.75rem; color: var(--razo-gray-warm); margin-top: 0.35rem;">${vecesSeleccionado} variante(s) agregadas a la orden</div>`
+              : "";
+            const buttonLabel = haySeleccion
+              ? "➕ Agregar otra medida"
+              : "➕ Agregar";
+
+            return `
+          <div style="padding: 1rem; border-bottom: 1px solid var(--razo-gray-light); display: flex; justify-content: space-between; align-items: center; ${
+            haySeleccion ? "background-color: #f9f9f9;" : ""
+          }">
             <div style="flex: 1;">
-              <div style="font-weight: 600; color: var(--razo-gray-dark);">${producto.nombreproducto}</div>
+              <div style="font-weight: 600; color: var(--razo-gray-dark);">${
+                producto.nombreproducto
+              }</div>
               <div style="font-size: 0.875rem; color: var(--razo-gray-warm); margin-top: 0.25rem;">
-                <span>Variantes disponibles: <strong>${variantes.length}</strong></span> • 
+                <span>Variantes disponibles: <strong>${
+                  variantes.length
+                }</strong></span> • 
                 <span class="${stockClass}">Stock de referencia: <strong>${stockListado}</strong> paquetes</span>
               </div>
               ${infoSeleccion}
@@ -394,96 +553,123 @@
             </button>
           </div>
         `;
-      }).join('');
-    }
-
-    // Filtrar productos
-    function filtrarProductos() {
-      const busqueda = document.getElementById('buscarProducto').value.toLowerCase();
-      if (!busqueda) {
-        mostrarProductos(todosLosProductos);
-        return;
+          })
+          .join("");
       }
 
-      const productosFiltrados = todosLosProductos.filter(producto => {
-        const coincideNombre = producto.nombreproducto.toLowerCase().includes(busqueda);
-        const variantes = variantesPorProducto.get(producto.productoid) || [];
-        const coincideVariante = variantes.some(vari => {
-          const etiqueta = (obtenerEtiquetaVariante(vari) || '').toLowerCase();
-          const sku = (vari.sku || '').toLowerCase();
-          return etiqueta.includes(busqueda) || sku.includes(busqueda);
+      // Filtrar productos
+      function filtrarProductos() {
+        const busqueda = document
+          .getElementById("buscarProducto")
+          .value.toLowerCase();
+        if (!busqueda) {
+          mostrarProductos(todosLosProductos);
+          return;
+        }
+
+        const productosFiltrados = todosLosProductos.filter((producto) => {
+          const coincideNombre = producto.nombreproducto
+            .toLowerCase()
+            .includes(busqueda);
+          const variantes = variantesPorProducto.get(producto.productoid) || [];
+          const coincideVariante = variantes.some((vari) => {
+            const etiqueta = (
+              obtenerEtiquetaVariante(vari) || ""
+            ).toLowerCase();
+            const sku = (vari.sku || "").toLowerCase();
+            return etiqueta.includes(busqueda) || sku.includes(busqueda);
+          });
+          return coincideNombre || coincideVariante;
         });
-        return coincideNombre || coincideVariante;
-      });
 
-      mostrarProductos(productosFiltrados);
-    }
-
-    // Seleccionar producto
-    function seleccionarProducto(productoId) {
-      const producto = todosLosProductos.find(p => p.productoid === productoId);
-      if (!producto) return;
-
-      const variantes = variantesPorProducto.get(producto.productoid) || [];
-
-      if (variantes.length === 0) {
-        showToast('Este producto no tiene variantes registradas.', 'warning');
-        return;
+        mostrarProductos(productosFiltrados);
       }
 
-      const variantesUsadas = productosSeleccionados
-        .filter(p => p.productoId === producto.productoid)
-        .map(p => p.varianteSeleccionada);
+      // Seleccionar producto
+      function seleccionarProducto(productoId) {
+        const producto = todosLosProductos.find(
+          (p) => p.productoid === productoId
+        );
+        if (!producto) return;
 
-      const varianteInicial = variantes.find(vari => !variantesUsadas.includes(vari.varianteId)) || variantes[0];
+        const variantes = variantesPorProducto.get(producto.productoid) || [];
 
-      if (!varianteInicial) {
-        showToast('No hay variantes disponibles para agregar.', 'warning');
-        return;
+        if (variantes.length === 0) {
+          showToast("Este producto no tiene variantes registradas.", "warning");
+          return;
+        }
+
+        const variantesUsadas = productosSeleccionados
+          .filter((p) => p.productoId === producto.productoid)
+          .map((p) => p.varianteSeleccionada);
+
+        const varianteInicial =
+          variantes.find(
+            (vari) => !variantesUsadas.includes(vari.varianteId)
+          ) || variantes[0];
+
+        if (!varianteInicial) {
+          showToast("No hay variantes disponibles para agregar.", "warning");
+          return;
+        }
+
+        // Agregar a la lista de seleccionados
+        productosSeleccionados.push({
+          productoId: producto.productoid,
+          nombreProducto: producto.nombreproducto,
+          variantes,
+          varianteSeleccionada: varianteInicial.varianteId,
+          sku: varianteInicial.sku || "Sin SKU",
+          etiquetaMedida: obtenerEtiquetaVariante(varianteInicial),
+          medidaId: varianteInicial.medidaId || null,
+          dimensiones: varianteInicial.dimensiones || "",
+          stockActual: Number.isFinite(varianteInicial.stock)
+            ? varianteInicial.stock
+            : 0,
+          cantidadSolicitada: 1,
+        });
+
+        actualizarTablaProductos();
+        closeProductoModal();
+        showToast(`${producto.nombreproducto} agregado a la orden`, "success");
       }
 
-      // Agregar a la lista de seleccionados
-      productosSeleccionados.push({
-        productoId: producto.productoid,
-        nombreProducto: producto.nombreproducto,
-        variantes,
-        varianteSeleccionada: varianteInicial.varianteId,
-        sku: varianteInicial.sku || 'Sin SKU',
-        etiquetaMedida: obtenerEtiquetaVariante(varianteInicial),
-        medidaId: varianteInicial.medidaId || null,
-        dimensiones: varianteInicial.dimensiones || '',
-        stockActual: Number.isFinite(varianteInicial.stock) ? varianteInicial.stock : 0,
-        cantidadSolicitada: 1
-      });
+      // Actualizar tabla de productos seleccionados
+      function actualizarTablaProductos() {
+        const emptyProductos = document.getElementById("emptyProductos");
+        const productosTable = document.getElementById("productosTable");
+        const productosTableBody =
+          document.getElementById("productosTableBody");
 
-      actualizarTablaProductos();
-      closeProductoModal();
-      showToast(`${producto.nombreproducto} agregado a la orden`, 'success');
-    }
+        if (productosSeleccionados.length === 0) {
+          emptyProductos.style.display = "block";
+          productosTable.style.display = "none";
+          return;
+        }
 
-    // Actualizar tabla de productos seleccionados
-    function actualizarTablaProductos() {
-      const emptyProductos = document.getElementById('emptyProductos');
-      const productosTable = document.getElementById('productosTable');
-      const productosTableBody = document.getElementById('productosTableBody');
+        emptyProductos.style.display = "none";
+        productosTable.style.display = "block";
 
-      if (productosSeleccionados.length === 0) {
-        emptyProductos.style.display = 'block';
-        productosTable.style.display = 'none';
-        return;
-      }
+        productosTableBody.innerHTML = productosSeleccionados
+          .map((producto, index) => {
+            const variantesOptions = (producto.variantes || [])
+              .map((vari) => {
+                const selected =
+                  vari.varianteId === producto.varianteSeleccionada
+                    ? "selected"
+                    : "";
+                const etiqueta = obtenerEtiquetaVariante(vari);
+                return `<option value="${vari.varianteId}" data-sku="${
+                  vari.sku || ""
+                }" data-stock="${
+                  Number.isFinite(vari.stock) ? vari.stock : 0
+                }" data-medida="${vari.medidaId ?? ""}" data-dimensiones="${
+                  vari.dimensiones || ""
+                }" data-label="${etiqueta}" ${selected}>${etiqueta}</option>`;
+              })
+              .join("");
 
-      emptyProductos.style.display = 'none';
-      productosTable.style.display = 'block';
-
-      productosTableBody.innerHTML = productosSeleccionados.map((producto, index) => {
-        const variantesOptions = (producto.variantes || []).map(vari => {
-          const selected = vari.varianteId === producto.varianteSeleccionada ? 'selected' : '';
-          const etiqueta = obtenerEtiquetaVariante(vari);
-          return `<option value="${vari.varianteId}" data-sku="${vari.sku || ''}" data-stock="${Number.isFinite(vari.stock) ? vari.stock : 0}" data-medida="${vari.medidaId ?? ''}" data-dimensiones="${vari.dimensiones || ''}" data-label="${etiqueta}" ${selected}>${etiqueta}</option>`;
-        }).join('');
-
-        return `
+            return `
           <tr>
             <td>
               <strong>${producto.nombreProducto}</strong>
@@ -495,8 +681,12 @@
               </div>
             </td>
             <td>
-              <div style="font-weight: 600;">${producto.etiquetaMedida || 'Sin medida'}</div>
-              <div style="font-size: 0.75rem; color: var(--razo-gray-warm);">SKU: <code style="background: #f0f0f0; padding: 0.15rem 0.35rem; border-radius: 0.25rem;">${producto.sku}</code></div>
+              <div style="font-weight: 600;">${
+                producto.etiquetaMedida || "Sin medida"
+              }</div>
+              <div style="font-size: 0.75rem; color: var(--razo-gray-warm);">SKU: <code style="background: #f0f0f0; padding: 0.15rem 0.35rem; border-radius: 0.25rem;">${
+                producto.sku
+              }</code></div>
             </td>
             <td style="text-align: center;">${producto.stockActual} paq.</td>
             <td style="width: 150px;">
@@ -520,221 +710,246 @@
             </td>
           </tr>
         `;
-      }).join('');
-    }
-
-    function cambiarVariante(index, varianteId, optionEl) {
-      const varianteIdNumero = parseInt(varianteId, 10);
-      if (!Number.isInteger(varianteIdNumero)) {
-        showToast('Selecciona una variante válida', 'warning');
-        return;
+          })
+          .join("");
       }
 
-      const producto = productosSeleccionados[index];
-      producto.varianteSeleccionada = varianteIdNumero;
-      producto.sku = optionEl.dataset.sku || 'Sin SKU';
-      producto.stockActual = Number.isFinite(parseInt(optionEl.dataset.stock, 10)) ? parseInt(optionEl.dataset.stock, 10) : 0;
-      producto.medidaId = optionEl.dataset.medida ? parseInt(optionEl.dataset.medida, 10) : null;
-      producto.dimensiones = optionEl.dataset.dimensiones || '';
-      producto.etiquetaMedida = optionEl.dataset.label || 'Sin medida';
+      function cambiarVariante(index, varianteId, optionEl) {
+        const varianteIdNumero = parseInt(varianteId, 10);
+        if (!Number.isInteger(varianteIdNumero)) {
+          showToast("Selecciona una variante válida", "warning");
+          return;
+        }
 
-      actualizarTablaProductos();
-    }
+        const producto = productosSeleccionados[index];
+        producto.varianteSeleccionada = varianteIdNumero;
+        producto.sku = optionEl.dataset.sku || "Sin SKU";
+        producto.stockActual = Number.isFinite(
+          parseInt(optionEl.dataset.stock, 10)
+        )
+          ? parseInt(optionEl.dataset.stock, 10)
+          : 0;
+        producto.medidaId = optionEl.dataset.medida
+          ? parseInt(optionEl.dataset.medida, 10)
+          : null;
+        producto.dimensiones = optionEl.dataset.dimensiones || "";
+        producto.etiquetaMedida = optionEl.dataset.label || "Sin medida";
 
-    // Actualizar cantidad de un producto
-    function actualizarCantidad(index, nuevaCantidad) {
-      const cantidad = parseInt(nuevaCantidad);
-      if (cantidad > 0) {
-        productosSeleccionados[index].cantidadSolicitada = cantidad;
-      } else {
-        showToast('La cantidad debe ser mayor a 0', 'error');
         actualizarTablaProductos();
       }
-    }
 
-    // Eliminar producto
-    function eliminarProducto(index) {
-      const producto = productosSeleccionados[index];
-      productosSeleccionados.splice(index, 1);
-      actualizarTablaProductos();
-      showToast(`${producto.nombreProducto} eliminado de la orden`, 'info');
-    }
-
-    // Abrir modal de productos
-    function openProductoModal() {
-      document.getElementById('buscarProducto').value = '';
-      loadProductos();
-      document.getElementById('productoModal').style.display = 'flex';
-    }
-
-    // Cerrar modal de productos
-    function closeProductoModal() {
-      document.getElementById('productoModal').style.display = 'none';
-    }
-
-    // Enviar formulario
-    document.getElementById('ordenCompraForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-
-      const proveedorId = document.getElementById('proveedorId').value;
-      const fechaEntregaEsperada = document.getElementById('fechaEntregaEsperada').value;
-
-      if (!proveedorId) {
-        showToast('Debe seleccionar un proveedor', 'error');
-        return;
+      // Actualizar cantidad de un producto
+      function actualizarCantidad(index, nuevaCantidad) {
+        const cantidad = parseInt(nuevaCantidad);
+        if (cantidad > 0) {
+          productosSeleccionados[index].cantidadSolicitada = cantidad;
+        } else {
+          showToast("La cantidad debe ser mayor a 0", "error");
+          actualizarTablaProductos();
+        }
       }
 
-      if (!fechaEntregaEsperada) {
-        showToast('Debe especificar una fecha de entrega', 'error');
-        return;
+      // Eliminar producto
+      function eliminarProducto(index) {
+        const producto = productosSeleccionados[index];
+        productosSeleccionados.splice(index, 1);
+        actualizarTablaProductos();
+        showToast(`${producto.nombreProducto} eliminado de la orden`, "info");
       }
 
-      if (productosSeleccionados.length === 0) {
-        showToast('Debe agregar al menos un producto', 'error');
-        return;
+      // Abrir modal de productos
+      function openProductoModal() {
+        document.getElementById("buscarProducto").value = "";
+        loadProductos();
+        document.getElementById("productoModal").style.display = "flex";
       }
 
-      const btnGuardar = document.getElementById('btnGuardar');
-      const btnGuardarText = document.getElementById('btnGuardarText');
-      const btnGuardarSpinner = document.getElementById('btnGuardarSpinner');
+      // Cerrar modal de productos
+      function closeProductoModal() {
+        document.getElementById("productoModal").style.display = "none";
+      }
 
-      try {
-        btnGuardar.disabled = true;
-        btnGuardarText.style.display = 'none';
-        btnGuardarSpinner.style.display = 'block';
+      // Enviar formulario
+      document
+        .getElementById("ordenCompraForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
 
-        const response = await fetch(`${API_BASE_URL}/admin/ordenes-compra`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${adminToken}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            proveedorId: parseInt(proveedorId),
-            fechaEntregaEsperada,
-            productos: productosSeleccionados.map(p => ({
-              productoId: p.productoId,
-              varianteId: p.varianteSeleccionada,
-              medidaId: p.medidaId || null,
-              cantidadSolicitada: p.cantidadSolicitada
-            }))
-          })
+          const proveedorId = document.getElementById("proveedorId").value;
+          const fechaEntregaEsperada = document.getElementById(
+            "fechaEntregaEsperada"
+          ).value;
+
+          if (!proveedorId) {
+            showToast("Debe seleccionar un proveedor", "error");
+            return;
+          }
+
+          if (!fechaEntregaEsperada) {
+            showToast("Debe especificar una fecha de entrega", "error");
+            return;
+          }
+
+          if (productosSeleccionados.length === 0) {
+            showToast("Debe agregar al menos un producto", "error");
+            return;
+          }
+
+          const btnGuardar = document.getElementById("btnGuardar");
+          const btnGuardarText = document.getElementById("btnGuardarText");
+          const btnGuardarSpinner =
+            document.getElementById("btnGuardarSpinner");
+
+          try {
+            btnGuardar.disabled = true;
+            btnGuardarText.style.display = "none";
+            btnGuardarSpinner.style.display = "block";
+
+            const response = await fetch(
+              `${API_BASE_URL}/admin/ordenes-compra`,
+              {
+                method: "POST",
+                headers: {
+                  Authorization: `Bearer ${adminToken}`,
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  proveedorId: parseInt(proveedorId),
+                  fechaEntregaEsperada,
+                  productos: productosSeleccionados.map((p) => ({
+                    productoId: p.productoId,
+                    varianteId: p.varianteSeleccionada,
+                    medidaId: p.medidaId || null,
+                    cantidadSolicitada: p.cantidadSolicitada,
+                  })),
+                }),
+              }
+            );
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+              showToast("Orden de compra creada exitosamente", "success");
+              setTimeout(() => {
+                try {
+                  sessionStorage.setItem("_navigating", "true");
+                } catch (storageError) {
+                  console.warn(
+                    "No se pudo registrar navegación en sessionStorage:",
+                    storageError
+                  );
+                }
+                window.location.href = "/admin-recibir-inventario.html";
+              }, 1200);
+            } else {
+              showToast(
+                data.message || "Error al crear orden de compra",
+                "error"
+              );
+            }
+          } catch (error) {
+            console.error("Error saving orden:", error);
+            showToast("Error al conectar con el servidor", "error");
+          } finally {
+            btnGuardar.disabled = false;
+            btnGuardarText.style.display = "inline";
+            btnGuardarSpinner.style.display = "none";
+          }
         });
 
-        const data = await response.json();
+      // Establecer fecha mínima (hoy)
+      const today = new Date().toISOString().split("T")[0];
+      document
+        .getElementById("fechaEntregaEsperada")
+        .setAttribute("min", today);
 
-        if (response.ok && data.success) {
-          showToast('Orden de compra creada exitosamente', 'success');
-          setTimeout(() => {
-            try {
-              sessionStorage.setItem('_navigating', 'true');
-            } catch (storageError) {
-              console.warn('No se pudo registrar navegación en sessionStorage:', storageError);
-            }
-            window.location.href = '/admin-recibir-inventario.html';
-          }, 1200);
-        } else {
-          showToast(data.message || 'Error al crear orden de compra', 'error');
-        }
-      } catch (error) {
-        console.error('Error saving orden:', error);
-        showToast('Error al conectar con el servidor', 'error');
-      } finally {
-        btnGuardar.disabled = false;
-        btnGuardarText.style.display = 'inline';
-        btnGuardarSpinner.style.display = 'none';
-      }
-    });
-
-    // Establecer fecha mínima (hoy)
-    const today = new Date().toISOString().split('T')[0];
-    document.getElementById('fechaEntregaEsperada').setAttribute('min', today);
-
-    // Logout
-    document.getElementById('logoutBtn').addEventListener('click', () => {
-      localStorage.removeItem('razoconnect_admin_token');
-      localStorage.removeItem('razoconnect_admin');
-      showToast('Sesión cerrada', 'success');
-      setTimeout(() => {
-        window.location.href = '/login.html';
-      }, 500);
-    });
-
-    // Navigation handling for non-implemented modules
-    const navLinks = document.querySelectorAll('.admin-nav-link[data-module]');
-    navLinks.forEach(link => {
-      link.addEventListener('click', (e) => {
-        e.preventDefault();
-        const moduleName = link.querySelector('span:last-child').textContent;
-        showToast(`Módulo "${moduleName}" próximamente disponible`, 'info');
+      // Logout
+      document.getElementById("logoutBtn").addEventListener("click", () => {
+        localStorage.removeItem("razoconnect_admin_token");
+        localStorage.removeItem("razoconnect_admin");
+        showToast("Sesión cerrada", "success");
+        setTimeout(() => {
+          window.location.href = "/login.html";
+        }, 500);
       });
-    });
 
-    // Close modal when clicking outside
-    window.onclick = function(event) {
-      const modal = document.getElementById('productoModal');
-      if (event.target == modal) {
-        closeProductoModal();
+      // Navigation handling for non-implemented modules
+      const navLinks = document.querySelectorAll(
+        ".admin-nav-link[data-module]"
+      );
+      navLinks.forEach((link) => {
+        link.addEventListener("click", (e) => {
+          e.preventDefault();
+          const moduleName = link.querySelector("span:last-child").textContent;
+          showToast(`Módulo "${moduleName}" próximamente disponible`, "info");
+        });
+      });
+
+      // Close modal when clicking outside
+      window.onclick = function (event) {
+        const modal = document.getElementById("productoModal");
+        if (event.target == modal) {
+          closeProductoModal();
+        }
+      };
+
+      // Initialize
+      verifyAndLoadAdmin();
+      loadProveedores();
+    </script>
+
+    <style>
+      /* Modal styles */
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.6);
+        -webkit-backdrop-filter: blur(4px);
+        backdrop-filter: blur(4px);
+        justify-content: center;
+        align-items: center;
+        padding: 1rem;
+        overflow-y: auto;
       }
-    }
 
-    // Initialize
-    verifyAndLoadAdmin();
-    loadProveedores();
-  </script>
-
-  <style>
-    /* Modal styles */
-    .modal {
-      display: none;
-      position: fixed;
-      z-index: 1000;
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0, 0, 0, 0.6);
-      -webkit-backdrop-filter: blur(4px);
-      backdrop-filter: blur(4px);
-      justify-content: center;
-      align-items: center;
-      padding: 1rem;
-      overflow-y: auto;
-    }
-
-    .modal-content {
-      animation: modalSlideIn 0.3s ease-out;
-      max-height: 90vh;
-      overflow-y: auto;
-      position: relative;
-    }
-
-    .modal-close:hover {
-      background-color: var(--razo-gray-light);
-      color: var(--razo-orange);
-    }
-
-    @keyframes modalSlideIn {
-      from {
-        transform: translateY(-50px);
-        opacity: 0;
-      }
-      to {
-        transform: translateY(0);
-        opacity: 1;
-      }
-    }
-
-    .text-danger {
-      color: #ef4444;
-    }
-
-    @media (max-width: 768px) {
       .modal-content {
-        max-width: 95% !important;
-        padding: 1.5rem !important;
+        animation: modalSlideIn 0.3s ease-out;
+        max-height: 90vh;
+        overflow-y: auto;
+        position: relative;
       }
-    }
-  </style>
-</body>
+
+      .modal-close:hover {
+        background-color: var(--razo-gray-light);
+        color: var(--razo-orange);
+      }
+
+      @keyframes modalSlideIn {
+        from {
+          transform: translateY(-50px);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+
+      .text-danger {
+        color: #ef4444;
+      }
+
+      @media (max-width: 768px) {
+        .modal-content {
+          max-width: 95% !important;
+          padding: 1.5rem !important;
+        }
+      }
+    </style>
+  </body>
 </html>

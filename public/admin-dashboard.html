@@ -167,10 +167,10 @@
           <div class="admin-stat-card">
             <div class="admin-stat-header">
               <div class="admin-stat-content">
-                <h3>Valor de inventario</h3>
-                <div class="admin-stat-value" id="valorInventario">$0.00</div>
+                <h3>Valor inventario (venta)</h3>
+                <div class="admin-stat-value" id="valorInventarioVenta">$0.00</div>
                 <div class="admin-stat-change neutral">
-                  Stock valorizado disponible
+                  A costo: <strong id="valorInventarioCosto">$0.00</strong>
                 </div>
               </div>
               <div class="admin-stat-icon red">🏷️</div>
@@ -344,8 +344,23 @@
         }
 
         const data = await response.json();
-        if (data.success && data.data && typeof data.data.valorTotal !== 'undefined') {
-          document.getElementById('valorInventario').textContent = formatCurrency(data.data.valorTotal);
+        if (data.success && data.data) {
+          const valorVenta = typeof data.data.valorVenta !== 'undefined'
+            ? data.data.valorVenta
+            : data.data.valorTotal;
+          const valorCosto = typeof data.data.valorCosto !== 'undefined'
+            ? data.data.valorCosto
+            : null;
+
+          const ventaElement = document.getElementById('valorInventarioVenta');
+          const costoElement = document.getElementById('valorInventarioCosto');
+
+          if (ventaElement) {
+            ventaElement.textContent = formatCurrency(valorVenta || 0);
+          }
+          if (costoElement && valorCosto !== null) {
+            costoElement.textContent = formatCurrency(valorCosto);
+          }
         }
       } catch (error) {
         console.error('Error al cargar la valuación de inventario:', error);

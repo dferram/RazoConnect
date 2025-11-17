@@ -11,6 +11,7 @@ const logoutBtn = document.getElementById('logoutBtn');
 const fechaDesdeInput = document.getElementById('fechaDesde');
 const fechaHastaInput = document.getElementById('fechaHasta');
 const generarBtn = document.getElementById('generarReporteBtn');
+const estadoSelect = document.getElementById('filtro-estado-select');
 const loadingEl = document.getElementById('loadingReporte');
 const tableEl = document.getElementById('reportesTable');
 const tableBodyEl = document.getElementById('reportesTableBody');
@@ -77,9 +78,11 @@ function buildQueryParams() {
   const params = new URLSearchParams();
   const desde = fechaDesdeInput.value;
   const hasta = fechaHastaInput.value;
+  const estadoID = estadoSelect ? estadoSelect.value : '';
 
   if (desde) params.append('desde', desde);
   if (hasta) params.append('hasta', hasta);
+  if (estadoID) params.append('estadoID', estadoID);
 
   const queryString = params.toString();
   return queryString ? `?${queryString}` : '';
@@ -245,7 +248,35 @@ generarBtn.addEventListener('click', () => {
   fetchReporte();
 });
 
+async function loadEstadosFiltro() {
+  if (!estadoSelect) return;
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/public/estados`);
+    if (!response.ok) {
+      throw new Error('No se pudieron obtener los estados');
+    }
+
+    const data = await response.json();
+    const estados = data?.data?.estados || [];
+
+    estadoSelect.innerHTML = '<option value="">Todos los estados</option>';
+    estados.forEach(estado => {
+      const option = document.createElement('option');
+      option.value = estado.estadoId;
+      option.textContent = estado.nombre;
+      estadoSelect.appendChild(option);
+    });
+  } catch (error) {
+    console.error('Error al cargar estados para filtro:', error);
+    if (typeof showToast === 'function') {
+      showToast('No se pudieron cargar los estados', 'error');
+    }
+  }
+}
+
 // Cargar datos iniciales
 loadAdminProfile();
 fetchReporte();
 loadAgingBackorders();
+loadEstadosFiltro();

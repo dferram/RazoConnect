@@ -1,805 +1,1633 @@
 <!DOCTYPE html>
 <html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gestión de Inventario - Admin RazoConnect</title>
-  
-  <!-- PROTECCIÓN DE AUTENTICACIÓN ADMIN -->
-  <script src="js/auth-guard-admin.js"></script>
-  
-  <!-- SISTEMA DE RENOVACIÓN DE TOKENS -->
-  <script src="js/token-refresh.js"></script>
-  
-  <link rel="stylesheet" href="css/styles.css">
-  <link rel="stylesheet" href="css/admin.css">
-</head>
-<body>
-  <div class="admin-layout">
-    <!-- Sidebar -->
-    <aside class="admin-sidebar">
-      <div class="admin-brand">
-        <a href="/admin-dashboard.html" class="admin-brand-logo">
-          📦 RazoConnect
-        </a>
-        <div class="admin-brand-subtitle">Panel admin</div>
-      </div>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gestión de Inventario - Admin RazoConnect</title>
 
-      <nav class="admin-nav">
-        <div class="admin-nav-section">
-          <div class="admin-nav-title">Principal</div>
-          <a href="/admin-dashboard.html" class="admin-nav-link">
-            <span class="admin-nav-icon">📊</span>
-            <span>Dashboard</span>
+    <!-- PROTECCIÓN DE AUTENTICACIÓN ADMIN -->
+    <script src="js/auth-guard-admin.js"></script>
+
+    <!-- SISTEMA DE RENOVACIÓN DE TOKENS -->
+    <script src="js/token-refresh.js"></script>
+
+    <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/admin.css" />
+  </head>
+  <body>
+    <div class="admin-layout">
+      <!-- Sidebar -->
+      <aside class="admin-sidebar">
+        <div class="admin-brand">
+          <a href="/admin-dashboard.html" class="admin-brand-logo">
+            📦 RazoConnect
           </a>
+          <div class="admin-brand-subtitle">Panel admin</div>
         </div>
 
-        <div class="admin-nav-section">
-          <div class="admin-nav-title">Gestión</div>
-          <a href="/admin-pedidos.html" class="admin-nav-link">
-            <span class="admin-nav-icon">📦</span>
-            <span>Pedidos</span>
-          </a>
-          <a href="/admin-agregar-producto.html" class="admin-nav-link">
-            <span class="admin-nav-icon">🎁</span>
-            <span>Productos</span>
-          </a>
-          <a href="/admin-categorias.html" class="admin-nav-link">
-            <span class="admin-nav-icon">🏷️</span>
-            <span>Categorías</span>
-          </a>
-          <a href="/admin-clientes.html" class="admin-nav-link">
-            <span class="admin-nav-icon">👥</span>
-            <span>Clientes</span>
-          </a>
-          <a href="/admin-agentes.html" class="admin-nav-link">
-            <span class="admin-nav-icon">💼</span>
-            <span>Agentes</span>
-          </a>
-        </div>
+        <!-- Modal detalle de variantes -->
+        <div id="detalleModal" class="modal">
+          <div class="modal-content modal-detalle">
+            <div class="detalle-modal-header">
+              <div class="detalle-title-wrapper">
+                <span class="detalle-title-icon">📦</span>
+                <div>
+                  <h2 id="detalleModalTitle">Detalle de Variantes</h2>
+                  <p id="detalleModalSubtitle" class="detalle-modal-subtitle">
+                    Revisa la información de cada variante registrada.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                class="modal-close-btn"
+                id="btnCerrarDetalle"
+                aria-label="Cerrar"
+              >
+                ×
+              </button>
+            </div>
 
-        <div class="admin-nav-section">
-          <div class="admin-nav-title">Financiero</div>
-          <a href="/admin-comisiones.html" class="admin-nav-link">
-            <span class="admin-nav-icon">💰</span>
-            <span>Comisiones</span>
-          </a>
-          <a href="/admin-inventario.html" class="admin-nav-link active">
-            <span class="admin-nav-icon">📈</span>
-            <span>Inventario</span>
-          </a>
-          <a href="/admin-reportes.html" class="admin-nav-link">
-            <span class="admin-nav-icon">📑</span>
-            <span>Reportes</span>
-          </a>
-        </div>
+            <div id="detalleModalLoading" class="modal-loading">
+              <div class="spinner"></div>
+              <p>Cargando detalles del producto…</p>
+            </div>
 
-        <div class="admin-nav-section">
-          <div class="admin-nav-title">Compras</div>
-          <a href="/admin-proveedores.html" class="admin-nav-link">
-            <span class="admin-nav-icon">🏭</span>
-            <span>Proveedores</span>
-          </a>
-          <a href="/admin-crear-oc.html" class="admin-nav-link">
-            <span class="admin-nav-icon">📋</span>
-            <span>Nueva Orden de Compra</span>
-          </a>
-          <a href="/admin-recibir-inventario.html" class="admin-nav-link">
-            <span class="admin-nav-icon">📥</span>
-            <span>Recibir Inventario</span>
-          </a>
-        </div>
-      </nav>
-    </aside>
+            <div class="detalle-modal-body">
+              <div
+                id="detalleModalSummary"
+                class="detalle-summary"
+                style="display: none"
+              >
+                <div class="detalle-summary-top">
+                  <div class="detalle-summary-info">
+                    <div class="detalle-summary-label">Descripción</div>
+                    <p
+                      id="detalleProductoDescripcion"
+                      class="detalle-summary-description"
+                    >
+                      —
+                    </p>
+                  </div>
+                  <div class="detalle-summary-tags">
+                    <span class="detalle-badge" id="detalleProductoEstado"
+                      >Activo</span
+                    >
+                    <span
+                      class="detalle-badge secondary"
+                      id="detalleProductoCategoria"
+                      >Sin categoría</span
+                    >
+                  </div>
+                </div>
 
-    <!-- Main Content -->
-    <main class="admin-main">
-      <header class="admin-header">
-        <h1 class="admin-header-title">Gestión de inventario</h1>
-        
-        <div class="admin-header-actions">
-          <div class="admin-user-info">
-            <div class="admin-user-avatar" id="userAvatar">A</div>
-            <div class="admin-user-details">
-              <div class="admin-user-name" id="userName">Administrador</div>
-              <div class="admin-user-role" id="userRole">Admin</div>
+                <div class="detalle-metrics">
+                  <div class="detalle-metric-card gradient-orange">
+                    <span class="metric-label">Total de variantes</span>
+                    <span class="metric-value" id="detalleTotalVariantes"
+                      >0</span
+                    >
+                  </div>
+                  <div class="detalle-metric-card gradient-purple">
+                    <span class="metric-label">Variantes con stock</span>
+                    <span class="metric-value" id="detalleVariantesConStock"
+                      >0</span
+                    >
+                  </div>
+                  <div class="detalle-metric-card soft-card">
+                    <span class="metric-label">Variantes sin stock</span>
+                    <span class="metric-value" id="detalleVariantesSinStock"
+                      >0</span
+                    >
+                  </div>
+                  <div class="detalle-metric-card outline-card">
+                    <span class="metric-label">Precio más bajo</span>
+                    <span class="metric-value" id="detallePrecioDesde">—</span>
+                  </div>
+                  <div class="detalle-metric-card outline-card">
+                    <span class="metric-label">Precio más alto</span>
+                    <span class="metric-value" id="detallePrecioHasta">—</span>
+                  </div>
+                </div>
+              </div>
+
+              <div
+                id="detalleModalFeedback"
+                class="modal-feedback"
+                style="display: none"
+              ></div>
+
+              <div
+                id="detalleModalTableWrapper"
+                class="modal-table-wrapper"
+                style="display: none"
+              >
+                <table id="tabla-variantes" class="modal-table">
+                  <thead>
+                    <tr>
+                      <th>SKU</th>
+                      <th>Dimensiones</th>
+                      <th>Precio/Paquete</th>
+                      <th>Stock</th>
+                      <th>Estado</th>
+                      <th style="text-align: center">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="detalle-modal-footer">
+              <button
+                type="button"
+                class="btn btn-secondary"
+                id="btnCerrarDetalleFooter"
+              >
+                Cerrar
+              </button>
             </div>
           </div>
-          <button class="admin-logout-btn" id="logoutBtn">Cerrar sesión</button>
         </div>
-      </header>
 
-      <div class="admin-content">
-        <!-- Products Table -->
-        <div class="admin-table-container">
-          <div class="admin-table-header">
-            <h2 class="admin-table-title">Productos en inventario</h2>
-            <div style="display: flex; gap: 1rem;">
-              <input 
-                type="text" 
-                id="searchInput" 
-                placeholder="Buscar producto..." 
-                style="padding: 0.5rem 1rem; border: 2px solid var(--razo-gray-light); border-radius: 0.5rem; font-family: 'Inter', sans-serif; width: 250px;"
+        <nav class="admin-nav">
+          <div class="admin-nav-section">
+            <div class="admin-nav-title">Principal</div>
+            <a href="/admin-dashboard.html" class="admin-nav-link">
+              <span class="admin-nav-icon">📊</span>
+              <span>Dashboard</span>
+            </a>
+          </div>
+
+          <div class="admin-nav-section">
+            <div class="admin-nav-title">Gestión</div>
+            <a href="/admin-pedidos.html" class="admin-nav-link">
+              <span class="admin-nav-icon">📦</span>
+              <span>Pedidos</span>
+            </a>
+            <a href="/admin-agregar-producto.html" class="admin-nav-link">
+              <span class="admin-nav-icon">🎁</span>
+              <span>Productos</span>
+            </a>
+            <a href="/admin-categorias.html" class="admin-nav-link">
+              <span class="admin-nav-icon">🏷️</span>
+              <span>Categorías</span>
+            </a>
+            <a href="/admin-clientes.html" class="admin-nav-link">
+              <span class="admin-nav-icon">👥</span>
+              <span>Clientes</span>
+            </a>
+            <a href="/admin-agentes.html" class="admin-nav-link">
+              <span class="admin-nav-icon">💼</span>
+              <span>Agentes</span>
+            </a>
+          </div>
+
+          <div class="admin-nav-section">
+            <div class="admin-nav-title">Financiero</div>
+            <a href="/admin-comisiones.html" class="admin-nav-link">
+              <span class="admin-nav-icon">💰</span>
+              <span>Comisiones</span>
+            </a>
+            <a href="/admin-inventario.html" class="admin-nav-link active">
+              <span class="admin-nav-icon">📈</span>
+              <span>Inventario</span>
+            </a>
+            <a href="/admin-reportes.html" class="admin-nav-link">
+              <span class="admin-nav-icon">📑</span>
+              <span>Reportes</span>
+            </a>
+          </div>
+
+          <div class="admin-nav-section">
+            <div class="admin-nav-title">Compras</div>
+            <a href="/admin-proveedores.html" class="admin-nav-link">
+              <span class="admin-nav-icon">🏭</span>
+              <span>Proveedores</span>
+            </a>
+            <a href="/admin-crear-oc.html" class="admin-nav-link">
+              <span class="admin-nav-icon">📋</span>
+              <span>Nueva Orden de Compra</span>
+            </a>
+            <a href="/admin-recibir-inventario.html" class="admin-nav-link">
+              <span class="admin-nav-icon">📥</span>
+              <span>Recibir Inventario</span>
+            </a>
+          </div>
+        </nav>
+      </aside>
+
+      <!-- Main Content -->
+      <main class="admin-main">
+        <header class="admin-header">
+          <h1 class="admin-header-title">Gestión de inventario</h1>
+
+          <div class="admin-header-actions">
+            <div class="admin-user-info">
+              <div class="admin-user-avatar" id="userAvatar">A</div>
+              <div class="admin-user-details">
+                <div class="admin-user-name" id="userName">Administrador</div>
+                <div class="admin-user-role" id="userRole">Admin</div>
+              </div>
+            </div>
+            <button class="admin-logout-btn" id="logoutBtn">
+              Cerrar sesión
+            </button>
+          </div>
+        </header>
+
+        <div class="admin-content">
+          <!-- Products Table -->
+          <div class="admin-table-container">
+            <div class="admin-table-header">
+              <h2 class="admin-table-title">Productos en inventario</h2>
+              <div style="display: flex; gap: 1rem">
+                <input
+                  type="text"
+                  id="searchInput"
+                  placeholder="Buscar producto..."
+                  style="
+                    padding: 0.5rem 1rem;
+                    border: 2px solid var(--razo-gray-light);
+                    border-radius: 0.5rem;
+                    font-family: 'Inter', sans-serif;
+                    width: 250px;
+                  "
+                />
+                <button
+                  class="btn btn-secondary"
+                  onclick="loadProductos()"
+                  style="padding: 0.5rem 1.5rem"
+                >
+                  Actualizar
+                </button>
+              </div>
+            </div>
+
+            <div id="loadingProducts" class="loading">
+              <div class="spinner"></div>
+            </div>
+
+            <div style="overflow-x: auto">
+              <table
+                class="admin-table"
+                id="productsTable"
+                style="display: none"
               >
-              <button class="btn btn-secondary" onclick="loadProductos()" style="padding: 0.5rem 1.5rem;">
-                🔄 Actualizar
+                <thead>
+                  <tr>
+                    <th>Producto</th>
+                    <th>Categoría</th>
+                    <th>Variantes Registradas</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="productsTableBody">
+                  <!-- Products will be loaded here -->
+                </tbody>
+              </table>
+            </div>
+
+            <div id="emptyProducts" class="empty-state" style="display: none">
+              <div class="empty-state-icon">📦</div>
+              <h3 class="empty-state-title">No hay productos</h3>
+              <p class="empty-state-text">
+                Comienza agregando tu primer producto
+              </p>
+              <a
+                href="/admin-agregar-producto.html"
+                class="btn btn-primary"
+                style="text-decoration: none; display: inline-block"
+              >
+                + Agregar Producto
+              </a>
+            </div>
+
+            <!-- Paginación -->
+            <div
+              id="paginationContainer"
+              style="
+                display: none;
+                margin-top: 1.5rem;
+                padding: 1rem;
+                border-top: 1px solid #e5e7eb;
+              "
+            >
+              <div
+                style="
+                  display: flex;
+                  justify-content: space-between;
+                  align-items: center;
+                  flex-wrap: wrap;
+                  gap: 1rem;
+                "
+              >
+                <!-- Información de registros -->
+                <div style="color: var(--razo-gray-warm); font-size: 0.875rem">
+                  Mostrando <strong id="pageStart">1</strong> a
+                  <strong id="pageEnd">10</strong> de
+                  <strong id="totalRecords">0</strong> productos
+                </div>
+
+                <!-- Controles de paginación -->
+                <div style="display: flex; gap: 0.5rem; align-items: center">
+                  <button
+                    id="btnPrevPage"
+                    onclick="cambiarPagina('prev')"
+                    class="btn btn-secondary"
+                    style="
+                      padding: 0.5rem 1rem;
+                      font-size: 0.875rem;
+                      display: flex;
+                      align-items: center;
+                      gap: 0.5rem;
+                    "
+                    disabled
+                  >
+                    ← Anterior
+                  </button>
+
+                  <div id="pageNumbers" style="display: flex; gap: 0.25rem">
+                    <!-- Los números de página se generarán dinámicamente -->
+                  </div>
+
+                  <button
+                    id="btnNextPage"
+                    onclick="cambiarPagina('next')"
+                    class="btn btn-secondary"
+                    style="
+                      padding: 0.5rem 1rem;
+                      font-size: 0.875rem;
+                      display: flex;
+                      align-items: center;
+                      gap: 0.5rem;
+                    "
+                  >
+                    Siguiente →
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- Modal para ajustar stock -->
+    <div id="ajusteModal" class="modal">
+      <div
+        class="modal-content"
+        style="
+          background: white;
+          padding: 2rem;
+          border-radius: 1rem;
+          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+          max-width: 550px;
+        "
+      >
+        <div style="margin-bottom: 1.5rem">
+          <h2
+            style="
+              font-size: 1.5rem;
+              font-weight: 700;
+              color: #2d3748;
+              margin-bottom: 0.25rem;
+            "
+          >
+            Ajustar stock
+          </h2>
+          <p style="color: #718096; font-size: 0.875rem">
+            Modifica el inventario del producto
+          </p>
+        </div>
+        <div>
+          <p style="margin-bottom: 1rem">
+            <strong><span id="modalProductoNombre"></span></strong><br />
+            <span style="color: var(--razo-gray-warm)"
+              >Variante seleccionada:
+              <span id="modalVarianteResumen"></span></span
+            ><br />
+            <span style="color: var(--razo-gray-warm)"
+              >Stock actual:
+              <strong id="modalStockActual">0</strong> paquetes</span
+            >
+          </p>
+
+          <div class="form-group">
+            <label for="modalVariante" class="form-label"
+              >Selecciona la variante / medida</label
+            >
+            <select id="modalVariante" class="form-input"></select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Tipo de Ajuste:</label>
+            <div style="display: flex; gap: 1rem; margin-bottom: 1rem">
+              <button
+                class="btn btn-success"
+                id="btnEntrada"
+                onclick="setTipoAjuste('entrada')"
+                style="flex: 1; padding: 0.75rem"
+              >
+                ➕ Entrada
+              </button>
+              <button
+                class="btn btn-danger"
+                id="btnSalida"
+                onclick="setTipoAjuste('salida')"
+                style="flex: 1; padding: 0.75rem"
+              >
+                ➖ Salida
               </button>
             </div>
           </div>
 
-          <div id="loadingProducts" class="loading">
-            <div class="spinner"></div>
+          <div class="form-group">
+            <label for="modalCantidad" class="form-label"
+              >Cantidad (paquetes):</label
+            >
+            <input
+              type="number"
+              id="modalCantidad"
+              class="form-input"
+              placeholder="0"
+              min="1"
+              required
+            />
           </div>
 
-          <div style="overflow-x: auto;">
-            <table class="admin-table" id="productsTable" style="display: none;">
-              <thead>
-                <tr>
-                  <th>SKU</th>
-                  <th>Producto</th>
-                  <th>Precio/Paquete</th>
-                  <th>Piezas/Paquete</th>
-                  <th>Stock</th>
-                  <th>Estado</th>
-                  <th>Acciones</th>
-                </tr>
-              </thead>
-              <tbody id="productsTableBody">
-                <!-- Products will be loaded here -->
-              </tbody>
-            </table>
+          <div class="form-group">
+            <label for="modalMotivo" class="form-label"
+              >Motivo del ajuste:</label
+            >
+            <select id="modalMotivo" class="form-input">
+              <option value="">Seleccionar motivo...</option>
+              <option value="Recepción de Almacén">Recepción de Almacén</option>
+              <option value="Ajuste de Inventario">Ajuste de Inventario</option>
+              <option value="Devolución de Cliente">
+                Devolución de Cliente
+              </option>
+              <option value="Producto Dañado">Producto Dañado</option>
+              <option value="Merma">Merma</option>
+              <option value="Otro">Otro</option>
+            </select>
           </div>
 
-          <div id="emptyProducts" class="empty-state" style="display: none;">
-            <div class="empty-state-icon">📦</div>
-            <h3 class="empty-state-title">No hay productos</h3>
-            <p class="empty-state-text">Comienza agregando tu primer producto</p>
-            <a href="/admin-agregar-producto.html" class="btn btn-primary" style="text-decoration: none; display: inline-block;">
-              + Agregar Producto
-            </a>
+          <div class="form-group" id="motivoOtroGroup" style="display: none">
+            <label for="modalMotivoOtro" class="form-label"
+              >Especificar motivo:</label
+            >
+            <input
+              type="text"
+              id="modalMotivoOtro"
+              class="form-input"
+              placeholder="Describe el motivo..."
+            />
           </div>
-          
-          <!-- Paginación -->
-          <div id="paginationContainer" style="display: none; margin-top: 1.5rem; padding: 1rem; border-top: 1px solid #E5E7EB;">
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-              <!-- Información de registros -->
-              <div style="color: var(--razo-gray-warm); font-size: 0.875rem;">
-                Mostrando <strong id="pageStart">1</strong> a <strong id="pageEnd">10</strong> de <strong id="totalRecords">0</strong> productos
-              </div>
-              
-              <!-- Controles de paginación -->
-              <div style="display: flex; gap: 0.5rem; align-items: center;">
-                <button 
-                  id="btnPrevPage" 
-                  onclick="cambiarPagina('prev')" 
-                  class="btn btn-secondary" 
-                  style="padding: 0.5rem 1rem; font-size: 0.875rem; display: flex; align-items: center; gap: 0.5rem;"
-                  disabled>
-                  ← Anterior
-                </button>
-                
-                <div id="pageNumbers" style="display: flex; gap: 0.25rem;">
-                  <!-- Los números de página se generarán dinámicamente -->
-                </div>
-                
-                <button 
-                  id="btnNextPage" 
-                  onclick="cambiarPagina('next')" 
-                  class="btn btn-secondary" 
-                  style="padding: 0.5rem 1rem; font-size: 0.875rem; display: flex; align-items: center; gap: 0.5rem;">
-                  Siguiente →
-                </button>
-              </div>
-            </div>
+
+          <div class="alert alert-info" style="font-size: 0.875rem">
+            <strong>ℹ️ Nota:</strong> Este ajuste se registrará en el log de
+            inventario con tu ID de administrador.
           </div>
-        </div>
-      </div>
-    </main>
-  </div>
 
-  <!-- Modal para ajustar stock -->
-  <div id="ajusteModal" class="modal">
-    <div class="modal-content" style="background: white; padding: 2rem; border-radius: 1rem; box-shadow: 0 20px 60px rgba(0,0,0,0.3); max-width: 550px;">
-      <div style="margin-bottom: 1.5rem;">
-        <h2 style="font-size: 1.5rem; font-weight: 700; color: #2D3748; margin-bottom: 0.25rem;">Ajustar stock</h2>
-        <p style="color: #718096; font-size: 0.875rem;">Modifica el inventario del producto</p>
-      </div>
-      <div>
-        <p style="margin-bottom: 1rem;">
-          <strong><span id="modalProductoNombre"></span></strong><br>
-          <span style="color: var(--razo-gray-warm);">Variante seleccionada: <span id="modalVarianteResumen"></span></span><br>
-          <span style="color: var(--razo-gray-warm);">Stock actual: <strong id="modalStockActual">0</strong> paquetes</span>
-        </p>
-
-        <div class="form-group">
-          <label for="modalVariante" class="form-label">Selecciona la variante / medida</label>
-          <select id="modalVariante" class="form-input"></select>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">Tipo de Ajuste:</label>
-          <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
-            <button 
-              class="btn btn-success" 
-              id="btnEntrada"
-              onclick="setTipoAjuste('entrada')"
-              style="flex: 1; padding: 0.75rem;">
-              ➕ Entrada
+          <div style="display: flex; gap: 1rem; margin-top: 1.5rem">
+            <button
+              class="btn btn-primary"
+              onclick="realizarAjuste()"
+              id="btnConfirmarAjuste"
+              style="flex: 1"
+            >
+              <span id="btnAjusteText">Confirmar ajuste</span>
+              <div
+                class="spinner"
+                id="btnAjusteSpinner"
+                style="display: none"
+              ></div>
             </button>
-            <button 
-              class="btn btn-danger" 
-              id="btnSalida"
-              onclick="setTipoAjuste('salida')"
-              style="flex: 1; padding: 0.75rem;">
-              ➖ Salida
+            <button
+              class="btn btn-secondary"
+              onclick="closeAjusteModal()"
+              style="flex: 1"
+            >
+              Cancelar
             </button>
           </div>
-        </div>
-
-        <div class="form-group">
-          <label for="modalCantidad" class="form-label">Cantidad (paquetes):</label>
-          <input 
-            type="number" 
-            id="modalCantidad" 
-            class="form-input" 
-            placeholder="0"
-            min="1"
-            required
-          >
-        </div>
-
-        <div class="form-group">
-          <label for="modalMotivo" class="form-label">Motivo del ajuste:</label>
-          <select id="modalMotivo" class="form-input">
-            <option value="">Seleccionar motivo...</option>
-            <option value="Recepción de Almacén">Recepción de Almacén</option>
-            <option value="Ajuste de Inventario">Ajuste de Inventario</option>
-            <option value="Devolución de Cliente">Devolución de Cliente</option>
-            <option value="Producto Dañado">Producto Dañado</option>
-            <option value="Merma">Merma</option>
-            <option value="Otro">Otro</option>
-          </select>
-        </div>
-
-        <div class="form-group" id="motivoOtroGroup" style="display: none;">
-          <label for="modalMotivoOtro" class="form-label">Especificar motivo:</label>
-          <input 
-            type="text" 
-            id="modalMotivoOtro" 
-            class="form-input" 
-            placeholder="Describe el motivo..."
-          >
-        </div>
-
-        <div class="alert alert-info" style="font-size: 0.875rem;">
-          <strong>ℹ️ Nota:</strong> Este ajuste se registrará en el log de inventario con tu ID de administrador.
-        </div>
-
-        <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
-          <button class="btn btn-primary" onclick="realizarAjuste()" id="btnConfirmarAjuste" style="flex: 1;">
-            <span id="btnAjusteText">Confirmar ajuste</span>
-            <div class="spinner" id="btnAjusteSpinner" style="display: none;"></div>
-          </button>
-          <button class="btn btn-secondary" onclick="closeAjusteModal()" style="flex: 1;">
-            Cancelar
-          </button>
         </div>
       </div>
     </div>
-  </div>
 
-  <script src="js/api.js"></script>
-  <script>
-    console.log('📄 Cargando página de inventario...');
-    
-    // Authentication check
-    const adminToken = localStorage.getItem('razoconnect_admin_token');
-    console.log('🔑 Token en inventario:', adminToken ? 'Present (length: ' + adminToken.length + ')' : 'Missing');
-    
-    if (!adminToken) {
-      console.warn('⚠️ No hay token en inventario, redirigiendo a login');
-      window.location.href = '/login.html';
-    } else {
-      console.log('✅ Token encontrado, continuando carga de página');
-    }
+    <script src="js/api.js"></script>
+    <script>
+      console.log("📄 Cargando página de inventario...");
 
-    let allProducts = [];
-    let selectedProduct = null;
-    let tipoAjuste = null; // 'entrada' o 'salida'
-    
-    // Variables de paginación
-    let paginaActual = 1;
-    const registrosPorPagina = 10;
+      // Authentication check
+      const adminToken = localStorage.getItem("razoconnect_admin_token");
+      console.log(
+        "🔑 Token en inventario:",
+        adminToken ? "Present (length: " + adminToken.length + ")" : "Missing"
+      );
 
-    // Verify admin
-    async function verifyAndLoadAdmin() {
-      try {
-        console.log('🔐 Verificando admin en página de inventario...');
-        
-        const response = await fetch(`${API_BASE_URL}/admin/verify`, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${adminToken}`,
-            'Content-Type': 'application/json'
+      if (!adminToken) {
+        console.warn("⚠️ No hay token en inventario, redirigiendo a login");
+        window.location.href = "/login.html";
+      } else {
+        console.log("✅ Token encontrado, continuando carga de página");
+      }
+
+      let allProducts = [];
+      let selectedProduct = null;
+      let tipoAjuste = null; // 'entrada' o 'salida'
+      let detalleProductoActual = null;
+      let shouldReopenDetalle = false;
+
+      // Variables de paginación
+      let paginaActual = 1;
+      const registrosPorPagina = 10;
+
+      const productsTableBody = document.getElementById("productsTableBody");
+      const productsTable = document.getElementById("productsTable");
+      const emptyProducts = document.getElementById("emptyProducts");
+      const pagination = document.getElementById("paginationContainer");
+      const loadingProducts = document.getElementById("loadingProducts");
+
+      const ajusteModal = document.getElementById("ajusteModal");
+      const modalVarianteSelect = document.getElementById("modalVariante");
+      const modalProductoNombre = document.getElementById(
+        "modalProductoNombre"
+      );
+      const modalCantidadInput = document.getElementById("modalCantidad");
+      const modalMotivoSelect = document.getElementById("modalMotivo");
+      const modalMotivoOtroInput = document.getElementById("modalMotivoOtro");
+      const modalMotivoOtroGroup = document.getElementById("motivoOtroGroup");
+      const modalVarianteResumen = document.getElementById(
+        "modalVarianteResumen"
+      );
+      const modalStockActual = document.getElementById("modalStockActual");
+      const btnEntrada = document.getElementById("btnEntrada");
+      const btnSalida = document.getElementById("btnSalida");
+      const btnConfirmarAjuste = document.getElementById("btnConfirmarAjuste");
+      const btnAjusteText = document.getElementById("btnAjusteText");
+      const btnAjusteSpinner = document.getElementById("btnAjusteSpinner");
+
+      const detalleModal = document.getElementById("detalleModal");
+      const detalleModalTitle = document.getElementById("detalleModalTitle");
+      const detalleModalSubtitle = document.getElementById(
+        "detalleModalSubtitle"
+      );
+      const detalleModalLoading = document.getElementById(
+        "detalleModalLoading"
+      );
+      const detalleModalFeedback = document.getElementById(
+        "detalleModalFeedback"
+      );
+      const detalleModalTableWrapper = document.getElementById(
+        "detalleModalTableWrapper"
+      );
+      const tablaVariantesBody = document.querySelector(
+        "#tabla-variantes tbody"
+      );
+      const btnCerrarDetalle = document.getElementById("btnCerrarDetalle");
+      const btnCerrarDetalleFooter = document.getElementById(
+        "btnCerrarDetalleFooter"
+      );
+
+      // Verify admin
+      async function verifyAndLoadAdmin() {
+        try {
+          console.log("🔐 Verificando admin en página de inventario...");
+
+          const response = await fetch(`${API_BASE_URL}/admin/verify`, {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${adminToken}`,
+              "Content-Type": "application/json",
+            },
+          });
+
+          console.log("📡 Response status desde inventario:", response.status);
+
+          if (!response.ok) throw new Error("Invalid token");
+
+          const data = await response.json();
+          console.log("📥 Verify response en inventario:", data);
+          if (data.success) {
+            const admin = data.data.admin;
+            document.getElementById("userName").textContent = admin.nombre;
+            document.getElementById("userRole").textContent =
+              admin.rol === "superadmin" ? "Super Admin" : "Admin";
+
+            const words = admin.nombre.split(" ");
+            const initials =
+              words.length >= 2
+                ? `${words[0].charAt(0)}${words[1].charAt(0)}`
+                : admin.nombre.substring(0, 2);
+            document.getElementById("userAvatar").textContent =
+              initials.toUpperCase();
           }
-        });
-
-        console.log('📡 Response status desde inventario:', response.status);
-        
-        if (!response.ok) throw new Error('Invalid token');
-
-        const data = await response.json();
-        console.log('📥 Verify response en inventario:', data);
-        if (data.success) {
-          const admin = data.data.admin;
-          document.getElementById('userName').textContent = admin.nombre;
-          document.getElementById('userRole').textContent = admin.rol === 'superadmin' ? 'Super Admin' : 'Admin';
-          
-          const words = admin.nombre.split(' ');
-          const initials = words.length >= 2 
-            ? `${words[0].charAt(0)}${words[1].charAt(0)}` 
-            : admin.nombre.substring(0, 2);
-          document.getElementById('userAvatar').textContent = initials.toUpperCase();
+        } catch (error) {
+          console.error("Error verifying admin:", error);
+          localStorage.removeItem("razoconnect_admin_token");
+          localStorage.removeItem("razoconnect_admin");
+          window.location.href = "/login.html";
         }
-      } catch (error) {
-        console.error('Error verifying admin:', error);
-        localStorage.removeItem('razoconnect_admin_token');
-        localStorage.removeItem('razoconnect_admin');
-        window.location.href = '/login.html';
       }
-    }
 
-    // Load products
-    async function loadProductos() {
-      const loadingProducts = document.getElementById('loadingProducts');
-      const productsTable = document.getElementById('productsTable');
-      const emptyProducts = document.getElementById('emptyProducts');
-      const productsTableBody = document.getElementById('productsTableBody');
+      // Load products
+      async function loadProductos() {
+        try {
+          loadingProducts.style.display = "flex";
+          productsTable.style.display = "none";
+          emptyProducts.style.display = "none";
 
-      try {
-        loadingProducts.style.display = 'flex';
-        productsTable.style.display = 'none';
-        emptyProducts.style.display = 'none';
+          const response = await fetch(`${API_BASE_URL}/admin/inventario`, {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${adminToken}`,
+              "Content-Type": "application/json",
+            },
+          });
 
-        const response = await fetch(`${API_BASE_URL}/admin/productos`, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${adminToken}`,
-            'Content-Type': 'application/json'
+          if (!response.ok) {
+            throw new Error("Error al cargar productos");
           }
-        });
 
-        if (!response.ok) {
-          throw new Error('Error al cargar productos');
+          const data = await response.json();
+          if (data.success) {
+            allProducts = data.data.productos;
+            paginaActual = 1;
+            renderProducts();
+          }
+        } catch (error) {
+          console.error("Error loading products:", error);
+          showToast("Error al cargar productos", "error");
+          emptyProducts.style.display = "block";
+        } finally {
+          loadingProducts.style.display = "none";
         }
-
-        const data = await response.json();
-        if (data.success) {
-          allProducts = data.data.productos;
-          paginaActual = 1;
-          renderProducts();
-        }
-      } catch (error) {
-        console.error('Error loading products:', error);
-        showToast('Error al cargar productos', 'error');
-        emptyProducts.style.display = 'block';
-      } finally {
-        loadingProducts.style.display = 'none';
-      }
-    }
-
-    // Render products
-    function renderProducts(products = null) {
-      const productsTableBody = document.getElementById('productsTableBody');
-      const productsTable = document.getElementById('productsTable');
-      const emptyProducts = document.getElementById('emptyProducts');
-      const pagination = document.getElementById('paginationContainer');
-
-      // Si no se pasan productos, usar allProducts con paginación
-      const productosAMostrar = products || allProducts;
-      
-      if (productosAMostrar.length === 0) {
-        emptyProducts.style.display = 'block';
-        pagination.style.display = 'none';
-        return;
       }
 
-      // Calcular paginación
-      const inicio = (paginaActual - 1) * registrosPorPagina;
-      const fin = inicio + registrosPorPagina;
-      const productosPagina = productosAMostrar.slice(inicio, fin);
+      // Render products
+      function renderProducts(products = null) {
+        // Si no se pasan productos, usar allProducts con paginación
+        const productosAMostrar = products || allProducts;
 
-      productsTableBody.innerHTML = productosPagina.map(product => {
-        const variantes = product.variantes || [];
-        const variante = product.varianteDestacada;
-        const stockPaquetes = product.stockTotal || 0;
-        const precioPaquete = variante?.precioPaquete || product.precioDesde || 0;
-        const piezasPorPaquete = variante?.piezasPorPaquete || '—';
-        const sku = variante?.sku || 'Sin SKU asignado';
-
-        let stockBadge = 'success';
-        let stockText = 'Normal';
-        if (stockPaquetes === 0) {
-          stockBadge = 'danger';
-          stockText = 'Sin Stock';
-        } else if (stockPaquetes <= 5) {
-          stockBadge = 'warning';
-          stockText = 'Stock Bajo';
+        if (productosAMostrar.length === 0) {
+          emptyProducts.style.display = "block";
+          pagination.style.display = "none";
+          return;
         }
 
-        const productPayload = {
-          ...product,
-          varianteDestacada: variante,
-          variantes
-        };
+        // Calcular paginación
+        const inicio = (paginaActual - 1) * registrosPorPagina;
+        const fin = inicio + registrosPorPagina;
+        const productosPagina = productosAMostrar.slice(inicio, fin);
 
-        return `
+        productsTableBody.innerHTML = productosPagina
+          .map((product) => {
+            return `
           <tr>
-            <td><strong>${sku}</strong></td>
             <td>
-              <div style="font-weight: 600;">${product.nombreproducto}</div>
-              <div style="font-size: 0.875rem; color: var(--razo-gray-warm);">${product.categoriaNombre || 'Sin categoría'}</div>
-              <div style="font-size: 0.75rem; color: var(--text-secondary);">${product.variantesCount} variante${product.variantesCount === 1 ? '' : 's'} registradas</div>
+              <div style="font-weight: 600;">${product.nombreProducto}</div>
+              <div style="font-size: 0.875rem; color: var(--razo-gray-warm);">ID: ${
+                product.productoId
+              }</div>
             </td>
-            <td><strong>${formatCurrency(precioPaquete)}</strong></td>
-            <td>${piezasPorPaquete} ${piezasPorPaquete === '—' ? '' : 'pzas'}</td>
+            <td>${product.nombreCategoria || "Sin categoría"}</td>
             <td>
-              <div style="font-size: 1.25rem; font-weight: 700; color: var(--razo-orange);">
-                ${stockPaquetes}
-              </div>
+              <span class="admin-badge secondary" style="font-size: 0.9rem;">${
+                product.totalVariantes
+              }</span>
             </td>
-            <td><span class="admin-badge ${stockBadge}">${stockText}</span></td>
             <td>
-              <button 
-                class="btn btn-primary" 
-                style="padding: 0.5rem 1rem; font-size: 0.875rem;"
-                onclick='openAjusteModal(${JSON.stringify(productPayload)})'>
-                Ajustar stock
+              <button
+                type="button"
+                class="btn btn-primary btn-detalle"
+                data-productoid="${product.productoId}"
+                style="padding: 0.625rem 1.25rem; font-size: 0.875rem; border-radius: 0.5rem; display: inline-flex; align-items: center; gap: 0.5rem; box-shadow: rgba(0, 0, 0, 0.1) 0px 2px 4px; transition: 0.2s; transform: translateY(0px);"
+              >
+                Ver Detalles
               </button>
             </td>
           </tr>
         `;
-      }).join('');
-      
-      productsTable.style.display = 'table';
-      
-      // Mostrar paginación solo si no se pasaron productos filtrados
-      if (!products) {
-        pagination.style.display = 'block';
-        actualizarPaginacion();
-      } else {
-        pagination.style.display = 'none';
-      }
-    }
+          })
+          .join("");
 
-    // Actualizar controles de paginación
-    function actualizarPaginacion() {
-      const totalPaginas = Math.ceil(allProducts.length / registrosPorPagina);
-      const inicio = (paginaActual - 1) * registrosPorPagina + 1;
-      const fin = Math.min(paginaActual * registrosPorPagina, allProducts.length);
-      
-      // Actualizar información
-      document.getElementById('pageStart').textContent = inicio;
-      document.getElementById('pageEnd').textContent = fin;
-      document.getElementById('totalRecords').textContent = allProducts.length;
-      
-      // Actualizar botones prev/next
-      document.getElementById('btnPrevPage').disabled = paginaActual === 1;
-      document.getElementById('btnNextPage').disabled = paginaActual === totalPaginas;
-      
-      // Generar números de página
-      const pageNumbers = document.getElementById('pageNumbers');
-      pageNumbers.innerHTML = '';
-      
-      // Mostrar máximo 5 números de página
-      let startPage = Math.max(1, paginaActual - 2);
-      let endPage = Math.min(totalPaginas, startPage + 4);
-      
-      if (endPage - startPage < 4) {
-        startPage = Math.max(1, endPage - 4);
+        productsTable.style.display = "table";
+
+        // Mostrar paginación solo si no se pasaron productos filtrados
+        if (!products) {
+          pagination.style.display = "block";
+          actualizarPaginacion();
+        } else {
+          pagination.style.display = "none";
+        }
       }
-      
-      for (let i = startPage; i <= endPage; i++) {
-        const pageBtn = document.createElement('button');
-        pageBtn.textContent = i;
-        pageBtn.className = 'btn';
-        pageBtn.style.cssText = `
+
+      // Actualizar controles de paginación
+      function actualizarPaginacion() {
+        const totalPaginas = Math.ceil(allProducts.length / registrosPorPagina);
+        const inicio = (paginaActual - 1) * registrosPorPagina + 1;
+        const fin = Math.min(
+          paginaActual * registrosPorPagina,
+          allProducts.length
+        );
+
+        // Actualizar información
+        document.getElementById("pageStart").textContent = inicio;
+        document.getElementById("pageEnd").textContent = fin;
+        document.getElementById("totalRecords").textContent =
+          allProducts.length;
+
+        // Actualizar botones prev/next
+        document.getElementById("btnPrevPage").disabled = paginaActual === 1;
+        document.getElementById("btnNextPage").disabled =
+          paginaActual === totalPaginas;
+
+        // Generar números de página
+        const pageNumbers = document.getElementById("pageNumbers");
+        pageNumbers.innerHTML = "";
+
+        // Mostrar máximo 5 números de página
+        let startPage = Math.max(1, paginaActual - 2);
+        let endPage = Math.min(totalPaginas, startPage + 4);
+
+        if (endPage - startPage < 4) {
+          startPage = Math.max(1, endPage - 4);
+        }
+
+        for (let i = startPage; i <= endPage; i++) {
+          const pageBtn = document.createElement("button");
+          pageBtn.textContent = i;
+          pageBtn.className = "btn";
+          pageBtn.style.cssText = `
           padding: 0.5rem 0.75rem;
           font-size: 0.875rem;
           min-width: 2.5rem;
-          ${i === paginaActual ? 
-            'background: var(--razo-orange); color: white; font-weight: 600;' : 
-            'background: white; color: var(--razo-gray-dark); border: 1px solid #E5E7EB;'}
+          ${
+            i === paginaActual
+              ? "background: var(--razo-orange); color: white; font-weight: 600;"
+              : "background: white; color: var(--razo-gray-dark); border: 1px solid #E5E7EB;"
+          }
         `;
-        pageBtn.onclick = () => irAPagina(i);
-        pageNumbers.appendChild(pageBtn);
+          pageBtn.onclick = () => irAPagina(i);
+          pageNumbers.appendChild(pageBtn);
+        }
       }
-    }
 
-    // Cambiar de página
-    function cambiarPagina(direccion) {
-      const totalPaginas = Math.ceil(allProducts.length / registrosPorPagina);
-      
-      if (direccion === 'prev' && paginaActual > 1) {
-        paginaActual--;
-      } else if (direccion === 'next' && paginaActual < totalPaginas) {
-        paginaActual++;
-      }
-      
-      renderProducts();
-    }
+      // Cambiar de página
+      function cambiarPagina(direccion) {
+        const totalPaginas = Math.ceil(allProducts.length / registrosPorPagina);
 
-    // Ir a página específica
-    function irAPagina(pagina) {
-      paginaActual = pagina;
-      renderProducts();
-    }
+        if (direccion === "prev" && paginaActual > 1) {
+          paginaActual--;
+        } else if (direccion === "next" && paginaActual < totalPaginas) {
+          paginaActual++;
+        }
 
-    // Format currency
-    function formatCurrency(amount) {
-      return new Intl.NumberFormat('es-MX', {
-        style: 'currency',
-        currency: 'MXN'
-      }).format(amount || 0);
-    }
-
-    // Search filter
-    document.getElementById('searchInput').addEventListener('input', (e) => {
-      const searchTerm = e.target.value.toLowerCase();
-      
-      if (searchTerm === '') {
-        // Si no hay búsqueda, mostrar todos con paginación
-        paginaActual = 1;
         renderProducts();
-      } else {
-        // Si hay búsqueda, mostrar filtrados sin paginación
-        const filtered = allProducts.filter(p => {
-          const matchesNombre = p.nombreproducto.toLowerCase().includes(searchTerm);
-          const matchesSku = p.varianteDestacada?.sku?.toLowerCase().includes(searchTerm);
-          return matchesNombre || matchesSku;
-        });
-        renderProducts(filtered);
-      }
-    });
-
-    // Open ajuste modal
-    function openAjusteModal(product) {
-      selectedProduct = product;
-      tipoAjuste = null;
-
-      const variantes = product.variantes || [];
-      const selectVariante = document.getElementById('modalVariante');
-      selectVariante.innerHTML = '';
-
-      if (!variantes.length) {
-        selectVariante.innerHTML = '<option value="" disabled>No hay variantes registradas</option>';
-        selectVariante.disabled = true;
-      } else {
-        selectVariante.disabled = false;
-        variantes.forEach(variant => {
-          const option = document.createElement('option');
-          option.value = variant.varianteId;
-          option.dataset.stock = variant.stock ?? 0;
-          option.dataset.sku = variant.sku || 'Sin SKU';
-          option.dataset.dimensiones = variant.dimensiones || '';
-          option.textContent = `${variant.sku || 'Sin SKU'} • ${variant.dimensiones || 'Sin medidas'} • Stock: ${variant.stock ?? 0}`;
-          selectVariante.appendChild(option);
-        });
-        selectVariante.value = (product.varianteDestacada && product.varianteDestacada.varianteId) ? product.varianteDestacada.varianteId : variantes[0].varianteId;
       }
 
-      actualizarResumenVariante();
-      document.getElementById('modalProductoNombre').textContent = product.nombreproducto;
-      document.getElementById('modalCantidad').value = '';
-      document.getElementById('modalMotivo').value = '';
-      document.getElementById('modalMotivoOtro').value = '';
-      document.getElementById('motivoOtroGroup').style.display = 'none';
-      
-      // Reset buttons
-      document.getElementById('btnEntrada').style.opacity = '0.6';
-      document.getElementById('btnSalida').style.opacity = '0.6';
-      
-      document.getElementById('ajusteModal').style.display = 'flex';
-    }
-
-    // Close ajuste modal
-    function closeAjusteModal() {
-      document.getElementById('ajusteModal').style.display = 'none';
-      selectedProduct = null;
-      tipoAjuste = null;
-    }
-
-    // Set tipo de ajuste
-    function setTipoAjuste(tipo) {
-      tipoAjuste = tipo;
-      
-      // Visual feedback
-      document.getElementById('btnEntrada').style.opacity = tipo === 'entrada' ? '1' : '0.6';
-      document.getElementById('btnSalida').style.opacity = tipo === 'salida' ? '1' : '0.6';
-    }
-
-    // Handle motivo change
-    document.getElementById('modalMotivo').addEventListener('change', (e) => {
-      const motivoOtroGroup = document.getElementById('motivoOtroGroup');
-      motivoOtroGroup.style.display = e.target.value === 'Otro' ? 'block' : 'none';
-    });
-
-    // Realizar ajuste
-    async function realizarAjuste() {
-      if (!selectedProduct || !tipoAjuste) {
-        showToast('Por favor selecciona el tipo de ajuste (Entrada o Salida)', 'warning');
-        return;
+      // Ir a página específica
+      function irAPagina(pagina) {
+        paginaActual = pagina;
+        renderProducts();
       }
 
-      const cantidad = parseInt(document.getElementById('modalCantidad').value);
-      const selectVariante = document.getElementById('modalVariante');
-      const varianteId = selectVariante.value ? parseInt(selectVariante.value, 10) : null;
-      const motivoSelect = document.getElementById('modalMotivo').value;
-      const motivoOtro = document.getElementById('modalMotivoOtro').value;
-
-      if (!varianteId) {
-        showToast('Selecciona la variante a ajustar', 'warning');
-        return;
+      // Format currency
+      function formatCurrency(amount) {
+        return new Intl.NumberFormat("es-MX", {
+          style: "currency",
+          currency: "MXN",
+        }).format(amount || 0);
       }
 
-      if (!cantidad || cantidad <= 0) {
-        showToast('Ingresa una cantidad válida', 'warning');
-        return;
-      }
+      // Search filter
+      document.getElementById("searchInput").addEventListener("input", (e) => {
+        const searchTerm = e.target.value.toLowerCase();
 
-      if (!motivoSelect) {
-        showToast('Selecciona un motivo', 'warning');
-        return;
-      }
-
-      if (motivoSelect === 'Otro' && !motivoOtro.trim()) {
-        showToast('Especifica el motivo', 'warning');
-        return;
-      }
-
-      const motivo = motivoSelect === 'Otro' ? motivoOtro : motivoSelect;
-      const cantidadCambio = tipoAjuste === 'entrada' ? cantidad : -cantidad;
-
-      const btnConfirmar = document.getElementById('btnConfirmarAjuste');
-      const btnText = document.getElementById('btnAjusteText');
-      const btnSpinner = document.getElementById('btnAjusteSpinner');
-
-      try {
-        btnConfirmar.disabled = true;
-        btnText.style.display = 'none';
-        btnSpinner.style.display = 'block';
-
-        const response = await fetch(`${API_BASE_URL}/admin/inventario/ajuste`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${adminToken}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            productoId: selectedProduct.productoid,
-            varianteId,
-            cantidadCambio,
-            motivo
-          })
-        });
-
-        const data = await response.json();
-
-        if (response.ok && data.success) {
-          showToast(`Stock ajustado: ${data.data.stockAnterior} → ${data.data.stockNuevo}`, 'success');
-          closeAjusteModal();
-          loadProductos();
+        if (searchTerm === "") {
+          // Si no hay búsqueda, mostrar todos con paginación
+          paginaActual = 1;
+          renderProducts();
         } else {
-          showToast(data.message || 'Error al ajustar inventario', 'error');
+          // Si hay búsqueda, mostrar filtrados sin paginación
+          const filtered = allProducts.filter((p) => {
+            const matchesNombre = p.nombreProducto
+              .toLowerCase()
+              .includes(searchTerm);
+            const matchesCategoria = (p.nombreCategoria || "")
+              .toLowerCase()
+              .includes(searchTerm);
+            return matchesNombre || matchesCategoria;
+          });
+          renderProducts(filtered);
         }
-      } catch (error) {
-        console.error('Error adjusting inventory:', error);
-        showToast('Error al conectar con el servidor', 'error');
-      } finally {
-        btnConfirmar.disabled = false;
-        btnText.style.display = 'inline';
-        btnSpinner.style.display = 'none';
-      }
-    }
-
-    // Logout
-    document.getElementById('logoutBtn').addEventListener('click', () => {
-      localStorage.removeItem('razoconnect_admin_token');
-      localStorage.removeItem('razoconnect_admin');
-      showToast('Sesión cerrada', 'success');
-      setTimeout(() => {
-        window.location.href = '/login.html';
-      }, 500);
-    });
-
-    document.getElementById('modalVariante').addEventListener('change', actualizarResumenVariante);
-
-    function actualizarResumenVariante() {
-      const selectVariante = document.getElementById('modalVariante');
-      const option = selectVariante.options[selectVariante.selectedIndex];
-      const sku = option?.dataset.sku || 'Sin SKU';
-      const dimensiones = option?.dataset.dimensiones || 'Sin medidas';
-      const stock = option ? parseInt(option.dataset.stock, 10) || 0 : 0;
-
-      document.getElementById('modalVarianteResumen').textContent = `${sku} • ${dimensiones}`;
-      document.getElementById('modalStockActual').textContent = stock;
-    }
-
-    // Navigation handling
-    const navLinks = document.querySelectorAll('.admin-nav-link[data-module]');
-    navLinks.forEach(link => {
-      link.addEventListener('click', (e) => {
-        e.preventDefault();
-        const moduleName = link.querySelector('span:last-child').textContent;
-        showToast(`Módulo "${moduleName}" próximamente disponible`, 'info');
       });
-    });
 
-    // Close modal when clicking outside
-    window.onclick = function(event) {
-      const modal = document.getElementById('ajusteModal');
-      if (event.target == modal) {
-        closeAjusteModal();
+      // Eventos de botones de detalle y ajuste
+      productsTableBody.addEventListener("click", (event) => {
+        const detalleBtn = event.target.closest(".btn-detalle");
+        if (!detalleBtn) return;
+
+        const productoId = parseInt(detalleBtn.dataset.productoid, 10);
+        if (!productoId) {
+          showToast("Producto inválido", "warning");
+          return;
+        }
+
+        openDetalleModal(productoId);
+      });
+
+      tablaVariantesBody.addEventListener("click", (event) => {
+        const ajusteBtn = event.target.closest(".btn-ajuste");
+        if (!ajusteBtn) return;
+
+        const varianteId = parseInt(ajusteBtn.dataset.varianteId, 10);
+        if (!detalleProductoActual || Number.isNaN(varianteId)) {
+          showToast("Variante no disponible", "warning");
+          return;
+        }
+
+        const variante = (detalleProductoActual.variantes || []).find(
+          (v) => v.varianteId === varianteId
+        );
+        if (!variante) {
+          showToast("Variante no encontrada", "warning");
+          return;
+        }
+
+        openAjusteModal(detalleProductoActual.producto, variante);
+      });
+
+      btnCerrarDetalle.addEventListener("click", closeDetalleModal);
+      btnCerrarDetalleFooter.addEventListener("click", closeDetalleModal);
+
+      // Logout
+      document.getElementById("logoutBtn").addEventListener("click", () => {
+        localStorage.removeItem("razoconnect_admin_token");
+        localStorage.removeItem("razoconnect_admin");
+        showToast("Sesión cerrada", "success");
+        setTimeout(() => {
+          window.location.href = "/login.html";
+        }, 500);
+      });
+
+      modalVarianteSelect.addEventListener("change", actualizarResumenVariante);
+      modalMotivoSelect.addEventListener("change", (e) => {
+        modalMotivoOtroGroup.style.display =
+          e.target.value === "Otro" ? "block" : "none";
+      });
+
+      async function openDetalleModal(productoId, { keepOpen = false } = {}) {
+        if (!keepOpen) {
+          detalleModal.style.display = "flex";
+        } else if (detalleModal.style.display !== "flex") {
+          detalleModal.style.display = "flex";
+        }
+
+        toggleDetalleLoading(true);
+        detalleModalFeedback.style.display = "none";
+        detalleModalTableWrapper.style.display = "none";
+        tablaVariantesBody.innerHTML = "";
+
+        try {
+          const response = await fetch(
+            `${API_BASE_URL}/admin/productos/${productoId}`,
+            {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${adminToken}`,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+
+          const data = await response.json();
+
+          if (!response.ok || !data.success) {
+            throw new Error(data.message || "No se pudo obtener el producto");
+          }
+
+          detalleModalTitle.textContent = `Detalle de Variantes: ${data.data.producto.nombreProducto}`;
+          detalleModalSubtitle.textContent =
+            data.data.producto.descripcion ||
+            "Consulta la información registrada.";
+
+          const producto = data.data.producto;
+          const variantes = data.data.variantes || [];
+
+          detalleProductoActual = {
+            producto,
+            variantes,
+          };
+
+          const summaryCard = document.getElementById("detalleModalSummary");
+          const descripcionEl = document.getElementById(
+            "detalleProductoDescripcion"
+          );
+          const estadoBadge = document.getElementById("detalleProductoEstado");
+          const categoriaBadge = document.getElementById(
+            "detalleProductoCategoria"
+          );
+          const variantesTotalEl = document.getElementById(
+            "detalleTotalVariantes"
+          );
+          const variantesConStockEl = document.getElementById(
+            "detalleVariantesConStock"
+          );
+          const variantesSinStockEl = document.getElementById(
+            "detalleVariantesSinStock"
+          );
+          const precioDesdeEl = document.getElementById("detallePrecioDesde");
+          const precioHastaEl = document.getElementById("detallePrecioHasta");
+
+          descripcionEl.textContent =
+            producto.descripcion || "Sin descripción disponible.";
+          estadoBadge.textContent = producto.activo ? "Activo" : "Inactivo";
+          estadoBadge.classList.toggle("danger", !producto.activo);
+
+          const categoriaNombre = producto?.categoria?.nombre;
+          if (categoriaNombre) {
+            categoriaBadge.textContent = categoriaNombre;
+            categoriaBadge.style.display = "inline-flex";
+          } else {
+            categoriaBadge.style.display = "none";
+          }
+
+          const totalVariantes = producto.totalVariantes ?? variantes.length;
+          const variantesConStock =
+            producto.variantesConStock ??
+            variantes.filter(
+              (v) => (typeof v.stock === "number" ? v.stock : 0) > 0
+            ).length;
+          const variantesSinStock = Math.max(
+            totalVariantes - variantesConStock,
+            0
+          );
+
+          variantesTotalEl.textContent = totalVariantes;
+          variantesConStockEl.textContent = variantesConStock;
+          variantesSinStockEl.textContent = variantesSinStock;
+
+          const precios = variantes
+            .map((v) =>
+              typeof v.precioPaquete === "number" ? v.precioPaquete : null
+            )
+            .filter((v) => v !== null);
+
+          const precioDesde =
+            producto.precioDesde ??
+            (precios.length ? Math.min(...precios) : null);
+          const precioHasta =
+            producto.precioHasta ??
+            (precios.length ? Math.max(...precios) : null);
+
+          precioDesdeEl.textContent =
+            typeof precioDesde === "number" ? formatCurrency(precioDesde) : "—";
+          precioHastaEl.textContent =
+            typeof precioHasta === "number" ? formatCurrency(precioHasta) : "—";
+
+          summaryCard.style.display = "block";
+
+          renderDetalleVariantes(variantes);
+          toggleDetalleLoading(false);
+        } catch (error) {
+          console.error("Error al obtener detalle del producto:", error);
+          toggleDetalleLoading(false);
+          detalleModalFeedback.style.display = "block";
+          detalleModalTableWrapper.style.display = "none";
+          document.getElementById("detalleModalSummary").style.display = "none";
+          detalleModalFeedback.innerHTML = `
+            <div class="modal-feedback-error">
+              <strong>No se pudo cargar el producto.</strong>
+              <p>${error.message || "Intenta nuevamente más tarde."}</p>
+            </div>
+          `;
+        }
       }
-    }
 
-    // Cerrar modal con Escape
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') {
-        const modal = document.getElementById('ajusteModal');
-        if (modal.style.display === 'flex') {
+      function renderDetalleVariantes(variantes = []) {
+        if (!Array.isArray(variantes) || variantes.length === 0) {
+          detalleModalFeedback.style.display = "block";
+          detalleModalFeedback.innerHTML = `
+            <div class="modal-feedback-empty">
+              <strong>Sin variantes registradas.</strong>
+              <p>Agrega variantes para gestionar su inventario.</p>
+            </div>
+          `;
+          detalleModalTableWrapper.style.display = "none";
+          document.getElementById("detalleModalSummary").style.display =
+            "block";
+          return;
+        }
+
+        detalleModalFeedback.style.display = "none";
+        detalleModalTableWrapper.style.display = "block";
+
+        tablaVariantesBody.innerHTML = variantes
+          .map((variant) => {
+            const precio =
+              typeof variant.precioPaquete === "number"
+                ? formatCurrency(variant.precioPaquete)
+                : "N/A";
+            const dimensiones = variant.dimensiones || "Sin dimensiones";
+            const stock = typeof variant.stock === "number" ? variant.stock : 0;
+            const estadoClase = stock > 0 ? "en-stock" : "sin-stock";
+            const estadoTexto = stock > 0 ? "En stock" : "Sin stock";
+
+            return `
+          <tr>
+            <td>${variant.sku || "Sin SKU"}</td>
+            <td>${dimensiones}</td>
+            <td>${precio}</td>
+            <td>${stock}</td>
+            <td>
+              <span class="status-badge ${estadoClase}">${estadoTexto}</span>
+            </td>
+            <td style="text-align: center;">
+              <button type="button" class="btn btn-primary btn-small btn-ajuste" data-variante-id="${
+                variant.varianteId
+              }">
+                Ajustar Stock
+              </button>
+            </td>
+          </tr>
+        `;
+          })
+          .join("");
+      }
+
+      function toggleDetalleLoading(isLoading) {
+        detalleModalLoading.style.display = isLoading ? "flex" : "none";
+        if (isLoading) {
+          detalleModalFeedback.style.display = "none";
+          detalleModalTableWrapper.style.display = "none";
+        }
+      }
+
+      function closeDetalleModal() {
+        detalleModal.style.display = "none";
+        detalleModalFeedback.style.display = "none";
+        detalleModalTableWrapper.style.display = "none";
+        tablaVariantesBody.innerHTML = "";
+        detalleProductoActual = null;
+        shouldReopenDetalle = false;
+      }
+
+      function openAjusteModal(producto, variantePreseleccionada = null) {
+        if (!producto) {
+          showToast("Producto no válido", "warning");
+          return;
+        }
+
+        selectedProduct = producto;
+        tipoAjuste = null;
+        modalVarianteSelect.innerHTML = "";
+        modalVarianteSelect.disabled = false;
+
+        const variantes =
+          detalleProductoActual?.producto?.productoId === producto.productoId
+            ? detalleProductoActual.variantes || []
+            : [];
+
+        if (!variantes.length) {
+          modalVarianteSelect.innerHTML =
+            '<option value="" disabled>No hay variantes registradas</option>';
+          modalVarianteSelect.disabled = true;
+        } else {
+          variantes.forEach((variant) => {
+            const option = document.createElement("option");
+            option.value = variant.varianteId;
+            option.dataset.stock = variant.stock ?? 0;
+            option.dataset.sku = variant.sku || "Sin SKU";
+            option.dataset.dimensiones =
+              variant.dimensiones || "Sin dimensiones";
+            option.textContent = `${option.dataset.sku} • ${option.dataset.dimensiones}`;
+            modalVarianteSelect.appendChild(option);
+          });
+
+          const defaultVarianteId =
+            variantePreseleccionada?.varianteId || variantes[0].varianteId;
+          modalVarianteSelect.value = defaultVarianteId;
+        }
+
+        modalProductoNombre.textContent =
+          producto.nombreProducto || `Producto #${producto.productoId}`;
+        modalCantidadInput.value = "";
+        modalMotivoSelect.value = "";
+        modalMotivoOtroInput.value = "";
+        modalMotivoOtroGroup.style.display = "none";
+        btnEntrada.style.opacity = "0.6";
+        btnSalida.style.opacity = "0.6";
+
+        actualizarResumenVariante();
+
+        shouldReopenDetalle = detalleModal.style.display === "flex";
+        if (shouldReopenDetalle) {
+          detalleModal.style.display = "none";
+        }
+
+        ajusteModal.style.display = "flex";
+      }
+
+      function closeAjusteModal() {
+        ajusteModal.style.display = "none";
+        selectedProduct = null;
+        tipoAjuste = null;
+        modalVarianteSelect.innerHTML = "";
+        modalVarianteSelect.disabled = false;
+
+        if (shouldReopenDetalle && detalleProductoActual) {
+          detalleModal.style.display = "flex";
+        }
+        shouldReopenDetalle = false;
+      }
+
+      function setTipoAjuste(tipo) {
+        tipoAjuste = tipo;
+        btnEntrada.style.opacity = tipo === "entrada" ? "1" : "0.6";
+        btnSalida.style.opacity = tipo === "salida" ? "1" : "0.6";
+      }
+
+      async function realizarAjuste() {
+        if (!selectedProduct || !tipoAjuste) {
+          showToast("Selecciona la variante y el tipo de ajuste", "warning");
+          return;
+        }
+
+        const varianteId = modalVarianteSelect.value
+          ? parseInt(modalVarianteSelect.value, 10)
+          : null;
+        const cantidad = parseInt(modalCantidadInput.value, 10);
+        const motivoSeleccionado = modalMotivoSelect.value;
+        const motivoOtro = modalMotivoOtroInput.value.trim();
+
+        if (!varianteId) {
+          showToast("Selecciona la variante a ajustar", "warning");
+          return;
+        }
+
+        if (!cantidad || cantidad <= 0) {
+          showToast("Ingresa una cantidad válida", "warning");
+          return;
+        }
+
+        if (!motivoSeleccionado) {
+          showToast("Selecciona el motivo del ajuste", "warning");
+          return;
+        }
+
+        if (motivoSeleccionado === "Otro" && !motivoOtro) {
+          showToast("Especifica el motivo del ajuste", "warning");
+          return;
+        }
+
+        const motivo =
+          motivoSeleccionado === "Otro" ? motivoOtro : motivoSeleccionado;
+        const cantidadCambio = tipoAjuste === "entrada" ? cantidad : -cantidad;
+        const productoId =
+          selectedProduct?.productoId || selectedProduct?.productoid;
+
+        try {
+          btnConfirmarAjuste.disabled = true;
+          btnAjusteText.style.display = "none";
+          btnAjusteSpinner.style.display = "block";
+
+          const response = await fetch(
+            `${API_BASE_URL}/admin/inventario/ajuste`,
+            {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${adminToken}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                productoId,
+                varianteId,
+                cantidadCambio,
+                motivo,
+              }),
+            }
+          );
+
+          const data = await response.json();
+
+          if (!response.ok || !data.success) {
+            throw new Error(data.message || "No se pudo ajustar el inventario");
+          }
+
+          showToast(
+            `Stock ajustado: ${data.data.stockAnterior} → ${data.data.stockNuevo}`,
+            "success"
+          );
+          closeAjusteModal();
+
+          if (productoId) {
+            openDetalleModal(productoId, { keepOpen: true });
+          }
+
+          loadProductos();
+        } catch (error) {
+          console.error("Error ajustando inventario:", error);
+          showToast(error.message || "Error al ajustar inventario", "error");
+        } finally {
+          btnConfirmarAjuste.disabled = false;
+          btnAjusteText.style.display = "inline";
+          btnAjusteSpinner.style.display = "none";
+        }
+      }
+
+      function actualizarResumenVariante() {
+        const option =
+          modalVarianteSelect.options[modalVarianteSelect.selectedIndex];
+        const sku = option?.dataset.sku || "Sin SKU";
+        const dimensiones = option?.dataset.dimensiones || "Sin medidas";
+        const stock = option ? parseInt(option.dataset.stock, 10) || 0 : 0;
+
+        modalVarianteResumen.textContent = `${sku} • ${dimensiones}`;
+        modalStockActual.textContent = stock;
+      }
+
+      // Navigation handling
+      const navLinks = document.querySelectorAll(
+        ".admin-nav-link[data-module]"
+      );
+      navLinks.forEach((link) => {
+        link.addEventListener("click", (e) => {
+          e.preventDefault();
+          const moduleName = link.querySelector("span:last-child").textContent;
+          showToast(`Módulo "${moduleName}" próximamente disponible`, "info");
+        });
+      });
+
+      // Close modal when clicking outside
+      window.onclick = function (event) {
+        if (event.target === ajusteModal) {
           closeAjusteModal();
         }
+        if (event.target === detalleModal) {
+          closeDetalleModal();
+        }
+      };
+
+      // Cerrar modal con Escape
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          if (ajusteModal.style.display === "flex") {
+            closeAjusteModal();
+          } else if (detalleModal.style.display === "flex") {
+            closeDetalleModal();
+          }
+        }
+      });
+
+      // Initialize
+      verifyAndLoadAdmin();
+      loadProductos();
+    </script>
+
+    <style>
+      /* Modal styles */
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.6);
+        -webkit-backdrop-filter: blur(4px);
+        backdrop-filter: blur(4px);
+        justify-content: center;
+        align-items: center;
+        padding: 1rem;
+        overflow-y: auto;
       }
-    });
 
-    // Initialize
-    verifyAndLoadAdmin();
-    loadProductos();
-  </script>
-
-  <style>
-    /* Modal styles */
-    .modal {
-      display: none;
-      position: fixed;
-      z-index: 1000;
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0, 0, 0, 0.6);
-      -webkit-backdrop-filter: blur(4px);
-      backdrop-filter: blur(4px);
-      justify-content: center;
-      align-items: center;
-      padding: 1rem;
-      overflow-y: auto;
-    }
-
-    .modal-content {
-      animation: modalSlideIn 0.3s ease-out;
-      max-height: 90vh;
-      overflow-y: auto;
-    }
-
-    @keyframes modalSlideIn {
-      from {
-        transform: translateY(-50px);
-        opacity: 0;
+      .modal-detalle {
+        background: white;
+        padding: 2rem;
+        border-radius: 1.25rem;
+        box-shadow: 0 25px 70px rgba(15, 23, 42, 0.25);
+        max-width: 960px;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
       }
-      to {
-        transform: translateY(0);
-        opacity: 1;
-      }
-    }
 
-    @media (max-width: 768px) {
+      .detalle-modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-bottom: 1.5rem;
+        border-bottom: 1px solid #f1f5f9;
+      }
+
+      .detalle-title-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+      }
+
+      .detalle-title-icon {
+        font-size: 2.5rem;
+      }
+
+      .detalle-modal-header h2 {
+        margin: 0;
+        font-size: 1.6rem;
+        color: #f97316;
+      }
+
+      .detalle-modal-subtitle {
+        margin: 0.35rem 0 0;
+        color: #6b7280;
+        font-size: 0.95rem;
+      }
+
+      .detalle-modal-body {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+      }
+
+      .detalle-summary {
+        background: #fff7ed;
+        border-radius: 1.25rem;
+        padding: 1.5rem;
+        border: 1px solid rgba(253, 186, 116, 0.45);
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.65);
+      }
+
+      .detalle-summary-top {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        justify-content: space-between;
+        align-items: flex-start;
+      }
+
+      .detalle-summary-info {
+        max-width: 550px;
+      }
+
+      .detalle-summary-label {
+        font-weight: 600;
+        color: #fb923c;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.08em;
+        margin-bottom: 0.35rem;
+      }
+
+      .detalle-summary-description {
+        margin: 0;
+        color: #374151;
+        line-height: 1.5;
+      }
+
+      .detalle-summary-tags {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+      }
+
+      select.form-input {
+        color: #1f2937;
+      }
+
+      select.form-input option {
+        color: #1f2937;
+        background-color: #ffffff;
+      }
+
+      .detalle-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.35rem 0.75rem;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        background: #34d399;
+        color: #064e3b;
+        border: 1px solid rgba(52, 211, 153, 0.35);
+      }
+
+      .detalle-badge.secondary {
+        background: #bae6fd;
+        color: #0c4a6e;
+        border: 1px solid rgba(14, 165, 233, 0.3);
+      }
+
+      .detalle-badge.danger {
+        background: #fee2e2;
+        color: #991b1b;
+        border: 1px solid rgba(248, 113, 113, 0.4);
+      }
+
+      .detalle-metrics {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: 1rem;
+        margin-top: 1.5rem;
+      }
+
+      .detalle-metric-card {
+        border-radius: 1rem;
+        padding: 1rem 1.15rem;
+        background: linear-gradient(135deg, #ff7a18, #ffae42);
+        color: #ffffff;
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+        min-height: 110px;
+        box-shadow: 0 12px 24px rgba(251, 146, 60, 0.3);
+        border: 1px solid rgba(251, 146, 60, 0.5);
+      }
+
+      .gradient-orange,
+      .gradient-purple,
+      .soft-card,
+      .outline-card {
+        background: linear-gradient(135deg, #ff7a18, #ffae42);
+        color: #ffffff;
+        box-shadow: 0 12px 24px rgba(251, 146, 60, 0.3);
+        border: 1px solid rgba(251, 146, 60, 0.5);
+      }
+
+      .metric-label {
+        font-size: 0.8rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        font-weight: 600;
+        opacity: 0.85;
+        color: rgba(255, 255, 255, 0.85);
+      }
+
+      .metric-value {
+        font-size: 2rem;
+        font-weight: 700;
+        line-height: 1;
+        color: #ffffff;
+      }
+
+      .modal-table th,
+      .modal-table td {
+        color: #1f2937;
+      }
+
+      .detalle-modal-footer {
+        display: flex;
+        justify-content: flex-end;
+        padding-top: 1rem;
+      }
+
+      .modal-close-btn {
+        background: transparent;
+        border: none;
+        font-size: 2rem;
+        line-height: 1;
+        cursor: pointer;
+        color: #9ca3af;
+        transition: color 0.2s ease;
+      }
+
+      .modal-close-btn:hover {
+        color: #4b5563;
+      }
+
+      .modal-loading {
+        display: none;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+        color: #4b5563;
+        padding: 2rem;
+      }
+
+      .modal-table-wrapper {
+        border: 1px solid #e5e7eb;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.6);
+      }
+
+      .modal-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.95rem;
+      }
+
+      .modal-table thead {
+        background: #f8fafc;
+        color: #0f172a;
+      }
+
+      .modal-table th,
+      .modal-table td {
+        padding: 0.85rem 1rem;
+        text-align: left;
+        border-bottom: 1px solid #e2e8f0;
+      }
+
+      .modal-table tbody tr:hover {
+        background: #f1f5f9;
+      }
+
+      .modal-table tbody tr:last-child td {
+        border-bottom: none;
+      }
+
+      .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.25rem 0.65rem;
+        border-radius: 999px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+      }
+
+      .status-badge.en-stock {
+        background: rgba(34, 197, 94, 0.12);
+        color: #15803d;
+        border: 1px solid rgba(34, 197, 94, 0.25);
+      }
+
+      .status-badge.sin-stock {
+        background: rgba(239, 68, 68, 0.12);
+        color: #b91c1c;
+        border: 1px solid rgba(239, 68, 68, 0.25);
+      }
+
+      .btn-small {
+        padding: 0.45rem 0.9rem;
+        font-size: 0.85rem;
+        border-radius: 0.75rem;
+      }
+
+      .btn-ajuste {
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.35rem;
+        cursor: pointer;
+      }
+
+      .modal-feedback {
+        border-radius: 1rem;
+        padding: 1.5rem;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+      }
+
+      .modal-feedback-error {
+        color: #b91c1c;
+      }
+
+      .modal-feedback-empty {
+        color: #475569;
+      }
+
       .modal-content {
-        max-width: 95% !important;
-        padding: 1.5rem !important;
+        animation: modalSlideIn 0.3s ease-out;
+        max-height: 90vh;
+        overflow-y: auto;
       }
-    }
-  </style>
-</body>
+
+      @keyframes modalSlideIn {
+        from {
+          transform: translateY(-50px);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+
+      @media (max-width: 768px) {
+        .modal-content {
+          max-width: 95% !important;
+          padding: 1.5rem !important;
+        }
+
+        .modal-detalle {
+          padding: 1.5rem;
+        }
+
+        .modal-table-wrapper {
+          overflow-x: auto;
+        }
+      }
+    </style>
+  </body>
 </html>

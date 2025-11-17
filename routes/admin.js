@@ -31,8 +31,11 @@ router.put('/pedidos/:id/costo-envio', authenticate, authorizeAdmin, adminContro
  * Gestión de productos
  */
 router.get('/productos', authenticate, authorizeAdmin, adminController.getAllProductos);
+router.get('/productos/:id', authenticate, authorizeAdmin, adminController.getProductoDetalle);
 router.post('/productos', authenticate, authorizeAdmin, adminController.crearProducto);
+router.put('/productos/:id', authenticate, authorizeAdmin, adminController.actualizarProducto);
 router.post('/variantes', authenticate, authorizeAdmin, adminController.crearVariante);
+router.get('/tamanos-paquetes', authenticate, authorizeAdmin, adminController.getTamanosPaquetes);
 router.get('/categorias', authenticate, authorizeAdmin, adminController.getCategorias);
 router.post('/categorias', authenticate, authorizeAdmin, adminController.crearCategoria);
 router.put('/categorias/:id', authenticate, authorizeAdmin, adminController.actualizarCategoria);
@@ -42,6 +45,7 @@ router.get('/medidas', authenticate, authorizeAdmin, adminController.getMedidas)
 /**
  * Gestión de inventario
  */
+router.get('/inventario', authenticate, authorizeAdmin, adminController.getInventarioResumen);
 router.post('/inventario/ajuste', authenticate, authorizeAdmin, adminController.ajustarInventario);
 
 /**

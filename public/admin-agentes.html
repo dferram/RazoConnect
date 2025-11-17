@@ -175,7 +175,7 @@
             <div class="admin-table-header">
               <h2 class="admin-table-title">Lista de agentes</h2>
               <button class="btn btn-secondary" onclick="loadAgentes()">
-                🔄 Actualizar
+                Actualizar
               </button>
             </div>
             <div id="loadingAgents" class="loading">
@@ -696,13 +696,13 @@
 
             <!-- Estadísticas -->
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
-              <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 1.25rem; border-radius: 0.75rem; color: white;">
+              <div style="background: linear-gradient(135deg, #ff7a18, #ffae42); padding: 1.25rem; border-radius: 0.75rem; color: white; box-shadow: 0 12px 24px rgba(251, 146, 60, 0.3); border: 1px solid rgba(251, 146, 60, 0.45);">
                 <p style="margin: 0; font-size: 0.875rem; opacity: 0.9;">Total Ventas</p>
                 <p style="margin: 0.5rem 0 0 0; font-size: 2rem; font-weight: 700;">${
                   ventas.length
                 }</p>
               </div>
-              <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 1.25rem; border-radius: 0.75rem; color: white;">
+              <div style="background: linear-gradient(135deg, #ff7a18, #ffae42); padding: 1.25rem; border-radius: 0.75rem; color: white; box-shadow: 0 12px 24px rgba(251, 146, 60, 0.3); border: 1px solid rgba(251, 146, 60, 0.45);">
                 <p style="margin: 0; font-size: 0.875rem; opacity: 0.9;">Comisiones Totales</p>
                 <p style="margin: 0.5rem 0 0 0; font-size: 2rem; font-weight: 700;">$${totalComisiones.toLocaleString()}</p>
               </div>

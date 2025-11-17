@@ -164,6 +164,12 @@ const API = {
   },
 
   // Direcciones endpoints
+  getEstados: async () => {
+    return apiCall('/public/estados', {
+      method: 'GET'
+    });
+  },
+
   getDirecciones: async () => {
     return apiCall('/direcciones', {
       method: 'GET'
