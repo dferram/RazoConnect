@@ -280,6 +280,12 @@ const API = {
       method: "GET",
     });
   },
+
+  obtenerComisionesAgente: async () => {
+    return apiCall("/agente/comisiones", {
+      method: "GET",
+    });
+  },
 };
 
 // Utility function to show toast notifications

@@ -236,6 +236,31 @@
               </div>
 
               <div style="padding: 1.5rem">
+                <form
+                  id="mastersSearchForm"
+                  class="admin-search admin-search--compact admin-search--spaced"
+                  role="search"
+                >
+                  <div class="search-group">
+                    <input
+                      type="text"
+                      id="search-productos"
+                      class="form-control"
+                      placeholder="Buscar producto..."
+                      aria-label="Buscar producto"
+                    />
+                    <button type="submit" class="btn btn-primary btn-sm">
+                      Buscar
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-secondary btn-sm"
+                      id="search-productos-clear"
+                    >
+                      Limpiar
+                    </button>
+                  </div>
+                </form>
                 <div id="mastersLoading" class="loading" style="display: none">
                   <div class="spinner"></div>
                 </div>
@@ -569,6 +594,8 @@
       // Initialize
       init();
 
+      let masterProductsCache = [];
+
       async function loadMasterProducts() {
         try {
           mastersLoading.style.display = "flex";
@@ -583,13 +610,8 @@
               ? response.data.data.productos
               : [];
 
-            if (!productos.length) {
-              mastersEmpty.style.display = "flex";
-              return;
-            }
-
-            productsToTable(productos);
-            mastersTable.style.display = "table";
+            masterProductsCache = productos;
+            applyMasterProductsSearch();
           } else {
             throw new Error(
               response.data?.message || "No se pudieron cargar productos"
@@ -597,6 +619,7 @@
           }
         } catch (error) {
           console.error("Error cargando productos maestros:", error);
+          masterProductsCache = [];
           mastersEmpty.style.display = "flex";
           mastersEmpty.querySelector(".empty-state-title").textContent =
             "Error al cargar productos";
@@ -609,17 +632,24 @@
 
       function productsToTable(productos) {
         mastersTableBody.innerHTML = "";
-        productos
-          .sort((a, b) =>
-            a.nombreProducto.localeCompare(b.nombreProducto, "es")
-          )
-          .forEach((prod) => {
-            const variantes = prod.totalVariantes ?? 0;
-            const precioDesde = Number.isFinite(prod.precioDesde)
-              ? formatCurrency(prod.precioDesde)
-              : "N/D";
-            const row = document.createElement("tr");
-            row.innerHTML = `
+
+        if (!productos.length) {
+          mastersTable.style.display = "none";
+          mastersEmpty.style.display = "flex";
+          return;
+        }
+
+        const sortedProducts = [...productos].sort((a, b) =>
+          a.nombreProducto.localeCompare(b.nombreProducto, "es")
+        );
+
+        sortedProducts.forEach((prod) => {
+          const variantes = prod.totalVariantes ?? 0;
+          const precioDesde = Number.isFinite(prod.precioDesde)
+            ? formatCurrency(prod.precioDesde)
+            : "N/D";
+          const row = document.createElement("tr");
+          row.innerHTML = `
             <td>#${prod.productoId}</td>
             <td>
               <strong>${prod.nombreProducto}</strong>
@@ -636,20 +666,102 @@
               }">Editar variantes</a>
             </td>
           `;
-            mastersTableBody.appendChild(row);
-          });
+          mastersTableBody.appendChild(row);
+        });
+
         mastersEmpty.style.display = "none";
+        mastersTable.style.display = "table";
+      }
+
+      function setMastersEmptyMessage(title, text) {
+        if (mastersEmptyTitleEl && typeof title === "string") {
+          mastersEmptyTitleEl.textContent = title;
+        }
+        if (mastersEmptyTextEl && typeof text === "string") {
+          mastersEmptyTextEl.textContent = text;
+        }
+      }
+
+      function applyMasterProductsSearch() {
+        if (!searchProductosInput) {
+          productsToTable(masterProductsCache);
+          return;
+        }
+
+        const term = searchProductosInput.value.trim().toLowerCase();
+
+        if (!term) {
+          setMastersEmptyMessage(
+            defaultEmptyState.title,
+            defaultEmptyState.text
+          );
+          productsToTable(masterProductsCache);
+          return;
+        }
+
+        const filtered = masterProductsCache.filter((prod) =>
+          (prod.nombreProducto || "").toLowerCase().includes(term)
+        );
+
+        if (filtered.length) {
+          setMastersEmptyMessage(
+            defaultEmptyState.title,
+            defaultEmptyState.text
+          );
+          productsToTable(filtered);
+        } else {
+          setMastersEmptyMessage(
+            "Sin resultados",
+            "No se encontraron productos que coincidan con la búsqueda."
+          );
+          productsToTable([]);
+        }
       }
 
       const mastersLoading = document.getElementById("mastersLoading");
       const mastersTable = document.getElementById("mastersTable");
       const mastersTableBody = document.getElementById("mastersTableBody");
       const mastersEmpty = document.getElementById("mastersEmpty");
+      const mastersEmptyTitleEl =
+        mastersEmpty?.querySelector(".empty-state-title");
+      const mastersEmptyTextEl =
+        mastersEmpty?.querySelector(".empty-state-text");
       const refreshMastersBtn = document.getElementById("refreshMastersBtn");
+      const searchProductosInput = document.getElementById("search-productos");
+      const mastersSearchForm = document.getElementById("mastersSearchForm");
+      const searchProductosClear = document.getElementById(
+        "search-productos-clear"
+      );
+      const defaultEmptyState = {
+        title: mastersEmptyTitleEl?.textContent || "",
+        text: mastersEmptyTextEl?.textContent || "",
+      };
 
       refreshMastersBtn.addEventListener("click", () => {
         loadMasterProducts();
       });
+
+      if (searchProductosInput) {
+        searchProductosInput.addEventListener("input", () => {
+          applyMasterProductsSearch();
+        });
+      }
+
+      if (mastersSearchForm) {
+        mastersSearchForm.addEventListener("submit", (event) => {
+          event.preventDefault();
+          applyMasterProductsSearch();
+        });
+      }
+
+      if (searchProductosClear) {
+        searchProductosClear.addEventListener("click", () => {
+          if (!searchProductosInput) return;
+          searchProductosInput.value = "";
+          applyMasterProductsSearch();
+          searchProductosInput.focus();
+        });
+      }
 
       function formatCurrency(value) {
         return new Intl.NumberFormat("es-MX", {

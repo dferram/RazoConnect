@@ -219,7 +219,7 @@ const obtenerDashboardStats = async (req, res) => {
 
     const pedidosRecientesQuery = await db.query(
       `SELECT p.pedidoid
-            ,p.numeropedido
+            ,LPAD(p.pedidoid::text, 6, '0') AS numeropedido
             ,p.fechapedido
             ,p.montototal
             ,p.estatus
@@ -278,7 +278,7 @@ const obtenerPedidosDelAgente = async (req, res) => {
       typeof req.query.estatus === "string" ? req.query.estatus.trim() : "";
     const params = [agenteId];
     let query = `SELECT p.pedidoid
-                      ,p.numeropedido
+                      ,LPAD(p.pedidoid::text, 6, '0') AS numeropedido
                       ,p.fechapedido
                       ,p.montototal
                       ,p.estatus
@@ -351,10 +351,10 @@ const obtenerComisionesDelAgente = async (req, res) => {
             ,c.montocomision
             ,c.estatus
             ,c.fechacalculo
-            ,c.fechapago
+            ,NULL::timestamp AS fechapago
        FROM Comisiones c
        WHERE c.agenteid = $1
-       ORDER BY COALESCE(c.fechapago, c.fechacalculo) DESC, c.comisionid DESC`,
+       ORDER BY c.fechacalculo DESC, c.comisionid DESC`,
       [agenteId]
     );
 

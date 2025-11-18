@@ -661,6 +661,10 @@
   min-width: auto;
 }
 
+.admin-search--spaced {
+  margin-bottom: 1.25rem;
+}
+
 @media (max-width: 1024px) {
   .dashboard-actions {
     justify-content: stretch;
@@ -682,6 +686,66 @@
 
 .admin-search .search-group .form-control::placeholder {
   color: rgba(15, 23, 42, 0.45);
+}
+
+.search-card {
+  background: #ffffff;
+  border-radius: 50px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  padding: 8px 8px 8px 25px;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.search-card input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 0.95rem;
+  color: var(--razo-gray-dark);
+}
+
+.search-card input::placeholder {
+  color: rgba(15, 23, 42, 0.45);
+}
+
+.search-card button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  font-weight: 600;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.search-card button:active {
+  transform: scale(0.98);
+}
+
+.search-card-submit {
+  background-color: #ff8652;
+  color: #ffffff;
+  border: none;
+  padding: 10px 30px;
+  margin-right: 10px;
+  box-shadow: 0 6px 16px rgba(255, 134, 82, 0.25);
+}
+
+.search-card-submit:hover {
+  box-shadow: 0 8px 18px rgba(255, 134, 82, 0.3);
+}
+
+.search-card-clear {
+  background-color: transparent;
+  color: #4fd1c5;
+  border: 2px solid #4fd1c5;
+  padding: 8px 30px;
+}
+
+.search-card-clear:hover {
+  background-color: rgba(79, 209, 197, 0.08);
 }
 
 .admin-filter-tabs {
