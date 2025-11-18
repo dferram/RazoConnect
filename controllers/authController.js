@@ -1,13 +1,14 @@
-const bcrypt = require('bcrypt');
-const db = require('../db');
-const { generateToken } = require('../utils/jwtHelper');
-const crypto = require('crypto');
-const { enviarEmail } = require('../services/emailService');
-const { 
-  validateClienteRegistro, 
-  validateAgenteRegistro, 
-  validateLogin 
-} = require('../utils/validator');
+const bcrypt = require("bcrypt");
+const db = require("../db");
+const { generateToken } = require("../utils/jwtHelper");
+const crypto = require("crypto");
+const { enviarEmail } = require("../services/emailService");
+const {
+  validateClienteRegistro,
+  validateAgenteRegistro,
+  validateLogin,
+} = require("../utils/validator");
+const { generateCodigoAgente } = require("../utils/agentCode");
 
 /**
  * Registro de nuevo cliente
@@ -18,25 +19,30 @@ const registroCliente = async (req, res) => {
     const { Nombre, Apellido, Email, Password, Telefono } = req.body;
 
     // Validar datos de entrada
-    const validation = validateClienteRegistro({ Nombre, Apellido, Email, Password });
+    const validation = validateClienteRegistro({
+      Nombre,
+      Apellido,
+      Email,
+      Password,
+    });
     if (!validation.valid) {
       return res.status(400).json({
         success: false,
-        message: 'Error de validación',
-        errors: validation.errors
+        message: "Error de validación",
+        errors: validation.errors,
       });
     }
 
     // Verificar si el email ya existe
     const emailExists = await db.query(
-      'SELECT Email FROM Clientes WHERE Email = $1',
+      "SELECT Email FROM Clientes WHERE Email = $1",
       [Email]
     );
 
     if (emailExists.rows.length > 0) {
       return res.status(400).json({
         success: false,
-        message: 'El email ya está registrado'
+        message: "El email ya está registrado",
       });
     }
 
@@ -57,13 +63,13 @@ const registroCliente = async (req, res) => {
     // Generar token JWT
     const token = generateToken({
       userId: nuevoCliente.clienteid,
-      rol: 'cliente',
-      email: nuevoCliente.email
+      rol: "cliente",
+      email: nuevoCliente.email,
     });
 
     res.status(201).json({
       success: true,
-      message: 'Cliente registrado exitosamente',
+      message: "Cliente registrado exitosamente",
       data: {
         cliente: {
           clienteId: nuevoCliente.clienteid,
@@ -71,18 +77,17 @@ const registroCliente = async (req, res) => {
           apellido: nuevoCliente.apellido,
           email: nuevoCliente.email,
           telefono: nuevoCliente.telefono,
-          fechaDeRegistro: nuevoCliente.fechaderegistro
+          fechaDeRegistro: nuevoCliente.fechaderegistro,
         },
-        token
-      }
+        token,
+      },
     });
-
   } catch (error) {
-    console.error('Error en registro de cliente:', error);
+    console.error("Error en registro de cliente:", error);
     res.status(500).json({
       success: false,
-      message: 'Error al registrar el cliente',
-      error: error.message
+      message: "Error al registrar el cliente",
+      error: error.message,
     });
   }
 };
@@ -93,47 +98,41 @@ const registroCliente = async (req, res) => {
  */
 const registroAgente = async (req, res) => {
   try {
-    const { Nombre, Apellido, Email, Password, CodigoAgente } = req.body;
+    const { Nombre, Apellido, Email, Password } = req.body;
 
     // Validar datos de entrada
-    const validation = validateAgenteRegistro({ Nombre, Apellido, Email, Password, CodigoAgente });
+    const validation = validateAgenteRegistro({
+      Nombre,
+      Apellido,
+      Email,
+      Password,
+    });
     if (!validation.valid) {
       return res.status(400).json({
         success: false,
-        message: 'Error de validación',
-        errors: validation.errors
+        message: "Error de validación",
+        errors: validation.errors,
       });
     }
 
     // Verificar si el email ya existe
     const emailExists = await db.query(
-      'SELECT Email FROM AgentesDeVentas WHERE Email = $1',
+      "SELECT Email FROM AgentesDeVentas WHERE Email = $1",
       [Email]
     );
 
     if (emailExists.rows.length > 0) {
       return res.status(400).json({
         success: false,
-        message: 'El email ya está registrado'
-      });
-    }
-
-    // Verificar si el código de agente ya existe
-    const codigoExists = await db.query(
-      'SELECT CodigoAgente FROM AgentesDeVentas WHERE CodigoAgente = $1',
-      [CodigoAgente]
-    );
-
-    if (codigoExists.rows.length > 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'El código de agente ya está registrado'
+        message: "El email ya está registrado",
       });
     }
 
     // Hashear la contraseña
     const saltRounds = parseInt(process.env.BCRYPT_ROUNDS) || 10;
     const PasswordHash = await bcrypt.hash(Password, saltRounds);
+
+    const CodigoAgente = await generateCodigoAgente(db);
 
     // Insertar nuevo agente
     const result = await db.query(
@@ -148,14 +147,15 @@ const registroAgente = async (req, res) => {
     // Generar token JWT
     const token = generateToken({
       userId: nuevoAgente.agenteid,
-      rol: 'agente',
+      rol: "agente",
+      roles: ["agente"],
       email: nuevoAgente.email,
-      codigoAgente: nuevoAgente.codigoagente
+      codigoAgente: nuevoAgente.codigoagente,
     });
 
     res.status(201).json({
       success: true,
-      message: 'Agente registrado exitosamente',
+      message: "Agente registrado exitosamente",
       data: {
         agente: {
           agenteId: nuevoAgente.agenteid,
@@ -163,18 +163,17 @@ const registroAgente = async (req, res) => {
           apellido: nuevoAgente.apellido,
           email: nuevoAgente.email,
           codigoAgente: nuevoAgente.codigoagente,
-          activo: nuevoAgente.activo
+          activo: nuevoAgente.activo,
         },
-        token
-      }
+        token,
+      },
     });
-
   } catch (error) {
-    console.error('Error en registro de agente:', error);
+    console.error("Error en registro de agente:", error);
     res.status(500).json({
       success: false,
-      message: 'Error al registrar el agente',
-      error: error.message
+      message: "Error al registrar el agente",
+      error: error.message,
     });
   }
 };
@@ -192,57 +191,60 @@ const login = async (req, res) => {
     if (!validation.valid) {
       return res.status(400).json({
         success: false,
-        message: 'Error de validación',
-        errors: validation.errors
+        message: "Error de validación",
+        errors: validation.errors,
       });
     }
 
     // Buscar en la tabla de Clientes
     const clienteResult = await db.query(
-      'SELECT ClienteID, Nombre, Apellido, Email, PasswordHash, Telefono FROM Clientes WHERE Email = $1',
+      "SELECT ClienteID, Nombre, Apellido, Email, PasswordHash, Telefono FROM Clientes WHERE Email = $1",
       [Email]
     );
 
     if (clienteResult.rows.length > 0) {
       const cliente = clienteResult.rows[0];
-      
+
       // Verificar contraseña
-      const passwordMatch = await bcrypt.compare(Password, cliente.passwordhash);
-      
+      const passwordMatch = await bcrypt.compare(
+        Password,
+        cliente.passwordhash
+      );
+
       if (!passwordMatch) {
         return res.status(401).json({
           success: false,
-          message: 'Credenciales inválidas'
+          message: "Credenciales inválidas",
         });
       }
 
       // Generar token JWT
       const token = generateToken({
         userId: cliente.clienteid,
-        rol: 'cliente',
-        email: cliente.email
+        rol: "cliente",
+        email: cliente.email,
       });
 
       return res.status(200).json({
         success: true,
-        message: 'Login exitoso',
+        message: "Login exitoso",
         data: {
-          rol: 'cliente',
+          rol: "cliente",
           usuario: {
             clienteId: cliente.clienteid,
             nombre: cliente.nombre,
             apellido: cliente.apellido,
             email: cliente.email,
-            telefono: cliente.telefono
+            telefono: cliente.telefono,
           },
-          token
-        }
+          token,
+        },
       });
     }
 
     // Si no es cliente, buscar en la tabla de AgentesDeVentas
     const agenteResult = await db.query(
-      'SELECT AgenteID, Nombre, Apellido, Email, PasswordHash, CodigoAgente, Activo FROM AgentesDeVentas WHERE Email = $1',
+      "SELECT AgenteID, Nombre, Apellido, Email, PasswordHash, CodigoAgente, Activo FROM AgentesDeVentas WHERE Email = $1",
       [Email]
     );
 
@@ -253,58 +255,58 @@ const login = async (req, res) => {
       if (!agente.activo) {
         return res.status(403).json({
           success: false,
-          message: 'La cuenta del agente está inactiva'
+          message: "La cuenta del agente está inactiva",
         });
       }
-      
+
       // Verificar contraseña
       const passwordMatch = await bcrypt.compare(Password, agente.passwordhash);
-      
+
       if (!passwordMatch) {
         return res.status(401).json({
           success: false,
-          message: 'Credenciales inválidas'
+          message: "Credenciales inválidas",
         });
       }
 
       // Generar token JWT
       const token = generateToken({
         userId: agente.agenteid,
-        rol: 'agente',
+        rol: "agente",
+        roles: ["agente"],
         email: agente.email,
-        codigoAgente: agente.codigoagente
+        codigoAgente: agente.codigoagente,
       });
 
       return res.status(200).json({
         success: true,
-        message: 'Login exitoso',
+        message: "Login exitoso",
         data: {
-          rol: 'agente',
+          rol: "agente",
           usuario: {
             agenteId: agente.agenteid,
             nombre: agente.nombre,
             apellido: agente.apellido,
             email: agente.email,
             codigoAgente: agente.codigoagente,
-            activo: agente.activo
+            activo: agente.activo,
           },
-          token
-        }
+          token,
+        },
       });
     }
 
     // Si no se encontró ni como cliente ni como agente
     res.status(401).json({
       success: false,
-      message: 'Credenciales inválidas'
+      message: "Credenciales inválidas",
     });
-
   } catch (error) {
-    console.error('Error en login:', error);
+    console.error("Error en login:", error);
     res.status(500).json({
       success: false,
-      message: 'Error al iniciar sesión',
-      error: error.message
+      message: "Error al iniciar sesión",
+      error: error.message,
     });
   }
 };
@@ -316,9 +318,9 @@ const login = async (req, res) => {
 const verifyCliente = async (req, res) => {
   try {
     // El middleware authenticate ya verificó el token y agregó req.user
-    console.log('🔍 req.user completo:', req.user);
+    console.log("🔍 req.user completo:", req.user);
     const clienteId = req.user.userId;
-    console.log('🔍 clienteId extraído:', clienteId);
+    console.log("🔍 clienteId extraído:", clienteId);
 
     // Obtener datos del cliente
     const result = await db.query(
@@ -327,12 +329,12 @@ const verifyCliente = async (req, res) => {
        WHERE ClienteID = $1`,
       [clienteId]
     );
-    console.log('🔍 Resultado query:', result.rows);
+    console.log("🔍 Resultado query:", result.rows);
 
     if (result.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        message: 'Cliente no encontrado o inactivo'
+        message: "Cliente no encontrado o inactivo",
       });
     }
 
@@ -347,16 +349,15 @@ const verifyCliente = async (req, res) => {
           apellido: cliente.apellido,
           email: cliente.email,
           telefono: cliente.telefono,
-          fechaDeRegistro: cliente.fechaderegistro
-        }
-      }
+          fechaDeRegistro: cliente.fechaderegistro,
+        },
+      },
     });
-
   } catch (error) {
-    console.error('Error verifying cliente:', error);
+    console.error("Error verifying cliente:", error);
     res.status(500).json({
       success: false,
-      message: 'Error en el servidor'
+      message: "Error en el servidor",
     });
   }
 };
@@ -380,32 +381,31 @@ const refreshClienteToken = async (req, res) => {
     if (result.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        message: 'Cliente no encontrado'
+        message: "Cliente no encontrado",
       });
     }
 
     // Generar un nuevo token con el mismo payload
     const newToken = generateToken({
       userId: clienteId,
-      rol: 'cliente',
-      email: email
+      rol: "cliente",
+      email: email,
     });
 
-    console.log('🔄 Token de cliente renovado:', { clienteId, email });
+    console.log("🔄 Token de cliente renovado:", { clienteId, email });
 
     res.json({
       success: true,
-      message: 'Token renovado exitosamente',
+      message: "Token renovado exitosamente",
       data: {
-        token: newToken
-      }
+        token: newToken,
+      },
     });
-
   } catch (error) {
-    console.error('Error refreshing cliente token:', error);
+    console.error("Error refreshing cliente token:", error);
     res.status(500).json({
       success: false,
-      message: 'Error al renovar token'
+      message: "Error al renovar token",
     });
   }
 };
@@ -416,30 +416,35 @@ const forgotPassword = async (req, res) => {
   if (!email) {
     return res.status(400).json({
       success: false,
-      message: 'El email es requerido'
+      message: "El email es requerido",
     });
   }
 
   const genericResponse = {
     success: true,
-    message: 'Si el email está registrado, recibirás instrucciones para restablecer tu contraseña.'
+    message:
+      "Si el email está registrado, recibirás instrucciones para restablecer tu contraseña.",
   };
 
   try {
     const clienteResult = await db.query(
-      'SELECT ClienteID, Nombre FROM Clientes WHERE Email = $1',
+      "SELECT ClienteID, Nombre FROM Clientes WHERE Email = $1",
       [email]
     );
 
-    const agenteResult = clienteResult.rows.length === 0
-      ? await db.query('SELECT AgenteID, Nombre FROM AgentesDeVentas WHERE Email = $1', [email])
-      : { rows: [] };
+    const agenteResult =
+      clienteResult.rows.length === 0
+        ? await db.query(
+            "SELECT AgenteID, Nombre FROM AgentesDeVentas WHERE Email = $1",
+            [email]
+          )
+        : { rows: [] };
 
     if (clienteResult.rows.length === 0 && agenteResult.rows.length === 0) {
       return res.status(200).json(genericResponse);
     }
 
-    const token = crypto.randomBytes(32).toString('hex');
+    const token = crypto.randomBytes(32).toString("hex");
     const expiration = new Date(Date.now() + 60 * 60 * 1000);
 
     const clienteId = clienteResult.rows[0]?.clienteid || null;
@@ -451,9 +456,14 @@ const forgotPassword = async (req, res) => {
       [token, clienteId, agenteId, expiration]
     );
 
-    const resetLink = `${process.env.FRONTEND_BASE_URL || 'https://tusitio.com'}/reset-password.html?token=${token}`;
-    const nombre = clienteResult.rows[0]?.nombre || agenteResult.rows[0]?.nombre || 'cliente';
-    const asunto = 'Instrucciones para restablecer tu contraseña';
+    const resetLink = `${
+      process.env.FRONTEND_BASE_URL || "https://tusitio.com"
+    }/reset-password.html?token=${token}`;
+    const nombre =
+      clienteResult.rows[0]?.nombre ||
+      agenteResult.rows[0]?.nombre ||
+      "cliente";
+    const asunto = "Instrucciones para restablecer tu contraseña";
     const cuerpoHtml = `
       <div style="font-family: Arial, sans-serif; color: #1f2937;">
         <h2 style="color:#0ea5e9;">Hola ${nombre}</h2>
@@ -466,16 +476,15 @@ const forgotPassword = async (req, res) => {
     `;
 
     enviarEmail(email, asunto, cuerpoHtml).catch((err) => {
-      console.error('Error enviando correo de reseteo:', err);
+      console.error("Error enviando correo de reseteo:", err);
     });
 
     return res.status(200).json(genericResponse);
-
   } catch (error) {
-    console.error('Error en forgot-password:', error);
+    console.error("Error en forgot-password:", error);
     return res.status(500).json({
       success: false,
-      message: 'Error al iniciar proceso de recuperación'
+      message: "Error al iniciar proceso de recuperación",
     });
   }
 };
@@ -486,7 +495,7 @@ const resetPassword = async (req, res) => {
   if (!token || !nuevaPassword) {
     return res.status(400).json({
       success: false,
-      message: 'Token y nuevaPassword son requeridos'
+      message: "Token y nuevaPassword son requeridos",
     });
   }
 
@@ -501,16 +510,18 @@ const resetPassword = async (req, res) => {
     if (tokenResult.rows.length === 0) {
       return res.status(400).json({
         success: false,
-        message: 'Token inválido o expirado'
+        message: "Token inválido o expirado",
       });
     }
 
     const tokenRow = tokenResult.rows[0];
     if (new Date(tokenRow.expiraen) <= new Date()) {
-      await db.query('DELETE FROM PasswordResetTokens WHERE TokenID = $1', [tokenRow.tokenid]);
+      await db.query("DELETE FROM PasswordResetTokens WHERE TokenID = $1", [
+        tokenRow.tokenid,
+      ]);
       return res.status(400).json({
         success: false,
-        message: 'Token inválido o expirado'
+        message: "Token inválido o expirado",
       });
     }
 
@@ -519,28 +530,29 @@ const resetPassword = async (req, res) => {
 
     if (tokenRow.clienteid) {
       await db.query(
-        'UPDATE Clientes SET PasswordHash = $1 WHERE ClienteID = $2',
+        "UPDATE Clientes SET PasswordHash = $1 WHERE ClienteID = $2",
         [hashedPassword, tokenRow.clienteid]
       );
     } else if (tokenRow.agenteid) {
       await db.query(
-        'UPDATE AgentesDeVentas SET PasswordHash = $1 WHERE AgenteID = $2',
+        "UPDATE AgentesDeVentas SET PasswordHash = $1 WHERE AgenteID = $2",
         [hashedPassword, tokenRow.agenteid]
       );
     }
 
-    await db.query('DELETE FROM PasswordResetTokens WHERE TokenID = $1', [tokenRow.tokenid]);
+    await db.query("DELETE FROM PasswordResetTokens WHERE TokenID = $1", [
+      tokenRow.tokenid,
+    ]);
 
     return res.status(200).json({
       success: true,
-      message: 'Contraseña actualizada correctamente'
+      message: "Contraseña actualizada correctamente",
     });
-
   } catch (error) {
-    console.error('Error en reset-password:', error);
+    console.error("Error en reset-password:", error);
     return res.status(500).json({
       success: false,
-      message: 'Error al restablecer la contraseña'
+      message: "Error al restablecer la contraseña",
     });
   }
 };
@@ -552,5 +564,5 @@ module.exports = {
   verifyCliente,
   refreshClienteToken,
   forgotPassword,
-  resetPassword
+  resetPassword,
 };

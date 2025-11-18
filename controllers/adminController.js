@@ -2,6 +2,7 @@ const db = require("../db");
 const { enviarEmail } = require("../services/emailService");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const { generateCodigoAgente } = require("../utils/agentCode");
 
 let agenteAdminColumnsCache = null;
 
@@ -228,6 +229,137 @@ const loginAdmin = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Error en el servidor",
+    });
+  }
+};
+
+/**
+ * Obtener clientes asignados a un agente específico
+ * GET /api/admin/agentes/:id/clientes
+ */
+const getAgenteClientes = async (req, res) => {
+  try {
+    const agenteId = parseInt(req.params.id, 10);
+
+    if (Number.isNaN(agenteId)) {
+      return res.status(400).json({
+        success: false,
+        message: "ID de agente inválido",
+      });
+    }
+
+    const agenteResult = await db.query(
+      `SELECT AgenteID FROM AgentesDeVentas WHERE AgenteID = $1`,
+      [agenteId]
+    );
+
+    if (agenteResult.rowCount === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Agente no encontrado",
+      });
+    }
+
+    const clientesResult = await db.query(
+      `SELECT
+         c.ClienteID,
+         c.Nombre,
+         c.Apellido,
+         c.Email,
+         c.Telefono,
+         c.FechaDeRegistro,
+         stats.total_pedidos,
+         stats.monto_total,
+         stats.total_comisiones
+       FROM Clientes c
+       LEFT JOIN LATERAL (
+         SELECT
+           COUNT(*) AS total_pedidos,
+           COALESCE(SUM(p.MontoTotal), 0) AS monto_total,
+           COALESCE(SUM(co.MontoComision), 0) AS total_comisiones
+         FROM Pedidos p
+         LEFT JOIN Comisiones co ON co.PedidoID = p.PedidoID
+         WHERE p.ClienteID = c.ClienteID AND p.AgenteID = $1
+       ) stats ON TRUE
+       WHERE c.AgenteID = $1
+       ORDER BY c.FechaDeRegistro DESC`,
+      [agenteId]
+    );
+
+    const clientes = clientesResult.rows.map((row) => ({
+      clienteId: row.clienteid,
+      nombre: row.nombre,
+      apellido: row.apellido,
+      email: row.email,
+      telefono: row.telefono,
+      fechaRegistro: row.fechaderegistro,
+      totalPedidos: Number.parseInt(row.total_pedidos ?? 0, 10),
+      montoTotalCompras: Number.parseFloat(row.monto_total ?? 0),
+      totalComisiones: Number.parseFloat(row.total_comisiones ?? 0),
+    }));
+
+    return res.json({
+      success: true,
+      data: {
+        clientes,
+        total: clientes.length,
+      },
+    });
+  } catch (error) {
+    console.error("Error al obtener clientes del agente:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error al obtener la cartera del agente",
+    });
+  }
+};
+
+/**
+ * Desvincular un cliente de su agente asignado
+ * PUT /api/admin/clientes/:id/desvincular
+ */
+const desvincularClienteDeAgente = async (req, res) => {
+  try {
+    const clienteId = parseInt(req.params.id, 10);
+
+    if (Number.isNaN(clienteId)) {
+      return res.status(400).json({
+        success: false,
+        message: "ID de cliente inválido",
+      });
+    }
+
+    const result = await db.query(
+      `UPDATE Clientes
+       SET AgenteID = NULL
+       WHERE ClienteID = $1
+       RETURNING ClienteID, Nombre, Apellido`,
+      [clienteId]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Cliente no encontrado",
+      });
+    }
+
+    const cliente = result.rows[0];
+
+    return res.json({
+      success: true,
+      message: "Cliente desvinculado del agente",
+      data: {
+        clienteId: cliente.clienteid,
+        nombre: cliente.nombre,
+        apellido: cliente.apellido,
+      },
+    });
+  } catch (error) {
+    console.error("Error al desvincular cliente:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error al desvincular al cliente del agente",
     });
   }
 };
@@ -2186,11 +2318,10 @@ const eliminarCategoria = async (req, res) => {
  */
 const crearAgente = async (req, res) => {
   try {
-    const { nombre, apellido, email, password, codigoAgente, telefono } =
-      req.body;
+    const { nombre, apellido, email, password, telefono } = req.body;
 
     // Validaciones
-    if (!nombre || !apellido || !email || !password || !codigoAgente) {
+    if (!nombre || !apellido || !email || !password) {
       return res.status(400).json({
         success: false,
         message: "Todos los campos obligatorios deben ser proporcionados",
@@ -2210,21 +2341,9 @@ const crearAgente = async (req, res) => {
       });
     }
 
-    // Verificar si el código de agente ya existe
-    const codigoCheck = await db.query(
-      "SELECT AgenteID FROM AgentesDeVentas WHERE CodigoAgente = $1",
-      [codigoAgente]
-    );
-
-    if (codigoCheck.rows.length > 0) {
-      return res.status(400).json({
-        success: false,
-        message: "El código de agente ya existe",
-      });
-    }
+    const nuevoCodigoAgente = await generateCodigoAgente(db);
 
     // Hash de la contraseña
-    const bcrypt = require("bcrypt");
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Insertar el agente
@@ -2233,7 +2352,7 @@ const crearAgente = async (req, res) => {
         (Nombre, Apellido, Email, PasswordHash, CodigoAgente, Activo)
        VALUES ($1, $2, $3, $4, $5, TRUE)
        RETURNING AgenteID, Nombre, Apellido, Email, CodigoAgente`,
-      [nombre, apellido, email, hashedPassword, codigoAgente]
+      [nombre, apellido, email, hashedPassword, nuevoCodigoAgente]
     );
 
     const agente = result.rows[0];
@@ -3516,12 +3635,14 @@ module.exports = {
   crearAgente,
   getAllAgentes,
   getAgenteDetalle,
+  getAgenteClientes,
   desactivarAgente,
   getAllComisiones,
   pagarComision,
   getAllClientes,
   getClienteDetalle,
   actualizarEstadoCliente,
+  desvincularClienteDeAgente,
   getAllProveedores,
   crearProveedor,
   actualizarProveedor,

@@ -1,505 +1,584 @@
 <!DOCTYPE html>
 <html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Editar Producto - Admin RazoConnect</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Editar Producto - Admin RazoConnect</title>
 
-  <!-- PROTECCIÓN DE AUTENTICACIÓN ADMIN -->
-  <script src="js/auth-guard-admin.js"></script>
+    <!-- PROTECCIÓN DE AUTENTICACIÓN ADMIN -->
+    <script src="js/auth-guard-admin.js"></script>
 
-  <!-- SISTEMA DE RENOVACIÓN DE TOKENS -->
-  <script src="js/token-refresh.js"></script>
+    <!-- SISTEMA DE RENOVACIÓN DE TOKENS -->
+    <script src="js/token-refresh.js"></script>
 
-  <link rel="stylesheet" href="css/styles.css">
-  <link rel="stylesheet" href="css/admin.css">
-  <style>
-    .product-editor-wrapper {
-      max-width: 1080px;
-      margin: 0 auto;
-      padding: 0 1.5rem 2.5rem;
-      width: 100%;
-    }
+    <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/admin.css" />
+    <style>
+      .product-editor-wrapper {
+        max-width: 1080px;
+        margin: 0 auto;
+        padding: 0 1.5rem 2.5rem;
+        width: 100%;
+      }
 
-    .product-editor-grid {
-      display: grid;
-      gap: 1.75rem;
-      margin-bottom: 2rem;
-      align-items: start;
-    }
-
-    @media (min-width: 1024px) {
       .product-editor-grid {
-        grid-template-columns: minmax(320px, 0.95fr) 1.05fr;
+        display: grid;
+        gap: 1.75rem;
+        margin-bottom: 2rem;
         align-items: start;
       }
-    }
 
-    .product-summary h3 {
-      margin-bottom: 0.5rem;
-      font-size: 1.25rem;
-    }
+      @media (min-width: 1024px) {
+        .product-editor-grid {
+          grid-template-columns: minmax(320px, 0.95fr) 1.05fr;
+          align-items: start;
+        }
+      }
 
-    .product-summary p {
-      margin-bottom: 1rem;
-      line-height: 1.6;
-    }
+      .product-summary h3 {
+        margin-bottom: 0.5rem;
+        font-size: 1.25rem;
+      }
 
-    .summary-grid {
-      display: grid;
-      gap: 0.75rem;
-      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-    }
+      .product-summary p {
+        margin-bottom: 1rem;
+        line-height: 1.6;
+      }
 
-    .variant-form .form-grid-2,
-    .variant-form .form-grid-3 {
-      display: grid;
-      gap: 1rem;
-    }
+      .summary-grid {
+        display: grid;
+        gap: 0.75rem;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      }
 
-    .variant-form .form-grid-2 {
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    }
+      .variant-form .form-grid-2,
+      .variant-form .form-grid-3 {
+        display: grid;
+        gap: 1rem;
+      }
 
-    .variant-form .form-grid-3 {
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    }
+      .variant-form .form-grid-2 {
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      }
 
-    .variant-margin {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 1.25rem;
-      background: #fff7ed;
-      padding: 1rem 1.25rem;
-      border-radius: 0.75rem;
-      border: 1px solid rgba(0, 0, 0, 0.05);
-      margin-top: 1rem;
-      margin-bottom: 1rem;
-      flex-wrap: wrap;
-    }
-
-    .variant-margin h3 {
-      margin: 0 0 0.25rem;
-      font-size: 1rem;
-    }
-
-    .margin-metrics {
-      display: flex;
-      gap: 1.75rem;
-      flex-wrap: wrap;
-    }
-
-    .margin-metrics > div {
-      min-width: 120px;
-    }
-
-    @media (max-width: 640px) {
-      .product-editor-wrapper {
-        padding: 0 1rem 2.5rem;
+      .variant-form .form-grid-3 {
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
       }
 
       .variant-margin {
-        padding: 0.85rem 1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1.25rem;
+        background: #fff7ed;
+        padding: 1rem 1.25rem;
+        border-radius: 0.75rem;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        margin-top: 1rem;
+        margin-bottom: 1rem;
+        flex-wrap: wrap;
       }
-    }
 
-    .variant-form-card .admin-card-header {
-      margin-bottom: 1.25rem;
-    }
+      .variant-margin h3 {
+        margin: 0 0 0.25rem;
+        font-size: 1rem;
+      }
 
-    .variant-form-card .variant-form {
-      display: flex;
-      flex-direction: column;
-      gap: 1.25rem;
-    }
+      .margin-metrics {
+        display: flex;
+        gap: 1.75rem;
+        flex-wrap: wrap;
+      }
 
-    .variant-form-card {
-      margin-bottom: 2rem;
-    }
+      .margin-metrics > div {
+        min-width: 120px;
+      }
 
-    .product-editor-header .admin-header-title {
-      margin-bottom: 0;
-    }
+      @media (max-width: 640px) {
+        .product-editor-wrapper {
+          padding: 0 1rem 2.5rem;
+        }
 
-    .product-editor-header .admin-header-subtitle {
-      margin: 0;
-      color: var(--text-secondary);
-    }
+        .variant-margin {
+          padding: 0.85rem 1rem;
+        }
+      }
 
-    .variant-table thead th {
-      font-size: 0.8rem;
-    }
+      .variant-form-card .admin-card-header {
+        margin-bottom: 1.25rem;
+      }
 
-    .variants-table tbody td {
-      vertical-align: middle;
-    }
+      .variant-form-card .variant-form {
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+      }
 
-    .variants-table td:first-child {
-      font-weight: 600;
-      color: var(--razo-gray-warm);
-    }
+      .variant-form-card {
+        margin-bottom: 2rem;
+      }
 
-    .variant-table-card .admin-card-header {
-      margin-bottom: 1rem;
-    }
+      .product-editor-header .admin-header-title {
+        margin-bottom: 0;
+      }
 
-    .variant-table-card .admin-card-body {
-      padding-top: 0;
-    }
-  </style>
-</head>
-<body>
-  <div class="admin-layout">
-    <!-- Sidebar -->
-    <aside class="admin-sidebar">
-      <div class="admin-brand">
-        <a href="/admin-dashboard.html" class="admin-brand-logo">
-          📦 RazoConnect
-        </a>
-        <div class="admin-brand-subtitle">Panel admin</div>
-      </div>
+      .product-editor-header .admin-header-subtitle {
+        margin: 0;
+        color: var(--text-secondary);
+      }
 
-      <nav class="admin-nav">
-        <div class="admin-nav-section">
-          <div class="admin-nav-title">Principal</div>
-          <a href="/admin-dashboard.html" class="admin-nav-link">
-            <span class="admin-nav-icon">📊</span>
-            <span>Dashboard</span>
-          </a>
-        </div>
+      .variant-table thead th {
+        font-size: 0.8rem;
+      }
 
-        <div class="admin-nav-section">
-          <div class="admin-nav-title">Gestión</div>
-          <a href="/admin-pedidos.html" class="admin-nav-link">
-            <span class="admin-nav-icon">📦</span>
-            <span>Pedidos</span>
-          </a>
-          <a href="/admin-agregar-producto.html" class="admin-nav-link active">
-            <span class="admin-nav-icon">🎁</span>
-            <span>Productos</span>
-          </a>
-          <a href="/admin-clientes.html" class="admin-nav-link">
-            <span class="admin-nav-icon">👥</span>
-            <span>Clientes</span>
-          </a>
-          <a href="/admin-agentes.html" class="admin-nav-link">
-            <span class="admin-nav-icon">💼</span>
-            <span>Agentes</span>
-          </a>
-        </div>
+      .variants-table tbody td {
+        vertical-align: middle;
+      }
 
-        <div class="admin-nav-section">
-          <div class="admin-nav-title">Financiero</div>
-          <a href="/admin-comisiones.html" class="admin-nav-link">
-            <span class="admin-nav-icon">💰</span>
-            <span>Comisiones</span>
-          </a>
-          <a href="/admin-inventario.html" class="admin-nav-link">
-            <span class="admin-nav-icon">📈</span>
-            <span>Inventario</span>
-          </a>
-          <a href="/admin-reportes.html" class="admin-nav-link">
-            <span class="admin-nav-icon">📑</span>
-            <span>Reportes</span>
-          </a>
-        </div>
+      .variants-table td:first-child {
+        font-weight: 600;
+        color: var(--razo-gray-warm);
+      }
 
-        <div class="admin-nav-section">
-          <div class="admin-nav-title">Compras</div>
-          <a href="/admin-proveedores.html" class="admin-nav-link">
-            <span class="admin-nav-icon">🏭</span>
-            <span>Proveedores</span>
-          </a>
-          <a href="/admin-crear-oc.html" class="admin-nav-link">
-            <span class="admin-nav-icon">📋</span>
-            <span>Nueva orden de compra</span>
-          </a>
-          <a href="/admin-recibir-inventario.html" class="admin-nav-link">
-            <span class="admin-nav-icon">📥</span>
-            <span>Recibir inventario</span>
-          </a>
-        </div>
-      </nav>
-    </aside>
+      .variant-table-card .admin-card-header {
+        margin-bottom: 1rem;
+      }
 
-    <!-- Main Content -->
-    <main class="admin-main">
-      <header class="admin-header product-editor-header">
-        <div class="product-header-info">
-          <h1 class="admin-header-title">Editar producto maestro</h1>
-          <p class="admin-header-subtitle" id="productBreadcrumb">Cargando...</p>
-        </div>
-        
-        <div class="admin-header-actions">
-          <div class="admin-user-info">
-            <div class="admin-user-avatar" id="userAvatar">A</div>
-            <div class="admin-user-details">
-              <div class="admin-user-name" id="userName">Administrador</div>
-              <div class="admin-user-role" id="userRole">Admin</div>
-            </div>
-          </div>
-          <button class="admin-logout-btn" id="logoutBtn">Cerrar sesión</button>
-        </div>
-      </header>
+      .variant-table-card .admin-card-body {
+        padding-top: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="admin-layout">
+      <!-- Sidebar -->
+      <div id="sidebar-container"></div>
 
-      <div class="admin-content" id="contentWrapper" style="display: none;">
-        <div class="product-editor-wrapper">
-          <div class="product-editor-grid">
-            <!-- Product summary -->
-            <section class="admin-card product-summary-card">
-            <div class="admin-card-header" style="display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
-              <div>
-                <h2 class="admin-card-title" style="margin-bottom: 0.25rem;">Información general</h2>
-                <p class="admin-header-subtitle" style="margin-bottom: 0;" id="productMeta">-</p>
-              </div>
-              <div id="pricingBadges" class="badge-group" style="display: flex; gap: 0.5rem;"></div>
-            </div>
-            <div class="admin-card-body" id="productSummary">
-              <!-- populated dynamically -->
-            </div>
-          </section>
-
-            <!-- Create variant form -->
-            <section class="admin-card variant-form-card">
-            <div class="admin-card-header">
-              <h2 class="admin-card-title">Agregar nueva variante</h2>
-              <p class="admin-header-subtitle" style="margin-bottom: 0;">Define SKU, precios y stock inicial para activar el producto en el catálogo.</p>
-            </div>
-            <form id="variantForm" class="admin-card-body variant-form">
-              <div class="form-group">
-                <label for="sku" class="form-label">SKU *</label>
-                <input type="text" id="sku" class="form-input" placeholder="Ej: NAVIDAD-10X10-ROJO" required>
-              </div>
-
-              <div class="form-grid-2">
-                <div class="form-group">
-                  <label for="dimensiones" class="form-label">Dimensiones / Medidas</label>
-                  <input type="text" id="dimensiones" class="form-input" placeholder="Ej: 10x10x10 cm o 25 piezas">
-                </div>
-                <div class="form-group">
-                  <label for="stock" class="form-label">Stock inicial (piezas)</label>
-                  <input type="number" id="stock" class="form-input" min="0" step="1" value="0">
-                </div>
-              </div>
-
-              <div class="form-grid-2">
-                <div class="form-group">
-                  <label for="costoUnitario" class="form-label">Costo unitario (MXN)</label>
-                  <input type="number" id="costoUnitario" class="form-input" min="0" step="0.01" placeholder="0.00">
-                </div>
-                <div class="form-group">
-                  <label for="precioUnitario" class="form-label">Precio unitario (MXN) *</label>
-                  <input type="number" id="precioUnitario" class="form-input" min="0" step="0.01" placeholder="0.00" required>
-                </div>
-              </div>
-
-              <div class="variant-margin" id="variantMargin">
-                <div>
-                  <h3>Resumen económico</h3>
-                  <p id="marginMessage">Ingresa costo y precio para calcular la ganancia.</p>
-                </div>
-                <div class="margin-metrics" id="marginMetrics" style="display: none;">
-                  <div>
-                    <span class="summary-label">Costo unitario</span>
-                    <span class="summary-value" id="costPerUnit">$0.00</span>
-                  </div>
-                  <div>
-                    <span class="summary-label">Ganancia por unidad</span>
-                    <span class="summary-value" id="profitPerUnit">$0.00</span>
-                  </div>
-                  <div>
-                    <span class="summary-label">Margen</span>
-                    <span class="summary-value" id="marginPercentage">0%</span>
-                  </div>
-                </div>
-              </div>
-
-              <div style="display: flex; justify-content: flex-end; gap: 1rem;">
-                <button type="reset" class="btn btn-secondary" id="resetVariantBtn">Limpiar</button>
-                <button type="submit" class="btn btn-primary" id="saveVariantBtn" style="display: inline-flex; align-items: center; justify-content: center; gap: 0.75rem;">
-                  <span id="variantBtnText">Guardar variante</span>
-                  <div class="spinner" id="variantBtnSpinner" style="display: none; width: 18px; height: 18px; border-width: 2px;"></div>
-                </button>
-              </div>
-            </form>
-          </section>
+      <!-- Main Content -->
+      <main class="admin-main">
+        <header class="admin-header product-editor-header">
+          <div class="product-header-info">
+            <h1 class="admin-header-title">Editar producto maestro</h1>
+            <p class="admin-header-subtitle" id="productBreadcrumb">
+              Cargando...
+            </p>
           </div>
 
-          <!-- Variants list -->
-          <section class="admin-card variant-table-card" style="margin-bottom: 1.5rem;">
-            <div class="admin-card-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
-              <h2 class="admin-card-title">Variantes registradas</h2>
-              <span id="variantCount" class="badge badge-neutral"></span>
-            </div>
-            <div class="admin-card-body" id="variantsContainer">
-              <div class="empty-state" id="variantsEmpty" style="display: none;">
-                <div class="empty-state-icon">🧩</div>
-                <h3 class="empty-state-title">Sin variantes registradas</h3>
-                <p class="empty-state-text">Agrega la primera variante usando el formulario superior.</p>
+          <div class="admin-header-actions">
+            <div class="admin-user-info">
+              <div class="admin-user-avatar" id="userAvatar">A</div>
+              <div class="admin-user-details">
+                <div class="admin-user-name" id="userName">Administrador</div>
+                <div class="admin-user-role" id="userRole">Admin</div>
               </div>
+            </div>
+            <button class="admin-logout-btn" id="logoutBtn">
+              Cerrar sesión
+            </button>
+          </div>
+        </header>
 
-              <div id="variantsTableWrapper" style="display: none;">
-                <table class="admin-table variants-table">
-                  <thead>
-                    <tr>
-                      <th>SKU</th>
-                      <th>Descripción</th>
-                      <th>Precio paquete</th>
-                      <th>Costo unitario</th>
-                      <th>Stock</th>
-                    </tr>
-                  </thead>
-                  <tbody id="variantsTableBody"></tbody>
-                </table>
-              </div>
+        <div class="admin-content" id="contentWrapper" style="display: none">
+          <div class="product-editor-wrapper">
+            <div class="product-editor-grid">
+              <!-- Product summary -->
+              <section class="admin-card product-summary-card">
+                <div
+                  class="admin-card-header"
+                  style="
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    gap: 1rem;
+                  "
+                >
+                  <div>
+                    <h2 class="admin-card-title" style="margin-bottom: 0.25rem">
+                      Información general
+                    </h2>
+                    <p
+                      class="admin-header-subtitle"
+                      style="margin-bottom: 0"
+                      id="productMeta"
+                    >
+                      -
+                    </p>
+                  </div>
+                  <div
+                    id="pricingBadges"
+                    class="badge-group"
+                    style="display: flex; gap: 0.5rem"
+                  ></div>
+                </div>
+                <div class="admin-card-body" id="productSummary">
+                  <!-- populated dynamically -->
+                </div>
+              </section>
+
+              <!-- Create variant form -->
+              <section class="admin-card variant-form-card">
+                <div class="admin-card-header">
+                  <h2 class="admin-card-title">Agregar nueva variante</h2>
+                  <p class="admin-header-subtitle" style="margin-bottom: 0">
+                    Define SKU, precios y stock inicial para activar el producto
+                    en el catálogo.
+                  </p>
+                </div>
+                <form id="variantForm" class="admin-card-body variant-form">
+                  <div class="form-group">
+                    <label for="sku" class="form-label">SKU *</label>
+                    <input
+                      type="text"
+                      id="sku"
+                      class="form-input"
+                      placeholder="Ej: NAVIDAD-10X10-ROJO"
+                      required
+                    />
+                  </div>
+
+                  <div class="form-grid-2">
+                    <div class="form-group">
+                      <label for="dimensiones" class="form-label"
+                        >Dimensiones / Medidas</label
+                      >
+                      <input
+                        type="text"
+                        id="dimensiones"
+                        class="form-input"
+                        placeholder="Ej: 10x10x10 cm o 25 piezas"
+                      />
+                    </div>
+                    <div class="form-group">
+                      <label for="stock" class="form-label"
+                        >Stock inicial (piezas)</label
+                      >
+                      <input
+                        type="number"
+                        id="stock"
+                        class="form-input"
+                        min="0"
+                        step="1"
+                        value="0"
+                      />
+                    </div>
+                  </div>
+
+                  <div class="form-grid-2">
+                    <div class="form-group">
+                      <label for="costoUnitario" class="form-label"
+                        >Costo unitario (MXN)</label
+                      >
+                      <input
+                        type="number"
+                        id="costoUnitario"
+                        class="form-input"
+                        min="0"
+                        step="0.01"
+                        placeholder="0.00"
+                      />
+                    </div>
+                    <div class="form-group">
+                      <label for="precioUnitario" class="form-label"
+                        >Precio unitario (MXN) *</label
+                      >
+                      <input
+                        type="number"
+                        id="precioUnitario"
+                        class="form-input"
+                        min="0"
+                        step="0.01"
+                        placeholder="0.00"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div class="variant-margin" id="variantMargin">
+                    <div>
+                      <h3>Resumen económico</h3>
+                      <p id="marginMessage">
+                        Ingresa costo y precio para calcular la ganancia.
+                      </p>
+                    </div>
+                    <div
+                      class="margin-metrics"
+                      id="marginMetrics"
+                      style="display: none"
+                    >
+                      <div>
+                        <span class="summary-label">Costo unitario</span>
+                        <span class="summary-value" id="costPerUnit"
+                          >$0.00</span
+                        >
+                      </div>
+                      <div>
+                        <span class="summary-label">Ganancia por unidad</span>
+                        <span class="summary-value" id="profitPerUnit"
+                          >$0.00</span
+                        >
+                      </div>
+                      <div>
+                        <span class="summary-label">Margen</span>
+                        <span class="summary-value" id="marginPercentage"
+                          >0%</span
+                        >
+                      </div>
+                    </div>
+                  </div>
+
+                  <div
+                    style="display: flex; justify-content: flex-end; gap: 1rem"
+                  >
+                    <button
+                      type="reset"
+                      class="btn btn-secondary"
+                      id="resetVariantBtn"
+                    >
+                      Limpiar
+                    </button>
+                    <button
+                      type="submit"
+                      class="btn btn-primary"
+                      id="saveVariantBtn"
+                      style="
+                        display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
+                        gap: 0.75rem;
+                      "
+                    >
+                      <span id="variantBtnText">Guardar variante</span>
+                      <div
+                        class="spinner"
+                        id="variantBtnSpinner"
+                        style="
+                          display: none;
+                          width: 18px;
+                          height: 18px;
+                          border-width: 2px;
+                        "
+                      ></div>
+                    </button>
+                  </div>
+                </form>
+              </section>
             </div>
-          </section>
+
+            <!-- Variants list -->
+            <section
+              class="admin-card variant-table-card"
+              style="margin-bottom: 1.5rem"
+            >
+              <div
+                class="admin-card-header"
+                style="
+                  display: flex;
+                  justify-content: space-between;
+                  align-items: center;
+                  margin-bottom: 1.25rem;
+                "
+              >
+                <h2 class="admin-card-title">Variantes registradas</h2>
+                <span id="variantCount" class="badge badge-neutral"></span>
+              </div>
+              <div class="admin-card-body" id="variantsContainer">
+                <div
+                  class="empty-state"
+                  id="variantsEmpty"
+                  style="display: none"
+                >
+                  <div class="empty-state-icon">🧩</div>
+                  <h3 class="empty-state-title">Sin variantes registradas</h3>
+                  <p class="empty-state-text">
+                    Agrega la primera variante usando el formulario superior.
+                  </p>
+                </div>
+
+                <div id="variantsTableWrapper" style="display: none">
+                  <table class="admin-table variants-table">
+                    <thead>
+                      <tr>
+                        <th>SKU</th>
+                        <th>Descripción</th>
+                        <th>Precio paquete</th>
+                        <th>Costo unitario</th>
+                        <th>Stock</th>
+                      </tr>
+                    </thead>
+                    <tbody id="variantsTableBody"></tbody>
+                  </table>
+                </div>
+              </div>
+            </section>
+          </div>
         </div>
-      </div>
 
-      <div id="loadingState" class="loading" style="display: flex;">
-        <div class="spinner"></div>
-      </div>
+        <div id="loadingState" class="loading" style="display: flex">
+          <div class="spinner"></div>
+        </div>
 
-      <div id="errorState" class="empty-state" style="display: none;">
-        <div class="empty-state-icon">❌</div>
-        <h2 class="empty-state-title">No se pudo cargar el producto</h2>
-        <p class="empty-state-text">Verifica el enlace o regresa a la lista de productos.</p>
-        <a href="/admin-agregar-producto.html" class="btn btn-secondary">Volver</a>
-      </div>
-    </main>
-  </div>
+        <div id="errorState" class="empty-state" style="display: none">
+          <div class="empty-state-icon">❌</div>
+          <h2 class="empty-state-title">No se pudo cargar el producto</h2>
+          <p class="empty-state-text">
+            Verifica el enlace o regresa a la lista de productos.
+          </p>
+          <a href="/admin-agregar-producto.html" class="btn btn-secondary"
+            >Volver</a
+          >
+        </div>
+      </main>
+    </div>
 
-  <script src="js/api.js"></script>
-  <script>
-    const adminToken = localStorage.getItem('razoconnect_admin_token');
+    <script src="js/layout.js" defer></script>
+    <script src="js/api.js"></script>
+    <script>
+      const adminToken = localStorage.getItem("razoconnect_admin_token");
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const productoId = parseInt(urlParams.get('id'), 10);
+      const urlParams = new URLSearchParams(window.location.search);
+      const productoId = parseInt(urlParams.get("id"), 10);
 
-    const loadingState = document.getElementById('loadingState');
-    const errorState = document.getElementById('errorState');
-    const contentWrapper = document.getElementById('contentWrapper');
-    const productSummary = document.getElementById('productSummary');
-    const productBreadcrumb = document.getElementById('productBreadcrumb');
-    const variantsEmpty = document.getElementById('variantsEmpty');
-    const variantsTableWrapper = document.getElementById('variantsTableWrapper');
-    const variantsTableBody = document.getElementById('variantsTableBody');
-    const variantCount = document.getElementById('variantCount');
+      const loadingState = document.getElementById("loadingState");
+      const errorState = document.getElementById("errorState");
+      const contentWrapper = document.getElementById("contentWrapper");
+      const productSummary = document.getElementById("productSummary");
+      const productBreadcrumb = document.getElementById("productBreadcrumb");
+      const variantsEmpty = document.getElementById("variantsEmpty");
+      const variantsTableWrapper = document.getElementById(
+        "variantsTableWrapper"
+      );
+      const variantsTableBody = document.getElementById("variantsTableBody");
+      const variantCount = document.getElementById("variantCount");
 
-    const variantForm = document.getElementById('variantForm');
-    const variantBtnText = document.getElementById('variantBtnText');
-    const variantBtnSpinner = document.getElementById('variantBtnSpinner');
-    const saveVariantBtn = document.getElementById('saveVariantBtn');
-    const resetVariantBtn = document.getElementById('resetVariantBtn');
+      const variantForm = document.getElementById("variantForm");
+      const variantBtnText = document.getElementById("variantBtnText");
+      const variantBtnSpinner = document.getElementById("variantBtnSpinner");
+      const saveVariantBtn = document.getElementById("saveVariantBtn");
+      const resetVariantBtn = document.getElementById("resetVariantBtn");
 
-    const variantMargin = document.getElementById('variantMargin');
-    const marginMetrics = document.getElementById('marginMetrics');
-    const marginMessage = document.getElementById('marginMessage');
-    const costPerPackage = document.getElementById('costPerPackage');
-    const profitPerPackage = document.getElementById('profitPerPackage');
-    const marginPercentage = document.getElementById('marginPercentage');
+      const variantMargin = document.getElementById("variantMargin");
+      const marginMetrics = document.getElementById("marginMetrics");
+      const marginMessage = document.getElementById("marginMessage");
+      const costPerPackage = document.getElementById("costPerPackage");
+      const profitPerPackage = document.getElementById("profitPerPackage");
+      const marginPercentage = document.getElementById("marginPercentage");
 
-    const logoutBtn = document.getElementById('logoutBtn');
-    const userAvatar = document.getElementById('userAvatar');
-    const userName = document.getElementById('userName');
-    const userRole = document.getElementById('userRole');
+      const logoutBtn = document.getElementById("logoutBtn");
+      const userAvatar = document.getElementById("userAvatar");
+      const userName = document.getElementById("userName");
+      const userRole = document.getElementById("userRole");
 
-    if (!productoId || Number.isNaN(productoId)) {
-      loadingState.style.display = 'none';
-      errorState.style.display = 'flex';
-    }
+      if (!productoId || Number.isNaN(productoId)) {
+        loadingState.style.display = "none";
+        errorState.style.display = "flex";
+      }
 
-    async function verifyAndLoadAdmin() {
-      try {
-        const response = await fetch(`${API_BASE_URL}/admin/verify`, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${adminToken}`,
-            'Content-Type': 'application/json'
+      async function verifyAndLoadAdmin() {
+        try {
+          const response = await fetch(`${API_BASE_URL}/admin/verify`, {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${adminToken}`,
+              "Content-Type": "application/json",
+            },
+          });
+
+          if (!response.ok) throw new Error("Invalid token");
+
+          const data = await response.json();
+          if (data.success) {
+            const admin = data.data.admin;
+            userName.textContent = admin.nombre;
+            userRole.textContent =
+              admin.rol === "superadmin" ? "Super Admin" : "Admin";
+
+            const words = admin.nombre.trim().split(" ");
+            const initials =
+              words.length >= 2
+                ? `${words[0].charAt(0)}${words[1].charAt(0)}`
+                : admin.nombre.substring(0, 2);
+            userAvatar.textContent = initials.toUpperCase();
           }
-        });
-
-        if (!response.ok) throw new Error('Invalid token');
-
-        const data = await response.json();
-        if (data.success) {
-          const admin = data.data.admin;
-          userName.textContent = admin.nombre;
-          userRole.textContent = admin.rol === 'superadmin' ? 'Super Admin' : 'Admin';
-
-          const words = admin.nombre.trim().split(' ');
-          const initials = words.length >= 2
-            ? `${words[0].charAt(0)}${words[1].charAt(0)}`
-            : admin.nombre.substring(0, 2);
-          userAvatar.textContent = initials.toUpperCase();
+        } catch (error) {
+          console.error("Error verifying admin:", error);
+          localStorage.removeItem("razoconnect_admin_token");
+          localStorage.removeItem("razoconnect_admin");
+          window.location.href = "/login.html";
         }
-      } catch (error) {
-        console.error('Error verifying admin:', error);
-        localStorage.removeItem('razoconnect_admin_token');
-        localStorage.removeItem('razoconnect_admin');
-        window.location.href = '/login.html';
       }
-    }
 
-    async function loadProducto() {
-      try {
-        loadingState.style.display = 'flex';
-        contentWrapper.style.display = 'none';
-        errorState.style.display = 'none';
+      async function loadProducto() {
+        try {
+          loadingState.style.display = "flex";
+          contentWrapper.style.display = "none";
+          errorState.style.display = "none";
 
-        const response = await API.getProductoById(productoId);
+          const response = await API.getProductoById(productoId);
 
-        if (response.ok && response.data.success) {
-          const { producto, variantes } = response.data.data;
-          productBreadcrumb.textContent = `Producto #${producto.productoId}`;
+          if (response.ok && response.data.success) {
+            const { producto, variantes } = response.data.data;
+            productBreadcrumb.textContent = `Producto #${producto.productoId}`;
 
-          renderProductSummary(producto, variantes);
-          renderVariants(variantes);
+            renderProductSummary(producto, variantes);
+            renderVariants(variantes);
 
-          loadingState.style.display = 'none';
-          contentWrapper.style.display = 'grid';
-        } else {
-          throw new Error(response.data?.message || 'No se pudo obtener el producto');
+            loadingState.style.display = "none";
+            contentWrapper.style.display = "grid";
+          } else {
+            throw new Error(
+              response.data?.message || "No se pudo obtener el producto"
+            );
+          }
+        } catch (error) {
+          console.error("Error loading product:", error);
+          loadingState.style.display = "none";
+          errorState.style.display = "flex";
         }
-      } catch (error) {
-        console.error('Error loading product:', error);
-        loadingState.style.display = 'none';
-        errorState.style.display = 'flex';
-      }
-    }
-
-    function renderProductSummary(producto, variantes) {
-      const totalVariantes = variantes.length;
-      const variantesConStock = variantes.filter(v => (v.stock || 0) > 0).length;
-      const precioMin = producto.precioDesde ? formatCurrency(producto.precioDesde) : 'N/D';
-      const precioMax = producto.precioHasta ? formatCurrency(producto.precioHasta) : 'N/D';
-
-      productMeta.textContent = `Producto #${producto.productoId}`;
-
-      pricingBadges.innerHTML = '';
-      if (producto.precioDesde) {
-        const badge = document.createElement('span');
-        badge.className = 'badge badge-success';
-        badge.textContent = `Precio desde ${precioMin}`;
-        pricingBadges.appendChild(badge);
-      }
-      if (producto.precioHasta && producto.precioHasta !== producto.precioDesde) {
-        const badgeMax = document.createElement('span');
-        badgeMax.className = 'badge badge-info';
-        badgeMax.textContent = `Precio hasta ${precioMax}`;
-        pricingBadges.appendChild(badgeMax);
       }
 
-      productSummary.innerHTML = `
+      function renderProductSummary(producto, variantes) {
+        const totalVariantes = variantes.length;
+        const variantesConStock = variantes.filter(
+          (v) => (v.stock || 0) > 0
+        ).length;
+        const precioMin = producto.precioDesde
+          ? formatCurrency(producto.precioDesde)
+          : "N/D";
+        const precioMax = producto.precioHasta
+          ? formatCurrency(producto.precioHasta)
+          : "N/D";
+
+        productMeta.textContent = `Producto #${producto.productoId}`;
+
+        pricingBadges.innerHTML = "";
+        if (producto.precioDesde) {
+          const badge = document.createElement("span");
+          badge.className = "badge badge-success";
+          badge.textContent = `Precio desde ${precioMin}`;
+          pricingBadges.appendChild(badge);
+        }
+        if (
+          producto.precioHasta &&
+          producto.precioHasta !== producto.precioDesde
+        ) {
+          const badgeMax = document.createElement("span");
+          badgeMax.className = "badge badge-info";
+          badgeMax.textContent = `Precio hasta ${precioMax}`;
+          pricingBadges.appendChild(badgeMax);
+        }
+
+        productSummary.innerHTML = `
         <div class="product-summary">
           <h3>${producto.nombreProducto}</h3>
-          <p style="color: var(--text-secondary);">${producto.descripcion || 'Sin descripción registrada.'}</p>
+          <p style="color: var(--text-secondary);">${
+            producto.descripcion || "Sin descripción registrada."
+          }</p>
           <div class="summary-grid">
             <div>
               <span class="summary-label">Categoría</span>
-              <span class="summary-value">${producto.categoria?.nombre || 'Sin categoría'}</span>
+              <span class="summary-value">${
+                producto.categoria?.nombre || "Sin categoría"
+              }</span>
             </div>
             <div>
               <span class="summary-label">Variantes totales</span>
@@ -520,193 +599,229 @@
           </div>
         </div>
       `;
-    }
-
-    function formatMedidaLabel(medida) {
-      if (!medida) return null;
-      const nombre = medida.nombre || '';
-      const abrev = medida.abreviatura || '';
-      return abrev ? `${nombre} (${abrev})` : nombre;
-    }
-
-    function renderVariants(variantes) {
-      variantCount.textContent = `${variantes.length} variante${variantes.length === 1 ? '' : 's'}`;
-
-      if (!Array.isArray(variantes) || variantes.length === 0) {
-        variantsEmpty.style.display = 'block';
-        variantsTableWrapper.style.display = 'none';
-        return;
       }
 
-      variantsEmpty.style.display = 'none';
-      variantsTableWrapper.style.display = 'block';
+      function formatMedidaLabel(medida) {
+        if (!medida) return null;
+        const nombre = medida.nombre || "";
+        const abrev = medida.abreviatura || "";
+        return abrev ? `${nombre} (${abrev})` : nombre;
+      }
 
-      variantsTableBody.innerHTML = variantes.map(variant => {
-        const precio = variant.precioUnitario ? formatCurrency(variant.precioUnitario) : 'N/D';
-        const costo = variant.costoUnitario ? formatCurrency(variant.costoUnitario) : 'N/D';
-        const stock = Number.isFinite(variant.stock) ? variant.stock : '0';
+      function renderVariants(variantes) {
+        variantCount.textContent = `${variantes.length} variante${
+          variantes.length === 1 ? "" : "s"
+        }`;
 
-        return `
+        if (!Array.isArray(variantes) || variantes.length === 0) {
+          variantsEmpty.style.display = "block";
+          variantsTableWrapper.style.display = "none";
+          return;
+        }
+
+        variantsEmpty.style.display = "none";
+        variantsTableWrapper.style.display = "block";
+
+        variantsTableBody.innerHTML = variantes
+          .map((variant) => {
+            const precio = variant.precioUnitario
+              ? formatCurrency(variant.precioUnitario)
+              : "N/D";
+            const costo = variant.costoUnitario
+              ? formatCurrency(variant.costoUnitario)
+              : "N/D";
+            const stock = Number.isFinite(variant.stock) ? variant.stock : "0";
+
+            return `
           <tr>
-            <td>${variant.sku || 'Sin SKU'}</td>
-            <td>${variant.dimensiones || 'Sin dimensiones'}</td>
+            <td>${variant.sku || "Sin SKU"}</td>
+            <td>${variant.dimensiones || "Sin dimensiones"}</td>
             <td>${precio}</td>
             <td>${costo}</td>
             <td>${stock}</td>
           </tr>
         `;
-      }).join('');
-    }
+          })
+          .join("");
+      }
 
-    function formatCurrency(amount) {
-      return new Intl.NumberFormat('es-MX', {
-        style: 'currency',
-        currency: 'MXN'
-      }).format(amount);
-    }
+      function formatCurrency(amount) {
+        return new Intl.NumberFormat("es-MX", {
+          style: "currency",
+          currency: "MXN",
+        }).format(amount);
+      }
 
-    async function loadProducto() {
-      try {
-        loadingState.style.display = 'flex';
-        contentWrapper.style.display = 'none';
-        errorState.style.display = 'none';
+      async function loadProducto() {
+        try {
+          loadingState.style.display = "flex";
+          contentWrapper.style.display = "none";
+          errorState.style.display = "none";
 
-        const response = await API.getProductoById(productoId);
+          const response = await API.getProductoById(productoId);
 
-        if (response.ok && response.data.success) {
-          const { producto, variantes } = response.data.data;
-          productBreadcrumb.textContent = `Producto #${producto.productoId}`;
+          if (response.ok && response.data.success) {
+            const { producto, variantes } = response.data.data;
+            productBreadcrumb.textContent = `Producto #${producto.productoId}`;
 
-          renderProductSummary(producto, variantes);
-          renderVariants(variantes);
+            renderProductSummary(producto, variantes);
+            renderVariants(variantes);
 
-          loadingState.style.display = 'none';
-          contentWrapper.style.display = 'grid';
-        } else {
-          throw new Error(response.data?.message || 'No se pudo obtener el producto');
+            loadingState.style.display = "none";
+            contentWrapper.style.display = "grid";
+          } else {
+            throw new Error(
+              response.data?.message || "No se pudo obtener el producto"
+            );
+          }
+        } catch (error) {
+          console.error("Error loading product:", error);
+          loadingState.style.display = "none";
+          errorState.style.display = "flex";
         }
-      } catch (error) {
-        console.error('Error loading product:', error);
-        loadingState.style.display = 'none';
-        errorState.style.display = 'flex';
-      }
-    }
-
-    variantForm.addEventListener('submit', async (event) => {
-      event.preventDefault();
-
-      const formData = {
-        productoId,
-        sku: document.getElementById('sku').value.trim(),
-        dimensiones: document.getElementById('dimensiones').value.trim() || null,
-        precioUnitario: parseFloat(document.getElementById('precioUnitario').value),
-        costoUnitario: document.getElementById('costoUnitario').value ? parseFloat(document.getElementById('costoUnitario').value) : null,
-        stock: document.getElementById('stock').value ? parseInt(document.getElementById('stock').value, 10) : 0,
-        tipoProductoId: null,
-        medidaId: null
-      };
-
-      if (!formData.sku) {
-        showToast('El SKU es obligatorio', 'warning');
-        return;
       }
 
-      if (!Number.isFinite(formData.precioUnitario) || formData.precioUnitario <= 0) {
-        showToast('El precio unitario debe ser mayor a 0', 'warning');
-        return;
+      variantForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+
+        const formData = {
+          productoId,
+          sku: document.getElementById("sku").value.trim(),
+          dimensiones:
+            document.getElementById("dimensiones").value.trim() || null,
+          precioUnitario: parseFloat(
+            document.getElementById("precioUnitario").value
+          ),
+          costoUnitario: document.getElementById("costoUnitario").value
+            ? parseFloat(document.getElementById("costoUnitario").value)
+            : null,
+          stock: document.getElementById("stock").value
+            ? parseInt(document.getElementById("stock").value, 10)
+            : 0,
+          tipoProductoId: null,
+          medidaId: null,
+        };
+
+        if (!formData.sku) {
+          showToast("El SKU es obligatorio", "warning");
+          return;
+        }
+
+        if (
+          !Number.isFinite(formData.precioUnitario) ||
+          formData.precioUnitario <= 0
+        ) {
+          showToast("El precio unitario debe ser mayor a 0", "warning");
+          return;
+        }
+
+        try {
+          saveVariantBtn.disabled = true;
+          variantBtnText.style.display = "none";
+          variantBtnSpinner.style.display = "inline-block";
+
+          const response = await fetch(`${API_BASE_URL}/admin/variantes`, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${adminToken}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(formData),
+          });
+
+          const data = await response.json();
+
+          if (response.ok && data.success) {
+            showToast("Variante creada correctamente", "success");
+            variantForm.reset();
+            await loadProducto();
+          } else {
+            throw new Error(data.message || "Error al crear variante");
+          }
+        } catch (error) {
+          console.error("Error al crear variante:", error);
+          showToast(error.message || "No se pudo crear la variante", "error");
+        } finally {
+          saveVariantBtn.disabled = false;
+          variantBtnText.style.display = "inline";
+          variantBtnSpinner.style.display = "none";
+        }
+      });
+
+      ["costoUnitario", "precioUnitario"].forEach((id) => {
+        document
+          .getElementById(id)
+          .addEventListener("input", calculateMarginPreview);
+      });
+
+      resetVariantBtn.addEventListener("click", () => {
+        marginMetrics.style.display = "none";
+        marginMessage.textContent =
+          "Ingresa costo y precio para calcular la ganancia.";
+      });
+
+      logoutBtn.addEventListener("click", () => {
+        localStorage.removeItem("razoconnect_admin_token");
+        localStorage.removeItem("razoconnect_admin");
+        showToast("Sesión cerrada", "success");
+        setTimeout(() => {
+          window.location.href = "/login.html";
+        }, 500);
+      });
+
+      function calculateMarginPreview() {
+        const costoUnit = parseFloat(
+          document.getElementById("costoUnitario").value
+        );
+        const precio = parseFloat(
+          document.getElementById("precioUnitario").value
+        );
+
+        if (
+          !Number.isFinite(precio) ||
+          precio <= 0 ||
+          !Number.isFinite(costoUnit) ||
+          costoUnit < 0
+        ) {
+          marginMetrics.style.display = "none";
+          marginMessage.style.display = "block";
+          marginMessage.textContent =
+            "Ingresa costo y precio para calcular la ganancia.";
+          return;
+        }
+
+        const costoUnitarioValue = Number.isFinite(costoUnit) ? costoUnit : 0;
+        const ganancia = precio - costoUnitarioValue;
+        const margen = precio > 0 ? (ganancia / precio) * 100 : 0;
+
+        costPerUnit.textContent = formatCurrency(costoUnitarioValue);
+        profitPerUnit.textContent = formatCurrency(ganancia);
+        marginPercentage.textContent = `${margen.toFixed(1)}%`;
+
+        marginMetrics.style.display = "grid";
+        marginMessage.textContent =
+          ganancia >= 0
+            ? "Excelente, estás generando ganancia por unidad."
+            : "Atención: el costo supera al precio, revisa los datos.";
+        profitPerUnit.style.color =
+          ganancia >= 0 ? "var(--success-color)" : "var(--danger-color)";
+        marginPercentage.style.color =
+          ganancia >= 0 ? "var(--success-color)" : "var(--danger-color)";
       }
 
-      try {
-        saveVariantBtn.disabled = true;
-        variantBtnText.style.display = 'none';
-        variantBtnSpinner.style.display = 'inline-block';
+      async function init() {
+        if (!adminToken) {
+          window.location.href = "/login.html";
+          return;
+        }
 
-        const response = await fetch(`${API_BASE_URL}/admin/variantes`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${adminToken}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(formData)
-        });
-
-        const data = await response.json();
-
-        if (response.ok && data.success) {
-          showToast('Variante creada correctamente', 'success');
-          variantForm.reset();
+        await verifyAndLoadAdmin();
+        if (productoId && !Number.isNaN(productoId)) {
           await loadProducto();
-        } else {
-          throw new Error(data.message || 'Error al crear variante');
         }
-      } catch (error) {
-        console.error('Error al crear variante:', error);
-        showToast(error.message || 'No se pudo crear la variante', 'error');
-      } finally {
-        saveVariantBtn.disabled = false;
-        variantBtnText.style.display = 'inline';
-        variantBtnSpinner.style.display = 'none';
-      }
-    });
-
-    ['costoUnitario', 'precioUnitario'].forEach(id => {
-      document.getElementById(id).addEventListener('input', calculateMarginPreview);
-    });
-
-    resetVariantBtn.addEventListener('click', () => {
-      marginMetrics.style.display = 'none';
-      marginMessage.textContent = 'Ingresa costo y precio para calcular la ganancia.';
-    });
-
-    logoutBtn.addEventListener('click', () => {
-      localStorage.removeItem('razoconnect_admin_token');
-      localStorage.removeItem('razoconnect_admin');
-      showToast('Sesión cerrada', 'success');
-      setTimeout(() => {
-        window.location.href = '/login.html';
-      }, 500);
-    });
-
-    function calculateMarginPreview() {
-      const costoUnit = parseFloat(document.getElementById('costoUnitario').value);
-      const precio = parseFloat(document.getElementById('precioUnitario').value);
-
-      if (!Number.isFinite(precio) || precio <= 0 || !Number.isFinite(costoUnit) || costoUnit < 0) {
-        marginMetrics.style.display = 'none';
-        marginMessage.style.display = 'block';
-        marginMessage.textContent = 'Ingresa costo y precio para calcular la ganancia.';
-        return;
       }
 
-      const costoUnitarioValue = Number.isFinite(costoUnit) ? costoUnit : 0;
-      const ganancia = precio - costoUnitarioValue;
-      const margen = precio > 0 ? (ganancia / precio) * 100 : 0;
-
-      costPerUnit.textContent = formatCurrency(costoUnitarioValue);
-      profitPerUnit.textContent = formatCurrency(ganancia);
-      marginPercentage.textContent = `${margen.toFixed(1)}%`;
-
-      marginMetrics.style.display = 'grid';
-      marginMessage.textContent = ganancia >= 0
-        ? 'Excelente, estás generando ganancia por unidad.'
-        : 'Atención: el costo supera al precio, revisa los datos.';
-      profitPerUnit.style.color = ganancia >= 0 ? 'var(--success-color)' : 'var(--danger-color)';
-      marginPercentage.style.color = ganancia >= 0 ? 'var(--success-color)' : 'var(--danger-color)';
-    }
-
-    async function init() {
-      if (!adminToken) {
-        window.location.href = '/login.html';
-        return;
-      }
-
-      await verifyAndLoadAdmin();
-      if (productoId && !Number.isNaN(productoId)) {
-        await loadProducto();
-      }
-    }
-
-    init();
-  </script>
-</body>
+      init();
+    </script>
+  </body>
 </html>

@@ -17,205 +17,130 @@
   <body>
     <div class="admin-layout">
       <!-- Sidebar -->
-      <aside class="admin-sidebar">
-        <div class="admin-brand">
-          <a href="/admin-dashboard.html" class="admin-brand-logo">
-            📦 RazoConnect
-          </a>
-          <div class="admin-brand-subtitle">Panel admin</div>
-        </div>
+      <div id="sidebar-container"></div>
 
-        <!-- Modal detalle de variantes -->
-        <div id="detalleModal" class="modal">
-          <div class="modal-content modal-detalle">
-            <div class="detalle-modal-header">
-              <div class="detalle-title-wrapper">
-                <span class="detalle-title-icon">📦</span>
-                <div>
-                  <h2 id="detalleModalTitle">Detalle de Variantes</h2>
-                  <p id="detalleModalSubtitle" class="detalle-modal-subtitle">
-                    Revisa la información de cada variante registrada.
+      <!-- Modal detalle de variantes -->
+      <div id="detalleModal" class="modal">
+        <div class="modal-content modal-detalle">
+          <div class="detalle-modal-header">
+            <div class="detalle-title-wrapper">
+              <span class="detalle-title-icon">📦</span>
+              <div>
+                <h2 id="detalleModalTitle">Detalle de Variantes</h2>
+                <p id="detalleModalSubtitle" class="detalle-modal-subtitle">
+                  Revisa la información de cada variante registrada.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              class="modal-close-btn"
+              id="btnCerrarDetalle"
+              aria-label="Cerrar"
+            >
+              ×
+            </button>
+          </div>
+
+          <div id="detalleModalLoading" class="modal-loading">
+            <div class="spinner"></div>
+            <p>Cargando detalles del producto…</p>
+          </div>
+
+          <div class="detalle-modal-body">
+            <div
+              id="detalleModalSummary"
+              class="detalle-summary"
+              style="display: none"
+            >
+              <div class="detalle-summary-top">
+                <div class="detalle-summary-info">
+                  <div class="detalle-summary-label">Descripción</div>
+                  <p
+                    id="detalleProductoDescripcion"
+                    class="detalle-summary-description"
+                  >
+                    —
                   </p>
                 </div>
-              </div>
-              <button
-                type="button"
-                class="modal-close-btn"
-                id="btnCerrarDetalle"
-                aria-label="Cerrar"
-              >
-                ×
-              </button>
-            </div>
-
-            <div id="detalleModalLoading" class="modal-loading">
-              <div class="spinner"></div>
-              <p>Cargando detalles del producto…</p>
-            </div>
-
-            <div class="detalle-modal-body">
-              <div
-                id="detalleModalSummary"
-                class="detalle-summary"
-                style="display: none"
-              >
-                <div class="detalle-summary-top">
-                  <div class="detalle-summary-info">
-                    <div class="detalle-summary-label">Descripción</div>
-                    <p
-                      id="detalleProductoDescripcion"
-                      class="detalle-summary-description"
-                    >
-                      —
-                    </p>
-                  </div>
-                  <div class="detalle-summary-tags">
-                    <span class="detalle-badge" id="detalleProductoEstado"
-                      >Activo</span
-                    >
-                    <span
-                      class="detalle-badge secondary"
-                      id="detalleProductoCategoria"
-                      >Sin categoría</span
-                    >
-                  </div>
-                </div>
-
-                <div class="detalle-metrics">
-                  <div class="detalle-metric-card gradient-orange">
-                    <span class="metric-label">Total de variantes</span>
-                    <span class="metric-value" id="detalleTotalVariantes"
-                      >0</span
-                    >
-                  </div>
-                  <div class="detalle-metric-card gradient-purple">
-                    <span class="metric-label">Variantes con stock</span>
-                    <span class="metric-value" id="detalleVariantesConStock"
-                      >0</span
-                    >
-                  </div>
-                  <div class="detalle-metric-card soft-card">
-                    <span class="metric-label">Variantes sin stock</span>
-                    <span class="metric-value" id="detalleVariantesSinStock"
-                      >0</span
-                    >
-                  </div>
-                  <div class="detalle-metric-card outline-card">
-                    <span class="metric-label">Precio más bajo</span>
-                    <span class="metric-value" id="detallePrecioDesde">—</span>
-                  </div>
-                  <div class="detalle-metric-card outline-card">
-                    <span class="metric-label">Precio más alto</span>
-                    <span class="metric-value" id="detallePrecioHasta">—</span>
-                  </div>
+                <div class="detalle-summary-tags">
+                  <span class="detalle-badge" id="detalleProductoEstado"
+                    >Activo</span
+                  >
+                  <span
+                    class="detalle-badge secondary"
+                    id="detalleProductoCategoria"
+                    >Sin categoría</span
+                  >
                 </div>
               </div>
 
-              <div
-                id="detalleModalFeedback"
-                class="modal-feedback"
-                style="display: none"
-              ></div>
-
-              <div
-                id="detalleModalTableWrapper"
-                class="modal-table-wrapper"
-                style="display: none"
-              >
-                <table id="tabla-variantes" class="modal-table">
-                  <thead>
-                    <tr>
-                      <th>SKU</th>
-                      <th>Dimensiones</th>
-                      <th>Precio/Paquete</th>
-                      <th>Stock</th>
-                      <th>Estado</th>
-                      <th style="text-align: center">Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody></tbody>
-                </table>
+              <div class="detalle-metrics">
+                <div class="detalle-metric-card gradient-orange">
+                  <span class="metric-label">Total de variantes</span>
+                  <span class="metric-value" id="detalleTotalVariantes">0</span>
+                </div>
+                <div class="detalle-metric-card gradient-purple">
+                  <span class="metric-label">Variantes con stock</span>
+                  <span class="metric-value" id="detalleVariantesConStock"
+                    >0</span
+                  >
+                </div>
+                <div class="detalle-metric-card soft-card">
+                  <span class="metric-label">Variantes sin stock</span>
+                  <span class="metric-value" id="detalleVariantesSinStock"
+                    >0</span
+                  >
+                </div>
+                <div class="detalle-metric-card outline-card">
+                  <span class="metric-label">Precio más bajo</span>
+                  <span class="metric-value" id="detallePrecioDesde">—</span>
+                </div>
+                <div class="detalle-metric-card outline-card">
+                  <span class="metric-label">Precio más alto</span>
+                  <span class="metric-value" id="detallePrecioHasta">—</span>
+                </div>
               </div>
             </div>
 
-            <div class="detalle-modal-footer">
-              <button
-                type="button"
-                class="btn btn-secondary"
-                id="btnCerrarDetalleFooter"
-              >
-                Cerrar
-              </button>
+            <div
+              id="detalleModalFeedback"
+              class="modal-feedback"
+              style="display: none"
+            ></div>
+
+            <div
+              id="detalleModalTableWrapper"
+              class="modal-table-wrapper"
+              style="display: none"
+            >
+              <table id="tabla-variantes" class="modal-table">
+                <thead>
+                  <tr>
+                    <th>SKU</th>
+                    <th>Dimensiones</th>
+                    <th>Precio/Paquete</th>
+                    <th>Stock</th>
+                    <th>Estado</th>
+                    <th style="text-align: center">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
             </div>
+          </div>
+
+          <div class="detalle-modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              id="btnCerrarDetalleFooter"
+            >
+              Cerrar
+            </button>
           </div>
         </div>
-
-        <nav class="admin-nav">
-          <div class="admin-nav-section">
-            <div class="admin-nav-title">Principal</div>
-            <a href="/admin-dashboard.html" class="admin-nav-link">
-              <span class="admin-nav-icon">📊</span>
-              <span>Dashboard</span>
-            </a>
-          </div>
-
-          <div class="admin-nav-section">
-            <div class="admin-nav-title">Gestión</div>
-            <a href="/admin-pedidos.html" class="admin-nav-link">
-              <span class="admin-nav-icon">📦</span>
-              <span>Pedidos</span>
-            </a>
-            <a href="/admin-agregar-producto.html" class="admin-nav-link">
-              <span class="admin-nav-icon">🎁</span>
-              <span>Productos</span>
-            </a>
-            <a href="/admin-categorias.html" class="admin-nav-link">
-              <span class="admin-nav-icon">🏷️</span>
-              <span>Categorías</span>
-            </a>
-            <a href="/admin-clientes.html" class="admin-nav-link">
-              <span class="admin-nav-icon">👥</span>
-              <span>Clientes</span>
-            </a>
-            <a href="/admin-agentes.html" class="admin-nav-link">
-              <span class="admin-nav-icon">💼</span>
-              <span>Agentes</span>
-            </a>
-          </div>
-
-          <div class="admin-nav-section">
-            <div class="admin-nav-title">Financiero</div>
-            <a href="/admin-comisiones.html" class="admin-nav-link">
-              <span class="admin-nav-icon">💰</span>
-              <span>Comisiones</span>
-            </a>
-            <a href="/admin-inventario.html" class="admin-nav-link active">
-              <span class="admin-nav-icon">📈</span>
-              <span>Inventario</span>
-            </a>
-            <a href="/admin-reportes.html" class="admin-nav-link">
-              <span class="admin-nav-icon">📑</span>
-              <span>Reportes</span>
-            </a>
-          </div>
-
-          <div class="admin-nav-section">
-            <div class="admin-nav-title">Compras</div>
-            <a href="/admin-proveedores.html" class="admin-nav-link">
-              <span class="admin-nav-icon">🏭</span>
-              <span>Proveedores</span>
-            </a>
-            <a href="/admin-crear-oc.html" class="admin-nav-link">
-              <span class="admin-nav-icon">📋</span>
-              <span>Nueva Orden de Compra</span>
-            </a>
-            <a href="/admin-recibir-inventario.html" class="admin-nav-link">
-              <span class="admin-nav-icon">📥</span>
-              <span>Recibir Inventario</span>
-            </a>
-          </div>
-        </nav>
-      </aside>
+      </div>
 
       <!-- Main Content -->
       <main class="admin-main">
@@ -516,6 +441,7 @@
       </div>
     </div>
 
+    <script src="js/layout.js" defer></script>
     <script src="js/api.js"></script>
     <script>
       console.log("📄 Cargando página de inventario...");

@@ -39,6 +39,7 @@ public/
 ## Características Implementadas
 
 ### 🔐 Autenticación
+
 - **Login (`login.html`)**: Formulario de inicio de sesión que llama a `POST /api/login`
 - **Registro (`registro.html`)**: Formulario de registro que llama a `POST /api/registro/cliente`
 - Almacenamiento de JWT en `localStorage`
@@ -46,12 +47,14 @@ public/
 - Validación en tiempo real de formularios
 
 ### 📦 Catálogo de Productos (Cliente)
+
 - **Dashboard (`dashboard.html`)**: Lista todos los productos disponibles
   - Llama a `GET /api/productos`
   - Muestra imagen principal, precio, stock, categoría
   - Cards clicables que llevan al detalle
 
 ### 🔍 Detalle de Producto
+
 - **Producto Detalle (`producto-detalle.html`)**: Vista completa del producto
   - Llama a `GET /api/productos/:id`
   - Galería de imágenes (principal + miniaturas)
@@ -61,6 +64,7 @@ public/
   - Validación de stock antes de agregar
 
 ### 🛒 Carrito de Compras
+
 - **Carrito (`carrito.html`)**: Vista del carrito de compras
   - Llama a `GET /api/carrito` con JWT en headers
   - Lista de productos agregados con cantidades
@@ -70,6 +74,7 @@ public/
   - Botón para proceder al checkout (pendiente implementación)
 
 ### 🛠️ Panel Administrador
+
 - **Dashboard (`admin-dashboard.html`)**
   - Widgets de Total de pedidos, Ingresos, Clientes, Agentes y **Valor de inventario** (nuevo)
   - Fetch a `/api/admin/reportes/valuacion-inventario` para el valor del stock
@@ -86,6 +91,7 @@ public/
   - Reporte de antigüedad de backorders ordenado por días pendientes (GET `/admin/reportes/aging-backorders`)
 
 ### 🎨 Componentes Reutilizables
+
 - **Tarjetas (stat cards)** con iconos degradados y métricas actualizadas
 - **Empty States** estilizados (icono grande, título naranja, subtítulo gris) reutilizados en todo el panel
 - **Toasts personalizados** y loaders consistentes
@@ -93,51 +99,54 @@ public/
 ## API Helper (`js/api.js`)
 
 ### Funciones de Autenticación
+
 ```javascript
 // Guardar datos de sesión
-saveAuthData(token, userData)
+saveAuthData(token, userData);
 
 // Obtener token JWT
-getToken()
+getToken();
 
 // Verificar si está autenticado
-isAuthenticated()
+isAuthenticated();
 
 // Limpiar sesión
-clearAuthData()
+clearAuthData();
 
 // Requerir autenticación (redirige si no está logueado)
-requireAuth()
+requireAuth();
 ```
 
 ### Llamadas API Principales
+
 ```javascript
 // Auth
-API.login(email, password)
-API.registroCliente(formData)
+API.login(email, password);
+API.registroCliente(formData);
 
 // Productos
-API.getProductos()
-API.getProductoById(id)
+API.getProductos();
+API.getProductoById(id);
 
 // Carrito
-API.getCarrito()
-API.agregarAlCarrito(productoId, cantidadPaquetes)
+API.getCarrito();
+API.agregarAlCarrito(productoId, cantidadPaquetes);
 
 // Pedidos (cliente)
-API.crearPedido(direccionEnvioId, codigoAgente)
+API.crearPedido(direccionEnvioId);
 
 // Panel admin (ver admin-reportes.js para más)
-fetch('/api/admin/reportes/rentabilidad')
-fetch('/api/admin/reportes/valuacion-inventario')
-fetch('/api/admin/reportes/aging-backorders')
-fetch('/api/admin/pedidos')
+fetch("/api/admin/reportes/rentabilidad");
+fetch("/api/admin/reportes/valuacion-inventario");
+fetch("/api/admin/reportes/aging-backorders");
+fetch("/api/admin/pedidos");
 ```
 
 ### Utilidades
+
 ```javascript
 // Mostrar notificaciones toast
-showToast(message, type) // types: 'success', 'error', 'warning', 'info'
+showToast(message, type); // types: 'success', 'error', 'warning', 'info'
 ```
 
 ## Flujo de Usuario
@@ -161,6 +170,7 @@ showToast(message, type) // types: 'success', 'error', 'warning', 'info'
 ## Validaciones Implementadas
 
 ### Formularios
+
 - ✅ Validación de formato de email
 - ✅ Validación de contraseña (mínimo 6 caracteres)
 - ✅ Confirmación de contraseña
@@ -168,6 +178,7 @@ showToast(message, type) // types: 'success', 'error', 'warning', 'info'
 - ✅ Validación en tiempo real (blur/input events)
 
 ### Carrito
+
 - ✅ Validación de stock disponible
 - ✅ Cantidad mínima (1 paquete)
 - ✅ Actualización automática si producto ya está en carrito
@@ -175,6 +186,7 @@ showToast(message, type) // types: 'success', 'error', 'warning', 'info'
 ## Responsive Design
 
 Todos los archivos HTML son responsive y se adaptan a dispositivos móviles:
+
 - Grid responsivo para productos
 - Layout adaptable para carrito
 - Navegación mobile-friendly
@@ -182,8 +194,9 @@ Todos los archivos HTML son responsive y se adaptan a dispositivos móviles:
 ## Configuración API
 
 Por defecto, el frontend se conecta a:
+
 ```javascript
-const API_BASE_URL = 'http://localhost:3000/api';
+const API_BASE_URL = "http://localhost:3000/api";
 ```
 
 Para cambiar la URL de la API, edita `public/js/api.js` línea 2.

@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dashboard del Agente - RazoConnect</title>
+
+    <!-- Protección de autenticación -->
+    <script src="js/auth-guard-client.js"></script>
+    <script src="js/token-refresh.js"></script>
+
+    <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/admin.css" />
+  </head>
+  <body data-sidebar="agent">
+    <div class="admin-layout">
+      <div id="sidebar-container"></div>
+
+      <main class="admin-main">
+        <header class="admin-header">
+          <div>
+            <h1 class="admin-header-title">Panel del agente</h1>
+            <p class="admin-header-subtitle">
+              Revisa tus resultados recientes y mantén a tus clientes al día.
+            </p>
+          </div>
+          <div class="admin-header-actions">
+            <div class="admin-user-info">
+              <div class="admin-user-avatar" id="userAvatar">A</div>
+              <div class="admin-user-details">
+                <div class="admin-user-name" id="userName">Agente</div>
+                <div class="admin-user-role" id="userRole">Agente</div>
+              </div>
+            </div>
+            <button class="admin-logout-btn" id="logoutBtn" type="button">
+              Cerrar sesión
+            </button>
+          </div>
+        </header>
+
+        <div class="admin-content">
+          <div class="admin-stats-grid">
+            <div class="admin-stat-card">
+              <div class="admin-stat-header">
+                <div class="admin-stat-content">
+                  <h3>Ventas del mes</h3>
+                  <div class="admin-stat-value" id="statVentasMes">$0.00</div>
+                  <div class="admin-stat-change positive">
+                    Pedidos confirmados este mes
+                  </div>
+                </div>
+                <div class="admin-stat-icon orange">🛒</div>
+              </div>
+            </div>
+
+            <div class="admin-stat-card">
+              <div class="admin-stat-header">
+                <div class="admin-stat-content">
+                  <h3>Comisiones acumuladas</h3>
+                  <div class="admin-stat-value" id="statComisiones">$0.00</div>
+                  <div class="admin-stat-change neutral">
+                    Pagadas y pendientes
+                  </div>
+                </div>
+                <div class="admin-stat-icon turquoise">💰</div>
+              </div>
+            </div>
+
+            <div class="admin-stat-card">
+              <div class="admin-stat-header">
+                <div class="admin-stat-content">
+                  <h3>Clientes activos</h3>
+                  <div class="admin-stat-value" id="statClientes">0</div>
+                  <div class="admin-stat-change neutral">
+                    <span>3 se unen cada semana</span>
+                  </div>
+                </div>
+                <div class="admin-stat-icon green">👥</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="admin-table-container">
+            <div class="admin-table-header">
+              <div>
+                <h2 class="admin-table-title">Pedidos recientes</h2>
+                <p class="admin-table-subtitle">
+                  Revisa los pedidos más recientes generados por tus clientes.
+                </p>
+              </div>
+              <button
+                class="btn btn-secondary"
+                id="btnRefrescarDashboard"
+                type="button"
+              >
+                Refrescar datos
+              </button>
+            </div>
+
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Pedido</th>
+                  <th>Cliente</th>
+                  <th>Fecha</th>
+                  <th>Monto total</th>
+                  <th>Estatus</th>
+                </tr>
+              </thead>
+              <tbody id="tablaUltimosPedidosBody">
+                <tr id="tablaUltimosPedidosEmpty">
+                  <td colspan="5" class="table-empty-state">
+                    Cargando últimos pedidos...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <script src="js/layout.js" defer></script>
+    <script src="js/api.js"></script>
+    <script src="js/agente-dashboard.js"></script>
+  </body>
+</html>

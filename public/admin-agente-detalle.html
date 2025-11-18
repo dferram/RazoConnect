@@ -17,66 +17,7 @@
   <body>
     <div class="admin-layout">
       <!-- Sidebar -->
-      <aside class="admin-sidebar">
-        <div class="admin-brand">
-          <a href="/admin-dashboard.html" class="admin-brand-logo"
-            >📦 RazoConnect</a
-          >
-          <div class="admin-brand-subtitle">Panel admin</div>
-        </div>
-        <nav class="admin-nav">
-          <div class="admin-nav-section">
-            <div class="admin-nav-title">Principal</div>
-            <a href="/admin-dashboard.html" class="admin-nav-link"
-              ><span class="admin-nav-icon">📊</span><span>Dashboard</span></a
-            >
-          </div>
-          <div class="admin-nav-section">
-            <div class="admin-nav-title">Gestión</div>
-            <a href="/admin-pedidos.html" class="admin-nav-link"
-              ><span class="admin-nav-icon">📦</span><span>Pedidos</span></a
-            >
-            <a href="/admin-agregar-producto.html" class="admin-nav-link"
-              ><span class="admin-nav-icon">🎁</span><span>Productos</span></a
-            >
-            <a href="/admin-categorias.html" class="admin-nav-link"
-              ><span class="admin-nav-icon">🏷️</span><span>Categorías</span></a
-            >
-            <a href="/admin-clientes.html" class="admin-nav-link"
-              ><span class="admin-nav-icon">👥</span><span>Clientes</span></a
-            >
-            <a href="/admin-agentes.html" class="admin-nav-link active"
-              ><span class="admin-nav-icon">💼</span><span>Agentes</span></a
-            >
-          </div>
-          <div class="admin-nav-section">
-            <div class="admin-nav-title">Financiero</div>
-            <a href="/admin-comisiones.html" class="admin-nav-link"
-              ><span class="admin-nav-icon">💰</span><span>Comisiones</span></a
-            >
-            <a href="/admin-inventario.html" class="admin-nav-link"
-              ><span class="admin-nav-icon">📈</span><span>Inventario</span></a
-            >
-            <a href="/admin-reportes.html" class="admin-nav-link"
-              ><span class="admin-nav-icon">📑</span><span>Reportes</span></a
-            >
-          </div>
-          <div class="admin-nav-section">
-            <div class="admin-nav-title">Compras</div>
-            <a href="/admin-proveedores.html" class="admin-nav-link"
-              ><span class="admin-nav-icon">🏭</span><span>Proveedores</span></a
-            >
-            <a href="/admin-crear-oc.html" class="admin-nav-link"
-              ><span class="admin-nav-icon">📋</span
-              ><span>Nueva Orden de Compra</span></a
-            >
-            <a href="/admin-recibir-inventario.html" class="admin-nav-link"
-              ><span class="admin-nav-icon">📥</span
-              ><span>Recibir Inventario</span></a
-            >
-          </div>
-        </nav>
-      </aside>
+      <div id="sidebar-container"></div>
 
       <!-- Main Content -->
       <main class="admin-main">
@@ -167,6 +108,44 @@
               </div>
             </div>
 
+            <!-- Cartera de Clientes -->
+            <div class="admin-table-container" style="margin-bottom: 2rem">
+              <div class="admin-table-header">
+                <h2 class="admin-table-title">Cartera de Clientes</h2>
+                <button
+                  type="button"
+                  class="btn btn-light btn-sm"
+                  id="btnRefrescarClientes"
+                >
+                  <span aria-hidden="true">🔄</span>
+                  <span>Refrescar</span>
+                </button>
+              </div>
+              <div style="overflow-x: auto">
+                <table class="admin-table">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Cliente</th>
+                      <th>Email</th>
+                      <th>Fecha Registro</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody id="clientesTableBody">
+                    <tr id="clientesLoadingRow">
+                      <td colspan="5" class="empty-state">
+                        Cargando cartera...
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div id="emptyClientes" class="empty-state" style="display: none">
+                <p>Este agente aún no tiene clientes asignados</p>
+              </div>
+            </div>
+
             <!-- Ventas -->
             <div class="admin-table-container" style="margin-bottom: 2rem">
               <div class="admin-table-header">
@@ -224,6 +203,7 @@
       </main>
     </div>
 
+    <script src="js/layout.js" defer></script>
     <script src="js/api.js"></script>
     <script>
       const adminToken = localStorage.getItem("razoconnect_admin_token");
@@ -232,14 +212,118 @@
       const urlParams = new URLSearchParams(window.location.search);
       const agenteId = urlParams.get("id");
 
+      const clientesTableBody = document.getElementById("clientesTableBody");
+      const emptyClientes = document.getElementById("emptyClientes");
+      const btnRefrescarClientes = document.getElementById(
+        "btnRefrescarClientes"
+      );
+
       if (!agenteId) {
         showToast("ID de agente no especificado", "error");
         setTimeout(() => (window.location.href = "/admin-agentes.html"), 1500);
       }
 
+      function formatDateToMX(value) {
+        if (!value) {
+          return "—";
+        }
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) {
+          return "—";
+        }
+        return date.toLocaleDateString("es-MX", {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+        });
+      }
+
+      function formatCurrencyMXN(value) {
+        const amount = Number.parseFloat(value);
+        if (Number.isNaN(amount)) {
+          return "$0.00";
+        }
+        return new Intl.NumberFormat("es-MX", {
+          style: "currency",
+          currency: "MXN",
+          minimumFractionDigits: 2,
+        }).format(amount);
+      }
+
+      function getClienteNombreCompleto(cliente) {
+        return (
+          [cliente.nombre, cliente.apellido]
+            .filter(Boolean)
+            .join(" ")
+            .trim()
+            .replace(/\s+/g, " ") || "Sin nombre"
+        );
+      }
+
+      function setClientesLoading(message = "Cargando cartera...") {
+        if (!clientesTableBody) {
+          return;
+        }
+        clientesTableBody.innerHTML = `
+          <tr>
+            <td colspan="5" class="empty-state">${message}</td>
+          </tr>
+        `;
+        if (emptyClientes) {
+          emptyClientes.style.display = "none";
+        }
+      }
+
+      function renderClientesRows(clientes) {
+        if (!clientesTableBody) {
+          return;
+        }
+
+        const rows = clientes
+          .map((cliente) => {
+            const nombreCompleto = getClienteNombreCompleto(cliente);
+            return `
+              <tr data-cliente-id="${cliente.clienteId}">
+                <td>#${cliente.clienteId}</td>
+                <td>
+                  <div>${nombreCompleto}</div>
+                  <div style="font-size: 0.85rem; color: var(--razo-gray-warm);">
+                    Pedidos: ${
+                      cliente.totalPedidos ?? 0
+                    } · Compras: ${formatCurrencyMXN(
+              cliente.montoTotalCompras || 0
+            )}
+                  </div>
+                </td>
+                <td>${cliente.email || "—"}</td>
+                <td>${formatDateToMX(cliente.fechaRegistro)}</td>
+                <td>
+                  <button
+                    type="button"
+                    class="btn btn-danger btn-sm"
+                    data-action="desvincular"
+                    data-cliente-id="${cliente.clienteId}"
+                    data-cliente-nombre="${nombreCompleto}"
+                    title="Desvincular cliente"
+                  >
+                    <span aria-hidden="true">⛓️</span>
+                    <span class="sr-only">Desvincular cliente</span>
+                  </button>
+                </td>
+              </tr>
+            `;
+          })
+          .join("");
+
+        clientesTableBody.innerHTML = rows;
+      }
+
       async function init() {
         await verifyAndLoadAdmin();
-        await loadAgenteDetalle();
+        const detalleCargado = await loadAgenteDetalle();
+        if (detalleCargado) {
+          await loadClientes();
+        }
       }
 
       async function verifyAndLoadAdmin() {
@@ -275,6 +359,7 @@
       async function loadAgenteDetalle() {
         const loading = document.getElementById("loadingData");
         const agentData = document.getElementById("agentData");
+        let success = false;
 
         try {
           loading.style.display = "flex";
@@ -302,7 +387,7 @@
             ).textContent = `${agente.nombre} ${agente.apellido}`;
             document.getElementById("agentEmail").textContent = agente.email;
             document.getElementById("agentCode").textContent =
-              agente.codigoAgente;
+              agente.codigoAgente || "—";
             document.getElementById("agentPhone").textContent =
               agente.telefono || "No registrado";
 
@@ -385,6 +470,7 @@
             }
 
             agentData.style.display = "block";
+            success = true;
           }
         } catch (error) {
           console.error("Error:", error);
@@ -396,12 +482,144 @@
         } finally {
           loading.style.display = "none";
         }
+
+        return success;
+      }
+
+      async function loadClientes() {
+        if (!clientesTableBody) {
+          return;
+        }
+
+        setClientesLoading();
+
+        try {
+          const response = await fetch(
+            `${API_BASE_URL}/admin/agentes/${agenteId}/clientes`,
+            {
+              headers: {
+                Authorization: `Bearer ${adminToken}`,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+
+          const data = await response.json();
+
+          if (!response.ok || !data.success) {
+            throw new Error(
+              data?.message || "No fue posible obtener la cartera del agente"
+            );
+          }
+
+          const clientes = data.data?.clientes || [];
+
+          if (clientes.length === 0) {
+            clientesTableBody.innerHTML = "";
+            if (emptyClientes) {
+              emptyClientes.style.display = "block";
+            }
+            return;
+          }
+
+          if (emptyClientes) {
+            emptyClientes.style.display = "none";
+          }
+
+          renderClientesRows(clientes);
+        } catch (error) {
+          console.error("Error al cargar cartera del agente:", error);
+          clientesTableBody.innerHTML = `
+            <tr>
+              <td colspan="5" class="empty-state">
+                ${error.message || "Error al cargar la cartera"}
+              </td>
+            </tr>
+          `;
+          if (emptyClientes) {
+            emptyClientes.style.display = "none";
+          }
+          showToast(
+            error.message || "Error al cargar la cartera del agente",
+            "error"
+          );
+        }
+      }
+
+      async function desvincularCliente(clienteId) {
+        const response = await fetch(
+          `${API_BASE_URL}/admin/clientes/${clienteId}/desvincular`,
+          {
+            method: "PUT",
+            headers: {
+              Authorization: `Bearer ${adminToken}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        const data = await response.json().catch(() => null);
+
+        if (!response.ok || !data?.success) {
+          throw new Error(
+            data?.message || "No fue posible desvincular al cliente"
+          );
+        }
+
+        return data;
+      }
+
+      async function handleClientesTableClick(event) {
+        const button = event.target.closest('[data-action="desvincular"]');
+        if (!button) {
+          return;
+        }
+
+        const clienteId = button.dataset.clienteId;
+        const clienteNombre = button.dataset.clienteNombre;
+
+        if (!clienteId) {
+          return;
+        }
+
+        const confirmMessage = clienteNombre
+          ? `¿Deseas desvincular a ${clienteNombre} de este agente?`
+          : "¿Deseas desvincular a este cliente del agente?";
+
+        if (!window.confirm(confirmMessage)) {
+          return;
+        }
+
+        const originalContent = button.innerHTML;
+        button.disabled = true;
+        button.innerHTML = "Procesando...";
+
+        try {
+          await desvincularCliente(clienteId);
+          showToast("Cliente desvinculado correctamente", "success");
+          await loadClientes();
+        } catch (error) {
+          console.error("Error al desvincular cliente:", error);
+          showToast(
+            error.message || "No fue posible desvincular al cliente",
+            "error"
+          );
+        } finally {
+          button.disabled = false;
+          button.innerHTML = originalContent;
+        }
       }
 
       document.getElementById("logoutBtn").addEventListener("click", () => {
         localStorage.removeItem("razoconnect_admin_token");
         window.location.href = "/login.html";
       });
+
+      btnRefrescarClientes?.addEventListener("click", () => {
+        loadClientes();
+      });
+
+      clientesTableBody?.addEventListener("click", handleClientesTableClick);
 
       init();
     </script>

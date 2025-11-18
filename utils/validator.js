@@ -33,26 +33,26 @@ const isNotEmpty = (value) => {
  */
 const validateClienteRegistro = (data) => {
   const errors = [];
-  
+
   if (!isNotEmpty(data.Nombre)) {
-    errors.push('El nombre es requerido');
+    errors.push("El nombre es requerido");
   }
-  
+
   if (!isNotEmpty(data.Apellido)) {
-    errors.push('El apellido es requerido');
+    errors.push("El apellido es requerido");
   }
-  
+
   if (!isValidEmail(data.Email)) {
-    errors.push('El email no es válido');
+    errors.push("El email no es válido");
   }
-  
+
   if (!isValidPassword(data.Password)) {
-    errors.push('La contraseña debe tener al menos 6 caracteres');
+    errors.push("La contraseña debe tener al menos 6 caracteres");
   }
-  
+
   return {
     valid: errors.length === 0,
-    errors
+    errors,
   };
 };
 
@@ -63,30 +63,26 @@ const validateClienteRegistro = (data) => {
  */
 const validateAgenteRegistro = (data) => {
   const errors = [];
-  
+
   if (!isNotEmpty(data.Nombre)) {
-    errors.push('El nombre es requerido');
+    errors.push("El nombre es requerido");
   }
-  
+
   if (!isNotEmpty(data.Apellido)) {
-    errors.push('El apellido es requerido');
+    errors.push("El apellido es requerido");
   }
-  
+
   if (!isValidEmail(data.Email)) {
-    errors.push('El email no es válido');
+    errors.push("El email no es válido");
   }
-  
+
   if (!isValidPassword(data.Password)) {
-    errors.push('La contraseña debe tener al menos 6 caracteres');
+    errors.push("La contraseña debe tener al menos 6 caracteres");
   }
-  
-  if (!isNotEmpty(data.CodigoAgente)) {
-    errors.push('El código de agente es requerido');
-  }
-  
+
   return {
     valid: errors.length === 0,
-    errors
+    errors,
   };
 };
 
@@ -97,18 +93,18 @@ const validateAgenteRegistro = (data) => {
  */
 const validateLogin = (data) => {
   const errors = [];
-  
+
   if (!isValidEmail(data.Email)) {
-    errors.push('El email no es válido');
+    errors.push("El email no es válido");
   }
-  
+
   if (!isNotEmpty(data.Password)) {
-    errors.push('La contraseña es requerida');
+    errors.push("La contraseña es requerida");
   }
-  
+
   return {
     valid: errors.length === 0,
-    errors
+    errors,
   };
 };
 
@@ -118,5 +114,5 @@ module.exports = {
   isNotEmpty,
   validateClienteRegistro,
   validateAgenteRegistro,
-  validateLogin
+  validateLogin,
 };

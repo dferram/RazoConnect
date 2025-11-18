@@ -11,7 +11,7 @@ const crearPedido = async (req, res) => {
 
   try {
     const clienteId = req.user.userId;
-    const { DireccionEnvioID, AgenteID } = req.body;
+    const { DireccionEnvioID } = req.body;
 
     // Validar datos de entrada
     if (!DireccionEnvioID) {
@@ -128,21 +128,24 @@ const crearPedido = async (req, res) => {
       return total + item.cantidad * tamanoValor * precioUnitario;
     }, 0);
 
-    // 6. Validar el AgenteID si se proporcionó
-    let agenteId = null;
-    if (AgenteID) {
-      const agenteResult = await client.query(
-        "SELECT agenteid, activo FROM agentesdeventas WHERE agenteid = $1",
-        [AgenteID]
-      );
+    // 6. Obtener el agente asignado al cliente (si existe)
+    const clienteAgenteResult = await client.query(
+      "SELECT AgenteID FROM Clientes WHERE ClienteID = $1",
+      [clienteId]
+    );
 
-      if (agenteResult.rows.length > 0 && agenteResult.rows[0].activo) {
-        agenteId = agenteResult.rows[0].agenteid;
-      } else {
-        // AgenteID no válido o inactivo - continuar sin comisión
-        console.warn(`AgenteID inválido o inactivo: ${AgenteID}`);
-      }
+    if (clienteAgenteResult.rows.length === 0) {
+      await client.query("ROLLBACK");
+      transactionStarted = false;
+      return res.status(404).json({
+        success: false,
+        message: "Cliente no encontrado",
+      });
     }
+
+    const agenteId = clienteAgenteResult.rows[0].agenteid
+      ? parseInt(clienteAgenteResult.rows[0].agenteid, 10)
+      : null;
 
     // 7. Crear el pedido
     const pedidoResult = await client.query(

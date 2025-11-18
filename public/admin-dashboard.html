@@ -1,418 +1,431 @@
 <!DOCTYPE html>
 <html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard Admin - RazoConnect</title>
-  
-  <!-- PROTECCIÓN DE AUTENTICACIÓN ADMIN - Debe cargarse PRIMERO -->
-  <script src="js/auth-guard-admin.js"></script>
-  
-  <!-- SISTEMA DE RENOVACIÓN DE TOKENS -->
-  <script src="js/token-refresh.js"></script>
-  
-  <link rel="stylesheet" href="css/styles.css">
-  <link rel="stylesheet" href="css/admin.css">
-</head>
-<body>
-  <div class="admin-layout">
-    <!-- Sidebar -->
-    <aside class="admin-sidebar">
-      <div class="admin-brand">
-        <a href="/admin-dashboard.html" class="admin-brand-logo">
-          📦 RazoConnect
-        </a>
-        <div class="admin-brand-subtitle">Panel admin</div>
-      </div>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dashboard Admin - RazoConnect</title>
 
-      <nav class="admin-nav">
-        <div class="admin-nav-section">
-          <div class="admin-nav-title">Principal</div>
-          <a href="/admin-dashboard.html" class="admin-nav-link active">
-            <span class="admin-nav-icon">📊</span>
-            <span>Dashboard</span>
-          </a>
-        </div>
+    <!-- PROTECCIÓN DE AUTENTICACIÓN ADMIN - Debe cargarse PRIMERO -->
+    <script src="js/auth-guard-admin.js"></script>
 
-        <div class="admin-nav-section">
-          <div class="admin-nav-title">Gestión</div>
-          <a href="/admin-pedidos.html" class="admin-nav-link">
-            <span class="admin-nav-icon">📦</span>
-            <span>Pedidos</span>
-          </a>
-          <a href="/admin-agregar-producto.html" class="admin-nav-link">
-            <span class="admin-nav-icon">🎁</span>
-            <span>Productos</span>
-          </a>
-          <a href="/admin-categorias.html" class="admin-nav-link">
-            <span class="admin-nav-icon">🏷️</span>
-            <span>Categorías</span>
-          </a>
-          <a href="/admin-clientes.html" class="admin-nav-link">
-            <span class="admin-nav-icon">👥</span>
-            <span>Clientes</span>
-          </a>
-          <a href="/admin-agentes.html" class="admin-nav-link">
-            <span class="admin-nav-icon">💼</span>
-            <span>Agentes</span>
-          </a>
-        </div>
+    <!-- SISTEMA DE RENOVACIÓN DE TOKENS -->
+    <script src="js/token-refresh.js"></script>
 
-        <div class="admin-nav-section">
-          <div class="admin-nav-title">Financiero</div>
-          <a href="/admin-comisiones.html" class="admin-nav-link">
-            <span class="admin-nav-icon">💰</span>
-            <span>Comisiones</span>
-          </a>
-          <a href="/admin-inventario.html" class="admin-nav-link">
-            <span class="admin-nav-icon">📈</span>
-            <span>Inventario</span>
-          </a>
-          <a href="/admin-reportes.html" class="admin-nav-link">
-            <span class="admin-nav-icon">📑</span>
-            <span>Reportes</span>
-          </a>
-        </div>
+    <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/admin.css" />
+  </head>
+  <body>
+    <div class="admin-layout">
+      <!-- Sidebar -->
+      <div id="sidebar-container"></div>
 
-        <div class="admin-nav-section">
-          <div class="admin-nav-title">Compras</div>
-          <a href="/admin-proveedores.html" class="admin-nav-link">
-            <span class="admin-nav-icon">🏭</span>
-            <span>Proveedores</span>
-          </a>
-          <a href="/admin-crear-oc.html" class="admin-nav-link">
-            <span class="admin-nav-icon">📋</span>
-            <span>Nueva orden de compra</span>
-          </a>
-          <a href="/admin-recibir-inventario.html" class="admin-nav-link">
-            <span class="admin-nav-icon">📥</span>
-            <span>Recibir inventario</span>
-          </a>
-        </div>
-      </nav>
-    </aside>
+      <!-- Main Content -->
+      <main class="admin-main">
+        <header class="admin-header">
+          <h1 class="admin-header-title">Panel de control</h1>
 
-    <!-- Main Content -->
-    <main class="admin-main">
-      <header class="admin-header">
-        <h1 class="admin-header-title">Panel de control</h1>
-        
-        <div class="admin-header-actions">
-          <div class="admin-user-info">
-            <div class="admin-user-avatar" id="userAvatar">A</div>
-            <div class="admin-user-details">
-              <div class="admin-user-name" id="userName">Administrador</div>
-              <div class="admin-user-role" id="userRole">Admin</div>
-            </div>
-          </div>
-          <button class="admin-logout-btn" id="logoutBtn">Cerrar sesión</button>
-        </div>
-      </header>
-
-      <div class="admin-content">
-        <!-- Stats Grid -->
-        <div class="admin-stats-grid">
-          <div class="admin-stat-card">
-            <div class="admin-stat-header">
-              <div class="admin-stat-content">
-                <h3>Total Pedidos</h3>
-                <div class="admin-stat-value" id="totalPedidos">0</div>
-                <div class="admin-stat-change positive">
-                  ↑ <span id="pedidosCambio">0%</span> vs mes anterior
-                </div>
+          <div class="admin-header-actions">
+            <div class="admin-user-info">
+              <div class="admin-user-avatar" id="userAvatar">A</div>
+              <div class="admin-user-details">
+                <div class="admin-user-name" id="userName">Administrador</div>
+                <div class="admin-user-role" id="userRole">Admin</div>
               </div>
-              <div class="admin-stat-icon orange">📦</div>
             </div>
-          </div>
-
-          <div class="admin-stat-card">
-            <div class="admin-stat-header">
-              <div class="admin-stat-content">
-                <h3>Ingresos Totales</h3>
-                <div class="admin-stat-value" id="ingresosTotales">$0</div>
-                <div class="admin-stat-change positive">
-                  ↑ <span id="ingresosCambio">0%</span> vs mes anterior
-                </div>
-              </div>
-              <div class="admin-stat-icon turquoise">💰</div>
-            </div>
-          </div>
-
-          <div class="admin-stat-card">
-            <div class="admin-stat-header">
-              <div class="admin-stat-content">
-                <h3>Clientes Activos</h3>
-                <div class="admin-stat-value" id="clientesActivos">0</div>
-                <div class="admin-stat-change positive">
-                  ↑ <span id="clientesCambio">0%</span> nuevos este mes
-                </div>
-              </div>
-              <div class="admin-stat-icon green">👥</div>
-            </div>
-          </div>
-
-          <div class="admin-stat-card">
-            <div class="admin-stat-header">
-              <div class="admin-stat-content">
-                <h3>Agentes Activos</h3>
-                <div class="admin-stat-value" id="agentesActivos">0</div>
-                <div class="admin-stat-change positive">
-                  ↑ <span id="agentesCambio">0%</span> nuevos este mes
-                </div>
-              </div>
-              <div class="admin-stat-icon purple">💼</div>
-            </div>
-          </div>
-
-          <div class="admin-stat-card">
-            <div class="admin-stat-header">
-              <div class="admin-stat-content">
-                <h3>Valor inventario (venta)</h3>
-                <div class="admin-stat-value" id="valorInventarioVenta">$0.00</div>
-                <div class="admin-stat-change neutral">
-                  A costo: <strong id="valorInventarioCosto">$0.00</strong>
-                </div>
-              </div>
-              <div class="admin-stat-icon red">🏷️</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Recent Orders Table -->
-        <div class="admin-table-container">
-          <div class="admin-table-header">
-            <h2 class="admin-table-title">Pedidos recientes</h2>
-            <button class="btn btn-primary" onclick="window.location.href='#pedidos'">
-              Ver todos
+            <button class="admin-logout-btn" id="logoutBtn">
+              Cerrar sesión
             </button>
           </div>
+        </header>
 
-          <div id="loadingOrders" class="loading">
-            <div class="spinner"></div>
+        <div class="admin-content">
+          <!-- Stats Grid -->
+          <div class="admin-stats-grid">
+            <div class="admin-stat-card">
+              <div class="admin-stat-header">
+                <div class="admin-stat-content">
+                  <h3>Total Pedidos</h3>
+                  <div class="admin-stat-value" id="totalPedidos">0</div>
+                  <div class="admin-stat-change positive">
+                    ↑ <span id="pedidosCambio">0%</span> vs mes anterior
+                  </div>
+                </div>
+                <div class="admin-stat-icon orange">📦</div>
+              </div>
+            </div>
+
+            <div class="admin-stat-card">
+              <div class="admin-stat-header">
+                <div class="admin-stat-content">
+                  <h3>Ingresos Totales</h3>
+                  <div class="admin-stat-value" id="ingresosTotales">$0</div>
+                  <div class="admin-stat-change positive">
+                    ↑ <span id="ingresosCambio">0%</span> vs mes anterior
+                  </div>
+                </div>
+                <div class="admin-stat-icon turquoise">💰</div>
+              </div>
+            </div>
+
+            <div class="admin-stat-card">
+              <div class="admin-stat-header">
+                <div class="admin-stat-content">
+                  <h3>Clientes Activos</h3>
+                  <div class="admin-stat-value" id="clientesActivos">0</div>
+                  <div class="admin-stat-change positive">
+                    ↑ <span id="clientesCambio">0%</span> nuevos este mes
+                  </div>
+                </div>
+                <div class="admin-stat-icon green">👥</div>
+              </div>
+            </div>
+
+            <div class="admin-stat-card">
+              <div class="admin-stat-header">
+                <div class="admin-stat-content">
+                  <h3>Agentes Activos</h3>
+                  <div class="admin-stat-value" id="agentesActivos">0</div>
+                  <div class="admin-stat-change positive">
+                    ↑ <span id="agentesCambio">0%</span> nuevos este mes
+                  </div>
+                </div>
+                <div class="admin-stat-icon purple">💼</div>
+              </div>
+            </div>
+
+            <div class="admin-stat-card">
+              <div class="admin-stat-header">
+                <div class="admin-stat-content">
+                  <h3>Valor inventario (venta)</h3>
+                  <div class="admin-stat-value" id="valorInventarioVenta">
+                    $0.00
+                  </div>
+                  <div class="admin-stat-change neutral">
+                    A costo: <strong id="valorInventarioCosto">$0.00</strong>
+                  </div>
+                </div>
+                <div class="admin-stat-icon red">🏷️</div>
+              </div>
+            </div>
           </div>
 
-          <table class="admin-table" id="ordersTable" style="display: none;">
-            <thead>
-              <tr>
-                <th>#ID</th>
-                <th>Cliente</th>
-                <th>Fecha</th>
-                <th>Total</th>
-                <th>Estado</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody id="ordersTableBody">
-              <!-- Orders will be loaded here -->
-            </tbody>
-          </table>
+          <!-- Recent Orders Table -->
+          <div class="admin-table-container">
+            <div class="admin-table-header">
+              <h2 class="admin-table-title">Pedidos recientes</h2>
+              <button
+                class="btn btn-primary"
+                onclick="window.location.href='#pedidos'"
+              >
+                Ver todos
+              </button>
+            </div>
 
-          <div id="emptyOrders" class="empty-state" style="display: none;">
-            <div class="empty-state-icon">📦</div>
-            <h3 class="empty-state-title">No hay pedidos</h3>
-            <p class="empty-state-text">Los pedidos recientes aparecerán aquí</p>
+            <div id="loadingOrders" class="loading">
+              <div class="spinner"></div>
+            </div>
+
+            <table class="admin-table" id="ordersTable" style="display: none">
+              <thead>
+                <tr>
+                  <th>#ID</th>
+                  <th>Cliente</th>
+                  <th>Fecha</th>
+                  <th>Total</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="ordersTableBody">
+                <!-- Orders will be loaded here -->
+              </tbody>
+            </table>
+
+            <div id="emptyOrders" class="empty-state" style="display: none">
+              <div class="empty-state-icon">📦</div>
+              <h3 class="empty-state-title">No hay pedidos</h3>
+              <p class="empty-state-text">
+                Los pedidos recientes aparecerán aquí
+              </p>
+            </div>
           </div>
         </div>
-      </div>
-    </main>
-  </div>
+      </main>
+    </div>
 
-  <!-- Modal para ver detalle del pedido -->
-  <div id="detalleModal" class="modal">
-    <div class="modal-content" style="background: white; padding: 2rem; border-radius: 1rem; box-shadow: 0 20px 60px rgba(0,0,0,0.3); max-width: 900px;">
-      <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 2px solid #F5F1ED;">
-        <h2 style="margin: 0; font-size: 1.5rem; color: #2D3748;">Detalle del Pedido #<span id="detallePedidoId"></span></h2>
-        <button class="modal-close" onclick="closeDetalleModal()" style="background: none; border: none; font-size: 2rem; cursor: pointer; color: #6B5D57; line-height: 1; padding: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: all 0.2s;">&times;</button>
-      </div>
-      <div id="detalleModalBody" class="modal-body">
-        <!-- El contenido se llenará dinámicamente -->
+    <!-- Modal para ver detalle del pedido -->
+    <div id="detalleModal" class="modal">
+      <div
+        class="modal-content"
+        style="
+          background: white;
+          padding: 2rem;
+          border-radius: 1rem;
+          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+          max-width: 900px;
+        "
+      >
+        <div
+          class="modal-header"
+          style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #f5f1ed;
+          "
+        >
+          <h2 style="margin: 0; font-size: 1.5rem; color: #2d3748">
+            Detalle del Pedido #<span id="detallePedidoId"></span>
+          </h2>
+          <button
+            class="modal-close"
+            onclick="closeDetalleModal()"
+            style="
+              background: none;
+              border: none;
+              font-size: 2rem;
+              cursor: pointer;
+              color: #6b5d57;
+              line-height: 1;
+              padding: 0;
+              width: 32px;
+              height: 32px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              border-radius: 50%;
+              transition: all 0.2s;
+            "
+          >
+            &times;
+          </button>
+        </div>
+        <div id="detalleModalBody" class="modal-body">
+          <!-- El contenido se llenará dinámicamente -->
+        </div>
       </div>
     </div>
-  </div>
 
-  <script src="js/api.js"></script>
-  <script>
-    // Authentication check
-    const adminToken = localStorage.getItem('razoconnect_admin_token');
-    if (!adminToken) {
-      window.location.href = '/login.html';
-    }
-
-    // Verify admin token
-    async function verifyAndLoadAdmin() {
-      try {
-        const response = await fetch(`${API_BASE_URL}/admin/verify`, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${adminToken}`,
-            'Content-Type': 'application/json'
-          }
-        });
-
-        if (!response.ok) {
-          throw new Error('Invalid token');
-        }
-
-        const data = await response.json();
-        if (data.success) {
-          // Update admin info in UI
-          const admin = data.data.admin;
-          document.getElementById('userName').textContent = admin.nombre;
-          document.getElementById('userRole').textContent = admin.rol === 'superadmin' ? 'Super Admin' : 'Admin';
-          
-          // Set avatar initials
-          const words = admin.nombre.split(' ');
-          const initials = words.length >= 2 
-            ? `${words[0].charAt(0)}${words[1].charAt(0)}` 
-            : admin.nombre.substring(0, 2);
-          document.getElementById('userAvatar').textContent = initials.toUpperCase();
-
-          // Save updated admin data
-          localStorage.setItem('razoconnect_admin', JSON.stringify(admin));
-        }
-      } catch (error) {
-        console.error('Error verifying admin:', error);
-        localStorage.removeItem('razoconnect_admin_token');
-        localStorage.removeItem('razoconnect_admin');
-        window.location.href = '/login.html';
+    <script src="js/layout.js" defer></script>
+    <script src="js/api.js"></script>
+    <script>
+      // Authentication check
+      const adminToken = localStorage.getItem("razoconnect_admin_token");
+      if (!adminToken) {
+        window.location.href = "/login.html";
       }
-    }
 
-    // Load dashboard statistics
-    async function loadDashboardStats() {
-      try {
-        const response = await fetch(`${API_BASE_URL}/admin/dashboard-stats`, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${adminToken}`,
-            'Content-Type': 'application/json'
+      // Verify admin token
+      async function verifyAndLoadAdmin() {
+        try {
+          const response = await fetch(`${API_BASE_URL}/admin/verify`, {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${adminToken}`,
+              "Content-Type": "application/json",
+            },
+          });
+
+          if (!response.ok) {
+            throw new Error("Invalid token");
           }
-        });
 
-        if (response.ok) {
           const data = await response.json();
           if (data.success) {
-            const stats = data.data;
-            
-            // Total pedidos
-            document.getElementById('totalPedidos').textContent = stats.totalPedidos || '0';
-            document.getElementById('pedidosCambio').textContent = `${stats.pedidosPendientes} pendientes`;
-            
-            // Ingresos totales
-            document.getElementById('ingresosTotales').textContent = formatCurrency(stats.ingresosTotales);
-            document.getElementById('ingresosCambio').textContent = formatCurrency(stats.comisionesPendientes) + ' en comisiones';
-            
-            // Clientes activos
-            document.getElementById('clientesActivos').textContent = stats.clientesActivos || '0';
-            document.getElementById('clientesCambio').textContent = `Total registrados`;
-            
-            // Agentes activos
-            document.getElementById('agentesActivos').textContent = stats.agentesActivos || '0';
-            document.getElementById('agentesCambio').textContent = `Total activos`;
+            // Update admin info in UI
+            const admin = data.data.admin;
+            document.getElementById("userName").textContent = admin.nombre;
+            document.getElementById("userRole").textContent =
+              admin.rol === "superadmin" ? "Super Admin" : "Admin";
 
-            // Alerta de stock bajo
-            if (stats.productosStockBajo > 0) {
-              showToast(`⚠️ ${stats.productosStockBajo} productos con stock bajo`, 'warning');
+            // Set avatar initials
+            const words = admin.nombre.split(" ");
+            const initials =
+              words.length >= 2
+                ? `${words[0].charAt(0)}${words[1].charAt(0)}`
+                : admin.nombre.substring(0, 2);
+            document.getElementById("userAvatar").textContent =
+              initials.toUpperCase();
+
+            // Save updated admin data
+            localStorage.setItem("razoconnect_admin", JSON.stringify(admin));
+          }
+        } catch (error) {
+          console.error("Error verifying admin:", error);
+          localStorage.removeItem("razoconnect_admin_token");
+          localStorage.removeItem("razoconnect_admin");
+          window.location.href = "/login.html";
+        }
+      }
+
+      // Load dashboard statistics
+      async function loadDashboardStats() {
+        try {
+          const response = await fetch(
+            `${API_BASE_URL}/admin/dashboard-stats`,
+            {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${adminToken}`,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+
+          if (response.ok) {
+            const data = await response.json();
+            if (data.success) {
+              const stats = data.data;
+
+              // Total pedidos
+              document.getElementById("totalPedidos").textContent =
+                stats.totalPedidos || "0";
+              document.getElementById(
+                "pedidosCambio"
+              ).textContent = `${stats.pedidosPendientes} pendientes`;
+
+              // Ingresos totales
+              document.getElementById("ingresosTotales").textContent =
+                formatCurrency(stats.ingresosTotales);
+              document.getElementById("ingresosCambio").textContent =
+                formatCurrency(stats.comisionesPendientes) + " en comisiones";
+
+              // Clientes activos
+              document.getElementById("clientesActivos").textContent =
+                stats.clientesActivos || "0";
+              document.getElementById(
+                "clientesCambio"
+              ).textContent = `Total registrados`;
+
+              // Agentes activos
+              document.getElementById("agentesActivos").textContent =
+                stats.agentesActivos || "0";
+              document.getElementById(
+                "agentesCambio"
+              ).textContent = `Total activos`;
+
+              // Alerta de stock bajo
+              if (stats.productosStockBajo > 0) {
+                showToast(
+                  `⚠️ ${stats.productosStockBajo} productos con stock bajo`,
+                  "warning"
+                );
+              }
             }
           }
-        }
-      } catch (error) {
-        console.error('Error loading stats:', error);
-      }
-    }
-
-    // Format currency helper
-    function formatCurrency(amount) {
-      return new Intl.NumberFormat('es-MX', {
-        style: 'currency',
-        currency: 'MXN'
-      }).format(amount || 0);
-    }
-
-    async function loadInventoryValuation() {
-      try {
-        const response = await fetch(`${API_BASE_URL}/admin/reportes/valuacion-inventario`, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${adminToken}`,
-            'Content-Type': 'application/json'
-          }
-        });
-
-        if (!response.ok) {
-          throw new Error('No se pudo obtener la valuación de inventario');
-        }
-
-        const data = await response.json();
-        if (data.success && data.data) {
-          const valorVenta = typeof data.data.valorVenta !== 'undefined'
-            ? data.data.valorVenta
-            : data.data.valorTotal;
-          const valorCosto = typeof data.data.valorCosto !== 'undefined'
-            ? data.data.valorCosto
-            : null;
-
-          const ventaElement = document.getElementById('valorInventarioVenta');
-          const costoElement = document.getElementById('valorInventarioCosto');
-
-          if (ventaElement) {
-            ventaElement.textContent = formatCurrency(valorVenta || 0);
-          }
-          if (costoElement && valorCosto !== null) {
-            costoElement.textContent = formatCurrency(valorCosto);
-          }
-        }
-      } catch (error) {
-        console.error('Error al cargar la valuación de inventario:', error);
-        if (typeof showToast === 'function') {
-          showToast('No se pudo cargar la valuación de inventario', 'error');
+        } catch (error) {
+          console.error("Error loading stats:", error);
         }
       }
-    }
 
-    // Load recent orders (REAL DATA from database)
-    async function loadRecentOrders() {
-      const loadingOrders = document.getElementById('loadingOrders');
-      const ordersTable = document.getElementById('ordersTable');
-      const emptyOrders = document.getElementById('emptyOrders');
-      const ordersTableBody = document.getElementById('ordersTableBody');
+      // Format currency helper
+      function formatCurrency(amount) {
+        return new Intl.NumberFormat("es-MX", {
+          style: "currency",
+          currency: "MXN",
+        }).format(amount || 0);
+      }
 
-      try {
-        loadingOrders.style.display = 'flex';
-        ordersTable.style.display = 'none';
-        emptyOrders.style.display = 'none';
+      async function loadInventoryValuation() {
+        try {
+          const response = await fetch(
+            `${API_BASE_URL}/admin/reportes/valuacion-inventario`,
+            {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${adminToken}`,
+                "Content-Type": "application/json",
+              },
+            }
+          );
 
-        // Fetch REAL orders from database
-        const response = await fetch(`${API_BASE_URL}/admin/pedidos`, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${adminToken}`,
-            'Content-Type': 'application/json'
+          if (!response.ok) {
+            throw new Error("No se pudo obtener la valuación de inventario");
           }
-        });
 
-        if (!response.ok) throw new Error('Error al cargar pedidos');
+          const data = await response.json();
+          if (data.success && data.data) {
+            const valorVenta =
+              typeof data.data.valorVenta !== "undefined"
+                ? data.data.valorVenta
+                : data.data.valorTotal;
+            const valorCosto =
+              typeof data.data.valorCosto !== "undefined"
+                ? data.data.valorCosto
+                : null;
 
-        const data = await response.json();
-        
-        if (data.success && data.data.pedidos.length > 0) {
-          // Mostrar solo los últimos 5 pedidos
-          const recentOrders = data.data.pedidos.slice(0, 5);
-          
-          ordersTableBody.innerHTML = recentOrders.map(order => {
-            let badgeClass = 'info';
-            if (order.estatus === 'Confirmado') badgeClass = 'success';
-            else if (order.estatus === 'Enviado') badgeClass = 'warning';
-            else if (order.estatus === 'Entregado') badgeClass = 'success';
-            else if (order.estatus === 'Cancelado') badgeClass = 'danger';
+            const ventaElement = document.getElementById(
+              "valorInventarioVenta"
+            );
+            const costoElement = document.getElementById(
+              "valorInventarioCosto"
+            );
 
-            return `
+            if (ventaElement) {
+              ventaElement.textContent = formatCurrency(valorVenta || 0);
+            }
+            if (costoElement && valorCosto !== null) {
+              costoElement.textContent = formatCurrency(valorCosto);
+            }
+          }
+        } catch (error) {
+          console.error("Error al cargar la valuación de inventario:", error);
+          if (typeof showToast === "function") {
+            showToast("No se pudo cargar la valuación de inventario", "error");
+          }
+        }
+      }
+
+      // Load recent orders (REAL DATA from database)
+      async function loadRecentOrders() {
+        const loadingOrders = document.getElementById("loadingOrders");
+        const ordersTable = document.getElementById("ordersTable");
+        const emptyOrders = document.getElementById("emptyOrders");
+        const ordersTableBody = document.getElementById("ordersTableBody");
+
+        try {
+          loadingOrders.style.display = "flex";
+          ordersTable.style.display = "none";
+          emptyOrders.style.display = "none";
+
+          // Fetch REAL orders from database
+          const response = await fetch(`${API_BASE_URL}/admin/pedidos`, {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${adminToken}`,
+              "Content-Type": "application/json",
+            },
+          });
+
+          if (!response.ok) throw new Error("Error al cargar pedidos");
+
+          const data = await response.json();
+
+          if (data.success && data.data.pedidos.length > 0) {
+            // Mostrar solo los últimos 5 pedidos
+            const recentOrders = data.data.pedidos.slice(0, 5);
+
+            ordersTableBody.innerHTML = recentOrders
+              .map((order) => {
+                let badgeClass = "info";
+                if (order.estatus === "Confirmado") badgeClass = "success";
+                else if (order.estatus === "Enviado") badgeClass = "warning";
+                else if (order.estatus === "Entregado") badgeClass = "success";
+                else if (order.estatus === "Cancelado") badgeClass = "danger";
+
+                return `
               <tr>
                 <td><strong>#${order.pedidoId}</strong></td>
                 <td>${order.clienteNombre}</td>
-                <td>${new Date(order.fechaPedido).toLocaleDateString('es-MX')}</td>
+                <td>${new Date(order.fechaPedido).toLocaleDateString(
+                  "es-MX"
+                )}</td>
                 <td><strong>${formatCurrency(order.montoTotal)}</strong></td>
-                <td><span class="admin-badge ${badgeClass}">${order.estatus}</span></td>
+                <td><span class="admin-badge ${badgeClass}">${
+                  order.estatus
+                }</span></td>
                 <td>
                   <button class="btn btn-primary" style="padding: 0.5rem 1rem; font-size: 0.875rem;" 
                     onclick="verDetallePedido(${order.pedidoId})">
@@ -421,81 +434,126 @@
                 </td>
               </tr>
             `;
-          }).join('');
-          ordersTable.style.display = 'table';
-        } else {
-          emptyOrders.style.display = 'block';
-        }
-      } catch (error) {
-        console.error('Error loading orders:', error);
-        showToast('Error al cargar pedidos recientes', 'error');
-        emptyOrders.style.display = 'block';
-      } finally {
-        loadingOrders.style.display = 'none';
-      }
-    }
-
-    // Ver detalle de pedido (abre modal)
-    async function verDetallePedido(pedidoId) {
-      try {
-        const response = await fetch(`${API_BASE_URL}/admin/pedidos/${pedidoId}/detalle`, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${adminToken}`,
-            'Content-Type': 'application/json'
+              })
+              .join("");
+            ordersTable.style.display = "table";
+          } else {
+            emptyOrders.style.display = "block";
           }
-        });
-
-        if (!response.ok) throw new Error('Error al cargar detalle');
-
-        const data = await response.json();
-        
-        if (data.success) {
-          mostrarModalDetalle(data.data);
+        } catch (error) {
+          console.error("Error loading orders:", error);
+          showToast("Error al cargar pedidos recientes", "error");
+          emptyOrders.style.display = "block";
+        } finally {
+          loadingOrders.style.display = "none";
         }
-      } catch (error) {
-        console.error('Error:', error);
-        showToast('Error al cargar detalle del pedido', 'error');
       }
-    }
 
-    // Mostrar modal con detalle del pedido
-    function mostrarModalDetalle(detalle) {
-      const { pedido, productos } = detalle;
-      
-      // Actualizar ID del pedido en el título
-      document.getElementById('detallePedidoId').textContent = pedido.pedidoId;
-      
-      // Generar el contenido del modal
-      const contenido = `
+      // Ver detalle de pedido (abre modal)
+      async function verDetallePedido(pedidoId) {
+        try {
+          const response = await fetch(
+            `${API_BASE_URL}/admin/pedidos/${pedidoId}/detalle`,
+            {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${adminToken}`,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+
+          if (!response.ok) throw new Error("Error al cargar detalle");
+
+          const data = await response.json();
+
+          if (data.success) {
+            mostrarModalDetalle(data.data);
+          }
+        } catch (error) {
+          console.error("Error:", error);
+          showToast("Error al cargar detalle del pedido", "error");
+        }
+      }
+
+      // Mostrar modal con detalle del pedido
+      function mostrarModalDetalle(detalle) {
+        const { pedido, productos } = detalle;
+
+        // Actualizar ID del pedido en el título
+        document.getElementById("detallePedidoId").textContent =
+          pedido.pedidoId;
+
+        // Generar el contenido del modal
+        const contenido = `
         <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; margin-bottom: 1.5rem;">
           <div>
             <h3 style="margin-bottom: 0.5rem; color: #FF9966;">👤 Cliente</h3>
-            <p style="margin: 0.25rem 0;"><strong>${pedido.cliente.nombre}</strong></p>
-            <p style="margin: 0.25rem 0; color: #6B5D57;">${pedido.cliente.email}</p>
-            <p style="margin: 0.25rem 0; color: #6B5D57;">${pedido.cliente.telefono || 'Sin teléfono'}</p>
+            <p style="margin: 0.25rem 0;"><strong>${
+              pedido.cliente.nombre
+            }</strong></p>
+            <p style="margin: 0.25rem 0; color: #6B5D57;">${
+              pedido.cliente.email
+            }</p>
+            <p style="margin: 0.25rem 0; color: #6B5D57;">${
+              pedido.cliente.telefono || "Sin teléfono"
+            }</p>
           </div>
           <div>
             <h3 style="margin-bottom: 0.5rem; color: #FF9966;">📋 Información del Pedido</h3>
-            <p style="margin: 0.25rem 0;">Fecha: <strong>${new Date(pedido.fechaPedido).toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' })}</strong></p>
-            <p style="margin: 0.25rem 0;">Estado: <span class="admin-badge ${pedido.estatus === 'Confirmado' ? 'success' : pedido.estatus === 'Enviado' ? 'warning' : pedido.estatus === 'Entregado' ? 'success' : pedido.estatus === 'Cancelado' ? 'danger' : 'info'}">${pedido.estatus}</span></p>
-            <p style="margin: 0.25rem 0;">Total: <strong style="font-size: 1.25rem; color: #FF9966;">${formatCurrency(pedido.montoTotal)}</strong></p>
+            <p style="margin: 0.25rem 0;">Fecha: <strong>${new Date(
+              pedido.fechaPedido
+            ).toLocaleDateString("es-MX", {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            })}</strong></p>
+            <p style="margin: 0.25rem 0;">Estado: <span class="admin-badge ${
+              pedido.estatus === "Confirmado"
+                ? "success"
+                : pedido.estatus === "Enviado"
+                ? "warning"
+                : pedido.estatus === "Entregado"
+                ? "success"
+                : pedido.estatus === "Cancelado"
+                ? "danger"
+                : "info"
+            }">${pedido.estatus}</span></p>
+            <p style="margin: 0.25rem 0;">Total: <strong style="font-size: 1.25rem; color: #FF9966;">${formatCurrency(
+              pedido.montoTotal
+            )}</strong></p>
           </div>
         </div>
 
-        ${pedido.agente ? `
+        ${
+          pedido.agente
+            ? `
         <div style="margin-bottom: 1.5rem; padding: 1rem; background: #FFF8F0; border-radius: 0.5rem;">
           <h3 style="margin-bottom: 0.5rem; color: #FF9966;">💼 Agente de Ventas</h3>
           <p style="margin: 0;"><strong>${pedido.agente.nombre}</strong> - Código: <span style="background: #FF9966; color: white; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-weight: 600;">${pedido.agente.codigo}</span></p>
         </div>
-        ` : ''}
+        `
+            : ""
+        }
 
         <div style="margin-bottom: 1.5rem; padding: 1rem; background: #f8f9fa; border-radius: 0.5rem;">
           <h3 style="margin-bottom: 0.5rem; color: #FF9966;">📍 Dirección de Envío</h3>
-          <p style="margin: 0.25rem 0;"><strong>${pedido.direccion.calle} ${pedido.direccion.numeroExterior}${pedido.direccion.numeroInterior ? ' Int. ' + pedido.direccion.numeroInterior : ''}</strong></p>
-          <p style="margin: 0.25rem 0;">${pedido.direccion.colonia}, ${pedido.direccion.ciudad}, ${pedido.direccion.estado}</p>
+          <p style="margin: 0.25rem 0;"><strong>${pedido.direccion.calle} ${
+          pedido.direccion.numeroExterior
+        }${
+          pedido.direccion.numeroInterior
+            ? " Int. " + pedido.direccion.numeroInterior
+            : ""
+        }</strong></p>
+          <p style="margin: 0.25rem 0;">${pedido.direccion.colonia}, ${
+          pedido.direccion.ciudad
+        }, ${pedido.direccion.estado}</p>
           <p style="margin: 0.25rem 0;">CP: ${pedido.direccion.codigoPostal}</p>
-          ${pedido.direccion.referencias ? `<p style="margin: 0.25rem 0; color: #6B5D57;"><em>📝 Referencias: ${pedido.direccion.referencias}</em></p>` : ''}
+          ${
+            pedido.direccion.referencias
+              ? `<p style="margin: 0.25rem 0; color: #6B5D57;"><em>📝 Referencias: ${pedido.direccion.referencias}</em></p>`
+              : ""
+          }
         </div>
 
         <h3 style="margin-bottom: 1rem; color: #FF9966;">🛍️ Productos del Pedido</h3>
@@ -509,25 +567,33 @@
               </tr>
             </thead>
             <tbody>
-              ${productos.map(p => `
+              ${productos
+                .map(
+                  (p) => `
                 <tr>
                   <td><strong>${p.nombre}</strong></td>
                   <td style="text-align: center;">${p.cantidadPaquetes}</td>
                   <td><strong>${formatCurrency(p.subtotal)}</strong></td>
                 </tr>
-              `).join('')}
+              `
+                )
+                .join("")}
             </tbody>
             <tfoot>
               <tr style="background: #FFF8F0;">
                 <td colspan="2" style="text-align: right;"><strong style="font-size: 1.1rem;">Total del Pedido:</strong></td>
-                <td><strong style="font-size: 1.25rem; color: #FF9966;">${formatCurrency(pedido.montoTotal)}</strong></td>
+                <td><strong style="font-size: 1.25rem; color: #FF9966;">${formatCurrency(
+                  pedido.montoTotal
+                )}</strong></td>
               </tr>
             </tfoot>
           </table>
         </div>
 
         <div style="padding-top: 1.5rem; margin-top: 1.5rem; text-align: right; border-top: 2px solid #F5F1ED;">
-          <a href="/admin-pedidos.html?pedidoId=${pedido.pedidoId}" class="btn btn-primary" style="padding: 0.75rem 1.5rem; margin-right: 0.5rem; text-decoration: none; display: inline-block;">
+          <a href="/admin-pedidos.html?pedidoId=${
+            pedido.pedidoId
+          }" class="btn btn-primary" style="padding: 0.75rem 1.5rem; margin-right: 0.5rem; text-decoration: none; display: inline-block;">
             Ir a gestión de pedidos
           </a>
           <button class="btn btn-secondary" onclick="closeDetalleModal()" style="padding: 0.75rem 2rem;">
@@ -535,152 +601,155 @@
           </button>
         </div>
       `;
-      
-      // Actualizar el contenido del modal
-      document.getElementById('detalleModalBody').innerHTML = contenido;
-      
-      // Mostrar el modal
-      document.getElementById('detalleModal').style.display = 'flex';
-    }
 
-    // Cerrar modal de detalle
-    function closeDetalleModal() {
-      document.getElementById('detalleModal').style.display = 'none';
-    }
+        // Actualizar el contenido del modal
+        document.getElementById("detalleModalBody").innerHTML = contenido;
 
-    // Navigation handling
-    const navPlaceholderLinks = document.querySelectorAll('.admin-nav-link[data-module]');
-    navPlaceholderLinks.forEach(link => {
-      link.addEventListener('click', (e) => {
-        e.preventDefault();
+        // Mostrar el modal
+        document.getElementById("detalleModal").style.display = "flex";
+      }
 
-        // Remove active class from all placeholder links
-        navPlaceholderLinks.forEach(l => l.classList.remove('active'));
-        link.classList.add('active');
+      // Cerrar modal de detalle
+      function closeDetalleModal() {
+        document.getElementById("detalleModal").style.display = "none";
+      }
 
-        // Update page title if header exists
-        const pageTitle = document.getElementById('pageTitle');
-        if (pageTitle) {
-          const moduleName = link.querySelector('span:last-child').textContent;
-          pageTitle.textContent = moduleName;
-        }
+      // Navigation handling
+      const navPlaceholderLinks = document.querySelectorAll(
+        ".admin-nav-link[data-module]"
+      );
+      navPlaceholderLinks.forEach((link) => {
+        link.addEventListener("click", (e) => {
+          e.preventDefault();
 
-        // Show toast for modules not implemented yet
-        const moduleName = link.querySelector('span:last-child').textContent;
-        showToast(`Módulo "${moduleName}" próximamente disponible`, 'info');
+          // Remove active class from all placeholder links
+          navPlaceholderLinks.forEach((l) => l.classList.remove("active"));
+          link.classList.add("active");
+
+          // Update page title if header exists
+          const pageTitle = document.getElementById("pageTitle");
+          if (pageTitle) {
+            const moduleName =
+              link.querySelector("span:last-child").textContent;
+            pageTitle.textContent = moduleName;
+          }
+
+          // Show toast for modules not implemented yet
+          const moduleName = link.querySelector("span:last-child").textContent;
+          showToast(`Módulo "${moduleName}" próximamente disponible`, "info");
+        });
       });
-    });
 
-    // Logout handler
-    document.getElementById('logoutBtn').addEventListener('click', () => {
-      localStorage.removeItem('razoconnect_admin_token');
-      localStorage.removeItem('razoconnect_admin');
-      showToast('Sesión cerrada', 'success');
-      setTimeout(() => {
-        window.location.href = '/login.html';
-      }, 500);
-    });
+      // Logout handler
+      document.getElementById("logoutBtn").addEventListener("click", () => {
+        localStorage.removeItem("razoconnect_admin_token");
+        localStorage.removeItem("razoconnect_admin");
+        showToast("Sesión cerrada", "success");
+        setTimeout(() => {
+          window.location.href = "/login.html";
+        }, 500);
+      });
 
-    // Initialize dashboard
-    verifyAndLoadAdmin();
-    loadDashboardStats();
-    loadInventoryValuation();
-    loadRecentOrders();
+      // Initialize dashboard
+      verifyAndLoadAdmin();
+      loadDashboardStats();
+      loadInventoryValuation();
+      loadRecentOrders();
 
-    // Close modal when clicking outside
-    window.onclick = function(event) {
-      const detalleModal = document.getElementById('detalleModal');
-      
-      if (event.target == detalleModal) {
-        closeDetalleModal();
+      // Close modal when clicking outside
+      window.onclick = function (event) {
+        const detalleModal = document.getElementById("detalleModal");
+
+        if (event.target == detalleModal) {
+          closeDetalleModal();
+        }
+      };
+    </script>
+
+    <style>
+      /* Modal styles */
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.6);
+        -webkit-backdrop-filter: blur(4px);
+        backdrop-filter: blur(4px);
+        justify-content: center;
+        align-items: center;
+        padding: 1rem;
+        overflow-y: auto;
       }
-    }
-  </script>
 
-  <style>
-    /* Modal styles */
-    .modal {
-      display: none;
-      position: fixed;
-      z-index: 1000;
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0, 0, 0, 0.6);
-      -webkit-backdrop-filter: blur(4px);
-      backdrop-filter: blur(4px);
-      justify-content: center;
-      align-items: center;
-      padding: 1rem;
-      overflow-y: auto;
-    }
-
-    .modal-content {
-      animation: modalSlideIn 0.3s ease-out;
-      max-height: 90vh;
-      overflow-y: auto;
-      position: relative;
-    }
-
-    .modal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 1.5rem;
-      padding-bottom: 1rem;
-      border-bottom: 2px solid var(--razo-gray-light);
-    }
-
-    .modal-header h2 {
-      margin: 0;
-      font-size: 1.5rem;
-      color: var(--razo-gray-dark);
-    }
-
-    .modal-close {
-      background: none;
-      border: none;
-      font-size: 2rem;
-      cursor: pointer;
-      color: var(--razo-gray-warm);
-      line-height: 1;
-      padding: 0;
-      width: 32px;
-      height: 32px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 50%;
-      transition: all 0.2s;
-    }
-
-    .modal-close:hover {
-      background-color: var(--razo-gray-light);
-      color: var(--razo-orange);
-    }
-
-    .modal-body {
-      margin-bottom: 0;
-    }
-
-    @keyframes modalSlideIn {
-      from {
-        transform: translateY(-50px);
-        opacity: 0;
-      }
-      to {
-        transform: translateY(0);
-        opacity: 1;
-      }
-    }
-
-    @media (max-width: 768px) {
       .modal-content {
-        max-width: 95% !important;
-        padding: 1.5rem !important;
+        animation: modalSlideIn 0.3s ease-out;
+        max-height: 90vh;
+        overflow-y: auto;
+        position: relative;
       }
-    }
-  </style>
-</body>
+
+      .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid var(--razo-gray-light);
+      }
+
+      .modal-header h2 {
+        margin: 0;
+        font-size: 1.5rem;
+        color: var(--razo-gray-dark);
+      }
+
+      .modal-close {
+        background: none;
+        border: none;
+        font-size: 2rem;
+        cursor: pointer;
+        color: var(--razo-gray-warm);
+        line-height: 1;
+        padding: 0;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        transition: all 0.2s;
+      }
+
+      .modal-close:hover {
+        background-color: var(--razo-gray-light);
+        color: var(--razo-orange);
+      }
+
+      .modal-body {
+        margin-bottom: 0;
+      }
+
+      @keyframes modalSlideIn {
+        from {
+          transform: translateY(-50px);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+
+      @media (max-width: 768px) {
+        .modal-content {
+          max-width: 95% !important;
+          padding: 1.5rem !important;
+        }
+      }
+    </style>
+  </body>
 </html>

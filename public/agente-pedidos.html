@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pedidos de mis clientes - RazoConnect</title>
+
+    <!-- Protección de autenticación -->
+    <script src="js/auth-guard-client.js"></script>
+    <script src="js/token-refresh.js"></script>
+
+    <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/admin.css" />
+  </head>
+  <body data-sidebar="agent">
+    <div class="admin-layout">
+      <div id="sidebar-container"></div>
+
+      <main class="admin-main">
+        <header class="admin-header">
+          <div>
+            <h1 class="admin-header-title">Pedidos de mis clientes</h1>
+            <p class="admin-header-subtitle">
+              Monitorea el estado de los pedidos generados por tu cartera.
+            </p>
+          </div>
+          <div
+            class="admin-filter-tabs"
+            role="tablist"
+            aria-label="Filtros de pedidos"
+          >
+            <button
+              type="button"
+              class="admin-filter-btn active"
+              data-estatus=""
+              role="tab"
+              aria-selected="true"
+            >
+              Todos
+            </button>
+            <button
+              type="button"
+              class="admin-filter-btn"
+              data-estatus="Pendiente"
+              role="tab"
+              aria-selected="false"
+            >
+              Pendientes
+            </button>
+            <button
+              type="button"
+              class="admin-filter-btn"
+              data-estatus="Confirmado,En Ruta"
+              role="tab"
+              aria-selected="false"
+            >
+              Por entregar
+            </button>
+          </div>
+          <button
+            type="button"
+            class="btn btn-secondary"
+            id="btnRefrescarPedidos"
+          >
+            Refrescar
+          </button>
+        </header>
+
+        <div class="admin-content">
+          <div class="admin-card">
+            <div class="admin-card-header">
+              <h2 class="admin-card-title">Listado de pedidos</h2>
+              <p class="admin-card-subtitle">
+                Mantente al tanto de la actividad reciente y da seguimiento a
+                los pedidos de tus clientes.
+              </p>
+            </div>
+            <div class="admin-card-body">
+              <div class="admin-table-container">
+                <table class="admin-table">
+                  <thead>
+                    <tr>
+                      <th>ID Pedido</th>
+                      <th>Cliente</th>
+                      <th>Fecha</th>
+                      <th>Total</th>
+                      <th>Estatus</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody id="tablaPedidosBody">
+                    <tr id="tablaPedidosEmpty">
+                      <td colspan="6" class="table-empty-state">
+                        Cargando pedidos...
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <script src="js/layout.js" defer></script>
+    <script src="js/api.js"></script>
+    <script src="js/agente-pedidos.js"></script>
+  </body>
+</html>

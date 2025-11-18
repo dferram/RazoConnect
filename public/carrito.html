@@ -384,44 +384,6 @@
               </div>
             </div>
 
-            <!-- Optional Agent Selection -->
-            <div class="form-group" style="margin-top: 1.5rem">
-              <label class="form-label" for="selectAgente"
-                >Agente de Ventas (opcional)</label
-              >
-
-              <!-- Loading agentes -->
-              <div
-                id="loadingAgentes"
-                style="display: none; padding: 0.5rem; text-align: center"
-              >
-                <div
-                  class="spinner"
-                  style="width: 20px; height: 20px; border-width: 2px"
-                ></div>
-              </div>
-
-              <select
-                id="selectAgente"
-                class="form-input"
-                style="padding: 0.75rem; font-size: 1rem"
-              >
-                <option value="">Sin agente</option>
-                <!-- Opciones se cargarán dinámicamente -->
-              </select>
-
-              <p
-                style="
-                  color: var(--text-secondary);
-                  font-size: 0.75rem;
-                  margin-top: 0.25rem;
-                "
-              >
-                💰 Si seleccionas un agente, recibirá una comisión del 20% de tu
-                compra
-              </p>
-            </div>
-
             <!-- Buttons -->
             <div style="display: flex; gap: 1rem; margin-top: 1.5rem">
               <button
@@ -489,8 +451,6 @@
       const loadingDirecciones = document.getElementById("loadingDirecciones");
       const direccionesList = document.getElementById("direccionesList");
       const noDirecciones = document.getElementById("noDirecciones");
-      const selectAgente = document.getElementById("selectAgente");
-      const loadingAgentes = document.getElementById("loadingAgentes");
       const btnConfirmarPedido = document.getElementById("btnConfirmarPedido");
       const btnCancelarCheckout = document.getElementById(
         "btnCancelarCheckout"
@@ -503,7 +463,6 @@
       let carritoData = null;
       let direcciones = [];
       let selectedDireccionId = null;
-      let agentes = [];
       let productoPendienteEliminar = null;
 
       // Format currency
@@ -672,40 +631,6 @@
         }
       }
 
-      // Load agentes for checkout
-      async function loadAgentesCheckout() {
-        try {
-          loadingAgentes.style.display = "block";
-          selectAgente.disabled = true;
-
-          const response = await fetch(`${API_BASE_URL}/agentes/lista-publica`);
-          const data = await response.json();
-
-          if (response.ok && data.success) {
-            agentes = data.data.agentes;
-
-            // Limpiar opciones anteriores (excepto "Sin agente")
-            selectAgente.innerHTML = '<option value="">Sin agente</option>';
-
-            // Agregar cada agente como opción
-            agentes.forEach((agente) => {
-              const option = document.createElement("option");
-              option.value = agente.agenteId; // Usar AgenteID como valor
-              option.textContent = `${agente.codigoAgente} (${agente.nombre} ${agente.apellido})`;
-              selectAgente.appendChild(option);
-            });
-
-            loadingAgentes.style.display = "none";
-            selectAgente.disabled = false;
-          }
-        } catch (error) {
-          console.error("Error loading agentes:", error);
-          loadingAgentes.style.display = "none";
-          selectAgente.disabled = false;
-          // Si hay error, el select queda con solo "Sin agente" y funciona igual
-        }
-      }
-
       // Load direcciones for checkout
       async function loadDireccionesCheckout() {
         try {
@@ -780,14 +705,12 @@
 
         modalCheckout.classList.add("show");
         loadDireccionesCheckout();
-        loadAgentesCheckout(); // Cargar agentes al abrir el modal
       });
 
       // Cancel checkout
       btnCancelarCheckout.addEventListener("click", () => {
         modalCheckout.classList.remove("show");
         selectedDireccionId = null;
-        selectAgente.value = ""; // Resetear a "Sin agente"
       });
 
       // Confirm order
@@ -802,11 +725,7 @@
         btnConfirmarSpinner.style.display = "block";
 
         try {
-          // Obtener el AgenteID del select (o null si no hay agente seleccionado)
-          const agenteId = selectAgente.value
-            ? parseInt(selectAgente.value)
-            : null;
-          const response = await API.crearPedido(selectedDireccionId, agenteId);
+          const response = await API.crearPedido(selectedDireccionId);
 
           if (response.ok && response.data.success) {
             const pedidoId = response.data.data.pedido.pedidoId;
@@ -819,7 +738,6 @@
 
             // Limpiar formulario
             selectedDireccionId = null;
-            selectAgente.value = ""; // Resetear a "Sin agente"
 
             // Restablecer botón
             btnConfirmarPedido.disabled = false;
@@ -866,7 +784,6 @@
         if (e.target === modalCheckout) {
           modalCheckout.classList.remove("show");
           selectedDireccionId = null;
-          selectAgente.value = ""; // Resetear a "Sin agente"
         }
         if (e.target === modalEliminar) {
           cerrarModalEliminar();

@@ -1,7 +1,8 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const authController = require('../controllers/authController');
-const { authenticate } = require('../middlewares/authMiddleware');
+const authController = require("../controllers/authController");
+const agentesController = require("../controllers/agentesController");
+const { authenticate, authorize } = require("../middlewares/authMiddleware");
 
 /**
  * @route   POST /api/registro/cliente
@@ -9,7 +10,7 @@ const { authenticate } = require('../middlewares/authMiddleware');
  * @access  Public
  * @body    { Nombre, Apellido, Email, Password, Telefono }
  */
-router.post('/registro/cliente', authController.registroCliente);
+router.post("/registro/cliente", authController.registroCliente);
 
 /**
  * @route   POST /api/registro/agente
@@ -17,7 +18,7 @@ router.post('/registro/cliente', authController.registroCliente);
  * @access  Public
  * @body    { Nombre, Apellido, Email, Password, CodigoAgente }
  */
-router.post('/registro/agente', authController.registroAgente);
+router.post("/registro/agente", authController.registroAgente);
 
 /**
  * @route   POST /api/login
@@ -25,22 +26,70 @@ router.post('/registro/agente', authController.registroAgente);
  * @access  Public
  * @body    { Email, Password }
  */
-router.post('/login', authController.login);
+router.post("/login", authController.login);
 
 /**
  * @route   GET /api/clientes/verify
  * @desc    Verificar token de cliente
  * @access  Private (requiere token de cliente)
  */
-router.get('/clientes/verify', authenticate, authController.verifyCliente);
+router.get("/clientes/verify", authenticate, authController.verifyCliente);
 
 /**
  * @route   POST /api/clientes/refresh-token
  * @desc    Renovar token de cliente
  * @access  Private (requiere token de cliente)
  */
-router.post('/clientes/refresh-token', authenticate, authController.refreshClienteToken);
-router.post('/auth/forgot-password', authController.forgotPassword);
-router.post('/auth/reset-password', authController.resetPassword);
+router.post(
+  "/clientes/refresh-token",
+  authenticate,
+  authController.refreshClienteToken
+);
+
+router.post("/auth/forgot-password", authController.forgotPassword);
+router.post("/auth/reset-password", authController.resetPassword);
+
+// Rutas privadas para agentes
+router.post(
+  "/agentes/vincular-cliente",
+  authenticate,
+  authorize(["agente"]),
+  agentesController.vincularCliente
+);
+
+router.get(
+  "/agentes/mis-clientes",
+  authenticate,
+  authorize(["agente"]),
+  agentesController.obtenerClientesDelAgente
+);
+
+router.get(
+  "/agente/clientes",
+  authenticate,
+  authorize(["agente"]),
+  agentesController.obtenerClientesDelAgente
+);
+
+router.get(
+  "/agente/pedidos",
+  authenticate,
+  authorize(["agente"]),
+  agentesController.obtenerPedidosDelAgente
+);
+
+router.get(
+  "/agente/dashboard-stats",
+  authenticate,
+  authorize(["agente"]),
+  agentesController.obtenerDashboardStats
+);
+
+router.get(
+  "/agente/comisiones",
+  authenticate,
+  authorize(["agente"]),
+  agentesController.obtenerComisionesDelAgente
+);
 
 module.exports = router;

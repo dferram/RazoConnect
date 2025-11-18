@@ -17,80 +17,7 @@
   <body>
     <div class="admin-layout">
       <!-- Sidebar -->
-      <aside class="admin-sidebar">
-        <div class="admin-brand">
-          <a href="/admin-dashboard.html" class="admin-brand-logo">
-            📦 RazoConnect
-          </a>
-          <div class="admin-brand-subtitle">Panel admin</div>
-        </div>
-
-        <nav class="admin-nav">
-          <div class="admin-nav-section">
-            <div class="admin-nav-title">Principal</div>
-            <a href="/admin-dashboard.html" class="admin-nav-link">
-              <span class="admin-nav-icon">📊</span>
-              <span>Dashboard</span>
-            </a>
-          </div>
-
-          <div class="admin-nav-section">
-            <div class="admin-nav-title">Gestión</div>
-            <a href="/admin-pedidos.html" class="admin-nav-link active">
-              <span class="admin-nav-icon">📦</span>
-              <span>Pedidos</span>
-            </a>
-            <a href="/admin-agregar-producto.html" class="admin-nav-link">
-              <span class="admin-nav-icon">🎁</span>
-              <span>Productos</span>
-            </a>
-            <a href="/admin-categorias.html" class="admin-nav-link">
-              <span class="admin-nav-icon">🏷️</span>
-              <span>Categorías</span>
-            </a>
-            <a href="/admin-clientes.html" class="admin-nav-link">
-              <span class="admin-nav-icon">👥</span>
-              <span>Clientes</span>
-            </a>
-            <a href="/admin-agentes.html" class="admin-nav-link">
-              <span class="admin-nav-icon">💼</span>
-              <span>Agentes</span>
-            </a>
-          </div>
-
-          <div class="admin-nav-section">
-            <div class="admin-nav-title">Financiero</div>
-            <a href="/admin-comisiones.html" class="admin-nav-link">
-              <span class="admin-nav-icon">💰</span>
-              <span>Comisiones</span>
-            </a>
-            <a href="/admin-inventario.html" class="admin-nav-link">
-              <span class="admin-nav-icon">📈</span>
-              <span>Inventario</span>
-            </a>
-            <a href="/admin-reportes.html" class="admin-nav-link">
-              <span class="admin-nav-icon">📑</span>
-              <span>Reportes</span>
-            </a>
-          </div>
-
-          <div class="admin-nav-section">
-            <div class="admin-nav-title">Compras</div>
-            <a href="/admin-proveedores.html" class="admin-nav-link">
-              <span class="admin-nav-icon">🏭</span>
-              <span>Proveedores</span>
-            </a>
-            <a href="/admin-crear-oc.html" class="admin-nav-link">
-              <span class="admin-nav-icon">📋</span>
-              <span>Nueva orden de compra</span>
-            </a>
-            <a href="/admin-recibir-inventario.html" class="admin-nav-link">
-              <span class="admin-nav-icon">📥</span>
-              <span>Recibir inventario</span>
-            </a>
-          </div>
-        </nav>
-      </aside>
+      <div id="sidebar-container"></div>
 
       <!-- Main Content -->
       <main class="admin-main">
@@ -333,6 +260,7 @@
       </div>
     </div>
 
+    <script src="js/layout.js" defer></script>
     <script src="js/api.js"></script>
     <script>
       // Authentication check

@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mi Cartera - RazoConnect</title>
+
+    <!-- Protección de autenticación -->
+    <script src="js/auth-guard-client.js"></script>
+    <script src="js/token-refresh.js"></script>
+
+    <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/admin.css" />
+  </head>
+  <body data-sidebar="agent">
+    <div class="admin-layout">
+      <div id="sidebar-container"></div>
+
+      <main class="admin-main">
+        <header class="admin-header">
+          <div>
+            <h1 class="admin-header-title">Mi cartera de clientes</h1>
+            <p class="admin-header-subtitle">
+              Consulta y gestiona a los clientes vinculados a tu cartera.
+            </p>
+          </div>
+          <div class="admin-header-actions">
+            <div class="admin-user-info">
+              <div class="admin-user-avatar" id="userAvatar">A</div>
+              <div class="admin-user-details">
+                <div class="admin-user-name" id="userName">Agente</div>
+                <div class="admin-user-role" id="userRole">Agente</div>
+              </div>
+            </div>
+            <button class="admin-logout-btn" id="logoutBtn" type="button">
+              Cerrar sesión
+            </button>
+          </div>
+        </header>
+
+        <div class="admin-content">
+          <div class="admin-card">
+            <div class="admin-card-header">
+              <div>
+                <h2 class="admin-card-title">Clientes vinculados</h2>
+                <p class="admin-card-subtitle">
+                  Listado actualizado de los clientes que forman parte de tu
+                  cartera.
+                </p>
+              </div>
+            </div>
+            <div class="admin-card-body">
+              <div class="admin-card-toolbar admin-card-toolbar--align-left">
+                <form
+                  id="clientesSearchForm"
+                  class="admin-search admin-search--compact"
+                  role="search"
+                >
+                  <div class="search-group">
+                    <input
+                      id="clientesSearchInput"
+                      type="search"
+                      class="form-control"
+                      placeholder="Buscar por nombre o correo..."
+                      aria-label="Buscar clientes"
+                    />
+                    <button type="submit" class="btn btn-primary btn-sm">
+                      Buscar
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-secondary btn-sm"
+                      id="btnLimpiarBusqueda"
+                    >
+                      Limpiar
+                    </button>
+                  </div>
+                </form>
+                <button
+                  type="button"
+                  class="btn btn-secondary btn-sm"
+                  id="btnRecargarClientes"
+                >
+                  Recargar
+                </button>
+              </div>
+              <div class="admin-table-container">
+                <table class="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Nombre</th>
+                      <th>Email</th>
+                      <th>Teléfono</th>
+                      <th>Fecha de registro</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody id="clientesTablaBody">
+                    <tr id="clientesEmptyRow">
+                      <td colspan="5" class="table-empty-state">
+                        Cargando cartera...
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <script src="js/layout.js" defer></script>
+    <script src="js/api.js"></script>
+    <script src="js/agente-cartera.js"></script>
+  </body>
+</html>
