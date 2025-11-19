@@ -1,4 +1,16 @@
-const jwt = require('jsonwebtoken');
+const jwt = require("jsonwebtoken");
+
+const resolveJwtSecret = () => {
+  const secret = process.env.JWT_SECRET;
+
+  if (!secret || !secret.trim()) {
+    throw new Error(
+      "JWT_SECRET no está definido. Configura JWT_SECRET en el archivo .env"
+    );
+  }
+
+  return secret;
+};
 
 /**
  * Genera un token JWT
@@ -6,13 +18,9 @@ const jwt = require('jsonwebtoken');
  * @returns {String} Token JWT
  */
 const generateToken = (payload) => {
-  return jwt.sign(
-    payload,
-    process.env.JWT_SECRET || 'razoconnect_secret_key',
-    {
-      expiresIn: process.env.JWT_EXPIRES_IN || '24h'
-    }
-  );
+  return jwt.sign(payload, resolveJwtSecret(), {
+    expiresIn: process.env.JWT_EXPIRES_IN || "24h",
+  });
 };
 
 /**
@@ -22,13 +30,13 @@ const generateToken = (payload) => {
  */
 const verifyToken = (token) => {
   try {
-    return jwt.verify(token, process.env.JWT_SECRET || 'razoconnect_secret_key');
+    return jwt.verify(token, resolveJwtSecret());
   } catch (error) {
-    throw new Error('Token inválido o expirado');
+    throw new Error("Token inválido o expirado");
   }
 };
 
 module.exports = {
   generateToken,
-  verifyToken
+  verifyToken,
 };

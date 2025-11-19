@@ -21,39 +21,6 @@
           <div>
             <h1 class="admin-header-title">Pedidos de mis clientes</h1>
           </div>
-          <div
-            class="admin-filter-tabs"
-            role="tablist"
-            aria-label="Filtros de pedidos"
-          >
-            <button
-              type="button"
-              class="admin-filter-btn active"
-              data-estatus=""
-              role="tab"
-              aria-selected="true"
-            >
-              Todos
-            </button>
-            <button
-              type="button"
-              class="admin-filter-btn"
-              data-estatus="Pendiente"
-              role="tab"
-              aria-selected="false"
-            >
-              Pendientes
-            </button>
-            <button
-              type="button"
-              class="admin-filter-btn"
-              data-estatus="Confirmado,En Ruta"
-              role="tab"
-              aria-selected="false"
-            >
-              Por entregar
-            </button>
-          </div>
           <button
             type="button"
             class="btn btn-secondary"
@@ -73,6 +40,41 @@
               </p>
             </div>
             <div class="admin-card-body">
+              <div
+                class="admin-card-toolbar admin-card-toolbar--align-right"
+                role="tablist"
+                aria-label="Filtros de pedidos"
+              >
+                <div class="admin-filter-tabs">
+                  <button
+                    type="button"
+                    class="admin-filter-btn active"
+                    data-estatus=""
+                    role="tab"
+                    aria-selected="true"
+                  >
+                    Todos
+                  </button>
+                  <button
+                    type="button"
+                    class="admin-filter-btn"
+                    data-estatus="Pendiente"
+                    role="tab"
+                    aria-selected="false"
+                  >
+                    Pendientes
+                  </button>
+                  <button
+                    type="button"
+                    class="admin-filter-btn"
+                    data-estatus="Confirmado,En Ruta"
+                    role="tab"
+                    aria-selected="false"
+                  >
+                    Por entregar
+                  </button>
+                </div>
+              </div>
               <div class="admin-table-container">
                 <table class="admin-table">
                   <thead>

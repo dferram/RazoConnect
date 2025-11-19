@@ -72,6 +72,13 @@ router.get(
 );
 
 router.get(
+  "/agentes/clientes-disponibles",
+  authenticate,
+  authorize(["agente"]),
+  agentesController.obtenerClientesDisponibles
+);
+
+router.get(
   "/agente/pedidos",
   authenticate,
   authorize(["agente"]),

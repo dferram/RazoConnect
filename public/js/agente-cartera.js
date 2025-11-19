@@ -14,12 +14,41 @@
     const searchInput = document.getElementById("clientesSearchInput");
     const searchForm = document.getElementById("clientesSearchForm");
     const clearSearchBtn = document.getElementById("btnLimpiarBusqueda");
+    const modalVincular = document.getElementById("modal-vincular-cliente");
+    const btnAbrirModalVincular = document.getElementById(
+      "btnAbrirModalVincular"
+    );
+    const btnCerrarModalVincular = document.getElementById(
+      "btnCerrarModalVincular"
+    );
+    const btnCancelarVincular = document.getElementById("btnCancelarVincular");
+    const btnConfirmarVincular = document.getElementById(
+      "btnConfirmarVincular"
+    );
+    const clientesDisponiblesBody = document.getElementById(
+      "clientesDisponiblesBody"
+    );
+    const clientesDisponiblesEmpty = document.getElementById(
+      "clientesDisponiblesEmpty"
+    );
+    const buscadorDisponiblesForm = document.getElementById(
+      "formBuscarClienteDisponible"
+    );
+    const clientesDisponiblesSearchInput = document.getElementById(
+      "clientesDisponiblesSearchInput"
+    );
+    const btnLimpiarBusquedaDisponibles = document.getElementById(
+      "btnLimpiarBusquedaDisponibles"
+    );
+    const vincularForm = document.getElementById("formVincularCliente");
     const userNameEl = document.getElementById("userName");
     const userRoleEl = document.getElementById("userRole");
     const userAvatarEl = document.getElementById("userAvatar");
     const emptyRowId = "clientesEmptyRow";
 
     let currentSearch = "";
+    let clientesDisponibles = [];
+    let filtroDisponibles = "";
 
     const debounce = (fn, delay = 350) => {
       let timer;
@@ -202,12 +231,218 @@
       }, 400);
     }
 
+    function renderClientesDisponibles(lista, selectedEmail = "") {
+      if (!clientesDisponiblesBody || !clientesDisponiblesEmpty) {
+        return;
+      }
+
+      if (!lista.length) {
+        clientesDisponiblesBody.innerHTML = `
+          <tr class="table-empty-state-row">
+            <td colspan="4">
+              ${
+                filtroDisponibles
+                  ? "No encontramos clientes con ese criterio."
+                  : "No hay clientes disponibles"
+              }
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      const rows = lista
+        .map((cliente) => {
+          const nombreCompleto =
+            [cliente.nombre, cliente.apellido].filter(Boolean).join(" ") ||
+            "Sin nombre";
+          const telefono = cliente.telefono || "—";
+          const isSelected = cliente.email?.toLowerCase() === selectedEmail;
+          return `
+            <tr data-email="${cliente.email}">
+              <td class="table-radio">
+                <input
+                  type="radio"
+                  name="cliente-disponible"
+                  value="${cliente.email}"
+                  ${isSelected ? "checked" : ""}
+                  aria-label="Seleccionar ${nombreCompleto}"
+                />
+              </td>
+              <td>${nombreCompleto}</td>
+              <td>${cliente.email || "—"}</td>
+              <td>${telefono}</td>
+            </tr>
+          `;
+        })
+        .join("");
+
+      clientesDisponiblesBody.innerHTML = rows;
+    }
+
+    function filtrarClientesDisponibles(term) {
+      filtroDisponibles = term.trim().toLowerCase();
+      const filtrados = clientesDisponibles.filter((cliente) => {
+        const nombre = `${cliente.nombre || ""} ${cliente.apellido || ""}`
+          .toLowerCase()
+          .trim();
+        const email = (cliente.email || "").toLowerCase();
+        if (!filtroDisponibles) {
+          return true;
+        }
+        return (
+          nombre.includes(filtroDisponibles) ||
+          email.includes(filtroDisponibles)
+        );
+      });
+
+      renderClientesDisponibles(filtrados, getClienteSeleccionado());
+    }
+
+    async function fetchClientesDisponibles() {
+      try {
+        clientesDisponiblesBody.innerHTML = `
+          <tr class="table-empty-state-row">
+            <td colspan="4">Cargando clientes disponibles...</td>
+          </tr>
+        `;
+
+        const response = await API.obtenerClientesDisponibles();
+
+        if (!response.ok || !response.data?.success) {
+          throw new Error(
+            response.data?.message ||
+              "No fue posible obtener los clientes disponibles"
+          );
+        }
+
+        clientesDisponibles = response.data?.data?.clientes || [];
+        filtrarClientesDisponibles(filtroDisponibles);
+      } catch (error) {
+        console.error("Error al cargar clientes disponibles:", error);
+        showToast(
+          error.message || "Error al cargar clientes disponibles",
+          "error"
+        );
+
+        clientesDisponiblesBody.innerHTML = `
+          <tr class="table-empty-state-row">
+            <td colspan="4">Error al cargar clientes</td>
+          </tr>
+        `;
+      }
+    }
+
+    function getClienteSeleccionado() {
+      const seleccionado = document.querySelector(
+        'input[name="cliente-disponible"]:checked'
+      );
+      return seleccionado?.value?.trim().toLowerCase() || "";
+    }
+
+    async function openModalVincular() {
+      if (!modalVincular) return;
+      modalVincular.classList.add("show");
+      modalVincular.setAttribute("aria-hidden", "false");
+      filtroDisponibles = "";
+      clientesDisponiblesSearchInput.value = "";
+      await fetchClientesDisponibles();
+      clientesDisponiblesSearchInput?.focus();
+    }
+
+    function closeModalVincular() {
+      if (!modalVincular) return;
+      modalVincular.classList.remove("show");
+      modalVincular.setAttribute("aria-hidden", "true");
+      vincularForm?.reset();
+      clientesDisponibles = [];
+      filtroDisponibles = "";
+      if (clientesDisponiblesBody) {
+        clientesDisponiblesBody.innerHTML = `
+          <tr class="table-empty-state-row">
+            <td colspan="4">Cargando clientes disponibles...</td>
+          </tr>
+        `;
+      }
+    }
+
+    async function handleConfirmarVinculo() {
+      if (!btnConfirmarVincular) {
+        return;
+      }
+
+      const email = getClienteSeleccionado();
+      if (!email) {
+        showToast("Selecciona un cliente disponible", "warning");
+        return;
+      }
+
+      try {
+        btnConfirmarVincular.disabled = true;
+        const response = await API.vincularClienteAgente(email);
+
+        if (!response.ok || !response.data?.success) {
+          const errorMessage =
+            response.data?.message || "No fue posible vincular al cliente";
+          throw new Error(errorMessage);
+        }
+
+        showToast(
+          response.data?.message || "Cliente vinculado correctamente",
+          "success"
+        );
+        closeModalVincular();
+        loadClientes();
+      } catch (error) {
+        console.error("Error al vincular cliente:", error);
+        showToast(
+          error.message || "Error al vincular el cliente. Intenta nuevamente",
+          "error"
+        );
+      } finally {
+        btnConfirmarVincular.disabled = false;
+      }
+    }
+
     refrescarBtn?.addEventListener("click", () => loadClientes());
     clientesBody?.addEventListener("click", handleTableClick);
     searchInput?.addEventListener("input", handleSearchInput);
     searchForm?.addEventListener("submit", handleSearchSubmit);
     clearSearchBtn?.addEventListener("click", handleClearSearch);
     logoutBtn?.addEventListener("click", handleLogout);
+    btnAbrirModalVincular?.addEventListener("click", openModalVincular);
+    btnCerrarModalVincular?.addEventListener("click", closeModalVincular);
+    btnCancelarVincular?.addEventListener("click", closeModalVincular);
+    btnConfirmarVincular?.addEventListener("click", handleConfirmarVinculo);
+    buscadorDisponiblesForm?.addEventListener("submit", (event) => {
+      event.preventDefault();
+      filtrarClientesDisponibles(clientesDisponiblesSearchInput.value || "");
+    });
+    btnLimpiarBusquedaDisponibles?.addEventListener("click", () => {
+      clientesDisponiblesSearchInput.value = "";
+      filtrarClientesDisponibles("");
+      clientesDisponiblesSearchInput.focus();
+    });
+    clientesDisponiblesBody?.addEventListener("change", (event) => {
+      if (event.target.name === "cliente-disponible") {
+        // Rerender to ensure only one row visually selected if needed
+        filtrarClientesDisponibles(clientesDisponiblesSearchInput.value || "");
+      }
+    });
+    vincularForm?.addEventListener("submit", (event) => {
+      event.preventDefault();
+      handleConfirmarVinculo();
+    });
+    modalVincular?.addEventListener("click", (event) => {
+      if (event.target === modalVincular) {
+        closeModalVincular();
+      }
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && modalVincular?.classList.contains("show")) {
+        closeModalVincular();
+      }
+    });
 
     updateUserHeader();
     loadClientes();

@@ -45,6 +45,16 @@
                   cartera.
                 </p>
               </div>
+              <div class="admin-card-header-actions">
+                <button
+                  type="button"
+                  class="btn btn-primary btn-sm"
+                  id="btnAbrirModalVincular"
+                >
+                  <span class="btn-icon">+</span>
+                  Vincular Cliente
+                </button>
+              </div>
             </div>
             <div class="admin-card-body">
               <div class="admin-card-toolbar admin-card-toolbar--align-left">
@@ -105,6 +115,92 @@
           </div>
         </div>
       </main>
+    </div>
+
+    <div class="modal" id="modal-vincular-cliente" aria-hidden="true">
+      <div class="modal-content modal-content--xl">
+        <div class="modal-header">
+          <h2 class="modal-title">Agregar Cliente a mi Cartera</h2>
+          <button
+            type="button"
+            class="modal-close-btn"
+            id="btnCerrarModalVincular"
+            aria-label="Cerrar"
+          >
+            ×
+          </button>
+        </div>
+        <div class="modal-body">
+          <p class="modal-description">
+            Selecciona un cliente registrado que aún no ha sido asignado para
+            sumarlo a tu cartera.
+          </p>
+          <form
+            id="formBuscarClienteDisponible"
+            class="admin-search admin-search--compact"
+            role="search"
+          >
+            <div class="search-group">
+              <input
+                type="search"
+                id="clientesDisponiblesSearchInput"
+                class="form-control"
+                placeholder="Buscar por nombre o correo..."
+                aria-label="Buscar clientes disponibles"
+              />
+              <button type="submit" class="btn btn-primary btn-sm">
+                Buscar
+              </button>
+              <button
+                type="button"
+                class="btn btn-secondary btn-sm"
+                id="btnLimpiarBusquedaDisponibles"
+              >
+                Limpiar
+              </button>
+            </div>
+          </form>
+
+          <div class="modal-table-container">
+            <div class="modal-table-scroll">
+              <table class="admin-table" id="tablaClientesDisponibles">
+                <thead>
+                  <tr>
+                    <th style="width: 48px"></th>
+                    <th>Nombre</th>
+                    <th>Email</th>
+                    <th>Teléfono</th>
+                  </tr>
+                </thead>
+                <tbody id="clientesDisponiblesBody">
+                  <tr
+                    class="table-empty-state-row"
+                    id="clientesDisponiblesEmpty"
+                  >
+                    <td colspan="4">Cargando clientes disponibles...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            id="btnCancelarVincular"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            class="btn btn-primary"
+            id="btnConfirmarVincular"
+          >
+            Vincular
+          </button>
+        </div>
+      </div>
     </div>
 
     <script src="js/layout.js" defer></script>

@@ -15,6 +15,54 @@ const resolveAuthenticatedAgenteId = (user) => {
 };
 
 /**
+ * Obtener clientes disponibles (sin agente asignado) para vincular
+ * GET /api/agentes/clientes-disponibles
+ */
+const obtenerClientesDisponibles = async (req, res) => {
+  try {
+    const agenteId = resolveAuthenticatedAgenteId(req.user);
+
+    if (!agenteId) {
+      return res.status(403).json({
+        success: false,
+        message: "No se pudo determinar el agente autenticado",
+      });
+    }
+
+    const result = await db.query(
+      `SELECT clienteid, nombre, apellido, email
+       FROM Clientes
+       WHERE agenteid IS NULL
+         AND activo = TRUE
+       ORDER BY nombre ASC, apellido ASC`
+    );
+
+    const clientes = result.rows.map((row) => ({
+      clienteId: row.clienteid,
+      nombre: row.nombre,
+      apellido: row.apellido,
+      email: row.email,
+    }));
+
+    return res.status(200).json({
+      success: true,
+      message: "Clientes disponibles obtenidos exitosamente",
+      data: {
+        clientes,
+        total: clientes.length,
+      },
+    });
+  } catch (error) {
+    console.error("Error al obtener clientes disponibles para agente:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error al obtener los clientes disponibles",
+      error: error.message,
+    });
+  }
+};
+
+/**
  * Vincular un cliente existente a la cartera del agente logueado
  * POST /api/agentes/vincular-cliente
  */
@@ -388,6 +436,7 @@ const obtenerComisionesDelAgente = async (req, res) => {
 module.exports = {
   vincularCliente,
   obtenerClientesDelAgente,
+  obtenerClientesDisponibles,
   obtenerDashboardStats,
   obtenerPedidosDelAgente,
   obtenerComisionesDelAgente,

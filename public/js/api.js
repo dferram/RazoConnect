@@ -255,6 +255,12 @@ const API = {
     });
   },
 
+  obtenerClientesDisponibles: async () => {
+    return apiCall("/agentes/clientes-disponibles", {
+      method: "GET",
+    });
+  },
+
   obtenerClientesAgente: async (searchTerm = "") => {
     const query = searchTerm
       ? `/agente/clientes?search=${encodeURIComponent(searchTerm)}`
