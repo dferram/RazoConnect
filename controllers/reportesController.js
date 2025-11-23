@@ -47,7 +47,7 @@ const getReporteRentabilidad = async (req, res) => {
         p.FechaPedido,
         p.CostoEnvio,
         dp.TamanoID,
-        t.Cantidad AS TamanoValor,
+        row_to_json(t) AS TamanoInfo,
         dp.PiezasTotales,
         pv.PrecioUnitario AS PrecioUnitarioAplicado,
         pv.CostoUnitario,
@@ -73,8 +73,48 @@ const getReporteRentabilidad = async (req, res) => {
     return res.json({
       success: true,
       data: result.rows.map((row) => {
-        const tamanoValor =
-          row.tamanovalor !== null ? parseInt(row.tamanovalor, 10) : null;
+        const tamanoInfo = row.tamanoinfo || {};
+
+        let tamanoValor = null;
+        for (const key of valueCandidates) {
+          if (Object.prototype.hasOwnProperty.call(tamanoInfo, key)) {
+            const parsed = parseInt(tamanoInfo[key], 10);
+            if (!Number.isNaN(parsed) && parsed > 0) {
+              tamanoValor = parsed;
+              break;
+            }
+          }
+
+          const capitalized = key.charAt(0).toUpperCase() + key.slice(1);
+          if (Object.prototype.hasOwnProperty.call(tamanoInfo, capitalized)) {
+            const parsed = parseInt(tamanoInfo[capitalized], 10);
+            if (!Number.isNaN(parsed) && parsed > 0) {
+              tamanoValor = parsed;
+              break;
+            }
+          }
+        }
+
+        let tamanoEtiqueta = null;
+        for (const key of labelCandidates) {
+          if (
+            Object.prototype.hasOwnProperty.call(tamanoInfo, key) &&
+            tamanoInfo[key]
+          ) {
+            tamanoEtiqueta = String(tamanoInfo[key]).trim();
+            if (tamanoEtiqueta) break;
+          }
+
+          const capitalized = key.charAt(0).toUpperCase() + key.slice(1);
+          if (
+            Object.prototype.hasOwnProperty.call(tamanoInfo, capitalized) &&
+            tamanoInfo[capitalized]
+          ) {
+            tamanoEtiqueta = String(tamanoInfo[capitalized]).trim();
+            if (tamanoEtiqueta) break;
+          }
+        }
+
         const piezasTotales = row.piezastotales
           ? parseInt(row.piezastotales, 10)
           : 0;
@@ -82,6 +122,18 @@ const getReporteRentabilidad = async (req, res) => {
           tamanoValor && tamanoValor > 0
             ? Math.round(piezasTotales / tamanoValor)
             : null;
+        const presentacion = (() => {
+          if (tamanoEtiqueta) {
+            return tamanoEtiqueta;
+          }
+          if (tamanoValor === 1) {
+            return "Pieza individual";
+          }
+          if (tamanoValor && tamanoValor > 1) {
+            return `Pack de ${tamanoValor}`;
+          }
+          return "Presentación estándar";
+        })();
 
         return {
           detalleId: row.detalleid,
@@ -94,9 +146,11 @@ const getReporteRentabilidad = async (req, res) => {
           costoEnvio: row.costoenvio !== null ? parseFloat(row.costoenvio) : 0,
           comision:
             row.montocomision !== null ? parseFloat(row.montocomision) : 0,
-          cantidad: cantidadDerivada !== null ? cantidadDerivada : 0,
+          cantidadPaquetes: cantidadDerivada !== null ? cantidadDerivada : 0,
           tamanoId: row.tamanoid !== null ? parseInt(row.tamanoid, 10) : null,
           tamanoValor,
+          tamanoEtiqueta,
+          presentacion,
           piezasTotales,
           precioUnitarioAplicado: row.preciounitarioaplicado
             ? parseFloat(row.preciounitarioaplicado)

@@ -90,6 +90,8 @@ const obtenerProductos = async (req, res) => {
         c.descripcion AS categoriadescripcion,
         variante_min.varianteid AS varianteid_precio_min,
         variante_min.sku AS sku_precio_min,
+        variante_min.dimensiones AS dimensiones_precio_min,
+        variante_min.stock AS stock_precio_min,
         variante_min.preciounitario AS precio_desde,
         imagen.url_imagen,
         imagen.textoalternativo,
@@ -133,7 +135,85 @@ const obtenerProductos = async (req, res) => {
 
     const result = await db.query(query, valores);
 
-    const productos = result.rows.map((row) => {
+    const productRows = result.rows;
+    const productoIds = productRows.map((row) => row.productoid);
+
+    const variantPriceMap = new Map();
+    if (productoIds.length) {
+      const variantesQuery = await db.query(
+        `SELECT productoid, preciounitario
+         FROM producto_variantes
+         WHERE productoid = ANY($1::int[])
+           AND preciounitario IS NOT NULL`,
+        [productoIds]
+      );
+
+      variantesQuery.rows.forEach((row) => {
+        const productId = row.productoid;
+        const precioUnitario = parseFloat(row.preciounitario);
+        if (!Number.isNaN(precioUnitario)) {
+          if (!variantPriceMap.has(productId)) {
+            variantPriceMap.set(productId, []);
+          }
+          variantPriceMap.get(productId).push(precioUnitario);
+        }
+      });
+    }
+
+    const valueCandidates = [
+      "valor",
+      "cantidad",
+      "piezas",
+      "piezasporpaquete",
+      "numeropiezas",
+      "tamano",
+      "cantidadpiezas",
+    ];
+
+    const tamanosMap = new Map();
+    if (productoIds.length) {
+      const tamanosQuery = await db.query(
+        `SELECT ptd.productoid, ptd.tamanoid, row_to_json(ct) AS tamano_info
+         FROM producto_tamanosdisponibles ptd
+         INNER JOIN cat_tamanopaquetes ct ON ct.tamanoid = ptd.tamanoid
+         WHERE ptd.productoid = ANY($1::int[])`,
+        [productoIds]
+      );
+
+      tamanosQuery.rows.forEach((row) => {
+        const productId = row.productoid;
+        const tamanoInfo = row.tamano_info || {};
+
+        let valor = null;
+        for (const key of valueCandidates) {
+          if (Object.prototype.hasOwnProperty.call(tamanoInfo, key)) {
+            const parsed = parseInt(tamanoInfo[key], 10);
+            if (!Number.isNaN(parsed) && parsed > 0) {
+              valor = parsed;
+              break;
+            }
+          }
+
+          const capitalized = key.charAt(0).toUpperCase() + key.slice(1);
+          if (Object.prototype.hasOwnProperty.call(tamanoInfo, capitalized)) {
+            const parsed = parseInt(tamanoInfo[capitalized], 10);
+            if (!Number.isNaN(parsed) && parsed > 0) {
+              valor = parsed;
+              break;
+            }
+          }
+        }
+
+        if (valor !== null) {
+          if (!tamanosMap.has(productId)) {
+            tamanosMap.set(productId, []);
+          }
+          tamanosMap.get(productId).push(valor);
+        }
+      });
+    }
+
+    const productos = productRows.map((row) => {
       const totalVariantes =
         row.total_variantes !== null ? parseInt(row.total_variantes, 10) : 0;
       const variantesConStock =
@@ -145,15 +225,54 @@ const obtenerProductos = async (req, res) => {
         ? {
             varianteId: row.varianteid_precio_min,
             sku: row.sku_precio_min,
-            dimensiones: row.dimensiones,
-            stock: row.stock !== null ? parseInt(row.stock, 10) : null,
+            dimensiones: row.dimensiones_precio_min || null,
+            stock:
+              row.stock_precio_min !== null
+                ? parseInt(row.stock_precio_min, 10)
+                : null,
             precioUnitario:
               row.precio_desde !== null ? parseFloat(row.precio_desde) : null,
           }
         : null;
 
+      const productId = row.productoid;
+      const variantPrices = variantPriceMap.get(productId) || [];
+      const tamanoValores = tamanosMap.get(productId) || [];
+
+      const preciosPaquete = [];
+      if (variantPrices.length) {
+        if (tamanoValores.length) {
+          variantPrices.forEach((precioUnitario) => {
+            tamanoValores.forEach((tamanoValor) => {
+              if (Number.isFinite(precioUnitario) && tamanoValor > 0) {
+                preciosPaquete.push(precioUnitario * tamanoValor);
+              }
+            });
+          });
+        } else {
+          preciosPaquete.push(...variantPrices);
+        }
+      }
+
+      const precioPaqueteMin =
+        preciosPaquete.length > 0
+          ? Math.min(
+              ...preciosPaquete.map((precio) =>
+                Number.isFinite(precio) ? parseFloat(precio.toFixed(2)) : precio
+              )
+            )
+          : null;
+      const precioPaqueteMax =
+        preciosPaquete.length > 0
+          ? Math.max(
+              ...preciosPaquete.map((precio) =>
+                Number.isFinite(precio) ? parseFloat(precio.toFixed(2)) : precio
+              )
+            )
+          : null;
+
       return {
-        productoId: row.productoid,
+        productoId: productId,
         nombreProducto: row.nombreproducto,
         descripcion: row.descripcion,
         categoria: row.categoriaid
@@ -165,6 +284,8 @@ const obtenerProductos = async (req, res) => {
           : null,
         precioDesde:
           row.precio_desde !== null ? parseFloat(row.precio_desde) : null,
+        precioPaqueteMin,
+        precioPaqueteMax,
         imagenUrl: row.url_imagen || null,
         imagenAlt: row.textoalternativo || null,
         totalVariantes,
@@ -328,6 +449,73 @@ const obtenerProductoPorId = async (req, res) => {
       };
     });
 
+    const tamanosQuery = `
+      SELECT ptd.tamanoid, ct.*
+      FROM producto_tamanosdisponibles ptd
+      INNER JOIN cat_tamanopaquetes ct ON ct.tamanoid = ptd.tamanoid
+      WHERE ptd.productoid = $1
+    `;
+
+    const tamanosResult = await db.query(tamanosQuery, [id]);
+
+    const valueCandidates = [
+      "valor",
+      "piezas",
+      "piezasporpaquete",
+      "cantidad",
+      "numeropiezas",
+      "tamano",
+      "cantidadpiezas",
+    ];
+
+    const labelCandidates = ["etiqueta", "descripcion", "nombre", "label"];
+
+    const tamanosDisponibles = tamanosResult.rows
+      .map((row) => {
+        const tamanoId = Number.parseInt(row.tamanoid, 10);
+
+        let valor = null;
+        for (const field of valueCandidates) {
+          if (
+            Object.prototype.hasOwnProperty.call(row, field) &&
+            row[field] !== null &&
+            row[field] !== undefined
+          ) {
+            const parsed = Number.parseInt(row[field], 10);
+            if (!Number.isNaN(parsed)) {
+              valor = parsed;
+              break;
+            }
+          }
+        }
+
+        let etiqueta = null;
+        for (const field of labelCandidates) {
+          if (
+            Object.prototype.hasOwnProperty.call(row, field) &&
+            typeof row[field] === "string" &&
+            row[field].trim()
+          ) {
+            etiqueta = row[field].trim();
+            break;
+          }
+        }
+
+        return {
+          tamanoId,
+          valor,
+          etiqueta,
+        };
+      })
+      .sort((a, b) => {
+        if (Number.isFinite(a.valor) && Number.isFinite(b.valor)) {
+          return a.valor - b.valor;
+        }
+        if (Number.isFinite(a.valor)) return -1;
+        if (Number.isFinite(b.valor)) return 1;
+        return a.tamanoId - b.tamanoId;
+      });
+
     const totalVariantes = variantes.length;
     const variantesConStock = variantes.filter(
       (v) => typeof v.stock === "number" && v.stock > 0
@@ -362,6 +550,7 @@ const obtenerProductoPorId = async (req, res) => {
       data: {
         producto: productoDetalle,
         variantes,
+        tamanosDisponibles,
       },
     });
   } catch (error) {

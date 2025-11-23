@@ -1,10 +1,47 @@
 const db = require("../db");
 const { enviarEmail } = require("../services/emailService");
+const { checkStockBajo } = require("../utils/stockAlerts");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const { generateCodigoAgente } = require("../utils/agentCode");
 
 let agenteAdminColumnsCache = null;
+
+const PEDIDO_ESTATUS_EMAIL_TEMPLATES = {
+  Confirmado: {
+    asunto: (pedidoId) => `¡Tu pedido #${pedidoId} ha sido confirmado!`,
+    html: (nombre, pedidoId) => `
+      <div style="font-family: Arial, sans-serif; color: #111827;">
+        <h2 style="color:#16a34a;">¡Tu pedido está confirmado!</h2>
+        <p>Hola ${nombre}, hemos confirmado tu pago y estamos preparando tu pedido.</p>
+        <p>Pedido: <strong>#${pedidoId}</strong></p>
+        <p style="margin-top: 1.5rem;">Equipo RazoConnect</p>
+      </div>
+    `,
+  },
+  Enviado: {
+    asunto: (pedidoId) => `¡Tu pedido #${pedidoId} va en camino!`,
+    html: (nombre, pedidoId) => `
+      <div style="font-family: Arial, sans-serif; color: #111827;">
+        <h2 style="color:#0ea5e9;">¡Tu pedido está en camino!</h2>
+        <p>Hola ${nombre}, buenas noticias: tu pedido ha salido de nuestro almacén.</p>
+        <p>Pedido: <strong>#${pedidoId}</strong></p>
+        <p style="margin-top: 1.5rem;">Equipo RazoConnect</p>
+      </div>
+    `,
+  },
+  Cancelado: {
+    asunto: (pedidoId) => `Actualización sobre tu pedido #${pedidoId}`,
+    html: (nombre, pedidoId) => `
+      <div style="font-family: Arial, sans-serif; color: #111827;">
+        <h2 style="color:#dc2626;">Actualización de tu pedido</h2>
+        <p>Hola ${nombre}, tu pedido ha sido cancelado. Si crees que es un error, contáctanos.</p>
+        <p>Pedido: <strong>#${pedidoId}</strong></p>
+        <p style="margin-top: 1.5rem;">Equipo RazoConnect</p>
+      </div>
+    `,
+  },
+};
 
 const getAgenteAdminColumnsInfo = async () => {
   if (agenteAdminColumnsCache) {
@@ -1036,7 +1073,13 @@ const updatePedidoEstatus = async (req, res) => {
 
     // Obtener datos del pedido
     const pedidoResult = await client.query(
-      "SELECT * FROM Pedidos WHERE PedidoID = $1",
+      `SELECT 
+         p.*, 
+         c.Email AS email_cliente, 
+         COALESCE(c.Nombre, '') AS nombre_cliente
+       FROM Pedidos p
+       INNER JOIN Clientes c ON c.ClienteID = p.ClienteID
+       WHERE p.PedidoID = $1`,
       [pedidoId]
     );
 
@@ -1116,6 +1159,24 @@ const updatePedidoEstatus = async (req, res) => {
 
     await client.query("COMMIT");
 
+    const emailCliente = pedido.email_cliente;
+    const nombreCliente =
+      (pedido.nombre_cliente || "cliente").trim() || "cliente";
+    const plantilla = PEDIDO_ESTATUS_EMAIL_TEMPLATES[estatus];
+
+    if (plantilla && emailCliente) {
+      try {
+        const asunto = plantilla.asunto(pedidoId);
+        const cuerpoHtml = plantilla.html(nombreCliente, pedidoId);
+        await enviarEmail(emailCliente, asunto, cuerpoHtml);
+      } catch (emailError) {
+        console.error(
+          `No se pudo enviar correo de notificación para el pedido #${pedidoId}:`,
+          emailError
+        );
+      }
+    }
+
     res.json({
       success: true,
       message: `Pedido actualizado a ${estatus}`,
@@ -1125,59 +1186,6 @@ const updatePedidoEstatus = async (req, res) => {
         estatusNuevo: estatus,
       },
     });
-
-    try {
-      const clienteInfo = await db.query(
-        `SELECT c.Email, c.Nombre
-         FROM Pedidos p
-         INNER JOIN Clientes c ON c.ClienteID = p.ClienteID
-         WHERE p.PedidoID = $1`,
-        [pedidoId]
-      );
-
-      const emailCliente = clienteInfo.rows[0]?.email;
-      const nombreCliente = clienteInfo.rows[0]?.nombre || "";
-
-      if (emailCliente) {
-        if (estatus === "Confirmado") {
-          const asunto = `Pedido #${pedidoId} confirmado`;
-          const cuerpoHtml = `
-            <div style="font-family: Arial, sans-serif; color: #111827;">
-              <h2 style="color:#16a34a;">¡Tu pedido está confirmado!</h2>
-              <p>Hola ${nombreCliente || "cliente"},</p>
-              <p>Hemos confirmado tu pedido <strong>#${pedidoId}</strong>. Nuestro equipo está preparando tu envío.</p>
-              <p>Te avisaremos cuando salga a ruta.</p>
-              <p style="margin-top: 1.5rem;">Equipo RazoConnect</p>
-            </div>
-          `;
-          enviarEmail(emailCliente, asunto, cuerpoHtml).catch((err) => {
-            console.error(
-              "No se pudo enviar correo de pedido confirmado:",
-              err
-            );
-          });
-        } else if (estatus === "Enviado") {
-          const asunto = `Tu pedido #${pedidoId} está en camino`;
-          const cuerpoHtml = `
-            <div style="font-family: Arial, sans-serif; color: #111827;">
-              <h2 style="color:#0ea5e9;">¡Tu pedido está en camino!</h2>
-              <p>Hola ${nombreCliente || "cliente"},</p>
-              <p>El pedido <strong>#${pedidoId}</strong> ya fue enviado y llegará muy pronto.</p>
-              <p>Gracias por confiar en RazoConnect.</p>
-              <p style="margin-top: 1.5rem;">Equipo RazoConnect</p>
-            </div>
-          `;
-          enviarEmail(emailCliente, asunto, cuerpoHtml).catch((err) => {
-            console.error("No se pudo enviar correo de pedido enviado:", err);
-          });
-        }
-      }
-    } catch (emailError) {
-      console.error(
-        "Error al notificar al cliente sobre el estatus del pedido:",
-        emailError
-      );
-    }
   } catch (error) {
     await client.query("ROLLBACK");
     console.error("Error al actualizar pedido:", error);
@@ -1196,7 +1204,14 @@ const updatePedidoEstatus = async (req, res) => {
  * POST /api/admin/productos
  */
 const crearProducto = async (req, res) => {
-  const { nombre, descripcion, categoriaId, tamanos, tamanoIds } = req.body;
+  const {
+    nombre,
+    descripcion,
+    categoriaId,
+    tamanos,
+    tamanoIds,
+    proveedorId: proveedorIdRaw,
+  } = req.body;
 
   if (!nombre) {
     return res.status(400).json({
@@ -1212,11 +1227,34 @@ const crearProducto = async (req, res) => {
     await client.query("BEGIN");
     transactionStarted = true;
 
+    let proveedorId = null;
+    if (proveedorIdRaw !== undefined && proveedorIdRaw !== null) {
+      const parsed = Number.parseInt(proveedorIdRaw, 10);
+      if (!Number.isNaN(parsed)) {
+        proveedorId = parsed;
+      }
+    }
+
+    if (proveedorId !== null) {
+      const proveedorResult = await client.query(
+        "SELECT ProveedorID FROM Proveedores WHERE ProveedorID = $1",
+        [proveedorId]
+      );
+
+      if (proveedorResult.rows.length === 0) {
+        await client.query("ROLLBACK");
+        return res.status(400).json({
+          success: false,
+          message: "El proveedor predeterminado no existe",
+        });
+      }
+    }
+
     const result = await client.query(
-      `INSERT INTO Productos (NombreProducto, Descripcion, CategoriaID, Activo)
-       VALUES ($1, $2, $3, TRUE)
-       RETURNING ProductoID, NombreProducto, Descripcion, CategoriaID, Activo`,
-      [nombre, descripcion || null, categoriaId || null]
+      `INSERT INTO Productos (NombreProducto, Descripcion, CategoriaID, ProveedorID_Default, Activo)
+       VALUES ($1, $2, $3, $4, TRUE)
+       RETURNING ProductoID, NombreProducto, Descripcion, CategoriaID, ProveedorID_Default AS ProveedorID, Activo`,
+      [nombre, descripcion || null, categoriaId || null, proveedorId]
     );
 
     const producto = result.rows[0];
@@ -1392,7 +1430,14 @@ const actualizarProducto = async (req, res) => {
     });
   }
 
-  const { nombre, descripcion, categoriaId, tamanos, tamanoIds } = req.body;
+  const {
+    nombre,
+    descripcion,
+    categoriaId,
+    tamanos,
+    tamanoIds,
+    proveedorId: proveedorIdRaw,
+  } = req.body;
 
   const client = await db.pool.connect();
   let transactionStarted = false;
@@ -1402,7 +1447,7 @@ const actualizarProducto = async (req, res) => {
     transactionStarted = true;
 
     const productoResult = await client.query(
-      `SELECT ProductoID, NombreProducto, Descripcion, CategoriaID
+      `SELECT ProductoID, NombreProducto, Descripcion, CategoriaID, ProveedorID_Default AS ProveedorID
        FROM Productos
        WHERE ProductoID = $1`,
       [productoId]
@@ -1445,15 +1490,51 @@ const actualizarProducto = async (req, res) => {
         ? categoriaId || null
         : productoActual.categoriaid;
 
-    const updateResult = await client.query(
+    let proveedorId = productoActual.proveedorid;
+    if (proveedorIdRaw !== undefined) {
+      if (
+        proveedorIdRaw === null ||
+        proveedorIdRaw === "" ||
+        proveedorIdRaw === 0
+      ) {
+        proveedorId = null;
+      } else {
+        const parsedProveedor = Number.parseInt(proveedorIdRaw, 10);
+        if (Number.isNaN(parsedProveedor) || parsedProveedor <= 0) {
+          await client.query("ROLLBACK");
+          return res.status(400).json({
+            success: false,
+            message: "Proveedor predeterminado inválido",
+          });
+        }
+
+        const proveedorExiste = await client.query(
+          "SELECT ProveedorID FROM Proveedores WHERE ProveedorID = $1",
+          [parsedProveedor]
+        );
+
+        if (proveedorExiste.rows.length === 0) {
+          await client.query("ROLLBACK");
+          return res.status(400).json({
+            success: false,
+            message: "El proveedor predeterminado especificado no existe",
+          });
+        }
+
+        proveedorId = parsedProveedor;
+      }
+    }
+
+    const productoActualizado = await client.query(
       `UPDATE Productos
        SET NombreProducto = $1,
            Descripcion = $2,
            CategoriaID = $3,
+           ProveedorID_Default = $4,
            FechaActualizacion = NOW()
-       WHERE ProductoID = $4
-       RETURNING ProductoID, NombreProducto, Descripcion, CategoriaID, Activo`,
-      [nombreFinal, descripcionFinal, categoriaFinal, productoId]
+       WHERE ProductoID = $5
+       RETURNING ProductoID, NombreProducto, Descripcion, CategoriaID, ProveedorID_Default AS ProveedorID, Activo`,
+      [nombreFinal, descripcionFinal, categoriaFinal, proveedorId, productoId]
     );
 
     const tamanosRaw = Array.isArray(tamanos)
@@ -1714,6 +1795,10 @@ const ajustarInventario = async (req, res) => {
 
     await client.query("COMMIT");
 
+    checkStockBajo(variante.varianteid).catch((err) => {
+      console.error("Error verificando stock bajo tras ajuste:", err);
+    });
+
     res.json({
       success: true,
       message: "Inventario ajustado exitosamente",
@@ -1840,20 +1925,110 @@ const getProductoDetalle = async (req, res) => {
       [productoId]
     );
 
-    const variantes = variantesResult.rows.map((row) => ({
-      varianteId: row.varianteid,
-      productoId: row.productoid,
-      sku: row.sku || null,
-      dimensiones: row.dimensiones || null,
-      costoUnitario:
-        row.costounitario !== null ? parseFloat(row.costounitario) : null,
-      precioUnitario:
-        row.preciounitario !== null ? parseFloat(row.preciounitario) : null,
-      stock: row.stock !== null ? parseInt(row.stock, 10) : 0,
-      tipoProductoId:
-        row.tipoproductoid !== null ? parseInt(row.tipoproductoid, 10) : null,
-      medidaId: row.medidaid !== null ? parseInt(row.medidaid, 10) : null,
-    }));
+    const tamanosQuery = `
+      SELECT ptd.TamanoID, ct.*
+      FROM Producto_TamanosDisponibles ptd
+      INNER JOIN Cat_TamanoPaquetes ct ON ct.TamanoID = ptd.TamanoID
+      WHERE ptd.ProductoID = $1
+    `;
+
+    const tamanosResult = await db.query(tamanosQuery, [productoId]);
+
+    const valueCandidates = [
+      "valor",
+      "cantidad",
+      "piezas",
+      "piezasporpaquete",
+      "numeropiezas",
+      "tamano",
+      "cantidadpiezas",
+    ];
+
+    const labelCandidates = ["etiqueta", "descripcion", "nombre", "label"];
+
+    const tamanosDisponibles = tamanosResult.rows
+      .map((row) => {
+        const tamanoId = Number.parseInt(row.tamanoid, 10);
+
+        let valor = null;
+        for (const key of valueCandidates) {
+          if (Object.prototype.hasOwnProperty.call(row, key)) {
+            const parsed = Number.parseInt(row[key], 10);
+            if (!Number.isNaN(parsed) && parsed > 0) {
+              valor = parsed;
+              break;
+            }
+          }
+        }
+
+        let etiqueta = null;
+        for (const key of labelCandidates) {
+          if (
+            Object.prototype.hasOwnProperty.call(row, key) &&
+            typeof row[key] === "string" &&
+            row[key].trim()
+          ) {
+            etiqueta = row[key].trim();
+            break;
+          }
+        }
+
+        return {
+          tamanoId,
+          valor,
+          etiqueta,
+        };
+      })
+      .sort((a, b) => {
+        if (Number.isFinite(a.valor) && Number.isFinite(b.valor)) {
+          return a.valor - b.valor;
+        }
+        if (Number.isFinite(a.valor)) return -1;
+        if (Number.isFinite(b.valor)) return 1;
+        return a.tamanoId - b.tamanoId;
+      });
+
+    const tamanoReferencia = tamanosDisponibles.find(
+      (tam) => Number.isFinite(tam.valor) && tam.valor > 0
+    );
+
+    const buildEtiqueta = (tamano) => {
+      if (!tamano) return null;
+      if (tamano.etiqueta) return tamano.etiqueta;
+      if (tamano.valor === 1) return "Pieza individual";
+      if (Number.isFinite(tamano.valor) && tamano.valor > 1)
+        return `Pack de ${tamano.valor}`;
+      return `Presentación ${tamano.tamanoId}`;
+    };
+
+    const variantes = variantesResult.rows.map((row) => {
+      const precioUnitario =
+        row.preciounitario !== null ? parseFloat(row.preciounitario) : null;
+      const costoUnitario =
+        row.costounitario !== null ? parseFloat(row.costounitario) : null;
+      const stock = row.stock !== null ? parseInt(row.stock, 10) : 0;
+
+      const precioPaquete =
+        precioUnitario !== null && tamanoReferencia?.valor
+          ? parseFloat((precioUnitario * tamanoReferencia.valor).toFixed(2))
+          : null;
+
+      return {
+        varianteId: row.varianteid,
+        productoId: row.productoid,
+        sku: row.sku || null,
+        dimensiones: row.dimensiones || null,
+        costoUnitario,
+        precioUnitario,
+        precioPaquete,
+        presentacionEtiqueta: buildEtiqueta(tamanoReferencia),
+        tamanoValorReferencia: tamanoReferencia?.valor || null,
+        stock,
+        tipoProductoId:
+          row.tipoproductoid !== null ? parseInt(row.tipoproductoid, 10) : null,
+        medidaId: row.medidaid !== null ? parseInt(row.medidaid, 10) : null,
+      };
+    });
 
     const productoDetalle = {
       productoId: producto.productoid,
@@ -1879,6 +2054,7 @@ const getProductoDetalle = async (req, res) => {
       data: {
         producto: productoDetalle,
         variantes,
+        tamanosDisponibles,
       },
     });
   } catch (error) {

@@ -640,15 +640,36 @@
           ? `<img src="${imagenUrl}" alt="${imagenAlt}" class="product-media" />`
           : `<div class="product-media product-media--fallback">${emoji}</div>`;
 
-        const precioBase = Number.isFinite(producto.precioDesde)
-          ? producto.precioDesde
-          : Number.isFinite(producto.varianteDestacada?.precioPaquete)
-            ? producto.varianteDestacada.precioPaquete
+        const precioPaqueteMin = Number.isFinite(producto.precioPaqueteMin)
+          ? producto.precioPaqueteMin
+          : null;
+        const precioPaqueteMax = Number.isFinite(producto.precioPaqueteMax)
+          ? producto.precioPaqueteMax
+          : null;
+
+        const mostrarRango =
+          precioPaqueteMin !== null && precioPaqueteMax !== null;
+
+        const precioLabel = (() => {
+          if (mostrarRango) {
+            if (Math.abs(precioPaqueteMin - precioPaqueteMax) < 0.005) {
+              return formatCurrency(precioPaqueteMin);
+            }
+            return `${formatCurrency(precioPaqueteMin)} – ${formatCurrency(
+              precioPaqueteMax
+            )}`;
+          }
+
+          const precioBase = Number.isFinite(producto.precioDesde)
+            ? producto.precioDesde
+            : Number.isFinite(producto.varianteDestacada?.precioUnitario)
+            ? producto.varianteDestacada.precioUnitario
             : null;
 
-        const precioLabel = precioBase !== null
-          ? formatCurrency(precioBase)
-          : 'Precio no disponible';
+          return precioBase !== null
+            ? formatCurrency(precioBase)
+            : "Precio no disponible";
+        })();
 
         return `
         <a href="/producto-detalle.html?id=${
@@ -666,7 +687,7 @@
               </div>
               <h3 class="product-title">${producto.nombreProducto}</h3>
               <p style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.5rem;">
-                Precio desde:
+                ${mostrarRango ? "Precio por paquete" : "Precio desde"}:
               </p>
               <div class="product-price">${precioLabel}</div>
             </div>

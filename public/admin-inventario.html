@@ -961,12 +961,26 @@
             const stock = typeof variant.stock === "number" ? variant.stock : 0;
             const estadoClase = stock > 0 ? "en-stock" : "sin-stock";
             const estadoTexto = stock > 0 ? "En stock" : "Sin stock";
+            const presentacion =
+              (variant.presentacionEtiqueta &&
+                variant.presentacionEtiqueta.trim()) ||
+              (Number.isFinite(variant.tamanoValorReferencia) &&
+              variant.tamanoValorReferencia > 0
+                ? variant.tamanoValorReferencia === 1
+                  ? "Pieza individual"
+                  : `Pack de ${variant.tamanoValorReferencia}`
+                : "Presentación estándar");
 
             return `
           <tr>
             <td>${variant.sku || "Sin SKU"}</td>
             <td>${dimensiones}</td>
-            <td>${precio}</td>
+            <td>
+              <div style="display:flex; flex-direction:column; gap:0.25rem;">
+                <span>${precio}</span>
+                <span style="font-size:0.75rem; color: var(--text-secondary);">${presentacion}</span>
+              </div>
+            </td>
             <td>${stock}</td>
             <td>
               <span class="status-badge ${estadoClase}">${estadoTexto}</span>

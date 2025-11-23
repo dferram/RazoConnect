@@ -146,6 +146,19 @@
                   </div>
 
                   <div class="form-group">
+                    <label for="proveedor-producto" class="form-label"
+                      >Proveedor Predeterminado</label
+                    >
+                    <select id="proveedor-producto" class="form-input">
+                      <option value="">-- Selecciona un proveedor --</option>
+                    </select>
+                    <small class="form-hint"
+                      >Necesario para generar órdenes de compra
+                      automáticas.</small
+                    >
+                  </div>
+
+                  <div class="form-group">
                     <label class="form-label">Presentaciones Disponibles</label>
                     <div id="presentacionesContainer" class="checkbox-grid">
                       <div class="empty-state" id="presentacionesPlaceholder">
@@ -316,6 +329,7 @@
       async function init() {
         await verifyAndLoadAdmin();
         await loadCategorias();
+        await loadProveedores();
       }
 
       async function verifyAndLoadAdmin() {
@@ -350,6 +364,49 @@
           localStorage.removeItem("razoconnect_admin_token");
           localStorage.removeItem("razoconnect_admin");
           window.location.href = "/login.html";
+        }
+      }
+
+      async function loadProveedores() {
+        const select = document.getElementById("proveedor-producto");
+        if (!select) return;
+
+        // Reiniciar opciones
+        select.innerHTML =
+          '<option value="">-- Selecciona un proveedor --</option>';
+
+        try {
+          const response = await fetch(`${API_BASE_URL}/admin/proveedores`, {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${adminToken}`,
+              "Content-Type": "application/json",
+            },
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+          }
+
+          const data = await response.json();
+          const proveedores = data?.data?.proveedores;
+
+          if (!data.success || !Array.isArray(proveedores)) {
+            throw new Error("Respuesta inválida del servidor");
+          }
+
+          proveedores.forEach((proveedor) => {
+            const option = document.createElement("option");
+            option.value = proveedor.proveedorid;
+            option.textContent = proveedor.nombreempresa;
+            select.appendChild(option);
+          });
+        } catch (error) {
+          console.error("Error cargando proveedores:", error);
+          showToast(
+            "No se pudieron cargar los proveedores. Intenta nuevamente.",
+            "error"
+          );
         }
       }
 
@@ -504,6 +561,14 @@
               descripcion:
                 document.getElementById("descripcion").value.trim() || null,
               categoriaId: document.getElementById("categoriaId").value || null,
+              proveedorId: (() => {
+                const value = document
+                  .getElementById("proveedor-producto")
+                  .value.trim();
+                if (!value) return null;
+                const parsed = Number.parseInt(value, 10);
+                return Number.isNaN(parsed) ? null : parsed;
+              })(),
               tamanoIds: tamanoIdsSeleccionados,
             };
 

@@ -73,6 +73,7 @@ const obtenerCarrito = async (req, res) => {
         ic.itemid,
         ic.varianteid,
         ic.cantidad,
+        COALESCE(ic.cantidadpaquetes, ic.cantidad) AS cantidad_paquetes,
         ic.tamanoid,
         pv.sku,
         pv.dimensiones,
@@ -84,10 +85,9 @@ const obtenerCarrito = async (req, res) => {
         p.categoriaid,
         c.nombre AS categorianombre,
         c.descripcion AS categoriadescripcion,
-        t.cantidad AS tamano_valor,
+        row_to_json(t) AS tamano_info,
         imagen.url_imagen,
-        imagen.textoalternativo,
-        (ic.cantidad * t.cantidad * pv.preciounitario) AS subtotal
+        imagen.textoalternativo
       FROM itemsdelcarrito ic
       INNER JOIN producto_variantes pv ON pv.varianteid = ic.varianteid
       INNER JOIN productos p ON p.productoid = pv.productoid
@@ -108,28 +108,79 @@ const obtenerCarrito = async (req, res) => {
 
     const itemsResult = await db.query(itemsQuery, [carritoId]);
 
-    const montoTotal = itemsResult.rows.reduce((total, item) => {
-      const subtotal = item.subtotal !== null ? parseFloat(item.subtotal) : 0;
-      return total + subtotal;
-    }, 0);
+    const valueCandidates = [
+      "cantidad",
+      "valor",
+      "piezas",
+      "piezasporpaquete",
+      "numeropiezas",
+      "tamano",
+      "cantidadpiezas",
+    ];
+    const labelCandidates = ["etiqueta", "descripcion", "nombre", "label"];
 
     const items = itemsResult.rows.map((item) => {
       const precioUnitario =
         item.preciounitario !== null ? parseFloat(item.preciounitario) : null;
-      const tamanoValor =
-        item.tamano_valor !== null ? parseInt(item.tamano_valor, 10) : null;
-      const cantidad = item.cantidad !== null ? parseInt(item.cantidad, 10) : 0;
-      const subtotal =
-        item.subtotal !== null ? parseFloat(item.subtotal) : null;
-      const stock = item.stock !== null ? parseInt(item.stock, 10) : null;
+      const tamanoInfo = item.tamano_info || {};
 
-      // Compatibilidad con frontend actual: exponemos campos "por paquete" calculados
-      const piezasPorPaquete = tamanoValor;
+      let tamanoCantidad = null;
+      for (const key of valueCandidates) {
+        if (Object.prototype.hasOwnProperty.call(tamanoInfo, key)) {
+          const parsed = parseInt(tamanoInfo[key], 10);
+          if (!Number.isNaN(parsed) && parsed > 0) {
+            tamanoCantidad = parsed;
+            break;
+          }
+        }
+
+        const capitalized = key.charAt(0).toUpperCase() + key.slice(1);
+        if (Object.prototype.hasOwnProperty.call(tamanoInfo, capitalized)) {
+          const parsed = parseInt(tamanoInfo[capitalized], 10);
+          if (!Number.isNaN(parsed) && parsed > 0) {
+            tamanoCantidad = parsed;
+            break;
+          }
+        }
+      }
+
+      let tamanoEtiqueta = null;
+      for (const key of labelCandidates) {
+        if (
+          Object.prototype.hasOwnProperty.call(tamanoInfo, key) &&
+          tamanoInfo[key]
+        ) {
+          tamanoEtiqueta = String(tamanoInfo[key]).trim();
+          if (tamanoEtiqueta) break;
+        }
+
+        const capitalized = key.charAt(0).toUpperCase() + key.slice(1);
+        if (
+          Object.prototype.hasOwnProperty.call(tamanoInfo, capitalized) &&
+          tamanoInfo[capitalized]
+        ) {
+          tamanoEtiqueta = String(tamanoInfo[capitalized]).trim();
+          if (tamanoEtiqueta) break;
+        }
+      }
+
+      const cantidad =
+        item.cantidad_paquetes !== null
+          ? parseInt(item.cantidad_paquetes, 10)
+          : item.cantidad !== null
+          ? parseInt(item.cantidad, 10)
+          : 0;
+      const stock = item.stock !== null ? parseInt(item.stock, 10) : null;
+      const piezasPorPaquete = tamanoCantidad;
       const precioPaquete =
-        precioUnitario !== null && tamanoValor
-          ? parseFloat((precioUnitario * tamanoValor).toFixed(2))
+        precioUnitario !== null && tamanoCantidad
+          ? parseFloat((precioUnitario * tamanoCantidad).toFixed(2))
           : null;
       const precioPorPieza = precioUnitario !== null ? precioUnitario : null;
+      const subtotalCalculado =
+        precioUnitario !== null && tamanoCantidad
+          ? parseFloat((precioUnitario * tamanoCantidad * cantidad).toFixed(2))
+          : null;
 
       return {
         itemId: item.itemid,
@@ -150,12 +201,14 @@ const obtenerCarrito = async (req, res) => {
         cantidadPaquetes: cantidad,
         tamanoId: item.tamanoid,
         piezasPorPaquete,
+        tamanoCantidad,
+        tamanoEtiqueta,
         precioPaquete,
         precioPorPieza,
         precioUnitario,
         stock,
         dimensiones: item.dimensiones,
-        subtotal,
+        subtotal: subtotalCalculado,
         imagenPrincipal: item.url_imagen
           ? {
               url: item.url_imagen,
@@ -164,6 +217,14 @@ const obtenerCarrito = async (req, res) => {
           : null,
       };
     });
+
+    const montoTotal = items.reduce((total, item) => {
+      const subtotal =
+        item.subtotal !== null && !Number.isNaN(item.subtotal)
+          ? item.subtotal
+          : 0;
+      return total + subtotal;
+    }, 0);
 
     res.status(200).json({
       success: true,
@@ -218,7 +279,7 @@ const agregarAlCarrito = async (req, res) => {
          pv.stock,
          pv.preciounitario,
          p.nombreproducto,
-         t.valor AS tamano_valor
+         row_to_json(t) AS tamano_info
        FROM producto_variantes pv
        INNER JOIN productos p ON p.productoid = pv.productoid
        INNER JOIN producto_tamanosdisponibles ptd ON ptd.productoid = p.productoid AND ptd.tamanoid = $2
@@ -235,24 +296,42 @@ const agregarAlCarrito = async (req, res) => {
     }
 
     const variante = varianteResult.rows[0];
-    const stockDisponible =
-      variante.stock !== null ? parseInt(variante.stock, 10) : 0;
 
-    const piezasPorTamano = variante.tamano_valor;
+    const valueCandidates = [
+      "valor",
+      "cantidad",
+      "piezas",
+      "piezasporpaquete",
+      "numeropiezas",
+      "tamano",
+      "cantidadpiezas",
+    ];
+
+    let piezasPorTamano = null;
+    const tamanoInfo = variante.tamano_info || {};
+    for (const key of valueCandidates) {
+      if (Object.prototype.hasOwnProperty.call(tamanoInfo, key)) {
+        const parsed = parseInt(tamanoInfo[key], 10);
+        if (!Number.isNaN(parsed) && parsed > 0) {
+          piezasPorTamano = parsed;
+          break;
+        }
+      }
+
+      const capitalized = key.charAt(0).toUpperCase() + key.slice(1);
+      if (Object.prototype.hasOwnProperty.call(tamanoInfo, capitalized)) {
+        const parsed = parseInt(tamanoInfo[capitalized], 10);
+        if (!Number.isNaN(parsed) && parsed > 0) {
+          piezasPorTamano = parsed;
+          break;
+        }
+      }
+    }
 
     if (!piezasPorTamano || piezasPorTamano <= 0) {
       return res.status(400).json({
         success: false,
         message: "El tamaño seleccionado no tiene valor válido",
-      });
-    }
-
-    const totalPiezasSolicitadas = cantidadEntera * piezasPorTamano;
-
-    if (stockDisponible < totalPiezasSolicitadas) {
-      return res.status(400).json({
-        success: false,
-        message: `Stock insuficiente. Disponible: ${stockDisponible} piezas`,
       });
     }
 
@@ -281,32 +360,26 @@ const agregarAlCarrito = async (req, res) => {
 
     // Verificar si la variante ya está en el carrito
     const itemExistente = await db.query(
-      "SELECT ItemID, Cantidad, TamanoID FROM ItemsDelCarrito WHERE CarritoID = $1 AND VarianteID = $2 AND TamanoID = $3",
+      "SELECT ItemID, COALESCE(CantidadPaquetes, Cantidad) AS cantidad_paquetes, TamanoID FROM ItemsDelCarrito WHERE CarritoID = $1 AND VarianteID = $2 AND TamanoID = $3",
       [carritoId, varianteId, tamanoId]
     );
 
     let itemResult;
     if (itemExistente.rows.length > 0) {
       // Actualizar cantidad
-      const nuevaCantidad = itemExistente.rows[0].cantidad + cantidadEntera;
-
-      const totalPiezas = nuevaCantidad * piezasPorTamano;
-
-      if (stockDisponible < totalPiezas) {
-        return res.status(400).json({
-          success: false,
-          message: `Stock insuficiente. Disponible: ${stockDisponible} piezas`,
-        });
-      }
+      const cantidadActual = itemExistente.rows[0].cantidad_paquetes
+        ? parseInt(itemExistente.rows[0].cantidad_paquetes, 10)
+        : 0;
+      const nuevaCantidad = cantidadActual + cantidadEntera;
 
       itemResult = await db.query(
-        "UPDATE ItemsDelCarrito SET Cantidad = $1 WHERE ItemID = $2 RETURNING ItemID, VarianteID, Cantidad, TamanoID",
+        "UPDATE ItemsDelCarrito SET CantidadPaquetes = $1, Cantidad = $1 WHERE ItemID = $2 RETURNING ItemID, VarianteID, CantidadPaquetes, Cantidad, TamanoID",
         [nuevaCantidad, itemExistente.rows[0].itemid]
       );
     } else {
       // Insertar nuevo item
       itemResult = await db.query(
-        "INSERT INTO ItemsDelCarrito (CarritoID, VarianteID, TamanoID, Cantidad) VALUES ($1, $2, $3, $4) RETURNING ItemID, VarianteID, TamanoID, Cantidad",
+        "INSERT INTO ItemsDelCarrito (CarritoID, VarianteID, TamanoID, CantidadPaquetes, Cantidad) VALUES ($1, $2, $3, $4, $4) RETURNING ItemID, VarianteID, TamanoID, CantidadPaquetes, Cantidad",
         [carritoId, varianteId, tamanoId, cantidadEntera]
       );
     }
@@ -325,7 +398,7 @@ const agregarAlCarrito = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: "Variante agregada al carrito exitosamente",
+      message: "Producto agregado al carrito exitosamente",
       data: {
         item: {
           itemId: item.itemid,
@@ -334,7 +407,7 @@ const agregarAlCarrito = async (req, res) => {
           nombreProducto: variante.nombreproducto,
           sku: variante.sku,
           tamanoId: item.tamanoid,
-          cantidad: item.cantidad,
+          cantidad: item.cantidad_paquetes || item.cantidad,
           piezasPorTamano,
           precioUnitario,
           subtotal,
@@ -362,14 +435,17 @@ const actualizarCarrito = async (req, res) => {
     const { CantidadPaquetes } = req.body;
 
     // Validar datos de entrada
+    const cantidadPaquetesEntera = parseInt(CantidadPaquetes, 10);
+
     if (
-      !CantidadPaquetes ||
-      CantidadPaquetes <= 0 ||
-      Number.isNaN(varianteId)
+      Number.isNaN(varianteId) ||
+      !Number.isInteger(cantidadPaquetesEntera) ||
+      cantidadPaquetesEntera <= 0
     ) {
       return res.status(400).json({
         success: false,
-        message: "La cantidad debe ser mayor a 0 y VarianteID debe ser válido",
+        message:
+          "La cantidad debe ser un entero mayor a 0 y VarianteID debe ser válido",
       });
     }
 
@@ -396,16 +472,6 @@ const actualizarCarrito = async (req, res) => {
 
     const variante = varianteResult.rows[0];
 
-    const stockDisponible =
-      variante.stock !== null ? parseInt(variante.stock, 10) : 0;
-
-    if (stockDisponible < CantidadPaquetes) {
-      return res.status(400).json({
-        success: false,
-        message: `Stock insuficiente. Disponible: ${stockDisponible} paquetes`,
-      });
-    }
-
     // Obtener el carrito del cliente
     const carritoResult = await db.query(
       "SELECT CarritoID FROM CarritoDeCompra WHERE ClienteID = $1",
@@ -424,7 +490,7 @@ const actualizarCarrito = async (req, res) => {
     // Actualizar la cantidad del item
     const updateResult = await db.query(
       "UPDATE ItemsDelCarrito SET CantidadPaquetes = $1 WHERE CarritoID = $2 AND VarianteID = $3 RETURNING ItemID, VarianteID, CantidadPaquetes",
-      [CantidadPaquetes, carritoId, varianteId]
+      [cantidadPaquetesEntera, carritoId, varianteId]
     );
 
     if (updateResult.rows.length === 0) {

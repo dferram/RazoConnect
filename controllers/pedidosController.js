@@ -1,5 +1,60 @@
 const db = require("../db");
 const { enviarEmail } = require("../services/emailService");
+const { generarOrdenCompraAutomatica } = require("../services/ordenesService");
+const { checkStockBajo } = require("../utils/stockAlerts");
+
+const TAMANO_VALUE_KEYS = [
+  "valor",
+  "cantidad",
+  "piezas",
+  "piezasporpaquete",
+  "numeropiezas",
+  "tamano",
+  "cantidadpiezas",
+];
+
+const TAMANO_LABEL_KEYS = ["etiqueta", "descripcion", "nombre", "label"];
+
+function extraerInfoTamano(tamanoRaw) {
+  if (!tamanoRaw || typeof tamanoRaw !== "object") {
+    return { valor: null, etiqueta: null };
+  }
+
+  let valorEncontrado = null;
+  for (const [key, value] of Object.entries(tamanoRaw)) {
+    const lowerKey = key.toLowerCase();
+    if (TAMANO_VALUE_KEYS.includes(lowerKey)) {
+      const parsed = Number.parseInt(value, 10);
+      if (!Number.isNaN(parsed) && parsed > 0) {
+        valorEncontrado = parsed;
+        break;
+      }
+    }
+  }
+
+  let etiquetaEncontrada = null;
+  for (const [key, value] of Object.entries(tamanoRaw)) {
+    const lowerKey = key.toLowerCase();
+    if (
+      TAMANO_LABEL_KEYS.includes(lowerKey) &&
+      typeof value === "string" &&
+      value.trim()
+    ) {
+      etiquetaEncontrada = value.trim();
+      break;
+    }
+  }
+
+  if (etiquetaEncontrada === null && Number.isFinite(valorEncontrado)) {
+    etiquetaEncontrada =
+      valorEncontrado === 1 ? "Pieza individual" : `Pack de ${valorEncontrado}`;
+  }
+
+  return {
+    valor: Number.isFinite(valorEncontrado) ? valorEncontrado : null,
+    etiqueta: etiquetaEncontrada,
+  };
+}
 
 /**
  * Crear un nuevo pedido desde el carrito
@@ -8,6 +63,7 @@ const { enviarEmail } = require("../services/emailService");
 const crearPedido = async (req, res) => {
   const client = await db.pool.connect();
   let transactionStarted = false;
+  const adminEmail = process.env.ADMIN_EMAIL || null;
 
   try {
     const clienteId = req.user.userId;
@@ -56,6 +112,7 @@ const crearPedido = async (req, res) => {
     }
 
     const carritoId = carritoResult.rows[0].carritoid;
+    const variantesAfectadas = new Set();
 
     // 3. Obtener los items del carrito con información de productos
     const itemsResult = await client.query(
@@ -64,7 +121,7 @@ const crearPedido = async (req, res) => {
         ic.varianteid,
         ic.cantidad,
         ic.tamanoid,
-        t.valor AS tamano_valor,
+        row_to_json(t) AS tamano_info,
         pv.productoid,
         pv.sku,
         pv.dimensiones,
@@ -75,7 +132,7 @@ const crearPedido = async (req, res) => {
       FROM itemsdelcarrito ic
       INNER JOIN producto_variantes pv ON pv.varianteid = ic.varianteid
       INNER JOIN productos p ON p.productoid = pv.productoid
-      INNER JOIN cat_tamanopaquetes t ON t.tamanoid = ic.tamanoid
+      LEFT JOIN cat_tamanopaquetes t ON t.tamanoid = ic.tamanoid
       WHERE ic.carritoid = $1
       FOR UPDATE OF pv`,
       [carritoId]
@@ -90,36 +147,16 @@ const crearPedido = async (req, res) => {
       });
     }
 
-    const items = itemsResult.rows;
+    const items = itemsResult.rows.map((row) => {
+      const tamanoInfo = extraerInfoTamano(row.tamano_info);
+      return {
+        ...row,
+        tamano_valor: tamanoInfo.valor,
+        tamano_etiqueta: tamanoInfo.etiqueta,
+      };
+    });
 
-    // 4. Validar stock para todos los productos
-    for (const item of items) {
-      const stockDisponible =
-        item.stock !== null ? parseInt(item.stock, 10) : 0;
-      const tamanoValor =
-        item.tamano_valor !== null ? parseInt(item.tamano_valor, 10) : 0;
-      const totalPiezasSolicitadas = tamanoValor * item.cantidad;
-
-      if (!tamanoValor || tamanoValor <= 0) {
-        await client.query("ROLLBACK");
-        transactionStarted = false;
-        return res.status(400).json({
-          success: false,
-          message: `El tamaño seleccionado es inválido para ${item.nombreproducto} (${item.sku})`,
-        });
-      }
-
-      if (stockDisponible < totalPiezasSolicitadas) {
-        await client.query("ROLLBACK");
-        transactionStarted = false;
-        return res.status(400).json({
-          success: false,
-          message: `Stock insuficiente para ${item.nombreproducto} (${item.sku}). Disponible: ${stockDisponible} piezas, Solicitado: ${totalPiezasSolicitadas}`,
-        });
-      }
-    }
-
-    // 5. Calcular el monto total
+    // 4. Calcular el monto total
     const montoTotal = items.reduce((total, item) => {
       const precioUnitario =
         item.preciounitario !== null ? parseFloat(item.preciounitario) : 0;
@@ -128,9 +165,9 @@ const crearPedido = async (req, res) => {
       return total + item.cantidad * tamanoValor * precioUnitario;
     }, 0);
 
-    // 6. Obtener el agente asignado al cliente (si existe)
+    // 5. Obtener el agente asignado al cliente (si existe)
     const clienteAgenteResult = await client.query(
-      "SELECT AgenteID FROM Clientes WHERE ClienteID = $1",
+      "SELECT AgenteID, Nombre, Email FROM Clientes WHERE ClienteID = $1",
       [clienteId]
     );
 
@@ -143,11 +180,28 @@ const crearPedido = async (req, res) => {
       });
     }
 
-    const agenteId = clienteAgenteResult.rows[0].agenteid
-      ? parseInt(clienteAgenteResult.rows[0].agenteid, 10)
+    const clienteInfo = clienteAgenteResult.rows[0];
+    const agenteId = clienteInfo.agenteid
+      ? parseInt(clienteInfo.agenteid, 10)
       : null;
+    const clienteNombre = (clienteInfo.nombre || "cliente").trim() || "cliente";
+    const clienteEmailDb = clienteInfo.email || null;
 
-    // 7. Crear el pedido
+    let agenteEmail = null;
+    let agenteNombre = null;
+    if (agenteId) {
+      const agenteResult = await client.query(
+        "SELECT Email, Nombre FROM AgentesDeVentas WHERE AgenteID = $1",
+        [agenteId]
+      );
+
+      if (agenteResult.rows.length > 0) {
+        agenteEmail = agenteResult.rows[0].email || null;
+        agenteNombre = agenteResult.rows[0].nombre || null;
+      }
+    }
+
+    // 6. Crear el pedido
     const pedidoResult = await client.query(
       `INSERT INTO Pedidos (ClienteID, AgenteID, DireccionEnvioID, MontoTotal, Estatus)
        VALUES ($1, $2, $3, $4, 'Pendiente')
@@ -158,50 +212,92 @@ const crearPedido = async (req, res) => {
     const pedido = pedidoResult.rows[0];
     const pedidoId = pedido.pedidoid;
 
-    // 8. Crear los detalles del pedido y actualizar inventario
+    // 7. Crear los detalles del pedido y actualizar inventario
     const detallesPedido = [];
+    const backordersGenerados = [];
     for (const item of items) {
       const tamanoValor =
         item.tamano_valor !== null ? parseInt(item.tamano_valor, 10) : 0;
+
+      if (!tamanoValor || tamanoValor <= 0) {
+        await client.query("ROLLBACK");
+        transactionStarted = false;
+        return res.status(400).json({
+          success: false,
+          message: `El tamaño seleccionado es inválido para ${item.nombreproducto} (${item.sku})`,
+        });
+      }
+
       const precioUnitario =
         item.preciounitario !== null ? parseFloat(item.preciounitario) : 0;
-      const piezasTotales = tamanoValor * item.cantidad;
-      const subtotal = parseFloat((precioUnitario * piezasTotales).toFixed(2));
+      const piezasSolicitadas = tamanoValor * item.cantidad;
+      const stockActual =
+        item.stock !== null ? Math.max(parseInt(item.stock, 10), 0) : 0;
+      const cantidadSurtida = Math.min(piezasSolicitadas, stockActual);
+      const cantidadFaltante = piezasSolicitadas - cantidadSurtida;
+      const subtotalSolicitado = parseFloat(
+        (precioUnitario * piezasSolicitadas).toFixed(2)
+      );
+      const subtotalSurtido = parseFloat(
+        (precioUnitario * cantidadSurtida).toFixed(2)
+      );
+
+      if (cantidadFaltante > 0) {
+        const resultadoBackorder = await generarOrdenCompraAutomatica(
+          client,
+          item.varianteid,
+          cantidadFaltante
+        );
+
+        backordersGenerados.push({
+          varianteId: item.varianteid,
+          sku: item.sku,
+          productoId: item.productoid,
+          nombreProducto: item.nombreproducto,
+          cantidadFaltante,
+          ordenCompraId: resultadoBackorder.ordenCompraId,
+        });
+      }
 
       // Insertar detalle del pedido
       const detalleResult = await client.query(
-        `INSERT INTO DetallesDelPedido (PedidoID, VarianteID, TamanoID, Cantidad, PrecioUnitarioAplicado, PiezasTotales)
-         VALUES ($1, $2, $3, $4, $5, $6)
+        `INSERT INTO DetallesDelPedido (PedidoID, VarianteID, TamanoID, CantidadPaquetes, PrecioPorPaquete, PiezasTotales, PrecioUnitario)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)
          RETURNING DetalleID`,
         [
           pedidoId,
           item.varianteid,
           item.tamanoid,
           item.cantidad,
+          precioPorPaquete,
+          piezasSolicitadas,
           precioUnitario.toFixed(2),
-          piezasTotales,
         ]
       );
 
-      // Actualizar stock del producto
-      const nuevoStockVariante = parseInt(item.stock, 10) - piezasTotales;
+      // Actualizar stock del producto (solo se descuenta lo efectivamente surtido)
+      const nuevoStockVariante = Math.max(stockActual - cantidadSurtida, 0);
       await client.query(
         "UPDATE producto_variantes SET Stock = $1 WHERE VarianteID = $2",
         [nuevoStockVariante, item.varianteid]
       );
 
-      // Crear registro en Log_Inventario
-      await client.query(
-        `INSERT INTO Log_Inventario (VarianteID, CantidadCambiado, NuevoStock, Motivo, UsuarioID)
-         VALUES ($1, $2, $3, $4, $5)`,
-        [
-          item.varianteid,
-          -piezasTotales,
-          nuevoStockVariante,
-          `Venta Pedido #${pedidoId}`,
-          clienteId,
-        ]
-      );
+      variantesAfectadas.add(item.varianteid);
+
+      // Crear registro en Log_Inventario cuando se surte inventario existente
+      if (cantidadSurtida > 0) {
+        await client.query(
+          `INSERT INTO Log_Inventario (VarianteID, CantidadCambiado, NuevoStock, Motivo, UsuarioID)
+           VALUES ($1, $2, $3, $4, $5)`,
+          [
+            item.varianteid,
+            -cantidadSurtida,
+            nuevoStockVariante,
+            `Venta Pedido #${pedidoId}`,
+            clienteId,
+          ]
+        );
+      }
 
       detallesPedido.push({
         detalleId: detalleResult.rows[0].detalleid,
@@ -210,16 +306,21 @@ const crearPedido = async (req, res) => {
         nombreProducto: item.nombreproducto,
         tamanoId: item.tamanoid,
         cantidad: item.cantidad,
-        piezasPorTamano: tamanoValor,
+        piezasPorPaquete: tamanoValor,
+        presentacion: item.tamano_etiqueta || null,
         precioUnitario,
-        piezasTotales,
-        subtotal,
+        precioPorPaquete,
+        piezasSolicitadas,
+        piezasSurtidas: cantidadSurtida,
+        piezasFaltantes: cantidadFaltante,
+        subtotalSolicitado,
+        subtotalSurtido,
         sku: item.sku,
         dimensiones: item.dimensiones,
       });
     }
 
-    // 9. Crear comisión si se usó código de agente
+    // 8. Crear comisión si se usó código de agente
     let comision = null;
     if (agenteId) {
       const montoComision = montoTotal * 0.2; // 20% de comisión
@@ -239,7 +340,7 @@ const crearPedido = async (req, res) => {
       };
     }
 
-    // 10. Limpiar el carrito
+    // 9. Limpiar el carrito
     await client.query("DELETE FROM ItemsDelCarrito WHERE CarritoID = $1", [
       carritoId,
     ]);
@@ -259,13 +360,14 @@ const crearPedido = async (req, res) => {
           estatus: pedido.estatus,
           detalles: detallesPedido,
           comision: comision,
+          backorders: backordersGenerados,
         },
       },
     };
 
     res.status(201).json(respuesta);
 
-    const emailCliente = req.user?.email;
+    const emailCliente = req.user?.email || clienteEmailDb;
     if (emailCliente) {
       const asunto = `Tu pedido RazoConnect ha sido recibido (#${pedido.pedidoid})`;
       const cuerpoHtml = `
@@ -284,6 +386,93 @@ const crearPedido = async (req, res) => {
 
       enviarEmail(emailCliente, asunto, cuerpoHtml).catch((err) => {
         console.error("No se pudo enviar correo de recibo de pedido:", err);
+      });
+    }
+
+    if (!adminEmail) {
+      console.warn(
+        "ADMIN_EMAIL no está configurado; no se enviará alerta de nuevo pedido."
+      );
+    } else {
+      const montoFormateado = parseFloat(pedido.montototal).toFixed(2);
+      const asuntoAdmin = `💰 Nuevo Pedido #${pedido.pedidoid} - $${montoFormateado}`;
+      const cuerpoAdmin = `
+        <div style="font-family: Arial, sans-serif; color: #1f2937;">
+          <h2 style=\"color:#f97316;\">Nuevo pedido recibido</h2>
+          <p>Pedido: <strong>#${pedido.pedidoid}</strong></p>
+          <p>Monto total: <strong>$${montoFormateado}</strong></p>
+          <p>Cliente: <strong>${clienteNombre}</strong></p>
+          <p>Fecha: ${pedido.fechapedido}</p>
+          <p style=\"margin-top: 1.5rem;\">Sistema RazoConnect</p>
+        </div>
+      `;
+
+      enviarEmail(adminEmail, asuntoAdmin, cuerpoAdmin).catch((err) => {
+        console.error(
+          "No se pudo enviar alerta de nuevo pedido al admin:",
+          err
+        );
+      });
+
+      if (backordersGenerados.length > 0) {
+        const asuntoBackorder = `⚠️ Alerta: Backorder generado para el pedido #${pedido.pedidoid}`;
+        const resumenItems = backordersGenerados
+          .map(
+            (item) =>
+              `<li><strong>${item.nombreProducto}</strong> (SKU: ${item.sku}) &mdash; Faltante: ${item.cantidadFaltante} piezas &mdash; OC #${item.ordenCompraId}</li>`
+          )
+          .join("");
+        const cuerpoBackorder = `
+          <div style="font-family: Arial, sans-serif; color: #1f2937;">
+            <h2 style="color:#DC2626;">Se generó un backorder</h2>
+            <p>Pedido: <strong>#${pedido.pedidoid}</strong></p>
+            <p>Cliente: <strong>${clienteNombre}</strong></p>
+            <p>Se ha creado/actualizado una Orden de Compra para surtir las piezas faltantes:</p>
+            <ul style="padding-left: 1.25rem;">${resumenItems}</ul>
+            <p style="margin-top: 1.5rem;">Sistema RazoConnect</p>
+          </div>
+        `;
+
+        enviarEmail(adminEmail, asuntoBackorder, cuerpoBackorder).catch(
+          (err) => {
+            console.error(
+              "No se pudo enviar alerta de backorder al admin:",
+              err
+            );
+          }
+        );
+      }
+    }
+
+    if (agenteEmail) {
+      const asuntoAgente = `🔔 Tu cliente ${clienteNombre} ha realizado un pedido (#${pedido.pedidoid})`;
+      const cuerpoAgente = `
+        <div style="font-family: Arial, sans-serif; color: #1f2937;">
+          <h2 style=\"color:#2563eb;\">Nuevo pedido de tu cliente</h2>
+          <p>Cliente: <strong>${clienteNombre}</strong></p>
+          <p>Pedido: <strong>#${pedido.pedidoid}</strong></p>
+          <p>Monto total: <strong>$${parseFloat(pedido.montototal).toFixed(
+            2
+          )}</strong></p>
+          <p>Revisa tus comisiones para más detalles.</p>
+          <p style=\"margin-top: 1.5rem;\">Sistema RazoConnect</p>
+        </div>
+      `;
+
+      enviarEmail(agenteEmail, asuntoAgente, cuerpoAgente).catch((err) => {
+        console.error(
+          "No se pudo enviar notificación de nuevo pedido al agente:",
+          err
+        );
+      });
+    }
+
+    for (const varianteId of variantesAfectadas) {
+      checkStockBajo(varianteId).catch((err) => {
+        console.error(
+          `Error verificando stock bajo para la variante ${varianteId} tras pedido:`,
+          err
+        );
       });
     }
   } catch (error) {
@@ -343,10 +532,11 @@ const obtenerPedidos = async (req, res) => {
         SELECT
           dp.detalleid,
           dp.varianteid,
-          dp.cantidad,
+          dp.cantidadpaquetes AS cantidad,
           dp.tamanoid,
-          dp.preciounitarioaplicado,
+          dp.preciounitario AS preciounitarioaplicado,
           dp.piezastotales,
+          dp.precioporpaquete,
           pv.productoid,
           pv.sku,
           pv.dimensiones,
@@ -381,13 +571,14 @@ const obtenerPedidos = async (req, res) => {
               }
             : null,
           items: detallesResult.rows.map((item) => {
-            const tamanoValor =
-              item.tamano_valor !== null
-                ? parseInt(item.tamano_valor, 10)
-                : null;
+            const { valor: tamanoValor } = extraerInfoTamano(item.tamano_info);
             const precioUnitarioAplicado =
               item.preciounitarioaplicado !== null
                 ? parseFloat(item.preciounitarioaplicado)
+                : null;
+            const precioPorPaquete =
+              item.precioporpaquete !== null
+                ? parseFloat(item.precioporpaquete)
                 : null;
             const cantidad =
               item.cantidad !== null ? parseInt(item.cantidad, 10) : null;
@@ -410,6 +601,7 @@ const obtenerPedidos = async (req, res) => {
               piezasPorTamano: tamanoValor,
               cantidad,
               precioUnitario: precioUnitarioAplicado,
+              precioPorPaquete,
               subtotal,
               piezasTotales: item.piezastotales,
               dimensiones: item.dimensiones,
@@ -502,16 +694,17 @@ const obtenerPedidoPorId = async (req, res) => {
       SELECT
         dp.detalleid,
         dp.varianteid,
-        dp.cantidad,
+        dp.cantidadpaquetes AS cantidad,
         dp.tamanoid,
-        dp.preciounitarioaplicado,
+        dp.preciounitario AS preciounitarioaplicado,
         dp.piezastotales,
+        dp.precioporpaquete,
         pv.productoid,
         pv.sku,
         pv.dimensiones,
         pv.preciounitario,
         prod.nombreproducto,
-        t.valor AS tamano_valor,
+        row_to_json(t) AS tamano_info,
         imagen.url_imagen
       FROM detallesdelpedido dp
       INNER JOIN producto_variantes pv ON pv.varianteid = dp.varianteid
@@ -548,11 +741,16 @@ const obtenerPedidoPorId = async (req, res) => {
       : null;
 
     const items = detallesResult.rows.map((item) => {
+      const tamanoInfo = extraerInfoTamano(item.tamano_info);
       const tamanoValor =
-        item.tamano_valor !== null ? parseInt(item.tamano_valor, 10) : null;
+        tamanoInfo.valor !== null ? parseInt(tamanoInfo.valor, 10) : null;
       const precioUnitarioAplicado =
         item.preciounitarioaplicado !== null
           ? parseFloat(item.preciounitarioaplicado)
+          : null;
+      const precioPorPaquete =
+        item.precioporpaquete !== null
+          ? parseFloat(item.precioporpaquete)
           : null;
       const cantidad =
         item.cantidad !== null ? parseInt(item.cantidad, 10) : null;
@@ -573,8 +771,10 @@ const obtenerPedidoPorId = async (req, res) => {
         nombreProducto: item.nombreproducto,
         tamanoId: item.tamanoid,
         piezasPorTamano: tamanoValor,
+        presentacion: tamanoInfo.etiqueta,
         cantidad,
         precioUnitario: precioUnitarioAplicado,
+        precioPorPaquete,
         subtotal,
         piezasTotales: item.piezastotales,
         dimensiones: item.dimensiones,

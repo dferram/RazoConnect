@@ -187,12 +187,14 @@ const API = {
     });
   },
 
-  agregarAlCarrito: async (varianteId, cantidadPaquetes) => {
+  agregarAlCarrito: async (varianteId, cantidadPaquetes, tamanoId) => {
     return apiCall("/carrito", {
       method: "POST",
       body: JSON.stringify({
         VarianteID: varianteId,
+        Cantidad: cantidadPaquetes,
         CantidadPaquetes: cantidadPaquetes,
+        TamanoID: tamanoId,
       }),
     });
   },

@@ -138,9 +138,93 @@
     <script src="js/api.js"></script>
     <script>
       const adminToken = localStorage.getItem("razoconnect_admin_token");
+      const adminDataRaw = localStorage.getItem("razoconnect_admin");
+
       if (!adminToken) {
         window.location.href = "/login.html";
       }
+
+      const logoutBtn = document.getElementById("logoutBtn");
+      const userNameEl = document.getElementById("userName");
+      const userRoleEl = document.getElementById("userRole");
+      const userAvatarEl = document.getElementById("userAvatar");
+
+      function updateAdminHeader(admin) {
+        if (!admin) {
+          userNameEl.textContent = "Administrador";
+          userRoleEl.textContent = "Admin";
+          userAvatarEl.textContent = "A";
+          return;
+        }
+
+        const nombre = admin.nombre?.trim();
+        const rol = admin.rol?.trim();
+
+        if (nombre) {
+          userNameEl.textContent = nombre;
+          const parts = nombre.split(" ").filter(Boolean);
+          const initials =
+            parts.length >= 2
+              ? `${parts[0][0]}${parts[1][0]}`
+              : nombre.substring(0, 2);
+          userAvatarEl.textContent = initials.toUpperCase();
+        }
+
+        if (rol) {
+          userRoleEl.textContent = rol.toUpperCase();
+        }
+      }
+
+      async function verifyAndLoadAdmin() {
+        try {
+          const response = await fetch(`${API_BASE_URL}/admin/verify`, {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${adminToken}`,
+              "Content-Type": "application/json",
+            },
+          });
+
+          if (!response.ok) {
+            throw new Error("Token inválido");
+          }
+
+          const data = await response.json();
+
+          if (data.success && data.data?.admin) {
+            const admin = data.data.admin;
+            updateAdminHeader(admin);
+            localStorage.setItem("razoconnect_admin", JSON.stringify(admin));
+          }
+        } catch (error) {
+          console.error("Error verificando admin:", error);
+          localStorage.removeItem("razoconnect_admin_token");
+          localStorage.removeItem("razoconnect_admin");
+          window.location.href = "/login.html";
+        }
+      }
+
+      if (adminDataRaw) {
+        try {
+          const adminData = JSON.parse(adminDataRaw);
+          updateAdminHeader(adminData);
+        } catch (error) {
+          console.warn("No se pudo parsear razoconnect_admin:", error);
+        }
+      }
+
+      if (logoutBtn) {
+        logoutBtn.addEventListener("click", () => {
+          localStorage.removeItem("razoconnect_admin_token");
+          localStorage.removeItem("razoconnect_admin");
+          showToast("Sesión cerrada", "success");
+          setTimeout(() => {
+            window.location.href = "/login.html";
+          }, 400);
+        });
+      }
+
+      verifyAndLoadAdmin();
 
       const parentSelect = document.getElementById("parentCategoria");
       const categoriasTable = document.getElementById("categoriasTable");

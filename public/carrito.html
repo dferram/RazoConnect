@@ -40,27 +40,90 @@
         overflow-y: auto;
       }
 
+      .direcciones-container {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+
       .direccion-option {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
         background: var(--surface);
-        border: 2px solid var(--border-color);
-        border-radius: 0.5rem;
-        padding: 1rem;
-        margin-bottom: 1rem;
+        border: 1px solid var(--border-color);
+        border-radius: 0.75rem;
+        padding: 1rem 1.25rem;
         cursor: pointer;
-        transition: all 0.3s;
+        transition: all 0.25s ease;
+        box-shadow: 0 6px 24px rgba(15, 23, 42, 0.06);
       }
 
       .direccion-option:hover {
         border-color: var(--primary-color);
+        transform: translateY(-2px);
+        box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
       }
 
       .direccion-option.selected {
         border-color: var(--primary-color);
-        background: rgba(37, 99, 235, 0.05);
+        background: rgba(19, 78, 230, 0.04);
       }
 
       .direccion-option input[type="radio"] {
-        margin-right: 1rem;
+        margin-top: 0.35rem;
+      }
+
+      .direccion-info {
+        flex: 1;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 0.35rem 1.25rem;
+      }
+
+      .direccion-header {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 600;
+        color: var(--text-primary);
+      }
+
+      .direccion-etiqueta {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        font-size: 0.85rem;
+        color: var(--primary-color);
+        background: rgba(19, 78, 230, 0.08);
+        padding: 0.2rem 0.6rem;
+        border-radius: 5px;
+      }
+
+      .direccion-datos {
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+        line-height: 1.4;
+      }
+
+      .direccion-contacto {
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+        line-height: 1.4;
+      }
+
+      @media (max-width: 520px) {
+        .direccion-option {
+          flex-direction: column;
+        }
+
+        .direccion-option input[type="radio"] {
+          margin-top: 0;
+        }
+
+        .direccion-info {
+          grid-template-columns: 1fr;
+        }
       }
 
       .btn-quantity:disabled {
@@ -371,7 +434,7 @@
               <div class="spinner"></div>
             </div>
 
-            <div id="direccionesList"></div>
+            <div id="direccionesList" class="direcciones-container"></div>
 
             <div id="noDirecciones" style="display: none">
               <div class="alert alert-info">
@@ -476,23 +539,42 @@
       // Render cart item
       function renderCartItem(item) {
         const producto = item.producto || {};
-        const piezasPorPaquete =
-          typeof item.piezasPorPaquete === "number"
-            ? item.piezasPorPaquete
-            : parseInt(item.piezasPorPaquete, 10) || 0;
+        const piezasPorPaquete = Number.isFinite(item.tamanoCantidad)
+          ? item.tamanoCantidad
+          : typeof item.piezasPorPaquete === "number"
+          ? item.piezasPorPaquete
+          : parseInt(item.piezasPorPaquete, 10) || 0;
+        const presentacionLabel = (() => {
+          if (item.tamanoEtiqueta && String(item.tamanoEtiqueta).trim()) {
+            return String(item.tamanoEtiqueta).trim();
+          }
+          if (piezasPorPaquete > 1) {
+            return `Pack de ${piezasPorPaquete}`;
+          }
+          if (piezasPorPaquete === 1) {
+            return "Pieza individual";
+          }
+          return "Presentación estándar";
+        })();
         const totalPiezas = piezasPorPaquete * item.cantidadPaquetes;
         const stockDisponible =
           typeof item.stock === "number"
             ? item.stock
             : parseInt(item.stock, 10) || 0;
+        const precioUnitario =
+          typeof item.precioUnitario === "number"
+            ? item.precioUnitario
+            : parseFloat(item.precioUnitario);
         const precioPaquete =
           item.precioPaquete !== null && item.precioPaquete !== undefined
             ? parseFloat(item.precioPaquete)
+            : Number.isFinite(precioUnitario) && piezasPorPaquete
+            ? precioUnitario * piezasPorPaquete
             : null;
         const subtotal =
           item.subtotal !== null && item.subtotal !== undefined
             ? parseFloat(item.subtotal)
-            : precioPaquete !== null
+            : Number.isFinite(precioPaquete)
             ? precioPaquete * item.cantidadPaquetes
             : null;
 
@@ -506,9 +588,10 @@
         <div class="cart-item" style="position: relative;">
           <img src="${imageSrc}" alt="${imageAlt}" class="cart-item-image">
           <div class="cart-item-info">
-            <h3 class="cart-item-title">${
-              producto.nombreProducto || "Producto sin nombre"
-            }</h3>
+            <h3 class="cart-item-title">
+              ${producto.nombreProducto || "Producto sin nombre"}
+              <span style="display:block; font-size:0.875rem; color: var(--text-secondary); margin-top:0.25rem;">${presentacionLabel}</span>
+            </h3>
             <p class="cart-item-details">
               <strong>SKU:</strong> ${item.sku || "Sin SKU"}<br>
               <strong>Piezas por paquete:</strong> ${
@@ -652,21 +735,27 @@
                   (d) => `
               <label class="direccion-option" data-id="${d.direccionId}">
                 <input type="radio" name="direccion" value="${d.direccionId}">
-                ${
-                  d.etiqueta
-                    ? `<strong style="color: var(--primary-color);">📍 ${d.etiqueta}</strong><br>`
-                    : ""
-                }
-                <strong>${d.receptor}</strong><br>
-                <span style="color: var(--text-secondary); font-size: 0.875rem;">
-                  ${d.calle} ${d.numeroExt || ""} ${
-                    d.numeroInt ? "Int. " + d.numeroInt : ""
-                  }<br>
-                  ${d.colonia ? d.colonia + ", " : ""}${d.ciudad}, ${
-                    d.estado
-                  } - CP: ${d.codigoPostal}
-                  ${d.telefonoContacto ? "<br>Tel: " + d.telefonoContacto : ""}
-                </span>
+                <div class="direccion-info">
+                  <div class="direccion-header">
+                    <span>${d.receptor}</span>
+                    ${
+                      d.etiqueta
+                        ? `<span class="direccion-etiqueta">📍 ${d.etiqueta}</span>`
+                        : ""
+                    }
+                  </div>
+                  <div class="direccion-datos">
+                    ${d.calle} ${d.numeroExt || ""}
+                    ${d.numeroInt ? `Int. ${d.numeroInt}` : ""}<br>
+                    ${d.colonia ? `${d.colonia}, ` : ""}${d.ciudad}, ${d.estado}
+                    <br>CP: ${d.codigoPostal}
+                  </div>
+                  ${
+                    d.telefonoContacto
+                      ? `<div class="direccion-contacto">Tel: ${d.telefonoContacto}</div>`
+                      : ""
+                  }
+                </div>
               </label>
             `
                 )

@@ -22,16 +22,28 @@
       }
 
       .product-editor-grid {
-        display: grid;
+        display: flex;
+        flex-direction: column;
         gap: 1.75rem;
         margin-bottom: 2rem;
-        align-items: start;
       }
 
       @media (min-width: 1024px) {
         .product-editor-grid {
-          grid-template-columns: minmax(320px, 0.95fr) 1.05fr;
-          align-items: start;
+          flex-direction: row;
+          align-items: flex-start;
+        }
+
+        .product-editor-grid > * {
+          flex: 1;
+        }
+
+        .product-summary-card {
+          max-width: 480px;
+        }
+
+        .product-editor-grid > .admin-card + .admin-card {
+          margin-top: 0;
         }
       }
 
@@ -400,7 +412,7 @@
                       <tr>
                         <th>SKU</th>
                         <th>Descripción</th>
-                        <th>Precio paquete</th>
+                        <th>Precio unitario</th>
                         <th>Costo unitario</th>
                         <th>Stock</th>
                       </tr>
