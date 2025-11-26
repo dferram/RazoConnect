@@ -125,6 +125,23 @@
                   </div>
 
                   <div class="form-group">
+                    <label for="codigoModelo" class="form-label"
+                      >Código de Modelo</label
+                    >
+                    <input
+                      type="text"
+                      id="codigoModelo"
+                      class="form-input"
+                      placeholder="Ej: NAV25, FAS100, PRE50"
+                      maxlength="50"
+                    />
+                    <small class="form-hint"
+                      >Código corto para identificar el modelo. Se usará para
+                      sugerir SKUs en las variantes (ej: NAV25-10x10).</small
+                    >
+                  </div>
+
+                  <div class="form-group">
                     <label for="descripcion" class="form-label"
                       >Descripción</label
                     >
@@ -558,6 +575,8 @@
 
             const formData = {
               nombre: document.getElementById("nombre").value.trim(),
+              codigoModelo:
+                document.getElementById("codigoModelo").value.trim() || null,
               descripcion:
                 document.getElementById("descripcion").value.trim() || null,
               categoriaId: document.getElementById("categoriaId").value || null,

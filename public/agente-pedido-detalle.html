@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Detalle del Pedido - RazoConnect</title>
+
+    <!-- Protección de autenticación -->
+    <script src="js/auth-guard-agent.js"></script>
+    <script src="js/token-refresh.js"></script>
+
+    <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/admin.css" />
+    <style>
+      .pedido-detail-wrapper {
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+
+      .pedido-summary-card {
+        background: white;
+        border-radius: 0.75rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+      }
+
+      .pedido-summary-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 1rem;
+        flex-wrap: wrap;
+        margin-bottom: 1.25rem;
+        padding-bottom: 1.25rem;
+        border-bottom: 1px solid var(--border-color);
+      }
+
+      .pedido-numero {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin: 0 0 0.25rem;
+        color: var(--razo-gray-warm);
+      }
+
+      .pedido-fecha {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+      }
+
+      .pedido-estatus-badge {
+        padding: 0.4rem 1rem;
+        border-radius: 2rem;
+        font-weight: 600;
+        font-size: 0.85rem;
+        text-transform: capitalize;
+      }
+
+      .pedido-estatus-badge.pendiente {
+        background: #fff7ed;
+        color: var(--razo-orange);
+      }
+
+      .pedido-estatus-badge.confirmado {
+        background: #dcfce7;
+        color: #16a34a;
+      }
+
+      .pedido-estatus-badge.en-ruta {
+        background: #dbeafe;
+        color: #2563eb;
+      }
+
+      .pedido-estatus-badge.entregado {
+        background: #f0fdf4;
+        color: #15803d;
+      }
+
+      .pedido-estatus-badge.cancelado {
+        background: #fef2f2;
+        color: #dc2626;
+      }
+
+      .pedido-monto-section {
+        display: flex;
+        align-items: baseline;
+        gap: 0.5rem;
+      }
+
+      .pedido-monto-label {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        font-weight: 500;
+      }
+
+      .pedido-monto {
+        font-size: 2rem;
+        font-weight: 700;
+        margin: 0;
+        color: var(--razo-orange);
+      }
+
+      .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+      }
+
+      .info-card {
+        background: white;
+        border-radius: 0.75rem;
+        padding: 1.25rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+      }
+
+      .info-card-title {
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--text-secondary);
+        margin-bottom: 0.75rem;
+        font-weight: 600;
+      }
+
+      .info-card-content h4 {
+        margin: 0 0 0.25rem;
+        font-size: 1rem;
+      }
+
+      .info-card-content p {
+        margin: 0;
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+        line-height: 1.5;
+      }
+
+      .info-card-content a {
+        color: var(--primary-color);
+        text-decoration: none;
+      }
+
+      .info-card-content a:hover {
+        text-decoration: underline;
+      }
+
+      .items-card {
+        background: white;
+        border-radius: 0.75rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
+      }
+
+      .items-card-header {
+        padding: 1.25rem;
+        border-bottom: 1px solid var(--border-color);
+        background: #fafafa;
+      }
+
+      .items-card-header h3 {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--razo-gray-warm);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .items-card-header h3::before {
+        content: "📦";
+        font-size: 1.25rem;
+      }
+
+      .item-row {
+        display: flex;
+        gap: 1rem;
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid var(--border-color);
+        align-items: center;
+      }
+
+      .item-row:last-child {
+        border-bottom: none;
+      }
+
+      .item-image {
+        width: 60px;
+        height: 60px;
+        border-radius: 0.5rem;
+        object-fit: cover;
+        background: #f5f5f5;
+        flex-shrink: 0;
+      }
+
+      .item-image-placeholder {
+        width: 60px;
+        height: 60px;
+        border-radius: 0.5rem;
+        background: linear-gradient(135deg, #f5f5f5, #e0e0e0);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #999;
+        font-size: 1.25rem;
+        flex-shrink: 0;
+      }
+
+      .item-info {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .item-name {
+        font-weight: 600;
+        margin: 0 0 0.25rem;
+        font-size: 0.95rem;
+      }
+
+      .item-meta {
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+      }
+
+      .item-meta span {
+        display: inline-block;
+        margin-right: 0.75rem;
+      }
+
+      .item-pricing {
+        text-align: right;
+        flex-shrink: 0;
+      }
+
+      .item-subtotal {
+        font-weight: 600;
+        font-size: 1rem;
+        color: var(--razo-gray-warm);
+      }
+
+      .item-unit-price {
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+      }
+
+      .items-total {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1.25rem;
+        background: #fafafa;
+        font-weight: 600;
+      }
+
+      .items-total-label {
+        font-size: 1rem;
+      }
+
+      .items-total-value {
+        font-size: 1.25rem;
+        color: var(--razo-orange);
+      }
+
+      .back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--text-secondary);
+        text-decoration: none;
+        font-size: 0.9rem;
+        margin-bottom: 1rem;
+        transition: color 0.2s;
+      }
+
+      .back-link:hover {
+        color: var(--primary-color);
+      }
+
+      .loading-state,
+      .error-state {
+        text-align: center;
+        padding: 3rem 1rem;
+      }
+
+      .error-state {
+        color: var(--danger-color);
+      }
+
+      @media (max-width: 640px) {
+        .pedido-header-top {
+          flex-direction: column;
+        }
+
+        .item-row {
+          flex-wrap: wrap;
+        }
+
+        .item-pricing {
+          width: 100%;
+          text-align: left;
+          margin-top: 0.5rem;
+          padding-top: 0.5rem;
+          border-top: 1px dashed var(--border-color);
+        }
+      }
+    </style>
+  </head>
+  <body data-sidebar="agent">
+    <div class="admin-layout">
+      <div id="sidebar-container"></div>
+
+      <main class="admin-main">
+        <header class="admin-header">
+          <div>
+            <h1 class="admin-header-title">Detalle del pedido</h1>
+          </div>
+          <button
+            type="button"
+            class="btn btn-outline btn-sm"
+            onclick="sessionStorage.setItem('_navigating', 'true'); window.location.href='/agente-pedidos.html';"
+          >
+            ← Volver a pedidos
+          </button>
+        </header>
+
+        <div class="admin-content">
+          <div class="pedido-detail-wrapper">
+            <!-- Loading state -->
+            <div id="loadingState" class="loading-state">
+              <div class="spinner"></div>
+              <p>Cargando detalle del pedido...</p>
+            </div>
+
+            <!-- Error state -->
+            <div id="errorState" class="error-state" style="display: none">
+              <p id="errorMessage">No se pudo cargar el pedido</p>
+              <button
+                type="button"
+                class="btn btn-outline btn-sm"
+                onclick="sessionStorage.setItem('_navigating', 'true'); window.location.href='/agente-pedidos.html';"
+              >
+                ← Volver a pedidos
+              </button>
+            </div>
+
+            <!-- Content -->
+            <div id="contentWrapper" style="display: none">
+              <!-- Pedido summary card -->
+              <div class="pedido-summary-card">
+                <div class="pedido-summary-header">
+                  <div>
+                    <h2 class="pedido-numero" id="pedidoNumero">
+                      Pedido #000000
+                    </h2>
+                    <p class="pedido-fecha" id="pedidoFecha">--</p>
+                  </div>
+                  <span
+                    class="pedido-estatus-badge pendiente"
+                    id="pedidoEstatus"
+                    >--</span
+                  >
+                </div>
+                <div class="pedido-monto-section">
+                  <span class="pedido-monto-label">Monto total:</span>
+                  <span class="pedido-monto" id="pedidoMonto">$0.00</span>
+                </div>
+              </div>
+
+              <!-- Info cards grid -->
+              <div class="info-grid">
+                <div class="info-card">
+                  <div class="info-card-title">👤 Cliente</div>
+                  <div class="info-card-content">
+                    <h4 id="clienteNombre">--</h4>
+                    <p id="clienteContacto">--</p>
+                  </div>
+                </div>
+                <div class="info-card">
+                  <div class="info-card-title">📍 Dirección de envío</div>
+                  <div class="info-card-content">
+                    <h4 id="direccionReceptor">--</h4>
+                    <p id="direccionCompleta">--</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Items list -->
+              <div class="items-card">
+                <div class="items-card-header">
+                  <h3>Productos del pedido</h3>
+                </div>
+                <div id="itemsContainer">
+                  <!-- Items will be rendered here -->
+                </div>
+                <div class="items-total">
+                  <span class="items-total-label">Total del pedido</span>
+                  <span class="items-total-value" id="itemsTotal">$0.00</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <script src="js/layout.js" defer></script>
+    <script src="js/api.js"></script>
+    <script>
+      (function () {
+        "use strict";
+
+        if (!requireAgentAuth()) {
+          return;
+        }
+
+        document.addEventListener("DOMContentLoaded", init);
+
+        async function init() {
+          const urlParams = new URLSearchParams(window.location.search);
+          const pedidoId = parseInt(urlParams.get("id"), 10);
+
+          const loadingState = document.getElementById("loadingState");
+          const errorState = document.getElementById("errorState");
+          const errorMessage = document.getElementById("errorMessage");
+          const contentWrapper = document.getElementById("contentWrapper");
+
+          if (!pedidoId || Number.isNaN(pedidoId)) {
+            loadingState.style.display = "none";
+            errorMessage.textContent = "ID de pedido inválido";
+            errorState.style.display = "block";
+            showToast("ID de pedido inválido", "error");
+            return;
+          }
+
+          try {
+            const response = await API.obtenerPedidoDetalleAgente(pedidoId);
+
+            if (!response.ok || !response.data.success) {
+              throw new Error(
+                response.data?.message || "No se pudo cargar el pedido"
+              );
+            }
+
+            const { pedido, cliente, direccion, items } = response.data.data;
+
+            // Render pedido header
+            document.getElementById(
+              "pedidoNumero"
+            ).textContent = `Pedido #${pedido.numeroPedido}`;
+            document.getElementById("pedidoFecha").textContent = formatDate(
+              pedido.fechaPedido
+            );
+
+            const estatusEl = document.getElementById("pedidoEstatus");
+            estatusEl.textContent = pedido.estatus;
+            estatusEl.className = `pedido-estatus-badge ${pedido.estatus
+              .toLowerCase()
+              .replace(/\s+/g, "-")}`;
+
+            document.getElementById("pedidoMonto").textContent = formatCurrency(
+              pedido.montoTotal
+            );
+
+            // Render cliente info
+            document.getElementById("clienteNombre").textContent =
+              [cliente.nombre, cliente.apellido].filter(Boolean).join(" ") ||
+              "Sin nombre";
+
+            const contactoParts = [];
+            if (cliente.email) contactoParts.push(`📧 ${cliente.email}`);
+            if (cliente.telefono) contactoParts.push(`📞 ${cliente.telefono}`);
+            document.getElementById("clienteContacto").innerHTML =
+              contactoParts.join("<br>") || "Sin información de contacto";
+
+            // Render direccion
+            document.getElementById("direccionReceptor").textContent =
+              direccion.receptor || "Sin receptor";
+
+            const direccionParts = [];
+            if (direccion.calle) {
+              let calleCompleta = direccion.calle;
+              if (direccion.numeroExterior)
+                calleCompleta += ` #${direccion.numeroExterior}`;
+              if (direccion.numeroInterior)
+                calleCompleta += `, Int. ${direccion.numeroInterior}`;
+              direccionParts.push(calleCompleta);
+            }
+            if (direccion.colonia) direccionParts.push(direccion.colonia);
+            if (direccion.ciudad || direccion.estado) {
+              direccionParts.push(
+                [direccion.ciudad, direccion.estado].filter(Boolean).join(", ")
+              );
+            }
+            if (direccion.codigoPostal)
+              direccionParts.push(`CP ${direccion.codigoPostal}`);
+            if (direccion.telefonoContacto)
+              direccionParts.push(`📞 ${direccion.telefonoContacto}`);
+
+            document.getElementById("direccionCompleta").innerHTML =
+              direccionParts.join("<br>") || "Sin dirección";
+
+            // Render items
+            const itemsContainer = document.getElementById("itemsContainer");
+            itemsContainer.innerHTML = items
+              .map(
+                (item) => `
+              <div class="item-row">
+                ${
+                  item.imagenUrl
+                    ? `<img src="${item.imagenUrl}" alt="${item.nombreProducto}" class="item-image" />`
+                    : `<div class="item-image-placeholder">📦</div>`
+                }
+                <div class="item-info">
+                  <p class="item-name">${item.nombreProducto}</p>
+                  <p class="item-meta">
+                    <span>SKU: ${item.sku || "N/A"}</span>
+                    ${
+                      item.dimensiones ? `<span>${item.dimensiones}</span>` : ""
+                    }
+                    ${item.tamano ? `<span>${item.tamano}</span>` : ""}
+                  </p>
+                </div>
+                <div class="item-pricing">
+                  <p class="item-subtotal">${formatCurrency(item.subtotal)}</p>
+                  <p class="item-unit-price">${
+                    item.cantidad
+                  } × ${formatCurrency(item.precioPorPaquete)}</p>
+                </div>
+              </div>
+            `
+              )
+              .join("");
+
+            document.getElementById("itemsTotal").textContent = formatCurrency(
+              pedido.montoTotal
+            );
+
+            loadingState.style.display = "none";
+            contentWrapper.style.display = "block";
+          } catch (error) {
+            console.error("Error loading order detail:", error);
+            const errorMsg = error.message || "Error al cargar el pedido";
+            loadingState.style.display = "none";
+            errorMessage.textContent = errorMsg;
+            errorState.style.display = "block";
+            showToast(errorMsg, "error");
+          }
+        }
+
+        function formatCurrency(value) {
+          if (value === null || value === undefined) return "$0.00";
+          const amount = Number.parseFloat(value);
+          if (Number.isNaN(amount)) return "$0.00";
+          return new Intl.NumberFormat("es-MX", {
+            style: "currency",
+            currency: "MXN",
+            minimumFractionDigits: 2,
+          }).format(amount);
+        }
+
+        function formatDate(value) {
+          if (!value) return "—";
+          const date = new Date(value);
+          if (Number.isNaN(date.getTime())) return "—";
+          return date.toLocaleDateString("es-MX", {
+            weekday: "long",
+            day: "numeric",
+            month: "long",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          });
+        }
+      })();
+    </script>
+  </body>
+</html>

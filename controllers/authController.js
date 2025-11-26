@@ -319,15 +319,50 @@ const verifyCliente = async (req, res) => {
   try {
     // El middleware authenticate ya verificó el token y agregó req.user
     console.log("🔍 req.user completo:", req.user);
-    const clienteId = req.user.userId;
-    console.log("🔍 clienteId extraído:", clienteId);
+    const userId = req.user.userId;
+    const userRol = req.user.rol;
+    console.log("🔍 userId extraído:", userId, "rol:", userRol);
 
-    // Obtener datos del cliente
+    // Si es agente, buscar en la tabla de agentes
+    if (userRol === "agente") {
+      const agenteResult = await db.query(
+        `SELECT AgenteID, Nombre, Apellido, Email, CodigoAgente, Activo
+         FROM AgentesDeVentas
+         WHERE AgenteID = $1 AND Activo = TRUE`,
+        [userId]
+      );
+
+      if (agenteResult.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: "Agente no encontrado o inactivo",
+        });
+      }
+
+      const agente = agenteResult.rows[0];
+
+      return res.json({
+        success: true,
+        data: {
+          rol: "agente",
+          agente: {
+            agenteId: agente.agenteid,
+            nombre: agente.nombre,
+            apellido: agente.apellido,
+            email: agente.email,
+            codigoAgente: agente.codigoagente,
+            activo: agente.activo,
+          },
+        },
+      });
+    }
+
+    // Si es cliente, buscar en la tabla de clientes
     const result = await db.query(
       `SELECT ClienteID, Nombre, Apellido, Email, Telefono, FechaDeRegistro
        FROM Clientes
        WHERE ClienteID = $1`,
-      [clienteId]
+      [userId]
     );
     console.log("🔍 Resultado query:", result.rows);
 
@@ -343,6 +378,7 @@ const verifyCliente = async (req, res) => {
     res.json({
       success: true,
       data: {
+        rol: "cliente",
         cliente: {
           clienteId: cliente.clienteid,
           nombre: cliente.nombre,
@@ -489,6 +525,100 @@ const forgotPassword = async (req, res) => {
   }
 };
 
+/**
+ * Registro de nuevo administrador (protegido por SUPER_ADMIN_KEY)
+ * POST /api/auth/registro-admin
+ */
+const registroAdmin = async (req, res) => {
+  try {
+    const { Nombre, Apellido, Email, Password, Rol, adminKey } = req.body;
+
+    // Validar clave maestra
+    const superAdminKey = process.env.SUPER_ADMIN_KEY;
+    if (!superAdminKey) {
+      console.error("SUPER_ADMIN_KEY no está configurada en .env");
+      return res.status(500).json({
+        success: false,
+        message: "Error de configuración del servidor",
+      });
+    }
+
+    if (!adminKey || adminKey !== superAdminKey) {
+      return res.status(403).json({
+        success: false,
+        message: "Clave de autorización inválida",
+      });
+    }
+
+    // Validar campos requeridos
+    const errors = [];
+    if (!Nombre || !Nombre.trim()) errors.push("El nombre es requerido");
+    if (!Apellido || !Apellido.trim()) errors.push("El apellido es requerido");
+    if (!Email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(Email))
+      errors.push("El email no es válido");
+    if (!Password || Password.length < 6)
+      errors.push("La contraseña debe tener al menos 6 caracteres");
+
+    if (errors.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Error de validación",
+        errors,
+      });
+    }
+
+    // Verificar si el email ya existe
+    const emailExists = await db.query(
+      "SELECT Email FROM Administradores WHERE Email = $1",
+      [Email]
+    );
+
+    if (emailExists.rows.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: "El email ya está registrado como administrador",
+      });
+    }
+
+    // Hashear la contraseña
+    const saltRounds = parseInt(process.env.BCRYPT_ROUNDS) || 10;
+    const PasswordHash = await bcrypt.hash(Password, saltRounds);
+
+    // Insertar nuevo administrador
+    const rolFinal =
+      Rol && ["admin", "superadmin"].includes(Rol) ? Rol : "admin";
+    const result = await db.query(
+      `INSERT INTO Administradores (Nombre, Apellido, Email, PasswordHash, Rol, Activo)
+       VALUES ($1, $2, $3, $4, $5, TRUE)
+       RETURNING AdminID, Nombre, Apellido, Email, Rol`,
+      [Nombre.trim(), Apellido.trim(), Email, PasswordHash, rolFinal]
+    );
+
+    const nuevoAdmin = result.rows[0];
+
+    res.status(201).json({
+      success: true,
+      message: "Administrador registrado exitosamente",
+      data: {
+        admin: {
+          adminId: nuevoAdmin.adminid,
+          nombre: nuevoAdmin.nombre,
+          apellido: nuevoAdmin.apellido,
+          email: nuevoAdmin.email,
+          rol: nuevoAdmin.rol,
+        },
+      },
+    });
+  } catch (error) {
+    console.error("Error en registro de administrador:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error al registrar el administrador",
+      error: error.message,
+    });
+  }
+};
+
 const resetPassword = async (req, res) => {
   const { token, nuevaPassword } = req.body;
 
@@ -560,6 +690,7 @@ const resetPassword = async (req, res) => {
 module.exports = {
   registroCliente,
   registroAgente,
+  registroAdmin,
   login,
   verifyCliente,
   refreshClienteToken,

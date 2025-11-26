@@ -1,12 +1,54 @@
 const db = require("../db");
 
 /**
+ * Obtener proveedores con productos activos
+ * GET /api/public/proveedores
+ */
+const obtenerProveedoresPublicos = async (req, res) => {
+  try {
+    const query = `
+      SELECT DISTINCT
+        prov.proveedorid,
+        prov.nombre
+      FROM proveedores prov
+      INNER JOIN productos p ON p.proveedorid_default = prov.proveedorid
+      WHERE p.activo = TRUE
+      ORDER BY prov.nombre ASC
+    `;
+
+    const result = await db.query(query);
+
+    const proveedores = result.rows.map((row) => ({
+      proveedorId: row.proveedorid,
+      nombre: row.nombre,
+    }));
+
+    res.status(200).json({
+      success: true,
+      message: "Proveedores obtenidos exitosamente",
+      data: {
+        proveedores,
+        total: proveedores.length,
+      },
+    });
+  } catch (error) {
+    console.error("Error al obtener proveedores públicos:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error al obtener los proveedores",
+      error: error.message,
+    });
+  }
+};
+
+/**
  * Obtener todos los productos con imagen principal
  * GET /api/productos
  */
 const obtenerProductos = async (req, res) => {
   try {
-    const { search, precioMin, precioMax, dimension, stock } = req.query;
+    const { search, precioMin, precioMax, dimension, stock, proveedorID } =
+      req.query;
 
     const filtros = [];
     const valores = [];
@@ -74,6 +116,12 @@ const obtenerProductos = async (req, res) => {
         WHERE pv.productoid = p.productoid
           AND pv.stock > 0
       )`);
+    }
+
+    if (proveedorID) {
+      valores.push(parseInt(proveedorID, 10));
+      const indiceProveedor = valores.length;
+      filtros.push(`p.proveedorid_default = $${indiceProveedor}`);
     }
 
     const whereClause =
@@ -656,4 +704,5 @@ module.exports = {
   obtenerCategorias,
   obtenerAgentesPublicos,
   obtenerDimensiones,
+  obtenerProveedoresPublicos,
 };

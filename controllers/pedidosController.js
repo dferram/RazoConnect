@@ -230,6 +230,9 @@ const crearPedido = async (req, res) => {
 
       const precioUnitario =
         item.preciounitario !== null ? parseFloat(item.preciounitario) : 0;
+      const precioPorPaquete = parseFloat(
+        (precioUnitario * tamanoValor).toFixed(2)
+      );
       const piezasSolicitadas = tamanoValor * item.cantidad;
       const stockActual =
         item.stock !== null ? Math.max(parseInt(item.stock, 10), 0) : 0;
@@ -540,6 +543,17 @@ const obtenerPedidos = async (req, res) => {
           pv.productoid,
           pv.sku,
           pv.dimensiones,
+          pr.nombreproducto,
+          row_to_json(ct) AS tamano_info,
+          imagen.url_imagen AS imagenurl
+        FROM detallesdelpedido dp
+        LEFT JOIN producto_variantes pv ON dp.varianteid = pv.varianteid
+        LEFT JOIN productos pr ON pv.productoid = pr.productoid
+        LEFT JOIN cat_tamanopaquetes ct ON dp.tamanoid = ct.tamanoid
+        LEFT JOIN LATERAL (
+          SELECT pi.url_imagen
+          FROM producto_imagenes pi
+          WHERE pi.varianteid = dp.varianteid
           ORDER BY pi.orden ASC NULLS LAST, pi.imagenid ASC
           LIMIT 1
         ) imagen ON TRUE

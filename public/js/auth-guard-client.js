@@ -7,6 +7,28 @@
 (function () {
   "use strict";
 
+  // Funciones de autenticación locales (necesarias porque api.js no se ha cargado aún)
+  const getToken = () => localStorage.getItem("razoconnect_token");
+  const getAdminToken = () => localStorage.getItem("razoconnect_admin_token");
+  const getAdminData = () => {
+    try {
+      return JSON.parse(localStorage.getItem("razoconnect_admin") || "null");
+    } catch {
+      return null;
+    }
+  };
+  const adminHasAgentRole = () => {
+    const adminData = getAdminData();
+    return adminData?.rol === "agente" || adminData?.esAgente === true;
+  };
+  const getEffectiveToken = () => {
+    const clientToken = getToken();
+    if (clientToken) return clientToken;
+    const adminToken = getAdminToken();
+    if (adminToken && adminHasAgentRole()) return adminToken;
+    return null;
+  };
+
   const effectiveToken = getEffectiveToken();
   if (!effectiveToken) {
     console.warn("No auth token found. Redirecting to login...");

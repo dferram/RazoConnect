@@ -193,11 +193,37 @@
                 "razoconnect_admin",
                 JSON.stringify(adminData.data.admin)
               );
-              showToast("¡Bienvenido Administrador!", "success");
-              setTimeout(() => {
-                sessionStorage.setItem("_navigating", "true");
-                window.location.href = "/admin-dashboard.html";
-              }, 500);
+
+              // Verificar si es agente para redirigir al panel de agente
+              const adminInfo = adminData.data.admin || {};
+              const adminRol = adminInfo.rol;
+              const origen = adminInfo.origen;
+              const esAgente =
+                adminRol === "agente" ||
+                origen === "agent" ||
+                adminInfo.esAgente === true ||
+                adminInfo.codigoAgente;
+
+              console.log("🔍 Admin login info:", {
+                adminRol,
+                origen,
+                esAgente,
+                adminInfo,
+              });
+
+              if (esAgente) {
+                showToast("¡Bienvenido Agente!", "success");
+                setTimeout(() => {
+                  sessionStorage.setItem("_navigating", "true");
+                  window.location.href = "/agente-dashboard.html";
+                }, 500);
+              } else {
+                showToast("¡Bienvenido Administrador!", "success");
+                setTimeout(() => {
+                  sessionStorage.setItem("_navigating", "true");
+                  window.location.href = "/admin-dashboard.html";
+                }, 500);
+              }
               loginSuccessful = true;
             }
           } catch (adminError) {
@@ -216,29 +242,50 @@
               const clientData = await clientResponse.json();
 
               if (clientResponse.ok && clientData.success) {
+                const rol =
+                  clientData.data.rol || clientData.data.usuario?.rol || null;
                 const usuario = {
                   ...clientData.data.usuario,
-                  rol:
-                    clientData.data.rol || clientData.data.usuario?.rol || null,
+                  rol,
                 };
 
-                localStorage.setItem(
-                  "razoconnect_token",
-                  clientData.data.token
-                );
-                localStorage.setItem(
-                  "razoconnect_user",
-                  JSON.stringify(usuario)
-                );
+                if (rol === "agente") {
+                  // AGENTE: Guardar como admin token para el panel de agente
+                  localStorage.setItem(
+                    "razoconnect_admin_token",
+                    clientData.data.token
+                  );
+                  localStorage.setItem(
+                    "razoconnect_admin",
+                    JSON.stringify({
+                      ...usuario,
+                      rol: "agente",
+                      esAgente: true,
+                    })
+                  );
 
-                showToast("¡Inicio de sesión exitoso!", "success");
-                setTimeout(() => {
-                  if ((clientData.data.rol || usuario.rol) === "agente") {
-                    window.location.href = "/agente-cartera.html";
-                  } else {
+                  showToast("¡Bienvenido Agente!", "success");
+                  setTimeout(() => {
+                    sessionStorage.setItem("_navigating", "true");
+                    window.location.href = "/agente-dashboard.html";
+                  }, 500);
+                } else {
+                  // CLIENTE: Guardar como token normal
+                  localStorage.setItem(
+                    "razoconnect_token",
+                    clientData.data.token
+                  );
+                  localStorage.setItem(
+                    "razoconnect_user",
+                    JSON.stringify(usuario)
+                  );
+
+                  showToast("¡Bienvenido!", "success");
+                  setTimeout(() => {
+                    sessionStorage.setItem("_navigating", "true");
                     window.location.href = "/catalogo.html";
-                  }
-                }, 500);
+                  }, 500);
+                }
                 loginSuccessful = true;
               }
             } catch (clientError) {

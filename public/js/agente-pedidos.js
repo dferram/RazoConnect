@@ -1,15 +1,17 @@
 (function () {
   "use strict";
 
-  if (!requireAuth()) {
+  if (!requireAgentAuth()) {
     return;
   }
 
   document.addEventListener("DOMContentLoaded", init);
 
   function init() {
-    const tabGroup = document.querySelector(".tab-group");
-    const tabButtons = Array.from(document.querySelectorAll(".tab-button"));
+    const tabGroup = document.querySelector(".admin-filter-tabs");
+    const tabButtons = Array.from(
+      document.querySelectorAll(".admin-filter-btn")
+    );
     const pedidosBody = document.getElementById("tablaPedidosBody");
     const refrescarBtn = document.getElementById("btnRefrescarPedidos");
     const logoutBtn = document.getElementById("logoutBtn");
@@ -89,7 +91,7 @@
               <td>
                 <button
                   type="button"
-                  class="btn btn-secondary btn-detalle"
+                  class="btn btn-primary btn-sm btn-detalle"
                   data-pedido-id="${pedido.pedidoId}"
                 >
                   Ver detalle
@@ -125,7 +127,7 @@
     }
 
     function handleTabClick(event) {
-      const button = event.target.closest(".tab-button");
+      const button = event.target.closest(".admin-filter-btn");
       if (!button) {
         return;
       }
@@ -147,10 +149,9 @@
       }
 
       const pedidoId = btn.dataset.pedidoId;
-      showToast(
-        `Detalle del pedido #${pedidoId} disponible próximamente.`,
-        "info"
-      );
+      // Marcar que es navegación interna para evitar limpieza de tokens
+      sessionStorage.setItem("_navigating", "true");
+      window.location.href = `/agente-pedido-detalle.html?id=${pedidoId}`;
     }
 
     function handleLogout(event) {

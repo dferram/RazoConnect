@@ -51,6 +51,7 @@
       >
         <div>
           <h1
+            id="catalogoTitulo"
             style="font-size: 2.5rem; font-weight: bold; margin-bottom: 1.5rem"
           >
             Catálogo de productos
@@ -167,6 +168,31 @@
           >
             <!-- Las categorías se cargarán aquí dinámicamente -->
           </ul>
+
+          <!-- Sección Nuestras Marcas -->
+          <div id="marcasSection" style="margin-top: 2rem; display: none">
+            <p
+              style="
+                font-weight: 700;
+                margin-bottom: 0.75rem;
+                color: var(--text-primary);
+                letter-spacing: 0.02em;
+                font-size: 0.875rem;
+                text-transform: uppercase;
+              "
+            >
+              🏷️ Nuestras Marcas
+            </p>
+            <div id="loadingMarcas" style="text-align: center; padding: 0.5rem">
+              <div class="spinner" style="width: 20px; height: 20px"></div>
+            </div>
+            <ul
+              id="marcasList"
+              style="list-style: none; padding: 0; margin: 0; display: none"
+            >
+              <!-- Las marcas se cargarán aquí dinámicamente -->
+            </ul>
+          </div>
 
           <!-- Controles de filtros adicionales -->
           <div id="filtrosAdicionales" style="margin-top: 2rem; display: none">
@@ -424,11 +450,17 @@
       const dimensionesSelect = document.getElementById("filtro-dimensiones");
       const stockCheckbox = document.getElementById("filtro-stock");
       const btnAplicarFiltros = document.getElementById("btn-aplicar-filtros");
+      const marcasSection = document.getElementById("marcasSection");
+      const loadingMarcas = document.getElementById("loadingMarcas");
+      const marcasList = document.getElementById("marcasList");
+      const catalogoTitulo = document.getElementById("catalogoTitulo");
 
       let todosLosProductos = [];
       let categoriaSeleccionada = null;
       let filtrosQueryActual = "";
       let nombreCategoriaSeleccionada = null;
+      let proveedorSeleccionado = null;
+      let nombreProveedorSeleccionado = null;
 
       function obtenerFiltrosSeleccionados() {
         return {
@@ -462,6 +494,10 @@
 
         if (filtros.stock) {
           params.append("stock", "true");
+        }
+
+        if (proveedorSeleccionado) {
+          params.append("proveedorID", proveedorSeleccionado);
         }
 
         const queryString = params.toString();
@@ -498,9 +534,20 @@
         return chip;
       }
 
+      function actualizarTituloCatalogo() {
+        if (catalogoTitulo) {
+          if (proveedorSeleccionado && nombreProveedorSeleccionado) {
+            catalogoTitulo.textContent = `Catálogo: ${nombreProveedorSeleccionado}`;
+          } else {
+            catalogoTitulo.textContent = "Catálogo de productos";
+          }
+        }
+      }
+
       function actualizarFiltroActivo() {
         const filtros = obtenerFiltrosSeleccionados();
         const hayCategoria = categoriaSeleccionada !== null;
+        const hayProveedor = proveedorSeleccionado !== null;
         const hayOtrosFiltros =
           filtros.search ||
           filtros.precioMin ||
@@ -508,7 +555,9 @@
           filtros.dimension ||
           filtros.stock;
 
-        if (!hayCategoria && !hayOtrosFiltros) {
+        actualizarTituloCatalogo();
+
+        if (!hayCategoria && !hayProveedor && !hayOtrosFiltros) {
           filtroActivo.style.display = "none";
           if (filtroResumen) {
             filtroResumen.innerHTML = "";
@@ -520,11 +569,24 @@
         filtroActivo.style.display = "block";
 
         if (categoriaActiva) {
-          categoriaActiva.textContent = nombreCategoriaSeleccionada || "Todos";
+          if (nombreProveedorSeleccionado) {
+            categoriaActiva.textContent = nombreProveedorSeleccionado;
+          } else {
+            categoriaActiva.textContent =
+              nombreCategoriaSeleccionada || "Todos";
+          }
         }
 
         if (!filtroResumen) return;
         filtroResumen.innerHTML = "";
+
+        if (hayProveedor && nombreProveedorSeleccionado) {
+          filtroResumen.appendChild(
+            crearChip(`Marca: ${nombreProveedorSeleccionado}`, () => {
+              filtrarPorProveedor(null);
+            })
+          );
+        }
 
         if (hayCategoria && nombreCategoriaSeleccionada) {
           filtroResumen.appendChild(
@@ -602,6 +664,94 @@
             filtrosAdicionales.style.display = "block";
           }
         }
+      }
+
+      // Cargar marcas/proveedores
+      async function loadMarcas() {
+        if (!marcasSection) return;
+
+        try {
+          if (loadingMarcas) loadingMarcas.style.display = "block";
+          if (marcasList) marcasList.style.display = "none";
+
+          const response = await fetch(`${API_BASE_URL}/public/proveedores`);
+          const data = await response.json();
+
+          if (response.ok && data.success) {
+            const proveedores = data.data.proveedores || [];
+
+            if (proveedores.length === 0) {
+              marcasSection.style.display = "none";
+              return;
+            }
+
+            let marcasHTML = "";
+            proveedores.forEach((proveedor) => {
+              const isActive = proveedorSeleccionado === proveedor.proveedorId;
+              marcasHTML += `
+              <li style="margin-bottom: 0.5rem;">
+                <a href="#" 
+                   data-proveedorid="${proveedor.proveedorId}" 
+                   onclick="filtrarPorProveedor(${proveedor.proveedorId}, '${
+                proveedor.nombre
+              }'); return false;"
+                   class="marca-link ${isActive ? "active" : ""}"
+                   style="display: block; padding: 0.5rem 0; text-decoration: none; color: ${
+                     isActive ? "var(--text-primary)" : "var(--text-secondary)"
+                   }; font-size: 0.9375rem; font-weight: ${
+                isActive ? "600" : "400"
+              }; transition: all 0.2s; border-left: ${
+                isActive
+                  ? "3px solid var(--razo-orange)"
+                  : "3px solid transparent"
+              }; padding-left: ${isActive ? "0.75rem" : "0"};">
+                  ${proveedor.nombre}
+                </a>
+              </li>
+            `;
+            });
+
+            if (marcasList) {
+              marcasList.innerHTML = marcasHTML;
+              marcasList.style.display = "block";
+            }
+
+            marcasSection.style.display = "block";
+
+            // Agregar hover effects
+            document
+              .querySelectorAll(".marca-link:not(.active)")
+              .forEach((link) => {
+                link.addEventListener("mouseenter", function () {
+                  this.style.color = "var(--text-primary)";
+                  this.style.paddingLeft = "0.75rem";
+                  this.style.borderLeft = "3px solid #e5e5e5";
+                });
+                link.addEventListener("mouseleave", function () {
+                  this.style.color = "var(--text-secondary)";
+                  this.style.paddingLeft = "0";
+                  this.style.borderLeft = "3px solid transparent";
+                });
+              });
+          }
+        } catch (error) {
+          console.error("Error loading marcas:", error);
+          if (marcasSection) marcasSection.style.display = "none";
+        } finally {
+          if (loadingMarcas) loadingMarcas.style.display = "none";
+        }
+      }
+
+      // Filtrar productos por proveedor/marca
+      function filtrarPorProveedor(proveedorId, nombreProveedor = null) {
+        proveedorSeleccionado = proveedorId;
+        nombreProveedorSeleccionado = proveedorId ? nombreProveedor : null;
+
+        // Recargar marcas para actualizar el estilo activo
+        loadMarcas();
+
+        // Aplicar filtros
+        aplicarFiltrosDesdeUI();
       }
 
       // Display user greeting
@@ -852,7 +1002,10 @@
           filtrosQueryActual = "";
           categoriaSeleccionada = null;
           nombreCategoriaSeleccionada = null;
+          proveedorSeleccionado = null;
+          nombreProveedorSeleccionado = null;
           await loadCategorias();
+          await loadMarcas();
           await loadProductos();
         });
       }
@@ -895,9 +1048,10 @@
         }, 500);
       });
 
-      // Load categorias, dimensiones and products on page load
+      // Load categorias, dimensiones, marcas and products on page load
       loadDimensiones();
       loadCategorias();
+      loadMarcas();
       loadProductos();
     </script>
 

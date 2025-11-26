@@ -289,6 +289,12 @@ const API = {
     });
   },
 
+  obtenerPedidoDetalleAgente: async (pedidoId) => {
+    return apiCall(`/agente/pedidos/${pedidoId}`, {
+      method: "GET",
+    });
+  },
+
   obtenerComisionesAgente: async () => {
     return apiCall("/agente/comisiones", {
       method: "GET",

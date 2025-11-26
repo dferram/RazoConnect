@@ -2,7 +2,7 @@
   "use strict";
 
   document.addEventListener("DOMContentLoaded", () => {
-    if (!requireAuth()) {
+    if (!requireAgentAuth()) {
       return;
     }
 

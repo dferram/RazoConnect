@@ -1206,6 +1206,7 @@ const updatePedidoEstatus = async (req, res) => {
 const crearProducto = async (req, res) => {
   const {
     nombre,
+    codigoModelo,
     descripcion,
     categoriaId,
     tamanos,
@@ -1251,10 +1252,16 @@ const crearProducto = async (req, res) => {
     }
 
     const result = await client.query(
-      `INSERT INTO Productos (NombreProducto, Descripcion, CategoriaID, ProveedorID_Default, Activo)
-       VALUES ($1, $2, $3, $4, TRUE)
-       RETURNING ProductoID, NombreProducto, Descripcion, CategoriaID, ProveedorID_Default AS ProveedorID, Activo`,
-      [nombre, descripcion || null, categoriaId || null, proveedorId]
+      `INSERT INTO Productos (NombreProducto, CodigoModelo, Descripcion, CategoriaID, ProveedorID_Default, Activo)
+       VALUES ($1, $2, $3, $4, $5, TRUE)
+       RETURNING ProductoID, NombreProducto, CodigoModelo, Descripcion, CategoriaID, ProveedorID_Default AS ProveedorID, Activo`,
+      [
+        nombre,
+        codigoModelo || null,
+        descripcion || null,
+        categoriaId || null,
+        proveedorId,
+      ]
     );
 
     const producto = result.rows[0];
@@ -1432,6 +1439,7 @@ const actualizarProducto = async (req, res) => {
 
   const {
     nombre,
+    codigoModelo,
     descripcion,
     categoriaId,
     tamanos,
@@ -1447,7 +1455,7 @@ const actualizarProducto = async (req, res) => {
     transactionStarted = true;
 
     const productoResult = await client.query(
-      `SELECT ProductoID, NombreProducto, Descripcion, CategoriaID, ProveedorID_Default AS ProveedorID
+      `SELECT ProductoID, NombreProducto, CodigoModelo, Descripcion, CategoriaID, ProveedorID_Default AS ProveedorID
        FROM Productos
        WHERE ProductoID = $1`,
       [productoId]
@@ -1484,6 +1492,13 @@ const actualizarProducto = async (req, res) => {
           ? descripcion.trim()
           : null
         : productoActual.descripcion;
+
+    const codigoModeloFinal =
+      codigoModelo !== undefined
+        ? typeof codigoModelo === "string" && codigoModelo.trim()
+          ? codigoModelo.trim()
+          : null
+        : productoActual.codigomodelo;
 
     const categoriaFinal =
       categoriaId !== undefined
@@ -1528,13 +1543,21 @@ const actualizarProducto = async (req, res) => {
     const productoActualizado = await client.query(
       `UPDATE Productos
        SET NombreProducto = $1,
-           Descripcion = $2,
-           CategoriaID = $3,
-           ProveedorID_Default = $4,
+           CodigoModelo = $2,
+           Descripcion = $3,
+           CategoriaID = $4,
+           ProveedorID_Default = $5,
            FechaActualizacion = NOW()
-       WHERE ProductoID = $5
-       RETURNING ProductoID, NombreProducto, Descripcion, CategoriaID, ProveedorID_Default AS ProveedorID, Activo`,
-      [nombreFinal, descripcionFinal, categoriaFinal, proveedorId, productoId]
+       WHERE ProductoID = $6
+       RETURNING ProductoID, NombreProducto, CodigoModelo, Descripcion, CategoriaID, ProveedorID_Default AS ProveedorID, Activo`,
+      [
+        nombreFinal,
+        codigoModeloFinal,
+        descripcionFinal,
+        categoriaFinal,
+        proveedorId,
+        productoId,
+      ]
     );
 
     const tamanosRaw = Array.isArray(tamanos)
@@ -1888,6 +1911,7 @@ const getProductoDetalle = async (req, res) => {
       `SELECT
          p.ProductoID,
          p.NombreProducto,
+         p.CodigoModelo,
          p.Descripcion,
          p.Activo,
          p.CategoriaID,
@@ -2033,6 +2057,7 @@ const getProductoDetalle = async (req, res) => {
     const productoDetalle = {
       productoId: producto.productoid,
       nombreProducto: producto.nombreproducto,
+      codigoModelo: producto.codigomodelo || null,
       descripcion: producto.descripcion,
       activo: producto.activo,
       categoria: producto.categoriaid
@@ -2957,6 +2982,7 @@ const getPedidoDetalle = async (req, res) => {
         dp.DetalleID,
         dp.PedidoID,
         dp.VarianteID,
+        dp.TamanoID,
         dp.CantidadPaquetes,
         dp.PrecioPorPaquete,
         dp.PiezasTotales,
@@ -2966,13 +2992,14 @@ const getPedidoDetalle = async (req, res) => {
           ROUND(dp.PrecioPorPaquete / NULLIF((dp.PiezasTotales / NULLIF(dp.CantidadPaquetes, 0)), 0), 2)
         ) as PrecioUnitarioCalculado,
         pv.SKU,
-        pv.PiezasPorPaquete,
         pv.Dimensiones,
         pv.ProductoID,
-        pr.NombreProducto
+        pr.NombreProducto,
+        row_to_json(ct) as tamano_info
       FROM DetallesDelPedido dp
       INNER JOIN Producto_Variantes pv ON dp.VarianteID = pv.VarianteID
       INNER JOIN Productos pr ON pv.ProductoID = pr.ProductoID
+      LEFT JOIN Cat_TamanoPaquetes ct ON dp.TamanoID = ct.TamanoID
       WHERE dp.PedidoID = $1`,
       [pedidoId]
     );
@@ -3013,26 +3040,38 @@ const getPedidoDetalle = async (req, res) => {
             referencias: pedido.referencias,
           },
         },
-        productos: detallesResult.rows.map((row) => ({
-          detalleId: row.detalleid,
-          productoId: row.productoid,
-          varianteId: row.varianteid,
-          nombre: row.nombreproducto,
-          sku: row.sku,
-          cantidadPaquetes: parseInt(row.cantidadpaquetes, 10),
-          piezasPorPaquete: row.piezasporpaquete,
-          precioPorPaquete: row.precioporpaquete
-            ? parseFloat(row.precioporpaquete)
-            : 0,
-          precioUnitario: row.preciounitariocalculado
-            ? parseFloat(row.preciounitariocalculado)
-            : 0,
-          piezasTotales: parseInt(row.piezastotales, 10),
-          dimensiones: row.dimensiones || null,
-          subtotal: row.precioporpaquete
-            ? parseFloat((row.cantidadpaquetes || 0) * row.precioporpaquete)
-            : 0,
-        })),
+        productos: detallesResult.rows.map((row) => {
+          // Extraer piezasPorPaquete del tamano_info JSON
+          const tamanoInfo = row.tamano_info || {};
+          const piezasPorPaquete =
+            tamanoInfo.valor ||
+            tamanoInfo.cantidad ||
+            tamanoInfo.piezas ||
+            tamanoInfo.piezasporpaquete ||
+            tamanoInfo.numeropiezas ||
+            null;
+
+          return {
+            detalleId: row.detalleid,
+            productoId: row.productoid,
+            varianteId: row.varianteid,
+            nombre: row.nombreproducto,
+            sku: row.sku,
+            cantidadPaquetes: parseInt(row.cantidadpaquetes, 10),
+            piezasPorPaquete,
+            precioPorPaquete: row.precioporpaquete
+              ? parseFloat(row.precioporpaquete)
+              : 0,
+            precioUnitario: row.preciounitariocalculado
+              ? parseFloat(row.preciounitariocalculado)
+              : 0,
+            piezasTotales: parseInt(row.piezastotales, 10),
+            dimensiones: row.dimensiones || null,
+            subtotal: row.precioporpaquete
+              ? parseFloat((row.cantidadpaquetes || 0) * row.precioporpaquete)
+              : 0,
+          };
+        }),
       },
     });
   } catch (error) {

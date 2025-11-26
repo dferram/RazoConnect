@@ -246,6 +246,27 @@
                       placeholder="Ej: NAVIDAD-10X10-ROJO"
                       required
                     />
+                    <small
+                      id="skuSuggestion"
+                      class="form-hint"
+                      style="display: none; color: var(--razo-orange)"
+                    >
+                      💡 Sugerencia: <span id="skuSuggestionText"></span>
+                      <button
+                        type="button"
+                        id="applySkuSuggestion"
+                        style="
+                          background: none;
+                          border: none;
+                          color: var(--primary-color);
+                          cursor: pointer;
+                          text-decoration: underline;
+                          font-size: inherit;
+                        "
+                      >
+                        Usar
+                      </button>
+                    </small>
                   </div>
 
                   <div class="form-grid-2">
@@ -479,6 +500,13 @@
       const userAvatar = document.getElementById("userAvatar");
       const userName = document.getElementById("userName");
       const userRole = document.getElementById("userRole");
+      const skuInput = document.getElementById("sku");
+      const dimensionesInput = document.getElementById("dimensiones");
+      const skuSuggestion = document.getElementById("skuSuggestion");
+      const skuSuggestionText = document.getElementById("skuSuggestionText");
+      const applySkuSuggestion = document.getElementById("applySkuSuggestion");
+
+      let productoCodigoModelo = null;
 
       if (!productoId || Number.isNaN(productoId)) {
         loadingState.style.display = "none";
@@ -531,6 +559,9 @@
             const { producto, variantes } = response.data.data;
             productBreadcrumb.textContent = `Producto #${producto.productoId}`;
 
+            // Guardar el código de modelo para sugerencias de SKU
+            productoCodigoModelo = producto.codigoModelo || null;
+
             renderProductSummary(producto, variantes);
             renderVariants(variantes);
 
@@ -546,6 +577,30 @@
           loadingState.style.display = "none";
           errorState.style.display = "flex";
         }
+      }
+
+      // Función para generar sugerencia de SKU
+      function generateSkuSuggestion() {
+        if (!productoCodigoModelo) {
+          skuSuggestion.style.display = "none";
+          return;
+        }
+
+        const dimensiones = dimensionesInput.value.trim();
+        if (!dimensiones) {
+          skuSuggestion.style.display = "none";
+          return;
+        }
+
+        // Limpiar dimensiones para el SKU (quitar espacios, caracteres especiales)
+        const dimensionesLimpias = dimensiones
+          .toUpperCase()
+          .replace(/\s+/g, "")
+          .replace(/[^A-Z0-9X]/gi, "-");
+
+        const sugerencia = `${productoCodigoModelo}-${dimensionesLimpias}`;
+        skuSuggestionText.textContent = sugerencia;
+        skuSuggestion.style.display = "block";
       }
 
       function renderProductSummary(producto, variantes) {
@@ -582,6 +637,11 @@
         productSummary.innerHTML = `
         <div class="product-summary">
           <h3>${producto.nombreProducto}</h3>
+          ${
+            producto.codigoModelo
+              ? `<p style="color: var(--razo-orange); font-weight: 600; margin-bottom: 0.5rem;">📦 Código: ${producto.codigoModelo}</p>`
+              : ""
+          }
           <p style="color: var(--text-secondary);">${
             producto.descripcion || "Sin descripción registrada."
           }</p>
@@ -590,6 +650,12 @@
               <span class="summary-label">Categoría</span>
               <span class="summary-value">${
                 producto.categoria?.nombre || "Sin categoría"
+              }</span>
+            </div>
+            <div>
+              <span class="summary-label">Código de Modelo</span>
+              <span class="summary-value">${
+                producto.codigoModelo || "No definido"
               }</span>
             </div>
             <div>
@@ -819,6 +885,23 @@
           ganancia >= 0 ? "var(--success-color)" : "var(--danger-color)";
         marginPercentage.style.color =
           ganancia >= 0 ? "var(--success-color)" : "var(--danger-color)";
+      }
+
+      // Event listener para sugerir SKU cuando cambian las dimensiones
+      if (dimensionesInput) {
+        dimensionesInput.addEventListener("input", generateSkuSuggestion);
+        dimensionesInput.addEventListener("blur", generateSkuSuggestion);
+      }
+
+      // Event listener para aplicar la sugerencia de SKU
+      if (applySkuSuggestion) {
+        applySkuSuggestion.addEventListener("click", () => {
+          if (skuSuggestionText && skuInput) {
+            skuInput.value = skuSuggestionText.textContent;
+            skuSuggestion.style.display = "none";
+            skuInput.focus();
+          }
+        });
       }
 
       async function init() {

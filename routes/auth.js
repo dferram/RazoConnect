@@ -49,6 +49,14 @@ router.post(
 router.post("/auth/forgot-password", authController.forgotPassword);
 router.post("/auth/reset-password", authController.resetPassword);
 
+/**
+ * @route   POST /api/auth/registro-admin
+ * @desc    Registrar un nuevo administrador (protegido por SUPER_ADMIN_KEY)
+ * @access  Public (requiere adminKey en el body)
+ * @body    { Nombre, Apellido, Email, Password, Rol?, adminKey }
+ */
+router.post("/auth/registro-admin", authController.registroAdmin);
+
 // Rutas privadas para agentes
 router.post(
   "/agentes/vincular-cliente",
@@ -83,6 +91,13 @@ router.get(
   authenticate,
   authorize(["agente"]),
   agentesController.obtenerPedidosDelAgente
+);
+
+router.get(
+  "/agente/pedidos/:id",
+  authenticate,
+  authorize(["agente"]),
+  agentesController.obtenerPedidoDetalleAgente
 );
 
 router.get(

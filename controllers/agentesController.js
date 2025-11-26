@@ -382,6 +382,181 @@ const obtenerPedidosDelAgente = async (req, res) => {
   }
 };
 
+/**
+ * Obtener detalle de un pedido específico del agente
+ * GET /api/agente/pedidos/:id
+ */
+const obtenerPedidoDetalleAgente = async (req, res) => {
+  try {
+    const agenteId = resolveAuthenticatedAgenteId(req.user);
+
+    if (!agenteId) {
+      return res.status(403).json({
+        success: false,
+        message: "No se pudo determinar el agente autenticado",
+      });
+    }
+
+    const pedidoId = parseInt(req.params.id, 10);
+
+    if (!pedidoId || Number.isNaN(pedidoId)) {
+      return res.status(400).json({
+        success: false,
+        message: "ID de pedido inválido",
+      });
+    }
+
+    // Verificar que el pedido pertenece a un cliente del agente
+    const pedidoResult = await db.query(
+      `SELECT 
+        p.pedidoid,
+        LPAD(p.pedidoid::text, 6, '0') AS numeropedido,
+        p.fechapedido,
+        p.montototal,
+        p.estatus,
+        c.clienteid,
+        c.nombre AS clientenombre,
+        c.apellido AS clienteapellido,
+        c.email AS clienteemail,
+        c.telefono AS clientetelefono,
+        d.receptor,
+        d.calle,
+        d.numeroext AS numeroexterior,
+        d.numeroint AS numerointerior,
+        d.colonia,
+        d.ciudad,
+        d.codigopostal,
+        d.telefonocontacto,
+        e.nombre AS estadonombre
+      FROM Pedidos p
+      INNER JOIN Clientes c ON c.clienteid = p.clienteid
+      LEFT JOIN Cliente_Direcciones d ON p.direccionenvioid = d.direccionid
+      LEFT JOIN Estados e ON d.estadoid = e.estadoid
+      WHERE p.pedidoid = $1 AND c.agenteid = $2`,
+      [pedidoId, agenteId]
+    );
+
+    if (pedidoResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Pedido no encontrado o no pertenece a tus clientes",
+      });
+    }
+
+    const pedido = pedidoResult.rows[0];
+
+    // Obtener detalles del pedido
+    const detallesResult = await db.query(
+      `SELECT 
+        dp.detalleid,
+        dp.cantidadpaquetes,
+        dp.precioporpaquete,
+        dp.piezastotales,
+        dp.preciounitario,
+        pv.sku,
+        pv.dimensiones,
+        pr.nombreproducto,
+        row_to_json(ct) AS tamano_info,
+        (SELECT pi.url_imagen 
+         FROM producto_imagenes pi 
+         WHERE pi.varianteid = pv.varianteid 
+         ORDER BY pi.orden ASC NULLS LAST 
+         LIMIT 1) AS imagenurl
+      FROM detallesdelpedido dp
+      INNER JOIN producto_variantes pv ON dp.varianteid = pv.varianteid
+      INNER JOIN productos pr ON pv.productoid = pr.productoid
+      LEFT JOIN cat_tamanopaquetes ct ON dp.tamanoid = ct.tamanoid
+      WHERE dp.pedidoid = $1
+      ORDER BY dp.detalleid ASC`,
+      [pedidoId]
+    );
+
+    const items = detallesResult.rows.map((row) => {
+      const precioUnitario = row.preciounitario
+        ? parseFloat(row.preciounitario)
+        : null;
+      const precioPorPaquete = row.precioporpaquete
+        ? parseFloat(row.precioporpaquete)
+        : null;
+      const cantidad = row.cantidadpaquetes
+        ? parseInt(row.cantidadpaquetes, 10)
+        : 0;
+      const subtotal =
+        precioPorPaquete && cantidad ? precioPorPaquete * cantidad : 0;
+
+      // Extraer valor y etiqueta del tamano_info JSON
+      const tamanoInfo = row.tamano_info || {};
+      const tamanoValor =
+        tamanoInfo.valor ||
+        tamanoInfo.cantidad ||
+        tamanoInfo.piezas ||
+        tamanoInfo.piezasporpaquete ||
+        tamanoInfo.numeropiezas ||
+        null;
+      const tamanoEtiqueta =
+        tamanoInfo.etiqueta ||
+        tamanoInfo.descripcion ||
+        tamanoInfo.nombre ||
+        tamanoInfo.label ||
+        null;
+
+      return {
+        detalleId: row.detalleid,
+        nombreProducto: row.nombreproducto,
+        sku: row.sku,
+        dimensiones: row.dimensiones,
+        cantidad,
+        piezasTotales: row.piezastotales ? parseInt(row.piezastotales, 10) : 0,
+        precioUnitario,
+        precioPorPaquete,
+        subtotal,
+        tamano: tamanoEtiqueta || (tamanoValor ? `${tamanoValor} pzas` : null),
+        imagenUrl: row.imagenurl,
+      };
+    });
+
+    res.json({
+      success: true,
+      data: {
+        pedido: {
+          pedidoId: pedido.pedidoid,
+          numeroPedido: pedido.numeropedido,
+          fechaPedido: pedido.fechapedido,
+          montoTotal: parseFloat(pedido.montototal),
+          estatus: pedido.estatus,
+        },
+        cliente: {
+          clienteId: pedido.clienteid,
+          nombre: pedido.clientenombre,
+          apellido: pedido.clienteapellido,
+          email: pedido.clienteemail,
+          telefono: pedido.clientetelefono,
+        },
+        direccion: {
+          receptor: pedido.receptor,
+          calle: pedido.calle,
+          numeroExterior: pedido.numeroexterior,
+          numeroInterior: pedido.numerointerior,
+          colonia: pedido.colonia,
+          ciudad: pedido.ciudad,
+          codigoPostal: pedido.codigopostal,
+          estado: pedido.estadonombre,
+          telefonoContacto: pedido.telefonocontacto,
+        },
+        items,
+        totalItems: items.length,
+      },
+    });
+  } catch (error) {
+    console.error("Error al obtener detalle del pedido del agente:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error al obtener el detalle del pedido",
+      error: error.message,
+    });
+  }
+};
+
 const obtenerComisionesDelAgente = async (req, res) => {
   try {
     const agenteId = resolveAuthenticatedAgenteId(req.user);
@@ -439,6 +614,7 @@ module.exports = {
   obtenerClientesDisponibles,
   obtenerDashboardStats,
   obtenerPedidosDelAgente,
+  obtenerPedidoDetalleAgente,
   obtenerComisionesDelAgente,
   resolveAuthenticatedAgenteId,
 };

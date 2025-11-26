@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  if (!requireAuth()) {
+  if (!requireAgentAuth()) {
     return;
   }
 
