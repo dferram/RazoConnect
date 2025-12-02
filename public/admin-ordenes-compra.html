@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Órdenes de Compra - Admin RazoConnect</title>
+
+    <!-- PROTECCIÓN DE AUTENTICACIÓN ADMIN -->
+    <script src="js/auth-guard-admin.js"></script>
+    <script src="js/token-refresh.js"></script>
+
+    <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/admin.css" />
+  </head>
+  <body>
+    <div class="admin-layout">
+      <!-- Sidebar -->
+      <div id="sidebar-container"></div>
+
+      <!-- Main Content -->
+      <main class="admin-main">
+        <header class="admin-header">
+          <h1 class="admin-header-title">Órdenes de Compra</h1>
+          <div class="admin-header-actions">
+            <div class="admin-user-info">
+              <div class="admin-user-avatar" id="userAvatar">A</div>
+              <div class="admin-user-details">
+                <div class="admin-user-name" id="userName">Administrador</div>
+                <div class="admin-user-role" id="userRole">Admin</div>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <div class="admin-content" style="display: grid; gap: 1.5rem">
+          <!-- Filtros -->
+          <section
+            class="admin-card"
+            style="
+              padding: 1.5rem;
+              display: flex;
+              flex-wrap: wrap;
+              gap: 1rem;
+              align-items: flex-end;
+            "
+          >
+            <div class="filtro-item">
+              <label for="filtroEstatus" class="form-label"
+                >Filtrar por estatus</label
+              >
+              <select id="filtroEstatus" class="form-input">
+                <option value="">Todas</option>
+                <option value="Pendiente" selected>Pendientes</option>
+                <option value="Parcial">Parcial</option>
+                <option value="Completada">Completadas</option>
+              </select>
+            </div>
+            <button
+              class="btn btn-primary"
+              onclick="window.location.href='/admin-crear-oc.html'"
+              style="height: fit-content; padding: 0.75rem 1.5rem"
+            >
+              + Nueva Orden
+            </button>
+          </section>
+
+          <!-- Tabla de Órdenes de Compra -->
+          <section class="admin-card" style="padding: 1.5rem">
+            <div
+              style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 1rem;
+              "
+            >
+              <h2
+                style="
+                  margin: 0;
+                  font-size: 1.2rem;
+                  color: var(--razo-orange, #ff6b35);
+                "
+              >
+                Órdenes de Compra
+              </h2>
+              <span id="resultadosBadge" class="admin-badge secondary"
+                >0 RESULTADOS</span
+              >
+            </div>
+
+            <div
+              id="loadingState"
+              class="loading"
+              style="display: none; min-height: 120px"
+            >
+              <div class="spinner"></div>
+            </div>
+
+            <div style="overflow-x: auto">
+              <table
+                class="admin-table"
+                id="ordenesTable"
+                style="display: none"
+              >
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Proveedor</th>
+                    <th>Fecha Creación</th>
+                    <th>Entrega Esperada</th>
+                    <th>Productos</th>
+                    <th>Estatus</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="ordenesTableBody">
+                  <!-- Rows will be inserted here -->
+                </tbody>
+              </table>
+            </div>
+
+            <div id="emptyState" class="empty-state" style="display: none">
+              <div class="empty-state-icon">📦</div>
+              <h3 class="empty-state-title">No hay órdenes de compra</h3>
+              <p class="empty-state-text">
+                Las órdenes generadas automáticamente por backorders aparecerán
+                aquí
+              </p>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <!-- Modal de Detalle de Orden -->
+    <div id="detalleModal" class="modal">
+      <div class="modal-content modal-content--xl">
+        <div class="modal-header">
+          <h2 class="modal-title">
+            Orden de Compra #<span id="detalleOrdenId"></span>
+          </h2>
+          <button class="modal-close-btn" onclick="closeDetalleModal()">
+            &times;
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <!-- Información de la Orden -->
+          <div
+            style="
+              background: #f8fafc;
+              padding: 1.5rem;
+              border-radius: 0.75rem;
+              margin-bottom: 1.5rem;
+            "
+          >
+            <div
+              style="
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 1rem;
+              "
+            >
+              <div>
+                <p
+                  style="
+                    font-size: 0.875rem;
+                    color: #6b7280;
+                    margin-bottom: 0.25rem;
+                  "
+                >
+                  Proveedor
+                </p>
+                <p
+                  style="font-weight: 600; color: #1f2937"
+                  id="detalleProveedor"
+                ></p>
+              </div>
+              <div>
+                <p
+                  style="
+                    font-size: 0.875rem;
+                    color: #6b7280;
+                    margin-bottom: 0.25rem;
+                  "
+                >
+                  Fecha Creación
+                </p>
+                <p
+                  style="font-weight: 600; color: #1f2937"
+                  id="detalleFechaCreacion"
+                ></p>
+              </div>
+              <div>
+                <p
+                  style="
+                    font-size: 0.875rem;
+                    color: #6b7280;
+                    margin-bottom: 0.25rem;
+                  "
+                >
+                  Entrega Esperada
+                </p>
+                <p
+                  style="font-weight: 600; color: #1f2937"
+                  id="detalleFechaEntrega"
+                ></p>
+              </div>
+              <div>
+                <p
+                  style="
+                    font-size: 0.875rem;
+                    color: #6b7280;
+                    margin-bottom: 0.25rem;
+                  "
+                >
+                  Estatus
+                </p>
+                <p style="font-weight: 600" id="detalleEstatus"></p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Productos -->
+          <h3
+            style="font-size: 1.125rem; font-weight: 600; margin-bottom: 1rem"
+          >
+            Productos Solicitados
+          </h3>
+          <div style="overflow-x: auto">
+            <table class="admin-table" style="min-width: 100%">
+              <thead>
+                <tr>
+                  <th>Producto</th>
+                  <th>SKU</th>
+                  <th>Solicitada</th>
+                  <th>Recibida</th>
+                  <th>Pendiente</th>
+                  <th>Stock Actual</th>
+                </tr>
+              </thead>
+              <tbody id="detalleProductosBody">
+                <!-- Rows will be inserted here -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="js/layout.js" defer></script>
+    <script src="js/admin-header-dropdown.js"></script>
+    <script src="js/api.js"></script>
+    <script>
+      (function () {
+        "use strict";
+
+        let ordenesData = [];
+
+        // Elements
+        const loadingState = document.getElementById("loadingState");
+        const emptyState = document.getElementById("emptyState");
+        const ordenesTable = document.getElementById("ordenesTable");
+        const ordenesTableBody = document.getElementById("ordenesTableBody");
+        const filtroEstatus = document.getElementById("filtroEstatus");
+        const detalleModal = document.getElementById("detalleModal");
+
+        // Cargar órdenes al inicio
+        document.addEventListener("DOMContentLoaded", function () {
+          loadOrdenes();
+          filtroEstatus.addEventListener("change", loadOrdenes);
+        });
+
+        // Cargar órdenes de compra
+        async function loadOrdenes() {
+          try {
+            loadingState.style.display = "block";
+            ordenesTable.style.display = "none";
+            emptyState.style.display = "none";
+
+            const estatus = filtroEstatus.value;
+            const url = estatus
+              ? `/admin/ordenes-compra?estatus=${estatus}`
+              : "/admin/ordenes-compra";
+
+            const response = await API.apiCall(url, { method: "GET" });
+
+            if (!response.ok) {
+              throw new Error("Error al cargar órdenes de compra");
+            }
+
+            ordenesData = response.data.ordenes || [];
+
+            loadingState.style.display = "none";
+
+            if (ordenesData.length === 0) {
+              emptyState.style.display = "block";
+            } else {
+              renderOrdenes();
+              ordenesTable.style.display = "block";
+            }
+          } catch (error) {
+            console.error("Error:", error);
+            loadingState.style.display = "none";
+            emptyState.style.display = "block";
+            showToast("Error al cargar órdenes de compra", "error");
+          }
+        }
+
+        // Renderizar tabla de órdenes
+        function renderOrdenes() {
+          ordenesTableBody.innerHTML = "";
+
+          // Actualizar badge de resultados
+          const badge = document.getElementById("resultadosBadge");
+          badge.textContent = `${ordenesData.length} RESULTADO${
+            ordenesData.length !== 1 ? "S" : ""
+          }`;
+
+          ordenesData.forEach((orden) => {
+            const row = document.createElement("tr");
+
+            const estatusBadgeClass = getEstatusBadgeClass(orden.estatus);
+            const fechaCreacion = new Date(
+              orden.fechaCreacion
+            ).toLocaleDateString("es-MX", {
+              year: "numeric",
+              month: "short",
+              day: "numeric",
+            });
+            const fechaEntrega = new Date(
+              orden.fechaEntregaEsperada
+            ).toLocaleDateString("es-MX", {
+              year: "numeric",
+              month: "short",
+              day: "numeric",
+            });
+
+            row.innerHTML = `
+              <td style="font-weight: 600; color: #374151;">#${orden.ordenCompraId}</td>
+              <td style="font-weight: 500;">${orden.proveedorNombre}</td>
+              <td style="color: #6b7280;">${fechaCreacion}</td>
+              <td style="color: #6b7280;">${fechaEntrega}</td>
+              <td style="text-align: center; color: #374151;">${orden.totalProductos}</td>
+              <td><span class="admin-badge ${estatusBadgeClass}">${orden.estatus}</span></td>
+              <td style="text-align: center;">
+                <button 
+                  class="btn btn-secondary" 
+                  onclick="verDetalle(${orden.ordenCompraId})"
+                  style="padding: 0.5rem 1rem; font-size: 0.875rem; width: 100%;">
+                  Ver Detalle
+                </button>
+              </td>
+            `;
+
+            ordenesTableBody.appendChild(row);
+          });
+        }
+
+        // Ver detalle de orden
+        window.verDetalle = async function (ordenCompraId) {
+          try {
+            const response = await API.apiCall(
+              `/admin/ordenes-compra/${ordenCompraId}/detalles`,
+              { method: "GET" }
+            );
+
+            if (!response.ok) {
+              throw new Error("Error al cargar detalle");
+            }
+
+            mostrarDetalle(response.data);
+          } catch (error) {
+            console.error("Error:", error);
+            showToast("Error al cargar detalle de la orden", "error");
+          }
+        };
+
+        // Mostrar modal de detalle
+        function mostrarDetalle(data) {
+          const { orden, detalles } = data;
+
+          document.getElementById("detalleOrdenId").textContent =
+            orden.ordenCompraId;
+          document.getElementById("detalleProveedor").textContent =
+            orden.proveedorNombre;
+          document.getElementById("detalleFechaCreacion").textContent =
+            new Date(orden.fechaCreacion).toLocaleDateString("es-MX");
+          document.getElementById("detalleFechaEntrega").textContent = new Date(
+            orden.fechaEntregaEsperada
+          ).toLocaleDateString("es-MX");
+
+          const estatusBadgeClass = getEstatusBadgeClass(orden.estatus);
+          document.getElementById(
+            "detalleEstatus"
+          ).innerHTML = `<span class="admin-badge ${estatusBadgeClass}">${orden.estatus}</span>`;
+
+          // Renderizar productos
+          const productosBody = document.getElementById("detalleProductosBody");
+          productosBody.innerHTML = "";
+
+          detalles.forEach((producto) => {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+              <td>${producto.nombreProducto}</td>
+              <td>${producto.sku}</td>
+              <td>${producto.cantidadSolicitada}</td>
+              <td>${producto.cantidadRecibida}</td>
+              <td><strong>${producto.cantidadPendiente}</strong></td>
+              <td>${producto.stockVariante}</td>
+            `;
+            productosBody.appendChild(row);
+          });
+
+          detalleModal.classList.add("show");
+        }
+
+        // Cerrar modal
+        window.closeDetalleModal = function () {
+          detalleModal.classList.remove("show");
+        };
+
+        // Clase de badge según estatus
+        function getEstatusBadgeClass(estatus) {
+          const classes = {
+            Pendiente: "badge-warning",
+            Parcial: "badge-info",
+            Completada: "badge-success",
+          };
+          return classes[estatus] || "badge-secondary";
+        }
+
+        // Cerrar modal al hacer clic fuera
+        window.onclick = function (event) {
+          if (event.target === detalleModal) {
+            closeDetalleModal();
+          }
+        };
+
+        // Toast notifications
+        function showToast(message, type = "info") {
+          // Implementar según tu sistema de toasts
+          console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+      })();
+    </script>
+
+    <style>
+      /* Modal styles */
+      .modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        overflow-y: auto;
+        -webkit-backdrop-filter: blur(4px);
+        backdrop-filter: blur(4px);
+      }
+
+      .modal-content {
+        animation: modalSlideIn 0.3s ease-out;
+        max-height: 90vh;
+        overflow-y: auto;
+      }
+
+      @keyframes modalSlideIn {
+        from {
+          transform: translateY(-50px);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+
+      /* Badge styles específicos para órdenes de compra */
+      .badge-warning {
+        background: #fff7ed;
+        color: #f97316;
+        border: 1px solid #fed7aa;
+      }
+
+      .badge-info {
+        background: #dbeafe;
+        color: #2563eb;
+        border: 1px solid #bfdbfe;
+      }
+
+      .badge-success {
+        background: #dcfce7;
+        color: #16a34a;
+        border: 1px solid #bbf7d0;
+      }
+    </style>
+  </body>
+</html>

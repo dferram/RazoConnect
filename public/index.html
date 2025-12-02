@@ -9,6 +9,7 @@
       content="Plataforma de venta al mayoreo de cajas de fashion. Precios competitivos, envíos rápidos y programa de comisiones para agentes."
     />
     <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/landing.css" />
   </head>
   <body>
     <!-- Navbar -->
@@ -32,178 +33,59 @@
       </div>
     </nav>
 
-    <!-- Hero Section -->
-    <section class="hero">
+    <!-- Hero Section - Banner Principal -->
+    <section class="landing-hero">
+      <div class="landing-hero-overlay"></div>
+      <div class="landing-hero-content">
+        <h1 class="landing-hero-title">Prepárate para la Navidad 2025</h1>
+        <p class="landing-hero-subtitle">
+          Las cajas navideñas más exclusivas al mejor precio del mercado
+        </p>
+        <a href="/productos.html?categoria=7" class="landing-hero-cta">
+          Ver Catálogo Navideño
+        </a>
+      </div>
+    </section>
+
+    <!-- Sección: Nuestras Marcas -->
+    <section class="landing-brands">
       <div class="container">
-        <div class="hero-content">
-          <div class="hero-text">
-            <p class="hero-tagline">🎁 Regalando sonrisas a negocios</p>
-            <h1 class="hero-title">
-              Productos<br />
-              al Mayoreo<br />
-              Que Hacen Crecer<br />
-              Tu Negocio
-            </h1>
-            <p class="hero-subtitle">
-              La plataforma líder para comprar cajas de fashion al por mayor.
-              Precios competitivos, entregas rápidas y un programa de comisiones
-              que premia tu crecimiento.
-            </p>
-            <div class="hero-ctas">
-              <a href="/registro.html" class="btn btn-primary btn-lg"
-                >Crear cuenta</a
-              >
-              <a
-                href="/catalogo.html"
-                class="btn btn-secondary"
-                style="font-size: 1.125rem; padding: 1rem 2.5rem"
-              >
-                Ver Catálogo
-              </a>
-            </div>
-            <div class="hero-benefits">
-              <div class="hero-benefit">Envíos rápidos en 48-72 horas</div>
-              <div class="hero-benefit">Precios al mayoreo competitivos</div>
-              <div class="hero-benefit">Comisiones del 20% para agentes</div>
-            </div>
-          </div>
-          <div class="hero-image">
-            <img
-              src="https://images.unsplash.com/photo-1607083206869-4c7672e72a8a?w=600&h=600&fit=crop"
-              alt="Cajas de fashion"
-              style="
-                border-radius: 1rem;
-                box-shadow: 0 20px 40px rgba(77, 212, 212, 0.3);
-              "
-            />
+        <h2 class="landing-section-title">Explora por Marca</h2>
+        <p class="landing-section-subtitle">
+          Descubre nuestros proveedores de confianza
+        </p>
+
+        <div id="brandsGrid" class="landing-brands-grid">
+          <!-- Loading -->
+          <div class="landing-loader">
+            <div class="spinner"></div>
+            <p>Cargando marcas...</p>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- Stats Section -->
-    <section class="stats">
+    <!-- Sección: Destacados de Temporada -->
+    <section class="landing-featured">
       <div class="container">
-        <div class="stats-grid">
-          <div class="stat-item">
-            <div class="stat-number">500+</div>
-            <div class="stat-label">Negocios Activos</div>
-          </div>
-          <div class="stat-item">
-            <div class="stat-number">10,000+</div>
-            <div class="stat-label">Cajas Enviadas</div>
-          </div>
-          <div class="stat-item">
-            <div class="stat-number">98%</div>
-            <div class="stat-label">Satisfacción</div>
+        <h2 class="landing-section-title">Destacados de Temporada</h2>
+        <p class="landing-section-subtitle">
+          Las cajas navideñas más populares
+        </p>
+
+        <div id="featuredGrid" class="landing-featured-grid">
+          <!-- Loading -->
+          <div class="landing-loader">
+            <div class="spinner"></div>
+            <p>Cargando productos...</p>
           </div>
         </div>
-      </div>
-    </section>
 
-    <!-- Features Section -->
-    <section class="features">
-      <div class="container">
-        <h2 class="features-title">¿Por Qué Elegir RazoConnect?</h2>
-        <div class="features-grid">
-          <div class="feature-card">
-            <div class="feature-icon">🎁</div>
-            <h3>Productos de Calidad</h3>
-            <p>
-              Amplio catálogo de cajas de fashion cuidadosamente seleccionadas
-              para tu negocio.
-            </p>
-          </div>
-          <div class="feature-card">
-            <div class="feature-icon">📦</div>
-            <h3>Compra por Paquetes</h3>
-            <p>
-              Precios al mayoreo diseñados específicamente para hacer crecer tu
-              negocio.
-            </p>
-          </div>
-          <div class="feature-card">
-            <div class="feature-icon">🚚</div>
-            <h3>Envío Rápido</h3>
-            <p>
-              Entregas en 48-72 horas para mantener tu inventario siempre
-              actualizado.
-            </p>
-          </div>
-          <div class="feature-card">
-            <div class="feature-icon">💼</div>
-            <h3>Programa de Agentes</h3>
-            <p>
-              Únete como agente de ventas y gana comisiones del 20% en cada
-              venta.
-            </p>
-          </div>
+        <div class="landing-featured-cta">
+          <a href="/productos.html?categoria=7" class="btn-view-all">
+            Ver Todo el Catálogo Navideño →
+          </a>
         </div>
-      </div>
-    </section>
-
-    <!-- Testimonials Section -->
-    <section class="testimonials">
-      <div class="container">
-        <h2 class="testimonials-title">Lo Que Dicen Nuestros Clientes</h2>
-        <div class="testimonials-grid">
-          <div class="testimonial-card">
-            <p class="testimonial-quote">
-              "RazoConnect transformó mi negocio. Las cajas llegan rápido, la
-              calidad es excelente y mis clientes están encantados. ¡Totalmente
-              recomendado!"
-            </p>
-            <div class="testimonial-author">
-              <div class="testimonial-avatar">MG</div>
-              <div class="testimonial-info">
-                <strong>María González</strong>
-                <span>Boutique Fashion MX</span>
-              </div>
-            </div>
-            <div class="testimonial-stars">⭐⭐⭐⭐⭐</div>
-          </div>
-
-          <div class="testimonial-card">
-            <p class="testimonial-quote">
-              "Los precios al mayoreo son inmejorables. He logrado aumentar mis
-              márgenes de ganancia significativamente desde que trabajo con
-              RazoConnect."
-            </p>
-            <div class="testimonial-author">
-              <div class="testimonial-avatar">JR</div>
-              <div class="testimonial-info">
-                <strong>Juan Ramírez</strong>
-                <span>Tienda Fashion Express</span>
-              </div>
-            </div>
-            <div class="testimonial-stars">⭐⭐⭐⭐⭐</div>
-          </div>
-
-          <div class="testimonial-card">
-            <p class="testimonial-quote">
-              "Como agente de ventas, las comisiones del 20% me han permitido
-              generar ingresos adicionales constantes. La plataforma es muy
-              fácil de usar."
-            </p>
-            <div class="testimonial-author">
-              <div class="testimonial-avatar">LC</div>
-              <div class="testimonial-info">
-                <strong>Laura Castro</strong>
-                <span>Agente de Ventas</span>
-              </div>
-            </div>
-            <div class="testimonial-stars">⭐⭐⭐⭐⭐</div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- CTA Section -->
-    <section class="cta-section">
-      <div class="container">
-        <h2>¿Listo para Hacer Crecer Tu Negocio?</h2>
-        <p>Únete a cientos de negocios que ya confían en RazoConnect</p>
-        <a href="/registro.html" class="btn">Crear Cuenta Gratis</a>
       </div>
     </section>
 
@@ -347,9 +229,9 @@
 
     <script src="js/api.js"></script>
     <script>
-      // Redirect to catalog if already logged in
+      // Redirect to home if already logged in
       if (isAuthenticated()) {
-        window.location.href = "/catalogo.html";
+        window.location.href = "/inicio.html";
       }
 
       // Newsletter form
@@ -361,6 +243,139 @@
           showToast("¡Gracias! Te has suscrito correctamente.", "success");
           e.target.reset();
         });
+
+      // ========================================
+      // CARGAR PROVEEDORES (MARCAS)
+      // ========================================
+      async function loadBrands() {
+        const brandsGrid = document.getElementById("brandsGrid");
+
+        try {
+          const response = await fetch("/api/public/proveedores");
+          const data = await response.json();
+
+          // El backend devuelve: { success, data: { proveedores: [...] } }
+          if (
+            data.success &&
+            data.data &&
+            data.data.proveedores &&
+            data.data.proveedores.length > 0
+          ) {
+            brandsGrid.innerHTML = data.data.proveedores
+              .map(
+                (proveedor) => `
+              <div class="brand-card">
+                <div class="brand-card-header">
+                  <div class="brand-icon">${proveedor.nombre
+                    .charAt(0)
+                    .toUpperCase()}</div>
+                  <h3 class="brand-name">${proveedor.nombre}</h3>
+                </div>
+                <p class="brand-contact">Productos disponibles</p>
+                <a 
+                  href="/proveedor-tienda.html?id=${proveedor.proveedorId}" 
+                  class="brand-btn"
+                >
+                  Ver Productos →
+                </a>
+              </div>
+            `
+              )
+              .join("");
+          } else {
+            brandsGrid.innerHTML = `
+              <div class="landing-empty">
+                <p>No hay proveedores disponibles en este momento.</p>
+              </div>
+            `;
+          }
+        } catch (error) {
+          console.error("Error cargando proveedores:", error);
+          brandsGrid.innerHTML = `
+            <div class="landing-error">
+              <p>⚠️ Error al cargar las marcas. Por favor intenta más tarde.</p>
+            </div>
+          `;
+        }
+      }
+
+      // ========================================
+      // CARGAR PRODUCTOS DESTACADOS DE NAVIDAD
+      // ========================================
+      async function loadFeaturedProducts() {
+        const featuredGrid = document.getElementById("featuredGrid");
+
+        try {
+          const response = await fetch("/api/productos?categoria=7&limit=4");
+          const data = await response.json();
+
+          // El backend devuelve: { success, data: { productos: [...] } }
+          if (
+            data.success &&
+            data.data &&
+            data.data.productos &&
+            data.data.productos.length > 0
+          ) {
+            featuredGrid.innerHTML = data.data.productos
+              .map((producto) => {
+                const precio = parseFloat(producto.preciounitario);
+                const precioFormateado = precio.toLocaleString("es-MX", {
+                  style: "currency",
+                  currency: "MXN",
+                });
+
+                return `
+              <div class="featured-card">
+                <div class="featured-card-image">
+                  <img 
+                    src="https://images.unsplash.com/photo-1607344645866-009c320b63e0?w=400&h=400&fit=crop" 
+                    alt="${producto.nombre}"
+                    loading="lazy"
+                  />
+                  <div class="featured-card-badge">⭐ Destacado</div>
+                </div>
+                <div class="featured-card-content">
+                  <h3 class="featured-card-title">${producto.nombre}</h3>
+                  <p class="featured-card-price">${precioFormateado}</p>
+                  <p class="featured-card-details">
+                    ${producto.piezasporpaquete || "N/A"} piezas por paquete
+                  </p>
+                  <a 
+                    href="/productos.html?categoria=7" 
+                    class="featured-card-btn"
+                  >
+                    Ver Detalles
+                  </a>
+                </div>
+              </div>
+            `;
+              })
+              .join("");
+          } else {
+            featuredGrid.innerHTML = `
+              <div class="landing-empty">
+                <p>Próximamente productos navideños disponibles.</p>
+                <a href="/productos.html" class="btn-secondary">Ver Catálogo Completo</a>
+              </div>
+            `;
+          }
+        } catch (error) {
+          console.error("Error cargando productos destacados:", error);
+          featuredGrid.innerHTML = `
+            <div class="landing-error">
+              <p>⚠️ Error al cargar productos. Por favor intenta más tarde.</p>
+            </div>
+          `;
+        }
+      }
+
+      // ========================================
+      // INICIALIZAR AL CARGAR LA PÁGINA
+      // ========================================
+      document.addEventListener("DOMContentLoaded", () => {
+        loadBrands();
+        loadFeaturedProducts();
+      });
     </script>
   </body>
 </html>

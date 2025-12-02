@@ -151,6 +151,7 @@
       const pedidoId = btn.dataset.pedidoId;
       // Marcar que es navegación interna para evitar limpieza de tokens
       sessionStorage.setItem("_navigating", "true");
+      localStorage.setItem("_nav_timestamp", Date.now().toString());
       window.location.href = `/agente-pedido-detalle.html?id=${pedidoId}`;
     }
 

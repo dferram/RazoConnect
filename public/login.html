@@ -97,7 +97,7 @@
 
       // Check if user is already logged in
       if (isAuthenticated()) {
-        window.location.href = "/catalogo.html";
+        window.location.href = "/inicio.html";
       }
 
       // Check if admin is already logged in
@@ -283,7 +283,7 @@
                   showToast("¡Bienvenido!", "success");
                   setTimeout(() => {
                     sessionStorage.setItem("_navigating", "true");
-                    window.location.href = "/catalogo.html";
+                    window.location.href = "/inicio.html";
                   }, 500);
                 }
                 loginSuccessful = true;

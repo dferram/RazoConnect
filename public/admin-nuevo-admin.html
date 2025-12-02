@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Crear Administrador - Admin RazoConnect</title>
+
+    <!-- PROTECCIÓN DE AUTENTICACIÓN ADMIN -->
+    <script src="js/auth-guard-admin.js"></script>
+
+    <!-- SISTEMA DE RENOVACIÓN DE TOKENS -->
+    <script src="js/token-refresh.js"></script>
+
+    <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/admin.css" />
+  </head>
+  <body>
+    <div class="admin-layout">
+      <!-- Sidebar -->
+      <div id="sidebar-container"></div>
+
+      <!-- Main Content -->
+      <main class="admin-main">
+        <header class="admin-header">
+          <h1 class="admin-header-title">Crear administrador</h1>
+          <div class="admin-header-actions">
+            <div class="admin-user-info">
+              <div class="admin-user-avatar" id="userAvatar">A</div>
+              <div class="admin-user-details">
+                <div class="admin-user-name" id="userName">Administrador</div>
+                <div class="admin-user-role" id="userRole">Admin</div>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <div class="admin-content">
+          <!-- Alert Container -->
+          <div id="alertContainer" style="margin-bottom: 1rem"></div>
+
+          <!-- Form to Create Admin -->
+          <div class="admin-table-container">
+            <div class="admin-table-header">
+              <h2 class="admin-table-title">Nuevo administrador</h2>
+              <p
+                style="color: #6b7280; font-size: 0.875rem; margin-top: 0.5rem"
+              >
+                Solo los super-administradores pueden crear nuevos usuarios
+                administradores
+              </p>
+            </div>
+            <form id="adminForm" style="padding: 1.5rem">
+              <div
+                style="
+                  display: grid;
+                  grid-template-columns: 1fr;
+                  gap: 1rem;
+                  max-width: 600px;
+                "
+              >
+                <div class="form-group">
+                  <label for="nombre" class="form-label">
+                    Nombre completo *
+                  </label>
+                  <input
+                    type="text"
+                    id="nombre"
+                    class="form-input"
+                    required
+                    placeholder="Juan Pérez García"
+                  />
+                </div>
+
+                <div class="form-group">
+                  <label for="email" class="form-label">
+                    Email corporativo *
+                  </label>
+                  <input
+                    type="email"
+                    id="email"
+                    class="form-input"
+                    required
+                    placeholder="juan.perez@razoconnect.com"
+                  />
+                  <small style="color: #6b7280; font-size: 0.875rem">
+                    Utiliza un email corporativo para mayor seguridad
+                  </small>
+                </div>
+
+                <div class="form-group">
+                  <label for="password" class="form-label">
+                    Contraseña temporal *
+                  </label>
+                  <input
+                    type="password"
+                    id="password"
+                    class="form-input"
+                    required
+                    minlength="6"
+                    placeholder="Mínimo 6 caracteres"
+                  />
+                  <small style="color: #6b7280; font-size: 0.875rem">
+                    El usuario deberá cambiarla en su primer acceso
+                  </small>
+                </div>
+
+                <div class="form-group">
+                  <label for="rol" class="form-label">
+                    Nivel de permisos *
+                  </label>
+                  <select id="rol" class="form-input" required>
+                    <option value="">Selecciona un rol...</option>
+                    <option value="admin">Administrador Normal</option>
+                    <option value="superadmin">Super Administrador</option>
+                  </select>
+                  <small style="color: #6b7280; font-size: 0.875rem">
+                    <strong>Administrador Normal:</strong> Gestión de productos,
+                    pedidos, inventario.<br />
+                    <strong>Super Administrador:</strong> Todos los permisos +
+                    creación de otros admins.
+                  </small>
+                </div>
+              </div>
+
+              <div
+                style="
+                  display: flex;
+                  justify-content: flex-end;
+                  gap: 1rem;
+                  margin-top: 1.5rem;
+                  max-width: 600px;
+                "
+              >
+                <button
+                  type="button"
+                  class="btn btn-secondary"
+                  onclick="window.location.href='/admin-dashboard.html'"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  class="btn btn-primary"
+                  id="submitBtn"
+                  style="min-width: 150px"
+                >
+                  <span id="btnText">Crear administrador</span>
+                  <div
+                    class="spinner"
+                    id="btnSpinner"
+                    style="display: none"
+                  ></div>
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Info Card -->
+          <div
+            class="admin-table-container"
+            style="
+              margin-top: 1.5rem;
+              background: #fffbeb;
+              border-left: 4px solid #f59e0b;
+            "
+          >
+            <div style="padding: 1.5rem">
+              <h3
+                style="color: #92400e; font-size: 1rem; margin-bottom: 0.75rem"
+              >
+                ⚠️ Información importante
+              </h3>
+              <ul
+                style="
+                  color: #78350f;
+                  font-size: 0.875rem;
+                  line-height: 1.6;
+                  padding-left: 1.25rem;
+                "
+              >
+                <li>
+                  Solo los super-administradores pueden crear nuevos usuarios
+                  administradores
+                </li>
+                <li>
+                  Los administradores normales tienen acceso completo excepto
+                  gestión de usuarios
+                </li>
+                <li>
+                  Los super-administradores tienen control total del sistema
+                </li>
+                <li>Asegúrate de usar contraseñas seguras temporales</li>
+                <li>El nuevo usuario recibirá sus credenciales por separado</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/layout.js"></script>
+    <script src="js/admin-header-dropdown.js"></script>
+    <script src="js/admin-nuevo-admin.js"></script>
+    <script>
+      // Update header with admin info
+      const adminData = localStorage.getItem("razoconnect_admin");
+      if (adminData) {
+        const admin = JSON.parse(adminData);
+        document.getElementById("userName").textContent =
+          admin.nombre || "Administrador";
+        document.getElementById("userRole").textContent = admin.rol || "Admin";
+        document.getElementById("userAvatar").textContent = (
+          admin.nombre || "A"
+        )
+          .charAt(0)
+          .toUpperCase();
+      }
+    </script>
+  </body>
+</html>

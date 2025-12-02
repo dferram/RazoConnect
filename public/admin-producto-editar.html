@@ -184,9 +184,6 @@
                 <div class="admin-user-role" id="userRole">Admin</div>
               </div>
             </div>
-            <button class="admin-logout-btn" id="logoutBtn">
-              Cerrar sesión
-            </button>
           </div>
         </header>
 
@@ -464,6 +461,7 @@
     </div>
 
     <script src="js/layout.js" defer></script>
+    <script src="js/admin-header-dropdown.js"></script>
     <script src="js/api.js"></script>
     <script>
       const adminToken = localStorage.getItem("razoconnect_admin_token");
@@ -496,7 +494,6 @@
       const profitPerPackage = document.getElementById("profitPerPackage");
       const marginPercentage = document.getElementById("marginPercentage");
 
-      const logoutBtn = document.getElementById("logoutBtn");
       const userAvatar = document.getElementById("userAvatar");
       const userName = document.getElementById("userName");
       const userRole = document.getElementById("userRole");
@@ -836,15 +833,6 @@
         marginMetrics.style.display = "none";
         marginMessage.textContent =
           "Ingresa costo y precio para calcular la ganancia.";
-      });
-
-      logoutBtn.addEventListener("click", () => {
-        localStorage.removeItem("razoconnect_admin_token");
-        localStorage.removeItem("razoconnect_admin");
-        showToast("Sesión cerrada", "success");
-        setTimeout(() => {
-          window.location.href = "/login.html";
-        }, 500);
       });
 
       function calculateMarginPreview() {

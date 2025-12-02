@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>RazoConnect - Inicio | B2B E-commerce</title>
+    <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/inicio-new.css" />
+  </head>
+  <body>
+    <!-- Navbar del Sistema -->
+    <nav class="navbar">
+      <div class="container navbar-content">
+        <a href="/inicio.html" class="navbar-brand">📦 RazoConnect</a>
+        <ul class="navbar-menu">
+          <li>
+            <a
+              href="/inicio.html"
+              class="navbar-link"
+              style="color: var(--primary-color); font-weight: 600"
+              >Inicio</a
+            >
+          </li>
+          <li>
+            <a href="/catalogo.html" class="navbar-link">Productos</a>
+          </li>
+          <li class="navbar-dropdown" id="marcasDropdown">
+            <span class="navbar-dropdown-toggle">
+              Marcas
+              <span class="navbar-dropdown-arrow">▼</span>
+            </span>
+            <div class="navbar-dropdown-menu">
+              <div class="navbar-dropdown-loading">Cargando marcas...</div>
+            </div>
+          </li>
+          <li><a href="/carrito.html" class="navbar-link">Carrito</a></li>
+          <li>
+            <a
+              href="/dashboard.html"
+              id="userGreeting"
+              style="
+                color: var(--text-secondary);
+                font-size: 0.875rem;
+                text-decoration: none;
+              "
+              title="Mi cuenta"
+            ></a>
+          </li>
+          <li>
+            <a href="#" class="navbar-link" id="logoutBtn">Cerrar sesión</a>
+          </li>
+        </ul>
+      </div>
+    </nav>
+
+    <!-- Hero Slider -->
+    <section class="hero-slider" id="heroSlider">
+      <div
+        class="hero-slide active"
+        style="
+          background-image: url('https://images.unsplash.com/photo-1607344645866-009c320b63e0?w=1600&h=900&fit=crop');
+        "
+      >
+        <div class="hero-content">
+          <p class="hero-eyebrow">Nueva Colección</p>
+          <h1 class="hero-title">Navidad 2025</h1>
+          <p class="hero-description">
+            Las cajas navideñas más exclusivas al mejor precio del mercado.
+            Compra al mayoreo y maximiza tus ganancias.
+          </p>
+          <a href="/catalogo.html?categoria=7" class="hero-cta">
+            Ver Catálogo Navideño
+          </a>
+        </div>
+      </div>
+
+      <div
+        class="hero-slide"
+        style="
+          background-image: url('https://images.unsplash.com/photo-1513885535751-8b9238bd345a?w=1600&h=900&fit=crop');
+        "
+      >
+        <div class="hero-content">
+          <p class="hero-eyebrow">Ofertas Especiales</p>
+          <h1 class="hero-title">Hasta 40% OFF</h1>
+          <p class="hero-description">
+            Descuentos increíbles en productos seleccionados. Aprovecha nuestras
+            ofertas flash antes de que terminen.
+          </p>
+          <a href="/catalogo.html?oferta=true" class="hero-cta">
+            Ver Ofertas
+          </a>
+        </div>
+      </div>
+
+      <div
+        class="hero-slide"
+        style="
+          background-image: url('https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=1600&h=900&fit=crop');
+        "
+      >
+        <div class="hero-content">
+          <p class="hero-eyebrow">Nuevos Productos</p>
+          <h1 class="hero-title">Recién Llegados</h1>
+          <p class="hero-description">
+            Descubre las últimas novedades en nuestro catálogo. Productos
+            frescos y tendencias del mercado.
+          </p>
+          <a href="/catalogo.html?sort=newest" class="hero-cta">
+            Explorar Novedades
+          </a>
+        </div>
+      </div>
+
+      <!-- Controles del Slider -->
+      <div class="slider-controls">
+        <button
+          class="slider-dot active"
+          data-slide="0"
+          aria-label="Ir a slide 1"
+        ></button>
+        <button
+          class="slider-dot"
+          data-slide="1"
+          aria-label="Ir a slide 2"
+        ></button>
+        <button
+          class="slider-dot"
+          data-slide="2"
+          aria-label="Ir a slide 3"
+        ></button>
+      </div>
+    </section>
+
+    <!-- Categorías Visuales -->
+    <section class="categories-section">
+      <div class="container">
+        <div class="section-header">
+          <h2 class="section-title">Explora por Categoría</h2>
+          <p class="section-subtitle">Encuentra lo que necesitas rápidamente</p>
+        </div>
+
+        <div class="categories-grid" id="categoriesGrid">
+          <!-- Loading -->
+          <div class="loading-skeleton" style="height: 180px"></div>
+          <div class="loading-skeleton" style="height: 180px"></div>
+          <div class="loading-skeleton" style="height: 180px"></div>
+          <div class="loading-skeleton" style="height: 180px"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Ofertas Relámpago -->
+    <section class="flash-sales-section">
+      <div class="container">
+        <div class="flash-header">
+          <h2 class="flash-title">⚡ Ofertas Relámpago</h2>
+          <p class="flash-subtitle">
+            Descuentos increíbles por tiempo limitado
+          </p>
+
+          <!-- Contador Regresivo -->
+          <div class="countdown-timer" id="countdown">
+            <div class="countdown-item">
+              <span class="countdown-value" id="hours">00</span>
+              <span class="countdown-label">Horas</span>
+            </div>
+            <div class="countdown-item">
+              <span class="countdown-value" id="minutes">00</span>
+              <span class="countdown-label">Minutos</span>
+            </div>
+            <div class="countdown-item">
+              <span class="countdown-value" id="seconds">00</span>
+              <span class="countdown-label">Segundos</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="flash-grid" id="flashGrid">
+          <!-- Loading -->
+          <div class="loading-skeleton" style="height: 450px"></div>
+          <div class="loading-skeleton" style="height: 450px"></div>
+          <div class="loading-skeleton" style="height: 450px"></div>
+          <div class="loading-skeleton" style="height: 450px"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Nuevos Arribos (Scroll Horizontal) -->
+    <section class="new-arrivals-section">
+      <div class="container">
+        <div class="section-header">
+          <h2 class="section-title">Nuevos Arribos</h2>
+          <p class="section-subtitle">
+            Los productos más recientes en nuestro catálogo
+          </p>
+        </div>
+
+        <div class="arrivals-scroll-container">
+          <div class="arrivals-grid" id="arrivalsGrid">
+            <!-- Loading -->
+            <div
+              class="loading-skeleton"
+              style="width: 300px; height: 480px"
+            ></div>
+            <div
+              class="loading-skeleton"
+              style="width: 300px; height: 480px"
+            ></div>
+            <div
+              class="loading-skeleton"
+              style="width: 300px; height: 480px"
+            ></div>
+            <div
+              class="loading-skeleton"
+              style="width: 300px; height: 480px"
+            ></div>
+            <div
+              class="loading-skeleton"
+              style="width: 300px; height: 480px"
+            ></div>
+            <div
+              class="loading-skeleton"
+              style="width: 300px; height: 480px"
+            ></div>
+            <div
+              class="loading-skeleton"
+              style="width: 300px; height: 480px"
+            ></div>
+            <div
+              class="loading-skeleton"
+              style="width: 300px; height: 480px"
+            ></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer Completo -->
+    <footer class="footer-complete">
+      <div class="footer-container">
+        <div class="footer-grid">
+          <!-- Columna 1: Marca -->
+          <div class="footer-brand">
+            <div class="footer-logo">📦 RazoConnect</div>
+            <p class="footer-description">
+              Tu plataforma B2B de confianza para compra al mayoreo. Regalando
+              sonrisas a negocios que crecen.
+            </p>
+            <div class="footer-social">
+              <a href="#" class="social-link" title="Instagram">📷</a>
+              <a href="#" class="social-link" title="Facebook">👥</a>
+              <a href="#" class="social-link" title="WhatsApp">💬</a>
+              <a href="#" class="social-link" title="Email">📧</a>
+            </div>
+          </div>
+
+          <!-- Columna 2: Ayuda -->
+          <div class="footer-column">
+            <h4>Ayuda</h4>
+            <ul class="footer-links">
+              <li><a href="#faq">Preguntas Frecuentes</a></li>
+              <li><a href="#envios">Información de Envíos</a></li>
+              <li><a href="#devoluciones">Devoluciones</a></li>
+              <li><a href="#seguimiento">Seguimiento de Pedido</a></li>
+              <li><a href="#metodos-pago">Métodos de Pago</a></li>
+            </ul>
+          </div>
+
+          <!-- Columna 3: Legal -->
+          <div class="footer-column">
+            <h4>Legal</h4>
+            <ul class="footer-links">
+              <li><a href="#terminos">Términos y Condiciones</a></li>
+              <li><a href="#privacidad">Política de Privacidad</a></li>
+              <li><a href="#cookies">Política de Cookies</a></li>
+              <li><a href="#garantia">Garantía</a></li>
+            </ul>
+          </div>
+
+          <!-- Columna 4: Contacto -->
+          <div class="footer-column">
+            <h4>Contacto</h4>
+            <ul class="footer-links">
+              <li>
+                <a href="mailto:ventas@razoconnect.com"
+                  >ventas@razoconnect.com</a
+                >
+              </li>
+              <li><a href="tel:+525512345678">+52 55 1234 5678</a></li>
+              <li><a href="#ubicacion">Ciudad de México, México</a></li>
+              <li><a href="#horarios">Lun - Vie: 9:00 - 18:00</a></li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="footer-bottom">
+          <p>
+            © 2025 RazoConnect. Todos los derechos reservados. | Hecho con 🧡 en
+            México
+          </p>
+        </div>
+      </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="js/auth-guard.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/inicio-new.js"></script>
+  </body>
+</html>

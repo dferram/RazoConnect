@@ -1,6 +1,9 @@
 const db = require("../db");
 const { enviarEmail } = require("../services/emailService");
-const { generarOrdenCompraAutomatica } = require("../services/ordenesService");
+const {
+  generarOrdenCompraAutomatica,
+  generarBackorderProveedor,
+} = require("../services/ordenesService");
 const { checkStockBajo } = require("../utils/stockAlerts");
 
 const TAMANO_VALUE_KEYS = [
@@ -233,23 +236,35 @@ const crearPedido = async (req, res) => {
       const precioPorPaquete = parseFloat(
         (precioUnitario * tamanoValor).toFixed(2)
       );
-      const piezasSolicitadas = tamanoValor * item.cantidad;
+      // Calcular cantidades requeridas y disponibles
+      const cantidadRequerida = item.cantidad; // Paquetes que pide el cliente
+      const piezasSolicitadas = tamanoValor * item.cantidad; // Piezas totales
       const stockActual =
-        item.stock !== null ? Math.max(parseInt(item.stock, 10), 0) : 0;
-      const cantidadSurtida = Math.min(piezasSolicitadas, stockActual);
-      const cantidadFaltante = piezasSolicitadas - cantidadSurtida;
+        item.stock !== null ? Math.max(parseInt(item.stock, 10), 0) : 0; // Stock en piezas
+
+      // Calcular cuántos paquetes se pueden surtir con el stock disponible
+      const paquetesSurtibles = Math.floor(stockActual / tamanoValor);
+      const cantidadSurtida = Math.min(cantidadRequerida, paquetesSurtibles); // Paquetes surtidos
+      const cantidadBackorder = cantidadRequerida - cantidadSurtida; // Paquetes faltantes
+
+      const piezasSurtidas = cantidadSurtida * tamanoValor; // Piezas efectivamente surtidas
+      const piezasFaltantes = cantidadBackorder * tamanoValor; // Piezas en backorder
+
       const subtotalSolicitado = parseFloat(
         (precioUnitario * piezasSolicitadas).toFixed(2)
       );
       const subtotalSurtido = parseFloat(
-        (precioUnitario * cantidadSurtida).toFixed(2)
+        (precioUnitario * piezasSurtidas).toFixed(2)
       );
 
-      if (cantidadFaltante > 0) {
-        const resultadoBackorder = await generarOrdenCompraAutomatica(
+      // PUNTO CLAVE: Si hay backorder, generar orden de compra al proveedor
+      if (cantidadBackorder > 0) {
+        const resultadoBackorder = await generarBackorderProveedor(
           client,
-          item.varianteid,
-          cantidadFaltante
+          item.productoid, // ProductoID
+          item.varianteid, // VarianteID
+          cantidadBackorder, // Cantidad de PAQUETES faltantes
+          item.tamanoid // TamanoID (puede ser null)
         );
 
         backordersGenerados.push({
@@ -257,8 +272,11 @@ const crearPedido = async (req, res) => {
           sku: item.sku,
           productoId: item.productoid,
           nombreProducto: item.nombreproducto,
-          cantidadFaltante,
-          ordenCompraId: resultadoBackorder.ordenCompraId,
+          cantidadPaquetesFaltantes: cantidadBackorder,
+          cantidadPiezasFaltantes: piezasFaltantes,
+          ordenCompraId: resultadoBackorder.ordenCompraID,
+          proveedorId: resultadoBackorder.proveedorID,
+          esOrdenNueva: resultadoBackorder.esOrdenNueva,
         });
       }
 
@@ -278,8 +296,8 @@ const crearPedido = async (req, res) => {
         ]
       );
 
-      // Actualizar stock del producto (solo se descuenta lo efectivamente surtido)
-      const nuevoStockVariante = Math.max(stockActual - cantidadSurtida, 0);
+      // Actualizar stock del producto (solo se descuenta lo efectivamente surtido en PIEZAS)
+      const nuevoStockVariante = Math.max(stockActual - piezasSurtidas, 0);
       await client.query(
         "UPDATE producto_variantes SET Stock = $1 WHERE VarianteID = $2",
         [nuevoStockVariante, item.varianteid]
@@ -288,13 +306,13 @@ const crearPedido = async (req, res) => {
       variantesAfectadas.add(item.varianteid);
 
       // Crear registro en Log_Inventario cuando se surte inventario existente
-      if (cantidadSurtida > 0) {
+      if (piezasSurtidas > 0) {
         await client.query(
           `INSERT INTO Log_Inventario (VarianteID, CantidadCambiado, NuevoStock, Motivo, UsuarioID)
            VALUES ($1, $2, $3, $4, $5)`,
           [
             item.varianteid,
-            -cantidadSurtida,
+            -piezasSurtidas,
             nuevoStockVariante,
             `Venta Pedido #${pedidoId}`,
             clienteId,
@@ -309,13 +327,15 @@ const crearPedido = async (req, res) => {
         nombreProducto: item.nombreproducto,
         tamanoId: item.tamanoid,
         cantidad: item.cantidad,
+        paquetesSurtidos: cantidadSurtida,
+        paquetesBackorder: cantidadBackorder,
         piezasPorPaquete: tamanoValor,
         presentacion: item.tamano_etiqueta || null,
         precioUnitario,
         precioPorPaquete,
         piezasSolicitadas,
-        piezasSurtidas: cantidadSurtida,
-        piezasFaltantes: cantidadFaltante,
+        piezasSurtidas,
+        piezasFaltantes,
         subtotalSolicitado,
         subtotalSurtido,
         sku: item.sku,
@@ -422,7 +442,15 @@ const crearPedido = async (req, res) => {
         const resumenItems = backordersGenerados
           .map(
             (item) =>
-              `<li><strong>${item.nombreProducto}</strong> (SKU: ${item.sku}) &mdash; Faltante: ${item.cantidadFaltante} piezas &mdash; OC #${item.ordenCompraId}</li>`
+              `<li><strong>${item.nombreProducto}</strong> (SKU: ${
+                item.sku
+              }) &mdash; Faltante: ${
+                item.cantidadPaquetesFaltantes
+              } paquetes (${item.cantidadPiezasFaltantes} piezas) &mdash; OC #${
+                item.ordenCompraId
+              } (Proveedor #${item.proveedorId})${
+                item.esOrdenNueva ? " [NUEVA]" : " [ACTUALIZADA]"
+              }</li>`
           )
           .join("");
         const cuerpoBackorder = `
@@ -430,8 +458,11 @@ const crearPedido = async (req, res) => {
             <h2 style="color:#DC2626;">Se generó un backorder</h2>
             <p>Pedido: <strong>#${pedido.pedidoid}</strong></p>
             <p>Cliente: <strong>${clienteNombre}</strong></p>
-            <p>Se ha creado/actualizado una Orden de Compra para surtir las piezas faltantes:</p>
+            <p>Se ha creado/actualizado una Orden de Compra para surtir los productos faltantes:</p>
             <ul style="padding-left: 1.25rem;">${resumenItems}</ul>
+            <p style="margin-top: 1.5rem; color: #6b7280; font-size: 0.875rem;">
+              Los productos en backorder se solicitarán automáticamente al proveedor correspondiente.
+            </p>
             <p style="margin-top: 1.5rem;">Sistema RazoConnect</p>
           </div>
         `;

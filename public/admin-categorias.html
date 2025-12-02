@@ -32,9 +32,6 @@
                 <div class="admin-user-role" id="userRole">Admin</div>
               </div>
             </div>
-            <button class="admin-logout-btn" id="logoutBtn">
-              Cerrar sesión
-            </button>
           </div>
         </header>
 
@@ -135,6 +132,7 @@
     </div>
 
     <script src="js/layout.js" defer></script>
+    <script src="js/admin-header-dropdown.js"></script>
     <script src="js/api.js"></script>
     <script>
       const adminToken = localStorage.getItem("razoconnect_admin_token");
@@ -144,7 +142,6 @@
         window.location.href = "/login.html";
       }
 
-      const logoutBtn = document.getElementById("logoutBtn");
       const userNameEl = document.getElementById("userName");
       const userRoleEl = document.getElementById("userRole");
       const userAvatarEl = document.getElementById("userAvatar");
@@ -211,17 +208,6 @@
         } catch (error) {
           console.warn("No se pudo parsear razoconnect_admin:", error);
         }
-      }
-
-      if (logoutBtn) {
-        logoutBtn.addEventListener("click", () => {
-          localStorage.removeItem("razoconnect_admin_token");
-          localStorage.removeItem("razoconnect_admin");
-          showToast("Sesión cerrada", "success");
-          setTimeout(() => {
-            window.location.href = "/login.html";
-          }, 400);
-        });
       }
 
       verifyAndLoadAdmin();

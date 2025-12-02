@@ -57,8 +57,9 @@ const getEffectiveToken = () => {
     return clientToken;
   }
 
+  // Si hay token de admin, usarlo (para admins y agentes)
   const adminToken = getAdminToken();
-  if (adminToken && adminHasAgentRole()) {
+  if (adminToken) {
     return adminToken;
   }
 
@@ -295,11 +296,20 @@ const API = {
     });
   },
 
+  obtenerPedidoDetalle: async (pedidoId) => {
+    return apiCall(`/admin/pedidos/${pedidoId}/detalle`, {
+      method: "GET",
+    });
+  },
+
   obtenerComisionesAgente: async () => {
     return apiCall("/agente/comisiones", {
       method: "GET",
     });
   },
+
+  // Exponerapi Call genérico para uso en páginas admin
+  apiCall: apiCall,
 };
 
 // Utility function to show toast notifications

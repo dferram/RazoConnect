@@ -32,9 +32,6 @@
                 <div class="admin-user-role" id="userRole">Admin</div>
               </div>
             </div>
-            <button class="admin-logout-btn" id="logoutBtn">
-              Cerrar sesión
-            </button>
           </div>
         </header>
 
@@ -162,7 +159,11 @@
           padding: 2rem;
           border-radius: 1rem;
           box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-          max-width: 900px;
+          max-width: 850px;
+          width: 90%;
+          max-height: 85vh;
+          overflow-y: auto;
+          margin: auto;
         "
       >
         <div
@@ -209,6 +210,7 @@
     </div>
 
     <script src="js/layout.js" defer></script>
+    <script src="js/admin-header-dropdown.js"></script>
     <script src="js/api.js"></script>
     <script>
       // Authentication check
@@ -638,16 +640,6 @@
           const moduleName = link.querySelector("span:last-child").textContent;
           showToast(`Módulo "${moduleName}" próximamente disponible`, "info");
         });
-      });
-
-      // Logout handler
-      document.getElementById("logoutBtn").addEventListener("click", () => {
-        localStorage.removeItem("razoconnect_admin_token");
-        localStorage.removeItem("razoconnect_admin");
-        showToast("Sesión cerrada", "success");
-        setTimeout(() => {
-          window.location.href = "/login.html";
-        }, 500);
       });
 
       // Initialize dashboard

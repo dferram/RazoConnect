@@ -687,10 +687,101 @@ const resetPassword = async (req, res) => {
   }
 };
 
+/**
+ * Creación de nuevo administrador (protegido por middleware authorizeSuperAdmin)
+ * POST /api/admin/crear-admin
+ * Solo accesible por super-administradores autenticados
+ */
+const crearAdmin = async (req, res) => {
+  try {
+    const { nombre, email, password, rol } = req.body;
+
+    // Validar campos requeridos
+    const errors = [];
+    if (!nombre || !nombre.trim()) errors.push("El nombre es requerido");
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+      errors.push("El email no es válido");
+    if (!password || password.length < 6)
+      errors.push("La contraseña debe tener al menos 6 caracteres");
+
+    if (errors.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Error de validación",
+        errors,
+      });
+    }
+
+    // Verificar si el email ya existe
+    const emailExists = await db.query(
+      "SELECT Email FROM Administradores WHERE Email = $1",
+      [email]
+    );
+
+    if (emailExists.rows.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: "El email ya está registrado como administrador",
+      });
+    }
+
+    // Hashear la contraseña
+    const saltRounds = parseInt(process.env.BCRYPT_ROUNDS) || 10;
+    const PasswordHash = await bcrypt.hash(password, saltRounds);
+
+    // Validar y asignar rol (solo 'admin' o 'superadmin' permitidos)
+    const rolesValidos = ["admin", "superadmin", "super-admin"];
+    let rolFinal = "admin"; // Por defecto
+
+    if (rol && rolesValidos.includes(rol.toLowerCase())) {
+      // Normalizar 'super-admin' a 'superadmin'
+      rolFinal =
+        rol.toLowerCase() === "super-admin" ? "superadmin" : rol.toLowerCase();
+    }
+
+    // Insertar nuevo administrador
+    const result = await db.query(
+      `INSERT INTO Administradores (Nombre, Apellido, Email, PasswordHash, Rol, Activo)
+       VALUES ($1, $2, $3, $4, $5, TRUE)
+       RETURNING AdminID, Nombre, Apellido, Email, Rol`,
+      [nombre.trim(), "", email, PasswordHash, rolFinal]
+    );
+
+    const nuevoAdmin = result.rows[0];
+
+    // Log de auditoría
+    console.log(
+      `✅ Super-admin ${req.user.email} creó nuevo admin: ${nuevoAdmin.email} con rol: ${nuevoAdmin.rol}`
+    );
+
+    res.status(201).json({
+      success: true,
+      message: "Administrador creado exitosamente",
+      data: {
+        admin: {
+          adminId: nuevoAdmin.adminid,
+          nombre: nuevoAdmin.nombre,
+          apellido: nuevoAdmin.apellido,
+          email: nuevoAdmin.email,
+          rol: nuevoAdmin.rol,
+        },
+      },
+    });
+  } catch (error) {
+    console.error("Error al crear administrador:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error al crear el administrador",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   registroCliente,
   registroAgente,
   registroAdmin,
+  crearAdmin,
   login,
   verifyCliente,
   refreshClienteToken,

@@ -8,19 +8,19 @@ const obtenerProveedoresPublicos = async (req, res) => {
   try {
     const query = `
       SELECT DISTINCT
-        prov.proveedorid,
-        prov.nombre
-      FROM proveedores prov
-      INNER JOIN productos p ON p.proveedorid_default = prov.proveedorid
-      WHERE p.activo = TRUE
-      ORDER BY prov.nombre ASC
+        prov.ProveedorID,
+        prov.NombreEmpresa
+      FROM Proveedores prov
+      INNER JOIN Productos p ON p.ProveedorID_Default = prov.ProveedorID
+      WHERE p.Activo = TRUE
+      ORDER BY prov.NombreEmpresa ASC
     `;
 
     const result = await db.query(query);
 
     const proveedores = result.rows.map((row) => ({
       proveedorId: row.proveedorid,
-      nombre: row.nombre,
+      nombre: row.nombreempresa,
     }));
 
     res.status(200).json({
@@ -47,8 +47,18 @@ const obtenerProveedoresPublicos = async (req, res) => {
  */
 const obtenerProductos = async (req, res) => {
   try {
-    const { search, precioMin, precioMax, dimension, stock, proveedorID } =
-      req.query;
+    const {
+      search,
+      precioMin,
+      precioMax,
+      dimension,
+      stock,
+      proveedorID,
+      categoria,
+      oferta,
+      sort,
+      limit,
+    } = req.query;
 
     const filtros = [];
     const valores = [];
@@ -124,6 +134,24 @@ const obtenerProductos = async (req, res) => {
       filtros.push(`p.proveedorid_default = $${indiceProveedor}`);
     }
 
+    // Filtro por categoría
+    if (categoria) {
+      valores.push(parseInt(categoria, 10));
+      const indiceCategoria = valores.length;
+      filtros.push(`p.categoriaid = $${indiceCategoria}`);
+    }
+
+    // Filtro por productos en oferta (con precio de oferta)
+    if (oferta === "true") {
+      filtros.push(`EXISTS (
+        SELECT 1
+        FROM producto_variantes pv
+        WHERE pv.productoid = p.productoid
+          AND pv.preciooferta IS NOT NULL
+          AND pv.preciooferta < pv.preciounitario
+      )`);
+    }
+
     const whereClause =
       filtros.length > 0 ? `WHERE ${filtros.join(" AND ")}` : "";
 
@@ -141,6 +169,7 @@ const obtenerProductos = async (req, res) => {
         variante_min.dimensiones AS dimensiones_precio_min,
         variante_min.stock AS stock_precio_min,
         variante_min.preciounitario AS precio_desde,
+        variante_min.preciooferta AS preciooferta,
         imagen.url_imagen,
         imagen.textoalternativo,
         stats.total_variantes,
@@ -153,10 +182,13 @@ const obtenerProductos = async (req, res) => {
           pv.sku,
           pv.dimensiones,
           pv.stock,
-          pv.preciounitario
+          pv.preciounitario,
+          pv.preciooferta
         FROM producto_variantes pv
         WHERE pv.productoid = p.productoid
-        ORDER BY pv.preciounitario ASC NULLS LAST, pv.varianteid ASC
+        ORDER BY 
+          COALESCE(pv.preciooferta, pv.preciounitario) ASC NULLS LAST, 
+          pv.varianteid ASC
         LIMIT 1
       ) variante_min ON TRUE
       LEFT JOIN LATERAL (
@@ -178,7 +210,8 @@ const obtenerProductos = async (req, res) => {
         GROUP BY pv.productoid
       ) stats ON stats.productoid = p.productoid
       ${whereClause}
-      ORDER BY p.productoid DESC
+      ORDER BY ${sort === "newest" ? "p.productoid DESC" : "p.productoid DESC"}
+      ${limit ? `LIMIT ${parseInt(limit, 10)}` : ""}
     `;
 
     const result = await db.query(query, valores);
@@ -269,6 +302,11 @@ const obtenerProductos = async (req, res) => {
           ? parseInt(row.variantes_con_stock, 10)
           : 0;
 
+      const precioOferta =
+        row.preciooferta !== null && row.preciooferta !== undefined
+          ? parseFloat(row.preciooferta)
+          : null;
+
       const varianteDestacada = row.varianteid_precio_min
         ? {
             varianteId: row.varianteid_precio_min,
@@ -280,6 +318,7 @@ const obtenerProductos = async (req, res) => {
                 : null,
             precioUnitario:
               row.precio_desde !== null ? parseFloat(row.precio_desde) : null,
+            precioOferta: precioOferta,
           }
         : null;
 
@@ -332,6 +371,10 @@ const obtenerProductos = async (req, res) => {
           : null,
         precioDesde:
           row.precio_desde !== null ? parseFloat(row.precio_desde) : null,
+        precioOferta: precioOferta,
+        tieneOferta:
+          precioOferta !== null &&
+          precioOferta < parseFloat(row.precio_desde || 0),
         precioPaqueteMin,
         precioPaqueteMax,
         imagenUrl: row.url_imagen || null,

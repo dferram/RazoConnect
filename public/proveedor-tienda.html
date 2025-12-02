@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tienda por Marca - RazoConnect</title>
+    <link rel="stylesheet" href="css/styles.css" />
+    <style>
+      /* Banner de Marca */
+      .brand-hero {
+        background: linear-gradient(
+          135deg,
+          var(--razo-orange) 0%,
+          var(--razo-turquoise) 100%
+        );
+        color: white;
+        padding: 4rem 0 3rem;
+        margin-bottom: 3rem;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .brand-hero::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320"><path fill="rgba(255,255,255,0.1)" d="M0,96L48,112C96,128,192,160,288,160C384,160,480,128,576,112C672,96,768,96,864,112C960,128,1056,160,1152,160C1248,160,1344,128,1392,112L1440,96L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path></svg>')
+          no-repeat bottom;
+        background-size: cover;
+        opacity: 0.3;
+      }
+
+      .brand-hero-content {
+        position: relative;
+        z-index: 2;
+      }
+
+      .brand-hero-title {
+        font-size: 3.5rem;
+        font-weight: 800;
+        margin-bottom: 1rem;
+        text-shadow: 2px 4px 8px rgba(0, 0, 0, 0.2);
+        letter-spacing: -0.02em;
+      }
+
+      .brand-hero-subtitle {
+        font-size: 1.25rem;
+        opacity: 0.95;
+        font-weight: 400;
+      }
+
+      .brand-back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: white;
+        text-decoration: none;
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+        transition: all 0.3s;
+        opacity: 0.9;
+      }
+
+      .brand-back-link:hover {
+        opacity: 1;
+        transform: translateX(-5px);
+      }
+
+      /* Grid de Productos */
+      .products-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 2rem;
+        margin-top: 2rem;
+      }
+
+      /* Loading y Estados */
+      .loading-container {
+        text-align: center;
+        padding: 4rem 2rem;
+      }
+
+      .loading-spinner {
+        width: 50px;
+        height: 50px;
+        border: 4px solid #f0f0f0;
+        border-top-color: var(--razo-turquoise);
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+        margin: 0 auto 1.5rem;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+      }
+
+      .empty-state-icon {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+      }
+
+      .empty-state-title {
+        font-size: 1.5rem;
+        color: var(--razo-gray-warm);
+        margin-bottom: 0.5rem;
+      }
+
+      .empty-state-text {
+        color: #999;
+        margin-bottom: 2rem;
+      }
+
+      /* Responsive */
+      @media (max-width: 768px) {
+        .brand-hero-title {
+          font-size: 2rem;
+        }
+
+        .brand-hero-subtitle {
+          font-size: 1rem;
+        }
+
+        .products-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Navbar -->
+    <nav class="navbar">
+      <div class="container navbar-content">
+        <a href="/catalogo.html" class="navbar-brand">📦 RazoConnect</a>
+        <ul class="navbar-menu">
+          <li>
+            <a href="/catalogo.html" class="navbar-link">Productos</a>
+          </li>
+          <li class="navbar-dropdown" id="marcasDropdown">
+            <span class="navbar-dropdown-toggle">
+              Marcas
+              <span class="navbar-dropdown-arrow">▼</span>
+            </span>
+            <div class="navbar-dropdown-menu">
+              <div class="navbar-dropdown-loading">Cargando marcas...</div>
+            </div>
+          </li>
+          <li><a href="/carrito.html" class="navbar-link">Carrito</a></li>
+          <li>
+            <a
+              href="/dashboard.html"
+              id="userGreeting"
+              style="
+                color: var(--text-secondary);
+                font-size: 0.875rem;
+                text-decoration: none;
+              "
+              title="Mi cuenta"
+            ></a>
+          </li>
+          <li>
+            <a href="#" class="navbar-link" id="logoutBtn">Cerrar sesión</a>
+          </li>
+        </ul>
+      </div>
+    </nav>
+
+    <!-- Banner de Marca -->
+    <section class="brand-hero" id="brandHero">
+      <div class="container brand-hero-content">
+        <a href="/catalogo.html" class="brand-back-link">
+          ← Volver al catálogo completo
+        </a>
+        <h1 class="brand-hero-title" id="brandName">Cargando...</h1>
+        <p class="brand-hero-subtitle" id="brandSubtitle">
+          Explora nuestra colección exclusiva
+        </p>
+      </div>
+    </section>
+
+    <!-- Contenedor Principal -->
+    <div class="container" style="padding-bottom: 4rem">
+      <!-- Loading State -->
+      <div id="loadingState" class="loading-container">
+        <div class="loading-spinner"></div>
+        <p style="color: #999">Cargando productos...</p>
+      </div>
+
+      <!-- Empty State -->
+      <div id="emptyState" class="empty-state" style="display: none">
+        <div class="empty-state-icon">📦</div>
+        <h2 class="empty-state-title">No hay productos disponibles</h2>
+        <p class="empty-state-text">
+          Esta marca aún no tiene productos en stock.
+        </p>
+        <a href="/catalogo.html" class="btn btn-primary">
+          Ver Catálogo Completo
+        </a>
+      </div>
+
+      <!-- Grid de Productos -->
+      <div id="productsGrid" class="products-grid" style="display: none"></div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/auth-guard.js"></script>
+    <script src="js/api.js"></script>
+    <script>
+      // ========================================
+      // OBTENER ID DE PROVEEDOR DE LA URL
+      // ========================================
+      const urlParams = new URLSearchParams(window.location.search);
+      const proveedorId = urlParams.get("id");
+
+      if (!proveedorId) {
+        window.location.href = "/catalogo.html";
+      }
+
+      // ========================================
+      // CARGAR INFORMACIÓN DEL PROVEEDOR
+      // ========================================
+      async function loadProveedorInfo() {
+        try {
+          const response = await fetch("/api/public/proveedores");
+          const data = await response.json();
+
+          if (data.success && data.data && data.data.proveedores) {
+            const proveedor = data.data.proveedores.find(
+              (p) => p.proveedorId === parseInt(proveedorId)
+            );
+
+            if (proveedor) {
+              document.getElementById(
+                "brandName"
+              ).textContent = `Colección ${proveedor.nombre}`;
+              document.title = `${proveedor.nombre} - RazoConnect`;
+            } else {
+              document.getElementById("brandName").textContent =
+                "Marca no encontrada";
+              document.getElementById("brandSubtitle").textContent = "";
+            }
+          }
+        } catch (error) {
+          console.error("Error cargando info del proveedor:", error);
+          document.getElementById("brandName").textContent =
+            "Error al cargar marca";
+        }
+      }
+
+      // ========================================
+      // CARGAR PRODUCTOS DEL PROVEEDOR
+      // ========================================
+      async function loadProductos() {
+        const loadingState = document.getElementById("loadingState");
+        const emptyState = document.getElementById("emptyState");
+        const productsGrid = document.getElementById("productsGrid");
+
+        try {
+          const response = await fetch(
+            `/api/productos?proveedorID=${proveedorId}`
+          );
+          const data = await response.json();
+
+          loadingState.style.display = "none";
+
+          // El backend devuelve: { success, data: { productos: [...] } }
+          if (
+            data.success &&
+            data.data &&
+            data.data.productos &&
+            data.data.productos.length > 0
+          ) {
+            productsGrid.style.display = "grid";
+            productsGrid.innerHTML = data.data.productos
+              .map((producto) => renderProductCard(producto))
+              .join("");
+          } else {
+            emptyState.style.display = "block";
+          }
+        } catch (error) {
+          console.error("Error cargando productos:", error);
+          loadingState.style.display = "none";
+          emptyState.style.display = "block";
+        }
+      }
+
+      // ========================================
+      // RENDERIZAR TARJETA DE PRODUCTO
+      // ========================================
+      function renderProductCard(producto) {
+        const precio = parseFloat(producto.preciounitario);
+        const precioFormateado = precio.toLocaleString("es-MX", {
+          style: "currency",
+          currency: "MXN",
+        });
+
+        const stockDisponible = producto.stocktotal || 0;
+        const stockBadge =
+          stockDisponible > 0
+            ? `<span class="stock-badge in-stock">Stock: ${stockDisponible} pzas</span>`
+            : `<span class="stock-badge out-of-stock">Sin stock</span>`;
+
+        return `
+          <div class="product-card">
+            <div class="product-image">
+              <img 
+                src="https://images.unsplash.com/photo-1607344645866-009c320b63e0?w=400&h=400&fit=crop" 
+                alt="${producto.nombre}"
+                loading="lazy"
+              />
+              ${stockBadge}
+            </div>
+            <div class="product-info">
+              <h3 class="product-title">${producto.nombre}</h3>
+              <div class="product-price">${precioFormateado}</div>
+              <p class="product-details">
+                ${producto.piezasporpaquete || "N/A"} piezas por paquete
+              </p>
+              <a 
+                href="/producto-detalle.html?id=${producto.productoid}" 
+                class="btn btn-primary btn-block"
+              >
+                Ver Detalles
+              </a>
+            </div>
+          </div>
+        `;
+      }
+
+      // ========================================
+      // DROPDOWN DE MARCAS (REUTILIZABLE)
+      // ========================================
+      (function () {
+        const dropdown = document.getElementById("marcasDropdown");
+        const toggle = dropdown.querySelector(".navbar-dropdown-toggle");
+        const menu = dropdown.querySelector(".navbar-dropdown-menu");
+
+        toggle.addEventListener("click", (e) => {
+          e.stopPropagation();
+          dropdown.classList.toggle("active");
+        });
+
+        document.addEventListener("click", (e) => {
+          if (!dropdown.contains(e.target)) {
+            dropdown.classList.remove("active");
+          }
+        });
+
+        async function loadMarcas() {
+          try {
+            const response = await fetch("/api/public/proveedores");
+            const data = await response.json();
+
+            if (
+              data.success &&
+              data.data &&
+              data.data.proveedores &&
+              data.data.proveedores.length > 0
+            ) {
+              menu.innerHTML = `
+                <a href="/catalogo.html" class="navbar-dropdown-item highlight">
+                  📦 Catálogo Completo
+                </a>
+                ${data.data.proveedores
+                  .map(
+                    (proveedor) => `
+                  <a 
+                    href="/proveedor-tienda.html?id=${proveedor.proveedorId}" 
+                    class="navbar-dropdown-item ${
+                      proveedor.proveedorId === parseInt(proveedorId)
+                        ? "active"
+                        : ""
+                    }"
+                  >
+                    ${proveedor.nombre}
+                  </a>
+                `
+                  )
+                  .join("")}
+              `;
+            }
+          } catch (error) {
+            console.error("Error cargando marcas:", error);
+          }
+        }
+
+        loadMarcas();
+      })();
+
+      // ========================================
+      // USER GREETING Y LOGOUT
+      // ========================================
+      const user = JSON.parse(localStorage.getItem("razoconnect_user") || "{}");
+      const userGreeting = document.getElementById("userGreeting");
+      if (userGreeting && user.nombre) {
+        userGreeting.textContent = `Hola, ${user.nombre}`;
+      }
+
+      document.getElementById("logoutBtn")?.addEventListener("click", (e) => {
+        e.preventDefault();
+        logout();
+      });
+
+      // ========================================
+      // INICIALIZAR PÁGINA
+      // ========================================
+      document.addEventListener("DOMContentLoaded", () => {
+        loadProveedorInfo();
+        loadProductos();
+      });
+    </script>
+  </body>
+</html>

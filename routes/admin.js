@@ -1,9 +1,11 @@
 const express = require("express");
 const router = express.Router();
 const adminController = require("../controllers/adminController");
+const authController = require("../controllers/authController");
 const {
   authenticate,
   authorizeAdmin,
+  authorizeSuperAdmin,
 } = require("../middlewares/authMiddleware");
 
 /**
@@ -31,6 +33,16 @@ router.post(
   authenticate,
   authorizeAdmin,
   adminController.refreshAdminToken
+);
+
+/**
+ * Rutas de super-admin (requieren autenticación y rol super-admin)
+ */
+router.post(
+  "/crear-admin",
+  authenticate,
+  authorizeSuperAdmin,
+  authController.crearAdmin
 );
 
 /**

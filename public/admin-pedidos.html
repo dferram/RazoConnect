@@ -32,9 +32,6 @@
                 <div class="admin-user-role" id="userRole">Admin</div>
               </div>
             </div>
-            <button class="admin-logout-btn" id="logoutBtn">
-              Cerrar sesión
-            </button>
           </div>
         </header>
 
@@ -115,20 +112,13 @@
     </div>
 
     <!-- Modal para cambiar estatus -->
-    <div id="statusModal" class="modal" style="display: none">
-      <div
-        class="modal-content"
-        style="
-          background: white;
-          padding: 2rem;
-          border-radius: 1rem;
-          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-          max-width: 500px;
-        "
-      >
-        <h2 style="font-size: 1.5rem; font-weight: bold; margin-bottom: 1.5rem">
-          Cambiar Estatus del Pedido
-        </h2>
+    <div id="statusModal" class="modal">
+      <div class="modal-content modal-content--xl">
+        <div class="modal-header">
+          <h2 class="modal-title">Cambiar Estatus del Pedido</h2>
+          <button class="modal-close-btn" onclick="closeStatusModal()">&times;</button>
+        </div>
+        <div class="modal-body">
 
         <p style="margin-bottom: 1.5rem">
           <strong style="font-size: 1.125rem"
@@ -183,84 +173,39 @@
           >
             <span id="btnConfirmarText">Confirmar Cambio</span>
             <div
-              class="spinner"
-              id="btnConfirmarSpinner"
               style="
-                display: none;
-                width: 20px;
-                height: 20px;
-                border-width: 2px;
+                background: var(--razo-cream);
+                padding: 1rem;
+                border-radius: 0.5rem;
+                border-left: 4px solid var(--razo-orange);
+                margin-bottom: 1.5rem;
               "
-            ></div>
-          </button>
-          <button
-            class="btn btn-secondary"
-            onclick="closeStatusModal()"
-            style="flex: 1"
-          >
-            Cancelar
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Modal para ver detalle del pedido -->
-    <div id="detalleModal" class="modal">
-      <div
-        class="modal-content"
-        style="
-          background: white;
-          padding: 2rem;
-          border-radius: 1rem;
-          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-          max-width: 860px;
-          width: 100%;
-        "
-      >
-        <div
-          class="modal-header"
-          style="
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.5rem;
-            padding-bottom: 1rem;
-            border-bottom: 2px solid #f5f1ed;
-          "
-        >
-          <h2 style="margin: 0; font-size: 1.5rem; color: #2d3748">
-            Detalle del Pedido #<span id="detallePedidoId"></span>
-          </h2>
-          <button
-            class="modal-close"
-            onclick="closeDetalleModal()"
-            style="
-              background: none;
-              border: none;
-              font-size: 2rem;
-              cursor: pointer;
-              color: #6b5d57;
-              line-height: 1;
-              padding: 0;
-              width: 32px;
-              height: 32px;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              border-radius: 50%;
-              transition: all 0.2s;
-            "
-          >
-            &times;
-          </button>
-        </div>
-        <div id="detalleModalBody" class="modal-body">
-          <!-- El contenido se llenará dinámicamente -->
-        </div>
+            >
+              <p style="font-size: 0.875rem; margin: 0">
+                <strong>⚠️ Importante:</strong> Al cambiar a "Confirmado", se
+                reducirá automáticamente el stock de los productos y se registrará
+                en el log de inventario.
+              </p>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-outline"
+              onclick="closeStatusModal()"
+            >
+              Cancelar
+            </button>
+            <button type="submit" class="btn btn-primary">
+              Actualizar Estatus
+            </button>
+          </div>
+        </form>
       </div>
     </div>
 
     <script src="js/layout.js" defer></script>
+    <script src="js/admin-header-dropdown.js"></script>
     <script src="js/api.js"></script>
     <script>
       // Authentication check
@@ -387,8 +332,8 @@
                         onclick="verDetallePedido(${order.pedidoId})">
                         Ver detalle
                       </button>
-                      <button 
-                        class="btn btn-primary" 
+                      <button
+                        class="btn btn-primary"
                         style="padding: 0.5rem 1rem; font-size: 0.875rem;"
                         onclick="openStatusModal(${order.pedidoId}, '${
                     order.clienteNombre
@@ -420,6 +365,15 @@
           style: "currency",
           currency: "MXN",
         }).format(amount || 0);
+      }
+
+      // Navigate to order detail page
+      function verDetallePedido(pedidoId) {
+        // Establecer flags de navegación
+        sessionStorage.setItem("_navigating", "true");
+        localStorage.setItem("_nav_timestamp", Date.now().toString());
+        // Redirigir inmediatamente
+        window.location.href = `/admin-pedido-detalle.html?id=${pedidoId}`;
       }
 
       // Open status modal
@@ -488,348 +442,9 @@
         }
       }
 
-      // Ver detalle de pedido (abre modal)
-      async function verDetallePedido(pedidoId) {
-        try {
-          const response = await fetch(
-            `${API_BASE_URL}/admin/pedidos/${pedidoId}/detalle`,
-            {
-              method: "GET",
-              headers: {
-                Authorization: `Bearer ${adminToken}`,
-                "Content-Type": "application/json",
-              },
-            }
-          );
-
-          if (!response.ok) throw new Error("Error al cargar detalle");
-
-          const data = await response.json();
-
-          if (data.success) {
-            mostrarModalDetalle(data.data);
-          }
-        } catch (error) {
-          console.error("Error:", error);
-          showToast("Error al cargar detalle del pedido", "error");
-        }
-      }
-
-      function setupCostoEnvioForm(pedido) {
-        const form = document.getElementById("costoEnvioForm");
-        if (!form) return;
-
-        const input = document.getElementById("costoEnvioInput");
-        const btn = document.getElementById("guardarCostoEnvioBtn");
-        const btnText = document.getElementById("guardarCostoEnvioBtnText");
-        const spinner = document.getElementById("guardarCostoEnvioSpinner");
-        const feedback = document.getElementById("costoEnvioFeedback");
-        const valorEl = document.getElementById("costoEnvioValor");
-        const resumenEl = document.getElementById("costoEnvioResumen");
-
-        const initialValue =
-          pedido.costoEnvio !== null && pedido.costoEnvio !== undefined
-            ? Number(pedido.costoEnvio)
-            : 0;
-
-        if (input) {
-          input.value = initialValue.toFixed(2);
-        }
-
-        form.addEventListener(
-          "submit",
-          async (event) => {
-            event.preventDefault();
-
-            if (!input) {
-              return;
-            }
-
-            const rawValue = input.value;
-            const parsedValue = parseFloat(rawValue);
-
-            if (feedback) {
-              feedback.style.display = "none";
-            }
-
-            if (Number.isNaN(parsedValue) || parsedValue < 0) {
-              if (feedback) {
-                feedback.textContent =
-                  "Ingresa un costo válido (mayor o igual a 0)";
-                feedback.style.color = "#dc2626";
-                feedback.style.display = "block";
-              }
-              return;
-            }
-
-            try {
-              if (btn) btn.disabled = true;
-              if (btnText) btnText.style.display = "none";
-              if (spinner) spinner.style.display = "inline-block";
-
-              const response = await fetch(
-                `${API_BASE_URL}/admin/pedidos/${pedido.pedidoId}/costo-envio`,
-                {
-                  method: "PUT",
-                  headers: {
-                    Authorization: `Bearer ${adminToken}`,
-                    "Content-Type": "application/json",
-                  },
-                  body: JSON.stringify({ costoEnvio: parsedValue }),
-                }
-              );
-
-              const data = await response.json();
-
-              if (!response.ok || !data.success) {
-                throw new Error(
-                  data.message || "No se pudo actualizar el costo de envío"
-                );
-              }
-
-              if (valorEl) {
-                valorEl.textContent = formatCurrency(parsedValue);
-              }
-
-              if (resumenEl) {
-                resumenEl.textContent = formatCurrency(parsedValue);
-              }
-
-              if (input) {
-                input.value = parsedValue.toFixed(2);
-              }
-
-              if (feedback) {
-                feedback.textContent =
-                  "Costo de envío actualizado correctamente.";
-                feedback.style.color = "#16a34a";
-                feedback.style.display = "block";
-              }
-
-              pedido.costoEnvio = parsedValue;
-
-              if (typeof loadOrders === "function") {
-                loadOrders();
-              }
-
-              if (typeof showToast === "function") {
-                showToast("Costo de envío actualizado", "success");
-              }
-            } catch (error) {
-              console.error("Error al guardar costo de envío:", error);
-              if (feedback) {
-                feedback.textContent =
-                  error.message || "No se pudo guardar el costo de envío";
-                feedback.style.color = "#dc2626";
-                feedback.style.display = "block";
-              }
-
-              if (typeof showToast === "function") {
-                showToast("Error al guardar el costo de envío", "error");
-              }
-            } finally {
-              if (btn) btn.disabled = false;
-              if (btnText) btnText.style.display = "inline";
-              if (spinner) spinner.style.display = "none";
-            }
-          },
-          { once: true }
-        );
-      }
-
-      // Mostrar modal con detalle del pedido
-      function mostrarModalDetalle(detalle) {
-        const { pedido, productos } = detalle;
-
-        // Actualizar ID del pedido en el título
-        document.getElementById("detallePedidoId").textContent =
-          pedido.pedidoId;
-
-        // Generar el contenido del modal
-        const contenido = `
-        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; margin-bottom: 1.5rem;">
-          <div>
-            <h3 style="margin-bottom: 0.5rem; color: #FF9966;">👤 Cliente</h3>
-            <p style="margin: 0.25rem 0;"><strong>${
-              pedido.cliente.nombre
-            }</strong></p>
-            <p style="margin: 0.25rem 0; color: #6B5D57;">${
-              pedido.cliente.email
-            }</p>
-            <p style="margin: 0.25rem 0; color: #6B5D57;">${
-              pedido.cliente.telefono || "Sin teléfono"
-            }</p>
-          </div>
-          <div>
-            <h3 style="margin-bottom: 0.5rem; color: #FF9966;">📋 Información del Pedido</h3>
-            <p style="margin: 0.25rem 0;">Fecha: <strong>${new Date(
-              pedido.fechaPedido
-            ).toLocaleDateString("es-MX", {
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-            })}</strong></p>
-            <p style="margin: 0.25rem 0;">Estado: <span class="admin-badge ${
-              pedido.estatus === "Confirmado"
-                ? "success"
-                : pedido.estatus === "Enviado"
-                ? "warning"
-                : pedido.estatus === "Entregado"
-                ? "success"
-                : pedido.estatus === "Cancelado"
-                ? "danger"
-                : "info"
-            }">${pedido.estatus}</span></p>
-            <p style="margin: 0.25rem 0;">Total: <strong style="font-size: 1.25rem; color: #FF9966;">${formatCurrency(
-              pedido.montoTotal
-            )}</strong></p>
-            <p style="margin: 0.25rem 0;">Costo de envío actual: <strong id="costoEnvioResumen" style="font-size: 1rem; color: #2563eb;">
-              ${formatCurrency(pedido.costoEnvio || 0)}
-            </strong></p>
-          </div>
-        </div>
-
-        ${
-          pedido.agente
-            ? `
-        <div style="margin-bottom: 1.5rem; padding: 1rem; background: #FFF8F0; border-radius: 0.5rem;">
-          <h3 style="margin-bottom: 0.5rem; color: #FF9966;">💼 Agente de Ventas</h3>
-          <p style="margin: 0;"><strong>${pedido.agente.nombre}</strong> - Código: <span style="background: #FF9966; color: white; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-weight: 600;">${pedido.agente.codigo}</span></p>
-        </div>
-        `
-            : ""
-        }
-
-        <div style="margin-bottom: 1.5rem; padding: 1rem; background: #f8f9fa; border-radius: 0.5rem;">
-          <h3 style="margin-bottom: 0.5rem; color: #FF9966;">📍 Dirección de Envío</h3>
-          <p style="margin: 0.25rem 0;"><strong>${pedido.direccion.calle} ${
-          pedido.direccion.numeroExterior
-        }${
-          pedido.direccion.numeroInterior
-            ? " Int. " + pedido.direccion.numeroInterior
-            : ""
-        }</strong></p>
-          <p style="margin: 0.25rem 0;">${pedido.direccion.colonia}, ${
-          pedido.direccion.ciudad
-        }, ${pedido.direccion.estado}</p>
-          <p style="margin: 0.25rem 0;">CP: ${pedido.direccion.codigoPostal}</p>
-          ${
-            pedido.direccion.referencias
-              ? `<p style="margin: 0.25rem 0; color: #6B5D57;"><em>📝 Referencias: ${pedido.direccion.referencias}</em></p>`
-              : ""
-          }
-        </div>
-
-        <div style="margin-bottom: 1.5rem; padding: 1rem; background: #f1f5f9; border-radius: 0.5rem;">
-          <h3 style="margin-bottom: 0.75rem; color: #0f172a;">🚚 Costo de Envío</h3>
-          <p style="margin: 0 0 0.75rem; color: #475569;">
-            Valor registrado: <strong id="costoEnvioValor" style="color: #0f172a;">${formatCurrency(
-              pedido.costoEnvio || 0
-            )}</strong>
-          </p>
-          <form id="costoEnvioForm" style="display: grid; grid-template-columns: 1fr auto; gap: 0.75rem; align-items: center;">
-            <div>
-              <label for="costoEnvioInput" class="form-label" style="display: block; margin-bottom: 0.25rem; color: #475569;">Actualizar costo</label>
-              <input 
-                type="number" 
-                id="costoEnvioInput" 
-                min="0" 
-                step="0.01" 
-                class="form-input" 
-                style="width: 100%;"
-              />
-              <small id="costoEnvioFeedback" style="display: none; margin-top: 0.5rem;"></small>
-            </div>
-            <button type="submit" id="guardarCostoEnvioBtn" class="btn btn-primary" style="align-self: flex-end; display: inline-flex; align-items: center; gap: 0.5rem;">
-              <span id="guardarCostoEnvioBtnText">Guardar costo</span>
-              <div id="guardarCostoEnvioSpinner" class="spinner" style="display: none; width: 16px; height: 16px; border-width: 2px;"></div>
-            </button>
-          </form>
-        </div>
-
-        <h3 style="margin-bottom: 1rem; color: #FF9966;">🛍️ Productos del Pedido</h3>
-        <div style="overflow-x: auto;">
-          <table class="admin-table">
-            <thead>
-              <tr>
-                <th>Producto</th>
-                <th>SKU</th>
-                <th>Paquetes</th>
-                <th>Piezas/Paq</th>
-                <th>Piezas Totales</th>
-                <th>Precio Unitario</th>
-                <th>Precio Paquete</th>
-                <th>Subtotal</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${productos
-                .map(
-                  (p) => `
-                <tr>
-                  <td><strong>${p.nombre}</strong></td>
-                  <td><code style="background: #f0f0f0; padding: 0.25rem 0.5rem; border-radius: 0.25rem;">${
-                    p.sku
-                  }</code></td>
-                  <td style="text-align: center;">${p.cantidadPaquetes}</td>
-                  <td style="text-align: center;">${p.piezasPorPaquete}</td>
-                  <td style="text-align: center;"><strong>${
-                    p.piezasTotales
-                  }</strong></td>
-                  <td>${formatCurrency(p.precioUnitario)}</td>
-                  <td>${formatCurrency(p.precioPorPaquete)}</td>
-                  <td><strong>${formatCurrency(p.subtotal)}</strong></td>
-                </tr>
-              `
-                )
-                .join("")}
-            </tbody>
-            <tfoot>
-              <tr style="background: #FFF8F0;">
-                <td colspan="7" style="text-align: right;"><strong style="font-size: 1.1rem;">Total del Pedido:</strong></td>
-                <td><strong style="font-size: 1.25rem; color: #FF9966;">${formatCurrency(
-                  pedido.montoTotal
-                )}</strong></td>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
-
-        <div style="padding-top: 1.5rem; margin-top: 1.5rem; text-align: right; border-top: 2px solid #F5F1ED;">
-          <button class="btn btn-secondary" onclick="closeDetalleModal()" style="padding: 0.75rem 2rem;">
-            Cerrar
-          </button>
-        </div>
-      `;
-
-        // Actualizar el contenido del modal
-        document.getElementById("detalleModalBody").innerHTML = contenido;
-
-        // Configurar formulario de costo de envío
-        setupCostoEnvioForm(pedido);
-
-        // Mostrar el modal
-        document.getElementById("detalleModal").style.display = "flex";
-      }
-
-      // Cerrar modal de detalle
-      function closeDetalleModal() {
-        document.getElementById("detalleModal").style.display = "none";
-      }
-
       // Status filter change
       document.getElementById("statusFilter").addEventListener("change", () => {
         loadOrders();
-      });
-
-      // Logout
-      document.getElementById("logoutBtn").addEventListener("click", () => {
-        localStorage.removeItem("razoconnect_admin_token");
-        localStorage.removeItem("razoconnect_admin");
-        showToast("Sesión cerrada", "success");
-        setTimeout(() => {
-          window.location.href = "/login.html";
-        }, 500);
       });
 
       // Navigation handling for non-implemented modules
@@ -844,42 +459,16 @@
         });
       });
 
-      // Verificar si hay un pedidoId en la URL para abrir el modal automáticamente
-      async function checkUrlParams() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const pedidoId = urlParams.get("pedidoId");
-
-        if (pedidoId) {
-          // Esperar un poco para que la tabla termine de cargar
-          setTimeout(() => {
-            verDetallePedido(parseInt(pedidoId));
-            // Limpiar el parámetro de la URL sin recargar la página
-            window.history.replaceState(
-              {},
-              document.title,
-              window.location.pathname
-            );
-          }, 500);
-        }
-      }
-
       // Initialize
       verifyAndLoadAdmin();
-      loadOrders().then(() => {
-        checkUrlParams();
-      });
+      loadOrders();
 
       // Close modal when clicking outside
       window.onclick = function (event) {
         const statusModal = document.getElementById("statusModal");
-        const detalleModal = document.getElementById("detalleModal");
 
         if (event.target == statusModal) {
           closeStatusModal();
-        }
-
-        if (event.target == detalleModal) {
-          closeDetalleModal();
         }
       };
     </script>

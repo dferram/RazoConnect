@@ -8,6 +8,19 @@ const getReporteRentabilidad = async (req, res) => {
   try {
     const { desde, hasta, estadoID } = req.query;
 
+    // Definir candidatos de campos para extraer valores del JSON de tamaño
+    const valueCandidates = [
+      "valor",
+      "cantidad",
+      "piezas",
+      "piezasporpaquete",
+      "numeropiezas",
+      "tamano",
+      "cantidadpiezas",
+    ];
+
+    const labelCandidates = ["etiqueta", "descripcion", "nombre", "label"];
+
     const filters = [];
     const params = [];
     let estadoJoinClause = "";

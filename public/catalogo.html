@@ -9,7 +9,7 @@
   <body>
     <nav class="navbar">
       <div class="container navbar-content">
-        <a href="/catalogo.html" class="navbar-brand">📦 RazoConnect</a>
+        <a href="/inicio.html" class="navbar-brand">📦 RazoConnect</a>
         <ul class="navbar-menu">
           <li>
             <a
@@ -18,6 +18,15 @@
               style="color: var(--primary-color); font-weight: 600"
               >Productos</a
             >
+          </li>
+          <li class="navbar-dropdown" id="marcasDropdown">
+            <span class="navbar-dropdown-toggle">
+              Marcas
+              <span class="navbar-dropdown-arrow">▼</span>
+            </span>
+            <div class="navbar-dropdown-menu">
+              <div class="navbar-dropdown-loading">Cargando marcas...</div>
+            </div>
           </li>
           <li><a href="/carrito.html" class="navbar-link">Carrito</a></li>
           <li>
@@ -1176,5 +1185,76 @@
         }
       }
     </style>
+
+    <!-- Script para Dropdown de Marcas -->
+    <script>
+      (function () {
+        const dropdown = document.getElementById("marcasDropdown");
+        const toggle = dropdown.querySelector(".navbar-dropdown-toggle");
+        const menu = dropdown.querySelector(".navbar-dropdown-menu");
+
+        // Toggle dropdown al hacer click
+        toggle.addEventListener("click", (e) => {
+          e.stopPropagation();
+          dropdown.classList.toggle("active");
+        });
+
+        // Cerrar dropdown al hacer click fuera
+        document.addEventListener("click", (e) => {
+          if (!dropdown.contains(e.target)) {
+            dropdown.classList.remove("active");
+          }
+        });
+
+        // Cargar marcas dinámicamente
+        async function loadMarcas() {
+          try {
+            const response = await fetch("/api/public/proveedores");
+            const data = await response.json();
+
+            if (
+              data.success &&
+              data.data &&
+              data.data.proveedores &&
+              data.data.proveedores.length > 0
+            ) {
+              menu.innerHTML = `
+                <a href="/catalogo.html" class="navbar-dropdown-item highlight">
+                  📦 Catálogo Completo
+                </a>
+                ${data.data.proveedores
+                  .map(
+                    (proveedor) => `
+                  <a 
+                    href="/proveedor-tienda.html?id=${proveedor.proveedorId}" 
+                    class="navbar-dropdown-item"
+                  >
+                    ${proveedor.nombre}
+                  </a>
+                `
+                  )
+                  .join("")}
+              `;
+            } else {
+              menu.innerHTML = `
+                <div class="navbar-dropdown-empty">
+                  No hay marcas disponibles
+                </div>
+              `;
+            }
+          } catch (error) {
+            console.error("Error cargando marcas:", error);
+            menu.innerHTML = `
+              <div class="navbar-dropdown-empty">
+                Error al cargar marcas
+              </div>
+            `;
+          }
+        }
+
+        // Cargar marcas al iniciar
+        loadMarcas();
+      })();
+    </script>
   </body>
 </html>

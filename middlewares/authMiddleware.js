@@ -1,4 +1,4 @@
-const { verifyToken } = require('../utils/jwtHelper');
+const { verifyToken } = require("../utils/jwtHelper");
 
 /**
  * Middleware para verificar autenticación JWT
@@ -7,31 +7,31 @@ const authenticate = (req, res, next) => {
   try {
     // Obtener el token del header
     const authHeader = req.headers.authorization;
-    
+
     if (!authHeader) {
       return res.status(401).json({
         success: false,
-        message: 'Token no proporcionado'
+        message: "Token no proporcionado",
       });
     }
 
     // El formato esperado es: "Bearer TOKEN"
-    const token = authHeader.startsWith('Bearer ') 
-      ? authHeader.slice(7) 
+    const token = authHeader.startsWith("Bearer ")
+      ? authHeader.slice(7)
       : authHeader;
 
     // Verificar y decodificar el token
     const decoded = verifyToken(token);
-    
+
     // Agregar la información del usuario al request
     req.user = decoded;
-    
+
     next();
   } catch (error) {
     return res.status(401).json({
       success: false,
-      message: 'Token inválido o expirado',
-      error: error.message
+      message: "Token inválido o expirado",
+      error: error.message,
     });
   }
 };
@@ -45,21 +45,22 @@ const authorize = (roles = []) => {
     if (!req.user) {
       return res.status(401).json({
         success: false,
-        message: 'No autenticado'
+        message: "No autenticado",
       });
     }
 
     if (roles.length) {
-      const userRoles = Array.isArray(req.user.roles) && req.user.roles.length
-        ? req.user.roles
-        : [req.user.rol].filter(Boolean);
+      const userRoles =
+        Array.isArray(req.user.roles) && req.user.roles.length
+          ? req.user.roles
+          : [req.user.rol].filter(Boolean);
 
-      const hasRole = userRoles.some(role => roles.includes(role));
+      const hasRole = userRoles.some((role) => roles.includes(role));
 
       if (!hasRole) {
         return res.status(403).json({
           success: false,
-          message: 'No tienes permisos para acceder a este recurso'
+          message: "No tienes permisos para acceder a este recurso",
         });
       }
     }
@@ -76,29 +77,72 @@ const authorizeAdmin = (req, res, next) => {
   if (!req.user) {
     return res.status(401).json({
       success: false,
-      message: 'No autenticado'
+      message: "No autenticado",
     });
   }
 
   // Verificar que el tipo de usuario sea 'admin'
-  if (req.user.tipo !== 'admin') {
+  if (req.user.tipo !== "admin") {
     return res.status(403).json({
       success: false,
-      message: 'Acceso denegado. Solo administradores'
+      message: "Acceso denegado. Solo administradores",
     });
   }
 
-  const userRoles = Array.isArray(req.user.roles) && req.user.roles.length
-    ? req.user.roles
-    : [req.user.rol].filter(Boolean);
+  const userRoles =
+    Array.isArray(req.user.roles) && req.user.roles.length
+      ? req.user.roles
+      : [req.user.rol].filter(Boolean);
 
   // Verificar que tenga un rol de admin válido
-  const hasAdminRole = userRoles.some(role => ['admin', 'superadmin'].includes(role));
+  const hasAdminRole = userRoles.some((role) =>
+    ["admin", "superadmin"].includes(role)
+  );
 
   if (!hasAdminRole) {
     return res.status(403).json({
       success: false,
-      message: 'Rol de administrador inválido'
+      message: "Rol de administrador inválido",
+    });
+  }
+
+  next();
+};
+
+/**
+ * Middleware específico para verificar que el usuario es un super-administrador
+ * Solo los super-admins pueden realizar ciertas acciones críticas como crear otros administradores
+ */
+const authorizeSuperAdmin = (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({
+      success: false,
+      message: "No autenticado",
+    });
+  }
+
+  // Verificar que el tipo de usuario sea 'admin'
+  if (req.user.tipo !== "admin") {
+    return res.status(403).json({
+      success: false,
+      message: "Acceso denegado. Solo super-administradores",
+    });
+  }
+
+  const userRoles =
+    Array.isArray(req.user.roles) && req.user.roles.length
+      ? req.user.roles
+      : [req.user.rol].filter(Boolean);
+
+  // Verificar que tenga específicamente el rol 'superadmin' o 'super-admin'
+  const isSuperAdmin = userRoles.some((role) =>
+    ["superadmin", "super-admin"].includes(role.toLowerCase())
+  );
+
+  if (!isSuperAdmin) {
+    return res.status(403).json({
+      success: false,
+      message: "Acceso denegado. Se requieren permisos de super-administrador",
     });
   }
 
@@ -108,5 +152,6 @@ const authorizeAdmin = (req, res, next) => {
 module.exports = {
   authenticate,
   authorize,
-  authorizeAdmin
+  authorizeAdmin,
+  authorizeSuperAdmin,
 };

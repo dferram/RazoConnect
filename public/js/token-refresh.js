@@ -6,13 +6,13 @@
  * - Detecta actividad del usuario (mouse, teclado, scroll, touch)
  */
 
-(function() {
-  'use strict';
+(function () {
+  "use strict";
 
   // Configuración
   const INACTIVITY_TIME = 5 * 60 * 1000; // 5 minutos en milisegundos
-  const API_BASE_URL = 'http://localhost:3000/api';
-  
+  const API_BASE_URL = "http://localhost:3000/api";
+
   let inactivityTimer = null;
   let lastActivity = Date.now();
 
@@ -20,11 +20,11 @@
    * Determinar si es cliente o admin según el token almacenado
    */
   function getUserType() {
-    const adminToken = localStorage.getItem('razoconnect_admin_token');
-    const clientToken = localStorage.getItem('razoconnect_token');
-    
-    if (adminToken) return 'admin';
-    if (clientToken) return 'client';
+    const adminToken = localStorage.getItem("razoconnect_admin_token");
+    const clientToken = localStorage.getItem("razoconnect_token");
+
+    if (adminToken) return "admin";
+    if (clientToken) return "client";
     return null;
   }
 
@@ -33,10 +33,10 @@
    */
   function getCurrentToken() {
     const userType = getUserType();
-    if (userType === 'admin') {
-      return localStorage.getItem('razoconnect_admin_token');
-    } else if (userType === 'client') {
-      return localStorage.getItem('razoconnect_token');
+    if (userType === "admin") {
+      return localStorage.getItem("razoconnect_admin_token");
+    } else if (userType === "client") {
+      return localStorage.getItem("razoconnect_token");
     }
     return null;
   }
@@ -49,60 +49,63 @@
     const token = getCurrentToken();
 
     if (!token || !userType) {
-      console.log('🔄 No hay token para renovar');
+      console.log("🔄 No hay token para renovar");
       return;
     }
 
     try {
-      const endpoint = userType === 'admin' 
-        ? `${API_BASE_URL}/admin/refresh-token`
-        : `${API_BASE_URL}/clientes/refresh-token`;
+      const endpoint =
+        userType === "admin"
+          ? `${API_BASE_URL}/admin/refresh-token`
+          : `${API_BASE_URL}/clientes/refresh-token`;
 
-      console.log('🔄 Renovando token...', { userType, tiempo: new Date().toLocaleTimeString() });
+      console.log("🔄 Renovando token...", {
+        userType,
+        tiempo: new Date().toLocaleTimeString(),
+      });
 
       const response = await fetch(endpoint, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
       });
 
       if (!response.ok) {
-        throw new Error('Error al renovar token');
+        throw new Error("Error al renovar token");
       }
 
       const data = await response.json();
 
       if (data.success && data.data.token) {
         // Guardar el nuevo token
-        if (userType === 'admin') {
-          localStorage.setItem('razoconnect_admin_token', data.data.token);
+        if (userType === "admin") {
+          localStorage.setItem("razoconnect_admin_token", data.data.token);
         } else {
-          localStorage.setItem('razoconnect_token', data.data.token);
+          localStorage.setItem("razoconnect_token", data.data.token);
         }
-        
-        console.log('✅ Token renovado exitosamente');
+
+        console.log("✅ Token renovado exitosamente");
         return true;
       } else {
-        throw new Error('Respuesta inválida del servidor');
+        throw new Error("Respuesta inválida del servidor");
       }
-
     } catch (error) {
-      console.error('❌ Error al renovar token:', error);
-      
+      console.error("❌ Error al renovar token:", error);
+
       // Si falla la renovación, podría ser que el token expiró completamente
       // En ese caso, limpiar y redirigir al login
-      if (userType === 'admin') {
-        localStorage.removeItem('razoconnect_admin_token');
-        localStorage.removeItem('razoconnect_admin');
-        window.location.href = '/login.html';
+      if (userType === "admin") {
+        localStorage.removeItem("razoconnect_admin_token");
+        localStorage.removeItem("razoconnect_admin");
+        window.location.href = "/login.html";
       } else {
-        localStorage.removeItem('razoconnect_token');
-        localStorage.removeItem('razoconnect_user');
-        window.location.href = '/login.html';
+        localStorage.removeItem("razoconnect_token");
+        localStorage.removeItem("razoconnect_user");
+        window.location.href = "/login.html";
       }
-      
+
       return false;
     }
   }
@@ -112,7 +115,7 @@
    */
   function resetInactivityTimer() {
     lastActivity = Date.now();
-    
+
     // Limpiar el temporizador anterior
     if (inactivityTimer) {
       clearTimeout(inactivityTimer);
@@ -140,31 +143,37 @@
 
   /**
    * Limpiar sesión SOLO al CERRAR la pestaña (NO al navegar)
+   * NOTA: Para administradores, NO limpiamos la sesión automáticamente por seguridad
    */
   function handlePageUnload(event) {
-    // Verificar si está navegando (click en enlace o redirección programática)
-    const navigatingProgrammatically = sessionStorage.getItem('_navigating');
-    
-    if (isNavigating || navigatingProgrammatically) {
-      console.log('📍 Navegando dentro del sitio - NO se limpia sesión');
-      // Limpiar la marca de navegación
-      sessionStorage.removeItem('_navigating');
-      return;
-    }
-
     const userType = getUserType();
     if (!userType) return;
 
-    // LIMPIAR tokens solo si realmente está cerrando
-    if (userType === 'admin') {
-      localStorage.removeItem('razoconnect_admin_token');
-      localStorage.removeItem('razoconnect_admin');
-      console.log('🚪 Cerrando pestaña - Sesión de admin limpiada');
-    } else {
-      localStorage.removeItem('razoconnect_token');
-      localStorage.removeItem('razoconnect_user');
-      console.log('🚪 Cerrando pestaña - Sesión de cliente limpiada');
+    // NO LIMPIAR sesión de ADMIN automáticamente
+    // Los admins deben cerrar sesión manualmente usando el botón de logout
+    if (userType === "admin") {
+      console.log(" Admin - Sesión persistente (no se limpia automáticamente)");
+      return;
     }
+
+    // Para CLIENTES y AGENTES: verificar si está navegando
+    const navigatingProgrammatically = sessionStorage.getItem("_navigating");
+    const navTimestamp = localStorage.getItem("_nav_timestamp");
+    const now = Date.now();
+    const isRecentNavigation =
+      navTimestamp && now - parseInt(navTimestamp) < 500;
+
+    if (isNavigating || navigatingProgrammatically || isRecentNavigation) {
+      console.log(" Navegando dentro del sitio - NO se limpia sesión");
+      sessionStorage.removeItem("_navigating");
+      localStorage.removeItem("_nav_timestamp");
+      return;
+    }
+
+    // LIMPIAR tokens de cliente/agente solo si realmente está cerrando
+    localStorage.removeItem("razoconnect_token");
+    localStorage.removeItem("razoconnect_user");
+    console.log(" Cerrando pestaña - Sesión de cliente limpiada");
   }
 
   /**
@@ -173,7 +182,7 @@
   function handleInternalNavigation(event) {
     // Marcar que está navegando
     isNavigating = true;
-    
+
     // Resetear después de 100ms (suficiente para que beforeunload se ejecute)
     setTimeout(() => {
       isNavigating = false;
@@ -186,60 +195,65 @@
   function init() {
     const token = getCurrentToken();
     if (!token) {
-      console.log('⚠️ No hay token activo - sistema de renovación no iniciado');
+      console.log("⚠️ No hay token activo - sistema de renovación no iniciado");
       return;
     }
 
-    console.log('🔐 Sistema de renovación de tokens iniciado');
-    console.log(`⏱️ Tiempo de inactividad: ${INACTIVITY_TIME / 1000 / 60} minutos`);
+    console.log("🔐 Sistema de renovación de tokens iniciado");
+    console.log(
+      `⏱️ Tiempo de inactividad: ${INACTIVITY_TIME / 1000 / 60} minutos`
+    );
 
     // Eventos de actividad del usuario
     const activityEvents = [
-      'mousedown',
-      'mousemove',
-      'keypress',
-      'scroll',
-      'touchstart',
-      'click'
+      "mousedown",
+      "mousemove",
+      "keypress",
+      "scroll",
+      "touchstart",
+      "click",
     ];
 
     // Agregar listeners para detectar actividad
-    activityEvents.forEach(event => {
+    activityEvents.forEach((event) => {
       document.addEventListener(event, handleUserActivity, true);
     });
 
     // Detectar clicks en enlaces para saber si está navegando
-    document.addEventListener('click', (event) => {
-      // Buscar si el click fue en un enlace o dentro de uno
-      let target = event.target;
-      while (target && target !== document) {
-        if (target.tagName === 'A' && target.href) {
-          // Es un enlace - marcar como navegación
-          handleInternalNavigation(event);
-          break;
+    document.addEventListener(
+      "click",
+      (event) => {
+        // Buscar si el click fue en un enlace o dentro de uno
+        let target = event.target;
+        while (target && target !== document) {
+          if (target.tagName === "A" && target.href) {
+            // Es un enlace - marcar como navegación
+            handleInternalNavigation(event);
+            break;
+          }
+          target = target.parentElement;
         }
-        target = target.parentElement;
-      }
-    }, true);
+      },
+      true
+    );
 
     // Listener para cuando el usuario cierra/sale de la página
-    window.addEventListener('beforeunload', handlePageUnload);
+    window.addEventListener("beforeunload", handlePageUnload);
 
     // Iniciar el temporizador
     resetInactivityTimer();
 
     // Renovar token cada 20 minutos como medida adicional
     setInterval(() => {
-      console.log('🔄 Renovación periódica programada (cada 20 min)');
+      console.log("🔄 Renovación periódica programada (cada 20 min)");
       refreshToken();
     }, 20 * 60 * 1000); // 20 minutos
   }
 
   // Inicializar cuando el DOM esté listo
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
   } else {
     init();
   }
-
 })();

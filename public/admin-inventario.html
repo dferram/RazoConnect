@@ -155,9 +155,6 @@
                 <div class="admin-user-role" id="userRole">Admin</div>
               </div>
             </div>
-            <button class="admin-logout-btn" id="logoutBtn">
-              Cerrar sesión
-            </button>
           </div>
         </header>
 
@@ -442,6 +439,7 @@
     </div>
 
     <script src="js/layout.js" defer></script>
+    <script src="js/admin-header-dropdown.js"></script>
     <script src="js/api.js"></script>
     <script>
       console.log("📄 Cargando página de inventario...");
@@ -788,16 +786,6 @@
 
       btnCerrarDetalle.addEventListener("click", closeDetalleModal);
       btnCerrarDetalleFooter.addEventListener("click", closeDetalleModal);
-
-      // Logout
-      document.getElementById("logoutBtn").addEventListener("click", () => {
-        localStorage.removeItem("razoconnect_admin_token");
-        localStorage.removeItem("razoconnect_admin");
-        showToast("Sesión cerrada", "success");
-        setTimeout(() => {
-          window.location.href = "/login.html";
-        }, 500);
-      });
 
       modalVarianteSelect.addEventListener("change", actualizarResumenVariante);
       modalMotivoSelect.addEventListener("change", (e) => {

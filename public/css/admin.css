@@ -1163,3 +1163,96 @@
   transform: none !important;
   box-shadow: none !important;
 }
+
+/* ============================================
+   USER DROPDOWN
+   ============================================ */
+.admin-user-info {
+  position: relative;
+  -webkit-user-select: none;
+  user-select: none;
+  transition: background 0.2s ease;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+}
+
+.admin-user-info:hover {
+  background: rgba(255, 119, 51, 0.05);
+}
+
+.admin-user-dropdown {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  min-width: 220px;
+  background: white;
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  z-index: 1000;
+  overflow: hidden;
+  animation: dropdownSlideIn 0.2s ease;
+}
+
+@keyframes dropdownSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.admin-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  color: var(--razo-gray-dark);
+  text-decoration: none;
+  transition: all 0.2s ease;
+  background: none;
+  border: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  font-size: 0.9375rem;
+  font-weight: 500;
+}
+
+.admin-dropdown-item:hover {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 119, 51, 0.08),
+    rgba(0, 191, 179, 0.08)
+  );
+  color: var(--razo-orange);
+}
+
+.admin-dropdown-icon {
+  font-size: 1.125rem;
+  width: 1.5rem;
+  text-align: center;
+}
+
+.admin-dropdown-divider {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(0, 0, 0, 0.08),
+    transparent
+  );
+  margin: 0.25rem 0;
+}
+
+/* Indicador visual de que es clickeable */
+.admin-user-info::after {
+  content: "▼";
+  font-size: 0.625rem;
+  margin-left: 0.5rem;
+  opacity: 0.5;
+  transition: transform 0.2s ease;
+}

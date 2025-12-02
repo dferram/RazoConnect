@@ -140,9 +140,6 @@
                 <div class="admin-user-role" id="userRole">Admin</div>
               </div>
             </div>
-            <button class="admin-logout-btn" id="logoutBtn">
-              Cerrar sesión
-            </button>
           </div>
         </header>
 
@@ -282,6 +279,7 @@
     </div>
 
     <script src="js/layout.js" defer></script>
+    <script src="js/admin-header-dropdown.js"></script>
     <script src="js/api.js"></script>
     <script>
       const adminToken = localStorage.getItem("razoconnect_admin_token");
@@ -510,12 +508,6 @@
 
       document.getElementById("statusFilter").addEventListener("change", () => {
         loadComisiones();
-      });
-
-      document.getElementById("logoutBtn").addEventListener("click", () => {
-        localStorage.removeItem("razoconnect_admin_token");
-        localStorage.removeItem("razoconnect_admin");
-        window.location.href = "/login.html";
       });
 
       document.getElementById("btnPrevPage").addEventListener("click", () => {
