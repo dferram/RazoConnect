@@ -20,7 +20,7 @@
       <!-- Main Content -->
       <main class="admin-main">
         <header class="admin-header">
-          <h1 class="admin-header-title">Órdenes de Compra</h1>
+          <h1 class="admin-header-title">Órdenes de Compra (Backorders)</h1>
           <div class="admin-header-actions">
             <div class="admin-user-info">
               <div class="admin-user-avatar" id="userAvatar">A</div>
@@ -55,13 +55,19 @@
                 <option value="Completada">Completadas</option>
               </select>
             </div>
-            <button
-              class="btn btn-primary"
-              onclick="window.location.href='/admin-crear-oc.html'"
-              style="height: fit-content; padding: 0.75rem 1.5rem"
+            <div
+              style="
+                padding: 0.75rem 1rem;
+                background: #f0f9ff;
+                border-radius: 0.5rem;
+                border-left: 4px solid #0ea5e9;
+              "
             >
-              + Nueva Orden
-            </button>
+              <p style="margin: 0; font-size: 0.875rem; color: #0369a1">
+                ℹ️ Las órdenes de backorder se generan automáticamente cuando un
+                pedido excede el stock disponible
+              </p>
+            </div>
           </section>
 
           <!-- Tabla de Órdenes de Compra -->
@@ -81,7 +87,7 @@
                   color: var(--razo-orange, #ff6b35);
                 "
               >
-                Órdenes de Compra
+                Órdenes de Compra por Backorder
               </h2>
               <span id="resultadosBadge" class="admin-badge secondary"
                 >0 RESULTADOS</span
@@ -110,7 +116,7 @@
                     <th>Entrega Esperada</th>
                     <th>Productos</th>
                     <th>Estatus</th>
-                    <th>Acciones</th>
+                    <th style="width: 280px">Acciones</th>
                   </tr>
                 </thead>
                 <tbody id="ordenesTableBody">
@@ -121,10 +127,13 @@
 
             <div id="emptyState" class="empty-state" style="display: none">
               <div class="empty-state-icon">📦</div>
-              <h3 class="empty-state-title">No hay órdenes de compra</h3>
+              <h3 class="empty-state-title">
+                No hay órdenes de backorder pendientes
+              </h3>
               <p class="empty-state-text">
-                Las órdenes generadas automáticamente por backorders aparecerán
-                aquí
+                Cuando un pedido genere un backorder, la orden de compra al
+                proveedor aparecerá aquí automáticamente. Podrás confirmar el
+                pedido y registrar la recepción de inventario.
               </p>
             </div>
           </section>
@@ -255,6 +264,12 @@
       (function () {
         "use strict";
 
+        // Authentication check
+        const adminToken = localStorage.getItem("razoconnect_admin_token");
+        if (!adminToken) {
+          window.location.href = "/login.html";
+        }
+
         let ordenesData = [];
 
         // Elements
@@ -267,9 +282,46 @@
 
         // Cargar órdenes al inicio
         document.addEventListener("DOMContentLoaded", function () {
+          verifyAndLoadAdmin();
           loadOrdenes();
           filtroEstatus.addEventListener("change", loadOrdenes);
         });
+
+        // Verificar y cargar información del admin desde la base de datos
+        async function verifyAndLoadAdmin() {
+          try {
+            const response = await fetch(`${API_BASE_URL}/admin/verify`, {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${adminToken}`,
+                "Content-Type": "application/json",
+              },
+            });
+
+            if (!response.ok) {
+              throw new Error("Invalid token");
+            }
+
+            const data = await response.json();
+            if (data.success) {
+              const admin = data.data.admin;
+              document.getElementById("userName").textContent = admin.nombre;
+              document.getElementById("userRole").textContent =
+                admin.rol === "superadmin" ? "Super Admin" : "Administrador";
+
+              const words = admin.nombre.split(" ");
+              const initials =
+                words.length >= 2
+                  ? `${words[0].charAt(0)}${words[1].charAt(0)}`
+                  : admin.nombre.substring(0, 2);
+              document.getElementById("userAvatar").textContent =
+                initials.toUpperCase();
+            }
+          } catch (error) {
+            console.error("Error verifying admin:", error);
+            // Mantener valores por defecto en caso de error
+          }
+        }
 
         // Cargar órdenes de compra
         async function loadOrdenes() {
@@ -285,17 +337,37 @@
 
             const response = await API.apiCall(url, { method: "GET" });
 
+            console.log("🔍 FRONTEND - Respuesta del API:", response);
+            console.log("🔍 FRONTEND - response.ok:", response.ok);
+            console.log("🔍 FRONTEND - response.data:", response.data);
+            console.log(
+              "🔍 FRONTEND - response.data.ordenes:",
+              response.data?.ordenes
+            );
+            console.log(
+              "🔍 FRONTEND - JSON completo:",
+              JSON.stringify(response, null, 2)
+            );
+
             if (!response.ok) {
               throw new Error("Error al cargar órdenes de compra");
             }
 
-            ordenesData = response.data.ordenes || [];
+            ordenesData = response.data.data?.ordenes || [];
+
+            console.log("🔍 FRONTEND - ordenesData recibido:", ordenesData);
+            console.log(
+              "🔍 FRONTEND - cantidad de órdenes:",
+              ordenesData.length
+            );
 
             loadingState.style.display = "none";
 
             if (ordenesData.length === 0) {
+              console.log("🔍 FRONTEND - Mostrando empty state");
               emptyState.style.display = "block";
             } else {
+              console.log("🔍 FRONTEND - Renderizando órdenes");
               renderOrdenes();
               ordenesTable.style.display = "block";
             }
@@ -337,25 +409,56 @@
             });
 
             row.innerHTML = `
-              <td style="font-weight: 600; color: #374151;">#${orden.ordenCompraId}</td>
+              <td style="font-weight: 600; color: #374151;">#${
+                orden.ordenCompraId
+              }</td>
               <td style="font-weight: 500;">${orden.proveedorNombre}</td>
               <td style="color: #6b7280;">${fechaCreacion}</td>
               <td style="color: #6b7280;">${fechaEntrega}</td>
-              <td style="text-align: center; color: #374151;">${orden.totalProductos}</td>
-              <td><span class="admin-badge ${estatusBadgeClass}">${orden.estatus}</span></td>
-              <td style="text-align: center;">
-                <button 
-                  class="btn btn-secondary" 
-                  onclick="verDetalle(${orden.ordenCompraId})"
-                  style="padding: 0.5rem 1rem; font-size: 0.875rem; width: 100%;">
-                  Ver Detalle
-                </button>
+              <td style="text-align: center; color: #374151;">${
+                orden.totalProductos
+              }</td>
+              <td><span class="admin-badge ${estatusBadgeClass}">${
+              orden.estatus
+            }</span></td>
+              <td>
+                <div style="display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap;">
+                  <button 
+                    class="btn btn-secondary" 
+                    onclick="verDetalle(${orden.ordenCompraId})"
+                    style="padding: 0.5rem 1rem; font-size: 0.875rem; flex: 1; min-width: 120px;">
+                    Ver Detalle
+                  </button>
+                  ${
+                    orden.estatus === "Pendiente"
+                      ? `
+                    <button 
+                      class="btn btn-primary" 
+                      onclick="confirmarPedido(${orden.ordenCompraId})"
+                      style="padding: 0.5rem 1rem; font-size: 0.875rem; flex: 1; min-width: 120px;">
+                      Confirmar Pedido
+                    </button>
+                  `
+                      : ""
+                  }
+                </div>
               </td>
             `;
 
             ordenesTableBody.appendChild(row);
           });
         }
+
+        // Confirmar pedido al proveedor (redirige a recibir inventario)
+        window.confirmarPedido = function (ordenCompraId) {
+          if (
+            confirm(
+              "¿Confirmar que el pedido ha sido realizado al proveedor? Se abrirá la página para registrar la recepción de inventario."
+            )
+          ) {
+            window.location.href = `/admin-recibir-inventario.html?ordenId=${ordenCompraId}`;
+          }
+        };
 
         // Ver detalle de orden
         window.verDetalle = async function (ordenCompraId) {
@@ -454,13 +557,17 @@
         width: 100%;
         height: 100%;
         background: rgba(0, 0, 0, 0.5);
-        display: flex;
+        display: none; /* Oculto por defecto */
         align-items: center;
         justify-content: center;
         z-index: 9999;
         overflow-y: auto;
         -webkit-backdrop-filter: blur(4px);
         backdrop-filter: blur(4px);
+      }
+
+      .modal.show {
+        display: flex; /* Visible cuando tiene clase show */
       }
 
       .modal-content {

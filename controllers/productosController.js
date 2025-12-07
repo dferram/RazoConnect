@@ -147,8 +147,8 @@ const obtenerProductos = async (req, res) => {
         SELECT 1
         FROM producto_variantes pv
         WHERE pv.productoid = p.productoid
-          AND pv.preciooferta IS NOT NULL
-          AND pv.preciooferta < pv.preciounitario
+          AND pv.precioofertaunitario IS NOT NULL
+          AND pv.precioofertaunitario < pv.preciounitario
       )`);
     }
 
@@ -169,7 +169,7 @@ const obtenerProductos = async (req, res) => {
         variante_min.dimensiones AS dimensiones_precio_min,
         variante_min.stock AS stock_precio_min,
         variante_min.preciounitario AS precio_desde,
-        variante_min.preciooferta AS preciooferta,
+        variante_min.precioofertaunitario AS preciooferta,
         imagen.url_imagen,
         imagen.textoalternativo,
         stats.total_variantes,
@@ -183,11 +183,11 @@ const obtenerProductos = async (req, res) => {
           pv.dimensiones,
           pv.stock,
           pv.preciounitario,
-          pv.preciooferta
+          pv.precioofertaunitario
         FROM producto_variantes pv
         WHERE pv.productoid = p.productoid
         ORDER BY 
-          COALESCE(pv.preciooferta, pv.preciounitario) ASC NULLS LAST, 
+          COALESCE(pv.precioofertaunitario, pv.preciounitario) ASC NULLS LAST, 
           pv.varianteid ASC
         LIMIT 1
       ) variante_min ON TRUE

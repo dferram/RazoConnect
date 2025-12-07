@@ -78,6 +78,7 @@ const obtenerCarrito = async (req, res) => {
         pv.sku,
         pv.dimensiones,
         pv.preciounitario,
+        pv.precioofertaunitario,
         pv.stock,
         p.productoid,
         p.nombreproducto,
@@ -120,8 +121,16 @@ const obtenerCarrito = async (req, res) => {
     const labelCandidates = ["etiqueta", "descripcion", "nombre", "label"];
 
     const items = itemsResult.rows.map((item) => {
-      const precioUnitario =
+      // LÓGICA DE PRECIOS CON OFERTA: Si existe precio de oferta, úsalo. Si no, usa precio normal.
+      const precioBase =
         item.preciounitario !== null ? parseFloat(item.preciounitario) : null;
+      const precioOferta =
+        item.precioofertaunitario !== null
+          ? parseFloat(item.precioofertaunitario)
+          : null;
+      const precioUnitario = precioOferta || precioBase;
+      const tieneOferta = precioOferta !== null && precioOferta > 0;
+
       const tamanoInfo = item.tamano_info || {};
 
       let tamanoCantidad = null;
@@ -206,6 +215,9 @@ const obtenerCarrito = async (req, res) => {
         precioPaquete,
         precioPorPieza,
         precioUnitario,
+        precioBase,
+        precioOferta,
+        tieneOferta,
         stock,
         dimensiones: item.dimensiones,
         subtotal: subtotalCalculado,

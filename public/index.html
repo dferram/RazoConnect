@@ -9,7 +9,7 @@
       content="Plataforma de venta al mayoreo de cajas de fashion. Precios competitivos, envíos rápidos y programa de comisiones para agentes."
     />
     <link rel="stylesheet" href="css/styles.css" />
-    <link rel="stylesheet" href="css/landing.css" />
+    <link rel="stylesheet" href="css/landing-dynamic.css" />
   </head>
   <body>
     <!-- Navbar -->
@@ -33,17 +33,93 @@
       </div>
     </nav>
 
-    <!-- Hero Section - Banner Principal -->
-    <section class="landing-hero">
-      <div class="landing-hero-overlay"></div>
-      <div class="landing-hero-content">
-        <h1 class="landing-hero-title">Prepárate para la Navidad 2025</h1>
-        <p class="landing-hero-subtitle">
-          Las cajas navideñas más exclusivas al mejor precio del mercado
+    <!-- Hero Section - Banner Dinámico por Temporada -->
+    <section class="hero-dynamic" id="heroSection">
+      <div class="hero-overlay"></div>
+      <div class="hero-background" id="heroBackground"></div>
+      <div class="container">
+        <div class="hero-content">
+          <div class="hero-icon" id="heroIcon">🎁</div>
+          <h1 class="hero-title" id="heroTitle">Empaques para toda ocasión</h1>
+          <p class="hero-subtitle" id="heroSubtitle">
+            Encuentra el regalo perfecto para tu negocio
+          </p>
+          <div class="hero-cta-group">
+            <a href="/registro.html" class="btn-hero-primary" id="heroCTA">
+              Comenzar Ahora
+            </a>
+            <a href="/catalogo.html" class="btn-hero-secondary">
+              Ver Catálogo
+            </a>
+          </div>
+          <div class="hero-trust">
+            <span class="hero-trust-item">✓ Precios al mayoreo</span>
+            <span class="hero-trust-item">✓ Envío rápido</span>
+            <span class="hero-trust-item">✓ Calidad garantizada</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Sección de Beneficios -->
+    <section class="benefits-section">
+      <div class="container">
+        <h2 class="section-title">¿Por qué elegir RazoConnect?</h2>
+        <p class="section-subtitle">
+          Somos tu socio confiable en el negocio de regalos
         </p>
-        <a href="/productos.html?categoria=7" class="landing-hero-cta">
-          Ver Catálogo Navideño
-        </a>
+
+        <div class="benefits-grid">
+          <div class="benefit-card">
+            <div class="benefit-icon">📦</div>
+            <h3 class="benefit-title">Variedad de Productos</h3>
+            <p class="benefit-text">
+              Miles de opciones para todas las temporadas y ocasiones
+              especiales.
+            </p>
+          </div>
+
+          <div class="benefit-card">
+            <div class="benefit-icon">💰</div>
+            <h3 class="benefit-title">Precios al Mayoreo</h3>
+            <p class="benefit-text">
+              Los mejores precios del mercado con descuentos por volumen.
+            </p>
+          </div>
+
+          <div class="benefit-card">
+            <div class="benefit-icon">🚚</div>
+            <h3 class="benefit-title">Envío Rápido</h3>
+            <p class="benefit-text">
+              Entregas en tiempo récord para que nunca te quedes sin inventario.
+            </p>
+          </div>
+
+          <div class="benefit-card">
+            <div class="benefit-icon">⭐</div>
+            <h3 class="benefit-title">Calidad Premium</h3>
+            <p class="benefit-text">
+              Productos seleccionados de los mejores proveedores del mercado.
+            </p>
+          </div>
+
+          <div class="benefit-card">
+            <div class="benefit-icon">💼</div>
+            <h3 class="benefit-title">Programa de Agentes</h3>
+            <p class="benefit-text">
+              Gana comisiones vendiendo nuestros productos a tu red de clientes.
+            </p>
+          </div>
+
+          <div class="benefit-card">
+            <div class="benefit-icon">🎯</div>
+            <h3 class="benefit-title">Temporadas Especiales</h3>
+            <p class="benefit-text">
+              Productos exclusivos para Navidad, San Valentín, Día de la Madre y
+              más.
+            </p>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -234,6 +310,96 @@
         window.location.href = "/inicio.html";
       }
 
+      // ========================================
+      // SISTEMA DE CONTENIDO DINÁMICO POR TEMA
+      // ========================================
+      const THEME_CONTENT = {
+        navidad: {
+          icon: "🎄",
+          title: "Empaques que iluminan la Navidad",
+          subtitle:
+            "Dale a tus clientes la magia de las fiestas con nuestros empaques exclusivos",
+          cta: "Ver Catálogo Navideño",
+          image:
+            "url('https://images.unsplash.com/photo-1512389142860-9c449e58a543?w=1600&h=900&fit=crop')",
+        },
+        sanValentin: {
+          icon: "💝",
+          title: "Amor en cada detalle",
+          subtitle: "Empaques románticos que expresan sentimientos especiales",
+          cta: "Explorar San Valentín",
+          image:
+            "url('https://images.unsplash.com/photo-1518199266791-5375a83190b7?w=1600&h=900&fit=crop')",
+        },
+        diaMadre: {
+          icon: "👩‍👧‍👦",
+          title: "Celebra a las mamás del mundo",
+          subtitle: "Regalos especiales para el ser más importante de la vida",
+          cta: "Ver Colección Día de la Madre",
+          image:
+            "url('https://images.unsplash.com/photo-1522673607200-164d1b6ce486?w=1600&h=900&fit=crop')",
+        },
+        diaPadre: {
+          icon: "👨‍👦",
+          title: "Honra a los héroes del hogar",
+          subtitle: "Empaques elegantes para el hombre de la casa",
+          cta: "Descubrir Día del Padre",
+          image:
+            "url('https://images.unsplash.com/photo-1473093295043-cdd812d0e601?w=1600&h=900&fit=crop')",
+        },
+        graduaciones: {
+          icon: "🎓",
+          title: "Celebra el éxito académico",
+          subtitle: "Empaques premium para momentos memorables de logro",
+          cta: "Ver Colección Graduaciones",
+          image:
+            "url('https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=1600&h=900&fit=crop')",
+        },
+        todaOcasion: {
+          icon: "🎁",
+          title: "Empaques para toda ocasión",
+          subtitle: "Encuentra el regalo perfecto para tu negocio todo el año",
+          cta: "Comenzar Ahora",
+          image:
+            "url('https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=1600&h=900&fit=crop')",
+        },
+      };
+
+      function updateHeroContent(themeName) {
+        const content = THEME_CONTENT[themeName] || THEME_CONTENT.todaOcasion;
+
+        // Actualizar contenido del hero
+        document.getElementById("heroIcon").textContent = content.icon;
+        document.getElementById("heroTitle").textContent = content.title;
+        document.getElementById("heroSubtitle").textContent = content.subtitle;
+        document.getElementById("heroCTA").textContent = content.cta;
+
+        // Actualizar imagen de fondo con fade
+        const heroBackground = document.getElementById("heroBackground");
+        heroBackground.style.opacity = "0";
+
+        setTimeout(() => {
+          heroBackground.style.backgroundImage = content.image;
+          heroBackground.style.opacity = "1";
+        }, 300);
+      }
+
+      // Escuchar cambios de tema
+      document.addEventListener("razo:themeChanged", (event) => {
+        console.log("🎨 Tema cambiado a:", event.detail.theme);
+        updateHeroContent(event.detail.theme);
+      });
+
+      // Inicializar contenido cuando el tema esté listo
+      setTimeout(() => {
+        if (window.RazoThemeManager) {
+          const currentTheme = window.RazoThemeManager.getCurrentTheme();
+          if (currentTheme) {
+            updateHeroContent(currentTheme.name);
+          }
+        }
+      }, 100);
+
       // Newsletter form
       document
         .querySelector(".footer-newsletter form")
@@ -318,30 +484,41 @@
           ) {
             featuredGrid.innerHTML = data.data.productos
               .map((producto) => {
-                const precio = parseFloat(producto.preciounitario);
+                // Usar las propiedades correctas del API
+                const precio =
+                  producto.precioPaqueteMin || producto.precioDesde || 0;
                 const precioFormateado = precio.toLocaleString("es-MX", {
                   style: "currency",
                   currency: "MXN",
                 });
 
+                const imagenUrl =
+                  producto.imagenUrl ||
+                  "https://images.unsplash.com/photo-1607344645866-009c320b63e0?w=400&h=400&fit=crop";
+                const totalVariantes = producto.totalVariantes || 0;
+
                 return `
               <div class="featured-card">
                 <div class="featured-card-image">
                   <img 
-                    src="https://images.unsplash.com/photo-1607344645866-009c320b63e0?w=400&h=400&fit=crop" 
-                    alt="${producto.nombre}"
+                    src="${imagenUrl}" 
+                    alt="${producto.imagenAlt || producto.nombreProducto}"
                     loading="lazy"
                   />
                   <div class="featured-card-badge">⭐ Destacado</div>
                 </div>
                 <div class="featured-card-content">
-                  <h3 class="featured-card-title">${producto.nombre}</h3>
+                  <h3 class="featured-card-title">${
+                    producto.nombreProducto
+                  }</h3>
                   <p class="featured-card-price">${precioFormateado}</p>
                   <p class="featured-card-details">
-                    ${producto.piezasporpaquete || "N/A"} piezas por paquete
+                    ${totalVariantes} variante${
+                  totalVariantes !== 1 ? "s" : ""
+                } disponible${totalVariantes !== 1 ? "s" : ""}
                   </p>
                   <a 
-                    href="/productos.html?categoria=7" 
+                    href="/producto-detalle.html?id=${producto.productoId}" 
                     class="featured-card-btn"
                   >
                     Ver Detalles
@@ -377,5 +554,8 @@
         loadFeaturedProducts();
       });
     </script>
+
+    <!-- Sistema de Temas Estacionales -->
+    <script src="/js/theme-manager.js"></script>
   </body>
 </html>

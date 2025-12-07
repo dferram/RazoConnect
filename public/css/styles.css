@@ -1,10 +1,14 @@
 /* ============================================
    RAZO CONNECT - BRAND DESIGN SYSTEM
    Regalando sonrisas a negocios
+   Sistema de Temas Estacionales Integrado
    ============================================ */
 
-/* Import Google Fonts - Poppins (títulos) + Inter (cuerpo) */
-@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap");
+/* Import Google Fonts - Poppins (títulos) + Inter (cuerpo) + Pacifico (San Valentín) */
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Inter:wght@400;500;600&family=Pacifico&display=swap");
+
+/* Import Sistema de Temas Estacionales */
+@import url("theme-variables.css");
 
 /* Reset and Base Styles */
 * {
@@ -15,25 +19,26 @@
 
 /* ============================================
    BRAND COLOR PALETTE
+   Ahora conectadas al Sistema de Temas
    ============================================ */
 :root {
-  /* Colores Primarios de Marca Razo */
-  --razo-orange: #ff9966;
-  --razo-turquoise: #4dd4d4;
+  /* Colores Primarios de Marca Razo - Conectados a Temas */
+  --razo-orange: var(--theme-primary, #ff9966);
+  --razo-turquoise: var(--theme-secondary, #4dd4d4);
   --razo-white: #ffffff;
 
-  /* Colores de Soporte */
-  --razo-orange-light: #ffb894;
-  --razo-orange-dark: #ff7733;
-  --razo-turquoise-light: #7febe8;
-  --razo-turquoise-dark: #2bb8b8;
+  /* Colores de Soporte - Conectados a Temas */
+  --razo-orange-light: var(--theme-primary-light, #ffb894);
+  --razo-orange-dark: var(--theme-primary-dark, #ff7733);
+  --razo-turquoise-light: var(--theme-secondary-light, #7febe8);
+  --razo-turquoise-dark: var(--theme-secondary-dark, #2bb8b8);
   --razo-blue: #4a90e2;
   --razo-blue-light: #e3f2fd;
 
   /* Neutrales (NO azules) */
-  --razo-cream: #fff8f0;
+  --razo-cream: var(--theme-bg-secondary, #fff8f0);
   --razo-gray-warm: #6b5d57;
-  --razo-gray-light: #f5f1ed;
+  --razo-gray-light: var(--theme-bg-tertiary, #f5f1ed);
   --razo-gray-dark: #2d3748;
 
   /* Layout helpers */
@@ -44,23 +49,27 @@
   --danger-color: #ef4444;
   --warning-color: #f59e0b;
 
-  /* Shadows */
-  --shadow: 0 2px 8px rgba(255, 119, 51, 0.1);
-  --shadow-lg: 0 10px 25px rgba(255, 119, 51, 0.15);
+  /* Shadows - Conectadas a Temas */
+  --shadow: var(--theme-shadow-sm, 0 2px 8px rgba(255, 119, 51, 0.1));
+  --shadow-lg: var(--theme-shadow-lg, 0 10px 25px rgba(255, 119, 51, 0.15));
   --shadow-turquoise: 0 4px 15px rgba(77, 212, 212, 0.2);
+
+  /* Colores de Acento del Tema */
+  --accent-color: var(--theme-accent, #ffd166);
 }
 
 /* ============================================
    TYPOGRAPHY
+   Conectadas al Sistema de Temas
    ============================================ */
 body {
-  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
-    sans-serif;
+  font-family: var(--theme-font-body, "Inter"), -apple-system,
+    BlinkMacSystemFont, "Segoe UI", sans-serif;
   background-color: var(--razo-cream);
   color: var(--razo-gray-warm);
   line-height: 1.6;
   font-size: 16px;
-  font-weight: 400;
+  font-weight: var(--theme-font-weight-body, 400);
 }
 
 h1,
@@ -69,8 +78,8 @@ h3,
 h4,
 h5,
 h6 {
-  font-family: "Poppins", sans-serif;
-  font-weight: 600;
+  font-family: var(--theme-font-title, "Poppins"), sans-serif;
+  font-weight: var(--theme-font-weight-title, 600);
   letter-spacing: -0.5px;
 }
 

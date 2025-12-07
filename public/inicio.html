@@ -6,6 +6,7 @@
     <title>RazoConnect - Inicio | B2B E-commerce</title>
     <link rel="stylesheet" href="css/styles.css" />
     <link rel="stylesheet" href="css/inicio-new.css" />
+    <link rel="stylesheet" href="css/inicio-seasonal.css" />
   </head>
   <body>
     <!-- Navbar del Sistema -->
@@ -52,6 +53,68 @@
         </ul>
       </div>
     </nav>
+
+    <!-- Mensaje de Bienvenida Dinámico -->
+    <section class="welcome-banner" id="welcomeBanner">
+      <div class="container">
+        <div class="welcome-content">
+          <div class="welcome-icon" id="welcomeIcon">🎁</div>
+          <div class="welcome-text">
+            <h2 class="welcome-title" id="welcomeTitle">
+              Hola <span id="userName">Cliente</span>, prepárate para toda
+              ocasión
+            </h2>
+            <p class="welcome-subtitle" id="welcomeSubtitle">
+              Encuentra los mejores productos para tu negocio
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Widget de Cuenta Regresiva Estacional -->
+    <section
+      class="countdown-widget"
+      id="countdownWidget"
+      style="display: none"
+    >
+      <div class="container">
+        <div class="countdown-container">
+          <div class="countdown-info">
+            <div class="countdown-event-icon" id="eventIcon">🎄</div>
+            <div>
+              <h3 class="countdown-event-title" id="eventTitle">
+                Navidad 2024
+              </h3>
+              <p class="countdown-event-subtitle" id="eventSubtitle">
+                Prepárate para la temporada más importante del año
+              </p>
+            </div>
+          </div>
+
+          <div class="countdown-display">
+            <div class="countdown-box">
+              <span class="countdown-number" id="daysCount">0</span>
+              <span class="countdown-text">Días</span>
+            </div>
+            <div class="countdown-separator">:</div>
+            <div class="countdown-box">
+              <span class="countdown-number" id="hoursCount">0</span>
+              <span class="countdown-text">Horas</span>
+            </div>
+            <div class="countdown-separator">:</div>
+            <div class="countdown-box">
+              <span class="countdown-number" id="minutesCount">0</span>
+              <span class="countdown-text">Min</span>
+            </div>
+          </div>
+
+          <a href="/catalogo.html" class="countdown-cta" id="countdownCTA">
+            Ver Catálogo Estacional →
+          </a>
+        </div>
+      </div>
+    </section>
 
     <!-- Hero Slider -->
     <section class="hero-slider" id="heroSlider">
@@ -151,7 +214,7 @@
     </section>
 
     <!-- Ofertas Relámpago -->
-    <section class="flash-sales-section">
+    <section class="flash-sales-section seasonal-tint" id="flashSalesSection">
       <div class="container">
         <div class="flash-header">
           <h2 class="flash-title">⚡ Ofertas Relámpago</h2>
@@ -307,5 +370,11 @@
     <script src="js/auth-guard.js"></script>
     <script src="js/api.js"></script>
     <script src="js/inicio-new.js"></script>
+
+    <!-- Sistema de Temas Estacionales -->
+    <script src="/js/theme-manager.js"></script>
+
+    <!-- Lógica de Contenido Dinámico -->
+    <script src="/js/inicio-seasonal.js"></script>
   </body>
 </html>

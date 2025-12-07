@@ -129,6 +129,7 @@ const crearPedido = async (req, res) => {
         pv.sku,
         pv.dimensiones,
         pv.preciounitario,
+        pv.precioofertaunitario,
         pv.stock,
         pv.costounitario,
         p.nombreproducto
@@ -159,10 +160,16 @@ const crearPedido = async (req, res) => {
       };
     });
 
-    // 4. Calcular el monto total
+    // 4. Calcular el monto total CON LÓGICA DE OFERTAS
     const montoTotal = items.reduce((total, item) => {
-      const precioUnitario =
+      const precioBase =
         item.preciounitario !== null ? parseFloat(item.preciounitario) : 0;
+      const precioOferta =
+        item.precioofertaunitario !== null
+          ? parseFloat(item.precioofertaunitario)
+          : null;
+      // Si existe precio de oferta, úsalo. Si no, usa precio base.
+      const precioUnitario = precioOferta || precioBase;
       const tamanoValor =
         item.tamano_valor !== null ? parseInt(item.tamano_valor, 10) : 0;
       return total + item.cantidad * tamanoValor * precioUnitario;
@@ -231,8 +238,15 @@ const crearPedido = async (req, res) => {
         });
       }
 
-      const precioUnitario =
+      // LÓGICA DE PRECIOS CON OFERTA
+      const precioBase =
         item.preciounitario !== null ? parseFloat(item.preciounitario) : 0;
+      const precioOferta =
+        item.precioofertaunitario !== null
+          ? parseFloat(item.precioofertaunitario)
+          : null;
+      // Si existe precio de oferta, úsalo. Si no, usa precio base.
+      const precioUnitario = precioOferta || precioBase;
       const precioPorPaquete = parseFloat(
         (precioUnitario * tamanoValor).toFixed(2)
       );

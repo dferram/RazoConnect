@@ -1,18 +1,18 @@
-const express = require('express');
-const path = require('path');
-const cors = require('cors');
-require('dotenv').config();
-const db = require('./db');
+const express = require("express");
+const path = require("path");
+const cors = require("cors");
+require("dotenv").config();
+const db = require("./db");
 
 // Importar rutas
-const authRoutes = require('./routes/auth');
-const productosRoutes = require('./routes/productos');
-const carritoRoutes = require('./routes/carrito');
-const pedidosRoutes = require('./routes/pedidos');
-const direccionesRoutes = require('./routes/direcciones');
-const adminRoutes = require('./routes/admin');
-const reportesRoutes = require('./routes/reportes');
-const publicRoutes = require('./routes/public');
+const authRoutes = require("./routes/auth");
+const productosRoutes = require("./routes/productos");
+const carritoRoutes = require("./routes/carrito");
+const pedidosRoutes = require("./routes/pedidos");
+const direccionesRoutes = require("./routes/direcciones");
+const adminRoutes = require("./routes/admin");
+const reportesRoutes = require("./routes/reportes");
+const publicRoutes = require("./routes/public");
 
 // Inicializar la aplicación Express
 const app = express();
@@ -24,7 +24,7 @@ app.use(express.json()); // Parsear JSON en el body de las peticiones
 app.use(express.urlencoded({ extended: true })); // Parsear datos de formularios
 
 // Servir archivos estáticos del frontend
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, "public")));
 
 // Middleware de logging simple
 app.use((req, res, next) => {
@@ -33,71 +33,71 @@ app.use((req, res, next) => {
 });
 
 // Endpoint de prueba
-app.get('/api', (req, res) => {
+app.get("/api", (req, res) => {
   res.json({
-    message: '¡Bienvenido a RazoConnect API!',
-    version: '1.0.0',
-    status: 'running',
-    timestamp: new Date().toISOString()
+    message: "¡Bienvenido a RazoConnect API!",
+    version: "1.0.0",
+    status: "running",
+    timestamp: new Date().toISOString(),
   });
 });
 
 // Endpoint para verificar la conexión a la base de datos
-app.get('/api/health', async (req, res) => {
+app.get("/api/health", async (req, res) => {
   try {
-    const result = await db.query('SELECT NOW()');
+    const result = await db.query("SELECT NOW()");
     res.json({
-      status: 'healthy',
-      database: 'connected',
-      timestamp: result.rows[0].now
+      status: "healthy",
+      database: "connected",
+      timestamp: result.rows[0].now,
     });
   } catch (error) {
     res.status(500).json({
-      status: 'unhealthy',
-      database: 'disconnected',
-      error: error.message
+      status: "unhealthy",
+      database: "disconnected",
+      error: error.message,
     });
   }
 });
 
 // Rutas de la API
-app.use('/api', authRoutes);
-app.use('/api', productosRoutes);
-app.use('/api', carritoRoutes);
-app.use('/api', pedidosRoutes);
-app.use('/api', direccionesRoutes);
-app.use('/api/public', publicRoutes);
-app.use('/api/admin', adminRoutes);
-app.use('/api/admin/reportes', reportesRoutes);
+app.use("/api", authRoutes);
+app.use("/api", productosRoutes);
+app.use("/api", carritoRoutes);
+app.use("/api", pedidosRoutes);
+app.use("/api", direccionesRoutes);
+app.use("/api/public", publicRoutes);
+app.use("/api/admin", adminRoutes);
+app.use("/api/admin/reportes", reportesRoutes);
 
 // Manejo de rutas no encontradas solo para API
-app.use('/api/*', (req, res) => {
+app.use("/api/*", (req, res) => {
   res.status(404).json({
-    error: 'Ruta no encontrada',
-    path: req.path
+    error: "Ruta no encontrada",
+    path: req.path,
   });
 });
 
 // Redirigir rutas no encontradas a index
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
 // Manejo de errores global
 app.use((err, req, res, next) => {
-  console.error('Error:', err.stack);
+  console.error("Error:", err.stack);
   res.status(500).json({
-    error: 'Error interno del servidor',
-    message: err.message
+    error: "Error interno del servidor",
+    message: err.message,
   });
 });
 
 // Iniciar el servidor
 app.listen(PORT, async () => {
-  console.log(`🚀 Servidor RazoConnect corriendo en puerto ${PORT}`);
-  console.log(`📍 URL: http://localhost:${PORT}`);
-  console.log(`🔗 Endpoint de prueba: http://localhost:${PORT}/api`);
-  
+  console.log(`Servidor RazoConnect corriendo en puerto ${PORT}`);
+  console.log(`URL: http://localhost:${PORT}`);
+  console.log(`Endpoint de prueba: http://localhost:${PORT}/api`);
+
   // Probar conexión a la base de datos
   await db.testConnection();
 });

@@ -1652,6 +1652,7 @@ const crearVariante = async (req, res) => {
       dimensiones,
       costoUnitario,
       precioUnitario,
+      precioOfertaUnitario,
       stock,
       tipoProductoId,
       medidaId,
@@ -1694,20 +1695,28 @@ const crearVariante = async (req, res) => {
       });
     }
 
+    const precioOfertaUnitarioNormalized =
+      precioOfertaUnitario !== undefined &&
+      precioOfertaUnitario !== null &&
+      precioOfertaUnitario > 0
+        ? precioOfertaUnitario
+        : null;
+
     const varianteResult = await client.query(
       `INSERT INTO Producto_Variantes (
         ProductoID, SKU, Dimensiones, CostoUnitario,
-        PrecioUnitario, Stock, TipoProductoID, MedidaID
+        PrecioUnitario, PrecioOfertaUnitario, Stock, TipoProductoID, MedidaID
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
       RETURNING VarianteID, ProductoID, SKU, Dimensiones,
-                CostoUnitario, PrecioUnitario, Stock, TipoProductoID, MedidaID`,
+                CostoUnitario, PrecioUnitario, PrecioOfertaUnitario, Stock, TipoProductoID, MedidaID`,
       [
         productoId,
         sku,
         dimensiones || null,
         costoUnitarioNormalized,
         precioUnitarioNormalized,
+        precioOfertaUnitarioNormalized,
         stockInicial,
         tipoProductoId || null,
         medidaId || null,
@@ -3280,6 +3289,15 @@ const getAllOrdenesCompra = async (req, res) => {
   try {
     const { estatus } = req.query;
 
+    // DEBUG: Ver todas las órdenes primero
+    const debugQuery = await db.query(`
+      SELECT OrdenCompraID, OrigenOC, Estatus 
+      FROM OrdenesDeCompra 
+      ORDER BY FechaCreacion DESC 
+      LIMIT 10
+    `);
+    console.log("🔍 DEBUG - Todas las órdenes recientes:", debugQuery.rows);
+
     let query = `
       SELECT 
         oc.OrdenCompraID,
@@ -3287,36 +3305,44 @@ const getAllOrdenesCompra = async (req, res) => {
         oc.FechaCreacion,
         oc.FechaEntregaEsperada,
         oc.Estatus,
+        oc.OrigenOC,
         p.NombreEmpresa as ProveedorNombre,
         COUNT(doc.DetalleOC_ID) as TotalProductos
       FROM OrdenesDeCompra oc
       INNER JOIN Proveedores p ON oc.ProveedorID = p.ProveedorID
       LEFT JOIN DetallesOrdenCompra doc ON oc.OrdenCompraID = doc.OrdenCompraID
+      WHERE oc.OrigenOC = 'backorder'
     `;
 
     const values = [];
 
-    // Filtrar por estatus si se proporciona
+    // Filtrar por estatus si se proporciona (además del filtro de backorder)
     if (estatus) {
       if (estatus === "Pendiente,Parcial") {
-        query += ` WHERE oc.Estatus IN ('Pendiente', 'Parcial')`;
+        query += ` AND oc.Estatus IN ('Pendiente', 'Parcial')`;
       } else {
-        query += ` WHERE oc.Estatus = $1`;
+        query += ` AND oc.Estatus = $1`;
         values.push(estatus);
       }
     }
 
     query += `
       GROUP BY oc.OrdenCompraID, oc.ProveedorID, oc.FechaCreacion, 
-               oc.FechaEntregaEsperada, oc.Estatus, p.NombreEmpresa
+               oc.FechaEntregaEsperada, oc.Estatus, oc.OrigenOC, p.NombreEmpresa
       ORDER BY oc.FechaCreacion DESC
     `;
 
     const result = await db.query(query, values);
 
+    console.log(
+      "🔍 DEBUG - Órdenes de backorder encontradas:",
+      result.rows.length
+    );
+    console.log("🔍 DEBUG - Filtro estatus:", estatus);
+
     res.json({
       success: true,
-      message: "Órdenes de compra obtenidas exitosamente",
+      message: "Órdenes de compra de backorder obtenidas exitosamente",
       data: {
         ordenes: result.rows.map((row) => ({
           ordenCompraId: row.ordencompraid,
@@ -3325,6 +3351,7 @@ const getAllOrdenesCompra = async (req, res) => {
           fechaCreacion: row.fechacreacion,
           fechaEntregaEsperada: row.fechaentregaesperada,
           estatus: row.estatus,
+          origenOC: row.origenoc,
           totalProductos: parseInt(row.totalproductos),
         })),
         total: result.rows.length,

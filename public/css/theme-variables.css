@@ -1,0 +1,472 @@
+/**
+ * RazoConnect - Variables de Temas Estacionales
+ * Define paletas de colores y estilos para cada temporada
+ * @version 2.0.0
+ */
+
+/* ============================================
+   TEMA BASE / TODA OCASIÓN (Default)
+   Naranja RazoConnect, Gris Oscuro, Blanco
+   ============================================ */
+
+:root,
+.theme-todaocasion {
+  /* Colores Primarios - Naranja RazoConnect */
+  --theme-primary: #ff9966;
+  --theme-primary-light: #ffb894;
+  --theme-primary-dark: #ff7733;
+  --theme-primary-rgb: 255, 153, 102;
+
+  /* Colores Secundarios - Gris Oscuro */
+  --theme-secondary: #424242;
+  --theme-secondary-light: #616161;
+  --theme-secondary-dark: #212121;
+  --theme-secondary-rgb: 66, 66, 66;
+
+  /* Colores de Acento - Blanco/Gris Claro */
+  --theme-accent: #ffffff;
+  --theme-accent-light: #fafafa;
+  --theme-accent-dark: #f5f5f5;
+
+  /* Gradientes */
+  --theme-gradient-primary: linear-gradient(135deg, #ff9966 0%, #424242 100%);
+  --theme-gradient-hero: linear-gradient(135deg, #ff9966 0%, #ff7733 100%);
+  --theme-gradient-card: linear-gradient(
+    145deg,
+    rgba(255, 153, 102, 0.05) 0%,
+    rgba(66, 66, 66, 0.05) 100%
+  );
+
+  /* Colores de Fondo */
+  --theme-bg-primary: #ffffff;
+  --theme-bg-secondary: #fafafa;
+  --theme-bg-tertiary: #f5f5f5;
+
+  /* Colores de Superficie (Cards, Modals) */
+  --theme-surface: #ffffff;
+  --theme-surface-hover: #fafafa;
+  --theme-surface-elevated: #ffffff;
+
+  /* Sombras */
+  --theme-shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.08);
+  --theme-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+  --theme-shadow-lg: 0 12px 26px rgba(255, 153, 102, 0.2);
+  --theme-shadow-xl: 0 20px 40px rgba(0, 0, 0, 0.12);
+
+  /* Tipografía */
+  --theme-font-title: "Poppins", sans-serif;
+  --theme-font-body: "Inter", sans-serif;
+  --theme-font-weight-title: 600;
+  --theme-font-weight-body: 400;
+
+  /* Emojis/Iconos decorativos */
+  --theme-icon-primary: "🎁";
+  --theme-icon-secondary: "✨";
+
+  /* Decoración de fondo (opcional) */
+  --theme-pattern-opacity: 0.03;
+  --theme-pattern-url: none;
+}
+
+/* ============================================
+   TEMA NAVIDAD 🎄
+   20 septiembre - 25 diciembre
+   Rojo Oscuro, Verde Pino, Dorado, Fondo Crema
+   ============================================ */
+
+.theme-navidad {
+  /* Colores Primarios - Rojo Oscuro */
+  --theme-primary: #b71c1c;
+  --theme-primary-light: #d32f2f;
+  --theme-primary-dark: #8b0000;
+  --theme-primary-rgb: 183, 28, 28;
+
+  /* Colores Secundarios - Verde Pino */
+  --theme-secondary: #1b5e20;
+  --theme-secondary-light: #2e7d32;
+  --theme-secondary-dark: #0d3e10;
+  --theme-secondary-rgb: 27, 94, 32;
+
+  /* Colores de Acento - Dorado */
+  --theme-accent: #ffd700;
+  --theme-accent-light: #ffe54c;
+  --theme-accent-dark: #ffc700;
+
+  /* Gradientes Navideños */
+  --theme-gradient-primary: linear-gradient(
+    135deg,
+    #b71c1c 0%,
+    #1b5e20 50%,
+    #ffd700 100%
+  );
+  --theme-gradient-hero: linear-gradient(
+    135deg,
+    rgba(183, 28, 28, 0.95) 0%,
+    rgba(27, 94, 32, 0.95) 100%
+  );
+  --theme-gradient-card: linear-gradient(
+    145deg,
+    rgba(183, 28, 28, 0.08) 0%,
+    rgba(27, 94, 32, 0.08) 100%
+  );
+
+  /* Colores de Fondo - Crema */
+  --theme-bg-primary: #fff8e1;
+  --theme-bg-secondary: #fffaf0;
+  --theme-bg-tertiary: #fff5e0;
+
+  /* Colores de Superficie */
+  --theme-surface: #ffffff;
+  --theme-surface-hover: #fff8e1;
+  --theme-surface-elevated: #ffffff;
+
+  /* Sombras con toque festivo */
+  --theme-shadow-sm: 0 2px 4px rgba(183, 28, 28, 0.12);
+  --theme-shadow-md: 0 4px 12px rgba(183, 28, 28, 0.18);
+  --theme-shadow-lg: 0 12px 26px rgba(183, 28, 28, 0.25);
+  --theme-shadow-xl: 0 20px 40px rgba(183, 28, 28, 0.22);
+
+  /* Tipografía */
+  --theme-font-title: "Poppins", sans-serif;
+  --theme-font-body: "Inter", sans-serif;
+  --theme-font-weight-title: 700;
+  --theme-font-weight-body: 400;
+
+  /* Iconos temáticos */
+  --theme-icon-primary: "🎄";
+  --theme-icon-secondary: "🎅";
+
+  /* Patrón decorativo */
+  --theme-pattern-opacity: 0.04;
+  --theme-pattern-url: url("data:image/svg+xml,%3Csvg width='40' height='40' xmlns='http://www.w3.org/2000/svg'%3E%3Ctext x='10' y='25' font-size='20'%3E🎄%3C/text%3E%3C/svg%3E");
+}
+
+/* ============================================
+   TEMA SAN VALENTÍN 💝
+   26 diciembre - 14 febrero
+   Rosa Pastel, Rojo Pasión, Blanco - Tipografía Romántica
+   ============================================ */
+
+.theme-sanvalentin {
+  /* Colores Primarios - Rosa Pastel */
+  --theme-primary: #f8bbd0;
+  --theme-primary-light: #fce4ec;
+  --theme-primary-dark: #f48fb1;
+  --theme-primary-rgb: 248, 187, 208;
+
+  /* Colores Secundarios - Rojo Pasión */
+  --theme-secondary: #d32f2f;
+  --theme-secondary-light: #e57373;
+  --theme-secondary-dark: #b71c1c;
+  --theme-secondary-rgb: 211, 47, 47;
+
+  /* Colores de Acento - Blanco */
+  --theme-accent: #ffffff;
+  --theme-accent-light: #ffffff;
+  --theme-accent-dark: #fafafa;
+
+  /* Gradientes Románticos */
+  --theme-gradient-primary: linear-gradient(135deg, #f8bbd0 0%, #d32f2f 100%);
+  --theme-gradient-hero: linear-gradient(
+    135deg,
+    rgba(248, 187, 208, 0.95) 0%,
+    rgba(211, 47, 47, 0.95) 100%
+  );
+  --theme-gradient-card: linear-gradient(
+    145deg,
+    rgba(248, 187, 208, 0.1) 0%,
+    rgba(211, 47, 47, 0.05) 100%
+  );
+
+  /* Colores de Fondo - Tonos Suaves */
+  --theme-bg-primary: #ffffff;
+  --theme-bg-secondary: #fff5f7;
+  --theme-bg-tertiary: #fce4ec;
+
+  /* Colores de Superficie */
+  --theme-surface: #ffffff;
+  --theme-surface-hover: #fff5f7;
+  --theme-surface-elevated: #ffffff;
+
+  /* Sombras suaves y románticas */
+  --theme-shadow-sm: 0 2px 4px rgba(248, 187, 208, 0.15);
+  --theme-shadow-md: 0 4px 12px rgba(248, 187, 208, 0.25);
+  --theme-shadow-lg: 0 12px 26px rgba(211, 47, 47, 0.2);
+  --theme-shadow-xl: 0 20px 40px rgba(248, 187, 208, 0.25);
+
+  /* Tipografía Romántica */
+  --theme-font-title: "Pacifico", "Poppins", cursive, sans-serif;
+  --theme-font-body: "Inter", sans-serif;
+  --theme-font-weight-title: 400;
+  --theme-font-weight-body: 400;
+
+  /* Iconos temáticos */
+  --theme-icon-primary: "💝";
+  --theme-icon-secondary: "💕";
+
+  /* Patrón decorativo */
+  --theme-pattern-opacity: 0.04;
+  --theme-pattern-url: url("data:image/svg+xml,%3Csvg width='40' height='40' xmlns='http://www.w3.org/2000/svg'%3E%3Ctext x='10' y='25' font-size='20'%3E💕%3C/text%3E%3C/svg%3E");
+}
+
+/* ============================================
+   TEMA DÍA DE LA MADRE 👩‍👧‍👦
+   15 abril - 10 mayo
+   Lila/Púrpura Suave, Blanco, Magenta Vibrante
+   ============================================ */
+
+.theme-diamadre {
+  /* Colores Primarios - Lila/Púrpura Suave */
+  --theme-primary: #e1bee7;
+  --theme-primary-light: #f3e5f5;
+  --theme-primary-dark: #ce93d8;
+  --theme-primary-rgb: 225, 190, 231;
+
+  /* Colores Secundarios - Blanco */
+  --theme-secondary: #ffffff;
+  --theme-secondary-light: #ffffff;
+  --theme-secondary-dark: #fafafa;
+  --theme-secondary-rgb: 255, 255, 255;
+
+  /* Colores de Acento - Magenta Vibrante */
+  --theme-accent: #c2185b;
+  --theme-accent-light: #e91e63;
+  --theme-accent-dark: #880e4f;
+
+  /* Gradientes Maternales */
+  --theme-gradient-primary: linear-gradient(135deg, #e1bee7 0%, #c2185b 100%);
+  --theme-gradient-hero: linear-gradient(
+    135deg,
+    rgba(225, 190, 231, 0.95) 0%,
+    rgba(194, 24, 91, 0.95) 100%
+  );
+  --theme-gradient-card: linear-gradient(
+    145deg,
+    rgba(225, 190, 231, 0.1) 0%,
+    rgba(194, 24, 91, 0.05) 100%
+  );
+
+  /* Colores de Fondo - Tonos Suaves */
+  --theme-bg-primary: #ffffff;
+  --theme-bg-secondary: #f9f5fa;
+  --theme-bg-tertiary: #f3e5f5;
+
+  /* Colores de Superficie */
+  --theme-surface: #ffffff;
+  --theme-surface-hover: #f9f5fa;
+  --theme-surface-elevated: #ffffff;
+
+  /* Sombras delicadas */
+  --theme-shadow-sm: 0 2px 4px rgba(225, 190, 231, 0.15);
+  --theme-shadow-md: 0 4px 12px rgba(225, 190, 231, 0.25);
+  --theme-shadow-lg: 0 12px 26px rgba(194, 24, 91, 0.2);
+  --theme-shadow-xl: 0 20px 40px rgba(225, 190, 231, 0.25);
+
+  /* Tipografía */
+  --theme-font-title: "Poppins", sans-serif;
+  --theme-font-body: "Inter", sans-serif;
+  --theme-font-weight-title: 600;
+  --theme-font-weight-body: 400;
+
+  /* Iconos temáticos */
+  --theme-icon-primary: "👩‍👧‍👦";
+  --theme-icon-secondary: "🌷";
+
+  /* Patrón decorativo */
+  --theme-pattern-opacity: 0.03;
+  --theme-pattern-url: url("data:image/svg+xml,%3Csvg width='40' height='40' xmlns='http://www.w3.org/2000/svg'%3E%3Ctext x='10' y='25' font-size='20'%3E🌷%3C/text%3E%3C/svg%3E");
+}
+
+/* ============================================
+   TEMA DÍA DEL PADRE 👨‍👦
+   11 mayo - 21 junio
+   Azul Marino, Gris Acero, Beige - Estilo Sobrio y Elegante
+   ============================================ */
+
+.theme-diapadre {
+  /* Colores Primarios - Azul Marino */
+  --theme-primary: #0d47a1;
+  --theme-primary-light: #1976d2;
+  --theme-primary-dark: #01579b;
+  --theme-primary-rgb: 13, 71, 161;
+
+  /* Colores Secundarios - Gris Acero */
+  --theme-secondary: #546e7a;
+  --theme-secondary-light: #78909c;
+  --theme-secondary-dark: #37474f;
+  --theme-secondary-rgb: 84, 110, 122;
+
+  /* Colores de Acento - Beige */
+  --theme-accent: #f5f5f5;
+  --theme-accent-light: #fafafa;
+  --theme-accent-dark: #eeeeee;
+
+  /* Gradientes Sobrios */
+  --theme-gradient-primary: linear-gradient(135deg, #0d47a1 0%, #546e7a 100%);
+  --theme-gradient-hero: linear-gradient(
+    135deg,
+    rgba(13, 71, 161, 0.95) 0%,
+    rgba(84, 110, 122, 0.95) 100%
+  );
+  --theme-gradient-card: linear-gradient(
+    145deg,
+    rgba(13, 71, 161, 0.05) 0%,
+    rgba(84, 110, 122, 0.08) 100%
+  );
+
+  /* Colores de Fondo - Beige */
+  --theme-bg-primary: #f5f5f5;
+  --theme-bg-secondary: #fafafa;
+  --theme-bg-tertiary: #eeeeee;
+
+  /* Colores de Superficie */
+  --theme-surface: #ffffff;
+  --theme-surface-hover: #f5f5f5;
+  --theme-surface-elevated: #ffffff;
+
+  /* Sombras elegantes */
+  --theme-shadow-sm: 0 2px 4px rgba(13, 71, 161, 0.15);
+  --theme-shadow-md: 0 4px 12px rgba(13, 71, 161, 0.22);
+  --theme-shadow-lg: 0 12px 26px rgba(13, 71, 161, 0.28);
+  --theme-shadow-xl: 0 20px 40px rgba(13, 71, 161, 0.25);
+
+  /* Tipografía - Estilo Sobrio */
+  --theme-font-title: "Poppins", sans-serif;
+  --theme-font-body: "Inter", sans-serif;
+  --theme-font-weight-title: 700;
+  --theme-font-weight-body: 400;
+
+  /* Iconos temáticos */
+  --theme-icon-primary: "👨‍👦";
+  --theme-icon-secondary: "👔";
+
+  /* Patrón decorativo */
+  --theme-pattern-opacity: 0.02;
+  --theme-pattern-url: url("data:image/svg+xml,%3Csvg width='40' height='40' xmlns='http://www.w3.org/2000/svg'%3E%3Ctext x='10' y='25' font-size='20'%3E👔%3C/text%3E%3C/svg%3E");
+}
+
+/* ============================================
+   TEMA GRADUACIONES 🎓
+   22 junio - 30 agosto
+   Negro, Oro Metálico, Blanco - Estilo Premium/Elegante
+   ============================================ */
+
+.theme-graduaciones {
+  /* Colores Primarios - Negro */
+  --theme-primary: #212121;
+  --theme-primary-light: #424242;
+  --theme-primary-dark: #000000;
+  --theme-primary-rgb: 33, 33, 33;
+
+  /* Colores Secundarios - Oro Metálico */
+  --theme-secondary: #c5a009;
+  --theme-secondary-light: #d4af37;
+  --theme-secondary-dark: #9a7d0a;
+  --theme-secondary-rgb: 197, 160, 9;
+
+  /* Colores de Acento - Blanco */
+  --theme-accent: #ffffff;
+  --theme-accent-light: #ffffff;
+  --theme-accent-dark: #fafafa;
+
+  /* Gradientes Premium */
+  --theme-gradient-primary: linear-gradient(135deg, #212121 0%, #c5a009 100%);
+  --theme-gradient-hero: linear-gradient(
+    135deg,
+    rgba(33, 33, 33, 0.95) 0%,
+    rgba(197, 160, 9, 0.95) 100%
+  );
+  --theme-gradient-card: linear-gradient(
+    145deg,
+    rgba(33, 33, 33, 0.05) 0%,
+    rgba(197, 160, 9, 0.08) 100%
+  );
+
+  /* Colores de Fondo - Blanco */
+  --theme-bg-primary: #ffffff;
+  --theme-bg-secondary: #fafafa;
+  --theme-bg-tertiary: #f5f5f5;
+
+  /* Colores de Superficie */
+  --theme-surface: #ffffff;
+  --theme-surface-hover: #fafafa;
+  --theme-surface-elevated: #ffffff;
+
+  /* Sombras elegantes y profundas */
+  --theme-shadow-sm: 0 2px 4px rgba(33, 33, 33, 0.15);
+  --theme-shadow-md: 0 4px 12px rgba(33, 33, 33, 0.25);
+  --theme-shadow-lg: 0 12px 26px rgba(33, 33, 33, 0.35);
+  --theme-shadow-xl: 0 20px 40px rgba(33, 33, 33, 0.3);
+
+  /* Tipografía - Estilo Premium */
+  --theme-font-title: "Poppins", sans-serif;
+  --theme-font-body: "Inter", sans-serif;
+  --theme-font-weight-title: 700;
+  --theme-font-weight-body: 400;
+
+  /* Iconos temáticos */
+  --theme-icon-primary: "🎓";
+  --theme-icon-secondary: "📜";
+
+  /* Patrón decorativo */
+  --theme-pattern-opacity: 0.02;
+  --theme-pattern-url: url("data:image/svg+xml,%3Csvg width='40' height='40' xmlns='http://www.w3.org/2000/svg'%3E%3Ctext x='10' y='25' font-size='20'%3E🎓%3C/text%3E%3C/svg%3E");
+}
+
+/* ============================================
+   TRANSICIONES SUAVES ENTRE TEMAS
+   ============================================ */
+
+body {
+  transition: background-color 0.6s ease, color 0.6s ease;
+}
+
+/* Transiciones para botones y elementos interactivos */
+.btn,
+.card,
+.navbar,
+.product-card,
+.hero-section {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ============================================
+   APLICACIÓN DE PATRONES DECORATIVOS
+   (Opcional - activar según preferencia)
+   ============================================ */
+
+body[data-theme-patterns="true"]::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: var(--theme-pattern-url);
+  background-repeat: repeat;
+  background-size: 40px 40px;
+  opacity: var(--theme-pattern-opacity);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ============================================
+   UTILIDADES PARA TESTING Y DEBUG
+   ============================================ */
+
+/* Indicador visual del tema actual (solo en desarrollo) */
+body[data-theme-debug="true"]::after {
+  content: var(--theme-icon-primary) " Tema activo";
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: var(--theme-primary);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  box-shadow: var(--theme-shadow-lg);
+  z-index: 9999;
+  pointer-events: none;
+}

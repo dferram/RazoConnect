@@ -70,8 +70,8 @@ async function generarOrdenCompraAutomatica(
     } else {
       esOrdenNueva = true;
       const nuevaOrdenResult = await dbClient.query(
-        `INSERT INTO OrdenesDeCompra (ProveedorID, FechaEntregaEsperada, Estatus)
-         VALUES ($1, NOW() + INTERVAL '14 days', 'Pendiente')
+        `INSERT INTO OrdenesDeCompra (ProveedorID, FechaEntregaEsperada, Estatus, OrigenOC)
+         VALUES ($1, NOW() + INTERVAL '14 days', 'Pendiente', 'backorder')
          RETURNING OrdenCompraID`,
         [proveedorId]
       );
@@ -203,8 +203,8 @@ async function generarBackorderProveedor(
     if (ordenPendienteResult.rows.length === 0) {
       // NO existe orden pendiente -> Crear nueva
       const nuevaOrdenResult = await client.query(
-        `INSERT INTO OrdenesDeCompra (ProveedorID, FechaEntregaEsperada, Estatus)
-         VALUES ($1, NOW() + INTERVAL '14 days', 'Pendiente')
+        `INSERT INTO OrdenesDeCompra (ProveedorID, FechaEntregaEsperada, Estatus, OrigenOC)
+         VALUES ($1, NOW() + INTERVAL '14 days', 'Pendiente', 'backorder')
          RETURNING OrdenCompraID`,
         [proveedorID]
       );
@@ -242,16 +242,10 @@ async function generarBackorderProveedor(
       // No existe el producto -> INSERT (nuevo detalle)
       const insertResult = await client.query(
         `INSERT INTO DetallesOrdenCompra 
-         (OrdenCompraID, ProductoID, VarianteID, CantidadSolicitada, CantidadRecibida, TamanoID)
-         VALUES ($1, $2, $3, $4, 0, $5)
+         (OrdenCompraID, VarianteID, CantidadSolicitada, CantidadRecibida)
+         VALUES ($1, $2, $3, 0)
          RETURNING DetalleOC_ID, CantidadSolicitada`,
-        [
-          ordenCompraID,
-          productoIdNumero,
-          varianteIdNumero,
-          cantidadSolicitada,
-          tamanoIdNumero,
-        ]
+        [ordenCompraID, varianteIdNumero, cantidadSolicitada]
       );
       detalleOrdenID = insertResult.rows[0].detalleoc_id;
       cantidadTotal = insertResult.rows[0].cantidadsolicitada;

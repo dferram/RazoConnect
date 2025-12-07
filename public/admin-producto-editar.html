@@ -293,7 +293,7 @@
                     </div>
                   </div>
 
-                  <div class="form-grid-2">
+                  <div class="form-grid-3">
                     <div class="form-group">
                       <label for="costoUnitario" class="form-label"
                         >Costo unitario (MXN)</label
@@ -320,6 +320,31 @@
                         placeholder="0.00"
                         required
                       />
+                    </div>
+                    <div class="form-group">
+                      <label for="precioOferta" class="form-label">
+                        💰 Precio de Oferta (MXN)
+                        <span
+                          style="color: var(--razo-orange); font-size: 0.875rem"
+                          >- Opcional</span
+                        >
+                      </label>
+                      <input
+                        type="number"
+                        id="precioOferta"
+                        class="form-input"
+                        min="0"
+                        step="0.01"
+                        placeholder="0.00"
+                        style="border: 2px solid var(--razo-orange)"
+                      />
+                      <small
+                        class="form-hint"
+                        style="color: var(--razo-orange)"
+                      >
+                        ⚡ Si defines un precio de oferta, este se mostrará como
+                        descuento en el catálogo
+                      </small>
                     </div>
                   </div>
 
@@ -759,6 +784,7 @@
       variantForm.addEventListener("submit", async (event) => {
         event.preventDefault();
 
+        const precioOfertaValue = document.getElementById("precioOferta").value;
         const formData = {
           productoId,
           sku: document.getElementById("sku").value.trim(),
@@ -767,6 +793,10 @@
           precioUnitario: parseFloat(
             document.getElementById("precioUnitario").value
           ),
+          precioOfertaUnitario:
+            precioOfertaValue && precioOfertaValue.trim() !== ""
+              ? parseFloat(precioOfertaValue)
+              : null,
           costoUnitario: document.getElementById("costoUnitario").value
             ? parseFloat(document.getElementById("costoUnitario").value)
             : null,

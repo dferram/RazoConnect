@@ -621,10 +621,25 @@
 
         const sku = varianteSeleccionada.sku || "N/D";
         const piezasVariante = obtenerPiezasPorPaquete();
-        const precioUnitario =
+
+        // LÓGICA DE PRECIOS CON OFERTA
+        const precioBase =
           typeof varianteSeleccionada.precioUnitario === "number"
             ? varianteSeleccionada.precioUnitario
             : parseFloat(varianteSeleccionada.precioUnitario);
+        const precioOferta = varianteSeleccionada.precioOfertaUnitario
+          ? typeof varianteSeleccionada.precioOfertaUnitario === "number"
+            ? varianteSeleccionada.precioOfertaUnitario
+            : parseFloat(varianteSeleccionada.precioOfertaUnitario)
+          : null;
+
+        // Si existe precio de oferta, úsalo. Si no, usa precio base.
+        const precioUnitario = precioOferta || precioBase;
+        const tieneOferta =
+          precioOferta !== null &&
+          precioOferta > 0 &&
+          precioOferta < precioBase;
+
         const precioPaqueteValor =
           Number.isFinite(precioUnitario) && piezasVariante
             ? precioUnitario * piezasVariante
@@ -638,12 +653,50 @@
             : parseInt(varianteSeleccionada.stock, 10) || 0;
 
         productSKU.textContent = `SKU: ${sku}`;
-        precioPaquete.textContent = Number.isFinite(precioPaqueteValor)
-          ? formatCurrency(precioPaqueteValor)
-          : "No disponible";
-        precioPieza.textContent = Number.isFinite(precioPiezaValor)
-          ? formatCurrency(precioPiezaValor)
-          : "No disponible";
+
+        // Mostrar precio con oferta (precio tachado + precio oferta en rojo)
+        if (tieneOferta && Number.isFinite(precioPaqueteValor)) {
+          const precioBaseValor =
+            Number.isFinite(precioBase) && piezasVariante
+              ? precioBase * piezasVariante
+              : null;
+          const descuento = Math.round(
+            ((precioBase - precioOferta) / precioBase) * 100
+          );
+          precioPaquete.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+              <del style="color: #999; font-size: 0.9em;">${formatCurrency(
+                precioBaseValor
+              )}</del>
+              <span style="color: #e53e3e; font-weight: 700; font-size: 1.2em;">${formatCurrency(
+                precioPaqueteValor
+              )}</span>
+              <span style="background: #e53e3e; color: white; padding: 0.15rem 0.4rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: 600;">-${descuento}%</span>
+            </div>
+          `;
+        } else {
+          precioPaquete.textContent = Number.isFinite(precioPaqueteValor)
+            ? formatCurrency(precioPaqueteValor)
+            : "No disponible";
+        }
+
+        // Mostrar precio por pieza con oferta
+        if (tieneOferta && Number.isFinite(precioPiezaValor)) {
+          precioPieza.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <del style="color: #999; font-size: 0.85em;">${formatCurrency(
+                precioBase
+              )}</del>
+              <span style="color: #e53e3e; font-weight: 600;">${formatCurrency(
+                precioPiezaValor
+              )}</span>
+            </div>
+          `;
+        } else {
+          precioPieza.textContent = Number.isFinite(precioPiezaValor)
+            ? formatCurrency(precioPiezaValor)
+            : "No disponible";
+        }
         piezasPorPaquete.textContent = piezasVariante || "N/D";
         dimensiones.textContent =
           varianteSeleccionada.dimensiones || "No especificado";
@@ -1221,5 +1274,8 @@
         }
       }
     </style>
+
+    <!-- Sistema de Temas Estacionales -->
+    <script src="/js/theme-manager.js"></script>
   </body>
 </html>
