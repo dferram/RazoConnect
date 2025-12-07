@@ -130,13 +130,24 @@
   // ========================================
   function renderProductCard(producto, index) {
     // El backend devuelve las propiedades en camelCase
-    const precio = parseFloat(
-      producto.precioDesde || producto.precioOferta || 0
-    );
-    const precioFormateado = precio.toLocaleString("es-MX", {
-      style: "currency",
-      currency: "MXN",
-    });
+    const precioBase = parseFloat(producto.precioDesde || 0);
+    const precioOferta = parseFloat(producto.precioOferta || 0);
+    const tieneOferta = precioOferta > 0 && precioOferta < precioBase;
+    
+    const formatCurrency = (valor) => {
+      return valor.toLocaleString("es-MX", {
+        style: "currency",
+        currency: "MXN",
+      });
+    };
+
+    // Generar HTML de precio según si hay oferta o no
+    const precioHTML = tieneOferta
+      ? `<div class="precio-contenedor">
+           <span class="precio-original">${formatCurrency(precioBase)}</span>
+           <span class="precio-oferta">${formatCurrency(precioOferta)}</span>
+         </div>`
+      : `<span class="precio-normal">${formatCurrency(precioBase || precioOferta)}</span>`;
 
     const stockDisponible = producto.variantesConStock || 0;
     const badge =
@@ -162,7 +173,7 @@
         </div>
         <div class="product-info">
           <h3 class="product-title">${producto.nombreProducto}</h3>
-          <div class="product-price">${precioFormateado}</div>
+          <div class="product-price">${precioHTML}</div>
           <p class="product-details">
             ${producto.categoria ? producto.categoria.nombre : "Producto"}
             ${

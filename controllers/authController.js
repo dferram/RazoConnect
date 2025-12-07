@@ -35,7 +35,7 @@ const registroCliente = async (req, res) => {
 
     // Verificar si el email ya existe
     const emailExists = await db.query(
-      "SELECT Email FROM Clientes WHERE Email = $1",
+      "SELECT Email FROM clientes WHERE Email = $1",
       [Email]
     );
 
@@ -52,7 +52,7 @@ const registroCliente = async (req, res) => {
 
     // Insertar nuevo cliente
     const result = await db.query(
-      `INSERT INTO Clientes (Nombre, Apellido, Email, PasswordHash, Telefono)
+      `INSERT INTO clientes (Nombre, Apellido, Email, PasswordHash, Telefono)
        VALUES ($1, $2, $3, $4, $5)
        RETURNING ClienteID, Nombre, Apellido, Email, Telefono, FechaDeRegistro`,
       [Nombre, Apellido, Email, PasswordHash, Telefono || null]
@@ -117,7 +117,7 @@ const registroAgente = async (req, res) => {
 
     // Verificar si el email ya existe
     const emailExists = await db.query(
-      "SELECT Email FROM AgentesDeVentas WHERE Email = $1",
+      "SELECT Email FROM agentesdeventas WHERE Email = $1",
       [Email]
     );
 
@@ -136,7 +136,7 @@ const registroAgente = async (req, res) => {
 
     // Insertar nuevo agente
     const result = await db.query(
-      `INSERT INTO AgentesDeVentas (Nombre, Apellido, Email, PasswordHash, CodigoAgente, Activo)
+      `INSERT INTO agentesdeventas (Nombre, Apellido, Email, PasswordHash, CodigoAgente, Activo)
        VALUES ($1, $2, $3, $4, $5, TRUE)
        RETURNING AgenteID, Nombre, Apellido, Email, CodigoAgente, Activo`,
       [Nombre, Apellido, Email, PasswordHash, CodigoAgente]
@@ -198,7 +198,7 @@ const login = async (req, res) => {
 
     // Buscar en la tabla de Clientes
     const clienteResult = await db.query(
-      "SELECT ClienteID, Nombre, Apellido, Email, PasswordHash, Telefono FROM Clientes WHERE Email = $1",
+      "SELECT ClienteID, Nombre, Apellido, Email, PasswordHash, Telefono FROM clientes WHERE Email = $1",
       [Email]
     );
 
@@ -244,7 +244,7 @@ const login = async (req, res) => {
 
     // Si no es cliente, buscar en la tabla de AgentesDeVentas
     const agenteResult = await db.query(
-      "SELECT AgenteID, Nombre, Apellido, Email, PasswordHash, CodigoAgente, Activo FROM AgentesDeVentas WHERE Email = $1",
+      "SELECT AgenteID, Nombre, Apellido, Email, PasswordHash, CodigoAgente, Activo FROM agentesdeventas WHERE Email = $1",
       [Email]
     );
 
@@ -327,7 +327,7 @@ const verifyCliente = async (req, res) => {
     if (userRol === "agente") {
       const agenteResult = await db.query(
         `SELECT AgenteID, Nombre, Apellido, Email, CodigoAgente, Activo
-         FROM AgentesDeVentas
+         FROM agentesdeventas
          WHERE AgenteID = $1 AND Activo = TRUE`,
         [userId]
       );
@@ -360,7 +360,7 @@ const verifyCliente = async (req, res) => {
     // Si es cliente, buscar en la tabla de clientes
     const result = await db.query(
       `SELECT ClienteID, Nombre, Apellido, Email, Telefono, FechaDeRegistro
-       FROM Clientes
+       FROM clientes
        WHERE ClienteID = $1`,
       [userId]
     );
@@ -410,7 +410,7 @@ const refreshClienteToken = async (req, res) => {
 
     // Verificar que el cliente aún existe y está activo
     const result = await db.query(
-      `SELECT ClienteID FROM Clientes WHERE ClienteID = $1`,
+      `SELECT ClienteID FROM clientes WHERE ClienteID = $1`,
       [clienteId]
     );
 
@@ -464,14 +464,14 @@ const forgotPassword = async (req, res) => {
 
   try {
     const clienteResult = await db.query(
-      "SELECT ClienteID, Nombre FROM Clientes WHERE Email = $1",
+      "SELECT ClienteID, Nombre FROM clientes WHERE Email = $1",
       [email]
     );
 
     const agenteResult =
       clienteResult.rows.length === 0
         ? await db.query(
-            "SELECT AgenteID, Nombre FROM AgentesDeVentas WHERE Email = $1",
+            "SELECT AgenteID, Nombre FROM agentesdeventas WHERE Email = $1",
             [email]
           )
         : { rows: [] };
@@ -487,7 +487,7 @@ const forgotPassword = async (req, res) => {
     const agenteId = agenteResult.rows[0]?.agenteid || null;
 
     await db.query(
-      `INSERT INTO PasswordResetTokens (Token, ClienteID, AgenteID, ExpiraEn)
+      `INSERT INTO passwordresettokens (Token, ClienteID, AgenteID, ExpiraEn)
        VALUES ($1, $2, $3, $4)`,
       [token, clienteId, agenteId, expiration]
     );
@@ -569,7 +569,7 @@ const registroAdmin = async (req, res) => {
 
     // Verificar si el email ya existe
     const emailExists = await db.query(
-      "SELECT Email FROM Administradores WHERE Email = $1",
+      "SELECT Email FROM administradores WHERE Email = $1",
       [Email]
     );
 
@@ -588,7 +588,7 @@ const registroAdmin = async (req, res) => {
     const rolFinal =
       Rol && ["admin", "superadmin"].includes(Rol) ? Rol : "admin";
     const result = await db.query(
-      `INSERT INTO Administradores (Nombre, Apellido, Email, PasswordHash, Rol, Activo)
+      `INSERT INTO administradores (Nombre, Apellido, Email, PasswordHash, Rol, Activo)
        VALUES ($1, $2, $3, $4, $5, TRUE)
        RETURNING AdminID, Nombre, Apellido, Email, Rol`,
       [Nombre.trim(), Apellido.trim(), Email, PasswordHash, rolFinal]
@@ -632,7 +632,7 @@ const resetPassword = async (req, res) => {
   try {
     const tokenResult = await db.query(
       `SELECT TokenID, ClienteID, AgenteID, ExpiraEn
-       FROM PasswordResetTokens
+       FROM passwordresettokens
        WHERE Token = $1`,
       [token]
     );
@@ -646,7 +646,7 @@ const resetPassword = async (req, res) => {
 
     const tokenRow = tokenResult.rows[0];
     if (new Date(tokenRow.expiraen) <= new Date()) {
-      await db.query("DELETE FROM PasswordResetTokens WHERE TokenID = $1", [
+      await db.query("DELETE FROM passwordresettokens WHERE TokenID = $1", [
         tokenRow.tokenid,
       ]);
       return res.status(400).json({
@@ -660,17 +660,17 @@ const resetPassword = async (req, res) => {
 
     if (tokenRow.clienteid) {
       await db.query(
-        "UPDATE Clientes SET PasswordHash = $1 WHERE ClienteID = $2",
+        "UPDATE clientes SET PasswordHash = $1 WHERE ClienteID = $2",
         [hashedPassword, tokenRow.clienteid]
       );
     } else if (tokenRow.agenteid) {
       await db.query(
-        "UPDATE AgentesDeVentas SET PasswordHash = $1 WHERE AgenteID = $2",
+        "UPDATE agentesdeventas SET PasswordHash = $1 WHERE AgenteID = $2",
         [hashedPassword, tokenRow.agenteid]
       );
     }
 
-    await db.query("DELETE FROM PasswordResetTokens WHERE TokenID = $1", [
+    await db.query("DELETE FROM passwordresettokens WHERE TokenID = $1", [
       tokenRow.tokenid,
     ]);
 
@@ -714,7 +714,7 @@ const crearAdmin = async (req, res) => {
 
     // Verificar si el email ya existe
     const emailExists = await db.query(
-      "SELECT Email FROM Administradores WHERE Email = $1",
+      "SELECT Email FROM administradores WHERE Email = $1",
       [email]
     );
 
@@ -741,7 +741,7 @@ const crearAdmin = async (req, res) => {
 
     // Insertar nuevo administrador
     const result = await db.query(
-      `INSERT INTO Administradores (Nombre, Apellido, Email, PasswordHash, Rol, Activo)
+      `INSERT INTO administradores (Nombre, Apellido, Email, PasswordHash, Rol, Activo)
        VALUES ($1, $2, $3, $4, $5, TRUE)
        RETURNING AdminID, Nombre, Apellido, Email, Rol`,
       [nombre.trim(), "", email, PasswordHash, rolFinal]
@@ -777,6 +777,163 @@ const crearAdmin = async (req, res) => {
   }
 };
 
+/**
+ * Obtener información del usuario actual
+ * GET /api/auth/me
+ * Endpoint unificado para obtener datos del perfil según el rol
+ */
+const getCurrentUser = async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: "No autenticado",
+      });
+    }
+
+    const { userId, id, rol, tipo, roles } = req.user;
+    let userData = {};
+
+    // userId puede venir como 'userId' o 'id' dependiendo del tipo de login
+    const efectiveUserId = userId || id;
+
+    // Determinar el rol efectivo
+    const userRole = tipo || rol || (Array.isArray(roles) ? roles[0] : null);
+
+    switch (userRole) {
+      case "admin":
+        // Consultar tabla Administradores
+        const adminQuery = `
+          SELECT 
+            AdminID,
+            Nombre,
+            Email,
+            Rol
+          FROM administradores
+          WHERE AdminID = $1
+        `;
+        const adminResult = await db.query(adminQuery, [efectiveUserId]);
+
+        if (adminResult.rows.length === 0) {
+          return res.status(404).json({
+            success: false,
+            message: "Administrador no encontrado",
+          });
+        }
+
+        const admin = adminResult.rows[0];
+        userData = {
+          nombre: admin.nombre,
+          email: admin.email,
+          rol: admin.rol === "superadmin" ? "Super Administrador" : "Administrador",
+          iniciales: getIniciales(admin.nombre),
+          tipo: "admin",
+        };
+        break;
+
+      case "agente":
+        // Consultar tabla AgentesDeVentas
+        const agenteQuery = `
+          SELECT 
+            AgenteID,
+            Nombre,
+            Apellido,
+            Email,
+            CodigoAgente
+          FROM agentesdeventas
+          WHERE AgenteID = $1
+        `;
+        const agenteResult = await db.query(agenteQuery, [efectiveUserId]);
+
+        if (agenteResult.rows.length === 0) {
+          return res.status(404).json({
+            success: false,
+            message: "Agente no encontrado",
+          });
+        }
+
+        const agente = agenteResult.rows[0];
+        const nombreCompleto = `${agente.nombre} ${agente.apellido}`.trim();
+        userData = {
+          nombre: nombreCompleto,
+          email: agente.email,
+          rol: "Agente de Ventas",
+          iniciales: getIniciales(nombreCompleto),
+          tipo: "agente",
+          codigoAgente: agente.codigoagente,
+        };
+        break;
+
+      case "cliente":
+        // Consultar tabla Clientes
+        const clienteQuery = `
+          SELECT 
+            ClienteID,
+            Nombre,
+            Apellido,
+            Email,
+            NombreEmpresa
+          FROM clientes
+          WHERE ClienteID = $1
+        `;
+        const clienteResult = await db.query(clienteQuery, [efectiveUserId]);
+
+        if (clienteResult.rows.length === 0) {
+          return res.status(404).json({
+            success: false,
+            message: "Cliente no encontrado",
+          });
+        }
+
+        const cliente = clienteResult.rows[0];
+        const nombreCliente = `${cliente.nombre} ${cliente.apellido}`.trim();
+        userData = {
+          nombre: nombreCliente || cliente.nombreempresa,
+          email: cliente.email,
+          rol: cliente.nombreempresa ? "Cliente - " + cliente.nombreempresa : "Cliente",
+          iniciales: getIniciales(nombreCliente || cliente.nombreempresa),
+          tipo: "cliente",
+          empresa: cliente.nombreempresa,
+        };
+        break;
+
+      default:
+        return res.status(400).json({
+          success: false,
+          message: "Rol de usuario no válido",
+        });
+    }
+
+    res.json({
+      success: true,
+      data: userData,
+    });
+  } catch (error) {
+    console.error("Error al obtener perfil del usuario:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error al obtener información del usuario",
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * Genera iniciales a partir de un nombre completo
+ * @param {string} nombre - Nombre completo
+ * @returns {string} Iniciales (máximo 2 caracteres)
+ */
+function getIniciales(nombre) {
+  if (!nombre) return "U";
+  
+  const palabras = nombre.trim().split(/\s+/);
+  if (palabras.length === 1) {
+    return palabras[0].substring(0, 2).toUpperCase();
+  }
+  
+  return (palabras[0][0] + palabras[palabras.length - 1][0]).toUpperCase();
+}
+
 module.exports = {
   registroCliente,
   registroAgente,
@@ -787,4 +944,5 @@ module.exports = {
   refreshClienteToken,
   forgotPassword,
   resetPassword,
+  getCurrentUser,
 };

@@ -254,6 +254,53 @@
             </table>
           </div>
         </div>
+
+        <!-- Modal Footer con Botones -->
+        <div class="modal-footer" style="
+          display: flex;
+          justify-content: flex-end;
+          gap: 1rem;
+          padding: 1.5rem;
+          border-top: 1px solid #e5e7eb;
+          background: #f9fafb;
+        ">
+          <button 
+            class="btn btn-danger" 
+            onclick="cancelarOrdenBackorder()"
+            style="
+              background: #dc2626;
+              color: white;
+              padding: 0.75rem 1.5rem;
+              border: none;
+              border-radius: 0.5rem;
+              font-weight: 600;
+              cursor: pointer;
+              transition: background 0.2s;
+            "
+            onmouseover="this.style.background='#b91c1c'"
+            onmouseout="this.style.background='#dc2626'"
+          >
+            Cancelar Orden
+          </button>
+          <button 
+            class="btn btn-success" 
+            onclick="confirmarOrdenBackorder()"
+            style="
+              background: #16a34a;
+              color: white;
+              padding: 0.75rem 1.5rem;
+              border: none;
+              border-radius: 0.5rem;
+              font-weight: 600;
+              cursor: pointer;
+              transition: background 0.2s;
+            "
+            onmouseover="this.style.background='#15803d'"
+            onmouseout="this.style.background='#16a34a'"
+          >
+            Confirmar Orden
+          </button>
+        </div>
       </div>
     </div>
 
@@ -463,25 +510,48 @@
         // Ver detalle de orden
         window.verDetalle = async function (ordenCompraId) {
           try {
+            console.log('🔍 Cargando detalle de orden:', ordenCompraId);
             const response = await API.apiCall(
               `/admin/ordenes-compra/${ordenCompraId}/detalles`,
               { method: "GET" }
             );
 
+            console.log('📦 Respuesta recibida:', response);
+
             if (!response.ok) {
+              console.error('❌ Respuesta no OK:', response);
               throw new Error("Error al cargar detalle");
             }
 
-            mostrarDetalle(response.data);
+            if (response.data && response.data.data) {
+              console.log('✅ Mostrando modal con data:', response.data.data);
+              mostrarDetalle(response.data.data);
+            } else {
+              console.error('❌ Formato de respuesta incorrecto:', response);
+              throw new Error("Formato de respuesta incorrecto");
+            }
           } catch (error) {
-            console.error("Error:", error);
+            console.error("❌ Error completo:", error);
             showToast("Error al cargar detalle de la orden", "error");
           }
         };
 
+        // Variable global para almacenar el ID de la orden actual
+        let currentOrdenId = null;
+
         // Mostrar modal de detalle
         function mostrarDetalle(data) {
+          console.log('🎯 mostrarDetalle llamada con:', data);
           const { orden, detalles } = data;
+
+          if (!orden || !detalles) {
+            console.error('❌ Datos incompletos:', { orden, detalles });
+            showToast("Error: datos incompletos", "error");
+            return;
+          }
+
+          // Guardar ID de la orden actual
+          currentOrdenId = orden.ordenCompraId;
 
           document.getElementById("detalleOrdenId").textContent =
             orden.ordenCompraId;
@@ -515,7 +585,9 @@
             productosBody.appendChild(row);
           });
 
+          console.log('🎬 Abriendo modal...');
           detalleModal.classList.add("show");
+          console.log('✅ Modal abierto, clase "show" agregada');
         }
 
         // Cerrar modal
@@ -540,10 +612,78 @@
           }
         };
 
+        // Confirmar Orden de Backorder
+        window.confirmarOrdenBackorder = async function() {
+          if (!currentOrdenId) {
+            showToast("Error: No hay orden seleccionada", "error");
+            return;
+          }
+
+          if (!confirm('¿Confirmar que esta orden de backorder ha sido procesada?')) {
+            return;
+          }
+
+          try {
+            const response = await API.apiCall(
+              `/admin/ordenes-compra/${currentOrdenId}/confirmar`,
+              { method: 'POST' }
+            );
+
+            if (response.ok) {
+              showToast("Orden confirmada exitosamente", "success");
+              closeDetalleModal();
+              loadOrdenes(); // Recargar lista
+            } else {
+              throw new Error(response.data?.message || "Error al confirmar");
+            }
+          } catch (error) {
+            console.error("Error confirmando orden:", error);
+            showToast("Error al confirmar la orden", "error");
+          }
+        };
+
+        // Cancelar Orden de Backorder
+        window.cancelarOrdenBackorder = async function() {
+          if (!currentOrdenId) {
+            showToast("Error: No hay orden seleccionada", "error");
+            return;
+          }
+
+          const motivo = prompt('Motivo de cancelación (se notificará al cliente):');
+          if (!motivo || motivo.trim() === '') {
+            showToast("Cancelación abortada: se requiere un motivo", "warning");
+            return;
+          }
+
+          try {
+            const response = await API.apiCall(
+              `/admin/ordenes-compra/${currentOrdenId}/cancelar`,
+              {
+                method: 'POST',
+                body: JSON.stringify({ motivo: motivo.trim() })
+              }
+            );
+
+            if (response.ok) {
+              showToast("Orden cancelada y cliente notificado", "success");
+              closeDetalleModal();
+              loadOrdenes(); // Recargar lista
+            } else {
+              throw new Error(response.data?.message || "Error al cancelar");
+            }
+          } catch (error) {
+            console.error("Error cancelando orden:", error);
+            showToast("Error al cancelar la orden", "error");
+          }
+        };
+
         // Toast notifications
         function showToast(message, type = "info") {
           // Implementar según tu sistema de toasts
           console.log(`[${type.toUpperCase()}] ${message}`);
+          if (typeof window.showToast === 'function') {
+            window.showToast(message, type);
+          }
         }
       })();
     </script>

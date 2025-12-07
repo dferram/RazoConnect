@@ -1918,17 +1918,17 @@ const getProductoDetalle = async (req, res) => {
 
     const productoResult = await db.query(
       `SELECT
-         p.ProductoID,
-         p.NombreProducto,
-         p.CodigoModelo,
-         p.Descripcion,
-         p.Activo,
-         p.CategoriaID,
-         c.Nombre AS CategoriaNombre,
-         c.Descripcion AS CategoriaDescripcion
-       FROM Productos p
-       LEFT JOIN Categorias c ON c.CategoriaID = p.CategoriaID
-       WHERE p.ProductoID = $1`,
+         p.productoid,
+         p.nombreproducto,
+         p.codigomodelo,
+         p.descripcion,
+         p.activo,
+         p.categoriaid,
+         c.nombre AS categorianombre,
+         c.descripcion AS categoriadescripcion
+       FROM productos p
+       LEFT JOIN categorias c ON c.categoriaid = p.categoriaid
+       WHERE p.productoid = $1`,
       [productoId]
     );
 
@@ -1943,26 +1943,26 @@ const getProductoDetalle = async (req, res) => {
 
     const variantesResult = await db.query(
       `SELECT
-         pv.VarianteID,
-         pv.ProductoID,
-         pv.SKU,
-         pv.Dimensiones,
-         pv.CostoUnitario,
-         pv.PrecioUnitario,
-         pv.Stock,
-         pv.TipoProductoID,
-         pv.MedidaID
-       FROM Producto_Variantes pv
-       WHERE pv.ProductoID = $1
-       ORDER BY pv.VarianteID ASC`,
+         pv.varianteid,
+         pv.productoid,
+         pv.sku,
+         pv.dimensiones,
+         pv.costounitario,
+         pv.preciounitario,
+         pv.stock,
+         pv.tipoproductoid,
+         pv.medidaid
+       FROM producto_variantes pv
+       WHERE pv.productoid = $1
+       ORDER BY pv.varianteid ASC`,
       [productoId]
     );
 
     const tamanosQuery = `
-      SELECT ptd.TamanoID, ct.*
-      FROM Producto_TamanosDisponibles ptd
-      INNER JOIN Cat_TamanoPaquetes ct ON ct.TamanoID = ptd.TamanoID
-      WHERE ptd.ProductoID = $1
+      SELECT ptd.tamanoid, ct.*
+      FROM producto_tamanosdisponibles ptd
+      INNER JOIN cat_tamanopaquetes ct ON ct.tamanoid = ptd.tamanoid
+      WHERE ptd.productoid = $1
     `;
 
     const tamanosResult = await db.query(tamanosQuery, [productoId]);
@@ -2109,46 +2109,46 @@ const getAllProductos = async (req, res) => {
   try {
     const result = await db.query(
       `SELECT 
-        p.ProductoID,
-        p.NombreProducto,
-        p.Descripcion,
-        p.CategoriaID,
-        COALESCE(SUM(v.Stock), 0) AS stock_total,
-        COUNT(v.VarianteID) AS variantes_count,
-        MIN(v.PrecioUnitario) FILTER (WHERE v.PrecioUnitario IS NOT NULL) AS precio_desde,
+        p.productoid,
+        p.nombreproducto,
+        p.descripcion,
+        p.categoriaid,
+        COALESCE(SUM(v.stock), 0) AS stock_total,
+        COUNT(v.varianteid) AS variantes_count,
+        MIN(v.preciounitario) FILTER (WHERE v.preciounitario IS NOT NULL) AS precio_desde,
         JSONB_BUILD_OBJECT(
-          'varianteId', v_top.VarianteID,
-          'sku', v_top.SKU,
-          'precioUnitario', v_top.PrecioUnitario,
-          'stock', v_top.Stock,
-          'dimensiones', v_top.Dimensiones,
-          'medidaId', v_top.MedidaID
+          'varianteId', v_top.varianteid,
+          'sku', v_top.sku,
+          'precioUnitario', v_top.preciounitario,
+          'stock', v_top.stock,
+          'dimensiones', v_top.dimensiones,
+          'medidaId', v_top.medidaid
         ) AS variante_destacada,
         JSONB_AGG(
           JSONB_BUILD_OBJECT(
-            'varianteId', v.VarianteID,
-            'sku', v.SKU,
-            'precioUnitario', v.PrecioUnitario,
-            'stock', v.Stock,
-            'dimensiones', v.Dimensiones,
-            'medidaId', v.MedidaID
+            'varianteId', v.varianteid,
+            'sku', v.sku,
+            'precioUnitario', v.preciounitario,
+            'stock', v.stock,
+            'dimensiones', v.dimensiones,
+            'medidaId', v.medidaid
           )
-        ) FILTER (WHERE v.VarianteID IS NOT NULL) AS variantes
-      FROM Productos p
-      LEFT JOIN Producto_Variantes v ON v.ProductoID = p.ProductoID
+        ) FILTER (WHERE v.varianteid IS NOT NULL) AS variantes
+      FROM productos p
+      LEFT JOIN producto_variantes v ON v.productoid = p.productoid
       LEFT JOIN LATERAL (
         SELECT v2.*
-        FROM Producto_Variantes v2
-        WHERE v2.ProductoID = p.ProductoID
-        ORDER BY v2.Stock DESC NULLS LAST, v2.VarianteID ASC
+        FROM producto_variantes v2
+        WHERE v2.productoid = p.productoid
+        ORDER BY v2.stock DESC NULLS LAST, v2.varianteid ASC
         LIMIT 1
       ) v_top ON true
-      GROUP BY p.ProductoID, p.NombreProducto, p.Descripcion, p.CategoriaID, v_top.VarianteID, v_top.SKU, v_top.PrecioUnitario, v_top.Stock, v_top.Dimensiones, v_top.MedidaID
-      ORDER BY p.ProductoID DESC`
+      GROUP BY p.productoid, p.nombreproducto, p.descripcion, p.categoriaid, v_top.varianteid, v_top.sku, v_top.preciounitario, v_top.stock, v_top.dimensiones, v_top.medidaid
+      ORDER BY p.productoid DESC`
     );
 
     const categorias = await db.query(
-      "SELECT CategoriaID, Nombre FROM Categorias"
+      "SELECT categoriaid, nombre FROM categorias"
     );
     const categoriasMap = {};
     categorias.rows.forEach((cat) => {
@@ -3590,16 +3590,16 @@ const getDetallesOrdenCompra = async (req, res) => {
     // Obtener información de la orden
     const ordenQuery = `
       SELECT 
-        oc.OrdenCompraID,
-        oc.ProveedorID,
-        oc.FechaCreacion,
-        oc.FechaEntregaEsperada,
-        oc.Estatus,
-        p.NombreEmpresa as ProveedorNombre,
-        p.ContactoNombre as ProveedorContacto
-      FROM OrdenesDeCompra oc
-      INNER JOIN Proveedores p ON oc.ProveedorID = p.ProveedorID
-      WHERE oc.OrdenCompraID = $1
+        oc.ordencompraid,
+        oc.proveedorid,
+        oc.fechacreacion,
+        oc.fechaentregaesperada,
+        oc.estatus,
+        p.nombreempresa as proveedornombre,
+        p.contactonombre as proveedorcontacto
+      FROM ordenesdecompra oc
+      INNER JOIN proveedores p ON oc.proveedorid = p.proveedorid
+      WHERE oc.ordencompraid = $1
     `;
 
     const ordenResult = await db.query(ordenQuery, [ordenCompraId]);
@@ -3616,22 +3616,22 @@ const getDetallesOrdenCompra = async (req, res) => {
     // Obtener detalles de productos
     const detallesQuery = `
       SELECT 
-        doc.DetalleOC_ID,
-        doc.OrdenCompraID,
-        doc.VarianteID,
-        doc.CantidadSolicitada,
-        doc.CantidadRecibida,
-        pv.ProductoID,
-        pv.SKU,
-        pv.Dimensiones,
-        pv.MedidaID,
-        COALESCE(pv.Stock, 0) AS StockVariante,
-        pr.NombreProducto
-      FROM DetallesOrdenCompra doc
-      INNER JOIN Producto_Variantes pv ON doc.VarianteID = pv.VarianteID
-      INNER JOIN Productos pr ON pv.ProductoID = pr.ProductoID
-      WHERE doc.OrdenCompraID = $1
-      ORDER BY pr.NombreProducto ASC
+        doc.detalleoc_id,
+        doc.ordencompraid,
+        doc.varianteid,
+        doc.cantidadsolicitada,
+        doc.cantidadrecibida,
+        pv.productoid,
+        pv.sku,
+        pv.dimensiones,
+        pv.medidaid,
+        COALESCE(pv.stock, 0) AS stockvariante,
+        pr.nombreproducto
+      FROM detallesordencompra doc
+      INNER JOIN producto_variantes pv ON doc.varianteid = pv.varianteid
+      INNER JOIN productos pr ON pv.productoid = pr.productoid
+      WHERE doc.ordencompraid = $1
+      ORDER BY pr.nombreproducto ASC
     `;
 
     const detallesResult = await db.query(detallesQuery, [ordenCompraId]);
@@ -4064,6 +4064,243 @@ const crearOrdenCompra = async (req, res) => {
   }
 };
 
+/**
+ * Subir imagen para un producto
+ * POST /api/admin/productos/:id/imagen
+ * Middleware: upload.single('imagen')
+ * 
+ * NOTA: producto_imagenes.productoid es FK a productos.productoid
+ */
+const subirImagenProducto = async (req, res) => {
+  const { id } = req.params;
+  
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: "No se proporcionó ningún archivo de imagen",
+      });
+    }
+
+    // Validar que el producto maestro exista
+    const productoResult = await db.query(
+      `SELECT productoid FROM productos WHERE productoid = $1`,
+      [id]
+    );
+
+    if (productoResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Producto no encontrado",
+      });
+    }
+
+    // Generar la ruta relativa de la imagen
+    const rutaImagen = `/uploads/${req.file.filename}`;
+
+    // Verificar si ya existe una imagen principal (orden = 1)
+    const existingImageResult = await db.query(
+      `SELECT imagenid FROM producto_imagenes 
+       WHERE productoid = $1 AND orden = 1`,
+      [id]
+    );
+
+    let imagenResult;
+    
+    if (existingImageResult.rows.length > 0) {
+      // Actualizar imagen principal existente
+      imagenResult = await db.query(
+        `UPDATE producto_imagenes 
+         SET url_imagen = $2
+         WHERE productoid = $1 AND orden = 1
+         RETURNING imagenid, url_imagen`,
+        [id, rutaImagen]
+      );
+    } else {
+      // Insertar nueva imagen principal
+      imagenResult = await db.query(
+        `INSERT INTO producto_imagenes (productoid, url_imagen, orden)
+         VALUES ($1, $2, 1)
+         RETURNING imagenid, url_imagen`,
+        [id, rutaImagen]
+      );
+    }
+
+    console.log(`✅ Imagen guardada: producto ${id} -> ${rutaImagen}`);
+
+    res.status(200).json({
+      success: true,
+      message: "Imagen subida exitosamente",
+      data: {
+        imagenId: imagenResult.rows[0].imagenid,
+        rutaImagen: imagenResult.rows[0].url_imagen,
+        urlCompleta: `${req.protocol}://${req.get("host")}${rutaImagen}`,
+      },
+    });
+  } catch (error) {
+    console.error(`❌ Error al subir imagen del producto ${id}:`, error.message);
+    
+    res.status(500).json({
+      success: false,
+      message: "Error al subir la imagen",
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * Confirmar orden de backorder
+ * POST /api/admin/ordenes-compra/:id/confirmar
+ */
+const confirmarOrdenBackorder = async (req, res) => {
+  try {
+    const ordenCompraId = parseInt(req.params.id);
+
+    // Verificar que la orden existe y está pendiente
+    const ordenResult = await db.query(
+      `SELECT oc.*, p.nombreempresa
+       FROM ordenesdecompra oc
+       INNER JOIN proveedores p ON oc.proveedorid = p.proveedorid
+       WHERE oc.ordencompraid = $1`,
+      [ordenCompraId]
+    );
+
+    if (ordenResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Orden de compra no encontrada",
+      });
+    }
+
+    const orden = ordenResult.rows[0];
+
+    // Actualizar estatus a confirmado
+    await db.query(
+      `UPDATE ordenesdecompra 
+       SET estatus = 'Confirmada'
+       WHERE ordencompraid = $1`,
+      [ordenCompraId]
+    );
+
+    // Obtener clientes afectados por productos en backorder
+    const clientesQuery = await db.query(
+      `SELECT DISTINCT p.clienteid
+       FROM pedidos p
+       INNER JOIN detallespedido dp ON p.pedidoid = dp.pedidoid
+       INNER JOIN detallesordencompra doc ON dp.varianteid = doc.varianteid
+       WHERE doc.ordencompraid = $1
+       AND p.estatus = 'Backorder'`,
+      [ordenCompraId]
+    );
+
+    // Notificar a cada cliente
+    const notificacionesController = require('./notificacionesController');
+    for (const cliente of clientesQuery.rows) {
+      await notificacionesController.crearNotificacion(cliente.clienteid, {
+        tipo: 'backorder',
+        titulo: '✅ Orden de Backorder Confirmada',
+        mensaje: `Tu orden de backorder #${ordenCompraId} ha sido confirmada y está siendo procesada.`,
+        url: '/dashboard.html?tab=pedidos',
+        prioridad: 'normal',
+        metadata: { ordenCompraId },
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Orden de backorder confirmada exitosamente",
+      data: {
+        ordenCompraId,
+        clientesNotificados: clientesQuery.rows.length,
+      },
+    });
+  } catch (error) {
+    console.error("Error al confirmar orden de backorder:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error al confirmar orden de backorder",
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * Cancelar orden de backorder
+ * POST /api/admin/ordenes-compra/:id/cancelar
+ */
+const cancelarOrdenBackorder = async (req, res) => {
+  try {
+    const ordenCompraId = parseInt(req.params.id);
+    const { motivo } = req.body;
+
+    if (!motivo || motivo.trim() === '') {
+      return res.status(400).json({
+        success: false,
+        message: "El motivo de cancelación es requerido",
+      });
+    }
+
+    // Verificar que la orden existe
+    const ordenResult = await db.query(
+      `SELECT * FROM ordenesdecompra WHERE ordencompraid = $1`,
+      [ordenCompraId]
+    );
+
+    if (ordenResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Orden de compra no encontrada",
+      });
+    }
+
+    // Actualizar estatus a cancelado
+    await db.query(
+      `UPDATE ordenesdecompra 
+       SET estatus = 'Cancelada'
+       WHERE ordencompraid = $1`,
+      [ordenCompraId]
+    );
+
+    // Obtener clientes afectados
+    const clientesQuery = await db.query(
+      `SELECT DISTINCT p.clienteid
+       FROM pedidos p
+       INNER JOIN detallespedido dp ON p.pedidoid = dp.pedidoid
+       INNER JOIN detallesordencompra doc ON dp.varianteid = doc.varianteid
+       WHERE doc.ordencompraid = $1
+       AND p.estatus = 'Backorder'`,
+      [ordenCompraId]
+    );
+
+    // Notificar a cada cliente
+    const notificacionesController = require('./notificacionesController');
+    for (const cliente of clientesQuery.rows) {
+      await notificacionesController.notificarBackorderCancelado(
+        ordenCompraId,
+        cliente.clienteid,
+        motivo
+      );
+    }
+
+    res.json({
+      success: true,
+      message: "Orden de backorder cancelada y clientes notificados",
+      data: {
+        ordenCompraId,
+        clientesNotificados: clientesQuery.rows.length,
+        motivo,
+      },
+    });
+  } catch (error) {
+    console.error("Error al cancelar orden de backorder:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error al cancelar orden de backorder",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   loginAdmin,
   verifyAdmin,
@@ -4105,4 +4342,7 @@ module.exports = {
   getDetallesOrdenCompra,
   crearOrdenCompra,
   recibirInventario,
+  subirImagenProducto,
+  confirmarOrdenBackorder,
+  cancelarOrdenBackorder,
 };

@@ -11,7 +11,6 @@
     const clientesEl = document.getElementById("statClientes");
     const pedidosBody = document.getElementById("tablaUltimosPedidosBody");
     const refrescarBtn = document.getElementById("btnRefrescarDashboard");
-    const logoutBtn = document.getElementById("logoutBtn");
     const userNameEl = document.getElementById("userName");
     const userRoleEl = document.getElementById("userRole");
     const userAvatarEl = document.getElementById("userAvatar");
@@ -172,17 +171,7 @@
       }
     }
 
-    function handleLogout(event) {
-      event.preventDefault();
-      clearAuthData();
-      showToast("Sesión cerrada", "info");
-      setTimeout(() => {
-        window.location.href = "/login.html";
-      }, 400);
-    }
-
     refrescarBtn?.addEventListener("click", loadDashboard);
-    logoutBtn?.addEventListener("click", handleLogout);
 
     updateUserHeader();
     loadDashboard();

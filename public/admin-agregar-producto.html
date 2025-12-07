@@ -173,6 +173,45 @@
                   </div>
 
                   <div class="form-group">
+                    <label for="input-imagen" class="form-label"
+                      >Imagen del Producto</label
+                    >
+                    <input
+                      type="file"
+                      id="input-imagen"
+                      class="form-input"
+                      accept="image/jpeg,image/jpg,image/png,image/webp"
+                      style="padding: 0.75rem; cursor: pointer;"
+                    />
+                    <small class="form-hint"
+                      >Formatos permitidos: JPG, PNG, WEBP. Máximo 5MB.</small
+                    >
+                    
+                    <!-- Contenedor de previsualización -->
+                    <div id="preview-container" style="margin-top: 1rem; display: none;">
+                      <p style="font-size: 0.875rem; color: #6b7280; margin-bottom: 0.5rem;">
+                        Previsualización:
+                      </p>
+                      <div style="position: relative; display: inline-block;">
+                        <img 
+                          id="img-preview" 
+                          src="" 
+                          alt="Vista previa" 
+                          style="max-width: 250px; max-height: 250px; border-radius: 8px; border: 2px solid #e5e7eb; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"
+                        />
+                        <button
+                          type="button"
+                          id="btn-remove-image"
+                          style="position: absolute; top: 8px; right: 8px; background: #ef4444; color: white; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 18px; line-height: 1; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.2);"
+                          title="Remover imagen"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="form-group">
                     <label class="form-label">Presentaciones Disponibles</label>
                     <div id="presentacionesContainer" class="checkbox-grid">
                       <div class="empty-state" id="presentacionesPlaceholder">
@@ -549,6 +588,90 @@
         }
       }
 
+      // ===== LÓGICA DE PREVIEW DE IMAGEN =====
+      const inputImagen = document.getElementById("input-imagen");
+      const previewContainer = document.getElementById("preview-container");
+      const imgPreview = document.getElementById("img-preview");
+      const btnRemoveImage = document.getElementById("btn-remove-image");
+      let selectedImageFile = null;
+
+      // Event listener para cambio de archivo
+      inputImagen.addEventListener("change", function(e) {
+        const file = e.target.files[0];
+        
+        if (!file) {
+          hideImagePreview();
+          return;
+        }
+
+        // Validar tipo de archivo
+        const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+        if (!validTypes.includes(file.type)) {
+          showToast('Solo se permiten imágenes JPG, PNG o WEBP', 'error');
+          hideImagePreview();
+          inputImagen.value = '';
+          return;
+        }
+
+        // Validar tamaño (5MB máximo)
+        const maxSize = 5 * 1024 * 1024; // 5MB
+        if (file.size > maxSize) {
+          showToast('La imagen no debe superar 5MB', 'error');
+          hideImagePreview();
+          inputImagen.value = '';
+          return;
+        }
+
+        // Guardar archivo seleccionado
+        selectedImageFile = file;
+
+        // Crear URL para preview
+        const objectURL = URL.createObjectURL(file);
+        imgPreview.src = objectURL;
+        previewContainer.style.display = 'block';
+      });
+
+      // Botón para remover imagen
+      btnRemoveImage.addEventListener("click", function() {
+        hideImagePreview();
+        inputImagen.value = '';
+        selectedImageFile = null;
+      });
+
+      function hideImagePreview() {
+        previewContainer.style.display = 'none';
+        imgPreview.src = '';
+        if (imgPreview.src) {
+          URL.revokeObjectURL(imgPreview.src);
+        }
+      }
+
+      // ===== FUNCIÓN PARA SUBIR IMAGEN =====
+      async function subirImagenProducto(productoId, imageFile) {
+        try {
+          const formData = new FormData();
+          formData.append('imagen', imageFile);
+
+          const response = await fetch(`${API_BASE_URL}/admin/productos/${productoId}/imagen`, {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${adminToken}`,
+            },
+            body: formData,
+          });
+
+          const data = await response.json();
+
+          if (response.ok && data.success) {
+            return { success: true, data: data.data };
+          } else {
+            return { success: false, message: data.message };
+          }
+        } catch (error) {
+          return { success: false, message: error.message };
+        }
+      }
+
       // Handle form submission
       document
         .getElementById("productoForm")
@@ -563,9 +686,6 @@
             submitBtn.disabled = true;
             btnText.style.display = "none";
             btnSpinner.style.display = "block";
-
-            console.log("📦 Iniciando creación de producto maestro...");
-            console.log("🔑 Token presente:", !!adminToken);
 
             const tamanoIdsSeleccionados = Array.from(
               document.querySelectorAll('input[name="tamanoIds"]:checked')
@@ -589,8 +709,6 @@
               tamanoIds: tamanoIdsSeleccionados,
             };
 
-            console.log("📋 Datos del producto maestro:", formData);
-
             const response = await fetch(`${API_BASE_URL}/admin/productos`, {
               method: "POST",
               headers: {
@@ -600,18 +718,35 @@
               body: JSON.stringify(formData),
             });
 
-            console.log("📡 Response status:", response.status);
             const data = await response.json();
-            console.log("📥 Respuesta del servidor:", data);
 
             if (response.ok && data.success) {
               const nuevoProducto = data.data?.producto;
-              console.log("✅ Producto maestro creado!", nuevoProducto);
 
-              showToast(
-                "Producto maestro creado. Ahora agrega variantes.",
-                "success"
-              );
+              // Si hay imagen seleccionada, subirla
+              if (selectedImageFile && nuevoProducto?.productoid) {
+                const uploadResult = await subirImagenProducto(
+                  nuevoProducto.productoid,
+                  selectedImageFile
+                );
+
+                if (uploadResult.success) {
+                  showToast(
+                    "Producto e imagen guardados exitosamente. Ahora agrega variantes.",
+                    "success"
+                  );
+                } else {
+                  showToast(
+                    "Producto creado, pero hubo un error al subir la imagen. Puedes intentar subirla después.",
+                    "warning"
+                  );
+                }
+              } else {
+                showToast(
+                  "Producto maestro creado. Ahora agrega variantes.",
+                  "success"
+                );
+              }
 
               await loadMasterProducts();
 
@@ -619,10 +754,9 @@
                 sessionStorage.setItem("_navigating", "true");
                 setTimeout(() => {
                   window.location.href = `/admin-producto-editar.html?id=${nuevoProducto.productoid}`;
-                }, 800);
+                }, 1200);
               }
             } else if (response.status === 401) {
-              // Token inválido o expirado
               showToast(
                 "Sesión expirada. Por favor, inicia sesión nuevamente.",
                 "error"
@@ -633,8 +767,6 @@
                 window.location.href = "/login.html";
               }, 2000);
             } else {
-              // Otro tipo de error
-              console.error("Error del servidor:", data);
               showToast(
                 data.message ||
                   "Error al crear producto. Revisa los datos e intenta nuevamente.",
@@ -642,7 +774,6 @@
               );
             }
           } catch (error) {
-            console.error("Error creating product:", error);
             showToast("Error al conectar con el servidor", "error");
           } finally {
             submitBtn.disabled = false;

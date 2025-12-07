@@ -13,6 +13,7 @@ const direccionesRoutes = require("./routes/direcciones");
 const adminRoutes = require("./routes/admin");
 const reportesRoutes = require("./routes/reportes");
 const publicRoutes = require("./routes/public");
+const notificacionesRoutes = require("./routes/notificaciones");
 
 // Inicializar la aplicación Express
 const app = express();
@@ -66,6 +67,7 @@ app.use("/api", productosRoutes);
 app.use("/api", carritoRoutes);
 app.use("/api", pedidosRoutes);
 app.use("/api", direccionesRoutes);
+app.use("/api/notificaciones", notificacionesRoutes);
 app.use("/api/public", publicRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/admin/reportes", reportesRoutes);

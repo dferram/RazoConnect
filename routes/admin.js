@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const adminController = require("../controllers/adminController");
 const authController = require("../controllers/authController");
+const upload = require("../middlewares/upload");
 const {
   authenticate,
   authorizeAdmin,
@@ -104,6 +105,20 @@ router.put(
   authorizeAdmin,
   adminController.actualizarProducto
 );
+
+/**
+ * @route   POST /api/admin/productos/:id/imagen
+ * @desc    Subir imagen para un producto
+ * @access  Private (Admin only)
+ */
+router.post(
+  "/productos/:id/imagen",
+  authenticate,
+  authorizeAdmin,
+  upload.single("imagen"),
+  adminController.subirImagenProducto
+);
+
 router.post(
   "/variantes",
   authenticate,
@@ -287,6 +302,18 @@ router.get(
   authenticate,
   authorizeAdmin,
   adminController.getDetallesOrdenCompra
+);
+router.post(
+  "/ordenes-compra/:id/confirmar",
+  authenticate,
+  authorizeAdmin,
+  adminController.confirmarOrdenBackorder
+);
+router.post(
+  "/ordenes-compra/:id/cancelar",
+  authenticate,
+  authorizeAdmin,
+  adminController.cancelarOrdenBackorder
 );
 router.post(
   "/ordenes-compra",

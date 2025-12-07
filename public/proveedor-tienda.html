@@ -5,77 +5,91 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Tienda por Marca - RazoConnect</title>
     <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/catalogo-profesional.css" />
     <style>
-      /* Banner de Marca */
+      /* Banner de Marca - Minimalista Moderno */
       .brand-hero {
-        background: linear-gradient(
-          135deg,
-          var(--razo-orange) 0%,
-          var(--razo-turquoise) 100%
-        );
-        color: white;
-        padding: 4rem 0 3rem;
-        margin-bottom: 3rem;
-        text-align: center;
-        position: relative;
-        overflow: hidden;
-      }
-
-      .brand-hero::before {
-        content: "";
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320"><path fill="rgba(255,255,255,0.1)" d="M0,96L48,112C96,128,192,160,288,160C384,160,480,128,576,112C672,96,768,96,864,112C960,128,1056,160,1152,160C1248,160,1344,128,1392,112L1440,96L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path></svg>')
-          no-repeat bottom;
-        background-size: cover;
-        opacity: 0.3;
+        background: #f9f9f9;
+        padding: 3rem 0 2.5rem;
+        margin-bottom: 2.5rem;
+        border-bottom: 1px solid #eee;
       }
 
       .brand-hero-content {
-        position: relative;
-        z-index: 2;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 2rem;
       }
 
-      .brand-hero-title {
-        font-size: 3.5rem;
-        font-weight: 800;
-        margin-bottom: 1rem;
-        text-shadow: 2px 4px 8px rgba(0, 0, 0, 0.2);
-        letter-spacing: -0.02em;
-      }
-
-      .brand-hero-subtitle {
-        font-size: 1.25rem;
-        opacity: 0.95;
-        font-weight: 400;
+      .brand-hero-left {
+        flex: 1;
       }
 
       .brand-back-link {
         display: inline-flex;
         align-items: center;
         gap: 0.5rem;
-        color: white;
+        color: #666;
         text-decoration: none;
-        font-weight: 600;
-        margin-bottom: 1.5rem;
-        transition: all 0.3s;
-        opacity: 0.9;
+        font-weight: 500;
+        font-size: 0.875rem;
+        margin-bottom: 1rem;
+        transition: all 0.2s;
       }
 
       .brand-back-link:hover {
-        opacity: 1;
-        transform: translateX(-5px);
+        color: #FF8C00;
+        transform: translateX(-3px);
       }
 
-      /* Grid de Productos */
+      .brand-hero-title {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        color: #111;
+        letter-spacing: -0.02em;
+      }
+
+      .brand-hero-subtitle {
+        font-size: 1rem;
+        color: #666;
+        font-weight: 400;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+      }
+
+      .brand-hero-subtitle span {
+        color: #FF8C00;
+        font-weight: 600;
+      }
+
+      .brand-hero-icon {
+        width: 80px;
+        height: 80px;
+        background: white;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.5rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      }
+
+      /* Grid de Productos - Igual que Catálogo */
       .products-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
         gap: 2rem;
         margin-top: 2rem;
+      }
+      
+      /* Usar product-grid del catálogo */
+      #productsGrid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 2rem;
       }
 
       /* Loading y Estados */
@@ -139,10 +153,10 @@
     </style>
   </head>
   <body>
-    <!-- Navbar -->
+    <!-- Navbar Moderno -->
     <nav class="navbar">
       <div class="container navbar-content">
-        <a href="/catalogo.html" class="navbar-brand">📦 RazoConnect</a>
+        <a href="/inicio.html" class="navbar-brand">📦 RazoConnect</a>
         <ul class="navbar-menu">
           <li>
             <a href="/catalogo.html" class="navbar-link">Productos</a>
@@ -158,16 +172,7 @@
           </li>
           <li><a href="/carrito.html" class="navbar-link">Carrito</a></li>
           <li>
-            <a
-              href="/dashboard.html"
-              id="userGreeting"
-              style="
-                color: var(--text-secondary);
-                font-size: 0.875rem;
-                text-decoration: none;
-              "
-              title="Mi cuenta"
-            ></a>
+            <a href="/dashboard.html" id="userGreeting" class="navbar-link" title="Mi cuenta"></a>
           </li>
           <li>
             <a href="#" class="navbar-link" id="logoutBtn">Cerrar sesión</a>
@@ -176,16 +181,40 @@
       </div>
     </nav>
 
-    <!-- Banner de Marca -->
-    <section class="brand-hero" id="brandHero">
-      <div class="container brand-hero-content">
-        <a href="/catalogo.html" class="brand-back-link">
-          ← Volver al catálogo completo
+    <!-- Header con Búsqueda y Carrito Moderno -->
+    <div class="container" style="padding-top: 2rem; padding-bottom: 1rem">
+      <div style="display: flex; justify-content: flex-end; align-items: center; gap: 1rem; margin-bottom: 1.5rem">
+        <a href="/carrito.html" class="cart-modern" title="Ver carrito">
+          🛒
+          <span class="cart-badge" id="cartBadge">0</span>
         </a>
-        <h1 class="brand-hero-title" id="brandName">Cargando...</h1>
-        <p class="brand-hero-subtitle" id="brandSubtitle">
-          Explora nuestra colección exclusiva
-        </p>
+        <form id="searchForm" class="search-container-modern" onsubmit="return false;">
+          <input
+            type="search"
+            id="search-bar"
+            class="search-input-modern"
+            placeholder="Buscar productos..."
+          />
+          <svg class="search-icon-modern" width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2" />
+            <path d="M16.5 16.5L21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+          </svg>
+        </form>
+      </div>
+    </div>
+
+    <!-- Banner de Marca Moderno -->
+    <section class="brand-hero">
+      <div class="container brand-hero-content">
+        <div class="brand-hero-left">
+          <a href="/catalogo.html" class="brand-back-link">
+            ← Volver al catálogo
+          </a>
+          <h1 class="brand-hero-title" id="brandName">Cargando...</h1>
+          <p class="brand-hero-subtitle">
+            Catálogo Oficial • <span id="productCount">0</span> productos disponibles
+          </p>
+        </div>
       </div>
     </section>
 
@@ -261,90 +290,126 @@
       // ========================================
       // CARGAR PRODUCTOS DEL PROVEEDOR
       // ========================================
+      let todosLosProductos = [];
+      
       async function loadProductos() {
         const loadingState = document.getElementById("loadingState");
         const emptyState = document.getElementById("emptyState");
         const productsGrid = document.getElementById("productsGrid");
+        const productCount = document.getElementById("productCount");
 
         try {
-          const response = await fetch(
-            `/api/productos?proveedorID=${proveedorId}`
-          );
+          const response = await fetch(`/api/productos?proveedorID=${proveedorId}`);
           const data = await response.json();
 
           loadingState.style.display = "none";
 
           // El backend devuelve: { success, data: { productos: [...] } }
-          if (
-            data.success &&
-            data.data &&
-            data.data.productos &&
-            data.data.productos.length > 0
-          ) {
-            productsGrid.style.display = "grid";
-            productsGrid.innerHTML = data.data.productos
-              .map((producto) => renderProductCard(producto))
-              .join("");
+          if (data.success && data.data && data.data.productos && data.data.productos.length > 0) {
+            todosLosProductos = data.data.productos;
+            renderProductos(todosLosProductos);
+            productCount.textContent = todosLosProductos.length;
           } else {
             emptyState.style.display = "block";
+            productCount.textContent = "0";
           }
         } catch (error) {
           console.error("Error cargando productos:", error);
           loadingState.style.display = "none";
           emptyState.style.display = "block";
+          productCount.textContent = "0";
         }
       }
 
+      // Renderizar productos
+      function renderProductos(productos) {
+        const productsGrid = document.getElementById("productsGrid");
+        const emptyState = document.getElementById("emptyState");
+
+        if (productos.length === 0) {
+          productsGrid.style.display = "none";
+          emptyState.style.display = "block";
+        } else {
+          productsGrid.style.display = "grid";
+          productsGrid.innerHTML = productos.map(producto => renderProductCard(producto)).join("");
+          emptyState.style.display = "none";
+        }
+      }
+
+      // Búsqueda de productos
+      const searchBar = document.getElementById("search-bar");
+      if (searchBar) {
+        searchBar.addEventListener("input", (e) => {
+          const searchTerm = e.target.value.toLowerCase().trim();
+          if (!searchTerm) {
+            renderProductos(todosLosProductos);
+            return;
+          }
+          
+          const productosFiltrados = todosLosProductos.filter(p =>
+            p.nombreProducto.toLowerCase().includes(searchTerm) ||
+            (p.categoria?.nombre || "").toLowerCase().includes(searchTerm)
+          );
+          renderProductos(productosFiltrados);
+        });
+      }
+
       // ========================================
-      // RENDERIZAR TARJETA DE PRODUCTO
+      // RENDERIZAR TARJETA DE PRODUCTO (ESTILO CATALOGO.HTML)
       // ========================================
       function renderProductCard(producto) {
-        // Usar precioPaqueteMin si existe, sino precioDesde
-        const precio = producto.precioPaqueteMin || producto.precioDesde || 0;
-        const precioFormateado = precio.toLocaleString("es-MX", {
-          style: "currency",
-          currency: "MXN",
-        });
+        const formatCurrency = (valor) => {
+          return valor.toLocaleString("es-MX", {
+            style: "currency",
+            currency: "MXN",
+          });
+        };
 
-        const stockDisponible = producto.variantesConStock || 0;
-        const stockBadge =
-          stockDisponible > 0
-            ? `<span class="stock-badge in-stock">Stock: ${stockDisponible} variante${
-                stockDisponible > 1 ? "s" : ""
-              }</span>`
-            : `<span class="stock-badge out-of-stock">Sin stock</span>`;
+        // Precios con lógica de oferta
+        const precioBase = parseFloat(producto.precioDesde || 0);
+        const precioOferta = parseFloat(producto.precioOferta || 0);
+        const tieneOferta = precioOferta > 0 && precioOferta < precioBase;
 
-        // Usar imagen del producto o placeholder
-        const imagenUrl =
-          producto.imagenUrl ||
-          "https://images.unsplash.com/photo-1607344645866-009c320b63e0?w=400&h=400&fit=crop";
+        // HTML de precio según si hay oferta
+        const precioHTML = tieneOferta
+          ? `<div class="precio-contenedor">
+               <span class="precio-original">${formatCurrency(precioBase)}</span>
+               <span class="precio-oferta">${formatCurrency(precioOferta)}</span>
+             </div>`
+          : `<span class="precio-normal">${formatCurrency(precioBase)}</span>`;
+
+        // Badge según oferta
+        const badge = tieneOferta
+          ? '<span class="product-badge product-badge--oferta">Oferta</span>'
+          : '<span class="product-badge product-badge--nuevo">Nuevo</span>';
+
+        // Imagen del producto
+        const imagenUrl = producto.imagenUrl || "/images/default-product.png";
+        const imagenAlt = producto.imagenAlt || producto.nombreProducto;
+        
+        const mediaContent = imagenUrl
+          ? `<img src="${imagenUrl}" alt="${imagenAlt}" class="product-media" loading="lazy" />`
+          : `<div class="product-fallback">📦</div>`;
 
         return `
-          <div class="product-card">
-            <div class="product-image">
-              <img 
-                src="${imagenUrl}" 
-                alt="${producto.imagenAlt || producto.nombreProducto}"
-                loading="lazy"
-              />
-              ${stockBadge}
+          <a href="/producto-detalle.html?id=${producto.productoId}" class="product-card">
+            <div class="imagen-wrapper">
+              ${badge}
+              ${mediaContent}
+              <button class="cart-floating-btn" onclick="event.preventDefault(); console.log('Añadir al carrito:', ${producto.productoId});" title="Añadir al carrito">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M9 2L9 22M2 9L22 9"/>
+                </svg>
+              </button>
             </div>
             <div class="product-info">
+              <span class="product-category">${producto.categoria?.nombre || "Sin categoría"}</span>
               <h3 class="product-title">${producto.nombreProducto}</h3>
-              <div class="product-price">${precioFormateado}</div>
-              <p class="product-details">
-                ${producto.totalVariantes || 0} variante${
-          producto.totalVariantes !== 1 ? "s" : ""
-        } disponible${producto.totalVariantes !== 1 ? "s" : ""}
-              </p>
-              <a 
-                href="/producto-detalle.html?id=${producto.productoId}" 
-                class="btn btn-primary btn-block"
-              >
-                Ver Detalles
-              </a>
+              <div class="product-price">
+                ${precioHTML}
+              </div>
             </div>
-          </div>
+          </a>
         `;
       }
 
@@ -417,10 +482,60 @@
         userGreeting.textContent = `Hola, ${user.nombre}`;
       }
 
-      document.getElementById("logoutBtn")?.addEventListener("click", (e) => {
-        e.preventDefault();
-        logout();
-      });
+      const logoutBtn = document.getElementById("logoutBtn");
+      if (logoutBtn) {
+        logoutBtn.addEventListener("click", (e) => {
+          e.preventDefault();
+          console.log('🔴 Cerrando sesión...');
+          
+          try {
+            // Limpiar datos de autenticación
+            if (typeof clearAuthData === 'function') {
+              clearAuthData();
+            } else {
+              // Fallback manual si la función no está disponible
+              localStorage.removeItem("razoconnect_token");
+              localStorage.removeItem("razoconnect_user");
+              localStorage.removeItem("razoconnect_admin_token");
+              localStorage.removeItem("razoconnect_admin");
+            }
+            
+            // Mostrar mensaje
+            if (typeof showToast === 'function') {
+              showToast("Sesión cerrada exitosamente", "success");
+            }
+            
+            // Redirigir al login
+            setTimeout(() => {
+              window.location.href = "/login.html";
+            }, 500);
+          } catch (error) {
+            console.error('Error al cerrar sesión:', error);
+            // Forzar redirect incluso si hay error
+            window.location.href = "/login.html";
+          }
+        });
+      }
+
+      // ========================================
+      // ACTUALIZAR BADGE DEL CARRITO
+      // ========================================
+      async function updateCartBadge() {
+        try {
+          const cartBadge = document.getElementById('cartBadge');
+          if (!cartBadge) return;
+
+          const response = await API.getCarrito();
+          if (response.ok && response.data.success) {
+            const items = response.data.data.items || [];
+            const totalItems = items.reduce((sum, item) => sum + (item.cantidadPaquetes || 0), 0);
+            cartBadge.textContent = totalItems;
+            cartBadge.style.display = totalItems > 0 ? 'flex' : 'none';
+          }
+        } catch (error) {
+          console.error('Error updating cart badge:', error);
+        }
+      }
 
       // ========================================
       // INICIALIZAR PÁGINA
@@ -428,6 +543,7 @@
       document.addEventListener("DOMContentLoaded", () => {
         loadProveedorInfo();
         loadProductos();
+        updateCartBadge();
       });
     </script>
 

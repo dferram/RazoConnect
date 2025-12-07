@@ -459,7 +459,7 @@ const obtenerPedidoDetalleAgente = async (req, res) => {
         row_to_json(ct) AS tamano_info,
         (SELECT pi.url_imagen 
          FROM producto_imagenes pi 
-         WHERE pi.varianteid = pv.varianteid 
+         WHERE pi.productoid = pv.productoid 
          ORDER BY pi.orden ASC NULLS LAST 
          LIMIT 1) AS imagenurl
       FROM detallesdelpedido dp

@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Productos - RazoConnect</title>
     <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/catalogo-profesional.css" />
   </head>
   <body>
     <nav class="navbar">
@@ -12,12 +13,7 @@
         <a href="/inicio.html" class="navbar-brand">📦 RazoConnect</a>
         <ul class="navbar-menu">
           <li>
-            <a
-              href="/catalogo.html"
-              class="navbar-link"
-              style="color: var(--primary-color); font-weight: 600"
-              >Productos</a
-            >
+            <a href="/catalogo.html" class="navbar-link navbar-link-active">Productos</a>
           </li>
           <li class="navbar-dropdown" id="marcasDropdown">
             <span class="navbar-dropdown-toggle">
@@ -33,11 +29,7 @@
             <a
               href="/dashboard.html"
               id="userGreeting"
-              style="
-                color: var(--text-secondary);
-                font-size: 0.875rem;
-                text-decoration: none;
-              "
+              class="navbar-link"
               title="Mi cuenta"
             ></a>
           </li>
@@ -59,13 +51,10 @@
         "
       >
         <div>
-          <h1
-            id="catalogoTitulo"
-            style="font-size: 2.5rem; font-weight: bold; margin-bottom: 1.5rem"
-          >
+          <h1 id="catalogoTitulo" class="catalog-main-title">
             Catálogo de productos
           </h1>
-          <p style="color: var(--text-secondary)">
+          <p class="catalog-subtitle">
             Explora nuestro catálogo de cajas de fashion al mayoreo
           </p>
         </div>
@@ -77,86 +66,35 @@
             align-items: flex-end;
           "
         >
-          <a href="/carrito.html" class="cart-icon-button" title="Ver carrito">
+          <a href="/carrito.html" class="cart-modern" title="Ver carrito">
             🛒
+            <span class="cart-badge" id="cartBadge">0</span>
             <span class="sr-only">Ver carrito</span>
           </a>
 
           <form
             id="searchForm"
-            style="width: 100%; max-width: 520px"
+            class="search-container-modern"
             onsubmit="return false;"
           >
-            <label for="search-bar" style="display: none"
-              >Buscar producto</label
+            <label for="search-bar" style="display: none">Buscar producto</label>
+            <input
+              type="search"
+              id="search-bar"
+              class="search-input-modern"
+              placeholder="Buscar por nombre/SKU"
+            />
+            <svg
+              class="search-icon-modern"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
             >
-            <div
-              style="
-                display: flex;
-                align-items: center;
-                width: 100%;
-                border: 2px solid rgba(255, 136, 84, 0.65);
-                border-radius: 2.5rem;
-                overflow: hidden;
-                background: #fff;
-                box-shadow: 0 12px 26px rgba(255, 116, 60, 0.18);
-              "
-            >
-              <input
-                type="search"
-                id="search-bar"
-                placeholder="Buscar por nombre/SKU"
-                style="
-                  flex: 1;
-                  padding: 1rem 1.5rem 1rem 1.5rem;
-                  border: none;
-                  background: transparent;
-                  font-size: 1.05rem;
-                  color: var(--text-primary);
-                  outline: none;
-                "
-              />
-              <button
-                type="button"
-                id="btnBuscarHeader"
-                style="
-                  min-width: 70px;
-                  align-self: stretch;
-                  border: none;
-                  background: linear-gradient(135deg, #ff7a3a 0%, #ff974d 100%);
-                  display: flex;
-                  align-items: center;
-                  justify-content: center;
-                  cursor: pointer;
-                  transition: transform 0.2s ease;
-                  padding: 0 1.35rem;
-                  border-radius: 0 0.5rem 0.5rem 0;
-                "
-                title="Buscar"
-              >
-                <svg
-                  width="22"
-                  height="22"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <circle
-                    cx="11"
-                    cy="11"
-                    r="7"
-                    stroke="white"
-                    stroke-width="2"
-                  />
-                  <path
-                    d="M16.5 16.5L21 21"
-                    stroke="white"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                  />
-                </svg>
-              </button>
-            </div>
+              <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2" />
+              <path d="M16.5 16.5L21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+            </svg>
           </form>
         </div>
       </div>
@@ -178,122 +116,33 @@
             <!-- Las categorías se cargarán aquí dinámicamente -->
           </ul>
 
-          <!-- Sección Nuestras Marcas -->
-          <div id="marcasSection" style="margin-top: 2rem; display: none">
-            <p
-              style="
-                font-weight: 700;
-                margin-bottom: 0.75rem;
-                color: var(--text-primary);
-                letter-spacing: 0.02em;
-                font-size: 0.875rem;
-                text-transform: uppercase;
-              "
-            >
-              🏷️ Nuestras Marcas
-            </p>
-            <div id="loadingMarcas" style="text-align: center; padding: 0.5rem">
-              <div class="spinner" style="width: 20px; height: 20px"></div>
-            </div>
-            <ul
-              id="marcasList"
-              style="list-style: none; padding: 0; margin: 0; display: none"
-            >
-              <!-- Las marcas se cargarán aquí dinámicamente -->
-            </ul>
-          </div>
-
           <!-- Controles de filtros adicionales -->
-          <div id="filtrosAdicionales" style="margin-top: 2rem; display: none">
-            <div
-              style="
-                display: flex;
-                flex-direction: column;
-                gap: 1.5rem;
-                font-size: 0.92rem;
-                color: var(--text-secondary);
-              "
-            >
+          <div id="filtrosAdicionales" style="display: none">
+            <div style="display: flex; flex-direction: column; gap: 1.5rem">
               <!-- Precio -->
-              <div>
-                <p
-                  style="
-                    font-weight: 600;
-                    margin-bottom: 0.75rem;
-                    color: var(--text-primary);
-                    letter-spacing: 0.02em;
-                  "
-                >
-                  Precio
-                </p>
-                <div
-                  style="
-                    display: grid;
-                    grid-template-columns: repeat(2, 1fr);
-                    gap: 0.75rem;
-                  "
-                >
-                  <div>
-                    <label
-                      for="precio-min"
-                      style="
-                        display: block;
-                        font-size: 0.75rem;
-                        color: var(--text-secondary);
-                        margin-bottom: 0.25rem;
-                      "
-                      >Min</label
-                    >
-                    <input
-                      type="number"
-                      id="precio-min"
-                      placeholder="Min"
-                      min="0"
-                      style="
-                        width: 100%;
-                        padding: 0.35rem 0;
-                        border: none;
-                        border-bottom: 1px solid #e5e5e5;
-                        background: transparent;
-                        font-size: 0.92rem;
-                        color: var(--text-primary);
-                        outline: none;
-                      "
-                    />
-                  </div>
-                  <div>
-                    <label
-                      for="precio-max"
-                      style="
-                        display: block;
-                        font-size: 0.75rem;
-                        color: var(--text-secondary);
-                        margin-bottom: 0.25rem;
-                      "
-                      >Max</label
-                    >
-                    <input
-                      type="number"
-                      id="precio-max"
-                      placeholder="Max"
-                      min="0"
-                      style="
-                        width: 100%;
-                        padding: 0.35rem 0;
-                        border: none;
-                        border-bottom: 1px solid #e5e5e5;
-                        background: transparent;
-                        font-size: 0.92rem;
-                        color: var(--text-primary);
-                        outline: none;
-                      "
-                    />
-                  </div>
+              <div class="filter-section">
+                <p class="filter-title">Precio</p>
+                <div class="price-inputs-container">
+                  <input
+                    type="number"
+                    id="precio-min"
+                    placeholder="Mín"
+                    min="0"
+                    class="price-input"
+                  />
+                  <span class="price-separator">—</span>
+                  <input
+                    type="number"
+                    id="precio-max"
+                    placeholder="Máx"
+                    min="0"
+                    class="price-input"
+                  />
                 </div>
               </div>
 
               <!-- Dimensiones -->
-              <div>
+              <div class="filter-section">
                 <label
                   for="filtro-dimensiones"
                   style="
@@ -336,21 +185,7 @@
               </div>
 
               <!-- Botón aplicar -->
-              <button
-                id="btn-aplicar-filtros"
-                class="btn btn-primary"
-                style="
-                  width: 100%;
-                  justify-content: center;
-                  padding: 0.85rem 1.5rem;
-                  border-radius: 0.5rem;
-                  border: none;
-                  box-shadow: 0 12px 26px rgba(255, 116, 60, 0.24);
-                  font-size: 0.95rem;
-                  font-weight: 600;
-                  letter-spacing: 0.01em;
-                "
-              >
+              <button id="btn-aplicar-filtros" class="btn-apply-filters">
                 Aplicar filtros
               </button>
             </div>
@@ -407,6 +242,21 @@
             ></div>
           </div>
 
+          <!-- Toolbar de Ordenamiento -->
+          <div class="catalog-toolbar" id="catalogToolbar" style="display: none">
+            <span class="product-count-text" id="productCountToolbar">
+              Mostrando <span id="productCountNumber">0</span> productos
+            </span>
+            <select class="sort-select" id="sortSelect">
+              <option value="recommended">Ordenar por: Recomendados</option>
+              <option value="price-asc">Precio: Menor a Mayor</option>
+              <option value="price-desc">Precio: Mayor a Menor</option>
+              <option value="newest">Más Recientes</option>
+              <option value="name-asc">Nombre: A-Z</option>
+              <option value="name-desc">Nombre: Z-A</option>
+            </select>
+          </div>
+
           <!-- Loading State -->
           <div id="loadingState" class="loading">
             <div class="spinner"></div>
@@ -459,17 +309,12 @@
       const dimensionesSelect = document.getElementById("filtro-dimensiones");
       const stockCheckbox = document.getElementById("filtro-stock");
       const btnAplicarFiltros = document.getElementById("btn-aplicar-filtros");
-      const marcasSection = document.getElementById("marcasSection");
-      const loadingMarcas = document.getElementById("loadingMarcas");
-      const marcasList = document.getElementById("marcasList");
       const catalogoTitulo = document.getElementById("catalogoTitulo");
 
       let todosLosProductos = [];
       let categoriaSeleccionada = null;
       let filtrosQueryActual = "";
       let nombreCategoriaSeleccionada = null;
-      let proveedorSeleccionado = null;
-      let nombreProveedorSeleccionado = null;
 
       function obtenerFiltrosSeleccionados() {
         return {
@@ -501,12 +346,8 @@
           params.append("dimension", filtros.dimension);
         }
 
-        if (filtros.stock) {
+        if (stockCheckbox && stockCheckbox.checked) {
           params.append("stock", "true");
-        }
-
-        if (proveedorSeleccionado) {
-          params.append("proveedorID", proveedorSeleccionado);
         }
 
         const queryString = params.toString();
@@ -545,18 +386,13 @@
 
       function actualizarTituloCatalogo() {
         if (catalogoTitulo) {
-          if (proveedorSeleccionado && nombreProveedorSeleccionado) {
-            catalogoTitulo.textContent = `Catálogo: ${nombreProveedorSeleccionado}`;
-          } else {
-            catalogoTitulo.textContent = "Catálogo de productos";
-          }
+          catalogoTitulo.textContent = "Catálogo de productos";
         }
       }
 
       function actualizarFiltroActivo() {
         const filtros = obtenerFiltrosSeleccionados();
         const hayCategoria = categoriaSeleccionada !== null;
-        const hayProveedor = proveedorSeleccionado !== null;
         const hayOtrosFiltros =
           filtros.search ||
           filtros.precioMin ||
@@ -566,11 +402,10 @@
 
         actualizarTituloCatalogo();
 
-        if (!hayCategoria && !hayProveedor && !hayOtrosFiltros) {
+        if (!hayCategoria && !hayOtrosFiltros) {
           filtroActivo.style.display = "none";
           if (filtroResumen) {
             filtroResumen.innerHTML = "";
-            filtroResumen.style.display = "none";
           }
           return;
         }
@@ -578,24 +413,11 @@
         filtroActivo.style.display = "block";
 
         if (categoriaActiva) {
-          if (nombreProveedorSeleccionado) {
-            categoriaActiva.textContent = nombreProveedorSeleccionado;
-          } else {
-            categoriaActiva.textContent =
-              nombreCategoriaSeleccionada || "Todos";
-          }
+          categoriaActiva.textContent = nombreCategoriaSeleccionada || "Todos";
         }
 
         if (!filtroResumen) return;
         filtroResumen.innerHTML = "";
-
-        if (hayProveedor && nombreProveedorSeleccionado) {
-          filtroResumen.appendChild(
-            crearChip(`Marca: ${nombreProveedorSeleccionado}`, () => {
-              filtrarPorProveedor(null);
-            })
-          );
-        }
 
         if (hayCategoria && nombreCategoriaSeleccionada) {
           filtroResumen.appendChild(
@@ -675,93 +497,7 @@
         }
       }
 
-      // Cargar marcas/proveedores
-      async function loadMarcas() {
-        if (!marcasSection) return;
-
-        try {
-          if (loadingMarcas) loadingMarcas.style.display = "block";
-          if (marcasList) marcasList.style.display = "none";
-
-          const response = await fetch(`${API_BASE_URL}/public/proveedores`);
-          const data = await response.json();
-
-          if (response.ok && data.success) {
-            const proveedores = data.data.proveedores || [];
-
-            if (proveedores.length === 0) {
-              marcasSection.style.display = "none";
-              return;
-            }
-
-            let marcasHTML = "";
-            proveedores.forEach((proveedor) => {
-              const isActive = proveedorSeleccionado === proveedor.proveedorId;
-              marcasHTML += `
-              <li style="margin-bottom: 0.5rem;">
-                <a href="#" 
-                   data-proveedorid="${proveedor.proveedorId}" 
-                   onclick="filtrarPorProveedor(${proveedor.proveedorId}, '${
-                proveedor.nombre
-              }'); return false;"
-                   class="marca-link ${isActive ? "active" : ""}"
-                   style="display: block; padding: 0.5rem 0; text-decoration: none; color: ${
-                     isActive ? "var(--text-primary)" : "var(--text-secondary)"
-                   }; font-size: 0.9375rem; font-weight: ${
-                isActive ? "600" : "400"
-              }; transition: all 0.2s; border-left: ${
-                isActive
-                  ? "3px solid var(--razo-orange)"
-                  : "3px solid transparent"
-              }; padding-left: ${isActive ? "0.75rem" : "0"};">
-                  ${proveedor.nombre}
-                </a>
-              </li>
-            `;
-            });
-
-            if (marcasList) {
-              marcasList.innerHTML = marcasHTML;
-              marcasList.style.display = "block";
-            }
-
-            marcasSection.style.display = "block";
-
-            // Agregar hover effects
-            document
-              .querySelectorAll(".marca-link:not(.active)")
-              .forEach((link) => {
-                link.addEventListener("mouseenter", function () {
-                  this.style.color = "var(--text-primary)";
-                  this.style.paddingLeft = "0.75rem";
-                  this.style.borderLeft = "3px solid #e5e5e5";
-                });
-                link.addEventListener("mouseleave", function () {
-                  this.style.color = "var(--text-secondary)";
-                  this.style.paddingLeft = "0";
-                  this.style.borderLeft = "3px solid transparent";
-                });
-              });
-          }
-        } catch (error) {
-          console.error("Error loading marcas:", error);
-          if (marcasSection) marcasSection.style.display = "none";
-        } finally {
-          if (loadingMarcas) loadingMarcas.style.display = "none";
-        }
-      }
-
-      // Filtrar productos por proveedor/marca
-      function filtrarPorProveedor(proveedorId, nombreProveedor = null) {
-        proveedorSeleccionado = proveedorId;
-        nombreProveedorSeleccionado = proveedorId ? nombreProveedor : null;
-
-        // Recargar marcas para actualizar el estilo activo
-        loadMarcas();
-
-        // Aplicar filtros
-        aplicarFiltrosDesdeUI();
-      }
+      // Filtros de marcas removidos - usar páginas de proveedor individuales
 
       // Display user greeting
       const userData = getUserData();
@@ -809,51 +545,73 @@
         const mostrarRango =
           precioPaqueteMin !== null && precioPaqueteMax !== null;
 
-        const precioLabel = (() => {
+        // Obtener precio base y precio de oferta (SIMPLIFICADO como en inicio.js)
+        const precioBase = parseFloat(producto.precioDesde || 0);
+        const precioOferta = parseFloat(producto.precioOferta || 0);
+        
+        // Determinar si hay oferta para el badge
+        const tieneOferta = precioOferta > 0 && precioOferta < precioBase;
+        
+        // DEBUG temporal para Prueba5
+        if (producto.nombreProducto === "Prueba5") {
+          console.log('🔥 CATALOGO - Prueba5:', {
+            'producto.precioDesde': producto.precioDesde,
+            'producto.precioOferta': producto.precioOferta,
+            precioBase,
+            precioOfertaCalculado: precioOferta,
+            tieneOferta,
+            'precioOferta > 0': precioOferta > 0,
+            'precioOferta < precioBase': precioOferta < precioBase
+          });
+        }
+
+        const precioHTML = (() => {
           if (mostrarRango) {
             if (Math.abs(precioPaqueteMin - precioPaqueteMax) < 0.005) {
-              return formatCurrency(precioPaqueteMin);
+              return `<span class="precio-normal">${formatCurrency(precioPaqueteMin)}</span>`;
             }
-            return `${formatCurrency(precioPaqueteMin)} – ${formatCurrency(
-              precioPaqueteMax
-            )}`;
+            return `<span class="precio-normal">${formatCurrency(precioPaqueteMin)} – ${formatCurrency(precioPaqueteMax)}</span>`;
           }
 
-          const precioBase = Number.isFinite(producto.precioDesde)
-            ? producto.precioDesde
-            : Number.isFinite(producto.varianteDestacada?.precioUnitario)
-            ? producto.varianteDestacada.precioUnitario
-            : null;
+          // Si hay precio de oferta, mostrar con las clases específicas
+          if (tieneOferta) {
+            return `
+              <div class="precio-contenedor">
+                <span class="precio-original">${formatCurrency(precioBase)}</span>
+                <span class="precio-oferta">${formatCurrency(precioOferta)}</span>
+              </div>
+            `;
+          }
 
-          return precioBase !== null
-            ? formatCurrency(precioBase)
-            : "Precio no disponible";
+          // Sin oferta, precio normal
+          return precioBase > 0
+            ? `<span class="precio-normal">${formatCurrency(precioBase)}</span>`
+            : '<span class="precio-normal">Precio no disponible</span>';
         })();
+
+        // Badge según si tiene oferta o no
+        const badge = tieneOferta 
+          ? '<span class="product-badge product-badge--oferta">Oferta</span>'
+          : '<span class="product-badge product-badge--nuevo">Nuevo</span>';
 
         return `
         <a href="/producto-detalle.html?id=${
           producto.productoId
         }" class="product-card">
-          <div class="product-image">
+          <div class="imagen-wrapper">
+            ${badge}
             ${mediaContent}
+            <button class="cart-floating-btn" onclick="event.preventDefault(); console.log('Añadir al carrito:', ${producto.productoId});" title="Añadir al carrito">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M9 2L9 22M2 9L22 9"/>
+              </svg>
+            </button>
           </div>
           <div class="product-info">
-            <div>
-              <div style="margin-bottom: 0.5rem;">
-                <span style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase;">
-                  ${producto.categoria?.nombre || "Sin categoría"}
-                </span>
-              </div>
-              <h3 class="product-title">${producto.nombreProducto}</h3>
-              <p style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.5rem;">
-                ${mostrarRango ? "Precio por paquete" : "Precio desde"}:
-              </p>
-              <div class="product-price">${precioLabel}</div>
-            </div>
-            <div style="margin-top: auto; padding-top: 1rem;">
-              <span class="btn btn-primary btn-block" style="display: block; text-align: center;">
-                Ver Detalles
-              </span>
+            <span class="product-category">${producto.categoria?.nombre || "Sin categoría"}</span>
+            <h3 class="product-title">${producto.nombreProducto}</h3>
+            <div class="product-price">
+              ${precioHTML}
             </div>
           </div>
         </a>
@@ -960,10 +718,21 @@
           productCount.textContent = productosFiltrados.length;
         }
 
+        // Actualizar toolbar
+        const catalogToolbar = document.getElementById("catalogToolbar");
+        const productCountNumber = document.getElementById("productCountNumber");
+        
         if (productosFiltrados.length === 0) {
+          if (catalogToolbar) catalogToolbar.style.display = "none";
           productGrid.style.display = "none";
           emptyState.style.display = "block";
         } else {
+          if (catalogToolbar) {
+            catalogToolbar.style.display = "flex";
+            if (productCountNumber) {
+              productCountNumber.textContent = productosFiltrados.length;
+            }
+          }
           productGrid.innerHTML = productosFiltrados
             .map((producto) => renderProductCard(producto))
             .join("");
@@ -1000,6 +769,57 @@
         });
       }
 
+      // Handle sort select
+      const sortSelect = document.getElementById("sortSelect");
+      if (sortSelect) {
+        sortSelect.addEventListener("change", (event) => {
+          sortProductos(event.target.value);
+        });
+      }
+
+      // Sort products function
+      function sortProductos(sortType) {
+        if (!todosLosProductos || todosLosProductos.length === 0) return;
+
+        let sortedProducts = [...todosLosProductos];
+
+        switch (sortType) {
+          case "price-asc":
+            sortedProducts.sort((a, b) => {
+              const priceA = a.precioOferta || a.precioDesde || 0;
+              const priceB = b.precioOferta || b.precioDesde || 0;
+              return priceA - priceB;
+            });
+            break;
+          case "price-desc":
+            sortedProducts.sort((a, b) => {
+              const priceA = a.precioOferta || a.precioDesde || 0;
+              const priceB = b.precioOferta || b.precioDesde || 0;
+              return priceB - priceA;
+            });
+            break;
+          case "newest":
+            sortedProducts.sort((a, b) => b.productoId - a.productoId);
+            break;
+          case "name-asc":
+            sortedProducts.sort((a, b) =>
+              a.nombreProducto.localeCompare(b.nombreProducto)
+            );
+            break;
+          case "name-desc":
+            sortedProducts.sort((a, b) =>
+              b.nombreProducto.localeCompare(a.nombreProducto)
+            );
+            break;
+          default: // recommended
+            // Keep original order
+            break;
+        }
+
+        todosLosProductos = sortedProducts;
+        mostrarProductos();
+      }
+
       if (btnLimpiarFiltros) {
         btnLimpiarFiltros.addEventListener("click", async (event) => {
           event.preventDefault();
@@ -1011,10 +831,7 @@
           filtrosQueryActual = "";
           categoriaSeleccionada = null;
           nombreCategoriaSeleccionada = null;
-          proveedorSeleccionado = null;
-          nombreProveedorSeleccionado = null;
           await loadCategorias();
-          await loadMarcas();
           await loadProductos();
         });
       }
@@ -1048,20 +865,65 @@
       }
 
       // Handle logout
-      logoutBtn.addEventListener("click", (e) => {
-        e.preventDefault();
-        clearAuthData();
-        showToast("Sesión cerrada exitosamente", "success");
-        setTimeout(() => {
-          window.location.href = "/login.html";
-        }, 500);
-      });
+      if (logoutBtn) {
+        logoutBtn.addEventListener("click", (e) => {
+          e.preventDefault();
+          console.log('🔴 Cerrando sesión...');
+          
+          try {
+            // Limpiar datos de autenticación
+            if (typeof clearAuthData === 'function') {
+              clearAuthData();
+            } else {
+              // Fallback manual si la función no está disponible
+              localStorage.removeItem("razoconnect_token");
+              localStorage.removeItem("razoconnect_user");
+              localStorage.removeItem("razoconnect_admin_token");
+              localStorage.removeItem("razoconnect_admin");
+            }
+            
+            // Mostrar mensaje
+            if (typeof showToast === 'function') {
+              showToast("Sesión cerrada exitosamente", "success");
+            }
+            
+            // Redirigir al login
+            setTimeout(() => {
+              window.location.href = "/login.html";
+            }, 500);
+          } catch (error) {
+            console.error('Error al cerrar sesión:', error);
+            // Forzar redirect incluso si hay error
+            window.location.href = "/login.html";
+          }
+        });
+      } else {
+        console.error('❌ Botón de logout no encontrado');
+      }
 
       // Load categorias, dimensiones, marcas and products on page load
+      // Update cart badge
+      async function updateCartBadge() {
+        try {
+          const cartBadge = document.getElementById('cartBadge');
+          if (!cartBadge) return;
+
+          const response = await API.getCarrito();
+          if (response.ok && response.data.success) {
+            const items = response.data.data.items || [];
+            const totalItems = items.reduce((sum, item) => sum + (item.cantidad || 0), 0);
+            cartBadge.textContent = totalItems;
+            cartBadge.style.display = totalItems > 0 ? 'flex' : 'none';
+          }
+        } catch (error) {
+          console.error('Error updating cart badge:', error);
+        }
+      }
+
       loadDimensiones();
       loadCategorias();
-      loadMarcas();
       loadProductos();
+      updateCartBadge();
     </script>
 
     <style>

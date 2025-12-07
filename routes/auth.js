@@ -50,6 +50,14 @@ router.post("/auth/forgot-password", authController.forgotPassword);
 router.post("/auth/reset-password", authController.resetPassword);
 
 /**
+ * @route   GET /api/auth/me
+ * @desc    Obtener información del usuario actual (admin, agente o cliente)
+ * @access  Private (requiere token válido)
+ * @returns { nombre, email, rol, iniciales, tipo }
+ */
+router.get("/auth/me", authenticate, authController.getCurrentUser);
+
+/**
  * @route   POST /api/auth/registro-admin
  * @desc    Registrar un nuevo administrador (protegido por SUPER_ADMIN_KEY)
  * @access  Public (requiere adminKey en el body)

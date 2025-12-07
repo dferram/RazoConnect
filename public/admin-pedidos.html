@@ -42,7 +42,7 @@
             style="margin-bottom: 1.5rem; padding: 1rem"
           >
             <div style="display: flex; gap: 1rem; align-items: center">
-              <label style="font-weight: 600">Filtrar por estatus:</label>
+              <label for="statusFilter" style="font-weight: 600">Filtrar por estatus:</label>
               <select
                 id="statusFilter"
                 style="
@@ -164,7 +164,15 @@
           </p>
         </div>
 
-        <div style="display: flex; gap: 1rem">
+        <div style="display: flex; gap: 1rem; margin-top: 1.5rem; margin-bottom: 1rem">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            onclick="closeStatusModal()"
+            style="flex: 1"
+          >
+            Cancelar
+          </button>
           <button
             class="btn btn-primary"
             onclick="updateOrderStatus()"
@@ -172,41 +180,18 @@
             style="flex: 1"
           >
             <span id="btnConfirmarText">Confirmar Cambio</span>
-            <div
-              style="
-                background: var(--razo-cream);
-                padding: 1rem;
-                border-radius: 0.5rem;
-                border-left: 4px solid var(--razo-orange);
-                margin-bottom: 1.5rem;
-              "
-            >
-              <p style="font-size: 0.875rem; margin: 0">
-                <strong>⚠️ Importante:</strong> Al cambiar a "Confirmado", se
-                reducirá automáticamente el stock de los productos y se registrará
-                en el log de inventario.
-              </p>
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button
-              type="button"
-              class="btn btn-outline"
-              onclick="closeStatusModal()"
-            >
-              Cancelar
-            </button>
-            <button type="submit" class="btn btn-primary">
-              Actualizar Estatus
-            </button>
-          </div>
-        </form>
+            <div class="spinner" id="btnConfirmarSpinner" style="display: none"></div>
+          </button>
+        </div>
+
+        </div>
       </div>
     </div>
 
     <script src="js/layout.js" defer></script>
-    <script src="js/admin-header-dropdown.js"></script>
     <script src="js/api.js"></script>
+    <script src="js/components/user-profile.js"></script>
+    <script src="js/admin-header-dropdown.js"></script>
     <script>
       // Authentication check
       const adminToken = localStorage.getItem("razoconnect_admin_token");
@@ -261,7 +246,14 @@
         const ordersTable = document.getElementById("ordersTable");
         const emptyOrders = document.getElementById("emptyOrders");
         const ordersTableBody = document.getElementById("ordersTableBody");
-        const statusFilter = document.getElementById("statusFilter").value;
+        const statusFilterEl = document.getElementById("statusFilter");
+
+        if (!loadingOrders || !ordersTable || !emptyOrders || !ordersTableBody) {
+          console.error("Required elements not found in DOM");
+          return;
+        }
+
+        const statusFilter = statusFilterEl ? statusFilterEl.value : "";
 
         try {
           loadingOrders.style.display = "flex";
@@ -379,16 +371,22 @@
       // Open status modal
       function openStatusModal(pedidoId, clienteNombre, estatusActual) {
         selectedOrderId = pedidoId;
-        document.getElementById("modalPedidoId").textContent = pedidoId;
-        document.getElementById("modalClienteNombre").textContent =
-          clienteNombre;
-        document.getElementById("modalNuevoEstatus").value = estatusActual;
-        document.getElementById("statusModal").style.display = "flex";
+        
+        const modalPedidoId = document.getElementById("modalPedidoId");
+        const modalClienteNombre = document.getElementById("modalClienteNombre");
+        const modalNuevoEstatus = document.getElementById("modalNuevoEstatus");
+        const statusModal = document.getElementById("statusModal");
+
+        if (modalPedidoId) modalPedidoId.textContent = pedidoId;
+        if (modalClienteNombre) modalClienteNombre.textContent = clienteNombre;
+        if (modalNuevoEstatus) modalNuevoEstatus.value = estatusActual;
+        if (statusModal) statusModal.style.display = "flex";
       }
 
       // Close status modal
       function closeStatusModal() {
-        document.getElementById("statusModal").style.display = "none";
+        const statusModal = document.getElementById("statusModal");
+        if (statusModal) statusModal.style.display = "none";
         selectedOrderId = null;
       }
 
@@ -396,17 +394,23 @@
       async function updateOrderStatus() {
         if (!selectedOrderId) return;
 
-        const nuevoEstatus = document.getElementById("modalNuevoEstatus").value;
+        const modalNuevoEstatus = document.getElementById("modalNuevoEstatus");
         const btnConfirmar = document.getElementById("btnConfirmar");
         const btnConfirmarText = document.getElementById("btnConfirmarText");
-        const btnConfirmarSpinner = document.getElementById(
-          "btnConfirmarSpinner"
-        );
+        const btnConfirmarSpinner = document.getElementById("btnConfirmarSpinner");
+
+        // Validate elements exist
+        if (!modalNuevoEstatus || !btnConfirmar) {
+          console.error("Required elements not found in DOM");
+          return;
+        }
+
+        const nuevoEstatus = modalNuevoEstatus.value;
 
         try {
           btnConfirmar.disabled = true;
-          btnConfirmarText.style.display = "none";
-          btnConfirmarSpinner.style.display = "block";
+          if (btnConfirmarText) btnConfirmarText.style.display = "none";
+          if (btnConfirmarSpinner) btnConfirmarSpinner.style.display = "block";
 
           const response = await fetch(
             `${API_BASE_URL}/admin/pedidos/${selectedOrderId}`,
@@ -436,9 +440,9 @@
           console.error("Error updating order:", error);
           showToast("Error al conectar con el servidor", "error");
         } finally {
-          btnConfirmar.disabled = false;
-          btnConfirmarText.style.display = "inline";
-          btnConfirmarSpinner.style.display = "none";
+          if (btnConfirmar) btnConfirmar.disabled = false;
+          if (btnConfirmarText) btnConfirmarText.style.display = "inline";
+          if (btnConfirmarSpinner) btnConfirmarSpinner.style.display = "none";
         }
       }
 

@@ -427,12 +427,32 @@
     if (logoutBtn) {
       logoutBtn.addEventListener("click", (e) => {
         e.preventDefault();
-        if (typeof logout === "function") {
-          logout();
-        } else {
-          localStorage.removeItem("razoconnect_token");
-          localStorage.removeItem("razoconnect_user");
-          localStorage.removeItem("razoconnect_admin_token");
+        console.log('🔴 Cerrando sesión...');
+        
+        try {
+          // Limpiar datos de autenticación
+          if (typeof clearAuthData === 'function') {
+            clearAuthData();
+          } else {
+            // Fallback manual si la función no está disponible
+            localStorage.removeItem("razoconnect_token");
+            localStorage.removeItem("razoconnect_user");
+            localStorage.removeItem("razoconnect_admin_token");
+            localStorage.removeItem("razoconnect_admin");
+          }
+          
+          // Mostrar mensaje
+          if (typeof showToast === 'function') {
+            showToast("Sesión cerrada exitosamente", "success");
+          }
+          
+          // Redirigir al login
+          setTimeout(() => {
+            window.location.href = "/login.html";
+          }, 500);
+        } catch (error) {
+          console.error('Error al cerrar sesión:', error);
+          // Forzar redirect incluso si hay error
           window.location.href = "/login.html";
         }
       });

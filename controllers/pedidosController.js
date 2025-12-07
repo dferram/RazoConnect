@@ -598,7 +598,7 @@ const obtenerPedidos = async (req, res) => {
         LEFT JOIN LATERAL (
           SELECT pi.url_imagen
           FROM producto_imagenes pi
-          WHERE pi.varianteid = dp.varianteid
+          WHERE pi.productoid = pv.productoid
           ORDER BY pi.orden ASC NULLS LAST, pi.imagenid ASC
           LIMIT 1
         ) imagen ON TRUE
@@ -772,7 +772,7 @@ const obtenerPedidoPorId = async (req, res) => {
       LEFT JOIN LATERAL (
         SELECT pi.url_imagen
         FROM producto_imagenes pi
-        WHERE pi.varianteid = pv.varianteid
+        WHERE pi.productoid = pv.productoid
         ORDER BY pi.orden ASC NULLS LAST, pi.imagenid ASC
         LIMIT 1
       ) imagen ON TRUE

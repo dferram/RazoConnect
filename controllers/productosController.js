@@ -195,10 +195,9 @@ const obtenerProductos = async (req, res) => {
         SELECT
           pi.url_imagen,
           pi.textoalternativo
-        FROM producto_variantes pv
-        JOIN producto_imagenes pi ON pi.varianteid = pv.varianteid
-        WHERE pv.productoid = p.productoid
-        ORDER BY pv.preciounitario ASC NULLS LAST, pi.orden ASC NULLS LAST, pi.imagenid ASC
+        FROM producto_imagenes pi
+        WHERE pi.productoid = p.productoid
+        ORDER BY pi.orden ASC NULLS LAST, pi.imagenid ASC
         LIMIT 1
       ) imagen ON TRUE
       LEFT JOIN (
@@ -483,24 +482,27 @@ const obtenerProductoPorId = async (req, res) => {
          pv.dimensiones,
          pv.costounitario,
          pv.preciounitario,
+         pv.precioofertaunitario,
          pv.stock,
          pv.tipoproductoid,
          pv.medidaid,
          COALESCE(
-           json_agg(
-             json_build_object(
-               'imagenId', pi.imagenid,
-               'url', pi.url_imagen,
-               'alt', pi.textoalternativo,
-               'orden', pi.orden
-             ) ORDER BY pi.orden ASC NULLS LAST, pi.imagenid ASC
-           ) FILTER (WHERE pi.imagenid IS NOT NULL),
+           (
+             SELECT json_agg(
+               json_build_object(
+                 'imagenId', pi2.imagenid,
+                 'url', pi2.url_imagen,
+                 'alt', pi2.textoalternativo,
+                 'orden', pi2.orden
+               ) ORDER BY pi2.orden ASC NULLS LAST, pi2.imagenid ASC
+             )
+             FROM producto_imagenes pi2
+             WHERE pi2.productoid = pv.productoid
+           ),
            '[]'::json
          ) AS imagenes
        FROM producto_variantes pv
-       LEFT JOIN producto_imagenes pi ON pi.varianteid = pv.varianteid
        WHERE pv.productoid = $1
-       GROUP BY pv.varianteid
        ORDER BY pv.varianteid ASC`,
       [id]
     );
@@ -508,6 +510,8 @@ const obtenerProductoPorId = async (req, res) => {
     const variantes = variantesResult.rows.map((row) => {
       const precioUnitario =
         row.preciounitario !== null ? parseFloat(row.preciounitario) : null;
+      const precioOfertaUnitario =
+        row.precioofertaunitario !== null ? parseFloat(row.precioofertaunitario) : null;
       const costoUnitario =
         row.costounitario !== null ? parseFloat(row.costounitario) : null;
       const stock = row.stock !== null ? parseInt(row.stock, 10) : null;
@@ -527,11 +531,11 @@ const obtenerProductoPorId = async (req, res) => {
       return {
         varianteId: row.varianteid,
         productoId: row.productoid,
-        productoId: row.productoid,
         sku: row.sku,
         dimensiones: row.dimensiones,
         costoUnitario,
         precioUnitario,
+        precioOfertaUnitario,
         stock,
         tipoProductoId:
           row.tipoproductoid !== null ? parseInt(row.tipoproductoid, 10) : null,

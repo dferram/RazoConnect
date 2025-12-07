@@ -52,14 +52,14 @@ const obtenerCarrito = async (req, res) => {
 
     // Obtener o crear el carrito del cliente
     let carritoResult = await db.query(
-      "SELECT CarritoID FROM CarritoDeCompra WHERE ClienteID = $1",
+      "SELECT carritoid FROM carritodecompra WHERE clienteid = $1",
       [clienteId]
     );
 
     // Si no existe carrito, crear uno nuevo
     if (carritoResult.rows.length === 0) {
       const nuevoCarrito = await db.query(
-        "INSERT INTO CarritoDeCompra (ClienteID) VALUES ($1) RETURNING CarritoID",
+        "INSERT INTO carritodecompra (clienteid) VALUES ($1) RETURNING carritoid",
         [clienteId]
       );
       carritoResult = nuevoCarrito;
@@ -99,7 +99,7 @@ const obtenerCarrito = async (req, res) => {
           pi.url_imagen,
           pi.textoalternativo
         FROM producto_imagenes pi
-        WHERE pi.varianteid = pv.varianteid
+        WHERE pi.productoid = pv.productoid
         ORDER BY pi.orden ASC NULLS LAST, pi.imagenid ASC
         LIMIT 1
       ) imagen ON TRUE
@@ -349,7 +349,7 @@ const agregarAlCarrito = async (req, res) => {
 
     // Obtener o crear el carrito del cliente
     let carritoResult = await db.query(
-      "SELECT CarritoID FROM CarritoDeCompra WHERE ClienteID = $1",
+      "SELECT carritoid FROM carritodecompra WHERE clienteid = $1",
       [clienteId]
     );
 
@@ -357,7 +357,7 @@ const agregarAlCarrito = async (req, res) => {
     if (carritoResult.rows.length === 0) {
       // Crear nuevo carrito
       const nuevoCarrito = await db.query(
-        "INSERT INTO CarritoDeCompra (ClienteID, UltimaModificacion) VALUES ($1, NOW()) RETURNING CarritoID",
+        "INSERT INTO carritodecompra (clienteid, ultimamodificacion) VALUES ($1, NOW()) RETURNING carritoid",
         [clienteId]
       );
       carritoId = nuevoCarrito.rows[0].carritoid;
@@ -365,14 +365,14 @@ const agregarAlCarrito = async (req, res) => {
       carritoId = carritoResult.rows[0].carritoid;
       // Actualizar última modificación
       await db.query(
-        "UPDATE CarritoDeCompra SET UltimaModificacion = NOW() WHERE CarritoID = $1",
+        "UPDATE carritodecompra SET ultimamodificacion = NOW() WHERE carritoid = $1",
         [carritoId]
       );
     }
 
     // Verificar si la variante ya está en el carrito
     const itemExistente = await db.query(
-      "SELECT ItemID, COALESCE(CantidadPaquetes, Cantidad) AS cantidad_paquetes, TamanoID FROM ItemsDelCarrito WHERE CarritoID = $1 AND VarianteID = $2 AND TamanoID = $3",
+      "SELECT itemid, COALESCE(cantidadpaquetes, cantidad) AS cantidad_paquetes, tamanoid FROM itemsdelcarrito WHERE carritoid = $1 AND varianteid = $2 AND tamanoid = $3",
       [carritoId, varianteId, tamanoId]
     );
 
@@ -385,13 +385,13 @@ const agregarAlCarrito = async (req, res) => {
       const nuevaCantidad = cantidadActual + cantidadEntera;
 
       itemResult = await db.query(
-        "UPDATE ItemsDelCarrito SET CantidadPaquetes = $1, Cantidad = $1 WHERE ItemID = $2 RETURNING ItemID, VarianteID, CantidadPaquetes, Cantidad, TamanoID",
+        "UPDATE itemsdelcarrito SET cantidadpaquetes = $1, cantidad = $1 WHERE itemid = $2 RETURNING itemid, varianteid, cantidadpaquetes, cantidad, tamanoid",
         [nuevaCantidad, itemExistente.rows[0].itemid]
       );
     } else {
       // Insertar nuevo item
       itemResult = await db.query(
-        "INSERT INTO ItemsDelCarrito (CarritoID, VarianteID, TamanoID, CantidadPaquetes, Cantidad) VALUES ($1, $2, $3, $4, $4) RETURNING ItemID, VarianteID, TamanoID, CantidadPaquetes, Cantidad",
+        "INSERT INTO itemsdelcarrito (carritoid, varianteid, tamanoid, cantidadpaquetes, cantidad) VALUES ($1, $2, $3, $4, $4) RETURNING itemid, varianteid, tamanoid, cantidadpaquetes, cantidad",
         [carritoId, varianteId, tamanoId, cantidadEntera]
       );
     }
@@ -486,7 +486,7 @@ const actualizarCarrito = async (req, res) => {
 
     // Obtener el carrito del cliente
     const carritoResult = await db.query(
-      "SELECT CarritoID FROM CarritoDeCompra WHERE ClienteID = $1",
+      "SELECT carritoid FROM carritodecompra WHERE clienteid = $1",
       [clienteId]
     );
 
@@ -501,7 +501,7 @@ const actualizarCarrito = async (req, res) => {
 
     // Actualizar la cantidad del item
     const updateResult = await db.query(
-      "UPDATE ItemsDelCarrito SET CantidadPaquetes = $1 WHERE CarritoID = $2 AND VarianteID = $3 RETURNING ItemID, VarianteID, CantidadPaquetes",
+      "UPDATE itemsdelcarrito SET cantidadpaquetes = $1 WHERE carritoid = $2 AND varianteid = $3 RETURNING itemid, varianteid, cantidadpaquetes",
       [cantidadPaquetesEntera, carritoId, varianteId]
     );
 
@@ -514,7 +514,7 @@ const actualizarCarrito = async (req, res) => {
 
     // Actualizar última modificación del carrito
     await db.query(
-      "UPDATE CarritoDeCompra SET UltimaModificacion = NOW() WHERE CarritoID = $1",
+      "UPDATE carritodecompra SET ultimamodificacion = NOW() WHERE carritoid = $1",
       [carritoId]
     );
 
@@ -574,7 +574,7 @@ const eliminarDelCarrito = async (req, res) => {
 
     // Obtener el carrito del cliente
     const carritoResult = await db.query(
-      "SELECT CarritoID FROM CarritoDeCompra WHERE ClienteID = $1",
+      "SELECT carritoid FROM carritodecompra WHERE clienteid = $1",
       [clienteId]
     );
 
@@ -589,7 +589,7 @@ const eliminarDelCarrito = async (req, res) => {
 
     // Eliminar el item del carrito
     const deleteResult = await db.query(
-      "DELETE FROM ItemsDelCarrito WHERE CarritoID = $1 AND VarianteID = $2 RETURNING ItemID",
+      "DELETE FROM itemsdelcarrito WHERE carritoid = $1 AND varianteid = $2 RETURNING itemid",
       [carritoId, varianteId]
     );
 
@@ -602,7 +602,7 @@ const eliminarDelCarrito = async (req, res) => {
 
     // Actualizar última modificación del carrito
     await db.query(
-      "UPDATE CarritoDeCompra SET UltimaModificacion = NOW() WHERE CarritoID = $1",
+      "UPDATE carritodecompra SET ultimamodificacion = NOW() WHERE carritoid = $1",
       [carritoId]
     );
 
