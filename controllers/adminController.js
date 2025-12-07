@@ -3110,7 +3110,30 @@ const getAllProveedores = async (req, res) => {
         NombreEmpresa,
         ContactoNombre,
         Email,
-        Telefono
+        Telefono,
+        RazonSocial,
+        RFC,
+        RegimenFiscal,
+        Calle,
+        Colonia,
+        CodigoPostal,
+        Ciudad,
+        Estado,
+        NombreRepresentanteVentas,
+        CelularVentas,
+        EmailVentas,
+        NombreContactoCobranza,
+        TelefonoCobranza,
+        EmailCobranza,
+        Banco,
+        NumeroCuenta,
+        CLABE,
+        ReferenciaPago,
+        DiasCredito,
+        LimiteCredito,
+        DescuentoFinanciero,
+        MinimoCompra,
+        AceptaDevoluciones
       FROM Proveedores
       ORDER BY NombreEmpresa ASC
     `;
@@ -3140,7 +3163,42 @@ const getAllProveedores = async (req, res) => {
  */
 const crearProveedor = async (req, res) => {
   try {
-    const { nombreEmpresa, contactoNombre, email, telefono } = req.body;
+    const {
+      nombreEmpresa,
+      contactoNombre,
+      email,
+      telefono,
+      razonSocial,
+      rfc,
+      regimenFiscal,
+      calle,
+      colonia,
+      cp,
+      ciudad,
+      estado,
+      nombreRepresentanteVentas,
+      celularVentas,
+      emailVentas,
+      nombreContactoCobranza,
+      telefonoCobranza,
+      emailCobranza,
+      banco,
+      numeroCuenta,
+      clabe,
+      referenciaPago,
+      diasCredito,
+      limiteCredito,
+      descuentoFinanciero,
+      minimoCompra,
+      aceptaDevoluciones,
+    } = req.body;
+
+    // Helper function to convert empty strings to NULL
+    const toNullIfEmpty = (value) => {
+      if (value === null || value === undefined) return null;
+      if (typeof value === "string" && value.trim() === "") return null;
+      return typeof value === "string" ? value.trim() : value;
+    };
 
     // Validaciones
     if (!nombreEmpresa || nombreEmpresa.trim() === "") {
@@ -3150,7 +3208,7 @@ const crearProveedor = async (req, res) => {
       });
     }
 
-    // Validar email si se proporciona
+    // Validar email principal si se proporciona
     if (email && email.trim() !== "") {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(email)) {
@@ -3161,17 +3219,69 @@ const crearProveedor = async (req, res) => {
       }
     }
 
+    // Validar email de ventas si se proporciona
+    if (emailVentas && emailVentas.trim() !== "") {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(emailVentas)) {
+        return res.status(400).json({
+          success: false,
+          message: "El email de ventas no tiene un formato válido",
+        });
+      }
+    }
+
+    // Validar email de cobranza si se proporciona
+    if (emailCobranza && emailCobranza.trim() !== "") {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(emailCobranza)) {
+        return res.status(400).json({
+          success: false,
+          message: "El email de cobranza no tiene un formato válido",
+        });
+      }
+    }
+
     const query = `
-      INSERT INTO Proveedores (NombreEmpresa, ContactoNombre, Email, Telefono)
-      VALUES ($1, $2, $3, $4)
-      RETURNING ProveedorID, NombreEmpresa, ContactoNombre, Email, Telefono
+      INSERT INTO Proveedores (
+        NombreEmpresa, ContactoNombre, Email, Telefono,
+        RazonSocial, RFC, RegimenFiscal, Calle, Colonia, CodigoPostal, Ciudad, Estado,
+        NombreRepresentanteVentas, CelularVentas, EmailVentas,
+        NombreContactoCobranza, TelefonoCobranza, EmailCobranza,
+        Banco, NumeroCuenta, CLABE, ReferenciaPago,
+        DiasCredito, LimiteCredito, DescuentoFinanciero, MinimoCompra, AceptaDevoluciones
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27)
+      RETURNING *
     `;
 
     const values = [
       nombreEmpresa.trim(),
-      contactoNombre ? contactoNombre.trim() : null,
-      email ? email.trim() : null,
-      telefono ? telefono.trim() : null,
+      toNullIfEmpty(contactoNombre),
+      toNullIfEmpty(email),
+      toNullIfEmpty(telefono),
+      toNullIfEmpty(razonSocial),
+      toNullIfEmpty(rfc),
+      toNullIfEmpty(regimenFiscal),
+      toNullIfEmpty(calle),
+      toNullIfEmpty(colonia),
+      toNullIfEmpty(cp),
+      toNullIfEmpty(ciudad),
+      toNullIfEmpty(estado),
+      toNullIfEmpty(nombreRepresentanteVentas),
+      toNullIfEmpty(celularVentas),
+      toNullIfEmpty(emailVentas),
+      toNullIfEmpty(nombreContactoCobranza),
+      toNullIfEmpty(telefonoCobranza),
+      toNullIfEmpty(emailCobranza),
+      toNullIfEmpty(banco),
+      toNullIfEmpty(numeroCuenta),
+      toNullIfEmpty(clabe),
+      toNullIfEmpty(referenciaPago),
+      diasCredito ? parseInt(diasCredito) : null,
+      limiteCredito ? parseFloat(limiteCredito) : null,
+      toNullIfEmpty(descuentoFinanciero),
+      minimoCompra ? parseFloat(minimoCompra) : null,
+      aceptaDevoluciones !== undefined ? Boolean(aceptaDevoluciones) : null,
     ];
 
     const result = await db.query(query, values);
@@ -3202,7 +3312,42 @@ const crearProveedor = async (req, res) => {
 const actualizarProveedor = async (req, res) => {
   try {
     const proveedorId = parseInt(req.params.id);
-    const { nombreEmpresa, contactoNombre, email, telefono } = req.body;
+    const {
+      nombreEmpresa,
+      contactoNombre,
+      email,
+      telefono,
+      razonSocial,
+      rfc,
+      regimenFiscal,
+      calle,
+      colonia,
+      cp,
+      ciudad,
+      estado,
+      nombreRepresentanteVentas,
+      celularVentas,
+      emailVentas,
+      nombreContactoCobranza,
+      telefonoCobranza,
+      emailCobranza,
+      banco,
+      numeroCuenta,
+      clabe,
+      referenciaPago,
+      diasCredito,
+      limiteCredito,
+      descuentoFinanciero,
+      minimoCompra,
+      aceptaDevoluciones,
+    } = req.body;
+
+    // Helper function to convert empty strings to NULL
+    const toNullIfEmpty = (value) => {
+      if (value === null || value === undefined) return null;
+      if (typeof value === "string" && value.trim() === "") return null;
+      return typeof value === "string" ? value.trim() : value;
+    };
 
     // Validaciones
     if (!nombreEmpresa || nombreEmpresa.trim() === "") {
@@ -3212,13 +3357,35 @@ const actualizarProveedor = async (req, res) => {
       });
     }
 
-    // Validar email si se proporciona
+    // Validar email principal si se proporciona
     if (email && email.trim() !== "") {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(email)) {
         return res.status(400).json({
           success: false,
           message: "El email no tiene un formato válido",
+        });
+      }
+    }
+
+    // Validar email de ventas si se proporciona
+    if (emailVentas && emailVentas.trim() !== "") {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(emailVentas)) {
+        return res.status(400).json({
+          success: false,
+          message: "El email de ventas no tiene un formato válido",
+        });
+      }
+    }
+
+    // Validar email de cobranza si se proporciona
+    if (emailCobranza && emailCobranza.trim() !== "") {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(emailCobranza)) {
+        return res.status(400).json({
+          success: false,
+          message: "El email de cobranza no tiene un formato válido",
         });
       }
     }
@@ -3241,16 +3408,62 @@ const actualizarProveedor = async (req, res) => {
         NombreEmpresa = $1,
         ContactoNombre = $2,
         Email = $3,
-        Telefono = $4
-      WHERE ProveedorID = $5
-      RETURNING ProveedorID, NombreEmpresa, ContactoNombre, Email, Telefono
+        Telefono = $4,
+        RazonSocial = $5,
+        RFC = $6,
+        RegimenFiscal = $7,
+        Calle = $8,
+        Colonia = $9,
+        CodigoPostal = $10,
+        Ciudad = $11,
+        Estado = $12,
+        NombreRepresentanteVentas = $13,
+        CelularVentas = $14,
+        EmailVentas = $15,
+        NombreContactoCobranza = $16,
+        TelefonoCobranza = $17,
+        EmailCobranza = $18,
+        Banco = $19,
+        NumeroCuenta = $20,
+        CLABE = $21,
+        ReferenciaPago = $22,
+        DiasCredito = $23,
+        LimiteCredito = $24,
+        DescuentoFinanciero = $25,
+        MinimoCompra = $26,
+        AceptaDevoluciones = $27
+      WHERE ProveedorID = $28
+      RETURNING *
     `;
 
     const values = [
       nombreEmpresa.trim(),
-      contactoNombre ? contactoNombre.trim() : null,
-      email ? email.trim() : null,
-      telefono ? telefono.trim() : null,
+      toNullIfEmpty(contactoNombre),
+      toNullIfEmpty(email),
+      toNullIfEmpty(telefono),
+      toNullIfEmpty(razonSocial),
+      toNullIfEmpty(rfc),
+      toNullIfEmpty(regimenFiscal),
+      toNullIfEmpty(calle),
+      toNullIfEmpty(colonia),
+      toNullIfEmpty(cp),
+      toNullIfEmpty(ciudad),
+      toNullIfEmpty(estado),
+      toNullIfEmpty(nombreRepresentanteVentas),
+      toNullIfEmpty(celularVentas),
+      toNullIfEmpty(emailVentas),
+      toNullIfEmpty(nombreContactoCobranza),
+      toNullIfEmpty(telefonoCobranza),
+      toNullIfEmpty(emailCobranza),
+      toNullIfEmpty(banco),
+      toNullIfEmpty(numeroCuenta),
+      toNullIfEmpty(clabe),
+      toNullIfEmpty(referenciaPago),
+      diasCredito ? parseInt(diasCredito) : null,
+      limiteCredito ? parseFloat(limiteCredito) : null,
+      toNullIfEmpty(descuentoFinanciero),
+      minimoCompra ? parseFloat(minimoCompra) : null,
+      aceptaDevoluciones !== undefined ? Boolean(aceptaDevoluciones) : null,
       proveedorId,
     ];
 
