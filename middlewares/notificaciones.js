@@ -1,8 +1,11 @@
 const express = require("express");
 const router = express.Router();
 const notificacionesController = require("../controllers/notificacionesController");
-const { authenticate } = require("../middlewares/authMiddleware");
+const { authenticate } = require("../middlewares/auth");
 
+/**
+ * Todas las rutas requieren autenticación de cliente
+ */
 
 // Obtener notificaciones del cliente autenticado
 router.get("/", authenticate, notificacionesController.obtenerNotificaciones);

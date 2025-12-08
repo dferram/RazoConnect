@@ -1212,6 +1212,7 @@ const crearProducto = async (req, res) => {
     tamanos,
     tamanoIds,
     proveedorId: proveedorIdRaw,
+    activo,
   } = req.body;
 
   if (!nombre) {
@@ -1251,9 +1252,12 @@ const crearProducto = async (req, res) => {
       }
     }
 
+    // Gestión de visibilidad: activo por defecto TRUE, pero respeta el valor del body
+    const activoFinal = activo !== undefined ? Boolean(activo) : true;
+
     const result = await client.query(
       `INSERT INTO Productos (NombreProducto, CodigoModelo, Descripcion, CategoriaID, ProveedorID_Default, Activo)
-       VALUES ($1, $2, $3, $4, $5, TRUE)
+       VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING ProductoID, NombreProducto, CodigoModelo, Descripcion, CategoriaID, ProveedorID_Default AS ProveedorID, Activo`,
       [
         nombre,
@@ -1261,6 +1265,7 @@ const crearProducto = async (req, res) => {
         descripcion || null,
         categoriaId || null,
         proveedorId,
+        activoFinal,
       ]
     );
 
@@ -1445,6 +1450,7 @@ const actualizarProducto = async (req, res) => {
     tamanos,
     tamanoIds,
     proveedorId: proveedorIdRaw,
+    activo,
   } = req.body;
 
   const client = await db.pool.connect();
@@ -1455,7 +1461,7 @@ const actualizarProducto = async (req, res) => {
     transactionStarted = true;
 
     const productoResult = await client.query(
-      `SELECT ProductoID, NombreProducto, CodigoModelo, Descripcion, CategoriaID, ProveedorID_Default AS ProveedorID
+      `SELECT ProductoID, NombreProducto, CodigoModelo, Descripcion, CategoriaID, ProveedorID_Default AS ProveedorID, Activo
        FROM Productos
        WHERE ProductoID = $1`,
       [productoId]
@@ -1540,6 +1546,9 @@ const actualizarProducto = async (req, res) => {
       }
     }
 
+    // Gestión de visibilidad: mantener el valor actual si no se especifica
+    const activoFinal = activo !== undefined ? Boolean(activo) : productoActual.activo;
+
     const productoActualizado = await client.query(
       `UPDATE Productos
        SET NombreProducto = $1,
@@ -1547,8 +1556,8 @@ const actualizarProducto = async (req, res) => {
            Descripcion = $3,
            CategoriaID = $4,
            ProveedorID_Default = $5,
-           FechaActualizacion = NOW()
-       WHERE ProductoID = $6
+           Activo = $6
+       WHERE ProductoID = $7
        RETURNING ProductoID, NombreProducto, CodigoModelo, Descripcion, CategoriaID, ProveedorID_Default AS ProveedorID, Activo`,
       [
         nombreFinal,
@@ -1556,6 +1565,7 @@ const actualizarProducto = async (req, res) => {
         descripcionFinal,
         categoriaFinal,
         proveedorId,
+        activoFinal,
         productoId,
       ]
     );
@@ -1951,7 +1961,8 @@ const getProductoDetalle = async (req, res) => {
          pv.preciounitario,
          pv.stock,
          pv.tipoproductoid,
-         pv.medidaid
+         pv.medidaid,
+         pv.activo
        FROM producto_variantes pv
        WHERE pv.productoid = $1
        ORDER BY pv.varianteid ASC`,
@@ -2060,6 +2071,7 @@ const getProductoDetalle = async (req, res) => {
         tipoProductoId:
           row.tipoproductoid !== null ? parseInt(row.tipoproductoid, 10) : null,
         medidaId: row.medidaid !== null ? parseInt(row.medidaid, 10) : null,
+        activo: row.activo !== undefined ? row.activo : true,
       };
     });
 
@@ -2113,6 +2125,7 @@ const getAllProductos = async (req, res) => {
         p.nombreproducto,
         p.descripcion,
         p.categoriaid,
+        p.activo,
         COALESCE(SUM(v.stock), 0) AS stock_total,
         COUNT(v.varianteid) AS variantes_count,
         MIN(v.preciounitario) FILTER (WHERE v.preciounitario IS NOT NULL) AS precio_desde,
@@ -2190,6 +2203,7 @@ const getAllProductos = async (req, res) => {
             productoid: row.productoid,
             nombreproducto: row.nombreproducto,
             descripcion: row.descripcion,
+            activo: row.activo,
             stockTotal: parseInt(row.stock_total, 10) || 0,
             variantesCount: parseInt(row.variantes_count, 10) || 0,
             precioDesde: row.precio_desde ? parseFloat(row.precio_desde) : null,
@@ -2221,6 +2235,7 @@ const getCategorias = async (req, res) => {
         c.Nombre,
         c.Descripcion,
         c.ParentCategoriaID,
+        c.Activo,
         p.Nombre AS ParentNombre
       FROM Categorias c
       LEFT JOIN Categorias p ON c.ParentCategoriaID = p.CategoriaID
@@ -2236,6 +2251,7 @@ const getCategorias = async (req, res) => {
           descripcion: row.descripcion,
           parentCategoriaId: row.parentcategoriaid,
           parentNombre: row.parentnombre || null,
+          activo: row.activo,
         })),
       },
     });
@@ -2254,7 +2270,7 @@ const getCategorias = async (req, res) => {
  */
 const crearCategoria = async (req, res) => {
   try {
-    const { nombre, descripcion, parentCategoriaId } = req.body;
+    const { nombre, descripcion, parentCategoriaId, activo } = req.body;
 
     if (!nombre || !nombre.trim()) {
       return res.status(400).json({
@@ -2295,11 +2311,14 @@ const crearCategoria = async (req, res) => {
       });
     }
 
+    // Gestión de visibilidad: activo por defecto TRUE
+    const activoFinal = activo !== undefined ? Boolean(activo) : true;
+
     const insertResult = await db.query(
-      `INSERT INTO Categorias (Nombre, Descripcion, ParentCategoriaID)
-       VALUES ($1, $2, $3)
-       RETURNING CategoriaID, Nombre, Descripcion, ParentCategoriaID`,
-      [nombreNormalizado, descripcion?.trim() || null, parentCategoria]
+      `INSERT INTO Categorias (Nombre, Descripcion, ParentCategoriaID, Activo)
+       VALUES ($1, $2, $3, $4)
+       RETURNING CategoriaID, Nombre, Descripcion, ParentCategoriaID, Activo`,
+      [nombreNormalizado, descripcion?.trim() || null, parentCategoria, activoFinal]
     );
 
     const categoria = insertResult.rows[0];
@@ -2313,6 +2332,7 @@ const crearCategoria = async (req, res) => {
           nombre: categoria.nombre,
           descripcion: categoria.descripcion,
           parentCategoriaId: categoria.parentcategoriaid,
+          activo: categoria.activo,
         },
       },
     });
@@ -2332,7 +2352,7 @@ const crearCategoria = async (req, res) => {
 const actualizarCategoria = async (req, res) => {
   try {
     const categoriaId = parseInt(req.params.id, 10);
-    const { nombre, descripcion, parentCategoriaId } = req.body;
+    const { nombre, descripcion, parentCategoriaId, activo } = req.body;
 
     if (Number.isNaN(categoriaId)) {
       return res.status(400).json({
@@ -2349,7 +2369,7 @@ const actualizarCategoria = async (req, res) => {
     }
 
     const categoriaResult = await db.query(
-      "SELECT CategoriaID FROM Categorias WHERE CategoriaID = $1",
+      "SELECT CategoriaID, Activo FROM Categorias WHERE CategoriaID = $1",
       [categoriaId]
     );
 
@@ -2359,6 +2379,8 @@ const actualizarCategoria = async (req, res) => {
         message: "Categoría no encontrada",
       });
     }
+
+    const categoriaActual = categoriaResult.rows[0];
 
     let parentCategoria = null;
 
@@ -2394,18 +2416,22 @@ const actualizarCategoria = async (req, res) => {
       }
     }
 
+    // Gestión de visibilidad: mantener el valor actual si no se especifica
+    const activoFinal = activo !== undefined ? Boolean(activo) : categoriaActual.activo;
+
     const updateResult = await db.query(
       `UPDATE Categorias
        SET Nombre = COALESCE($1, Nombre),
            Descripcion = $2,
            ParentCategoriaID = $3,
-           FechaActualizacion = NOW()
-       WHERE CategoriaID = $4
-       RETURNING CategoriaID, Nombre, Descripcion, ParentCategoriaID`,
+           Activo = $4
+       WHERE CategoriaID = $5
+       RETURNING CategoriaID, Nombre, Descripcion, ParentCategoriaID, Activo`,
       [
         nombreNormalizado || null,
         descripcion?.trim() || null,
         parentCategoria,
+        activoFinal,
         categoriaId,
       ]
     );
@@ -2421,6 +2447,7 @@ const actualizarCategoria = async (req, res) => {
           nombre: categoriaActualizada.nombre,
           descripcion: categoriaActualizada.descripcion,
           parentCategoriaId: categoriaActualizada.parentcategoriaid,
+          activo: categoriaActualizada.activo,
         },
       },
     });
@@ -4301,6 +4328,72 @@ const cancelarOrdenBackorder = async (req, res) => {
   }
 };
 
+/**
+ * Actualizar visibilidad de una variante
+ * PUT /api/admin/variantes/:id
+ */
+const actualizarVariante = async (req, res) => {
+  try {
+    const varianteId = parseInt(req.params.id, 10);
+    const { activo } = req.body;
+
+    if (!varianteId || isNaN(varianteId)) {
+      return res.status(400).json({
+        success: false,
+        message: "ID de variante inválido",
+      });
+    }
+
+    if (activo === undefined) {
+      return res.status(400).json({
+        success: false,
+        message: "El campo 'activo' es requerido",
+      });
+    }
+
+    // Verificar que la variante existe
+    const checkVariante = await db.query(
+      `SELECT VarianteID FROM Producto_Variantes WHERE VarianteID = $1`,
+      [varianteId]
+    );
+
+    if (checkVariante.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Variante no encontrada",
+      });
+    }
+
+    // Actualizar solo el campo activo
+    console.log(`🔄 Actualizando variante ${varianteId} a activo=${activo}`);
+    
+    const updateResult = await db.query(
+      `UPDATE Producto_Variantes SET Activo = $1 WHERE VarianteID = $2 RETURNING *`,
+      [activo, varianteId]
+    );
+
+    console.log(`✅ Variante actualizada:`, updateResult.rows[0]);
+
+    res.json({
+      success: true,
+      message: `Variante ${activo ? 'activada' : 'desactivada'} exitosamente`,
+      data: {
+        varianteId,
+        activo,
+        updated: updateResult.rows[0],
+      },
+    });
+  } catch (error) {
+    console.error("❌ Error al actualizar variante:", error);
+    console.error("Error completo:", error.message, error.stack);
+    res.status(500).json({
+      success: false,
+      message: "Error en el servidor: " + error.message,
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   loginAdmin,
   verifyAdmin,
@@ -4324,6 +4417,7 @@ module.exports = {
   eliminarCategoria,
   getMedidas,
   crearVariante,
+  actualizarVariante,
   crearAgente,
   getAllAgentes,
   getAgenteDetalle,

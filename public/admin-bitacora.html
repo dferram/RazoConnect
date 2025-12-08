@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bitácora de Auditoría - Admin RazoConnect</title>
+
+    <!-- PROTECCIÓN DE AUTENTICACIÓN ADMIN -->
+    <script src="js/auth-guard-admin.js"></script>
+
+    <!-- SISTEMA DE RENOVACIÓN DE TOKENS -->
+    <script src="js/token-refresh.js"></script>
+
+    <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/admin.css" />
+    <style>
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+      }
+
+      .stat-card {
+        background: linear-gradient(135deg, #ffb27a 0%, var(--razo-orange) 100%);
+        padding: 1.5rem;
+        border-radius: 1rem;
+        color: white;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+
+      .stat-card.secondary {
+        background: linear-gradient(135deg, #ffd1ad 0%, #ff9c5d 100%);
+      }
+
+      .stat-card.success {
+        background: linear-gradient(135deg, #ffe3cd 0%, #ffa96c 100%);
+      }
+
+      .stat-card.warning {
+        background: linear-gradient(135deg, #ffc399 0%, #ff8740 100%);
+      }
+
+      .stat-card.info {
+        background: linear-gradient(135deg, #ffd7b4 0%, #ff995b 100%);
+      }
+
+      .stat-value {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin: 0.5rem 0;
+      }
+
+      .stat-label {
+        font-size: 0.875rem;
+        opacity: 0.9;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .filters-container {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 1rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      }
+
+      .filters-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+      }
+
+      .log-table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      .log-table th {
+        background: var(--razo-gray-light);
+        padding: 0.75rem 1rem;
+        text-align: left;
+        font-weight: 600;
+        color: var(--razo-gray-dark);
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .log-table td {
+        padding: 1rem;
+        border-bottom: 1px solid var(--border-color);
+      }
+
+      .log-table tr:hover {
+        background: rgba(255, 107, 53, 0.05);
+      }
+
+      .action-badge {
+        display: inline-block;
+        padding: 0.35rem 0.75rem;
+        border-radius: 2rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+      }
+
+      .action-badge.crear {
+        background: #d1fae5;
+        color: #065f46;
+      }
+
+      .action-badge.editar {
+        background: #dbeafe;
+        color: #1e40af;
+      }
+
+      .action-badge.eliminar {
+        background: #fee2e2;
+        color: #991b1b;
+      }
+
+      .action-badge.login {
+        background: #e0e7ff;
+        color: #3730a3;
+      }
+
+      .action-badge.activar {
+        background: #d1fae5;
+        color: #065f46;
+      }
+
+      .action-badge.desactivar {
+        background: #fef3c7;
+        color: #92400e;
+      }
+
+      .details-cell {
+        max-width: 300px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        cursor: pointer;
+        color: var(--razo-orange);
+      }
+
+      .details-cell:hover {
+        text-decoration: underline;
+      }
+
+      /* Modal de detalles */
+      .modal-details {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 9999;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .modal-details.active {
+        display: flex;
+      }
+
+      .modal-content {
+        background: white;
+        padding: 2rem;
+        border-radius: 1rem;
+        max-width: 600px;
+        width: 90%;
+        max-height: 80vh;
+        overflow-y: auto;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+      }
+
+      .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid var(--border-color);
+      }
+
+      .modal-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--razo-gray-dark);
+      }
+
+      .btn-close-modal {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: var(--razo-gray-warm);
+        padding: 0;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        transition: all 0.2s;
+      }
+
+      .btn-close-modal:hover {
+        background: var(--razo-gray-light);
+        color: var(--razo-gray-dark);
+      }
+
+      .detail-item {
+        margin-bottom: 1rem;
+        padding: 0.75rem;
+        background: var(--razo-gray-light);
+        border-radius: 0.5rem;
+      }
+
+      .detail-label {
+        font-weight: 600;
+        color: var(--razo-gray-dark);
+        margin-bottom: 0.25rem;
+        font-size: 0.875rem;
+      }
+
+      .detail-value {
+        color: var(--razo-gray-warm);
+        font-family: 'Courier New', monospace;
+        background: white;
+        padding: 0.5rem;
+        border-radius: 0.25rem;
+        word-break: break-all;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="admin-layout">
+      <!-- Sidebar -->
+      <div id="sidebar-container"></div>
+
+      <!-- Main Content -->
+      <main class="admin-main">
+        <header class="admin-header">
+          <h1 class="admin-header-title">🔍 Bitácora de Auditoría</h1>
+
+          <div class="admin-header-actions">
+            <div class="admin-user-info">
+              <div class="admin-user-avatar" id="userAvatar">A</div>
+              <div class="admin-user-details">
+                <div class="admin-user-name" id="userName">Administrador</div>
+                <div class="admin-user-role" id="userRole">Super Admin</div>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <div class="admin-content">
+          <!-- Estadísticas -->
+          <div class="stats-grid" id="statsGrid">
+            <div class="stat-card">
+              <div class="stat-label">Total Movimientos</div>
+              <div class="stat-value" id="statTotal">...</div>
+            </div>
+            <div class="stat-card secondary">
+              <div class="stat-label">Usuarios Activos</div>
+              <div class="stat-value" id="statUsuarios">...</div>
+            </div>
+            <div class="stat-card success">
+              <div class="stat-label">Creaciones</div>
+              <div class="stat-value" id="statCreaciones">...</div>
+            </div>
+            <div class="stat-card warning">
+              <div class="stat-label">Ediciones</div>
+              <div class="stat-value" id="statEdiciones">...</div>
+            </div>
+            <div class="stat-card info">
+              <div class="stat-label">Movimientos Hoy</div>
+              <div class="stat-value" id="statHoy">...</div>
+            </div>
+          </div>
+
+          <!-- Filtros -->
+          <div class="filters-container">
+            <h2 style="margin: 0 0 1rem 0; color: var(--razo-gray-dark);">
+              🔧 Filtros de Búsqueda
+            </h2>
+            <div class="filters-grid">
+              <div>
+                <label class="form-label" for="filtroUsuario">Usuario</label>
+                <select
+                  id="filtroUsuario"
+                  class="form-input"
+                  aria-label="Filtrar por usuario"
+                >
+                  <option value="">Todos los usuarios</option>
+                </select>
+              </div>
+              <div>
+                <label class="form-label" for="filtroAccion">Acción</label>
+                <select
+                  id="filtroAccion"
+                  class="form-input"
+                  aria-label="Filtrar por acción"
+                >
+                  <option value="">Todas las acciones</option>
+                  <option value="CREAR">Crear</option>
+                  <option value="EDITAR">Editar</option>
+                  <option value="ELIMINAR">Eliminar</option>
+                  <option value="LOGIN">Login</option>
+                  <option value="ACTIVAR">Activar</option>
+                  <option value="DESACTIVAR">Desactivar</option>
+                </select>
+              </div>
+              <div>
+                <label class="form-label" for="filtroEntidad">Entidad</label>
+                <select
+                  id="filtroEntidad"
+                  class="form-input"
+                  aria-label="Filtrar por entidad"
+                >
+                  <option value="">Todas las entidades</option>
+                </select>
+              </div>
+              <div>
+                <label class="form-label" for="filtroFechaInicio">Fecha Inicio</label>
+                <input
+                  type="date"
+                  id="filtroFechaInicio"
+                  class="form-input"
+                  aria-label="Seleccionar fecha de inicio"
+                />
+              </div>
+              <div>
+                <label class="form-label" for="filtroFechaFin">Fecha Fin</label>
+                <input
+                  type="date"
+                  id="filtroFechaFin"
+                  class="form-input"
+                  aria-label="Seleccionar fecha de fin"
+                />
+              </div>
+              <div style="display: flex; align-items: end; gap: 0.5rem;">
+                <button class="btn btn-primary" onclick="aplicarFiltros()" style="flex: 1;">
+                  Buscar
+                </button>
+                <button class="btn btn-secondary" onclick="limpiarFiltros()" style="flex: 1;">
+                  Limpiar
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tabla de Logs -->
+          <div class="admin-table-container">
+            <div class="admin-table-header">
+              <h2 class="admin-table-title">Registro de Movimientos</h2>
+              <div>
+                <button class="btn btn-secondary" onclick="cargarDatos()">
+                  🔄 Refrescar
+                </button>
+              </div>
+            </div>
+
+            <div id="loadingState" style="display: flex; justify-content: center; padding: 3rem;">
+              <div class="spinner"></div>
+            </div>
+
+            <div id="tableContainer" style="display: none;">
+              <table class="log-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Usuario</th>
+                    <th>Acción</th>
+                    <th>Entidad</th>
+                    <th>Registro</th>
+                    <th>Fecha</th>
+                    <th>IP</th>
+                    <th>Detalles</th>
+                  </tr>
+                </thead>
+                <tbody id="logsTableBody"></tbody>
+              </table>
+            </div>
+
+            <div id="emptyState" class="empty-state" style="display: none;">
+              <div class="empty-state-icon">📋</div>
+              <p class="empty-state-text">No hay movimientos registrados</p>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- Modal de Detalles -->
+    <div class="modal-details" id="modalDetalles">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 class="modal-title">Detalles del Movimiento</h3>
+          <button class="btn-close-modal" onclick="cerrarModal()">×</button>
+        </div>
+        <div id="modalBody"></div>
+      </div>
+    </div>
+
+    <script src="js/layout.js" defer></script>
+    <script src="js/admin-header-dropdown.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/date-helpers.js"></script>
+    <script>
+      const adminToken = localStorage.getItem("razoconnect_admin_token");
+      if (!adminToken) window.location.href = "/login.html";
+
+      let todosLosLogs = [];
+      let usuarios = [];
+      let entidades = [];
+
+      // Cargar datos iniciales
+      async function init() {
+        await Promise.all([
+          cargarEstadisticas(),
+          cargarUsuarios(),
+          cargarEntidades(),
+          cargarDatos()
+        ]);
+      }
+
+      // Cargar estadísticas
+      async function cargarEstadisticas() {
+        try {
+          const response = await API.apiCall('/admin/bitacora/estadisticas');
+          
+          if (response.ok && response.data.success) {
+            const stats = response.data.data;
+            document.getElementById('statTotal').textContent = stats.totalMovimientos.toLocaleString();
+            document.getElementById('statUsuarios').textContent = stats.usuariosActivos;
+            document.getElementById('statCreaciones').textContent = stats.totalCreaciones;
+            document.getElementById('statEdiciones').textContent = stats.totalEdiciones;
+            document.getElementById('statHoy').textContent = stats.movimientosHoy;
+          }
+        } catch (error) {
+          console.error('Error cargando estadísticas:', error);
+        }
+      }
+
+      // Cargar usuarios únicos
+      async function cargarUsuarios() {
+        try {
+          const response = await API.apiCall('/admin/bitacora/usuarios');
+          
+          if (response.ok && response.data.success) {
+            usuarios = response.data.data.usuarios;
+            const select = document.getElementById('filtroUsuario');
+            
+            usuarios.forEach(u => {
+              const option = document.createElement('option');
+              option.value = u.usuarioId;
+              option.textContent = `${u.nombreUsuario} (${u.rol})`;
+              select.appendChild(option);
+            });
+          }
+        } catch (error) {
+          console.error('Error cargando usuarios:', error);
+        }
+      }
+
+      // Cargar entidades únicas
+      async function cargarEntidades() {
+        try {
+          const response = await API.apiCall('/admin/bitacora/entidades');
+          
+          if (response.ok && response.data.success) {
+            entidades = response.data.data.entidades;
+            const select = document.getElementById('filtroEntidad');
+            
+            entidades.forEach(e => {
+              const option = document.createElement('option');
+              option.value = e;
+              option.textContent = e;
+              select.appendChild(option);
+            });
+          }
+        } catch (error) {
+          console.error('Error cargando entidades:', error);
+        }
+      }
+
+      // Cargar logs
+      async function cargarDatos() {
+        try {
+          document.getElementById('loadingState').style.display = 'flex';
+          document.getElementById('tableContainer').style.display = 'none';
+          document.getElementById('emptyState').style.display = 'none';
+
+          const params = construirParametros();
+          const response = await API.apiCall(`/admin/bitacora?${params}`);
+
+          if (response.ok && response.data.success) {
+            todosLosLogs = response.data.data.logs;
+            renderizarTabla(todosLosLogs);
+            
+            document.getElementById('loadingState').style.display = 'none';
+            
+            if (todosLosLogs.length === 0) {
+              document.getElementById('emptyState').style.display = 'flex';
+            } else {
+              document.getElementById('tableContainer').style.display = 'block';
+            }
+          }
+        } catch (error) {
+          console.error('Error cargando logs:', error);
+          document.getElementById('loadingState').style.display = 'none';
+          document.getElementById('emptyState').style.display = 'flex';
+        }
+      }
+
+      // Construir parámetros de consulta
+      function construirParametros() {
+        const params = new URLSearchParams();
+        
+        const usuarioId = document.getElementById('filtroUsuario').value;
+        const accion = document.getElementById('filtroAccion').value;
+        const entidad = document.getElementById('filtroEntidad').value;
+        const fechaInicio = document.getElementById('filtroFechaInicio').value;
+        const fechaFin = document.getElementById('filtroFechaFin').value;
+
+        if (usuarioId) params.append('usuarioId', usuarioId);
+        if (accion) params.append('accion', accion);
+        if (entidad) params.append('entidad', entidad);
+        if (fechaInicio) params.append('fechaInicio', fechaInicio);
+        if (fechaFin) params.append('fechaFin', fechaFin);
+        
+        params.append('limit', '100');
+
+        return params.toString();
+      }
+
+      // Aplicar filtros
+      function aplicarFiltros() {
+        cargarDatos();
+      }
+
+      // Limpiar filtros
+      function limpiarFiltros() {
+        document.getElementById('filtroUsuario').value = '';
+        document.getElementById('filtroAccion').value = '';
+        document.getElementById('filtroEntidad').value = '';
+        document.getElementById('filtroFechaInicio').value = '';
+        document.getElementById('filtroFechaFin').value = '';
+        cargarDatos();
+      }
+
+      // Renderizar tabla
+      function renderizarTabla(logs) {
+        const tbody = document.getElementById('logsTableBody');
+        
+        tbody.innerHTML = logs.map(log => {
+          const accionClass = log.accion.toLowerCase();
+          const detallesTexto = typeof log.detalles === 'string' 
+            ? log.detalles 
+            : JSON.stringify(log.detalles);
+          const detallesPreview = detallesTexto.length > 50 
+            ? detallesTexto.substring(0, 50) + '...' 
+            : detallesTexto;
+
+          return `
+            <tr>
+              <td><strong>#${log.logId}</strong></td>
+              <td>
+                <div><strong>${log.nombreUsuario}</strong></div>
+                <div style="font-size: 0.75rem; color: var(--razo-gray-warm);">${log.rol}</div>
+              </td>
+              <td><span class="action-badge ${accionClass}">${log.accion}</span></td>
+              <td><strong>${log.entidad}</strong></td>
+              <td>${log.entidadId ? '#' + log.entidadId : '—'}</td>
+              <td>${formatDateTime(log.fecha)}</td>
+              <td style="font-family: monospace; font-size: 0.875rem;">${log.ip}</td>
+              <td>
+                <span class="details-cell" onclick="verDetalles(${log.logId})">
+                  ${detallesPreview}
+                </span>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      // Ver detalles en modal
+      function verDetalles(logId) {
+        const log = todosLosLogs.find(l => l.logId === logId);
+        if (!log) return;
+
+        const detalles = typeof log.detalles === 'string' 
+          ? JSON.parse(log.detalles || '{}') 
+          : log.detalles;
+
+        const modalBody = document.getElementById('modalBody');
+        modalBody.innerHTML = `
+          <div class="detail-item">
+            <div class="detail-label">ID de Log</div>
+            <div class="detail-value">#${log.logId}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Usuario</div>
+            <div class="detail-value">${log.nombreUsuario} (${log.rol})</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Acción</div>
+            <div class="detail-value"><span class="action-badge ${log.accion.toLowerCase()}">${log.accion}</span></div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Entidad</div>
+            <div class="detail-value">${log.entidad} ${log.entidadId ? '#' + log.entidadId : ''}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Fecha y Hora</div>
+            <div class="detail-value">${formatDateTime(log.fecha)}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Dirección IP</div>
+            <div class="detail-value">${log.ip}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Detalles JSON</div>
+            <div class="detail-value"><pre style="margin: 0; white-space: pre-wrap;">${JSON.stringify(detalles, null, 2)}</pre></div>
+          </div>
+        `;
+
+        document.getElementById('modalDetalles').classList.add('active');
+      }
+
+      // Cerrar modal
+      function cerrarModal() {
+        document.getElementById('modalDetalles').classList.remove('active');
+      }
+
+      // Cerrar modal al hacer clic fuera
+      document.getElementById('modalDetalles').addEventListener('click', function(e) {
+        if (e.target === this) {
+          cerrarModal();
+        }
+      });
+
+      // Inicializar
+      init();
+    </script>
+  </body>
+</html>

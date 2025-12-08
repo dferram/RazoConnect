@@ -159,6 +159,51 @@
       .variant-table-card .admin-card-body {
         padding-top: 0;
       }
+
+      /* Visibility badges and toggle button styles */
+      .visibility-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.375rem;
+        padding: 0.375rem 0.75rem;
+        border-radius: 0.375rem;
+        font-size: 0.875rem;
+        font-weight: 600;
+        white-space: nowrap;
+      }
+
+      .badge-success {
+        background: #d1fae5;
+        color: #065f46;
+        border: 1px solid #6ee7b7;
+      }
+
+      .badge-secondary {
+        background: #e5e7eb;
+        color: #6b7280;
+        border: 1px solid #d1d5db;
+      }
+
+      .btn-icon-toggle {
+        cursor: pointer;
+        background: none;
+        border: none;
+        font-size: 1.25rem;
+        padding: 0.25rem;
+        opacity: 0.7;
+        transition: all 0.2s;
+        border-radius: 0.25rem;
+      }
+
+      .btn-icon-toggle:hover {
+        opacity: 1;
+        transform: scale(1.1);
+        background: rgba(0, 0, 0, 0.05);
+      }
+
+      .btn-icon-toggle:active {
+        transform: scale(0.95);
+      }
     </style>
   </head>
   <body>
@@ -458,6 +503,7 @@
                         <th>Precio unitario</th>
                         <th>Costo unitario</th>
                         <th>Stock</th>
+                        <th>Estado</th>
                       </tr>
                     </thead>
                     <tbody id="variantsTableBody"></tbody>
@@ -731,6 +777,11 @@
               ? formatCurrency(variant.costoUnitario)
               : "N/D";
             const stock = Number.isFinite(variant.stock) ? variant.stock : "0";
+            
+            const activo = variant.activo !== undefined ? variant.activo : true;
+            const estadoBadgeClass = activo ? 'badge-success' : 'badge-secondary';
+            const estadoTexto = activo ? 'Visible' : 'Oculto';
+            const estadoIcon = activo ? '👁️' : '🚫';
 
             return `
           <tr>
@@ -739,6 +790,21 @@
             <td>${precio}</td>
             <td>${costo}</td>
             <td>${stock}</td>
+            <td>
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <span class="visibility-badge ${estadoBadgeClass}" title="${estadoTexto}">
+                  ${estadoIcon} ${estadoTexto}
+                </span>
+                <button
+                  type="button"
+                  class="btn-icon-toggle"
+                  onclick="toggleVarianteVisibilidad(${variant.varianteId}, ${activo})"
+                  title="${activo ? 'Ocultar variante' : 'Mostrar variante'}"
+                >
+                  ${activo ? '🔒' : '🔓'}
+                </button>
+              </div>
+            </td>
           </tr>
         `;
           })
@@ -750,35 +816,6 @@
           style: "currency",
           currency: "MXN",
         }).format(amount);
-      }
-
-      async function loadProducto() {
-        try {
-          loadingState.style.display = "flex";
-          contentWrapper.style.display = "none";
-          errorState.style.display = "none";
-
-          const response = await API.getProductoById(productoId);
-
-          if (response.ok && response.data.success) {
-            const { producto, variantes } = response.data.data;
-            productBreadcrumb.textContent = `Producto #${producto.productoId}`;
-
-            renderProductSummary(producto, variantes);
-            renderVariants(variantes);
-
-            loadingState.style.display = "none";
-            contentWrapper.style.display = "grid";
-          } else {
-            throw new Error(
-              response.data?.message || "No se pudo obtener el producto"
-            );
-          }
-        } catch (error) {
-          console.error("Error loading product:", error);
-          loadingState.style.display = "none";
-          errorState.style.display = "flex";
-        }
       }
 
       variantForm.addEventListener("submit", async (event) => {
@@ -920,6 +957,47 @@
             skuInput.focus();
           }
         });
+      }
+
+      // Toggle variant visibility
+      async function toggleVarianteVisibilidad(varianteId, estadoActual) {
+        const nuevoEstado = !estadoActual;
+        const accion = nuevoEstado ? 'mostrar' : 'ocultar';
+        
+        console.log('🔄 Toggle variante:', { varianteId, estadoActual, nuevoEstado });
+        
+        if (!confirm(`¿Estás seguro de ${accion} esta variante?`)) {
+          return;
+        }
+
+        try {
+          const response = await API.apiCall(
+            `/admin/variantes/${varianteId}`,
+            {
+              method: 'PUT',
+              body: JSON.stringify({ activo: nuevoEstado })
+            }
+          );
+
+          console.log('📥 Response del backend:', response);
+
+          if (response.ok && response.data && response.data.success) {
+            showToast(
+              `Variante ${nuevoEstado ? 'visible' : 'oculta'} exitosamente`,
+              'success'
+            );
+            console.log('🔄 Recargando producto...');
+            await loadProducto(); // Recargar producto y variantes
+            console.log('✅ Producto recargado');
+          } else {
+            const errorMsg = response.data?.message || 'Error al actualizar variante';
+            console.error('❌ Error del backend:', errorMsg);
+            throw new Error(errorMsg);
+          }
+        } catch (error) {
+          console.error('💥 Error al toggle visibilidad:', error);
+          showToast(error.message || 'Error al cambiar visibilidad de la variante', 'error');
+        }
       }
 
       async function init() {

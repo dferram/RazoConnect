@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const adminController = require("../controllers/adminController");
 const authController = require("../controllers/authController");
+const bitacoraController = require("../controllers/bitacoraController");
 const upload = require("../middlewares/upload");
 const {
   authenticate,
@@ -124,6 +125,12 @@ router.post(
   authenticate,
   authorizeAdmin,
   adminController.crearVariante
+);
+router.put(
+  "/variantes/:id",
+  authenticate,
+  authorizeAdmin,
+  adminController.actualizarVariante
 );
 router.get(
   "/tamanos-paquetes",
@@ -326,6 +333,37 @@ router.post(
   authenticate,
   authorizeAdmin,
   adminController.recibirInventario
+);
+
+/**
+ * Rutas de Bitácora de Auditoría (Solo Super Admin)
+ */
+router.get(
+  "/bitacora",
+  authenticate,
+  authorizeSuperAdmin,
+  bitacoraController.obtenerBitacora
+);
+
+router.get(
+  "/bitacora/estadisticas",
+  authenticate,
+  authorizeSuperAdmin,
+  bitacoraController.obtenerEstadisticas
+);
+
+router.get(
+  "/bitacora/usuarios",
+  authenticate,
+  authorizeSuperAdmin,
+  bitacoraController.obtenerUsuariosUnicos
+);
+
+router.get(
+  "/bitacora/entidades",
+  authenticate,
+  authorizeSuperAdmin,
+  bitacoraController.obtenerEntidadesUnicas
 );
 
 module.exports = router;

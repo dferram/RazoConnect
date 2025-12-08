@@ -152,8 +152,11 @@ const obtenerProductos = async (req, res) => {
       )`);
     }
 
-    const whereClause =
-      filtros.length > 0 ? `WHERE ${filtros.join(" AND ")}` : "";
+    // FILTRO CRÍTICO: Solo productos y categorías activas (visibilidad para clientes)
+    filtros.push(`p.activo = TRUE`);
+    filtros.push(`(c.activo = TRUE OR c.activo IS NULL)`);
+
+    const whereClause = `WHERE ${filtros.join(" AND ")}`;
 
     const query = `
       SELECT
@@ -668,8 +671,10 @@ const obtenerCategorias = async (req, res) => {
       SELECT 
         categoriaid,
         nombre,
-        descripcion
+        descripcion,
+        activo
       FROM categorias
+      WHERE activo = TRUE
       ORDER BY nombre ASC
     `;
 
@@ -680,6 +685,7 @@ const obtenerCategorias = async (req, res) => {
       categoriaId: row.categoriaid,
       nombre: row.nombre,
       descripcion: row.descripcion,
+      activo: row.activo,
     }));
 
     res.status(200).json({

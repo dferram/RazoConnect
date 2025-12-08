@@ -67,6 +67,20 @@
                 </select>
               </div>
 
+              <!-- Switch de visibilidad -->
+              <div class="switch-container">
+                <label class="switch-label" for="activoSwitch">
+                  <div class="switch-toggle">
+                    <input type="checkbox" id="activoSwitch" checked />
+                    <div class="switch-toggle"></div>
+                  </div>
+                  <span class="switch-text">Mostrar en Tienda</span>
+                </label>
+                <small style="color: #6b7280; font-size: 0.875rem;">
+                  Desactiva para temporadas fuera de fecha (ej: Navidad en Julio)
+                </small>
+              </div>
+
               <div
                 style="
                   display: flex;
@@ -75,8 +89,8 @@
                   margin-top: 1.5rem;
                 "
               >
-                <button type="reset" class="btn btn-secondary">Limpiar</button>
-                <button type="submit" class="btn btn-primary" id="guardarBtn">
+                <button type="reset" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.875rem;">Limpiar</button>
+                <button type="submit" class="btn btn-primary" id="guardarBtn" style="padding: 0.5rem 1rem; font-size: 0.875rem;">
                   <span id="guardarBtnText">Guardar categoría</span>
                   <div
                     class="spinner"
@@ -92,7 +106,7 @@
           <div class="admin-table-container">
             <div class="admin-table-header">
               <h2 class="admin-table-title">Listado de categorías</h2>
-              <button class="btn btn-secondary" id="btnRefrescar">
+              <button class="btn btn-secondary" id="btnRefrescar" style="padding: 0.5rem 1rem; font-size: 0.875rem;">
                 Actualizar
               </button>
             </div>
@@ -111,6 +125,7 @@
                   <tr>
                     <th>Nombre</th>
                     <th>Descripción</th>
+                    <th>Estado</th>
                     <th>Categoría padre</th>
                     <th>Acciones</th>
                   </tr>
@@ -302,6 +317,11 @@
             const parentName = cat.parentNombre
               ? `${cat.parentNombre}`
               : "Sin padre";
+            
+            const activo = cat.activo !== undefined ? cat.activo : true;
+            const estadoBadgeClass = activo ? 'badge-success' : 'badge-secondary';
+            const estadoTexto = activo ? 'Visible' : 'Oculto';
+            const estadoIcon = activo ? '👁️' : '🚫';
 
             return `
             <tr>
@@ -310,13 +330,31 @@
                 cat.descripcion ||
                 '<span class="text-muted">Sin descripción</span>'
               }</td>
+              <td>
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                  <span class="visibility-badge ${estadoBadgeClass}" title="${estadoTexto}">
+                    ${estadoIcon} ${estadoTexto}
+                  </span>
+                  <button
+                    type="button"
+                    class="btn-icon-toggle"
+                    onclick="toggleCategoriaVisibilidad(${cat.categoriaId}, ${activo})"
+                    title="${activo ? 'Ocultar categoría' : 'Mostrar categoría'}"
+                    style="cursor: pointer; background: none; border: none; font-size: 1.25rem; padding: 0.25rem; opacity: 0.7; transition: all 0.2s;"
+                    onmouseover="this.style.opacity='1'; this.style.transform='scale(1.1)'"
+                    onmouseout="this.style.opacity='0.7'; this.style.transform='scale(1)'"
+                  >
+                    ${activo ? '🔒' : '🔓'}
+                  </button>
+                </div>
+              </td>
               <td>${parentName}</td>
               <td>
                 <div class="table-actions">
-                  <button class="btn btn-secondary" data-action="edit" data-id="${
+                  <button class="btn btn-secondary btn-sm" data-action="edit" data-id="${
                     cat.categoriaId
                   }">Editar</button>
-                  <button class="btn btn-danger" data-action="delete" data-id="${
+                  <button class="btn btn-danger btn-sm" data-action="delete" data-id="${
                     cat.categoriaId
                   }">Eliminar</button>
                 </div>
@@ -342,6 +380,7 @@
           nombre: categoriaForm.nombre.value.trim(),
           descripcion: categoriaForm.descripcion.value.trim() || null,
           parentCategoriaId: categoriaForm.parentCategoria.value || null,
+          activo: document.getElementById('activoSwitch').checked,
         };
 
         if (!formData.nombre) {
@@ -472,9 +511,175 @@
       });
 
       // Inicialización
+      // Toggle category visibility (quick action)
+      async function toggleCategoriaVisibilidad(categoriaId, estadoActual) {
+        const nuevoEstado = !estadoActual;
+        const accion = nuevoEstado ? 'mostrar' : 'ocultar';
+        
+        if (!confirm(`¿Estás seguro de ${accion} esta categoría en la tienda?\\n\\nSi la ocultas, todos los productos de esta categoría dejarán de verse en la tienda.`)) {
+          return;
+        }
+
+        try {
+          const response = await API.apiCall(
+            `/admin/categorias/${categoriaId}`,
+            {
+              method: 'PUT',
+              body: JSON.stringify({ activo: nuevoEstado })
+            }
+          );
+
+          if (response.ok) {
+            showToast(
+              `Categoría ${nuevoEstado ? 'visible' : 'oculta'} exitosamente`,
+              'success'
+            );
+            fetchCategorias(); // Recargar tabla
+          } else {
+            throw new Error(response.data?.message || 'Error al actualizar');
+          }
+        } catch (error) {
+          console.error('Error al toggle visibilidad:', error);
+          showToast('Error al cambiar visibilidad de la categoría', 'error');
+        }
+      }
+
       window.addEventListener("DOMContentLoaded", () => {
         fetchCategorias();
       });
     </script>
+
+    <style>
+      /* Visibility badges and toggle button styles */
+      .visibility-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.375rem;
+        padding: 0.375rem 0.75rem;
+        border-radius: 0.375rem;
+        font-size: 0.875rem;
+        font-weight: 600;
+        white-space: nowrap;
+      }
+
+      .badge-success {
+        background: #d1fae5;
+        color: #065f46;
+        border: 1px solid #6ee7b7;
+      }
+
+      .badge-secondary {
+        background: #e5e7eb;
+        color: #6b7280;
+        border: 1px solid #d1d5db;
+      }
+
+      .btn-icon-toggle {
+        cursor: pointer;
+        background: none;
+        border: none;
+        font-size: 1.25rem;
+        padding: 0.25rem;
+        opacity: 0.7;
+        transition: all 0.2s;
+        border-radius: 0.25rem;
+      }
+
+      .btn-icon-toggle:hover {
+        opacity: 1;
+        transform: scale(1.1);
+        background: rgba(0, 0, 0, 0.05);
+      }
+
+      .btn-icon-toggle:active {
+        transform: scale(0.95);
+      }
+
+      /* Switch toggle styles */
+      .switch-container {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        padding: 1rem;
+        background: #f9fafb;
+        border-radius: 0.5rem;
+        border: 1px solid #e5e7eb;
+      }
+
+      .switch-label {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        cursor: pointer;
+        -webkit-user-select: none;
+        user-select: none;
+      }
+
+      .switch-toggle {
+        position: relative;
+        width: 44px;
+        height: 24px;
+        flex-shrink: 0;
+      }
+
+      .switch-toggle input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+        position: absolute;
+      }
+
+      .switch-toggle > div {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: #d1d5db;
+        border-radius: 12px;
+        transition: background 0.3s;
+        cursor: pointer;
+      }
+
+      .switch-toggle > div::after {
+        content: '';
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 20px;
+        height: 20px;
+        background: white;
+        border-radius: 50%;
+        transition: transform 0.3s;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+      }
+
+      .switch-toggle input:checked + div {
+        background: #16a34a;
+      }
+
+      .switch-toggle input:checked + div::after {
+        transform: translateX(20px);
+      }
+
+      .switch-text {
+        font-weight: 500;
+        color: #374151;
+      }
+
+      /* Small buttons */
+      .btn-sm {
+        padding: 0.375rem 0.75rem !important;
+        font-size: 0.8125rem !important;
+        border-radius: 0.375rem !important;
+      }
+
+      /* Table actions buttons */
+      .table-actions {
+        display: flex;
+        gap: 0.5rem;
+        justify-content: flex-end;
+      }
+    </style>
   </body>
 </html>

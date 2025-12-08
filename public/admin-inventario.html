@@ -200,6 +200,7 @@
                   <tr>
                     <th>Producto</th>
                     <th>Categoría</th>
+                    <th>Estado</th>
                     <th>Variantes Registradas</th>
                     <th>Acciones</th>
                   </tr>
@@ -609,6 +610,11 @@
 
         productsTableBody.innerHTML = productosPagina
           .map((product) => {
+            const activo = product.activo !== undefined ? product.activo : true;
+            const estadoBadgeClass = activo ? 'badge-success' : 'badge-secondary';
+            const estadoTexto = activo ? 'Visible' : 'Oculto';
+            const estadoIcon = activo ? '👁️' : '🚫';
+            
             return `
           <tr>
             <td>
@@ -618,6 +624,24 @@
               }</div>
             </td>
             <td>${product.nombreCategoria || "Sin categoría"}</td>
+            <td>
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <span class="visibility-badge ${estadoBadgeClass}" title="${estadoTexto}">
+                  ${estadoIcon} ${estadoTexto}
+                </span>
+                <button
+                  type="button"
+                  class="btn-icon-toggle"
+                  onclick="toggleProductoVisibilidad(${product.productoId}, ${activo})"
+                  title="${activo ? 'Ocultar producto' : 'Mostrar producto'}"
+                  style="cursor: pointer; background: none; border: none; font-size: 1.25rem; padding: 0.25rem; opacity: 0.7; transition: all 0.2s;"
+                  onmouseover="this.style.opacity='1'; this.style.transform='scale(1.1)'"
+                  onmouseout="this.style.opacity='0.7'; this.style.transform='scale(1)'"
+                >
+                  ${activo ? '🔒' : '🔓'}
+                </button>
+              </div>
+            </td>
             <td>
               <span class="admin-badge secondary" style="font-size: 0.9rem;">${
                 product.totalVariantes
@@ -1211,6 +1235,39 @@
         }
       });
 
+      // Toggle product visibility (quick action)
+      async function toggleProductoVisibilidad(productoId, estadoActual) {
+        const nuevoEstado = !estadoActual;
+        const accion = nuevoEstado ? 'mostrar' : 'ocultar';
+        
+        if (!confirm(`¿Estás seguro de ${accion} este producto en la tienda?`)) {
+          return;
+        }
+
+        try {
+          const response = await API.apiCall(
+            `/admin/productos/${productoId}`,
+            {
+              method: 'PUT',
+              body: JSON.stringify({ activo: nuevoEstado })
+            }
+          );
+
+          if (response.ok) {
+            showToast(
+              `Producto ${nuevoEstado ? 'visible' : 'oculto'} exitosamente`,
+              'success'
+            );
+            loadProductos(); // Recargar tabla
+          } else {
+            throw new Error(response.data?.message || 'Error al actualizar');
+          }
+        } catch (error) {
+          console.error('Error al toggle visibilidad:', error);
+          showToast('Error al cambiar visibilidad del producto', 'error');
+        }
+      }
+
       // Initialize
       verifyAndLoadAdmin();
       loadProductos();
@@ -1556,6 +1613,113 @@
         .modal-table-wrapper {
           overflow-x: auto;
         }
+      }
+
+      /* Visibility badges and toggle button styles */
+      .visibility-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.375rem;
+        padding: 0.375rem 0.75rem;
+        border-radius: 0.375rem;
+        font-size: 0.875rem;
+        font-weight: 600;
+        white-space: nowrap;
+      }
+
+      .badge-success {
+        background: #d1fae5;
+        color: #065f46;
+        border: 1px solid #6ee7b7;
+      }
+
+      .badge-secondary {
+        background: #e5e7eb;
+        color: #6b7280;
+        border: 1px solid #d1d5db;
+      }
+
+      .btn-icon-toggle {
+        cursor: pointer;
+        background: none;
+        border: none;
+        font-size: 1.25rem;
+        padding: 0.25rem;
+        opacity: 0.7;
+        transition: all 0.2s;
+        border-radius: 0.25rem;
+      }
+
+      .btn-icon-toggle:hover {
+        opacity: 1;
+        transform: scale(1.1);
+        background: rgba(0, 0, 0, 0.05);
+      }
+
+      .btn-icon-toggle:active {
+        transform: scale(0.95);
+      }
+
+      /* Switch toggle styles for forms */
+      .switch-container {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 1rem;
+        background: #f9fafb;
+        border-radius: 0.5rem;
+        border: 1px solid #e5e7eb;
+      }
+
+      .switch-label {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        cursor: pointer;
+        -webkit-user-select: none;
+        user-select: none;
+      }
+
+      .switch-toggle {
+        position: relative;
+        width: 44px;
+        height: 24px;
+        background: #d1d5db;
+        border-radius: 12px;
+        transition: background 0.3s;
+        cursor: pointer;
+      }
+
+      .switch-toggle input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+
+      .switch-toggle::after {
+        content: '';
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 20px;
+        height: 20px;
+        background: white;
+        border-radius: 50%;
+        transition: transform 0.3s;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+      }
+
+      .switch-toggle input:checked + .switch-toggle {
+        background: #16a34a;
+      }
+
+      .switch-toggle input:checked + .switch-toggle::after {
+        transform: translateX(20px);
+      }
+
+      .switch-text {
+        font-weight: 500;
+        color: #374151;
       }
     </style>
   </body>

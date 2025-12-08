@@ -178,6 +178,62 @@
         max-height: 90vh;
         overflow-y: auto;
       }
+
+      /* Notificaciones */
+      .notif-badge {
+        display: inline-block;
+        background: #dc2626;
+        color: white;
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 0.125rem 0.5rem;
+        border-radius: 1rem;
+        margin-left: 0.5rem;
+        min-width: 20px;
+        text-align: center;
+      }
+
+      .notificacion-card {
+        background: white;
+        border: 2px solid var(--razo-gray-light);
+        border-radius: 1rem;
+        padding: 1.25rem;
+        margin-bottom: 1rem;
+        transition: all 0.3s;
+      }
+
+      .notificacion-card.no-leida {
+        background: #fffbeb;
+        border-color: var(--razo-orange-light);
+      }
+
+      .notificacion-card:hover {
+        border-color: var(--razo-orange);
+        box-shadow: 0 4px 12px rgba(255, 119, 51, 0.1);
+        transform: translateY(-2px);
+      }
+
+      .badge-new {
+        display: inline-block;
+        background: var(--razo-orange);
+        color: white;
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 0.25rem 0.625rem;
+        border-radius: 0.375rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      .btn-link {
+        text-decoration: underline;
+        font-weight: 500;
+        transition: opacity 0.2s;
+      }
+
+      .btn-link:hover {
+        opacity: 0.7;
+      }
     </style>
   </head>
   <body>
@@ -212,6 +268,10 @@
         <button class="tab active" data-tab="perfil">👤 Perfil</button>
         <button class="tab" data-tab="direcciones">📍 Direcciones</button>
         <button class="tab" data-tab="pedidos">📦 Pedidos</button>
+        <button class="tab" data-tab="notificaciones">
+          🔔 Notificaciones
+          <span id="notifBadge" class="notif-badge" style="display: none;">0</span>
+        </button>
       </div>
 
       <!-- Tab: Perfil -->
@@ -276,6 +336,36 @@
             Explora nuestro catálogo y realiza tu primer pedido
           </p>
           <a href="/catalogo.html" class="btn btn-primary">Ver Productos</a>
+        </div>
+      </div>
+
+      <!-- Tab: Notificaciones -->
+      <div class="tab-content" id="notificaciones">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+          <h2 style="font-size: 1.5rem; font-weight: 600;">
+            🔔 Mis Notificaciones
+          </h2>
+          <button 
+            class="btn btn-secondary" 
+            id="btnMarcarTodasLeidas"
+            style="display: none;"
+          >
+            Marcar todas como leídas
+          </button>
+        </div>
+
+        <div id="loadingNotificaciones" class="loading">
+          <div class="spinner"></div>
+        </div>
+
+        <div id="notificacionesList"></div>
+
+        <div id="emptyNotificaciones" class="empty-state" style="display: none">
+          <div class="empty-state-icon">🔔</div>
+          <h3 class="empty-state-title">No tienes notificaciones</h3>
+          <p class="empty-state-text">
+            Te notificaremos cuando haya cambios en tus pedidos o nuevas ofertas
+          </p>
         </div>
       </div>
     </div>
@@ -448,7 +538,9 @@
       </div>
     </div>
 
+    <script src="js/logout.js"></script>
     <script src="js/api.js"></script>
+    <script src="js/date-helpers.js"></script>
     <script>
       // Check authentication
       if (!requireAuth()) {
@@ -541,6 +633,8 @@
             loadDirecciones();
           } else if (tabName === "pedidos") {
             loadPedidos();
+          } else if (tabName === "notificaciones") {
+            loadNotificaciones();
           }
         });
       });
@@ -554,8 +648,8 @@
         const telefono = userData.telefono || "No especificado";
         const fechaRegistro =
           userData.fechaDeRegistro || userData.fechaderegistro || null;
-        const fechaFormateada = fechaRegistro
-          ? new Date(fechaRegistro).toLocaleDateString("es-MX")
+        const fechaFormateada = formatDateSafe(fechaRegistro) !== "—" 
+          ? formatDateSafe(fechaRegistro)
           : "N/A";
 
         perfilContent.innerHTML = `
@@ -744,10 +838,7 @@
                           p.pedidoId
                         }</div>
                         <div style="color: rgba(255,255,255,0.9); font-size: 0.875rem;">
-                          ${new Date(p.fechaPedido).toLocaleDateString(
-                            "es-MX",
-                            { year: "numeric", month: "long", day: "numeric" }
-                          )}
+                          ${formatDateLong(p.fechaPedido)}
                         </div>
                       </div>
                     </div>
@@ -776,12 +867,12 @@
                             <div style="display: flex; flex-wrap: wrap; gap: 1rem; font-size: 0.875rem; color: var(--razo-gray-warm);">
                               <div><strong>SKU:</strong> ${item.sku}</div>
                               <div><strong>${
-                                item.cantidadPaquetes
+                                item.cantidad || 0
                               }</strong> paquete(s) × ${formatCurrency(
-                            item.precioPorPaquete
+                            item.precioPorPaquete || 0
                           )}</div>
                               <div><strong>Total piezas:</strong> ${
-                                item.piezasTotales
+                                item.piezasTotales || 0
                               }</div>
                             </div>
                           </div>
@@ -789,7 +880,7 @@
                             <div style="font-size: 0.75rem; color: var(--razo-gray-warm); margin-bottom: 0.25rem;">Subtotal</div>
                             <div style="font-weight: 700; font-size: 1.125rem; color: var(--razo-orange);">
                               ${formatCurrency(
-                                item.cantidadPaquetes * item.precioPorPaquete
+                                item.subtotal || ((item.cantidad || 0) * (item.precioPorPaquete || 0))
                               )}
                             </div>
                           </div>
@@ -859,6 +950,173 @@
           console.error("Error loading pedidos:", error);
           loadingPedidos.style.display = "none";
           showToast("Error al cargar pedidos", "error");
+        }
+      }
+
+      // ========== NOTIFICACIONES ==========
+      const notificacionesList = document.getElementById("notificacionesList");
+      const loadingNotificaciones = document.getElementById("loadingNotificaciones");
+      const emptyNotificaciones = document.getElementById("emptyNotificaciones");
+      const btnMarcarTodasLeidas = document.getElementById("btnMarcarTodasLeidas");
+      const notifBadge = document.getElementById("notifBadge");
+
+      // Load notificaciones
+      async function loadNotificaciones() {
+        try {
+          loadingNotificaciones.style.display = "flex";
+          notificacionesList.style.display = "none";
+          emptyNotificaciones.style.display = "none";
+
+          const response = await API.apiCall("/notificaciones");
+
+          if (response.ok && response.data.success) {
+            const notificaciones = response.data.data.notificaciones.map(n => ({
+              ...n,
+              notificacionId: n.notificacionid,
+              fecha: n.fechacreacion
+            }));
+            const noLeidas = notificaciones.filter(n => !n.leida).length;
+
+            // Actualizar badge
+            if (noLeidas > 0) {
+              notifBadge.textContent = noLeidas;
+              notifBadge.style.display = "inline-block";
+              btnMarcarTodasLeidas.style.display = "inline-block";
+            } else {
+              notifBadge.style.display = "none";
+              btnMarcarTodasLeidas.style.display = "none";
+            }
+
+            if (notificaciones.length === 0) {
+              loadingNotificaciones.style.display = "none";
+              emptyNotificaciones.style.display = "block";
+            } else {
+              notificacionesList.innerHTML = notificaciones
+                .map((n) => {
+                  const fechaFormato = formatDateTime(n.fecha);
+                  
+                  const iconos = {
+                    'pedido': '📦',
+                    'backorder': '⚠️',
+                    'oferta': '🎁',
+                    'temporada': '🎄',
+                    'general': '📢'
+                  };
+                  const icono = iconos[n.tipo] || '🔔';
+
+                  return `
+                    <div class="notificacion-card ${n.leida ? '' : 'no-leida'}" data-notif-id="${n.notificacionId}">
+                      <div style="display: flex; gap: 1rem; align-items: start;">
+                        <div style="font-size: 2rem; flex-shrink: 0;">${icono}</div>
+                        <div style="flex: 1;">
+                          <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
+                            <h3 style="font-weight: 600; font-size: 1.125rem; margin: 0; color: var(--razo-gray-dark);">
+                              ${n.titulo}
+                            </h3>
+                            ${!n.leida ? '<span class="badge-new">Nuevo</span>' : ''}
+                          </div>
+                          <p style="color: var(--razo-gray-warm); margin: 0 0 0.5rem 0; line-height: 1.5;">
+                            ${n.mensaje}
+                          </p>
+                          <div style="display: flex; gap: 1rem; align-items: center; font-size: 0.875rem; color: var(--razo-gray-warm);">
+                            <span>🕐 ${fechaFormato}</span>
+                            ${!n.leida ? `
+                              <button 
+                                class="btn-link" 
+                                onclick="marcarComoLeida(${n.notificacionId})"
+                                style="color: var(--razo-orange); cursor: pointer; border: none; background: none; padding: 0;"
+                              >
+                                Marcar como leída
+                              </button>
+                            ` : ''}
+                            <button 
+                              class="btn-link" 
+                              onclick="eliminarNotificacion(${n.notificacionId})"
+                              style="color: #dc2626; cursor: pointer; border: none; background: none; padding: 0;"
+                            >
+                              Eliminar
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  `;
+                })
+                .join("");
+
+              loadingNotificaciones.style.display = "none";
+              notificacionesList.style.display = "block";
+            }
+          }
+        } catch (error) {
+          console.error("Error loading notificaciones:", error);
+          loadingNotificaciones.style.display = "none";
+          showToast("Error al cargar notificaciones", "error");
+        }
+      }
+
+      // Marcar como leída
+      async function marcarComoLeida(notifId) {
+        try {
+          const response = await API.apiCall(`/notificaciones/${notifId}/marcar-leida`, {
+            method: 'POST'
+          });
+
+          if (response.ok) {
+            showToast("Notificación marcada como leída", "success");
+            loadNotificaciones(); // Recargar
+          } else {
+            throw new Error("Error al marcar como leída");
+          }
+        } catch (error) {
+          console.error("Error:", error);
+          showToast("Error al actualizar notificación", "error");
+        }
+      }
+
+      // Marcar todas como leídas
+      btnMarcarTodasLeidas.addEventListener("click", async () => {
+        if (!confirm("¿Marcar todas las notificaciones como leídas?")) {
+          return;
+        }
+
+        try {
+          const response = await API.apiCall('/notificaciones/marcar-todas-leidas', {
+            method: 'POST'
+          });
+
+          if (response.ok) {
+            showToast("Todas las notificaciones fueron marcadas como leídas", "success");
+            loadNotificaciones(); // Recargar
+          } else {
+            throw new Error("Error al marcar todas");
+          }
+        } catch (error) {
+          console.error("Error:", error);
+          showToast("Error al actualizar notificaciones", "error");
+        }
+      });
+
+      // Eliminar notificación
+      async function eliminarNotificacion(notifId) {
+        if (!confirm("¿Eliminar esta notificación?")) {
+          return;
+        }
+
+        try {
+          const response = await API.apiCall(`/notificaciones/${notifId}`, {
+            method: 'DELETE'
+          });
+
+          if (response.ok) {
+            showToast("Notificación eliminada", "success");
+            loadNotificaciones(); // Recargar
+          } else {
+            throw new Error("Error al eliminar");
+          }
+        } catch (error) {
+          console.error("Error:", error);
+          showToast("Error al eliminar notificación", "error");
         }
       }
 

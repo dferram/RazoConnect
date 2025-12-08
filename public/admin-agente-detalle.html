@@ -203,6 +203,7 @@
     <script src="js/layout.js" defer></script>
     <script src="js/admin-header-dropdown.js"></script>
     <script src="js/api.js"></script>
+    <script src="js/date-helpers.js"></script>
     <script>
       const adminToken = localStorage.getItem("razoconnect_admin_token");
       if (!adminToken) window.location.href = "/login.html";
@@ -304,7 +305,7 @@
                     data-cliente-nombre="${nombreCompleto}"
                     title="Desvincular cliente"
                   >
-                    <span aria-hidden="true">⛓️</span>
+                    <span aria-hidden="true">Desvincular</span>
                     <span class="sr-only">Desvincular cliente</span>
                   </button>
                 </td>
@@ -451,14 +452,8 @@
                 <td><span class="admin-badge ${
                   c.estatus === "Pagada" ? "success" : "warning"
                 }">${c.estatus}</span></td>
-                <td>${new Date(c.fechaGeneracion).toLocaleDateString(
-                  "es-MX"
-                )}</td>
-                <td>${
-                  c.fechaPago
-                    ? new Date(c.fechaPago).toLocaleDateString("es-MX")
-                    : "-"
-                }</td>
+                <td>${formatDateSafe(c.fechaGeneracion)}</td>
+                <td>${formatDateSafe(c.fechaPago) !== "—" ? formatDateSafe(c.fechaPago) : "-"}</td>
               </tr>
             `
                 )

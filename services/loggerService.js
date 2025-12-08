@@ -1,0 +1,236 @@
+/**
+ * SERVICIO DE AUDITORÍA Y BITÁCORA
+ * Registra todas las acciones de escritura en el sistema
+ * 
+ * @module loggerService
+ */
+
+const db = require("../db");
+
+/**
+ * Registra una acción en la bitácora de auditoría
+ * 
+ * @param {Object} req - Objeto de request de Express (contiene usuario autenticado)
+ * @param {string} accion - Tipo de acción: 'CREAR', 'EDITAR', 'ELIMINAR', 'LOGIN', 'LOGOUT'
+ * @param {string} entidad - Nombre de la entidad afectada: 'Producto', 'Categoría', 'Pedido', etc.
+ * @param {number|string} entidadId - ID del registro afectado (puede ser null para acciones generales)
+ * @param {Object} detalles - Objeto con información adicional (se guarda como JSONB)
+ * @param {string} detalles.descripcion - Descripción legible de la acción
+ * @param {Object} detalles.anterior - Estado anterior del registro (opcional)
+ * @param {Object} detalles.nuevo - Estado nuevo del registro (opcional)
+ * @param {Array} detalles.campos - Lista de campos modificados (opcional)
+ * @returns {Promise<Object>} Registro de log creado
+ */
+const registrarLog = async (req, accion, entidad, entidadId = null, detalles = {}) => {
+  try {
+    // Extraer información del usuario autenticado
+    const usuario = req.user || {};
+    const usuarioId = usuario.id || usuario.userId || null;
+    const nombreUsuario = usuario.nombre 
+      ? `${usuario.nombre} ${usuario.apellido || ''}`.trim() 
+      : usuario.email || 'Usuario desconocido';
+    const rol = Array.isArray(usuario.roles) 
+      ? usuario.roles[0] 
+      : usuario.rol || 'Sin rol';
+
+    // Extraer IP del cliente
+    const ip = req.ip || 
+               req.headers['x-forwarded-for'] || 
+               req.headers['x-real-ip'] || 
+               req.connection.remoteAddress || 
+               'IP desconocida';
+
+    // Limpiar IPv6 local
+    const ipLimpia = ip.replace('::ffff:', '');
+
+    // Validar datos requeridos
+    if (!accion || !entidad) {
+      console.warn('⚠️ Logger: Faltan parámetros requeridos (accion o entidad)');
+      return null;
+    }
+
+    // Convertir detalles a JSON si no lo es
+    const detallesJSON = typeof detalles === 'string' 
+      ? detalles 
+      : JSON.stringify(detalles);
+
+    // Insertar en la base de datos
+    const result = await db.query(
+      `INSERT INTO Log_Movimientos 
+        (UsuarioID, NombreUsuario, Rol, Accion, Entidad, EntidadID, Detalles, IP)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       RETURNING LogID, Fecha`,
+      [
+        usuarioId,
+        nombreUsuario,
+        rol,
+        accion.toUpperCase(),
+        entidad,
+        entidadId,
+        detallesJSON,
+        ipLimpia
+      ]
+    );
+
+    const logCreado = result.rows[0];
+    
+    console.log(`✅ [AUDIT] ${accion} ${entidad}${entidadId ? ' #' + entidadId : ''} por ${nombreUsuario} (${rol})`);
+    
+    return logCreado;
+
+  } catch (error) {
+    // No fallar si el log falla - solo registrar el error
+    console.error('❌ Error al registrar en bitácora:', error.message);
+    console.error('Detalles:', {
+      accion,
+      entidad,
+      entidadId,
+      usuario: req.user?.email || 'desconocido'
+    });
+    return null;
+  }
+};
+
+/**
+ * Registra múltiples acciones en un lote (útil para operaciones masivas)
+ * 
+ * @param {Object} req - Request de Express
+ * @param {Array} acciones - Array de objetos {accion, entidad, entidadId, detalles}
+ * @returns {Promise<number>} Cantidad de logs registrados
+ */
+const registrarLogBatch = async (req, acciones) => {
+  let registrados = 0;
+  
+  for (const accion of acciones) {
+    const resultado = await registrarLog(
+      req,
+      accion.accion,
+      accion.entidad,
+      accion.entidadId,
+      accion.detalles
+    );
+    if (resultado) registrados++;
+  }
+  
+  return registrados;
+};
+
+/**
+ * Obtiene el historial de logs con filtros
+ * 
+ * @param {Object} filtros - Filtros de búsqueda
+ * @param {string} filtros.usuarioId - Filtrar por usuario específico
+ * @param {string} filtros.accion - Filtrar por tipo de acción
+ * @param {string} filtros.entidad - Filtrar por entidad
+ * @param {string} filtros.fechaInicio - Fecha inicial
+ * @param {string} filtros.fechaFin - Fecha final
+ * @param {number} filtros.limit - Límite de registros (default: 50)
+ * @param {number} filtros.offset - Offset para paginación (default: 0)
+ * @returns {Promise<Array>} Lista de logs
+ */
+const obtenerLogs = async (filtros = {}) => {
+  try {
+    const {
+      usuarioId,
+      accion,
+      entidad,
+      fechaInicio,
+      fechaFin,
+      limit = 50,
+      offset = 0
+    } = filtros;
+
+    let query = `
+      SELECT 
+        LogID,
+        UsuarioID,
+        NombreUsuario,
+        Rol,
+        Accion,
+        Entidad,
+        EntidadID,
+        Detalles,
+        IP,
+        Fecha
+      FROM Log_Movimientos
+      WHERE 1=1
+    `;
+
+    const params = [];
+    let paramIndex = 1;
+
+    // Aplicar filtros
+    if (usuarioId) {
+      query += ` AND UsuarioID = $${paramIndex}`;
+      params.push(usuarioId);
+      paramIndex++;
+    }
+
+    if (accion) {
+      query += ` AND Accion = $${paramIndex}`;
+      params.push(accion.toUpperCase());
+      paramIndex++;
+    }
+
+    if (entidad) {
+      query += ` AND Entidad = $${paramIndex}`;
+      params.push(entidad);
+      paramIndex++;
+    }
+
+    if (fechaInicio) {
+      query += ` AND Fecha >= $${paramIndex}`;
+      params.push(fechaInicio);
+      paramIndex++;
+    }
+
+    if (fechaFin) {
+      query += ` AND Fecha <= $${paramIndex}`;
+      params.push(fechaFin);
+      paramIndex++;
+    }
+
+    query += ` ORDER BY Fecha DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
+    params.push(limit, offset);
+
+    const result = await db.query(query, params);
+
+    return result.rows;
+
+  } catch (error) {
+    console.error('Error al obtener logs:', error);
+    throw error;
+  }
+};
+
+/**
+ * Obtiene estadísticas de la bitácora
+ * 
+ * @returns {Promise<Object>} Estadísticas generales
+ */
+const obtenerEstadisticas = async () => {
+  try {
+    const result = await db.query(`
+      SELECT 
+        COUNT(*) as total_movimientos,
+        COUNT(DISTINCT UsuarioID) as usuarios_activos,
+        COUNT(CASE WHEN Accion = 'CREAR' THEN 1 END) as total_creaciones,
+        COUNT(CASE WHEN Accion = 'EDITAR' THEN 1 END) as total_ediciones,
+        COUNT(CASE WHEN Accion = 'ELIMINAR' THEN 1 END) as total_eliminaciones,
+        COUNT(CASE WHEN Fecha >= NOW() - INTERVAL '24 hours' THEN 1 END) as movimientos_hoy
+      FROM Log_Movimientos
+    `);
+
+    return result.rows[0];
+  } catch (error) {
+    console.error('Error al obtener estadísticas:', error);
+    throw error;
+  }
+};
+
+module.exports = {
+  registrarLog,
+  registrarLogBatch,
+  obtenerLogs,
+  obtenerEstadisticas
+};

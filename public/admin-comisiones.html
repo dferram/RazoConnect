@@ -190,7 +190,7 @@
             style="margin-bottom: 1.5rem; padding: 1rem"
           >
             <div style="display: flex; gap: 1rem; align-items: center">
-              <label style="font-weight: 600">Filtrar por estatus:</label>
+              <label for="statusFilter" style="font-weight: 600">Filtrar por estatus:</label>
               <select
                 id="statusFilter"
                 style="
@@ -281,6 +281,7 @@
     <script src="js/layout.js" defer></script>
     <script src="js/admin-header-dropdown.js"></script>
     <script src="js/api.js"></script>
+    <script src="js/date-helpers.js"></script>
     <script>
       const adminToken = localStorage.getItem("razoconnect_admin_token");
       if (!adminToken) window.location.href = "/login.html";
@@ -410,9 +411,7 @@
                 <td><span class="admin-badge ${
                   c.estatus === "Pagada" ? "success" : "warning"
                 }">${c.estatus}</span></td>
-                <td class="cell-secondary">${new Date(
-                  c.fechaGeneracion
-                ).toLocaleDateString("es-MX")}</td>
+                <td class="cell-secondary">${formatDateSafe(c.fechaGeneracion)}</td>
                 <td class="cell-actions">
                   ${
                     c.estatus === "Pendiente"
