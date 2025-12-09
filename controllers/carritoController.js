@@ -1,5 +1,40 @@
 const db = require("../db");
 
+const TAMANO_VALUE_KEYS = [
+  "valor",
+  "cantidad",
+  "piezas",
+  "piezasporpaquete",
+  "numeropiezas",
+  "tamano",
+  "cantidadpiezas",
+];
+
+function obtenerPiezasDesdeTamanoInfo(tamanoInfo) {
+  if (!tamanoInfo || typeof tamanoInfo !== "object") {
+    return null;
+  }
+
+  for (const key of TAMANO_VALUE_KEYS) {
+    if (Object.prototype.hasOwnProperty.call(tamanoInfo, key)) {
+      const parsed = parseInt(tamanoInfo[key], 10);
+      if (!Number.isNaN(parsed) && parsed > 0) {
+        return parsed;
+      }
+    }
+
+    const capitalized = key.charAt(0).toUpperCase() + key.slice(1);
+    if (Object.prototype.hasOwnProperty.call(tamanoInfo, capitalized)) {
+      const parsed = parseInt(tamanoInfo[capitalized], 10);
+      if (!Number.isNaN(parsed) && parsed > 0) {
+        return parsed;
+      }
+    }
+  }
+
+  return null;
+}
+
 const validateAgregarAlCarritoInput = ({ VarianteID, Cantidad, TamanoID }) => {
   if (
     VarianteID === undefined ||

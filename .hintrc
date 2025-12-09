@@ -4,5 +4,18 @@
   ],
   "hints": {
     "no-inline-styles": "off"
-  }
+  },
+  "browserslist": [
+    "defaults",
+    "not ie 11",
+    "not and_chr <= 141",
+    "not and_ff <= 143",
+    "not chrome <= 141",
+    "not edge <= 141",
+    "not firefox <= 144",
+    "not ios_saf <= 26",
+    "not opera <= 122",
+    "not safari <= 26",
+    "not samsung <= 28"
+  ]
 }

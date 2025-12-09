@@ -160,6 +160,45 @@ const crearPedido = async (req, res) => {
       };
     });
 
+    const productosEnPedido = [
+      ...new Set(items.map((item) => item.productoid).filter(Boolean)),
+    ];
+
+    let masterVariantsMap = new Map();
+
+    if (productosEnPedido.length) {
+      const masterVariantsResult = await client.query(
+        `SELECT ProductoID, VarianteID, COALESCE(Stock, 0) AS Stock
+         FROM Producto_Variantes
+         WHERE ProductoID = ANY($1::int[])
+           AND PiezasPorPaquete = 1
+         FOR UPDATE`,
+        [productosEnPedido]
+      );
+
+      masterVariantsMap = new Map(
+        masterVariantsResult.rows.map((row) => [
+          row.productoid,
+          {
+            varianteId: row.varianteid,
+            stock: Math.max(parseInt(row.stock, 10), 0),
+          },
+        ])
+      );
+    }
+
+    for (const productId of productosEnPedido) {
+      if (!masterVariantsMap.has(productId)) {
+        await client.query("ROLLBACK");
+        transactionStarted = false;
+        return res.status(400).json({
+          success: false,
+          message:
+            "No se encontró la variante maestra (1 pieza) para uno de los productos en el pedido.",
+        });
+      }
+    }
+
     // 4. Calcular el monto total CON LÓGICA DE OFERTAS
     const montoTotal = items.reduce((total, item) => {
       const precioBase =
@@ -253,8 +292,11 @@ const crearPedido = async (req, res) => {
       // Calcular cantidades requeridas y disponibles
       const cantidadRequerida = item.cantidad; // Paquetes que pide el cliente
       const piezasSolicitadas = tamanoValor * item.cantidad; // Piezas totales
+      const masterInfo = masterVariantsMap.get(item.productoid);
       const stockActual =
-        item.stock !== null ? Math.max(parseInt(item.stock, 10), 0) : 0; // Stock en piezas
+        masterInfo && typeof masterInfo.stock === "number"
+          ? masterInfo.stock
+          : 0;
 
       // Calcular cuántos paquetes se pueden surtir con el stock disponible
       const paquetesSurtibles = Math.floor(stockActual / tamanoValor);
@@ -311,27 +353,28 @@ const crearPedido = async (req, res) => {
       );
 
       // Actualizar stock del producto (solo se descuenta lo efectivamente surtido en PIEZAS)
-      const nuevoStockVariante = Math.max(stockActual - piezasSurtidas, 0);
-      await client.query(
-        "UPDATE producto_variantes SET Stock = $1 WHERE VarianteID = $2",
-        [nuevoStockVariante, item.varianteid]
-      );
+      if (piezasSurtidas > 0 && masterInfo) {
+        const nuevoStockMaestro = Math.max(stockActual - piezasSurtidas, 0);
+        masterInfo.stock = nuevoStockMaestro;
 
-      variantesAfectadas.add(item.varianteid);
+        await client.query(
+          "UPDATE producto_variantes SET Stock = $1 WHERE VarianteID = $2",
+          [nuevoStockMaestro, masterInfo.varianteId]
+        );
 
-      // Crear registro en Log_Inventario cuando se surte inventario existente
-      if (piezasSurtidas > 0) {
         await client.query(
           `INSERT INTO Log_Inventario (VarianteID, CantidadCambiado, NuevoStock, Motivo, UsuarioID)
            VALUES ($1, $2, $3, $4, $5)`,
           [
-            item.varianteid,
+            masterInfo.varianteId,
             -piezasSurtidas,
-            nuevoStockVariante,
+            nuevoStockMaestro,
             `Venta Pedido #${pedidoId}`,
             clienteId,
           ]
         );
+
+        variantesAfectadas.add(masterInfo.varianteId);
       }
 
       detallesPedido.push({

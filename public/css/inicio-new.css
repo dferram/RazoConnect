@@ -345,20 +345,60 @@
    ======================================== */
 .flash-sales-section {
   padding: 4rem 0;
-  background: linear-gradient(135deg, #ff5e62 0%, #ff9966 100%);
-  color: white;
   position: relative;
   overflow: hidden;
 }
 
-.flash-sales-section::before {
-  content: "⚡";
+/* Estilo navideño solo cuando el theme manager aplica el tema de Navidad */
+body.theme-navidad .flash-sales-section {
+  /* Anula el fondo claro de .seasonal-tint para que la nieve se vea sobre fondo oscuro */
+  background: #020617;
+  color: #e5e7eb;
+}
+
+/* Fondo navideño oscuro tipo noche invernal */
+body.theme-navidad .flash-sales-section::before {
+  content: "";
   position: absolute;
-  font-size: 20rem;
-  opacity: 0.05;
-  top: -5rem;
-  right: -3rem;
-  transform: rotate(-15deg);
+  inset: 0;
+  background:
+    linear-gradient(180deg, #020617 0%, #111827 40%, #020617 100%),
+    radial-gradient(circle at 0% 0%, rgba(220, 38, 38, 0.35), transparent 55%),
+    radial-gradient(circle at 100% 0%, rgba(56, 189, 248, 0.35), transparent 55%);
+  opacity: 0.98;
+  z-index: 0;
+}
+
+/* Capa de copos de nieve animados solo en Ofertas */
+body.theme-navidad .flash-sales-section::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    /* puntos pequeños con borde suave (blur natural por el gradiente) */
+    radial-gradient(circle, rgba(255, 255, 255, 0.95) 0 1px, rgba(255, 255, 255, 0) 2px),
+    radial-gradient(circle, rgba(248, 250, 252, 0.9) 0 0.9px, rgba(248, 250, 252, 0) 1.8px),
+    radial-gradient(circle, rgba(226, 232, 240, 0.85) 0 0.8px, rgba(226, 232, 240, 0) 1.6px);
+  /* tamaños no uniformes para romper la cuadrícula y simular caída más aleatoria */
+  background-size: 73px 91px, 109px 137px, 149px 181px;
+  background-position: 0 -260px, 60px -340px, -120px -420px;
+  mix-blend-mode: screen;
+  animation: flashSnowFall 28s linear infinite;
+  opacity: 0.7;
+}
+
+@keyframes flashSnowFall {
+  0% {
+    background-position: 0 -260px, 60px -340px, -120px -420px;
+  }
+  50% {
+    /* mitad del recorrido: capas se desplazan en distintas direcciones */
+    background-position: -80px 40px, 120px -60px, -40px -80px;
+  }
+  100% {
+    background-position: -140px 320px, 40px 220px, 60px 120px;
+  }
 }
 
 .flash-header {
@@ -375,10 +415,21 @@
   text-shadow: 2px 4px 8px rgba(0, 0, 0, 0.2);
 }
 
+body.theme-navidad .flash-title {
+  color: #fef3c7; /* dorado suave */
+  text-shadow: 0 0 25px rgba(252, 211, 77, 0.7),
+    2px 4px 12px rgba(15, 23, 42, 0.9);
+}
+
 .flash-subtitle {
   font-size: 1.25rem;
   opacity: 0.95;
   margin-bottom: 1.5rem;
+}
+
+body.theme-navidad .flash-subtitle {
+  color: #e5e7eb;
+  opacity: 0.9;
 }
 
 /* Contador Regresivo */
@@ -425,7 +476,10 @@
   background: white;
   border-radius: var(--border-radius);
   overflow: hidden;
-  box-shadow: var(--shadow-lg);
+  box-shadow:
+    0 18px 45px rgba(15, 23, 42, 0.85),
+    0 0 0 1px rgba(248, 250, 252, 0.04),
+    0 0 28px rgba(251, 191, 36, 0.35); /* halo dorado suave */
   transition: var(--transition);
   color: #1a202c;
   text-decoration: none;
@@ -820,5 +874,424 @@
 
   .countdown-value {
     font-size: 2rem;
+  }
+}
+
+/* =====================================================
+   ESTILOS ESTACIONALES ORIGINALES (desde inicio-seasonal.css)
+   ===================================================== */
+
+.welcome-banner {
+  background: var(--theme-gradient-primary);
+  padding: 2rem 0;
+  margin-bottom: 2rem;
+  box-shadow: var(--theme-shadow-md);
+}
+
+.welcome-content {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+}
+
+.welcome-icon {
+  font-size: 4rem;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.2));
+  animation: welcomeBounce 3s ease-in-out infinite;
+}
+
+@keyframes welcomeBounce {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-10px) rotate(-5deg);
+  }
+  75% {
+    transform: translateY(-10px) rotate(5deg);
+  }
+}
+
+.welcome-text {
+  flex: 1;
+}
+
+.welcome-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: white;
+  margin-bottom: 0.5rem;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.welcome-title #userName {
+  color: var(--theme-accent);
+  font-weight: 800;
+}
+
+.welcome-subtitle {
+  font-size: 1.125rem;
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+}
+
+.countdown-widget {
+  margin-bottom: 3rem;
+  animation: slideDown 0.6s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.countdown-container {
+  background: linear-gradient(
+    135deg,
+    var(--theme-primary) 0%,
+    var(--theme-secondary) 100%
+  );
+  border-radius: 1.5rem;
+  padding: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 3rem;
+  box-shadow: var(--theme-shadow-xl);
+  position: relative;
+  overflow: hidden;
+}
+
+.countdown-container::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.1) 25%,
+    transparent 25%,
+    transparent 50%,
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0.1) 75%,
+    transparent 75%,
+    transparent
+  );
+  background-size: 50px 50px;
+  opacity: 0.3;
+  animation: patternMove 20s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes patternMove {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 50px 50px;
+  }
+}
+
+.countdown-info {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex: 1;
+  z-index: 1;
+}
+
+.countdown-event-icon {
+  font-size: 4.5rem;
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.3));
+  animation: iconPulse 2s ease-in-out infinite;
+}
+
+@keyframes iconPulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+.countdown-event-title {
+  font-size: 2rem;
+  font-weight: 800;
+  color: white;
+  margin-bottom: 0.5rem;
+  text-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.countdown-event-subtitle {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.countdown-display {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  z-index: 1;
+}
+
+.countdown-box {
+  background: rgba(255, 255, 255, 0.2);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border-radius: 1rem;
+  padding: 1.5rem 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 100px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+.countdown-number {
+  font-size: 3rem;
+  font-weight: 800;
+  color: white;
+  line-height: 1;
+  text-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.countdown-text {
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.9);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-top: 0.5rem;
+  font-weight: 600;
+}
+
+.countdown-separator {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: white;
+  opacity: 0.7;
+}
+
+.countdown-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1.25rem 2.5rem;
+  background: var(--theme-accent);
+  color: var(--theme-primary);
+  font-weight: 700;
+  font-size: 1.125rem;
+  text-decoration: none;
+  border-radius: 50px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 0 20px var(--theme-accent), 0 8px 20px rgba(0, 0, 0, 0.3);
+  z-index: 1;
+}
+
+.countdown-cta:hover {
+  transform: translateY(-4px) scale(1.05);
+  box-shadow: 0 0 30px var(--theme-accent), 0 12px 30px rgba(0, 0, 0, 0.4);
+}
+
+.categories-grid .category-card {
+  border: 3px solid var(--theme-primary);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.categories-grid .category-card:hover {
+  border-color: var(--theme-accent);
+  box-shadow: 0 0 20px rgba(var(--theme-primary-rgb), 0.3),
+    var(--theme-shadow-lg);
+  transform: translateY(-8px);
+}
+
+.categories-grid .category-icon {
+  background: var(--theme-gradient-primary);
+  box-shadow: 0 8px 20px rgba(var(--theme-primary-rgb), 0.3);
+}
+
+.seasonal-tint {
+  background: linear-gradient(
+    180deg,
+    rgba(var(--theme-primary-rgb), 0.03) 0%,
+    rgba(var(--theme-secondary-rgb), 0.03) 100%
+  );
+  position: relative;
+}
+
+.seasonal-tint::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--theme-gradient-primary);
+  opacity: 0.5;
+}
+
+.flash-sales-section .product-card {
+  border: 2px solid transparent;
+  transition: border-color 0.3s;
+}
+
+.flash-sales-section .product-card:hover {
+  border-color: var(--theme-primary);
+}
+
+.discount-badge {
+  background: var(--theme-primary);
+  box-shadow: 0 4px 12px rgba(var(--theme-primary-rgb), 0.4);
+}
+
+.slider-dot {
+  background: rgba(var(--theme-primary-rgb), 0.3);
+}
+
+.slider-dot.active {
+  background: var(--theme-primary);
+  box-shadow: 0 0 15px rgba(var(--theme-primary-rgb), 0.6);
+}
+
+.hero-cta,
+.category-link,
+.product-card .btn-primary {
+  background: var(--theme-primary);
+  color: white;
+  transition: all 0.3s;
+}
+
+.hero-cta:hover,
+.category-link:hover,
+.product-card .btn-primary:hover {
+  background: var(--theme-primary-dark);
+  box-shadow: var(--theme-shadow-lg);
+}
+
+@media (max-width: 1024px) {
+  .countdown-container {
+    flex-direction: column;
+    text-align: center;
+    padding: 2rem;
+  }
+
+  .countdown-info {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .countdown-display {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 768px) {
+  .welcome-content {
+    flex-direction: column;
+    text-align: center;
+    gap: 1rem;
+  }
+
+  .welcome-icon {
+    font-size: 3rem;
+  }
+
+  .welcome-title {
+    font-size: 1.5rem;
+  }
+
+  .welcome-subtitle {
+    font-size: 1rem;
+  }
+
+  .countdown-event-icon {
+    font-size: 3.5rem;
+  }
+
+  .countdown-event-title {
+    font-size: 1.5rem;
+  }
+
+  .countdown-box {
+    min-width: 80px;
+    padding: 1rem 1.5rem;
+  }
+
+  .countdown-number {
+    font-size: 2.5rem;
+  }
+
+  .countdown-separator {
+    font-size: 2rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .countdown-container {
+    padding: 1.5rem;
+  }
+
+  .countdown-display {
+    gap: 0.5rem;
+  }
+
+  .countdown-box {
+    min-width: 70px;
+    padding: 0.75rem 1rem;
+  }
+
+  .countdown-number {
+    font-size: 2rem;
+  }
+
+  .countdown-text {
+    font-size: 0.75rem;
+  }
+
+  .countdown-separator {
+    display: none;
+  }
+
+  .countdown-cta {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .welcome-banner,
+  .countdown-widget {
+    animation-duration: 0.6s;
+    animation-timing-function: ease-out;
+    animation-fill-mode: both;
+  }
+
+  .welcome-banner {
+    animation-name: fadeInDown;
+  }
+
+  @keyframes fadeInDown {
+    from {
+      opacity: 0;
+      transform: translateY(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 }

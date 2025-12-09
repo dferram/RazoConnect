@@ -4,6 +4,9 @@ const { generateToken } = require("../utils/jwtHelper");
 const crypto = require("crypto");
 const { enviarEmail } = require("../services/emailService");
 const {
+  crearNotificacion,
+} = require("../services/notificacionesService");
+const {
   validateClienteRegistro,
   validateAgenteRegistro,
   validateLogin,
@@ -66,6 +69,20 @@ const registroCliente = async (req, res) => {
       rol: "cliente",
       email: nuevoCliente.email,
     });
+
+    try {
+      await crearNotificacion(
+        nuevoCliente.clienteid,
+        "general",
+        "¡Bienvenido a RazoConnect!",
+        "Gracias por unirte. Tu cuenta ha sido creada exitosamente."
+      );
+    } catch (notificacionError) {
+      console.error(
+        "No se pudo crear la notificación de bienvenida:",
+        notificacionError
+      );
+    }
 
     res.status(201).json({
       success: true,

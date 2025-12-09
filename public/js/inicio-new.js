@@ -176,17 +176,26 @@
     const precioBase = parseFloat(
       producto.precioDesde || producto.precioUnitario || 0
     );
-    const precioOferta = producto.precioOferta
-      ? parseFloat(producto.precioOferta)
-      : null;
+    const precioOferta =
+      producto.precioOferta !== null && producto.precioOferta !== undefined
+        ? parseFloat(producto.precioOferta)
+        : null;
 
-    const precioMostrar = precioOferta || precioBase;
+    const precioMostrar =
+      precioOferta !== null && !Number.isNaN(precioOferta)
+        ? precioOferta
+        : precioBase;
     const precioFormateado = precioMostrar.toLocaleString("es-MX", {
       style: "currency",
       currency: "MXN",
     });
 
-    const tieneOferta = precioOferta && precioOferta < precioBase;
+    const tieneOferta =
+      precioOferta !== null &&
+      !Number.isNaN(precioOferta) &&
+      precioBase > 0 &&
+      precioOferta < precioBase;
+
     const descuento = tieneOferta
       ? Math.round(((precioBase - precioOferta) / precioBase) * 100)
       : 0;
@@ -208,13 +217,24 @@
 
     const badge =
       type === "flash"
-        ? `<div class="flash-badge">⚡ OFERTA</div>`
+        ? tieneOferta
+          ? `<div class="flash-badge">⚡ OFERTA</div>`
+          : ""
         : `<div class="new-badge">🆕 NUEVO</div>`;
 
     const stock = producto.variantesConStock || 0;
     const imagenUrl =
       producto.imagenUrl ||
       "https://images.unsplash.com/photo-1607344645866-009c320b63e0?w=400&h=400&fit=crop";
+
+    const dimensionLabel =
+      type === "flash"
+        ? producto.varianteDimensiones ||
+          (producto.varianteDestacada &&
+            producto.varianteDestacada.dimensiones) ||
+          producto.dimensiones ||
+          null
+        : null;
 
     if (type === "flash") {
       return `
@@ -229,6 +249,11 @@
           </div>
           <div class="flash-product-info">
             <h3 class="flash-product-title">${producto.nombreProducto}</h3>
+            ${
+              dimensionLabel
+                ? `<p class="flash-product-dimension">${dimensionLabel}</p>`
+                : ""
+            }
             <div class="flash-price-container">
               ${precioOriginalHtml}
               <span class="flash-price-offer">${precioFormateado}</span>
@@ -277,7 +302,7 @@
     if (!grid) return;
 
     try {
-      const response = await fetch("/api/productos?oferta=true&limit=4");
+      const response = await fetch("/api/productos?oferta=true&limit=8");
       const data = await response.json();
 
       if (
@@ -286,9 +311,103 @@
         data.data.productos &&
         data.data.productos.length > 0
       ) {
-        grid.innerHTML = data.data.productos
-          .map((producto) => renderProductCard(producto, "flash"))
-          .join("");
+        const productosRaw = data.data.productos;
+
+        // Primero quedarnos solo con productos que, a nivel agregado, reportan oferta válida
+        const productosConOferta = productosRaw.filter((producto) => {
+          const base = parseFloat(
+            producto.precioDesde || producto.precioUnitario || 0
+          );
+          const oferta =
+            producto.precioOferta !== null &&
+            producto.precioOferta !== undefined
+              ? parseFloat(producto.precioOferta)
+              : NaN;
+
+          return (
+            Number.isFinite(base) &&
+            base > 0 &&
+            Number.isFinite(oferta) &&
+            oferta > 0 &&
+            oferta < base
+          );
+        });
+
+        const tarjetasVariantes = [];
+
+        // Para cada producto con oferta, obtener sus variantes y generar una tarjeta por variante en oferta
+        for (const producto of productosConOferta) {
+          try {
+            const detalleResp = await fetch(
+              `/api/productos/${producto.productoId}`
+            );
+            const detalleData = await detalleResp.json();
+
+            if (
+              detalleResp.ok &&
+              detalleData.success &&
+              detalleData.data &&
+              Array.isArray(detalleData.data.variantes)
+            ) {
+              const variantes = detalleData.data.variantes;
+
+              variantes.forEach((v) => {
+                const base =
+                  typeof v.precioUnitario === "number" &&
+                  !Number.isNaN(v.precioUnitario)
+                    ? v.precioUnitario
+                    : null;
+                const oferta =
+                  typeof v.precioOfertaUnitario === "number" &&
+                  !Number.isNaN(v.precioOfertaUnitario)
+                    ? v.precioOfertaUnitario
+                    : null;
+
+                if (
+                  base !== null &&
+                  oferta !== null &&
+                  base > 0 &&
+                  oferta > 0 &&
+                  oferta < base
+                ) {
+                  tarjetasVariantes.push({
+                    productoId: producto.productoId,
+                    nombreProducto: producto.nombreProducto,
+                    categoria: producto.categoria || null,
+                    imagenUrl: producto.imagenUrl,
+                    imagenAlt: producto.imagenAlt || producto.nombreProducto,
+                    variantesConStock: v.stock,
+                    precioDesde: base,
+                    precioOferta: oferta,
+                    varianteDimensiones: v.dimensiones || null,
+                  });
+                }
+              });
+            }
+          } catch (detalleError) {
+            console.error(
+              "Error cargando variantes para ofertas flash del producto",
+              producto.productoId,
+              detalleError
+            );
+          }
+        }
+
+        if (tarjetasVariantes.length > 0) {
+          grid.innerHTML = tarjetasVariantes
+            .slice(0, 4)
+            .map((productoVariante) =>
+              renderProductCard(productoVariante, "flash")
+            )
+            .join("");
+        } else {
+          grid.innerHTML = `
+          <div style="grid-column: 1 / -1; text-align: center; padding: 3rem; color: white;">
+            <p style="font-size: 1.25rem; margin-bottom: 1rem;">🔥 Próximamente nuevas ofertas</p>
+            <a href="/catalogo.html" style="color: white; text-decoration: underline;">Ver catálogo completo</a>
+          </div>
+        `;
+        }
       } else {
         grid.innerHTML = `
           <div style="grid-column: 1 / -1; text-align: center; padding: 3rem; color: white;">
@@ -575,28 +694,25 @@
       // 3. Categorías
       loadCategories();
 
-      // 4. Contador regresivo
-      initCountdown();
-
-      // 5. Cargar contenido dinámico (paralelo)
+      // 4. Cargar contenido dinámico (paralelo)
       await Promise.all([loadFlashSales(), loadNewArrivals()]);
 
-      // 6. Dropdown de marcas
+      // 5. Dropdown de marcas
       initMarcasDropdown();
 
-      // 7. Navegación
+      // 6. Navegación
       initNavigation();
 
-      // 8. Scroll horizontal
+      // 7. Scroll horizontal
       initHorizontalScroll();
 
-      // 9. Animaciones
+      // 8. Animaciones
       initScrollAnimations();
 
-      // 10. Error handling
+      // 9. Error handling
       initImageErrorHandling();
 
-      // 11. Analytics
+      // 10. Analytics
       trackPageView();
 
       console.log("✅ Página de inicio lista");

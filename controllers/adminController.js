@@ -1,5 +1,8 @@
 const db = require("../db");
 const { enviarEmail } = require("../services/emailService");
+const {
+  crearNotificacion: crearNotificacionServicio,
+} = require("../services/notificacionesService");
 const { checkStockBajo } = require("../utils/stockAlerts");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
@@ -1177,6 +1180,32 @@ const updatePedidoEstatus = async (req, res) => {
       }
     }
 
+    const clienteIdNotificacion = pedido.clienteid;
+    if (
+      clienteIdNotificacion &&
+      (estatus === "Enviado" || estatus === "Entregado")
+    ) {
+      const mensajes = {
+        Enviado: "Tu pedido ha sido enviado.",
+        Entregado: "Tu pedido ha sido entregado.",
+      };
+
+      try {
+        await crearNotificacionServicio(
+          clienteIdNotificacion,
+          "pedido",
+          `Pedido ${estatus.toLowerCase()}`,
+          `Tu pedido #${pedidoId} ha sido ${estatus.toLowerCase()}.`,
+          { pedidoID: pedidoId }
+        );
+      } catch (notificacionError) {
+        console.error(
+          `No se pudo crear notificación para el pedido #${pedidoId}:`,
+          notificacionError
+        );
+      }
+    }
+
     res.json({
       success: true,
       message: `Pedido actualizado a ${estatus}`,
@@ -1213,6 +1242,11 @@ const crearProducto = async (req, res) => {
     tamanoIds,
     proveedorId: proveedorIdRaw,
     activo,
+    stockTotalInicial: stockTotalInicialRaw,
+    venderIndividual: venderIndividualRaw,
+    precioUnitarioBase: precioUnitarioBaseRaw,
+    precioUnitario: precioUnitarioLegacyRaw,
+    variantes: variantesRaw,
   } = req.body;
 
   if (!nombre) {
@@ -1255,6 +1289,59 @@ const crearProducto = async (req, res) => {
     // Gestión de visibilidad: activo por defecto TRUE, pero respeta el valor del body
     const activoFinal = activo !== undefined ? Boolean(activo) : true;
 
+    const parseBoolean = (value, defaultValue = false) => {
+      if (typeof value === "boolean") return value;
+      if (typeof value === "string") {
+        const normalized = value.trim().toLowerCase();
+        if (normalized === "true" || normalized === "1") return true;
+        if (normalized === "false" || normalized === "0") return false;
+      }
+      if (typeof value === "number") {
+        if (value === 1) return true;
+        if (value === 0) return false;
+      }
+      return defaultValue;
+    };
+
+    const stockTotalInicial = (() => {
+      if (stockTotalInicialRaw === undefined || stockTotalInicialRaw === null) {
+        return 0;
+      }
+      const parsed = Number.parseInt(stockTotalInicialRaw, 10);
+      if (Number.isNaN(parsed) || parsed < 0) {
+        throw new Error("STOCK_INICIAL_INVALIDO");
+      }
+      return parsed;
+    })();
+
+    const venderIndividual = parseBoolean(venderIndividualRaw, false);
+
+    const precioUnitarioBaseNormalized = (() => {
+      const raw =
+        precioUnitarioBaseRaw !== undefined && precioUnitarioBaseRaw !== null
+          ? precioUnitarioBaseRaw
+          : precioUnitarioLegacyRaw;
+
+      // Si no se venderá por pieza, no necesitamos precio unitario base
+      if (!venderIndividual) {
+        return null;
+      }
+
+      // Si se venderá por pieza pero aún no se define el precio, permitir null.
+      // El precio podrá configurarse posteriormente en la pantalla de variantes.
+      if (raw === undefined || raw === null || String(raw).trim() === "") {
+        return null;
+      }
+
+      const parsed = Number.parseFloat(raw);
+      if (Number.isNaN(parsed) || parsed < 0) {
+        throw new Error("PRECIO_UNITARIO_BASE_INVALIDO");
+      }
+      return Number(parsed.toFixed(4));
+    })();
+
+    const variantesInput = Array.isArray(variantesRaw) ? variantesRaw : [];
+
     const result = await client.query(
       `INSERT INTO Productos (NombreProducto, CodigoModelo, Descripcion, CategoriaID, ProveedorID_Default, Activo)
        VALUES ($1, $2, $3, $4, $5, $6)
@@ -1270,51 +1357,348 @@ const crearProducto = async (req, res) => {
     );
 
     const producto = result.rows[0];
+
+    const serieSkuBase = (() => {
+      const base =
+        (typeof codigoModelo === "string" && codigoModelo.trim().length
+          ? codigoModelo
+          : typeof nombre === "string" && nombre.trim().length
+          ? nombre
+          : `PROD-${producto.productoid}`) || `PROD-${producto.productoid}`;
+      return base
+        .toUpperCase()
+        .replace(/[^A-Z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "") || `PROD-${producto.productoid}`;
+    })();
+
+    const buildSku = (suffix) => {
+      const normalizedSuffix = (suffix || "VAR")
+        .toUpperCase()
+        .replace(/[^A-Z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "");
+      return `${serieSkuBase}-${normalizedSuffix || "VAR"}`;
+    };
+
     let tamanosAsociados = [];
-    const tamanosRaw = Array.isArray(tamanos)
+    const tamanosProductoRaw = Array.isArray(tamanos)
       ? tamanos
       : Array.isArray(tamanoIds)
       ? tamanoIds
       : [];
 
-    if (tamanosRaw.length) {
-      const sanitizedIds = [
-        ...new Set(
-          tamanosRaw
-            .map((id) => Number.parseInt(id, 10))
-            .filter((id) => Number.isInteger(id) && id > 0)
-        ),
-      ];
+    const sanitizedTamanosProducto = [
+      ...new Set(
+        tamanosProductoRaw
+          .map((id) => Number.parseInt(id, 10))
+          .filter((id) => Number.isInteger(id) && id > 0)
+      ),
+    ];
 
-      if (sanitizedIds.length) {
-        const tamanosValidosResult = await client.query(
-          "SELECT TamanoID FROM Cat_TamanoPaquetes WHERE TamanoID = ANY($1::int[])",
-          [sanitizedIds]
-        );
+    const tamanoIdsFromVariantes = [
+      ...new Set(
+        variantesInput
+          .map((v) =>
+            Number.parseInt(v?.tamanoId ?? v?.tamanoid ?? v?.TamanoID, 10)
+          )
+          .filter((id) => Number.isInteger(id) && id > 0)
+      ),
+    ];
 
-        const tamanosValidos = tamanosValidosResult.rows.map((row) =>
-          Number.parseInt(row.tamanoid, 10)
-        );
+    const tamanoIdsNecesarios = [
+      ...new Set([...sanitizedTamanosProducto, ...tamanoIdsFromVariantes]),
+    ];
 
-        if (tamanosValidos.length !== sanitizedIds.length) {
+    const tamanoCatalogoMap = new Map();
+    const valueCandidates = [
+      "valor",
+      "cantidad",
+      "piezas",
+      "piezasporpaquete",
+      "numeropiezas",
+      "tamano",
+      "cantidadpiezas",
+    ];
+
+    const extractValorNumerico = (row) => {
+      for (const field of valueCandidates) {
+        if (
+          Object.prototype.hasOwnProperty.call(row, field) &&
+          row[field] !== null &&
+          row[field] !== undefined
+        ) {
+          const parsed = Number.parseInt(row[field], 10);
+          if (!Number.isNaN(parsed) && parsed > 0) {
+            return parsed;
+          }
+        }
+        const capitalized =
+          field.charAt(0).toUpperCase() + field.slice(1);
+        if (
+          Object.prototype.hasOwnProperty.call(row, capitalized) &&
+          row[capitalized] !== null &&
+          row[capitalized] !== undefined
+        ) {
+          const parsed = Number.parseInt(row[capitalized], 10);
+          if (!Number.isNaN(parsed) && parsed > 0) {
+            return parsed;
+          }
+        }
+      }
+      return null;
+    };
+
+    if (tamanoIdsNecesarios.length) {
+      const tamanosCatalogoResult = await client.query(
+        "SELECT * FROM Cat_TamanoPaquetes WHERE TamanoID = ANY($1::int[])",
+        [tamanoIdsNecesarios]
+      );
+
+      tamanosCatalogoResult.rows.forEach((row) => {
+        const tamanoId = Number.parseInt(row.tamanoid, 10);
+        if (!Number.isInteger(tamanoId)) return;
+        tamanoCatalogoMap.set(tamanoId, {
+          raw: row,
+          valor: extractValorNumerico(row),
+        });
+      });
+
+      for (const requiredId of tamanoIdsNecesarios) {
+        if (!tamanoCatalogoMap.has(requiredId)) {
           await client.query("ROLLBACK");
           return res.status(400).json({
             success: false,
-            message:
-              "Uno o más tamaños seleccionados no existen en el catálogo",
+            message: `El tamaño con ID ${requiredId} no existe en el catálogo`,
           });
         }
-
-        for (const tamanoId of tamanosValidos) {
-          await client.query(
-            `INSERT INTO Producto_TamanosDisponibles (ProductoID, TamanoID)
-             VALUES ($1, $2)`,
-            [producto.productoid, tamanoId]
-          );
-        }
-
-        tamanosAsociados = tamanosValidos;
       }
+    }
+
+    if (sanitizedTamanosProducto.length) {
+      for (const tamanoId of sanitizedTamanosProducto) {
+        await client.query(
+          `INSERT INTO Producto_TamanosDisponibles (ProductoID, TamanoID)
+           VALUES ($1, $2)`,
+          [producto.productoid, tamanoId]
+        );
+      }
+      tamanosAsociados = sanitizedTamanosProducto;
+    }
+
+    const userId = req.user?.id || req.user?.userId || null;
+
+    const variantesCreadas = [];
+
+    const masterSku = buildSku("UNIT");
+    const masterDimensiones = "Unidad individual";
+
+    const masterVarianteResult = await client.query(
+      `INSERT INTO Producto_Variantes (
+        ProductoID,
+        SKU,
+        Dimensiones,
+        CostoUnitario,
+        PrecioUnitario,
+        PrecioOfertaUnitario,
+        Stock,
+        TipoProductoID,
+        MedidaID,
+        Activo,
+        PiezasPorPaquete
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      RETURNING VarianteID, SKU, Stock, Activo, PiezasPorPaquete`,
+      [
+        producto.productoid,
+        masterSku,
+        masterDimensiones,
+        null,
+        precioUnitarioBaseNormalized,
+        null,
+        stockTotalInicial,
+        null,
+        null,
+        venderIndividual,
+        1,
+      ]
+    );
+
+    const varianteMaestra = masterVarianteResult.rows[0];
+    variantesCreadas.push({
+      ...varianteMaestra,
+      esVarianteMaestra: true,
+    });
+
+    if (stockTotalInicial > 0) {
+      await client.query(
+        `INSERT INTO Log_Inventario (VarianteID, CantidadCambiado, NuevoStock, Motivo, UsuarioID)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [
+          varianteMaestra.varianteid,
+          stockTotalInicial,
+          stockTotalInicial,
+          "Stock inicial variante maestra (1 pieza)",
+          userId,
+        ]
+      );
+    }
+
+    const inferPiezasPorPaquete = (variante) => {
+      if (!variante || typeof variante !== "object") return null;
+
+      const candidateKeys = [
+        "piezasPorPaquete",
+        "valor",
+        "cantidad",
+        "piezas",
+        "numeropiezas",
+        "tamanoValor",
+        "pieces",
+        "qty",
+      ];
+
+      for (const key of candidateKeys) {
+        if (variante[key] !== undefined && variante[key] !== null) {
+          const parsed = Number.parseInt(variante[key], 10);
+          if (!Number.isNaN(parsed) && parsed > 0) return parsed;
+        }
+      }
+
+      const tamanoId = Number.parseInt(
+        variante.tamanoId ?? variante.tamanoid ?? variante.TamanoID,
+        10
+      );
+      if (Number.isInteger(tamanoId) && tamanoCatalogoMap.has(tamanoId)) {
+        return tamanoCatalogoMap.get(tamanoId).valor || null;
+      }
+
+      return null;
+    };
+
+    const inferPrecioUnitario = (variante, piezasPorPaquete) => {
+      const candidateKeys = [
+        "precioUnitario",
+        "precio",
+        "price",
+        "precioPorUnidad",
+        "unitPrice",
+      ];
+
+      for (const key of candidateKeys) {
+        if (variante[key] !== undefined && variante[key] !== null) {
+          const parsed = Number.parseFloat(variante[key]);
+          if (!Number.isNaN(parsed) && parsed > 0) {
+            return Number(parsed.toFixed(4));
+          }
+        }
+      }
+
+      const pricePerPackKeys = [
+        "precioPorPaquete",
+        "precioPack",
+        "pricePerPack",
+      ];
+
+      for (const key of pricePerPackKeys) {
+        if (
+          variante[key] !== undefined &&
+          variante[key] !== null &&
+          piezasPorPaquete &&
+          piezasPorPaquete > 0
+        ) {
+          const parsed = Number.parseFloat(variante[key]);
+          if (!Number.isNaN(parsed) && parsed > 0) {
+            return Number((parsed / piezasPorPaquete).toFixed(4));
+          }
+        }
+      }
+
+      return null;
+    };
+
+    for (const [index, variante] of variantesInput.entries()) {
+      if (!variante || typeof variante !== "object") {
+        continue;
+      }
+
+      const piezasPorPaquete = inferPiezasPorPaquete(variante);
+      if (!Number.isInteger(piezasPorPaquete) || piezasPorPaquete <= 1) {
+        continue;
+      }
+
+      const precioUnitarioVariante = inferPrecioUnitario(
+        variante,
+        piezasPorPaquete
+      );
+      if (precioUnitarioVariante === null) {
+        continue;
+      }
+
+      const precioOfertaUnitario =
+        variante.precioOfertaUnitario !== undefined &&
+        variante.precioOfertaUnitario !== null
+          ? Number.parseFloat(variante.precioOfertaUnitario)
+          : null;
+
+      const skuVariante =
+        typeof variante.sku === "string" && variante.sku.trim().length
+          ? variante.sku.trim().toUpperCase()
+          : buildSku(`PACK${piezasPorPaquete}`);
+
+      const dimensionesVariante =
+        variante.dimensiones ||
+        variante.presentacion ||
+        `Pack de ${piezasPorPaquete}`;
+
+      const activoVariante =
+        variante.activo !== undefined && variante.activo !== null
+          ? parseBoolean(variante.activo, true)
+          : true;
+
+      const tipoProductoId =
+        variante.tipoProductoId !== undefined
+          ? variante.tipoProductoId
+          : variante.tipoProductoID;
+
+      const medidaId =
+        variante.medidaId !== undefined ? variante.medidaId : variante.medidaID;
+
+      const insertResult = await client.query(
+        `INSERT INTO Producto_Variantes (
+          ProductoID,
+          SKU,
+          Dimensiones,
+          CostoUnitario,
+          PrecioUnitario,
+          PrecioOfertaUnitario,
+          Stock,
+          TipoProductoID,
+          MedidaID,
+          Activo,
+          PiezasPorPaquete
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, 0, $7, $8, $9, $10)
+        RETURNING VarianteID, SKU, Activo, PiezasPorPaquete`,
+        [
+          producto.productoid,
+          skuVariante,
+          dimensionesVariante || null,
+          variante.costoUnitario || null,
+          precioUnitarioVariante,
+          precioOfertaUnitario && precioOfertaUnitario > 0
+            ? precioOfertaUnitario
+            : null,
+          tipoProductoId || null,
+          medidaId || null,
+          activoVariante,
+          piezasPorPaquete,
+        ]
+      );
+
+      variantesCreadas.push({
+        ...insertResult.rows[0],
+        esVarianteMaestra: false,
+        indice: index,
+      });
     }
 
     await client.query("COMMIT");
@@ -1325,11 +1709,27 @@ const crearProducto = async (req, res) => {
       data: {
         producto,
         tamanosDisponibles: tamanosAsociados,
+        varianteMaestra: varianteMaestra,
+        variantes: variantesCreadas,
       },
     });
   } catch (error) {
     if (transactionStarted) {
       await client.query("ROLLBACK");
+    }
+    if (error.message === "STOCK_INICIAL_INVALIDO") {
+      return res.status(400).json({
+        success: false,
+        message:
+          "El stock total inicial debe ser un número entero mayor o igual a 0.",
+      });
+    }
+    if (error.message === "PRECIO_UNITARIO_BASE_INVALIDO") {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Debes proporcionar un precio unitario válido para vender por pieza.",
+      });
     }
     console.error("Error al crear producto maestro:", error);
     res.status(500).json({
@@ -4329,13 +4729,16 @@ const cancelarOrdenBackorder = async (req, res) => {
 };
 
 /**
- * Actualizar visibilidad de una variante
+ * Actualizar una variante
  * PUT /api/admin/variantes/:id
+ *
+ * Soporta dos usos:
+ * - Toggle rápido de visibilidad (solo 'activo').
+ * - Edición de datos económicos: SKU, dimensiones, costo, precio, oferta.
  */
 const actualizarVariante = async (req, res) => {
   try {
     const varianteId = parseInt(req.params.id, 10);
-    const { activo } = req.body;
 
     if (!varianteId || isNaN(varianteId)) {
       return res.status(400).json({
@@ -4344,42 +4747,147 @@ const actualizarVariante = async (req, res) => {
       });
     }
 
-    if (activo === undefined) {
-      return res.status(400).json({
-        success: false,
-        message: "El campo 'activo' es requerido",
-      });
-    }
+    const {
+      activo,
+      sku,
+      dimensiones,
+      costoUnitario,
+      precioUnitario,
+      precioOfertaUnitario,
+    } = req.body || {};
 
-    // Verificar que la variante existe
-    const checkVariante = await db.query(
-      `SELECT VarianteID FROM Producto_Variantes WHERE VarianteID = $1`,
+    const result = await db.query(
+      `SELECT VarianteID, SKU, Dimensiones, CostoUnitario, PrecioUnitario, PrecioOfertaUnitario, Stock, Activo
+       FROM Producto_Variantes
+       WHERE VarianteID = $1`,
       [varianteId]
     );
 
-    if (checkVariante.rows.length === 0) {
+    if (result.rows.length === 0) {
       return res.status(404).json({
         success: false,
         message: "Variante no encontrada",
       });
     }
 
-    // Actualizar solo el campo activo
-    console.log(`🔄 Actualizando variante ${varianteId} a activo=${activo}`);
-    
+    const actual = result.rows[0];
+
+    const normalizarBoolean = (value, fallback) => {
+      if (value === undefined) return fallback;
+      if (typeof value === "boolean") return value;
+      if (typeof value === "number") return value === 1;
+      if (typeof value === "string") {
+        const norm = value.trim().toLowerCase();
+        if (norm === "true" || norm === "1") return true;
+        if (norm === "false" || norm === "0") return false;
+      }
+      return fallback;
+    };
+
+    const parseNullableNumero = (raw) => {
+      if (raw === undefined) return { usarActual: true, valor: null };
+      if (raw === null || raw === "") {
+        return { usarActual: false, valor: null };
+      }
+      const num = Number.parseFloat(raw);
+      if (Number.isNaN(num)) {
+        return { usarActual: false, valor: null };
+      }
+      return { usarActual: false, valor: num };
+    };
+
+    const skuActual = actual.sku;
+    const dimensionesActual = actual.dimensiones;
+    const costoActual =
+      actual.costounitario !== null && actual.costounitario !== undefined
+        ? Number.parseFloat(actual.costounitario)
+        : null;
+    const precioActual =
+      actual.preciounitario !== null && actual.preciounitario !== undefined
+        ? Number.parseFloat(actual.preciounitario)
+        : null;
+    const ofertaActual =
+      actual.precioofertaunitario !== null &&
+      actual.precioofertaunitario !== undefined
+        ? Number.parseFloat(actual.precioofertaunitario)
+        : null;
+    const activoActual = Boolean(actual.activo);
+
+    const nuevoSku =
+      typeof sku === "string" && sku.trim().length
+        ? sku.trim().toUpperCase()
+        : skuActual;
+
+    const nuevasDimensiones =
+      dimensiones !== undefined
+        ? (() => {
+            if (dimensiones === null) return null;
+            const texto = String(dimensiones).trim();
+            return texto.length ? texto : null;
+          })()
+        : dimensionesActual;
+
+    const costoParse = parseNullableNumero(costoUnitario);
+    const nuevoCosto = costoParse.usarActual ? costoActual : costoParse.valor;
+
+    const precioParse = parseNullableNumero(precioUnitario);
+    const nuevoPrecio = precioParse.usarActual ? precioActual : precioParse.valor;
+
+    if (nuevoPrecio === null || !(nuevoPrecio > 0)) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "El precio unitario debe ser un número mayor a 0 al editar la variante",
+      });
+    }
+
+    const ofertaParse = parseNullableNumero(precioOfertaUnitario);
+    let nuevaOferta = ofertaParse.usarActual ? ofertaActual : ofertaParse.valor;
+
+    if (nuevaOferta !== null && !(nuevaOferta > 0 && nuevaOferta < nuevoPrecio)) {
+      nuevaOferta = null;
+    }
+
+    const nuevoActivo = normalizarBoolean(activo, activoActual);
+
+    console.log("🔄 Actualizando variante", {
+      varianteId,
+      sku: nuevoSku,
+      dimensiones: nuevasDimensiones,
+      costoUnitario: nuevoCosto,
+      precioUnitario: nuevoPrecio,
+      precioOfertaUnitario: nuevaOferta,
+      activo: nuevoActivo,
+    });
+
     const updateResult = await db.query(
-      `UPDATE Producto_Variantes SET Activo = $1 WHERE VarianteID = $2 RETURNING *`,
-      [activo, varianteId]
+      `UPDATE Producto_Variantes
+       SET SKU = $1,
+           Dimensiones = $2,
+           CostoUnitario = $3,
+           PrecioUnitario = $4,
+           PrecioOfertaUnitario = $5,
+           Activo = $6
+       WHERE VarianteID = $7
+       RETURNING *`,
+      [
+        nuevoSku,
+        nuevasDimensiones,
+        nuevoCosto,
+        nuevoPrecio,
+        nuevaOferta,
+        nuevoActivo,
+        varianteId,
+      ]
     );
 
-    console.log(`✅ Variante actualizada:`, updateResult.rows[0]);
+    console.log("✅ Variante actualizada:", updateResult.rows[0]);
 
     res.json({
       success: true,
-      message: `Variante ${activo ? 'activada' : 'desactivada'} exitosamente`,
+      message: "Variante actualizada exitosamente",
       data: {
         varianteId,
-        activo,
         updated: updateResult.rows[0],
       },
     });

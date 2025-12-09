@@ -379,6 +379,9 @@
         window.location.href = "/login.html";
       }
 
+      let unidadTamanoId = null;
+      let customPacks = [];
+
       // Verify admin and load data
       async function init() {
         await verifyAndLoadAdmin();
@@ -498,7 +501,7 @@
         }
       }
 
-      // Load tamaños de paquetes
+      // Load tamaños de paquetes (solo para identificar "Venta por Pieza")
       async function loadTamanos() {
         const container = document.getElementById("presentacionesContainer");
         const placeholder = document.getElementById(
@@ -528,49 +531,178 @@
             throw new Error("Respuesta inválida del servidor");
           }
 
-          if (!data.data.tamanos.length) {
-            container.innerHTML = `
-              <div class="empty-state" style="margin-top: 0.75rem">
-                <div class="empty-state-icon">📭</div>
-                <h3 class="empty-state-title">Sin tamaños disponibles</h3>
-                <p class="empty-state-text">
-                  Agrega registros en Cat_TamanoPaquetes para mostrarlos aquí.
-                </p>
-              </div>`;
-            return;
-          }
+          const tamanos = data.data.tamanos;
 
-          const fragment = document.createDocumentFragment();
-
-          data.data.tamanos.forEach((tamano) => {
-            const inputId = `tamano-${tamano.tamanoId}`;
-            const wrapper = document.createElement("label");
-            wrapper.className = "checkbox-card";
-            wrapper.htmlFor = inputId;
-
-            const checkbox = document.createElement("input");
-            checkbox.type = "checkbox";
-            checkbox.name = "tamanoIds";
-            checkbox.value = tamano.tamanoId;
-            checkbox.id = inputId;
-
-            const badge = document.createElement("span");
-            badge.className = "checkbox-card-label";
+          const tamanoUnidad = tamanos.find((tamano) => {
             const valor = tamano.valor ?? null;
-            const etiquetaCatalogo = tamano.etiqueta?.trim();
-
-            const labelText =
-              valor === 1 ? "Venta por Pieza (Individual)" : `Pack de ${valor}`;
-
-            badge.textContent = etiquetaCatalogo || labelText;
-
-            wrapper.appendChild(checkbox);
-            wrapper.appendChild(badge);
-            fragment.appendChild(wrapper);
+            return Number.isFinite(valor) ? valor === 1 : parseInt(valor, 10) === 1;
           });
 
-          container.innerHTML = "";
-          container.appendChild(fragment);
+          if (tamanoUnidad) {
+            const parsedId = Number.parseInt(tamanoUnidad.tamanoId, 10);
+            unidadTamanoId = Number.isNaN(parsedId)
+              ? tamanoUnidad.tamanoId
+              : parsedId;
+          } else {
+            unidadTamanoId = null;
+          }
+
+          const ventaIndividualCheckboxHtml = tamanoUnidad
+            ? `
+              <label class="checkbox-card" for="tamano-unidad">
+                <input
+                  type="checkbox"
+                  id="tamano-unidad"
+                  name="tamanoIds"
+                  value="${tamanoUnidad.tamanoId}"
+                />
+                <span class="checkbox-card-label">
+                  Venta por Pieza (Individual)
+                </span>
+              </label>
+            `
+            : `
+              <div class="empty-state" style="margin-top: 0.5rem">
+                <div class="empty-state-icon">⚠️</div>
+                <h3 class="empty-state-title">Falta tamaño de unidad</h3>
+                <p class="empty-state-text">
+                  Registra un tamaño con valor 1 en Cat_TamanoPaquetes para habilitar la venta por pieza.
+                </p>
+              </div>
+            `;
+
+          container.innerHTML = `
+            <div class="presentaciones-layout">
+              <div class="presentaciones-individual">
+                <p class="form-label" style="margin-bottom: 0.5rem;">Venta individual</p>
+                ${ventaIndividualCheckboxHtml}
+                <small class="form-hint">
+                  Marca esta opción si este producto se podrá vender por pieza suelta.
+                </small>
+              </div>
+
+              <div class="presentaciones-dinamicas" style="margin-top: 1.25rem;">
+                <p class="form-label" style="margin-bottom: 0.5rem;">Packs personalizados</p>
+                <div style="display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem;">
+                  <input
+                    type="number"
+                    id="nuevoPackInput"
+                    class="form-input"
+                    min="2"
+                    step="1"
+                    placeholder="Ej: 12"
+                    style="max-width: 140px;"
+                  />
+                  <button
+                    type="button"
+                    id="agregarPackBtn"
+                    class="btn btn-secondary"
+                    style="display: inline-flex; align-items: center; gap: 0.35rem;"
+                  >
+                    <span style="font-size: 1rem;">+</span>
+                    <span>Agregar pack</span>
+                  </button>
+                </div>
+                <div
+                  id="packsChipsContainer"
+                  style="display: flex; flex-wrap: wrap; gap: 0.5rem; min-height: 1.75rem;"
+                ></div>
+                <small class="form-hint">
+                  Ingresa cantidades de piezas por paquete (ej. 2, 3, 5, 10). No se permiten 0, 1 ni duplicados.
+                </small>
+              </div>
+            </div>
+          `;
+
+          const packInput = container.querySelector("#nuevoPackInput");
+          const agregarPackBtn = container.querySelector("#agregarPackBtn");
+          const chipsContainer = container.querySelector("#packsChipsContainer");
+
+          function renderPacksChips() {
+            if (!chipsContainer) return;
+
+            if (!Array.isArray(customPacks) || customPacks.length === 0) {
+              chipsContainer.innerHTML = `
+                <span style="font-size: 0.85rem; color: #6b7280;">
+                  Aún no has agregado packs.
+                </span>
+              `;
+              return;
+            }
+
+            chipsContainer.innerHTML = customPacks
+              .slice()
+              .sort((a, b) => a - b)
+              .map(
+                (n) => `
+                  <button
+                    type="button"
+                    class="badge badge-neutral"
+                    data-pack="${n}"
+                    style="display: inline-flex; align-items: center; gap: 0.35rem; cursor: pointer;"
+                  >
+                    <span>Pack de ${n}</span>
+                    <span aria-hidden="true">✕</span>
+                  </button>
+                `
+              )
+              .join("");
+
+            chipsContainer
+              .querySelectorAll("button[data-pack]")
+              .forEach((btn) => {
+                btn.addEventListener("click", () => {
+                  const value = Number.parseInt(btn.getAttribute("data-pack"), 10);
+                  customPacks = customPacks.filter((n) => n !== value);
+                  renderPacksChips();
+                });
+              });
+          }
+
+          function agregarPackDesdeInput() {
+            if (!packInput) return;
+            const raw = packInput.value.trim();
+            const parsed = Number.parseInt(raw, 10);
+
+            if (!Number.isInteger(parsed) || parsed < 2) {
+              showToast(
+                "Ingresa un número entero mayor o igual a 2 para crear un pack.",
+                "warning"
+              );
+              return;
+            }
+
+            if (parsed === 1) {
+              showToast(
+                "El valor 1 corresponde a venta individual. Usa el checkbox superior.",
+                "info"
+              );
+              return;
+            }
+
+            if (customPacks.includes(parsed)) {
+              showToast("Ya agregaste un pack con esa cantidad.", "info");
+              return;
+            }
+
+            customPacks.push(parsed);
+            packInput.value = "";
+            renderPacksChips();
+          }
+
+          if (agregarPackBtn) {
+            agregarPackBtn.addEventListener("click", agregarPackDesdeInput);
+          }
+          if (packInput) {
+            packInput.addEventListener("keydown", (event) => {
+              if (event.key === "Enter") {
+                event.preventDefault();
+                agregarPackDesdeInput();
+              }
+            });
+          }
+
+          renderPacksChips();
         } catch (error) {
           console.error("Error loading tamaños:", error);
           container.innerHTML = `
@@ -707,7 +839,18 @@
                 return Number.isNaN(parsed) ? null : parsed;
               })(),
               tamanoIds: tamanoIdsSeleccionados,
+              packs: Array.isArray(customPacks)
+                ? customPacks
+                    .filter((n) => Number.isInteger(n) && n >= 2)
+                    .sort((a, b) => a - b)
+                : [],
             };
+
+            const venderIndividual =
+              unidadTamanoId !== null &&
+              tamanoIdsSeleccionados.includes(Number(unidadTamanoId));
+
+            formData.venderIndividual = venderIndividual;
 
             const response = await fetch(`${API_BASE_URL}/admin/productos`, {
               method: "POST",

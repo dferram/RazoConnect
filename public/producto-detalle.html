@@ -468,6 +468,7 @@
     </div>
 
     <script src="js/api.js"></script>
+    <script src="js/carritoService.js"></script>
     <script>
       // Check authentication
       if (!requireAuth()) {
@@ -534,6 +535,113 @@
       }
 
       // Update total pieces display
+      function obtenerStockDisponibleVariante(variante) {
+        if (!variante) return 0;
+        if (typeof variante.stock === "number") {
+          return Math.max(variante.stock, 0);
+        }
+        const parsed = parseInt(variante.stock, 10);
+        return Number.isFinite(parsed) ? Math.max(parsed, 0) : 0;
+      }
+
+      function actualizarStockUI(variante) {
+        if (!stock || !cantidadInput || !addToCartBtn) {
+          return;
+        }
+
+        if (!variante) {
+          stock.textContent = "Sin stock disponible";
+          stock.classList.add("text-danger");
+          cantidadInput.disabled = true;
+          cantidadInput.value = 0;
+          addToCartBtn.disabled = true;
+          return;
+        }
+
+        // Stock virtual base de la variante (en paquetes de su propio piezasPorPaquete)
+        const stockVariante = obtenerStockDisponibleVariante(variante);
+
+        // Piezas por paquete originales de la variante (para reconstruir stock en piezas)
+        const piezasVariante =
+          typeof variante.piezasPorPaquete === "number"
+            ? variante.piezasPorPaquete
+            : parseInt(variante.piezasPorPaquete, 10) || 0;
+
+        // Piezas por paquete del pack actualmente seleccionado en la UI
+        const piezasPackSeleccionado = obtenerPiezasPorPaquete();
+
+        let stockPaquetes = stockVariante;
+
+        if (
+          Number.isFinite(stockVariante) &&
+          stockVariante >= 0 &&
+          Number.isFinite(piezasVariante) &&
+          piezasVariante > 0 &&
+          Number.isFinite(piezasPackSeleccionado) &&
+          piezasPackSeleccionado > 0
+        ) {
+          // Reconstruir aproximación del stock maestro en piezas y volver a dividir
+          const stockPiezasAprox = stockVariante * piezasVariante;
+          stockPaquetes = Math.floor(stockPiezasAprox / piezasPackSeleccionado);
+        }
+
+        console.log(
+          "Variante cambiada:",
+          variante?.dimensiones || variante?.medida || variante?.tamano || "N/D",
+          "Stock variante base:",
+          stockVariante,
+          "PiezasVariante:",
+          piezasVariante,
+          "PiezasPackSeleccionado:",
+          piezasPackSeleccionado,
+          "Stock mostrado (paquetes):",
+          stockPaquetes
+        );
+
+        if (!Number.isFinite(stockPaquetes) || stockPaquetes < 1) {
+          stock.textContent = "Agotado en esta presentación";
+          stock.classList.add("text-danger");
+          cantidadInput.disabled = true;
+          cantidadInput.value = 0;
+          addToCartBtn.disabled = true;
+        } else {
+          stock.textContent = `Stock disponible: ${stockPaquetes} paquetes`;
+          stock.classList.remove("text-danger");
+          cantidadInput.disabled = false;
+          addToCartBtn.disabled = false;
+          cantidadInput.max = stockPaquetes;
+          if (
+            !Number.isFinite(parseInt(cantidadInput.value, 10)) ||
+            parseInt(cantidadInput.value, 10) < 1 ||
+            parseInt(cantidadInput.value, 10) > stockPaquetes
+          ) {
+            cantidadInput.value = 1;
+          }
+        }
+      }
+
+      function clampCantidadPorStock() {
+        if (!cantidadInput) return;
+        const max = parseInt(cantidadInput.max, 10);
+        let value = parseInt(cantidadInput.value, 10);
+
+        if (!Number.isFinite(value) || value < 1) {
+          value = 1;
+        }
+
+        if (Number.isFinite(max) && max > 0 && value > max) {
+          value = max;
+          if (typeof showToast === "function") {
+            showToast(
+              `Solo hay ${max} paquete${max === 1 ? "" : "s"} disponibles.`,
+              "info"
+            );
+          }
+        }
+
+        cantidadInput.value = value;
+      }
+
       function updateTotalPiezas() {
         if (!varianteSeleccionada) {
           totalPiezas.textContent = "";
@@ -562,6 +670,42 @@
             : parseInt(varianteSeleccionada?.piezasPorPaquete, 10) || 0;
 
         return fallback;
+      }
+
+      function encontrarVariantePorTamano(tamano) {
+        if (!tamano || !Array.isArray(variantes) || variantes.length === 0) {
+          return null;
+        }
+
+        const piezasTamano = Number.isFinite(tamano.valor)
+          ? tamano.valor
+          : parseInt(tamano.valor, 10);
+
+        if (!Number.isFinite(piezasTamano) || piezasTamano <= 0) {
+          return null;
+        }
+
+        const dimensionActual = (
+          varianteSeleccionada?.dimensiones || ""
+        )
+          .toString()
+          .trim()
+          .toLowerCase();
+
+        const varianteEncontrada =
+          variantes.find((v) => {
+            const dim = (v.dimensiones || "")
+              .toString()
+              .trim()
+              .toLowerCase();
+            const piezas =
+              typeof v.piezasPorPaquete === "number"
+                ? v.piezasPorPaquete
+                : parseInt(v.piezasPorPaquete, 10) || 0;
+            return dim === dimensionActual && piezas === piezasTamano;
+          }) || null;
+
+        return varianteEncontrada;
       }
 
       function renderVariantImages(variant) {
@@ -649,10 +793,9 @@
         const precioPiezaValor = Number.isFinite(precioUnitario)
           ? precioUnitario
           : null;
-        const stockDisponible =
-          typeof varianteSeleccionada.stock === "number"
-            ? varianteSeleccionada.stock
-            : parseInt(varianteSeleccionada.stock, 10) || 0;
+        const stockDisponible = obtenerStockDisponibleVariante(
+          varianteSeleccionada
+        );
 
         productSKU.textContent = `SKU: ${sku}`;
 
@@ -719,16 +862,17 @@
           backorderMessage.style.display = tieneStock ? "none" : "block";
         }
 
-        cantidadInput.disabled = false;
-        decreaseBtn.disabled = false;
-        increaseBtn.disabled = false;
-        addToCartBtn.disabled = false;
+        cantidadInput.disabled = !tieneStock;
+        decreaseBtn.disabled = !tieneStock;
+        increaseBtn.disabled = !tieneStock;
+        addToCartBtn.disabled = !tieneStock;
 
-        cantidadInput.max = tieneStock ? stockDisponible : 999;
+        cantidadInput.max = stockDisponible > 0 ? stockDisponible : 0;
 
-        const cantidadActual = parseInt(cantidadInput.value, 10) || 1;
-        if (cantidadActual < 1) {
-          cantidadInput.value = 1;
+        if (!tieneStock) {
+          cantidadInput.value = 0;
+        } else {
+          clampCantidadPorStock();
         }
 
         renderVariantImages(varianteSeleccionada);
@@ -791,6 +935,7 @@
         }
 
         actualizarInformacionVariante();
+        actualizarStockUI(varianteSeleccionada);
       }
 
       function renderTamanos() {
@@ -880,7 +1025,16 @@
           tamanoSelect.value = tamanoSeleccionado.tamanoId;
         }
 
-        actualizarInformacionVariante();
+        const variantePorTamano = encontrarVariantePorTamano(tamanoSeleccionado);
+
+        if (variantePorTamano && variantePorTamano.varianteId) {
+          // Cambiar a la variante que corresponde al pack seleccionado
+          setVarianteSeleccionada(variantePorTamano.varianteId);
+        } else {
+          // Fallback: solo refrescar la info actual de variante
+          actualizarInformacionVariante();
+          actualizarStockUI(varianteSeleccionada);
+        }
       }
 
       function actualizarDescripcionTamano() {
@@ -980,6 +1134,15 @@
         if (current < max) {
           cantidadInput.value = current + 1;
           updateTotalPiezas();
+        } else if (Number.isFinite(max) && max > 0) {
+          if (typeof showToast === "function") {
+            showToast(
+              `No puedes agregar más de ${max} paquete${
+                max === 1 ? "" : "s"
+              }.`,
+              "info"
+            );
+          }
         }
       });
 
@@ -1020,6 +1183,7 @@
       }
 
       cantidadInput.addEventListener("input", () => {
+        clampCantidadPorStock();
         const value = parseInt(cantidadInput.value, 10);
         if (value < 1 || Number.isNaN(value)) {
           cantidadInput.value = 1;
@@ -1060,41 +1224,23 @@
         btnSpinner.style.display = "block";
 
         try {
-          const response = await API.agregarAlCarrito(
-            varianteSeleccionada.varianteId,
+          await CarritoService.agregarItem({
+            productoId: producto?.productoId,
+            varianteId: varianteSeleccionada.varianteId,
             cantidad,
-            tamanoSeleccionado.tamanoId
+          });
+
+          cantidadInput.value = Math.min(
+            1,
+            parseInt(cantidadInput.max, 10) || 1
           );
+          updateTotalPiezas();
 
-          if (response.ok && response.data.success) {
-            showToast(
-              "✅ Variante agregada al carrito exitosamente",
-              "success"
-            );
-
-            // Reset quantity
-            cantidadInput.value = Math.min(
-              1,
-              parseInt(cantidadInput.max, 10) || 1
-            );
-            updateTotalPiezas();
-
-            // Mostrar modal personalizado para ir al carrito
-            setTimeout(() => {
-              mostrarModalCarrito();
-            }, 800);
-          } else {
-            showToast(
-              response.data.message || "Error al agregar al carrito",
-              "error"
-            );
-          }
+          setTimeout(() => {
+            mostrarModalCarrito();
+          }, 800);
         } catch (error) {
           console.error("Error adding to cart:", error);
-          showToast(
-            "Error al conectar con el servidor. Intenta nuevamente.",
-            "error"
-          );
         } finally {
           // Reset button state
           addToCartBtn.disabled = false;

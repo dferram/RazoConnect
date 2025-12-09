@@ -335,6 +335,22 @@
                         step="1"
                         value="0"
                       />
+                      <div
+                        id="stockInfoAlert"
+                        class="form-hint"
+                        style="margin-top: 0.35rem; color: var(--text-secondary); font-size: 0.8rem;"
+                      >
+                        ℹ️ El stock que ingreses aquí se usará como inventario físico total.
+                      </div>
+                      <div
+                        id="stockInfoBadges"
+                        style="display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.25rem; font-size: 0.78rem;"
+                      ></div>
+                      <small
+                        id="stockInfoCapacity"
+                        class="form-hint"
+                        style="margin-top: 0.35rem; color: var(--text-secondary); font-size: 0.8rem; display: none;"
+                      ></small>
                     </div>
                   </div>
 
@@ -504,6 +520,7 @@
                         <th>Costo unitario</th>
                         <th>Stock</th>
                         <th>Estado</th>
+                        <th>Acciones</th>
                       </tr>
                     </thead>
                     <tbody id="variantsTableBody"></tbody>
@@ -573,8 +590,15 @@
       const skuSuggestion = document.getElementById("skuSuggestion");
       const skuSuggestionText = document.getElementById("skuSuggestionText");
       const applySkuSuggestion = document.getElementById("applySkuSuggestion");
+      const stockInput = document.getElementById("stock");
+      const stockInfoAlert = document.getElementById("stockInfoAlert");
+      const stockInfoBadges = document.getElementById("stockInfoBadges");
+      const stockInfoCapacity = document.getElementById("stockInfoCapacity");
 
       let productoCodigoModelo = null;
+      let tamanosConfiguradosMaestro = [];
+      let variantesProducto = [];
+      let editingVarianteId = null;
 
       if (!productoId || Number.isNaN(productoId)) {
         loadingState.style.display = "none";
@@ -624,14 +648,24 @@
           const response = await API.getProductoById(productoId);
 
           if (response.ok && response.data.success) {
-            const { producto, variantes } = response.data.data;
+            const { producto, variantes, tamanosDisponibles } =
+              response.data.data;
+
             productBreadcrumb.textContent = `Producto #${producto.productoId}`;
 
             // Guardar el código de modelo para sugerencias de SKU
             productoCodigoModelo = producto.codigoModelo || null;
 
-            renderProductSummary(producto, variantes);
-            renderVariants(variantes);
+            // Guardar configuración de presentaciones (pieza / packs) del maestro
+            tamanosConfiguradosMaestro = Array.isArray(tamanosDisponibles)
+              ? tamanosDisponibles
+              : [];
+
+            variantesProducto = Array.isArray(variantes) ? variantes : [];
+
+            renderProductSummary(producto, variantesProducto);
+            renderVariants(variantesProducto);
+            renderStockInfoForVariant();
 
             loadingState.style.display = "none";
             contentWrapper.style.display = "grid";
@@ -805,10 +839,217 @@
                 </button>
               </div>
             </td>
+            <td>
+              <button
+                type="button"
+                class="btn btn-secondary"
+                onclick="iniciarEdicionVariante(${variant.varianteId})"
+              >
+                Editar
+              </button>
+            </td>
           </tr>
         `;
           })
           .join("");
+      }
+
+      function buildPresentacionLabel(tamano) {
+        if (!tamano) return null;
+
+        const rawValor = tamano.valor ?? tamano.Valor ?? null;
+        const valor = Number.isFinite(rawValor)
+          ? rawValor
+          : parseInt(rawValor, 10);
+
+        const etiqueta = (tamano.etiqueta || tamano.Etiqueta || "").trim();
+
+        if (Number.isFinite(valor) && valor > 0) {
+          if (valor === 1) return etiqueta || "Venta Individual";
+          return etiqueta || `Pack de ${valor}`;
+        }
+
+        return etiqueta || `Presentación ${tamano.tamanoId}`;
+      }
+
+      function renderStockInfoForVariant() {
+        if (!stockInfoAlert || !stockInfoBadges || !stockInfoCapacity) return;
+
+        const presentaciones = Array.isArray(tamanosConfiguradosMaestro)
+          ? tamanosConfiguradosMaestro
+          : [];
+
+        if (!presentaciones.length) {
+          stockInfoAlert.textContent =
+            "El stock se asignará solo a esta variante (sin presentaciones adicionales configuradas en el producto maestro).";
+          stockInfoBadges.innerHTML = "";
+          stockInfoCapacity.style.display = "none";
+          stockInfoCapacity.textContent = "";
+          return;
+        }
+
+        stockInfoAlert.textContent =
+          "ℹ️ El stock que ingreses aquí será compartido automáticamente para:";
+
+        const badgesHtml = presentaciones
+          .map((t) => {
+            const label = buildPresentacionLabel(t);
+            if (!label) return "";
+            const rawValor = t.valor ?? t.Valor ?? null;
+            const valor = Number.isFinite(rawValor)
+              ? rawValor
+              : parseInt(rawValor, 10);
+
+            const icon = valor === 1 ? "✅" : "📦";
+            return `<span class="badge badge-neutral" style="display:inline-flex; align-items:center; gap:0.25rem;">
+        ${icon} ${label}
+      </span>`;
+          })
+          .join("");
+
+        stockInfoBadges.innerHTML = badgesHtml;
+        updateStockCapacityPreview();
+      }
+
+      function updateStockCapacityPreview() {
+        if (!stockInput || !stockInfoCapacity) return;
+
+        const totalPiezas = parseInt(stockInput.value, 10);
+
+        if (!Number.isFinite(totalPiezas) || totalPiezas <= 0) {
+          stockInfoCapacity.style.display = "none";
+          stockInfoCapacity.textContent = "";
+          return;
+        }
+
+        const presentaciones = Array.isArray(tamanosConfiguradosMaestro)
+          ? tamanosConfiguradosMaestro
+          : [];
+
+        const items = [];
+
+        presentaciones.forEach((t) => {
+          const rawValor = t.valor ?? t.Valor ?? null;
+          const valor = Number.isFinite(rawValor)
+            ? rawValor
+            : parseInt(rawValor, 10);
+
+          if (!Number.isFinite(valor) || valor <= 0) return;
+
+          const maxPacks = Math.floor(totalPiezas / valor);
+          if (maxPacks < 1) return;
+
+          const esUnidad = valor === 1;
+          const etiquetaBase = esUnidad
+            ? "Piezas sueltas"
+            : `Paquetes de ${valor} pzas`;
+
+          items.push(
+            `<li>${etiquetaBase} = <strong>${maxPacks}</strong></li>`
+          );
+        });
+
+        if (!items.length) {
+          stockInfoCapacity.style.display = "none";
+          stockInfoCapacity.textContent = "";
+          return;
+        }
+
+        stockInfoCapacity.style.display = "block";
+        stockInfoCapacity.innerHTML = `Con ${totalPiezas} piezas tienes para:<ul style="margin: 0.25rem 0 0 1.1rem; padding-left: 1rem; list-style: disc;">${items.join(
+          ""
+        )}</ul>`;
+      }
+
+      function resetVariantFormState() {
+        editingVarianteId = null;
+        if (variantForm) {
+          variantForm.reset();
+        }
+        if (variantBtnText) {
+          variantBtnText.textContent = "Guardar variante";
+        }
+        if (marginMetrics) {
+          marginMetrics.style.display = "none";
+        }
+        if (marginMessage) {
+          marginMessage.style.display = "block";
+          marginMessage.textContent =
+            "Ingresa costo y precio para calcular la ganancia.";
+        }
+        updateStockCapacityPreview();
+      }
+
+      function iniciarEdicionVariante(varianteId) {
+        if (!Array.isArray(variantesProducto) || !variantesProducto.length) {
+          return;
+        }
+
+        const idNumero = Number.parseInt(varianteId, 10);
+        if (!Number.isInteger(idNumero)) return;
+
+        const variante = variantesProducto.find((v) => {
+          const vid = v.varianteId ?? v.varianteid;
+          return Number.parseInt(vid, 10) === idNumero;
+        });
+
+        if (!variante) {
+          console.warn("Variante no encontrada para edición", varianteId);
+          return;
+        }
+
+        editingVarianteId = idNumero;
+
+        if (skuInput) {
+          skuInput.value = variante.sku || "";
+        }
+        if (dimensionesInput) {
+          dimensionesInput.value = variante.dimensiones || "";
+        }
+
+        const costoInputEl = document.getElementById("costoUnitario");
+        const precioInputEl = document.getElementById("precioUnitario");
+        const ofertaInputEl = document.getElementById("precioOferta");
+        const stockInputEl = document.getElementById("stock");
+
+        const costoVal =
+          typeof variante.costoUnitario === "number" &&
+          !Number.isNaN(variante.costoUnitario)
+            ? variante.costoUnitario
+            : null;
+        const precioVal =
+          typeof variante.precioUnitario === "number" &&
+          !Number.isNaN(variante.precioUnitario)
+            ? variante.precioUnitario
+            : null;
+        const ofertaVal =
+          typeof variante.precioOfertaUnitario === "number" &&
+          !Number.isNaN(variante.precioOfertaUnitario)
+            ? variante.precioOfertaUnitario
+            : null;
+
+        if (costoInputEl) {
+          costoInputEl.value = costoVal !== null ? String(costoVal) : "";
+        }
+        if (precioInputEl) {
+          precioInputEl.value = precioVal !== null ? String(precioVal) : "";
+        }
+        if (ofertaInputEl) {
+          ofertaInputEl.value = ofertaVal !== null ? String(ofertaVal) : "";
+        }
+        if (stockInputEl) {
+          const stockVal =
+            typeof variante.stock === "number" && !Number.isNaN(variante.stock)
+              ? variante.stock
+              : 0;
+          stockInputEl.value = String(stockVal);
+        }
+
+        if (variantBtnText) {
+          variantBtnText.textContent = "Actualizar variante";
+        }
+
+        calculateMarginPreview();
       }
 
       function formatCurrency(amount) {
@@ -822,6 +1063,7 @@
         event.preventDefault();
 
         const precioOfertaValue = document.getElementById("precioOferta").value;
+        const isEditing = Number.isInteger(editingVarianteId);
         const formData = {
           productoId,
           sku: document.getElementById("sku").value.trim(),
@@ -861,24 +1103,76 @@
           saveVariantBtn.disabled = true;
           variantBtnText.style.display = "none";
           variantBtnSpinner.style.display = "inline-block";
+          let response;
+          let data;
 
-          const response = await fetch(`${API_BASE_URL}/admin/variantes`, {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${adminToken}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(formData),
-          });
+          if (isEditing) {
+            let activoPayload;
+            if (Array.isArray(variantesProducto) && variantesProducto.length) {
+              const varianteOriginal = variantesProducto.find((v) => {
+                const vid = v.varianteId ?? v.varianteid;
+                return (
+                  Number.parseInt(vid, 10) ===
+                  Number.parseInt(editingVarianteId, 10)
+                );
+              });
+              if (varianteOriginal && varianteOriginal.activo !== undefined) {
+                activoPayload = varianteOriginal.activo;
+              }
+            }
 
-          const data = await response.json();
+            const payload = {
+              sku: formData.sku,
+              dimensiones: formData.dimensiones,
+              costoUnitario: formData.costoUnitario,
+              precioUnitario: formData.precioUnitario,
+              precioOfertaUnitario: formData.precioOfertaUnitario,
+            };
+
+            if (activoPayload !== undefined) {
+              payload.activo = activoPayload;
+            }
+
+            response = await fetch(
+              `${API_BASE_URL}/admin/variantes/${editingVarianteId}`,
+              {
+                method: "PUT",
+                headers: {
+                  Authorization: `Bearer ${adminToken}`,
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify(payload),
+              }
+            );
+          } else {
+            response = await fetch(`${API_BASE_URL}/admin/variantes`, {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${adminToken}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(formData),
+            });
+          }
+
+          data = await response.json();
 
           if (response.ok && data.success) {
-            showToast("Variante creada correctamente", "success");
-            variantForm.reset();
+            showToast(
+              isEditing
+                ? "Variante actualizada correctamente"
+                : "Variante creada correctamente",
+              "success"
+            );
+            resetVariantFormState();
             await loadProducto();
           } else {
-            throw new Error(data.message || "Error al crear variante");
+            throw new Error(
+              data.message ||
+                (isEditing
+                  ? "Error al actualizar variante"
+                  : "Error al crear variante")
+            );
           }
         } catch (error) {
           console.error("Error al crear variante:", error);
@@ -897,6 +1191,10 @@
       });
 
       resetVariantBtn.addEventListener("click", () => {
+        editingVarianteId = null;
+        if (variantBtnText) {
+          variantBtnText.textContent = "Guardar variante";
+        }
         marginMetrics.style.display = "none";
         marginMessage.textContent =
           "Ingresa costo y precio para calcular la ganancia.";
@@ -957,6 +1255,11 @@
             skuInput.focus();
           }
         });
+      }
+
+      if (stockInput) {
+        stockInput.addEventListener("input", updateStockCapacityPreview);
+        stockInput.addEventListener("blur", updateStockCapacityPreview);
       }
 
       // Toggle variant visibility

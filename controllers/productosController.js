@@ -158,6 +158,23 @@ const obtenerProductos = async (req, res) => {
 
     const whereClause = `WHERE ${filtros.join(" AND ")}`;
 
+    const varianteOrderBy =
+      oferta === "true"
+        ? `
+          CASE
+            WHEN pv.precioofertaunitario IS NOT NULL
+             AND pv.precioofertaunitario < pv.preciounitario
+            THEN 0
+            ELSE 1
+          END,
+          COALESCE(pv.precioofertaunitario, pv.preciounitario) ASC NULLS LAST,
+          pv.varianteid ASC
+        `
+        : `
+          COALESCE(pv.precioofertaunitario, pv.preciounitario) ASC NULLS LAST,
+          pv.varianteid ASC
+        `;
+
     const query = `
       SELECT
         p.productoid,
@@ -189,9 +206,7 @@ const obtenerProductos = async (req, res) => {
           pv.precioofertaunitario
         FROM producto_variantes pv
         WHERE pv.productoid = p.productoid
-        ORDER BY 
-          COALESCE(pv.precioofertaunitario, pv.preciounitario) ASC NULLS LAST, 
-          pv.varianteid ASC
+        ORDER BY ${varianteOrderBy}
         LIMIT 1
       ) variante_min ON TRUE
       LEFT JOIN LATERAL (
@@ -221,10 +236,45 @@ const obtenerProductos = async (req, res) => {
     const productRows = result.rows;
     const productoIds = productRows.map((row) => row.productoid);
 
+    const piezasPorVarianteMap = new Map();
+    const stockMaestroMap = new Map();
+
+    if (productoIds.length) {
+      const variantesStockResult = await db.query(
+        `SELECT productoid, varianteid, stock, piezasporpaquete
+         FROM producto_variantes
+         WHERE productoid = ANY($1::int[])`,
+        [productoIds]
+      );
+
+      variantesStockResult.rows.forEach((row) => {
+        const productId = row.productoid;
+        const piezasPorPaquete =
+          row.piezasporpaquete !== null
+            ? parseInt(row.piezasporpaquete, 10)
+            : null;
+        const stockFisico =
+          row.stock !== null ? Math.max(parseInt(row.stock, 10), 0) : 0;
+
+        piezasPorVarianteMap.set(row.varianteid, {
+          piezasPorPaquete,
+          stockFisico,
+        });
+
+        if (piezasPorPaquete === 1) {
+          stockMaestroMap.set(productId, stockFisico);
+        }
+      });
+    }
+
     const variantPriceMap = new Map();
+    const minSellingPriceMap = new Map();
+    const maxSellingPriceMap = new Map();
+    const hasActiveOfferMap = new Map();
+
     if (productoIds.length) {
       const variantesQuery = await db.query(
-        `SELECT productoid, preciounitario
+        `SELECT productoid, preciounitario, precioofertaunitario, activo
          FROM producto_variantes
          WHERE productoid = ANY($1::int[])
            AND preciounitario IS NOT NULL`,
@@ -234,11 +284,52 @@ const obtenerProductos = async (req, res) => {
       variantesQuery.rows.forEach((row) => {
         const productId = row.productoid;
         const precioUnitario = parseFloat(row.preciounitario);
-        if (!Number.isNaN(precioUnitario)) {
-          if (!variantPriceMap.has(productId)) {
-            variantPriceMap.set(productId, []);
-          }
-          variantPriceMap.get(productId).push(precioUnitario);
+        const precioOferta =
+          row.precioofertaunitario !== null &&
+          row.precioofertaunitario !== undefined
+            ? parseFloat(row.precioofertaunitario)
+            : null;
+
+        const estaActiva = row.activo === null || row.activo === undefined
+          ? true
+          : Boolean(row.activo);
+
+        if (!estaActiva || Number.isNaN(precioUnitario)) {
+          return;
+        }
+
+        if (!variantPriceMap.has(productId)) {
+          variantPriceMap.set(productId, []);
+        }
+        variantPriceMap.get(productId).push(precioUnitario);
+
+        const tieneOfertaValida =
+          precioOferta !== null &&
+          !Number.isNaN(precioOferta) &&
+          precioOferta > 0 &&
+          precioOferta < precioUnitario;
+
+        const precioVigente = tieneOfertaValida ? precioOferta : precioUnitario;
+        if (!Number.isFinite(precioVigente)) {
+          return;
+        }
+
+        const minActual = minSellingPriceMap.get(productId);
+        const maxActual = maxSellingPriceMap.get(productId);
+
+        minSellingPriceMap.set(
+          productId,
+          minActual === undefined ? precioVigente : Math.min(minActual, precioVigente)
+        );
+        maxSellingPriceMap.set(
+          productId,
+          maxActual === undefined ? precioVigente : Math.max(maxActual, precioVigente)
+        );
+
+        if (tieneOfertaValida) {
+          hasActiveOfferMap.set(productId, true);
+        } else if (!hasActiveOfferMap.has(productId)) {
+          hasActiveOfferMap.set(productId, false);
         }
       });
     }
@@ -309,20 +400,42 @@ const obtenerProductos = async (req, res) => {
           ? parseFloat(row.preciooferta)
           : null;
 
-      const varianteDestacada = row.varianteid_precio_min
-        ? {
-            varianteId: row.varianteid_precio_min,
-            sku: row.sku_precio_min,
-            dimensiones: row.dimensiones_precio_min || null,
-            stock:
-              row.stock_precio_min !== null
-                ? parseInt(row.stock_precio_min, 10)
-                : null,
-            precioUnitario:
-              row.precio_desde !== null ? parseFloat(row.precio_desde) : null,
-            precioOferta: precioOferta,
-          }
-        : null;
+      let varianteDestacada = null;
+      if (row.varianteid_precio_min) {
+        const piezasInfo =
+          piezasPorVarianteMap.get(row.varianteid_precio_min) || null;
+        const piezasPorPaquete =
+          piezasInfo?.piezasPorPaquete !== undefined
+            ? piezasInfo.piezasPorPaquete
+            : null;
+
+        let stockVariante =
+          piezasInfo?.stockFisico ??
+          (row.stock_precio_min !== null
+            ? Math.max(parseInt(row.stock_precio_min, 10), 0)
+            : null);
+
+        if (
+          piezasPorPaquete &&
+          piezasPorPaquete > 1 &&
+          stockMaestroMap.has(productId)
+        ) {
+          stockVariante = Math.floor(
+            stockMaestroMap.get(productId) / piezasPorPaquete
+          );
+        }
+
+        varianteDestacada = {
+          varianteId: row.varianteid_precio_min,
+          sku: row.sku_precio_min,
+          dimensiones: row.dimensiones_precio_min || null,
+          stock: stockVariante,
+          piezasPorPaquete,
+          precioUnitario:
+            row.precio_desde !== null ? parseFloat(row.precio_desde) : null,
+          precioOferta: precioOferta,
+        };
+      }
 
       const productId = row.productoid;
       const variantPrices = variantPriceMap.get(productId) || [];
@@ -360,6 +473,14 @@ const obtenerProductos = async (req, res) => {
             )
           : null;
 
+      const minSellingPrice = minSellingPriceMap.has(productId)
+        ? minSellingPriceMap.get(productId)
+        : null;
+      const maxSellingPrice = maxSellingPriceMap.has(productId)
+        ? maxSellingPriceMap.get(productId)
+        : null;
+      const hasActiveOffer = Boolean(hasActiveOfferMap.get(productId));
+
       return {
         productoId: productId,
         nombreProducto: row.nombreproducto,
@@ -377,6 +498,9 @@ const obtenerProductos = async (req, res) => {
         tieneOferta:
           precioOferta !== null &&
           precioOferta < parseFloat(row.precio_desde || 0),
+        minSellingPrice,
+        maxSellingPrice,
+        hasActiveOffer,
         precioPaqueteMin,
         precioPaqueteMax,
         imagenUrl: row.url_imagen || null,
@@ -487,6 +611,7 @@ const obtenerProductoPorId = async (req, res) => {
          pv.preciounitario,
          pv.precioofertaunitario,
          pv.stock,
+         pv.piezasporpaquete,
          pv.tipoproductoid,
          pv.medidaid,
          COALESCE(
@@ -510,14 +635,41 @@ const obtenerProductoPorId = async (req, res) => {
       [id]
     );
 
-    const variantes = variantesResult.rows.map((row) => {
+    const variantesRaw = variantesResult.rows;
+
+    const varianteMaestra = variantesRaw.find((row) => {
+      if (row.piezasporpaquete === null || row.piezasporpaquete === undefined) {
+        return false;
+      }
+      const piezas = parseInt(row.piezasporpaquete, 10);
+      return !Number.isNaN(piezas) && piezas === 1;
+    });
+
+    const stockMaestro =
+      varianteMaestra && varianteMaestra.stock !== null
+        ? Math.max(parseInt(varianteMaestra.stock, 10), 0)
+        : null;
+
+    const variantes = variantesRaw.map((row) => {
       const precioUnitario =
         row.preciounitario !== null ? parseFloat(row.preciounitario) : null;
       const precioOfertaUnitario =
         row.precioofertaunitario !== null ? parseFloat(row.precioofertaunitario) : null;
       const costoUnitario =
         row.costounitario !== null ? parseFloat(row.costounitario) : null;
-      const stock = row.stock !== null ? parseInt(row.stock, 10) : null;
+      const piezasPorPaquete =
+        row.piezasporpaquete !== null
+          ? parseInt(row.piezasporpaquete, 10)
+          : null;
+      let stockCalculado =
+        row.stock !== null ? Math.max(parseInt(row.stock, 10), 0) : null;
+      if (
+        piezasPorPaquete &&
+        piezasPorPaquete > 1 &&
+        typeof stockMaestro === "number"
+      ) {
+        stockCalculado = Math.floor(stockMaestro / piezasPorPaquete);
+      }
 
       const imagenes = Array.isArray(row.imagenes)
         ? row.imagenes.map((img) => ({
@@ -539,7 +691,8 @@ const obtenerProductoPorId = async (req, res) => {
         costoUnitario,
         precioUnitario,
         precioOfertaUnitario,
-        stock,
+        stock: stockCalculado,
+        piezasPorPaquete,
         tipoProductoId:
           row.tipoproductoid !== null ? parseInt(row.tipoproductoid, 10) : null,
         medidaId: row.medidaid !== null ? parseInt(row.medidaid, 10) : null,
