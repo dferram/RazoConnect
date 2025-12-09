@@ -28,6 +28,9 @@ app.use(express.urlencoded({ extended: true })); // Parsear datos de formularios
 // Servir archivos estáticos del frontend
 app.use(express.static(path.join(__dirname, "public")));
 
+// Servir iconos (favicon y otros) desde la carpeta /icon
+app.use("/icon", express.static(path.join(__dirname, "icon")));
+
 // Middleware de logging simple
 app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);

@@ -35,6 +35,38 @@ function obtenerPiezasDesdeTamanoInfo(tamanoInfo) {
   return null;
 }
 
+async function calcularPiezasTotalesEnCarritoParaVariante(carritoId, varianteId) {
+  const result = await db.query(
+    `SELECT
+       COALESCE(ic.cantidadpaquetes, ic.cantidad) AS cantidad_paquetes,
+       row_to_json(t) AS tamano_info
+     FROM itemsdelcarrito ic
+     LEFT JOIN cat_tamanopaquetes t ON t.tamanoid = ic.tamanoid
+     WHERE ic.carritoid = $1 AND ic.varianteid = $2`,
+    [carritoId, varianteId]
+  );
+
+  let totalPiezas = 0;
+
+  for (const row of result.rows) {
+    const piezasPorPaquete = obtenerPiezasDesdeTamanoInfo(row.tamano_info) || 0;
+    const cantidadPaquetes =
+      row.cantidad_paquetes !== null && row.cantidad_paquetes !== undefined
+        ? parseInt(row.cantidad_paquetes, 10)
+        : 0;
+
+    if (
+      !Number.isNaN(cantidadPaquetes) &&
+      cantidadPaquetes > 0 &&
+      piezasPorPaquete > 0
+    ) {
+      totalPiezas += cantidadPaquetes * piezasPorPaquete;
+    }
+  }
+
+  return totalPiezas;
+}
+
 const validateAgregarAlCarritoInput = ({ VarianteID, Cantidad, TamanoID }) => {
   if (
     VarianteID === undefined ||
@@ -382,6 +414,18 @@ const agregarAlCarrito = async (req, res) => {
       });
     }
 
+    const stockFisico =
+      variante.stock !== null && variante.stock !== undefined
+        ? parseInt(variante.stock, 10)
+        : 0;
+
+    if (stockFisico <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "No hay stock disponible para esta variante.",
+      });
+    }
+
     // Obtener o crear el carrito del cliente
     let carritoResult = await db.query(
       "SELECT carritoid FROM carritodecompra WHERE clienteid = $1",
@@ -410,6 +454,20 @@ const agregarAlCarrito = async (req, res) => {
       "SELECT itemid, COALESCE(cantidadpaquetes, cantidad) AS cantidad_paquetes, tamanoid FROM itemsdelcarrito WHERE carritoid = $1 AND varianteid = $2 AND tamanoid = $3",
       [carritoId, varianteId, tamanoId]
     );
+
+    // Calcular piezas totales actuales en el carrito para esta variante
+    const piezasActualesEnCarrito =
+      await calcularPiezasTotalesEnCarritoParaVariante(carritoId, varianteId);
+
+    const piezasNuevas = cantidadEntera * piezasPorTamano;
+    const piezasTotalesPost = piezasActualesEnCarrito + piezasNuevas;
+
+    if (piezasTotalesPost > stockFisico) {
+      return res.status(400).json({
+        success: false,
+        message: `No hay suficiente stock disponible. Intentas llevar ${piezasTotalesPost} piezas y solo quedan ${stockFisico}.`,
+      });
+    }
 
     let itemResult;
     if (itemExistente.rows.length > 0) {
@@ -479,20 +537,22 @@ const actualizarCarrito = async (req, res) => {
   try {
     const clienteId = req.user.userId;
     const varianteId = parseInt(req.params.varianteId);
-    const { CantidadPaquetes } = req.body;
+    const { CantidadPaquetes, TamanoID } = req.body;
 
     // Validar datos de entrada
     const cantidadPaquetesEntera = parseInt(CantidadPaquetes, 10);
+    const tamanoId = TamanoID !== undefined ? parseInt(TamanoID, 10) : NaN;
 
     if (
       Number.isNaN(varianteId) ||
       !Number.isInteger(cantidadPaquetesEntera) ||
-      cantidadPaquetesEntera <= 0
+      cantidadPaquetesEntera <= 0 ||
+      Number.isNaN(tamanoId)
     ) {
       return res.status(400).json({
         success: false,
         message:
-          "La cantidad debe ser un entero mayor a 0 y VarianteID debe ser válido",
+          "La cantidad debe ser un entero mayor a 0 y VarianteID/TamanoID deben ser válidos",
       });
     }
 
@@ -500,13 +560,15 @@ const actualizarCarrito = async (req, res) => {
       `SELECT
          pv.varianteid,
          pv.productoid,
-         pv.preciopaquete,
+         pv.preciounitario,
+         pv.precioofertaunitario,
          pv.stock,
          pv.sku,
          p.nombreproducto
        FROM producto_variantes pv
        INNER JOIN productos p ON p.productoid = pv.productoid
-       WHERE pv.varianteid = $1`,
+       WHERE pv.varianteid = $1
+       LIMIT 1`,
       [varianteId]
     );
 
@@ -518,6 +580,18 @@ const actualizarCarrito = async (req, res) => {
     }
 
     const variante = varianteResult.rows[0];
+
+    const stockFisico =
+      variante.stock !== null && variante.stock !== undefined
+        ? parseInt(variante.stock, 10)
+        : 0;
+
+    if (stockFisico <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "No hay stock disponible para esta variante.",
+      });
+    }
 
     // Obtener el carrito del cliente
     const carritoResult = await db.query(
@@ -534,18 +608,78 @@ const actualizarCarrito = async (req, res) => {
 
     const carritoId = carritoResult.rows[0].carritoid;
 
-    // Actualizar la cantidad del item
-    const updateResult = await db.query(
-      "UPDATE itemsdelcarrito SET cantidadpaquetes = $1 WHERE carritoid = $2 AND varianteid = $3 RETURNING itemid, varianteid, cantidadpaquetes",
-      [cantidadPaquetesEntera, carritoId, varianteId]
+    // Obtener el item actual (para conocer tamano y cantidad actual)
+    const itemActualResult = await db.query(
+      `SELECT
+         ic.itemid,
+         COALESCE(ic.cantidadpaquetes, ic.cantidad) AS cantidad_paquetes,
+         ic.tamanoid,
+         row_to_json(t) AS tamano_info
+       FROM itemsdelcarrito ic
+       LEFT JOIN cat_tamanopaquetes t ON t.tamanoid = ic.tamanoid
+       WHERE ic.carritoid = $1 AND ic.varianteid = $2 AND ic.tamanoid = $3`,
+      [carritoId, varianteId, tamanoId]
     );
 
-    if (updateResult.rows.length === 0) {
+    if (itemActualResult.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        message: "Variante no encontrada en el carrito",
+        message: "Variante no encontrada en el carrito para la presentación seleccionada",
       });
     }
+    const itemActual = itemActualResult.rows[0];
+
+    const piezasPorPaqueteActual =
+      obtenerPiezasDesdeTamanoInfo(itemActual.tamano_info) || 0;
+
+    if (piezasPorPaqueteActual <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "El tamaño seleccionado no tiene valor válido",
+      });
+    }
+
+    // Calcular precio unitario efectivo (oferta o normal)
+    const precioBase =
+      variante.preciounitario !== null && variante.preciounitario !== undefined
+        ? parseFloat(variante.preciounitario)
+        : null;
+    const precioOferta =
+      variante.precioofertaunitario !== null &&
+      variante.precioofertaunitario !== undefined
+        ? parseFloat(variante.precioofertaunitario)
+        : null;
+    const precioUnitario = precioOferta || precioBase;
+
+    // Calcular piezas totales actuales en el carrito para esta variante
+    const piezasActualesEnCarrito =
+      await calcularPiezasTotalesEnCarritoParaVariante(carritoId, varianteId);
+
+    const cantidadActualLinea =
+      itemActual.cantidad_paquetes !== null &&
+      itemActual.cantidad_paquetes !== undefined
+        ? parseInt(itemActual.cantidad_paquetes, 10)
+        : 0;
+
+    const piezasLineaActual = cantidadActualLinea * piezasPorPaqueteActual;
+    const piezasLineaNueva =
+      cantidadPaquetesEntera * piezasPorPaqueteActual;
+
+    const piezasTotalesPost =
+      piezasActualesEnCarrito - piezasLineaActual + piezasLineaNueva;
+
+    if (piezasTotalesPost > stockFisico) {
+      return res.status(400).json({
+        success: false,
+        message: `No hay suficiente stock disponible. Intentas llevar ${piezasTotalesPost} piezas y solo quedan ${stockFisico}.`,
+      });
+    }
+
+    // Actualizar la cantidad del item específico
+    const updateResult = await db.query(
+      "UPDATE itemsdelcarrito SET cantidadpaquetes = $1, cantidad = $1 WHERE itemid = $2 RETURNING itemid, varianteid, cantidadpaquetes",
+      [cantidadPaquetesEntera, itemActual.itemid]
+    );
 
     // Actualizar última modificación del carrito
     await db.query(
@@ -554,6 +688,18 @@ const actualizarCarrito = async (req, res) => {
     );
 
     const item = updateResult.rows[0];
+
+    const precioPaquete =
+      precioUnitario !== null && piezasPorPaqueteActual
+        ? parseFloat((precioUnitario * piezasPorPaqueteActual).toFixed(2))
+        : null;
+
+    const subtotal =
+      precioPaquete !== null
+        ? parseFloat(
+            (item.cantidadpaquetes * precioPaquete).toFixed(2)
+          )
+        : null;
 
     res.status(200).json({
       success: true,
@@ -566,18 +712,8 @@ const actualizarCarrito = async (req, res) => {
           nombreProducto: variante.nombreproducto,
           sku: variante.sku,
           cantidadPaquetes: item.cantidadpaquetes,
-          precioPaquete:
-            variante.preciopaquete !== null
-              ? parseFloat(variante.preciopaquete)
-              : null,
-          subtotal:
-            variante.preciopaquete !== null
-              ? parseFloat(
-                  (
-                    item.cantidadpaquetes * parseFloat(variante.preciopaquete)
-                  ).toFixed(2)
-                )
-              : null,
+          precioPaquete,
+          subtotal,
         },
       },
     });
@@ -592,18 +728,28 @@ const actualizarCarrito = async (req, res) => {
 };
 
 /**
- * Eliminar un producto del carrito
- * DELETE /api/carrito/:productoId
+ * Cambiar la variante (medida física) de una línea del carrito
+ * PUT /api/carrito/item/:itemId/cambiar-variante
  */
-const eliminarDelCarrito = async (req, res) => {
+const cambiarVarianteItemCarrito = async (req, res) => {
   try {
     const clienteId = req.user.userId;
-    const varianteId = parseInt(req.params.varianteId);
+    const itemId = parseInt(req.params.itemId, 10);
+    const { NuevaVarianteID, TamanoID } = req.body || {};
 
-    if (Number.isNaN(varianteId)) {
+    const nuevaVarianteId =
+      NuevaVarianteID !== undefined && NuevaVarianteID !== null
+        ? parseInt(NuevaVarianteID, 10)
+        : NaN;
+    const tamanoIdBody =
+      TamanoID !== undefined && TamanoID !== null
+        ? parseInt(TamanoID, 10)
+        : NaN;
+
+    if (Number.isNaN(itemId) || Number.isNaN(nuevaVarianteId)) {
       return res.status(400).json({
         success: false,
-        message: "VarianteID inválido",
+        message: "ItemID y NuevaVarianteID deben ser válidos",
       });
     }
 
@@ -622,16 +768,259 @@ const eliminarDelCarrito = async (req, res) => {
 
     const carritoId = carritoResult.rows[0].carritoid;
 
-    // Eliminar el item del carrito
+    // Obtener la línea actual del carrito y el producto asociado
+    const itemResult = await db.query(
+      `SELECT
+         ic.itemid,
+         COALESCE(ic.cantidadpaquetes, ic.cantidad) AS cantidad_paquetes,
+         ic.tamanoid,
+         ic.varianteid AS variante_actual_id,
+         pv.productoid
+       FROM itemsdelcarrito ic
+       INNER JOIN producto_variantes pv ON pv.varianteid = ic.varianteid
+       WHERE ic.carritoid = $1 AND ic.itemid = $2
+       LIMIT 1`,
+      [carritoId, itemId]
+    );
+
+    if (itemResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Item no encontrado en el carrito",
+      });
+    }
+
+    const itemActual = itemResult.rows[0];
+    const cantidadPaquetes =
+      itemActual.cantidad_paquetes !== null &&
+      itemActual.cantidad_paquetes !== undefined
+        ? parseInt(itemActual.cantidad_paquetes, 10)
+        : 0;
+
+    if (!Number.isInteger(cantidadPaquetes) || cantidadPaquetes <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "La cantidad actual del item no es válida",
+      });
+    }
+
+    const tamanoIdActual =
+      itemActual.tamanoid !== null && itemActual.tamanoid !== undefined
+        ? parseInt(itemActual.tamanoid, 10)
+        : NaN;
+
+    let tamanoIdFinal = tamanoIdActual;
+    if (!Number.isNaN(tamanoIdBody)) {
+      tamanoIdFinal = tamanoIdBody;
+    }
+
+    if (Number.isNaN(tamanoIdFinal) || tamanoIdFinal <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "TamanoID inválido para cambio de variante",
+      });
+    }
+
+    const productId = itemActual.productoid;
+
+    // Obtener información de la nueva variante y validar que pertenezca al mismo producto y tamaño permitido
+    const varianteResult = await db.query(
+      `SELECT
+         pv.varianteid,
+         pv.productoid,
+         pv.sku,
+         pv.stock,
+         pv.preciounitario,
+         pv.precioofertaunitario,
+         p.nombreproducto,
+         row_to_json(t) AS tamano_info
+       FROM producto_variantes pv
+       INNER JOIN productos p ON p.productoid = pv.productoid
+       INNER JOIN producto_tamanosdisponibles ptd ON ptd.productoid = p.productoid AND ptd.tamanoid = $3
+       INNER JOIN cat_tamanopaquetes t ON t.tamanoid = ptd.tamanoid
+       WHERE pv.varianteid = $1 AND pv.productoid = $2
+       LIMIT 1`,
+      [nuevaVarianteId, productId, tamanoIdFinal]
+    );
+
+    if (varianteResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Variante o tamaño no válido para este producto",
+      });
+    }
+
+    const variante = varianteResult.rows[0];
+
+    const piezasPorTamano =
+      obtenerPiezasDesdeTamanoInfo(variante.tamano_info) || 0;
+
+    if (!piezasPorTamano || piezasPorTamano <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "El tamaño seleccionado no tiene valor válido",
+      });
+    }
+
+    const stockFisico =
+      variante.stock !== null && variante.stock !== undefined
+        ? parseInt(variante.stock, 10)
+        : 0;
+
+    if (stockFisico <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "No hay stock disponible para esta variante.",
+      });
+    }
+
+    // Calcular piezas totales actuales en el carrito para la nueva variante (sin incluir aún esta línea)
+    const piezasActualesNuevaVariante =
+      await calcularPiezasTotalesEnCarritoParaVariante(
+        carritoId,
+        nuevaVarianteId
+      );
+
+    const piezasLineaNueva = cantidadPaquetes * piezasPorTamano;
+    const piezasTotalesPost =
+      piezasActualesNuevaVariante + piezasLineaNueva;
+
+    if (piezasTotalesPost > stockFisico) {
+      return res.status(400).json({
+        success: false,
+        message: `No hay suficiente stock disponible. Intentas llevar ${piezasTotalesPost} piezas y solo quedan ${stockFisico}.`,
+      });
+    }
+
+    // Calcular precio unitario efectivo (oferta o normal)
+    const precioBase =
+      variante.preciounitario !== null &&
+      variante.preciounitario !== undefined
+        ? parseFloat(variante.preciounitario)
+        : null;
+    const precioOferta =
+      variante.precioofertaunitario !== null &&
+      variante.precioofertaunitario !== undefined
+        ? parseFloat(variante.precioofertaunitario)
+        : null;
+    const precioUnitario = precioOferta || precioBase;
+
+    // Actualizar la línea del carrito con la nueva variante y tamaño
+    const updateResult = await db.query(
+      `UPDATE itemsdelcarrito
+       SET varianteid = $1,
+           tamanoid = $2
+       WHERE itemid = $3 AND carritoid = $4
+       RETURNING itemid, varianteid, tamanoid, COALESCE(cantidadpaquetes, cantidad) AS cantidad_paquetes`,
+      [nuevaVarianteId, tamanoIdFinal, itemId, carritoId]
+    );
+
+    if (updateResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "No se pudo actualizar el item del carrito",
+      });
+    }
+
+    // Actualizar última modificación del carrito
+    await db.query(
+      "UPDATE carritodecompra SET ultimamodificacion = NOW() WHERE carritoid = $1",
+      [carritoId]
+    );
+
+    const itemActualizado = updateResult.rows[0];
+
+    const precioPaquete =
+      precioUnitario !== null && piezasPorTamano
+        ? parseFloat((precioUnitario * piezasPorTamano).toFixed(2))
+        : null;
+
+    const subtotal =
+      precioPaquete !== null &&
+      itemActualizado.cantidad_paquetes !== null &&
+      itemActualizado.cantidad_paquetes !== undefined
+        ? parseFloat(
+            (
+              parseInt(itemActualizado.cantidad_paquetes, 10) *
+              precioPaquete
+            ).toFixed(2)
+          )
+        : null;
+
+    res.status(200).json({
+      success: true,
+      message: "Variante actualizada exitosamente",
+      data: {
+        item: {
+          itemId: itemActualizado.itemid,
+          varianteId: itemActualizado.varianteid,
+          productoId: variante.productoid,
+          nombreProducto: variante.nombreproducto,
+          sku: variante.sku,
+          tamanoId: itemActualizado.tamanoid,
+          cantidadPaquetes:
+            itemActualizado.cantidad_paquetes !== null &&
+            itemActualizado.cantidad_paquetes !== undefined
+              ? parseInt(itemActualizado.cantidad_paquetes, 10)
+              : null,
+          piezasPorTamano,
+          precioUnitario,
+          precioPaquete,
+          subtotal,
+        },
+      },
+    });
+  } catch (error) {
+    console.error("Error al cambiar variante del carrito:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error al cambiar la variante del producto en el carrito",
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * Eliminar una línea específica del carrito
+ * DELETE /api/carrito/:itemId
+ */
+const eliminarDelCarrito = async (req, res) => {
+  try {
+    const clienteId = req.user.userId;
+    const itemId = parseInt(req.params.itemId, 10);
+
+    if (Number.isNaN(itemId)) {
+      return res.status(400).json({
+        success: false,
+        message: "ItemID inválido",
+      });
+    }
+
+    // Obtener el carrito del cliente
+    const carritoResult = await db.query(
+      "SELECT carritoid FROM carritodecompra WHERE clienteid = $1",
+      [clienteId]
+    );
+
+    if (carritoResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Carrito no encontrado",
+      });
+    }
+
+    const carritoId = carritoResult.rows[0].carritoid;
+
+    // Eliminar solo el item específico del carrito
     const deleteResult = await db.query(
-      "DELETE FROM itemsdelcarrito WHERE carritoid = $1 AND varianteid = $2 RETURNING itemid",
-      [carritoId, varianteId]
+      "DELETE FROM itemsdelcarrito WHERE carritoid = $1 AND itemid = $2 RETURNING itemid",
+      [carritoId, itemId]
     );
 
     if (deleteResult.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        message: "Variante no encontrada en el carrito",
+        message: "Item no encontrado en el carrito",
       });
     }
 
@@ -659,5 +1048,6 @@ module.exports = {
   obtenerCarrito,
   agregarAlCarrito,
   actualizarCarrito,
+  cambiarVarianteItemCarrito,
   eliminarDelCarrito,
 };

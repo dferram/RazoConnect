@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Agregar Producto - Admin RazoConnect</title>
+    <link rel="icon" type="image/png" href="/icon/Logo_Razo.png" />
 
     <!-- PROTECCIÓN DE AUTENTICACIÓN ADMIN -->
     <script src="js/auth-guard-admin.js"></script>
@@ -60,6 +61,55 @@
         margin-top: 0.35rem;
         font-size: 0.825rem;
         color: #6b7280;
+      }
+
+      .packs-chips-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        min-height: 1.75rem;
+        margin-top: 0.25rem;
+      }
+
+      .pack-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.4rem 0.9rem;
+        border-radius: 999px;
+        background: #ffffff;
+        border: 1px solid rgba(79, 70, 229, 0.25);
+        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.08);
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #111827;
+        cursor: pointer;
+      }
+
+      .pack-chip:hover {
+        border-color: rgba(79, 70, 229, 0.55);
+        box-shadow: 0 8px 20px rgba(79, 70, 229, 0.18);
+        background: #ffffff;
+      }
+
+      .pack-chip-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 18px;
+        height: 18px;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        line-height: 1;
+        color: #9ca3af;
+        transition: background-color 0.2s ease, color 0.2s ease,
+          transform 0.2s ease;
+      }
+
+      .pack-chip:hover .pack-chip-icon {
+        background-color: rgba(239, 68, 68, 0.08);
+        color: #ef4444;
+        transform: scale(1.05);
       }
     </style>
   </head>
@@ -533,6 +583,20 @@
 
           const tamanos = data.data.tamanos;
 
+          const packsFrecuentes = Array.from(
+            new Set(
+              tamanos
+                .map((tamano) => {
+                  const rawValor = tamano.valor ?? tamano.Valor ?? null;
+                  const valor = Number.isFinite(rawValor)
+                    ? rawValor
+                    : parseInt(rawValor, 10);
+                  return Number.isFinite(valor) ? valor : null;
+                })
+                .filter((valor) => Number.isFinite(valor) && valor > 1)
+            )
+          ).sort((a, b) => a - b);
+
           const tamanoUnidad = tamanos.find((tamano) => {
             const valor = tamano.valor ?? null;
             return Number.isFinite(valor) ? valor === 1 : parseInt(valor, 10) === 1;
@@ -583,6 +647,21 @@
 
               <div class="presentaciones-dinamicas" style="margin-top: 1.25rem;">
                 <p class="form-label" style="margin-bottom: 0.5rem;">Packs personalizados</p>
+
+                <div class="packs-suggestions-wrapper" style="margin-bottom: 0.5rem;">
+                  <small
+                    id="packsSuggestionsLabel"
+                    class="form-hint"
+                    style="display: block; margin-bottom: 0.25rem;"
+                  >
+                    Packs frecuentes:
+                  </small>
+                  <div
+                    id="packsSuggestionsContainer"
+                    class="packs-suggestions-container"
+                  ></div>
+                </div>
+
                 <div style="display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem;">
                   <input
                     type="number"
@@ -603,10 +682,7 @@
                     <span>Agregar pack</span>
                   </button>
                 </div>
-                <div
-                  id="packsChipsContainer"
-                  style="display: flex; flex-wrap: wrap; gap: 0.5rem; min-height: 1.75rem;"
-                ></div>
+                <div id="packsChipsContainer" class="packs-chips-container"></div>
                 <small class="form-hint">
                   Ingresa cantidades de piezas por paquete (ej. 2, 3, 5, 10). No se permiten 0, 1 ni duplicados.
                 </small>
@@ -617,6 +693,70 @@
           const packInput = container.querySelector("#nuevoPackInput");
           const agregarPackBtn = container.querySelector("#agregarPackBtn");
           const chipsContainer = container.querySelector("#packsChipsContainer");
+          const suggestionsContainer = container.querySelector(
+            "#packsSuggestionsContainer"
+          );
+          const suggestionsLabel = container.querySelector(
+            "#packsSuggestionsLabel"
+          );
+
+          function renderPackSuggestions() {
+            if (!suggestionsContainer) return;
+
+            if (!packsFrecuentes.length) {
+              if (suggestionsLabel) {
+                suggestionsLabel.style.display = "none";
+              }
+              suggestionsContainer.innerHTML = "";
+              return;
+            }
+
+            if (suggestionsLabel) {
+              suggestionsLabel.style.display = "block";
+            }
+
+            suggestionsContainer.innerHTML = packsFrecuentes
+              .map((valor) => {
+                const isActive = Array.isArray(customPacks)
+                  ? customPacks.includes(valor)
+                  : false;
+                const activeClass = isActive
+                  ? " pack-suggestion-chip--active"
+                  : "";
+                return `
+                  <button
+                    type="button"
+                    class="pack-suggestion-chip${activeClass}"
+                    data-pack="${valor}"
+                  >
+                    Pack de ${valor}
+                  </button>
+                `;
+              })
+              .join("");
+
+            suggestionsContainer
+              .querySelectorAll("button[data-pack]")
+              .forEach((btn) => {
+                btn.addEventListener("click", () => {
+                  const value = Number.parseInt(
+                    btn.getAttribute("data-pack"),
+                    10
+                  );
+                  if (!Number.isInteger(value) || value < 2) return;
+
+                  if (customPacks.includes(value)) {
+                    customPacks = customPacks.filter((n) => n !== value);
+                    btn.classList.remove("pack-suggestion-chip--active");
+                  } else {
+                    customPacks.push(value);
+                    btn.classList.add("pack-suggestion-chip--active");
+                  }
+
+                  renderPacksChips();
+                });
+              });
+          }
 
           function renderPacksChips() {
             if (!chipsContainer) return;
@@ -637,12 +777,11 @@
                 (n) => `
                   <button
                     type="button"
-                    class="badge badge-neutral"
+                    class="pack-chip"
                     data-pack="${n}"
-                    style="display: inline-flex; align-items: center; gap: 0.35rem; cursor: pointer;"
                   >
                     <span>Pack de ${n}</span>
-                    <span aria-hidden="true">✕</span>
+                    <span class="pack-chip-icon" aria-hidden="true">×</span>
                   </button>
                 `
               )
@@ -688,6 +827,7 @@
             customPacks.push(parsed);
             packInput.value = "";
             renderPacksChips();
+            renderPackSuggestions();
           }
 
           if (agregarPackBtn) {
@@ -703,6 +843,7 @@
           }
 
           renderPacksChips();
+          renderPackSuggestions();
         } catch (error) {
           console.error("Error loading tamaños:", error);
           container.innerHTML = `
@@ -810,6 +951,17 @@
         .addEventListener("submit", async (e) => {
           e.preventDefault();
 
+          const categoriaSelect = document.getElementById("categoriaId");
+          const rawCategoriaId = categoriaSelect ? categoriaSelect.value : "";
+
+          if (!rawCategoriaId) {
+            showToast(
+              "Selecciona una categoría para el producto maestro.",
+              "warning"
+            );
+            return;
+          }
+
           const submitBtn = document.getElementById("submitBtn");
           const btnText = document.getElementById("btnText");
           const btnSpinner = document.getElementById("btnSpinner");
@@ -852,6 +1004,18 @@
 
             formData.venderIndividual = venderIndividual;
 
+            // DEBUG: inspeccionar qué se está enviando al backend al crear producto maestro
+            console.group("[DEBUG] Crear Producto Maestro - Payload");
+            console.log("URL:", `${API_BASE_URL}/admin/productos`);
+            console.log("Payload (formData):", formData);
+            console.log("tamanoIds seleccionados:", tamanoIdsSeleccionados);
+            console.log("customPacks (packs a enviar):", formData.packs);
+            console.log("venderIndividual:", formData.venderIndividual);
+            console.groupEnd();
+
+            // Exponer último payload en window para inspección manual
+            window.__RAZO_DEBUG_ULTIMO_PRODUCTO_MAESTRO_PAYLOAD = formData;
+
             const response = await fetch(`${API_BASE_URL}/admin/productos`, {
               method: "POST",
               headers: {
@@ -863,8 +1027,28 @@
 
             const data = await response.json();
 
+            // DEBUG: inspeccionar respuesta del backend al crear producto maestro
+            console.group("[DEBUG] Crear Producto Maestro - Respuesta");
+            console.log("Status:", response.status, "OK:", response.ok);
+            console.log("Respuesta completa (data):", data);
+            console.groupEnd();
+
+            window.__RAZO_DEBUG_ULTIMO_PRODUCTO_MAESTRO_RESPONSE = {
+              status: response.status,
+              ok: response.ok,
+              data,
+            };
+
             if (response.ok && data.success) {
               const nuevoProducto = data.data?.producto;
+
+              // DEBUG: producto maestro creado en base de datos
+              console.group("[DEBUG] Producto Maestro creado en BD");
+              console.log("nuevoProducto:", nuevoProducto);
+              console.log(
+                "Recordatorio: packs y tamaños se asocian en tablas relacionadas (Producto_TamanosDisponibles / campo packs)",
+              );
+              console.groupEnd();
 
               // Si hay imagen seleccionada, subirla
               if (selectedImageFile && nuevoProducto?.productoid) {

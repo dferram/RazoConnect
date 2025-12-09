@@ -1228,6 +1228,78 @@ const updatePedidoEstatus = async (req, res) => {
   }
 };
 
+// Helper: a partir de un array de cantidades (packs), encontrar o crear
+// registros en Cat_TamanoPaquetes y devolver sus TamanoID.
+// Implementa un "find or create" estricto por la columna Cantidad.
+const findOrCreateTamanosFromPacks = async (client, packsRaw) => {
+  const cantidades = Array.isArray(packsRaw)
+    ? [
+        ...new Set(
+          packsRaw
+            .map((n) => Number.parseInt(n, 10))
+            .filter((n) => Number.isInteger(n) && n > 1)
+        ),
+      ]
+    : [];
+
+  if (!cantidades.length) {
+    return [];
+  }
+
+  // 1) Buscar tamaños existentes por Cantidad
+  const existentesResult = await client.query(
+    `SELECT TamanoID, Cantidad
+     FROM Cat_TamanoPaquetes
+     WHERE Cantidad = ANY($1::int[])`,
+    [cantidades]
+  );
+
+  const existentesPorCantidad = new Map(); // Cantidad -> TamanoID
+
+  existentesResult.rows.forEach((row) => {
+    const cantidad = Number.parseInt(row.cantidad, 10);
+    const tamanoId = Number.parseInt(row.tamanoid, 10);
+    if (Number.isInteger(cantidad) && Number.isInteger(tamanoId)) {
+      existentesPorCantidad.set(cantidad, tamanoId);
+    }
+  });
+
+  const idsResultantes = [];
+
+  // 2) Para cada cantidad, reutilizar o crear tamaño
+  for (const cantidad of cantidades) {
+    if (existentesPorCantidad.has(cantidad)) {
+      idsResultantes.push(existentesPorCantidad.get(cantidad));
+      continue;
+    }
+
+    // La tabla Cat_TamanoPaquetes solo tiene columnas TamanoID (PK) y Cantidad,
+    // así que insertamos únicamente Cantidad y dejamos que TamanoID se autogenere.
+    const insertResult = await client.query(
+      `INSERT INTO Cat_TamanoPaquetes (Cantidad)
+       VALUES ($1)
+       RETURNING TamanoID, Cantidad`,
+      [cantidad]
+    );
+
+    const newRow = insertResult.rows[0];
+    const nuevoTamanoId = Number.parseInt(newRow.tamanoid, 10);
+    const cantidadCreada = Number.parseInt(newRow.cantidad, 10);
+
+    if (Number.isInteger(nuevoTamanoId) && Number.isInteger(cantidadCreada)) {
+      existentesPorCantidad.set(cantidadCreada, nuevoTamanoId);
+      idsResultantes.push(nuevoTamanoId);
+    }
+  }
+
+  console.log("🟢 [PACKS] TamanoIDs vinculados desde packs (find-or-create por Cantidad):", {
+    packs: cantidades,
+    tamanoIds: idsResultantes,
+  });
+
+  return idsResultantes;
+};
+
 /**
  * Crear un nuevo producto
  * POST /api/admin/productos
@@ -1247,12 +1319,45 @@ const crearProducto = async (req, res) => {
     precioUnitarioBase: precioUnitarioBaseRaw,
     precioUnitario: precioUnitarioLegacyRaw,
     variantes: variantesRaw,
+    packs,
   } = req.body;
+
+  // DEBUG BACKEND: inspeccionar qué llega al crear producto maestro
+  console.log("🟢 [CREAR_PRODUCTO] Body recibido:", {
+    nombre,
+    codigoModelo,
+    categoriaId,
+    proveedorIdRaw,
+    stockTotalInicialRaw,
+    venderIndividualRaw,
+    tamanoIds,
+    tamanos,
+    packs,
+  });
 
   if (!nombre) {
     return res.status(400).json({
       success: false,
       message: "El nombre del producto es obligatorio",
+    });
+  }
+
+  const categoriaIdParsed = (() => {
+    if (
+      categoriaId === undefined ||
+      categoriaId === null ||
+      String(categoriaId).trim() === ""
+    ) {
+      return null;
+    }
+    const parsed = Number.parseInt(categoriaId, 10);
+    return Number.isNaN(parsed) ? null : parsed;
+  })();
+
+  if (categoriaIdParsed === null) {
+    return res.status(400).json({
+      success: false,
+      message: "Debes seleccionar una categoría para el producto maestro.",
     });
   }
 
@@ -1350,13 +1455,15 @@ const crearProducto = async (req, res) => {
         nombre,
         codigoModelo || null,
         descripcion || null,
-        categoriaId || null,
+        categoriaIdParsed,
         proveedorId,
         activoFinal,
       ]
     );
 
     const producto = result.rows[0];
+
+    console.log("🟢 [CREAR_PRODUCTO] Producto insertado:", producto);
 
     const serieSkuBase = (() => {
       const base =
@@ -1380,11 +1487,23 @@ const crearProducto = async (req, res) => {
     };
 
     let tamanosAsociados = [];
-    const tamanosProductoRaw = Array.isArray(tamanos)
+
+    // A partir de packs, encontrar/crear tamaños en catálogo y obtener sus IDs
+    const tamanoIdsFromPacks = await findOrCreateTamanosFromPacks(
+      client,
+      packs
+    );
+
+    const tamanosProductoRawBase = Array.isArray(tamanos)
       ? tamanos
       : Array.isArray(tamanoIds)
       ? tamanoIds
       : [];
+
+    const tamanosProductoRaw = [
+      ...tamanosProductoRawBase,
+      ...tamanoIdsFromPacks,
+    ];
 
     const sanitizedTamanosProducto = [
       ...new Set(
@@ -1482,13 +1601,18 @@ const crearProducto = async (req, res) => {
         );
       }
       tamanosAsociados = sanitizedTamanosProducto;
+      console.log(
+        "🟢 [CREAR_PRODUCTO] tamanosAsociados en Producto_TamanosDisponibles:",
+        tamanosAsociados
+      );
     }
 
     const userId = req.user?.id || req.user?.userId || null;
 
     const variantesCreadas = [];
 
-    const masterSku = buildSku("UNIT");
+    // Usar el SKU base del producto para la variante maestra (sin sufijo UNIT)
+    const masterSku = serieSkuBase;
     const masterDimensiones = "Unidad individual";
 
     const masterVarianteResult = await client.query(
@@ -1511,7 +1635,7 @@ const crearProducto = async (req, res) => {
         producto.productoid,
         masterSku,
         masterDimensiones,
-        null,
+        0, // Costo unitario se define más adelante en las variantes; aquí usamos 0 para respetar NOT NULL
         precioUnitarioBaseNormalized,
         null,
         stockTotalInicial,
@@ -1703,6 +1827,13 @@ const crearProducto = async (req, res) => {
 
     await client.query("COMMIT");
 
+    console.log("🟢 [CREAR_PRODUCTO] Transacción COMMIT realizada", {
+      producto,
+      tamanosAsociados,
+      varianteMaestra,
+      variantesCreadasCount: variantesCreadas.length,
+    });
+
     res.status(201).json({
       success: true,
       message: "Producto maestro creado exitosamente",
@@ -1716,6 +1847,18 @@ const crearProducto = async (req, res) => {
   } catch (error) {
     if (transactionStarted) {
       await client.query("ROLLBACK");
+    }
+
+    if (
+      error.code === "23502" &&
+      error.table === "productos" &&
+      error.column &&
+      error.column.toLowerCase() === "categoriaid"
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Debes seleccionar una categoría para el producto maestro.",
+      });
     }
     if (error.message === "STOCK_INICIAL_INVALIDO") {
       return res.status(400).json({
@@ -1851,6 +1994,7 @@ const actualizarProducto = async (req, res) => {
     tamanoIds,
     proveedorId: proveedorIdRaw,
     activo,
+    packs,
   } = req.body;
 
   const client = await db.pool.connect();
@@ -1947,9 +2091,10 @@ const actualizarProducto = async (req, res) => {
     }
 
     // Gestión de visibilidad: mantener el valor actual si no se especifica
-    const activoFinal = activo !== undefined ? Boolean(activo) : productoActual.activo;
+    const activoFinal =
+      activo !== undefined ? Boolean(activo) : productoActual.activo;
 
-    const productoActualizado = await client.query(
+    const updateResult = await client.query(
       `UPDATE Productos
        SET NombreProducto = $1,
            CodigoModelo = $2,
@@ -1970,11 +2115,19 @@ const actualizarProducto = async (req, res) => {
       ]
     );
 
-    const tamanosRaw = Array.isArray(tamanos)
+    const tamanosRawBase = Array.isArray(tamanos)
       ? tamanos
       : Array.isArray(tamanoIds)
       ? tamanoIds
       : [];
+
+    // A partir de packs, encontrar/crear tamaños en catálogo y obtener sus IDs
+    const tamanoIdsFromPacks = await findOrCreateTamanosFromPacks(
+      client,
+      packs
+    );
+
+    const tamanosRaw = [...tamanosRawBase, ...tamanoIdsFromPacks];
 
     await client.query(
       "DELETE FROM Producto_TamanosDisponibles WHERE ProductoID = $1",
@@ -2038,129 +2191,6 @@ const actualizarProducto = async (req, res) => {
       await client.query("ROLLBACK");
     }
     console.error("Error al actualizar producto maestro:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error en el servidor",
-      error: error.message,
-    });
-  } finally {
-    client.release();
-  }
-};
-
-/**
- * Crear una nueva variante para un producto maestro
- * POST /api/admin/variantes
- */
-const crearVariante = async (req, res) => {
-  const client = await db.pool.connect();
-
-  try {
-    const {
-      productoId,
-      sku,
-      dimensiones,
-      costoUnitario,
-      precioUnitario,
-      precioOfertaUnitario,
-      stock,
-      tipoProductoId,
-      medidaId,
-    } = req.body;
-
-    if (!productoId || !sku || precioUnitario === undefined) {
-      return res.status(400).json({
-        success: false,
-        message: "productoId, sku y precioUnitario son obligatorios",
-      });
-    }
-
-    await client.query("BEGIN");
-
-    const productoResult = await client.query(
-      "SELECT ProductoID FROM Productos WHERE ProductoID = $1",
-      [productoId]
-    );
-
-    if (productoResult.rows.length === 0) {
-      await client.query("ROLLBACK");
-      return res.status(404).json({
-        success: false,
-        message: "Producto maestro no encontrado",
-      });
-    }
-
-    const stockInicial = Number.isFinite(stock) ? stock : 0;
-    const costoUnitarioNormalized =
-      costoUnitario !== undefined ? costoUnitario : null;
-    const precioUnitarioNormalized = Number.isFinite(precioUnitario)
-      ? precioUnitario
-      : null;
-
-    if (precioUnitarioNormalized === null || precioUnitarioNormalized <= 0) {
-      await client.query("ROLLBACK");
-      return res.status(400).json({
-        success: false,
-        message: "El precio unitario debe ser un número mayor a 0",
-      });
-    }
-
-    const precioOfertaUnitarioNormalized =
-      precioOfertaUnitario !== undefined &&
-      precioOfertaUnitario !== null &&
-      precioOfertaUnitario > 0
-        ? precioOfertaUnitario
-        : null;
-
-    const varianteResult = await client.query(
-      `INSERT INTO Producto_Variantes (
-        ProductoID, SKU, Dimensiones, CostoUnitario,
-        PrecioUnitario, PrecioOfertaUnitario, Stock, TipoProductoID, MedidaID
-      )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-      RETURNING VarianteID, ProductoID, SKU, Dimensiones,
-                CostoUnitario, PrecioUnitario, PrecioOfertaUnitario, Stock, TipoProductoID, MedidaID`,
-      [
-        productoId,
-        sku,
-        dimensiones || null,
-        costoUnitarioNormalized,
-        precioUnitarioNormalized,
-        precioOfertaUnitarioNormalized,
-        stockInicial,
-        tipoProductoId || null,
-        medidaId || null,
-      ]
-    );
-
-    const variante = varianteResult.rows[0];
-
-    if (stockInicial && stockInicial !== 0) {
-      await client.query(
-        `INSERT INTO Log_Inventario (VarianteID, CantidadCambiado, NuevoStock, Motivo, UsuarioID)
-         VALUES ($1, $2, $3, $4, $5)`,
-        [
-          variante.varianteid,
-          stockInicial,
-          stockInicial,
-          "Stock inicial de variante (piezas)",
-          req.user.id,
-        ]
-      );
-    }
-
-    await client.query("COMMIT");
-
-    res.status(201).json({
-      success: true,
-      message: "Variante creada exitosamente",
-      data: {
-        variante,
-      },
-    });
-  } catch (error) {
-    await client.query("ROLLBACK");
-    console.error("Error al crear variante:", error);
     res.status(500).json({
       success: false,
       message: "Error en el servidor",
@@ -4725,6 +4755,196 @@ const cancelarOrdenBackorder = async (req, res) => {
       message: "Error al cancelar orden de backorder",
       error: error.message,
     });
+  }
+};
+
+/**
+ * Crear una variante
+ * POST /api/admin/variantes
+ */
+const crearVariante = async (req, res) => {
+  const client = await db.pool.connect();
+
+  try {
+    const {
+      productoId,
+      sku,
+      dimensiones,
+      costoUnitario,
+      precioUnitario,
+      precioOfertaUnitario,
+      stock,
+      tipoProductoId,
+      medidaId,
+      activo,
+    } = req.body || {};
+
+    const parsedProductoId = Number.parseInt(productoId, 10);
+    if (!parsedProductoId || Number.isNaN(parsedProductoId)) {
+      return res.status(400).json({
+        success: false,
+        message: "productoId es obligatorio y debe ser numérico",
+      });
+    }
+
+    if (!sku || !String(sku).trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "SKU es obligatorio",
+      });
+    }
+
+    if (
+      precioUnitario === undefined ||
+      precioUnitario === null ||
+      String(precioUnitario).trim() === ""
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "precioUnitario es obligatorio",
+      });
+    }
+
+    const precioUnitarioNum = Number.parseFloat(precioUnitario);
+    if (!Number.isFinite(precioUnitarioNum) || precioUnitarioNum <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "precioUnitario debe ser un número mayor a 0",
+      });
+    }
+
+    const stockNum =
+      stock === undefined || stock === null || stock === ""
+        ? 0
+        : Number.parseInt(stock, 10);
+    if (!Number.isInteger(stockNum) || stockNum < 0) {
+      return res.status(400).json({
+        success: false,
+        message: "stock debe ser un entero mayor o igual a 0",
+      });
+    }
+
+    const costoUnitarioNumRaw =
+      costoUnitario === undefined ||
+      costoUnitario === null ||
+      costoUnitario === ""
+        ? 0
+        : Number.parseFloat(costoUnitario);
+    const costoUnitarioNum =
+      Number.isFinite(costoUnitarioNumRaw) && costoUnitarioNumRaw >= 0
+        ? costoUnitarioNumRaw
+        : 0;
+
+    let ofertaNum = null;
+    if (
+      precioOfertaUnitario !== undefined &&
+      precioOfertaUnitario !== null &&
+      String(precioOfertaUnitario).trim() !== ""
+    ) {
+      const parsedOferta = Number.parseFloat(precioOfertaUnitario);
+      if (
+        Number.isFinite(parsedOferta) &&
+        parsedOferta > 0 &&
+        parsedOferta < precioUnitarioNum
+      ) {
+        ofertaNum = parsedOferta;
+      }
+    }
+
+    const activoFinal = activo !== undefined ? Boolean(activo) : true;
+
+    await client.query("BEGIN");
+
+    const productoResult = await client.query(
+      "SELECT ProductoID FROM Productos WHERE ProductoID = $1",
+      [parsedProductoId]
+    );
+
+    if (productoResult.rows.length === 0) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({
+        success: false,
+        message: "Producto maestro no encontrado",
+      });
+    }
+
+    const skuFinal = String(sku).trim().toUpperCase();
+    const dimensionesFinal =
+      dimensiones === undefined
+        ? null
+        : (() => {
+            if (dimensiones === null) return null;
+            const txt = String(dimensiones).trim();
+            return txt.length ? txt : null;
+          })();
+
+    const insertResult = await client.query(
+      `INSERT INTO Producto_Variantes (
+         ProductoID,
+         SKU,
+         Dimensiones,
+         CostoUnitario,
+         PrecioUnitario,
+         PrecioOfertaUnitario,
+         Stock,
+         TipoProductoID,
+         MedidaID,
+         Activo,
+         PiezasPorPaquete
+       )
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+       RETURNING VarianteID, ProductoID, SKU, Dimensiones, CostoUnitario, PrecioUnitario, PrecioOfertaUnitario, Stock, TipoProductoID, MedidaID, Activo, PiezasPorPaquete`,
+      [
+        parsedProductoId,
+        skuFinal,
+        dimensionesFinal,
+        costoUnitarioNum,
+        precioUnitarioNum,
+        ofertaNum,
+        stockNum,
+        tipoProductoId || null,
+        medidaId || null,
+        activoFinal,
+        1,
+      ]
+    );
+
+    const variante = insertResult.rows[0];
+
+    if (stockNum && stockNum > 0) {
+      const userId = req.user?.id || req.user?.userId || null;
+      await client.query(
+        `INSERT INTO Log_Inventario (VarianteID, CantidadCambiado, NuevoStock, Motivo, UsuarioID)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [
+          variante.varianteid,
+          stockNum,
+          stockNum,
+          "Stock inicial de variante (piezas)",
+          userId,
+        ]
+      );
+    }
+
+    await client.query("COMMIT");
+
+    return res.status(201).json({
+      success: true,
+      message: "Variante creada exitosamente",
+      data: {
+        variante,
+      },
+    });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("Error al crear variante:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error en el servidor",
+      error: error.message,
+    });
+  } finally {
+    client.release();
   }
 };
 

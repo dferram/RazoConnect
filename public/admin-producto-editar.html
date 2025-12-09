@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Editar Producto - Admin RazoConnect</title>
+    <link rel="icon" type="image/png" href="/icon/Logo_Razo.png" />
 
     <!-- PROTECCIÓN DE AUTENTICACIÓN ADMIN -->
     <script src="js/auth-guard-admin.js"></script>
@@ -29,21 +30,8 @@
       }
 
       @media (min-width: 1024px) {
-        .product-editor-grid {
-          flex-direction: row;
-          align-items: flex-start;
-        }
-
         .product-editor-grid > * {
-          flex: 1;
-        }
-
-        .product-summary-card {
-          max-width: 480px;
-        }
-
-        .product-editor-grid > .admin-card + .admin-card {
-          margin-top: 0;
+          flex: 1 1 auto;
         }
       }
 
@@ -55,6 +43,35 @@
       .product-summary p {
         margin-bottom: 1rem;
         line-height: 1.6;
+      }
+
+      .product-summary-header {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+        margin-bottom: 0.75rem;
+      }
+
+      .product-summary-image {
+        flex: 0 0 auto;
+        width: 100px;
+        height: 100px;
+        border-radius: 0.75rem;
+        overflow: hidden;
+        background: #f3f4f6;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .product-summary-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .product-summary-text {
+        flex: 1 1 auto;
       }
 
       .summary-grid {
@@ -204,6 +221,95 @@
       .btn-icon-toggle:active {
         transform: scale(0.95);
       }
+
+      .variant-editor-grid {
+        align-items: flex-start;
+      }
+
+      .inventory-summary-card {
+        background: #fff9f4;
+        border-radius: 0.9rem;
+        border: 1px solid rgba(255, 153, 102, 0.4);
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+        padding: 1.1rem 1.25rem 1.25rem;
+      }
+
+      @media (min-width: 1024px) {
+        .inventory-summary-card {
+          position: static;
+        }
+      }
+
+      .stock-projection-title {
+        margin: 0 0 0.35rem;
+        font-family: "Poppins", sans-serif;
+        font-size: 1.05rem;
+        font-weight: 600;
+        color: var(--razo-orange-dark);
+      }
+
+      .stock-projection-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        gap: 0.75rem;
+        margin-bottom: 0.75rem;
+      }
+
+      .stock-total-value {
+        font-family: "Poppins", sans-serif;
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--razo-orange-dark);
+      }
+
+      .stock-projection-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.85rem;
+      }
+
+      .stock-projection-table th,
+      .stock-projection-table td {
+        padding: 0.4rem 0.25rem;
+      }
+
+      .stock-projection-table th {
+        text-align: left;
+        font-weight: 600;
+        color: rgba(55, 65, 81, 0.85);
+        border-bottom: 1px solid rgba(209, 213, 219, 0.8);
+      }
+
+      .stock-projection-table tbody tr:nth-child(even) {
+        background: #fff7f1;
+      }
+
+      .stock-projection-table tbody tr:nth-child(odd) {
+        background: #ffffff;
+      }
+
+      .stock-projection-label {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+      }
+
+      .stock-projection-label-icon {
+        font-size: 1rem;
+      }
+
+      .stock-projection-qty {
+        text-align: right;
+        font-weight: 600;
+        color: var(--razo-gray-dark);
+      }
+
+      .stock-projection-empty {
+        padding: 0.5rem 0;
+        font-size: 0.8rem;
+        color: rgba(75, 85, 99, 0.85);
+      }
     </style>
   </head>
   <body>
@@ -269,7 +375,7 @@
                 </div>
               </section>
 
-              <!-- Create variant form -->
+              <!-- Create variant form + stock projection sidebar -->
               <section class="admin-card variant-form-card">
                 <div class="admin-card-header">
                   <h2 class="admin-card-title">Agregar nueva variante</h2>
@@ -278,205 +384,209 @@
                     en el catálogo.
                   </p>
                 </div>
-                <form id="variantForm" class="admin-card-body variant-form">
-                  <div class="form-group">
-                    <label for="sku" class="form-label">SKU *</label>
-                    <input
-                      type="text"
-                      id="sku"
-                      class="form-input"
-                      placeholder="Ej: NAVIDAD-10X10-ROJO"
-                      required
-                    />
-                    <small
-                      id="skuSuggestion"
-                      class="form-hint"
-                      style="display: none; color: var(--razo-orange)"
-                    >
-                      💡 Sugerencia: <span id="skuSuggestionText"></span>
-                      <button
-                        type="button"
-                        id="applySkuSuggestion"
-                        style="
-                          background: none;
-                          border: none;
-                          color: var(--primary-color);
-                          cursor: pointer;
-                          text-decoration: underline;
-                          font-size: inherit;
-                        "
-                      >
-                        Usar
-                      </button>
-                    </small>
-                  </div>
+                <div class="admin-card-body">
+                  <div class="admin-grid-lg variant-editor-grid">
+                    <form id="variantForm" class="variant-form">
+                      <div class="form-group">
+                        <label for="sku" class="form-label">SKU *</label>
+                        <input
+                          type="text"
+                          id="sku"
+                          class="form-input"
+                          placeholder="Ej: NAVIDAD-10X10-ROJO"
+                          required
+                        />
+                        <small
+                          id="skuSuggestion"
+                          class="form-hint"
+                          style="display: none; color: var(--razo-orange)"
+                        >
+                          💡 Sugerencia: <span id="skuSuggestionText"></span>
+                          <button
+                            type="button"
+                            id="applySkuSuggestion"
+                            style="
+                              background: none;
+                              border: none;
+                              color: var(--primary-color);
+                              cursor: pointer;
+                              text-decoration: underline;
+                              font-size: inherit;
+                            "
+                          >
+                            Usar
+                          </button>
+                        </small>
+                      </div>
 
-                  <div class="form-grid-2">
-                    <div class="form-group">
-                      <label for="dimensiones" class="form-label"
-                        >Dimensiones / Medidas</label
-                      >
-                      <input
-                        type="text"
-                        id="dimensiones"
-                        class="form-input"
-                        placeholder="Ej: 10x10x10 cm o 25 piezas"
-                      />
-                    </div>
-                    <div class="form-group">
-                      <label for="stock" class="form-label"
-                        >Stock inicial (piezas)</label
-                      >
-                      <input
-                        type="number"
-                        id="stock"
-                        class="form-input"
-                        min="0"
-                        step="1"
-                        value="0"
-                      />
+                      <div class="form-grid-2">
+                        <div class="form-group">
+                          <label for="dimensiones" class="form-label"
+                            >Dimensiones / Medidas</label
+                          >
+                          <input
+                            type="text"
+                            id="dimensiones"
+                            class="form-input"
+                            placeholder="Ej: 10x10x10 cm o 25 piezas"
+                          />
+                        </div>
+                        <div class="form-group">
+                          <label for="stock" class="form-label">
+                            Stock inicial (piezas)
+                            <span
+                              class="info-icon"
+                              style="margin-left: 0.25rem; cursor: help; font-size: 0.85em; color: var(--text-secondary);"
+                              title="Este es el inventario físico total. El sistema calculará automáticamente cuántos paquetes se pueden armar con esta cantidad."
+                            >ℹ️</span>
+                          </label>
+                          <input
+                            type="number"
+                            id="stock"
+                            class="form-input"
+                            min="0"
+                            step="1"
+                            value="0"
+                          />
+                          <div
+                            id="stockInfoAlert"
+                            class="form-hint"
+                            style="margin-top: 0.35rem; color: var(--text-secondary); font-size: 0.8rem;"
+                          >
+                            ℹ️ El stock que ingreses aquí se usará como inventario físico total.
+                          </div>
+                          <div
+                            id="stockInfoBadges"
+                            style="display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.25rem; font-size: 0.78rem;"
+                          ></div>
+                        </div>
+                      </div>
+
+                      <div class="form-grid-3">
+                        <div class="form-group">
+                          <label for="costoUnitario" class="form-label"
+                            >Costo unitario (MXN)</label
+                          >
+                          <input
+                            type="number"
+                            id="costoUnitario"
+                            class="form-input"
+                            min="0"
+                            step="0.01"
+                            placeholder="0.00"
+                          />
+                        </div>
+                        <div class="form-group">
+                          <label for="precioUnitario" class="form-label"
+                            >Precio unitario (MXN) *</label
+                          >
+                          <input
+                            type="number"
+                            id="precioUnitario"
+                            class="form-input"
+                            min="0"
+                            step="0.01"
+                            placeholder="0.00"
+                            required
+                          />
+                        </div>
+                        <div class="form-group">
+                          <label for="precioOferta" class="form-label">
+                            💰 Precio de Oferta (MXN)
+                            <span
+                              style="color: var(--razo-orange); font-size: 0.875rem"
+                              >- Opcional</span
+                            >
+                          </label>
+                          <input
+                            type="number"
+                            id="precioOferta"
+                            class="form-input"
+                            min="0"
+                            step="0.01"
+                            placeholder="0.00"
+                            style="border: 2px solid var(--razo-orange)"
+                          />
+                          <small
+                            class="form-hint"
+                            style="color: var(--razo-orange)"
+                          >
+                            ⚡ Si defines un precio de oferta, este se mostrará como
+                            descuento en el catálogo
+                          </small>
+                        </div>
+                      </div>
+
+                      <div class="variant-margin" id="variantMargin">
+                        <div>
+                          <h3>Resumen económico</h3>
+                          <p id="marginMessage">
+                            Ingresa costo y precio para calcular la ganancia.
+                          </p>
+                        </div>
+                        <div
+                          class="margin-metrics"
+                          id="marginMetrics"
+                          style="display: none"
+                        >
+                          <div>
+                            <span class="summary-label">Costo unitario</span>
+                            <span class="summary-value" id="costPerUnit"
+                              >$0.00</span
+                            >
+                          </div>
+                          <div>
+                            <span class="summary-label">Ganancia por unidad</span>
+                            <span class="summary-value" id="profitPerUnit"
+                              >$0.00</span
+                            >
+                          </div>
+                          <div>
+                            <span class="summary-label">Margen</span>
+                            <span class="summary-value" id="marginPercentage"
+                              >0%</span
+                            >
+                          </div>
+                        </div>
+                      </div>
+
                       <div
-                        id="stockInfoAlert"
-                        class="form-hint"
-                        style="margin-top: 0.35rem; color: var(--text-secondary); font-size: 0.8rem;"
+                        style="display: flex; justify-content: flex-end; gap: 1rem"
                       >
-                        ℹ️ El stock que ingreses aquí se usará como inventario físico total.
-                      </div>
-                      <div
-                        id="stockInfoBadges"
-                        style="display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.25rem; font-size: 0.78rem;"
-                      ></div>
-                      <small
-                        id="stockInfoCapacity"
-                        class="form-hint"
-                        style="margin-top: 0.35rem; color: var(--text-secondary); font-size: 0.8rem; display: none;"
-                      ></small>
-                    </div>
-                  </div>
-
-                  <div class="form-grid-3">
-                    <div class="form-group">
-                      <label for="costoUnitario" class="form-label"
-                        >Costo unitario (MXN)</label
-                      >
-                      <input
-                        type="number"
-                        id="costoUnitario"
-                        class="form-input"
-                        min="0"
-                        step="0.01"
-                        placeholder="0.00"
-                      />
-                    </div>
-                    <div class="form-group">
-                      <label for="precioUnitario" class="form-label"
-                        >Precio unitario (MXN) *</label
-                      >
-                      <input
-                        type="number"
-                        id="precioUnitario"
-                        class="form-input"
-                        min="0"
-                        step="0.01"
-                        placeholder="0.00"
-                        required
-                      />
-                    </div>
-                    <div class="form-group">
-                      <label for="precioOferta" class="form-label">
-                        💰 Precio de Oferta (MXN)
-                        <span
-                          style="color: var(--razo-orange); font-size: 0.875rem"
-                          >- Opcional</span
+                        <button
+                          type="reset"
+                          class="btn btn-secondary"
+                          id="resetVariantBtn"
                         >
-                      </label>
-                      <input
-                        type="number"
-                        id="precioOferta"
-                        class="form-input"
-                        min="0"
-                        step="0.01"
-                        placeholder="0.00"
-                        style="border: 2px solid var(--razo-orange)"
-                      />
-                      <small
-                        class="form-hint"
-                        style="color: var(--razo-orange)"
-                      >
-                        ⚡ Si defines un precio de oferta, este se mostrará como
-                        descuento en el catálogo
-                      </small>
-                    </div>
-                  </div>
-
-                  <div class="variant-margin" id="variantMargin">
-                    <div>
-                      <h3>Resumen económico</h3>
-                      <p id="marginMessage">
-                        Ingresa costo y precio para calcular la ganancia.
-                      </p>
-                    </div>
-                    <div
-                      class="margin-metrics"
-                      id="marginMetrics"
-                      style="display: none"
-                    >
-                      <div>
-                        <span class="summary-label">Costo unitario</span>
-                        <span class="summary-value" id="costPerUnit"
-                          >$0.00</span
+                          Limpiar
+                        </button>
+                        <button
+                          type="submit"
+                          class="btn btn-primary"
+                          id="saveVariantBtn"
+                          style="
+                            display: inline-flex;
+                            align-items: center;
+                            justify-content: center;
+                            gap: 0.75rem;
+                          "
                         >
+                          <span id="variantBtnText">Guardar variante</span>
+                          <div
+                            class="spinner"
+                            id="variantBtnSpinner"
+                            style="
+                              display: none;
+                              width: 18px;
+                              height: 18px;
+                              border-width: 2px;
+                            "
+                          ></div>
+                        </button>
                       </div>
-                      <div>
-                        <span class="summary-label">Ganancia por unidad</span>
-                        <span class="summary-value" id="profitPerUnit"
-                          >$0.00</span
-                        >
-                      </div>
-                      <div>
-                        <span class="summary-label">Margen</span>
-                        <span class="summary-value" id="marginPercentage"
-                          >0%</span
-                        >
-                      </div>
-                    </div>
+                    </form>
                   </div>
-
-                  <div
-                    style="display: flex; justify-content: flex-end; gap: 1rem"
-                  >
-                    <button
-                      type="reset"
-                      class="btn btn-secondary"
-                      id="resetVariantBtn"
-                    >
-                      Limpiar
-                    </button>
-                    <button
-                      type="submit"
-                      class="btn btn-primary"
-                      id="saveVariantBtn"
-                      style="
-                        display: inline-flex;
-                        align-items: center;
-                        justify-content: center;
-                        gap: 0.75rem;
-                      "
-                    >
-                      <span id="variantBtnText">Guardar variante</span>
-                      <div
-                        class="spinner"
-                        id="variantBtnSpinner"
-                        style="
-                          display: none;
-                          width: 18px;
-                          height: 18px;
-                          border-width: 2px;
-                        "
-                      ></div>
-                    </button>
-                  </div>
-                </form>
+                </div>
               </section>
             </div>
 
@@ -525,6 +635,56 @@
                     </thead>
                     <tbody id="variantsTableBody"></tbody>
                   </table>
+                </div>
+              </div>
+            </section>
+
+            <!-- Stock projection full-width section -->
+            <section class="admin-card" style="margin-bottom: 2rem">
+              <div class="admin-card-header">
+                <h2 class="admin-card-title">Proyección de stock y packs</h2>
+                <p
+                  class="admin-header-subtitle"
+                  style="margin-bottom: 0"
+                >
+                  Visualiza cuántos paquetes puedes armar con el stock físico inicial
+                  en cada presentación configurada.
+                </p>
+              </div>
+              <div class="admin-card-body">
+                <div class="inventory-summary-card" aria-live="polite">
+                  <div class="stock-projection-header">
+                    <div>
+                      <h3 class="stock-projection-title">📊 Proyección de Stock</h3>
+                      <p
+                        id="stockProjectionSubtitle"
+                        class="form-hint"
+                        style="margin: 0; font-size: 0.8rem; color: var(--text-secondary);"
+                      >
+                        Define el stock inicial para ver cuántos paquetes puedes armar con cada presentación.
+                      </p>
+                    </div>
+                    <div class="stock-total-value" id="stockProjectionTotal">
+                      0
+                    </div>
+                  </div>
+                  <div id="stockProjectionTableWrapper">
+                    <table class="stock-projection-table">
+                      <thead>
+                        <tr>
+                          <th>Presentación</th>
+                          <th class="stock-projection-qty">Disponibles</th>
+                        </tr>
+                      </thead>
+                      <tbody id="stockProjectionTableBody">
+                        <tr>
+                          <td colspan="2" class="stock-projection-empty">
+                            Aún no se ha definido stock para esta variante.
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
             </section>
@@ -593,7 +753,15 @@
       const stockInput = document.getElementById("stock");
       const stockInfoAlert = document.getElementById("stockInfoAlert");
       const stockInfoBadges = document.getElementById("stockInfoBadges");
-      const stockInfoCapacity = document.getElementById("stockInfoCapacity");
+      const stockProjectionTotal = document.getElementById(
+        "stockProjectionTotal"
+      );
+      const stockProjectionTableBody = document.getElementById(
+        "stockProjectionTableBody"
+      );
+      const stockProjectionSubtitle = document.getElementById(
+        "stockProjectionSubtitle"
+      );
 
       let productoCodigoModelo = null;
       let tamanosConfiguradosMaestro = [];
@@ -735,18 +903,44 @@
           badgeMax.textContent = `Precio hasta ${precioMax}`;
           pricingBadges.appendChild(badgeMax);
         }
+        // Buscar imagen principal a partir de las variantes
+        let mainImageUrl = null;
+        let mainImageAlt = null;
+        if (Array.isArray(variantes) && variantes.length) {
+          for (const v of variantes) {
+            if (Array.isArray(v.imagenes) && v.imagenes.length) {
+              const img = v.imagenes[0];
+              if (img && img.url) {
+                mainImageUrl = img.url;
+                mainImageAlt = img.alt || producto.nombreProducto || "Producto";
+                break;
+              }
+            }
+          }
+        }
+
+        const imageHtml = mainImageUrl
+          ? `<div class="product-summary-image"><img src="${mainImageUrl}" alt="${
+              mainImageAlt || "Producto"
+            }" /></div>`
+          : `<div class="product-summary-image"><span style="font-size: 1.75rem;">📦</span></div>`;
 
         productSummary.innerHTML = `
         <div class="product-summary">
-          <h3>${producto.nombreProducto}</h3>
-          ${
-            producto.codigoModelo
-              ? `<p style="color: var(--razo-orange); font-weight: 600; margin-bottom: 0.5rem;">📦 Código: ${producto.codigoModelo}</p>`
-              : ""
-          }
-          <p style="color: var(--text-secondary);">${
-            producto.descripcion || "Sin descripción registrada."
-          }</p>
+          <div class="product-summary-header">
+            ${imageHtml}
+            <div class="product-summary-text">
+              <h3>${producto.nombreProducto}</h3>
+              ${
+                producto.codigoModelo
+                  ? `<p style="color: var(--razo-orange); font-weight: 600; margin-bottom: 0.5rem;">📦 Código: ${producto.codigoModelo}</p>`
+                  : ""
+              }
+              <p style="color: var(--text-secondary);">${
+                producto.descripcion || "Sin descripción registrada."
+              }</p>
+            </div>
+          </div>
           <div class="summary-grid">
             <div>
               <span class="summary-label">Categoría</span>
@@ -873,18 +1067,40 @@
       }
 
       function renderStockInfoForVariant() {
-        if (!stockInfoAlert || !stockInfoBadges || !stockInfoCapacity) return;
+        if (!stockInfoAlert || !stockInfoBadges) return;
 
         const presentaciones = Array.isArray(tamanosConfiguradosMaestro)
           ? tamanosConfiguradosMaestro
           : [];
 
+        const totalPiezas = parseInt(stockInput?.value || "0", 10);
+        const safeTotal =
+          Number.isFinite(totalPiezas) && totalPiezas > 0 ? totalPiezas : 0;
+
+        if (stockProjectionTotal) {
+          stockProjectionTotal.textContent = safeTotal.toLocaleString("es-MX");
+        }
+
         if (!presentaciones.length) {
           stockInfoAlert.textContent =
             "El stock se asignará solo a esta variante (sin presentaciones adicionales configuradas en el producto maestro).";
           stockInfoBadges.innerHTML = "";
-          stockInfoCapacity.style.display = "none";
-          stockInfoCapacity.textContent = "";
+
+          if (stockProjectionSubtitle) {
+            stockProjectionSubtitle.textContent =
+              "Esta variante usa el stock únicamente en forma individual (sin packs configurados).";
+          }
+
+          if (stockProjectionTableBody) {
+            stockProjectionTableBody.innerHTML = `
+              <tr>
+                <td colspan="2" class="stock-projection-empty">
+                  No hay presentaciones configuradas para este producto maestro.
+                </td>
+              </tr>
+            `;
+          }
+
           return;
         }
 
@@ -908,25 +1124,41 @@
           .join("");
 
         stockInfoBadges.innerHTML = badgesHtml;
+
+        if (stockProjectionSubtitle) {
+          stockProjectionSubtitle.textContent =
+            "Con el stock inicial calcularemos cuántos paquetes puedes armar en cada presentación.";
+        }
+
         updateStockCapacityPreview();
       }
 
       function updateStockCapacityPreview() {
-        if (!stockInput || !stockInfoCapacity) return;
+        if (!stockInput || !stockProjectionTotal || !stockProjectionTableBody)
+          return;
 
         const totalPiezas = parseInt(stockInput.value, 10);
+        const safeTotal =
+          Number.isFinite(totalPiezas) && totalPiezas > 0 ? totalPiezas : 0;
 
-        if (!Number.isFinite(totalPiezas) || totalPiezas <= 0) {
-          stockInfoCapacity.style.display = "none";
-          stockInfoCapacity.textContent = "";
-          return;
-        }
+        stockProjectionTotal.textContent = safeTotal.toLocaleString("es-MX");
 
         const presentaciones = Array.isArray(tamanosConfiguradosMaestro)
           ? tamanosConfiguradosMaestro
           : [];
 
-        const items = [];
+        if (!presentaciones.length || safeTotal === 0) {
+          stockProjectionTableBody.innerHTML = `
+            <tr>
+              <td colspan="2" class="stock-projection-empty">
+                Define stock inicial para ver cómo se reparte entre las presentaciones.
+              </td>
+            </tr>
+          `;
+          return;
+        }
+
+        const rows = [];
 
         presentaciones.forEach((t) => {
           const rawValor = t.valor ?? t.Valor ?? null;
@@ -936,29 +1168,41 @@
 
           if (!Number.isFinite(valor) || valor <= 0) return;
 
-          const maxPacks = Math.floor(totalPiezas / valor);
+          const maxPacks = Math.floor(safeTotal / valor);
           if (maxPacks < 1) return;
 
-          const esUnidad = valor === 1;
-          const etiquetaBase = esUnidad
-            ? "Piezas sueltas"
-            : `Paquetes de ${valor} pzas`;
+          const label = buildPresentacionLabel(t);
+          if (!label) return;
 
-          items.push(
-            `<li>${etiquetaBase} = <strong>${maxPacks}</strong></li>`
-          );
+          const icon = valor === 1 ? "✅" : "📦";
+
+          rows.push(`
+            <tr>
+              <td>
+                <div class="stock-projection-label">
+                  <span class="stock-projection-label-icon">${icon}</span>
+                  <span>${label}</span>
+                </div>
+              </td>
+              <td class="stock-projection-qty">${maxPacks.toLocaleString(
+                "es-MX"
+              )}</td>
+            </tr>
+          `);
         });
 
-        if (!items.length) {
-          stockInfoCapacity.style.display = "none";
-          stockInfoCapacity.textContent = "";
+        if (!rows.length) {
+          stockProjectionTableBody.innerHTML = `
+            <tr>
+              <td colspan="2" class="stock-projection-empty">
+                Con este stock no se alcanza a formar ningún pack completo en las presentaciones configuradas.
+              </td>
+            </tr>
+          `;
           return;
         }
 
-        stockInfoCapacity.style.display = "block";
-        stockInfoCapacity.innerHTML = `Con ${totalPiezas} piezas tienes para:<ul style="margin: 0.25rem 0 0 1.1rem; padding-left: 1rem; list-style: disc;">${items.join(
-          ""
-        )}</ul>`;
+        stockProjectionTableBody.innerHTML = rows.join("");
       }
 
       function resetVariantFormState() {
@@ -997,6 +1241,12 @@
           console.warn("Variante no encontrada para edición", varianteId);
           return;
         }
+
+        // Debug: verificar presentaciones/packs configurados en el maestro
+        console.log(
+          "🔎 Presentaciones configuradas en el producto maestro (tamanosConfiguradosMaestro):",
+          tamanosConfiguradosMaestro
+        );
 
         editingVarianteId = idNumero;
 

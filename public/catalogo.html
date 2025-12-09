@@ -4,13 +4,14 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Productos - RazoConnect</title>
+    <link rel="icon" type="image/png" href="/icon/Logo_Razo.png" />
     <link rel="stylesheet" href="css/styles.css" />
     <link rel="stylesheet" href="css/catalogo-profesional.css" />
   </head>
   <body>
     <nav class="navbar">
       <div class="container navbar-content">
-        <a href="/inicio.html" class="navbar-brand">📦 RazoConnect</a>
+        <a href="/inicio.html" class="navbar-brand"><img src="/icon/Logo_Razo.png" class="titulo-emoji-reemplazo" alt="Razo">RazoConnect</a>
         <ul class="navbar-menu">
           <li>
             <a href="/catalogo.html" class="navbar-link navbar-link-active">Productos</a>
@@ -587,6 +588,10 @@
         const imagenUrl = producto.imagenUrl;
         const imagenAlt = producto.imagenAlt || producto.nombreProducto;
 
+        const isCatalogPage =
+          typeof window !== "undefined" &&
+          window.location.pathname.includes("catalogo.html");
+
         const mediaContent = imagenUrl
           ? `<img src="${imagenUrl}" alt="${imagenAlt}" class="product-media" />`
           : `<div class="product-media product-media--fallback">${emoji}</div>`;
@@ -768,22 +773,28 @@
           : null;
 
         const manejarClickCarrito = () => {
-          if (!usandoVarianteEspecifica) {
-            window.location.href = `/producto-detalle.html?id=${productoId}`;
-            return;
-          }
-
-          if (botonAgregarDisabled) {
-            showToast("Sin stock disponible para esta medida.", "warning");
-            return;
-          }
-
-          CarritoService.agregarItem({
-            productoId,
-            varianteId: varianteSeleccionadaId,
-            cantidad: 1,
-          });
+          // Como el flujo de carrito ahora requiere un TamanoID (presentación),
+          // redirigimos siempre a la página de detalle para que el usuario
+          // elija el pack antes de agregar al carrito.
+          window.location.href = `/producto-detalle.html?id=${productoId}`;
         };
+
+        const zonaPrecioOAccion = (() => {
+          if (isCatalogPage) {
+            return `
+              <div class="product-cta-wrapper">
+                <span class="btn btn-outline-primary btn-block product-cta-btn">Ver opciones</span>
+              </div>
+            `;
+          }
+
+          return `
+            <div class="product-price">
+              ${precioHTML}
+            </div>
+            ${stockInfoHTML}
+          `;
+        })();
 
         return `
         <a href="/producto-detalle.html?id=${productoId}" class="product-card">
@@ -809,10 +820,7 @@
             <span class="product-category">${producto.categoria?.nombre || "Sin categoría"}</span>
             <h3 class="product-title">${producto.nombreProducto}</h3>
             ${medidaBadgeHTML}
-            <div class="product-price">
-              ${precioHTML}
-            </div>
-            ${stockInfoHTML}
+            ${zonaPrecioOAccion}
           </div>
         </a>
       `;

@@ -112,9 +112,17 @@
   color: var(--razo-orange);
   text-decoration: none;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
+  gap: 0.4rem;
+  text-align: center;
+}
+
+.admin-brand-logo img.titulo-emoji-reemplazo {
+  margin-right: 0;
+  margin-bottom: 0.4rem;
+  height: 2.4rem;
 }
 
 .admin-brand-subtitle {

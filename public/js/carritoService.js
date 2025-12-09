@@ -1,41 +1,27 @@
 const CarritoService = (() => {
-  const endpoint = "/carrito/agregar";
-
-  async function agregarItem({
-    productoId,
-    varianteId,
-    cantidad = 1,
-  } = {}) {
-    if (!productoId || !varianteId) {
-      showToast("Faltan datos para agregar al carrito.", "warning");
+  // Requiere: varianteId (VarianteID), cantidad (Cantidad) y tamanoId (TamanoID)
+  // para alinearse con carritoController.agregarAlCarrito.
+  async function agregarItem({ varianteId, cantidad = 1, tamanoId } = {}) {
+    if (!varianteId || !tamanoId) {
+      showToast(
+        "Faltan datos para agregar al carrito (variante o presentación).",
+        "warning"
+      );
       return;
     }
 
     try {
-      const token = getEffectiveToken?.();
-      if (!token) {
-        requireAuth?.();
-        throw new Error("Debes iniciar sesión para agregar productos.");
-      }
+      // API.agregarAlCarrito ya envía { VarianteID, Cantidad, TamanoID }
+      const response = await API.agregarAlCarrito(
+        varianteId,
+        cantidad,
+        tamanoId
+      );
 
-      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          productoId,
-          varianteId,
-          cantidad,
-        }),
-      });
-
-      const data = await response.json().catch(() => ({}));
-
-      if (!response.ok || data.success === false) {
+      if (!response.ok || response.data?.success === false) {
         throw new Error(
-          data?.message || "No fue posible agregar el producto al carrito."
+          response.data?.message ||
+            "No fue posible agregar el producto al carrito."
         );
       }
 
@@ -45,7 +31,7 @@ const CarritoService = (() => {
         window.updateCartBadge();
       }
 
-      return data;
+      return response.data;
     } catch (error) {
       console.error("Error agregando al carrito:", error);
       showToast(error.message || "Error al agregar al carrito.", "error");

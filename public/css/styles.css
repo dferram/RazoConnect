@@ -157,6 +157,14 @@ h3 {
   transform: scale(1.05);
 }
 
+.titulo-emoji-reemplazo {
+  height: 1.1em;
+  width: auto;
+  vertical-align: -0.15em;
+  margin-right: 0.12em;
+  display: inline-block;
+}
+
 .navbar-menu {
   display: flex;
   gap: 2rem;
@@ -366,6 +374,20 @@ h3 {
   background: var(--razo-turquoise);
   color: white;
   transform: translateY(-2px);
+}
+
+.btn-outline-primary {
+  background-color: transparent;
+  color: var(--razo-orange-dark);
+  border: 2px solid var(--razo-orange);
+  box-shadow: none;
+}
+
+.btn-outline-primary:hover:not(:disabled) {
+  background-color: var(--razo-orange);
+  color: #ffffff;
+  box-shadow: 0 6px 20px rgba(255, 119, 51, 0.35);
+  transform: translateY(-1px);
 }
 
 .btn-success {
@@ -988,6 +1010,71 @@ h3 {
   width: 100%;
   height: 100%;
   border-radius: 8px 8px 0 0;
+}
+
+.packs-chips-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.pack-chip {
+  border: 1px solid var(--razo-gray-light);
+  background-color: #f9fafb;
+  border-radius: 999px;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.8rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease,
+    box-shadow 0.15s ease, transform 0.1s ease;
+}
+
+.pack-chip:hover {
+  background-color: #eef2ff;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.08);
+  transform: translateY(-1px);
+}
+
+.pack-chip-icon {
+  font-size: 0.9em;
+  color: #6b7280;
+}
+
+.packs-suggestions-wrapper {
+  margin-bottom: 0.5rem;
+}
+
+.packs-suggestions-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.pack-suggestion-chip {
+  border-radius: 999px;
+  border: 1px dashed var(--razo-gray-light);
+  background-color: #f3f4f6;
+  color: #374151;
+  padding: 0.2rem 0.6rem;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease,
+    border-color 0.15s ease, transform 0.1s ease;
+}
+
+.pack-suggestion-chip:hover {
+  background-color: #e5e7eb;
+  transform: translateY(-1px);
+}
+
+.pack-suggestion-chip--active {
+  background-color: var(--razo-turquoise);
+  color: #ffffff;
+  border-color: var(--razo-turquoise-dark, var(--razo-turquoise));
 }
 
 /* ====================================

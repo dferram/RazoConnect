@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Gestión de Inventario - Admin RazoConnect</title>
+    <link rel="icon" type="image/png" href="/icon/Logo_Razo.png" />
 
     <!-- PROTECCIÓN DE AUTENTICACIÓN ADMIN -->
     <script src="js/auth-guard-admin.js"></script>
@@ -947,7 +948,18 @@
       }
 
       function renderDetalleVariantes(variantes = []) {
-        if (!Array.isArray(variantes) || variantes.length === 0) {
+        const lista = Array.isArray(variantes) ? variantes : [];
+
+        // Filtrar variantes que no tienen una medida física real
+        // (dimensión vacía o placeholder "Unidad individual").
+        const variantesVisibles = lista.filter((variant) => {
+          const dimRaw = (variant.dimensiones || "").toString().trim();
+          if (!dimRaw) return false;
+          const dimLower = dimRaw.toLowerCase();
+          return dimLower !== "unidad individual";
+        });
+
+        if (!variantesVisibles.length) {
           detalleModalFeedback.style.display = "block";
           detalleModalFeedback.innerHTML = `
             <div class="modal-feedback-empty">
@@ -964,13 +976,22 @@
         detalleModalFeedback.style.display = "none";
         detalleModalTableWrapper.style.display = "block";
 
-        tablaVariantesBody.innerHTML = variantes
+        tablaVariantesBody.innerHTML = variantesVisibles
           .map((variant) => {
             const precio =
               typeof variant.precioPaquete === "number"
                 ? formatCurrency(variant.precioPaquete)
                 : "N/A";
-            const dimensiones = variant.dimensiones || "Sin dimensiones";
+
+            // Las "dimensiones" deben representar una medida física real,
+            // no el placeholder "Unidad individual".
+            let dimensionesCrudas = variant.dimensiones || "";
+            let dimensiones =
+              dimensionesCrudas &&
+              typeof dimensionesCrudas === "string" &&
+              dimensionesCrudas.trim().toLowerCase() !== "unidad individual"
+                ? dimensionesCrudas.trim()
+                : "Sin dimensiones";
             const stock = typeof variant.stock === "number" ? variant.stock : 0;
             const estadoClase = stock > 0 ? "en-stock" : "sin-stock";
             const estadoTexto = stock > 0 ? "En stock" : "Sin stock";
@@ -1044,24 +1065,40 @@
             ? detalleProductoActual.variantes || []
             : [];
 
-        if (!variantes.length) {
+        // Filtrar variantes sin medida física real para no mostrarlas en el ajuste
+        const variantesVisibles = variantes.filter((variant) => {
+          const dimRaw = (variant.dimensiones || "").toString().trim();
+          if (!dimRaw) return false;
+          const dimLower = dimRaw.toLowerCase();
+          return dimLower !== "unidad individual";
+        });
+
+        if (!variantesVisibles.length) {
           modalVarianteSelect.innerHTML =
             '<option value="" disabled>No hay variantes registradas</option>';
           modalVarianteSelect.disabled = true;
         } else {
-          variantes.forEach((variant) => {
+          variantesVisibles.forEach((variant) => {
             const option = document.createElement("option");
             option.value = variant.varianteId;
             option.dataset.stock = variant.stock ?? 0;
             option.dataset.sku = variant.sku || "Sin SKU";
-            option.dataset.dimensiones =
-              variant.dimensiones || "Sin dimensiones";
+
+            let dimensionesCrudas = variant.dimensiones || "";
+            let dimensionesSanitizadas =
+              dimensionesCrudas &&
+              typeof dimensionesCrudas === "string" &&
+              dimensionesCrudas.trim().toLowerCase() !== "unidad individual"
+                ? dimensionesCrudas.trim()
+                : "Sin dimensiones";
+
+            option.dataset.dimensiones = dimensionesSanitizadas;
             option.textContent = `${option.dataset.sku} • ${option.dataset.dimensiones}`;
             modalVarianteSelect.appendChild(option);
           });
 
           const defaultVarianteId =
-            variantePreseleccionada?.varianteId || variantes[0].varianteId;
+            variantePreseleccionada?.varianteId || variantesVisibles[0].varianteId;
           modalVarianteSelect.value = defaultVarianteId;
         }
 

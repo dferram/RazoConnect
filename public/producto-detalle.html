@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Detalle del Producto - RazoConnect</title>
+    <link rel="icon" type="image/png" href="/icon/Logo_Razo.png" />
     <link rel="stylesheet" href="css/styles.css" />
     <style>
       .product-layout {
@@ -558,40 +559,29 @@
           return;
         }
 
-        // Stock virtual base de la variante (en paquetes de su propio piezasPorPaquete)
-        const stockVariante = obtenerStockDisponibleVariante(variante);
-
-        // Piezas por paquete originales de la variante (para reconstruir stock en piezas)
-        const piezasVariante =
-          typeof variante.piezasPorPaquete === "number"
-            ? variante.piezasPorPaquete
-            : parseInt(variante.piezasPorPaquete, 10) || 0;
+        // Interpretar el stock de la variante como STOCK EN PIEZAS totales
+        const stockPiezas = obtenerStockDisponibleVariante(variante);
 
         // Piezas por paquete del pack actualmente seleccionado en la UI
         const piezasPackSeleccionado = obtenerPiezasPorPaquete();
 
-        let stockPaquetes = stockVariante;
+        let stockPaquetes = 0;
 
         if (
-          Number.isFinite(stockVariante) &&
-          stockVariante >= 0 &&
-          Number.isFinite(piezasVariante) &&
-          piezasVariante > 0 &&
+          Number.isFinite(stockPiezas) &&
+          stockPiezas >= 0 &&
           Number.isFinite(piezasPackSeleccionado) &&
           piezasPackSeleccionado > 0
         ) {
-          // Reconstruir aproximación del stock maestro en piezas y volver a dividir
-          const stockPiezasAprox = stockVariante * piezasVariante;
-          stockPaquetes = Math.floor(stockPiezasAprox / piezasPackSeleccionado);
+          // Cuántos packs completos se pueden armar con las piezas disponibles
+          stockPaquetes = Math.floor(stockPiezas / piezasPackSeleccionado);
         }
 
         console.log(
           "Variante cambiada:",
           variante?.dimensiones || variante?.medida || variante?.tamano || "N/D",
-          "Stock variante base:",
-          stockVariante,
-          "PiezasVariante:",
-          piezasVariante,
+          "Stock (piezas) variante base:",
+          stockPiezas,
           "PiezasPackSeleccionado:",
           piezasPackSeleccionado,
           "Stock mostrado (paquetes):",
@@ -660,8 +650,16 @@
       }
 
       function obtenerPiezasPorPaquete() {
-        if (tamanoSeleccionado && Number.isFinite(tamanoSeleccionado.valor)) {
-          return tamanoSeleccionado.valor;
+        if (tamanoSeleccionado) {
+          const rawValor =
+            tamanoSeleccionado.valor ?? tamanoSeleccionado.Valor ?? null;
+          const valor = Number.isFinite(rawValor)
+            ? rawValor
+            : parseInt(rawValor, 10);
+
+          if (Number.isFinite(valor) && valor > 0) {
+            return valor;
+          }
         }
 
         const fallback =
@@ -835,8 +833,27 @@
             : '<span class="precio-normal">No disponible</span>';
         }
         piezasPorPaquete.textContent = piezasVariante || "N/D";
-        dimensiones.textContent =
-          varianteSeleccionada.dimensiones || "No especificado";
+
+        // DIMENSIONES: deben mostrar siempre la medida física de la variante
+        // (ej. "10x10"), independiente del pack seleccionado.
+        const medidaFisicaCruda =
+          varianteSeleccionada.dimensiones ||
+          varianteSeleccionada.medida ||
+          null;
+
+        let dimensionTexto =
+          (medidaFisicaCruda && String(medidaFisicaCruda).trim()) ||
+          "No especificada";
+
+        if (
+          typeof dimensionTexto === "string" &&
+          dimensionTexto.trim().toLowerCase() === "unidad individual"
+        ) {
+          // Evitar mostrar el placeholder de algunas variantes maestras
+          dimensionTexto = "No especificada";
+        }
+
+        dimensiones.textContent = dimensionTexto;
 
         const tieneStock = stockDisponible > 0;
         stock.textContent = tieneStock
@@ -892,13 +909,66 @@
           return;
         }
 
+        const tieneMedidaFisica = (variant) => {
+          const dimCruda =
+            variant.dimensiones ||
+            variant.Dimension ||
+            variant.medida ||
+            variant.Medida ||
+            null;
+
+          if (!dimCruda) return false;
+          const dimTexto = String(dimCruda).trim().toLowerCase();
+          return dimTexto && dimTexto !== "unidad individual";
+        };
+
+        const variantesConMedida = Array.isArray(variantes)
+          ? variantes.filter((v) => tieneMedidaFisica(v))
+          : [];
+
+        const listaParaRenderizar =
+          variantesConMedida.length > 0 ? variantesConMedida : variantes;
+
+        // Si la variante seleccionada actual no tiene medida física y existe
+        // alguna variante con medida, usar esa variante como selección por defecto.
+        if (
+          varianteSeleccionada &&
+          !listaParaRenderizar.some(
+            (v) => v.varianteId === varianteSeleccionada.varianteId
+          ) &&
+          listaParaRenderizar.length > 0
+        ) {
+          varianteSeleccionada = listaParaRenderizar[0];
+        }
+
         variantSelect.disabled = false;
-        variantSelect.innerHTML = variantes
+        variantSelect.innerHTML = listaParaRenderizar
           .map((variant) => {
-            const labelParts = [];
-            if (variant.dimensiones) {
-              labelParts.push(variant.dimensiones);
+            // Si existen variantes con medida física y esta variante no tiene,
+            // no mostrarla en el select.
+            if (
+              variantesConMedida.length > 0 &&
+              !tieneMedidaFisica(variant)
+            ) {
+              return "";
             }
+
+            const labelParts = [];
+
+            const dimCruda =
+              variant.dimensiones ||
+              variant.Dimension ||
+              variant.medida ||
+              variant.Medida ||
+              null;
+
+            if (dimCruda) {
+              const dimTexto = String(dimCruda).trim();
+              if (dimTexto && dimTexto.toLowerCase() !== "unidad individual") {
+                labelParts.push(dimTexto);
+              }
+            }
+
             if (variant.sku) {
               labelParts.push(`SKU: ${variant.sku}`);
             }
@@ -961,7 +1031,7 @@
           }
           if (Number.isFinite(tamano.valor)) {
             if (tamano.valor === 1) {
-              return "Pieza individual";
+              return "Pieza Individual";
             }
             return `Pack de ${tamano.valor}`;
           }
@@ -985,12 +1055,15 @@
             tamanoButtons.appendChild(button);
           });
         } else {
+          // Para el select, solo mostrar la cantidad de piezas por paquete
+          // usando la etiqueta simple del pack (sin precio ni stock).
           const optionsHtml = tamanosDisponibles
             .map((tamano) => {
-              const etiqueta = generarEtiqueta(tamano);
-              return `<option value="${tamano.tamanoId}">${etiqueta}</option>`;
+              const etiquetaSimple = generarEtiqueta(tamano);
+              return `<option value="${tamano.tamanoId}">${etiquetaSimple}</option>`;
             })
             .join("");
+
           tamanoSelect.innerHTML = optionsHtml;
           tamanoSelect.onchange = (event) => {
             const valor = parseInt(event.target.value, 10);
@@ -1025,16 +1098,10 @@
           tamanoSelect.value = tamanoSeleccionado.tamanoId;
         }
 
-        const variantePorTamano = encontrarVariantePorTamano(tamanoSeleccionado);
-
-        if (variantePorTamano && variantePorTamano.varianteId) {
-          // Cambiar a la variante que corresponde al pack seleccionado
-          setVarianteSeleccionada(variantePorTamano.varianteId);
-        } else {
-          // Fallback: solo refrescar la info actual de variante
-          actualizarInformacionVariante();
-          actualizarStockUI(varianteSeleccionada);
-        }
+        // Recalcular precios y stock usando la variante actualmente seleccionada
+        // y el pack elegido, sin buscar variantes independientes por pack.
+        actualizarInformacionVariante();
+        actualizarStockUI(varianteSeleccionada);
       }
 
       function actualizarDescripcionTamano() {
@@ -1151,35 +1218,38 @@
           return;
         }
 
-        const stockDisponible =
-          typeof varianteSeleccionada.stock === "number"
-            ? varianteSeleccionada.stock
-            : parseInt(varianteSeleccionada.stock, 10) || 0;
-        const piezasPorPaqueteVariante =
-          typeof varianteSeleccionada.piezasPorPaquete === "number"
-            ? varianteSeleccionada.piezasPorPaquete
-            : parseInt(varianteSeleccionada.piezasPorPaquete, 10) || 0;
+        const stockDisponible = obtenerStockDisponibleVariante(
+          varianteSeleccionada
+        ); // piezas totales
+        const piezasPorPaqueteSeleccionado = obtenerPiezasPorPaquete();
         const cantidadPaquetes = parseInt(cantidadInput.value, 10) || 0;
-        const piezasSolicitadas = cantidadPaquetes * piezasPorPaqueteVariante;
+        const piezasSolicitadas =
+          cantidadPaquetes *
+          (Number.isFinite(piezasPorPaqueteSeleccionado)
+            ? piezasPorPaqueteSeleccionado
+            : 0);
 
         backorderAlert.style.display = "none";
         backorderAlert.textContent = "";
 
-        if (stockDisponible <= 0) {
+        if (!Number.isFinite(stockDisponible) || stockDisponible <= 0) {
           backorderAlert.style.display = "block";
           backorderAlert.textContent =
             "Producto bajo pedido. Se solicitará a proveedor.";
           return;
         }
 
-        const stockDisponiblesPiezas =
-          stockDisponible * piezasPorPaqueteVariante;
-        if (piezasSolicitadas > stockDisponiblesPiezas) {
-          const piezasInmediatas = stockDisponiblesPiezas;
-          const piezasBackorder = piezasSolicitadas - stockDisponiblesPiezas;
-          backorderAlert.style.display = "block";
-          backorderAlert.textContent = `¡Atención! Solo tenemos ${piezasInmediatas} piezas disponibles inmediatas. El resto (${piezasBackorder}) se solicitará a proveedor y tomará más tiempo.`;
+        if (
+          !Number.isFinite(piezasSolicitadas) ||
+          piezasSolicitadas <= stockDisponible
+        ) {
+          return;
         }
+
+        const piezasInmediatas = stockDisponible;
+        const piezasBackorder = piezasSolicitadas - stockDisponible;
+        backorderAlert.style.display = "block";
+        backorderAlert.textContent = `¡Atención! Solo tenemos ${piezasInmediatas} piezas disponibles inmediatas. El resto (${piezasBackorder}) se solicitará a proveedor y tomará más tiempo.`;
       }
 
       cantidadInput.addEventListener("input", () => {
@@ -1225,9 +1295,9 @@
 
         try {
           await CarritoService.agregarItem({
-            productoId: producto?.productoId,
             varianteId: varianteSeleccionada.varianteId,
             cantidad,
+            tamanoId: tamanoSeleccionado.tamanoId,
           });
 
           cantidadInput.value = Math.min(

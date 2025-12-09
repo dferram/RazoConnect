@@ -200,17 +200,28 @@ const API = {
     });
   },
 
-  actualizarCarrito: async (varianteId, cantidadPaquetes) => {
+  actualizarCarrito: async (varianteId, cantidadPaquetes, tamanoId) => {
     return apiCall(`/carrito/${varianteId}`, {
       method: "PUT",
       body: JSON.stringify({
         CantidadPaquetes: cantidadPaquetes,
+        TamanoID: tamanoId,
       }),
     });
   },
 
-  eliminarDelCarrito: async (varianteId) => {
-    return apiCall(`/carrito/${varianteId}`, {
+  cambiarVarianteItemCarrito: async (itemId, nuevaVarianteId, tamanoId) => {
+    return apiCall(`/carrito/item/${itemId}/cambiar-variante`, {
+      method: "PUT",
+      body: JSON.stringify({
+        NuevaVarianteID: nuevaVarianteId,
+        TamanoID: tamanoId,
+      }),
+    });
+  },
+
+  eliminarDelCarrito: async (itemId) => {
+    return apiCall(`/carrito/${itemId}`, {
       method: "DELETE",
     });
   },
