@@ -121,6 +121,14 @@ router.post(
 );
 
 router.post(
+  "/productos/:id/imagenes",
+  authenticate,
+  authorizeAdmin,
+  upload.array("imagenes", 5),
+  adminController.subirImagenesProductoMultiple
+);
+
+router.post(
   "/variantes",
   authenticate,
   authorizeAdmin,

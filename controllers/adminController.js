@@ -4606,6 +4606,107 @@ const subirImagenProducto = async (req, res) => {
 };
 
 /**
+ * Subir múltiples imágenes para un producto
+ * POST /api/admin/productos/:id/imagenes
+ * Middleware: upload.array('imagenes', 5)
+ */
+const subirImagenesProductoMultiple = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const archivos = Array.isArray(req.files) ? req.files : [];
+
+    if (!archivos.length) {
+      return res.status(400).json({
+        success: false,
+        message: "No se proporcionaron archivos de imagen",
+      });
+    }
+
+    const productoResult = await db.query(
+      `SELECT productoid FROM productos WHERE productoid = $1`,
+      [id]
+    );
+
+    if (productoResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Producto no encontrado",
+      });
+    }
+
+    const ordenResult = await db.query(
+      `SELECT COALESCE(MAX(orden), 0) AS max_orden
+       FROM producto_imagenes
+       WHERE productoid = $1`,
+      [id]
+    );
+
+    let nextOrden = Number.parseInt(ordenResult.rows[0]?.max_orden, 10);
+    if (!Number.isFinite(nextOrden) || nextOrden < 0) {
+      nextOrden = 0;
+    }
+
+    const imagenesGuardadas = [];
+
+    for (const file of archivos) {
+      if (!file || !file.filename) continue;
+
+      const rutaImagen = `/uploads/${file.filename}`;
+      nextOrden += 1;
+
+      const insertResult = await db.query(
+        `INSERT INTO producto_imagenes (productoid, url_imagen, textoalternativo, orden)
+         VALUES ($1, $2, NULL, $3)
+         RETURNING imagenid, url_imagen, textoalternativo, orden`,
+        [id, rutaImagen, nextOrden]
+      );
+
+      imagenesGuardadas.push(insertResult.rows[0]);
+    }
+
+    if (!imagenesGuardadas.length) {
+      return res.status(400).json({
+        success: false,
+        message: "No se pudieron guardar las imágenes proporcionadas",
+      });
+    }
+
+    console.log(
+      `✅ Imágenes guardadas para producto ${id}:`,
+      imagenesGuardadas.map((img) => img.url_imagen)
+    );
+
+    const baseUrl = `${req.protocol}://${req.get("host")}`;
+
+    res.status(200).json({
+      success: true,
+      message: "Imágenes subidas exitosamente",
+      data: {
+        imagenes: imagenesGuardadas.map((img) => ({
+          imagenId: img.imagenid,
+          rutaImagen: img.url_imagen,
+          urlCompleta: `${baseUrl}${img.url_imagen}`,
+          textoAlternativo: img.textoalternativo || null,
+          orden: img.orden,
+        })),
+      },
+    });
+  } catch (error) {
+    console.error(
+      `❌ Error al subir imágenes múltiples del producto ${id}:`,
+      error.message
+    );
+
+    res.status(500).json({
+      success: false,
+      message: "Error al subir las imágenes",
+      error: error.message,
+    });
+  }
+};
+
+/**
  * Confirmar orden de backorder
  * POST /api/admin/ordenes-compra/:id/confirmar
  */
@@ -5165,6 +5266,7 @@ module.exports = {
   crearOrdenCompra,
   recibirInventario,
   subirImagenProducto,
+  subirImagenesProductoMultiple,
   confirmarOrdenBackorder,
   cancelarOrdenBackorder,
 };

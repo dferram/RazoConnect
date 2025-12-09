@@ -256,10 +256,86 @@
         color: var(--warning-color, #dd6b20);
       }
 
+      .galeria-sticky {
+        position: sticky;
+        top: 1.25rem;
+      }
+
+      .producto-galeria-container {
+        display: flex;
+        gap: 1.25rem;
+        align-items: flex-start;
+      }
+
+      .galeria-thumbnails {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        width: 80px;
+        max-height: 500px;
+        overflow-y: auto;
+      }
+
+      .galeria-main {
+        flex: 1;
+      }
+
+      .galeria-main img {
+        width: 100%;
+        max-height: 500px;
+        object-fit: contain;
+        border-radius: 0.5rem;
+        box-shadow: var(--shadow-lg);
+        background: #f5f5f5;
+        padding: 1rem;
+      }
+
+      .thumb-img {
+        width: 100%;
+        height: 80px;
+        object-fit: cover;
+        border-radius: 0.45rem;
+        cursor: pointer;
+        border: 2px solid transparent;
+        box-shadow: var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.08));
+        transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.1s ease;
+      }
+
+      .thumb-img:hover {
+        border-color: var(--primary-color, #2563eb);
+        box-shadow: var(--shadow, 0 4px 10px rgba(0, 0, 0, 0.12));
+        transform: translateY(-1px);
+      }
+
+      .thumb-img.active {
+        border-color: var(--primary-color, #2563eb);
+        box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.4);
+      }
+
       @media (max-width: 992px) {
         .product-layout {
           grid-template-columns: 1fr;
           gap: 1.75rem;
+        }
+
+        .galeria-sticky {
+          position: static;
+        }
+
+        .producto-galeria-container {
+          flex-direction: column-reverse;
+        }
+
+        .galeria-thumbnails {
+          flex-direction: row;
+          width: 100%;
+          max-height: none;
+          overflow-x: auto;
+        }
+
+        .thumb-img {
+          width: 80px;
+          height: 80px;
         }
       }
 
@@ -305,33 +381,17 @@
       <div id="productDetails" style="display: none">
         <div class="product-layout">
           <!-- Images Section -->
-          <div>
-            <div style="margin-bottom: 1rem">
-              <img
-                id="mainImage"
-                src=""
-                alt=""
-                style="
-                  width: 100%;
-                  height: 500px;
-                  object-fit: contain;
-                  border-radius: 0.5rem;
-                  box-shadow: var(--shadow-lg);
-                  background: #f5f5f5;
-                  padding: 1rem;
-                "
-              />
+          <div class="galeria-sticky">
+            <div class="producto-galeria-container">
+              <div id="thumbnailGallery" class="galeria-thumbnails"></div>
+              <div class="galeria-main">
+                <img
+                  id="mainImage"
+                  src=""
+                  alt=""
+                />
+              </div>
             </div>
-
-            <!-- Thumbnail Gallery -->
-            <div
-              id="thumbnailGallery"
-              style="
-                display: grid;
-                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-                gap: 0.5rem;
-              "
-            ></div>
           </div>
 
           <!-- Product Info Section -->
@@ -715,30 +775,42 @@
         const fallbackAlt = producto?.nombreProducto || "Producto";
         const primeraImagen = imagenes[0];
 
-        mainImage.src = primeraImagen?.url || placeholderImage;
-        mainImage.alt = primeraImagen?.alt || fallbackAlt;
+        function cambiarImagenPrincipalDesdeThumb(thumbEl, url, alt) {
+          if (!mainImage) return;
+          mainImage.src = url || placeholderImage;
+          mainImage.alt = alt || fallbackAlt;
 
-        if (imagenes.length > 1) {
-          thumbnailGallery.style.display = "grid";
-          imagenes.forEach((img) => {
+          if (thumbnailGallery) {
+            thumbnailGallery
+              .querySelectorAll(".thumb-img")
+              .forEach((el) => el.classList.remove("active"));
+          }
+          if (thumbEl) {
+            thumbEl.classList.add("active");
+          }
+        }
+
+        const urlInicial = primeraImagen?.url || placeholderImage;
+        const altInicial = primeraImagen?.alt || fallbackAlt;
+        cambiarImagenPrincipalDesdeThumb(null, urlInicial, altInicial);
+
+        if (imagenes.length) {
+          thumbnailGallery.style.display = "flex";
+          imagenes.forEach((img, index) => {
             const thumb = document.createElement("img");
             thumb.src = img.url;
             thumb.alt = img.alt || fallbackAlt;
-            thumb.style.width = "100%";
-            thumb.style.height = "100px";
-            thumb.style.objectFit = "cover";
-            thumb.style.borderRadius = "0.375rem";
-            thumb.style.cursor = "pointer";
-            thumb.style.border = "2px solid var(--border-color)";
+            thumb.className = "thumb-img";
+            if (index === 0) {
+              thumb.classList.add("active");
+            }
             thumb.addEventListener("click", () => {
-              mainImage.src = img.url;
-              mainImage.alt = thumb.alt;
+              cambiarImagenPrincipalDesdeThumb(thumb, img.url, thumb.alt);
             });
             thumbnailGallery.appendChild(thumb);
           });
         } else {
-          thumbnailGallery.style.display =
-            imagenes.length === 1 ? "grid" : "none";
+          thumbnailGallery.style.display = "none";
         }
       }
 
@@ -967,10 +1039,6 @@
               if (dimTexto && dimTexto.toLowerCase() !== "unidad individual") {
                 labelParts.push(dimTexto);
               }
-            }
-
-            if (variant.sku) {
-              labelParts.push(`SKU: ${variant.sku}`);
             }
             const label =
               labelParts.length > 0

@@ -310,6 +310,54 @@
         font-size: 0.8rem;
         color: rgba(75, 85, 99, 0.85);
       }
+
+      .product-images-uploader {
+        margin-top: 1rem;
+        padding-top: 0.75rem;
+        border-top: 1px solid rgba(209, 213, 219, 0.6);
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      .product-images-preview {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+      }
+
+      .product-images-preview-item {
+        position: relative;
+        width: 80px;
+        height: 80px;
+        border-radius: 0.5rem;
+        overflow: hidden;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+      }
+
+      .product-images-preview-item img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .product-images-preview-remove {
+        position: absolute;
+        top: 4px;
+        right: 4px;
+        width: 20px;
+        height: 20px;
+        border-radius: 999px;
+        border: none;
+        background: rgba(239, 68, 68, 0.9);
+        color: #fff;
+        font-size: 0.8rem;
+        line-height: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+      }
     </style>
   </head>
   <body>
@@ -372,6 +420,40 @@
                 </div>
                 <div class="admin-card-body" id="productSummary">
                   <!-- populated dynamically -->
+                </div>
+                <div class="admin-card-body">
+                  <div class="product-images-uploader">
+                    <label for="productImagesInput" class="form-label">
+                      Galería de imágenes
+                    </label>
+                    <input
+                      type="file"
+                      id="productImagesInput"
+                      class="form-input"
+                      accept="image/jpeg,image/jpg,image/png,image/webp"
+                      multiple
+                    />
+                    <small class="form-hint">
+                      Puedes seleccionar hasta 5 imágenes por carga. La primera imagen se usará como portada en el catálogo.
+                    </small>
+                    <div class="product-images-preview" id="galeriaPreview"></div>
+                    <div style="display: flex; gap: 0.5rem; margin-top: 0.25rem;">
+                      <button
+                        type="button"
+                        class="btn btn-secondary btn-sm"
+                        id="clearImagesSelectionBtn"
+                      >
+                        Limpiar selección
+                      </button>
+                      <button
+                        type="button"
+                        class="btn btn-primary btn-sm"
+                        id="uploadImagesBtn"
+                      >
+                        Subir imágenes
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </section>
 
@@ -763,10 +845,18 @@
         "stockProjectionSubtitle"
       );
 
+      const productImagesInput = document.getElementById("productImagesInput");
+      const galeriaPreview = document.getElementById("galeriaPreview");
+      const uploadImagesBtn = document.getElementById("uploadImagesBtn");
+      const clearImagesSelectionBtn = document.getElementById(
+        "clearImagesSelectionBtn"
+      );
+
       let productoCodigoModelo = null;
       let tamanosConfiguradosMaestro = [];
       let variantesProducto = [];
       let editingVarianteId = null;
+      let imagenesSeleccionadas = [];
 
       if (!productoId || Number.isNaN(productoId)) {
         loadingState.style.display = "none";
@@ -1307,6 +1397,30 @@
           style: "currency",
           currency: "MXN",
         }).format(amount);
+      }
+
+      if (productImagesInput) {
+        productImagesInput.addEventListener("change", (event) => {
+          const files = Array.from(event.target.files || []);
+          imagenesSeleccionadas = files;
+          renderGaleriaPreview();
+        });
+      }
+
+      if (clearImagesSelectionBtn) {
+        clearImagesSelectionBtn.addEventListener("click", () => {
+          imagenesSeleccionadas = [];
+          if (productImagesInput) {
+            productImagesInput.value = "";
+          }
+          renderGaleriaPreview();
+        });
+      }
+
+      if (uploadImagesBtn) {
+        uploadImagesBtn.addEventListener("click", () => {
+          subirImagenesProductoMultiple();
+        });
       }
 
       variantForm.addEventListener("submit", async (event) => {
