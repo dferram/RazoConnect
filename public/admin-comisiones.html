@@ -476,12 +476,32 @@
       }
 
       async function pagarComision(id, agente, monto) {
-        if (
-          !confirm(`¿Pagar comisión de $${monto.toLocaleString()} a ${agente}?`)
-        )
-          return;
-
         try {
+          // Si SweetAlert2 está disponible, usar modal moderno
+          if (typeof Swal !== "undefined" && Swal && typeof Swal.fire === "function") {
+            const result = await Swal.fire({
+              title: "Confirmar Pago",
+              html: `Vas a pagar <b>$${monto.toLocaleString()}</b> a <b>${
+                agente || "este agente"
+              }</b>.`,
+              icon: "question",
+              showCancelButton: true,
+              confirmButtonText: "Sí, procesar pago",
+              cancelButtonText: "Cancelar",
+              confirmButtonColor: "#F97316",
+            });
+
+            if (!result.isConfirmed) {
+              return;
+            }
+          } else {
+            // Fallback a confirm nativo si no está SweetAlert2
+            const confirmado = confirm(
+              `¿Pagar comisión de $${monto.toLocaleString()} a ${agente}?`
+            );
+            if (!confirmado) return;
+          }
+
           const response = await fetch(
             `${API_BASE_URL}/admin/comisiones/${id}/pagar`,
             {

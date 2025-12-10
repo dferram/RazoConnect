@@ -6,6 +6,8 @@
     <title>Bitácora de Auditoría - Admin RazoConnect</title>
     <link rel="icon" type="image/png" href="/icon/Logo_Razo.png" />
 
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <!-- PROTECCIÓN DE AUTENTICACIÓN ADMIN -->
     <script src="js/auth-guard-admin.js"></script>
 
@@ -17,14 +19,14 @@
     <style>
       .stats-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 1.5rem;
-        margin-bottom: 2rem;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.5rem;
       }
 
       .stat-card {
         background: linear-gradient(135deg, #ffb27a 0%, var(--razo-orange) 100%);
-        padding: 1.5rem;
+        padding: 1.25rem;
         border-radius: 1rem;
         color: white;
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -47,7 +49,7 @@
       }
 
       .stat-value {
-        font-size: 2.5rem;
+        font-size: 2rem;
         font-weight: 700;
         margin: 0.5rem 0;
       }
@@ -61,7 +63,7 @@
 
       .filters-container {
         background: white;
-        padding: 1.5rem;
+        padding: 1.25rem;
         border-radius: 1rem;
         margin-bottom: 2rem;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
@@ -69,7 +71,7 @@
 
       .filters-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
         gap: 1rem;
         margin-top: 1rem;
       }
@@ -77,21 +79,22 @@
       .log-table {
         width: 100%;
         border-collapse: collapse;
+        table-layout: fixed;
       }
 
       .log-table th {
         background: var(--razo-gray-light);
-        padding: 0.75rem 1rem;
+        padding: 0.5rem 0.75rem;
         text-align: left;
         font-weight: 600;
         color: var(--razo-gray-dark);
-        font-size: 0.875rem;
+        font-size: 0.8rem;
         text-transform: uppercase;
         letter-spacing: 0.5px;
       }
 
       .log-table td {
-        padding: 1rem;
+        padding: 0.6rem 0.75rem;
         border-bottom: 1px solid var(--border-color);
       }
 
@@ -139,12 +142,13 @@
       }
 
       .details-cell {
-        max-width: 300px;
+        max-width: 220px;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
         cursor: pointer;
         color: var(--razo-orange);
+        font-size: 0.8rem;
       }
 
       .details-cell:hover {

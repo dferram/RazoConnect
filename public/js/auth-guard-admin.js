@@ -51,21 +51,35 @@
       }
 
       // Permitir que la página continúe cargando
-      console.log("✅ Admin authenticated successfully");
+      console.log(" Admin authenticated successfully");
     })
     .catch((error) => {
-      console.error("❌ Admin authentication failed:", error);
+      console.error(" Admin authentication failed:", error);
       console.error("Error details:", error.message);
 
       // Limpiar tokens inválidos
       localStorage.removeItem("razoconnect_admin_token");
       localStorage.removeItem("razoconnect_admin");
 
-      // Solo mostrar alerta si había un token que resultó ser inválido
-      alert(
-        "Tu sesión ha expirado o es inválida. Por favor, inicia sesión nuevamente."
-      );
-      window.location.replace("/login.html");
+      // Solo mostrar aviso si había un token que resultó ser inválido
+      if (typeof Swal !== "undefined" && Swal && typeof Swal.fire === "function") {
+        Swal.fire({
+          icon: "warning",
+          title: "Sesión Expirada",
+          text:
+            "Tu sesión ha expirado o es inválida. Por favor, inicia sesión nuevamente.",
+          confirmButtonText: "Ir al Login",
+          confirmButtonColor: "#F97316",
+          allowOutsideClick: false,
+        }).then(() => {
+          window.location.replace("/login.html");
+        });
+      } else {
+        alert(
+          "Tu sesión ha expirado o es inválida. Por favor, inicia sesión nuevamente."
+        );
+        window.location.replace("/login.html");
+      }
     });
 })();
 

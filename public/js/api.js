@@ -106,7 +106,10 @@ const requireAuth = () => {
   return false;
 };
 
-// API call wrapper with automatic token handling
+// Flag para evitar mostrar múltiples modales de sesión expirada
+let sessionExpiredHandled = false;
+
+// API call wrapper con manejo automático de token y sesión expirada
 const apiCall = async (endpoint, options = {}) => {
   const token = getEffectiveToken();
 
@@ -127,10 +130,34 @@ const apiCall = async (endpoint, options = {}) => {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
     const data = await response.json();
 
-    // Handle unauthorized (token expired or invalid)
+    // Manejo centralizado de sesión expirada (401)
     if (response.status === 401) {
       clearAuthData();
-      window.location.href = "/login.html";
+
+      if (!sessionExpiredHandled) {
+        sessionExpiredHandled = true;
+
+        // Preferir SweetAlert2 si está disponible globalmente
+        if (typeof Swal !== "undefined" && Swal && typeof Swal.fire === "function") {
+          Swal.fire({
+            icon: "warning",
+            title: "Sesión Expirada",
+            text: "Tu sesión ha caducado por inactividad. Por favor, ingresa nuevamente.",
+            confirmButtonText: "Ir al Login",
+            confirmButtonColor: "#F97316",
+            allowOutsideClick: false,
+          }).then(() => {
+            window.location.href = "/login.html";
+          });
+        } else {
+          // Fallback en caso de que SweetAlert2 no esté disponible
+          alert(
+            "Tu sesión ha caducado por inactividad. Por favor, ingresa nuevamente."
+          );
+          window.location.href = "/login.html";
+        }
+      }
+
       throw new Error("Sesión expirada. Por favor, inicia sesión nuevamente.");
     }
 

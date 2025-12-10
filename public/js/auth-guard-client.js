@@ -89,9 +89,24 @@
 
       localStorage.removeItem("razoconnect_token");
       localStorage.removeItem("razoconnect_user");
-      alert(
-        "Tu sesión ha expirado o es inválida. Por favor, inicia sesión nuevamente."
-      );
-      window.location.replace("/login.html");
+
+      if (typeof Swal !== "undefined" && Swal && typeof Swal.fire === "function") {
+        Swal.fire({
+          icon: "warning",
+          title: "Sesión Expirada",
+          text:
+            "Tu sesión ha expirado o es inválida. Por favor, inicia sesión nuevamente.",
+          confirmButtonText: "Ir al Login",
+          confirmButtonColor: "#F97316",
+          allowOutsideClick: false,
+        }).then(() => {
+          window.location.replace("/login.html");
+        });
+      } else {
+        alert(
+          "Tu sesión ha expirado o es inválida. Por favor, inicia sesión nuevamente."
+        );
+        window.location.replace("/login.html");
+      }
     });
 })();

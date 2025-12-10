@@ -6,6 +6,8 @@
     <title>Editar Producto - Admin RazoConnect</title>
     <link rel="icon" type="image/png" href="/icon/Logo_Razo.png" />
 
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <!-- PROTECCIÓN DE AUTENTICACIÓN ADMIN -->
     <script src="js/auth-guard-admin.js"></script>
 
@@ -358,6 +360,77 @@
         justify-content: center;
         cursor: pointer;
       }
+
+      /* Layout mejorado para resumen y KPIs */
+      .product-summary-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+      }
+
+      .product-summary-main {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+
+      .product-summary-kpis {
+        display: grid;
+        grid-auto-rows: minmax(0, 1fr);
+        gap: 0.5rem;
+        min-width: 220px;
+      }
+
+      .product-kpi {
+        background: #fff7f1;
+        border-radius: 0.75rem;
+        padding: 0.5rem 0.75rem;
+        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+      }
+
+      .product-kpi-label {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--razo-gray-warm);
+        margin-bottom: 0.15rem;
+      }
+
+      .product-kpi-value {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--razo-orange-dark);
+      }
+
+      .inventory-summary-wrapper {
+        position: sticky;
+        top: 1rem;
+      }
+
+      @media (max-width: 1024px) {
+        .inventory-summary-wrapper {
+          position: static;
+          margin-top: 1.5rem;
+        }
+      }
+
+      .variants-table td.actions-cell {
+        text-align: right;
+        white-space: nowrap;
+      }
+
+      .badge.badge-neutral {
+        background: #f3f4f6;
+        color: #374151;
+        border-radius: 999px;
+        padding: 0.25rem 0.75rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+      }
     </style>
   </head>
   <body>
@@ -468,7 +541,8 @@
                 </div>
                 <div class="admin-card-body">
                   <div class="admin-grid-lg variant-editor-grid">
-                    <form id="variantForm" class="variant-form">
+                    <div>
+                      <form id="variantForm" class="variant-form">
                       <div class="form-group">
                         <label for="sku" class="form-label">SKU *</label>
                         <input
@@ -676,6 +750,43 @@
                         </button>
                       </div>
                     </form>
+                    </div>
+                    <aside class="inventory-summary-wrapper">
+                      <div class="inventory-summary-card" aria-live="polite">
+                        <div class="stock-projection-header">
+                          <div>
+                            <h3 class="stock-projection-title">📊 Proyección de Stock</h3>
+                            <p
+                              id="stockProjectionSubtitle"
+                              class="form-hint"
+                              style="margin: 0; font-size: 0.8rem; color: var(--text-secondary);"
+                            >
+                              Define el stock inicial para ver cuántos paquetes puedes armar con cada presentación.
+                            </p>
+                          </div>
+                          <div class="stock-total-value" id="stockProjectionTotal">
+                            0
+                          </div>
+                        </div>
+                        <div id="stockProjectionTableWrapper">
+                          <table class="stock-projection-table">
+                            <thead>
+                              <tr>
+                                <th>Presentación</th>
+                                <th class="stock-projection-qty">Disponibles</th>
+                              </tr>
+                            </thead>
+                            <tbody id="stockProjectionTableBody">
+                              <tr>
+                                <td colspan="2" class="stock-projection-empty">
+                                  Aún no se ha definido stock para esta variante.
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </aside>
                   </div>
                 </div>
               </section>
@@ -730,55 +841,6 @@
               </div>
             </section>
 
-            <!-- Stock projection full-width section -->
-            <section class="admin-card" style="margin-bottom: 2rem">
-              <div class="admin-card-header">
-                <h2 class="admin-card-title">Proyección de stock y packs</h2>
-                <p
-                  class="admin-header-subtitle"
-                  style="margin-bottom: 0"
-                >
-                  Visualiza cuántos paquetes puedes armar con el stock físico inicial
-                  en cada presentación configurada.
-                </p>
-              </div>
-              <div class="admin-card-body">
-                <div class="inventory-summary-card" aria-live="polite">
-                  <div class="stock-projection-header">
-                    <div>
-                      <h3 class="stock-projection-title">📊 Proyección de Stock</h3>
-                      <p
-                        id="stockProjectionSubtitle"
-                        class="form-hint"
-                        style="margin: 0; font-size: 0.8rem; color: var(--text-secondary);"
-                      >
-                        Define el stock inicial para ver cuántos paquetes puedes armar con cada presentación.
-                      </p>
-                    </div>
-                    <div class="stock-total-value" id="stockProjectionTotal">
-                      0
-                    </div>
-                  </div>
-                  <div id="stockProjectionTableWrapper">
-                    <table class="stock-projection-table">
-                      <thead>
-                        <tr>
-                          <th>Presentación</th>
-                          <th class="stock-projection-qty">Disponibles</th>
-                        </tr>
-                      </thead>
-                      <tbody id="stockProjectionTableBody">
-                        <tr>
-                          <td colspan="2" class="stock-projection-empty">
-                            Aún no se ha definido stock para esta variante.
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
-            </section>
           </div>
         </div>
 
@@ -1018,10 +1080,16 @@
       }
 
       function renderProductSummary(producto, variantes) {
-        const totalVariantes = variantes.length;
-        const variantesConStock = variantes.filter(
+        const totalVariantes = Array.isArray(variantes) ? variantes.length : 0;
+        const variantesConStock = (Array.isArray(variantes) ? variantes : []).filter(
           (v) => (v.stock || 0) > 0
         ).length;
+
+        const stockTotal = (Array.isArray(variantes) ? variantes : []).reduce(
+          (sum, v) => sum + (Number.isFinite(v.stock) ? v.stock : 0),
+          0
+        );
+
         const precioMin = producto.precioDesde
           ? formatCurrency(producto.precioDesde)
           : "N/D";
@@ -1047,6 +1115,7 @@
           badgeMax.textContent = `Precio hasta ${precioMax}`;
           pricingBadges.appendChild(badgeMax);
         }
+
         // Buscar imagen principal a partir de las variantes
         let mainImageUrl = null;
         let mainImageAlt = null;
@@ -1069,50 +1138,42 @@
             }" /></div>`
           : `<div class="product-summary-image"><span style="font-size: 1.75rem;">📦</span></div>`;
 
+        const categoriaNombre = producto.categoria?.nombre || "Sin categoría";
+        const codigoModelo = producto.codigoModelo || "No definido";
+
         productSummary.innerHTML = `
         <div class="product-summary">
           <div class="product-summary-header">
-            ${imageHtml}
-            <div class="product-summary-text">
-              <h3>${producto.nombreProducto}</h3>
-              ${
-                producto.codigoModelo
-                  ? `<p style="color: var(--razo-orange); font-weight: 600; margin-bottom: 0.5rem;">📦 Código: ${producto.codigoModelo}</p>`
-                  : ""
-              }
-              <p style="color: var(--text-secondary);">${
-                producto.descripcion || "Sin descripción registrada."
-              }</p>
+            <div class="product-summary-main">
+              ${imageHtml}
+              <div class="product-summary-text">
+                <h3>${producto.nombreProducto}</h3>
+                <div style="display:flex; flex-wrap:wrap; gap:0.5rem; margin-bottom:0.5rem;">
+                  <span class="badge" style="background:#f3f4f6; color:#374151; border-radius:999px; font-size:0.75rem; font-weight:600; padding:0.25rem 0.75rem;">
+                    ${categoriaNombre}
+                  </span>
+                  <span class="badge" style="background:#eef2ff; color:#4b5563; border-radius:999px; font-size:0.75rem; font-weight:600; padding:0.25rem 0.75rem;">
+                    SKU base: ${codigoModelo}
+                  </span>
+                </div>
+                <p style="color: var(--text-secondary);">
+                  ${producto.descripcion || "Sin descripción registrada."}
+                </p>
+              </div>
             </div>
-          </div>
-          <div class="summary-grid">
-            <div>
-              <span class="summary-label">Categoría</span>
-              <span class="summary-value">${
-                producto.categoria?.nombre || "Sin categoría"
-              }</span>
-            </div>
-            <div>
-              <span class="summary-label">Código de Modelo</span>
-              <span class="summary-value">${
-                producto.codigoModelo || "No definido"
-              }</span>
-            </div>
-            <div>
-              <span class="summary-label">Variantes totales</span>
-              <span class="summary-value">${totalVariantes}</span>
-            </div>
-            <div>
-              <span class="summary-label">Variantes con stock</span>
-              <span class="summary-value">${variantesConStock}</span>
-            </div>
-            <div>
-              <span class="summary-label">Precio mínimo</span>
-              <span class="summary-value">${precioMin}</span>
-            </div>
-            <div>
-              <span class="summary-label">Precio máximo</span>
-              <span class="summary-value">${precioMax}</span>
+            <div class="product-summary-kpis">
+              <div class="product-kpi">
+                <div class="product-kpi-label">Total variantes</div>
+                <div class="product-kpi-value">${totalVariantes}</div>
+              </div>
+              <div class="product-kpi">
+                <div class="product-kpi-label">Stock total</div>
+                <div class="product-kpi-value">${stockTotal.toLocaleString("es-MX")}</div>
+              </div>
+              <div class="product-kpi">
+                <div class="product-kpi-label">Rango de precios</div>
+                <div class="product-kpi-value">${precioMin} – ${precioMax}</div>
+              </div>
             </div>
           </div>
         </div>
@@ -1177,13 +1238,14 @@
                 </button>
               </div>
             </td>
-            <td>
+            <td class="actions-cell">
               <button
                 type="button"
-                class="btn btn-secondary"
+                class="btn btn-secondary btn-sm"
                 onclick="iniciarEdicionVariante(${variant.varianteId})"
+                title="Editar variante"
               >
-                Editar
+                ✏️
               </button>
             </td>
           </tr>

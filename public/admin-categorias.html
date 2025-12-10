@@ -6,6 +6,8 @@
     <title>Gestión de Categorías - Admin RazoConnect</title>
     <link rel="icon" type="image/png" href="/icon/Logo_Razo.png" />
 
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <!-- PROTECCIÓN DE AUTENTICACIÓN ADMIN -->
     <script src="js/auth-guard-admin.js"></script>
 
@@ -355,9 +357,6 @@
                   <button class="btn btn-secondary btn-sm" data-action="edit" data-id="${
                     cat.categoriaId
                   }">Editar</button>
-                  <button class="btn btn-danger btn-sm" data-action="delete" data-id="${
-                    cat.categoriaId
-                  }">Eliminar</button>
                 </div>
               </td>
             </tr>
@@ -457,46 +456,6 @@
             categoria.parentCategoriaId || "";
           guardarBtnText.textContent = "Actualizar categoría";
           showToast(`Editando categoría: ${categoria.nombre}`, "info");
-        }
-
-        if (action === "delete") {
-          const confirmDelete = confirm(
-            `¿Eliminar la categoría "${categoria.nombre}"? Esta acción no se puede deshacer.`
-          );
-          if (!confirmDelete) return;
-
-          try {
-            const response = await fetch(
-              `${API_BASE_URL}/admin/categorias/${id}`,
-              {
-                method: "DELETE",
-                headers,
-              }
-            );
-
-            const result = await response.json();
-
-            if (!response.ok || !result.success) {
-              throw new Error(
-                result.message || "No se pudo eliminar la categoría"
-              );
-            }
-
-            showToast(
-              result.message || "Categoría eliminada correctamente",
-              "success"
-            );
-            if (categoriaEditando && categoriaEditando.categoriaId === id) {
-              resetForm();
-            }
-            fetchCategorias();
-          } catch (error) {
-            console.error("Error al eliminar categoría:", error);
-            showToast(
-              error.message || "No se pudo eliminar la categoría",
-              "error"
-            );
-          }
         }
       });
 
