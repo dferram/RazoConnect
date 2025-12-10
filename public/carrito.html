@@ -147,47 +147,59 @@
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
       }
 
+      /* Grid de tallas estilo tarjetas de ropa (Nike-like) */
       .size-options-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
-        gap: 0.75rem;
-        margin-top: 0.5rem;
+        grid-template-columns: repeat(auto-fit, minmax(52px, 1fr));
+        gap: 0.5rem;
+        margin-top: 0.75rem;
       }
 
       .size-option-button {
-        border-radius: 0.5rem;
-        border: 1px solid var(--border-color, #e5e7eb);
-        padding: 0.6rem 0.4rem;
+        width: 52px;
+        height: 52px;
+        border-radius: 0.75rem;
+        border: 1px solid #d1d5db;
+        padding: 0;
         font-size: 0.8rem;
-        font-weight: 500;
+        font-weight: 600;
         background: #ffffff;
         cursor: pointer;
         display: flex;
-        flex-direction: column;
         align-items: center;
         justify-content: center;
-        gap: 0.25rem;
+        position: relative;
         transition: all 0.15s ease;
       }
 
       .size-option-button:hover {
-        border-color: var(--primary-color);
-        box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.15);
+        border-color: #111827;
+        box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.18);
+        transform: translateY(-1px);
       }
 
       .size-option-selected {
-        border-color: var(--primary-color);
-        background: rgba(59, 130, 246, 0.06);
-        box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.3);
+        border-color: #111827;
+        box-shadow: 0 0 0 2px #111827;
+        background: #111827;
+        color: #ffffff;
       }
 
       .size-option-disabled {
         background: #f3f4f6;
         color: #9ca3af;
         border-style: dashed;
-        text-decoration: line-through;
         cursor: not-allowed;
-        opacity: 0.65;
+        opacity: 0.7;
+      }
+
+      .size-option-disabled::after {
+        content: "";
+        position: absolute;
+        inset: 18%;
+        border-top: 2px solid rgba(156, 163, 175, 0.9);
+        transform: rotate(-45deg);
+        pointer-events: none;
       }
 
       .size-option-button:disabled {
@@ -196,16 +208,19 @@
 
       .size-label {
         white-space: nowrap;
+        font-size: 0.75rem;
       }
 
       .size-stock-label {
-        font-size: 0.7rem;
-        color: #b91c1c;
+        font-size: 0.65rem;
+        color: #9ca3af;
+        margin-top: 0.1rem;
       }
 
       .size-badge {
-        font-size: 0.7rem;
+        font-size: 0.6rem;
         color: var(--text-secondary);
+        margin-top: 0.1rem;
       }
 
       .cart-item-change-variant {
@@ -561,7 +576,7 @@
         class="modal-content"
         style="
           background: white;
-          padding: 2rem;
+          padding: 2.5rem 2.5rem 2.25rem;
           border-radius: 1rem;
           box-shadow: 0 24px 60px rgba(15, 23, 42, 0.45);
           max-width: 900px;
@@ -573,12 +588,12 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 1.5rem;
+            margin-bottom: 1.75rem;
           "
         >
           <h2
             id="modalCambiarVarianteTitle"
-            style="font-size: 1.25rem; font-weight: 700; margin: 0"
+            style="font-size: 1.35rem; font-weight: 700; margin: 0; color: #111827;"
           >
             Cambiar medida
           </h2>
@@ -600,9 +615,9 @@
         <div
           style="
             display: grid;
-            grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.4fr);
-            gap: 1.75rem;
-            align-items: flex-start;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            gap: 2rem;
+            align-items: stretch;
           "
         >
           <div>
@@ -614,13 +629,15 @@
                 display: flex;
                 align-items: center;
                 justify-content: center;
+                height: 100%;
+                min-height: 260px;
               "
             >
               <img
                 id="modalCambiarVarianteImage"
                 src=""
                 alt=""
-                style="max-width: 100%; max-height: 260px; object-fit: contain"
+                style="width: 100%; height: 100%; object-fit: contain; display: block;"
               />
             </div>
           </div>
@@ -629,10 +646,10 @@
             <p
               id="modalCambiarVariantePrecio"
               style="
-                font-weight: 600;
-                font-size: 1rem;
-                margin-bottom: 1rem;
-                color: var(--text-primary);
+                font-weight: 700;
+                font-size: 1.25rem;
+                margin-bottom: 1.25rem;
+                color: #111827;
               "
             ></p>
 
@@ -654,7 +671,7 @@
             <button
               id="btnActualizarVariante"
               class="btn btn-primary"
-              style="margin-top: 1.75rem; width: 100%"
+              style="margin-top: 2.5rem; width: 100%"
               disabled
             >
               Actualizar producto
@@ -665,6 +682,7 @@
     </div>
 
     <script src="js/api.js"></script>
+    <script src="js/pack-helpers.js"></script>
     <script>
       // Check authentication
       if (!requireAuth()) {
@@ -755,12 +773,17 @@
           if (item.tamanoEtiqueta && String(item.tamanoEtiqueta).trim()) {
             return String(item.tamanoEtiqueta).trim();
           }
-          if (piezasPorPaquete > 1) {
-            return `Pack de ${piezasPorPaquete}`;
-          }
+
           if (piezasPorPaquete === 1) {
             return "Pieza individual";
           }
+
+          if (piezasPorPaquete > 1) {
+            return typeof obtenerNombrePack === "function"
+              ? obtenerNombrePack(piezasPorPaquete)
+              : `Paquete de ${piezasPorPaquete}`;
+          }
+
           return "Presentación estándar";
         })();
         const totalPiezas = piezasPorPaquete * item.cantidadPaquetes;

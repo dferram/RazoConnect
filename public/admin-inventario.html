@@ -442,6 +442,7 @@
 
     <script src="js/layout.js" defer></script>
     <script src="js/api.js"></script>
+    <script src="js/pack-helpers.js"></script>
     <script src="js/components/user-profile.js"></script>
     <script src="js/admin-header-dropdown.js"></script>
     <script>
@@ -1002,7 +1003,9 @@
               variant.tamanoValorReferencia > 0
                 ? variant.tamanoValorReferencia === 1
                   ? "Pieza individual"
-                  : `Pack de ${variant.tamanoValorReferencia}`
+                  : (typeof obtenerNombrePack === "function"
+                      ? obtenerNombrePack(variant.tamanoValorReferencia)
+                      : `Paquete de ${variant.tamanoValorReferencia}`)
                 : "Presentación estándar");
 
             return `

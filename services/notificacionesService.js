@@ -21,15 +21,12 @@ async function crearNotificacion(
   }
 
   try {
-    const datosAdicionalesJson =
-      datosAdicionales !== null ? JSON.stringify(datosAdicionales) : null;
-
     const result = await db.query(
       `INSERT INTO Notificaciones
-        (ClienteID, Tipo, Titulo, Mensaje, DatosAdicionales)
-       VALUES ($1, $2, $3, $4, $5)
+        (ClienteID, Tipo, Titulo, Mensaje)
+       VALUES ($1, $2, $3, $4)
        RETURNING *`,
-      [clienteId, tipo, titulo, mensaje, datosAdicionalesJson]
+      [clienteId, tipo, titulo, mensaje]
     );
 
     return result.rows[0];

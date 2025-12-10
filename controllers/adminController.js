@@ -5245,6 +5245,7 @@ module.exports = {
   actualizarCategoria,
   eliminarCategoria,
   getMedidas,
+getMedidasExistentes,
   crearVariante,
   actualizarVariante,
   crearAgente,

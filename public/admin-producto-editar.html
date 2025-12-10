@@ -511,7 +511,9 @@
                             id="dimensiones"
                             class="form-input"
                             placeholder="Ej: 10x10x10 cm o 25 piezas"
+                            list="listaMedidas"
                           />
+                          <datalist id="listaMedidas"></datalist>
                         </div>
                         <div class="form-group">
                           <label for="stock" class="form-label">
@@ -574,7 +576,7 @@
                         </div>
                         <div class="form-group">
                           <label for="precioOferta" class="form-label">
-                            💰 Precio de Oferta (MXN)
+                            💰 Porcentaje de Descuento (%)
                             <span
                               style="color: var(--razo-orange); font-size: 0.875rem"
                               >- Opcional</span
@@ -586,15 +588,22 @@
                             class="form-input"
                             min="0"
                             step="0.01"
-                            placeholder="0.00"
+                            placeholder="Ej: 10, 20, 50"
                             style="border: 2px solid var(--razo-orange)"
                           />
                           <small
                             class="form-hint"
                             style="color: var(--razo-orange)"
                           >
-                            ⚡ Si defines un precio de oferta, este se mostrará como
-                            descuento en el catálogo
+                            ⚡ Si defines un porcentaje de descuento, se calculará el
+                            precio final de la oferta.
+                          </small>
+                          <small
+                            id="precioOfertaPreview"
+                            class="form-hint"
+                            style="display:block; color: var(--text-secondary); margin-top: 0.25rem;"
+                          >
+                            Precio final resultante: $0.00
                           </small>
                         </div>
                       </div>
@@ -793,6 +802,7 @@
     <script src="js/layout.js" defer></script>
     <script src="js/admin-header-dropdown.js"></script>
     <script src="js/api.js"></script>
+    <script src="js/pack-helpers.js"></script>
     <script>
       const adminToken = localStorage.getItem("razoconnect_admin_token");
 
@@ -823,12 +833,16 @@
       const costPerPackage = document.getElementById("costPerPackage");
       const profitPerPackage = document.getElementById("profitPerPackage");
       const marginPercentage = document.getElementById("marginPercentage");
+      const precioUnitarioInput = document.getElementById("precioUnitario");
+      const precioOfertaInput = document.getElementById("precioOferta");
+      const precioOfertaPreview = document.getElementById("precioOfertaPreview");
 
       const userAvatar = document.getElementById("userAvatar");
       const userName = document.getElementById("userName");
       const userRole = document.getElementById("userRole");
       const skuInput = document.getElementById("sku");
       const dimensionesInput = document.getElementById("dimensiones");
+      const medidasDatalist = document.getElementById("listaMedidas");
       const skuSuggestion = document.getElementById("skuSuggestion");
       const skuSuggestionText = document.getElementById("skuSuggestionText");
       const applySkuSuggestion = document.getElementById("applySkuSuggestion");
@@ -894,6 +908,46 @@
           localStorage.removeItem("razoconnect_admin_token");
           localStorage.removeItem("razoconnect_admin");
           window.location.href = "/login.html";
+        }
+      }
+
+      async function loadMedidasExistentes() {
+        if (!medidasDatalist) return;
+
+        try {
+          const response = await fetch(
+            `${API_BASE_URL}/admin/medidas-existentes`,
+            {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${adminToken}`,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+
+          if (!response.ok) {
+            console.warn(
+              "No se pudieron cargar las medidas existentes:",
+              response.status
+            );
+            return;
+          }
+
+          const data = await response.json();
+          const medidas = Array.isArray(data?.data?.medidas)
+            ? data.data.medidas
+            : [];
+
+          medidasDatalist.innerHTML = medidas
+            .map((valor) => {
+              const texto = String(valor || "").trim();
+              if (!texto) return "";
+              return `<option value="${texto}"></option>`;
+            })
+            .join("");
+        } catch (error) {
+          console.error("Error al cargar medidas existentes:", error);
         }
       }
 
@@ -1150,7 +1204,7 @@
 
         if (Number.isFinite(valor) && valor > 0) {
           if (valor === 1) return etiqueta || "Venta Individual";
-          return etiqueta || `Pack de ${valor}`;
+          return etiqueta || obtenerNombrePack(valor);
         }
 
         return etiqueta || `Presentación ${tamano.tamanoId}`;
@@ -1375,7 +1429,12 @@
           precioInputEl.value = precioVal !== null ? String(precioVal) : "";
         }
         if (ofertaInputEl) {
-          ofertaInputEl.value = ofertaVal !== null ? String(ofertaVal) : "";
+          if (ofertaVal !== null && Number.isFinite(precioVal) && precioVal > 0) {
+            const descuentoPct = ((precioVal - ofertaVal) / precioVal) * 100;
+            ofertaInputEl.value = descuentoPct > 0 ? descuentoPct.toFixed(1) : "";
+          } else {
+            ofertaInputEl.value = "";
+          }
         }
         if (stockInputEl) {
           const stockVal =
@@ -1390,6 +1449,7 @@
         }
 
         calculateMarginPreview();
+        updatePrecioOfertaPreview();
       }
 
       function formatCurrency(amount) {
@@ -1397,6 +1457,31 @@
           style: "currency",
           currency: "MXN",
         }).format(amount);
+      }
+
+      function updatePrecioOfertaPreview() {
+        if (!precioOfertaPreview) return;
+
+        const precioBase = parseFloat(precioUnitarioInput?.value);
+        const descuentoRaw = precioOfertaInput?.value;
+
+        if (!Number.isFinite(precioBase) || precioBase <= 0) {
+          precioOfertaPreview.textContent = "Precio final resultante: $0.00";
+          return;
+        }
+
+        const porcentaje = parseFloat(descuentoRaw);
+
+        if (!Number.isFinite(porcentaje) || porcentaje <= 0) {
+          // Sin descuento: mostrar el precio base
+          precioOfertaPreview.textContent = `Precio final resultante: ${formatCurrency(precioBase)}`;
+          return;
+        }
+
+        const porcentajeClamped = Math.min(Math.max(porcentaje, 0), 100);
+        const precioFinal = precioBase - precioBase * (porcentajeClamped / 100);
+
+        precioOfertaPreview.textContent = `Precio final resultante: ${formatCurrency(precioFinal)}`;
       }
 
       if (productImagesInput) {
@@ -1425,21 +1510,32 @@
 
       variantForm.addEventListener("submit", async (event) => {
         event.preventDefault();
+        const precioUnitarioRaw = document.getElementById("precioUnitario").value;
+        const descuentoRaw = document.getElementById("precioOferta").value.trim();
+        const precioBase = parseFloat(precioUnitarioRaw);
 
-        const precioOfertaValue = document.getElementById("precioOferta").value;
+        let precioOfertaUnitario = null;
+        if (
+          Number.isFinite(precioBase) &&
+          precioBase > 0 &&
+          descuentoRaw !== ""
+        ) {
+          const porcentaje = parseFloat(descuentoRaw);
+          if (Number.isFinite(porcentaje) && porcentaje > 0) {
+            const porcentajeClamped = Math.min(Math.max(porcentaje, 0), 100);
+            const precioFinal =
+              precioBase - precioBase * (porcentajeClamped / 100);
+            precioOfertaUnitario = Number(precioFinal.toFixed(2));
+          }
+        }
         const isEditing = Number.isInteger(editingVarianteId);
         const formData = {
           productoId,
           sku: document.getElementById("sku").value.trim(),
           dimensiones:
             document.getElementById("dimensiones").value.trim() || null,
-          precioUnitario: parseFloat(
-            document.getElementById("precioUnitario").value
-          ),
-          precioOfertaUnitario:
-            precioOfertaValue && precioOfertaValue.trim() !== ""
-              ? parseFloat(precioOfertaValue)
-              : null,
+          precioUnitario: precioBase,
+          precioOfertaUnitario,
           costoUnitario: document.getElementById("costoUnitario").value
             ? parseFloat(document.getElementById("costoUnitario").value)
             : null,
@@ -1554,6 +1650,13 @@
           .addEventListener("input", calculateMarginPreview);
       });
 
+      if (precioUnitarioInput) {
+        precioUnitarioInput.addEventListener("input", updatePrecioOfertaPreview);
+      }
+      if (precioOfertaInput) {
+        precioOfertaInput.addEventListener("input", updatePrecioOfertaPreview);
+      }
+
       resetVariantBtn.addEventListener("click", () => {
         editingVarianteId = null;
         if (variantBtnText) {
@@ -1562,6 +1665,9 @@
         marginMetrics.style.display = "none";
         marginMessage.textContent =
           "Ingresa costo y precio para calcular la ganancia.";
+        if (precioOfertaPreview) {
+          precioOfertaPreview.textContent = "Precio final resultante: $0.00";
+        }
       });
 
       function calculateMarginPreview() {
@@ -1674,6 +1780,7 @@
         }
 
         await verifyAndLoadAdmin();
+        await loadMedidasExistentes();
         if (productoId && !Number.isNaN(productoId)) {
           await loadProducto();
         }

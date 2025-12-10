@@ -359,7 +359,7 @@
   <body>
     <nav class="navbar">
       <div class="container navbar-content">
-        <a href="/catalogo.html" class="navbar-brand">📦 RazoConnect</a>
+        <a href="/catalogo.html" class="navbar-brand"><img src="/icon/Logo_Razo.png" class="titulo-emoji-reemplazo" alt="Razo">RazoConnect</a>
         <ul class="navbar-menu">
           <li><a href="/catalogo.html" class="navbar-link">Productos</a></li>
           <li><a href="/carrito.html" class="navbar-link">Carrito</a></li>
@@ -529,6 +529,7 @@
     </div>
 
     <script src="js/api.js"></script>
+    <script src="js/pack-helpers.js"></script>
     <script src="js/carritoService.js"></script>
     <script>
       // Check authentication
@@ -1097,12 +1098,17 @@
           if (tamano.etiqueta) {
             return tamano.etiqueta;
           }
+
           if (Number.isFinite(tamano.valor)) {
             if (tamano.valor === 1) {
               return "Pieza Individual";
             }
-            return `Pack de ${tamano.valor}`;
+
+            return typeof obtenerNombrePack === "function"
+              ? obtenerNombrePack(tamano.valor)
+              : `Paquete de ${tamano.valor}`;
           }
+
           return `Presentación ${tamano.tamanoId}`;
         };
 

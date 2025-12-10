@@ -176,6 +176,12 @@ router.get(
   authorizeAdmin,
   adminController.getMedidas
 );
+router.get(
+  "/medidas-existentes",
+  authenticate,
+  authorizeAdmin,
+  adminController.getMedidasExistentes
+);
 
 /**
  * Gestión de inventario

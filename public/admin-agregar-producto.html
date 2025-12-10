@@ -422,6 +422,7 @@
     <script src="js/layout.js" defer></script>
     <script src="js/admin-header-dropdown.js"></script>
     <script src="js/api.js"></script>
+    <script src="js/pack-helpers.js"></script>
     <script>
       // Authentication check
       const adminToken = localStorage.getItem("razoconnect_admin_token");
@@ -729,7 +730,9 @@
                     class="pack-suggestion-chip${activeClass}"
                     data-pack="${valor}"
                   >
-                    Pack de ${valor}
+                    ${typeof obtenerNombrePack === "function"
+                      ? obtenerNombrePack(valor)
+                      : `Paquete de ${valor}`}
                   </button>
                 `;
               })
@@ -780,7 +783,9 @@
                     class="pack-chip"
                     data-pack="${n}"
                   >
-                    <span>Pack de ${n}</span>
+                    <span>${typeof obtenerNombrePack === "function"
+                      ? obtenerNombrePack(n)
+                      : `Paquete de ${n}`}</span>
                     <span class="pack-chip-icon" aria-hidden="true">×</span>
                   </button>
                 `
