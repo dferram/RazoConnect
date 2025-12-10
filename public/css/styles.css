@@ -409,6 +409,99 @@ h3 {
   width: 100%;
 }
 
+.btn-google {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  background-color: #ffffff;
+  color: #757575;
+  border: 1px solid #dadce0;
+  border-radius: 4px;
+  padding: 8px 16px;
+  font-family: "Roboto", -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  font-weight: 500;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  transition: all 0.2s ease-in-out;
+  text-decoration: none;
+  margin-top: 0.75rem;
+}
+
+.btn-google img {
+  width: 24px;
+  height: 24px;
+  margin-right: 12px;
+}
+
+.btn-google span {
+  line-height: 1;
+}
+
+.btn-google:hover {
+  background-color: #f8f9fa;
+  border-color: #d2e3fc;
+  box-shadow: 0 1px 3px rgba(66, 133, 244, 0.3);
+}
+
+.btn-google:active {
+  background-color: #e8f0fe;
+}
+
+.carousel-container {
+  position: relative;
+  margin-top: 1.5rem;
+}
+
+#ofertasTrack {
+  display: flex;
+  gap: 20px;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  padding: 20px 0;
+  scrollbar-width: none; /* Firefox */
+}
+
+#ofertasTrack::-webkit-scrollbar {
+  display: none; /* Chrome, Safari */
+}
+
+.flash-product-card {
+  min-width: 280px;
+}
+
+.carousel-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.12);
+  color: #ffffff;
+  cursor: pointer;
+  z-index: 10;
+  transition: all 0.2s ease-in-out;
+}
+
+.carousel-btn.prev {
+  left: -8px;
+}
+
+.carousel-btn.next {
+  right: -8px;
+}
+
+.carousel-btn:hover {
+  background-color: #f97316;
+  transform: translateY(-50%) scale(1.05);
+  box-shadow: 0 8px 20px rgba(249, 115, 22, 0.35);
+}
+
 /* ============================================
    HERO SECTION
    ============================================ */

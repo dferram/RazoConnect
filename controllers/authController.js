@@ -12,6 +12,7 @@ const {
   validateLogin,
 } = require("../utils/validator");
 const { generateCodigoAgente } = require("../utils/agentCode");
+const { registrarLog } = require("../services/loggerService");
 
 /**
  * Registro de nuevo cliente
@@ -626,6 +627,24 @@ const registroAdmin = async (req, res) => {
         },
       },
     });
+
+    // Registrar log de creación de administrador (vía registro-admin con SUPER_ADMIN_KEY)
+    try {
+      registrarLog(req, "CREAR", "Administrador", nuevoAdmin.adminid, {
+        nombre: nuevoAdmin.nombre,
+        apellido: nuevoAdmin.apellido,
+        email: nuevoAdmin.email,
+        rol: nuevoAdmin.rol,
+        origen: "registro-admin",
+      }).catch((err) => {
+        console.error("Error guardando log de CREAR Administrador (registroAdmin):", err);
+      });
+    } catch (logError) {
+      console.error(
+        "Error interno al preparar log de CREAR Administrador (registroAdmin):",
+        logError
+      );
+    }
   } catch (error) {
     console.error("Error en registro de administrador:", error);
     res.status(500).json({
@@ -784,6 +803,27 @@ const crearAdmin = async (req, res) => {
         },
       },
     });
+
+    try {
+      registrarLog(req, "CREAR", "Administrador", nuevoAdmin.adminid, {
+        nombre: nuevoAdmin.nombre,
+        apellido: nuevoAdmin.apellido,
+        email: nuevoAdmin.email,
+        rol: nuevoAdmin.rol,
+        origen: "crear-admin",
+        creadoPor: req.user?.email || null,
+      }).catch((err) => {
+        console.error(
+          "Error guardando log de CREAR Administrador (crearAdmin):",
+          err
+        );
+      });
+    } catch (logError) {
+      console.error(
+        "Error interno al preparar log de CREAR Administrador (crearAdmin):",
+        logError
+      );
+    }
   } catch (error) {
     console.error("Error al crear administrador:", error);
     res.status(500).json({
@@ -951,6 +991,50 @@ function getIniciales(nombre) {
   return (palabras[0][0] + palabras[palabras.length - 1][0]).toUpperCase();
 }
 
+const googleCallback = async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.redirect("/login.html?error=google_auth_failed");
+    }
+
+    const { clienteId, nombre, apellido, email, avatarUrl } = req.user;
+
+    if (!clienteId || !email) {
+      return res.redirect("/login.html?error=google_auth_invalid_user");
+    }
+
+    const token = generateToken({
+      userId: clienteId,
+      rol: "cliente",
+      email,
+    });
+
+    const frontendBase =
+      process.env.FRONTEND_BASE_URL ||
+      `http://localhost:${process.env.PORT || 3000}`;
+
+    let redirectUrl;
+
+    try {
+      const url = new URL("/login.html", frontendBase);
+      url.searchParams.set("googleToken", token);
+      if (nombre) url.searchParams.set("nombre", nombre);
+      if (apellido) url.searchParams.set("apellido", apellido);
+      if (email) url.searchParams.set("email", email);
+      if (avatarUrl) url.searchParams.set("avatarUrl", avatarUrl);
+      url.searchParams.set("provider", "google");
+      redirectUrl = url.toString();
+    } catch (e) {
+      redirectUrl = "/login.html?googleToken=" + encodeURIComponent(token);
+    }
+
+    return res.redirect(redirectUrl);
+  } catch (error) {
+    console.error("Error en callback de Google OAuth:", error);
+    return res.redirect("/login.html?error=google_auth_internal");
+  }
+};
+
 module.exports = {
   registroCliente,
   registroAgente,
@@ -962,4 +1046,5 @@ module.exports = {
   forgotPassword,
   resetPassword,
   getCurrentUser,
+  googleCallback,
 };

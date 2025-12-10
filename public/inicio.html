@@ -223,12 +223,32 @@
           </p>
         </div>
 
-        <div class="flash-grid" id="flashGrid">
-          <!-- Loading -->
-          <div class="loading-skeleton" style="height: 450px"></div>
-          <div class="loading-skeleton" style="height: 450px"></div>
-          <div class="loading-skeleton" style="height: 450px"></div>
-          <div class="loading-skeleton" style="height: 450px"></div>
+        <div class="carousel-container">
+          <button
+            class="carousel-btn prev"
+            type="button"
+            onclick="scrollOfertas(-1)"
+            aria-label="Ver ofertas anteriores"
+          >
+            ❮
+          </button>
+
+          <div class="flash-grid" id="ofertasTrack">
+            <!-- Loading -->
+            <div class="loading-skeleton" style="height: 450px"></div>
+            <div class="loading-skeleton" style="height: 450px"></div>
+            <div class="loading-skeleton" style="height: 450px"></div>
+            <div class="loading-skeleton" style="height: 450px"></div>
+          </div>
+
+          <button
+            class="carousel-btn next"
+            type="button"
+            onclick="scrollOfertas(1)"
+            aria-label="Ver más ofertas"
+          >
+            ❯
+          </button>
         </div>
       </div>
     </section>

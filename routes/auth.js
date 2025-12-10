@@ -3,6 +3,7 @@ const router = express.Router();
 const authController = require("../controllers/authController");
 const agentesController = require("../controllers/agentesController");
 const { authenticate, authorize } = require("../middlewares/authMiddleware");
+const passport = require("passport");
 
 /**
  * @route   POST /api/registro/cliente
@@ -56,6 +57,23 @@ router.post("/auth/reset-password", authController.resetPassword);
  * @returns { nombre, email, rol, iniciales, tipo }
  */
 router.get("/auth/me", authenticate, authController.getCurrentUser);
+
+router.get(
+  "/auth/google",
+  passport.authenticate("google", {
+    scope: ["profile", "email"],
+    prompt: "select_account",
+  })
+);
+
+router.get(
+  "/auth/google/callback",
+  passport.authenticate("google", {
+    session: false,
+    failureRedirect: "/login.html",
+  }),
+  authController.googleCallback
+);
 
 /**
  * @route   POST /api/auth/registro-admin

@@ -3,6 +3,8 @@ const path = require("path");
 const cors = require("cors");
 require("dotenv").config();
 const db = require("./db");
+const passport = require("passport");
+const configurePassport = require("./config/passport");
 
 // Importar rutas
 const authRoutes = require("./routes/auth");
@@ -24,6 +26,8 @@ const PORT = process.env.PORT || 3000;
 app.use(cors()); // Habilitar CORS
 app.use(express.json()); // Parsear JSON en el body de las peticiones
 app.use(express.urlencoded({ extended: true })); // Parsear datos de formularios
+configurePassport(passport);
+app.use(passport.initialize());
 
 // Servir archivos estáticos del frontend
 app.use(express.static(path.join(__dirname, "public")));

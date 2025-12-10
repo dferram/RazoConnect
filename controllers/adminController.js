@@ -7,6 +7,7 @@ const { checkStockBajo } = require("../utils/stockAlerts");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const { generateCodigoAgente } = require("../utils/agentCode");
+const { registrarLog } = require("../services/loggerService");
 
 let agenteAdminColumnsCache = null;
 
@@ -249,7 +250,7 @@ const loginAdmin = async (req, res) => {
       [cuenta.nombre, cuenta.apellido].filter(Boolean).join(" ").trim() ||
       cuenta.nombre;
 
-    // Enviar respuesta
+    // Preparar datos de respuesta
     res.json({
       success: true,
       message: "Login exitoso",
@@ -264,6 +265,28 @@ const loginAdmin = async (req, res) => {
         },
       },
     });
+
+    // Registrar log de LOGIN de admin (no bloquear el flujo principal)
+    try {
+      req.user = {
+        id: cuenta.id,
+        email: cuenta.email,
+        nombre: cuenta.nombre,
+        apellido: cuenta.apellido,
+        rol: cuenta.rol,
+        roles: cuenta.roles,
+        adminSource: cuenta.adminSource,
+      };
+
+      registrarLog(req, "LOGIN", "Admin", cuenta.id, {
+        email: cuenta.email,
+        origen: cuenta.adminSource,
+      }).catch((err) => {
+        console.error("Error guardando log de LOGIN admin:", err);
+      });
+    } catch (logError) {
+      console.error("Error interno al preparar log de LOGIN admin:", logError);
+    }
   } catch (error) {
     console.error("Error en login de admin:", error);
     res.status(500).json({
@@ -674,6 +697,39 @@ const getMedidas = async (req, res) => {
     });
   } catch (error) {
     console.error("Error al obtener medidas:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error en el servidor",
+    });
+  }
+};
+
+/**
+ * Obtener lista de medidas/dimensiones ya usadas en variantes
+ * GET /api/admin/medidas-existentes
+ * Devuelve un arreglo de strings en data.medidas
+ */
+const getMedidasExistentes = async (req, res) => {
+  try {
+    const result = await db.query(
+      `SELECT DISTINCT TRIM(Dimensiones) AS valor
+       FROM Producto_Variantes
+       WHERE Dimensiones IS NOT NULL AND TRIM(Dimensiones) <> ''
+       ORDER BY TRIM(Dimensiones)`
+    );
+
+    const medidas = result.rows
+      .map((row) => (row.valor || "").trim())
+      .filter((v) => v.length > 0);
+
+    res.json({
+      success: true,
+      data: {
+        medidas,
+      },
+    });
+  } catch (error) {
+    console.error("Error al obtener medidas existentes:", error);
     res.status(500).json({
       success: false,
       message: "Error en el servidor",
@@ -1844,6 +1900,24 @@ const crearProducto = async (req, res) => {
         variantes: variantesCreadas,
       },
     });
+
+    // Registrar log de creación de producto (no bloquear el flujo principal)
+    try {
+      registrarLog(req, "CREAR", "Producto", producto.productoid, {
+        nombre: producto.nombreproducto,
+        codigoModelo: producto.codigomodelo,
+        categoriaId: producto.categoriaid,
+        proveedorId: producto.proveedorid,
+        activo: producto.activo,
+      }).catch((err) => {
+        console.error("Error guardando log de CREAR Producto:", err);
+      });
+    } catch (logError) {
+      console.error(
+        "Error interno al preparar log de CREAR Producto:",
+        logError
+      );
+    }
   } catch (error) {
     if (transactionStarted) {
       await client.query("ROLLBACK");
@@ -2186,6 +2260,49 @@ const actualizarProducto = async (req, res) => {
         tamanosDisponibles: tamanosAsociados,
       },
     });
+
+    // Registrar log de actualización / desactivación de producto
+    try {
+      const productoAnterior = {
+        productoId: productoActual.productoid,
+        nombre: productoActual.nombreproducto,
+        codigoModelo: productoActual.codigomodelo,
+        categoriaId: productoActual.categoriaid,
+        proveedorId: productoActual.proveedorid,
+        activo: productoActual.activo,
+      };
+
+      const productoNuevo = updateResult.rows[0];
+
+      const accionLog =
+        productoActual.activo && !activoFinal ? "ELIMINAR" : "EDITAR";
+
+      registrarLog(req, accionLog, "Producto", productoId, {
+        descripcion:
+          accionLog === "ELIMINAR"
+            ? "Soft delete (desactivación) de producto maestro desde panel admin"
+            : "Actualización de producto maestro desde panel admin",
+        anterior: productoAnterior,
+        nuevo: {
+          productoId: productoNuevo.productoid,
+          nombre: productoNuevo.nombreproducto,
+          codigoModelo: productoNuevo.codigomodelo,
+          categoriaId: productoNuevo.categoriaid,
+          proveedorId: productoNuevo.proveedorid,
+          activo: productoNuevo.activo,
+        },
+      }).catch((err) => {
+        console.error(
+          "Error guardando log de ACTUALIZAR/ELIMINAR Producto:",
+          err
+        );
+      });
+    } catch (logError) {
+      console.error(
+        "Error interno al preparar log de ACTUALIZAR/ELIMINAR Producto:",
+        logError
+      );
+    }
   } catch (error) {
     if (transactionStarted) {
       await client.query("ROLLBACK");
@@ -2576,7 +2693,9 @@ const getAllProductos = async (req, res) => {
             'dimensiones', v.dimensiones,
             'medidaId', v.medidaid
           )
-        ) FILTER (WHERE v.varianteid IS NOT NULL) AS variantes
+        ) FILTER (WHERE v.varianteid IS NOT NULL) AS variantes,
+        imagen.url_imagen,
+        imagen.textoalternativo
       FROM productos p
       LEFT JOIN producto_variantes v ON v.productoid = p.productoid
       LEFT JOIN LATERAL (
@@ -2586,7 +2705,28 @@ const getAllProductos = async (req, res) => {
         ORDER BY v2.stock DESC NULLS LAST, v2.varianteid ASC
         LIMIT 1
       ) v_top ON true
-      GROUP BY p.productoid, p.nombreproducto, p.descripcion, p.categoriaid, v_top.varianteid, v_top.sku, v_top.preciounitario, v_top.stock, v_top.dimensiones, v_top.medidaid
+      LEFT JOIN LATERAL (
+        SELECT 
+          pi.url_imagen,
+          pi.textoalternativo
+        FROM producto_imagenes pi
+        WHERE pi.productoid = p.productoid
+        ORDER BY pi.orden ASC NULLS LAST, pi.imagenid ASC
+        LIMIT 1
+      ) imagen ON true
+      GROUP BY 
+        p.productoid, 
+        p.nombreproducto, 
+        p.descripcion, 
+        p.categoriaid, 
+        v_top.varianteid, 
+        v_top.sku, 
+        v_top.preciounitario, 
+        v_top.stock, 
+        v_top.dimensiones, 
+        v_top.medidaid,
+        imagen.url_imagen,
+        imagen.textoalternativo
       ORDER BY p.productoid DESC`
     );
 
@@ -2638,6 +2778,8 @@ const getAllProductos = async (req, res) => {
             variantesCount: parseInt(row.variantes_count, 10) || 0,
             precioDesde: row.precio_desde ? parseFloat(row.precio_desde) : null,
             categoriaNombre: categoriasMap[row.categoriaid] || "Sin categoría",
+            imagenUrl: row.url_imagen || null,
+            imagenAlt: row.textoalternativo || null,
             varianteDestacada,
             variantes,
           };
@@ -3035,6 +3177,23 @@ const crearAgente = async (req, res) => {
         codigoAgente: agente.codigoagente,
       },
     });
+
+    // Registrar log de creación de agente
+    try {
+      registrarLog(req, "CREAR", "Agente", agente.agenteid, {
+        nombre: agente.nombre,
+        apellido: agente.apellido,
+        email: agente.email,
+        codigoAgente: agente.codigoagente,
+      }).catch((err) => {
+        console.error("Error guardando log de CREAR Agente:", err);
+      });
+    } catch (logError) {
+      console.error(
+        "Error interno al preparar log de CREAR Agente:",
+        logError
+      );
+    }
   } catch (error) {
     console.error("Error al crear agente:", error);
     res.status(500).json({
@@ -3217,6 +3376,23 @@ const desactivarAgente = async (req, res) => {
         agenteId: agente.agenteid,
       },
     });
+
+    // Registrar log de desactivación (soft delete) de agente
+    try {
+      registrarLog(req, "ELIMINAR", "Agente", agente.agenteid, {
+        nombre: agente.nombre,
+        apellido: agente.apellido,
+        motivo:
+          "Desactivación de agente (soft delete) desde panel administrativo",
+      }).catch((err) => {
+        console.error("Error guardando log de ELIMINAR Agente:", err);
+      });
+    } catch (logError) {
+      console.error(
+        "Error interno al preparar log de ELIMINAR Agente:",
+        logError
+      );
+    }
   } catch (error) {
     console.error("Error al desactivar agente:", error);
     res.status(500).json({

@@ -631,6 +631,25 @@
   }
 
   // ========================================
+  // CARRUSEL DE OFERTAS RELÁMPAGO
+  // ========================================
+  function scrollOfertas(direccion) {
+    const track = document.getElementById("ofertasTrack");
+    if (!track) return;
+
+    // Tomar como referencia el ancho de la primera tarjeta
+    const firstCard = track.querySelector(".flash-product-card");
+    const cardWidth = firstCard
+      ? firstCard.getBoundingClientRect().width
+      : 300;
+
+    const gap = 20; // debe coincidir con el gap del CSS
+    const delta = direccion * (cardWidth + gap);
+
+    track.scrollBy({ left: delta, behavior: "smooth" });
+  }
+
+  // ========================================
   // ANIMACIONES AL SCROLL
   // ========================================
   function initScrollAnimations() {

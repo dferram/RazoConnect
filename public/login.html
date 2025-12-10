@@ -68,6 +68,18 @@
             ></div>
           </button>
 
+          <a
+            href="/api/auth/google"
+            class="btn-google"
+            id="googleLoginBtn"
+          >
+            <img
+              src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+              alt="Google logo"
+            />
+            <span>Continuar con Google</span>
+          </a>
+
           <p class="text-center mt-2">
             <a href="/forgot-password.html" class="link-underline"
               >Olvidé mi contraseña</a
@@ -95,6 +107,34 @@
       const btnText = document.getElementById("btnText");
       const btnSpinner = document.getElementById("btnSpinner");
       const alertDiv = document.getElementById("alert");
+
+      const params = new URLSearchParams(window.location.search);
+      const googleToken = params.get("googleToken");
+
+      if (googleToken) {
+        const nombre = params.get("nombre") || "";
+        const apellido = params.get("apellido") || "";
+        const emailFromQuery = params.get("email") || "";
+        const avatarUrl = params.get("avatarUrl") || null;
+
+        const usuario = {
+          nombre,
+          apellido,
+          email: emailFromQuery,
+          rol: "cliente",
+          avatarUrl,
+        };
+
+        localStorage.setItem("razoconnect_token", googleToken);
+        localStorage.setItem("razoconnect_user", JSON.stringify(usuario));
+
+        showToast("Inicio de sesión con Google exitoso", "success");
+
+        setTimeout(() => {
+          sessionStorage.setItem("_navigating", "true");
+          window.location.href = "/inicio.html";
+        }, 500);
+      }
 
       // Check if user is already logged in
       if (isAuthenticated()) {
