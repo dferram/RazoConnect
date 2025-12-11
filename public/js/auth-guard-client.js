@@ -103,8 +103,8 @@
           window.location.replace("/login.html");
         });
       } else {
-        alert(
-          "Tu sesión ha expirado o es inválida. Por favor, inicia sesión nuevamente."
+        console.warn(
+          "Sesión de cliente expirada o inválida. Redirigiendo a login..."
         );
         window.location.replace("/login.html");
       }

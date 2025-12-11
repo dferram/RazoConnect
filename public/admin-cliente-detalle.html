@@ -6,6 +6,7 @@
     <title>Detalle del Cliente - Admin RazoConnect</title>
     <link rel="icon" type="image/png" href="/icon/Logo_Razo.png" />
 
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <!-- PROTECCIÓN DE AUTENTICACIÓN ADMIN -->
     <script src="js/auth-guard-admin.js"></script>
 
@@ -330,8 +331,20 @@
       const clienteId = parseInt(params.get("id"), 10);
 
       if (!Number.isInteger(clienteId)) {
-        alert("Cliente no válido. Regresando al listado.");
-        window.location.href = "/admin-clientes.html";
+        if (typeof Swal !== "undefined" && Swal && typeof Swal.fire === "function") {
+          Swal.fire({
+            icon: "warning",
+            title: "Cliente no válido",
+            text: "Regresando al listado de clientes.",
+            confirmButtonText: "Ir al listado",
+            confirmButtonColor: "#F97316",
+          }).then(() => {
+            window.location.href = "/admin-clientes.html";
+          });
+        } else {
+          console.warn("Cliente no válido. Redirigiendo al listado de clientes...");
+          window.location.href = "/admin-clientes.html";
+        }
       }
 
       async function verifyAndLoadAdmin() {

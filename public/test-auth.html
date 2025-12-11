@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Probar Autenticación - RazoConnect</title>
   <link rel="icon" type="image/png" href="/icon/Logo_Razo.png" />
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -166,12 +167,32 @@
       }
     }
 
-    function clearAll() {
-      if (confirm('¿Estás seguro de que quieres limpiar todo el localStorage?')) {
-        localStorage.clear();
-        alert('LocalStorage limpiado');
-        location.reload();
+    async function clearAll() {
+      const result = await Swal.fire({
+        title: '¿Estás seguro?',
+        text: 'Se limpiará por completo el LocalStorage de esta aplicación.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#F97316',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Sí, limpiar',
+        cancelButtonText: 'Cancelar',
+      });
+
+      if (!result.isConfirmed) {
+        return;
       }
+
+      localStorage.clear();
+
+      await Swal.fire({
+        icon: 'success',
+        title: 'Listo',
+        text: 'LocalStorage limpiado correctamente.',
+        confirmButtonColor: '#F97316',
+      });
+
+      location.reload();
     }
 
     // Verificar automáticamente al cargar

@@ -142,7 +142,7 @@ const apiCall = async (endpoint, options = {}) => {
           Swal.fire({
             icon: "warning",
             title: "Sesión Expirada",
-            text: "Tu sesión ha caducado por inactividad. Por favor, ingresa nuevamente.",
+            text: "Tu sesión ha expirado por seguridad. Por favor, inicia sesión nuevamente.",
             confirmButtonText: "Ir al Login",
             confirmButtonColor: "#F97316",
             allowOutsideClick: false,
@@ -150,10 +150,8 @@ const apiCall = async (endpoint, options = {}) => {
             window.location.href = "/login.html";
           });
         } else {
-          // Fallback en caso de que SweetAlert2 no esté disponible
-          alert(
-            "Tu sesión ha caducado por inactividad. Por favor, ingresa nuevamente."
-          );
+          // Si SweetAlert2 no está disponible, redirigir silenciosamente
+          console.warn("Sesión expirada. Redirigiendo a login...");
           window.location.href = "/login.html";
         }
       }

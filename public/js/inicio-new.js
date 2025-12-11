@@ -298,7 +298,7 @@
   // CARGAR OFERTAS FLASH
   // ========================================
   async function loadFlashSales() {
-    const grid = document.getElementById("flashGrid");
+    const grid = document.getElementById("ofertasTrack");
     if (!grid) return;
 
     try {

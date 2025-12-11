@@ -1253,7 +1253,7 @@
                 type="button"
                 class="btn btn-outline-danger btn-sm"
                 title="Cancelar solicitud de creación de variante"
-                onclick="if(window.rechazarCambio){ window.rechazarCambio(${controlId}); }"
+                onclick="cancelarSolicitudVariante(${controlId})"
               >
                 Cancelar solicitud
               </button>
@@ -1303,6 +1303,56 @@
         `;
           })
           .join("");
+      }
+
+      async function cancelarSolicitudVariante(controlId) {
+        const idNumero = Number.parseInt(controlId, 10);
+        if (!Number.isInteger(idNumero)) {
+          console.warn(
+            "ID de control de cambio inválido para cancelar solicitud:",
+            controlId
+          );
+          return;
+        }
+
+        const result = await Swal.fire({
+          title: "¿Estás seguro de cancelar esta solicitud de creación?",
+          text: "Esta operación rechazará la solicitud pendiente en el panel de aprobaciones.",
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonText: "Sí, cancelar",
+          cancelButtonText: "No, volver",
+          confirmButtonColor: "#EF4444",
+          cancelButtonColor: "#6b7280",
+        });
+
+        if (!result.isConfirmed) {
+          return;
+        }
+
+        try {
+          const response = await API.apiCall("/admin/cambios/rechazar-lote", {
+            method: "POST",
+            body: JSON.stringify({ ids: [idNumero] }),
+          });
+
+          if (!response.ok || !response.data?.success) {
+            throw new Error(
+              response.data?.message || "No se pudo cancelar la solicitud"
+            );
+          }
+
+          showToast("Solicitud cancelada correctamente", "success");
+          await loadProducto();
+        } catch (error) {
+          console.error("Error al cancelar solicitud de variante:", error);
+          Swal.fire({
+            icon: "error",
+            title: "Error",
+            text: error.message || "No se pudo cancelar la solicitud",
+            confirmButtonColor: "#F97316",
+          });
+        }
       }
 
       function buildPresentacionLabel(tamano) {

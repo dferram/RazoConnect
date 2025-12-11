@@ -242,6 +242,142 @@
         border-radius: 0.25rem;
         word-break: break-all;
       }
+
+      .swal-change-popup {
+        max-width: 1200px;
+        width: 95% !important;
+        border-radius: 1rem;
+        padding-top: 1.5rem;
+      }
+
+      .swal-change-header {
+        margin: -0.75rem -0.75rem 1rem;
+        border-radius: 0.75rem;
+        padding: 0.9rem 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+      }
+
+      .swal-change-header-icon {
+        width: 2.5rem;
+        height: 2.5rem;
+        border-radius: 999px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.4rem;
+        background: rgba(0, 0, 0, 0.03);
+      }
+
+      .swal-change-header-text {
+        display: flex;
+        flex-direction: column;
+        gap: 0.1rem;
+      }
+
+      .swal-change-header-title {
+        font-size: 1rem;
+        font-weight: 700;
+      }
+
+      .swal-change-header-subtitle {
+        font-size: 0.82rem;
+        opacity: 0.9;
+      }
+
+      .swal-change-header-insert {
+        background: #ecfdf3;
+        border: 1px solid #bbf7d0;
+        color: #166534;
+      }
+
+      .swal-change-header-update {
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
+        color: #1d4ed8;
+      }
+
+      .swal-change-header-delete {
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        color: #b91c1c;
+      }
+
+      .swal-change-header-neutral {
+        background: #f3f4f6;
+        border: 1px solid #e5e7eb;
+        color: #111827;
+      }
+
+      .swal2-confirm.swal2-confirm-neutral {
+        background-color: #111827 !important;
+        border-radius: 999px;
+        padding: 0.6rem 1.6rem;
+        margin-top: 1.5rem;
+        margin-bottom: 1rem;
+      }
+
+      .swal2-confirm.swal2-confirm-primary {
+        background-color: #F97316 !important;
+        color: #ffffff !important;
+        border-radius: 999px;
+        padding: 0.6rem 1.6rem;
+        margin-top: 1.5rem;
+        margin-bottom: 1rem;
+      }
+
+      .swal-change-body {
+        margin-top: 0.5rem;
+      }
+
+      .swal-change-header-center {
+        justify-content: center;
+        text-align: center;
+      }
+
+      .swal-change-header-center .swal-change-header-text {
+        align-items: center;
+      }
+
+      .swal-change-header-center .swal-change-header-title {
+        font-size: 1.4rem;
+      }
+
+      .change-table-update th {
+        border-bottom-width: 1px;
+      }
+
+      .change-value-old,
+      .change-value-new {
+        vertical-align: top;
+        padding: 0.35rem 0.6rem;
+      }
+
+      .change-value-old {
+        background: #fef2f2;
+        font-weight: 600;
+        color: #b91c1c;
+      }
+
+      .change-value-new {
+        background: #ecfdf3;
+        font-weight: 700;
+        color: #166534;
+      }
+
+      .change-arrow {
+        margin: 0 0.35rem;
+        color: #9ca3af;
+        font-size: 0.8rem;
+      }
+
+      .change-card-delete {
+        border-radius: 0.75rem;
+        border: 1px solid #fecaca;
+        background: #fef2f2;
+        padding: 1rem 1.25rem;
+      }
     </style>
   </head>
   <body>
@@ -703,13 +839,150 @@
       }
 
       function formatearValorCampo(valor) {
-        if (valor === null || valor === undefined) return "<em>—</em>";
+        return formatValue(valor);
+      }
+
+      function esValorFecha(valor) {
+        if (valor instanceof Date) {
+          return !isNaN(valor.getTime());
+        }
+
+        if (typeof valor === "string") {
+          const trimmed = valor.trim();
+          if (!trimmed) return false;
+
+          if (/^\d{4}-\d{2}-\d{2}/.test(trimmed) || /^\d{2}\/\d{2}\/\d{4}$/.test(trimmed)) {
+            const d = new Date(trimmed);
+            return !isNaN(d.getTime());
+          }
+
+          return false;
+        }
+
+        if (typeof valor === "number") {
+          if (!Number.isFinite(valor)) return false;
+          if (Math.abs(valor) < 1000000000000) {
+            return false;
+          }
+          const d = new Date(valor);
+          return !isNaN(d.getTime());
+        }
+
+        return false;
+      }
+
+      function formatearFechaLocal(valor) {
+        const date = valor instanceof Date ? valor : new Date(valor);
+        if (isNaN(date.getTime())) return null;
+
+        return date.toLocaleDateString("es-MX", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+        });
+      }
+
+      function formatearMoneda(valor) {
+        if (valor === null || valor === undefined || valor === "") {
+          return null;
+        }
+
+        const numero =
+          typeof valor === "number"
+            ? valor
+            : parseFloat(String(valor).replace(/[^0-9.-]/g, ""));
+
+        if (isNaN(numero)) return null;
+
+        try {
+          return numero.toLocaleString("es-MX", {
+            style: "currency",
+            currency: "MXN",
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          });
+        } catch (e) {
+          return "$" + numero.toFixed(2);
+        }
+      }
+
+      function formatValue(valor) {
+        if (valor === true) {
+          return '<span style="color:#16a34a;font-weight:600;">✅ Sí</span>';
+        }
+
+        if (valor === false) {
+          return '<span style="color:#6b7280;">❌ No</span>';
+        }
+
+        if (valor === null || valor === undefined) {
+          return '<span style="color:#9ca3af;"><em>-- Vacío --</em></span>';
+        }
+
+        if (typeof valor === "string") {
+          const trimmed = valor.trim();
+          if (!trimmed) {
+            return '<span style="color:#9ca3af;"><em>-- Vacío --</em></span>';
+          }
+
+          if (esValorFecha(trimmed)) {
+            const fechaFormateada = formatearFechaLocal(trimmed);
+            if (fechaFormateada) {
+              return fechaFormateada;
+            }
+          }
+
+          return trimmed;
+        }
+
+        if (typeof valor === "number") {
+          if (esValorFecha(valor)) {
+            const fechaNum = formatearFechaLocal(valor);
+            if (fechaNum) {
+              return fechaNum;
+            }
+          }
+
+          return String(valor);
+        }
+
+        if (valor instanceof Date) {
+          const fechaObj = formatearFechaLocal(valor);
+          if (fechaObj) {
+            return fechaObj;
+          }
+        }
+
         if (typeof valor === "object") {
           return `<pre style="margin:0;font-size:0.75rem;white-space:pre-wrap;">${
             JSON.stringify(valor, null, 2)
           }</pre>`;
         }
+
         return String(valor);
+      }
+
+      function esCampoPrecio(key) {
+        const k = (key || "").toString().toLowerCase();
+        if (!k) return false;
+
+        return (
+          k.indexOf("precio") !== -1 ||
+          k.indexOf("monto") !== -1 ||
+          k.indexOf("total") !== -1 ||
+          k.indexOf("importe") !== -1
+        );
+      }
+
+      function formatValueParaCampo(key, valor) {
+        if (esCampoPrecio(key)) {
+          const moneda = formatearMoneda(valor);
+          if (moneda) {
+            return `<span style="font-weight:600;">${moneda}</span>`;
+          }
+        }
+
+        return formatValue(valor);
       }
 
       const LABELS_PRODUCTO = {
@@ -733,14 +1006,15 @@
 
       function formatearValorAmigableInsert(entidad, key, valor) {
         const entidadLower = (entidad || "").toString().toLowerCase();
+        let base = formatValueParaCampo(key, valor);
 
         if (entidadLower === "productos") {
           if (key === "Activo") {
             if (valor === true) {
-              return '<span class="text-success">✅ Sí</span>';
+              return '<span style="color:#16a34a;font-weight:600;">✅ Sí, será visible inmediatamente.</span>';
             }
             if (valor === false) {
-              return '<span class="text-danger">❌ No</span>';
+              return '<span style="color:#6b7280;">❌ No, quedará inactivo por ahora.</span>';
             }
           }
 
@@ -750,15 +1024,22 @@
             }
           }
 
-          if (key === "CategoriaID" || key === "ProveedorID_Default") {
+          if (key === "CategoriaID") {
             if (valor === null || valor === undefined) {
               return '<span style="color:#9ca3af;font-style:italic;">Sin asignar</span>';
             }
-            return `<span title="Referencia técnica">ID: ${valor} (requiere nombre real)</span>`;
+            return `${valor} (ID de Categoría)`;
+          }
+
+          if (key === "ProveedorID_Default") {
+            if (valor === null || valor === undefined) {
+              return '<span style="color:#9ca3af;font-style:italic;">Sin asignar</span>';
+            }
+            return `${valor} (ID de Proveedor)`;
           }
         }
 
-        return formatearValorCampo(valor);
+        return base;
       }
 
       function obtenerTituloCambio(cambio) {
@@ -826,11 +1107,11 @@
                 Se proponen los siguientes datos para este registro:
               </p>
               <div class="table-responsive">
-                <table class="table table-bordered table-striped table-sm mb-0" style="font-size:0.85rem;">
+                <table class="table table-hover table-striped table-sm mb-0" style="font-size:0.85rem;">
                   <thead>
                     <tr>
                       <th style="width:40%;">Dato</th>
-                      <th>Valor</th>
+                      <th>Valor a Registrar</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -862,12 +1143,14 @@
               return `
                 <tr>
                   <td style="vertical-align:top;font-weight:600;">${etiqueta}</td>
-                  <td style="vertical-align:top;background:#fef2f2;font-weight:600;">${formatearValorCampo(
+                  <td class="change-value-old">${formatValueParaCampo(
+                    key,
                     anteriores[key]
                   )}</td>
-                  <td style="vertical-align:top;background:#ecfdf3;font-weight:600;">${formatearValorCampo(
-                    nuevos[key]
-                  )}</td>
+                  <td class="change-value-new">
+                    <span>${formatValueParaCampo(key, nuevos[key])}</span>
+                    <span class="change-arrow">→</span>
+                  </td>
                 </tr>
               `;
             })
@@ -876,14 +1159,14 @@
           return `
             <div style="border-radius:0.75rem;border:1px solid #e5e7eb;background:#f9fafb;padding:1rem;">
               <p style="margin:0 0 0.75rem;font-size:0.9rem;">
-                Solo se muestran los campos que cambiaron.
+                Solo se muestran los campos que cambiaron. El valor nuevo se resalta a la derecha.
               </p>
-              <table style="width:100%;border-collapse:collapse;font-size:0.85rem;">
+              <table class="table table-hover table-sm mb-0 change-table-update" style="font-size:0.85rem;">
                 <thead>
                   <tr>
-                    <th style="text-align:left;padding:0.25rem 0.5rem;">Campo</th>
-                    <th style="text-align:left;padding:0.25rem 0.5rem;">Antes</th>
-                    <th style="text-align:left;padding:0.25rem 0.5rem;">Después</th>
+                    <th style="text-align:left;padding:0.25rem 0.5rem;">Dato</th>
+                    <th style="text-align:left;padding:0.25rem 0.5rem;">Antes 🔴</th>
+                    <th style="text-align:left;padding:0.25rem 0.5rem;">Ahora 🟢</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -900,35 +1183,94 @@
             return "<p style=\"margin:0;\">No hay datos anteriores para mostrar.</p>";
           }
 
-          const filas = claves
+          const clavesClave = claves.filter((key) => {
+            const k = (key || "").toString().toLowerCase();
+            if (!k) return false;
+
+            return (
+              k === "id" ||
+              k.endsWith("id") ||
+              k.indexOf("id_") !== -1 ||
+              k.indexOf("nombre") !== -1 ||
+              k.indexOf("name") !== -1
+            );
+          });
+
+          const lista = (clavesClave.length ? clavesClave : claves)
             .map((key) => {
               const etiqueta = obtenerEtiquetaAmigable(cambio.entidad, key);
+              const valor = formatValueParaCampo(key, anteriores[key]);
               return `
-                <tr>
-                  <td style="font-weight:600;vertical-align:top;">${etiqueta}</td>
-                  <td style="vertical-align:top;">${formatearValorCampo(
-                    anteriores[key]
-                  )}</td>
-                </tr>
+                <li style="margin-bottom:0.35rem;">
+                  <strong>${etiqueta}:</strong>
+                  <span style="margin-left:0.25rem;">${valor}</span>
+                </li>
               `;
             })
             .join("");
 
           return `
-            <div style="border-radius:0.75rem;border:1px solid #fecaca;background:#fef2f2;padding:1rem;">
+            <div class="change-card-delete">
               <p style="margin:0 0 0.75rem;font-size:0.9rem;color:#b91c1c;">
-                Este cambio eliminaría el siguiente registro:
+                ⚠️ Se solicitó eliminar el siguiente registro:
               </p>
-              <table style="width:100%;border-collapse:collapse;font-size:0.85rem;">
-                <tbody>
-                  ${filas}
-                </tbody>
-              </table>
+              <ul style="padding-left:1.1rem;margin:0;font-size:0.85rem;">
+                ${lista}
+              </ul>
             </div>
           `;
         }
 
         return "<p style=\"margin:0;\">No hay información de cambios para mostrar.</p>";
+      }
+
+      function obtenerConfigVisualCambio(cambio) {
+        const tipo = (cambio.tipoCambio || "").toString().toUpperCase();
+        const entidadLower = (cambio.entidad || "").toString().toLowerCase();
+
+        if (tipo === "INSERT") {
+          if (entidadLower === "productos") {
+            return {
+              headerClass: "swal-change-header-insert swal-change-header-center",
+              icon: "➕",
+              titulo: "Revisión de Nuevo Producto",
+              subtitulo:
+                "Se creará el siguiente registro. Por favor, verifica los datos.",
+            };
+          }
+
+          return {
+            headerClass: "swal-change-header-insert",
+            icon: "➕",
+            titulo: "✨ Nuevo Registro Detectado",
+            subtitulo: obtenerTituloCambio(cambio),
+          };
+        }
+
+        if (tipo === "UPDATE") {
+          return {
+            headerClass: "swal-change-header-update",
+            icon: "✏️",
+            titulo: "📝 Actualización de Datos",
+            subtitulo: obtenerTituloCambio(cambio),
+          };
+        }
+
+        if (tipo === "DELETE") {
+          return {
+            headerClass: "swal-change-header-delete",
+            icon: "🗑️",
+            titulo: "⚠️ Eliminación de Registro",
+            subtitulo: obtenerTituloCambio(cambio),
+          };
+        }
+
+        return {
+          headerClass: "swal-change-header-neutral",
+          icon: "ℹ️",
+          titulo: obtenerTituloCambio(cambio),
+          subtitulo: "",
+        };
       }
 
       async function ejecutarAccionLoteCambios(ids, endpoint, confirmConfig) {
@@ -1024,13 +1366,42 @@
         if (!cambio) return;
 
         const htmlDiff = renderizarDiffCambio(cambio);
+        const visual = obtenerConfigVisualCambio(cambio);
+
+        const esInsertProducto =
+          (cambio.tipoCambio || "").toString().toUpperCase() === "INSERT" &&
+          (cambio.entidad || "").toString().toLowerCase() === "productos";
+
+        const contenidoHtml = `
+          <div class="swal-change-header ${visual.headerClass}">
+            <div class="swal-change-header-icon">${visual.icon}</div>
+            <div class="swal-change-header-text">
+              <div class="swal-change-header-title">${visual.titulo}</div>
+              ${
+                visual.subtitulo
+                  ? `<div class="swal-change-header-subtitle">${visual.subtitulo}</div>`
+                  : ""
+              }
+            </div>
+          </div>
+          <div class="swal-change-body">
+            ${htmlDiff}
+          </div>
+        `;
 
         Swal.fire({
-          title: obtenerTituloCambio(cambio),
-          html: htmlDiff,
-          width: "90%",
+          title: "",
+          html: contenidoHtml,
+          width: "95%",
+          customClass: {
+            popup: "swal-change-popup",
+            confirmButton: esInsertProducto
+              ? "swal2-confirm-primary"
+              : "swal2-confirm-neutral",
+          },
+          focusConfirm: false,
           confirmButtonText: "Cerrar",
-          confirmButtonColor: "#F97316",
+          confirmButtonColor: esInsertProducto ? "#F97316" : "#111827",
         });
       }
 
