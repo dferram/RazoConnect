@@ -12,6 +12,7 @@
 
     <link rel="stylesheet" href="css/styles.css" />
     <link rel="stylesheet" href="css/admin.css" />
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
       .pedido-detail-wrapper {
         max-width: 1200px;
@@ -287,13 +288,23 @@
           <div>
             <h1 class="admin-header-title">Detalle del pedido</h1>
           </div>
-          <button
-            type="button"
-            class="btn btn-outline btn-sm"
-            onclick="sessionStorage.setItem('_navigating', 'true'); localStorage.setItem('_nav_timestamp', Date.now().toString()); window.location.href='/admin-pedidos.html';"
-          >
-            ← Volver a pedidos
-          </button>
+          <div class="admin-header-actions">
+            <button
+              type="button"
+              class="btn btn-outline btn-sm"
+              onclick="sessionStorage.setItem('_navigating', 'true'); localStorage.setItem('_nav_timestamp', Date.now().toString()); window.location.href='/admin-pedidos.html';"
+              style="margin-right: 1rem"
+            >
+              ← Volver a pedidos
+            </button>
+            <div class="admin-user-info">
+              <div class="admin-user-avatar" id="userAvatar">A</div>
+              <div class="admin-user-details">
+                <div class="admin-user-name" id="userName">Administrador</div>
+                <div class="admin-user-role" id="userRole">Admin</div>
+              </div>
+            </div>
+          </div>
         </header>
 
         <div class="admin-content">
@@ -327,11 +338,13 @@
                     </h2>
                     <p class="pedido-fecha" id="pedidoFecha">--</p>
                   </div>
-                  <span
-                    class="pedido-estatus-badge pendiente"
-                    id="pedidoEstatus"
-                    >--</span
-                  >
+                  <div class="d-flex align-items-center gap-2">
+                    <span
+                      class="pedido-estatus-badge pendiente"
+                      id="pedidoEstatus"
+                      >--</span
+                    >
+                  </div>
                 </div>
                 <div class="pedido-monto-section">
                   <span class="pedido-monto-label">Monto total:</span>
@@ -377,14 +390,123 @@
                   <span class="items-total-value" id="itemsTotal">$0.00</span>
                 </div>
               </div>
+
+              <div
+                class="pedido-actions"
+                style="
+                  margin-top: 1.75rem;
+                  display: flex;
+                  justify-content: flex-end;
+                "
+              >
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-primary"
+                  id="btnCambiarEstatus"
+                  onclick="openStatusModalFromDetalle()"
+                >
+                  Editar estado
+                </button>
+              </div>
             </div>
           </div>
         </div>
       </main>
     </div>
 
+    <!-- Modal para cambiar estatus -->
+    <div id="statusModal" class="modal">
+      <div class="modal-content modal-content--xl">
+        <div class="modal-header">
+          <h2 class="modal-title">Cambiar Estatus del Pedido</h2>
+          <button class="modal-close-btn" onclick="closeStatusModal()">
+            &times;
+          </button>
+        </div>
+        <div class="modal-body">
+          <p style="margin-bottom: 1.5rem">
+            <strong style="font-size: 1.125rem"
+              >Pedido #<span id="modalPedidoId"></span></strong
+            ><br />
+            <span style="color: var(--text-secondary); font-size: 0.875rem">
+              Cliente: <span id="modalClienteNombre"></span>
+            </span>
+          </p>
+
+          <div class="form-group" style="margin-bottom: 1.5rem">
+            <label
+              class="form-label"
+              style="font-weight: 600; margin-bottom: 0.5rem; display: block"
+              >Nuevo Estatus:</label
+            >
+            <select
+              id="modalNuevoEstatus"
+              class="form-input"
+              style="width: 100%; padding: 0.75rem; font-size: 1rem"
+              aria-label="Nuevo estatus del pedido"
+            >
+              <option value="Pendiente">Pendiente</option>
+              <option value="Confirmado">Confirmado ⚠️ (Reduce Stock)</option>
+              <option value="Enviado">Enviado</option>
+              <option value="Entregado">Entregado</option>
+              <option value="Cancelado">Cancelado</option>
+            </select>
+          </div>
+
+          <div
+            style="
+              background: var(--razo-cream);
+              padding: 1rem;
+              border-radius: 0.5rem;
+              border-left: 4px solid var(--razo-orange);
+              margin-bottom: 1.5rem;
+            "
+          >
+            <p style="font-size: 0.875rem; margin: 0">
+              <strong>⚠️ Importante:</strong> Al cambiar a "Confirmado", se
+              reducirá automáticamente el stock de los productos y se registrará
+              en el log de inventario.
+            </p>
+          </div>
+
+          <div
+            style="
+              display: flex;
+              gap: 1rem;
+              margin-top: 1.5rem;
+              margin-bottom: 1rem;
+            "
+          >
+            <button
+              type="button"
+              class="btn btn-secondary"
+              onclick="closeStatusModal()"
+              style="flex: 1"
+            >
+              Cancelar
+            </button>
+            <button
+              class="btn btn-primary"
+              onclick="updateOrderStatus()"
+              id="btnConfirmar"
+              style="flex: 1"
+            >
+              <span id="btnConfirmarText">Confirmar Cambio</span>
+              <div
+                class="spinner"
+                id="btnConfirmarSpinner"
+                style="display: none"
+              ></div>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <script src="js/layout.js" defer></script>
     <script src="js/api.js"></script>
+    <script src="js/components/user-profile.js"></script>
+    <script src="js/admin-header-dropdown.js"></script>
     <script>
       (function () {
         "use strict";
@@ -392,6 +514,15 @@
         if (!requireAdminAuth()) {
           return;
         }
+
+        const adminToken = localStorage.getItem("razoconnect_admin_token");
+        if (!adminToken) {
+          window.location.href = "/login.html";
+          return;
+        }
+
+        let selectedOrderId = null;
+        let selectedOrderStatus = null;
 
         document.addEventListener("DOMContentLoaded", init);
 
@@ -458,6 +589,9 @@
             }
 
             estatusEl.className = estatusClass;
+
+            selectedOrderId = pedido.pedidoId;
+            selectedOrderStatus = pedido.estatus || "";
 
             document.getElementById("pedidoMonto").textContent = formatCurrency(
               pedido.montoTotal
@@ -561,6 +695,182 @@
             showToast(errorMsg, "error");
           }
         }
+
+        window.openStatusModalFromDetalle = function () {
+          if (!selectedOrderId) {
+            showToast(
+              "No se pudo identificar el pedido seleccionado.",
+              "error"
+            );
+            return;
+          }
+
+          const statusModal = document.getElementById("statusModal");
+          const modalPedidoId = document.getElementById("modalPedidoId");
+          const modalClienteNombre =
+            document.getElementById("modalClienteNombre");
+          const modalNuevoEstatus =
+            document.getElementById("modalNuevoEstatus");
+
+          if (modalPedidoId) modalPedidoId.textContent = selectedOrderId;
+
+          const clienteNombreEl = document.getElementById("clienteNombre");
+          if (modalClienteNombre && clienteNombreEl) {
+            modalClienteNombre.textContent =
+              clienteNombreEl.textContent || "Cliente";
+          }
+
+          if (modalNuevoEstatus && selectedOrderStatus) {
+            modalNuevoEstatus.value = selectedOrderStatus;
+          }
+
+          if (statusModal) {
+            statusModal.style.display = "flex";
+          }
+        };
+
+        window.closeStatusModal = function () {
+          const statusModal = document.getElementById("statusModal");
+          if (statusModal) statusModal.style.display = "none";
+        };
+
+        async function updateOrderStatus() {
+          if (!selectedOrderId) return;
+
+          const modalNuevoEstatus =
+            document.getElementById("modalNuevoEstatus");
+          const btnConfirmar = document.getElementById("btnConfirmar");
+          const btnConfirmarText =
+            document.getElementById("btnConfirmarText");
+          const btnConfirmarSpinner =
+            document.getElementById("btnConfirmarSpinner");
+
+          // Validate elements exist
+          if (!modalNuevoEstatus || !btnConfirmar) {
+            console.error("Required elements not found in DOM");
+            return;
+          }
+
+          const nuevoEstatus = modalNuevoEstatus.value;
+          const estatusActual = selectedOrderStatus || "";
+          const nuevoLower = (nuevoEstatus || "").toString().toLowerCase();
+          const actualLower = (estatusActual || "").toString().toLowerCase();
+
+          let swalConfig = null;
+          let fallbackMessage =
+            "¿Deseas actualizar el estatus y notificar al cliente?";
+
+          if (
+            typeof Swal !== "undefined" &&
+            Swal &&
+            typeof Swal.fire === "function"
+          ) {
+            if (nuevoLower === "cancelado" && actualLower !== "cancelado") {
+              swalConfig = {
+                icon: "warning",
+                title: "¿Cancelar pedido?",
+                text:
+                  "⚠️ Se devolverán los productos al inventario y se enviará un correo de cancelación al cliente.",
+                showCancelButton: true,
+                confirmButtonText: "Sí, cancelar",
+                cancelButtonText: "No, mantener",
+                confirmButtonColor: "#dc3545",
+                cancelButtonColor: "#6c757d",
+              };
+              fallbackMessage = swalConfig.text;
+            } else if (
+              actualLower === "cancelado" &&
+              nuevoLower !== "cancelado"
+            ) {
+              swalConfig = {
+                icon: "question",
+                title: "¿Reactivar pedido?",
+                text:
+                  "⚠️ Se volverá a descontar el stock. Asegúrate de tener existencias.",
+                showCancelButton: true,
+                confirmButtonText: "Sí, reactivar",
+                cancelButtonText: "No, mantener cancelado",
+                confirmButtonColor: "#0d6efd",
+                cancelButtonColor: "#6c757d",
+              };
+              fallbackMessage = swalConfig.text;
+            } else {
+              swalConfig = {
+                icon: "question",
+                title: "Actualizar estatus",
+                text:
+                  "¿Deseas actualizar el estatus y notificar al cliente?",
+                showCancelButton: true,
+                confirmButtonText: "Sí, actualizar",
+                cancelButtonText: "Cancelar",
+                confirmButtonColor: "#F97316",
+                cancelButtonColor: "#6c757d",
+              };
+              fallbackMessage = swalConfig.text;
+            }
+
+            const result = await Swal.fire(swalConfig);
+            if (!result.isConfirmed) {
+              return;
+            }
+          } else {
+            const confirmed = window.confirm(fallbackMessage);
+            if (!confirmed) {
+              return;
+            }
+          }
+
+          try {
+            btnConfirmar.disabled = true;
+            if (btnConfirmarText) btnConfirmarText.style.display = "none";
+            if (btnConfirmarSpinner)
+              btnConfirmarSpinner.style.display = "block";
+
+            const response = await fetch(
+              `${API_BASE_URL}/admin/pedidos/${selectedOrderId}`,
+              {
+                method: "PUT",
+                headers: {
+                  Authorization: `Bearer ${adminToken}`,
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ estatus: nuevoEstatus }),
+              }
+            );
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+              showToast(
+                `Pedido #${selectedOrderId} actualizado a ${nuevoEstatus}`,
+                "success"
+              );
+              closeStatusModal();
+              window.location.reload();
+            } else {
+              showToast(
+                data.message || "Error al actualizar pedido",
+                "error"
+              );
+            }
+          } catch (error) {
+            console.error("Error updating order:", error);
+            showToast("Error al conectar con el servidor", "error");
+          } finally {
+            if (btnConfirmar) btnConfirmar.disabled = false;
+            if (btnConfirmarText)
+              btnConfirmarText.style.display = "inline";
+            if (btnConfirmarSpinner)
+              btnConfirmarSpinner.style.display = "none";
+          }
+        }
+
+        window.addEventListener("click", function (event) {
+          const statusModal = document.getElementById("statusModal");
+          if (event.target === statusModal) {
+            closeStatusModal();
+          }
+        });
 
         function formatCurrency(value) {
           if (value === null || value === undefined) return "$0.00";

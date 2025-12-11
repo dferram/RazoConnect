@@ -339,6 +339,13 @@ const API = {
     });
   },
 
+  solicitarCambioEstatusPedidoAgente: async (pedidoId, nuevoEstatus) => {
+    return apiCall(`/agente/pedidos/${pedidoId}/solicitar-estatus`, {
+      method: "POST",
+      body: JSON.stringify({ nuevoEstatus }),
+    });
+  },
+
   obtenerPedidoDetalle: async (pedidoId) => {
     return apiCall(`/admin/pedidos/${pedidoId}/detalle`, {
       method: "GET",

@@ -1,6 +1,7 @@
 const db = require("../db");
 const { isValidEmail } = require("../utils/validator");
 const { registrarLog } = require("../services/loggerService");
+const { solicitarCambio } = require("../services/ChangeRequestService");
 
 const resolveAuthenticatedAgenteId = (user) => {
   const agenteIdRaw =
@@ -670,6 +671,132 @@ const actualizarEstatusPedidoAgente = async (req, res) => {
   }
 };
 
+const solicitarCambioEstatusPedidoAgente = async (req, res) => {
+  try {
+    const agenteId = resolveAuthenticatedAgenteId(req.user);
+
+    if (!agenteId) {
+      return res.status(403).json({
+        success: false,
+        message: "No se pudo determinar el agente autenticado",
+      });
+    }
+
+    const pedidoId = parseInt(req.params.id, 10);
+
+    if (!pedidoId || Number.isNaN(pedidoId)) {
+      return res.status(400).json({
+        success: false,
+        message: "ID de pedido inválido",
+      });
+    }
+
+    const bodyStatus = req.body && req.body.nuevoEstatus;
+    const nuevoEstatusRaw =
+      typeof bodyStatus === "string" ? bodyStatus.trim() : "";
+
+    const destinosPermitidos = ["Confirmado", "Cancelado"];
+
+    if (!destinosPermitidos.includes(nuevoEstatusRaw)) {
+      return res.status(400).json({
+        success: false,
+        message: "Estatus destino no permitido",
+      });
+    }
+
+    const pedidoResult = await db.query(
+      `SELECT p.pedidoid, p.estatus
+       FROM Pedidos p
+       INNER JOIN Clientes c ON c.ClienteID = p.ClienteID
+       WHERE p.PedidoID = $1 AND c.AgenteID = $2`,
+      [pedidoId, agenteId]
+    );
+
+    if (pedidoResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Pedido no encontrado o no pertenece a tus clientes",
+      });
+    }
+
+    const estatusActual = pedidoResult.rows[0].estatus || "";
+    const estatusActualLower = estatusActual.toString().toLowerCase();
+    const nuevoEstatusLower = nuevoEstatusRaw.toString().toLowerCase();
+
+    if (estatusActual === nuevoEstatusRaw) {
+      return res.status(200).json({
+        success: true,
+        message: "El estatus ya se encuentra establecido",
+        data: {
+          pedidoId,
+          estatusAnterior: estatusActual,
+          estatusNuevo: nuevoEstatusRaw,
+        },
+      });
+    }
+
+    const estadosBloqueados = ["enviado", "entregado", "pagado", "cancelado"];
+    if (estadosBloqueados.includes(estatusActualLower)) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "No puedes solicitar cambios para pedidos en estatus Enviado, Entregado, Pagado o Cancelado",
+      });
+    }
+
+    const transicionValida =
+      (estatusActualLower === "pendiente" &&
+        (nuevoEstatusLower === "confirmado" ||
+          nuevoEstatusLower === "cancelado")) ||
+      ((estatusActualLower === "confirmado" ||
+        estatusActualLower === "validado") &&
+        nuevoEstatusLower === "cancelado");
+
+    if (!transicionValida) {
+      return res.status(400).json({
+        success: false,
+        message: "La transición de estatus solicitada no está permitida",
+      });
+    }
+
+    const datosNuevos = { estatus: nuevoEstatusRaw };
+    const datosAnteriores = { estatus: estatusActual };
+
+    const resultado = await solicitarCambio(
+      req,
+      "pedidos",
+      pedidoId,
+      "UPDATE",
+      datosNuevos,
+      datosAnteriores
+    );
+
+    return res.status(200).json({
+      success: true,
+      message:
+        resultado.mensaje ||
+        "Solicitud registrada. El administrador revisará el cambio.",
+      data: {
+        pedidoId,
+        estatusAnterior: estatusActual,
+        estatusNuevo: nuevoEstatusRaw,
+        solicitudId: resultado.solicitudId,
+        estadoSolicitud: resultado.estado,
+      },
+    });
+  } catch (error) {
+    console.error(
+      "Error al registrar solicitud de cambio de estatus de pedido por agente:",
+      error
+    );
+    return res.status(500).json({
+      success: false,
+      message: "Error al registrar la solicitud de cambio de estatus",
+      error: error.message,
+    });
+  }
+};
+
 const obtenerComisionesDelAgente = async (req, res) => {
   try {
     const agenteId = resolveAuthenticatedAgenteId(req.user);
@@ -731,4 +858,5 @@ module.exports = {
   obtenerComisionesDelAgente,
   resolveAuthenticatedAgenteId,
   actualizarEstatusPedidoAgente,
+  solicitarCambioEstatusPedidoAgente,
 };

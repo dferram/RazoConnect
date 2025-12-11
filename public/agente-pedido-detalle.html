@@ -12,6 +12,7 @@
 
     <link rel="stylesheet" href="css/styles.css" />
     <link rel="stylesheet" href="css/admin.css" />
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
       .pedido-detail-wrapper {
         max-width: 1200px;
@@ -370,11 +371,13 @@
                     </h2>
                     <p class="pedido-fecha" id="pedidoFecha">--</p>
                   </div>
-                  <span
-                    class="pedido-estatus-badge pendiente"
-                    id="pedidoEstatus"
-                    >--</span
-                  >
+                  <div class="d-flex align-items-center gap-2">
+                    <span
+                      class="pedido-estatus-badge pendiente"
+                      id="pedidoEstatus"
+                      >--</span
+                    >
+                  </div>
                 </div>
                 <div class="pedido-monto-section">
                   <span class="pedido-monto-label">Monto total:</span>
@@ -413,10 +416,125 @@
                   <span class="items-total-value" id="itemsTotal">$0.00</span>
                 </div>
               </div>
+
+              <div
+                class="pedido-actions"
+                style="
+                  margin-top: 1.75rem;
+                  display: flex;
+                  justify-content: flex-end;
+                "
+              >
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-primary"
+                  id="btnSolicitarCambio"
+                  style="display: none;"
+                  onclick="abrirModalSolicitudDesdeDetalle()"
+                >
+                  Solicitar cambio
+                </button>
+              </div>
             </div>
           </div>
         </div>
       </main>
+    </div>
+
+    <div
+      id="modalStatusAgente"
+      class="modal"
+      tabindex="-1"
+      style="background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px); display: none;"
+    >
+      <div
+        class="modal-dialog modal-dialog-centered"
+        style="max-width: none; width: auto; display: flex; justify-content: center;"
+      >
+        <div
+          class="modal-content modal-content--xl"
+          style="width: 95%; max-width: 600px; background: #fff; border-radius: 1rem; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);"
+        >
+          <div
+            class="modal-header"
+            style="padding: 1.5rem; border-bottom: 2px solid #f3f4f6; display: flex; justify-content: space-between; align-items: center;"
+          >
+            <h2
+              class="modal-title"
+              style="font-size: 1.5rem; font-weight: 700; color: #111827; margin: 0;"
+            >
+              Solicitar Cambio de Estatus
+            </h2>
+            <button
+              type="button"
+              class="modal-close-btn"
+              aria-label="Close"
+              onclick="cerrarModalStatusAgente()"
+              style="background: transparent; border: none; font-size: 1.5rem; cursor: pointer; color: #9ca3af;"
+            >
+              ×
+            </button>
+          </div>
+
+          <div class="modal-body" style="padding: 1.5rem;">
+            <div class="mb-4">
+              <p style="font-size: 1.125rem; color: #374151; margin-bottom: 0.5rem;">
+                <strong>Pedido #<span id="modalPedidoId"></span></strong>
+                <span class="text-muted" style="font-size: 0.875rem;">
+                  - Cliente: <span id="modalClienteNombre"></span>
+                </span>
+              </p>
+            </div>
+
+            <div class="form-group mb-4">
+              <label
+                class="form-label"
+                style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #374151;"
+              >
+                Nuevo Estatus Propuesto:
+              </label>
+              <select
+                id="selectNuevoEstatus"
+                class="form-input"
+                style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.5rem; font-size: 1rem;"
+              >
+                <option value="Confirmado">Confirmado</option>
+                <option value="Cancelado">Cancelado</option>
+              </select>
+            </div>
+
+            <div
+              style="background-color: #fff7ed; border-left: 4px solid #F97316; padding: 1rem; border-radius: 0.5rem;"
+            >
+              <p style="margin: 0; font-size: 0.875rem; color: #9a3412;">
+                <strong>⚠️ Solicitud de Cambio:</strong>
+                Esta acción enviará una notificación al Administrador para su
+                aprobación. El stock y el estatus no cambiarán hasta que sea
+                autorizado.
+              </p>
+            </div>
+
+            <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+              <button
+                type="button"
+                class="btn btn-secondary"
+                onclick="cerrarModalStatusAgente()"
+                style="flex: 1; padding: 0.75rem; border-radius: 0.5rem; background-color: #f3f4f6; color: #374151; border: 1px solid #d1d5db; font-weight: 600;"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                class="btn btn-primary"
+                onclick="enviarSolicitudEstatusDesdeDetalle()"
+                style="flex: 1; padding: 0.75rem; border-radius: 0.5rem; background-color: #F97316; color: white; border: none; font-weight: 600;"
+              >
+                Enviar Solicitud
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <script src="js/layout.js" defer></script>
@@ -430,6 +548,8 @@
         if (!requireAgentAuth()) {
           return;
         }
+
+        let selectedPedidoForStatus = null;
 
         document.addEventListener("DOMContentLoaded", init);
 
@@ -493,6 +613,24 @@
             }
 
             estatusEl.className = estatusClass;
+
+            selectedPedidoForStatus = {
+              id: pedido.id || pedido.pedidoId || pedido.numeroPedido,
+              estatusActual: pedido.estatus || "",
+              cliente:
+                [cliente.nombre, cliente.apellido].filter(Boolean).join(" ") ||
+                "Cliente",
+            };
+
+            const btnSolicitarCambio =
+              document.getElementById("btnSolicitarCambio");
+            if (btnSolicitarCambio) {
+              const puedeSolicitar =
+                estatusValor === "pendiente" || estatusValor === "confirmado";
+              btnSolicitarCambio.style.display = puedeSolicitar
+                ? "inline-block"
+                : "none";
+            }
 
             document.getElementById("pedidoMonto").textContent = formatCurrency(
               pedido.montoTotal
@@ -583,6 +721,233 @@
             showToast(errorMsg, "error");
           }
         }
+
+        window.abrirModalSolicitudDesdeDetalle = function () {
+          if (!selectedPedidoForStatus || !selectedPedidoForStatus.id) {
+            showToast(
+              "No hay un pedido seleccionado para actualizar.",
+              "error"
+            );
+            return;
+          }
+
+          const modalEl = document.getElementById("modalStatusAgente");
+          const idEl = document.getElementById("modalPedidoId");
+          const clienteEl = document.getElementById("modalClienteNombre");
+          const selectEl = document.getElementById("selectNuevoEstatus");
+
+          if (idEl) {
+            idEl.textContent = selectedPedidoForStatus.id;
+          }
+
+          if (clienteEl) {
+            clienteEl.textContent = selectedPedidoForStatus.cliente;
+          }
+
+          if (selectEl) {
+            const opciones = Array.from(selectEl.options || []);
+            const estatusLower = (
+              selectedPedidoForStatus.estatusActual || ""
+            )
+              .toString()
+              .toLowerCase();
+
+            const esPendiente = estatusLower === "pendiente";
+            const esConfirmado = ["confirmado", "validado"].includes(
+              estatusLower
+            );
+
+            opciones.forEach((opt) => {
+              const valueLower = (opt.value || "").toString().toLowerCase();
+
+              opt.disabled = false;
+              opt.hidden = false;
+
+              if (esPendiente) {
+                return;
+              }
+
+              if (esConfirmado) {
+                if (valueLower === "confirmado") {
+                  opt.disabled = true;
+                  opt.hidden = true;
+                }
+                if (valueLower === "cancelado") {
+                  opt.disabled = false;
+                  opt.hidden = false;
+                }
+              }
+            });
+
+            if (esPendiente) {
+              selectEl.value = "Confirmado";
+            } else if (esConfirmado) {
+              selectEl.value = "Cancelado";
+            } else {
+              const primeraVisible = opciones.find(
+                (opt) => !opt.disabled && !opt.hidden
+              );
+              if (primeraVisible) {
+                selectEl.value = primeraVisible.value;
+              }
+            }
+          }
+
+          if (modalEl) {
+            modalEl.style.display = "flex";
+          }
+        };
+
+        window.cerrarModalStatusAgente = function () {
+          const modalEl = document.getElementById("modalStatusAgente");
+          if (!modalEl) return;
+          modalEl.style.display = "none";
+        };
+
+        window.enviarSolicitudEstatusDesdeDetalle = async function () {
+          if (!selectedPedidoForStatus || !selectedPedidoForStatus.id) {
+            showToast(
+              "No hay un pedido seleccionado para actualizar.",
+              "error"
+            );
+            return;
+          }
+
+          const selectEl = document.getElementById("selectNuevoEstatus");
+          if (!selectEl) {
+            showToast("No se encontró el selector de estatus.", "error");
+            return;
+          }
+
+          const nuevoEstatus = selectEl.value;
+          if (!nuevoEstatus) {
+            showToast("Selecciona un nuevo estatus.", "warning");
+            return;
+          }
+
+          const nuevoLower = (nuevoEstatus || "").toString().toLowerCase();
+          const estatusActual =
+            (selectedPedidoForStatus.estatusActual || "").toString();
+          const actualLower = estatusActual.toLowerCase();
+
+          let swalConfig = null;
+          let fallbackMessage =
+            "¿Deseas enviar la solicitud de cambio de estatus al administrador?";
+
+          if (
+            typeof Swal !== "undefined" &&
+            Swal &&
+            typeof Swal.fire === "function"
+          ) {
+            if (nuevoLower === "cancelado") {
+              swalConfig = {
+                icon: "warning",
+                title: "¿Solicitar cancelación?",
+                text:
+                  "⚠️ Se enviará una solicitud al administrador. Si se aprueba, se devolverán los productos al inventario y se notificará al cliente.",
+                showCancelButton: true,
+                confirmButtonText: "Sí, solicitar cancelación",
+                cancelButtonText: "No, mantener pedido",
+                confirmButtonColor: "#dc3545",
+                cancelButtonColor: "#6b7280",
+              };
+              fallbackMessage = swalConfig.text;
+            } else {
+              swalConfig = {
+                icon: "question",
+                title: "¿Solicitar actualización?",
+                text:
+                  "⚠️ Se enviará una solicitud al administrador para actualizar el estatus y notificar al cliente.",
+                showCancelButton: true,
+                confirmButtonText: "Sí, enviar solicitud",
+                cancelButtonText: "Cancelar",
+                confirmButtonColor: "#F97316",
+                cancelButtonColor: "#6b7280",
+              };
+              fallbackMessage = swalConfig.text;
+            }
+
+            const result = await Swal.fire(swalConfig);
+            if (!result.isConfirmed) {
+              return;
+            }
+          } else {
+            const confirmed = window.confirm(fallbackMessage);
+            if (!confirmed) {
+              return;
+            }
+          }
+
+          try {
+            const response = await API.solicitarCambioEstatusPedidoAgente(
+              selectedPedidoForStatus.id,
+              nuevoEstatus
+            );
+
+            if (!response.ok || !response.data?.success) {
+              throw new Error(
+                response.data?.message ||
+                  "No fue posible registrar la solicitud de cambio de estatus"
+              );
+            }
+
+            cerrarModalStatusAgente();
+
+            const mensaje =
+              response.data.message ||
+              "Solicitud registrada. El administrador revisará el cambio.";
+
+            if (
+              typeof Swal !== "undefined" &&
+              Swal &&
+              typeof Swal.fire === "function"
+            ) {
+              await Swal.fire({
+                icon: "success",
+                title: "Solicitud enviada",
+                text: mensaje,
+                confirmButtonColor: "#F97316",
+              });
+            } else {
+              showToast(mensaje, "success");
+            }
+
+            window.location.reload();
+          } catch (error) {
+            console.error(
+              "Error al registrar solicitud de cambio de estatus del pedido:",
+              error
+            );
+
+            if (
+              typeof Swal !== "undefined" &&
+              Swal &&
+              typeof Swal.fire === "function"
+            ) {
+              Swal.fire({
+                icon: "error",
+                title: "No se pudo registrar la solicitud",
+                text:
+                  error.message ||
+                  "Ocurrió un error al enviar la solicitud de cambio de estatus.",
+                confirmButtonColor: "#F97316",
+              });
+            } else {
+              showToast(
+                error.message ||
+                  "Ocurrió un error al enviar la solicitud de cambio de estatus.",
+                "error"
+              );
+            }
+          }
+        };
+
+        document.addEventListener("click", function (event) {
+          const modalEl = document.getElementById("modalStatusAgente");
+          if (event.target === modalEl) {
+            cerrarModalStatusAgente();
+          }
+        });
 
         function formatCurrency(value) {
           if (value === null || value === undefined) return "$0.00";

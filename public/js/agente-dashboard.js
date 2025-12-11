@@ -6,6 +6,13 @@
       return;
     }
 
+    window.irADetallePedidoAgente = function (pedidoId) {
+      if (!pedidoId) return;
+      sessionStorage.setItem("_navigating", "true");
+      localStorage.setItem("_nav_timestamp", Date.now().toString());
+      window.location.href = `/agente-pedido-detalle.html?id=${pedidoId}`;
+    };
+
     const ventasMesEl = document.getElementById("statVentasMes");
     const comisionesEl = document.getElementById("statComisiones");
     const clientesEl = document.getElementById("statClientes");
@@ -124,29 +131,8 @@
 
     function renderStatusSelector(pedido) {
       const estatus = pedido.estatus || "";
-      const value = estatus.toString().toLowerCase();
-
-      // Solo editable si está Pendiente
-      if (value !== "pendiente") {
-        const badgeClass = getPedidoStatusBadgeClass(estatus);
-        return `<span class="${badgeClass}">${estatus || "Desconocido"}</span>`;
-      }
-
-      const currentValue = "Pendiente";
-
-      return `
-        <select 
-          class="pedido-estatus-select"
-          data-pedido-id="${pedido.pedidoId}"
-          data-current-value="${currentValue}"
-        >
-          <option value="Pendiente" ${
-            currentValue === "Pendiente" ? "selected" : ""
-          }>Pendiente</option>
-          <option value="Confirmado">Confirmado</option>
-          <option value="Cancelado">Cancelado</option>
-        </select>
-      `;
+      const badgeClass = getPedidoStatusBadgeClass(estatus);
+      return `<span class="${badgeClass}">${estatus || "Desconocido"}</span>`;
     }
 
     function getDisplayName(user) {
@@ -214,13 +200,40 @@
               .filter(Boolean)
               .join(" ") || "Cliente sin nombre";
 
+          const estatusLower = (pedido.estatus || "").toString().toLowerCase();
+          const puedeSolicitarCambio = [
+            "pendiente",
+            "confirmado",
+            "validado",
+          ].includes(estatusLower);
+
           return `
-            <tr>
+            <tr style="cursor:pointer;" onclick="irADetallePedidoAgente(${pedido.pedidoId})">
               <td>${pedido.numeroPedido || `#${pedido.pedidoId}`}</td>
               <td>${clienteNombre}</td>
               <td>${formatDate(pedido.fechaPedido)}</td>
               <td>${formatCurrency(pedido.montoTotal)}</td>
-              <td>${renderStatusSelector(pedido)}</td>
+              <td>
+                ${renderStatusSelector(pedido)}
+              </td>
+              <td>
+                <div style="display:flex; align-items:center; justify-content:center;">
+                  ${
+                    puedeSolicitarCambio
+                      ? `<button
+                          type="button"
+                          class="btn btn-outline-primary btn-sm"
+                          data-pedido-id="${pedido.pedidoId}"
+                          data-estatus="${pedido.estatus || ""}"
+                          data-cliente="${clienteNombre.replace(/"/g, "&quot;")}"
+                          onclick="event.stopPropagation(); abrirModalStatusDesdeBoton(this)"
+                        >
+                          Cambiar Estatus
+                        </button>`
+                      : ""
+                  }
+                </div>
+              </td>
             </tr>
           `;
         })
@@ -231,92 +244,6 @@
       pedidosBody
         .querySelectorAll(".pedido-estatus-select")
         .forEach((select) => applyStatusSelectStyle(select));
-    }
-
-    function handleTablaPedidosEvent(event) {
-      const select = event.target.closest(".pedido-estatus-select");
-      if (!select) {
-        return;
-      }
-
-      const pedidoId = select.dataset.pedidoId;
-      const previousValue = select.dataset.currentValue || "Pendiente";
-      const newValue = select.value;
-
-      if (!pedidoId || !newValue || newValue === previousValue) {
-        applyStatusSelectStyle(select);
-        return;
-      }
-
-      // Feedback inmediato de color
-      applyStatusSelectStyle(select);
-
-      const swalAvailable =
-        typeof Swal !== "undefined" && Swal && typeof Swal.fire === "function";
-
-      const confirmCambio = async () => {
-        try {
-          const response = await API.actualizarEstatusPedidoAgente(
-            pedidoId,
-            newValue
-          );
-
-          if (!response.ok || !response.data?.success) {
-            throw new Error(
-              response.data?.message || "No fue posible actualizar el estatus"
-            );
-          }
-
-          showToast(
-            response.data.message ||
-              `Pedido #${pedidoId} actualizado a ${newValue}`,
-            "success"
-          );
-
-          // Actualizar dashboard con datos frescos
-          loadDashboard();
-        } catch (error) {
-          console.error("Error al actualizar estatus del pedido:", error);
-          showToast(
-            error.message || "Error al actualizar el estatus del pedido",
-            "error"
-          );
-          select.value = previousValue;
-          applyStatusSelectStyle(select);
-        }
-      };
-
-      if (!swalAvailable) {
-        if (
-          window.confirm(
-            `¿Confirmas cambiar el estatus del pedido #${pedidoId} a "${newValue}"?`
-          )
-        ) {
-          confirmCambio();
-        } else {
-          select.value = previousValue;
-          applyStatusSelectStyle(select);
-        }
-        return;
-      }
-
-      Swal.fire({
-        icon: "question",
-        title: "Cambiar estatus del pedido",
-        text: `¿Confirmas cambiar el estatus del pedido #${pedidoId} a "${newValue}"?`,
-        showCancelButton: true,
-        confirmButtonText: "Sí, cambiar",
-        cancelButtonText: "Cancelar",
-        confirmButtonColor: "#F97316",
-        cancelButtonColor: "#6b7280",
-      }).then((result) => {
-        if (result.isConfirmed) {
-          confirmCambio();
-        } else {
-          select.value = previousValue;
-          applyStatusSelectStyle(select);
-        }
-      });
     }
 
     async function loadDashboard() {
@@ -347,8 +274,264 @@
       }
     }
 
+    let selectedPedidoForStatus = null;
+
+    function mostrarModalStatusAgente() {
+      const modalEl = document.getElementById("modalStatusAgente");
+      if (!modalEl) return;
+      modalEl.style.display = "flex";
+    }
+
+    window.cerrarModalStatusAgente = function () {
+      const modalEl = document.getElementById("modalStatusAgente");
+      if (!modalEl) return;
+      modalEl.style.display = "none";
+    };
+
+    (function initModalStatusAgenteInteractions() {
+      const modalEl = document.getElementById("modalStatusAgente");
+      if (!modalEl) return;
+
+      modalEl.addEventListener("click", function (event) {
+        if (event.target === modalEl) {
+          cerrarModalStatusAgente();
+        }
+      });
+
+      document.addEventListener("keydown", function (event) {
+        if (event.key === "Escape" || event.key === "Esc") {
+          if (modalEl.style.display === "flex") {
+            cerrarModalStatusAgente();
+          }
+        }
+      });
+    })();
+
+    window.abrirModalStatus = function (
+      pedidoId,
+      estatusActual,
+      clienteNombre
+    ) {
+      const idNum = parseInt(pedidoId, 10);
+      if (!idNum || Number.isNaN(idNum)) {
+        showToast("No se pudo identificar el pedido seleccionado.", "error");
+        return;
+      }
+
+      selectedPedidoForStatus = {
+        id: idNum,
+        estatusActual: estatusActual || "",
+        cliente: clienteNombre || "Cliente",
+      };
+
+      const idEl = document.getElementById("modalPedidoId");
+      if (idEl) {
+        idEl.textContent = idNum;
+      }
+
+      const clienteEl = document.getElementById("modalClienteNombre");
+      if (clienteEl) {
+        clienteEl.textContent = selectedPedidoForStatus.cliente;
+      }
+
+      const selectEl = document.getElementById("selectNuevoEstatus");
+      if (selectEl) {
+        const opciones = Array.from(selectEl.options || []);
+        const estatusLower = (estatusActual || "").toString().toLowerCase();
+
+        const esPendiente = estatusLower === "pendiente";
+        const esConfirmado = ["confirmado", "validado"].includes(
+          estatusLower
+        );
+
+        opciones.forEach((opt) => {
+          const valueLower = (opt.value || "").toString().toLowerCase();
+
+          // Por defecto mostrar todas
+          opt.disabled = false;
+          opt.hidden = false;
+
+          if (esPendiente) {
+            // Pendiente: puede elegir Confirmado o Cancelado
+            return;
+          }
+
+          if (esConfirmado) {
+            // Confirmado/Validado: solo permitir Cancelado
+            if (valueLower === "confirmado") {
+              opt.disabled = true;
+              opt.hidden = true;
+            }
+            if (valueLower === "cancelado") {
+              opt.disabled = false;
+              opt.hidden = false;
+            }
+          }
+        });
+
+        if (esPendiente) {
+          selectEl.value = "Confirmado";
+        } else if (esConfirmado) {
+          selectEl.value = "Cancelado";
+        } else {
+          // Fallback: seleccionar primera opción visible
+          const primeraVisible = opciones.find(
+            (opt) => !opt.disabled && !opt.hidden
+          );
+          if (primeraVisible) {
+            selectEl.value = primeraVisible.value;
+          }
+        }
+      }
+
+      mostrarModalStatusAgente();
+    };
+
+    window.abrirModalStatusDesdeBoton = function (button) {
+      if (!button) return;
+      const pedidoId = button.getAttribute("data-pedido-id");
+      const estatus = button.getAttribute("data-estatus") || "";
+      const cliente = button.getAttribute("data-cliente") || "Cliente";
+      window.abrirModalStatus(pedidoId, estatus, cliente);
+    };
+
+    window.enviarSolicitudEstatus = async function () {
+      if (!selectedPedidoForStatus || !selectedPedidoForStatus.id) {
+        showToast("No hay un pedido seleccionado para actualizar.", "error");
+        return;
+      }
+
+      const selectEl = document.getElementById("selectNuevoEstatus");
+      if (!selectEl) {
+        showToast("No se encontró el selector de estatus.", "error");
+        return;
+      }
+
+      const nuevoEstatus = selectEl.value;
+      if (!nuevoEstatus) {
+        showToast("Selecciona un nuevo estatus.", "warning");
+        return;
+      }
+
+      const nuevoLower = (nuevoEstatus || "").toString().toLowerCase();
+      const estatusActual =
+        (selectedPedidoForStatus.estatusActual || "").toString();
+      const actualLower = estatusActual.toLowerCase();
+
+      let swalConfig = null;
+      let fallbackMessage =
+        "¿Deseas enviar la solicitud de cambio de estatus al administrador?";
+
+      if (
+        typeof Swal !== "undefined" &&
+        Swal &&
+        typeof Swal.fire === "function"
+      ) {
+        if (nuevoLower === "cancelado") {
+          swalConfig = {
+            icon: "warning",
+            title: "¿Solicitar cancelación?",
+            text:
+              "⚠️ Se enviará una solicitud al administrador. Si se aprueba, se devolverán los productos al inventario y se notificará al cliente.",
+            showCancelButton: true,
+            confirmButtonText: "Sí, solicitar cancelación",
+            cancelButtonText: "No, mantener pedido",
+            confirmButtonColor: "#dc3545",
+            cancelButtonColor: "#6b7280",
+          };
+          fallbackMessage = swalConfig.text;
+        } else {
+          swalConfig = {
+            icon: "question",
+            title: "¿Solicitar actualización?",
+            text:
+              "⚠️ Se enviará una solicitud al administrador para actualizar el estatus y notificar al cliente.",
+            showCancelButton: true,
+            confirmButtonText: "Sí, enviar solicitud",
+            cancelButtonText: "Cancelar",
+            confirmButtonColor: "#F97316",
+            cancelButtonColor: "#6b7280",
+          };
+          fallbackMessage = swalConfig.text;
+        }
+
+        const result = await Swal.fire(swalConfig);
+        if (!result.isConfirmed) {
+          return;
+        }
+      } else {
+        const confirmed = window.confirm(fallbackMessage);
+        if (!confirmed) {
+          return;
+        }
+      }
+
+      try {
+        const response = await API.solicitarCambioEstatusPedidoAgente(
+          selectedPedidoForStatus.id,
+          nuevoEstatus
+        );
+
+        if (!response.ok || !response.data?.success) {
+          throw new Error(
+            response.data?.message ||
+              "No fue posible registrar la solicitud de cambio de estatus"
+          );
+        }
+
+        cerrarModalStatusAgente();
+        selectedPedidoForStatus = null;
+
+        const mensaje =
+          response.data.message ||
+          "Solicitud registrada. El administrador revisará el cambio.";
+
+        if (
+          typeof Swal !== "undefined" &&
+          Swal &&
+          typeof Swal.fire === "function"
+        ) {
+          await Swal.fire({
+            icon: "success",
+            title: "Solicitud enviada",
+            text: mensaje,
+            confirmButtonColor: "#F97316",
+          });
+        } else {
+          showToast(mensaje, "success");
+        }
+
+        loadDashboard();
+      } catch (error) {
+        console.error(
+          "Error al registrar solicitud de cambio de estatus del pedido:",
+          error
+        );
+
+        if (
+          typeof Swal !== "undefined" &&
+          Swal &&
+          typeof Swal.fire === "function"
+        ) {
+          Swal.fire({
+            icon: "error",
+            title: "No se pudo registrar la solicitud",
+            text:
+              error.message ||
+              "Ocurrió un error al enviar la solicitud de cambio de estatus.",
+            confirmButtonColor: "#F97316",
+          });
+        } else {
+          showToast(
+            error.message ||
+              "Ocurrió un error al enviar la solicitud de cambio de estatus.",
+            "error"
+          );
+        }
+      }
+    };
+
     refrescarBtn?.addEventListener("click", loadDashboard);
-    pedidosBody?.addEventListener("change", handleTablaPedidosEvent);
 
     updateUserHeader();
     loadDashboard();

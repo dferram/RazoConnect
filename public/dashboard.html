@@ -1082,7 +1082,30 @@
 
       // Marcar todas como leídas
       btnMarcarTodasLeidas.addEventListener("click", async () => {
-        if (!confirm("¿Marcar todas las notificaciones como leídas?")) {
+        const mensaje = "¿Marcar todas las notificaciones como leídas?";
+        let confirmado = false;
+
+        if (
+          typeof Swal !== "undefined" &&
+          Swal &&
+          typeof Swal.fire === "function"
+        ) {
+          const result = await Swal.fire({
+            icon: "question",
+            title: "Marcar todas como leídas",
+            text: mensaje,
+            showCancelButton: true,
+            confirmButtonText: "Sí, marcar todas",
+            cancelButtonText: "Cancelar",
+            confirmButtonColor: "#F97316",
+            cancelButtonColor: "#6b7280",
+          });
+          confirmado = !!result.isConfirmed;
+        } else {
+          confirmado = window.confirm(mensaje);
+        }
+
+        if (!confirmado) {
           return;
         }
 
@@ -1105,7 +1128,30 @@
 
       // Eliminar notificación
       async function eliminarNotificacion(notifId) {
-        if (!confirm("¿Eliminar esta notificación?")) {
+        const mensaje = "¿Eliminar esta notificación?";
+        let confirmado = false;
+
+        if (
+          typeof Swal !== "undefined" &&
+          Swal &&
+          typeof Swal.fire === "function"
+        ) {
+          const result = await Swal.fire({
+            icon: "warning",
+            title: "Eliminar notificación",
+            text: mensaje,
+            showCancelButton: true,
+            confirmButtonText: "Sí, eliminar",
+            cancelButtonText: "Cancelar",
+            confirmButtonColor: "#dc3545",
+            cancelButtonColor: "#6b7280",
+          });
+          confirmado = !!result.isConfirmed;
+        } else {
+          confirmado = window.confirm(mensaje);
+        }
+
+        if (!confirmado) {
           return;
         }
 

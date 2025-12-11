@@ -324,7 +324,7 @@
             const activo = cat.activo !== undefined ? cat.activo : true;
             const estadoBadgeClass = activo ? 'badge-success' : 'badge-secondary';
             const estadoTexto = activo ? 'Visible' : 'Oculto';
-            const estadoIcon = activo ? '👁️' : '🚫';
+            const estadoIcon = activo ? '' : '🚫';
 
             return `
             <tr>
@@ -474,9 +474,36 @@
       // Toggle category visibility (quick action)
       async function toggleCategoriaVisibilidad(categoriaId, estadoActual) {
         const nuevoEstado = !estadoActual;
-        const accion = nuevoEstado ? 'mostrar' : 'ocultar';
-        
-        if (!confirm(`¿Estás seguro de ${accion} esta categoría en la tienda?\\n\\nSi la ocultas, todos los productos de esta categoría dejarán de verse en la tienda.`)) {
+        const accion = nuevoEstado ? "mostrar" : "ocultar";
+        const esOcultar = !nuevoEstado;
+
+        const mensaje =
+          `¿Estás seguro de ${accion} esta categoría en la tienda? ` +
+          "Si la ocultas, todos los productos de esta categoría dejarán de verse en la tienda.";
+
+        let confirmado = false;
+
+        if (
+          typeof Swal !== "undefined" &&
+          Swal &&
+          typeof Swal.fire === "function"
+        ) {
+          const result = await Swal.fire({
+            icon: esOcultar ? "warning" : "question",
+            title: esOcultar ? "Ocultar categoría" : "Mostrar categoría",
+            text: mensaje,
+            showCancelButton: true,
+            confirmButtonText: esOcultar ? "Sí, ocultar" : "Sí, mostrar",
+            cancelButtonText: "Cancelar",
+            confirmButtonColor: esOcultar ? "#dc3545" : "#F97316",
+            cancelButtonColor: "#6b7280",
+          });
+          confirmado = !!result.isConfirmed;
+        } else {
+          confirmado = window.confirm(mensaje);
+        }
+
+        if (!confirmado) {
           return;
         }
 

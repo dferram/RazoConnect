@@ -2,6 +2,18 @@ const db = require("../db");
 
 const TIPOS_CAMBIO = ["INSERT", "UPDATE", "DELETE"];
 
+// Mapeos de campos lógicos -> columnas reales para entidades específicas
+// Útil para compatibilidad hacia atrás cuando se guardaron claves como "Estatus".
+const FIELD_MAPPINGS = {
+  pedidos: {
+    Estatus: "estatus",
+  },
+  comisiones: {
+    Estatus: "estatus",
+    FechaPago: "fechapago",
+  },
+};
+
 // Lista blanca de entidades administrables. El valor "table" se usa solo como metadato;
 // la lógica de aprobación real se implementará en un endpoint dedicado.
 const ENTIDADES_PERMITIDAS = {
@@ -22,6 +34,15 @@ function getAdminIdFromRequest(req) {
   // En tokens de admin ya se está usando "id" y "roles" (ver adminController.loginAdmin)
   if (req.user.tipo === "admin") {
     return req.user.id || req.user.userId || null;
+  }
+
+  const rol = (req.user.rol || "").toString().toLowerCase();
+  const roles = Array.isArray(req.user.roles)
+    ? req.user.roles.map((r) => String(r).toLowerCase())
+    : [];
+
+  if (rol === "agente" || roles.includes("agente")) {
+    return req.user.userId || req.user.id || null;
   }
 
   return null;
@@ -154,7 +175,8 @@ async function aprobarSolicitudes(ids, adminId) {
       }
 
       const cambio = rows[0];
-      const entityConfig = ENTIDADES_PERMITIDAS[cambio.entidad];
+      const entidadKey = String(cambio.entidad || "").toLowerCase();
+      const entityConfig = ENTIDADES_PERMITIDAS[entidadKey];
 
       if (!entityConfig) {
         throw new Error(
@@ -166,6 +188,7 @@ async function aprobarSolicitudes(ids, adminId) {
       const tipoCambio = cambio.tipo_cambio;
       const entidadId = cambio.entidad_id;
       const nuevos = ensureJsonObject(cambio.datos_nuevos);
+      const fieldMap = FIELD_MAPPINGS[entidadKey] || {};
 
       if (tipoCambio === "INSERT") {
         const columns = Object.keys(nuevos || {});
@@ -210,16 +233,25 @@ async function aprobarSolicitudes(ids, adminId) {
           );
         }
 
-        const columns = Object.keys(nuevos || {});
-        if (!columns.length) {
+        const rawColumns = Object.keys(nuevos || {});
+        if (!rawColumns.length) {
           skipped.push({ id: cambioId, reason: "Sin campos para actualizar" });
           continue;
+        }
+
+        const columns = [];
+        const values = [];
+
+        for (const rawCol of rawColumns) {
+          const mappedCol = fieldMap[rawCol] || rawCol;
+          columns.push(mappedCol);
+          values.push(nuevos[rawCol]);
         }
 
         const setClauses = columns
           .map((c, idx) => `"${c}" = $${idx + 1}`)
           .join(", ");
-        const values = columns.map((c) => nuevos[c]);
+
         values.push(entidadId);
 
         const updateSql = `UPDATE ${table} SET ${setClauses} WHERE ${pk} = $${

@@ -4,6 +4,7 @@ const {
   aprobarSolicitudes,
 } = require("../services/ChangeRequestService");
 const { enviarEmail } = require("../services/emailService");
+const { generarHtmlConfirmacion } = require("../utils/emailTemplates");
 const {
   crearNotificacion: crearNotificacionServicio,
 } = require("../services/notificacionesService");
@@ -1157,14 +1158,28 @@ const updatePedidoEstatus = async (req, res) => {
 
     await client.query("BEGIN");
 
-    // Obtener datos del pedido
+    // Obtener datos del pedido (incluyendo datos de cliente y dirección de envío)
     const pedidoResult = await client.query(
       `SELECT 
          p.*, 
          c.Email AS email_cliente, 
-         COALESCE(c.Nombre, '') AS nombre_cliente
+         COALESCE(c.Nombre, '') AS nombre_cliente,
+         COALESCE(c.Apellido, '') AS apellido_cliente,
+         cd.Receptor,
+         cd.Calle,
+         cd.NumeroExt,
+         cd.NumeroInt,
+         cd.Colonia,
+         cd.Ciudad,
+         cd.EstadoID,
+         e.Nombre AS EstadoNombre,
+         e.Abreviatura AS EstadoAbreviatura,
+         cd.CodigoPostal,
+         cd.TelefonoContacto
        FROM Pedidos p
        INNER JOIN Clientes c ON c.ClienteID = p.ClienteID
+       LEFT JOIN Cliente_Direcciones cd ON p.DireccionEnvioID = cd.DireccionID
+       LEFT JOIN Estados e ON cd.EstadoID = e.EstadoID
        WHERE p.PedidoID = $1`,
       [pedidoId]
     );
@@ -1180,61 +1195,15 @@ const updatePedidoEstatus = async (req, res) => {
     const pedido = pedidoResult.rows[0];
     const estatusAnterior = pedido.estatus;
 
-    // Si el estatus cambia a 'Confirmado', reducir stock y crear log
-    if (estatus === "Confirmado" && estatusAnterior !== "Confirmado") {
-      // Obtener los detalles del pedido con sus variantes
-      const detallesResult = await client.query(
-        `SELECT 
-          dp.DetalleID,
-          dp.VarianteID,
-          dp.CantidadPaquetes,
-          pv.Stock,
-          pv.ProductoID,
-          pv.SKU,
-          pr.NombreProducto
-        FROM DetallesDelPedido dp
-        INNER JOIN Producto_Variantes pv ON dp.VarianteID = pv.VarianteID
-        INNER JOIN Productos pr ON pv.ProductoID = pr.ProductoID
-        WHERE dp.PedidoID = $1`,
-        [pedidoId]
-      );
+    const esCancelacion =
+      estatus === "Cancelado" && estatusAnterior !== "Cancelado";
+    const esReactivacion =
+      estatusAnterior === "Cancelado" && estatus !== "Cancelado";
 
-      // Reducir stock de cada variante y crear log
-      for (const detalle of detallesResult.rows) {
-        const stockActual = detalle.stock ?? 0;
-        const cantidadRequerida = detalle.cantidadpaquetes;
-
-        if (stockActual < cantidadRequerida) {
-          await client.query("ROLLBACK");
-          return res.status(400).json({
-            success: false,
-            message: `Stock insuficiente para la variante ${
-              detalle.sku || detalle.varianteid
-            }. Stock actual: ${stockActual}, requerido: ${cantidadRequerida}`,
-          });
-        }
-
-        const nuevoStock = stockActual - cantidadRequerida;
-
-        await client.query(
-          `UPDATE Producto_Variantes 
-           SET Stock = $1 
-           WHERE VarianteID = $2`,
-          [nuevoStock, detalle.varianteid]
-        );
-
-        await client.query(
-          `INSERT INTO Log_Inventario (VarianteID, CantidadCambiado, NuevoStock, Motivo, UsuarioID)
-           VALUES ($1, $2, $3, $4, $5)`,
-          [
-            detalle.varianteid,
-            -cantidadRequerida,
-            nuevoStock,
-            `Pedido #${pedidoId} confirmado (${detalle.nombreproducto})`,
-            req.user.id,
-          ]
-        );
-      }
+    if (esCancelacion) {
+      await devolverStockPedido(client, pedidoId, req.user.id);
+    } else if (esReactivacion) {
+      await reducirStockPedido(client, pedidoId, req.user.id);
     }
 
     // Actualizar el estatus del pedido
@@ -1246,15 +1215,104 @@ const updatePedidoEstatus = async (req, res) => {
     await client.query("COMMIT");
 
     const emailCliente = pedido.email_cliente;
-    const nombreCliente =
+    const nombreClienteBase =
       (pedido.nombre_cliente || "cliente").trim() || "cliente";
+    const apellidoClienteBase = (pedido.apellido_cliente || "").trim();
+    const nombreCliente =
+      [nombreClienteBase, apellidoClienteBase].filter(Boolean).join(" ").trim() ||
+      nombreClienteBase;
     const plantilla = PEDIDO_ESTATUS_EMAIL_TEMPLATES[estatus];
+    const seConfirmaAhora =
+      estatus === "Confirmado" && estatusAnterior !== "Confirmado";
 
-    if (plantilla && emailCliente) {
+    if (emailCliente) {
       try {
-        const asunto = plantilla.asunto(pedidoId);
-        const cuerpoHtml = plantilla.html(nombreCliente, pedidoId);
-        await enviarEmail(emailCliente, asunto, cuerpoHtml);
+        if (seConfirmaAhora) {
+          const detallesEmailResult = await db.query(
+            `SELECT
+               dp.DetalleID,
+               dp.CantidadPaquetes AS Cantidad,
+               dp.PrecioPorPaquete,
+               pv.ProductoID,
+               pv.SKU,
+               pv.Dimensiones,
+               pr.NombreProducto,
+               imagen.url_imagen
+             FROM DetallesDelPedido dp
+             INNER JOIN Producto_Variantes pv ON pv.VarianteID = dp.VarianteID
+             INNER JOIN Productos pr ON pr.ProductoID = pv.ProductoID
+             LEFT JOIN LATERAL (
+               SELECT pi.url_imagen
+               FROM producto_imagenes pi
+               WHERE pi.productoid = pv.productoid
+               ORDER BY pi.orden ASC NULLS LAST, pi.imagenid ASC
+               LIMIT 1
+             ) imagen ON TRUE
+             WHERE dp.PedidoID = $1
+             ORDER BY dp.DetalleID ASC`,
+            [pedidoId]
+          );
+
+          const detallesEmail = detallesEmailResult.rows.map((row) => {
+            const cantidad =
+              row.cantidad !== null ? parseInt(row.cantidad, 10) : 0;
+            const precioPorPaquete =
+              row.precioporpaquete !== null
+                ? parseFloat(row.precioporpaquete)
+                : 0;
+            const subtotal = cantidad * precioPorPaquete;
+
+            return {
+              nombreProducto: row.nombreproducto,
+              sku: row.sku,
+              dimensiones: row.dimensiones,
+              cantidad,
+              precioUnitario: precioPorPaquete,
+              precioTotal: subtotal,
+              imagenUrl: row.url_imagen,
+            };
+          });
+
+          const pedidoEmail = {
+            id: pedidoId,
+            fecha: pedido.fechapedido,
+            montoTotal:
+              pedido.montototal !== null ? parseFloat(pedido.montototal) : 0,
+            costoEnvio:
+              pedido.costoenvio !== null ? parseFloat(pedido.costoenvio) : 0,
+          };
+
+          const clienteEmail = {
+            nombre: nombreCliente,
+            email: emailCliente,
+            direccion: {
+              receptor: pedido.receptor || nombreCliente,
+              calle: pedido.calle,
+              numeroExterior: pedido.numeroext,
+              numeroInterior: pedido.numeroint,
+              colonia: pedido.colonia,
+              ciudad: pedido.ciudad,
+              estadoNombre: pedido.estadonombre,
+              estado: pedido.estadonombre,
+              estadoAbreviatura: pedido.estadoabreviatura,
+              codigoPostal: pedido.codigopostal,
+              telefonoContacto: pedido.telefonocontacto,
+            },
+          };
+
+          const htmlContent = generarHtmlConfirmacion(
+            pedidoEmail,
+            detallesEmail,
+            clienteEmail
+          );
+          const asunto = `¡Tu pedido #${pedidoId} ha sido confirmado!`;
+
+          await enviarEmail(emailCliente, asunto, htmlContent);
+        } else if (plantilla) {
+          const asunto = plantilla.asunto(pedidoId);
+          const cuerpoHtml = plantilla.html(nombreCliente, pedidoId);
+          await enviarEmail(emailCliente, asunto, cuerpoHtml);
+        }
       } catch (emailError) {
         console.error(
           `No se pudo enviar correo de notificación para el pedido #${pedidoId}:`,
@@ -1301,6 +1359,15 @@ const updatePedidoEstatus = async (req, res) => {
   } catch (error) {
     await client.query("ROLLBACK");
     console.error("Error al actualizar pedido:", error);
+
+    if (error && error.code === "NO_STOCK_REACTIVACION") {
+      return res.status(400).json({
+        success: false,
+        message: "No hay stock suficiente para reactivar este pedido",
+        error: error.message,
+      });
+    }
+
     res.status(500).json({
       success: false,
       message: "Error en el servidor",
@@ -1308,6 +1375,163 @@ const updatePedidoEstatus = async (req, res) => {
     });
   } finally {
     client.release();
+  }
+};
+
+const devolverStockPedido = async (client, pedidoId, usuarioId) => {
+  const motivoVenta = `Venta Pedido #${pedidoId}`;
+
+  const movimientosResult = await client.query(
+    `SELECT VarianteID, SUM(CantidadCambiado) AS total_cambiado
+     FROM Log_Inventario
+     WHERE Motivo = $1
+     GROUP BY VarianteID`,
+    [motivoVenta]
+  );
+
+  if (!movimientosResult.rows.length) {
+    return;
+  }
+
+  for (const row of movimientosResult.rows) {
+    const varianteId = row.varianteid;
+    const totalCambiadoRaw = row.total_cambiado;
+
+    if (!varianteId || totalCambiadoRaw === null) {
+      continue;
+    }
+
+    const totalCambiado = parseInt(totalCambiadoRaw, 10);
+    if (!Number.isFinite(totalCambiado) || totalCambiado === 0) {
+      continue;
+    }
+
+    const piezasADevolver = -totalCambiado; // totalCambiado es negativo en la venta
+    if (piezasADevolver <= 0) {
+      continue;
+    }
+
+    const stockResult = await client.query(
+      `SELECT COALESCE(Stock, 0) AS stock_actual
+       FROM Producto_Variantes
+       WHERE VarianteID = $1
+       FOR UPDATE`,
+      [varianteId]
+    );
+
+    if (!stockResult.rows.length) {
+      continue;
+    }
+
+    const stockActual = parseInt(stockResult.rows[0].stock_actual, 10) || 0;
+    const nuevoStock = Math.max(stockActual + piezasADevolver, 0);
+
+    await client.query(
+      `UPDATE Producto_Variantes
+       SET Stock = $1
+       WHERE VarianteID = $2`,
+      [nuevoStock, varianteId]
+    );
+
+    await client.query(
+      `INSERT INTO Log_Inventario (VarianteID, CantidadCambiado, NuevoStock, Motivo, UsuarioID)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [
+        varianteId,
+        piezasADevolver,
+        nuevoStock,
+        `Devolución Pedido Cancelado #${pedidoId}`,
+        usuarioId || null,
+      ]
+    );
+  }
+};
+
+const reducirStockPedido = async (client, pedidoId, usuarioId) => {
+  const motivoVenta = `Venta Pedido #${pedidoId}`;
+
+  const movimientosResult = await client.query(
+    `SELECT VarianteID, SUM(CantidadCambiado) AS total_cambiado
+     FROM Log_Inventario
+     WHERE Motivo = $1
+     GROUP BY VarianteID`,
+    [motivoVenta]
+  );
+
+  if (!movimientosResult.rows.length) {
+    return;
+  }
+
+  const variantesAReactivar = [];
+
+  // 1) Validar stock disponible para todas las variantes afectadas
+  for (const row of movimientosResult.rows) {
+    const varianteId = row.varianteid;
+    const totalCambiadoRaw = row.total_cambiado;
+
+    if (!varianteId || totalCambiadoRaw === null) {
+      continue;
+    }
+
+    const totalCambiado = parseInt(totalCambiadoRaw, 10);
+    if (!Number.isFinite(totalCambiado) || totalCambiado === 0) {
+      continue;
+    }
+
+    // totalCambiado es negativo en la venta; necesitamos volver a restar esas piezas
+    const piezasADescontar = -totalCambiado;
+    if (piezasADescontar <= 0) {
+      continue;
+    }
+
+    const stockResult = await client.query(
+      `SELECT COALESCE(Stock, 0) AS stock_actual
+       FROM Producto_Variantes
+       WHERE VarianteID = $1
+       FOR UPDATE`,
+      [varianteId]
+    );
+
+    if (!stockResult.rows.length) {
+      continue;
+    }
+
+    const stockActual = parseInt(stockResult.rows[0].stock_actual, 10) || 0;
+
+    if (stockActual < piezasADescontar) {
+      const error = new Error(
+        `Stock insuficiente para reactivar el pedido #${pedidoId} en la variante ${varianteId}. Actual: ${stockActual}, requerido: ${piezasADescontar}`
+      );
+      error.code = "NO_STOCK_REACTIVACION";
+      throw error;
+    }
+
+    variantesAReactivar.push({ varianteId, stockActual, piezasADescontar });
+  }
+
+  // 2) Aplicar los movimientos de salida de stock
+  for (const variante of variantesAReactivar) {
+    const { varianteId, stockActual, piezasADescontar } = variante;
+    const nuevoStock = Math.max(stockActual - piezasADescontar, 0);
+
+    await client.query(
+      `UPDATE Producto_Variantes
+       SET Stock = $1
+       WHERE VarianteID = $2`,
+      [nuevoStock, varianteId]
+    );
+
+    await client.query(
+      `INSERT INTO Log_Inventario (VarianteID, CantidadCambiado, NuevoStock, Motivo, UsuarioID)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [
+        varianteId,
+        -piezasADescontar,
+        nuevoStock,
+        `Reactivación Pedido #${pedidoId}`,
+        usuarioId || null,
+      ]
+    );
   }
 };
 
@@ -1375,10 +1599,13 @@ const findOrCreateTamanosFromPacks = async (client, packsRaw) => {
     }
   }
 
-  console.log("🟢 [PACKS] TamanoIDs vinculados desde packs (find-or-create por Cantidad):", {
-    packs: cantidades,
-    tamanoIds: idsResultantes,
-  });
+  console.log(
+    "🟢 [PACKS] TamanoIDs vinculados desde packs (find-or-create por Cantidad):",
+    {
+      packs: cantidades,
+      tamanoIds: idsResultantes,
+    }
+  );
 
   return idsResultantes;
 };
@@ -3744,8 +3971,8 @@ const pagarComision = async (req, res) => {
     }
 
     const datosNuevos = {
-      Estatus: "Pagada",
-      FechaPago: new Date(),
+      estatus: "Pagada",
+      fechapago: new Date(),
     };
 
     const resultado = await solicitarCambio(

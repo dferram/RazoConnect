@@ -943,7 +943,8 @@ const getCurrentUser = async (req, res) => {
         userData = {
           nombre: admin.nombre,
           email: admin.email,
-          rol: admin.rol === "superadmin" ? "Super Administrador" : "Administrador",
+          // Normalizar etiqueta de rol para UI: siempre "Super Admin" o "Admin"
+          rol: admin.rol === "superadmin" ? "Super Admin" : "Admin",
           iniciales: getIniciales(admin.nombre),
           tipo: "admin",
         };
@@ -1070,26 +1071,61 @@ const googleCallback = async (req, res) => {
       email,
     });
 
-    const frontendBase =
-      process.env.FRONTEND_BASE_URL ||
-      `http://localhost:${process.env.PORT || 3000}`;
+    const userPayload = {
+      nombre: nombre || "",
+      apellido: apellido || "",
+      email,
+      rol: "cliente",
+      avatarUrl: avatarUrl || null,
+    };
 
-    let redirectUrl;
+    const safeToken = String(token).replace(/'/g, "\\'");
+    const serializedUser = JSON.stringify(userPayload).replace(/</g, "\\u003c");
 
-    try {
-      const url = new URL("/login.html", frontendBase);
-      url.searchParams.set("googleToken", token);
-      if (nombre) url.searchParams.set("nombre", nombre);
-      if (apellido) url.searchParams.set("apellido", apellido);
-      if (email) url.searchParams.set("email", email);
-      if (avatarUrl) url.searchParams.set("avatarUrl", avatarUrl);
-      url.searchParams.set("provider", "google");
-      redirectUrl = url.toString();
-    } catch (e) {
-      redirectUrl = "/login.html?googleToken=" + encodeURIComponent(token);
-    }
+    const html = `<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Autenticando...</title>
+  </head>
+  <body>
+    <script>
+      (function() {
+        var payload = {
+          type: 'GOOGLE_SUCCESS',
+          token: '${safeToken}',
+          user: ${serializedUser}
+        };
 
-    return res.redirect(redirectUrl);
+        try {
+          if (window.opener && !window.opener.closed) {
+            var targetOrigin = window.location.origin || '*';
+            window.opener.postMessage(payload, targetOrigin);
+            window.close();
+            return;
+          }
+        } catch (err) {
+          console.error('Error enviando mensaje a la ventana padre:', err);
+        }
+
+        try {
+          var params = new URLSearchParams();
+          params.set('googleToken', payload.token);
+          if (payload.user && payload.user.nombre) params.set('nombre', payload.user.nombre);
+          if (payload.user && payload.user.apellido) params.set('apellido', payload.user.apellido);
+          if (payload.user && payload.user.email) params.set('email', payload.user.email);
+          if (payload.user && payload.user.avatarUrl) params.set('avatarUrl', payload.user.avatarUrl);
+          params.set('provider', 'google');
+          window.location.href = '/login.html?' + params.toString();
+        } catch (e) {
+          window.location.href = '/login.html?googleToken=' + encodeURIComponent(payload.token);
+        }
+      })();
+    <\/script>
+  </body>
+</html>`;
+
+    return res.status(200).send(html);
   } catch (error) {
     console.error("Error en callback de Google OAuth:", error);
     return res.redirect("/login.html?error=google_auth_internal");

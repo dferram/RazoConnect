@@ -133,6 +133,13 @@ router.put(
   agentesController.actualizarEstatusPedidoAgente
 );
 
+router.post(
+  "/agente/pedidos/:id/solicitar-estatus",
+  authenticate,
+  authorize(["agente"]),
+  agentesController.solicitarCambioEstatusPedidoAgente
+);
+
 router.get(
   "/agente/dashboard-stats",
   authenticate,

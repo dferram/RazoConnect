@@ -12,6 +12,8 @@
     <!-- SISTEMA DE RENOVACIÓN DE TOKENS -->
     <script src="js/token-refresh.js"></script>
 
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <link rel="stylesheet" href="css/styles.css" />
     <link rel="stylesheet" href="css/admin.css" />
   </head>
@@ -603,7 +605,31 @@
 
       async function aprobarSolicitudProveedor(controlCambioId) {
         if (!controlCambioId) return;
-        if (!confirm("¿Aprobar esta solicitud de creación de proveedor?")) return;
+
+        const mensaje = "¿Aprobar esta solicitud de creación de proveedor?";
+        let confirmado = false;
+
+        if (
+          typeof Swal !== "undefined" &&
+          Swal &&
+          typeof Swal.fire === "function"
+        ) {
+          const result = await Swal.fire({
+            icon: "question",
+            title: "Aprobar solicitud",
+            text: mensaje,
+            showCancelButton: true,
+            confirmButtonText: "Sí, aprobar",
+            cancelButtonText: "Cancelar",
+            confirmButtonColor: "#F97316",
+            cancelButtonColor: "#6b7280",
+          });
+          confirmado = !!result.isConfirmed;
+        } else {
+          confirmado = window.confirm(mensaje);
+        }
+
+        if (!confirmado) return;
 
         try {
           const response = await fetch(
@@ -633,7 +659,31 @@
 
       async function rechazarSolicitudProveedor(controlCambioId) {
         if (!controlCambioId) return;
-        if (!confirm("¿Rechazar esta solicitud de creación de proveedor?")) return;
+
+        const mensaje = "¿Rechazar esta solicitud de creación de proveedor?";
+        let confirmado = false;
+
+        if (
+          typeof Swal !== "undefined" &&
+          Swal &&
+          typeof Swal.fire === "function"
+        ) {
+          const result = await Swal.fire({
+            icon: "warning",
+            title: "Rechazar solicitud",
+            text: mensaje,
+            showCancelButton: true,
+            confirmButtonText: "Sí, rechazar",
+            cancelButtonText: "Cancelar",
+            confirmButtonColor: "#dc3545",
+            cancelButtonColor: "#6b7280",
+          });
+          confirmado = !!result.isConfirmed;
+        } else {
+          confirmado = window.confirm(mensaje);
+        }
+
+        if (!confirmado) return;
 
         try {
           const response = await fetch(

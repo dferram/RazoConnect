@@ -1265,7 +1265,7 @@
             const activo = variant.activo !== undefined ? variant.activo : true;
             const estadoBadgeClass = activo ? 'badge-success' : 'badge-secondary';
             const estadoTexto = activo ? 'Visible' : 'Oculto';
-            const estadoIcon = activo ? '👁️' : '🚫';
+            const estadoIcon = activo ? '' : '🚫';
 
             return `
           <tr>
@@ -1898,11 +1898,35 @@
       // Toggle variant visibility
       async function toggleVarianteVisibilidad(varianteId, estadoActual) {
         const nuevoEstado = !estadoActual;
-        const accion = nuevoEstado ? 'mostrar' : 'ocultar';
-        
+        const accion = nuevoEstado ? "mostrar" : "ocultar";
+        const esOcultar = !nuevoEstado;
+
         console.log('🔄 Toggle variante:', { varianteId, estadoActual, nuevoEstado });
-        
-        if (!confirm(`¿Estás seguro de ${accion} esta variante?`)) {
+
+        const mensaje = `¿Estás seguro de ${accion} esta variante?`;
+        let confirmado = false;
+
+        if (
+          typeof Swal !== "undefined" &&
+          Swal &&
+          typeof Swal.fire === "function"
+        ) {
+          const result = await Swal.fire({
+            icon: esOcultar ? "warning" : "question",
+            title: esOcultar ? "Ocultar variante" : "Mostrar variante",
+            text: mensaje,
+            showCancelButton: true,
+            confirmButtonText: esOcultar ? "Sí, ocultar" : "Sí, mostrar",
+            cancelButtonText: "Cancelar",
+            confirmButtonColor: esOcultar ? "#dc3545" : "#F97316",
+            cancelButtonColor: "#6b7280",
+          });
+          confirmado = !!result.isConfirmed;
+        } else {
+          confirmado = window.confirm(mensaje);
+        }
+
+        if (!confirmado) {
           return;
         }
 

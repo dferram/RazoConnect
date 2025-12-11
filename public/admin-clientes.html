@@ -12,6 +12,8 @@
     <!-- SISTEMA DE RENOVACIÓN DE TOKENS -->
     <script src="js/token-refresh.js"></script>
 
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <link rel="stylesheet" href="css/styles.css" />
     <link rel="stylesheet" href="css/admin.css" />
   </head>
@@ -218,12 +220,33 @@
       }
 
       async function toggleEstadoCliente(clienteId, activoActual) {
-        const confirmar = confirm(
-          `¿Seguro que deseas ${
-            activoActual ? "desactivar" : "activar"
-          } este cliente?`
-        );
-        if (!confirmar) return;
+        const mensaje = `¿Seguro que deseas ${
+          activoActual ? "desactivar" : "activar"
+        } este cliente?`;
+
+        let confirmado = false;
+
+        if (
+          typeof Swal !== "undefined" &&
+          Swal &&
+          typeof Swal.fire === "function"
+        ) {
+          const result = await Swal.fire({
+            icon: activoActual ? "warning" : "question",
+            title: activoActual ? "Desactivar cliente" : "Activar cliente",
+            text: mensaje,
+            showCancelButton: true,
+            confirmButtonText: activoActual ? "Sí, desactivar" : "Sí, activar",
+            cancelButtonText: "Cancelar",
+            confirmButtonColor: activoActual ? "#dc3545" : "#16a34a",
+            cancelButtonColor: "#6b7280",
+          });
+          confirmado = !!result.isConfirmed;
+        } else {
+          confirmado = window.confirm(mensaje);
+        }
+
+        if (!confirmado) return;
 
         const btn = event.currentTarget;
         const btnOriginal = btn.innerHTML;

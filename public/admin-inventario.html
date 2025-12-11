@@ -12,6 +12,8 @@
     <!-- SISTEMA DE RENOVACIÓN DE TOKENS -->
     <script src="js/token-refresh.js"></script>
 
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <link rel="stylesheet" href="css/styles.css" />
     <link rel="stylesheet" href="css/admin.css" />
   </head>
@@ -615,7 +617,7 @@
             const activo = product.activo !== undefined ? product.activo : true;
             const estadoBadgeClass = activo ? 'badge-success' : 'badge-secondary';
             const estadoTexto = activo ? 'Visible' : 'Oculto';
-            const estadoIcon = activo ? '👁️' : '🚫';
+            const estadoIcon = activo ? '' : '🚫';
             
             return `
           <tr>
@@ -1278,9 +1280,35 @@
       // Toggle product visibility (quick action)
       async function toggleProductoVisibilidad(productoId, estadoActual) {
         const nuevoEstado = !estadoActual;
-        const accion = nuevoEstado ? 'mostrar' : 'ocultar';
-        
-        if (!confirm(`¿Estás seguro de ${accion} este producto en la tienda?`)) {
+        const accion = nuevoEstado ? "mostrar" : "ocultar";
+        const esOcultar = !nuevoEstado;
+
+        const mensaje = `¿Estás seguro de ${accion} este producto en la tienda?`;
+        let confirmado = false;
+
+        if (
+          typeof Swal !== "undefined" &&
+          Swal &&
+          typeof Swal.fire === "function"
+        ) {
+          const swalConfig = {
+            icon: esOcultar ? "warning" : "question",
+            title: esOcultar ? "Ocultar producto" : "Mostrar producto",
+            text: mensaje,
+            showCancelButton: true,
+            confirmButtonText: esOcultar ? "Sí, ocultar" : "Sí, mostrar",
+            cancelButtonText: "Cancelar",
+            confirmButtonColor: esOcultar ? "#dc3545" : "#F97316",
+            cancelButtonColor: "#6b7280",
+          };
+
+          const result = await Swal.fire(swalConfig);
+          confirmado = !!result.isConfirmed;
+        } else {
+          confirmado = window.confirm(mensaje);
+        }
+
+        if (!confirmado) {
           return;
         }
 
