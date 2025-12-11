@@ -1,5 +1,6 @@
 const db = require("../db");
 const { isValidEmail } = require("../utils/validator");
+const { registrarLog } = require("../services/loggerService");
 
 const resolveAuthenticatedAgenteId = (user) => {
   const agenteIdRaw =
@@ -557,6 +558,118 @@ const obtenerPedidoDetalleAgente = async (req, res) => {
   }
 };
 
+const actualizarEstatusPedidoAgente = async (req, res) => {
+  try {
+    const agenteId = resolveAuthenticatedAgenteId(req.user);
+
+    if (!agenteId) {
+      return res.status(403).json({
+        success: false,
+        message: "No se pudo determinar el agente autenticado",
+      });
+    }
+
+    const pedidoId = parseInt(req.params.id, 10);
+
+    if (!pedidoId || Number.isNaN(pedidoId)) {
+      return res.status(400).json({
+        success: false,
+        message: "ID de pedido inválido",
+      });
+    }
+
+    const bodyEstatus = req.body && req.body.estatus;
+    const nuevoEstatus =
+      typeof bodyEstatus === "string" ? bodyEstatus.trim() : "";
+
+    const destinosPermitidos = ["Confirmado", "Cancelado"];
+
+    if (!destinosPermitidos.includes(nuevoEstatus)) {
+      return res.status(400).json({
+        success: false,
+        message: "Estatus destino no permitido",
+      });
+    }
+
+    const pedidoResult = await db.query(
+      `SELECT p.pedidoid, p.estatus
+       FROM Pedidos p
+       INNER JOIN Clientes c ON c.ClienteID = p.ClienteID
+       WHERE p.PedidoID = $1 AND c.AgenteID = $2`,
+      [pedidoId, agenteId]
+    );
+
+    if (pedidoResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Pedido no encontrado o no pertenece a tus clientes",
+      });
+    }
+
+    const estatusActual = pedidoResult.rows[0].estatus || "";
+    const estatusActualLower = estatusActual.toString().toLowerCase();
+
+    if (estatusActualLower !== "pendiente") {
+      return res.status(400).json({
+        success: false,
+        message: "Solo puedes cambiar pedidos en estatus Pendiente",
+      });
+    }
+
+    if (estatusActual === nuevoEstatus) {
+      return res.status(200).json({
+        success: true,
+        message: "El estatus ya se encuentra establecido",
+        data: {
+          pedidoId,
+          estatusAnterior: estatusActual,
+          estatusNuevo: nuevoEstatus,
+        },
+      });
+    }
+
+    const updateResult = await db.query(
+      `UPDATE Pedidos
+       SET Estatus = $1
+       WHERE PedidoID = $2
+       RETURNING PedidoID, Estatus`,
+      [nuevoEstatus, pedidoId]
+    );
+
+    const pedidoActualizado = updateResult.rows[0];
+
+    try {
+      await registrarLog(req, "EDITAR", "Pedido", pedidoId, {
+        descripcion: `Agente cambió estatus de ${estatusActual} a ${nuevoEstatus}`,
+        anterior: { estatus: estatusActual },
+        nuevo: { estatus: nuevoEstatus },
+      });
+    } catch (logError) {
+      console.error(
+        "Error al registrar log de cambio de estatus de pedido por agente:",
+        logError
+      );
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: `Estatus actualizado a ${nuevoEstatus}`,
+      data: {
+        pedidoId: pedidoActualizado.pedidoid,
+        estatusAnterior: estatusActual,
+        estatusNuevo: pedidoActualizado.estatus,
+      },
+    });
+  } catch (error) {
+    console.error("Error al actualizar estatus del pedido por agente:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error al actualizar el estatus del pedido",
+      error: error.message,
+    });
+  }
+};
+
 const obtenerComisionesDelAgente = async (req, res) => {
   try {
     const agenteId = resolveAuthenticatedAgenteId(req.user);
@@ -617,4 +730,5 @@ module.exports = {
   obtenerPedidoDetalleAgente,
   obtenerComisionesDelAgente,
   resolveAuthenticatedAgenteId,
+  actualizarEstatusPedidoAgente,
 };

@@ -126,6 +126,13 @@ router.get(
   agentesController.obtenerPedidoDetalleAgente
 );
 
+router.put(
+  "/agente/pedidos/:id/estatus",
+  authenticate,
+  authorize(["agente"]),
+  agentesController.actualizarEstatusPedidoAgente
+);
+
 router.get(
   "/agente/dashboard-stats",
   authenticate,
