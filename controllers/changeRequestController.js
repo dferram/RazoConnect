@@ -11,6 +11,7 @@ const ENTITY_MAP = {
   agentes: { table: "AgentesDeVentas", pk: "AgenteID" },
   admins: { table: "Administradores", pk: "AdminID" },
   pedidos: { table: "Pedidos", pk: "PedidoID" },
+  comisiones: { table: "Comisiones", pk: "ComisionID" },
 };
 
 function getAdminIdFromRequest(req) {

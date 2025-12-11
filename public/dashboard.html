@@ -140,21 +140,6 @@
         text-transform: uppercase;
       }
 
-      .estatus-pendiente {
-        background: #fef3c7;
-        color: #92400e;
-      }
-
-      .estatus-confirmado {
-        background: #d1fae5;
-        color: #065f46;
-      }
-
-      .estatus-enviado {
-        background: #dbeafe;
-        color: #1e40af;
-      }
-
       .modal {
         display: none;
         position: fixed;
@@ -707,6 +692,26 @@
         return "📦";
       }
 
+      function getPedidoStatusBadgeClass(estatus) {
+        const value = (estatus || "").toString().toLowerCase();
+
+        if (value === "pendiente") return "pedido-estatus-badge pendiente";
+        if (value === "confirmado") return "pedido-estatus-badge confirmado";
+        if (
+          value === "enviado" ||
+          value === "en ruta" ||
+          value === "en_ruta" ||
+          value === "en-ruta"
+        ) {
+          return "pedido-estatus-badge enviado";
+        }
+        if (value === "entregado") return "pedido-estatus-badge entregado";
+        if (value === "cancelado") return "pedido-estatus-badge cancelado";
+        if (value === "completado") return "pedido-estatus-badge completado";
+
+        return "pedido-estatus-badge pendiente";
+      }
+
       // Load direcciones
       async function loadDirecciones() {
         try {
@@ -827,7 +832,7 @@
             } else {
               pedidosList.innerHTML = pedidos
                 .map((p) => {
-                  const estatusClass = `estatus-${p.estatus.toLowerCase()}`;
+                  const estatusClass = getPedidoStatusBadgeClass(p.estatus);
                   return `
                 <div class="pedido-card">
                   <!-- Header del pedido -->
@@ -845,9 +850,7 @@
                         </div>
                       </div>
                     </div>
-                    <span class="estatus-badge ${estatusClass}">${
-                    p.estatus
-                  }</span>
+                    <span class="${estatusClass}">${p.estatus}</span>
                   </div>
 
                   <!-- Productos del pedido -->

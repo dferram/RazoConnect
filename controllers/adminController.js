@@ -423,47 +423,6 @@ const desvincularClienteDeAgente = async (req, res) => {
       clienteActual
     );
 
-    const isSuperAdmin =
-      req.user &&
-      (req.user.rol === "superadmin" || req.user.tipo === "superadmin");
-
-    if (isSuperAdmin) {
-      try {
-        await aprobarSolicitudes([resultado.solicitudId], req.user.id);
-
-        const refreshed = await db.query(
-          "SELECT ClienteID, Nombre, Apellido FROM Clientes WHERE ClienteID = $1",
-          [clienteId]
-        );
-
-        const cliente = refreshed.rows[0] || clienteActual;
-
-        return res.json({
-          success: true,
-          message: "Cliente desvinculado del agente (auto-aprobado)",
-          data: {
-            clienteId: cliente.clienteid,
-            nombre: cliente.nombre,
-            apellido: cliente.apellido,
-          },
-        });
-      } catch (autoError) {
-        console.error(
-          "Error en auto-aprobación de desvincularClienteDeAgente:",
-          autoError
-        );
-        return res.status(500).json({
-          success: false,
-          message:
-            "La solicitud de cambio se registró, pero ocurrió un error al aplicar la auto-aprobación.",
-          error: autoError.message,
-          data: {
-            solicitudId: resultado.solicitudId,
-          },
-        });
-      }
-    }
-
     return res.json({
       success: true,
       message: resultado.mensaje,
@@ -722,47 +681,6 @@ const actualizarEstadoCliente = async (req, res) => {
       datosNuevos,
       clienteActual
     );
-
-    const isSuperAdmin =
-      req.user &&
-      (req.user.rol === "superadmin" || req.user.tipo === "superadmin");
-
-    if (isSuperAdmin) {
-      try {
-        await aprobarSolicitudes([resultado.solicitudId], req.user.id);
-
-        const refreshed = await db.query(
-          "SELECT ClienteID, Activo FROM Clientes WHERE ClienteID = $1",
-          [clienteId]
-        );
-
-        const row = refreshed.rows[0] || clienteActual;
-
-        return res.json({
-          success: true,
-          message:
-            "Estado del cliente actualizado correctamente (auto-aprobado)",
-          data: {
-            clienteId: row.clienteid,
-            activo: row.activo,
-          },
-        });
-      } catch (autoError) {
-        console.error(
-          "Error en auto-aprobación de actualizarEstadoCliente:",
-          autoError
-        );
-        return res.status(500).json({
-          success: false,
-          message:
-            "La solicitud de cambio se registró, pero ocurrió un error al aplicar la auto-aprobación.",
-          error: autoError.message,
-          data: {
-            solicitudId: resultado.solicitudId,
-          },
-        });
-      }
-    }
 
     res.json({
       success: true,
@@ -3029,26 +2947,28 @@ const crearCategoria = async (req, res) => {
     // Gestión de visibilidad: activo por defecto TRUE
     const activoFinal = activo !== undefined ? Boolean(activo) : true;
 
-    const insertResult = await db.query(
-      `INSERT INTO Categorias (Nombre, Descripcion, ParentCategoriaID, Activo)
-       VALUES ($1, $2, $3, $4)
-       RETURNING CategoriaID, Nombre, Descripcion, ParentCategoriaID, Activo`,
-      [nombreNormalizado, descripcion?.trim() || null, parentCategoria, activoFinal]
-    );
+    const datosNuevos = {
+      Nombre: nombreNormalizado,
+      Descripcion: descripcion?.trim() || null,
+      ParentCategoriaID: parentCategoria,
+      Activo: activoFinal,
+    };
 
-    const categoria = insertResult.rows[0];
+    const resultado = await solicitarCambio(
+      req,
+      "categorias",
+      null,
+      "INSERT",
+      datosNuevos,
+      null
+    );
 
     res.status(201).json({
       success: true,
-      message: "Categoría creada exitosamente",
+      message: "Solicitud de cambio en categoría registrada.",
       data: {
-        categoria: {
-          categoriaId: categoria.categoriaid,
-          nombre: categoria.nombre,
-          descripcion: categoria.descripcion,
-          parentCategoriaId: categoria.parentcategoriaid,
-          activo: categoria.activo,
-        },
+        solicitudId: resultado.solicitudId,
+        estado: resultado.estado,
       },
     });
   } catch (error) {
@@ -3084,7 +3004,7 @@ const actualizarCategoria = async (req, res) => {
     }
 
     const categoriaResult = await db.query(
-      "SELECT CategoriaID, Activo FROM Categorias WHERE CategoriaID = $1",
+      "SELECT * FROM Categorias WHERE CategoriaID = $1",
       [categoriaId]
     );
 
@@ -3132,38 +3052,33 @@ const actualizarCategoria = async (req, res) => {
     }
 
     // Gestión de visibilidad: mantener el valor actual si no se especifica
-    const activoFinal = activo !== undefined ? Boolean(activo) : categoriaActual.activo;
+    const activoFinal =
+      activo !== undefined ? Boolean(activo) : categoriaActual.activo;
 
-    const updateResult = await db.query(
-      `UPDATE Categorias
-       SET Nombre = COALESCE($1, Nombre),
-           Descripcion = $2,
-           ParentCategoriaID = $3,
-           Activo = $4
-       WHERE CategoriaID = $5
-       RETURNING CategoriaID, Nombre, Descripcion, ParentCategoriaID, Activo`,
-      [
-        nombreNormalizado || null,
-        descripcion?.trim() || null,
-        parentCategoria,
-        activoFinal,
-        categoriaId,
-      ]
+    const datosNuevos = {
+      Nombre: nombreNormalizado || categoriaActual.nombre,
+      Descripcion: descripcion?.trim() || categoriaActual.descripcion,
+      ParentCategoriaID:
+        parentCategoria !== null ? parentCategoria : categoriaActual.parentcategoriaid,
+      Activo: activoFinal,
+    };
+
+    const resultado = await solicitarCambio(
+      req,
+      "categorias",
+      categoriaId,
+      "UPDATE",
+      datosNuevos,
+      categoriaActual
     );
-
-    const categoriaActualizada = updateResult.rows[0];
 
     res.json({
       success: true,
-      message: "Categoría actualizada correctamente",
+      message: "Solicitud de cambio en categoría registrada.",
       data: {
-        categoria: {
-          categoriaId: categoriaActualizada.categoriaid,
-          nombre: categoriaActualizada.nombre,
-          descripcion: categoriaActualizada.descripcion,
-          parentCategoriaId: categoriaActualizada.parentcategoriaid,
-          activo: categoriaActualizada.activo,
-        },
+        categoriaId,
+        solicitudId: resultado.solicitudId,
+        estado: resultado.estado,
       },
     });
   } catch (error) {
@@ -3191,7 +3106,7 @@ const eliminarCategoria = async (req, res) => {
     }
 
     const categoriaResult = await db.query(
-      "SELECT CategoriaID FROM Categorias WHERE CategoriaID = $1",
+      "SELECT * FROM Categorias WHERE CategoriaID = $1",
       [categoriaId]
     );
 
@@ -3247,13 +3162,27 @@ const eliminarCategoria = async (req, res) => {
       });
     }
 
-    await db.query("DELETE FROM Categorias WHERE CategoriaID = $1", [
+    const categoriaSnapshot = categoriaResult.rows[0];
+
+    const datosNuevos = {};
+
+    const resultado = await solicitarCambio(
+      req,
+      "categorias",
       categoriaId,
-    ]);
+      "DELETE",
+      datosNuevos,
+      categoriaSnapshot
+    );
 
     res.json({
       success: true,
-      message: "Categoría eliminada correctamente",
+      message: "Solicitud de cambio en categoría registrada.",
+      data: {
+        categoriaId,
+        solicitudId: resultado.solicitudId,
+        estado: resultado.estado,
+      },
     });
   } catch (error) {
     console.error("Error al eliminar categoría:", error);
@@ -3814,24 +3743,27 @@ const pagarComision = async (req, res) => {
       });
     }
 
-    // Actualizar el estatus a Pagada
-    const result = await db.query(
-      `UPDATE Comisiones 
-       SET Estatus = 'Pagada'
-       WHERE ComisionID = $1
-       RETURNING *`,
-      [comisionId]
-    );
+    const datosNuevos = {
+      Estatus: "Pagada",
+      FechaPago: new Date(),
+    };
 
-    const comisionActualizada = result.rows[0];
+    const resultado = await solicitarCambio(
+      req,
+      "comisiones",
+      comisionId,
+      "UPDATE",
+      datosNuevos,
+      comision
+    );
 
     res.json({
       success: true,
-      message: "Comisión marcada como pagada",
+      message: "Solicitud de cambio en comisión registrada.",
       data: {
-        comisionId: comisionActualizada.comisionid,
-        montoComision: parseFloat(comisionActualizada.montocomision),
-        estatus: comisionActualizada.estatus,
+        comisionId,
+        solicitudId: resultado.solicitudId,
+        estado: resultado.estado,
       },
     });
   } catch (error) {

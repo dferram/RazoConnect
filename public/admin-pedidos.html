@@ -202,7 +202,23 @@
 
       // Mapea el estatus del pedido a un badge normalizado con diseño admin-badge info
       function getPedidoStatusBadgeClass(estatus) {
-        return "admin-badge info";
+        const value = (estatus || "").toString().toLowerCase();
+
+        if (value === "pendiente") return "pedido-estatus-badge pendiente";
+        if (value === "confirmado") return "pedido-estatus-badge confirmado";
+        if (
+          value === "enviado" ||
+          value === "en ruta" ||
+          value === "en_ruta" ||
+          value === "en-ruta"
+        ) {
+          return "pedido-estatus-badge enviado";
+        }
+        if (value === "entregado") return "pedido-estatus-badge entregado";
+        if (value === "cancelado") return "pedido-estatus-badge cancelado";
+        if (value === "completado") return "pedido-estatus-badge completado";
+
+        return "pedido-estatus-badge pendiente";
       }
 
       let currentOrders = [];

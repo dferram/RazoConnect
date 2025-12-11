@@ -661,13 +661,62 @@
       const adminToken = localStorage.getItem("razoconnect_admin_token");
       if (!adminToken) window.location.href = "/login.html";
 
+      const userNameEl = document.getElementById("userName");
+      const userRoleEl = document.getElementById("userRole");
+      const userAvatarEl = document.getElementById("userAvatar");
+
       let todosLosLogs = [];
       let logsFiltrados = [];
       let paginaLogsActual = 1;
-      const registrosPorPaginaLogs = 10;
+      const registrosPorPaginaLogs = 20;
+      let totalRegistrosServidor = 0;
+      let totalPaginasServidor = 1;
       let usuarios = [];
       let entidades = [];
       let cambiosPendientes = [];
+
+      async function loadAdminProfile() {
+        try {
+          const response = await fetch(`${API_BASE_URL}/admin/verify`, {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${adminToken}`,
+            },
+          });
+
+          if (!response.ok) {
+            throw new Error("Token inválido");
+          }
+
+          const data = await response.json();
+          if (data.success && data.data && data.data.admin) {
+            const admin = data.data.admin;
+
+            if (userNameEl) {
+              userNameEl.textContent = admin.nombre;
+            }
+
+            if (userRoleEl) {
+              userRoleEl.textContent =
+                admin.rol === "superadmin" ? "Super Admin" : "Admin";
+            }
+
+            if (userAvatarEl) {
+              const initials = (admin.nombre || "")
+                .split(" ")
+                .map((part) => part.charAt(0).toUpperCase())
+                .join("")
+                .slice(0, 2);
+              userAvatarEl.textContent = initials || "A";
+            }
+          }
+        } catch (error) {
+          console.error("Error al verificar admin:", error);
+          localStorage.removeItem("razoconnect_admin_token");
+          localStorage.removeItem("razoconnect_admin");
+          window.location.href = "/login.html";
+        }
+      }
 
       // --- Control de Cambios (aprobaciones) ---
 
@@ -984,24 +1033,61 @@
 
         return formatValue(valor);
       }
+      const FIELD_LABELS = {
+        NombreProducto: "Nombre del Producto",
+        Nombre: "Nombre",
+        Apellido: "Apellido",
+        Email: "Correo electrónico",
+        Telefono: "Teléfono",
+        PrecioUnitario: "Precio de Venta",
+        CostoUnitario: "Costo",
+        CategoriaID: "Categoría",
+        ClienteID: "Cliente",
+        PedidoID: "Pedido",
+        ProveedorID_Default: "Proveedor Principal",
+        ProveedorID: "Proveedor",
+        Stock: "Inventario Disponible",
+        Activo: "¿Visible en Tienda?",
+        CodigoModelo: "Código / SKU",
+        Descripcion: "Descripción Detallada",
+        MontoComision: "Monto de Comisión",
+        Estatus: "Estatus",
+        FechaPago: "Fecha de Pago",
+      };
 
       const LABELS_PRODUCTO = {
-        NombreProducto: "Nombre del Producto",
-        CodigoModelo: "Código / Modelo",
-        Descripcion: "Descripción",
-        Activo: "¿Está Activo?",
-        CategoriaID: "Categoría",
-        ProveedorID_Default: "Proveedor Principal",
+        NombreProducto: FIELD_LABELS.NombreProducto,
+        CodigoModelo: FIELD_LABELS.CodigoModelo,
+        Descripcion: FIELD_LABELS.Descripcion,
+        Activo: FIELD_LABELS.Activo,
+        CategoriaID: FIELD_LABELS.CategoriaID,
+        ProveedorID_Default: FIELD_LABELS.ProveedorID_Default,
       };
+
+      function humanizarClaveCampo(key) {
+        if (!key) return "Dato";
+
+        const str = key.toString().replace(/_/g, " ");
+
+        const withSpaces = str.replace(/([a-z])([A-Z])/g, "$1 $2");
+
+        return (
+          withSpaces.charAt(0).toUpperCase() + withSpaces.slice(1)
+        );
+      }
 
       function obtenerEtiquetaAmigable(entidad, key) {
         const entidadLower = (entidad || "").toString().toLowerCase();
+
+        if (FIELD_LABELS[key]) {
+          return FIELD_LABELS[key];
+        }
 
         if (entidadLower === "productos" && LABELS_PRODUCTO[key]) {
           return LABELS_PRODUCTO[key];
         }
 
-        return key;
+        return humanizarClaveCampo(key);
       }
 
       function formatearValorAmigableInsert(entidad, key, valor) {
@@ -1048,26 +1134,102 @@
 
         if (tipo === "INSERT") {
           if (entidad === "productos") {
-            return "Revisión de Nuevo Producto";
+            return "Nueva creación de producto";
           }
-          return "Revisión de Nuevo Registro";
+          return "Nueva creación";
         }
 
         if (tipo === "UPDATE") {
           if (entidad === "productos") {
-            return "Revisión de Cambios de Producto";
+            return "Edición de datos de producto";
           }
-          return "Revisión de Cambios";
+          return "Edición de datos";
         }
 
         if (tipo === "DELETE") {
           if (entidad === "productos") {
-            return "Revisión de Eliminación de Producto";
+            return "Solicitud de eliminación de producto";
           }
-          return "Revisión de Eliminación";
+          return "Solicitud de eliminación";
         }
 
         return `Cambio #${cambio.id} - ${cambio.entidad} (${cambio.tipoCambio})`;
+      }
+
+      function esCampoId(key) {
+        const k = (key || "").toString().toLowerCase();
+        if (!k) return false;
+        return (
+          k === "id" ||
+          k.endsWith("id") ||
+          k.startsWith("id_") ||
+          k.indexOf("id_") !== -1
+        );
+      }
+
+      function formatValueExecutive(key, valor) {
+        if (valor === true) {
+          return '<span class="badge bg-success">Sí</span>';
+        }
+
+        if (valor === false) {
+          return '<span class="badge bg-secondary">No</span>';
+        }
+
+        if (
+          valor === null ||
+          valor === undefined ||
+          (typeof valor === "string" && valor.trim() === "")
+        ) {
+          return '<span style="color:#9ca3af;font-style:italic;">Sin dato</span>';
+        }
+
+        if (esCampoPrecio(key)) {
+          const moneda = formatearMoneda(valor);
+          if (moneda) {
+            return `<span style="font-weight:600;">${moneda}</span>`;
+          }
+        }
+
+        if (esCampoId(key)) {
+          return `<span style="color:#4b5563;font-weight:500;">ID: ${valor}</span>`;
+        }
+
+        if (typeof valor === "string") {
+          const trimmed = valor.trim();
+          if (esValorFecha(trimmed)) {
+            const fechaFormateada = formatearFechaLocal(trimmed);
+            if (fechaFormateada) {
+              return fechaFormateada;
+            }
+          }
+          return trimmed;
+        }
+
+        if (typeof valor === "number") {
+          if (esValorFecha(valor)) {
+            const fechaNum = formatearFechaLocal(valor);
+            if (fechaNum) {
+              return fechaNum;
+            }
+          }
+          return String(valor);
+        }
+
+        if (valor instanceof Date) {
+          const fechaObj = formatearFechaLocal(valor);
+          if (fechaObj) {
+            return fechaObj;
+          }
+        }
+
+        if (Array.isArray(valor) || typeof valor === "object") {
+          return `<pre style="margin:0;font-size:0.75rem;white-space:pre-wrap;">${
+            JSON.stringify(valor, null, 2)
+          }</pre>`;
+        }
+
+        return String(valor);
       }
 
       function renderizarDiffCambio(cambio) {
@@ -1085,11 +1247,7 @@
             .map(
               (key) => {
                 const etiqueta = obtenerEtiquetaAmigable(cambio.entidad, key);
-                const valorHtml = formatearValorAmigableInsert(
-                  cambio.entidad,
-                  key,
-                  nuevos[key]
-                );
+                const valorHtml = formatValueExecutive(key, nuevos[key]);
 
                 return `
                   <tr>
@@ -1107,7 +1265,7 @@
                 Se proponen los siguientes datos para este registro:
               </p>
               <div class="table-responsive">
-                <table class="table table-hover table-striped table-sm mb-0" style="font-size:0.85rem;">
+                <table class="table table-bordered table-striped table-sm mb-0" style="font-size:0.85rem;">
                   <thead>
                     <tr>
                       <th style="width:40%;">Dato</th>
@@ -1140,16 +1298,20 @@
           const filas = claves
             .map((key) => {
               const etiqueta = obtenerEtiquetaAmigable(cambio.entidad, key);
+              const valorAntes = formatValueExecutive(key, anteriores[key]);
+              const valorDespues = formatValueExecutive(key, nuevos[key]);
               return `
                 <tr>
                   <td style="vertical-align:top;font-weight:600;">${etiqueta}</td>
-                  <td class="change-value-old">${formatValueParaCampo(
-                    key,
-                    anteriores[key]
-                  )}</td>
-                  <td class="change-value-new">
-                    <span>${formatValueParaCampo(key, nuevos[key])}</span>
-                    <span class="change-arrow">→</span>
+                  <td style="vertical-align:top;">
+                    <div style="font-size:0.78rem;color:#6b7280;margin-bottom:0.2rem;">
+                      <span style="font-weight:500;">Antes:</span>
+                      <span style="margin-left:0.25rem;">${valorAntes}</span>
+                    </div>
+                    <div>
+                      <span style="font-weight:500;">Valor propuesto:</span>
+                      <span style="margin-left:0.25rem;">${valorDespues}</span>
+                    </div>
                   </td>
                 </tr>
               `;
@@ -1159,14 +1321,13 @@
           return `
             <div style="border-radius:0.75rem;border:1px solid #e5e7eb;background:#f9fafb;padding:1rem;">
               <p style="margin:0 0 0.75rem;font-size:0.9rem;">
-                Solo se muestran los campos que cambiaron. El valor nuevo se resalta a la derecha.
+                Solo se muestran los campos que cambiaron. Revisa el valor anterior y el valor propuesto.
               </p>
-              <table class="table table-hover table-sm mb-0 change-table-update" style="font-size:0.85rem;">
+              <table class="table table-bordered table-striped table-sm mb-0" style="font-size:0.85rem;">
                 <thead>
                   <tr>
                     <th style="text-align:left;padding:0.25rem 0.5rem;">Dato</th>
-                    <th style="text-align:left;padding:0.25rem 0.5rem;">Antes 🔴</th>
-                    <th style="text-align:left;padding:0.25rem 0.5rem;">Ahora 🟢</th>
+                    <th style="text-align:left;padding:0.25rem 0.5rem;">Valor Propuesto</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1199,12 +1360,12 @@
           const lista = (clavesClave.length ? clavesClave : claves)
             .map((key) => {
               const etiqueta = obtenerEtiquetaAmigable(cambio.entidad, key);
-              const valor = formatValueParaCampo(key, anteriores[key]);
+              const valor = formatValueExecutive(key, anteriores[key]);
               return `
-                <li style="margin-bottom:0.35rem;">
-                  <strong>${etiqueta}:</strong>
-                  <span style="margin-left:0.25rem;">${valor}</span>
-                </li>
+                <tr>
+                  <td style="vertical-align:top;font-weight:600;width:40%;">${etiqueta}</td>
+                  <td style="vertical-align:top;">${valor}</td>
+                </tr>
               `;
             })
             .join("");
@@ -1214,9 +1375,19 @@
               <p style="margin:0 0 0.75rem;font-size:0.9rem;color:#b91c1c;">
                 ⚠️ Se solicitó eliminar el siguiente registro:
               </p>
-              <ul style="padding-left:1.1rem;margin:0;font-size:0.85rem;">
-                ${lista}
-              </ul>
+              <div class="table-responsive">
+                <table class="table table-bordered table-striped table-sm mb-0" style="font-size:0.85rem;">
+                  <thead>
+                    <tr>
+                      <th style="width:40%;">Dato</th>
+                      <th>Valor Actual</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${lista}
+                  </tbody>
+                </table>
+              </div>
             </div>
           `;
         }
@@ -1415,6 +1586,7 @@
         }
 
         await Promise.all([
+          loadAdminProfile(),
           cargarEstadisticas(),
           cargarUsuarios(),
           cargarEntidades(),
@@ -1494,9 +1666,16 @@
           const response = await API.apiCall(`/admin/bitacora?${params}`);
 
           if (response.ok && response.data.success) {
-            todosLosLogs = response.data.data.logs;
+            const payload = response.data.data || {};
+            const pagination = payload.pagination || {};
+
+            todosLosLogs = payload.logs || [];
             logsFiltrados = [...todosLosLogs];
-            paginaLogsActual = 1;
+
+            totalRegistrosServidor = pagination.totalRegistros ?? todosLosLogs.length;
+            totalPaginasServidor = pagination.totalPaginas ?? 1;
+            paginaLogsActual = pagination.paginaActual ?? 1;
+
             renderizarTablaPaginada();
             
             document.getElementById('loadingState').style.display = 'none';
@@ -1530,13 +1709,15 @@
         if (fechaInicio) params.append('fechaInicio', fechaInicio);
         if (fechaFin) params.append('fechaFin', fechaFin);
         
-        params.append('limit', '100');
+        params.append('page', String(paginaLogsActual));
+        params.append('limit', String(registrosPorPaginaLogs));
 
         return params.toString();
       }
 
       // Aplicar filtros
       function aplicarFiltros() {
+        paginaLogsActual = 1;
         cargarDatos();
       }
 
@@ -1547,6 +1728,7 @@
         document.getElementById('filtroEntidad').value = '';
         document.getElementById('filtroFechaInicio').value = '';
         document.getElementById('filtroFechaFin').value = '';
+        paginaLogsActual = 1;
         cargarDatos();
       }
 
@@ -1577,7 +1759,10 @@
           });
         }
 
+        // Búsqueda rápida solo sobre la página actual
         paginaLogsActual = 1;
+        totalRegistrosServidor = logsFiltrados.length;
+        totalPaginasServidor = 1;
         renderizarTablaPaginada();
       }
 
@@ -1591,8 +1776,8 @@
             <tr>
               <td><strong>#${log.logId}</strong></td>
               <td>
-                <div><strong>${log.nombreUsuario}</strong></div>
-                <div style="font-size: 0.75rem; color: var(--razo-gray-warm);">${log.rol}</div>
+                <div class="fw-bold text-dark">${log.nombre || log.nombreUsuario || 'Sistema'}</div>
+                <div class="text-muted small" style="font-size: 0.75rem;">${log.email || ''}</div>
               </td>
               <td><span class="action-badge ${accionClass}">${log.accion}</span></td>
               <td><strong>${log.entidad}</strong></td>
@@ -1607,7 +1792,7 @@
       function renderizarTablaPaginada() {
         const tbody = document.getElementById('logsTableBody');
         const pagContainer = document.getElementById('logsPaginationContainer');
-        const totalRegistros = logsFiltrados.length;
+        const totalRegistros = totalRegistrosServidor || logsFiltrados.length;
 
         if (!tbody || !pagContainer) return;
 
@@ -1620,22 +1805,25 @@
           return;
         }
 
-        const totalPaginas = Math.ceil(totalRegistros / registrosPorPaginaLogs);
+        const totalPaginas = totalPaginasServidor || Math.ceil(totalRegistros / registrosPorPaginaLogs);
         if (paginaLogsActual > totalPaginas) paginaLogsActual = totalPaginas;
 
-        const inicio = (paginaLogsActual - 1) * registrosPorPaginaLogs;
-        const fin = Math.min(inicio + registrosPorPaginaLogs, totalRegistros);
-        const pagina = logsFiltrados.slice(inicio, fin);
+        const inicio = totalRegistros === 0
+          ? 0
+          : (paginaLogsActual - 1) * registrosPorPaginaLogs + 1;
+        const fin = totalRegistros === 0
+          ? 0
+          : Math.min(paginaLogsActual * registrosPorPaginaLogs, totalRegistros);
 
-        tbody.innerHTML = pagina
+        tbody.innerHTML = logsFiltrados
           .map((log) => {
             const accionClass = log.accion.toLowerCase();
             return `
             <tr>
               <td><strong>#${log.logId}</strong></td>
               <td>
-                <div><strong>${log.nombreUsuario}</strong></div>
-                <div style="font-size: 0.75rem; color: var(--razo-gray-warm);">${log.rol}</div>
+                <div class="fw-bold text-dark">${log.nombre || log.nombreUsuario || 'Sistema'}</div>
+                <div class="text-muted small" style="font-size: 0.75rem;">${log.email || ''}</div>
               </td>
               <td><span class="action-badge ${accionClass}">${log.accion}</span></td>
               <td><strong>${log.entidad}</strong></td>
@@ -1648,7 +1836,7 @@
 
         // Actualizar info de paginación
         document.getElementById('logsTotalRecords').textContent = totalRegistros;
-        document.getElementById('logsPageStart').textContent = inicio + 1;
+        document.getElementById('logsPageStart').textContent = inicio;
         document.getElementById('logsPageEnd').textContent = fin;
 
         // Controles prev/next
@@ -1694,23 +1882,21 @@
 
       // Cambiar página
       function cambiarPaginaLogs(direccion) {
-        const totalPaginas = Math.ceil(
-          logsFiltrados.length / registrosPorPaginaLogs
-        );
+        const totalPaginas = totalPaginasServidor || 1;
 
         if (direccion === 'prev' && paginaLogsActual > 1) {
           paginaLogsActual--;
+          cargarDatos();
         } else if (direccion === 'next' && paginaLogsActual < totalPaginas) {
           paginaLogsActual++;
+          cargarDatos();
         }
-
-        renderizarTablaPaginada();
       }
 
       // Ir a página
       function irAPaginaLogs(pagina) {
         paginaLogsActual = pagina;
-        renderizarTablaPaginada();
+        cargarDatos();
       }
 
       // Ver detalles en modal

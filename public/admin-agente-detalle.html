@@ -407,16 +407,31 @@
               "totalComisiones"
             ).textContent = `$${totalComisiones.toLocaleString()}`;
 
-            // Ventas
+            // Ventas (estatus de pedido con badge suave unificado)
             const ventasBody = document.getElementById("ventasTableBody");
             const emptyVentas = document.getElementById("emptyVentas");
             if (ventas.length > 0) {
               ventasBody.innerHTML = ventas
                 .map((v) => {
-                  let badge = "info";
-                  if (v.estatus === "Confirmado") badge = "success";
-                  else if (v.estatus === "Enviado") badge = "warning";
-                  else if (v.estatus === "Entregado") badge = "success";
+                  const estatusValor = (v.estatus || "").toString().toLowerCase();
+                  let badgeClass = "pedido-estatus-badge pendiente";
+
+                  if (estatusValor === "pendiente") badgeClass = "pedido-estatus-badge pendiente";
+                  else if (estatusValor === "confirmado") badgeClass = "pedido-estatus-badge confirmado";
+                  else if (
+                    estatusValor === "enviado" ||
+                    estatusValor === "en ruta" ||
+                    estatusValor === "en_ruta" ||
+                    estatusValor === "en-ruta"
+                  ) {
+                    badgeClass = "pedido-estatus-badge enviado";
+                  } else if (estatusValor === "entregado") {
+                    badgeClass = "pedido-estatus-badge entregado";
+                  } else if (estatusValor === "cancelado") {
+                    badgeClass = "pedido-estatus-badge cancelado";
+                  } else if (estatusValor === "completado") {
+                    badgeClass = "pedido-estatus-badge completado";
+                  }
 
                   return `
                 <tr>
@@ -426,7 +441,7 @@
                     "es-MX"
                   )}</td>
                   <td><strong>$${v.montoTotal.toLocaleString()}</strong></td>
-                  <td><span class="admin-badge ${badge}">${
+                  <td><span class="${badgeClass}">${
                     v.estatus
                   }</span></td>
                 </tr>

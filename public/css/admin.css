@@ -1151,12 +1151,14 @@
   color: #16a34a;
 }
 
-.pedido-estatus-badge.en-ruta {
+.pedido-estatus-badge.en-ruta,
+.pedido-estatus-badge.enviado {
   background: #dbeafe;
   color: #2563eb;
 }
 
-.pedido-estatus-badge.entregado {
+.pedido-estatus-badge.entregado,
+.pedido-estatus-badge.completado {
   background: #f0fdf4;
   color: #15803d;
 }

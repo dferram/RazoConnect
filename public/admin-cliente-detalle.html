@@ -486,19 +486,33 @@
             const monto = pedido.montoTotal
               ? `$${Number(pedido.montoTotal).toFixed(2)}`
               : "$0.00";
-            const badgeClass =
-              pedido.estatus === "Completado"
-                ? "success"
-                : pedido.estatus === "Pendiente"
-                ? "info"
-                : "warning";
+
+            const estatusValor = (pedido.estatus || "").toString().toLowerCase();
+            let badgeClass = "pedido-estatus-badge pendiente";
+
+            if (estatusValor === "pendiente") badgeClass = "pedido-estatus-badge pendiente";
+            else if (estatusValor === "confirmado") badgeClass = "pedido-estatus-badge confirmado";
+            else if (
+              estatusValor === "enviado" ||
+              estatusValor === "en ruta" ||
+              estatusValor === "en_ruta" ||
+              estatusValor === "en-ruta"
+            ) {
+              badgeClass = "pedido-estatus-badge enviado";
+            } else if (estatusValor === "entregado") {
+              badgeClass = "pedido-estatus-badge entregado";
+            } else if (estatusValor === "cancelado") {
+              badgeClass = "pedido-estatus-badge cancelado";
+            } else if (estatusValor === "completado") {
+              badgeClass = "pedido-estatus-badge completado";
+            }
 
             return `
           <tr>
             <td><strong>#${pedido.pedidoId}</strong></td>
             <td>${fecha}</td>
             <td>${monto}</td>
-            <td><span class="admin-badge ${badgeClass}">${
+            <td><span class="${badgeClass}">${
               pedido.estatus || "Sin estatus"
             }</span></td>
             <td>${

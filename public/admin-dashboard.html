@@ -334,6 +334,26 @@
         }).format(amount || 0);
       }
 
+      function getPedidoStatusBadgeClass(estatus) {
+        const value = (estatus || "").toString().toLowerCase();
+
+        if (value === "pendiente") return "pedido-estatus-badge pendiente";
+        if (value === "confirmado") return "pedido-estatus-badge confirmado";
+        if (
+          value === "enviado" ||
+          value === "en ruta" ||
+          value === "en_ruta" ||
+          value === "en-ruta"
+        ) {
+          return "pedido-estatus-badge enviado";
+        }
+        if (value === "entregado") return "pedido-estatus-badge entregado";
+        if (value === "cancelado") return "pedido-estatus-badge cancelado";
+        if (value === "completado") return "pedido-estatus-badge completado";
+
+        return "pedido-estatus-badge pendiente";
+      }
+
       async function loadInventoryValuation() {
         try {
           const response = await fetch(
@@ -415,11 +435,7 @@
 
             ordersTableBody.innerHTML = recentOrders
               .map((order) => {
-                let badgeClass = "info";
-                if (order.estatus === "Confirmado") badgeClass = "success";
-                else if (order.estatus === "Enviado") badgeClass = "warning";
-                else if (order.estatus === "Entregado") badgeClass = "success";
-                else if (order.estatus === "Cancelado") badgeClass = "danger";
+                const badgeClass = getPedidoStatusBadgeClass(order.estatus);
 
                 return `
               <tr>
@@ -429,9 +445,7 @@
                   "es-MX"
                 )}</td>
                 <td><strong>${formatCurrency(order.montoTotal)}</strong></td>
-                <td><span class="admin-badge ${badgeClass}">${
-                  order.estatus
-                }</span></td>
+                <td><span class="${badgeClass}">${order.estatus}</span></td>
                 <td>
                   <button class="btn btn-primary" style="padding: 0.5rem 1rem; font-size: 0.875rem;" 
                     onclick="verDetallePedido(${order.pedidoId})">
@@ -514,17 +528,9 @@
               month: "long",
               day: "numeric",
             })}</strong></p>
-            <p style="margin: 0.25rem 0;">Estado: <span class="admin-badge ${
-              pedido.estatus === "Confirmado"
-                ? "success"
-                : pedido.estatus === "Enviado"
-                ? "warning"
-                : pedido.estatus === "Entregado"
-                ? "success"
-                : pedido.estatus === "Cancelado"
-                ? "danger"
-                : "info"
-            }">${pedido.estatus}</span></p>
+            <p style="margin: 0.25rem 0;">Estado: <span class="${getPedidoStatusBadgeClass(
+              pedido.estatus
+            )}">${pedido.estatus}</span></p>
             <p style="margin: 0.25rem 0;">Total: <strong style="font-size: 1.25rem; color: #FF9966;">${formatCurrency(
               pedido.montoTotal
             )}</strong></p>

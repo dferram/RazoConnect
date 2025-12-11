@@ -116,17 +116,17 @@ const registrarLogBatch = async (req, acciones) => {
 };
 
 /**
- * Obtiene el historial de logs con filtros
+ * Obtiene el historial de logs con filtros y paginación
  * 
  * @param {Object} filtros - Filtros de búsqueda
  * @param {string} filtros.usuarioId - Filtrar por usuario específico
  * @param {string} filtros.accion - Filtrar por tipo de acción
  * @param {string} filtros.entidad - Filtrar por entidad
- * @param {string} filtros.fechaInicio - Fecha inicial
- * @param {string} filtros.fechaFin - Fecha final
+ * @param {string} filtros.fechaInicio - Fecha inicial (YYYY-MM-DD)
+ * @param {string} filtros.fechaFin - Fecha final (YYYY-MM-DD)
  * @param {number} filtros.limit - Límite de registros (default: 50)
  * @param {number} filtros.offset - Offset para paginación (default: 0)
- * @returns {Promise<Array>} Lista de logs
+ * @returns {Promise<{rows: Array, total: number}>} Lista de logs y total
  */
 const obtenerLogs = async (filtros = {}) => {
   try {
@@ -140,63 +140,81 @@ const obtenerLogs = async (filtros = {}) => {
       offset = 0
     } = filtros;
 
-    let query = `
-      SELECT 
-        LogID,
-        UsuarioID,
-        NombreUsuario,
-        Rol,
-        Accion,
-        Entidad,
-        EntidadID,
-        Detalles,
-        IP,
-        Fecha
-      FROM Log_Movimientos
-      WHERE 1=1
-    `;
-
+    // Construir cláusula WHERE y parámetros compartidos
+    let whereClause = "WHERE 1=1";
     const params = [];
     let paramIndex = 1;
 
-    // Aplicar filtros
     if (usuarioId) {
-      query += ` AND UsuarioID = $${paramIndex}`;
+      whereClause += ` AND l.UsuarioID = $${paramIndex}`;
       params.push(usuarioId);
       paramIndex++;
     }
 
     if (accion) {
-      query += ` AND Accion = $${paramIndex}`;
+      whereClause += ` AND l.Accion = $${paramIndex}`;
       params.push(accion.toUpperCase());
       paramIndex++;
     }
 
     if (entidad) {
-      query += ` AND Entidad = $${paramIndex}`;
+      whereClause += ` AND l.Entidad = $${paramIndex}`;
       params.push(entidad);
       paramIndex++;
     }
 
     if (fechaInicio) {
-      query += ` AND Fecha >= $${paramIndex}`;
+      whereClause += ` AND l.Fecha >= $${paramIndex}`;
       params.push(fechaInicio);
       paramIndex++;
     }
 
     if (fechaFin) {
-      query += ` AND Fecha <= $${paramIndex}`;
+      whereClause += ` AND l.Fecha <= $${paramIndex}`;
       params.push(fechaFin);
       paramIndex++;
     }
 
-    query += ` ORDER BY Fecha DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
-    params.push(limit, offset);
+    const selectQuery = `
+      SELECT 
+        l.LogID,
+        l.UsuarioID,
+        l.NombreUsuario,
+        l.Rol,
+        l.Accion,
+        l.Entidad,
+        l.EntidadID,
+        l.Detalles,
+        l.IP,
+        l.Fecha,
+        a.Nombre AS admin_nombre,
+        a.Email AS admin_email
+      FROM Log_Movimientos l
+      LEFT JOIN Administradores a ON l.UsuarioID = a.AdminID
+      ${whereClause}
+      ORDER BY l.Fecha DESC
+      LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
+    `;
 
-    const result = await db.query(query, params);
+    const selectParams = [...params, limit, offset];
 
-    return result.rows;
+    const countQuery = `
+      SELECT COUNT(*) AS total
+      FROM Log_Movimientos l
+      ${whereClause}
+    `;
 
+    const [result, countResult] = await Promise.all([
+      db.query(selectQuery, selectParams),
+      db.query(countQuery, params),
+    ]);
+
+    const total = parseInt(countResult.rows[0]?.total, 10) || 0;
+
+    return {
+      rows: result.rows,
+      total,
+    };
   } catch (error) {
     console.error('Error al obtener logs:', error);
     throw error;

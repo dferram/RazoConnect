@@ -919,6 +919,43 @@ h3 {
   color: var(--razo-orange);
 }
 
+/* Badges suaves de estatus de pedido (uso global clientes/admin/agentes) */
+.pedido-estatus-badge {
+  display: inline-block;
+  padding: 0.4rem 1rem;
+  border-radius: 2rem;
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: capitalize;
+}
+
+.pedido-estatus-badge.pendiente {
+  background: #fff7ed;
+  color: var(--razo-orange);
+}
+
+.pedido-estatus-badge.confirmado {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.pedido-estatus-badge.en-ruta,
+.pedido-estatus-badge.enviado {
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.pedido-estatus-badge.entregado,
+.pedido-estatus-badge.completado {
+  background: #f0fdf4;
+  color: #15803d;
+}
+
+.pedido-estatus-badge.cancelado {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
 /* ============================================
    SUMMARY
    ============================================ */

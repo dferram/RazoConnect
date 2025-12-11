@@ -19,6 +19,26 @@
 
     let currentStatusFilter = "";
 
+    function getPedidoStatusBadgeClass(estatus) {
+      const value = (estatus || "").toString().toLowerCase();
+
+      if (value === "pendiente") return "pedido-estatus-badge pendiente";
+      if (value === "confirmado") return "pedido-estatus-badge confirmado";
+      if (
+        value === "enviado" ||
+        value === "en ruta" ||
+        value === "en_ruta" ||
+        value === "en-ruta"
+      ) {
+        return "pedido-estatus-badge enviado";
+      }
+      if (value === "entregado") return "pedido-estatus-badge entregado";
+      if (value === "cancelado") return "pedido-estatus-badge cancelado";
+      if (value === "completado") return "pedido-estatus-badge completado";
+
+      return "pedido-estatus-badge pendiente";
+    }
+
     function setLoading(message = "Cargando pedidos...") {
       pedidosBody.innerHTML = `
         <tr id="${emptyRowId}">
@@ -73,6 +93,8 @@
               .filter(Boolean)
               .join(" ") || "Cliente sin nombre";
 
+          const badgeClass = getPedidoStatusBadgeClass(pedido.estatus);
+
           return `
             <tr>
               <td>${pedido.numeroPedido || `#${pedido.pedidoId}`}</td>
@@ -80,7 +102,7 @@
               <td>${formatDate(pedido.fechaPedido)}</td>
               <td>${formatCurrency(pedido.montoTotal)}</td>
               <td>
-                <span class="admin-badge info">
+                <span class="${badgeClass}">
                   ${pedido.estatus || "Desconocido"}
                 </span>
               </td>

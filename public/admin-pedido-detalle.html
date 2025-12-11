@@ -328,7 +328,7 @@
                     <p class="pedido-fecha" id="pedidoFecha">--</p>
                   </div>
                   <span
-                    class="admin-badge info"
+                    class="pedido-estatus-badge pendiente"
                     id="pedidoEstatus"
                     >--</span
                   >
@@ -435,9 +435,29 @@
             );
 
             const estatusEl = document.getElementById("pedidoEstatus");
-            estatusEl.textContent = pedido.estatus;
-            // Normalizar diseño: usar siempre admin-badge info para estatus de pedido
-            estatusEl.className = "admin-badge info";
+            estatusEl.textContent = pedido.estatus || "";
+
+            const estatusValor = (pedido.estatus || "").toString().toLowerCase();
+            let estatusClass = "pedido-estatus-badge pendiente";
+
+            if (estatusValor === "pendiente") estatusClass = "pedido-estatus-badge pendiente";
+            else if (estatusValor === "confirmado") estatusClass = "pedido-estatus-badge confirmado";
+            else if (
+              estatusValor === "enviado" ||
+              estatusValor === "en ruta" ||
+              estatusValor === "en_ruta" ||
+              estatusValor === "en-ruta"
+            ) {
+              estatusClass = "pedido-estatus-badge enviado";
+            } else if (estatusValor === "entregado") {
+              estatusClass = "pedido-estatus-badge entregado";
+            } else if (estatusValor === "cancelado") {
+              estatusClass = "pedido-estatus-badge cancelado";
+            } else if (estatusValor === "completado") {
+              estatusClass = "pedido-estatus-badge completado";
+            }
+
+            estatusEl.className = estatusClass;
 
             document.getElementById("pedidoMonto").textContent = formatCurrency(
               pedido.montoTotal

@@ -17,22 +17,26 @@ const obtenerBitacora = async (req, res) => {
       entidad,
       fechaInicio,
       fechaFin,
-      limit,
-      offset
+      page,
+      limit
     } = req.query;
 
-    const logs = await logger.obtenerLogs({
+    const pageNumber = page ? parseInt(page, 10) : 1;
+    const pageSize = limit ? parseInt(limit, 10) : 20;
+    const offset = (pageNumber - 1) * pageSize;
+
+    const { rows, total } = await logger.obtenerLogs({
       usuarioId,
       accion,
       entidad,
       fechaInicio,
       fechaFin,
-      limit: limit ? parseInt(limit) : 50,
-      offset: offset ? parseInt(offset) : 0
+      limit: pageSize,
+      offset,
     });
 
     // Formatear respuesta
-    const logsFormateados = logs.map(log => ({
+    const logsFormateados = rows.map(log => ({
       logId: log.logid,
       usuarioId: log.usuarioid,
       nombreUsuario: log.nombreusuario,
@@ -42,15 +46,27 @@ const obtenerBitacora = async (req, res) => {
       entidadId: log.entidadid,
       detalles: log.detalles,
       ip: log.ip,
-      fecha: log.fecha
+      fecha: log.fecha,
+      nombre: log.admin_nombre || log.nombreusuario || null,
+      email: log.admin_email || null
     }));
+
+    const totalRegistros = total;
+    const totalPaginas = totalRegistros > 0
+      ? Math.ceil(totalRegistros / pageSize)
+      : 1;
 
     res.json({
       success: true,
       data: {
         logs: logsFormateados,
-        total: logsFormateados.length
-      }
+        pagination: {
+          totalRegistros,
+          totalPaginas,
+          paginaActual: pageNumber,
+          registrosPorPagina: pageSize,
+        },
+      },
     });
 
   } catch (error) {
