@@ -1132,6 +1132,40 @@
   color: var(--razo-turquoise-dark);
 }
 
+/* Badges de estatus de pedido (compartidos con admin-pedido-detalle) */
+.pedido-estatus-badge {
+  padding: 0.4rem 1rem;
+  border-radius: 2rem;
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: capitalize;
+}
+
+.pedido-estatus-badge.pendiente {
+  background: #fff7ed;
+  color: var(--razo-orange);
+}
+
+.pedido-estatus-badge.confirmado {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.pedido-estatus-badge.en-ruta {
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.pedido-estatus-badge.entregado {
+  background: #f0fdf4;
+  color: #15803d;
+}
+
+.pedido-estatus-badge.cancelado {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
 /* ============================================
    RESPONSIVE
    ============================================ */

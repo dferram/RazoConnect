@@ -371,7 +371,7 @@
                     <p class="pedido-fecha" id="pedidoFecha">--</p>
                   </div>
                   <span
-                    class="pedido-estatus-badge pendiente"
+                    class="admin-badge info"
                     id="pedidoEstatus"
                     >--</span
                   >
@@ -471,9 +471,8 @@
 
             const estatusEl = document.getElementById("pedidoEstatus");
             estatusEl.textContent = pedido.estatus;
-            estatusEl.className = `pedido-estatus-badge ${pedido.estatus
-              .toLowerCase()
-              .replace(/\s+/g, "-")}`;
+            // Normalizar diseño: usar siempre admin-badge info para estatus de pedido
+            estatusEl.className = "admin-badge info";
 
             document.getElementById("pedidoMonto").textContent = formatCurrency(
               pedido.montoTotal

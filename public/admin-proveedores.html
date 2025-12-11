@@ -560,6 +560,7 @@
 
       let currentProveedores = [];
       let editingProveedorId = null;
+      let isSuperAdmin = false;
 
       // Verify admin token
       async function verifyAndLoadAdmin() {
@@ -583,6 +584,7 @@
             document.getElementById("userRole").textContent =
               admin.rol === "superadmin" ? "Super Admin" : "Admin";
 
+            isSuperAdmin = admin.rol === "superadmin";
             const words = admin.nombre.split(" ");
             const initials =
               words.length >= 2
@@ -596,6 +598,66 @@
           localStorage.removeItem("razoconnect_admin_token");
           localStorage.removeItem("razoconnect_admin");
           window.location.href = "/login.html";
+        }
+      }
+
+      async function aprobarSolicitudProveedor(controlCambioId) {
+        if (!controlCambioId) return;
+        if (!confirm("¿Aprobar esta solicitud de creación de proveedor?")) return;
+
+        try {
+          const response = await fetch(
+            `${API_BASE_URL}/admin/cambios/aprobar-lote`,
+            {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${adminToken}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ ids: [controlCambioId] }),
+            }
+          );
+
+          const data = await response.json();
+          if (response.ok && data.success) {
+            showToast("Solicitud aprobada correctamente", "success");
+            await loadProveedores();
+          } else {
+            showToast(data.message || "Error al aprobar solicitud", "error");
+          }
+        } catch (error) {
+          console.error("Error al aprobar solicitud de proveedor:", error);
+          showToast("Error al conectar con el servidor", "error");
+        }
+      }
+
+      async function rechazarSolicitudProveedor(controlCambioId) {
+        if (!controlCambioId) return;
+        if (!confirm("¿Rechazar esta solicitud de creación de proveedor?")) return;
+
+        try {
+          const response = await fetch(
+            `${API_BASE_URL}/admin/cambios/rechazar-lote`,
+            {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${adminToken}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ ids: [controlCambioId] }),
+            }
+          );
+
+          const data = await response.json();
+          if (response.ok && data.success) {
+            showToast("Solicitud rechazada correctamente", "success");
+            await loadProveedores();
+          } else {
+            showToast(data.message || "Error al rechazar solicitud", "error");
+          }
+        } catch (error) {
+          console.error("Error al rechazar solicitud de proveedor:", error);
+          showToast("Error al conectar con el servidor", "error");
         }
       }
 
@@ -634,8 +696,48 @@
               emptyProveedores.style.display = "block";
             } else {
               proveedoresTableBody.innerHTML = currentProveedores
-                .map(
-                  (proveedor) => `
+                .map((proveedor) => {
+                  const isPending = !!proveedor._isPending;
+                  if (isPending) {
+                    const controlId = proveedor.controlCambioId || "";
+                    const actionsHtml = isSuperAdmin
+                      ? `<button 
+                          class="btn btn-success btn-sm" 
+                          style="margin-right:0.35rem;"
+                          title="Aprobar solicitud de creación"
+                          onclick="aprobarSolicitudProveedor(${controlId})">
+                          ✔
+                        </button>
+                        <button 
+                          class="btn btn-danger btn-sm" 
+                          title="Rechazar solicitud de creación"
+                          onclick="rechazarSolicitudProveedor(${controlId})">
+                          ✖
+                        </button>`
+                      : `<span style="font-size:0.8rem; color: var(--razo-gray-warm);">En revisión</span>`;
+
+                    return `
+              <tr class="table-warning">
+                <td><strong>—</strong></td>
+                <td>
+                  <div style="font-weight: 600; color: var(--razo-gray-dark);">${
+                    proveedor.nombreempresa
+                  }</div>
+                </td>
+                <td>${proveedor.contactonombre || "-"}</td>
+                <td>${proveedor.email || "-"}</td>
+                <td>${proveedor.telefono || "-"}</td>
+                <td>
+                  <span class="admin-badge warning">⏳ Por Confirmar</span>
+                  <div style="margin-top:0.35rem; display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+                    ${actionsHtml}
+                  </div>
+                </td>
+              </tr>
+            `;
+                  }
+
+                  return `
               <tr>
                 <td><strong>#${proveedor.proveedorid}</strong></td>
                 <td>
@@ -655,8 +757,8 @@
                   </button>
                 </td>
               </tr>
-            `
-                )
+            `;
+                })
                 .join("");
 
               proveedoresTable.style.display = "table";
@@ -824,8 +926,13 @@
             const data = await response.json();
 
             if (response.ok && data.success) {
-              const mensaje = editingProveedorId ? "actualizado" : "creado";
-              showToast(`Proveedor ${mensaje} exitosamente`, "success");
+              showToast(
+                data.message ||
+                  (editingProveedorId
+                    ? "Solicitud registrada y pendiente de confirmación."
+                    : "Solicitud registrada y pendiente de confirmación."),
+                "success"
+              );
               closeProveedorModal();
               loadProveedores();
             } else {

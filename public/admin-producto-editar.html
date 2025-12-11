@@ -1141,8 +1141,21 @@
         const categoriaNombre = producto.categoria?.nombre || "Sin categoría";
         const codigoModelo = producto.codigoModelo || "No definido";
 
+        const isDraft = producto.activo === false;
+
+        const draftBannerHtml = isDraft
+          ? `<div style="margin-bottom:0.75rem; padding:0.75rem 1rem; border-radius:0.75rem; background: #fffbeb; border:1px solid #fed7aa; color:#92400e; font-size:0.9rem; display:flex; align-items:flex-start; gap:0.5rem;">
+              <span style="font-size:1.1rem;">⚠️</span>
+              <div>
+                <strong>Este producto está en modo BORRADOR.</strong>
+                <div>Los clientes no pueden verlo hasta que un SuperAdmin apruebe la creación o sus variantes.</div>
+              </div>
+            </div>`
+          : "";
+
         productSummary.innerHTML = `
         <div class="product-summary">
+          ${draftBannerHtml}
           <div class="product-summary-header">
             <div class="product-summary-main">
               ${imageHtml}
@@ -1210,7 +1223,45 @@
               ? formatCurrency(variant.costoUnitario)
               : "N/D";
             const stock = Number.isFinite(variant.stock) ? variant.stock : "0";
-            
+            const isPending = !!variant.isPending;
+
+            if (isPending) {
+              const controlId = variant.controlCambioId || "";
+              return `
+          <tr style="background: #fffbeb;">
+            <td>${variant.sku || "Sin SKU"}</td>
+            <td>${variant.dimensiones || "Sin dimensiones"}</td>
+            <td>${precio}</td>
+            <td>${costo}</td>
+            <td>${stock}</td>
+            <td>
+              <span class="badge" style="background:#fed7aa; color:#7c2d12; border-radius:999px; font-size:0.75rem; font-weight:600; padding:0.25rem 0.75rem; display:inline-flex; align-items:center; gap:0.35rem;">
+                ⏳ En revisión
+              </span>
+            </td>
+            <td class="actions-cell">
+              <button
+                type="button"
+                class="btn btn-secondary btn-sm"
+                disabled
+                title="No se puede editar una variante pendiente de aprobación"
+                style="opacity:0.6; cursor:not-allowed;"
+              >
+                ✏️
+              </button>
+              <button
+                type="button"
+                class="btn btn-outline-danger btn-sm"
+                title="Cancelar solicitud de creación de variante"
+                onclick="if(window.rechazarCambio){ window.rechazarCambio(${controlId}); }"
+              >
+                Cancelar solicitud
+              </button>
+            </td>
+          </tr>
+        `;
+            }
+
             const activo = variant.activo !== undefined ? variant.activo : true;
             const estadoBadgeClass = activo ? 'badge-success' : 'badge-secondary';
             const estadoTexto = activo ? 'Visible' : 'Oculto';

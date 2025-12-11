@@ -200,6 +200,11 @@
         window.location.href = "/login.html";
       }
 
+      // Mapea el estatus del pedido a un badge normalizado con diseño admin-badge info
+      function getPedidoStatusBadgeClass(estatus) {
+        return "admin-badge info";
+      }
+
       let currentOrders = [];
       let selectedOrderId = null;
 
@@ -290,12 +295,7 @@
             } else {
               ordersTableBody.innerHTML = filteredOrders
                 .map((order) => {
-                  let badgeClass = "info";
-                  if (order.estatus === "Confirmado") badgeClass = "success";
-                  else if (order.estatus === "Enviado") badgeClass = "warning";
-                  else if (order.estatus === "Entregado")
-                    badgeClass = "success";
-                  else if (order.estatus === "Cancelado") badgeClass = "danger";
+                  const badgeClass = getPedidoStatusBadgeClass(order.estatus);
 
                   const fecha = new Date(order.fechaPedido).toLocaleDateString(
                     "es-MX"
@@ -314,9 +314,7 @@
                   <td>${order.totalItems} items</td>
                   <td><strong>${formatCurrency(order.montoTotal)}</strong></td>
                   <td>${order.agenteNombre || "-"}</td>
-                  <td><span class="admin-badge ${badgeClass}">${
-                    order.estatus
-                  }</span></td>
+                  <td><span class="${badgeClass}">${order.estatus}</span></td>
                   <td>
                     <div style="display: flex; gap: 0.5rem;">
                       <button 

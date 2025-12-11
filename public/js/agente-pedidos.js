@@ -73,10 +73,6 @@
               .filter(Boolean)
               .join(" ") || "Cliente sin nombre";
 
-          const statusSlug = (pedido.estatus || "desconocido")
-            .toLowerCase()
-            .replace(/\s+/g, "_");
-
           return `
             <tr>
               <td>${pedido.numeroPedido || `#${pedido.pedidoId}`}</td>
@@ -84,7 +80,7 @@
               <td>${formatDate(pedido.fechaPedido)}</td>
               <td>${formatCurrency(pedido.montoTotal)}</td>
               <td>
-                <span class="estatus-pill estatus-${statusSlug}">
+                <span class="admin-badge info">
                   ${pedido.estatus || "Desconocido"}
                 </span>
               </td>

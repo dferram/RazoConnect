@@ -307,10 +307,11 @@
       const adminToken = localStorage.getItem("razoconnect_admin_token");
       if (!adminToken) window.location.href = "/login.html";
 
-      // Variables de paginación
+      // Variables de estado y paginación
       let todosLosAgentes = [];
       let paginaActual = 1;
       const registrosPorPagina = 10;
+      let isSuperAdmin = false;
 
       async function init() {
         await verifyAndLoadAdmin();
@@ -332,6 +333,8 @@
             document.getElementById("userName").textContent = admin.nombre;
             document.getElementById("userRole").textContent =
               admin.rol === "superadmin" ? "Super Admin" : "Admin";
+
+            isSuperAdmin = admin.rol === "superadmin";
             const words = admin.nombre.split(" ");
             const initials =
               words.length >= 2
@@ -344,6 +347,66 @@
           console.error("Error:", error);
           localStorage.removeItem("razoconnect_admin_token");
           window.location.href = "/login.html";
+        }
+      }
+
+      async function aprobarSolicitudAgente(controlCambioId) {
+        if (!controlCambioId) return;
+        if (!confirm("¿Aprobar esta solicitud de creación de agente?")) return;
+
+        try {
+          const response = await fetch(
+            `${API_BASE_URL}/admin/cambios/aprobar-lote`,
+            {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${adminToken}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ ids: [controlCambioId] }),
+            }
+          );
+
+          const data = await response.json();
+          if (response.ok && data.success) {
+            showToast("Solicitud aprobada correctamente", "success");
+            await loadAgentes();
+          } else {
+            showToast(data.message || "Error al aprobar solicitud", "error");
+          }
+        } catch (error) {
+          console.error("Error al aprobar solicitud de agente:", error);
+          showToast("Error al conectar con el servidor", "error");
+        }
+      }
+
+      async function rechazarSolicitudAgente(controlCambioId) {
+        if (!controlCambioId) return;
+        if (!confirm("¿Rechazar esta solicitud de creación de agente?")) return;
+
+        try {
+          const response = await fetch(
+            `${API_BASE_URL}/admin/cambios/rechazar-lote`,
+            {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${adminToken}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ ids: [controlCambioId] }),
+            }
+          );
+
+          const data = await response.json();
+          if (response.ok && data.success) {
+            showToast("Solicitud rechazada correctamente", "success");
+            await loadAgentes();
+          } else {
+            showToast(data.message || "Error al rechazar solicitud", "error");
+          }
+        } catch (error) {
+          console.error("Error al rechazar solicitud de agente:", error);
+          showToast("Error al conectar con el servidor", "error");
         }
       }
 
@@ -391,8 +454,49 @@
         const agentesPagina = todosLosAgentes.slice(inicio, fin);
 
         tbody.innerHTML = agentesPagina
-          .map(
-            (a) => `
+          .map((a) => {
+            const isPending = !!a._isPending;
+            if (isPending) {
+              const controlId = a.controlCambioId || "";
+              const actionsHtml = isSuperAdmin
+                ? `<button 
+                    class="btn btn-success btn-sm" 
+                    style="margin-right:0.35rem;"
+                    title="Aprobar solicitud de creación"
+                    onclick="aprobarSolicitudAgente(${controlId})">
+                    ✔
+                  </button>
+                  <button 
+                    class="btn btn-danger btn-sm" 
+                    title="Rechazar solicitud de creación"
+                    onclick="rechazarSolicitudAgente(${controlId})">
+                    ✖
+                  </button>`
+                : `<span style="font-size:0.8rem; color: var(--razo-gray-warm);">En revisión</span>`;
+
+              return `
+        <tr class="table-warning">
+          <td><strong>${a.nombre} ${a.apellido}</strong></td>
+          <td>${a.email}</td>
+          <td><span class="admin-badge info">${
+            a.codigoAgente || "—"
+          }</span></td>
+          <td>${a.totalVentas}</td>
+          <td><strong>$${a.montoTotalVentas.toLocaleString()}</strong></td>
+          <td><strong style="color: var(--success-color)">$${a.comisionesTotales.toLocaleString()}</strong></td>
+          <td>
+            <span class="admin-badge warning">⏳ Por Confirmar</span>
+          </td>
+          <td>
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items:center;">
+              ${actionsHtml}
+            </div>
+          </td>
+        </tr>
+      `;
+            }
+
+            return `
         <tr>
           <td><strong>${a.nombre} ${a.apellido}</strong></td>
           <td>${a.email}</td>
@@ -430,8 +534,8 @@
             </div>
           </td>
         </tr>
-      `
-          )
+      `;
+          })
           .join("");
 
         table.style.display = "table";
@@ -542,7 +646,10 @@
             const data = await response.json();
 
             if (response.ok && data.success) {
-              showToast("Agente creado exitosamente", "success");
+              showToast(
+                data.message || "Solicitud registrada y pendiente de aprobación",
+                "success"
+              );
               e.target.reset();
               loadAgentes();
             } else {

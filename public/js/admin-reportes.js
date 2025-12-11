@@ -248,11 +248,13 @@ async function loadAgingBackorders() {
   }
 }
 
-logoutBtn.addEventListener("click", () => {
-  localStorage.removeItem("razoconnect_admin_token");
-  localStorage.removeItem("razoconnect_admin");
-  window.location.href = "/login.html";
-});
+if (logoutBtn) {
+  logoutBtn.addEventListener("click", () => {
+    localStorage.removeItem("razoconnect_admin_token");
+    localStorage.removeItem("razoconnect_admin");
+    window.location.href = "/login.html";
+  });
+}
 
 generarBtn.addEventListener("click", () => {
   fetchReporte();

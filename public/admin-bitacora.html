@@ -361,11 +361,81 @@
             </div>
           </div>
 
+          <!-- Control de Cambios -->
+          <div class="admin-table-container mb-4" id="controlCambiosContainer">
+            <div class="admin-table-header">
+              <h2 class="admin-table-title">Control de Cambios</h2>
+              <button
+                type="button"
+                id="btnAprobarTodoCambios"
+                class="btn btn-success"
+                style="padding: 0.5rem 1.4rem; font-weight: 600; border-radius: 999px;"
+              >
+                ✔ Aprobar Todo el Lote
+              </button>
+            </div>
+
+            <div class="stats-grid" id="cambiosStatsGrid">
+              <div class="stat-card success">
+                <div class="stat-label">Solicitudes Pendientes</div>
+                <div class="stat-value" id="statCambiosPendientes">0</div>
+              </div>
+              <div class="stat-card success">
+                <div class="stat-label">Creaciones (INSERT)</div>
+                <div class="stat-value" id="statCambiosInsert">0</div>
+              </div>
+              <div class="stat-card info">
+                <div class="stat-label">Ediciones (UPDATE)</div>
+                <div class="stat-value" id="statCambiosUpdate">0</div>
+              </div>
+            </div>
+
+            <div
+              id="cambiosLoading"
+              style="display: flex; justify-content: center; align-items: center; padding: 1.5rem;"
+            >
+              <div class="spinner"></div>
+            </div>
+
+            <div style="overflow-x: auto;">
+              <table class="log-table" id="tablaCambios" style="display: none;">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Entidad</th>
+                    <th>Tipo</th>
+                    <th>Solicitante</th>
+                    <th>Fecha</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="tablaCambiosBody"></tbody>
+              </table>
+            </div>
+
+            <div id="cambiosEmpty" class="empty-state" style="display: none;">
+              <div class="empty-state-icon">✅</div>
+              <p class="empty-state-text">
+                No hay solicitudes de cambio pendientes.
+              </p>
+            </div>
+          </div>
+
           <!-- Tabla de Logs -->
           <div class="admin-table-container">
-            <div class="admin-table-header">
+            <div class="admin-table-header" style="align-items: center; gap: 1rem; flex-wrap: wrap;">
               <h2 class="admin-table-title">Registro de Movimientos</h2>
-              <div>
+              <div style="display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap;">
+                <div class="input-group" style="max-width:260px;">
+                  <input
+                    type="text"
+                    id="logSearchInput"
+                    class="form-input"
+                    placeholder="Buscar por usuario, acción, entidad..."
+                    aria-label="Buscar en registros"
+                    oninput="aplicarBusquedaRapida()"
+                  />
+                </div>
                 <button class="btn btn-secondary" onclick="cargarDatos()">
                   🔄 Refrescar
                 </button>
@@ -386,12 +456,45 @@
                     <th>Entidad</th>
                     <th>Registro</th>
                     <th>Fecha</th>
-                    <th>IP</th>
-                    <th>Detalles</th>
                   </tr>
                 </thead>
                 <tbody id="logsTableBody"></tbody>
               </table>
+
+              <!-- Paginación -->
+              <div
+                id="logsPaginationContainer"
+                style="display:none; margin-top:1rem; padding-top:0.75rem; border-top:1px solid #e5e7eb; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem;"
+              >
+                <div style="font-size:0.85rem; color:var(--razo-gray-warm);">
+                  Mostrando
+                  <strong id="logsPageStart">0</strong>
+                  a
+                  <strong id="logsPageEnd">0</strong>
+                  de
+                  <strong id="logsTotalRecords">0</strong>
+                  movimientos
+                </div>
+                <div style="display:flex; gap:0.5rem; align-items:center;">
+                  <button
+                    id="logsPrevPageBtn"
+                    class="btn btn-secondary btn-sm"
+                    onclick="cambiarPaginaLogs('prev')"
+                    disabled
+                  >
+                    ← Anterior
+                  </button>
+                  <div id="logsPageNumbers" style="display:flex; gap:0.25rem;"></div>
+                  <button
+                    id="logsNextPageBtn"
+                    class="btn btn-secondary btn-sm"
+                    onclick="cambiarPaginaLogs('next')"
+                    disabled
+                  >
+                    Siguiente →
+                  </button>
+                </div>
+              </div>
             </div>
 
             <div id="emptyState" class="empty-state" style="display: none;">
@@ -423,16 +526,529 @@
       if (!adminToken) window.location.href = "/login.html";
 
       let todosLosLogs = [];
+      let logsFiltrados = [];
+      let paginaLogsActual = 1;
+      const registrosPorPaginaLogs = 10;
       let usuarios = [];
       let entidades = [];
+      let cambiosPendientes = [];
+
+      // --- Control de Cambios (aprobaciones) ---
+
+      function actualizarStatsCambios() {
+        const total = cambiosPendientes.length;
+        const totalInsert = cambiosPendientes.filter(
+          (c) => c.tipoCambio === "INSERT"
+        ).length;
+        const totalUpdate = cambiosPendientes.filter(
+          (c) => c.tipoCambio === "UPDATE"
+        ).length;
+
+        const elPend = document.getElementById("statCambiosPendientes");
+        const elIns = document.getElementById("statCambiosInsert");
+        const elUpd = document.getElementById("statCambiosUpdate");
+
+        if (elPend) elPend.textContent = total;
+        if (elIns) elIns.textContent = totalInsert;
+        if (elUpd) elUpd.textContent = totalUpdate;
+      }
+
+      async function cargarCambiosPendientes() {
+        const loading = document.getElementById("cambiosLoading");
+        const tabla = document.getElementById("tablaCambios");
+        const tbody = document.getElementById("tablaCambiosBody");
+        const empty = document.getElementById("cambiosEmpty");
+
+        if (!loading || !tabla || !tbody || !empty) {
+          return;
+        }
+
+        loading.style.display = "flex";
+        tabla.style.display = "none";
+        empty.style.display = "none";
+
+        try {
+          const response = await fetch(
+            `${API_BASE_URL}/admin/cambios/pendientes`,
+            {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${adminToken}`,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+
+          const data = await response.json();
+
+          if (!response.ok || !data.success) {
+            throw new Error(
+              data.message || "Error al cargar solicitudes de cambio pendientes"
+            );
+          }
+
+          cambiosPendientes = data.data.cambios || [];
+          actualizarStatsCambios();
+
+          if (!cambiosPendientes.length) {
+            empty.style.display = "flex";
+            return;
+          }
+
+          renderizarTablaCambios(cambiosPendientes);
+          tabla.style.display = "table";
+        } catch (error) {
+          console.error("Error cargando cambios pendientes:", error);
+          empty.style.display = "flex";
+          Swal.fire({
+            icon: "error",
+            title: "Error",
+            text:
+              error.message || "No se pudieron cargar las solicitudes de cambio",
+            confirmButtonColor: "#F97316",
+          });
+        } finally {
+          loading.style.display = "none";
+        }
+      }
+
+      function obtenerBadgeTipoCambio(tipo) {
+        const normalized = (tipo || "").toString().toUpperCase();
+        if (normalized === "INSERT") {
+          return '<span class="badge bg-success">INSERT</span>';
+        }
+        if (normalized === "UPDATE") {
+          return '<span class="badge bg-primary">UPDATE</span>';
+        }
+        if (normalized === "DELETE") {
+          return '<span class="badge bg-danger">DELETE</span>';
+        }
+        return `<span class="badge bg-secondary">${
+          normalized || "N/D"
+        }</span>`;
+      }
+
+      function renderizarTablaCambios(cambios) {
+        const tbody = document.getElementById("tablaCambiosBody");
+        if (!tbody) return;
+
+        tbody.innerHTML = cambios
+          .map((cambio) => {
+            const solicitante =
+              cambio.solicitanteNombre ||
+              cambio.solicitanteEmail ||
+              "Desconocido";
+
+            const fecha = cambio.fechaSolicitud
+              ? new Date(cambio.fechaSolicitud).toLocaleString("es-MX", {
+                  day: "2-digit",
+                  month: "short",
+                  year: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })
+              : "—";
+
+            return `
+            <tr>
+              <td><strong>#${cambio.id}</strong></td>
+              <td>${cambio.entidad}</td>
+              <td>${obtenerBadgeTipoCambio(cambio.tipoCambio)}</td>
+              <td>
+                <div style="font-weight:600;">${solicitante}</div>
+                <div style="font-size:0.75rem;color:var(--razo-gray-warm);">
+                  ID: ${cambio.usuarioSolicitanteId || "N/D"}
+                </div>
+              </td>
+              <td>${fecha}</td>
+              <td>
+                <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+                  <button
+                    type="button"
+                    class="btn btn-secondary btn-sm"
+                    onclick="verCambiosCambio(${cambio.id})"
+                  >
+                    👁 Ver cambios
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-primary btn-sm"
+                    onclick="aprobarCambio(${cambio.id})"
+                  >
+                    Aprobar
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-outline btn-sm"
+                    onclick="rechazarCambio(${cambio.id})"
+                  >
+                    Rechazar
+                  </button>
+                </div>
+              </td>
+            </tr>
+          `;
+          })
+          .join("");
+      }
+
+      function normalizarObjetoDatos(value) {
+        if (!value) return {};
+        if (typeof value === "object") return value;
+        try {
+          return JSON.parse(value);
+        } catch (e) {
+          return {};
+        }
+      }
+
+      function formatearValorCampo(valor) {
+        if (valor === null || valor === undefined) return "<em>—</em>";
+        if (typeof valor === "object") {
+          return `<pre style="margin:0;font-size:0.75rem;white-space:pre-wrap;">${
+            JSON.stringify(valor, null, 2)
+          }</pre>`;
+        }
+        return String(valor);
+      }
+
+      const LABELS_PRODUCTO = {
+        NombreProducto: "Nombre del Producto",
+        CodigoModelo: "Código / Modelo",
+        Descripcion: "Descripción",
+        Activo: "¿Está Activo?",
+        CategoriaID: "Categoría",
+        ProveedorID_Default: "Proveedor Principal",
+      };
+
+      function obtenerEtiquetaAmigable(entidad, key) {
+        const entidadLower = (entidad || "").toString().toLowerCase();
+
+        if (entidadLower === "productos" && LABELS_PRODUCTO[key]) {
+          return LABELS_PRODUCTO[key];
+        }
+
+        return key;
+      }
+
+      function formatearValorAmigableInsert(entidad, key, valor) {
+        const entidadLower = (entidad || "").toString().toLowerCase();
+
+        if (entidadLower === "productos") {
+          if (key === "Activo") {
+            if (valor === true) {
+              return '<span class="text-success">✅ Sí</span>';
+            }
+            if (valor === false) {
+              return '<span class="text-danger">❌ No</span>';
+            }
+          }
+
+          if (key === "Descripcion") {
+            if (!valor || valor === "--") {
+              return '<span style="color:#9ca3af;font-style:italic;">Sin descripción</span>';
+            }
+          }
+
+          if (key === "CategoriaID" || key === "ProveedorID_Default") {
+            if (valor === null || valor === undefined) {
+              return '<span style="color:#9ca3af;font-style:italic;">Sin asignar</span>';
+            }
+            return `<span title="Referencia técnica">ID: ${valor} (requiere nombre real)</span>`;
+          }
+        }
+
+        return formatearValorCampo(valor);
+      }
+
+      function obtenerTituloCambio(cambio) {
+        const tipo = (cambio.tipoCambio || "").toString().toUpperCase();
+        const entidad = (cambio.entidad || "").toString().toLowerCase();
+
+        if (tipo === "INSERT") {
+          if (entidad === "productos") {
+            return "Revisión de Nuevo Producto";
+          }
+          return "Revisión de Nuevo Registro";
+        }
+
+        if (tipo === "UPDATE") {
+          if (entidad === "productos") {
+            return "Revisión de Cambios de Producto";
+          }
+          return "Revisión de Cambios";
+        }
+
+        if (tipo === "DELETE") {
+          if (entidad === "productos") {
+            return "Revisión de Eliminación de Producto";
+          }
+          return "Revisión de Eliminación";
+        }
+
+        return `Cambio #${cambio.id} - ${cambio.entidad} (${cambio.tipoCambio})`;
+      }
+
+      function renderizarDiffCambio(cambio) {
+        const tipo = (cambio.tipoCambio || "").toString().toUpperCase();
+        const anteriores = normalizarObjetoDatos(cambio.datosAnteriores);
+        const nuevos = normalizarObjetoDatos(cambio.datosNuevos);
+
+        if (tipo === "INSERT") {
+          const claves = Object.keys(nuevos || {});
+          if (!claves.length) {
+            return "<p style=\"margin:0;\">No hay datos nuevos para mostrar.</p>";
+          }
+
+          const filas = claves
+            .map(
+              (key) => {
+                const etiqueta = obtenerEtiquetaAmigable(cambio.entidad, key);
+                const valorHtml = formatearValorAmigableInsert(
+                  cambio.entidad,
+                  key,
+                  nuevos[key]
+                );
+
+                return `
+                  <tr>
+                    <td class="fw-bold" style="vertical-align:top;width:40%;">${etiqueta}</td>
+                    <td style="vertical-align:top;">${valorHtml}</td>
+                  </tr>
+                `;
+              }
+            )
+            .join("");
+
+          return `
+            <div style="border-radius:0.75rem;border:1px solid #bbf7d0;background:#ecfdf3;padding:1rem;">
+              <p style="margin:0 0 0.75rem;font-size:0.9rem;color:#166534;font-weight:500;">
+                Se proponen los siguientes datos para este registro:
+              </p>
+              <div class="table-responsive">
+                <table class="table table-bordered table-striped table-sm mb-0" style="font-size:0.85rem;">
+                  <thead>
+                    <tr>
+                      <th style="width:40%;">Dato</th>
+                      <th>Valor</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${filas}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          `;
+        }
+
+        if (tipo === "UPDATE") {
+          const clavesSet = new Set([
+            ...Object.keys(anteriores || {}),
+            ...Object.keys(nuevos || {}),
+          ]);
+          const claves = Array.from(clavesSet).filter(
+            (key) =>
+              JSON.stringify(anteriores[key]) !== JSON.stringify(nuevos[key])
+          );
+
+          if (!claves.length) {
+            return "<p style=\"margin:0;\">No se detectaron diferencias entre los datos anteriores y nuevos.</p>";
+          }
+
+          const filas = claves
+            .map((key) => {
+              const etiqueta = obtenerEtiquetaAmigable(cambio.entidad, key);
+              return `
+                <tr>
+                  <td style="vertical-align:top;font-weight:600;">${etiqueta}</td>
+                  <td style="vertical-align:top;background:#fef2f2;font-weight:600;">${formatearValorCampo(
+                    anteriores[key]
+                  )}</td>
+                  <td style="vertical-align:top;background:#ecfdf3;font-weight:600;">${formatearValorCampo(
+                    nuevos[key]
+                  )}</td>
+                </tr>
+              `;
+            })
+            .join("");
+
+          return `
+            <div style="border-radius:0.75rem;border:1px solid #e5e7eb;background:#f9fafb;padding:1rem;">
+              <p style="margin:0 0 0.75rem;font-size:0.9rem;">
+                Solo se muestran los campos que cambiaron.
+              </p>
+              <table style="width:100%;border-collapse:collapse;font-size:0.85rem;">
+                <thead>
+                  <tr>
+                    <th style="text-align:left;padding:0.25rem 0.5rem;">Campo</th>
+                    <th style="text-align:left;padding:0.25rem 0.5rem;">Antes</th>
+                    <th style="text-align:left;padding:0.25rem 0.5rem;">Después</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${filas}
+                </tbody>
+              </table>
+            </div>
+          `;
+        }
+
+        if (tipo === "DELETE") {
+          const claves = Object.keys(anteriores || {});
+          if (!claves.length) {
+            return "<p style=\"margin:0;\">No hay datos anteriores para mostrar.</p>";
+          }
+
+          const filas = claves
+            .map((key) => {
+              const etiqueta = obtenerEtiquetaAmigable(cambio.entidad, key);
+              return `
+                <tr>
+                  <td style="font-weight:600;vertical-align:top;">${etiqueta}</td>
+                  <td style="vertical-align:top;">${formatearValorCampo(
+                    anteriores[key]
+                  )}</td>
+                </tr>
+              `;
+            })
+            .join("");
+
+          return `
+            <div style="border-radius:0.75rem;border:1px solid #fecaca;background:#fef2f2;padding:1rem;">
+              <p style="margin:0 0 0.75rem;font-size:0.9rem;color:#b91c1c;">
+                Este cambio eliminaría el siguiente registro:
+              </p>
+              <table style="width:100%;border-collapse:collapse;font-size:0.85rem;">
+                <tbody>
+                  ${filas}
+                </tbody>
+              </table>
+            </div>
+          `;
+        }
+
+        return "<p style=\"margin:0;\">No hay información de cambios para mostrar.</p>";
+      }
+
+      async function ejecutarAccionLoteCambios(ids, endpoint, confirmConfig) {
+        if (!Array.isArray(ids) || !ids.length) {
+          return;
+        }
+
+        const result = await Swal.fire({
+          title: confirmConfig.title,
+          html: confirmConfig.html,
+          icon: confirmConfig.icon || "warning",
+          showCancelButton: true,
+          confirmButtonText: confirmConfig.confirmText || "Sí, continuar",
+          cancelButtonText: "Cancelar",
+          confirmButtonColor: confirmConfig.confirmColor || "#22c55e",
+          cancelButtonColor: "#6b7280",
+        });
+
+        if (!result.isConfirmed) {
+          return;
+        }
+
+        try {
+          const response = await fetch(`${API_BASE_URL}/admin${endpoint}`, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${adminToken}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ ids }),
+          });
+
+          const data = await response.json();
+
+          if (!response.ok || !data.success) {
+            throw new Error(data.message || "Error al ejecutar la acción");
+          }
+
+          Swal.fire({
+            icon: "success",
+            title: "Acción completada",
+            text: data.message || "Operación realizada correctamente",
+            confirmButtonColor: "#22c55e",
+          });
+
+          await cargarCambiosPendientes();
+        } catch (error) {
+          console.error("Error en acción de lote (cambios):", error);
+          Swal.fire({
+            icon: "error",
+            title: "Error",
+            text: error.message || "No se pudo completar la acción",
+            confirmButtonColor: "#F97316",
+          });
+        }
+      }
+
+      function aprobarCambio(id) {
+        ejecutarAccionLoteCambios([id], "/cambios/aprobar-lote", {
+          title: `¿Aprobar cambio #${id}?`,
+          html: "Este cambio se aplicará inmediatamente sobre la base de datos.",
+          icon: "question",
+          confirmText: "Sí, aprobar",
+          confirmColor: "#22c55e",
+        });
+      }
+
+      function rechazarCambio(id) {
+        ejecutarAccionLoteCambios([id], "/cambios/rechazar-lote", {
+          title: `¿Rechazar cambio #${id}?`,
+          html: "El cambio permanecerá registrado pero no se aplicará.",
+          icon: "warning",
+          confirmText: "Sí, rechazar",
+          confirmColor: "#EF4444",
+        });
+      }
+
+      function aprobarTodoCambios() {
+        if (!cambiosPendientes.length) return;
+        const ids = cambiosPendientes.map((c) => c.id);
+
+        ejecutarAccionLoteCambios(ids, "/cambios/aprobar-lote", {
+          title: "¿Aprobar todas las solicitudes pendientes?",
+          html: `Se aplicarán <strong>${ids.length}</strong> cambio(s) sobre la base de datos. Esta acción no se puede deshacer.`,
+          icon: "question",
+          confirmText: "Sí, aprobar todo",
+          confirmColor: "#22c55e",
+        });
+      }
+
+      function verCambiosCambio(id) {
+        const cambio = cambiosPendientes.find((c) => c.id === id);
+        if (!cambio) return;
+
+        const htmlDiff = renderizarDiffCambio(cambio);
+
+        Swal.fire({
+          title: obtenerTituloCambio(cambio),
+          html: htmlDiff,
+          width: "90%",
+          confirmButtonText: "Cerrar",
+          confirmButtonColor: "#F97316",
+        });
+      }
 
       // Cargar datos iniciales
       async function init() {
+        const btnAprobarTodoCambios = document.getElementById(
+          "btnAprobarTodoCambios"
+        );
+        if (btnAprobarTodoCambios) {
+          btnAprobarTodoCambios.addEventListener("click", aprobarTodoCambios);
+        }
+
         await Promise.all([
           cargarEstadisticas(),
           cargarUsuarios(),
           cargarEntidades(),
-          cargarDatos()
+          cargarDatos(),
+          cargarCambiosPendientes(),
         ]);
       }
 
@@ -508,7 +1124,9 @@
 
           if (response.ok && response.data.success) {
             todosLosLogs = response.data.data.logs;
-            renderizarTabla(todosLosLogs);
+            logsFiltrados = [...todosLosLogs];
+            paginaLogsActual = 1;
+            renderizarTablaPaginada();
             
             document.getElementById('loadingState').style.display = 'none';
             
@@ -561,19 +1179,43 @@
         cargarDatos();
       }
 
+      // Búsqueda rápida sobre los logs cargados
+      function aplicarBusquedaRapida() {
+        const input = document.getElementById('logSearchInput');
+        if (!input) return;
+
+        const query = input.value.trim().toLowerCase();
+
+        if (!query) {
+          logsFiltrados = [...todosLosLogs];
+        } else {
+          logsFiltrados = todosLosLogs.filter((log) => {
+            const usuario = `${log.nombreUsuario || ''} ${log.rol || ''}`.toLowerCase();
+            const accion = (log.accion || '').toLowerCase();
+            const entidad = (log.entidad || '').toLowerCase();
+            const entidadId = log.entidadId ? `#${log.entidadId}` : '';
+            const fechaTexto = formatDateTime(log.fecha).toLowerCase();
+
+            return (
+              usuario.includes(query) ||
+              accion.includes(query) ||
+              entidad.includes(query) ||
+              entidadId.toLowerCase().includes(query) ||
+              fechaTexto.includes(query)
+            );
+          });
+        }
+
+        paginaLogsActual = 1;
+        renderizarTablaPaginada();
+      }
+
       // Renderizar tabla
       function renderizarTabla(logs) {
         const tbody = document.getElementById('logsTableBody');
         
         tbody.innerHTML = logs.map(log => {
           const accionClass = log.accion.toLowerCase();
-          const detallesTexto = typeof log.detalles === 'string' 
-            ? log.detalles 
-            : JSON.stringify(log.detalles);
-          const detallesPreview = detallesTexto.length > 50 
-            ? detallesTexto.substring(0, 50) + '...' 
-            : detallesTexto;
-
           return `
             <tr>
               <td><strong>#${log.logId}</strong></td>
@@ -585,15 +1227,119 @@
               <td><strong>${log.entidad}</strong></td>
               <td>${log.entidadId ? '#' + log.entidadId : '—'}</td>
               <td>${formatDateTime(log.fecha)}</td>
-              <td style="font-family: monospace; font-size: 0.875rem;">${log.ip}</td>
-              <td>
-                <span class="details-cell" onclick="verDetalles(${log.logId})">
-                  ${detallesPreview}
-                </span>
-              </td>
             </tr>
           `;
         }).join('');
+      }
+
+      // Renderizar tabla paginada
+      function renderizarTablaPaginada() {
+        const tbody = document.getElementById('logsTableBody');
+        const pagContainer = document.getElementById('logsPaginationContainer');
+        const totalRegistros = logsFiltrados.length;
+
+        if (!tbody || !pagContainer) return;
+
+        if (!totalRegistros) {
+          tbody.innerHTML = '';
+          pagContainer.style.display = 'none';
+          document.getElementById('logsTotalRecords').textContent = '0';
+          document.getElementById('logsPageStart').textContent = '0';
+          document.getElementById('logsPageEnd').textContent = '0';
+          return;
+        }
+
+        const totalPaginas = Math.ceil(totalRegistros / registrosPorPaginaLogs);
+        if (paginaLogsActual > totalPaginas) paginaLogsActual = totalPaginas;
+
+        const inicio = (paginaLogsActual - 1) * registrosPorPaginaLogs;
+        const fin = Math.min(inicio + registrosPorPaginaLogs, totalRegistros);
+        const pagina = logsFiltrados.slice(inicio, fin);
+
+        tbody.innerHTML = pagina
+          .map((log) => {
+            const accionClass = log.accion.toLowerCase();
+            return `
+            <tr>
+              <td><strong>#${log.logId}</strong></td>
+              <td>
+                <div><strong>${log.nombreUsuario}</strong></div>
+                <div style="font-size: 0.75rem; color: var(--razo-gray-warm);">${log.rol}</div>
+              </td>
+              <td><span class="action-badge ${accionClass}">${log.accion}</span></td>
+              <td><strong>${log.entidad}</strong></td>
+              <td>${log.entidadId ? '#' + log.entidadId : '—'}</td>
+              <td>${formatDateTime(log.fecha)}</td>
+            </tr>
+          `;
+          })
+          .join('');
+
+        // Actualizar info de paginación
+        document.getElementById('logsTotalRecords').textContent = totalRegistros;
+        document.getElementById('logsPageStart').textContent = inicio + 1;
+        document.getElementById('logsPageEnd').textContent = fin;
+
+        // Controles prev/next
+        const prevBtn = document.getElementById('logsPrevPageBtn');
+        const nextBtn = document.getElementById('logsNextPageBtn');
+        if (prevBtn) prevBtn.disabled = paginaLogsActual === 1;
+        if (nextBtn) nextBtn.disabled = paginaLogsActual === totalPaginas;
+
+        // Números de página
+        const pageNumbers = document.getElementById('logsPageNumbers');
+        if (pageNumbers) {
+          pageNumbers.innerHTML = '';
+
+          let startPage = Math.max(1, paginaLogsActual - 2);
+          let endPage = Math.min(totalPaginas, startPage + 4);
+
+          if (endPage - startPage < 4) {
+            startPage = Math.max(1, endPage - 4);
+          }
+
+          for (let i = startPage; i <= endPage; i++) {
+            const btn = document.createElement('button');
+            btn.textContent = i;
+            btn.className = 'btn btn-sm';
+            btn.style.padding = '0.35rem 0.6rem';
+            btn.style.minWidth = '2rem';
+            if (i === paginaLogsActual) {
+              btn.style.background = 'var(--razo-orange)';
+              btn.style.color = '#fff';
+              btn.style.fontWeight = '600';
+            } else {
+              btn.style.background = '#fff';
+              btn.style.color = 'var(--razo-gray-dark)';
+              btn.style.border = '1px solid #e5e7eb';
+            }
+            btn.onclick = () => irAPaginaLogs(i);
+            pageNumbers.appendChild(btn);
+          }
+        }
+
+        pagContainer.style.display = 'flex';
+      }
+
+      // Cambiar página
+      function cambiarPaginaLogs(direccion) {
+        const totalPaginas = Math.ceil(
+          logsFiltrados.length / registrosPorPaginaLogs
+        );
+
+        if (direccion === 'prev' && paginaLogsActual > 1) {
+          paginaLogsActual--;
+        } else if (direccion === 'next' && paginaLogsActual < totalPaginas) {
+          paginaLogsActual++;
+        }
+
+        renderizarTablaPaginada();
+      }
+
+      // Ir a página
+      function irAPaginaLogs(pagina) {
+        paginaLogsActual = pagina;
+        renderizarTablaPaginada();
       }
 
       // Ver detalles en modal

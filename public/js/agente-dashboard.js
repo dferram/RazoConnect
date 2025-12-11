@@ -132,9 +132,9 @@
               <td>${clienteNombre}</td>
               <td>${formatDate(pedido.fechaPedido)}</td>
               <td>${formatCurrency(pedido.montoTotal)}</td>
-              <td><span class="estatus-pill estatus-${(
-                pedido.estatus || "desconocido"
-              ).toLowerCase()}">${pedido.estatus || "Desconocido"}</span></td>
+              <td><span class="admin-badge info">${
+                pedido.estatus || "Desconocido"
+              }</span></td>
             </tr>
           `;
         })

@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Control de Cambios y Aprobaciones - Admin RazoConnect</title>
+    <link rel="icon" type="image/png" href="/icon/Logo_Razo.png" />
+
+    <!-- Protección de autenticación admin -->
+    <script src="js/auth-guard-admin.js"></script>
+    <script src="js/token-refresh.js"></script>
+
+    <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/admin.css" />
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  </head>
+  <body>
+    <div class="admin-layout">
+      <div id="sidebar-container"></div>
+
+      <main class="admin-main">
+        <header class="admin-header">
+          <div>
+            <h1 class="admin-header-title">Control de Cambios y Aprobaciones</h1>
+            <p class="admin-header-subtitle">
+              Revisa y aprueba los cambios pendientes antes de que impacten la base de datos real.
+            </p>
+          </div>
+          <div class="admin-header-actions">
+            <button
+              type="button"
+              id="btnAprobarTodo"
+              class="btn btn-success"
+              style="padding: 0.6rem 1.6rem; font-weight: 600; border-radius: 999px;"
+            >
+              ✔ Aprobar todo el lote
+            </button>
+          </div>
+        </header>
+
+        <div class="admin-content">
+          <!-- KPIs resumen -->
+          <section class="admin-stats-grid" id="statsContainer">
+            <article class="admin-stat-card">
+              <div class="admin-stat-header">
+                <div class="admin-stat-icon green">⏳</div>
+                <span class="admin-badge info">Pendientes</span>
+              </div>
+              <div class="admin-stat-content">
+                <h3>Total pendientes</h3>
+                <div class="admin-stat-value" id="statTotalPendientes">0</div>
+              </div>
+            </article>
+
+            <article class="admin-stat-card">
+              <div class="admin-stat-header">
+                <div class="admin-stat-icon orange">➕</div>
+                <span class="admin-badge success">INSERT</span>
+              </div>
+              <div class="admin-stat-content">
+                <h3>Inserciones propuestas</h3>
+                <div class="admin-stat-value" id="statTotalInsert">0</div>
+              </div>
+            </article>
+
+            <article class="admin-stat-card">
+              <div class="admin-stat-header">
+                <div class="admin-stat-icon red">⚠️</div>
+                <span class="admin-badge danger">DELETE</span>
+              </div>
+              <div class="admin-stat-content">
+                <h3>Eliminaciones (riesgo)</h3>
+                <div class="admin-stat-value" id="statTotalDelete">0</div>
+              </div>
+            </article>
+          </section>
+
+          <!-- Tabla de solicitudes -->
+          <section class="admin-table-container">
+            <div class="admin-table-header">
+              <h2 class="admin-table-title">Solicitudes de cambio pendientes</h2>
+            </div>
+
+            <div id="cambiosLoading" class="loading" style="display: flex">
+              <div class="spinner"></div>
+            </div>
+
+            <div style="overflow-x: auto">
+              <table class="admin-table" id="tablaCambios" style="display: none">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Entidad</th>
+                    <th>Tipo</th>
+                    <th>Solicitante</th>
+                    <th>Fecha</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="tablaCambiosBody"></tbody>
+              </table>
+            </div>
+
+            <div id="cambiosEmpty" class="empty-state" style="display: none">
+              <div class="empty-state-icon">✅</div>
+              <h3 class="empty-state-title">No hay cambios pendientes</h3>
+              <p class="empty-state-text">
+                Todos los cambios han sido aprobados o rechazados.
+              </p>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <script src="js/layout.js" defer></script>
+    <script src="js/api.js"></script>
+    <script src="js/components/user-profile.js"></script>
+    <script src="js/admin-header-dropdown.js"></script>
+    <script>
+      (function () {
+        "use strict";
+
+        const adminToken = localStorage.getItem("razoconnect_admin_token");
+        if (!adminToken) {
+          window.location.href = "/login.html";
+          return;
+        }
+
+        let cambiosPendientes = [];
+
+        document.addEventListener("DOMContentLoaded", () => {
+          cargarCambiosPendientes();
+          const btnAprobarTodo = document.getElementById("btnAprobarTodo");
+          btnAprobarTodo?.addEventListener("click", handleAprobarTodo);
+        });
+
+        function formatearFecha(value) {
+          if (!value) return "—";
+          const date = new Date(value);
+          if (Number.isNaN(date.getTime())) return "—";
+          return date.toLocaleString("es-MX", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          });
+        }
+
+        function actualizarStats() {
+          const total = cambiosPendientes.length;
+          const totalInsert = cambiosPendientes.filter(
+            (c) => c.tipoCambio === "INSERT"
+          ).length;
+          const totalDelete = cambiosPendientes.filter(
+            (c) => c.tipoCambio === "DELETE"
+          ).length;
+
+          document.getElementById("statTotalPendientes").textContent = total;
+          document.getElementById("statTotalInsert").textContent = totalInsert;
+          document.getElementById("statTotalDelete").textContent = totalDelete;
+        }
+
+        async function cargarCambiosPendientes() {
+          const loading = document.getElementById("cambiosLoading");
+          const tabla = document.getElementById("tablaCambios");
+          const tbody = document.getElementById("tablaCambiosBody");
+          const empty = document.getElementById("cambiosEmpty");
+
+          loading.style.display = "flex";
+          tabla.style.display = "none";
+          empty.style.display = "none";
+
+          try {
+            const response = await fetch(`${API_BASE_URL}/admin/cambios/pendientes`, {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${adminToken}`,
+                "Content-Type": "application/json",
+              },
+            });
+
+            const data = await response.json();
+
+            if (!response.ok || !data.success) {
+              throw new Error(data.message || "Error al cargar cambios pendientes");
+            }
+
+            cambiosPendientes = data.data.cambios || [];
+            actualizarStats();
+
+            if (!cambiosPendientes.length) {
+              empty.style.display = "block";
+              return;
+            }
+
+            tbody.innerHTML = cambiosPendientes
+              .map((cambio) => {
+                const solicitante =
+                  cambio.solicitanteNombre || cambio.solicitanteEmail || "Desconocido";
+
+                return `
+                  <tr data-cambio-id="${cambio.id}">
+                    <td>#${cambio.id}</td>
+                    <td>${cambio.entidad}</td>
+                    <td>
+                      <span class="admin-badge info">${cambio.tipoCambio}</span>
+                    </td>
+                    <td>
+                      <div style="font-weight:600;">${solicitante}</div>
+                      <div style="font-size:0.75rem;color:var(--razo-gray-warm);">
+                        ID: ${cambio.usuarioSolicitanteId || "N/D"}
+                      </div>
+                    </td>
+                    <td>${formatearFecha(cambio.fechaSolicitud)}</td>
+                    <td>
+                      <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+                        <button
+                          type="button"
+                          class="btn btn-secondary btn-sm"
+                          onclick="verDetallesCambio(${cambio.id})"
+                        >
+                          Ver detalles
+                        </button>
+                        <button
+                          type="button"
+                          class="btn btn-primary btn-sm"
+                          onclick="aprobarCambio(${cambio.id})"
+                        >
+                          Aprobar
+                        </button>
+                        <button
+                          type="button"
+                          class="btn btn-outline btn-sm"
+                          onclick="rechazarCambio(${cambio.id})"
+                        >
+                          Rechazar
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                `;
+              })
+              .join("");
+
+            tabla.style.display = "table";
+          } catch (error) {
+            console.error("Error al cargar cambios pendientes:", error);
+            empty.style.display = "block";
+            Swal.fire({
+              icon: "error",
+              title: "Error",
+              text: error.message || "No se pudieron cargar los cambios",
+              confirmButtonColor: "#F97316",
+            });
+          } finally {
+            loading.style.display = "none";
+          }
+        }
+
+        function encontrarCambioPorId(id) {
+          return cambiosPendientes.find((c) => c.id === id) || null;
+        }
+
+        function renderizarDiffHtml(cambio) {
+          const anteriores = cambio.datosAnteriores || {};
+          const nuevos = cambio.datosNuevos || {};
+
+          const claves = Array.from(
+            new Set([
+              ...Object.keys(anteriores || {}),
+              ...Object.keys(nuevos || {}),
+            ])
+          ).sort();
+
+          if (!claves.length) {
+            return `
+              <p style="margin:0;">No hay datos para comparar en este cambio.</p>
+            `;
+          }
+
+          const filas = claves
+            .map((key) => {
+              const antes = anteriores ? anteriores[key] : undefined;
+              const despues = nuevos ? nuevos[key] : undefined;
+
+              const cambiado = JSON.stringify(antes) !== JSON.stringify(despues);
+              const highlightStyle = cambiado
+                ? "font-weight: 600; color: var(--razo-orange-dark);"
+                : "color: var(--razo-gray-warm);";
+
+              return `
+                <tr>
+                  <td style="vertical-align:top;"><code>${key}</code></td>
+                  <td style="vertical-align:top; background:#fef2f2;">${
+                    antes === undefined ? "<em>—</em>" :
+                    `<span style=\"${highlightStyle}\">${
+                      typeof antes === "object"
+                        ? `<pre style=\"margin:0;font-size:0.75rem;\">${
+                            JSON.stringify(antes, null, 2)
+                          }</pre>`
+                        : String(antes)
+                    }</span>`
+                  }</td>
+                  <td style="vertical-align:top; background:#ecfdf3;">${
+                    despues === undefined ? "<em>—</em>" :
+                    `<span style=\"${highlightStyle}\">${
+                      typeof despues === "object"
+                        ? `<pre style=\"margin:0;font-size:0.75rem;\">${
+                            JSON.stringify(despues, null, 2)
+                          }</pre>`
+                        : String(despues)
+                    }</span>`
+                  }</td>
+                </tr>
+              `;
+            })
+            .join("");
+
+          return `
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+              <div>
+                <h3 style="font-size:0.9rem;margin:0 0 0.5rem;color:#dc2626;">Datos anteriores</h3>
+                <div style="border-radius:0.75rem;border:1px solid #fecaca;background:#fef2f2;overflow:hidden;">
+                  <table style="width:100%;border-collapse:collapse;font-size:0.8rem;">
+                    <tbody>
+                      ${filas.replace(/<td style=\"vertical-align:top; background:#ecfdf3;\">[\s\S]*?<\/td>/g, "")}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              <div>
+                <h3 style="font-size:0.9rem;margin:0 0 0.5rem;color:#16a34a;">Datos nuevos</h3>
+                <div style="border-radius:0.75rem;border:1px solid #bbf7d0;background:#ecfdf3;overflow:hidden;">
+                  <table style="width:100%;border-collapse:collapse;font-size:0.8rem;">
+                    <tbody>
+                      ${filas}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          `;
+        }
+
+        window.verDetallesCambio = function (id) {
+          const cambio = encontrarCambioPorId(Number(id));
+          if (!cambio) return;
+
+          const htmlDiff = renderizarDiffHtml(cambio);
+
+          Swal.fire({
+            title: `Cambio #${cambio.id} - ${cambio.entidad}`,
+            html: htmlDiff,
+            width: "90%",
+            customClass: {
+              popup: "swal2-popup--wide",
+            },
+            confirmButtonText: "Cerrar",
+            confirmButtonColor: "#F97316",
+          });
+        };
+
+        async function ejecutarAccionLote(ids, endpoint, confirmConfig) {
+          if (!Array.isArray(ids) || !ids.length) {
+            return;
+          }
+
+          const result = await Swal.fire({
+            title: confirmConfig.title,
+            html: confirmConfig.html,
+            icon: confirmConfig.icon || "warning",
+            showCancelButton: true,
+            confirmButtonText: confirmConfig.confirmText || "Sí, continuar",
+            cancelButtonText: "Cancelar",
+            confirmButtonColor: confirmConfig.confirmColor || "#22c55e",
+            cancelButtonColor: "#6b7280",
+          });
+
+          if (!result.isConfirmed) {
+            return;
+          }
+
+          try {
+            const response = await fetch(`${API_BASE_URL}/admin${endpoint}`, {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${adminToken}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ ids }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok || !data.success) {
+              throw new Error(data.message || "Error al ejecutar la acción");
+            }
+
+            Swal.fire({
+              icon: "success",
+              title: "Acción completada",
+              text: data.message || "Operación realizada correctamente",
+              confirmButtonColor: "#22c55e",
+            });
+
+            // Recargar lista
+            await cargarCambiosPendientes();
+          } catch (error) {
+            console.error("Error en acción de lote:", error);
+            Swal.fire({
+              icon: "error",
+              title: "Error",
+              text: error.message || "No se pudo completar la acción",
+              confirmButtonColor: "#F97316",
+            });
+          }
+        }
+
+        window.aprobarCambio = function (id) {
+          ejecutarAccionLote([id], "/cambios/aprobar-lote", {
+            title: `Aprobar cambio #${id}?`,
+            html: "Este cambio se aplicará inmediatamente sobre la base de datos.",
+            icon: "question",
+            confirmText: "Sí, aprobar",
+            confirmColor: "#22c55e",
+          });
+        };
+
+        window.rechazarCambio = function (id) {
+          ejecutarAccionLote([id], "/cambios/rechazar-lote", {
+            title: `Rechazar cambio #${id}?`,
+            html: "El cambio permanecerá registrado pero no se aplicará.",
+            icon: "warning",
+            confirmText: "Sí, rechazar",
+            confirmColor: "#EF4444",
+          });
+        };
+
+        async function handleAprobarTodo() {
+          if (!cambiosPendientes.length) return;
+          const ids = cambiosPendientes.map((c) => c.id);
+
+          ejecutarAccionLote(ids, "/cambios/aprobar-lote", {
+            title: "Aprobar todos los cambios pendientes?",
+            html: `Se aplicarán <strong>${ids.length}</strong> cambio(s) sobre la base de datos. Esta acción no se puede deshacer.`,
+            icon: "question",
+            confirmText: "Sí, aprobar todo",
+            confirmColor: "#22c55e",
+          });
+        }
+      })();
+    </script>
+  </body>
+</html>

@@ -13,6 +13,10 @@ const {
 } = require("../utils/validator");
 const { generateCodigoAgente } = require("../utils/agentCode");
 const { registrarLog } = require("../services/loggerService");
+const {
+  solicitarCambio,
+  aprobarSolicitudes,
+} = require("../services/ChangeRequestService");
 
 /**
  * Registro de nuevo cliente
@@ -775,54 +779,111 @@ const crearAdmin = async (req, res) => {
         rol.toLowerCase() === "super-admin" ? "superadmin" : rol.toLowerCase();
     }
 
-    // Insertar nuevo administrador
-    const result = await db.query(
-      `INSERT INTO administradores (Nombre, Apellido, Email, PasswordHash, Rol, Activo)
-       VALUES ($1, $2, $3, $4, $5, TRUE)
-       RETURNING AdminID, Nombre, Apellido, Email, Rol`,
-      [nombre.trim(), "", email, PasswordHash, rolFinal]
+    // Estrategia Pura: registrar solicitud de creación en control_cambios
+    const datosNuevosAdmin = {
+      Nombre: nombre.trim(),
+      Apellido: "",
+      Email: email,
+      PasswordHash,
+      Rol: rolFinal,
+      Activo: true,
+    };
+
+    const resultado = await solicitarCambio(
+      req,
+      "admins",
+      null,
+      "INSERT",
+      datosNuevosAdmin,
+      null
     );
 
-    const nuevoAdmin = result.rows[0];
+    const isSuperAdmin =
+      req.user &&
+      (req.user.rol === "superadmin" || req.user.tipo === "superadmin");
 
-    // Log de auditoría
-    console.log(
-      `✅ Super-admin ${req.user.email} creó nuevo admin: ${nuevoAdmin.email} con rol: ${nuevoAdmin.rol}`
-    );
+    if (isSuperAdmin) {
+      try {
+        await aprobarSolicitudes([resultado.solicitudId], req.user.id);
 
-    res.status(201).json({
-      success: true,
-      message: "Administrador creado exitosamente",
-      data: {
-        admin: {
-          adminId: nuevoAdmin.adminid,
-          nombre: nuevoAdmin.nombre,
-          apellido: nuevoAdmin.apellido,
-          email: nuevoAdmin.email,
-          rol: nuevoAdmin.rol,
-        },
-      },
-    });
-
-    try {
-      registrarLog(req, "CREAR", "Administrador", nuevoAdmin.adminid, {
-        nombre: nuevoAdmin.nombre,
-        apellido: nuevoAdmin.apellido,
-        email: nuevoAdmin.email,
-        rol: nuevoAdmin.rol,
-        origen: "crear-admin",
-        creadoPor: req.user?.email || null,
-      }).catch((err) => {
-        console.error(
-          "Error guardando log de CREAR Administrador (crearAdmin):",
-          err
+        const adminResult = await db.query(
+          `SELECT AdminID, Nombre, Apellido, Email, Rol
+           FROM administradores
+           WHERE Email = $1`,
+          [email]
         );
+
+        const nuevoAdmin = adminResult.rows[0] || null;
+
+        if (!nuevoAdmin) {
+          throw new Error(
+            "No se pudo recuperar el administrador después de la auto-aprobación"
+          );
+        }
+
+        // Log de auditoría
+        console.log(
+          `✅ Super-admin ${req.user.email} creó nuevo admin: ${nuevoAdmin.email} con rol: ${nuevoAdmin.rol} (auto-aprobado)`
+        );
+
+        res.status(201).json({
+          success: true,
+          message: "Administrador creado correctamente (auto-aprobado)",
+          data: {
+            admin: {
+              adminId: nuevoAdmin.adminid,
+              nombre: nuevoAdmin.nombre,
+              apellido: nuevoAdmin.apellido,
+              email: nuevoAdmin.email,
+              rol: nuevoAdmin.rol,
+            },
+            solicitudId: resultado.solicitudId,
+          },
+        });
+
+        try {
+          registrarLog(req, "CREAR", "Administrador", nuevoAdmin.adminid, {
+            nombre: nuevoAdmin.nombre,
+            apellido: nuevoAdmin.apellido,
+            email: nuevoAdmin.email,
+            rol: nuevoAdmin.rol,
+            origen: "crear-admin",
+            creadoPor: req.user?.email || null,
+          }).catch((err) => {
+            console.error(
+              "Error guardando log de CREAR Administrador (crearAdmin):",
+              err
+            );
+          });
+        } catch (logError) {
+          console.error(
+            "Error interno al preparar log de CREAR Administrador (crearAdmin):",
+            logError
+          );
+        }
+      } catch (autoError) {
+        console.error("Error en auto-aprobación de crearAdmin:", autoError);
+        return res.status(500).json({
+          success: false,
+          message:
+            "La solicitud de cambio se registró, pero ocurrió un error al aplicar la auto-aprobación.",
+          error: autoError.message,
+          data: {
+            solicitudId: resultado.solicitudId,
+          },
+        });
+      }
+    } else {
+      // En la práctica este endpoint está protegido por authorizeSuperAdmin,
+      // pero dejamos esta rama por robustez.
+      return res.status(201).json({
+        success: true,
+        message: resultado.mensaje,
+        data: {
+          solicitudId: resultado.solicitudId,
+          estado: resultado.estado,
+        },
       });
-    } catch (logError) {
-      console.error(
-        "Error interno al preparar log de CREAR Administrador (crearAdmin):",
-        logError
-      );
     }
   } catch (error) {
     console.error("Error al crear administrador:", error);

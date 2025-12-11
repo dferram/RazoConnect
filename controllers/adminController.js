@@ -1,4 +1,8 @@
 const db = require("../db");
+const {
+  solicitarCambio,
+  aprobarSolicitudes,
+} = require("../services/ChangeRequestService");
 const { enviarEmail } = require("../services/emailService");
 const {
   crearNotificacion: crearNotificacionServicio,
@@ -392,30 +396,81 @@ const desvincularClienteDeAgente = async (req, res) => {
       });
     }
 
-    const result = await db.query(
-      `UPDATE Clientes
-       SET AgenteID = NULL
-       WHERE ClienteID = $1
-       RETURNING ClienteID, Nombre, Apellido`,
+    const snapshotResult = await db.query(
+      "SELECT * FROM Clientes WHERE ClienteID = $1",
       [clienteId]
     );
 
-    if (result.rowCount === 0) {
+    if (snapshotResult.rows.length === 0) {
       return res.status(404).json({
         success: false,
         message: "Cliente no encontrado",
       });
     }
 
-    const cliente = result.rows[0];
+    const clienteActual = snapshotResult.rows[0];
+
+    const datosNuevos = {
+      AgenteID: null,
+    };
+
+    const resultado = await solicitarCambio(
+      req,
+      "clientes",
+      clienteId,
+      "UPDATE",
+      datosNuevos,
+      clienteActual
+    );
+
+    const isSuperAdmin =
+      req.user &&
+      (req.user.rol === "superadmin" || req.user.tipo === "superadmin");
+
+    if (isSuperAdmin) {
+      try {
+        await aprobarSolicitudes([resultado.solicitudId], req.user.id);
+
+        const refreshed = await db.query(
+          "SELECT ClienteID, Nombre, Apellido FROM Clientes WHERE ClienteID = $1",
+          [clienteId]
+        );
+
+        const cliente = refreshed.rows[0] || clienteActual;
+
+        return res.json({
+          success: true,
+          message: "Cliente desvinculado del agente (auto-aprobado)",
+          data: {
+            clienteId: cliente.clienteid,
+            nombre: cliente.nombre,
+            apellido: cliente.apellido,
+          },
+        });
+      } catch (autoError) {
+        console.error(
+          "Error en auto-aprobación de desvincularClienteDeAgente:",
+          autoError
+        );
+        return res.status(500).json({
+          success: false,
+          message:
+            "La solicitud de cambio se registró, pero ocurrió un error al aplicar la auto-aprobación.",
+          error: autoError.message,
+          data: {
+            solicitudId: resultado.solicitudId,
+          },
+        });
+      }
+    }
 
     return res.json({
       success: true,
-      message: "Cliente desvinculado del agente",
+      message: resultado.mensaje,
       data: {
-        clienteId: cliente.clienteid,
-        nombre: cliente.nombre,
-        apellido: cliente.apellido,
+        clienteId,
+        solicitudId: resultado.solicitudId,
+        estado: resultado.estado,
       },
     });
   } catch (error) {
@@ -641,27 +696,81 @@ const actualizarEstadoCliente = async (req, res) => {
       });
     }
 
-    const result = await db.query(
-      `UPDATE Clientes
-       SET Activo = $1
-       WHERE ClienteID = $2
-       RETURNING ClienteID, Activo`,
-      [activo, clienteId]
+    const snapshotResult = await db.query(
+      "SELECT * FROM Clientes WHERE ClienteID = $1",
+      [clienteId]
     );
 
-    if (result.rows.length === 0) {
+    if (snapshotResult.rows.length === 0) {
       return res.status(404).json({
         success: false,
         message: "Cliente no encontrado",
       });
     }
 
+    const clienteActual = snapshotResult.rows[0];
+
+    const datosNuevos = {
+      Activo: activo,
+    };
+
+    const resultado = await solicitarCambio(
+      req,
+      "clientes",
+      clienteId,
+      "UPDATE",
+      datosNuevos,
+      clienteActual
+    );
+
+    const isSuperAdmin =
+      req.user &&
+      (req.user.rol === "superadmin" || req.user.tipo === "superadmin");
+
+    if (isSuperAdmin) {
+      try {
+        await aprobarSolicitudes([resultado.solicitudId], req.user.id);
+
+        const refreshed = await db.query(
+          "SELECT ClienteID, Activo FROM Clientes WHERE ClienteID = $1",
+          [clienteId]
+        );
+
+        const row = refreshed.rows[0] || clienteActual;
+
+        return res.json({
+          success: true,
+          message:
+            "Estado del cliente actualizado correctamente (auto-aprobado)",
+          data: {
+            clienteId: row.clienteid,
+            activo: row.activo,
+          },
+        });
+      } catch (autoError) {
+        console.error(
+          "Error en auto-aprobación de actualizarEstadoCliente:",
+          autoError
+        );
+        return res.status(500).json({
+          success: false,
+          message:
+            "La solicitud de cambio se registró, pero ocurrió un error al aplicar la auto-aprobación.",
+          error: autoError.message,
+          data: {
+            solicitudId: resultado.solicitudId,
+          },
+        });
+      }
+    }
+
     res.json({
       success: true,
-      message: "Estado del cliente actualizado correctamente",
+      message: resultado.mensaje,
       data: {
-        clienteId: result.rows[0].clienteid,
-        activo: result.rows[0].activo,
+        clienteId,
+        solicitudId: resultado.solicitudId,
+        estado: resultado.estado,
       },
     });
   } catch (error) {
@@ -1447,8 +1556,9 @@ const crearProducto = async (req, res) => {
       }
     }
 
-    // Gestión de visibilidad: activo por defecto TRUE, pero respeta el valor del body
-    const activoFinal = activo !== undefined ? Boolean(activo) : true;
+    // Gestión de visibilidad: forzar activo FALSE en creación.
+    // El producto maestro se activará sólo cuando un superadmin apruebe el cambio.
+    const activoFinal = false;
 
     const parseBoolean = (value, defaultValue = false) => {
       if (typeof value === "boolean") return value;
@@ -1890,9 +2000,37 @@ const crearProducto = async (req, res) => {
       variantesCreadasCount: variantesCreadas.length,
     });
 
+    // Registrar solicitud de cambio para ACTIVAR el producto maestro (estrategia híbrida)
+    try {
+      const datosNuevosProducto = {
+        NombreProducto: producto.nombreproducto,
+        CodigoModelo: producto.codigomodelo,
+        Descripcion: producto.descripcion,
+        CategoriaID: producto.categoriaid,
+        ProveedorID_Default: producto.proveedorid,
+        Activo: true,
+      };
+
+      await solicitarCambio(
+        req,
+        "productos",
+        producto.productoid,
+        "INSERT",
+        datosNuevosProducto,
+        null
+      );
+    } catch (crError) {
+      console.error(
+        "Error al registrar solicitud de cambio para creación de producto:",
+        crError
+      );
+      // No rompemos el flujo principal: el producto queda inactivo si falla el registro
+    }
+
     res.status(201).json({
       success: true,
-      message: "Producto maestro creado exitosamente",
+      message:
+        "Producto creado preliminarmente. Pendiente de aprobación para activación.",
       data: {
         producto,
         tamanosDisponibles: tamanosAsociados,
@@ -2168,140 +2306,57 @@ const actualizarProducto = async (req, res) => {
     const activoFinal =
       activo !== undefined ? Boolean(activo) : productoActual.activo;
 
-    const updateResult = await client.query(
-      `UPDATE Productos
-       SET NombreProducto = $1,
-           CodigoModelo = $2,
-           Descripcion = $3,
-           CategoriaID = $4,
-           ProveedorID_Default = $5,
-           Activo = $6
-       WHERE ProductoID = $7
-       RETURNING ProductoID, NombreProducto, CodigoModelo, Descripcion, CategoriaID, ProveedorID_Default AS ProveedorID, Activo`,
-      [
-        nombreFinal,
-        codigoModeloFinal,
-        descripcionFinal,
-        categoriaFinal,
-        proveedorId,
-        activoFinal,
-        productoId,
-      ]
-    );
-
-    const tamanosRawBase = Array.isArray(tamanos)
-      ? tamanos
-      : Array.isArray(tamanoIds)
-      ? tamanoIds
-      : [];
-
-    // A partir de packs, encontrar/crear tamaños en catálogo y obtener sus IDs
-    const tamanoIdsFromPacks = await findOrCreateTamanosFromPacks(
-      client,
-      packs
-    );
-
-    const tamanosRaw = [...tamanosRawBase, ...tamanoIdsFromPacks];
-
-    await client.query(
-      "DELETE FROM Producto_TamanosDisponibles WHERE ProductoID = $1",
-      [productoId]
-    );
-
-    let tamanosAsociados = [];
-
-    if (tamanosRaw.length) {
-      const sanitizedIds = [
-        ...new Set(
-          tamanosRaw
-            .map((id) => Number.parseInt(id, 10))
-            .filter((id) => Number.isInteger(id) && id > 0)
-        ),
-      ];
-
-      if (sanitizedIds.length) {
-        const tamanosValidosResult = await client.query(
-          "SELECT TamanoID FROM Cat_TamanoPaquetes WHERE TamanoID = ANY($1::int[])",
-          [sanitizedIds]
-        );
-
-        const tamanosValidos = tamanosValidosResult.rows.map((row) =>
-          Number.parseInt(row.tamanoid, 10)
-        );
-
-        if (tamanosValidos.length !== sanitizedIds.length) {
-          await client.query("ROLLBACK");
-          return res.status(400).json({
-            success: false,
-            message:
-              "Uno o más tamaños seleccionados no existen en el catálogo",
-          });
-        }
-
-        for (const tamanoId of tamanosValidos) {
-          await client.query(
-            `INSERT INTO Producto_TamanosDisponibles (ProductoID, TamanoID)
-             VALUES ($1, $2)`,
-            [productoId, tamanoId]
-          );
-        }
-
-        tamanosAsociados = tamanosValidos;
-      }
-    }
-
-    await client.query("COMMIT");
-
-    res.json({
-      success: true,
-      message: "Producto maestro actualizado correctamente",
-      data: {
-        producto: updateResult.rows[0],
-        tamanosDisponibles: tamanosAsociados,
-      },
-    });
-
-    // Registrar log de actualización / desactivación de producto
+    // Nueva estrategia estricta: NO aplicar el UPDATE directamente sobre Productos.
+    // En su lugar, registrar una solicitud de cambio para aprobación.
     try {
-      const productoAnterior = {
-        productoId: productoActual.productoid,
-        nombre: productoActual.nombreproducto,
-        codigoModelo: productoActual.codigomodelo,
-        categoriaId: productoActual.categoriaid,
-        proveedorId: productoActual.proveedorid,
-        activo: productoActual.activo,
+      const datosNuevosProducto = {
+        NombreProducto: nombreFinal,
+        CodigoModelo: codigoModeloFinal,
+        Descripcion: descripcionFinal,
+        CategoriaID: categoriaFinal,
+        ProveedorID_Default: proveedorId,
+        Activo: activoFinal,
       };
 
-      const productoNuevo = updateResult.rows[0];
-
-      const accionLog =
-        productoActual.activo && !activoFinal ? "ELIMINAR" : "EDITAR";
-
-      registrarLog(req, accionLog, "Producto", productoId, {
-        descripcion:
-          accionLog === "ELIMINAR"
-            ? "Soft delete (desactivación) de producto maestro desde panel admin"
-            : "Actualización de producto maestro desde panel admin",
-        anterior: productoAnterior,
-        nuevo: {
-          productoId: productoNuevo.productoid,
-          nombre: productoNuevo.nombreproducto,
-          codigoModelo: productoNuevo.codigomodelo,
-          categoriaId: productoNuevo.categoriaid,
-          proveedorId: productoNuevo.proveedorid,
-          activo: productoNuevo.activo,
-        },
-      }).catch((err) => {
-        console.error(
-          "Error guardando log de ACTUALIZAR/ELIMINAR Producto:",
-          err
-        );
-      });
-    } catch (logError) {
-      console.error(
-        "Error interno al preparar log de ACTUALIZAR/ELIMINAR Producto:",
-        logError
+      const resultado = await solicitarCambio(
+        req,
+        "productos",
+        productoId,
+        "UPDATE",
+        datosNuevosProducto,
+        productoActual
       );
+
+      if (transactionStarted) {
+        await client.query("ROLLBACK");
+        transactionStarted = false;
+      }
+
+      return res.json({
+        success: true,
+        message: resultado.mensaje || "Solicitud de edición enviada a revisión.",
+        data: {
+          productoId,
+          solicitudId: resultado.solicitudId,
+          estado: resultado.estado,
+        },
+      });
+    } catch (crError) {
+      if (transactionStarted) {
+        await client.query("ROLLBACK");
+        transactionStarted = false;
+      }
+
+      console.error(
+        "Error al registrar solicitud de cambio de producto maestro:",
+        crError
+      );
+      return res.status(500).json({
+        success: false,
+        message:
+          "Error al registrar la solicitud de cambio del producto maestro",
+        error: crError.message,
+      });
     }
   } catch (error) {
     if (transactionStarted) {
@@ -2592,6 +2647,7 @@ const getProductoDetalle = async (req, res) => {
       return `Presentación ${tamano.tamanoId}`;
     };
 
+    // Variantes reales en BD
     const variantes = variantesResult.rows.map((row) => {
       const precioUnitario =
         row.preciounitario !== null ? parseFloat(row.preciounitario) : null;
@@ -2622,6 +2678,93 @@ const getProductoDetalle = async (req, res) => {
       };
     });
 
+    // Variantes pendientes de aprobación desde control_cambios
+    const cambiosPendientesResult = await db.query(
+      `SELECT id, datos_nuevos
+       FROM control_cambios
+       WHERE entidad = 'producto_variantes'
+         AND tipo_cambio = 'INSERT'
+         AND estado = 'PENDIENTE'`
+    );
+
+    const variantesPendientes = cambiosPendientesResult.rows
+      .map((rowCambio) => {
+        let datos = rowCambio.datos_nuevos;
+        if (!datos || typeof datos !== "object") {
+          try {
+            datos = JSON.parse(rowCambio.datos_nuevos);
+          } catch (e) {
+            return null;
+          }
+        }
+
+        const pendienteProductoIdRaw =
+          datos.productoid ?? datos.ProductoID ?? datos.productoId;
+        const pendienteProductoId = Number.parseInt(pendienteProductoIdRaw, 10);
+
+        if (
+          !Number.isInteger(pendienteProductoId) ||
+          pendienteProductoId !== productoId
+        ) {
+          return null;
+        }
+
+        const precioUnitario =
+          datos.preciounitario !== undefined && datos.preciounitario !== null
+            ? Number.parseFloat(datos.preciounitario)
+            : null;
+        const costoUnitario =
+          datos.costounitario !== undefined && datos.costounitario !== null
+            ? Number.parseFloat(datos.costounitario)
+            : null;
+        const stock =
+          datos.stock !== undefined && datos.stock !== null
+            ? Number.parseInt(datos.stock, 10)
+            : 0;
+
+        const precioPaquete =
+          precioUnitario !== null && tamanoReferencia?.valor
+            ? Number.parseFloat(
+                (precioUnitario * tamanoReferencia.valor).toFixed(2)
+              )
+            : null;
+
+        const tipoProductoId =
+          datos.tipoproductoid !== undefined && datos.tipoproductoid !== null
+            ? Number.parseInt(datos.tipoproductoid, 10)
+            : null;
+        const medidaId =
+          datos.medidaid !== undefined && datos.medidaid !== null
+            ? Number.parseInt(datos.medidaid, 10)
+            : null;
+
+        const activo =
+          datos.activo !== undefined && datos.activo !== null
+            ? Boolean(datos.activo)
+            : true;
+
+        return {
+          varianteId: null,
+          productoId: pendienteProductoId,
+          sku: datos.sku || null,
+          dimensiones: datos.dimensiones || null,
+          costoUnitario,
+          precioUnitario,
+          precioPaquete,
+          presentacionEtiqueta: buildEtiqueta(tamanoReferencia),
+          tamanoValorReferencia: tamanoReferencia?.valor || null,
+          stock,
+          tipoProductoId,
+          medidaId,
+          activo,
+          isPending: true,
+          controlCambioId: rowCambio.id,
+        };
+      })
+      .filter(Boolean);
+
+    const variantesCombinadas = [...variantes, ...variantesPendientes];
+
     const productoDetalle = {
       productoId: producto.productoid,
       nombreProducto: producto.nombreproducto,
@@ -2635,8 +2778,8 @@ const getProductoDetalle = async (req, res) => {
             descripcion: producto.categoriadescripcion,
           }
         : null,
-      totalVariantes: variantes.length,
-      variantesConStock: variantes.filter(
+      totalVariantes: variantesCombinadas.length,
+      variantesConStock: variantesCombinadas.filter(
         (v) => typeof v.stock === "number" && v.stock > 0
       ).length,
     };
@@ -2646,7 +2789,7 @@ const getProductoDetalle = async (req, res) => {
       message: "Producto obtenido exitosamente",
       data: {
         producto: productoDetalle,
-        variantes,
+        variantes: variantesCombinadas,
         tamanosDisponibles,
       },
     });
@@ -3155,45 +3298,116 @@ const crearAgente = async (req, res) => {
     // Hash de la contraseña
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Insertar el agente
-    const result = await db.query(
-      `INSERT INTO AgentesDeVentas 
-        (Nombre, Apellido, Email, PasswordHash, CodigoAgente, Activo)
-       VALUES ($1, $2, $3, $4, $5, TRUE)
-       RETURNING AgenteID, Nombre, Apellido, Email, CodigoAgente`,
-      [nombre, apellido, email, hashedPassword, nuevoCodigoAgente]
+    // Estrategia Pura: registrar solicitud de creación en control_cambios
+    const datosNuevosAgente = {
+      Nombre: nombre,
+      Apellido: apellido,
+      Email: email,
+      PasswordHash: hashedPassword,
+      CodigoAgente: nuevoCodigoAgente,
+      Telefono: telefono || null,
+      Activo: true,
+    };
+
+    const resultado = await solicitarCambio(
+      req,
+      "agentes",
+      null,
+      "INSERT",
+      datosNuevosAgente,
+      null
     );
 
-    const agente = result.rows[0];
+    const isSuperAdmin =
+      req.user &&
+      (req.user.rol === "superadmin" || req.user.tipo === "superadmin");
 
-    res.status(201).json({
+    if (isSuperAdmin) {
+      try {
+        const autoResult = await aprobarSolicitudes(
+          [resultado.solicitudId],
+          req.user.id
+        );
+
+        const aplicado = autoResult.applied.find(
+          (c) => c.id === resultado.solicitudId
+        );
+
+        let agenteIdRes = aplicado?.entidadId || null;
+
+        if (!agenteIdRes) {
+          // Intentar resolver por email
+          const refetch = await db.query(
+            "SELECT AgenteID, Nombre, Apellido, Email, CodigoAgente FROM AgentesDeVentas WHERE Email = $1",
+            [email]
+          );
+          if (refetch.rows.length) {
+            agenteIdRes = refetch.rows[0].agenteid;
+          }
+        }
+
+        let agenteData = null;
+        if (agenteIdRes) {
+          const refetch = await db.query(
+            "SELECT AgenteID, Nombre, Apellido, Email, CodigoAgente FROM AgentesDeVentas WHERE AgenteID = $1",
+            [agenteIdRes]
+          );
+          agenteData = refetch.rows[0] || null;
+        }
+
+        // Registrar log solo cuando el cambio ya fue aplicado
+        if (agenteData) {
+          try {
+            registrarLog(req, "CREAR", "Agente", agenteData.agenteid, {
+              nombre: agenteData.nombre,
+              apellido: agenteData.apellido,
+              email: agenteData.email,
+              codigoAgente: agenteData.codigoagente,
+            }).catch((err) => {
+              console.error("Error guardando log de CREAR Agente:", err);
+            });
+          } catch (logError) {
+            console.error(
+              "Error interno al preparar log de CREAR Agente:",
+              logError
+            );
+          }
+        }
+
+        return res.status(201).json({
+          success: true,
+          message: "Agente creado correctamente (auto-aprobado)",
+          data: {
+            agenteId: agenteData?.agenteid || null,
+            nombre: agenteData?.nombre || nombre,
+            apellido: agenteData?.apellido || apellido,
+            email,
+            codigoAgente: agenteData?.codigoagente || nuevoCodigoAgente,
+            solicitudId: resultado.solicitudId,
+          },
+        });
+      } catch (autoError) {
+        console.error("Error en auto-aprobación de crearAgente:", autoError);
+        return res.status(500).json({
+          success: false,
+          message:
+            "La solicitud de cambio se registró, pero ocurrió un error al aplicar la auto-aprobación.",
+          error: autoError.message,
+          data: {
+            solicitudId: resultado.solicitudId,
+          },
+        });
+      }
+    }
+
+    return res.status(201).json({
       success: true,
-      message: "Agente creado exitosamente",
+      message: resultado.mensaje,
       data: {
-        agenteId: agente.agenteid,
-        nombre: agente.nombre,
-        apellido: agente.apellido,
-        email: agente.email,
-        codigoAgente: agente.codigoagente,
+        solicitudId: resultado.solicitudId,
+        estado: resultado.estado,
       },
     });
-
-    // Registrar log de creación de agente
-    try {
-      registrarLog(req, "CREAR", "Agente", agente.agenteid, {
-        nombre: agente.nombre,
-        apellido: agente.apellido,
-        email: agente.email,
-        codigoAgente: agente.codigoagente,
-      }).catch((err) => {
-        console.error("Error guardando log de CREAR Agente:", err);
-      });
-    } catch (logError) {
-      console.error(
-        "Error interno al preparar log de CREAR Agente:",
-        logError
-      );
-    }
   } catch (error) {
     console.error("Error al crear agente:", error);
     res.status(500).json({
@@ -3205,7 +3419,7 @@ const crearAgente = async (req, res) => {
 };
 
 /**
- * Obtener todos los agentes
+ * Obtener todos los agentes (reales + pendientes de creación)
  * GET /api/admin/agentes
  */
 const getAllAgentes = async (req, res) => {
@@ -3228,22 +3442,80 @@ const getAllAgentes = async (req, res) => {
       ORDER BY a.AgenteID DESC`
     );
 
+    const agentesReales = result.rows.map((row) => ({
+      agenteId: row.agenteid,
+      nombre: row.nombre,
+      apellido: row.apellido,
+      email: row.email,
+      codigoAgente: row.codigoagente,
+      telefono: row.telefono,
+      activo: row.activo,
+      fechaCreacion: row.fechacreacion,
+      totalVentas: parseInt(row.totalventas),
+      montoTotalVentas: parseFloat(row.montototalventas),
+      comisionesTotales: parseFloat(row.comisionestotales),
+    }));
+
+    // Agentes pendientes de creación en control_cambios (INSERT, PENDIENTE)
+    const cambiosPendientesResult = await db.query(
+      `SELECT id, datos_nuevos
+       FROM control_cambios
+       WHERE entidad = 'agentes'
+         AND tipo_cambio = 'INSERT'
+         AND estado = 'PENDIENTE'`
+    );
+
+    const agentesPendientes = cambiosPendientesResult.rows
+      .map((rowCambio) => {
+        let datos = rowCambio.datos_nuevos;
+        if (!datos || typeof datos !== "object") {
+          try {
+            datos = JSON.parse(rowCambio.datos_nuevos);
+          } catch (e) {
+            return null;
+          }
+        }
+
+        const nombre = (datos.Nombre || "").trim();
+        const apellido = (datos.Apellido || "").trim();
+        const email = (datos.Email || "").trim();
+
+        if (!nombre && !apellido && !email) {
+          // Datos incompletos, evitar mostrar basura
+          return null;
+        }
+
+        const codigoAgente = datos.CodigoAgente || null;
+        const telefono = datos.Telefono || null;
+        const activo =
+          datos.Activo !== undefined && datos.Activo !== null
+            ? Boolean(datos.Activo)
+            : true;
+
+        return {
+          agenteId: null,
+          nombre,
+          apellido,
+          email,
+          codigoAgente,
+          telefono,
+          activo,
+          fechaCreacion: null,
+          totalVentas: 0,
+          montoTotalVentas: 0,
+          comisionesTotales: 0,
+          _isPending: true,
+          controlCambioId: rowCambio.id,
+        };
+      })
+      .filter(Boolean);
+
+    const agentes = [...agentesReales, ...agentesPendientes];
+
     res.json({
       success: true,
       data: {
-        agentes: result.rows.map((row) => ({
-          agenteId: row.agenteid,
-          nombre: row.nombre,
-          apellido: row.apellido,
-          email: row.email,
-          codigoAgente: row.codigoagente,
-          telefono: row.telefono,
-          activo: row.activo,
-          fechaCreacion: row.fechacreacion,
-          totalVentas: parseInt(row.totalventas),
-          montoTotalVentas: parseFloat(row.montototalventas),
-          comisionesTotales: parseFloat(row.comisionestotales),
-        })),
+        agentes,
       },
     });
   } catch (error) {
@@ -3345,54 +3617,102 @@ const getAgenteDetalle = async (req, res) => {
 };
 
 /**
- * Desactivar un agente (soft delete)
+ * Desactivar un agente (soft delete) vía control de cambios
  * PUT /api/admin/agentes/:id/desactivar
  */
 const desactivarAgente = async (req, res) => {
   try {
     const agenteId = parseInt(req.params.id);
 
-    const result = await db.query(
-      `UPDATE AgentesDeVentas 
-       SET Activo = FALSE 
-       WHERE AgenteID = $1
-       RETURNING AgenteID, Nombre, Apellido`,
+    const snapshotResult = await db.query(
+      "SELECT * FROM AgentesDeVentas WHERE AgenteID = $1",
       [agenteId]
     );
 
-    if (result.rows.length === 0) {
+    if (snapshotResult.rows.length === 0) {
       return res.status(404).json({
         success: false,
         message: "Agente no encontrado",
       });
     }
 
-    const agente = result.rows[0];
+    const agenteActual = snapshotResult.rows[0];
 
-    res.json({
+    const datosNuevos = {
+      Activo: false,
+    };
+
+    const resultado = await solicitarCambio(
+      req,
+      "agentes",
+      agenteId,
+      "UPDATE",
+      datosNuevos,
+      agenteActual
+    );
+
+    const isSuperAdmin =
+      req.user &&
+      (req.user.rol === "superadmin" || req.user.tipo === "superadmin");
+
+    if (isSuperAdmin) {
+      try {
+        await aprobarSolicitudes([resultado.solicitudId], req.user.id);
+
+        const refreshed = await db.query(
+          "SELECT AgenteID, Nombre, Apellido FROM AgentesDeVentas WHERE AgenteID = $1",
+          [agenteId]
+        );
+
+        const agente = refreshed.rows[0] || agenteActual;
+
+        // Registrar log solo cuando el cambio ya fue aplicado
+        try {
+          registrarLog(req, "ELIMINAR", "Agente", agente.agenteid, {
+            nombre: agente.nombre,
+            apellido: agente.apellido,
+            motivo:
+              "Desactivación de agente (soft delete) desde panel administrativo",
+          }).catch((err) => {
+            console.error("Error guardando log de ELIMINAR Agente:", err);
+          });
+        } catch (logError) {
+          console.error(
+            "Error interno al preparar log de ELIMINAR Agente:",
+            logError
+          );
+        }
+
+        return res.json({
+          success: true,
+          message: `Agente ${agente.nombre} ${agente.apellido} desactivado exitosamente (auto-aprobado)`,
+          data: {
+            agenteId: agente.agenteid,
+          },
+        });
+      } catch (autoError) {
+        console.error("Error en auto-aprobación de desactivarAgente:", autoError);
+        return res.status(500).json({
+          success: false,
+          message:
+            "La solicitud de cambio se registró, pero ocurrió un error al aplicar la auto-aprobación.",
+          error: autoError.message,
+          data: {
+            solicitudId: resultado.solicitudId,
+          },
+        });
+      }
+    }
+
+    return res.json({
       success: true,
-      message: `Agente ${agente.nombre} ${agente.apellido} desactivado exitosamente`,
+      message: resultado.mensaje,
       data: {
-        agenteId: agente.agenteid,
+        agenteId,
+        solicitudId: resultado.solicitudId,
+        estado: resultado.estado,
       },
     });
-
-    // Registrar log de desactivación (soft delete) de agente
-    try {
-      registrarLog(req, "ELIMINAR", "Agente", agente.agenteid, {
-        nombre: agente.nombre,
-        apellido: agente.apellido,
-        motivo:
-          "Desactivación de agente (soft delete) desde panel administrativo",
-      }).catch((err) => {
-        console.error("Error guardando log de ELIMINAR Agente:", err);
-      });
-    } catch (logError) {
-      console.error(
-        "Error interno al preparar log de ELIMINAR Agente:",
-        logError
-      );
-    }
   } catch (error) {
     console.error("Error al desactivar agente:", error);
     res.status(500).json({
@@ -3732,7 +4052,7 @@ const getPedidoDetalle = async (req, res) => {
  */
 
 /**
- * Obtener todos los proveedores
+ * Obtener todos los proveedores (reales + pendientes de creación)
  * GET /api/admin/proveedores
  */
 const getAllProveedores = async (req, res) => {
@@ -3772,13 +4092,54 @@ const getAllProveedores = async (req, res) => {
     `;
 
     const result = await db.query(query);
+    const proveedoresReales = result.rows;
+
+    // Proveedores pendientes de creación en control_cambios
+    const cambiosPendientesResult = await db.query(
+      `SELECT id, datos_nuevos
+       FROM control_cambios
+       WHERE entidad = 'proveedores'
+         AND tipo_cambio = 'INSERT'
+         AND estado = 'PENDIENTE'`
+    );
+
+    const proveedoresPendientes = cambiosPendientesResult.rows
+      .map((rowCambio) => {
+        let datos = rowCambio.datos_nuevos;
+        if (!datos || typeof datos !== "object") {
+          try {
+            datos = JSON.parse(rowCambio.datos_nuevos);
+          } catch (e) {
+            return null;
+          }
+        }
+
+        const nombreEmpresa = (datos.NombreEmpresa || "").trim();
+        if (!nombreEmpresa) {
+          return null;
+        }
+
+        return {
+          proveedorid: null,
+          nombreempresa: nombreEmpresa,
+          contactonombre: datos.ContactoNombre || null,
+          email: datos.Email || null,
+          telefono: datos.Telefono || null,
+          // Otros campos opcionales pueden agregarse aquí si se necesitan en el futuro
+          _isPending: true,
+          controlCambioId: rowCambio.id,
+        };
+      })
+      .filter(Boolean);
+
+    const proveedores = [...proveedoresReales, ...proveedoresPendientes];
 
     res.json({
       success: true,
       message: "Proveedores obtenidos exitosamente",
       data: {
-        proveedores: result.rows,
-        total: result.rows.length,
+        proveedores,
+        total: proveedores.length,
       },
     });
   } catch (error) {
@@ -3874,59 +4235,53 @@ const crearProveedor = async (req, res) => {
       }
     }
 
-    const query = `
-      INSERT INTO Proveedores (
-        NombreEmpresa, ContactoNombre, Email, Telefono,
-        RazonSocial, RFC, RegimenFiscal, Calle, Colonia, CodigoPostal, Ciudad, Estado,
-        NombreRepresentanteVentas, CelularVentas, EmailVentas,
-        NombreContactoCobranza, TelefonoCobranza, EmailCobranza,
-        Banco, NumeroCuenta, CLABE, ReferenciaPago,
-        DiasCredito, LimiteCredito, DescuentoFinanciero, MinimoCompra, AceptaDevoluciones
-      )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27)
-      RETURNING *
-    `;
+    // Estrategia Pura: registrar solicitud de creación en control_cambios
+    const datosNuevosProveedor = {
+      NombreEmpresa: nombreEmpresa.trim(),
+      ContactoNombre: toNullIfEmpty(contactoNombre),
+      Email: toNullIfEmpty(email),
+      Telefono: toNullIfEmpty(telefono),
+      RazonSocial: toNullIfEmpty(razonSocial),
+      RFC: toNullIfEmpty(rfc),
+      RegimenFiscal: toNullIfEmpty(regimenFiscal),
+      Calle: toNullIfEmpty(calle),
+      Colonia: toNullIfEmpty(colonia),
+      CodigoPostal: toNullIfEmpty(cp),
+      Ciudad: toNullIfEmpty(ciudad),
+      Estado: toNullIfEmpty(estado),
+      NombreRepresentanteVentas: toNullIfEmpty(nombreRepresentanteVentas),
+      CelularVentas: toNullIfEmpty(celularVentas),
+      EmailVentas: toNullIfEmpty(emailVentas),
+      NombreContactoCobranza: toNullIfEmpty(nombreContactoCobranza),
+      TelefonoCobranza: toNullIfEmpty(telefonoCobranza),
+      EmailCobranza: toNullIfEmpty(emailCobranza),
+      Banco: toNullIfEmpty(banco),
+      NumeroCuenta: toNullIfEmpty(numeroCuenta),
+      CLABE: toNullIfEmpty(clabe),
+      ReferenciaPago: toNullIfEmpty(referenciaPago),
+      DiasCredito: diasCredito ? parseInt(diasCredito) : null,
+      LimiteCredito: limiteCredito ? parseFloat(limiteCredito) : null,
+      DescuentoFinanciero: toNullIfEmpty(descuentoFinanciero),
+      MinimoCompra: minimoCompra ? parseFloat(minimoCompra) : null,
+      AceptaDevoluciones:
+        aceptaDevoluciones !== undefined ? Boolean(aceptaDevoluciones) : null,
+    };
 
-    const values = [
-      nombreEmpresa.trim(),
-      toNullIfEmpty(contactoNombre),
-      toNullIfEmpty(email),
-      toNullIfEmpty(telefono),
-      toNullIfEmpty(razonSocial),
-      toNullIfEmpty(rfc),
-      toNullIfEmpty(regimenFiscal),
-      toNullIfEmpty(calle),
-      toNullIfEmpty(colonia),
-      toNullIfEmpty(cp),
-      toNullIfEmpty(ciudad),
-      toNullIfEmpty(estado),
-      toNullIfEmpty(nombreRepresentanteVentas),
-      toNullIfEmpty(celularVentas),
-      toNullIfEmpty(emailVentas),
-      toNullIfEmpty(nombreContactoCobranza),
-      toNullIfEmpty(telefonoCobranza),
-      toNullIfEmpty(emailCobranza),
-      toNullIfEmpty(banco),
-      toNullIfEmpty(numeroCuenta),
-      toNullIfEmpty(clabe),
-      toNullIfEmpty(referenciaPago),
-      diasCredito ? parseInt(diasCredito) : null,
-      limiteCredito ? parseFloat(limiteCredito) : null,
-      toNullIfEmpty(descuentoFinanciero),
-      minimoCompra ? parseFloat(minimoCompra) : null,
-      aceptaDevoluciones !== undefined ? Boolean(aceptaDevoluciones) : null,
-    ];
+    const resultado = await solicitarCambio(
+      req,
+      "proveedores",
+      null,
+      "INSERT",
+      datosNuevosProveedor,
+      null
+    );
 
-    const result = await db.query(query, values);
-    const nuevoProveedor = result.rows[0];
-
-    console.log("✅ Proveedor creado:", nuevoProveedor);
-
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
-      message: "Proveedor creado exitosamente",
+      message: "Solicitud registrada y pendiente de confirmación.",
       data: {
-        proveedor: nuevoProveedor,
+        solicitudId: resultado.solicitudId,
+        estado: resultado.estado,
       },
     });
   } catch (error) {
@@ -4023,9 +4378,9 @@ const actualizarProveedor = async (req, res) => {
       }
     }
 
-    // Verificar que el proveedor existe
+    // Verificar que el proveedor existe y obtener snapshot actual
     const checkQuery =
-      "SELECT ProveedorID FROM Proveedores WHERE ProveedorID = $1";
+      "SELECT * FROM Proveedores WHERE ProveedorID = $1";
     const checkResult = await db.query(checkQuery, [proveedorId]);
 
     if (checkResult.rows.length === 0) {
@@ -4035,81 +4390,55 @@ const actualizarProveedor = async (req, res) => {
       });
     }
 
-    const query = `
-      UPDATE Proveedores
-      SET 
-        NombreEmpresa = $1,
-        ContactoNombre = $2,
-        Email = $3,
-        Telefono = $4,
-        RazonSocial = $5,
-        RFC = $6,
-        RegimenFiscal = $7,
-        Calle = $8,
-        Colonia = $9,
-        CodigoPostal = $10,
-        Ciudad = $11,
-        Estado = $12,
-        NombreRepresentanteVentas = $13,
-        CelularVentas = $14,
-        EmailVentas = $15,
-        NombreContactoCobranza = $16,
-        TelefonoCobranza = $17,
-        EmailCobranza = $18,
-        Banco = $19,
-        NumeroCuenta = $20,
-        CLABE = $21,
-        ReferenciaPago = $22,
-        DiasCredito = $23,
-        LimiteCredito = $24,
-        DescuentoFinanciero = $25,
-        MinimoCompra = $26,
-        AceptaDevoluciones = $27
-      WHERE ProveedorID = $28
-      RETURNING *
-    `;
+    const proveedorActual = checkResult.rows[0];
 
-    const values = [
-      nombreEmpresa.trim(),
-      toNullIfEmpty(contactoNombre),
-      toNullIfEmpty(email),
-      toNullIfEmpty(telefono),
-      toNullIfEmpty(razonSocial),
-      toNullIfEmpty(rfc),
-      toNullIfEmpty(regimenFiscal),
-      toNullIfEmpty(calle),
-      toNullIfEmpty(colonia),
-      toNullIfEmpty(cp),
-      toNullIfEmpty(ciudad),
-      toNullIfEmpty(estado),
-      toNullIfEmpty(nombreRepresentanteVentas),
-      toNullIfEmpty(celularVentas),
-      toNullIfEmpty(emailVentas),
-      toNullIfEmpty(nombreContactoCobranza),
-      toNullIfEmpty(telefonoCobranza),
-      toNullIfEmpty(emailCobranza),
-      toNullIfEmpty(banco),
-      toNullIfEmpty(numeroCuenta),
-      toNullIfEmpty(clabe),
-      toNullIfEmpty(referenciaPago),
-      diasCredito ? parseInt(diasCredito) : null,
-      limiteCredito ? parseFloat(limiteCredito) : null,
-      toNullIfEmpty(descuentoFinanciero),
-      minimoCompra ? parseFloat(minimoCompra) : null,
-      aceptaDevoluciones !== undefined ? Boolean(aceptaDevoluciones) : null,
+    const datosNuevosProveedor = {
+      NombreEmpresa: nombreEmpresa.trim(),
+      ContactoNombre: toNullIfEmpty(contactoNombre),
+      Email: toNullIfEmpty(email),
+      Telefono: toNullIfEmpty(telefono),
+      RazonSocial: toNullIfEmpty(razonSocial),
+      RFC: toNullIfEmpty(rfc),
+      RegimenFiscal: toNullIfEmpty(regimenFiscal),
+      Calle: toNullIfEmpty(calle),
+      Colonia: toNullIfEmpty(colonia),
+      CodigoPostal: toNullIfEmpty(cp),
+      Ciudad: toNullIfEmpty(ciudad),
+      Estado: toNullIfEmpty(estado),
+      NombreRepresentanteVentas: toNullIfEmpty(nombreRepresentanteVentas),
+      CelularVentas: toNullIfEmpty(celularVentas),
+      EmailVentas: toNullIfEmpty(emailVentas),
+      NombreContactoCobranza: toNullIfEmpty(nombreContactoCobranza),
+      TelefonoCobranza: toNullIfEmpty(telefonoCobranza),
+      EmailCobranza: toNullIfEmpty(emailCobranza),
+      Banco: toNullIfEmpty(banco),
+      NumeroCuenta: toNullIfEmpty(numeroCuenta),
+      CLABE: toNullIfEmpty(clabe),
+      ReferenciaPago: toNullIfEmpty(referenciaPago),
+      DiasCredito: diasCredito ? parseInt(diasCredito) : null,
+      LimiteCredito: limiteCredito ? parseFloat(limiteCredito) : null,
+      DescuentoFinanciero: toNullIfEmpty(descuentoFinanciero),
+      MinimoCompra: minimoCompra ? parseFloat(minimoCompra) : null,
+      AceptaDevoluciones:
+        aceptaDevoluciones !== undefined ? Boolean(aceptaDevoluciones) : null,
+    };
+
+    const resultado = await solicitarCambio(
+      req,
+      "proveedores",
       proveedorId,
-    ];
+      "UPDATE",
+      datosNuevosProveedor,
+      proveedorActual
+    );
 
-    const result = await db.query(query, values);
-    const proveedorActualizado = result.rows[0];
-
-    console.log("✅ Proveedor actualizado:", proveedorActualizado);
-
-    res.json({
+    return res.json({
       success: true,
-      message: "Proveedor actualizado exitosamente",
+      message: "Solicitud registrada y pendiente de confirmación.",
       data: {
-        proveedor: proveedorActualizado,
+        proveedorId,
+        solicitudId: resultado.solicitudId,
+        estado: resultado.estado,
       },
     });
   } catch (error) {
@@ -5038,10 +5367,11 @@ const cancelarOrdenBackorder = async (req, res) => {
 /**
  * Crear una variante
  * POST /api/admin/variantes
+ *
+ * Nuevo flujo: no inserta directamente en Producto_Variantes.
+ * Registra una solicitud de cambio (INSERT) en control_cambios para revisión.
  */
 const crearVariante = async (req, res) => {
-  const client = await db.pool.connect();
-
   try {
     const {
       productoId,
@@ -5130,15 +5460,13 @@ const crearVariante = async (req, res) => {
 
     const activoFinal = activo !== undefined ? Boolean(activo) : true;
 
-    await client.query("BEGIN");
-
-    const productoResult = await client.query(
-      "SELECT ProductoID FROM Productos WHERE ProductoID = $1",
+    // Verificar que el producto maestro exista, pero sin modificar tablas de negocio
+    const productoResult = await db.query(
+      "SELECT ProductoID, NombreProducto FROM Productos WHERE ProductoID = $1",
       [parsedProductoId]
     );
 
     if (productoResult.rows.length === 0) {
-      await client.query("ROLLBACK");
       return res.status(404).json({
         success: false,
         message: "Producto maestro no encontrado",
@@ -5155,73 +5483,44 @@ const crearVariante = async (req, res) => {
             return txt.length ? txt : null;
           })();
 
-    const insertResult = await client.query(
-      `INSERT INTO Producto_Variantes (
-         ProductoID,
-         SKU,
-         Dimensiones,
-         CostoUnitario,
-         PrecioUnitario,
-         PrecioOfertaUnitario,
-         Stock,
-         TipoProductoID,
-         MedidaID,
-         Activo,
-         PiezasPorPaquete
-       )
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-       RETURNING VarianteID, ProductoID, SKU, Dimensiones, CostoUnitario, PrecioUnitario, PrecioOfertaUnitario, Stock, TipoProductoID, MedidaID, Activo, PiezasPorPaquete`,
-      [
-        parsedProductoId,
-        skuFinal,
-        dimensionesFinal,
-        costoUnitarioNum,
-        precioUnitarioNum,
-        ofertaNum,
-        stockNum,
-        tipoProductoId || null,
-        medidaId || null,
-        activoFinal,
-        1,
-      ]
+    // Usar nombres de columnas reales de Producto_Variantes (en minúsculas)
+    const payloadNuevos = {
+      productoid: parsedProductoId,
+      sku: skuFinal,
+      dimensiones: dimensionesFinal,
+      costounitario: costoUnitarioNum,
+      preciounitario: precioUnitarioNum,
+      precioofertaunitario: ofertaNum,
+      stock: stockNum,
+      tipoproductoid: tipoProductoId || null,
+      medidaid: medidaId || null,
+      activo: activoFinal,
+    };
+
+    const resultado = await solicitarCambio(
+      req,
+      "producto_variantes",
+      null,
+      "INSERT",
+      payloadNuevos,
+      null
     );
-
-    const variante = insertResult.rows[0];
-
-    if (stockNum && stockNum > 0) {
-      const userId = req.user?.id || req.user?.userId || null;
-      await client.query(
-        `INSERT INTO Log_Inventario (VarianteID, CantidadCambiado, NuevoStock, Motivo, UsuarioID)
-         VALUES ($1, $2, $3, $4, $5)`,
-        [
-          variante.varianteid,
-          stockNum,
-          stockNum,
-          "Stock inicial de variante (piezas)",
-          userId,
-        ]
-      );
-    }
-
-    await client.query("COMMIT");
 
     return res.status(201).json({
       success: true,
-      message: "Variante creada exitosamente",
+      message: resultado.mensaje,
       data: {
-        variante,
+        solicitudId: resultado.solicitudId,
+        estado: resultado.estado,
       },
     });
   } catch (error) {
-    await client.query("ROLLBACK");
-    console.error("Error al crear variante:", error);
+    console.error("Error al crear variante (solicitud de cambio):", error);
     return res.status(500).json({
       success: false,
       message: "Error en el servidor",
       error: error.message,
     });
-  } finally {
-    client.release();
   }
 };
 
@@ -5347,7 +5646,7 @@ const actualizarVariante = async (req, res) => {
 
     const nuevoActivo = normalizarBoolean(activo, activoActual);
 
-    console.log("🔄 Actualizando variante", {
+    console.log("📝 Solicitud de actualización de variante", {
       varianteId,
       sku: nuevoSku,
       dimensiones: nuevasDimensiones,
@@ -5357,40 +5656,36 @@ const actualizarVariante = async (req, res) => {
       activo: nuevoActivo,
     });
 
-    const updateResult = await db.query(
-      `UPDATE Producto_Variantes
-       SET SKU = $1,
-           Dimensiones = $2,
-           CostoUnitario = $3,
-           PrecioUnitario = $4,
-           PrecioOfertaUnitario = $5,
-           Activo = $6
-       WHERE VarianteID = $7
-       RETURNING *`,
-      [
-        nuevoSku,
-        nuevasDimensiones,
-        nuevoCosto,
-        nuevoPrecio,
-        nuevaOferta,
-        nuevoActivo,
-        varianteId,
-      ]
-    );
+    // Usar nombres de columnas reales de Producto_Variantes (en minúsculas)
+    const payloadNuevos = {
+      sku: nuevoSku,
+      dimensiones: nuevasDimensiones,
+      costounitario: nuevoCosto,
+      preciounitario: nuevoPrecio,
+      precioofertaunitario: nuevaOferta,
+      activo: nuevoActivo,
+    };
 
-    console.log("✅ Variante actualizada:", updateResult.rows[0]);
+    const resultado = await solicitarCambio(
+      req,
+      "producto_variantes",
+      varianteId,
+      "UPDATE",
+      payloadNuevos,
+      actual
+    );
 
     res.json({
       success: true,
-      message: "Variante actualizada exitosamente",
+      message: resultado.mensaje,
       data: {
         varianteId,
-        updated: updateResult.rows[0],
+        solicitudId: resultado.solicitudId,
+        estado: resultado.estado,
       },
     });
   } catch (error) {
-    console.error("❌ Error al actualizar variante:", error);
-    console.error("Error completo:", error.message, error.stack);
+    console.error("❌ Error al generar solicitud de actualización de variante:", error);
     res.status(500).json({
       success: false,
       message: "Error en el servidor: " + error.message,

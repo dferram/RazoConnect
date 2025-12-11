@@ -3,6 +3,7 @@ const router = express.Router();
 const adminController = require("../controllers/adminController");
 const authController = require("../controllers/authController");
 const bitacoraController = require("../controllers/bitacoraController");
+const changeRequestController = require("../controllers/changeRequestController");
 const upload = require("../middlewares/upload");
 const {
   authenticate,
@@ -45,6 +46,27 @@ router.post(
   authenticate,
   authorizeSuperAdmin,
   authController.crearAdmin
+);
+
+router.post(
+  "/cambios/aprobar-lote",
+  authenticate,
+  authorizeSuperAdmin,
+  changeRequestController.aprobarCambios
+);
+
+router.post(
+  "/cambios/rechazar-lote",
+  authenticate,
+  authorizeSuperAdmin,
+  changeRequestController.rechazarCambios
+);
+
+router.get(
+  "/cambios/pendientes",
+  authenticate,
+  authorizeSuperAdmin,
+  changeRequestController.obtenerPendientes
 );
 
 /**
