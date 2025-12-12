@@ -202,6 +202,7 @@
                 <thead>
                   <tr>
                     <th>Producto</th>
+                    <th>SKU Maestro</th>
                     <th>Categoría</th>
                     <th>Estado</th>
                     <th>Variantes Registradas</th>
@@ -626,6 +627,9 @@
               <div style="font-size: 0.875rem; color: var(--razo-gray-warm);">ID: ${
                 product.productoId
               }</div>
+            </td>
+            <td style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; font-size: 0.9rem;">
+              ${product.sku_maestro || product.skuMaestro || "-"}
             </td>
             <td>${product.nombreCategoria || "Sin categoría"}</td>
             <td>

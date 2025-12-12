@@ -1266,26 +1266,28 @@
         if (current > 1) {
           cantidadInput.value = current - 1;
           updateTotalPiezas();
+          renderBackorderAlert();
         }
       });
 
       increaseBtn.addEventListener("click", () => {
         const current = parseInt(cantidadInput.value) || 1;
-        const max = parseInt(cantidadInput.max);
-        if (current < max) {
-          cantidadInput.value = current + 1;
-          updateTotalPiezas();
-        } else if (Number.isFinite(max) && max > 0) {
-          if (typeof showToast === "function") {
-            showToast(
-              `No puedes agregar más de ${max} paquete${
-                max === 1 ? "" : "s"
-              }.`,
-              "info"
-            );
-          }
-        }
+        const next = Math.min(current + 1, 999);
+        cantidadInput.value = next;
+        updateTotalPiezas();
+        renderBackorderAlert();
       });
+
+      function clampCantidadMaxima() {
+        const raw = parseInt(cantidadInput.value, 10);
+        if (!Number.isFinite(raw) || Number.isNaN(raw) || raw < 1) {
+          cantidadInput.value = 1;
+          return;
+        }
+        if (raw > 999) {
+          cantidadInput.value = 999;
+        }
+      }
 
       function renderBackorderAlert() {
         if (!backorderAlert || !varianteSeleccionada) {
@@ -1327,7 +1329,7 @@
       }
 
       cantidadInput.addEventListener("input", () => {
-        clampCantidadPorStock();
+        clampCantidadMaxima();
         const value = parseInt(cantidadInput.value, 10);
         if (value < 1 || Number.isNaN(value)) {
           cantidadInput.value = 1;
@@ -1374,10 +1376,7 @@
             tamanoId: tamanoSeleccionado.tamanoId,
           });
 
-          cantidadInput.value = Math.min(
-            1,
-            parseInt(cantidadInput.max, 10) || 1
-          );
+          cantidadInput.value = 1;
           updateTotalPiezas();
 
           setTimeout(() => {

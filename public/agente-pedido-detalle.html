@@ -423,6 +423,7 @@
                   margin-top: 1.75rem;
                   display: flex;
                   justify-content: flex-end;
+                  gap: 0.75rem;
                 "
               >
                 <button
@@ -433,6 +434,14 @@
                   onclick="abrirModalSolicitudDesdeDetalle()"
                 >
                   Solicitar cambio
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-sm"
+                  id="btnSolicitarConfirmacion"
+                  style="display: none; background: #F97316; border-color: #F97316; color: #fff;"
+                >
+                  Solicitar Confirmación
                 </button>
               </div>
             </div>
@@ -613,6 +622,87 @@
             }
 
             estatusEl.className = estatusClass;
+
+            const btnSolicitarConfirmacion = document.getElementById(
+              "btnSolicitarConfirmacion"
+            );
+            if (btnSolicitarConfirmacion) {
+              const esConfirmado = estatusValor === "confirmado";
+              btnSolicitarConfirmacion.style.display = esConfirmado
+                ? "none"
+                : "inline-flex";
+
+              btnSolicitarConfirmacion.addEventListener("mouseenter", () => {
+                btnSolicitarConfirmacion.style.filter = "brightness(0.95)";
+              });
+              btnSolicitarConfirmacion.addEventListener("mouseleave", () => {
+                btnSolicitarConfirmacion.style.filter = "none";
+              });
+
+              btnSolicitarConfirmacion.onclick = async () => {
+                const token = localStorage.getItem("razoconnect_admin_token");
+
+                if (!token) {
+                  showToast("Sesión expirada. Inicia sesión nuevamente.", "warning");
+                  setTimeout(() => window.location.href = "/login.html", 600);
+                  return;
+                }
+
+                const result = await Swal.fire({
+                  title: "¿Deseas enviar este pedido a confirmación?",
+                  text: "Se generará una solicitud para revisión del administrador.",
+                  icon: "question",
+                  showCancelButton: true,
+                  confirmButtonText: "Sí, enviar",
+                  cancelButtonText: "Cancelar",
+                  confirmButtonColor: "#16a34a",
+                });
+
+                if (!result.isConfirmed) return;
+
+                try {
+                  btnSolicitarConfirmacion.disabled = true;
+
+                  const resp = await fetch(
+                    `${API_BASE_URL}/agentes/pedidos/${pedidoId}/solicitar-confirmacion`,
+                    {
+                      method: "POST",
+                      headers: {
+                        Authorization: `Bearer ${token}`,
+                        "Content-Type": "application/json",
+                      },
+                    }
+                  );
+
+                  const dataConfirm = await resp.json();
+
+                  if (!resp.ok || !dataConfirm.success) {
+                    throw new Error(
+                      dataConfirm.message || "No se pudo enviar la solicitud"
+                    );
+                  }
+
+                  await Swal.fire({
+                    icon: "warning",
+                    title: "Solicitud Enviada",
+                    text: "El administrador revisará el pedido.",
+                    confirmButtonColor: "#F97316",
+                  });
+
+                  window.location.reload();
+                } catch (err) {
+                  console.error("Error solicitando confirmación:", err);
+                  await Swal.fire({
+                    icon: "error",
+                    title: "No se pudo enviar",
+                    text: err.message || "Error desconocido",
+                    confirmButtonColor: "#F97316",
+                  });
+                } finally {
+                  btnSolicitarConfirmacion.disabled = false;
+                }
+              };
+            }
 
             selectedPedidoForStatus = {
               id: pedido.id || pedido.pedidoId || pedido.numeroPedido,

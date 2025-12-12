@@ -799,12 +799,21 @@
                 <td>${proveedor.email || "-"}</td>
                 <td>${proveedor.telefono || "-"}</td>
                 <td>
-                  <button 
-                    class="btn btn-primary" 
-                    style="padding: 0.5rem 1rem; font-size: 0.875rem;"
-                    onclick="editProveedor(${proveedor.proveedorid})">
-                    ✏️ Editar
-                  </button>
+                  <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+                    <button 
+                      class="btn btn-light" 
+                      style="padding: 0.5rem 0.75rem; font-size: 0.875rem;"
+                      title="Ver Detalle"
+                      onclick="window.location.href='/admin-proveedor-detalle.html?id=${proveedor.proveedorid}'">
+                      Ver detalles
+                    </button>
+                    <button 
+                      class="btn btn-primary" 
+                      style="padding: 0.5rem 1rem; font-size: 0.875rem;"
+                      onclick="editProveedor(${proveedor.proveedorid})">
+                      ✏️ Editar
+                    </button>
+                  </div>
                 </td>
               </tr>
             `;

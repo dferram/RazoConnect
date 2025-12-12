@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Detalle del Proveedor - Admin RazoConnect</title>
+    <link rel="icon" type="image/png" href="/icon/Logo_Razo.png" />
+
+    <script src="js/auth-guard-admin.js"></script>
+    <script src="js/token-refresh.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/admin.css" />
+  </head>
+  <body>
+    <div class="admin-layout">
+      <div id="sidebar-container"></div>
+
+      <main class="admin-main">
+        <header class="admin-header">
+          <h1 class="admin-header-title">Detalle del proveedor</h1>
+          <div class="admin-header-actions">
+            <div class="admin-user-info">
+              <div class="admin-user-avatar" id="userAvatar">A</div>
+              <div class="admin-user-details">
+                <div class="admin-user-name" id="userName">Administrador</div>
+                <div class="admin-user-role" id="userRole">Admin</div>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <div class="admin-content">
+          <div id="loadingData" class="loading">
+            <div class="spinner"></div>
+          </div>
+
+          <div id="proveedorData" style="display: none">
+            <div class="admin-stats-grid" style="margin-bottom: 1.5rem">
+              <div class="admin-stat-card">
+                <div class="admin-stat-header">
+                  <div class="admin-stat-content">
+                    <h3>Proveedor</h3>
+                    <div class="admin-stat-value" id="proveedorNombre">-</div>
+                    <p style="color: var(--razo-gray-warm); margin: 0.35rem 0 0">
+                      ID: <span id="proveedorId">-</span>
+                    </p>
+                  </div>
+                  <div class="admin-stat-icon orange">🏭</div>
+                </div>
+              </div>
+
+              <div class="admin-stat-card">
+                <div class="admin-stat-header">
+                  <div class="admin-stat-content">
+                    <h3>RFC</h3>
+                    <div class="admin-stat-value" id="proveedorRfc">-</div>
+                    <p style="color: var(--razo-gray-warm); margin: 0.35rem 0 0">
+                      Registro fiscal
+                    </p>
+                  </div>
+                  <div class="admin-stat-icon purple">🧾</div>
+                </div>
+              </div>
+
+              <div class="admin-stat-card">
+                <div class="admin-stat-header">
+                  <div class="admin-stat-content">
+                    <h3>Email</h3>
+                    <div class="admin-stat-value" id="proveedorEmail">-</div>
+                    <p style="color: var(--razo-gray-warm); margin: 0.35rem 0 0">
+                      Contacto principal
+                    </p>
+                  </div>
+                  <div class="admin-stat-icon green">✉️</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="admin-table-container">
+              <div class="admin-table-header" style="flex-wrap: wrap; gap: 0.75rem">
+                <div>
+                  <h2 class="admin-table-title">Configuración de Empaques</h2>
+                  <p style="margin: 0.35rem 0 0; color: var(--razo-gray-warm); font-size: 0.875rem">
+                    Define cuántas piezas vienen por paquete según el tipo de producto.
+                  </p>
+                </div>
+              </div>
+
+              <div
+                style="
+                  display: grid;
+                  grid-template-columns: minmax(240px, 1.2fr) minmax(220px, 1fr) auto;
+                  gap: 0.75rem;
+                  align-items: end;
+                  margin-top: 1rem;
+                "
+              >
+                <div class="form-group" style="margin: 0">
+                  <label for="selectTipoRegla" class="form-label">Tipo de Producto</label>
+                  <input
+                    id="inputTipoRegla"
+                    class="form-input"
+                    list="listTiposProducto"
+                    placeholder="Escribe o selecciona un tipo"
+                    autocomplete="off"
+                  />
+                  <datalist id="listTiposProducto"></datalist>
+                </div>
+
+                <div class="form-group" style="margin: 0">
+                  <label for="inputCantidadRegla" class="form-label">Piezas por paquete</label>
+                  <input
+                    type="number"
+                    id="inputCantidadRegla"
+                    class="form-input"
+                    min="1"
+                    placeholder="Piezas por paquete"
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  id="btnGuardarRegla"
+                  class="btn btn-primary"
+                  style="height: 42px; padding-left: 1.25rem; padding-right: 1.25rem"
+                >
+                  Agregar
+                </button>
+              </div>
+
+              <div style="overflow-x: auto; margin-top: 1rem">
+                <table class="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Tipo</th>
+                      <th>Piezas</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tablaReglasEmpaqueBody">
+                    <tr>
+                      <td colspan="3" class="empty-state">Cargando reglas...</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div id="alertasPendientes" style="margin-top: 1rem"></div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <script src="js/layout.js" defer></script>
+    <script src="js/admin-header-dropdown.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/components/user-profile.js"></script>
+    <script src="js/admin-proveedor-detalle.js"></script>
+  </body>
+</html>

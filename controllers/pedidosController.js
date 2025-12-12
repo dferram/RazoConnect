@@ -18,6 +18,88 @@ const TAMANO_VALUE_KEYS = [
 
 const TAMANO_LABEL_KEYS = ["etiqueta", "descripcion", "nombre", "label"];
 
+function calcularSplitBackorder({
+  cantidadSolicitada,
+  stockPiezas,
+  piezasPorPaquete,
+  multiploBackorder,
+}) {
+  const cantidad = Number.isInteger(cantidadSolicitada) ? cantidadSolicitada : 0;
+  const stock = Number.isInteger(stockPiezas) ? stockPiezas : 0;
+  const piezas = Number.isInteger(piezasPorPaquete) ? piezasPorPaquete : 0;
+  const multiplo = Number.isInteger(multiploBackorder) ? multiploBackorder : 1;
+  const regla = multiplo > 1 ? "PAQUETE" : "UNITARIO";
+
+  if (cantidad <= 0 || piezas <= 0) {
+    return {
+      cantidadSurtida: 0,
+      cantidadPendiente: 0,
+      cantidadBackorderAjustada: 0,
+      cantidadTotalCobrar: 0,
+      ajusteAplicado: false,
+      reglaBackorder: regla,
+    };
+  }
+
+  const paquetesSurtibles = Math.floor(Math.max(stock, 0) / piezas);
+  const cantidadSurtida = Math.max(Math.min(cantidad, paquetesSurtibles), 0);
+  const cantidadPendiente = Math.max(cantidad - cantidadSurtida, 0);
+
+  let cantidadBackorderAjustada = cantidadPendiente;
+  if (cantidadPendiente > 0 && multiplo > 1) {
+    cantidadBackorderAjustada = Math.ceil(cantidadPendiente / multiplo) * multiplo;
+  }
+
+  const cantidadTotalCobrar = cantidadSurtida + cantidadBackorderAjustada;
+  const ajusteAplicado = cantidadTotalCobrar !== cantidad;
+
+  return {
+    cantidadSurtida,
+    cantidadPendiente,
+    cantidadBackorderAjustada,
+    cantidadTotalCobrar,
+    ajusteAplicado,
+    reglaBackorder: regla,
+  };
+}
+
+async function obtenerMultiploBackorderDesdeReglaEmpaque({
+  proveedorId,
+  tipoProductoId,
+}) {
+  const proveedor = Number.parseInt(proveedorId, 10);
+  const tipo = Number.parseInt(tipoProductoId, 10);
+  if (!Number.isInteger(proveedor) || proveedor <= 0) return 1;
+  if (!Number.isInteger(tipo) || tipo <= 0) return 1;
+
+  try {
+    const { rows } = await db.query(
+      `SELECT cantidadempaque
+       FROM proveedor_reglas_empaque
+       WHERE proveedorid = $1 AND tipoproductoid = $2
+       LIMIT 1`,
+      [proveedor, tipo]
+    );
+    const raw = rows[0]?.cantidadempaque;
+    const parsed = Number.parseInt(raw, 10);
+    return Number.isInteger(parsed) && parsed > 0 ? parsed : 1;
+  } catch (dbError) {
+    if (dbError && dbError.code === "42703") {
+      const { rows } = await db.query(
+        `SELECT piezasporpaquete AS cantidadempaque
+         FROM proveedor_reglas_empaque
+         WHERE proveedorid = $1 AND tipoproductoid = $2
+         LIMIT 1`,
+        [proveedor, tipo]
+      );
+      const raw = rows[0]?.cantidadempaque;
+      const parsed = Number.parseInt(raw, 10);
+      return Number.isInteger(parsed) && parsed > 0 ? parsed : 1;
+    }
+    throw dbError;
+  }
+}
+
 function extraerInfoTamano(tamanoRaw) {
   if (!tamanoRaw || typeof tamanoRaw !== "object") {
     return { valor: null, etiqueta: null };
@@ -128,11 +210,13 @@ const crearPedido = async (req, res) => {
         pv.productoid,
         pv.sku,
         pv.dimensiones,
+        pv.tipoproductoid,
         pv.preciounitario,
         pv.precioofertaunitario,
         pv.stock,
         pv.costounitario,
-        p.nombreproducto
+        p.nombreproducto,
+        p.proveedorid_default
       FROM itemsdelcarrito ic
       INNER JOIN producto_variantes pv ON pv.varianteid = ic.varianteid
       INNER JOIN productos p ON p.productoid = pv.productoid
@@ -159,6 +243,17 @@ const crearPedido = async (req, res) => {
         tamano_etiqueta: tamanoInfo.etiqueta,
       };
     });
+
+    const multiploPorKey = new Map();
+    for (const item of items) {
+      const key = `${item.proveedorid_default || 0}:${item.tipoproductoid || 0}`;
+      if (multiploPorKey.has(key)) continue;
+      const multiplo = await obtenerMultiploBackorderDesdeReglaEmpaque({
+        proveedorId: item.proveedorid_default,
+        tipoProductoId: item.tipoproductoid,
+      });
+      multiploPorKey.set(key, multiplo);
+    }
 
     const productosEnPedido = [
       ...new Set(items.map((item) => item.productoid).filter(Boolean)),
@@ -199,7 +294,7 @@ const crearPedido = async (req, res) => {
       }
     }
 
-    // 4. Calcular el monto total CON LÓGICA DE OFERTAS
+    // 4. Calcular el monto total CON LÓGICA DE OFERTAS + split (stock + backorder)
     const montoTotal = items.reduce((total, item) => {
       const precioBase =
         item.preciounitario !== null ? parseFloat(item.preciounitario) : 0;
@@ -207,11 +302,29 @@ const crearPedido = async (req, res) => {
         item.precioofertaunitario !== null
           ? parseFloat(item.precioofertaunitario)
           : null;
-      // Si existe precio de oferta, úsalo. Si no, usa precio base.
       const precioUnitario = precioOferta || precioBase;
       const tamanoValor =
         item.tamano_valor !== null ? parseInt(item.tamano_valor, 10) : 0;
-      return total + item.cantidad * tamanoValor * precioUnitario;
+
+      if (!tamanoValor || tamanoValor <= 0) {
+        return total;
+      }
+
+      const masterInfo = masterVariantsMap.get(item.productoid);
+      const stockActual =
+        masterInfo && typeof masterInfo.stock === "number" ? masterInfo.stock : 0;
+
+      const split = calcularSplitBackorder({
+        cantidadSolicitada: item.cantidad,
+        stockPiezas: stockActual,
+        piezasPorPaquete: tamanoValor,
+        multiploBackorder:
+          multiploPorKey.get(
+            `${item.proveedorid_default || 0}:${item.tipoproductoid || 0}`
+          ) || 1,
+      });
+
+      return total + split.cantidadTotalCobrar * tamanoValor * precioUnitario;
     }, 0);
 
     // 5. Obtener el agente asignado al cliente (si existe)
@@ -264,6 +377,7 @@ const crearPedido = async (req, res) => {
     // 7. Crear los detalles del pedido y actualizar inventario
     const detallesPedido = [];
     const backordersGenerados = [];
+    let pedidoTieneBackorder = false;
     for (const item of items) {
       const tamanoValor =
         item.tamano_valor !== null ? parseInt(item.tamano_valor, 10) : 0;
@@ -291,23 +405,32 @@ const crearPedido = async (req, res) => {
       );
       // Calcular cantidades requeridas y disponibles
       const cantidadRequerida = item.cantidad; // Paquetes que pide el cliente
-      const piezasSolicitadas = tamanoValor * item.cantidad; // Piezas totales
       const masterInfo = masterVariantsMap.get(item.productoid);
       const stockActual =
         masterInfo && typeof masterInfo.stock === "number"
           ? masterInfo.stock
           : 0;
 
-      // Calcular cuántos paquetes se pueden surtir con el stock disponible
-      const paquetesSurtibles = Math.floor(stockActual / tamanoValor);
-      const cantidadSurtida = Math.min(cantidadRequerida, paquetesSurtibles); // Paquetes surtidos
-      const cantidadBackorder = cantidadRequerida - cantidadSurtida; // Paquetes faltantes
+      const split = calcularSplitBackorder({
+        cantidadSolicitada: cantidadRequerida,
+        stockPiezas: stockActual,
+        piezasPorPaquete: tamanoValor,
+        multiploBackorder:
+          multiploPorKey.get(
+            `${item.proveedorid_default || 0}:${item.tipoproductoid || 0}`
+          ) || 1,
+      });
 
-      const piezasSurtidas = cantidadSurtida * tamanoValor; // Piezas efectivamente surtidas
-      const piezasFaltantes = cantidadBackorder * tamanoValor; // Piezas en backorder
+      const cantidadSurtida = split.cantidadSurtida;
+      const cantidadBackorder = split.cantidadBackorderAjustada;
+      const piezasSurtidas = cantidadSurtida * tamanoValor;
+      const piezasBackorder = cantidadBackorder * tamanoValor;
+
+      const piezasSolicitadasOriginal = tamanoValor * cantidadRequerida;
+      const piezasTotalesCobrar = tamanoValor * split.cantidadTotalCobrar;
 
       const subtotalSolicitado = parseFloat(
-        (precioUnitario * piezasSolicitadas).toFixed(2)
+        (precioUnitario * piezasTotalesCobrar).toFixed(2)
       );
       const subtotalSurtido = parseFloat(
         (precioUnitario * piezasSurtidas).toFixed(2)
@@ -315,11 +438,12 @@ const crearPedido = async (req, res) => {
 
       // PUNTO CLAVE: Si hay backorder, generar orden de compra al proveedor
       if (cantidadBackorder > 0) {
+        pedidoTieneBackorder = true;
         const resultadoBackorder = await generarBackorderProveedor(
           client,
           item.productoid, // ProductoID
           item.varianteid, // VarianteID
-          cantidadBackorder, // Cantidad de PAQUETES faltantes
+          cantidadBackorder, // Cantidad de PAQUETES faltantes (ajustada por regla)
           item.tamanoid // TamanoID (puede ser null)
         );
 
@@ -329,28 +453,122 @@ const crearPedido = async (req, res) => {
           productoId: item.productoid,
           nombreProducto: item.nombreproducto,
           cantidadPaquetesFaltantes: cantidadBackorder,
-          cantidadPiezasFaltantes: piezasFaltantes,
+          cantidadPiezasFaltantes: piezasBackorder,
           ordenCompraId: resultadoBackorder.ordenCompraID,
           proveedorId: resultadoBackorder.proveedorID,
           esOrdenNueva: resultadoBackorder.esOrdenNueva,
         });
       }
 
-      // Insertar detalle del pedido
-      const detalleResult = await client.query(
-        `INSERT INTO DetallesDelPedido (PedidoID, VarianteID, TamanoID, CantidadPaquetes, PrecioPorPaquete, PiezasTotales, PrecioUnitario)
-         VALUES ($1, $2, $3, $4, $5, $6, $7)
-         RETURNING DetalleID`,
-        [
-          pedidoId,
-          item.varianteid,
-          item.tamanoid,
-          item.cantidad,
+      // Insertar detalle surtido (si aplica)
+      if (cantidadSurtida > 0) {
+        const detalleResult = await client.query(
+          `INSERT INTO DetallesDelPedido (
+             PedidoID,
+             VarianteID,
+             TamanoID,
+             CantidadPaquetes,
+             PrecioPorPaquete,
+             PiezasTotales,
+             PrecioUnitario,
+             EsBackorder,
+             CantidadSurtida,
+             CantidadBackorder
+           )
+           VALUES ($1, $2, $3, $4, $5, $6, $7, FALSE, $4, 0)
+           RETURNING DetalleID`,
+          [
+            pedidoId,
+            item.varianteid,
+            item.tamanoid,
+            cantidadSurtida,
+            precioPorPaquete,
+            piezasSurtidas,
+            precioUnitario.toFixed(2),
+          ]
+        );
+
+        detallesPedido.push({
+          detalleId: detalleResult.rows[0].detalleid,
+          varianteId: item.varianteid,
+          productoId: item.productoid,
+          nombreProducto: item.nombreproducto,
+          tamanoId: item.tamanoid,
+          cantidad: cantidadSurtida,
+          esBackorder: false,
+          cantidadSurtida,
+          cantidadBackorder: 0,
+          piezasPorPaquete: tamanoValor,
+          presentacion: item.tamano_etiqueta || null,
+          precioUnitario,
           precioPorPaquete,
-          piezasSolicitadas,
-          precioUnitario.toFixed(2),
-        ]
-      );
+          piezasSolicitadas: piezasSolicitadasOriginal,
+          piezasSurtidas,
+          piezasBackorder: 0,
+          subtotalSolicitado,
+          subtotalSurtido,
+          sku: item.sku,
+          dimensiones: item.dimensiones,
+          reglaBackorder: split.reglaBackorder,
+          ajusteAplicado: split.ajusteAplicado,
+          cantidadTotalCobrar: split.cantidadTotalCobrar,
+        });
+      }
+
+      // Insertar detalle backorder (si aplica)
+      if (cantidadBackorder > 0) {
+        const detalleBackorderResult = await client.query(
+          `INSERT INTO DetallesDelPedido (
+             PedidoID,
+             VarianteID,
+             TamanoID,
+             CantidadPaquetes,
+             PrecioPorPaquete,
+             PiezasTotales,
+             PrecioUnitario,
+             EsBackorder,
+             CantidadSurtida,
+             CantidadBackorder
+           )
+           VALUES ($1, $2, $3, $4, $5, $6, $7, TRUE, 0, $4)
+           RETURNING DetalleID`,
+          [
+            pedidoId,
+            item.varianteid,
+            item.tamanoid,
+            cantidadBackorder,
+            precioPorPaquete,
+            piezasBackorder,
+            precioUnitario.toFixed(2),
+          ]
+        );
+
+        detallesPedido.push({
+          detalleId: detalleBackorderResult.rows[0].detalleid,
+          varianteId: item.varianteid,
+          productoId: item.productoid,
+          nombreProducto: item.nombreproducto,
+          tamanoId: item.tamanoid,
+          cantidad: cantidadBackorder,
+          esBackorder: true,
+          cantidadSurtida: 0,
+          cantidadBackorder,
+          piezasPorPaquete: tamanoValor,
+          presentacion: item.tamano_etiqueta || null,
+          precioUnitario,
+          precioPorPaquete,
+          piezasSolicitadas: piezasSolicitadasOriginal,
+          piezasSurtidas: 0,
+          piezasBackorder,
+          subtotalSolicitado,
+          subtotalSurtido: 0,
+          sku: item.sku,
+          dimensiones: item.dimensiones,
+          reglaBackorder: split.reglaBackorder,
+          ajusteAplicado: split.ajusteAplicado,
+          cantidadTotalCobrar: split.cantidadTotalCobrar,
+        });
+      }
 
       // Actualizar stock del producto (solo se descuenta lo efectivamente surtido en PIEZAS)
       if (piezasSurtidas > 0 && masterInfo) {
@@ -377,27 +595,19 @@ const crearPedido = async (req, res) => {
         variantesAfectadas.add(masterInfo.varianteId);
       }
 
-      detallesPedido.push({
-        detalleId: detalleResult.rows[0].detalleid,
-        varianteId: item.varianteid,
-        productoId: item.productoid,
-        nombreProducto: item.nombreproducto,
-        tamanoId: item.tamanoid,
-        cantidad: item.cantidad,
-        paquetesSurtidos: cantidadSurtida,
-        paquetesBackorder: cantidadBackorder,
-        piezasPorPaquete: tamanoValor,
-        presentacion: item.tamano_etiqueta || null,
-        precioUnitario,
-        precioPorPaquete,
-        piezasSolicitadas,
-        piezasSurtidas,
-        piezasFaltantes,
-        subtotalSolicitado,
-        subtotalSurtido,
-        sku: item.sku,
-        dimensiones: item.dimensiones,
-      });
+      // detallesPedido se llena con las líneas insertadas (surtido / backorder)
+    }
+
+    if (pedidoTieneBackorder) {
+      const updatePedidoResult = await client.query(
+        "UPDATE Pedidos SET Estatus = 'Parcialmente Surtido' WHERE PedidoID = $1 RETURNING Estatus",
+        [pedidoId]
+      );
+      if (updatePedidoResult.rows.length > 0) {
+        pedido.estatus = updatePedidoResult.rows[0].estatus;
+      } else {
+        pedido.estatus = "Parcialmente Surtido";
+      }
     }
 
     // 8. Crear comisión si se usó código de agente
@@ -624,6 +834,9 @@ const obtenerPedidos = async (req, res) => {
           dp.detalleid,
           dp.varianteid,
           dp.cantidadpaquetes AS cantidad,
+          dp.esbackorder,
+          dp.cantidadsurtida,
+          dp.cantidadbackorder,
           dp.tamanoid,
           dp.preciounitario AS preciounitarioaplicado,
           dp.piezastotales,
@@ -702,6 +915,15 @@ const obtenerPedidos = async (req, res) => {
               tamanoId: item.tamanoid,
               piezasPorTamano: tamanoValor,
               cantidad,
+              esBackorder: item.esbackorder === true,
+              cantidadSurtida:
+                item.cantidadsurtida !== null
+                  ? parseInt(item.cantidadsurtida, 10)
+                  : null,
+              cantidadBackorder:
+                item.cantidadbackorder !== null
+                  ? parseInt(item.cantidadbackorder, 10)
+                  : null,
               precioUnitario: precioUnitarioAplicado,
               precioPorPaquete,
               subtotal,
@@ -797,6 +1019,9 @@ const obtenerPedidoPorId = async (req, res) => {
         dp.detalleid,
         dp.varianteid,
         dp.cantidadpaquetes AS cantidad,
+        dp.esbackorder,
+        dp.cantidadsurtida,
+        dp.cantidadbackorder,
         dp.tamanoid,
         dp.preciounitario AS preciounitarioaplicado,
         dp.piezastotales,
@@ -875,6 +1100,13 @@ const obtenerPedidoPorId = async (req, res) => {
         piezasPorTamano: tamanoValor,
         presentacion: tamanoInfo.etiqueta,
         cantidad,
+        esBackorder: item.esbackorder === true,
+        cantidadSurtida:
+          item.cantidadsurtida !== null ? parseInt(item.cantidadsurtida, 10) : null,
+        cantidadBackorder:
+          item.cantidadbackorder !== null
+            ? parseInt(item.cantidadbackorder, 10)
+            : null,
         precioUnitario: precioUnitarioAplicado,
         precioPorPaquete,
         subtotal,

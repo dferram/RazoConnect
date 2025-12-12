@@ -5,6 +5,15 @@ const TIPOS_CAMBIO = ["INSERT", "UPDATE", "DELETE"];
 // Mapeos de campos lógicos -> columnas reales para entidades específicas
 // Útil para compatibilidad hacia atrás cuando se guardaron claves como "Estatus".
 const FIELD_MAPPINGS = {
+  productos: {
+    NombreProducto: "nombreproducto",
+    Descripcion: "descripcion",
+    CategoriaID: "categoriaid",
+    ProveedorID_Default: "proveedorid_default",
+    Activo: "activo",
+    TipoProductoID: "tipoproductoid",
+    ReglaBackorder: "reglabackorder",
+  },
   pedidos: {
     Estatus: "estatus",
   },
@@ -21,6 +30,7 @@ const ENTIDADES_PERMITIDAS = {
   producto_variantes: { table: "Producto_Variantes", pk: "VarianteID" },
   categorias: { table: "Categorias", pk: "CategoriaID" },
   proveedores: { table: "Proveedores", pk: "ProveedorID" },
+  proveedor_reglas_empaque: { table: "proveedor_reglas_empaque", pk: "reglaid" },
   clientes: { table: "Clientes", pk: "ClienteID" },
   agentes: { table: "AgentesDeVentas", pk: "AgenteID" },
   admins: { table: "Administradores", pk: "AdminID" },
@@ -190,17 +200,96 @@ async function aprobarSolicitudes(ids, adminId) {
       const nuevos = ensureJsonObject(cambio.datos_nuevos);
       const fieldMap = FIELD_MAPPINGS[entidadKey] || {};
 
+      if (entidadKey === "proveedor_reglas_empaque") {
+        const proveedorId = Number.parseInt(
+          nuevos.proveedorId ?? nuevos.proveedorid,
+          10
+        );
+        const tipoProductoId = Number.parseInt(
+          nuevos.tipoProductoId ?? nuevos.tipoproductoid,
+          10
+        );
+        const cantidadEmpaque = Number.parseInt(
+          nuevos.cantidadEmpaque ?? nuevos.cantidadempaque,
+          10
+        );
+
+        if (!Number.isInteger(proveedorId) || proveedorId <= 0) {
+          throw new Error(
+            `Cambio #${cambioId} proveedor_reglas_empaque tiene proveedorId inválido`
+          );
+        }
+        if (!Number.isInteger(tipoProductoId) || tipoProductoId <= 0) {
+          throw new Error(
+            `Cambio #${cambioId} proveedor_reglas_empaque tiene tipoProductoId inválido`
+          );
+        }
+        if (!Number.isInteger(cantidadEmpaque) || cantidadEmpaque <= 0) {
+          throw new Error(
+            `Cambio #${cambioId} proveedor_reglas_empaque tiene cantidadEmpaque inválida`
+          );
+        }
+
+        let upsertResult;
+        try {
+          upsertResult = await client.query(
+            `INSERT INTO proveedor_reglas_empaque (proveedorid, tipoproductoid, cantidadempaque)
+             VALUES ($1, $2, $3)
+             ON CONFLICT (proveedorid, tipoproductoid)
+             DO UPDATE SET cantidadempaque = EXCLUDED.cantidadempaque
+             RETURNING reglaid`,
+            [proveedorId, tipoProductoId, cantidadEmpaque]
+          );
+        } catch (dbError) {
+          if (dbError && dbError.code === "42703") {
+            upsertResult = await client.query(
+              `INSERT INTO proveedor_reglas_empaque (proveedorid, tipoproductoid, piezasporpaquete)
+               VALUES ($1, $2, $3)
+               ON CONFLICT (proveedorid, tipoproductoid)
+               DO UPDATE SET piezasporpaquete = EXCLUDED.piezasporpaquete
+               RETURNING reglaid`,
+              [proveedorId, tipoProductoId, cantidadEmpaque]
+            );
+          } else {
+            throw dbError;
+          }
+        }
+
+        const reglaid = upsertResult.rows[0]?.reglaid ?? null;
+
+        await client.query(
+          `UPDATE control_cambios
+           SET estado = 'APROBADO',
+               entidad_id = COALESCE(entidad_id, $1),
+               fecha_resolucion = NOW(),
+               usuario_resolutor_id = $2
+           WHERE id = $3`,
+          [reglaid, adminId, cambioId]
+        );
+
+        applied.push({
+          id: cambioId,
+          cambioId,
+          entidad: cambio.entidad,
+          tipo: tipoCambio,
+          entidadId: reglaid || entidadId || null,
+        });
+
+        continue;
+      }
+
       if (tipoCambio === "INSERT") {
-        const columns = Object.keys(nuevos || {});
-        if (!columns.length) {
+        const rawColumns = Object.keys(nuevos || {});
+        if (!rawColumns.length) {
           throw new Error(
             `Cambio #${cambioId} de tipo INSERT no tiene datos_nuevos`
           );
         }
 
+        const columns = rawColumns.map((rawCol) => fieldMap[rawCol] || rawCol);
         const colNames = columns.map((c) => `"${c}"`).join(", ");
         const placeholders = columns.map((_, idx) => `$${idx + 1}`);
-        const values = columns.map((c) => nuevos[c]);
+        const values = rawColumns.map((rawCol) => nuevos[rawCol]);
 
         const insertSql = `INSERT INTO ${table} (${colNames}) VALUES (${placeholders.join(
           ", "

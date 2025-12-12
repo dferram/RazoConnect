@@ -593,6 +593,12 @@
             selectedOrderId = pedido.pedidoId;
             selectedOrderStatus = pedido.estatus || "";
 
+            const btnCambiarEstatus = document.getElementById("btnCambiarEstatus");
+            if (btnCambiarEstatus) {
+              btnCambiarEstatus.disabled = false;
+              btnCambiarEstatus.removeAttribute("disabled");
+            }
+
             document.getElementById("pedidoMonto").textContent = formatCurrency(
               pedido.montoTotal
             );
@@ -841,12 +847,25 @@
             const data = await response.json();
 
             if (response.ok && data.success) {
-              showToast(
-                `Pedido #${selectedOrderId} actualizado a ${nuevoEstatus}`,
-                "success"
-              );
               closeStatusModal();
-              window.location.reload();
+
+              if (
+                typeof Swal !== "undefined" &&
+                Swal &&
+                typeof Swal.fire === "function"
+              ) {
+                await Swal.fire({
+                  icon: "info",
+                  title: "Solicitud en Espera",
+                  text: "El cambio de estatus ha sido registrado en la bitácora. Debes aprobarlo en la sección de Auditoría para que se aplique.",
+                  confirmButtonColor: "#F97316",
+                });
+              } else {
+                showToast(
+                  "Solicitud en espera. Debes aprobarla en Auditoría para que se aplique.",
+                  "info"
+                );
+              }
             } else {
               showToast(
                 data.message || "Error al actualizar pedido",

@@ -392,6 +392,7 @@
             <tr>
               <th>Producto</th>
               <th>SKU</th>
+              <th style="text-align: center;">Empaque</th>
               <th style="text-align: center;">Solicitado</th>
               <th style="text-align: center;">Ya Recibido</th>
               <th style="text-align: center;">Pendiente</th>
@@ -408,12 +409,26 @@
                 const pendienteClass =
                   pendiente > 0 ? "text-warning" : "text-success";
 
+                const piezasPorPaquete = (() => {
+                  const raw = detalle.piezasPorPaquete ?? detalle.piezasporpaquete;
+                  const parsed = Number.parseInt(raw, 10);
+                  return Number.isInteger(parsed) && parsed > 0 ? parsed : 1;
+                })();
+
+                const stockPiezas = (() => {
+                  const raw =
+                    detalle.stockVariante ?? detalle.StockVariante ?? detalle.stockvariante ?? detalle.Stock;
+                  const parsed = Number.parseInt(raw, 10);
+                  return Number.isFinite(parsed) && !Number.isNaN(parsed) ? parsed : 0;
+                })();
+
                 return `
                 <tr>
                   <td><strong>${detalle.nombreProducto}</strong></td>
                   <td><code style="background: #f0f0f0; padding: 0.25rem 0.5rem; border-radius: 0.25rem;">${
                     detalle.sku
                   }</code></td>
+                  <td style="text-align: center;"><span style="font-weight: 700;">${piezasPorPaquete}</span> pzas/paq</td>
                   <td style="text-align: center;"><strong>${
                     detalle.cantidadSolicitada
                   }</strong></td>
@@ -421,14 +436,13 @@
                   detalle.cantidadRecibida
                 }</strong></td>
                   <td style="text-align: center;" class="${pendienteClass}"><strong>${pendiente}</strong></td>
-                  <td style="text-align: center;">${
-                    detalle.stockActual
-                  } paq.</td>
+                  <td style="text-align: center;">${stockPiezas} pzas.</td>
                   <td>
                     <input 
                       type="number" 
                       class="form-input recibir-input" 
                       data-detalle-id="${detalle.detalleId}"
+                      data-piezas-por-paquete="${piezasPorPaquete}"
                       data-max="${pendiente}"
                       min="0" 
                       max="${pendiente}"
@@ -437,6 +451,7 @@
                       placeholder="0"
                       style="padding: 0.5rem; text-align: center;"
                     >
+                    <div class="recibir-helper" style="margin-top: 0.35rem; font-size: 0.8rem; color: var(--razo-gray-warm); display: none;"></div>
                   </td>
                 </tr>
               `;
@@ -445,6 +460,35 @@
           </tbody>
         </table>
       `;
+
+        container.querySelectorAll(".recibir-input").forEach((input) => {
+          const helper = input.parentElement
+            ? input.parentElement.querySelector(".recibir-helper")
+            : null;
+          const piezasPorPaquete = (() => {
+            const raw = input.getAttribute("data-piezas-por-paquete");
+            const parsed = Number.parseInt(raw, 10);
+            return Number.isInteger(parsed) && parsed > 0 ? parsed : 1;
+          })();
+
+          const render = () => {
+            const cantidad = Number.parseInt(input.value, 10);
+            if (!helper) return;
+            if (!Number.isInteger(cantidad) || cantidad <= 0) {
+              helper.style.display = "none";
+              helper.textContent = "";
+              return;
+            }
+
+            const totalPiezas = cantidad * piezasPorPaquete;
+            helper.style.display = "block";
+            helper.textContent = `Estás recibiendo: ${totalPiezas} piezas totales`;
+          };
+
+          input.addEventListener("input", render);
+          input.addEventListener("change", render);
+          render();
+        });
       }
 
       // Guardar recepción

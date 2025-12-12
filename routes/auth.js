@@ -140,6 +140,13 @@ router.post(
   agentesController.solicitarCambioEstatusPedidoAgente
 );
 
+router.post(
+  "/agentes/pedidos/:id/solicitar-confirmacion",
+  authenticate,
+  authorize(["agente"]),
+  agentesController.solicitarConfirmacionPedidoAgente
+);
+
 router.get(
   "/agente/dashboard-stats",
   authenticate,

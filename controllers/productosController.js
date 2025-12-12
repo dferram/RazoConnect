@@ -41,6 +41,76 @@ const obtenerProveedoresPublicos = async (req, res) => {
   }
 };
 
+const obtenerTiposProducto = async (req, res) => {
+  try {
+    const result = await db.query(
+      `SELECT DISTINCT tp.nombre
+       FROM tipoproducto tp
+       WHERE tp.activo = TRUE
+         AND tp.nombre IS NOT NULL
+         AND TRIM(tp.nombre) <> ''
+       ORDER BY tp.nombre ASC`
+    );
+
+    const tipos = result.rows
+      .map((row) => (row.nombre !== null ? String(row.nombre).trim() : ""))
+      .filter((nombre) => nombre.length);
+
+    return res.status(200).json({
+      success: true,
+      message: "Tipos de producto obtenidos exitosamente",
+      data: {
+        tipos,
+        total: tipos.length,
+      },
+    });
+  } catch (error) {
+    console.error("Error al obtener tipos de producto:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error al obtener los tipos de producto",
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * Obtener tipos de producto disponibles para exploración pública
+ * GET /api/public/tipos-producto
+ */
+const obtenerTiposProductoPublicos = async (req, res) => {
+  try {
+    const result = await db.query(
+      `SELECT tp.tipoproductoid, tp.nombre, tp.descripcion
+       FROM tipoproducto tp
+       WHERE tp.activo = TRUE
+       ORDER BY tp.nombre ASC`
+    );
+
+    const tipos = result.rows.map((row) => ({
+      tipoProductoId: row.tipoproductoid,
+      nombre: row.nombre,
+      descripcion: row.descripcion,
+    }));
+
+    return res.status(200).json({
+      success: true,
+      message: "Tipos de producto obtenidos exitosamente",
+      data: {
+        tipos,
+        total: tipos.length,
+      },
+    });
+  } catch (error) {
+    console.error("Error al obtener tipos de producto públicos:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error al obtener los tipos de producto",
+      error: error.message,
+    });
+  }
+};
+
 /**
  * Obtener todos los productos con imagen principal
  * GET /api/productos
@@ -55,6 +125,7 @@ const obtenerProductos = async (req, res) => {
       stock,
       proveedorID,
       categoria,
+      tipo,
       oferta,
       sort,
       limit,
@@ -141,6 +212,58 @@ const obtenerProductos = async (req, res) => {
       filtros.push(`p.categoriaid = $${indiceCategoria}`);
     }
 
+    const filtroTipoRaw = tipo && String(tipo).trim() ? String(tipo).trim() : null;
+    const filtroTipoUpper = filtroTipoRaw ? filtroTipoRaw.toUpperCase() : null;
+    const esFiltroRegla = filtroTipoUpper
+      ? ["DOCENA", "PAQUETE", "UNITARIO"].includes(filtroTipoUpper)
+      : false;
+
+    const buildFiltros = (colCantidadEmpaque) => {
+      const filtrosLocal = [...filtros];
+      const valoresLocal = [...valores];
+
+      // Filtro por tipo de producto (Caja, Peluche, etc.)
+      if (filtroTipoRaw) {
+        if (esFiltroRegla) {
+          const regla = filtroTipoUpper === "DOCENA" ? "PAQUETE" : filtroTipoUpper;
+          if (regla === "PAQUETE") {
+            filtrosLocal.push(
+              `EXISTS (
+                SELECT 1
+                FROM proveedor_reglas_empaque pre_f
+                WHERE pre_f.proveedorid = p.proveedorid_default
+                  AND pre_f.tipoproductoid = tipo_info.tipoproductoid
+                  AND COALESCE(pre_f.${colCantidadEmpaque}, 1) > 1
+              )`
+            );
+          } else {
+            filtrosLocal.push(
+              `NOT EXISTS (
+                SELECT 1
+                FROM proveedor_reglas_empaque pre_f
+                WHERE pre_f.proveedorid = p.proveedorid_default
+                  AND pre_f.tipoproductoid = tipo_info.tipoproductoid
+                  AND COALESCE(pre_f.${colCantidadEmpaque}, 1) > 1
+              )`
+            );
+          }
+        } else {
+          valoresLocal.push(filtroTipoRaw);
+          const indiceTipo = valoresLocal.length;
+          filtrosLocal.push(`EXISTS (
+            SELECT 1
+            FROM producto_variantes pv
+            INNER JOIN tipoproducto tp ON tp.tipoproductoid = pv.tipoproductoid
+            WHERE pv.productoid = p.productoid
+              AND tp.activo = TRUE
+              AND tp.nombre = $${indiceTipo}
+          )`);
+        }
+      }
+
+      return { filtrosLocal, valoresLocal };
+    };
+
     // Filtro por productos en oferta (con precio de oferta)
     if (oferta === "true") {
       filtros.push(`EXISTS (
@@ -156,7 +279,8 @@ const obtenerProductos = async (req, res) => {
     filtros.push(`p.activo = TRUE`);
     filtros.push(`(c.activo = TRUE OR c.activo IS NULL)`);
 
-    const whereClause = `WHERE ${filtros.join(" AND ")}`;
+    const buildWhereClause = (filtrosFinal) =>
+      filtrosFinal.length ? `WHERE ${filtrosFinal.join(" AND ")}` : "";
 
     const varianteOrderBy =
       oferta === "true"
@@ -175,15 +299,19 @@ const obtenerProductos = async (req, res) => {
           pv.varianteid ASC
         `;
 
-    const query = `
+    const buildQuery = (colCantidadEmpaque, whereClauseFinal) => `
       SELECT
         p.productoid,
         p.nombreproducto,
+        p.sku_maestro,
         p.descripcion,
         p.activo,
         p.categoriaid,
         c.nombre AS categorianombre,
         c.descripcion AS categoriadescripcion,
+        tipo_info.tipoproductoid AS tipo_productoid,
+        tipo_info.nombre AS tipo_producto,
+        COALESCE(regla_empaque.${colCantidadEmpaque}, 1) AS multiplo_empaque,
         variante_min.varianteid AS varianteid_precio_min,
         variante_min.sku AS sku_precio_min,
         variante_min.dimensiones AS dimensiones_precio_min,
@@ -196,6 +324,21 @@ const obtenerProductos = async (req, res) => {
         stats.variantes_con_stock
       FROM productos p
       LEFT JOIN categorias c ON p.categoriaid = c.categoriaid
+      LEFT JOIN LATERAL (
+        SELECT tp.tipoproductoid, tp.nombre
+        FROM producto_variantes pv_tipo
+        LEFT JOIN tipoproducto tp ON tp.tipoproductoid = pv_tipo.tipoproductoid
+        WHERE pv_tipo.productoid = p.productoid
+        ORDER BY pv_tipo.piezasporpaquete ASC NULLS LAST, pv_tipo.varianteid ASC
+        LIMIT 1
+      ) tipo_info ON TRUE
+      LEFT JOIN LATERAL (
+        SELECT pre.${colCantidadEmpaque}
+        FROM proveedor_reglas_empaque pre
+        WHERE pre.proveedorid = p.proveedorid_default
+          AND pre.tipoproductoid = tipo_info.tipoproductoid
+        LIMIT 1
+      ) regla_empaque ON TRUE
       LEFT JOIN LATERAL (
         SELECT
           pv.varianteid,
@@ -226,12 +369,25 @@ const obtenerProductos = async (req, res) => {
         FROM producto_variantes pv
         GROUP BY pv.productoid
       ) stats ON stats.productoid = p.productoid
-      ${whereClause}
+      ${whereClauseFinal}
       ORDER BY ${sort === "newest" ? "p.productoid DESC" : "p.productoid DESC"}
       ${limit ? `LIMIT ${parseInt(limit, 10)}` : ""}
     `;
 
-    const result = await db.query(query, valores);
+    let result;
+    try {
+      const { filtrosLocal, valoresLocal } = buildFiltros("cantidadempaque");
+      const whereClauseFinal = buildWhereClause(filtrosLocal);
+      result = await db.query(buildQuery("cantidadempaque", whereClauseFinal), valoresLocal);
+    } catch (dbError) {
+      if (dbError && dbError.code === "42703") {
+        const { filtrosLocal, valoresLocal } = buildFiltros("piezasporpaquete");
+        const whereClauseFinal = buildWhereClause(filtrosLocal);
+        result = await db.query(buildQuery("piezasporpaquete", whereClauseFinal), valoresLocal);
+      } else {
+        throw dbError;
+      }
+    }
 
     const productRows = result.rows;
     const productoIds = productRows.map((row) => row.productoid);
@@ -484,7 +640,18 @@ const obtenerProductos = async (req, res) => {
       return {
         productoId: productId,
         nombreProducto: row.nombreproducto,
+        sku_maestro: row.sku_maestro || null,
         descripcion: row.descripcion,
+        tipoProductoId:
+          row.tipo_productoid !== null && row.tipo_productoid !== undefined
+            ? Number.parseInt(row.tipo_productoid, 10)
+            : null,
+        tipoProducto:
+          row.tipo_producto !== null && row.tipo_producto !== undefined
+            ? String(row.tipo_producto)
+            : null,
+        reglaBackorder:
+          Number.parseInt(row.multiplo_empaque, 10) > 1 ? "PAQUETE" : "UNITARIO",
         categoria: row.categoriaid
           ? {
               categoriaId: row.categoriaid,
@@ -581,6 +748,7 @@ const obtenerProductoPorId = async (req, res) => {
       `SELECT
          p.productoid,
          p.nombreproducto,
+         p.sku_maestro,
          p.descripcion,
          p.activo,
          p.categoriaid,
@@ -780,6 +948,7 @@ const obtenerProductoPorId = async (req, res) => {
     const productoDetalle = {
       productoId: producto.productoid,
       nombreProducto: producto.nombreproducto,
+      sku_maestro: producto.sku_maestro || null,
       descripcion: producto.descripcion,
       activo: producto.activo,
       categoria: producto.categoriaid
@@ -905,10 +1074,12 @@ const obtenerAgentesPublicos = async (req, res) => {
 };
 
 module.exports = {
+  obtenerProveedoresPublicos,
+  obtenerTiposProductoPublicos,
+  obtenerTiposProducto,
   obtenerProductos,
+  obtenerDimensiones,
   obtenerProductoPorId,
   obtenerCategorias,
   obtenerAgentesPublicos,
-  obtenerDimensiones,
-  obtenerProveedoresPublicos,
 };

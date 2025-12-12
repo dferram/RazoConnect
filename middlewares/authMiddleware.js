@@ -109,6 +109,17 @@ const authorizeAdmin = (req, res, next) => {
   next();
 };
 
+const verifySuperAdmin = (req, res, next) => {
+  const rol = req.user?.rol ? String(req.user.rol).toLowerCase() : "";
+  if (req.user && rol === "superadmin") {
+    return next();
+  }
+  return res.status(403).json({
+    success: false,
+    message: "Acceso denegado. Se requieren permisos de Super Administrador.",
+  });
+};
+
 /**
  * Middleware específico para verificar que el usuario es un super-administrador
  * Solo los super-admins pueden realizar ciertas acciones críticas como crear otros administradores
@@ -154,4 +165,5 @@ module.exports = {
   authorize,
   authorizeAdmin,
   authorizeSuperAdmin,
+  verifySuperAdmin,
 };

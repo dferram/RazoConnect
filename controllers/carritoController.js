@@ -10,6 +10,88 @@ const TAMANO_VALUE_KEYS = [
   "cantidadpiezas",
 ];
 
+function calcularSplitBackorder({
+  cantidadSolicitada,
+  stockPiezas,
+  piezasPorPaquete,
+  multiploBackorder,
+}) {
+  const cantidad = Number.isInteger(cantidadSolicitada) ? cantidadSolicitada : 0;
+  const stock = Number.isInteger(stockPiezas) ? stockPiezas : 0;
+  const piezas = Number.isInteger(piezasPorPaquete) ? piezasPorPaquete : 0;
+  const multiplo = Number.isInteger(multiploBackorder) ? multiploBackorder : 1;
+  const regla = multiplo > 1 ? "PAQUETE" : "UNITARIO";
+
+  if (cantidad <= 0 || piezas <= 0) {
+    return {
+      cantidadSurtida: 0,
+      cantidadPendiente: 0,
+      cantidadBackorderAjustada: 0,
+      cantidadTotalCobrar: 0,
+      ajusteAplicado: false,
+      reglaBackorder: regla,
+    };
+  }
+
+  const paquetesSurtibles = Math.floor(Math.max(stock, 0) / piezas);
+  const cantidadSurtida = Math.max(Math.min(cantidad, paquetesSurtibles), 0);
+  const cantidadPendiente = Math.max(cantidad - cantidadSurtida, 0);
+
+  let cantidadBackorderAjustada = cantidadPendiente;
+  if (cantidadPendiente > 0 && multiplo > 1) {
+    cantidadBackorderAjustada = Math.ceil(cantidadPendiente / multiplo) * multiplo;
+  }
+
+  const cantidadTotalCobrar = cantidadSurtida + cantidadBackorderAjustada;
+  const ajusteAplicado = cantidadTotalCobrar !== cantidad;
+
+  return {
+    cantidadSurtida,
+    cantidadPendiente,
+    cantidadBackorderAjustada,
+    cantidadTotalCobrar,
+    ajusteAplicado,
+    reglaBackorder: regla,
+  };
+}
+
+async function obtenerMultiploBackorderDesdeReglaEmpaque({
+  proveedorId,
+  tipoProductoId,
+}) {
+  const proveedor = Number.parseInt(proveedorId, 10);
+  const tipo = Number.parseInt(tipoProductoId, 10);
+  if (!Number.isInteger(proveedor) || proveedor <= 0) return 1;
+  if (!Number.isInteger(tipo) || tipo <= 0) return 1;
+
+  try {
+    const { rows } = await db.query(
+      `SELECT cantidadempaque
+       FROM proveedor_reglas_empaque
+       WHERE proveedorid = $1 AND tipoproductoid = $2
+       LIMIT 1`,
+      [proveedor, tipo]
+    );
+    const raw = rows[0]?.cantidadempaque;
+    const parsed = Number.parseInt(raw, 10);
+    return Number.isInteger(parsed) && parsed > 0 ? parsed : 1;
+  } catch (dbError) {
+    if (dbError && dbError.code === "42703") {
+      const { rows } = await db.query(
+        `SELECT piezasporpaquete AS cantidadempaque
+         FROM proveedor_reglas_empaque
+         WHERE proveedorid = $1 AND tipoproductoid = $2
+         LIMIT 1`,
+        [proveedor, tipo]
+      );
+      const raw = rows[0]?.cantidadempaque;
+      const parsed = Number.parseInt(raw, 10);
+      return Number.isInteger(parsed) && parsed > 0 ? parsed : 1;
+    }
+    throw dbError;
+  }
+}
+
 function obtenerPiezasDesdeTamanoInfo(tamanoInfo) {
   if (!tamanoInfo || typeof tamanoInfo !== "object") {
     return null;
@@ -147,9 +229,11 @@ const obtenerCarrito = async (req, res) => {
         pv.preciounitario,
         pv.precioofertaunitario,
         pv.stock,
+        pv.tipoproductoid,
         p.productoid,
         p.nombreproducto,
         p.descripcion,
+        p.proveedorid_default,
         p.categoriaid,
         c.nombre AS categorianombre,
         c.descripcion AS categoriadescripcion,
@@ -176,6 +260,31 @@ const obtenerCarrito = async (req, res) => {
 
     const itemsResult = await db.query(itemsQuery, [carritoId]);
 
+    const productosEnCarrito = [
+      ...new Set(itemsResult.rows.map((row) => row.productoid).filter(Boolean)),
+    ];
+
+    let masterVariantsMap = new Map();
+    if (productosEnCarrito.length) {
+      const masterVariantsResult = await db.query(
+        `SELECT ProductoID, VarianteID, COALESCE(Stock, 0) AS Stock
+         FROM Producto_Variantes
+         WHERE ProductoID = ANY($1::int[])
+           AND PiezasPorPaquete = 1`,
+        [productosEnCarrito]
+      );
+
+      masterVariantsMap = new Map(
+        masterVariantsResult.rows.map((row) => [
+          row.productoid,
+          {
+            varianteId: row.varianteid,
+            stock: Math.max(parseInt(row.stock, 10), 0),
+          },
+        ])
+      );
+    }
+
     const valueCandidates = [
       "cantidad",
       "valor",
@@ -187,7 +296,7 @@ const obtenerCarrito = async (req, res) => {
     ];
     const labelCandidates = ["etiqueta", "descripcion", "nombre", "label"];
 
-    const items = itemsResult.rows.map((item) => {
+    const items = await Promise.all(itemsResult.rows.map(async (item) => {
       // LÓGICA DE PRECIOS CON OFERTA: Si existe precio de oferta, úsalo. Si no, usa precio normal.
       const precioBase =
         item.preciounitario !== null ? parseFloat(item.preciounitario) : null;
@@ -246,8 +355,22 @@ const obtenerCarrito = async (req, res) => {
           : item.cantidad !== null
           ? parseInt(item.cantidad, 10)
           : 0;
-      const stock = item.stock !== null ? parseInt(item.stock, 10) : null;
+      const masterInfo = masterVariantsMap.get(item.productoid);
+      const stockPiezas = masterInfo ? masterInfo.stock : 0;
       const piezasPorPaquete = tamanoCantidad;
+
+      const multiploBackorder = await obtenerMultiploBackorderDesdeReglaEmpaque({
+        proveedorId: item.proveedorid_default,
+        tipoProductoId: item.tipoproductoid,
+      });
+
+      const split = calcularSplitBackorder({
+        cantidadSolicitada: cantidad,
+        stockPiezas,
+        piezasPorPaquete,
+        multiploBackorder,
+      });
+
       const precioPaquete =
         precioUnitario !== null && tamanoCantidad
           ? parseFloat((precioUnitario * tamanoCantidad).toFixed(2))
@@ -256,6 +379,17 @@ const obtenerCarrito = async (req, res) => {
       const subtotalCalculado =
         precioUnitario !== null && tamanoCantidad
           ? parseFloat((precioUnitario * tamanoCantidad * cantidad).toFixed(2))
+          : null;
+
+      const subtotalCobrar =
+        precioUnitario !== null && tamanoCantidad
+          ? parseFloat(
+              (
+                precioUnitario *
+                tamanoCantidad *
+                split.cantidadTotalCobrar
+              ).toFixed(2)
+            )
           : null;
 
       return {
@@ -275,6 +409,13 @@ const obtenerCarrito = async (req, res) => {
         },
         sku: item.sku,
         cantidadPaquetes: cantidad,
+        cantidadPaquetesSolicitada: cantidad,
+        cantidadPaquetesSurtida: split.cantidadSurtida,
+        cantidadPaquetesBackorder: split.cantidadBackorderAjustada,
+        cantidadPaquetesBackorderAjustada: split.cantidadBackorderAjustada,
+        cantidadPaquetesCobrar: split.cantidadTotalCobrar,
+        reglaBackorder: split.reglaBackorder,
+        ajusteAplicado: split.ajusteAplicado,
         tamanoId: item.tamanoid,
         piezasPorPaquete,
         tamanoCantidad,
@@ -285,9 +426,11 @@ const obtenerCarrito = async (req, res) => {
         precioBase,
         precioOferta,
         tieneOferta,
-        stock,
+        stock: stockPiezas,
+        stockPiezas,
         dimensiones: item.dimensiones,
-        subtotal: subtotalCalculado,
+        subtotal: subtotalCobrar,
+        subtotalSolicitado: subtotalCalculado,
         imagenPrincipal: item.url_imagen
           ? {
               url: item.url_imagen,
@@ -295,7 +438,7 @@ const obtenerCarrito = async (req, res) => {
             }
           : null,
       };
-    });
+    }));
 
     const montoTotal = items.reduce((total, item) => {
       const subtotal =
@@ -358,6 +501,8 @@ const agregarAlCarrito = async (req, res) => {
          pv.stock,
          pv.preciounitario,
          p.nombreproducto,
+         p.proveedorid_default,
+         pv.tipoproductoid,
          row_to_json(t) AS tamano_info
        FROM producto_variantes pv
        INNER JOIN productos p ON p.productoid = pv.productoid
@@ -414,17 +559,23 @@ const agregarAlCarrito = async (req, res) => {
       });
     }
 
+    const masterResult = await db.query(
+      `SELECT VarianteID, COALESCE(Stock, 0) AS Stock
+       FROM Producto_Variantes
+       WHERE ProductoID = $1
+         AND PiezasPorPaquete = 1
+       LIMIT 1`,
+      [variante.productoid]
+    );
     const stockFisico =
-      variante.stock !== null && variante.stock !== undefined
-        ? parseInt(variante.stock, 10)
+      masterResult.rows.length > 0
+        ? Math.max(parseInt(masterResult.rows[0].stock, 10), 0)
         : 0;
 
-    if (stockFisico <= 0) {
-      return res.status(400).json({
-        success: false,
-        message: "No hay stock disponible para esta variante.",
-      });
-    }
+    const multiploBackorder = await obtenerMultiploBackorderDesdeReglaEmpaque({
+      proveedorId: variante.proveedorid_default,
+      tipoProductoId: variante.tipoproductoid,
+    });
 
     // Obtener o crear el carrito del cliente
     let carritoResult = await db.query(
@@ -454,20 +605,6 @@ const agregarAlCarrito = async (req, res) => {
       "SELECT itemid, COALESCE(cantidadpaquetes, cantidad) AS cantidad_paquetes, tamanoid FROM itemsdelcarrito WHERE carritoid = $1 AND varianteid = $2 AND tamanoid = $3",
       [carritoId, varianteId, tamanoId]
     );
-
-    // Calcular piezas totales actuales en el carrito para esta variante
-    const piezasActualesEnCarrito =
-      await calcularPiezasTotalesEnCarritoParaVariante(carritoId, varianteId);
-
-    const piezasNuevas = cantidadEntera * piezasPorTamano;
-    const piezasTotalesPost = piezasActualesEnCarrito + piezasNuevas;
-
-    if (piezasTotalesPost > stockFisico) {
-      return res.status(400).json({
-        success: false,
-        message: `No hay suficiente stock disponible. Intentas llevar ${piezasTotalesPost} piezas y solo quedan ${stockFisico}.`,
-      });
-    }
 
     let itemResult;
     if (itemExistente.rows.length > 0) {
@@ -501,6 +638,20 @@ const agregarAlCarrito = async (req, res) => {
           )
         : null;
 
+    const cantidadFinal =
+      item.cantidad_paquetes !== null && item.cantidad_paquetes !== undefined
+        ? parseInt(item.cantidad_paquetes, 10)
+        : item.cantidad !== null && item.cantidad !== undefined
+        ? parseInt(item.cantidad, 10)
+        : cantidadEntera;
+
+    const split = calcularSplitBackorder({
+      cantidadSolicitada: cantidadFinal,
+      stockPiezas: stockFisico,
+      piezasPorPaquete: piezasPorTamano,
+      multiploBackorder,
+    });
+
     res.status(200).json({
       success: true,
       message: "Producto agregado al carrito exitosamente",
@@ -516,6 +667,14 @@ const agregarAlCarrito = async (req, res) => {
           piezasPorTamano,
           precioUnitario,
           subtotal,
+        },
+        split: {
+          cantidadSolicitada: cantidadFinal,
+          cantidadSurtida: split.cantidadSurtida,
+          cantidadBackorder: split.cantidadBackorderAjustada,
+          cantidadTotalCobrar: split.cantidadTotalCobrar,
+          reglaBackorder: split.reglaBackorder,
+          ajusteAplicado: split.ajusteAplicado,
         },
       },
     });
@@ -564,7 +723,9 @@ const actualizarCarrito = async (req, res) => {
          pv.precioofertaunitario,
          pv.stock,
          pv.sku,
-         p.nombreproducto
+         p.nombreproducto,
+         p.proveedorid_default,
+         pv.tipoproductoid
        FROM producto_variantes pv
        INNER JOIN productos p ON p.productoid = pv.productoid
        WHERE pv.varianteid = $1
@@ -581,17 +742,18 @@ const actualizarCarrito = async (req, res) => {
 
     const variante = varianteResult.rows[0];
 
+    const masterResult = await db.query(
+      `SELECT VarianteID, COALESCE(Stock, 0) AS Stock
+       FROM Producto_Variantes
+       WHERE ProductoID = $1
+         AND PiezasPorPaquete = 1
+       LIMIT 1`,
+      [variante.productoid]
+    );
     const stockFisico =
-      variante.stock !== null && variante.stock !== undefined
-        ? parseInt(variante.stock, 10)
+      masterResult.rows.length > 0
+        ? Math.max(parseInt(masterResult.rows[0].stock, 10), 0)
         : 0;
-
-    if (stockFisico <= 0) {
-      return res.status(400).json({
-        success: false,
-        message: "No hay stock disponible para esta variante.",
-      });
-    }
 
     // Obtener el carrito del cliente
     const carritoResult = await db.query(
@@ -651,30 +813,6 @@ const actualizarCarrito = async (req, res) => {
         : null;
     const precioUnitario = precioOferta || precioBase;
 
-    // Calcular piezas totales actuales en el carrito para esta variante
-    const piezasActualesEnCarrito =
-      await calcularPiezasTotalesEnCarritoParaVariante(carritoId, varianteId);
-
-    const cantidadActualLinea =
-      itemActual.cantidad_paquetes !== null &&
-      itemActual.cantidad_paquetes !== undefined
-        ? parseInt(itemActual.cantidad_paquetes, 10)
-        : 0;
-
-    const piezasLineaActual = cantidadActualLinea * piezasPorPaqueteActual;
-    const piezasLineaNueva =
-      cantidadPaquetesEntera * piezasPorPaqueteActual;
-
-    const piezasTotalesPost =
-      piezasActualesEnCarrito - piezasLineaActual + piezasLineaNueva;
-
-    if (piezasTotalesPost > stockFisico) {
-      return res.status(400).json({
-        success: false,
-        message: `No hay suficiente stock disponible. Intentas llevar ${piezasTotalesPost} piezas y solo quedan ${stockFisico}.`,
-      });
-    }
-
     // Actualizar la cantidad del item específico
     const updateResult = await db.query(
       "UPDATE itemsdelcarrito SET cantidadpaquetes = $1, cantidad = $1 WHERE itemid = $2 RETURNING itemid, varianteid, cantidadpaquetes",
@@ -701,6 +839,18 @@ const actualizarCarrito = async (req, res) => {
           )
         : null;
 
+    const multiploBackorder = await obtenerMultiploBackorderDesdeReglaEmpaque({
+      proveedorId: variante.proveedorid_default,
+      tipoProductoId: variante.tipoproductoid,
+    });
+
+    const split = calcularSplitBackorder({
+      cantidadSolicitada: cantidadPaquetesEntera,
+      stockPiezas: stockFisico,
+      piezasPorPaquete: piezasPorPaqueteActual,
+      multiploBackorder,
+    });
+
     res.status(200).json({
       success: true,
       message: "Cantidad actualizada exitosamente",
@@ -714,6 +864,14 @@ const actualizarCarrito = async (req, res) => {
           cantidadPaquetes: item.cantidadpaquetes,
           precioPaquete,
           subtotal,
+        },
+        split: {
+          cantidadSolicitada: cantidadPaquetesEntera,
+          cantidadSurtida: split.cantidadSurtida,
+          cantidadBackorder: split.cantidadBackorderAjustada,
+          cantidadTotalCobrar: split.cantidadTotalCobrar,
+          reglaBackorder: split.reglaBackorder,
+          ajusteAplicado: split.ajusteAplicado,
         },
       },
     });
@@ -832,7 +990,9 @@ const cambiarVarianteItemCarrito = async (req, res) => {
          pv.stock,
          pv.preciounitario,
          pv.precioofertaunitario,
+         pv.tipoproductoid,
          p.nombreproducto,
+         p.proveedorid_default,
          row_to_json(t) AS tamano_info
        FROM producto_variantes pv
        INNER JOIN productos p ON p.productoid = pv.productoid
@@ -862,35 +1022,18 @@ const cambiarVarianteItemCarrito = async (req, res) => {
       });
     }
 
+    const masterResult = await db.query(
+      `SELECT VarianteID, COALESCE(Stock, 0) AS Stock
+       FROM Producto_Variantes
+       WHERE ProductoID = $1
+         AND PiezasPorPaquete = 1
+       LIMIT 1`,
+      [variante.productoid]
+    );
     const stockFisico =
-      variante.stock !== null && variante.stock !== undefined
-        ? parseInt(variante.stock, 10)
+      masterResult.rows.length > 0
+        ? Math.max(parseInt(masterResult.rows[0].stock, 10), 0)
         : 0;
-
-    if (stockFisico <= 0) {
-      return res.status(400).json({
-        success: false,
-        message: "No hay stock disponible para esta variante.",
-      });
-    }
-
-    // Calcular piezas totales actuales en el carrito para la nueva variante (sin incluir aún esta línea)
-    const piezasActualesNuevaVariante =
-      await calcularPiezasTotalesEnCarritoParaVariante(
-        carritoId,
-        nuevaVarianteId
-      );
-
-    const piezasLineaNueva = cantidadPaquetes * piezasPorTamano;
-    const piezasTotalesPost =
-      piezasActualesNuevaVariante + piezasLineaNueva;
-
-    if (piezasTotalesPost > stockFisico) {
-      return res.status(400).json({
-        success: false,
-        message: `No hay suficiente stock disponible. Intentas llevar ${piezasTotalesPost} piezas y solo quedan ${stockFisico}.`,
-      });
-    }
 
     // Calcular precio unitario efectivo (oferta o normal)
     const precioBase =
@@ -967,6 +1110,14 @@ const cambiarVarianteItemCarrito = async (req, res) => {
           precioUnitario,
           precioPaquete,
           subtotal,
+        },
+        split: {
+          cantidadSolicitada: cantidadFinal,
+          cantidadSurtida: split.cantidadSurtida,
+          cantidadBackorder: split.cantidadBackorderAjustada,
+          cantidadTotalCobrar: split.cantidadTotalCobrar,
+          reglaBackorder: split.reglaBackorder,
+          ajusteAplicado: split.ajusteAplicado,
         },
       },
     });

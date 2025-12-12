@@ -20,6 +20,16 @@ router.get(
 );
 
 /**
+ * @route   GET /api/public/tipos-producto
+ * @desc    Obtener tipos de producto activos (para exploración pública)
+ * @access  Public
+ */
+router.get(
+  "/public/tipos-producto",
+  productosController.obtenerTiposProductoPublicos
+);
+
+/**
  * @route   GET /api/agentes/lista-publica
  * @desc    Obtener lista pública de agentes activos (solo datos no sensibles)
  * @access  Public
@@ -35,6 +45,13 @@ router.get(
  * @access  Public
  */
 router.get("/productos", productosController.obtenerProductos);
+
+/**
+ * @route   GET /api/productos/tipos
+ * @desc    Obtener lista de tipos de producto (para sugerencias/autocompletado)
+ * @access  Public
+ */
+router.get("/productos/tipos", productosController.obtenerTiposProducto);
 
 /**
  * @route   GET /api/productos/dimensiones

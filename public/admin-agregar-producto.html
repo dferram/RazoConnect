@@ -12,6 +12,8 @@
     <!-- SISTEMA DE RENOVACIÓN DE TOKENS -->
     <script src="js/token-refresh.js"></script>
 
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <link rel="stylesheet" href="css/styles.css" />
     <link rel="stylesheet" href="css/admin.css" />
     <style>
@@ -111,6 +113,18 @@
         color: #ef4444;
         transform: scale(1.05);
       }
+
+      .texto-compacto {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 350px;
+        line-height: 1.2em;
+        max-height: 2.4em;
+      }
     </style>
   </head>
   <body>
@@ -143,6 +157,7 @@
 
               <form id="productoForm" style="padding: 1.5rem">
                 <div style="display: grid; gap: 1.5rem">
+                  <input type="hidden" id="inputProductoIdEditando" />
                   <div class="alert alert-info">
                     <strong>Nuevo flujo maestro/variante:</strong>
                     <p
@@ -172,20 +187,19 @@
                   </div>
 
                   <div class="form-group">
-                    <label for="codigoModelo" class="form-label"
-                      >Código de Modelo</label
-                    >
+                    <label for="inputSkuMaestro" class="form-label">SKU Maestro / Modelo General *</label>
                     <input
                       type="text"
-                      id="codigoModelo"
+                      id="inputSkuMaestro"
+                      name="inputSkuMaestro"
                       class="form-input"
-                      placeholder="Ej: NAV25, FAS100, PRE50"
+                      placeholder="Ej: CAJA-NAVIDAD-ROJA"
                       maxlength="50"
+                      required
                     />
-                    <small class="form-hint"
-                      >Código corto para identificar el modelo. Se usará para
-                      sugerir SKUs en las variantes (ej: NAV25-10x10).</small
-                    >
+                    <small class="form-hint">
+                      SKU principal del producto maestro. Se guardará exactamente como lo escribas.
+                    </small>
                   </div>
 
                   <div class="form-group">
@@ -223,39 +237,51 @@
                   </div>
 
                   <div class="form-group">
-                    <label for="input-imagen" class="form-label"
-                      >Imagen del Producto</label
-                    >
+                    <label for="inputTipoProducto" class="form-label">
+                      Tipo de Producto (Ej. Caja, Peluche)
+                    </label>
+                    <input
+                      id="inputTipoProducto"
+                      class="form-input"
+                      list="tipoProductoOptions"
+                      placeholder="Escribe o selecciona un tipo"
+                      autocomplete="off"
+                    />
+                    <datalist id="tipoProductoOptions"></datalist>
+                    <input type="hidden" id="tipoProductoIdHidden" value="" />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="input-imagen" class="form-label">
+                      Fotos del Producto
+                    </label>
                     <input
                       type="file"
                       id="input-imagen"
                       class="form-input"
                       accept="image/jpeg,image/jpg,image/png,image/webp"
+                      multiple
                       style="padding: 0.75rem; cursor: pointer;"
                     />
                     <small class="form-hint"
-                      >Formatos permitidos: JPG, PNG, WEBP. Máximo 5MB.</small
+                      >Sube hasta 12 fotos del producto (se aplicarán a todas las variantes). Formatos permitidos: JPG, PNG, WEBP. Máximo 5MB c/u.</small
                     >
-                    
-                    <!-- Contenedor de previsualización -->
+
                     <div id="preview-container" style="margin-top: 1rem; display: none;">
                       <p style="font-size: 0.875rem; color: #6b7280; margin-bottom: 0.5rem;">
                         Previsualización:
                       </p>
-                      <div style="position: relative; display: inline-block;">
-                        <img 
-                          id="img-preview" 
-                          src="" 
-                          alt="Vista previa" 
-                          style="max-width: 250px; max-height: 250px; border-radius: 8px; border: 2px solid #e5e7eb; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"
-                        />
+                      <div
+                        id="imagenes-preview"
+                        style="display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 0.75rem;"
+                      ></div>
+                      <div style="display:flex; gap:0.5rem; margin-top: 0.75rem;">
                         <button
                           type="button"
-                          id="btn-remove-image"
-                          style="position: absolute; top: 8px; right: 8px; background: #ef4444; color: white; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 18px; line-height: 1; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.2);"
-                          title="Remover imagen"
+                          class="btn btn-secondary btn-sm"
+                          id="btn-clear-images"
                         >
-                          ×
+                          Limpiar selección
                         </button>
                       </div>
                     </div>
@@ -304,6 +330,14 @@
                       onclick="window.history.back()"
                     >
                       Cancelar
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-outline-secondary"
+                      id="btnCancelarEdicion"
+                      style="display: none"
+                    >
+                      Cancelar Edición
                     </button>
                     <button
                       type="submit"
@@ -365,6 +399,17 @@
                       placeholder="Buscar producto..."
                       aria-label="Buscar producto"
                     />
+                    <select
+                      id="backorderFilter"
+                      class="form-control"
+                      title="Filtrar por tipo de venta"
+                      aria-label="Filtro de tipo de venta"
+                      style="max-width: 230px"
+                    >
+                      <option value="ALL" selected>Todos</option>
+                      <option value="UNITARIO">Venta Unitaria</option>
+                      <option value="DOCENA">Venta por Docena</option>
+                    </select>
                     <button type="submit" class="btn btn-primary btn-sm">
                       Buscar
                     </button>
@@ -391,10 +436,13 @@
                       <tr>
                         <th>#ID</th>
                         <th>Producto</th>
+                        <th>SKU Maestro</th>
                         <th>Categoría</th>
+                        <th>Tipo</th>
+                        <th>Venta</th>
                         <th>Variantes</th>
                         <th>Precio desde</th>
-                        <th>Acciones</th>
+                        <th style="width: 10%;">Acciones</th>
                       </tr>
                     </thead>
                     <tbody id="mastersTableBody"></tbody>
@@ -438,6 +486,7 @@
         await verifyAndLoadAdmin();
         await loadCategorias();
         await loadProveedores();
+        await loadTiposProducto();
       }
 
       async function verifyAndLoadAdmin() {
@@ -475,6 +524,179 @@
         }
       }
 
+      async function prepararEdicion(id) {
+        try {
+          const inputProductoIdEditando = document.getElementById(
+            "inputProductoIdEditando"
+          );
+          const btnCancelarEdicion = document.getElementById("btnCancelarEdicion");
+          const btnText = document.getElementById("btnText");
+
+          const inputNombre = document.getElementById("nombre");
+          const inputSkuMaestro = document.getElementById("inputSkuMaestro");
+          const inputDescripcion = document.getElementById("descripcion");
+          const selectCategoriaId = document.getElementById("categoriaId");
+          const selectProveedor = document.getElementById("proveedor-producto");
+
+          const inputTipoProducto = document.getElementById("inputTipoProducto");
+          const hiddenTipoProductoId = document.getElementById("tipoProductoIdHidden");
+
+          if (!id || !inputProductoIdEditando) {
+            showToast("ID de producto inválido", "warning");
+            return;
+          }
+
+          const response = await fetch(`${API_BASE_URL}/admin/productos/${id}`, {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${adminToken}`,
+              "Content-Type": "application/json",
+            },
+          });
+
+          const data = await response.json();
+          if (!response.ok || !data.success) {
+            throw new Error(data.message || "No se pudo cargar el producto");
+          }
+
+          const producto = data?.data?.producto || {};
+
+          const nombreProducto =
+            producto.nombreProducto !== undefined
+              ? producto.nombreProducto
+              : producto.nombreproducto;
+          const skuMaestro =
+            producto.sku_maestro !== undefined
+              ? producto.sku_maestro
+              : producto.sku_maestro;
+          const descripcion =
+            producto.descripcion !== undefined ? producto.descripcion : producto.descripcion;
+
+          const categoriaId = producto.categoria?.categoriaId ?? producto.categoriaid ?? null;
+          const proveedorId =
+            producto.proveedorid_default ?? producto.proveedorId_Default ?? producto.proveedorid ?? null;
+          const tipoProductoId =
+            producto.TipoProductoID ?? producto.tipoproductoid ?? null;
+
+          if (inputNombre) inputNombre.value = (nombreProducto || "").toString();
+          if (inputSkuMaestro) inputSkuMaestro.value = (skuMaestro || "").toString();
+          if (inputDescripcion)
+            inputDescripcion.value = descripcion !== null && descripcion !== undefined ? String(descripcion) : "";
+
+          if (selectCategoriaId && categoriaId !== null && categoriaId !== undefined) {
+            selectCategoriaId.value = String(categoriaId);
+          }
+
+          if (selectProveedor) {
+            if (proveedorId === null || proveedorId === undefined) {
+              selectProveedor.value = "";
+            } else {
+              selectProveedor.value = String(proveedorId);
+            }
+          }
+
+          if (hiddenTipoProductoId) {
+            hiddenTipoProductoId.value =
+              tipoProductoId !== null && tipoProductoId !== undefined
+                ? String(tipoProductoId)
+                : "";
+          }
+
+          if (inputTipoProducto) {
+            const tipos = Array.isArray(window.__tiposProductoCache)
+              ? window.__tiposProductoCache
+              : [];
+            const match = tipos.find((t) => {
+              const tId = Number.parseInt(t?.tipoProductoId, 10);
+              return (
+                Number.isInteger(tId) &&
+                tipoProductoId !== null &&
+                Number.isInteger(Number.parseInt(tipoProductoId, 10)) &&
+                tId === Number.parseInt(tipoProductoId, 10)
+              );
+            });
+
+            if (match && match.nombre) {
+              inputTipoProducto.value = String(match.nombre);
+            } else {
+              inputTipoProducto.value = inputTipoProducto.value || "";
+            }
+          }
+
+          inputProductoIdEditando.value = String(id);
+          if (btnText) btnText.textContent = "Actualizar producto";
+          if (btnCancelarEdicion) btnCancelarEdicion.style.display = "inline-flex";
+
+          window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+        } catch (error) {
+          console.error("Error preparando edición:", error);
+          if (typeof Swal !== "undefined" && Swal && typeof Swal.fire === "function") {
+            await Swal.fire({
+              icon: "warning",
+              title: "No se pudo cargar",
+              text: error.message || "Error desconocido",
+              confirmButtonColor: "#F97316",
+            });
+          } else {
+            showToast(error.message || "Error desconocido", "error");
+          }
+        }
+      }
+
+      function resetModoCreacion() {
+        const inputProductoIdEditando = document.getElementById(
+          "inputProductoIdEditando"
+        );
+        const btnCancelarEdicion = document.getElementById("btnCancelarEdicion");
+        const btnText = document.getElementById("btnText");
+        const form = document.getElementById("productoForm");
+
+        if (inputProductoIdEditando) inputProductoIdEditando.value = "";
+        if (btnCancelarEdicion) btnCancelarEdicion.style.display = "none";
+        if (btnText) btnText.textContent = "Guardar producto maestro";
+
+        if (form && typeof form.reset === "function") {
+          form.reset();
+        }
+
+        const hiddenTipoProductoId = document.getElementById("tipoProductoIdHidden");
+        if (hiddenTipoProductoId) hiddenTipoProductoId.value = "";
+      }
+
+      async function subirImagenesProductoMultiple(productoId, imageFiles) {
+        try {
+          const files = Array.isArray(imageFiles) ? imageFiles : [];
+          if (!files.length) {
+            return { success: true };
+          }
+
+          const formData = new FormData();
+          files.forEach((file) => {
+            formData.append("imagenes", file);
+          });
+
+          const response = await fetch(
+            `${API_BASE_URL}/admin/productos/${productoId}/imagenes`,
+            {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${adminToken}`,
+              },
+              body: formData,
+            }
+          );
+
+          const data = await response.json();
+
+          if (response.ok && data.success) {
+            return { success: true, data: data.data };
+          }
+          return { success: false, message: data.message };
+        } catch (error) {
+          return { success: false, message: error.message };
+        }
+      }
+
       async function loadProveedores() {
         const select = document.getElementById("proveedor-producto");
         if (!select) return;
@@ -503,6 +725,8 @@
             throw new Error("Respuesta inválida del servidor");
           }
 
+          window.__proveedoresCache = proveedores;
+
           proveedores.forEach((proveedor) => {
             const option = document.createElement("option");
             option.value = proveedor.proveedorid;
@@ -513,6 +737,79 @@
           console.error("Error cargando proveedores:", error);
           showToast(
             "No se pudieron cargar los proveedores. Intenta nuevamente.",
+            "error"
+          );
+        }
+      }
+
+      async function loadTiposProducto() {
+        const input = document.getElementById("inputTipoProducto");
+        const datalist = document.getElementById("tipoProductoOptions");
+        const hiddenId = document.getElementById("tipoProductoIdHidden");
+        if (!input || !datalist || !hiddenId) return;
+
+        try {
+          const response = await fetch(`${API_BASE_URL}/public/tipos-producto`, {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+            },
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+          }
+
+          const data = await response.json();
+          const tipos =
+            data && data.success && data.data && Array.isArray(data.data.tipos)
+              ? data.data.tipos
+              : [];
+
+          window.__tiposProductoCache = tipos;
+          datalist.innerHTML = "";
+          tipos.forEach((tipo) => {
+            const id = tipo?.tipoProductoId;
+            const nombre = tipo?.nombre;
+            if (id === undefined || id === null) return;
+            const parsed = Number.parseInt(id, 10);
+            if (!Number.isInteger(parsed) || parsed <= 0) return;
+            const label = (nombre || "").toString().trim();
+            if (!label) return;
+
+            const option = document.createElement("option");
+            option.value = label;
+            option.dataset.id = String(parsed);
+            datalist.appendChild(option);
+          });
+
+          const syncTipoProductoId = () => {
+            const raw = (input.value || "").toString().trim();
+            if (!raw) {
+              hiddenId.value = "";
+              return;
+            }
+
+            const tiposLocal = Array.isArray(window.__tiposProductoCache)
+              ? window.__tiposProductoCache
+              : [];
+
+            const match = tiposLocal.find((t) => {
+              const n = (t?.nombre || "").toString().trim();
+              return n && n.toLowerCase() === raw.toLowerCase();
+            });
+
+            const matchId = match?.tipoProductoId;
+            const parsed = Number.parseInt(matchId, 10);
+            hiddenId.value = Number.isInteger(parsed) && parsed > 0 ? String(parsed) : "";
+          };
+
+          input.addEventListener("input", syncTipoProductoId);
+          input.addEventListener("change", syncTipoProductoId);
+        } catch (error) {
+          console.error("Error cargando tipos de producto:", error);
+          showToast(
+            "No se pudieron cargar los tipos de producto. Intenta nuevamente.",
             "error"
           );
         }
@@ -534,6 +831,7 @@
 
           const data = await response.json();
           if (data.success && Array.isArray(data.data?.categorias)) {
+            window.__categoriasCache = data.data.categorias;
             const select = document.getElementById("categoriaId");
 
             data.data.categorias.forEach((cat) => {
@@ -549,6 +847,156 @@
             "No se pudieron cargar las categorías. Intenta nuevamente.",
             "error"
           );
+        }
+      }
+
+      async function abrirEdicionMaestro(producto) {
+        try {
+          const productoId = producto?.productoId;
+          if (!productoId) {
+            showToast("Producto inválido para edición", "warning");
+            return;
+          }
+
+          const categorias = Array.isArray(window.__categoriasCache)
+            ? window.__categoriasCache
+            : [];
+          const proveedores = Array.isArray(window.__proveedoresCache)
+            ? window.__proveedoresCache
+            : [];
+
+          const categoriaIdActual =
+            producto?.categoria?.categoriaId ?? producto?.categoriaId ?? "";
+          const proveedorIdActual =
+            producto?.proveedorid_default ?? producto?.proveedorId ?? "";
+          const activoActual = producto?.activo !== undefined ? producto.activo : true;
+
+          const optionsCategorias = [
+            '<option value="">Sin categoría</option>',
+            ...categorias.map((cat) => {
+              const id = cat.categoriaId ?? cat.categoriaid;
+              const nombre = cat.nombre || "";
+              if (!id) return "";
+              const selected = String(id) === String(categoriaIdActual) ? "selected" : "";
+              return `<option value="${id}" ${selected}>${nombre}</option>`;
+            }),
+          ].join("");
+
+          const optionsProveedores = [
+            '<option value="">-- Sin proveedor --</option>',
+            ...proveedores.map((p) => {
+              const id = p.proveedorid ?? p.proveedorId;
+              const nombre = p.nombreempresa ?? p.nombreEmpresa ?? "";
+              if (!id) return "";
+              const selected = String(id) === String(proveedorIdActual) ? "selected" : "";
+              return `<option value="${id}" ${selected}>${nombre}</option>`;
+            }),
+          ].join("");
+
+          const html = `
+            <div style="text-align:left; display:grid; gap:0.75rem;">
+              <div>
+                <label style="font-weight:600; display:block; margin-bottom:0.35rem;">Nombre *</label>
+                <input id="swalNombreMaestro" class="form-control" value="${
+                  (producto?.nombreProducto || "").toString().replace(/"/g, "&quot;")
+                }" />
+              </div>
+              <div>
+                <label style="font-weight:600; display:block; margin-bottom:0.35rem;">Descripción</label>
+                <textarea id="swalDescMaestro" class="form-control" rows="4">${
+                  (producto?.descripcion || "").toString()
+                }</textarea>
+              </div>
+              <div>
+                <label style="font-weight:600; display:block; margin-bottom:0.35rem;">Categoría</label>
+                <select id="swalCategoriaMaestro" class="form-control">${optionsCategorias}</select>
+              </div>
+              <div>
+                <label style="font-weight:600; display:block; margin-bottom:0.35rem;">Proveedor predeterminado</label>
+                <select id="swalProveedorMaestro" class="form-control">${optionsProveedores}</select>
+              </div>
+              <div>
+                <label style="font-weight:600; display:block; margin-bottom:0.35rem;">Visibilidad</label>
+                <select id="swalActivoMaestro" class="form-control">
+                  <option value="true" ${activoActual ? "selected" : ""}>Visible</option>
+                  <option value="false" ${!activoActual ? "selected" : ""}>Oculto</option>
+                </select>
+              </div>
+              <small style="color:#6b7280; line-height:1.4;">
+                Este cambio genera una <strong>solicitud de aprobación</strong>. No se aplica inmediatamente.
+              </small>
+            </div>
+          `;
+
+          const result = await Swal.fire({
+            title: `Editar producto maestro #${productoId}`,
+            html,
+            icon: "info",
+            showCancelButton: true,
+            confirmButtonText: "Enviar a revisión",
+            cancelButtonText: "Cancelar",
+            confirmButtonColor: "#F97316",
+            width: "900px",
+            preConfirm: () => {
+              const nombre = document.getElementById("swalNombreMaestro")?.value?.trim();
+              const descripcion = document.getElementById("swalDescMaestro")?.value?.trim() || null;
+              const categoriaId = document.getElementById("swalCategoriaMaestro")?.value || null;
+              const proveedorId = document.getElementById("swalProveedorMaestro")?.value || null;
+              const activoRaw = document.getElementById("swalActivoMaestro")?.value;
+              const activo = activoRaw === "false" ? false : true;
+
+              if (!nombre) {
+                Swal.showValidationMessage("El nombre es obligatorio");
+                return null;
+              }
+
+              return { nombre, descripcion, categoriaId, proveedorId, activo };
+            },
+          });
+
+          if (!result.isConfirmed || !result.value) {
+            return;
+          }
+
+          const payload = {
+            nombre: result.value.nombre,
+            descripcion: result.value.descripcion,
+            categoriaId: result.value.categoriaId,
+            proveedorId: result.value.proveedorId,
+            activo: result.value.activo,
+          };
+
+          const resp = await fetch(`${API_BASE_URL}/admin/productos/${productoId}`, {
+            method: "PUT",
+            headers: {
+              Authorization: `Bearer ${adminToken}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
+          });
+          const data = await resp.json();
+
+          if (!resp.ok || !data?.success) {
+            throw new Error(data?.message || "No se pudo enviar la solicitud");
+          }
+
+          await Swal.fire({
+            icon: "info",
+            title: "Solicitud Enviada",
+            text: data?.message || "La edición del producto maestro fue enviada a revisión.",
+            confirmButtonColor: "#F97316",
+          });
+
+          // Refrescar tabla para reflejar cambios locales si aplica
+          await loadMasterProducts();
+        } catch (error) {
+          console.error("Error editando producto maestro:", error);
+          await Swal.fire({
+            icon: "error",
+            title: "Error",
+            text: error.message || "No se pudo enviar la solicitud",
+            confirmButtonColor: "#F97316",
+          });
         }
       }
 
@@ -869,62 +1317,128 @@
       // ===== LÓGICA DE PREVIEW DE IMAGEN =====
       const inputImagen = document.getElementById("input-imagen");
       const previewContainer = document.getElementById("preview-container");
-      const imgPreview = document.getElementById("img-preview");
-      const btnRemoveImage = document.getElementById("btn-remove-image");
-      let selectedImageFile = null;
+      const imagenesPreviewGrid = document.getElementById("imagenes-preview");
+      const btnClearImages = document.getElementById("btn-clear-images");
+      let selectedImageFiles = [];
 
-      // Event listener para cambio de archivo
-      inputImagen.addEventListener("change", function(e) {
-        const file = e.target.files[0];
-        
-        if (!file) {
-          hideImagePreview();
-          return;
+      function clearSelectedImages() {
+        selectedImageFiles = [];
+        if (inputImagen) {
+          inputImagen.value = "";
         }
-
-        // Validar tipo de archivo
-        const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-        if (!validTypes.includes(file.type)) {
-          showToast('Solo se permiten imágenes JPG, PNG o WEBP', 'error');
-          hideImagePreview();
-          inputImagen.value = '';
-          return;
-        }
-
-        // Validar tamaño (5MB máximo)
-        const maxSize = 5 * 1024 * 1024; // 5MB
-        if (file.size > maxSize) {
-          showToast('La imagen no debe superar 5MB', 'error');
-          hideImagePreview();
-          inputImagen.value = '';
-          return;
-        }
-
-        // Guardar archivo seleccionado
-        selectedImageFile = file;
-
-        // Crear URL para preview
-        const objectURL = URL.createObjectURL(file);
-        imgPreview.src = objectURL;
-        previewContainer.style.display = 'block';
-      });
-
-      // Botón para remover imagen
-      btnRemoveImage.addEventListener("click", function() {
-        hideImagePreview();
-        inputImagen.value = '';
-        selectedImageFile = null;
-      });
-
-      function hideImagePreview() {
-        previewContainer.style.display = 'none';
-        imgPreview.src = '';
-        if (imgPreview.src) {
-          URL.revokeObjectURL(imgPreview.src);
-        }
+        renderImagesPreview();
       }
 
-      // ===== FUNCIÓN PARA SUBIR IMAGEN =====
+      function renderImagesPreview() {
+        if (!previewContainer || !imagenesPreviewGrid) return;
+
+        if (!Array.isArray(selectedImageFiles) || selectedImageFiles.length === 0) {
+          previewContainer.style.display = "none";
+          imagenesPreviewGrid.innerHTML = "";
+          return;
+        }
+
+        previewContainer.style.display = "block";
+        imagenesPreviewGrid.innerHTML = "";
+
+        selectedImageFiles.forEach((file, index) => {
+          const card = document.createElement("div");
+          card.style.position = "relative";
+          card.style.borderRadius = "0.75rem";
+          card.style.border = "1px solid #e5e7eb";
+          card.style.overflow = "hidden";
+          card.style.background = "#fff";
+
+          const img = document.createElement("img");
+          img.alt = "Vista previa";
+          img.style.width = "100%";
+          img.style.height = "110px";
+          img.style.objectFit = "cover";
+          img.src = URL.createObjectURL(file);
+          img.onload = () => {
+            try {
+              URL.revokeObjectURL(img.src);
+            } catch (e) {}
+          };
+
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.textContent = "×";
+          btn.title = "Quitar";
+          btn.style.position = "absolute";
+          btn.style.top = "6px";
+          btn.style.right = "6px";
+          btn.style.background = "#ef4444";
+          btn.style.color = "white";
+          btn.style.border = "none";
+          btn.style.borderRadius = "999px";
+          btn.style.width = "26px";
+          btn.style.height = "26px";
+          btn.style.cursor = "pointer";
+          btn.style.fontSize = "18px";
+          btn.style.lineHeight = "1";
+          btn.style.display = "flex";
+          btn.style.alignItems = "center";
+          btn.style.justifyContent = "center";
+          btn.style.boxShadow = "0 2px 4px rgba(0,0,0,0.2)";
+          btn.addEventListener("click", () => {
+            selectedImageFiles.splice(index, 1);
+            renderImagesPreview();
+          });
+
+          card.appendChild(img);
+          card.appendChild(btn);
+          imagenesPreviewGrid.appendChild(card);
+        });
+      }
+
+      // Event listener para cambio de archivos
+      if (inputImagen) {
+        inputImagen.addEventListener("change", function (e) {
+          const files = Array.from(e.target.files || []);
+
+          if (!files.length) {
+            clearSelectedImages();
+            return;
+          }
+
+          if (files.length > 12) {
+            showToast("Puedes subir hasta 12 imágenes por producto", "warning");
+            clearSelectedImages();
+            return;
+          }
+
+          const validTypes = [
+            "image/jpeg",
+            "image/jpg",
+            "image/png",
+            "image/webp",
+          ];
+          const maxSize = 5 * 1024 * 1024; // 5MB
+
+          for (const file of files) {
+            if (!validTypes.includes(file.type)) {
+              showToast("Solo se permiten imágenes JPG, PNG o WEBP", "error");
+              clearSelectedImages();
+              return;
+            }
+            if (file.size > maxSize) {
+              showToast("Cada imagen no debe superar 5MB", "error");
+              clearSelectedImages();
+              return;
+            }
+          }
+
+          selectedImageFiles = files;
+          renderImagesPreview();
+        });
+      }
+
+      if (btnClearImages) {
+        btnClearImages.addEventListener("click", clearSelectedImages);
+      }
+
+      // ===== FUNCIÓN PARA SUBIR IMAGEN(ES) =====
       async function subirImagenProducto(productoId, imageFile) {
         try {
           const formData = new FormData();
@@ -971,10 +1485,19 @@
           const btnText = document.getElementById("btnText");
           const btnSpinner = document.getElementById("btnSpinner");
 
+          let response;
+
           try {
             submitBtn.disabled = true;
             btnText.style.display = "none";
             btnSpinner.style.display = "block";
+
+            const inputProductoIdEditando = document.getElementById(
+              "inputProductoIdEditando"
+            );
+            const productoIdEditando = inputProductoIdEditando
+              ? String(inputProductoIdEditando.value || "").trim()
+              : "";
 
             const tamanoIdsSeleccionados = Array.from(
               document.querySelectorAll('input[name="tamanoIds"]:checked')
@@ -982,11 +1505,28 @@
 
             const formData = {
               nombre: document.getElementById("nombre").value.trim(),
-              codigoModelo:
-                document.getElementById("codigoModelo").value.trim() || null,
+              sku_maestro: document.getElementById("inputSkuMaestro").value,
               descripcion:
                 document.getElementById("descripcion").value.trim() || null,
               categoriaId: document.getElementById("categoriaId").value || null,
+              TipoProductoID: (() => {
+                const raw = document.getElementById("tipoProductoIdHidden")?.value;
+                if (raw === undefined || raw === null) return null;
+                const txt = String(raw).trim();
+                if (!txt) return null;
+                const parsed = Number.parseInt(txt, 10);
+                return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+              })(),
+              TipoProducto: (() => {
+                const raw = document.getElementById("inputTipoProducto")?.value;
+                if (raw === undefined || raw === null) return null;
+                const txt = String(raw).trim();
+                if (!txt) return null;
+                const idRaw = document.getElementById("tipoProductoIdHidden")?.value;
+                const idTxt = idRaw !== undefined && idRaw !== null ? String(idRaw).trim() : "";
+                if (idTxt) return null;
+                return txt;
+              })(),
               proveedorId: (() => {
                 const value = document
                   .getElementById("proveedor-producto")
@@ -1021,14 +1561,30 @@
             // Exponer último payload en window para inspección manual
             window.__RAZO_DEBUG_ULTIMO_PRODUCTO_MAESTRO_PAYLOAD = formData;
 
-            const response = await fetch(`${API_BASE_URL}/admin/productos`, {
-              method: "POST",
-              headers: {
-                Authorization: `Bearer ${adminToken}`,
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify(formData),
-            });
+            if (productoIdEditando) {
+              response = await fetch(
+                `${API_BASE_URL}/admin/productos/${encodeURIComponent(
+                  productoIdEditando
+                )}`,
+                {
+                  method: "PUT",
+                  headers: {
+                    Authorization: `Bearer ${adminToken}`,
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify(formData),
+                }
+              );
+            } else {
+              response = await fetch(`${API_BASE_URL}/admin/productos`, {
+                method: "POST",
+                headers: {
+                  Authorization: `Bearer ${adminToken}`,
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify(formData),
+              });
+            }
 
             const data = await response.json();
 
@@ -1044,7 +1600,48 @@
               data,
             };
 
-            if (response.ok && data.success) {
+            if (response.status === 401) {
+              throw new Error(
+                data.message ||
+                  "Sesión expirada. Por favor, inicia sesión nuevamente."
+              );
+            }
+
+            if (!response.ok) {
+              throw new Error(data.message || "Error desconocido");
+            }
+
+            if (!data.success) {
+              throw new Error(
+                data.message ||
+                  "Error al crear producto. Revisa los datos e intenta nuevamente."
+              );
+            }
+
+            {
+              const isEditMode = Boolean(productoIdEditando);
+
+              if (
+                typeof Swal !== "undefined" &&
+                Swal &&
+                typeof Swal.fire === "function"
+              ) {
+                await Swal.fire({
+                  icon: "success",
+                  title: "Guardado",
+                  text: isEditMode
+                    ? data.message || "Solicitud enviada para aprobación."
+                    : "Producto maestro creado. Ahora agrega variantes.",
+                  confirmButtonColor: "#F97316",
+                });
+              }
+
+              if (isEditMode) {
+                await loadMasterProducts();
+                resetModoCreacion();
+                return;
+              }
+
               const nuevoProducto = data.data?.producto;
 
               // DEBUG: producto maestro creado en base de datos
@@ -1055,21 +1652,21 @@
               );
               console.groupEnd();
 
-              // Si hay imagen seleccionada, subirla
-              if (selectedImageFile && nuevoProducto?.productoid) {
-                const uploadResult = await subirImagenProducto(
+              // Si hay imágenes seleccionadas, subirlas
+              if (selectedImageFiles.length && nuevoProducto?.productoid) {
+                const uploadResult = await subirImagenesProductoMultiple(
                   nuevoProducto.productoid,
-                  selectedImageFile
+                  selectedImageFiles
                 );
 
                 if (uploadResult.success) {
                   showToast(
-                    "Producto e imagen guardados exitosamente. Ahora agrega variantes.",
+                    "Producto e imágenes guardados exitosamente. Ahora agrega variantes.",
                     "success"
                   );
                 } else {
                   showToast(
-                    "Producto creado, pero hubo un error al subir la imagen. Puedes intentar subirla después.",
+                    "Producto creado, pero hubo un error al subir las imágenes. Puedes intentar subirlas después.",
                     "warning"
                   );
                 }
@@ -1088,31 +1685,44 @@
                   window.location.href = `/admin-producto-editar.html?id=${nuevoProducto.productoid}`;
                 }, 1200);
               }
-            } else if (response.status === 401) {
-              showToast(
-                "Sesión expirada. Por favor, inicia sesión nuevamente.",
-                "error"
-              );
+            }
+          } catch (error) {
+            console.error("No se pudo guardar producto maestro:", error);
+            if (
+              typeof Swal !== "undefined" &&
+              Swal &&
+              typeof Swal.fire === "function"
+            ) {
+              await Swal.fire({
+                icon: "warning",
+                title: "No se pudo guardar",
+                text: error.message || "Error desconocido",
+                confirmButtonColor: "#F97316",
+              });
+            } else {
+              showToast(error.message || "Error desconocido", "error");
+            }
+
+            if (response && response.status === 401) {
               setTimeout(() => {
                 localStorage.removeItem("razoconnect_admin_token");
                 localStorage.removeItem("razoconnect_admin");
                 window.location.href = "/login.html";
-              }, 2000);
-            } else {
-              showToast(
-                data.message ||
-                  "Error al crear producto. Revisa los datos e intenta nuevamente.",
-                "error"
-              );
+              }, 300);
             }
-          } catch (error) {
-            showToast("Error al conectar con el servidor", "error");
           } finally {
             submitBtn.disabled = false;
             btnText.style.display = "inline";
             btnSpinner.style.display = "none";
           }
         });
+
+      const btnCancelarEdicion = document.getElementById("btnCancelarEdicion");
+      if (btnCancelarEdicion) {
+        btnCancelarEdicion.addEventListener("click", () => {
+          resetModoCreacion();
+        });
+      }
 
       // Navigation handling
       const navLinks = document.querySelectorAll(
@@ -1130,6 +1740,7 @@
       init();
 
       let masterProductsCache = [];
+      let selectedBackorderFilter = "ALL";
 
       async function loadMasterProducts() {
         try {
@@ -1178,27 +1789,62 @@
           a.nombreProducto.localeCompare(b.nombreProducto, "es")
         );
 
+        const getReglaLabel = (raw) => {
+          const value = (raw || "UNITARIO").toString().trim().toUpperCase();
+          if (value === "PAQUETE" || value === "DOCENA") return "Docena";
+          return "Unitario";
+        };
+
+        const renderReglaBadge = (raw) => {
+          const label = getReglaLabel(raw);
+          const isDocena = label === "Docena";
+          const bg = isDocena ? "#E9D5FF" : "#DBEAFE";
+          const fg = isDocena ? "#6B21A8" : "#1E40AF";
+          return `<span style="display:inline-flex; align-items:center; padding:0.2rem 0.6rem; border-radius:999px; font-weight:700; font-size:0.75rem; background:${bg}; color:${fg};">${label}</span>`;
+        };
+
         sortedProducts.forEach((prod) => {
           const variantes = prod.totalVariantes ?? 0;
           const precioDesde = Number.isFinite(prod.precioDesde)
             ? formatCurrency(prod.precioDesde)
             : "N/D";
+          const skuMaestro = prod.sku_maestro || "-";
+          const descripcionRaw = prod.descripcion || "-";
           const row = document.createElement("tr");
           row.innerHTML = `
             <td>#${prod.productoId}</td>
             <td>
               <strong>${prod.nombreProducto}</strong>
-              <div class="table-subtext">${
-                prod.descripcion || "Sin descripción"
-              }</div>
+              <div class="table-subtext">
+                <div class="texto-compacto" title="${
+                  (descripcionRaw || "").toString().replace(/"/g, "&quot;")
+                }">${descripcionRaw}</div>
+              </div>
             </td>
+            <td><span style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;">${skuMaestro}</span></td>
             <td>${prod.categoria?.nombre || "Sin categoría"}</td>
+            <td>${prod.tipoProducto || "—"}</td>
+            <td>${renderReglaBadge(prod.reglaBackorder)}</td>
             <td>${variantes} variante${variantes === 1 ? "" : "s"}</td>
             <td>${precioDesde}</td>
             <td>
-              <a class="btn btn-primary" style="padding: 0.5rem 1.5rem; border-radius: 0.5rem; justify-content: center;" href="/admin-producto-editar.html?id=${
-                prod.productoId
-              }">Editar variantes</a>
+              <div style="display:flex; gap:0.5rem; flex-wrap:wrap; justify-content:flex-end;">
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-primary"
+                  title="Editar Producto Maestro"
+                  onclick='prepararEdicion(${prod.productoId})'
+                >
+                  Editar
+                </button>
+                <a
+                  href="admin-producto-editar.html?id=${prod.productoId}"
+                  class="btn btn-sm btn-outline-secondary"
+                  title="Editar variantes"
+                >
+                  Editar variantes
+                </a>
+              </div>
             </td>
           `;
           mastersTableBody.appendChild(row);
@@ -1234,9 +1880,23 @@
           return;
         }
 
-        const filtered = masterProductsCache.filter((prod) =>
-          (prod.nombreProducto || "").toLowerCase().includes(term)
-        );
+        const filtered = masterProductsCache.filter((prod) => {
+          const matchesTerm = (prod.nombreProducto || "")
+            .toLowerCase()
+            .includes(term);
+
+          let matchesRegla = true;
+          if (selectedBackorderFilter && selectedBackorderFilter !== "ALL") {
+            const regla = (prod.reglaBackorder || "UNITARIO")
+              .toString()
+              .trim()
+              .toUpperCase();
+            const normalized = regla === "PAQUETE" ? "DOCENA" : regla;
+            matchesRegla = normalized === selectedBackorderFilter;
+          }
+
+          return matchesTerm && matchesRegla;
+        });
 
         if (filtered.length) {
           setMastersEmptyMessage(
@@ -1263,6 +1923,7 @@
         mastersEmpty?.querySelector(".empty-state-text");
       const refreshMastersBtn = document.getElementById("refreshMastersBtn");
       const searchProductosInput = document.getElementById("search-productos");
+      const backorderFilter = document.getElementById("backorderFilter");
       const mastersSearchForm = document.getElementById("mastersSearchForm");
       const searchProductosClear = document.getElementById(
         "search-productos-clear"
@@ -1278,6 +1939,13 @@
 
       if (searchProductosInput) {
         searchProductosInput.addEventListener("input", () => {
+          applyMasterProductsSearch();
+        });
+      }
+
+      if (backorderFilter) {
+        backorderFilter.addEventListener("change", () => {
+          selectedBackorderFilter = backorderFilter.value || "ALL";
           applyMasterProductsSearch();
         });
       }

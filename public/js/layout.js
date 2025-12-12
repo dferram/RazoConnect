@@ -68,9 +68,17 @@
    * Nota: La gestión de administradores ahora se hace vía dropdown del header
    */
   function applyPermissions(container) {
-    // Reservado para futuras restricciones de menú por rol
-    // La opción "Agregar administrador" está ahora en el dropdown del usuario
-    console.log("🔐 Permisos de menú aplicados");
+    const linkBitacora = container.querySelector("#menuLinkBitacora");
+    if (linkBitacora && !isSuperAdmin()) {
+      const section = linkBitacora.closest(".admin-nav-section");
+      linkBitacora.remove();
+      if (section) {
+        const hasLinks = section.querySelector("a[href]");
+        if (!hasLinks) {
+          section.remove();
+        }
+      }
+    }
   }
 
   document.addEventListener("DOMContentLoaded", async () => {

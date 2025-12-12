@@ -64,6 +64,80 @@ const obtenerClientesDisponibles = async (req, res) => {
   }
 };
 
+const solicitarConfirmacionPedidoAgente = async (req, res) => {
+  try {
+    if (!req.user || req.user.rol !== "agente") {
+      return res.status(403).json({
+        success: false,
+        message: "Acceso no autorizado",
+      });
+    }
+
+    const agenteId = resolveAuthenticatedAgenteId(req.user);
+
+    if (!agenteId) {
+      return res.status(403).json({
+        success: false,
+        message: "No se pudo determinar el agente autenticado",
+      });
+    }
+
+    const pedidoId = Number.parseInt(req.params.id, 10);
+    if (!Number.isInteger(pedidoId) || pedidoId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "ID de pedido inválido",
+      });
+    }
+
+    const pedidoResult = await db.query(
+      `SELECT p.pedidoid, p.estatus
+       FROM Pedidos p
+       INNER JOIN Clientes c ON c.ClienteID = p.ClienteID
+       WHERE p.PedidoID = $1 AND c.AgenteID = $2`,
+      [pedidoId, agenteId]
+    );
+
+    if (pedidoResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Pedido no encontrado o no pertenece a tus clientes",
+      });
+    }
+
+    const estatusActual = pedidoResult.rows[0].estatus || "";
+
+    const resultado = await solicitarCambio(
+      req,
+      "pedidos",
+      pedidoId,
+      "UPDATE",
+      { estatus: "Confirmado" },
+      { estatus: estatusActual || "Pendiente" }
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Solicitud de confirmación enviada al administrador.",
+      data: {
+        pedidoId,
+        solicitudId: resultado.solicitudId,
+        estadoSolicitud: resultado.estado,
+      },
+    });
+  } catch (error) {
+    console.error(
+      "Error al registrar solicitud de confirmación de pedido por agente:",
+      error
+    );
+    return res.status(500).json({
+      success: false,
+      message: "Error al registrar la solicitud de confirmación",
+      error: error.message,
+    });
+  }
+};
+
 /**
  * Vincular un cliente existente a la cartera del agente logueado
  * POST /api/agentes/vincular-cliente
@@ -859,4 +933,5 @@ module.exports = {
   resolveAuthenticatedAgenteId,
   actualizarEstatusPedidoAgente,
   solicitarCambioEstatusPedidoAgente,
+  solicitarConfirmacionPedidoAgente,
 };

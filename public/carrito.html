@@ -763,6 +763,44 @@
         }).format(amount);
       }
 
+      function showBackorderAdjustmentToast({
+        cantidadSurtida,
+        cantidadBackorder,
+        reglaBackorder,
+      } = {}) {
+        const surtida = Number.isFinite(cantidadSurtida)
+          ? cantidadSurtida
+          : parseInt(cantidadSurtida, 10) || 0;
+        const backorder = Number.isFinite(cantidadBackorder)
+          ? cantidadBackorder
+          : parseInt(cantidadBackorder, 10) || 0;
+        const regla = (reglaBackorder || "UNITARIO").toString().toUpperCase();
+
+        const textoRegla =
+          regla === "PAQUETE"
+            ? " (Mínimo de producción requerido)"
+            : "";
+        const mensaje = `Se ha ajustado tu pedido: ${surtida} disponibles + ${backorder} en backorder${textoRegla}.`;
+
+        if (typeof Swal !== "undefined" && Swal && typeof Swal.mixin === "function") {
+          const Toast = Swal.mixin({
+            toast: true,
+            position: "top-end",
+            showConfirmButton: false,
+            timer: 4500,
+            timerProgressBar: true,
+          });
+
+          Toast.fire({
+            icon: "info",
+            title: mensaje,
+          });
+          return;
+        }
+
+        showToast(mensaje, "info");
+      }
+
       // Render cart item
       function renderCartItem(item, conflictInfo) {
         const producto = item.producto || {};
@@ -788,11 +826,37 @@
 
           return "Presentación estándar";
         })();
-        const totalPiezas = piezasPorPaquete * item.cantidadPaquetes;
+        const cantidadSolicitada =
+          typeof item.cantidadPaquetesSolicitada === "number"
+            ? item.cantidadPaquetesSolicitada
+            : typeof item.cantidadPaquetes === "number"
+            ? item.cantidadPaquetes
+            : parseInt(item.cantidadPaquetes, 10) || 0;
+
+        const cantidadSurtida =
+          typeof item.cantidadPaquetesSurtida === "number"
+            ? item.cantidadPaquetesSurtida
+            : parseInt(item.cantidadPaquetesSurtida, 10) || 0;
+
+        const cantidadBackorder =
+          typeof item.cantidadPaquetesBackorder === "number"
+            ? item.cantidadPaquetesBackorder
+            : parseInt(item.cantidadPaquetesBackorder, 10) || 0;
+
+        const cantidadCobrar =
+          typeof item.cantidadPaquetesCobrar === "number"
+            ? item.cantidadPaquetesCobrar
+            : parseInt(item.cantidadPaquetesCobrar, 10) || cantidadSolicitada;
+
+        const totalPiezasSolicitadas = piezasPorPaquete * cantidadSolicitada;
+        const totalPiezasCobrar = piezasPorPaquete * cantidadCobrar;
         const stockDisponible =
           typeof item.stock === "number"
             ? item.stock
             : parseInt(item.stock, 10) || 0;
+
+        const paquetesDisponibles =
+          piezasPorPaquete > 0 ? Math.floor(stockDisponible / piezasPorPaquete) : 0;
         const precioUnitario =
           typeof item.precioUnitario === "number"
             ? item.precioUnitario
@@ -807,8 +871,35 @@
           item.subtotal !== null && item.subtotal !== undefined
             ? parseFloat(item.subtotal)
             : Number.isFinite(precioPaquete)
-            ? precioPaquete * item.cantidadPaquetes
+            ? precioPaquete * cantidadCobrar
             : null;
+
+        const reglaBackorder = (item.reglaBackorder || "UNITARIO")
+          .toString()
+          .toUpperCase();
+        const ajusteAplicado = item.ajusteAplicado === true;
+
+        const splitBadges =
+          cantidadBackorder > 0 || cantidadSurtida > 0
+            ? `
+              <div style="display:flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.75rem;">
+                <span style="display:inline-flex; align-items:center; gap:0.35rem; padding: 0.25rem 0.6rem; border-radius: 999px; background: #dcfce7; color: #166534; font-weight: 700; font-size: 0.75rem;">
+                  Envío hoy: ${cantidadSurtida}
+                </span>
+                <span style="display:inline-flex; align-items:center; gap:0.35rem; padding: 0.25rem 0.6rem; border-radius: 999px; background: #fef3c7; color: #92400e; font-weight: 700; font-size: 0.75rem;">
+                  Backorder: ${cantidadBackorder}
+                </span>
+                <span style="display:inline-flex; align-items:center; gap:0.35rem; padding: 0.25rem 0.6rem; border-radius: 999px; background: #e0f2fe; color: #075985; font-weight: 700; font-size: 0.75rem;">
+                  A cobrar: ${cantidadCobrar}
+                </span>
+                ${
+                  ajusteAplicado && reglaBackorder === "PAQUETE"
+                    ? `<span style="display:inline-flex; align-items:center; gap:0.35rem; padding: 0.25rem 0.6rem; border-radius: 999px; background: rgba(249, 115, 22, 0.12); color: #9a3412; font-weight: 800; font-size: 0.75rem;">Mínimo 12</span>`
+                    : ""
+                }
+              </div>
+            `
+            : "";
 
         const conflictBadge = conflictInfo
           ? `<div style="margin-top: 0.5rem; padding: 0.4rem 0.6rem; border-radius: 0.5rem; background: #fee2e2; color: #b91c1c; font-size: 0.75rem;">
@@ -839,8 +930,10 @@
               <strong>Piezas por paquete:</strong> ${
                 piezasPorPaquete || "N/D"
               }<br>
-              <strong>Total piezas:</strong> ${totalPiezas || "N/D"}
+              <strong>Solicitado:</strong> ${cantidadSolicitada} paquete(s) (${totalPiezasSolicitadas} piezas)<br>
+              <strong>Total a cobrar:</strong> ${cantidadCobrar} paquete(s) (${totalPiezasCobrar} piezas)
             </p>
+            ${splitBadges}
             <p class="cart-item-details" style="margin-top: 0.5rem; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
               <span>${item.dimensiones || "Sin dimensiones"}</span>
               <button
@@ -859,23 +952,23 @@
                 <button 
                   onclick="actualizarCantidad(${item.varianteId}, ${
           item.tamanoId
-        }, ${item.cantidadPaquetes - 1})"
+        }, ${cantidadSolicitada - 1})"
                   class="btn-quantity"
                   style="background: white; border: none; width: 32px; height: 32px; border-radius: 0.375rem; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; font-weight: 600; color: var(--razo-orange); transition: all 0.2s;"
-                  ${item.cantidadPaquetes <= 1 ? "disabled" : ""}
+                  ${cantidadSolicitada <= 1 ? "disabled" : ""}
                   onmouseover="this.style.background='var(--razo-orange)'; this.style.color='white'"
                   onmouseout="this.style.background='white'; this.style.color='var(--razo-orange)'"
                 >−</button>
                 <span style="font-weight: 700; font-size: 1.125rem; min-width: 40px; text-align: center; color: var(--razo-gray-dark);">${
-                  item.cantidadPaquetes
+                  cantidadSolicitada
                 }</span>
                 <button 
                   onclick="actualizarCantidad(${item.varianteId}, ${
           item.tamanoId
-        }, ${item.cantidadPaquetes + 1})"
+        }, ${cantidadSolicitada + 1})"
                   class="btn-quantity"
                   style="background: white; border: none; width: 32px; height: 32px; border-radius: 0.375rem; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; font-weight: 600; color: var(--razo-orange); transition: all 0.2s;"
-                  ${item.cantidadPaquetes >= stockDisponible ? "disabled" : ""}
+                  ${cantidadSolicitada >= 999 ? "disabled" : ""}
                   onmouseover="this.style.background='var(--razo-orange)'; this.style.color='white'"
                   onmouseout="this.style.background='white'; this.style.color='var(--razo-orange)'"
                 >+</button>
@@ -897,7 +990,7 @@
                 : "Subtotal no disponible"
             }</p>
             <p style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 0.5rem;">
-              Stock disponible: ${stockDisponible}
+              Disponibles hoy: ${paquetesDisponibles} paquete(s) (${stockDisponible} piezas)
             </p>
           </div>
           
@@ -1293,12 +1386,9 @@
               loadingState.style.display = "none";
               emptyState.style.display = "block";
             } else {
-              // Calcular conflictos de stock compartido por variante
-              const conflictos = calcularConflictosStock(carritoData.items);
-
               // Render cart items
               cartItemsContainer.innerHTML = carritoData.items
-                .map((item) => renderCartItem(item, conflictos[item.varianteId]))
+                .map((item) => renderCartItem(item, null))
                 .join("");
 
               // Update summary
@@ -1308,12 +1398,8 @@
               );
               summaryTotal.textContent = formatCurrency(carritoData.montoTotal);
 
-              const hayConflictos =
-                conflictos && Object.keys(conflictos).length > 0;
-              checkoutBtn.disabled = hayConflictos;
-              checkoutBtn.title = hayConflictos
-                ? "No puedes finalizar la compra: hay productos que exceden el stock disponible."
-                : "";
+              checkoutBtn.disabled = false;
+              checkoutBtn.title = "";
 
               // Show cart content
               loadingState.style.display = "none";
@@ -1521,6 +1607,11 @@
           return;
         }
 
+        if (nuevaCantidad > 999) {
+          showToast("La cantidad máxima es 999 paquetes", "warning");
+          return;
+        }
+
         try {
           const response = await API.actualizarCarrito(
             varianteId,
@@ -1529,7 +1620,20 @@
           );
 
           if (response.ok && response.data.success) {
-            showToast("Cantidad actualizada", "success");
+            const split = response.data?.data?.split;
+            if (
+              split &&
+              split.ajusteAplicado === true &&
+              String(split.reglaBackorder || "").toUpperCase() === "PAQUETE"
+            ) {
+              showBackorderAdjustmentToast({
+                cantidadSurtida: split.cantidadSurtida,
+                cantidadBackorder: split.cantidadBackorder,
+                reglaBackorder: split.reglaBackorder,
+              });
+            } else {
+              showToast("Cantidad actualizada", "success");
+            }
             loadCarrito();
           } else {
             showToast(

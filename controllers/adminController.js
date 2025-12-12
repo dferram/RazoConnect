@@ -52,6 +52,246 @@ const PEDIDO_ESTATUS_EMAIL_TEMPLATES = {
   },
 };
 
+const getProveedorById = async (req, res) => {
+  try {
+    const proveedorId = Number.parseInt(req.params.id, 10);
+    if (!Number.isInteger(proveedorId) || proveedorId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "ProveedorID inválido",
+      });
+    }
+
+    const result = await db.query(
+      `SELECT *
+       FROM Proveedores
+       WHERE ProveedorID = $1`,
+      [proveedorId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Proveedor no encontrado",
+      });
+    }
+
+    return res.json({
+      success: true,
+      data: {
+        proveedor: result.rows[0],
+      },
+    });
+  } catch (error) {
+    console.error("Error al obtener proveedor:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error al obtener el proveedor",
+    });
+  }
+};
+
+/**
+ * Obtener variantes pendientes (INSERT) desde control_cambios
+ * GET /api/admin/productos/:id/variantes-pendientes
+ */
+const getVariantesPendientesProducto = async (req, res) => {
+  try {
+    const productoId = Number.parseInt(req.params.id, 10);
+
+    if (!Number.isInteger(productoId) || productoId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "ProductoID inválido",
+      });
+    }
+
+    const result = await db.query(
+      `SELECT id, datos_nuevos, fecha_solicitud
+       FROM control_cambios
+       WHERE estado = 'PENDIENTE'
+         AND LOWER(entidad) = 'producto_variantes'
+         AND COALESCE(
+           (datos_nuevos::jsonb)->>'productoid',
+           (datos_nuevos::jsonb)->>'ProductoID',
+           (datos_nuevos::jsonb)->>'productoId'
+         ) = $1
+       ORDER BY fecha_solicitud DESC`,
+      [String(productoId)]
+    );
+
+    const pendientes = (result.rows || [])
+      .map((row) => {
+        let datos = row.datos_nuevos;
+        if (!datos || typeof datos !== "object") {
+          try {
+            datos = JSON.parse(row.datos_nuevos);
+          } catch (e) {
+            return null;
+          }
+        }
+
+        const sku = datos.sku ?? datos.SKU ?? null;
+        const dimensiones = datos.dimensiones ?? datos.Dimensiones ?? null;
+        const costoUnitarioRaw = datos.costounitario ?? datos.CostoUnitario;
+        const precioUnitarioRaw = datos.preciounitario ?? datos.PrecioUnitario;
+        const precioOfertaRaw =
+          datos.precioofertaunitario ?? datos.PrecioOfertaUnitario;
+        const stockRaw = datos.stock ?? datos.Stock;
+        const piezasPorPaqueteRaw =
+          datos.piezasporpaquete ?? datos.PiezasPorPaquete;
+        const tipoProductoIdRaw = datos.tipoproductoid ?? datos.TipoProductoID;
+        const medidaIdRaw = datos.medidaid ?? datos.MedidaID;
+
+        const costoUnitario =
+          costoUnitarioRaw !== undefined && costoUnitarioRaw !== null
+            ? Number.parseFloat(costoUnitarioRaw)
+            : null;
+        const precioUnitario =
+          precioUnitarioRaw !== undefined && precioUnitarioRaw !== null
+            ? Number.parseFloat(precioUnitarioRaw)
+            : null;
+        const precioOfertaUnitario =
+          precioOfertaRaw !== undefined && precioOfertaRaw !== null
+            ? Number.parseFloat(precioOfertaRaw)
+            : null;
+        const stock =
+          stockRaw !== undefined && stockRaw !== null
+            ? Number.parseInt(stockRaw, 10)
+            : 0;
+        const piezasPorPaquete =
+          piezasPorPaqueteRaw !== undefined && piezasPorPaqueteRaw !== null
+            ? Number.parseInt(piezasPorPaqueteRaw, 10)
+            : null;
+        const tipoProductoId =
+          tipoProductoIdRaw !== undefined && tipoProductoIdRaw !== null
+            ? Number.parseInt(tipoProductoIdRaw, 10)
+            : null;
+        const medidaId =
+          medidaIdRaw !== undefined && medidaIdRaw !== null
+            ? Number.parseInt(medidaIdRaw, 10)
+            : null;
+
+        const activo =
+          datos.activo !== undefined && datos.activo !== null
+            ? Boolean(datos.activo)
+            : true;
+
+        return {
+          varianteId: null,
+          productoId,
+          sku,
+          dimensiones,
+          costoUnitario: Number.isFinite(costoUnitario) ? costoUnitario : null,
+          precioUnitario: Number.isFinite(precioUnitario) ? precioUnitario : null,
+          precioOfertaUnitario: Number.isFinite(precioOfertaUnitario)
+            ? precioOfertaUnitario
+            : null,
+          stock: Number.isInteger(stock) && stock > 0 ? stock : 0,
+          piezasPorPaquete:
+            Number.isInteger(piezasPorPaquete) && piezasPorPaquete > 0
+              ? piezasPorPaquete
+              : null,
+          tipoProductoId:
+            Number.isInteger(tipoProductoId) && tipoProductoId > 0
+              ? tipoProductoId
+              : null,
+          medidaId: Number.isInteger(medidaId) && medidaId > 0 ? medidaId : null,
+          activo,
+          isPending: true,
+          controlCambioId: row.id,
+          fechaSolicitud: row.fecha_solicitud,
+        };
+      })
+      .filter(Boolean);
+
+    return res.status(200).json({
+      success: true,
+      message: "Variantes pendientes obtenidas exitosamente",
+      data: {
+        productoId,
+        variantes: pendientes,
+        total: pendientes.length,
+      },
+    });
+  } catch (error) {
+    console.error("Error al obtener variantes pendientes del producto:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error al obtener variantes pendientes",
+      error: error.message,
+    });
+  }
+};
+
+const getSolicitudesPendientesProveedor = async (req, res) => {
+  try {
+    const proveedorId = Number.parseInt(req.params.id, 10);
+    if (!Number.isInteger(proveedorId) || proveedorId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "ProveedorID inválido",
+      });
+    }
+
+    const proveedorResult = await db.query(
+      `SELECT proveedorid
+       FROM proveedores
+       WHERE proveedorid = $1`,
+      [proveedorId]
+    );
+    if (!proveedorResult.rows.length) {
+      return res.status(404).json({
+        success: false,
+        message: "Proveedor no encontrado",
+      });
+    }
+
+    const { rows } = await db.query(
+      `SELECT
+         id,
+         entidad,
+         entidad_id,
+         tipo_cambio,
+         datos_nuevos,
+         fecha_solicitud
+       FROM control_cambios
+       WHERE estado = 'PENDIENTE'
+         AND LOWER(entidad) = 'proveedor_reglas_empaque'
+         AND COALESCE(
+           (datos_nuevos::jsonb)->>'proveedorId',
+           (datos_nuevos::jsonb)->>'proveedorid'
+         ) = $1
+       ORDER BY fecha_solicitud DESC`,
+      [String(proveedorId)]
+    );
+
+    const solicitudes = (rows || []).map((r) => ({
+      id: r.id,
+      entidad: r.entidad,
+      entidadId: r.entidad_id ?? null,
+      tipoCambio: r.tipo_cambio,
+      datosNuevos: r.datos_nuevos,
+      fechaSolicitud: r.fecha_solicitud,
+    }));
+
+    return res.status(200).json({
+      success: true,
+      message: "Solicitudes pendientes obtenidas exitosamente",
+      data: {
+        solicitudes,
+      },
+    });
+  } catch (error) {
+    console.error("Error al obtener solicitudes pendientes del proveedor:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error al obtener solicitudes pendientes",
+      error: error.message,
+    });
+  }
+};
+
 const getAgenteAdminColumnsInfo = async () => {
   if (agenteAdminColumnsCache) {
     return agenteAdminColumnsCache;
@@ -297,6 +537,241 @@ const loginAdmin = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Error en el servidor",
+    });
+  }
+};
+
+const getReglasEmpaqueProveedor = async (req, res) => {
+  try {
+    const proveedorId = Number.parseInt(req.params.id, 10);
+    if (!Number.isInteger(proveedorId) || proveedorId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "ProveedorID inválido",
+      });
+    }
+
+    const proveedorResult = await db.query(
+      `SELECT proveedorid
+       FROM proveedores
+       WHERE proveedorid = $1`,
+      [proveedorId]
+    );
+
+    if (!proveedorResult.rows.length) {
+      return res.status(404).json({
+        success: false,
+        message: "Proveedor no encontrado",
+      });
+    }
+
+    let reglasResult;
+    try {
+      reglasResult = await db.query(
+        `SELECT tipoproductoid, cantidadempaque
+         FROM proveedor_reglas_empaque
+         WHERE proveedorid = $1`,
+        [proveedorId]
+      );
+    } catch (dbError) {
+      if (dbError && dbError.code === "42703") {
+        reglasResult = await db.query(
+          `SELECT tipoproductoid, piezasporpaquete AS cantidadempaque
+           FROM proveedor_reglas_empaque
+           WHERE proveedorid = $1`,
+          [proveedorId]
+        );
+      } else {
+        throw dbError;
+      }
+    }
+
+    const reglas = (reglasResult?.rows || []).reduce((acc, row) => {
+      const tipoId = row.tipoproductoid;
+      const cantidad = row.cantidadempaque;
+      if (tipoId !== null && tipoId !== undefined && cantidad !== null && cantidad !== undefined) {
+        const tipoKey = String(tipoId);
+        const cantidadInt = Number.parseInt(cantidad, 10);
+        if (Number.isInteger(cantidadInt) && cantidadInt > 0) {
+          acc[tipoKey] = cantidadInt;
+        }
+      }
+      return acc;
+    }, {});
+
+    return res.status(200).json({
+      success: true,
+      message: "Reglas de empaque obtenidas exitosamente",
+      data: {
+        reglas,
+      },
+    });
+  } catch (error) {
+    console.error("Error al obtener reglas de empaque del proveedor:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error al obtener reglas de empaque",
+      error: error.message,
+    });
+  }
+};
+
+const saveReglaEmpaque = async (req, res) => {
+  try {
+    const proveedorId = Number.parseInt(req.params.id, 10);
+    if (!Number.isInteger(proveedorId) || proveedorId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "ProveedorID inválido",
+      });
+    }
+
+    const tipoProductoIdRaw =
+      req.body.tipoproductoid ?? req.body.TipoProductoID ?? req.body.tipoProductoId;
+    const tipoProductoNombreRaw =
+      req.body.tipoProductoNombre ?? req.body.tipoProducto ?? req.body.TipoProducto;
+
+    const tipoProductoIdParsed = Number.parseInt(tipoProductoIdRaw, 10);
+    let tipoProductoId =
+      Number.isInteger(tipoProductoIdParsed) && tipoProductoIdParsed > 0
+        ? tipoProductoIdParsed
+        : null;
+
+    const tipoProductoNombre = (() => {
+      if (tipoProductoNombreRaw === undefined || tipoProductoNombreRaw === null) {
+        return null;
+      }
+      const txt = String(tipoProductoNombreRaw).trim();
+      return txt.length ? txt : null;
+    })();
+
+    if (!tipoProductoId && !tipoProductoNombre) {
+      return res.status(400).json({
+        success: false,
+        message: "TipoProductoID inválido",
+      });
+    }
+
+    const cantidadEmpaque = Number.parseInt(
+      req.body.cantidadempaque ?? req.body.cantidadEmpaque ?? req.body.piezasPorPaquete,
+      10
+    );
+    if (!Number.isInteger(cantidadEmpaque) || cantidadEmpaque <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "cantidadEmpaque inválida",
+      });
+    }
+
+    const proveedorResult = await db.query(
+      `SELECT proveedorid
+       FROM proveedores
+       WHERE proveedorid = $1`,
+      [proveedorId]
+    );
+    if (!proveedorResult.rows.length) {
+      return res.status(404).json({
+        success: false,
+        message: "Proveedor no encontrado",
+      });
+    }
+
+    if (!tipoProductoId && tipoProductoNombre) {
+      const creado = await db.query(
+        `INSERT INTO tipoproducto (nombre, descripcion, activo)
+         VALUES ($1, NULL, TRUE)
+         ON CONFLICT (nombre)
+         DO UPDATE SET activo = TRUE
+         RETURNING tipoproductoid`,
+        [tipoProductoNombre]
+      );
+      const nuevoId = Number.parseInt(creado.rows[0]?.tipoproductoid, 10);
+      if (!Number.isInteger(nuevoId) || nuevoId <= 0) {
+        return res.status(500).json({
+          success: false,
+          message: "No se pudo crear el tipo de producto",
+        });
+      }
+      tipoProductoId = nuevoId;
+    }
+
+    const tipoResult = await db.query(
+      `SELECT tipoproductoid
+       FROM tipoproducto
+       WHERE tipoproductoid = $1`,
+      [tipoProductoId]
+    );
+    if (!tipoResult.rows.length) {
+      return res.status(404).json({
+        success: false,
+        message: "Tipo de producto no encontrado",
+      });
+    }
+
+    let reglaExistenteResult;
+    try {
+      reglaExistenteResult = await db.query(
+        `SELECT reglaid, cantidadempaque
+         FROM proveedor_reglas_empaque
+         WHERE proveedorid = $1
+           AND tipoproductoid = $2
+         LIMIT 1`,
+        [proveedorId, tipoProductoId]
+      );
+    } catch (dbError) {
+      if (dbError && dbError.code === "42703") {
+        reglaExistenteResult = await db.query(
+          `SELECT reglaid, piezasporpaquete AS cantidadempaque
+           FROM proveedor_reglas_empaque
+           WHERE proveedorid = $1
+             AND tipoproductoid = $2
+           LIMIT 1`,
+          [proveedorId, tipoProductoId]
+        );
+      } else {
+        throw dbError;
+      }
+    }
+
+    const reglaExistente = reglaExistenteResult.rows[0] || null;
+    const tipoCambio = reglaExistente ? "UPDATE" : "INSERT";
+    const entidadId = reglaExistente ? reglaExistente.reglaid : null;
+    const datosAnteriores = reglaExistente
+      ? {
+          cantidadEmpaque: Number.parseInt(reglaExistente.cantidadempaque, 10),
+        }
+      : null;
+
+    const datosNuevos = {
+      proveedorId,
+      tipoProductoId,
+      cantidadEmpaque,
+    };
+
+    const resultado = await solicitarCambio(
+      req,
+      "proveedor_reglas_empaque",
+      entidadId,
+      tipoCambio,
+      datosNuevos,
+      datosAnteriores
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: resultado.mensaje,
+      data: {
+        solicitudId: resultado.solicitudId,
+        estado: resultado.estado,
+        tipoCambio,
+      },
+    });
+  } catch (error) {
+    console.error("Error al guardar regla de empaque:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error al guardar regla de empaque",
+      error: error.message,
     });
   }
 };
@@ -1135,246 +1610,62 @@ const getAllPedidos = async (req, res) => {
  * PUT /api/admin/pedidos/:id
  */
 const updatePedidoEstatus = async (req, res) => {
-  const client = await db.pool.connect();
-
   try {
-    const pedidoId = parseInt(req.params.id);
-    const { estatus } = req.body;
+    const pedidoId = Number.parseInt(req.params.id, 10);
+    const estatusBody = req.body ? req.body.estatus : null;
 
-    // Validar estatus
-    const estatusValidos = [
-      "Pendiente",
-      "Confirmado",
-      "Enviado",
-      "Entregado",
-      "Cancelado",
-    ];
-    if (!estatusValidos.includes(estatus)) {
+    if (!Number.isInteger(pedidoId) || pedidoId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "ID de pedido inválido",
+      });
+    }
+
+    const estatusNuevo = typeof estatusBody === "string" ? estatusBody.trim() : "";
+
+    // Permitir cualquier estatus manual (incluye 'Parcialmente Surtido'),
+    // pero auditarlo via control_cambios.
+    if (!estatusNuevo) {
       return res.status(400).json({
         success: false,
         message: "Estatus inválido",
       });
     }
 
-    await client.query("BEGIN");
-
-    // Obtener datos del pedido (incluyendo datos de cliente y dirección de envío)
-    const pedidoResult = await client.query(
-      `SELECT 
-         p.*, 
-         c.Email AS email_cliente, 
-         COALESCE(c.Nombre, '') AS nombre_cliente,
-         COALESCE(c.Apellido, '') AS apellido_cliente,
-         cd.Receptor,
-         cd.Calle,
-         cd.NumeroExt,
-         cd.NumeroInt,
-         cd.Colonia,
-         cd.Ciudad,
-         cd.EstadoID,
-         e.Nombre AS EstadoNombre,
-         e.Abreviatura AS EstadoAbreviatura,
-         cd.CodigoPostal,
-         cd.TelefonoContacto
-       FROM Pedidos p
-       INNER JOIN Clientes c ON c.ClienteID = p.ClienteID
-       LEFT JOIN Cliente_Direcciones cd ON p.DireccionEnvioID = cd.DireccionID
-       LEFT JOIN Estados e ON cd.EstadoID = e.EstadoID
-       WHERE p.PedidoID = $1`,
+    const pedidoResult = await db.query(
+      "SELECT PedidoID, Estatus FROM Pedidos WHERE PedidoID = $1",
       [pedidoId]
     );
 
     if (pedidoResult.rows.length === 0) {
-      await client.query("ROLLBACK");
       return res.status(404).json({
         success: false,
         message: "Pedido no encontrado",
       });
     }
 
-    const pedido = pedidoResult.rows[0];
-    const estatusAnterior = pedido.estatus;
+    const estatusAnterior = pedidoResult.rows[0].estatus || "Pendiente";
 
-    const esCancelacion =
-      estatus === "Cancelado" && estatusAnterior !== "Cancelado";
-    const esReactivacion =
-      estatusAnterior === "Cancelado" && estatus !== "Cancelado";
-
-    if (esCancelacion) {
-      await devolverStockPedido(client, pedidoId, req.user.id);
-    } else if (esReactivacion) {
-      await reducirStockPedido(client, pedidoId, req.user.id);
-    }
-
-    // Actualizar el estatus del pedido
-    await client.query("UPDATE Pedidos SET Estatus = $1 WHERE PedidoID = $2", [
-      estatus,
+    await solicitarCambio(
+      req,
+      "pedidos",
       pedidoId,
-    ]);
+      "UPDATE",
+      { estatus: estatusNuevo },
+      { estatus: estatusAnterior }
+    );
 
-    await client.query("COMMIT");
-
-    const emailCliente = pedido.email_cliente;
-    const nombreClienteBase =
-      (pedido.nombre_cliente || "cliente").trim() || "cliente";
-    const apellidoClienteBase = (pedido.apellido_cliente || "").trim();
-    const nombreCliente =
-      [nombreClienteBase, apellidoClienteBase].filter(Boolean).join(" ").trim() ||
-      nombreClienteBase;
-    const plantilla = PEDIDO_ESTATUS_EMAIL_TEMPLATES[estatus];
-    const seConfirmaAhora =
-      estatus === "Confirmado" && estatusAnterior !== "Confirmado";
-
-    if (emailCliente) {
-      try {
-        if (seConfirmaAhora) {
-          const detallesEmailResult = await db.query(
-            `SELECT
-               dp.DetalleID,
-               dp.CantidadPaquetes AS Cantidad,
-               dp.PrecioPorPaquete,
-               pv.ProductoID,
-               pv.SKU,
-               pv.Dimensiones,
-               pr.NombreProducto,
-               imagen.url_imagen
-             FROM DetallesDelPedido dp
-             INNER JOIN Producto_Variantes pv ON pv.VarianteID = dp.VarianteID
-             INNER JOIN Productos pr ON pr.ProductoID = pv.ProductoID
-             LEFT JOIN LATERAL (
-               SELECT pi.url_imagen
-               FROM producto_imagenes pi
-               WHERE pi.productoid = pv.productoid
-               ORDER BY pi.orden ASC NULLS LAST, pi.imagenid ASC
-               LIMIT 1
-             ) imagen ON TRUE
-             WHERE dp.PedidoID = $1
-             ORDER BY dp.DetalleID ASC`,
-            [pedidoId]
-          );
-
-          const detallesEmail = detallesEmailResult.rows.map((row) => {
-            const cantidad =
-              row.cantidad !== null ? parseInt(row.cantidad, 10) : 0;
-            const precioPorPaquete =
-              row.precioporpaquete !== null
-                ? parseFloat(row.precioporpaquete)
-                : 0;
-            const subtotal = cantidad * precioPorPaquete;
-
-            return {
-              nombreProducto: row.nombreproducto,
-              sku: row.sku,
-              dimensiones: row.dimensiones,
-              cantidad,
-              precioUnitario: precioPorPaquete,
-              precioTotal: subtotal,
-              imagenUrl: row.url_imagen,
-            };
-          });
-
-          const pedidoEmail = {
-            id: pedidoId,
-            fecha: pedido.fechapedido,
-            montoTotal:
-              pedido.montototal !== null ? parseFloat(pedido.montototal) : 0,
-            costoEnvio:
-              pedido.costoenvio !== null ? parseFloat(pedido.costoenvio) : 0,
-          };
-
-          const clienteEmail = {
-            nombre: nombreCliente,
-            email: emailCliente,
-            direccion: {
-              receptor: pedido.receptor || nombreCliente,
-              calle: pedido.calle,
-              numeroExterior: pedido.numeroext,
-              numeroInterior: pedido.numeroint,
-              colonia: pedido.colonia,
-              ciudad: pedido.ciudad,
-              estadoNombre: pedido.estadonombre,
-              estado: pedido.estadonombre,
-              estadoAbreviatura: pedido.estadoabreviatura,
-              codigoPostal: pedido.codigopostal,
-              telefonoContacto: pedido.telefonocontacto,
-            },
-          };
-
-          const htmlContent = generarHtmlConfirmacion(
-            pedidoEmail,
-            detallesEmail,
-            clienteEmail
-          );
-          const asunto = `¡Tu pedido #${pedidoId} ha sido confirmado!`;
-
-          await enviarEmail(emailCliente, asunto, htmlContent);
-        } else if (plantilla) {
-          const asunto = plantilla.asunto(pedidoId);
-          const cuerpoHtml = plantilla.html(nombreCliente, pedidoId);
-          await enviarEmail(emailCliente, asunto, cuerpoHtml);
-        }
-      } catch (emailError) {
-        console.error(
-          `No se pudo enviar correo de notificación para el pedido #${pedidoId}:`,
-          emailError
-        );
-      }
-    }
-
-    const clienteIdNotificacion = pedido.clienteid;
-    if (
-      clienteIdNotificacion &&
-      (estatus === "Enviado" || estatus === "Entregado")
-    ) {
-      const mensajes = {
-        Enviado: "Tu pedido ha sido enviado.",
-        Entregado: "Tu pedido ha sido entregado.",
-      };
-
-      try {
-        await crearNotificacionServicio(
-          clienteIdNotificacion,
-          "pedido",
-          `Pedido ${estatus.toLowerCase()}`,
-          `Tu pedido #${pedidoId} ha sido ${estatus.toLowerCase()}.`,
-          { pedidoID: pedidoId }
-        );
-      } catch (notificacionError) {
-        console.error(
-          `No se pudo crear notificación para el pedido #${pedidoId}:`,
-          notificacionError
-        );
-      }
-    }
-
-    res.json({
+    return res.status(200).json({
       success: true,
-      message: `Pedido actualizado a ${estatus}`,
-      data: {
-        pedidoId,
-        estatusAnterior,
-        estatusNuevo: estatus,
-      },
+      message: "Solicitud de cambio de estatus enviada a bitácora.",
     });
   } catch (error) {
-    await client.query("ROLLBACK");
-    console.error("Error al actualizar pedido:", error);
-
-    if (error && error.code === "NO_STOCK_REACTIVACION") {
-      return res.status(400).json({
-        success: false,
-        message: "No hay stock suficiente para reactivar este pedido",
-        error: error.message,
-      });
-    }
-
-    res.status(500).json({
+    console.error("Error updating order status:", error);
+    return res.status(500).json({
       success: false,
-      message: "Error en el servidor",
+      message: "Error al actualizar el estatus del pedido",
       error: error.message,
     });
-  } finally {
-    client.release();
   }
 };
 
@@ -1617,9 +1908,12 @@ const findOrCreateTamanosFromPacks = async (client, packsRaw) => {
 const crearProducto = async (req, res) => {
   const {
     nombre,
-    codigoModelo,
+    sku_maestro,
     descripcion,
     categoriaId,
+    TipoProductoID: tipoProductoIdRaw,
+    tipoProducto,
+    TipoProducto: tipoProductoRaw,
     tamanos,
     tamanoIds,
     proveedorId: proveedorIdRaw,
@@ -1635,8 +1929,9 @@ const crearProducto = async (req, res) => {
   // DEBUG BACKEND: inspeccionar qué llega al crear producto maestro
   console.log("🟢 [CREAR_PRODUCTO] Body recibido:", {
     nombre,
-    codigoModelo,
+    sku_maestro,
     categoriaId,
+    tipoProducto: tipoProducto ?? tipoProductoRaw,
     proveedorIdRaw,
     stockTotalInicialRaw,
     venderIndividualRaw,
@@ -1649,6 +1944,13 @@ const crearProducto = async (req, res) => {
     return res.status(400).json({
       success: false,
       message: "El nombre del producto es obligatorio",
+    });
+  }
+
+  if (sku_maestro === undefined || sku_maestro === null || String(sku_maestro).trim() === "") {
+    return res.status(400).json({
+      success: false,
+      message: "El SKU Maestro es obligatorio",
     });
   }
 
@@ -1678,6 +1980,25 @@ const crearProducto = async (req, res) => {
     await client.query("BEGIN");
     transactionStarted = true;
 
+    const skuMaestroFinal = String(sku_maestro);
+
+    const skuExisteResult = await client.query(
+      `SELECT productoid
+       FROM productos
+       WHERE sku_maestro = $1
+       LIMIT 1`,
+      [skuMaestroFinal]
+    );
+
+    if (skuExisteResult.rows.length > 0) {
+      await client.query("ROLLBACK");
+      transactionStarted = false;
+      return res.status(400).json({
+        success: false,
+        message: "El SKU Maestro ya existe. Debe ser único.",
+      });
+    }
+
     let proveedorId = null;
     if (proveedorIdRaw !== undefined && proveedorIdRaw !== null) {
       const parsed = Number.parseInt(proveedorIdRaw, 10);
@@ -1704,6 +2025,56 @@ const crearProducto = async (req, res) => {
     // Gestión de visibilidad: forzar activo FALSE en creación.
     // El producto maestro se activará sólo cuando un superadmin apruebe el cambio.
     const activoFinal = false;
+
+    const tipoProductoNombre = (() => {
+      const raw =
+        tipoProducto !== undefined && tipoProducto !== null
+          ? tipoProducto
+          : tipoProductoRaw;
+      if (raw === undefined || raw === null) {
+        return null;
+      }
+      const txt = String(raw).trim();
+      return txt.length ? txt : null;
+    })();
+
+    const tipoProductoId = await (async () => {
+      if (tipoProductoIdRaw !== undefined && tipoProductoIdRaw !== null && String(tipoProductoIdRaw).trim() !== "") {
+        const parsed = Number.parseInt(tipoProductoIdRaw, 10);
+        if (!Number.isInteger(parsed) || parsed <= 0) {
+          throw new Error("TIPO_PRODUCTO_INVALIDO");
+        }
+
+        const existe = await client.query(
+          `SELECT tipoproductoid
+           FROM tipoproducto
+           WHERE tipoproductoid = $1
+             AND activo = TRUE`,
+          [parsed]
+        );
+
+        if (!existe.rows.length) {
+          throw new Error("TIPO_PRODUCTO_NO_EXISTE");
+        }
+
+        return parsed;
+      }
+
+      if (tipoProductoNombre) {
+        return (
+          await client.query(
+            `INSERT INTO tipoproducto (nombre, descripcion, activo)
+             VALUES ($1, NULL, TRUE)
+             ON CONFLICT (nombre)
+             DO UPDATE SET activo = TRUE
+             RETURNING tipoproductoid`,
+            [tipoProductoNombre]
+          )
+        ).rows[0]?.tipoproductoid ?? null;
+      }
+
+      return null;
+    })();
 
     const parseBoolean = (value, defaultValue = false) => {
       if (typeof value === "boolean") return value;
@@ -1759,12 +2130,12 @@ const crearProducto = async (req, res) => {
     const variantesInput = Array.isArray(variantesRaw) ? variantesRaw : [];
 
     const result = await client.query(
-      `INSERT INTO Productos (NombreProducto, CodigoModelo, Descripcion, CategoriaID, ProveedorID_Default, Activo)
+      `INSERT INTO Productos (NombreProducto, sku_maestro, Descripcion, CategoriaID, ProveedorID_Default, Activo)
        VALUES ($1, $2, $3, $4, $5, $6)
-       RETURNING ProductoID, NombreProducto, CodigoModelo, Descripcion, CategoriaID, ProveedorID_Default AS ProveedorID, Activo`,
+       RETURNING ProductoID, NombreProducto, sku_maestro, Descripcion, CategoriaID, ProveedorID_Default AS ProveedorID, Activo`,
       [
         nombre,
-        codigoModelo || null,
+        skuMaestroFinal,
         descripcion || null,
         categoriaIdParsed,
         proveedorId,
@@ -1778,8 +2149,8 @@ const crearProducto = async (req, res) => {
 
     const serieSkuBase = (() => {
       const base =
-        (typeof codigoModelo === "string" && codigoModelo.trim().length
-          ? codigoModelo
+        (typeof skuMaestroFinal === "string" && skuMaestroFinal.trim().length
+          ? skuMaestroFinal
           : typeof nombre === "string" && nombre.trim().length
           ? nombre
           : `PROD-${producto.productoid}`) || `PROD-${producto.productoid}`;
@@ -1918,13 +2289,48 @@ const crearProducto = async (req, res) => {
       );
     }
 
+    await client.query("COMMIT");
+    transactionStarted = false;
+
+    // Registrar solicitud de cambio para PUBLICAR/ACTIVAR el producto maestro (estrategia híbrida)
+    try {
+      await solicitarCambio(
+        req,
+        "productos",
+        producto.productoid,
+        "UPDATE",
+        {
+          Activo: true,
+        },
+        producto
+      );
+    } catch (crError) {
+      console.error(
+        "Error al registrar solicitud de cambio para creación de producto:",
+        crError
+      );
+      // No rompemos el flujo principal: el producto queda inactivo si falla el registro
+    }
+
+    return res.status(201).json({
+      success: true,
+      message:
+        "Producto creado preliminarmente. Pendiente de aprobación para activación.",
+      data: {
+        producto,
+        tamanosDisponibles: tamanosAsociados,
+        varianteMaestra: null,
+        variantes: [],
+      },
+    });
+
     const userId = req.user?.id || req.user?.userId || null;
 
     const variantesCreadas = [];
 
     // Usar el SKU base del producto para la variante maestra (sin sufijo UNIT)
     const masterSku = serieSkuBase;
-    const masterDimensiones = "Unidad individual";
+    const masterDimensiones = null;
 
     const masterVarianteResult = await client.query(
       `INSERT INTO Producto_Variantes (
@@ -1950,7 +2356,7 @@ const crearProducto = async (req, res) => {
         precioUnitarioBaseNormalized,
         null,
         stockTotalInicial,
-        null,
+        tipoProductoId,
         null,
         venderIndividual,
         1,
@@ -2145,24 +2551,17 @@ const crearProducto = async (req, res) => {
       variantesCreadasCount: variantesCreadas.length,
     });
 
-    // Registrar solicitud de cambio para ACTIVAR el producto maestro (estrategia híbrida)
+    // Registrar solicitud de cambio para PUBLICAR/ACTIVAR el producto maestro (estrategia híbrida)
     try {
-      const datosNuevosProducto = {
-        NombreProducto: producto.nombreproducto,
-        CodigoModelo: producto.codigomodelo,
-        Descripcion: producto.descripcion,
-        CategoriaID: producto.categoriaid,
-        ProveedorID_Default: producto.proveedorid,
-        Activo: true,
-      };
-
       await solicitarCambio(
         req,
         "productos",
         producto.productoid,
-        "INSERT",
-        datosNuevosProducto,
-        null
+        "UPDATE",
+        {
+          Activo: true,
+        },
+        producto
       );
     } catch (crError) {
       console.error(
@@ -2188,12 +2587,11 @@ const crearProducto = async (req, res) => {
     try {
       registrarLog(req, "CREAR", "Producto", producto.productoid, {
         nombre: producto.nombreproducto,
-        codigoModelo: producto.codigomodelo,
         categoriaId: producto.categoriaid,
         proveedorId: producto.proveedorid,
         activo: producto.activo,
-      }).catch((err) => {
-        console.error("Error guardando log de CREAR Producto:", err);
+      }).catch((logError) => {
+        console.error("Error guardando log al crear producto:", logError);
       });
     } catch (logError) {
       console.error(
@@ -2204,6 +2602,37 @@ const crearProducto = async (req, res) => {
   } catch (error) {
     if (transactionStarted) {
       await client.query("ROLLBACK");
+    }
+
+    if (error && error.message === "TIPO_PRODUCTO_INVALIDO") {
+      return res.status(400).json({
+        success: false,
+        message: "Tipo de producto inválido",
+      });
+    }
+
+    if (error && error.message === "TIPO_PRODUCTO_NO_EXISTE") {
+      return res.status(400).json({
+        success: false,
+        message: "El tipo de producto seleccionado no existe",
+      });
+    }
+
+    if (error && error.code === "23505") {
+      const detail = (error.detail || "").toString().toLowerCase();
+      const constraint = (error.constraint || "").toString().toLowerCase();
+      const haySku =
+        detail.includes("sku") ||
+        detail.includes("sku_maestro") ||
+        constraint.includes("sku") ||
+        constraint.includes("sku_maestro");
+
+      return res.status(409).json({
+        success: false,
+        message: haySku
+          ? "El SKU ingresado ya existe. Por favor utiliza uno diferente."
+          : "Ya existe un registro con este valor duplicado.",
+      });
     }
 
     if (
@@ -2344,9 +2773,11 @@ const actualizarProducto = async (req, res) => {
 
   const {
     nombre,
-    codigoModelo,
     descripcion,
     categoriaId,
+    TipoProductoID: tipoProductoIdRaw,
+    tipoProducto,
+    TipoProducto: tipoProductoRaw,
     tamanos,
     tamanoIds,
     proveedorId: proveedorIdRaw,
@@ -2362,7 +2793,7 @@ const actualizarProducto = async (req, res) => {
     transactionStarted = true;
 
     const productoResult = await client.query(
-      `SELECT ProductoID, NombreProducto, CodigoModelo, Descripcion, CategoriaID, ProveedorID_Default AS ProveedorID, Activo
+      `SELECT ProductoID, NombreProducto, sku_maestro, Descripcion, CategoriaID, ProveedorID_Default AS ProveedorID, Activo, TipoProductoID
        FROM Productos
        WHERE ProductoID = $1`,
       [productoId]
@@ -2377,6 +2808,23 @@ const actualizarProducto = async (req, res) => {
     }
 
     const productoActual = productoResult.rows[0];
+
+    const normalizarReglaBackorder = (raw, fallback = "UNITARIO") => {
+      if (raw === undefined || raw === null || String(raw).trim() === "") {
+        return fallback;
+      }
+
+      const normalized = String(raw).trim().toUpperCase();
+      if (normalized === "DOCENA") {
+        return "PAQUETE";
+      }
+
+      if (normalized === "PAQUETE" || normalized === "UNITARIO") {
+        return normalized;
+      }
+
+      return fallback;
+    };
 
     const nombreFinal =
       nombre !== undefined
@@ -2399,13 +2847,6 @@ const actualizarProducto = async (req, res) => {
           ? descripcion.trim()
           : null
         : productoActual.descripcion;
-
-    const codigoModeloFinal =
-      codigoModelo !== undefined
-        ? typeof codigoModelo === "string" && codigoModelo.trim()
-          ? codigoModelo.trim()
-          : null
-        : productoActual.codigomodelo;
 
     const categoriaFinal =
       categoriaId !== undefined
@@ -2451,17 +2892,77 @@ const actualizarProducto = async (req, res) => {
     const activoFinal =
       activo !== undefined ? Boolean(activo) : productoActual.activo;
 
+    const tipoProductoNombre = (() => {
+      const raw =
+        tipoProducto !== undefined && tipoProducto !== null
+          ? tipoProducto
+          : tipoProductoRaw;
+      if (raw === undefined) {
+        return null;
+      }
+      if (raw === null) {
+        return "";
+      }
+      return String(raw).trim();
+    })();
+
+    const tipoProductoId = (() => {
+      if (tipoProductoIdRaw !== undefined) {
+        if (tipoProductoIdRaw === null || String(tipoProductoIdRaw).trim() === "") {
+          return Promise.resolve(null);
+        }
+        const parsed = Number.parseInt(tipoProductoIdRaw, 10);
+        if (!Number.isInteger(parsed) || parsed <= 0) {
+          return Promise.reject(new Error("TIPO_PRODUCTO_INVALIDO"));
+        }
+        return db
+          .query(
+            `SELECT tipoproductoid
+             FROM tipoproducto
+             WHERE tipoproductoid = $1
+               AND activo = TRUE`,
+            [parsed]
+          )
+          .then((r) => {
+            if (!r.rows.length) throw new Error("TIPO_PRODUCTO_NO_EXISTE");
+            return parsed;
+          });
+      }
+
+      if (tipoProductoNombre === null) {
+        return Promise.resolve(null);
+      }
+      if (tipoProductoNombre === "") {
+        return Promise.resolve(null);
+      }
+      return db
+        .query(
+          `INSERT INTO tipoproducto (nombre, descripcion, activo)
+           VALUES ($1, NULL, TRUE)
+           ON CONFLICT (nombre)
+           DO UPDATE SET activo = TRUE
+           RETURNING tipoproductoid`,
+          [tipoProductoNombre]
+        )
+        .then((r) => r.rows[0]?.tipoproductoid ?? null);
+    })();
+
     // Nueva estrategia estricta: NO aplicar el UPDATE directamente sobre Productos.
     // En su lugar, registrar una solicitud de cambio para aprobación.
     try {
       const datosNuevosProducto = {
         NombreProducto: nombreFinal,
-        CodigoModelo: codigoModeloFinal,
         Descripcion: descripcionFinal,
         CategoriaID: categoriaFinal,
         ProveedorID_Default: proveedorId,
         Activo: activoFinal,
       };
+
+      let resolvedTipoProductoId = null;
+      if (tipoProductoNombre !== null || tipoProductoIdRaw !== undefined) {
+        resolvedTipoProductoId = await tipoProductoId;
+        datosNuevosProducto.TipoProductoID = resolvedTipoProductoId;
+      }
 
       const resultado = await solicitarCambio(
         req,
@@ -2471,6 +2972,32 @@ const actualizarProducto = async (req, res) => {
         datosNuevosProducto,
         productoActual
       );
+
+      let resultadoTipo = null;
+      if (tipoProductoNombre !== null || tipoProductoIdRaw !== undefined) {
+        const masterVarianteResult = await client.query(
+          `SELECT *
+           FROM producto_variantes
+           WHERE productoid = $1
+           ORDER BY piezasporpaquete ASC NULLS LAST, varianteid ASC
+           LIMIT 1`,
+          [productoId]
+        );
+
+        const varianteMaestraActual = masterVarianteResult.rows[0] || null;
+        if (varianteMaestraActual && varianteMaestraActual.varianteid) {
+          resultadoTipo = await solicitarCambio(
+            req,
+            "producto_variantes",
+            varianteMaestraActual.varianteid,
+            "UPDATE",
+            {
+              tipoproductoid: resolvedTipoProductoId,
+            },
+            varianteMaestraActual
+          );
+        }
+      }
 
       if (transactionStarted) {
         await client.query("ROLLBACK");
@@ -2484,6 +3011,7 @@ const actualizarProducto = async (req, res) => {
           productoId,
           solicitudId: resultado.solicitudId,
           estado: resultado.estado,
+          solicitudTipoProductoId: resultadoTipo ? resultadoTipo.solicitudId : null,
         },
       });
     } catch (crError) {
@@ -2506,6 +3034,23 @@ const actualizarProducto = async (req, res) => {
   } catch (error) {
     if (transactionStarted) {
       await client.query("ROLLBACK");
+    }
+
+    if (error && error.code === "23505") {
+      const detail = (error.detail || "").toString().toLowerCase();
+      const constraint = (error.constraint || "").toString().toLowerCase();
+      const haySku =
+        detail.includes("sku") ||
+        detail.includes("sku_maestro") ||
+        constraint.includes("sku") ||
+        constraint.includes("sku_maestro");
+
+      return res.status(409).json({
+        success: false,
+        message: haySku
+          ? "El SKU ingresado ya existe. Por favor utiliza uno diferente."
+          : "Ya existe un registro con este valor duplicado.",
+      });
     }
     console.error("Error al actualizar producto maestro:", error);
     res.status(500).json({
@@ -2677,14 +3222,16 @@ const getProductoDetalle = async (req, res) => {
       `SELECT
          p.productoid,
          p.nombreproducto,
-         p.codigomodelo,
+         p.sku_maestro,
          p.descripcion,
          p.activo,
          p.categoriaid,
+         p.tipoproductoid,
          c.nombre AS categorianombre,
          c.descripcion AS categoriadescripcion
        FROM productos p
        LEFT JOIN categorias c ON c.categoriaid = p.categoriaid
+       LEFT JOIN tipoproducto tp ON tp.tipoproductoid = p.tipoproductoid
        WHERE p.productoid = $1`,
       [productoId]
     );
@@ -2913,9 +3460,13 @@ const getProductoDetalle = async (req, res) => {
     const productoDetalle = {
       productoId: producto.productoid,
       nombreProducto: producto.nombreproducto,
-      codigoModelo: producto.codigomodelo || null,
+      sku_maestro: producto.sku_maestro || null,
       descripcion: producto.descripcion,
       activo: producto.activo,
+      TipoProductoID:
+        producto.tipoproductoid !== null && producto.tipoproductoid !== undefined
+          ? Number.parseInt(producto.tipoproductoid, 10)
+          : null,
       categoria: producto.categoriaid
         ? {
             categoriaId: producto.categoriaid,
@@ -2961,6 +3512,8 @@ const getAllProductos = async (req, res) => {
         p.descripcion,
         p.categoriaid,
         p.activo,
+        tipo_info.tipoproductoid AS tipoproductoid,
+        tipo_info.nombre AS tipo_producto,
         COALESCE(SUM(v.stock), 0) AS stock_total,
         COUNT(v.varianteid) AS variantes_count,
         MIN(v.preciounitario) FILTER (WHERE v.preciounitario IS NOT NULL) AS precio_desde,
@@ -2987,6 +3540,14 @@ const getAllProductos = async (req, res) => {
       FROM productos p
       LEFT JOIN producto_variantes v ON v.productoid = p.productoid
       LEFT JOIN LATERAL (
+        SELECT tp.tipoproductoid, tp.nombre
+        FROM producto_variantes pv_tipo
+        LEFT JOIN tipoproducto tp ON tp.tipoproductoid = pv_tipo.tipoproductoid
+        WHERE pv_tipo.productoid = p.productoid
+        ORDER BY pv_tipo.piezasporpaquete ASC NULLS LAST, pv_tipo.varianteid ASC
+        LIMIT 1
+      ) tipo_info ON true
+      LEFT JOIN LATERAL (
         SELECT v2.*
         FROM producto_variantes v2
         WHERE v2.productoid = p.productoid
@@ -3007,6 +3568,8 @@ const getAllProductos = async (req, res) => {
         p.nombreproducto, 
         p.descripcion, 
         p.categoriaid, 
+        tipo_info.tipoproductoid,
+        tipo_info.nombre,
         v_top.varianteid, 
         v_top.sku, 
         v_top.preciounitario, 
@@ -3062,6 +3625,14 @@ const getAllProductos = async (req, res) => {
             nombreproducto: row.nombreproducto,
             descripcion: row.descripcion,
             activo: row.activo,
+            TipoProductoID:
+              row.tipoproductoid !== null && row.tipoproductoid !== undefined
+                ? Number.parseInt(row.tipoproductoid, 10)
+                : null,
+            tipoProducto:
+              row.tipo_producto !== null && row.tipo_producto !== undefined
+                ? String(row.tipo_producto)
+                : null,
             stockTotal: parseInt(row.stock_total, 10) || 0,
             variantesCount: parseInt(row.variantes_count, 10) || 0,
             precioDesde: row.precio_desde ? parseFloat(row.precio_desde) : null,
@@ -4742,6 +5313,7 @@ const getDetallesOrdenCompra = async (req, res) => {
         doc.varianteid,
         doc.cantidadsolicitada,
         doc.cantidadrecibida,
+        doc.piezasporpaquete,
         pv.productoid,
         pv.sku,
         pv.dimensiones,
@@ -4783,6 +5355,10 @@ const getDetallesOrdenCompra = async (req, res) => {
           cantidadRecibida: row.cantidadrecibida,
           cantidadPendiente: row.cantidadsolicitada - row.cantidadrecibida,
           stockVariante: row.stockvariante,
+          piezasPorPaquete: (() => {
+            const parsed = Number.parseInt(row.piezasporpaquete, 10);
+            return Number.isInteger(parsed) && parsed > 0 ? parsed : 1;
+          })(),
         })),
       },
     });
@@ -4871,6 +5447,7 @@ const recibirInventario = async (req, res) => {
           doc.VarianteID,
           doc.CantidadSolicitada,
           doc.CantidadRecibida,
+          doc.PiezasPorPaquete,
           pv.ProductoID,
           pv.SKU,
           pv.Dimensiones,
@@ -4899,6 +5476,14 @@ const recibirInventario = async (req, res) => {
       const detalle = detalleResult.rows[0];
       const nuevaCantidadRecibida = detalle.cantidadrecibida + cantidadRecibida;
 
+      const piezasPorPaqueteRaw = detalle.piezasporpaquete;
+      let piezasPorPaquete = Number.parseInt(piezasPorPaqueteRaw, 10);
+      if (!Number.isInteger(piezasPorPaquete) || piezasPorPaquete <= 0) {
+        piezasPorPaquete = 1;
+      }
+
+      const cantidadAumentar = cantidadRecibida * piezasPorPaquete;
+
       // Validar que no se exceda la cantidad solicitada
       if (nuevaCantidadRecibida > detalle.cantidadsolicitada) {
         await client.query("ROLLBACK");
@@ -4918,12 +5503,12 @@ const recibirInventario = async (req, res) => {
 
       // 3. Actualizar Stock en la variante seleccionada
       const nuevoStockVariante =
-        (detalle.stockvariante || 0) + cantidadRecibida;
+        (detalle.stockvariante || 0) + cantidadAumentar;
       await client.query(
         `UPDATE Producto_Variantes 
          SET Stock = COALESCE(Stock, 0) + $1 
          WHERE VarianteID = $2`,
-        [cantidadRecibida, detalle.varianteid]
+        [cantidadAumentar, detalle.varianteid]
       );
 
       // 4. Registrar movimiento en Log_Inventario
@@ -4933,9 +5518,11 @@ const recibirInventario = async (req, res) => {
          VALUES ($1, $2, $3, $4, $5)`,
         [
           detalle.varianteid,
-          cantidadRecibida,
+          cantidadAumentar,
           nuevoStockVariante,
-          `Recepción de OC #${ordenCompraId}`,
+          `Recepción de OC #${ordenCompraId} (${cantidadRecibida} paquete${
+            cantidadRecibida === 1 ? "" : "s"
+          } x ${piezasPorPaquete} piezas)` ,
           adminId || null,
         ]
       );
@@ -4948,6 +5535,8 @@ const recibirInventario = async (req, res) => {
         medidaId: detalle.medidaid,
         dimensiones: detalle.dimensiones,
         cantidadRecibidaAhora: cantidadRecibida,
+        piezasPorPaquete,
+        cantidadAumentada: cantidadAumentar,
         cantidadRecibidaTotal: nuevaCantidadRecibida,
         cantidadSolicitada: detalle.cantidadsolicitada,
         stockVariante: nuevoStockVariante,
@@ -5060,6 +5649,17 @@ const crearOrdenCompra = async (req, res) => {
           message: "La cantidad solicitada debe ser mayor a 0",
         });
       }
+
+      const piezasPorPaqueteParsed = Number.parseInt(
+        producto.piezasPorPaquete ?? producto.piezasporpaquete ?? 1,
+        10
+      );
+      if (!Number.isInteger(piezasPorPaqueteParsed) || piezasPorPaqueteParsed <= 0) {
+        return res.status(400).json({
+          success: false,
+          message: "piezasPorPaquete inválido",
+        });
+      }
     }
 
     // Verificar que el proveedor existe
@@ -5124,9 +5724,14 @@ const crearOrdenCompra = async (req, res) => {
         });
       }
 
+      const piezasPorPaquete = Number.parseInt(
+        producto.piezasPorPaquete ?? producto.piezasporpaquete ?? 1,
+        10
+      );
+
       const detalleQuery = `
-        INSERT INTO DetallesOrdenCompra (OrdenCompraID, VarianteID, CantidadSolicitada, CantidadRecibida)
-        VALUES ($1, $2, $3, 0)
+        INSERT INTO DetallesOrdenCompra (OrdenCompraID, VarianteID, CantidadSolicitada, CantidadRecibida, PiezasPorPaquete)
+        VALUES ($1, $2, $3, 0, $4)
         RETURNING DetalleOC_ID, VarianteID, CantidadSolicitada, CantidadRecibida
       `;
 
@@ -5134,6 +5739,7 @@ const crearOrdenCompra = async (req, res) => {
         ordenCompraId,
         variante.varianteid,
         producto.cantidadSolicitada,
+        piezasPorPaquete,
       ]);
 
       detallesInsertados.push({
@@ -5278,7 +5884,28 @@ const subirImagenesProductoMultiple = async (req, res) => {
   const { id } = req.params;
 
   try {
-    const archivos = Array.isArray(req.files) ? req.files : [];
+    const archivos = (() => {
+      if (Array.isArray(req.files)) {
+        return req.files;
+      }
+
+      if (req.files && typeof req.files === "object") {
+        const fromImagenes = Array.isArray(req.files.imagenes)
+          ? req.files.imagenes
+          : [];
+        const fromImages = Array.isArray(req.files.images) ? req.files.images : [];
+        return [...fromImagenes, ...fromImages];
+      }
+
+      return [];
+    })();
+
+    if (archivos.length > 12) {
+      return res.status(400).json({
+        success: false,
+        message: "El límite máximo es de 12 imágenes por producto",
+      });
+    }
 
     if (!archivos.length) {
       return res.status(400).json({
@@ -5866,6 +6493,7 @@ module.exports = {
   ajustarInventario,
   getInventarioResumen,
   getProductoDetalle,
+  getVariantesPendientesProducto,
   getAllProductos,
   crearProducto,
   actualizarProducto,
@@ -5890,8 +6518,12 @@ getMedidasExistentes,
   actualizarEstadoCliente,
   desvincularClienteDeAgente,
   getAllProveedores,
+  getProveedorById,
   crearProveedor,
   actualizarProveedor,
+  getSolicitudesPendientesProveedor,
+  getReglasEmpaqueProveedor,
+  saveReglaEmpaque,
   getAllOrdenesCompra,
   getDetallesOrdenCompra,
   crearOrdenCompra,

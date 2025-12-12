@@ -709,6 +709,38 @@
       const adminToken = localStorage.getItem("razoconnect_admin_token");
       if (!adminToken) window.location.href = "/login.html";
 
+      try {
+        const parts = String(adminToken || "").split(".");
+        const payloadRaw = parts.length === 3 ? parts[1] : null;
+        if (!payloadRaw) {
+          window.location.href = "/admin-dashboard.html";
+        } else {
+          const base64 = payloadRaw.replace(/-/g, "+").replace(/_/g, "/");
+          const jsonPayload = decodeURIComponent(
+            atob(base64)
+              .split("")
+              .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+              .join("")
+          );
+          const payload = JSON.parse(jsonPayload);
+          const roles = Array.isArray(payload?.roles) ? payload.roles : [];
+          const rol = payload?.rol ? String(payload.rol).toLowerCase() : "";
+          const isSuper =
+            rol === "superadmin" ||
+            roles.some(
+              (r) =>
+                r &&
+                (String(r).toLowerCase() === "superadmin" ||
+                  String(r).toLowerCase() === "super-admin")
+            );
+          if (!isSuper) {
+            window.location.href = "/admin-dashboard.html";
+          }
+        }
+      } catch (e) {
+        window.location.href = "/admin-dashboard.html";
+      }
+
       const userNameEl = document.getElementById("userName");
       const userRoleEl = document.getElementById("userRole");
       const userAvatarEl = document.getElementById("userAvatar");
@@ -1280,167 +1312,113 @@
         return String(valor);
       }
 
+      function esValorVacio(valor) {
+        return (
+          valor === null ||
+          valor === undefined ||
+          (typeof valor === "string" && valor.trim() === "")
+        );
+      }
+
+      function normalizarParaComparacion(valor) {
+        if (esValorVacio(valor)) return "";
+        if (typeof valor === "number" && Number.isNaN(valor)) return "";
+        if (typeof valor === "string") return valor.trim();
+        return valor;
+      }
+
+      function sonValoresIguales(a, b) {
+        const va = normalizarParaComparacion(a);
+        const vb = normalizarParaComparacion(b);
+        if (va === vb) return true;
+        return JSON.stringify(va) === JSON.stringify(vb);
+      }
+
+      function renderValorComparativo(key, valor, column, cambioDetectado) {
+        if (esValorVacio(valor)) {
+          return '<span class="badge bg-secondary">Vacío</span>';
+        }
+
+        const rendered = formatValueExecutive(key, valor);
+        const isLongText =
+          typeof valor === "string" && String(valor).trim().length > 100;
+        const baseStyle = isLongText
+          ? 'max-height:150px; overflow-y:auto;'
+          : '';
+
+        if (column === "old") {
+          if (!cambioDetectado) {
+            return `<div style="${baseStyle}">${rendered}</div>`;
+          }
+          return `<div class="text-danger" style="${baseStyle}"><span style="text-decoration: line-through; text-decoration-color: rgba(220,38,38,0.45);">${rendered}</span></div>`;
+        }
+
+        if (!cambioDetectado) {
+          return `<div style="${baseStyle}">${rendered}</div>`;
+        }
+
+        return `<div class="text-success" style="${baseStyle}"><strong>${rendered}</strong></div>`;
+      }
+
       function renderizarDiffCambio(cambio) {
         const tipo = (cambio.tipoCambio || "").toString().toUpperCase();
         const anteriores = normalizarObjetoDatos(cambio.datosAnteriores);
         const nuevos = normalizarObjetoDatos(cambio.datosNuevos);
 
-        if (tipo === "INSERT") {
-          const claves = Object.keys(nuevos || {});
-          if (!claves.length) {
-            return "<p style=\"margin:0;\">No hay datos nuevos para mostrar.</p>";
-          }
+        const clavesSet = new Set([
+          ...Object.keys(anteriores || {}),
+          ...Object.keys(nuevos || {}),
+        ]);
+        const claves = Array.from(clavesSet);
 
-          const filas = claves
-            .map(
-              (key) => {
-                const etiqueta = obtenerEtiquetaAmigable(cambio.entidad, key);
-                const valorHtml = formatValueExecutive(key, nuevos[key]);
-
-                return `
-                  <tr>
-                    <td class="fw-bold" style="vertical-align:top;width:40%;">${etiqueta}</td>
-                    <td style="vertical-align:top;">${valorHtml}</td>
-                  </tr>
-                `;
-              }
-            )
-            .join("");
-
-          return `
-            <div style="border-radius:0.75rem;border:1px solid #bbf7d0;background:#ecfdf3;padding:1rem;">
-              <p style="margin:0 0 0.75rem;font-size:0.9rem;color:#166534;font-weight:500;">
-                Se proponen los siguientes datos para este registro:
-              </p>
-              <div class="table-responsive">
-                <table class="table table-bordered table-striped table-sm mb-0" style="font-size:0.85rem;">
-                  <thead>
-                    <tr>
-                      <th style="width:40%;">Dato</th>
-                      <th>Valor a Registrar</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    ${filas}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          `;
+        if (!claves.length) {
+          return '<div class="table-responsive"><table class="table table-bordered table-hover align-middle mb-0"><thead class="table-light"><tr><th style="width:20%">Atributo</th><th style="width:40%">Valor Anterior</th><th style="width:40%">Valor Nuevo</th></tr></thead><tbody id="tablaDetalleCambio"><tr><td colspan="3" class="text-muted">Sin información</td></tr></tbody></table></div>';
         }
 
-        if (tipo === "UPDATE") {
-          const clavesSet = new Set([
-            ...Object.keys(anteriores || {}),
-            ...Object.keys(nuevos || {}),
-          ]);
-          const claves = Array.from(clavesSet).filter(
-            (key) =>
-              JSON.stringify(anteriores[key]) !== JSON.stringify(nuevos[key])
-          );
+        const filas = claves
+          .sort((a, b) => {
+            const aa = obtenerEtiquetaAmigable(cambio.entidad, a);
+            const bb = obtenerEtiquetaAmigable(cambio.entidad, b);
+            return aa.localeCompare(bb, "es", { sensitivity: "base" });
+          })
+          .map((key) => {
+            const etiqueta = obtenerEtiquetaAmigable(cambio.entidad, key);
+            const antes = tipo === "INSERT" ? null : anteriores[key];
+            const despues = tipo === "DELETE" ? null : nuevos[key];
+            const cambioDetectado = !sonValoresIguales(antes, despues);
+            const rowStyle = cambioDetectado
+              ? 'style="background: rgba(249,115,22,0.06);"'
+              : '';
 
-          if (!claves.length) {
-            return "<p style=\"margin:0;\">No se detectaron diferencias entre los datos anteriores y nuevos.</p>";
-          }
+            const valorAntes = renderValorComparativo(key, antes, "old", cambioDetectado);
+            const valorDespues = renderValorComparativo(key, despues, "new", cambioDetectado);
 
-          const filas = claves
-            .map((key) => {
-              const etiqueta = obtenerEtiquetaAmigable(cambio.entidad, key);
-              const valorAntes = formatValueExecutive(key, anteriores[key]);
-              const valorDespues = formatValueExecutive(key, nuevos[key]);
-              return `
+            return `
+              <tr ${rowStyle}>
+                <td style="width:20%; font-weight:700;">${etiqueta}</td>
+                <td style="width:40%;" class="text-danger">${valorAntes}</td>
+                <td style="width:40%;" class="text-success">${valorDespues}</td>
+              </tr>
+            `;
+          })
+          .join('');
+
+        return `
+          <div class="table-responsive">
+            <table class="table table-bordered table-hover align-middle mb-0" style="font-size:0.9rem;">
+              <thead class="table-light">
                 <tr>
-                  <td style="vertical-align:top;font-weight:600;">${etiqueta}</td>
-                  <td style="vertical-align:top;">
-                    <div style="font-size:0.78rem;color:#6b7280;margin-bottom:0.2rem;">
-                      <span style="font-weight:500;">Antes:</span>
-                      <span style="margin-left:0.25rem;">${valorAntes}</span>
-                    </div>
-                    <div>
-                      <span style="font-weight:500;">Valor propuesto:</span>
-                      <span style="margin-left:0.25rem;">${valorDespues}</span>
-                    </div>
-                  </td>
+                  <th style="width: 20%">Atributo</th>
+                  <th style="width: 40%">Valor Anterior</th>
+                  <th style="width: 40%">Valor Nuevo</th>
                 </tr>
-              `;
-            })
-            .join("");
-
-          return `
-            <div style="border-radius:0.75rem;border:1px solid #e5e7eb;background:#f9fafb;padding:1rem;">
-              <p style="margin:0 0 0.75rem;font-size:0.9rem;">
-                Solo se muestran los campos que cambiaron. Revisa el valor anterior y el valor propuesto.
-              </p>
-              <table class="table table-bordered table-striped table-sm mb-0" style="font-size:0.85rem;">
-                <thead>
-                  <tr>
-                    <th style="text-align:left;padding:0.25rem 0.5rem;">Dato</th>
-                    <th style="text-align:left;padding:0.25rem 0.5rem;">Valor Propuesto</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${filas}
-                </tbody>
-              </table>
-            </div>
-          `;
-        }
-
-        if (tipo === "DELETE") {
-          const claves = Object.keys(anteriores || {});
-          if (!claves.length) {
-            return "<p style=\"margin:0;\">No hay datos anteriores para mostrar.</p>";
-          }
-
-          const clavesClave = claves.filter((key) => {
-            const k = (key || "").toString().toLowerCase();
-            if (!k) return false;
-
-            return (
-              k === "id" ||
-              k.endsWith("id") ||
-              k.indexOf("id_") !== -1 ||
-              k.indexOf("nombre") !== -1 ||
-              k.indexOf("name") !== -1
-            );
-          });
-
-          const lista = (clavesClave.length ? clavesClave : claves)
-            .map((key) => {
-              const etiqueta = obtenerEtiquetaAmigable(cambio.entidad, key);
-              const valor = formatValueExecutive(key, anteriores[key]);
-              return `
-                <tr>
-                  <td style="vertical-align:top;font-weight:600;width:40%;">${etiqueta}</td>
-                  <td style="vertical-align:top;">${valor}</td>
-                </tr>
-              `;
-            })
-            .join("");
-
-          return `
-            <div class="change-card-delete">
-              <p style="margin:0 0 0.75rem;font-size:0.9rem;color:#b91c1c;">
-                ⚠️ Se solicitó eliminar el siguiente registro:
-              </p>
-              <div class="table-responsive">
-                <table class="table table-bordered table-striped table-sm mb-0" style="font-size:0.85rem;">
-                  <thead>
-                    <tr>
-                      <th style="width:40%;">Dato</th>
-                      <th>Valor Actual</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    ${lista}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          `;
-        }
-
-        return "<p style=\"margin:0;\">No hay información de cambios para mostrar.</p>";
+              </thead>
+              <tbody id="tablaDetalleCambio">
+                ${filas}
+              </tbody>
+            </table>
+          </div>
+        `;
       }
 
       function obtenerConfigVisualCambio(cambio) {

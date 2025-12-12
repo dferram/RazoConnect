@@ -135,6 +135,32 @@
           btnAprobarTodo?.addEventListener("click", handleAprobarTodo);
         });
 
+        function esSolicitudPublicacionProducto(cambio) {
+          if (!cambio) return false;
+          const entidad = (cambio.entidad || "").toString().toLowerCase();
+          if (entidad !== "productos") return false;
+          if (cambio.tipoCambio !== "UPDATE") return false;
+
+          const nuevos = cambio.datosNuevos || {};
+          const keys = Object.keys(nuevos);
+          if (keys.length !== 1) return false;
+          if (keys[0] !== "Activo") return false;
+          return nuevos.Activo === true;
+        }
+
+        function getTipoLabel(cambio) {
+          return esSolicitudPublicacionProducto(cambio)
+            ? "PUBLICAR"
+            : cambio.tipoCambio;
+        }
+
+        function getTipoBadgeClass(cambio) {
+          if (esSolicitudPublicacionProducto(cambio)) return "success";
+          if (cambio.tipoCambio === "DELETE") return "danger";
+          if (cambio.tipoCambio === "INSERT") return "success";
+          return "info";
+        }
+
         function formatearFecha(value) {
           if (!value) return "—";
           const date = new Date(value);
@@ -200,12 +226,15 @@
                 const solicitante =
                   cambio.solicitanteNombre || cambio.solicitanteEmail || "Desconocido";
 
+                const tipoLabel = getTipoLabel(cambio);
+                const tipoBadge = getTipoBadgeClass(cambio);
+
                 return `
                   <tr data-cambio-id="${cambio.id}">
                     <td>#${cambio.id}</td>
                     <td>${cambio.entidad}</td>
                     <td>
-                      <span class="admin-badge info">${cambio.tipoCambio}</span>
+                      <span class="admin-badge ${tipoBadge}">${tipoLabel}</span>
                     </td>
                     <td>
                       <div style="font-weight:600;">${solicitante}</div>
@@ -350,8 +379,10 @@
 
           const htmlDiff = renderizarDiffHtml(cambio);
 
+          const tipoLabel = getTipoLabel(cambio);
+
           Swal.fire({
-            title: `Cambio #${cambio.id} - ${cambio.entidad}`,
+            title: `Cambio #${cambio.id} - ${cambio.entidad} (${tipoLabel})`,
             html: htmlDiff,
             width: "90%",
             customClass: {

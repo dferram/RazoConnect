@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const multer = require("multer");
 const adminController = require("../controllers/adminController");
 const authController = require("../controllers/authController");
 const bitacoraController = require("../controllers/bitacoraController");
@@ -9,6 +10,7 @@ const {
   authenticate,
   authorizeAdmin,
   authorizeSuperAdmin,
+  verifySuperAdmin,
 } = require("../middlewares/authMiddleware");
 
 /**
@@ -116,6 +118,13 @@ router.get(
   authorizeAdmin,
   adminController.getProductoDetalle
 );
+
+router.get(
+  "/productos/:id/variantes-pendientes",
+  authenticate,
+  authorizeAdmin,
+  adminController.getVariantesPendientesProducto
+);
 router.post(
   "/productos",
   authenticate,
@@ -146,7 +155,42 @@ router.post(
   "/productos/:id/imagenes",
   authenticate,
   authorizeAdmin,
-  upload.array("imagenes", 5),
+  (req, res, next) => {
+    const handler = upload.fields([
+      { name: "imagenes", maxCount: 12 },
+      { name: "images", maxCount: 12 },
+    ]);
+
+    handler(req, res, (err) => {
+      if (!err) return next();
+
+      if (err instanceof multer.MulterError) {
+        if (err.code === "LIMIT_UNEXPECTED_FILE") {
+          return res.status(400).json({
+            success: false,
+            message: "El límite máximo es de 12 imágenes por producto",
+          });
+        }
+
+        if (err.code === "LIMIT_FILE_SIZE") {
+          return res.status(400).json({
+            success: false,
+            message: "Cada imagen no debe superar 5MB",
+          });
+        }
+
+        return res.status(400).json({
+          success: false,
+          message: err.message || "Error al subir las imágenes",
+        });
+      }
+
+      return res.status(400).json({
+        success: false,
+        message: err.message || "Error al subir las imágenes",
+      });
+    });
+  },
   adminController.subirImagenesProductoMultiple
 );
 
@@ -318,6 +362,12 @@ router.get(
   authorizeAdmin,
   adminController.getAllProveedores
 );
+router.get(
+  "/proveedores/:id",
+  authenticate,
+  authorizeAdmin,
+  adminController.getProveedorById
+);
 router.post(
   "/proveedores",
   authenticate,
@@ -329,6 +379,34 @@ router.put(
   authenticate,
   authorizeAdmin,
   adminController.actualizarProveedor
+);
+
+router.get(
+  "/proveedores/:id/solicitudes-pendientes",
+  authenticate,
+  authorizeAdmin,
+  adminController.getSolicitudesPendientesProveedor
+);
+
+router.get(
+  "/proveedores/:id/reglas",
+  authenticate,
+  authorizeAdmin,
+  adminController.getReglasEmpaqueProveedor
+);
+
+router.post(
+  "/proveedores/reglas",
+  authenticate,
+  authorizeAdmin,
+  adminController.saveReglaEmpaque
+);
+
+router.put(
+  "/proveedores/:id/reglas",
+  authenticate,
+  authorizeAdmin,
+  adminController.saveReglaEmpaque
 );
 
 /**
@@ -377,28 +455,28 @@ router.post(
 router.get(
   "/bitacora",
   authenticate,
-  authorizeSuperAdmin,
+  verifySuperAdmin,
   bitacoraController.obtenerBitacora
 );
 
 router.get(
   "/bitacora/estadisticas",
   authenticate,
-  authorizeSuperAdmin,
+  verifySuperAdmin,
   bitacoraController.obtenerEstadisticas
 );
 
 router.get(
   "/bitacora/usuarios",
   authenticate,
-  authorizeSuperAdmin,
+  verifySuperAdmin,
   bitacoraController.obtenerUsuariosUnicos
 );
 
 router.get(
   "/bitacora/entidades",
   authenticate,
-  authorizeSuperAdmin,
+  verifySuperAdmin,
   bitacoraController.obtenerEntidadesUnicas
 );
 

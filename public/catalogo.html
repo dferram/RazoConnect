@@ -16,6 +16,15 @@
           <li>
             <a href="/catalogo.html" class="navbar-link navbar-link-active">Productos</a>
           </li>
+          <li class="navbar-dropdown" id="tiposDropdown">
+            <span class="navbar-dropdown-toggle">
+              Explorar por Tipo
+              <span class="navbar-dropdown-arrow">▼</span>
+            </span>
+            <div class="navbar-dropdown-menu">
+              <div class="navbar-dropdown-loading">Cargando tipos...</div>
+            </div>
+          </li>
           <li class="navbar-dropdown" id="marcasDropdown">
             <span class="navbar-dropdown-toggle">
               Marcas
@@ -354,6 +363,33 @@
       let categoriaSeleccionada = null;
       let filtrosQueryActual = "";
       let nombreCategoriaSeleccionada = null;
+      let tipoSeleccionado = null;
+
+      function obtenerTipoDesdeUrl() {
+        try {
+          const params = new URLSearchParams(window.location.search);
+          const tipo = params.get("tipo");
+          if (!tipo || !String(tipo).trim()) {
+            return null;
+          }
+          return String(tipo).trim();
+        } catch (error) {
+          return null;
+        }
+      }
+
+      function actualizarTituloPorTipo() {
+        if (!catalogoTitulo) {
+          return;
+        }
+
+        if (tipoSeleccionado) {
+          catalogoTitulo.textContent = `Viendo: ${tipoSeleccionado}`;
+          return;
+        }
+
+        catalogoTitulo.textContent = "Catálogo de productos";
+      }
 
       function obtenerFiltrosSeleccionados() {
         return {
@@ -368,6 +404,10 @@
       function construirQueryString() {
         const params = new URLSearchParams();
         const filtros = obtenerFiltrosSeleccionados();
+
+        if (tipoSeleccionado) {
+          params.append("tipo", tipoSeleccionado);
+        }
 
         if (filtros.search) {
           params.append("search", filtros.search);
@@ -1060,6 +1100,13 @@
           filtrosQueryActual = "";
           categoriaSeleccionada = null;
           nombreCategoriaSeleccionada = null;
+
+          tipoSeleccionado = null;
+          try {
+            window.history.replaceState({}, "", "/catalogo.html");
+          } catch (error) {}
+          actualizarTituloPorTipo();
+
           await loadCategorias();
           await loadProductos();
         });
@@ -1151,7 +1198,10 @@
 
       loadDimensiones();
       loadCategorias();
-      loadProductos();
+      tipoSeleccionado = obtenerTipoDesdeUrl();
+      actualizarTituloPorTipo();
+      filtrosQueryActual = construirQueryString();
+      loadProductos(filtrosQueryActual);
       updateCartBadge();
     </script>
 
@@ -1345,6 +1395,80 @@
 
         // Cargar marcas al iniciar
         loadMarcas();
+      })();
+    </script>
+
+    <!-- Script para Dropdown de Tipos de Producto -->
+    <script>
+      (function () {
+        const dropdown = document.getElementById("tiposDropdown");
+        if (!dropdown) return;
+        const toggle = dropdown.querySelector(".navbar-dropdown-toggle");
+        const menu = dropdown.querySelector(".navbar-dropdown-menu");
+
+        toggle.addEventListener("click", (e) => {
+          e.stopPropagation();
+          dropdown.classList.toggle("active");
+        });
+
+        document.addEventListener("click", (e) => {
+          if (!dropdown.contains(e.target)) {
+            dropdown.classList.remove("active");
+          }
+        });
+
+        async function loadTipos() {
+          try {
+            const response = await fetch("/api/public/tipos-producto");
+            const data = await response.json();
+
+            const tiposRaw =
+              data && data.success && data.data && Array.isArray(data.data.tipos)
+                ? data.data.tipos
+                : [];
+
+            if (!tiposRaw.length) {
+              menu.innerHTML = `
+                <a href="/catalogo.html" class="navbar-dropdown-item highlight">
+                  🧾 Todos los productos
+                </a>
+                <div class="navbar-dropdown-empty">
+                  No hay tipos disponibles
+                </div>
+              `;
+              return;
+            }
+
+            menu.innerHTML = `
+              <a href="/catalogo.html" class="navbar-dropdown-item highlight">
+                🧾 Todos los productos
+              </a>
+              ${tiposRaw
+                .map((tipo) => {
+                  const nombre = (tipo.nombre || "").toString().trim();
+                  const href = `/catalogo.html?tipo=${encodeURIComponent(nombre)}`;
+                  return `
+                    <a href="${href}" class="navbar-dropdown-item">
+                      ${nombre}
+                    </a>
+                  `;
+                })
+                .join("")}
+            `;
+          } catch (error) {
+            console.error("Error cargando tipos de producto:", error);
+            menu.innerHTML = `
+              <a href="/catalogo.html" class="navbar-dropdown-item highlight">
+                🧾 Todos los productos
+              </a>
+              <div class="navbar-dropdown-empty">
+                Error al cargar tipos
+              </div>
+            `;
+          }
+        }
+
+        loadTipos();
       })();
     </script>
 

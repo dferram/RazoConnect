@@ -494,40 +494,6 @@
                 <div class="admin-card-body" id="productSummary">
                   <!-- populated dynamically -->
                 </div>
-                <div class="admin-card-body">
-                  <div class="product-images-uploader">
-                    <label for="productImagesInput" class="form-label">
-                      Galería de imágenes
-                    </label>
-                    <input
-                      type="file"
-                      id="productImagesInput"
-                      class="form-input"
-                      accept="image/jpeg,image/jpg,image/png,image/webp"
-                      multiple
-                    />
-                    <small class="form-hint">
-                      Puedes seleccionar hasta 5 imágenes por carga. La primera imagen se usará como portada en el catálogo.
-                    </small>
-                    <div class="product-images-preview" id="galeriaPreview"></div>
-                    <div style="display: flex; gap: 0.5rem; margin-top: 0.25rem;">
-                      <button
-                        type="button"
-                        class="btn btn-secondary btn-sm"
-                        id="clearImagesSelectionBtn"
-                      >
-                        Limpiar selección
-                      </button>
-                      <button
-                        type="button"
-                        class="btn btn-primary btn-sm"
-                        id="uploadImagesBtn"
-                      >
-                        Subir imágenes
-                      </button>
-                    </div>
-                  </div>
-                </div>
               </section>
 
               <!-- Create variant form + stock projection sidebar -->
@@ -928,7 +894,7 @@
         "clearImagesSelectionBtn"
       );
 
-      let productoCodigoModelo = null;
+      let skuMaestroBase = null;
       let tamanosConfiguradosMaestro = [];
       let variantesProducto = [];
       let editingVarianteId = null;
@@ -1027,15 +993,34 @@
 
             productBreadcrumb.textContent = `Producto #${producto.productoId}`;
 
-            // Guardar el código de modelo para sugerencias de SKU
-            productoCodigoModelo = producto.codigoModelo || null;
+            // Guardar el SKU Maestro para sugerencias de SKU
+            skuMaestroBase = producto.sku_maestro || producto.skuMaestro || null;
 
             // Guardar configuración de presentaciones (pieza / packs) del maestro
             tamanosConfiguradosMaestro = Array.isArray(tamanosDisponibles)
               ? tamanosDisponibles
               : [];
 
-            variantesProducto = Array.isArray(variantes) ? variantes : [];
+            const variantesReales = Array.isArray(variantes) ? variantes : [];
+
+            let variantesPendientes = [];
+            try {
+              const pendingResp = await API.apiCall(
+                `/admin/productos/${productoId}/variantes-pendientes`,
+                { method: "GET" }
+              );
+
+              if (pendingResp.ok && pendingResp.data?.success) {
+                variantesPendientes = Array.isArray(pendingResp.data?.data?.variantes)
+                  ? pendingResp.data.data.variantes
+                  : [];
+              }
+            } catch (e) {
+              console.warn("No se pudieron cargar variantes pendientes:", e);
+            }
+
+            // Fusionar reales + pendientes (las pendientes solo existen en control_cambios)
+            variantesProducto = [...variantesReales, ...variantesPendientes];
 
             renderProductSummary(producto, variantesProducto);
             renderVariants(variantesProducto);
@@ -1057,7 +1042,7 @@
 
       // Función para generar sugerencia de SKU
       function generateSkuSuggestion() {
-        if (!productoCodigoModelo) {
+        if (!skuMaestroBase) {
           skuSuggestion.style.display = "none";
           return;
         }
@@ -1074,7 +1059,7 @@
           .replace(/\s+/g, "")
           .replace(/[^A-Z0-9X]/gi, "-");
 
-        const sugerencia = `${productoCodigoModelo}-${dimensionesLimpias}`;
+        const sugerencia = `${skuMaestroBase}-${dimensionesLimpias}`;
         skuSuggestionText.textContent = sugerencia;
         skuSuggestion.style.display = "block";
       }
@@ -1139,7 +1124,7 @@
           : `<div class="product-summary-image"><span style="font-size: 1.75rem;">📦</span></div>`;
 
         const categoriaNombre = producto.categoria?.nombre || "Sin categoría";
-        const codigoModelo = producto.codigoModelo || "No definido";
+        const codigoModelo = producto.sku_maestro || producto.skuMaestro || "No definido";
 
         const isDraft = producto.activo === false;
 
@@ -1166,7 +1151,7 @@
                     ${categoriaNombre}
                   </span>
                   <span class="badge" style="background:#eef2ff; color:#4b5563; border-radius:999px; font-size:0.75rem; font-weight:600; padding:0.25rem 0.75rem;">
-                    SKU base: ${codigoModelo}
+                    SKU Maestro: ${codigoModelo}
                   </span>
                 </div>
                 <p style="color: var(--text-secondary);">
@@ -1226,37 +1211,20 @@
             const isPending = !!variant.isPending;
 
             if (isPending) {
-              const controlId = variant.controlCambioId || "";
               return `
-          <tr style="background: #fffbeb;">
+          <tr class="table-warning">
             <td>${variant.sku || "Sin SKU"}</td>
             <td>${variant.dimensiones || "Sin dimensiones"}</td>
             <td>${precio}</td>
             <td>${costo}</td>
             <td>${stock}</td>
             <td>
-              <span class="badge" style="background:#fed7aa; color:#7c2d12; border-radius:999px; font-size:0.75rem; font-weight:600; padding:0.25rem 0.75rem; display:inline-flex; align-items:center; gap:0.35rem;">
-                ⏳ En revisión
+              <span class="badge bg-warning text-dark" style="font-weight:700;">
+                ⏳ En Revisión
               </span>
             </td>
             <td class="actions-cell">
-              <button
-                type="button"
-                class="btn btn-secondary btn-sm"
-                disabled
-                title="No se puede editar una variante pendiente de aprobación"
-                style="opacity:0.6; cursor:not-allowed;"
-              >
-                ✏️
-              </button>
-              <button
-                type="button"
-                class="btn btn-outline-danger btn-sm"
-                title="Cancelar solicitud de creación de variante"
-                onclick="cancelarSolicitudVariante(${controlId})"
-              >
-                Cancelar solicitud
-              </button>
+              <span class="badge bg-secondary">Acciones bloqueadas</span>
             </td>
           </tr>
         `;
@@ -1799,7 +1767,20 @@
           }
         } catch (error) {
           console.error("Error al crear variante:", error);
-          showToast(error.message || "No se pudo crear la variante", "error");
+          if (
+            typeof Swal !== "undefined" &&
+            Swal &&
+            typeof Swal.fire === "function"
+          ) {
+            await Swal.fire({
+              icon: "warning",
+              title: "No se pudo guardar",
+              text: error.message || "Error desconocido",
+              confirmButtonColor: "#F97316",
+            });
+          } else {
+            showToast(error.message || "No se pudo guardar", "error");
+          }
         } finally {
           saveVariantBtn.disabled = false;
           variantBtnText.style.display = "inline";
