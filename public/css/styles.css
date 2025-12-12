@@ -135,6 +135,14 @@ h3 {
   z-index: 100;
 }
 
+.navbar.fixed-top {
+  position: fixed !important;
+  top: 0;
+  left: 0;
+  right: 0;
+  margin-top: 0;
+}
+
 .navbar-content {
   display: flex;
   justify-content: space-between;
@@ -197,6 +205,30 @@ h3 {
 
 .navbar-link:hover::after {
   width: 100%;
+}
+
+.d-none {
+  display: none !important;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.2em 0.5em;
+  font-size: 0.75em;
+  font-weight: 600;
+  line-height: 1;
+  color: #fff;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: baseline;
+}
+
+.bg-danger {
+  background-color: var(--danger-color) !important;
+}
+
+.rounded-pill {
+  border-radius: 999px;
 }
 
 /* Dropdown Marcas */

@@ -17,6 +17,7 @@ const reportesRoutes = require("./routes/reportes");
 const publicRoutes = require("./routes/public");
 const notificacionesRoutes = require("./routes/notificaciones");
 const clientesRoutes = require("./routes/clientes");
+const staffRoutes = require("./routes/staff");
 
 // Inicializar la aplicación Express
 const app = express();
@@ -80,6 +81,7 @@ app.use("/api/public", publicRoutes);
 app.use("/api/cliente", clientesRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/admin/reportes", reportesRoutes);
+app.use("/api/staff", staffRoutes);
 
 // Manejo de rutas no encontradas solo para API
 app.use("/api/*", (req, res) => {

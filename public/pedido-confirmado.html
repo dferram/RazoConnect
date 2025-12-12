@@ -330,16 +330,6 @@
         }
       }
 
-      // Logout
-      logoutBtn.addEventListener("click", (e) => {
-        e.preventDefault();
-        clearAuthData();
-        showToast("Sesión cerrada exitosamente", "success");
-        setTimeout(() => {
-          window.location.href = "/login.html";
-        }, 500);
-      });
-
       // Load order on page load
       if (pedidoId) {
         loadOrderDetails();

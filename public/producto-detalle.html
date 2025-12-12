@@ -650,11 +650,17 @@
         );
 
         if (!Number.isFinite(stockPaquetes) || stockPaquetes < 1) {
-          stock.textContent = "Agotado en esta presentación";
+          stock.textContent = "Sin stock inmediato (Disponible bajo pedido)";
           stock.classList.add("text-danger");
-          cantidadInput.disabled = true;
-          cantidadInput.value = 0;
-          addToCartBtn.disabled = true;
+          cantidadInput.disabled = false;
+          addToCartBtn.disabled = false;
+          cantidadInput.max = 999;
+          if (
+            !Number.isFinite(parseInt(cantidadInput.value, 10)) ||
+            parseInt(cantidadInput.value, 10) < 1
+          ) {
+            cantidadInput.value = 1;
+          }
         } else {
           stock.textContent = `Stock disponible: ${stockPaquetes} paquetes`;
           stock.classList.remove("text-danger");
@@ -928,47 +934,31 @@
 
         dimensiones.textContent = dimensionTexto;
 
-        const tieneStock = stockDisponible > 0;
-        stock.textContent = tieneStock
-          ? `${stockDisponible} paquetes`
-          : "Sin stock disponible";
-        stock.style.color = tieneStock
-          ? "var(--success-color)"
-          : "var(--warning-color, #DD6B20)";
+        // Backorder habilitado: no deshabilitar controles aunque no haya stock inmediato.
+        // El texto/color del stock se controla en actualizarStockVisual().
 
         if (variantAvailability) {
-          variantAvailability.textContent = tieneStock
-            ? "En stock (envío inmediato)."
-            : "Producto bajo pedido con tiempo de entrega extendido.";
-          variantAvailability.style.color = tieneStock
-            ? "var(--text-secondary)"
-            : "var(--warning-color, #DD6B20)";
+          variantAvailability.textContent = "Puedes pedir más piezas aunque no haya stock inmediato.";
+          variantAvailability.style.color = "var(--text-secondary)";
         }
 
         if (backorderMessage) {
-          backorderMessage.textContent = tieneStock
-            ? " "
-            : "Producto bajo pedido. Se solicitar 00a proveedor.";
-          backorderMessage.style.display = tieneStock ? "none" : "block";
+          backorderMessage.style.display = "none";
         }
 
-        cantidadInput.disabled = !tieneStock;
-        decreaseBtn.disabled = !tieneStock;
-        increaseBtn.disabled = !tieneStock;
-        addToCartBtn.disabled = !tieneStock;
+        cantidadInput.disabled = false;
+        decreaseBtn.disabled = false;
+        increaseBtn.disabled = false;
+        addToCartBtn.disabled = false;
 
-        cantidadInput.max = stockDisponible > 0 ? stockDisponible : 0;
-
-        if (!tieneStock) {
-          cantidadInput.value = 0;
-        } else {
-          clampCantidadPorStock();
-        }
+        cantidadInput.max = 999;
+        clampCantidadMaxima();
 
         renderVariantImages(varianteSeleccionada);
         updateTotalPiezas();
         renderBackorderAlert();
         actualizarDescripcionTamano();
+        actualizarStockVisual();
       }
 
       function renderVariantOptions() {
@@ -1075,6 +1065,137 @@
 
         actualizarInformacionVariante();
         actualizarStockUI(varianteSeleccionada);
+        actualizarStockVisual();
+      }
+
+      function getCarritoCache() {
+        const keys = [
+          "razoconnect_carrito",
+          "razoconnect_cart",
+          "razoconnect_cart_cache",
+        ];
+
+        for (const key of keys) {
+          const raw = localStorage.getItem(key);
+          if (!raw) continue;
+          try {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) {
+              return { key, items: parsed };
+            }
+          } catch (_) {}
+        }
+
+        return { key: "razoconnect_cart_cache", items: [] };
+      }
+
+      function setCarritoCache(key, items) {
+        try {
+          localStorage.setItem(key, JSON.stringify(Array.isArray(items) ? items : []));
+        } catch (_) {}
+      }
+
+      function getCantidadEnCarrito(varianteId, tamanoId) {
+        if (!varianteId || !tamanoId) return 0;
+
+        const { items } = getCarritoCache();
+        let total = 0;
+
+        for (const item of items) {
+          const vId = Number.parseInt(item?.varianteId ?? item?.VarianteID ?? item?.varianteid, 10);
+          const tId = Number.parseInt(item?.tamanoId ?? item?.TamanoID ?? item?.tamanoid, 10);
+          const qty = Number.parseInt(item?.cantidad ?? item?.Cantidad ?? item?.cantidadPaquetes ?? item?.cantidadpaquetes, 10);
+
+          if (
+            Number.isInteger(vId) &&
+            Number.isInteger(tId) &&
+            vId === Number.parseInt(varianteId, 10) &&
+            tId === Number.parseInt(tamanoId, 10)
+          ) {
+            if (Number.isInteger(qty) && qty > 0) {
+              total += qty;
+            }
+          }
+        }
+
+        return total;
+      }
+
+      function upsertCantidadEnCarrito(varianteId, tamanoId, cantidadAgregar) {
+        const parsedVar = Number.parseInt(varianteId, 10);
+        const parsedTam = Number.parseInt(tamanoId, 10);
+        const parsedQty = Number.parseInt(cantidadAgregar, 10);
+        if (!Number.isInteger(parsedVar) || !Number.isInteger(parsedTam) || !Number.isInteger(parsedQty) || parsedQty <= 0) {
+          return;
+        }
+
+        const cache = getCarritoCache();
+        const items = Array.isArray(cache.items) ? [...cache.items] : [];
+
+        const idx = items.findIndex((it) => {
+          const vId = Number.parseInt(it?.varianteId ?? it?.VarianteID ?? it?.varianteid, 10);
+          const tId = Number.parseInt(it?.tamanoId ?? it?.TamanoID ?? it?.tamanoid, 10);
+          return Number.isInteger(vId) && Number.isInteger(tId) && vId === parsedVar && tId === parsedTam;
+        });
+
+        if (idx >= 0) {
+          const currentQty = Number.parseInt(items[idx]?.cantidad ?? items[idx]?.Cantidad ?? 0, 10);
+          const nextQty = (Number.isInteger(currentQty) ? currentQty : 0) + parsedQty;
+          items[idx] = {
+            ...items[idx],
+            varianteId: parsedVar,
+            tamanoId: parsedTam,
+            cantidad: nextQty,
+          };
+        } else {
+          items.push({
+            varianteId: parsedVar,
+            tamanoId: parsedTam,
+            cantidad: parsedQty,
+          });
+        }
+
+        setCarritoCache(cache.key, items);
+      }
+
+      function actualizarStockVisual() {
+        try {
+          if (!stock || !varianteSeleccionada || !tamanoSeleccionado) {
+            return;
+          }
+
+          const stockPiezas = obtenerStockDisponibleVariante(varianteSeleccionada);
+          const piezasPorPaqueteSeleccionado = obtenerPiezasPorPaquete();
+
+          const stockRealPaquetes = (() => {
+            const piezas = Number.parseInt(stockPiezas, 10);
+            const ppp = Number.parseInt(piezasPorPaqueteSeleccionado, 10);
+            if (!Number.isInteger(piezas) || piezas <= 0) return 0;
+            if (!Number.isInteger(ppp) || ppp <= 0) return piezas;
+            return Math.floor(piezas / ppp);
+          })();
+
+          const cantidadEnCarrito = getCantidadEnCarrito(
+            varianteSeleccionada.varianteId,
+            tamanoSeleccionado.tamanoId
+          );
+
+          let stockVisual = stockRealPaquetes - cantidadEnCarrito;
+          if (!Number.isFinite(stockVisual) || Number.isNaN(stockVisual)) {
+            stockVisual = stockRealPaquetes;
+          }
+          if (stockVisual < 0) stockVisual = 0;
+
+          if (stockVisual > 0) {
+            stock.textContent = `Stock disponible: ${stockVisual} paquetes`;
+            stock.style.color = "var(--success-color)";
+          } else {
+            stock.textContent = "Sin stock inmediato (Disponible bajo pedido)";
+            stock.style.color = "var(--warning-color, #DD6B20)";
+          }
+        } catch (e) {
+          console.error("Error actualizando stock visual:", e);
+        }
       }
 
       function renderTamanos() {
@@ -1176,6 +1297,7 @@
         // y el pack elegido, sin buscar variantes independientes por pack.
         actualizarInformacionVariante();
         actualizarStockUI(varianteSeleccionada);
+        actualizarStockVisual();
       }
 
       function actualizarDescripcionTamano() {
@@ -1354,10 +1476,22 @@
         }
 
         const cantidad = parseInt(cantidadInput.value) || 0;
-        const stockDisponible =
-          typeof varianteSeleccionada.stock === "number"
-            ? varianteSeleccionada.stock
-            : parseInt(varianteSeleccionada.stock, 10) || 0;
+        const stockPiezas = obtenerStockDisponibleVariante(varianteSeleccionada);
+        const piezasPorPaqueteSeleccionado = obtenerPiezasPorPaquete();
+
+        const stockRealPaquetes = (() => {
+          const piezas = Number.parseInt(stockPiezas, 10);
+          const ppp = Number.parseInt(piezasPorPaqueteSeleccionado, 10);
+
+          if (!Number.isFinite(piezas) || Number.isNaN(piezas) || piezas <= 0) {
+            return 0;
+          }
+          if (!Number.isFinite(ppp) || Number.isNaN(ppp) || ppp <= 0) {
+            return piezas;
+          }
+
+          return Math.floor(piezas / ppp);
+        })();
 
         if (cantidad < 1) {
           showToast("La cantidad debe ser mayor a 0", "warning");
@@ -1376,12 +1510,42 @@
             tamanoId: tamanoSeleccionado.tamanoId,
           });
 
+          upsertCantidadEnCarrito(
+            varianteSeleccionada.varianteId,
+            tamanoSeleccionado.tamanoId,
+            cantidad
+          );
+
           cantidadInput.value = 1;
           updateTotalPiezas();
+          actualizarStockVisual();
 
-          setTimeout(() => {
-            mostrarModalCarrito();
-          }, 800);
+          if (cantidad > stockRealPaquetes) {
+            const surtido = Math.max(stockRealPaquetes, 0);
+            const pendiente = Math.max(cantidad - surtido, 0);
+
+            if (
+              typeof Swal !== "undefined" &&
+              Swal &&
+              typeof Swal.fire === "function"
+            ) {
+              await Swal.fire({
+                icon: "info",
+                title: "Agregado con Backorder",
+                text: `Se agregaron ${cantidad} paquetes. ${surtido} son de entrega inmediata y ${pendiente} quedarán en espera (Backorder).`,
+                confirmButtonColor: "#F97316",
+              });
+            } else {
+              showToast(
+                `Agregado con Backorder: ${surtido} inmediatos, ${pendiente} en espera.`,
+                "info"
+              );
+            }
+          } else {
+            setTimeout(() => {
+              mostrarModalCarrito();
+            }, 800);
+          }
         } catch (error) {
           console.error("Error adding to cart:", error);
         } finally {
@@ -1391,16 +1555,6 @@
           btnSpinner.style.display = "none";
           renderBackorderAlert();
         }
-      });
-
-      // Handle logout
-      logoutBtn.addEventListener("click", (e) => {
-        e.preventDefault();
-        clearAuthData();
-        showToast("Sesión cerrada exitosamente", "success");
-        setTimeout(() => {
-          window.location.href = "/login.html";
-        }, 500);
       });
 
       // Funciones del modal de carrito

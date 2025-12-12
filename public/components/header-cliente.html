@@ -1,0 +1,96 @@
+<nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm fixed-top">
+  <div class="container">
+    <a class="navbar-brand d-flex align-items-center gap-2" href="/inicio.html">
+      <img src="/icon/Logo_Razo.png" alt="RazoConnect" style="height: 28px; width: auto;" />
+      <span style="font-weight: 800; color: #F97316;">RazoConnect</span>
+    </a>
+
+    <button
+      class="navbar-toggler"
+      type="button"
+      data-bs-toggle="collapse"
+      data-bs-target="#navbarCliente"
+      aria-controls="navbarCliente"
+      aria-expanded="false"
+      aria-label="Toggle navigation"
+    >
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarCliente">
+      <ul class="navbar-nav mx-auto mb-2 mb-lg-0">
+        <li class="nav-item">
+          <a class="nav-link" href="/inicio.html">Inicio</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/catalogo.html">Productos</a>
+        </li>
+
+        <li class="nav-item dropdown">
+          <a
+            class="nav-link dropdown-toggle"
+            href="#"
+            id="dropdownTipos"
+            role="button"
+            data-bs-toggle="dropdown"
+            aria-expanded="false"
+          >
+            Explorar por Tipo
+          </a>
+          <ul class="dropdown-menu" aria-labelledby="dropdownTipos" id="listaTiposProducto">
+            <li><span class="dropdown-item-text">Cargando...</span></li>
+          </ul>
+        </li>
+
+        <li class="nav-item dropdown">
+          <a
+            class="nav-link dropdown-toggle"
+            href="#"
+            id="dropdownMarcas"
+            role="button"
+            data-bs-toggle="dropdown"
+            aria-expanded="false"
+          >
+            Marcas
+          </a>
+          <ul class="dropdown-menu" aria-labelledby="dropdownMarcas" id="listaMarcas">
+            <li><span class="dropdown-item-text">Cargando...</span></li>
+          </ul>
+        </li>
+      </ul>
+
+      <ul class="navbar-nav ms-auto mb-2 mb-lg-0 align-items-lg-center" style="gap: 0.25rem;">
+        <li class="nav-item">
+          <a class="nav-link position-relative" href="/carrito.html" title="Carrito">
+            <span style="font-size: 1.05rem;">🛒</span>
+            <span
+              id="cartBadge"
+              class="badge rounded-pill bg-danger position-absolute"
+              style="top: 0; left: 1.05rem; font-size: 0.65rem; display: none;"
+            >0</span>
+            <span
+              id="badgeCarrito"
+              class="badge rounded-pill bg-danger position-absolute"
+              style="top: 0; left: 1.05rem; font-size: 0.65rem;"
+            >0</span>
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link" href="/dashboard.html" title="Mi cuenta" id="userGreeting">
+            <span id="headerNombreUsuario">Iniciar Sesión</span>
+            <span
+              id="badgeNotificaciones"
+              class="badge bg-danger rounded-pill d-none"
+              style="font-size: 0.7em; position: relative; top: -5px;"
+            >0</span>
+          </a>
+        </li>
+
+        <li class="nav-item" id="headerLogoutItem" style="display: none;">
+          <a class="nav-link" href="#" id="logoutBtn">Cerrar Sesión</a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>

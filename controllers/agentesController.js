@@ -126,6 +126,13 @@ const solicitarConfirmacionPedidoAgente = async (req, res) => {
       },
     });
   } catch (error) {
+    if (error && error.code === "PENDING_CHANGE_EXISTS") {
+      return res.status(409).json({
+        success: false,
+        message:
+          "Ya existe una solicitud pendiente para este registro. Revisa la bitácora.",
+      });
+    }
     console.error(
       "Error al registrar solicitud de confirmación de pedido por agente:",
       error
@@ -859,6 +866,13 @@ const solicitarCambioEstatusPedidoAgente = async (req, res) => {
       },
     });
   } catch (error) {
+    if (error && error.code === "PENDING_CHANGE_EXISTS") {
+      return res.status(409).json({
+        success: false,
+        message:
+          "Ya existe una solicitud pendiente para este registro. Revisa la bitácora.",
+      });
+    }
     console.error(
       "Error al registrar solicitud de cambio de estatus de pedido por agente:",
       error

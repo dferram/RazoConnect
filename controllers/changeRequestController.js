@@ -1,5 +1,8 @@
 const db = require("../db");
 const { aprobarSolicitudes } = require("../services/ChangeRequestService");
+const { crearNotificacion } = require("../services/notificacionesService");
+const { enviarEmail } = require("../services/emailService");
+const { getOrderConfirmationEmail } = require("../utils/emailTemplates");
 
 // Whitelist de entidades administrables y su tabla/PK real
 const ENTITY_MAP = {
@@ -32,6 +35,60 @@ function ensureJsonObject(value) {
   }
 }
 
+async function inferSolicitanteTipoYId(usuarioSolicitanteId) {
+  const id = Number.parseInt(usuarioSolicitanteId, 10);
+  if (!Number.isInteger(id) || id <= 0) {
+    return { tipo: null, id: null };
+  }
+
+  const adminRes = await db.query(
+    "SELECT AdminID FROM Administradores WHERE AdminID = $1 LIMIT 1",
+    [id]
+  );
+  if (adminRes.rows && adminRes.rows.length > 0) {
+    return { tipo: "admin", id };
+  }
+
+  const agenteRes = await db.query(
+    "SELECT AgenteID FROM AgentesDeVentas WHERE AgenteID = $1 LIMIT 1",
+    [id]
+  );
+  if (agenteRes.rows && agenteRes.rows.length > 0) {
+    return { tipo: "agente", id };
+  }
+
+  return { tipo: null, id };
+}
+
+async function notificarSolicitudAprobada(solicitudRow) {
+  const entidad = (solicitudRow?.entidad || "").toString().trim();
+  const usuarioSolicitanteId = solicitudRow?.usuario_solicitante_id;
+  if (!usuarioSolicitanteId) return;
+
+  const { tipo, id } = await inferSolicitanteTipoYId(usuarioSolicitanteId);
+  if (!tipo || !id) return;
+
+  const titulo = "Solicitud Aprobada";
+  const mensaje = `Tu cambio en ${entidad} fue aprobado.`;
+
+  if (tipo === "admin") {
+    await db.query(
+      `INSERT INTO notificaciones (clienteid, administrador_id, agente_id, tipo, titulo, mensaje)
+       VALUES ($1, $2, $3, $4, $5, $6)`,
+      [null, id, null, "sistema", titulo, mensaje]
+    );
+    return;
+  }
+
+  if (tipo === "agente") {
+    await db.query(
+      `INSERT INTO notificaciones (clienteid, administrador_id, agente_id, tipo, titulo, mensaje)
+       VALUES ($1, $2, $3, $4, $5, $6)`,
+      [null, null, id, "sistema", titulo, mensaje]
+    );
+  }
+}
+
 async function aprobarCambios(req, res) {
   const { ids } = req.body || {};
 
@@ -52,6 +109,109 @@ async function aprobarCambios(req, res) {
 
   try {
     const resultado = await aprobarSolicitudes(ids, adminId);
+
+    try {
+      const appliedIds = Array.isArray(resultado?.applied)
+        ? resultado.applied
+            .map((row) => Number.parseInt(row?.id ?? row?.cambioId, 10))
+            .filter((n) => Number.isInteger(n) && n > 0)
+        : [];
+
+      for (const cambioId of appliedIds) {
+        const cambioResult = await db.query(
+          `SELECT entidad, tipo_cambio, entidad_id, datos_nuevos, usuario_solicitante_id
+           FROM control_cambios
+           WHERE id = $1`,
+          [cambioId]
+        );
+
+        if (!cambioResult.rows.length) continue;
+
+        const solicitud = cambioResult.rows[0];
+        try {
+          await notificarSolicitudAprobada(solicitud);
+        } catch (staffNotifyError) {
+          console.error(
+            "Error creando notificación interna de aprobación:",
+            staffNotifyError
+          );
+        }
+
+        const entidad = (solicitud.entidad || "").toString().toLowerCase();
+        const tipoCambio = (solicitud.tipo_cambio || "")
+          .toString()
+          .toUpperCase();
+
+        if (entidad !== "pedidos" || tipoCambio !== "UPDATE") {
+          continue;
+        }
+
+        const pedidoId = Number.parseInt(solicitud.entidad_id, 10);
+        if (!Number.isInteger(pedidoId) || pedidoId <= 0) {
+          continue;
+        }
+
+        const nuevos = ensureJsonObject(solicitud.datos_nuevos);
+        const nuevoEstatus = (nuevos.estatus || "").toString().trim();
+        if (!nuevoEstatus) {
+          continue;
+        }
+
+        const pedidoInfoResult = await db.query(
+          `SELECT ClienteID
+           FROM Pedidos
+           WHERE PedidoID = $1`,
+          [pedidoId]
+        );
+
+        const clienteIdRaw = pedidoInfoResult.rows[0]?.clienteid;
+        const clienteId = Number.parseInt(clienteIdRaw, 10);
+        if (!Number.isInteger(clienteId) || clienteId <= 0) {
+          continue;
+        }
+
+        const clienteInfoResult = await db.query(
+          `SELECT Nombre, Apellido, Email
+           FROM Clientes
+           WHERE ClienteID = $1`,
+          [clienteId]
+        );
+
+        const clienteInfo = clienteInfoResult.rows[0] || {};
+        const emailCliente = (clienteInfo.email || "").toString().trim();
+        const nombreCliente = [
+          (clienteInfo.nombre || "").toString().trim(),
+          (clienteInfo.apellido || "").toString().trim(),
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .trim();
+
+        await crearNotificacion(
+          clienteId,
+          "pedido",
+          `¡Tu pedido #${pedidoId} ha sido ${nuevoEstatus}!`,
+          "El estatus de tu pedido ha cambiado. Revisa los detalles en tu cuenta.",
+          {
+            link: `/mis-pedidos.html?id=${pedidoId}`,
+            pedidoId,
+            estatus: nuevoEstatus,
+          }
+        );
+
+        if (emailCliente) {
+          const asunto = `¡Tu pedido #${pedidoId} ha sido ${nuevoEstatus}!`;
+          const cuerpoHtml = getOrderConfirmationEmail(
+            nombreCliente || "cliente",
+            pedidoId,
+            nuevoEstatus
+          );
+          await enviarEmail(emailCliente, asunto, cuerpoHtml);
+        }
+      }
+    } catch (notifyError) {
+      console.error("Error creando notificaciones tras aprobar cambios:", notifyError);
+    }
 
     return res.json({
       success: true,

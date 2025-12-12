@@ -84,6 +84,218 @@ const obtenerNotificaciones = async (req, res) => {
 };
 
 /**
+ * Marcar todas las notificaciones staff como leídas
+ * POST /api/staff/notificaciones/marcar-todas-leidas
+ */
+const marcarTodasLeidasStaff = async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: "No autenticado",
+      });
+    }
+
+    const roles =
+      Array.isArray(req.user.roles) && req.user.roles.length
+        ? req.user.roles
+        : [req.user.rol].filter(Boolean);
+
+    const isAdmin = roles.some((r) =>
+      ["admin", "superadmin"].includes(String(r).toLowerCase())
+    );
+    const isAgente = roles.some((r) => String(r).toLowerCase() === "agente");
+
+    let column = null;
+    let staffId = null;
+
+    if (isAdmin) {
+      column = "administrador_id";
+      staffId = req.user.id || req.user.userId || null;
+    } else if (isAgente) {
+      column = "agente_id";
+      staffId = req.user.userId || req.user.agenteId || null;
+    }
+
+    if (!column || !staffId) {
+      return res.status(403).json({
+        success: false,
+        message: "No tienes permisos para acceder a este recurso",
+      });
+    }
+
+    const result = await db.query(
+      `UPDATE notificaciones
+       SET leida = TRUE
+       WHERE ${column} = $1
+         AND leida = FALSE
+       RETURNING notificacionid`,
+      [staffId]
+    );
+
+    return res.json({
+      success: true,
+      message: `${result.rows.length} notificaciones marcadas como leídas`,
+      data: {
+        actualizadas: result.rows.length,
+      },
+    });
+  } catch (error) {
+    console.error("Error al marcar todas como leídas (staff):", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error al marcar todas como leídas",
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * Obtener conteo de notificaciones no leídas para staff (admin/superadmin/agente)
+ * GET /api/staff/notificaciones/unread-count
+ */
+const obtenerConteoNoLeidasStaff = async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: "No autenticado",
+      });
+    }
+
+    const roles =
+      Array.isArray(req.user.roles) && req.user.roles.length
+        ? req.user.roles
+        : [req.user.rol].filter(Boolean);
+
+    const isAdmin = roles.some((r) =>
+      ["admin", "superadmin"].includes(String(r).toLowerCase())
+    );
+    const isAgente = roles.some((r) => String(r).toLowerCase() === "agente");
+
+    let column = null;
+    let staffId = null;
+
+    if (isAdmin) {
+      column = "administrador_id";
+      staffId = req.user.id || req.user.userId || null;
+    } else if (isAgente) {
+      column = "agente_id";
+      staffId = req.user.userId || req.user.agenteId || null;
+    }
+
+    if (!column || !staffId) {
+      return res.status(403).json({
+        success: false,
+        message: "No tienes permisos para acceder a este recurso",
+      });
+    }
+
+    const countQuery = `
+      SELECT COUNT(*)::int AS count
+      FROM notificaciones
+      WHERE ${column} = $1
+        AND leida = FALSE
+    `;
+
+    const result = await db.query(countQuery, [staffId]);
+    const count = Number(result.rows?.[0]?.count || 0);
+
+    return res.json({
+      success: true,
+      count,
+    });
+  } catch (error) {
+    console.error("Error al obtener conteo de notificaciones staff:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error al obtener conteo de notificaciones",
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * Obtener notificaciones internas para staff (admin/superadmin/agente)
+ * GET /api/staff/notificaciones
+ */
+const obtenerNotificacionesStaff = async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: "No autenticado",
+      });
+    }
+
+    const roles =
+      Array.isArray(req.user.roles) && req.user.roles.length
+        ? req.user.roles
+        : [req.user.rol].filter(Boolean);
+
+    const isAdmin = roles.some((r) => ["admin", "superadmin"].includes(String(r).toLowerCase()));
+    const isAgente = roles.some((r) => String(r).toLowerCase() === "agente");
+
+    let column = null;
+    let staffId = null;
+
+    if (isAdmin) {
+      column = "administrador_id";
+      staffId = req.user.id || req.user.userId || null;
+    } else if (isAgente) {
+      column = "agente_id";
+      staffId = req.user.userId || req.user.agenteId || null;
+    }
+
+    if (!column || !staffId) {
+      return res.status(403).json({
+        success: false,
+        message: "No tienes permisos para acceder a este recurso",
+      });
+    }
+
+    const { limit = 50, offset = 0 } = req.query;
+
+    const query = `
+      SELECT
+        notificacionid,
+        tipo,
+        titulo,
+        mensaje,
+        leida,
+        fechacreacion,
+        metadata,
+        url,
+        prioridad,
+        administrador_id,
+        agente_id,
+        clienteid
+      FROM notificaciones
+      WHERE ${column} = $1
+      ORDER BY leida ASC, fechacreacion DESC
+      LIMIT $2 OFFSET $3
+    `;
+
+    const result = await db.query(query, [staffId, parseInt(limit), parseInt(offset)]);
+
+    return res.json({
+      success: true,
+      data: {
+        notificaciones: result.rows,
+        total: result.rows.length,
+      },
+    });
+  } catch (error) {
+    console.error("Error al obtener notificaciones staff:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error al obtener notificaciones",
+      error: error.message,
+    });
+  }
+};
+
+/**
  * Marcar notificación como leída
  * POST /api/notificaciones/:id/marcar-leida
  */
@@ -315,6 +527,9 @@ const notificarTemporadaCercana = async (clienteId, temporada, diasRestantes) =>
 
 module.exports = {
   obtenerNotificaciones,
+  obtenerNotificacionesStaff,
+  obtenerConteoNoLeidasStaff,
+  marcarTodasLeidasStaff,
   marcarComoLeida,
   marcarTodasLeidas,
   eliminarNotificacion,

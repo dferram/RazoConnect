@@ -5,50 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Productos - RazoConnect</title>
     <link rel="icon" type="image/png" href="/icon/Logo_Razo.png" />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="css/styles.css" />
     <link rel="stylesheet" href="css/catalogo-profesional.css" />
   </head>
   <body>
-    <nav class="navbar">
-      <div class="container navbar-content">
-        <a href="/inicio.html" class="navbar-brand"><img src="/icon/Logo_Razo.png" class="titulo-emoji-reemplazo" alt="Razo">RazoConnect</a>
-        <ul class="navbar-menu">
-          <li>
-            <a href="/catalogo.html" class="navbar-link navbar-link-active">Productos</a>
-          </li>
-          <li class="navbar-dropdown" id="tiposDropdown">
-            <span class="navbar-dropdown-toggle">
-              Explorar por Tipo
-              <span class="navbar-dropdown-arrow">▼</span>
-            </span>
-            <div class="navbar-dropdown-menu">
-              <div class="navbar-dropdown-loading">Cargando tipos...</div>
-            </div>
-          </li>
-          <li class="navbar-dropdown" id="marcasDropdown">
-            <span class="navbar-dropdown-toggle">
-              Marcas
-              <span class="navbar-dropdown-arrow">▼</span>
-            </span>
-            <div class="navbar-dropdown-menu">
-              <div class="navbar-dropdown-loading">Cargando marcas...</div>
-            </div>
-          </li>
-          <li><a href="/carrito.html" class="navbar-link">Carrito</a></li>
-          <li>
-            <a
-              href="/dashboard.html"
-              id="userGreeting"
-              class="navbar-link"
-              title="Mi cuenta"
-            ></a>
-          </li>
-          <li>
-            <a href="#" class="navbar-link" id="logoutBtn">Cerrar sesión</a>
-          </li>
-        </ul>
-      </div>
-    </nav>
+    <div id="header-container"></div>
 
     <div class="container" style="padding-top: 2rem; padding-bottom: 3rem">
       <!-- Header -->
@@ -78,7 +43,6 @@
         >
           <a href="/carrito.html" class="cart-modern" title="Ver carrito">
             🛒
-            <span class="cart-badge" id="cartBadge">0</span>
             <span class="sr-only">Ver carrito</span>
           </a>
 
@@ -339,8 +303,6 @@
       const loadingState = document.getElementById("loadingState");
       const productGrid = document.getElementById("productGrid");
       const emptyState = document.getElementById("emptyState");
-      const userGreeting = document.getElementById("userGreeting");
-      const logoutBtn = document.getElementById("logoutBtn");
       const loadingCategorias = document.getElementById("loadingCategorias");
       const categoriasList = document.getElementById("categoriasList");
       const filtroActivo = document.getElementById("filtroActivo");
@@ -577,13 +539,6 @@
       }
 
       // Filtros de marcas removidos - usar páginas de proveedor individuales
-
-      // Display user greeting
-      const userData = getUserData();
-      if (userData) {
-        const nombre = userData.nombre || userData.Nombre || "usuario";
-        userGreeting.textContent = `Hola, ${nombre}`;
-      }
 
       // Format currency
       function formatCurrency(amount) {
@@ -1140,69 +1095,12 @@
         }
       }
 
-      // Handle logout
-      if (logoutBtn) {
-        logoutBtn.addEventListener("click", (e) => {
-          e.preventDefault();
-          console.log('🔴 Cerrando sesión...');
-          
-          try {
-            // Limpiar datos de autenticación
-            if (typeof clearAuthData === 'function') {
-              clearAuthData();
-            } else {
-              // Fallback manual si la función no está disponible
-              localStorage.removeItem("razoconnect_token");
-              localStorage.removeItem("razoconnect_user");
-              localStorage.removeItem("razoconnect_admin_token");
-              localStorage.removeItem("razoconnect_admin");
-            }
-            
-            // Mostrar mensaje
-            if (typeof showToast === 'function') {
-              showToast("Sesión cerrada exitosamente", "success");
-            }
-            
-            // Redirigir al login
-            setTimeout(() => {
-              window.location.href = "/login.html";
-            }, 500);
-          } catch (error) {
-            console.error('Error al cerrar sesión:', error);
-            // Forzar redirect incluso si hay error
-            window.location.href = "/login.html";
-          }
-        });
-      } else {
-        console.error('❌ Botón de logout no encontrado');
-      }
-
-      // Load categorias, dimensiones, marcas and products on page load
-      // Update cart badge
-      async function updateCartBadge() {
-        try {
-          const cartBadge = document.getElementById('cartBadge');
-          if (!cartBadge) return;
-
-          const response = await API.getCarrito();
-          if (response.ok && response.data.success) {
-            const items = response.data.data.items || [];
-            const totalItems = items.reduce((sum, item) => sum + (item.cantidad || 0), 0);
-            cartBadge.textContent = totalItems;
-            cartBadge.style.display = totalItems > 0 ? 'flex' : 'none';
-          }
-        } catch (error) {
-          console.error('Error updating cart badge:', error);
-        }
-      }
-
       loadDimensiones();
       loadCategorias();
       tipoSeleccionado = obtenerTipoDesdeUrl();
       actualizarTituloPorTipo();
       filtrosQueryActual = construirQueryString();
       loadProductos(filtrosQueryActual);
-      updateCartBadge();
     </script>
 
     <style>
@@ -1328,151 +1226,12 @@
     </style>
 
     <!-- Script para Dropdown de Marcas -->
-    <script>
-      (function () {
-        const dropdown = document.getElementById("marcasDropdown");
-        const toggle = dropdown.querySelector(".navbar-dropdown-toggle");
-        const menu = dropdown.querySelector(".navbar-dropdown-menu");
-
-        // Toggle dropdown al hacer click
-        toggle.addEventListener("click", (e) => {
-          e.stopPropagation();
-          dropdown.classList.toggle("active");
-        });
-
-        // Cerrar dropdown al hacer click fuera
-        document.addEventListener("click", (e) => {
-          if (!dropdown.contains(e.target)) {
-            dropdown.classList.remove("active");
-          }
-        });
-
-        // Cargar marcas dinámicamente
-        async function loadMarcas() {
-          try {
-            const response = await fetch("/api/public/proveedores");
-            const data = await response.json();
-
-            if (
-              data.success &&
-              data.data &&
-              data.data.proveedores &&
-              data.data.proveedores.length > 0
-            ) {
-              menu.innerHTML = `
-                <a href="/catalogo.html" class="navbar-dropdown-item highlight">
-                  📦 Catálogo Completo
-                </a>
-                ${data.data.proveedores
-                  .map(
-                    (proveedor) => `
-                  <a 
-                    href="/proveedor-tienda.html?id=${proveedor.proveedorId}" 
-                    class="navbar-dropdown-item"
-                  >
-                    ${proveedor.nombre}
-                  </a>
-                `
-                  )
-                  .join("")}
-              `;
-            } else {
-              menu.innerHTML = `
-                <div class="navbar-dropdown-empty">
-                  No hay marcas disponibles
-                </div>
-              `;
-            }
-          } catch (error) {
-            console.error("Error cargando marcas:", error);
-            menu.innerHTML = `
-              <div class="navbar-dropdown-empty">
-                Error al cargar marcas
-              </div>
-            `;
-          }
-        }
-
-        // Cargar marcas al iniciar
-        loadMarcas();
-      })();
-    </script>
 
     <!-- Script para Dropdown de Tipos de Producto -->
-    <script>
-      (function () {
-        const dropdown = document.getElementById("tiposDropdown");
-        if (!dropdown) return;
-        const toggle = dropdown.querySelector(".navbar-dropdown-toggle");
-        const menu = dropdown.querySelector(".navbar-dropdown-menu");
-
-        toggle.addEventListener("click", (e) => {
-          e.stopPropagation();
-          dropdown.classList.toggle("active");
-        });
-
-        document.addEventListener("click", (e) => {
-          if (!dropdown.contains(e.target)) {
-            dropdown.classList.remove("active");
-          }
-        });
-
-        async function loadTipos() {
-          try {
-            const response = await fetch("/api/public/tipos-producto");
-            const data = await response.json();
-
-            const tiposRaw =
-              data && data.success && data.data && Array.isArray(data.data.tipos)
-                ? data.data.tipos
-                : [];
-
-            if (!tiposRaw.length) {
-              menu.innerHTML = `
-                <a href="/catalogo.html" class="navbar-dropdown-item highlight">
-                  🧾 Todos los productos
-                </a>
-                <div class="navbar-dropdown-empty">
-                  No hay tipos disponibles
-                </div>
-              `;
-              return;
-            }
-
-            menu.innerHTML = `
-              <a href="/catalogo.html" class="navbar-dropdown-item highlight">
-                🧾 Todos los productos
-              </a>
-              ${tiposRaw
-                .map((tipo) => {
-                  const nombre = (tipo.nombre || "").toString().trim();
-                  const href = `/catalogo.html?tipo=${encodeURIComponent(nombre)}`;
-                  return `
-                    <a href="${href}" class="navbar-dropdown-item">
-                      ${nombre}
-                    </a>
-                  `;
-                })
-                .join("")}
-            `;
-          } catch (error) {
-            console.error("Error cargando tipos de producto:", error);
-            menu.innerHTML = `
-              <a href="/catalogo.html" class="navbar-dropdown-item highlight">
-                🧾 Todos los productos
-              </a>
-              <div class="navbar-dropdown-empty">
-                Error al cargar tipos
-              </div>
-            `;
-          }
-        }
-
-        loadTipos();
-      })();
-    </script>
 
     <!-- Sistema de Temas Estacionales -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/components/header-loader.js"></script>
     <script src="/js/theme-manager.js"></script>
   </body>
 </html>

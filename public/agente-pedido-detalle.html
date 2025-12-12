@@ -536,6 +536,7 @@
                 type="button"
                 class="btn btn-primary"
                 onclick="enviarSolicitudEstatusDesdeDetalle()"
+                id="btnEnviarSolicitudEstatus"
                 style="flex: 1; padding: 0.75rem; border-radius: 0.5rem; background-color: #F97316; color: white; border: none; font-weight: 600;"
               >
                 Enviar Solicitud
@@ -660,8 +661,14 @@
 
                 if (!result.isConfirmed) return;
 
+                const originalBtnText =
+                  btnSolicitarConfirmacion.dataset.originalText ||
+                  btnSolicitarConfirmacion.textContent;
+                btnSolicitarConfirmacion.dataset.originalText = originalBtnText;
+
                 try {
                   btnSolicitarConfirmacion.disabled = true;
+                  btnSolicitarConfirmacion.textContent = "Enviando...";
 
                   const resp = await fetch(
                     `${API_BASE_URL}/agentes/pedidos/${pedidoId}/solicitar-confirmacion`,
@@ -698,8 +705,14 @@
                     text: err.message || "Error desconocido",
                     confirmButtonColor: "#F97316",
                   });
-                } finally {
+
+                  // Error: permitir reintento
                   btnSolicitarConfirmacion.disabled = false;
+                  btnSolicitarConfirmacion.textContent =
+                    btnSolicitarConfirmacion.dataset.originalText ||
+                    "Solicitar Confirmación";
+                } finally {
+                  // En éxito se recarga la página; no re-habilitar aquí para prevenir doble envío.
                 }
               };
             }
@@ -903,6 +916,8 @@
             return;
           }
 
+          const btnEnviar = document.getElementById("btnEnviarSolicitudEstatus");
+
           const selectEl = document.getElementById("selectNuevoEstatus");
           if (!selectEl) {
             showToast("No se encontró el selector de estatus.", "error");
@@ -968,6 +983,14 @@
             }
           }
 
+          if (btnEnviar) {
+            const originalText =
+              btnEnviar.dataset.originalText || btnEnviar.textContent;
+            btnEnviar.dataset.originalText = originalText;
+            btnEnviar.disabled = true;
+            btnEnviar.textContent = "Enviando...";
+          }
+
           try {
             const response = await API.solicitarCambioEstatusPedidoAgente(
               selectedPedidoForStatus.id,
@@ -1028,6 +1051,13 @@
                   "Ocurrió un error al enviar la solicitud de cambio de estatus.",
                 "error"
               );
+            }
+
+            // Error: permitir reintento
+            if (btnEnviar) {
+              btnEnviar.disabled = false;
+              btnEnviar.textContent =
+                btnEnviar.dataset.originalText || "Enviar Solicitud";
             }
           }
         };

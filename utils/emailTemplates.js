@@ -116,6 +116,85 @@ function buildDireccionTexto(direccion, clienteNombreFallback) {
   return lineas.join("<br/>");
 }
 
+function getBaseHtml(contenido, options = {}) {
+  const frontendBaseUrl = options.frontendBaseUrl || DEFAULT_FRONTEND_BASE_URL;
+  const year = new Date().getFullYear();
+
+  const logoUrl = buildAbsoluteUrl(
+    options.logoUrl || "/icon/Logo_Razo.png",
+    frontendBaseUrl
+  );
+
+  return `
+  <html>
+    <body style="margin:0; padding:0; background-color:#F3F4F6; font-family:system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#F3F4F6; padding:24px 0;">
+        <tr>
+          <td align="center" style="padding:0 16px;">
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px; background-color:#FFFFFF; border-radius:14px; overflow:hidden; box-shadow:0 12px 30px rgba(15, 23, 42, 0.12);">
+              <tr>
+                <td style="background-color:#F47C3C; padding:22px 20px; text-align:center;">
+                  <img src="${logoUrl}" alt="RazoConnect" width="64" height="64" style="display:block; margin:0 auto 10px; border-radius:12px;" />
+                  <div style="font-size:18px; font-weight:800; letter-spacing:0.06em; text-transform:uppercase; color:#FFFFFF;">RAZOCONNECT</div>
+                  <div style="font-size:12px; font-weight:600; color:rgba(255,255,255,0.9); margin-top:6px;">Inventario &amp; E-commerce</div>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:22px 20px;">
+                  ${contenido || ""}
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:14px 20px 20px; border-top:1px solid #E5E7EB; text-align:center;">
+                  <div style="font-size:12px; color:#6B7280; line-height:1.4;">
+                    &copy; ${year} RazoConnect - Todos los derechos reservados.
+                  </div>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    </body>
+  </html>
+  `;
+}
+
+function getOrderConfirmationEmail(nombreCliente, pedidoId, nuevoEstatus, options = {}) {
+  const frontendBaseUrl = options.frontendBaseUrl || DEFAULT_FRONTEND_BASE_URL;
+  const pedidoIdSafe = escapeHtml(pedidoId);
+  const estatusSafe = escapeHtml(nuevoEstatus || "");
+  const clienteSafe = escapeHtml(nombreCliente || "cliente");
+  const link = `${frontendBaseUrl}/mis-pedidos.html?id=${encodeURIComponent(
+    String(pedidoId || "")
+  )}`;
+
+  const contenido = `
+    <div style="text-align:left;">
+      <div style="font-size:22px; font-weight:800; color:#3F2D20; margin-bottom:10px;">
+        ¡Tu pedido #${pedidoIdSafe} está ${estatusSafe}!
+      </div>
+      <div style="font-size:14px; color:#4B5563; line-height:1.55; margin-bottom:18px;">
+        Hola ${clienteSafe}, tenemos buenas noticias sobre tu compra.
+      </div>
+      <div style="text-align:center; padding:6px 0 18px;">
+        <a href="${link}"
+           style="display:inline-block; background-color:#F47C3C; color:#FFFFFF; text-decoration:none; font-weight:800; font-size:14px; padding:12px 22px; border-radius:12px;">
+          Ver mi Pedido
+        </a>
+      </div>
+      <div style="font-size:12px; color:#6B7280; line-height:1.5;">
+        Si el botón no funciona, copia y pega este enlace en tu navegador:<br/>
+        <a href="${link}" style="color:#3F2D20; text-decoration:underline; word-break:break-word;">${escapeHtml(
+          link
+        )}</a>
+      </div>
+    </div>
+  `;
+
+  return getBaseHtml(contenido, { ...options, frontendBaseUrl });
+}
+
 function generarHtmlConfirmacion(pedido, detalles, cliente, options = {}) {
   const frontendBaseUrl = options.frontendBaseUrl || DEFAULT_FRONTEND_BASE_URL;
 
@@ -358,4 +437,6 @@ function generarHtmlConfirmacion(pedido, detalles, cliente, options = {}) {
 
 module.exports = {
   generarHtmlConfirmacion,
+  getBaseHtml,
+  getOrderConfirmationEmail,
 };

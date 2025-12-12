@@ -33,6 +33,10 @@
         <span class="admin-dropdown-icon">💰</span>
         <span>Mis comisiones</span>
       </a>
+      <a href="/staff-notificaciones.html" class="admin-dropdown-item">
+        <span class="admin-dropdown-icon">🔔</span>
+        <span>Notificaciones</span>
+      </a>
       <div class="admin-dropdown-divider"></div>
       <button class="admin-dropdown-item" id="dropdownLogoutAgente">
         <span class="admin-dropdown-icon">🚪</span>
@@ -76,12 +80,14 @@
    * Maneja el logout del agente
    */
   function handleLogout() {
-    // Limpiar tokens y datos del agente
-    localStorage.removeItem("razoconnect_cliente_token");
-    localStorage.removeItem("razoconnect_cliente");
-    sessionStorage.clear();
-    
-    // Redirigir al login
+    try {
+      localStorage.removeItem("razoconnect_admin_token");
+      localStorage.removeItem("razoconnect_admin");
+      sessionStorage.clear();
+    } catch (error) {
+      console.error("Error limpiando sesión de agente:", error);
+    }
+
     window.location.href = "/login.html";
   }
 

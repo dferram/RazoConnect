@@ -826,9 +826,23 @@
             }
           }
 
+          const originalBtnText = btnConfirmarText
+            ? btnConfirmarText.textContent
+            : btnConfirmar.textContent;
+          if (btnConfirmarText) {
+            btnConfirmarText.dataset.originalText = originalBtnText;
+          } else {
+            btnConfirmar.dataset.originalText = originalBtnText;
+          }
+
           try {
             btnConfirmar.disabled = true;
-            if (btnConfirmarText) btnConfirmarText.style.display = "none";
+            if (btnConfirmarText) {
+              btnConfirmarText.textContent = "Enviando...";
+              btnConfirmarText.style.display = "inline";
+            } else {
+              btnConfirmar.textContent = "Enviando...";
+            }
             if (btnConfirmarSpinner)
               btnConfirmarSpinner.style.display = "block";
 
@@ -866,21 +880,44 @@
                   "info"
                 );
               }
+
+              // Éxito: mantener deshabilitado hasta recarga
+              window.location.reload();
             } else {
               showToast(
                 data.message || "Error al actualizar pedido",
                 "error"
               );
+
+              // Error de validación/respuesta: re-habilitar
+              btnConfirmar.disabled = false;
+              if (btnConfirmarText) {
+                btnConfirmarText.textContent =
+                  btnConfirmarText.dataset.originalText || "Confirmar Cambio";
+              } else {
+                btnConfirmar.textContent =
+                  btnConfirmar.dataset.originalText || "Confirmar Cambio";
+              }
+              if (btnConfirmarSpinner)
+                btnConfirmarSpinner.style.display = "none";
             }
           } catch (error) {
             console.error("Error updating order:", error);
             showToast("Error al conectar con el servidor", "error");
-          } finally {
-            if (btnConfirmar) btnConfirmar.disabled = false;
-            if (btnConfirmarText)
-              btnConfirmarText.style.display = "inline";
+
+            // Error catch: re-habilitar
+            btnConfirmar.disabled = false;
+            if (btnConfirmarText) {
+              btnConfirmarText.textContent =
+                btnConfirmarText.dataset.originalText || "Confirmar Cambio";
+            } else {
+              btnConfirmar.textContent =
+                btnConfirmar.dataset.originalText || "Confirmar Cambio";
+            }
             if (btnConfirmarSpinner)
               btnConfirmarSpinner.style.display = "none";
+          } finally {
+            // El estado del botón se maneja dentro de success/error para evitar doble envío.
           }
         }
 

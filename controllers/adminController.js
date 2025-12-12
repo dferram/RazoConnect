@@ -1660,6 +1660,13 @@ const updatePedidoEstatus = async (req, res) => {
       message: "Solicitud de cambio de estatus enviada a bitácora.",
     });
   } catch (error) {
+    if (error && error.code === "PENDING_CHANGE_EXISTS") {
+      return res.status(409).json({
+        success: false,
+        message:
+          "Ya existe una solicitud pendiente para este registro. Revisa la bitácora.",
+      });
+    }
     console.error("Error updating order status:", error);
     return res.status(500).json({
       success: false,

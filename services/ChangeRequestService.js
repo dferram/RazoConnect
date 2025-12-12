@@ -91,6 +91,32 @@ async function solicitarCambio(
     throw new Error("Usuario solicitante no identificado como admin");
   }
 
+  const entidadIdParsed =
+    entidadId !== undefined && entidadId !== null
+      ? Number.parseInt(entidadId, 10)
+      : null;
+
+  if (Number.isInteger(entidadIdParsed) && entidadIdParsed > 0) {
+    const dupCheck = await db.query(
+      `SELECT id
+       FROM control_cambios
+       WHERE entidad = $1
+         AND entidad_id = $2
+         AND estado = 'PENDIENTE'
+       LIMIT 1`,
+      [entidad, entidadIdParsed]
+    );
+
+    if (dupCheck.rows && dupCheck.rows.length > 0) {
+      const err = new Error(
+        "Ya existe una solicitud pendiente para este registro. Revisa la bitácora."
+      );
+      err.code = "PENDING_CHANGE_EXISTS";
+      err.existingId = dupCheck.rows[0]?.id ?? null;
+      throw err;
+    }
+  }
+
   const insertSql = `
     INSERT INTO control_cambios (
       entidad,
@@ -106,7 +132,7 @@ async function solicitarCambio(
 
   const values = [
     entidad,
-    entidadId || null,
+    Number.isInteger(entidadIdParsed) ? entidadIdParsed : entidadId || null,
     tipoCambio,
     datosAnteriores ? JSON.stringify(datosAnteriores) : null,
     JSON.stringify(datosNuevos || {}),
