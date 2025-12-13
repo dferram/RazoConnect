@@ -389,6 +389,7 @@
             >
             <select id="modalMotivo" class="form-input">
               <option value="">Seleccionar motivo...</option>
+              <option value="entrada_inicial">Inventario Inicial / Compra</option>
               <option value="Recepción de Almacén">Recepción de Almacén</option>
               <option value="Ajuste de Inventario">Ajuste de Inventario</option>
               <option value="Devolución de Cliente">
@@ -1184,7 +1185,8 @@
 
         const motivo =
           motivoSeleccionado === "Otro" ? motivoOtro : motivoSeleccionado;
-        const cantidadCambio = tipoAjuste === "entrada" ? cantidad : -cantidad;
+        const esEntrada = tipoAjuste === "entrada" || motivoSeleccionado === "entrada_inicial";
+        const cantidadCambio = esEntrada ? cantidad : -cantidad;
         const productoId =
           selectedProduct?.productoId || selectedProduct?.productoid;
 

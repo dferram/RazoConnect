@@ -336,6 +336,27 @@
   box-shadow: var(--theme-shadow-lg);
 }
 
+#hero-banner {
+  --hero-accent: #F97316;
+}
+
+#hero-banner .hero-eyebrow {
+  color: var(--hero-accent);
+}
+
+#hero-banner .hero-title {
+  color: white;
+}
+
+#hero-banner.tema-sanvalentin .hero-slide::before,
+#hero-banner.tema-diamadre .hero-slide::before,
+#hero-banner.tema-diapadre .hero-slide::before,
+#hero-banner.tema-graduaciones .hero-slide::before,
+#hero-banner.tema-navidad .hero-slide::before,
+#hero-banner.tema-todaocasion .hero-slide::before {
+  background: linear-gradient(to right, rgba(0, 0, 0, 0.65), transparent);
+}
+
 /* ============================================
    RESPONSIVE
    ============================================ */

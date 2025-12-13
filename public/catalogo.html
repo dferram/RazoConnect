@@ -75,96 +75,7 @@
 
       <!-- Layout con Sidebar y Contenido -->
       <div style="display: grid; grid-template-columns: 200px 1fr; gap: 3rem">
-        <!-- Sidebar de Categorías estilo Nike -->
-        <aside class="catalog-sidebar">
-          <!-- Loading categorías -->
-          <div id="loadingCategorias" style="text-align: center; padding: 1rem">
-            <div class="spinner" style="width: 30px; height: 30px"></div>
-          </div>
-
-          <!-- Lista de categorías -->
-          <ul
-            id="categoriasList"
-            style="list-style: none; padding: 0; margin: 0; display: none"
-          >
-            <!-- Las categorías se cargarán aquí dinámicamente -->
-          </ul>
-
-          <!-- Controles de filtros adicionales -->
-          <div id="filtrosAdicionales" style="display: none">
-            <div style="display: flex; flex-direction: column; gap: 1.5rem">
-              <!-- Precio -->
-              <div class="filter-section">
-                <p class="filter-title">Precio</p>
-                <div class="price-inputs-container">
-                  <input
-                    type="number"
-                    id="precio-min"
-                    placeholder="Mín"
-                    min="0"
-                    class="price-input"
-                  />
-                  <span class="price-separator">—</span>
-                  <input
-                    type="number"
-                    id="precio-max"
-                    placeholder="Máx"
-                    min="0"
-                    class="price-input"
-                  />
-                </div>
-              </div>
-
-              <!-- Dimensiones -->
-              <div class="filter-section">
-                <label
-                  for="filtro-dimensiones"
-                  style="
-                    display: block;
-                    font-weight: 600;
-                    margin-bottom: 0.5rem;
-                    color: var(--text-secondary);
-                  "
-                >
-                  Dimensiones
-                </label>
-                <select
-                  id="filtro-dimensiones"
-                  style="
-                    width: 100%;
-                    padding: 0.5rem 0;
-                    border: none;
-                    border-bottom: 1px solid #e5e5e5;
-                    background: transparent;
-                    font-size: 0.92rem;
-                    color: var(--text-primary);
-                    outline: none;
-                  "
-                >
-                  <option value="">Todas</option>
-                </select>
-              </div>
-
-              <!-- Disponibilidad -->
-              <div>
-                <label for="filtro-stock" class="stock-filter">
-                  <input
-                    type="checkbox"
-                    id="filtro-stock"
-                    class="stock-filter__checkbox"
-                  />
-                  <span class="check-box" aria-hidden="true"></span>
-                  <span class="stock-filter__text">Solo en stock</span>
-                </label>
-              </div>
-
-              <!-- Botón aplicar -->
-              <button id="btn-aplicar-filtros" class="btn-apply-filters">
-                Aplicar filtros
-              </button>
-            </div>
-          </div>
-        </aside>
+        <div id="sidebar-filters-container"></div>
 
         <!-- Contenido Principal -->
         <main>
@@ -303,19 +214,20 @@
       const loadingState = document.getElementById("loadingState");
       const productGrid = document.getElementById("productGrid");
       const emptyState = document.getElementById("emptyState");
-      const loadingCategorias = document.getElementById("loadingCategorias");
-      const categoriasList = document.getElementById("categoriasList");
       const filtroActivo = document.getElementById("filtroActivo");
       const categoriaActiva = document.getElementById("categoriaActiva");
-      const filtrosAdicionales = document.getElementById("filtrosAdicionales");
       const filtroResumen = document.getElementById("filtroResumen");
       const btnLimpiarFiltros = document.getElementById("btnLimpiarFiltros");
       const productCount = document.getElementById("productCount");
       const searchForm = document.getElementById("searchForm");
       const searchBar = document.getElementById("search-bar");
       const btnBuscarHeader = document.getElementById("btnBuscarHeader");
-      const precioMinInput = document.getElementById("precio-min");
-      const precioMaxInput = document.getElementById("precio-max");
+      const precioMinInput =
+        document.getElementById("precio-min") ||
+        document.getElementById("sidebarPrecioMin");
+      const precioMaxInput =
+        document.getElementById("precio-max") ||
+        document.getElementById("sidebarPrecioMax");
       const dimensionesSelect = document.getElementById("filtro-dimensiones");
       const stockCheckbox = document.getElementById("filtro-stock");
       const btnAplicarFiltros = document.getElementById("btn-aplicar-filtros");
@@ -463,7 +375,9 @@
         if (hayCategoria && nombreCategoriaSeleccionada) {
           filtroResumen.appendChild(
             crearChip(`Categoría: ${nombreCategoriaSeleccionada}`, () => {
-              filtrarPorCategoria(null);
+              categoriaSeleccionada = null;
+              nombreCategoriaSeleccionada = null;
+              mostrarProductos();
             })
           );
         }
@@ -531,10 +445,6 @@
         } catch (error) {
           console.error("Error loading dimensiones:", error);
           showToast("No se pudieron cargar las dimensiones", "warning");
-        } finally {
-          if (filtrosAdicionales) {
-            filtrosAdicionales.style.display = "block";
-          }
         }
       }
 
@@ -836,83 +746,26 @@
         window.location.href = `/producto-detalle.html?id=${id}`;
       }
 
-      // Cargar categorías
-      async function loadCategorias() {
-        try {
-          loadingCategorias.style.display = "block";
-          categoriasList.style.display = "none";
-
-          const response = await fetch(`${API_BASE_URL}/categorias`);
-          const data = await response.json();
-
-          if (response.ok && data.success) {
-            const categorias = data.data.categorias;
-
-            // Agregar cada categoría con estilo (minimalista)
-            let categoriasHTML = "";
-            categorias.forEach((categoria) => {
-              const isActive = categoriaSeleccionada === categoria.categoriaId;
-              categoriasHTML += `
-              <li style="margin-bottom: 0.5rem;">
-                <a href="#" 
-                   data-categoriaid="${categoria.categoriaId}" 
-                   onclick="filtrarPorCategoria(${categoria.categoriaId}, '${
-                categoria.nombre
-              }'); return false;"
-                   class="categoria-link ${isActive ? "active" : ""}"
-                   style="display: block; padding: 0.5rem 0; text-decoration: none; color: ${
-                     isActive ? "var(--text-primary)" : "var(--text-secondary)"
-                   }; font-size: 0.9375rem; font-weight: ${
-                isActive ? "600" : "400"
-              }; transition: all 0.2s; border-left: ${
-                isActive
-                  ? "3px solid var(--razo-orange)"
-                  : "3px solid transparent"
-              }; padding-left: ${isActive ? "0.75rem" : "0"};">
-                  ${categoria.nombre}
-                </a>
-              </li>
-            `;
-            });
-
-            categoriasList.innerHTML = categoriasHTML;
-            loadingCategorias.style.display = "none";
-            categoriasList.style.display = "block";
-
-            // Agregar hover effects dinámicamente
-            document
-              .querySelectorAll(".categoria-link:not(.active)")
-              .forEach((link) => {
-                link.addEventListener("mouseenter", function () {
-                  this.style.color = "var(--text-primary)";
-                  this.style.paddingLeft = "0.75rem";
-                  this.style.borderLeft = "3px solid #e5e5e5";
-                });
-                link.addEventListener("mouseleave", function () {
-                  this.style.color = "var(--text-secondary)";
-                  this.style.paddingLeft = "0";
-                  this.style.borderLeft = "3px solid transparent";
-                });
-              });
-          }
-        } catch (error) {
-          console.error("Error loading categorias:", error);
-          loadingCategorias.innerHTML =
-            '<p style="color: var(--danger-color); font-size: 0.875rem;">Error al cargar categorías</p>';
+      document.addEventListener("filtroCambiado", (event) => {
+        const detail = event?.detail || {};
+        if (searchBar && typeof detail.search === "string") {
+          searchBar.value = detail.search;
         }
-      }
+        if (precioMinInput && detail.precioMin !== undefined) {
+          precioMinInput.value = detail.precioMin || "";
+        }
+        if (precioMaxInput && detail.precioMax !== undefined) {
+          precioMaxInput.value = detail.precioMax || "";
+        }
 
-      // Filtrar productos por categoría
-      function filtrarPorCategoria(categoriaId, nombreCategoria = null) {
-        categoriaSeleccionada = categoriaId;
-        nombreCategoriaSeleccionada = categoriaId ? nombreCategoria : null;
+        categoriaSeleccionada =
+          detail.categoriaId !== undefined && detail.categoriaId !== null
+            ? parseInt(detail.categoriaId, 10)
+            : null;
+        nombreCategoriaSeleccionada = null;
 
-        // Recargar categorías para actualizar el estilo activo
-        loadCategorias();
-
-        // Filtrar y mostrar productos
         mostrarProductos();
-      }
+      });
 
       // Mostrar productos filtrados
       function mostrarProductos() {
@@ -1062,7 +915,9 @@
           } catch (error) {}
           actualizarTituloPorTipo();
 
-          await loadCategorias();
+          if (window.RazoSidebarFiltros && typeof window.RazoSidebarFiltros.reset === "function") {
+            window.RazoSidebarFiltros.reset();
+          }
           await loadProductos();
         });
       }
@@ -1096,7 +951,6 @@
       }
 
       loadDimensiones();
-      loadCategorias();
       tipoSeleccionado = obtenerTipoDesdeUrl();
       actualizarTituloPorTipo();
       filtrosQueryActual = construirQueryString();
@@ -1232,6 +1086,7 @@
     <!-- Sistema de Temas Estacionales -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="/js/components/header-loader.js"></script>
+    <script src="/js/components/sidebar-loader.js"></script>
     <script src="/js/theme-manager.js"></script>
   </body>
 </html>

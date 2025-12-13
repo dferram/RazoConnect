@@ -16,6 +16,66 @@ const { registrarLog } = require("../services/loggerService");
 
 let agenteAdminColumnsCache = null;
 
+async function notifySuperAdmins(client, payload) {
+  try {
+    const superAdminsResult = await client.query(
+      `SELECT adminid
+       FROM administradores
+       WHERE LOWER(rol) IN ('superadmin', 'super-admin')`
+    );
+
+    const ids = (superAdminsResult.rows || [])
+      .map((r) => Number.parseInt(r.adminid, 10))
+      .filter((n) => Number.isInteger(n) && n > 0);
+
+    if (!ids.length) return;
+
+    const titulo = payload?.titulo || "⚠️ Discrepancia de Inventario Detectada";
+    const mensaje = payload?.mensaje || "Se detectó una discrepancia en recepción.";
+    const url = payload?.url || null;
+    const metadata = payload?.metadata ? JSON.stringify(payload.metadata) : null;
+
+    for (const adminId of ids) {
+      try {
+        await client.query(
+          `INSERT INTO notificaciones
+            (clienteid, administrador_id, agente_id, tipo, titulo, mensaje, url, prioridad, metadata)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+          [null, adminId, null, "seguridad", titulo, mensaje, url, "alta", metadata]
+        );
+      } catch (e) {
+        // No bloquear recepción si la notificación no se puede guardar
+      }
+    }
+  } catch (error) {
+    // Silencioso: no bloquear recepción
+  }
+}
+
+const subirEvidenciaRecepcionOC = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: "No se proporcionó ningún archivo de evidencia",
+      });
+    }
+
+    const url = `/uploads/${req.file.filename}`;
+    return res.status(200).json({
+      success: true,
+      message: "Evidencia subida exitosamente",
+      data: { url },
+    });
+  } catch (error) {
+    console.error("Error al subir evidencia de recepción:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error al subir la evidencia",
+    });
+  }
+};
+
 const PEDIDO_ESTATUS_EMAIL_TEMPLATES = {
   Confirmado: {
     asunto: (pedidoId) => `¡Tu pedido #${pedidoId} ha sido confirmado!`,
@@ -3128,10 +3188,20 @@ const ajustarInventario = async (req, res) => {
       [nuevoStock, varianteId]
     );
 
+    const motivoNormalizado = (motivo || "").toString().trim();
+    const isEntrada = cantidadCambio > 0 || motivoNormalizado === "entrada_inicial";
+    const motivoLog = (() => {
+      if (!motivoNormalizado) return isEntrada ? "Entrada" : "Salida";
+      if (motivoNormalizado === "entrada_inicial") {
+        return "Entrada: Inventario Inicial / Compra";
+      }
+      return isEntrada ? `Entrada: ${motivoNormalizado}` : `Salida: ${motivoNormalizado}`;
+    })();
+
     await client.query(
       `INSERT INTO Log_Inventario (VarianteID, CantidadCambiado, NuevoStock, Motivo, UsuarioID)
        VALUES ($1, $2, $3, $4, $5)`,
-      [variante.varianteid, cantidadCambio, nuevoStock, motivo, req.user.id]
+      [variante.varianteid, cantidadCambio, nuevoStock, motivoLog, req.user.id]
     );
 
     await client.query("COMMIT");
@@ -5386,7 +5456,7 @@ const recibirInventario = async (req, res) => {
   const client = await db.pool.connect();
 
   try {
-    const { ordenCompraId, productos, adminId } = req.body;
+    const { ordenCompraId, productos, adminId, discrepancias } = req.body;
 
     // Validaciones
     if (!ordenCompraId) {
@@ -5402,6 +5472,17 @@ const recibirInventario = async (req, res) => {
         message: "Debe incluir al menos un producto para recibir",
       });
     }
+
+    const discrepanciasArray = Array.isArray(discrepancias) ? discrepancias : [];
+    const discrepanciasByDetalle = new Map(
+      discrepanciasArray
+        .map((d) => {
+          const detalleId = Number.parseInt(d?.detalleId, 10);
+          if (!Number.isInteger(detalleId) || detalleId <= 0) return null;
+          return [detalleId, d];
+        })
+        .filter(Boolean)
+    );
 
     // Validar cada producto
     for (const producto of productos) {
@@ -5438,6 +5519,7 @@ const recibirInventario = async (req, res) => {
     }
 
     const productosActualizados = [];
+    const alertasSeguridad = [];
 
     // Procesar cada producto
     for (const producto of productos) {
@@ -5482,6 +5564,11 @@ const recibirInventario = async (req, res) => {
 
       const detalle = detalleResult.rows[0];
       const nuevaCantidadRecibida = detalle.cantidadrecibida + cantidadRecibida;
+
+      const pendienteEsperada = Number.parseInt(
+        (detalle.cantidadsolicitada || 0) - (detalle.cantidadrecibida || 0),
+        10
+      );
 
       const piezasPorPaqueteRaw = detalle.piezasporpaquete;
       let piezasPorPaquete = Number.parseInt(piezasPorPaqueteRaw, 10);
@@ -5548,6 +5635,65 @@ const recibirInventario = async (req, res) => {
         cantidadSolicitada: detalle.cantidadsolicitada,
         stockVariante: nuevoStockVariante,
       });
+
+      const discrepanciaInfo = discrepanciasByDetalle.get(producto.detalleId);
+      if (
+        discrepanciaInfo &&
+        Number.isInteger(pendienteEsperada) &&
+        pendienteEsperada >= 0 &&
+        cantidadRecibida !== pendienteEsperada
+      ) {
+        const justificacion = (discrepanciaInfo?.justificacion || "")
+          .toString()
+          .trim();
+
+        if (!justificacion) {
+          await client.query("ROLLBACK");
+          return res.status(400).json({
+            success: false,
+            message:
+              "Discrepancia detectada: la justificación es obligatoria para guardar con diferencia",
+          });
+        }
+
+        alertasSeguridad.push({
+          ordenCompraId,
+          detalleId: producto.detalleId,
+          varianteId: detalle.varianteid,
+          sku: detalle.sku,
+          producto: detalle.nombreproducto,
+          esperado: pendienteEsperada,
+          recibido: cantidadRecibida,
+          justificacion,
+          evidenciaUrl: discrepanciaInfo?.evidenciaUrl || null,
+          adminId: adminId || null,
+        });
+
+        try {
+          await client.query(
+            `INSERT INTO alertas_seguridad
+              (tipo, mensaje, metadata, creado_en)
+             VALUES ($1, $2, $3, NOW())`,
+            [
+              "DISCREPANCIA_RECEPCION_OC",
+              `Discrepancia de inventario detectada en OC #${ordenCompraId}`,
+              JSON.stringify({
+                ordenCompraId,
+                detalleId: producto.detalleId,
+                varianteId: detalle.varianteid,
+                sku: detalle.sku,
+                esperado: pendienteEsperada,
+                recibido: cantidadRecibida,
+                justificacion,
+                evidenciaUrl: discrepanciaInfo?.evidenciaUrl || null,
+                adminId: adminId || null,
+              }),
+            ]
+          );
+        } catch (e) {
+          // Si la tabla no existe u otro error, no bloquear
+        }
+      }
     }
 
     // 5. Actualizar el Estatus de la OrdenDeCompra
@@ -5577,6 +5723,23 @@ const recibirInventario = async (req, res) => {
       [nuevoEstatus, ordenCompraId]
     );
 
+    if (alertasSeguridad.length > 0) {
+      const resumen = alertasSeguridad
+        .map((a) => `${a.sku}: esperado ${a.esperado}, recibido ${a.recibido}`)
+        .join(" | ");
+
+      await notifySuperAdmins(client, {
+        titulo: `⚠️ Discrepancia de Inventario Detectada en OC #${ordenCompraId}`,
+        mensaje: `Se detectó discrepancia en recepción. ${resumen}`,
+        url: `/admin-recibir-inventario.html?ordenId=${ordenCompraId}`,
+        metadata: {
+          ordenCompraId,
+          nuevoEstatus,
+          alertas: alertasSeguridad,
+        },
+      });
+    }
+
     // Commit de la transacción
     await client.query("COMMIT");
 
@@ -5593,6 +5756,7 @@ const recibirInventario = async (req, res) => {
         ordenCompraId,
         nuevoEstatus,
         productosActualizados,
+        alertasSeguridad,
         totalSolicitado: parseInt(totalsolicitado),
         totalRecibido: parseInt(totalrecibido),
       },
@@ -6535,6 +6699,7 @@ getMedidasExistentes,
   getDetallesOrdenCompra,
   crearOrdenCompra,
   recibirInventario,
+  subirEvidenciaRecepcionOC,
   subirImagenProducto,
   subirImagenesProductoMultiple,
   confirmarOrdenBackorder,

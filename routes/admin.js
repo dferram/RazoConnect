@@ -449,6 +449,14 @@ router.post(
   adminController.recibirInventario
 );
 
+router.post(
+  "/ordenes-compra/recibir/evidencia",
+  authenticate,
+  authorizeAdmin,
+  upload.single("evidencia"),
+  adminController.subirEvidenciaRecepcionOC
+);
+
 /**
  * Rutas de Bitácora de Auditoría (Solo Super Admin)
  */

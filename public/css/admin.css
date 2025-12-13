@@ -78,6 +78,14 @@
   background: var(--razo-cream);
 }
 
+body.sidebar-collapsed .admin-sidebar {
+  transform: translateX(-100%);
+}
+
+body.sidebar-collapsed .admin-main {
+  margin-left: 0;
+}
+
 /* Sidebar */
 .admin-sidebar {
   width: var(--admin-sidebar-width);

@@ -6,6 +6,9 @@
     <title>Recepción de Inventario - Admin RazoConnect</title>
     <link rel="icon" type="image/png" href="/icon/Logo_Razo.png" />
 
+    <!-- SWEETALERT2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <!-- PROTECCIÓN DE AUTENTICACIÓN ADMIN -->
     <script src="js/auth-guard-admin.js"></script>
 
@@ -226,6 +229,7 @@
 
       let ordenActual = null;
       let detallesActuales = [];
+      const discrepanciaIntentos = {};
 
       // Verify admin token
       async function verifyAndLoadAdmin() {
@@ -348,6 +352,8 @@
           document.getElementById("productosRecepcion").innerHTML = "";
           document.getElementById("recepcionModal").style.display = "flex";
 
+          Object.keys(discrepanciaIntentos).forEach((k) => delete discrepanciaIntentos[k]);
+
           const response = await fetch(
             `${API_BASE_URL}/admin/ordenes-compra/${ordenCompraId}/detalles`,
             {
@@ -393,9 +399,7 @@
               <th>Producto</th>
               <th>SKU</th>
               <th style="text-align: center;">Empaque</th>
-              <th style="text-align: center;">Solicitado</th>
               <th style="text-align: center;">Ya Recibido</th>
-              <th style="text-align: center;">Pendiente</th>
               <th style="text-align: center;">Stock Actual</th>
               <th style="width: 200px;">Recibir Ahora</th>
             </tr>
@@ -429,13 +433,9 @@
                     detalle.sku
                   }</code></td>
                   <td style="text-align: center;"><span style="font-weight: 700;">${piezasPorPaquete}</span> pzas/paq</td>
-                  <td style="text-align: center;"><strong>${
-                    detalle.cantidadSolicitada
-                  }</strong></td>
                   <td style="text-align: center;" class="${recibidoClass}"><strong>${
                   detalle.cantidadRecibida
                 }</strong></td>
-                  <td style="text-align: center;" class="${pendienteClass}"><strong>${pendiente}</strong></td>
                   <td style="text-align: center;">${stockPiezas} pzas.</td>
                   <td>
                     <input 
@@ -446,9 +446,9 @@
                       data-max="${pendiente}"
                       min="0" 
                       max="${pendiente}"
-                      value="0"
+                      value=""
                       ${pendiente === 0 ? "disabled" : ""}
-                      placeholder="0"
+                      placeholder="Ingresa cantidad"
                       style="padding: 0.5rem; text-align: center;"
                     >
                     <div class="recibir-helper" style="margin-top: 0.35rem; font-size: 0.8rem; color: var(--razo-gray-warm); display: none;"></div>
@@ -492,13 +492,92 @@
       }
 
       // Guardar recepción
+      async function subirEvidenciaDiscrepancia(file) {
+        if (!file) return null;
+
+        const formData = new FormData();
+        formData.append("evidencia", file);
+
+        const res = await fetch(`${API_BASE_URL}/admin/ordenes-compra/recibir/evidencia`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${adminToken}`,
+          },
+          body: formData,
+        });
+
+        const data = await res.json();
+        if (!res.ok || !data?.success) {
+          throw new Error(data?.message || "No se pudo subir la evidencia");
+        }
+
+        return data?.data?.url || null;
+      }
+
+      async function pedirJustificacionYFoto(ordenCompraId, detalleId, esperado, recibido) {
+        if (typeof Swal === "undefined" || !Swal) {
+          throw new Error("SweetAlert2 no está disponible");
+        }
+
+        const result = await Swal.fire({
+          title: "Discrepancia detectada",
+          html: `El sistema esperaba <strong>${esperado}</strong> y estás ingresando <strong>${recibido}</strong>.<br/><br/>Escribe una justificación y, si puedes, adjunta una foto de evidencia.`,
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonText: "Guardar con discrepancia",
+          cancelButtonText: "Cancelar",
+          reverseButtons: true,
+          input: "textarea",
+          inputLabel: "Justificación (obligatoria)",
+          inputPlaceholder: "Ej: Llegó incompleto / proveedor envió menos / se dañó caja...",
+          inputAttributes: {
+            required: true,
+          },
+          didOpen: () => {
+            const container = Swal.getHtmlContainer();
+            if (!container) return;
+            const wrap = document.createElement("div");
+            wrap.style.marginTop = "12px";
+            wrap.innerHTML = `
+              <label style="display:block; font-weight:700; margin-bottom:6px;">Foto de evidencia (opcional)</label>
+              <input type="file" id="swalEvidencia" accept="image/*" class="form-control" />
+              <div style="margin-top:6px; font-size:0.85rem; color:#6b7280;">Máx. 5MB. JPG/PNG/WEBP.</div>
+            `;
+            container.appendChild(wrap);
+          },
+          preConfirm: () => {
+            const justificacion = (Swal.getInput()?.value || "").toString().trim();
+            if (!justificacion) {
+              Swal.showValidationMessage("La justificación es obligatoria");
+              return false;
+            }
+
+            const fileInput = document.getElementById("swalEvidencia");
+            const file = fileInput && fileInput.files && fileInput.files[0] ? fileInput.files[0] : null;
+            return { justificacion, file };
+          },
+        });
+
+        if (!result.isConfirmed) return null;
+        return {
+          ordenCompraId,
+          detalleId,
+          esperado,
+          recibido,
+          justificacion: result.value.justificacion,
+          file: result.value.file || null,
+        };
+      }
+
       async function guardarRecepcion() {
         try {
           // Recopilar productos con cantidades > 0
           const inputs = document.querySelectorAll(".recibir-input");
           const productos = [];
+          const discrepancias = [];
+          let abortarGuardado = false;
 
-          inputs.forEach((input) => {
+          for (const input of inputs) {
             const cantidad = parseInt(input.value) || 0;
             if (cantidad > 0) {
               const max = parseInt(input.getAttribute("data-max"));
@@ -507,12 +586,73 @@
                   `La cantidad recibida no puede exceder la cantidad pendiente`
                 );
               }
+
+              // Recepción ciega: validación de discrepancias (esperado = pendiente)
+              const detalleId = parseInt(input.getAttribute("data-detalle-id"));
+              const esperado = max;
+              const recibido = cantidad;
+
+              if (Number.isInteger(esperado) && esperado >= 0 && recibido !== esperado) {
+                const intentos = discrepanciaIntentos[detalleId] || 0;
+                discrepanciaIntentos[detalleId] = intentos + 1;
+
+                if (intentos === 0) {
+                  if (typeof Swal !== "undefined" && Swal) {
+                    await Swal.fire({
+                      title: "Discrepancia detectada",
+                      text: "Discrepancia detectada. El sistema esperaba una cantidad diferente. Por favor, cuenta de nuevo.",
+                      icon: "warning",
+                      confirmButtonText: "Entendido",
+                    });
+                  } else {
+                    showToast(
+                      "Discrepancia detectada. El sistema esperaba una cantidad diferente. Por favor, cuenta de nuevo.",
+                      "warning"
+                    );
+                  }
+
+                  // Bloquea guardado en primer intento
+                  abortarGuardado = true;
+                  break;
+                }
+
+                const info = await pedirJustificacionYFoto(
+                  ordenActual?.ordenCompraId,
+                  detalleId,
+                  esperado,
+                  recibido
+                );
+                if (!info) {
+                  abortarGuardado = true;
+                  break;
+                }
+
+                let evidenciaUrl = null;
+                if (info.file) {
+                  evidenciaUrl = await subirEvidenciaDiscrepancia(info.file);
+                }
+
+                discrepancias.push({
+                  detalleId,
+                  esperado,
+                  recibido,
+                  justificacion: info.justificacion,
+                  evidenciaUrl,
+                });
+
+                productos.push({
+                  detalleId,
+                  cantidadRecibidaAhora: recibido,
+                });
+                continue;
+              }
+
               productos.push({
-                detalleId: parseInt(input.getAttribute("data-detalle-id")),
-                cantidadRecibidaAhora: cantidad,
+                detalleId: detalleId,
+                cantidadRecibidaAhora: recibido,
               });
             }
-          });
+          }
 
           if (productos.length === 0) {
             showToast("Debe ingresar al menos una cantidad recibida", "error");
@@ -545,6 +685,7 @@
                 ordenCompraId: ordenActual.ordenCompraId,
                 productos: productos,
                 adminId: adminId,
+                discrepancias,
               }),
             }
           );

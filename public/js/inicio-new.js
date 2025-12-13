@@ -104,7 +104,7 @@
     });
 
     // Pausar en hover
-    const heroSlider = document.getElementById("heroSlider");
+    const heroSlider = document.getElementById("hero-banner");
     if (heroSlider) {
       heroSlider.addEventListener("mouseenter", stopAutoPlay);
       heroSlider.addEventListener("mouseleave", startAutoPlay);

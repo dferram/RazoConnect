@@ -38,6 +38,27 @@ const ENTIDADES_PERMITIDAS = {
   comisiones: { table: "Comisiones", pk: "ComisionID" },
 };
 
+async function getExistingTableColumns(client, tableName) {
+  const normalized = (tableName || "").toString().trim();
+  if (!normalized) return new Map();
+
+  const res = await client.query(
+    `SELECT column_name
+     FROM information_schema.columns
+     WHERE table_schema = 'public'
+       AND lower(table_name) = lower($1)`,
+    [normalized]
+  );
+
+  const map = new Map();
+  for (const row of res.rows || []) {
+    const col = (row.column_name || "").toString();
+    if (!col) continue;
+    map.set(col.toLowerCase(), col);
+  }
+  return map;
+}
+
 function getAdminIdFromRequest(req) {
   if (!req || !req.user) return null;
 
@@ -228,7 +249,7 @@ async function aprobarSolicitudes(ids, adminId) {
 
       if (entidadKey === "proveedor_reglas_empaque") {
         const proveedorId = Number.parseInt(
-          nuevos.proveedorId ?? nuevos.proveedorid,
+          nuevos.proveedorid ?? nuevos.ProveedorID ?? nuevos.proveedorId,
           10
         );
         const tipoProductoId = Number.parseInt(
@@ -304,18 +325,36 @@ async function aprobarSolicitudes(ids, adminId) {
         continue;
       }
 
+      const existingColumns = await getExistingTableColumns(client, table);
+
       if (tipoCambio === "INSERT") {
         const rawColumns = Object.keys(nuevos || {});
-        if (!rawColumns.length) {
-          throw new Error(
-            `Cambio #${cambioId} de tipo INSERT no tiene datos_nuevos`
-          );
+        const rawColumnsFiltered = [];
+        const columns = [];
+        const values = [];
+
+        for (const rawCol of rawColumns) {
+          const mapped = (fieldMap[rawCol] || rawCol).toString();
+          const mappedLower = mapped.toLowerCase();
+          const realCol = existingColumns.get(mappedLower);
+          if (!realCol) {
+            continue;
+          }
+          rawColumnsFiltered.push(rawCol);
+          columns.push(realCol);
+          values.push(nuevos[rawCol]);
         }
 
-        const columns = rawColumns.map((rawCol) => fieldMap[rawCol] || rawCol);
+        if (!columns.length) {
+          skipped.push({
+            id: cambioId,
+            reason: "Ninguna columna válida para insertar (schema mismatch)",
+          });
+          continue;
+        }
+
         const colNames = columns.map((c) => `"${c}"`).join(", ");
         const placeholders = columns.map((_, idx) => `$${idx + 1}`);
-        const values = rawColumns.map((rawCol) => nuevos[rawCol]);
 
         const insertSql = `INSERT INTO ${table} (${colNames}) VALUES (${placeholders.join(
           ", "
@@ -349,18 +388,26 @@ async function aprobarSolicitudes(ids, adminId) {
         }
 
         const rawColumns = Object.keys(nuevos || {});
-        if (!rawColumns.length) {
-          skipped.push({ id: cambioId, reason: "Sin campos para actualizar" });
-          continue;
-        }
-
         const columns = [];
         const values = [];
 
         for (const rawCol of rawColumns) {
           const mappedCol = fieldMap[rawCol] || rawCol;
-          columns.push(mappedCol);
+          const mappedLower = mappedCol.toString().toLowerCase();
+          const realCol = existingColumns.get(mappedLower);
+          if (!realCol) {
+            continue;
+          }
+          columns.push(realCol);
           values.push(nuevos[rawCol]);
+        }
+
+        if (!columns.length) {
+          skipped.push({
+            id: cambioId,
+            reason: "Ninguna columna válida para actualizar (schema mismatch)",
+          });
+          continue;
         }
 
         const setClauses = columns
@@ -417,8 +464,6 @@ async function aprobarSolicitudes(ids, adminId) {
           tipo: tipoCambio,
           entidadId,
         });
-      } else {
-        throw new Error(`Tipo de cambio no soportado: ${tipoCambio}`);
       }
     }
 

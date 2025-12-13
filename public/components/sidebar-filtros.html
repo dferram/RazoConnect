@@ -1,0 +1,57 @@
+<aside class="card shadow-sm" style="border-radius: 16px; border: 1px solid #eee;">
+  <div class="card-body" style="padding: 1.25rem;">
+    <div class="mb-3">
+      <label for="sidebarFiltroBuscar" class="form-label" style="font-weight: 700; font-size: 0.85rem; letter-spacing: 0.02em;">Buscar</label>
+      <input
+        type="search"
+        class="form-control"
+        id="sidebarFiltroBuscar"
+        placeholder="Buscar en esta sección..."
+        autocomplete="off"
+        style="border-radius: 12px;"
+      />
+    </div>
+
+    <div class="mb-3">
+      <div style="font-weight: 800; font-size: 0.85rem; letter-spacing: 0.02em;">Categorías</div>
+      <ul class="list-unstyled mt-2 mb-0" id="sidebarFiltroCategorias">
+        <li class="text-muted" style="font-size: 0.9rem;">Cargando...</li>
+      </ul>
+    </div>
+
+    <div class="mb-3" id="sidebarFiltroMarcasSection">
+      <div style="font-weight: 800; font-size: 0.85rem; letter-spacing: 0.02em;">Marcas</div>
+      <ul class="list-unstyled mt-2 mb-0" id="sidebarFiltroMarcas">
+        <li class="text-muted" style="font-size: 0.9rem;">Cargando...</li>
+      </ul>
+    </div>
+
+    <div class="mb-3">
+      <div style="font-weight: 800; font-size: 0.85rem; letter-spacing: 0.02em;">Rango de Precio</div>
+      <div class="d-flex align-items-center gap-2 mt-2">
+        <input
+          type="number"
+          class="form-control form-control-sm"
+          id="sidebarPrecioMin"
+          placeholder="Min"
+          min="0"
+          step="1"
+          style="border-radius: 12px;"
+        />
+        <span class="text-muted" style="font-weight: 600;">-</span>
+        <input
+          type="number"
+          class="form-control form-control-sm"
+          id="sidebarPrecioMax"
+          placeholder="Max"
+          min="0"
+          step="1"
+          style="border-radius: 12px;"
+        />
+      </div>
+      <button type="button" class="btn btn-primary btn-sm w-100 mt-3" id="sidebarBtnFiltrar" style="border-radius: 999px; background:#F97316; border-color:#F97316; font-weight:700;">
+        Filtrar
+      </button>
+    </div>
+  </div>
+</aside>

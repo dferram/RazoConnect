@@ -81,6 +81,51 @@
   let countdownInterval = null;
   let currentTheme = null;
 
+  const HERO_THEME_CONFIG = {
+    navidad: {
+      titulo: "Navidad",
+      className: "tema-navidad",
+      bgImage:
+        "url('https://images.unsplash.com/photo-1607344645866-009c320b63e0?w=1600&h=900&fit=crop')",
+      accent: "#F97316",
+    },
+    sanValentin: {
+      titulo: "14 de febrero",
+      className: "tema-sanvalentin",
+      bgImage:
+        "url('https://images.unsplash.com/photo-1518199266791-5375a83190b7?w=1600&h=900&fit=crop')",
+      accent: "#E91E63",
+    },
+    diaMadre: {
+      titulo: "Día de la Madre",
+      className: "tema-diamadre",
+      bgImage:
+        "url('https://images.unsplash.com/photo-1529634806980-85c3dd6d34ac?w=1600&h=900&fit=crop')",
+      accent: "#D946EF",
+    },
+    diaPadre: {
+      titulo: "Día del Padre",
+      className: "tema-diapadre",
+      bgImage:
+        "url('https://images.unsplash.com/photo-1520975682071-a0d3d8a4b6d3?w=1600&h=900&fit=crop')",
+      accent: "#2563EB",
+    },
+    graduaciones: {
+      titulo: "Graduaciones",
+      className: "tema-graduaciones",
+      bgImage:
+        "url('https://images.unsplash.com/photo-1523580846011-d3a5bc25702b?w=1600&h=900&fit=crop')",
+      accent: "#0EA5E9",
+    },
+    todaOcasion: {
+      titulo: "Toda Ocasión",
+      className: "tema-todaocasion",
+      bgImage:
+        "url('https://images.unsplash.com/photo-1513885535751-8b9238bd345a?w=1600&h=900&fit=crop')",
+      accent: "#F97316",
+    },
+  };
+
   // ============================================
   // ACTUALIZAR CONTENIDO SEGÚN TEMA
   // ============================================
@@ -89,6 +134,8 @@
     const event = SEASONAL_EVENTS[themeName] || SEASONAL_EVENTS.todaOcasion;
     currentTheme = themeName;
 
+    updateHeroBanner(themeName);
+
     // Actualizar mensaje de bienvenida
     updateWelcomeBanner(event);
 
@@ -96,6 +143,36 @@
     updateCountdownWidget(event);
 
     console.log("🎯 Contenido estacional actualizado:", themeName);
+  }
+
+  function updateHeroBanner(themeName) {
+    const heroBanner = document.getElementById("hero-banner");
+    if (!heroBanner) return;
+
+    const config =
+      HERO_THEME_CONFIG[themeName] || HERO_THEME_CONFIG.todaOcasion;
+
+    const year = new Date().getFullYear();
+    const tituloEl = document.getElementById("tituloTemporada");
+    const anioEl = document.getElementById("anioTemporada");
+    if (tituloEl) tituloEl.textContent = config.titulo;
+    if (anioEl) anioEl.textContent = String(year);
+
+    heroBanner.classList.remove(
+      "tema-navidad",
+      "tema-sanvalentin",
+      "tema-diamadre",
+      "tema-diapadre",
+      "tema-graduaciones",
+      "tema-todaocasion"
+    );
+    heroBanner.classList.add(config.className);
+    heroBanner.style.setProperty("--hero-accent", config.accent);
+
+    const firstSlide = heroBanner.querySelector(".hero-slide");
+    if (firstSlide && config.bgImage) {
+      firstSlide.style.backgroundImage = config.bgImage;
+    }
   }
 
   // ============================================

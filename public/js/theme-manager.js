@@ -17,26 +17,20 @@
       displayName: "Navidad",
       className: "theme-navidad",
       icon: "🎄",
-      // 20 septiembre - 25 diciembre
-      dateRanges: [{ startMonth: 9, startDay: 20, endMonth: 12, endDay: 25 }],
+      dateRanges: [{ startMonth: 11, startDay: 1, endMonth: 12, endDay: 31 }],
     },
     sanValentin: {
       name: "sanValentin",
       displayName: "San Valentín",
       className: "theme-sanvalentin",
       icon: "💝",
-      // 26 diciembre - 14 febrero (cruza año)
-      dateRanges: [
-        { startMonth: 12, startDay: 26, endMonth: 12, endDay: 31 }, // Fin de diciembre
-        { startMonth: 1, startDay: 1, endMonth: 2, endDay: 14 }, // Enero-Febrero
-      ],
+      dateRanges: [{ startMonth: 1, startDay: 15, endMonth: 2, endDay: 14 }],
     },
     diaMadre: {
       name: "diaMadre",
       displayName: "Día de la Madre",
       className: "theme-diamadre",
       icon: "👩‍👧‍👦",
-      // 15 abril - 10 mayo
       dateRanges: [{ startMonth: 4, startDay: 15, endMonth: 5, endDay: 10 }],
     },
     diaPadre: {
@@ -44,16 +38,14 @@
       displayName: "Día del Padre",
       className: "theme-diapadre",
       icon: "👨‍👦",
-      // 11 mayo - 21 junio
-      dateRanges: [{ startMonth: 5, startDay: 11, endMonth: 6, endDay: 21 }],
+      dateRanges: [{ startMonth: 6, startDay: 1, endMonth: 6, endDay: 30 }],
     },
     graduaciones: {
       name: "graduaciones",
       displayName: "Graduaciones",
       className: "theme-graduaciones",
       icon: "🎓",
-      // 22 junio - 30 agosto
-      dateRanges: [{ startMonth: 6, startDay: 22, endMonth: 8, endDay: 30 }],
+      dateRanges: [{ startMonth: 7, startDay: 1, endMonth: 7, endDay: 31 }],
     },
     todaOcasion: {
       name: "todaOcasion",
