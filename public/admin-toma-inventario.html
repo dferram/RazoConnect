@@ -41,7 +41,7 @@
                 justify-content: space-between;
               "
             >
-              <div style="min-width: 280px; flex: 1">
+              <div style="min-width: 280px; flex: 1" id="crearSesionBlock">
                 <label for="sesionNombre" class="form-label">Nueva sesión</label>
                 <div style="display: flex; gap: 0.75rem; flex-wrap: wrap">
                   <input
@@ -92,7 +92,7 @@
                   Modo Operador
                 </button>
               </li>
-              <li class="nav-item" role="presentation">
+              <li class="nav-item" role="presentation" id="auditorTabLi">
                 <button
                   class="nav-link"
                   id="auditor-tab"
@@ -262,6 +262,9 @@
     <script src="js/admin-header-dropdown.js"></script>
 
     <script>
+      const crearSesionBlock = document.getElementById("crearSesionBlock");
+      const auditorTabLi = document.getElementById("auditorTabLi");
+
       const sesionNombre = document.getElementById("sesionNombre");
       const btnCrearSesion = document.getElementById("btnCrearSesion");
       const sesionSelect = document.getElementById("sesionSelect");
@@ -284,6 +287,58 @@
         sesionId: null,
         sesionEstatus: null,
         filas: [],
+        isAgente: false,
+      };
+
+      const getAdminData = () => {
+        const raw = localStorage.getItem("razoconnect_admin");
+        if (!raw) return null;
+        try {
+          return JSON.parse(raw);
+        } catch (e) {
+          return null;
+        }
+      };
+
+      const detectIsAgente = () => {
+        const adminData = getAdminData();
+        if (!adminData) return false;
+
+        const rol = adminData.rol ? String(adminData.rol).toLowerCase() : "";
+        if (rol === "agente") return true;
+
+        if (Array.isArray(adminData.roles)) {
+          return adminData.roles.some(
+            (r) => r && String(r).toLowerCase() === "agente"
+          );
+        }
+
+        const origen = adminData.origen || adminData.adminSource;
+        if (origen && String(origen).toLowerCase() === "agent") return true;
+
+        return false;
+      };
+
+      const applyRoleRestrictions = () => {
+        state.isAgente = detectIsAgente();
+
+        if (state.isAgente) {
+          if (crearSesionBlock) crearSesionBlock.style.display = "none";
+          if (btnAplicar) btnAplicar.style.display = "none";
+          if (btnRefrescar) btnRefrescar.style.display = "none";
+          if (auditorTabLi) auditorTabLi.style.display = "none";
+
+          // Forzar pestaña Operador
+          try {
+            const opTabBtn = document.getElementById("operador-tab");
+            if (opTabBtn) {
+              const tab = bootstrap.Tab.getOrCreateInstance(opTabBtn);
+              tab.show();
+            }
+          } catch (e) {
+            // ignore
+          }
+        }
       };
 
       const toast = (icon, title) =>
@@ -308,7 +363,11 @@
         btnRegistrar.disabled = !hasSesion;
 
         const conflictos = state.filas.filter((f) => f.estatusFila === "CONFLICTO").length;
-        const canApply = hasSesion && state.sesionEstatus === "ABIERTA" && conflictos === 0;
+        const canApply =
+          hasSesion &&
+          state.sesionEstatus === "ABIERTA" &&
+          conflictos === 0 &&
+          !state.isAgente;
         btnAplicar.disabled = !canApply;
 
         if (!hasSesion) {
@@ -394,6 +453,7 @@
 
       const loadDashboard = async () => {
         if (!state.sesionId) return;
+        if (state.isAgente) return;
         setDashboardLoading(true);
 
         try {
@@ -416,6 +476,10 @@
       };
 
       const crearSesion = async () => {
+        if (state.isAgente) {
+          toast("error", "No tienes permisos para crear sesiones");
+          return;
+        }
         const nombre = safeText(sesionNombre.value).trim();
         if (!nombre) {
           toast("warning", "Escribe un nombre de sesión");
@@ -543,6 +607,10 @@
 
       const aplicarInventario = async () => {
         if (!state.sesionId) return;
+        if (state.isAgente) {
+          toast("error", "No tienes permisos para aplicar inventario");
+          return;
+        }
 
         const confirm = await Swal.fire({
           icon: "warning",
@@ -626,6 +694,26 @@
       btnAplicar.addEventListener("click", aplicarInventario);
 
       updateControls();
+      applyRoleRestrictions();
+
+      // Auto-seleccionar sesión desde querystring (?sesionId=123)
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const sesionIdParam = Number.parseInt(params.get("sesionId"), 10);
+        if (Number.isInteger(sesionIdParam) && sesionIdParam > 0) {
+          const option = document.createElement("option");
+          option.value = String(sesionIdParam);
+          option.textContent = `#${sesionIdParam}`;
+          sesionSelect.appendChild(option);
+          sesionSelect.value = String(sesionIdParam);
+          state.sesionId = sesionIdParam;
+          if (!state.isAgente) {
+            loadDashboard();
+          }
+        }
+      } catch (e) {
+        // ignore
+      }
       skuInput.focus();
     </script>
   </body>

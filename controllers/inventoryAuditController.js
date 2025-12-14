@@ -37,12 +37,49 @@ const crearSesion = async (req, res) => {
       [nombre, usuarioCreadorId]
     );
 
+    const sesionId = result.rows[0].sesionid;
+
+    try {
+      const agentes = await db.query(
+        "SELECT agenteid FROM agentesdeventas WHERE activo = true"
+      );
+
+      const titulo = "Auditoría de Inventario Requerida";
+      const mensaje = `Se requiere tu participación en la toma de inventario: ${nombre}.`;
+      const url = `/admin-toma-inventario.html?sesionId=${sesionId}`;
+
+      for (const row of agentes.rows || []) {
+        const agenteId = Number.parseInt(row.agenteid, 10);
+        if (!Number.isInteger(agenteId) || agenteId <= 0) continue;
+
+        await db.query(
+          `INSERT INTO notificaciones
+            (clienteid, administrador_id, agente_id, tipo, titulo, mensaje, url, prioridad, metadata)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+          [
+            null,
+            null,
+            agenteId,
+            "sistema",
+            titulo,
+            mensaje,
+            url,
+            "alta",
+            null,
+          ]
+        );
+      }
+    } catch (notifyError) {
+      // No bloquear creación de sesión si falla la notificación.
+      console.error("Error al notificar a agentes sobre auditoría:", notifyError);
+    }
+
     return res.json({
       success: true,
       message: "Sesión creada",
       data: {
         sesion: {
-          sesionId: result.rows[0].sesionid,
+          sesionId,
           nombre: result.rows[0].nombre,
           estatus: result.rows[0].estatus,
           usuarioCreadorId: result.rows[0].usuario_creador_id,

@@ -10,6 +10,8 @@ const upload = require("../middlewares/upload");
 const {
   authenticate,
   authorizeAdmin,
+  authorizeAdminOrAgente,
+  authorizeAdminOnly,
   authorizeSuperAdmin,
   verifySuperAdmin,
 } = require("../middlewares/authMiddleware");
@@ -47,21 +49,21 @@ router.post(
 router.post(
   "/auditoria-inventario/crear-sesion",
   authenticate,
-  authorizeAdmin,
+  authorizeAdminOnly,
   inventoryAuditController.crearSesion
 );
 
 router.get(
   "/auditoria-inventario/variante-por-sku",
   authenticate,
-  authorizeAdmin,
+  authorizeAdminOrAgente,
   inventoryAuditController.getVariantePorSku
 );
 
 router.post(
   "/auditoria-inventario/registrar-conteo",
   authenticate,
-  authorizeAdmin,
+  authorizeAdminOrAgente,
   inventoryAuditController.registrarConteo
 );
 
@@ -75,7 +77,7 @@ router.get(
 router.post(
   "/auditoria-inventario/aplicar/:sesionId",
   authenticate,
-  authorizeAdmin,
+  authorizeAdminOnly,
   inventoryAuditController.aplicarSesion
 );
 
