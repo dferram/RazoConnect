@@ -77,16 +77,156 @@ const subirEvidenciaRecepcionOC = async (req, res) => {
   }
 };
 
+const confirmarPedido = async (req, res) => {
+  const client = await db.pool.connect();
+
+  try {
+    const pedidoId = Number.parseInt(req.params.id, 10);
+    if (!Number.isInteger(pedidoId) || pedidoId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "ID de pedido inválido",
+      });
+    }
+
+    await client.query("BEGIN");
+
+    const pedidoResult = await client.query(
+      "SELECT PedidoID, Estatus FROM Pedidos WHERE PedidoID = $1 FOR UPDATE",
+      [pedidoId]
+    );
+
+    if (!pedidoResult.rows.length) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({
+        success: false,
+        message: "Pedido no encontrado",
+      });
+    }
+
+    const estatusActual = (pedidoResult.rows[0].estatus || "").toString().trim();
+    if (estatusActual !== "Pendiente") {
+      await client.query("ROLLBACK");
+      return res.status(409).json({
+        success: false,
+        message: `No se puede confirmar un pedido con estatus '${estatusActual || "(vacío)"}'`,
+      });
+    }
+
+    const itemsResult = await client.query(
+      `SELECT
+         dp.DetalleID,
+         dp.VarianteID,
+         dp.PiezasTotales,
+         pr.NombreProducto,
+         pv.SKU
+       FROM DetallesDelPedido dp
+       INNER JOIN Producto_Variantes pv ON pv.VarianteID = dp.VarianteID
+       INNER JOIN Productos pr ON pr.ProductoID = pv.ProductoID
+       WHERE dp.PedidoID = $1`,
+      [pedidoId]
+    );
+
+    if (!itemsResult.rows.length) {
+      await client.query("ROLLBACK");
+      return res.status(400).json({
+        success: false,
+        message: "No se puede confirmar: el pedido no tiene productos",
+      });
+    }
+
+    const motivo = `Venta Pedido #${pedidoId}`;
+
+    for (const item of itemsResult.rows) {
+      const varianteId = Number.parseInt(item.varianteid, 10);
+      const piezasTotales = Number.parseInt(item.piezastotales, 10);
+
+      if (!Number.isInteger(varianteId) || varianteId <= 0) {
+        await client.query("ROLLBACK");
+        return res.status(400).json({
+          success: false,
+          message: "No se pudo confirmar: item inválido (varianteId)",
+        });
+      }
+
+      if (!Number.isInteger(piezasTotales) || piezasTotales <= 0) {
+        continue;
+      }
+
+      try {
+        await inventoryService.registrarMovimiento(client, {
+          varianteId,
+          cantidadDelta: -1 * piezasTotales,
+          motivo,
+          usuarioId: req.user.id,
+          esExcepcion: false,
+        });
+      } catch (invError) {
+        await client.query("ROLLBACK");
+
+        const nombre = (item.nombreproducto || "Producto").toString().trim();
+        const sku = (item.sku || "").toString().trim();
+        const ref = sku ? `${nombre} (${sku})` : nombre;
+
+        if (invError && invError.code === "STOCK_INSUFICIENTE") {
+          return res.status(400).json({
+            success: false,
+            message: `No se pudo confirmar: Stock insuficiente para el producto ${ref}`,
+            error: invError.message,
+            code: invError.code,
+          });
+        }
+
+        return res.status(500).json({
+          success: false,
+          message: `No se pudo confirmar: Error al descontar inventario para ${ref}`,
+          error: invError.message,
+          code: invError.code,
+        });
+      }
+    }
+
+    await client.query(
+      "UPDATE Pedidos SET Estatus = 'Confirmado' WHERE PedidoID = $1",
+      [pedidoId]
+    );
+
+    await client.query("COMMIT");
+
+    return res.status(200).json({
+      success: true,
+      message: "Pedido confirmado exitosamente",
+    });
+  } catch (error) {
+    try {
+      await client.query("ROLLBACK");
+    } catch (e) {
+      // ignore
+    }
+
+    console.error("Error confirmando pedido:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error al confirmar el pedido",
+      error: error.message,
+      code: error.code,
+    });
+  } finally {
+    client.release();
+  }
+};
+
 /**
  * Recepción de mercancía inteligente (entrada por bultos/cajas)
  * POST /api/admin/recepcion
- * Body: { varianteId, cantidadBultos, esExcepcion, comentarios }
+ * Body: { varianteId, cantidadBultos, proveedorId (opcional), esExcepcion, comentarios }
  */
 const recepcionarMercancia = async (req, res) => {
   const client = await db.pool.connect();
 
   try {
-    const { varianteId, cantidadBultos, esExcepcion, comentarios } = req.body;
+    const { varianteId, cantidadBultos, proveedorId, esExcepcion, comentarios } =
+      req.body;
 
     const parsedVarianteId = Number.parseInt(varianteId, 10);
     if (!Number.isInteger(parsedVarianteId) || parsedVarianteId <= 0) {
@@ -115,15 +255,16 @@ const recepcionarMercancia = async (req, res) => {
 
     await client.query("BEGIN");
 
-    // 1) Obtener factor de empaque y tipo de empaque (si existe)
+    // 1) Resolver proveedor + tipoProducto (y traer SKU)
     const varianteInfo = await client.query(
       `SELECT
          pv.varianteid,
          pv.sku,
-         pv.piezasporpaquete,
-         tp.nombre AS tipoempaque
+         pv.productoid,
+         COALESCE(pv.tipoproductoid, p.tipoproductoid) AS tipoproductoid,
+         p.proveedorid_default
        FROM producto_variantes pv
-       LEFT JOIN tipoproducto tp ON tp.tipoproductoid = pv.tipoproductoid
+       INNER JOIN productos p ON p.productoid = pv.productoid
        WHERE pv.varianteid = $1`,
       [parsedVarianteId]
     );
@@ -137,13 +278,116 @@ const recepcionarMercancia = async (req, res) => {
     }
 
     const row = varianteInfo.rows[0];
-    const piezasPorPaquete =
-      Number.isInteger(Number.parseInt(row.piezasporpaquete, 10)) &&
-      Number.parseInt(row.piezasporpaquete, 10) > 0
-        ? Number.parseInt(row.piezasporpaquete, 10)
-        : 1;
 
-    const tipoEmpaque = (row.tipoempaque || "").toString().trim() || "bultos";
+    const tipoProductoId =
+      row.tipoproductoid !== null && row.tipoproductoid !== undefined
+        ? Number.parseInt(row.tipoproductoid, 10)
+        : null;
+
+    const proveedorIdResolvedRaw =
+      proveedorId !== undefined && proveedorId !== null && proveedorId !== ""
+        ? proveedorId
+        : row.proveedorid_default;
+    const proveedorIdResolved =
+      proveedorIdResolvedRaw !== null && proveedorIdResolvedRaw !== undefined
+        ? Number.parseInt(proveedorIdResolvedRaw, 10)
+        : null;
+
+    // 2) Buscar regla de empaque por proveedor + tipoProducto
+    let piezasPorPaquete = 1;
+    let tipoEmpaque = "bultos";
+
+    if (
+      Number.isInteger(proveedorIdResolved) &&
+      proveedorIdResolved > 0 &&
+      Number.isInteger(tipoProductoId) &&
+      tipoProductoId > 0
+    ) {
+      try {
+        const regla = await client.query(
+          `SELECT cantidadempaque
+           FROM proveedor_reglas_empaque
+           WHERE proveedorid = $1
+             AND tipoproductoid = $2
+           LIMIT 1`,
+          [proveedorIdResolved, tipoProductoId]
+        );
+
+        if (regla.rows.length) {
+          const factor = Number.parseInt(regla.rows[0].cantidadempaque, 10);
+          if (Number.isInteger(factor) && factor > 0) {
+            piezasPorPaquete = factor;
+          }
+        }
+      } catch (dbError) {
+        // Compatibilidad: si la columna se llama piezasporpaquete (o falta la tabla), no debe romper la recepción.
+        if (dbError && dbError.code === "42703") {
+          try {
+            const regla = await client.query(
+              `SELECT piezasporpaquete AS cantidadempaque
+               FROM proveedor_reglas_empaque
+               WHERE proveedorid = $1
+                 AND tipoproductoid = $2
+               LIMIT 1`,
+              [proveedorIdResolved, tipoProductoId]
+            );
+
+            if (regla.rows.length) {
+              const factor = Number.parseInt(regla.rows[0].cantidadempaque, 10);
+              if (Number.isInteger(factor) && factor > 0) {
+                piezasPorPaquete = factor;
+              }
+            }
+          } catch (e) {
+            // ignore
+          }
+        }
+      }
+
+      // 3) (Opcional) Fallback a catálogo si no hay regla
+      if (!Number.isInteger(piezasPorPaquete) || piezasPorPaquete <= 0) {
+        piezasPorPaquete = 1;
+      }
+
+      if (piezasPorPaquete === 1) {
+        try {
+          const cat = await client.query(
+            `SELECT valor
+             FROM cat_tamanopaquetes
+             WHERE tipoproductoid = $1
+             ORDER BY valor DESC
+             LIMIT 1`,
+            [tipoProductoId]
+          );
+
+          if (cat.rows.length) {
+            const factor = Number.parseInt(cat.rows[0].valor, 10);
+            if (Number.isInteger(factor) && factor > 0) {
+              piezasPorPaquete = factor;
+            }
+          }
+        } catch (e) {
+          // ignore
+        }
+      }
+
+      // Determinar etiqueta de empaque (mejor esfuerzo)
+      try {
+        const tipoEmpaqueResult = await client.query(
+          `SELECT nombre
+           FROM tipoproducto
+           WHERE tipoproductoid = $1
+           LIMIT 1`,
+          [tipoProductoId]
+        );
+        if (tipoEmpaqueResult.rows.length) {
+          const label = (tipoEmpaqueResult.rows[0].nombre || "").toString().trim();
+          if (label) tipoEmpaque = label;
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
 
     const totalUnidades = parsedBultos * piezasPorPaquete;
     if (!Number.isInteger(totalUnidades) || totalUnidades <= 0) {
@@ -154,7 +398,8 @@ const recepcionarMercancia = async (req, res) => {
       });
     }
 
-    const motivo = `Recepción Compra (x${parsedBultos} ${tipoEmpaque})${comentariosTrim ? ` - ${comentariosTrim}` : ""}`;
+    const desglose = `Se recibieron ${parsedBultos} ${tipoEmpaque} de ${piezasPorPaquete} pzas (Total: ${totalUnidades})`;
+    const motivo = `Recepción Compra - ${desglose}${comentariosTrim ? ` - ${comentariosTrim}` : ""}`;
 
     const { stockAnterior, stockNuevo } = await inventoryService.registrarMovimiento(
       client,
@@ -171,7 +416,7 @@ const recepcionarMercancia = async (req, res) => {
 
     return res.json({
       success: true,
-      message: "Recepción registrada exitosamente",
+      message: desglose,
       stockAnterior,
       nuevoStock: stockNuevo,
       data: {
@@ -180,6 +425,9 @@ const recepcionarMercancia = async (req, res) => {
         piezasPorPaquete,
         cantidadBultos: parsedBultos,
         totalUnidades,
+        proveedorId: Number.isInteger(proveedorIdResolved) ? proveedorIdResolved : null,
+        tipoProductoId: Number.isInteger(tipoProductoId) ? tipoProductoId : null,
+        tipoEmpaque,
         esExcepcion: flagExcepcion,
       },
     });
@@ -3561,6 +3809,19 @@ const ajustarInventario = async (req, res) => {
   const client = await db.pool.connect();
 
   try {
+    const rolesRaw = Array.isArray(req.user?.roles) ? req.user.roles : [req.user?.rol];
+    const roles = rolesRaw
+      .filter(Boolean)
+      .map((r) => r.toString().trim().toLowerCase());
+    const isSuperAdmin = roles.some((r) => ["superadmin", "super-admin", "super admin"].includes(r));
+
+    if (!req.user || req.user.tipo !== "admin" || !isSuperAdmin) {
+      return res.status(403).json({
+        success: false,
+        message: "Acceso denegado. Se requieren permisos de super-administrador",
+      });
+    }
+
     const {
       varianteId,
       // Nuevo contrato
@@ -7121,6 +7382,7 @@ module.exports = {
   refreshAdminToken,
   getDashboardStats,
   getAllPedidos,
+  confirmarPedido,
   updateCostoEnvio,
   updatePedidoEstatus,
   getPedidoDetalle,

@@ -308,66 +308,109 @@
         await loadMovimientos();
       }
 
-      function renderMovimientosRows(movimientos) {
-        return (movimientos || [])
-          .map((m) => {
-            const tipo = (m.tipoMovimiento || "").toUpperCase();
-            const isEntrada = tipo === "ENTRADA";
-            const badgeClass = isEntrada
-              ? "bg-green-100 text-green-800"
-              : "bg-red-100 text-red-800";
-            const badgeText = isEntrada ? "Entrada" : "Salida";
-            const badgeIcon = isEntrada ? "⬆" : "⬇";
-            const { fecha, hora } = formatDateParts(m.fecha);
-            const cantidad = Number.isFinite(Number(m.cantidad)) ? Number(m.cantidad) : 0;
+      function buildMovimientoRow(m) {
+        const tipo = (m.tipoMovimiento || "").toString().toUpperCase();
+        const isEntrada = tipo === "ENTRADA";
+        const badgeClass = isEntrada
+          ? "bg-green-100 text-green-800"
+          : "bg-red-100 text-red-800";
+        const badgeText = isEntrada ? "Entrada" : "Salida";
+        const badgeIcon = isEntrada ? "⬆" : "⬇";
+        const { fecha, hora } = formatDateParts(m.fecha);
+        const cantidad = Number.isFinite(Number(m.cantidad)) ? Number(m.cantidad) : 0;
+        const isExcepcion = m.esExcepcion === true;
 
-            const isExcepcion = m.esExcepcion === true;
+        const productoNombre = (m.productoNombre || "—").toString();
+        const sku = (m.sku || "—").toString();
+        const motivo = m.motivo ? m.motivo.toString() : "—";
 
-            const productoNombre = escapeHtml(m.productoNombre || "—");
-            const sku = escapeHtml(m.sku || "—");
-            const motivo = m.motivo ? escapeHtml(m.motivo) : "—";
+        const usuario = m.usuario || (m.usuarioId ? `#${m.usuarioId}` : "—");
+        const usuarioText = (usuario || "—").toString();
+        const initial = getUserInitial(usuarioText);
 
-            const usuario = m.usuario || (m.usuarioId ? `#${m.usuarioId}` : "—");
-            const userText = escapeHtml(usuario);
-            const initial = getUserInitial(usuario);
+        const tr = document.createElement("tr");
+        tr.className = `border-b ${isExcepcion ? "bg-yellow-50" : ""}`;
 
-            return `
-              <tr class="border-b ${isExcepcion ? "bg-yellow-50" : ""}">
-                <td class="py-4 px-6">
-                  <div class="text-gray-900 font-semibold">${fecha}</div>
-                  <div class="text-gray-500 text-xs">${hora}</div>
-                </td>
-                <td class="py-4 px-6">
-                  <div class="text-gray-900 font-semibold">${productoNombre}</div>
-                  <div class="text-gray-500 text-xs">${sku}</div>
-                </td>
-                <td class="py-4 px-6">
-                  <div class="flex items-center gap-2">
-                    <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${badgeClass}">
-                      <span>${badgeIcon}</span>
-                      <span>${badgeText}</span>
-                    </span>
-                    ${
-                      isExcepcion
-                        ? '<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">Excepción</span>'
-                        : ""
-                    }
-                  </div>
-                </td>
-                <td class="py-4 px-6">
-                  <span class="font-bold text-gray-900">${cantidad}</span>
-                </td>
-                <td class="py-4 px-6 text-gray-700">${motivo}</td>
-                <td class="py-4 px-6">
-                  <div class="flex items-center gap-2">
-                    <div class="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-700 text-xs font-semibold">${initial}</div>
-                    <div class="text-gray-900">${userText}</div>
-                  </div>
-                </td>
-              </tr>
-            `;
-          })
-          .join("");
+        const tdFecha = document.createElement("td");
+        tdFecha.className = "py-4 px-6";
+        const fechaDiv = document.createElement("div");
+        fechaDiv.className = "text-gray-900 font-semibold";
+        fechaDiv.textContent = fecha;
+        const horaDiv = document.createElement("div");
+        horaDiv.className = "text-gray-500 text-xs";
+        horaDiv.textContent = hora;
+        tdFecha.appendChild(fechaDiv);
+        tdFecha.appendChild(horaDiv);
+
+        const tdProd = document.createElement("td");
+        tdProd.className = "py-4 px-6";
+        const prodDiv = document.createElement("div");
+        prodDiv.className = "text-gray-900 font-semibold";
+        prodDiv.textContent = productoNombre;
+        const skuDiv = document.createElement("div");
+        skuDiv.className = "text-gray-500 text-xs";
+        skuDiv.textContent = sku;
+        tdProd.appendChild(prodDiv);
+        tdProd.appendChild(skuDiv);
+
+        const tdTipo = document.createElement("td");
+        tdTipo.className = "py-4 px-6";
+        const tipoWrap = document.createElement("div");
+        tipoWrap.className = "flex items-center gap-2";
+        const tipoBadge = document.createElement("span");
+        tipoBadge.className = `inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${badgeClass}`;
+        const iconSpan = document.createElement("span");
+        iconSpan.textContent = badgeIcon;
+        const textSpan = document.createElement("span");
+        textSpan.textContent = badgeText;
+        tipoBadge.appendChild(iconSpan);
+        tipoBadge.appendChild(textSpan);
+        tipoWrap.appendChild(tipoBadge);
+
+        if (isExcepcion) {
+          const excBadge = document.createElement("span");
+          excBadge.className =
+            "inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800";
+          excBadge.textContent = "Excepción";
+          tipoWrap.appendChild(excBadge);
+        }
+
+        tdTipo.appendChild(tipoWrap);
+
+        const tdCantidad = document.createElement("td");
+        tdCantidad.className = "py-4 px-6";
+        const qtySpan = document.createElement("span");
+        qtySpan.className = "font-bold text-gray-900";
+        qtySpan.textContent = String(cantidad);
+        tdCantidad.appendChild(qtySpan);
+
+        const tdMotivo = document.createElement("td");
+        tdMotivo.className = "py-4 px-6 text-gray-700";
+        tdMotivo.textContent = motivo;
+
+        const tdUser = document.createElement("td");
+        tdUser.className = "py-4 px-6";
+        const userWrap = document.createElement("div");
+        userWrap.className = "flex items-center gap-2";
+        const avatar = document.createElement("div");
+        avatar.className =
+          "h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-700 text-xs font-semibold";
+        avatar.textContent = initial;
+        const userNameDiv = document.createElement("div");
+        userNameDiv.className = "text-gray-900";
+        userNameDiv.textContent = usuarioText;
+        userWrap.appendChild(avatar);
+        userWrap.appendChild(userNameDiv);
+        tdUser.appendChild(userWrap);
+
+        tr.appendChild(tdFecha);
+        tr.appendChild(tdProd);
+        tr.appendChild(tdTipo);
+        tr.appendChild(tdCantidad);
+        tr.appendChild(tdMotivo);
+        tr.appendChild(tdUser);
+
+        return tr;
       }
 
       async function loadMovimientos() {
@@ -403,7 +446,11 @@
             return;
           }
 
-          movimientosTbody.innerHTML = renderMovimientosRows(movimientos);
+          const frag = document.createDocumentFragment();
+          movimientos.forEach((m) => {
+            frag.appendChild(buildMovimientoRow(m));
+          });
+          movimientosTbody.appendChild(frag);
         } catch (error) {
           console.error("Error cargando movimientos:", error);
           await Swal.fire({

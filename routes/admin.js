@@ -103,6 +103,13 @@ router.put(
   adminController.updateCostoEnvio
 );
 
+router.post(
+  "/pedidos/:id/confirmar",
+  authenticate,
+  authorizeAdmin,
+  adminController.confirmarPedido
+);
+
 /**
  * Gestión de productos
  */

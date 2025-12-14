@@ -432,7 +432,7 @@
             ><br />
             <span style="color: var(--razo-gray-warm)"
               >Stock actual:
-              <strong id="modalStockActual">0</strong> paquetes</span
+              <strong id="modalStockActual">0</strong> piezas</span
             >
           </p>
 
@@ -467,7 +467,7 @@
 
           <div class="form-group">
             <label for="modalCantidad" class="form-label"
-              >Cantidad (paquetes):</label
+              >Cantidad (piezas sueltas):</label
             >
             <input
               type="number"
@@ -539,6 +539,16 @@
     <script src="js/admin-header-dropdown.js"></script>
     <script>
       console.log("📄 Cargando página de inventario...");
+
+      function escapeHtml(value) {
+        return (value ?? "")
+          .toString()
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/\"/g, "&quot;")
+          .replace(/'/g, "&#039;");
+      }
 
       // Authentication check
       const adminToken = localStorage.getItem("razoconnect_admin_token");
@@ -739,16 +749,19 @@
             const estadoBadgeClass = activo ? 'badge-success' : 'badge-secondary';
             const estadoTexto = activo ? 'Visible' : 'Oculto';
             const estadoIcon = activo ? '' : '🚫';
+
+            const nombreProductoSafe = escapeHtml(product.nombreProducto || "");
+            const nombreCategoriaSafe = escapeHtml(product.nombreCategoria || "Sin categoría");
             
             return `
           <tr>
             <td>
-              <div style="font-weight: 600;">${product.nombreProducto}</div>
+              <div style="font-weight: 600;">${nombreProductoSafe}</div>
               <div style="font-size: 0.875rem; color: var(--razo-gray-warm);">ID: ${
                 product.productoId
               }</div>
             </td>
-            <td>${product.nombreCategoria || "Sin categoría"}</td>
+            <td>${nombreCategoriaSafe}</td>
             <td>
               <div style="display: flex; align-items: center; gap: 0.5rem;">
                 <span class="visibility-badge ${estadoBadgeClass}" title="${estadoTexto}">
@@ -925,6 +938,27 @@
           return;
         }
 
+        const recepcionBtn = event.target.closest(".btn-recepcion");
+        if (recepcionBtn) {
+          const varianteId = parseInt(recepcionBtn.dataset.varianteId, 10);
+          if (!detalleProductoActual || Number.isNaN(varianteId)) {
+            showToast("Variante no disponible", "warning");
+            return;
+          }
+
+          const variante = (detalleProductoActual.variantes || []).find(
+            (v) => v.varianteId === varianteId
+          );
+
+          if (!variante) {
+            showToast("Variante no encontrada", "warning");
+            return;
+          }
+
+          openRecepcionModal(detalleProductoActual.producto, variante);
+          return;
+        }
+
         const ajusteBtn = event.target.closest(".btn-ajuste");
         if (!ajusteBtn) return;
 
@@ -1082,12 +1116,17 @@
           detalleModalFeedback.style.display = "block";
           detalleModalTableWrapper.style.display = "none";
           document.getElementById("detalleModalSummary").style.display = "none";
-          detalleModalFeedback.innerHTML = `
-            <div class="modal-feedback-error">
-              <strong>No se pudo cargar el producto.</strong>
-              <p>${error.message || "Intenta nuevamente más tarde."}</p>
-            </div>
-          `;
+
+          detalleModalFeedback.innerHTML = "";
+          const wrap = document.createElement("div");
+          wrap.className = "modal-feedback-error";
+          const strong = document.createElement("strong");
+          strong.textContent = "No se pudo cargar el producto.";
+          const p = document.createElement("p");
+          p.textContent = error?.message || "Intenta nuevamente más tarde.";
+          wrap.appendChild(strong);
+          wrap.appendChild(p);
+          detalleModalFeedback.appendChild(wrap);
         }
       }
 
@@ -1105,12 +1144,16 @@
 
         if (!variantesVisibles.length) {
           detalleModalFeedback.style.display = "block";
-          detalleModalFeedback.innerHTML = `
-            <div class="modal-feedback-empty">
-              <strong>Sin variantes registradas.</strong>
-              <p>Agrega variantes para gestionar su inventario.</p>
-            </div>
-          `;
+          detalleModalFeedback.innerHTML = "";
+          const wrap = document.createElement("div");
+          wrap.className = "modal-feedback-empty";
+          const strong = document.createElement("strong");
+          strong.textContent = "Sin variantes registradas.";
+          const p = document.createElement("p");
+          p.textContent = "Agrega variantes para gestionar su inventario.";
+          wrap.appendChild(strong);
+          wrap.appendChild(p);
+          detalleModalFeedback.appendChild(wrap);
           detalleModalTableWrapper.style.display = "none";
           document.getElementById("detalleModalSummary").style.display =
             "block";
@@ -1161,14 +1204,19 @@
                       : `Paquete de ${variant.tamanoValorReferencia}`)
                 : "Presentación estándar");
 
+            const skuSafe = escapeHtml(variant.sku || "Sin SKU");
+            const dimensionesSafe = escapeHtml(dimensiones);
+            const presentacionSafe = escapeHtml(presentacion);
+            const precioSafe = escapeHtml(precio);
+
             return `
           <tr>
-            <td>${variant.sku || "Sin SKU"}</td>
-            <td>${dimensiones}</td>
+            <td>${skuSafe}</td>
+            <td>${dimensionesSafe}</td>
             <td>
               <div style="display:flex; flex-direction:column; gap:0.25rem;">
-                <span>${precio}</span>
-                <span style="font-size:0.75rem; color: var(--text-secondary);">${presentacion}</span>
+                <span>${precioSafe}</span>
+                <span style="font-size:0.75rem; color: var(--text-secondary);">${presentacionSafe}</span>
               </div>
             </td>
             <td class="stock-variante-${variant.varianteId}">${stock} ${unidadStock}</td>
