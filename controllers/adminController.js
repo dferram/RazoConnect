@@ -5988,6 +5988,355 @@ const actualizarProveedor = async (req, res) => {
  */
 
 /**
+ * Conteo Ciego: Listar órdenes de compra pendientes/parciales
+ * GET /api/admin/compras/pendientes
+ */
+const getComprasPendientes = async (req, res) => {
+  try {
+    const result = await db.query(
+      `SELECT
+         oc.ordencompraid,
+         oc.proveedorid,
+         oc.fechacreacion,
+         oc.fechaentregaesperada,
+         oc.estatus,
+         p.nombreempresa AS proveedornombre,
+         COUNT(doc.detalleoc_id) AS totalproductos
+       FROM ordenesdecompra oc
+       INNER JOIN proveedores p ON oc.proveedorid = p.proveedorid
+       LEFT JOIN detallesordencompra doc ON oc.ordencompraid = doc.ordencompraid
+       WHERE oc.estatus IN ('Pendiente', 'Parcial')
+       GROUP BY oc.ordencompraid, oc.proveedorid, oc.fechacreacion, oc.fechaentregaesperada, oc.estatus, p.nombreempresa
+       ORDER BY oc.fechacreacion DESC`
+    );
+
+    return res.json({
+      success: true,
+      data: {
+        ordenes: result.rows.map((row) => ({
+          ordenCompraId: row.ordencompraid,
+          proveedorId: row.proveedorid,
+          proveedorNombre: row.proveedornombre,
+          fechaCreacion: row.fechacreacion,
+          fechaEntregaEsperada: row.fechaentregaesperada,
+          estatus: row.estatus,
+          totalProductos: Number.parseInt(row.totalproductos ?? 0, 10) || 0,
+        })),
+        total: result.rows.length,
+      },
+    });
+  } catch (error) {
+    console.error("Error al obtener compras pendientes:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error al obtener órdenes de compra pendientes",
+    });
+  }
+};
+
+/**
+ * Conteo Ciego: Detalle de OC sin cantidades esperadas
+ * GET /api/admin/compras/:id/detalle-ciego
+ */
+const getCompraDetalleCiego = async (req, res) => {
+  try {
+    const ordenCompraId = Number.parseInt(req.params.id, 10);
+    if (!Number.isInteger(ordenCompraId) || ordenCompraId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "ID de orden de compra inválido",
+      });
+    }
+
+    const ordenResult = await db.query(
+      `SELECT
+         oc.ordencompraid,
+         oc.proveedorid,
+         oc.fechacreacion,
+         oc.fechaentregaesperada,
+         oc.estatus,
+         p.nombreempresa AS proveedornombre
+       FROM ordenesdecompra oc
+       INNER JOIN proveedores p ON oc.proveedorid = p.proveedorid
+       WHERE oc.ordencompraid = $1`,
+      [ordenCompraId]
+    );
+
+    if (!ordenResult.rows.length) {
+      return res.status(404).json({
+        success: false,
+        message: "Orden de compra no encontrada",
+      });
+    }
+
+    const orden = ordenResult.rows[0];
+
+    const detallesResult = await db.query(
+      `SELECT
+         doc.detalleoc_id,
+         doc.ordencompraid,
+         doc.varianteid,
+         pv.productoid,
+         pv.sku,
+         pr.nombreproducto,
+         pi.url_imagen AS imagen
+       FROM detallesordencompra doc
+       INNER JOIN producto_variantes pv ON doc.varianteid = pv.varianteid
+       INNER JOIN productos pr ON pv.productoid = pr.productoid
+       LEFT JOIN producto_imagenes pi ON pi.productoid = pr.productoid AND pi.orden = 1
+       WHERE doc.ordencompraid = $1
+       ORDER BY pr.nombreproducto ASC`,
+      [ordenCompraId]
+    );
+
+    return res.json({
+      success: true,
+      data: {
+        orden: {
+          ordenCompraId: orden.ordencompraid,
+          proveedorId: orden.proveedorid,
+          proveedorNombre: orden.proveedornombre,
+          fechaCreacion: orden.fechacreacion,
+          fechaEntregaEsperada: orden.fechaentregaesperada,
+          estatus: orden.estatus,
+        },
+        items: detallesResult.rows.map((row) => ({
+          detalleId: row.detalleoc_id,
+          ordenCompraId: row.ordencompraid,
+          varianteId: row.varianteid,
+          productoId: row.productoid,
+          sku: row.sku,
+          nombreProducto: row.nombreproducto,
+          imagen: row.imagen || null,
+        })),
+      },
+    });
+  } catch (error) {
+    console.error("Error al obtener detalle ciego de OC:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error al obtener detalle de la orden",
+    });
+  }
+};
+
+/**
+ * Conteo Ciego: Validar recepción y aplicar inventario si coincide
+ * POST /api/admin/compras/:id/validar-recepcion
+ * Body: { conteos: [{ varianteId, cantidadContada }] }
+ */
+const validarRecepcionCompra = async (req, res) => {
+  const client = await db.pool.connect();
+
+  try {
+    const ordenCompraId = Number.parseInt(req.params.id, 10);
+    if (!Number.isInteger(ordenCompraId) || ordenCompraId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "ID de orden de compra inválido",
+      });
+    }
+
+    const conteos = Array.isArray(req.body?.conteos) ? req.body.conteos : [];
+    if (!conteos.length) {
+      return res.status(400).json({
+        success: false,
+        message: "Debes enviar conteos",
+      });
+    }
+
+    // Normalizar conteos en Map (varianteId -> cantidadContada)
+    const conteosMap = new Map();
+    for (const c of conteos) {
+      const varianteId = Number.parseInt(c?.varianteId, 10);
+      const cantidadContada = Number.parseInt(c?.cantidadContada, 10);
+      if (!Number.isInteger(varianteId) || varianteId <= 0) {
+        return res.status(400).json({
+          success: false,
+          message: "conteos contiene varianteId inválido",
+        });
+      }
+      if (!Number.isInteger(cantidadContada) || cantidadContada < 0) {
+        return res.status(400).json({
+          success: false,
+          message: "conteos contiene cantidadContada inválida",
+        });
+      }
+      conteosMap.set(varianteId, cantidadContada);
+    }
+
+    await client.query("BEGIN");
+
+    const ordenLock = await client.query(
+      "SELECT OrdenCompraID, Estatus FROM OrdenesDeCompra WHERE OrdenCompraID = $1 FOR UPDATE",
+      [ordenCompraId]
+    );
+
+    if (!ordenLock.rows.length) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({
+        success: false,
+        message: "Orden de compra no encontrada",
+      });
+    }
+
+    const estatus = (ordenLock.rows[0].estatus || "").toString().trim();
+    if (!['Pendiente', 'Parcial'].includes(estatus)) {
+      await client.query("ROLLBACK");
+      return res.status(409).json({
+        success: false,
+        message: `La orden no se puede recepcionar en estatus '${estatus || "(vacío)"}'`,
+      });
+    }
+
+    const detalles = await client.query(
+      `SELECT
+         doc.detalleoc_id,
+         doc.varianteid,
+         doc.cantidadsolicitada,
+         doc.cantidadrecibida,
+         doc.piezasporpaquete,
+         pv.sku,
+         pr.nombreproducto
+       FROM detallesordencompra doc
+       INNER JOIN producto_variantes pv ON doc.varianteid = pv.varianteid
+       INNER JOIN productos pr ON pv.productoid = pr.productoid
+       WHERE doc.ordencompraid = $1
+       FOR UPDATE`,
+      [ordenCompraId]
+    );
+
+    if (!detalles.rows.length) {
+      await client.query("ROLLBACK");
+      return res.status(400).json({
+        success: false,
+        message: "La orden no tiene productos",
+      });
+    }
+
+    // Validación de discrepancias (no tocar inventario si algo no coincide)
+    for (const row of detalles.rows) {
+      const varianteId = Number.parseInt(row.varianteid, 10);
+      const solicitado = Number.parseInt(row.cantidadsolicitada, 10) || 0;
+      const recibido = Number.parseInt(row.cantidadrecibida, 10) || 0;
+      const pendiente = Math.max(solicitado - recibido, 0);
+
+      if (pendiente === 0) {
+        continue;
+      }
+
+      if (!conteosMap.has(varianteId)) {
+        await client.query("ROLLBACK");
+        return res.status(409).json({
+          success: false,
+          message: `Discrepancia en ${row.nombreproducto}: Esperado ${pendiente}, Contado 0`,
+          data: {
+            varianteId,
+            sku: row.sku,
+            producto: row.nombreproducto,
+            esperado: pendiente,
+            contado: 0,
+          },
+        });
+      }
+
+      const contado = conteosMap.get(varianteId);
+      if (contado !== pendiente) {
+        await client.query("ROLLBACK");
+        return res.status(409).json({
+          success: false,
+          message: `Discrepancia en ${row.nombreproducto}: Esperado ${pendiente}, Contado ${contado}`,
+          data: {
+            varianteId,
+            sku: row.sku,
+            producto: row.nombreproducto,
+            esperado: pendiente,
+            contado,
+          },
+        });
+      }
+    }
+
+    // Si todo coincide, aplicamos recepción completa de lo pendiente
+    const movimientos = [];
+
+    for (const row of detalles.rows) {
+      const solicitado = Number.parseInt(row.cantidadsolicitada, 10) || 0;
+      const recibido = Number.parseInt(row.cantidadrecibida, 10) || 0;
+      const pendiente = Math.max(solicitado - recibido, 0);
+      if (pendiente === 0) continue;
+
+      const piezasPorPaqueteParsed = Number.parseInt(row.piezasporpaquete, 10);
+      const piezasPorPaquete =
+        Number.isInteger(piezasPorPaqueteParsed) && piezasPorPaqueteParsed > 0
+          ? piezasPorPaqueteParsed
+          : 1;
+
+      const cantidadAumentar = pendiente * piezasPorPaquete;
+      const motivo = `Recepción Blindada OC #${ordenCompraId} (${pendiente} paquete${pendiente === 1 ? "" : "s"} x ${piezasPorPaquete} piezas)`;
+
+      await inventoryService.registrarMovimiento(client, {
+        varianteId: row.varianteid,
+        cantidadDelta: cantidadAumentar,
+        motivo,
+        usuarioId: req.user.id,
+        esExcepcion: false,
+      });
+
+      await client.query(
+        `UPDATE DetallesOrdenCompra
+         SET CantidadRecibida = CantidadRecibida + $1
+         WHERE DetalleOC_ID = $2 AND OrdenCompraID = $3`,
+        [pendiente, row.detalleoc_id, ordenCompraId]
+      );
+
+      movimientos.push({
+        detalleId: row.detalleoc_id,
+        varianteId: row.varianteid,
+        sku: row.sku,
+        producto: row.nombreproducto,
+        cantidadContada: pendiente,
+        piezasPorPaquete,
+        unidadesAgregadas: cantidadAumentar,
+      });
+    }
+
+    await client.query(
+      "UPDATE OrdenesDeCompra SET Estatus = 'Completada' WHERE OrdenCompraID = $1",
+      [ordenCompraId]
+    );
+
+    await client.query("COMMIT");
+
+    return res.json({
+      success: true,
+      message: "Recepción perfecta (Conteo Ciego): inventario actualizado",
+      data: {
+        ordenCompraId,
+        movimientos,
+        estatus: "Completada",
+      },
+    });
+  } catch (error) {
+    try {
+      await client.query("ROLLBACK");
+    } catch (e) {
+      // ignore
+    }
+    console.error("Error en validarRecepcionCompra:", error);
+    const status = error && Number.isInteger(error.status) ? error.status : 500;
+    return res.status(status).json({
+      success: false,
+      message: error.message || "Error al validar recepción",
+      error: error.message,
+      code: error.code,
+    });
+  } finally {
+    client.release();
+  }
+};
+
+/**
  * Obtener todas las órdenes de compra (con filtro por estatus)
  * GET /api/admin/ordenes-compra
  */
@@ -7425,6 +7774,9 @@ getMedidasExistentes,
   saveReglaEmpaque,
   getAllOrdenesCompra,
   getDetallesOrdenCompra,
+  getComprasPendientes,
+  getCompraDetalleCiego,
+  validarRecepcionCompra,
   crearOrdenCompra,
   recibirInventario,
   subirEvidenciaRecepcionOC,

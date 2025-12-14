@@ -5,6 +5,7 @@ const adminController = require("../controllers/adminController");
 const authController = require("../controllers/authController");
 const bitacoraController = require("../controllers/bitacoraController");
 const changeRequestController = require("../controllers/changeRequestController");
+const inventoryAuditController = require("../controllers/inventoryAuditController");
 const upload = require("../middlewares/upload");
 const {
   authenticate,
@@ -38,6 +39,44 @@ router.post(
   authenticate,
   authorizeAdmin,
   adminController.refreshAdminToken
+);
+
+/**
+ * Auditoría de Inventario (Nivel 3 - Doble Ciego)
+ */
+router.post(
+  "/auditoria-inventario/crear-sesion",
+  authenticate,
+  authorizeAdmin,
+  inventoryAuditController.crearSesion
+);
+
+router.get(
+  "/auditoria-inventario/variante-por-sku",
+  authenticate,
+  authorizeAdmin,
+  inventoryAuditController.getVariantePorSku
+);
+
+router.post(
+  "/auditoria-inventario/registrar-conteo",
+  authenticate,
+  authorizeAdmin,
+  inventoryAuditController.registrarConteo
+);
+
+router.get(
+  "/auditoria-inventario/dashboard/:sesionId",
+  authenticate,
+  authorizeAdmin,
+  inventoryAuditController.getDashboardSesion
+);
+
+router.post(
+  "/auditoria-inventario/aplicar/:sesionId",
+  authenticate,
+  authorizeAdmin,
+  inventoryAuditController.aplicarSesion
 );
 
 /**
@@ -435,6 +474,28 @@ router.put(
   authenticate,
   authorizeAdmin,
   adminController.saveReglaEmpaque
+);
+
+/**
+ * Conteo Ciego (Blind Count) - Recepción de Órdenes de Compra
+ */
+router.get(
+  "/compras/pendientes",
+  authenticate,
+  authorizeAdmin,
+  adminController.getComprasPendientes
+);
+router.get(
+  "/compras/:id/detalle-ciego",
+  authenticate,
+  authorizeAdmin,
+  adminController.getCompraDetalleCiego
+);
+router.post(
+  "/compras/:id/validar-recepcion",
+  authenticate,
+  authorizeAdmin,
+  adminController.validarRecepcionCompra
 );
 
 /**
