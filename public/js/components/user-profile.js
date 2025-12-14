@@ -99,16 +99,32 @@
     const userRoleEl = document.getElementById("userRole");
     const userAvatarEl = document.getElementById("userAvatar");
 
+    const headerUserNameEl = document.getElementById("headerUserName");
+    const headerUserRoleEl = document.getElementById("headerUserRole");
+    const headerUserAvatarEl = document.getElementById("headerUserAvatar");
+
     if (userNameEl) {
       userNameEl.textContent = userData.nombre;
+    }
+
+    if (headerUserNameEl) {
+      headerUserNameEl.textContent = userData.nombre;
     }
 
     if (userRoleEl) {
       userRoleEl.textContent = userData.rol;
     }
 
+    if (headerUserRoleEl) {
+      headerUserRoleEl.textContent = userData.rol;
+    }
+
     if (userAvatarEl) {
       userAvatarEl.textContent = userData.iniciales;
+    }
+
+    if (headerUserAvatarEl) {
+      headerUserAvatarEl.textContent = userData.iniciales;
     }
   }
 

@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Movimientos (Kardex) - Admin RazoConnect</title>
+    <link rel="icon" type="image/png" href="/icon/Logo_Razo.png" />
+
+    <!-- PROTECCIÓN DE AUTENTICACIÓN ADMIN -->
+    <script src="js/auth-guard-admin.js"></script>
+
+    <!-- SISTEMA DE RENOVACIÓN DE TOKENS -->
+    <script src="js/token-refresh.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/admin.css" />
+  </head>
+
+  <body data-sidebar="admin" data-page-title="Movimientos">
+    <div class="admin-layout">
+      <!-- Sidebar -->
+      <div id="sidebar-container"></div>
+
+      <!-- Main Content -->
+      <main class="admin-main">
+        <div id="admin-header-container"></div>
+
+        <div class="admin-content">
+          <div class="admin-table-container">
+            <div class="admin-table-header" style="flex-wrap: wrap; gap: 1rem">
+              <div>
+                <h2 class="admin-table-title">Movimientos (Kardex)</h2>
+                <p style="margin: 0; color: var(--razo-gray-warm); font-size: 0.9rem">
+                  Consulta los últimos movimientos de inventario y filtra por variante, tipo, fechas o texto.
+                </p>
+              </div>
+
+              <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center">
+                <button id="btnLimpiarFiltros" class="btn btn-secondary" type="button">
+                  Limpiar Filtros
+                </button>
+              </div>
+            </div>
+
+            <!-- Barra de filtros -->
+            <div
+              style="
+                display: grid;
+                grid-template-columns: 2fr 1fr 1fr 1fr;
+                gap: 0.75rem;
+                padding: 1rem;
+                border-top: 1px solid #e5e7eb;
+                background: #fafafa;
+              "
+            >
+              <div>
+                <label style="display:block; font-size:0.8rem; color:#6b7280; margin-bottom:0.25rem;">Buscar</label>
+                <input
+                  id="filtroSearch"
+                  type="text"
+                  placeholder="Buscar por SKU, Producto o Motivo..."
+                  style="
+                    width: 100%;
+                    padding: 0.65rem 0.9rem;
+                    border: 2px solid var(--razo-gray-light);
+                    border-radius: 0.75rem;
+                    font-family: 'Inter', sans-serif;
+                    background: white;
+                  "
+                />
+              </div>
+
+              <div>
+                <label style="display:block; font-size:0.8rem; color:#6b7280; margin-bottom:0.25rem;">Tipo</label>
+                <select
+                  id="filtroTipo"
+                  aria-label="Tipo de movimiento"
+                  style="
+                    width: 100%;
+                    padding: 0.65rem 0.9rem;
+                    border: 2px solid var(--razo-gray-light);
+                    border-radius: 0.75rem;
+                    font-family: 'Inter', sans-serif;
+                    background: white;
+                  "
+                >
+                  <option value="">Todos</option>
+                  <option value="ENTRADA">Entrada</option>
+                  <option value="SALIDA">Salida</option>
+                </select>
+              </div>
+
+              <div>
+                <label style="display:block; font-size:0.8rem; color:#6b7280; margin-bottom:0.25rem;">Desde</label>
+                <input
+                  id="filtroFechaInicio"
+                  type="date"
+                  aria-label="Fecha inicio"
+                  style="
+                    width: 100%;
+                    padding: 0.65rem 0.9rem;
+                    border: 2px solid var(--razo-gray-light);
+                    border-radius: 0.75rem;
+                    font-family: 'Inter', sans-serif;
+                    background: white;
+                  "
+                />
+              </div>
+
+              <div>
+                <label style="display:block; font-size:0.8rem; color:#6b7280; margin-bottom:0.25rem;">Hasta</label>
+                <input
+                  id="filtroFechaFin"
+                  type="date"
+                  aria-label="Fecha fin"
+                  style="
+                    width: 100%;
+                    padding: 0.65rem 0.9rem;
+                    border: 2px solid var(--razo-gray-light);
+                    border-radius: 0.75rem;
+                    font-family: 'Inter', sans-serif;
+                    background: white;
+                  "
+                />
+              </div>
+            </div>
+
+            <div id="active-filters" style="display:none; padding: 0.75rem 1rem; border-top: 1px solid #e5e7eb; background: white;"></div>
+
+            <div style="padding: 1rem; border-top: 1px solid #e5e7eb; background: white">
+              <div style="display:flex; gap:0.75rem; flex-wrap:wrap; align-items:center;">
+                <div style="display:flex; align-items:center; gap:0.5rem; color:#6b7280; font-size:0.9rem;">
+                  <strong style="color:#111827;">Variante:</strong>
+                  <span id="filtroVarianteLabel">Todas</span>
+                </div>
+                <button id="btnAplicarFiltros" class="btn btn-primary" type="button">Buscar</button>
+              </div>
+            </div>
+
+            <!-- Tabla -->
+            <div style="overflow-x:auto;">
+              <table class="w-full text-sm text-left text-gray-700" id="tablaMovimientos">
+                <thead class="bg-gray-50 text-xs uppercase tracking-wider text-gray-600">
+                  <tr>
+                    <th class="py-4 px-6">Fecha/Hora</th>
+                    <th class="py-4 px-6">Producto (SKU)</th>
+                    <th class="py-4 px-6">Movimiento</th>
+                    <th class="py-4 px-6">Cantidad</th>
+                    <th class="py-4 px-6">Motivo</th>
+                    <th class="py-4 px-6">Usuario</th>
+                  </tr>
+                </thead>
+                <tbody class="bg-white" id="movimientosTbody"></tbody>
+              </table>
+            </div>
+
+            <div id="movimientosLoading" class="loading" style="display:none;">
+              <div class="spinner"></div>
+            </div>
+
+            <div id="movimientosEmpty" class="empty-state" style="display:none; padding:2rem;">
+              <div class="empty-state-icon">🧾</div>
+              <h3 class="empty-state-title">Sin movimientos</h3>
+              <p class="empty-state-text">No hay registros con los filtros actuales.</p>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <script src="js/layout.js" defer></script>
+    <script src="js/api.js"></script>
+    <script src="js/components/admin-header-loader.js"></script>
+    <script src="js/components/user-profile.js"></script>
+
+    <script>
+      const adminToken = localStorage.getItem("razoconnect_admin_token");
+
+      const filtroSearch = document.getElementById("filtroSearch");
+      const filtroTipo = document.getElementById("filtroTipo");
+      const filtroFechaInicio = document.getElementById("filtroFechaInicio");
+      const filtroFechaFin = document.getElementById("filtroFechaFin");
+      const filtroVarianteLabel = document.getElementById("filtroVarianteLabel");
+      const activeFilters = document.getElementById("active-filters");
+
+      const btnAplicarFiltros = document.getElementById("btnAplicarFiltros");
+      const btnLimpiarFiltros = document.getElementById("btnLimpiarFiltros");
+
+      const movimientosTbody = document.getElementById("movimientosTbody");
+      const movimientosLoading = document.getElementById("movimientosLoading");
+      const movimientosEmpty = document.getElementById("movimientosEmpty");
+      const tablaMovimientos = document.getElementById("tablaMovimientos");
+
+      let varianteIdFixed = null;
+
+      function setVarianteIdFixed(newValue) {
+        varianteIdFixed = newValue ? String(newValue) : null;
+        filtroVarianteLabel.textContent = varianteIdFixed
+          ? `#${varianteIdFixed}`
+          : "Todas";
+      }
+
+      function escapeHtml(value) {
+        return (value ?? "")
+          .toString()
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/\"/g, "&quot;")
+          .replace(/'/g, "&#039;");
+      }
+
+      function formatDateParts(value) {
+        if (!value) return { fecha: "—", hora: "" };
+        const d = new Date(value);
+        if (Number.isNaN(d.getTime())) return { fecha: "—", hora: "" };
+        const pad = (n) => String(n).padStart(2, "0");
+        const fecha = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
+        const hora = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+        return { fecha, hora };
+      }
+
+      function getUserInitial(nombre) {
+        const safe = (nombre || "").toString().trim();
+        if (!safe) return "?";
+        return safe.charAt(0).toUpperCase();
+      }
+
+      function buildQueryFromFilters() {
+        const params = new URLSearchParams();
+
+        if (varianteIdFixed) {
+          params.set("varianteId", varianteIdFixed);
+        }
+
+        const search = filtroSearch.value.trim();
+        if (search) params.set("search", search);
+
+        const tipo = filtroTipo.value;
+        if (tipo) params.set("tipo", tipo);
+
+        const fi = filtroFechaInicio.value;
+        if (fi) params.set("fechaInicio", `${fi} 00:00:00`);
+
+        const ff = filtroFechaFin.value;
+        if (ff) params.set("fechaFin", `${ff} 23:59:59`);
+
+        params.set("limit", "50");
+        return params;
+      }
+
+      function renderActiveFiltersChip(movimientos) {
+        if (!varianteIdFixed) {
+          activeFilters.style.display = "none";
+          activeFilters.innerHTML = "";
+          return;
+        }
+
+        let label = `Filtro activo: Variante #${varianteIdFixed}`;
+        if (Array.isArray(movimientos) && movimientos.length) {
+          const first = movimientos[0];
+          const nombre = (first.productoNombre || "").toString().trim();
+          const sku = (first.sku || "").toString().trim();
+          if (nombre && sku) {
+            label = `Filtro: ${escapeHtml(nombre)} (${escapeHtml(sku)})`;
+          }
+        }
+
+        activeFilters.style.display = "block";
+        activeFilters.innerHTML = `
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="inline-flex items-center gap-2 bg-blue-100 text-blue-800 rounded-full px-4 py-2 text-sm font-semibold">
+              <span>${label}</span>
+              <button
+                type="button"
+                id="btnRemoveVarianteFilter"
+                class="inline-flex items-center justify-center h-6 w-6 rounded-full bg-blue-200 text-blue-900 hover:bg-blue-300"
+                aria-label="Quitar filtro de variante"
+                title="Quitar filtro"
+              >
+                ×
+              </button>
+            </span>
+          </div>
+        `;
+      }
+
+      async function removerFiltroVariante() {
+        setVarianteIdFixed(null);
+        window.history.pushState({}, "", "/admin-movimientos.html");
+        activeFilters.style.display = "none";
+        activeFilters.innerHTML = "";
+        await loadMovimientos();
+      }
+
+      async function limpiarFiltrosSinRecargar() {
+        setVarianteIdFixed(null);
+        filtroSearch.value = "";
+        filtroTipo.value = "";
+        filtroFechaInicio.value = "";
+        filtroFechaFin.value = "";
+        window.history.pushState({}, "", "/admin-movimientos.html");
+        activeFilters.style.display = "none";
+        activeFilters.innerHTML = "";
+        await loadMovimientos();
+      }
+
+      function renderMovimientosRows(movimientos) {
+        return (movimientos || [])
+          .map((m) => {
+            const tipo = (m.tipoMovimiento || "").toUpperCase();
+            const isEntrada = tipo === "ENTRADA";
+            const badgeClass = isEntrada
+              ? "bg-green-100 text-green-800"
+              : "bg-red-100 text-red-800";
+            const badgeText = isEntrada ? "Entrada" : "Salida";
+            const badgeIcon = isEntrada ? "⬆" : "⬇";
+            const { fecha, hora } = formatDateParts(m.fecha);
+            const cantidad = Number.isFinite(Number(m.cantidad)) ? Number(m.cantidad) : 0;
+
+            const isExcepcion = m.esExcepcion === true;
+
+            const productoNombre = escapeHtml(m.productoNombre || "—");
+            const sku = escapeHtml(m.sku || "—");
+            const motivo = m.motivo ? escapeHtml(m.motivo) : "—";
+
+            const usuario = m.usuario || (m.usuarioId ? `#${m.usuarioId}` : "—");
+            const userText = escapeHtml(usuario);
+            const initial = getUserInitial(usuario);
+
+            return `
+              <tr class="border-b ${isExcepcion ? "bg-yellow-50" : ""}">
+                <td class="py-4 px-6">
+                  <div class="text-gray-900 font-semibold">${fecha}</div>
+                  <div class="text-gray-500 text-xs">${hora}</div>
+                </td>
+                <td class="py-4 px-6">
+                  <div class="text-gray-900 font-semibold">${productoNombre}</div>
+                  <div class="text-gray-500 text-xs">${sku}</div>
+                </td>
+                <td class="py-4 px-6">
+                  <div class="flex items-center gap-2">
+                    <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${badgeClass}">
+                      <span>${badgeIcon}</span>
+                      <span>${badgeText}</span>
+                    </span>
+                    ${
+                      isExcepcion
+                        ? '<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">Excepción</span>'
+                        : ""
+                    }
+                  </div>
+                </td>
+                <td class="py-4 px-6">
+                  <span class="font-bold text-gray-900">${cantidad}</span>
+                </td>
+                <td class="py-4 px-6 text-gray-700">${motivo}</td>
+                <td class="py-4 px-6">
+                  <div class="flex items-center gap-2">
+                    <div class="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-700 text-xs font-semibold">${initial}</div>
+                    <div class="text-gray-900">${userText}</div>
+                  </div>
+                </td>
+              </tr>
+            `;
+          })
+          .join("");
+      }
+
+      async function loadMovimientos() {
+        movimientosLoading.style.display = "block";
+        movimientosEmpty.style.display = "none";
+        tablaMovimientos.style.display = "table";
+        movimientosTbody.innerHTML = "";
+
+        renderActiveFiltersChip([]);
+
+        try {
+          const query = buildQueryFromFilters();
+          const url = `${API_BASE_URL}/admin/movimientos?${query.toString()}`;
+
+          const response = await fetch(url, {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${adminToken}`,
+              "Content-Type": "application/json",
+            },
+          });
+
+          const data = await response.json();
+          if (!response.ok || !data.success) {
+            throw new Error(data.message || "No se pudieron cargar los movimientos");
+          }
+
+          const movimientos = data.data?.movimientos || [];
+          renderActiveFiltersChip(movimientos);
+          if (!movimientos.length) {
+            tablaMovimientos.style.display = "none";
+            movimientosEmpty.style.display = "block";
+            return;
+          }
+
+          movimientosTbody.innerHTML = renderMovimientosRows(movimientos);
+        } catch (error) {
+          console.error("Error cargando movimientos:", error);
+          await Swal.fire({
+            icon: "error",
+            title: "Error",
+            text: error.message || "No se pudieron cargar los movimientos",
+            confirmButtonColor: "#F97316",
+          });
+          tablaMovimientos.style.display = "none";
+          movimientosEmpty.style.display = "block";
+        } finally {
+          movimientosLoading.style.display = "none";
+        }
+      }
+
+      function initFromUrlParams() {
+        const params = new URLSearchParams(window.location.search);
+        const varianteIdParam = params.get("varianteId");
+
+        if (varianteIdParam) {
+          const parsed = parseInt(varianteIdParam, 10);
+          if (!Number.isNaN(parsed) && parsed > 0) {
+            setVarianteIdFixed(parsed);
+          }
+        }
+
+        const search = params.get("search");
+        if (search) filtroSearch.value = search;
+
+        const tipo = params.get("tipo");
+        if (tipo) filtroTipo.value = tipo;
+
+        const fi = params.get("fechaInicio");
+        if (fi) {
+          const d = fi.split(" ")[0];
+          filtroFechaInicio.value = d;
+        }
+
+        const ff = params.get("fechaFin");
+        if (ff) {
+          const d = ff.split(" ")[0];
+          filtroFechaFin.value = d;
+        }
+      }
+
+      btnAplicarFiltros.addEventListener("click", () => {
+        // No reescribimos la URL (para permitir limpiar con botón), solo recargamos la tabla
+        loadMovimientos();
+      });
+
+      btnLimpiarFiltros.addEventListener("click", () => {
+        limpiarFiltrosSinRecargar();
+      });
+
+      activeFilters.addEventListener("click", (e) => {
+        const btn = e.target.closest("#btnRemoveVarianteFilter");
+        if (btn) {
+          e.preventDefault();
+          removerFiltroVariante();
+        }
+      });
+
+      filtroSearch.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          loadMovimientos();
+        }
+      });
+
+      // Init
+      initFromUrlParams();
+      loadMovimientos();
+    </script>
+  </body>
+</html>

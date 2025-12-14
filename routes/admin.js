@@ -265,6 +265,27 @@ router.post(
   adminController.ajustarInventario
 );
 
+router.get(
+  "/inventario/:varianteId/historial",
+  authenticate,
+  authorizeAdmin,
+  adminController.getHistorialInventarioVariante
+);
+
+router.get(
+  "/movimientos",
+  authenticate,
+  authorizeAdmin,
+  adminController.getMovimientosInventario
+);
+
+router.post(
+  "/recepcion",
+  authenticate,
+  authorizeAdmin,
+  adminController.recepcionarMercancia
+);
+
 /**
  * Gestión de agentes
  */

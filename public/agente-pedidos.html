@@ -16,38 +16,28 @@
     <link rel="stylesheet" href="css/styles.css" />
     <link rel="stylesheet" href="css/admin.css" />
   </head>
-  <body data-sidebar="agent">
+  <body data-sidebar="agent" data-page-title="Mis Pedidos">
     <div class="admin-layout">
       <div id="sidebar-container"></div>
 
       <main class="admin-main">
-        <header class="admin-header">
-          <div>
-            <h1 class="admin-header-title">Pedidos de mis clientes</h1>
-          </div>
-          <div class="admin-header-actions">
-            <button
-              type="button"
-              class="btn btn-secondary btn-sm"
-              id="btnRefrescarPedidos"
-              style="margin-right: 1rem"
-            >
-              Refrescar
-            </button>
-            <div class="admin-user-info">
-              <div class="admin-user-avatar" id="userAvatar">A</div>
-              <div class="admin-user-details">
-                <div class="admin-user-name" id="userName">Agente</div>
-                <div class="admin-user-role" id="userRole">Agente</div>
-              </div>
-            </div>
-          </div>
-        </header>
+        <div id="admin-header-container"></div>
 
         <div class="admin-content">
           <div class="admin-card">
             <div class="admin-card-header">
-              <h2 class="admin-card-title">Listado de pedidos</h2>
+              <div>
+                <h2 class="admin-card-title">Listado de pedidos</h2>
+              </div>
+              <div>
+                <button
+                  type="button"
+                  class="btn btn-secondary btn-sm"
+                  id="btnRefrescarPedidos"
+                >
+                  Refrescar
+                </button>
+              </div>
               <p class="admin-card-subtitle">
                 Mantente al tanto de la actividad reciente y da seguimiento a
                 los pedidos de tus clientes.
@@ -214,6 +204,7 @@
 
     <script src="js/layout.js" defer></script>
     <script src="js/api.js"></script>
+    <script src="js/components/agente-header-loader.js"></script>
     <script src="js/components/user-profile.js"></script>
     <script src="js/agente-header-dropdown.js"></script>
     <script src="js/agente-pedidos.js"></script>

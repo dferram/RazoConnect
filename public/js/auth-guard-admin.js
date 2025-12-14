@@ -7,6 +7,29 @@
 (function () {
   "use strict";
 
+  // Aliases legacy para evitar crashes si se removieron IDs del navbar en alguna pantalla.
+  // Se inyecta en <head> para que exista antes de que corran scripts inline al final del body.
+  (function ensureLegacyHeaderAliases() {
+    try {
+      if (document.getElementById("adminHeaderLegacyAliases")) return;
+
+      const wrapper = document.createElement("div");
+      wrapper.id = "adminHeaderLegacyAliases";
+      wrapper.style.display = "none";
+      wrapper.innerHTML = `
+        <span id="adminHeaderTitle"></span>
+        <span id="admin-name"></span>
+        <span id="userName"></span>
+        <span id="userRole"></span>
+        <span id="userAvatar"></span>
+      `;
+
+      (document.head || document.documentElement).appendChild(wrapper);
+    } catch (e) {
+      // ignore
+    }
+  })();
+
   const adminToken = localStorage.getItem("razoconnect_admin_token");
 
   // Si no hay token, redirigir sin mostrar alerta (usuario no ha iniciado sesión)

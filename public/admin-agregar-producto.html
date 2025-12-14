@@ -14,6 +14,13 @@
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.14.0/Sortable.min.js"></script>
+
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css"
+    />
+
     <link rel="stylesheet" href="css/styles.css" />
     <link rel="stylesheet" href="css/admin.css" />
     <style>
@@ -125,28 +132,42 @@
         line-height: 1.2em;
         max-height: 2.4em;
       }
+
+      .sortable-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .sortable-ghost {
+        opacity: 0.6;
+        background: rgba(59, 130, 246, 0.12);
+      }
+
+      .image-order-badge {
+        position: absolute;
+        top: 6px;
+        left: 6px;
+        padding: 0.2rem 0.45rem;
+        border-radius: 999px;
+        font-size: 0.7rem;
+        font-weight: 800;
+        background: rgba(17, 24, 39, 0.85);
+        color: white;
+        z-index: 2;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+        pointer-events: none;
+      }
     </style>
   </head>
-  <body>
+  <body data-page-title="Agregar Producto">
     <div class="admin-layout">
       <!-- Sidebar -->
       <div id="sidebar-container"></div>
 
       <!-- Main Content -->
       <main class="admin-main">
-        <header class="admin-header">
-          <h1 class="admin-header-title">Agregar producto</h1>
-
-          <div class="admin-header-actions">
-            <div class="admin-user-info">
-              <div class="admin-user-avatar" id="userAvatar">A</div>
-              <div class="admin-user-details">
-                <div class="admin-user-name" id="userName">Administrador</div>
-                <div class="admin-user-role" id="userRole">Admin</div>
-              </div>
-            </div>
-          </div>
-        </header>
+        <div id="admin-header-container"></div>
 
         <div class="admin-content">
           <div class="admin-grid-two-columns">
@@ -240,15 +261,7 @@
                     <label for="inputTipoProducto" class="form-label">
                       Tipo de Producto (Ej. Caja, Peluche)
                     </label>
-                    <input
-                      id="inputTipoProducto"
-                      class="form-input"
-                      list="tipoProductoOptions"
-                      placeholder="Escribe o selecciona un tipo"
-                      autocomplete="off"
-                    />
-                    <datalist id="tipoProductoOptions"></datalist>
-                    <input type="hidden" id="tipoProductoIdHidden" value="" />
+                    <select id="inputTipoProducto" class="form-input"></select>
                   </div>
 
                   <div class="form-group">
@@ -266,6 +279,16 @@
                     <small class="form-hint"
                       >Sube hasta 12 fotos del producto (se aplicarán a todas las variantes). Formatos permitidos: JPG, PNG, WEBP. Máximo 5MB c/u.</small
                     >
+
+                    <div id="area-imagenes-existentes" class="mt-3 d-none">
+                      <label class="form-label fw-bold"
+                        >Imágenes Actuales en el Servidor:</label
+                      >
+                      <div
+                        id="galeria-imagenes-server"
+                        class="d-flex flex-wrap gap-2 sortable-grid"
+                      ></div>
+                    </div>
 
                     <div id="preview-container" style="margin-top: 1rem; display: none;">
                       <p style="font-size: 0.875rem; color: #6b7280; margin-bottom: 0.5rem;">
@@ -470,7 +493,8 @@
     <script src="js/layout.js" defer></script>
     <script src="js/admin-header-dropdown.js"></script>
     <script src="js/api.js"></script>
-    <script src="js/pack-helpers.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+    <script src="js/components/admin-header-loader.js"></script>
     <script>
       // Authentication check
       const adminToken = localStorage.getItem("razoconnect_admin_token");
@@ -480,6 +504,15 @@
 
       let unidadTamanoId = null;
       let customPacks = [];
+      let tipoProductoChoices = null;
+      let tipoProductoIdsDisponibles = new Set();
+
+      let __tipoProductoEmpaqueListenerBound = false;
+      let __reglasEmpaqueProveedorCache = {};
+
+      let serverImagesOrder = [];
+      let sortablePreviewInstance = null;
+      let sortableServerInstance = null;
 
       // Verify admin and load data
       async function init() {
@@ -487,6 +520,20 @@
         await loadCategorias();
         await loadProveedores();
         await loadTiposProducto();
+
+        bindTipoProductoEmpaqueAutomation();
+
+        // Modo edición: si viene ?id= en la URL, cargar el producto DESPUÉS de poblar selects
+        try {
+          const params = new URLSearchParams(window.location.search);
+          const idRaw = params.get("id");
+          const parsedId = Number.parseInt(idRaw, 10);
+          if (Number.isInteger(parsedId) && parsedId > 0) {
+            await prepararEdicion(parsedId);
+          }
+        } catch (e) {
+          console.warn("No se pudo leer id de la URL para edición:", e);
+        }
       }
 
       async function verifyAndLoadAdmin() {
@@ -504,17 +551,21 @@
           const data = await response.json();
           if (data.success) {
             const admin = data.data.admin;
-            document.getElementById("userName").textContent = admin.nombre;
-            document.getElementById("userRole").textContent =
-              admin.rol === "superadmin" ? "Super Admin" : "Admin";
+            const nameEl = document.getElementById("headerUserName");
+            const roleEl = document.getElementById("headerUserRole");
+            const avatarEl = document.getElementById("headerUserAvatar");
+
+            if (nameEl) nameEl.textContent = admin.nombre;
+            if (roleEl) {
+              roleEl.textContent = admin.rol === "superadmin" ? "Super Admin" : "Admin";
+            }
 
             const words = admin.nombre.split(" ");
             const initials =
               words.length >= 2
                 ? `${words[0].charAt(0)}${words[1].charAt(0)}`
                 : admin.nombre.substring(0, 2);
-            document.getElementById("userAvatar").textContent =
-              initials.toUpperCase();
+            if (avatarEl) avatarEl.textContent = initials.toUpperCase();
           }
         } catch (error) {
           console.error("Error verifying admin:", error);
@@ -526,6 +577,13 @@
 
       async function prepararEdicion(id) {
         try {
+          const areaImagenesExistentes = document.getElementById(
+            "area-imagenes-existentes"
+          );
+          const galeriaImagenesServer = document.getElementById(
+            "galeria-imagenes-server"
+          );
+
           const inputProductoIdEditando = document.getElementById(
             "inputProductoIdEditando"
           );
@@ -539,7 +597,6 @@
           const selectProveedor = document.getElementById("proveedor-producto");
 
           const inputTipoProducto = document.getElementById("inputTipoProducto");
-          const hiddenTipoProductoId = document.getElementById("tipoProductoIdHidden");
 
           if (!id || !inputProductoIdEditando) {
             showToast("ID de producto inválido", "warning");
@@ -560,6 +617,96 @@
           }
 
           const producto = data?.data?.producto || {};
+
+          const imagenesServidor = Array.isArray(producto?.imagenes)
+            ? producto.imagenes
+                .map((img) => {
+                  if (!img) return null;
+                  if (typeof img === "string") {
+                    const url = img.trim();
+                    return url ? { url, alt: null } : null;
+                  }
+                  const url = (img.url || img.url_imagen || "").toString().trim();
+                  if (!url) return null;
+                  const alt = (img.alt || img.textoalternativo || "")
+                    .toString()
+                    .trim();
+                  return { url, alt: alt || null };
+                })
+                .filter(Boolean)
+            : [];
+
+          serverImagesOrder = imagenesServidor.map((img) => img.url).filter(Boolean);
+
+          if (areaImagenesExistentes && galeriaImagenesServer) {
+            if (imagenesServidor.length > 0) {
+              areaImagenesExistentes.classList.remove("d-none");
+              galeriaImagenesServer.innerHTML = "";
+
+              imagenesServidor.forEach((img, idx) => {
+                const wrapper = document.createElement("div");
+                wrapper.style.position = "relative";
+                wrapper.style.width = "86px";
+                wrapper.style.height = "86px";
+                wrapper.style.borderRadius = "12px";
+                wrapper.style.overflow = "hidden";
+                wrapper.style.border = "1px solid rgba(209, 213, 219, 0.9)";
+                wrapper.style.boxShadow = "0 6px 16px rgba(15, 23, 42, 0.10)";
+                wrapper.style.cursor = "move";
+                wrapper.title = `Imagen ${idx + 1}`;
+                wrapper.classList.add("sortable-item");
+                wrapper.dataset.url = img.url;
+
+                const badge = document.createElement("div");
+                badge.className = "image-order-badge";
+                badge.textContent = idx === 0 ? "⭐ PORTADA" : String(idx + 1);
+
+                const imageEl = document.createElement("img");
+                imageEl.src = img.url;
+                imageEl.alt = img.alt || `Imagen ${idx + 1}`;
+                imageEl.style.width = "100%";
+                imageEl.style.height = "100%";
+                imageEl.style.objectFit = "cover";
+                imageEl.loading = "lazy";
+
+                // Placeholder de UI para marcar eliminación (sin backend aún)
+                const btn = document.createElement("button");
+                btn.type = "button";
+                btn.textContent = "×";
+                btn.style.position = "absolute";
+                btn.style.top = "6px";
+                btn.style.right = "6px";
+                btn.style.width = "22px";
+                btn.style.height = "22px";
+                btn.style.borderRadius = "999px";
+                btn.style.border = "none";
+                btn.style.background = "rgba(239, 68, 68, 0.92)";
+                btn.style.color = "#fff";
+                btn.style.fontWeight = "900";
+                btn.style.lineHeight = "1";
+                btn.style.cursor = "pointer";
+                btn.title = "Marcar para eliminación (pendiente de implementar)";
+                btn.addEventListener("click", () => {
+                  showToast(
+                    "Eliminar imágenes existentes aún no está implementado.",
+                    "info"
+                  );
+                });
+
+                wrapper.appendChild(badge);
+                wrapper.appendChild(imageEl);
+                wrapper.appendChild(btn);
+                galeriaImagenesServer.appendChild(wrapper);
+              });
+
+              initSortableServer();
+              actualizarBadgesOrden(galeriaImagenesServer);
+            } else {
+              areaImagenesExistentes.classList.add("d-none");
+              galeriaImagenesServer.innerHTML = "";
+              serverImagesOrder = [];
+            }
+          }
 
           const nombreProducto =
             producto.nombreProducto !== undefined
@@ -591,35 +738,45 @@
             if (proveedorId === null || proveedorId === undefined) {
               selectProveedor.value = "";
             } else {
-              selectProveedor.value = String(proveedorId);
+              const proveedorTxt = String(proveedorId);
+              // Si por alguna razón aún no existe la opción, insertarla antes de asignar
+              const exists = Array.from(selectProveedor.options || []).some(
+                (opt) => String(opt.value) === proveedorTxt
+              );
+              if (!exists) {
+                const option = document.createElement("option");
+                option.value = proveedorTxt;
+                option.textContent = `Proveedor #${proveedorTxt}`;
+                selectProveedor.appendChild(option);
+              }
+              selectProveedor.value = proveedorTxt;
             }
           }
 
-          if (hiddenTipoProductoId) {
-            hiddenTipoProductoId.value =
-              tipoProductoId !== null && tipoProductoId !== undefined
-                ? String(tipoProductoId)
-                : "";
-          }
-
           if (inputTipoProducto) {
-            const tipos = Array.isArray(window.__tiposProductoCache)
-              ? window.__tiposProductoCache
-              : [];
-            const match = tipos.find((t) => {
-              const tId = Number.parseInt(t?.tipoProductoId, 10);
-              return (
-                Number.isInteger(tId) &&
-                tipoProductoId !== null &&
-                Number.isInteger(Number.parseInt(tipoProductoId, 10)) &&
-                tId === Number.parseInt(tipoProductoId, 10)
-              );
-            });
-
-            if (match && match.nombre) {
-              inputTipoProducto.value = String(match.nombre);
+            const tipoIdParsed = Number.parseInt(tipoProductoId, 10);
+            if (Number.isInteger(tipoIdParsed) && tipoIdParsed > 0) {
+              // Choices.js está inicializado en loadTiposProducto(); seleccionar por value (id)
+              if (tipoProductoChoices) {
+                try {
+                  tipoProductoChoices.setChoiceByValue(String(tipoIdParsed));
+                } catch (e) {
+                  inputTipoProducto.value = String(tipoIdParsed);
+                }
+              } else {
+                inputTipoProducto.value = String(tipoIdParsed);
+              }
             } else {
-              inputTipoProducto.value = inputTipoProducto.value || "";
+              // No hay ID válido, dejar vacío
+              if (tipoProductoChoices) {
+                try {
+                  tipoProductoChoices.removeActiveItems();
+                } catch (e) {
+                  inputTipoProducto.value = "";
+                }
+              } else {
+                inputTipoProducto.value = "";
+              }
             }
           }
 
@@ -733,6 +890,8 @@
             option.textContent = proveedor.nombreempresa;
             select.appendChild(option);
           });
+
+          bindTipoProductoEmpaqueAutomation();
         } catch (error) {
           console.error("Error cargando proveedores:", error);
           showToast(
@@ -742,11 +901,129 @@
         }
       }
 
+      async function obtenerReglasEmpaqueProveedor(proveedorId) {
+        const key = String(proveedorId || "").trim();
+        if (!key) return null;
+        if (__reglasEmpaqueProveedorCache[key]) {
+          return __reglasEmpaqueProveedorCache[key];
+        }
+
+        try {
+          const response = await fetch(
+            `${API_BASE_URL}/admin/proveedores/${encodeURIComponent(key)}/reglas`,
+            {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${adminToken}`,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+          const data = await response.json().catch(() => ({}));
+          if (!response.ok || !data?.success) {
+            throw new Error(data?.message || "No se pudieron cargar reglas de empaque");
+          }
+
+          const reglas = data?.data?.reglas;
+          const normalized = reglas && typeof reglas === "object" ? reglas : {};
+          __reglasEmpaqueProveedorCache[key] = normalized;
+          return normalized;
+        } catch (error) {
+          console.warn("No se pudieron obtener reglas de empaque del proveedor:", error);
+          return null;
+        }
+      }
+
+      function sugerirPack(valor) {
+        const parsed = Number.parseInt(valor, 10);
+        if (!Number.isInteger(parsed) || parsed < 2) return;
+
+        // Si ya está en customPacks, no hacemos nada
+        if (Array.isArray(customPacks) && customPacks.includes(parsed)) {
+          return;
+        }
+
+        // Preferimos usar el UI existente (chips sugeridos) para que se re-renderice correctamente
+        const suggestionBtn = document.querySelector(
+          `#packsSuggestionsContainer button[data-pack="${parsed}"]`
+        );
+        if (suggestionBtn) {
+          suggestionBtn.click();
+          return;
+        }
+
+        // Si no existe sugerencia, lo agregamos usando el input/botón existente
+        const packInput = document.getElementById("nuevoPackInput");
+        const agregarBtn = document.getElementById("agregarPackBtn");
+        if (packInput) {
+          packInput.value = String(parsed);
+        }
+        if (agregarBtn) {
+          agregarBtn.click();
+        } else {
+          // Fallback: actualizar estado aunque no se renderice inmediatamente
+          customPacks.push(parsed);
+        }
+      }
+
+      async function aplicarReglaEmpaqueDesdeTipo(origen = "tipo") {
+        const selectTipo = document.getElementById("inputTipoProducto");
+        const selectProveedor = document.getElementById("proveedor-producto");
+        if (!selectTipo || !selectProveedor) return;
+
+        const proveedorId = (selectProveedor.value || "").toString().trim();
+        if (!proveedorId) return;
+
+        const tipoIdRaw = (selectTipo.value || "").toString().trim();
+        const tipoId = Number.parseInt(tipoIdRaw, 10);
+        if (!Number.isInteger(tipoId) || tipoId <= 0) return;
+
+        const reglas = await obtenerReglasEmpaqueProveedor(proveedorId);
+        if (!reglas) return;
+
+        const cantidad = Number.parseInt(reglas[String(tipoId)] ?? reglas[tipoId], 10);
+        if (!Number.isInteger(cantidad) || cantidad <= 1) {
+          return;
+        }
+
+        // Desmarcar venta individual si existe el checkbox
+        const ventaIndividualCheckbox = document.getElementById("tamano-unidad");
+        if (ventaIndividualCheckbox && ventaIndividualCheckbox.checked) {
+          ventaIndividualCheckbox.checked = false;
+        }
+
+        // Sugerir/pre-seleccionar pack según regla
+        sugerirPack(cantidad);
+
+        if (typeof showToast === "function") {
+          showToast(
+            `Configuración aplicada: Venta por Docena (${cantidad} pzs) según proveedor.`,
+            "info"
+          );
+        }
+      }
+
+      function bindTipoProductoEmpaqueAutomation() {
+        if (__tipoProductoEmpaqueListenerBound) return;
+
+        const selectTipo = document.getElementById("inputTipoProducto");
+        const selectProveedor = document.getElementById("proveedor-producto");
+        if (!selectTipo || !selectProveedor) return;
+
+        __tipoProductoEmpaqueListenerBound = true;
+
+        selectTipo.addEventListener("change", () => {
+          aplicarReglaEmpaqueDesdeTipo("tipo");
+        });
+
+        selectProveedor.addEventListener("change", () => {
+          aplicarReglaEmpaqueDesdeTipo("proveedor");
+        });
+      }
+
       async function loadTiposProducto() {
-        const input = document.getElementById("inputTipoProducto");
-        const datalist = document.getElementById("tipoProductoOptions");
-        const hiddenId = document.getElementById("tipoProductoIdHidden");
-        if (!input || !datalist || !hiddenId) return;
+        const select = document.getElementById("inputTipoProducto");
+        if (!select) return;
 
         try {
           const response = await fetch(`${API_BASE_URL}/public/tipos-producto`, {
@@ -767,45 +1044,59 @@
               : [];
 
           window.__tiposProductoCache = tipos;
-          datalist.innerHTML = "";
+          tipoProductoIdsDisponibles = new Set();
+
+          const previousValue = select.value;
+          select.innerHTML = "";
+
+          const placeholderOption = document.createElement("option");
+          placeholderOption.value = "";
+          placeholderOption.textContent = "Escribe o selecciona un tipo";
+          select.appendChild(placeholderOption);
+
           tipos.forEach((tipo) => {
             const id = tipo?.tipoProductoId;
             const nombre = tipo?.nombre;
-            if (id === undefined || id === null) return;
             const parsed = Number.parseInt(id, 10);
             if (!Number.isInteger(parsed) || parsed <= 0) return;
             const label = (nombre || "").toString().trim();
             if (!label) return;
 
+            tipoProductoIdsDisponibles.add(parsed);
+
             const option = document.createElement("option");
-            option.value = label;
-            option.dataset.id = String(parsed);
-            datalist.appendChild(option);
+            option.value = String(parsed);
+            option.textContent = label;
+            select.appendChild(option);
           });
 
-          const syncTipoProductoId = () => {
-            const raw = (input.value || "").toString().trim();
-            if (!raw) {
-              hiddenId.value = "";
-              return;
+          if (tipoProductoChoices) {
+            try {
+              tipoProductoChoices.destroy();
+            } catch (e) {
+              // ignore
             }
+            tipoProductoChoices = null;
+          }
 
-            const tiposLocal = Array.isArray(window.__tiposProductoCache)
-              ? window.__tiposProductoCache
-              : [];
+          tipoProductoChoices = new Choices(select, {
+            searchEnabled: true,
+            searchResultLimit: 100,
+            shouldSort: false,
+            allowHTML: false,
+            removeItemButton: true,
+            duplicateItemsAllowed: false,
+            addItems: true,
+            addItemText: (value) => `Agregar "${value}"`,
+          });
 
-            const match = tiposLocal.find((t) => {
-              const n = (t?.nombre || "").toString().trim();
-              return n && n.toLowerCase() === raw.toLowerCase();
-            });
-
-            const matchId = match?.tipoProductoId;
-            const parsed = Number.parseInt(matchId, 10);
-            hiddenId.value = Number.isInteger(parsed) && parsed > 0 ? String(parsed) : "";
-          };
-
-          input.addEventListener("input", syncTipoProductoId);
-          input.addEventListener("change", syncTipoProductoId);
+          if (previousValue) {
+            try {
+              tipoProductoChoices.setChoiceByValue(String(previousValue));
+            } catch (e) {
+              // ignore
+            }
+          }
         } catch (error) {
           console.error("Error cargando tipos de producto:", error);
           showToast(
@@ -1321,6 +1612,61 @@
       const btnClearImages = document.getElementById("btn-clear-images");
       let selectedImageFiles = [];
 
+      function actualizarBadgesOrden(grid) {
+        if (!grid) return;
+        const items = Array.from(grid.children || []).filter(
+          (el) => el && el.classList && el.classList.contains("sortable-item")
+        );
+        items.forEach((el, idx) => {
+          const badge = el.querySelector(".image-order-badge");
+          if (!badge) return;
+          badge.textContent = idx === 0 ? "⭐ PORTADA" : String(idx + 1);
+          badge.style.background = idx === 0 ? "var(--razo-orange)" : "rgba(17, 24, 39, 0.85)";
+        });
+      }
+
+      function initSortablePreview() {
+        if (!imagenesPreviewGrid) return;
+        if (typeof Sortable === "undefined") return;
+        if (sortablePreviewInstance) return;
+
+        sortablePreviewInstance = new Sortable(imagenesPreviewGrid, {
+          animation: 150,
+          ghostClass: "sortable-ghost",
+          onEnd: function (evt) {
+            const oldIndex = evt.oldIndex;
+            const newIndex = evt.newIndex;
+            if (oldIndex === undefined || newIndex === undefined) return;
+            if (oldIndex === newIndex) return;
+            if (!Array.isArray(selectedImageFiles)) return;
+
+            const moved = selectedImageFiles.splice(oldIndex, 1)[0];
+            selectedImageFiles.splice(newIndex, 0, moved);
+
+            renderImagesPreview();
+          },
+        });
+      }
+
+      function initSortableServer() {
+        const grid = document.getElementById("galeria-imagenes-server");
+        if (!grid) return;
+        if (typeof Sortable === "undefined") return;
+        if (sortableServerInstance) return;
+
+        sortableServerInstance = new Sortable(grid, {
+          animation: 150,
+          ghostClass: "sortable-ghost",
+          onEnd: function () {
+            const ordered = Array.from(grid.children || [])
+              .map((el) => (el?.dataset?.url || "").toString().trim())
+              .filter(Boolean);
+            serverImagesOrder = ordered;
+            actualizarBadgesOrden(grid);
+          },
+        });
+      }
+
       function clearSelectedImages() {
         selectedImageFiles = [];
         if (inputImagen) {
@@ -1348,6 +1694,13 @@
           card.style.border = "1px solid #e5e7eb";
           card.style.overflow = "hidden";
           card.style.background = "#fff";
+          card.style.cursor = "move";
+          card.classList.add("sortable-item");
+          card.dataset.localIndex = String(index);
+
+          const badge = document.createElement("div");
+          badge.className = "image-order-badge";
+          badge.textContent = index === 0 ? "⭐ PORTADA" : String(index + 1);
 
           const img = document.createElement("img");
           img.alt = "Vista previa";
@@ -1386,10 +1739,14 @@
             renderImagesPreview();
           });
 
+          card.appendChild(badge);
           card.appendChild(img);
           card.appendChild(btn);
           imagenesPreviewGrid.appendChild(card);
         });
+
+        initSortablePreview();
+        actualizarBadgesOrden(imagenesPreviewGrid);
       }
 
       // Event listener para cambio de archivos
@@ -1505,26 +1862,28 @@
 
             const formData = {
               nombre: document.getElementById("nombre").value.trim(),
-              sku_maestro: document.getElementById("inputSkuMaestro").value,
+              sku_maestro: document.getElementById("inputSkuMaestro").value.trim(),
               descripcion:
                 document.getElementById("descripcion").value.trim() || null,
               categoriaId: document.getElementById("categoriaId").value || null,
               TipoProductoID: (() => {
-                const raw = document.getElementById("tipoProductoIdHidden")?.value;
+                const raw = document.getElementById("inputTipoProducto")?.value;
                 if (raw === undefined || raw === null) return null;
                 const txt = String(raw).trim();
                 if (!txt) return null;
                 const parsed = Number.parseInt(txt, 10);
-                return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+                if (!Number.isInteger(parsed) || parsed <= 0) return null;
+                return tipoProductoIdsDisponibles.has(parsed) ? parsed : null;
               })(),
               TipoProducto: (() => {
                 const raw = document.getElementById("inputTipoProducto")?.value;
                 if (raw === undefined || raw === null) return null;
                 const txt = String(raw).trim();
                 if (!txt) return null;
-                const idRaw = document.getElementById("tipoProductoIdHidden")?.value;
-                const idTxt = idRaw !== undefined && idRaw !== null ? String(idRaw).trim() : "";
-                if (idTxt) return null;
+                const parsed = Number.parseInt(txt, 10);
+                if (Number.isInteger(parsed) && parsed > 0 && tipoProductoIdsDisponibles.has(parsed)) {
+                  return null;
+                }
                 return txt;
               })(),
               proveedorId: (() => {
@@ -1533,7 +1892,7 @@
                   .value.trim();
                 if (!value) return null;
                 const parsed = Number.parseInt(value, 10);
-                return Number.isNaN(parsed) ? null : parsed;
+                return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
               })(),
               tamanoIds: tamanoIdsSeleccionados,
               packs: Array.isArray(customPacks)
@@ -1542,6 +1901,12 @@
                     .sort((a, b) => a - b)
                 : [],
             };
+
+            if (productoIdEditando) {
+              formData.ordenImagenes = Array.isArray(serverImagesOrder)
+                ? serverImagesOrder.slice()
+                : [];
+            }
 
             const venderIndividual =
               unidadTamanoId !== null &&

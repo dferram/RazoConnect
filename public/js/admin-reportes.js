@@ -8,6 +8,11 @@ const userRoleEl = document.getElementById("userRole");
 const userAvatarEl = document.getElementById("userAvatar");
 const logoutBtn = document.getElementById("logoutBtn");
 
+function safeSetText(el, value) {
+  if (!el) return;
+  el.textContent = value;
+}
+
 const fechaDesdeInput = document.getElementById("fechaDesde");
 const fechaHastaInput = document.getElementById("fechaHasta");
 const generarBtn = document.getElementById("generarReporteBtn");
@@ -57,18 +62,23 @@ async function loadAdminProfile() {
     const data = await response.json();
     if (data.success && data.data && data.data.admin) {
       const admin = data.data.admin;
-      userNameEl.textContent = admin.nombre;
-      userRoleEl.textContent =
-        admin.rol === "superadmin" ? "Super Admin" : "Admin";
-      const initials = admin.nombre
-        .split(" ")
-        .map((part) => part.charAt(0).toUpperCase())
-        .join("")
-        .slice(0, 2);
-      userAvatarEl.textContent = initials || "A";
+      safeSetText(userNameEl, admin.nombre || "Administrador");
+      safeSetText(
+        userRoleEl,
+        admin.rol === "superadmin" ? "Super Admin" : "Admin"
+      );
+
+      // Iniciales para avatar
+      const nombre = (admin.nombre || "A").toString();
+      const words = nombre.split(" ").filter(Boolean);
+      const initials =
+        words.length >= 2
+          ? `${words[0].charAt(0)}${words[1].charAt(0)}`
+          : nombre.substring(0, 2);
+      safeSetText(userAvatarEl, initials.toUpperCase());
     }
   } catch (error) {
-    console.error("Error al verificar admin:", error);
+    console.error("Error cargando perfil de admin:", error);
     localStorage.removeItem("razoconnect_admin_token");
     localStorage.removeItem("razoconnect_admin");
     window.location.href = "/login.html";

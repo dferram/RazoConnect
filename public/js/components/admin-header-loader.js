@@ -1,242 +1,169 @@
 (function () {
   "use strict";
 
-  async function cargarAdminHeader() {
+  document.addEventListener("DOMContentLoaded", () => {
     const container = document.getElementById("admin-header-container");
     if (!container) return;
 
-    try {
-      const res = await fetch("/components/admin-header.html", {
-        headers: { "Content-Type": "text/html; charset=utf-8" },
-      });
-      if (!res.ok) {
-        throw new Error(`No se pudo cargar admin header: ${res.status}`);
-      }
+    fetch("/components/admin-header.html")
+      .then((response) => response.text())
+      .then((html) => {
+        container.innerHTML = html;
+        asegurarAliasesLegacy(container);
+        initializeHeader();
+      })
+      .catch((err) => console.error("Error cargando header:", err));
+  });
 
-      container.innerHTML = await res.text();
+  function asegurarAliasesLegacy(container) {
+    if (!container) return;
 
-      inicializarTitulo();
-      inicializarUsuario();
-      inicializarSidebarToggle();
-      await actualizarNotificacionesStaff();
-    } catch (error) {
-      console.error("Error cargando admin header:", error);
-    }
-  }
+    const existing = document.getElementById("adminHeaderLegacyAliases");
+    if (existing) return;
 
-  function getAdminToken() {
-    return localStorage.getItem("razoconnect_admin_token");
-  }
-
-  function decodeJWT(token) {
-    try {
-      if (!token) return null;
-      const parts = token.split(".");
-      if (parts.length !== 3) return null;
-      const payload = parts[1].replace(/-/g, "+").replace(/_/g, "/");
-      const jsonPayload = decodeURIComponent(
-        atob(payload)
-          .split("")
-          .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
-          .join("")
-      );
-      return JSON.parse(jsonPayload);
-    } catch {
-      return null;
-    }
-  }
-
-  function detectarTipoUsuario() {
-    const adminRaw = localStorage.getItem("razoconnect_admin");
-    if (adminRaw) {
-      try {
-        return { type: "admin", data: JSON.parse(adminRaw) };
-      } catch {
-        return { type: "admin", data: null };
-      }
-    }
-
-    const token = getAdminToken();
-    const payload = decodeJWT(token);
-    const rol = (payload?.rol || "").toString().toLowerCase();
-    const roles = Array.isArray(payload?.roles)
-      ? payload.roles.map((r) => (r || "").toString().toLowerCase())
-      : [];
-
-    if (rol === "agente" || roles.includes("agente")) {
-      return { type: "agente", data: payload };
-    }
-
-    return { type: "admin", data: payload };
-  }
-
-  function getNombreUsuario(info) {
-    const data = info?.data || {};
-    const nombreRaw =
-      data?.nombre ||
-      data?.Nombre ||
-      data?.nombres ||
-      data?.Nombres ||
-      data?.email ||
-      "Usuario";
-    return (nombreRaw || "Usuario").toString().trim();
-  }
-
-  function getRolTexto(info) {
-    const data = info?.data || {};
-
-    if (info?.type === "agente") {
-      return "AGENTE DE VENTAS";
-    }
-
-    const roles = Array.isArray(data?.roles)
-      ? data.roles.map((r) => (r || "").toString().toLowerCase())
-      : [];
-    const rol = (data?.rol || "").toString().toLowerCase();
-
-    if (roles.includes("superadmin") || roles.includes("super-admin") || rol === "superadmin") {
-      return "SUPER ADMIN";
-    }
-
-    if (rol) {
-      return rol.toUpperCase();
-    }
-
-    return "ADMIN";
+    const wrapper = document.createElement("div");
+    wrapper.id = "adminHeaderLegacyAliases";
+    wrapper.style.display = "none";
+    wrapper.innerHTML = `
+      <span id="adminHeaderTitle"></span>
+      <span id="userName"></span>
+      <span id="userRole"></span>
+      <span id="userAvatar"></span>
+    `;
+    container.appendChild(wrapper);
   }
 
   function getIniciales(nombre) {
     const parts = (nombre || "")
+      .toString()
+      .trim()
       .split(/\s+/)
-      .map((p) => p.trim())
       .filter(Boolean);
-    if (!parts.length) return "U";
-    const first = parts[0][0] || "U";
-    const second = parts.length > 1 ? parts[1][0] : (parts[0][1] || "");
-    return (first + (second || "")).toUpperCase();
+
+    if (!parts.length) return "AD";
+    const first = parts[0]?.charAt(0) || "A";
+    const second = parts.length >= 2 ? parts[1]?.charAt(0) : parts[0]?.charAt(1);
+    return `${first}${second || ""}`.toUpperCase();
   }
 
-  function inicializarTitulo() {
-    const titleEl = document.getElementById("adminHeaderTitle");
-    if (!titleEl) return;
+  function initializeHeader() {
+    // 1. Cargar Datos del Usuario (LocalStorage)
+    let adminData = null;
+    try {
+      adminData = JSON.parse(localStorage.getItem("razoconnect_admin"));
+    } catch {
+      adminData = null;
+    }
 
-    const fromData = document.body?.dataset?.pageTitle;
-    if (fromData) {
-      titleEl.textContent = fromData;
+    // Si no hay sesión, redirigir (Protección básica)
+    if (!adminData) {
+      window.location.href = "/login.html";
       return;
     }
 
-    const existing = document.querySelector(".admin-header-title");
-    if (existing && existing !== titleEl && existing.textContent) {
-      titleEl.textContent = existing.textContent.trim();
-    }
-  }
+    const nombre = (adminData.nombre || "Admin").toString().trim();
+    const rolSession = (adminData.rol || adminData.role || "").toString().trim();
+    const rolRaw = rolSession.toLowerCase();
+    const isSuperAdmin = rolRaw === "super admin" || rolRaw === "superadmin";
+    const rolTexto = isSuperAdmin ? "Super Admin" : "Administrador";
 
-  function inicializarUsuario() {
-    const info = detectarTipoUsuario();
-    const nombre = getNombreUsuario(info);
+    // Llenar datos en el Header
+    const headerUserName = document.getElementById("headerUserName");
+    const headerUserRole = document.getElementById("headerUserRole");
+    const headerUserAvatar = document.getElementById("headerUserAvatar");
 
-    const userNameEl = document.getElementById("userName");
-    const userRoleEl = document.getElementById("userRole");
-    const avatarEl = document.getElementById("userAvatar");
+    if (headerUserName) headerUserName.textContent = nombre || "Admin";
+    if (headerUserRole) headerUserRole.textContent = rolTexto;
+    if (headerUserAvatar) headerUserAvatar.textContent = getIniciales(nombre);
 
-    if (userNameEl) userNameEl.textContent = nombre;
-    if (userRoleEl) userRoleEl.textContent = getRolTexto(info);
-    if (avatarEl) avatarEl.textContent = getIniciales(nombre);
+    // Backwards compat IDs
+    const legacyUserName = document.getElementById("userName");
+    const legacyUserRole = document.getElementById("userRole");
+    const legacyUserAvatar = document.getElementById("userAvatar");
+    const legacyAdminName = document.getElementById("admin-name");
+    if (legacyUserName) legacyUserName.textContent = nombre || "Admin";
+    if (legacyUserRole) legacyUserRole.textContent = rolTexto;
+    if (legacyUserAvatar) legacyUserAvatar.textContent = getIniciales(nombre);
+    if (legacyAdminName) legacyAdminName.textContent = nombre || "Admin";
 
-    const logoutBtn = document.getElementById("adminLogoutBtn");
-    if (logoutBtn) {
-      logoutBtn.addEventListener("click", (e) => {
+    // 2.1 Dropdown dinámico (evitar duplicados)
+    const dropdownContainer = document.getElementById("user-dropdown-container");
+    if (dropdownContainer) {
+      dropdownContainer.innerHTML = "";
+
+      const header = document.createElement("div");
+      header.className = "dropdown-header";
+      header.innerHTML = `
+        <span class="d-block small text-muted">Conectado como</span>
+        <strong>${nombre || "Admin"}</strong>
+      `;
+
+      const divider1 = document.createElement("hr");
+      divider1.className = "dropdown-divider";
+
+      const linkNotificaciones = document.createElement("a");
+      linkNotificaciones.href = "/staff-notificaciones.html";
+      linkNotificaciones.className = "dropdown-item";
+      linkNotificaciones.innerHTML = `<i class="bi bi-bell"></i> Notificaciones`;
+
+      const itemsFragment = document.createDocumentFragment();
+      itemsFragment.appendChild(header);
+      itemsFragment.appendChild(divider1);
+      itemsFragment.appendChild(linkNotificaciones);
+
+      if (isSuperAdmin) {
+        const linkAgregarAdmin = document.createElement("a");
+        linkAgregarAdmin.href = "/admin-nuevo-admin.html";
+        linkAgregarAdmin.className = "dropdown-item";
+        linkAgregarAdmin.innerHTML = `<i class="bi bi-person-plus"></i> Agregar Admin`;
+        itemsFragment.appendChild(linkAgregarAdmin);
+      }
+
+      const divider2 = document.createElement("hr");
+      divider2.className = "dropdown-divider";
+
+      const linkLogout = document.createElement("a");
+      linkLogout.href = "#";
+      linkLogout.className = "dropdown-item text-danger";
+      linkLogout.id = "btnLogout";
+      linkLogout.innerHTML = `<i class="bi bi-box-arrow-right"></i> Cerrar Sesión`;
+      linkLogout.addEventListener("click", (e) => {
         e.preventDefault();
-        logoutUnificado();
-      });
-    }
-  }
-
-  function logoutUnificado() {
-    try {
-      if (typeof clearAuthData === "function") {
-        clearAuthData();
-      } else {
-        localStorage.removeItem("razoconnect_admin_token");
         localStorage.removeItem("razoconnect_admin");
-        localStorage.removeItem("razoconnect_token");
-        localStorage.removeItem("razoconnect_user");
-        localStorage.removeItem("usuario");
-      }
-      sessionStorage.clear();
-    } catch (error) {
-      console.error("Error al cerrar sesión:", error);
-    }
-
-    window.location.href = "/login.html";
-  }
-
-  async function actualizarNotificacionesStaff() {
-    const token = getAdminToken();
-    const badge = document.getElementById("badgeNotifMenu");
-    const dot = document.getElementById("indicadorAlertaUsuario");
-
-    if (!token) {
-      badge?.classList.add("d-none");
-      dot?.classList.add("d-none");
-      return;
-    }
-
-    try {
-      const res = await fetch("/api/staff/notificaciones/unread-count", {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
+        localStorage.removeItem("razoconnect_admin_token");
+        window.location.href = "/login.html";
       });
-      const data = await res.json();
-      const count = Number.parseInt(data?.count, 10) || 0;
 
-      if (!res.ok || data?.success === false) {
-        badge?.classList.add("d-none");
-        dot?.classList.add("d-none");
-        return;
-      }
+      itemsFragment.appendChild(divider2);
+      itemsFragment.appendChild(linkLogout);
 
-      if (count > 0) {
-        if (badge) {
-          badge.textContent = String(count);
-          badge.classList.remove("d-none");
-        }
-        dot?.classList.remove("d-none");
-      } else {
-        badge?.classList.add("d-none");
-        dot?.classList.add("d-none");
-      }
-    } catch (error) {
-      console.error("Error obteniendo conteo de notificaciones staff:", error);
-      badge?.classList.add("d-none");
-      dot?.classList.add("d-none");
+      dropdownContainer.appendChild(itemsFragment);
     }
-  }
 
-  function inicializarSidebarToggle() {
-    const btn = document.getElementById("btnToggleSidebar");
-    if (!btn) return;
+    // 2. Título de la Página
+    const pageTitle = document.body?.getAttribute("data-page-title") || document.title;
+    const headerPageTitle = document.getElementById("headerPageTitle");
+    if (headerPageTitle) headerPageTitle.textContent = pageTitle;
+    const legacyTitle = document.getElementById("adminHeaderTitle");
+    if (legacyTitle) legacyTitle.textContent = pageTitle;
 
-    btn.addEventListener("click", () => {
-      document.body.classList.toggle("sidebar-collapsed");
-    });
-  }
+    // 3. Lógica del Dropdown (Toggle)
+    const trigger = document.getElementById("userMenuTrigger");
+    const menu = document.getElementById("userDropdownMenu");
 
-  window.AdminHeader = {
-    setTitle: (title) => {
-      const titleEl = document.getElementById("adminHeaderTitle");
-      if (titleEl) titleEl.textContent = title;
-    },
-    refreshNotifications: () => actualizarNotificacionesStaff(),
-  };
+    if (trigger && menu) {
+      trigger.addEventListener("click", (e) => {
+        e.stopPropagation();
+        menu.classList.toggle("show");
+      });
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", cargarAdminHeader);
-  } else {
-    cargarAdminHeader();
+      document.addEventListener("click", (e) => {
+        if (!menu.contains(e.target) && !trigger.contains(e.target)) {
+          menu.classList.remove("show");
+        }
+      });
+    }
+
+    // Nota: logout se enlaza en el dropdown dinámico.
   }
 })();

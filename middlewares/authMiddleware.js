@@ -1,5 +1,18 @@
 const { verifyToken } = require("../utils/jwtHelper");
 
+function normalizeRole(role) {
+  return (role || "").toString().trim().toLowerCase();
+}
+
+function getUserRoles(req) {
+  if (!req?.user) return [];
+  const roles =
+    Array.isArray(req.user.roles) && req.user.roles.length
+      ? req.user.roles
+      : [req.user.rol].filter(Boolean);
+  return roles.map(normalizeRole).filter(Boolean);
+}
+
 /**
  * Middleware para verificar autenticación JWT
  */
@@ -50,12 +63,9 @@ const authorize = (roles = []) => {
     }
 
     if (roles.length) {
-      const userRoles =
-        Array.isArray(req.user.roles) && req.user.roles.length
-          ? req.user.roles
-          : [req.user.rol].filter(Boolean);
-
-      const hasRole = userRoles.some((role) => roles.includes(role));
+      const allowedRoles = roles.map(normalizeRole).filter(Boolean);
+      const userRoles = getUserRoles(req);
+      const hasRole = userRoles.some((role) => allowedRoles.includes(role));
 
       if (!hasRole) {
         return res.status(403).json({
@@ -89,14 +99,11 @@ const authorizeAdmin = (req, res, next) => {
     });
   }
 
-  const userRoles =
-    Array.isArray(req.user.roles) && req.user.roles.length
-      ? req.user.roles
-      : [req.user.rol].filter(Boolean);
+  const userRoles = getUserRoles(req);
 
   // Verificar que tenga un rol de admin válido
   const hasAdminRole = userRoles.some((role) =>
-    ["admin", "superadmin"].includes(role)
+    ["admin", "superadmin", "super-admin", "super admin"].includes(role)
   );
 
   if (!hasAdminRole) {
@@ -110,10 +117,11 @@ const authorizeAdmin = (req, res, next) => {
 };
 
 const verifySuperAdmin = (req, res, next) => {
-  const rol = req.user?.rol ? String(req.user.rol).toLowerCase() : "";
-  if (req.user && rol === "superadmin") {
-    return next();
-  }
+  const userRoles = getUserRoles(req);
+  const isSuperAdmin = userRoles.some((role) =>
+    ["superadmin", "super-admin", "super admin"].includes(role)
+  );
+  if (req.user && isSuperAdmin) return next();
   return res.status(403).json({
     success: false,
     message: "Acceso denegado. Se requieren permisos de Super Administrador.",

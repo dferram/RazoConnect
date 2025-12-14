@@ -13,6 +13,7 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const { generateCodigoAgente } = require("../utils/agentCode");
 const { registrarLog } = require("../services/loggerService");
+const inventoryService = require("../services/inventoryService");
 
 let agenteAdminColumnsCache = null;
 
@@ -72,6 +73,384 @@ const subirEvidenciaRecepcionOC = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Error al subir la evidencia",
+    });
+  }
+};
+
+/**
+ * Recepción de mercancía inteligente (entrada por bultos/cajas)
+ * POST /api/admin/recepcion
+ * Body: { varianteId, cantidadBultos, esExcepcion, comentarios }
+ */
+const recepcionarMercancia = async (req, res) => {
+  const client = await db.pool.connect();
+
+  try {
+    const { varianteId, cantidadBultos, esExcepcion, comentarios } = req.body;
+
+    const parsedVarianteId = Number.parseInt(varianteId, 10);
+    if (!Number.isInteger(parsedVarianteId) || parsedVarianteId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "varianteId inválido",
+      });
+    }
+
+    const parsedBultos = Number.parseInt(cantidadBultos, 10);
+    if (!Number.isInteger(parsedBultos) || parsedBultos <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "cantidadBultos inválida",
+      });
+    }
+
+    const comentariosTrim = (comentarios || "").toString().trim();
+    const flagExcepcion = Boolean(esExcepcion);
+    if (flagExcepcion && !comentariosTrim) {
+      return res.status(400).json({
+        success: false,
+        message: "Si marcas excepción, debes indicar el detalle del problema",
+      });
+    }
+
+    await client.query("BEGIN");
+
+    // 1) Obtener factor de empaque y tipo de empaque (si existe)
+    const varianteInfo = await client.query(
+      `SELECT
+         pv.varianteid,
+         pv.sku,
+         pv.piezasporpaquete,
+         tp.nombre AS tipoempaque
+       FROM producto_variantes pv
+       LEFT JOIN tipoproducto tp ON tp.tipoproductoid = pv.tipoproductoid
+       WHERE pv.varianteid = $1`,
+      [parsedVarianteId]
+    );
+
+    if (!varianteInfo.rows.length) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({
+        success: false,
+        message: "Variante no encontrada",
+      });
+    }
+
+    const row = varianteInfo.rows[0];
+    const piezasPorPaquete =
+      Number.isInteger(Number.parseInt(row.piezasporpaquete, 10)) &&
+      Number.parseInt(row.piezasporpaquete, 10) > 0
+        ? Number.parseInt(row.piezasporpaquete, 10)
+        : 1;
+
+    const tipoEmpaque = (row.tipoempaque || "").toString().trim() || "bultos";
+
+    const totalUnidades = parsedBultos * piezasPorPaquete;
+    if (!Number.isInteger(totalUnidades) || totalUnidades <= 0) {
+      await client.query("ROLLBACK");
+      return res.status(400).json({
+        success: false,
+        message: "Total de unidades inválido",
+      });
+    }
+
+    const motivo = `Recepción Compra (x${parsedBultos} ${tipoEmpaque})${comentariosTrim ? ` - ${comentariosTrim}` : ""}`;
+
+    const { stockAnterior, stockNuevo } = await inventoryService.registrarMovimiento(
+      client,
+      {
+        varianteId: parsedVarianteId,
+        cantidadDelta: totalUnidades,
+        motivo,
+        usuarioId: req.user.id,
+        esExcepcion: flagExcepcion,
+      }
+    );
+
+    await client.query("COMMIT");
+
+    return res.json({
+      success: true,
+      message: "Recepción registrada exitosamente",
+      stockAnterior,
+      nuevoStock: stockNuevo,
+      data: {
+        varianteId: parsedVarianteId,
+        sku: row.sku,
+        piezasPorPaquete,
+        cantidadBultos: parsedBultos,
+        totalUnidades,
+        esExcepcion: flagExcepcion,
+      },
+    });
+  } catch (error) {
+    try {
+      await client.query("ROLLBACK");
+    } catch (e) {
+      // ignore
+    }
+    console.error("Error en recepcionarMercancia:", error);
+    const status = error && Number.isInteger(error.status) ? error.status : 500;
+    return res.status(status).json({
+      success: false,
+      message: error.message || "Error en el servidor",
+      error: error.message,
+      code: error.code,
+    });
+  } finally {
+    client.release();
+  }
+};
+
+/**
+ * Movimientos (Kardex) global con filtros
+ * GET /api/admin/movimientos
+ * Query params: varianteId, search, tipo (ENTRADA|SALIDA), fechaInicio, fechaFin
+ */
+const getMovimientosInventario = async (req, res) => {
+  try {
+    const where = [];
+    const values = [];
+
+    const varianteIdRaw = req.query.varianteId;
+    if (varianteIdRaw !== undefined && varianteIdRaw !== null && varianteIdRaw !== "") {
+      const varianteId = Number.parseInt(varianteIdRaw, 10);
+      if (!Number.isInteger(varianteId) || varianteId <= 0) {
+        return res.status(400).json({
+          success: false,
+          message: "varianteId inválido",
+        });
+      }
+      values.push(varianteId);
+      where.push(`li.varianteid = $${values.length}`);
+    }
+
+    const tipoRaw = (req.query.tipo || "").toString().trim().toUpperCase();
+    if (tipoRaw === "ENTRADA") {
+      where.push("li.cantidadcambiado > 0");
+    } else if (tipoRaw === "SALIDA") {
+      where.push("li.cantidadcambiado < 0");
+    } else if (tipoRaw) {
+      return res.status(400).json({
+        success: false,
+        message: "tipo inválido (usa ENTRADA o SALIDA)",
+      });
+    }
+
+    const searchRaw = (req.query.search || "").toString().trim();
+    if (searchRaw) {
+      values.push(`%${searchRaw}%`);
+      const p = `$${values.length}`;
+      where.push(
+        `(
+          pv.sku ILIKE ${p} OR
+          COALESCE(p.nombreproducto, '') ILIKE ${p} OR
+          COALESCE(li.motivo, '') ILIKE ${p} OR
+          COALESCE(pv.dimensiones, '') ILIKE ${p}
+        )`
+      );
+    }
+
+    const fechaInicioRaw = (req.query.fechaInicio || "").toString().trim();
+    if (fechaInicioRaw) {
+      values.push(fechaInicioRaw);
+      where.push(`li.fecha >= $${values.length}::timestamp`);
+    }
+
+    const fechaFinRaw = (req.query.fechaFin || "").toString().trim();
+    if (fechaFinRaw) {
+      values.push(fechaFinRaw);
+      where.push(`li.fecha <= $${values.length}::timestamp`);
+    }
+
+    const limitRaw = Number.parseInt(req.query.limit, 10);
+    const limit = Number.isInteger(limitRaw)
+      ? Math.min(Math.max(limitRaw, 1), 50)
+      : 50;
+    values.push(limit);
+    const limitParam = `$${values.length}`;
+
+    const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
+
+    let rows = [];
+
+    try {
+      const r = await db.query(
+        `SELECT
+           li.logid,
+           li.fecha,
+           li.varianteid,
+           li.cantidadcambiado,
+           ABS(li.cantidadcambiado) AS cantidad,
+           li.motivo,
+           li.nuevostock,
+           li.usuarioid,
+           li.es_excepcion,
+           pv.sku,
+           pv.dimensiones,
+           p.productoid,
+           p.nombreproducto,
+           COALESCE(
+             NULLIF(TRIM(a.nombre), ''),
+             NULLIF(TRIM(av.nombre || ' ' || av.apellido), ''),
+             NULL
+           ) AS usuario
+         FROM log_inventario li
+         INNER JOIN producto_variantes pv ON pv.varianteid = li.varianteid
+         INNER JOIN productos p ON p.productoid = pv.productoid
+         LEFT JOIN administradores a ON a.adminid = li.usuarioid
+         LEFT JOIN agentesdeventas av ON av.agenteid = li.usuarioid
+         ${whereSql}
+         ORDER BY li.fecha DESC
+         LIMIT ${limitParam}`,
+        values
+      );
+      rows = r.rows || [];
+    } catch (error) {
+      // Si la columna es_excepcion aún no existe, hacer fallback sin romper.
+      if (error && error.code === "42703") {
+        const r = await db.query(
+          `SELECT
+             li.logid,
+             li.fecha,
+             li.varianteid,
+             li.cantidadcambiado,
+             ABS(li.cantidadcambiado) AS cantidad,
+             li.motivo,
+             li.nuevostock,
+             li.usuarioid,
+             pv.sku,
+             pv.dimensiones,
+             p.productoid,
+             p.nombreproducto,
+             COALESCE(
+               NULLIF(TRIM(a.nombre), ''),
+               NULLIF(TRIM(av.nombre || ' ' || av.apellido), ''),
+               NULL
+             ) AS usuario
+           FROM log_inventario li
+           INNER JOIN producto_variantes pv ON pv.varianteid = li.varianteid
+           INNER JOIN productos p ON p.productoid = pv.productoid
+           LEFT JOIN administradores a ON a.adminid = li.usuarioid
+           LEFT JOIN agentesdeventas av ON av.agenteid = li.usuarioid
+           ${whereSql}
+           ORDER BY li.fecha DESC
+           LIMIT ${limitParam}`,
+          values
+        );
+        rows = r.rows || [];
+      } else {
+        throw error;
+      }
+    }
+
+    const movimientos = (rows || []).map((r) => {
+      const cantidadCambiado = Number.parseInt(r.cantidadcambiado, 10) || 0;
+      const tipoMovimiento = cantidadCambiado >= 0 ? "ENTRADA" : "SALIDA";
+      return {
+        logId: r.logid,
+        fecha: r.fecha,
+        varianteId: r.varianteid,
+        productoId: r.productoid,
+        productoNombre: r.nombreproducto,
+        sku: r.sku,
+        dimensiones: r.dimensiones,
+        tipoMovimiento,
+        cantidad: Number.parseInt(r.cantidad, 10) || 0,
+        motivo: r.motivo || "",
+        nuevoStock: Number.parseInt(r.nuevostock, 10) || 0,
+        usuarioId: r.usuarioid ?? null,
+        usuario: r.usuario || null,
+        esExcepcion: r.es_excepcion === true,
+      };
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        movimientos,
+        total: movimientos.length,
+      },
+    });
+  } catch (error) {
+    console.error("Error al obtener movimientos de inventario:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error en el servidor",
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * Historial (Kardex) de movimientos por variante
+ * GET /api/admin/inventario/:varianteId/historial
+ */
+const getHistorialInventarioVariante = async (req, res) => {
+  try {
+    const varianteId = Number.parseInt(req.params.varianteId, 10);
+    if (!Number.isInteger(varianteId) || varianteId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "varianteId inválido",
+      });
+    }
+
+    const limitRaw = Number.parseInt(req.query.limit, 10);
+    const limit = Number.isInteger(limitRaw)
+      ? Math.min(Math.max(limitRaw, 1), 50)
+      : 50;
+
+    const { rows } = await db.query(
+      `SELECT
+         li.fecha,
+         li.cantidadcambiado,
+         ABS(li.cantidadcambiado) AS cantidad,
+         li.motivo,
+         li.nuevostock,
+         li.usuarioid,
+         COALESCE(
+           NULLIF(TRIM(a.nombre), ''),
+           NULLIF(TRIM(av.nombre || ' ' || av.apellido), ''),
+           NULL
+         ) AS usuario
+       FROM log_inventario li
+       LEFT JOIN administradores a ON a.adminid = li.usuarioid
+       LEFT JOIN agentesdeventas av ON av.agenteid = li.usuarioid
+       WHERE li.varianteid = $1
+       ORDER BY li.fecha DESC
+       LIMIT $2`,
+      [varianteId, limit]
+    );
+
+    const movimientos = (rows || []).map((r) => {
+      const cantidadCambiado = Number.parseInt(r.cantidadcambiado, 10) || 0;
+      const tipoMovimiento = cantidadCambiado >= 0 ? "ENTRADA" : "SALIDA";
+      return {
+        fecha: r.fecha,
+        tipoMovimiento,
+        cantidad: Number.parseInt(r.cantidad, 10) || 0,
+        motivo: r.motivo || "",
+        nuevoStock: Number.parseInt(r.nuevostock, 10) || 0,
+        usuarioId: r.usuarioid ?? null,
+        usuario: r.usuario || null,
+      };
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        varianteId,
+        movimientos,
+        total: movimientos.length,
+      },
+    });
+  } catch (error) {
+    console.error("Error al obtener historial de inventario:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error en el servidor",
+      error: error.message,
     });
   }
 };
@@ -2850,6 +3229,7 @@ const actualizarProducto = async (req, res) => {
     proveedorId: proveedorIdRaw,
     activo,
     packs,
+    ordenImagenes,
   } = req.body;
 
   const client = await db.pool.connect();
@@ -2875,6 +3255,49 @@ const actualizarProducto = async (req, res) => {
     }
 
     const productoActual = productoResult.rows[0];
+
+    // Si viene un orden explícito de imágenes, actualizarlo aquí.
+    // Esto debe aplicarse inmediatamente (no requiere solicitud de cambio) porque es un atributo de presentación.
+    if (Array.isArray(ordenImagenes)) {
+      const desired = ordenImagenes
+        .map((u) => (u || "").toString().trim())
+        .filter(Boolean);
+
+      if (desired.length > 0) {
+        const existingImgs = await client.query(
+          `SELECT url_imagen
+           FROM producto_imagenes
+           WHERE productoid = $1`,
+          [productoId]
+        );
+
+        const existingUrls = new Set(
+          (existingImgs.rows || [])
+            .map((r) => (r.url_imagen || "").toString().trim())
+            .filter(Boolean)
+        );
+
+        const filteredDesired = desired.filter((u) => existingUrls.has(u));
+
+        // Agregar al final las imágenes que existan pero no estén en el arreglo recibido
+        const missing = Array.from(existingUrls).filter(
+          (u) => !filteredDesired.includes(u)
+        );
+
+        const finalOrder = [...filteredDesired, ...missing];
+
+        let orden = 0;
+        for (const url of finalOrder) {
+          orden += 1;
+          await client.query(
+            `UPDATE producto_imagenes
+             SET orden = $1
+             WHERE productoid = $2 AND url_imagen = $3`,
+            [orden, productoId, url]
+          );
+        }
+      }
+    }
 
     const normalizarReglaBackorder = (raw, fallback = "UNITARIO") => {
       if (raw === undefined || raw === null || String(raw).trim() === "") {
@@ -3138,97 +3561,124 @@ const ajustarInventario = async (req, res) => {
   const client = await db.pool.connect();
 
   try {
-    const { varianteId, cantidadCambio, motivo } = req.body;
+    const {
+      varianteId,
+      // Nuevo contrato
+      tipoMovimiento,
+      cantidad,
+      motivo,
+      usuarioId,
+      esExcepcion,
+      // Retro-compat
+      cantidadCambio,
+    } = req.body;
 
-    if (!varianteId || cantidadCambio === undefined || !motivo) {
+    if (!varianteId) {
       return res.status(400).json({
         success: false,
-        message: "varianteId, cantidadCambio y motivo son requeridos",
+        message: "varianteId es requerido",
       });
     }
 
-    if (cantidadCambio === 0) {
+    const tipoMov = (tipoMovimiento || "").toString().trim().toUpperCase();
+    const motivoNormalizado = (motivo || "").toString().trim();
+
+    // Permitir retro-compat: si viene cantidadCambio lo usamos, si no, usamos cantidad+tipoMovimiento
+    let cantidadDelta = null;
+    if (cantidadCambio !== undefined && cantidadCambio !== null) {
+      const parsed = Number.parseInt(cantidadCambio, 10);
+      cantidadDelta = Number.isFinite(parsed) ? parsed : null;
+    } else {
+      const parsedCantidad = Number.parseInt(cantidad, 10);
+      if (!Number.isFinite(parsedCantidad)) {
+        return res.status(400).json({
+          success: false,
+          message: "cantidad inválida",
+        });
+      }
+      if (!["ENTRADA", "SALIDA"].includes(tipoMov)) {
+        return res.status(400).json({
+          success: false,
+          message: "tipoMovimiento debe ser ENTRADA o SALIDA",
+        });
+      }
+
+      const absCantidad = Math.abs(parsedCantidad);
+      cantidadDelta = tipoMov === "SALIDA" ? -absCantidad : absCantidad;
+    }
+
+    if (cantidadDelta === null || !Number.isFinite(cantidadDelta)) {
+      return res.status(400).json({
+        success: false,
+        message: "cantidad inválida",
+      });
+    }
+
+    if (cantidadDelta === 0) {
       return res.status(400).json({
         success: false,
         message: "La cantidad de cambio no puede ser cero",
       });
     }
 
-    await client.query("BEGIN");
-
-    const varianteResult = await client.query(
-      `SELECT VarianteID, ProductoID, SKU, Stock
-       FROM Producto_Variantes
-       WHERE VarianteID = $1`,
-      [varianteId]
-    );
-
-    if (varianteResult.rows.length === 0) {
-      await client.query("ROLLBACK");
-      return res.status(404).json({
-        success: false,
-        message: "Variante no encontrada",
-      });
-    }
-
-    const variante = varianteResult.rows[0];
-    const stockActual = variante.stock || 0;
-    const nuevoStock = stockActual + cantidadCambio;
-
-    if (nuevoStock < 0) {
-      await client.query("ROLLBACK");
+    // Para el contrato nuevo, motivo es requerido. En retro-compat, mantenemos el mismo requisito.
+    if (!motivoNormalizado) {
       return res.status(400).json({
         success: false,
-        message: `Stock insuficiente. Stock actual: ${stockActual}, cambio solicitado: ${cantidadCambio}`,
+        message: "motivo es requerido",
       });
     }
 
-    await client.query(
-      "UPDATE Producto_Variantes SET Stock = $1 WHERE VarianteID = $2",
-      [nuevoStock, varianteId]
-    );
+    await client.query("BEGIN");
 
-    const motivoNormalizado = (motivo || "").toString().trim();
-    const isEntrada = cantidadCambio > 0 || motivoNormalizado === "entrada_inicial";
-    const motivoLog = (() => {
-      if (!motivoNormalizado) return isEntrada ? "Entrada" : "Salida";
-      if (motivoNormalizado === "entrada_inicial") {
-        return "Entrada: Inventario Inicial / Compra";
+    const resolvedUsuarioId = Number.isInteger(Number.parseInt(usuarioId, 10))
+      ? Number.parseInt(usuarioId, 10)
+      : req.user.id;
+
+    const { stockAnterior, stockNuevo } = await inventoryService.registrarMovimiento(
+      client,
+      {
+        varianteId,
+        cantidadDelta,
+        motivo: motivoNormalizado,
+        usuarioId: resolvedUsuarioId,
+        esExcepcion,
       }
-      return isEntrada ? `Entrada: ${motivoNormalizado}` : `Salida: ${motivoNormalizado}`;
-    })();
-
-    await client.query(
-      `INSERT INTO Log_Inventario (VarianteID, CantidadCambiado, NuevoStock, Motivo, UsuarioID)
-       VALUES ($1, $2, $3, $4, $5)`,
-      [variante.varianteid, cantidadCambio, nuevoStock, motivoLog, req.user.id]
     );
 
     await client.query("COMMIT");
 
-    checkStockBajo(variante.varianteid).catch((err) => {
+    checkStockBajo(varianteId).catch((err) => {
       console.error("Error verificando stock bajo tras ajuste:", err);
     });
 
     res.json({
       success: true,
+      nuevoStock: stockNuevo,
+      stockAnterior,
       message: "Inventario ajustado exitosamente",
       data: {
-        varianteId: variante.varianteid,
-        sku: variante.sku,
-        stockAnterior: stockActual,
-        cantidadCambio,
-        stockNuevo: nuevoStock,
-        motivo,
+        varianteId,
+        stockAnterior,
+        cantidadCambio: cantidadDelta,
+        stockNuevo,
+        motivo: motivoNormalizado,
       },
     });
   } catch (error) {
-    await client.query("ROLLBACK");
+    try {
+      await client.query("ROLLBACK");
+    } catch (e) {
+      // ignore
+    }
     console.error("Error al ajustar inventario:", error);
-    res.status(500).json({
+
+    const status = error && Number.isInteger(error.status) ? error.status : 500;
+    res.status(status).json({
       success: false,
-      message: "Error en el servidor",
+      message: error.message || "Error en el servidor",
       error: error.message,
+      code: error.code,
     });
   } finally {
     client.release();
@@ -3424,6 +3874,11 @@ const getProductoDetalle = async (req, res) => {
         row.costounitario !== null ? parseFloat(row.costounitario) : null;
       const stock = row.stock !== null ? parseInt(row.stock, 10) : 0;
 
+      const piezasPorPaquete =
+        row.piezasporpaquete !== null && row.piezasporpaquete !== undefined
+          ? parseInt(row.piezasporpaquete, 10)
+          : null;
+
       const precioPaquete =
         precioUnitario !== null && tamanoReferencia?.valor
           ? parseFloat((precioUnitario * tamanoReferencia.valor).toFixed(2))
@@ -3440,6 +3895,14 @@ const getProductoDetalle = async (req, res) => {
         presentacionEtiqueta: buildEtiqueta(tamanoReferencia),
         tamanoValorReferencia: tamanoReferencia?.valor || null,
         stock,
+        piezasPorPaquete:
+          Number.isInteger(piezasPorPaquete) && piezasPorPaquete > 0
+            ? piezasPorPaquete
+            : 1,
+        tipoEmpaque:
+          row.tipoempaque && String(row.tipoempaque).trim()
+            ? String(row.tipoempaque).trim()
+            : null,
         tipoProductoId:
           row.tipoproductoid !== null ? parseInt(row.tipoproductoid, 10) : null,
         medidaId: row.medidaid !== null ? parseInt(row.medidaid, 10) : null,
@@ -6661,6 +7124,9 @@ module.exports = {
   updateCostoEnvio,
   updatePedidoEstatus,
   getPedidoDetalle,
+  getMovimientosInventario,
+  getHistorialInventarioVariante,
+  recepcionarMercancia,
   ajustarInventario,
   getInventarioResumen,
   getProductoDetalle,

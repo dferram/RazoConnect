@@ -72,24 +72,27 @@
 
     let menuItems = "";
 
+    // Opciones comunes para todos
+    menuItems += `
+      <a href="/staff-notificaciones.html" class="admin-dropdown-item">
+        <span class="admin-dropdown-icon">🔔</span>
+        <span>Notificaciones</span>
+      </a>
+      <div class="admin-dropdown-divider"></div>
+    `;
+
     // Si es super-admin, agregar opción de crear administrador
     if (isSuperAdmin()) {
       menuItems += `
         <a href="/admin-nuevo-admin.html" class="admin-dropdown-item">
           <span class="admin-dropdown-icon">👤</span>
-          <span>Agregar administrador</span>
+          <span>Agregar Admin</span>
         </a>
         <div class="admin-dropdown-divider"></div>
       `;
     }
 
-    // Opciones comunes para todos
     menuItems += `
-      <a href="/admin-dashboard.html" class="admin-dropdown-item">
-        <span class="admin-dropdown-icon">📊</span>
-        <span>Dashboard</span>
-      </a>
-      <div class="admin-dropdown-divider"></div>
       <button class="admin-dropdown-item" id="dropdownLogout">
         <span class="admin-dropdown-icon">🚪</span>
         <span>Cerrar sesión</span>
@@ -141,6 +144,16 @@
    * Inicializa el dropdown
    */
   function init() {
+    // Si la página ya usa (o fue migrada a) header compartido, no inicializar dropdown legacy
+    const path = (window.location.pathname || "").toLowerCase();
+    if (
+      document.getElementById("admin-header-container") ||
+      document.getElementById("userDropdownMenu") ||
+      path.startsWith("/admin")
+    ) {
+      return;
+    }
+
     // Esperar a que el DOM y el sidebar estén cargados
     setTimeout(() => {
       const userInfo = document.querySelector(".admin-user-info");

@@ -227,6 +227,7 @@ body.sidebar-collapsed .admin-main {
   display: flex;
   align-items: center;
   gap: 1.5rem;
+  position: relative;
 }
 
 .admin-header.simple {
@@ -1307,4 +1308,62 @@ body.sidebar-collapsed .admin-main {
   margin-left: 0.5rem;
   opacity: 0.5;
   transition: transform 0.2s ease;
+}
+
+/* Estilos para el Dropdown del Header */
+.admin-header-actions {
+  position: relative;
+}
+
+.admin-dropdown-menu {
+  display: none;
+  position: absolute;
+  top: 100%;
+  right: 0;
+  width: 200px;
+  background: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
+  padding: 0.5rem 0;
+  z-index: 1000;
+  margin-top: 10px;
+  border: 1px solid #eee;
+}
+
+.admin-dropdown-menu.show {
+  display: block;
+  animation: slideDown 0.2s ease-out;
+}
+
+.dropdown-item {
+  display: block;
+  padding: 0.5rem 1rem;
+  color: #333;
+  text-decoration: none;
+  transition: background 0.2s;
+}
+
+.dropdown-item:hover {
+  background-color: #f8f9fa;
+  color: var(--razo-orange);
+}
+
+.dropdown-header {
+  padding: 0.5rem 1rem;
+}
+
+.dropdown-divider {
+  border-top: 1px solid #eee;
+  margin: 0.5rem 0;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

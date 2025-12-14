@@ -16,26 +16,14 @@
     <link rel="stylesheet" href="css/admin.css" />
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   </head>
-  <body>
+  <body data-page-title="Gestión de Pedidos">
     <div class="admin-layout">
       <!-- Sidebar -->
       <div id="sidebar-container"></div>
 
       <!-- Main Content -->
       <main class="admin-main">
-        <header class="admin-header">
-          <h1 class="admin-header-title">Gestión de pedidos</h1>
-
-          <div class="admin-header-actions">
-            <div class="admin-user-info">
-              <div class="admin-user-avatar" id="userAvatar">A</div>
-              <div class="admin-user-details">
-                <div class="admin-user-name" id="userName">Administrador</div>
-                <div class="admin-user-role" id="userRole">Admin</div>
-              </div>
-            </div>
-          </div>
-        </header>
+        <div id="admin-header-container"></div>
 
         <div class="admin-content">
           <!-- Filters -->
@@ -192,6 +180,7 @@
 
     <script src="js/layout.js" defer></script>
     <script src="js/api.js"></script>
+    <script src="js/components/admin-header-loader.js"></script>
     <script src="js/components/user-profile.js"></script>
     <script src="js/admin-header-dropdown.js"></script>
     <script>
@@ -226,53 +215,15 @@
       let selectedOrderId = null;
       let selectedOrderStatus = null;
 
-      // Verify admin token
-      async function verifyAndLoadAdmin() {
-        try {
-          const response = await fetch(`${API_BASE_URL}/admin/verify`, {
-            method: "GET",
-            headers: {
-              Authorization: `Bearer ${adminToken}`,
-              "Content-Type": "application/json",
-            },
-          });
-
-          if (!response.ok) {
-            throw new Error("Invalid token");
-          }
-
-          const data = await response.json();
-          if (data.success) {
-            const admin = data.data.admin;
-            document.getElementById("userName").textContent = admin.nombre;
-            document.getElementById("userRole").textContent =
-              admin.rol === "superadmin" ? "Super Admin" : "Admin";
-
-            const words = admin.nombre.split(" ");
-            const initials =
-              words.length >= 2
-                ? `${words[0].charAt(0)}${words[1].charAt(0)}`
-                : admin.nombre.substring(0, 2);
-            document.getElementById("userAvatar").textContent =
-              initials.toUpperCase();
-          }
-        } catch (error) {
-          console.error("Error verifying admin:", error);
-          localStorage.removeItem("razoconnect_admin_token");
-          localStorage.removeItem("razoconnect_admin");
-          window.location.href = "/login.html";
-        }
-      }
-
       // Load orders
       async function loadOrders() {
-        const loadingOrders = document.getElementById("loadingOrders");
-        const ordersTable = document.getElementById("ordersTable");
-        const emptyOrders = document.getElementById("emptyOrders");
+        document.getElementById("loadingOrders").style.display = "flex";
+        document.getElementById("ordersTable").style.display = "none";
+        document.getElementById("emptyOrders").style.display = "none";
         const ordersTableBody = document.getElementById("ordersTableBody");
         const statusFilterEl = document.getElementById("statusFilter");
 
-        if (!loadingOrders || !ordersTable || !emptyOrders || !ordersTableBody) {
+        if (!ordersTableBody || !statusFilterEl) {
           console.error("Required elements not found in DOM");
           return;
         }
@@ -548,7 +499,6 @@
       });
 
       // Initialize
-      verifyAndLoadAdmin();
       loadOrders();
 
       // Close modal when clicking outside

@@ -32,6 +32,79 @@
     }
   }
 
+  function ensureAdminHeaderUnified() {
+    if (window.__RAZO_ADMIN_HEADER_UNIFIED) return;
+
+    const explicitType = document.body?.dataset?.sidebar;
+    const path = (window.location.pathname || "").toLowerCase();
+    const isAdminPage = explicitType === "admin" || path.startsWith("/admin");
+    if (!isAdminPage) return;
+
+    window.__RAZO_ADMIN_HEADER_UNIFIED = true;
+
+    // Asegurar Bootstrap Icons (usado por el header nuevo)
+    const hasBootstrapIcons = Array.from(document.querySelectorAll('link[rel="stylesheet"]')).some(
+      (l) => (l.getAttribute("href") || "").includes("bootstrap-icons")
+    );
+    if (!hasBootstrapIcons) {
+      const link = document.createElement("link");
+      link.rel = "stylesheet";
+      link.href =
+        "https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css";
+      document.head.appendChild(link);
+    }
+
+    // Reemplazar header legacy por contenedor del header compartido
+    const main = document.querySelector("main.admin-main");
+    if (!main) return;
+
+    let headerContainer = document.getElementById("admin-header-container");
+    if (!headerContainer) {
+      const legacyHeader = main.querySelector("header.admin-header");
+      headerContainer = document.createElement("div");
+      headerContainer.id = "admin-header-container";
+
+      if (legacyHeader) {
+        legacyHeader.replaceWith(headerContainer);
+      } else {
+        // Insertar al inicio del main para mantener layout consistente
+        main.insertBefore(headerContainer, main.firstChild);
+      }
+    }
+
+    // Cargar el loader del header si no está incluido
+    const hasHeaderLoader = Array.from(document.querySelectorAll("script[src]"))
+      .map((s) => (s.getAttribute("src") || "").toLowerCase())
+      .some((src) => src.includes("js/components/admin-header-loader.js"));
+
+    if (!hasHeaderLoader) {
+      const script = document.createElement("script");
+      script.src = "/js/components/admin-header-loader.js";
+      document.body.appendChild(script);
+    }
+
+    // Aliases legacy: evitar crashes en páginas que aún intentan escribir userName/userRole/userAvatar
+    ensureLegacyHeaderAliases();
+  }
+
+  function ensureLegacyHeaderAliases() {
+    const existing = document.getElementById("adminHeaderLegacyAliases");
+    if (existing) return;
+
+    const wrapper = document.createElement("div");
+    wrapper.id = "adminHeaderLegacyAliases";
+    wrapper.style.display = "none";
+    wrapper.innerHTML = `
+      <span id="adminHeaderTitle"></span>
+      <span id="admin-name"></span>
+      <span id="userName"></span>
+      <span id="userRole"></span>
+      <span id="userAvatar"></span>
+    `;
+
+    document.body.appendChild(wrapper);
+  }
+
   /**
    * Verifica si el usuario actual es super-administrador
    */
@@ -82,6 +155,12 @@
   }
 
   document.addEventListener("DOMContentLoaded", async () => {
+    try {
+      ensureAdminHeaderUnified();
+    } catch (e) {
+      console.warn("No se pudo unificar header admin:", e);
+    }
+
     const sidebarContainer = document.getElementById("sidebar-container");
     if (!sidebarContainer) {
       return;
@@ -164,5 +243,11 @@
       return "/";
     }
     return pathname.replace(/\/?$/, "").toLowerCase() || "/";
+  }
+
+  try {
+    ensureAdminHeaderUnified();
+  } catch (e) {
+    // ignore
   }
 })();

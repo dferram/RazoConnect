@@ -12,8 +12,7 @@ const proveedorIdEl = document.getElementById("proveedorId");
 const proveedorRfc = document.getElementById("proveedorRfc");
 const proveedorEmail = document.getElementById("proveedorEmail");
 
-const inputTipoRegla = document.getElementById("inputTipoRegla");
-const listTiposProducto = document.getElementById("listTiposProducto");
+const selectTipoRegla = document.getElementById("selectTipoRegla");
 const inputCantidadRegla = document.getElementById("inputCantidadRegla");
 const btnGuardarRegla = document.getElementById("btnGuardarRegla");
 const tablaReglasEmpaqueBody = document.getElementById("tablaReglasEmpaqueBody");
@@ -21,6 +20,8 @@ const alertasPendientes = document.getElementById("alertasPendientes");
 
 let tiposProductoCache = [];
 let reglasCache = {};
+let tipoReglaChoices = null;
+let tipoProductoIdsDisponibles = new Set();
 
 function normalizeTipoNombre(value) {
   return String(value || "").trim().toLowerCase();
@@ -190,15 +191,68 @@ async function loadTiposProducto() {
   const tipos = Array.isArray(data?.data?.tipos) ? data.data.tipos : [];
   tiposProductoCache = tipos;
 
-  if (listTiposProducto) {
-    listTiposProducto.innerHTML = "";
-    tiposProductoCache.forEach((tipo) => {
-      const nombre = (tipo?.nombre || "").toString().trim();
-      if (!nombre) return;
-      const option = document.createElement("option");
-      option.value = nombre;
-      listTiposProducto.appendChild(option);
+  if (!selectTipoRegla) {
+    return;
+  }
+
+  tipoProductoIdsDisponibles = new Set();
+
+  const previousValue = selectTipoRegla.value;
+  selectTipoRegla.innerHTML = "";
+
+  const placeholderOption = document.createElement("option");
+  placeholderOption.value = "";
+  placeholderOption.textContent = "Escribe o selecciona un tipo";
+  selectTipoRegla.appendChild(placeholderOption);
+
+  tiposProductoCache.forEach((tipo) => {
+    const id = tipo?.tipoProductoId;
+    const nombre = tipo?.nombre;
+    const parsed = Number.parseInt(id, 10);
+    if (!Number.isInteger(parsed) || parsed <= 0) return;
+    const label = (nombre || "").toString().trim();
+    if (!label) return;
+
+    tipoProductoIdsDisponibles.add(parsed);
+
+    const option = document.createElement("option");
+    option.value = String(parsed);
+    option.textContent = label;
+    selectTipoRegla.appendChild(option);
+  });
+
+  if (tipoReglaChoices) {
+    try {
+      tipoReglaChoices.destroy();
+    } catch (e) {
+      // ignore
+    }
+    tipoReglaChoices = null;
+  }
+
+  if (typeof Choices !== "undefined") {
+    tipoReglaChoices = new Choices(selectTipoRegla, {
+      searchEnabled: true,
+      searchResultLimit: 100,
+      shouldSort: false,
+      allowHTML: false,
+      removeItemButton: true,
+      duplicateItemsAllowed: false,
+      addItems: true,
+      addItemText: (value) => `Agregar "${value}"`,
     });
+  }
+
+  if (previousValue) {
+    try {
+      if (tipoReglaChoices) {
+        tipoReglaChoices.setChoiceByValue(String(previousValue));
+      } else {
+        selectTipoRegla.value = String(previousValue);
+      }
+    } catch (e) {
+      // ignore
+    }
   }
 }
 
@@ -255,9 +309,18 @@ async function loadSolicitudesPendientes() {
 }
 
 async function guardarReglaEmpaque() {
-  const tipoNombreRaw = inputTipoRegla ? inputTipoRegla.value : "";
-  const tipoIdResolved = getTipoIdByNombre(tipoNombreRaw);
-  const tipoNombreNormalized = String(tipoNombreRaw || "").trim();
+  const rawValue = selectTipoRegla ? selectTipoRegla.value : "";
+  const rawTxt = String(rawValue || "").trim();
+
+  const parsed = Number.parseInt(rawTxt, 10);
+  const tipoIdResolved =
+    Number.isInteger(parsed) && parsed > 0 && tipoProductoIdsDisponibles.has(parsed)
+      ? parsed
+      : null;
+
+  const tipoNombreNormalized = tipoIdResolved
+    ? ""
+    : rawTxt;
   const cantidad = Number.parseInt(inputCantidadRegla.value, 10);
 
   if ((!tipoIdResolved || tipoIdResolved <= 0) && !tipoNombreNormalized) {
@@ -280,7 +343,9 @@ async function guardarReglaEmpaque() {
     return;
   }
 
-  const tipoNombre = tipoIdResolved ? getTipoNombreById(tipoIdResolved) : tipoNombreNormalized;
+  const tipoNombre = tipoIdResolved
+    ? getTipoNombreById(tipoIdResolved)
+    : tipoNombreNormalized;
 
   const result = await Swal.fire({
     icon: "question",
@@ -305,7 +370,7 @@ async function guardarReglaEmpaque() {
     if (tipoIdResolved) {
       payload.TipoProductoID = tipoIdResolved;
     } else {
-      payload.tipoProductoNombre = tipoNombreNormalized;
+      payload.TipoProducto = tipoNombreNormalized;
     }
 
     const { response, data } = await fetchJson(
@@ -333,7 +398,17 @@ async function guardarReglaEmpaque() {
     });
 
     inputCantidadRegla.value = "";
-    if (inputTipoRegla) inputTipoRegla.value = "";
+    if (selectTipoRegla) {
+      if (tipoReglaChoices) {
+        try {
+          tipoReglaChoices.removeActiveItems();
+        } catch (e) {
+          selectTipoRegla.value = "";
+        }
+      } else {
+        selectTipoRegla.value = "";
+      }
+    }
     await loadSolicitudesPendientes();
   } catch (error) {
     console.error("Error guardando regla:", error);
@@ -350,7 +425,18 @@ async function guardarReglaEmpaque() {
 
 window.__editarReglaEmpaque = function (tipoId, cantidad) {
   try {
-    if (inputTipoRegla) inputTipoRegla.value = getTipoNombreById(tipoId);
+    const value = String(tipoId);
+    if (selectTipoRegla) {
+      if (tipoReglaChoices) {
+        try {
+          tipoReglaChoices.setChoiceByValue(value);
+        } catch (e) {
+          selectTipoRegla.value = value;
+        }
+      } else {
+        selectTipoRegla.value = value;
+      }
+    }
     if (inputCantidadRegla) inputCantidadRegla.value = String(cantidad);
 
     if (inputCantidadRegla && typeof inputCantidadRegla.focus === "function") {

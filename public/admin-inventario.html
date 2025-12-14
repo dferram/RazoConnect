@@ -17,7 +17,7 @@
     <link rel="stylesheet" href="css/styles.css" />
     <link rel="stylesheet" href="css/admin.css" />
   </head>
-  <body>
+  <body data-page-title="Inventario">
     <div class="admin-layout">
       <!-- Sidebar -->
       <div id="sidebar-container"></div>
@@ -145,21 +145,118 @@
         </div>
       </div>
 
-      <!-- Main Content -->
-      <main class="admin-main">
-        <header class="admin-header">
-          <h1 class="admin-header-title">Gestión de inventario</h1>
+      <!-- Modal recepción de mercancía -->
+      <div id="recepcionModal" class="modal">
+        <div
+          class="modal-content"
+          style="
+            background: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+          "
+        >
+          <div style="margin-bottom: 1.5rem">
+            <h2
+              id="recepcionModalTitle"
+              style="
+                font-size: 1.5rem;
+                font-weight: 700;
+                color: #2d3748;
+                margin-bottom: 0.25rem;
+              "
+            >
+              Recepción
+            </h2>
+            <p id="recepcionModalSubtitle" style="color: #718096; font-size: 0.875rem">
+              Registra la entrada de mercancía por bultos/cajas.
+            </p>
+          </div>
 
-          <div class="admin-header-actions">
-            <div class="admin-user-info">
-              <div class="admin-user-avatar" id="userAvatar">A</div>
-              <div class="admin-user-details">
-                <div class="admin-user-name" id="userName">Administrador</div>
-                <div class="admin-user-role" id="userRole">Admin</div>
-              </div>
+          <div class="form-group">
+            <label for="recepcionCantidadBultos" class="form-label"
+              >Cantidad de empaque:</label
+            >
+            <input
+              type="number"
+              id="recepcionCantidadBultos"
+              class="form-input"
+              placeholder="0"
+              min="1"
+              required
+            />
+            <div
+              id="recepcionPreview"
+              style="margin-top: 0.5rem; color: #4b5563; font-size: 0.9rem"
+            >
+              Se ingresarán +0 unidades al inventario.
             </div>
           </div>
-        </header>
+
+          <div class="form-group" style="margin-top: 1rem">
+            <label class="switch-label" style="display:flex; gap:0.75rem; align-items:center;">
+              <input type="checkbox" id="recepcionEsExcepcion" />
+              <span>¿Registrar Excepción/Anomalía?</span>
+            </label>
+          </div>
+
+          <div class="form-group" id="recepcionDetalleExcepcionGroup" style="display:none;">
+            <label for="recepcionDetalleExcepcion" class="form-label"
+              >Detalle del problema (obligatorio):</label
+            >
+            <input
+              type="text"
+              id="recepcionDetalleExcepcion"
+              class="form-input"
+              placeholder="Ej: caja dañada, faltante, humedad..."
+            />
+          </div>
+
+          <div class="form-group" style="margin-top: 0.5rem">
+            <label for="recepcionComentarios" class="form-label">Comentarios (opcional):</label>
+            <input
+              type="text"
+              id="recepcionComentarios"
+              class="form-input"
+              placeholder="Ej: proveedor X, OC #123..."
+            />
+          </div>
+
+          <div class="alert alert-info" style="font-size: 0.875rem">
+            <strong>ℹ️ Nota:</strong> Esta recepción se registrará en el log de
+            inventario.
+          </div>
+
+          <div style="display: flex; gap: 1rem; margin-top: 1.5rem">
+            <button
+              class="btn btn-primary"
+              id="btnConfirmarRecepcion"
+              style="flex: 1; background: #4f46e5; border-color: #4f46e5"
+              type="button"
+            >
+              <span id="btnRecepcionText">Confirmar recepción</span>
+              <div
+                class="spinner"
+                id="btnRecepcionSpinner"
+                style="display: none"
+              ></div>
+            </button>
+            <button
+              class="btn btn-secondary"
+              id="btnCancelarRecepcion"
+              type="button"
+              style="flex: 1"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Content -->
+      <main class="admin-main">
+        <div id="admin-header-container"></div>
 
         <div class="admin-content">
           <!-- Products Table -->
@@ -202,7 +299,6 @@
                 <thead>
                   <tr>
                     <th>Producto</th>
-                    <th>SKU Maestro</th>
                     <th>Categoría</th>
                     <th>Estado</th>
                     <th>Variantes Registradas</th>
@@ -389,15 +485,6 @@
             >
             <select id="modalMotivo" class="form-input">
               <option value="">Seleccionar motivo...</option>
-              <option value="entrada_inicial">Inventario Inicial / Compra</option>
-              <option value="Recepción de Almacén">Recepción de Almacén</option>
-              <option value="Ajuste de Inventario">Ajuste de Inventario</option>
-              <option value="Devolución de Cliente">
-                Devolución de Cliente
-              </option>
-              <option value="Producto Dañado">Producto Dañado</option>
-              <option value="Merma">Merma</option>
-              <option value="Otro">Otro</option>
             </select>
           </div>
 
@@ -447,6 +534,7 @@
     <script src="js/layout.js" defer></script>
     <script src="js/api.js"></script>
     <script src="js/pack-helpers.js"></script>
+    <script src="js/components/admin-header-loader.js"></script>
     <script src="js/components/user-profile.js"></script>
     <script src="js/admin-header-dropdown.js"></script>
     <script>
@@ -501,6 +589,33 @@
       const btnAjusteText = document.getElementById("btnAjusteText");
       const btnAjusteSpinner = document.getElementById("btnAjusteSpinner");
 
+      const recepcionModal = document.getElementById("recepcionModal");
+      const recepcionModalTitle = document.getElementById("recepcionModalTitle");
+      const recepcionModalSubtitle = document.getElementById(
+        "recepcionModalSubtitle"
+      );
+      const recepcionCantidadBultos = document.getElementById(
+        "recepcionCantidadBultos"
+      );
+      const recepcionPreview = document.getElementById("recepcionPreview");
+      const recepcionEsExcepcion = document.getElementById("recepcionEsExcepcion");
+      const recepcionDetalleExcepcionGroup = document.getElementById(
+        "recepcionDetalleExcepcionGroup"
+      );
+      const recepcionDetalleExcepcion = document.getElementById(
+        "recepcionDetalleExcepcion"
+      );
+      const recepcionComentarios = document.getElementById("recepcionComentarios");
+      const btnConfirmarRecepcion = document.getElementById(
+        "btnConfirmarRecepcion"
+      );
+      const btnCancelarRecepcion = document.getElementById("btnCancelarRecepcion");
+      const btnRecepcionText = document.getElementById("btnRecepcionText");
+      const btnRecepcionSpinner = document.getElementById("btnRecepcionSpinner");
+
+      let recepcionVarianteActual = null;
+      let recepcionProductoActual = null;
+
       const detalleModal = document.getElementById("detalleModal");
       const detalleModalTitle = document.getElementById("detalleModalTitle");
       const detalleModalSubtitle = document.getElementById(
@@ -544,17 +659,21 @@
           console.log("📥 Verify response en inventario:", data);
           if (data.success) {
             const admin = data.data.admin;
-            document.getElementById("userName").textContent = admin.nombre;
-            document.getElementById("userRole").textContent =
-              admin.rol === "superadmin" ? "Super Admin" : "Admin";
+            const nameEl = document.getElementById("headerUserName");
+            const roleEl = document.getElementById("headerUserRole");
+            const avatarEl = document.getElementById("headerUserAvatar");
+
+            if (nameEl) nameEl.textContent = admin.nombre;
+            if (roleEl) {
+              roleEl.textContent = admin.rol === "superadmin" ? "Super Admin" : "Admin";
+            }
 
             const words = admin.nombre.split(" ");
             const initials =
               words.length >= 2
                 ? `${words[0].charAt(0)}${words[1].charAt(0)}`
                 : admin.nombre.substring(0, 2);
-            document.getElementById("userAvatar").textContent =
-              initials.toUpperCase();
+            if (avatarEl) avatarEl.textContent = initials.toUpperCase();
           }
         } catch (error) {
           console.error("Error verifying admin:", error);
@@ -628,9 +747,6 @@
               <div style="font-size: 0.875rem; color: var(--razo-gray-warm);">ID: ${
                 product.productoId
               }</div>
-            </td>
-            <td style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; font-size: 0.9rem;">
-              ${product.sku_maestro || product.skuMaestro || "-"}
             </td>
             <td>${product.nombreCategoria || "Sin categoría"}</td>
             <td>
@@ -798,6 +914,17 @@
       });
 
       tablaVariantesBody.addEventListener("click", (event) => {
+        const historialBtn = event.target.closest(".btn-historial-trigger");
+        if (historialBtn) {
+          const varianteId = parseInt(historialBtn.dataset.varianteId, 10);
+          if (Number.isNaN(varianteId)) {
+            showToast("Variante inválida", "warning");
+            return;
+          }
+          window.location.href = `/admin-movimientos.html?varianteId=${varianteId}`;
+          return;
+        }
+
         const ajusteBtn = event.target.closest(".btn-ajuste");
         if (!ajusteBtn) return;
 
@@ -820,6 +947,15 @@
 
       btnCerrarDetalle.addEventListener("click", closeDetalleModal);
       btnCerrarDetalleFooter.addEventListener("click", closeDetalleModal);
+
+      btnCancelarRecepcion.addEventListener("click", closeRecepcionModal);
+      btnConfirmarRecepcion.addEventListener("click", realizarRecepcion);
+      recepcionCantidadBultos.addEventListener("input", actualizarPreviewRecepcion);
+      recepcionEsExcepcion.addEventListener("change", () => {
+        recepcionDetalleExcepcionGroup.style.display = recepcionEsExcepcion.checked
+          ? "block"
+          : "none";
+      });
 
       modalVarianteSelect.addEventListener("change", actualizarResumenVariante);
       modalMotivoSelect.addEventListener("change", (e) => {
@@ -984,6 +1120,16 @@
         detalleModalFeedback.style.display = "none";
         detalleModalTableWrapper.style.display = "block";
 
+        const tipoProductoRaw = (
+          detalleProductoActual?.producto?.tipoProducto ||
+          detalleProductoActual?.producto?.tipo ||
+          ""
+        )
+          .toString()
+          .trim()
+          .toLowerCase();
+        const unidadStock = tipoProductoRaw.includes("caja") ? "packs" : "pzas";
+
         tablaVariantesBody.innerHTML = variantesVisibles
           .map((variant) => {
             const precio =
@@ -1025,16 +1171,32 @@
                 <span style="font-size:0.75rem; color: var(--text-secondary);">${presentacion}</span>
               </div>
             </td>
-            <td>${stock}</td>
+            <td class="stock-variante-${variant.varianteId}">${stock} ${unidadStock}</td>
             <td>
               <span class="status-badge ${estadoClase}">${estadoTexto}</span>
             </td>
             <td style="text-align: center;">
-              <button type="button" class="btn btn-primary btn-small btn-ajuste" data-variante-id="${
-                variant.varianteId
-              }">
-                Ajustar Stock
-              </button>
+              <div style="display:inline-flex; align-items:center; gap:0.5rem;">
+                <button type="button" class="btn btn-primary btn-small btn-ajuste" data-variante-id="${
+                  variant.varianteId
+                }">
+                  Ajustar Stock
+                </button>
+                <button type="button" class="btn btn-secondary btn-small btn-recepcion" data-variante-id="${
+                  variant.varianteId
+                }" style="background:#4f46e5; border-color:#4f46e5; color:white;">
+                  Recepcionar
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-secondary btn-small btn-historial-trigger"
+                  data-variante-id="${variant.varianteId}"
+                  title="Historial"
+                  style="padding: 0.5rem 0.6rem;"
+                >
+                  🕒
+                </button>
+              </div>
             </td>
           </tr>
         `;
@@ -1121,6 +1283,9 @@
         btnEntrada.style.opacity = "0.6";
         btnSalida.style.opacity = "0.6";
 
+        // Motivos: limpiar al abrir, se llenan al elegir Entrada/Salida
+        resetMotivosSelect();
+
         actualizarResumenVariante();
 
         shouldReopenDetalle = detalleModal.style.display === "flex";
@@ -1148,6 +1313,40 @@
         tipoAjuste = tipo;
         btnEntrada.style.opacity = tipo === "entrada" ? "1" : "0.6";
         btnSalida.style.opacity = tipo === "salida" ? "1" : "0.6";
+
+        populateMotivos(tipo);
+      }
+
+      const motivosInventario = {
+        entrada: [
+          { val: "compra", text: "Recepción de Compra" },
+          { val: "devolucion", text: "Devolución de Cliente" },
+          { val: "ajuste_in", text: "Ajuste Inventario (+)" },
+        ],
+        salida: [
+          { val: "merma", text: "Merma / Daño" },
+          { val: "uso_interno", text: "Uso Interno / Regalo" },
+          { val: "ajuste_out", text: "Ajuste Inventario (-)" },
+        ],
+      };
+
+      function resetMotivosSelect() {
+        modalMotivoSelect.innerHTML =
+          '<option value="">Seleccionar motivo...</option>';
+        modalMotivoSelect.value = "";
+        modalMotivoOtroInput.value = "";
+        modalMotivoOtroGroup.style.display = "none";
+      }
+
+      function populateMotivos(tipo) {
+        resetMotivosSelect();
+        const opciones = motivosInventario?.[tipo] || [];
+        opciones.forEach((opt) => {
+          const optionEl = document.createElement("option");
+          optionEl.value = opt.val;
+          optionEl.textContent = opt.text;
+          modalMotivoSelect.appendChild(optionEl);
+        });
       }
 
       async function realizarAjuste() {
@@ -1185,10 +1384,19 @@
 
         const motivo =
           motivoSeleccionado === "Otro" ? motivoOtro : motivoSeleccionado;
-        const esEntrada = tipoAjuste === "entrada" || motivoSeleccionado === "entrada_inicial";
-        const cantidadCambio = esEntrada ? cantidad : -cantidad;
-        const productoId =
-          selectedProduct?.productoId || selectedProduct?.productoid;
+        const tipoMovimiento = tipoAjuste === "salida" ? "SALIDA" : "ENTRADA";
+
+        const adminRaw = localStorage.getItem("razoconnect_admin");
+        let usuarioId = null;
+        if (adminRaw) {
+          try {
+            const admin = JSON.parse(adminRaw);
+            const id = Number.parseInt(admin?.id ?? admin?.adminId ?? admin?.adminid, 10);
+            usuarioId = Number.isFinite(id) ? id : null;
+          } catch (e) {
+            // ignore
+          }
+        }
 
         try {
           btnConfirmarAjuste.disabled = true;
@@ -1204,10 +1412,11 @@
                 "Content-Type": "application/json",
               },
               body: JSON.stringify({
-                productoId,
                 varianteId,
-                cantidadCambio,
+                tipoMovimiento,
+                cantidad,
                 motivo,
+                usuarioId,
               }),
             }
           );
@@ -1218,20 +1427,65 @@
             throw new Error(data.message || "No se pudo ajustar el inventario");
           }
 
-          showToast(
-            `Stock ajustado: ${data.data.stockAnterior} → ${data.data.stockNuevo}`,
-            "success"
-          );
+          const nuevoStock =
+            typeof data.nuevoStock === "number"
+              ? data.nuevoStock
+              : data.data?.stockNuevo;
+
+          if (typeof nuevoStock === "number") {
+            // Actualizar select (para que el resumen y stock actual se mantengan)
+            const option = modalVarianteSelect.querySelector(
+              `option[value="${varianteId}"]`
+            );
+            if (option) {
+              option.dataset.stock = String(nuevoStock);
+            }
+
+            // Actualizar resumen del modal
+            modalStockActual.textContent = nuevoStock;
+
+            // Actualizar celda stock dentro del modal detalle (si está visible)
+            const celdaStock = document.querySelector(
+              `.stock-variante-${varianteId}`
+            );
+            if (celdaStock) {
+              const unidad = celdaStock.innerText.split(" ")[1] || "pzas";
+              celdaStock.innerText = `${nuevoStock} ${unidad}`;
+            }
+          }
+
+          if (typeof Swal !== "undefined" && Swal && typeof Swal.fire === "function") {
+            await Swal.fire({
+              icon: "success",
+              title: "Ajuste exitoso",
+              text:
+                typeof nuevoStock === "number"
+                  ? `Nuevo stock: ${nuevoStock}`
+                  : "Inventario ajustado exitosamente.",
+              confirmButtonColor: "#F97316",
+            });
+          }
+
           closeAjusteModal();
 
+          // Fallback: refrescar detalle para mantener consistencia con métricas
+          const productoId = selectedProduct?.productoId || selectedProduct?.productoid;
           if (productoId) {
             openDetalleModal(productoId, { keepOpen: true });
           }
-
-          loadProductos();
         } catch (error) {
           console.error("Error ajustando inventario:", error);
-          showToast(error.message || "Error al ajustar inventario", "error");
+
+          if (typeof Swal !== "undefined" && Swal && typeof Swal.fire === "function") {
+            await Swal.fire({
+              icon: "error",
+              title: "No se pudo ajustar el inventario",
+              text: error.message || "Error al ajustar inventario",
+              confirmButtonColor: "#F97316",
+            });
+          } else {
+            showToast(error.message || "Error al ajustar inventario", "error");
+          }
         } finally {
           btnConfirmarAjuste.disabled = false;
           btnAjusteText.style.display = "inline";
@@ -1270,6 +1524,9 @@
         if (event.target === detalleModal) {
           closeDetalleModal();
         }
+        if (event.target === recepcionModal) {
+          closeRecepcionModal();
+        }
       };
 
       // Cerrar modal con Escape
@@ -1279,9 +1536,208 @@
             closeAjusteModal();
           } else if (detalleModal.style.display === "flex") {
             closeDetalleModal();
+          } else if (recepcionModal.style.display === "flex") {
+            closeRecepcionModal();
           }
         }
       });
+
+      function closeRecepcionModal() {
+        recepcionModal.style.display = "none";
+        recepcionVarianteActual = null;
+        recepcionProductoActual = null;
+        recepcionCantidadBultos.value = "";
+        recepcionComentarios.value = "";
+        recepcionEsExcepcion.checked = false;
+        recepcionDetalleExcepcion.value = "";
+        recepcionDetalleExcepcionGroup.style.display = "none";
+        recepcionPreview.textContent = "";
+        recepcionPreview.style.marginTop = "0.5rem";
+        recepcionPreview.style.fontSize = "0.9rem";
+        recepcionPreview.style.fontWeight = "500";
+        recepcionPreview.style.color = "#4b5563";
+      }
+
+      function getEtiquetaEmpaque(variante) {
+        const tipo = (variante?.tipoEmpaque || "").toString().trim();
+        if (tipo) return tipo;
+
+        const tipoProductoRaw = (
+          detalleProductoActual?.producto?.tipoProducto ||
+          detalleProductoActual?.producto?.tipo ||
+          ""
+        )
+          .toString()
+          .trim()
+          .toLowerCase();
+
+        if (tipoProductoRaw.includes("caja")) return "cajas";
+        if (tipoProductoRaw.includes("bolsa")) return "bolsas";
+        return "bultos";
+      }
+
+      function getPiezasPorPaquete(variante) {
+        const n = Number.parseInt(variante?.piezasPorPaquete, 10);
+        return Number.isInteger(n) && n > 0 ? n : 1;
+      }
+
+      function openRecepcionModal(producto, variante) {
+        recepcionProductoActual = producto;
+        recepcionVarianteActual = variante;
+
+        const nombre = producto?.nombreProducto || producto?.nombre || "Producto";
+        const sku = variante?.sku ? ` (${variante.sku})` : "";
+        const tipoEmpaque = getEtiquetaEmpaque(variante);
+
+        recepcionModalTitle.textContent = `Recepción de ${nombre}${sku}`;
+        recepcionModalSubtitle.textContent = `Ingresa la cantidad de ${tipoEmpaque} recibidos.`;
+
+        // Ajustar label dinámico
+        const label = recepcionModal.querySelector(
+          'label[for="recepcionCantidadBultos"]'
+        );
+        if (label) {
+          label.textContent = `Cantidad de ${tipoEmpaque}:`;
+        }
+
+        recepcionModal.style.display = "flex";
+        actualizarPreviewRecepcion();
+        recepcionCantidadBultos.focus();
+      }
+
+      function actualizarPreviewRecepcion() {
+        const cantidad = Number.parseInt(recepcionCantidadBultos.value, 10) || 0;
+        const varianteActual = recepcionVarianteActual;
+
+        const factor = getPiezasPorPaquete(varianteActual);
+        const totalUnidades = cantidad * factor;
+        const nombreEmpaque = getEtiquetaEmpaque(varianteActual) || "bultos";
+
+        recepcionPreview.style.marginTop = "0.5rem";
+        recepcionPreview.style.fontSize = "0.9rem";
+        recepcionPreview.style.fontWeight = "600";
+
+        if (cantidad > 0) {
+          if (factor > 1) {
+            recepcionPreview.textContent = `Se ingresarán: ${cantidad} ${nombreEmpaque} × ${factor} pzas = +${totalUnidades} unidades.`;
+            recepcionPreview.style.color = "#4f46e5";
+          } else {
+            recepcionPreview.textContent = `Se ingresarán: +${totalUnidades} unidades.`;
+            recepcionPreview.style.color = "#16a34a";
+          }
+        } else {
+          recepcionPreview.textContent = "";
+          recepcionPreview.style.color = "#4b5563";
+        }
+      }
+
+      async function realizarRecepcion() {
+        if (!recepcionVarianteActual || !recepcionProductoActual) {
+          showToast("Selecciona una variante para recepcionar", "warning");
+          return;
+        }
+
+        const varianteId = Number.parseInt(recepcionVarianteActual.varianteId, 10);
+        const cantidadBultos = Number.parseInt(recepcionCantidadBultos.value, 10);
+        const comentarios = (recepcionComentarios.value || "").toString().trim();
+        const esExcepcion = Boolean(recepcionEsExcepcion.checked);
+        const detalleExcepcion = (recepcionDetalleExcepcion.value || "")
+          .toString()
+          .trim();
+
+        if (!Number.isInteger(varianteId) || varianteId <= 0) {
+          showToast("Variante inválida", "warning");
+          return;
+        }
+
+        if (!Number.isInteger(cantidadBultos) || cantidadBultos <= 0) {
+          showToast("Ingresa una cantidad válida", "warning");
+          return;
+        }
+
+        if (esExcepcion && !detalleExcepcion) {
+          showToast("Indica el detalle del problema", "warning");
+          return;
+        }
+
+        // Si hay excepción, el detalle debe ir forzosamente en comentarios (backend requiere comentarios)
+        const comentariosFinal = esExcepcion
+          ? detalleExcepcion + (comentarios ? ` | ${comentarios}` : "")
+          : comentarios;
+
+        try {
+          btnConfirmarRecepcion.disabled = true;
+          btnRecepcionText.style.display = "none";
+          btnRecepcionSpinner.style.display = "block";
+
+          const response = await fetch(`${API_BASE_URL}/admin/recepcion`, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${adminToken}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              varianteId,
+              cantidadBultos,
+              esExcepcion,
+              comentarios: comentariosFinal,
+            }),
+          });
+
+          const data = await response.json();
+          if (!response.ok || !data.success) {
+            throw new Error(data.message || "No se pudo registrar la recepción");
+          }
+
+          const nuevoStock = data.nuevoStock;
+          if (typeof nuevoStock === "number") {
+            // Actualizar dataset en select del ajuste (si existe la opción)
+            const option = modalVarianteSelect.querySelector(
+              `option[value="${varianteId}"]`
+            );
+            if (option) {
+              option.dataset.stock = String(nuevoStock);
+            }
+
+            // Actualizar celda stock en modal detalle
+            const celdaStock = document.querySelector(
+              `.stock-variante-${varianteId}`
+            );
+            if (celdaStock) {
+              const unidad = celdaStock.innerText.split(" ")[1] || "pzas";
+              celdaStock.innerText = `${nuevoStock} ${unidad}`;
+            }
+          }
+
+          await Swal.fire({
+            icon: "success",
+            title: "Recepción registrada",
+            text: data.message || "Recepción registrada exitosamente",
+            confirmButtonColor: "#F97316",
+          });
+
+          closeRecepcionModal();
+
+          // Refrescar detalle para consistencia (sin cerrar)
+          const productoId =
+            recepcionProductoActual?.productoId || recepcionProductoActual?.productoid;
+          if (productoId) {
+            openDetalleModal(productoId, { keepOpen: true });
+          }
+        } catch (error) {
+          console.error("Error en recepción:", error);
+          await Swal.fire({
+            icon: "error",
+            title: "Error",
+            text: error.message || "No se pudo registrar la recepción",
+            confirmButtonColor: "#F97316",
+          });
+        } finally {
+          btnConfirmarRecepcion.disabled = false;
+          btnRecepcionText.style.display = "inline";
+          btnRecepcionSpinner.style.display = "none";
+        }
+      }
 
       // Toggle product visibility (quick action)
       async function toggleProductoVisibilidad(productoId, estadoActual) {
