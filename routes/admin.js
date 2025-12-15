@@ -522,6 +522,13 @@ router.get(
   purchaseSuggestionController.obtenerSugerencias
 );
 
+router.post(
+  "/compras/generar",
+  authenticate,
+  authorizeAdmin,
+  purchaseSuggestionController.generarOrdenCompra
+);
+
 /**
  * Gestión de órdenes de compra
  */

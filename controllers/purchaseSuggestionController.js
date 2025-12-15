@@ -1,4 +1,5 @@
 const db = require("../db");
+const auditService = require("../services/auditService");
 
 const obtenerSugerencias = async (req, res) => {
   try {
@@ -119,6 +120,210 @@ const obtenerSugerencias = async (req, res) => {
   }
 };
 
+const generarOrdenCompra = async (req, res) => {
+  const proveedorId = Number.parseInt(req?.body?.proveedorId, 10);
+  const items = Array.isArray(req?.body?.items) ? req.body.items : [];
+
+  if (!Number.isInteger(proveedorId) || proveedorId <= 0) {
+    return res.status(400).json({
+      success: false,
+      message: "proveedorId inválido",
+    });
+  }
+
+  if (!items.length) {
+    return res.status(400).json({
+      success: false,
+      message: "items es requerido",
+    });
+  }
+
+  const usuarioCreadorId = Number.parseInt(req?.user?.id ?? req?.user?.userId, 10);
+  if (!Number.isInteger(usuarioCreadorId) || usuarioCreadorId <= 0) {
+    return res.status(401).json({
+      success: false,
+      message: "Usuario no autenticado",
+    });
+  }
+
+  try {
+    const proveedorRes = await db.query(
+      "SELECT proveedorid, nombreempresa FROM proveedores WHERE proveedorid = $1 LIMIT 1",
+      [proveedorId]
+    );
+
+    if (!proveedorRes.rows?.length) {
+      return res.status(404).json({
+        success: false,
+        message: "Proveedor no encontrado",
+      });
+    }
+
+    const proveedorNombre = proveedorRes.rows[0].nombreempresa || null;
+
+    const normalizadosPorVariante = new Map();
+    let total = 0;
+
+    for (const item of items) {
+      const varianteId = Number.parseInt(item?.varianteId, 10);
+      const cantidad = Number.parseInt(item?.cantidad, 10);
+      const costoUnitarioRaw =
+        item?.costoUnitario !== undefined && item?.costoUnitario !== null
+          ? Number.parseFloat(item.costoUnitario)
+          : NaN;
+
+      if (!Number.isInteger(varianteId) || varianteId <= 0) {
+        return res.status(400).json({
+          success: false,
+          message: "varianteId inválido en items",
+        });
+      }
+
+      if (!Number.isInteger(cantidad) || cantidad <= 0) {
+        return res.status(400).json({
+          success: false,
+          message: "cantidad inválida en items",
+        });
+      }
+
+      if (!Number.isFinite(costoUnitarioRaw) || costoUnitarioRaw < 0) {
+        return res.status(400).json({
+          success: false,
+          message: "costoUnitario inválido en items",
+        });
+      }
+
+      const costoUnitario = Number(costoUnitarioRaw.toFixed(2));
+
+      const existente = normalizadosPorVariante.get(varianteId);
+      if (existente) {
+        if (existente.costoUnitario !== costoUnitario) {
+          return res.status(400).json({
+            success: false,
+            message: "costoUnitario inconsistente para la misma variante",
+          });
+        }
+        existente.cantidad += cantidad;
+      } else {
+        normalizadosPorVariante.set(varianteId, {
+          varianteId,
+          cantidad,
+          costoUnitario,
+        });
+      }
+    }
+
+    const normalizados = Array.from(normalizadosPorVariante.values());
+
+    for (const n of normalizados) {
+      total += n.cantidad * n.costoUnitario;
+    }
+
+    total = Number(total.toFixed(2));
+    if (!Number.isFinite(total) || total < 0) {
+      return res.status(400).json({
+        success: false,
+        message: "total inválido",
+      });
+    }
+
+    const variantesRes = await db.query(
+      `SELECT pv.varianteid
+       FROM producto_variantes pv
+       INNER JOIN productos p ON p.productoid = pv.productoid
+       WHERE pv.varianteid = ANY($1::int[])
+         AND p.proveedorid_default = $2
+         AND p.activo = TRUE
+         AND pv.activo = TRUE`,
+      [normalizados.map((n) => n.varianteId), proveedorId]
+    );
+
+    const idsValidos = new Set(
+      (variantesRes.rows || []).map((r) => Number.parseInt(r.varianteid, 10))
+    );
+
+    if (idsValidos.size !== normalizados.length) {
+      return res.status(400).json({
+        success: false,
+        message: "Una o más variantes no existen, no pertenecen al proveedor o no están activas",
+      });
+    }
+
+    const client = await db.pool.connect();
+    let ordenCompraId = null;
+
+    try {
+      await client.query("BEGIN");
+
+      const insertOC = await client.query(
+        `INSERT INTO ordenesdecompra
+          (proveedorid, fechasolicitud, estatus, total, origenoc, usuario_creador_id)
+         VALUES ($1, NOW(), 'Pendiente', $2, $3, $4)
+         RETURNING ordencompraid`,
+        [proveedorId, total, "sugerencia_stock", usuarioCreadorId]
+      );
+
+      ordenCompraId = insertOC.rows?.[0]?.ordencompraid ?? null;
+      const ordenIdParsed = Number.parseInt(ordenCompraId, 10);
+      if (!Number.isInteger(ordenIdParsed) || ordenIdParsed <= 0) {
+        throw new Error("No se pudo crear la orden de compra");
+      }
+
+      for (const n of normalizados) {
+        await client.query(
+          `INSERT INTO detallesordencompra
+            (ordencompraid, varianteid, cantidadsolicitada, cantidadrecibida, costounitario)
+           VALUES ($1, $2, $3, 0, $4)`,
+          [ordenIdParsed, n.varianteId, n.cantidad, n.costoUnitario]
+        );
+      }
+
+      await client.query("COMMIT");
+      client.release();
+
+      try {
+        await auditService.registrarCambioPasivo(
+          req,
+          "ordenesdecompra",
+          ordenIdParsed,
+          "INSERT",
+          null,
+          {
+            mensaje: `Se creó la Orden de Compra #${ordenIdParsed} por sugerencia de stock`,
+            origenoc: "sugerencia_stock",
+            proveedorId,
+            proveedorNombre,
+            total,
+            items: normalizados,
+          }
+        );
+      } catch (e) {
+      }
+
+      return res.status(201).json({
+        success: true,
+        data: {
+          ordenCompraId: ordenIdParsed,
+        },
+      });
+    } catch (error) {
+      try {
+        await client.query("ROLLBACK");
+      } catch (e) {
+      }
+      client.release();
+      throw error;
+    }
+  } catch (error) {
+    console.error("Error al generar orden de compra desde sugerencias:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error en el servidor",
+    });
+  }
+};
+
 module.exports = {
   obtenerSugerencias,
+  generarOrdenCompra,
 };
