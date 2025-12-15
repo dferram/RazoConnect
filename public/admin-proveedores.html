@@ -603,114 +603,6 @@
         }
       }
 
-      async function aprobarSolicitudProveedor(controlCambioId) {
-        if (!controlCambioId) return;
-
-        const mensaje = "¿Aprobar esta solicitud de creación de proveedor?";
-        let confirmado = false;
-
-        if (
-          typeof Swal !== "undefined" &&
-          Swal &&
-          typeof Swal.fire === "function"
-        ) {
-          const result = await Swal.fire({
-            icon: "question",
-            title: "Aprobar solicitud",
-            text: mensaje,
-            showCancelButton: true,
-            confirmButtonText: "Sí, aprobar",
-            cancelButtonText: "Cancelar",
-            confirmButtonColor: "#F97316",
-            cancelButtonColor: "#6b7280",
-          });
-          confirmado = !!result.isConfirmed;
-        } else {
-          confirmado = window.confirm(mensaje);
-        }
-
-        if (!confirmado) return;
-
-        try {
-          const response = await fetch(
-            `${API_BASE_URL}/admin/cambios/aprobar-lote`,
-            {
-              method: "POST",
-              headers: {
-                Authorization: `Bearer ${adminToken}`,
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({ ids: [controlCambioId] }),
-            }
-          );
-
-          const data = await response.json();
-          if (response.ok && data.success) {
-            showToast("Solicitud aprobada correctamente", "success");
-            await loadProveedores();
-          } else {
-            showToast(data.message || "Error al aprobar solicitud", "error");
-          }
-        } catch (error) {
-          console.error("Error al aprobar solicitud de proveedor:", error);
-          showToast("Error al conectar con el servidor", "error");
-        }
-      }
-
-      async function rechazarSolicitudProveedor(controlCambioId) {
-        if (!controlCambioId) return;
-
-        const mensaje = "¿Rechazar esta solicitud de creación de proveedor?";
-        let confirmado = false;
-
-        if (
-          typeof Swal !== "undefined" &&
-          Swal &&
-          typeof Swal.fire === "function"
-        ) {
-          const result = await Swal.fire({
-            icon: "warning",
-            title: "Rechazar solicitud",
-            text: mensaje,
-            showCancelButton: true,
-            confirmButtonText: "Sí, rechazar",
-            cancelButtonText: "Cancelar",
-            confirmButtonColor: "#dc3545",
-            cancelButtonColor: "#6b7280",
-          });
-          confirmado = !!result.isConfirmed;
-        } else {
-          confirmado = window.confirm(mensaje);
-        }
-
-        if (!confirmado) return;
-
-        try {
-          const response = await fetch(
-            `${API_BASE_URL}/admin/cambios/rechazar-lote`,
-            {
-              method: "POST",
-              headers: {
-                Authorization: `Bearer ${adminToken}`,
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({ ids: [controlCambioId] }),
-            }
-          );
-
-          const data = await response.json();
-          if (response.ok && data.success) {
-            showToast("Solicitud rechazada correctamente", "success");
-            await loadProveedores();
-          } else {
-            showToast(data.message || "Error al rechazar solicitud", "error");
-          }
-        } catch (error) {
-          console.error("Error al rechazar solicitud de proveedor:", error);
-          showToast("Error al conectar con el servidor", "error");
-        }
-      }
-
       // Load proveedores
       async function loadProveedores() {
         const loadingProveedores =
@@ -747,46 +639,6 @@
             } else {
               proveedoresTableBody.innerHTML = currentProveedores
                 .map((proveedor) => {
-                  const isPending = !!proveedor._isPending;
-                  if (isPending) {
-                    const controlId = proveedor.controlCambioId || "";
-                    const actionsHtml = isSuperAdmin
-                      ? `<button 
-                          class="btn btn-success btn-sm" 
-                          style="margin-right:0.35rem;"
-                          title="Aprobar solicitud de creación"
-                          onclick="aprobarSolicitudProveedor(${controlId})">
-                          ✔
-                        </button>
-                        <button 
-                          class="btn btn-danger btn-sm" 
-                          title="Rechazar solicitud de creación"
-                          onclick="rechazarSolicitudProveedor(${controlId})">
-                          ✖
-                        </button>`
-                      : `<span style="font-size:0.8rem; color: var(--razo-gray-warm);">En revisión</span>`;
-
-                    return `
-              <tr class="table-warning">
-                <td><strong>—</strong></td>
-                <td>
-                  <div style="font-weight: 600; color: var(--razo-gray-dark);">${
-                    proveedor.nombreempresa
-                  }</div>
-                </td>
-                <td>${proveedor.contactonombre || "-"}</td>
-                <td>${proveedor.email || "-"}</td>
-                <td>${proveedor.telefono || "-"}</td>
-                <td>
-                  <span class="admin-badge warning">⏳ Por Confirmar</span>
-                  <div style="margin-top:0.35rem; display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
-                    ${actionsHtml}
-                  </div>
-                </td>
-              </tr>
-            `;
-                  }
-
                   return `
               <tr>
                 <td><strong>#${proveedor.proveedorid}</strong></td>
@@ -988,8 +840,8 @@
               showToast(
                 data.message ||
                   (editingProveedorId
-                    ? "Solicitud registrada y pendiente de confirmación."
-                    : "Solicitud registrada y pendiente de confirmación."),
+                    ? "Proveedor actualizado correctamente."
+                    : "Proveedor creado correctamente."),
                 "success"
               );
               closeProveedorModal();

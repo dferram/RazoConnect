@@ -2847,8 +2847,7 @@ const crearProducto = async (req, res) => {
     packs,
   } = req.body;
 
-  const rolUsuario = (req?.user?.rol || "").toString().trim().toLowerCase();
-  const allowDirect = rolUsuario === "admin" || rolUsuario === "superadmin";
+  const allowDirect = true;
 
   // DEBUG BACKEND: inspeccionar qué llega al crear producto maestro
   console.log("🟢 [CREAR_PRODUCTO] Body recibido:", {
@@ -2920,10 +2919,8 @@ const crearProducto = async (req, res) => {
       }
     }
 
-    // Gestión de visibilidad:
-    // - Admin/Superadmin: permite crear directamente con el valor recibido.
-    // - Otros: mantener el comportamiento anterior (pendiente de aprobación).
-    const activoFinal = allowDirect ? (activo !== undefined ? Boolean(activo) : true) : false;
+    // Gestión de visibilidad: respetar lo enviado, por defecto TRUE.
+    const activoFinal = activo !== undefined ? Boolean(activo) : true;
 
     const tipoProductoNombre = (() => {
       const raw =
@@ -3215,52 +3212,18 @@ const crearProducto = async (req, res) => {
     await client.query("COMMIT");
     transactionStarted = false;
 
-    if (allowDirect) {
-      await auditService.registrarCambioPasivo(
-        req,
-        "productos",
-        producto.productoid,
-        "INSERT",
-        null,
-        producto
-      );
-
-      return res.status(201).json({
-        success: true,
-        message: "Producto creado correctamente.",
-        data: {
-          producto,
-          tamanosDisponibles: tamanosAsociados,
-          varianteMaestra: null,
-          variantes: [],
-        },
-      });
-    }
-
-    // Registrar solicitud de cambio para PUBLICAR/ACTIVAR el producto maestro (estrategia híbrida)
-    try {
-      await solicitarCambio(
-        req,
-        "productos",
-        producto.productoid,
-        "UPDATE",
-        {
-          Activo: true,
-        },
-        producto
-      );
-    } catch (crError) {
-      console.error(
-        "Error al registrar solicitud de cambio para creación de producto:",
-        crError
-      );
-      // No rompemos el flujo principal: el producto queda inactivo si falla el registro
-    }
+    await auditService.registrarCambioPasivo(
+      req,
+      "productos",
+      producto.productoid,
+      "INSERT",
+      null,
+      producto
+    );
 
     return res.status(201).json({
       success: true,
-      message:
-        "Producto creado preliminarmente. Pendiente de aprobación para activación.",
+      message: "Producto creado correctamente.",
       data: {
         producto,
         tamanosDisponibles: tamanosAsociados,
@@ -3764,8 +3727,7 @@ const actualizarProducto = async (req, res) => {
 
     const productoActual = productoResult.rows[0];
 
-    const rolUsuario = (req?.user?.rol || "").toString().trim().toLowerCase();
-    const allowDirect = rolUsuario === "admin" || rolUsuario === "superadmin";
+    const allowDirect = true;
 
     // Si viene un orden explícito de imágenes, actualizarlo aquí.
     // Esto debe aplicarse inmediatamente (no requiere solicitud de cambio) porque es un atributo de presentación.
@@ -3948,186 +3910,115 @@ const actualizarProducto = async (req, res) => {
         .then((r) => r.rows[0]?.tipoproductoid ?? null);
     })();
 
-    try {
-      const datosNuevosProducto = {
-        NombreProducto: nombreFinal,
-        Descripcion: descripcionFinal,
-        CategoriaID: categoriaFinal,
-        ProveedorID_Default: proveedorId,
-        Activo: activoFinal,
-      };
+    const datosNuevosProducto = {
+      NombreProducto: nombreFinal,
+      Descripcion: descripcionFinal,
+      CategoriaID: categoriaFinal,
+      ProveedorID_Default: proveedorId,
+      Activo: activoFinal,
+    };
 
-      let resolvedTipoProductoId = null;
-      if (tipoProductoNombre !== null || tipoProductoIdRaw !== undefined) {
-        resolvedTipoProductoId = await tipoProductoId;
-        datosNuevosProducto.TipoProductoID = resolvedTipoProductoId;
-      }
+    let resolvedTipoProductoId = null;
+    if (tipoProductoNombre !== null || tipoProductoIdRaw !== undefined) {
+      resolvedTipoProductoId = await tipoProductoId;
+      datosNuevosProducto.TipoProductoID = resolvedTipoProductoId;
+    }
 
-      if (allowDirect) {
-        const updateProductoRes = await client.query(
-          `UPDATE productos
-           SET nombreproducto = $1,
-               descripcion = $2,
-               categoriaid = $3,
-               proveedorid_default = $4,
-               activo = $5,
-               tipoproductoid = $6
-           WHERE productoid = $7
-           RETURNING productoid, nombreproducto, sku_maestro, descripcion, categoriaid, proveedorid_default, activo, tipoproductoid`,
-          [
-            datosNuevosProducto.NombreProducto,
-            datosNuevosProducto.Descripcion,
-            datosNuevosProducto.CategoriaID,
-            datosNuevosProducto.ProveedorID_Default,
-            datosNuevosProducto.Activo,
-            resolvedTipoProductoId ?? productoActual.tipoproductoid ?? null,
-            productoId,
-          ]
-        );
-
-        if (!updateProductoRes.rows.length) {
-          if (transactionStarted) {
-            await client.query("ROLLBACK");
-            transactionStarted = false;
-          }
-          return res.status(404).json({
-            success: false,
-            message: "Producto maestro no encontrado",
-          });
-        }
-
-        const productoActualizado = updateProductoRes.rows[0];
-
-        let varianteTipoAudit = null;
-
-        if (tipoProductoNombre !== null || tipoProductoIdRaw !== undefined) {
-          const masterVarianteResult = await client.query(
-            `SELECT *
-             FROM producto_variantes
-             WHERE productoid = $1
-             ORDER BY piezasporpaquete ASC NULLS LAST, varianteid ASC
-             LIMIT 1`,
-            [productoId]
-          );
-
-          const varianteMaestraActual = masterVarianteResult.rows[0] || null;
-          if (varianteMaestraActual && varianteMaestraActual.varianteid) {
-            const updateVarianteTipoRes = await client.query(
-              `UPDATE producto_variantes
-               SET tipoproductoid = $1
-               WHERE varianteid = $2
-               RETURNING varianteid, productoid, sku, tipoproductoid`,
-              [resolvedTipoProductoId, varianteMaestraActual.varianteid]
-            );
-
-            if (updateVarianteTipoRes.rows.length) {
-              varianteTipoAudit = {
-                old: varianteMaestraActual,
-                neu: updateVarianteTipoRes.rows[0],
-              };
-            }
-          }
-        }
-
-        await client.query("COMMIT");
-        transactionStarted = false;
-
-        await auditService.registrarCambioPasivo(
-          req,
-          "productos",
-          productoId,
-          "UPDATE",
-          productoActual,
-          productoActualizado
-        );
-
-        if (varianteTipoAudit) {
-          await auditService.registrarCambioPasivo(
-            req,
-            "producto_variantes",
-            varianteTipoAudit.neu.varianteid,
-            "UPDATE",
-            varianteTipoAudit.old,
-            varianteTipoAudit.neu
-          );
-        }
-
-        return res.json({
-          success: true,
-          message: "Producto actualizado correctamente.",
-          data: {
-            productoId,
-          },
-        });
-      }
-
-      const resultado = await solicitarCambio(
-        req,
-        "productos",
+    const updateProductoRes = await client.query(
+      `UPDATE productos
+       SET nombreproducto = $1,
+           descripcion = $2,
+           categoriaid = $3,
+           proveedorid_default = $4,
+           activo = $5,
+           tipoproductoid = $6
+       WHERE productoid = $7
+       RETURNING productoid, nombreproducto, sku_maestro, descripcion, categoriaid, proveedorid_default, activo, tipoproductoid`,
+      [
+        datosNuevosProducto.NombreProducto,
+        datosNuevosProducto.Descripcion,
+        datosNuevosProducto.CategoriaID,
+        datosNuevosProducto.ProveedorID_Default,
+        datosNuevosProducto.Activo,
+        resolvedTipoProductoId ?? productoActual.tipoproductoid ?? null,
         productoId,
-        "UPDATE",
-        datosNuevosProducto,
-        productoActual
-      );
+      ]
+    );
 
-      let resultadoTipo = null;
-      if (tipoProductoNombre !== null || tipoProductoIdRaw !== undefined) {
-        const masterVarianteResult = await client.query(
-          `SELECT *
-           FROM producto_variantes
-           WHERE productoid = $1
-           ORDER BY piezasporpaquete ASC NULLS LAST, varianteid ASC
-           LIMIT 1`,
-          [productoId]
-        );
-
-        const varianteMaestraActual = masterVarianteResult.rows[0] || null;
-        if (varianteMaestraActual && varianteMaestraActual.varianteid) {
-          resultadoTipo = await solicitarCambio(
-            req,
-            "producto_variantes",
-            varianteMaestraActual.varianteid,
-            "UPDATE",
-            {
-              tipoproductoid: resolvedTipoProductoId,
-            },
-            varianteMaestraActual
-          );
-        }
-      }
-
+    if (!updateProductoRes.rows.length) {
       if (transactionStarted) {
         await client.query("ROLLBACK");
         transactionStarted = false;
       }
-
-      return res.json({
-        success: true,
-        message: resultado.mensaje || "Solicitud de edición enviada a revisión.",
-        data: {
-          productoId,
-          solicitudId: resultado.solicitudId,
-          estado: resultado.estado,
-          solicitudTipoProductoId: resultadoTipo ? resultadoTipo.solicitudId : null,
-        },
-      });
-    } catch (crError) {
-      if (transactionStarted) {
-        await client.query("ROLLBACK");
-        transactionStarted = false;
-      }
-
-      console.error(
-        "Error al registrar solicitud de cambio de producto maestro:",
-        crError
-      );
-      return res.status(500).json({
+      return res.status(404).json({
         success: false,
-        message:
-          "Error al registrar la solicitud de cambio del producto maestro",
-        error: crError.message,
+        message: "Producto maestro no encontrado",
       });
     }
+
+    const productoActualizado = updateProductoRes.rows[0];
+
+    let varianteTipoAudit = null;
+
+    if (tipoProductoNombre !== null || tipoProductoIdRaw !== undefined) {
+      const masterVarianteResult = await client.query(
+        `SELECT *
+         FROM producto_variantes
+         WHERE productoid = $1
+         ORDER BY piezasporpaquete ASC NULLS LAST, varianteid ASC
+         LIMIT 1`,
+        [productoId]
+      );
+
+      const varianteMaestraActual = masterVarianteResult.rows[0] || null;
+      if (varianteMaestraActual && varianteMaestraActual.varianteid) {
+        const updateVarianteTipoRes = await client.query(
+          `UPDATE producto_variantes
+           SET tipoproductoid = $1
+           WHERE varianteid = $2
+           RETURNING varianteid, productoid, sku, tipoproductoid`,
+          [resolvedTipoProductoId, varianteMaestraActual.varianteid]
+        );
+
+        if (updateVarianteTipoRes.rows.length) {
+          varianteTipoAudit = {
+            old: varianteMaestraActual,
+            neu: updateVarianteTipoRes.rows[0],
+          };
+        }
+      }
+    }
+
+    await client.query("COMMIT");
+    transactionStarted = false;
+
+    await auditService.registrarCambioPasivo(
+      req,
+      "productos",
+      productoId,
+      "UPDATE",
+      productoActual,
+      productoActualizado
+    );
+
+    if (varianteTipoAudit) {
+      await auditService.registrarCambioPasivo(
+        req,
+        "producto_variantes",
+        varianteTipoAudit.neu.varianteid,
+        "UPDATE",
+        varianteTipoAudit.old,
+        varianteTipoAudit.neu
+      );
+    }
+
+    return res.json({
+      success: true,
+      message: "Producto actualizado correctamente.",
+      data: {
+        productoId,
+      },
+    });
   } catch (error) {
     if (transactionStarted) {
       await client.query("ROLLBACK");
@@ -4912,8 +4803,15 @@ const crearCategoria = async (req, res) => {
       Activo: activoFinal,
     };
 
-    const rol = (req?.user?.rol || "").toString().trim().toLowerCase();
-    const allowDirect = rol === "admin" || rol === "superadmin";
+    const rolesRaw = Array.isArray(req.user?.roles)
+      ? req.user.roles
+      : [req.user?.rol];
+    const roles = rolesRaw
+      .filter(Boolean)
+      .map((r) => r.toString().trim().toLowerCase());
+    const allowDirect = roles.some((r) =>
+      ["admin", "superadmin", "super-admin", "super admin"].includes(r)
+    );
 
     if (allowDirect) {
       const insertRes = await db.query(
@@ -5067,8 +4965,15 @@ const actualizarCategoria = async (req, res) => {
       Activo: activoFinal,
     };
 
-    const rol = (req?.user?.rol || "").toString().trim().toLowerCase();
-    const allowDirect = rol === "admin" || rol === "superadmin";
+    const rolesRaw = Array.isArray(req.user?.roles)
+      ? req.user.roles
+      : [req.user?.rol];
+    const roles = rolesRaw
+      .filter(Boolean)
+      .map((r) => r.toString().trim().toLowerCase());
+    const allowDirect = roles.some((r) =>
+      ["admin", "superadmin", "super-admin", "super admin"].includes(r)
+    );
 
     if (allowDirect) {
       const updateRes = await db.query(
@@ -5222,8 +5127,15 @@ const eliminarCategoria = async (req, res) => {
 
     const categoriaSnapshot = categoriaResult.rows[0];
 
-    const rol = (req?.user?.rol || "").toString().trim().toLowerCase();
-    const allowDirect = rol === "admin" || rol === "superadmin";
+    const rolesRaw = Array.isArray(req.user?.roles)
+      ? req.user.roles
+      : [req.user?.rol];
+    const roles = rolesRaw
+      .filter(Boolean)
+      .map((r) => r.toString().trim().toLowerCase());
+    const allowDirect = roles.some((r) =>
+      ["admin", "superadmin", "super-admin", "super admin"].includes(r)
+    );
 
     const datosNuevos = {};
 
@@ -6236,47 +6148,7 @@ const getAllProveedores = async (req, res) => {
     `;
 
     const result = await db.query(query);
-    const proveedoresReales = result.rows;
-
-    // Proveedores pendientes de creación en control_cambios
-    const cambiosPendientesResult = await db.query(
-      `SELECT id, datos_nuevos
-       FROM control_cambios
-       WHERE entidad = 'proveedores'
-         AND tipo_cambio = 'INSERT'
-         AND estado = 'PENDIENTE'`
-    );
-
-    const proveedoresPendientes = cambiosPendientesResult.rows
-      .map((rowCambio) => {
-        let datos = rowCambio.datos_nuevos;
-        if (!datos || typeof datos !== "object") {
-          try {
-            datos = JSON.parse(rowCambio.datos_nuevos);
-          } catch (e) {
-            return null;
-          }
-        }
-
-        const nombreEmpresa = (datos.NombreEmpresa || "").trim();
-        if (!nombreEmpresa) {
-          return null;
-        }
-
-        return {
-          proveedorid: null,
-          nombreempresa: nombreEmpresa,
-          contactonombre: datos.ContactoNombre || null,
-          email: datos.Email || null,
-          telefono: datos.Telefono || null,
-          // Otros campos opcionales pueden agregarse aquí si se necesitan en el futuro
-          _isPending: true,
-          controlCambioId: rowCambio.id,
-        };
-      })
-      .filter(Boolean);
-
-    const proveedores = [...proveedoresReales, ...proveedoresPendientes];
+    const proveedores = result.rows;
 
     res.json({
       success: true,
@@ -6379,7 +6251,6 @@ const crearProveedor = async (req, res) => {
       }
     }
 
-    // Estrategia Pura: registrar solicitud de creación en control_cambios
     const datosNuevosProveedor = {
       NombreEmpresa: nombreEmpresa.trim(),
       ContactoNombre: toNullIfEmpty(contactoNombre),
@@ -6406,26 +6277,90 @@ const crearProveedor = async (req, res) => {
       DiasCredito: diasCredito ? parseInt(diasCredito) : null,
       LimiteCredito: limiteCredito ? parseFloat(limiteCredito) : null,
       DescuentoFinanciero: toNullIfEmpty(descuentoFinanciero),
-      MinimoCompra: minimoCompra ? parseFloat(minimoCompra) : null,
+      MinimoCompra: toNullIfEmpty(minimoCompra),
       AceptaDevoluciones:
         aceptaDevoluciones !== undefined ? Boolean(aceptaDevoluciones) : null,
     };
 
-    const resultado = await solicitarCambio(
+    const insertRes = await db.query(
+      `INSERT INTO proveedores (
+        nombreempresa,
+        contactonombre,
+        email,
+        telefono,
+        razonsocial,
+        rfc,
+        regimenfiscal,
+        calle,
+        colonia,
+        codigopostal,
+        ciudad,
+        estado,
+        nombrerepresentanteventas,
+        celularventas,
+        emailventas,
+        nombrecontactocobranza,
+        telefonocobranza,
+        emailcobranza,
+        banco,
+        numerocuenta,
+        clabe,
+        referenciapago,
+        diascredito,
+        limitecredito,
+        descuentofinanciero,
+        minimocompra,
+        aceptadevoluciones
+      ) VALUES (
+        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27
+      ) RETURNING *`,
+      [
+        datosNuevosProveedor.NombreEmpresa,
+        datosNuevosProveedor.ContactoNombre,
+        datosNuevosProveedor.Email,
+        datosNuevosProveedor.Telefono,
+        datosNuevosProveedor.RazonSocial,
+        datosNuevosProveedor.RFC,
+        datosNuevosProveedor.RegimenFiscal,
+        datosNuevosProveedor.Calle,
+        datosNuevosProveedor.Colonia,
+        datosNuevosProveedor.CodigoPostal,
+        datosNuevosProveedor.Ciudad,
+        datosNuevosProveedor.Estado,
+        datosNuevosProveedor.NombreRepresentanteVentas,
+        datosNuevosProveedor.CelularVentas,
+        datosNuevosProveedor.EmailVentas,
+        datosNuevosProveedor.NombreContactoCobranza,
+        datosNuevosProveedor.TelefonoCobranza,
+        datosNuevosProveedor.EmailCobranza,
+        datosNuevosProveedor.Banco,
+        datosNuevosProveedor.NumeroCuenta,
+        datosNuevosProveedor.CLABE,
+        datosNuevosProveedor.ReferenciaPago,
+        datosNuevosProveedor.DiasCredito,
+        datosNuevosProveedor.LimiteCredito,
+        datosNuevosProveedor.DescuentoFinanciero,
+        datosNuevosProveedor.MinimoCompra,
+        datosNuevosProveedor.AceptaDevoluciones,
+      ]
+    );
+
+    const row = insertRes.rows[0];
+
+    await auditService.registrarCambioPasivo(
       req,
       "proveedores",
-      null,
+      row.proveedorid,
       "INSERT",
-      datosNuevosProveedor,
-      null
+      null,
+      row
     );
 
     return res.status(201).json({
       success: true,
-      message: "Solicitud registrada y pendiente de confirmación.",
+      message: "Proveedor creado correctamente.",
       data: {
-        solicitudId: resultado.solicitudId,
-        estado: resultado.estado,
+        proveedorId: row.proveedorid,
       },
     });
   } catch (error) {
@@ -6562,27 +6497,97 @@ const actualizarProveedor = async (req, res) => {
       DiasCredito: diasCredito ? parseInt(diasCredito) : null,
       LimiteCredito: limiteCredito ? parseFloat(limiteCredito) : null,
       DescuentoFinanciero: toNullIfEmpty(descuentoFinanciero),
-      MinimoCompra: minimoCompra ? parseFloat(minimoCompra) : null,
+      MinimoCompra: toNullIfEmpty(minimoCompra),
       AceptaDevoluciones:
         aceptaDevoluciones !== undefined ? Boolean(aceptaDevoluciones) : null,
     };
 
-    const resultado = await solicitarCambio(
+    const updateRes = await db.query(
+      `UPDATE proveedores
+       SET nombreempresa = $1,
+           contactonombre = $2,
+           email = $3,
+           telefono = $4,
+           razonsocial = $5,
+           rfc = $6,
+           regimenfiscal = $7,
+           calle = $8,
+           colonia = $9,
+           codigopostal = $10,
+           ciudad = $11,
+           estado = $12,
+           nombrerepresentanteventas = $13,
+           celularventas = $14,
+           emailventas = $15,
+           nombrecontactocobranza = $16,
+           telefonocobranza = $17,
+           emailcobranza = $18,
+           banco = $19,
+           numerocuenta = $20,
+           clabe = $21,
+           referenciapago = $22,
+           diascredito = $23,
+           limitecredito = $24,
+           descuentofinanciero = $25,
+           minimocompra = $26,
+           aceptadevoluciones = $27
+       WHERE proveedorid = $28
+       RETURNING *`,
+      [
+        datosNuevosProveedor.NombreEmpresa,
+        datosNuevosProveedor.ContactoNombre,
+        datosNuevosProveedor.Email,
+        datosNuevosProveedor.Telefono,
+        datosNuevosProveedor.RazonSocial,
+        datosNuevosProveedor.RFC,
+        datosNuevosProveedor.RegimenFiscal,
+        datosNuevosProveedor.Calle,
+        datosNuevosProveedor.Colonia,
+        datosNuevosProveedor.CodigoPostal,
+        datosNuevosProveedor.Ciudad,
+        datosNuevosProveedor.Estado,
+        datosNuevosProveedor.NombreRepresentanteVentas,
+        datosNuevosProveedor.CelularVentas,
+        datosNuevosProveedor.EmailVentas,
+        datosNuevosProveedor.NombreContactoCobranza,
+        datosNuevosProveedor.TelefonoCobranza,
+        datosNuevosProveedor.EmailCobranza,
+        datosNuevosProveedor.Banco,
+        datosNuevosProveedor.NumeroCuenta,
+        datosNuevosProveedor.CLABE,
+        datosNuevosProveedor.ReferenciaPago,
+        datosNuevosProveedor.DiasCredito,
+        datosNuevosProveedor.LimiteCredito,
+        datosNuevosProveedor.DescuentoFinanciero,
+        datosNuevosProveedor.MinimoCompra,
+        datosNuevosProveedor.AceptaDevoluciones,
+        proveedorId,
+      ]
+    );
+
+    if (!updateRes.rows.length) {
+      return res.status(404).json({
+        success: false,
+        message: "Proveedor no encontrado",
+      });
+    }
+
+    const row = updateRes.rows[0];
+
+    await auditService.registrarCambioPasivo(
       req,
       "proveedores",
       proveedorId,
       "UPDATE",
-      datosNuevosProveedor,
-      proveedorActual
+      proveedorActual,
+      row
     );
 
     return res.json({
       success: true,
-      message: "Solicitud registrada y pendiente de confirmación.",
+      message: "Proveedor actualizado correctamente.",
       data: {
         proveedorId,
-        solicitudId: resultado.solicitudId,
-        estado: resultado.estado,
       },
     });
   } catch (error) {

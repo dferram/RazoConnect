@@ -53,15 +53,6 @@
                 ></textarea>
               </div>
 
-              <div class="form-group">
-                <label for="parentCategoria" class="form-label"
-                  >Categoría padre (opcional)</label
-                >
-                <select id="parentCategoria" class="form-input">
-                  <option value="">Sin categoría padre</option>
-                </select>
-              </div>
-
               <!-- Switch de visibilidad -->
               <div class="switch-container">
                 <label class="switch-label" for="activoSwitch">
@@ -121,7 +112,6 @@
                     <th>Nombre</th>
                     <th>Descripción</th>
                     <th>Estado</th>
-                    <th>Categoría padre</th>
                     <th>Acciones</th>
                   </tr>
                 </thead>
@@ -179,8 +169,6 @@
       }
 
       verifyAndLoadAdmin();
-
-      const parentSelect = document.getElementById("parentCategoria");
       const categoriasTable = document.getElementById("categoriasTable");
       const categoriasTableBody = document.getElementById(
         "categoriasTableBody"
@@ -202,8 +190,6 @@
         guardarBtnText.textContent = "Guardar categoría";
         guardarBtnText.style.display = "inline";
         guardarBtnSpinner.style.display = "none";
-        populateParentOptions();
-        parentSelect.value = "";
       };
 
       const headers = {
@@ -232,7 +218,6 @@
 
           categoriasCache = result.data.categorias || [];
           renderCategorias();
-          populateParentOptions();
         } catch (error) {
           console.error("Error al cargar categorías:", error);
           showToast(error.message || "Error al cargar categorías", "error");
@@ -241,21 +226,6 @@
         } finally {
           loadingCategorias.style.display = "none";
         }
-      };
-
-      const populateParentOptions = () => {
-        const current = categoriaEditando?.categoriaId || null;
-        parentSelect.innerHTML =
-          '<option value="">Sin categoría padre</option>';
-
-        categoriasCache
-          .filter((cat) => cat.categoriaId !== current)
-          .forEach((cat) => {
-            const option = document.createElement("option");
-            option.value = cat.categoriaId;
-            option.textContent = cat.nombre;
-            parentSelect.appendChild(option);
-          });
       };
 
       const renderCategorias = () => {
@@ -267,10 +237,6 @@
 
         categoriasTableBody.innerHTML = categoriasCache
           .map((cat) => {
-            const parentName = cat.parentNombre
-              ? `${cat.parentNombre}`
-              : "Sin padre";
-            
             const activo = cat.activo !== undefined ? cat.activo : true;
             const estadoBadgeClass = activo ? 'badge-success' : 'badge-secondary';
             const estadoTexto = activo ? 'Visible' : 'Oculto';
@@ -301,7 +267,6 @@
                   </button>
                 </div>
               </td>
-              <td>${parentName}</td>
               <td>
                 <div class="table-actions">
                   <button class="btn btn-secondary btn-sm" data-action="edit" data-id="${
@@ -329,7 +294,6 @@
         const formData = {
           nombre: categoriaForm.nombre.value.trim(),
           descripcion: categoriaForm.descripcion.value.trim() || null,
-          parentCategoriaId: categoriaForm.parentCategoria.value || null,
           activo: document.getElementById('activoSwitch').checked,
         };
 
@@ -399,11 +363,8 @@
 
         if (action === "edit") {
           categoriaEditando = categoria;
-          populateParentOptions();
           categoriaForm.nombre.value = categoria.nombre;
           categoriaForm.descripcion.value = categoria.descripcion || "";
-          categoriaForm.parentCategoria.value =
-            categoria.parentCategoriaId || "";
           guardarBtnText.textContent = "Actualizar categoría";
           showToast(`Editando categoría: ${categoria.nombre}`, "info");
         }

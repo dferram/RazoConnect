@@ -615,4 +615,25 @@ router.get(
   bitacoraController.obtenerEntidadesUnicas
 );
 
+router.get(
+  "/bitacora/actividad",
+  authenticate,
+  verifySuperAdmin,
+  bitacoraController.obtenerActividad
+);
+
+router.get(
+  "/bitacora/actividad/usuarios",
+  authenticate,
+  verifySuperAdmin,
+  bitacoraController.obtenerUsuariosActividad
+);
+
+router.get(
+  "/bitacora/actividad/entidades",
+  authenticate,
+  verifySuperAdmin,
+  bitacoraController.obtenerEntidadesActividad
+);
+
 module.exports = router;

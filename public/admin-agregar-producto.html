@@ -1214,7 +1214,7 @@
                 </select>
               </div>
               <small style="color:#6b7280; line-height:1.4;">
-                Este cambio genera una <strong>solicitud de aprobación</strong>. No se aplica inmediatamente.
+                Este cambio se aplica inmediatamente.
               </small>
             </div>
           `;
@@ -1224,7 +1224,7 @@
             html,
             icon: "info",
             showCancelButton: true,
-            confirmButtonText: "Enviar a revisión",
+            confirmButtonText: "Guardar cambios",
             cancelButtonText: "Cancelar",
             confirmButtonColor: "#F97316",
             width: "900px",
@@ -1268,13 +1268,13 @@
           const data = await resp.json();
 
           if (!resp.ok || !data?.success) {
-            throw new Error(data?.message || "No se pudo enviar la solicitud");
+            throw new Error(data?.message || "No se pudo guardar el producto");
           }
 
           await Swal.fire({
-            icon: "info",
-            title: "Solicitud Enviada",
-            text: data?.message || "La edición del producto maestro fue enviada a revisión.",
+            icon: "success",
+            title: "Actualizado",
+            text: data?.message || "Producto actualizado correctamente.",
             confirmButtonColor: "#F97316",
           });
 
@@ -1285,7 +1285,7 @@
           await Swal.fire({
             icon: "error",
             title: "Error",
-            text: error.message || "No se pudo enviar la solicitud",
+            text: error.message || "No se pudo guardar el producto",
             confirmButtonColor: "#F97316",
           });
         }
