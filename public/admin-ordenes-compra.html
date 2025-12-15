@@ -93,9 +93,30 @@
               >
                 Órdenes de Compra por Backorder
               </h2>
-              <span id="resultadosBadge" class="admin-badge secondary"
-                >0 RESULTADOS</span
-              >
+              <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; justify-content: flex-end;">
+                <button
+                  id="btn-auto-generar"
+                  type="button"
+                  class="btn"
+                  style="
+                    background: #4f46e5;
+                    color: #fff;
+                    padding: 0.5rem 1rem;
+                    border: none;
+                    border-radius: 0.5rem;
+                    font-weight: 600;
+                    cursor: pointer;
+                    transition: background 0.2s;
+                  "
+                  onmouseover="this.style.background='#4338ca'"
+                  onmouseout="this.style.background='#4f46e5'"
+                >
+                  🤖 Generar Sugerencias
+                </button>
+                <span id="resultadosBadge" class="admin-badge secondary"
+                  >0 RESULTADOS</span
+                >
+              </div>
             </div>
 
             <div
@@ -115,6 +136,7 @@
                 <thead>
                   <tr>
                     <th>ID</th>
+                    <th>Origen</th>
                     <th>Proveedor</th>
                     <th>Fecha Creación</th>
                     <th>Entrega Esperada</th>
@@ -336,6 +358,83 @@
           verifyAndLoadAdmin();
           loadOrdenes();
           filtroEstatus.addEventListener("change", loadOrdenes);
+
+          const btnAutoGenerar = document.getElementById("btn-auto-generar");
+          if (btnAutoGenerar) {
+            btnAutoGenerar.addEventListener("click", async () => {
+              try {
+                if (
+                  typeof Swal !== "undefined" &&
+                  Swal &&
+                  typeof Swal.fire === "function"
+                ) {
+                  Swal.fire({
+                    title: "Analizando inventario...",
+                    text: "Generando órdenes sugeridas por stock bajo.",
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                      Swal.showLoading();
+                    },
+                    confirmButtonColor: "#F97316",
+                  });
+                }
+
+                const response = await API.apiCall("/admin/compras/auto-generar", {
+                  method: "POST",
+                });
+
+                if (!response.ok) {
+                  throw new Error(
+                    response.data?.message || "No se pudo generar automáticamente"
+                  );
+                }
+
+                const ordenesCreadas =
+                  response.data?.ordenesCreadas ?? response.data?.data?.ordenesCreadas;
+
+                if (
+                  typeof Swal !== "undefined" &&
+                  Swal &&
+                  typeof Swal.fire === "function"
+                ) {
+                  await Swal.fire({
+                    icon: "success",
+                    title: "Listo",
+                    text: `Se generaron ${
+                      Number.isInteger(Number.parseInt(ordenesCreadas, 10))
+                        ? Number.parseInt(ordenesCreadas, 10)
+                        : 0
+                    } órdenes automáticamente.`,
+                    confirmButtonColor: "#F97316",
+                  });
+                } else {
+                  showToast(
+                    `Se generaron ${ordenesCreadas || 0} órdenes automáticamente.`,
+                    "success"
+                  );
+                }
+
+                await loadOrdenes();
+              } catch (error) {
+                console.error("Error auto-generando órdenes:", error);
+
+                if (
+                  typeof Swal !== "undefined" &&
+                  Swal &&
+                  typeof Swal.fire === "function"
+                ) {
+                  await Swal.fire({
+                    icon: "warning",
+                    title: "No se pudo generar",
+                    text: error.message || "Error desconocido",
+                    confirmButtonColor: "#F97316",
+                  });
+                } else {
+                  showToast(error.message || "Error al generar órdenes", "error");
+                }
+              }
+            });
+          }
         });
 
         // Verificar y cargar información del admin desde la base de datos
@@ -444,34 +543,50 @@
             const row = document.createElement("tr");
 
             const estatusBadgeClass = getEstatusBadgeClass(orden.estatus);
-            const fechaCreacion = new Date(
-              orden.fechaCreacion
-            ).toLocaleDateString("es-MX", {
-              year: "numeric",
-              month: "short",
-              day: "numeric",
-            });
-            const fechaEntrega = new Date(
-              orden.fechaEntregaEsperada
-            ).toLocaleDateString("es-MX", {
-              year: "numeric",
-              month: "short",
-              day: "numeric",
-            });
+            const origenInfo = getOrigenBadgeInfo(orden.origenOC);
+
+            const fechaCreacion = orden.fechaCreacion
+              ? new Date(orden.fechaCreacion).toLocaleDateString("es-MX", {
+                  year: "numeric",
+                  month: "short",
+                  day: "numeric",
+                })
+              : "-";
+
+            const fechaEntrega = orden.fechaEntregaEsperada
+              ? new Date(orden.fechaEntregaEsperada).toLocaleDateString("es-MX", {
+                  year: "numeric",
+                  month: "short",
+                  day: "numeric",
+                })
+              : "-";
+
+            const estatusTexto = (() => {
+              const val = (orden.estatus || "").toString();
+              if (val === "Pendiente") return "Pendiente (Preliminar)";
+              if (val === "Recibido") return "Recibido (Real/Cerrada)";
+              if (val === "Completada") return "Completada (Real/Cerrada)";
+              return val;
+            })();
 
             row.innerHTML = `
               <td style="font-weight: 600; color: #374151;">#${
                 orden.ordenCompraId
               }</td>
-              <td style="font-weight: 500;">${orden.proveedorNombre}</td>
+              <td><span class="admin-badge ${origenInfo.className}">${
+                origenInfo.label
+              }</span></td>
+              <td style="font-weight: 500;">${
+                (orden.proveedorNombre || "").toString()
+              }</td>
               <td style="color: #6b7280;">${fechaCreacion}</td>
               <td style="color: #6b7280;">${fechaEntrega}</td>
               <td style="text-align: center; color: #374151;">${
                 orden.totalProductos
               }</td>
               <td><span class="admin-badge ${estatusBadgeClass}">${
-              orden.estatus
-            }</span></td>
+                estatusTexto
+              }</span></td>
               <td>
                 <div style="display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap;">
                   <button 
@@ -623,8 +738,20 @@
             Pendiente: "badge-warning",
             Parcial: "badge-info",
             Completada: "badge-success",
+            Recibido: "badge-success",
           };
           return classes[estatus] || "badge-secondary";
+        }
+
+        function getOrigenBadgeInfo(origenOC) {
+          const origen = (origenOC || "").toString().trim().toLowerCase();
+          if (origen === "backorder") {
+            return { label: "Backorder", className: "danger" };
+          }
+          if (origen === "sugerencia_stock") {
+            return { label: "Stock Bajo", className: "warning" };
+          }
+          return { label: "Manual", className: "info" };
         }
 
         // Cerrar modal al hacer clic fuera

@@ -120,6 +120,212 @@ const obtenerSugerencias = async (req, res) => {
   }
 };
 
+const autoGenerarOrdenes = async (req, res) => {
+  const usuarioCreadorId = Number.parseInt(req?.user?.id ?? req?.user?.userId, 10);
+  if (!Number.isInteger(usuarioCreadorId) || usuarioCreadorId <= 0) {
+    return res.status(401).json({
+      success: false,
+      message: "Usuario no autenticado",
+    });
+  }
+
+  try {
+    const query = `
+      WITH en_transito AS (
+        SELECT
+          doc.varianteid,
+          SUM(GREATEST(doc.cantidadsolicitada - doc.cantidadrecibida, 0))::int AS entransito
+        FROM detallesordencompra doc
+        INNER JOIN ordenesdecompra oc
+          ON oc.ordencompraid = doc.ordencompraid
+        WHERE oc.estatus IN ('Pendiente', 'Parcial')
+          AND COALESCE(oc.origenoc, 'manual') <> 'backorder'
+        GROUP BY doc.varianteid
+      )
+      SELECT
+        pv.varianteid,
+        pv.sku,
+        pv.stock,
+        pv.stock_minimo,
+        pv.costounitario,
+        pv.productoid,
+        pv.tipoproductoid,
+        p.nombreproducto,
+        p.proveedorid_default,
+        pr.nombreempresa,
+        COALESCE(et.entransito, 0) AS entransito,
+        COALESCE(pre.cantidadempaque, 1) AS cantidadempaque
+      FROM producto_variantes pv
+      INNER JOIN productos p
+        ON p.productoid = pv.productoid
+      LEFT JOIN proveedores pr
+        ON pr.proveedorid = p.proveedorid_default
+      LEFT JOIN en_transito et
+        ON et.varianteid = pv.varianteid
+      LEFT JOIN proveedor_reglas_empaque pre
+        ON pre.proveedorid = p.proveedorid_default
+       AND pre.tipoproductoid = pv.tipoproductoid
+      WHERE p.activo = TRUE
+        AND pv.activo = TRUE
+        AND COALESCE(pv.stock_minimo, 0) > 0
+      ORDER BY pr.nombreempresa ASC NULLS LAST, p.proveedorid_default ASC NULLS LAST, pv.varianteid ASC
+    `;
+
+    const result = await db.query(query);
+    const rows = Array.isArray(result.rows) ? result.rows : [];
+
+    const grupos = new Map();
+
+    for (const row of rows) {
+      const proveedorId = row.proveedorid_default ? Number.parseInt(row.proveedorid_default, 10) : null;
+      if (!Number.isInteger(proveedorId) || proveedorId <= 0) {
+        continue;
+      }
+
+      const stockFisico = Number.parseInt(row.stock, 10);
+      const stockMinimo = Number.parseInt(row.stock_minimo, 10);
+      const enTransito = Number.parseInt(row.entransito, 10);
+
+      const stockFisicoFinal = Number.isInteger(stockFisico) ? stockFisico : 0;
+      const stockMinimoFinal = Number.isInteger(stockMinimo) ? stockMinimo : 0;
+      const enTransitoFinal = Number.isInteger(enTransito) ? enTransito : 0;
+
+      const existencia = stockFisicoFinal + enTransitoFinal;
+      const deficit = stockMinimoFinal - existencia;
+      if (!(deficit > 0)) {
+        continue;
+      }
+
+      const cantidadEmpaqueRaw = Number.parseInt(row.cantidadempaque, 10);
+      const cantidadEmpaque =
+        Number.isInteger(cantidadEmpaqueRaw) && cantidadEmpaqueRaw > 0
+          ? cantidadEmpaqueRaw
+          : 1;
+
+      const sugerenciaCompra =
+        Math.ceil(deficit / cantidadEmpaque) * cantidadEmpaque;
+
+      const costoUnitarioRaw =
+        row.costounitario !== undefined && row.costounitario !== null
+          ? Number.parseFloat(row.costounitario)
+          : NaN;
+      const costoUnitario =
+        Number.isFinite(costoUnitarioRaw) && costoUnitarioRaw > 0
+          ? Number(costoUnitarioRaw.toFixed(2))
+          : 0;
+
+      const varianteId = Number.parseInt(row.varianteid, 10);
+      if (!Number.isInteger(varianteId) || varianteId <= 0) {
+        continue;
+      }
+
+      if (!grupos.has(proveedorId)) {
+        grupos.set(proveedorId, {
+          proveedorId,
+          nombreEmpresa: (row.nombreempresa || "").toString(),
+          items: [],
+        });
+      }
+
+      grupos.get(proveedorId).items.push({
+        varianteId,
+        sku: row.sku,
+        nombre: row.nombreproducto,
+        cantidad: sugerenciaCompra,
+        costoUnitario,
+        deficit,
+      });
+    }
+
+    let ordenesCreadas = 0;
+
+    for (const grupo of grupos.values()) {
+      if (!grupo?.proveedorId || !Array.isArray(grupo.items) || !grupo.items.length) {
+        continue;
+      }
+
+      const total = Number(
+        grupo.items
+          .reduce((sum, it) => sum + (it.cantidad || 0) * (it.costoUnitario || 0), 0)
+          .toFixed(2)
+      );
+
+      const client = await db.pool.connect();
+      let ordenCompraId = null;
+
+      try {
+        await client.query("BEGIN");
+
+        const insertOC = await client.query(
+          `INSERT INTO ordenesdecompra
+            (proveedorid, fechasolicitud, estatus, total, origenoc, usuario_creador_id)
+           VALUES ($1, NOW(), 'Pendiente', $2, $3, $4)
+           RETURNING ordencompraid`,
+          [grupo.proveedorId, total, "sugerencia_stock", usuarioCreadorId]
+        );
+
+        ordenCompraId = insertOC.rows?.[0]?.ordencompraid ?? null;
+        const ordenIdParsed = Number.parseInt(ordenCompraId, 10);
+        if (!Number.isInteger(ordenIdParsed) || ordenIdParsed <= 0) {
+          throw new Error("No se pudo crear la orden de compra");
+        }
+
+        for (const it of grupo.items) {
+          await client.query(
+            `INSERT INTO detallesordencompra
+              (ordencompraid, varianteid, cantidadsolicitada, cantidadrecibida, costounitario)
+             VALUES ($1, $2, $3, 0, $4)`,
+            [ordenIdParsed, it.varianteId, it.cantidad, it.costoUnitario]
+          );
+        }
+
+        await client.query("COMMIT");
+        client.release();
+
+        ordenesCreadas += 1;
+
+        try {
+          await auditService.registrarCambioPasivo(
+            req,
+            "ordenesdecompra",
+            ordenIdParsed,
+            "INSERT",
+            null,
+            {
+              evento: "AUTO-GENERATE",
+              origenoc: "sugerencia_stock",
+              proveedorId: grupo.proveedorId,
+              nombreEmpresa: grupo.nombreEmpresa,
+              total,
+              items: grupo.items,
+            }
+          );
+        } catch (e) {
+        }
+      } catch (error) {
+        try {
+          await client.query("ROLLBACK");
+        } catch (e) {
+        }
+        client.release();
+        throw error;
+      }
+    }
+
+    return res.json({
+      success: true,
+      message: `Se generaron ${ordenesCreadas} órdenes automáticamente.`,
+      ordenesCreadas,
+    });
+  } catch (error) {
+    console.error("Error al auto-generar órdenes de compra:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error en el servidor",
+    });
+  }
+};
+
 const generarOrdenCompra = async (req, res) => {
   const proveedorId = Number.parseInt(req?.body?.proveedorId, 10);
   const items = Array.isArray(req?.body?.items) ? req.body.items : [];
@@ -326,4 +532,5 @@ const generarOrdenCompra = async (req, res) => {
 module.exports = {
   obtenerSugerencias,
   generarOrdenCompra,
+  autoGenerarOrdenes,
 };

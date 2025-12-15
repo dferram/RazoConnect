@@ -6979,7 +6979,7 @@ const getAllOrdenesCompra = async (req, res) => {
       FROM OrdenesDeCompra oc
       INNER JOIN Proveedores p ON oc.ProveedorID = p.ProveedorID
       LEFT JOIN DetallesOrdenCompra doc ON oc.OrdenCompraID = doc.OrdenCompraID
-      WHERE oc.OrigenOC = 'backorder'
+      WHERE 1=1
     `;
 
     const values = [];
@@ -7143,6 +7143,7 @@ const recibirInventario = async (req, res) => {
 
   try {
     const { ordenCompraId, productos, adminId, discrepancias } = req.body;
+    const usuarioRecibeId = Number.parseInt(req?.user?.id ?? req?.user?.userId, 10);
 
     // Validaciones
     if (!ordenCompraId) {
@@ -7204,6 +7205,7 @@ const recibirInventario = async (req, res) => {
       });
     }
 
+    const estatusAnterior = (ordenCheck.rows[0].estatus || "").toString();
     const productosActualizados = [];
     const alertasSeguridad = [];
 
@@ -7303,7 +7305,9 @@ const recibirInventario = async (req, res) => {
           `Recepción de OC #${ordenCompraId} (${cantidadRecibida} paquete${
             cantidadRecibida === 1 ? "" : "s"
           } x ${piezasPorPaquete} piezas)` ,
-          adminId || null,
+          Number.isInteger(usuarioRecibeId) && usuarioRecibeId > 0
+            ? usuarioRecibeId
+            : adminId || null,
         ]
       );
 
@@ -7352,7 +7356,10 @@ const recibirInventario = async (req, res) => {
           recibido: cantidadRecibida,
           justificacion,
           evidenciaUrl: discrepanciaInfo?.evidenciaUrl || null,
-          adminId: adminId || null,
+          adminId:
+            Number.isInteger(usuarioRecibeId) && usuarioRecibeId > 0
+              ? usuarioRecibeId
+              : adminId || null,
         });
 
         try {
@@ -7372,7 +7379,10 @@ const recibirInventario = async (req, res) => {
                 recibido: cantidadRecibida,
                 justificacion,
                 evidenciaUrl: discrepanciaInfo?.evidenciaUrl || null,
-                adminId: adminId || null,
+                adminId:
+                  Number.isInteger(usuarioRecibeId) && usuarioRecibeId > 0
+                    ? usuarioRecibeId
+                    : adminId || null,
               }),
             ]
           );
@@ -7428,6 +7438,25 @@ const recibirInventario = async (req, res) => {
 
     // Commit de la transacción
     await client.query("COMMIT");
+
+    try {
+      await auditService.registrarCambioPasivo(
+        req,
+        "ordenesdecompra",
+        ordenCompraId,
+        "UPDATE",
+        {
+          estatus: estatusAnterior,
+        },
+        {
+          estatus: nuevoEstatus,
+          recibidoPor: Number.isInteger(usuarioRecibeId) ? usuarioRecibeId : null,
+          productosActualizados,
+        }
+      );
+    } catch (e) {
+      // silencioso
+    }
 
     console.log("✅ Inventario recibido:", {
       ordenCompraId,

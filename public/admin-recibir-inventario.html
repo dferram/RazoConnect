@@ -172,6 +172,16 @@
             actualizará automáticamente el stock y el estatus de la orden.
           </div>
 
+          <div
+            id="recepcionParcialAlert"
+            class="alert alert-warning"
+            style="margin-bottom: 1.5rem; display: none"
+          >
+            <strong>⚠️ Recepción Parcial:</strong> Hay productos donde el ingreso
+            actual es menor a lo pendiente. La orden quedará en estatus
+            <strong>Parcial</strong>.
+          </div>
+
           <div id="loadingDetalles" class="loading" style="display: none">
             <div class="spinner"></div>
           </div>
@@ -392,16 +402,49 @@
       function mostrarProductosRecepcion() {
         const container = document.getElementById("productosRecepcion");
 
+        const resumen = (() => {
+          let totalSolicitadoPzas = 0;
+          let totalRecibidoPzas = 0;
+          for (const d of detallesActuales) {
+            const piezasPorPaquete = (() => {
+              const raw = d.piezasPorPaquete ?? d.piezasporpaquete;
+              const parsed = Number.parseInt(raw, 10);
+              return Number.isInteger(parsed) && parsed > 0 ? parsed : 1;
+            })();
+
+            const solicitado = Number.parseInt(d.cantidadSolicitada, 10);
+            const recibido = Number.parseInt(d.cantidadRecibida, 10);
+
+            const solicitadoFinal = Number.isInteger(solicitado) ? solicitado : 0;
+            const recibidoFinal = Number.isInteger(recibido) ? recibido : 0;
+
+            totalSolicitadoPzas += solicitadoFinal * piezasPorPaquete;
+            totalRecibidoPzas += recibidoFinal * piezasPorPaquete;
+          }
+          return {
+            totalSolicitadoPzas,
+            totalRecibidoPzas,
+          };
+        })();
+
         container.innerHTML = `
+        <div style="margin-bottom: 1rem; display: grid; gap: 0.5rem;">
+          <div style="display:flex; align-items:center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;">
+            <div style="font-weight: 700; color: var(--razo-gray-dark);">Progreso de recepción</div>
+            <div id="recepcionProgresoTexto" style="font-weight: 700; color: #111827;">${resumen.totalRecibidoPzas}/${resumen.totalSolicitadoPzas} piezas</div>
+          </div>
+          <div style="height: 10px; background: #e5e7eb; border-radius: 999px; overflow: hidden;">
+            <div id="recepcionProgresoBar" style="height: 10px; width: ${resumen.totalSolicitadoPzas > 0 ? Math.min(100, Math.round((resumen.totalRecibidoPzas / resumen.totalSolicitadoPzas) * 100)) : 0}%; background: #10b981;"></div>
+          </div>
+        </div>
+
         <table class="admin-table">
           <thead>
             <tr>
-              <th>Producto</th>
-              <th>SKU</th>
-              <th style="text-align: center;">Empaque</th>
+              <th>SKU / Producto</th>
+              <th style="text-align: center;">Preliminar (Solicitado)</th>
               <th style="text-align: center;">Ya Recibido</th>
-              <th style="text-align: center;">Stock Actual</th>
-              <th style="width: 200px;">Recibir Ahora</th>
+              <th style="width: 220px;">Ingreso Actual</th>
             </tr>
           </thead>
           <tbody>
@@ -410,8 +453,6 @@
                 const pendiente = detalle.cantidadPendiente;
                 const recibidoClass =
                   detalle.cantidadRecibida > 0 ? "text-success" : "";
-                const pendienteClass =
-                  pendiente > 0 ? "text-warning" : "text-success";
 
                 const piezasPorPaquete = (() => {
                   const raw = detalle.piezasPorPaquete ?? detalle.piezasporpaquete;
@@ -419,30 +460,32 @@
                   return Number.isInteger(parsed) && parsed > 0 ? parsed : 1;
                 })();
 
-                const stockPiezas = (() => {
-                  const raw =
-                    detalle.stockVariante ?? detalle.StockVariante ?? detalle.stockvariante ?? detalle.Stock;
-                  const parsed = Number.parseInt(raw, 10);
-                  return Number.isFinite(parsed) && !Number.isNaN(parsed) ? parsed : 0;
-                })();
+                const solicitado = Number.parseInt(detalle.cantidadSolicitada, 10);
+                const solicitadoFinal = Number.isInteger(solicitado) ? solicitado : 0;
 
                 return `
                 <tr>
-                  <td><strong>${detalle.nombreProducto}</strong></td>
-                  <td><code style="background: #f0f0f0; padding: 0.25rem 0.5rem; border-radius: 0.25rem;">${
-                    detalle.sku
-                  }</code></td>
-                  <td style="text-align: center;"><span style="font-weight: 700;">${piezasPorPaquete}</span> pzas/paq</td>
+                  <td>
+                    <div style="display: grid; gap: 0.25rem;">
+                      <div><code style="background: #f0f0f0; padding: 0.25rem 0.5rem; border-radius: 0.25rem;">${
+                        detalle.sku
+                      }</code></div>
+                      <div style="font-weight: 700; color: #111827;">${detalle.nombreProducto}</div>
+                      <div style="font-size: 0.8rem; color: var(--razo-gray-warm);">${piezasPorPaquete} pzas/paq</div>
+                    </div>
+                  </td>
+                  <td style="text-align: center;"><strong>${solicitadoFinal}</strong></td>
                   <td style="text-align: center;" class="${recibidoClass}"><strong>${
                   detalle.cantidadRecibida
                 }</strong></td>
-                  <td style="text-align: center;">${stockPiezas} pzas.</td>
                   <td>
                     <input 
                       type="number" 
                       class="form-input recibir-input" 
                       data-detalle-id="${detalle.detalleId}"
                       data-piezas-por-paquete="${piezasPorPaquete}"
+                      data-solicitado="${solicitadoFinal}"
+                      data-ya-recibido="${Number.parseInt(detalle.cantidadRecibida, 10) || 0}"
                       data-max="${pendiente}"
                       min="0" 
                       max="${pendiente}"
@@ -461,6 +504,50 @@
         </table>
       `;
 
+        const progresoBar = document.getElementById("recepcionProgresoBar");
+        const progresoTexto = document.getElementById("recepcionProgresoTexto");
+        const parcialAlert = document.getElementById("recepcionParcialAlert");
+
+        const updateProgreso = () => {
+          let ingresoActualPzas = 0;
+          let hayParcial = false;
+
+          container.querySelectorAll(".recibir-input").forEach((inp) => {
+            const piezas = Number.parseInt(inp.getAttribute("data-piezas-por-paquete"), 10) || 1;
+            const solicitado = Number.parseInt(inp.getAttribute("data-solicitado"), 10) || 0;
+            const yaRecibido = Number.parseInt(inp.getAttribute("data-ya-recibido"), 10) || 0;
+            const pendiente = Math.max(solicitado - yaRecibido, 0);
+            const ingreso = Number.parseInt(inp.value, 10);
+
+            const ingresoFinal = Number.isInteger(ingreso) && ingreso > 0 ? ingreso : 0;
+            if (ingresoFinal > 0) {
+              ingresoActualPzas += ingresoFinal * piezas;
+            }
+
+            if (pendiente > 0 && ingresoFinal < pendiente) {
+              hayParcial = true;
+            }
+          });
+
+          const recibidoTotal = resumen.totalRecibidoPzas + ingresoActualPzas;
+          const solicitadoTotal = resumen.totalSolicitadoPzas;
+          const pct =
+            solicitadoTotal > 0
+              ? Math.min(100, Math.round((recibidoTotal / solicitadoTotal) * 100))
+              : 0;
+
+          if (progresoBar) {
+            progresoBar.style.width = `${pct}%`;
+          }
+          if (progresoTexto) {
+            progresoTexto.textContent = `${recibidoTotal}/${solicitadoTotal} piezas`;
+          }
+
+          if (parcialAlert) {
+            parcialAlert.style.display = hayParcial ? "block" : "none";
+          }
+        };
+
         container.querySelectorAll(".recibir-input").forEach((input) => {
           const helper = input.parentElement
             ? input.parentElement.querySelector(".recibir-helper")
@@ -471,24 +558,39 @@
             return Number.isInteger(parsed) && parsed > 0 ? parsed : 1;
           })();
 
+          const solicitado = Number.parseInt(input.getAttribute("data-solicitado"), 10) || 0;
+          const yaRecibido = Number.parseInt(input.getAttribute("data-ya-recibido"), 10) || 0;
+          const pendiente = Math.max(solicitado - yaRecibido, 0);
+
           const render = () => {
             const cantidad = Number.parseInt(input.value, 10);
             if (!helper) return;
             if (!Number.isInteger(cantidad) || cantidad <= 0) {
               helper.style.display = "none";
               helper.textContent = "";
+              input.style.borderColor = "";
               return;
             }
 
             const totalPiezas = cantidad * piezasPorPaquete;
             helper.style.display = "block";
             helper.textContent = `Estás recibiendo: ${totalPiezas} piezas totales`;
+
+            if (cantidad < pendiente) {
+              input.style.borderColor = "#f59e0b";
+            } else {
+              input.style.borderColor = "#10b981";
+            }
           };
 
           input.addEventListener("input", render);
           input.addEventListener("change", render);
+          input.addEventListener("input", updateProgreso);
+          input.addEventListener("change", updateProgreso);
           render();
         });
+
+        updateProgreso();
       }
 
       // Guardar recepción
@@ -574,8 +676,6 @@
           // Recopilar productos con cantidades > 0
           const inputs = document.querySelectorAll(".recibir-input");
           const productos = [];
-          const discrepancias = [];
-          let abortarGuardado = false;
 
           for (const input of inputs) {
             const cantidad = parseInt(input.value) || 0;
@@ -587,72 +687,15 @@
                 );
               }
 
-              // Recepción ciega: validación de discrepancias (esperado = pendiente)
               const detalleId = parseInt(input.getAttribute("data-detalle-id"));
-              const esperado = max;
-              const recibido = cantidad;
-
-              if (Number.isInteger(esperado) && esperado >= 0 && recibido !== esperado) {
-                const intentos = discrepanciaIntentos[detalleId] || 0;
-                discrepanciaIntentos[detalleId] = intentos + 1;
-
-                if (intentos === 0) {
-                  if (typeof Swal !== "undefined" && Swal) {
-                    await Swal.fire({
-                      title: "Discrepancia detectada",
-                      text: "Discrepancia detectada. El sistema esperaba una cantidad diferente. Por favor, cuenta de nuevo.",
-                      icon: "warning",
-                      confirmButtonText: "Entendido",
-                    });
-                  } else {
-                    showToast(
-                      "Discrepancia detectada. El sistema esperaba una cantidad diferente. Por favor, cuenta de nuevo.",
-                      "warning"
-                    );
-                  }
-
-                  // Bloquea guardado en primer intento
-                  abortarGuardado = true;
-                  break;
-                }
-
-                const info = await pedirJustificacionYFoto(
-                  ordenActual?.ordenCompraId,
-                  detalleId,
-                  esperado,
-                  recibido
-                );
-                if (!info) {
-                  abortarGuardado = true;
-                  break;
-                }
-
-                let evidenciaUrl = null;
-                if (info.file) {
-                  evidenciaUrl = await subirEvidenciaDiscrepancia(info.file);
-                }
-
-                discrepancias.push({
-                  detalleId,
-                  esperado,
-                  recibido,
-                  justificacion: info.justificacion,
-                  evidenciaUrl,
-                });
-
-                productos.push({
-                  detalleId,
-                  cantidadRecibidaAhora: recibido,
-                });
-                continue;
-              }
-
               productos.push({
                 detalleId: detalleId,
-                cantidadRecibidaAhora: recibido,
+                cantidadRecibidaAhora: cantidad,
               });
             }
           }
+
+          
 
           if (productos.length === 0) {
             showToast("Debe ingresar al menos una cantidad recibida", "error");
@@ -685,7 +728,7 @@
                 ordenCompraId: ordenActual.ordenCompraId,
                 productos: productos,
                 adminId: adminId,
-                discrepancias,
+                discrepancias: [],
               }),
             }
           );
