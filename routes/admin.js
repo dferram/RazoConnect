@@ -6,6 +6,7 @@ const authController = require("../controllers/authController");
 const bitacoraController = require("../controllers/bitacoraController");
 const changeRequestController = require("../controllers/changeRequestController");
 const inventoryAuditController = require("../controllers/inventoryAuditController");
+const purchaseSuggestionController = require("../controllers/purchaseSuggestionController");
 const upload = require("../middlewares/upload");
 const {
   authenticate,
@@ -512,6 +513,13 @@ router.post(
   authenticate,
   authorizeAdmin,
   adminController.validarRecepcionCompra
+);
+
+router.get(
+  "/compras/sugerencias",
+  authenticate,
+  authorizeAdmin,
+  purchaseSuggestionController.obtenerSugerencias
 );
 
 /**
