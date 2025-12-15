@@ -53,17 +53,25 @@ const adminHasAgentRole = () => {
 
 const getEffectiveToken = () => {
   const clientToken = getToken();
-  if (clientToken) {
-    return clientToken;
-  }
-
-  // Si hay token de admin, usarlo (para admins y agentes)
   const adminToken = getAdminToken();
-  if (adminToken) {
-    return adminToken;
+
+  const sidebarType = (document.body?.dataset?.sidebar || "").toString().toLowerCase();
+  const path = (window.location?.pathname || "").toString().toLowerCase();
+
+  const isStaffContext =
+    sidebarType === "admin" ||
+    sidebarType === "agent" ||
+    path.startsWith("/admin") ||
+    path.startsWith("/agente") ||
+    path.startsWith("/staff");
+
+  // En contexto admin/agente, SIEMPRE preferir token admin para evitar 401 en /api/admin/*
+  if (isStaffContext) {
+    return adminToken || clientToken || null;
   }
 
-  return null;
+  // En contexto cliente, preferir token cliente
+  return clientToken || adminToken || null;
 };
 
 // Utility function to get user data from localStorage

@@ -1,9 +1,25 @@
 (function () {
   "use strict";
 
+  function ensureBootstrapIcons() {
+    const hasBootstrapIcons = Array.from(
+      document.querySelectorAll('link[rel="stylesheet"]')
+    ).some((l) => (l.getAttribute("href") || "").includes("bootstrap-icons"));
+
+    if (hasBootstrapIcons) return;
+
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href =
+      "https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css";
+    document.head.appendChild(link);
+  }
+
   async function cargarAgenteHeader() {
     const container = document.getElementById("admin-header-container");
     if (!container) return;
+
+    ensureBootstrapIcons();
 
     const agente = getAgenteInfo();
     if (!agente) {
@@ -24,7 +40,7 @@
       asegurarAliasesLegacy(container);
       inicializarTitulo();
       inicializarAgente(agente);
-      enlazarLogoutAgente();
+      inicializarDropdownUnificado(agente);
     } catch (error) {
       console.error("Error cargando agente header:", error);
     }
@@ -125,26 +141,80 @@
     container.appendChild(wrapper);
   }
 
-  function enlazarLogoutAgente() {
-    const logoutBtn = document.getElementById("dropdownLogoutAgente");
-    if (!logoutBtn) return;
+  function inicializarDropdownUnificado(agente) {
+    const dropdownContainer = document.getElementById("user-dropdown-container");
+    if (dropdownContainer) {
+      dropdownContainer.innerHTML = "";
 
-    logoutBtn.addEventListener("click", async () => {
-      try {
-        if (typeof clearAgentAuth === "function") {
-          clearAgentAuth();
-        } else {
-          localStorage.removeItem("razoconnect_admin_token");
-          localStorage.removeItem("razoconnect_admin");
+      const nombre = (agente?.nombre || "Agente").toString().trim();
+
+      const header = document.createElement("div");
+      header.className = "dropdown-header";
+      header.innerHTML = `
+        <span class="d-block small text-muted">Conectado como</span>
+        <strong>${nombre || "Agente"}</strong>
+      `;
+
+      const divider1 = document.createElement("hr");
+      divider1.className = "dropdown-divider";
+
+      const linkNotificaciones = document.createElement("a");
+      linkNotificaciones.href = "/staff-notificaciones.html";
+      linkNotificaciones.className = "dropdown-item";
+      linkNotificaciones.innerHTML = `<i class="bi bi-bell"></i> Notificaciones`;
+
+      const divider2 = document.createElement("hr");
+      divider2.className = "dropdown-divider";
+
+      const linkLogout = document.createElement("a");
+      linkLogout.href = "#";
+      linkLogout.className = "dropdown-item text-danger";
+      linkLogout.id = "btnLogout";
+      linkLogout.innerHTML = `<i class="bi bi-box-arrow-right"></i> Cerrar Sesión`;
+      linkLogout.addEventListener("click", async (e) => {
+        e.preventDefault();
+
+        try {
+          if (typeof clearAgentAuth === "function") {
+            clearAgentAuth();
+          } else {
+            localStorage.removeItem("razoconnect_admin_token");
+            localStorage.removeItem("razoconnect_admin");
+          }
+          sessionStorage.clear();
+        } catch (error) {
+          console.error("Error limpiando sesión de agente:", error);
         }
-        sessionStorage.clear();
-      } catch (error) {
-        console.error("Error limpiando sesión de agente:", error);
-      }
 
-      const url = await getAgentLoginUrl();
-      window.location.href = url;
-    });
+        const url = await getAgentLoginUrl();
+        window.location.href = url;
+      });
+
+      const itemsFragment = document.createDocumentFragment();
+      itemsFragment.appendChild(header);
+      itemsFragment.appendChild(divider1);
+      itemsFragment.appendChild(linkNotificaciones);
+      itemsFragment.appendChild(divider2);
+      itemsFragment.appendChild(linkLogout);
+
+      dropdownContainer.appendChild(itemsFragment);
+    }
+
+    const trigger = document.getElementById("userMenuTrigger");
+    const menu = document.getElementById("userDropdownMenu");
+
+    if (trigger && menu) {
+      trigger.addEventListener("click", (e) => {
+        e.stopPropagation();
+        menu.classList.toggle("show");
+      });
+
+      document.addEventListener("click", (e) => {
+        if (!menu.contains(e.target) && !trigger.contains(e.target)) {
+          menu.classList.remove("show");
+        }
+      });
+    }
   }
 
   if (document.readyState === "loading") {

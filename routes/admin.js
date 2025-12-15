@@ -54,6 +54,20 @@ router.post(
 );
 
 router.get(
+  "/auditoria-inventario/buscar-productos",
+  authenticate,
+  authorizeAdminOrAgente,
+  inventoryAuditController.buscarProductos
+);
+
+router.get(
+  "/auditoria-inventario/sesiones",
+  authenticate,
+  authorizeAdminOrAgente,
+  inventoryAuditController.listarSesiones
+);
+
+router.get(
   "/auditoria-inventario/variante-por-sku",
   authenticate,
   authorizeAdminOrAgente,
@@ -306,12 +320,12 @@ router.get(
   authorizeAdmin,
   adminController.getInventarioResumen
 );
-router.post(
-  "/inventario/ajuste",
-  authenticate,
-  authorizeAdmin,
-  adminController.ajustarInventario
-);
+// router.post(
+//   "/inventario/ajuste",
+//   authenticate,
+//   authorizeAdmin,
+//   adminController.ajustarInventario
+// );
 
 router.get(
   "/inventario/:varianteId/historial",
@@ -327,12 +341,12 @@ router.get(
   adminController.getMovimientosInventario
 );
 
-router.post(
-  "/recepcion",
-  authenticate,
-  authorizeAdmin,
-  adminController.recepcionarMercancia
-);
+// router.post(
+//   "/recepcion",
+//   authenticate,
+//   authorizeAdmin,
+//   adminController.recepcionarMercancia
+// );
 
 /**
  * Gestión de agentes

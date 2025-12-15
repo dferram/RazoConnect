@@ -1,4 +1,5 @@
 const { verifyToken } = require("../utils/jwtHelper");
+const db = require("../db");
 
 function normalizeRole(role) {
   return (role || "").toString().trim().toLowerCase();
@@ -16,7 +17,7 @@ function getUserRoles(req) {
 /**
  * Middleware para verificar autenticación JWT
  */
-const authenticate = (req, res, next) => {
+const authenticate = async (req, res, next) => {
   try {
     // Obtener el token del header
     const authHeader = req.headers.authorization;
@@ -36,10 +37,97 @@ const authenticate = (req, res, next) => {
     // Verificar y decodificar el token
     const decoded = verifyToken(token);
 
-    // Agregar la información del usuario al request
-    req.user = decoded;
+    const rawUserId =
+      decoded?.userId ?? decoded?.id ?? decoded?.userid ?? decoded?.AdminID ?? decoded?.adminId;
+    const userId = Number.parseInt(rawUserId, 10);
+    if (!Number.isInteger(userId) || userId <= 0) {
+      return res.status(401).json({
+        success: false,
+        message: "Token inválido (userId)",
+      });
+    }
 
-    next();
+    const rolesFromToken = Array.isArray(decoded?.roles)
+      ? decoded.roles.map(normalizeRole).filter(Boolean)
+      : [normalizeRole(decoded?.rol)].filter(Boolean);
+
+    const isAgenteToken = rolesFromToken.includes("agente");
+
+    // 1) Si el token declara agente, validar contra agentesdeventas (activo)
+    if (isAgenteToken) {
+      const agenteResult = await db.query(
+        "SELECT agenteid, activo, email, codigoagente FROM agentesdeventas WHERE agenteid = $1 LIMIT 1",
+        [userId]
+      );
+
+      if (!agenteResult.rows.length || agenteResult.rows[0].activo !== true) {
+        return res.status(401).json({
+          success: false,
+          message: "Agente no autorizado o inactivo",
+        });
+      }
+
+      req.user = {
+        ...decoded,
+        id: userId,
+        userId,
+        rol: "agente",
+        roles: ["agente"],
+        email: decoded?.email || agenteResult.rows[0].email || null,
+        codigoAgente: decoded?.codigoAgente || agenteResult.rows[0].codigoagente || null,
+      };
+
+      return next();
+    }
+
+    // 2) Si no es agente por token, validar primero contra administradores (activo)
+    const adminResult = await db.query(
+      "SELECT adminid, rol, activo, email FROM administradores WHERE adminid = $1 LIMIT 1",
+      [userId]
+    );
+
+    if (adminResult.rows.length && adminResult.rows[0].activo === true) {
+      const dbRol = normalizeRole(adminResult.rows[0].rol);
+      const rolFinal = ["superadmin", "super-admin", "super admin"].includes(dbRol)
+        ? "superadmin"
+        : "admin";
+
+      req.user = {
+        ...decoded,
+        id: userId,
+        userId,
+        rol: rolFinal,
+        roles: [rolFinal],
+        email: decoded?.email || adminResult.rows[0].email || null,
+      };
+
+      return next();
+    }
+
+    // 3) Fallback: si no existe en administradores, buscar como agente (activo)
+    const agenteFallback = await db.query(
+      "SELECT agenteid, activo, email, codigoagente FROM agentesdeventas WHERE agenteid = $1 LIMIT 1",
+      [userId]
+    );
+
+    if (agenteFallback.rows.length && agenteFallback.rows[0].activo === true) {
+      req.user = {
+        ...decoded,
+        id: userId,
+        userId,
+        rol: "agente",
+        roles: ["agente"],
+        email: decoded?.email || agenteFallback.rows[0].email || null,
+        codigoAgente: decoded?.codigoAgente || agenteFallback.rows[0].codigoagente || null,
+      };
+
+      return next();
+    }
+
+    return res.status(401).json({
+      success: false,
+      message: "Usuario no autorizado",
+    });
   } catch (error) {
     return res.status(401).json({
       success: false,
@@ -91,25 +179,11 @@ const authorizeAdmin = (req, res, next) => {
     });
   }
 
-  // Verificar que el tipo de usuario sea 'admin'
-  if (req.user.tipo !== "admin") {
+  const rol = normalizeRole(req.user.rol);
+  if (rol !== "admin" && rol !== "superadmin") {
     return res.status(403).json({
       success: false,
       message: "Acceso denegado. Solo administradores",
-    });
-  }
-
-  const userRoles = getUserRoles(req);
-
-  // Verificar que tenga un rol de admin válido
-  const hasAdminRole = userRoles.some((role) =>
-    ["admin", "superadmin", "super-admin", "super admin"].includes(role)
-  );
-
-  if (!hasAdminRole) {
-    return res.status(403).json({
-      success: false,
-      message: "Rol de administrador inválido",
     });
   }
 
@@ -128,9 +202,8 @@ const authorizeAdminOrAgente = (req, res, next) => {
     });
   }
 
-  const userRoles = getUserRoles(req);
-  const allowed = userRoles.some((role) => ["admin", "agente", "superadmin", "super-admin", "super admin"].includes(role));
-
+  const rol = normalizeRole(req.user.rol);
+  const allowed = rol === "admin" || rol === "superadmin" || rol === "agente";
   if (!allowed) {
     return res.status(403).json({
       success: false,

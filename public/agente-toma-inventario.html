@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Auditoría de Inventario - Agente RazoConnect</title>
+    <link rel="icon" type="image/png" href="/icon/Logo_Razo.png" />
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- Protección de autenticación -->
+    <script src="js/auth-guard-agent.js"></script>
+    <script src="js/token-refresh.js"></script>
+
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/admin.css" />
+  </head>
+  <body data-sidebar="agent" data-page-title="Auditoría de Inventario">
+    <div class="admin-layout">
+      <div id="sidebar-container"></div>
+
+      <main class="admin-main">
+        <div id="admin-header-container"></div>
+
+        <div class="admin-content" style="display: grid; gap: 1.25rem">
+          <section class="admin-card" style="padding: 1.25rem">
+            <div style="display: grid; gap: 1rem">
+              <div>
+                <h2 class="admin-card-title" style="margin: 0">Auditoría de Inventario</h2>
+                <p class="admin-card-subtitle" style="margin: 0.25rem 0 0 0">
+                  Registra conteos por SKU seleccionando una sesión activa.
+                </p>
+              </div>
+
+              <div style="display: grid; gap: 0.75rem; grid-template-columns: 1fr;">
+                <div style="min-width: 280px">
+                  <label for="sesionSelect" class="form-label">Sesión activa</label>
+                  <select id="sesionSelect" class="form-input">
+                    <option value="">Selecciona una sesión…</option>
+                  </select>
+                </div>
+
+                <div
+                  style="
+                    display: grid;
+                    gap: 0.75rem;
+                    grid-template-columns: 1fr 180px 170px;
+                    align-items: end;
+                  "
+                >
+                  <div>
+                    <label class="form-label" for="skuInput">SKU</label>
+                    <div style="position: relative">
+                      <input
+                        id="skuInput"
+                        type="text"
+                        class="form-input"
+                        placeholder="Busca por SKU o nombre…"
+                        autocomplete="off"
+                        style="font-size: 1.1rem; padding: 0.85rem"
+                      />
+                      <input type="hidden" id="varianteIdSeleccionada" />
+                      <div
+                        id="resultadosBusqueda"
+                        style="
+                          position: absolute;
+                          top: calc(100% + 6px);
+                          left: 0;
+                          right: 0;
+                          z-index: 50;
+                          background: #ffffff;
+                          border: 1px solid rgba(0, 0, 0, 0.08);
+                          border-radius: 0.75rem;
+                          box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
+                          max-height: 320px;
+                          overflow-x: hidden;
+                          overflow-y: auto;
+                          display: none;
+                        "
+                      ></div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label class="form-label" for="cantidadInput">Cantidad</label>
+                    <input
+                      id="cantidadInput"
+                      type="number"
+                      min="0"
+                      step="1"
+                      class="form-input"
+                      value="0"
+                      style="font-size: 1.1rem; padding: 0.85rem"
+                    />
+                  </div>
+
+                  <div>
+                    <button
+                      type="button"
+                      id="btnRegistrar"
+                      class="btn btn-primary"
+                      style="
+                        width: 100%;
+                        background: var(--razo-orange, #f97316);
+                        border: none;
+                        padding: 0.85rem;
+                      "
+                      disabled
+                    >
+                      Registrar Conteo
+                    </button>
+                  </div>
+                </div>
+
+                <div
+                  style="
+                    padding: 0.75rem 1rem;
+                    background: #f0f9ff;
+                    border-radius: 0.75rem;
+                    border-left: 4px solid #0ea5e9;
+                    color: #0369a1;
+                  "
+                >
+                  Al enviar, el formulario se limpia y vuelve el foco a SKU.
+                </div>
+
+                <div
+                  id="ultimoRegistro"
+                  style="
+                    padding: 0.75rem 1rem;
+                    border: 1px solid rgba(0, 0, 0, 0.06);
+                    border-radius: 0.75rem;
+                    color: #6b7280;
+                  "
+                >
+                  Último registro: —
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <script src="js/layout.js" defer></script>
+    <script src="js/api.js"></script>
+    <script src="js/components/agente-header-loader.js"></script>
+    <script src="js/components/user-profile.js"></script>
+
+    <script>
+      const sesionSelect = document.getElementById("sesionSelect");
+      const skuInput = document.getElementById("skuInput");
+      const resultadosBusqueda = document.getElementById("resultadosBusqueda");
+      const varianteIdSeleccionada = document.getElementById("varianteIdSeleccionada");
+      const cantidadInput = document.getElementById("cantidadInput");
+      const btnRegistrar = document.getElementById("btnRegistrar");
+      const ultimoRegistro = document.getElementById("ultimoRegistro");
+
+      const safeText = (v) => (v == null ? "" : String(v));
+
+      const clearResultadosBusqueda = () => {
+        if (!resultadosBusqueda) return;
+        resultadosBusqueda.innerHTML = "";
+        resultadosBusqueda.style.display = "none";
+      };
+
+      const renderResultadosBusqueda = (resultados) => {
+        if (!resultadosBusqueda) return;
+        resultadosBusqueda.innerHTML = "";
+
+        if (!Array.isArray(resultados) || resultados.length === 0) {
+          resultadosBusqueda.style.display = "none";
+          return;
+        }
+
+        for (const item of resultados) {
+          const row = document.createElement("div");
+          row.style.display = "flex";
+          row.style.alignItems = "center";
+          row.style.gap = "0.75rem";
+          row.style.padding = "0.6rem 0.75rem";
+          row.style.cursor = "pointer";
+          row.style.borderBottom = "1px solid rgba(0,0,0,0.06)";
+
+          row.addEventListener("mouseenter", () => {
+            row.style.background = "rgba(249, 115, 22, 0.08)";
+          });
+          row.addEventListener("mouseleave", () => {
+            row.style.background = "transparent";
+          });
+
+          const img = document.createElement("img");
+          img.src = item.imagen || "/icon/Logo_Razo.png";
+          img.alt = safeText(item.nombreProducto);
+          img.style.width = "40px";
+          img.style.height = "40px";
+          img.style.objectFit = "cover";
+          img.style.borderRadius = "0.75rem";
+          img.style.border = "1px solid rgba(0,0,0,0.06)";
+
+          const text = document.createElement("div");
+          text.style.display = "grid";
+          text.style.lineHeight = "1.1";
+
+          const sku = document.createElement("div");
+          sku.style.fontWeight = "700";
+          sku.textContent = safeText(item.sku);
+
+          const name = document.createElement("div");
+          name.style.fontSize = "0.9rem";
+          name.style.color = "#6b7280";
+          const varianteLabel = safeText(item.nombreVariante).trim();
+          name.textContent = varianteLabel
+            ? `${safeText(item.nombreProducto)} (${varianteLabel})`
+            : safeText(item.nombreProducto);
+
+          text.appendChild(sku);
+          text.appendChild(name);
+
+          row.appendChild(img);
+          row.appendChild(text);
+
+          row.addEventListener("click", () => {
+            skuInput.value = safeText(item.sku);
+            varianteIdSeleccionada.value = String(item.varianteId || "");
+            clearResultadosBusqueda();
+            cantidadInput.focus();
+          });
+
+          resultadosBusqueda.appendChild(row);
+        }
+
+        const last = resultadosBusqueda.lastElementChild;
+        if (last) last.style.borderBottom = "none";
+
+        resultadosBusqueda.style.display = "block";
+      };
+
+      let searchTimer = null;
+      const buscarConDebounce = () => {
+        if (!skuInput || !resultadosBusqueda) return;
+        const q = safeText(skuInput.value).trim();
+
+        varianteIdSeleccionada.value = "";
+
+        if (searchTimer) {
+          clearTimeout(searchTimer);
+        }
+
+        if (q.length < 2) {
+          clearResultadosBusqueda();
+          return;
+        }
+
+        searchTimer = setTimeout(async () => {
+          try {
+            const resp = await apiCall(
+              `/admin/auditoria-inventario/buscar-productos?q=${encodeURIComponent(
+                q
+              )}`,
+              { method: "GET" }
+            );
+
+            if (!resp.ok) {
+              clearResultadosBusqueda();
+              return;
+            }
+
+            const resultados = Array.isArray(resp.data?.data?.resultados)
+              ? resp.data.data.resultados
+              : [];
+            renderResultadosBusqueda(resultados);
+          } catch (e) {
+            clearResultadosBusqueda();
+          }
+        }, 300);
+      };
+
+      const updateControls = () => {
+        const hasSesion = Boolean(sesionSelect && sesionSelect.value);
+        btnRegistrar.disabled = !hasSesion;
+      };
+
+      const loadSesionesAbiertas = async () => {
+        try {
+          const resp = await apiCall(
+            `/admin/auditoria-inventario/sesiones?estatus=ABIERTA`,
+            { method: "GET" }
+          );
+
+          const sesiones = Array.isArray(resp.data?.data?.sesiones)
+            ? resp.data.data.sesiones
+            : [];
+
+          sesionSelect.innerHTML = "";
+
+          const optDefault = document.createElement("option");
+          optDefault.value = "";
+          optDefault.textContent = "Selecciona una sesión…";
+          sesionSelect.appendChild(optDefault);
+
+          for (const s of sesiones) {
+            if (!s || s.estatus !== "ABIERTA") continue;
+            const opt = document.createElement("option");
+            opt.value = String(s.sesionId);
+            opt.textContent = `${safeText(s.nombre)} (#${safeText(s.sesionId)})`;
+            sesionSelect.appendChild(opt);
+          }
+
+          updateControls();
+        } catch (e) {
+          updateControls();
+        }
+      };
+
+      const getAgenteToken = () => {
+        // En este proyecto, los agentes usan token de staff/admin (razoconnect_admin_token)
+        // porque el backend expone endpoints de auditoría bajo /api/admin y se autoriza con authorizeAdminOrAgente.
+        return localStorage.getItem("razoconnect_admin_token");
+      };
+
+      const redirectToAgentLogin = async () => {
+        const candidate = "/login-agente.html";
+        try {
+          const res = await fetch(candidate, { method: "HEAD" });
+          if (res.ok) {
+            window.location.replace(candidate);
+            return;
+          }
+        } catch (e) {
+          // ignore
+        }
+        window.location.replace("/login.html");
+      };
+
+      const registrarConteo = async () => {
+        const token = getAgenteToken();
+        console.log("Token enviado:", token);
+
+        if (!token) {
+          await redirectToAgentLogin();
+          return;
+        }
+
+        try {
+          const sesionId = Number.parseInt(sesionSelect.value, 10);
+          const varianteId = Number.parseInt(varianteIdSeleccionada.value, 10);
+          const cantidad = Number.parseInt(cantidadInput.value, 10);
+
+          if (!Number.isInteger(sesionId) || sesionId <= 0) {
+            Swal.fire({
+              icon: "warning",
+              title: "Selecciona una sesión",
+              text: "Debes seleccionar una sesión activa antes de registrar.",
+              confirmButtonColor: "#F97316",
+            });
+            return;
+          }
+
+          if (!Number.isInteger(varianteId) || varianteId <= 0) {
+            Swal.fire({
+              icon: "warning",
+              title: "Selecciona un producto",
+              text: "Elige un SKU desde la lista para asegurar el ID de variante.",
+              confirmButtonColor: "#F97316",
+            });
+            skuInput.focus();
+            return;
+          }
+
+          if (!Number.isInteger(cantidad) || cantidad < 0) {
+            Swal.fire({
+              icon: "warning",
+              title: "Cantidad inválida",
+              text: "La cantidad debe ser un número entero mayor o igual a 0.",
+              confirmButtonColor: "#F97316",
+            });
+            cantidadInput.focus();
+            return;
+          }
+
+          btnRegistrar.disabled = true;
+
+          const response = await fetch(`${API_BASE_URL}/admin/auditoria-inventario/registrar-conteo`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ sesionId, varianteId, cantidad }),
+          });
+
+          if (response.status === 401) {
+            Swal.fire({
+              icon: "error",
+              title: "Error de Permisos",
+              text: "Tu usuario no está autorizado para auditar en este momento.",
+              confirmButtonColor: "#F97316",
+            });
+            updateControls();
+            return;
+          }
+
+          let payload = null;
+          try {
+            payload = await response.json();
+          } catch (e) {
+            payload = null;
+          }
+
+          if (!response.ok) {
+            Swal.fire({
+              icon: "error",
+              title: "No se pudo registrar",
+              text: safeText(payload?.message || "Error al registrar conteo"),
+              confirmButtonColor: "#F97316",
+            });
+            updateControls();
+            return;
+          }
+
+          ultimoRegistro.textContent = `Último registro: SKU ${safeText(
+            skuInput.value
+          )} · Cantidad ${safeText(cantidad)} · ${new Date().toLocaleString()}`;
+
+          Swal.fire({
+            toast: true,
+            position: "top-end",
+            icon: "success",
+            title: "Conteo registrado",
+            showConfirmButton: false,
+            timer: 1400,
+            timerProgressBar: true,
+          });
+
+          skuInput.value = "";
+          varianteIdSeleccionada.value = "";
+          cantidadInput.value = "0";
+          clearResultadosBusqueda();
+          skuInput.focus();
+
+          updateControls();
+        } catch (e) {
+          Swal.fire({
+            icon: "error",
+            title: "Error",
+            text: safeText(e?.message || "Error al registrar conteo"),
+            confirmButtonColor: "#F97316",
+          });
+          updateControls();
+        }
+      };
+
+      document.addEventListener("click", (ev) => {
+        if (!resultadosBusqueda) return;
+        if (resultadosBusqueda.contains(ev.target)) return;
+        if (skuInput && skuInput.contains(ev.target)) return;
+        clearResultadosBusqueda();
+      });
+
+      sesionSelect.addEventListener("change", updateControls);
+      skuInput.addEventListener("input", buscarConDebounce);
+      skuInput.addEventListener("focus", buscarConDebounce);
+      cantidadInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          if (!btnRegistrar.disabled) registrarConteo();
+        }
+      });
+      btnRegistrar.addEventListener("click", registrarConteo);
+
+      loadSesionesAbiertas();
+      updateControls();
+    </script>
+  </body>
+</html>

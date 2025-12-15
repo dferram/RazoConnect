@@ -97,6 +97,98 @@ const crearSesion = async (req, res) => {
 };
 
 /**
+ * GET /sesiones?estatus=ABIERTA
+ */
+const listarSesiones = async (req, res) => {
+  try {
+    const estatusRaw = (req.query?.estatus || "ABIERTA").toString().trim();
+    const estatus = estatusRaw || "ABIERTA";
+
+    const result = await db.query(
+      `SELECT sesionid, nombre, estatus, usuario_creador_id
+       FROM toma_inventario_sesiones
+       WHERE ($1::text IS NULL OR estatus = $1::estatus_sesion_enum)
+       ORDER BY sesionid DESC
+       LIMIT 50`,
+      [estatus]
+    );
+
+    return res.json({
+      success: true,
+      data: {
+        sesiones: (result.rows || []).map((r) => ({
+          sesionId: r.sesionid,
+          nombre: r.nombre,
+          estatus: r.estatus,
+          usuarioCreadorId: r.usuario_creador_id,
+        })),
+      },
+    });
+  } catch (error) {
+    console.error("Error en listarSesiones:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error al listar sesiones",
+      error: error.message,
+    });
+  }
+};
+
+const buscarProductos = async (req, res) => {
+  try {
+    const qRaw = (req.query?.q || "").toString().trim();
+    if (!qRaw) {
+      return res.json({
+        success: true,
+        data: {
+          resultados: [],
+        },
+      });
+    }
+
+    const q = `%${qRaw}%`;
+
+    const result = await db.query(
+      `SELECT
+         pv.varianteid,
+         pv.sku,
+         pv.dimensiones,
+         pr.nombreproducto,
+         pi.url_imagen AS imagen
+       FROM producto_variantes pv
+       INNER JOIN productos pr ON pr.productoid = pv.productoid
+       LEFT JOIN producto_imagenes pi ON pi.productoid = pr.productoid AND pi.orden = 1
+       WHERE pv.sku ILIKE $1
+          OR pr.nombreproducto ILIKE $1
+          OR COALESCE(pv.dimensiones, '') ILIKE $1
+       ORDER BY pr.nombreproducto ASC
+       LIMIT 20`,
+      [q]
+    );
+
+    return res.json({
+      success: true,
+      data: {
+        resultados: (result.rows || []).map((r) => ({
+          varianteId: r.varianteid,
+          sku: r.sku,
+          nombreProducto: r.nombreproducto,
+          nombreVariante: r.dimensiones || null,
+          imagen: r.imagen || null,
+        })),
+      },
+    });
+  } catch (error) {
+    console.error("Error en buscarProductos:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error al buscar productos",
+      error: error.message,
+    });
+  }
+};
+
+/**
  * GET /variante-por-sku?sku=...
  */
 const getVariantePorSku = async (req, res) => {
@@ -405,6 +497,22 @@ const getDashboardSesion = async (req, res) => {
       estatusFila: r.estatus_fila,
     }));
 
+    const rol = (req.user?.rol || "").toString().trim().toLowerCase();
+    const isSuperAdmin = rol === "superadmin";
+
+    if (!isSuperAdmin) {
+      for (const fila of filas) {
+        if (
+          fila.estatusFila === "CONFLICTO" ||
+          fila.estatusFila === "PENDIENTE_A" ||
+          fila.estatusFila === "PENDIENTE_B"
+        ) {
+          fila.conteoA = null;
+          fila.conteoB = null;
+        }
+      }
+    }
+
     const stats = {
       total: filas.length,
       validados: filas.filter((f) => f.estatusFila === "VALIDADO").length,
@@ -594,4 +702,6 @@ module.exports = {
   getDashboardSesion,
   aplicarSesion,
   getVariantePorSku,
+  buscarProductos,
+  listarSesiones,
 };

@@ -126,13 +126,35 @@
                   >
                     <div>
                       <label class="form-label" for="skuInput">SKU</label>
-                      <input
-                        id="skuInput"
-                        class="form-input"
-                        placeholder="Escanea o escribe SKU…"
-                        autocomplete="off"
-                        style="font-size: 1.1rem; padding: 0.85rem"
-                      />
+                      <div style="position: relative">
+                        <input
+                          id="skuInput"
+                          type="text"
+                          class="form-input"
+                          placeholder="Busca por SKU o nombre…"
+                          autocomplete="off"
+                          style="font-size: 1.1rem; padding: 0.85rem"
+                        />
+                        <input type="hidden" id="varianteIdSeleccionada" />
+                        <div
+                          id="resultadosBusqueda"
+                          style="
+                            position: absolute;
+                            top: calc(100% + 6px);
+                            left: 0;
+                            right: 0;
+                            z-index: 50;
+                            background: #ffffff;
+                            border: 1px solid rgba(0, 0, 0, 0.08);
+                            border-radius: 0.75rem;
+                            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.10);
+                            max-height: 320px;
+                            overflow-x: hidden;
+                            overflow-y: auto;
+                            display: none;
+                          "
+                        ></div>
+                      </div>
                     </div>
                     <div>
                       <label class="form-label" for="cantidadInput">Cantidad</label>
@@ -272,6 +294,10 @@
       const sesionStats = document.getElementById("sesionStats");
 
       const skuInput = document.getElementById("skuInput");
+      const varianteIdSeleccionada = document.getElementById(
+        "varianteIdSeleccionada"
+      );
+      const resultadosBusqueda = document.getElementById("resultadosBusqueda");
       const cantidadInput = document.getElementById("cantidadInput");
       const btnRegistrar = document.getElementById("btnRegistrar");
       const ultimoRegistro = document.getElementById("ultimoRegistro");
@@ -290,7 +316,10 @@
         isAgente: false,
       };
 
-      const getAdminData = () => {
+      const getAdminDataForAudit = () => {
+        if (typeof window.getAdminData === "function") {
+          return window.getAdminData();
+        }
         const raw = localStorage.getItem("razoconnect_admin");
         if (!raw) return null;
         try {
@@ -301,7 +330,7 @@
       };
 
       const detectIsAgente = () => {
-        const adminData = getAdminData();
+        const adminData = getAdminDataForAudit();
         if (!adminData) return false;
 
         const rol = adminData.rol ? String(adminData.rol).toLowerCase() : "";
@@ -357,6 +386,126 @@
       };
 
       const safeText = (v) => (v == null ? "" : String(v));
+
+      const clearResultadosBusqueda = () => {
+        if (!resultadosBusqueda) return;
+        resultadosBusqueda.innerHTML = "";
+        resultadosBusqueda.style.display = "none";
+      };
+
+      const renderResultadosBusqueda = (resultados) => {
+        if (!resultadosBusqueda) return;
+        resultadosBusqueda.innerHTML = "";
+
+        if (!Array.isArray(resultados) || resultados.length === 0) {
+          resultadosBusqueda.style.display = "none";
+          return;
+        }
+
+        for (const item of resultados) {
+          const row = document.createElement("div");
+          row.style.display = "flex";
+          row.style.alignItems = "center";
+          row.style.gap = "0.75rem";
+          row.style.padding = "0.6rem 0.75rem";
+          row.style.cursor = "pointer";
+          row.style.borderBottom = "1px solid rgba(0,0,0,0.06)";
+
+          row.addEventListener("mouseenter", () => {
+            row.style.background = "rgba(249, 115, 22, 0.08)";
+          });
+          row.addEventListener("mouseleave", () => {
+            row.style.background = "transparent";
+          });
+
+          const img = document.createElement("img");
+          img.src = item.imagen || "/icon/Logo_Razo.png";
+          img.alt = safeText(item.nombreProducto);
+          img.style.width = "40px";
+          img.style.height = "40px";
+          img.style.objectFit = "cover";
+          img.style.borderRadius = "0.75rem";
+          img.style.border = "1px solid rgba(0,0,0,0.06)";
+
+          const text = document.createElement("div");
+          text.style.display = "grid";
+          text.style.lineHeight = "1.1";
+
+          const sku = document.createElement("div");
+          sku.style.fontWeight = "700";
+          sku.textContent = safeText(item.sku);
+
+          const name = document.createElement("div");
+          name.style.fontSize = "0.9rem";
+          name.style.color = "#6b7280";
+          const varianteLabel = safeText(item.nombreVariante).trim();
+          name.textContent = varianteLabel
+            ? `${safeText(item.nombreProducto)} (${varianteLabel})`
+            : safeText(item.nombreProducto);
+
+          text.appendChild(sku);
+          text.appendChild(name);
+
+          row.appendChild(img);
+          row.appendChild(text);
+
+          row.addEventListener("click", () => {
+            skuInput.value = safeText(item.sku);
+            varianteIdSeleccionada.value = String(item.varianteId || "");
+            clearResultadosBusqueda();
+            cantidadInput.focus();
+          });
+
+          resultadosBusqueda.appendChild(row);
+        }
+
+        // Quitar borde final
+        const last = resultadosBusqueda.lastElementChild;
+        if (last) last.style.borderBottom = "none";
+
+        resultadosBusqueda.style.display = "block";
+      };
+
+      let searchTimer = null;
+      const buscarConDebounce = () => {
+        if (!skuInput || !resultadosBusqueda) return;
+        const q = safeText(skuInput.value).trim();
+
+        // Al cambiar texto, invalidar selección previa
+        varianteIdSeleccionada.value = "";
+
+        if (searchTimer) {
+          clearTimeout(searchTimer);
+        }
+
+        if (q.length < 2) {
+          clearResultadosBusqueda();
+          return;
+        }
+
+        searchTimer = setTimeout(async () => {
+          try {
+            const resp = await apiCall(
+              `/admin/auditoria-inventario/buscar-productos?q=${encodeURIComponent(
+                q
+              )}`,
+              { method: "GET" }
+            );
+
+            if (!resp.ok) {
+              clearResultadosBusqueda();
+              return;
+            }
+
+            const resultados = Array.isArray(resp.data?.data?.resultados)
+              ? resp.data.data.resultados
+              : [];
+            renderResultadosBusqueda(resultados);
+          } catch (e) {
+            clearResultadosBusqueda();
+          }
+        }, 300);
+      };
 
       const updateControls = () => {
         const hasSesion = Boolean(state.sesionId);
@@ -434,7 +583,9 @@
 
           const tdDetalle = document.createElement("td");
           if (f.estatusFila === "CONFLICTO") {
-            tdDetalle.textContent = `A: ${safeText(f.conteoA)} · B: ${safeText(f.conteoB)}`;
+            const aTxt = f.conteoA == null ? "🔒" : safeText(f.conteoA);
+            const bTxt = f.conteoB == null ? "🔒" : safeText(f.conteoB);
+            tdDetalle.textContent = `A: ${aTxt} · B: ${bTxt}`;
           } else if (f.estatusFila === "VALIDADO") {
             tdDetalle.textContent = `Final: ${safeText(f.cantidadFinal)}`;
           } else {
@@ -449,6 +600,59 @@
         }
 
         updateControls();
+      };
+
+      const fillSesionesSelect = (sesiones, preferId) => {
+        const current = sesionSelect.value;
+        sesionSelect.innerHTML = "";
+
+        const placeholder = document.createElement("option");
+        placeholder.value = "";
+        placeholder.textContent = "Selecciona una sesión…";
+        sesionSelect.appendChild(placeholder);
+
+        for (const s of sesiones) {
+          const option = document.createElement("option");
+          option.value = String(s.sesionId);
+          option.textContent = `#${s.sesionId} — ${safeText(s.nombre)} (${safeText(
+            s.estatus
+          )})`;
+          sesionSelect.appendChild(option);
+        }
+
+        const targetId = preferId || (current ? Number.parseInt(current, 10) : null);
+        if (Number.isInteger(targetId) && targetId > 0) {
+          const exists = Array.from(sesionSelect.options).some(
+            (o) => o.value === String(targetId)
+          );
+          if (exists) {
+            sesionSelect.value = String(targetId);
+            state.sesionId = targetId;
+          }
+        }
+      };
+
+      const loadSesiones = async (preferId) => {
+        try {
+          const resp = await apiCall(
+            "/admin/auditoria-inventario/sesiones?estatus=ABIERTA",
+            { method: "GET" }
+          );
+
+          if (!resp.ok) {
+            throw new Error(resp.data?.message || "No se pudieron cargar sesiones");
+          }
+
+          const sesiones = Array.isArray(resp.data?.data?.sesiones)
+            ? resp.data.data.sesiones
+            : [];
+
+          fillSesionesSelect(sesiones, preferId);
+          updateControls();
+        } catch (error) {
+          console.error(error);
+          // Mantener placeholder si falla
+        }
       };
 
       const loadDashboard = async () => {
@@ -525,24 +729,6 @@
         }
       };
 
-      const resolverVariantePorSku = async (sku) => {
-        const resp = await apiCall(
-          `/admin/auditoria-inventario/variante-por-sku?sku=${encodeURIComponent(sku)}`,
-          { method: "GET" }
-        );
-
-        if (!resp.ok) {
-          throw new Error(resp.data?.message || "SKU no encontrado");
-        }
-
-        const v = resp.data?.data?.variante;
-        if (!v?.varianteId) {
-          throw new Error("Variante inválida");
-        }
-
-        return v;
-      };
-
       const registrarConteo = async () => {
         if (!state.sesionId) {
           toast("warning", "Selecciona una sesión");
@@ -550,10 +736,17 @@
         }
 
         const sku = safeText(skuInput.value).trim();
+        const varianteId = Number.parseInt(varianteIdSeleccionada.value, 10);
         const cantidad = Number.parseInt(cantidadInput.value || "0", 10) || 0;
 
         if (!sku) {
-          toast("warning", "SKU requerido");
+          toast("warning", "Busca y selecciona un producto");
+          skuInput.focus();
+          return;
+        }
+
+        if (!Number.isInteger(varianteId) || varianteId <= 0) {
+          toast("warning", "Selecciona un resultado del buscador");
           skuInput.focus();
           return;
         }
@@ -567,13 +760,11 @@
         try {
           btnRegistrar.disabled = true;
 
-          const variante = await resolverVariantePorSku(sku);
-
           const resp = await apiCall("/admin/auditoria-inventario/registrar-conteo", {
             method: "POST",
             body: JSON.stringify({
               sesionId: state.sesionId,
-              varianteId: variante.varianteId,
+              varianteId,
               cantidad,
               usuarioId: null,
             }),
@@ -584,13 +775,15 @@
           }
 
           toast("success", `Registrado: ${sku} (${cantidad})`);
-          ultimoRegistro.textContent = `Último registro: ${safeText(variante.nombreProducto)} — ${safeText(
+          ultimoRegistro.textContent = `Último registro: ${safeText(
             sku
           )} · Cantidad: ${cantidad} · Estatus: ${safeText(
             resp.data?.data?.conteo?.estatusFila
           )}`;
 
           skuInput.value = "";
+          varianteIdSeleccionada.value = "";
+          clearResultadosBusqueda();
           cantidadInput.value = "0";
           skuInput.focus();
 
@@ -684,7 +877,20 @@
 
       btnRegistrar.addEventListener("click", registrarConteo);
       skuInput.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") registrarConteo();
+        if (e.key === "Enter") {
+          if (resultadosBusqueda && resultadosBusqueda.style.display === "block") {
+            return;
+          }
+          registrarConteo();
+        }
+      });
+      skuInput.addEventListener("input", buscarConDebounce);
+      document.addEventListener("click", (e) => {
+        const target = e.target;
+        if (!target) return;
+        if (resultadosBusqueda && resultadosBusqueda.contains(target)) return;
+        if (skuInput && (target === skuInput || skuInput.contains(target))) return;
+        clearResultadosBusqueda();
       });
       cantidadInput.addEventListener("keydown", (e) => {
         if (e.key === "Enter") registrarConteo();
@@ -701,18 +907,17 @@
         const params = new URLSearchParams(window.location.search);
         const sesionIdParam = Number.parseInt(params.get("sesionId"), 10);
         if (Number.isInteger(sesionIdParam) && sesionIdParam > 0) {
-          const option = document.createElement("option");
-          option.value = String(sesionIdParam);
-          option.textContent = `#${sesionIdParam}`;
-          sesionSelect.appendChild(option);
-          sesionSelect.value = String(sesionIdParam);
-          state.sesionId = sesionIdParam;
-          if (!state.isAgente) {
-            loadDashboard();
-          }
+          loadSesiones(sesionIdParam).then(() => {
+            if (state.sesionId && !state.isAgente) {
+              loadDashboard();
+            }
+          });
+        } else {
+          loadSesiones(null);
         }
       } catch (e) {
         // ignore
+        loadSesiones(null);
       }
       skuInput.focus();
     </script>
