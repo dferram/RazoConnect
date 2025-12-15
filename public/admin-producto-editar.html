@@ -14,6 +14,11 @@
     <!-- SISTEMA DE RENOVACIÓN DE TOKENS -->
     <script src="js/token-refresh.js"></script>
 
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+    />
+
     <link rel="stylesheet" href="css/styles.css" />
     <link rel="stylesheet" href="css/admin.css" />
     <style>
@@ -433,31 +438,18 @@
       }
     </style>
   </head>
-  <body>
+  <body data-sidebar="admin" data-page-title="Editar producto maestro">
     <div class="admin-layout">
       <!-- Sidebar -->
       <div id="sidebar-container"></div>
 
       <!-- Main Content -->
       <main class="admin-main">
-        <header class="admin-header product-editor-header">
-          <div class="product-header-info">
-            <h1 class="admin-header-title">Editar producto maestro</h1>
-            <p class="admin-header-subtitle" id="productBreadcrumb">
-              Cargando...
-            </p>
-          </div>
+        <div id="admin-header-container"></div>
 
-          <div class="admin-header-actions">
-            <div class="admin-user-info">
-              <div class="admin-user-avatar" id="userAvatar">A</div>
-              <div class="admin-user-details">
-                <div class="admin-user-name" id="userName">Administrador</div>
-                <div class="admin-user-role" id="userRole">Admin</div>
-              </div>
-            </div>
-          </div>
-        </header>
+        <div style="padding: 0 1.5rem; margin-top: 0.5rem">
+          <p class="admin-header-subtitle" id="productBreadcrumb">Cargando...</p>
+        </div>
 
         <div class="admin-content" id="contentWrapper" style="display: none">
           <div class="product-editor-wrapper">
@@ -586,6 +578,31 @@
                             id="stockInfoBadges"
                             style="display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.25rem; font-size: 0.78rem;"
                           ></div>
+                        </div>
+                      </div>
+
+                      <div class="form-grid-2">
+                        <div class="form-group">
+                          <label for="color_nombre" class="form-label"
+                            >Color (Nike)</label
+                          >
+                          <input
+                            type="text"
+                            id="color_nombre"
+                            class="form-input"
+                            placeholder="Ej: Rosa, Azul"
+                          />
+                        </div>
+                        <div class="form-group">
+                          <label for="url_imagen_variante" class="form-label"
+                            >URL Imagen Variante (Nike)</label
+                          >
+                          <input
+                            type="url"
+                            id="url_imagen_variante"
+                            class="form-input"
+                            placeholder="https://..."
+                          />
                         </div>
                       </div>
 
@@ -833,6 +850,8 @@
     <script src="js/layout.js" defer></script>
     <script src="js/admin-header-dropdown.js"></script>
     <script src="js/api.js"></script>
+    <script src="js/components/admin-header-loader.js"></script>
+    <script src="js/components/user-profile.js"></script>
     <script src="js/pack-helpers.js"></script>
     <script>
       const adminToken = localStorage.getItem("razoconnect_admin_token");
@@ -867,13 +886,11 @@
       const precioUnitarioInput = document.getElementById("precioUnitario");
       const precioOfertaInput = document.getElementById("precioOferta");
       const precioOfertaPreview = document.getElementById("precioOfertaPreview");
-
-      const userAvatar = document.getElementById("userAvatar");
-      const userName = document.getElementById("userName");
-      const userRole = document.getElementById("userRole");
       const skuInput = document.getElementById("sku");
       const dimensionesInput = document.getElementById("dimensiones");
       const medidasDatalist = document.getElementById("listaMedidas");
+      const colorNombreInput = document.getElementById("color_nombre");
+      const urlImagenVarianteInput = document.getElementById("url_imagen_variante");
       const skuSuggestion = document.getElementById("skuSuggestion");
       const skuSuggestionText = document.getElementById("skuSuggestionText");
       const applySkuSuggestion = document.getElementById("applySkuSuggestion");
@@ -908,6 +925,20 @@
         errorState.style.display = "flex";
       }
 
+      const waitForElementById = (id, timeoutMs = 1500) =>
+        new Promise((resolve) => {
+          const startedAt = Date.now();
+
+          const tick = () => {
+            const el = document.getElementById(id);
+            if (el) return resolve(el);
+            if (Date.now() - startedAt >= timeoutMs) return resolve(null);
+            requestAnimationFrame(tick);
+          };
+
+          tick();
+        });
+
       async function verifyAndLoadAdmin() {
         try {
           const response = await fetch(`${API_BASE_URL}/admin/verify`, {
@@ -922,17 +953,51 @@
 
           const data = await response.json();
           if (data.success) {
-            const admin = data.data.admin;
-            userName.textContent = admin.nombre;
-            userRole.textContent =
-              admin.rol === "superadmin" ? "Super Admin" : "Admin";
+            const admin = data?.data?.admin || null;
+            if (!admin) return;
 
-            const words = admin.nombre.trim().split(" ");
+            try {
+              localStorage.setItem("razoconnect_admin", JSON.stringify(admin));
+            } catch (e) {
+              console.warn("No se pudo persistir razoconnect_admin:", e);
+            }
+
+            const nombre = (admin.nombre || "Admin").toString().trim();
+            const rolRaw = (admin.rol || "").toString().toLowerCase();
+            const rolTexto =
+              rolRaw === "superadmin" || rolRaw === "super admin"
+                ? "Super Admin"
+                : "Admin";
+
+            const words = nombre.split(" ").filter(Boolean);
             const initials =
               words.length >= 2
                 ? `${words[0].charAt(0)}${words[1].charAt(0)}`
-                : admin.nombre.substring(0, 2);
-            userAvatar.textContent = initials.toUpperCase();
+                : nombre.substring(0, 2);
+
+            const iniciales = initials.toUpperCase();
+
+            const [legacyNameEl, legacyRoleEl, legacyAvatarEl] =
+              await Promise.all([
+                waitForElementById("userName"),
+                waitForElementById("userRole"),
+                waitForElementById("userAvatar"),
+              ]);
+
+            if (legacyNameEl) legacyNameEl.textContent = nombre;
+            if (legacyRoleEl) legacyRoleEl.textContent = rolTexto;
+            if (legacyAvatarEl) legacyAvatarEl.textContent = iniciales;
+
+            const [headerNameEl, headerRoleEl, headerAvatarEl] =
+              await Promise.all([
+                waitForElementById("headerUserName"),
+                waitForElementById("headerUserRole"),
+                waitForElementById("headerUserAvatar"),
+              ]);
+
+            if (headerNameEl) headerNameEl.textContent = nombre;
+            if (headerRoleEl) headerRoleEl.textContent = rolTexto;
+            if (headerAvatarEl) headerAvatarEl.textContent = iniciales;
           }
         } catch (error) {
           console.error("Error verifying admin:", error);
@@ -1490,6 +1555,12 @@
         if (variantForm) {
           variantForm.reset();
         }
+        if (colorNombreInput) {
+          colorNombreInput.value = "";
+        }
+        if (urlImagenVarianteInput) {
+          urlImagenVarianteInput.value = "";
+        }
         if (stockInput) {
           stockInput.value = "0";
           stockInput.disabled = true;
@@ -1541,6 +1612,20 @@
         }
         if (dimensionesInput) {
           dimensionesInput.value = variante.dimensiones || "";
+        }
+
+        if (colorNombreInput) {
+          const colorValue =
+            variante.colorNombre || variante.color_nombre || variante.ColorNombre || "";
+          colorNombreInput.value = String(colorValue || "");
+        }
+        if (urlImagenVarianteInput) {
+          const urlValue =
+            variante.urlImagenVariante ||
+            variante.url_imagen_variante ||
+            variante.UrlImagenVariante ||
+            "";
+          urlImagenVarianteInput.value = String(urlValue || "");
         }
 
         const costoInputEl = document.getElementById("costoUnitario");
@@ -1674,6 +1759,10 @@
           }
         }
         const isEditing = Number.isInteger(editingVarianteId);
+        const colorNombreRaw = (colorNombreInput?.value || "").toString().trim();
+        const urlImagenVarianteRaw = (urlImagenVarianteInput?.value || "")
+          .toString()
+          .trim();
         const formData = {
           productoId,
           dimensiones:
@@ -1688,6 +1777,9 @@
             : 0,
           tipoProductoId: null,
           medidaId: null,
+          color_nombre: colorNombreRaw === "" ? null : colorNombreRaw,
+          url_imagen_variante:
+            urlImagenVarianteRaw === "" ? null : urlImagenVarianteRaw,
         };
 
         if (
@@ -1725,6 +1817,8 @@
               costoUnitario: formData.costoUnitario,
               precioUnitario: formData.precioUnitario,
               precioOfertaUnitario: formData.precioOfertaUnitario,
+              color_nombre: formData.color_nombre,
+              url_imagen_variante: formData.url_imagen_variante,
             };
 
             if (activoPayload !== undefined) {

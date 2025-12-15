@@ -354,6 +354,44 @@
           grid-template-columns: 1fr;
         }
       }
+
+      .nike-selector-container {
+        margin-top: 0.9rem;
+        width: 100%;
+      }
+
+      .nike-label {
+        font-size: 0.85rem;
+        margin: 0 0 0.5rem;
+        color: var(--text-primary);
+      }
+
+      .nike-thumbnails-row {
+        display: flex;
+        gap: 0.65rem;
+        overflow-x: auto;
+        padding-bottom: 0.35rem;
+      }
+
+      .nike-thumb {
+        width: 60px;
+        height: 60px;
+        object-fit: cover;
+        border-radius: 0.6rem;
+        cursor: pointer;
+        border: 1px solid rgba(0, 0, 0, 0.15);
+        transition: transform 0.15s ease, opacity 0.15s ease, border 0.15s ease;
+        flex: 0 0 auto;
+      }
+
+      .nike-thumb.active {
+        border: 3px solid #111;
+      }
+
+      .nike-thumb:hover {
+        opacity: 0.85;
+        transform: scale(1.03);
+      }
     </style>
   </head>
   <body>
@@ -390,6 +428,14 @@
                   src=""
                   alt=""
                 />
+              </div>
+              <div
+                id="nikeSelectorContainer"
+                class="nike-selector-container"
+                style="display: none"
+              >
+                <p class="nike-label" id="nikeSelectedColorLabel"></p>
+                <div class="nike-thumbnails-row" id="nikeThumbnailsRow"></div>
               </div>
             </div>
           </div>
@@ -576,8 +622,140 @@
       let tamanosDisponibles = [];
       let varianteSeleccionada = null;
       let tamanoSeleccionado = null;
+      let selectedColorNombre = null;
+      let uniqueColorVariants = [];
       const placeholderImage =
         "https://via.placeholder.com/500x500?text=Sin+Imagen";
+
+      const nikeSelectorContainer = document.getElementById(
+        "nikeSelectorContainer"
+      );
+      const nikeSelectedColorLabel = document.getElementById(
+        "nikeSelectedColorLabel"
+      );
+      const nikeThumbnailsRow = document.getElementById("nikeThumbnailsRow");
+
+      function getVariantColorNombre(variant) {
+        const raw =
+          variant?.colorNombre ||
+          variant?.color_nombre ||
+          variant?.ColorNombre ||
+          variant?.Color_Nombre ||
+          null;
+        const txt = raw !== null && raw !== undefined ? String(raw).trim() : "";
+        return txt || null;
+      }
+
+      function getVariantColorImageUrl(variant) {
+        const raw =
+          variant?.urlImagenVariante ||
+          variant?.url_imagen_variante ||
+          variant?.UrlImagenVariante ||
+          variant?.Url_Imagen_Variante ||
+          null;
+        const txt = raw !== null && raw !== undefined ? String(raw).trim() : "";
+        return txt || null;
+      }
+
+      function buildUniqueColorVariants(sourceVariants) {
+        const list = Array.isArray(sourceVariants) ? sourceVariants : [];
+        const map = new Map();
+
+        list.forEach((v) => {
+          const color = getVariantColorNombre(v);
+          if (!color) return;
+          const imgUrl = getVariantColorImageUrl(v);
+          if (!imgUrl) return;
+
+          if (!map.has(color)) {
+            map.set(color, v);
+          }
+        });
+
+        return Array.from(map.values());
+      }
+
+      function getNikeSelectedImageUrl() {
+        if (!selectedColorNombre) return null;
+        const entry = uniqueColorVariants.find(
+          (v) => getVariantColorNombre(v) === selectedColorNombre
+        );
+        return entry ? getVariantColorImageUrl(entry) : null;
+      }
+
+      function getVariantesFiltradasPorColor() {
+        if (!selectedColorNombre) return [];
+        if (!Array.isArray(variantes) || !variantes.length) return [];
+        const filtered = variantes.filter(
+          (v) => getVariantColorNombre(v) === selectedColorNombre
+        );
+        return filtered;
+      }
+
+      function syncVarianteSeleccionadaConColor() {
+        const filtered = getVariantesFiltradasPorColor();
+        if (!filtered.length) return;
+
+        const currentColor = getVariantColorNombre(varianteSeleccionada);
+        if (!varianteSeleccionada || currentColor !== selectedColorNombre) {
+          varianteSeleccionada = filtered[0] || null;
+        }
+      }
+
+      function renderNikeSelector() {
+        if (!nikeSelectorContainer || !nikeThumbnailsRow || !nikeSelectedColorLabel) {
+          return;
+        }
+
+        uniqueColorVariants = buildUniqueColorVariants(variantes);
+
+        if (!uniqueColorVariants.length) {
+          nikeSelectorContainer.style.display = "none";
+          return;
+        }
+
+        if (!selectedColorNombre) {
+          selectedColorNombre = getVariantColorNombre(uniqueColorVariants[0]);
+        }
+
+        nikeSelectorContainer.style.display = "block";
+        nikeSelectedColorLabel.innerHTML = `Color: <strong>${
+          selectedColorNombre || "-"
+        }</strong>`;
+
+        nikeThumbnailsRow.innerHTML = "";
+
+        uniqueColorVariants.forEach((variant) => {
+          const color = getVariantColorNombre(variant);
+          const url = getVariantColorImageUrl(variant);
+          if (!color || !url) return;
+
+          const thumb = document.createElement("img");
+          thumb.src = url;
+          thumb.alt = color;
+          thumb.className = "nike-thumb";
+          if (color === selectedColorNombre) {
+            thumb.classList.add("active");
+          }
+          thumb.addEventListener("click", () => {
+            selectedColorNombre = color;
+            renderNikeSelector();
+            syncVarianteSeleccionadaConColor();
+            renderVariantOptions();
+
+            const urlSeleccionada = getNikeSelectedImageUrl();
+            if (mainImage && urlSeleccionada) {
+              mainImage.src = urlSeleccionada;
+              mainImage.alt = color;
+            }
+
+            if (varianteSeleccionada) {
+              setVarianteSeleccionada(varianteSeleccionada.varianteId);
+            }
+          });
+          nikeThumbnailsRow.appendChild(thumb);
+        });
+      }
 
       // Get product ID from URL
       const urlParams = new URLSearchParams(window.location.search);
@@ -797,8 +975,9 @@
           }
         }
 
-        const urlInicial = primeraImagen?.url || placeholderImage;
-        const altInicial = primeraImagen?.alt || fallbackAlt;
+        const nikeUrl = getNikeSelectedImageUrl();
+        const urlInicial = nikeUrl || primeraImagen?.url || placeholderImage;
+        const altInicial = nikeUrl ? `Color ${selectedColorNombre || ""}` : (primeraImagen?.alt || fallbackAlt);
         cambiarImagenPrincipalDesdeThumb(null, urlInicial, altInicial);
 
         if (imagenes.length) {
@@ -808,7 +987,7 @@
             thumb.src = img.url;
             thumb.alt = img.alt || fallbackAlt;
             thumb.className = "thumb-img";
-            if (index === 0) {
+            if (!nikeUrl && index === 0) {
               thumb.classList.add("active");
             }
             thumb.addEventListener("click", () => {
@@ -972,6 +1151,11 @@
           return;
         }
 
+        const variantesFiltradasColor = getVariantesFiltradasPorColor();
+        const variantesBase = variantesFiltradasColor.length
+          ? variantesFiltradasColor
+          : variantes;
+
         const tieneMedidaFisica = (variant) => {
           const dimCruda =
             variant.dimensiones ||
@@ -985,12 +1169,12 @@
           return dimTexto && dimTexto !== "unidad individual";
         };
 
-        const variantesConMedida = Array.isArray(variantes)
-          ? variantes.filter((v) => tieneMedidaFisica(v))
+        const variantesConMedida = Array.isArray(variantesBase)
+          ? variantesBase.filter((v) => tieneMedidaFisica(v))
           : [];
 
         const listaParaRenderizar =
-          variantesConMedida.length > 0 ? variantesConMedida : variantes;
+          variantesConMedida.length > 0 ? variantesConMedida : variantesBase;
 
         // Si la variante seleccionada actual no tiene medida física y existe
         // alguna variante con medida, usar esa variante como selección por defecto.
@@ -1055,6 +1239,12 @@
         }
 
         varianteSeleccionada = nuevaVariante;
+
+        const nuevoColor = getVariantColorNombre(varianteSeleccionada);
+        if (nuevoColor && nuevoColor !== selectedColorNombre) {
+          selectedColorNombre = nuevoColor;
+          renderNikeSelector();
+        }
 
         if (
           variantSelect &&
@@ -1342,6 +1532,10 @@
               ? data.tamanosDisponibles
               : [];
             varianteSeleccionada = variantes[0] || null;
+
+            selectedColorNombre = getVariantColorNombre(varianteSeleccionada);
+            renderNikeSelector();
+            syncVarianteSeleccionadaConColor();
 
             // Set product info (master)
             productCategory.textContent =

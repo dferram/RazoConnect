@@ -4294,6 +4294,8 @@ const getProductoDetalle = async (req, res) => {
          pv.stock,
          pv.tipoproductoid,
          pv.medidaid,
+         pv.color_nombre,
+         pv.url_imagen_variante,
          pv.activo
        FROM producto_variantes pv
        WHERE pv.productoid = $1
@@ -4400,6 +4402,8 @@ const getProductoDetalle = async (req, res) => {
         productoId: row.productoid,
         sku: row.sku || null,
         dimensiones: row.dimensiones || null,
+        colorNombre: row.color_nombre || null,
+        urlImagenVariante: row.url_imagen_variante || null,
         costoUnitario,
         precioUnitario,
         precioPaquete,
@@ -8060,6 +8064,8 @@ const crearVariante = async (req, res) => {
       stock,
       tipoProductoId,
       medidaId,
+      color_nombre,
+      url_imagen_variante,
       activo,
     } = req.body || {};
 
@@ -8199,15 +8205,29 @@ const crearVariante = async (req, res) => {
       stock: stockNum,
       tipoproductoid: tipoProductoId || null,
       medidaid: medidaId || null,
+      color_nombre:
+        color_nombre === undefined || color_nombre === null
+          ? null
+          : (() => {
+              const txt = String(color_nombre).trim();
+              return txt.length ? txt : null;
+            })(),
+      url_imagen_variante:
+        url_imagen_variante === undefined || url_imagen_variante === null
+          ? null
+          : (() => {
+              const txt = String(url_imagen_variante).trim();
+              return txt.length ? txt : null;
+            })(),
       activo: activoFinal,
     };
 
     if (allowDirect) {
       const insertRes = await db.query(
         `INSERT INTO producto_variantes
-          (productoid, sku, dimensiones, costounitario, stock, tipoproductoid, medidaid, preciounitario, precioofertaunitario, activo)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-         RETURNING varianteid, productoid, sku, dimensiones, costounitario, preciounitario, precioofertaunitario, stock, tipoproductoid, medidaid, activo, piezasporpaquete`,
+          (productoid, sku, dimensiones, costounitario, stock, tipoproductoid, medidaid, preciounitario, precioofertaunitario, color_nombre, url_imagen_variante, activo)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+         RETURNING varianteid, productoid, sku, dimensiones, costounitario, preciounitario, precioofertaunitario, stock, tipoproductoid, medidaid, color_nombre, url_imagen_variante, activo, piezasporpaquete`,
         [
           payloadNuevos.productoid,
           payloadNuevos.sku,
@@ -8218,6 +8238,8 @@ const crearVariante = async (req, res) => {
           payloadNuevos.medidaid,
           payloadNuevos.preciounitario,
           payloadNuevos.precioofertaunitario,
+          payloadNuevos.color_nombre,
+          payloadNuevos.url_imagen_variante,
           payloadNuevos.activo,
         ]
       );
@@ -8242,6 +8264,8 @@ const crearVariante = async (req, res) => {
             productoId: row.productoid,
             sku: row.sku,
             dimensiones: row.dimensiones,
+            colorNombre: row.color_nombre || null,
+            urlImagenVariante: row.url_imagen_variante || null,
             costoUnitario:
               row.costounitario !== null ? parseFloat(row.costounitario) : null,
             precioUnitario:
@@ -8312,10 +8336,13 @@ const actualizarVariante = async (req, res) => {
       costoUnitario,
       precioUnitario,
       precioOfertaUnitario,
+      color_nombre,
+      url_imagen_variante,
     } = req.body || {};
 
     const result = await db.query(
-      `SELECT VarianteID, SKU, Dimensiones, CostoUnitario, PrecioUnitario, PrecioOfertaUnitario, Stock, Activo
+      `SELECT VarianteID, SKU, Dimensiones, CostoUnitario, PrecioUnitario, PrecioOfertaUnitario, Stock, Activo,
+              color_nombre, url_imagen_variante
        FROM Producto_Variantes
        WHERE VarianteID = $1`,
       [varianteId]
@@ -8416,6 +8443,13 @@ const actualizarVariante = async (req, res) => {
       activo: nuevoActivo,
     });
 
+    const normalizarTextoNullable = (raw) => {
+      if (raw === undefined) return { usarActual: true, valor: null };
+      if (raw === null) return { usarActual: false, valor: null };
+      const txt = String(raw).trim();
+      return { usarActual: false, valor: txt.length ? txt : null };
+    };
+
     // Usar nombres de columnas reales de Producto_Variantes (en minúsculas)
     const payloadNuevos = {
       dimensiones: nuevasDimensiones,
@@ -8425,21 +8459,41 @@ const actualizarVariante = async (req, res) => {
       activo: nuevoActivo,
     };
 
+    const colorParsed = normalizarTextoNullable(color_nombre);
+    if (!colorParsed.usarActual) {
+      payloadNuevos.color_nombre = colorParsed.valor;
+    }
+    const urlParsed = normalizarTextoNullable(url_imagen_variante);
+    if (!urlParsed.usarActual) {
+      payloadNuevos.url_imagen_variante = urlParsed.valor;
+    }
+
     if (allowDirect) {
+      const colorFinal = Object.prototype.hasOwnProperty.call(payloadNuevos, "color_nombre")
+        ? payloadNuevos.color_nombre
+        : actual.color_nombre ?? actual.color_nombre;
+      const urlFinal = Object.prototype.hasOwnProperty.call(payloadNuevos, "url_imagen_variante")
+        ? payloadNuevos.url_imagen_variante
+        : actual.url_imagen_variante ?? actual.url_imagen_variante;
+
       const updateRes = await db.query(
         `UPDATE producto_variantes
          SET dimensiones = $1,
              costounitario = $2,
              preciounitario = $3,
              precioofertaunitario = $4,
-             activo = $5
-         WHERE varianteid = $6
-         RETURNING varianteid, productoid, sku, dimensiones, costounitario, preciounitario, precioofertaunitario, stock, activo, tipoproductoid, medidaid, piezasporpaquete`,
+             color_nombre = $5,
+             url_imagen_variante = $6,
+             activo = $7
+         WHERE varianteid = $8
+         RETURNING varianteid, productoid, sku, dimensiones, costounitario, preciounitario, precioofertaunitario, stock, activo, tipoproductoid, medidaid, color_nombre, url_imagen_variante, piezasporpaquete`,
         [
           payloadNuevos.dimensiones,
           payloadNuevos.costounitario,
           payloadNuevos.preciounitario,
           payloadNuevos.precioofertaunitario,
+          colorFinal,
+          urlFinal,
           payloadNuevos.activo,
           varianteId,
         ]
@@ -8472,6 +8526,8 @@ const actualizarVariante = async (req, res) => {
             productoId: row.productoid,
             sku: row.sku,
             dimensiones: row.dimensiones,
+            colorNombre: row.color_nombre || null,
+            urlImagenVariante: row.url_imagen_variante || null,
             costoUnitario:
               row.costounitario !== null ? parseFloat(row.costounitario) : null,
             precioUnitario:

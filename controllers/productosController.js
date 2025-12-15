@@ -782,6 +782,8 @@ const obtenerProductoPorId = async (req, res) => {
          pv.piezasporpaquete,
          pv.tipoproductoid,
          pv.medidaid,
+         pv.color_nombre,
+         pv.url_imagen_variante,
          COALESCE(
            (
              SELECT json_agg(
@@ -856,6 +858,8 @@ const obtenerProductoPorId = async (req, res) => {
         productoId: row.productoid,
         sku: row.sku,
         dimensiones: row.dimensiones,
+        colorNombre: row.color_nombre,
+        urlImagenVariante: row.url_imagen_variante,
         costoUnitario,
         precioUnitario,
         precioOfertaUnitario,

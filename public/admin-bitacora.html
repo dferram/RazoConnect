@@ -428,26 +428,14 @@
       }
     </style>
   </head>
-  <body>
+  <body data-page-title="Bitácora de Auditoría">
     <div class="admin-layout">
       <!-- Sidebar -->
       <div id="sidebar-container"></div>
 
       <!-- Main Content -->
       <main class="admin-main">
-        <header class="admin-header">
-          <h1 class="admin-header-title">🔍 Bitácora de Auditoría</h1>
-
-          <div class="admin-header-actions">
-            <div class="admin-user-info">
-              <div class="admin-user-avatar" id="userAvatar">A</div>
-              <div class="admin-user-details">
-                <div class="admin-user-name" id="userName">Administrador</div>
-                <div class="admin-user-role" id="userRole">Super Admin</div>
-              </div>
-            </div>
-          </div>
-        </header>
+        <div id="admin-header-container"></div>
 
         <div class="admin-content">
           <!-- Filtros -->
@@ -558,8 +546,10 @@
     </div>
 
     <script src="js/layout.js" defer></script>
-    <script src="js/admin-header-dropdown.js"></script>
     <script src="js/api.js"></script>
+    <script src="js/admin-header-dropdown.js"></script>
+    <script src="js/components/admin-header-loader.js"></script>
+    <script src="js/components/user-profile.js"></script>
     <script src="js/date-helpers.js"></script>
     <script src="js/admin-bitacora.js" defer></script>
   </body>
