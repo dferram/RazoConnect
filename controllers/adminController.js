@@ -14,6 +14,7 @@ const jwt = require("jsonwebtoken");
 const { generateCodigoAgente } = require("../utils/agentCode");
 const { registrarLog } = require("../services/loggerService");
 const inventoryService = require("../services/inventoryService");
+const auditService = require("../services/auditService");
 
 let agenteAdminColumnsCache = null;
 
@@ -1573,9 +1574,54 @@ const desvincularClienteDeAgente = async (req, res) => {
 
     const clienteActual = snapshotResult.rows[0];
 
+    const rol = (req?.user?.rol || "").toString().trim().toLowerCase();
+    const allowDirect = rol === "admin" || rol === "superadmin";
+
     const datosNuevos = {
       AgenteID: null,
     };
+
+    if (allowDirect) {
+      const updateRes = await db.query(
+        "UPDATE clientes SET agenteid = $1 WHERE clienteid = $2 RETURNING clienteid, nombre, apellido, email, telefono, activo, agenteid",
+        [null, clienteId]
+      );
+
+      if (!updateRes.rows.length) {
+        return res.status(404).json({
+          success: false,
+          message: "Cliente no encontrado",
+        });
+      }
+
+      const row = updateRes.rows[0];
+
+      await auditService.registrarCambioPasivo(
+        req,
+        "clientes",
+        clienteId,
+        "UPDATE",
+        clienteActual,
+        {
+          clienteid: row.clienteid,
+          nombre: row.nombre,
+          apellido: row.apellido,
+          email: row.email,
+          telefono: row.telefono,
+          activo: row.activo,
+          agenteid: row.agenteid,
+        }
+      );
+
+      return res.json({
+        success: true,
+        message: "Cliente desvinculado correctamente.",
+        data: {
+          clienteId: row.clienteid,
+          agenteId: row.agenteid,
+        },
+      });
+    }
 
     const resultado = await solicitarCambio(
       req,
@@ -1832,9 +1878,49 @@ const actualizarEstadoCliente = async (req, res) => {
 
     const clienteActual = snapshotResult.rows[0];
 
+    const rol = (req?.user?.rol || "").toString().trim().toLowerCase();
+    const allowDirect = rol === "admin" || rol === "superadmin";
+
     const datosNuevos = {
       Activo: activo,
     };
+
+    if (allowDirect) {
+      const updateRes = await db.query(
+        "UPDATE clientes SET activo = $1 WHERE clienteid = $2 RETURNING clienteid, activo",
+        [activo, clienteId]
+      );
+
+      if (!updateRes.rows.length) {
+        return res.status(404).json({
+          success: false,
+          message: "Cliente no encontrado",
+        });
+      }
+
+      const row = updateRes.rows[0];
+
+      await auditService.registrarCambioPasivo(
+        req,
+        "clientes",
+        clienteId,
+        "UPDATE",
+        clienteActual,
+        {
+          clienteid: row.clienteid,
+          activo: row.activo,
+        }
+      );
+
+      return res.json({
+        success: true,
+        message: "Estado del cliente actualizado correctamente.",
+        data: {
+          clienteId: row.clienteid,
+          activo: row.activo,
+        },
+      });
+    }
 
     const resultado = await solicitarCambio(
       req,
@@ -2332,6 +2418,58 @@ const updatePedidoEstatus = async (req, res) => {
     }
 
     const estatusAnterior = pedidoResult.rows[0].estatus || "Pendiente";
+    const rol = (req?.user?.rol || "").toString().trim().toLowerCase();
+    const allowDirect = rol === "superadmin" || rol === "admin" || rol === "agente";
+
+    if (allowDirect) {
+      const oldData = {
+        pedidoid: pedidoId,
+        estatus: estatusAnterior,
+      };
+      const newData = {
+        pedidoid: pedidoId,
+        estatus: estatusNuevo,
+      };
+
+      const updateRes = await db.query(
+        "UPDATE pedidos SET estatus = $1 WHERE pedidoid = $2 RETURNING pedidoid, clienteid, agenteid, direccionenvioid, fechapedido, montototal, estatus, costoenvio",
+        [estatusNuevo, pedidoId]
+      );
+
+      if (!updateRes.rows.length) {
+        return res.status(404).json({
+          success: false,
+          message: "Pedido no encontrado",
+        });
+      }
+
+      await auditService.registrarCambioPasivo(
+        req,
+        "pedidos",
+        pedidoId,
+        "UPDATE",
+        oldData,
+        newData
+      );
+
+      const row = updateRes.rows[0];
+      return res.status(200).json({
+        success: true,
+        message: "Estatus actualizado correctamente.",
+        data: {
+          pedido: {
+            pedidoId: row.pedidoid,
+            clienteId: row.clienteid,
+            agenteId: row.agenteid,
+            direccionEnvioId: row.direccionenvioid,
+            fechaPedido: row.fechapedido,
+            montoTotal: row.montototal !== null ? parseFloat(row.montototal) : null,
+            estatus: row.estatus,
+            costoEnvio: row.costoenvio !== null ? parseFloat(row.costoenvio) : null,
+          },
+        },
+      });
+    }
 
     await solicitarCambio(
       req,
@@ -2520,18 +2658,11 @@ const reducirStockPedido = async (client, pedidoId, usuarioId) => {
   }
 };
 
-// Helper: a partir de un array de cantidades (packs), encontrar o crear
-// registros en Cat_TamanoPaquetes y devolver sus TamanoID.
-// Implementa un "find or create" estricto por la columna Cantidad.
-const findOrCreateTamanosFromPacks = async (client, packsRaw) => {
-  const cantidades = Array.isArray(packsRaw)
-    ? [
-        ...new Set(
-          packsRaw
-            .map((n) => Number.parseInt(n, 10))
-            .filter((n) => Number.isInteger(n) && n > 1)
-        ),
-      ]
+const findOrCreateTamanosFromPacks = async (client, packs) => {
+  const cantidades = Array.isArray(packs)
+    ? packs
+        .map((p) => Number.parseInt(p, 10))
+        .filter((n) => Number.isInteger(n) && n > 0)
     : [];
 
   if (!cantidades.length) {
@@ -2595,6 +2726,102 @@ const findOrCreateTamanosFromPacks = async (client, packsRaw) => {
   return idsResultantes;
 };
 
+const sanitizeSkuSegment = (input, maxLen, fallback) => {
+  const raw = input === undefined || input === null ? "" : String(input);
+  const normalized = raw
+    .trim()
+    .toUpperCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^A-Z0-9]/g, "");
+
+  const base = normalized.length ? normalized : String(fallback || "");
+  return base.slice(0, maxLen);
+};
+
+const generarSkuMaestro = async (
+  pool,
+  { proveedorid, tipoproductoid, categoriaid, nombreproducto }
+) => {
+  if (!pool || typeof pool.query !== "function") {
+    throw new Error("pool inválido");
+  }
+
+  const yearSegment = String(new Date().getFullYear()).slice(-2);
+
+  const proveedorIdParsed =
+    proveedorid !== undefined && proveedorid !== null
+      ? Number.parseInt(proveedorid, 10)
+      : null;
+  const tipoProductoIdParsed =
+    tipoproductoid !== undefined && tipoproductoid !== null
+      ? Number.parseInt(tipoproductoid, 10)
+      : null;
+  const categoriaIdParsed =
+    categoriaid !== undefined && categoriaid !== null
+      ? Number.parseInt(categoriaid, 10)
+      : null;
+
+  const proveedorNombre = await (async () => {
+    if (!Number.isInteger(proveedorIdParsed) || proveedorIdParsed <= 0) {
+      return "GEN";
+    }
+    const r = await pool.query(
+      "SELECT nombreempresa FROM proveedores WHERE proveedorid = $1",
+      [proveedorIdParsed]
+    );
+    return r.rows[0]?.nombreempresa ?? "GEN";
+  })();
+
+  const tipoProductoNombre = await (async () => {
+    if (!Number.isInteger(tipoProductoIdParsed) || tipoProductoIdParsed <= 0) {
+      return "GEN";
+    }
+    const r = await pool.query(
+      "SELECT nombre FROM tipoproducto WHERE tipoproductoid = $1",
+      [tipoProductoIdParsed]
+    );
+    return r.rows[0]?.nombre ?? "GEN";
+  })();
+
+  const categoriaNombre = await (async () => {
+    if (!Number.isInteger(categoriaIdParsed) || categoriaIdParsed <= 0) {
+      return "GEN";
+    }
+    const r = await pool.query(
+      "SELECT nombre FROM categorias WHERE categoriaid = $1",
+      [categoriaIdParsed]
+    );
+    return r.rows[0]?.nombre ?? "GEN";
+  })();
+
+  const proveedorSegment = sanitizeSkuSegment(proveedorNombre, 3, "GEN");
+  const tipoSegment = sanitizeSkuSegment(tipoProductoNombre, 3, "GEN");
+  const categoriaSegment = sanitizeSkuSegment(categoriaNombre, 3, "GEN");
+  const nombreSegment = sanitizeSkuSegment(nombreproducto, 4, "PROD");
+
+  return `${yearSegment}-${proveedorSegment}-${tipoSegment}-${categoriaSegment}-${nombreSegment}`;
+};
+
+const procesarMedidaParaSkuVariante = (dimensiones) => {
+  const raw = dimensiones === undefined || dimensiones === null ? "" : String(dimensiones);
+  const normalized = raw
+    .trim()
+    .toUpperCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/×/g, "X")
+    .replace(/\s+/g, "")
+    .replace(/[^A-Z0-9]/g, "");
+
+  if (!normalized.length) {
+    return "";
+  }
+
+  const hasNumbers = /\d/.test(normalized);
+  return hasNumbers ? normalized : normalized.slice(0, 3);
+};
+
 /**
  * Crear un nuevo producto
  * POST /api/admin/productos
@@ -2620,6 +2847,9 @@ const crearProducto = async (req, res) => {
     packs,
   } = req.body;
 
+  const rolUsuario = (req?.user?.rol || "").toString().trim().toLowerCase();
+  const allowDirect = rolUsuario === "admin" || rolUsuario === "superadmin";
+
   // DEBUG BACKEND: inspeccionar qué llega al crear producto maestro
   console.log("🟢 [CREAR_PRODUCTO] Body recibido:", {
     nombre,
@@ -2638,13 +2868,6 @@ const crearProducto = async (req, res) => {
     return res.status(400).json({
       success: false,
       message: "El nombre del producto es obligatorio",
-    });
-  }
-
-  if (sku_maestro === undefined || sku_maestro === null || String(sku_maestro).trim() === "") {
-    return res.status(400).json({
-      success: false,
-      message: "El SKU Maestro es obligatorio",
     });
   }
 
@@ -2674,25 +2897,6 @@ const crearProducto = async (req, res) => {
     await client.query("BEGIN");
     transactionStarted = true;
 
-    const skuMaestroFinal = String(sku_maestro);
-
-    const skuExisteResult = await client.query(
-      `SELECT productoid
-       FROM productos
-       WHERE sku_maestro = $1
-       LIMIT 1`,
-      [skuMaestroFinal]
-    );
-
-    if (skuExisteResult.rows.length > 0) {
-      await client.query("ROLLBACK");
-      transactionStarted = false;
-      return res.status(400).json({
-        success: false,
-        message: "El SKU Maestro ya existe. Debe ser único.",
-      });
-    }
-
     let proveedorId = null;
     if (proveedorIdRaw !== undefined && proveedorIdRaw !== null) {
       const parsed = Number.parseInt(proveedorIdRaw, 10);
@@ -2716,9 +2920,10 @@ const crearProducto = async (req, res) => {
       }
     }
 
-    // Gestión de visibilidad: forzar activo FALSE en creación.
-    // El producto maestro se activará sólo cuando un superadmin apruebe el cambio.
-    const activoFinal = false;
+    // Gestión de visibilidad:
+    // - Admin/Superadmin: permite crear directamente con el valor recibido.
+    // - Otros: mantener el comportamiento anterior (pendiente de aprobación).
+    const activoFinal = allowDirect ? (activo !== undefined ? Boolean(activo) : true) : false;
 
     const tipoProductoNombre = (() => {
       const raw =
@@ -2769,6 +2974,30 @@ const crearProducto = async (req, res) => {
 
       return null;
     })();
+
+    const skuMaestroFinal = await generarSkuMaestro(client, {
+      proveedorid: proveedorId,
+      tipoproductoid: tipoProductoId,
+      categoriaid: categoriaIdParsed,
+      nombreproducto: nombre,
+    });
+
+    const skuExisteResult = await client.query(
+      `SELECT productoid
+       FROM productos
+       WHERE sku_maestro = $1
+       LIMIT 1`,
+      [skuMaestroFinal]
+    );
+
+    if (skuExisteResult.rows.length > 0) {
+      await client.query("ROLLBACK");
+      transactionStarted = false;
+      return res.status(400).json({
+        success: false,
+        message: "El SKU Maestro ya existe. Debe ser único.",
+      });
+    }
 
     const parseBoolean = (value, defaultValue = false) => {
       if (typeof value === "boolean") return value;
@@ -2985,6 +3214,28 @@ const crearProducto = async (req, res) => {
 
     await client.query("COMMIT");
     transactionStarted = false;
+
+    if (allowDirect) {
+      await auditService.registrarCambioPasivo(
+        req,
+        "productos",
+        producto.productoid,
+        "INSERT",
+        null,
+        producto
+      );
+
+      return res.status(201).json({
+        success: true,
+        message: "Producto creado correctamente.",
+        data: {
+          producto,
+          tamanosDisponibles: tamanosAsociados,
+          varianteMaestra: null,
+          variantes: [],
+        },
+      });
+    }
 
     // Registrar solicitud de cambio para PUBLICAR/ACTIVAR el producto maestro (estrategia híbrida)
     try {
@@ -3465,6 +3716,15 @@ const actualizarProducto = async (req, res) => {
     });
   }
 
+  if (req.body && typeof req.body === "object") {
+    if (Object.prototype.hasOwnProperty.call(req.body, "sku_maestro")) {
+      delete req.body.sku_maestro;
+    }
+    if (Object.prototype.hasOwnProperty.call(req.body, "skuMaestro")) {
+      delete req.body.skuMaestro;
+    }
+  }
+
   const {
     nombre,
     descripcion,
@@ -3503,6 +3763,9 @@ const actualizarProducto = async (req, res) => {
     }
 
     const productoActual = productoResult.rows[0];
+
+    const rolUsuario = (req?.user?.rol || "").toString().trim().toLowerCase();
+    const allowDirect = rolUsuario === "admin" || rolUsuario === "superadmin";
 
     // Si viene un orden explícito de imágenes, actualizarlo aquí.
     // Esto debe aplicarse inmediatamente (no requiere solicitud de cambio) porque es un atributo de presentación.
@@ -3685,8 +3948,6 @@ const actualizarProducto = async (req, res) => {
         .then((r) => r.rows[0]?.tipoproductoid ?? null);
     })();
 
-    // Nueva estrategia estricta: NO aplicar el UPDATE directamente sobre Productos.
-    // En su lugar, registrar una solicitud de cambio para aprobación.
     try {
       const datosNuevosProducto = {
         NombreProducto: nombreFinal,
@@ -3700,6 +3961,104 @@ const actualizarProducto = async (req, res) => {
       if (tipoProductoNombre !== null || tipoProductoIdRaw !== undefined) {
         resolvedTipoProductoId = await tipoProductoId;
         datosNuevosProducto.TipoProductoID = resolvedTipoProductoId;
+      }
+
+      if (allowDirect) {
+        const updateProductoRes = await client.query(
+          `UPDATE productos
+           SET nombreproducto = $1,
+               descripcion = $2,
+               categoriaid = $3,
+               proveedorid_default = $4,
+               activo = $5,
+               tipoproductoid = $6
+           WHERE productoid = $7
+           RETURNING productoid, nombreproducto, sku_maestro, descripcion, categoriaid, proveedorid_default, activo, tipoproductoid`,
+          [
+            datosNuevosProducto.NombreProducto,
+            datosNuevosProducto.Descripcion,
+            datosNuevosProducto.CategoriaID,
+            datosNuevosProducto.ProveedorID_Default,
+            datosNuevosProducto.Activo,
+            resolvedTipoProductoId ?? productoActual.tipoproductoid ?? null,
+            productoId,
+          ]
+        );
+
+        if (!updateProductoRes.rows.length) {
+          if (transactionStarted) {
+            await client.query("ROLLBACK");
+            transactionStarted = false;
+          }
+          return res.status(404).json({
+            success: false,
+            message: "Producto maestro no encontrado",
+          });
+        }
+
+        const productoActualizado = updateProductoRes.rows[0];
+
+        let varianteTipoAudit = null;
+
+        if (tipoProductoNombre !== null || tipoProductoIdRaw !== undefined) {
+          const masterVarianteResult = await client.query(
+            `SELECT *
+             FROM producto_variantes
+             WHERE productoid = $1
+             ORDER BY piezasporpaquete ASC NULLS LAST, varianteid ASC
+             LIMIT 1`,
+            [productoId]
+          );
+
+          const varianteMaestraActual = masterVarianteResult.rows[0] || null;
+          if (varianteMaestraActual && varianteMaestraActual.varianteid) {
+            const updateVarianteTipoRes = await client.query(
+              `UPDATE producto_variantes
+               SET tipoproductoid = $1
+               WHERE varianteid = $2
+               RETURNING varianteid, productoid, sku, tipoproductoid`,
+              [resolvedTipoProductoId, varianteMaestraActual.varianteid]
+            );
+
+            if (updateVarianteTipoRes.rows.length) {
+              varianteTipoAudit = {
+                old: varianteMaestraActual,
+                neu: updateVarianteTipoRes.rows[0],
+              };
+            }
+          }
+        }
+
+        await client.query("COMMIT");
+        transactionStarted = false;
+
+        await auditService.registrarCambioPasivo(
+          req,
+          "productos",
+          productoId,
+          "UPDATE",
+          productoActual,
+          productoActualizado
+        );
+
+        if (varianteTipoAudit) {
+          await auditService.registrarCambioPasivo(
+            req,
+            "producto_variantes",
+            varianteTipoAudit.neu.varianteid,
+            "UPDATE",
+            varianteTipoAudit.old,
+            varianteTipoAudit.neu
+          );
+        }
+
+        return res.json({
+          success: true,
+          message: "Producto actualizado correctamente.",
+          data: {
+            productoId,
+          },
+        });
       }
 
       const resultado = await solicitarCambio(
@@ -4553,6 +4912,52 @@ const crearCategoria = async (req, res) => {
       Activo: activoFinal,
     };
 
+    const rol = (req?.user?.rol || "").toString().trim().toLowerCase();
+    const allowDirect = rol === "admin" || rol === "superadmin";
+
+    if (allowDirect) {
+      const insertRes = await db.query(
+        "INSERT INTO categorias (nombre, descripcion, parentcategoriaid, activo) VALUES ($1, $2, $3, $4) RETURNING categoriaid, nombre, descripcion, parentcategoriaid, activo",
+        [
+          datosNuevos.Nombre,
+          datosNuevos.Descripcion,
+          datosNuevos.ParentCategoriaID,
+          datosNuevos.Activo,
+        ]
+      );
+
+      const row = insertRes.rows[0];
+
+      await auditService.registrarCambioPasivo(
+        req,
+        "categorias",
+        row.categoriaid,
+        "INSERT",
+        null,
+        {
+          categoriaid: row.categoriaid,
+          nombre: row.nombre,
+          descripcion: row.descripcion,
+          parentcategoriaid: row.parentcategoriaid,
+          activo: row.activo,
+        }
+      );
+
+      return res.status(201).json({
+        success: true,
+        message: "Categoría creada correctamente.",
+        data: {
+          categoria: {
+            categoriaId: row.categoriaid,
+            nombre: row.nombre,
+            descripcion: row.descripcion,
+            parentCategoriaId: row.parentcategoriaid,
+            activo: row.activo,
+          },
+        },
+      });
+    }
+
     const resultado = await solicitarCambio(
       req,
       "categorias",
@@ -4662,6 +5067,60 @@ const actualizarCategoria = async (req, res) => {
       Activo: activoFinal,
     };
 
+    const rol = (req?.user?.rol || "").toString().trim().toLowerCase();
+    const allowDirect = rol === "admin" || rol === "superadmin";
+
+    if (allowDirect) {
+      const updateRes = await db.query(
+        "UPDATE categorias SET nombre = $1, descripcion = $2, parentcategoriaid = $3, activo = $4 WHERE categoriaid = $5 RETURNING categoriaid, nombre, descripcion, parentcategoriaid, activo",
+        [
+          datosNuevos.Nombre,
+          datosNuevos.Descripcion,
+          datosNuevos.ParentCategoriaID,
+          datosNuevos.Activo,
+          categoriaId,
+        ]
+      );
+
+      if (!updateRes.rows.length) {
+        return res.status(404).json({
+          success: false,
+          message: "Categoría no encontrada",
+        });
+      }
+
+      const row = updateRes.rows[0];
+
+      await auditService.registrarCambioPasivo(
+        req,
+        "categorias",
+        categoriaId,
+        "UPDATE",
+        categoriaActual,
+        {
+          categoriaid: row.categoriaid,
+          nombre: row.nombre,
+          descripcion: row.descripcion,
+          parentcategoriaid: row.parentcategoriaid,
+          activo: row.activo,
+        }
+      );
+
+      return res.json({
+        success: true,
+        message: "Categoría actualizada correctamente.",
+        data: {
+          categoria: {
+            categoriaId: row.categoriaid,
+            nombre: row.nombre,
+            descripcion: row.descripcion,
+            parentCategoriaId: row.parentcategoriaid,
+            activo: row.activo,
+          },
+        },
+      });
+    }
+
     const resultado = await solicitarCambio(
       req,
       "categorias",
@@ -4763,7 +5222,41 @@ const eliminarCategoria = async (req, res) => {
 
     const categoriaSnapshot = categoriaResult.rows[0];
 
+    const rol = (req?.user?.rol || "").toString().trim().toLowerCase();
+    const allowDirect = rol === "admin" || rol === "superadmin";
+
     const datosNuevos = {};
+
+    if (allowDirect) {
+      const deleteRes = await db.query(
+        "DELETE FROM categorias WHERE categoriaid = $1 RETURNING categoriaid",
+        [categoriaId]
+      );
+
+      if (!deleteRes.rows.length) {
+        return res.status(404).json({
+          success: false,
+          message: "Categoría no encontrada",
+        });
+      }
+
+      await auditService.registrarCambioPasivo(
+        req,
+        "categorias",
+        categoriaId,
+        "DELETE",
+        categoriaSnapshot,
+        {}
+      );
+
+      return res.json({
+        success: true,
+        message: "Categoría eliminada correctamente.",
+        data: {
+          categoriaId,
+        },
+      });
+    }
 
     const resultado = await solicitarCambio(
       req,
@@ -4826,6 +5319,49 @@ const crearAgente = async (req, res) => {
     // Hash de la contraseña
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    const rol = (req?.user?.rol || "").toString().trim().toLowerCase();
+    const allowDirect = rol === "admin" || rol === "superadmin";
+
+    if (allowDirect) {
+      const insertRes = await db.query(
+        "INSERT INTO agentesdeventas (nombre, apellido, email, passwordhash, codigoagente, activo, esadmin, adminrol) VALUES ($1, $2, $3, $4, $5, TRUE, FALSE, NULL) RETURNING agenteid, nombre, apellido, email, codigoagente, activo, esadmin, adminrol",
+        [nombre.trim(), apellido.trim(), email, hashedPassword, nuevoCodigoAgente]
+      );
+
+      const row = insertRes.rows[0];
+
+      await auditService.registrarCambioPasivo(
+        req,
+        "agentes",
+        row.agenteid,
+        "INSERT",
+        null,
+        {
+          agenteid: row.agenteid,
+          nombre: row.nombre,
+          apellido: row.apellido,
+          email: row.email,
+          codigoagente: row.codigoagente,
+          activo: row.activo,
+          esadmin: row.esadmin,
+          adminrol: row.adminrol,
+        }
+      );
+
+      return res.status(201).json({
+        success: true,
+        message: "Agente creado correctamente.",
+        data: {
+          agenteId: row.agenteid,
+          nombre: row.nombre,
+          apellido: row.apellido,
+          email: row.email,
+          codigoAgente: row.codigoagente,
+          solicitudId: null,
+        },
+      });
+    }
+
     // Estrategia Pura: registrar solicitud de creación en control_cambios
     const datosNuevosAgente = {
       Nombre: nombre,
@@ -4833,7 +5369,6 @@ const crearAgente = async (req, res) => {
       Email: email,
       PasswordHash: hashedPassword,
       CodigoAgente: nuevoCodigoAgente,
-      Telefono: telefono || null,
       Activo: true,
     };
 
@@ -5166,9 +5701,48 @@ const desactivarAgente = async (req, res) => {
 
     const agenteActual = snapshotResult.rows[0];
 
+    const rol = (req?.user?.rol || "").toString().trim().toLowerCase();
+    const allowDirect = rol === "admin" || rol === "superadmin";
+
     const datosNuevos = {
       Activo: false,
     };
+
+    if (allowDirect) {
+      const updateRes = await db.query(
+        "UPDATE agentesdeventas SET activo = FALSE WHERE agenteid = $1 RETURNING agenteid, nombre, apellido, email, codigoagente, activo, esadmin, adminrol",
+        [agenteId]
+      );
+
+      if (!updateRes.rows.length) {
+        return res.status(404).json({
+          success: false,
+          message: "Agente no encontrado",
+        });
+      }
+
+      const row = updateRes.rows[0];
+
+      await auditService.registrarCambioPasivo(
+        req,
+        "agentes",
+        agenteId,
+        "UPDATE",
+        agenteActual,
+        {
+          agenteid: row.agenteid,
+          activo: row.activo,
+        }
+      );
+
+      return res.json({
+        success: true,
+        message: `Agente ${row.nombre} ${row.apellido} desactivado exitosamente.`,
+        data: {
+          agenteId: row.agenteid,
+        },
+      });
+    }
 
     const resultado = await solicitarCambio(
       req,
@@ -5343,9 +5917,48 @@ const pagarComision = async (req, res) => {
     }
 
     const datosNuevos = {
-      estatus: "Pagada",
-      fechapago: new Date(),
+      Estatus: "Pagada",
     };
+
+    const rol = (req?.user?.rol || "").toString().trim().toLowerCase();
+    const allowDirect = rol === "admin" || rol === "superadmin";
+
+    if (allowDirect) {
+      const updateRes = await db.query(
+        "UPDATE comisiones SET estatus = $1 WHERE comisionid = $2 RETURNING comisionid, pedidoid, agenteid, montocomision, fechacalculo, estatus",
+        ["Pagada", comisionId]
+      );
+
+      if (!updateRes.rows.length) {
+        return res.status(404).json({
+          success: false,
+          message: "Comisión no encontrada",
+        });
+      }
+
+      const row = updateRes.rows[0];
+
+      await auditService.registrarCambioPasivo(
+        req,
+        "comisiones",
+        comisionId,
+        "UPDATE",
+        comision,
+        {
+          comisionid: row.comisionid,
+          estatus: row.estatus,
+        }
+      );
+
+      return res.json({
+        success: true,
+        message: "Comisión pagada correctamente.",
+        data: {
+          comisionId: row.comisionid,
+          estatus: row.estatus,
+        },
+      });
+    }
 
     const resultado = await solicitarCambio(
       req,
@@ -7416,6 +8029,9 @@ const crearVariante = async (req, res) => {
       activo,
     } = req.body || {};
 
+    const rolUsuario = (req?.user?.rol || "").toString().trim().toLowerCase();
+    const allowDirect = rolUsuario === "admin" || rolUsuario === "superadmin";
+
     const parsedProductoId = Number.parseInt(productoId, 10);
     if (!parsedProductoId || Number.isNaN(parsedProductoId)) {
       return res.status(400).json({
@@ -7424,10 +8040,19 @@ const crearVariante = async (req, res) => {
       });
     }
 
-    if (!sku || !String(sku).trim()) {
+    const dimensionesFinal =
+      dimensiones === undefined
+        ? null
+        : (() => {
+            if (dimensiones === null) return null;
+            const txt = String(dimensiones).trim();
+            return txt.length ? txt : null;
+          })();
+
+    if (!dimensionesFinal) {
       return res.status(400).json({
         success: false,
-        message: "SKU es obligatorio",
+        message: "dimensiones es obligatorio para generar el SKU",
       });
     }
 
@@ -7492,7 +8117,7 @@ const crearVariante = async (req, res) => {
 
     // Verificar que el producto maestro exista, pero sin modificar tablas de negocio
     const productoResult = await db.query(
-      "SELECT ProductoID, NombreProducto FROM Productos WHERE ProductoID = $1",
+      "SELECT productoid, nombreproducto, sku_maestro FROM productos WHERE productoid = $1",
       [parsedProductoId]
     );
 
@@ -7503,15 +8128,31 @@ const crearVariante = async (req, res) => {
       });
     }
 
-    const skuFinal = String(sku).trim().toUpperCase();
-    const dimensionesFinal =
-      dimensiones === undefined
-        ? null
-        : (() => {
-            if (dimensiones === null) return null;
-            const txt = String(dimensiones).trim();
-            return txt.length ? txt : null;
-          })();
+    const productoRow = productoResult.rows[0];
+    const skuMaestroBase = (productoRow?.sku_maestro || "").toString().trim();
+    if (!skuMaestroBase) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "El producto no tiene SKU Maestro. Debe existir para generar el SKU de la variante.",
+      });
+    }
+
+    const medidaProcesada = procesarMedidaParaSkuVariante(dimensionesFinal);
+    if (!medidaProcesada) {
+      return res.status(400).json({
+        success: false,
+        message: "No se pudo procesar dimensiones para generar el SKU",
+      });
+    }
+
+    const skuMaestroSan = skuMaestroBase.toUpperCase().replace(/\s+/g, "");
+    const maxSkuLen = 50;
+    const remaining = maxSkuLen - (skuMaestroSan.length + 1);
+    const skuFinal =
+      remaining > 0
+        ? `${skuMaestroSan}-${medidaProcesada.slice(0, remaining)}`
+        : skuMaestroSan.slice(0, maxSkuLen);
 
     // Usar nombres de columnas reales de Producto_Variantes (en minúsculas)
     const payloadNuevos = {
@@ -7526,6 +8167,64 @@ const crearVariante = async (req, res) => {
       medidaid: medidaId || null,
       activo: activoFinal,
     };
+
+    if (allowDirect) {
+      const insertRes = await db.query(
+        `INSERT INTO producto_variantes
+          (productoid, sku, dimensiones, costounitario, stock, tipoproductoid, medidaid, preciounitario, precioofertaunitario, activo)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+         RETURNING varianteid, productoid, sku, dimensiones, costounitario, preciounitario, precioofertaunitario, stock, tipoproductoid, medidaid, activo, piezasporpaquete`,
+        [
+          payloadNuevos.productoid,
+          payloadNuevos.sku,
+          payloadNuevos.dimensiones,
+          payloadNuevos.costounitario,
+          payloadNuevos.stock,
+          payloadNuevos.tipoproductoid,
+          payloadNuevos.medidaid,
+          payloadNuevos.preciounitario,
+          payloadNuevos.precioofertaunitario,
+          payloadNuevos.activo,
+        ]
+      );
+
+      const row = insertRes.rows[0];
+
+      await auditService.registrarCambioPasivo(
+        req,
+        "producto_variantes",
+        row.varianteid,
+        "INSERT",
+        null,
+        row
+      );
+
+      return res.status(201).json({
+        success: true,
+        message: "Variante creada correctamente.",
+        data: {
+          variante: {
+            varianteId: row.varianteid,
+            productoId: row.productoid,
+            sku: row.sku,
+            dimensiones: row.dimensiones,
+            costoUnitario:
+              row.costounitario !== null ? parseFloat(row.costounitario) : null,
+            precioUnitario:
+              row.preciounitario !== null ? parseFloat(row.preciounitario) : null,
+            precioOfertaUnitario:
+              row.precioofertaunitario !== null
+                ? parseFloat(row.precioofertaunitario)
+                : null,
+            stock: row.stock ?? 0,
+            activo: row.activo,
+            piezasPorPaquete: row.piezasporpaquete,
+            tipoProductoId: row.tipoproductoid ?? null,
+            medidaId: row.medidaid ?? null,
+          },
+        },
+      });
+    }
 
     const resultado = await solicitarCambio(
       req,
@@ -7575,7 +8274,6 @@ const actualizarVariante = async (req, res) => {
 
     const {
       activo,
-      sku,
       dimensiones,
       costoUnitario,
       precioUnitario,
@@ -7597,6 +8295,9 @@ const actualizarVariante = async (req, res) => {
     }
 
     const actual = result.rows[0];
+
+    const rolUsuario = (req?.user?.rol || "").toString().trim().toLowerCase();
+    const allowDirect = rolUsuario === "admin" || rolUsuario === "superadmin";
 
     const normalizarBoolean = (value, fallback) => {
       if (value === undefined) return fallback;
@@ -7639,11 +8340,6 @@ const actualizarVariante = async (req, res) => {
         : null;
     const activoActual = Boolean(actual.activo);
 
-    const nuevoSku =
-      typeof sku === "string" && sku.trim().length
-        ? sku.trim().toUpperCase()
-        : skuActual;
-
     const nuevasDimensiones =
       dimensiones !== undefined
         ? (() => {
@@ -7678,7 +8374,7 @@ const actualizarVariante = async (req, res) => {
 
     console.log("📝 Solicitud de actualización de variante", {
       varianteId,
-      sku: nuevoSku,
+      sku: skuActual,
       dimensiones: nuevasDimensiones,
       costoUnitario: nuevoCosto,
       precioUnitario: nuevoPrecio,
@@ -7688,13 +8384,77 @@ const actualizarVariante = async (req, res) => {
 
     // Usar nombres de columnas reales de Producto_Variantes (en minúsculas)
     const payloadNuevos = {
-      sku: nuevoSku,
       dimensiones: nuevasDimensiones,
       costounitario: nuevoCosto,
       preciounitario: nuevoPrecio,
       precioofertaunitario: nuevaOferta,
       activo: nuevoActivo,
     };
+
+    if (allowDirect) {
+      const updateRes = await db.query(
+        `UPDATE producto_variantes
+         SET dimensiones = $1,
+             costounitario = $2,
+             preciounitario = $3,
+             precioofertaunitario = $4,
+             activo = $5
+         WHERE varianteid = $6
+         RETURNING varianteid, productoid, sku, dimensiones, costounitario, preciounitario, precioofertaunitario, stock, activo, tipoproductoid, medidaid, piezasporpaquete`,
+        [
+          payloadNuevos.dimensiones,
+          payloadNuevos.costounitario,
+          payloadNuevos.preciounitario,
+          payloadNuevos.precioofertaunitario,
+          payloadNuevos.activo,
+          varianteId,
+        ]
+      );
+
+      if (!updateRes.rows.length) {
+        return res.status(404).json({
+          success: false,
+          message: "Variante no encontrada",
+        });
+      }
+
+      const row = updateRes.rows[0];
+
+      await auditService.registrarCambioPasivo(
+        req,
+        "producto_variantes",
+        varianteId,
+        "UPDATE",
+        actual,
+        row
+      );
+
+      return res.json({
+        success: true,
+        message: "Variante actualizada correctamente.",
+        data: {
+          variante: {
+            varianteId: row.varianteid,
+            productoId: row.productoid,
+            sku: row.sku,
+            dimensiones: row.dimensiones,
+            costoUnitario:
+              row.costounitario !== null ? parseFloat(row.costounitario) : null,
+            precioUnitario:
+              row.preciounitario !== null ? parseFloat(row.preciounitario) : null,
+            precioOfertaUnitario:
+              row.precioofertaunitario !== null
+                ? parseFloat(row.precioofertaunitario)
+                : null,
+            stock: row.stock ?? 0,
+            activo: row.activo,
+            piezasPorPaquete: row.piezasporpaquete,
+            tipoProductoId: row.tipoproductoid ?? null,
+            medidaId: row.medidaid ?? null,
+          },
+        },
+      });
+    }
 
     const resultado = await solicitarCambio(
       req,

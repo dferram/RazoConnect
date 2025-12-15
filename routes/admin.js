@@ -148,7 +148,7 @@ router.get(
 router.put(
   "/pedidos/:id",
   authenticate,
-  authorizeAdmin,
+  authorizeAdminOrAgente,
   adminController.updatePedidoEstatus
 );
 router.put(

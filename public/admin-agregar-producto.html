@@ -208,18 +208,18 @@
                   </div>
 
                   <div class="form-group">
-                    <label for="inputSkuMaestro" class="form-label">SKU Maestro / Modelo General *</label>
+                    <label for="inputSkuMaestro" class="form-label">SKU Maestro / Modelo General</label>
                     <input
                       type="text"
                       id="inputSkuMaestro"
                       name="inputSkuMaestro"
                       class="form-input"
-                      placeholder="Ej: CAJA-NAVIDAD-ROJA"
+                      placeholder="Generado automáticamente"
                       maxlength="50"
-                      required
+                      readonly
                     />
                     <small class="form-hint">
-                      SKU principal del producto maestro. Se guardará exactamente como lo escribas.
+                      SKU principal del producto maestro. Se genera automáticamente.
                     </small>
                   </div>
 
@@ -1862,7 +1862,6 @@
 
             const formData = {
               nombre: document.getElementById("nombre").value.trim(),
-              sku_maestro: document.getElementById("inputSkuMaestro").value.trim(),
               descripcion:
                 document.getElementById("descripcion").value.trim() || null,
               categoriaId: document.getElementById("categoriaId").value || null,

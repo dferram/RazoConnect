@@ -510,13 +510,13 @@
                     <div>
                       <form id="variantForm" class="variant-form">
                       <div class="form-group">
-                        <label for="sku" class="form-label">SKU *</label>
+                        <label for="sku" class="form-label">SKU</label>
                         <input
                           type="text"
                           id="sku"
                           class="form-input"
-                          placeholder="Ej: NAVIDAD-10X10-ROJO"
-                          required
+                          placeholder="Generado automáticamente"
+                          readonly
                         />
                         <small
                           id="skuSuggestion"
@@ -1063,8 +1063,10 @@
           .replace(/[^A-Z0-9X]/gi, "-");
 
         const sugerencia = `${skuMaestroBase}-${dimensionesLimpias}`;
-        skuSuggestionText.textContent = sugerencia;
-        skuSuggestion.style.display = "block";
+        if (skuInput) {
+          skuInput.value = sugerencia;
+        }
+        skuSuggestion.style.display = "none";
       }
 
       function renderProductSummary(producto, variantes) {
@@ -1674,7 +1676,6 @@
         const isEditing = Number.isInteger(editingVarianteId);
         const formData = {
           productoId,
-          sku: document.getElementById("sku").value.trim(),
           dimensiones:
             document.getElementById("dimensiones").value.trim() || null,
           precioUnitario: precioBase,
@@ -1688,11 +1689,6 @@
           tipoProductoId: null,
           medidaId: null,
         };
-
-        if (!formData.sku) {
-          showToast("El SKU es obligatorio", "warning");
-          return;
-        }
 
         if (
           !Number.isFinite(formData.precioUnitario) ||
@@ -1725,7 +1721,6 @@
             }
 
             const payload = {
-              sku: formData.sku,
               dimensiones: formData.dimensiones,
               costoUnitario: formData.costoUnitario,
               precioUnitario: formData.precioUnitario,

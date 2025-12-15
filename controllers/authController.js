@@ -17,6 +17,7 @@ const {
   solicitarCambio,
   aprobarSolicitudes,
 } = require("../services/ChangeRequestService");
+const auditService = require("../services/auditService");
 
 /**
  * Registro de nuevo cliente
@@ -777,6 +778,51 @@ const crearAdmin = async (req, res) => {
       // Normalizar 'super-admin' a 'superadmin'
       rolFinal =
         rol.toLowerCase() === "super-admin" ? "superadmin" : rol.toLowerCase();
+    }
+
+    const rolUsuario = (req?.user?.rol || "").toString().trim().toLowerCase();
+    const allowDirect = rolUsuario === "admin" || rolUsuario === "superadmin";
+
+    if (allowDirect) {
+      const insertRes = await db.query(
+        `INSERT INTO administradores (Nombre, Apellido, Email, PasswordHash, Rol, Activo)
+         VALUES ($1, $2, $3, $4, $5, TRUE)
+         RETURNING AdminID, Nombre, Apellido, Email, Rol, Activo`,
+        [nombre.trim(), "", email, PasswordHash, rolFinal]
+      );
+
+      const row = insertRes.rows[0];
+
+      await auditService.registrarCambioPasivo(
+        req,
+        "admins",
+        row.adminid,
+        "INSERT",
+        null,
+        {
+          adminid: row.adminid,
+          nombre: row.nombre,
+          apellido: row.apellido,
+          email: row.email,
+          rol: row.rol,
+          activo: row.activo,
+        }
+      );
+
+      return res.status(201).json({
+        success: true,
+        message: "Administrador creado correctamente.",
+        data: {
+          admin: {
+            adminId: row.adminid,
+            nombre: row.nombre,
+            apellido: row.apellido,
+            email: row.email,
+            rol: row.rol,
+          },
+          solicitudId: null,
+        },
+      });
     }
 
     // Estrategia Pura: registrar solicitud de creación en control_cambios
