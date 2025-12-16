@@ -167,19 +167,33 @@ async function generarBackorderProveedor(
 
     // PASO 1: Identificar Proveedor
     const productoResult = await client.query(
-      `SELECT ProveedorID_Default
-       FROM Productos
-       WHERE ProductoID = $1`,
+      `SELECT proveedorid_default
+       FROM productos
+       WHERE productoid = $1`,
       [productoIdNumero]
     );
 
-    if (productoResult.rows.length === 0) {
-      throw new Error(`Producto con ID ${productoIdNumero} no encontrado`);
+    let proveedorID = null;
+    if (productoResult.rows.length > 0) {
+      proveedorID = productoResult.rows[0].proveedorid_default;
     }
 
-    const proveedorID = productoResult.rows[0].proveedorid_default;
+    // Fallback: si no hay proveedor por producto, intentar resolver por variante -> producto
+    if (!proveedorID) {
+      const varianteProveedorResult = await client.query(
+        `SELECT p.proveedorid_default
+         FROM producto_variantes pv
+         INNER JOIN productos p ON p.productoid = pv.productoid
+         WHERE pv.varianteid = $1
+         LIMIT 1`,
+        [varianteIdNumero]
+      );
 
-    // Manejo de error: Proveedor no asignado
+      if (varianteProveedorResult.rows.length > 0) {
+        proveedorID = varianteProveedorResult.rows[0].proveedorid_default;
+      }
+    }
+
     if (!proveedorID) {
       throw new Error(
         `El producto ${productoIdNumero} no tiene un proveedor asignado. No se puede generar orden de compra.`

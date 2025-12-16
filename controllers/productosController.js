@@ -12,16 +12,29 @@ const obtenerProveedoresPublicos = async (req, res) => {
         prov.NombreEmpresa
       FROM Proveedores prov
       INNER JOIN Productos p ON p.ProveedorID_Default = prov.ProveedorID
-      WHERE p.Activo = TRUE
+      WHERE COALESCE(p.Activo, TRUE) = TRUE
       ORDER BY prov.NombreEmpresa ASC
     `;
 
     const result = await db.query(query);
 
-    const proveedores = result.rows.map((row) => ({
+    let proveedores = result.rows.map((row) => ({
       proveedorId: row.proveedorid,
       nombre: row.nombreempresa,
     }));
+
+    if (!proveedores.length) {
+      const fallbackResult = await db.query(
+        `SELECT proveedorid, nombreempresa
+         FROM proveedores
+         ORDER BY nombreempresa ASC`
+      );
+
+      proveedores = fallbackResult.rows.map((row) => ({
+        proveedorId: row.proveedorid,
+        nombre: row.nombreempresa,
+      }));
+    }
 
     res.status(200).json({
       success: true,

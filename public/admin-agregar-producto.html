@@ -520,6 +520,7 @@
         await loadCategorias();
         await loadProveedores();
         await loadTiposProducto();
+        await loadTamanos();
 
         bindTipoProductoEmpaqueAutomation();
 
@@ -617,6 +618,54 @@
           }
 
           const producto = data?.data?.producto || {};
+          const variantes = Array.isArray(data?.data?.variantes) ? data.data.variantes : [];
+          const tamanosDisponiblesRespuesta = Array.isArray(data?.data?.tamanosDisponibles)
+            ? data.data.tamanosDisponibles
+            : [];
+
+          if (!document.getElementById("packsChipsContainer") && typeof loadTamanos === "function") {
+            await loadTamanos();
+          }
+
+          const tieneVentaIndividual =
+            variantes.some((v) => {
+              const raw =
+                v?.piezasPorPaquete ??
+                v?.piezasporpaquete ??
+                v?.piezas_por_paquete ??
+                null;
+              const n = Number.parseInt(raw, 10);
+              return Number.isInteger(n) && n === 1;
+            }) ||
+            tamanosDisponiblesRespuesta.some((t) => {
+              const n = Number.parseInt(t?.valor, 10);
+              return Number.isInteger(n) && n === 1;
+            });
+
+          const packSet = new Set();
+          variantes.forEach((v) => {
+            const raw =
+              v?.piezasPorPaquete ??
+              v?.piezasporpaquete ??
+              v?.piezas_por_paquete ??
+              null;
+            const n = Number.parseInt(raw, 10);
+            if (Number.isInteger(n) && n > 1) packSet.add(n);
+          });
+          tamanosDisponiblesRespuesta.forEach((t) => {
+            const n = Number.parseInt(t?.valor, 10);
+            if (Number.isInteger(n) && n > 1) packSet.add(n);
+          });
+
+          const ventaIndividualCheckbox = document.getElementById("tamano-unidad");
+          if (ventaIndividualCheckbox) {
+            ventaIndividualCheckbox.checked = Boolean(tieneVentaIndividual);
+          }
+
+          customPacks = [];
+          Array.from(packSet)
+            .sort((a, b) => a - b)
+            .forEach((valor) => sugerirPack(valor));
 
           const imagenesServidor = Array.isArray(producto?.imagenes)
             ? producto.imagenes
@@ -886,8 +935,8 @@
 
           proveedores.forEach((proveedor) => {
             const option = document.createElement("option");
-            option.value = proveedor.proveedorid;
-            option.textContent = proveedor.nombreempresa;
+            option.value = proveedor.proveedorid ?? proveedor.proveedorId ?? proveedor.ProveedorID ?? "";
+            option.textContent = proveedor.nombreempresa ?? proveedor.nombreEmpresa ?? proveedor.NombreEmpresa ?? "";
             select.appendChild(option);
           });
 

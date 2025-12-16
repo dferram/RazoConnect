@@ -270,7 +270,9 @@ async function loadCatalogoCompleto() {
   setLoading(true);
   try {
     const proveedorId = getProveedorIdSeleccionado();
-    const qs = proveedorId ? `?all=1&proveedorId=${encodeURIComponent(proveedorId)}` : "?all=1";
+    const qs = proveedorId
+      ? `?all=1&proveedorId=${encodeURIComponent(proveedorId)}&filtrarProveedor=1`
+      : "?all=1";
     const data = await fetchJSON(`${API_BASE_URL}/admin/productos/buscar-compra${qs}`);
     catalogo = Array.isArray(data?.data?.resultados) ? data.data.resultados : [];
 

@@ -341,7 +341,10 @@ const buscarProductosCompra = async (req, res) => {
     const q = hasQ ? `%${qRaw}%` : null;
 
     const reglasProveedorId = hasProveedor ? proveedorId : null;
-    const whereParts = ["pv.activo = true", "p.activo = true"];
+    const whereParts = [
+      "COALESCE(pv.activo, TRUE) = TRUE",
+      "COALESCE(p.activo, TRUE) = TRUE",
+    ];
     const params = [reglasProveedorId];
     let i = 2;
 
@@ -3433,9 +3436,17 @@ const crearProducto = async (req, res) => {
     await client.query("BEGIN");
     transactionStarted = true;
 
+    const proveedorIdRawEffective =
+      proveedorIdRaw ??
+      req.body?.proveedorid_default ??
+      req.body?.proveedorId_Default ??
+      req.body?.ProveedorID_Default ??
+      req.body?.proveedorid ??
+      null;
+
     let proveedorId = null;
-    if (proveedorIdRaw !== undefined && proveedorIdRaw !== null) {
-      const parsed = Number.parseInt(proveedorIdRaw, 10);
+    if (proveedorIdRawEffective !== undefined && proveedorIdRawEffective !== null) {
+      const parsed = Number.parseInt(proveedorIdRawEffective, 10);
       if (!Number.isNaN(parsed)) {
         proveedorId = parsed;
       }
@@ -4353,16 +4364,24 @@ const actualizarProducto = async (req, res) => {
         ? categoriaId || null
         : productoActual.categoriaid;
 
+    const proveedorIdRawEffective =
+      proveedorIdRaw ??
+      req.body?.proveedorid_default ??
+      req.body?.proveedorId_Default ??
+      req.body?.ProveedorID_Default ??
+      req.body?.proveedorid ??
+      null;
+
     let proveedorId = productoActual.proveedorid;
-    if (proveedorIdRaw !== undefined) {
+    if (proveedorIdRawEffective !== undefined) {
       if (
-        proveedorIdRaw === null ||
-        proveedorIdRaw === "" ||
-        proveedorIdRaw === 0
+        proveedorIdRawEffective === null ||
+        proveedorIdRawEffective === "" ||
+        proveedorIdRawEffective === 0
       ) {
         proveedorId = null;
       } else {
-        const parsedProveedor = Number.parseInt(proveedorIdRaw, 10);
+        const parsedProveedor = Number.parseInt(proveedorIdRawEffective, 10);
         if (Number.isNaN(parsedProveedor) || parsedProveedor <= 0) {
           await client.query("ROLLBACK");
           return res.status(400).json({
@@ -4799,6 +4818,7 @@ const getProductoDetalle = async (req, res) => {
          p.nombreproducto,
          p.sku_maestro,
          p.descripcion,
+         p.proveedorid_default,
          p.activo,
          p.categoriaid,
          p.tipoproductoid,
@@ -4820,6 +4840,25 @@ const getProductoDetalle = async (req, res) => {
 
     const producto = productoResult.rows[0];
 
+    const imagenesResult = await db.query(
+      `SELECT
+         pi.imagenid,
+         pi.url_imagen,
+         pi.textoalternativo,
+         pi.orden
+       FROM producto_imagenes pi
+       WHERE pi.productoid = $1
+       ORDER BY pi.orden ASC NULLS LAST, pi.imagenid ASC`,
+      [productoId]
+    );
+
+    const imagenesProducto = imagenesResult.rows.map((row) => ({
+      imagenId: row.imagenid,
+      url: row.url_imagen,
+      textoAlternativo: row.textoalternativo || null,
+      orden: row.orden !== null && row.orden !== undefined ? parseInt(row.orden, 10) : null,
+    }));
+
     const variantesResult = await db.query(
       `SELECT
          pv.varianteid,
@@ -4828,6 +4867,7 @@ const getProductoDetalle = async (req, res) => {
          pv.dimensiones,
          pv.costounitario,
          pv.preciounitario,
+         pv.piezasporpaquete,
          pv.stock,
          pv.tipoproductoid,
          pv.medidaid,
@@ -4951,10 +4991,7 @@ const getProductoDetalle = async (req, res) => {
           Number.isInteger(piezasPorPaquete) && piezasPorPaquete > 0
             ? piezasPorPaquete
             : 1,
-        tipoEmpaque:
-          row.tipoempaque && String(row.tipoempaque).trim()
-            ? String(row.tipoempaque).trim()
-            : null,
+        tipoEmpaque: null,
         tipoProductoId:
           row.tipoproductoid !== null ? parseInt(row.tipoproductoid, 10) : null,
         medidaId: row.medidaid !== null ? parseInt(row.medidaid, 10) : null,
@@ -5054,11 +5091,17 @@ const getProductoDetalle = async (req, res) => {
       nombreProducto: producto.nombreproducto,
       sku_maestro: producto.sku_maestro || null,
       descripcion: producto.descripcion,
+      proveedorid_default:
+        producto.proveedorid_default !== null &&
+        producto.proveedorid_default !== undefined
+          ? Number.parseInt(producto.proveedorid_default, 10)
+          : null,
       activo: producto.activo,
       TipoProductoID:
         producto.tipoproductoid !== null && producto.tipoproductoid !== undefined
           ? Number.parseInt(producto.tipoproductoid, 10)
           : null,
+      imagenes: imagenesProducto,
       categoria: producto.categoriaid
         ? {
             categoriaId: producto.categoriaid,
