@@ -15,6 +15,7 @@ const { generateCodigoAgente } = require("../utils/agentCode");
 const { registrarLog } = require("../services/loggerService");
 const inventoryService = require("../services/inventoryService");
 const auditService = require("../services/auditService");
+const fs = require("fs");
 
 let agenteAdminColumnsCache = null;
 
@@ -2820,6 +2821,23 @@ const procesarMedidaParaSkuVariante = (dimensiones) => {
 
   const hasNumbers = /\d/.test(normalized);
   return hasNumbers ? normalized : normalized.slice(0, 3);
+};
+
+const procesarColorParaSkuVariante = (colorNombre) => {
+  const raw = colorNombre === undefined || colorNombre === null ? "" : String(colorNombre);
+  const normalized = raw
+    .trim()
+    .toUpperCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, "")
+    .replace(/[^A-Z0-9]/g, "");
+
+  if (!normalized.length) {
+    return "";
+  }
+
+  return normalized.slice(0, 6);
 };
 
 /**
@@ -7892,6 +7910,306 @@ const subirImagenesProductoMultiple = async (req, res) => {
   }
 };
 
+const getImagenesVariante = async (req, res) => {
+  const { id } = req.params;
+  const varianteId = Number.parseInt(id, 10);
+
+  if (!Number.isInteger(varianteId) || varianteId <= 0) {
+    return res.status(400).json({
+      success: false,
+      message: "ID de variante inválido",
+    });
+  }
+
+  try {
+    const varianteResult = await db.query(
+      "SELECT varianteid, url_imagen_variante FROM producto_variantes WHERE varianteid = $1",
+      [varianteId]
+    );
+
+    if (!varianteResult.rows.length) {
+      return res.status(404).json({
+        success: false,
+        message: "Variante no encontrada",
+      });
+    }
+
+    const imagenesResult = await db.query(
+      `SELECT imagenid, url_imagen, textoalternativo, orden
+       FROM producto_variante_imagenes
+       WHERE varianteid = $1
+       ORDER BY orden ASC NULLS LAST, imagenid ASC`,
+      [varianteId]
+    );
+
+    const baseUrl = `${req.protocol}://${req.get("host")}`;
+    const imagenes = (imagenesResult.rows || []).map((row) => ({
+      imagenId: row.imagenid,
+      rutaImagen: row.url_imagen,
+      urlCompleta: `${baseUrl}${row.url_imagen}`,
+      textoAlternativo: row.textoalternativo || null,
+      orden: row.orden,
+    }));
+
+    return res.json({
+      success: true,
+      data: {
+        varianteId,
+        portadaUrl: varianteResult.rows[0].url_imagen_variante || null,
+        imagenes,
+      },
+    });
+  } catch (error) {
+    console.error("❌ Error al obtener imágenes de la variante:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error al obtener imágenes de la variante",
+      error: error.message,
+    });
+  }
+};
+
+const subirImagenesVarianteMultiple = async (req, res) => {
+  const { id } = req.params;
+  const varianteId = Number.parseInt(id, 10);
+
+  if (!Number.isInteger(varianteId) || varianteId <= 0) {
+    return res.status(400).json({
+      success: false,
+      message: "ID de variante inválido",
+    });
+  }
+
+  try {
+    const archivos = (() => {
+      if (Array.isArray(req.files)) {
+        return req.files;
+      }
+
+      if (req.files && typeof req.files === "object") {
+        const fromImagenes = Array.isArray(req.files.imagenes)
+          ? req.files.imagenes
+          : [];
+        const fromImages = Array.isArray(req.files.images) ? req.files.images : [];
+        return [...fromImagenes, ...fromImages];
+      }
+
+      return [];
+    })();
+
+    if (archivos.length > 12) {
+      return res.status(400).json({
+        success: false,
+        message: "El límite máximo es de 12 imágenes por variante",
+      });
+    }
+
+    if (!archivos.length) {
+      return res.status(400).json({
+        success: false,
+        message: "No se proporcionaron archivos de imagen",
+      });
+    }
+
+    const varianteResult = await db.query(
+      "SELECT varianteid FROM producto_variantes WHERE varianteid = $1",
+      [varianteId]
+    );
+
+    if (!varianteResult.rows.length) {
+      return res.status(404).json({
+        success: false,
+        message: "Variante no encontrada",
+      });
+    }
+
+    const ordenResult = await db.query(
+      `SELECT COALESCE(MAX(orden), 0) AS max_orden
+       FROM producto_variante_imagenes
+       WHERE varianteid = $1`,
+      [varianteId]
+    );
+
+    let nextOrden = Number.parseInt(ordenResult.rows[0]?.max_orden, 10);
+    if (!Number.isFinite(nextOrden) || nextOrden < 0) {
+      nextOrden = 0;
+    }
+
+    const imagenesGuardadas = [];
+
+    for (const file of archivos) {
+      if (!file || !file.filename) continue;
+
+      const rutaImagen = `/uploads/${file.filename}`;
+      nextOrden += 1;
+
+      const insertResult = await db.query(
+        `INSERT INTO producto_variante_imagenes (varianteid, url_imagen, textoalternativo, orden)
+         VALUES ($1, $2, NULL, $3)
+         RETURNING imagenid, url_imagen, textoalternativo, orden`,
+        [varianteId, rutaImagen, nextOrden]
+      );
+
+      imagenesGuardadas.push(insertResult.rows[0]);
+    }
+
+    if (!imagenesGuardadas.length) {
+      return res.status(400).json({
+        success: false,
+        message: "No se pudieron guardar las imágenes proporcionadas",
+      });
+    }
+
+    const portadaResult = await db.query(
+      `SELECT url_imagen
+       FROM producto_variante_imagenes
+       WHERE varianteid = $1
+       ORDER BY orden ASC NULLS LAST, imagenid ASC
+       LIMIT 1`,
+      [varianteId]
+    );
+
+    const portadaUrl = portadaResult.rows[0]?.url_imagen || null;
+    await db.query(
+      "UPDATE producto_variantes SET url_imagen_variante = $1 WHERE varianteid = $2",
+      [portadaUrl, varianteId]
+    );
+
+    const baseUrl = `${req.protocol}://${req.get("host")}`;
+
+    return res.status(200).json({
+      success: true,
+      message: "Imágenes subidas exitosamente",
+      data: {
+        varianteId,
+        portadaUrl,
+        imagenes: imagenesGuardadas.map((img) => ({
+          imagenId: img.imagenid,
+          rutaImagen: img.url_imagen,
+          urlCompleta: `${baseUrl}${img.url_imagen}`,
+          textoAlternativo: img.textoalternativo || null,
+          orden: img.orden,
+        })),
+      },
+    });
+  } catch (error) {
+    console.error("❌ Error al subir imágenes múltiples de la variante:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Error al subir las imágenes",
+      error: error.message,
+    });
+  }
+};
+
+const actualizarOrdenImagenesVariante = async (req, res) => {
+  const { id } = req.params;
+  const varianteId = Number.parseInt(id, 10);
+
+  if (!Number.isInteger(varianteId) || varianteId <= 0) {
+    return res.status(400).json({
+      success: false,
+      message: "ID de variante inválido",
+    });
+  }
+
+  const { ordenImagenes } = req.body || {};
+  if (!Array.isArray(ordenImagenes)) {
+    return res.status(400).json({
+      success: false,
+      message: "ordenImagenes debe ser un arreglo",
+    });
+  }
+
+  const client = await db.pool.connect();
+  let transactionStarted = false;
+
+  try {
+    await client.query("BEGIN");
+    transactionStarted = true;
+
+    const varianteResult = await client.query(
+      "SELECT varianteid FROM producto_variantes WHERE varianteid = $1",
+      [varianteId]
+    );
+
+    if (!varianteResult.rows.length) {
+      await client.query("ROLLBACK");
+      transactionStarted = false;
+      return res.status(404).json({
+        success: false,
+        message: "Variante no encontrada",
+      });
+    }
+
+    const existingImgs = await client.query(
+      `SELECT url_imagen
+       FROM producto_variante_imagenes
+       WHERE varianteid = $1`,
+      [varianteId]
+    );
+
+    const existingUrls = new Set(
+      (existingImgs.rows || [])
+        .map((r) => (r.url_imagen || "").toString().trim())
+        .filter(Boolean)
+    );
+
+    const desired = ordenImagenes
+      .map((u) => (u || "").toString().trim())
+      .filter(Boolean);
+
+    const filteredDesired = desired.filter((u) => existingUrls.has(u));
+    const missing = Array.from(existingUrls).filter(
+      (u) => !filteredDesired.includes(u)
+    );
+    const finalOrder = [...filteredDesired, ...missing];
+
+    let orden = 0;
+    for (const url of finalOrder) {
+      orden += 1;
+      await client.query(
+        `UPDATE producto_variante_imagenes
+         SET orden = $1
+         WHERE varianteid = $2 AND url_imagen = $3`,
+        [orden, varianteId, url]
+      );
+    }
+
+    const portadaUrl = finalOrder.length ? finalOrder[0] : null;
+    await client.query(
+      "UPDATE producto_variantes SET url_imagen_variante = $1 WHERE varianteid = $2",
+      [portadaUrl, varianteId]
+    );
+
+    await client.query("COMMIT");
+    transactionStarted = false;
+
+    return res.json({
+      success: true,
+      message: "Orden de imágenes actualizado correctamente",
+      data: {
+        varianteId,
+        portadaUrl,
+      },
+    });
+  } catch (error) {
+    if (transactionStarted) {
+      await client.query("ROLLBACK");
+    }
+
+    console.error("❌ Error al actualizar orden de imágenes de variante:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error al actualizar el orden de imágenes",
+      error: error.message,
+    });
+  } finally {
+    client.release();
+  }
+};
+
 /**
  * Confirmar orden de backorder
  * POST /api/admin/ordenes-compra/:id/confirmar
@@ -8045,6 +8363,188 @@ const cancelarOrdenBackorder = async (req, res) => {
   }
 };
 
+const cancelarOrdenCompra = cancelarOrdenBackorder;
+
+const normalizeUploadedFiles = (req) => {
+  const files = [];
+
+  if (Array.isArray(req.files)) {
+    req.files.forEach((f) => files.push(f));
+    return files;
+  }
+
+  if (req.files && typeof req.files === "object") {
+    const a = Array.isArray(req.files.imagenes) ? req.files.imagenes : [];
+    const b = Array.isArray(req.files.images) ? req.files.images : [];
+    return [...a, ...b];
+  }
+
+  return files;
+};
+
+const safeUnlinkUploads = async (files) => {
+  if (!Array.isArray(files) || !files.length) return;
+
+  await Promise.all(
+    files
+      .filter((f) => f && f.path)
+      .map((f) =>
+        fs.promises
+          .unlink(f.path)
+          .catch(() => null)
+      )
+  );
+};
+
+const parseGaleriaPayload = (raw) => {
+  if (raw === undefined || raw === null) return null;
+  if (typeof raw === "object") return raw;
+  const txt = String(raw).trim();
+  if (!txt) return null;
+  try {
+    return JSON.parse(txt);
+  } catch (e) {
+    return null;
+  }
+};
+
+const applyGaleriaVarianteAtomic = async ({
+  client,
+  varianteId,
+  galeria,
+  uploadedFiles,
+  baseUrl,
+}) => {
+  const files = Array.isArray(uploadedFiles) ? uploadedFiles : [];
+  const galeriaArr = Array.isArray(galeria) ? galeria : null;
+
+  if (!galeriaArr) {
+    return { portadaUrl: null, imagenes: [] };
+  }
+
+  const existingItems = galeriaArr
+    .filter((it) => it && String(it.type || it.tipo).toLowerCase() === "existing")
+    .map((it) => Number.parseInt(it.imagenId ?? it.imagenid, 10))
+    .filter((n) => Number.isInteger(n) && n > 0);
+
+  const newItems = galeriaArr
+    .filter((it) => it && String(it.type || it.tipo).toLowerCase() === "new")
+    .map((it) => {
+      const uploadIndex = Number.parseInt(it.uploadIndex ?? it.uploadindex, 10);
+      return Number.isInteger(uploadIndex) && uploadIndex >= 0 ? uploadIndex : null;
+    })
+    .filter((n) => n !== null);
+
+  const existingDb = await client.query(
+    `SELECT imagenid, url_imagen, textoalternativo, orden
+     FROM producto_variante_imagenes
+     WHERE varianteid = $1`,
+    [varianteId]
+  );
+  const existingDbIds = (existingDb.rows || [])
+    .map((r) => Number.parseInt(r.imagenid, 10))
+    .filter((n) => Number.isInteger(n) && n > 0);
+
+  const keepSet = new Set(existingItems);
+  const toDelete = existingDbIds.filter((id) => !keepSet.has(id));
+
+  if (toDelete.length) {
+    await client.query(
+      `DELETE FROM producto_variante_imagenes
+       WHERE varianteid = $1
+         AND imagenid = ANY($2::int[])`,
+      [varianteId, toDelete]
+    );
+  }
+
+  let orden = 0;
+
+  for (const item of galeriaArr) {
+    const type = String(item?.type || item?.tipo || "").toLowerCase();
+    orden += 1;
+
+    if (type === "existing") {
+      const imagenId = Number.parseInt(item.imagenId ?? item.imagenid, 10);
+      if (!Number.isInteger(imagenId) || imagenId <= 0) continue;
+      await client.query(
+        `UPDATE producto_variante_imagenes
+         SET orden = $1
+         WHERE varianteid = $2 AND imagenid = $3`,
+        [orden, varianteId, imagenId]
+      );
+      continue;
+    }
+
+    if (type === "new") {
+      const uploadIndex = Number.parseInt(item.uploadIndex ?? item.uploadindex, 10);
+      if (!Number.isInteger(uploadIndex) || uploadIndex < 0) continue;
+      const file = files[uploadIndex];
+      if (!file || !file.filename) continue;
+
+      const rutaImagen = `/uploads/${file.filename}`;
+      const alt =
+        item.textoalternativo !== undefined
+          ? (() => {
+              if (item.textoalternativo === null) return null;
+              const txt = String(item.textoalternativo).trim();
+              return txt.length ? txt : null;
+            })()
+          : item.textoAlternativo !== undefined
+            ? (() => {
+                if (item.textoAlternativo === null) return null;
+                const txt = String(item.textoAlternativo).trim();
+                return txt.length ? txt : null;
+              })()
+            : null;
+      await client.query(
+        `INSERT INTO producto_variante_imagenes (url_imagen, textoalternativo, orden, varianteid)
+         VALUES ($1, $2, $3, $4)`,
+        [rutaImagen, alt, orden, varianteId]
+      );
+      continue;
+    }
+  }
+
+  const portadaRes = await client.query(
+    `SELECT url_imagen
+     FROM producto_variante_imagenes
+     WHERE varianteid = $1
+     ORDER BY orden ASC NULLS LAST, imagenid ASC
+     LIMIT 1`,
+    [varianteId]
+  );
+
+  const portadaRuta = portadaRes.rows?.[0]?.url_imagen || null;
+
+  await client.query(
+    `UPDATE producto_variantes
+     SET url_imagen_variante = $1
+     WHERE varianteid = $2`,
+    [portadaRuta, varianteId]
+  );
+
+  const imagenesFinalRes = await client.query(
+    `SELECT imagenid, url_imagen, textoalternativo, orden
+     FROM producto_variante_imagenes
+     WHERE varianteid = $1
+     ORDER BY orden ASC NULLS LAST, imagenid ASC`,
+    [varianteId]
+  );
+
+  const imagenes = (imagenesFinalRes.rows || []).map((row) => ({
+    imagenId: row.imagenid,
+    rutaImagen: row.url_imagen,
+    urlCompleta: `${baseUrl}${row.url_imagen}`,
+    textoAlternativo: row.textoalternativo || null,
+    orden: row.orden,
+  }));
+
+  return {
+    portadaUrl: portadaRuta ? `${baseUrl}${portadaRuta}` : null,
+    imagenes,
+  };
+};
+
 /**
  * Crear una variante
  * POST /api/admin/variantes
@@ -8053,6 +8553,241 @@ const cancelarOrdenBackorder = async (req, res) => {
  * Registra una solicitud de cambio (INSERT) en control_cambios para revisión.
  */
 const crearVariante = async (req, res) => {
+  const galeriaParsed = parseGaleriaPayload(req.body?.galeria);
+  const uploadedFiles = normalizeUploadedFiles(req);
+  const isAtomic = Array.isArray(galeriaParsed) || uploadedFiles.length > 0;
+
+  if (isAtomic) {
+    const rolUsuario = (req?.user?.rol || "").toString().trim().toLowerCase();
+    const allowDirect = rolUsuario === "admin" || rolUsuario === "superadmin";
+    if (!allowDirect) {
+      await safeUnlinkUploads(uploadedFiles);
+      return res.status(403).json({
+        success: false,
+        message: "No tienes permisos para guardar variantes con imágenes en una sola operación.",
+      });
+    }
+
+    const client = await db.pool.connect();
+    try {
+      await client.query("BEGIN");
+
+      const {
+        productoId,
+        dimensiones,
+        costoUnitario,
+        precioUnitario,
+        precioOfertaUnitario,
+        stock,
+        tipoProductoId,
+        medidaId,
+        color_nombre,
+        activo,
+      } = req.body || {};
+
+      const parsedProductoId = Number.parseInt(productoId, 10);
+      if (!parsedProductoId || Number.isNaN(parsedProductoId)) {
+        throw Object.assign(new Error("productoId es obligatorio y debe ser numérico"), {
+          status: 400,
+        });
+      }
+
+      const dimensionesFinal = (() => {
+        if (dimensiones === undefined) return null;
+        if (dimensiones === null) return null;
+        const txt = String(dimensiones).trim();
+        return txt.length ? txt : null;
+      })();
+
+      if (!dimensionesFinal) {
+        throw Object.assign(new Error("dimensiones es obligatorio para generar el SKU"), {
+          status: 400,
+        });
+      }
+
+      if (
+        precioUnitario === undefined ||
+        precioUnitario === null ||
+        String(precioUnitario).trim() === ""
+      ) {
+        throw Object.assign(new Error("precioUnitario es obligatorio"), { status: 400 });
+      }
+
+      const precioUnitarioNum = Number.parseFloat(precioUnitario);
+      if (!Number.isFinite(precioUnitarioNum) || precioUnitarioNum <= 0) {
+        throw Object.assign(new Error("precioUnitario debe ser un número mayor a 0"), {
+          status: 400,
+        });
+      }
+
+      const stockNum =
+        stock === undefined || stock === null || stock === ""
+          ? 0
+          : Number.parseInt(stock, 10);
+      if (!Number.isInteger(stockNum) || stockNum < 0) {
+        throw Object.assign(new Error("stock debe ser un entero mayor o igual a 0"), {
+          status: 400,
+        });
+      }
+
+      const costoUnitarioNumRaw =
+        costoUnitario === undefined ||
+        costoUnitario === null ||
+        costoUnitario === ""
+          ? 0
+          : Number.parseFloat(costoUnitario);
+      const costoUnitarioNum =
+        Number.isFinite(costoUnitarioNumRaw) && costoUnitarioNumRaw >= 0
+          ? costoUnitarioNumRaw
+          : 0;
+
+      let ofertaNum = null;
+      if (
+        precioOfertaUnitario !== undefined &&
+        precioOfertaUnitario !== null &&
+        String(precioOfertaUnitario).trim() !== ""
+      ) {
+        const parsedOferta = Number.parseFloat(precioOfertaUnitario);
+        if (
+          Number.isFinite(parsedOferta) &&
+          parsedOferta > 0 &&
+          parsedOferta < precioUnitarioNum
+        ) {
+          ofertaNum = parsedOferta;
+        }
+      }
+
+      const activoFinal = activo !== undefined ? Boolean(activo) : true;
+
+      const productoResult = await client.query(
+        "SELECT productoid, sku_maestro FROM productos WHERE productoid = $1",
+        [parsedProductoId]
+      );
+      if (!productoResult.rows.length) {
+        throw Object.assign(new Error("Producto maestro no encontrado"), {
+          status: 404,
+        });
+      }
+
+      const skuMaestroBase = (productoResult.rows[0]?.sku_maestro || "")
+        .toString()
+        .trim();
+      if (!skuMaestroBase) {
+        throw Object.assign(
+          new Error(
+            "El producto no tiene SKU Maestro. Debe existir para generar el SKU de la variante."
+          ),
+          { status: 400 }
+        );
+      }
+
+      const medidaProcesada = procesarMedidaParaSkuVariante(dimensionesFinal);
+      if (!medidaProcesada) {
+        throw Object.assign(new Error("No se pudo procesar dimensiones para generar el SKU"), {
+          status: 400,
+        });
+      }
+
+      const colorFinal = (() => {
+        if (color_nombre === undefined || color_nombre === null) return null;
+        const txt = String(color_nombre).trim();
+        return txt.length ? txt : null;
+      })();
+
+      const colorSegment = procesarColorParaSkuVariante(colorFinal);
+
+      const skuMaestroSan = skuMaestroBase.toUpperCase().replace(/\s+/g, "");
+      const maxSkuLen = 50;
+      const remaining = maxSkuLen - (skuMaestroSan.length + 1);
+      const tailRaw = colorSegment ? `${medidaProcesada}-${colorSegment}` : medidaProcesada;
+      const tail = remaining > 0 ? tailRaw.slice(0, remaining).replace(/-+$/g, "") : "";
+      const skuFinal = remaining > 0 && tail ? `${skuMaestroSan}-${tail}` : skuMaestroSan.slice(0, maxSkuLen);
+
+      const insertRes = await client.query(
+        `INSERT INTO producto_variantes
+          (productoid, sku, dimensiones, costounitario, stock, tipoproductoid, medidaid, preciounitario, precioofertaunitario, color_nombre, url_imagen_variante, activo)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NULL, $11)
+         RETURNING varianteid, productoid, sku, dimensiones, costounitario, preciounitario, precioofertaunitario, stock, tipoproductoid, medidaid, color_nombre, url_imagen_variante, activo, piezasporpaquete`,
+        [
+          parsedProductoId,
+          skuFinal,
+          dimensionesFinal,
+          costoUnitarioNum,
+          stockNum,
+          tipoProductoId || null,
+          medidaId || null,
+          precioUnitarioNum,
+          ofertaNum,
+          colorFinal,
+          activoFinal,
+        ]
+      );
+
+      const row = insertRes.rows[0];
+      const varianteId = row.varianteid;
+      const baseUrl = `${req.protocol}://${req.get("host")}`;
+
+      const galeriaResult = await applyGaleriaVarianteAtomic({
+        client,
+        varianteId,
+        galeria: galeriaParsed || [],
+        uploadedFiles,
+        baseUrl,
+      });
+
+      const usedUploadIndexes = new Set(
+        (Array.isArray(galeriaParsed) ? galeriaParsed : [])
+          .filter((it) => it && String(it.type || it.tipo).toLowerCase() === "new")
+          .map((it) => Number.parseInt(it.uploadIndex ?? it.uploadindex, 10))
+          .filter((n) => Number.isInteger(n) && n >= 0)
+      );
+
+      const unusedFiles = uploadedFiles.filter((_, idx) => !usedUploadIndexes.has(idx));
+      await safeUnlinkUploads(unusedFiles);
+
+      await client.query("COMMIT");
+
+      return res.status(201).json({
+        success: true,
+        message: "Variante creada correctamente.",
+        data: {
+          variante: {
+            varianteId: row.varianteid,
+            productoId: row.productoid,
+            sku: row.sku,
+            dimensiones: row.dimensiones,
+            colorNombre: row.color_nombre || null,
+            urlImagenVariante: galeriaResult.portadaUrl || null,
+            costoUnitario:
+              row.costounitario !== null ? parseFloat(row.costounitario) : null,
+            precioUnitario:
+              row.preciounitario !== null ? parseFloat(row.preciounitario) : null,
+            precioOfertaUnitario:
+              row.precioofertaunitario !== null
+                ? parseFloat(row.precioofertaunitario)
+                : null,
+            stock: row.stock !== null ? parseInt(row.stock, 10) : 0,
+            activo: row.activo !== undefined ? row.activo : true,
+            tipoproductoid: row.tipoproductoid,
+            medidaid: row.medidaid,
+            piezasporpaquete: row.piezasporpaquete,
+          },
+          galeria: galeriaResult,
+        },
+      });
+    } catch (error) {
+      await client.query("ROLLBACK");
+      await safeUnlinkUploads(uploadedFiles);
+      const status = error && Number.isInteger(error.status) ? error.status : 500;
+      return res.status(status).json({
+        success: false,
+        message: error.message || "Error en el servidor",
+      });
+    } finally {
+      client.release();
+    }
+  }
+
   try {
     const {
       productoId,
@@ -8186,13 +8921,22 @@ const crearVariante = async (req, res) => {
       });
     }
 
+    const colorFinal =
+      color_nombre === undefined || color_nombre === null
+        ? null
+        : (() => {
+            const txt = String(color_nombre).trim();
+            return txt.length ? txt : null;
+          })();
+
+    const colorSegment = procesarColorParaSkuVariante(colorFinal);
+
     const skuMaestroSan = skuMaestroBase.toUpperCase().replace(/\s+/g, "");
     const maxSkuLen = 50;
     const remaining = maxSkuLen - (skuMaestroSan.length + 1);
-    const skuFinal =
-      remaining > 0
-        ? `${skuMaestroSan}-${medidaProcesada.slice(0, remaining)}`
-        : skuMaestroSan.slice(0, maxSkuLen);
+    const tailRaw = colorSegment ? `${medidaProcesada}-${colorSegment}` : medidaProcesada;
+    const tail = remaining > 0 ? tailRaw.slice(0, remaining).replace(/-+$/g, "") : "";
+    const skuFinal = remaining > 0 && tail ? `${skuMaestroSan}-${tail}` : skuMaestroSan.slice(0, maxSkuLen);
 
     // Usar nombres de columnas reales de Producto_Variantes (en minúsculas)
     const payloadNuevos = {
@@ -8206,12 +8950,7 @@ const crearVariante = async (req, res) => {
       tipoproductoid: tipoProductoId || null,
       medidaid: medidaId || null,
       color_nombre:
-        color_nombre === undefined || color_nombre === null
-          ? null
-          : (() => {
-              const txt = String(color_nombre).trim();
-              return txt.length ? txt : null;
-            })(),
+        colorFinal,
       url_imagen_variante:
         url_imagen_variante === undefined || url_imagen_variante === null
           ? null
@@ -8320,6 +9059,214 @@ const crearVariante = async (req, res) => {
  * - Edición de datos económicos: SKU, dimensiones, costo, precio, oferta.
  */
 const actualizarVariante = async (req, res) => {
+  const galeriaParsed = parseGaleriaPayload(req.body?.galeria);
+  const uploadedFiles = normalizeUploadedFiles(req);
+  const isAtomic = Array.isArray(galeriaParsed) || uploadedFiles.length > 0;
+
+  if (isAtomic) {
+    const varianteId = parseInt(req.params.id, 10);
+    if (!varianteId || Number.isNaN(varianteId)) {
+      await safeUnlinkUploads(uploadedFiles);
+      return res.status(400).json({
+        success: false,
+        message: "ID de variante inválido",
+      });
+    }
+
+    const rolUsuario = (req?.user?.rol || "").toString().trim().toLowerCase();
+    const allowDirect = rolUsuario === "admin" || rolUsuario === "superadmin";
+    if (!allowDirect) {
+      await safeUnlinkUploads(uploadedFiles);
+      return res.status(403).json({
+        success: false,
+        message: "No tienes permisos para guardar variantes con imágenes en una sola operación.",
+      });
+    }
+
+    const client = await db.pool.connect();
+    try {
+      await client.query("BEGIN");
+
+      const {
+        activo,
+        dimensiones,
+        costoUnitario,
+        precioUnitario,
+        precioOfertaUnitario,
+        color_nombre,
+      } = req.body || {};
+
+      const result = await client.query(
+        `SELECT VarianteID, SKU, Dimensiones, CostoUnitario, PrecioUnitario, PrecioOfertaUnitario, Stock, Activo,
+                color_nombre, url_imagen_variante
+         FROM Producto_Variantes
+         WHERE VarianteID = $1`,
+        [varianteId]
+      );
+      if (!result.rows.length) {
+        throw Object.assign(new Error("Variante no encontrada"), { status: 404 });
+      }
+
+      const actual = result.rows[0];
+
+      const parseNullableNumero = (raw) => {
+        if (raw === undefined) return { usarActual: true, valor: null };
+        if (raw === null || raw === "") {
+          return { usarActual: false, valor: null };
+        }
+        const num = Number.parseFloat(raw);
+        if (Number.isNaN(num)) {
+          return { usarActual: false, valor: null };
+        }
+        return { usarActual: false, valor: num };
+      };
+
+      const normalizarTextoNullable = (raw) => {
+        if (raw === undefined) return { usarActual: true, valor: null };
+        if (raw === null) return { usarActual: false, valor: null };
+        const txt = String(raw).trim();
+        return { usarActual: false, valor: txt.length ? txt : null };
+      };
+
+      const dimensionesActual = actual.dimensiones;
+      const costoActual =
+        actual.costounitario !== null && actual.costounitario !== undefined
+          ? Number.parseFloat(actual.costounitario)
+          : null;
+      const precioActual =
+        actual.preciounitario !== null && actual.preciounitario !== undefined
+          ? Number.parseFloat(actual.preciounitario)
+          : null;
+      const ofertaActual =
+        actual.precioofertaunitario !== null && actual.precioofertaunitario !== undefined
+          ? Number.parseFloat(actual.precioofertaunitario)
+          : null;
+
+      const nuevasDimensiones =
+        dimensiones !== undefined
+          ? (() => {
+              if (dimensiones === null) return null;
+              const texto = String(dimensiones).trim();
+              return texto.length ? texto : null;
+            })()
+          : dimensionesActual;
+
+      const costoParse = parseNullableNumero(costoUnitario);
+      const nuevoCosto = costoParse.usarActual ? costoActual : costoParse.valor;
+
+      const precioParse = parseNullableNumero(precioUnitario);
+      const nuevoPrecio = precioParse.usarActual ? precioActual : precioParse.valor;
+
+      if (nuevoPrecio === null || !(nuevoPrecio > 0)) {
+        throw Object.assign(
+          new Error(
+            "El precio unitario debe ser un número mayor a 0 al editar la variante"
+          ),
+          { status: 400 }
+        );
+      }
+
+      const ofertaParse = parseNullableNumero(precioOfertaUnitario);
+      let nuevaOferta = ofertaParse.usarActual ? ofertaActual : ofertaParse.valor;
+      if (nuevaOferta !== null && !(nuevaOferta > 0 && nuevaOferta < nuevoPrecio)) {
+        nuevaOferta = null;
+      }
+
+      const colorParsed = normalizarTextoNullable(color_nombre);
+      const colorFinal = colorParsed.usarActual
+        ? actual.color_nombre ?? actual.color_nombre
+        : colorParsed.valor;
+
+      const activoFinal = activo !== undefined ? Boolean(activo) : Boolean(actual.activo);
+
+      const updateRes = await client.query(
+        `UPDATE producto_variantes
+         SET dimensiones = $1,
+             costounitario = $2,
+             preciounitario = $3,
+             precioofertaunitario = $4,
+             color_nombre = $5,
+             activo = $6
+         WHERE varianteid = $7
+         RETURNING varianteid, productoid, sku, dimensiones, costounitario, preciounitario, precioofertaunitario, stock, activo, tipoproductoid, medidaid, color_nombre, url_imagen_variante, piezasporpaquete`,
+        [
+          nuevasDimensiones,
+          nuevoCosto,
+          nuevoPrecio,
+          nuevaOferta,
+          colorFinal,
+          activoFinal,
+          varianteId,
+        ]
+      );
+
+      if (!updateRes.rows.length) {
+        throw Object.assign(new Error("Variante no encontrada"), { status: 404 });
+      }
+
+      const row = updateRes.rows[0];
+      const baseUrl = `${req.protocol}://${req.get("host")}`;
+
+      const galeriaResult = await applyGaleriaVarianteAtomic({
+        client,
+        varianteId,
+        galeria: galeriaParsed || [],
+        uploadedFiles,
+        baseUrl,
+      });
+
+      const usedUploadIndexes = new Set(
+        (Array.isArray(galeriaParsed) ? galeriaParsed : [])
+          .filter((it) => it && String(it.type || it.tipo).toLowerCase() === "new")
+          .map((it) => Number.parseInt(it.uploadIndex ?? it.uploadindex, 10))
+          .filter((n) => Number.isInteger(n) && n >= 0)
+      );
+      const unusedFiles = uploadedFiles.filter((_, idx) => !usedUploadIndexes.has(idx));
+      await safeUnlinkUploads(unusedFiles);
+
+      await client.query("COMMIT");
+
+      return res.json({
+        success: true,
+        message: "Variante actualizada correctamente.",
+        data: {
+          variante: {
+            varianteId: row.varianteid,
+            productoId: row.productoid,
+            sku: row.sku,
+            dimensiones: row.dimensiones,
+            colorNombre: row.color_nombre || null,
+            urlImagenVariante: galeriaResult.portadaUrl || null,
+            costoUnitario:
+              row.costounitario !== null ? parseFloat(row.costounitario) : null,
+            precioUnitario:
+              row.preciounitario !== null ? parseFloat(row.preciounitario) : null,
+            precioOfertaUnitario:
+              row.precioofertaunitario !== null
+                ? parseFloat(row.precioofertaunitario)
+                : null,
+            stock: row.stock !== null ? parseInt(row.stock, 10) : 0,
+            activo: row.activo !== undefined ? row.activo : true,
+            tipoproductoid: row.tipoproductoid,
+            medidaid: row.medidaid,
+            piezasporpaquete: row.piezasporpaquete,
+          },
+          galeria: galeriaResult,
+        },
+      });
+    } catch (error) {
+      await client.query("ROLLBACK");
+      await safeUnlinkUploads(uploadedFiles);
+      const status = error && Number.isInteger(error.status) ? error.status : 500;
+      return res.status(status).json({
+        success: false,
+        message: error.message || "Error en el servidor",
+      });
+    } finally {
+      client.release();
+    }
+  }
+
   try {
     const varianteId = parseInt(req.params.id, 10);
 
@@ -8628,10 +9575,14 @@ getMedidasExistentes,
   getCompraDetalleCiego,
   validarRecepcionCompra,
   crearOrdenCompra,
+  cancelarOrdenCompra,
   recibirInventario,
   subirEvidenciaRecepcionOC,
   subirImagenProducto,
   subirImagenesProductoMultiple,
+  getImagenesVariante,
+  subirImagenesVarianteMultiple,
+  actualizarOrdenImagenesVariante,
   confirmarOrdenBackorder,
   cancelarOrdenBackorder,
 };

@@ -788,6 +788,18 @@ const obtenerProductoPorId = async (req, res) => {
            (
              SELECT json_agg(
                json_build_object(
+                 'imagenId', pvi.imagenid,
+                 'url', pvi.url_imagen,
+                 'alt', pvi.textoalternativo,
+                 'orden', pvi.orden
+               ) ORDER BY pvi.orden ASC NULLS LAST, pvi.imagenid ASC
+             )
+             FROM producto_variante_imagenes pvi
+             WHERE pvi.varianteid = pv.varianteid
+           ),
+           (
+             SELECT json_agg(
+               json_build_object(
                  'imagenId', pi2.imagenid,
                  'url', pi2.url_imagen,
                  'alt', pi2.textoalternativo,

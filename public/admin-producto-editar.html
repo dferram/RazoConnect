@@ -8,6 +8,8 @@
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.14.0/Sortable.min.js"></script>
+
     <!-- PROTECCIÓN DE AUTENTICACIÓN ADMIN -->
     <script src="js/auth-guard-admin.js"></script>
 
@@ -366,6 +368,30 @@
         cursor: pointer;
       }
 
+      .sortable-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .sortable-ghost {
+        opacity: 0.6;
+        background: rgba(59, 130, 246, 0.12);
+      }
+
+      .image-order-badge {
+        position: absolute;
+        top: 6px;
+        left: 6px;
+        padding: 0.15rem 0.45rem;
+        border-radius: 999px;
+        font-size: 0.72rem;
+        font-weight: 800;
+        color: #fff;
+        background: rgba(17, 24, 39, 0.85);
+        box-shadow: 0 4px 10px rgba(15, 23, 42, 0.18);
+      }
+
       /* Layout mejorado para resumen y KPIs */
       .product-summary-header {
         display: flex;
@@ -582,9 +608,9 @@
                       </div>
 
                       <div class="form-grid-2">
-                        <div class="form-group">
+                        <div class="form-group" style="grid-column: 1 / -1;">
                           <label for="color_nombre" class="form-label"
-                            >Color (Nike)</label
+                            >Color</label
                           >
                           <input
                             type="text"
@@ -593,16 +619,67 @@
                             placeholder="Ej: Rosa, Azul"
                           />
                         </div>
-                        <div class="form-group">
-                          <label for="url_imagen_variante" class="form-label"
-                            >URL Imagen Variante (Nike)</label
+                      </div>
+
+                      <div
+                        class="product-images-uploader"
+                        id="variantImagesUploader"
+                        style="display: flex"
+                      >
+                        <div
+                          style="display:flex; align-items:center; justify-content:space-between; gap: 0.75rem; flex-wrap: wrap;"
+                        >
+                          <strong style="font-size: 0.95rem; color: var(--text-primary);"
+                            >Imágenes de la variante</strong
                           >
-                          <input
-                            type="url"
-                            id="url_imagen_variante"
-                            class="form-input"
-                            placeholder="https://..."
-                          />
+                          <span
+                            id="variantImagesStatus"
+                            style="font-size: 0.85rem; color: var(--text-secondary);"
+                          ></span>
+                        </div>
+
+                        <input
+                          type="file"
+                          id="productImagesInput"
+                          class="form-input"
+                          accept="image/jpeg,image/jpg,image/png,image/webp"
+                          multiple
+                        />
+
+                        <div
+                          style="display:flex; justify-content:flex-end; gap: 0.75rem; flex-wrap: wrap;"
+                        >
+                          <button
+                            type="button"
+                            class="btn btn-secondary"
+                            id="clearImagesSelectionBtn"
+                          >
+                            Limpiar selección
+                          </button>
+                        </div>
+
+                        <div>
+                          <div
+                            style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.35rem;"
+                          >
+                            Vista previa (arrastra para ordenar antes de subir)
+                          </div>
+                          <div
+                            id="galeriaPreview"
+                            class="product-images-preview sortable-grid"
+                          ></div>
+                        </div>
+
+                        <div id="variantServerImagesBlock" style="display: none;">
+                          <div
+                            style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.35rem;"
+                          >
+                            Imágenes guardadas (arrastra para reordenar)
+                          </div>
+                          <div
+                            id="galeriaImagenesVarianteServer"
+                            class="d-flex flex-wrap gap-2 sortable-grid"
+                          ></div>
                         </div>
                       </div>
 
@@ -814,6 +891,7 @@
                       <tr>
                         <th>SKU</th>
                         <th>Descripción</th>
+                        <th>Color</th>
                         <th>Precio unitario</th>
                         <th>Costo unitario</th>
                         <th title="Gestionar en Inventario">Stock</th>
@@ -891,6 +969,18 @@
       const medidasDatalist = document.getElementById("listaMedidas");
       const colorNombreInput = document.getElementById("color_nombre");
       const urlImagenVarianteInput = document.getElementById("url_imagen_variante");
+      const portadaPreviewImg = document.getElementById("variantePortadaPreviewImg");
+      const portadaPreviewText = document.getElementById(
+        "variantePortadaPreviewText"
+      );
+      const variantImagesUploader = document.getElementById("variantImagesUploader");
+      const variantImagesStatus = document.getElementById("variantImagesStatus");
+      const variantServerImagesBlock = document.getElementById(
+        "variantServerImagesBlock"
+      );
+      const galeriaImagenesVarianteServer = document.getElementById(
+        "galeriaImagenesVarianteServer"
+      );
       const skuSuggestion = document.getElementById("skuSuggestion");
       const skuSuggestionText = document.getElementById("skuSuggestionText");
       const applySkuSuggestion = document.getElementById("applySkuSuggestion");
@@ -909,7 +999,6 @@
 
       const productImagesInput = document.getElementById("productImagesInput");
       const galeriaPreview = document.getElementById("galeriaPreview");
-      const uploadImagesBtn = document.getElementById("uploadImagesBtn");
       const clearImagesSelectionBtn = document.getElementById(
         "clearImagesSelectionBtn"
       );
@@ -918,7 +1007,9 @@
       let tamanosConfiguradosMaestro = [];
       let variantesProducto = [];
       let editingVarianteId = null;
-      let imagenesSeleccionadas = [];
+      let imagenesSeleccionadasMeta = [];
+      let varianteServerImagesOrder = [];
+      let varianteServerImagesData = [];
 
       if (!productoId || Number.isNaN(productoId)) {
         loadingState.style.display = "none";
@@ -1127,7 +1218,20 @@
           .replace(/\s+/g, "")
           .replace(/[^A-Z0-9X]/gi, "-");
 
-        const sugerencia = `${skuMaestroBase}-${dimensionesLimpias}`;
+        const colorRaw = (colorNombreInput?.value || "").toString().trim();
+        const colorLimpio = colorRaw
+          ? colorRaw
+              .toUpperCase()
+              .normalize("NFD")
+              .replace(/[\u0300-\u036f]/g, "")
+              .replace(/\s+/g, "")
+              .replace(/[^A-Z0-9]/g, "")
+              .slice(0, 6)
+          : "";
+
+        const sugerencia = colorLimpio
+          ? `${skuMaestroBase}-${dimensionesLimpias}-${colorLimpio}`
+          : `${skuMaestroBase}-${dimensionesLimpias}`;
         if (skuInput) {
           skuInput.value = sugerencia;
         }
@@ -1278,6 +1382,14 @@
               ? formatCurrency(variant.costoUnitario)
               : "N/D";
             const stock = Number.isFinite(variant.stock) ? variant.stock : "0";
+            const color = (
+              variant.colorNombre ||
+              variant.color_nombre ||
+              variant.ColorNombre ||
+              ""
+            )
+              .toString()
+              .trim();
             const isPending = !!variant.isPending;
 
             if (isPending) {
@@ -1285,6 +1397,7 @@
           <tr class="table-warning">
             <td>${variant.sku || "Sin SKU"}</td>
             <td>${variant.dimensiones || "Sin dimensiones"}</td>
+            <td>${color || "-"}</td>
             <td>${precio}</td>
             <td>${costo}</td>
             <td>${stock}</td>
@@ -1309,6 +1422,7 @@
           <tr>
             <td>${variant.sku || "Sin SKU"}</td>
             <td>${variant.dimensiones || "Sin dimensiones"}</td>
+            <td>${color || "-"}</td>
             <td>${precio}</td>
             <td>${costo}</td>
             <td>${stock}</td>
@@ -1561,6 +1675,37 @@
         if (urlImagenVarianteInput) {
           urlImagenVarianteInput.value = "";
         }
+
+        if (portadaPreviewImg) {
+          portadaPreviewImg.style.display = "none";
+          portadaPreviewImg.removeAttribute("src");
+        }
+        if (portadaPreviewText) {
+          portadaPreviewText.textContent = "Sin imagen";
+        }
+
+        imagenesSeleccionadasMeta = [];
+        if (productImagesInput) {
+          productImagesInput.value = "";
+        }
+        if (galeriaPreview) {
+          galeriaPreview.innerHTML = "";
+        }
+        if (galeriaImagenesVarianteServer) {
+          galeriaImagenesVarianteServer.innerHTML = "";
+        }
+        if (variantServerImagesBlock) {
+          variantServerImagesBlock.style.display = "none";
+        }
+        if (variantImagesUploader) {
+          variantImagesUploader.style.display = "flex";
+        }
+        if (variantImagesStatus) {
+          variantImagesStatus.textContent = "Nueva variante";
+        }
+        varianteServerImagesOrder = [];
+        sortableVariantePreviewInstance = null;
+        sortableVarianteServerInstance = null;
         if (stockInput) {
           stockInput.value = "0";
           stockInput.disabled = true;
@@ -1627,6 +1772,30 @@
             "";
           urlImagenVarianteInput.value = String(urlValue || "");
         }
+
+        const portadaUrl = (urlImagenVarianteInput?.value || "").toString().trim();
+        if (portadaPreviewImg && portadaPreviewText) {
+          if (portadaUrl) {
+            portadaPreviewImg.src = portadaUrl;
+            portadaPreviewImg.style.display = "block";
+            portadaPreviewText.textContent = "Imagen principal";
+          } else {
+            portadaPreviewImg.style.display = "none";
+            portadaPreviewImg.removeAttribute("src");
+            portadaPreviewText.textContent = "Sin imagen";
+          }
+        }
+
+        if (variantImagesUploader) {
+          variantImagesUploader.style.display = "flex";
+        }
+
+        imagenesSeleccionadasMeta = [];
+        if (productImagesInput) {
+          productImagesInput.value = "";
+        }
+        renderGaleriaPreview();
+        cargarImagenesVarianteDesdeServidor(idNumero);
 
         const costoInputEl = document.getElementById("costoUnitario");
         const precioInputEl = document.getElementById("precioUnitario");
@@ -1714,27 +1883,282 @@
         precioOfertaPreview.textContent = `Precio final resultante: ${formatCurrency(precioFinal)}`;
       }
 
+      function actualizarBadgeOrdenGrid(grid) {
+        if (!grid) return;
+        const items = Array.from(grid.children || []).filter(
+          (el) => el && el.classList && el.classList.contains("sortable-item")
+        );
+        items.forEach((el, idx) => {
+          const badge = el.querySelector(".image-order-badge");
+          if (!badge) return;
+          badge.textContent = idx === 0 ? "⭐" : String(idx + 1);
+          badge.style.background =
+            idx === 0 ? "var(--razo-orange)" : "rgba(17, 24, 39, 0.85)";
+        });
+      }
+
+      function initSortableVariantePreview() {
+        if (!galeriaPreview) return;
+        if (typeof Sortable === "undefined") return;
+        if (sortableVariantePreviewInstance) return;
+
+        sortableVariantePreviewInstance = new Sortable(galeriaPreview, {
+          animation: 150,
+          ghostClass: "sortable-ghost",
+          onEnd: function (evt) {
+            const oldIndex = evt.oldIndex;
+            const newIndex = evt.newIndex;
+            if (oldIndex === undefined || newIndex === undefined) return;
+            if (oldIndex === newIndex) return;
+            if (!Array.isArray(imagenesSeleccionadasMeta)) return;
+
+            const moved = imagenesSeleccionadasMeta.splice(oldIndex, 1)[0];
+            imagenesSeleccionadasMeta.splice(newIndex, 0, moved);
+            renderGaleriaPreview();
+          },
+        });
+      }
+
+      function initSortableVarianteServer() {
+        if (!galeriaImagenesVarianteServer) return;
+        if (typeof Sortable === "undefined") return;
+        if (sortableVarianteServerInstance) return;
+
+        sortableVarianteServerInstance = new Sortable(galeriaImagenesVarianteServer, {
+          animation: 150,
+          ghostClass: "sortable-ghost",
+          onEnd: function () {
+            const ordered = Array.from(galeriaImagenesVarianteServer.children || [])
+              .map((el) => (el?.dataset?.url || "").toString().trim())
+              .filter(Boolean);
+            varianteServerImagesOrder = ordered;
+            actualizarBadgeOrdenGrid(galeriaImagenesVarianteServer);
+          },
+        });
+      }
+
+      function renderGaleriaPreview() {
+        if (!galeriaPreview) return;
+        galeriaPreview.innerHTML = "";
+
+        if (!Array.isArray(imagenesSeleccionadasMeta) || !imagenesSeleccionadasMeta.length) {
+          return;
+        }
+
+        imagenesSeleccionadasMeta.forEach((item, index) => {
+          const file = item?.file;
+          if (!file) return;
+
+          const wrapper = document.createElement("div");
+          wrapper.style.position = "relative";
+          wrapper.style.width = "86px";
+          wrapper.style.height = "86px";
+          wrapper.style.borderRadius = "12px";
+          wrapper.style.overflow = "hidden";
+          wrapper.style.border = "1px solid rgba(209, 213, 219, 0.9)";
+          wrapper.style.boxShadow = "0 6px 16px rgba(15, 23, 42, 0.10)";
+          wrapper.style.cursor = "move";
+          wrapper.classList.add("sortable-item");
+          wrapper.dataset.clientId = item.clientId;
+
+          const badge = document.createElement("div");
+          badge.className = "image-order-badge";
+          badge.textContent = index === 0 ? "⭐" : String(index + 1);
+          badge.style.background =
+            index === 0 ? "var(--razo-orange)" : "rgba(17, 24, 39, 0.85)";
+
+          const img = document.createElement("img");
+          img.alt = "Vista previa";
+          img.style.width = "100%";
+          img.style.height = "100%";
+          img.style.objectFit = "cover";
+          img.src = URL.createObjectURL(file);
+          img.onload = () => {
+            try {
+              URL.revokeObjectURL(img.src);
+            } catch (e) {}
+          };
+
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.textContent = "×";
+          btn.className = "product-images-preview-remove";
+          btn.addEventListener("click", () => {
+            imagenesSeleccionadasMeta.splice(index, 1);
+            renderGaleriaPreview();
+          });
+
+          wrapper.appendChild(badge);
+          wrapper.appendChild(img);
+          wrapper.appendChild(btn);
+          galeriaPreview.appendChild(wrapper);
+        });
+
+        initSortableVariantePreview();
+      }
+
+      async function cargarImagenesVarianteDesdeServidor(varianteId) {
+        const idNumero = Number.parseInt(varianteId, 10);
+        if (!Number.isInteger(idNumero) || idNumero <= 0) return;
+
+        if (variantImagesStatus) {
+          variantImagesStatus.textContent = `Variante #${idNumero}`;
+        }
+
+        try {
+          const response = await fetch(
+            `${API_BASE_URL}/admin/variantes/${idNumero}/imagenes`,
+            {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${adminToken}`,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+
+          const data = await response.json();
+          if (!response.ok || !data.success) {
+            throw new Error(data.message || "No se pudieron cargar las imágenes");
+          }
+
+          const imagenes = Array.isArray(data?.data?.imagenes) ? data.data.imagenes : [];
+
+          varianteServerImagesData = imagenes
+            .map((row) => {
+              const imagenId = Number.parseInt(row.imagenId ?? row.imagenid, 10);
+              const url = (row.urlCompleta || row.rutaImagen || "").toString().trim();
+              return {
+                imagenId: Number.isInteger(imagenId) ? imagenId : null,
+                url,
+                textoAlternativo: row.textoAlternativo || row.textoalternativo || null,
+                orden: row.orden,
+              };
+            })
+            .filter((img) => img.imagenId && img.url);
+
+          if (galeriaImagenesVarianteServer) {
+            galeriaImagenesVarianteServer.innerHTML = "";
+          }
+
+          if (imagenes.length && galeriaImagenesVarianteServer) {
+            imagenes.forEach((img, idx) => {
+              const url = (img.urlCompleta || img.rutaImagen || "").toString().trim();
+              if (!url) return;
+
+              const imagenId = Number.parseInt(img.imagenId ?? img.imagenid, 10);
+
+              const wrapper = document.createElement("div");
+              wrapper.style.position = "relative";
+              wrapper.style.width = "86px";
+              wrapper.style.height = "86px";
+              wrapper.style.borderRadius = "12px";
+              wrapper.style.overflow = "hidden";
+              wrapper.style.border = "1px solid rgba(209, 213, 219, 0.9)";
+              wrapper.style.boxShadow = "0 6px 16px rgba(15, 23, 42, 0.10)";
+              wrapper.style.cursor = "move";
+              wrapper.classList.add("sortable-item");
+              wrapper.dataset.url = url;
+              if (Number.isInteger(imagenId)) {
+                wrapper.dataset.imagenId = String(imagenId);
+              }
+
+              const badge = document.createElement("div");
+              badge.className = "image-order-badge";
+              badge.textContent = idx === 0 ? "⭐" : String(idx + 1);
+              badge.style.background =
+                idx === 0 ? "var(--razo-orange)" : "rgba(17, 24, 39, 0.85)";
+
+              const imageEl = document.createElement("img");
+              imageEl.src = url;
+              imageEl.alt = img.textoAlternativo || `Imagen ${idx + 1}`;
+              imageEl.style.width = "100%";
+              imageEl.style.height = "100%";
+              imageEl.style.objectFit = "cover";
+              imageEl.loading = "lazy";
+
+              const btn = document.createElement("button");
+              btn.type = "button";
+              btn.textContent = "×";
+              btn.className = "product-images-preview-remove";
+              btn.addEventListener("click", () => {
+                wrapper.remove();
+                varianteServerImagesOrder = Array.from(
+                  galeriaImagenesVarianteServer.children || []
+                )
+                  .map((el) => (el?.dataset?.url || "").toString().trim())
+                  .filter(Boolean);
+                actualizarBadgeOrdenGrid(galeriaImagenesVarianteServer);
+              });
+
+              wrapper.appendChild(badge);
+              wrapper.appendChild(imageEl);
+              wrapper.appendChild(btn);
+              galeriaImagenesVarianteServer.appendChild(wrapper);
+            });
+
+            varianteServerImagesOrder = Array.from(
+              galeriaImagenesVarianteServer.children || []
+            )
+              .map((el) => (el?.dataset?.url || "").toString().trim())
+              .filter(Boolean);
+
+            if (variantServerImagesBlock) {
+              variantServerImagesBlock.style.display = "block";
+            }
+
+            initSortableVarianteServer();
+            actualizarBadgeOrdenGrid(galeriaImagenesVarianteServer);
+          } else if (variantServerImagesBlock) {
+            variantServerImagesBlock.style.display = "none";
+            varianteServerImagesOrder = [];
+          }
+
+          const portadaUrl = (data?.data?.portadaUrl || "").toString().trim();
+          if (urlImagenVarianteInput) {
+            urlImagenVarianteInput.value = portadaUrl || "";
+          }
+          if (portadaPreviewImg && portadaPreviewText) {
+            if (portadaUrl) {
+              portadaPreviewImg.src = portadaUrl;
+              portadaPreviewImg.style.display = "block";
+              portadaPreviewText.textContent = "Imagen principal";
+            } else {
+              portadaPreviewImg.style.display = "none";
+              portadaPreviewImg.removeAttribute("src");
+              portadaPreviewText.textContent = "Sin imagen";
+            }
+          }
+        } catch (error) {
+          console.error("Error al cargar imágenes de variante:", error);
+          if (variantImagesStatus) {
+            variantImagesStatus.textContent = "No se pudieron cargar imágenes";
+          }
+        }
+      }
+
+      function buildClientId() {
+        return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      }
+
       if (productImagesInput) {
         productImagesInput.addEventListener("change", (event) => {
           const files = Array.from(event.target.files || []);
-          imagenesSeleccionadas = files;
+          imagenesSeleccionadasMeta = files.map((file) => ({
+            clientId: buildClientId(),
+            file,
+          }));
           renderGaleriaPreview();
         });
       }
 
       if (clearImagesSelectionBtn) {
         clearImagesSelectionBtn.addEventListener("click", () => {
-          imagenesSeleccionadas = [];
+          imagenesSeleccionadasMeta = [];
           if (productImagesInput) {
             productImagesInput.value = "";
           }
           renderGaleriaPreview();
-        });
-      }
-
-      if (uploadImagesBtn) {
-        uploadImagesBtn.addEventListener("click", () => {
-          subirImagenesProductoMultiple();
         });
       }
 
@@ -1760,9 +2184,6 @@
         }
         const isEditing = Number.isInteger(editingVarianteId);
         const colorNombreRaw = (colorNombreInput?.value || "").toString().trim();
-        const urlImagenVarianteRaw = (urlImagenVarianteInput?.value || "")
-          .toString()
-          .trim();
         const formData = {
           productoId,
           dimensiones:
@@ -1778,8 +2199,6 @@
           tipoProductoId: null,
           medidaId: null,
           color_nombre: colorNombreRaw === "" ? null : colorNombreRaw,
-          url_imagen_variante:
-            urlImagenVarianteRaw === "" ? null : urlImagenVarianteRaw,
         };
 
         if (
@@ -1812,17 +2231,63 @@
               }
             }
 
-            const payload = {
-              dimensiones: formData.dimensiones,
-              costoUnitario: formData.costoUnitario,
-              precioUnitario: formData.precioUnitario,
-              precioOfertaUnitario: formData.precioOfertaUnitario,
-              color_nombre: formData.color_nombre,
-              url_imagen_variante: formData.url_imagen_variante,
-            };
+            const multipart = new FormData();
+            multipart.append("dimensiones", formData.dimensiones || "");
+            multipart.append(
+              "costoUnitario",
+              formData.costoUnitario === null ? "" : String(formData.costoUnitario)
+            );
+            multipart.append("precioUnitario", String(formData.precioUnitario));
+            multipart.append(
+              "precioOfertaUnitario",
+              formData.precioOfertaUnitario === null
+                ? ""
+                : String(formData.precioOfertaUnitario)
+            );
+            multipart.append("color_nombre", formData.color_nombre || "");
+
+            const orderedExisting = Array.from(
+              galeriaImagenesVarianteServer?.children || []
+            )
+              .map((el) => {
+                const imagenId = Number.parseInt(el?.dataset?.imagenId, 10);
+                return Number.isInteger(imagenId) ? imagenId : null;
+              })
+              .filter(Boolean);
+
+            const galeria = [];
+            orderedExisting.forEach((imagenId) => {
+              galeria.push({ type: "existing", imagenId });
+            });
+
+            const orderedNewClientIds = Array.from(galeriaPreview?.children || [])
+              .map((el) => (el?.dataset?.clientId || "").toString().trim())
+              .filter(Boolean);
+
+            const uploadIndexByClientId = new Map();
+            let uploadIndex = 0;
+            orderedNewClientIds.forEach((clientId) => {
+              const item = (imagenesSeleccionadasMeta || []).find(
+                (it) => it && it.clientId === clientId
+              );
+              if (!item || !item.file) return;
+              multipart.append("imagenes", item.file);
+              uploadIndexByClientId.set(clientId, uploadIndex);
+              uploadIndex += 1;
+            });
+
+            orderedNewClientIds.forEach((clientId) => {
+              if (!uploadIndexByClientId.has(clientId)) return;
+              galeria.push({
+                type: "new",
+                uploadIndex: uploadIndexByClientId.get(clientId),
+              });
+            });
+
+            multipart.append("galeria", JSON.stringify(galeria));
 
             if (activoPayload !== undefined) {
-              payload.activo = activoPayload;
+              multipart.append("activo", String(!!activoPayload));
             }
 
             response = await fetch(
@@ -1831,19 +2296,61 @@
                 method: "PUT",
                 headers: {
                   Authorization: `Bearer ${adminToken}`,
-                  "Content-Type": "application/json",
                 },
-                body: JSON.stringify(payload),
+                body: multipart,
               }
             );
           } else {
+            const multipart = new FormData();
+            multipart.append("productoId", String(formData.productoId));
+            multipart.append("dimensiones", formData.dimensiones || "");
+            multipart.append(
+              "costoUnitario",
+              formData.costoUnitario === null ? "" : String(formData.costoUnitario)
+            );
+            multipart.append("precioUnitario", String(formData.precioUnitario));
+            multipart.append(
+              "precioOfertaUnitario",
+              formData.precioOfertaUnitario === null
+                ? ""
+                : String(formData.precioOfertaUnitario)
+            );
+            multipart.append("stock", String(formData.stock || 0));
+            multipart.append("color_nombre", formData.color_nombre || "");
+
+            const orderedNewClientIds = Array.from(galeriaPreview?.children || [])
+              .map((el) => (el?.dataset?.clientId || "").toString().trim())
+              .filter(Boolean);
+
+            const galeria = [];
+            const uploadIndexByClientId = new Map();
+            let uploadIndex = 0;
+            orderedNewClientIds.forEach((clientId) => {
+              const item = (imagenesSeleccionadasMeta || []).find(
+                (it) => it && it.clientId === clientId
+              );
+              if (!item || !item.file) return;
+              multipart.append("imagenes", item.file);
+              uploadIndexByClientId.set(clientId, uploadIndex);
+              uploadIndex += 1;
+            });
+
+            orderedNewClientIds.forEach((clientId) => {
+              if (!uploadIndexByClientId.has(clientId)) return;
+              galeria.push({
+                type: "new",
+                uploadIndex: uploadIndexByClientId.get(clientId),
+              });
+            });
+
+            multipart.append("galeria", JSON.stringify(galeria));
+
             response = await fetch(`${API_BASE_URL}/admin/variantes`, {
               method: "POST",
               headers: {
                 Authorization: `Bearer ${adminToken}`,
-                "Content-Type": "application/json",
               },
-              body: JSON.stringify(formData),
+              body: multipart,
             });
           }
 
@@ -1959,6 +2466,16 @@
       if (dimensionesInput) {
         dimensionesInput.addEventListener("input", generateSkuSuggestion);
         dimensionesInput.addEventListener("blur", generateSkuSuggestion);
+        dimensionesInput.addEventListener("keyup", generateSkuSuggestion);
+        dimensionesInput.addEventListener("change", generateSkuSuggestion);
+      }
+
+      // Event listener para sugerir SKU cuando cambia el color
+      if (colorNombreInput) {
+        colorNombreInput.addEventListener("input", generateSkuSuggestion);
+        colorNombreInput.addEventListener("blur", generateSkuSuggestion);
+        colorNombreInput.addEventListener("keyup", generateSkuSuggestion);
+        colorNombreInput.addEventListener("change", generateSkuSuggestion);
       }
 
       // Event listener para aplicar la sugerencia de SKU

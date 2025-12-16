@@ -261,13 +261,142 @@ router.post(
   "/variantes",
   authenticate,
   authorizeAdmin,
+  (req, res, next) => {
+    const handler = upload.fields([
+      { name: "imagenes", maxCount: 12 },
+      { name: "images", maxCount: 12 },
+    ]);
+
+    handler(req, res, (err) => {
+      if (!err) return next();
+
+      if (err instanceof multer.MulterError) {
+        if (err.code === "LIMIT_UNEXPECTED_FILE") {
+          return res.status(400).json({
+            success: false,
+            message: "El límite máximo es de 12 imágenes por variante",
+          });
+        }
+
+        if (err.code === "LIMIT_FILE_SIZE") {
+          return res.status(400).json({
+            success: false,
+            message: "Cada imagen no debe superar 5MB",
+          });
+        }
+
+        return res.status(400).json({
+          success: false,
+          message: err.message || "Error al subir las imágenes",
+        });
+      }
+
+      return res.status(400).json({
+        success: false,
+        message: err.message || "Error al subir las imágenes",
+      });
+    });
+  },
   adminController.crearVariante
 );
 router.put(
   "/variantes/:id",
   authenticate,
   authorizeAdmin,
+  (req, res, next) => {
+    const handler = upload.fields([
+      { name: "imagenes", maxCount: 12 },
+      { name: "images", maxCount: 12 },
+    ]);
+
+    handler(req, res, (err) => {
+      if (!err) return next();
+
+      if (err instanceof multer.MulterError) {
+        if (err.code === "LIMIT_UNEXPECTED_FILE") {
+          return res.status(400).json({
+            success: false,
+            message: "El límite máximo es de 12 imágenes por variante",
+          });
+        }
+
+        if (err.code === "LIMIT_FILE_SIZE") {
+          return res.status(400).json({
+            success: false,
+            message: "Cada imagen no debe superar 5MB",
+          });
+        }
+
+        return res.status(400).json({
+          success: false,
+          message: err.message || "Error al subir las imágenes",
+        });
+      }
+
+      return res.status(400).json({
+        success: false,
+        message: err.message || "Error al subir las imágenes",
+      });
+    });
+  },
   adminController.actualizarVariante
+);
+
+router.get(
+  "/variantes/:id/imagenes",
+  authenticate,
+  authorizeAdmin,
+  adminController.getImagenesVariante
+);
+
+router.post(
+  "/variantes/:id/imagenes",
+  authenticate,
+  authorizeAdmin,
+  (req, res, next) => {
+    const handler = upload.fields([
+      { name: "imagenes", maxCount: 12 },
+      { name: "images", maxCount: 12 },
+    ]);
+
+    handler(req, res, (err) => {
+      if (!err) return next();
+
+      if (err instanceof multer.MulterError) {
+        if (err.code === "LIMIT_UNEXPECTED_FILE") {
+          return res.status(400).json({
+            success: false,
+            message: "El límite máximo es de 12 imágenes por variante",
+          });
+        }
+
+        if (err.code === "LIMIT_FILE_SIZE") {
+          return res.status(400).json({
+            success: false,
+            message: "Cada imagen no debe superar 5MB",
+          });
+        }
+
+        return res.status(400).json({
+          success: false,
+          message: err.message || "Error al subir las imágenes",
+        });
+      }
+
+      return res.status(400).json({
+        success: false,
+        message: err.message || "Error al subir las imágenes",
+      });
+    });
+  },
+  adminController.subirImagenesVarianteMultiple
+);
+
+router.put(
+  "/variantes/:id/orden-imagenes",
+  authenticate,
+  authorizeAdmin,
+  adminController.actualizarOrdenImagenesVariante
 );
 router.get(
   "/tamanos-paquetes",

@@ -5,6 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Detalle del Producto - RazoConnect</title>
     <link rel="icon" type="image/png" href="/icon/Logo_Razo.png" />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+    />
     <link rel="stylesheet" href="css/styles.css" />
     <style>
       .product-layout {
@@ -265,6 +273,7 @@
         display: flex;
         gap: 1.25rem;
         align-items: flex-start;
+        flex-wrap: wrap;
       }
 
       .galeria-thumbnails {
@@ -277,7 +286,8 @@
       }
 
       .galeria-main {
-        flex: 1;
+        flex: 1 1 320px;
+        min-width: 260px;
       }
 
       .galeria-main img {
@@ -358,6 +368,7 @@
       .nike-selector-container {
         margin-top: 0.9rem;
         width: 100%;
+        flex: 0 0 100%;
       }
 
       .nike-label {
@@ -395,19 +406,7 @@
     </style>
   </head>
   <body>
-    <nav class="navbar">
-      <div class="container navbar-content">
-        <a href="/catalogo.html" class="navbar-brand"><img src="/icon/Logo_Razo.png" class="titulo-emoji-reemplazo" alt="Razo">RazoConnect</a>
-        <ul class="navbar-menu">
-          <li><a href="/catalogo.html" class="navbar-link">Productos</a></li>
-          <li><a href="/carrito.html" class="navbar-link">Carrito</a></li>
-          <li><a href="/dashboard.html" class="navbar-link">Mi cuenta</a></li>
-          <li>
-            <a href="#" class="navbar-link" id="logoutBtn">Cerrar sesión</a>
-          </li>
-        </ul>
-      </div>
-    </nav>
+    <div id="header-container"></div>
 
     <div class="container" style="padding-top: 2rem; padding-bottom: 3rem">
       <!-- Loading State -->
@@ -577,6 +576,8 @@
     <script src="js/api.js"></script>
     <script src="js/pack-helpers.js"></script>
     <script src="js/carritoService.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/components/header-loader.js"></script>
     <script>
       // Check authentication
       if (!requireAuth()) {
@@ -586,7 +587,6 @@
       const loadingState = document.getElementById("loadingState");
       const productDetails = document.getElementById("productDetails");
       const errorState = document.getElementById("errorState");
-      const logoutBtn = document.getElementById("logoutBtn");
 
       // Product elements
       const mainImage = document.getElementById("mainImage");
@@ -664,7 +664,9 @@
         list.forEach((v) => {
           const color = getVariantColorNombre(v);
           if (!color) return;
-          const imgUrl = getVariantColorImageUrl(v);
+          const imagenes = Array.isArray(v?.imagenes) ? v.imagenes : [];
+          const firstUrl = (imagenes[0]?.url || imagenes[0]?.urlCompleta || "").toString().trim();
+          const imgUrl = getVariantColorImageUrl(v) || (firstUrl || null);
           if (!imgUrl) return;
 
           if (!map.has(color)) {
@@ -680,7 +682,10 @@
         const entry = uniqueColorVariants.find(
           (v) => getVariantColorNombre(v) === selectedColorNombre
         );
-        return entry ? getVariantColorImageUrl(entry) : null;
+        if (!entry) return null;
+        const imagenes = Array.isArray(entry?.imagenes) ? entry.imagenes : [];
+        const firstUrl = (imagenes[0]?.url || imagenes[0]?.urlCompleta || "").toString().trim();
+        return getVariantColorImageUrl(entry) || (firstUrl || null);
       }
 
       function getVariantesFiltradasPorColor() {
@@ -975,23 +980,32 @@
           }
         }
 
-        const nikeUrl = getNikeSelectedImageUrl();
-        const urlInicial = nikeUrl || primeraImagen?.url || placeholderImage;
-        const altInicial = nikeUrl ? `Color ${selectedColorNombre || ""}` : (primeraImagen?.alt || fallbackAlt);
+        const primeraUrl = (primeraImagen?.url || primeraImagen?.urlCompleta || "").toString().trim();
+        const nikeUrl = (getNikeSelectedImageUrl() || "").toString().trim();
+        const urlInicial = primeraUrl || nikeUrl || placeholderImage;
+        const altInicial = primeraUrl
+          ? (primeraImagen?.alt || fallbackAlt)
+          : nikeUrl
+            ? `Color ${selectedColorNombre || ""}`
+            : fallbackAlt;
         cambiarImagenPrincipalDesdeThumb(null, urlInicial, altInicial);
 
         if (imagenes.length) {
           thumbnailGallery.style.display = "flex";
           imagenes.forEach((img, index) => {
             const thumb = document.createElement("img");
-            thumb.src = img.url;
+            thumb.src = img.url || img.urlCompleta || placeholderImage;
             thumb.alt = img.alt || fallbackAlt;
             thumb.className = "thumb-img";
-            if (!nikeUrl && index === 0) {
+            if (index === 0) {
               thumb.classList.add("active");
             }
             thumb.addEventListener("click", () => {
-              cambiarImagenPrincipalDesdeThumb(thumb, img.url, thumb.alt);
+              cambiarImagenPrincipalDesdeThumb(
+                thumb,
+                img.url || img.urlCompleta || placeholderImage,
+                thumb.alt
+              );
             });
             thumbnailGallery.appendChild(thumb);
           });
