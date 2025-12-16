@@ -37,6 +37,19 @@ async function notifySuperAdmins(client, payload) {
     const mensaje = payload?.mensaje || "Se detectó una discrepancia en recepción.";
     const url = payload?.url || null;
     const metadata = payload?.metadata ? JSON.stringify(payload.metadata) : null;
+    const tipo = (() => {
+      const t = (payload?.tipo || "").toString().trim().toLowerCase();
+      const allowed = ["pedido", "oferta", "temporada", "backorder", "sistema", "producto"];
+      if (allowed.includes(t)) return t;
+      return "sistema";
+    })();
+    const prioridad = (() => {
+      const p = (payload?.prioridad || "").toString().trim().toLowerCase();
+      if (p === "media") return "normal";
+      const allowed = ["baja", "normal", "alta", "urgente"];
+      if (allowed.includes(p)) return p;
+      return "alta";
+    })();
 
     for (const adminId of ids) {
       try {
@@ -44,7 +57,7 @@ async function notifySuperAdmins(client, payload) {
           `INSERT INTO notificaciones
             (clienteid, administrador_id, agente_id, tipo, titulo, mensaje, url, prioridad, metadata)
            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-          [null, adminId, null, "seguridad", titulo, mensaje, url, "alta", metadata]
+          [null, adminId, null, tipo, titulo, mensaje, url, prioridad, metadata]
         );
       } catch (e) {
         // No bloquear recepción si la notificación no se puede guardar
@@ -79,11 +92,222 @@ const subirEvidenciaRecepcionOC = async (req, res) => {
   }
 };
 
+function normalizeReglasEmpaqueInput(raw) {
+  const list = Array.isArray(raw) ? raw : [];
+
+  const map = new Map();
+  for (const item of list) {
+    const tipoIdRaw =
+      item?.tipoProductoId ?? item?.TipoProductoID ?? item?.tipoproductoid ?? item?.tipoproductoId;
+    const piezasRaw =
+      item?.piezasPorPaquete ?? item?.cantidadEmpaque ?? item?.cantidadempaque ?? item?.piezas;
+
+    const tipoId = Number.parseInt(tipoIdRaw, 10);
+    const piezas = Number.parseInt(piezasRaw, 10);
+    if (!Number.isInteger(tipoId) || tipoId <= 0) continue;
+    if (!Number.isInteger(piezas) || piezas <= 0) continue;
+
+    map.set(tipoId, piezas);
+  }
+
+  return Array.from(map.entries()).map(([tipoProductoId, piezasPorPaquete]) => ({
+    tipoProductoId,
+    piezasPorPaquete,
+  }));
+}
+
+async function getReglasEmpaqueProveedorSnapshot(client, proveedorId) {
+  let reglasResult;
+  try {
+    reglasResult = await client.query(
+      `SELECT reglaid, tipoproductoid, cantidadempaque
+       FROM proveedor_reglas_empaque
+       WHERE proveedorid = $1`,
+      [proveedorId]
+    );
+  } catch (dbError) {
+    if (dbError && dbError.code === "42703") {
+      reglasResult = await client.query(
+        `SELECT reglaid, tipoproductoid, piezasporpaquete AS cantidadempaque
+         FROM proveedor_reglas_empaque
+         WHERE proveedorid = $1`,
+        [proveedorId]
+      );
+    } else {
+      throw dbError;
+    }
+  }
+
+  const map = new Map();
+  for (const row of reglasResult.rows || []) {
+    const tipoId = Number.parseInt(row.tipoproductoid, 10);
+    const cantidad = Number.parseInt(row.cantidadempaque, 10);
+    const reglaid = Number.parseInt(row.reglaid, 10);
+    if (!Number.isInteger(tipoId) || tipoId <= 0) continue;
+    if (!Number.isInteger(cantidad) || cantidad <= 0) continue;
+    map.set(tipoId, {
+      reglaid: Number.isInteger(reglaid) && reglaid > 0 ? reglaid : null,
+      cantidad,
+    });
+  }
+
+  return map;
+}
+
+async function upsertReglaEmpaque(client, proveedorId, tipoProductoId, cantidadEmpaque) {
+  try {
+    const res = await client.query(
+      `INSERT INTO proveedor_reglas_empaque (proveedorid, tipoproductoid, cantidadempaque)
+       VALUES ($1, $2, $3)
+       ON CONFLICT (proveedorid, tipoproductoid)
+       DO UPDATE SET cantidadempaque = EXCLUDED.cantidadempaque
+       RETURNING reglaid`,
+      [proveedorId, tipoProductoId, cantidadEmpaque]
+    );
+    return res.rows?.[0]?.reglaid ?? null;
+  } catch (dbError) {
+    if (dbError && dbError.code === "42703") {
+      const res = await client.query(
+        `INSERT INTO proveedor_reglas_empaque (proveedorid, tipoproductoid, piezasporpaquete)
+         VALUES ($1, $2, $3)
+         ON CONFLICT (proveedorid, tipoproductoid)
+         DO UPDATE SET piezasporpaquete = EXCLUDED.piezasporpaquete
+         RETURNING reglaid`,
+        [proveedorId, tipoProductoId, cantidadEmpaque]
+      );
+      return res.rows?.[0]?.reglaid ?? null;
+    }
+    throw dbError;
+  }
+}
+
+async function registrarAuditoriaReglasEmpaque(client, req, eventos) {
+  const solicitanteId = Number.parseInt(req?.user?.id ?? req?.user?.userId, 10);
+  if (!Number.isInteger(solicitanteId) || solicitanteId <= 0) return;
+
+  for (const ev of eventos) {
+    try {
+      await client.query(
+        `INSERT INTO control_cambios (
+           entidad,
+           entidad_id,
+           tipo_cambio,
+           datos_anteriores,
+           datos_nuevos,
+           usuario_solicitante_id,
+           estado,
+           fecha_resolucion,
+           usuario_resolutor_id
+         )
+         VALUES ($1, $2, $3, $4, $5, $6, 'APROBADO', NOW(), $6)`,
+        [
+          "proveedor_reglas_empaque",
+          ev.entidadId ?? null,
+          ev.tipoCambio,
+          ev.datosAnteriores ? JSON.stringify(ev.datosAnteriores) : null,
+          JSON.stringify(ev.datosNuevos || {}),
+          solicitanteId,
+        ]
+      );
+    } catch (e) {
+      // no bloquear
+    }
+  }
+}
+
+const getTiposProductoAdmin = async (req, res) => {
+  try {
+    const result = await db.query(
+      `SELECT tp.tipoproductoid, tp.nombre, tp.descripcion
+       FROM tipoproducto tp
+       WHERE tp.activo = TRUE
+       ORDER BY tp.nombre ASC`
+    );
+
+    const tipos = (result.rows || []).map((row) => ({
+      tipoProductoId: row.tipoproductoid,
+      nombre: row.nombre,
+      descripcion: row.descripcion,
+    }));
+
+    return res.status(200).json({
+      success: true,
+      message: "Tipos de producto obtenidos exitosamente",
+      data: {
+        tipos,
+        total: tipos.length,
+      },
+    });
+  } catch (error) {
+    console.error("Error al obtener tipos de producto (admin):", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error al obtener los tipos de producto",
+      error: error.message,
+    });
+  }
+};
+
+const crearTipoProductoAdmin = async (req, res) => {
+  try {
+    const nombreRaw = req.body?.nombre ?? req.body?.Nombre ?? req.body?.tipoProducto;
+    const descripcionRaw = req.body?.descripcion ?? req.body?.Descripcion ?? null;
+
+    const nombre = String(nombreRaw || "").trim();
+    const descripcion =
+      descripcionRaw === undefined || descripcionRaw === null
+        ? null
+        : String(descripcionRaw).trim() || null;
+
+    if (!nombre) {
+      return res.status(400).json({
+        success: false,
+        message: "El nombre del tipo de producto es requerido",
+      });
+    }
+
+    const insertRes = await db.query(
+      `INSERT INTO tipoproducto (nombre, descripcion, activo)
+       VALUES ($1, $2, TRUE)
+       ON CONFLICT (nombre)
+       DO UPDATE SET activo = TRUE,
+                    descripcion = COALESCE(EXCLUDED.descripcion, tipoproducto.descripcion)
+       RETURNING tipoproductoid, nombre, descripcion`,
+      [nombre, descripcion]
+    );
+
+    const row = insertRes.rows?.[0];
+    return res.status(201).json({
+      success: true,
+      message: "Tipo de producto creado correctamente",
+      data: {
+        tipoProductoId: row?.tipoproductoid,
+        nombre: row?.nombre,
+        descripcion: row?.descripcion ?? null,
+      },
+    });
+  } catch (error) {
+    console.error("Error al crear tipo de producto (admin):", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error al crear el tipo de producto",
+      error: error.message,
+    });
+  }
+};
+
 const buscarProductosCompra = async (req, res) => {
   try {
     const qRaw = (req.query.q || "").toString().trim();
     const allRaw = (req.query.all || "").toString().trim().toLowerCase();
     const all = allRaw === "1" || allRaw === "true";
+
+    const filtrarProveedorRaw = (req.query.filtrarProveedor || "")
+      .toString()
+      .trim()
+      .toLowerCase();
+    const filtrarProveedor =
+      filtrarProveedorRaw === "1" || filtrarProveedorRaw === "true";
 
     const proveedorId = Number.parseInt(req.query.proveedorId, 10);
     const categoriaId = Number.parseInt(req.query.categoriaId, 10);
@@ -91,13 +315,21 @@ const buscarProductosCompra = async (req, res) => {
     const medidaRaw = (req.query.medida || "").toString().trim();
 
     const hasProveedor = Number.isInteger(proveedorId) && proveedorId > 0;
+    const hasProveedorFiltro = filtrarProveedor && hasProveedor;
     const hasCategoria = Number.isInteger(categoriaId) && categoriaId > 0;
     const hasMedidaId = Number.isInteger(medidaId) && medidaId > 0;
     const hasMedidaStr = !!medidaRaw;
 
     const hasQ = !!qRaw && qRaw.length >= 2;
 
-    if (!all && !hasQ && !hasProveedor && !hasCategoria && !hasMedidaId && !hasMedidaStr) {
+    if (
+      !all &&
+      !hasQ &&
+      !hasProveedorFiltro &&
+      !hasCategoria &&
+      !hasMedidaId &&
+      !hasMedidaStr
+    ) {
       return res.json({
         success: true,
         data: {
@@ -127,10 +359,8 @@ const buscarProductosCompra = async (req, res) => {
       i += 1;
     }
 
-    if (hasProveedor) {
-      whereParts.push("p.proveedorid_default = $" + i);
-      params.push(proveedorId);
-      i += 1;
+    if (hasProveedorFiltro) {
+      whereParts.push("p.proveedorid_default = $1");
     }
 
     if (hasCategoria) {
@@ -160,6 +390,7 @@ const buscarProductosCompra = async (req, res) => {
          p.sku_maestro,
          p.proveedorid_default,
          p.categoriaid,
+         COALESCE(regla.cantidadempaque, 1) AS regla_empaque,
          COALESCE(regla.cantidadempaque, 1) AS cantidad_empaque,
          pv.dimensiones,
          m.nombremedida,
@@ -218,6 +449,9 @@ const buscarProductosCompra = async (req, res) => {
         categoriaid: row.categoriaid ?? null,
         nombreproducto: row.nombreproducto ?? null,
         sku_maestro: row.sku_maestro ?? null,
+        regla_empaque: Number.isInteger(row.regla_empaque)
+          ? row.regla_empaque
+          : Number.parseInt(row.regla_empaque, 10) || 1,
         cantidad_empaque: Number.isInteger(row.cantidad_empaque)
           ? row.cantidad_empaque
           : Number.parseInt(row.cantidad_empaque, 10) || 1,
@@ -1472,8 +1706,12 @@ const getReglasEmpaqueProveedor = async (req, res) => {
 };
 
 const saveReglaEmpaque = async (req, res) => {
+  const client = await db.pool.connect();
+
   try {
-    const proveedorId = Number.parseInt(req.params.id, 10);
+    const proveedorIdRaw =
+      req.params.id ?? req.body.proveedorId ?? req.body.proveedorid ?? req.body.ProveedorID;
+    const proveedorId = Number.parseInt(proveedorIdRaw, 10);
     if (!Number.isInteger(proveedorId) || proveedorId <= 0) {
       return res.status(400).json({
         success: false,
@@ -1518,21 +1756,26 @@ const saveReglaEmpaque = async (req, res) => {
       });
     }
 
-    const proveedorResult = await db.query(
-      `SELECT proveedorid
+    await client.query("BEGIN");
+
+    const proveedorResult = await client.query(
+      `SELECT proveedorid, nombreempresa
        FROM proveedores
        WHERE proveedorid = $1`,
       [proveedorId]
     );
     if (!proveedorResult.rows.length) {
+      await client.query("ROLLBACK");
       return res.status(404).json({
         success: false,
         message: "Proveedor no encontrado",
       });
     }
 
+    const proveedorNombre = proveedorResult.rows[0]?.nombreempresa || "Proveedor";
+
     if (!tipoProductoId && tipoProductoNombre) {
-      const creado = await db.query(
+      const creado = await client.query(
         `INSERT INTO tipoproducto (nombre, descripcion, activo)
          VALUES ($1, NULL, TRUE)
          ON CONFLICT (nombre)
@@ -1550,37 +1793,42 @@ const saveReglaEmpaque = async (req, res) => {
       tipoProductoId = nuevoId;
     }
 
-    const tipoResult = await db.query(
-      `SELECT tipoproductoid
+    const tipoResult = await client.query(
+      `SELECT tipoproductoid, nombre
        FROM tipoproducto
        WHERE tipoproductoid = $1`,
       [tipoProductoId]
     );
     if (!tipoResult.rows.length) {
+      await client.query("ROLLBACK");
       return res.status(404).json({
         success: false,
         message: "Tipo de producto no encontrado",
       });
     }
 
+    const tipoProductoNombreFinal = tipoResult.rows[0]?.nombre || "Tipo";
+
     let reglaExistenteResult;
     try {
-      reglaExistenteResult = await db.query(
+      reglaExistenteResult = await client.query(
         `SELECT reglaid, cantidadempaque
          FROM proveedor_reglas_empaque
          WHERE proveedorid = $1
            AND tipoproductoid = $2
-         LIMIT 1`,
+         LIMIT 1
+         FOR UPDATE`,
         [proveedorId, tipoProductoId]
       );
     } catch (dbError) {
       if (dbError && dbError.code === "42703") {
-        reglaExistenteResult = await db.query(
+        reglaExistenteResult = await client.query(
           `SELECT reglaid, piezasporpaquete AS cantidadempaque
            FROM proveedor_reglas_empaque
            WHERE proveedorid = $1
              AND tipoproductoid = $2
-           LIMIT 1`,
+           LIMIT 1
+           FOR UPDATE`,
           [proveedorId, tipoProductoId]
         );
       } else {
@@ -1590,44 +1838,149 @@ const saveReglaEmpaque = async (req, res) => {
 
     const reglaExistente = reglaExistenteResult.rows[0] || null;
     const tipoCambio = reglaExistente ? "UPDATE" : "INSERT";
-    const entidadId = reglaExistente ? reglaExistente.reglaid : null;
+
     const datosAnteriores = reglaExistente
       ? {
-          cantidadEmpaque: Number.parseInt(reglaExistente.cantidadempaque, 10),
+          proveedorid: proveedorId,
+          tipoproductoid: tipoProductoId,
+          cantidadempaque: Number.parseInt(reglaExistente.cantidadempaque, 10) || 1,
         }
       : null;
 
     const datosNuevos = {
-      proveedorId,
-      tipoProductoId,
-      cantidadEmpaque,
+      proveedorid: proveedorId,
+      tipoproductoid: tipoProductoId,
+      cantidadempaque: cantidadEmpaque,
     };
 
-    const resultado = await solicitarCambio(
-      req,
-      "proveedor_reglas_empaque",
-      entidadId,
-      tipoCambio,
-      datosNuevos,
-      datosAnteriores
+    let reglaid;
+    if (reglaExistente) {
+      reglaid = reglaExistente.reglaid;
+      try {
+        await client.query(
+          `UPDATE proveedor_reglas_empaque
+           SET cantidadempaque = $3
+           WHERE reglaid = $1 AND proveedorid = $2`,
+          [reglaid, proveedorId, cantidadEmpaque]
+        );
+      } catch (dbError) {
+        if (dbError && dbError.code === "42703") {
+          await client.query(
+            `UPDATE proveedor_reglas_empaque
+             SET piezasporpaquete = $3
+             WHERE reglaid = $1 AND proveedorid = $2`,
+            [reglaid, proveedorId, cantidadEmpaque]
+          );
+        } else {
+          throw dbError;
+        }
+      }
+    } else {
+      let insertResult;
+      try {
+        insertResult = await client.query(
+          `INSERT INTO proveedor_reglas_empaque (proveedorid, tipoproductoid, cantidadempaque)
+           VALUES ($1, $2, $3)
+           RETURNING reglaid`,
+          [proveedorId, tipoProductoId, cantidadEmpaque]
+        );
+      } catch (dbError) {
+        if (dbError && dbError.code === "42703") {
+          insertResult = await client.query(
+            `INSERT INTO proveedor_reglas_empaque (proveedorid, tipoproductoid, piezasporpaquete)
+             VALUES ($1, $2, $3)
+             RETURNING reglaid`,
+            [proveedorId, tipoProductoId, cantidadEmpaque]
+          );
+        } else {
+          throw dbError;
+        }
+      }
+      reglaid = insertResult.rows[0]?.reglaid ?? null;
+    }
+
+    const adminId = req?.user?.id ?? req?.user?.userId ?? null;
+    const adminIdParsed = Number.parseInt(adminId, 10);
+    if (!Number.isInteger(adminIdParsed) || adminIdParsed <= 0) {
+      throw new Error("Usuario solicitante no identificado como admin");
+    }
+
+    const adminNombreResult = await client.query(
+      `SELECT nombre
+       FROM administradores
+       WHERE adminid = $1`,
+      [adminIdParsed]
     );
+    const adminNombre = adminNombreResult.rows[0]?.nombre || "Usuario";
+
+    const cambioRes = await client.query(
+      `INSERT INTO control_cambios (
+         entidad,
+         entidad_id,
+         tipo_cambio,
+         datos_anteriores,
+         datos_nuevos,
+         usuario_solicitante_id,
+         estado,
+         fecha_resolucion,
+         usuario_resolutor_id
+       )
+       VALUES ($1, $2, $3, $4, $5, $6, 'APROBADO', NOW(), $6)
+       RETURNING id`,
+      [
+        "proveedor_reglas_empaque",
+        reglaid,
+        tipoCambio,
+        datosAnteriores ? JSON.stringify(datosAnteriores) : null,
+        JSON.stringify(datosNuevos),
+        adminIdParsed,
+      ]
+    );
+
+    await notifySuperAdmins(client, {
+      tipo: "sistema",
+      prioridad: "media",
+      titulo: "Aviso: Regla de Empaque Modificada",
+      mensaje: `El usuario ${adminNombre} modificó la regla de empaque para ${proveedorNombre} - ${tipoProductoNombreFinal}: ${cantidadEmpaque} piezas`,
+      url: `/admin-proveedor-detalle.html?id=${proveedorId}`,
+      metadata: {
+        proveedorId,
+        proveedorNombre,
+        tipoProductoId,
+        tipoProductoNombre: tipoProductoNombreFinal,
+        cantidadEmpaque,
+        tipoCambio,
+        controlCambioId: cambioRes.rows[0]?.id ?? null,
+      },
+    });
+
+    await client.query("COMMIT");
 
     return res.status(200).json({
       success: true,
-      message: resultado.mensaje,
+      message: "Regla de empaque aplicada exitosamente",
       data: {
-        solicitudId: resultado.solicitudId,
-        estado: resultado.estado,
+        reglaid,
         tipoCambio,
+        cantidadEmpaque,
+        controlCambioId: cambioRes.rows[0]?.id ?? null,
       },
     });
   } catch (error) {
+    try {
+      await client.query("ROLLBACK");
+    } catch (e) {
+      // silencioso
+    }
     console.error("Error al guardar regla de empaque:", error);
     return res.status(500).json({
       success: false,
       message: "Error al guardar regla de empaque",
       error: error.message,
     });
+  }
+  finally {
+    client.release();
   }
 };
 
@@ -6360,6 +6713,8 @@ const getAllProveedores = async (req, res) => {
  * POST /api/admin/proveedores
  */
 const crearProveedor = async (req, res) => {
+  const client = await db.pool.connect();
+
   try {
     const {
       nombreEmpresa,
@@ -6390,6 +6745,8 @@ const crearProveedor = async (req, res) => {
       minimoCompra,
       aceptaDevoluciones,
     } = req.body;
+
+    const reglasEmpaqueInput = normalizeReglasEmpaqueInput(req.body?.reglasEmpaque);
 
     // Helper function to convert empty strings to NULL
     const toNullIfEmpty = (value) => {
@@ -6470,7 +6827,9 @@ const crearProveedor = async (req, res) => {
         aceptaDevoluciones !== undefined ? Boolean(aceptaDevoluciones) : null,
     };
 
-    const insertRes = await db.query(
+    await client.query("BEGIN");
+
+    const insertRes = await client.query(
       `INSERT INTO proveedores (
         nombreempresa,
         contactonombre,
@@ -6535,14 +6894,66 @@ const crearProveedor = async (req, res) => {
 
     const row = insertRes.rows[0];
 
-    await auditService.registrarCambioPasivo(
-      req,
-      "proveedores",
-      row.proveedorid,
-      "INSERT",
-      null,
-      row
-    );
+    const eventosAuditoria = [];
+    for (const regla of reglasEmpaqueInput) {
+      const tipoId = regla.tipoProductoId;
+      const cantidad = regla.piezasPorPaquete;
+      const reglaid = await upsertReglaEmpaque(client, row.proveedorid, tipoId, cantidad);
+
+      eventosAuditoria.push({
+        tipoCambio: "INSERT",
+        entidadId: reglaid,
+        datosAnteriores: null,
+        datosNuevos: {
+          proveedorid: row.proveedorid,
+          tipoproductoid: tipoId,
+          cantidadempaque: cantidad,
+        },
+      });
+    }
+
+    await client.query("COMMIT");
+
+    try {
+      await auditService.registrarCambioPasivo(
+        req,
+        "proveedores",
+        row.proveedorid,
+        "INSERT",
+        null,
+        row
+      );
+    } catch (e) {
+      // no bloquear
+    }
+
+    if (eventosAuditoria.length) {
+      await registrarAuditoriaReglasEmpaque(client, req, eventosAuditoria);
+
+      const usuarioNombre = [req?.user?.nombre, req?.user?.apellido]
+        .filter((x) => String(x || "").trim().length)
+        .join(" ") || "Usuario";
+
+      try {
+        await notifySuperAdmins(client, {
+          tipo: "sistema",
+          prioridad: "media",
+          titulo: "Reglas de Empaque Actualizadas",
+          mensaje: `El usuario ${usuarioNombre} modificó reglas de empaque para ${row.nombreempresa}. Ver bitácora.`,
+          url: "/admin-bitacora.html",
+          metadata: {
+            proveedorId: row.proveedorid,
+            proveedorNombre: row.nombreempresa,
+            cambios: eventosAuditoria.map((e) => ({
+              tipoCambio: e.tipoCambio,
+              datosNuevos: e.datosNuevos,
+            })),
+          },
+        });
+      } catch (e) {
+        // no bloquear
+      }
+    }
 
     return res.status(201).json({
       success: true,
@@ -6552,11 +6963,19 @@ const crearProveedor = async (req, res) => {
       },
     });
   } catch (error) {
+    try {
+      await client.query("ROLLBACK");
+    } catch (e) {
+      // ignore
+    }
     console.error("Error al crear proveedor:", error);
     res.status(500).json({
       success: false,
       message: "Error al crear el proveedor",
     });
+  }
+  finally {
+    client.release();
   }
 };
 
@@ -6565,6 +6984,8 @@ const crearProveedor = async (req, res) => {
  * PUT /api/admin/proveedores/:id
  */
 const actualizarProveedor = async (req, res) => {
+  const client = await db.pool.connect();
+
   try {
     const proveedorId = parseInt(req.params.id);
     const {
@@ -6596,6 +7017,8 @@ const actualizarProveedor = async (req, res) => {
       minimoCompra,
       aceptaDevoluciones,
     } = req.body;
+
+    const reglasEmpaqueInput = normalizeReglasEmpaqueInput(req.body?.reglasEmpaque);
 
     // Helper function to convert empty strings to NULL
     const toNullIfEmpty = (value) => {
@@ -6648,7 +7071,7 @@ const actualizarProveedor = async (req, res) => {
     // Verificar que el proveedor existe y obtener snapshot actual
     const checkQuery =
       "SELECT * FROM Proveedores WHERE ProveedorID = $1";
-    const checkResult = await db.query(checkQuery, [proveedorId]);
+    const checkResult = await client.query(checkQuery, [proveedorId]);
 
     if (checkResult.rows.length === 0) {
       return res.status(404).json({
@@ -6658,6 +7081,12 @@ const actualizarProveedor = async (req, res) => {
     }
 
     const proveedorActual = checkResult.rows[0];
+
+    const proveedorNombreActual = proveedorActual?.nombreempresa || "Proveedor";
+
+    await client.query("BEGIN");
+
+    const reglasActuales = await getReglasEmpaqueProveedorSnapshot(client, proveedorId);
 
     const datosNuevosProveedor = {
       NombreEmpresa: nombreEmpresa.trim(),
@@ -6690,7 +7119,7 @@ const actualizarProveedor = async (req, res) => {
         aceptaDevoluciones !== undefined ? Boolean(aceptaDevoluciones) : null,
     };
 
-    const updateRes = await db.query(
+    const updateRes = await client.query(
       `UPDATE proveedores
        SET nombreempresa = $1,
            contactonombre = $2,
@@ -6754,6 +7183,7 @@ const actualizarProveedor = async (req, res) => {
     );
 
     if (!updateRes.rows.length) {
+      await client.query("ROLLBACK");
       return res.status(404).json({
         success: false,
         message: "Proveedor no encontrado",
@@ -6762,14 +7192,89 @@ const actualizarProveedor = async (req, res) => {
 
     const row = updateRes.rows[0];
 
-    await auditService.registrarCambioPasivo(
-      req,
-      "proveedores",
-      proveedorId,
-      "UPDATE",
-      proveedorActual,
-      row
-    );
+    const eventosAuditoria = [];
+    for (const regla of reglasEmpaqueInput) {
+      const tipoId = regla.tipoProductoId;
+      const cantidadNueva = regla.piezasPorPaquete;
+
+      const anterior = reglasActuales.get(tipoId) || null;
+      if (anterior && anterior.cantidad === cantidadNueva) {
+        continue;
+      }
+
+      const reglaid = await upsertReglaEmpaque(client, proveedorId, tipoId, cantidadNueva);
+
+      if (!anterior) {
+        eventosAuditoria.push({
+          tipoCambio: "INSERT",
+          entidadId: reglaid,
+          datosAnteriores: null,
+          datosNuevos: {
+            proveedorid: proveedorId,
+            tipoproductoid: tipoId,
+            cantidadempaque: cantidadNueva,
+          },
+        });
+      } else {
+        eventosAuditoria.push({
+          tipoCambio: "UPDATE",
+          entidadId: anterior.reglaid ?? reglaid,
+          datosAnteriores: {
+            proveedorid: proveedorId,
+            tipoproductoid: tipoId,
+            cantidadempaque: anterior.cantidad,
+          },
+          datosNuevos: {
+            proveedorid: proveedorId,
+            tipoproductoid: tipoId,
+            cantidadempaque: cantidadNueva,
+          },
+        });
+      }
+    }
+
+    await client.query("COMMIT");
+
+    try {
+      await auditService.registrarCambioPasivo(
+        req,
+        "proveedores",
+        proveedorId,
+        "UPDATE",
+        proveedorActual,
+        row
+      );
+    } catch (e) {
+      // no bloquear
+    }
+
+    if (eventosAuditoria.length) {
+      await registrarAuditoriaReglasEmpaque(client, req, eventosAuditoria);
+
+      const usuarioNombre = [req?.user?.nombre, req?.user?.apellido]
+        .filter((x) => String(x || "").trim().length)
+        .join(" ") || "Usuario";
+
+      try {
+        await notifySuperAdmins(client, {
+          tipo: "sistema",
+          prioridad: "media",
+          titulo: "Reglas de Empaque Actualizadas",
+          mensaje: `El usuario ${usuarioNombre} modificó reglas de empaque para ${proveedorNombreActual}. Ver bitácora.`,
+          url: "/admin-bitacora.html",
+          metadata: {
+            proveedorId,
+            proveedorNombre: proveedorNombreActual,
+            cambios: eventosAuditoria.map((e) => ({
+              tipoCambio: e.tipoCambio,
+              datosNuevos: e.datosNuevos,
+            })),
+          },
+        });
+      } catch (e) {
+        // no bloquear
+      }
+    }
 
     return res.json({
       success: true,
@@ -6779,11 +7284,19 @@ const actualizarProveedor = async (req, res) => {
       },
     });
   } catch (error) {
+    try {
+      await client.query("ROLLBACK");
+    } catch (e) {
+      // ignore
+    }
     console.error("Error al actualizar proveedor:", error);
     res.status(500).json({
       success: false,
       message: "Error al actualizar el proveedor",
     });
+  }
+  finally {
+    client.release();
   }
 };
 
@@ -9759,6 +10272,8 @@ getMedidasExistentes,
   getSolicitudesPendientesProveedor,
   getReglasEmpaqueProveedor,
   saveReglaEmpaque,
+  getTiposProductoAdmin,
+  crearTipoProductoAdmin,
   getAllOrdenesCompra,
   getDetallesOrdenCompra,
   getComprasPendientes,

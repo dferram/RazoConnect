@@ -73,6 +73,31 @@ function getProveedorIdSeleccionado() {
   return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
 }
 
+function setAlertReglasEmpaqueVisible(isVisible) {
+  const el = document.getElementById("alertReglasEmpaque");
+  if (!el) return;
+  el.style.display = isVisible ? "block" : "none";
+}
+
+async function checkReglasEmpaqueProveedor() {
+  const proveedorId = getProveedorIdSeleccionado();
+
+  if (!proveedorId) {
+    setAlertReglasEmpaqueVisible(false);
+    return;
+  }
+
+  try {
+    const data = await fetchJSON(`${API_BASE_URL}/admin/proveedores/${proveedorId}/reglas`);
+    const reglas = data?.data?.reglas || {};
+    const hasReglas = reglas && typeof reglas === "object" && Object.keys(reglas).length > 0;
+    setAlertReglasEmpaqueVisible(!hasReglas);
+  } catch (e) {
+    console.error("Error verificando reglas de empaque del proveedor:", e);
+    setAlertReglasEmpaqueVisible(false);
+  }
+}
+
 async function fetchJSON(url) {
   const res = await fetch(url, {
     method: "GET",
@@ -161,16 +186,13 @@ function normalizeText(value) {
 
 function applyFilters() {
   const q = normalizeText(document.getElementById("q")?.value);
-  const proveedorId = (document.getElementById("proveedorId")?.value || "").trim();
   const categoriaId = (document.getElementById("categoriaId")?.value || "").trim();
   const medida = (document.getElementById("medida")?.value || "").trim();
 
-  const hasProveedor = !!proveedorId;
   const hasCategoria = !!categoriaId;
   const hasMedida = !!medida;
 
   resultados = (maestros || []).filter((p) => {
-    if (hasProveedor && String(p.proveedorid ?? "") !== String(proveedorId)) return false;
     if (hasCategoria && String(p.categoriaid ?? "") !== String(categoriaId)) return false;
     if (hasMedida && !(p.medidasSet && p.medidasSet.has(medida))) return false;
 
@@ -507,6 +529,7 @@ function wireEvents() {
   });
 
   document.getElementById("proveedorId")?.addEventListener("change", async () => {
+    await checkReglasEmpaqueProveedor();
     await loadCatalogoCompleto();
     await buscar();
   });
@@ -547,6 +570,7 @@ function applyQueryStringDefaults() {
   wireEvents();
   await loadFiltros();
   applyQueryStringDefaults();
+  await checkReglasEmpaqueProveedor();
   await loadCatalogoCompleto();
   await buscar();
 })();

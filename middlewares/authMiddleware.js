@@ -52,6 +52,7 @@ const authenticate = async (req, res, next) => {
       : [normalizeRole(decoded?.rol)].filter(Boolean);
 
     const isAgenteToken = rolesFromToken.includes("agente");
+    const isClienteToken = rolesFromToken.includes("cliente");
 
     // 1) Si el token declara agente, validar contra agentesdeventas (activo)
     if (isAgenteToken) {
@@ -75,6 +76,31 @@ const authenticate = async (req, res, next) => {
         roles: ["agente"],
         email: decoded?.email || agenteResult.rows[0].email || null,
         codigoAgente: decoded?.codigoAgente || agenteResult.rows[0].codigoagente || null,
+      };
+
+      return next();
+    }
+
+    if (isClienteToken) {
+      const clienteResult = await db.query(
+        "SELECT clienteid, activo, email FROM clientes WHERE clienteid = $1 LIMIT 1",
+        [userId]
+      );
+
+      if (!clienteResult.rows.length || clienteResult.rows[0].activo !== true) {
+        return res.status(401).json({
+          success: false,
+          message: "Cliente no autorizado o inactivo",
+        });
+      }
+
+      req.user = {
+        ...decoded,
+        id: userId,
+        userId,
+        rol: "cliente",
+        roles: ["cliente"],
+        email: decoded?.email || clienteResult.rows[0].email || null,
       };
 
       return next();

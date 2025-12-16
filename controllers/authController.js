@@ -384,7 +384,7 @@ const verifyCliente = async (req, res) => {
     const result = await db.query(
       `SELECT ClienteID, Nombre, Apellido, Email, Telefono, FechaDeRegistro
        FROM clientes
-       WHERE ClienteID = $1`,
+       WHERE ClienteID = $1 AND Activo = TRUE`,
       [userId]
     );
     console.log("🔍 Resultado query:", result.rows);
@@ -433,7 +433,7 @@ const refreshClienteToken = async (req, res) => {
 
     // Verificar que el cliente aún existe y está activo
     const result = await db.query(
-      `SELECT ClienteID FROM clientes WHERE ClienteID = $1`,
+      `SELECT ClienteID FROM clientes WHERE ClienteID = $1 AND Activo = TRUE`,
       [clienteId]
     );
 

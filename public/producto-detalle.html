@@ -616,12 +616,16 @@
       const tamanoButtons = document.getElementById("tamanoButtons");
       const tamanoSelect = document.getElementById("tamanoSelect");
       const tamanoDescripcion = document.getElementById("tamanoDescripcion");
+      const precioPaqueteLabel = document.querySelector(
+        ".price-row .price-item:first-child .price-label"
+      );
 
       let producto = null;
       let variantes = [];
       let tamanosDisponibles = [];
       let varianteSeleccionada = null;
       let tamanoSeleccionado = null;
+      let maxPiezasPresentacion = null;
       let selectedColorNombre = null;
       let uniqueColorVariants = [];
       const placeholderImage =
@@ -1067,6 +1071,22 @@
           varianteSeleccionada
         );
 
+        if (precioPaqueteLabel) {
+          if (Number.isInteger(maxPiezasPresentacion) && maxPiezasPresentacion > 0) {
+            if (piezasVariante === 1) {
+              precioPaqueteLabel.textContent = "Precio por pieza";
+            } else if (piezasVariante === maxPiezasPresentacion) {
+              precioPaqueteLabel.textContent = "Precio por paquete";
+            } else if (Number.isFinite(piezasVariante) && piezasVariante > 1) {
+              precioPaqueteLabel.textContent = "Precio por serie";
+            } else {
+              precioPaqueteLabel.textContent = "Precio por paquete";
+            }
+          } else {
+            precioPaqueteLabel.textContent = "Precio por paquete";
+          }
+        }
+
         productSKU.textContent = `SKU: ${sku}`;
 
         // Mostrar precio con oferta usando clases CSS
@@ -1419,22 +1439,42 @@
         tamanoButtons.style.display = usarBotones ? "flex" : "none";
         tamanoSelect.style.display = usarBotones ? "none" : "block";
 
+        const obtenerPiezasTamano = (tamano) => {
+          if (!tamano) return null;
+          const raw =
+            tamano.valor ??
+            tamano.cantidad ??
+            tamano.piezas ??
+            tamano.piezasPorPaquete ??
+            tamano.piezasporpaquete ??
+            null;
+          const parsed = Number.parseInt(raw, 10);
+          return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+        };
+
+        const piezasLista = tamanosDisponibles
+          .map((t) => obtenerPiezasTamano(t))
+          .filter((v) => Number.isInteger(v) && v > 0);
+
+        maxPiezasPresentacion = piezasLista.length
+          ? Math.max(...piezasLista)
+          : null;
+
         const generarEtiqueta = (tamano) => {
-          if (tamano.etiqueta) {
-            return tamano.etiqueta;
+          const piezas = obtenerPiezasTamano(tamano);
+          if (!Number.isInteger(piezas) || piezas <= 0) {
+            return `Presentación ${tamano.tamanoId}`;
           }
 
-          if (Number.isFinite(tamano.valor)) {
-            if (tamano.valor === 1) {
-              return "Pieza Individual";
-            }
-
-            return typeof obtenerNombrePack === "function"
-              ? obtenerNombrePack(tamano.valor)
-              : `Paquete de ${tamano.valor}`;
+          if (piezas === 1) {
+            return "Pieza";
           }
 
-          return `Presentación ${tamano.tamanoId}`;
+          if (Number.isInteger(maxPiezasPresentacion) && piezas === maxPiezasPresentacion) {
+            return `Paquete de ${piezas}`;
+          }
+
+          return `Serie de ${piezas}`;
         };
 
         if (usarBotones) {
@@ -1515,11 +1555,25 @@
         }
 
         const piezas = obtenerPiezasPorPaquete();
-        const etiqueta = tamanoSeleccionado.etiqueta;
+        const etiqueta = null;
 
         const partes = [];
-        if (etiqueta) {
-          partes.push(etiqueta);
+        if (
+          tamanoSeleccionado &&
+          typeof tamanoSeleccionado === "object" &&
+          typeof maxPiezasPresentacion === "number" &&
+          maxPiezasPresentacion > 0
+        ) {
+          const valor = Number.parseInt(tamanoSeleccionado.valor, 10);
+          if (Number.isInteger(valor) && valor > 0) {
+            if (valor === 1) {
+              partes.push("Pieza");
+            } else if (valor === maxPiezasPresentacion) {
+              partes.push(`Paquete de ${valor}`);
+            } else {
+              partes.push(`Serie de ${valor}`);
+            }
+          }
         }
         if (Number.isFinite(piezas) && piezas > 0) {
           partes.push(`${piezas} piezas por paquete`);
@@ -1728,31 +1782,20 @@
           updateTotalPiezas();
           actualizarStockVisual();
 
+          if (typeof window.updateCartBadge === "function") {
+            window.updateCartBadge();
+          }
+
           if (cantidad > stockRealPaquetes) {
             const surtido = Math.max(stockRealPaquetes, 0);
             const pendiente = Math.max(cantidad - surtido, 0);
 
-            if (
-              typeof Swal !== "undefined" &&
-              Swal &&
-              typeof Swal.fire === "function"
-            ) {
-              await Swal.fire({
-                icon: "info",
-                title: "Agregado con Backorder",
-                text: `Se agregaron ${cantidad} paquetes. ${surtido} son de entrega inmediata y ${pendiente} quedarán en espera (Backorder).`,
-                confirmButtonColor: "#F97316",
-              });
-            } else {
-              showToast(
-                `Agregado con Backorder: ${surtido} inmediatos, ${pendiente} en espera.`,
-                "info"
-              );
-            }
+            showToast(
+              `Agregado correctamente. ${surtido} inmediato${surtido === 1 ? "" : "s"}, ${pendiente} en backorder.`,
+              "info"
+            );
           } else {
-            setTimeout(() => {
-              mostrarModalCarrito();
-            }, 800);
+            showToast("Agregado correctamente.", "success");
           }
         } catch (error) {
           console.error("Error adding to cart:", error);
@@ -1765,160 +1808,11 @@
         }
       });
 
-      // Funciones del modal de carrito
-      function mostrarModalCarrito() {
-        const modal = document.getElementById("carritoModal");
-        modal.style.display = "flex";
-
-        // Cerrar modal al hacer clic fuera de él
-        modal.onclick = function (event) {
-          if (event.target === modal) {
-            cerrarModalCarrito();
-          }
-        };
-      }
-
-      function cerrarModalCarrito() {
-        document.getElementById("carritoModal").style.display = "none";
-      }
-
-      function irAlCarrito() {
-        window.location.href = "/carrito.html";
-      }
-
-      // Cerrar modal con la tecla Escape
-      document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape") {
-          cerrarModalCarrito();
-        }
-      });
-
       // Load product on page load
       if (productoId) {
         loadProducto();
       }
     </script>
-
-    <!-- Modal para ir al carrito -->
-    <div id="carritoModal" class="modal">
-      <div class="modal-content" style="max-width: 420px; text-align: center">
-        <div style="margin-bottom: 2rem">
-          <div
-            style="
-              width: 70px;
-              height: 70px;
-              background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
-              border-radius: 50%;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              margin: 0 auto 1.25rem;
-              font-size: 2rem;
-              box-shadow: 0 8px 20px rgba(255, 107, 53, 0.3);
-            "
-          >
-            🛒
-          </div>
-          <h2
-            style="
-              font-size: 1.5rem;
-              font-weight: 700;
-              margin-bottom: 0.75rem;
-              color: #2d3748;
-            "
-          >
-            ¡Producto agregado!
-          </h2>
-          <p style="color: #718096; font-size: 1rem; line-height: 1.5">
-            ¿Deseas ir al carrito para finalizar tu compra?
-          </p>
-        </div>
-
-        <div
-          style="
-            display: flex;
-            gap: 0.75rem;
-            justify-content: center;
-            flex-wrap: wrap;
-          "
-        >
-          <button
-            class="btn btn-secondary"
-            onclick="cerrarModalCarrito()"
-            style="
-              flex: 1;
-              min-width: 160px;
-              padding: 0.875rem 1.5rem;
-              font-size: 0.9375rem;
-            "
-          >
-            Seguir comprando
-          </button>
-          <button
-            class="btn btn-primary"
-            onclick="irAlCarrito()"
-            style="
-              flex: 1;
-              min-width: 160px;
-              padding: 0.875rem 1.5rem;
-              font-size: 0.9375rem;
-            "
-          >
-            Ir al carrito →
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <style>
-      /* Modal styles */
-      .modal {
-        display: none;
-        position: fixed;
-        z-index: 1000;
-        left: 0;
-        top: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.6);
-        -webkit-backdrop-filter: blur(4px);
-        backdrop-filter: blur(4px);
-        justify-content: center;
-        align-items: center;
-        padding: 1rem;
-      }
-
-      .modal-content {
-        background: white;
-        padding: 2.5rem;
-        border-radius: 1.5rem;
-        box-shadow: 0 25px 70px rgba(0, 0, 0, 0.3);
-        position: relative;
-        animation: modalSlideIn 0.3s ease-out;
-      }
-
-      @keyframes modalSlideIn {
-        from {
-          transform: translateY(-50px);
-          opacity: 0;
-        }
-        to {
-          transform: translateY(0);
-          opacity: 1;
-        }
-      }
-
-      @media (max-width: 968px) {
-        #productDetails > div {
-          grid-template-columns: 1fr !important;
-        }
-
-        .modal-content {
-          max-width: 90% !important;
-          padding: 2rem !important;
-        }
-      }
-    </style>
 
     <!-- Sistema de Temas Estacionales -->
     <script src="/js/theme-manager.js"></script>

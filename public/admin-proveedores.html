@@ -513,6 +513,71 @@
               </div>
             </div>
 
+            <fieldset style="grid-column: 1 / -1; border: none; padding: 0; margin: 1.5rem 0 1rem 0;">
+              <legend style="font-size: 1rem; font-weight: 600; color: var(--razo-orange); margin-bottom: 0.75rem; padding: 0;">📦 Configuración de Empaques</legend>
+            </fieldset>
+
+            <div class="admin-table-container" style="grid-column: 1 / -1; padding: 1rem; margin-bottom: 0.75rem;">
+              <div class="form-grid" style="margin-bottom: 0.75rem;">
+                <div class="form-group" style="grid-column: 1 / -1;">
+                  <label for="selectTipoProductoRegla" class="form-label">Tipo de Producto</label>
+                  <div style="display:flex; gap:0.5rem; align-items:center;">
+                    <select id="selectTipoProductoRegla" class="form-input" style="flex: 1;" title="Tipo de Producto">
+                      <option value="">Selecciona un tipo...</option>
+                    </select>
+                    <button
+                      type="button"
+                      id="btnCrearTipoProductoRegla"
+                      class="btn btn-light"
+                      title="Crear tipo de producto"
+                      style="padding: 0.5rem 0.75rem;"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label for="inputPiezasPorPaqueteRegla" class="form-label">Piezas por Paquete</label>
+                  <input
+                    type="number"
+                    id="inputPiezasPorPaqueteRegla"
+                    class="form-input"
+                    placeholder="Ej: 24"
+                    min="1"
+                  />
+                </div>
+
+                <div class="form-group" style="display:flex; align-items:end;">
+                  <button
+                    type="button"
+                    id="btnAgregarReglaEmpaque"
+                    class="btn btn-primary"
+                    style="width: 100%;"
+                  >
+                    Agregar / Actualizar Regla
+                  </button>
+                </div>
+              </div>
+
+              <div style="overflow-x: auto;">
+                <table class="admin-table" style="margin: 0;">
+                  <thead>
+                    <tr>
+                      <th>Tipo de Producto</th>
+                      <th>Piezas</th>
+                      <th style="width: 110px;">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tablaReglasEmpaquePreviewBody">
+                    <tr>
+                      <td colspan="3" style="text-align:center; color: var(--razo-gray-warm);">Sin reglas configuradas</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
             <div style="display: flex; gap: 1rem; margin-top: 1.5rem; margin-bottom: 1rem">
               <button
                 type="submit"
@@ -556,6 +621,222 @@
       let currentProveedores = [];
       let editingProveedorId = null;
       let isSuperAdmin = false;
+
+      let tiposProductoAdminCache = [];
+      let reglasEmpaque = [];
+
+      const selectTipoProductoRegla = document.getElementById("selectTipoProductoRegla");
+      const btnCrearTipoProductoRegla = document.getElementById("btnCrearTipoProductoRegla");
+      const inputPiezasPorPaqueteRegla = document.getElementById("inputPiezasPorPaqueteRegla");
+      const btnAgregarReglaEmpaque = document.getElementById("btnAgregarReglaEmpaque");
+      const tablaReglasEmpaquePreviewBody = document.getElementById(
+        "tablaReglasEmpaquePreviewBody"
+      );
+
+      function resetReglasEmpaque() {
+        reglasEmpaque = [];
+        if (inputPiezasPorPaqueteRegla) inputPiezasPorPaqueteRegla.value = "";
+        if (selectTipoProductoRegla) selectTipoProductoRegla.value = "";
+        renderReglasEmpaquePreview();
+      }
+
+      function getTipoProductoNombreById(tipoId) {
+        const id = Number.parseInt(tipoId, 10);
+        if (!Number.isInteger(id) || id <= 0) return "";
+        const match = (tiposProductoAdminCache || []).find(
+          (t) => Number.parseInt(t?.tipoProductoId, 10) === id
+        );
+        return match?.nombre ? String(match.nombre) : "";
+      }
+
+      function renderReglasEmpaquePreview() {
+        if (!tablaReglasEmpaquePreviewBody) return;
+
+        if (!Array.isArray(reglasEmpaque) || reglasEmpaque.length === 0) {
+          tablaReglasEmpaquePreviewBody.innerHTML =
+            '<tr><td colspan="3" style="text-align:center; color: var(--razo-gray-warm);">Sin reglas configuradas</td></tr>';
+          return;
+        }
+
+        const rows = reglasEmpaque
+          .slice()
+          .sort((a, b) => {
+            const an = getTipoProductoNombreById(a.tipoProductoId);
+            const bn = getTipoProductoNombreById(b.tipoProductoId);
+            return an.localeCompare(bn);
+          })
+          .map((r) => {
+            const tipoId = Number.parseInt(r.tipoProductoId, 10);
+            const piezas = Number.parseInt(r.piezasPorPaquete, 10);
+            const nombre = getTipoProductoNombreById(tipoId) || `#${tipoId}`;
+            return `
+              <tr>
+                <td>${nombre}</td>
+                <td>${piezas}</td>
+                <td>
+                  <button
+                    type="button"
+                    class="btn btn-light"
+                    style="padding: 0.4rem 0.6rem; font-size: 0.85rem;"
+                    onclick="editarReglaEmpaqueModal(${tipoId}, ${piezas})"
+                    title="Editar"
+                  >
+                    ✏️
+                  </button>
+                </td>
+              </tr>
+            `;
+          })
+          .join("");
+
+        tablaReglasEmpaquePreviewBody.innerHTML = rows;
+      }
+
+      window.editarReglaEmpaqueModal = function (tipoProductoId, piezasPorPaquete) {
+        const tipoId = Number.parseInt(tipoProductoId, 10);
+        const piezas = Number.parseInt(piezasPorPaquete, 10);
+        if (selectTipoProductoRegla) selectTipoProductoRegla.value = String(tipoId);
+        if (inputPiezasPorPaqueteRegla) inputPiezasPorPaqueteRegla.value = String(piezas);
+      };
+
+      async function loadTiposProductoAdmin() {
+        const response = await fetch(`${API_BASE_URL}/admin/tipos-producto`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${adminToken}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+          throw new Error(data.message || "No se pudieron cargar los tipos de producto");
+        }
+
+        tiposProductoAdminCache = Array.isArray(data?.data?.tipos) ? data.data.tipos : [];
+        if (selectTipoProductoRegla) {
+          const prev = selectTipoProductoRegla.value;
+          selectTipoProductoRegla.innerHTML = '<option value="">Selecciona un tipo...</option>';
+          tiposProductoAdminCache.forEach((t) => {
+            const opt = document.createElement("option");
+            opt.value = String(t.tipoProductoId);
+            opt.textContent = t.nombre;
+            selectTipoProductoRegla.appendChild(opt);
+          });
+          selectTipoProductoRegla.value = prev;
+        }
+        renderReglasEmpaquePreview();
+      }
+
+      async function crearTipoProductoRapido() {
+        const result = await Swal.fire({
+          title: "Nuevo Tipo de Producto",
+          input: "text",
+          inputPlaceholder: "Ej: Caja",
+          showCancelButton: true,
+          confirmButtonText: "Crear",
+          cancelButtonText: "Cancelar",
+          confirmButtonColor: "#F97316",
+          cancelButtonColor: "#6b7280",
+          inputValidator: (value) => {
+            const txt = String(value || "").trim();
+            if (!txt) return "Ingresa un nombre";
+            return undefined;
+          },
+        });
+
+        if (!result.isConfirmed) return;
+
+        const nombre = String(result.value || "").trim();
+        const response = await fetch(`${API_BASE_URL}/admin/tipos-producto`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${adminToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ nombre }),
+        });
+
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+          throw new Error(data.message || "No se pudo crear el tipo");
+        }
+
+        await loadTiposProductoAdmin();
+        if (selectTipoProductoRegla && data?.data?.tipoProductoId) {
+          selectTipoProductoRegla.value = String(data.data.tipoProductoId);
+        }
+      }
+
+      async function loadReglasEmpaqueProveedorIntoArray(proveedorId) {
+        const response = await fetch(
+          `${API_BASE_URL}/admin/proveedores/${proveedorId}/reglas`,
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${adminToken}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+          throw new Error(data.message || "No se pudieron cargar las reglas");
+        }
+
+        const reglasMap = data?.data?.reglas && typeof data.data.reglas === "object"
+          ? data.data.reglas
+          : {};
+
+        reglasEmpaque = Object.entries(reglasMap)
+          .map(([tipoId, cantidad]) => ({
+            tipoProductoId: Number.parseInt(tipoId, 10),
+            piezasPorPaquete: Number.parseInt(cantidad, 10),
+          }))
+          .filter(
+            (r) =>
+              Number.isInteger(r.tipoProductoId) &&
+              r.tipoProductoId > 0 &&
+              Number.isInteger(r.piezasPorPaquete) &&
+              r.piezasPorPaquete > 0
+          );
+
+        renderReglasEmpaquePreview();
+      }
+
+      async function applyReglasEmpaque(proveedorId) {
+        const provId = Number.parseInt(proveedorId, 10);
+        if (!Number.isInteger(provId) || provId <= 0) {
+          throw new Error("Proveedor inválido para aplicar reglas");
+        }
+
+        for (const regla of reglasEmpaque) {
+          const tipoId = Number.parseInt(regla.tipoProductoId, 10);
+          const cantidad = Number.parseInt(regla.piezasPorPaquete, 10);
+          if (!Number.isInteger(tipoId) || tipoId <= 0) continue;
+          if (!Number.isInteger(cantidad) || cantidad <= 0) continue;
+
+          const response = await fetch(
+            `${API_BASE_URL}/admin/proveedores/${provId}/reglas`,
+            {
+              method: "PUT",
+              headers: {
+                Authorization: `Bearer ${adminToken}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                TipoProductoID: tipoId,
+                cantidadEmpaque: cantidad,
+              }),
+            }
+          );
+          const data = await response.json();
+          if (!response.ok || !data.success) {
+            throw new Error(data.message || "No se pudieron aplicar las reglas");
+          }
+        }
+      }
 
       // Verify admin token
       async function verifyAndLoadAdmin() {
@@ -683,18 +964,24 @@
       }
 
       // Open modal to create new proveedor
-      function openProveedorModal() {
+      async function openProveedorModal() {
         editingProveedorId = null;
         document.getElementById("modalTitle").textContent = "Nuevo Proveedor";
         document.getElementById("btnGuardarText").textContent =
           "Guardar Proveedor";
         document.getElementById("proveedorForm").reset();
         document.getElementById("proveedorId").value = "";
+        resetReglasEmpaque();
+        try {
+          await loadTiposProductoAdmin();
+        } catch (e) {
+          // ignore
+        }
         document.getElementById("proveedorModal").style.display = "flex";
       }
 
       // Edit proveedor
-      function editProveedor(proveedorId) {
+      async function editProveedor(proveedorId) {
         const proveedor = currentProveedores.find(
           (p) => p.proveedorid === proveedorId
         );
@@ -747,6 +1034,13 @@
         document.getElementById("minimoCompra").value = proveedor.minimocompra || "";
         document.getElementById("aceptaDevoluciones").checked = proveedor.aceptadevoluciones || false;
 
+        resetReglasEmpaque();
+        try {
+          await loadTiposProductoAdmin();
+          await loadReglasEmpaqueProveedorIntoArray(proveedorId);
+        } catch (e) {
+          // ignore
+        }
         document.getElementById("proveedorModal").style.display = "flex";
       }
 
@@ -755,6 +1049,7 @@
         document.getElementById("proveedorModal").style.display = "none";
         editingProveedorId = null;
         document.getElementById("proveedorForm").reset();
+        resetReglasEmpaque();
       }
 
       // Submit form
@@ -821,6 +1116,7 @@
               descuentoFinanciero: getValue("descuentoFinanciero") || null,
               minimoCompra: getValue("minimoCompra") || null,
               aceptaDevoluciones: document.getElementById("aceptaDevoluciones").checked,
+              reglasEmpaque,
             };
 
             const response = await fetch(url, {
@@ -835,6 +1131,27 @@
             const data = await response.json();
 
             if (response.ok && data.success) {
+              const proveedorIdRespuesta =
+                data?.data?.proveedorId ?? data?.data?.proveedorid ?? editingProveedorId;
+              try {
+                if (Array.isArray(reglasEmpaque) && reglasEmpaque.length) {
+                  await applyReglasEmpaque(proveedorIdRespuesta);
+                }
+              } catch (e) {
+                showToast(
+                  e.message || "Proveedor guardado, pero falló la aplicación de reglas de empaque",
+                  "error"
+                );
+                if (!editingProveedorId && proveedorIdRespuesta) {
+                  editingProveedorId = proveedorIdRespuesta;
+                  document.getElementById("proveedorId").value = proveedorIdRespuesta;
+                  document.getElementById("modalTitle").textContent = "Editar Proveedor";
+                  document.getElementById("btnGuardarText").textContent =
+                    "Actualizar Proveedor";
+                }
+                return;
+              }
+
               showToast(
                 data.message ||
                   (editingProveedorId
@@ -880,6 +1197,48 @@
           closeProveedorModal();
         }
       };
+
+      if (btnCrearTipoProductoRegla) {
+        btnCrearTipoProductoRegla.addEventListener("click", async () => {
+          try {
+            await crearTipoProductoRapido();
+          } catch (e) {
+            showToast(e.message || "Error al crear tipo", "error");
+          }
+        });
+      }
+
+      if (btnAgregarReglaEmpaque) {
+        btnAgregarReglaEmpaque.addEventListener("click", async () => {
+          const tipoId = Number.parseInt(selectTipoProductoRegla?.value, 10);
+          const piezas = Number.parseInt(inputPiezasPorPaqueteRegla?.value, 10);
+
+          if (!Number.isInteger(tipoId) || tipoId <= 0) {
+            showToast("Selecciona un tipo de producto", "error");
+            return;
+          }
+          if (!Number.isInteger(piezas) || piezas <= 0) {
+            showToast("Ingresa piezas por paquete (min 1)", "error");
+            return;
+          }
+
+          const idx = reglasEmpaque.findIndex(
+            (r) => Number.parseInt(r.tipoProductoId, 10) === tipoId
+          );
+          if (idx >= 0) {
+            reglasEmpaque[idx].piezasPorPaquete = piezas;
+          } else {
+            reglasEmpaque.push({
+              tipoProductoId: tipoId,
+              piezasPorPaquete: piezas,
+            });
+          }
+
+          if (inputPiezasPorPaqueteRegla) inputPiezasPorPaqueteRegla.value = "";
+          if (selectTipoProductoRegla) selectTipoProductoRegla.value = "";
+          renderReglasEmpaquePreview();
+        });
+      }
     </script>
 
     <style>

@@ -602,6 +602,20 @@ router.put(
 );
 
 router.get(
+  "/tipos-producto",
+  authenticate,
+  authorizeAdmin,
+  adminController.getTiposProductoAdmin
+);
+
+router.post(
+  "/tipos-producto",
+  authenticate,
+  authorizeAdmin,
+  adminController.crearTipoProductoAdmin
+);
+
+router.get(
   "/proveedores/:id/solicitudes-pendientes",
   authenticate,
   authorizeAdmin,

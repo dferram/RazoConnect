@@ -223,6 +223,17 @@ h3 {
   vertical-align: baseline;
 }
 
+ .cart-badge {
+   position: absolute;
+   top: 0.2rem;
+   right: 0.05rem;
+   width: 8px;
+   height: 8px;
+   background: #ff0000;
+   border: 1px solid #ffffff;
+   border-radius: 50%;
+ }
+
 .bg-danger {
   background-color: var(--danger-color) !important;
 }

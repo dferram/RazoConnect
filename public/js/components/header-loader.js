@@ -226,49 +226,59 @@
   }
 
   async function actualizarBadgeCarrito() {
-    const badge1 = document.getElementById("badgeCarrito");
-    const badge2 = document.getElementById("cartBadge");
-
-    if (!badge1 && !badge2) return;
+    const badge = document.getElementById("cartRedDot");
+    if (!badge) return;
 
     let totalItems = 0;
-    try {
-      const raw = localStorage.getItem("carrito");
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        const items = Array.isArray(parsed)
-          ? parsed
-          : Array.isArray(parsed?.items)
-            ? parsed.items
-            : [];
 
-        totalItems = items.reduce(
-          (sum, item) => sum + (Number(item?.cantidad) || 0),
-          0
-        );
+    const keys = [
+      "carrito",
+      "razoconnect_carrito",
+      "razoconnect_cart",
+      "razoconnect_cart_cache",
+    ];
+
+    const readItems = () => {
+      for (const key of keys) {
+        const raw = localStorage.getItem(key);
+        if (!raw) continue;
+        try {
+          const parsed = JSON.parse(raw);
+          const items = Array.isArray(parsed)
+            ? parsed
+            : Array.isArray(parsed?.items)
+              ? parsed.items
+              : [];
+          if (items.length) return items;
+        } catch (_) {
+          continue;
+        }
       }
+      return [];
+    };
+
+    try {
+      const items = readItems();
+      totalItems = items.reduce((sum, item) => {
+        const qty =
+          item?.cantidad ??
+          item?.Cantidad ??
+          item?.cantidadPaquetes ??
+          item?.CantidadPaquetes ??
+          0;
+        const parsed = Number.parseInt(qty, 10);
+        return sum + (Number.isInteger(parsed) && parsed > 0 ? parsed : 0);
+      }, 0);
     } catch (error) {
       console.error("Error leyendo carrito desde localStorage:", error);
       totalItems = 0;
     }
 
-    const apply = (el) => {
-      if (!el) return;
-      el.textContent = String(totalItems);
-      if (totalItems > 0) {
-        el.classList.remove("d-none");
-        el.style.display = "inline-block";
-      } else {
-        el.classList.add("d-none");
-        el.style.display = "none";
-      }
-    };
-
-    apply(badge1);
-    apply(badge2);
+    badge.style.display = totalItems > 0 ? "inline-block" : "none";
   }
 
   window.cargarHeaderCliente = cargarHeaderCliente;
+  window.updateCartBadge = actualizarBadgeCarrito;
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", cargarHeaderCliente);

@@ -23,6 +23,23 @@ let reglasCache = {};
 let tipoReglaChoices = null;
 let tipoProductoIdsDisponibles = new Set();
 
+function toastSuccess(message) {
+  if (typeof Swal === "undefined" || !Swal || typeof Swal.mixin !== "function") {
+    return;
+  }
+
+  Swal.mixin({
+    toast: true,
+    position: "top-end",
+    showConfirmButton: false,
+    timer: 2500,
+    timerProgressBar: true,
+  }).fire({
+    icon: "success",
+    title: message || "Operación exitosa",
+  });
+}
+
 function normalizeTipoNombre(value) {
   return String(value || "").trim().toLowerCase();
 }
@@ -279,35 +296,6 @@ async function loadReglasEmpaque() {
   renderReglas();
 }
 
-async function loadSolicitudesPendientes() {
-  if (!alertasPendientes) return;
-
-  try {
-    const { response, data } = await fetchJson(
-      `${API_BASE_URL}/admin/proveedores/${proveedorId}/solicitudes-pendientes`,
-      {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${adminToken}`,
-          "Content-Type": "application/json",
-        },
-      }
-    );
-
-    if (!response.ok || !data.success) {
-      throw new Error(data.message || "No se pudieron cargar las solicitudes pendientes");
-    }
-
-    const solicitudes = Array.isArray(data?.data?.solicitudes)
-      ? data.data.solicitudes
-      : [];
-    renderPendientes(solicitudes);
-  } catch (error) {
-    console.error("Error cargando solicitudes pendientes:", error);
-    alertasPendientes.innerHTML = "";
-  }
-}
-
 async function guardarReglaEmpaque() {
   const rawValue = selectTipoRegla ? selectTipoRegla.value : "";
   const rawTxt = String(rawValue || "").trim();
@@ -389,13 +377,8 @@ async function guardarReglaEmpaque() {
       throw new Error(data.message || "No se pudo guardar la regla");
     }
 
-    await Swal.fire({
-      icon: "info",
-      title: "Solicitud Enviada",
-      text: "Tu cambio ha sido registrado y enviado a la Bitácora para su aprobación. Los datos se actualizarán una vez confirmados.",
-      confirmButtonText: "Entendido",
-      confirmButtonColor: "#F97316",
-    });
+    await loadReglasEmpaque();
+    toastSuccess("Regla actualizada correctamente");
 
     inputCantidadRegla.value = "";
     if (selectTipoRegla) {
@@ -409,7 +392,6 @@ async function guardarReglaEmpaque() {
         selectTipoRegla.value = "";
       }
     }
-    await loadSolicitudesPendientes();
   } catch (error) {
     console.error("Error guardando regla:", error);
     await Swal.fire({
@@ -476,7 +458,11 @@ async function init() {
     await loadProveedor();
     await loadTiposProducto();
     await loadReglasEmpaque();
-    await loadSolicitudesPendientes();
+
+    if (alertasPendientes) {
+      alertasPendientes.innerHTML = "";
+      alertasPendientes.style.display = "none";
+    }
 
     proveedorData.style.display = "block";
   } catch (error) {
