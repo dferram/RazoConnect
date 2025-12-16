@@ -175,6 +175,13 @@ router.get(
   authorizeAdmin,
   adminController.getAllProductos
 );
+
+router.get(
+  "/productos/buscar-compra",
+  authenticate,
+  authorizeAdmin,
+  adminController.buscarProductosCompra
+);
 router.get(
   "/productos/:id",
   authenticate,

@@ -79,6 +79,172 @@ const subirEvidenciaRecepcionOC = async (req, res) => {
   }
 };
 
+const buscarProductosCompra = async (req, res) => {
+  try {
+    const qRaw = (req.query.q || "").toString().trim();
+    const allRaw = (req.query.all || "").toString().trim().toLowerCase();
+    const all = allRaw === "1" || allRaw === "true";
+
+    const proveedorId = Number.parseInt(req.query.proveedorId, 10);
+    const categoriaId = Number.parseInt(req.query.categoriaId, 10);
+    const medidaId = Number.parseInt(req.query.medidaId, 10);
+    const medidaRaw = (req.query.medida || "").toString().trim();
+
+    const hasProveedor = Number.isInteger(proveedorId) && proveedorId > 0;
+    const hasCategoria = Number.isInteger(categoriaId) && categoriaId > 0;
+    const hasMedidaId = Number.isInteger(medidaId) && medidaId > 0;
+    const hasMedidaStr = !!medidaRaw;
+
+    const hasQ = !!qRaw && qRaw.length >= 2;
+
+    if (!all && !hasQ && !hasProveedor && !hasCategoria && !hasMedidaId && !hasMedidaStr) {
+      return res.json({
+        success: true,
+        data: {
+          resultados: [],
+        },
+      });
+    }
+
+    const q = hasQ ? `%${qRaw}%` : null;
+
+    const reglasProveedorId = hasProveedor ? proveedorId : null;
+    const whereParts = ["pv.activo = true", "p.activo = true"];
+    const params = [reglasProveedorId];
+    let i = 2;
+
+    if (q) {
+      whereParts.push(
+        "(pv.sku ILIKE $" +
+          i +
+          " OR p.nombreproducto ILIKE $" +
+          i +
+          " OR COALESCE(pv.color_nombre, '') ILIKE $" +
+          i +
+          ")"
+      );
+      params.push(q);
+      i += 1;
+    }
+
+    if (hasProveedor) {
+      whereParts.push("p.proveedorid_default = $" + i);
+      params.push(proveedorId);
+      i += 1;
+    }
+
+    if (hasCategoria) {
+      whereParts.push("p.categoriaid = $" + i);
+      params.push(categoriaId);
+      i += 1;
+    }
+
+    if (hasMedidaId) {
+      whereParts.push("pv.medidaid = $" + i);
+      params.push(medidaId);
+      i += 1;
+    } else if (hasMedidaStr) {
+      whereParts.push("TRIM(COALESCE(pv.dimensiones, '')) = $" + i);
+      params.push(medidaRaw);
+      i += 1;
+    }
+
+    const limit = all ? 5000 : 50;
+
+    const result = await db.query(
+      `SELECT
+         pv.varianteid,
+         pv.sku,
+         pv.productoid,
+         p.nombreproducto,
+         p.sku_maestro,
+         p.proveedorid_default,
+         p.categoriaid,
+         COALESCE(regla.cantidadempaque, 1) AS cantidad_empaque,
+         pv.dimensiones,
+         m.nombremedida,
+         pv.color_nombre,
+         pv.costounitario,
+         pv.stock,
+         COALESCE(pv.url_imagen_variante, img_variante.url_imagen, img_producto.url_imagen) AS url_imagen_variante,
+         pv.piezasporpaquete
+       FROM producto_variantes pv
+       INNER JOIN productos p ON p.productoid = pv.productoid
+       LEFT JOIN medidas m ON m.medidaid = pv.medidaid
+       LEFT JOIN LATERAL (
+         SELECT pre.cantidadempaque
+         FROM proveedor_reglas_empaque pre
+         WHERE pre.proveedorid = $1
+           AND pre.tipoproductoid = COALESCE(pv.tipoproductoid, p.tipoproductoid)
+         ORDER BY pre.reglaid ASC
+         LIMIT 1
+       ) regla ON true
+       LEFT JOIN LATERAL (
+         SELECT pvi.url_imagen
+         FROM producto_variante_imagenes pvi
+         WHERE pvi.varianteid = pv.varianteid
+         ORDER BY pvi.orden ASC NULLS LAST, pvi.imagenid ASC
+         LIMIT 1
+       ) img_variante ON true
+       LEFT JOIN LATERAL (
+         SELECT pi.url_imagen
+         FROM producto_imagenes pi
+         WHERE pi.productoid = pv.productoid
+         ORDER BY pi.orden ASC NULLS LAST, pi.imagenid ASC
+         LIMIT 1
+       ) img_producto ON true
+       WHERE ${whereParts.join(" AND ")}
+       ORDER BY p.nombreproducto ASC, pv.varianteid ASC
+       LIMIT ${limit}`,
+      params
+    );
+
+    const resultados = (result.rows || []).map((row) => {
+      const nombreProducto = (row.nombreproducto || "").toString().trim();
+      const medidaLabel =
+        (row.dimensiones && row.dimensiones.toString().trim()) ||
+        (row.nombremedida && row.nombremedida.toString().trim()) ||
+        "";
+      const color = (row.color_nombre || "").toString().trim();
+      const partes = [nombreProducto];
+      if (medidaLabel) partes.push(medidaLabel);
+      if (color) partes.push(color);
+
+      return {
+        varianteid: row.varianteid,
+        sku: row.sku,
+        productoid: row.productoid ?? null,
+        proveedorid: row.proveedorid_default ?? null,
+        categoriaid: row.categoriaid ?? null,
+        nombreproducto: row.nombreproducto ?? null,
+        sku_maestro: row.sku_maestro ?? null,
+        cantidad_empaque: Number.isInteger(row.cantidad_empaque)
+          ? row.cantidad_empaque
+          : Number.parseInt(row.cantidad_empaque, 10) || 1,
+        nombre_completo: partes.join(" "),
+        medidas: medidaLabel || null,
+        costounitario: row.costounitario ? Number.parseFloat(row.costounitario) : 0,
+        url_imagen_variante: row.url_imagen_variante || null,
+        stock: row.stock ?? 0,
+        piezasporpaquete: row.piezasporpaquete ?? 1,
+      };
+    });
+
+    return res.json({
+      success: true,
+      data: {
+        resultados,
+      },
+    });
+  } catch (error) {
+    console.error("Error al buscar productos para compra:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error en el servidor",
+    });
+  }
+};
+
 const confirmarPedido = async (req, res) => {
   const client = await db.pool.connect();
 
@@ -7573,6 +7739,18 @@ const crearOrdenCompra = async (req, res) => {
           message: "piezasPorPaquete inválido",
         });
       }
+
+      const costoRaw =
+        producto.costoUnitario ?? producto.costounitario ?? producto.costo_unitario;
+      if (costoRaw !== undefined && costoRaw !== null && costoRaw !== "") {
+        const costoParsed = Number.parseFloat(costoRaw);
+        if (!Number.isFinite(costoParsed) || costoParsed < 0) {
+          return res.status(400).json({
+            success: false,
+            message: "costoUnitario inválido",
+          });
+        }
+      }
     }
 
     // Verificar que el proveedor existe
@@ -7612,7 +7790,7 @@ const crearOrdenCompra = async (req, res) => {
     for (const producto of productos) {
       // Verificar que la variante existe
       const varianteResult = await client.query(
-        `SELECT pv.VarianteID, pv.ProductoID, pv.SKU, pv.Dimensiones, pv.MedidaID, pr.NombreProducto
+        `SELECT pv.VarianteID, pv.ProductoID, pv.SKU, pv.Dimensiones, pv.MedidaID, pv.CostoUnitario, pr.NombreProducto
          FROM Producto_Variantes pv
          INNER JOIN Productos pr ON pv.ProductoID = pr.ProductoID
          WHERE pv.VarianteID = $1`,
@@ -7642,9 +7820,19 @@ const crearOrdenCompra = async (req, res) => {
         10
       );
 
+      const costoUnitario = (() => {
+        const costoRaw =
+          producto.costoUnitario ?? producto.costounitario ?? producto.costo_unitario;
+        const costoParsed = Number.parseFloat(costoRaw);
+        if (Number.isFinite(costoParsed) && costoParsed >= 0) return costoParsed;
+        const fallback = Number.parseFloat(variante.costounitario);
+        if (Number.isFinite(fallback) && fallback >= 0) return fallback;
+        return 0;
+      })();
+
       const detalleQuery = `
-        INSERT INTO DetallesOrdenCompra (OrdenCompraID, VarianteID, CantidadSolicitada, CantidadRecibida, PiezasPorPaquete)
-        VALUES ($1, $2, $3, 0, $4)
+        INSERT INTO DetallesOrdenCompra (OrdenCompraID, VarianteID, CantidadSolicitada, CantidadRecibida, PiezasPorPaquete, CostoUnitario)
+        VALUES ($1, $2, $3, 0, $4, $5)
         RETURNING DetalleOC_ID, VarianteID, CantidadSolicitada, CantidadRecibida
       `;
 
@@ -7653,6 +7841,7 @@ const crearOrdenCompra = async (req, res) => {
         variante.varianteid,
         producto.cantidadSolicitada,
         piezasPorPaquete,
+        costoUnitario,
       ]);
 
       detallesInsertados.push({
@@ -9537,6 +9726,7 @@ module.exports = {
   recepcionarMercancia,
   ajustarInventario,
   getInventarioResumen,
+  buscarProductosCompra,
   getProductoDetalle,
   getVariantesPendientesProducto,
   getAllProductos,

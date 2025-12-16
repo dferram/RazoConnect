@@ -107,7 +107,7 @@
                   <button
                     type="button"
                     class="btn btn-primary"
-                    onclick="openProductoModal()"
+                    onclick="irAProductosOC()"
                     style="padding: 0.5rem 1rem"
                   >
                     ➕ Agregar Producto
@@ -132,18 +132,49 @@
                     <table class="admin-table">
                       <thead>
                         <tr>
-                          <th>Producto</th>
-                          <th>SKU</th>
-                          <th>Stock Actual</th>
-                          <th>Cantidad Solicitada</th>
-                          <th>Empaque</th>
-                          <th>Acciones</th>
+                          <th>Imagen</th>
+                          <th>Producto / SKU</th>
+                          <th style="width: 170px;">Costo Unitario</th>
+                          <th style="width: 140px;">Paquetes</th>
+                          <th style="width: 160px;">Total Piezas</th>
+                          <th style="width: 160px;">Subtotal</th>
+                          <th style="width: 140px;">Acciones</th>
                         </tr>
                       </thead>
                       <tbody id="productosTableBody">
                         <!-- Productos seleccionados aparecerán aquí -->
                       </tbody>
                     </table>
+
+                    <div
+                      style="
+                        display: flex;
+                        justify-content: flex-end;
+                        padding: 1rem 0;
+                        border-top: 1px solid var(--razo-gray-light);
+                      "
+                    >
+                      <div
+                        style="
+                          background: #fff8f0;
+                          border: 1px solid #fed7aa;
+                          border-radius: 0.75rem;
+                          padding: 0.75rem 1rem;
+                          min-width: 260px;
+                          text-align: right;
+                        "
+                      >
+                        <div style="font-size: 0.875rem; color: var(--razo-gray-warm);">
+                          Total General
+                        </div>
+                        <div
+                          id="ocTotalGeneral"
+                          style="font-size: 1.25rem; font-weight: 800; color: var(--razo-orange);"
+                        >
+                          $0.00
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -250,8 +281,9 @@
                 type="text"
                 id="buscarProducto"
                 class="form-input"
-                placeholder="Buscar por nombre o SKU..."
-                oninput="filtrarProductos()"
+                placeholder="Buscar por SKU, Nombre o Color..."
+                oninput="onBuscarCompraInput()"
+                style="padding: 0.85rem 1rem; font-size: 1rem;"
               />
             </div>
 
@@ -270,7 +302,9 @@
                 border-radius: 0.5rem;
               "
             >
-              <!-- Los productos se cargarán aquí dinámicamente -->
+              <div style="padding: 1.25rem; color: var(--razo-gray-warm);">
+                Escribe para buscar productos.
+              </div>
             </div>
           </div>
         </div>
@@ -289,10 +323,56 @@
         window.location.href = "/login.html";
       }
 
-      let todosLosProductos = [];
-      let productosSeleccionados = [];
-      const variantesPorProducto = new Map();
+      const OC_ITEMS_STORAGE_KEY = "razoconnect_oc_items";
+
+      let itemsOrdenCompra = [];
+      let resultadosCompra = [];
       let reglasEmpaqueProveedor = {};
+      let buscarCompraDebounce = null;
+
+      function cargarItemsDesdeSessionStorage() {
+        try {
+          const raw = sessionStorage.getItem(OC_ITEMS_STORAGE_KEY);
+          const parsed = raw ? JSON.parse(raw) : [];
+          if (Array.isArray(parsed)) {
+            itemsOrdenCompra = parsed.map((it) => {
+              const reglaEmpaque = Number.parseInt(it.reglaEmpaque, 10);
+              const regla = Number.isInteger(reglaEmpaque) && reglaEmpaque > 0 ? reglaEmpaque : 1;
+
+              const paquetesRaw = it.paquetes ?? it.cantidad ?? 1;
+              const paquetesParsed = Number.parseInt(paquetesRaw, 10);
+              const paquetes = Number.isInteger(paquetesParsed) && paquetesParsed > 0 ? paquetesParsed : 1;
+
+              return {
+                ...it,
+                reglaEmpaque: regla,
+                paquetes,
+              };
+            });
+          }
+        } catch (e) {
+          // silencioso
+        }
+      }
+
+      function guardarItemsEnSessionStorage() {
+        try {
+          sessionStorage.setItem(OC_ITEMS_STORAGE_KEY, JSON.stringify(itemsOrdenCompra || []));
+        } catch (e) {
+          // silencioso
+        }
+      }
+
+      function irAProductosOC() {
+        guardarItemsEnSessionStorage();
+        const proveedorId = document.getElementById("proveedorId")?.value;
+        if (!proveedorId) {
+          showToast("Debe seleccionar un proveedor para aplicar reglas de empaque", "warning");
+          return;
+        }
+        const qs = proveedorId ? `?proveedorId=${encodeURIComponent(proveedorId)}` : "";
+        window.location.href = `/admin-productos-oc.html${qs}`;
+      }
 
       function obtenerEtiquetaVariante(vari) {
         if (!vari) return "Sin medida";
@@ -413,320 +493,28 @@
         }
       }
 
-      // Cargar productos
-      async function loadProductos() {
-        try {
-          document.getElementById("loadingProductos").style.display = "flex";
-
-          const response = await fetch(`${API_BASE_URL}/admin/productos`, {
-            method: "GET",
-            headers: {
-              Authorization: `Bearer ${adminToken}`,
-              "Content-Type": "application/json",
-            },
-          });
-
-          if (!response.ok) throw new Error("Error al cargar productos");
-
-          const data = await response.json();
-          if (data.success) {
-            todosLosProductos = (data.data.productos || []).map((producto) => ({
-              ...producto,
-              variantes: Array.isArray(producto.variantes)
-                ? producto.variantes.map((v) => ({
-                    ...v,
-                    sku: v.sku || "Sin SKU",
-                    dimensiones: v.dimensiones || "",
-                    medidaNombre: v.medidaNombre || "",
-                  }))
-                : [],
-            }));
-
-            variantesPorProducto.clear();
-            todosLosProductos.forEach((producto) => {
-              if (Array.isArray(producto.variantes)) {
-                variantesPorProducto.set(
-                  producto.productoid,
-                  producto.variantes
-                );
-              }
-            });
-
-            mostrarProductos(todosLosProductos);
-          }
-        } catch (error) {
-          console.error("Error loading productos:", error);
-          showToast("Error al cargar productos", "error");
-        } finally {
-          document.getElementById("loadingProductos").style.display = "none";
-        }
+      function formatMoney(value) {
+        const n = Number(value);
+        const safe = Number.isFinite(n) ? n : 0;
+        return new Intl.NumberFormat("es-MX", {
+          style: "currency",
+          currency: "MXN",
+        }).format(safe);
       }
 
-      // Mostrar productos en el modal
-      function mostrarProductos(productos) {
-        const listaProductos = document.getElementById("listaProductos");
+      function calcularTotalesOrdenCompra() {
+        const total = (itemsOrdenCompra || []).reduce((acc, item) => {
+          const costo = Number.parseFloat(item.costounitario);
+          const paquetes = Number.parseInt(item.paquetes, 10);
+          const regla = Number.parseInt(item.reglaEmpaque, 10);
+          const c = Number.isFinite(costo) ? costo : 0;
+          const p = Number.isInteger(paquetes) && paquetes > 0 ? paquetes : 0;
+          const r = Number.isInteger(regla) && regla > 0 ? regla : 1;
+          return acc + c * (p * r);
+        }, 0);
 
-        if (productos.length === 0) {
-          listaProductos.innerHTML =
-            '<div style="padding: 2rem; text-align: center; color: var(--razo-gray-warm);">No se encontraron productos</div>';
-          return;
-        }
-
-        listaProductos.innerHTML = productos
-          .map((producto) => {
-            const variantes =
-              variantesPorProducto.get(producto.productoid) || [];
-            const vecesSeleccionado = productosSeleccionados.filter(
-              (p) => p.productoId === producto.productoid
-            ).length;
-            const haySeleccion = vecesSeleccionado > 0;
-            const primeraVariante = variantes[0] || {};
-            const skuListado =
-              primeraVariante.sku ||
-              producto.varianteDestacada?.sku ||
-              "Sin SKU";
-            const stockListado = Number.isFinite(primeraVariante.stock)
-              ? primeraVariante.stock
-              : Number.isFinite(producto.stockTotal)
-              ? producto.stockTotal
-              : 0;
-            const stockClass = stockListado < 10 ? "text-danger" : "";
-            const infoSeleccion = haySeleccion
-              ? `<div style="font-size: 0.75rem; color: var(--razo-gray-warm); margin-top: 0.35rem;">${vecesSeleccionado} variante(s) agregadas a la orden</div>`
-              : "";
-            const buttonLabel = haySeleccion
-              ? "➕ Agregar otra medida"
-              : "➕ Agregar";
-
-            const imagenUrl =
-              producto.imagenUrl || "/images/default-product.png";
-            const imagenAlt =
-              producto.imagenAlt || producto.nombreproducto || "Producto";
-
-            const tipoIdRaw =
-              producto.TipoProductoID !== undefined
-                ? producto.TipoProductoID
-                : producto.tipoProductoId;
-            const tipoId = Number.parseInt(tipoIdRaw, 10);
-            const suggested =
-              Number.isInteger(tipoId) && reglasEmpaqueProveedor
-                ? Number.parseInt(reglasEmpaqueProveedor[String(tipoId)], 10)
-                : NaN;
-            const valorEmpaque =
-              Number.isFinite(suggested) && suggested > 0 ? suggested : 1;
-            const opcionesEmpaque = (() => {
-              const base = [1, 6, 12, 24, 50];
-              const clean = base.filter((n) => Number.isInteger(n) && n > 0);
-              if (Number.isInteger(valorEmpaque) && valorEmpaque > 0 && !clean.includes(valorEmpaque)) {
-                clean.push(valorEmpaque);
-              }
-              return clean.sort((a, b) => a - b);
-            })();
-            const opcionesEmpaqueHtml = opcionesEmpaque
-              .map(
-                (n) =>
-                  `<option value="${n}" ${valorEmpaque === n ? "selected" : ""}>${n}</option>`
-              )
-              .join("");
-            const tipoLabel = (producto.tipoProducto || "").toString().trim();
-            const hintText = tipoLabel
-              ? `Sugerido por tipo: ${tipoLabel}`
-              : "Empaque sugerido por tipo de producto";
-
-            return `
-          <div style="padding: 1rem; border-bottom: 1px solid var(--razo-gray-light); display: flex; justify-content: space-between; align-items: center; ${
-            haySeleccion ? "background-color: #f9f9f9;" : ""
-          }">
-            <div style="display: flex; align-items: center; gap: 0.75rem; flex: 1;">
-              <div class="oc-product-thumb-wrapper">
-                <img
-                  src="${imagenUrl}"
-                  alt="${imagenAlt}"
-                  class="oc-product-thumb"
-                  loading="lazy"
-                  onerror="this.src='/images/default-product.png'; this.onerror=null;"
-                />
-              </div>
-              <div>
-                <div style="font-weight: 600; color: var(--razo-gray-dark);">${
-                  producto.nombreproducto
-                }</div>
-                <div style="font-size: 0.875rem; color: var(--razo-gray-warm); margin-top: 0.25rem;">
-                  <span>Variantes disponibles: <strong>${
-                    variantes.length
-                  }</strong></span> • 
-                  <span class="${stockClass}">Stock de referencia: <strong>${stockListado}</strong> paquetes</span>
-                </div>
-                ${infoSeleccion}
-              </div>
-            </div>
-
-            <div style="display: grid; grid-template-columns: 170px 190px; gap: 0.75rem; align-items: center; margin-right: 1rem;">
-              <div class="form-group" style="margin: 0;">
-                <label for="inputCantidadPaquetes-${producto.productoid}" class="form-label" style="font-size: 0.75rem; margin-bottom: 0.25rem;">Cantidad (paquetes)</label>
-                <input
-                  type="number"
-                  id="inputCantidadPaquetes-${producto.productoid}"
-                  class="form-input"
-                  min="1"
-                  value="1"
-                  style="padding: 0.5rem; height: 42px;"
-                />
-              </div>
-
-              <div class="form-group" style="margin: 0;">
-                <label for="inputPiezasPaquete-${producto.productoid}" class="form-label" style="font-size: 0.75rem; margin-bottom: 0.25rem;">Piezas por Paquete</label>
-                <select
-                  id="inputPiezasPaquete-${producto.productoid}"
-                  class="form-input form-select"
-                  style="padding: 0.5rem; height: 42px;"
-                >
-                  ${opcionesEmpaqueHtml}
-                </select>
-                <div
-                  id="empaqueHint-${producto.productoid}"
-                  style="
-                    margin-top: 0.25rem;
-                    font-size: 0.75rem;
-                    color: #9a3412;
-                    font-weight: 700;
-                    min-height: 1rem;
-                    ${Number.isFinite(suggested) && suggested > 0 ? "" : "opacity: 0.6;"}
-                  "
-                >
-                  ${hintText}
-                </div>
-              </div>
-            </div>
-
-            <button 
-              type="button"
-              class="btn btn-primary" 
-              onclick="seleccionarProducto(${producto.productoid})"
-              style="padding: 0.5rem 1rem; font-size: 0.875rem;">
-              ${buttonLabel}
-            </button>
-          </div>
-        `;
-          })
-          .join("");
-      }
-
-      // Filtrar productos
-      function filtrarProductos() {
-        const busqueda = document
-          .getElementById("buscarProducto")
-          .value.toLowerCase();
-        if (!busqueda) {
-          mostrarProductos(todosLosProductos);
-          return;
-        }
-
-        const productosFiltrados = todosLosProductos.filter((producto) => {
-          const coincideNombre = producto.nombreproducto
-            .toLowerCase()
-            .includes(busqueda);
-          const variantes = variantesPorProducto.get(producto.productoid) || [];
-          const coincideVariante = variantes.some((vari) => {
-            const etiqueta = (
-              obtenerEtiquetaVariante(vari) || ""
-            ).toLowerCase();
-            const sku = (vari.sku || "").toLowerCase();
-            return etiqueta.includes(busqueda) || sku.includes(busqueda);
-          });
-          return coincideNombre || coincideVariante;
-        });
-
-        mostrarProductos(productosFiltrados);
-      }
-
-      // Seleccionar producto
-      function seleccionarProducto(productoId) {
-        const proveedorIdActual = document.getElementById("proveedorId")?.value;
-        if (!proveedorIdActual) {
-          showToast("Debe seleccionar un proveedor antes de agregar productos", "warning");
-          return;
-        }
-
-        const producto = todosLosProductos.find(
-          (p) => p.productoid === productoId
-        );
-        if (!producto) return;
-
-        const piezasSelect = document.getElementById(
-          `inputPiezasPaquete-${productoId}`
-        );
-        const cantidadInput = document.getElementById(
-          `inputCantidadPaquetes-${productoId}`
-        );
-
-        const tipoIdRaw =
-          producto.TipoProductoID !== undefined
-            ? producto.TipoProductoID
-            : producto.tipoProductoId;
-        const tipoId = Number.parseInt(tipoIdRaw, 10);
-        const suggested =
-          Number.isInteger(tipoId) && reglasEmpaqueProveedor
-            ? Number.parseInt(reglasEmpaqueProveedor[String(tipoId)], 10)
-            : NaN;
-        const valorEmpaqueDefault =
-          Number.isFinite(suggested) && suggested > 0 ? suggested : 1;
-
-        const variantes = variantesPorProducto.get(producto.productoid) || [];
-
-        if (variantes.length === 0) {
-          showToast("Este producto no tiene variantes registradas.", "warning");
-          return;
-        }
-
-        const variantesUsadas = productosSeleccionados
-          .filter((p) => p.productoId === producto.productoid)
-          .map((p) => p.varianteSeleccionada);
-
-        const varianteInicial =
-          variantes.find(
-            (vari) => !variantesUsadas.includes(vari.varianteId)
-          ) || variantes[0];
-
-        if (!varianteInicial) {
-          showToast("No hay variantes disponibles para agregar.", "warning");
-          return;
-        }
-
-        const cantidadSolicitada = (() => {
-          const raw = cantidadInput ? cantidadInput.value : "1";
-          const parsed = Number.parseInt(raw, 10);
-          if (!Number.isInteger(parsed) || parsed <= 0) return 1;
-          return parsed;
-        })();
-
-        const piezasPorPaquete = (() => {
-          const raw = piezasSelect ? piezasSelect.value : String(valorEmpaqueDefault);
-          const parsed = Number.parseInt(raw, 10);
-          if (!Number.isInteger(parsed) || parsed <= 0) return 1;
-          return parsed;
-        })();
-
-        // Agregar a la lista de seleccionados
-        productosSeleccionados.push({
-          productoId: producto.productoid,
-          nombreProducto: producto.nombreproducto,
-          variantes,
-          varianteSeleccionada: varianteInicial.varianteId,
-          sku: varianteInicial.sku || "Sin SKU",
-          etiquetaMedida: obtenerEtiquetaVariante(varianteInicial),
-          medidaId: varianteInicial.medidaId || null,
-          dimensiones: varianteInicial.dimensiones || "",
-          stockActual: Number.isFinite(varianteInicial.stock)
-            ? varianteInicial.stock
-            : 0,
-          cantidadSolicitada,
-          piezasPorPaquete,
-        });
-
-        actualizarTablaProductos();
-        closeProductoModal();
-        showToast(`${producto.nombreproducto} agregado a la orden`, "success");
+        const totalEl = document.getElementById("ocTotalGeneral");
+        if (totalEl) totalEl.textContent = formatMoney(total);
       }
 
       // Actualizar tabla de productos seleccionados
@@ -736,86 +524,90 @@
         const productosTableBody =
           document.getElementById("productosTableBody");
 
-        if (productosSeleccionados.length === 0) {
+        if (itemsOrdenCompra.length === 0) {
           emptyProductos.style.display = "block";
           productosTable.style.display = "none";
+          calcularTotalesOrdenCompra();
           return;
         }
 
         emptyProductos.style.display = "none";
         productosTable.style.display = "block";
 
-        productosTableBody.innerHTML = productosSeleccionados
-          .map((producto, index) => {
-            const variantesOptions = (producto.variantes || [])
-              .map((vari) => {
-                const selected =
-                  vari.varianteId === producto.varianteSeleccionada
-                    ? "selected"
-                    : "";
-                const etiqueta = obtenerEtiquetaVariante(vari);
-                return `<option value="${vari.varianteId}" data-sku="${
-                  vari.sku || ""
-                }" data-stock="${
-                  Number.isFinite(vari.stock) ? vari.stock : 0
-                }" data-medida="${vari.medidaId ?? ""}" data-dimensiones="${
-                  vari.dimensiones || ""
-                }" data-label="${etiqueta}" ${selected}>${etiqueta}</option>`;
-              })
-              .join("");
+        productosTableBody.innerHTML = itemsOrdenCompra
+          .map((item, index) => {
+            const costo = Number.parseFloat(item.costounitario);
+            const paquetes = Number.parseInt(item.paquetes, 10);
+            const regla = Number.parseInt(item.reglaEmpaque, 10);
+            const c = Number.isFinite(costo) ? costo : 0;
+            const p = Number.isInteger(paquetes) && paquetes > 0 ? paquetes : 1;
+            const r = Number.isInteger(regla) && regla > 0 ? regla : 1;
+            const totalPiezas = p * r;
+            const subtotal = c * totalPiezas;
+
+            const img = item.url_imagen_variante || "/images/default-product.png";
+            const nombre = item.nombre_completo || "(Sin nombre)";
+            const sku = item.sku || "Sin SKU";
+            const stock = Number.isFinite(Number(item.stock)) ? Number(item.stock) : 0;
 
             return `
           <tr>
-            <td>
-              <strong>${producto.nombreProducto}</strong>
-              <div style="margin-top: 0.35rem;">
-                <label style="display: block; font-size: 0.75rem; color: var(--razo-gray-warm); margin-bottom: 0.25rem;">Variante / Medida</label>
-                <select class="form-input" onchange="cambiarVariante(${index}, this.value, this.selectedOptions[0])">
-                  ${variantesOptions}
-                </select>
+            <td style="width: 70px;">
+              <div class="oc-product-thumb-wrapper" style="width: 56px; height: 56px;">
+                <img
+                  src="${img}"
+                  alt="${nombre}"
+                  class="oc-product-thumb"
+                  loading="lazy"
+                  onerror="this.src='/images/default-product.png'; this.onerror=null;"
+                />
               </div>
             </td>
             <td>
-              <div style="font-weight: 600;">${
-                producto.etiquetaMedida || "Sin medida"
-              }</div>
-              <div style="font-size: 0.75rem; color: var(--razo-gray-warm);">SKU: <code style="background: #f0f0f0; padding: 0.15rem 0.35rem; border-radius: 0.25rem;">${
-                producto.sku
-              }</code></div>
+              <div style="font-weight: 700; color: var(--razo-gray-dark);">${nombre}</div>
+              <div style="font-size: 0.8rem; color: var(--razo-gray-warm); margin-top: 0.25rem;">
+                SKU: <code style="background: #f0f0f0; padding: 0.15rem 0.35rem; border-radius: 0.25rem;">${sku}</code>
+                <span style="margin-left: 0.5rem;">Stock: <strong>${stock}</strong></span>
+              </div>
             </td>
-            <td style="text-align: center;">${producto.stockActual} paq.</td>
-            <td style="width: 150px;">
-              <input 
-                type="number" 
-                class="form-input" 
-                min="1" 
-                value="${producto.cantidadSolicitada}"
-                onchange="actualizarCantidad(${index}, this.value)"
+            <td>
+              <input
+                type="number"
+                class="form-input"
+                min="0"
+                step="0.01"
+                value="${c.toFixed(2)}"
+                onchange="actualizarCosto(${index}, this.value)"
                 style="padding: 0.5rem;"
-              >
-            </td>
-            <td style="width: 170px;">
-              <select class="form-input form-select" onchange="actualizarEmpaque(${index}, this.value)">
-                ${[1, 6, 12, 24, 50]
-                  .map((n) =>
-                    `<option value="${n}" ${
-                      Number.parseInt(producto.piezasPorPaquete, 10) === n
-                        ? "selected"
-                        : ""
-                    }>${n}</option>`
-                  )
-                  .join("")}
-              </select>
-              <div style="font-size: 0.75rem; color: var(--razo-gray-warm); margin-top: 0.25rem;">
-                ${producto.piezasPorPaquete > 1 ? `${producto.piezasPorPaquete} pzas/paquete` : "Pieza individual"}
-              </div>
+              />
             </td>
             <td>
-              <button 
+              <input
+                type="number"
+                class="form-input"
+                min="1"
+                step="1"
+                value="${p}"
+                onchange="actualizarPaquetes(${index}, this.value)"
+                style="padding: 0.5rem;"
+              />
+            </td>
+            <td style="font-weight: 800; color: var(--razo-gray-dark);">
+              ${totalPiezas}
+              <div style="font-size: 0.75rem; color: var(--razo-gray-warm); font-weight: 600; margin-top: 0.15rem;">
+                (${p} x ${r})
+              </div>
+            </td>
+            <td style="font-weight: 800; color: var(--razo-gray-dark);">
+              ${formatMoney(subtotal)}
+            </td>
+            <td>
+              <button
                 type="button"
-                class="btn btn-danger" 
+                class="btn btn-danger"
                 onclick="eliminarProducto(${index})"
-                style="padding: 0.5rem 1rem; font-size: 0.875rem;">
+                style="padding: 0.5rem 1rem; font-size: 0.875rem;"
+              >
                 🗑️ Eliminar
               </button>
             </td>
@@ -823,68 +615,230 @@
         `;
           })
           .join("");
+
+        calcularTotalesOrdenCompra();
       }
 
-      function cambiarVariante(index, varianteId, optionEl) {
-        const varianteIdNumero = parseInt(varianteId, 10);
-        if (!Number.isInteger(varianteIdNumero)) {
-          showToast("Selecciona una variante válida", "warning");
+      function actualizarCosto(index, nuevoCosto) {
+        const costo = Number.parseFloat(nuevoCosto);
+        if (!Number.isFinite(costo) || costo < 0) {
+          showToast("El costo debe ser un número válido", "warning");
+          actualizarTablaProductos();
           return;
         }
-
-        const producto = productosSeleccionados[index];
-        producto.varianteSeleccionada = varianteIdNumero;
-        producto.sku = optionEl.dataset.sku || "Sin SKU";
-        producto.stockActual = Number.isFinite(
-          parseInt(optionEl.dataset.stock, 10)
-        )
-          ? parseInt(optionEl.dataset.stock, 10)
-          : 0;
-        producto.medidaId = optionEl.dataset.medida
-          ? parseInt(optionEl.dataset.medida, 10)
-          : null;
-        producto.dimensiones = optionEl.dataset.dimensiones || "";
-        producto.etiquetaMedida = optionEl.dataset.label || "Sin medida";
-
+        itemsOrdenCompra[index].costounitario = costo;
+        guardarItemsEnSessionStorage();
         actualizarTablaProductos();
       }
 
-      function actualizarEmpaque(index, value) {
-        const parsed = Number.parseInt(value, 10);
-        if (!Number.isInteger(parsed) || parsed <= 0) {
-          showToast("Selecciona un empaque válido", "warning");
-          return;
-        }
-        const producto = productosSeleccionados[index];
-        if (!producto) return;
-        producto.piezasPorPaquete = parsed;
-        actualizarTablaProductos();
-      }
-
-      // Actualizar cantidad de un producto
-      function actualizarCantidad(index, nuevaCantidad) {
-        const cantidad = parseInt(nuevaCantidad);
-        if (cantidad > 0) {
-          productosSeleccionados[index].cantidadSolicitada = cantidad;
+      // Actualizar paquetes de un producto
+      function actualizarPaquetes(index, nuevaCantidad) {
+        const cantidad = Number.parseInt(nuevaCantidad, 10);
+        if (Number.isInteger(cantidad) && cantidad > 0) {
+          itemsOrdenCompra[index].paquetes = cantidad;
+          guardarItemsEnSessionStorage();
+          actualizarTablaProductos();
         } else {
-          showToast("La cantidad debe ser mayor a 0", "error");
+          showToast("Los paquetes deben ser un entero mayor a 0", "error");
           actualizarTablaProductos();
         }
       }
 
       // Eliminar producto
       function eliminarProducto(index) {
-        const producto = productosSeleccionados[index];
-        productosSeleccionados.splice(index, 1);
+        const producto = itemsOrdenCompra[index];
+        itemsOrdenCompra.splice(index, 1);
+        guardarItemsEnSessionStorage();
         actualizarTablaProductos();
-        showToast(`${producto.nombreProducto} eliminado de la orden`, "info");
+        showToast(`${producto?.nombre_completo || "Producto"} eliminado de la orden`, "info");
+      }
+
+      function renderResultadosCompra() {
+        const listaProductos = document.getElementById("listaProductos");
+        if (!Array.isArray(resultadosCompra) || resultadosCompra.length === 0) {
+          listaProductos.innerHTML =
+            '<div style="padding: 1.25rem; text-align: center; color: var(--razo-gray-warm);">No se encontraron productos</div>';
+          return;
+        }
+
+        listaProductos.innerHTML = resultadosCompra
+          .map((r) => {
+            const img = r.url_imagen_variante || "/images/default-product.png";
+            const nombre = r.nombre_completo || "(Sin nombre)";
+            const sku = r.sku || "Sin SKU";
+            const stock = Number.isFinite(Number(r.stock)) ? Number(r.stock) : 0;
+            const costo = Number.isFinite(Number(r.costounitario))
+              ? Number(r.costounitario)
+              : 0;
+
+            const stockClass = stock <= 0 ? "text-danger" : "";
+
+            return `
+              <div
+                style="
+                  padding: 0.9rem 1rem;
+                  border-bottom: 1px solid var(--razo-gray-light);
+                  display: flex;
+                  align-items: center;
+                  gap: 0.9rem;
+                "
+              >
+                <div class="oc-product-thumb-wrapper" style="width: 56px; height: 56px;">
+                  <img
+                    src="${img}"
+                    alt="${nombre}"
+                    class="oc-product-thumb"
+                    loading="lazy"
+                    onerror="this.src='/images/default-product.png'; this.onerror=null;"
+                  />
+                </div>
+
+                <div style="flex: 1; min-width: 0;">
+                  <div style="font-weight: 800; color: var(--razo-gray-dark); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                    ${nombre}
+                  </div>
+                  <div style="font-size: 0.8rem; color: var(--razo-gray-warm); margin-top: 0.25rem;">
+                    SKU: <code style="background: #f0f0f0; padding: 0.12rem 0.35rem; border-radius: 0.25rem;">${sku}</code>
+                    <span class="${stockClass}" style="margin-left: 0.5rem;">Stock: <strong>${stock}</strong></span>
+                    <span style="margin-left: 0.5rem;">Costo: <strong>${formatMoney(costo)}</strong></span>
+                  </div>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                  <input
+                    type="number"
+                    id="modalQty-${r.varianteid}"
+                    class="form-input"
+                    min="1"
+                    value="1"
+                    style="width: 110px; padding: 0.5rem;"
+                  />
+                  <button
+                    type="button"
+                    class="btn btn-primary"
+                    onclick="agregarDesdeModal(${r.varianteid})"
+                    style="padding: 0.5rem 1rem; font-size: 0.875rem;"
+                  >
+                    Agregar
+                  </button>
+                </div>
+              </div>
+            `;
+          })
+          .join("");
+      }
+
+      async function buscarProductosCompra(termino) {
+        const listaProductos = document.getElementById("listaProductos");
+        if (!termino || termino.trim().length < 2) {
+          resultadosCompra = [];
+          listaProductos.innerHTML =
+            '<div style="padding: 1.25rem; color: var(--razo-gray-warm);">Escribe para buscar productos.</div>';
+          return;
+        }
+
+        document.getElementById("loadingProductos").style.display = "flex";
+
+        try {
+          const response = await fetch(
+            `${API_BASE_URL}/admin/productos/buscar-compra?q=${encodeURIComponent(
+              termino.trim()
+            )}`,
+            {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${adminToken}`,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+
+          const data = await response.json();
+          if (!response.ok || !data.success) {
+            resultadosCompra = [];
+            listaProductos.innerHTML =
+              '<div style="padding: 1.25rem; text-align: center; color: var(--razo-gray-warm);">No se pudo cargar la búsqueda</div>';
+            return;
+          }
+
+          resultadosCompra = Array.isArray(data?.data?.resultados)
+            ? data.data.resultados
+            : [];
+          renderResultadosCompra();
+        } catch (error) {
+          console.error("Error buscando productos:", error);
+          resultadosCompra = [];
+          listaProductos.innerHTML =
+            '<div style="padding: 1.25rem; text-align: center; color: var(--razo-gray-warm);">Error al conectar con el servidor</div>';
+        } finally {
+          document.getElementById("loadingProductos").style.display = "none";
+        }
+      }
+
+      function onBuscarCompraInput() {
+        const term = document.getElementById("buscarProducto")?.value || "";
+        if (buscarCompraDebounce) clearTimeout(buscarCompraDebounce);
+        buscarCompraDebounce = setTimeout(() => {
+          buscarProductosCompra(term);
+        }, 250);
+      }
+
+      function agregarDesdeModal(varianteId) {
+        const proveedorIdActual = document.getElementById("proveedorId")?.value;
+        if (!proveedorIdActual) {
+          showToast("Debe seleccionar un proveedor antes de agregar productos", "warning");
+          return;
+        }
+
+        const r = (resultadosCompra || []).find((x) => x.varianteid === varianteId);
+        if (!r) return;
+
+        const qtyEl = document.getElementById(`modalQty-${varianteId}`);
+        const qtyRaw = qtyEl ? qtyEl.value : "1";
+        const qty = Number.parseInt(qtyRaw, 10);
+        const cantidad = Number.isInteger(qty) && qty > 0 ? qty : 1;
+
+        const existenteIndex = itemsOrdenCompra.findIndex(
+          (it) => it.varianteid === r.varianteid
+        );
+
+        if (existenteIndex >= 0) {
+          const prev = Number.parseInt(itemsOrdenCompra[existenteIndex].cantidad, 10);
+          itemsOrdenCompra[existenteIndex].cantidad =
+            (Number.isInteger(prev) && prev > 0 ? prev : 0) + cantidad;
+        } else {
+          itemsOrdenCompra.push({
+            varianteid: r.varianteid,
+            sku: r.sku,
+            nombre_completo: r.nombre_completo,
+            costounitario: Number.isFinite(Number(r.costounitario))
+              ? Number(r.costounitario)
+              : 0,
+            url_imagen_variante: r.url_imagen_variante,
+            stock: r.stock,
+            cantidad,
+          });
+        }
+
+        guardarItemsEnSessionStorage();
+        actualizarTablaProductos();
+        showToast("Producto agregado a la orden", "success");
       }
 
       // Abrir modal de productos
       function openProductoModal() {
         document.getElementById("buscarProducto").value = "";
-        loadProductos();
+        resultadosCompra = [];
+        document.getElementById("listaProductos").innerHTML =
+          '<div style="padding: 1.25rem; color: var(--razo-gray-warm);">Escribe para buscar productos.</div>';
         document.getElementById("productoModal").style.display = "flex";
+        setTimeout(() => {
+          try {
+            document.getElementById("buscarProducto")?.focus();
+          } catch (e) {
+            // silencioso
+          }
+        }, 50);
       }
 
       // Cerrar modal de productos
@@ -913,7 +867,7 @@
             return;
           }
 
-          if (productosSeleccionados.length === 0) {
+          if (itemsOrdenCompra.length === 0) {
             showToast("Debe agregar al menos un producto", "error");
             return;
           }
@@ -939,12 +893,11 @@
                 body: JSON.stringify({
                   proveedorId: parseInt(proveedorId),
                   fechaEntregaEsperada,
-                  productos: productosSeleccionados.map((p) => ({
-                    productoId: p.productoId,
-                    varianteId: p.varianteSeleccionada,
-                    medidaId: p.medidaId || null,
-                    cantidadSolicitada: p.cantidadSolicitada,
-                    piezasPorPaquete: p.piezasPorPaquete || 1,
+                  productos: itemsOrdenCompra.map((p) => ({
+                    varianteId: p.varianteid,
+                    cantidadSolicitada: Number.parseInt(p.paquetes, 10) || 1,
+                    piezasPorPaquete: Number.parseInt(p.reglaEmpaque, 10) || 1,
+                    costoUnitario: p.costounitario,
                   })),
                 }),
               }
@@ -1011,12 +964,16 @@
       verifyAndLoadAdmin();
       loadProveedores();
 
+      cargarItemsDesdeSessionStorage();
+      actualizarTablaProductos();
+
       const proveedorSelect = document.getElementById("proveedorId");
       if (proveedorSelect) {
         proveedorSelect.addEventListener("change", async (e) => {
           const value = e.target.value;
           await loadReglasEmpaqueProveedor(value);
-          mostrarProductos(todosLosProductos);
+          guardarItemsEnSessionStorage();
+          actualizarTablaProductos();
         });
       }
     </script>
