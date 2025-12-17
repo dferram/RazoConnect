@@ -756,6 +756,14 @@ router.post(
 );
 
 router.post(
+  "/recepcion-masiva",
+  authenticate,
+  authorizeAdmin,
+  uploadComprobante.single("archivoRemision"),
+  adminController.recepcionMasivaOrdenCompra
+);
+
+router.post(
   "/ordenes-compra/recibir/evidencia",
   authenticate,
   authorizeAdmin,

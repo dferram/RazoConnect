@@ -2,7 +2,7 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 
-const uploadDir = path.join(__dirname, "..", "public", "uploads");
+const uploadDir = path.join(__dirname, "..", "public", "uploads", "comprobantes");
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
@@ -12,14 +12,15 @@ const storage = multer.diskStorage({
     cb(null, uploadDir);
   },
   filename: function (req, file, cb) {
-    const uniqueName = Date.now() + "-" + file.originalname;
-    cb(null, uniqueName);
+    const ext = path.extname(file.originalname || "").toLowerCase();
+    const safeExt = ext && ext.length <= 10 ? ext : "";
+    cb(null, `${Date.now()}${safeExt}`);
   },
 });
 
 const fileFilter = (req, file, cb) => {
-  const allowedExtensions = /jpeg|jpg|png|webp|pdf/;
-  const allowedMimeTypes = /^(image\/(jpeg|jpg|png|webp)|application\/pdf)$/;
+  const allowedExtensions = /jpeg|jpg|png|pdf/;
+  const allowedMimeTypes = /^(image\/(jpeg|jpg|png)|application\/pdf)$/;
 
   const extname = allowedExtensions.test(
     path.extname(file.originalname).toLowerCase()
@@ -32,7 +33,7 @@ const fileFilter = (req, file, cb) => {
 
   cb(
     new Error(
-      "Solo se permiten comprobantes en formato PDF o imagen (JPG, PNG, JPEG, WEBP)"
+      "Solo se permiten comprobantes en formato PDF o imagen (JPG, PNG, JPEG)"
     ),
     false
   );

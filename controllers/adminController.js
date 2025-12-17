@@ -311,6 +311,336 @@ const registrarPagoCuentaPorPagar = async (req, res) => {
   }
 };
 
+const recepcionMasivaOrdenCompra = async (req, res) => {
+  const client = await db.pool.connect();
+
+  const assignCxpEtiqueta = async (cxpId, nombreLike) => {
+    if (!Number.isInteger(cxpId) || cxpId <= 0) return;
+    const query = `
+      SELECT etiqueta_id
+      FROM cat_cxp_etiquetas
+      WHERE activo = true AND nombre ILIKE $1
+      ORDER BY etiqueta_id ASC
+      LIMIT 1
+    `;
+
+    const etiquetaRes = await client.query(query, [nombreLike]);
+    if (!etiquetaRes.rows.length) return;
+
+    const etiquetaId = Number.parseInt(etiquetaRes.rows[0].etiqueta_id, 10);
+    if (!Number.isInteger(etiquetaId) || etiquetaId <= 0) return;
+
+    await client.query(
+      `INSERT INTO cxp_etiquetas_asignadas (cxp_id, etiqueta_id)
+       VALUES ($1, $2)
+       ON CONFLICT (cxp_id, etiqueta_id) DO NOTHING`,
+      [cxpId, etiquetaId]
+    );
+  };
+
+  try {
+    const ordenCompraId = Number.parseInt(req.body?.ordenCompraId, 10);
+    const referenciaProveedor = (req.body?.referenciaProveedor || "").toString().trim();
+    const itemsRaw = req.body?.items;
+    const usuarioRecibeId = Number.parseInt(req?.user?.id ?? req?.user?.userId, 10);
+
+    if (!Number.isInteger(ordenCompraId) || ordenCompraId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "ordenCompraId inválido",
+      });
+    }
+
+    if (!referenciaProveedor) {
+      return res.status(400).json({
+        success: false,
+        message: "referenciaProveedor es requerida",
+      });
+    }
+
+    let items = [];
+    try {
+      items = typeof itemsRaw === "string" ? JSON.parse(itemsRaw) : itemsRaw;
+    } catch (e) {
+      return res.status(400).json({
+        success: false,
+        message: "items inválido (JSON)",
+      });
+    }
+
+    if (!Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "items debe ser un arreglo con al menos 1 elemento",
+      });
+    }
+
+    await client.query("BEGIN");
+
+    const ordenLock = await client.query(
+      `SELECT oc.ordencompraid, oc.estatus, oc.proveedorid, COALESCE(p.diascredito, 0) AS diascredito
+       FROM ordenesdecompra oc
+       INNER JOIN proveedores p ON p.proveedorid = oc.proveedorid
+       WHERE oc.ordencompraid = $1
+       FOR UPDATE`,
+      [ordenCompraId]
+    );
+
+    if (!ordenLock.rows.length) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({
+        success: false,
+        message: "Orden de compra no encontrada",
+      });
+    }
+
+    const estatusActual = (ordenLock.rows[0].estatus || "").toString().trim();
+    if (!["Pendiente", "Parcial"].includes(estatusActual)) {
+      await client.query("ROLLBACK");
+      return res.status(409).json({
+        success: false,
+        message: `La orden no se puede recepcionar en estatus '${estatusActual || "(vacío)"}'`,
+      });
+    }
+
+    const proveedorId = Number.parseInt(ordenLock.rows[0].proveedorid, 10);
+    const diasCredito = Number.parseInt(ordenLock.rows[0].diascredito, 10);
+    const diasCreditoFinal = Number.isInteger(diasCredito) && diasCredito > 0 ? diasCredito : 0;
+    const vencResult = await client.query(
+      "SELECT (CURRENT_DATE + ($1::int * INTERVAL '1 day'))::date AS fecha_vencimiento",
+      [diasCreditoFinal]
+    );
+    const fechaVencimiento = vencResult.rows[0]?.fecha_vencimiento || null;
+
+    const comprobanteUrl = req.file?.filename
+      ? `/uploads/comprobantes/${req.file.filename}`
+      : null;
+
+    let montoTotal = 0;
+    const productosActualizados = [];
+
+    for (const raw of items) {
+      const detalleId = Number.parseInt(raw?.detalleId, 10);
+      const varianteIdReq = raw?.varianteId;
+      const cantidadIngresada = Number.parseInt(raw?.cantidad, 10);
+
+      if (!Number.isInteger(detalleId) || detalleId <= 0) {
+        await client.query("ROLLBACK");
+        return res.status(400).json({
+          success: false,
+          message: "detalleId inválido en items",
+        });
+      }
+      if (!Number.isInteger(cantidadIngresada) || cantidadIngresada <= 0) {
+        await client.query("ROLLBACK");
+        return res.status(400).json({
+          success: false,
+          message: "cantidad inválida en items",
+        });
+      }
+
+      const detalleResult = await client.query(
+        `SELECT
+           doc.detalleoc_id,
+           doc.ordencompraid,
+           doc.varianteid,
+           doc.cantidadsolicitada,
+           doc.piezasrecibidas,
+           doc.piezasporpaquete,
+           doc.costounitario,
+           pv.sku,
+           pv.stock AS stockvariante,
+           pv.costounitario AS variante_costounitario,
+           pr.nombreproducto
+         FROM detallesordencompra doc
+         INNER JOIN producto_variantes pv ON pv.varianteid = doc.varianteid
+         INNER JOIN productos pr ON pr.productoid = pv.productoid
+         WHERE doc.detalleoc_id = $1 AND doc.ordencompraid = $2
+         FOR UPDATE`,
+        [detalleId, ordenCompraId]
+      );
+
+      if (!detalleResult.rows.length) {
+        await client.query("ROLLBACK");
+        return res.status(404).json({
+          success: false,
+          message: `Detalle ${detalleId} no encontrado en esta orden`,
+        });
+      }
+
+      const detalle = detalleResult.rows[0];
+      const varianteId = Number.parseInt(detalle.varianteid, 10);
+      if (
+        varianteIdReq !== undefined &&
+        varianteIdReq !== null &&
+        varianteIdReq !== "" &&
+        Number.isInteger(Number.parseInt(varianteIdReq, 10)) &&
+        Number.parseInt(varianteIdReq, 10) !== varianteId
+      ) {
+        await client.query("ROLLBACK");
+        return res.status(400).json({
+          success: false,
+          message: `La variante no corresponde al detalle ${detalleId}`,
+        });
+      }
+
+      const solicitado = Number.parseInt(detalle.cantidadsolicitada, 10) || 0;
+      const piezasPorPaqueteParsed = Number.parseInt(detalle.piezasporpaquete, 10);
+      const piezasPorPaquete =
+        Number.isInteger(piezasPorPaqueteParsed) && piezasPorPaqueteParsed > 0
+          ? piezasPorPaqueteParsed
+          : 1;
+      const solicitadoPzas = solicitado * piezasPorPaquete;
+      const recibidoPzsActual = Number.parseInt(detalle.piezasrecibidas, 10) || 0;
+      const nuevoRecibidoPzas = recibidoPzsActual + cantidadIngresada;
+      if (nuevoRecibidoPzas > solicitadoPzas) {
+        await client.query("ROLLBACK");
+        return res.status(400).json({
+          success: false,
+          message: `No puede recibir más de lo solicitado para ${detalle.nombreproducto}. Solicitado: ${solicitadoPzas}, Ya recibido: ${recibidoPzsActual}`,
+        });
+      }
+
+      const costoPaquete = Number.parseFloat(detalle.costounitario ?? 0) || 0;
+      const costoVariante = Number.parseFloat(detalle.variante_costounitario ?? 0) || 0;
+      const costoPorPieza =
+        costoPaquete > 0
+          ? costoPaquete / (Number.isInteger(piezasPorPaquete) && piezasPorPaquete > 0 ? piezasPorPaquete : 1)
+          : costoVariante;
+      montoTotal += cantidadIngresada * (Number.isFinite(costoPorPieza) ? costoPorPieza : 0);
+
+      await client.query(
+        `UPDATE detallesordencompra
+         SET piezasrecibidas = COALESCE(piezasrecibidas, 0) + $1,
+             cantidadrecibida = FLOOR(
+               (COALESCE(piezasrecibidas, 0) + $1)
+               / COALESCE(NULLIF(piezasporpaquete, 0), 1)
+             )::int
+         WHERE detalleoc_id = $2 AND ordencompraid = $3`,
+        [cantidadIngresada, detalleId, ordenCompraId]
+      );
+
+      const stockAnterior = Number.parseInt(detalle.stockvariante, 10) || 0;
+      const stockUpdate = await client.query(
+        `UPDATE producto_variantes
+         SET stock = COALESCE(stock, 0) + $1
+         WHERE varianteid = $2
+         RETURNING stock`,
+        [cantidadIngresada, varianteId]
+      );
+      const nuevoStock = Number.parseInt(stockUpdate.rows[0]?.stock, 10);
+      const nuevoStockSafe = Number.isInteger(nuevoStock)
+        ? nuevoStock
+        : stockAnterior + cantidadIngresada;
+
+      productosActualizados.push({
+        detalleId,
+        varianteId,
+        sku: detalle.sku,
+        nombreProducto: detalle.nombreproducto,
+        cantidadRecibidaAhora: cantidadIngresada,
+        cantidadRecibidaTotal: nuevoRecibidoPzas,
+        cantidadSolicitada: solicitadoPzas,
+        cantidadPendiente: Math.max(solicitadoPzas - nuevoRecibidoPzas, 0),
+        stockVariante: nuevoStockSafe,
+      });
+    }
+
+    const montoFinal = Number.isFinite(montoTotal) ? Number.parseFloat(montoTotal.toFixed(2)) : 0;
+
+    const cxpInsert = await client.query(
+      `INSERT INTO cuentas_por_pagar
+        (proveedor_id, orden_compra_id, fecha_vencimiento, monto_total, monto_pagado, estatus, referencia_factura, comprobante_pago, usuario_creador_id)
+       VALUES ($1, $2, $3, $4, 0.00, 'PENDIENTE', $5, $6, $7)
+       RETURNING cxp_id`,
+      [
+        proveedorId,
+        ordenCompraId,
+        fechaVencimiento,
+        montoFinal,
+        referenciaProveedor,
+        comprobanteUrl,
+        Number.isInteger(usuarioRecibeId) && usuarioRecibeId > 0 ? usuarioRecibeId : null,
+      ]
+    );
+
+    const cxpId = Number.parseInt(cxpInsert.rows[0]?.cxp_id, 10);
+
+    try {
+      await assignCxpEtiqueta(cxpId, "%Mercanc%");
+    } catch (e) {
+      // ignore
+    }
+    try {
+      await assignCxpEtiqueta(cxpId, "%Crédit%");
+    } catch (e) {
+      // ignore
+    }
+    try {
+      await assignCxpEtiqueta(cxpId, "%Credit%");
+    } catch (e) {
+      // ignore
+    }
+
+    for (const producto of productosActualizados) {
+      await client.query(
+        `INSERT INTO log_inventario
+         (varianteid, cantidadcambiado, nuevostock, motivo, usuarioid, es_excepcion, cxp_id)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+        [
+          producto.varianteId,
+          producto.cantidadRecibidaAhora,
+          producto.stockVariante,
+          `Recepción OC #${ordenCompraId} (Lote: ${referenciaProveedor})`,
+          Number.isInteger(usuarioRecibeId) && usuarioRecibeId > 0 ? usuarioRecibeId : null,
+          false,
+          Number.isInteger(cxpId) && cxpId > 0 ? cxpId : null,
+        ]
+      );
+    }
+
+    const faltantesResult = await client.query(
+      "SELECT COUNT(*)::int AS faltantes FROM detallesordencompra WHERE ordencompraid = $1 AND COALESCE(piezasrecibidas, 0) < (cantidadsolicitada * COALESCE(NULLIF(piezasporpaquete, 0), 1))",
+      [ordenCompraId]
+    );
+    const faltantes = Number.parseInt(faltantesResult.rows[0]?.faltantes, 10) || 0;
+    const nuevoEstatusOC = faltantes === 0 ? "Completada" : "Parcial";
+    await client.query("UPDATE ordenesdecompra SET estatus = $1 WHERE ordencompraid = $2", [
+      nuevoEstatusOC,
+      ordenCompraId,
+    ]);
+
+    await client.query("COMMIT");
+
+    return res.json({
+      success: true,
+      message: "Recepción masiva procesada correctamente",
+      data: {
+        ordenCompraId,
+        cxpId: Number.isInteger(cxpId) ? cxpId : null,
+        estatusOC: nuevoEstatusOC,
+        montoTotal: montoFinal,
+        referenciaProveedor,
+        comprobanteUrl,
+        productosActualizados,
+      },
+    });
+  } catch (error) {
+    try {
+      await client.query("ROLLBACK");
+    } catch (e) {
+      // ignore
+    }
+    console.error("Error en recepción masiva:", error);
+    return res.status(500).json({
+      success: false,
+      message: error?.message || "Error al procesar la recepción masiva",
+    });
+  } finally {
+    client.release();
+  }
+};
+
 const upsertCuentaPorPagarForOC = async (client, ordenCompraId, usuarioId) => {
   const ordenResult = await client.query(
     `SELECT oc.proveedorid, COALESCE(p.diascredito, 0) AS diascredito
@@ -11016,6 +11346,7 @@ getMedidasExistentes,
   cancelarOrdenCompra,
   recibirInventario,
   recibirItemOrdenCompra,
+  recepcionMasivaOrdenCompra,
   getCuentasPorPagar,
   registrarPagoCuentaPorPagar,
   subirEvidenciaRecepcionOC,

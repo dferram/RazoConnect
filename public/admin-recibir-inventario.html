@@ -184,10 +184,60 @@
                   </div>
                 </div>
               </div>
+
+              <div class="mt-3">
+                <div class="recepcion-panel">
+                  <div
+                    style="
+                      display: flex;
+                      justify-content: space-between;
+                      align-items: center;
+                      flex-wrap: wrap;
+                      gap: 0.5rem;
+                      margin-bottom: 0.75rem;
+                    "
+                  >
+                    <div style="font-weight: 800; color: #111827">
+                      🧾 Resumen de Sesión
+                    </div>
+                    <div id="sesionBadge" class="admin-badge secondary">0 ÍTEMS</div>
+                  </div>
+
+                  <div id="sesionEmpty" style="color: #6b7280; font-size: 0.95rem; padding: 0.75rem; border: 1px dashed rgba(107, 114, 128, 0.35); border-radius: 0.75rem;">
+                    Agrega cantidades a la sesión para finalizar la recepción en un solo paso.
+                  </div>
+
+                  <div id="sesionTableWrap" class="table-responsive" style="display:none;">
+                    <table class="admin-table" id="tablaSesion">
+                      <thead class="thead-sticky">
+                        <tr>
+                          <th style="width: 160px;">SKU</th>
+                          <th>Producto</th>
+                          <th style="text-align:center; width: 160px;">Cantidad (pzas)</th>
+                          <th style="width: 88px;"></th>
+                        </tr>
+                      </thead>
+                      <tbody id="tbodySesion"></tbody>
+                    </table>
+                  </div>
+
+                  <div class="d-flex justify-content-between align-items-center mt-3 p-3 bg-light rounded border">
+                    <span class="fw-bold text-muted">Total en Sesión:</span>
+                    <span class="fs-5 fw-bold" style="color:#111827;" id="lbl-total-sesion">0 Pzas</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </section>
         </div>
       </main>
+    </div>
+
+    <button id="btnFinalizarRecepcion" type="button" class="btn btn-primary" style="display:none;" aria-label="Finalizar recepción">
+      📝 Finalizar Recepción (0 ítems)
+    </button>
+    <div id="sesionFloatingCounter" style="display:none;" aria-label="Resumen de sesión">
+      Items en sesión: 0 | Total Piezas: 0
     </div>
 
     <script src="js/layout.js" defer></script>
@@ -213,11 +263,21 @@
       const lblTotalSolicitado = document.getElementById("lbl-total-solicitado");
       const lblTotalRecibido = document.getElementById("lbl-total-recibido");
 
+      const sesionBadge = document.getElementById("sesionBadge");
+      const sesionEmpty = document.getElementById("sesionEmpty");
+      const sesionTableWrap = document.getElementById("sesionTableWrap");
+      const tbodySesion = document.getElementById("tbodySesion");
+      const lblTotalSesion = document.getElementById("lbl-total-sesion");
+      const btnFinalizarRecepcion = document.getElementById("btnFinalizarRecepcion");
+      const sesionFloatingCounter = document.getElementById("sesionFloatingCounter");
+
       const state = {
         ordenes: [],
         orden: null,
         items: [],
       };
+
+      let sesionRecepcion = [];
 
       const safeText = (value) => (value == null ? "" : String(value));
 
@@ -340,9 +400,15 @@
 
       const renderSplit = () => {
         const items = Array.isArray(state.items) ? state.items : [];
-        const pendientes = items.filter(
-          (i) => (Number.parseInt(i.cantidadPendiente, 10) || 0) > 0
-        );
+        const pendientes = items.filter((i) => {
+          const solicitado = Number.parseInt(i.cantidadSolicitada, 10) || 0;
+          const recibido = Number.parseInt(i.cantidadRecibida, 10) || 0;
+          const enSesion = sesionRecepcion
+            .filter((x) => String(x.detalleId) === String(i.detalleId))
+            .reduce((acc, x) => acc + (Number.parseInt(x.cantidad, 10) || 0), 0);
+          const pendiente = Math.max(solicitado - recibido - enSesion, 0);
+          return pendiente > 0;
+        });
 
         const sumaSolicitada = items.reduce(
           (acc, item) => acc + (Number.parseInt(item.cantidadSolicitada, 10) || 0),
@@ -372,7 +438,10 @@
           const piezas = piezasPorPaqueteValue(item);
           const solicitadoPzas = Number.parseInt(item.cantidadSolicitada, 10) || 0;
           const recibidoPzas = Number.parseInt(item.cantidadRecibida, 10) || 0;
-          const pendientePzas = Math.max(solicitadoPzas - recibidoPzas, 0);
+          const enSesionPzas = sesionRecepcion
+            .filter((x) => String(x.detalleId) === String(item.detalleId))
+            .reduce((acc, x) => acc + (Number.parseInt(x.cantidad, 10) || 0), 0);
+          const pendientePzas = Math.max(solicitadoPzas - recibidoPzas - enSesionPzas, 0);
 
           const tr = document.createElement("tr");
 
@@ -447,11 +516,11 @@
           const btn = document.createElement("button");
           btn.type = "button";
           btn.className = "btn btn-primary";
-          btn.textContent = "⬇️ Ingresar";
+          btn.textContent = "➕ Agregar";
           btn.style.padding = "0.45rem 0.75rem";
           btn.style.fontSize = "0.875rem";
           btn.addEventListener("click", async () => {
-            const cantidad = Number.parseInt(input.value, 10);
+            let cantidad = Number.parseInt(input.value, 10);
             const max = Number.parseInt(input.dataset.pendiente, 10) || 0;
 
             if (!Number.isInteger(cantidad) || cantidad <= 0) {
@@ -459,77 +528,49 @@
               return;
             }
             if (cantidad > max) {
-              showToastError("No puede exceder lo pendiente");
-              return;
+              if (typeof Swal !== "undefined" && Swal && typeof Swal.fire === "function") {
+                const resp = await Swal.fire({
+                  icon: "warning",
+                  title: "Estás recibiendo más de lo solicitado. ¿Deseas continuar?",
+                  showCancelButton: true,
+                  confirmButtonText: "Sí, continuar",
+                  cancelButtonText: "Cancelar",
+                  confirmButtonColor: "#F97316",
+                });
+
+                if (!resp.isConfirmed) {
+                  return;
+                }
+
+                cantidad = max;
+              } else {
+                return;
+              }
             }
 
-            btn.disabled = true;
-            try {
-              const resp = await apiCall(
-                `/admin/ordenes-compra/${encodeURIComponent(
-                  state.orden.ordenCompraId
-                )}/recibir-item`,
-                {
-                  method: "POST",
-                  body: JSON.stringify({
-                    detalleId: Number.parseInt(item.detalleId, 10),
-                    varianteId: Number.parseInt(item.varianteId, 10),
-                    cantidadIngresada: cantidad,
-                  }),
-                }
-              );
+            const existingIdx = sesionRecepcion.findIndex(
+              (x) => String(x.detalleId) === String(item.detalleId)
+            );
 
-              if (!resp.ok) {
-                throw new Error(resp.data?.message || "No se pudo recibir item");
-              }
-
-              const updated = resp.data?.data?.item;
-              if (updated) {
-                state.items = state.items.map((x) =>
-                  Number.parseInt(x.detalleId, 10) === Number.parseInt(updated.detalleId, 10)
-                    ? {
-                        ...x,
-                        cantidadRecibida: updated.cantidadRecibida,
-                        cantidadPendiente: updated.cantidadPendiente,
-                      }
-                    : x
-                );
-              }
-
-              state.orden.estatus = resp.data?.data?.estatusOC || state.orden.estatus;
-              ocMeta.textContent = `Estatus: ${safeText(state.orden.estatus)}`;
-              ocBadge.textContent = `OC #${state.orden.ordenCompraId} · ${safeText(
-                state.orden.estatus
-              )}`;
-
-              showToastOk("Recibido");
-              input.value = "";
-              renderSplit();
-
-              if (state.orden.estatus === "Completada") {
-                if (typeof Swal !== "undefined" && Swal) {
-                  await Swal.fire({
-                    icon: "success",
-                    title: "OC completada",
-                    text: `La OC #${state.orden.ordenCompraId} quedó Completada.`,
-                    confirmButtonColor: "#F97316",
-                  });
-                }
-                ocSelect.value = "";
-                ocProveedor.textContent = "—";
-                ocMeta.textContent = "—";
-                ocBadge.textContent = "—";
-                state.orden = null;
-                state.items = [];
-                setEmpty("Selecciona una orden de compra para empezar.");
-                await loadOrdenes();
-              }
-            } catch (error) {
-              console.error(error);
-              showToastError(error.message || "Error");
-            } finally {
-              btn.disabled = false;
+            if (existingIdx >= 0) {
+              sesionRecepcion[existingIdx] = {
+                ...sesionRecepcion[existingIdx],
+                cantidad: (Number.parseInt(sesionRecepcion[existingIdx].cantidad, 10) || 0) + cantidad,
+              };
+            } else {
+              sesionRecepcion.push({
+                detalleId: item.detalleId,
+                varianteId: item.varianteId,
+                cantidad,
+                nombreProducto: safeText(item.nombreProducto),
+                sku: safeText(item.sku),
+              });
             }
+
+            input.value = "";
+            showToastSuccess("Agregado a sesión");
+            renderizarTablaSesion();
+            renderSplit();
           });
           tdBtn.appendChild(btn);
 
@@ -618,10 +659,202 @@
         }
       };
 
+      const renderizarTablaSesion = () => {
+        const items = Array.isArray(sesionRecepcion) ? sesionRecepcion : [];
+        const count = items.length;
+        const total = items.reduce(
+          (acc, x) => acc + (Number.parseInt(x.cantidad, 10) || 0),
+          0
+        );
+
+        if (sesionBadge) {
+          sesionBadge.textContent = `${count} ÍTEMS`;
+        }
+        if (lblTotalSesion) {
+          lblTotalSesion.textContent = `${total.toLocaleString("es-MX")} Pzas`;
+        }
+
+        if (sesionEmpty) {
+          sesionEmpty.style.display = count ? "none" : "block";
+        }
+        if (sesionTableWrap) {
+          sesionTableWrap.style.display = count ? "block" : "none";
+        }
+        if (btnFinalizarRecepcion) {
+          btnFinalizarRecepcion.style.display = count ? "inline-flex" : "none";
+          btnFinalizarRecepcion.textContent = `📝 Finalizar Recepción (${count} ítems)`;
+        }
+
+        if (sesionFloatingCounter) {
+          sesionFloatingCounter.style.display = count ? "block" : "none";
+          sesionFloatingCounter.textContent = `Items en sesión: ${count} | Total Piezas: ${total.toLocaleString(
+            "es-MX"
+          )}`;
+        }
+
+        if (!tbodySesion) return;
+        tbodySesion.innerHTML = "";
+
+        for (const it of items) {
+          const tr = document.createElement("tr");
+
+          const tdSku = document.createElement("td");
+          tdSku.className = "td-truncado";
+          tdSku.title = safeText(it.sku);
+          tdSku.innerHTML = `<code style="background:#f3f4f6; padding: 0.25rem 0.5rem; border-radius: 0.375rem;">${safeText(
+            it.sku
+          )}</code>`;
+
+          const tdNombre = document.createElement("td");
+          tdNombre.className = "td-truncado";
+          tdNombre.title = safeText(it.nombreProducto);
+          tdNombre.innerHTML = `<div style="font-weight: 800; color: #111827;">${safeText(
+            it.nombreProducto
+          )}</div>`;
+
+          const tdCant = document.createElement("td");
+          tdCant.style.textAlign = "center";
+          tdCant.innerHTML = `<strong>${(Number.parseInt(it.cantidad, 10) || 0).toLocaleString("es-MX")}</strong>`;
+
+          const tdAcc = document.createElement("td");
+          tdAcc.style.textAlign = "right";
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "btn btn-danger btn-sm";
+          btn.innerHTML = '<i class="bi bi-trash"></i>';
+          btn.style.padding = "0.35rem 0.6rem";
+          btn.addEventListener("click", () => {
+            sesionRecepcion = sesionRecepcion.filter(
+              (x) => String(x.detalleId) !== String(it.detalleId)
+            );
+            renderizarTablaSesion();
+            renderSplit();
+          });
+          tdAcc.appendChild(btn);
+
+          tr.appendChild(tdSku);
+          tr.appendChild(tdNombre);
+          tr.appendChild(tdCant);
+          tr.appendChild(tdAcc);
+          tbodySesion.appendChild(tr);
+        }
+      };
+
+      const apiCallFormData = async (endpoint, formData) => {
+        const token = typeof getEffectiveToken === "function" ? getEffectiveToken() : null;
+        const headers = {};
+        if (token) {
+          headers["Authorization"] = `Bearer ${token}`;
+        }
+
+        const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+          method: "POST",
+          headers,
+          body: formData,
+        });
+
+        let data = null;
+        try {
+          data = await response.json();
+        } catch (e) {
+          data = null;
+        }
+
+        if (response.status === 401) {
+          if (typeof clearAuthData === "function") {
+            clearAuthData();
+          }
+          if (typeof Swal !== "undefined" && Swal && typeof Swal.fire === "function") {
+            await Swal.fire({
+              icon: "warning",
+              title: "Sesión Expirada",
+              text: "Tu sesión ha expirado. Por favor inicia sesión nuevamente.",
+              confirmButtonColor: "#F97316",
+              allowOutsideClick: false,
+            });
+          }
+          window.location.href = "/login.html";
+          throw new Error("Sesión expirada");
+        }
+
+        return { ok: response.ok, status: response.status, data };
+      };
+
+      const finalizarRecepcion = async () => {
+        if (!state.orden || !state.orden.ordenCompraId) {
+          showToastError("Selecciona una OC");
+          return;
+        }
+        if (!Array.isArray(sesionRecepcion) || sesionRecepcion.length === 0) {
+          showToastError("No hay items en la sesión");
+          return;
+        }
+
+        const modal = await Swal.fire({
+          title: "Finalizar Recepción",
+          html: `
+            <div style="text-align:left;">
+              <label for="swalRef" style="display:block; font-weight:700; margin-bottom:0.35rem;">Referencia / Remisión</label>
+              <input id="swalRef" class="swal2-input" placeholder="Ej: REM-5002" style="margin:0;" />
+              <div style="height: 0.75rem;"></div>
+              <label for="swalFile" style="display:block; font-weight:700; margin-bottom:0.35rem;">Foto de Remisión (opcional)</label>
+              <input id="swalFile" type="file" class="swal2-file" accept="image/*,application/pdf" />
+            </div>
+          `,
+          focusConfirm: false,
+          showCancelButton: true,
+          confirmButtonText: "Ingresar Stock",
+          confirmButtonColor: "#F97316",
+          cancelButtonText: "Cancelar",
+          preConfirm: () => {
+            const ref = document.getElementById("swalRef")?.value?.trim();
+            if (!ref) {
+              Swal.showValidationMessage("La referencia/remisión es obligatoria");
+              return null;
+            }
+            const file = document.getElementById("swalFile")?.files?.[0] || null;
+            return { ref, file };
+          },
+        });
+
+        if (!modal.isConfirmed || !modal.value) {
+          return;
+        }
+
+        const fd = new FormData();
+        fd.append("ordenCompraId", String(state.orden.ordenCompraId));
+        fd.append("referenciaProveedor", modal.value.ref);
+        fd.append("items", JSON.stringify(sesionRecepcion));
+        if (modal.value.file) {
+          fd.append("archivoRemision", modal.value.file);
+        }
+
+        try {
+          if (btnFinalizarRecepcion) btnFinalizarRecepcion.disabled = true;
+          const resp = await apiCallFormData("/admin/recepcion-masiva", fd);
+          if (!resp.ok) {
+            throw new Error(resp.data?.message || "No se pudo finalizar recepción");
+          }
+
+          sesionRecepcion = [];
+          renderizarTablaSesion();
+          await loadRecepcion(state.orden.ordenCompraId);
+          showToastSuccess("Recepción finalizada");
+        } catch (error) {
+          console.error(error);
+          showToastError(error.message || "Error al finalizar");
+        } finally {
+          if (btnFinalizarRecepcion) btnFinalizarRecepcion.disabled = false;
+        }
+      };
+
       const loadRecepcion = async (ordenCompraId) => {
         setLoading(true);
         recepcionEmpty.style.display = "none";
         recepcionSplit.style.display = "none";
+
+        sesionRecepcion = [];
+        renderizarTablaSesion();
 
         try {
           const resp = await apiCall(
@@ -649,6 +882,7 @@
 
           recepcionSplit.style.display = "block";
           renderSplit();
+          renderizarTablaSesion();
         } catch (error) {
           console.error(error);
           setEmpty(error.message || "Error al cargar recepción");
@@ -656,6 +890,10 @@
           setLoading(false);
         }
       };
+
+      if (btnFinalizarRecepcion) {
+        btnFinalizarRecepcion.addEventListener("click", finalizarRecepcion);
+      }
 
       ocSearch.addEventListener("input", () => {
         renderOrdenes(ocSearch.value);
@@ -749,6 +987,53 @@
         border-radius: 0.75rem;
         padding: 0.75rem;
         background: #fff;
+      }
+
+      #btnFinalizarRecepcion {
+        position: fixed;
+        right: 18px;
+        bottom: 18px;
+        z-index: 1200;
+        border-radius: 999px;
+        box-shadow: 0 14px 34px rgba(0, 0, 0, 0.14);
+        padding: 0.85rem 1.1rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      @media (max-width: 768px) {
+        #btnFinalizarRecepcion {
+          right: 12px;
+          left: 12px;
+          bottom: 12px;
+          width: calc(100% - 24px);
+          justify-content: center;
+        }
+      }
+
+      #sesionFloatingCounter {
+        position: fixed;
+        right: 18px;
+        bottom: 76px;
+        z-index: 1200;
+        background: rgba(255, 255, 255, 0.98);
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        border-radius: 999px;
+        padding: 0.5rem 0.75rem;
+        font-weight: 700;
+        color: #111827;
+        box-shadow: 0 10px 28px rgba(0, 0, 0, 0.12);
+      }
+
+      @media (max-width: 768px) {
+        #sesionFloatingCounter {
+          right: 12px;
+          left: 12px;
+          bottom: 78px;
+          width: calc(100% - 24px);
+          text-align: center;
+        }
       }
 
       /* Imágenes de producto miniatura en tablas */
