@@ -8,6 +8,7 @@ const changeRequestController = require("../controllers/changeRequestController"
 const inventoryAuditController = require("../controllers/inventoryAuditController");
 const purchaseSuggestionController = require("../controllers/purchaseSuggestionController");
 const upload = require("../middlewares/upload");
+const uploadComprobante = require("../middlewares/uploadComprobante");
 const {
   authenticate,
   authorizeAdmin,
@@ -535,6 +536,21 @@ router.put(
   adminController.pagarComision
 );
 
+router.get(
+  "/cuentas-por-pagar",
+  authenticate,
+  authorizeAdmin,
+  adminController.getCuentasPorPagar
+);
+
+router.post(
+  "/cuentas-por-pagar/:id/registrar-pago",
+  authenticate,
+  authorizeAdmin,
+  uploadComprobante.single("comprobante"),
+  adminController.registrarPagoCuentaPorPagar
+);
+
 /**
  * Gestión de clientes
  */
@@ -701,6 +717,12 @@ router.get(
   authorizeAdmin,
   adminController.getDetallesOrdenCompra
 );
+router.get(
+  "/ordenes-compra/:id/recepcion",
+  authenticate,
+  authorizeAdmin,
+  adminController.getRecepcionOrdenCompra
+);
 router.post(
   "/ordenes-compra/:id/confirmar",
   authenticate,
@@ -724,6 +746,13 @@ router.post(
   authenticate,
   authorizeAdmin,
   adminController.recibirInventario
+);
+
+router.post(
+  "/ordenes-compra/:id/recibir-item",
+  authenticate,
+  authorizeAdmin,
+  adminController.recibirItemOrdenCompra
 );
 
 router.post(

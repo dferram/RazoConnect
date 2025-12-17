@@ -279,35 +279,23 @@
       }
     </style>
   </head>
-  <body data-sidebar="admin">
+  <body data-sidebar="admin" data-page-title="Detalle del pedido">
     <div class="admin-layout">
       <div id="sidebar-container"></div>
 
       <main class="admin-main">
-        <header class="admin-header">
-          <div>
-            <h1 class="admin-header-title">Detalle del pedido</h1>
-          </div>
-          <div class="admin-header-actions">
+        <div id="admin-header-container"></div>
+
+        <div class="admin-content">
+          <div style="display: flex; justify-content: flex-start; margin-bottom: 1rem;">
             <button
               type="button"
               class="btn btn-outline btn-sm"
               onclick="sessionStorage.setItem('_navigating', 'true'); localStorage.setItem('_nav_timestamp', Date.now().toString()); window.location.href='/admin-pedidos.html';"
-              style="margin-right: 1rem"
             >
               ← Volver a pedidos
             </button>
-            <div class="admin-user-info">
-              <div class="admin-user-avatar" id="userAvatar">A</div>
-              <div class="admin-user-details">
-                <div class="admin-user-name" id="userName">Administrador</div>
-                <div class="admin-user-role" id="userRole">Admin</div>
-              </div>
-            </div>
           </div>
-        </header>
-
-        <div class="admin-content">
           <div class="pedido-detail-wrapper">
             <!-- Loading state -->
             <div id="loadingState" class="loading-state">
@@ -446,6 +434,7 @@
               aria-label="Nuevo estatus del pedido"
             >
               <option value="Pendiente">Pendiente</option>
+              <option value="Parcialmente Surtido">Parcialmente Surtido</option>
               <option value="Confirmado">Confirmado ⚠️ (Reduce Stock)</option>
               <option value="Enviado">Enviado</option>
               <option value="Entregado">Entregado</option>
@@ -505,8 +494,9 @@
 
     <script src="js/layout.js" defer></script>
     <script src="js/api.js"></script>
-    <script src="js/components/user-profile.js"></script>
     <script src="js/admin-header-dropdown.js"></script>
+    <script src="js/components/admin-header-loader.js"></script>
+    <script src="js/components/user-profile.js"></script>
     <script>
       (function () {
         "use strict";
@@ -846,22 +836,25 @@
             if (btnConfirmarSpinner)
               btnConfirmarSpinner.style.display = "block";
 
-            const response = await fetch(
-              `${API_BASE_URL}/admin/pedidos/${selectedOrderId}`,
+            const resp = await apiCall(`/admin/pedidos/${encodeURIComponent(selectedOrderId)}`,
               {
                 method: "PUT",
-                headers: {
-                  Authorization: `Bearer ${adminToken}`,
-                  "Content-Type": "application/json",
-                },
                 body: JSON.stringify({ estatus: nuevoEstatus }),
               }
             );
 
-            const data = await response.json();
+            const data = resp.data;
 
-            if (response.ok && data.success) {
+            if (resp.ok && data && data.success) {
               closeStatusModal();
+
+              const message = (data.message || "").toString();
+              const isAuditFlow = message.toLowerCase().includes("bitácora") || message.toLowerCase().includes("auditor");
+              const swalIcon = isAuditFlow ? "info" : "success";
+              const swalTitle = isAuditFlow ? "Solicitud en Espera" : "Estatus actualizado";
+              const swalText = isAuditFlow
+                ? "El cambio de estatus ha sido registrado en la bitácora. Debes aprobarlo en la sección de Auditoría para que se aplique."
+                : (message || "Estatus actualizado correctamente.");
 
               if (
                 typeof Swal !== "undefined" &&
@@ -869,23 +862,20 @@
                 typeof Swal.fire === "function"
               ) {
                 await Swal.fire({
-                  icon: "info",
-                  title: "Solicitud en Espera",
-                  text: "El cambio de estatus ha sido registrado en la bitácora. Debes aprobarlo en la sección de Auditoría para que se aplique.",
+                  icon: swalIcon,
+                  title: swalTitle,
+                  text: swalText,
                   confirmButtonColor: "#F97316",
                 });
               } else {
-                showToast(
-                  "Solicitud en espera. Debes aprobarla en Auditoría para que se aplique.",
-                  "info"
-                );
+                showToast(swalText, isAuditFlow ? "info" : "success");
               }
 
               // Éxito: mantener deshabilitado hasta recarga
               window.location.reload();
             } else {
               showToast(
-                data.message || "Error al actualizar pedido",
+                data?.message || "Error al actualizar pedido",
                 "error"
               );
 

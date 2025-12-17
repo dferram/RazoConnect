@@ -790,23 +790,10 @@
             return;
           }
 
-          try {
-            const response = await API.apiCall(
-              `/admin/ordenes-compra/${currentOrdenId}/confirmar`,
-              { method: 'POST' }
-            );
-
-            if (response.ok) {
-              showToast("Orden confirmada exitosamente", "success");
-              closeDetalleModal();
-              loadOrdenes(); // Recargar lista
-            } else {
-              throw new Error(response.data?.message || "Error al confirmar");
-            }
-          } catch (error) {
-            console.error("Error confirmando orden:", error);
-            showToast("Error al confirmar la orden", "error");
-          }
+          closeDetalleModal();
+          window.location.href = `/admin-recibir-inventario.html?ordenId=${encodeURIComponent(
+            currentOrdenId
+          )}`;
         };
 
         // Cancelar Orden de Backorder

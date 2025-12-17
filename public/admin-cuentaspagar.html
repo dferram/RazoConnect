@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cuentas por Pagar - Admin RazoConnect</title>
+    <link rel="icon" type="image/png" href="/icon/Logo_Razo.png" />
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- PROTECCIÓN DE AUTENTICACIÓN ADMIN -->
+    <script src="js/auth-guard-admin.js"></script>
+
+    <!-- SISTEMA DE RENOVACIÓN DE TOKENS -->
+    <script src="js/token-refresh.js"></script>
+
+    <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/admin.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css"
+    />
+  </head>
+  <body data-page-title="Cuentas por pagar">
+    <div class="admin-layout">
+      <div id="sidebar-container"></div>
+
+      <main class="admin-main">
+        <div id="admin-header-container"></div>
+
+        <div class="admin-content" style="display: grid; gap: 1.25rem">
+          <section class="admin-card" style="padding: 1.25rem">
+            <div style="display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; align-items: center;">
+              <div>
+                <h2 style="margin: 0; font-size: 1.1rem;">Deuda con proveedores</h2>
+                <div style="margin-top: 0.25rem; color: #6b7280; font-size: 0.9rem;">
+                  Visualiza cuentas por pagar, vencimientos y registra pagos.
+                </div>
+              </div>
+              <div style="display:flex; gap: 0.75rem; align-items:center; flex-wrap: wrap; justify-content: flex-end;">
+                <button id="btnRefresh" type="button" class="btn btn-secondary" style="padding: 0.55rem 1rem;">
+                  <i class="bi bi-arrow-repeat"></i> Actualizar
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <section class="admin-card" style="padding: 1.25rem;">
+            <div class="kpi-grid">
+              <div class="kpi-card">
+                <div class="kpi-title">Total por pagar</div>
+                <div class="kpi-value" id="kpiTotalPorPagar">$0</div>
+                <div class="kpi-sub" id="kpiTotalPorPagarSub">Pendiente/Parcial</div>
+              </div>
+              <div class="kpi-card kpi-danger">
+                <div class="kpi-title">Vencido</div>
+                <div class="kpi-value" id="kpiVencido">$0</div>
+                <div class="kpi-sub" id="kpiVencidoSub">Fecha anterior a hoy</div>
+              </div>
+              <div class="kpi-card kpi-warning">
+                <div class="kpi-title">Próximo a vencer</div>
+                <div class="kpi-value" id="kpiProximo">$0</div>
+                <div class="kpi-sub" id="kpiProximoSub">Siguientes 7 días</div>
+              </div>
+            </div>
+          </section>
+
+          <section class="admin-card" style="padding: 1.25rem;">
+            <div style="display:flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; margin-bottom: 0.75rem;">
+              <div style="display:flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+                <span id="resultadosBadge" class="admin-badge secondary">0 CUENTAS</span>
+              </div>
+              <div style="display:flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; justify-content: flex-end;">
+                <select id="filtroEstatus" class="form-input" style="min-width: 180px;" aria-label="Filtrar cuentas por pagar por estatus">
+                  <option value="">Todos</option>
+                  <option value="PENDIENTE">Pendiente</option>
+                  <option value="PARCIAL">Parcial</option>
+                  <option value="PAGADO">Pagado</option>
+                </select>
+              </div>
+            </div>
+
+            <div id="loadingState" class="loading" style="display: none; min-height: 120px;">
+              <div class="spinner"></div>
+            </div>
+
+            <div id="emptyState" style="display:none; padding: 1rem; border: 1px dashed rgba(107, 114, 128, 0.35); border-radius: 0.75rem; color: #6b7280;">
+              No hay cuentas por pagar para mostrar.
+            </div>
+
+            <div style="overflow-x: auto;">
+              <table class="admin-table" id="cxpTable" style="display:none;">
+                <thead>
+                  <tr>
+                    <th>Proveedor</th>
+                    <th>OC Ref</th>
+                    <th>Fecha Emisión</th>
+                    <th>Fecha Vencimiento</th>
+                    <th style="text-align:right;">Monto Total</th>
+                    <th style="text-align:right;">Restante</th>
+                    <th>Estatus</th>
+                    <th style="text-align:center;">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="cxpTbody"></tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <div id="pagoModal" class="modal" style="display:none;">
+      <div class="modal-content" style="background:white; padding: 2rem; border-radius: 1rem; box-shadow: 0 20px 60px rgba(0,0,0,0.3); max-width: 1200px; width: 95%;">
+        <div style="display:flex; justify-content: space-between; align-items:center; gap: 1rem; padding-bottom: 1rem; border-bottom: 2px solid #f5f1ed;">
+          <div>
+            <h2 style="margin: 0; font-size: 1.4rem; color: #111827;">Registrar Pago</h2>
+            <div style="margin-top: 0.25rem; color:#6b7280; font-size: 0.9rem;">
+              Deuda actual: <strong id="pagoDeudaActual">$0</strong>
+            </div>
+          </div>
+          <button id="btnCerrarModal" type="button" style="background:none; border:none; font-size: 2rem; cursor:pointer; color:#6b5d57; line-height:1;">&times;</button>
+        </div>
+
+        <div style="padding-top: 1.25rem; display: grid; gap: 1rem;">
+          <div style="display:grid; gap: 0.5rem;">
+            <label for="pagoMonto" class="form-label">Monto a pagar</label>
+            <input id="pagoMonto" type="number" class="form-input" min="0" step="0.01" placeholder="0.00" />
+          </div>
+
+          <div style="display:grid; gap: 0.5rem;">
+            <label for="pagoReferencia" class="form-label">Referencia / Nota</label>
+            <input id="pagoReferencia" type="text" class="form-input" placeholder="Ej: Transferencia BBVA #123" />
+          </div>
+
+          <div style="display:grid; gap: 0.5rem;">
+            <label for="pagoComprobante" class="form-label">Subir comprobante</label>
+            <input id="pagoComprobante" type="file" class="form-input" accept="image/*,application/pdf" />
+            <div style="font-size: 0.85rem; color: #6b7280;">PDF o imagen. Máx. 8MB.</div>
+          </div>
+
+          <div style="display:flex; gap: 1rem; justify-content: flex-end; margin-top: 1.5rem; margin-bottom: 1rem;">
+            <button id="btnCancelarPago" type="button" class="btn btn-secondary" style="padding: 0.75rem 1.5rem;">Cancelar</button>
+            <button id="btnGuardarPago" type="button" class="btn btn-primary" style="padding: 0.75rem 2rem;">
+              <span id="btnGuardarPagoText">Guardar pago</span>
+              <span id="btnGuardarPagoSpinner" class="spinner" style="display:none;"></span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="js/layout.js" defer></script>
+    <script src="js/api.js"></script>
+    <script src="js/admin-header-dropdown.js"></script>
+    <script src="js/components/admin-header-loader.js"></script>
+    <script src="js/components/user-profile.js"></script>
+    <script src="js/admin-cuentaspagar.js" defer></script>
+
+    <style>
+      .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+      }
+
+      .kpi-card {
+        border: 1px solid rgba(0,0,0,0.06);
+        border-radius: 0.75rem;
+        padding: 1rem;
+        background: #fff;
+      }
+
+      .kpi-title {
+        color: #6b7280;
+        font-size: 0.9rem;
+        font-weight: 700;
+      }
+
+      .kpi-value {
+        margin-top: 0.35rem;
+        font-size: 1.6rem;
+        font-weight: 900;
+        color: #111827;
+      }
+
+      .kpi-sub {
+        margin-top: 0.25rem;
+        color: #6b7280;
+        font-size: 0.85rem;
+      }
+
+      .kpi-danger {
+        border-color: rgba(239, 68, 68, 0.25);
+        background: rgba(254, 242, 242, 0.35);
+      }
+
+      .kpi-warning {
+        border-color: rgba(245, 158, 11, 0.35);
+        background: rgba(255, 247, 237, 0.55);
+      }
+
+      .modal {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.6);
+        -webkit-backdrop-filter: blur(4px);
+        backdrop-filter: blur(4px);
+        z-index: 1000;
+        padding: 1rem;
+        overflow-y: auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .modal-content {
+        max-height: 90vh;
+        overflow-y: auto;
+      }
+
+      @media (max-width: 992px) {
+        .kpi-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </body>
+</html>

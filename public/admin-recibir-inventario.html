@@ -31,193 +31,163 @@
       <main class="admin-main">
         <div id="admin-header-container"></div>
 
-        <div class="admin-content">
+        <div class="admin-content" style="display: grid; gap: 1.25rem">
           <!-- Órdenes de Compra Pendientes -->
-          <div class="admin-table-container">
-            <div style="margin-bottom: 1.5rem">
-              <h2
-                style="
-                  margin: 0 0 0.5rem 0;
-                  font-size: 1.25rem;
-                  color: var(--razo-gray-dark);
-                "
-              >
-                📋 Órdenes Pendientes de Recepción
-              </h2>
-              <p
-                style="
-                  margin: 0;
-                  color: var(--razo-gray-warm);
-                  font-size: 0.875rem;
-                "
-              >
-                Selecciona una orden para registrar la mercancía recibida
-              </p>
+          <section class="admin-card" style="padding: 1.25rem">
+            <div
+              style="
+                display: flex;
+                flex-wrap: wrap;
+                gap: 1rem;
+                align-items: flex-end;
+                justify-content: space-between;
+              "
+            >
+              <div style="min-width: 260px; flex: 1">
+                <label for="ocSearch" class="form-label">Buscar OC</label>
+                <input
+                  id="ocSearch"
+                  type="text"
+                  class="form-input"
+                  placeholder="Ej: 120 · Proveedor..."
+                />
+              </div>
+
+              <div style="min-width: 320px; flex: 1">
+                <label for="ocSelect" class="form-label">Orden de Compra</label>
+                <select id="ocSelect" class="form-input" disabled>
+                  <option value="">Cargando órdenes…</option>
+                </select>
+              </div>
+
+              <div style="display: grid; gap: 0.25rem; min-width: 240px">
+                <div style="font-size: 0.85rem; color: #6b7280">Proveedor</div>
+                <div id="ocProveedor" style="font-weight: 700; color: #111827">—</div>
+                <div id="ocMeta" style="font-size: 0.85rem; color: #6b7280">—</div>
+              </div>
+            </div>
+          </section>
+
+          <section class="admin-card" style="padding: 1.25rem">
+            <div
+              style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                flex-wrap: wrap;
+                gap: 0.75rem;
+                margin-bottom: 0.75rem;
+              "
+            >
+              <h2 style="margin: 0; font-size: 1.1rem">Auditoría de Recepción</h2>
+              <span id="ocBadge" class="admin-badge secondary">—</span>
             </div>
 
-            <div id="loadingOrdenes" class="loading">
+            <div
+              id="recepcionEmpty"
+              style="
+                padding: 1rem;
+                border: 1px dashed rgba(107, 114, 128, 0.35);
+                border-radius: 0.75rem;
+                color: #6b7280;
+                display: block;
+              "
+            >
+              Selecciona una orden de compra para empezar.
+            </div>
+
+            <div id="recepcionLoading" class="loading" style="display: none; min-height: 120px">
               <div class="spinner"></div>
             </div>
 
-            <div style="overflow-x: auto">
-              <table
-                class="admin-table"
-                id="ordenesTable"
-                style="display: none"
-              >
-                <thead>
-                  <tr>
-                    <th>Orden #</th>
-                    <th>Proveedor</th>
-                    <th>Fecha Creación</th>
-                    <th>Fecha Esperada</th>
-                    <th>Productos</th>
-                    <th>Estatus</th>
-                    <th>Acciones</th>
-                  </tr>
-                </thead>
-                <tbody id="ordenesTableBody">
-                  <!-- Órdenes will be loaded here -->
-                </tbody>
-              </table>
-            </div>
+            <div id="recepcionSplit" style="display: none">
+              <div class="row g-3">
+                <div class="col-12 col-xl-6">
+                  <div class="recepcion-panel">
+                  <div
+                    style="
+                      display: flex;
+                      justify-content: space-between;
+                      align-items: center;
+                      flex-wrap: wrap;
+                      gap: 0.5rem;
+                      margin-bottom: 0.75rem;
+                    "
+                  >
+                    <div style="font-weight: 800; color: #111827">
+                      📜 Ordenado (Pendiente)
+                    </div>
+                    <div id="pendienteBadge" class="admin-badge info">0 PENDIENTES</div>
+                  </div>
+                  <div class="table-responsive">
+                    <table class="admin-table" id="tablaPendiente">
+                      <thead class="thead-sticky thead-pendiente">
+                        <tr>
+                          <th style="width: 56px">Imagen</th>
+                          <th>SKU / Producto</th>
+                          <th style="text-align: center; width: 130px">Solicitado (pzas)</th>
+                          <th style="text-align: center; width: 130px">Por recibir (pzas)</th>
+                          <th style="width: 140px">Cantidad hoy (pzas)</th>
+                          <th style="width: 140px"></th>
+                        </tr>
+                      </thead>
+                      <tbody id="tbodyPendiente"></tbody>
+                    </table>
+                  </div>
+                  <div
+                    id="footer-resumen-pendiente"
+                    class="d-flex justify-content-between align-items-center mt-3 p-3 bg-light rounded border"
+                  >
+                    <span class="fw-bold text-muted">Total Solicitado:</span>
+                    <span class="fs-5 fw-bold text-primary" id="lbl-total-solicitado">0 Pzas</span>
+                  </div>
+                  </div>
+                </div>
 
-            <div id="emptyOrdenes" class="empty-state" style="display: none">
-              <div class="empty-state-icon">✅</div>
-              <h3 class="empty-state-title">No hay órdenes pendientes</h3>
-              <p class="empty-state-text">
-                Todas las órdenes de compra han sido completadas
-              </p>
+                <div class="col-12 col-xl-6">
+                  <div class="recepcion-panel">
+                  <div
+                    style="
+                      display: flex;
+                      justify-content: space-between;
+                      align-items: center;
+                      flex-wrap: wrap;
+                      gap: 0.5rem;
+                      margin-bottom: 0.75rem;
+                    "
+                  >
+                    <div style="font-weight: 800; color: #111827">
+                      ✅ Recibido (Confirmado)
+                    </div>
+                    <div id="recibidoBadge" class="admin-badge secondary">0 RECIBIDOS</div>
+                  </div>
+                  <div class="table-responsive">
+                    <table class="admin-table" id="tablaRecibido">
+                      <thead class="thead-sticky thead-recibido">
+                        <tr>
+                          <th style="width: 56px">Imagen</th>
+                          <th style="width: 150px">SKU</th>
+                          <th style="text-align: center; width: 160px">Total recibido (pzas)</th>
+                          <th>Progreso</th>
+                        </tr>
+                      </thead>
+                      <tbody id="tbodyRecibido"></tbody>
+                    </table>
+                  </div>
+                  <div
+                    id="footer-resumen-recibido"
+                    class="d-flex justify-content-between align-items-center mt-3 p-3 bg-light rounded border"
+                  >
+                    <span class="fw-bold text-muted">Total Recibido:</span>
+                    <span class="fs-5 fw-bold text-success" id="lbl-total-recibido">0 Pzas</span>
+                  </div>
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
+          </section>
         </div>
       </main>
-    </div>
-
-    <!-- Modal para recibir inventario -->
-    <div id="recepcionModal" class="modal">
-      <div
-        class="modal-content"
-        style="
-          background: white;
-          padding: 2rem;
-          border-radius: 1rem;
-          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-          max-width: 1400px;
-          width: 95%;
-        "
-      >
-        <div
-          class="modal-header"
-          style="
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.5rem;
-            padding-bottom: 1rem;
-            border-bottom: 2px solid #f5f1ed;
-          "
-        >
-          <div>
-            <h2
-              style="margin: 0 0 0.25rem 0; font-size: 1.5rem; color: #2d3748"
-            >
-              Recibir Inventario - Orden #<span id="modalOrdenId"></span>
-            </h2>
-            <p
-              style="
-                margin: 0;
-                color: var(--razo-gray-warm);
-                font-size: 0.875rem;
-              "
-            >
-              <strong>Proveedor:</strong> <span id="modalProveedor"></span>
-            </p>
-          </div>
-          <button
-            class="modal-close"
-            onclick="closeRecepcionModal()"
-            style="
-              background: none;
-              border: none;
-              font-size: 2rem;
-              cursor: pointer;
-              color: #6b5d57;
-              line-height: 1;
-              padding: 0;
-              width: 32px;
-              height: 32px;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              border-radius: 50%;
-              transition: all 0.2s;
-            "
-          >
-            &times;
-          </button>
-        </div>
-
-        <div class="modal-body">
-          <div class="alert alert-info" style="margin-bottom: 1.5rem">
-            <strong>💡 Entregas Parciales:</strong> Si solo recibiste parte de
-            lo solicitado, ingresa únicamente la cantidad que llegó. El sistema
-            actualizará automáticamente el stock y el estatus de la orden.
-          </div>
-
-          <div
-            id="recepcionParcialAlert"
-            class="alert alert-warning"
-            style="margin-bottom: 1.5rem; display: none"
-          >
-            <strong>⚠️ Recepción Parcial:</strong> Hay productos donde el ingreso
-            actual es menor a lo pendiente. La orden quedará en estatus
-            <strong>Parcial</strong>.
-          </div>
-
-          <div id="loadingDetalles" class="loading" style="display: none">
-            <div class="spinner"></div>
-          </div>
-
-          <div id="productosRecepcion" style="overflow-x: auto">
-            <!-- La tabla de productos se cargará aquí -->
-          </div>
-
-          <div
-            style="
-              display: flex;
-              gap: 1rem;
-              justify-content: flex-end;
-              padding-top: 1.5rem;
-              margin-top: 1.5rem;
-              border-top: 2px solid var(--razo-gray-light);
-            "
-          >
-            <button
-              type="button"
-              class="btn btn-secondary"
-              onclick="closeRecepcionModal()"
-              style="padding: 0.75rem 1.5rem"
-            >
-              Cancelar
-            </button>
-            <button
-              type="button"
-              class="btn btn-primary"
-              onclick="guardarRecepcion()"
-              id="btnGuardarRecepcion"
-              style="padding: 0.75rem 2rem"
-            >
-              <span id="btnGuardarText">Guardar Recepción</span>
-              <div
-                class="spinner"
-                id="btnGuardarSpinner"
-                style="display: none"
-              ></div>
-            </button>
-          </div>
-        </div>
-      </div>
     </div>
 
     <script src="js/layout.js" defer></script>
@@ -226,569 +196,492 @@
     <script src="js/components/admin-header-loader.js"></script>
     <script src="js/components/user-profile.js"></script>
     <script>
-      // Authentication check
-      const adminToken = localStorage.getItem("razoconnect_admin_token");
-      if (!adminToken) {
-        window.location.href = "/login.html";
-      }
+      const ocSearch = document.getElementById("ocSearch");
+      const ocSelect = document.getElementById("ocSelect");
+      const ocProveedor = document.getElementById("ocProveedor");
+      const ocMeta = document.getElementById("ocMeta");
+      const ocBadge = document.getElementById("ocBadge");
 
-      let ordenActual = null;
-      let detallesActuales = [];
-      const discrepanciaIntentos = {};
+      const recepcionEmpty = document.getElementById("recepcionEmpty");
+      const recepcionLoading = document.getElementById("recepcionLoading");
+      const recepcionSplit = document.getElementById("recepcionSplit");
 
-      // Verify admin token
-      async function verifyAndLoadAdmin() {
+      const pendienteBadge = document.getElementById("pendienteBadge");
+      const recibidoBadge = document.getElementById("recibidoBadge");
+      const tbodyPendiente = document.getElementById("tbodyPendiente");
+      const tbodyRecibido = document.getElementById("tbodyRecibido");
+      const lblTotalSolicitado = document.getElementById("lbl-total-solicitado");
+      const lblTotalRecibido = document.getElementById("lbl-total-recibido");
+
+      const state = {
+        ordenes: [],
+        orden: null,
+        items: [],
+      };
+
+      const safeText = (value) => (value == null ? "" : String(value));
+
+      const setLoading = (isLoading) => {
+        recepcionLoading.style.display = isLoading ? "block" : "none";
+      };
+
+      const setEmpty = (text) => {
+        recepcionEmpty.textContent = text;
+        recepcionEmpty.style.display = "block";
+        recepcionSplit.style.display = "none";
+        setLoading(false);
+      };
+
+      const buildOptionLabel = (oc) => {
+        const id = safeText(oc.ordenCompraId);
+        const prov = safeText(oc.proveedorNombre);
+        const est = safeText(oc.estatus);
+        return `OC #${id} — ${prov} (${est})`;
+      };
+
+      const renderOrdenes = (filterText) => {
+        const text = (filterText || "").toString().trim().toLowerCase();
+        const ordenes = state.ordenes.filter((o) => {
+          if (!text) return true;
+          const label = buildOptionLabel(o).toLowerCase();
+          return label.includes(text);
+        });
+
+        ocSelect.innerHTML = "";
+        const placeholder = document.createElement("option");
+        placeholder.value = "";
+        placeholder.textContent = ordenes.length
+          ? "Selecciona una OC…"
+          : "No hay OCs con ese filtro";
+        ocSelect.appendChild(placeholder);
+
+        for (const oc of ordenes) {
+          const opt = document.createElement("option");
+          opt.value = String(oc.ordenCompraId);
+          opt.textContent = buildOptionLabel(oc);
+          opt.dataset.proveedorNombre = safeText(oc.proveedorNombre);
+          opt.dataset.fechaCreacion = safeText(oc.fechaCreacion);
+          opt.dataset.fechaEntrega = safeText(oc.fechaEntregaEsperada);
+          opt.dataset.estatus = safeText(oc.estatus);
+          ocSelect.appendChild(opt);
+        }
+
+        ocSelect.disabled = false;
+      };
+
+      const loadOrdenes = async () => {
+        ocSelect.disabled = true;
+        ocSelect.innerHTML = "<option value=\"\">Cargando órdenes…</option>";
         try {
-          const response = await fetch(`${API_BASE_URL}/admin/verify`, {
+          const resp = await apiCall("/admin/ordenes-compra?estatus=Pendiente,Parcial", {
             method: "GET",
-            headers: {
-              Authorization: `Bearer ${adminToken}`,
-              "Content-Type": "application/json",
-            },
           });
 
-          if (!response.ok) throw new Error("Invalid token");
-
-          const data = await response.json();
-          if (data.success) {
-            const admin = data.data.admin;
-            const userNameEl = document.getElementById("userName");
-            const userRoleEl = document.getElementById("userRole");
-            const userAvatarEl = document.getElementById("userAvatar");
-            if (userNameEl) userNameEl.textContent = admin.nombre;
-            if (userRoleEl) {
-              userRoleEl.textContent =
-                admin.rol === "superadmin" ? "Super Admin" : "Admin";
-            }
-
-            const words = admin.nombre.split(" ");
-            const initials =
-              words.length >= 2
-                ? `${words[0].charAt(0)}${words[1].charAt(0)}`
-                : admin.nombre.substring(0, 2);
-            if (userAvatarEl) userAvatarEl.textContent = initials.toUpperCase();
+          if (!resp.ok) {
+            throw new Error(resp.data?.message || "No se pudieron cargar órdenes");
           }
-        } catch (error) {
-          console.error("Error verifying admin:", error);
-          localStorage.removeItem("razoconnect_admin_token");
-          localStorage.removeItem("razoconnect_admin");
-          window.location.href = "/login.html";
-        }
-      }
 
-      // Cargar órdenes pendientes/parciales
-      async function loadOrdenesPendientes() {
-        const loadingOrdenes = document.getElementById("loadingOrdenes");
-        const ordenesTable = document.getElementById("ordenesTable");
-        const emptyOrdenes = document.getElementById("emptyOrdenes");
-        const ordenesTableBody = document.getElementById("ordenesTableBody");
+          state.ordenes = Array.isArray(resp.data?.data?.ordenes)
+            ? resp.data.data.ordenes
+            : [];
 
-        try {
-          loadingOrdenes.style.display = "flex";
-          ordenesTable.style.display = "none";
-          emptyOrdenes.style.display = "none";
+          renderOrdenes(ocSearch.value);
 
-          const response = await fetch(
-            `${API_BASE_URL}/admin/ordenes-compra?estatus=Pendiente,Parcial`,
-            {
-              method: "GET",
-              headers: {
-                Authorization: `Bearer ${adminToken}`,
-                "Content-Type": "application/json",
-              },
-            }
-          );
-
-          if (!response.ok) throw new Error("Error al cargar órdenes");
-
-          const data = await response.json();
-          if (data.success) {
-            const ordenes = data.data.ordenes;
-
-            if (ordenes.length === 0) {
-              emptyOrdenes.style.display = "block";
-            } else {
-              ordenesTableBody.innerHTML = ordenes
-                .map((orden) => {
-                  const fecha = new Date(
-                    orden.fechaCreacion
-                  ).toLocaleDateString("es-MX");
-                  const fechaEsperada = new Date(
-                    orden.fechaEntregaEsperada
-                  ).toLocaleDateString("es-MX");
-                  const badgeClass =
-                    orden.estatus === "Pendiente" ? "info" : "warning";
-
-                  return `
-                <tr>
-                  <td><strong>#${orden.ordenCompraId}</strong></td>
-                  <td>
-                    <div style="font-weight: 600; color: var(--razo-gray-dark);">${orden.proveedorNombre}</div>
-                  </td>
-                  <td>${fecha}</td>
-                  <td>${fechaEsperada}</td>
-                  <td style="text-align: center;">${orden.totalProductos} items</td>
-                  <td><span class="admin-badge ${badgeClass}">${orden.estatus}</span></td>
-                  <td>
-                    <button 
-                      class="btn btn-primary" 
-                      style="padding: 0.5rem 1rem; font-size: 0.875rem;"
-                      onclick="abrirRecepcion(${orden.ordenCompraId})">
-                      📥 Recibir
-                    </button>
-                  </td>
-                </tr>
-              `;
-                })
-                .join("");
-
-              ordenesTable.style.display = "table";
+          const params = new URLSearchParams(window.location.search);
+          const ordenIdParam = params.get("ordenId");
+          const ordenId = Number.parseInt(ordenIdParam, 10);
+          if (Number.isInteger(ordenId) && ordenId > 0) {
+            const hasOption = Array.from(ocSelect.options).some(
+              (o) => String(o.value) === String(ordenId)
+            );
+            if (hasOption) {
+              ocSelect.value = String(ordenId);
+              ocSelect.dispatchEvent(new Event("change"));
             }
           }
         } catch (error) {
-          console.error("Error loading ordenes:", error);
-          showToast("Error al cargar órdenes", "error");
-          emptyOrdenes.style.display = "block";
-        } finally {
-          loadingOrdenes.style.display = "none";
+          ocSelect.disabled = true;
+          ocSelect.innerHTML = "<option value=\"\">Error cargando OCs</option>";
+          setEmpty(error.message || "No se pudieron cargar órdenes");
         }
-      }
+      };
 
-      // Abrir modal de recepción
-      async function abrirRecepcion(ordenCompraId) {
-        try {
-          document.getElementById("loadingDetalles").style.display = "flex";
-          document.getElementById("productosRecepcion").innerHTML = "";
-          document.getElementById("recepcionModal").style.display = "flex";
+      const piezasPorPaqueteValue = (item) => {
+        const raw = item.piezasPorPaquete ?? item.piezasporpaquete;
+        const parsed = Number.parseInt(raw, 10);
+        return Number.isInteger(parsed) && parsed > 0 ? parsed : 1;
+      };
 
-          Object.keys(discrepanciaIntentos).forEach((k) => delete discrepanciaIntentos[k]);
+      const showToastOk = (title) => {
+        if (typeof Swal === "undefined" || !Swal) return;
+        Swal.fire({
+          toast: true,
+          position: "top-end",
+          icon: "success",
+          title: title || "Listo",
+          showConfirmButton: false,
+          timer: 1400,
+          timerProgressBar: true,
+        });
+      };
 
-          const response = await fetch(
-            `${API_BASE_URL}/admin/ordenes-compra/${ordenCompraId}/detalles`,
-            {
-              method: "GET",
-              headers: {
-                Authorization: `Bearer ${adminToken}`,
-                "Content-Type": "application/json",
-              },
-            }
-          );
+      const showToastError = (title) => {
+        if (typeof Swal === "undefined" || !Swal) return;
+        Swal.fire({
+          toast: true,
+          position: "top-end",
+          icon: "error",
+          title: title || "Error",
+          showConfirmButton: false,
+          timer: 2200,
+          timerProgressBar: true,
+        });
+      };
 
-          if (!response.ok) throw new Error("Error al cargar detalles");
+      const renderSplit = () => {
+        const items = Array.isArray(state.items) ? state.items : [];
+        const pendientes = items.filter(
+          (i) => (Number.parseInt(i.cantidadPendiente, 10) || 0) > 0
+        );
 
-          const data = await response.json();
-          if (data.success) {
-            ordenActual = data.data.orden;
-            detallesActuales = data.data.detalles;
+        const sumaSolicitada = items.reduce(
+          (acc, item) => acc + (Number.parseInt(item.cantidadSolicitada, 10) || 0),
+          0
+        );
+        const sumaRecibida = items.reduce(
+          (acc, item) => acc + (Number.parseInt(item.cantidadRecibida, 10) || 0),
+          0
+        );
 
-            document.getElementById("modalOrdenId").textContent =
-              ordenActual.ordenCompraId;
-            document.getElementById("modalProveedor").textContent =
-              ordenActual.proveedorNombre;
-
-            mostrarProductosRecepcion();
-          }
-        } catch (error) {
-          console.error("Error:", error);
-          showToast("Error al cargar detalles de la orden", "error");
-          closeRecepcionModal();
-        } finally {
-          document.getElementById("loadingDetalles").style.display = "none";
+        if (lblTotalSolicitado) {
+          lblTotalSolicitado.textContent = `${sumaSolicitada.toLocaleString("es-MX")} Pzas`;
         }
-      }
+        if (lblTotalRecibido) {
+          lblTotalRecibido.textContent = `${sumaRecibida.toLocaleString("es-MX")} Pzas`;
+        }
 
-      // Mostrar productos para recepción
-      function mostrarProductosRecepcion() {
-        const container = document.getElementById("productosRecepcion");
+        pendienteBadge.textContent = `${pendientes.length} PENDIENTES`;
+        recibidoBadge.textContent = `${items.length} ITEMS`;
 
-        const resumen = (() => {
-          let totalSolicitadoPzas = 0;
-          let totalRecibidoPzas = 0;
-          for (const d of detallesActuales) {
-            const piezasPorPaquete = (() => {
-              const raw = d.piezasPorPaquete ?? d.piezasporpaquete;
-              const parsed = Number.parseInt(raw, 10);
-              return Number.isInteger(parsed) && parsed > 0 ? parsed : 1;
-            })();
+        tbodyPendiente.innerHTML = "";
+        tbodyRecibido.innerHTML = "";
 
-            const solicitado = Number.parseInt(d.cantidadSolicitada, 10);
-            const recibido = Number.parseInt(d.cantidadRecibida, 10);
+        const baseUrl = `${window.location.protocol}//${window.location.host}`;
 
-            const solicitadoFinal = Number.isInteger(solicitado) ? solicitado : 0;
-            const recibidoFinal = Number.isInteger(recibido) ? recibido : 0;
+        for (const item of pendientes) {
+          const piezas = piezasPorPaqueteValue(item);
+          const solicitadoPzas = Number.parseInt(item.cantidadSolicitada, 10) || 0;
+          const recibidoPzas = Number.parseInt(item.cantidadRecibida, 10) || 0;
+          const pendientePzas = Math.max(solicitadoPzas - recibidoPzas, 0);
 
-            totalSolicitadoPzas += solicitadoFinal * piezasPorPaquete;
-            totalRecibidoPzas += recibidoFinal * piezasPorPaquete;
-          }
-          return {
-            totalSolicitadoPzas,
-            totalRecibidoPzas,
-          };
-        })();
+          const tr = document.createElement("tr");
 
-        container.innerHTML = `
-        <div style="margin-bottom: 1rem; display: grid; gap: 0.5rem;">
-          <div style="display:flex; align-items:center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;">
-            <div style="font-weight: 700; color: var(--razo-gray-dark);">Progreso de recepción</div>
-            <div id="recepcionProgresoTexto" style="font-weight: 700; color: #111827;">${resumen.totalRecibidoPzas}/${resumen.totalSolicitadoPzas} piezas</div>
-          </div>
-          <div style="height: 10px; background: #e5e7eb; border-radius: 999px; overflow: hidden;">
-            <div id="recepcionProgresoBar" style="height: 10px; width: ${resumen.totalSolicitadoPzas > 0 ? Math.min(100, Math.round((resumen.totalRecibidoPzas / resumen.totalSolicitadoPzas) * 100)) : 0}%; background: #10b981;"></div>
-          </div>
-        </div>
+          const tdImg = document.createElement("td");
+          const img = document.createElement("img");
+          img.alt = safeText(item.nombreProducto);
+          img.src = item.imagen ? `${baseUrl}${item.imagen}` : "/icon/Logo_Razo.png";
+          img.className = "img-mini-tabla";
+          img.style.border = "1px solid rgba(0,0,0,0.06)";
+          tdImg.appendChild(img);
 
-        <table class="admin-table">
-          <thead>
-            <tr>
-              <th>SKU / Producto</th>
-              <th style="text-align: center;">Preliminar (Solicitado)</th>
-              <th style="text-align: center;">Ya Recibido</th>
-              <th style="width: 220px;">Ingreso Actual</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${detallesActuales
-              .map((detalle) => {
-                const pendiente = detalle.cantidadPendiente;
-                const recibidoClass =
-                  detalle.cantidadRecibida > 0 ? "text-success" : "";
+          const tdSku = document.createElement("td");
+          tdSku.innerHTML = `
+            <div style="display:grid; gap: 0.25rem;">
+              <div><code style="background:#f3f4f6; padding: 0.25rem 0.5rem; border-radius: 0.375rem;">${safeText(
+                item.sku
+              )}</code></div>
+              <div class="td-truncado" title="${safeText(item.nombreProducto)}" style="font-weight: 800; color: #111827;">${safeText(
+                item.nombreProducto
+              )}</div>
+              <div style="font-size: 0.85rem; color: #6b7280;">${piezas} pzas/paq</div>
+            </div>
+          `;
 
-                const piezasPorPaquete = (() => {
-                  const raw = detalle.piezasPorPaquete ?? detalle.piezasporpaquete;
-                  const parsed = Number.parseInt(raw, 10);
-                  return Number.isInteger(parsed) && parsed > 0 ? parsed : 1;
-                })();
+          const tdSol = document.createElement("td");
+          tdSol.style.textAlign = "center";
+          tdSol.innerHTML = `<strong>${solicitadoPzas}</strong>`;
 
-                const solicitado = Number.parseInt(detalle.cantidadSolicitada, 10);
-                const solicitadoFinal = Number.isInteger(solicitado) ? solicitado : 0;
+          const tdPen = document.createElement("td");
+          tdPen.style.textAlign = "center";
+          tdPen.innerHTML = `<strong>${pendientePzas}</strong>`;
 
-                return `
-                <tr>
-                  <td>
-                    <div style="display: grid; gap: 0.25rem;">
-                      <div><code style="background: #f0f0f0; padding: 0.25rem 0.5rem; border-radius: 0.25rem;">${
-                        detalle.sku
-                      }</code></div>
-                      <div style="font-weight: 700; color: #111827;">${detalle.nombreProducto}</div>
-                      <div style="font-size: 0.8rem; color: var(--razo-gray-warm);">${piezasPorPaquete} pzas/paq</div>
-                    </div>
-                  </td>
-                  <td style="text-align: center;"><strong>${solicitadoFinal}</strong></td>
-                  <td style="text-align: center;" class="${recibidoClass}"><strong>${
-                  detalle.cantidadRecibida
-                }</strong></td>
-                  <td>
-                    <input 
-                      type="number" 
-                      class="form-input recibir-input" 
-                      data-detalle-id="${detalle.detalleId}"
-                      data-piezas-por-paquete="${piezasPorPaquete}"
-                      data-solicitado="${solicitadoFinal}"
-                      data-ya-recibido="${Number.parseInt(detalle.cantidadRecibida, 10) || 0}"
-                      data-max="${pendiente}"
-                      min="0" 
-                      max="${pendiente}"
-                      value=""
-                      ${pendiente === 0 ? "disabled" : ""}
-                      placeholder="Ingresa cantidad"
-                      style="padding: 0.5rem; text-align: center;"
-                    >
-                    <div class="recibir-helper" style="margin-top: 0.35rem; font-size: 0.8rem; color: var(--razo-gray-warm); display: none;"></div>
-                  </td>
-                </tr>
-              `;
-              })
-              .join("")}
-          </tbody>
-        </table>
-      `;
+          const tdInput = document.createElement("td");
+          const input = document.createElement("input");
+          input.type = "number";
+          input.min = "1";
+          input.max = String(pendientePzas);
+          input.step = "1";
+          input.placeholder = "0";
+          input.className = "form-input input-mini-tabla";
+          input.dataset.detalleId = String(item.detalleId);
+          input.dataset.varianteId = String(item.varianteId);
+          input.dataset.pendiente = String(pendientePzas);
+          input.dataset.piezas = String(piezas);
+          tdInput.appendChild(input);
 
-        const progresoBar = document.getElementById("recepcionProgresoBar");
-        const progresoTexto = document.getElementById("recepcionProgresoTexto");
-        const parcialAlert = document.getElementById("recepcionParcialAlert");
+          const helper = document.createElement("div");
+          helper.style.marginTop = "0.35rem";
+          helper.style.fontSize = "0.8rem";
+          helper.style.color = "#6b7280";
+          helper.textContent = `Regla: ${piezas} pzas/paq`;
+          tdInput.appendChild(helper);
 
-        const updateProgreso = () => {
-          let ingresoActualPzas = 0;
-          let hayParcial = false;
-
-          container.querySelectorAll(".recibir-input").forEach((inp) => {
-            const piezas = Number.parseInt(inp.getAttribute("data-piezas-por-paquete"), 10) || 1;
-            const solicitado = Number.parseInt(inp.getAttribute("data-solicitado"), 10) || 0;
-            const yaRecibido = Number.parseInt(inp.getAttribute("data-ya-recibido"), 10) || 0;
-            const pendiente = Math.max(solicitado - yaRecibido, 0);
-            const ingreso = Number.parseInt(inp.value, 10);
-
-            const ingresoFinal = Number.isInteger(ingreso) && ingreso > 0 ? ingreso : 0;
-            if (ingresoFinal > 0) {
-              ingresoActualPzas += ingresoFinal * piezas;
-            }
-
-            if (pendiente > 0 && ingresoFinal < pendiente) {
-              hayParcial = true;
-            }
-          });
-
-          const recibidoTotal = resumen.totalRecibidoPzas + ingresoActualPzas;
-          const solicitadoTotal = resumen.totalSolicitadoPzas;
-          const pct =
-            solicitadoTotal > 0
-              ? Math.min(100, Math.round((recibidoTotal / solicitadoTotal) * 100))
-              : 0;
-
-          if (progresoBar) {
-            progresoBar.style.width = `${pct}%`;
-          }
-          if (progresoTexto) {
-            progresoTexto.textContent = `${recibidoTotal}/${solicitadoTotal} piezas`;
-          }
-
-          if (parcialAlert) {
-            parcialAlert.style.display = hayParcial ? "block" : "none";
-          }
-        };
-
-        container.querySelectorAll(".recibir-input").forEach((input) => {
-          const helper = input.parentElement
-            ? input.parentElement.querySelector(".recibir-helper")
-            : null;
-          const piezasPorPaquete = (() => {
-            const raw = input.getAttribute("data-piezas-por-paquete");
-            const parsed = Number.parseInt(raw, 10);
-            return Number.isInteger(parsed) && parsed > 0 ? parsed : 1;
-          })();
-
-          const solicitado = Number.parseInt(input.getAttribute("data-solicitado"), 10) || 0;
-          const yaRecibido = Number.parseInt(input.getAttribute("data-ya-recibido"), 10) || 0;
-          const pendiente = Math.max(solicitado - yaRecibido, 0);
-
-          const render = () => {
-            const cantidad = Number.parseInt(input.value, 10);
-            if (!helper) return;
-            if (!Number.isInteger(cantidad) || cantidad <= 0) {
-              helper.style.display = "none";
-              helper.textContent = "";
+          const renderColor = () => {
+            const val = Number.parseInt(input.value, 10);
+            if (!Number.isInteger(val) || val <= 0) {
               input.style.borderColor = "";
               return;
             }
-
-            const totalPiezas = cantidad * piezasPorPaquete;
-            helper.style.display = "block";
-            helper.textContent = `Estás recibiendo: ${totalPiezas} piezas totales`;
-
-            if (cantidad < pendiente) {
+            if (val < pendientePzas) {
               input.style.borderColor = "#f59e0b";
             } else {
               input.style.borderColor = "#10b981";
             }
           };
 
-          input.addEventListener("input", render);
-          input.addEventListener("change", render);
-          input.addEventListener("input", updateProgreso);
-          input.addEventListener("change", updateProgreso);
-          render();
-        });
+          input.addEventListener("input", renderColor);
+          input.addEventListener("change", renderColor);
+          renderColor();
 
-        updateProgreso();
-      }
+          const tdBtn = document.createElement("td");
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "btn btn-primary";
+          btn.textContent = "⬇️ Ingresar";
+          btn.style.padding = "0.45rem 0.75rem";
+          btn.style.fontSize = "0.875rem";
+          btn.addEventListener("click", async () => {
+            const cantidad = Number.parseInt(input.value, 10);
+            const max = Number.parseInt(input.dataset.pendiente, 10) || 0;
 
-      // Guardar recepción
-      async function subirEvidenciaDiscrepancia(file) {
-        if (!file) return null;
-
-        const formData = new FormData();
-        formData.append("evidencia", file);
-
-        const res = await fetch(`${API_BASE_URL}/admin/ordenes-compra/recibir/evidencia`, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${adminToken}`,
-          },
-          body: formData,
-        });
-
-        const data = await res.json();
-        if (!res.ok || !data?.success) {
-          throw new Error(data?.message || "No se pudo subir la evidencia");
-        }
-
-        return data?.data?.url || null;
-      }
-
-      async function pedirJustificacionYFoto(ordenCompraId, detalleId, esperado, recibido) {
-        if (typeof Swal === "undefined" || !Swal) {
-          throw new Error("SweetAlert2 no está disponible");
-        }
-
-        const result = await Swal.fire({
-          title: "Discrepancia detectada",
-          html: `El sistema esperaba <strong>${esperado}</strong> y estás ingresando <strong>${recibido}</strong>.<br/><br/>Escribe una justificación y, si puedes, adjunta una foto de evidencia.`,
-          icon: "warning",
-          showCancelButton: true,
-          confirmButtonText: "Guardar con discrepancia",
-          cancelButtonText: "Cancelar",
-          reverseButtons: true,
-          input: "textarea",
-          inputLabel: "Justificación (obligatoria)",
-          inputPlaceholder: "Ej: Llegó incompleto / proveedor envió menos / se dañó caja...",
-          inputAttributes: {
-            required: true,
-          },
-          didOpen: () => {
-            const container = Swal.getHtmlContainer();
-            if (!container) return;
-            const wrap = document.createElement("div");
-            wrap.style.marginTop = "12px";
-            wrap.innerHTML = `
-              <label style="display:block; font-weight:700; margin-bottom:6px;">Foto de evidencia (opcional)</label>
-              <input type="file" id="swalEvidencia" accept="image/*" class="form-control" />
-              <div style="margin-top:6px; font-size:0.85rem; color:#6b7280;">Máx. 5MB. JPG/PNG/WEBP.</div>
-            `;
-            container.appendChild(wrap);
-          },
-          preConfirm: () => {
-            const justificacion = (Swal.getInput()?.value || "").toString().trim();
-            if (!justificacion) {
-              Swal.showValidationMessage("La justificación es obligatoria");
-              return false;
+            if (!Number.isInteger(cantidad) || cantidad <= 0) {
+              showToastError("Ingresa una cantidad válida");
+              return;
+            }
+            if (cantidad > max) {
+              showToastError("No puede exceder lo pendiente");
+              return;
             }
 
-            const fileInput = document.getElementById("swalEvidencia");
-            const file = fileInput && fileInput.files && fileInput.files[0] ? fileInput.files[0] : null;
-            return { justificacion, file };
-          },
-        });
+            btn.disabled = true;
+            try {
+              const resp = await apiCall(
+                `/admin/ordenes-compra/${encodeURIComponent(
+                  state.orden.ordenCompraId
+                )}/recibir-item`,
+                {
+                  method: "POST",
+                  body: JSON.stringify({
+                    detalleId: Number.parseInt(item.detalleId, 10),
+                    varianteId: Number.parseInt(item.varianteId, 10),
+                    cantidadIngresada: cantidad,
+                  }),
+                }
+              );
 
-        if (!result.isConfirmed) return null;
-        return {
-          ordenCompraId,
-          detalleId,
-          esperado,
-          recibido,
-          justificacion: result.value.justificacion,
-          file: result.value.file || null,
-        };
-      }
+              if (!resp.ok) {
+                throw new Error(resp.data?.message || "No se pudo recibir item");
+              }
 
-      async function guardarRecepcion() {
-        try {
-          // Recopilar productos con cantidades > 0
-          const inputs = document.querySelectorAll(".recibir-input");
-          const productos = [];
-
-          for (const input of inputs) {
-            const cantidad = parseInt(input.value) || 0;
-            if (cantidad > 0) {
-              const max = parseInt(input.getAttribute("data-max"));
-              if (cantidad > max) {
-                throw new Error(
-                  `La cantidad recibida no puede exceder la cantidad pendiente`
+              const updated = resp.data?.data?.item;
+              if (updated) {
+                state.items = state.items.map((x) =>
+                  Number.parseInt(x.detalleId, 10) === Number.parseInt(updated.detalleId, 10)
+                    ? {
+                        ...x,
+                        cantidadRecibida: updated.cantidadRecibida,
+                        cantidadPendiente: updated.cantidadPendiente,
+                      }
+                    : x
                 );
               }
 
-              const detalleId = parseInt(input.getAttribute("data-detalle-id"));
-              productos.push({
-                detalleId: detalleId,
-                cantidadRecibidaAhora: cantidad,
-              });
+              state.orden.estatus = resp.data?.data?.estatusOC || state.orden.estatus;
+              ocMeta.textContent = `Estatus: ${safeText(state.orden.estatus)}`;
+              ocBadge.textContent = `OC #${state.orden.ordenCompraId} · ${safeText(
+                state.orden.estatus
+              )}`;
+
+              showToastOk("Recibido");
+              input.value = "";
+              renderSplit();
+
+              if (state.orden.estatus === "Completada") {
+                if (typeof Swal !== "undefined" && Swal) {
+                  await Swal.fire({
+                    icon: "success",
+                    title: "OC completada",
+                    text: `La OC #${state.orden.ordenCompraId} quedó Completada.`,
+                    confirmButtonColor: "#F97316",
+                  });
+                }
+                ocSelect.value = "";
+                ocProveedor.textContent = "—";
+                ocMeta.textContent = "—";
+                ocBadge.textContent = "—";
+                state.orden = null;
+                state.items = [];
+                setEmpty("Selecciona una orden de compra para empezar.");
+                await loadOrdenes();
+              }
+            } catch (error) {
+              console.error(error);
+              showToastError(error.message || "Error");
+            } finally {
+              btn.disabled = false;
             }
-          }
+          });
+          tdBtn.appendChild(btn);
 
-          
-
-          if (productos.length === 0) {
-            showToast("Debe ingresar al menos una cantidad recibida", "error");
-            return;
-          }
-
-          const btnGuardar = document.getElementById("btnGuardarRecepcion");
-          const btnGuardarText = document.getElementById("btnGuardarText");
-          const btnGuardarSpinner =
-            document.getElementById("btnGuardarSpinner");
-
-          btnGuardar.disabled = true;
-          btnGuardarText.style.display = "none";
-          btnGuardarSpinner.style.display = "block";
-
-          const adminData = JSON.parse(
-            localStorage.getItem("razoconnect_admin")
-          );
-          const adminId = adminData ? adminData.adminid : null;
-
-          const response = await fetch(
-            `${API_BASE_URL}/admin/ordenes-compra/recibir`,
-            {
-              method: "POST",
-              headers: {
-                Authorization: `Bearer ${adminToken}`,
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                ordenCompraId: ordenActual.ordenCompraId,
-                productos: productos,
-                adminId: adminId,
-                discrepancias: [],
-              }),
-            }
-          );
-
-          const data = await response.json();
-
-          if (response.ok && data.success) {
-            showToast(
-              `✅ Inventario recibido. Estatus: ${data.data.nuevoEstatus}`,
-              "success"
-            );
-            closeRecepcionModal();
-            loadOrdenesPendientes();
-          } else {
-            showToast(data.message || "Error al recibir inventario", "error");
-          }
-        } catch (error) {
-          console.error("Error:", error);
-          showToast(error.message || "Error al procesar la recepción", "error");
-        } finally {
-          const btnGuardar = document.getElementById("btnGuardarRecepcion");
-          const btnGuardarText = document.getElementById("btnGuardarText");
-          const btnGuardarSpinner =
-            document.getElementById("btnGuardarSpinner");
-
-          btnGuardar.disabled = false;
-          btnGuardarText.style.display = "inline";
-          btnGuardarSpinner.style.display = "none";
+          tr.appendChild(tdImg);
+          tr.appendChild(tdSku);
+          tr.appendChild(tdSol);
+          tr.appendChild(tdPen);
+          tr.appendChild(tdInput);
+          tr.appendChild(tdBtn);
+          tbodyPendiente.appendChild(tr);
         }
-      }
 
-      // Cerrar modal
-      function closeRecepcionModal() {
-        document.getElementById("recepcionModal").style.display = "none";
-        ordenActual = null;
-        detallesActuales = [];
-      }
+        for (const item of items) {
+          const piezas = piezasPorPaqueteValue(item);
+          const solicitadoPzas = Number.parseInt(item.cantidadSolicitada, 10) || 0;
+          const recibidoPzas = Number.parseInt(item.cantidadRecibida, 10) || 0;
 
-      // Navigation handling for non-implemented modules
-      const navLinks = document.querySelectorAll(
-        ".admin-nav-link[data-module]"
-      );
-      navLinks.forEach((link) => {
-        link.addEventListener("click", (e) => {
-          e.preventDefault();
-          const moduleName = link.querySelector("span:last-child").textContent;
-          showToast(`Módulo "${moduleName}" próximamente disponible`, "info");
-        });
-      });
+          const pct = solicitadoPzas > 0 ? Math.min(100, Math.round((recibidoPzas / solicitadoPzas) * 100)) : 0;
+          const isDone = recibidoPzas >= solicitadoPzas && solicitadoPzas > 0;
 
-      // Close modal when clicking outside
-      window.onclick = function (event) {
-        const modal = document.getElementById("recepcionModal");
-        if (event.target == modal) {
-          closeRecepcionModal();
+          const tr = document.createElement("tr");
+
+          const tdImg = document.createElement("td");
+          const img = document.createElement("img");
+          img.alt = safeText(item.nombreProducto);
+          img.src = item.imagen ? `${baseUrl}${item.imagen}` : "/icon/Logo_Razo.png";
+          img.className = "img-mini-tabla";
+          img.style.border = "1px solid rgba(0,0,0,0.06)";
+          tdImg.appendChild(img);
+
+          const tdSku = document.createElement("td");
+          tdSku.className = "td-truncado";
+          tdSku.title = safeText(item.sku);
+          tdSku.textContent = safeText(item.sku);
+
+          const tdRec = document.createElement("td");
+          tdRec.style.textAlign = "center";
+          tdRec.innerHTML = `<strong>${recibidoPzas}</strong>`;
+
+          const tdProg = document.createElement("td");
+          const wrap = document.createElement("div");
+          wrap.style.display = "grid";
+          wrap.style.gap = "0.35rem";
+
+          const top = document.createElement("div");
+          top.style.display = "flex";
+          top.style.alignItems = "center";
+          top.style.justifyContent = "space-between";
+          top.style.gap = "0.75rem";
+          top.innerHTML = `
+            <div style="font-weight: 800; color: ${isDone ? "#10b981" : "#f59e0b"}">
+              ${isDone ? "✅ Completo" : "🟡 Parcial"}
+            </div>
+            <div style="font-size: 0.85rem; color: #6b7280">${recibidoPzas}/${solicitadoPzas}</div>
+          `;
+
+          const barOuter = document.createElement("div");
+          barOuter.className = "recepcion-progress-outer";
+          const barInner = document.createElement("div");
+          barInner.className = "recepcion-progress-inner";
+          barInner.style.width = `${pct}%`;
+          barInner.style.background = isDone ? "#10b981" : "#f59e0b";
+          barOuter.appendChild(barInner);
+
+          wrap.appendChild(top);
+          wrap.appendChild(barOuter);
+          tdProg.appendChild(wrap);
+
+          tr.appendChild(tdImg);
+          tr.appendChild(tdSku);
+          tr.appendChild(tdRec);
+          tr.appendChild(tdProg);
+          tbodyRecibido.appendChild(tr);
+        }
+
+        if (!pendientes.length) {
+          const tr = document.createElement("tr");
+          const td = document.createElement("td");
+          td.colSpan = 6;
+          td.style.textAlign = "center";
+          td.style.color = "#6b7280";
+          td.style.padding = "1rem";
+          td.textContent = "No hay pendientes por recibir.";
+          tr.appendChild(td);
+          tbodyPendiente.appendChild(tr);
         }
       };
 
-      // Initialize
-      verifyAndLoadAdmin();
-      loadOrdenesPendientes();
+      const loadRecepcion = async (ordenCompraId) => {
+        setLoading(true);
+        recepcionEmpty.style.display = "none";
+        recepcionSplit.style.display = "none";
+
+        try {
+          const resp = await apiCall(
+            `/admin/ordenes-compra/${encodeURIComponent(ordenCompraId)}/recepcion`,
+            { method: "GET" }
+          );
+
+          if (!resp.ok) {
+            throw new Error(resp.data?.message || "No se pudo cargar recepción");
+          }
+
+          state.orden = resp.data?.data?.orden || null;
+          state.items = Array.isArray(resp.data?.data?.items) ? resp.data.data.items : [];
+
+          if (!state.orden) {
+            setEmpty("No se encontró información de la orden");
+            return;
+          }
+
+          ocProveedor.textContent = safeText(state.orden.proveedorNombre || "—");
+          ocMeta.textContent = `Estatus: ${safeText(state.orden.estatus)}`;
+          ocBadge.textContent = `OC #${safeText(state.orden.ordenCompraId)} · ${safeText(
+            state.orden.estatus
+          )}`;
+
+          recepcionSplit.style.display = "block";
+          renderSplit();
+        } catch (error) {
+          console.error(error);
+          setEmpty(error.message || "Error al cargar recepción");
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      ocSearch.addEventListener("input", () => {
+        renderOrdenes(ocSearch.value);
+      });
+
+      ocSelect.addEventListener("change", async () => {
+        const id = ocSelect.value;
+        const selected = ocSelect.options[ocSelect.selectedIndex];
+
+        if (!id) {
+          state.orden = null;
+          state.items = [];
+          ocProveedor.textContent = "—";
+          ocMeta.textContent = "—";
+          ocBadge.textContent = "—";
+          setEmpty("Selecciona una orden de compra para empezar.");
+          return;
+        }
+
+        ocProveedor.textContent = safeText(selected?.dataset?.proveedorNombre || "—");
+        ocMeta.textContent = "—";
+        ocBadge.textContent = `OC #${safeText(id)} · Cargando…`;
+        await loadRecepcion(id);
+      });
+
+      loadOrdenes();
     </script>
 
     <style>
@@ -850,6 +743,99 @@
           padding: 1rem !important;
         }
       }
+
+      .recepcion-panel {
+        border: 1px solid rgba(0, 0, 0, 0.06);
+        border-radius: 0.75rem;
+        padding: 0.75rem;
+        background: #fff;
+      }
+
+      /* Imágenes de producto miniatura en tablas */
+      .img-mini-tabla {
+        width: 40px;
+        height: 40px;
+        object-fit: cover;
+        border-radius: 4px;
+      }
+
+      /* Truncar texto largo con "..." */
+      .td-truncado {
+        max-width: 150px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      /* Inputs de cantidad más compactos */
+      .input-mini-tabla {
+        max-width: 80px;
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+      }
+
+      /* Encabezados sticky */
+      .thead-sticky th {
+        position: sticky;
+        top: 0;
+        background-color: #f8f9fa;
+        z-index: 2;
+      }
+
+      .thead-pendiente th {
+        background: #f8fafc;
+      }
+
+      .thead-recibido th {
+        background: #ecfdf5;
+      }
+
+      /* Asegurar grid responsivo aunque Bootstrap no esté cargado */
+      #recepcionSplit .row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+      }
+
+      #recepcionSplit .col-12 {
+        flex: 1 1 100%;
+        max-width: 100%;
+      }
+
+      @media (min-width: 1200px) {
+        #recepcionSplit .col-xl-6 {
+          flex: 1 1 calc(50% - 1rem);
+          max-width: calc(50% - 1rem);
+        }
+      }
+
+      /* Compactar celdas para evitar overflow */
+      #tablaPendiente th,
+      #tablaPendiente td,
+      #tablaRecibido th,
+      #tablaRecibido td {
+        padding: 0.5rem 0.5rem;
+        font-size: 0.875rem;
+        vertical-align: middle;
+      }
+
+      .table-responsive {
+        overflow-x: auto;
+      }
+
+      .recepcion-progress-outer {
+        height: 10px;
+        background: #e5e7eb;
+        border-radius: 999px;
+        overflow: hidden;
+      }
+
+      .recepcion-progress-inner {
+        height: 10px;
+        width: 0;
+        border-radius: 999px;
+      }
+
     </style>
   </body>
 </html>

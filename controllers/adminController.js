@@ -92,6 +92,468 @@ const subirEvidenciaRecepcionOC = async (req, res) => {
   }
 };
 
+const getCuentasPorPagar = async (req, res) => {
+  try {
+    const estatus = (req.query.estatus || "").toString().trim().toUpperCase();
+    const proveedorId = Number.parseInt(req.query.proveedorId, 10);
+
+    const where = [];
+    const params = [];
+    let i = 1;
+
+    if (estatus) {
+      where.push("cxp.estatus = $" + i);
+      params.push(estatus);
+      i += 1;
+    }
+
+    if (Number.isInteger(proveedorId) && proveedorId > 0) {
+      where.push("cxp.proveedor_id = $" + i);
+      params.push(proveedorId);
+      i += 1;
+    }
+
+    const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
+
+    const result = await db.query(
+      `SELECT
+         cxp.cxp_id,
+         cxp.proveedor_id,
+         cxp.orden_compra_id,
+         cxp.fecha_emision,
+         cxp.fecha_vencimiento,
+         cxp.monto_total,
+         cxp.monto_pagado,
+         cxp.estatus,
+         cxp.referencia_factura,
+         cxp.comprobante_pago,
+         cxp.notas,
+         p.nombreempresa AS proveedor_nombre,
+         COALESCE(oc.estatus, NULL) AS estatus_oc
+       FROM cuentas_por_pagar cxp
+       INNER JOIN proveedores p ON p.proveedorid = cxp.proveedor_id
+       LEFT JOIN ordenesdecompra oc ON oc.ordencompraid = cxp.orden_compra_id
+       ${whereSql}
+       ORDER BY cxp.fecha_vencimiento ASC NULLS LAST, cxp.fecha_emision DESC`,
+      params
+    );
+
+    return res.json({
+      success: true,
+      data: {
+        cuentas: (result.rows || []).map((row) => {
+          const montoTotal = Number.parseFloat(row.monto_total ?? 0) || 0;
+          const montoPagado = Number.parseFloat(row.monto_pagado ?? 0) || 0;
+          return {
+            cxpId: row.cxp_id,
+            proveedorId: row.proveedor_id,
+            proveedorNombre: row.proveedor_nombre,
+            ordenCompraId: row.orden_compra_id,
+            estatusOC: row.estatus_oc,
+            fechaEmision: row.fecha_emision,
+            fechaVencimiento: row.fecha_vencimiento,
+            montoTotal,
+            montoPagado,
+            restante: Math.max(montoTotal - montoPagado, 0),
+            estatus: row.estatus,
+            referenciaFactura: row.referencia_factura || null,
+            comprobantePago: row.comprobante_pago || null,
+            notas: row.notas || null,
+          };
+        }),
+      },
+    });
+  } catch (error) {
+    console.error("Error al obtener cuentas por pagar:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error al obtener cuentas por pagar",
+    });
+  }
+};
+
+const registrarPagoCuentaPorPagar = async (req, res) => {
+  const client = await db.pool.connect();
+
+  try {
+    const cxpId = Number.parseInt(req.params.id, 10);
+    const monto = Number.parseFloat(req.body?.monto);
+    const referencia = (req.body?.referencia || "").toString().trim();
+    const nota = (req.body?.nota || "").toString().trim();
+
+    if (!Number.isInteger(cxpId) || cxpId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "ID de cuenta por pagar inválido",
+      });
+    }
+    if (!Number.isFinite(monto) || monto <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Monto inválido",
+      });
+    }
+
+    const usuarioId = Number.parseInt(req?.user?.id ?? req?.user?.userId, 10);
+    const usuarioFinal = Number.isInteger(usuarioId) && usuarioId > 0 ? usuarioId : null;
+
+    const comprobanteUrl = req.file ? `/uploads/${req.file.filename}` : null;
+
+    await client.query("BEGIN");
+
+    const locked = await client.query(
+      `SELECT
+         cxp_id,
+         proveedor_id,
+         orden_compra_id,
+         monto_total,
+         monto_pagado,
+         estatus,
+         referencia_factura,
+         comprobante_pago,
+         notas
+       FROM cuentas_por_pagar
+       WHERE cxp_id = $1
+       FOR UPDATE`,
+      [cxpId]
+    );
+
+    if (!locked.rows.length) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({
+        success: false,
+        message: "Cuenta por pagar no encontrada",
+      });
+    }
+
+    const row = locked.rows[0];
+    const montoTotal = Number.parseFloat(row.monto_total ?? 0) || 0;
+    const montoPagadoActual = Number.parseFloat(row.monto_pagado ?? 0) || 0;
+    const nuevoPagado = montoPagadoActual + monto;
+
+    const estatusNuevo = (() => {
+      if (montoTotal > 0 && nuevoPagado >= montoTotal) return "PAGADO";
+      if (nuevoPagado > 0) return "PARCIAL";
+      return "PENDIENTE";
+    })();
+
+    const nuevaReferencia = referencia || row.referencia_factura || null;
+    const nuevoComprobante = comprobanteUrl || row.comprobante_pago || null;
+
+    const notasPrevias = (row.notas || "").toString().trim();
+    const notaNueva = nota;
+    const notasFinal = (() => {
+      if (!notaNueva) return notasPrevias || null;
+      if (!notasPrevias) return notaNueva;
+      return `${notasPrevias}\n${notaNueva}`;
+    })();
+
+    const updateRes = await client.query(
+      `UPDATE cuentas_por_pagar
+       SET monto_pagado = $1,
+           estatus = $2,
+           referencia_factura = $3,
+           comprobante_pago = $4,
+           notas = $5,
+           usuario_creador_id = COALESCE(usuario_creador_id, $6)
+       WHERE cxp_id = $7
+       RETURNING cxp_id, proveedor_id, orden_compra_id, fecha_emision, fecha_vencimiento, monto_total, monto_pagado, estatus, referencia_factura, comprobante_pago, notas`,
+      [
+        nuevoPagado,
+        estatusNuevo,
+        nuevaReferencia,
+        nuevoComprobante,
+        notasFinal,
+        usuarioFinal,
+        cxpId,
+      ]
+    );
+
+    await client.query("COMMIT");
+
+    const updated = updateRes.rows[0];
+    const total = Number.parseFloat(updated.monto_total ?? 0) || 0;
+    const pagado = Number.parseFloat(updated.monto_pagado ?? 0) || 0;
+
+    return res.json({
+      success: true,
+      message: "Pago registrado correctamente",
+      data: {
+        cuenta: {
+          cxpId: updated.cxp_id,
+          proveedorId: updated.proveedor_id,
+          ordenCompraId: updated.orden_compra_id,
+          fechaEmision: updated.fecha_emision,
+          fechaVencimiento: updated.fecha_vencimiento,
+          montoTotal: total,
+          montoPagado: pagado,
+          restante: Math.max(total - pagado, 0),
+          estatus: updated.estatus,
+          referenciaFactura: updated.referencia_factura || null,
+          comprobantePago: updated.comprobante_pago || null,
+          notas: updated.notas || null,
+        },
+      },
+    });
+  } catch (error) {
+    try {
+      await client.query("ROLLBACK");
+    } catch (e) {
+      // ignore
+    }
+    console.error("Error al registrar pago CxP:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error al registrar pago",
+    });
+  } finally {
+    client.release();
+  }
+};
+
+const upsertCuentaPorPagarForOC = async (client, ordenCompraId, usuarioId) => {
+  const ordenResult = await client.query(
+    `SELECT oc.proveedorid, COALESCE(p.diascredito, 0) AS diascredito
+     FROM ordenesdecompra oc
+     INNER JOIN proveedores p ON p.proveedorid = oc.proveedorid
+     WHERE oc.ordencompraid = $1`,
+    [ordenCompraId]
+  );
+
+  if (!ordenResult.rows.length) {
+    return null;
+  }
+
+  const proveedorId = Number.parseInt(ordenResult.rows[0].proveedorid, 10);
+  const diasCredito = Number.parseInt(ordenResult.rows[0].diascredito, 10);
+  const diasCreditoFinal = Number.isInteger(diasCredito) && diasCredito > 0 ? diasCredito : 0;
+
+  const montoResult = await client.query(
+    `SELECT COALESCE(
+        SUM(
+          COALESCE(
+            doc.piezasrecibidas,
+            (doc.cantidadrecibida * COALESCE(NULLIF(doc.piezasporpaquete, 0), 1))
+          )
+          * COALESCE(
+              NULLIF(doc.costounitario, 0) / COALESCE(NULLIF(doc.piezasporpaquete, 0), 1),
+              pv.costounitario
+            )
+        ),
+        0
+      ) AS monto_total
+     FROM detallesordencompra doc
+     INNER JOIN producto_variantes pv ON pv.varianteid = doc.varianteid
+     WHERE doc.ordencompraid = $1`,
+    [ordenCompraId]
+  );
+
+  const totalOrdenResult = await client.query(
+    `SELECT COALESCE(
+        SUM(
+          doc.cantidadsolicitada
+          * COALESCE(
+              NULLIF(doc.costounitario, 0),
+              (pv.costounitario * COALESCE(NULLIF(doc.piezasporpaquete, 0), 1))
+            )
+        ),
+        0
+      ) AS total_orden
+     FROM detallesordencompra doc
+     INNER JOIN producto_variantes pv ON pv.varianteid = doc.varianteid
+     WHERE doc.ordencompraid = $1`,
+    [ordenCompraId]
+  );
+
+  const totalOrden = Number.parseFloat(totalOrdenResult.rows[0]?.total_orden ?? 0) || 0;
+  await client.query("UPDATE OrdenesDeCompra SET Total = $1 WHERE OrdenCompraID = $2", [
+    totalOrden,
+    ordenCompraId,
+  ]);
+
+  const montoTotal = Number.parseFloat(montoResult.rows[0]?.monto_total ?? 0) || 0;
+
+  const vencResult = await client.query(
+    "SELECT (CURRENT_DATE + ($1::int * INTERVAL '1 day'))::date AS fecha_vencimiento",
+    [diasCreditoFinal]
+  );
+  const fechaVencimiento = vencResult.rows[0]?.fecha_vencimiento || null;
+
+  const existing = await client.query(
+    `SELECT cxp_id, monto_pagado
+     FROM cuentas_por_pagar
+     WHERE orden_compra_id = $1
+     LIMIT 1
+     FOR UPDATE`,
+    [ordenCompraId]
+  );
+
+  if (!existing.rows.length) {
+    const estatus = montoTotal > 0 ? "PENDIENTE" : "PENDIENTE";
+    const insertRes = await client.query(
+      `INSERT INTO cuentas_por_pagar
+        (proveedor_id, orden_compra_id, fecha_vencimiento, monto_total, estatus, usuario_creador_id)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       RETURNING cxp_id, proveedor_id, orden_compra_id, fecha_vencimiento, monto_total, monto_pagado, estatus`,
+      [proveedorId, ordenCompraId, fechaVencimiento, montoTotal, estatus, usuarioId]
+    );
+
+    return insertRes.rows[0] || null;
+  }
+
+  const cxpId = Number.parseInt(existing.rows[0].cxp_id, 10);
+  const montoPagado = Number.parseFloat(existing.rows[0].monto_pagado ?? 0) || 0;
+
+  const estatus = (() => {
+    if (montoTotal > 0 && montoPagado >= montoTotal) return "PAGADO";
+    if (montoPagado > 0) return "PARCIAL";
+    return "PENDIENTE";
+  })();
+
+  const updateRes = await client.query(
+    `UPDATE cuentas_por_pagar
+     SET proveedor_id = $1,
+         fecha_vencimiento = $2,
+         monto_total = $3,
+         estatus = $4
+     WHERE cxp_id = $5
+     RETURNING cxp_id, proveedor_id, orden_compra_id, fecha_vencimiento, monto_total, monto_pagado, estatus`,
+    [proveedorId, fechaVencimiento, montoTotal, estatus, cxpId]
+  );
+
+  return updateRes.rows[0] || null;
+};
+
+const getRecepcionOrdenCompra = async (req, res) => {
+  try {
+    const ordenCompraId = Number.parseInt(req.params.id, 10);
+    if (!Number.isInteger(ordenCompraId) || ordenCompraId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "ID de orden de compra inválido",
+      });
+    }
+
+    const ordenResult = await db.query(
+      `SELECT
+         oc.ordencompraid,
+         oc.proveedorid,
+         oc.fechacreacion,
+         oc.fechaentregaesperada,
+         oc.estatus,
+         p.nombreempresa AS proveedornombre,
+         p.contactonombre AS proveedorcontacto
+       FROM ordenesdecompra oc
+       INNER JOIN proveedores p ON oc.proveedorid = p.proveedorid
+       WHERE oc.ordencompraid = $1`,
+      [ordenCompraId]
+    );
+
+    if (!ordenResult.rows.length) {
+      return res.status(404).json({
+        success: false,
+        message: "Orden de compra no encontrada",
+      });
+    }
+
+    const orden = ordenResult.rows[0];
+
+    const detallesResult = await db.query(
+      `SELECT
+         doc.detalleoc_id,
+         doc.ordencompraid,
+         doc.varianteid,
+         doc.cantidadsolicitada,
+         doc.cantidadrecibida,
+         doc.piezasrecibidas,
+         doc.piezasporpaquete,
+         pv.productoid,
+         pv.sku,
+         pv.dimensiones,
+         pv.medidaid,
+         pv.tipoproductoid,
+         COALESCE(pv.stock, 0) AS stockvariante,
+         pr.nombreproducto,
+         pi.url_imagen AS imagen,
+         pre.cantidadempaque AS regla_cantidadempaque
+       FROM detallesordencompra doc
+       INNER JOIN producto_variantes pv ON doc.varianteid = pv.varianteid
+       INNER JOIN productos pr ON pv.productoid = pr.productoid
+       LEFT JOIN producto_imagenes pi ON pi.productoid = pr.productoid AND pi.orden = 1
+       LEFT JOIN proveedor_reglas_empaque pre
+         ON pre.proveedorid = $2
+        AND pre.tipoproductoid = pv.tipoproductoid
+       WHERE doc.ordencompraid = $1
+       ORDER BY pr.nombreproducto ASC`,
+      [ordenCompraId, orden.proveedorid]
+    );
+
+    const items = detallesResult.rows.map((row) => {
+      const piezasPorPaqueteParsed = Number.parseInt(row.piezasporpaquete, 10);
+      const piezasPorPaquete =
+        Number.isInteger(piezasPorPaqueteParsed) && piezasPorPaqueteParsed > 0
+          ? piezasPorPaqueteParsed
+          : 1;
+
+      const solicitadoPzas =
+        (Number.parseInt(row.cantidadsolicitada, 10) || 0) * piezasPorPaquete;
+      const recibidoPzas = (() => {
+        const piezasRecibidasRaw = row.piezasrecibidas;
+        const piezasRecibidas = Number.parseInt(piezasRecibidasRaw, 10);
+        if (Number.isInteger(piezasRecibidas) && piezasRecibidas >= 0) return piezasRecibidas;
+        const recibidoPaq = Number.parseInt(row.cantidadrecibida, 10) || 0;
+        return recibidoPaq * piezasPorPaquete;
+      })();
+
+      return {
+        detalleId: row.detalleoc_id,
+        ordenCompraId: row.ordencompraid,
+        varianteId: row.varianteid,
+        productoId: row.productoid,
+        sku: row.sku,
+        nombreProducto: row.nombreproducto,
+        dimensiones: row.dimensiones,
+        medidaId: row.medidaid,
+        tipoProductoId: row.tipoproductoid,
+        imagen: row.imagen || null,
+        cantidadSolicitada: solicitadoPzas,
+        cantidadRecibida: recibidoPzas,
+        cantidadPendiente: Math.max(solicitadoPzas - recibidoPzas, 0),
+        piezasPorPaquete,
+        stockVariante: Number.parseInt(row.stockvariante, 10) || 0,
+        reglas_empaque: {
+          cantidadEmpaque:
+            row.regla_cantidadempaque !== null && row.regla_cantidadempaque !== undefined
+              ? Number.parseInt(row.regla_cantidadempaque, 10) || null
+              : null,
+        },
+      };
+    });
+
+    return res.json({
+      success: true,
+      data: {
+        orden: {
+          ordenCompraId: orden.ordencompraid,
+          proveedorId: orden.proveedorid,
+          proveedorNombre: orden.proveedornombre,
+          proveedorContacto: orden.proveedorcontacto,
+          fechaCreacion: orden.fechacreacion,
+          fechaEntregaEsperada: orden.fechaentregaesperada,
+          estatus: orden.estatus,
+        },
+        items,
+      },
+    });
+  } catch (error) {
+    console.error("Error al obtener recepción de OC:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error al obtener información de recepción",
+    });
+  }
+};
+
 function normalizeReglasEmpaqueInput(raw) {
   const list = Array.isArray(raw) ? raw : [];
 
@@ -2941,8 +3403,9 @@ const updatePedidoEstatus = async (req, res) => {
     }
 
     const estatusAnterior = pedidoResult.rows[0].estatus || "Pendiente";
-    const rol = (req?.user?.rol || "").toString().trim().toLowerCase();
-    const allowDirect = rol === "superadmin" || rol === "admin" || rol === "agente";
+    const rolRaw = (req?.user?.rol || "").toString().trim().toLowerCase();
+    const rolNorm = rolRaw.replace(/[\s_-]+/g, "");
+    const allowDirect = rolNorm === "superadmin" || rolNorm === "admin" || rolNorm === "agente";
 
     if (allowDirect) {
       const oldData = {
@@ -8168,6 +8631,13 @@ const recibirInventario = async (req, res) => {
       [nuevoEstatus, ordenCompraId]
     );
 
+    let cuentaPorPagar = null;
+    if (["Parcial", "Completada"].includes(nuevoEstatus)) {
+      const usuarioId =
+        Number.isInteger(usuarioRecibeId) && usuarioRecibeId > 0 ? usuarioRecibeId : null;
+      cuentaPorPagar = await upsertCuentaPorPagarForOC(client, ordenCompraId, usuarioId);
+    }
+
     if (alertasSeguridad.length > 0) {
       const resumen = alertasSeguridad
         .map((a) => `${a.sku}: esperado ${a.esperado}, recibido ${a.recibido}`)
@@ -8219,6 +8689,7 @@ const recibirInventario = async (req, res) => {
       data: {
         ordenCompraId,
         nuevoEstatus,
+        cuentaPorPagar,
         productosActualizados,
         alertasSeguridad,
         totalSolicitado: parseInt(totalsolicitado),
@@ -8231,6 +8702,211 @@ const recibirInventario = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Error al recibir el inventario",
+    });
+  } finally {
+    client.release();
+  }
+};
+
+const recibirItemOrdenCompra = async (req, res) => {
+  const client = await db.pool.connect();
+
+  try {
+    const ordenCompraId = Number.parseInt(req.params.id, 10);
+    const detalleId = Number.parseInt(req.body?.detalleId, 10);
+    const varianteId = Number.parseInt(req.body?.varianteId, 10);
+    const cantidadIngresada = Number.parseInt(req.body?.cantidadIngresada, 10);
+    const usuarioRecibeId = Number.parseInt(req?.user?.id ?? req?.user?.userId, 10);
+
+    if (!Number.isInteger(ordenCompraId) || ordenCompraId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "ID de orden de compra inválido",
+      });
+    }
+    if (!Number.isInteger(detalleId) || detalleId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "detalleId inválido",
+      });
+    }
+    if (!Number.isInteger(varianteId) || varianteId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "varianteId inválido",
+      });
+    }
+    if (!Number.isInteger(cantidadIngresada) || cantidadIngresada <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "cantidadIngresada inválida",
+      });
+    }
+
+    await client.query("BEGIN");
+
+    const ordenLock = await client.query(
+      "SELECT OrdenCompraID, Estatus FROM OrdenesDeCompra WHERE OrdenCompraID = $1 FOR UPDATE",
+      [ordenCompraId]
+    );
+    if (!ordenLock.rows.length) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({
+        success: false,
+        message: "Orden de compra no encontrada",
+      });
+    }
+
+    const estatusActual = (ordenLock.rows[0].estatus || "").toString().trim();
+    if (!["Pendiente", "Parcial"].includes(estatusActual)) {
+      await client.query("ROLLBACK");
+      return res.status(409).json({
+        success: false,
+        message: `La orden no se puede recepcionar en estatus '${estatusActual || "(vacío)"}'`,
+      });
+    }
+
+    const detalleResult = await client.query(
+      `SELECT 
+         doc.DetalleOC_ID,
+         doc.OrdenCompraID,
+         doc.VarianteID,
+         doc.CantidadSolicitada,
+         doc.CantidadRecibida,
+         doc.PiezasRecibidas,
+         doc.PiezasPorPaquete,
+         pv.ProductoID,
+         pv.SKU,
+         pv.Stock AS StockVariante,
+         pr.NombreProducto
+       FROM DetallesOrdenCompra doc
+       INNER JOIN Producto_Variantes pv ON doc.VarianteID = pv.VarianteID
+       INNER JOIN Productos pr ON pv.ProductoID = pr.ProductoID
+       WHERE doc.DetalleOC_ID = $1 AND doc.OrdenCompraID = $2
+       FOR UPDATE`,
+      [detalleId, ordenCompraId]
+    );
+
+    if (!detalleResult.rows.length) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({
+        success: false,
+        message: "Detalle no encontrado en esta orden",
+      });
+    }
+
+    const detalle = detalleResult.rows[0];
+    const varianteIdDb = Number.parseInt(detalle.varianteid, 10);
+    if (varianteIdDb !== varianteId) {
+      await client.query("ROLLBACK");
+      return res.status(400).json({
+        success: false,
+        message: "La variante no corresponde al detalle indicado",
+      });
+    }
+
+    const solicitado = Number.parseInt(detalle.cantidadsolicitada, 10) || 0;
+    const recibidoPiezasRaw = detalle.piezasrecibidas;
+    const recibidoPiezas = Number.isInteger(Number.parseInt(recibidoPiezasRaw, 10))
+      ? Number.parseInt(recibidoPiezasRaw, 10)
+      : null;
+    const piezasPorPaqueteParsed = Number.parseInt(detalle.piezasporpaquete, 10);
+    const piezasPorPaquete =
+      Number.isInteger(piezasPorPaqueteParsed) && piezasPorPaqueteParsed > 0
+        ? piezasPorPaqueteParsed
+        : 1;
+
+    const solicitadoPzas = solicitado * piezasPorPaquete;
+    const recibidoPzasActual =
+      recibidoPiezas !== null ? recibidoPiezas : (Number.parseInt(detalle.cantidadrecibida, 10) || 0) * piezasPorPaquete;
+    const nuevoRecibidoPzas = recibidoPzasActual + cantidadIngresada;
+    if (nuevoRecibidoPzas > solicitadoPzas) {
+      await client.query("ROLLBACK");
+      return res.status(400).json({
+        success: false,
+        message: `No puede recibir más de lo solicitado para ${detalle.nombreproducto}. Solicitado: ${solicitadoPzas}, Ya recibido: ${recibidoPzasActual}`,
+      });
+    }
+
+    await client.query(
+      "UPDATE DetallesOrdenCompra SET PiezasRecibidas = COALESCE(PiezasRecibidas, 0) + $1 WHERE DetalleOC_ID = $2 AND OrdenCompraID = $3",
+      [cantidadIngresada, detalleId, ordenCompraId]
+    );
+
+    const cantidadAumentar = cantidadIngresada;
+    await client.query(
+      "UPDATE Producto_Variantes SET Stock = COALESCE(Stock, 0) + $1 WHERE VarianteID = $2",
+      [cantidadAumentar, varianteId]
+    );
+
+    const stockAnterior = Number.parseInt(detalle.stockvariante, 10) || 0;
+    const nuevoStock = stockAnterior + cantidadAumentar;
+
+    await client.query(
+      `INSERT INTO Log_Inventario 
+       (VarianteID, CantidadCambiado, NuevoStock, Motivo, UsuarioID) 
+       VALUES ($1, $2, $3, $4, $5)`,
+      [
+        varianteId,
+        cantidadAumentar,
+        nuevoStock,
+        `Recepción OC #${ordenCompraId}`,
+        Number.isInteger(usuarioRecibeId) && usuarioRecibeId > 0 ? usuarioRecibeId : null,
+      ]
+    );
+
+    const faltantesResult = await client.query(
+      "SELECT COUNT(*)::int AS faltantes FROM DetallesOrdenCompra WHERE OrdenCompraID = $1 AND COALESCE(PiezasRecibidas, 0) < (CantidadSolicitada * COALESCE(NULLIF(PiezasPorPaquete, 0), 1))",
+      [ordenCompraId]
+    );
+
+    const faltantes = Number.parseInt(faltantesResult.rows[0]?.faltantes, 10) || 0;
+    const nuevoEstatusOC = faltantes === 0 ? "Completada" : "Parcial";
+
+    await client.query(
+      "UPDATE OrdenesDeCompra SET Estatus = $1 WHERE OrdenCompraID = $2",
+      [nuevoEstatusOC, ordenCompraId]
+    );
+
+    let cuentaPorPagar = null;
+    if (["Parcial", "Completada"].includes(nuevoEstatusOC)) {
+      const usuarioId =
+        Number.isInteger(usuarioRecibeId) && usuarioRecibeId > 0 ? usuarioRecibeId : null;
+      cuentaPorPagar = await upsertCuentaPorPagarForOC(client, ordenCompraId, usuarioId);
+    }
+
+    await client.query("COMMIT");
+
+    return res.json({
+      success: true,
+      message: "Item recibido correctamente",
+      data: {
+        ordenCompraId,
+        estatusOC: nuevoEstatusOC,
+        cuentaPorPagar,
+        item: {
+          detalleId,
+          varianteId,
+          sku: detalle.sku,
+          nombreProducto: detalle.nombreproducto,
+          cantidadSolicitada: solicitadoPzas,
+          cantidadRecibida: nuevoRecibidoPzas,
+          cantidadPendiente: Math.max(solicitadoPzas - nuevoRecibidoPzas, 0),
+          piezasPorPaquete,
+          stockVariante: nuevoStock,
+        },
+      },
+    });
+  } catch (error) {
+    try {
+      await client.query("ROLLBACK");
+    } catch (e) {
+      // ignore
+    }
+    console.error("Error al recibir item de OC:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error al recibir item de la orden de compra",
     });
   } finally {
     client.release();
@@ -8343,6 +9019,8 @@ const crearOrdenCompra = async (req, res) => {
     // 2. Insertar los detalles de la orden (productos)
     const detallesInsertados = [];
 
+    let totalCents = 0;
+
     for (const producto of productos) {
       // Verificar que la variante existe
       const varianteResult = await client.query(
@@ -8382,9 +9060,14 @@ const crearOrdenCompra = async (req, res) => {
         const costoParsed = Number.parseFloat(costoRaw);
         if (Number.isFinite(costoParsed) && costoParsed >= 0) return costoParsed;
         const fallback = Number.parseFloat(variante.costounitario);
-        if (Number.isFinite(fallback) && fallback >= 0) return fallback;
+        if (Number.isFinite(fallback) && fallback >= 0) return fallback * piezasPorPaquete;
         return 0;
       })();
+
+      const cantidadSolicitada = Number.parseInt(producto.cantidadSolicitada, 10);
+      if (Number.isInteger(cantidadSolicitada) && cantidadSolicitada > 0) {
+        totalCents += Math.round(costoUnitario * 100) * cantidadSolicitada;
+      }
 
       const detalleQuery = `
         INSERT INTO DetallesOrdenCompra (OrdenCompraID, VarianteID, CantidadSolicitada, CantidadRecibida, PiezasPorPaquete, CostoUnitario)
@@ -8412,6 +9095,12 @@ const crearOrdenCompra = async (req, res) => {
         cantidadRecibida: detalleResult.rows[0].cantidadrecibida,
       });
     }
+
+    const totalMonetario = totalCents / 100;
+    await client.query("UPDATE OrdenesDeCompra SET Total = $1 WHERE OrdenCompraID = $2", [
+      totalMonetario,
+      ordenCompraId,
+    ]);
 
     // Commit de la transacción
     await client.query("COMMIT");
@@ -10319,12 +11008,16 @@ getMedidasExistentes,
   crearTipoProductoAdmin,
   getAllOrdenesCompra,
   getDetallesOrdenCompra,
+  getRecepcionOrdenCompra,
   getComprasPendientes,
   getCompraDetalleCiego,
   validarRecepcionCompra,
   crearOrdenCompra,
   cancelarOrdenCompra,
   recibirInventario,
+  recibirItemOrdenCompra,
+  getCuentasPorPagar,
+  registrarPagoCuentaPorPagar,
   subirEvidenciaRecepcionOC,
   subirImagenProducto,
   subirImagenesProductoMultiple,
