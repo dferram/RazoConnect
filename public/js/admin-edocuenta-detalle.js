@@ -10,7 +10,6 @@
     kpiTotal: document.getElementById("kpiTotal"),
 
     btnRefresh: document.getElementById("btnRefresh"),
-    btnAbonar: document.getElementById("btnAbonar"),
 
     movBadge: document.getElementById("movBadge"),
     loadingState: document.getElementById("loadingState"),
@@ -78,34 +77,57 @@
       }
 
       const productos = Array.isArray(resp.data?.data?.productos) ? resp.data.data.productos : [];
-      const rowsHtml = productos
-        .map((p) => {
-          const piezas = Number.parseInt(p.piezas ?? 0, 10) || 0;
-          const ppp = Number.parseInt(p.piezasPorPaquete ?? 1, 10) || 1;
-          const paq = ppp > 0 ? piezas / ppp : 0;
-          return `
+
+      let htmlTabla = `
+        <div style="overflow-x:auto; border: 1px solid rgba(0,0,0,0.08); border-radius: 0.75rem;">
+          <table style="width:100%; border-collapse: collapse; min-width: 680px;" class="table table-sm text-start">
+            <thead>
+              <tr style="background:#f8fafc; text-align:left;">
+                <th style="padding: 0.55rem 0.6rem;">Producto</th>
+                <th style="padding: 0.55rem 0.6rem;">SKU</th>
+                <th style="padding: 0.55rem 0.6rem; text-align:right;">Piezas</th>
+                <th style="padding: 0.55rem 0.6rem; text-align:right;">Paquetes</th>
+              </tr>
+            </thead>
+            <tbody>
+      `;
+
+      if (productos.length === 0) {
+        htmlTabla += `
+          <tr>
+            <td colspan="4" style="padding: 0.85rem; text-align:center; color:#6b7280;">
+              No hay detalle de productos para esta recepción antigua.
+            </td>
+          </tr>
+        `;
+      } else {
+        productos.forEach((prod) => {
+          const piezas = Number.parseInt(prod.piezas ?? 0, 10) || 0;
+          const paquetes = Number.parseFloat(prod.paquetes ?? 0) || 0;
+          htmlTabla += `
             <tr>
               <td style="padding: 0.45rem 0.6rem; border-bottom: 1px solid rgba(0,0,0,0.06);">
-                <div style="font-weight: 900; color:#111827;">${safeText(p.nombreProducto)}</div>
-                <div style="margin-top: 0.2rem; color:#6b7280; font-size: 0.85rem;">${safeText(
-                  p.dimensiones || ""
-                )}</div>
+                ${safeText(prod.nombreproducto)}
               </td>
               <td style="padding: 0.45rem 0.6rem; border-bottom: 1px solid rgba(0,0,0,0.06); white-space:nowrap;">
-                <code style="background:#f3f4f6; padding: 0.2rem 0.45rem; border-radius: 0.4rem;">${safeText(
-                  p.sku
-                )}</code>
+                <small>${safeText(prod.sku)}</small>
               </td>
               <td style="padding: 0.45rem 0.6rem; border-bottom: 1px solid rgba(0,0,0,0.06); text-align:right; white-space:nowrap;">
-                <strong>${piezas.toLocaleString("es-MX")}</strong>
+                ${piezas.toLocaleString("es-MX")}
               </td>
               <td style="padding: 0.45rem 0.6rem; border-bottom: 1px solid rgba(0,0,0,0.06); text-align:right; white-space:nowrap;">
-                <strong>${paq.toLocaleString("es-MX", { maximumFractionDigits: 2 })}</strong>
+                ${paquetes.toLocaleString("es-MX", { maximumFractionDigits: 2 })}
               </td>
             </tr>
           `;
-        })
-        .join("");
+        });
+      }
+
+      htmlTabla += `
+            </tbody>
+          </table>
+        </div>
+      `;
 
       const html = `
         <div style="text-align:left;">
@@ -113,22 +135,7 @@
             <div style="font-weight: 900; color:#111827;">Productos recibidos</div>
             <div style="color:#6b7280; font-size: 0.85rem;">CxP #${id}</div>
           </div>
-
-          <div style="overflow-x:auto; border: 1px solid rgba(0,0,0,0.08); border-radius: 0.75rem;">
-            <table style="width: 100%; border-collapse: collapse; min-width: 680px;">
-              <thead>
-                <tr style="background: #f8fafc; text-align:left;">
-                  <th style="padding: 0.55rem 0.6rem;">Producto</th>
-                  <th style="padding: 0.55rem 0.6rem;">SKU</th>
-                  <th style="padding: 0.55rem 0.6rem; text-align:right;">Piezas</th>
-                  <th style="padding: 0.55rem 0.6rem; text-align:right;">Paquetes</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${rowsHtml || "<tr><td colspan='4' style='padding: 0.8rem; color:#6b7280;'>Sin productos.</td></tr>"}
-              </tbody>
-            </table>
-          </div>
+          ${htmlTabla}
         </div>
       `;
 
@@ -138,6 +145,14 @@
         width: "1200px",
         confirmButtonText: "Cerrar",
         confirmButtonColor: "#F97316",
+        buttonsStyling: false,
+        customClass: {
+          popup: "rc-swal-popup",
+          title: "rc-swal-title",
+          htmlContainer: "rc-swal-html",
+          actions: "rc-swal-actions",
+          confirmButton: "btn btn-primary rc-swal-btn",
+        },
       });
     } catch (error) {
       console.error(error);
@@ -378,9 +393,6 @@
       }
     }
 
-    if (el.btnAbonar) {
-      el.btnAbonar.style.display = saldo > 0 ? "inline-flex" : "none";
-    }
   };
 
   const load = async () => {
@@ -427,7 +439,6 @@
     state.proveedorId = Number.parseInt(params.get("proveedorId"), 10);
 
     if (el.btnRefresh) el.btnRefresh.addEventListener("click", load);
-    if (el.btnAbonar) el.btnAbonar.addEventListener("click", openAbonarModal);
 
     load();
   };

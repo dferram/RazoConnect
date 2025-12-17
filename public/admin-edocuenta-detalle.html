@@ -87,10 +87,6 @@
       </main>
     </div>
 
-    <button id="btnAbonar" type="button" class="btn btn-primary" style="display:none;" aria-label="Abonar a la cuenta">
-      💵 Abonar a la cuenta
-    </button>
-
     <script src="js/layout.js" defer></script>
     <script src="js/api.js"></script>
     <script src="js/admin-header-dropdown.js"></script>
@@ -254,29 +250,6 @@
 
       .bank-event-abono .bank-event-amount {
         color: #065f46;
-      }
-
-      #btnAbonar {
-        position: fixed;
-        right: 18px;
-        bottom: 18px;
-        z-index: 1200;
-        border-radius: 999px;
-        box-shadow: 0 14px 34px rgba(0, 0, 0, 0.14);
-        padding: 0.85rem 1.1rem;
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-      }
-
-      @media (max-width: 768px) {
-        #btnAbonar {
-          right: 12px;
-          left: 12px;
-          bottom: 12px;
-          width: calc(100% - 24px);
-          justify-content: center;
-        }
       }
 
       .rc-swal-popup {

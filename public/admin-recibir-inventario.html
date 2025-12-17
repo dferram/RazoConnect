@@ -353,11 +353,90 @@
 
         if (input) input.value = "";
         showToastSuccess("Agregado a sesión");
+        persistSesionRecepcion();
         renderizarTablaSesion();
         renderSplit();
       };
 
       let sesionRecepcion = [];
+
+      const getRecepcionStorageKey = (ordenCompraId) => {
+        const id = Number.parseInt(ordenCompraId, 10);
+        if (!Number.isInteger(id) || id <= 0) return null;
+        return `rc_recepcion_${id}`;
+      };
+
+      const persistSesionRecepcion = () => {
+        try {
+          const key = getRecepcionStorageKey(state?.orden?.ordenCompraId);
+          if (!key) return;
+          if (!Array.isArray(sesionRecepcion) || sesionRecepcion.length === 0) {
+            localStorage.removeItem(key);
+            return;
+          }
+          localStorage.setItem(key, JSON.stringify(sesionRecepcion));
+        } catch (e) {
+          // ignore
+        }
+      };
+
+      const readSesionRecepcionFromStorage = (ordenCompraId) => {
+        try {
+          const key = getRecepcionStorageKey(ordenCompraId);
+          if (!key) return [];
+          const raw = localStorage.getItem(key);
+          if (!raw) return [];
+          const parsed = JSON.parse(raw);
+          return Array.isArray(parsed) ? parsed : [];
+        } catch (e) {
+          return [];
+        }
+      };
+
+      const clearSesionRecepcionStorage = (ordenCompraId) => {
+        try {
+          const key = getRecepcionStorageKey(ordenCompraId);
+          if (!key) return;
+          localStorage.removeItem(key);
+        } catch (e) {
+          // ignore
+        }
+      };
+
+      const ocRestorePrompted = new Set();
+
+      const normalizeRestoredSesion = (stored) => {
+        const items = Array.isArray(state.items) ? state.items : [];
+        const byDetalle = new Map(items.map((i) => [String(i.detalleId), i]));
+
+        const normalized = [];
+        for (const raw of Array.isArray(stored) ? stored : []) {
+          const detalleId = raw?.detalleId;
+          const base = byDetalle.get(String(detalleId));
+          if (!base) continue;
+
+          const cantidad = Number.parseInt(raw?.cantidad, 10);
+          if (!Number.isInteger(cantidad) || cantidad <= 0) continue;
+
+          const solicitado = Number.parseInt(base.cantidadSolicitada, 10) || 0;
+          const recibido = Number.parseInt(base.cantidadRecibida, 10) || 0;
+          const max = Math.max(solicitado - recibido, 0);
+          const cantidadFinal = Math.min(cantidad, max);
+          if (cantidadFinal <= 0) continue;
+
+          normalized.push({
+            detalleId: base.detalleId,
+            varianteId: base.varianteId,
+            cantidad: cantidadFinal,
+            nombreProducto: safeText(base.nombreProducto),
+            sku: safeText(base.sku),
+            piezasPorPaquete: piezasPorPaqueteValue(base),
+            costoUnitario: costoUnitarioValue(base),
+          });
+        }
+
+        return normalized;
+      };
 
       const safeText = (value) => (value == null ? "" : String(value));
 
@@ -804,6 +883,7 @@
             sesionRecepcion = sesionRecepcion.filter(
               (x) => String(x.detalleId) !== String(it.detalleId)
             );
+            persistSesionRecepcion();
             renderizarTablaSesion();
             renderSplit();
           });
@@ -913,6 +993,7 @@
             throw new Error(resp.data?.message || "No se pudo finalizar recepción");
           }
 
+          clearSesionRecepcionStorage(state.orden.ordenCompraId);
           sesionRecepcion = [];
           renderizarTablaSesion();
           await loadRecepcion(state.orden.ordenCompraId);
@@ -949,6 +1030,28 @@
           if (!state.orden) {
             setEmpty("No se encontró información de la orden");
             return;
+          }
+
+          const ocKey = getRecepcionStorageKey(state.orden.ordenCompraId);
+          if (ocKey && !ocRestorePrompted.has(ocKey)) {
+            ocRestorePrompted.add(ocKey);
+            const stored = readSesionRecepcionFromStorage(state.orden.ordenCompraId);
+            if (Array.isArray(stored) && stored.length > 0) {
+              const confirm = await Swal.fire({
+                icon: "question",
+                title: "Recuperar sesión",
+                text: "Se encontró una sesión previa sin finalizar. ¿Deseas recuperarla?",
+                showCancelButton: true,
+                confirmButtonText: "Sí, recuperar",
+                cancelButtonText: "No",
+                confirmButtonColor: "#F97316",
+              });
+
+              if (confirm.isConfirmed) {
+                sesionRecepcion = normalizeRestoredSesion(stored);
+                persistSesionRecepcion();
+              }
+            }
           }
 
           ocProveedor.textContent = safeText(state.orden.proveedorNombre || "—");

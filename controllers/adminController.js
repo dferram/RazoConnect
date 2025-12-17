@@ -95,7 +95,10 @@ const subirEvidenciaRecepcionOC = async (req, res) => {
 const getCuentasPorPagar = async (req, res) => {
   try {
     const estatus = (req.query.estatus || "").toString().trim().toUpperCase();
+    const modo = (req.query.modo || "").toString().trim().toLowerCase();
     const proveedorId = Number.parseInt(req.query.proveedorId, 10);
+
+    const isHistorico = modo === "historico";
 
     const where = [];
     const params = [];
@@ -104,6 +107,13 @@ const getCuentasPorPagar = async (req, res) => {
     if (estatus) {
       where.push("cxp.estatus = $" + i);
       params.push(estatus);
+      i += 1;
+    } else {
+      const allowedEstatus = isHistorico
+        ? ["PAGADO", "CANCELADO"]
+        : ["PENDIENTE", "PARCIAL", "VENCIDO"];
+      where.push(`cxp.estatus = ANY($${i}::public.estatus_cxp_enum[])`);
+      params.push(allowedEstatus);
       i += 1;
     }
 
@@ -115,6 +125,10 @@ const getCuentasPorPagar = async (req, res) => {
 
     const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
 
+    const orderBySql = isHistorico
+      ? "ORDER BY cxp.fecha_emision DESC"
+      : "ORDER BY cxp.fecha_vencimiento ASC NULLS LAST, cxp.fecha_emision DESC";
+
     const result = await db.query(
       `SELECT
          cxp.cxp_id,
@@ -122,6 +136,7 @@ const getCuentasPorPagar = async (req, res) => {
          cxp.orden_compra_id,
          cxp.fecha_emision,
          cxp.fecha_vencimiento,
+         pagos.fecha_pagado,
          cxp.monto_total,
          cxp.monto_pagado,
          cxp.estatus,
@@ -132,9 +147,14 @@ const getCuentasPorPagar = async (req, res) => {
          COALESCE(oc.estatus, NULL) AS estatus_oc
        FROM cuentas_por_pagar cxp
        INNER JOIN proveedores p ON p.proveedorid = cxp.proveedor_id
+       LEFT JOIN (
+         SELECT cxp_id, MAX(fecha_pago) AS fecha_pagado
+         FROM pagos_cxp
+         GROUP BY cxp_id
+       ) pagos ON pagos.cxp_id = cxp.cxp_id
        LEFT JOIN ordenesdecompra oc ON oc.ordencompraid = cxp.orden_compra_id
        ${whereSql}
-       ORDER BY cxp.fecha_vencimiento ASC NULLS LAST, cxp.fecha_emision DESC`,
+       ${orderBySql}`,
       params
     );
 
@@ -152,6 +172,7 @@ const getCuentasPorPagar = async (req, res) => {
             estatusOC: row.estatus_oc,
             fechaEmision: row.fecha_emision,
             fechaVencimiento: row.fecha_vencimiento,
+            fechaPagado: row.fecha_pagado || null,
             montoTotal,
             montoPagado,
             restante: Math.max(montoTotal - montoPagado, 0),
@@ -194,6 +215,16 @@ const registrarPagoCuentaPorPagar = async (req, res) => {
       });
     }
 
+    const montoCentavos = Math.round(monto * 100);
+    if (!Number.isInteger(montoCentavos) || montoCentavos <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Monto inválido",
+      });
+    }
+
+    const montoNormalizado = Number.parseFloat((montoCentavos / 100).toFixed(2));
+
     const usuarioId = Number.parseInt(req?.user?.id ?? req?.user?.userId, 10);
     const usuarioFinal = Number.isInteger(usuarioId) && usuarioId > 0 ? usuarioId : null;
 
@@ -229,11 +260,25 @@ const registrarPagoCuentaPorPagar = async (req, res) => {
     const row = locked.rows[0];
     const montoTotal = Number.parseFloat(row.monto_total ?? 0) || 0;
     const montoPagadoActual = Number.parseFloat(row.monto_pagado ?? 0) || 0;
-    const nuevoPagado = montoPagadoActual + monto;
+
+    const montoTotalCentavos = Math.round(montoTotal * 100);
+    const montoPagadoActualCentavos = Math.round(montoPagadoActual * 100);
+    const restanteCentavos = Math.max(montoTotalCentavos - montoPagadoActualCentavos, 0);
+
+    if (montoCentavos > restanteCentavos) {
+      await client.query("ROLLBACK");
+      return res.status(400).json({
+        success: false,
+        message: "No puedes pagar más que el restante",
+      });
+    }
+
+    const nuevoPagadoCentavos = montoPagadoActualCentavos + montoCentavos;
+    const nuevoPagado = Number.parseFloat((nuevoPagadoCentavos / 100).toFixed(2));
 
     const estatusNuevo = (() => {
-      if (montoTotal > 0 && nuevoPagado >= montoTotal) return "PAGADO";
-      if (nuevoPagado > 0) return "PARCIAL";
+      if (nuevoPagadoCentavos >= montoTotalCentavos) return "PAGADO";
+      if (nuevoPagadoCentavos > 0) return "PARCIAL";
       return "PENDIENTE";
     })();
 
@@ -276,7 +321,7 @@ const registrarPagoCuentaPorPagar = async (req, res) => {
          VALUES ($1, $2, $3, $4, $5, $6, $7)`,
         [
           cxpId,
-          monto,
+          montoNormalizado,
           null,
           referencia || null,
           comprobanteUrl,
@@ -531,7 +576,8 @@ const getProductosRecibidosPorCxp = async (req, res) => {
          pv.sku,
          pv.dimensiones,
          pv.piezasporpaquete,
-         SUM(li.cantidadcambiado) AS piezas,
+         SUM(li.cantidadcambiado)::int AS piezas,
+         (SUM(li.cantidadcambiado)::numeric / NULLIF(COALESCE(pv.piezasporpaquete, 1), 0)) AS paquetes,
          MIN(li.fecha) AS fecha_inicio,
          MAX(li.fecha) AS fecha_fin
        FROM log_inventario li
@@ -548,11 +594,16 @@ const getProductosRecibidosPorCxp = async (req, res) => {
       success: true,
       data: {
         productos: (result.rows || []).map((row) => ({
-          nombreProducto: row.nombreproducto,
+          // Campos requeridos
+          nombreproducto: row.nombreproducto,
           sku: row.sku,
+          piezas: Number.parseInt(row.piezas ?? 0, 10) || 0,
+          paquetes: Number.parseFloat(row.paquetes ?? 0) || 0,
+
+          // Compatibilidad con frontend existente
+          nombreProducto: row.nombreproducto,
           dimensiones: row.dimensiones || null,
           piezasPorPaquete: row.piezasporpaquete ?? 1,
-          piezas: Number.parseInt(row.piezas ?? 0, 10) || 0,
           fechaInicio: row.fecha_inicio || null,
           fechaFin: row.fecha_fin || null,
         })),
@@ -672,7 +723,7 @@ const recepcionMasivaOrdenCompra = async (req, res) => {
       ? `/uploads/comprobantes/${req.file.filename}`
       : null;
 
-    let montoTotal = 0;
+    let montoTotalCentavos = 0;
     const productosActualizados = [];
 
     for (const raw of items) {
@@ -759,13 +810,20 @@ const recepcionMasivaOrdenCompra = async (req, res) => {
 
       const costoPaquete = Number.parseFloat(detalle.costounitario ?? 0) || 0;
       const costoVariante = Number.parseFloat(detalle.variante_costounitario ?? 0) || 0;
-      const paquetesRecibidos = cantidadIngresada / (Number.isInteger(piezasPorPaquete) && piezasPorPaquete > 0 ? piezasPorPaquete : 1);
       const costoPorPaquete = (() => {
         if (Number.isFinite(costoPaquete) && costoPaquete > 0) return costoPaquete;
         if (Number.isFinite(costoVariante) && costoVariante > 0) return costoVariante * piezasPorPaquete;
         return 0;
       })();
-      montoTotal += paquetesRecibidos * costoPorPaquete;
+
+      // Redondeo por línea (centavos): subtotal = round((piezas / piezas_por_paquete) * costo_paquete, 2)
+      // Se acumula en centavos para evitar errores de coma flotante.
+      const costoPorPaqueteCentavos = Math.round((Number.parseFloat(costoPorPaquete) || 0) * 100);
+      const subtotalCentavos = Math.round(
+        (cantidadIngresada * costoPorPaqueteCentavos) /
+          (Number.isInteger(piezasPorPaquete) && piezasPorPaquete > 0 ? piezasPorPaquete : 1)
+      );
+      montoTotalCentavos += subtotalCentavos;
 
       await client.query(
         `UPDATE detallesordencompra
@@ -804,7 +862,9 @@ const recepcionMasivaOrdenCompra = async (req, res) => {
       });
     }
 
-    const montoFinal = Number.isFinite(montoTotal) ? Number.parseFloat(montoTotal.toFixed(2)) : 0;
+    const montoFinal = Number.isFinite(montoTotalCentavos)
+      ? Number.parseFloat((montoTotalCentavos / 100).toFixed(2))
+      : 0;
 
     const totalOrdenResult = await client.query(
       `SELECT COALESCE(
