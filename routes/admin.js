@@ -551,6 +551,27 @@ router.post(
   adminController.registrarPagoCuentaPorPagar
 );
 
+router.get(
+  "/estado-cuenta/resumen",
+  authenticate,
+  authorizeAdmin,
+  adminController.getResumenEstadoCuentaProveedores
+);
+
+router.get(
+  "/estado-cuenta/proveedores/:id/movimientos",
+  authenticate,
+  authorizeAdmin,
+  adminController.getEstadoCuentaProveedorMovimientos
+);
+
+router.get(
+  "/estado-cuenta/cxp/:id/productos",
+  authenticate,
+  authorizeAdmin,
+  adminController.getProductosRecibidosPorCxp
+);
+
 /**
  * Gestión de clientes
  */

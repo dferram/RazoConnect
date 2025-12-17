@@ -269,6 +269,25 @@ const registrarPagoCuentaPorPagar = async (req, res) => {
       ]
     );
 
+    try {
+      await client.query(
+        `INSERT INTO pagos_cxp
+          (cxp_id, monto, metodo_pago, referencia_bancaria, comprobante_url, nota, usuario_id)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+        [
+          cxpId,
+          monto,
+          null,
+          referencia || null,
+          comprobanteUrl,
+          nota || null,
+          usuarioFinal,
+        ]
+      );
+    } catch (e) {
+      // ignore
+    }
+
     await client.query("COMMIT");
 
     const updated = updateRes.rows[0];
@@ -308,6 +327,243 @@ const registrarPagoCuentaPorPagar = async (req, res) => {
     });
   } finally {
     client.release();
+  }
+};
+
+const getResumenEstadoCuentaProveedores = async (req, res) => {
+  try {
+    const result = await db.query(
+      `SELECT
+         proveedorid,
+         nombreempresa,
+         deuda_total_historica,
+         saldo_pendiente_pago,
+         facturas_vivas
+       FROM v_resumen_bancario_proveedores
+       ORDER BY saldo_pendiente_pago DESC, nombreempresa ASC`
+    );
+
+    return res.json({
+      success: true,
+      data: {
+        proveedores: (result.rows || []).map((row) => ({
+          proveedorId: row.proveedorid,
+          proveedorNombre: row.nombreempresa,
+          deudaTotalHistorica: Number.parseFloat(row.deuda_total_historica ?? 0) || 0,
+          saldoPendiente: Number.parseFloat(row.saldo_pendiente_pago ?? 0) || 0,
+          facturasVivas: Number.parseInt(row.facturas_vivas ?? 0, 10) || 0,
+        })),
+      },
+    });
+  } catch (error) {
+    console.error("Error al obtener resumen estado de cuenta proveedores:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error al obtener estado de cuenta",
+    });
+  }
+};
+
+const getEstadoCuentaProveedorMovimientos = async (req, res) => {
+  try {
+    const proveedorId = Number.parseInt(req.params.id, 10);
+    if (!Number.isInteger(proveedorId) || proveedorId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "proveedorId inválido",
+      });
+    }
+
+    const provResult = await db.query(
+      `SELECT proveedorid, nombreempresa
+       FROM proveedores
+       WHERE proveedorid = $1`,
+      [proveedorId]
+    );
+
+    if (!provResult.rows.length) {
+      return res.status(404).json({
+        success: false,
+        message: "Proveedor no encontrado",
+      });
+    }
+
+    const proveedor = provResult.rows[0];
+
+    const cuentasResult = await db.query(
+      `SELECT
+         cxp_id,
+         proveedor_id,
+         orden_compra_id,
+         fecha_emision,
+         fecha_vencimiento,
+         monto_total,
+         monto_pagado,
+         estatus,
+         referencia_factura,
+         comprobante_pago,
+         notas
+       FROM cuentas_por_pagar
+       WHERE proveedor_id = $1
+       ORDER BY fecha_emision DESC`,
+      [proveedorId]
+    );
+
+    const resumenResult = await db.query(
+      `SELECT
+         COALESCE(SUM(monto_total), 0) AS total,
+         COALESCE(SUM(monto_pagado), 0) AS pagado
+       FROM cuentas_por_pagar
+       WHERE proveedor_id = $1`,
+      [proveedorId]
+    );
+
+    const total = Number.parseFloat(resumenResult.rows[0]?.total ?? 0) || 0;
+    const pagado = Number.parseFloat(resumenResult.rows[0]?.pagado ?? 0) || 0;
+    const saldo = Math.max(total - pagado, 0);
+
+    const movResult = await db.query(
+      `SELECT * FROM (
+        SELECT
+          'cargo'::text AS tipo,
+          cxp.cxp_id,
+          cxp.orden_compra_id,
+          cxp.fecha_emision AS fecha,
+          cxp.monto_total AS monto,
+          cxp.monto_pagado,
+          cxp.estatus::text AS estatus,
+          cxp.referencia_factura AS referencia,
+          cxp.comprobante_pago AS comprobante_url,
+          NULL::int AS pago_id
+        FROM cuentas_por_pagar cxp
+        WHERE cxp.proveedor_id = $1
+
+        UNION ALL
+
+        SELECT
+          'abono'::text AS tipo,
+          cxp.cxp_id,
+          cxp.orden_compra_id,
+          pc.fecha_pago AS fecha,
+          pc.monto AS monto,
+          NULL::numeric AS monto_pagado,
+          'PAGO'::text AS estatus,
+          pc.referencia_bancaria AS referencia,
+          pc.comprobante_url AS comprobante_url,
+          pc.pago_id
+        FROM pagos_cxp pc
+        INNER JOIN cuentas_por_pagar cxp ON cxp.cxp_id = pc.cxp_id
+        WHERE cxp.proveedor_id = $1
+      ) t
+      ORDER BY fecha DESC`,
+      [proveedorId]
+    );
+
+    const cuentas = (cuentasResult.rows || []).map((row) => {
+      const montoTotal = Number.parseFloat(row.monto_total ?? 0) || 0;
+      const montoPagado = Number.parseFloat(row.monto_pagado ?? 0) || 0;
+      return {
+        cxpId: row.cxp_id,
+        proveedorId: row.proveedor_id,
+        ordenCompraId: row.orden_compra_id,
+        fechaEmision: row.fecha_emision,
+        fechaVencimiento: row.fecha_vencimiento,
+        montoTotal,
+        montoPagado,
+        restante: Math.max(montoTotal - montoPagado, 0),
+        estatus: row.estatus,
+        referenciaFactura: row.referencia_factura || null,
+        comprobantePago: row.comprobante_pago || null,
+        notas: row.notas || null,
+      };
+    });
+
+    const movimientos = (movResult.rows || []).map((row) => ({
+      tipo: row.tipo,
+      cxpId: row.cxp_id,
+      pagoId: row.pago_id,
+      ordenCompraId: row.orden_compra_id,
+      fecha: row.fecha,
+      monto: Number.parseFloat(row.monto ?? 0) || 0,
+      estatus: row.estatus || null,
+      referencia: row.referencia || null,
+      comprobanteUrl: row.comprobante_url || null,
+    }));
+
+    return res.json({
+      success: true,
+      data: {
+        proveedor: {
+          proveedorId: proveedor.proveedorid,
+          proveedorNombre: proveedor.nombreempresa,
+        },
+        resumen: {
+          total,
+          pagado,
+          saldo,
+        },
+        cuentas,
+        movimientos,
+      },
+    });
+  } catch (error) {
+    console.error("Error al obtener movimientos proveedor:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error al obtener movimientos",
+    });
+  }
+};
+
+const getProductosRecibidosPorCxp = async (req, res) => {
+  try {
+    const cxpId = Number.parseInt(req.params.id, 10);
+    if (!Number.isInteger(cxpId) || cxpId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "cxpId inválido",
+      });
+    }
+
+    const result = await db.query(
+      `SELECT
+         pr.nombreproducto,
+         pv.sku,
+         pv.dimensiones,
+         pv.piezasporpaquete,
+         SUM(li.cantidadcambiado) AS piezas,
+         MIN(li.fecha) AS fecha_inicio,
+         MAX(li.fecha) AS fecha_fin
+       FROM log_inventario li
+       INNER JOIN producto_variantes pv ON pv.varianteid = li.varianteid
+       INNER JOIN productos pr ON pr.productoid = pv.productoid
+       WHERE li.cxp_id = $1
+         AND COALESCE(li.cantidadcambiado, 0) > 0
+       GROUP BY pr.nombreproducto, pv.sku, pv.dimensiones, pv.piezasporpaquete
+       ORDER BY pr.nombreproducto ASC`,
+      [cxpId]
+    );
+
+    return res.json({
+      success: true,
+      data: {
+        productos: (result.rows || []).map((row) => ({
+          nombreProducto: row.nombreproducto,
+          sku: row.sku,
+          dimensiones: row.dimensiones || null,
+          piezasPorPaquete: row.piezasporpaquete ?? 1,
+          piezas: Number.parseInt(row.piezas ?? 0, 10) || 0,
+          fechaInicio: row.fecha_inicio || null,
+          fechaFin: row.fecha_fin || null,
+        })),
+      },
+    });
+  } catch (error) {
+    console.error("Error al obtener productos recibidos por CxP:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error al obtener productos recibidos",
+    });
   }
 };
 
@@ -503,11 +759,13 @@ const recepcionMasivaOrdenCompra = async (req, res) => {
 
       const costoPaquete = Number.parseFloat(detalle.costounitario ?? 0) || 0;
       const costoVariante = Number.parseFloat(detalle.variante_costounitario ?? 0) || 0;
-      const costoPorPieza =
-        costoPaquete > 0
-          ? costoPaquete / (Number.isInteger(piezasPorPaquete) && piezasPorPaquete > 0 ? piezasPorPaquete : 1)
-          : costoVariante;
-      montoTotal += cantidadIngresada * (Number.isFinite(costoPorPieza) ? costoPorPieza : 0);
+      const paquetesRecibidos = cantidadIngresada / (Number.isInteger(piezasPorPaquete) && piezasPorPaquete > 0 ? piezasPorPaquete : 1);
+      const costoPorPaquete = (() => {
+        if (Number.isFinite(costoPaquete) && costoPaquete > 0) return costoPaquete;
+        if (Number.isFinite(costoVariante) && costoVariante > 0) return costoVariante * piezasPorPaquete;
+        return 0;
+      })();
+      montoTotal += paquetesRecibidos * costoPorPaquete;
 
       await client.query(
         `UPDATE detallesordencompra
@@ -548,10 +806,35 @@ const recepcionMasivaOrdenCompra = async (req, res) => {
 
     const montoFinal = Number.isFinite(montoTotal) ? Number.parseFloat(montoTotal.toFixed(2)) : 0;
 
+    const totalOrdenResult = await client.query(
+      `SELECT COALESCE(
+          SUM(
+            doc.cantidadsolicitada
+            * COALESCE(
+                NULLIF(doc.costounitario, 0),
+                (pv.costounitario * COALESCE(NULLIF(doc.piezasporpaquete, 0), 1))
+              )
+          ),
+          0
+        ) AS total_orden
+       FROM detallesordencompra doc
+       INNER JOIN producto_variantes pv ON pv.varianteid = doc.varianteid
+       WHERE doc.ordencompraid = $1`,
+      [ordenCompraId]
+    );
+
+    const montoOriginalOrden =
+      Number.parseFloat(totalOrdenResult.rows[0]?.total_orden ?? 0) || 0;
+
+    await client.query("UPDATE ordenesdecompra SET total = $1 WHERE ordencompraid = $2", [
+      montoOriginalOrden,
+      ordenCompraId,
+    ]);
+
     const cxpInsert = await client.query(
       `INSERT INTO cuentas_por_pagar
-        (proveedor_id, orden_compra_id, fecha_vencimiento, monto_total, monto_pagado, estatus, referencia_factura, comprobante_pago, usuario_creador_id)
-       VALUES ($1, $2, $3, $4, 0.00, 'PENDIENTE', $5, $6, $7)
+        (proveedor_id, orden_compra_id, fecha_vencimiento, monto_total, monto_pagado, estatus, referencia_factura, comprobante_pago, usuario_creador_id, monto_original)
+       VALUES ($1, $2, $3, $4, 0.00, 'PENDIENTE', $5, $6, $7, $8)
        RETURNING cxp_id`,
       [
         proveedorId,
@@ -561,6 +844,7 @@ const recepcionMasivaOrdenCompra = async (req, res) => {
         referenciaProveedor,
         comprobanteUrl,
         Number.isInteger(usuarioRecibeId) && usuarioRecibeId > 0 ? usuarioRecibeId : null,
+        montoFinal,
       ]
     );
 
@@ -797,6 +1081,7 @@ const getRecepcionOrdenCompra = async (req, res) => {
          doc.cantidadrecibida,
          doc.piezasrecibidas,
          doc.piezasporpaquete,
+         doc.costounitario,
          pv.productoid,
          pv.sku,
          pv.dimensiones,
@@ -850,6 +1135,7 @@ const getRecepcionOrdenCompra = async (req, res) => {
         cantidadRecibida: recibidoPzas,
         cantidadPendiente: Math.max(solicitadoPzas - recibidoPzas, 0),
         piezasPorPaquete,
+        costounitario: row.costounitario !== null ? Number.parseFloat(row.costounitario) : 0,
         stockVariante: Number.parseInt(row.stockvariante, 10) || 0,
         reglas_empaque: {
           cantidadEmpaque:
@@ -11349,6 +11635,9 @@ getMedidasExistentes,
   recepcionMasivaOrdenCompra,
   getCuentasPorPagar,
   registrarPagoCuentaPorPagar,
+  getResumenEstadoCuentaProveedores,
+  getEstadoCuentaProveedorMovimientos,
+  getProductosRecibidosPorCxp,
   subirEvidenciaRecepcionOC,
   subirImagenProducto,
   subirImagenesProductoMultiple,
