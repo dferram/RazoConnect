@@ -233,7 +233,7 @@
                       class="btn btn-primary w-100"
                       disabled
                     >
-                      📝 Finalizar Recepción y Generar Deuda
+                      📝 Finalizar Recepción y Generar Cuenta por Pagar
                     </button>
                   </div>
                 </div>
@@ -244,8 +244,8 @@
       </main>
     </div>
 
-    <button id="btnFinalizarRecepcion" type="button" class="btn btn-primary" style="display:none;" aria-label="Finalizar recepción y generar deuda">
-      📝 Finalizar Recepción y Generar Deuda (0 ítems)
+    <button id="btnFinalizarRecepcion" type="button" class="btn btn-primary" style="display:none;" aria-label="Finalizar recepción y generar cuenta por pagar">
+      📝 Finalizar Recepción y Generar Cuenta por Pagar (0 ítems)
     </button>
     <div id="sesionFloatingCounter" style="display:none;" aria-label="Resumen de sesión">
       Items en sesión: 0 | Total: $0.00
@@ -756,10 +756,11 @@
         }
         if (btnFinalizarRecepcion) {
           btnFinalizarRecepcion.style.display = count ? "inline-flex" : "none";
-          btnFinalizarRecepcion.textContent = `📝 Finalizar Recepción y Generar Deuda (${count} ítems)`;
+          btnFinalizarRecepcion.textContent = `📝 Finalizar Recepción y Generar Cuenta por Pagar (${count} ítems)`;
         }
 
         if (btnConfirmarGenerarCxp) {
+          btnConfirmarGenerarCxp.style.display = count ? "inline-flex" : "none";
           btnConfirmarGenerarCxp.disabled = !count;
         }
 
@@ -867,10 +868,10 @@
         }
 
         const modal = await Swal.fire({
-          title: "📝 Finalizar Recepción y Generar Deuda",
+          title: "📝 Finalizar Recepción y Generar Cuenta por Pagar",
           html: `
             <div style="text-align:left;">
-              <label for="swalRef" style="display:block; font-weight:700; margin-bottom:0.35rem;">Número de Remisión</label>
+              <label for="swalRef" style="display:block; font-weight:700; margin-bottom:0.35rem;">Número de Remisión/Factura</label>
               <input id="swalRef" class="swal2-input" placeholder="Ej: REM-5002" style="margin:0;" />
               <div style="height: 0.75rem;"></div>
               <label for="swalFile" style="display:block; font-weight:700; margin-bottom:0.35rem;">Foto de Remisión (opcional)</label>
@@ -879,13 +880,13 @@
           `,
           focusConfirm: false,
           showCancelButton: true,
-          confirmButtonText: "Finalizar y Generar Deuda",
+          confirmButtonText: "Finalizar y Generar Cuenta",
           confirmButtonColor: "#F97316",
           cancelButtonText: "Cancelar",
           preConfirm: () => {
             const ref = document.getElementById("swalRef")?.value?.trim();
             if (!ref) {
-              Swal.showValidationMessage("El número de remisión es obligatorio");
+              Swal.showValidationMessage("El número de remisión/factura es obligatorio");
               return null;
             }
             const file = document.getElementById("swalFile")?.files?.[0] || null;
