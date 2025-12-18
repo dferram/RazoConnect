@@ -282,6 +282,42 @@
         items: [],
       };
 
+      const getReglasDisponibles = (item) => {
+        const list = item?.reglas_empaque?.disponibles;
+        return Array.isArray(list) ? list : [];
+      };
+
+      const ensureReglaSeleccionada = (item) => {
+        if (!item || typeof item !== "object") return;
+        const reglas = getReglasDisponibles(item);
+
+        const piezasFallbackRaw =
+          item._piezasPorPaquete ??
+          item.reglas_empaque?.cantidadEmpaque ??
+          item.piezasPorPaquete ??
+          item.piezasporpaquete;
+        const piezasFallbackParsed = Number.parseInt(piezasFallbackRaw, 10);
+        const piezasFallback =
+          Number.isInteger(piezasFallbackParsed) && piezasFallbackParsed > 0
+            ? piezasFallbackParsed
+            : reglas[0]?.cantidadEmpaque ?? 1;
+
+        const reglaIdRaw =
+          item._reglaEmpaqueId ?? item.reglas_empaque?.reglaEmpaqueIdSeleccionada;
+        const reglaIdParsed = Number.parseInt(reglaIdRaw, 10);
+        const reglaId =
+          Number.isInteger(reglaIdParsed) && reglaIdParsed > 0 ? reglaIdParsed : null;
+
+        let selectedReglaId = reglaId;
+        if (Array.isArray(reglas) && reglas.length > 0) {
+          const matchByPzas = reglas.find((r) => Number.parseInt(r.cantidadEmpaque, 10) === piezasFallback);
+          selectedReglaId = matchByPzas?.reglaId ?? reglas[0]?.reglaId ?? null;
+        }
+
+        item._piezasPorPaquete = piezasFallback;
+        item._reglaEmpaqueId = selectedReglaId;
+      };
+
       const agregarItemASesion = async (detalleId, inputEl) => {
         const item = (Array.isArray(state.items) ? state.items : []).find(
           (x) => String(x.detalleId) === String(detalleId)
@@ -290,6 +326,8 @@
           showToastError("No se encontró el item");
           return;
         }
+
+        ensureReglaSeleccionada(item);
 
         const input = inputEl;
         const piezas = piezasPorPaqueteValue(item);
@@ -331,6 +369,8 @@
             ...sesionRecepcion[existingIdx],
             cantidad:
               (Number.parseInt(sesionRecepcion[existingIdx].cantidad, 10) || 0) + cantidad,
+            piezasPorPaquete: piezas,
+            reglaEmpaqueId: item._reglaEmpaqueId,
           };
         } else {
           sesionRecepcion.push({
@@ -340,6 +380,7 @@
             nombreProducto: safeText(item.nombreProducto),
             sku: safeText(item.sku),
             piezasPorPaquete: piezas,
+            reglaEmpaqueId: item._reglaEmpaqueId,
             costoUnitario: costoUnitarioValue(item),
           });
         }
@@ -411,9 +452,49 @@
           const cantidad = Number.parseInt(raw?.cantidad, 10);
           if (!Number.isInteger(cantidad) || cantidad <= 0) continue;
 
-          const solicitado = Number.parseInt(base.cantidadSolicitada, 10) || 0;
-          const recibido = Number.parseInt(base.cantidadRecibida, 10) || 0;
-          const max = Math.max(solicitado - recibido, 0);
+          const piezasPorPaqueteStored = Number.parseInt(
+            raw?.piezasPorPaquete ?? raw?.piezasporpaquete,
+            10
+          );
+          const reglaEmpaqueIdStored = Number.parseInt(
+            raw?.reglaEmpaqueId ?? raw?.reglaEmpaqueID ?? raw?.reglaId,
+            10
+          );
+
+          if (Number.isInteger(piezasPorPaqueteStored) && piezasPorPaqueteStored > 0) {
+            base._piezasPorPaquete = piezasPorPaqueteStored;
+          }
+          if (Number.isInteger(reglaEmpaqueIdStored) && reglaEmpaqueIdStored > 0) {
+            base._reglaEmpaqueId = reglaEmpaqueIdStored;
+          }
+
+          ensureReglaSeleccionada(base);
+
+          const piezasForCalc = (() => {
+            const rawPzas =
+              base._piezasPorPaquete ??
+              base.reglas_empaque?.cantidadEmpaque ??
+              base.piezasPorPaquete ??
+              base.piezasporpaquete;
+            const parsed = Number.parseInt(rawPzas, 10);
+            return Number.isInteger(parsed) && parsed > 0 ? parsed : 1;
+          })();
+
+          const solicitadoPzas = (() => {
+            const paqRaw = base.cantidadSolicitadaPaquetes ?? base.cantidadsolicitadaPaquetes;
+            const paq = Number.parseInt(paqRaw, 10);
+            if (Number.isInteger(paq) && paq >= 0) return paq * piezasForCalc;
+            return Number.parseInt(base.cantidadSolicitada, 10) || 0;
+          })();
+
+          const recibidoPzas = (() => {
+            const rawRec = base.piezasRecibidas ?? base.piezasrecibidas;
+            const parsed = Number.parseInt(rawRec, 10);
+            if (Number.isInteger(parsed) && parsed >= 0) return parsed;
+            return Number.parseInt(base.cantidadRecibida, 10) || 0;
+          })();
+
+          const max = Math.max(solicitadoPzas - recibidoPzas, 0);
           const cantidadFinal = Math.min(cantidad, max);
           if (cantidadFinal <= 0) continue;
 
@@ -423,7 +504,14 @@
             cantidad: cantidadFinal,
             nombreProducto: safeText(base.nombreProducto),
             sku: safeText(base.sku),
-            piezasPorPaquete: piezasPorPaqueteValue(base),
+            piezasPorPaquete:
+              (Number.isInteger(piezasPorPaqueteStored) && piezasPorPaqueteStored > 0
+                ? piezasPorPaqueteStored
+                : piezasForCalc),
+            reglaEmpaqueId:
+              (Number.isInteger(reglaEmpaqueIdStored) && reglaEmpaqueIdStored > 0
+                ? reglaEmpaqueIdStored
+                : base?._reglaEmpaqueId || base?.reglas_empaque?.reglaEmpaqueIdSeleccionada || null),
             costoUnitario: costoUnitarioValue(base),
           });
         }
@@ -530,12 +618,30 @@
       };
 
       const piezasPorPaqueteValue = (item) => {
+        ensureReglaSeleccionada(item);
         const raw =
+          item._piezasPorPaquete ??
           item.piezasPorPaquete ??
           item.piezasporpaquete ??
           item.reglas_empaque?.cantidadEmpaque;
         const parsed = Number.parseInt(raw, 10);
         return Number.isInteger(parsed) && parsed > 0 ? parsed : 1;
+      };
+
+      const solicitadoPzasValue = (item) => {
+        const paquetesRaw = item.cantidadSolicitadaPaquetes ?? item.cantidadsolicitadaPaquetes;
+        const paquetes = Number.parseInt(paquetesRaw, 10);
+        if (Number.isInteger(paquetes) && paquetes >= 0) {
+          return paquetes * piezasPorPaqueteValue(item);
+        }
+        return Number.parseInt(item.cantidadSolicitada, 10) || 0;
+      };
+
+      const recibidoPzasValue = (item) => {
+        const raw = item.piezasRecibidas ?? item.piezasrecibidas;
+        const parsed = Number.parseInt(raw, 10);
+        if (Number.isInteger(parsed) && parsed >= 0) return parsed;
+        return Number.parseInt(item.cantidadRecibida, 10) || 0;
       };
 
       const costoUnitarioValue = (item) => {
@@ -586,10 +692,25 @@
       };
 
       const renderSplit = () => {
+        const drafts = new Map();
+        try {
+          const inputs = tbodyPendiente?.querySelectorAll?.("input.cantidad-hoy") || [];
+          for (const el of inputs) {
+            const id = el?.dataset?.detalleId;
+            if (!id) continue;
+            const val = Number.parseInt(el.value, 10);
+            if (Number.isInteger(val) && val > 0) {
+              drafts.set(String(id), val);
+            }
+          }
+        } catch (e) {
+          // ignore
+        }
+
         const items = Array.isArray(state.items) ? state.items : [];
         const pendientes = items.filter((i) => {
-          const solicitado = Number.parseInt(i.cantidadSolicitada, 10) || 0;
-          const recibido = Number.parseInt(i.cantidadRecibida, 10) || 0;
+          const solicitado = solicitadoPzasValue(i);
+          const recibido = recibidoPzasValue(i);
           const enSesion = sesionRecepcion
             .filter((x) => String(x.detalleId) === String(i.detalleId))
             .reduce((acc, x) => acc + (Number.parseInt(x.cantidad, 10) || 0), 0);
@@ -600,13 +721,13 @@
         const totalOrden = items.reduce((acc, item) => {
           const piezas = piezasPorPaqueteValue(item);
           const costo = costoUnitarioValue(item);
-          return acc + montoDePiezas(item.cantidadSolicitada, piezas, costo);
+          return acc + montoDePiezas(solicitadoPzasValue(item), piezas, costo);
         }, 0);
 
         const valorRecibido = items.reduce((acc, item) => {
           const piezas = piezasPorPaqueteValue(item);
           const costo = costoUnitarioValue(item);
-          return acc + montoDePiezas(item.cantidadRecibida, piezas, costo);
+          return acc + montoDePiezas(recibidoPzasValue(item), piezas, costo);
         }, 0);
 
         if (lblTotalSolicitado) {
@@ -626,8 +747,8 @@
 
         for (const item of pendientes) {
           const piezas = piezasPorPaqueteValue(item);
-          const solicitadoPzas = Number.parseInt(item.cantidadSolicitada, 10) || 0;
-          const recibidoPzas = Number.parseInt(item.cantidadRecibida, 10) || 0;
+          const solicitadoPzas = solicitadoPzasValue(item);
+          const recibidoPzas = recibidoPzasValue(item);
           const enSesionPzas = sesionRecepcion
             .filter((x) => String(x.detalleId) === String(item.detalleId))
             .reduce((acc, x) => acc + (Number.parseInt(x.cantidad, 10) || 0), 0);
@@ -676,13 +797,80 @@
           input.dataset.varianteId = String(item.varianteId);
           input.dataset.pendiente = String(pendientePzas);
           input.dataset.piezas = String(piezas);
+          const draft = drafts.get(String(item.detalleId));
+          if (draft) {
+            input.value = String(draft);
+          }
           tdInput.appendChild(input);
 
+          const reglas = getReglasDisponibles(item);
           const helper = document.createElement("div");
           helper.style.marginTop = "0.35rem";
           helper.style.fontSize = "0.8rem";
           helper.style.color = "#6b7280";
-          helper.textContent = `Regla: ${piezas} pzas/paq`;
+          helper.style.display = "grid";
+          helper.style.gap = "0.25rem";
+
+          const label = document.createElement("div");
+          label.textContent = "Regla de empaque";
+          label.style.fontWeight = "700";
+          helper.appendChild(label);
+
+          const select = document.createElement("select");
+          select.className = "form-select form-select-sm";
+          select.dataset.detalleId = String(item.detalleId);
+
+          if (Array.isArray(reglas) && reglas.length > 0) {
+            ensureReglaSeleccionada(item);
+            for (const r of reglas) {
+              const opt = document.createElement("option");
+              opt.value = r.reglaId ? String(r.reglaId) : "";
+              opt.dataset.piezas = String(Number.parseInt(r.cantidadEmpaque, 10) || 1);
+              opt.textContent = safeText(r.nombreRegla || `Caja x${r.cantidadEmpaque}`);
+
+              if (item._reglaEmpaqueId && r.reglaId && String(r.reglaId) === String(item._reglaEmpaqueId)) {
+                opt.selected = true;
+              } else if (!item._reglaEmpaqueId && Number.parseInt(r.cantidadEmpaque, 10) === piezas) {
+                opt.selected = true;
+              }
+
+              select.appendChild(opt);
+            }
+          } else {
+            const opt = document.createElement("option");
+            opt.value = "";
+            opt.dataset.piezas = String(piezas);
+            opt.textContent = `Regla fija: ${piezas} pzas/paq`;
+            opt.selected = true;
+            select.appendChild(opt);
+            select.disabled = true;
+          }
+
+          select.addEventListener("change", () => {
+            const selected = select.selectedOptions?.[0];
+            const newPzas = Number.parseInt(selected?.dataset?.piezas, 10);
+            const newReglaId = Number.parseInt(select.value, 10);
+
+            if (Number.isInteger(newPzas) && newPzas > 0) {
+              item._piezasPorPaquete = newPzas;
+            }
+            item._reglaEmpaqueId = Number.isInteger(newReglaId) && newReglaId > 0 ? newReglaId : null;
+
+            const idx = sesionRecepcion.findIndex((x) => String(x.detalleId) === String(item.detalleId));
+            if (idx >= 0) {
+              sesionRecepcion[idx] = {
+                ...sesionRecepcion[idx],
+                piezasPorPaquete: piezasPorPaqueteValue(item),
+                reglaEmpaqueId: item._reglaEmpaqueId,
+              };
+              persistSesionRecepcion();
+              renderizarTablaSesion();
+            }
+
+            renderSplit();
+          });
+
+          helper.appendChild(select);
           tdInput.appendChild(helper);
 
           const renderColor = () => {
@@ -723,8 +911,8 @@
 
         for (const item of items) {
           const piezas = piezasPorPaqueteValue(item);
-          const solicitadoPzas = Number.parseInt(item.cantidadSolicitada, 10) || 0;
-          const recibidoPzas = Number.parseInt(item.cantidadRecibida, 10) || 0;
+          const solicitadoPzas = solicitadoPzasValue(item);
+          const recibidoPzas = recibidoPzasValue(item);
 
           const pct = solicitadoPzas > 0 ? Math.min(100, Math.round((recibidoPzas / solicitadoPzas) * 100)) : 0;
           const isDone = recibidoPzas >= solicitadoPzas && solicitadoPzas > 0;

@@ -765,6 +765,26 @@ const recepcionMasivaOrdenCompra = async (req, res) => {
       ? `/uploads/comprobantes/${req.file.filename}`
       : null;
 
+    const reglasEmpaqueRes = await client.query(
+      `SELECT reglaid, tipoproductoid, cantidadempaque
+       FROM proveedor_reglas_empaque
+       WHERE proveedorid = $1`,
+      [proveedorId]
+    );
+    const reglasEmpaqueByTipo = new Map();
+    const reglasEmpaqueById = new Map();
+    for (const r of reglasEmpaqueRes.rows || []) {
+      const tipoProductoId = Number.parseInt(r.tipoproductoid, 10);
+      const reglaid = Number.parseInt(r.reglaid, 10);
+      const cantidadEmpaque = Number.parseInt(r.cantidadempaque, 10);
+      if (!Number.isInteger(tipoProductoId) || tipoProductoId <= 0) continue;
+      if (!Number.isInteger(reglaid) || reglaid <= 0) continue;
+      if (!Number.isInteger(cantidadEmpaque) || cantidadEmpaque <= 0) continue;
+      if (!reglasEmpaqueByTipo.has(tipoProductoId)) reglasEmpaqueByTipo.set(tipoProductoId, []);
+      reglasEmpaqueByTipo.get(tipoProductoId).push({ reglaid, cantidadEmpaque });
+      reglasEmpaqueById.set(reglaid, { tipoProductoId, cantidadEmpaque });
+    }
+
     let montoTotalCentavos = 0;
     const productosActualizados = [];
 
@@ -801,6 +821,7 @@ const recepcionMasivaOrdenCompra = async (req, res) => {
            pv.stock AS stockvariante,
            pv.costounitario AS variante_costounitario,
            pv.piezasporpaquete AS variante_piezasporpaquete,
+           pv.tipoproductoid,
            pr.nombreproducto
          FROM detallesordencompra doc
          INNER JOIN producto_variantes pv ON pv.varianteid = doc.varianteid
@@ -835,27 +856,58 @@ const recepcionMasivaOrdenCompra = async (req, res) => {
       }
 
       const solicitado = Number.parseInt(detalle.cantidadsolicitada, 10) || 0;
-      const piezasPorPaqueteParsed = Number.parseInt(detalle.piezasporpaquete, 10);
-      const piezasPorPaqueteAltParsed = Number.parseInt(detalle.variante_piezasporpaquete, 10);
-      const piezasPorPaquete = (() => {
-        if (Number.isInteger(piezasPorPaqueteParsed) && piezasPorPaqueteParsed > 0) {
-          return piezasPorPaqueteParsed;
+
+      const tipoProductoId = Number.parseInt(detalle.tipoproductoid, 10);
+      const reglaEmpaqueIdReq = Number.parseInt(
+        raw?.reglaEmpaqueId ?? raw?.reglaEmpaqueID ?? raw?.reglaId,
+        10
+      );
+      const piezasPorPaqueteReq = Number.parseInt(
+        raw?.piezasPorPaquete ?? raw?.piezasporpaquete ?? raw?.cantidadEmpaque,
+        10
+      );
+
+      const reglasTipo = reglasEmpaqueByTipo.get(tipoProductoId) || [];
+
+      const piezasPorPaqueteSeleccion = (() => {
+        if (Number.isInteger(reglaEmpaqueIdReq) && reglaEmpaqueIdReq > 0) {
+          if (!reglasTipo.length) return undefined;
+          const regla = reglasEmpaqueById.get(reglaEmpaqueIdReq);
+          if (!regla || regla.tipoProductoId !== tipoProductoId) return null;
+          return regla.cantidadEmpaque;
         }
-        if (Number.isInteger(piezasPorPaqueteAltParsed) && piezasPorPaqueteAltParsed > 0) {
-          return piezasPorPaqueteAltParsed;
+
+        if (Number.isInteger(piezasPorPaqueteReq) && piezasPorPaqueteReq > 0) {
+          if (!reglasTipo.length) return undefined;
+          const found = reglasTipo.find((r) => r.cantidadEmpaque === piezasPorPaqueteReq);
+          if (!found) return null;
+          return piezasPorPaqueteReq;
         }
-        return 1;
+
+        return undefined;
       })();
-      const solicitadoPzas = solicitado * piezasPorPaquete;
-      const recibidoPzsActual = Number.parseInt(detalle.piezasrecibidas, 10) || 0;
-      const nuevoRecibidoPzas = recibidoPzsActual + cantidadIngresada;
-      if (nuevoRecibidoPzas > solicitadoPzas) {
+
+      if (piezasPorPaqueteSeleccion === null) {
         await client.query("ROLLBACK");
         return res.status(400).json({
           success: false,
-          message: `No puede recibir más de lo solicitado para ${detalle.nombreproducto}. Solicitado: ${solicitadoPzas}, Ya recibido: ${recibidoPzsActual}`,
+          message:
+            "Regla de empaque inválida: la selección no coincide con las reglas permitidas del proveedor para este tipo de producto",
         });
       }
+
+      const piezasPorPaqueteSafe = (() => {
+        if (piezasPorPaqueteSeleccion !== undefined) {
+          const candidate = Number.parseInt(piezasPorPaqueteSeleccion, 10);
+          if (Number.isInteger(candidate) && candidate > 0) return candidate;
+        }
+
+        const parsed = Number.parseInt(detalle.piezasporpaquete, 10);
+        if (Number.isInteger(parsed) && parsed > 0) return parsed;
+        const alt = Number.parseInt(detalle.variante_piezasporpaquete, 10);
+        if (Number.isInteger(alt) && alt > 0) return alt;
+        return 1;
+      })();
 
       const costoPaquete = Number.parseFloat(detalle.costounitario ?? 0) || 0;
       const costoVariante = Number.parseFloat(detalle.variante_costounitario ?? 0) || 0;
@@ -874,13 +926,13 @@ const recepcionMasivaOrdenCompra = async (req, res) => {
       await client.query(
         `UPDATE detallesordencompra
          SET piezasrecibidas = COALESCE(piezasrecibidas, 0) + $1,
-             piezasporpaquete = COALESCE(NULLIF(piezasporpaquete, 0), $4),
+             piezasporpaquete = $4,
              cantidadrecibida = FLOOR(
                (COALESCE(piezasrecibidas, 0) + $1)
-               / COALESCE(NULLIF(COALESCE(NULLIF(piezasporpaquete, 0), $4), 0), 1)
+               / COALESCE(NULLIF($4, 0), 1)
              )::int
          WHERE detalleoc_id = $2 AND ordencompraid = $3`,
-        [cantidadIngresada, detalleId, ordenCompraId, piezasPorPaquete]
+        [cantidadIngresada, detalleId, ordenCompraId, piezasPorPaqueteSafe]
       );
 
       const stockAnterior = Number.parseInt(detalle.stockvariante, 10) || 0;
@@ -1175,6 +1227,56 @@ const getRecepcionOrdenCompra = async (req, res) => {
 
     const orden = ordenResult.rows[0];
 
+    let reglasEmpaqueProveedor = [];
+    try {
+      const reglasRes = await db.query(
+        `SELECT reglaid, tipoproductoid, cantidadempaque, descripcion, nombre_regla
+         FROM proveedor_reglas_empaque
+         WHERE proveedorid = $1
+         ORDER BY reglaid ASC`,
+        [orden.proveedorid]
+      );
+      reglasEmpaqueProveedor = reglasRes.rows || [];
+    } catch (dbError) {
+      if (dbError && dbError.code === "42703") {
+        const reglasRes = await db.query(
+          `SELECT reglaid, tipoproductoid, cantidadempaque, descripcion
+           FROM proveedor_reglas_empaque
+           WHERE proveedorid = $1
+           ORDER BY reglaid ASC`,
+          [orden.proveedorid]
+        );
+        reglasEmpaqueProveedor = reglasRes.rows || [];
+      } else {
+        throw dbError;
+      }
+    }
+
+    const reglasEmpaqueByTipo = new Map();
+    for (const r of reglasEmpaqueProveedor) {
+      const tipoProductoId = Number.parseInt(r.tipoproductoid, 10);
+      const reglaid = Number.parseInt(r.reglaid, 10);
+      const cantidadEmpaque = Number.parseInt(r.cantidadempaque, 10);
+      if (!Number.isInteger(tipoProductoId) || tipoProductoId <= 0) continue;
+      if (!Number.isInteger(cantidadEmpaque) || cantidadEmpaque <= 0) continue;
+
+      const nombreRegla = (() => {
+        const raw = (r.nombre_regla ?? r.descripcion ?? "").toString().trim();
+        if (raw) return raw;
+        return `Caja x${cantidadEmpaque}`;
+      })();
+
+      if (!reglasEmpaqueByTipo.has(tipoProductoId)) {
+        reglasEmpaqueByTipo.set(tipoProductoId, []);
+      }
+      reglasEmpaqueByTipo.get(tipoProductoId).push({
+        reglaId: Number.isInteger(reglaid) && reglaid > 0 ? reglaid : null,
+        tipoProductoId,
+        cantidadEmpaque,
+        nombreRegla,
+      });
+    }
+
     const detallesResult = await db.query(
       `SELECT
          doc.detalleoc_id,
@@ -1193,23 +1295,24 @@ const getRecepcionOrdenCompra = async (req, res) => {
          pv.piezasporpaquete AS variante_piezasporpaquete,
          COALESCE(pv.stock, 0) AS stockvariante,
          pr.nombreproducto,
-         pi.url_imagen AS imagen,
-         pre.cantidadempaque AS regla_cantidadempaque
+         pi.url_imagen AS imagen
        FROM detallesordencompra doc
        INNER JOIN producto_variantes pv ON doc.varianteid = pv.varianteid
        INNER JOIN productos pr ON pv.productoid = pr.productoid
        LEFT JOIN producto_imagenes pi ON pi.productoid = pr.productoid AND pi.orden = 1
-       LEFT JOIN proveedor_reglas_empaque pre
-         ON pre.proveedorid = $2
-        AND pre.tipoproductoid = pv.tipoproductoid
        WHERE doc.ordencompraid = $1
        ORDER BY pr.nombreproducto ASC`,
-      [ordenCompraId, orden.proveedorid]
+      [ordenCompraId]
     );
 
     const items = detallesResult.rows.map((row) => {
+      const tipoProductoId = Number.parseInt(row.tipoproductoid, 10);
+      const reglasDisponibles = reglasEmpaqueByTipo.get(tipoProductoId) || [];
+
       const piezasPorPaqueteParsed = Number.parseInt(
-        row.piezasporpaquete ?? row.variante_piezasporpaquete ?? row.regla_cantidadempaque,
+        row.piezasporpaquete ??
+          row.variante_piezasporpaquete ??
+          reglasDisponibles[0]?.cantidadEmpaque,
         10
       );
       const piezasPorPaquete =
@@ -1217,14 +1320,20 @@ const getRecepcionOrdenCompra = async (req, res) => {
           ? piezasPorPaqueteParsed
           : 1;
 
-      const solicitadoPzas =
-        (Number.parseInt(row.cantidadsolicitada, 10) || 0) * piezasPorPaquete;
+      const solicitadoPaq = Number.parseInt(row.cantidadsolicitada, 10) || 0;
+      const solicitadoPzas = solicitadoPaq * piezasPorPaquete;
       const recibidoPzas = (() => {
         const piezasRecibidasRaw = row.piezasrecibidas;
         const piezasRecibidas = Number.parseInt(piezasRecibidasRaw, 10);
         if (Number.isInteger(piezasRecibidas) && piezasRecibidas >= 0) return piezasRecibidas;
         const recibidoPaq = Number.parseInt(row.cantidadrecibida, 10) || 0;
         return recibidoPaq * piezasPorPaquete;
+      })();
+
+      const reglaEmpaqueIdSeleccionada = (() => {
+        if (!Array.isArray(reglasDisponibles) || reglasDisponibles.length === 0) return null;
+        const match = reglasDisponibles.find((r) => r.cantidadEmpaque === piezasPorPaquete);
+        return match?.reglaId ?? reglasDisponibles[0]?.reglaId ?? null;
       })();
 
       return {
@@ -1236,19 +1345,21 @@ const getRecepcionOrdenCompra = async (req, res) => {
         nombreProducto: row.nombreproducto,
         dimensiones: row.dimensiones,
         medidaId: row.medidaid,
-        tipoProductoId: row.tipoproductoid,
+        tipoProductoId,
         imagen: row.imagen || null,
         cantidadSolicitada: solicitadoPzas,
         cantidadRecibida: recibidoPzas,
+        cantidadSolicitadaPaquetes: solicitadoPaq,
+        cantidadRecibidaPaquetes: Number.parseInt(row.cantidadrecibida, 10) || 0,
+        piezasRecibidas: Number.parseInt(row.piezasrecibidas, 10) || 0,
         cantidadPendiente: Math.max(solicitadoPzas - recibidoPzas, 0),
         piezasPorPaquete,
         costounitario: row.costounitario !== null ? Number.parseFloat(row.costounitario) : 0,
         stockVariante: Number.parseInt(row.stockvariante, 10) || 0,
         reglas_empaque: {
-          cantidadEmpaque:
-            row.regla_cantidadempaque !== null && row.regla_cantidadempaque !== undefined
-              ? Number.parseInt(row.regla_cantidadempaque, 10) || null
-              : null,
+          cantidadEmpaque: piezasPorPaquete,
+          disponibles: reglasDisponibles,
+          reglaEmpaqueIdSeleccionada,
         },
       };
     });
@@ -9003,6 +9114,56 @@ const getDetallesOrdenCompra = async (req, res) => {
 
     const orden = ordenResult.rows[0];
 
+    let reglasEmpaqueProveedor = [];
+    try {
+      const reglasRes = await db.query(
+        `SELECT reglaid, tipoproductoid, cantidadempaque, descripcion, nombre_regla
+         FROM proveedor_reglas_empaque
+         WHERE proveedorid = $1
+         ORDER BY reglaid ASC`,
+        [orden.proveedorid]
+      );
+      reglasEmpaqueProveedor = reglasRes.rows || [];
+    } catch (dbError) {
+      if (dbError && dbError.code === "42703") {
+        const reglasRes = await db.query(
+          `SELECT reglaid, tipoproductoid, cantidadempaque, descripcion
+           FROM proveedor_reglas_empaque
+           WHERE proveedorid = $1
+           ORDER BY reglaid ASC`,
+          [orden.proveedorid]
+        );
+        reglasEmpaqueProveedor = reglasRes.rows || [];
+      } else {
+        throw dbError;
+      }
+    }
+
+    const reglasEmpaqueByTipo = new Map();
+    for (const r of reglasEmpaqueProveedor) {
+      const tipoProductoId = Number.parseInt(r.tipoproductoid, 10);
+      const reglaid = Number.parseInt(r.reglaid, 10);
+      const cantidadEmpaque = Number.parseInt(r.cantidadempaque, 10);
+      if (!Number.isInteger(tipoProductoId) || tipoProductoId <= 0) continue;
+      if (!Number.isInteger(cantidadEmpaque) || cantidadEmpaque <= 0) continue;
+
+      const nombreRegla = (() => {
+        const raw = (r.nombre_regla ?? r.descripcion ?? "").toString().trim();
+        if (raw) return raw;
+        return `Caja x${cantidadEmpaque}`;
+      })();
+
+      if (!reglasEmpaqueByTipo.has(tipoProductoId)) {
+        reglasEmpaqueByTipo.set(tipoProductoId, []);
+      }
+      reglasEmpaqueByTipo.get(tipoProductoId).push({
+        reglaId: Number.isInteger(reglaid) && reglaid > 0 ? reglaid : null,
+        tipoProductoId,
+        cantidadEmpaque,
+        nombreRegla,
+      });
+    }
+
     // Obtener detalles de productos
     const detallesQuery = `
       SELECT 
@@ -9016,6 +9177,7 @@ const getDetallesOrdenCompra = async (req, res) => {
         pv.sku,
         pv.dimensiones,
         pv.medidaid,
+        pv.tipoproductoid,
         COALESCE(pv.stock, 0) AS stockvariante,
         pr.nombreproducto
       FROM detallesordencompra doc
@@ -9053,6 +9215,10 @@ const getDetallesOrdenCompra = async (req, res) => {
           cantidadRecibida: row.cantidadrecibida,
           cantidadPendiente: row.cantidadsolicitada - row.cantidadrecibida,
           stockVariante: row.stockvariante,
+          reglas_empaque: {
+            disponibles:
+              reglasEmpaqueByTipo.get(Number.parseInt(row.tipoproductoid, 10)) || [],
+          },
           piezasPorPaquete: (() => {
             const parsed = Number.parseInt(row.piezasporpaquete, 10);
             return Number.isInteger(parsed) && parsed > 0 ? parsed : 1;
@@ -9529,25 +9695,19 @@ const recibirItemOrdenCompra = async (req, res) => {
     }
 
     const solicitado = Number.parseInt(detalle.cantidadsolicitada, 10) || 0;
-    const recibidoPiezasRaw = detalle.piezasrecibidas;
-    const recibidoPiezas = Number.isInteger(Number.parseInt(recibidoPiezasRaw, 10))
-      ? Number.parseInt(recibidoPiezasRaw, 10)
-      : null;
-    const piezasPorPaqueteParsed = Number.parseInt(detalle.piezasporpaquete, 10);
-    const piezasPorPaquete =
-      Number.isInteger(piezasPorPaqueteParsed) && piezasPorPaqueteParsed > 0
-        ? piezasPorPaqueteParsed
-        : 1;
+    const piezasPorPaqueteSafe = (() => {
+      const parsed = Number.parseInt(detalle.piezasporpaquete, 10);
+      return Number.isInteger(parsed) && parsed > 0 ? parsed : 1;
+    })();
 
-    const solicitadoPzas = solicitado * piezasPorPaquete;
-    const recibidoPzasActual =
-      recibidoPiezas !== null ? recibidoPiezas : (Number.parseInt(detalle.cantidadrecibida, 10) || 0) * piezasPorPaquete;
-    const nuevoRecibidoPzas = recibidoPzasActual + cantidadIngresada;
+    const solicitadoPzas = solicitado * piezasPorPaqueteSafe;
+    const recibidoPzsActual = Number.parseInt(detalle.piezasrecibidas, 10) || 0;
+    const nuevoRecibidoPzas = recibidoPzsActual + cantidadIngresada;
     if (nuevoRecibidoPzas > solicitadoPzas) {
       await client.query("ROLLBACK");
       return res.status(400).json({
         success: false,
-        message: `No puede recibir más de lo solicitado para ${detalle.nombreproducto}. Solicitado: ${solicitadoPzas}, Ya recibido: ${recibidoPzasActual}`,
+        message: `No puede recibir más de lo solicitado para ${detalle.nombreproducto}. Solicitado: ${solicitadoPzas}, Ya recibido: ${recibidoPzsActual}`,
       });
     }
 
@@ -9615,7 +9775,7 @@ const recibirItemOrdenCompra = async (req, res) => {
           cantidadSolicitada: solicitadoPzas,
           cantidadRecibida: nuevoRecibidoPzas,
           cantidadPendiente: Math.max(solicitadoPzas - nuevoRecibidoPzas, 0),
-          piezasPorPaquete,
+          piezasPorPaquete: piezasPorPaqueteSafe,
           stockVariante: nuevoStock,
         },
       },
