@@ -243,14 +243,7 @@
         </div>
       </main>
     </div>
-
-    <button id="btnFinalizarRecepcion" type="button" class="btn btn-primary" style="display:none;" aria-label="Finalizar recepción y generar cuenta por pagar">
-      📝 Finalizar Recepción y Generar Cuenta por Pagar (0 ítems)
-    </button>
-    <div id="sesionFloatingCounter" style="display:none;" aria-label="Resumen de sesión">
-      Items en sesión: 0 | Total: $0.00
-    </div>
-
+    
     <script src="js/layout.js" defer></script>
     <script src="js/api.js"></script>
     <script src="js/admin-header-dropdown.js"></script>
@@ -537,7 +530,10 @@
       };
 
       const piezasPorPaqueteValue = (item) => {
-        const raw = item.piezasPorPaquete ?? item.piezasporpaquete;
+        const raw =
+          item.piezasPorPaquete ??
+          item.piezasporpaquete ??
+          item.reglas_empaque?.cantidadEmpaque;
         const parsed = Number.parseInt(raw, 10);
         return Number.isInteger(parsed) && parsed > 0 ? parsed : 1;
       };
@@ -558,7 +554,7 @@
         const ppp = Number.parseInt(piezasPorPaquete, 10) || 1;
         const cu = Number.parseFloat(costoUnitario) || 0;
         if (pzas <= 0 || ppp <= 0 || cu <= 0) return 0;
-        return (pzas / ppp) * cu;
+        return pzas * cu;
       };
 
       const showToastOk = (title) => {

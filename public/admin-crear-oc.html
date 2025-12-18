@@ -44,15 +44,40 @@
                   margin-bottom: 2rem;
                 "
               >
-                <h3
+                <div
                   style="
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    gap: 1rem;
                     margin: 0 0 1rem 0;
-                    color: var(--razo-orange);
-                    font-size: 1.125rem;
                   "
                 >
-                  📋 Información General
-                </h3>
+                  <h3
+                    style="
+                      margin: 0;
+                      color: var(--razo-orange);
+                      font-size: 1.125rem;
+                    "
+                  >
+                    📋 Información General
+                  </h3>
+                  <div
+                    style="
+                      padding: 0.35rem 0.6rem;
+                      border-radius: 999px;
+                      background: #fff7ed;
+                      border: 1px solid #fed7aa;
+                      color: #9a3412;
+                      font-weight: 800;
+                      font-size: 0.9rem;
+                      white-space: nowrap;
+                    "
+                    aria-label="Número de orden de compra"
+                  >
+                    OC #<span id="ocNumero">Nueva</span>
+                  </div>
+                </div>
 
                 <div
                   style="
@@ -318,6 +343,7 @@
     <script src="js/components/user-profile.js"></script>
     <script>
       // Authentication check
+      const ocNumeroEl = document.getElementById("ocNumero");
       const adminToken = localStorage.getItem("razoconnect_admin_token");
       if (!adminToken) {
         window.location.href = "/login.html";
@@ -500,6 +526,12 @@
           style: "currency",
           currency: "MXN",
         }).format(safe);
+      }
+
+      function setOcNumero(value) {
+        if (!ocNumeroEl) return;
+        const id = Number.parseInt(value, 10);
+        ocNumeroEl.textContent = Number.isInteger(id) && id > 0 ? String(id) : "Nueva";
       }
 
       function calcularTotalesOrdenCompra() {
@@ -906,7 +938,12 @@
             const data = await response.json();
 
             if (response.ok && data.success) {
-              showToast("Orden de compra creada exitosamente", "success");
+              const newId = data?.data?.ordenCompra?.ordenCompraId;
+              setOcNumero(newId);
+              showToast(
+                `Orden de compra creada exitosamente${newId ? ` (OC #${newId})` : ""}`,
+                "success"
+              );
               setTimeout(() => {
                 try {
                   sessionStorage.setItem("_navigating", "true");
@@ -916,7 +953,10 @@
                     storageError
                   );
                 }
-                window.location.href = "/admin-recibir-inventario.html";
+                const id = Number.parseInt(newId, 10);
+                window.location.href = Number.isInteger(id) && id > 0
+                  ? `/admin-recibir-inventario.html?ordenId=${encodeURIComponent(String(id))}`
+                  : "/admin-recibir-inventario.html";
               }, 1200);
             } else {
               showToast(
@@ -939,6 +979,12 @@
       document
         .getElementById("fechaEntregaEsperada")
         .setAttribute("min", today);
+
+      (() => {
+        const params = new URLSearchParams(window.location.search);
+        const ordenIdParam = params.get("ordenId");
+        setOcNumero(ordenIdParam);
+      })();
 
       // Navigation handling for non-implemented modules
       const navLinks = document.querySelectorAll(

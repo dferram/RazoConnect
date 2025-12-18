@@ -125,9 +125,7 @@ const getCuentasPorPagar = async (req, res) => {
 
     const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
 
-    const orderBySql = isHistorico
-      ? "ORDER BY cxp.fecha_emision DESC"
-      : "ORDER BY cxp.fecha_vencimiento ASC NULLS LAST, cxp.fecha_emision DESC";
+    const orderBySql = "ORDER BY cxp.cxp_id DESC";
 
     const result = await db.query(
       `SELECT
@@ -590,15 +588,59 @@ const getProductosRecibidosPorCxp = async (req, res) => {
       [cxpId]
     );
 
+    let rows = Array.isArray(result.rows) ? result.rows : [];
+
+    if (rows.length === 0) {
+      const ordenRes = await db.query(
+        `SELECT orden_compra_id
+         FROM cuentas_por_pagar
+         WHERE cxp_id = $1
+         LIMIT 1`,
+        [cxpId]
+      );
+
+      const ordenCompraId = Number.parseInt(ordenRes.rows?.[0]?.orden_compra_id ?? 0, 10);
+
+      if (Number.isInteger(ordenCompraId) && ordenCompraId > 0) {
+        const fallbackRes = await db.query(
+          `SELECT
+             pr.nombreproducto AS nombre_producto,
+             doc.cantidadsolicitada AS cantidad,
+             doc.costounitario AS precio,
+             pr.nombreproducto AS nombreproducto,
+             pv.sku AS sku,
+             pv.dimensiones AS dimensiones,
+             COALESCE(doc.piezasporpaquete, pv.piezasporpaquete, 1) AS piezasporpaquete,
+             (doc.cantidadsolicitada * COALESCE(doc.piezasporpaquete, pv.piezasporpaquete, 1))::int AS piezas,
+             (doc.cantidadsolicitada)::numeric AS paquetes,
+             NULL::timestamp AS fecha_inicio,
+             NULL::timestamp AS fecha_fin
+           FROM detallesordencompra doc
+           INNER JOIN producto_variantes pv ON pv.varianteid = doc.varianteid
+           INNER JOIN productos pr ON pr.productoid = pv.productoid
+           WHERE doc.ordencompraid = $1
+           ORDER BY pr.nombreproducto ASC, pv.sku ASC`,
+          [ordenCompraId]
+        );
+
+        rows = Array.isArray(fallbackRes.rows) ? fallbackRes.rows : [];
+      }
+    }
+
     return res.json({
       success: true,
       data: {
-        productos: (result.rows || []).map((row) => ({
+        productos: rows.map((row) => ({
           // Campos requeridos
           nombreproducto: row.nombreproducto,
           sku: row.sku,
           piezas: Number.parseInt(row.piezas ?? 0, 10) || 0,
           paquetes: Number.parseFloat(row.paquetes ?? 0) || 0,
+
+          // Claves para compatibilidad con fallback de OC
+          nombre_producto: row.nombre_producto ?? row.nombreproducto,
+          cantidad: Number.parseInt(row.cantidad ?? 0, 10) || 0,
+          precio: Number.parseFloat(row.precio ?? 0) || 0,
 
           // Compatibilidad con frontend existente
           nombreProducto: row.nombreproducto,
@@ -758,6 +800,7 @@ const recepcionMasivaOrdenCompra = async (req, res) => {
            pv.sku,
            pv.stock AS stockvariante,
            pv.costounitario AS variante_costounitario,
+           pv.piezasporpaquete AS variante_piezasporpaquete,
            pr.nombreproducto
          FROM detallesordencompra doc
          INNER JOIN producto_variantes pv ON pv.varianteid = doc.varianteid
@@ -793,10 +836,16 @@ const recepcionMasivaOrdenCompra = async (req, res) => {
 
       const solicitado = Number.parseInt(detalle.cantidadsolicitada, 10) || 0;
       const piezasPorPaqueteParsed = Number.parseInt(detalle.piezasporpaquete, 10);
-      const piezasPorPaquete =
-        Number.isInteger(piezasPorPaqueteParsed) && piezasPorPaqueteParsed > 0
-          ? piezasPorPaqueteParsed
-          : 1;
+      const piezasPorPaqueteAltParsed = Number.parseInt(detalle.variante_piezasporpaquete, 10);
+      const piezasPorPaquete = (() => {
+        if (Number.isInteger(piezasPorPaqueteParsed) && piezasPorPaqueteParsed > 0) {
+          return piezasPorPaqueteParsed;
+        }
+        if (Number.isInteger(piezasPorPaqueteAltParsed) && piezasPorPaqueteAltParsed > 0) {
+          return piezasPorPaqueteAltParsed;
+        }
+        return 1;
+      })();
       const solicitadoPzas = solicitado * piezasPorPaquete;
       const recibidoPzsActual = Number.parseInt(detalle.piezasrecibidas, 10) || 0;
       const nuevoRecibidoPzas = recibidoPzsActual + cantidadIngresada;
@@ -810,30 +859,28 @@ const recepcionMasivaOrdenCompra = async (req, res) => {
 
       const costoPaquete = Number.parseFloat(detalle.costounitario ?? 0) || 0;
       const costoVariante = Number.parseFloat(detalle.variante_costounitario ?? 0) || 0;
-      const costoPorPaquete = (() => {
+      const costoUnitario = (() => {
         if (Number.isFinite(costoPaquete) && costoPaquete > 0) return costoPaquete;
-        if (Number.isFinite(costoVariante) && costoVariante > 0) return costoVariante * piezasPorPaquete;
+        if (Number.isFinite(costoVariante) && costoVariante > 0) return costoVariante;
         return 0;
       })();
 
-      // Redondeo por línea (centavos): subtotal = round((piezas / piezas_por_paquete) * costo_paquete, 2)
+      // Costos son UNITARIOS por pieza: subtotal = piezas * costo_unitario
       // Se acumula en centavos para evitar errores de coma flotante.
-      const costoPorPaqueteCentavos = Math.round((Number.parseFloat(costoPorPaquete) || 0) * 100);
-      const subtotalCentavos = Math.round(
-        (cantidadIngresada * costoPorPaqueteCentavos) /
-          (Number.isInteger(piezasPorPaquete) && piezasPorPaquete > 0 ? piezasPorPaquete : 1)
-      );
+      const costoUnitarioCentavos = Math.round((Number.parseFloat(costoUnitario) || 0) * 100);
+      const subtotalCentavos = Math.round((cantidadIngresada || 0) * costoUnitarioCentavos);
       montoTotalCentavos += subtotalCentavos;
 
       await client.query(
         `UPDATE detallesordencompra
          SET piezasrecibidas = COALESCE(piezasrecibidas, 0) + $1,
+             piezasporpaquete = COALESCE(NULLIF(piezasporpaquete, 0), $4),
              cantidadrecibida = FLOOR(
                (COALESCE(piezasrecibidas, 0) + $1)
-               / COALESCE(NULLIF(piezasporpaquete, 0), 1)
+               / COALESCE(NULLIF(COALESCE(NULLIF(piezasporpaquete, 0), $4), 0), 1)
              )::int
          WHERE detalleoc_id = $2 AND ordencompraid = $3`,
-        [cantidadIngresada, detalleId, ordenCompraId]
+        [cantidadIngresada, detalleId, ordenCompraId, piezasPorPaquete]
       );
 
       const stockAnterior = Number.parseInt(detalle.stockvariante, 10) || 0;
@@ -869,11 +916,8 @@ const recepcionMasivaOrdenCompra = async (req, res) => {
     const totalOrdenResult = await client.query(
       `SELECT COALESCE(
           SUM(
-            doc.cantidadsolicitada
-            * COALESCE(
-                NULLIF(doc.costounitario, 0),
-                (pv.costounitario * COALESCE(NULLIF(doc.piezasporpaquete, 0), 1))
-              )
+            (doc.cantidadsolicitada * COALESCE(NULLIF(doc.piezasporpaquete, 0), NULLIF(pv.piezasporpaquete, 0), 1))
+            * COALESCE(NULLIF(doc.costounitario, 0), pv.costounitario)
           ),
           0
         ) AS total_orden
@@ -944,7 +988,12 @@ const recepcionMasivaOrdenCompra = async (req, res) => {
     }
 
     const faltantesResult = await client.query(
-      "SELECT COUNT(*)::int AS faltantes FROM detallesordencompra WHERE ordencompraid = $1 AND COALESCE(piezasrecibidas, 0) < (cantidadsolicitada * COALESCE(NULLIF(piezasporpaquete, 0), 1))",
+      `SELECT COUNT(*)::int AS faltantes
+       FROM detallesordencompra doc
+       INNER JOIN producto_variantes pv ON pv.varianteid = doc.varianteid
+       WHERE doc.ordencompraid = $1
+         AND COALESCE(doc.piezasrecibidas, 0)
+           < (doc.cantidadsolicitada * COALESCE(NULLIF(doc.piezasporpaquete, 0), NULLIF(pv.piezasporpaquete, 0), 1))`,
       [ordenCompraId]
     );
     const faltantes = Number.parseInt(faltantesResult.rows[0]?.faltantes, 10) || 0;
@@ -1006,13 +1055,10 @@ const upsertCuentaPorPagarForOC = async (client, ordenCompraId, usuarioId) => {
     `SELECT COALESCE(
         SUM(
           COALESCE(
-            doc.piezasrecibidas,
-            (doc.cantidadrecibida * COALESCE(NULLIF(doc.piezasporpaquete, 0), 1))
+            NULLIF(doc.piezasrecibidas, 0),
+            (doc.cantidadrecibida * COALESCE(NULLIF(doc.piezasporpaquete, 0), NULLIF(pv.piezasporpaquete, 0), 1))
           )
-          * COALESCE(
-              NULLIF(doc.costounitario, 0) / COALESCE(NULLIF(doc.piezasporpaquete, 0), 1),
-              pv.costounitario
-            )
+          * COALESCE(NULLIF(doc.costounitario, 0), pv.costounitario)
         ),
         0
       ) AS monto_total
@@ -1025,11 +1071,8 @@ const upsertCuentaPorPagarForOC = async (client, ordenCompraId, usuarioId) => {
   const totalOrdenResult = await client.query(
     `SELECT COALESCE(
         SUM(
-          doc.cantidadsolicitada
-          * COALESCE(
-              NULLIF(doc.costounitario, 0),
-              (pv.costounitario * COALESCE(NULLIF(doc.piezasporpaquete, 0), 1))
-            )
+          (doc.cantidadsolicitada * COALESCE(NULLIF(doc.piezasporpaquete, 0), NULLIF(pv.piezasporpaquete, 0), 1))
+          * COALESCE(NULLIF(doc.costounitario, 0), pv.costounitario)
         ),
         0
       ) AS total_orden
@@ -1147,6 +1190,7 @@ const getRecepcionOrdenCompra = async (req, res) => {
          pv.dimensiones,
          pv.medidaid,
          pv.tipoproductoid,
+         pv.piezasporpaquete AS variante_piezasporpaquete,
          COALESCE(pv.stock, 0) AS stockvariante,
          pr.nombreproducto,
          pi.url_imagen AS imagen,
@@ -1164,7 +1208,10 @@ const getRecepcionOrdenCompra = async (req, res) => {
     );
 
     const items = detallesResult.rows.map((row) => {
-      const piezasPorPaqueteParsed = Number.parseInt(row.piezasporpaquete, 10);
+      const piezasPorPaqueteParsed = Number.parseInt(
+        row.piezasporpaquete ?? row.variante_piezasporpaquete ?? row.regla_cantidadempaque,
+        10
+      );
       const piezasPorPaquete =
         Number.isInteger(piezasPorPaqueteParsed) && piezasPorPaqueteParsed > 0
           ? piezasPorPaqueteParsed
