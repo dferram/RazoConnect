@@ -1613,6 +1613,118 @@ footer::after {
   );
 }
 
+.rz-footer {
+  margin-top: 2rem;
+  background: linear-gradient(180deg, #0b1220 0%, #060a12 100%);
+  color: rgba(255, 255, 255, 0.86);
+  padding: 3rem 0 1.5rem;
+}
+
+.rz-footer-top {
+  display: grid;
+  gap: 2rem;
+  grid-template-columns: 1fr;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+@media (min-width: 992px) {
+  .rz-footer-top {
+    grid-template-columns: 1.2fr 1.8fr;
+    align-items: start;
+  }
+}
+
+.rz-footer-name {
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  color: #ffffff;
+}
+
+.rz-footer-tagline {
+  margin: 0.85rem 0 0;
+  color: rgba(255, 255, 255, 0.72);
+  line-height: 1.7;
+  max-width: 28rem;
+}
+
+.rz-footer-columns {
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 576px) {
+  .rz-footer-columns {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.rz-footer-col h4 {
+  font-size: 0.95rem;
+  font-weight: 900;
+  color: #ffffff;
+  margin-bottom: 0.75rem;
+}
+
+.rz-footer-col ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.rz-footer-col a {
+  color: rgba(255, 255, 255, 0.72);
+  text-decoration: none;
+}
+
+.rz-footer-col a:hover {
+  color: #ffffff;
+}
+
+.rz-footer-bottom {
+  padding-top: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+@media (min-width: 768px) {
+  .rz-footer-bottom {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.rz-footer-copy {
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.9rem;
+}
+
+.rz-footer-social {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.rz-footer-social-link {
+  color: rgba(255, 255, 255, 0.78);
+  font-weight: 700;
+  text-decoration: none;
+  padding: 0.35rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.rz-footer-social-link:hover {
+  color: #ffffff;
+  border-color: rgba(249, 115, 22, 0.5);
+  background: rgba(249, 115, 22, 0.12);
+}
+
 .footer-content {
   display: grid;
   grid-template-columns: 2.2fr 1fr 1fr 1fr;
