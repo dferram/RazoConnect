@@ -12,16 +12,19 @@ const proveedorIdEl = document.getElementById("proveedorId");
 const proveedorRfc = document.getElementById("proveedorRfc");
 const proveedorEmail = document.getElementById("proveedorEmail");
 
-const selectTipoRegla = document.getElementById("selectTipoRegla");
-const inputCantidadRegla = document.getElementById("inputCantidadRegla");
-const btnGuardarRegla = document.getElementById("btnGuardarRegla");
 const tablaReglasEmpaqueBody = document.getElementById("tablaReglasEmpaqueBody");
 const alertasPendientes = document.getElementById("alertasPendientes");
 
+const btnAbrirModalReglas = document.getElementById("btnAbrirModalReglas");
+const modalReglasEmpaque = document.getElementById("modalReglasEmpaque");
+const tbodyReglasEmpaqueModal = document.getElementById("tbodyReglasEmpaqueModal");
+const btnAgregarFilaRegla = document.getElementById("btnAgregarFilaRegla");
+const btnGuardarModalReglas = document.getElementById("btnGuardarModalReglas");
+const btnCancelarModalReglas = document.getElementById("btnCancelarModalReglas");
+const btnCerrarModalReglas = document.getElementById("btnCerrarModalReglas");
+
 let tiposProductoCache = [];
-let reglasCache = {};
-let tipoReglaChoices = null;
-let tipoProductoIdsDisponibles = new Set();
+let reglasCache = [];
 
 function toastSuccess(message) {
   if (typeof Swal === "undefined" || !Swal || typeof Swal.mixin !== "function") {
@@ -67,37 +70,40 @@ function getTipoNombreById(tipoId) {
 }
 
 function renderReglas() {
-  const entries = reglasCache && typeof reglasCache === "object"
-    ? Object.entries(reglasCache)
-    : [];
+  const list = Array.isArray(reglasCache) ? reglasCache : [];
 
-  if (!entries.length) {
+  if (!list.length) {
     tablaReglasEmpaqueBody.innerHTML = `
       <tr>
-        <td colspan="3" class="empty-state">No hay reglas de empaque configuradas</td>
+        <td colspan="4" class="empty-state">No hay reglas de empaque configuradas</td>
       </tr>
     `;
     return;
   }
 
-  tablaReglasEmpaqueBody.innerHTML = entries
-    .sort((a, b) => Number.parseInt(a[0], 10) - Number.parseInt(b[0], 10))
-    .map(([tipoId, cantidad]) => {
+  tablaReglasEmpaqueBody.innerHTML = list
+    .slice()
+    .sort((a, b) => {
+      const aTipo = Number.parseInt(a?.tipoproductoid, 10) || 0;
+      const bTipo = Number.parseInt(b?.tipoproductoid, 10) || 0;
+      const aCant = Number.parseInt(a?.cantidadempaque, 10) || 0;
+      const bCant = Number.parseInt(b?.cantidadempaque, 10) || 0;
+      if (aTipo !== bTipo) return aTipo - bTipo;
+      return aCant - bCant;
+    })
+    .map((r) => {
+      const tipoId = Number.parseInt(r?.tipoproductoid, 10);
       const nombreTipo = getTipoNombreById(tipoId);
-      const cantidadInt = Number.parseInt(cantidad, 10);
+      const nombreRegla = String(r?.nombre_regla ?? "").trim();
+      const piezas = Number.parseInt(r?.cantidadempaque, 10);
+
       return `
         <tr>
           <td style="font-weight:600; color: var(--razo-gray-dark);">${nombreTipo}</td>
-          <td>${Number.isInteger(cantidadInt) ? cantidadInt : "-"}</td>
+          <td style="font-weight:600; color: var(--razo-gray-dark);">${nombreRegla || "-"}</td>
+          <td>${Number.isInteger(piezas) ? piezas : "-"}</td>
           <td>
-            <button
-              type="button"
-              class="btn btn-light btn-sm"
-              onclick="window.__editarReglaEmpaque && window.__editarReglaEmpaque('${String(
-                tipoId
-              )}', '${String(cantidad)}')"
-              title="Editar"
-            >
+            <button type="button" class="btn btn-light btn-sm" id="btnAbrirModalReglasInline" onclick="window.__openReglasEmpaqueModal && window.__openReglasEmpaqueModal()" title="Editar">
               ✏️
             </button>
           </td>
@@ -207,75 +213,11 @@ async function loadTiposProducto() {
 
   const tipos = Array.isArray(data?.data?.tipos) ? data.data.tipos : [];
   tiposProductoCache = tipos;
-
-  if (!selectTipoRegla) {
-    return;
-  }
-
-  tipoProductoIdsDisponibles = new Set();
-
-  const previousValue = selectTipoRegla.value;
-  selectTipoRegla.innerHTML = "";
-
-  const placeholderOption = document.createElement("option");
-  placeholderOption.value = "";
-  placeholderOption.textContent = "Escribe o selecciona un tipo";
-  selectTipoRegla.appendChild(placeholderOption);
-
-  tiposProductoCache.forEach((tipo) => {
-    const id = tipo?.tipoProductoId;
-    const nombre = tipo?.nombre;
-    const parsed = Number.parseInt(id, 10);
-    if (!Number.isInteger(parsed) || parsed <= 0) return;
-    const label = (nombre || "").toString().trim();
-    if (!label) return;
-
-    tipoProductoIdsDisponibles.add(parsed);
-
-    const option = document.createElement("option");
-    option.value = String(parsed);
-    option.textContent = label;
-    selectTipoRegla.appendChild(option);
-  });
-
-  if (tipoReglaChoices) {
-    try {
-      tipoReglaChoices.destroy();
-    } catch (e) {
-      // ignore
-    }
-    tipoReglaChoices = null;
-  }
-
-  if (typeof Choices !== "undefined") {
-    tipoReglaChoices = new Choices(selectTipoRegla, {
-      searchEnabled: true,
-      searchResultLimit: 100,
-      shouldSort: false,
-      allowHTML: false,
-      removeItemButton: true,
-      duplicateItemsAllowed: false,
-      addItems: true,
-      addItemText: (value) => `Agregar "${value}"`,
-    });
-  }
-
-  if (previousValue) {
-    try {
-      if (tipoReglaChoices) {
-        tipoReglaChoices.setChoiceByValue(String(previousValue));
-      } else {
-        selectTipoRegla.value = String(previousValue);
-      }
-    } catch (e) {
-      // ignore
-    }
-  }
 }
 
 async function loadReglasEmpaque() {
   const { response, data } = await fetchJson(
-    `${API_BASE_URL}/admin/proveedores/${proveedorId}/reglas`,
+    `${API_BASE_URL}/admin/proveedores/${proveedorId}/reglas-multiples`,
     {
       method: "GET",
       headers: {
@@ -289,153 +231,221 @@ async function loadReglasEmpaque() {
     throw new Error(data.message || "No se pudieron cargar las reglas");
   }
 
-  reglasCache = data?.data?.reglas && typeof data.data.reglas === "object"
-    ? data.data.reglas
-    : {};
+  reglasCache = Array.isArray(data?.data?.reglas) ? data.data.reglas : [];
 
   renderReglas();
 }
 
-async function guardarReglaEmpaque() {
-  const rawValue = selectTipoRegla ? selectTipoRegla.value : "";
-  const rawTxt = String(rawValue || "").trim();
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
 
-  const parsed = Number.parseInt(rawTxt, 10);
-  const tipoIdResolved =
-    Number.isInteger(parsed) && parsed > 0 && tipoProductoIdsDisponibles.has(parsed)
-      ? parsed
-      : null;
-
-  const tipoNombreNormalized = tipoIdResolved
-    ? ""
-    : rawTxt;
-  const cantidad = Number.parseInt(inputCantidadRegla.value, 10);
-
-  if ((!tipoIdResolved || tipoIdResolved <= 0) && !tipoNombreNormalized) {
-    await Swal.fire({
-      icon: "warning",
-      title: "Falta tipo de producto",
-      text: "Selecciona o escribe un tipo de producto.",
-      confirmButtonColor: "#F97316",
-    });
-    return;
-  }
-
-  if (!Number.isInteger(cantidad) || cantidad <= 0) {
-    await Swal.fire({
-      icon: "warning",
-      title: "Cantidad inválida",
-      text: "Ingresa una cantidad mayor a 0.",
-      confirmButtonColor: "#F97316",
-    });
-    return;
-  }
-
-  const tipoNombre = tipoIdResolved
-    ? getTipoNombreById(tipoIdResolved)
-    : tipoNombreNormalized;
-
-  const result = await Swal.fire({
-    icon: "question",
-    title: "Guardar regla",
-    text: `¿Guardar ${tipoNombre} = ${cantidad} piezas por paquete?`,
-    showCancelButton: true,
-    confirmButtonText: "Sí, guardar",
-    cancelButtonText: "Cancelar",
-    confirmButtonColor: "#F97316",
-    cancelButtonColor: "#6b7280",
-  });
-
-  if (!result.isConfirmed) return;
-
-  btnGuardarRegla.disabled = true;
-
-  try {
-    const payload = {
-      cantidadEmpaque: cantidad,
-    };
-
-    if (tipoIdResolved) {
-      payload.TipoProductoID = tipoIdResolved;
-    } else {
-      payload.TipoProducto = tipoNombreNormalized;
-    }
-
-    const { response, data } = await fetchJson(
-      `${API_BASE_URL}/admin/proveedores/${proveedorId}/reglas`,
-      {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${adminToken}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      }
+function buildTipoOptionsHtml(selectedTipoId) {
+  const selected = Number.parseInt(selectedTipoId, 10);
+  const opts = [`<option value="">Selecciona...</option>`];
+  for (const t of tiposProductoCache) {
+    const id = Number.parseInt(t?.tipoProductoId, 10);
+    const nombre = String(t?.nombre ?? "").trim();
+    if (!Number.isInteger(id) || id <= 0) continue;
+    if (!nombre) continue;
+    const isSel = Number.isInteger(selected) && selected === id;
+    opts.push(
+      `<option value="${escapeHtml(String(id))}" ${isSel ? "selected" : ""}>${escapeHtml(
+        nombre
+      )}</option>`
     );
+  }
+  return opts.join("");
+}
 
-    if (!response.ok || !data.success) {
-      throw new Error(data.message || "No se pudo guardar la regla");
-    }
+function createTrashButtonHtml() {
+  return `
+    <button type="button" class="btn btn-light btn-sm" data-action="delete" title="Eliminar" style="display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px; padding:0; border-radius:10px;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M9 3h6m-7 4h8m-9 0l1 14h8l1-14M10 11v7m4-7v7" stroke="#F97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+  `;
+}
 
-    await loadReglasEmpaque();
-    toastSuccess("Regla actualizada correctamente");
+function addReglaRowToModal(regla) {
+  const reglaid = Number.parseInt(regla?.reglaid, 10);
+  const reglaidSafe = Number.isInteger(reglaid) && reglaid > 0 ? reglaid : "";
+  const tipoId = Number.parseInt(regla?.tipoproductoid, 10);
+  const tipoIdSafe = Number.isInteger(tipoId) && tipoId > 0 ? tipoId : "";
+  const nombre = String(regla?.nombre_regla ?? "").trim();
+  const cantidad = Number.parseInt(regla?.cantidadempaque, 10);
+  const cantidadSafe = Number.isInteger(cantidad) && cantidad > 0 ? cantidad : "";
 
-    inputCantidadRegla.value = "";
-    if (selectTipoRegla) {
-      if (tipoReglaChoices) {
-        try {
-          tipoReglaChoices.removeActiveItems();
-        } catch (e) {
-          selectTipoRegla.value = "";
-        }
-      } else {
-        selectTipoRegla.value = "";
-      }
-    }
-  } catch (error) {
-    console.error("Error guardando regla:", error);
-    await Swal.fire({
-      icon: "error",
-      title: "Error",
-      text: error.message || "Error al guardar la regla",
-      confirmButtonColor: "#F97316",
-    });
-  } finally {
-    btnGuardarRegla.disabled = false;
+  const tr = document.createElement("tr");
+  tr.dataset.reglaid = String(reglaidSafe);
+
+  tr.innerHTML = `
+    <td>
+      <select class="form-input" data-field="tipoproductoid" style="height: 42px;">
+        ${buildTipoOptionsHtml(tipoIdSafe)}
+      </select>
+    </td>
+    <td>
+      <input class="form-input" data-field="nombre_regla" type="text" maxlength="100" placeholder="Ej: Caja Master" value="${escapeHtml(nombre)}" style="height: 42px;" />
+    </td>
+    <td>
+      <input class="form-input" data-field="cantidadempaque" type="number" min="1" step="1" placeholder="Piezas" value="${escapeHtml(String(cantidadSafe))}" style="height: 42px;" />
+    </td>
+    <td style="text-align:center;">
+      ${createTrashButtonHtml()}
+    </td>
+  `;
+
+  tbodyReglasEmpaqueModal.appendChild(tr);
+}
+
+function renderModalReglas() {
+  if (!tbodyReglasEmpaqueModal) return;
+
+  tbodyReglasEmpaqueModal.innerHTML = "";
+  const list = Array.isArray(reglasCache) ? reglasCache : [];
+
+  if (!list.length) {
+    const empty = document.createElement("tr");
+    empty.innerHTML = `<td colspan="4" class="empty-state">No hay reglas. Agrega una nueva.</td>`;
+    tbodyReglasEmpaqueModal.appendChild(empty);
+    return;
+  }
+
+  for (const r of list) {
+    addReglaRowToModal(r);
   }
 }
 
-window.__editarReglaEmpaque = function (tipoId, cantidad) {
+function openModalReglas() {
+  if (!modalReglasEmpaque) return;
+  modalReglasEmpaque.classList.add("show");
+  modalReglasEmpaque.setAttribute("aria-hidden", "false");
+}
+
+function closeModalReglas() {
+  if (!modalReglasEmpaque) return;
+  modalReglasEmpaque.classList.remove("show");
+  modalReglasEmpaque.setAttribute("aria-hidden", "true");
+}
+
+function collectReglasFromModal() {
+  const reglas = [];
+  if (!tbodyReglasEmpaqueModal) return reglas;
+
+  const rows = Array.from(tbodyReglasEmpaqueModal.querySelectorAll("tr"));
+  for (const tr of rows) {
+    const tipoEl = tr.querySelector('[data-field="tipoproductoid"]');
+    const nombreEl = tr.querySelector('[data-field="nombre_regla"]');
+    const cantEl = tr.querySelector('[data-field="cantidadempaque"]');
+
+    if (!tipoEl || !nombreEl || !cantEl) continue;
+
+    const reglaidRaw = String(tr.dataset.reglaid || "").trim();
+    const reglaid = Number.parseInt(reglaidRaw, 10);
+
+    const tipoId = Number.parseInt(String(tipoEl.value || "").trim(), 10);
+    const nombre = String(nombreEl.value || "").trim();
+    const cantidad = Number.parseInt(String(cantEl.value || "").trim(), 10);
+
+    reglas.push({
+      reglaid: Number.isInteger(reglaid) && reglaid > 0 ? reglaid : null,
+      tipoproductoid: Number.isInteger(tipoId) && tipoId > 0 ? tipoId : null,
+      nombre_regla: nombre,
+      cantidadempaque: Number.isInteger(cantidad) && cantidad > 0 ? cantidad : null,
+    });
+  }
+
+  return reglas;
+}
+
+function validateReglas(reglas) {
+  const list = Array.isArray(reglas) ? reglas : [];
+  if (!list.length) {
+    return { ok: false, message: "Agrega al menos una regla antes de guardar." };
+  }
+
+  for (let i = 0; i < list.length; i += 1) {
+    const r = list[i] || {};
+    const idx = i + 1;
+    if (!Number.isInteger(r.tipoproductoid) || r.tipoproductoid <= 0) {
+      return { ok: false, message: `Fila ${idx}: selecciona un tipo de producto.` };
+    }
+    if (!String(r.nombre_regla || "").trim()) {
+      return { ok: false, message: `Fila ${idx}: el nombre de la regla es requerido.` };
+    }
+    if (!Number.isInteger(r.cantidadempaque) || r.cantidadempaque <= 0) {
+      return { ok: false, message: `Fila ${idx}: la cantidad de piezas debe ser mayor a 0.` };
+    }
+  }
+
+  return { ok: true };
+}
+
+async function saveRules() {
+  const reglas = collectReglasFromModal();
+  const validation = validateReglas(reglas);
+  if (!validation.ok) {
+    await Swal.fire({
+      icon: "warning",
+      title: "Validación",
+      text: validation.message || "Revisa los datos",
+      confirmButtonColor: "#F97316",
+    });
+    return;
+  }
+
+  if (!btnGuardarModalReglas) return;
+
+  btnGuardarModalReglas.disabled = true;
   try {
-    const value = String(tipoId);
-    if (selectTipoRegla) {
-      if (tipoReglaChoices) {
-        try {
-          tipoReglaChoices.setChoiceByValue(value);
-        } catch (e) {
-          selectTipoRegla.value = value;
-        }
-      } else {
-        selectTipoRegla.value = value;
-      }
-    }
-    if (inputCantidadRegla) inputCantidadRegla.value = String(cantidad);
+    const payload = {
+      proveedorId: Number.parseInt(proveedorId, 10),
+      reglas,
+    };
 
-    if (inputCantidadRegla && typeof inputCantidadRegla.focus === "function") {
-      inputCantidadRegla.focus();
+    const { response, data } = await fetchJson(`${API_BASE_URL}/admin/save-reglas-empaque`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${adminToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok || !data.success) {
+      throw new Error(data.message || "No se pudieron guardar las reglas");
     }
 
-    const hint = getTipoNombreById(tipoId);
-    if (typeof Swal !== "undefined" && Swal && typeof Swal.fire === "function") {
-      Swal.fire({
-        icon: "info",
-        title: "Editar regla",
-        text: `Edita la cantidad y presiona "Agregar" para guardar (${hint}).`,
-        confirmButtonColor: "#F97316",
-      });
-    }
+    reglasCache = Array.isArray(data?.data?.reglas) ? data.data.reglas : reglasCache;
+    renderReglas();
+    closeModalReglas();
+    toastSuccess("Reglas guardadas correctamente");
+  } catch (error) {
+    console.error("Error guardando reglas múltiples:", error);
+    await Swal.fire({
+      icon: "error",
+      title: "Error",
+      text: error.message || "Error al guardar las reglas",
+      confirmButtonColor: "#F97316",
+    });
+  } finally {
+    btnGuardarModalReglas.disabled = false;
+  }
+}
+
+window.__openReglasEmpaqueModal = function () {
+  try {
+    renderModalReglas();
+    openModalReglas();
   } catch (e) {
-    console.error("Error preparando edición:", e);
+    console.error("Error abriendo modal:", e);
   }
 };
 
@@ -481,10 +491,51 @@ async function init() {
   }
 }
 
-if (btnGuardarRegla) {
-  btnGuardarRegla.addEventListener("click", () => {
-    guardarReglaEmpaque();
+if (btnAbrirModalReglas) {
+  btnAbrirModalReglas.addEventListener("click", async () => {
+    try {
+      await loadReglasEmpaque();
+    } catch (e) {
+      // ignore
+    }
+    renderModalReglas();
+    openModalReglas();
   });
 }
+
+if (btnCerrarModalReglas) btnCerrarModalReglas.addEventListener("click", closeModalReglas);
+if (btnCancelarModalReglas) btnCancelarModalReglas.addEventListener("click", closeModalReglas);
+
+if (modalReglasEmpaque) {
+  modalReglasEmpaque.addEventListener("click", (e) => {
+    if (e.target === modalReglasEmpaque) closeModalReglas();
+  });
+}
+
+if (tbodyReglasEmpaqueModal) {
+  tbodyReglasEmpaqueModal.addEventListener("click", (e) => {
+    const btn = e.target?.closest?.("[data-action='delete']");
+    if (!btn) return;
+    const tr = btn.closest("tr");
+    if (tr) tr.remove();
+  });
+}
+
+if (btnAgregarFilaRegla) {
+  btnAgregarFilaRegla.addEventListener("click", () => {
+    if (!tbodyReglasEmpaqueModal) return;
+    const hasEmptyState = tbodyReglasEmpaqueModal.querySelector(".empty-state");
+    if (hasEmptyState) tbodyReglasEmpaqueModal.innerHTML = "";
+    addReglaRowToModal({ reglaid: null, tipoproductoid: null, nombre_regla: "", cantidadempaque: null });
+  });
+}
+
+if (btnGuardarModalReglas) btnGuardarModalReglas.addEventListener("click", saveRules);
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && modalReglasEmpaque && modalReglasEmpaque.classList.contains("show")) {
+    closeModalReglas();
+  }
+});
 
 init();

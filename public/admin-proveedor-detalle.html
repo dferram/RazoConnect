@@ -81,41 +81,17 @@
                     Define cuántas piezas vienen por paquete según el tipo de producto.
                   </p>
                 </div>
-              </div>
 
-              <div
-                style="
-                  display: grid;
-                  grid-template-columns: minmax(240px, 1.2fr) minmax(220px, 1fr) auto;
-                  gap: 0.75rem;
-                  align-items: end;
-                  margin-top: 1rem;
-                "
-              >
-                <div class="form-group" style="margin: 0">
-                  <label for="selectTipoRegla" class="form-label">Tipo de Producto</label>
-                  <select id="selectTipoRegla" class="form-input"></select>
+                <div style="display:flex; gap: 0.75rem; align-items:center; flex-wrap:wrap">
+                  <button
+                    type="button"
+                    id="btnAbrirModalReglas"
+                    class="btn btn-primary"
+                    style="height: 42px; padding-left: 1.25rem; padding-right: 1.25rem"
+                  >
+                    Administrar reglas
+                  </button>
                 </div>
-
-                <div class="form-group" style="margin: 0">
-                  <label for="inputCantidadRegla" class="form-label">Piezas por paquete</label>
-                  <input
-                    type="number"
-                    id="inputCantidadRegla"
-                    class="form-input"
-                    min="1"
-                    placeholder="Piezas por paquete"
-                  />
-                </div>
-
-                <button
-                  type="button"
-                  id="btnGuardarRegla"
-                  class="btn btn-primary"
-                  style="height: 42px; padding-left: 1.25rem; padding-right: 1.25rem"
-                >
-                  Agregar
-                </button>
               </div>
 
               <div style="overflow-x: auto; margin-top: 1rem">
@@ -123,13 +99,14 @@
                   <thead>
                     <tr>
                       <th>Tipo</th>
+                      <th>Nombre regla</th>
                       <th>Piezas</th>
                       <th>Acciones</th>
                     </tr>
                   </thead>
                   <tbody id="tablaReglasEmpaqueBody">
                     <tr>
-                      <td colspan="3" class="empty-state">Cargando reglas...</td>
+                      <td colspan="4" class="empty-state">Cargando reglas...</td>
                     </tr>
                   </tbody>
                 </table>
@@ -140,6 +117,53 @@
           </div>
         </div>
       </main>
+    </div>
+
+    <div class="modal" id="modalReglasEmpaque" aria-hidden="true">
+      <div class="modal-content modal-content--xl" role="dialog" aria-modal="true">
+        <div class="modal-header">
+          <div>
+            <h3 class="modal-title">Reglas de Empaque</h3>
+            <p class="modal-description" style="margin-top: 0.35rem">
+              Crea, edita o elimina reglas para cada tipo de producto. El stock se manejará en piezas.
+            </p>
+          </div>
+          <button type="button" class="modal-close-btn" id="btnCerrarModalReglas" aria-label="Cerrar">✕</button>
+        </div>
+
+        <div class="modal-body">
+          <div class="modal-table-container">
+            <div class="modal-table-scroll">
+              <table class="admin-table" style="margin: 0">
+                <thead>
+                  <tr>
+                    <th style="min-width: 220px">Tipo de Producto</th>
+                    <th style="min-width: 240px">Nombre de la Regla</th>
+                    <th style="min-width: 160px">Piezas</th>
+                    <th style="width: 72px">Eliminar</th>
+                  </tr>
+                </thead>
+                <tbody id="tbodyReglasEmpaqueModal">
+                  <tr>
+                    <td colspan="4" class="empty-state">Cargando...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div style="display:flex; justify-content:flex-start; gap:0.75rem; margin-top: 1rem; flex-wrap:wrap">
+            <button type="button" class="btn btn-light" id="btnAgregarFilaRegla">
+              + Añadir nueva regla
+            </button>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-light" id="btnCancelarModalReglas">Cancelar</button>
+          <button type="button" class="btn btn-primary" id="btnGuardarModalReglas">Guardar</button>
+        </div>
+      </div>
     </div>
 
     <script src="js/layout.js" defer></script>

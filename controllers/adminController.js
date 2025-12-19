@@ -791,7 +791,16 @@ const recepcionMasivaOrdenCompra = async (req, res) => {
     for (const raw of items) {
       const detalleId = Number.parseInt(raw?.detalleId, 10);
       const varianteIdReq = raw?.varianteId;
-      const cantidadIngresada = Number.parseInt(raw?.cantidad, 10);
+      const cantidadPaquetesRecibidos = Number.parseInt(
+        raw?.cantidadPaquetes ?? raw?.cantidadpaquetes ?? raw?.paquetes ?? raw?.cantidadPaquete,
+        10
+      );
+      const cantidadPiezasRecibidas = Number.parseInt(
+        raw?.cantidadPiezas ?? raw?.cantidadpiezas ?? raw?.piezas ?? raw?.cantidad,
+        10
+      );
+      const hasPaquetes = Number.isInteger(cantidadPaquetesRecibidos) && cantidadPaquetesRecibidos > 0;
+      const hasPiezas = Number.isInteger(cantidadPiezasRecibidas) && cantidadPiezasRecibidas > 0;
 
       if (!Number.isInteger(detalleId) || detalleId <= 0) {
         await client.query("ROLLBACK");
@@ -800,7 +809,8 @@ const recepcionMasivaOrdenCompra = async (req, res) => {
           message: "detalleId inválido en items",
         });
       }
-      if (!Number.isInteger(cantidadIngresada) || cantidadIngresada <= 0) {
+
+      if (!hasPaquetes && !hasPiezas) {
         await client.query("ROLLBACK");
         return res.status(400).json({
           success: false,
@@ -862,45 +872,29 @@ const recepcionMasivaOrdenCompra = async (req, res) => {
         raw?.reglaEmpaqueId ?? raw?.reglaEmpaqueID ?? raw?.reglaId,
         10
       );
-      const piezasPorPaqueteReq = Number.parseInt(
-        raw?.piezasPorPaquete ?? raw?.piezasporpaquete ?? raw?.cantidadEmpaque,
-        10
-      );
 
-      const reglasTipo = reglasEmpaqueByTipo.get(tipoProductoId) || [];
-
-      const piezasPorPaqueteSeleccion = (() => {
-        if (Number.isInteger(reglaEmpaqueIdReq) && reglaEmpaqueIdReq > 0) {
-          if (!reglasTipo.length) return undefined;
-          const regla = reglasEmpaqueById.get(reglaEmpaqueIdReq);
-          if (!regla || regla.tipoProductoId !== tipoProductoId) return null;
-          return regla.cantidadEmpaque;
-        }
-
-        if (Number.isInteger(piezasPorPaqueteReq) && piezasPorPaqueteReq > 0) {
-          if (!reglasTipo.length) return undefined;
-          const found = reglasTipo.find((r) => r.cantidadEmpaque === piezasPorPaqueteReq);
-          if (!found) return null;
-          return piezasPorPaqueteReq;
-        }
-
-        return undefined;
-      })();
-
-      if (piezasPorPaqueteSeleccion === null) {
+      if (!Number.isInteger(reglaEmpaqueIdReq) || reglaEmpaqueIdReq <= 0) {
         await client.query("ROLLBACK");
         return res.status(400).json({
           success: false,
           message:
-            "Regla de empaque inválida: la selección no coincide con las reglas permitidas del proveedor para este tipo de producto",
+            "Debes seleccionar una regla de empaque para cada renglón antes de recepcionar",
+        });
+      }
+
+      const reglaSeleccionada = reglasEmpaqueById.get(reglaEmpaqueIdReq);
+      if (!reglaSeleccionada || reglaSeleccionada.tipoProductoId !== tipoProductoId) {
+        await client.query("ROLLBACK");
+        return res.status(400).json({
+          success: false,
+          message:
+            "Regla de empaque inválida: la regla seleccionada no pertenece al proveedor o no corresponde al tipo de producto",
         });
       }
 
       const piezasPorPaqueteSafe = (() => {
-        if (piezasPorPaqueteSeleccion !== undefined) {
-          const candidate = Number.parseInt(piezasPorPaqueteSeleccion, 10);
-          if (Number.isInteger(candidate) && candidate > 0) return candidate;
-        }
+        const candidate = Number.parseInt(reglaSeleccionada.cantidadEmpaque, 10);
+        if (Number.isInteger(candidate) && candidate > 0) return candidate;
 
         const parsed = Number.parseInt(detalle.piezasporpaquete, 10);
         if (Number.isInteger(parsed) && parsed > 0) return parsed;
@@ -909,30 +903,93 @@ const recepcionMasivaOrdenCompra = async (req, res) => {
         return 1;
       })();
 
+      const piezasRecibidasAhora = hasPaquetes
+        ? cantidadPaquetesRecibidos * piezasPorPaqueteSafe
+        : cantidadPiezasRecibidas;
+
+      if (!Number.isInteger(piezasRecibidasAhora) || piezasRecibidasAhora <= 0) {
+        await client.query("ROLLBACK");
+        return res.status(400).json({
+          success: false,
+          message: "Cantidad recibida inválida (piezas calculadas)",
+        });
+      }
+
+      const paquetesRecibidosAhora = hasPaquetes
+        ? cantidadPaquetesRecibidos
+        : Math.floor(piezasRecibidasAhora / Math.max(piezasPorPaqueteSafe, 1));
+
+      const solicitadoPzas = solicitado * piezasPorPaqueteSafe;
+      const recibidoPzsActual = Number.parseInt(detalle.piezasrecibidas, 10) || 0;
+      const nuevoRecibidoPzas = recibidoPzsActual + piezasRecibidasAhora;
+      if (solicitadoPzas > 0 && nuevoRecibidoPzas > solicitadoPzas) {
+        await client.query("ROLLBACK");
+        return res.status(400).json({
+          success: false,
+          message:
+            "La cantidad recibida excede lo solicitado para este renglón. Ajusta la cantidad o revisa el empaque seleccionado.",
+        });
+      }
+
+      const montoTotalRenglon = Number.parseFloat(
+        raw?.montoTotalRenglon ??
+          raw?.monto_total_renglon ??
+          raw?.montoTotal ??
+          raw?.monto_total ??
+          raw?.costoTotal ??
+          raw?.costo_total ??
+          raw?.subtotal,
+        10
+      );
+      const montoTotalRenglonCentavos =
+        Number.isFinite(montoTotalRenglon) && montoTotalRenglon > 0
+          ? Math.round(montoTotalRenglon * 100)
+          : null;
+
       const costoPaquete = Number.parseFloat(detalle.costounitario ?? 0) || 0;
       const costoVariante = Number.parseFloat(detalle.variante_costounitario ?? 0) || 0;
+      const costoUnitarioRaw = Number.parseFloat(
+        raw?.costoUnitario ?? raw?.costounitario ?? raw?.costo_unitario ?? raw?.precioUnitario
+      );
+
       const costoUnitario = (() => {
+        if (montoTotalRenglonCentavos !== null) {
+          const unit = (montoTotalRenglonCentavos / Math.max(piezasRecibidasAhora, 1)) / 100;
+          const safe = Number.parseFloat(unit.toFixed(2));
+          return Number.isFinite(safe) && safe >= 0 ? safe : 0;
+        }
+        if (Number.isFinite(costoUnitarioRaw) && costoUnitarioRaw >= 0) return costoUnitarioRaw;
         if (Number.isFinite(costoPaquete) && costoPaquete > 0) return costoPaquete;
         if (Number.isFinite(costoVariante) && costoVariante > 0) return costoVariante;
         return 0;
       })();
 
-      // Costos son UNITARIOS por pieza: subtotal = piezas * costo_unitario
-      // Se acumula en centavos para evitar errores de coma flotante.
+      // Costos son UNITARIOS por pieza.
+      // Si el frontend envía monto total del renglón, se usa como fuente de verdad.
       const costoUnitarioCentavos = Math.round((Number.parseFloat(costoUnitario) || 0) * 100);
-      const subtotalCentavos = Math.round((cantidadIngresada || 0) * costoUnitarioCentavos);
+      const subtotalCentavos =
+        montoTotalRenglonCentavos !== null
+          ? montoTotalRenglonCentavos
+          : Math.round((piezasRecibidasAhora || 0) * costoUnitarioCentavos);
       montoTotalCentavos += subtotalCentavos;
 
       await client.query(
         `UPDATE detallesordencompra
          SET piezasrecibidas = COALESCE(piezasrecibidas, 0) + $1,
              piezasporpaquete = $4,
+             costounitario = $5,
              cantidadrecibida = FLOOR(
                (COALESCE(piezasrecibidas, 0) + $1)
                / COALESCE(NULLIF($4, 0), 1)
              )::int
          WHERE detalleoc_id = $2 AND ordencompraid = $3`,
-        [cantidadIngresada, detalleId, ordenCompraId, piezasPorPaqueteSafe]
+        [
+          piezasRecibidasAhora,
+          detalleId,
+          ordenCompraId,
+          piezasPorPaqueteSafe,
+          Number.parseFloat((Number.parseFloat(costoUnitario) || 0).toFixed(2)),
+        ]
       );
 
       const stockAnterior = Number.parseInt(detalle.stockvariante, 10) || 0;
@@ -941,19 +998,19 @@ const recepcionMasivaOrdenCompra = async (req, res) => {
          SET stock = COALESCE(stock, 0) + $1
          WHERE varianteid = $2
          RETURNING stock`,
-        [cantidadIngresada, varianteId]
+        [piezasRecibidasAhora, varianteId]
       );
       const nuevoStock = Number.parseInt(stockUpdate.rows[0]?.stock, 10);
       const nuevoStockSafe = Number.isInteger(nuevoStock)
         ? nuevoStock
-        : stockAnterior + cantidadIngresada;
+        : stockAnterior + piezasRecibidasAhora;
 
       productosActualizados.push({
         detalleId,
         varianteId,
         sku: detalle.sku,
         nombreProducto: detalle.nombreproducto,
-        cantidadRecibidaAhora: cantidadIngresada,
+        cantidadRecibidaAhora: piezasRecibidasAhora,
         cantidadRecibidaTotal: nuevoRecibidoPzas,
         cantidadSolicitada: solicitadoPzas,
         cantidadPendiente: Math.max(solicitadoPzas - nuevoRecibidoPzas, 0),
@@ -3001,6 +3058,305 @@ const getReglasEmpaqueProveedor = async (req, res) => {
       message: "Error al obtener reglas de empaque",
       error: error.message,
     });
+  }
+};
+
+const getReglasEmpaqueProveedorMultiples = async (req, res) => {
+  try {
+    const proveedorId = Number.parseInt(req.params.id, 10);
+    if (!Number.isInteger(proveedorId) || proveedorId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "ProveedorID inválido",
+      });
+    }
+
+    const proveedorResult = await db.query(
+      `SELECT proveedorid
+       FROM proveedores
+       WHERE proveedorid = $1`,
+      [proveedorId]
+    );
+
+    if (!proveedorResult.rows.length) {
+      return res.status(404).json({
+        success: false,
+        message: "Proveedor no encontrado",
+      });
+    }
+
+    const reglasResult = await db.query(
+      `SELECT reglaid, tipoproductoid, cantidadempaque, descripcion
+       FROM proveedor_reglas_empaque
+       WHERE proveedorid = $1
+       ORDER BY tipoproductoid ASC, cantidadempaque ASC, reglaid ASC`,
+      [proveedorId]
+    );
+
+    const reglas = (reglasResult.rows || []).map((row) => ({
+      reglaid: Number.parseInt(row.reglaid, 10) || null,
+      tipoproductoid: Number.parseInt(row.tipoproductoid, 10) || null,
+      cantidadempaque: Number.parseInt(row.cantidadempaque, 10) || 1,
+      nombre_regla: (row.descripcion || "").toString().trim(),
+    }));
+
+    return res.status(200).json({
+      success: true,
+      message: "Reglas de empaque obtenidas exitosamente",
+      data: {
+        reglas,
+      },
+    });
+  } catch (error) {
+    console.error("Error al obtener reglas de empaque múltiples:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error al obtener reglas de empaque",
+      error: error.message,
+    });
+  }
+};
+
+const saveReglasEmpaqueMultiples = async (req, res) => {
+  const client = await db.pool.connect();
+
+  try {
+    const proveedorIdRaw = req.body?.proveedorId ?? req.body?.proveedorid ?? req.body?.ProveedorID;
+    const proveedorId = Number.parseInt(proveedorIdRaw, 10);
+
+    if (!Number.isInteger(proveedorId) || proveedorId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "ProveedorID inválido",
+      });
+    }
+
+    const reglasInput = Array.isArray(req.body?.reglas) ? req.body.reglas : [];
+    if (!reglasInput.length) {
+      return res.status(400).json({
+        success: false,
+        message: "Debes enviar al menos una regla",
+      });
+    }
+
+    const adminId = req?.user?.id ?? req?.user?.userId ?? null;
+    const adminIdParsed = Number.parseInt(adminId, 10);
+    if (!Number.isInteger(adminIdParsed) || adminIdParsed <= 0) {
+      return res.status(401).json({
+        success: false,
+        message: "Usuario solicitante no identificado como admin",
+      });
+    }
+
+    const reglasNormalized = [];
+    const tipoIdsSet = new Set();
+    const dupeGuard = new Set();
+
+    for (const raw of reglasInput) {
+      const reglaidParsed = Number.parseInt(raw?.reglaid, 10);
+      const tipoproductoid = Number.parseInt(
+        raw?.tipoproductoid ?? raw?.tipoProductoId ?? raw?.TipoProductoID,
+        10
+      );
+      const cantidadempaque = Number.parseInt(
+        raw?.cantidadempaque ?? raw?.cantidadEmpaque ?? raw?.piezasPorPaquete,
+        10
+      );
+      const nombreRegla = (raw?.nombre_regla ?? raw?.nombreRegla ?? raw?.descripcion ?? "")
+        .toString()
+        .trim();
+
+      const reglaid = Number.isInteger(reglaidParsed) && reglaidParsed > 0 ? reglaidParsed : null;
+
+      if (!Number.isInteger(tipoproductoid) || tipoproductoid <= 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Hay reglas con tipoproductoid inválido",
+        });
+      }
+
+      if (!Number.isInteger(cantidadempaque) || cantidadempaque <= 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Hay reglas con cantidadempaque inválida",
+        });
+      }
+
+      if (!nombreRegla) {
+        return res.status(400).json({
+          success: false,
+          message: "Hay reglas sin nombre_regla",
+        });
+      }
+
+      const nombreTrim = nombreRegla.length > 100 ? nombreRegla.slice(0, 100) : nombreRegla;
+      const key = `${tipoproductoid}|${cantidadempaque}|${nombreTrim.toLowerCase()}`;
+      if (dupeGuard.has(key)) {
+        return res.status(400).json({
+          success: false,
+          message: "No se permiten reglas duplicadas (tipo, piezas y nombre)",
+        });
+      }
+      dupeGuard.add(key);
+      tipoIdsSet.add(tipoproductoid);
+
+      reglasNormalized.push({
+        reglaid,
+        tipoproductoid,
+        cantidadempaque,
+        nombre_regla: nombreTrim,
+      });
+    }
+
+    await client.query("BEGIN");
+
+    const proveedorResult = await client.query(
+      `SELECT proveedorid
+       FROM proveedores
+       WHERE proveedorid = $1
+       FOR UPDATE`,
+      [proveedorId]
+    );
+
+    if (!proveedorResult.rows.length) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({
+        success: false,
+        message: "Proveedor no encontrado",
+      });
+    }
+
+    const tipoIds = Array.from(tipoIdsSet);
+    const tiposCheck = await client.query(
+      `SELECT tipoproductoid
+       FROM tipoproducto
+       WHERE tipoproductoid = ANY($1::int[])`,
+      [tipoIds]
+    );
+
+    const tiposValidos = new Set(
+      (tiposCheck.rows || []).map((r) => Number.parseInt(r.tipoproductoid, 10))
+    );
+
+    for (const tipoId of tipoIds) {
+      if (!tiposValidos.has(tipoId)) {
+        await client.query("ROLLBACK");
+        return res.status(400).json({
+          success: false,
+          message: `Tipo de producto inválido: ${tipoId}`,
+        });
+      }
+    }
+
+    const existentesRes = await client.query(
+      `SELECT reglaid
+       FROM proveedor_reglas_empaque
+       WHERE proveedorid = $1
+       FOR UPDATE`,
+      [proveedorId]
+    );
+
+    const existentesSet = new Set(
+      (existentesRes.rows || [])
+        .map((r) => Number.parseInt(r.reglaid, 10))
+        .filter((id) => Number.isInteger(id) && id > 0)
+    );
+
+    const keepIds = [];
+
+    for (const r of reglasNormalized) {
+      if (r.reglaid) {
+        if (!existentesSet.has(r.reglaid)) {
+          await client.query("ROLLBACK");
+          return res.status(400).json({
+            success: false,
+            message: "Hay reglas con reglaid inválido para este proveedor",
+          });
+        }
+
+        const upd = await client.query(
+          `UPDATE proveedor_reglas_empaque
+           SET tipoproductoid = $3,
+               cantidadempaque = $4,
+               descripcion = $5
+           WHERE proveedorid = $1 AND reglaid = $2`,
+          [proveedorId, r.reglaid, r.tipoproductoid, r.cantidadempaque, r.nombre_regla]
+        );
+
+        if (!upd.rowCount) {
+          await client.query("ROLLBACK");
+          return res.status(400).json({
+            success: false,
+            message: "No se pudo actualizar una regla (no encontrada)",
+          });
+        }
+
+        keepIds.push(r.reglaid);
+        continue;
+      }
+
+      const ins = await client.query(
+        `INSERT INTO proveedor_reglas_empaque (proveedorid, tipoproductoid, cantidadempaque, descripcion)
+         VALUES ($1, $2, $3, $4)
+         RETURNING reglaid`,
+        [proveedorId, r.tipoproductoid, r.cantidadempaque, r.nombre_regla]
+      );
+
+      const newId = Number.parseInt(ins.rows?.[0]?.reglaid ?? 0, 10);
+      if (Number.isInteger(newId) && newId > 0) {
+        keepIds.push(newId);
+      }
+    }
+
+    if (keepIds.length) {
+      await client.query(
+        `DELETE FROM proveedor_reglas_empaque
+         WHERE proveedorid = $1
+           AND reglaid <> ALL($2::int[])`,
+        [proveedorId, keepIds]
+      );
+    } else {
+      await client.query(`DELETE FROM proveedor_reglas_empaque WHERE proveedorid = $1`, [proveedorId]);
+    }
+
+    await client.query("COMMIT");
+
+    const reglasResult = await db.query(
+      `SELECT reglaid, tipoproductoid, cantidadempaque, descripcion
+       FROM proveedor_reglas_empaque
+       WHERE proveedorid = $1
+       ORDER BY tipoproductoid ASC, cantidadempaque ASC, reglaid ASC`,
+      [proveedorId]
+    );
+
+    const reglas = (reglasResult.rows || []).map((row) => ({
+      reglaid: Number.parseInt(row.reglaid, 10) || null,
+      tipoproductoid: Number.parseInt(row.tipoproductoid, 10) || null,
+      cantidadempaque: Number.parseInt(row.cantidadempaque, 10) || 1,
+      nombre_regla: (row.descripcion || "").toString().trim(),
+    }));
+
+    return res.status(200).json({
+      success: true,
+      message: "Reglas guardadas correctamente",
+      data: {
+        reglas,
+      },
+    });
+  } catch (error) {
+    try {
+      await client.query("ROLLBACK");
+    } catch (e) {
+      // ignore
+    }
+    console.error("Error al guardar reglas de empaque múltiples:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error al guardar reglas de empaque",
+      error: error.message,
+    });
+  } finally {
+    client.release();
   }
 };
 
@@ -11886,7 +12242,9 @@ getMedidasExistentes,
   actualizarProveedor,
   getSolicitudesPendientesProveedor,
   getReglasEmpaqueProveedor,
+  getReglasEmpaqueProveedorMultiples,
   saveReglaEmpaque,
+  saveReglasEmpaqueMultiples,
   getTiposProductoAdmin,
   crearTipoProductoAdmin,
   getAllOrdenesCompra,

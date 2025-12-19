@@ -666,6 +666,20 @@ router.get(
   adminController.getReglasEmpaqueProveedor
 );
 
+router.get(
+  "/proveedores/:id/reglas-multiples",
+  authenticate,
+  authorizeAdmin,
+  adminController.getReglasEmpaqueProveedorMultiples
+);
+
+router.post(
+  "/save-reglas-empaque",
+  authenticate,
+  authorizeAdmin,
+  adminController.saveReglasEmpaqueMultiples
+);
+
 router.post(
   "/proveedores/reglas",
   authenticate,
