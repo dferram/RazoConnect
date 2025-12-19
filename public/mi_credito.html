@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mi Crédito - RazoConnect</title>
+    <link rel="icon" type="image/png" href="/icon/Logo_Razo.png" />
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="js/auth-guard-client.js"></script>
+    <script src="js/token-refresh.js"></script>
+
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/admin.css" />
+  </head>
+  <body>
+    <div id="header-container"></div>
+
+    <main class="container" style="padding-top: 2rem; padding-bottom: 3rem;">
+      <header style="margin-bottom: 2rem;">
+        <p
+          style="
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            font-size: 0.85rem;
+            color: var(--razo-gray-warm);
+            margin-bottom: 0.5rem;
+          "
+        >
+          Finanzas del cliente
+        </p>
+        <h1 style="font-size: 2.25rem; font-weight: 700; margin-bottom: 0.5rem;">
+          Mi crédito
+        </h1>
+        <p style="color: var(--razo-gray-warm); max-width: 620px;">
+          Consulta tu línea de crédito, saldo deudor y movimientos más recientes.
+          Mantente al día y liquida tu saldo cuando lo necesites.
+        </p>
+      </header>
+
+      <section class="admin-stats-grid" style="margin-bottom: 2rem;">
+        <article class="admin-stat-card">
+          <div class="admin-stat-header">
+            <div class="admin-stat-content">
+              <h3>Límite de crédito</h3>
+              <div class="admin-stat-value" id="limiteCredito">$0.00</div>
+              <div class="admin-stat-change neutral">
+                Asignado por RazoConnect
+              </div>
+            </div>
+            <div class="admin-stat-icon orange">💳</div>
+          </div>
+        </article>
+
+        <article class="admin-stat-card">
+          <div class="admin-stat-header">
+            <div class="admin-stat-content">
+              <h3>Saldo deudor</h3>
+              <div class="admin-stat-value" id="saldoDeudor">$0.00</div>
+              <div class="admin-stat-change danger">
+                Actualizado en tiempo real
+              </div>
+            </div>
+            <div class="admin-stat-icon red">⚠️</div>
+          </div>
+        </article>
+
+        <article class="admin-stat-card">
+          <div class="admin-stat-header">
+            <div class="admin-stat-content">
+              <h3>Disponible</h3>
+              <div class="admin-stat-value" id="creditoDisponible">$0.00</div>
+              <div class="admin-stat-change positive">
+                Crédito libre para nuevos pedidos
+              </div>
+            </div>
+            <div class="admin-stat-icon turquoise">💠</div>
+          </div>
+        </article>
+      </section>
+
+      <section class="admin-table-container">
+        <div class="admin-table-header">
+          <div>
+            <h2 class="admin-table-title">Movimientos de crédito</h2>
+            <p class="admin-table-subtitle" style="margin: 0; color: var(--razo-gray-warm);">
+              Últimas operaciones registradas en tu estado de cuenta.
+            </p>
+          </div>
+          <button class="btn btn-primary" id="btnPagarSaldo">Pagar saldo</button>
+        </div>
+
+        <div
+          id="creditError"
+          class="alert alert-error"
+          style="display: none;"
+        >
+          No fue posible obtener la información de tu crédito. Intenta recargar la
+          página.
+        </div>
+
+        <table class="admin-table" aria-live="polite">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Concepto</th>
+              <th>Tipo</th>
+              <th class="text-end">Monto</th>
+            </tr>
+          </thead>
+          <tbody id="movimientosTableBody">
+            <tr id="movimientosLoadingRow">
+              <td colspan="4" class="table-empty-state">
+                Cargando movimientos...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div
+          id="movimientosEmpty"
+          class="empty-state"
+          style="display: none;"
+        >
+          <div class="empty-state-icon">📄</div>
+          <h3 class="empty-state-title">Sin movimientos registrados</h3>
+          <p class="empty-state-text">
+            Cuando se genere un cargo o abono, aparecerá aquí.
+          </p>
+        </div>
+      </section>
+    </main>
+
+    <div id="footer-container"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/mi_credito.js"></script>
+    <script src="/js/components/header-loader.js"></script>
+    <script src="/js/components/footer-loader.js"></script>
+  </body>
+</html>
