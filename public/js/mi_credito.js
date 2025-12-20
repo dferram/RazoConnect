@@ -14,6 +14,14 @@
     const emptyState = document.getElementById("movimientosEmpty");
     const errorAlert = document.getElementById("creditError");
     const payButton = document.getElementById("btnPagarSaldo");
+    const creditOverviewSection = document.getElementById("creditOverviewSection");
+    const solicitudSection = document.getElementById("solicitudCreditoSection");
+    const solicitudForm = document.getElementById("solicitudCreditoForm");
+    const montoInput = document.getElementById("montoSolicitado");
+    const ingresosInput = document.getElementById("ingresosMensuales");
+    const motivoInput = document.getElementById("motivoCredito");
+    const plazoSelect = document.getElementById("plazoPreferido");
+    const submitBtn = document.getElementById("btnEnviarSolicitud");
 
     function formatCurrency(value) {
       const amount = Number.parseFloat(value ?? 0) || 0;
@@ -144,6 +152,36 @@
       movimientosBody.innerHTML = rows;
     }
 
+    function mostrarResumenCredito() {
+      if (creditOverviewSection) {
+        creditOverviewSection.style.display = "";
+      }
+      if (solicitudSection) {
+        solicitudSection.style.display = "none";
+      }
+    }
+
+    function mostrarFormularioSolicitud() {
+      if (creditOverviewSection) {
+        creditOverviewSection.style.display = "none";
+      }
+      if (solicitudSection) {
+        solicitudSection.style.display = "block";
+      }
+    }
+
+    function tieneDatosCredito(payload) {
+      if (!payload || typeof payload !== "object") return false;
+      const hasKpi =
+        payload.limiteCredito != null ||
+        payload.limite != null ||
+        payload.saldoDeudor != null ||
+        payload.saldo != null;
+      const hasMovimientos =
+        Array.isArray(payload.movimientos) && payload.movimientos.length > 0;
+      return hasKpi || hasMovimientos;
+    }
+
     async function loadCredito() {
       if (loadingRow) {
         loadingRow.style.display = "";
@@ -163,6 +201,11 @@
           return;
         }
 
+        if (response?.status === 404) {
+          mostrarFormularioSolicitud();
+          return;
+        }
+
         if (!response.ok || response.data?.success === false) {
           throw new Error(
             response.data?.message || "No fue posible recuperar tu crédito."
@@ -170,6 +213,12 @@
         }
 
         const payload = response.data?.data || {};
+        if (!tieneDatosCredito(payload)) {
+          mostrarFormularioSolicitud();
+          return;
+        }
+
+        mostrarResumenCredito();
         renderStats(payload);
         renderMovimientos(payload.movimientos || payload.detalle || []);
       } catch (error) {
@@ -177,6 +226,10 @@
         if (error?.message && error?.message.includes("Acceso denegado")) {
           window.location.href = "/inicio.html";
           return;
+        }
+
+        if (error?.message && error.message.includes("No fue posible recuperar")) {
+          mostrarFormularioSolicitud();
         }
 
         if (errorAlert) {
@@ -188,6 +241,85 @@
       } finally {
         if (loadingRow) {
           loadingRow.style.display = "none";
+        }
+      }
+    }
+
+    async function enviarSolicitud() {
+      if (!solicitudForm) return;
+
+      const monto = Number.parseFloat(montoInput?.value || "0");
+      const ingresos = Number.parseFloat(ingresosInput?.value || "0");
+      const motivo = (motivoInput?.value || "").trim();
+      const plazo = Number.parseInt(plazoSelect?.value || "", 10);
+
+      if (!monto || monto <= 0 || !ingresos || ingresos <= 0 || !motivo || !plazo) {
+        const msg = "Completa todos los campos antes de enviar tu solicitud.";
+        if (typeof Swal !== "undefined" && Swal?.fire) {
+          Swal.fire({
+            icon: "warning",
+            title: "Datos incompletos",
+            text: msg,
+            confirmButtonColor: "#F97316",
+          });
+        } else {
+          alert(msg);
+        }
+        return;
+      }
+
+      try {
+        if (submitBtn) {
+          submitBtn.disabled = true;
+          submitBtn.textContent = "Enviando...";
+        }
+
+        const response = await API.apiCall("/cliente/solicitar-credito", {
+          method: "POST",
+          body: JSON.stringify({
+            montoSolicitado: monto,
+            ingresosMensuales: ingresos,
+            motivoCredito: motivo,
+            plazoPreferido: plazo,
+          }),
+        });
+
+        if (!response.ok || response.data?.success === false) {
+          throw new Error(
+            response.data?.message || "No fue posible enviar la solicitud."
+          );
+        }
+
+        if (typeof Swal !== "undefined" && Swal?.fire) {
+          await Swal.fire({
+            icon: "success",
+            title: "¡Solicitud enviada!",
+            text: "Nuestro equipo la revisará en breve.",
+            confirmButtonColor: "#F97316",
+          });
+        } else {
+          alert("¡Solicitud enviada! Nuestro equipo la revisará en breve.");
+        }
+
+        solicitudForm.reset();
+      } catch (error) {
+        console.error("Error enviando solicitud de crédito:", error);
+        const message =
+          error.message || "No pudimos registrar tu solicitud. Intenta más tarde.";
+        if (typeof Swal !== "undefined" && Swal?.fire) {
+          Swal.fire({
+            icon: "error",
+            title: "Error al enviar",
+            text: message,
+            confirmButtonColor: "#F97316",
+          });
+        } else {
+          alert(message);
+        }
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = "Enviar solicitud";
         }
       }
     }
@@ -204,6 +336,11 @@
       }
 
       alert("Un ejecutivo se pondrá en contacto para liquidar tu saldo.");
+    });
+
+    solicitudForm?.addEventListener("submit", (event) => {
+      event.preventDefault();
+      enviarSolicitud();
     });
 
     loadCredito();

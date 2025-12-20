@@ -42,96 +42,174 @@
         </p>
       </header>
 
-      <section class="admin-stats-grid" style="margin-bottom: 2rem;">
-        <article class="admin-stat-card">
-          <div class="admin-stat-header">
-            <div class="admin-stat-content">
-              <h3>Límite de crédito</h3>
-              <div class="admin-stat-value" id="limiteCredito">$0.00</div>
-              <div class="admin-stat-change neutral">
-                Asignado por RazoConnect
+      <div id="creditOverviewSection">
+        <section class="admin-stats-grid" style="margin-bottom: 2rem;">
+          <article class="admin-stat-card">
+            <div class="admin-stat-header">
+              <div class="admin-stat-content">
+                <h3>Límite de crédito</h3>
+                <div class="admin-stat-value" id="limiteCredito">$0.00</div>
+                <div class="admin-stat-change neutral">
+                  Asignado por RazoConnect
+                </div>
               </div>
+              <div class="admin-stat-icon orange">💳</div>
             </div>
-            <div class="admin-stat-icon orange">💳</div>
-          </div>
-        </article>
+          </article>
 
-        <article class="admin-stat-card">
-          <div class="admin-stat-header">
-            <div class="admin-stat-content">
-              <h3>Saldo deudor</h3>
-              <div class="admin-stat-value" id="saldoDeudor">$0.00</div>
-              <div class="admin-stat-change danger">
-                Actualizado en tiempo real
+          <article class="admin-stat-card">
+            <div class="admin-stat-header">
+              <div class="admin-stat-content">
+                <h3>Saldo deudor</h3>
+                <div class="admin-stat-value" id="saldoDeudor">$0.00</div>
+                <div class="admin-stat-change danger">
+                  Actualizado en tiempo real
+                </div>
               </div>
+              <div class="admin-stat-icon red">⚠️</div>
             </div>
-            <div class="admin-stat-icon red">⚠️</div>
-          </div>
-        </article>
+          </article>
 
-        <article class="admin-stat-card">
-          <div class="admin-stat-header">
-            <div class="admin-stat-content">
-              <h3>Disponible</h3>
-              <div class="admin-stat-value" id="creditoDisponible">$0.00</div>
-              <div class="admin-stat-change positive">
-                Crédito libre para nuevos pedidos
+          <article class="admin-stat-card">
+            <div class="admin-stat-header">
+              <div class="admin-stat-content">
+                <h3>Disponible</h3>
+                <div class="admin-stat-value" id="creditoDisponible">$0.00</div>
+                <div class="admin-stat-change positive">
+                  Crédito libre para nuevos pedidos
+                </div>
               </div>
+              <div class="admin-stat-icon turquoise">💠</div>
             </div>
-            <div class="admin-stat-icon turquoise">💠</div>
-          </div>
-        </article>
-      </section>
+          </article>
+        </section>
 
-      <section class="admin-table-container">
-        <div class="admin-table-header">
-          <div>
-            <h2 class="admin-table-title">Movimientos de crédito</h2>
-            <p class="admin-table-subtitle" style="margin: 0; color: var(--razo-gray-warm);">
-              Últimas operaciones registradas en tu estado de cuenta.
+        <section class="admin-table-container">
+          <div class="admin-table-header">
+            <div>
+              <h2 class="admin-table-title">Movimientos de crédito</h2>
+              <p class="admin-table-subtitle" style="margin: 0; color: var(--razo-gray-warm);">
+                Últimas operaciones registradas en tu estado de cuenta.
+              </p>
+            </div>
+            <button class="btn btn-primary" id="btnPagarSaldo">Pagar saldo</button>
+          </div>
+
+          <div
+            id="creditError"
+            class="alert alert-error"
+            style="display: none;"
+          >
+            No fue posible obtener la información de tu crédito. Intenta recargar la
+            página.
+          </div>
+
+          <table class="admin-table" aria-live="polite">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Concepto</th>
+                <th>Tipo</th>
+                <th class="text-end">Monto</th>
+              </tr>
+            </thead>
+            <tbody id="movimientosTableBody">
+              <tr id="movimientosLoadingRow">
+                <td colspan="4" class="table-empty-state">
+                  Cargando movimientos...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div
+            id="movimientosEmpty"
+            class="empty-state"
+            style="display: none;"
+          >
+            <div class="empty-state-icon">📄</div>
+            <h3 class="empty-state-title">Sin movimientos registrados</h3>
+            <p class="empty-state-text">
+              Cuando se genere un cargo o abono, aparecerá aquí.
             </p>
           </div>
-          <button class="btn btn-primary" id="btnPagarSaldo">Pagar saldo</button>
+        </section>
+      </div>
+
+      <section
+        id="solicitudCreditoSection"
+        class="admin-table-container"
+        style="display: none; margin-top: 2rem;"
+      >
+        <div class="admin-table-header">
+          <div>
+            <h2 class="admin-table-title">Solicitud de crédito</h2>
+            <p class="admin-table-subtitle" style="margin: 0; color: var(--razo-gray-warm);">
+              Completa los datos y nuestro equipo validará tu línea de crédito.
+            </p>
+          </div>
         </div>
 
-        <div
-          id="creditError"
-          class="alert alert-error"
-          style="display: none;"
-        >
-          No fue posible obtener la información de tu crédito. Intenta recargar la
-          página.
-        </div>
+        <form id="solicitudCreditoForm" class="row g-4">
+          <div class="col-12 col-md-6">
+            <label for="montoSolicitado" class="form-label">Monto solicitado</label>
+            <div class="input-group">
+              <span class="input-group-text">$</span>
+              <input
+                type="number"
+                min="0"
+                step="500"
+                class="form-control"
+                id="montoSolicitado"
+                placeholder="Ej. 50,000"
+                required
+              />
+            </div>
+          </div>
 
-        <table class="admin-table" aria-live="polite">
-          <thead>
-            <tr>
-              <th>Fecha</th>
-              <th>Concepto</th>
-              <th>Tipo</th>
-              <th class="text-end">Monto</th>
-            </tr>
-          </thead>
-          <tbody id="movimientosTableBody">
-            <tr id="movimientosLoadingRow">
-              <td colspan="4" class="table-empty-state">
-                Cargando movimientos...
-              </td>
-            </tr>
-          </tbody>
-        </table>
+          <div class="col-12 col-md-6">
+            <label for="ingresosMensuales" class="form-label">Ingresos mensuales estimados</label>
+            <div class="input-group">
+              <span class="input-group-text">$</span>
+              <input
+                type="number"
+                min="0"
+                step="1000"
+                class="form-control"
+                id="ingresosMensuales"
+                placeholder="Ej. 120,000"
+                required
+              />
+            </div>
+          </div>
 
-        <div
-          id="movimientosEmpty"
-          class="empty-state"
-          style="display: none;"
-        >
-          <div class="empty-state-icon">📄</div>
-          <h3 class="empty-state-title">Sin movimientos registrados</h3>
-          <p class="empty-state-text">
-            Cuando se genere un cargo o abono, aparecerá aquí.
-          </p>
-        </div>
+          <div class="col-12">
+            <label for="motivoCredito" class="form-label">Motivo del crédito</label>
+            <textarea
+              id="motivoCredito"
+              class="form-control"
+              rows="4"
+              placeholder="Describe cómo utilizarás la línea de crédito (inventario, nuevos proyectos, etc.)"
+              required
+            ></textarea>
+          </div>
+
+          <div class="col-12 col-md-6">
+            <label for="plazoPreferido" class="form-label">Plazo de pago preferido</label>
+            <select id="plazoPreferido" class="form-select" required>
+              <option value="" selected disabled>Selecciona una opción</option>
+              <option value="15">15 días</option>
+              <option value="30">30 días</option>
+              <option value="45">45 días</option>
+            </select>
+          </div>
+
+          <div class="col-12">
+            <button type="submit" class="btn btn-primary w-100" id="btnEnviarSolicitud">
+              Enviar solicitud
+            </button>
+          </div>
+        </form>
       </section>
     </main>
 
