@@ -152,7 +152,7 @@ const crearPedido = async (req, res) => {
 
   try {
     const clienteId = req.user.userId;
-    const { DireccionEnvioID } = req.body;
+    const { DireccionEnvioID, MetodoPago } = req.body;
 
     // Validar datos de entrada
     if (!DireccionEnvioID) {
@@ -363,16 +363,74 @@ const crearPedido = async (req, res) => {
       }
     }
 
-    // 6. Crear el pedido
-    const pedidoResult = await client.query(
-      `INSERT INTO Pedidos (ClienteID, AgenteID, DireccionEnvioID, MontoTotal, Estatus)
-       VALUES ($1, $2, $3, $4, 'Pendiente')
-       RETURNING PedidoID, FechaPedido, MontoTotal, Estatus`,
-      [clienteId, agenteId, DireccionEnvioID, montoTotal]
-    );
+    const metodoPago = (MetodoPago || MetodoPago?.metodo || "").toString().toLowerCase();
 
-    const pedido = pedidoResult.rows[0];
-    const pedidoId = pedido.pedidoid;
+    let pedido;
+    let pedidoId;
+
+    async function registrarPedido() {
+      const pedidoResult = await client.query(
+        `INSERT INTO Pedidos (ClienteID, AgenteID, DireccionEnvioID, MontoTotal, Estatus)
+         VALUES ($1, $2, $3, $4, 'Pendiente')
+         RETURNING PedidoID, FechaPedido, MontoTotal, Estatus`,
+        [clienteId, agenteId, DireccionEnvioID, montoTotal]
+      );
+      pedido = pedidoResult.rows[0];
+      pedidoId = pedido.pedidoid;
+    }
+
+    async function procesarPagoCredito() {
+      const creditoResult = await client.query(
+        `SELECT credito_id, limite_credito, saldo_deudor
+         FROM cliente_creditos
+         WHERE cliente_id = $1
+         LIMIT 1`,
+        [clienteId]
+      );
+
+      if (!creditoResult.rows.length) {
+        throw new Error("No tienes un plan de crédito activo.");
+      }
+
+      const { credito_id, limite_credito, saldo_deudor } = creditoResult.rows[0];
+      const limite = Number.parseFloat(limite_credito || 0);
+      const saldoActual = Number.parseFloat(saldo_deudor || 0);
+      const nuevoSaldo = parseFloat((saldoActual + montoTotal).toFixed(2));
+
+      if (nuevoSaldo - limite > 0.00001) {
+        const err = new Error("Saldo de crédito insuficiente para esta compra");
+        err.statusCode = 400;
+        throw err;
+      }
+
+      await client.query(
+        `UPDATE cliente_creditos
+         SET saldo_deudor = $1, ultima_actualizacion = NOW()
+         WHERE credito_id = $2`,
+        [nuevoSaldo, credito_id]
+      );
+
+      await client.query(
+        `INSERT INTO credito_movimientos (
+           credito_id,
+           tipo_movimiento,
+           monto,
+           referencia_id,
+           descripcion,
+           saldo_despues_movimiento
+         )
+         VALUES ($1, 'CARGO', $2, $3, $4, $5)`,
+        [
+          credito_id,
+          montoTotal.toFixed(2),
+          `PED-${pedidoId}`,
+          `Compra realizada (Pedido #${pedidoId})`,
+          nuevoSaldo.toFixed(2),
+        ]
+      );
+    }
+
+    await registrarPedido();
 
     // 7. Crear los detalles del pedido y actualizar inventario
     const detallesPedido = [];
@@ -628,6 +686,10 @@ const crearPedido = async (req, res) => {
         fechaCalculo: comisionResult.rows[0].fechacalculo,
         estatus: "Pendiente",
       };
+    }
+
+    if (metodoPago === "credito") {
+      await procesarPagoCredito();
     }
 
     // 9. Limpiar el carrito
