@@ -243,6 +243,68 @@
       .cart-item-change-variant:hover {
         color: var(--primary-color-dark, #1d4ed8);
       }
+
+      .payment-options {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+      }
+
+      .payment-option {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+        border: 2px solid var(--razo-gray-light);
+        border-radius: 1rem;
+        padding: 1rem 1.25rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        background: white;
+        box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04);
+      }
+
+      .payment-option:hover {
+        border-color: var(--razo-orange);
+        box-shadow: 0 8px 24px rgba(249, 115, 22, 0.15);
+      }
+
+      .payment-option.selected {
+        border-color: var(--razo-orange);
+        background: #fff7ed;
+        box-shadow: 0 10px 30px rgba(249, 115, 22, 0.25);
+      }
+
+      .payment-option input[type="radio"] {
+        margin-top: 0.25rem;
+        accent-color: var(--razo-orange);
+      }
+
+      .payment-option-title {
+        font-weight: 600;
+        font-size: 1rem;
+        margin: 0;
+        color: var(--text-primary);
+      }
+
+      .payment-option-desc {
+        margin: 0.25rem 0 0;
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+      }
+
+      .payment-credit-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        background: rgba(59, 130, 246, 0.12);
+        color: #1d4ed8;
+        font-size: 0.8rem;
+        font-weight: 600;
+        padding: 0.15rem 0.65rem;
+        border-radius: 999px;
+        margin-top: 0.35rem;
+      }
     </style>
   </head>
   <body>
@@ -526,6 +588,60 @@
               </div>
             </div>
 
+            <div id="paymentSection" style="margin-top: 1.75rem">
+              <h3 style="font-weight: 600; margin-bottom: 0.35rem">
+                Selecciona método de pago
+              </h3>
+              <p
+                style="
+                  color: var(--text-secondary);
+                  font-size: 0.9rem;
+                  margin-bottom: 0.75rem;
+                "
+              >
+                Elige cómo deseas completar esta compra.
+              </p>
+
+              <div class="payment-options" id="paymentOptions">
+                <label
+                  class="payment-option selected"
+                  id="paymentOptionStandard"
+                  data-method="estandar"
+                >
+                  <input
+                    type="radio"
+                    name="metodoPago"
+                    value="estandar"
+                    checked
+                  />
+                  <div>
+                    <p class="payment-option-title">Pago estándar</p>
+                    <p class="payment-option-desc">
+                      Confirmaremos el pedido y tu ejecutivo coordinará el cobro
+                      habitual.
+                    </p>
+                  </div>
+                </label>
+
+                <label
+                  class="payment-option"
+                  id="paymentOptionCredito"
+                  data-method="credito"
+                  style="display: none"
+                >
+                  <input type="radio" name="metodoPago" value="credito" />
+                  <div>
+                    <p class="payment-option-title">Pago con crédito interno</p>
+                    <p class="payment-option-desc">
+                      Cargaremos el total a tu línea de crédito disponible de
+                      RazoConnect.
+                    </p>
+                    <span class="payment-credit-chip">Crédito activado</span>
+                  </div>
+                </label>
+              </div>
+            </div>
+
             <!-- Buttons -->
             <div style="display: flex; gap: 1rem; margin-top: 1.5rem">
               <button
@@ -712,6 +828,13 @@
       const btnConfirmarSpinner = document.getElementById(
         "btnConfirmarSpinner"
       );
+      const paymentOptionStandard = document.getElementById(
+        "paymentOptionStandard"
+      );
+      const paymentOptionCredito =
+        document.getElementById("paymentOptionCredito");
+      const paymentSection = document.getElementById("paymentSection");
+
       const modalCambiarVariante = document.getElementById(
         "modalCambiarVariante"
       );
@@ -739,6 +862,8 @@
       let selectedDireccionId = null;
       let productoPendienteEliminar = null;
       let cambioVarianteContext = null;
+      let metodoPagoSeleccionado = "estandar";
+      let creditoDisponible = false;
 
       // Format currency
       function formatCurrency(amount) {
@@ -785,6 +910,89 @@
 
         showToast(mensaje, "info");
       }
+
+      function setMetodoPago(metodo) {
+        metodoPagoSeleccionado = metodo;
+        const opciones = [
+          paymentOptionStandard,
+          creditoDisponible ? paymentOptionCredito : null,
+        ].filter(Boolean);
+
+        opciones.forEach((opcion) => {
+          const esSeleccionada = opcion.dataset.method === metodo;
+          opcion.classList.toggle("selected", esSeleccionada);
+          const radio = opcion.querySelector('input[type="radio"]');
+          if (radio) {
+            radio.checked = esSeleccionada;
+          }
+        });
+      }
+
+      function inicializarOpcionesPago() {
+        const opciones = [
+          paymentOptionStandard,
+          paymentOptionCredito,
+        ].filter(Boolean);
+
+        opciones.forEach((opcion) => {
+          opcion.addEventListener("click", () => {
+            const metodo = opcion.dataset.method;
+            if (metodo === "credito" && !creditoDisponible) return;
+            setMetodoPago(metodo);
+          });
+        });
+      }
+
+      async function verificarCreditoCliente() {
+        if (!paymentSection) return;
+
+        try {
+          const response = await API.checkCreditoCliente();
+          if (!response.ok || !response.data?.success) {
+            throw new Error(
+              response.data?.message || "No se pudo verificar el crédito"
+            );
+          }
+
+          creditoDisponible = response.data.hasCredit === true;
+          if (creditoDisponible && paymentOptionCredito) {
+            paymentOptionCredito.style.display = "flex";
+          } else if (paymentOptionCredito) {
+            paymentOptionCredito.style.display = "none";
+            if (metodoPagoSeleccionado === "credito") {
+              setMetodoPago("estandar");
+            }
+          }
+        } catch (error) {
+          console.warn("No se pudo validar crédito del cliente:", error);
+          creditoDisponible = false;
+          if (paymentOptionCredito) {
+            paymentOptionCredito.style.display = "none";
+          }
+        }
+      }
+
+      async function confirmarUsoCredito() {
+        if (typeof Swal === "undefined" || !Swal?.fire) {
+          return window.confirm(
+            "Esta compra se cargará a tu línea de crédito. ¿Deseas continuar?"
+          );
+        }
+
+        const modal = await Swal.fire({
+          title: "¿Cargar compra a tu crédito?",
+          text: "Esta compra se cargará a tu línea de crédito. ¿Deseas continuar?",
+          icon: "question",
+          showCancelButton: true,
+          confirmButtonText: "Sí, continuar",
+          cancelButtonText: "No, cancelar",
+          confirmButtonColor: "#F97316",
+        });
+
+        return modal.isConfirmed;
+      }
+
+      inicializarOpcionesPago();
 
       // Render cart item
       function renderCartItem(item, conflictInfo) {
@@ -1477,12 +1685,13 @@
       }
 
       // Handle checkout
-      checkoutBtn.addEventListener("click", () => {
+      checkoutBtn.addEventListener("click", async () => {
         if (!carritoData || carritoData.items.length === 0) {
           showToast("Tu carrito está vacío", "warning");
           return;
         }
 
+        await verificarCreditoCliente();
         modalCheckout.classList.add("show");
         loadDireccionesCheckout();
       });
@@ -1505,7 +1714,23 @@
         btnConfirmarSpinner.style.display = "block";
 
         try {
-          const response = await API.crearPedido(selectedDireccionId);
+          if (metodoPagoSeleccionado === "credito") {
+            const confirmado = await confirmarUsoCredito();
+            if (!confirmado) {
+              btnConfirmarPedido.disabled = false;
+              btnConfirmarText.style.display = "inline";
+              btnConfirmarSpinner.style.display = "none";
+              return;
+            }
+          }
+
+          const metodoPagoPayload =
+            metodoPagoSeleccionado === "credito" ? "credito" : null;
+
+          const response = await API.crearPedido(
+            selectedDireccionId,
+            metodoPagoPayload
+          );
 
           if (response.ok && response.data.success) {
             const pedidoId = response.data.data.pedido.pedidoId;

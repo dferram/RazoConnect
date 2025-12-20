@@ -363,7 +363,16 @@ const crearPedido = async (req, res) => {
       }
     }
 
-    const metodoPago = (MetodoPago || MetodoPago?.metodo || "").toString().toLowerCase();
+    const metodoPago = (() => {
+      if (
+        MetodoPago &&
+        typeof MetodoPago === "object" &&
+        typeof MetodoPago.metodo === "string"
+      ) {
+        return MetodoPago.metodo.trim().toLowerCase();
+      }
+      return (MetodoPago || "").toString().trim().toLowerCase();
+    })();
 
     let pedido;
     let pedidoId;
@@ -389,7 +398,9 @@ const crearPedido = async (req, res) => {
       );
 
       if (!creditoResult.rows.length) {
-        throw new Error("No tienes un plan de crédito activo.");
+        const err = new Error("No tienes un plan de crédito activo.");
+        err.statusCode = 400;
+        throw err;
       }
 
       const { credito_id, limite_credito, saldo_deudor } = creditoResult.rows[0];
@@ -845,10 +856,14 @@ const crearPedido = async (req, res) => {
       transactionStarted = false;
     }
     console.error("Error al crear pedido:", error);
-    res.status(500).json({
+    const status = Number.isInteger(error.statusCode) ? error.statusCode : 500;
+    const isServerError = status >= 500;
+    res.status(status).json({
       success: false,
-      message: "Error al crear el pedido",
-      error: error.message,
+      message: isServerError
+        ? "Error al crear el pedido"
+        : error.message || "No se pudo crear el pedido",
+      ...(isServerError ? { error: error.message } : {}),
     });
   } finally {
     // Liberar el cliente de vuelta al pool

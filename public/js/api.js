@@ -266,11 +266,20 @@ const API = {
     });
   },
 
-  crearPedido: async (direccionEnvioId) => {
+  crearPedido: async (direccionEnvioId, metodoPago = null) => {
     const body = { DireccionEnvioID: direccionEnvioId };
+    if (metodoPago) {
+      body.MetodoPago = metodoPago;
+    }
     return apiCall("/pedidos", {
       method: "POST",
       body: JSON.stringify(body),
+    });
+  },
+
+  checkCreditoCliente: async () => {
+    return apiCall("/cliente/check-auth-credit", {
+      method: "GET",
     });
   },
 
