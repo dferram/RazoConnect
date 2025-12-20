@@ -158,6 +158,11 @@
           method: "GET",
         });
 
+        if (response?.status === 403) {
+          window.location.href = "/inicio.html";
+          return;
+        }
+
         if (!response.ok || response.data?.success === false) {
           throw new Error(
             response.data?.message || "No fue posible recuperar tu crédito."
@@ -169,6 +174,11 @@
         renderMovimientos(payload.movimientos || payload.detalle || []);
       } catch (error) {
         console.error("Error cargando crédito:", error);
+        if (error?.message && error?.message.includes("Acceso denegado")) {
+          window.location.href = "/inicio.html";
+          return;
+        }
+
         if (errorAlert) {
           errorAlert.textContent =
             error.message || "Error al obtener información de crédito.";

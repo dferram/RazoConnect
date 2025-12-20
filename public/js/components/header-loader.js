@@ -6,6 +6,8 @@
     if (!container) return;
 
     try {
+      const hasCreditAccess = await verificarCreditoCliente();
+
       const res = await fetch("/components/header-cliente.html", {
         headers: { "Content-Type": "text/html; charset=utf-8" },
       });
@@ -15,6 +17,7 @@
 
       const html = await res.text();
       container.innerHTML = html;
+      ajustarVisibilidadCredito(hasCreditAccess);
 
       // Navbar es fixed-top (Bootstrap). Reservar espacio.
       document.body.style.paddingTop = "80px";
@@ -133,6 +136,39 @@
 
   function getTokenCliente() {
     return localStorage.getItem("razoconnect_token");
+  }
+
+  async function verificarCreditoCliente() {
+    const token = getTokenCliente();
+    if (!token) return false;
+
+    try {
+      const res = await fetch("/api/cliente/check-auth-credit", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) {
+        return false;
+      }
+
+      const data = await res.json();
+      return Boolean(data?.hasCredit);
+    } catch (error) {
+      console.error("Error verificando crédito del cliente:", error);
+      return false;
+    }
+  }
+
+  function ajustarVisibilidadCredito(tieneCredito) {
+    if (tieneCredito) return;
+    const link = document.querySelector('a.nav-link[href="/mi_credito.html"]');
+    if (!link) return;
+    const li = link.closest("li");
+    if (li) {
+      li.remove();
+    }
   }
 
   function inicializarUsuario() {
