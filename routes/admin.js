@@ -552,6 +552,20 @@ router.post(
 );
 
 router.get(
+  "/cxc-summary",
+  authenticate,
+  authorizeAdmin,
+  adminController.getCxcSummary
+);
+
+router.post(
+  "/registrar-abono",
+  authenticate,
+  authorizeAdminOrAgente,
+  adminController.registrarAbonoCxC
+);
+
+router.get(
   "/estado-cuenta/resumen",
   authenticate,
   authorizeAdmin,
