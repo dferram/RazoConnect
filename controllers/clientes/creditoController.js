@@ -12,7 +12,7 @@ const isCliente = (req) =>
 
 const fetchCreditoActivo = async (clienteId) => {
   const query = `
-    SELECT credito_id, limite_credito, saldo_deudor, estado_credito
+    SELECT credito_id, limite_credito, saldo_deudor, estado_credito, dias_gracia, fecha_creacion, ultima_actualizacion
     FROM cliente_creditos
     WHERE cliente_id = $1
       AND estado_credito = 'ACTIVO'
@@ -48,26 +48,12 @@ const checkAuthCredit = async (req, res) => {
     }
 
     const creditoActivo = await fetchCreditoActivo(clienteId);
-    const limite = creditoActivo
-      ? Number.parseFloat(creditoActivo.limite_credito ?? 0) || 0
-      : 0;
-    const saldo = creditoActivo
-      ? Number.parseFloat(creditoActivo.saldo_deudor ?? 0) || 0
-      : 0;
-    const disponible = Math.max(limite - saldo, 0);
+    const creditSummary = créditoResumen(creditoActivo);
 
     return res.json({
       success: true,
-      hasCredit: Boolean(creditoActivo),
-      creditSummary: creditoActivo
-        ? {
-            creditoId: creditoActivo.credito_id,
-            limiteCredito: limite,
-            saldoDeudor: saldo,
-            creditoDisponible: disponible,
-            estado: creditoActivo.estado_credito,
-          }
-        : null,
+      hasCredit: Boolean(creditSummary),
+      creditSummary,
     });
   } catch (error) {
     console.error("Error verificando crédito del cliente:", error);
@@ -78,6 +64,27 @@ const checkAuthCredit = async (req, res) => {
   }
 };
 
+const créditoResumen = (creditoActivo) => {
+  if (!creditoActivo) return null;
+  const limite =
+    Number.parseFloat(creditoActivo.limite_credito ?? 0) || 0;
+  const saldo =
+    Number.parseFloat(creditoActivo.saldo_deudor ?? 0) || 0;
+  const disponible = Math.max(limite - saldo, 0);
+  const diasGracia = Number.parseInt(creditoActivo.dias_gracia, 10);
+  return {
+    creditoId: creditoActivo.credito_id,
+    limiteCredito: limite,
+    saldoDeudor: saldo,
+    creditoDisponible: disponible,
+    estado: creditoActivo.estado_credito,
+    diasGracia: Number.isNaN(diasGracia) ? 0 : diasGracia,
+    fechaCreacion: creditoActivo.fecha_creacion,
+    ultimaActualizacion: creditoActivo.ultima_actualizacion,
+  };
+};
+
 module.exports = {
   checkAuthCredit,
+  obtenerPerfilCredito: checkAuthCredit,
 };

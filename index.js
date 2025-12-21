@@ -18,6 +18,7 @@ const publicRoutes = require("./routes/public");
 const notificacionesRoutes = require("./routes/notificaciones");
 const clientesRoutes = require("./routes/clientes");
 const staffRoutes = require("./routes/staff");
+const { scheduleDailyMaintenance } = require("./cron/dailyMaintenance");
 
 // Inicializar la aplicación Express
 const app = express();
@@ -113,6 +114,9 @@ app.listen(PORT, async () => {
 
   // Probar conexión a la base de datos
   await db.testConnection();
+
+  scheduleDailyMaintenance();
+  console.log("[CRON] Sistema de mantenimiento diario activado.");
 });
 
 module.exports = app;

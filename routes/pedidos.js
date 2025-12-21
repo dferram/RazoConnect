@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const pedidosController = require("../controllers/pedidosController");
 const { authenticate, authorize } = require("../middlewares/authMiddleware");
+const checkCreditStatus = require("../middlewares/checkCreditStatus");
 
 /**
  * @route   GET /api/pedidos
@@ -31,6 +32,14 @@ router.post(
   "/pedidos",
   authenticate,
   authorize(["cliente"]),
+  pedidosController.crearPedido
+);
+
+router.post(
+  "/pedidos/finalizar",
+  authenticate,
+  authorize(["cliente"]),
+  checkCreditStatus(),
   pedidosController.crearPedido
 );
 
