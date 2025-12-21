@@ -5,7 +5,10 @@ const {
   obtenerNotificacionesCliente,
   obtenerConteoNotificacionesNoLeidas,
 } = require("../controllers/clientes/notificacionesController");
-const { checkAuthCredit } = require("../controllers/clientes/creditoController");
+const {
+  checkAuthCredit,
+  obtenerPerfilCredito,
+} = require("../controllers/clientes/creditoController");
 const { authenticate } = require("../middlewares/authMiddleware");
 
 router.get("/notificaciones", authenticate, obtenerNotificacionesCliente);
@@ -16,5 +19,6 @@ router.get(
 );
 
 router.get("/check-auth-credit", authenticate, checkAuthCredit);
+router.get("/perfil-credito", authenticate, obtenerPerfilCredito);
 
 module.exports = router;

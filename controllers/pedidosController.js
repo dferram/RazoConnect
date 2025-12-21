@@ -374,51 +374,113 @@ const crearPedido = async (req, res) => {
       return (MetodoPago || "").toString().trim().toLowerCase();
     })();
 
+    const metodoPagoEsCredito = metodoPago === "credito";
+    let creditoInfo = null;
+    let diasGracia = 0;
+
+    if (metodoPagoEsCredito) {
+      const creditoResult = await client.query(
+        `
+          SELECT credito_id, limite_credito, saldo_deudor, dias_gracia
+          FROM cliente_creditos
+          WHERE cliente_id = $1
+          FOR UPDATE
+          LIMIT 1
+        `,
+        [clienteId]
+      );
+
+      if (!creditoResult.rows.length) {
+        await client.query("ROLLBACK");
+        transactionStarted = false;
+        return res.status(400).json({
+          success: false,
+          message:
+            "No tienes una línea de crédito activa. Selecciona otro método de pago.",
+        });
+      }
+
+      const creditoRow = creditoResult.rows[0];
+      const limiteCredito =
+        Number.parseFloat(creditoRow.limite_credito ?? 0) || 0;
+      const saldoDeudor =
+        Number.parseFloat(creditoRow.saldo_deudor ?? 0) || 0;
+      const saldoDisponible = limiteCredito - saldoDeudor;
+
+      if (montoTotal - saldoDisponible > 0.009) {
+        await client.query("ROLLBACK");
+        transactionStarted = false;
+        return res.status(400).json({
+          success: false,
+          message: "Saldo de crédito insuficiente para completar esta compra.",
+        });
+      }
+
+      const diasRaw = Number.parseInt(creditoRow.dias_gracia, 10);
+      diasGracia =
+        !Number.isNaN(diasRaw) && diasRaw > 0 ? diasRaw : 15;
+
+      creditoInfo = {
+        creditoId: creditoRow.credito_id,
+        saldoActual: saldoDeudor,
+        limiteCredito,
+        nuevoSaldo: parseFloat((saldoDeudor + montoTotal).toFixed(2)),
+      };
+    }
+
     let pedido;
     let pedidoId;
 
     async function registrarPedido() {
       const pedidoResult = await client.query(
-        `INSERT INTO Pedidos (ClienteID, AgenteID, DireccionEnvioID, MontoTotal, Estatus)
-         VALUES ($1, $2, $3, $4, 'Pendiente')
-         RETURNING PedidoID, FechaPedido, MontoTotal, Estatus`,
-        [clienteId, agenteId, DireccionEnvioID, montoTotal]
+        `INSERT INTO Pedidos (
+           ClienteID,
+           AgenteID,
+           DireccionEnvioID,
+           MontoTotal,
+           Estatus,
+           Es_Credito,
+           Pagado,
+           Fecha_Vencimiento,
+           Metodo_Pago
+         )
+         VALUES (
+           $1,
+           $2,
+           $3,
+           $4,
+           'Pendiente',
+           $5,
+           FALSE,
+           CASE
+             WHEN $5 THEN CURRENT_TIMESTAMP + ($6 * INTERVAL '1 day')
+             ELSE NULL
+           END,
+           $7
+         )
+         RETURNING PedidoID, FechaPedido, MontoTotal, Estatus, Fecha_Vencimiento, Es_Credito`,
+        [
+          clienteId,
+          agenteId,
+          DireccionEnvioID,
+          montoTotal,
+          metodoPagoEsCredito,
+          metodoPagoEsCredito ? diasGracia : 0,
+          metodoPago || null,
+        ]
       );
       pedido = pedidoResult.rows[0];
       pedidoId = pedido.pedidoid;
     }
 
-    async function procesarPagoCredito() {
-      const creditoResult = await client.query(
-        `SELECT credito_id, limite_credito, saldo_deudor
-         FROM cliente_creditos
-         WHERE cliente_id = $1
-         LIMIT 1`,
-        [clienteId]
-      );
-
-      if (!creditoResult.rows.length) {
-        const err = new Error("No tienes un plan de crédito activo.");
-        err.statusCode = 400;
-        throw err;
-      }
-
-      const { credito_id, limite_credito, saldo_deudor } = creditoResult.rows[0];
-      const limite = Number.parseFloat(limite_credito || 0);
-      const saldoActual = Number.parseFloat(saldo_deudor || 0);
-      const nuevoSaldo = parseFloat((saldoActual + montoTotal).toFixed(2));
-
-      if (nuevoSaldo - limite > 0.00001) {
-        const err = new Error("Saldo de crédito insuficiente para esta compra");
-        err.statusCode = 400;
-        throw err;
-      }
+    async function aplicarCargoCredito(info) {
+      if (!info) return;
 
       await client.query(
         `UPDATE cliente_creditos
          SET saldo_deudor = $1, ultima_actualizacion = NOW()
          WHERE credito_id = $2`,
-        [nuevoSaldo, credito_id]
+        [info.nuevoSaldo, info.creditoId]
       );
 
       await client.query(
@@ -432,11 +494,11 @@ const crearPedido = async (req, res) => {
          )
          VALUES ($1, 'CARGO', $2, $3, $4, $5)`,
         [
-          credito_id,
+          info.creditoId,
           montoTotal.toFixed(2),
           `PED-${pedidoId}`,
           `Compra realizada (Pedido #${pedidoId})`,
-          nuevoSaldo.toFixed(2),
+          info.nuevoSaldo.toFixed(2),
         ]
       );
     }
@@ -699,8 +761,8 @@ const crearPedido = async (req, res) => {
       };
     }
 
-    if (metodoPago === "credito") {
-      await procesarPagoCredito();
+    if (metodoPagoEsCredito) {
+      await aplicarCargoCredito(creditoInfo);
     }
 
     // 9. Limpiar el carrito

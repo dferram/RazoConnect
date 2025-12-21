@@ -84,7 +84,60 @@ const créditoResumen = (creditoActivo) => {
   };
 };
 
+const obtenerPerfilCredito = async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: "No autenticado",
+      });
+    }
+
+    if (!isCliente(req)) {
+      return res.status(403).json({
+        success: false,
+        message: "Acceso denegado",
+      });
+    }
+
+    const clienteId = normalizeClienteId(req);
+    if (!clienteId) {
+      return res.status(400).json({
+        success: false,
+        message: "Identificador de cliente inválido",
+      });
+    }
+
+    const creditoActivo = await fetchCreditoActivo(clienteId);
+    const creditSummary = créditoResumen(creditoActivo);
+    const data = creditSummary
+      ? {
+          limite_credito: creditSummary.limiteCredito,
+          saldo_deudor: creditSummary.saldoDeudor,
+          estado_credito: creditSummary.estado,
+          saldo_disponible: creditSummary.creditoDisponible,
+        }
+      : {
+          limite_credito: 0,
+          saldo_deudor: 0,
+          estado_credito: null,
+          saldo_disponible: 0,
+        };
+
+    return res.json({
+      success: true,
+      data,
+    });
+  } catch (error) {
+    console.error("Error obteniendo perfil de crédito:", error);
+    return res.status(500).json({
+      success: false,
+      message: "No fue posible obtener tu perfil de crédito",
+    });
+  }
+};
+
 module.exports = {
   checkAuthCredit,
-  obtenerPerfilCredito: checkAuthCredit,
+  obtenerPerfilCredito,
 };

@@ -19,6 +19,7 @@ const notificacionesRoutes = require("./routes/notificaciones");
 const clientesRoutes = require("./routes/clientes");
 const staffRoutes = require("./routes/staff");
 const { scheduleDailyMaintenance } = require("./cron/dailyMaintenance");
+const pagosRoutes = require("./routes/pagos");
 
 // Inicializar la aplicación Express
 const app = express();
@@ -83,6 +84,7 @@ app.use("/api/cliente", clientesRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/admin/reportes", reportesRoutes);
 app.use("/api/staff", staffRoutes);
+app.use("/api/pagos", pagosRoutes);
 
 // Manejo de rutas no encontradas solo para API
 app.use("/api/*", (req, res) => {

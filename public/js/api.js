@@ -290,6 +290,12 @@ const API = {
     });
   },
 
+  getPerfilCredito: async () => {
+    return apiCall("/cliente/perfil-credito", {
+      method: "GET",
+    });
+  },
+
   // Direcciones endpoints
   getEstados: async () => {
     return apiCall("/public/estados", {
