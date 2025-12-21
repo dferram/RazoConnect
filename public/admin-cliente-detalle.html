@@ -16,7 +16,7 @@
     <link rel="stylesheet" href="css/styles.css" />
     <link rel="stylesheet" href="css/admin.css" />
   </head>
-  <body>
+  <body data-sidebar="admin" data-page-title="Detalle del cliente">
     <div class="admin-layout">
       <!-- Sidebar -->
       <div id="sidebar-container"></div>
@@ -50,7 +50,20 @@
           </div>
         </header>
 
-        <div class="admin-content">
+        <div class="admin-content" style="display: grid; gap: 1.5rem;">
+          <section class="admin-card" style="padding: 1.5rem; display: flex; justify-content: space-between; gap: 1.25rem; flex-wrap: wrap; align-items: center;">
+            <div>
+              <p class="eyebrow" style="margin-bottom: 0.4rem;">Clientes · Seguimiento individual</p>
+              <h2 style="margin: 0; font-size: clamp(1.4rem, 3vw, 2rem);" id="clienteTitulo">
+                Detalle del cliente
+              </h2>
+              <p style="margin: 0.35rem 0 0; color: var(--razo-gray-warm);" id="clienteSubtitle">
+                Consulta la información completa del cliente
+              </p>
+            </div>
+            <div id="estadoBadge"></div>
+          </section>
+
           <div
             style="
               display: flex;
@@ -66,7 +79,7 @@
             >
               Volver a clientes
             </button>
-            <div id="estadoBadge"></div>
+            <div class="admin-badge info" id="secondaryEstadoBadge" style="display: none;"></div>
           </div>
 
           <div id="loadingState" class="loading" style="min-height: 220px">

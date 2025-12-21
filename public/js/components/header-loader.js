@@ -6,7 +6,8 @@
     if (!container) return;
 
     try {
-      const hasCreditAccess = await verificarCreditoCliente();
+      const tokenCliente = getTokenCliente();
+      const hasCreditAccess = await verificarCreditoCliente(tokenCliente);
 
       const res = await fetch("/components/header-cliente.html", {
         headers: { "Content-Type": "text/html; charset=utf-8" },
@@ -17,7 +18,10 @@
 
       const html = await res.text();
       container.innerHTML = html;
-      ajustarVisibilidadCredito(hasCreditAccess);
+      actualizarIndicadorCredito({
+        hasCreditAccess,
+        isAuthenticated: Boolean(tokenCliente),
+      });
 
       // Navbar es fixed-top (Bootstrap). Reservar espacio.
       document.body.style.paddingTop = "80px";
@@ -138,8 +142,7 @@
     return localStorage.getItem("razoconnect_token");
   }
 
-  async function verificarCreditoCliente() {
-    const token = getTokenCliente();
+  async function verificarCreditoCliente(token) {
     if (!token) return false;
 
     try {
@@ -161,13 +164,31 @@
     }
   }
 
-  function ajustarVisibilidadCredito(tieneCredito) {
-    if (tieneCredito) return;
-    const link = document.querySelector('a.nav-link[href="/mi_credito.html"]');
-    if (!link) return;
-    const li = link.closest("li");
-    if (li) {
-      li.remove();
+  function actualizarIndicadorCredito({ hasCreditAccess, isAuthenticated }) {
+    const linkWrapper = document.getElementById("navCreditoLink");
+    const label = document.getElementById("creditLinkLabel");
+    const badge = document.getElementById("creditStatusBadge");
+    if (!linkWrapper || !label || !badge) return;
+
+    badge.className = "badge rounded-pill";
+
+    if (!isAuthenticated) {
+      label.textContent = "Mi Crédito";
+      badge.textContent = "";
+      badge.classList.add("d-none");
+      return;
+    }
+
+    if (hasCreditAccess) {
+      label.textContent = "Mi Crédito";
+      badge.textContent = "Activo";
+      badge.classList.remove("d-none");
+      badge.classList.add("bg-success");
+    } else {
+      label.textContent = "Solicitar crédito";
+      badge.textContent = "Nuevo";
+      badge.classList.remove("d-none");
+      badge.classList.add("bg-warning", "text-dark");
     }
   }
 
