@@ -277,6 +277,13 @@ const API = {
     });
   },
 
+  procesarPagoTarjeta: async (payload) => {
+    return apiCall("/pagos/procesar-tarjeta", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+
   checkCreditoCliente: async () => {
     return apiCall("/cliente/check-auth-credit", {
       method: "GET",

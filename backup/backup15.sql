@@ -5,7 +5,7 @@
 -- Dumped from database version 17.5
 -- Dumped by pg_dump version 17.5
 
--- Started on 2025-12-20 00:01:16
+-- Started on 2025-12-21 16:47:56
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -1476,7 +1476,10 @@ CREATE TABLE public.pedidos (
     costoenvio numeric(10,2) DEFAULT 0.00 NOT NULL,
     es_credito boolean DEFAULT false,
     fecha_vencimiento timestamp without time zone,
-    pagado boolean DEFAULT false
+    pagado boolean DEFAULT false,
+    transaccion_id character varying(100),
+    comprobante_url text,
+    metodo_pago character varying(30)
 );
 
 
@@ -2423,6 +2426,7 @@ INSERT INTO public.categorias (categoriaid, nombre, descripcion, parentcategoria
 --
 
 INSERT INTO public.clientes (clienteid, nombre, apellido, email, passwordhash, telefono, fechaderegistro, activo, agenteid, google_id, avatar_url) VALUES (1, 'Diego Fernando', 'Ramírez García', 'dferram8@gmail.com', NULL, NULL, '2025-12-19 12:11:47.325519', true, NULL, '112463414682839499861', 'https://lh3.googleusercontent.com/a/ACg8ocL4vAqVyYj3GucQspTlE6BtmuyoqZqML7L4Zcb7WdwdcHT9m4E=s96-c');
+INSERT INTO public.clientes (clienteid, nombre, apellido, email, passwordhash, telefono, fechaderegistro, activo, agenteid, google_id, avatar_url) VALUES (2, 'Diego Fernando', 'Ramírez García', 'dferramm@gmail.com', '$2b$10$wO8AHmwoDDh3LXVCnr4vQOsk6kvSQFc8We7oWdDKigyPseuvo6tc2', '5560989524', '2025-01-21 13:06:50.921092', true, NULL, NULL, NULL);
 
 
 --
@@ -2560,6 +2564,9 @@ INSERT INTO public.estados (estadoid, nombre, abreviatura) VALUES (32, 'Zacateca
 --
 
 INSERT INTO public.log_movimientos (logid, usuarioid, nombreusuario, rol, accion, entidad, entidadid, detalles, ip, fecha) VALUES (1, 2, 'Fernando Garcia', 'admin', 'LOGIN', 'Admin', 2, '{"email": "fegarcia@hotmail.com", "origen": "admin"}', '::1', '2025-12-19 17:44:44.70313');
+INSERT INTO public.log_movimientos (logid, usuarioid, nombreusuario, rol, accion, entidad, entidadid, detalles, ip, fecha) VALUES (2, 2, 'Fernando Garcia', 'admin', 'LOGIN', 'Admin', 2, '{"email": "fegarcia@hotmail.com", "origen": "admin"}', '::1', '2025-12-21 03:10:48.361285');
+INSERT INTO public.log_movimientos (logid, usuarioid, nombreusuario, rol, accion, entidad, entidadid, detalles, ip, fecha) VALUES (3, 2, 'Fernando Garcia', 'admin', 'LOGIN', 'Admin', 2, '{"email": "fegarcia@hotmail.com", "origen": "admin"}', '::1', '2025-12-21 03:22:54.963486');
+INSERT INTO public.log_movimientos (logid, usuarioid, nombreusuario, rol, accion, entidad, entidadid, detalles, ip, fecha) VALUES (4, 2, 'Fernando Garcia', 'admin', 'LOGIN', 'Admin', 2, '{"email": "fegarcia@hotmail.com", "origen": "admin"}', '::1', '2025-01-21 13:05:53.021814');
 
 
 --
@@ -2780,7 +2787,7 @@ SELECT pg_catalog.setval('public.cliente_direcciones_direccionid_seq', 1, false)
 -- Name: clientes_clienteid_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.clientes_clienteid_seq', 1, true);
+SELECT pg_catalog.setval('public.clientes_clienteid_seq', 2, true);
 
 
 --
@@ -2897,7 +2904,7 @@ SELECT pg_catalog.setval('public.log_inventario_logid_seq', 1, false);
 -- Name: log_movimientos_logid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.log_movimientos_logid_seq', 1, true);
+SELECT pg_catalog.setval('public.log_movimientos_logid_seq', 4, true);
 
 
 --
@@ -2915,7 +2922,7 @@ SELECT pg_catalog.setval('public.medidas_medidaid_seq', 1, false);
 -- Name: notificaciones_notificacionid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.notificaciones_notificacionid_seq', 1, false);
+SELECT pg_catalog.setval('public.notificaciones_notificacionid_seq', 1, true);
 
 
 --
@@ -4376,7 +4383,7 @@ ALTER TABLE ONLY public.toma_inventario_sesiones
     ADD CONSTRAINT toma_inventario_sesiones_usuario_creador_id_fkey FOREIGN KEY (usuario_creador_id) REFERENCES public.administradores(adminid);
 
 
--- Completed on 2025-12-20 00:01:16
+-- Completed on 2025-12-21 16:47:56
 
 --
 -- PostgreSQL database dump complete

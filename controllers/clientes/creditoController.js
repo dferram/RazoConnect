@@ -1,16 +1,18 @@
 const db = require("../../db");
 
 const normalizeClienteId = (req) => {
-  const raw = req.user?.userId ?? req.user?.id ?? req.user?.clienteId ?? req.user?.clienteid;
+  const raw =
+    req.user?.userId ?? req.user?.id ?? req.user?.clienteId ?? req.user?.clienteid;
   const parsed = Number.parseInt(raw, 10);
   return Number.isInteger(parsed) ? parsed : null;
 };
 
-const isCliente = (req) => (req.user?.rol || "").toString().trim().toLowerCase() === "cliente";
+const isCliente = (req) =>
+  (req.user?.rol || "").toString().trim().toLowerCase() === "cliente";
 
-const hasActiveCredit = async (clienteId) => {
+const fetchCreditoActivo = async (clienteId) => {
   const query = `
-    SELECT 1
+    SELECT credito_id, limite_credito, saldo_deudor, estado_credito
     FROM cliente_creditos
     WHERE cliente_id = $1
       AND estado_credito = 'ACTIVO'
@@ -18,7 +20,7 @@ const hasActiveCredit = async (clienteId) => {
   `;
 
   const { rows } = await db.query(query, [clienteId]);
-  return rows.length > 0;
+  return rows.length ? rows[0] : null;
 };
 
 const checkAuthCredit = async (req, res) => {
@@ -45,10 +47,27 @@ const checkAuthCredit = async (req, res) => {
       });
     }
 
-    const hasCredit = await hasActiveCredit(clienteId);
+    const creditoActivo = await fetchCreditoActivo(clienteId);
+    const limite = creditoActivo
+      ? Number.parseFloat(creditoActivo.limite_credito ?? 0) || 0
+      : 0;
+    const saldo = creditoActivo
+      ? Number.parseFloat(creditoActivo.saldo_deudor ?? 0) || 0
+      : 0;
+    const disponible = Math.max(limite - saldo, 0);
+
     return res.json({
       success: true,
-      hasCredit,
+      hasCredit: Boolean(creditoActivo),
+      creditSummary: creditoActivo
+        ? {
+            creditoId: creditoActivo.credito_id,
+            limiteCredito: limite,
+            saldoDeudor: saldo,
+            creditoDisponible: disponible,
+            estado: creditoActivo.estado_credito,
+          }
+        : null,
     });
   } catch (error) {
     console.error("Error verificando crédito del cliente:", error);
