@@ -474,7 +474,7 @@ const crearPedido = async (req, res) => {
     }
 
     async function aplicarCargoCredito(info) {
-      if (!info) return;
+      if (!info) return null;
 
       await client.query(
         `UPDATE cliente_creditos
@@ -501,6 +501,12 @@ const crearPedido = async (req, res) => {
           info.nuevoSaldo.toFixed(2),
         ]
       );
+
+      return {
+        creditoId: info.creditoId,
+        saldoAnterior: info.saldoActual,
+        saldoActual: info.nuevoSaldo,
+      };
     }
 
     await registrarPedido();
@@ -761,8 +767,9 @@ const crearPedido = async (req, res) => {
       };
     }
 
+    let resultadoCredito = null;
     if (metodoPagoEsCredito) {
-      await aplicarCargoCredito(creditoInfo);
+      resultadoCredito = await aplicarCargoCredito(creditoInfo);
     }
 
     // 9. Limpiar el carrito
@@ -787,6 +794,7 @@ const crearPedido = async (req, res) => {
           comision: comision,
           backorders: backordersGenerados,
         },
+        credito: resultadoCredito,
       },
     };
 

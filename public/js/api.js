@@ -296,6 +296,13 @@ const API = {
     });
   },
 
+  finalizarPedidoCredito: async (payload) => {
+    return apiCall("/pedidos/finalizar", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+
   // Direcciones endpoints
   getEstados: async () => {
     return apiCall("/public/estados", {

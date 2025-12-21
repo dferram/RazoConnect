@@ -194,14 +194,25 @@ const registrarAbonoCxC = async (req, res) => {
   const client = await db.pool.connect();
 
   try {
-    const creditoId = Number.parseInt(req.body?.creditoId, 10);
+    const clienteIdBody = Number.parseInt(
+      req.body?.clienteId ?? req.body?.clienteid,
+      10
+    );
+    const creditoIdBody = Number.parseInt(req.body?.creditoId, 10);
     const monto = Number.parseFloat(req.body?.monto);
-    const concepto = (req.body?.concepto || "").toString().trim();
+    const metodoPagoRaw = (req.body?.metodoPago ?? req.body?.metodo_pago ?? "")
+      .toString()
+      .trim()
+      .toLowerCase();
+    const notas = (req.body?.notas ?? req.body?.nota ?? req.body?.concepto ?? "")
+      .toString()
+      .trim();
+    const referencia = (req.body?.referencia ?? "").toString().trim();
 
-    if (!Number.isInteger(creditoId) || creditoId <= 0) {
+    if ((!Number.isInteger(creditoIdBody) || creditoIdBody <= 0) && (!Number.isInteger(clienteIdBody) || clienteIdBody <= 0)) {
       return res.status(400).json({
         success: false,
-        message: "creditoId inválido",
+        message: "Debe proporcionar creditoId o clienteId válido",
       });
     }
 
@@ -211,6 +222,11 @@ const registrarAbonoCxC = async (req, res) => {
         message: "Monto inválido",
       });
     }
+
+    const allowedMetodos = new Set(["efectivo", "transferencia"]);
+    const metodoPago = allowedMetodos.has(metodoPagoRaw)
+      ? metodoPagoRaw
+      : "efectivo";
 
     const montoCentavos = Math.round(monto * 100);
     if (!Number.isInteger(montoCentavos) || montoCentavos <= 0) {
@@ -224,23 +240,47 @@ const registrarAbonoCxC = async (req, res) => {
 
     await client.query("BEGIN");
 
-    const creditoResult = await client.query(
-      `SELECT credito_id, cliente_id, saldo_deudor
-       FROM cliente_creditos
-       WHERE credito_id = $1
-       FOR UPDATE`,
-      [creditoId]
-    );
+    let creditoRow;
+    if (Number.isInteger(creditoIdBody) && creditoIdBody > 0) {
+      const creditoResult = await client.query(
+        `SELECT credito_id, cliente_id, saldo_deudor, estado_credito
+         FROM cliente_creditos
+         WHERE credito_id = $1
+         FOR UPDATE`,
+        [creditoIdBody]
+      );
 
-    if (!creditoResult.rows.length) {
-      await client.query("ROLLBACK");
-      return res.status(404).json({
-        success: false,
-        message: "Crédito no encontrado",
-      });
+      if (!creditoResult.rows.length) {
+        await client.query("ROLLBACK");
+        return res.status(404).json({
+          success: false,
+          message: "Crédito no encontrado",
+        });
+      }
+      creditoRow = creditoResult.rows[0];
+    } else {
+      const creditoResult = await client.query(
+        `SELECT credito_id, cliente_id, saldo_deudor, estado_credito
+         FROM cliente_creditos
+         WHERE cliente_id = $1
+         ORDER BY credito_id DESC
+         FOR UPDATE
+         LIMIT 1`,
+        [clienteIdBody]
+      );
+
+      if (!creditoResult.rows.length) {
+        await client.query("ROLLBACK");
+        return res.status(404).json({
+          success: false,
+          message: "El cliente no tiene crédito registrado",
+        });
+      }
+      creditoRow = creditoResult.rows[0];
     }
 
-    const creditoRow = creditoResult.rows[0];
+    const creditoId = creditoRow.credito_id;
+    const estadoAnterior = (creditoRow.estado_credito || "").toString().trim().toUpperCase();
     const saldoActual = Number.parseFloat(creditoRow.saldo_deudor ?? 0) || 0;
     const saldoActualCentavos = Math.round(saldoActual * 100);
 
@@ -255,12 +295,17 @@ const registrarAbonoCxC = async (req, res) => {
     const nuevoSaldoCentavos = saldoActualCentavos - montoCentavos;
     const nuevoSaldo = Number.parseFloat((nuevoSaldoCentavos / 100).toFixed(2));
 
+    const estadoFinal =
+      estadoAnterior === "SUSPENDIDO" && nuevoSaldo <= 0 ? "ACTIVO" : estadoAnterior;
+    const fueReactivado = estadoAnterior === "SUSPENDIDO" && estadoFinal === "ACTIVO";
+
     await client.query(
       `UPDATE cliente_creditos
        SET saldo_deudor = $1,
-           ultima_actualizacion = NOW()
+           ultima_actualizacion = NOW(),
+           estado_credito = $3
        WHERE credito_id = $2`,
-      [nuevoSaldo, creditoId]
+      [nuevoSaldo, creditoId, estadoFinal]
     );
 
     const rawUserId = req?.user?.id ?? req?.user?.userId;
@@ -274,6 +319,11 @@ const registrarAbonoCxC = async (req, res) => {
         ? usuarioId || null
         : null;
     const agenteId = rol === "agente" ? usuarioId || null : null;
+
+    const descripcionBase =
+      notas ||
+      `Abono manual registrado (${metodoPago.charAt(0).toUpperCase() + metodoPago.slice(1)})`;
+    const descripcion = descripcionBase.slice(0, 200);
 
     await client.query(
       `INSERT INTO credito_movimientos (
@@ -291,8 +341,8 @@ const registrarAbonoCxC = async (req, res) => {
       [
         creditoId,
         montoNormalizado,
-        concepto ? concepto.slice(0, 50) : null,
-        concepto || "Abono manual",
+        metodoPago.toUpperCase(),
+        descripcion,
         nuevoSaldo,
         usuarioId || null,
         adminId,
@@ -304,12 +354,17 @@ const registrarAbonoCxC = async (req, res) => {
 
     return res.json({
       success: true,
-      message: "Abono registrado correctamente",
+      message: fueReactivado
+        ? "Abono registrado y cliente reactivado"
+        : "Abono registrado correctamente",
       data: {
         credito: {
           creditoId,
           clienteId: creditoRow.cliente_id,
           saldoDeudor: nuevoSaldo,
+          saldoAnterior: saldoActual,
+          estadoCredito: estadoFinal,
+          fueReactivado,
         },
       },
     });

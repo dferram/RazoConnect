@@ -5,7 +5,7 @@
 -- Dumped from database version 17.5
 -- Dumped by pg_dump version 17.5
 
--- Started on 2025-12-21 16:47:56
+-- Started on 2025-12-21 17:41:47
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -20,7 +20,7 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
--- TOC entry 1014 (class 1247 OID 33690)
+-- TOC entry 1017 (class 1247 OID 33690)
 -- Name: estado_solicitud_enum; Type: TYPE; Schema: public; Owner: ferram
 --
 
@@ -34,7 +34,7 @@ CREATE TYPE public.estado_solicitud_enum AS ENUM (
 ALTER TYPE public.estado_solicitud_enum OWNER TO ferram;
 
 --
--- TOC entry 1026 (class 1247 OID 33764)
+-- TOC entry 1029 (class 1247 OID 33764)
 -- Name: estatus_conteo_enum; Type: TYPE; Schema: public; Owner: ferram
 --
 
@@ -49,7 +49,7 @@ CREATE TYPE public.estatus_conteo_enum AS ENUM (
 ALTER TYPE public.estatus_conteo_enum OWNER TO ferram;
 
 --
--- TOC entry 1038 (class 1247 OID 34113)
+-- TOC entry 1041 (class 1247 OID 34113)
 -- Name: estatus_cxp_enum; Type: TYPE; Schema: public; Owner: ferram
 --
 
@@ -65,7 +65,7 @@ CREATE TYPE public.estatus_cxp_enum AS ENUM (
 ALTER TYPE public.estatus_cxp_enum OWNER TO ferram;
 
 --
--- TOC entry 1023 (class 1247 OID 33757)
+-- TOC entry 1026 (class 1247 OID 33757)
 -- Name: estatus_sesion_enum; Type: TYPE; Schema: public; Owner: ferram
 --
 
@@ -79,7 +79,7 @@ CREATE TYPE public.estatus_sesion_enum AS ENUM (
 ALTER TYPE public.estatus_sesion_enum OWNER TO ferram;
 
 --
--- TOC entry 1011 (class 1247 OID 33682)
+-- TOC entry 1014 (class 1247 OID 33682)
 -- Name: tipo_cambio_enum; Type: TYPE; Schema: public; Owner: ferram
 --
 
@@ -93,7 +93,7 @@ CREATE TYPE public.tipo_cambio_enum AS ENUM (
 ALTER TYPE public.tipo_cambio_enum OWNER TO ferram;
 
 --
--- TOC entry 297 (class 1255 OID 25532)
+-- TOC entry 299 (class 1255 OID 25532)
 -- Name: limitar_notificaciones_por_cliente(); Type: FUNCTION; Schema: public; Owner: ferram
 --
 
@@ -122,7 +122,7 @@ $$;
 ALTER FUNCTION public.limitar_notificaciones_por_cliente() OWNER TO ferram;
 
 --
--- TOC entry 296 (class 1255 OID 25531)
+-- TOC entry 298 (class 1255 OID 25531)
 -- Name: limpiar_notificaciones_antiguas(); Type: FUNCTION; Schema: public; Owner: ferram
 --
 
@@ -145,7 +145,37 @@ $$;
 ALTER FUNCTION public.limpiar_notificaciones_antiguas() OWNER TO ferram;
 
 --
--- TOC entry 298 (class 1255 OID 34556)
+-- TOC entry 301 (class 1255 OID 34591)
+-- Name: suspender_clientes_morosos(); Type: FUNCTION; Schema: public; Owner: ferram
+--
+
+CREATE FUNCTION public.suspender_clientes_morosos() RETURNS integer
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    cantidad_suspendidos INTEGER;
+BEGIN
+    -- Actualizamos el estado de crédito a 'SUSPENDIDO'
+    UPDATE public.cliente_creditos cc
+    SET estado_credito = 'SUSPENDIDO',
+        ultima_actualizacion = CURRENT_TIMESTAMP
+    FROM public.pedidos p
+    WHERE cc.cliente_id = p.clienteid
+      AND p.es_credito = true
+      AND p.pagado = false
+      AND p.fecha_vencimiento < (CURRENT_DATE - INTERVAL '15 days')
+      AND cc.estado_credito = 'ACTIVO'; -- Solo suspendemos los que estaban activos
+
+    GET DIAGNOSTICS cantidad_suspendidos = ROW_COUNT;
+    RETURN cantidad_suspendidos;
+END;
+$$;
+
+
+ALTER FUNCTION public.suspender_clientes_morosos() OWNER TO ferram;
+
+--
+-- TOC entry 300 (class 1255 OID 34556)
 -- Name: update_ultima_actualizacion(); Type: FUNCTION; Schema: public; Owner: ferram
 --
 
@@ -201,7 +231,7 @@ CREATE SEQUENCE public.administradores_adminid_seq
 ALTER SEQUENCE public.administradores_adminid_seq OWNER TO ferram;
 
 --
--- TOC entry 5519 (class 0 OID 0)
+-- TOC entry 5533 (class 0 OID 0)
 -- Dependencies: 241
 -- Name: administradores_adminid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -223,7 +253,11 @@ CREATE TABLE public.agentesdeventas (
     codigoagente character varying(50) NOT NULL,
     activo boolean DEFAULT true,
     esadmin boolean DEFAULT false NOT NULL,
-    adminrol text
+    adminrol text,
+    banco character varying(100),
+    numero_cuenta character varying(50),
+    clabe character varying(20),
+    titular character varying(255)
 );
 
 
@@ -246,7 +280,7 @@ CREATE SEQUENCE public.agentesdeventas_agenteid_seq
 ALTER SEQUENCE public.agentesdeventas_agenteid_seq OWNER TO postgres;
 
 --
--- TOC entry 5520 (class 0 OID 0)
+-- TOC entry 5534 (class 0 OID 0)
 -- Dependencies: 219
 -- Name: agentesdeventas_agenteid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -286,7 +320,7 @@ CREATE SEQUENCE public.carritodecompra_carritoid_seq
 ALTER SEQUENCE public.carritodecompra_carritoid_seq OWNER TO postgres;
 
 --
--- TOC entry 5521 (class 0 OID 0)
+-- TOC entry 5535 (class 0 OID 0)
 -- Dependencies: 227
 -- Name: carritodecompra_carritoid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -327,7 +361,7 @@ CREATE SEQUENCE public.cat_cxp_etiquetas_etiqueta_id_seq
 ALTER SEQUENCE public.cat_cxp_etiquetas_etiqueta_id_seq OWNER TO ferram;
 
 --
--- TOC entry 5522 (class 0 OID 0)
+-- TOC entry 5536 (class 0 OID 0)
 -- Dependencies: 285
 -- Name: cat_cxp_etiquetas_etiqueta_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -365,7 +399,7 @@ CREATE SEQUENCE public.cat_tamanopaquetes_tamanoid_seq
 ALTER SEQUENCE public.cat_tamanopaquetes_tamanoid_seq OWNER TO ferram;
 
 --
--- TOC entry 5523 (class 0 OID 0)
+-- TOC entry 5537 (class 0 OID 0)
 -- Dependencies: 263
 -- Name: cat_tamanopaquetes_tamanoid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -406,7 +440,7 @@ CREATE SEQUENCE public.categorias_categoriaid_seq
 ALTER SEQUENCE public.categorias_categoriaid_seq OWNER TO postgres;
 
 --
--- TOC entry 5524 (class 0 OID 0)
+-- TOC entry 5538 (class 0 OID 0)
 -- Dependencies: 221
 -- Name: categorias_categoriaid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -427,7 +461,9 @@ CREATE TABLE public.cliente_creditos (
     dias_gracia integer DEFAULT 15,
     estado_credito character varying(20) DEFAULT 'ACTIVO'::character varying,
     fecha_creacion timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
-    ultima_actualizacion timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+    ultima_actualizacion timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT chk_montos_positivos CHECK (((limite_credito >= (0)::numeric) AND (saldo_deudor >= (0)::numeric))),
+    CONSTRAINT chk_saldo_no_excede_limite CHECK ((saldo_deudor <= limite_credito))
 );
 
 
@@ -450,7 +486,7 @@ CREATE SEQUENCE public.cliente_creditos_credito_id_seq
 ALTER SEQUENCE public.cliente_creditos_credito_id_seq OWNER TO ferram;
 
 --
--- TOC entry 5525 (class 0 OID 0)
+-- TOC entry 5539 (class 0 OID 0)
 -- Dependencies: 290
 -- Name: cliente_creditos_credito_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -498,7 +534,7 @@ CREATE SEQUENCE public.cliente_direcciones_direccionid_seq
 ALTER SEQUENCE public.cliente_direcciones_direccionid_seq OWNER TO postgres;
 
 --
--- TOC entry 5526 (class 0 OID 0)
+-- TOC entry 5540 (class 0 OID 0)
 -- Dependencies: 231
 -- Name: cliente_direcciones_direccionid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -545,7 +581,7 @@ CREATE SEQUENCE public.clientes_clienteid_seq
 ALTER SEQUENCE public.clientes_clienteid_seq OWNER TO postgres;
 
 --
--- TOC entry 5527 (class 0 OID 0)
+-- TOC entry 5541 (class 0 OID 0)
 -- Dependencies: 217
 -- Name: clientes_clienteid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -587,7 +623,7 @@ CREATE SEQUENCE public.comisiones_comisionid_seq
 ALTER SEQUENCE public.comisiones_comisionid_seq OWNER TO postgres;
 
 --
--- TOC entry 5528 (class 0 OID 0)
+-- TOC entry 5542 (class 0 OID 0)
 -- Dependencies: 237
 -- Name: comisiones_comisionid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -633,7 +669,7 @@ CREATE SEQUENCE public.communicationlogs_logid_seq
 ALTER SEQUENCE public.communicationlogs_logid_seq OWNER TO ferram;
 
 --
--- TOC entry 5529 (class 0 OID 0)
+-- TOC entry 5543 (class 0 OID 0)
 -- Dependencies: 255
 -- Name: communicationlogs_logid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -680,7 +716,7 @@ CREATE SEQUENCE public.control_cambios_id_seq
 ALTER SEQUENCE public.control_cambios_id_seq OWNER TO ferram;
 
 --
--- TOC entry 5530 (class 0 OID 0)
+-- TOC entry 5544 (class 0 OID 0)
 -- Dependencies: 271
 -- Name: control_cambios_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -727,7 +763,7 @@ CREATE SEQUENCE public.credito_movimientos_movimiento_id_seq
 ALTER SEQUENCE public.credito_movimientos_movimiento_id_seq OWNER TO ferram;
 
 --
--- TOC entry 5531 (class 0 OID 0)
+-- TOC entry 5545 (class 0 OID 0)
 -- Dependencies: 292
 -- Name: credito_movimientos_movimiento_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -780,7 +816,7 @@ CREATE SEQUENCE public.cuentas_por_pagar_cxp_id_seq
 ALTER SEQUENCE public.cuentas_por_pagar_cxp_id_seq OWNER TO ferram;
 
 --
--- TOC entry 5532 (class 0 OID 0)
+-- TOC entry 5546 (class 0 OID 0)
 -- Dependencies: 281
 -- Name: cuentas_por_pagar_cxp_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -820,12 +856,54 @@ CREATE SEQUENCE public.cxp_etiquetas_asignadas_asignacion_id_seq
 ALTER SEQUENCE public.cxp_etiquetas_asignadas_asignacion_id_seq OWNER TO ferram;
 
 --
--- TOC entry 5533 (class 0 OID 0)
+-- TOC entry 5547 (class 0 OID 0)
 -- Dependencies: 287
 -- Name: cxp_etiquetas_asignadas_asignacion_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
 
 ALTER SEQUENCE public.cxp_etiquetas_asignadas_asignacion_id_seq OWNED BY public.cxp_etiquetas_asignadas.asignacion_id;
+
+
+--
+-- TOC entry 297 (class 1259 OID 34593)
+-- Name: datos_bancarios_empresa; Type: TABLE; Schema: public; Owner: ferram
+--
+
+CREATE TABLE public.datos_bancarios_empresa (
+    id integer NOT NULL,
+    banco character varying(100) NOT NULL,
+    numero_cuenta character varying(50) NOT NULL,
+    clabe character varying(20),
+    titular character varying(255) NOT NULL,
+    ultima_actualizacion timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.datos_bancarios_empresa OWNER TO ferram;
+
+--
+-- TOC entry 296 (class 1259 OID 34592)
+-- Name: datos_bancarios_empresa_id_seq; Type: SEQUENCE; Schema: public; Owner: ferram
+--
+
+CREATE SEQUENCE public.datos_bancarios_empresa_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.datos_bancarios_empresa_id_seq OWNER TO ferram;
+
+--
+-- TOC entry 5548 (class 0 OID 0)
+-- Dependencies: 296
+-- Name: datos_bancarios_empresa_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
+--
+
+ALTER SEQUENCE public.datos_bancarios_empresa_id_seq OWNED BY public.datos_bancarios_empresa.id;
 
 
 --
@@ -867,7 +945,7 @@ CREATE SEQUENCE public.detallesdelpedido_detalleid_seq
 ALTER SEQUENCE public.detallesdelpedido_detalleid_seq OWNER TO postgres;
 
 --
--- TOC entry 5534 (class 0 OID 0)
+-- TOC entry 5549 (class 0 OID 0)
 -- Dependencies: 235
 -- Name: detallesdelpedido_detalleid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -912,7 +990,7 @@ CREATE SEQUENCE public.detallesordencompra_detalleoc_id_seq
 ALTER SEQUENCE public.detallesordencompra_detalleoc_id_seq OWNER TO ferram;
 
 --
--- TOC entry 5535 (class 0 OID 0)
+-- TOC entry 5550 (class 0 OID 0)
 -- Dependencies: 247
 -- Name: detallesordencompra_detalleoc_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -947,7 +1025,7 @@ CREATE TABLE public.notificaciones (
 ALTER TABLE public.notificaciones OWNER TO ferram;
 
 --
--- TOC entry 5536 (class 0 OID 0)
+-- TOC entry 5551 (class 0 OID 0)
 -- Dependencies: 267
 -- Name: TABLE notificaciones; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -956,7 +1034,7 @@ COMMENT ON TABLE public.notificaciones IS 'Notificaciones para clientes del sist
 
 
 --
--- TOC entry 5537 (class 0 OID 0)
+-- TOC entry 5552 (class 0 OID 0)
 -- Dependencies: 267
 -- Name: COLUMN notificaciones.tipo; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -965,7 +1043,7 @@ COMMENT ON COLUMN public.notificaciones.tipo IS 'Tipo de notificación: pedido, 
 
 
 --
--- TOC entry 5538 (class 0 OID 0)
+-- TOC entry 5553 (class 0 OID 0)
 -- Dependencies: 267
 -- Name: COLUMN notificaciones.metadata; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -974,7 +1052,7 @@ COMMENT ON COLUMN public.notificaciones.metadata IS 'Información adicional en f
 
 
 --
--- TOC entry 5539 (class 0 OID 0)
+-- TOC entry 5554 (class 0 OID 0)
 -- Dependencies: 267
 -- Name: COLUMN notificaciones.url; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -983,7 +1061,7 @@ COMMENT ON COLUMN public.notificaciones.url IS 'URL de redirección al hacer cli
 
 
 --
--- TOC entry 5540 (class 0 OID 0)
+-- TOC entry 5555 (class 0 OID 0)
 -- Dependencies: 267
 -- Name: COLUMN notificaciones.prioridad; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -1013,7 +1091,7 @@ CREATE VIEW public.estadisticas_notificaciones AS
 ALTER VIEW public.estadisticas_notificaciones OWNER TO ferram;
 
 --
--- TOC entry 5541 (class 0 OID 0)
+-- TOC entry 5556 (class 0 OID 0)
 -- Dependencies: 268
 -- Name: VIEW estadisticas_notificaciones; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -1052,7 +1130,7 @@ CREATE SEQUENCE public.estados_estadoid_seq
 ALTER SEQUENCE public.estados_estadoid_seq OWNER TO ferram;
 
 --
--- TOC entry 5542 (class 0 OID 0)
+-- TOC entry 5557 (class 0 OID 0)
 -- Dependencies: 259
 -- Name: estados_estadoid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -1094,7 +1172,7 @@ CREATE SEQUENCE public.itemsdelcarrito_itemid_seq
 ALTER SEQUENCE public.itemsdelcarrito_itemid_seq OWNER TO postgres;
 
 --
--- TOC entry 5543 (class 0 OID 0)
+-- TOC entry 5558 (class 0 OID 0)
 -- Dependencies: 229
 -- Name: itemsdelcarrito_itemid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -1137,7 +1215,7 @@ CREATE SEQUENCE public.log_eventosusuario_eventoid_seq
 ALTER SEQUENCE public.log_eventosusuario_eventoid_seq OWNER TO ferram;
 
 --
--- TOC entry 5544 (class 0 OID 0)
+-- TOC entry 5559 (class 0 OID 0)
 -- Dependencies: 261
 -- Name: log_eventosusuario_eventoid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -1182,7 +1260,7 @@ CREATE SEQUENCE public.log_inventario_logid_seq
 ALTER SEQUENCE public.log_inventario_logid_seq OWNER TO postgres;
 
 --
--- TOC entry 5545 (class 0 OID 0)
+-- TOC entry 5560 (class 0 OID 0)
 -- Dependencies: 239
 -- Name: log_inventario_logid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -1229,7 +1307,7 @@ CREATE SEQUENCE public.log_movimientos_logid_seq
 ALTER SEQUENCE public.log_movimientos_logid_seq OWNER TO ferram;
 
 --
--- TOC entry 5546 (class 0 OID 0)
+-- TOC entry 5561 (class 0 OID 0)
 -- Dependencies: 269
 -- Name: log_movimientos_logid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -1260,7 +1338,7 @@ CREATE TABLE public.medidas (
 ALTER TABLE public.medidas OWNER TO ferram;
 
 --
--- TOC entry 5547 (class 0 OID 0)
+-- TOC entry 5562 (class 0 OID 0)
 -- Dependencies: 252
 -- Name: TABLE medidas; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -1285,7 +1363,7 @@ CREATE SEQUENCE public.medidas_medidaid_seq
 ALTER SEQUENCE public.medidas_medidaid_seq OWNER TO ferram;
 
 --
--- TOC entry 5548 (class 0 OID 0)
+-- TOC entry 5563 (class 0 OID 0)
 -- Dependencies: 251
 -- Name: medidas_medidaid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -1310,7 +1388,7 @@ CREATE SEQUENCE public.notificaciones_notificacionid_seq
 ALTER SEQUENCE public.notificaciones_notificacionid_seq OWNER TO ferram;
 
 --
--- TOC entry 5549 (class 0 OID 0)
+-- TOC entry 5564 (class 0 OID 0)
 -- Dependencies: 266
 -- Name: notificaciones_notificacionid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -1339,7 +1417,7 @@ CREATE TABLE public.ordenesdecompra (
 ALTER TABLE public.ordenesdecompra OWNER TO ferram;
 
 --
--- TOC entry 5550 (class 0 OID 0)
+-- TOC entry 5565 (class 0 OID 0)
 -- Dependencies: 246
 -- Name: COLUMN ordenesdecompra.origenoc; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -1364,7 +1442,7 @@ CREATE SEQUENCE public.ordenesdecompra_ordencompraid_seq
 ALTER SEQUENCE public.ordenesdecompra_ordencompraid_seq OWNER TO ferram;
 
 --
--- TOC entry 5551 (class 0 OID 0)
+-- TOC entry 5566 (class 0 OID 0)
 -- Dependencies: 245
 -- Name: ordenesdecompra_ordencompraid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -1410,7 +1488,7 @@ CREATE SEQUENCE public.pagos_cxp_pago_id_seq
 ALTER SEQUENCE public.pagos_cxp_pago_id_seq OWNER TO ferram;
 
 --
--- TOC entry 5552 (class 0 OID 0)
+-- TOC entry 5567 (class 0 OID 0)
 -- Dependencies: 283
 -- Name: pagos_cxp_pago_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -1452,7 +1530,7 @@ CREATE SEQUENCE public.passwordresettokens_tokenid_seq
 ALTER SEQUENCE public.passwordresettokens_tokenid_seq OWNER TO ferram;
 
 --
--- TOC entry 5553 (class 0 OID 0)
+-- TOC entry 5568 (class 0 OID 0)
 -- Dependencies: 257
 -- Name: passwordresettokens_tokenid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -1502,7 +1580,7 @@ CREATE SEQUENCE public.pedidos_pedidoid_seq
 ALTER SEQUENCE public.pedidos_pedidoid_seq OWNER TO postgres;
 
 --
--- TOC entry 5554 (class 0 OID 0)
+-- TOC entry 5569 (class 0 OID 0)
 -- Dependencies: 233
 -- Name: pedidos_pedidoid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -1543,7 +1621,7 @@ CREATE SEQUENCE public.producto_imagenes_imagenid_seq
 ALTER SEQUENCE public.producto_imagenes_imagenid_seq OWNER TO postgres;
 
 --
--- TOC entry 5555 (class 0 OID 0)
+-- TOC entry 5570 (class 0 OID 0)
 -- Dependencies: 225
 -- Name: producto_imagenes_imagenid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -1597,7 +1675,7 @@ CREATE SEQUENCE public.producto_variante_imagenes_imagenid_seq
 ALTER SEQUENCE public.producto_variante_imagenes_imagenid_seq OWNER TO ferram;
 
 --
--- TOC entry 5556 (class 0 OID 0)
+-- TOC entry 5571 (class 0 OID 0)
 -- Dependencies: 280
 -- Name: producto_variante_imagenes_imagenid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -1633,7 +1711,7 @@ CREATE TABLE public.producto_variantes (
 ALTER TABLE public.producto_variantes OWNER TO postgres;
 
 --
--- TOC entry 5557 (class 0 OID 0)
+-- TOC entry 5572 (class 0 OID 0)
 -- Dependencies: 224
 -- Name: COLUMN producto_variantes.tipoproductoid; Type: COMMENT; Schema: public; Owner: postgres
 --
@@ -1642,7 +1720,7 @@ COMMENT ON COLUMN public.producto_variantes.tipoproductoid IS 'Formato físico d
 
 
 --
--- TOC entry 5558 (class 0 OID 0)
+-- TOC entry 5573 (class 0 OID 0)
 -- Dependencies: 224
 -- Name: COLUMN producto_variantes.url_imagen_variante; Type: COMMENT; Schema: public; Owner: postgres
 --
@@ -1667,7 +1745,7 @@ CREATE SEQUENCE public.producto_variantes_varianteid_seq
 ALTER SEQUENCE public.producto_variantes_varianteid_seq OWNER TO postgres;
 
 --
--- TOC entry 5559 (class 0 OID 0)
+-- TOC entry 5574 (class 0 OID 0)
 -- Dependencies: 223
 -- Name: producto_variantes_varianteid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -1711,7 +1789,7 @@ CREATE SEQUENCE public.productos_productoid_seq1
 ALTER SEQUENCE public.productos_productoid_seq1 OWNER TO ferram;
 
 --
--- TOC entry 5560 (class 0 OID 0)
+-- TOC entry 5575 (class 0 OID 0)
 -- Dependencies: 253
 -- Name: productos_productoid_seq1; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -1753,7 +1831,7 @@ CREATE SEQUENCE public.proveedor_reglas_empaque_reglaid_seq
 ALTER SEQUENCE public.proveedor_reglas_empaque_reglaid_seq OWNER TO ferram;
 
 --
--- TOC entry 5561 (class 0 OID 0)
+-- TOC entry 5576 (class 0 OID 0)
 -- Dependencies: 273
 -- Name: proveedor_reglas_empaque_reglaid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -1817,7 +1895,7 @@ CREATE SEQUENCE public.proveedores_proveedorid_seq
 ALTER SEQUENCE public.proveedores_proveedorid_seq OWNER TO ferram;
 
 --
--- TOC entry 5562 (class 0 OID 0)
+-- TOC entry 5577 (class 0 OID 0)
 -- Dependencies: 243
 -- Name: proveedores_proveedorid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -1860,7 +1938,7 @@ CREATE SEQUENCE public.solicitudes_credito_solicitud_id_seq
 ALTER SEQUENCE public.solicitudes_credito_solicitud_id_seq OWNER TO ferram;
 
 --
--- TOC entry 5563 (class 0 OID 0)
+-- TOC entry 5578 (class 0 OID 0)
 -- Dependencies: 294
 -- Name: solicitudes_credito_solicitud_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -1885,7 +1963,7 @@ CREATE TABLE public.tipoproducto (
 ALTER TABLE public.tipoproducto OWNER TO ferram;
 
 --
--- TOC entry 5564 (class 0 OID 0)
+-- TOC entry 5579 (class 0 OID 0)
 -- Dependencies: 250
 -- Name: TABLE tipoproducto; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -1910,7 +1988,7 @@ CREATE SEQUENCE public.tipoproducto_tipoproductoid_seq
 ALTER SEQUENCE public.tipoproducto_tipoproductoid_seq OWNER TO ferram;
 
 --
--- TOC entry 5565 (class 0 OID 0)
+-- TOC entry 5580 (class 0 OID 0)
 -- Dependencies: 249
 -- Name: tipoproducto_tipoproductoid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -1940,7 +2018,7 @@ CREATE TABLE public.toma_inventario_conteos (
 ALTER TABLE public.toma_inventario_conteos OWNER TO ferram;
 
 --
--- TOC entry 5566 (class 0 OID 0)
+-- TOC entry 5581 (class 0 OID 0)
 -- Dependencies: 278
 -- Name: TABLE toma_inventario_conteos; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -1965,7 +2043,7 @@ CREATE SEQUENCE public.toma_inventario_conteos_conteoid_seq
 ALTER SEQUENCE public.toma_inventario_conteos_conteoid_seq OWNER TO ferram;
 
 --
--- TOC entry 5567 (class 0 OID 0)
+-- TOC entry 5582 (class 0 OID 0)
 -- Dependencies: 277
 -- Name: toma_inventario_conteos_conteoid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -1991,7 +2069,7 @@ CREATE TABLE public.toma_inventario_sesiones (
 ALTER TABLE public.toma_inventario_sesiones OWNER TO ferram;
 
 --
--- TOC entry 5568 (class 0 OID 0)
+-- TOC entry 5583 (class 0 OID 0)
 -- Dependencies: 276
 -- Name: TABLE toma_inventario_sesiones; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -2016,7 +2094,7 @@ CREATE SEQUENCE public.toma_inventario_sesiones_sesionid_seq
 ALTER SEQUENCE public.toma_inventario_sesiones_sesionid_seq OWNER TO ferram;
 
 --
--- TOC entry 5569 (class 0 OID 0)
+-- TOC entry 5584 (class 0 OID 0)
 -- Dependencies: 275
 -- Name: toma_inventario_sesiones_sesionid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -2043,7 +2121,7 @@ CREATE VIEW public.v_resumen_bancario_proveedores AS
 ALTER VIEW public.v_resumen_bancario_proveedores OWNER TO ferram;
 
 --
--- TOC entry 4995 (class 2604 OID 17403)
+-- TOC entry 5001 (class 2604 OID 17403)
 -- Name: administradores adminid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -2051,7 +2129,7 @@ ALTER TABLE ONLY public.administradores ALTER COLUMN adminid SET DEFAULT nextval
 
 
 --
--- TOC entry 4960 (class 2604 OID 17225)
+-- TOC entry 4966 (class 2604 OID 17225)
 -- Name: agentesdeventas agenteid; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -2059,7 +2137,7 @@ ALTER TABLE ONLY public.agentesdeventas ALTER COLUMN agenteid SET DEFAULT nextva
 
 
 --
--- TOC entry 4975 (class 2604 OID 17285)
+-- TOC entry 4981 (class 2604 OID 17285)
 -- Name: carritodecompra carritoid; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -2067,7 +2145,7 @@ ALTER TABLE ONLY public.carritodecompra ALTER COLUMN carritoid SET DEFAULT nextv
 
 
 --
--- TOC entry 5053 (class 2604 OID 34175)
+-- TOC entry 5059 (class 2604 OID 34175)
 -- Name: cat_cxp_etiquetas etiqueta_id; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -2075,7 +2153,7 @@ ALTER TABLE ONLY public.cat_cxp_etiquetas ALTER COLUMN etiqueta_id SET DEFAULT n
 
 
 --
--- TOC entry 5027 (class 2604 OID 25443)
+-- TOC entry 5033 (class 2604 OID 25443)
 -- Name: cat_tamanopaquetes tamanoid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -2083,7 +2161,7 @@ ALTER TABLE ONLY public.cat_tamanopaquetes ALTER COLUMN tamanoid SET DEFAULT nex
 
 
 --
--- TOC entry 4963 (class 2604 OID 17239)
+-- TOC entry 4969 (class 2604 OID 17239)
 -- Name: categorias categoriaid; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -2091,7 +2169,7 @@ ALTER TABLE ONLY public.categorias ALTER COLUMN categoriaid SET DEFAULT nextval(
 
 
 --
--- TOC entry 5058 (class 2604 OID 34525)
+-- TOC entry 5064 (class 2604 OID 34525)
 -- Name: cliente_creditos credito_id; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -2099,7 +2177,7 @@ ALTER TABLE ONLY public.cliente_creditos ALTER COLUMN credito_id SET DEFAULT nex
 
 
 --
--- TOC entry 4978 (class 2604 OID 17315)
+-- TOC entry 4984 (class 2604 OID 17315)
 -- Name: cliente_direcciones direccionid; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -2107,7 +2185,7 @@ ALTER TABLE ONLY public.cliente_direcciones ALTER COLUMN direccionid SET DEFAULT
 
 
 --
--- TOC entry 4957 (class 2604 OID 17213)
+-- TOC entry 4963 (class 2604 OID 17213)
 -- Name: clientes clienteid; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -2115,7 +2193,7 @@ ALTER TABLE ONLY public.clientes ALTER COLUMN clienteid SET DEFAULT nextval('pub
 
 
 --
--- TOC entry 4989 (class 2604 OID 17370)
+-- TOC entry 4995 (class 2604 OID 17370)
 -- Name: comisiones comisionid; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -2123,7 +2201,7 @@ ALTER TABLE ONLY public.comisiones ALTER COLUMN comisionid SET DEFAULT nextval('
 
 
 --
--- TOC entry 5021 (class 2604 OID 17554)
+-- TOC entry 5027 (class 2604 OID 17554)
 -- Name: communicationlogs logid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -2131,7 +2209,7 @@ ALTER TABLE ONLY public.communicationlogs ALTER COLUMN logid SET DEFAULT nextval
 
 
 --
--- TOC entry 5035 (class 2604 OID 33701)
+-- TOC entry 5041 (class 2604 OID 33701)
 -- Name: control_cambios id; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -2139,7 +2217,7 @@ ALTER TABLE ONLY public.control_cambios ALTER COLUMN id SET DEFAULT nextval('pub
 
 
 --
--- TOC entry 5065 (class 2604 OID 34545)
+-- TOC entry 5071 (class 2604 OID 34545)
 -- Name: credito_movimientos movimiento_id; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -2147,7 +2225,7 @@ ALTER TABLE ONLY public.credito_movimientos ALTER COLUMN movimiento_id SET DEFAU
 
 
 --
--- TOC entry 5047 (class 2604 OID 34127)
+-- TOC entry 5053 (class 2604 OID 34127)
 -- Name: cuentas_por_pagar cxp_id; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -2155,7 +2233,7 @@ ALTER TABLE ONLY public.cuentas_por_pagar ALTER COLUMN cxp_id SET DEFAULT nextva
 
 
 --
--- TOC entry 5056 (class 2604 OID 34184)
+-- TOC entry 5062 (class 2604 OID 34184)
 -- Name: cxp_etiquetas_asignadas asignacion_id; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -2163,7 +2241,15 @@ ALTER TABLE ONLY public.cxp_etiquetas_asignadas ALTER COLUMN asignacion_id SET D
 
 
 --
--- TOC entry 4985 (class 2604 OID 17353)
+-- TOC entry 5076 (class 2604 OID 34596)
+-- Name: datos_bancarios_empresa id; Type: DEFAULT; Schema: public; Owner: ferram
+--
+
+ALTER TABLE ONLY public.datos_bancarios_empresa ALTER COLUMN id SET DEFAULT nextval('public.datos_bancarios_empresa_id_seq'::regclass);
+
+
+--
+-- TOC entry 4991 (class 2604 OID 17353)
 -- Name: detallesdelpedido detalleid; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -2171,7 +2257,7 @@ ALTER TABLE ONLY public.detallesdelpedido ALTER COLUMN detalleid SET DEFAULT nex
 
 
 --
--- TOC entry 5006 (class 2604 OID 17440)
+-- TOC entry 5012 (class 2604 OID 17440)
 -- Name: detallesordencompra detalleoc_id; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -2179,7 +2265,7 @@ ALTER TABLE ONLY public.detallesordencompra ALTER COLUMN detalleoc_id SET DEFAUL
 
 
 --
--- TOC entry 5024 (class 2604 OID 25403)
+-- TOC entry 5030 (class 2604 OID 25403)
 -- Name: estados estadoid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -2187,7 +2273,7 @@ ALTER TABLE ONLY public.estados ALTER COLUMN estadoid SET DEFAULT nextval('publi
 
 
 --
--- TOC entry 4977 (class 2604 OID 17298)
+-- TOC entry 4983 (class 2604 OID 17298)
 -- Name: itemsdelcarrito itemid; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -2195,7 +2281,7 @@ ALTER TABLE ONLY public.itemsdelcarrito ALTER COLUMN itemid SET DEFAULT nextval(
 
 
 --
--- TOC entry 5025 (class 2604 OID 25419)
+-- TOC entry 5031 (class 2604 OID 25419)
 -- Name: log_eventosusuario eventoid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -2203,7 +2289,7 @@ ALTER TABLE ONLY public.log_eventosusuario ALTER COLUMN eventoid SET DEFAULT nex
 
 
 --
--- TOC entry 4992 (class 2604 OID 17389)
+-- TOC entry 4998 (class 2604 OID 17389)
 -- Name: log_inventario logid; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -2211,7 +2297,7 @@ ALTER TABLE ONLY public.log_inventario ALTER COLUMN logid SET DEFAULT nextval('p
 
 
 --
--- TOC entry 5033 (class 2604 OID 25545)
+-- TOC entry 5039 (class 2604 OID 25545)
 -- Name: log_movimientos logid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -2219,7 +2305,7 @@ ALTER TABLE ONLY public.log_movimientos ALTER COLUMN logid SET DEFAULT nextval('
 
 
 --
--- TOC entry 5014 (class 2604 OID 17471)
+-- TOC entry 5020 (class 2604 OID 17471)
 -- Name: medidas medidaid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -2227,7 +2313,7 @@ ALTER TABLE ONLY public.medidas ALTER COLUMN medidaid SET DEFAULT nextval('publi
 
 
 --
--- TOC entry 5028 (class 2604 OID 25511)
+-- TOC entry 5034 (class 2604 OID 25511)
 -- Name: notificaciones notificacionid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -2235,7 +2321,7 @@ ALTER TABLE ONLY public.notificaciones ALTER COLUMN notificacionid SET DEFAULT n
 
 
 --
--- TOC entry 5000 (class 2604 OID 17426)
+-- TOC entry 5006 (class 2604 OID 17426)
 -- Name: ordenesdecompra ordencompraid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -2243,7 +2329,7 @@ ALTER TABLE ONLY public.ordenesdecompra ALTER COLUMN ordencompraid SET DEFAULT n
 
 
 --
--- TOC entry 5051 (class 2604 OID 34153)
+-- TOC entry 5057 (class 2604 OID 34153)
 -- Name: pagos_cxp pago_id; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -2251,7 +2337,7 @@ ALTER TABLE ONLY public.pagos_cxp ALTER COLUMN pago_id SET DEFAULT nextval('publ
 
 
 --
--- TOC entry 5023 (class 2604 OID 17581)
+-- TOC entry 5029 (class 2604 OID 17581)
 -- Name: passwordresettokens tokenid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -2259,7 +2345,7 @@ ALTER TABLE ONLY public.passwordresettokens ALTER COLUMN tokenid SET DEFAULT nex
 
 
 --
--- TOC entry 4979 (class 2604 OID 17329)
+-- TOC entry 4985 (class 2604 OID 17329)
 -- Name: pedidos pedidoid; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -2267,7 +2353,7 @@ ALTER TABLE ONLY public.pedidos ALTER COLUMN pedidoid SET DEFAULT nextval('publi
 
 
 --
--- TOC entry 4973 (class 2604 OID 17270)
+-- TOC entry 4979 (class 2604 OID 17270)
 -- Name: producto_imagenes imagenid; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -2275,7 +2361,7 @@ ALTER TABLE ONLY public.producto_imagenes ALTER COLUMN imagenid SET DEFAULT next
 
 
 --
--- TOC entry 5045 (class 2604 OID 34102)
+-- TOC entry 5051 (class 2604 OID 34102)
 -- Name: producto_variante_imagenes imagenid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -2283,7 +2369,7 @@ ALTER TABLE ONLY public.producto_variante_imagenes ALTER COLUMN imagenid SET DEF
 
 
 --
--- TOC entry 4965 (class 2604 OID 17253)
+-- TOC entry 4971 (class 2604 OID 17253)
 -- Name: producto_variantes varianteid; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -2291,7 +2377,7 @@ ALTER TABLE ONLY public.producto_variantes ALTER COLUMN varianteid SET DEFAULT n
 
 
 --
--- TOC entry 5019 (class 2604 OID 17501)
+-- TOC entry 5025 (class 2604 OID 17501)
 -- Name: productos productoid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -2299,7 +2385,7 @@ ALTER TABLE ONLY public.productos ALTER COLUMN productoid SET DEFAULT nextval('p
 
 
 --
--- TOC entry 5038 (class 2604 OID 33726)
+-- TOC entry 5044 (class 2604 OID 33726)
 -- Name: proveedor_reglas_empaque reglaid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -2307,7 +2393,7 @@ ALTER TABLE ONLY public.proveedor_reglas_empaque ALTER COLUMN reglaid SET DEFAUL
 
 
 --
--- TOC entry 4999 (class 2604 OID 17417)
+-- TOC entry 5005 (class 2604 OID 17417)
 -- Name: proveedores proveedorid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -2315,7 +2401,7 @@ ALTER TABLE ONLY public.proveedores ALTER COLUMN proveedorid SET DEFAULT nextval
 
 
 --
--- TOC entry 5067 (class 2604 OID 34563)
+-- TOC entry 5073 (class 2604 OID 34563)
 -- Name: solicitudes_credito solicitud_id; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -2323,7 +2409,7 @@ ALTER TABLE ONLY public.solicitudes_credito ALTER COLUMN solicitud_id SET DEFAUL
 
 
 --
--- TOC entry 5011 (class 2604 OID 17458)
+-- TOC entry 5017 (class 2604 OID 17458)
 -- Name: tipoproducto tipoproductoid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -2331,7 +2417,7 @@ ALTER TABLE ONLY public.tipoproducto ALTER COLUMN tipoproductoid SET DEFAULT nex
 
 
 --
--- TOC entry 5043 (class 2604 OID 33791)
+-- TOC entry 5049 (class 2604 OID 33791)
 -- Name: toma_inventario_conteos conteoid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -2339,7 +2425,7 @@ ALTER TABLE ONLY public.toma_inventario_conteos ALTER COLUMN conteoid SET DEFAUL
 
 
 --
--- TOC entry 5040 (class 2604 OID 33777)
+-- TOC entry 5046 (class 2604 OID 33777)
 -- Name: toma_inventario_sesiones sesionid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -2347,7 +2433,7 @@ ALTER TABLE ONLY public.toma_inventario_sesiones ALTER COLUMN sesionid SET DEFAU
 
 
 --
--- TOC entry 5462 (class 0 OID 17400)
+-- TOC entry 5474 (class 0 OID 17400)
 -- Dependencies: 242
 -- Data for Name: administradores; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -2356,16 +2442,16 @@ INSERT INTO public.administradores (adminid, nombre, email, passwordhash, rol, a
 
 
 --
--- TOC entry 5440 (class 0 OID 17222)
+-- TOC entry 5452 (class 0 OID 17222)
 -- Dependencies: 220
 -- Data for Name: agentesdeventas; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-INSERT INTO public.agentesdeventas (agenteid, nombre, apellido, email, passwordhash, codigoagente, activo, esadmin, adminrol) VALUES (1, 'Lupita', 'García', 'pupis_gr@hotmail.com', '$2b$10$6t8maMlHk52sLRQ4PSGnJe0y/6gbIlEQYtlNgba/HwV1LzArkqfie', 'AG0001', true, false, NULL);
+INSERT INTO public.agentesdeventas (agenteid, nombre, apellido, email, passwordhash, codigoagente, activo, esadmin, adminrol, banco, numero_cuenta, clabe, titular) VALUES (1, 'Lupita', 'García', 'pupis_gr@hotmail.com', '$2b$10$6t8maMlHk52sLRQ4PSGnJe0y/6gbIlEQYtlNgba/HwV1LzArkqfie', 'AG0001', true, false, NULL, NULL, NULL, NULL, NULL);
 
 
 --
--- TOC entry 5448 (class 0 OID 17282)
+-- TOC entry 5460 (class 0 OID 17282)
 -- Dependencies: 228
 -- Data for Name: carritodecompra; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -2374,7 +2460,7 @@ INSERT INTO public.carritodecompra (carritoid, clienteid, fechacreacion, ultimam
 
 
 --
--- TOC entry 5505 (class 0 OID 34172)
+-- TOC entry 5517 (class 0 OID 34172)
 -- Dependencies: 286
 -- Data for Name: cat_cxp_etiquetas; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -2382,7 +2468,7 @@ INSERT INTO public.carritodecompra (carritoid, clienteid, fechacreacion, ultimam
 
 
 --
--- TOC entry 5484 (class 0 OID 25440)
+-- TOC entry 5496 (class 0 OID 25440)
 -- Dependencies: 264
 -- Data for Name: cat_tamanopaquetes; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -2395,7 +2481,7 @@ INSERT INTO public.cat_tamanopaquetes (tamanoid, cantidad) VALUES (5, 4);
 
 
 --
--- TOC entry 5442 (class 0 OID 17236)
+-- TOC entry 5454 (class 0 OID 17236)
 -- Dependencies: 222
 -- Data for Name: categorias; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -2404,7 +2490,7 @@ INSERT INTO public.categorias (categoriaid, nombre, descripcion, parentcategoria
 
 
 --
--- TOC entry 5509 (class 0 OID 34522)
+-- TOC entry 5521 (class 0 OID 34522)
 -- Dependencies: 291
 -- Data for Name: cliente_creditos; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -2412,7 +2498,7 @@ INSERT INTO public.categorias (categoriaid, nombre, descripcion, parentcategoria
 
 
 --
--- TOC entry 5452 (class 0 OID 17312)
+-- TOC entry 5464 (class 0 OID 17312)
 -- Dependencies: 232
 -- Data for Name: cliente_direcciones; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -2420,7 +2506,7 @@ INSERT INTO public.categorias (categoriaid, nombre, descripcion, parentcategoria
 
 
 --
--- TOC entry 5438 (class 0 OID 17210)
+-- TOC entry 5450 (class 0 OID 17210)
 -- Dependencies: 218
 -- Data for Name: clientes; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -2430,7 +2516,7 @@ INSERT INTO public.clientes (clienteid, nombre, apellido, email, passwordhash, t
 
 
 --
--- TOC entry 5458 (class 0 OID 17367)
+-- TOC entry 5470 (class 0 OID 17367)
 -- Dependencies: 238
 -- Data for Name: comisiones; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -2438,7 +2524,7 @@ INSERT INTO public.clientes (clienteid, nombre, apellido, email, passwordhash, t
 
 
 --
--- TOC entry 5476 (class 0 OID 17551)
+-- TOC entry 5488 (class 0 OID 17551)
 -- Dependencies: 256
 -- Data for Name: communicationlogs; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -2446,7 +2532,7 @@ INSERT INTO public.clientes (clienteid, nombre, apellido, email, passwordhash, t
 
 
 --
--- TOC entry 5491 (class 0 OID 33698)
+-- TOC entry 5503 (class 0 OID 33698)
 -- Dependencies: 272
 -- Data for Name: control_cambios; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -2454,7 +2540,7 @@ INSERT INTO public.clientes (clienteid, nombre, apellido, email, passwordhash, t
 
 
 --
--- TOC entry 5511 (class 0 OID 34542)
+-- TOC entry 5523 (class 0 OID 34542)
 -- Dependencies: 293
 -- Data for Name: credito_movimientos; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -2462,7 +2548,7 @@ INSERT INTO public.clientes (clienteid, nombre, apellido, email, passwordhash, t
 
 
 --
--- TOC entry 5501 (class 0 OID 34124)
+-- TOC entry 5513 (class 0 OID 34124)
 -- Dependencies: 282
 -- Data for Name: cuentas_por_pagar; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -2470,7 +2556,7 @@ INSERT INTO public.clientes (clienteid, nombre, apellido, email, passwordhash, t
 
 
 --
--- TOC entry 5507 (class 0 OID 34181)
+-- TOC entry 5519 (class 0 OID 34181)
 -- Dependencies: 288
 -- Data for Name: cxp_etiquetas_asignadas; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -2478,7 +2564,16 @@ INSERT INTO public.clientes (clienteid, nombre, apellido, email, passwordhash, t
 
 
 --
--- TOC entry 5456 (class 0 OID 17350)
+-- TOC entry 5527 (class 0 OID 34593)
+-- Dependencies: 297
+-- Data for Name: datos_bancarios_empresa; Type: TABLE DATA; Schema: public; Owner: ferram
+--
+
+INSERT INTO public.datos_bancarios_empresa (id, banco, numero_cuenta, clabe, titular, ultima_actualizacion) VALUES (1, 'Banco Default', '0000000000', '000000000000000000', 'RazoConnect S.A.', '2025-12-21 17:39:14.507139');
+
+
+--
+-- TOC entry 5468 (class 0 OID 17350)
 -- Dependencies: 236
 -- Data for Name: detallesdelpedido; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -2486,7 +2581,7 @@ INSERT INTO public.clientes (clienteid, nombre, apellido, email, passwordhash, t
 
 
 --
--- TOC entry 5468 (class 0 OID 17437)
+-- TOC entry 5480 (class 0 OID 17437)
 -- Dependencies: 248
 -- Data for Name: detallesordencompra; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -2494,7 +2589,7 @@ INSERT INTO public.clientes (clienteid, nombre, apellido, email, passwordhash, t
 
 
 --
--- TOC entry 5480 (class 0 OID 25400)
+-- TOC entry 5492 (class 0 OID 25400)
 -- Dependencies: 260
 -- Data for Name: estados; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -2534,7 +2629,7 @@ INSERT INTO public.estados (estadoid, nombre, abreviatura) VALUES (32, 'Zacateca
 
 
 --
--- TOC entry 5450 (class 0 OID 17295)
+-- TOC entry 5462 (class 0 OID 17295)
 -- Dependencies: 230
 -- Data for Name: itemsdelcarrito; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -2542,7 +2637,7 @@ INSERT INTO public.estados (estadoid, nombre, abreviatura) VALUES (32, 'Zacateca
 
 
 --
--- TOC entry 5482 (class 0 OID 25416)
+-- TOC entry 5494 (class 0 OID 25416)
 -- Dependencies: 262
 -- Data for Name: log_eventosusuario; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -2550,7 +2645,7 @@ INSERT INTO public.estados (estadoid, nombre, abreviatura) VALUES (32, 'Zacateca
 
 
 --
--- TOC entry 5460 (class 0 OID 17386)
+-- TOC entry 5472 (class 0 OID 17386)
 -- Dependencies: 240
 -- Data for Name: log_inventario; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -2558,7 +2653,7 @@ INSERT INTO public.estados (estadoid, nombre, abreviatura) VALUES (32, 'Zacateca
 
 
 --
--- TOC entry 5489 (class 0 OID 25542)
+-- TOC entry 5501 (class 0 OID 25542)
 -- Dependencies: 270
 -- Data for Name: log_movimientos; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -2570,7 +2665,7 @@ INSERT INTO public.log_movimientos (logid, usuarioid, nombreusuario, rol, accion
 
 
 --
--- TOC entry 5472 (class 0 OID 17468)
+-- TOC entry 5484 (class 0 OID 17468)
 -- Dependencies: 252
 -- Data for Name: medidas; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -2578,7 +2673,7 @@ INSERT INTO public.log_movimientos (logid, usuarioid, nombreusuario, rol, accion
 
 
 --
--- TOC entry 5487 (class 0 OID 25508)
+-- TOC entry 5499 (class 0 OID 25508)
 -- Dependencies: 267
 -- Data for Name: notificaciones; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -2586,7 +2681,7 @@ INSERT INTO public.log_movimientos (logid, usuarioid, nombreusuario, rol, accion
 
 
 --
--- TOC entry 5466 (class 0 OID 17423)
+-- TOC entry 5478 (class 0 OID 17423)
 -- Dependencies: 246
 -- Data for Name: ordenesdecompra; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -2594,7 +2689,7 @@ INSERT INTO public.log_movimientos (logid, usuarioid, nombreusuario, rol, accion
 
 
 --
--- TOC entry 5503 (class 0 OID 34150)
+-- TOC entry 5515 (class 0 OID 34150)
 -- Dependencies: 284
 -- Data for Name: pagos_cxp; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -2602,7 +2697,7 @@ INSERT INTO public.log_movimientos (logid, usuarioid, nombreusuario, rol, accion
 
 
 --
--- TOC entry 5478 (class 0 OID 17578)
+-- TOC entry 5490 (class 0 OID 17578)
 -- Dependencies: 258
 -- Data for Name: passwordresettokens; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -2610,7 +2705,7 @@ INSERT INTO public.log_movimientos (logid, usuarioid, nombreusuario, rol, accion
 
 
 --
--- TOC entry 5454 (class 0 OID 17326)
+-- TOC entry 5466 (class 0 OID 17326)
 -- Dependencies: 234
 -- Data for Name: pedidos; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -2618,7 +2713,7 @@ INSERT INTO public.log_movimientos (logid, usuarioid, nombreusuario, rol, accion
 
 
 --
--- TOC entry 5446 (class 0 OID 17267)
+-- TOC entry 5458 (class 0 OID 17267)
 -- Dependencies: 226
 -- Data for Name: producto_imagenes; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -2626,7 +2721,7 @@ INSERT INTO public.log_movimientos (logid, usuarioid, nombreusuario, rol, accion
 
 
 --
--- TOC entry 5485 (class 0 OID 25448)
+-- TOC entry 5497 (class 0 OID 25448)
 -- Dependencies: 265
 -- Data for Name: producto_tamanosdisponibles; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -2634,7 +2729,7 @@ INSERT INTO public.log_movimientos (logid, usuarioid, nombreusuario, rol, accion
 
 
 --
--- TOC entry 5498 (class 0 OID 34095)
+-- TOC entry 5510 (class 0 OID 34095)
 -- Dependencies: 279
 -- Data for Name: producto_variante_imagenes; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -2642,7 +2737,7 @@ INSERT INTO public.log_movimientos (logid, usuarioid, nombreusuario, rol, accion
 
 
 --
--- TOC entry 5444 (class 0 OID 17250)
+-- TOC entry 5456 (class 0 OID 17250)
 -- Dependencies: 224
 -- Data for Name: producto_variantes; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -2650,7 +2745,7 @@ INSERT INTO public.log_movimientos (logid, usuarioid, nombreusuario, rol, accion
 
 
 --
--- TOC entry 5474 (class 0 OID 17498)
+-- TOC entry 5486 (class 0 OID 17498)
 -- Dependencies: 254
 -- Data for Name: productos; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -2658,7 +2753,7 @@ INSERT INTO public.log_movimientos (logid, usuarioid, nombreusuario, rol, accion
 
 
 --
--- TOC entry 5493 (class 0 OID 33723)
+-- TOC entry 5505 (class 0 OID 33723)
 -- Dependencies: 274
 -- Data for Name: proveedor_reglas_empaque; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -2666,7 +2761,7 @@ INSERT INTO public.log_movimientos (logid, usuarioid, nombreusuario, rol, accion
 
 
 --
--- TOC entry 5464 (class 0 OID 17414)
+-- TOC entry 5476 (class 0 OID 17414)
 -- Dependencies: 244
 -- Data for Name: proveedores; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -2674,7 +2769,7 @@ INSERT INTO public.log_movimientos (logid, usuarioid, nombreusuario, rol, accion
 
 
 --
--- TOC entry 5513 (class 0 OID 34560)
+-- TOC entry 5525 (class 0 OID 34560)
 -- Dependencies: 295
 -- Data for Name: solicitudes_credito; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -2682,7 +2777,7 @@ INSERT INTO public.log_movimientos (logid, usuarioid, nombreusuario, rol, accion
 
 
 --
--- TOC entry 5470 (class 0 OID 17455)
+-- TOC entry 5482 (class 0 OID 17455)
 -- Dependencies: 250
 -- Data for Name: tipoproducto; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -2694,7 +2789,7 @@ INSERT INTO public.tipoproducto (tipoproductoid, nombre, descripcion, activo, fe
 
 
 --
--- TOC entry 5497 (class 0 OID 33788)
+-- TOC entry 5509 (class 0 OID 33788)
 -- Dependencies: 278
 -- Data for Name: toma_inventario_conteos; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -2702,7 +2797,7 @@ INSERT INTO public.tipoproducto (tipoproductoid, nombre, descripcion, activo, fe
 
 
 --
--- TOC entry 5495 (class 0 OID 33774)
+-- TOC entry 5507 (class 0 OID 33774)
 -- Dependencies: 276
 -- Data for Name: toma_inventario_sesiones; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -2710,7 +2805,7 @@ INSERT INTO public.tipoproducto (tipoproductoid, nombre, descripcion, activo, fe
 
 
 --
--- TOC entry 5570 (class 0 OID 0)
+-- TOC entry 5585 (class 0 OID 0)
 -- Dependencies: 241
 -- Name: administradores_adminid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -2719,7 +2814,7 @@ SELECT pg_catalog.setval('public.administradores_adminid_seq', 3, true);
 
 
 --
--- TOC entry 5571 (class 0 OID 0)
+-- TOC entry 5586 (class 0 OID 0)
 -- Dependencies: 219
 -- Name: agentesdeventas_agenteid_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -2728,7 +2823,7 @@ SELECT pg_catalog.setval('public.agentesdeventas_agenteid_seq', 1, true);
 
 
 --
--- TOC entry 5572 (class 0 OID 0)
+-- TOC entry 5587 (class 0 OID 0)
 -- Dependencies: 227
 -- Name: carritodecompra_carritoid_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -2737,7 +2832,7 @@ SELECT pg_catalog.setval('public.carritodecompra_carritoid_seq', 1, true);
 
 
 --
--- TOC entry 5573 (class 0 OID 0)
+-- TOC entry 5588 (class 0 OID 0)
 -- Dependencies: 285
 -- Name: cat_cxp_etiquetas_etiqueta_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -2746,7 +2841,7 @@ SELECT pg_catalog.setval('public.cat_cxp_etiquetas_etiqueta_id_seq', 1, false);
 
 
 --
--- TOC entry 5574 (class 0 OID 0)
+-- TOC entry 5589 (class 0 OID 0)
 -- Dependencies: 263
 -- Name: cat_tamanopaquetes_tamanoid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -2755,7 +2850,7 @@ SELECT pg_catalog.setval('public.cat_tamanopaquetes_tamanoid_seq', 5, true);
 
 
 --
--- TOC entry 5575 (class 0 OID 0)
+-- TOC entry 5590 (class 0 OID 0)
 -- Dependencies: 221
 -- Name: categorias_categoriaid_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -2764,7 +2859,7 @@ SELECT pg_catalog.setval('public.categorias_categoriaid_seq', 1, true);
 
 
 --
--- TOC entry 5576 (class 0 OID 0)
+-- TOC entry 5591 (class 0 OID 0)
 -- Dependencies: 290
 -- Name: cliente_creditos_credito_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -2773,7 +2868,7 @@ SELECT pg_catalog.setval('public.cliente_creditos_credito_id_seq', 1, false);
 
 
 --
--- TOC entry 5577 (class 0 OID 0)
+-- TOC entry 5592 (class 0 OID 0)
 -- Dependencies: 231
 -- Name: cliente_direcciones_direccionid_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -2782,7 +2877,7 @@ SELECT pg_catalog.setval('public.cliente_direcciones_direccionid_seq', 1, false)
 
 
 --
--- TOC entry 5578 (class 0 OID 0)
+-- TOC entry 5593 (class 0 OID 0)
 -- Dependencies: 217
 -- Name: clientes_clienteid_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -2791,7 +2886,7 @@ SELECT pg_catalog.setval('public.clientes_clienteid_seq', 2, true);
 
 
 --
--- TOC entry 5579 (class 0 OID 0)
+-- TOC entry 5594 (class 0 OID 0)
 -- Dependencies: 237
 -- Name: comisiones_comisionid_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -2800,7 +2895,7 @@ SELECT pg_catalog.setval('public.comisiones_comisionid_seq', 1, false);
 
 
 --
--- TOC entry 5580 (class 0 OID 0)
+-- TOC entry 5595 (class 0 OID 0)
 -- Dependencies: 255
 -- Name: communicationlogs_logid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -2809,7 +2904,7 @@ SELECT pg_catalog.setval('public.communicationlogs_logid_seq', 1, false);
 
 
 --
--- TOC entry 5581 (class 0 OID 0)
+-- TOC entry 5596 (class 0 OID 0)
 -- Dependencies: 271
 -- Name: control_cambios_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -2818,7 +2913,7 @@ SELECT pg_catalog.setval('public.control_cambios_id_seq', 1, false);
 
 
 --
--- TOC entry 5582 (class 0 OID 0)
+-- TOC entry 5597 (class 0 OID 0)
 -- Dependencies: 292
 -- Name: credito_movimientos_movimiento_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -2827,7 +2922,7 @@ SELECT pg_catalog.setval('public.credito_movimientos_movimiento_id_seq', 1, fals
 
 
 --
--- TOC entry 5583 (class 0 OID 0)
+-- TOC entry 5598 (class 0 OID 0)
 -- Dependencies: 281
 -- Name: cuentas_por_pagar_cxp_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -2836,7 +2931,7 @@ SELECT pg_catalog.setval('public.cuentas_por_pagar_cxp_id_seq', 1, false);
 
 
 --
--- TOC entry 5584 (class 0 OID 0)
+-- TOC entry 5599 (class 0 OID 0)
 -- Dependencies: 287
 -- Name: cxp_etiquetas_asignadas_asignacion_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -2845,7 +2940,16 @@ SELECT pg_catalog.setval('public.cxp_etiquetas_asignadas_asignacion_id_seq', 1, 
 
 
 --
--- TOC entry 5585 (class 0 OID 0)
+-- TOC entry 5600 (class 0 OID 0)
+-- Dependencies: 296
+-- Name: datos_bancarios_empresa_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
+--
+
+SELECT pg_catalog.setval('public.datos_bancarios_empresa_id_seq', 1, true);
+
+
+--
+-- TOC entry 5601 (class 0 OID 0)
 -- Dependencies: 235
 -- Name: detallesdelpedido_detalleid_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -2854,7 +2958,7 @@ SELECT pg_catalog.setval('public.detallesdelpedido_detalleid_seq', 1, false);
 
 
 --
--- TOC entry 5586 (class 0 OID 0)
+-- TOC entry 5602 (class 0 OID 0)
 -- Dependencies: 247
 -- Name: detallesordencompra_detalleoc_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -2863,7 +2967,7 @@ SELECT pg_catalog.setval('public.detallesordencompra_detalleoc_id_seq', 1, false
 
 
 --
--- TOC entry 5587 (class 0 OID 0)
+-- TOC entry 5603 (class 0 OID 0)
 -- Dependencies: 259
 -- Name: estados_estadoid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -2872,7 +2976,7 @@ SELECT pg_catalog.setval('public.estados_estadoid_seq', 32, true);
 
 
 --
--- TOC entry 5588 (class 0 OID 0)
+-- TOC entry 5604 (class 0 OID 0)
 -- Dependencies: 229
 -- Name: itemsdelcarrito_itemid_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -2881,7 +2985,7 @@ SELECT pg_catalog.setval('public.itemsdelcarrito_itemid_seq', 1, false);
 
 
 --
--- TOC entry 5589 (class 0 OID 0)
+-- TOC entry 5605 (class 0 OID 0)
 -- Dependencies: 261
 -- Name: log_eventosusuario_eventoid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -2890,7 +2994,7 @@ SELECT pg_catalog.setval('public.log_eventosusuario_eventoid_seq', 1, false);
 
 
 --
--- TOC entry 5590 (class 0 OID 0)
+-- TOC entry 5606 (class 0 OID 0)
 -- Dependencies: 239
 -- Name: log_inventario_logid_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -2899,7 +3003,7 @@ SELECT pg_catalog.setval('public.log_inventario_logid_seq', 1, false);
 
 
 --
--- TOC entry 5591 (class 0 OID 0)
+-- TOC entry 5607 (class 0 OID 0)
 -- Dependencies: 269
 -- Name: log_movimientos_logid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -2908,7 +3012,7 @@ SELECT pg_catalog.setval('public.log_movimientos_logid_seq', 4, true);
 
 
 --
--- TOC entry 5592 (class 0 OID 0)
+-- TOC entry 5608 (class 0 OID 0)
 -- Dependencies: 251
 -- Name: medidas_medidaid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -2917,7 +3021,7 @@ SELECT pg_catalog.setval('public.medidas_medidaid_seq', 1, false);
 
 
 --
--- TOC entry 5593 (class 0 OID 0)
+-- TOC entry 5609 (class 0 OID 0)
 -- Dependencies: 266
 -- Name: notificaciones_notificacionid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -2926,7 +3030,7 @@ SELECT pg_catalog.setval('public.notificaciones_notificacionid_seq', 1, true);
 
 
 --
--- TOC entry 5594 (class 0 OID 0)
+-- TOC entry 5610 (class 0 OID 0)
 -- Dependencies: 245
 -- Name: ordenesdecompra_ordencompraid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -2935,7 +3039,7 @@ SELECT pg_catalog.setval('public.ordenesdecompra_ordencompraid_seq', 1, false);
 
 
 --
--- TOC entry 5595 (class 0 OID 0)
+-- TOC entry 5611 (class 0 OID 0)
 -- Dependencies: 283
 -- Name: pagos_cxp_pago_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -2944,7 +3048,7 @@ SELECT pg_catalog.setval('public.pagos_cxp_pago_id_seq', 1, false);
 
 
 --
--- TOC entry 5596 (class 0 OID 0)
+-- TOC entry 5612 (class 0 OID 0)
 -- Dependencies: 257
 -- Name: passwordresettokens_tokenid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -2953,7 +3057,7 @@ SELECT pg_catalog.setval('public.passwordresettokens_tokenid_seq', 1, false);
 
 
 --
--- TOC entry 5597 (class 0 OID 0)
+-- TOC entry 5613 (class 0 OID 0)
 -- Dependencies: 233
 -- Name: pedidos_pedidoid_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -2962,7 +3066,7 @@ SELECT pg_catalog.setval('public.pedidos_pedidoid_seq', 1, false);
 
 
 --
--- TOC entry 5598 (class 0 OID 0)
+-- TOC entry 5614 (class 0 OID 0)
 -- Dependencies: 225
 -- Name: producto_imagenes_imagenid_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -2971,7 +3075,7 @@ SELECT pg_catalog.setval('public.producto_imagenes_imagenid_seq', 1, false);
 
 
 --
--- TOC entry 5599 (class 0 OID 0)
+-- TOC entry 5615 (class 0 OID 0)
 -- Dependencies: 280
 -- Name: producto_variante_imagenes_imagenid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -2980,7 +3084,7 @@ SELECT pg_catalog.setval('public.producto_variante_imagenes_imagenid_seq', 1, fa
 
 
 --
--- TOC entry 5600 (class 0 OID 0)
+-- TOC entry 5616 (class 0 OID 0)
 -- Dependencies: 223
 -- Name: producto_variantes_varianteid_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -2989,7 +3093,7 @@ SELECT pg_catalog.setval('public.producto_variantes_varianteid_seq', 1, false);
 
 
 --
--- TOC entry 5601 (class 0 OID 0)
+-- TOC entry 5617 (class 0 OID 0)
 -- Dependencies: 253
 -- Name: productos_productoid_seq1; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -2998,7 +3102,7 @@ SELECT pg_catalog.setval('public.productos_productoid_seq1', 1, false);
 
 
 --
--- TOC entry 5602 (class 0 OID 0)
+-- TOC entry 5618 (class 0 OID 0)
 -- Dependencies: 273
 -- Name: proveedor_reglas_empaque_reglaid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -3007,7 +3111,7 @@ SELECT pg_catalog.setval('public.proveedor_reglas_empaque_reglaid_seq', 1, false
 
 
 --
--- TOC entry 5603 (class 0 OID 0)
+-- TOC entry 5619 (class 0 OID 0)
 -- Dependencies: 243
 -- Name: proveedores_proveedorid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -3016,7 +3120,7 @@ SELECT pg_catalog.setval('public.proveedores_proveedorid_seq', 1, false);
 
 
 --
--- TOC entry 5604 (class 0 OID 0)
+-- TOC entry 5620 (class 0 OID 0)
 -- Dependencies: 294
 -- Name: solicitudes_credito_solicitud_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -3025,7 +3129,7 @@ SELECT pg_catalog.setval('public.solicitudes_credito_solicitud_id_seq', 1, false
 
 
 --
--- TOC entry 5605 (class 0 OID 0)
+-- TOC entry 5621 (class 0 OID 0)
 -- Dependencies: 249
 -- Name: tipoproducto_tipoproductoid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -3034,7 +3138,7 @@ SELECT pg_catalog.setval('public.tipoproducto_tipoproductoid_seq', 4, true);
 
 
 --
--- TOC entry 5606 (class 0 OID 0)
+-- TOC entry 5622 (class 0 OID 0)
 -- Dependencies: 277
 -- Name: toma_inventario_conteos_conteoid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -3043,7 +3147,7 @@ SELECT pg_catalog.setval('public.toma_inventario_conteos_conteoid_seq', 1, false
 
 
 --
--- TOC entry 5607 (class 0 OID 0)
+-- TOC entry 5623 (class 0 OID 0)
 -- Dependencies: 275
 -- Name: toma_inventario_sesiones_sesionid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -3052,7 +3156,7 @@ SELECT pg_catalog.setval('public.toma_inventario_sesiones_sesionid_seq', 1, fals
 
 
 --
--- TOC entry 5125 (class 2606 OID 17412)
+-- TOC entry 5135 (class 2606 OID 17412)
 -- Name: administradores administradores_email_key; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -3061,7 +3165,7 @@ ALTER TABLE ONLY public.administradores
 
 
 --
--- TOC entry 5127 (class 2606 OID 17410)
+-- TOC entry 5137 (class 2606 OID 17410)
 -- Name: administradores administradores_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -3070,7 +3174,7 @@ ALTER TABLE ONLY public.administradores
 
 
 --
--- TOC entry 5090 (class 2606 OID 17234)
+-- TOC entry 5100 (class 2606 OID 17234)
 -- Name: agentesdeventas agentesdeventas_codigoagente_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -3079,7 +3183,7 @@ ALTER TABLE ONLY public.agentesdeventas
 
 
 --
--- TOC entry 5092 (class 2606 OID 17232)
+-- TOC entry 5102 (class 2606 OID 17232)
 -- Name: agentesdeventas agentesdeventas_email_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -3088,7 +3192,7 @@ ALTER TABLE ONLY public.agentesdeventas
 
 
 --
--- TOC entry 5094 (class 2606 OID 17230)
+-- TOC entry 5104 (class 2606 OID 17230)
 -- Name: agentesdeventas agentesdeventas_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -3097,7 +3201,7 @@ ALTER TABLE ONLY public.agentesdeventas
 
 
 --
--- TOC entry 5108 (class 2606 OID 17288)
+-- TOC entry 5118 (class 2606 OID 17288)
 -- Name: carritodecompra carritodecompra_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -3106,7 +3210,7 @@ ALTER TABLE ONLY public.carritodecompra
 
 
 --
--- TOC entry 5215 (class 2606 OID 34179)
+-- TOC entry 5225 (class 2606 OID 34179)
 -- Name: cat_cxp_etiquetas cat_cxp_etiquetas_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -3115,7 +3219,7 @@ ALTER TABLE ONLY public.cat_cxp_etiquetas
 
 
 --
--- TOC entry 5168 (class 2606 OID 25447)
+-- TOC entry 5178 (class 2606 OID 25447)
 -- Name: cat_tamanopaquetes cat_tamanopaquetes_cantidad_key; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -3124,7 +3228,7 @@ ALTER TABLE ONLY public.cat_tamanopaquetes
 
 
 --
--- TOC entry 5170 (class 2606 OID 25445)
+-- TOC entry 5180 (class 2606 OID 25445)
 -- Name: cat_tamanopaquetes cat_tamanopaquetes_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -3133,7 +3237,7 @@ ALTER TABLE ONLY public.cat_tamanopaquetes
 
 
 --
--- TOC entry 5096 (class 2606 OID 17243)
+-- TOC entry 5106 (class 2606 OID 17243)
 -- Name: categorias categorias_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -3142,7 +3246,7 @@ ALTER TABLE ONLY public.categorias
 
 
 --
--- TOC entry 5221 (class 2606 OID 34533)
+-- TOC entry 5231 (class 2606 OID 34533)
 -- Name: cliente_creditos cliente_creditos_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -3151,7 +3255,7 @@ ALTER TABLE ONLY public.cliente_creditos
 
 
 --
--- TOC entry 5112 (class 2606 OID 17319)
+-- TOC entry 5122 (class 2606 OID 17319)
 -- Name: cliente_direcciones cliente_direcciones_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -3160,7 +3264,7 @@ ALTER TABLE ONLY public.cliente_direcciones
 
 
 --
--- TOC entry 5083 (class 2606 OID 17220)
+-- TOC entry 5093 (class 2606 OID 17220)
 -- Name: clientes clientes_email_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -3169,7 +3273,7 @@ ALTER TABLE ONLY public.clientes
 
 
 --
--- TOC entry 5085 (class 2606 OID 33680)
+-- TOC entry 5095 (class 2606 OID 33680)
 -- Name: clientes clientes_google_id_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -3178,7 +3282,7 @@ ALTER TABLE ONLY public.clientes
 
 
 --
--- TOC entry 5087 (class 2606 OID 17218)
+-- TOC entry 5097 (class 2606 OID 17218)
 -- Name: clientes clientes_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -3187,7 +3291,7 @@ ALTER TABLE ONLY public.clientes
 
 
 --
--- TOC entry 5118 (class 2606 OID 17374)
+-- TOC entry 5128 (class 2606 OID 17374)
 -- Name: comisiones comisiones_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -3196,7 +3300,7 @@ ALTER TABLE ONLY public.comisiones
 
 
 --
--- TOC entry 5150 (class 2606 OID 17560)
+-- TOC entry 5160 (class 2606 OID 17560)
 -- Name: communicationlogs communicationlogs_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -3205,7 +3309,7 @@ ALTER TABLE ONLY public.communicationlogs
 
 
 --
--- TOC entry 5186 (class 2606 OID 33707)
+-- TOC entry 5196 (class 2606 OID 33707)
 -- Name: control_cambios control_cambios_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -3214,7 +3318,7 @@ ALTER TABLE ONLY public.control_cambios
 
 
 --
--- TOC entry 5225 (class 2606 OID 34550)
+-- TOC entry 5235 (class 2606 OID 34550)
 -- Name: credito_movimientos credito_movimientos_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -3223,7 +3327,7 @@ ALTER TABLE ONLY public.credito_movimientos
 
 
 --
--- TOC entry 5204 (class 2606 OID 34134)
+-- TOC entry 5214 (class 2606 OID 34134)
 -- Name: cuentas_por_pagar cuentas_por_pagar_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -3232,7 +3336,7 @@ ALTER TABLE ONLY public.cuentas_por_pagar
 
 
 --
--- TOC entry 5217 (class 2606 OID 34189)
+-- TOC entry 5227 (class 2606 OID 34189)
 -- Name: cxp_etiquetas_asignadas cxp_etiquetas_asignadas_cxp_id_etiqueta_id_key; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -3241,7 +3345,7 @@ ALTER TABLE ONLY public.cxp_etiquetas_asignadas
 
 
 --
--- TOC entry 5219 (class 2606 OID 34187)
+-- TOC entry 5229 (class 2606 OID 34187)
 -- Name: cxp_etiquetas_asignadas cxp_etiquetas_asignadas_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -3250,7 +3354,16 @@ ALTER TABLE ONLY public.cxp_etiquetas_asignadas
 
 
 --
--- TOC entry 5116 (class 2606 OID 17355)
+-- TOC entry 5239 (class 2606 OID 34599)
+-- Name: datos_bancarios_empresa datos_bancarios_empresa_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
+--
+
+ALTER TABLE ONLY public.datos_bancarios_empresa
+    ADD CONSTRAINT datos_bancarios_empresa_pkey PRIMARY KEY (id);
+
+
+--
+-- TOC entry 5126 (class 2606 OID 17355)
 -- Name: detallesdelpedido detallesdelpedido_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -3259,7 +3372,7 @@ ALTER TABLE ONLY public.detallesdelpedido
 
 
 --
--- TOC entry 5134 (class 2606 OID 17443)
+-- TOC entry 5144 (class 2606 OID 17443)
 -- Name: detallesordencompra detallesordencompra_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -3268,7 +3381,7 @@ ALTER TABLE ONLY public.detallesordencompra
 
 
 --
--- TOC entry 5156 (class 2606 OID 25409)
+-- TOC entry 5166 (class 2606 OID 25409)
 -- Name: estados estados_abreviatura_key; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -3277,7 +3390,7 @@ ALTER TABLE ONLY public.estados
 
 
 --
--- TOC entry 5158 (class 2606 OID 25407)
+-- TOC entry 5168 (class 2606 OID 25407)
 -- Name: estados estados_nombre_key; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -3286,7 +3399,7 @@ ALTER TABLE ONLY public.estados
 
 
 --
--- TOC entry 5160 (class 2606 OID 25405)
+-- TOC entry 5170 (class 2606 OID 25405)
 -- Name: estados estados_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -3295,7 +3408,7 @@ ALTER TABLE ONLY public.estados
 
 
 --
--- TOC entry 5110 (class 2606 OID 17300)
+-- TOC entry 5120 (class 2606 OID 17300)
 -- Name: itemsdelcarrito itemsdelcarrito_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -3304,7 +3417,7 @@ ALTER TABLE ONLY public.itemsdelcarrito
 
 
 --
--- TOC entry 5166 (class 2606 OID 25424)
+-- TOC entry 5176 (class 2606 OID 25424)
 -- Name: log_eventosusuario log_eventosusuario_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -3313,7 +3426,7 @@ ALTER TABLE ONLY public.log_eventosusuario
 
 
 --
--- TOC entry 5123 (class 2606 OID 17392)
+-- TOC entry 5133 (class 2606 OID 17392)
 -- Name: log_inventario log_inventario_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -3322,7 +3435,7 @@ ALTER TABLE ONLY public.log_inventario
 
 
 --
--- TOC entry 5184 (class 2606 OID 25551)
+-- TOC entry 5194 (class 2606 OID 25551)
 -- Name: log_movimientos log_movimientos_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -3331,7 +3444,7 @@ ALTER TABLE ONLY public.log_movimientos
 
 
 --
--- TOC entry 5141 (class 2606 OID 17477)
+-- TOC entry 5151 (class 2606 OID 17477)
 -- Name: medidas medidas_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -3340,7 +3453,7 @@ ALTER TABLE ONLY public.medidas
 
 
 --
--- TOC entry 5143 (class 2606 OID 17479)
+-- TOC entry 5153 (class 2606 OID 17479)
 -- Name: medidas medidas_tipoproductoid_nombremedida_key; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -3349,7 +3462,7 @@ ALTER TABLE ONLY public.medidas
 
 
 --
--- TOC entry 5178 (class 2606 OID 25521)
+-- TOC entry 5188 (class 2606 OID 25521)
 -- Name: notificaciones notificaciones_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -3358,7 +3471,7 @@ ALTER TABLE ONLY public.notificaciones
 
 
 --
--- TOC entry 5132 (class 2606 OID 17430)
+-- TOC entry 5142 (class 2606 OID 17430)
 -- Name: ordenesdecompra ordenesdecompra_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -3367,7 +3480,7 @@ ALTER TABLE ONLY public.ordenesdecompra
 
 
 --
--- TOC entry 5213 (class 2606 OID 34159)
+-- TOC entry 5223 (class 2606 OID 34159)
 -- Name: pagos_cxp pagos_cxp_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -3376,7 +3489,7 @@ ALTER TABLE ONLY public.pagos_cxp
 
 
 --
--- TOC entry 5152 (class 2606 OID 17584)
+-- TOC entry 5162 (class 2606 OID 17584)
 -- Name: passwordresettokens passwordresettokens_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -3385,7 +3498,7 @@ ALTER TABLE ONLY public.passwordresettokens
 
 
 --
--- TOC entry 5154 (class 2606 OID 17586)
+-- TOC entry 5164 (class 2606 OID 17586)
 -- Name: passwordresettokens passwordresettokens_token_key; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -3394,7 +3507,7 @@ ALTER TABLE ONLY public.passwordresettokens
 
 
 --
--- TOC entry 5114 (class 2606 OID 17333)
+-- TOC entry 5124 (class 2606 OID 17333)
 -- Name: pedidos pedidos_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -3403,7 +3516,7 @@ ALTER TABLE ONLY public.pedidos
 
 
 --
--- TOC entry 5106 (class 2606 OID 17275)
+-- TOC entry 5116 (class 2606 OID 17275)
 -- Name: producto_imagenes producto_imagenes_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -3412,7 +3525,7 @@ ALTER TABLE ONLY public.producto_imagenes
 
 
 --
--- TOC entry 5172 (class 2606 OID 25452)
+-- TOC entry 5182 (class 2606 OID 25452)
 -- Name: producto_tamanosdisponibles producto_tamanosdisponibles_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -3421,7 +3534,7 @@ ALTER TABLE ONLY public.producto_tamanosdisponibles
 
 
 --
--- TOC entry 5202 (class 2606 OID 34104)
+-- TOC entry 5212 (class 2606 OID 34104)
 -- Name: producto_variante_imagenes producto_variante_imagenes_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -3430,7 +3543,7 @@ ALTER TABLE ONLY public.producto_variante_imagenes
 
 
 --
--- TOC entry 5102 (class 2606 OID 17258)
+-- TOC entry 5112 (class 2606 OID 17258)
 -- Name: producto_variantes productos_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -3439,7 +3552,7 @@ ALTER TABLE ONLY public.producto_variantes
 
 
 --
--- TOC entry 5146 (class 2606 OID 17506)
+-- TOC entry 5156 (class 2606 OID 17506)
 -- Name: productos productos_pkey1; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -3448,7 +3561,7 @@ ALTER TABLE ONLY public.productos
 
 
 --
--- TOC entry 5104 (class 2606 OID 17260)
+-- TOC entry 5114 (class 2606 OID 17260)
 -- Name: producto_variantes productos_sku_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -3457,7 +3570,7 @@ ALTER TABLE ONLY public.producto_variantes
 
 
 --
--- TOC entry 5148 (class 2606 OID 33716)
+-- TOC entry 5158 (class 2606 OID 33716)
 -- Name: productos productos_sku_maestro_key; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -3466,7 +3579,7 @@ ALTER TABLE ONLY public.productos
 
 
 --
--- TOC entry 5190 (class 2606 OID 33729)
+-- TOC entry 5200 (class 2606 OID 33729)
 -- Name: proveedor_reglas_empaque proveedor_reglas_empaque_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -3475,7 +3588,7 @@ ALTER TABLE ONLY public.proveedor_reglas_empaque
 
 
 --
--- TOC entry 5129 (class 2606 OID 17421)
+-- TOC entry 5139 (class 2606 OID 17421)
 -- Name: proveedores proveedores_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -3484,7 +3597,7 @@ ALTER TABLE ONLY public.proveedores
 
 
 --
--- TOC entry 5227 (class 2606 OID 34569)
+-- TOC entry 5237 (class 2606 OID 34569)
 -- Name: solicitudes_credito solicitudes_credito_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -3493,7 +3606,7 @@ ALTER TABLE ONLY public.solicitudes_credito
 
 
 --
--- TOC entry 5136 (class 2606 OID 17466)
+-- TOC entry 5146 (class 2606 OID 17466)
 -- Name: tipoproducto tipoproducto_nombre_key; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -3502,7 +3615,7 @@ ALTER TABLE ONLY public.tipoproducto
 
 
 --
--- TOC entry 5138 (class 2606 OID 17464)
+-- TOC entry 5148 (class 2606 OID 17464)
 -- Name: tipoproducto tipoproducto_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -3511,7 +3624,7 @@ ALTER TABLE ONLY public.tipoproducto
 
 
 --
--- TOC entry 5196 (class 2606 OID 33795)
+-- TOC entry 5206 (class 2606 OID 33795)
 -- Name: toma_inventario_conteos toma_inventario_conteos_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -3520,7 +3633,7 @@ ALTER TABLE ONLY public.toma_inventario_conteos
 
 
 --
--- TOC entry 5192 (class 2606 OID 33781)
+-- TOC entry 5202 (class 2606 OID 33781)
 -- Name: toma_inventario_sesiones toma_inventario_sesiones_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -3529,7 +3642,7 @@ ALTER TABLE ONLY public.toma_inventario_sesiones
 
 
 --
--- TOC entry 5223 (class 2606 OID 34535)
+-- TOC entry 5233 (class 2606 OID 34535)
 -- Name: cliente_creditos unique_cliente_credito; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -3538,7 +3651,7 @@ ALTER TABLE ONLY public.cliente_creditos
 
 
 --
--- TOC entry 5210 (class 2606 OID 34214)
+-- TOC entry 5220 (class 2606 OID 34214)
 -- Name: cuentas_por_pagar unq_orden_referencia; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -3547,7 +3660,7 @@ ALTER TABLE ONLY public.cuentas_por_pagar
 
 
 --
--- TOC entry 5198 (class 2606 OID 33797)
+-- TOC entry 5208 (class 2606 OID 33797)
 -- Name: toma_inventario_conteos unq_sesion_variante; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -3556,7 +3669,7 @@ ALTER TABLE ONLY public.toma_inventario_conteos
 
 
 --
--- TOC entry 5097 (class 1259 OID 25506)
+-- TOC entry 5107 (class 1259 OID 25506)
 -- Name: idx_categoria_activo; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -3564,7 +3677,7 @@ CREATE INDEX idx_categoria_activo ON public.categorias USING btree (activo);
 
 
 --
--- TOC entry 5088 (class 1259 OID 25478)
+-- TOC entry 5098 (class 1259 OID 25478)
 -- Name: idx_cliente_agente; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -3572,7 +3685,7 @@ CREATE INDEX idx_cliente_agente ON public.clientes USING btree (agenteid);
 
 
 --
--- TOC entry 5193 (class 1259 OID 33809)
+-- TOC entry 5203 (class 1259 OID 33809)
 -- Name: idx_conteos_estatus; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -3580,7 +3693,7 @@ CREATE INDEX idx_conteos_estatus ON public.toma_inventario_conteos USING btree (
 
 
 --
--- TOC entry 5194 (class 1259 OID 33808)
+-- TOC entry 5204 (class 1259 OID 33808)
 -- Name: idx_conteos_sesion; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -3588,7 +3701,7 @@ CREATE INDEX idx_conteos_sesion ON public.toma_inventario_conteos USING btree (s
 
 
 --
--- TOC entry 5187 (class 1259 OID 33709)
+-- TOC entry 5197 (class 1259 OID 33709)
 -- Name: idx_control_cambios_entidad; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -3596,7 +3709,7 @@ CREATE INDEX idx_control_cambios_entidad ON public.control_cambios USING btree (
 
 
 --
--- TOC entry 5188 (class 1259 OID 33708)
+-- TOC entry 5198 (class 1259 OID 33708)
 -- Name: idx_control_cambios_estado; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -3604,7 +3717,7 @@ CREATE INDEX idx_control_cambios_estado ON public.control_cambios USING btree (e
 
 
 --
--- TOC entry 5205 (class 1259 OID 34146)
+-- TOC entry 5215 (class 1259 OID 34146)
 -- Name: idx_cxp_estatus; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -3612,7 +3725,7 @@ CREATE INDEX idx_cxp_estatus ON public.cuentas_por_pagar USING btree (estatus);
 
 
 --
--- TOC entry 5206 (class 1259 OID 34219)
+-- TOC entry 5216 (class 1259 OID 34219)
 -- Name: idx_cxp_fecha_cierre; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -3620,7 +3733,7 @@ CREATE INDEX idx_cxp_fecha_cierre ON public.cuentas_por_pagar USING btree (fecha
 
 
 --
--- TOC entry 5207 (class 1259 OID 34145)
+-- TOC entry 5217 (class 1259 OID 34145)
 -- Name: idx_cxp_proveedor; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -3628,7 +3741,7 @@ CREATE INDEX idx_cxp_proveedor ON public.cuentas_por_pagar USING btree (proveedo
 
 
 --
--- TOC entry 5208 (class 1259 OID 34147)
+-- TOC entry 5218 (class 1259 OID 34147)
 -- Name: idx_cxp_vencimiento; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -3636,7 +3749,7 @@ CREATE INDEX idx_cxp_vencimiento ON public.cuentas_por_pagar USING btree (fecha_
 
 
 --
--- TOC entry 5179 (class 1259 OID 25558)
+-- TOC entry 5189 (class 1259 OID 25558)
 -- Name: idx_log_accion; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -3644,7 +3757,7 @@ CREATE INDEX idx_log_accion ON public.log_movimientos USING btree (accion);
 
 
 --
--- TOC entry 5161 (class 1259 OID 25436)
+-- TOC entry 5171 (class 1259 OID 25436)
 -- Name: idx_log_clienteid; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -3652,7 +3765,7 @@ CREATE INDEX idx_log_clienteid ON public.log_eventosusuario USING btree (cliente
 
 
 --
--- TOC entry 5180 (class 1259 OID 25560)
+-- TOC entry 5190 (class 1259 OID 25560)
 -- Name: idx_log_entidad; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -3660,7 +3773,7 @@ CREATE INDEX idx_log_entidad ON public.log_movimientos USING btree (entidad, ent
 
 
 --
--- TOC entry 5181 (class 1259 OID 25557)
+-- TOC entry 5191 (class 1259 OID 25557)
 -- Name: idx_log_fecha; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -3668,7 +3781,7 @@ CREATE INDEX idx_log_fecha ON public.log_movimientos USING btree (fecha DESC);
 
 
 --
--- TOC entry 5119 (class 1259 OID 34205)
+-- TOC entry 5129 (class 1259 OID 34205)
 -- Name: idx_log_inventario_cxp; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -3676,7 +3789,7 @@ CREATE INDEX idx_log_inventario_cxp ON public.log_inventario USING btree (cxp_id
 
 
 --
--- TOC entry 5120 (class 1259 OID 34218)
+-- TOC entry 5130 (class 1259 OID 34218)
 -- Name: idx_log_inventario_cxp_id; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -3684,7 +3797,7 @@ CREATE INDEX idx_log_inventario_cxp_id ON public.log_inventario USING btree (cxp
 
 
 --
--- TOC entry 5121 (class 1259 OID 33755)
+-- TOC entry 5131 (class 1259 OID 33755)
 -- Name: idx_log_inventario_excepcion; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -3692,7 +3805,7 @@ CREATE INDEX idx_log_inventario_excepcion ON public.log_inventario USING btree (
 
 
 --
--- TOC entry 5162 (class 1259 OID 25438)
+-- TOC entry 5172 (class 1259 OID 25438)
 -- Name: idx_log_timestamp; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -3700,7 +3813,7 @@ CREATE INDEX idx_log_timestamp ON public.log_eventosusuario USING btree ("timest
 
 
 --
--- TOC entry 5163 (class 1259 OID 25435)
+-- TOC entry 5173 (class 1259 OID 25435)
 -- Name: idx_log_tipoevento; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -3708,7 +3821,7 @@ CREATE INDEX idx_log_tipoevento ON public.log_eventosusuario USING btree (tipoev
 
 
 --
--- TOC entry 5182 (class 1259 OID 25559)
+-- TOC entry 5192 (class 1259 OID 25559)
 -- Name: idx_log_usuario; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -3716,7 +3829,7 @@ CREATE INDEX idx_log_usuario ON public.log_movimientos USING btree (usuarioid);
 
 
 --
--- TOC entry 5164 (class 1259 OID 25437)
+-- TOC entry 5174 (class 1259 OID 25437)
 -- Name: idx_log_varianteid; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -3724,7 +3837,7 @@ CREATE INDEX idx_log_varianteid ON public.log_eventosusuario USING btree (varian
 
 
 --
--- TOC entry 5139 (class 1259 OID 17495)
+-- TOC entry 5149 (class 1259 OID 17495)
 -- Name: idx_medidas_tipoproducto; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -3732,7 +3845,7 @@ CREATE INDEX idx_medidas_tipoproducto ON public.medidas USING btree (tipoproduct
 
 
 --
--- TOC entry 5173 (class 1259 OID 25527)
+-- TOC entry 5183 (class 1259 OID 25527)
 -- Name: idx_notificaciones_clienteid; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -3740,7 +3853,7 @@ CREATE INDEX idx_notificaciones_clienteid ON public.notificaciones USING btree (
 
 
 --
--- TOC entry 5174 (class 1259 OID 25530)
+-- TOC entry 5184 (class 1259 OID 25530)
 -- Name: idx_notificaciones_fecha; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -3748,7 +3861,7 @@ CREATE INDEX idx_notificaciones_fecha ON public.notificaciones USING btree (fech
 
 
 --
--- TOC entry 5175 (class 1259 OID 25528)
+-- TOC entry 5185 (class 1259 OID 25528)
 -- Name: idx_notificaciones_leida; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -3756,7 +3869,7 @@ CREATE INDEX idx_notificaciones_leida ON public.notificaciones USING btree (leid
 
 
 --
--- TOC entry 5176 (class 1259 OID 25529)
+-- TOC entry 5186 (class 1259 OID 25529)
 -- Name: idx_notificaciones_tipo; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -3764,7 +3877,7 @@ CREATE INDEX idx_notificaciones_tipo ON public.notificaciones USING btree (tipo)
 
 
 --
--- TOC entry 5130 (class 1259 OID 25490)
+-- TOC entry 5140 (class 1259 OID 25490)
 -- Name: idx_ordenesdecompra_origenoc; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -3772,7 +3885,7 @@ CREATE INDEX idx_ordenesdecompra_origenoc ON public.ordenesdecompra USING btree 
 
 
 --
--- TOC entry 5211 (class 1259 OID 34170)
+-- TOC entry 5221 (class 1259 OID 34170)
 -- Name: idx_pagos_historial; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -3780,7 +3893,7 @@ CREATE INDEX idx_pagos_historial ON public.pagos_cxp USING btree (cxp_id);
 
 
 --
--- TOC entry 5144 (class 1259 OID 25505)
+-- TOC entry 5154 (class 1259 OID 25505)
 -- Name: idx_producto_activo; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -3788,7 +3901,7 @@ CREATE INDEX idx_producto_activo ON public.productos USING btree (activo);
 
 
 --
--- TOC entry 5098 (class 1259 OID 25487)
+-- TOC entry 5108 (class 1259 OID 25487)
 -- Name: idx_producto_oferta; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -3796,7 +3909,7 @@ CREATE INDEX idx_producto_oferta ON public.producto_variantes USING btree (preci
 
 
 --
--- TOC entry 5199 (class 1259 OID 34110)
+-- TOC entry 5209 (class 1259 OID 34110)
 -- Name: idx_producto_variante_imagenes_varianteid; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -3804,7 +3917,7 @@ CREATE INDEX idx_producto_variante_imagenes_varianteid ON public.producto_varian
 
 
 --
--- TOC entry 5200 (class 1259 OID 34111)
+-- TOC entry 5210 (class 1259 OID 34111)
 -- Name: idx_producto_variante_imagenes_varianteid_orden; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -3812,7 +3925,7 @@ CREATE INDEX idx_producto_variante_imagenes_varianteid_orden ON public.producto_
 
 
 --
--- TOC entry 5099 (class 1259 OID 17496)
+-- TOC entry 5109 (class 1259 OID 17496)
 -- Name: idx_productos_tipoproducto; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -3820,7 +3933,7 @@ CREATE INDEX idx_productos_tipoproducto ON public.producto_variantes USING btree
 
 
 --
--- TOC entry 5100 (class 1259 OID 34094)
+-- TOC entry 5110 (class 1259 OID 34094)
 -- Name: idx_variantes_color_nombre; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -3828,7 +3941,7 @@ CREATE INDEX idx_variantes_color_nombre ON public.producto_variantes USING btree
 
 
 --
--- TOC entry 5288 (class 2620 OID 25533)
+-- TOC entry 5300 (class 2620 OID 25533)
 -- Name: notificaciones trigger_limitar_notificaciones; Type: TRIGGER; Schema: public; Owner: ferram
 --
 
@@ -3836,7 +3949,7 @@ CREATE TRIGGER trigger_limitar_notificaciones AFTER INSERT ON public.notificacio
 
 
 --
--- TOC entry 5289 (class 2620 OID 34557)
+-- TOC entry 5301 (class 2620 OID 34557)
 -- Name: cliente_creditos trigger_update_credito_fecha; Type: TRIGGER; Schema: public; Owner: ferram
 --
 
@@ -3844,7 +3957,7 @@ CREATE TRIGGER trigger_update_credito_fecha BEFORE UPDATE ON public.cliente_cred
 
 
 --
--- TOC entry 5234 (class 2606 OID 17289)
+-- TOC entry 5246 (class 2606 OID 17289)
 -- Name: carritodecompra carritodecompra_clienteid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -3853,7 +3966,7 @@ ALTER TABLE ONLY public.carritodecompra
 
 
 --
--- TOC entry 5229 (class 2606 OID 17244)
+-- TOC entry 5241 (class 2606 OID 17244)
 -- Name: categorias categorias_parentcategoriaid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -3862,7 +3975,7 @@ ALTER TABLE ONLY public.categorias
 
 
 --
--- TOC entry 5238 (class 2606 OID 17320)
+-- TOC entry 5250 (class 2606 OID 17320)
 -- Name: cliente_direcciones cliente_direcciones_clienteid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -3871,7 +3984,7 @@ ALTER TABLE ONLY public.cliente_direcciones
 
 
 --
--- TOC entry 5246 (class 2606 OID 17380)
+-- TOC entry 5258 (class 2606 OID 17380)
 -- Name: comisiones comisiones_agenteid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -3880,7 +3993,7 @@ ALTER TABLE ONLY public.comisiones
 
 
 --
--- TOC entry 5247 (class 2606 OID 17375)
+-- TOC entry 5259 (class 2606 OID 17375)
 -- Name: comisiones comisiones_pedidoid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -3889,7 +4002,7 @@ ALTER TABLE ONLY public.comisiones
 
 
 --
--- TOC entry 5277 (class 2606 OID 34140)
+-- TOC entry 5289 (class 2606 OID 34140)
 -- Name: cuentas_por_pagar cuentas_por_pagar_orden_compra_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -3898,7 +4011,7 @@ ALTER TABLE ONLY public.cuentas_por_pagar
 
 
 --
--- TOC entry 5278 (class 2606 OID 34135)
+-- TOC entry 5290 (class 2606 OID 34135)
 -- Name: cuentas_por_pagar cuentas_por_pagar_proveedor_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -3907,7 +4020,7 @@ ALTER TABLE ONLY public.cuentas_por_pagar
 
 
 --
--- TOC entry 5281 (class 2606 OID 34190)
+-- TOC entry 5293 (class 2606 OID 34190)
 -- Name: cxp_etiquetas_asignadas cxp_etiquetas_asignadas_cxp_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -3916,7 +4029,7 @@ ALTER TABLE ONLY public.cxp_etiquetas_asignadas
 
 
 --
--- TOC entry 5282 (class 2606 OID 34195)
+-- TOC entry 5294 (class 2606 OID 34195)
 -- Name: cxp_etiquetas_asignadas cxp_etiquetas_asignadas_etiqueta_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -3925,7 +4038,7 @@ ALTER TABLE ONLY public.cxp_etiquetas_asignadas
 
 
 --
--- TOC entry 5243 (class 2606 OID 17356)
+-- TOC entry 5255 (class 2606 OID 17356)
 -- Name: detallesdelpedido detallesdelpedido_pedidoid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -3934,7 +4047,7 @@ ALTER TABLE ONLY public.detallesdelpedido
 
 
 --
--- TOC entry 5252 (class 2606 OID 17444)
+-- TOC entry 5264 (class 2606 OID 17444)
 -- Name: detallesordencompra detallesordencompra_ordencompraid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -3943,7 +4056,7 @@ ALTER TABLE ONLY public.detallesordencompra
 
 
 --
--- TOC entry 5284 (class 2606 OID 34577)
+-- TOC entry 5296 (class 2606 OID 34577)
 -- Name: credito_movimientos fk_admin_registro; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -3952,7 +4065,7 @@ ALTER TABLE ONLY public.credito_movimientos
 
 
 --
--- TOC entry 5285 (class 2606 OID 34582)
+-- TOC entry 5297 (class 2606 OID 34582)
 -- Name: credito_movimientos fk_agente_registro; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -3961,7 +4074,7 @@ ALTER TABLE ONLY public.credito_movimientos
 
 
 --
--- TOC entry 5258 (class 2606 OID 17566)
+-- TOC entry 5270 (class 2606 OID 17566)
 -- Name: communicationlogs fk_cliente; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -3970,7 +4083,7 @@ ALTER TABLE ONLY public.communicationlogs
 
 
 --
--- TOC entry 5228 (class 2606 OID 25473)
+-- TOC entry 5240 (class 2606 OID 25473)
 -- Name: clientes fk_cliente_agente; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -3979,7 +4092,7 @@ ALTER TABLE ONLY public.clientes
 
 
 --
--- TOC entry 5283 (class 2606 OID 34536)
+-- TOC entry 5295 (class 2606 OID 34536)
 -- Name: cliente_creditos fk_cliente_credito; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -3988,7 +4101,7 @@ ALTER TABLE ONLY public.cliente_creditos
 
 
 --
--- TOC entry 5239 (class 2606 OID 25410)
+-- TOC entry 5251 (class 2606 OID 25410)
 -- Name: cliente_direcciones fk_cliente_estado; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -3997,7 +4110,7 @@ ALTER TABLE ONLY public.cliente_direcciones
 
 
 --
--- TOC entry 5244 (class 2606 OID 25463)
+-- TOC entry 5256 (class 2606 OID 25463)
 -- Name: detallesdelpedido fk_detalles_tamano; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -4006,7 +4119,7 @@ ALTER TABLE ONLY public.detallesdelpedido
 
 
 --
--- TOC entry 5245 (class 2606 OID 17518)
+-- TOC entry 5257 (class 2606 OID 17518)
 -- Name: detallesdelpedido fk_detallesdelpedido_varianteid; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -4015,7 +4128,7 @@ ALTER TABLE ONLY public.detallesdelpedido
 
 
 --
--- TOC entry 5253 (class 2606 OID 17538)
+-- TOC entry 5265 (class 2606 OID 17538)
 -- Name: detallesordencompra fk_detallesordencompra_varianteid; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -4024,7 +4137,7 @@ ALTER TABLE ONLY public.detallesordencompra
 
 
 --
--- TOC entry 5233 (class 2606 OID 25499)
+-- TOC entry 5245 (class 2606 OID 25499)
 -- Name: producto_imagenes fk_imagen_producto_maestro; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -4033,7 +4146,7 @@ ALTER TABLE ONLY public.producto_imagenes
 
 
 --
--- TOC entry 5235 (class 2606 OID 25468)
+-- TOC entry 5247 (class 2606 OID 25468)
 -- Name: itemsdelcarrito fk_items_tamano; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -4042,7 +4155,7 @@ ALTER TABLE ONLY public.itemsdelcarrito
 
 
 --
--- TOC entry 5236 (class 2606 OID 17523)
+-- TOC entry 5248 (class 2606 OID 17523)
 -- Name: itemsdelcarrito fk_itemsdelcarrito_varianteid; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -4051,7 +4164,7 @@ ALTER TABLE ONLY public.itemsdelcarrito
 
 
 --
--- TOC entry 5263 (class 2606 OID 25425)
+-- TOC entry 5275 (class 2606 OID 25425)
 -- Name: log_eventosusuario fk_log_cliente; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -4060,7 +4173,7 @@ ALTER TABLE ONLY public.log_eventosusuario
 
 
 --
--- TOC entry 5270 (class 2606 OID 25552)
+-- TOC entry 5282 (class 2606 OID 25552)
 -- Name: log_movimientos fk_log_usuario; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -4069,7 +4182,7 @@ ALTER TABLE ONLY public.log_movimientos
 
 
 --
--- TOC entry 5264 (class 2606 OID 25430)
+-- TOC entry 5276 (class 2606 OID 25430)
 -- Name: log_eventosusuario fk_log_variante; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -4078,7 +4191,7 @@ ALTER TABLE ONLY public.log_eventosusuario
 
 
 --
--- TOC entry 5248 (class 2606 OID 17533)
+-- TOC entry 5260 (class 2606 OID 17533)
 -- Name: log_inventario fk_loginventario_varianteid; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -4087,7 +4200,7 @@ ALTER TABLE ONLY public.log_inventario
 
 
 --
--- TOC entry 5286 (class 2606 OID 34551)
+-- TOC entry 5298 (class 2606 OID 34551)
 -- Name: credito_movimientos fk_movimiento_credito; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -4096,7 +4209,7 @@ ALTER TABLE ONLY public.credito_movimientos
 
 
 --
--- TOC entry 5279 (class 2606 OID 34160)
+-- TOC entry 5291 (class 2606 OID 34160)
 -- Name: pagos_cxp fk_pagos_cxp; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -4105,7 +4218,7 @@ ALTER TABLE ONLY public.pagos_cxp
 
 
 --
--- TOC entry 5280 (class 2606 OID 34165)
+-- TOC entry 5292 (class 2606 OID 34165)
 -- Name: pagos_cxp fk_pagos_usuario; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -4114,7 +4227,7 @@ ALTER TABLE ONLY public.pagos_cxp
 
 
 --
--- TOC entry 5261 (class 2606 OID 17592)
+-- TOC entry 5273 (class 2606 OID 17592)
 -- Name: passwordresettokens fk_passwordreset_agente; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -4123,7 +4236,7 @@ ALTER TABLE ONLY public.passwordresettokens
 
 
 --
--- TOC entry 5262 (class 2606 OID 17587)
+-- TOC entry 5274 (class 2606 OID 17587)
 -- Name: passwordresettokens fk_passwordreset_cliente; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -4132,7 +4245,7 @@ ALTER TABLE ONLY public.passwordresettokens
 
 
 --
--- TOC entry 5259 (class 2606 OID 17561)
+-- TOC entry 5271 (class 2606 OID 17561)
 -- Name: communicationlogs fk_pedido; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -4141,7 +4254,7 @@ ALTER TABLE ONLY public.communicationlogs
 
 
 --
--- TOC entry 5230 (class 2606 OID 17512)
+-- TOC entry 5242 (class 2606 OID 17512)
 -- Name: producto_variantes fk_producto_maestro; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -4150,7 +4263,7 @@ ALTER TABLE ONLY public.producto_variantes
 
 
 --
--- TOC entry 5255 (class 2606 OID 33717)
+-- TOC entry 5267 (class 2606 OID 33717)
 -- Name: productos fk_producto_tipo; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -4159,7 +4272,7 @@ ALTER TABLE ONLY public.productos
 
 
 --
--- TOC entry 5260 (class 2606 OID 17571)
+-- TOC entry 5272 (class 2606 OID 17571)
 -- Name: communicationlogs fk_proveedor; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -4168,7 +4281,7 @@ ALTER TABLE ONLY public.communicationlogs
 
 
 --
--- TOC entry 5256 (class 2606 OID 25480)
+-- TOC entry 5268 (class 2606 OID 25480)
 -- Name: productos fk_proveedor_default; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -4177,7 +4290,7 @@ ALTER TABLE ONLY public.productos
 
 
 --
--- TOC entry 5271 (class 2606 OID 33732)
+-- TOC entry 5283 (class 2606 OID 33732)
 -- Name: proveedor_reglas_empaque fk_regla_proveedor; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -4186,7 +4299,7 @@ ALTER TABLE ONLY public.proveedor_reglas_empaque
 
 
 --
--- TOC entry 5272 (class 2606 OID 33737)
+-- TOC entry 5284 (class 2606 OID 33737)
 -- Name: proveedor_reglas_empaque fk_regla_tipo; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -4195,7 +4308,7 @@ ALTER TABLE ONLY public.proveedor_reglas_empaque
 
 
 --
--- TOC entry 5287 (class 2606 OID 34570)
+-- TOC entry 5299 (class 2606 OID 34570)
 -- Name: solicitudes_credito fk_solicitud_cliente; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -4204,7 +4317,7 @@ ALTER TABLE ONLY public.solicitudes_credito
 
 
 --
--- TOC entry 5265 (class 2606 OID 25453)
+-- TOC entry 5277 (class 2606 OID 25453)
 -- Name: producto_tamanosdisponibles fk_tamanos_producto; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -4213,7 +4326,7 @@ ALTER TABLE ONLY public.producto_tamanosdisponibles
 
 
 --
--- TOC entry 5266 (class 2606 OID 25458)
+-- TOC entry 5278 (class 2606 OID 25458)
 -- Name: producto_tamanosdisponibles fk_tamanos_tamano; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -4222,7 +4335,7 @@ ALTER TABLE ONLY public.producto_tamanosdisponibles
 
 
 --
--- TOC entry 5237 (class 2606 OID 17543)
+-- TOC entry 5249 (class 2606 OID 17543)
 -- Name: itemsdelcarrito itemsdelcarrito_carritoid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -4231,7 +4344,7 @@ ALTER TABLE ONLY public.itemsdelcarrito
 
 
 --
--- TOC entry 5249 (class 2606 OID 34200)
+-- TOC entry 5261 (class 2606 OID 34200)
 -- Name: log_inventario log_inventario_cxp_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -4240,7 +4353,7 @@ ALTER TABLE ONLY public.log_inventario
 
 
 --
--- TOC entry 5254 (class 2606 OID 17480)
+-- TOC entry 5266 (class 2606 OID 17480)
 -- Name: medidas medidas_tipoproductoid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -4249,7 +4362,7 @@ ALTER TABLE ONLY public.medidas
 
 
 --
--- TOC entry 5267 (class 2606 OID 33743)
+-- TOC entry 5279 (class 2606 OID 33743)
 -- Name: notificaciones notificaciones_administrador_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -4258,7 +4371,7 @@ ALTER TABLE ONLY public.notificaciones
 
 
 --
--- TOC entry 5268 (class 2606 OID 33748)
+-- TOC entry 5280 (class 2606 OID 33748)
 -- Name: notificaciones notificaciones_agente_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -4267,7 +4380,7 @@ ALTER TABLE ONLY public.notificaciones
 
 
 --
--- TOC entry 5269 (class 2606 OID 25522)
+-- TOC entry 5281 (class 2606 OID 25522)
 -- Name: notificaciones notificaciones_clienteid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -4276,7 +4389,7 @@ ALTER TABLE ONLY public.notificaciones
 
 
 --
--- TOC entry 5250 (class 2606 OID 17431)
+-- TOC entry 5262 (class 2606 OID 17431)
 -- Name: ordenesdecompra ordenesdecompra_proveedorid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -4285,7 +4398,7 @@ ALTER TABLE ONLY public.ordenesdecompra
 
 
 --
--- TOC entry 5251 (class 2606 OID 33949)
+-- TOC entry 5263 (class 2606 OID 33949)
 -- Name: ordenesdecompra ordenesdecompra_usuario_creador_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -4294,7 +4407,7 @@ ALTER TABLE ONLY public.ordenesdecompra
 
 
 --
--- TOC entry 5240 (class 2606 OID 17339)
+-- TOC entry 5252 (class 2606 OID 17339)
 -- Name: pedidos pedidos_agenteid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -4303,7 +4416,7 @@ ALTER TABLE ONLY public.pedidos
 
 
 --
--- TOC entry 5241 (class 2606 OID 17334)
+-- TOC entry 5253 (class 2606 OID 17334)
 -- Name: pedidos pedidos_clienteid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -4312,7 +4425,7 @@ ALTER TABLE ONLY public.pedidos
 
 
 --
--- TOC entry 5242 (class 2606 OID 17344)
+-- TOC entry 5254 (class 2606 OID 17344)
 -- Name: pedidos pedidos_direccionenvioid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -4321,7 +4434,7 @@ ALTER TABLE ONLY public.pedidos
 
 
 --
--- TOC entry 5276 (class 2606 OID 34105)
+-- TOC entry 5288 (class 2606 OID 34105)
 -- Name: producto_variante_imagenes producto_variante_imagenes_varianteid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -4330,7 +4443,7 @@ ALTER TABLE ONLY public.producto_variante_imagenes
 
 
 --
--- TOC entry 5257 (class 2606 OID 17507)
+-- TOC entry 5269 (class 2606 OID 17507)
 -- Name: productos productos_categoriaid_fkey1; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -4339,7 +4452,7 @@ ALTER TABLE ONLY public.productos
 
 
 --
--- TOC entry 5231 (class 2606 OID 17490)
+-- TOC entry 5243 (class 2606 OID 17490)
 -- Name: producto_variantes productos_medidaid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -4348,7 +4461,7 @@ ALTER TABLE ONLY public.producto_variantes
 
 
 --
--- TOC entry 5232 (class 2606 OID 17485)
+-- TOC entry 5244 (class 2606 OID 17485)
 -- Name: producto_variantes productos_tipoproductoid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -4357,7 +4470,7 @@ ALTER TABLE ONLY public.producto_variantes
 
 
 --
--- TOC entry 5274 (class 2606 OID 33798)
+-- TOC entry 5286 (class 2606 OID 33798)
 -- Name: toma_inventario_conteos toma_inventario_conteos_sesionid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -4366,7 +4479,7 @@ ALTER TABLE ONLY public.toma_inventario_conteos
 
 
 --
--- TOC entry 5275 (class 2606 OID 33803)
+-- TOC entry 5287 (class 2606 OID 33803)
 -- Name: toma_inventario_conteos toma_inventario_conteos_varianteid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -4375,7 +4488,7 @@ ALTER TABLE ONLY public.toma_inventario_conteos
 
 
 --
--- TOC entry 5273 (class 2606 OID 33782)
+-- TOC entry 5285 (class 2606 OID 33782)
 -- Name: toma_inventario_sesiones toma_inventario_sesiones_usuario_creador_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -4383,7 +4496,7 @@ ALTER TABLE ONLY public.toma_inventario_sesiones
     ADD CONSTRAINT toma_inventario_sesiones_usuario_creador_id_fkey FOREIGN KEY (usuario_creador_id) REFERENCES public.administradores(adminid);
 
 
--- Completed on 2025-12-21 16:47:56
+-- Completed on 2025-12-21 17:41:48
 
 --
 -- PostgreSQL database dump complete
