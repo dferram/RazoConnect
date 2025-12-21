@@ -14,29 +14,12 @@
     <link rel="stylesheet" href="css/admin.css" />
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   </head>
-  <body>
+  <body data-sidebar="admin">
     <div class="admin-layout">
       <div id="sidebar-container"></div>
 
       <main class="admin-main">
-        <header class="admin-header">
-          <div>
-            <h1 class="admin-header-title">Control de Cambios y Aprobaciones</h1>
-            <p class="admin-header-subtitle">
-              Revisa y aprueba los cambios pendientes antes de que impacten la base de datos real.
-            </p>
-          </div>
-          <div class="admin-header-actions">
-            <button
-              type="button"
-              id="btnAprobarTodo"
-              class="btn btn-success"
-              style="padding: 0.6rem 1.6rem; font-weight: 600; border-radius: 999px;"
-            >
-              ✔ Aprobar todo el lote
-            </button>
-          </div>
-        </header>
+        <div id="admin-header-container"></div>
 
         <div class="admin-content">
           <!-- KPIs resumen -->
@@ -117,6 +100,7 @@
     <script src="js/api.js"></script>
     <script src="js/components/user-profile.js"></script>
     <script src="js/admin-header-dropdown.js"></script>
+    <script src="js/components/admin-header-loader.js"></script>
     <script>
       (function () {
         "use strict";
