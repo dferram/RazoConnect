@@ -296,10 +296,43 @@ const API = {
     });
   },
 
-  finalizarPedidoCredito: async (payload) => {
+  finalizarPedido: async (payload) => {
     return apiCall("/pedidos/finalizar", {
       method: "POST",
       body: JSON.stringify(payload),
+    });
+  },
+
+  finalizarPedidoTransferencia: async (formData) => {
+    const token = getEffectiveToken();
+    const headers = {};
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(`${API_BASE_URL}/pedidos/finalizar`, {
+      method: "POST",
+      headers,
+      body: formData,
+    });
+
+    let data = {};
+    try {
+      data = await response.json();
+    } catch (error) {
+      console.warn("No se pudo parsear la respuesta JSON:", error);
+    }
+
+    return {
+      ok: response.ok,
+      status: response.status,
+      data,
+    };
+  },
+
+  getInfoTransferencia: async () => {
+    return apiCall("/pagos/info-transferencia", {
+      method: "GET",
     });
   },
 

@@ -116,12 +116,14 @@ const obtenerPerfilCredito = async (req, res) => {
           saldo_deudor: creditSummary.saldoDeudor,
           estado_credito: creditSummary.estado,
           saldo_disponible: creditSummary.creditoDisponible,
+          dias_gracia: creditSummary.diasGracia,
         }
       : {
           limite_credito: 0,
           saldo_deudor: 0,
           estado_credito: null,
           saldo_disponible: 0,
+          dias_gracia: 0,
         };
 
     return res.json({

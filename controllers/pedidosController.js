@@ -1,3 +1,5 @@
+const fs = require("fs");
+const path = require("path");
 const db = require("../db");
 const { enviarEmail } = require("../services/emailService");
 const {
@@ -150,12 +152,40 @@ const crearPedido = async (req, res) => {
   let transactionStarted = false;
   const adminEmail = process.env.ADMIN_EMAIL || null;
 
+  const removeUploadedComprobante = () => {
+    if (req.file?.path) {
+      fs.unlink(req.file.path, () => {});
+    }
+  };
+
   try {
     const clienteId = req.user.userId;
-    const { DireccionEnvioID, MetodoPago } = req.body;
+    const rawDireccionEnvioId =
+      req.body?.DireccionEnvioID ??
+      req.body?.direccionEnvioId ??
+      req.body?.direccionenvioid;
+    const DireccionEnvioID = Number.parseInt(rawDireccionEnvioId, 10);
+
+    const rawMetodoPago =
+      req.body?.MetodoPago ?? req.body?.metodoPago ?? req.body?.metodo ?? null;
+
+    let MetodoPago = rawMetodoPago;
+    if (typeof rawMetodoPago === "string") {
+      const trimmed = rawMetodoPago.trim();
+      if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
+        try {
+          MetodoPago = JSON.parse(trimmed);
+        } catch {
+          MetodoPago = trimmed;
+        }
+      } else {
+        MetodoPago = trimmed;
+      }
+    }
 
     // Validar datos de entrada
-    if (!DireccionEnvioID) {
+    if (!Number.isInteger(DireccionEnvioID) || DireccionEnvioID <= 0) {
+      removeUploadedComprobante();
       return res.status(400).json({
         success: false,
         message: "DireccionEnvioID es requerido",
@@ -175,6 +205,7 @@ const crearPedido = async (req, res) => {
     if (direccionResult.rows.length === 0) {
       await client.query("ROLLBACK");
       transactionStarted = false;
+      removeUploadedComprobante();
       return res.status(404).json({
         success: false,
         message: "Dirección no encontrada o no pertenece al cliente",
@@ -190,6 +221,7 @@ const crearPedido = async (req, res) => {
     if (carritoResult.rows.length === 0) {
       await client.query("ROLLBACK");
       transactionStarted = false;
+      removeUploadedComprobante();
       return res.status(400).json({
         success: false,
         message: "No tienes un carrito activo",
@@ -229,6 +261,7 @@ const crearPedido = async (req, res) => {
     if (itemsResult.rows.length === 0) {
       await client.query("ROLLBACK");
       transactionStarted = false;
+      removeUploadedComprobante();
       return res.status(400).json({
         success: false,
         message: "El carrito está vacío",
@@ -286,6 +319,7 @@ const crearPedido = async (req, res) => {
       if (!masterVariantsMap.has(productId)) {
         await client.query("ROLLBACK");
         transactionStarted = false;
+        removeUploadedComprobante();
         return res.status(400).json({
           success: false,
           message:
@@ -336,6 +370,7 @@ const crearPedido = async (req, res) => {
     if (clienteAgenteResult.rows.length === 0) {
       await client.query("ROLLBACK");
       transactionStarted = false;
+      removeUploadedComprobante();
       return res.status(404).json({
         success: false,
         message: "Cliente no encontrado",
@@ -371,7 +406,10 @@ const crearPedido = async (req, res) => {
       ) {
         return MetodoPago.metodo.trim().toLowerCase();
       }
-      return (MetodoPago || "").toString().trim().toLowerCase();
+      if (typeof MetodoPago === "string" && MetodoPago.trim()) {
+        return MetodoPago.trim().toLowerCase();
+      }
+      return "efectivo";
     })();
 
     const metodoPagoEsCredito = metodoPago === "credito";
@@ -428,8 +466,41 @@ const crearPedido = async (req, res) => {
       };
     }
 
+    const metodoPagoReferencia =
+      typeof MetodoPago === "object" ? MetodoPago?.referenciaPago || null : null;
+
+    const comprobanteUrl =
+      req.file && req.file.filename
+        ? `/uploads/comprobantes/${req.file.filename}`
+        : null;
+
+    if (metodoPago === "transferencia" && !comprobanteUrl) {
+      removeUploadedComprobante();
+      return res.status(400).json({
+        success: false,
+        message:
+          "Debes adjuntar el comprobante de pago en formato de imagen para finalizar por transferencia.",
+      });
+    }
+
     let pedido;
     let pedidoId;
+    let pedidoTransaccionId = null;
+    let pedidoComprobanteUrl = metodoPago === "transferencia" ? comprobanteUrl : null;
+    let pedidoEstatus = "Pendiente";
+    let pedidoPagado = false;
+
+    if (metodoPago === "mercadopago") {
+      pedidoPagado = true;
+      pedidoEstatus = "Pagado";
+      pedidoTransaccionId = metodoPagoReferencia || null;
+    } else if (metodoPago === "transferencia") {
+      pedidoPagado = false;
+      pedidoEstatus = "Pendiente de Validación";
+    } else if (metodoPagoEsCredito) {
+      pedidoPagado = false;
+      pedidoEstatus = "Aprobado";
+    }
 
     async function registrarPedido() {
       const pedidoResult = await client.query(
@@ -442,31 +513,39 @@ const crearPedido = async (req, res) => {
            Es_Credito,
            Pagado,
            Fecha_Vencimiento,
-           Metodo_Pago
+           Metodo_Pago,
+           Transaccion_ID,
+           Comprobante_URL
          )
          VALUES (
            $1,
            $2,
            $3,
            $4,
-           'Pendiente',
            $5,
-           FALSE,
+           $5,
+           $6,
            CASE
-             WHEN $5 THEN CURRENT_TIMESTAMP + ($6 * INTERVAL '1 day')
+             WHEN $5 THEN CURRENT_TIMESTAMP + ($7 * INTERVAL '1 day')
              ELSE NULL
            END,
-           $7
+           $8,
+           $9,
+           $10
          )
-         RETURNING PedidoID, FechaPedido, MontoTotal, Estatus, Fecha_Vencimiento, Es_Credito`,
+         RETURNING PedidoID, FechaPedido, MontoTotal, Estatus, Fecha_Vencimiento, Es_Credito, Pagado, Metodo_Pago, Transaccion_ID, Comprobante_URL`,
         [
           clienteId,
           agenteId,
           DireccionEnvioID,
           montoTotal,
+          pedidoEstatus,
           metodoPagoEsCredito,
+          pedidoPagado,
           metodoPagoEsCredito ? diasGracia : 0,
           metodoPago || null,
+          pedidoTransaccionId,
+          pedidoComprobanteUrl,
         ]
       );
       pedido = pedidoResult.rows[0];

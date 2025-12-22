@@ -3,6 +3,7 @@ const router = express.Router();
 const pedidosController = require("../controllers/pedidosController");
 const { authenticate, authorize } = require("../middlewares/authMiddleware");
 const checkCreditStatus = require("../middlewares/checkCreditStatus");
+const uploadComprobante = require("../middlewares/uploadComprobante");
 
 /**
  * @route   GET /api/pedidos
@@ -39,6 +40,7 @@ router.post(
   "/pedidos/finalizar",
   authenticate,
   authorize(["cliente"]),
+  uploadComprobante.single("comprobante"),
   checkCreditStatus(),
   pedidosController.crearPedido
 );

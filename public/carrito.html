@@ -874,42 +874,17 @@
 
               <div class="payment-options-grid" id="paymentOptions">
                 <label
-                  class="payment-option-card"
-                  id="paymentOptionCredito"
-                  data-method="credito"
-                >
-                  <div class="payment-option-top">
-                    <div class="payment-option-icon">💳</div>
-                    <input type="radio" name="metodoPago" value="credito" />
-                  </div>
-                  <div class="payment-option-content">
-                    <h5>Crédito Razo</h5>
-                    <p>
-                      Cargaremos el total a tu línea de crédito activo para no
-                      frenar tu operación.
-                    </p>
-                  </div>
-                  <span
-                    class="payment-option-chip payment-chip-credit"
-                    id="creditCardBalanceText"
-                    >Saldo disponible: $0.00</span
-                  >
-                  <div class="payment-option-lock" id="creditLockBadge">
-                    🔒 Solicítalo
-                  </div>
-                </label>
-
-                <label
-                  class="payment-option-card"
+                  class="payment-option-card selected"
                   id="paymentOptionMercadoPago"
                   data-method="mercadopago"
                 >
                   <div class="payment-option-top">
-                    <div class="payment-option-icon">📱</div>
+                    <div class="payment-option-icon">💳</div>
                     <input
                       type="radio"
-                      name="metodoPago"
+                      name="metodo_pago"
                       value="mercadopago"
+                      checked
                     />
                   </div>
                   <div class="payment-option-content">
@@ -923,6 +898,27 @@
 
                 <label
                   class="payment-option-card"
+                  id="paymentOptionCredito"
+                  data-method="credito"
+                >
+                  <div class="payment-option-top">
+                    <div class="payment-option-icon">🏬</div>
+                    <input type="radio" name="metodo_pago" value="credito" />
+                  </div>
+                  <div class="payment-option-content">
+                    <h5>Crédito Razo</h5>
+                    <p>Usa tu línea autorizada para no detener tu operación.</p>
+                    <span
+                      class="payment-option-chip payment-chip-credit"
+                      id="creditCardBalanceText"
+                      >Saldo disponible: $0.00</span
+                    >
+                  </div>
+                  <span class="credit-status-badge" id="badge-estado-credito"></span>
+                </label>
+
+                <label
+                  class="payment-option-card"
                   id="paymentOptionTransferencia"
                   data-method="transferencia"
                 >
@@ -930,190 +926,184 @@
                     <div class="payment-option-icon">🏦</div>
                     <input
                       type="radio"
-                      name="metodoPago"
+                      name="metodo_pago"
                       value="transferencia"
                     />
                   </div>
                   <div class="payment-option-content">
                     <h5>Transferencia bancaria</h5>
-                    <p>
-                      Recibirás nuestros datos bancarios para realizar el pago y
-                      adjuntar tu comprobante.
-                    </p>
+                    <p>Recibirás los datos bancarios y deberás adjuntar tu comprobante.</p>
                   </div>
                   <span class="payment-option-chip payment-chip-transfer"
                     >SPEI / Depósito</span
                   >
                 </label>
-
-                <label
-                  class="payment-option-card selected"
-                  id="paymentOptionEfectivo"
-                  data-method="efectivo"
-                >
-                  <div class="payment-option-top">
-                    <div class="payment-option-icon">💼</div>
-                    <input
-                      type="radio"
-                      name="metodoPago"
-                      value="efectivo"
-                      checked
-                    />
-                  </div>
-                  <div class="payment-option-content">
-                    <h5>Efectivo / Contraentrega</h5>
-                    <p>
-                      Coordinaremos contigo la entrega y cobro en efectivo con tu
-                      ejecutivo.
-                    </p>
-                  </div>
-                  <span class="payment-option-chip payment-chip-cash"
-                    >Entrega segura</span
-                  >
-                </label>
-              </div>
-
-              <div class="credit-info-panel" id="creditInfoPanel">
-                <div><strong>Saldo disponible:</strong> <span id="creditInfoAvailable">$0.00</span></div>
-                <div>
-                  Límite: <span id="creditInfoLimit">$0.00</span> • Utilizado:
-                  <span id="creditInfoUsed">$0.00</span>
-                </div>
-                <small>Si necesitas un aumento de línea, contacta a tu ejecutivo.</small>
               </div>
 
               <div class="payment-error" id="paymentError">
-                <span>⚠️</span>
+                <i class="bi bi-exclamation-triangle-fill"></i>
                 <div id="paymentErrorMessage"></div>
               </div>
 
-              <div class="transfer-details" id="transferDetails">
-                <div>
-                  <strong>Datos bancarios de Razo:</strong>
-                  <div class="bank-info-grid">
-                    <div class="bank-info-card">
-                      <label>Banco</label>
-                      <span>BBVA Bancomer</span>
+              <div class="payment-info-panels">
+                <section class="payment-info-card" id="info-mercadopago">
+                  <div class="mercadopago-form-container" id="mercadoPagoCardForm">
+                    <h5>Ingresa los datos de tu tarjeta</h5>
+                    <div class="mp-form-grid">
+                      <div class="mp-form-field">
+                        <label for="mpCardholderName">Nombre del titular</label>
+                        <input
+                          type="text"
+                          id="mpCardholderName"
+                          placeholder="Nombre impreso en la tarjeta"
+                          autocomplete="off"
+                        />
+                      </div>
+                      <div class="mp-form-field">
+                        <label for="mpCardNumber">Número de tarjeta</label>
+                        <input
+                          type="text"
+                          id="mpCardNumber"
+                          inputmode="numeric"
+                          maxlength="22"
+                          placeholder="0000 0000 0000 0000"
+                          autocomplete="off"
+                        />
+                      </div>
+                      <div class="mp-form-two-cols">
+                        <div class="mp-form-field">
+                          <label for="mpExpMonth">Mes expiración</label>
+                          <input
+                            type="text"
+                            id="mpExpMonth"
+                            inputmode="numeric"
+                            maxlength="2"
+                            placeholder="MM"
+                            autocomplete="off"
+                          />
+                        </div>
+                        <div class="mp-form-field">
+                          <label for="mpExpYear">Año expiración</label>
+                          <input
+                            type="text"
+                            id="mpExpYear"
+                            inputmode="numeric"
+                            maxlength="4"
+                            placeholder="AAAA"
+                            autocomplete="off"
+                          />
+                        </div>
+                      </div>
+                      <div class="mp-form-field">
+                        <label for="mpSecurityCode">CVV</label>
+                        <input
+                          type="text"
+                          id="mpSecurityCode"
+                          inputmode="numeric"
+                          maxlength="4"
+                          placeholder="CVV"
+                          autocomplete="off"
+                        />
+                      </div>
                     </div>
-                    <div class="bank-info-card">
-                      <label>Beneficiario</label>
-                      <span>RazoConnect S.A. de C.V.</span>
-                    </div>
-                    <div class="bank-info-card">
-                      <label>CLABE</label>
-                      <span>012 345 678 901 234 567</span>
-                    </div>
-                    <div class="bank-info-card">
-                      <label>Cuenta</label>
-                      <span>1234567890</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="transfer-upload">
-                  <label for="transferReceipt">Sube el comprobante de pago (opcional)</label>
-                  <div class="upload-box">
-                    <input
-                      type="file"
-                      id="transferReceipt"
-                      accept="image/*,application/pdf"
-                    />
-                    <div
-                      class="file-name-chip"
-                      id="transferFileChip"
-                      style="display: none"
-                    >
-                      📎 <span id="transferFileName"></span>
+                    <div class="mp-form-field" style="margin-top: 0.25rem">
+                      <label for="mpIdentificationNumber">Documento (opcional)</label>
+                      <input
+                        type="text"
+                        id="mpIdentificationNumber"
+                        placeholder="RFC / CURP"
+                        autocomplete="off"
+                      />
                     </div>
                     <small style="color: #6b7280"
-                      >Formatos permitidos: PDF, JPG o PNG (máx. 8&nbsp;MB).</small
+                      >Este formulario usa la Public Key de prueba suministrada por Mercado Pago.</small
                     >
                   </div>
-                </div>
-              </div>
+                </section>
 
-              <div class="mercadopago-card-form" id="mercadoPagoCardForm">
-                <div>
-                  <h5>Pago con tarjeta Mercado Pago</h5>
-                  <p>
-                    Tokenizamos tu tarjeta con Mercado Pago. Los datos nunca se guardan en
-                    RazoConnect.
-                  </p>
-                </div>
+                <section class="payment-info-card" id="info-credito" style="display: none;">
+                  <div class="credit-summary-card">
+                    <div class="credit-summary-row">
+                      <div>
+                        <span>Saldo deudor actual</span>
+                        <strong id="credito-saldo-actual">Loading...</strong>
+                      </div>
+                      <div>
+                        <span>Saldo final estimado</span>
+                        <strong id="credito-saldo-final">Calculando...</strong>
+                      </div>
+                    </div>
+                    <div class="credit-summary-row">
+                      <div>
+                        <span>Fecha límite de pago</span>
+                        <strong id="credito-fecha-limite">--/--/--</strong>
+                      </div>
+                      <div>
+                        <span>Monto de esta compra</span>
+                        <strong id="creditMontoCompra">$0.00</strong>
+                      </div>
+                    </div>
+                    <p class="credit-summary-helper">
+                      Confirmaremos tu compra y actualizaremos tu línea al instante.
+                    </p>
+                  </div>
+                </section>
 
-                <div class="mp-form-grid">
-                  <div class="mp-form-field">
-                    <label for="mpCardholderName">Nombre del titular</label>
-                    <input
-                      type="text"
-                      id="mpCardholderName"
-                      autocomplete="cc-name"
-                      placeholder="Como aparece en la tarjeta"
-                    />
+                <section class="payment-info-card" id="info-transferencia" style="display: none;">
+                  <div class="bank-info-card">
+                    <div class="bank-info-header">
+                      <div>
+                        <h5>Datos bancarios de Razo</h5>
+                        <p>Realiza tu transferencia y adjunta el comprobante.</p>
+                      </div>
+                      <div class="bank-status-pill" id="transferInfoStatus">
+                        <span class="spinner" id="transferInfoSpinner"></span>
+                        <span id="transferInfoMessage">Cargando información…</span>
+                      </div>
+                    </div>
+                    <div class="bank-info-grid" id="transferBankData">
+                      <div>
+                        <span>Banco</span>
+                        <strong id="transf-banco">—</strong>
+                      </div>
+                      <div>
+                        <span>Cuenta</span>
+                        <strong id="transf-cuenta">—</strong>
+                      </div>
+                      <div>
+                        <span>CLABE</span>
+                        <strong id="transf-clabe">—</strong>
+                      </div>
+                      <div>
+                        <span>Titular</span>
+                        <strong id="transf-titular">—</strong>
+                      </div>
+                      <div>
+                        <span>Referencia</span>
+                        <strong id="transf-referencia">—</strong>
+                      </div>
+                    </div>
                   </div>
-                  <div class="mp-form-field">
-                    <label for="mpCardNumber">Número de tarjeta</label>
-                    <input
-                      type="text"
-                      id="mpCardNumber"
-                      inputmode="numeric"
-                      autocomplete="cc-number"
-                      placeholder="0000 0000 0000 0000"
-                      maxlength="23"
-                    />
+                  <div class="transfer-upload">
+                    <label for="input-comprobante">Adjunta el comprobante (obligatorio)</label>
+                    <div class="upload-box">
+                      <input
+                        type="file"
+                        id="input-comprobante"
+                        accept="image/*"
+                        class="form-control"
+                      />
+                      <div class="upload-chip" id="transferFileChip" style="display: none">
+                        <i class="bi bi-paperclip"></i>
+                        <span id="transferFileName"></span>
+                        <button type="button" id="btnRemoveTransferFile" aria-label="Eliminar archivo">
+                          ×
+                        </button>
+                      </div>
+                      <small>Sube una foto clara de tu comprobante para validar el pedido.</small>
+                    </div>
                   </div>
-                </div>
-
-                <div class="mp-inline-fields">
-                  <div class="mp-form-field">
-                    <label for="mpExpMonth">Mes</label>
-                    <input
-                      type="text"
-                      id="mpExpMonth"
-                      inputmode="numeric"
-                      autocomplete="cc-exp-month"
-                      placeholder="MM"
-                      maxlength="2"
-                    />
-                  </div>
-                  <div class="mp-form-field">
-                    <label for="mpExpYear">Año</label>
-                    <input
-                      type="text"
-                      id="mpExpYear"
-                      inputmode="numeric"
-                      autocomplete="cc-exp-year"
-                      placeholder="AAAA"
-                      maxlength="4"
-                    />
-                  </div>
-                  <div class="mp-form-field">
-                    <label for="mpSecurityCode">CVV</label>
-                    <input
-                      type="password"
-                      id="mpSecurityCode"
-                      inputmode="numeric"
-                      autocomplete="cc-csc"
-                      placeholder="123"
-                      maxlength="4"
-                    />
-                  </div>
-                </div>
-
-                <div class="mp-form-field" style="margin-top: 0.25rem">
-                  <label for="mpIdentificationNumber">Documento (opcional)</label>
-                  <input
-                    type="text"
-                    id="mpIdentificationNumber"
-                    placeholder="RFC / CURP"
-                    autocomplete="off"
-                  />
-                </div>
-
-                <small style="color: #6b7280"
-                  >Este formulario usa la Public Key de prueba suministrada por Mercado
-                  Pago.</small
-                >
+                </section>
               </div>
             </div>
 
@@ -1304,31 +1294,52 @@
         "btnConfirmarSpinner"
       );
       const paymentCards = {
-        credito: document.getElementById("paymentOptionCredito"),
         mercadopago: document.getElementById("paymentOptionMercadoPago"),
+        credito: document.getElementById("paymentOptionCredito"),
         transferencia: document.getElementById("paymentOptionTransferencia"),
-        efectivo: document.getElementById("paymentOptionEfectivo"),
+      };
+      const paymentPanels = {
+        mercadopago: document.getElementById("info-mercadopago"),
+        credito: document.getElementById("info-credito"),
+        transferencia: document.getElementById("info-transferencia"),
       };
       const paymentSection = document.getElementById("paymentSection");
       const creditCardBalanceText = document.getElementById(
         "creditCardBalanceText"
       );
-      const creditLockBadge = document.getElementById("creditLockBadge");
-      const creditInfoPanel = document.getElementById("creditInfoPanel");
-      const creditInfoAvailable = document.getElementById("creditInfoAvailable");
-      const creditInfoLimit = document.getElementById("creditInfoLimit");
-      const creditInfoUsed = document.getElementById("creditInfoUsed");
+      const badgeEstadoCredito = document.getElementById(
+        "badge-estado-credito"
+      );
+      const creditoSaldoActualSpan = document.getElementById(
+        "credito-saldo-actual"
+      );
+      const creditoSaldoFinalSpan = document.getElementById(
+        "credito-saldo-final"
+      );
+      const creditoFechaLimiteSpan = document.getElementById(
+        "credito-fecha-limite"
+      );
+      const creditMontoCompraSpan = document.getElementById("creditMontoCompra");
       const paymentError = document.getElementById("paymentError");
       const paymentErrorMessage = document.getElementById(
         "paymentErrorMessage"
       );
-      const transferDetails = document.getElementById("transferDetails");
-      const transferReceipt = document.getElementById("transferReceipt");
+      const transferInfoStatus = document.getElementById("transferInfoStatus");
+      const transferInfoSpinner = document.getElementById("transferInfoSpinner");
+      const transferInfoMessage = document.getElementById("transferInfoMessage");
+      const transferBancoText = document.getElementById("transf-banco");
+      const transferCuentaText = document.getElementById("transf-cuenta");
+      const transferClabeText = document.getElementById("transf-clabe");
+      const transferTitularText = document.getElementById("transf-titular");
+      const transferReferenciaText = document.getElementById(
+        "transf-referencia"
+      );
       const transferFileChip = document.getElementById("transferFileChip");
       const transferFileName = document.getElementById("transferFileName");
-      if (transferReceipt) {
-        transferReceipt.addEventListener("change", handleTransferFileChange);
-      }
+      const inputComprobante = document.getElementById("input-comprobante");
+      const btnRemoveTransferFile = document.getElementById(
+        "btnRemoveTransferFile"
+      );
       const mercadoPagoCardForm = document.getElementById("mercadoPagoCardForm");
       const mpCardholderName = document.getElementById("mpCardholderName");
       const mpCardNumber = document.getElementById("mpCardNumber");
@@ -1366,12 +1377,31 @@
       let selectedDireccionId = null;
       let productoPendienteEliminar = null;
       let cambioVarianteContext = null;
-      let metodoPagoSeleccionado = "efectivo";
+      const defaultPaymentRadio = document.querySelector(
+        '#paymentOptions input[name="metodo_pago"]:checked'
+      );
+      let metodoPagoSeleccionado = defaultPaymentRadio
+        ? defaultPaymentRadio.value.toLowerCase()
+        : "mercadopago";
       let creditoDisponible = false;
       let creditSummary = null;
       let isConfirmingPedido = false;
       let transferReceiptFile = null;
       let mpInstance = null;
+      let transferInfoLoaded = false;
+      let transferInfoLoading = false;
+      let transferInfoError = null;
+      let paymentProfileLoaded = false;
+      let paymentProfileLoading = false;
+
+      if (inputComprobante) {
+        inputComprobante.addEventListener("change", handleTransferFileChange);
+      }
+      if (btnRemoveTransferFile) {
+        btnRemoveTransferFile.addEventListener("click", () => {
+          resetTransferUpload();
+        });
+      }
 
       const MP_PUBLIC_KEY = "TEST-401eb5af-fa55-4c39-b5fe-72aaf0421489";
       const MERCADOPAGO_LOCALE = "es-MX";
@@ -1382,6 +1412,279 @@
           style: "currency",
           currency: "MXN",
         }).format(amount);
+      }
+
+      function formatDateShort(date) {
+        return new Intl.DateTimeFormat("es-MX", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+        }).format(date);
+      }
+
+      function showPaymentPanel(panelKey) {
+        Object.entries(paymentPanels).forEach(([key, panel]) => {
+          if (!panel) return;
+          const shouldShow = key === panelKey;
+          panel.style.display = shouldShow ? "block" : "none";
+          panel.classList.toggle("d-none", !shouldShow);
+        });
+      }
+
+      function setCreditoBadge(status, text) {
+        if (!badgeEstadoCredito) return;
+        badgeEstadoCredito.className = "credit-status-badge";
+        if (status === "success") {
+          badgeEstadoCredito.classList.add("badge-success");
+        } else if (status === "warning") {
+          badgeEstadoCredito.classList.add("badge-warning");
+        } else if (status === "danger") {
+          badgeEstadoCredito.classList.add("badge-danger");
+        } else {
+          badgeEstadoCredito.classList.add("badge-muted");
+        }
+        badgeEstadoCredito.textContent = text || "";
+      }
+
+      function updateCreditInfoVisibility() {
+        const panel = paymentPanels.credito;
+        if (!panel) return;
+        const shouldShow = metodoPagoSeleccionado === "credito";
+        panel.style.display = shouldShow ? "block" : "none";
+      }
+
+      async function ensureTransferInfo(force = false) {
+        if (!transferInfoStatus) return;
+        if (transferInfoLoading) return;
+        if (transferInfoLoaded && !force) return;
+
+        transferInfoLoading = true;
+        transferInfoError = null;
+
+        if (transferInfoSpinner) {
+          transferInfoSpinner.style.display = "inline-block";
+        }
+        if (transferInfoMessage) {
+          transferInfoMessage.textContent = "Cargando información…";
+        }
+
+        try {
+          const response = await API.getInfoTransferencia();
+          if (!response.ok || !response.data?.success) {
+            throw new Error(
+              response.data?.message ||
+                "No se pudo obtener la información bancaria en este momento."
+            );
+          }
+
+          const data = response.data.data || {};
+          const cuenta =
+            data.numeroCuenta || data.numero_cuenta || data.cuenta || "—";
+          const clabe =
+            data.clabe || data.clabeInterbancaria || data.clabe_interbancaria || "—";
+          const banco = data.banco || "—";
+          const titular = data.titular || data.nombreTitular || "—";
+          const referencia =
+            data.referencia ||
+            data.referenciaPago ||
+            data.referencia_transferencia ||
+            data.referenciaTransferencia ||
+            data.reference ||
+            data.nota ||
+            "—";
+
+          if (transferBancoText) transferBancoText.textContent = banco;
+          if (transferCuentaText) transferCuentaText.textContent = cuenta;
+          if (transferClabeText) transferClabeText.textContent = clabe;
+          if (transferTitularText) transferTitularText.textContent = titular;
+          if (transferReferenciaText)
+            transferReferenciaText.textContent = referencia;
+
+          if (transferInfoMessage) {
+            transferInfoMessage.textContent = "Datos listos para tu transferencia.";
+          }
+
+          transferInfoLoaded = true;
+        } catch (error) {
+          console.error("No se pudo cargar la información de transferencia:", error);
+          transferInfoError =
+            error?.message ||
+            "No se pudo cargar la información bancaria. Intenta nuevamente.";
+          if (transferInfoMessage) {
+            transferInfoMessage.textContent = transferInfoError;
+          }
+          transferInfoLoaded = false;
+        } finally {
+          transferInfoLoading = false;
+          if (transferInfoSpinner) {
+            transferInfoSpinner.style.display = "none";
+          }
+        }
+      }
+
+      async function initPaymentMethods(force = false) {
+        if (!paymentSection) return;
+
+        const updateOnly =
+          !force && paymentProfileLoaded && creditSummary !== null;
+        const syncUiFromSummary = () => {
+          if (creditMontoCompraSpan) {
+            creditMontoCompraSpan.textContent = formatCurrency(
+              getCarritoTotal()
+            );
+          }
+          aplicarResumenCreditoUI();
+          updateCreditCardState();
+          updateCreditInfoVisibility();
+          validatePaymentConstraints();
+        };
+
+        if (updateOnly) {
+          syncUiFromSummary();
+          return;
+        }
+
+        if (paymentProfileLoading) return;
+        paymentProfileLoading = true;
+
+        try {
+          const response = await API.getPerfilCredito();
+          if (!response.ok || !response.data?.success) {
+            throw new Error(
+              response.data?.message ||
+                "No se pudo obtener tu perfil de crédito en este momento."
+            );
+          }
+
+          const perfil = response.data.data || {};
+          const estado = (perfil.estado_credito ?? perfil.estadoCredito ?? "")
+            .toString()
+            .trim()
+            .toUpperCase();
+          const limiteCredito =
+            Number.parseFloat(perfil.limite_credito ?? perfil.limiteCredito) ||
+            0;
+          const saldoDeudor =
+            Number.parseFloat(perfil.saldo_deudor ?? perfil.saldoDeudor) || 0;
+          const saldoDisponibleRaw =
+            Number.parseFloat(
+              perfil.saldo_disponible ?? perfil.saldoDisponible
+            ) || 0;
+          const diasGracia =
+            Number.parseInt(perfil.dias_gracia ?? perfil.diasGracia, 10) || 0;
+
+          const total = getCarritoTotal();
+          if (creditMontoCompraSpan) {
+            creditMontoCompraSpan.textContent = formatCurrency(total);
+          }
+
+          creditSummary = {
+            limiteCredito,
+            saldoDeudor,
+            creditoDisponible: saldoDisponibleRaw,
+            estado,
+            diasGracia,
+          };
+
+          const estadoSuspendido = estado === "SUSPENDIDO";
+          const saldoInsuficiente = total - saldoDisponibleRaw > 0.009;
+          creditoDisponible = !estadoSuspendido && !saldoInsuficiente;
+
+          if (estadoSuspendido) {
+            setCreditoBadge("danger", "Suspendido / Sin saldo");
+          } else if (saldoInsuficiente) {
+            const diferencia = Math.max(total - saldoDisponibleRaw, 0);
+            setCreditoBadge(
+              "danger",
+              `Saldo insuficiente: faltan ${formatCurrency(diferencia)}`
+            );
+          } else {
+            setCreditoBadge(
+              "success",
+              `Disponible: ${formatCurrency(saldoDisponibleRaw)}`
+            );
+          }
+
+          paymentProfileLoaded = true;
+          syncUiFromSummary();
+        } catch (error) {
+          console.error("No se pudo inicializar el perfil de crédito:", error);
+          creditSummary = null;
+          creditoDisponible = false;
+          setCreditoBadge(
+            "danger",
+            "No pudimos validar tu crédito. Intenta más tarde."
+          );
+          aplicarResumenCreditoUI();
+          updateCreditCardState();
+          updateCreditInfoVisibility();
+          validatePaymentConstraints();
+          paymentProfileLoaded = false;
+        } finally {
+          paymentProfileLoading = false;
+        }
+      }
+
+      function showErrorAlert(message, title = "No se pudo completar") {
+        if (typeof Swal !== "undefined" && Swal?.fire) {
+          Swal.fire({
+            icon: "error",
+            title,
+            text: message,
+            confirmButtonColor: "#F97316",
+          });
+        } else {
+          showToast(message, "error");
+        }
+      }
+
+      async function showSuccessAlert(message, title = "¡Pedido registrado!") {
+        if (typeof Swal !== "undefined" && Swal?.fire) {
+          await Swal.fire({
+            icon: "success",
+            title,
+            text: message,
+            confirmButtonColor: "#22c55e",
+          });
+        } else {
+          showToast(message, "success");
+        }
+      }
+
+      function clearLocalCartCache() {
+        const cacheKeys = [
+          "razoconnect_carrito",
+          "razoconnect_cart",
+          "razoconnect_cart_cache",
+          "carrito",
+        ];
+        cacheKeys.forEach((key) => {
+          try {
+            localStorage.removeItem(key);
+          } catch (_) {}
+        });
+      }
+
+      async function handleCheckoutSuccess() {
+        closeCheckoutModal();
+        clearLocalCartCache();
+        if (typeof window.updateCartBadge === "function") {
+          window.updateCartBadge();
+        }
+        await showSuccessAlert(
+          "Tu pedido fue registrado correctamente. Te llevamos a Mis pedidos."
+        );
+        window.location.href = "/mis-pedidos";
+      }
+
+      function buildPedidoPayload(extraMetodoFields = {}) {
+        return {
+          DireccionEnvioID: selectedDireccionId,
+          MetodoPago: {
+            metodo: metodoPagoSeleccionado,
+            ...extraMetodoFields,
+          },
+        };
       }
 
       function showBackorderAdjustmentToast({
@@ -1463,28 +1766,6 @@
           console.warn("No se pudo obtener el email del cliente:", error);
           return "";
         }
-      }
-
-      function buildMetodoPagoPayload(extra = {}) {
-        const basePayload = {
-          metodo: metodoPagoSeleccionado,
-        };
-
-        if (metodoPagoSeleccionado === "mercadopago") {
-          return {
-            ...basePayload,
-            referenciaPago: extra.mercadopagoReferencia || null,
-          };
-        }
-
-        if (metodoPagoSeleccionado === "transferencia") {
-          return {
-            ...basePayload,
-            comprobanteAdjunto: Boolean(transferReceiptFile),
-          };
-        }
-
-        return basePayload;
       }
 
       function getMercadoPagoFormData() {
@@ -1630,31 +1911,10 @@
         }
       }
 
-      function updateCreditInfoVisibility() {
-        if (!creditInfoPanel) return;
-        const shouldShow =
-          metodoPagoSeleccionado === "credito" &&
-          creditoDisponible &&
-          creditSummary;
-        creditInfoPanel.classList.toggle("show", Boolean(shouldShow));
-      }
-
-      function updateTransferDetailsVisibility() {
-        if (!transferDetails) return;
-        const shouldShow = metodoPagoSeleccionado === "transferencia";
-        transferDetails.classList.toggle("show", shouldShow);
-      }
-
-      function updateMercadoPagoFormVisibility() {
-        if (!mercadoPagoCardForm) return;
-        const shouldShow = metodoPagoSeleccionado === "mercadopago";
-        mercadoPagoCardForm.classList.toggle("show", shouldShow);
-      }
-
       function resetTransferUpload() {
         transferReceiptFile = null;
-        if (transferReceipt) {
-          transferReceipt.value = "";
+        if (inputComprobante) {
+          inputComprobante.value = "";
         }
         if (transferFileChip) {
           transferFileChip.style.display = "none";
@@ -1679,7 +1939,10 @@
 
       function handleTransferFileChange(event) {
         if (!transferFileChip || !transferFileName) return;
-        const file = event?.target?.files?.[0] || null;
+        const file =
+          event?.target?.files?.[0] ||
+          (inputComprobante?.files ? inputComprobante.files[0] : null) ||
+          null;
         transferReceiptFile = file;
         if (file) {
           transferFileName.textContent = file.name;
@@ -1694,7 +1957,7 @@
         resetTransferUpload();
         resetMercadoPagoForm();
         showPaymentError("");
-        setMetodoPago("efectivo");
+        setMetodoPago("mercadopago");
         selectedDireccionId = null;
         document
           .querySelectorAll(".direccion-option.selected")
@@ -1722,9 +1985,6 @@
         if (creditoDisponible && creditSummary) {
           card.classList.remove("disabled");
           card.style.pointerEvents = "";
-          if (creditLockBadge) {
-            creditLockBadge.style.display = "none";
-          }
           if (creditCardBalanceText) {
             creditCardBalanceText.textContent = `Saldo disponible: ${formatCurrency(
               Number.parseFloat(creditSummary.creditoDisponible || 0)
@@ -1733,14 +1993,11 @@
         } else {
           card.classList.add("disabled");
           card.style.pointerEvents = "none";
-          if (creditLockBadge) {
-            creditLockBadge.style.display = "inline-flex";
-          }
           if (creditCardBalanceText) {
             creditCardBalanceText.textContent = "Saldo no disponible";
           }
           if (metodoPagoSeleccionado === "credito") {
-            setMetodoPago("efectivo");
+            setMetodoPago("mercadopago");
           }
         }
       }
@@ -1775,11 +2032,17 @@
 
       function aplicarResumenCreditoUI() {
         if (!creditSummary) {
-          if (creditInfoAvailable) creditInfoAvailable.textContent = "$0.00";
-          if (creditInfoLimit) creditInfoLimit.textContent = "$0.00";
-          if (creditInfoUsed) creditInfoUsed.textContent = "$0.00";
           if (creditCardBalanceText) {
             creditCardBalanceText.textContent = "Saldo no disponible";
+          }
+          if (creditoSaldoActualSpan) {
+            creditoSaldoActualSpan.textContent = "$0.00";
+          }
+          if (creditoSaldoFinalSpan) {
+            creditoSaldoFinalSpan.textContent = "$0.00";
+          }
+          if (creditoFechaLimiteSpan) {
+            creditoFechaLimiteSpan.textContent = "--/--/--";
           }
           return;
         }
@@ -1791,29 +2054,35 @@
             0,
           0
         );
+        const total = getCarritoTotal();
+        const saldoFinal = saldo + total;
+        const diasGracia = Number.parseInt(creditSummary.diasGracia, 10) || 0;
+        const fechaLimite = new Date();
+        fechaLimite.setDate(fechaLimite.getDate() + diasGracia);
 
-        if (creditInfoAvailable) {
-          creditInfoAvailable.textContent = formatCurrency(disponible);
-        }
-        if (creditInfoLimit) {
-          creditInfoLimit.textContent = formatCurrency(limite);
-        }
-        if (creditInfoUsed) {
-          creditInfoUsed.textContent = formatCurrency(saldo);
-        }
         if (creditCardBalanceText) {
           creditCardBalanceText.textContent = `Saldo disponible: ${formatCurrency(
             disponible
           )}`;
         }
+        if (creditoSaldoActualSpan) {
+          creditoSaldoActualSpan.textContent = formatCurrency(saldo);
+        }
+        if (creditoSaldoFinalSpan) {
+          creditoSaldoFinalSpan.textContent = formatCurrency(saldoFinal);
+        }
+        if (creditoFechaLimiteSpan) {
+          creditoFechaLimiteSpan.textContent =
+            diasGracia > 0 ? formatDateShort(fechaLimite) : "--/--/--";
+        }
       }
 
       function setMetodoPago(metodo) {
         if (!paymentCards[metodo]) {
-          metodo = "efectivo";
+          metodo = "mercadopago";
         }
-        if (metodo === "credito" && !creditoDisponible) {
-          metodo = "efectivo";
+        if (metodo === "credito" && (!creditoDisponible || !creditSummary)) {
+          metodo = "mercadopago";
         }
 
         metodoPagoSeleccionado = metodo;
@@ -1836,53 +2105,50 @@
           }
         });
 
-        updateCreditInfoVisibility();
-        updateTransferDetailsVisibility();
-        updateMercadoPagoFormVisibility();
+        showPaymentPanel(metodo);
         validatePaymentConstraints();
       }
 
-      function inicializarOpcionesPago() {
-        Object.entries(paymentCards).forEach(([metodo, card]) => {
-          if (!card) return;
-          card.addEventListener("click", () => {
-            if (card.classList.contains("disabled")) return;
-            setMetodoPago(metodo);
-          });
-        });
-
-        setMetodoPago(metodoPagoSeleccionado);
+      async function onMetodoPagoSelected(metodo) {
+        setMetodoPago(metodo);
+        if (metodo === "transferencia") {
+          await ensureTransferInfo();
+        }
       }
 
-      async function verificarCreditoCliente() {
-        if (!paymentSection) return;
+      function setupPaymentListeners() {
+        const radios = document.querySelectorAll(
+          '#paymentOptions input[name="metodo_pago"]'
+        );
 
-        try {
-          const response = await API.checkCreditoCliente();
-          if (!response.ok || !response.data?.success) {
-            throw new Error(
-              response.data?.message || "No se pudo verificar el crédito"
-            );
+        radios.forEach((radio) => {
+          const card = radio.closest(".payment-option-card");
+
+          const handleSelection = async () => {
+            if (radio.disabled || card?.classList.contains("disabled")) {
+              return;
+            }
+            const metodo = (radio.value || "").toLowerCase();
+            await onMetodoPagoSelected(metodo);
+          };
+
+          radio.addEventListener("change", () => {
+            handleSelection();
+          });
+
+          if (card) {
+            card.addEventListener("click", () => {
+              if (radio.disabled || card.classList.contains("disabled")) {
+                return;
+              }
+              radio.checked = true;
+              handleSelection();
+            });
           }
+        });
 
-          creditoDisponible = response.data.hasCredit === true;
-          creditSummary = creditoDisponible
-            ? response.data.creditSummary || null
-            : null;
-
-          aplicarResumenCreditoUI();
-          updateCreditCardState();
-          updateCreditInfoVisibility();
-          validatePaymentConstraints();
-        } catch (error) {
-          console.warn("No se pudo validar crédito del cliente:", error);
-          creditoDisponible = false;
-          creditSummary = null;
-          aplicarResumenCreditoUI();
-          updateCreditCardState();
-          updateCreditInfoVisibility();
-          validatePaymentConstraints();
-        }
+        showPaymentPanel(metodoPagoSeleccionado);
+        setMetodoPago(metodoPagoSeleccionado);
       }
 
       async function confirmarUsoCredito() {
@@ -1905,7 +2171,8 @@
         return modal.isConfirmed;
       }
 
-      inicializarOpcionesPago();
+      setupPaymentListeners();
+      initPaymentMethods();
 
       // Render cart item
       function renderCartItem(item, conflictInfo) {
@@ -2606,7 +2873,7 @@
           return;
         }
 
-        await verificarCreditoCliente();
+        await initPaymentMethods(true);
         modalCheckout.classList.add("show");
         loadDireccionesCheckout();
       });
@@ -2614,8 +2881,9 @@
       // Cancel checkout
       btnCancelarCheckout.addEventListener("click", closeCheckoutModal);
 
-      // Confirm order
-      btnConfirmarPedido.addEventListener("click", async () => {
+      async function procesarCompra(event) {
+        event?.preventDefault?.();
+
         if (!selectedDireccionId) {
           showToast("Por favor selecciona una dirección de envío", "warning");
           return;
@@ -2625,82 +2893,141 @@
           return;
         }
 
+        const metodo = (metodoPagoSeleccionado || "").toLowerCase();
+        const isTransferencia = metodo === "transferencia";
+        const isCredito = metodo === "credito";
+        const isMercadoPago = metodo === "mercadopago";
+
+        if (isTransferencia) {
+          const hasFile = inputComprobante?.files?.length;
+          if (!hasFile) {
+            showErrorAlert(
+              "Debes subir el comprobante de pago para finalizar por transferencia."
+            );
+            return;
+          }
+        }
+
+        if (isCredito) {
+          if (!creditoDisponible || !creditSummary) {
+            showErrorAlert(
+              "Tu línea de crédito no está disponible. Selecciona otro método de pago."
+            );
+            return;
+          }
+
+          const confirmado = await confirmarUsoCredito();
+          if (!confirmado) {
+            return;
+          }
+        }
+
+        if (isConfirmingPedido) return;
         isConfirmingPedido = true;
         setConfirmarPedidoLoading(true);
 
+        let processingModalShown = false;
+        if (typeof Swal !== "undefined" && Swal?.fire) {
+          processingModalShown = true;
+          Swal.fire({
+            title: "Procesando pedido...",
+            text: "No cierres esta ventana",
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            showConfirmButton: false,
+            didOpen: () => {
+              Swal.showLoading();
+            },
+          });
+        }
+
         try {
-          if (metodoPagoSeleccionado === "credito") {
-            const confirmado = await confirmarUsoCredito();
-            if (!confirmado) {
-              isConfirmingPedido = false;
-              setConfirmarPedidoLoading(false);
-              return;
-            }
-          }
+          if (isTransferencia) {
+            const file = inputComprobante.files[0];
+            const formData = new FormData();
+            formData.append("DireccionEnvioID", selectedDireccionId);
+            formData.append(
+              "MetodoPago",
+              JSON.stringify({ metodo: "transferencia" })
+            );
+            formData.append("MontoTotal", getCarritoTotal());
+            formData.append("comprobante", file);
 
-          let mercadopagoReferencia = null;
-          if (metodoPagoSeleccionado === "mercadopago") {
-            const tokenId = await generarTokenTarjeta();
-            const amount = getCarritoTotal();
-            const emailCliente = getClienteEmail();
-
-            const pagoResponse = await API.procesarPagoTarjeta({
-              token: tokenId,
-              monto: amount,
-              emailCliente,
-            });
-
-            if (!pagoResponse.ok || !pagoResponse.data?.success) {
+            const response = await API.finalizarPedidoTransferencia(formData);
+            if (!response.ok || !response.data?.success) {
               throw new Error(
-                pagoResponse.data?.message ||
-                  "No se pudo procesar el pago con tarjeta."
+                response.data?.message ||
+                  "No se pudo finalizar el pedido por transferencia."
               );
             }
-
-            mercadopagoReferencia =
-              pagoResponse.data?.data?.pagoId ||
-              pagoResponse.data?.data?.paymentId ||
-              pagoResponse.data?.data?.referencia ||
-              pagoResponse.data?.data?.reference ||
-              pagoResponse.data?.payment?.id ||
-              null;
-          }
-
-          const metodoPagoPayload = buildMetodoPagoPayload({
-            mercadopagoReferencia,
-          });
-
-          const response = await API.crearPedido(
-            selectedDireccionId,
-            metodoPagoPayload
-          );
-
-          if (response.ok && response.data.success) {
-            const pedidoId = response.data.data.pedido.pedidoId;
-
-            closeCheckoutModal();
-            modalSuccess.classList.add("show");
-
-            setTimeout(() => {
-              loadCarrito();
-            }, 500);
           } else {
-            throw new Error(
-              response.data?.message || "Error al crear el pedido"
+            let extraMetodoFields = {};
+
+            if (isMercadoPago) {
+              const tokenId = await generarTokenTarjeta();
+              const amount = getCarritoTotal();
+              const emailCliente = getClienteEmail();
+
+              const pagoResponse = await API.procesarPagoTarjeta({
+                token: tokenId,
+                monto: amount,
+                emailCliente,
+              });
+
+              if (!pagoResponse.ok || !pagoResponse.data?.success) {
+                throw new Error(
+                  pagoResponse.data?.message ||
+                    "No se pudo procesar el pago con tarjeta."
+                );
+              }
+
+              const mercadopagoReferencia =
+                pagoResponse.data?.data?.pagoId ||
+                pagoResponse.data?.data?.paymentId ||
+                pagoResponse.data?.data?.referencia ||
+                pagoResponse.data?.data?.reference ||
+                pagoResponse.data?.payment?.id ||
+                null;
+
+              extraMetodoFields.referenciaPago = mercadopagoReferencia;
+            }
+
+            const response = await API.finalizarPedido(
+              buildPedidoPayload(extraMetodoFields)
             );
+
+            if (!response.ok || !response.data?.success) {
+              throw new Error(
+                response.data?.message ||
+                  "No se pudo registrar tu pedido. Intenta más tarde."
+              );
+            }
           }
+
+          if (processingModalShown) {
+            Swal.close();
+            processingModalShown = false;
+          }
+
+          await handleCheckoutSuccess();
         } catch (error) {
-          console.error("Error creating order:", error);
-          showToast(
+          console.error("Error al procesar la compra:", error);
+          if (processingModalShown && typeof Swal !== "undefined" && Swal?.close) {
+            Swal.close();
+          }
+          showErrorAlert(
             error?.message ||
-              "Error al conectar con el servidor. Intenta nuevamente.",
-            "error"
+              "Ocurrió un error al procesar tu pedido. Inténtalo nuevamente."
           );
         } finally {
           isConfirmingPedido = false;
           setConfirmarPedidoLoading(false);
         }
-      });
+      }
+
+      if (btnConfirmarPedido) {
+        btnConfirmarPedido.addEventListener("click", procesarCompra);
+      }
 
       // Close modals when clicking outside
       window.addEventListener("click", (e) => {
