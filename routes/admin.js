@@ -7,6 +7,8 @@ const bitacoraController = require("../controllers/bitacoraController");
 const changeRequestController = require("../controllers/changeRequestController");
 const inventoryAuditController = require("../controllers/inventoryAuditController");
 const purchaseSuggestionController = require("../controllers/purchaseSuggestionController");
+const cxcExportController = require("../controllers/cxcExportController");
+const cxcController = require("../controllers/cxcController");
 const upload = require("../middlewares/upload");
 const uploadComprobante = require("../middlewares/uploadComprobante");
 const {
@@ -558,11 +560,32 @@ router.get(
   adminController.getCxcSummary
 );
 
+router.get(
+  "/cxc/metricas",
+  authenticate,
+  authorizeAdmin,
+  cxcController.getMetricasCobranza
+);
+
+router.get(
+  "/cxc/exportar",
+  authenticate,
+  authorizeAdmin,
+  cxcController.exportarLoteCxC
+);
+
 router.post(
   "/registrar-abono",
   authenticate,
   authorizeAdminOrAgente,
   adminController.registrarAbonoCxC
+);
+
+router.get(
+  "/cxc/exportar",
+  authenticate,
+  authorizeAdmin,
+  cxcController.exportarCxC
 );
 
 router.get(

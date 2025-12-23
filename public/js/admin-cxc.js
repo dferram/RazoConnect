@@ -18,6 +18,7 @@
     ensureFontAwesome();
     bindEvents();
     loadCartera();
+    cargarMetricas();
   });
 
   function cacheElements() {
@@ -91,13 +92,47 @@
       loadCartera(true);
     });
 
-    elements.btnExportar?.addEventListener("click", () => {
-      Swal.fire({
-        icon: "info",
-        title: "En desarrollo",
-        text: "La exportación estará disponible próximamente.",
-        confirmButtonColor: "#F97316",
-      });
+    elements.btnExportar?.addEventListener("click", async () => {
+      try {
+        Swal.fire({
+          title: "Generando Reporte...",
+          text: "Estamos procesando y archivando los registros pendientes.",
+          allowOutsideClick: false,
+          didOpen: () => { Swal.showLoading() }
+        });
+
+        const response = await fetch('/api/admin/cxc/exportar', { method: 'GET' });
+
+        if (response.status === 404) {
+          Swal.fire('Sin Datos', 'No hay registros nuevos pendientes de exportar.', 'info');
+          return;
+        }
+
+        if (!response.ok) throw new Error('Error al generar reporte');
+
+        // Descarga del archivo
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `CxC_RazoConnect_${new Date().toISOString().slice(0,10)}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+
+        // Éxito y recarga
+        Swal.fire({
+          icon: 'success',
+          title: 'Reporte Descargado',
+          text: 'Los registros han sido movidos al histórico.'
+        }).then(() => {
+          loadCartera(); // Recargar la tabla
+        });
+
+      } catch (error) {
+        console.error(error);
+        Swal.fire('Error', 'No se pudo generar el reporte.', 'error');
+      }
     });
 
     elements.tablaBody?.addEventListener("click", (event) => {
@@ -418,6 +453,36 @@
       currency: "MXN",
       minimumFractionDigits: 2,
     }).format(number);
+  }
+
+    async function cargarMetricas() {
+    try {
+      const response = await fetch('/api/admin/cxc/metricas');
+      if (!response.ok) throw new Error('Error al cargar métricas');
+      
+      const { data } = await response.json();
+      
+      // Actualizar KPIs
+      const kpis = {
+        '#kpi-pendiente': data.por_cobrar,
+        '#kpi-gestion': data.en_gestion,
+        '#kpi-morosos': data.clientes_mora
+      };
+      
+      Object.entries(kpis).forEach(([selector, value]) => {
+        const element = document.querySelector(selector);
+        if (!element) return;
+        
+        if (selector === '#kpi-morosos') {
+          element.textContent = formatNumber(value);
+        } else {
+          element.textContent = formatCurrency(value);
+        }
+      });
+      
+    } catch (error) {
+      console.error('Error cargando métricas:', error);
+    }
   }
 
   function formatNumber(value) {
