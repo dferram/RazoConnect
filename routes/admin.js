@@ -7,8 +7,9 @@ const bitacoraController = require("../controllers/bitacoraController");
 const changeRequestController = require("../controllers/changeRequestController");
 const inventoryAuditController = require("../controllers/inventoryAuditController");
 const purchaseSuggestionController = require("../controllers/purchaseSuggestionController");
-const cxcExportController = require("../controllers/cxcExportController");
 const cxcController = require("../controllers/cxcController");
+const cxpController = require("../controllers/cxpController");
+const inventarioController = require("../controllers/inventarioController");
 const upload = require("../middlewares/upload");
 const uploadComprobante = require("../middlewares/uploadComprobante");
 const {
@@ -574,18 +575,18 @@ router.get(
   cxcController.exportarLoteCxC
 );
 
+router.get(
+  "/cxp/exportar",
+  authenticate,
+  authorizeAdmin,
+  cxpController.exportarLoteCxP
+);
+
 router.post(
   "/registrar-abono",
   authenticate,
   authorizeAdminOrAgente,
   adminController.registrarAbonoCxC
-);
-
-router.get(
-  "/cxc/exportar",
-  authenticate,
-  authorizeAdmin,
-  cxcController.exportarCxC
 );
 
 router.get(
@@ -893,6 +894,21 @@ router.get(
   authenticate,
   verifySuperAdmin,
   bitacoraController.obtenerEntidadesActividad
+);
+
+// Rutas de Inventario
+router.get(
+  "/inventario/entradas/exportar",
+  authenticate,
+  authorizeAdmin,
+  inventarioController.exportarEntradasAlmacen
+);
+
+router.get(
+  "/inventario/ordenes-pendientes",
+  authenticate,
+  authorizeAdmin,
+  inventarioController.getOrdenesPendientes
 );
 
 module.exports = router;

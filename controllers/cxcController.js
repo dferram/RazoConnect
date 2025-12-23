@@ -1,5 +1,5 @@
 const ExcelJS = require('exceljs');
-const pool = require('../db/pool');
+const pool = require('../db');
 const { format } = require('date-fns');
 
 /**
@@ -169,7 +169,66 @@ async function getMetricasCobranza(req, res) {
     }
 }
 
+/**
+ * Obtiene lista paginada de clientes con crédito
+ */
+async function getClientesCredito(req, res) {
+    const client = await pool.connect();
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const offset = (page - 1) * limit;
+    
+    try {
+        // Total de registros
+        const { rows: [count] } = await client.query(`
+            SELECT COUNT(*) as total
+            FROM cliente_creditos cc
+            JOIN clientes c ON c.clienteid = cc.cliente_id
+            WHERE cc.saldo_deudor > 0
+        `);
+
+        // Datos paginados
+        const { rows } = await client.query(`
+            SELECT 
+                cc.credito_id,
+                cc.cliente_id,
+                cc.limite_credito,
+                cc.saldo_deudor,
+                cc.estado_credito,
+                c.nombre,
+                c.apellido,
+                c.email,
+                COALESCE(cc.ultimo_movimiento, cc.fecha_creacion) as ultimo_movimiento
+            FROM cliente_creditos cc
+            JOIN clientes c ON c.clienteid = cc.cliente_id
+            WHERE cc.saldo_deudor > 0
+            ORDER BY cc.estado_credito DESC, cc.saldo_deudor DESC
+            LIMIT $1 OFFSET $2
+        `, [limit, offset]);
+
+        const totalPages = Math.ceil(count.total / limit);
+
+        res.json({
+            success: true,
+            data: rows,
+            totalRecords: parseInt(count.total),
+            totalPages,
+            currentPage: page
+        });
+
+    } catch (error) {
+        console.error('Error obteniendo clientes:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error al obtener lista de clientes'
+        });
+    } finally {
+        client.release();
+    }
+}
+
 module.exports = {
     exportarLoteCxC,
-    getMetricasCobranza
+    getMetricasCobranza,
+    getClientesCredito
 };

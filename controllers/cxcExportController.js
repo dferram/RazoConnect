@@ -1,5 +1,5 @@
 const ExcelJS = require('exceljs');
-const pool = require('../db/pool');
+const pool = require('../db');
 const { format } = require('date-fns');
 
 /**

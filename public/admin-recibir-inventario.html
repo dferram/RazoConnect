@@ -31,6 +31,16 @@
       <main class="admin-main">
         <div id="admin-header-container"></div>
 
+        <div class="admin-content" style="display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; justify-content: flex-end;">
+          <button id="btn-exportar-entradas" type="button" class="btn btn-success me-2">
+            <i class="bi bi-file-earmark-excel"></i>
+            <span class="ms-1">Descargar Lote</span>
+          </button>
+          <button id="btnRefresh" type="button" class="btn btn-secondary" style="padding: 0.55rem 1rem;">
+            <i class="bi bi-arrow-repeat"></i> Actualizar
+          </button>
+        </div>
+
         <div class="admin-content" style="display: grid; gap: 1.25rem">
           <!-- Órdenes de Compra Pendientes -->
           <section class="admin-card" style="padding: 1.25rem">
@@ -239,11 +249,13 @@
                 </div>
               </div>
             </div>
+            <div id="pagination-controls" class="pagination-controls"></div>
           </section>
         </div>
       </main>
     </div>
     
+    <script src="js/admin-recibir-inventario.js" defer></script>
     <script src="js/layout.js" defer></script>
     <script src="js/api.js"></script>
     <script src="js/admin-header-dropdown.js"></script>
