@@ -9,6 +9,10 @@
       estado: "",
     },
     currentCreditoId: null,
+    currentPage: 1,
+    itemsPerPage: 10,
+    totalPages: 1,
+    totalRecords: 0
   };
 
   const elements = {};
@@ -155,14 +159,14 @@
     });
   }
 
-  async function loadCartera(isManualRefresh = false) {
+  async function loadCartera(isManualRefresh = false, page = state.currentPage) {
     toggleLoading(true);
     try {
       if (isManualRefresh) {
         showButtonLoading(elements.btnRecargar, true);
       }
 
-      const response = await API.apiCall("/admin/cxc-summary", {
+      const response = await API.apiCall(`/admin/cxc-summary?page=${page}&limit=${state.itemsPerPage}`, {
         method: "GET",
       });
 
@@ -171,7 +175,11 @@
       }
 
       const payload = response.data.data || {};
-      const cartera = Array.isArray(payload.cartera) ? payload.cartera : [];
+      const cartera = Array.isArray(payload.data) ? payload.data : [];
+      
+      state.currentPage = payload.currentPage || 1;
+      state.totalPages = payload.totalPages || 1;
+      state.totalRecords = payload.totalRecords || 0;
 
       state.cartera = cartera.map((cliente) => ({
         ...cliente,
@@ -271,6 +279,8 @@
 
   function renderTabla() {
     if (!elements.tabla || !elements.tablaBody) return;
+
+    renderPagination();
 
     if (!state.filtrada.length) {
       elements.tabla.style.display = "none";
@@ -506,5 +516,39 @@
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;")
       .replace(/'/g, "&#39;");
+  }
+
+  function renderPagination() {
+    const paginationEl = document.getElementById('pagination-controls');
+    if (!paginationEl) return;
+
+    let html = '';
+
+    // Botón Anterior
+    html += `<li class="page-item ${state.currentPage === 1 ? 'disabled' : ''}">
+      <button class="page-link" ${state.currentPage === 1 ? 'disabled' : ''} onclick="loadCartera(false, ${state.currentPage - 1})">
+        <i class="bi bi-chevron-left"></i>
+      </button>
+    </li>`;
+
+    // Números de página
+    for (let i = 1; i <= state.totalPages; i++) {
+      if (i === 1 || i === state.totalPages || (i >= state.currentPage - 1 && i <= state.currentPage + 1)) {
+        html += `<li class="page-item ${i === state.currentPage ? 'active' : ''}">
+          <button class="page-link" onclick="loadCartera(false, ${i})">${i}</button>
+        </li>`;
+      } else if (i === state.currentPage - 2 || i === state.currentPage + 2) {
+        html += '<li class="page-item disabled"><span class="page-link">...</span></li>';
+      }
+    }
+
+    // Botón Siguiente
+    html += `<li class="page-item ${state.currentPage === state.totalPages ? 'disabled' : ''}">
+      <button class="page-link" ${state.currentPage === state.totalPages ? 'disabled' : ''} onclick="loadCartera(false, ${state.currentPage + 1})">
+        <i class="bi bi-chevron-right"></i>
+      </button>
+    </li>`;
+
+    paginationEl.innerHTML = html;
   }
 })();

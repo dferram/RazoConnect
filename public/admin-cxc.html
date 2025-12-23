@@ -46,11 +46,7 @@
                 <button id="btnRegistrarAbono" type="button" class="btn btn-primary">
                   <i class="bi bi-cash-coin"></i> Registrar abono
                 </button>
-                <button id="btnExportar" type="button" class="btn btn-success">
-                  <i class="bi bi-file-earmark-excel"></i>
-                  <span class="ms-1">Descargar Lote</span>
-                </button>
-                <button
+                                <button
                   id="btnRecargar"
                   type="button"
                   class="btn btn-secondary btn-icon"
@@ -139,6 +135,18 @@
                 </thead>
                 <tbody id="tablaCxCTbody"></tbody>
               </table>
+
+              <div class="d-flex justify-content-between align-items-center mt-3 mb-4">
+                <nav aria-label="Navegación de tabla">
+                  <ul class="pagination mb-0" id="pagination-controls"></ul>
+                </nav>
+                <div id="action-buttons-container">
+                  <button id="btnExportar" type="button" class="btn btn-success">
+                    <i class="bi bi-file-earmark-excel"></i>
+                    <span class="ms-1">Descargar Lote</span>
+                  </button>
+                </div>
+              </div>
             </div>
           </section>
         </div>

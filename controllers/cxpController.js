@@ -166,6 +166,64 @@ async function exportarLoteCxP(req, res) {
     }
 }
 
+/**
+ * Obtiene lista paginada de cuentas por pagar
+ */
+async function getCuentasPorPagar(req, res) {
+    const client = await pool.connect();
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const offset = (page - 1) * limit;
+    
+    try {
+        // Total de registros
+        const { rows: [count] } = await client.query(`
+            SELECT COUNT(*) as total
+            FROM cuentas_por_pagar cxp
+            WHERE cxp.estatus NOT IN ('PAGADO', 'CANCELADO')
+        `);
+
+        // Datos paginados
+        const { rows } = await client.query(`
+            SELECT 
+                cxp.cxp_id,
+                cxp.proveedor_id,
+                cxp.fecha_emision,
+                cxp.fecha_vencimiento,
+                cxp.importe_total as importe,
+                COALESCE(cxp.importe_pagado, 0) as abono,
+                cxp.estatus,
+                cxp.notas,
+                p.nombre as proveedor
+            FROM cuentas_por_pagar cxp
+            INNER JOIN proveedores p ON p.proveedorid = cxp.proveedor_id
+            WHERE cxp.estatus NOT IN ('PAGADO', 'CANCELADO')
+            ORDER BY cxp.fecha_vencimiento ASC
+            LIMIT $1 OFFSET $2
+        `, [limit, offset]);
+
+        const totalPages = Math.ceil(count.total / limit);
+
+        res.json({
+            success: true,
+            data: rows,
+            totalRecords: parseInt(count.total),
+            totalPages,
+            currentPage: page
+        });
+
+    } catch (error) {
+        console.error('Error obteniendo CxP:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error al obtener cuentas por pagar'
+        });
+    } finally {
+        client.release();
+    }
+}
+
 module.exports = {
-    exportarLoteCxP
+    exportarLoteCxP,
+    getCuentasPorPagar
 };
