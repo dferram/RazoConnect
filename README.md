@@ -1,413 +1,222 @@
-# RazoConnect
+# RazoConnect 
 
-RazoConnect es una plataforma de e-commerce orientada a la venta al mayoreo de cajas de fashion. Está diseñada para cubrir los flujos comerciales típicos de un negocio B2B/B2C mayorista: catálogo por paquetes, gestión de inventario con auditoría, procesamiento de pedidos, panel administrativo completo y un sistema de agentes con comisiones.
+![Node.js](https://img.shields.io/badge/Node.js-v18+-green.svg)
+![Express](https://img.shields.io/badge/Express-4.18.2-blue.svg)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-v17+-blue.svg)
+![Bootstrap](https://img.shields.io/badge/Bootstrap-5.0-purple.svg)
 
-## Tabla de Contenidos
-- [Propósito y Enfoque](#propósito-y-enfoque)
-- [Características Principales](#características-principales)
-- [Instalación y Configuración](#instalación-y-configuración)
-- [Arquitectura del Backend](#arquitectura-del-backend)
-- [Frontend](#frontend)
-- [Endpoints API](#endpoints-api)
-- [Seguridad](#seguridad)
-- [Licencia](#licencia)
+Sistema integral de E-commerce y gestión de inventario diseñado para optimizar operaciones comerciales B2B.
 
-## Propósito y enfoque
+## Características Principales
 
-- Proveer una API RESTful y una interfaz administrativa que permitan gestionar catálogo, stock, órdenes y comisiones de agentes.
-- Facilitar operaciones mayoristas por paquetes (piezas por paquete, precio por paquete, control de stock en unidades de paquete).
-- Mantener trazabilidad y auditoría de cambios de inventario y operaciones críticas mediante transacciones atómicas y logs.
+- Sistema de autenticación multi-rol (Clientes, Agentes, Administradores)
+- Catálogo de productos con gestión de variantes y paquetes
+- Sistema de carrito de compras y pedidos
+- Gestión de créditos y cuentas por pagar
+- Panel administrativo completo
+- Sistema de notificaciones en tiempo real
+- Reportes y estadísticas
+- Gestión de comisiones para agentes
 
-## Características principales
+## Tecnologías
 
-- **API RESTful** construida con Node.js y Express
-- **Persistencia** con PostgreSQL (modelo relacional)
-- **Autenticación** basada en JWT con roles diferenciados (clientes, agentes, administradores)
-- **Encriptación** segura de contraseñas con bcrypt
-- **Gestión completa de inventario** con registro de movimientos (Log_Inventario)
-- **Panel administrativo** con estadísticas en tiempo real, gestión de pedidos, productos, agentes y comisiones
-- **Sistemas de validación** y reglas de negocio (unicidad de SKU, códigos de agente, stock no negativo)
-- **Soporte para backorders** y recepción parcial/total de ordenes de compra
-- **Endpoints orientados a auditoría** y operaciones atómicas (BEGIN/COMMIT/ROLLBACK)
-- **Frontend responsive** con HTML, CSS y JavaScript vanilla
+- **Backend:** Node.js con Express
+- **Base de Datos:** PostgreSQL
+- **Frontend:** HTML5, JavaScript Vanilla, Bootstrap 5
+- **Autenticación:** JWT, Passport (Google OAuth)
+- **Email:** Nodemailer
+- **Procesamiento de Pagos:** MercadoPago
+- **Tareas Programadas:** node-cron
 
-## Instalación y Configuración
+## Arquitectura del Proyecto
 
-### Requisitos Previos
-- Node.js (v14 o superior)
-- PostgreSQL (v12 o superior)
-- npm o yarn
+<details>
+<summary>Controllers</summary>
 
-### Pasos de Instalación
+| Archivo | Responsabilidad Específica |
+|---------|---------------------------|
+| `adminController.js` | Gestión completa del panel administrativo: CRUD de productos, gestión de inventario, aprobación de cambios y monitoreo de operaciones. |
+| `agentesController.js` | Control de agentes de venta: gestión de cartera, cálculo de comisiones y métricas de rendimiento. |
+| `authController.js` | Autenticación completa: login tradicional, OAuth con Google, manejo de JWT y roles de acceso. |
+| `carritoController.js` | Lógica del carrito: agregar/quitar productos, validar stock, aplicar descuentos y procesar checkout. |
+| `creditoController.js` | Gestión de créditos: límites, saldos, historial y validación de operaciones crediticias. |
+| `cxpController.js` | Control de cuentas por pagar: registro de facturas, pagos y seguimiento de vencimientos. |
+| `inventarioController.js` | Control de inventario: entradas, salidas, ajustes y validación de stock. |
+| `pedidosController.js` | Procesamiento de pedidos: creación, seguimiento, backorder y actualización de estados. |
+| `productosController.js` | Gestión de productos: CRUD, variantes, precios y categorización. |
+| `reportesController.js` | Generación de reportes: ventas, inventario, comisiones y estados financieros. |
 
-1. **Clonar el repositorio**
-```bash
-git clone <repository-url>
-cd RazoConnect
+</details>
+
+<details>
+<summary>Routes</summary>
+
+| Archivo | Responsabilidad Específica |
+|---------|---------------------------|
+| `admin.js` | Rutas protegidas del panel admin: `/api/admin/*` con validación de roles. |
+| `auth.js` | Endpoints de autenticación: login, registro, refresh token y OAuth. |
+| `carrito.js` | Rutas de carrito: gestión de productos y proceso de compra. |
+| `clientes.js` | API de clientes: perfil, direcciones y preferencias. |
+| `pagos.js` | Integración con MercadoPago y gestión de transacciones. |
+| `pedidos.js` | Gestión de órdenes: creación, seguimiento y actualizaciones. |
+| `productos.js` | API de productos: catálogo, búsqueda y filtrado. |
+| `staff.js` | Rutas específicas para personal interno y agentes. |
+
+</details>
+
+<details>
+<summary>Services</summary>
+
+| Archivo | Responsabilidad Específica |
+|---------|---------------------------|
+| `ChangeRequestService.js` | Control de cambios y aprobaciones en sistema. |
+| `auditService.js` | Registro de auditoría de operaciones críticas. |
+| `emailService.js` | Envío de correos transaccionales y notificaciones. |
+| `inventoryService.js` | Lógica de negocio para gestión de inventario. |
+| `notificacionesService.js` | Sistema de notificaciones en tiempo real. |
+| `ordenesService.js` | Procesamiento y seguimiento de órdenes de compra. |
+
+</details>
+
+<details>
+<summary>Middleware</summary>
+
+| Archivo | Responsabilidad Específica |
+|---------|---------------------------|
+| `authMiddleware.js` | Validación de JWT y roles de usuario. |
+| `checkClienteCredit.js` | Validación de límites de crédito en operaciones. |
+| `checkCreditStatus.js` | Verificación de estado crediticio activo. |
+| `notificaciones.js` | Middleware de notificaciones en tiempo real. |
+| `upload.js` | Gestión de carga de archivos y validación. |
+
+</details>
+
+<details>
+<summary>Public/Components</summary>
+
+| Archivo | Responsabilidad Específica |
+|---------|---------------------------|
+| `header-cliente.html` | Navbar principal con carrito y notificaciones. |
+| `admin-header.html` | Header del panel administrativo con menú de gestión. |
+| `sidebar-filtros.html` | Filtros de catálogo: categorías, precios, marcas. |
+| `footer.html` | Footer común con enlaces y copyright. |
+
+</details>
+
+<details>
+<summary>Public/JS</summary>
+
+| Archivo | Responsabilidad Específica |
+|---------|---------------------------|
+| `api.js` | Cliente API para comunicación con backend. |
+| `carritoService.js` | Gestión del carrito en el frontend. |
+| `jwt-utils.js` | Manejo de tokens JWT en cliente. |
+| `theme-manager.js` | Control de temas estacionales. |
+| `admin-*.js` | Scripts específicos del panel admin. |
+| `agente-*.js` | Funcionalidad del portal de agentes. |
+
+</details>
+
+<details>
+<summary>Public/Pages</summary>
+
+| Vista | Funcionalidad |
+|-------|---------------|
+| `catalogo.html` | Listado de productos con filtros. |
+| `producto-detalle.html` | Vista detallada de producto con variantes. |
+| `carrito.html` | Carrito de compras y checkout. |
+| `admin-*.html` | Vistas del panel administrativo. |
+| `agente-*.html` | Portal de agentes de venta. |
+
+</details>
+
+### Flujo de Datos y Dependencias
+
+```mermaid
+graph TD
+    A[Cliente Web] --> B[Routes]
+    B --> C[Controllers]
+    C --> D[Services]
+    D --> E[Base de Datos]
+    C --> F[Middlewares]
+    D --> G[External APIs]
 ```
 
-2. **Instalar dependencias**
-```bash
-npm install
-```
+### Patrones de Diseño
 
-3. **Configurar variables de entorno**
+1. **MVC Modificado**
+   - Routes: Enrutamiento y validación inicial
+   - Controllers: Lógica de negocio
+   - Services: Capa de abstracción para operaciones complejas
 
-Crea un archivo `.env` en la raíz del proyecto con las siguientes variables:
+2. **Middleware Pipeline**
+   - Autenticación
+   - Validación de roles
+   - Verificación de crédito
+   - Logging y auditoría
 
-```env
-# Database
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=razoconnect
-DB_USER=postgres
-DB_PASSWORD=tu_password
+3. **Component-Based Frontend**
+   - Componentes reutilizables
+   - Inyección dinámica vía loaders
+   - Gestión de estado con localStorage
 
-# JWT
-JWT_SECRET=tu_secreto_jwt_seguro
+### Rutas Principales
 
-# Email
-EMAIL_HOST=smtp.gmail.com
-EMAIL_PORT=587
-EMAIL_USER=tu_email@gmail.com
-EMAIL_PASS=tu_password_de_app
+#### API Routes
 
-# Frontend
-FRONTEND_BASE_URL=http://localhost:3000
+| Ruta | Descripción |
+|------|-------------|
+| `/api/auth` | Autenticación y registro |
+| `/api/productos` | Gestión de productos y catálogo |
+| `/api/carrito` | Operaciones del carrito de compras |
+| `/api/pedidos` | Gestión de pedidos |
+| `/api/admin` | Panel administrativo |
+| `/api/cliente` | Operaciones de clientes |
+| `/api/staff` | Gestión de personal |
+| `/api/pagos` | Procesamiento de pagos |
 
-# Admin
-SUPER_ADMIN_KEY=tu_clave_super_admin
+#### Frontend Pages
 
-# Server
-PORT=3000
-```
-
-4. **Configurar la base de datos**
-
-Ejecuta el script SQL para crear las tablas:
-```bash
-psql -U postgres -d razoconnect -f "BD V01.sql"
-```
-
-5. **Iniciar el servidor**
-
-```bash
-# Modo desarrollo (con nodemon)
-npm run dev
-
-# Modo producción
-npm start
-```
-
-El servidor estará disponible en `http://localhost:3000`
-
-### Scripts de Inicio
-
-También puedes usar los scripts proporcionados:
-- **Windows PowerShell**: `.\start.ps1`
-- **Windows Batch**: `start.bat`
-
-## Arquitectura del Backend
-
-### Estructura del Proyecto
-
-```
-RazoConnect/
-├── controllers/        # Lógica de negocio por dominio
-│   ├── authController.js
-│   ├── adminController.js
-│   ├── productosController.js
-│   ├── carritoController.js
-│   ├── pedidosController.js
-│   └── ...
-├── routes/            # Definición de rutas
-│   ├── auth.js
-│   ├── admin.js
-│   ├── productos.js
-│   └── ...
-├── middlewares/       # Middlewares de autenticación y autorización
-│   └── auth.js
-├── services/          # Servicios de utilidad
-│   └── emailService.js
-├── utils/             # Utilidades generales
-│   └── jwtHelper.js
-├── public/            # Frontend estático
-├── db.js              # Configuración de PostgreSQL
-├── index.js           # Punto de entrada del servidor
-└── package.json
-```
-
-### Principales dominios y flujos de negocio
-
-#### Usuarios
-- **Clientes**: navegación de catálogo, carrito y proceso de pedido
-- **Agentes**: registro de ventas que generan comisiones
-- **Administradores**: control y operación del sistema (confirmar pedidos, ajustar inventario, pagar comisiones)
-
-#### Catálogo y productos
-- Productos con SKU, piezas por paquete, costo unitario, precio por paquete y stock
-- Cálculo automático de margen y ganancia a nivel de paquete
-- Variantes con medidas y tamaños disponibles
-
-#### Pedidos
-- Estados: Pendiente, Confirmado, Enviado, Entregado, Cancelado
-- Confirmación de pedido: verificación de stock, decremento de inventario y registro en log en una transacción atómica
-- Gestión de direcciones de envío normalizadas por estado
-
-#### Inventario
-- Ajustes con motivo y tipo (Entrada/Salida)
-- Prevención de stock negativo y registro en Log_Inventario
-- Recepción de órdenes de compra para cubrir backorders
-- Auditoría completa de movimientos
-
-#### Comisiones y agentes
-- Registro de agentes con código único
-- Métricas de ventas y comisiones acumuladas
-- Flujo para marcar comisiones como pagadas
-- Evitar pagos duplicados
-- Dashboard de agente con estadísticas
-
-#### Auditoría
-- Log de movimientos de inventario con ProductoID, TipoMovimiento, Cantidad, Motivo, UsuarioID y timestamp
-- Trazabilidad completa de operaciones críticas
-
-### Reglas críticas y garantías
-
-- Operaciones críticas (confirmar pedidos, ajustes de inventario) se ejecutan dentro de transacciones atómicas: se revierte todo si alguna parte falla
-- Validaciones de negocio en backend: unicidad (SKU/email/código de agente), stock no negativo, estados válidos y permisos por rol
-- Prevención de condiciones de carrera en la manipulación de stock (control de concurrencia a nivel de BD/restricciones según implementación)
-
-## Frontend
-
-El frontend es una aplicación web estática construida con HTML, CSS y JavaScript vanilla (sin frameworks). Se conecta a la API RESTful del backend.
-
-### Estructura del Frontend
-
-```
-public/
-├── css/
-│   ├── styles.css          # Estilos globales
-│   └── admin.css           # Estilos del panel admin
-├── js/
-│   ├── api.js              # Funciones de utilidad para API
-│   ├── auth-guard-admin.js # Protección de rutas
-│   ├── token-refresh.js    # Renovación de tokens
-│   └── admin-reportes.js   # Lógica de reportes
-├── index.html              # Página de bienvenida
-├── login.html              # Login unificado
-├── registro.html           # Registro de clientes
-├── dashboard.html          # Catálogo de productos
-├── producto-detalle.html   # Detalle de producto
-├── carrito.html            # Carrito de compras
-│
-├── admin-dashboard.html        # Panel principal
-├── admin-pedidos.html          # Gestión de pedidos
-├── admin-clientes.html         # Lista de clientes
-├── admin-cliente-detalle.html  # Perfil del cliente
-├── admin-agentes.html          # Gestión de agentes
-├── admin-agente-detalle.html   # Detalle del agente
-├── admin-agregar-producto.html # Alta de productos
-├── admin-inventario.html       # Kardex y ajustes
-├── admin-comisiones.html       # Gestión de comisiones
-├── admin-proveedores.html      # Gestión de proveedores
-├── admin-crear-oc.html         # Creación de OC
-├── admin-recibir-inventario.html # Recepción de inventario
-└── admin-reportes.html         # Reportes financieros
-```
-
-### Características del Frontend
-
-#### 🔐 Autenticación
-- Login unificado para clientes y administradores
-- Registro de clientes con validación en tiempo real
-- Almacenamiento de JWT en localStorage
-- Renovación automática de tokens para sesiones admin
-- Protección de rutas mediante `auth-guard-admin.js`
-
-#### 📦 Catálogo y Productos (Cliente)
-- Dashboard con listado de productos disponibles
-- Vista detallada de cada producto con galería de imágenes
-- Selector de cantidad de paquetes con validación de stock
-- Sistema de "Agregar al Carrito" integrado
-
-#### 🛒 Carrito de Compras
-- Vista del carrito con lista de productos agregados
-- Cálculo automático de subtotales y total
-- Información de piezas totales por producto
-- Proceso de checkout con selección de dirección de envío
-
-#### 🛠️ Panel Administrador
-- **Dashboard**: Widgets de métricas clave (pedidos, ingresos, clientes, agentes, valor de inventario)
-- **Gestión de Pedidos**: Tabla con filtros y modal de detalle completo
-- **Clientes y Agentes**: Listados con funciones de activación/desactivación y dashboards individuales
-- **Inventario**: Kardex completo, ajustes de stock y gestión de órdenes de compra
-- **Reportes**: Rentabilidad, valuación de inventario y aging de backorders
-- **Comisiones**: Gestión y pago de comisiones a agentes
-
-#### 🎨 Componentes y Diseño
-- Tarjetas de estadísticas con iconos degradados
-- Estados vacíos estilizados (empty states) reutilizables
-- Sistema de notificaciones toast personalizado
-- Estados de loading para operaciones asíncronas
-- Diseño responsive adaptable a dispositivos móviles
-
-### API Helper (`js/api.js`)
-
-El módulo `api.js` proporciona funciones de utilidad para todas las llamadas a la API:
-
-**Autenticación:**
-- `saveAuthData(token, userData)` - Guardar datos de sesión
-- `getToken()` - Obtener token JWT
-- `isAuthenticated()` - Verificar autenticación
-- `clearAuthData()` - Limpiar sesión
-- `requireAuth()` - Requerir autenticación (redirige si no está logueado)
-
-**Llamadas API:**
-- Productos: `API.getProductos()`, `API.getProductoById(id)`
-- Carrito: `API.getCarrito()`, `API.agregarAlCarrito(productoId, cantidadPaquetes)`
-- Pedidos: `API.crearPedido(direccionEnvioId)`
-- Utilidades: `showToast(message, type)` para notificaciones
-
-### Configuración API
-
-Por defecto, el frontend se conecta a `http://localhost:3000/api`. Para cambiar la URL, edita `public/js/api.js` línea 2.
-
-### Validaciones Implementadas
-
-**Formularios:**
-- Formato de email
-- Contraseña (mínimo 6 caracteres)
-- Confirmación de contraseña
-- Campos requeridos
-- Validación en tiempo real
-
-**Carrito:**
-- Validación de stock disponible
-- Cantidad mínima (1 paquete)
-- Actualización automática si producto ya está en carrito
-
-### Flujo de Usuario
-
-1. Usuario llega a `index.html` (página de bienvenida)
-2. Se registra en `registro.html` o inicia sesión en `login.html`
-3. Después del login exitoso, se redirige a `dashboard.html`
-4. Explora el catálogo de productos
-5. Hace clic en un producto para ver `producto-detalle.html`
-6. Selecciona cantidad y agrega productos al carrito
-7. Ve su carrito en `carrito.html` con todos los productos agregados
-8. Procede a finalizar el pedido
-
-## Endpoints API
-
-### Salud y Prueba
-- `GET /api` — bienvenida
-- `GET /api/health` — estado del servidor y BD
-
-### Autenticación
-- `POST /api/registro/cliente` — registrar cliente
-- `POST /api/registro/agente` — registrar agente
-- `POST /api/login` — login (clientes/agentes/admins, con flujo que detecta rol)
-
-### Administración (protegido, JWT admin)
-- `GET /api/admin/dashboard-stats` — estadísticas del dashboard
-- `GET /api/admin/pedidos` — listar pedidos
-- `PUT /api/admin/pedidos/:id` — cambiar estatus (incluye lógica de confirmación)
-- `POST /api/admin/productos` — crear producto
-- `GET /api/admin/productos` — listar productos
-- `POST /api/admin/inventario/ajuste` — ajustar stock con log
-- `GET /api/admin/agentes` — listar agentes
-- `POST /api/admin/agentes` — crear agente
-- `GET /api/admin/comisiones` — listar comisiones
-- `PUT /api/admin/comisiones/:id/pagar` — marcar comisión como pagada
-- `GET /api/admin/reportes/rentabilidad` — reporte de rentabilidad
-- `GET /api/admin/reportes/valuacion-inventario` — valuación de inventario
-- `GET /api/admin/reportes/aging-backorders` — aging de backorders
-
-### Productos (público/protegido según endpoint)
-- `GET /api/productos` — listar productos
-- `GET /api/productos/:id` — detalle de producto
-
-### Carrito (protegido, JWT cliente)
-- `GET /api/carrito` — obtener carrito
-- `POST /api/carrito` — agregar producto al carrito
-- `DELETE /api/carrito/:itemId` — eliminar item del carrito
-
-### Pedidos (protegido, JWT cliente)
-- `POST /api/pedidos` — crear pedido
-- `GET /api/pedidos` — listar pedidos del cliente
-
-### Agentes (protegido, JWT agente)
-- `GET /api/agente/dashboard-stats` — estadísticas del agente
-- `GET /api/agente/comisiones` — comisiones del agente
-- `GET /api/agente/pedidos` — pedidos del agente
+| Ruta | Archivo | Descripción |
+|------|---------|-------------|
+| `/` | `index.html` | Página principal/catálogo |
+| `/admin` | `admin-*.html` | Panel administrativo |
+| `/agente` | `agente-*.html` | Portal de agentes |
+| `/producto` | `producto-detalle.html` | Detalles de producto |
+| `/carrito` | `carrito.html` | Carrito de compras |
+| `/cuenta` | `cuenta-*.html` | Gestión de cuenta de usuario |
 
 ## Seguridad
 
-### Backend
-- Contraseñas hasheadas con bcrypt (configurable rounds)
-- JWT para autenticación con tokens separados por rol para evitar confusiones entre sesión cliente y admin
-- Variables sensibles gestionadas fuera del código fuente (por ejemplo: .env)
-- CORS configurado según necesidades del frontend
-- Registro de quién realizó cambios relevantes (UserID) en Log_Inventario para auditoría
-- Validación de SUPER_ADMIN_KEY para registro de administradores
+- Autenticación JWT para API
+- Middleware de autorización por roles
+- Validación de datos en endpoints
+- Sanitización de entradas
+- Control de acceso basado en roles (RBAC)
+- Protección contra CSRF
 
-### Frontend
-- JWT almacenado en localStorage con clave `razoconnect_token`
-- Verificación de autenticación en rutas protegidas con `requireAuth()`
-- Headers de autorización agregados automáticamente en llamadas API
-- Tokens expirados redirigen automáticamente al login
+## Componentes Reutilizables
 
-## Tecnologías y dependencias principales
+El sistema utiliza componentes HTML modulares ubicados en `/public/components/`:
+- Header Cliente (`header-cliente.html`)
+- Header Admin/Staff (`admin-header.html`)
+- Sidebar Filtros (`sidebar-filtros.html`)
+- Footer común (`footer.html`)
 
-### Backend
-- Node.js, Express
-- PostgreSQL, módulo pg
-- bcrypt (hashing de contraseñas)
-- jsonwebtoken (gestión de JWT)
-- cors, dotenv
-- nodemailer (envío de emails)
+## Diseño y Estilo
 
-### Frontend
-- HTML5, CSS3, JavaScript vanilla
-- Sin frameworks (sin build process)
-- Compatible con todos los navegadores modernos
+- Tema principal con `--razo-orange` (#F97316)
+- Diseño responsivo con Bootstrap 5
+- Componentes consistentes con bordes redondeados y sombras suaves
+- Modales estandarizados para formularios administrativos
 
-## Dashboard y experiencia administrativa
+## Mantenimiento
 
-El panel de administración está diseñado para ofrecer:
-- Estadísticas en tiempo real (pedidos totales, ingresos, clientes activos, agentes, productos con stock bajo, valor de inventario)
-- Gestión granular de pedidos con validaciones y modales para cambios de estado
-- Gestión completa del catálogo (creación con cálculo de margen y SKU único)
-- Gestión de inventario con logs y motivos de ajuste
-- Gestión de agentes y flujo de pago de comisiones con trazabilidad
-- Reportes financieros (rentabilidad, valuación, aging de backorders)
+- Sistema de logs para comunicaciones
+- Tareas de mantenimiento diario automatizadas
+- Respaldos periódicos de base de datos
+- Monitoreo de rendimiento y salud del sistema
 
-## Estado del proyecto y prioridades
+## Licencia
 
-### Estado Actual
-- Implementación completa de módulos principales (autenticación, catálogo, carrito, pedidos, inventario, agentes y comisiones)
-- Panel administrativo funcional con reportes
-- Dashboard de agentes con estadísticas y comisiones
-- Sistema de backorders y órdenes de compra
-
-### Prioridades sugeridas
-- Generación de reportes en formatos (PDF/Excel)
-- Integración de pasarelas de pago
-- Tracking de envíos y estados logísticos
-- Tests unitarios y de integración para las reglas críticas
-- Preparación para despliegue en entornos productivos
-- Optimización de consultas de base de datos
-
-## Audiencia objetivo
-- Equipos de operaciones y logística de comercios mayoristas
-- Administradores que requieren control de inventario y trazabilidad
-- Agentes comerciales que requieren registro de ventas y cobro de comisiones
-- Clientes mayoristas que compran por paquetes
-
-## Licencia y autoría
-- **Licencia**: ISC
-- **Desarrollado por**: Fernando Ramírez
-
----
-
-Para más información o soporte, contacta al equipo de desarrollo.
+Este proyecto está bajo la Licencia ISC. Ver el archivo `LICENSE` para más detalles.
