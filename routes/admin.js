@@ -5,6 +5,7 @@ const adminController = require("../controllers/adminController");
 const authController = require("../controllers/authController");
 const bitacoraController = require("../controllers/bitacoraController");
 const changeRequestController = require("../controllers/changeRequestController");
+const { analizarRiesgoCredito } = require("../services/creditAnalysisService");
 const inventoryAuditController = require("../controllers/inventoryAuditController");
 const purchaseSuggestionController = require("../controllers/purchaseSuggestionController");
 const cxcController = require("../controllers/cxcController");
@@ -129,6 +130,35 @@ router.get(
   authenticate,
   authorizeSuperAdmin,
   changeRequestController.obtenerPendientes
+);
+
+router.get(
+  "/analisis-credito/:solicitudId",
+  authenticate,
+  authorizeAdmin,
+  async (req, res) => {
+    try {
+      const solicitudId = Number.parseInt(req.params.solicitudId, 10);
+      if (!Number.isInteger(solicitudId)) {
+        return res.status(400).json({
+          success: false,
+          message: "ID de solicitud inválido"
+        });
+      }
+
+      const analisis = await analizarRiesgoCredito(solicitudId);
+      return res.json({
+        success: true,
+        data: analisis
+      });
+    } catch (error) {
+      console.error("Error en análisis de crédito:", error);
+      return res.status(500).json({
+        success: false,
+        message: error.message || "Error al analizar solicitud de crédito"
+      });
+    }
+  }
 );
 
 /**

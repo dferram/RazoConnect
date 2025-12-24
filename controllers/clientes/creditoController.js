@@ -139,7 +139,93 @@ const obtenerPerfilCredito = async (req, res) => {
   }
 };
 
+const enviarSolicitudCredito = async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: "No autenticado",
+      });
+    }
+
+    if (!isCliente(req)) {
+      return res.status(403).json({
+        success: false,
+        message: "Acceso denegado",
+      });
+    }
+
+    const clienteId = normalizeClienteId(req);
+    if (!clienteId) {
+      return res.status(400).json({
+        success: false,
+        message: "Identificador de cliente inválido",
+      });
+    }
+
+    // Validar que no tenga una solicitud pendiente
+    const checkPendiente = `
+      SELECT solicitud_id 
+      FROM solicitudes_credito 
+      WHERE cliente_id = $1 
+        AND estado = 'PENDIENTE'
+      LIMIT 1
+    `;
+    const { rows: pendientes } = await db.query(checkPendiente, [clienteId]);
+    if (pendientes.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Ya tienes una solicitud de crédito en proceso de revisión",
+      });
+    }
+
+    // Validar que no tenga un crédito activo
+    const creditoActivo = await fetchCreditoActivo(clienteId);
+    if (creditoActivo) {
+      return res.status(400).json({
+        success: false,
+        message: "Ya cuentas con una línea de crédito activa",
+      });
+    }
+
+    const { montoSolicitado, motivoCredito } = req.body;
+    if (!montoSolicitado || montoSolicitado <= 0 || !motivoCredito?.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "El monto solicitado y motivo son requeridos",
+      });
+    }
+
+    // Insertar la solicitud
+    const query = `
+      INSERT INTO solicitudes_credito 
+        (cliente_id, monto_solicitado, motivo_uso)
+      VALUES 
+        ($1, $2, $3)
+      RETURNING solicitud_id
+    `;
+
+    const values = [clienteId, montoSolicitado, motivoCredito.trim()];
+    const { rows } = await db.query(query, values);
+
+    return res.json({
+      success: true,
+      message: "Solicitud enviada correctamente",
+      data: {
+        solicitudId: rows[0].solicitud_id,
+      },
+    });
+  } catch (error) {
+    console.error("Error al enviar solicitud de crédito:", error);
+    return res.status(500).json({
+      success: false,
+      message: "No fue posible enviar la solicitud",
+    });
+  }
+};
+
 module.exports = {
   checkAuthCredit,
   obtenerPerfilCredito,
+  enviarSolicitudCredito,
 };

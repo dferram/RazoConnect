@@ -3305,17 +3305,19 @@ const getReglasEmpaqueProveedor = async (req, res) => {
     let reglasResult;
     try {
       reglasResult = await db.query(
-        `SELECT tipoproductoid, cantidadempaque
-         FROM proveedor_reglas_empaque
-         WHERE proveedorid = $1`,
+        `SELECT pre.reglaid, pre.tipoproductoid, pre.cantidadempaque, tp.nombre as nombre_tipo
+         FROM proveedor_reglas_empaque pre
+         JOIN tipoproducto tp ON pre.tipoproductoid = tp.tipoproductoid
+         WHERE pre.proveedorid = $1`,
         [proveedorId]
       );
     } catch (dbError) {
       if (dbError && dbError.code === "42703") {
         reglasResult = await db.query(
-          `SELECT tipoproductoid, piezasporpaquete AS cantidadempaque
-           FROM proveedor_reglas_empaque
-           WHERE proveedorid = $1`,
+          `SELECT pre.reglaid, pre.tipoproductoid, pre.piezasporpaquete AS cantidadempaque, tp.nombre as nombre_tipo
+           FROM proveedor_reglas_empaque pre
+           JOIN tipoproducto tp ON pre.tipoproductoid = tp.tipoproductoid
+           WHERE pre.proveedorid = $1`,
           [proveedorId]
         );
       } else {
@@ -3323,18 +3325,18 @@ const getReglasEmpaqueProveedor = async (req, res) => {
       }
     }
 
-    const reglas = (reglasResult?.rows || []).reduce((acc, row) => {
-      const tipoId = row.tipoproductoid;
-      const cantidad = row.cantidadempaque;
-      if (tipoId !== null && tipoId !== undefined && cantidad !== null && cantidad !== undefined) {
-        const tipoKey = String(tipoId);
-        const cantidadInt = Number.parseInt(cantidad, 10);
-        if (Number.isInteger(cantidadInt) && cantidadInt > 0) {
-          acc[tipoKey] = cantidadInt;
-        }
-      }
-      return acc;
-    }, {});
+    const reglas = (reglasResult?.rows || []).map(row => ({
+      reglaid: row.reglaid,
+      tipoproductoid: row.tipoproductoid,
+      cantidadempaque: parseInt(row.cantidadempaque, 10),
+      nombre_tipo: row.nombre_tipo,
+      nombre_regla: `${row.nombre_tipo} (${row.cantidadempaque} piezas)`
+    })).filter(regla => 
+      regla.tipoproductoid !== null && 
+      regla.cantidadempaque !== null && 
+      Number.isInteger(regla.cantidadempaque) && 
+      regla.cantidadempaque > 0
+    );
 
     return res.status(200).json({
       success: true,

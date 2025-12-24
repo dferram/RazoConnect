@@ -495,6 +495,7 @@
     <script src="js/api.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
     <script src="js/components/admin-header-loader.js"></script>
+    <script src="js/components/tipo-producto-loader.js"></script>
     <script>
       // Authentication check
       const adminToken = localStorage.getItem("razoconnect_admin_token");
@@ -519,7 +520,6 @@
         await verifyAndLoadAdmin();
         await loadCategorias();
         await loadProveedores();
-        await loadTiposProducto();
         await loadTamanos();
 
         bindTipoProductoEmpaqueAutomation();
@@ -951,36 +951,8 @@
       }
 
       async function obtenerReglasEmpaqueProveedor(proveedorId) {
-        const key = String(proveedorId || "").trim();
-        if (!key) return null;
-        if (__reglasEmpaqueProveedorCache[key]) {
-          return __reglasEmpaqueProveedorCache[key];
-        }
-
-        try {
-          const response = await fetch(
-            `${API_BASE_URL}/admin/proveedores/${encodeURIComponent(key)}/reglas`,
-            {
-              method: "GET",
-              headers: {
-                Authorization: `Bearer ${adminToken}`,
-                "Content-Type": "application/json",
-              },
-            }
-          );
-          const data = await response.json().catch(() => ({}));
-          if (!response.ok || !data?.success) {
-            throw new Error(data?.message || "No se pudieron cargar reglas de empaque");
-          }
-
-          const reglas = data?.data?.reglas;
-          const normalized = reglas && typeof reglas === "object" ? reglas : {};
-          __reglasEmpaqueProveedorCache[key] = normalized;
-          return normalized;
-        } catch (error) {
-          console.warn("No se pudieron obtener reglas de empaque del proveedor:", error);
-          return null;
-        }
+        // Ahora manejado por tipo-producto-loader.js
+        return window.TipoProductoLoader?.cargarReglasEmpaque(proveedorId) || null;
       }
 
       function sugerirPack(valor) {
@@ -1053,21 +1025,8 @@
       }
 
       function bindTipoProductoEmpaqueAutomation() {
-        if (__tipoProductoEmpaqueListenerBound) return;
-
-        const selectTipo = document.getElementById("inputTipoProducto");
-        const selectProveedor = document.getElementById("proveedor-producto");
-        if (!selectTipo || !selectProveedor) return;
-
-        __tipoProductoEmpaqueListenerBound = true;
-
-        selectTipo.addEventListener("change", () => {
-          aplicarReglaEmpaqueDesdeTipo("tipo");
-        });
-
-        selectProveedor.addEventListener("change", () => {
-          aplicarReglaEmpaqueDesdeTipo("proveedor");
-        });
+        // Ahora manejado por tipo-producto-loader.js
+        return;
       }
 
       async function loadTiposProducto() {
@@ -1914,25 +1873,36 @@
               descripcion:
                 document.getElementById("descripcion").value.trim() || null,
               categoriaId: document.getElementById("categoriaId").value || null,
+              // CRÍTICO: Usar dataset en lugar del value del select
               TipoProductoID: (() => {
-                const raw = document.getElementById("inputTipoProducto")?.value;
-                if (raw === undefined || raw === null) return null;
-                const txt = String(raw).trim();
-                if (!txt) return null;
-                const parsed = Number.parseInt(txt, 10);
-                if (!Number.isInteger(parsed) || parsed <= 0) return null;
-                return tipoProductoIdsDisponibles.has(parsed) ? parsed : null;
+                // Usar helper function del TipoProductoLoader
+                const datosTipo = window.TipoProductoLoader?.obtenerDatosTipoSeleccionado();
+                if (!datosTipo || !datosTipo.tipoId) return null;
+                
+                const tipoId = parseInt(datosTipo.tipoId, 10);
+                return Number.isInteger(tipoId) && tipoId > 0 ? tipoId : null;
+              })(),
+              // Piezas por paquete desde dataset
+              piezasPorPaquete: (() => {
+                const datosTipo = window.TipoProductoLoader?.obtenerDatosTipoSeleccionado();
+                if (!datosTipo || !datosTipo.piezas) return 1; // Default
+                
+                const piezas = parseInt(datosTipo.piezas, 10);
+                return Number.isInteger(piezas) && piezas > 0 ? piezas : 1;
               })(),
               TipoProducto: (() => {
-                const raw = document.getElementById("inputTipoProducto")?.value;
-                if (raw === undefined || raw === null) return null;
-                const txt = String(raw).trim();
-                if (!txt) return null;
-                const parsed = Number.parseInt(txt, 10);
-                if (Number.isInteger(parsed) && parsed > 0 && tipoProductoIdsDisponibles.has(parsed)) {
+                // Para tipos nuevos no existentes (solo si se permite crear tipos nuevos)
+                const selectTipo = document.getElementById("inputTipoProducto");
+                if (!selectTipo?.value) return null;
+                
+                const datosTipo = window.TipoProductoLoader?.obtenerDatosTipoSeleccionado();
+                if (datosTipo && datosTipo.tipoId) {
+                  // Es un tipo existente, no enviar nombre
                   return null;
                 }
-                return txt;
+                
+                // Podría ser un tipo nuevo (solo si Choices.js permite agregar)
+                return selectTipo.value.trim() || null;
               })(),
               proveedorId: (() => {
                 const value = document

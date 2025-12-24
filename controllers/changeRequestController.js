@@ -15,6 +15,7 @@ const ENTITY_MAP = {
   admins: { table: "Administradores", pk: "AdminID" },
   pedidos: { table: "Pedidos", pk: "PedidoID" },
   comisiones: { table: "Comisiones", pk: "ComisionID" },
+  solicitudes_credito: { table: "solicitudes_credito", pk: "solicitud_id" },
 };
 
 function getAdminIdFromRequest(req) {
@@ -89,6 +90,62 @@ async function notificarSolicitudAprobada(solicitudRow) {
   }
 }
 
+async function aprobarSolicitudCredito(solicitudId, adminId, client) {
+  const { rows } = await client.query(
+    `SELECT cliente_id, monto_solicitado 
+     FROM solicitudes_credito 
+     WHERE solicitud_id = $1 AND estado = 'PENDIENTE'
+     FOR UPDATE`,
+    [solicitudId]
+  );
+
+  if (!rows.length) {
+    throw new Error(`Solicitud de crédito #${solicitudId} no encontrada o no está pendiente`);
+  }
+
+  const { cliente_id, monto_solicitado } = rows[0];
+
+  // Verificar que el cliente no tenga un crédito activo
+  const creditoActivo = await client.query(
+    `SELECT credito_id 
+     FROM cliente_creditos 
+     WHERE cliente_id = $1 AND estado_credito = 'ACTIVO'
+     LIMIT 1`,
+    [cliente_id]
+  );
+
+  if (creditoActivo.rows.length > 0) {
+    throw new Error(`El cliente #${cliente_id} ya tiene una línea de crédito activa`);
+  }
+
+  // Crear línea de crédito
+  await client.query(
+    `INSERT INTO cliente_creditos 
+       (cliente_id, limite_credito, saldo_deudor, estado_credito)
+     VALUES 
+       ($1, $2, 0, 'ACTIVO')`,
+    [cliente_id, monto_solicitado]
+  );
+
+  // Actualizar estado de la solicitud
+  await client.query(
+    `UPDATE solicitudes_credito 
+     SET estado = 'APROBADO', 
+         comentarios_admin = 'Aprobado por administrador #' || $1
+     WHERE solicitud_id = $2`,
+    [adminId, solicitudId]
+  );
+
+  // Crear notificación para el cliente
+  await client.query(
+    `INSERT INTO notificaciones 
+       (clienteid, tipo, titulo, mensaje, prioridad)
+     VALUES 
+       ($1, 'sistema', '¡Crédito Aprobado!', 'Tu solicitud de crédito ha sido aprobada. Ya puedes realizar compras a crédito.', 'alta')`,
+    [cliente_id]
+  );
+}
+
 async function aprobarCambios(req, res) {
   const { ids } = req.body || {};
 
@@ -107,15 +164,50 @@ async function aprobarCambios(req, res) {
     });
   }
 
+  const client = await db.pool.connect();
   try {
-    const resultado = await aprobarSolicitudes(ids, adminId);
+    await client.query('BEGIN');
+
+      // Separar IDs por tipo
+    const solicitudesCredito = [];
+    const cambiosRegulares = [];
+
+    for (const id of ids) {
+      // Verificar si es una solicitud de crédito
+      const { rows } = await client.query(
+        'SELECT solicitud_id FROM solicitudes_credito WHERE solicitud_id = $1',
+        [id]
+      );
+
+      if (rows.length > 0) {
+        solicitudesCredito.push(id);
+      } else {
+        cambiosRegulares.push(id);
+      }
+    }
+
+    // Procesar solicitudes de crédito
+    for (const solicitudId of solicitudesCredito) {
+      await aprobarSolicitudCredito(solicitudId, adminId, client);
+    }
+
+    // Procesar cambios regulares
+    let resultado = { applied: [], skipped: [] };
+    if (cambiosRegulares.length > 0) {
+      resultado = await aprobarSolicitudes(cambiosRegulares, adminId);
+    }
+
+    await client.query('COMMIT');
 
     try {
-      const appliedIds = Array.isArray(resultado?.applied)
-        ? resultado.applied
-            .map((row) => Number.parseInt(row?.id ?? row?.cambioId, 10))
-            .filter((n) => Number.isInteger(n) && n > 0)
-        : [];
+      const appliedIds = [
+        ...solicitudesCredito,
+        ...(Array.isArray(resultado?.applied)
+          ? resultado.applied
+              .map((row) => Number.parseInt(row?.id ?? row?.cambioId, 10))
+              .filter((n) => Number.isInteger(n) && n > 0)
+          : [])
+      ];
 
       for (const cambioId of appliedIds) {
         const cambioResult = await db.query(
@@ -260,6 +352,24 @@ async function rechazarCambios(req, res) {
     });
   }
 
+  // Separar IDs por tipo
+  const solicitudesCredito = [];
+  const cambiosRegulares = [];
+
+  for (const id of validIds) {
+    // Verificar si es una solicitud de crédito
+    const { rows } = await client.query(
+      'SELECT solicitud_id FROM solicitudes_credito WHERE solicitud_id = $1',
+      [id]
+    );
+
+    if (rows.length > 0) {
+      solicitudesCredito.push(id);
+    } else {
+      cambiosRegulares.push(id);
+    }
+  }
+
   const client = await db.pool.connect();
 
   try {
@@ -267,7 +377,42 @@ async function rechazarCambios(req, res) {
 
     let rechazados = 0;
 
-    for (const cambioId of validIds) {
+    // Procesar solicitudes de crédito
+    for (const solicitudId of solicitudesCredito) {
+      const { rowCount } = await client.query(
+        `UPDATE solicitudes_credito 
+         SET estado = 'RECHAZADO',
+             comentarios_admin = 'Rechazado por administrador #' || $1
+         WHERE solicitud_id = $2 AND estado = 'PENDIENTE'`,
+        [adminId, solicitudId]
+      );
+
+      if (rowCount > 0) {
+        // Notificar al cliente del rechazo
+        const { rows } = await client.query(
+          `SELECT c.clienteid, c.nombre || ' ' || c.apellido AS nombre_completo
+           FROM solicitudes_credito s
+           INNER JOIN clientes c ON c.clienteid = s.cliente_id
+           WHERE s.solicitud_id = $1`,
+          [solicitudId]
+        );
+
+        if (rows.length > 0) {
+          await client.query(
+            `INSERT INTO notificaciones 
+               (clienteid, tipo, titulo, mensaje, prioridad)
+             VALUES 
+               ($1, 'sistema', 'Solicitud de Crédito Rechazada', 'Tu solicitud de crédito ha sido rechazada. Contacta a tu agente para más información.', 'alta')`,
+            [rows[0].clienteid]
+          );
+        }
+
+        rechazados++;
+      }
+    }
+
+    // Procesar cambios regulares
+    for (const cambioId of cambiosRegulares) {
       const { rows } = await client.query(
         `SELECT * FROM control_cambios
          WHERE id = $1 AND estado = 'PENDIENTE'
@@ -419,6 +564,41 @@ async function rechazarCambios(req, res) {
   }
 }
 
+async function obtenerSolicitudesCredito() {
+  const { rows } = await db.query(
+    `SELECT 
+      s.solicitud_id,
+      s.cliente_id,
+      s.monto_solicitado,
+      s.motivo_uso,
+      s.estado,
+      s.fecha_solicitud,
+      c.nombre || ' ' || c.apellido AS solicitante_nombre,
+      c.email AS solicitante_email
+    FROM solicitudes_credito s
+    INNER JOIN clientes c ON c.clienteid = s.cliente_id
+    WHERE s.estado = 'PENDIENTE'
+    ORDER BY s.fecha_solicitud ASC`
+  );
+
+  return rows.map(row => ({
+    id: row.solicitud_id,
+    entidad: 'solicitudes_credito',
+    entidadId: row.cliente_id,
+    tipoCambio: 'CREDITO',
+    datosAnteriores: null,
+    datosNuevos: {
+      montoSolicitado: row.monto_solicitado,
+      motivoUso: row.motivo_uso
+    },
+    usuarioSolicitanteId: row.cliente_id,
+    solicitanteNombre: row.solicitante_nombre,
+    solicitanteEmail: row.solicitante_email,
+    estado: row.estado,
+    fechaSolicitud: row.fecha_solicitud
+  }));
+}
+
 async function obtenerPendientes(req, res) {
   const adminId = getAdminIdFromRequest(req);
 
@@ -430,6 +610,7 @@ async function obtenerPendientes(req, res) {
   }
 
   try {
+    // Obtener cambios pendientes regulares
     const { rows } = await db.query(
       `SELECT
          cc.id,
@@ -452,7 +633,7 @@ async function obtenerPendientes(req, res) {
        ORDER BY cc.fecha_solicitud ASC`
     );
 
-    const cambios = rows.map((row) => ({
+    const cambiosRegulares = rows.map((row) => ({
       id: row.id,
       entidad: row.entidad,
       entidadId: row.entidad_id,
@@ -465,6 +646,15 @@ async function obtenerPendientes(req, res) {
       estado: row.estado,
       fechaSolicitud: row.fecha_solicitud,
     }));
+
+    // Obtener solicitudes de crédito pendientes
+    const solicitudesCredito = await obtenerSolicitudesCredito();
+
+    // Combinar ambos tipos de solicitudes
+    const cambios = [...cambiosRegulares, ...solicitudesCredito];
+
+    // Ordenar por fecha de solicitud
+    cambios.sort((a, b) => new Date(a.fechaSolicitud) - new Date(b.fechaSolicitud));
 
     return res.json({
       success: true,
