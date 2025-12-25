@@ -452,67 +452,119 @@
     // FUNCIONES PARA EL MODAL DE PAGO
     // ========================================
     
+    const modalPagoCredito = document.getElementById("modalPagoCredito");
+    const btnCerrarModalPago = document.getElementById("btnCerrarModalPago");
+    const btnCancelarPago = document.getElementById("btnCancelarPago");
+    const btnConfirmarPago = document.getElementById("btnConfirmarPago");
+    const paymentCards = document.querySelectorAll("#paymentOptionsPagoCredito .payment-option-card");
+    
+    let metodoPagoSeleccionado = "mercadopago";
+
     function abrirModalPago() {
-      const modal = document.getElementById("modalPagoCredito");
-      if (modal) {
-        modal.style.display = "flex";
-        document.body.style.overflow = "hidden"; // Prevenir scroll del body
+      if (modalPagoCredito) {
+        modalPagoCredito.style.display = "flex";
+        modalPagoCredito.classList.add("show");
+        document.body.style.overflow = "hidden";
       }
     }
 
     function cerrarModalPago() {
-      const modal = document.getElementById("modalPagoCredito");
-      if (modal) {
-        modal.style.display = "none";
-        document.body.style.overflow = ""; // Restaurar scroll
+      if (modalPagoCredito) {
+        modalPagoCredito.style.display = "none";
+        modalPagoCredito.classList.remove("show");
+        document.body.style.overflow = "";
       }
     }
 
-    function seleccionarMetodoPago(metodo) {
-      console.log(`✅ Método de pago seleccionado: ${metodo}`);
+    // Manejar selección de método de pago
+    function handlePaymentMethodSelection() {
+      paymentCards.forEach((card) => {
+        card.addEventListener("click", () => {
+          // Remover selección de todas las tarjetas
+          paymentCards.forEach((c) => c.classList.remove("selected"));
+          
+          // Seleccionar la tarjeta clickeada
+          card.classList.add("selected");
+          
+          // Marcar el radio button
+          const radio = card.querySelector('input[type="radio"]');
+          if (radio) {
+            radio.checked = true;
+            metodoPagoSeleccionado = radio.value;
+          }
+
+          // Mostrar/ocultar paneles de información
+          const infoMercadoPago = document.getElementById("info-mercadopago-pago");
+          const infoTransferencia = document.getElementById("info-transferencia-pago");
+
+          if (metodoPagoSeleccionado === "mercadopago") {
+            if (infoMercadoPago) infoMercadoPago.style.display = "block";
+            if (infoTransferencia) infoTransferencia.style.display = "none";
+          } else if (metodoPagoSeleccionado === "transferencia") {
+            if (infoMercadoPago) infoMercadoPago.style.display = "none";
+            if (infoTransferencia) infoTransferencia.style.display = "block";
+          }
+        });
+      });
+    }
+
+    // Procesar el pago
+    async function procesarPagoCredito() {
+      console.log(`✅ Procesando pago con método: ${metodoPagoSeleccionado}`);
       
-      // Aquí puedes agregar la lógica específica para cada método
-      if (metodo === "transferencia") {
-        console.log("📋 Mostrando información de transferencia bancaria...");
-        console.log("Datos bancarios:");
-        console.log("- Banco: BBVA");
-        console.log("- Cuenta: 0123456789");
-        console.log("- CLABE: 012345678901234567");
-        // TODO: Mostrar modal con datos bancarios
-      } else if (metodo === "mercadopago") {
-        console.log("💳 Redirigiendo a Mercado Pago...");
-        console.log("Preparando integración con API de Mercado Pago...");
+      if (metodoPagoSeleccionado === "mercadopago") {
+        console.log("💳 Procesando pago con Mercado Pago...");
         // TODO: Integrar con API de Mercado Pago
-      }
+        await Swal.fire({
+          icon: "info",
+          title: "Función en desarrollo",
+          text: "La integración con Mercado Pago estará disponible próximamente.",
+          confirmButtonColor: "#F97316",
+        });
+      } else if (metodoPagoSeleccionado === "transferencia") {
+        console.log("� Procesando pago con transferencia bancaria...");
+        const comprobante = document.getElementById("comprobanteTransferencia");
+        
+        if (!comprobante?.files?.length) {
+          await Swal.fire({
+            icon: "warning",
+            title: "Comprobante requerido",
+            text: "Por favor adjunta tu comprobante de transferencia.",
+            confirmButtonColor: "#F97316",
+          });
+          return;
+        }
 
-      cerrarModalPago();
+        // TODO: Enviar comprobante al backend
+        await Swal.fire({
+          icon: "success",
+          title: "Comprobante recibido",
+          text: "Tu pago será verificado en las próximas 24 horas.",
+          confirmButtonColor: "#F97316",
+        });
+        
+        cerrarModalPago();
+      }
     }
 
-    // Event listener para abrir el modal al hacer click en "Pagar saldo"
+    // Event listeners
     payButton?.addEventListener("click", () => {
       abrirModalPago();
     });
 
-    // Cerrar modal con botón X
-    const btnCerrarModal = document.getElementById("btnCerrarModalPago");
-    btnCerrarModal?.addEventListener("click", cerrarModalPago);
+    btnCerrarModalPago?.addEventListener("click", cerrarModalPago);
+    btnCancelarPago?.addEventListener("click", cerrarModalPago);
+    btnConfirmarPago?.addEventListener("click", procesarPagoCredito);
 
-    // Cerrar modal al hacer click fuera del contenedor
-    const modalOverlay = document.getElementById("modalPagoCredito");
-    modalOverlay?.addEventListener("click", (event) => {
-      if (event.target === modalOverlay) {
+    // Cerrar modal al hacer click fuera
+    modalPagoCredito?.addEventListener("click", (event) => {
+      if (event.target === modalPagoCredito) {
         cerrarModalPago();
       }
     });
 
-    // Manejar selección de métodos de pago
-    const metodoCards = document.querySelectorAll(".metodo-pago-card");
-    metodoCards.forEach((card) => {
-      card.addEventListener("click", () => {
-        const metodo = card.getAttribute("data-metodo");
-        seleccionarMetodoPago(metodo);
-      });
-    });
+    // Inicializar selección de métodos de pago
+    handlePaymentMethodSelection();
 
     // ========================================
     // FIN FUNCIONES MODAL DE PAGO

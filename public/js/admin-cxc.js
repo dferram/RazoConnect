@@ -536,36 +536,71 @@
   }
 
   function renderPagination() {
-    const paginationEl = document.getElementById('pagination-controls');
-    if (!paginationEl) return;
+    const paginationContainer = document.getElementById('paginationContainer');
+    const pageNumbers = document.getElementById('pageNumbers');
+    const btnPrevPage = document.getElementById('btnPrevPage');
+    const btnNextPage = document.getElementById('btnNextPage');
+    const pageStart = document.getElementById('pageStart');
+    const pageEnd = document.getElementById('pageEnd');
+    const totalRecords = document.getElementById('totalRecords');
 
-    let html = '';
+    if (!paginationContainer || !pageNumbers) return;
 
-    // Botón Anterior
-    html += `<li class="page-item ${state.currentPage === 1 ? 'disabled' : ''}">
-      <button class="page-link" ${state.currentPage === 1 ? 'disabled' : ''} onclick="loadCartera(false, ${state.currentPage - 1})">
-        <i class="bi bi-chevron-left"></i>
-      </button>
-    </li>`;
-
-    // Números de página
-    for (let i = 1; i <= state.totalPages; i++) {
-      if (i === 1 || i === state.totalPages || (i >= state.currentPage - 1 && i <= state.currentPage + 1)) {
-        html += `<li class="page-item ${i === state.currentPage ? 'active' : ''}">
-          <button class="page-link" onclick="loadCartera(false, ${i})">${i}</button>
-        </li>`;
-      } else if (i === state.currentPage - 2 || i === state.currentPage + 2) {
-        html += '<li class="page-item disabled"><span class="page-link">...</span></li>';
-      }
+    // Mostrar/ocultar paginación
+    if (state.totalPages <= 1) {
+      paginationContainer.style.display = 'none';
+      return;
     }
 
-    // Botón Siguiente
-    html += `<li class="page-item ${state.currentPage === state.totalPages ? 'disabled' : ''}">
-      <button class="page-link" ${state.currentPage === state.totalPages ? 'disabled' : ''} onclick="loadCartera(false, ${state.currentPage + 1})">
-        <i class="bi bi-chevron-right"></i>
-      </button>
-    </li>`;
+    paginationContainer.style.display = 'block';
 
-    paginationEl.innerHTML = html;
+    // Actualizar información de registros
+    const start = (state.currentPage - 1) * state.itemsPerPage + 1;
+    const end = Math.min(state.currentPage * state.itemsPerPage, state.totalRecords);
+    
+    if (pageStart) pageStart.textContent = start;
+    if (pageEnd) pageEnd.textContent = end;
+    if (totalRecords) totalRecords.textContent = state.totalRecords;
+
+    // Actualizar botones Anterior/Siguiente
+    if (btnPrevPage) {
+      btnPrevPage.disabled = state.currentPage === 1;
+      btnPrevPage.onclick = () => state.currentPage > 1 && loadCartera(false, state.currentPage - 1);
+    }
+
+    if (btnNextPage) {
+      btnNextPage.disabled = state.currentPage === state.totalPages;
+      btnNextPage.onclick = () => state.currentPage < state.totalPages && loadCartera(false, state.currentPage + 1);
+    }
+
+    // Generar números de página
+    let html = '';
+    const maxPagesToShow = 5;
+    let startPage = Math.max(1, state.currentPage - Math.floor(maxPagesToShow / 2));
+    let endPage = Math.min(state.totalPages, startPage + maxPagesToShow - 1);
+
+    if (endPage - startPage < maxPagesToShow - 1) {
+      startPage = Math.max(1, endPage - maxPagesToShow + 1);
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+      const isActive = i === state.currentPage;
+      html += `
+        <button
+          class="btn ${isActive ? 'btn-primary' : 'btn-secondary'}"
+          style="
+            padding: 0.5rem 0.75rem;
+            font-size: 0.875rem;
+            min-width: 40px;
+            ${isActive ? 'pointer-events: none;' : ''}
+          "
+          onclick="loadCartera(false, ${i})"
+        >
+          ${i}
+        </button>
+      `;
+    }
+
+    pageNumbers.innerHTML = html;
   }
 })();

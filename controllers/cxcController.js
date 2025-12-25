@@ -1,5 +1,5 @@
 const ExcelJS = require('exceljs');
-const pool = require('../db');
+const db = require('../db');
 const { format } = require('date-fns');
 
 /**
@@ -8,7 +8,7 @@ const { format } = require('date-fns');
  * @param {Object} res Express response object
  */
 async function exportarLoteCxC(req, res) {
-    const client = await pool.connect();
+    const client = await db.pool.connect();
     
     try {
         await client.query('BEGIN');

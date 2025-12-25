@@ -199,7 +199,7 @@
           </section>
 
           <section class="admin-card">
-            <div class="table-toolbar">
+            <div class="table-toolbar" style="padding: 1.5rem; margin-bottom: 1rem;">
               <div class="toolbar-left">
                 <span id="resumenResultados" class="admin-badge secondary">0 CLIENTES</span>
                 <div class="input-icon">
@@ -251,15 +251,72 @@
                 <tbody id="tablaCxCTbody"></tbody>
               </table>
 
-              <div class="d-flex justify-content-between align-items-center mt-3 mb-4">
-                <nav aria-label="Navegación de tabla">
-                  <ul class="pagination mb-0" id="pagination-controls"></ul>
-                </nav>
-                <div id="action-buttons-container">
-                  <button id="btnExportar" type="button" class="btn btn-success">
-                    <i class="bi bi-file-earmark-excel"></i>
-                    <span class="ms-1">Descargar Lote</span>
-                  </button>
+              <!-- Paginación -->
+              <div
+                id="paginationContainer"
+                style="
+                  display: none;
+                  margin-top: 1.5rem;
+                  padding: 1rem 1.5rem;
+                  border-top: 1px solid #e5e7eb;
+                "
+              >
+                <div
+                  style="
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    flex-wrap: wrap;
+                    gap: 1rem;
+                  "
+                >
+                  <!-- Información de registros -->
+                  <div style="color: var(--razo-gray-warm); font-size: 0.875rem">
+                    Mostrando <strong id="pageStart">1</strong> a
+                    <strong id="pageEnd">10</strong> de
+                    <strong id="totalRecords">0</strong> clientes
+                  </div>
+
+                  <!-- Controles de paginación -->
+                  <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                    <button
+                      id="btnPrevPage"
+                      class="btn btn-secondary"
+                      style="
+                        padding: 0.5rem 1rem;
+                        font-size: 0.875rem;
+                        display: flex;
+                        align-items: center;
+                        gap: 0.5rem;
+                      "
+                      disabled
+                    >
+                      ← Anterior
+                    </button>
+
+                    <div id="pageNumbers" style="display: flex; gap: 0.25rem; flex-wrap: wrap;">
+                      <!-- Los números de página se generarán dinámicamente -->
+                    </div>
+
+                    <button
+                      id="btnNextPage"
+                      class="btn btn-secondary"
+                      style="
+                        padding: 0.5rem 1rem;
+                        font-size: 0.875rem;
+                        display: flex;
+                        align-items: center;
+                        gap: 0.5rem;
+                      "
+                    >
+                      Siguiente →
+                    </button>
+
+                    <button id="btnExportar" type="button" class="btn btn-success" style="margin-left: 1rem;">
+                      <i class="bi bi-file-earmark-excel"></i>
+                      <span class="ms-1">Descargar Lote</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

@@ -18,211 +18,298 @@
     <link rel="stylesheet" href="css/admin.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
     <style>
-      /* Modal de Pago - Overlay */
-      .modal-pago-overlay {
+      /* Modal Styles */
+      .modal {
+        display: none;
         position: fixed;
         top: 0;
         left: 0;
         width: 100%;
         height: 100%;
-        background: rgba(0, 0, 0, 0.6);
-        backdrop-filter: blur(4px);
-        z-index: 9999;
-        display: flex;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
         align-items: center;
         justify-content: center;
-        padding: 1rem;
-        animation: fadeIn 0.3s ease;
       }
 
-      @keyframes fadeIn {
-        from {
-          opacity: 0;
-        }
-        to {
-          opacity: 1;
-        }
+      .modal.show {
+        display: flex;
       }
 
-      /* Modal Container */
-      .modal-pago-container {
-        background: white;
-        border-radius: 1rem;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      .modal-content {
+        background: var(--surface);
+        border-radius: 0.5rem;
+        padding: 2rem;
         max-width: 600px;
-        width: 100%;
-        position: relative;
-        animation: slideUp 0.3s ease;
+        width: 90%;
+        max-height: 90vh;
+        overflow-y: auto;
       }
 
-      @keyframes slideUp {
-        from {
-          transform: translateY(30px);
-          opacity: 0;
-        }
-        to {
-          transform: translateY(0);
-          opacity: 1;
-        }
-      }
-
-      /* Botón Cerrar */
-      .modal-pago-close {
-        position: absolute;
-        top: 1rem;
-        right: 1rem;
-        background: #f3f4f6;
-        border: none;
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
+      /* Payment Options Grid */
+      .payment-section-header {
         display: flex;
+        justify-content: space-between;
         align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        color: #6b7280;
-        font-size: 1.25rem;
-        z-index: 10;
+        margin-bottom: 0.5rem;
+        gap: 0.75rem;
       }
 
-      .modal-pago-close:hover {
-        background: #E85D04;
-        color: white;
-        transform: rotate(90deg);
-      }
-
-      /* Header del Modal */
-      .modal-pago-header {
-        padding: 2rem 2rem 1.5rem;
-        border-bottom: 1px solid #e5e7eb;
-      }
-
-      .modal-pago-title {
-        font-size: 1.5rem;
-        font-weight: 600;
-        color: #111827;
-        margin: 0 0 0.5rem 0;
-      }
-
-      .modal-pago-subtitle {
-        font-size: 0.9375rem;
-        color: #6b7280;
+      .payment-section-header h4 {
         margin: 0;
+        font-weight: 700;
+        font-size: 1.1rem;
       }
 
-      /* Body del Modal */
-      .modal-pago-body {
-        padding: 1.5rem 2rem 2rem;
-        display: flex;
-        flex-direction: column;
+      .payment-options-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
         gap: 1rem;
       }
 
-      /* Tarjetas de Método de Pago */
-      .metodo-pago-card {
+      .payment-option-card {
+        position: relative;
+        border: 2px solid #e5e7eb;
+        border-radius: 1.1rem;
+        padding: 1.1rem 1.2rem;
+        background: #fff;
+        display: flex;
+        flex-direction: column;
+        gap: 0.65rem;
+        cursor: pointer;
+        transition: all 0.25s ease;
+        box-shadow: 0 6px 24px rgba(15, 23, 42, 0.06);
+      }
+
+      .payment-option-card:hover {
+        border-color: var(--razo-orange);
+        box-shadow: 0 12px 32px rgba(249, 115, 22, 0.15);
+      }
+
+      .payment-option-card.selected {
+        border-color: var(--razo-orange);
+        background: linear-gradient(135deg, #fff7ed 0%, #fff 100%);
+        box-shadow: 0 18px 36px rgba(249, 115, 22, 0.2);
+      }
+
+      .payment-option-card.disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+        box-shadow: none;
+      }
+
+      .payment-option-card input[type="radio"] {
+        accent-color: var(--razo-orange);
+        width: 18px;
+        height: 18px;
+        margin: 0;
+      }
+
+      .payment-option-top {
         display: flex;
         align-items: center;
-        gap: 1.25rem;
-        padding: 1.5rem;
-        border: 2px solid #e5e7eb;
-        border-radius: 0.75rem;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        background: white;
+        justify-content: space-between;
+        gap: 0.5rem;
       }
 
-      .metodo-pago-card:hover {
-        border-color: #E85D04;
-        background: #fff7ed;
-        transform: translateY(-2px);
-        box-shadow: 0 8px 20px rgba(232, 93, 4, 0.15);
-      }
-
-      .metodo-pago-card:active {
-        transform: translateY(0);
-      }
-
-      /* Icono del Método */
-      .metodo-pago-icon {
-        width: 60px;
-        height: 60px;
-        background: linear-gradient(135deg, #E85D04 0%, #ff7b2e 100%);
-        border-radius: 0.75rem;
-        display: flex;
+      .payment-option-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
+        display: inline-flex;
         align-items: center;
         justify-content: center;
-        color: white;
-        font-size: 1.75rem;
-        flex-shrink: 0;
-        transition: all 0.3s ease;
+        font-size: 1.35rem;
+        background: rgba(249, 115, 22, 0.12);
+        color: var(--razo-orange);
       }
 
-      .metodo-pago-card:hover .metodo-pago-icon {
-        transform: scale(1.1) rotate(5deg);
-      }
-
-      /* Contenido del Método */
-      .metodo-pago-content {
-        flex: 1;
-      }
-
-      .metodo-pago-title {
-        font-size: 1.125rem;
-        font-weight: 600;
-        color: #111827;
-        margin: 0 0 0.25rem 0;
-      }
-
-      .metodo-pago-description {
-        font-size: 0.875rem;
-        color: #6b7280;
+      .payment-option-content h5 {
         margin: 0;
+        font-size: 1rem;
+        font-weight: 700;
+        color: #0f172a;
+      }
+
+      .payment-option-content p {
+        margin: 0.25rem 0 0;
+        color: #6b7280;
+        font-size: 0.92rem;
         line-height: 1.4;
       }
 
-      /* Flecha Indicadora */
-      .metodo-pago-arrow {
-        color: #9ca3af;
-        font-size: 1.25rem;
-        transition: all 0.3s ease;
+      .payment-option-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        border-radius: 999px;
+        padding: 0.25rem 0.75rem;
+        font-size: 0.8rem;
+        font-weight: 600;
       }
 
-      .metodo-pago-card:hover .metodo-pago-arrow {
-        color: #E85D04;
-        transform: translateX(5px);
+      .payment-chip-digital {
+        background: rgba(86, 196, 150, 0.15);
+        color: #0f766e;
+      }
+
+      .payment-chip-transfer {
+        background: rgba(14, 165, 233, 0.12);
+        color: #0369a1;
+      }
+
+      .payment-error {
+        margin-top: 1rem;
+        display: none;
+        align-items: flex-start;
+        gap: 0.5rem;
+        background: #fee2e2;
+        color: #b91c1c;
+        border: 1px solid #fecaca;
+        border-radius: 0.75rem;
+        padding: 0.85rem 1rem;
+        font-size: 0.9rem;
+      }
+
+      .payment-error.show {
+        display: flex;
+      }
+
+      /* Payment Info Panels */
+      .payment-info-panels {
+        margin-top: 1.5rem;
+      }
+
+      .payment-info-card {
+        display: none;
+      }
+
+      .payment-info-card.show {
+        display: block;
+      }
+
+      /* Mercado Pago Form */
+      .mercadopago-form-container {
+        border: 1px solid #e5e7eb;
+        border-radius: 1rem;
+        padding: 1.25rem;
+        background: #fff;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+      }
+
+      .mercadopago-form-container h5 {
+        margin: 0 0 0.5rem 0;
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: #0f172a;
+      }
+
+      .mp-form-grid {
+        display: grid;
+        gap: 1rem;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      }
+
+      .mp-form-field {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+      }
+
+      .mp-form-field label {
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: #111827;
+      }
+
+      .mp-form-field input {
+        width: 100%;
+        border: 1px solid #d1d5db;
+        border-radius: 0.75rem;
+        padding: 0.65rem 0.85rem;
+        font-size: 0.95rem;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .mp-form-field input:focus {
+        outline: none;
+        border-color: var(--razo-orange);
+        box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.2);
+      }
+
+      .mp-form-two-cols {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+      }
+
+      /* Bank Info */
+      .bank-info-card {
+        background: #fff;
+        border-radius: 0.9rem;
+        padding: 1.25rem;
+        border: 1px solid #e5e7eb;
+      }
+
+      .bank-info-header {
+        margin-bottom: 1rem;
+      }
+
+      .bank-info-header h5 {
+        margin: 0 0 0.25rem 0;
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: #0f172a;
+      }
+
+      .bank-info-header p {
+        margin: 0;
+        color: #6b7280;
+        font-size: 0.9rem;
+      }
+
+      .bank-info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1rem;
+      }
+
+      .bank-info-grid > div {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+      }
+
+      .bank-info-grid span {
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        color: #9ca3af;
+        letter-spacing: 0.05em;
+      }
+
+      .bank-info-grid strong {
+        font-weight: 600;
+        color: #111827;
+        font-size: 0.95rem;
       }
 
       /* Responsive */
       @media (max-width: 640px) {
-        .modal-pago-header {
-          padding: 1.5rem 1.5rem 1rem;
+        .payment-options-grid {
+          grid-template-columns: 1fr;
         }
 
-        .modal-pago-body {
-          padding: 1rem 1.5rem 1.5rem;
+        .mp-form-grid {
+          grid-template-columns: 1fr;
         }
 
-        .modal-pago-title {
-          font-size: 1.25rem;
+        .mp-form-two-cols {
+          grid-template-columns: 1fr;
         }
 
-        .metodo-pago-card {
-          padding: 1.25rem;
-        }
-
-        .metodo-pago-icon {
-          width: 50px;
-          height: 50px;
-          font-size: 1.5rem;
-        }
-
-        .metodo-pago-title {
-          font-size: 1rem;
-        }
-
-        .metodo-pago-description {
-          font-size: 0.8125rem;
+        .bank-info-grid {
+          grid-template-columns: 1fr;
         }
       }
     </style>
@@ -431,42 +518,239 @@
       </section>
     </main>
 
-    <!-- Modal de Selección de Método de Pago -->
-    <div id="modalPagoCredito" class="modal-pago-overlay" style="display: none;">
-      <div class="modal-pago-container">
-        <button class="modal-pago-close" id="btnCerrarModalPago" aria-label="Cerrar modal">
-          <i class="bi bi-x-lg"></i>
-        </button>
-        
-        <div class="modal-pago-header">
-          <h2 class="modal-pago-title">Selecciona un método de pago</h2>
-          <p class="modal-pago-subtitle">Elige cómo deseas liquidar tu saldo pendiente</p>
+    <!-- Modal de Pago de Crédito -->
+    <div id="modalPagoCredito" class="modal" style="display: none;">
+      <div
+        class="modal-content"
+        style="
+          background: white;
+          padding: 2rem;
+          border-radius: 1rem;
+          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+          max-width: 600px;
+        "
+      >
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+          <h2 style="font-size: 1.5rem; font-weight: bold; margin: 0;">
+            Pagar saldo de crédito
+          </h2>
+          <button
+            id="btnCerrarModalPago"
+            style="
+              background: #f3f4f6;
+              border: none;
+              width: 40px;
+              height: 40px;
+              border-radius: 50%;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              cursor: pointer;
+              transition: all 0.2s ease;
+              color: #6b7280;
+              font-size: 1.25rem;
+            "
+            aria-label="Cerrar modal"
+          >
+            <i class="bi bi-x-lg"></i>
+          </button>
         </div>
 
-        <div class="modal-pago-body">
-          <div class="metodo-pago-card" data-metodo="transferencia">
-            <div class="metodo-pago-icon">
-              <i class="bi bi-bank2"></i>
+        <div id="pagoContent">
+          <div id="paymentSection">
+            <div class="payment-section-header" style="margin-bottom: 1.5rem;">
+              <h4 style="font-weight: 600; margin-bottom: 0.5rem;">Selecciona método de pago</h4>
+              <span style="color: #6b7280; font-size: 0.875rem;">
+                Elige la opción que mejor se adapte para liquidar tu saldo.
+              </span>
             </div>
-            <div class="metodo-pago-content">
-              <h3 class="metodo-pago-title">Transferencia Bancaria</h3>
-              <p class="metodo-pago-description">Realiza una transferencia directa a nuestra cuenta</p>
-            </div>
-            <div class="metodo-pago-arrow">
-              <i class="bi bi-chevron-right"></i>
-            </div>
-          </div>
 
-          <div class="metodo-pago-card" data-metodo="mercadopago">
-            <div class="metodo-pago-icon">
-              <i class="bi bi-credit-card-2-front"></i>
+            <div class="payment-options-grid" id="paymentOptionsPagoCredito">
+              <label
+                class="payment-option-card selected"
+                id="paymentOptionMercadoPagoPago"
+                data-method="mercadopago"
+              >
+                <div class="payment-option-top">
+                  <div class="payment-option-icon">💳</div>
+                  <input
+                    type="radio"
+                    name="metodo_pago_credito"
+                    value="mercadopago"
+                    checked
+                  />
+                </div>
+                <div class="payment-option-content">
+                  <h5>Mercado Pago</h5>
+                  <p>Paga con tarjeta o saldo digital y recibe confirmación inmediata.</p>
+                </div>
+                <span class="payment-option-chip payment-chip-digital">Pago digital</span>
+              </label>
+
+              <label
+                class="payment-option-card"
+                id="paymentOptionTransferenciaPago"
+                data-method="transferencia"
+              >
+                <div class="payment-option-top">
+                  <div class="payment-option-icon">🏦</div>
+                  <input
+                    type="radio"
+                    name="metodo_pago_credito"
+                    value="transferencia"
+                  />
+                </div>
+                <div class="payment-option-content">
+                  <h5>Transferencia bancaria</h5>
+                  <p>Recibirás los datos bancarios y deberás adjuntar tu comprobante.</p>
+                </div>
+                <span class="payment-option-chip payment-chip-transfer">SPEI / Depósito</span>
+              </label>
             </div>
-            <div class="metodo-pago-content">
-              <h3 class="metodo-pago-title">Mercado Pago</h3>
-              <p class="metodo-pago-description">Paga con tarjeta de crédito o débito de forma segura</p>
+
+            <div class="payment-error" id="paymentErrorPago" style="display: none;">
+              <i class="bi bi-exclamation-triangle-fill"></i>
+              <div id="paymentErrorMessagePago"></div>
             </div>
-            <div class="metodo-pago-arrow">
-              <i class="bi bi-chevron-right"></i>
+
+            <div class="payment-info-panels">
+              <section class="payment-info-card" id="info-mercadopago-pago">
+                <div class="mercadopago-form-container">
+                  <h5>Ingresa los datos de tu tarjeta</h5>
+                  <p style="color: #6b7280; font-size: 0.875rem; margin-bottom: 1rem;">
+                    Procesaremos el pago de tu saldo de crédito de forma segura.
+                  </p>
+                  <div class="mp-form-grid">
+                    <div class="mp-form-field">
+                      <label for="mpCardholderNamePago">Nombre del titular</label>
+                      <input
+                        type="text"
+                        id="mpCardholderNamePago"
+                        placeholder="Nombre impreso en la tarjeta"
+                        autocomplete="off"
+                      />
+                    </div>
+                    <div class="mp-form-field">
+                      <label for="mpCardNumberPago">Número de tarjeta</label>
+                      <input
+                        type="text"
+                        id="mpCardNumberPago"
+                        inputmode="numeric"
+                        maxlength="22"
+                        placeholder="0000 0000 0000 0000"
+                        autocomplete="off"
+                      />
+                    </div>
+                    <div class="mp-form-two-cols">
+                      <div class="mp-form-field">
+                        <label for="mpExpMonthPago">Mes expiración</label>
+                        <input
+                          type="text"
+                          id="mpExpMonthPago"
+                          inputmode="numeric"
+                          maxlength="2"
+                          placeholder="MM"
+                          autocomplete="off"
+                        />
+                      </div>
+                      <div class="mp-form-field">
+                        <label for="mpExpYearPago">Año expiración</label>
+                        <input
+                          type="text"
+                          id="mpExpYearPago"
+                          inputmode="numeric"
+                          maxlength="4"
+                          placeholder="AAAA"
+                          autocomplete="off"
+                        />
+                      </div>
+                    </div>
+                    <div class="mp-form-field">
+                      <label for="mpSecurityCodePago">CVV</label>
+                      <input
+                        type="text"
+                        id="mpSecurityCodePago"
+                        inputmode="numeric"
+                        maxlength="4"
+                        placeholder="CVV"
+                        autocomplete="off"
+                      />
+                    </div>
+                  </div>
+                  <div class="mp-form-field" style="margin-top: 0.25rem">
+                    <label for="mpIdentificationNumberPago">Documento (opcional)</label>
+                    <input
+                      type="text"
+                      id="mpIdentificationNumberPago"
+                      placeholder="RFC / CURP"
+                      autocomplete="off"
+                    />
+                  </div>
+                </div>
+              </section>
+
+              <section class="payment-info-card" id="info-transferencia-pago" style="display: none;">
+                <div class="bank-info-card">
+                  <div class="bank-info-header">
+                    <div>
+                      <h5>Datos bancarios de Razo</h5>
+                      <p>Realiza tu transferencia y adjunta el comprobante.</p>
+                    </div>
+                  </div>
+                  <div class="bank-info-grid">
+                    <div>
+                      <span>Banco</span>
+                      <strong>BBVA Bancomer</strong>
+                    </div>
+                    <div>
+                      <span>Cuenta</span>
+                      <strong>0123456789</strong>
+                    </div>
+                    <div>
+                      <span>CLABE</span>
+                      <strong>012345678901234567</strong>
+                    </div>
+                    <div>
+                      <span>Beneficiario</span>
+                      <strong>Razo Connect S.A. de C.V.</strong>
+                    </div>
+                  </div>
+                  <div style="margin-top: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">
+                      Adjuntar comprobante
+                    </label>
+                    <input
+                      type="file"
+                      id="comprobanteTransferencia"
+                      accept="image/*,.pdf"
+                      style="
+                        width: 100%;
+                        padding: 0.75rem;
+                        border: 2px dashed #e5e7eb;
+                        border-radius: 0.5rem;
+                        cursor: pointer;
+                      "
+                    />
+                  </div>
+                </div>
+              </section>
+            </div>
+
+            <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+              <button
+                id="btnCancelarPago"
+                class="btn btn-secondary"
+                style="flex: 1;"
+              >
+                Cancelar
+              </button>
+              <button
+                id="btnConfirmarPago"
+                class="btn btn-primary"
+                style="flex: 1;"
+              >
+                Confirmar pago
+              </button>
             </div>
           </div>
         </div>
