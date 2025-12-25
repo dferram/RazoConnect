@@ -109,6 +109,10 @@
       }
     }
 
+    let currentPage = 1;
+    let totalPages = 1;
+    let isLoadingMovimientos = false;
+
     function renderMovimientos(movimientos) {
       if (!movimientosBody) {
         return;
@@ -126,24 +130,27 @@
         .map((mov) => {
           const tipo = normalizeTipo(mov);
           const concepto = normalizeConcept(mov);
-          const badgeClass = badgeClassForType(tipo);
-          const tipoLabel = labelForType(tipo);
-          const fecha = formatDate(mov.fecha || mov.fechaMovimiento);
-
-          const montoRaw = Number.parseFloat(mov.monto ?? mov.importe ?? 0) || 0;
-          const montoFormatted =
-            tipo === "abono"
-              ? `-${formatCurrency(Math.abs(montoRaw))}`
-              : formatCurrency(montoRaw);
+          const fecha = mov.fecha
+            ? new Date(mov.fecha).toLocaleDateString("es-MX", {
+                year: "numeric",
+                month: "short",
+                day: "numeric",
+              })
+            : "—";
+          const monto = formatCurrency(Math.abs(mov.monto || 0));
 
           return `
             <tr>
               <td>${fecha}</td>
               <td>${concepto}</td>
               <td>
-                <span class="${badgeClass}">${tipoLabel}</span>
+                <span class="badge ${tipo === "cargo" ? "bg-danger" : "bg-success"}">
+                  ${tipo === "cargo" ? "Cargo" : "Abono"}
+                </span>
               </td>
-              <td class="text-end" style="font-weight:600;">${montoFormatted}</td>
+              <td class="text-end fw-bold ${tipo === "cargo" ? "text-danger" : "text-success"}">
+                ${tipo === "cargo" ? "-" : "+"}${monto}
+              </td>
             </tr>
           `;
         })
@@ -151,6 +158,100 @@
 
       movimientosBody.innerHTML = rows;
     }
+
+    function renderPagination(pagination) {
+      const paginationContainer = document.getElementById("movimientosPagination");
+      if (!paginationContainer || !pagination) return;
+
+      currentPage = pagination.page;
+      totalPages = pagination.totalPages;
+
+      if (totalPages <= 1) {
+        paginationContainer.style.display = "none";
+        return;
+      }
+
+      paginationContainer.style.display = "flex";
+
+      const prevDisabled = !pagination.hasPrevPage ? "disabled" : "";
+      const nextDisabled = !pagination.hasNextPage ? "disabled" : "";
+
+      let paginationHTML = `
+        <nav aria-label="Paginación de movimientos">
+          <ul class="pagination pagination-sm mb-0">
+            <li class="page-item ${prevDisabled}">
+              <button class="page-link" onclick="window.cambiarPaginaMovimientos(${currentPage - 1})" ${prevDisabled}>
+                Anterior
+              </button>
+            </li>
+      `;
+
+      // Mostrar páginas
+      const maxPagesToShow = 5;
+      let startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
+      let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
+
+      if (endPage - startPage < maxPagesToShow - 1) {
+        startPage = Math.max(1, endPage - maxPagesToShow + 1);
+      }
+
+      for (let i = startPage; i <= endPage; i++) {
+        const active = i === currentPage ? "active" : "";
+        paginationHTML += `
+          <li class="page-item ${active}">
+            <button class="page-link" onclick="window.cambiarPaginaMovimientos(${i})">${i}</button>
+          </li>
+        `;
+      }
+
+      paginationHTML += `
+            <li class="page-item ${nextDisabled}">
+              <button class="page-link" onclick="window.cambiarPaginaMovimientos(${currentPage + 1})" ${nextDisabled}>
+                Siguiente
+              </button>
+            </li>
+          </ul>
+        </nav>
+        <div class="ms-3 text-muted small">
+          Página ${currentPage} de ${totalPages} (${pagination.total} movimientos)
+        </div>
+      `;
+
+      paginationContainer.innerHTML = paginationHTML;
+    }
+
+    async function cargarMovimientos(page = 1) {
+      if (isLoadingMovimientos) return;
+      isLoadingMovimientos = true;
+
+      try {
+        const response = await API.apiCall(`/cliente/credito?page=${page}&limit=10`, {
+          method: "GET",
+        });
+
+        if (response.ok && response.data?.success) {
+          const movimientos = response.data.data?.movimientos || [];
+          const pagination = response.data.data?.pagination;
+
+          renderMovimientos(movimientos);
+          renderPagination(pagination);
+        } else {
+          renderMovimientos([]);
+        }
+      } catch (error) {
+        console.error("Error cargando movimientos:", error);
+        renderMovimientos([]);
+      } finally {
+        isLoadingMovimientos = false;
+      }
+    }
+
+    // Exponer función globalmente para los botones de paginación
+    window.cambiarPaginaMovimientos = (page) => {
+      if (page >= 1 && page <= totalPages && page !== currentPage) {
+        cargarMovimientos(page);
+      }
+    };
 
     function mostrarResumenCredito() {
       if (creditOverviewSection) {
@@ -215,20 +316,8 @@
           mostrarResumenCredito();
           renderStats(checkData.creditSummary);
           
-          // Intentar cargar movimientos (opcional)
-          try {
-            const movResponse = await API.apiCall("/cliente/credito", {
-              method: "GET",
-            });
-            if (movResponse.ok && movResponse.data?.data?.movimientos) {
-              renderMovimientos(movResponse.data.data.movimientos);
-            } else {
-              renderMovimientos([]);
-            }
-          } catch (movError) {
-            console.warn("No se pudieron cargar movimientos:", movError);
-            renderMovimientos([]);
-          }
+          // Cargar movimientos con paginación
+          await cargarMovimientos(1);
         } else if (checkData.hasPendingRequest && checkData.pendingRequest) {
           // SI tiene una solicitud pendiente → Mostrar mensaje informativo
           mostrarFormularioSolicitud();

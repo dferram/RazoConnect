@@ -239,8 +239,120 @@ const enviarSolicitudCredito = async (req, res) => {
   }
 };
 
+const obtenerMovimientosCredito = async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: "No autenticado",
+      });
+    }
+
+    if (!isCliente(req)) {
+      return res.status(403).json({
+        success: false,
+        message: "Acceso denegado",
+      });
+    }
+
+    const clienteId = normalizeClienteId(req);
+    if (!clienteId) {
+      return res.status(400).json({
+        success: false,
+        message: "Identificador de cliente inválido",
+      });
+    }
+
+    // Obtener parámetros de paginación
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit, 10) || 10));
+    const offset = (page - 1) * limit;
+
+    // Verificar que el cliente tenga crédito activo
+    const creditoActivo = await fetchCreditoActivo(clienteId);
+    if (!creditoActivo) {
+      return res.json({
+        success: true,
+        data: {
+          movimientos: [],
+          pagination: {
+            page: 1,
+            limit: 10,
+            total: 0,
+            totalPages: 0,
+          },
+        },
+      });
+    }
+
+    const creditoId = creditoActivo.credito_id;
+
+    // Obtener el total de movimientos
+    const countResult = await db.query(
+      `SELECT COUNT(*) as total
+       FROM credito_movimientos
+       WHERE credito_id = $1`,
+      [creditoId]
+    );
+    const totalMovimientos = parseInt(countResult.rows[0]?.total || 0, 10);
+    const totalPages = Math.ceil(totalMovimientos / limit);
+
+    // Obtener los movimientos paginados
+    const movimientosResult = await db.query(
+      `SELECT 
+        movimiento_id,
+        tipo_movimiento,
+        monto,
+        saldo_anterior,
+        saldo_nuevo,
+        referencia_id,
+        descripcion,
+        fecha_movimiento,
+        created_at
+       FROM credito_movimientos
+       WHERE credito_id = $1
+       ORDER BY fecha_movimiento DESC, created_at DESC
+       LIMIT $2 OFFSET $3`,
+      [creditoId, limit, offset]
+    );
+
+    const movimientos = movimientosResult.rows.map((mov) => ({
+      movimientoId: mov.movimiento_id,
+      tipo: mov.tipo_movimiento,
+      monto: parseFloat(mov.monto),
+      saldoAnterior: parseFloat(mov.saldo_anterior || 0),
+      saldoNuevo: parseFloat(mov.saldo_nuevo || 0),
+      referenciaId: mov.referencia_id,
+      descripcion: mov.descripcion,
+      fecha: mov.fecha_movimiento || mov.created_at,
+    }));
+
+    return res.json({
+      success: true,
+      data: {
+        movimientos,
+        pagination: {
+          page,
+          limit,
+          total: totalMovimientos,
+          totalPages,
+          hasNextPage: page < totalPages,
+          hasPrevPage: page > 1,
+        },
+      },
+    });
+  } catch (error) {
+    console.error("Error obteniendo movimientos de crédito:", error);
+    return res.status(500).json({
+      success: false,
+      message: "No fue posible obtener los movimientos de crédito",
+    });
+  }
+};
+
 module.exports = {
   checkAuthCredit,
   obtenerPerfilCredito,
   enviarSolicitudCredito,
+  obtenerMovimientosCredito,
 };

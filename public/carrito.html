@@ -363,6 +363,61 @@
         font-weight: 700;
       }
 
+      /* Estilos para la nueva tarjeta de Crédito Razo */
+      .credit-amount-display {
+        margin-bottom: 0.75rem;
+      }
+
+      .credit-amount-value {
+        font-size: 1.75rem;
+        font-weight: 700;
+        font-family: 'Courier New', Courier, monospace;
+        color: #047857;
+        line-height: 1.2;
+        margin-bottom: 0.25rem;
+      }
+
+      .credit-amount-label {
+        font-size: 0.8rem;
+        color: #6b7280;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.025em;
+      }
+
+      .credit-capacity-bar {
+        width: 100%;
+        height: 6px;
+        background: #e5e7eb;
+        border-radius: 3px;
+        overflow: hidden;
+        margin-top: 0.5rem;
+      }
+
+      .credit-capacity-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+        border-radius: 3px;
+        transition: width 0.4s ease;
+      }
+
+      .credit-capacity-fill.medium {
+        background: linear-gradient(90deg, #f59e0b 0%, #d97706 100%);
+      }
+
+      .credit-capacity-fill.low {
+        background: linear-gradient(90deg, #ef4444 0%, #dc2626 100%);
+      }
+
+      /* Estado activo mejorado para Crédito Razo */
+      #paymentOptionCredito.selected {
+        background: linear-gradient(135deg, #fff7ed 0%, #fffbf5 100%);
+      }
+
+      #paymentOptionCredito.selected .credit-amount-value {
+        color: var(--razo-orange);
+      }
+
       .payment-chip-digital {
         background: rgba(86, 196, 150, 0.15);
         color: #0f766e;
@@ -906,13 +961,14 @@
                     <input type="radio" name="metodo_pago" value="credito" />
                   </div>
                   <div class="payment-option-content">
-                    <h5>Crédito Razo</h5>
-                    <p>Usa tu línea autorizada para no detener tu operación.</p>
-                    <span
-                      class="payment-option-chip payment-chip-credit"
-                      id="creditCardBalanceText"
-                      >Saldo disponible: $0.00</span
-                    >
+                    <h5 style="margin-bottom: 0.5rem;">Crédito Razo</h5>
+                    <div class="credit-amount-display" id="creditAmountDisplay">
+                      <div class="credit-amount-value" id="creditCardBalanceText">$0.00</div>
+                      <div class="credit-amount-label">Disponible para comprar ahora</div>
+                    </div>
+                    <div class="credit-capacity-bar" id="creditCapacityBar">
+                      <div class="credit-capacity-fill" id="creditCapacityFill" style="width: 0%"></div>
+                    </div>
                   </div>
                   <span class="credit-status-badge" id="badge-estado-credito"></span>
                 </label>
@@ -1684,6 +1740,7 @@
             metodo: metodoPagoSeleccionado,
             ...extraMetodoFields,
           },
+          MontoTotal: getCarritoTotal(),
         };
       }
 
@@ -1986,15 +2043,15 @@
           card.classList.remove("disabled");
           card.style.pointerEvents = "";
           if (creditCardBalanceText) {
-            creditCardBalanceText.textContent = `Saldo disponible: ${formatCurrency(
+            creditCardBalanceText.textContent = formatCurrency(
               Number.parseFloat(creditSummary.creditoDisponible || 0)
-            )}`;
+            );
           }
         } else {
           card.classList.add("disabled");
           card.style.pointerEvents = "none";
           if (creditCardBalanceText) {
-            creditCardBalanceText.textContent = "Saldo no disponible";
+            creditCardBalanceText.textContent = "$0.00";
           }
           if (metodoPagoSeleccionado === "credito") {
             setMetodoPago("mercadopago");
@@ -2031,9 +2088,11 @@
       }
 
       function aplicarResumenCreditoUI() {
+        const creditCapacityFill = document.getElementById("creditCapacityFill");
+        
         if (!creditSummary) {
           if (creditCardBalanceText) {
-            creditCardBalanceText.textContent = "Saldo no disponible";
+            creditCardBalanceText.textContent = "$0.00";
           }
           if (creditoSaldoActualSpan) {
             creditoSaldoActualSpan.textContent = "$0.00";
@@ -2043,6 +2102,9 @@
           }
           if (creditoFechaLimiteSpan) {
             creditoFechaLimiteSpan.textContent = "--/--/--";
+          }
+          if (creditCapacityFill) {
+            creditCapacityFill.style.width = "0%";
           }
           return;
         }
@@ -2060,11 +2122,25 @@
         const fechaLimite = new Date();
         fechaLimite.setDate(fechaLimite.getDate() + diasGracia);
 
+        // Actualizar el monto disponible (sin texto redundante)
         if (creditCardBalanceText) {
-          creditCardBalanceText.textContent = `Saldo disponible: ${formatCurrency(
-            disponible
-          )}`;
+          creditCardBalanceText.textContent = formatCurrency(disponible);
         }
+
+        // Calcular y actualizar la barra de capacidad
+        if (creditCapacityFill && limite > 0) {
+          const porcentajeDisponible = (disponible / limite) * 100;
+          creditCapacityFill.style.width = `${Math.min(porcentajeDisponible, 100)}%`;
+          
+          // Cambiar color según el porcentaje disponible
+          creditCapacityFill.className = "credit-capacity-fill";
+          if (porcentajeDisponible < 25) {
+            creditCapacityFill.classList.add("low");
+          } else if (porcentajeDisponible < 50) {
+            creditCapacityFill.classList.add("medium");
+          }
+        }
+
         if (creditoSaldoActualSpan) {
           creditoSaldoActualSpan.textContent = formatCurrency(saldo);
         }
@@ -2992,9 +3068,16 @@
               extraMetodoFields.referenciaPago = mercadopagoReferencia;
             }
 
-            const response = await API.finalizarPedido(
-              buildPedidoPayload(extraMetodoFields)
-            );
+            const payload = buildPedidoPayload(extraMetodoFields);
+            
+            // 🔍 DEBUG: Ver exactamente qué se envía al backend
+            console.log("=== DEBUG CHECKOUT ===");
+            console.log("Método de pago:", metodoPagoSeleccionado);
+            console.log("Monto total del carrito:", getCarritoTotal());
+            console.log("Payload completo:", JSON.stringify(payload, null, 2));
+            console.log("=====================");
+            
+            const response = await API.finalizarPedido(payload);
 
             if (!response.ok || !response.data?.success) {
               throw new Error(

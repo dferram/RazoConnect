@@ -159,12 +159,19 @@ const crearPedido = async (req, res) => {
   };
 
   try {
+    console.log("🔍 [PEDIDO] === INICIO FINALIZAR PEDIDO ===");
+    console.log("🔍 [PEDIDO] Body recibido:", JSON.stringify(req.body, null, 2));
+    console.log("🔍 [PEDIDO] Usuario autenticado:", req.user);
+
     const clienteId = req.user.userId;
     const rawDireccionEnvioId =
       req.body?.DireccionEnvioID ??
       req.body?.direccionEnvioId ??
       req.body?.direccionenvioid;
     const DireccionEnvioID = Number.parseInt(rawDireccionEnvioId, 10);
+
+    console.log("🔍 [PEDIDO] Cliente ID:", clienteId);
+    console.log("🔍 [PEDIDO] Dirección de envío ID:", DireccionEnvioID);
 
     const rawMetodoPago =
       req.body?.MetodoPago ?? req.body?.metodoPago ?? req.body?.metodo ?? null;
@@ -329,7 +336,17 @@ const crearPedido = async (req, res) => {
     }
 
     // 4. Calcular el monto total CON LÓGICA DE OFERTAS + split (stock + backorder)
-    const montoTotal = items.reduce((total, item) => {
+    console.log("🔍 [PEDIDO] Calculando monto total...");
+    console.log("🔍 [PEDIDO] Items en el carrito:", items.length);
+    
+    const montoTotal = items.reduce((total, item, index) => {
+      console.log(`🔍 [PEDIDO] --- Item ${index + 1} ---`);
+      console.log("🔍 [PEDIDO] SKU:", item.sku);
+      console.log("🔍 [PEDIDO] Precio unitario (raw):", item.preciounitario);
+      console.log("🔍 [PEDIDO] Precio oferta (raw):", item.precioofertaunitario);
+      console.log("🔍 [PEDIDO] Tamaño valor (raw):", item.tamano_valor);
+      console.log("🔍 [PEDIDO] Cantidad:", item.cantidad);
+
       const precioBase =
         item.preciounitario !== null ? parseFloat(item.preciounitario) : 0;
       const precioOferta =
@@ -340,7 +357,11 @@ const crearPedido = async (req, res) => {
       const tamanoValor =
         item.tamano_valor !== null ? parseInt(item.tamano_valor, 10) : 0;
 
+      console.log("🔍 [PEDIDO] Precio unitario (parsed):", precioUnitario);
+      console.log("🔍 [PEDIDO] Tamaño valor (parsed):", tamanoValor);
+
       if (!tamanoValor || tamanoValor <= 0) {
+        console.log("⚠️ [PEDIDO] Tamaño valor inválido, saltando item");
         return total;
       }
 
@@ -358,8 +379,32 @@ const crearPedido = async (req, res) => {
           ) || 1,
       });
 
-      return total + split.cantidadTotalCobrar * tamanoValor * precioUnitario;
+      console.log("🔍 [PEDIDO] Cantidad a cobrar:", split.cantidadTotalCobrar);
+      const subtotal = split.cantidadTotalCobrar * tamanoValor * precioUnitario;
+      console.log("🔍 [PEDIDO] Subtotal calculado:", subtotal);
+      console.log("🔍 [PEDIDO] Total acumulado:", total + (Number.isFinite(subtotal) ? subtotal : 0));
+      
+      return total + (Number.isFinite(subtotal) ? subtotal : 0);
     }, 0);
+
+    console.log("🔍 [PEDIDO] Monto total calculado:", montoTotal);
+    console.log("🔍 [PEDIDO] Tipo:", typeof montoTotal);
+    console.log("🔍 [PEDIDO] ¿Es finito?:", Number.isFinite(montoTotal));
+    console.log("🔍 [PEDIDO] ¿Es mayor a 0?:", montoTotal > 0);
+
+    // Validar que el monto total sea válido
+    if (!Number.isFinite(montoTotal) || montoTotal <= 0) {
+      console.log("❌ [PEDIDO] Monto total inválido, abortando...");
+      await client.query("ROLLBACK");
+      transactionStarted = false;
+      removeUploadedComprobante();
+      return res.status(400).json({
+        success: false,
+        message: "Error al calcular el monto del pedido. Verifica que todos los productos tengan precio y presentación válidos.",
+      });
+    }
+
+    console.log("✅ [PEDIDO] Monto total válido, continuando...");
 
     // 5. Obtener el agente asignado al cliente (si existe)
     const clienteAgenteResult = await client.query(
@@ -417,6 +462,13 @@ const crearPedido = async (req, res) => {
     let diasGracia = 0;
 
     if (metodoPagoEsCredito) {
+      console.log("🔍 [CRÉDITO] Iniciando validación de pago con crédito...");
+      console.log("🔍 [CRÉDITO] Cliente ID:", clienteId);
+      console.log("🔍 [CRÉDITO] Monto total del pedido:", montoTotal);
+      console.log("🔍 [CRÉDITO] Tipo de montoTotal:", typeof montoTotal);
+      console.log("🔍 [CRÉDITO] ¿Es NaN?:", Number.isNaN(montoTotal));
+      console.log("🔍 [CRÉDITO] ¿Es finito?:", Number.isFinite(montoTotal));
+
       const creditoResult = await client.query(
         `
           SELECT credito_id, limite_credito, saldo_deudor, dias_gracia
@@ -428,7 +480,10 @@ const crearPedido = async (req, res) => {
         [clienteId]
       );
 
+      console.log("🔍 [CRÉDITO] Registros encontrados:", creditoResult.rows.length);
+
       if (!creditoResult.rows.length) {
+        console.log("❌ [CRÉDITO] No se encontró línea de crédito activa");
         await client.query("ROLLBACK");
         transactionStarted = false;
         return res.status(400).json({
@@ -439,13 +494,22 @@ const crearPedido = async (req, res) => {
       }
 
       const creditoRow = creditoResult.rows[0];
+      console.log("🔍 [CRÉDITO] Datos del crédito (raw):", creditoRow);
+
       const limiteCredito =
         Number.parseFloat(creditoRow.limite_credito ?? 0) || 0;
       const saldoDeudor =
         Number.parseFloat(creditoRow.saldo_deudor ?? 0) || 0;
       const saldoDisponible = limiteCredito - saldoDeudor;
 
+      console.log("🔍 [CRÉDITO] Límite de crédito:", limiteCredito);
+      console.log("🔍 [CRÉDITO] Saldo deudor actual:", saldoDeudor);
+      console.log("🔍 [CRÉDITO] Saldo disponible:", saldoDisponible);
+      console.log("🔍 [CRÉDITO] Diferencia (monto - disponible):", montoTotal - saldoDisponible);
+      console.log("🔍 [CRÉDITO] ¿Excede el límite?:", montoTotal - saldoDisponible > 0.009);
+
       if (montoTotal - saldoDisponible > 0.009) {
+        console.log("❌ [CRÉDITO] Saldo insuficiente para completar la compra");
         await client.query("ROLLBACK");
         transactionStarted = false;
         return res.status(400).json({
@@ -523,15 +587,15 @@ const crearPedido = async (req, res) => {
            $3,
            $4,
            $5,
-           $5,
            $6,
+           $7,
            CASE
-             WHEN $5 THEN CURRENT_TIMESTAMP + ($7 * INTERVAL '1 day')
+             WHEN $6 THEN CURRENT_TIMESTAMP + ($8 * INTERVAL '1 day')
              ELSE NULL
            END,
-           $8,
            $9,
-           $10
+           $10,
+           $11
          )
          RETURNING PedidoID, FechaPedido, MontoTotal, Estatus, Fecha_Vencimiento, Es_Credito, Pagado, Metodo_Pago, Transaccion_ID, Comprobante_URL`,
         [
