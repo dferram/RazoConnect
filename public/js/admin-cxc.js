@@ -42,6 +42,7 @@
     elements.btnCerrarModal = document.getElementById("btnCerrarModal");
     elements.btnRecargar = document.getElementById("btnRecargar");
     elements.btnExportar = document.getElementById("btnExportar");
+    elements.exportContainer = document.getElementById("exportContainer");
     elements.modal = document.getElementById("abonoModal");
     elements.abonoCliente = document.getElementById("abonoCliente");
     elements.abonoSaldo = document.getElementById("abonoSaldoActual");
@@ -98,7 +99,7 @@
       try {
         Swal.fire({
           title: "Generando Reporte...",
-          text: "Estamos procesando y archivando los registros pendientes.",
+          text: "Estamos generando el reporte con el estado actual de la cartera.",
           allowOutsideClick: false,
           didOpen: () => { Swal.showLoading() }
         });
@@ -119,7 +120,7 @@
         });
 
         if (response.status === 404) {
-          Swal.fire('Sin Datos', 'No hay registros nuevos pendientes de exportar.', 'info');
+          Swal.fire('Sin Datos', 'No hay clientes con saldo pendiente para exportar.', 'info');
           return;
         }
 
@@ -145,9 +146,10 @@
         Swal.fire({
           icon: 'success',
           title: 'Reporte Descargado',
-          text: 'Los registros han sido movidos al histórico.'
+          text: 'El reporte refleja el estado actual de la cartera de cobranza.',
+          confirmButtonColor: '#F97316'
         }).then(() => {
-          loadCartera(); // Recargar la tabla
+          cargarMetricas(); // Recargar métricas
         });
 
       } catch (error) {
@@ -304,12 +306,21 @@
       elements.estadoVacio.style.display = "flex";
       elements.resumenResultados.textContent = "0 CLIENTES";
       elements.tablaBody.innerHTML = "";
+      // Ocultar contenedor de exportar si no hay datos
+      if (elements.exportContainer) {
+        elements.exportContainer.style.display = "none";
+      }
       return;
     }
 
     elements.tabla.style.display = "table";
     elements.estadoVacio.style.display = "none";
     elements.resumenResultados.textContent = `${state.filtrada.length} CLIENTES`;
+
+    // Mostrar contenedor de exportar si hay clientes con deuda
+    if (elements.exportContainer && state.cartera.length > 0) {
+      elements.exportContainer.style.display = "block";
+    }
 
     elements.tablaBody.innerHTML = state.filtrada
       .map((cliente) => generarFila(cliente))

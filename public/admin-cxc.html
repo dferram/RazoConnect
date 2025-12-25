@@ -311,13 +311,25 @@
                     >
                       Siguiente →
                     </button>
-
-                    <button id="btnExportar" type="button" class="btn btn-success" style="margin-left: 1rem;">
-                      <i class="bi bi-file-earmark-excel"></i>
-                      <span class="ms-1">Descargar Lote</span>
-                    </button>
                   </div>
                 </div>
+              </div>
+
+              <!-- Botón de Exportar (siempre visible cuando hay datos) -->
+              <div
+                id="exportContainer"
+                style="
+                  display: none;
+                  margin-top: 1.5rem;
+                  padding: 1rem 1.5rem;
+                  border-top: 1px solid #e5e7eb;
+                  text-align: right;
+                "
+              >
+                <button id="btnExportar" type="button" class="btn btn-success" style="display: inline-flex; align-items: center; gap: 0.5rem;">
+                  <i class="bi bi-file-earmark-excel"></i>
+                  <span>Exportar Excel</span>
+                </button>
               </div>
             </div>
           </section>
