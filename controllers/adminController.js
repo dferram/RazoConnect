@@ -11320,7 +11320,7 @@ const cancelarOrdenBackorder = async (req, res) => {
     const clientesQuery = await db.query(
       `SELECT DISTINCT p.clienteid
        FROM pedidos p
-       INNER JOIN detallespedido dp ON p.pedidoid = dp.pedidoid
+       INNER JOIN detallesdelpedido dp ON p.pedidoid = dp.pedidoid
        INNER JOIN detallesordencompra doc ON dp.varianteid = doc.varianteid
        WHERE doc.ordencompraid = $1
        AND p.estatus = 'Backorder'`,

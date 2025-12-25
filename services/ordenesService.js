@@ -1,6 +1,74 @@
 const db = require("../db");
 
 /**
+ * Normaliza la cantidad solicitada al múltiplo más cercano de la regla de empaque del proveedor.
+ * Implementa Smart Reordering: redondea hacia arriba para cumplir con las reglas de empaque.
+ *
+ * @param {object} client - Cliente de base de datos activo.
+ * @param {number} productoID - ID del producto.
+ * @param {number} cantidadSolicitada - Cantidad original solicitada (piezas o paquetes).
+ * @returns {Promise<object>} - { cantidadNormalizada, reglaEmpaque, sobranteStock }
+ */
+async function normalizarCantidadPorReglaEmpaque(
+  client,
+  productoID,
+  cantidadSolicitada
+) {
+  try {
+    // PASO 1: Obtener la regla de empaque del producto
+    const reglaResult = await client.query(
+      `SELECT pre.cantidadempaque, pre.descripcion
+       FROM productos p
+       INNER JOIN proveedor_reglas_empaque pre ON pre.reglaid = p.reglaid
+       WHERE p.productoid = $1`,
+      [productoID]
+    );
+
+    // Si no hay regla de empaque, retornar cantidad original (sin normalizar)
+    if (reglaResult.rows.length === 0) {
+      console.warn(
+        `⚠️ Producto ${productoID} no tiene regla de empaque definida. Se usará cantidad original.`
+      );
+      return {
+        cantidadNormalizada: cantidadSolicitada,
+        reglaEmpaque: null,
+        sobranteStock: 0,
+        descripcionRegla: "Sin regla de empaque",
+      };
+    }
+
+    const reglaEmpaque = reglaResult.rows[0].cantidadempaque;
+    const descripcionRegla = reglaResult.rows[0].descripcion;
+
+    // PASO 2: Aplicar algoritmo de Smart Reordering
+    // Fórmula: Math.ceil(cantidad_solicitada / regla_empaque) * regla_empaque
+    const cantidadNormalizada =
+      Math.ceil(cantidadSolicitada / reglaEmpaque) * reglaEmpaque;
+
+    // PASO 3: Calcular sobrante de stock
+    const sobranteStock = cantidadNormalizada - cantidadSolicitada;
+
+    console.log(
+      `📦 Smart Reordering - Producto ${productoID}:`,
+      `\n   Solicitado: ${cantidadSolicitada}`,
+      `\n   Regla Empaque: ${reglaEmpaque} (${descripcionRegla})`,
+      `\n   Normalizado: ${cantidadNormalizada}`,
+      `\n   Sobrante: ${sobranteStock}`
+    );
+
+    return {
+      cantidadNormalizada,
+      reglaEmpaque,
+      sobranteStock,
+      descripcionRegla,
+    };
+  } catch (error) {
+    console.error("Error en normalizarCantidadPorReglaEmpaque:", error);
+    throw error;
+  }
+}
+
+/**
  * Genera o actualiza una Orden de Compra en estatus "Pendiente" para surtir
  * la cantidad faltante de una variante específica.
  *
@@ -79,6 +147,15 @@ async function generarOrdenCompraAutomatica(
       ordenCompraId = nuevaOrdenResult.rows[0].ordencompraid;
     }
 
+    // SMART REORDERING: Normalizar cantidad según regla de empaque
+    const normalizacionResult = await normalizarCantidadPorReglaEmpaque(
+      dbClient,
+      productoId,
+      cantidadSolicitada
+    );
+
+    const cantidadNormalizada = normalizacionResult.cantidadNormalizada;
+
     const detalleExistenteResult = await dbClient.query(
       `SELECT DetalleOC_ID, CantidadSolicitada
          FROM DetallesOrdenCompra
@@ -96,7 +173,7 @@ async function generarOrdenCompraAutomatica(
             SET CantidadSolicitada = CantidadSolicitada + $1
           WHERE DetalleOC_ID = $2
           RETURNING DetalleOC_ID, CantidadSolicitada`,
-        [cantidadSolicitada, detalle.detalleoc_id]
+        [cantidadNormalizada, detalle.detalleoc_id]
       );
 
       detalleOrden = detalleActualizado.rows[0];
@@ -105,7 +182,7 @@ async function generarOrdenCompraAutomatica(
         `INSERT INTO DetallesOrdenCompra (OrdenCompraID, VarianteID, CantidadSolicitada, CantidadRecibida)
          VALUES ($1, $2, $3, 0)
          RETURNING DetalleOC_ID, CantidadSolicitada`,
-        [ordenCompraId, varianteIdNumero, cantidadSolicitada]
+        [ordenCompraId, varianteIdNumero, cantidadNormalizada]
       );
 
       detalleOrden = detalleInsertado.rows[0];
@@ -120,7 +197,10 @@ async function generarOrdenCompraAutomatica(
       proveedorId,
       productoId,
       varianteId: varianteIdNumero,
-      cantidadSolicitada,
+      cantidadSolicitadaOriginal: cantidadSolicitada,
+      cantidadNormalizada: cantidadNormalizada,
+      reglaEmpaque: normalizacionResult.reglaEmpaque,
+      sobranteStock: normalizacionResult.sobranteStock,
       esOrdenNueva,
       detalle: detalleOrden,
     };
@@ -229,7 +309,16 @@ async function generarBackorderProveedor(
       ordenCompraID = ordenPendienteResult.rows[0].ordencompraid;
     }
 
-    // PASO 4: Agregar/Actualizar Producto en DetallesOrdenCompra
+    // PASO 4: SMART REORDERING - Normalizar cantidad según regla de empaque
+    const normalizacionResult = await normalizarCantidadPorReglaEmpaque(
+      client,
+      productoIdNumero,
+      cantidadSolicitada
+    );
+
+    const cantidadNormalizada = normalizacionResult.cantidadNormalizada;
+
+    // PASO 5: Agregar/Actualizar Producto en DetallesOrdenCompra
     const detalleExistenteResult = await client.query(
       `SELECT DetalleOC_ID, CantidadSolicitada
        FROM DetallesOrdenCompra
@@ -241,25 +330,25 @@ async function generarBackorderProveedor(
     let cantidadTotal;
 
     if (detalleExistenteResult.rows.length > 0) {
-      // Ya existe el producto -> UPDATE (incrementar cantidad)
+      // Ya existe el producto -> UPDATE (incrementar cantidad NORMALIZADA)
       const detalleExistente = detalleExistenteResult.rows[0];
       const updateResult = await client.query(
         `UPDATE DetallesOrdenCompra
          SET CantidadSolicitada = CantidadSolicitada + $1
          WHERE DetalleOC_ID = $2
          RETURNING DetalleOC_ID, CantidadSolicitada`,
-        [cantidadSolicitada, detalleExistente.detalleoc_id]
+        [cantidadNormalizada, detalleExistente.detalleoc_id]
       );
       detalleOrdenID = updateResult.rows[0].detalleoc_id;
       cantidadTotal = updateResult.rows[0].cantidadsolicitada;
     } else {
-      // No existe el producto -> INSERT (nuevo detalle)
+      // No existe el producto -> INSERT (nuevo detalle con cantidad NORMALIZADA)
       const insertResult = await client.query(
         `INSERT INTO DetallesOrdenCompra 
          (OrdenCompraID, VarianteID, CantidadSolicitada, CantidadRecibida)
          VALUES ($1, $2, $3, 0)
          RETURNING DetalleOC_ID, CantidadSolicitada`,
-        [ordenCompraID, varianteIdNumero, cantidadSolicitada]
+        [ordenCompraID, varianteIdNumero, cantidadNormalizada]
       );
       detalleOrdenID = insertResult.rows[0].detalleoc_id;
       cantidadTotal = insertResult.rows[0].cantidadsolicitada;
@@ -272,13 +361,16 @@ async function generarBackorderProveedor(
       productoID: productoIdNumero,
       varianteID: varianteIdNumero,
       tamanoID: tamanoIdNumero,
-      cantidadSolicitada: cantidadSolicitada,
+      cantidadSolicitadaOriginal: cantidadSolicitada,
+      cantidadNormalizada: cantidadNormalizada,
       cantidadTotal: cantidadTotal,
+      reglaEmpaque: normalizacionResult.reglaEmpaque,
+      sobranteStock: normalizacionResult.sobranteStock,
       detalleOrdenID,
       esOrdenNueva,
       mensaje: esOrdenNueva
-        ? `Orden de compra ${ordenCompraID} creada para proveedor ${proveedorID}`
-        : `Orden de compra ${ordenCompraID} actualizada`,
+        ? `Orden de compra ${ordenCompraID} creada para proveedor ${proveedorID} (Smart Reordering aplicado)`
+        : `Orden de compra ${ordenCompraID} actualizada (Smart Reordering aplicado)`,
     };
   } catch (error) {
     console.error("Error en generarBackorderProveedor:", error);

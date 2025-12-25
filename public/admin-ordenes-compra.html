@@ -799,44 +799,129 @@
         // Cancelar Orden de Backorder
         window.cancelarOrdenBackorder = async function() {
           if (!currentOrdenId) {
-            showToast("Error: No hay orden seleccionada", "error");
-            return;
-          }
-
-          const motivo = prompt('Motivo de cancelación (se notificará al cliente):');
-          if (!motivo || motivo.trim() === '') {
-            showToast("Cancelación abortada: se requiere un motivo", "warning");
-            return;
-          }
-
-          try {
-            const response = await API.apiCall(
-              `/admin/ordenes-compra/${currentOrdenId}/cancelar`,
-              {
-                method: 'POST',
-                body: JSON.stringify({ motivo: motivo.trim() })
-              }
-            );
-
-            if (response.ok) {
-              showToast("Orden cancelada y cliente notificado", "success");
-              closeDetalleModal();
-              loadOrdenes(); // Recargar lista
-            } else {
-              throw new Error(response.data?.message || "Error al cancelar");
+            if (typeof Swal !== "undefined" && Swal && typeof Swal.fire === "function") {
+              Swal.fire({
+                icon: "error",
+                title: "Error",
+                text: "No hay orden seleccionada",
+                confirmButtonColor: "#F97316",
+              });
             }
-          } catch (error) {
-            console.error("Error cancelando orden:", error);
-            showToast("Error al cancelar la orden", "error");
+            return;
+          }
+
+          // Usar SweetAlert2 para solicitar el motivo
+          if (typeof Swal !== "undefined" && Swal && typeof Swal.fire === "function") {
+            const { value: motivo, isConfirmed } = await Swal.fire({
+              title: "Cancelar Orden de Compra",
+              html: `
+                <p style="margin-bottom: 1rem; color: #6b7280;">
+                  Esta acción cancelará la orden #${currentOrdenId} y notificará automáticamente a todos los clientes afectados.
+                </p>
+                <textarea 
+                  id="swal-motivo" 
+                  class="swal2-input" 
+                  placeholder="Motivo de cancelación (requerido)..."
+                  style="height: 100px; resize: vertical; width: 90%;"
+                ></textarea>
+              `,
+              icon: "warning",
+              showCancelButton: true,
+              confirmButtonText: "Sí, cancelar orden",
+              cancelButtonText: "No, mantener orden",
+              confirmButtonColor: "#dc2626",
+              cancelButtonColor: "#6b7280",
+              preConfirm: () => {
+                const motivoInput = document.getElementById('swal-motivo').value;
+                if (!motivoInput || motivoInput.trim() === '') {
+                  Swal.showValidationMessage('El motivo de cancelación es requerido');
+                  return false;
+                }
+                return motivoInput.trim();
+              }
+            });
+
+            if (!isConfirmed || !motivo) {
+              return;
+            }
+
+            // Mostrar loading mientras se procesa
+            Swal.fire({
+              title: "Cancelando orden...",
+              text: "Notificando a clientes afectados",
+              allowOutsideClick: false,
+              didOpen: () => {
+                Swal.showLoading();
+              },
+            });
+
+            try {
+              const response = await API.apiCall(
+                `/admin/ordenes-compra/${currentOrdenId}/cancelar`,
+                {
+                  method: 'POST',
+                  body: JSON.stringify({ motivo: motivo })
+                }
+              );
+
+              if (response.ok) {
+                const clientesNotificados = response.data?.data?.clientesNotificados || 0;
+                await Swal.fire({
+                  icon: "success",
+                  title: "Orden Cancelada",
+                  html: `
+                    <p>La orden #${currentOrdenId} ha sido cancelada exitosamente.</p>
+                    <p style="color: #6b7280; margin-top: 0.5rem;">
+                      ${clientesNotificados} cliente(s) notificado(s)
+                    </p>
+                  `,
+                  confirmButtonColor: "#F97316",
+                });
+                closeDetalleModal();
+                loadOrdenes();
+              } else {
+                throw new Error(response.data?.message || "Error al cancelar");
+              }
+            } catch (error) {
+              console.error("Error cancelando orden:", error);
+              await Swal.fire({
+                icon: "error",
+                title: "Error al Cancelar",
+                text: error.message || "No se pudo cancelar la orden",
+                confirmButtonColor: "#F97316",
+              });
+            }
+          } else {
+            console.error("SweetAlert2 no está disponible");
+            alert("Error: SweetAlert2 no está cargado");
           }
         };
 
-        // Toast notifications
+        // Toast notifications usando SweetAlert2
         function showToast(message, type = "info") {
-          // Implementar según tu sistema de toasts
           console.log(`[${type.toUpperCase()}] ${message}`);
-          if (typeof window.showToast === 'function') {
+          
+          if (typeof Swal !== "undefined" && Swal && typeof Swal.fire === "function") {
+            const iconMap = {
+              success: "success",
+              error: "error",
+              warning: "warning",
+              info: "info"
+            };
+            
+            Swal.fire({
+              toast: true,
+              position: "top-end",
+              icon: iconMap[type] || "info",
+              title: message,
+              showConfirmButton: false,
+              timer: 3000,
+              timerProgressBar: true,
+            });
+          } else if (typeof window.showToast === 'function') {
             window.showToast(message, type);
+          } else {
+            console.warn("Sistema de notificaciones no disponible:", message);
           }
         }
       })();
@@ -854,10 +939,15 @@
         display: none; /* Oculto por defecto */
         align-items: center;
         justify-content: center;
-        z-index: 9999;
+        z-index: 1040;
         overflow-y: auto;
         -webkit-backdrop-filter: blur(4px);
         backdrop-filter: blur(4px);
+      }
+      
+      /* Asegurar que SweetAlert2 aparezca sobre el modal */
+      .swal2-container {
+        z-index: 10000 !important;
       }
 
       .modal.show {
