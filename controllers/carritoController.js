@@ -229,7 +229,7 @@ const obtenerCarrito = async (req, res) => {
         pv.preciounitario,
         pv.precioofertaunitario,
         pv.stock,
-        pv.tipoproductoid,
+        pre.tipoproductoid,
         p.productoid,
         p.nombreproducto,
         p.descripcion,
@@ -243,6 +243,7 @@ const obtenerCarrito = async (req, res) => {
       FROM itemsdelcarrito ic
       INNER JOIN producto_variantes pv ON pv.varianteid = ic.varianteid
       INNER JOIN productos p ON p.productoid = pv.productoid
+      LEFT JOIN proveedor_reglas_empaque pre ON pre.reglaid = p.reglaid
       LEFT JOIN categorias c ON p.categoriaid = c.categoriaid
       LEFT JOIN cat_tamanopaquetes t ON t.tamanoid = ic.tamanoid
       LEFT JOIN LATERAL (
@@ -502,10 +503,11 @@ const agregarAlCarrito = async (req, res) => {
          pv.preciounitario,
          p.nombreproducto,
          p.proveedorid_default,
-         pv.tipoproductoid,
+         pre.tipoproductoid,
          row_to_json(t) AS tamano_info
        FROM producto_variantes pv
        INNER JOIN productos p ON p.productoid = pv.productoid
+       LEFT JOIN proveedor_reglas_empaque pre ON pre.reglaid = p.reglaid
        INNER JOIN producto_tamanosdisponibles ptd ON ptd.productoid = p.productoid AND ptd.tamanoid = $2
        INNER JOIN cat_tamanopaquetes t ON t.tamanoid = ptd.tamanoid
        WHERE pv.varianteid = $1`,
@@ -725,9 +727,10 @@ const actualizarCarrito = async (req, res) => {
          pv.sku,
          p.nombreproducto,
          p.proveedorid_default,
-         pv.tipoproductoid
+         pre.tipoproductoid
        FROM producto_variantes pv
        INNER JOIN productos p ON p.productoid = pv.productoid
+       LEFT JOIN proveedor_reglas_empaque pre ON pre.reglaid = p.reglaid
        WHERE pv.varianteid = $1
        LIMIT 1`,
       [varianteId]
@@ -990,7 +993,7 @@ const cambiarVarianteItemCarrito = async (req, res) => {
          pv.stock,
          pv.preciounitario,
          pv.precioofertaunitario,
-         pv.tipoproductoid,
+         pre.tipoproductoid,
          p.nombreproducto,
          p.proveedorid_default,
          row_to_json(t) AS tamano_info

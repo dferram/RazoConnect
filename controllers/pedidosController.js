@@ -249,16 +249,16 @@ const crearPedido = async (req, res) => {
         pv.productoid,
         pv.sku,
         pv.dimensiones,
-        pv.tipoproductoid,
+        pre.tipoproductoid,
         pv.preciounitario,
         pv.precioofertaunitario,
         pv.stock,
-        pv.costounitario,
         p.nombreproducto,
-        p.proveedorid_default
-      FROM itemsdelcarrito ic
-      INNER JOIN producto_variantes pv ON pv.varianteid = ic.varianteid
+        p.proveedorid_default,
+        row_to_json(t) AS tamano_info
+      FROM producto_variantes pv
       INNER JOIN productos p ON p.productoid = pv.productoid
+      LEFT JOIN proveedor_reglas_empaque pre ON pre.reglaid = p.reglaid
       LEFT JOIN cat_tamanopaquetes t ON t.tamanoid = ic.tamanoid
       WHERE ic.carritoid = $1
       FOR UPDATE OF pv`,

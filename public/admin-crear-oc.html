@@ -702,6 +702,10 @@
             const costo = Number.isFinite(Number(r.costounitario))
               ? Number(r.costounitario)
               : 0;
+            const reglaEmpaqueRaw = r.cantidad_empaque ?? r.regla_empaque ?? 1;
+            const reglaEmpaque = Number.parseInt(reglaEmpaqueRaw, 10);
+            const regla = Number.isInteger(reglaEmpaque) && reglaEmpaque > 0 ? reglaEmpaque : 1;
+            const ventaLabel = regla === 1 ? "Unidad" : `Paquete de ${regla} pzas`;
 
             const stockClass = stock <= 0 ? "text-danger" : "";
 
@@ -733,6 +737,9 @@
                     SKU: <code style="background: #f0f0f0; padding: 0.12rem 0.35rem; border-radius: 0.25rem;">${sku}</code>
                     <span class="${stockClass}" style="margin-left: 0.5rem;">Stock: <strong>${stock}</strong></span>
                     <span style="margin-left: 0.5rem;">Costo: <strong>${formatMoney(costo)}</strong></span>
+                  </div>
+                  <div style="font-size: 0.8rem; color: #9a3412; margin-top: 0.25rem; font-weight: 800;">
+                    Venta por: ${ventaLabel}
                   </div>
                 </div>
 
@@ -830,14 +837,19 @@
         const qty = Number.parseInt(qtyRaw, 10);
         const cantidad = Number.isInteger(qty) && qty > 0 ? qty : 1;
 
+        const reglaEmpaqueRaw = r.cantidad_empaque ?? r.regla_empaque ?? 1;
+        const reglaEmpaque = Number.parseInt(reglaEmpaqueRaw, 10);
+        const regla = Number.isInteger(reglaEmpaque) && reglaEmpaque > 0 ? reglaEmpaque : 1;
+
         const existenteIndex = itemsOrdenCompra.findIndex(
           (it) => it.varianteid === r.varianteid
         );
 
         if (existenteIndex >= 0) {
-          const prev = Number.parseInt(itemsOrdenCompra[existenteIndex].cantidad, 10);
-          itemsOrdenCompra[existenteIndex].cantidad =
+          const prev = Number.parseInt(itemsOrdenCompra[existenteIndex].paquetes, 10);
+          itemsOrdenCompra[existenteIndex].paquetes =
             (Number.isInteger(prev) && prev > 0 ? prev : 0) + cantidad;
+          itemsOrdenCompra[existenteIndex].reglaEmpaque = regla;
         } else {
           itemsOrdenCompra.push({
             varianteid: r.varianteid,
@@ -848,7 +860,8 @@
               : 0,
             url_imagen_variante: r.url_imagen_variante,
             stock: r.stock,
-            cantidad,
+            paquetes: cantidad,
+            reglaEmpaque: regla,
           });
         }
 

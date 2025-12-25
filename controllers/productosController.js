@@ -244,8 +244,7 @@ const obtenerProductos = async (req, res) => {
               `EXISTS (
                 SELECT 1
                 FROM proveedor_reglas_empaque pre_f
-                WHERE pre_f.proveedorid = p.proveedorid_default
-                  AND pre_f.tipoproductoid = tipo_info.tipoproductoid
+                WHERE pre_f.reglaid = p.reglaid
                   AND COALESCE(pre_f.${colCantidadEmpaque}, 1) > 1
               )`
             );
@@ -254,8 +253,7 @@ const obtenerProductos = async (req, res) => {
               `NOT EXISTS (
                 SELECT 1
                 FROM proveedor_reglas_empaque pre_f
-                WHERE pre_f.proveedorid = p.proveedorid_default
-                  AND pre_f.tipoproductoid = tipo_info.tipoproductoid
+                WHERE pre_f.reglaid = p.reglaid
                   AND COALESCE(pre_f.${colCantidadEmpaque}, 1) > 1
               )`
             );
@@ -265,9 +263,9 @@ const obtenerProductos = async (req, res) => {
           const indiceTipo = valoresLocal.length;
           filtrosLocal.push(`EXISTS (
             SELECT 1
-            FROM producto_variantes pv
-            INNER JOIN tipoproducto tp ON tp.tipoproductoid = pv.tipoproductoid
-            WHERE pv.productoid = p.productoid
+            FROM proveedor_reglas_empaque pre_tipo
+            INNER JOIN tipoproducto tp ON tp.tipoproductoid = pre_tipo.tipoproductoid
+            WHERE pre_tipo.reglaid = p.reglaid
               AND tp.activo = TRUE
               AND tp.nombre = $${indiceTipo}
           )`);
@@ -322,7 +320,7 @@ const obtenerProductos = async (req, res) => {
         p.categoriaid,
         c.nombre AS categorianombre,
         c.descripcion AS categoriadescripcion,
-        tipo_info.tipoproductoid AS tipo_productoid,
+        pre.tipoproductoid AS tipo_productoid,
         tipo_info.nombre AS tipo_producto,
         COALESCE(regla_empaque.${colCantidadEmpaque}, 1) AS multiplo_empaque,
         variante_min.varianteid AS varianteid_precio_min,
@@ -337,19 +335,12 @@ const obtenerProductos = async (req, res) => {
         stats.variantes_con_stock
       FROM productos p
       LEFT JOIN categorias c ON p.categoriaid = c.categoriaid
+      LEFT JOIN proveedor_reglas_empaque pre ON pre.reglaid = p.reglaid
+      LEFT JOIN tipoproducto tipo_info ON tipo_info.tipoproductoid = pre.tipoproductoid
       LEFT JOIN LATERAL (
-        SELECT tp.tipoproductoid, tp.nombre
-        FROM producto_variantes pv_tipo
-        LEFT JOIN tipoproducto tp ON tp.tipoproductoid = pv_tipo.tipoproductoid
-        WHERE pv_tipo.productoid = p.productoid
-        ORDER BY pv_tipo.piezasporpaquete ASC NULLS LAST, pv_tipo.varianteid ASC
-        LIMIT 1
-      ) tipo_info ON TRUE
-      LEFT JOIN LATERAL (
-        SELECT pre.${colCantidadEmpaque}
-        FROM proveedor_reglas_empaque pre
-        WHERE pre.proveedorid = p.proveedorid_default
-          AND pre.tipoproductoid = tipo_info.tipoproductoid
+        SELECT pre2.${colCantidadEmpaque}
+        FROM proveedor_reglas_empaque pre2
+        WHERE pre2.reglaid = p.reglaid
         LIMIT 1
       ) regla_empaque ON TRUE
       LEFT JOIN LATERAL (

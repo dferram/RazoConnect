@@ -2053,9 +2053,7 @@ const buscarProductosCompra = async (req, res) => {
        LEFT JOIN LATERAL (
          SELECT pre.cantidadempaque
          FROM proveedor_reglas_empaque pre
-         WHERE pre.proveedorid = $1
-           AND pre.tipoproductoid = COALESCE(pv.tipoproductoid, p.tipoproductoid)
-         ORDER BY pre.reglaid ASC
+         WHERE pre.reglaid = p.reglaid
          LIMIT 1
        ) regla ON true
        LEFT JOIN LATERAL (
@@ -5319,6 +5317,8 @@ const crearProducto = async (req, res) => {
     sku_maestro,
     descripcion,
     categoriaId,
+    reglaid: reglaIdRaw,
+    reglaId: reglaIdAlt,
     TipoProductoID: tipoProductoIdRaw,
     tipoProducto,
     TipoProducto: tipoProductoRaw,
@@ -5417,59 +5417,101 @@ const crearProducto = async (req, res) => {
     // Gestión de visibilidad: respetar lo enviado, por defecto TRUE.
     const activoFinal = activo !== undefined ? Boolean(activo) : true;
 
-    const tipoProductoNombre = (() => {
-      const raw =
-        tipoProducto !== undefined && tipoProducto !== null
-          ? tipoProducto
-          : tipoProductoRaw;
-      if (raw === undefined || raw === null) {
-        return null;
-      }
-      const txt = String(raw).trim();
-      return txt.length ? txt : null;
-    })();
-
-    const tipoProductoId = await (async () => {
-      if (tipoProductoIdRaw !== undefined && tipoProductoIdRaw !== null && String(tipoProductoIdRaw).trim() !== "") {
-        const parsed = Number.parseInt(tipoProductoIdRaw, 10);
+    const reglaId = await (async () => {
+      const rawReglaId = reglaIdRaw ?? reglaIdAlt;
+      if (rawReglaId !== undefined && rawReglaId !== null && String(rawReglaId).trim() !== "") {
+        const parsed = Number.parseInt(rawReglaId, 10);
         if (!Number.isInteger(parsed) || parsed <= 0) {
-          throw new Error("TIPO_PRODUCTO_INVALIDO");
+          throw new Error("REGLA_ID_INVALIDO");
         }
 
         const existe = await client.query(
-          `SELECT tipoproductoid
-           FROM tipoproducto
-           WHERE tipoproductoid = $1
-             AND activo = TRUE`,
+          `SELECT reglaid FROM proveedor_reglas_empaque WHERE reglaid = $1`,
           [parsed]
         );
 
         if (!existe.rows.length) {
-          throw new Error("TIPO_PRODUCTO_NO_EXISTE");
+          throw new Error("REGLA_EMPAQUE_NO_EXISTE");
         }
 
         return parsed;
       }
 
-      if (tipoProductoNombre) {
-        return (
-          await client.query(
-            `INSERT INTO tipoproducto (nombre, descripcion, activo)
-             VALUES ($1, NULL, TRUE)
-             ON CONFLICT (nombre)
-             DO UPDATE SET activo = TRUE
-             RETURNING tipoproductoid`,
-            [tipoProductoNombre]
-          )
-        ).rows[0]?.tipoproductoid ?? null;
+      const tipoProductoNombre = (() => {
+        const raw =
+          tipoProducto !== undefined && tipoProducto !== null
+            ? tipoProducto
+            : tipoProductoRaw;
+        if (raw === undefined || raw === null) {
+          return null;
+        }
+        const txt = String(raw).trim();
+        return txt.length ? txt : null;
+      })();
+
+      const tipoProductoId = await (async () => {
+        if (tipoProductoIdRaw !== undefined && tipoProductoIdRaw !== null && String(tipoProductoIdRaw).trim() !== "") {
+          const parsed = Number.parseInt(tipoProductoIdRaw, 10);
+          if (!Number.isInteger(parsed) || parsed <= 0) {
+            throw new Error("TIPO_PRODUCTO_INVALIDO");
+          }
+
+          const existe = await client.query(
+            `SELECT tipoproductoid
+             FROM tipoproducto
+             WHERE tipoproductoid = $1
+               AND activo = TRUE`,
+            [parsed]
+          );
+
+          if (!existe.rows.length) {
+            throw new Error("TIPO_PRODUCTO_NO_EXISTE");
+          }
+
+          return parsed;
+        }
+
+        if (tipoProductoNombre) {
+          return (
+            await client.query(
+              `INSERT INTO tipoproducto (nombre, descripcion, activo)
+               VALUES ($1, NULL, TRUE)
+               ON CONFLICT (nombre)
+               DO UPDATE SET activo = TRUE
+               RETURNING tipoproductoid`,
+              [tipoProductoNombre]
+            )
+          ).rows[0]?.tipoproductoid ?? null;
+        }
+
+        return null;
+      })();
+
+      if (tipoProductoId && proveedorId) {
+        const reglaRes = await client.query(
+          `SELECT reglaid FROM proveedor_reglas_empaque
+           WHERE proveedorid = $1 AND tipoproductoid = $2
+           LIMIT 1`,
+          [proveedorId, tipoProductoId]
+        );
+        if (reglaRes.rows.length > 0) {
+          return reglaRes.rows[0].reglaid;
+        }
       }
 
       return null;
     })();
 
+    const tipoProductoIdForSku = reglaId ? (
+      await client.query(
+        `SELECT tipoproductoid FROM proveedor_reglas_empaque WHERE reglaid = $1`,
+        [reglaId]
+      )
+    ).rows[0]?.tipoproductoid ?? null : null;
+
     const skuMaestroFinal = await generarSkuMaestro(client, {
       proveedorid: proveedorId,
-      tipoproductoid: tipoProductoId,
+      tipoproductoid: tipoProductoIdForSku,
       categoriaid: categoriaIdParsed,
       nombreproducto: nombre,
     });
@@ -5545,9 +5587,9 @@ const crearProducto = async (req, res) => {
     const variantesInput = Array.isArray(variantesRaw) ? variantesRaw : [];
 
     const result = await client.query(
-      `INSERT INTO Productos (NombreProducto, sku_maestro, Descripcion, CategoriaID, ProveedorID_Default, Activo)
-       VALUES ($1, $2, $3, $4, $5, $6)
-       RETURNING ProductoID, NombreProducto, sku_maestro, Descripcion, CategoriaID, ProveedorID_Default AS ProveedorID, Activo`,
+      `INSERT INTO Productos (NombreProducto, sku_maestro, Descripcion, CategoriaID, ProveedorID_Default, Activo, reglaid)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       RETURNING ProductoID, NombreProducto, sku_maestro, Descripcion, CategoriaID, ProveedorID_Default AS ProveedorID, Activo, reglaid`,
       [
         nombre,
         skuMaestroFinal,
@@ -5555,6 +5597,7 @@ const crearProducto = async (req, res) => {
         categoriaIdParsed,
         proveedorId,
         activoFinal,
+        reglaId,
       ]
     );
 
@@ -6187,6 +6230,8 @@ const actualizarProducto = async (req, res) => {
     nombre,
     descripcion,
     categoriaId,
+    reglaid: reglaIdRaw,
+    reglaId: reglaIdAlt,
     TipoProductoID: tipoProductoIdRaw,
     tipoProducto,
     TipoProducto: tipoProductoRaw,
@@ -6206,7 +6251,7 @@ const actualizarProducto = async (req, res) => {
     transactionStarted = true;
 
     const productoResult = await client.query(
-      `SELECT ProductoID, NombreProducto, sku_maestro, Descripcion, CategoriaID, ProveedorID_Default AS ProveedorID, Activo, TipoProductoID
+      `SELECT ProductoID, NombreProducto, sku_maestro, Descripcion, CategoriaID, ProveedorID_Default AS ProveedorID, Activo, reglaid
        FROM Productos
        WHERE ProductoID = $1`,
       [productoId]
@@ -6372,45 +6417,76 @@ const actualizarProducto = async (req, res) => {
       return String(raw).trim();
     })();
 
-    const tipoProductoId = (() => {
-      if (tipoProductoIdRaw !== undefined) {
-        if (tipoProductoIdRaw === null || String(tipoProductoIdRaw).trim() === "") {
-          return Promise.resolve(null);
+    const reglaId = await (async () => {
+      const rawReglaId = reglaIdRaw ?? reglaIdAlt;
+      if (rawReglaId !== undefined) {
+        if (rawReglaId === null || String(rawReglaId).trim() === "") {
+          return null;
         }
-        const parsed = Number.parseInt(tipoProductoIdRaw, 10);
+        const parsed = Number.parseInt(rawReglaId, 10);
         if (!Number.isInteger(parsed) || parsed <= 0) {
-          return Promise.reject(new Error("TIPO_PRODUCTO_INVALIDO"));
+          throw new Error("REGLA_ID_INVALIDO");
         }
-        return db
-          .query(
+
+        const existe = await client.query(
+          `SELECT reglaid FROM proveedor_reglas_empaque WHERE reglaid = $1`,
+          [parsed]
+        );
+
+        if (!existe.rows.length) {
+          throw new Error("REGLA_EMPAQUE_NO_EXISTE");
+        }
+
+        return parsed;
+      }
+
+      const tipoProductoId = await (async () => {
+        if (tipoProductoIdRaw !== undefined) {
+          if (tipoProductoIdRaw === null || String(tipoProductoIdRaw).trim() === "") {
+            return null;
+          }
+          const parsed = Number.parseInt(tipoProductoIdRaw, 10);
+          if (!Number.isInteger(parsed) || parsed <= 0) {
+            throw new Error("TIPO_PRODUCTO_INVALIDO");
+          }
+          const r = await client.query(
             `SELECT tipoproductoid
              FROM tipoproducto
              WHERE tipoproductoid = $1
                AND activo = TRUE`,
             [parsed]
-          )
-          .then((r) => {
-            if (!r.rows.length) throw new Error("TIPO_PRODUCTO_NO_EXISTE");
-            return parsed;
-          });
-      }
+          );
+          if (!r.rows.length) throw new Error("TIPO_PRODUCTO_NO_EXISTE");
+          return parsed;
+        }
 
-      if (tipoProductoNombre === null) {
-        return Promise.resolve(null);
-      }
-      if (tipoProductoNombre === "") {
-        return Promise.resolve(null);
-      }
-      return db
-        .query(
+        if (tipoProductoNombre === null || tipoProductoNombre === "") {
+          return null;
+        }
+        const r = await client.query(
           `INSERT INTO tipoproducto (nombre, descripcion, activo)
            VALUES ($1, NULL, TRUE)
            ON CONFLICT (nombre)
            DO UPDATE SET activo = TRUE
            RETURNING tipoproductoid`,
           [tipoProductoNombre]
-        )
-        .then((r) => r.rows[0]?.tipoproductoid ?? null);
+        );
+        return r.rows[0]?.tipoproductoid ?? null;
+      })();
+
+      if (tipoProductoId && proveedorId) {
+        const reglaRes = await client.query(
+          `SELECT reglaid FROM proveedor_reglas_empaque
+           WHERE proveedorid = $1 AND tipoproductoid = $2
+           LIMIT 1`,
+          [proveedorId, tipoProductoId]
+        );
+        if (reglaRes.rows.length > 0) {
+          return reglaRes.rows[0].reglaid;
+        }
+      }
+
+      return productoActual.reglaid ?? null;
     })();
 
     const datosNuevosProducto = {
@@ -6419,13 +6495,8 @@ const actualizarProducto = async (req, res) => {
       CategoriaID: categoriaFinal,
       ProveedorID_Default: proveedorId,
       Activo: activoFinal,
+      reglaid: reglaId,
     };
-
-    let resolvedTipoProductoId = null;
-    if (tipoProductoNombre !== null || tipoProductoIdRaw !== undefined) {
-      resolvedTipoProductoId = await tipoProductoId;
-      datosNuevosProducto.TipoProductoID = resolvedTipoProductoId;
-    }
 
     const updateProductoRes = await client.query(
       `UPDATE productos
@@ -6434,16 +6505,16 @@ const actualizarProducto = async (req, res) => {
            categoriaid = $3,
            proveedorid_default = $4,
            activo = $5,
-           tipoproductoid = $6
+           reglaid = $6
        WHERE productoid = $7
-       RETURNING productoid, nombreproducto, sku_maestro, descripcion, categoriaid, proveedorid_default, activo, tipoproductoid`,
+       RETURNING productoid, nombreproducto, sku_maestro, descripcion, categoriaid, proveedorid_default, activo, reglaid`,
       [
         datosNuevosProducto.NombreProducto,
         datosNuevosProducto.Descripcion,
         datosNuevosProducto.CategoriaID,
         datosNuevosProducto.ProveedorID_Default,
         datosNuevosProducto.Activo,
-        resolvedTipoProductoId ?? productoActual.tipoproductoid ?? null,
+        reglaId,
         productoId,
       ]
     );
@@ -6460,37 +6531,6 @@ const actualizarProducto = async (req, res) => {
     }
 
     const productoActualizado = updateProductoRes.rows[0];
-
-    let varianteTipoAudit = null;
-
-    if (tipoProductoNombre !== null || tipoProductoIdRaw !== undefined) {
-      const masterVarianteResult = await client.query(
-        `SELECT *
-         FROM producto_variantes
-         WHERE productoid = $1
-         ORDER BY piezasporpaquete ASC NULLS LAST, varianteid ASC
-         LIMIT 1`,
-        [productoId]
-      );
-
-      const varianteMaestraActual = masterVarianteResult.rows[0] || null;
-      if (varianteMaestraActual && varianteMaestraActual.varianteid) {
-        const updateVarianteTipoRes = await client.query(
-          `UPDATE producto_variantes
-           SET tipoproductoid = $1
-           WHERE varianteid = $2
-           RETURNING varianteid, productoid, sku, tipoproductoid`,
-          [resolvedTipoProductoId, varianteMaestraActual.varianteid]
-        );
-
-        if (updateVarianteTipoRes.rows.length) {
-          varianteTipoAudit = {
-            old: varianteMaestraActual,
-            neu: updateVarianteTipoRes.rows[0],
-          };
-        }
-      }
-    }
 
     await client.query("COMMIT");
     transactionStarted = false;
@@ -6768,12 +6808,14 @@ const getProductoDetalle = async (req, res) => {
          p.proveedorid_default,
          p.activo,
          p.categoriaid,
-         p.tipoproductoid,
+         p.reglaid,
+         pre.tipoproductoid,
          c.nombre AS categorianombre,
          c.descripcion AS categoriadescripcion
        FROM productos p
        LEFT JOIN categorias c ON c.categoriaid = p.categoriaid
-       LEFT JOIN tipoproducto tp ON tp.tipoproductoid = p.tipoproductoid
+       LEFT JOIN proveedor_reglas_empaque pre ON pre.reglaid = p.reglaid
+       LEFT JOIN tipoproducto tp ON tp.tipoproductoid = pre.tipoproductoid
        WHERE p.productoid = $1`,
       [productoId]
     );
@@ -7094,8 +7136,9 @@ const getAllProductos = async (req, res) => {
         p.descripcion,
         p.categoriaid,
         p.activo,
-        tipo_info.tipoproductoid AS tipoproductoid,
-        tipo_info.nombre AS tipo_producto,
+        p.reglaid,
+        pre.tipoproductoid,
+        tp.nombre AS tipo_producto,
         COALESCE(SUM(v.stock), 0) AS stock_total,
         COUNT(v.varianteid) AS variantes_count,
         MIN(v.preciounitario) FILTER (WHERE v.preciounitario IS NOT NULL) AS precio_desde,
@@ -7120,15 +7163,9 @@ const getAllProductos = async (req, res) => {
         imagen.url_imagen,
         imagen.textoalternativo
       FROM productos p
+      LEFT JOIN proveedor_reglas_empaque pre ON pre.reglaid = p.reglaid
+      LEFT JOIN tipoproducto tp ON tp.tipoproductoid = pre.tipoproductoid
       LEFT JOIN producto_variantes v ON v.productoid = p.productoid
-      LEFT JOIN LATERAL (
-        SELECT tp.tipoproductoid, tp.nombre
-        FROM producto_variantes pv_tipo
-        LEFT JOIN tipoproducto tp ON tp.tipoproductoid = pv_tipo.tipoproductoid
-        WHERE pv_tipo.productoid = p.productoid
-        ORDER BY pv_tipo.piezasporpaquete ASC NULLS LAST, pv_tipo.varianteid ASC
-        LIMIT 1
-      ) tipo_info ON true
       LEFT JOIN LATERAL (
         SELECT v2.*
         FROM producto_variantes v2
