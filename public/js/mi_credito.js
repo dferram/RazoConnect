@@ -192,35 +192,67 @@
       emptyState.style.display = "none";
 
       try {
-        const response = await API.apiCall("/cliente/credito", {
+        // Primero verificar si el cliente tiene crédito activo
+        const checkResponse = await API.apiCall("/cliente/check-auth-credit", {
           method: "GET",
         });
 
-        if (response?.status === 403) {
+        if (checkResponse?.status === 403) {
           window.location.href = "/inicio.html";
           return;
         }
 
-        if (response?.status === 404) {
-          mostrarFormularioSolicitud();
-          return;
-        }
-
-        if (!response.ok || response.data?.success === false) {
+        if (!checkResponse.ok || checkResponse.data?.success === false) {
           throw new Error(
-            response.data?.message || "No fue posible recuperar tu crédito."
+            checkResponse.data?.message || "No fue posible verificar tu crédito."
           );
         }
 
-        const payload = response.data?.data || {};
-        if (!tieneDatosCredito(payload)) {
+        const checkData = checkResponse.data || {};
+        
+        // SI el cliente tiene crédito activo → Mostrar Dashboard
+        if (checkData.hasCredit && checkData.creditSummary) {
+          mostrarResumenCredito();
+          renderStats(checkData.creditSummary);
+          
+          // Intentar cargar movimientos (opcional)
+          try {
+            const movResponse = await API.apiCall("/cliente/credito", {
+              method: "GET",
+            });
+            if (movResponse.ok && movResponse.data?.data?.movimientos) {
+              renderMovimientos(movResponse.data.data.movimientos);
+            } else {
+              renderMovimientos([]);
+            }
+          } catch (movError) {
+            console.warn("No se pudieron cargar movimientos:", movError);
+            renderMovimientos([]);
+          }
+        } else if (checkData.hasPendingRequest && checkData.pendingRequest) {
+          // SI tiene una solicitud pendiente → Mostrar mensaje informativo
           mostrarFormularioSolicitud();
-          return;
+          Swal.fire({
+            icon: "info",
+            title: "Solicitud en Proceso",
+            html: `
+              <p>Tu solicitud de crédito por <strong>${formatCurrency(checkData.pendingRequest.monto_solicitado)}</strong> está siendo evaluada por nuestro equipo.</p>
+              <p style="margin-top: 1rem; color: #6b5d57;">Te notificaremos cuando sea aprobada.</p>
+            `,
+            confirmButtonText: "Entendido",
+            confirmButtonColor: "#F97316",
+            allowOutsideClick: false,
+          });
+          // Deshabilitar el formulario si ya hay una solicitud pendiente
+          if (submitBtn) submitBtn.disabled = true;
+          if (montoInput) montoInput.disabled = true;
+          if (ingresosInput) ingresosInput.disabled = true;
+          if (motivoInput) motivoInput.disabled = true;
+          if (plazoSelect) plazoSelect.disabled = true;
+        } else {
+          // SINO → Mostrar Formulario de Solicitud
+          mostrarFormularioSolicitud();
         }
-
-        mostrarResumenCredito();
-        renderStats(payload);
-        renderMovimientos(payload.movimientos || payload.detalle || []);
       } catch (error) {
         console.error("Error cargando crédito:", error);
         if (error?.message && error?.message.includes("Acceso denegado")) {
@@ -228,16 +260,14 @@
           return;
         }
 
-        if (error?.message && error.message.includes("No fue posible recuperar")) {
-          mostrarFormularioSolicitud();
-        }
+        // En caso de error, mostrar formulario por defecto
+        mostrarFormularioSolicitud();
 
         if (errorAlert) {
           errorAlert.textContent =
             error.message || "Error al obtener información de crédito.";
           errorAlert.style.display = "block";
         }
-        emptyState.style.display = "flex";
       } finally {
         if (loadingRow) {
           loadingRow.style.display = "none";

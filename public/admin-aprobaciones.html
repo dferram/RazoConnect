@@ -99,6 +99,7 @@
 
     <script src="js/layout.js" defer></script>
     <script src="js/api.js"></script>
+    <script src="js/components/admin-header-loader.js"></script>
     <script src="js/components/user-profile.js"></script>
     <script>
       (function () {
@@ -327,8 +328,8 @@
                         <div class="bar-base" style="width:100%;">
                           ${formatCurrency(analisis.metricas.compra_maxima)}
                         </div>
-                        <div class="bar-request" style="width:${(analisis.solicitud.monto / analisis.metricas.compra_maxima * 100).toFixed(0)}%;">
-                          ${formatCurrency(analisis.solicitud.monto)}
+                        <div class="bar-request" style="width:${(analisis.solicitud.monto_solicitado / analisis.metricas.compra_maxima * 100).toFixed(0)}%;">
+                          ${formatCurrency(analisis.solicitud.monto_solicitado)}
                         </div>
                       </div>
                     </div>

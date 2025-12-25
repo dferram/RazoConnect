@@ -50,10 +50,25 @@ const checkAuthCredit = async (req, res) => {
     const creditoActivo = await fetchCreditoActivo(clienteId);
     const creditSummary = créditoResumen(creditoActivo);
 
+    // Verificar si tiene una solicitud pendiente
+    const checkPendiente = `
+      SELECT solicitud_id, monto_solicitado, fecha_solicitud, estado
+      FROM solicitudes_credito 
+      WHERE cliente_id = $1 
+        AND estado = 'PENDIENTE'
+      ORDER BY fecha_solicitud DESC
+      LIMIT 1
+    `;
+    const { rows: pendientes } = await db.query(checkPendiente, [clienteId]);
+    const hasPendingRequest = pendientes.length > 0;
+    const pendingRequest = pendientes.length > 0 ? pendientes[0] : null;
+
     return res.json({
       success: true,
       hasCredit: Boolean(creditSummary),
       creditSummary,
+      hasPendingRequest,
+      pendingRequest,
     });
   } catch (error) {
     console.error("Error verificando crédito del cliente:", error);
