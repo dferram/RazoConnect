@@ -39,11 +39,13 @@ function calcularSplitBackorder({
 
   let cantidadBackorderAjustada = cantidadPendiente;
   if (cantidadPendiente > 0 && multiplo > 1) {
-    cantidadBackorderAjustada = Math.ceil(cantidadPendiente / multiplo) * multiplo;
+    const piezasPendientes = cantidadPendiente * piezas;
+    const piezasBackorderAjustadas = Math.ceil(piezasPendientes / multiplo) * multiplo;
+    cantidadBackorderAjustada = Math.ceil(piezasBackorderAjustadas / piezas);
   }
 
-  const cantidadTotalCobrar = cantidadSurtida + cantidadBackorderAjustada;
-  const ajusteAplicado = cantidadTotalCobrar !== cantidad;
+  const cantidadTotalCobrar = cantidad;
+  const ajusteAplicado = cantidadBackorderAjustada !== cantidadPendiente;
 
   return {
     cantidadSurtida,

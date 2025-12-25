@@ -16,8 +16,6 @@
     return;
   }
 
-  const apiBaseUrl = window.API_BASE_URL || "http://localhost:3000/api";
-
   async function safeJson(res) {
     try {
       return await res.json();
@@ -27,7 +25,7 @@
   }
 
   async function verifyAdmin() {
-    const res = await fetch(`${apiBaseUrl}/admin/verify`, {
+    const res = await fetch("/api/admin/verify", {
       method: "GET",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -40,7 +38,7 @@
   }
 
   async function verifyAgente() {
-    const res = await fetch(`${apiBaseUrl}/clientes/verify`, {
+    const res = await fetch("/api/clientes/verify", {
       method: "GET",
       headers: {
         Authorization: `Bearer ${token}`,

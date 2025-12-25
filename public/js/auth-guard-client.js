@@ -40,7 +40,7 @@
   const adminData = getAdminData();
 
   // Verificar token con el servidor de forma asíncrona
-  fetch("http://localhost:3000/api/clientes/verify", {
+  fetch("/api/clientes/verify", {
     method: "GET",
     headers: {
       Authorization: `Bearer ${effectiveToken}`,

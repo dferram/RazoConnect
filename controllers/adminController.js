@@ -6544,17 +6544,6 @@ const actualizarProducto = async (req, res) => {
       productoActualizado
     );
 
-    if (varianteTipoAudit) {
-      await auditService.registrarCambioPasivo(
-        req,
-        "producto_variantes",
-        varianteTipoAudit.neu.varianteid,
-        "UPDATE",
-        varianteTipoAudit.old,
-        varianteTipoAudit.neu
-      );
-    }
-
     return res.json({
       success: true,
       message: "Producto actualizado correctamente.",

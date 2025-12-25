@@ -49,11 +49,13 @@ function calcularSplitBackorder({
 
   let cantidadBackorderAjustada = cantidadPendiente;
   if (cantidadPendiente > 0 && multiplo > 1) {
-    cantidadBackorderAjustada = Math.ceil(cantidadPendiente / multiplo) * multiplo;
+    const piezasPendientes = cantidadPendiente * piezas;
+    const piezasBackorderAjustadas = Math.ceil(piezasPendientes / multiplo) * multiplo;
+    cantidadBackorderAjustada = Math.ceil(piezasBackorderAjustadas / piezas);
   }
 
-  const cantidadTotalCobrar = cantidadSurtida + cantidadBackorderAjustada;
-  const ajusteAplicado = cantidadTotalCobrar !== cantidad;
+  const cantidadTotalCobrar = cantidad;
+  const ajusteAplicado = cantidadBackorderAjustada !== cantidadPendiente;
 
   return {
     cantidadSurtida,
@@ -254,9 +256,9 @@ const crearPedido = async (req, res) => {
         pv.precioofertaunitario,
         pv.stock,
         p.nombreproducto,
-        p.proveedorid_default,
-        row_to_json(t) AS tamano_info
-      FROM producto_variantes pv
+        p.proveedorid_default
+      FROM itemsdelcarrito ic
+      INNER JOIN producto_variantes pv ON pv.varianteid = ic.varianteid
       INNER JOIN productos p ON p.productoid = pv.productoid
       LEFT JOIN proveedor_reglas_empaque pre ON pre.reglaid = p.reglaid
       LEFT JOIN cat_tamanopaquetes t ON t.tamanoid = ic.tamanoid

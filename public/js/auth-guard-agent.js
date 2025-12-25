@@ -36,7 +36,7 @@
 
   // Verificar token con el servidor
   // Los agentes usan el endpoint de clientes para verificación
-  fetch("http://localhost:3000/api/clientes/verify", {
+  fetch("/api/clientes/verify", {
     method: "GET",
     headers: {
       Authorization: `Bearer ${adminToken}`,
