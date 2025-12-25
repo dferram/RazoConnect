@@ -1,7 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { authenticate } = require("../middlewares/authMiddleware");
-const { authorizeAdmin } = require("../middlewares/checkCreditAccess");
+const { authenticate, authorizeAdmin } = require("../middlewares/authMiddleware");
 const creditoController = require("../controllers/creditoController");
 
 // Rutas protegidas para administradores
