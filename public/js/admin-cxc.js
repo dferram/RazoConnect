@@ -61,9 +61,7 @@
     if (!exists) {
       const link = document.createElement("link");
       link.rel = "stylesheet";
-      link.href = "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css";
-      link.integrity = "sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAI7zWj4lrnUksdQRVvoxMfoo7+k6FZpF6B+0mL7z0j2KA==";
-      link.crossOrigin = "anonymous";
+      link.href = "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css";
       document.head.appendChild(link);
     }
   }
@@ -105,10 +103,28 @@
           didOpen: () => { Swal.showLoading() }
         });
 
-        const response = await fetch('/api/admin/cxc/exportar', { method: 'GET' });
+        // Obtener el token JWT del localStorage
+        const token = localStorage.getItem('razoconnect_admin_token');
+        if (!token) {
+          Swal.fire('Error', 'No estás autenticado. Por favor, inicia sesión nuevamente.', 'error');
+          return;
+        }
+
+        const response = await fetch('/api/admin/cxc/exportar', { 
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
 
         if (response.status === 404) {
           Swal.fire('Sin Datos', 'No hay registros nuevos pendientes de exportar.', 'info');
+          return;
+        }
+
+        if (response.status === 401) {
+          Swal.fire('Error', 'Tu sesión ha expirado. Por favor, inicia sesión nuevamente.', 'error');
           return;
         }
 
@@ -123,6 +139,7 @@
         document.body.appendChild(a);
         a.click();
         a.remove();
+        window.URL.revokeObjectURL(url);
 
         // Éxito y recarga
         Swal.fire({
@@ -175,11 +192,11 @@
       }
 
       const payload = response.data.data || {};
-      const cartera = Array.isArray(payload.data) ? payload.data : [];
+      const cartera = Array.isArray(payload.cartera) ? payload.cartera : [];
       
       state.currentPage = payload.currentPage || 1;
       state.totalPages = payload.totalPages || 1;
-      state.totalRecords = payload.totalRecords || 0;
+      state.totalRecords = payload.totalRecords || cartera.length;
 
       state.cartera = cartera.map((cliente) => ({
         ...cliente,

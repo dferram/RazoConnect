@@ -443,24 +443,80 @@
       }
     }
 
-    payButton?.addEventListener("click", async () => {
-      if (typeof Swal !== "undefined" && Swal?.fire) {
-        await Swal.fire({
-          icon: "info",
-          title: "Pagar saldo",
-          text: "Un ejecutivo se pondrá en contacto para liquidar tu saldo. Mientras tanto puedes transferir a tu referencia habitual.",
-          confirmButtonColor: "#F97316",
-        });
-        return;
-      }
-
-      alert("Un ejecutivo se pondrá en contacto para liquidar tu saldo.");
-    });
-
     solicitudForm?.addEventListener("submit", (event) => {
       event.preventDefault();
       enviarSolicitud();
     });
+
+    // ========================================
+    // FUNCIONES PARA EL MODAL DE PAGO
+    // ========================================
+    
+    function abrirModalPago() {
+      const modal = document.getElementById("modalPagoCredito");
+      if (modal) {
+        modal.style.display = "flex";
+        document.body.style.overflow = "hidden"; // Prevenir scroll del body
+      }
+    }
+
+    function cerrarModalPago() {
+      const modal = document.getElementById("modalPagoCredito");
+      if (modal) {
+        modal.style.display = "none";
+        document.body.style.overflow = ""; // Restaurar scroll
+      }
+    }
+
+    function seleccionarMetodoPago(metodo) {
+      console.log(`✅ Método de pago seleccionado: ${metodo}`);
+      
+      // Aquí puedes agregar la lógica específica para cada método
+      if (metodo === "transferencia") {
+        console.log("📋 Mostrando información de transferencia bancaria...");
+        console.log("Datos bancarios:");
+        console.log("- Banco: BBVA");
+        console.log("- Cuenta: 0123456789");
+        console.log("- CLABE: 012345678901234567");
+        // TODO: Mostrar modal con datos bancarios
+      } else if (metodo === "mercadopago") {
+        console.log("💳 Redirigiendo a Mercado Pago...");
+        console.log("Preparando integración con API de Mercado Pago...");
+        // TODO: Integrar con API de Mercado Pago
+      }
+
+      cerrarModalPago();
+    }
+
+    // Event listener para abrir el modal al hacer click en "Pagar saldo"
+    payButton?.addEventListener("click", () => {
+      abrirModalPago();
+    });
+
+    // Cerrar modal con botón X
+    const btnCerrarModal = document.getElementById("btnCerrarModalPago");
+    btnCerrarModal?.addEventListener("click", cerrarModalPago);
+
+    // Cerrar modal al hacer click fuera del contenedor
+    const modalOverlay = document.getElementById("modalPagoCredito");
+    modalOverlay?.addEventListener("click", (event) => {
+      if (event.target === modalOverlay) {
+        cerrarModalPago();
+      }
+    });
+
+    // Manejar selección de métodos de pago
+    const metodoCards = document.querySelectorAll(".metodo-pago-card");
+    metodoCards.forEach((card) => {
+      card.addEventListener("click", () => {
+        const metodo = card.getAttribute("data-metodo");
+        seleccionarMetodoPago(metodo);
+      });
+    });
+
+    // ========================================
+    // FIN FUNCIONES MODAL DE PAGO
+    // ========================================
 
     loadCredito();
   });

@@ -16,6 +16,216 @@
     />
     <link rel="stylesheet" href="css/styles.css" />
     <link rel="stylesheet" href="css/admin.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <style>
+      /* Modal de Pago - Overlay */
+      .modal-pago-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(4px);
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+        animation: fadeIn 0.3s ease;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+
+      /* Modal Container */
+      .modal-pago-container {
+        background: white;
+        border-radius: 1rem;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        max-width: 600px;
+        width: 100%;
+        position: relative;
+        animation: slideUp 0.3s ease;
+      }
+
+      @keyframes slideUp {
+        from {
+          transform: translateY(30px);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+
+      /* Botón Cerrar */
+      .modal-pago-close {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        background: #f3f4f6;
+        border: none;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        color: #6b7280;
+        font-size: 1.25rem;
+        z-index: 10;
+      }
+
+      .modal-pago-close:hover {
+        background: #E85D04;
+        color: white;
+        transform: rotate(90deg);
+      }
+
+      /* Header del Modal */
+      .modal-pago-header {
+        padding: 2rem 2rem 1.5rem;
+        border-bottom: 1px solid #e5e7eb;
+      }
+
+      .modal-pago-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #111827;
+        margin: 0 0 0.5rem 0;
+      }
+
+      .modal-pago-subtitle {
+        font-size: 0.9375rem;
+        color: #6b7280;
+        margin: 0;
+      }
+
+      /* Body del Modal */
+      .modal-pago-body {
+        padding: 1.5rem 2rem 2rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      /* Tarjetas de Método de Pago */
+      .metodo-pago-card {
+        display: flex;
+        align-items: center;
+        gap: 1.25rem;
+        padding: 1.5rem;
+        border: 2px solid #e5e7eb;
+        border-radius: 0.75rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: white;
+      }
+
+      .metodo-pago-card:hover {
+        border-color: #E85D04;
+        background: #fff7ed;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(232, 93, 4, 0.15);
+      }
+
+      .metodo-pago-card:active {
+        transform: translateY(0);
+      }
+
+      /* Icono del Método */
+      .metodo-pago-icon {
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(135deg, #E85D04 0%, #ff7b2e 100%);
+        border-radius: 0.75rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.75rem;
+        flex-shrink: 0;
+        transition: all 0.3s ease;
+      }
+
+      .metodo-pago-card:hover .metodo-pago-icon {
+        transform: scale(1.1) rotate(5deg);
+      }
+
+      /* Contenido del Método */
+      .metodo-pago-content {
+        flex: 1;
+      }
+
+      .metodo-pago-title {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: #111827;
+        margin: 0 0 0.25rem 0;
+      }
+
+      .metodo-pago-description {
+        font-size: 0.875rem;
+        color: #6b7280;
+        margin: 0;
+        line-height: 1.4;
+      }
+
+      /* Flecha Indicadora */
+      .metodo-pago-arrow {
+        color: #9ca3af;
+        font-size: 1.25rem;
+        transition: all 0.3s ease;
+      }
+
+      .metodo-pago-card:hover .metodo-pago-arrow {
+        color: #E85D04;
+        transform: translateX(5px);
+      }
+
+      /* Responsive */
+      @media (max-width: 640px) {
+        .modal-pago-header {
+          padding: 1.5rem 1.5rem 1rem;
+        }
+
+        .modal-pago-body {
+          padding: 1rem 1.5rem 1.5rem;
+        }
+
+        .modal-pago-title {
+          font-size: 1.25rem;
+        }
+
+        .metodo-pago-card {
+          padding: 1.25rem;
+        }
+
+        .metodo-pago-icon {
+          width: 50px;
+          height: 50px;
+          font-size: 1.5rem;
+        }
+
+        .metodo-pago-title {
+          font-size: 1rem;
+        }
+
+        .metodo-pago-description {
+          font-size: 0.8125rem;
+        }
+      }
+    </style>
   </head>
   <body>
     <div id="header-container"></div>
@@ -220,6 +430,48 @@
         </form>
       </section>
     </main>
+
+    <!-- Modal de Selección de Método de Pago -->
+    <div id="modalPagoCredito" class="modal-pago-overlay" style="display: none;">
+      <div class="modal-pago-container">
+        <button class="modal-pago-close" id="btnCerrarModalPago" aria-label="Cerrar modal">
+          <i class="bi bi-x-lg"></i>
+        </button>
+        
+        <div class="modal-pago-header">
+          <h2 class="modal-pago-title">Selecciona un método de pago</h2>
+          <p class="modal-pago-subtitle">Elige cómo deseas liquidar tu saldo pendiente</p>
+        </div>
+
+        <div class="modal-pago-body">
+          <div class="metodo-pago-card" data-metodo="transferencia">
+            <div class="metodo-pago-icon">
+              <i class="bi bi-bank2"></i>
+            </div>
+            <div class="metodo-pago-content">
+              <h3 class="metodo-pago-title">Transferencia Bancaria</h3>
+              <p class="metodo-pago-description">Realiza una transferencia directa a nuestra cuenta</p>
+            </div>
+            <div class="metodo-pago-arrow">
+              <i class="bi bi-chevron-right"></i>
+            </div>
+          </div>
+
+          <div class="metodo-pago-card" data-metodo="mercadopago">
+            <div class="metodo-pago-icon">
+              <i class="bi bi-credit-card-2-front"></i>
+            </div>
+            <div class="metodo-pago-content">
+              <h3 class="metodo-pago-title">Mercado Pago</h3>
+              <p class="metodo-pago-description">Paga con tarjeta de crédito o débito de forma segura</p>
+            </div>
+            <div class="metodo-pago-arrow">
+              <i class="bi bi-chevron-right"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <div id="footer-container"></div>
 

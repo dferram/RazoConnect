@@ -303,15 +303,13 @@ const obtenerMovimientosCredito = async (req, res) => {
         movimiento_id,
         tipo_movimiento,
         monto,
-        saldo_anterior,
-        saldo_nuevo,
+        saldo_despues_movimiento,
         referencia_id,
         descripcion,
-        fecha_movimiento,
-        created_at
+        fecha_movimiento
        FROM credito_movimientos
        WHERE credito_id = $1
-       ORDER BY fecha_movimiento DESC, created_at DESC
+       ORDER BY fecha_movimiento DESC
        LIMIT $2 OFFSET $3`,
       [creditoId, limit, offset]
     );
@@ -320,11 +318,10 @@ const obtenerMovimientosCredito = async (req, res) => {
       movimientoId: mov.movimiento_id,
       tipo: mov.tipo_movimiento,
       monto: parseFloat(mov.monto),
-      saldoAnterior: parseFloat(mov.saldo_anterior || 0),
-      saldoNuevo: parseFloat(mov.saldo_nuevo || 0),
+      saldoDespues: parseFloat(mov.saldo_despues_movimiento || 0),
       referenciaId: mov.referencia_id,
       descripcion: mov.descripcion,
-      fecha: mov.fecha_movimiento || mov.created_at,
+      fecha: mov.fecha_movimiento,
     }));
 
     return res.json({
