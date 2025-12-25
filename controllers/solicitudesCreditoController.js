@@ -1,0 +1,328 @@
+const db = require("../db");
+
+const NIVEL_RIESGO = {
+  BAJO: "BAJO",
+  MEDIO: "MEDIO",
+  ALTO: "ALTO"
+};
+
+async function obtenerSolicitudesPendientes(req, res) {
+  try {
+    const { rows } = await db.query(
+      `SELECT 
+        s.solicitud_id,
+        s.cliente_id,
+        s.monto_solicitado,
+        s.motivo_uso,
+        s.estado,
+        s.fecha_solicitud,
+        c.nombre || ' ' || c.apellido as nombre_cliente
+      FROM solicitudes_credito s
+      INNER JOIN clientes c ON c.clienteid = s.cliente_id
+      WHERE s.estado = 'PENDIENTE'
+      ORDER BY s.fecha_solicitud DESC`,
+    );
+
+    // Calcular monto total solicitado
+    const montoTotal = rows.reduce((sum, row) => sum + Number(row.monto_solicitado), 0);
+
+    return res.json({
+      success: true,
+      data: {
+        solicitudes: rows,
+        stats: {
+          total_pendientes: rows.length,
+          monto_total_pendiente: montoTotal
+        }
+      }
+    });
+  } catch (error) {
+    console.error("Error obteniendo solicitudes pendientes:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error al obtener solicitudes pendientes"
+    });
+  }
+}
+
+async function obtenerAnalisisSolicitud(req, res) {
+  try {
+    const solicitudId = Number.parseInt(req.params.id, 10);
+    if (!Number.isInteger(solicitudId)) {
+      return res.status(400).json({
+        success: false,
+        message: "ID de solicitud inválido"
+      });
+    }
+
+    // 1. Obtener datos de la solicitud y cliente
+    const { rows: [solicitud] } = await db.query(
+      `SELECT 
+        s.solicitud_id,
+        s.cliente_id,
+        s.monto_solicitado,
+        s.motivo_uso,
+        s.fecha_solicitud,
+        c.nombre || ' ' || c.apellido as nombre_cliente,
+        c.fechaderegistro,
+        EXTRACT(MONTH FROM AGE(CURRENT_DATE, c.fechaderegistro))::integer as antiguedad_meses
+      FROM solicitudes_credito s
+      INNER JOIN clientes c ON c.clienteid = s.cliente_id
+      WHERE s.solicitud_id = $1`,
+      [solicitudId]
+    );
+
+    if (!solicitud) {
+      return res.status(404).json({
+        success: false,
+        message: "Solicitud no encontrada"
+      });
+    }
+
+    // 2. Obtener métricas de pedidos
+    const { rows: [metricas] } = await db.query(
+      `SELECT 
+        COUNT(*)::integer as pedidos_totales,
+        COALESCE(SUM(montototal), 0) as total_comprado,
+        COALESCE(MAX(montototal), 0) as compra_maxima,
+        COALESCE(AVG(montototal), 0) as promedio_compra,
+        MAX(fecha) as ultima_compra
+      FROM pedidos 
+      WHERE clienteid = $1 
+        AND estatus = 'COMPLETADO' 
+        AND pagado = true`,
+      [solicitud.cliente_id]
+    );
+
+    // 3. Verificar pagos vencidos
+    const { rows: [{ pagos_vencidos }] } = await db.query(
+      `SELECT COUNT(*)::integer as pagos_vencidos
+       FROM pedidos 
+       WHERE clienteid = $1 
+         AND es_credito = true
+         AND pagado = false
+         AND fecha_vencimiento < CURRENT_DATE`,
+      [solicitud.cliente_id]
+    );
+
+    // 4. Calcular score y mensaje
+    let score = NIVEL_RIESGO.MEDIO;
+    let mensajes = [];
+
+    if (pagos_vencidos > 0) {
+      score = NIVEL_RIESGO.ALTO;
+      mensajes.push("Cliente tiene pagos vencidos pendientes");
+    } else if (metricas.pedidos_totales === 0) {
+      score = NIVEL_RIESGO.ALTO;
+      mensajes.push("Cliente sin historial de compras");
+    } else if (solicitud.antiguedad_meses < 3) {
+      score = NIVEL_RIESGO.MEDIO;
+      mensajes.push("Cliente con menos de 3 meses de antigüedad");
+    } else if (solicitud.monto_solicitado > metricas.compra_maxima * 2) {
+      score = NIVEL_RIESGO.MEDIO;
+      mensajes.push('Monto solicitado supera 2x la compra máxima histórica (' + metricas.compra_maxima.toFixed(2) + ')');
+    } else if (solicitud.antiguedad_meses >= 6 && solicitud.monto_solicitado <= metricas.compra_maxima * 1.5) {
+      score = NIVEL_RIESGO.BAJO;
+    }
+
+    return res.json({
+      success: true,
+      data: {
+        solicitud: {
+          id: solicitud.solicitud_id,
+          monto: solicitud.monto_solicitado,
+          motivo: solicitud.motivo_uso,
+          fecha: solicitud.fecha_solicitud
+        },
+        cliente: {
+          id: solicitud.cliente_id,
+          nombre: solicitud.nombre_cliente,
+          antiguedad_meses: solicitud.antiguedad_meses
+        },
+        metricas: {
+          total_comprado: metricas.total_comprado,
+          compra_maxima: metricas.compra_maxima,
+          pedidos_totales: metricas.pedidos_totales,
+          promedio_compra: metricas.promedio_compra,
+          ultima_compra: metricas.ultima_compra,
+          pagos_vencidos
+        },
+        score,
+        mensajes
+      }
+    });
+  } catch (error) {
+    console.error("Error en análisis de solicitud:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error al analizar solicitud"
+    });
+  }
+}
+
+async function aprobarSolicitud(req, res) {
+  const client = await db.pool.connect();
+  try {
+    const solicitudId = Number.parseInt(req.params.id, 10);
+    if (!Number.isInteger(solicitudId)) {
+      return res.status(400).json({
+        success: false,
+        message: "ID de solicitud inválido"
+      });
+    }
+
+    await client.query('BEGIN');
+
+    // 1. Obtener datos de la solicitud
+    const { rows: [solicitud] } = await client.query(
+      `SELECT cliente_id, monto_solicitado 
+       FROM solicitudes_credito 
+       WHERE solicitud_id = $1 AND estado = 'PENDIENTE'
+       FOR UPDATE`,
+      [solicitudId]
+    );
+
+    if (!solicitud) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({
+        success: false,
+        message: "Solicitud no encontrada o ya procesada"
+      });
+    }
+
+    // 2. Verificar que no tenga crédito activo
+    const { rows: [creditoActivo] } = await client.query(
+      `SELECT credito_id 
+       FROM cliente_creditos 
+       WHERE cliente_id = $1 AND estado_credito = 'ACTIVO'
+       LIMIT 1`,
+      [solicitud.cliente_id]
+    );
+
+    if (creditoActivo) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({
+        success: false,
+        message: "El cliente ya tiene una línea de crédito activa"
+      });
+    }
+
+    // 3. Crear línea de crédito
+    await client.query(
+      `INSERT INTO cliente_creditos 
+         (cliente_id, limite_credito, saldo_deudor, estado_credito)
+       VALUES 
+         ($1, $2, 0, 'ACTIVO')`,
+      [solicitud.cliente_id, solicitud.monto_solicitado]
+    );
+
+    // 4. Actualizar estado de la solicitud
+    await client.query(
+      `UPDATE solicitudes_credito 
+       SET estado = 'APROBADO',
+           comentarios_admin = $1
+       WHERE solicitud_id = $2`,
+      [`Aprobado por administrador ${req.user.id}`, solicitudId]
+    );
+
+    // 5. Crear notificación para el cliente
+    await client.query(
+      `INSERT INTO notificaciones 
+         (clienteid, tipo, titulo, mensaje, prioridad)
+       VALUES 
+         ($1, 'sistema', '¡Crédito Aprobado!', 'Tu solicitud de crédito ha sido aprobada. Ya puedes realizar compras a crédito.', 'alta')`,
+      [solicitud.cliente_id]
+    );
+
+    await client.query('COMMIT');
+
+    return res.json({
+      success: true,
+      message: "Solicitud aprobada correctamente"
+    });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error("Error aprobando solicitud:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error al aprobar solicitud"
+    });
+  } finally {
+    client.release();
+  }
+}
+
+async function rechazarSolicitud(req, res) {
+  const client = await db.pool.connect();
+  try {
+    const solicitudId = Number.parseInt(req.params.id, 10);
+    const { motivo } = req.body;
+
+    if (!Number.isInteger(solicitudId)) {
+      return res.status(400).json({
+        success: false,
+        message: "ID de solicitud inválido"
+      });
+    }
+
+    await client.query('BEGIN');
+
+    // 1. Obtener datos de la solicitud
+    const { rows: [solicitud] } = await client.query(
+      `SELECT cliente_id 
+       FROM solicitudes_credito 
+       WHERE solicitud_id = $1 AND estado = 'PENDIENTE'
+       FOR UPDATE`,
+      [solicitudId]
+    );
+
+    if (!solicitud) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({
+        success: false,
+        message: "Solicitud no encontrada o ya procesada"
+      });
+    }
+
+    // 2. Actualizar estado de la solicitud
+    await client.query(
+      `UPDATE solicitudes_credito 
+       SET estado = 'RECHAZADO',
+           comentarios_admin = $1
+       WHERE solicitud_id = $2`,
+      [motivo || `Rechazado por administrador ${req.user.id}`, solicitudId]
+    );
+
+    // 3. Crear notificación para el cliente
+    await client.query(
+      `INSERT INTO notificaciones 
+         (clienteid, tipo, titulo, mensaje, prioridad)
+       VALUES 
+         ($1, 'sistema', 'Solicitud de Crédito Rechazada', 'Tu solicitud de crédito ha sido rechazada. Contacta a tu agente para más información.', 'alta')`,
+      [solicitud.cliente_id]
+    );
+
+    await client.query('COMMIT');
+
+    return res.json({
+      success: true,
+      message: "Solicitud rechazada correctamente"
+    });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error("Error rechazando solicitud:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error al rechazar solicitud"
+    });
+  } finally {
+    client.release();
+  }
+}
+
+module.exports = {
+  obtenerSolicitudesPendientes,
+  obtenerAnalisisSolicitud,
+  aprobarSolicitud,
+  rechazarSolicitud
+};
