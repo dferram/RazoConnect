@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 
 const notificacionesController = require("../controllers/notificacionesController");
+const numCuentaController = require("../controllers/numCuentaController");
 const { authenticate, authorize } = require("../middlewares/authMiddleware");
 
 router.get(
@@ -23,6 +24,20 @@ router.post(
   authenticate,
   authorize(["admin", "superadmin", "agente"]),
   notificacionesController.marcarTodasLeidasStaff
+);
+
+router.get(
+  "/numcuenta",
+  authenticate,
+  authorize(["agente"]),
+  numCuentaController.obtenerCuentaAgente
+);
+
+router.put(
+  "/numcuenta",
+  authenticate,
+  authorize(["agente"]),
+  numCuentaController.actualizarCuentaAgente
 );
 
 module.exports = router;

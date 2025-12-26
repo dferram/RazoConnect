@@ -11,6 +11,7 @@ const purchaseSuggestionController = require("../controllers/purchaseSuggestionC
 const cxcController = require("../controllers/cxcController");
 const cxpController = require("../controllers/cxpController");
 const inventarioController = require("../controllers/inventarioController");
+const numCuentaController = require("../controllers/numCuentaController");
 const upload = require("../middlewares/upload");
 const uploadComprobante = require("../middlewares/uploadComprobante");
 const {
@@ -939,6 +940,50 @@ router.get(
   authenticate,
   authorizeAdmin,
   inventarioController.getOrdenesPendientes
+);
+
+/**
+ * Gestión de cuentas bancarias empresa (múltiples)
+ */
+router.get(
+  "/cuenta-maestra",
+  authenticate,
+  authorizeAdmin,
+  numCuentaController.obtenerCuentasEmpresa
+);
+router.post(
+  "/cuenta-maestra",
+  authenticate,
+  authorizeAdmin,
+  numCuentaController.crearCuentaEmpresa
+);
+router.put(
+  "/cuenta-maestra/:id/activar",
+  authenticate,
+  authorizeAdmin,
+  numCuentaController.activarCuentaEmpresa
+);
+router.delete(
+  "/cuenta-maestra/:id",
+  authenticate,
+  authorizeAdmin,
+  numCuentaController.eliminarCuentaEmpresa
+);
+
+/**
+ * Gestión de cuentas bancarias admin individual (legacy)
+ */
+router.get(
+  "/numcuenta",
+  authenticate,
+  authorizeAdmin,
+  numCuentaController.obtenerCuentaAdmin
+);
+router.put(
+  "/numcuenta",
+  authenticate,
+  authorizeAdmin,
+  numCuentaController.actualizarCuentaAdmin
 );
 
 module.exports = router;

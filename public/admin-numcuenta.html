@@ -33,94 +33,61 @@
             <div style="display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; align-items: center;">
               <div>
                 <p class="simple-hero__eyebrow">Finanzas · Transferencias</p>
-                <h2 style="margin: 0; font-size: 1.5rem;">Cuenta Maestra de la Empresa</h2>
+                <h2 style="margin: 0; font-size: 1.5rem;">Cuentas Bancarias de la Empresa</h2>
                 <p style="margin: 0.35rem 0 0; color: #6b7280;">
-                  Define la cuenta bancaria visible para todos los clientes cuando eligen pagar por transferencia.
+                  Gestiona las cuentas bancarias de la empresa. La cuenta activa será visible para los clientes en el checkout.
                 </p>
               </div>
-              <button id="btnActualizarCuenta" type="button" class="btn btn-primary" style="min-width: 220px;">
-                <i class="bi bi-shield-check"></i>
-                <span style="margin-left: 0.35rem;">Actualizar cuenta principal</span>
+              <button id="btnAgregarCuenta" type="button" class="btn btn-primary" style="min-width: 220px;">
+                <i class="bi bi-plus-circle"></i>
+                <span style="margin-left: 0.5rem;">Agregar nueva cuenta</span>
               </button>
             </div>
           </section>
 
           <section class="admin-card" style="display: grid; gap: 1.25rem;">
             <div class="row g-4">
-              <div class="col-12 col-xl-5">
-                <div class="preview-card" style="border: 1px solid rgba(148, 163, 184, 0.3); border-radius: 1rem; padding: 1.25rem; background: linear-gradient(135deg, #111827, #1f2937); color: #f1f5f9; min-height: 100%;">
-                  <p style="margin: 0; text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.75rem; color: #fbbf24; font-weight: 700;">Vista previa para clientes</p>
-                  <h3 style="margin: 0.4rem 0 0.75rem; font-size: 1.35rem;">Transferencia Bancaria</h3>
-                  <div style="display: grid; gap: 0.5rem; font-size: 0.95rem;">
+              <div class="col-12 col-xl-4">
+                <div class="preview-card" style="border: 1px solid rgba(148, 163, 184, 0.3); border-radius: 1rem; padding: 1.5rem; background: linear-gradient(135deg, #111827, #1f2937); color: #f1f5f9; min-height: 100%;">
+                  <p style="margin: 0 0 0.5rem 0; text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.75rem; color: #fbbf24; font-weight: 700;">Vista previa para clientes</p>
+                  <h3 style="margin: 0 0 1rem 0; font-size: 1.35rem;">Transferencia Bancaria</h3>
+                  <div style="display: grid; gap: 0.75rem; font-size: 0.95rem;">
                     <div>
-                      <p class="preview-label">Banco</p>
+                      <p class="preview-label" style="margin-bottom: 0.25rem;">Banco</p>
                       <p id="previewBanco" class="preview-value">—</p>
                     </div>
                     <div>
-                      <p class="preview-label">Titular</p>
+                      <p class="preview-label" style="margin-bottom: 0.25rem;">Titular</p>
                       <p id="previewTitular" class="preview-value">—</p>
                     </div>
                     <div>
-                      <p class="preview-label">Número de cuenta</p>
+                      <p class="preview-label" style="margin-bottom: 0.25rem;">Número de cuenta</p>
                       <p id="previewCuenta" class="preview-value">—</p>
                     </div>
                     <div>
-                      <p class="preview-label">CLABE</p>
+                      <p class="preview-label" style="margin-bottom: 0.25rem;">CLABE</p>
                       <p id="previewClabe" class="preview-value">—</p>
                     </div>
                   </div>
-                  <p style="margin-top: 1.25rem; font-size: 0.85rem; color: rgba(241, 245, 249, 0.8);">
-                    * Esta información aparece dentro del modal de pago cuando el cliente selecciona transferencia bancaria.
+                  <p style="margin-top: 1.5rem; margin-bottom: 0; font-size: 0.85rem; color: rgba(241, 245, 249, 0.8); line-height: 1.5;">
+                    * Esta es la cuenta activa que ven los clientes.
                   </p>
                 </div>
               </div>
 
-              <div class="col-12 col-xl-7">
-                <form id="formCuentaMaestra" class="form-grid" style="display: grid; gap: 1rem;">
-                  <label class="form-group">
-                    <span>Banco</span>
-                    <input id="inputBanco" name="banco" type="text" class="form-input" placeholder="Nombre del banco" required />
-                  </label>
-                  <label class="form-group">
-                    <span>Nombre del titular</span>
-                    <input id="inputTitular" name="titular" type="text" class="form-input" placeholder="Empresa / Razón social" required />
-                  </label>
-                  <label class="form-group">
-                    <span>Número de cuenta</span>
-                    <input
-                      id="inputCuenta"
-                      name="numeroCuenta"
-                      type="text"
-                      class="form-input"
-                      placeholder="Solo números"
-                      inputmode="numeric"
-                      pattern="[0-9]+"
-                      maxlength="20"
-                      required
-                    />
-                  </label>
-                  <label class="form-group">
-                    <span>CLABE interbancaria</span>
-                    <input
-                      id="inputClabe"
-                      name="clabe"
-                      type="text"
-                      class="form-input"
-                      placeholder="18 dígitos"
-                      inputmode="numeric"
-                      pattern="[0-9]{18}"
-                      maxlength="18"
-                      required
-                    />
-                  </label>
-                  <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
-                    <button type="submit" class="btn btn-primary" id="btnGuardarCambios">
-                      <span class="label-text">Guardar cambios</span>
-                      <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true" style="display: none;"></span>
-                    </button>
-                    <button type="reset" class="btn btn-outline-secondary">Limpiar</button>
-                  </div>
-                </form>
+              <div class="col-12 col-xl-8">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding: 0 0.25rem;">
+                  <h3 style="margin: 0; font-size: 1.1rem; font-weight: 600;">Cuentas registradas</h3>
+                  <span id="contadorCuentas" style="color: #6b7280; font-size: 0.9rem;">0 cuentas</span>
+                </div>
+                <div id="listaCuentas" style="display: grid; gap: 0.75rem;">
+                  <!-- Las tarjetas de cuentas se cargarán aquí dinámicamente -->
+                </div>
+                <div id="estadoVacio" style="display: none; text-align: center; padding: 3rem 1rem; color: #9ca3af;">
+                  <i class="bi bi-bank" style="font-size: 3rem; opacity: 0.3;"></i>
+                  <p style="margin-top: 1rem; font-size: 1.1rem;">No hay cuentas registradas</p>
+                  <p style="margin-top: 0.5rem; font-size: 0.9rem;">Agrega tu primera cuenta bancaria para comenzar</p>
+                </div>
               </div>
             </div>
           </section>
@@ -128,7 +95,175 @@
       </main>
     </div>
 
+    <!-- Modal para agregar/editar cuenta -->
+    <div class="modal fade" id="modalCuenta" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 1rem; border: none; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
+          <div class="modal-header" style="border-bottom: 1px solid #e5e7eb; padding: 1.5rem;">
+            <h5 class="modal-title" id="modalCuentaTitle">Agregar Nueva Cuenta</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body" style="padding: 1.5rem;">
+            <form id="formCuentaMaestra">
+              <div class="mb-3">
+                <label for="inputBanco" class="form-label">Banco</label>
+                <input id="inputBanco" name="banco" type="text" class="form-control" placeholder="Ej: BBVA, Santander, Banamex" required />
+              </div>
+              <div class="mb-3">
+                <label for="inputTitular" class="form-label">Nombre del titular</label>
+                <input id="inputTitular" name="titular" type="text" class="form-control" placeholder="Empresa / Razón social" required />
+              </div>
+              <div class="mb-3">
+                <label for="inputCuenta" class="form-label">Número de cuenta</label>
+                <input
+                  id="inputCuenta"
+                  name="numeroCuenta"
+                  type="text"
+                  class="form-control"
+                  placeholder="Solo números"
+                  inputmode="numeric"
+                  pattern="[0-9]+"
+                  maxlength="20"
+                  required
+                />
+              </div>
+              <div class="mb-3">
+                <label for="inputClabe" class="form-label">CLABE interbancaria</label>
+                <input
+                  id="inputClabe"
+                  name="clabe"
+                  type="text"
+                  class="form-control"
+                  placeholder="18 dígitos"
+                  inputmode="numeric"
+                  pattern="[0-9]{18}"
+                  maxlength="18"
+                  required
+                />
+              </div>
+              <div class="form-check mb-3">
+                <input class="form-check-input" type="checkbox" id="checkPrincipal" />
+                <label class="form-check-label" for="checkPrincipal">
+                  Marcar como cuenta activa
+                </label>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer" style="border-top: 1px solid #e5e7eb; padding: 1.5rem; margin-top: 0;">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="button" class="btn btn-primary" id="btnGuardarCuenta">
+              <span class="label-text">Guardar cuenta</span>
+              <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true" style="display: none;"></span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <style>
+      .cuenta-card {
+        background: white;
+        border: 2px solid #e5e7eb;
+        border-radius: 0.75rem;
+        padding: 1.25rem;
+        transition: all 0.2s ease;
+        position: relative;
+      }
+
+      .cuenta-card.activa {
+        border-color: #22c55e;
+        background: #f0fdf4;
+      }
+
+      .cuenta-card:hover {
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      }
+
+      .cuenta-badge {
+        position: absolute;
+        top: 0.75rem;
+        right: 0.75rem;
+        background: #22c55e;
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      .cuenta-info {
+        display: grid;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+        padding-right: 3rem;
+      }
+
+      .cuenta-info-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.9rem;
+      }
+
+      .cuenta-info-label {
+        color: #6b7280;
+        font-weight: 500;
+      }
+
+      .cuenta-info-value {
+        color: #111827;
+        font-weight: 600;
+      }
+
+      .cuenta-actions {
+        display: flex;
+        gap: 0.5rem;
+        padding-top: 0.75rem;
+        border-top: 1px solid #e5e7eb;
+      }
+
+      .btn-activar {
+        flex: 1;
+        background: #f3f4f6;
+        border: 1px solid #d1d5db;
+        color: #374151;
+        padding: 0.5rem 1rem;
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+
+      .btn-activar:hover {
+        background: #e5e7eb;
+      }
+
+      .btn-activar.activo {
+        background: #22c55e;
+        border-color: #22c55e;
+        color: white;
+        cursor: default;
+      }
+
+      .btn-eliminar {
+        background: #fee2e2;
+        border: 1px solid #fecaca;
+        color: #dc2626;
+        padding: 0.5rem 1rem;
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+
+      .btn-eliminar:hover {
+        background: #fecaca;
+      }
+
       .preview-label {
         margin: 0;
         font-size: 0.75rem;
@@ -167,16 +302,22 @@
       }
 
       @media (max-width: 768px) {
-        #btnActualizarCuenta {
+        #btnAgregarCuenta {
           width: 100%;
         }
 
         .preview-card {
           min-height: auto;
+          padding: 1.25rem;
+        }
+
+        .cuenta-info {
+          padding-right: 0;
         }
       }
     </style>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="js/layout.js" defer></script>
     <script src="js/api.js"></script>
     <script src="js/components/admin-header-loader.js"></script>

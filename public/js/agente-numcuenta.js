@@ -64,7 +64,7 @@
   async function loadDatosBancarios() {
     try {
       setLoading(true);
-      const response = await API.apiCall("/agentes/mis-datos-bancarios", {
+      const response = await API.apiCall("/staff/numcuenta", {
         method: "GET",
       });
 
@@ -131,7 +131,7 @@
         didOpen: () => Swal.showLoading(),
       });
 
-      const response = await API.apiCall("/agentes/mis-datos-bancarios", {
+      const response = await API.apiCall("/staff/numcuenta", {
         method: "PUT",
         body: JSON.stringify(payload),
       });
