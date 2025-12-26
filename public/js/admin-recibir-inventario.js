@@ -41,6 +41,34 @@ function saveLastFolio(folio) {
     }
 }
 
+// Función para obtener la siguiente remisión sugerida
+function getSuggestedRemision() {
+    try {
+        const lastRemision = localStorage.getItem('last_remision_code');
+        if (!lastRemision) return '';
+        
+        // Detectar parte numérica final e incrementarla
+        const match = lastRemision.match(/^(.*?)(\d+)$/);
+        if (match) {
+            const prefix = match[1]; // Ej: "REM-"
+            const number = parseInt(match[2], 10) + 1; // Ej: 501
+            return `${prefix}${number}`;
+        }
+        return lastRemision; // Fallback si no hay números
+    } catch (e) {
+        return '';
+    }
+}
+
+// Función para guardar la última remisión usada
+function saveLastRemision(codigo) {
+    try {
+        localStorage.setItem('last_remision_code', codigo);
+    } catch (e) {
+        console.error('Error guardando remisión:', e);
+    }
+}
+
 // Función principal de exportación a Excel
 async function exportarExcelEntrada() {
     if (!sesionRecepcion || sesionRecepcion.length === 0) {
@@ -104,47 +132,44 @@ async function exportarExcelEntrada() {
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet('Entrada Almacén');
 
-        // Configurar anchos de columna
+        // Configurar anchos de columna según especificación
         worksheet.columns = [
-            { key: 'A', width: 12 },  // Pedido
-            { key: 'B', width: 15 },  // Código
-            { key: 'C', width: 15 },  // Descripción parte 1
-            { key: 'D', width: 15 },  // Descripción parte 2
-            { key: 'E', width: 15 },  // Descripción parte 3
-            { key: 'F', width: 12 },  // Cantidad
-            { key: 'G', width: 15 },  // Precio Unitario
-            { key: 'H', width: 15 }   // TOTAL
+            { key: 'A', width: 10 },   // Pedido
+            { key: 'B', width: 18 },   // Código
+            { key: 'C', width: 13.33 }, // Descripción parte 1
+            { key: 'D', width: 13.33 }, // Descripción parte 2
+            { key: 'E', width: 13.33 }, // Descripción parte 3
+            { key: 'F', width: 12 },   // Cantidad
+            { key: 'G', width: 15 },   // Precio Unitario
+            { key: 'H', width: 15 }    // TOTAL
         ];
 
-        // ENCABEZADO - Fila 1: Título
-        worksheet.mergeCells('A1:E1');
-        const titleCell = worksheet.getCell('A1');
+        // ENCABEZADO - Fila 1: Título (B1:E1)
+        worksheet.mergeCells('B1:E1');
+        const titleCell = worksheet.getCell('B1');
         titleCell.value = 'ENTRADA DE ALMACEN';
         titleCell.font = { name: 'Arial', size: 16, bold: true };
         titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
-        worksheet.getRow(1).height = 25;
+        worksheet.getRow(1).height = 30;
 
-        // Fila 1: Logo (placeholder)
-        worksheet.mergeCells('F1:G1');
-        const logoCell = worksheet.getCell('F1');
-        logoCell.value = '[LOGO]';
-        logoCell.font = { name: 'Arial', size: 10, italic: true };
-        logoCell.alignment = { horizontal: 'center', vertical: 'middle' };
+        // Fila 1: Etiqueta FOLIO (G1)
+        const folioLabelCell = worksheet.getCell('G1');
+        folioLabelCell.value = 'FOLIO';
+        folioLabelCell.font = { name: 'Arial', size: 9, bold: true };
+        folioLabelCell.alignment = { horizontal: 'right', vertical: 'middle' };
 
-        // Fila 1: Folio (rojo)
+        // Fila 1: Valor del Folio (H1) - ROJO
         const folioCell = worksheet.getCell('H1');
         folioCell.value = folio;
         folioCell.font = { name: 'Arial', size: 14, bold: true, color: { argb: 'FFFF0000' } };
         folioCell.alignment = { horizontal: 'center', vertical: 'middle' };
 
         // Fila 2: Fecha
-        worksheet.mergeCells('A2:B2');
-        const fechaLabelCell = worksheet.getCell('A2');
+        const fechaLabelCell = worksheet.getCell('B2');
         fechaLabelCell.value = 'Fecha:';
         fechaLabelCell.font = { name: 'Arial', size: 10, bold: true };
         fechaLabelCell.alignment = { horizontal: 'right', vertical: 'middle' };
 
-        worksheet.mergeCells('C2:E2');
         const fechaValueCell = worksheet.getCell('C2');
         const today = new Date();
         fechaValueCell.value = today.toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' });
@@ -153,13 +178,11 @@ async function exportarExcelEntrada() {
         worksheet.getRow(2).height = 20;
 
         // Fila 3: No. Cliente (ID Proveedor)
-        worksheet.mergeCells('A3:B3');
-        const clienteLabelCell = worksheet.getCell('A3');
+        const clienteLabelCell = worksheet.getCell('B3');
         clienteLabelCell.value = 'No. Cliente:';
         clienteLabelCell.font = { name: 'Arial', size: 10, bold: true };
         clienteLabelCell.alignment = { horizontal: 'right', vertical: 'middle' };
 
-        worksheet.mergeCells('C3:E3');
         const clienteValueCell = worksheet.getCell('C3');
         clienteValueCell.value = state.orden.proveedorId || 'N/A';
         clienteValueCell.font = { name: 'Arial', size: 10 };
@@ -167,8 +190,7 @@ async function exportarExcelEntrada() {
         worksheet.getRow(3).height = 20;
 
         // Fila 4: Nombre (Proveedor)
-        worksheet.mergeCells('A4:B4');
-        const nombreLabelCell = worksheet.getCell('A4');
+        const nombreLabelCell = worksheet.getCell('B4');
         nombreLabelCell.value = 'Nombre:';
         nombreLabelCell.font = { name: 'Arial', size: 10, bold: true };
         nombreLabelCell.alignment = { horizontal: 'right', vertical: 'middle' };
@@ -190,15 +212,16 @@ async function exportarExcelEntrada() {
         const headers = [
             { col: 'A', text: 'Pedido' },
             { col: 'B', text: 'Código' },
-            { col: 'C', text: 'Descripción', merge: 'C6:E6' },
+            { col: 'C', text: 'Descripción', merge: true },
             { col: 'F', text: 'Cantidad' },
             { col: 'G', text: 'Precio Unitario' },
             { col: 'H', text: 'TOTAL' }
         ];
 
-        // Combinar celdas para Descripción
+        // Combinar celdas para Descripción (C6:E6)
         worksheet.mergeCells('C6:E6');
 
+        // Aplicar estilos a encabezados
         headers.forEach(h => {
             const cell = worksheet.getCell(`${h.col}6`);
             cell.value = h.text;
@@ -207,13 +230,13 @@ async function exportarExcelEntrada() {
             cell.fill = {
                 type: 'pattern',
                 pattern: 'solid',
-                fgColor: { argb: 'FFE0E0E0' }
+                fgColor: { argb: 'FFEEEEEE' }
             };
             cell.border = {
-                top: { style: 'thin' },
-                left: { style: 'thin' },
-                bottom: { style: 'thin' },
-                right: { style: 'thin' }
+                top: { style: 'thin', color: { argb: 'FF000000' } },
+                left: { style: 'thin', color: { argb: 'FF000000' } },
+                bottom: { style: 'thin', color: { argb: 'FF000000' } },
+                right: { style: 'thin', color: { argb: 'FF000000' } }
             };
         });
 

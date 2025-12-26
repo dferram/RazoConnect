@@ -1094,13 +1094,21 @@
           return;
         }
 
-        // Modal para capturar remisión y archivo
+        // Modal para capturar remisión y archivo con sugerencia inteligente
+        const sugerenciaRemision = getSuggestedRemision();
+        const lastRemision = localStorage.getItem('last_remision_code');
+        
         const modal = await Swal.fire({
           title: "📝 Finalizar Recepción y Generar Cuenta por Pagar",
           html: `
             <div style="text-align:left;">
               <label for="swalRef" style="display:block; font-weight:700; margin-bottom:0.35rem;">Número de Remisión/Factura</label>
-              <input id="swalRef" class="swal2-input" placeholder="Ej: REM-5002" style="margin:0;" />
+              <input id="swalRef" class="swal2-input" value="${sugerenciaRemision}" placeholder="Ej: REM-5002" style="margin:0;" />
+              ${sugerenciaRemision ? `
+                <div style="margin-top: 0.5rem; padding: 0.75rem; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 0.375rem; font-size: 0.875rem;">
+                  <strong>💡 Sugerencia:</strong> El consecutivo anterior fue <strong>${lastRemision}</strong>
+                </div>
+              ` : ''}
               <div style="height: 0.75rem;"></div>
               <label for="swalFile" style="display:block; font-weight:700; margin-bottom:0.35rem;">Foto de Remisión (opcional)</label>
               <input id="swalFile" type="file" class="swal2-file" accept="image/*,application/pdf" />
@@ -1117,6 +1125,10 @@
               Swal.showValidationMessage("El número de remisión/factura es obligatorio");
               return null;
             }
+            
+            // Guardar la remisión para la próxima vez
+            saveLastRemision(ref);
+            
             const file = document.getElementById("swalFile")?.files?.[0] || null;
             return { ref, file };
           },
