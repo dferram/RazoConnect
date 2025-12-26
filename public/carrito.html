@@ -492,13 +492,18 @@
       .bank-info-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-        gap: 1rem;
+        gap: 1.25rem;
+        margin-top: 1rem;
+      }
+
+      .bank-info-grid > div {
+        padding: 0.5rem;
       }
 
       .bank-info-card {
         background: #fff;
         border-radius: 0.9rem;
-        padding: 0.85rem 1rem;
+        padding: 1.25rem 1.5rem;
         border: 1px solid #e5e7eb;
       }
 
@@ -508,24 +513,33 @@
         text-transform: uppercase;
         color: #9ca3af;
         letter-spacing: 0.05em;
-        margin-bottom: 0.2rem;
+        margin-bottom: 0.4rem;
       }
 
       .bank-info-card span {
         font-weight: 600;
         color: #111827;
         font-size: 0.95rem;
+        display: block;
+        margin-bottom: 0.25rem;
+      }
+
+      .bank-info-card strong {
+        display: block;
+        margin-top: 0.25rem;
       }
 
       .transfer-upload {
         display: flex;
         flex-direction: column;
-        gap: 0.5rem;
+        gap: 0.75rem;
+        margin-top: 1.5rem;
       }
 
       .transfer-upload label {
         font-weight: 600;
         color: #111827;
+        margin-bottom: 0.5rem;
       }
 
       .upload-box {
@@ -1533,24 +1547,24 @@
             );
           }
 
-          const data = response.data.data || {};
-          const cuenta =
-            data.numeroCuenta || data.numero_cuenta || data.cuenta || "—";
+          const cuenta = response.data.cuenta || {};
+          const numeroCuenta =
+            cuenta.numeroCuenta || cuenta.numero_cuenta || cuenta.cuenta || "—";
           const clabe =
-            data.clabe || data.clabeInterbancaria || data.clabe_interbancaria || "—";
-          const banco = data.banco || "—";
-          const titular = data.titular || data.nombreTitular || "—";
+            cuenta.clabe || cuenta.clabeInterbancaria || cuenta.clabe_interbancaria || "—";
+          const banco = cuenta.banco || "—";
+          const titular = cuenta.titular || cuenta.nombreTitular || "—";
           const referencia =
-            data.referencia ||
-            data.referenciaPago ||
-            data.referencia_transferencia ||
-            data.referenciaTransferencia ||
-            data.reference ||
-            data.nota ||
+            cuenta.referencia ||
+            cuenta.referenciaPago ||
+            cuenta.referencia_transferencia ||
+            cuenta.referenciaTransferencia ||
+            cuenta.reference ||
+            cuenta.nota ||
             "—";
 
           if (transferBancoText) transferBancoText.textContent = banco;
-          if (transferCuentaText) transferCuentaText.textContent = cuenta;
+          if (transferCuentaText) transferCuentaText.textContent = numeroCuenta;
           if (transferClabeText) transferClabeText.textContent = clabe;
           if (transferTitularText) transferTitularText.textContent = titular;
           if (transferReferenciaText)
