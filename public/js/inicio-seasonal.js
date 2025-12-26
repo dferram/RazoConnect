@@ -1,77 +1,208 @@
 /**
  * RazoConnect - Inicio Seasonal Logic
- * Lógica dinámica para adaptar la página de inicio según el tema estacional
- * @version 1.0.0
+ * Conecta el evento razo:themeChanged con el DOM de inicio.html
+ * @version 2.0.0
  */
 
 (function () {
   "use strict";
 
   // ============================================
-  // CONFIGURACIÓN DE EVENTOS ESTACIONALES
+  // DICCIONARIO DE CONFIGURACIÓN ESTACIONAL
   // ============================================
 
-  const SEASONAL_EVENTS = {
+  const SEASONAL_CONFIG = {
     navidad: {
-      icon: "🎄",
-      eventName: "Navidad",
-      welcomeMessage: "prepárate para la Navidad",
-      subtitle: "Encuentra los regalos perfectos para la temporada más mágica",
-      targetMonth: 12, // Diciembre
-      targetDay: 25, // 25 de diciembre
-      ctaText: "Ver Catálogo Navideño →",
-      countdownText: "Prepárate para la temporada más importante del año",
+      hero: [
+        {
+          image: "https://images.unsplash.com/photo-1607344645866-009c320b63e0?w=1600&h=900&fit=crop",
+          eyebrow: "Temporada Especial",
+          title: "Navidad",
+          description: "Las cajas navideñas más exclusivas al mejor precio del mercado. Compra al mayoreo y maximiza tus ganancias.",
+          ctaText: "Ver Catálogo Navideño",
+          ctaLink: "/catalogo.html?categoria=7"
+        },
+        {
+          image: "https://images.unsplash.com/photo-1512909006721-3d6018887383?w=1600&h=900&fit=crop",
+          eyebrow: "Ofertas Navideñas",
+          title: "Hasta 40% OFF",
+          description: "Descuentos especiales en productos seleccionados para la temporada. Aprovecha nuestras ofertas flash.",
+          ctaText: "Ver Ofertas",
+          ctaLink: "/catalogo.html?oferta=true"
+        }
+      ],
+      welcome: {
+        icon: "🎄",
+        title: "prepárate para la Navidad",
+        subtitle: "Encuentra los regalos perfectos para la temporada más mágica"
+      },
+      countdown: {
+        month: 12,
+        day: 25,
+        title: "Navidad",
+        subtitle: "Prepárate para la temporada más importante del año",
+        ctaText: "Ver Catálogo Navideño →"
+      }
     },
+
     sanValentin: {
-      icon: "💝",
-      eventName: "San Valentín",
-      welcomeMessage: "celebra el amor",
-      subtitle: "Empaques románticos que expresan sentimientos especiales",
-      targetMonth: 2, // Febrero
-      targetDay: 14, // 14 de febrero
-      ctaText: "Explorar San Valentín →",
-      countdownText: "El día del amor está cerca, prepara tus productos",
+      hero: [
+        {
+          image: "https://images.unsplash.com/photo-1518199266791-5375a83190b7?w=1600&h=900&fit=crop",
+          eyebrow: "Temporada del Amor",
+          title: "San Valentín",
+          description: "Empaques románticos que expresan sentimientos especiales. Productos perfectos para el día del amor.",
+          ctaText: "Explorar San Valentín",
+          ctaLink: "/catalogo.html?categoria=san-valentin"
+        },
+        {
+          image: "https://images.unsplash.com/photo-1516975080664-ed2fc6a32937?w=1600&h=900&fit=crop",
+          eyebrow: "Ofertas Especiales",
+          title: "Hasta 35% OFF",
+          description: "Descuentos increíbles en productos seleccionados. Aprovecha nuestras ofertas flash antes de que terminen.",
+          ctaText: "Ver Ofertas",
+          ctaLink: "/catalogo.html?oferta=true"
+        }
+      ],
+      welcome: {
+        icon: "💝",
+        title: "celebra el amor",
+        subtitle: "Empaques románticos que expresan sentimientos especiales"
+      },
+      countdown: {
+        month: 2,
+        day: 14,
+        title: "San Valentín",
+        subtitle: "El día del amor está cerca, prepara tus productos",
+        ctaText: "Explorar San Valentín →"
+      }
     },
+
     diaMadre: {
-      icon: "👩‍👧‍👦",
-      eventName: "Día de la Madre",
-      welcomeMessage: "celebra a las mamás",
-      subtitle: "Regalos especiales para las personas más importantes",
-      targetMonth: 5, // Mayo
-      targetDay: 10, // 10 de mayo
-      ctaText: "Ver Colección Día de la Madre →",
-      countdownText: "Prepárate para honrar a las mamás del mundo",
+      hero: [
+        {
+          image: "https://images.unsplash.com/photo-1529634806980-85c3dd6d34ac?w=1600&h=900&fit=crop",
+          eyebrow: "Celebración Especial",
+          title: "Día de la Madre",
+          description: "Regalos especiales para las personas más importantes. Empaques elegantes que expresan amor y gratitud.",
+          ctaText: "Ver Colección Día de la Madre",
+          ctaLink: "/catalogo.html?categoria=dia-madre"
+        },
+        {
+          image: "https://images.unsplash.com/photo-1522673607200-164d1b6ce486?w=1600&h=900&fit=crop",
+          eyebrow: "Ofertas Especiales",
+          title: "Hasta 30% OFF",
+          description: "Descuentos increíbles en productos seleccionados. Aprovecha nuestras ofertas flash antes de que terminen.",
+          ctaText: "Ver Ofertas",
+          ctaLink: "/catalogo.html?oferta=true"
+        }
+      ],
+      welcome: {
+        icon: "👩‍👧‍👦",
+        title: "celebra a las mamás",
+        subtitle: "Regalos especiales para las personas más importantes"
+      },
+      countdown: {
+        month: 5,
+        day: 10,
+        title: "Día de la Madre",
+        subtitle: "Prepárate para honrar a las mamás del mundo",
+        ctaText: "Ver Colección Día de la Madre →"
+      }
     },
+
     diaPadre: {
-      icon: "👨‍👦",
-      eventName: "Día del Padre",
-      welcomeMessage: "honra a los padres",
-      subtitle: "Empaques elegantes para los héroes del hogar",
-      targetMonth: 6, // Junio
-      targetDay: 15, // 15 de junio (tercer domingo aproximado)
-      ctaText: "Descubrir Día del Padre →",
-      countdownText: "El día del padre se acerca, prepara tu inventario",
+      hero: [
+        {
+          image: "https://images.unsplash.com/photo-1520975682071-a0d3d8a4b6d3?w=1600&h=900&fit=crop",
+          eyebrow: "Celebración Especial",
+          title: "Día del Padre",
+          description: "Empaques elegantes para los héroes del hogar. Productos premium que expresan admiración y respeto.",
+          ctaText: "Descubrir Día del Padre",
+          ctaLink: "/catalogo.html?categoria=dia-padre"
+        },
+        {
+          image: "https://images.unsplash.com/photo-1513885535751-8b9238bd345a?w=1600&h=900&fit=crop",
+          eyebrow: "Ofertas Especiales",
+          title: "Hasta 30% OFF",
+          description: "Descuentos increíbles en productos seleccionados. Aprovecha nuestras ofertas flash antes de que terminen.",
+          ctaText: "Ver Ofertas",
+          ctaLink: "/catalogo.html?oferta=true"
+        }
+      ],
+      welcome: {
+        icon: "👨‍👦",
+        title: "honra a los padres",
+        subtitle: "Empaques elegantes para los héroes del hogar"
+      },
+      countdown: {
+        month: 6,
+        day: 15,
+        title: "Día del Padre",
+        subtitle: "El día del padre se acerca, prepara tu inventario",
+        ctaText: "Descubrir Día del Padre →"
+      }
     },
+
     graduaciones: {
-      icon: "🎓",
-      eventName: "Graduaciones",
-      welcomeMessage: "celebra el éxito académico",
-      subtitle: "Empaques premium para momentos memorables",
-      targetMonth: 7, // Julio
-      targetDay: 15, // Mitad de temporada de graduaciones
-      ctaText: "Ver Colección Graduaciones →",
-      countdownText: "La temporada de graduaciones está por comenzar",
+      hero: [
+        {
+          image: "https://images.unsplash.com/photo-1523580846011-d3a5bc25702b?w=1600&h=900&fit=crop",
+          eyebrow: "Temporada de Logros",
+          title: "Graduaciones",
+          description: "Empaques premium para momentos memorables. Celebra el éxito académico con productos de calidad.",
+          ctaText: "Ver Colección Graduaciones",
+          ctaLink: "/catalogo.html?categoria=graduaciones"
+        },
+        {
+          image: "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=1600&h=900&fit=crop",
+          eyebrow: "Ofertas Especiales",
+          title: "Hasta 25% OFF",
+          description: "Descuentos increíbles en productos seleccionados. Aprovecha nuestras ofertas flash antes de que terminen.",
+          ctaText: "Ver Ofertas",
+          ctaLink: "/catalogo.html?oferta=true"
+        }
+      ],
+      welcome: {
+        icon: "🎓",
+        title: "celebra el éxito académico",
+        subtitle: "Empaques premium para momentos memorables"
+      },
+      countdown: {
+        month: 7,
+        day: 15,
+        title: "Graduaciones",
+        subtitle: "La temporada de graduaciones está por comenzar",
+        ctaText: "Ver Colección Graduaciones →"
+      }
     },
+
     todaOcasion: {
-      icon: "🎁",
-      eventName: null, // No mostrar countdown
-      welcomeMessage: "prepárate para toda ocasión",
-      subtitle: "Encuentra los mejores productos para tu negocio",
-      targetMonth: null,
-      targetDay: null,
-      ctaText: null,
-      countdownText: null,
-    },
+      hero: [
+        {
+          image: "https://images.unsplash.com/photo-1513885535751-8b9238bd345a?w=1600&h=900&fit=crop",
+          eyebrow: "Ofertas Especiales",
+          title: "Hasta 40% OFF",
+          description: "Descuentos increíbles en productos seleccionados. Aprovecha nuestras ofertas flash antes de que terminen.",
+          ctaText: "Ver Ofertas",
+          ctaLink: "/catalogo.html?oferta=true"
+        },
+        {
+          image: "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=1600&h=900&fit=crop",
+          eyebrow: "Nuevos Productos",
+          title: "Recién Llegados",
+          description: "Descubre las últimas novedades en nuestro catálogo. Productos frescos y tendencias del mercado.",
+          ctaText: "Explorar Novedades",
+          ctaLink: "/catalogo.html?sort=newest"
+        }
+      ],
+      welcome: {
+        icon: "🎁",
+        title: "prepárate para toda ocasión",
+        subtitle: "Encuentra los mejores productos para tu negocio"
+      },
+      countdown: "auto"
+    }
   };
 
   // ============================================
@@ -81,186 +212,160 @@
   let countdownInterval = null;
   let currentTheme = null;
 
-  const HERO_THEME_CONFIG = {
-    navidad: {
-      titulo: "Navidad",
-      className: "tema-navidad",
-      bgImage:
-        "url('https://images.unsplash.com/photo-1607344645866-009c320b63e0?w=1600&h=900&fit=crop')",
-      accent: "#F97316",
-    },
-    sanValentin: {
-      titulo: "14 de febrero",
-      className: "tema-sanvalentin",
-      bgImage:
-        "url('https://images.unsplash.com/photo-1518199266791-5375a83190b7?w=1600&h=900&fit=crop')",
-      accent: "#E91E63",
-    },
-    diaMadre: {
-      titulo: "Día de la Madre",
-      className: "tema-diamadre",
-      bgImage:
-        "url('https://images.unsplash.com/photo-1529634806980-85c3dd6d34ac?w=1600&h=900&fit=crop')",
-      accent: "#D946EF",
-    },
-    diaPadre: {
-      titulo: "Día del Padre",
-      className: "tema-diapadre",
-      bgImage:
-        "url('https://images.unsplash.com/photo-1520975682071-a0d3d8a4b6d3?w=1600&h=900&fit=crop')",
-      accent: "#2563EB",
-    },
-    graduaciones: {
-      titulo: "Graduaciones",
-      className: "tema-graduaciones",
-      bgImage:
-        "url('https://images.unsplash.com/photo-1523580846011-d3a5bc25702b?w=1600&h=900&fit=crop')",
-      accent: "#0EA5E9",
-    },
-    todaOcasion: {
-      titulo: "Toda Ocasión",
-      className: "tema-todaocasion",
-      bgImage:
-        "url('https://images.unsplash.com/photo-1513885535751-8b9238bd345a?w=1600&h=900&fit=crop')",
-      accent: "#F97316",
-    },
-  };
-
   // ============================================
-  // ACTUALIZAR CONTENIDO SEGÚN TEMA
+  // ACTUALIZAR HERO SLIDER
   // ============================================
 
-  function updateSeasonalContent(themeName) {
-    const event = SEASONAL_EVENTS[themeName] || SEASONAL_EVENTS.todaOcasion;
-    currentTheme = themeName;
+  function updateHeroSlider(config) {
+    const heroSlides = document.querySelectorAll(".hero-slide");
+    
+    if (!heroSlides || heroSlides.length === 0) return;
 
-    updateHeroBanner(themeName);
+    config.hero.forEach((slideConfig, index) => {
+      const slide = heroSlides[index];
+      if (!slide) return;
 
-    // Actualizar mensaje de bienvenida
-    updateWelcomeBanner(event);
+      slide.style.backgroundImage = `url('${slideConfig.image}')`;
 
-    // Actualizar/ocultar widget de cuenta regresiva
-    updateCountdownWidget(event);
+      const eyebrow = slide.querySelector(".hero-eyebrow");
+      const title = slide.querySelector(".hero-title");
+      const description = slide.querySelector(".hero-description");
+      const cta = slide.querySelector(".hero-cta");
 
-    console.log("🎯 Contenido estacional actualizado:", themeName);
-  }
-
-  function updateHeroBanner(themeName) {
-    const heroBanner = document.getElementById("hero-banner");
-    if (!heroBanner) return;
-
-    const config =
-      HERO_THEME_CONFIG[themeName] || HERO_THEME_CONFIG.todaOcasion;
-
-    const year = new Date().getFullYear();
-    const tituloEl = document.getElementById("tituloTemporada");
-    const anioEl = document.getElementById("anioTemporada");
-    if (tituloEl) tituloEl.textContent = config.titulo;
-    if (anioEl) anioEl.textContent = String(year);
-
-    heroBanner.classList.remove(
-      "tema-navidad",
-      "tema-sanvalentin",
-      "tema-diamadre",
-      "tema-diapadre",
-      "tema-graduaciones",
-      "tema-todaocasion"
-    );
-    heroBanner.classList.add(config.className);
-    heroBanner.style.setProperty("--hero-accent", config.accent);
-
-    const firstSlide = heroBanner.querySelector(".hero-slide");
-    if (firstSlide && config.bgImage) {
-      firstSlide.style.backgroundImage = config.bgImage;
-    }
+      if (eyebrow) eyebrow.textContent = slideConfig.eyebrow;
+      if (title) title.textContent = slideConfig.title;
+      if (description) description.textContent = slideConfig.description;
+      if (cta) {
+        cta.textContent = slideConfig.ctaText;
+        cta.href = slideConfig.ctaLink;
+      }
+    });
   }
 
   // ============================================
-  // BANNER DE BIENVENIDA
+  // ACTUALIZAR BANNER DE BIENVENIDA
   // ============================================
 
-  function updateWelcomeBanner(event) {
+  function updateWelcomeBanner(config) {
     const user = JSON.parse(localStorage.getItem("razoconnect_user") || "{}");
     const userName = user.nombre || "Cliente";
 
-    // Actualizar elementos
     const welcomeIcon = document.getElementById("welcomeIcon");
     const welcomeTitle = document.getElementById("welcomeTitle");
     const welcomeSubtitle = document.getElementById("welcomeSubtitle");
-    const userNameSpan = document.getElementById("userName");
 
-    if (welcomeIcon) welcomeIcon.textContent = event.icon;
-    if (userNameSpan) userNameSpan.textContent = userName;
+    if (welcomeIcon) {
+      welcomeIcon.textContent = config.welcome.icon;
+    }
 
     if (welcomeTitle) {
-      welcomeTitle.innerHTML = `Hola <span id="userName">${userName}</span>, ${event.welcomeMessage}`;
+      welcomeTitle.innerHTML = `Hola <span id="userName">${userName}</span>, ${config.welcome.title}`;
     }
 
     if (welcomeSubtitle) {
-      welcomeSubtitle.textContent = event.subtitle;
+      welcomeSubtitle.textContent = config.welcome.subtitle;
     }
   }
 
   // ============================================
-  // WIDGET DE CUENTA REGRESIVA
+  // CALCULAR SIGUIENTE TEMPORADA
   // ============================================
 
-  function updateCountdownWidget(event) {
+  function getNextSeasonalEvent() {
+    const now = new Date();
+    const currentMonth = now.getMonth() + 1;
+    const currentDay = now.getDate();
+
+    // Orden de temporadas con sus fechas
+    const seasons = [
+      { month: 2, day: 14, name: "sanValentin", icon: "💝", title: "San Valentín" },
+      { month: 5, day: 10, name: "diaMadre", icon: "👩‍👧‍👦", title: "Día de la Madre" },
+      { month: 6, day: 15, name: "diaPadre", icon: "👨‍👦", title: "Día del Padre" },
+      { month: 7, day: 15, name: "graduaciones", icon: "🎓", title: "Graduaciones" },
+      { month: 12, day: 25, name: "navidad", icon: "🎄", title: "Navidad" }
+    ];
+
+    // Buscar la siguiente temporada
+    for (const season of seasons) {
+      const seasonDate = new Date(now.getFullYear(), season.month - 1, season.day);
+      
+      if (seasonDate > now) {
+        return {
+          ...season,
+          targetDate: seasonDate
+        };
+      }
+    }
+
+    // Si no hay ninguna temporada pendiente este año, la siguiente es San Valentín del próximo año
+    return {
+      month: 2,
+      day: 14,
+      name: "sanValentin",
+      icon: "💝",
+      title: "San Valentín",
+      targetDate: new Date(now.getFullYear() + 1, 1, 14)
+    };
+  }
+
+  // ============================================
+  // ACTUALIZAR WIDGET DE CUENTA REGRESIVA
+  // ============================================
+
+  function updateCountdownWidget(config) {
     const widget = document.getElementById("countdownWidget");
 
-    // Si es "Toda Ocasión", ocultar widget
-    if (!event.eventName || !event.targetMonth || !event.targetDay) {
+    if (countdownInterval) {
+      clearInterval(countdownInterval);
+      countdownInterval = null;
+    }
+
+    if (!config.countdown) {
       if (widget) {
         widget.style.display = "none";
-      }
-      if (countdownInterval) {
-        clearInterval(countdownInterval);
-        countdownInterval = null;
       }
       return;
     }
 
-    // Mostrar widget
     if (widget) {
       widget.style.display = "block";
     }
 
-    // Calcular fecha objetivo
-    const targetDate = calculateTargetDate(event.targetMonth, event.targetDay);
+    let targetDate, eventIcon, eventTitle, eventSubtitle, countdownCTA;
+    const eventIconEl = document.getElementById("eventIcon");
+    const eventTitleEl = document.getElementById("eventTitle");
+    const eventSubtitleEl = document.getElementById("eventSubtitle");
+    const countdownCTAEl = document.getElementById("countdownCTA");
 
-    // Actualizar contenido del widget
-    const eventIcon = document.getElementById("eventIcon");
-    const eventTitle = document.getElementById("eventTitle");
-    const eventSubtitle = document.getElementById("eventSubtitle");
-    const countdownCTA = document.getElementById("countdownCTA");
+    // Si es "auto", calcular la siguiente temporada
+    if (config.countdown === "auto") {
+      const nextSeason = getNextSeasonalEvent();
+      targetDate = nextSeason.targetDate;
+      
+      if (eventIconEl) eventIconEl.textContent = nextSeason.icon;
+      if (eventTitleEl) eventTitleEl.textContent = `${nextSeason.title} ${targetDate.getFullYear()}`;
+      if (eventSubtitleEl) eventSubtitleEl.textContent = "¡Prepárate para la siguiente temporada especial!";
+      if (countdownCTAEl) countdownCTAEl.textContent = "Explorar Catálogo →";
+    } else {
+      // Calcular año dinámicamente para temporadas específicas
+      const now = new Date();
+      const currentYear = now.getFullYear();
+      
+      // Crear fecha objetivo para este año
+      targetDate = new Date(currentYear, config.countdown.month - 1, config.countdown.day, 23, 59, 59);
+      
+      // Si la fecha ya pasó este año, usar el siguiente año
+      if (targetDate < now) {
+        targetDate.setFullYear(currentYear + 1);
+      }
 
-    if (eventIcon) eventIcon.textContent = event.icon;
-    if (eventTitle)
-      eventTitle.textContent = event.eventName + " " + targetDate.getFullYear();
-    if (eventSubtitle) eventSubtitle.textContent = event.countdownText;
-    if (countdownCTA) countdownCTA.textContent = event.ctaText;
-
-    // Iniciar cuenta regresiva
-    startCountdown(targetDate);
-  }
-
-  // ============================================
-  // CALCULAR FECHA OBJETIVO
-  // ============================================
-
-  function calculateTargetDate(month, day) {
-    const now = new Date();
-    const currentYear = now.getFullYear();
-
-    // Crear fecha objetivo para este año
-    const targetDate = new Date(currentYear, month - 1, day, 23, 59, 59);
-
-    // Si la fecha ya pasó este año, usar el siguiente año
-    if (targetDate < now) {
-      targetDate.setFullYear(currentYear + 1);
+      if (eventIconEl) eventIconEl.textContent = config.welcome.icon;
+      if (eventTitleEl) eventTitleEl.textContent = `${config.countdown.title} ${targetDate.getFullYear()}`;
+      if (eventSubtitleEl) eventSubtitleEl.textContent = config.countdown.subtitle;
+      if (countdownCTAEl) countdownCTAEl.textContent = config.countdown.ctaText;
     }
 
-    return targetDate;
+    startCountdown(targetDate);
   }
 
   // ============================================
@@ -268,16 +373,10 @@
   // ============================================
 
   function startCountdown(targetDate) {
-    // Limpiar intervalo anterior si existe
-    if (countdownInterval) {
-      clearInterval(countdownInterval);
-    }
-
     function updateCounter() {
       const now = new Date();
       const diff = targetDate - now;
 
-      // Si llegó el día o pasó, no mostrar números negativos
       if (diff <= 0) {
         const daysCount = document.getElementById("daysCount");
         const hoursCount = document.getElementById("hoursCount");
@@ -287,7 +386,6 @@
         if (hoursCount) hoursCount.textContent = "00";
         if (minutesCount) minutesCount.textContent = "00";
 
-        // Detener el contador
         if (countdownInterval) {
           clearInterval(countdownInterval);
           countdownInterval = null;
@@ -295,77 +393,65 @@
         return;
       }
 
-      // Calcular tiempo restante
       const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-      const hours = Math.floor(
-        (diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
-      );
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
       const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
 
-      // Actualizar display
       const daysCount = document.getElementById("daysCount");
       const hoursCount = document.getElementById("hoursCount");
       const minutesCount = document.getElementById("minutesCount");
 
       if (daysCount) daysCount.textContent = days.toString().padStart(2, "0");
-      if (hoursCount)
-        hoursCount.textContent = hours.toString().padStart(2, "0");
-      if (minutesCount)
-        minutesCount.textContent = minutes.toString().padStart(2, "0");
+      if (hoursCount) hoursCount.textContent = hours.toString().padStart(2, "0");
+      if (minutesCount) minutesCount.textContent = minutes.toString().padStart(2, "0");
     }
 
-    // Actualizar inmediatamente
     updateCounter();
-
-    // Actualizar cada minuto (60 segundos)
     countdownInterval = setInterval(updateCounter, 60000);
   }
 
   // ============================================
-  // CALCULAR DÍAS HASTA FESTIVIDAD
+  // ACTUALIZAR TODO EL CONTENIDO
   // ============================================
 
-  function getDaysUntilEvent(month, day) {
-    if (!month || !day) return null;
+  function updateSeasonalContent(themeName) {
+    const config = SEASONAL_CONFIG[themeName] || SEASONAL_CONFIG.todaOcasion;
+    currentTheme = themeName;
 
-    const targetDate = calculateTargetDate(month, day);
-    const now = new Date();
-    const diff = targetDate - now;
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    updateHeroSlider(config);
+    updateWelcomeBanner(config);
+    updateCountdownWidget(config);
 
-    return days;
+    console.log("🎯 Contenido estacional actualizado:", themeName);
   }
 
   // ============================================
   // EVENT LISTENERS
   // ============================================
 
-  // Escuchar cambios de tema
   document.addEventListener("razo:themeChanged", (event) => {
-    console.log("🎨 Tema cambiado a:", event.detail.theme);
+    console.log("🎨 Tema cambiado detectado:", event.detail.theme);
     updateSeasonalContent(event.detail.theme);
   });
 
-  // Inicializar cuando el tema esté listo
+  // ============================================
+  // INICIALIZACIÓN
+  // ============================================
+
   function initializeSeasonalContent() {
-    if (window.RazoThemeManager) {
+    if (window.RazoThemeManager && window.RazoThemeManager.getCurrentTheme()) {
       const theme = window.RazoThemeManager.getCurrentTheme();
-      if (theme) {
-        updateSeasonalContent(theme.name);
-      }
+      console.log("🚀 Inicializando con tema:", theme.name);
+      updateSeasonalContent(theme.name);
     } else {
-      // Si aún no está listo, reintentar
-      setTimeout(initializeSeasonalContent, 100);
+      setTimeout(initializeSeasonalContent, 50);
     }
   }
 
-  // Esperar a que el DOM esté listo
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", () => {
-      setTimeout(initializeSeasonalContent, 150);
-    });
+    document.addEventListener("DOMContentLoaded", initializeSeasonalContent);
   } else {
-    setTimeout(initializeSeasonalContent, 150);
+    initializeSeasonalContent();
   }
 
   // ============================================
@@ -373,39 +459,14 @@
   // ============================================
 
   window.RazoSeasonalContent = {
-    getCurrentEvent: () => {
-      if (currentTheme) {
-        const event = SEASONAL_EVENTS[currentTheme];
-        if (event && event.targetMonth && event.targetDay) {
-          const targetDate = calculateTargetDate(
-            event.targetMonth,
-            event.targetDay
-          );
-          return {
-            ...event,
-            targetYear: targetDate.getFullYear(),
-            targetDate: targetDate.toLocaleDateString("es-MX"),
-            daysUntil: getDaysUntilEvent(event.targetMonth, event.targetDay),
-          };
-        }
-        return event;
-      }
-      return null;
-    },
-    getDaysUntil: (themeName) => {
-      const event = SEASONAL_EVENTS[themeName];
-      if (event && event.targetMonth && event.targetDay) {
-        return getDaysUntilEvent(event.targetMonth, event.targetDay);
-      }
-      return null;
-    },
-    updateContent: (themeName) => {
-      updateSeasonalContent(themeName);
-    },
+    getCurrentTheme: () => currentTheme,
+    getConfig: (themeName) => SEASONAL_CONFIG[themeName] || null,
+    updateContent: (themeName) => updateSeasonalContent(themeName),
+    getAllThemes: () => Object.keys(SEASONAL_CONFIG)
   };
 
   // ============================================
-  // CLEANUP AL SALIR DE LA PÁGINA
+  // CLEANUP
   // ============================================
 
   window.addEventListener("beforeunload", () => {

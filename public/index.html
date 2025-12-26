@@ -145,9 +145,9 @@
     <!-- Sección: Destacados de Temporada -->
     <section class="landing-featured">
       <div class="container">
-        <h2 class="landing-section-title">Destacados de Temporada</h2>
-        <p class="landing-section-subtitle">
-          Las cajas navideñas más populares
+        <h2 class="landing-section-title" id="seasonal-section-title">Destacados de Temporada</h2>
+        <p class="landing-section-subtitle" id="seasonal-section-subtitle">
+          Nuestros productos más populares
         </p>
 
         <div id="featuredGrid" class="landing-featured-grid">
@@ -159,8 +159,8 @@
         </div>
 
         <div class="landing-featured-cta">
-          <a href="/productos.html?categoria=7" class="btn-view-all">
-            Ver Todo el Catálogo Navideño →
+          <a href="/catalogo.html" class="btn-view-all" id="seasonal-section-btn">
+            Ver Catálogo
           </a>
         </div>
       </div>
@@ -232,6 +232,52 @@
         },
       };
 
+      // Configuración de textos para sección de destacados por tema
+      const SEASONAL_SECTION_TEXTS = {
+        navidad: {
+          title: "Destacados navideños",
+          subtitle: "Las cajas navideñas más populares",
+          btnText: "Ver Catálogo Navideño →",
+          btnLink: "/catalogo.html?categoria=7",
+          apiCategory: "7"
+        },
+        sanValentin: {
+          title: "Especial San Valentín",
+          subtitle: "Enamora a tus clientes con estos productos",
+          btnText: "Ver San Valentín →",
+          btnLink: "/catalogo.html?categoria=san-valentin",
+          apiCategory: "san-valentin"
+        },
+        diaMadre: {
+          title: "Colección día de la Madre",
+          subtitle: "Regalos especiales para mamá",
+          btnText: "Ver Día de la Madre →",
+          btnLink: "/catalogo.html?categoria=dia-madre",
+          apiCategory: "dia-madre"
+        },
+        diaPadre: {
+          title: "Colección día del Padre",
+          subtitle: "Productos premium para papá",
+          btnText: "Ver Día del Padre →",
+          btnLink: "/catalogo.html?categoria=dia-padre",
+          apiCategory: "dia-padre"
+        },
+        graduaciones: {
+          title: "Especial graduaciones",
+          subtitle: "Celebra el éxito académico",
+          btnText: "Ver Graduaciones →",
+          btnLink: "/catalogo.html?categoria=graduaciones",
+          apiCategory: "graduaciones"
+        },
+        todaOcasion: {
+          title: "¡Nuevos productos!",
+          subtitle: "Tendencias del mes para tu negocio",
+          btnText: "Ver Novedades →",
+          btnLink: "/catalogo.html?sort=newest",
+          apiCategory: null
+        }
+      };
+
       function updateHeroContent(themeName) {
         const content = THEME_CONTENT[themeName] || THEME_CONTENT.todaOcasion;
 
@@ -249,6 +295,32 @@
           heroBackground.style.backgroundImage = content.image;
           heroBackground.style.opacity = "1";
         }, 300);
+
+        // Actualizar sección de destacados
+        updateSeasonalSection(themeName);
+      }
+
+      function updateSeasonalSection(themeName) {
+        const sectionConfig = SEASONAL_SECTION_TEXTS[themeName] || SEASONAL_SECTION_TEXTS.todaOcasion;
+        
+        const sectionTitle = document.getElementById("seasonal-section-title");
+        const sectionSubtitle = document.getElementById("seasonal-section-subtitle");
+        const sectionBtn = document.getElementById("seasonal-section-btn");
+
+        if (sectionTitle) sectionTitle.textContent = sectionConfig.title;
+        if (sectionSubtitle) sectionSubtitle.textContent = sectionConfig.subtitle;
+        if (sectionBtn) {
+          sectionBtn.textContent = sectionConfig.btnText;
+          sectionBtn.href = sectionConfig.btnLink;
+        }
+
+        // Recargar productos según la categoría del tema
+        if (sectionConfig.apiCategory) {
+          loadFeaturedProducts(sectionConfig.apiCategory);
+        } else {
+          // Para "toda ocasión", cargar productos más recientes
+          loadFeaturedProducts(null, "newest");
+        }
       }
 
       // Escuchar cambios de tema
@@ -267,15 +339,20 @@
         }
       }, 100);
 
-      // Newsletter form
-      document
-        .querySelector(".footer-newsletter form")
-        .addEventListener("submit", (e) => {
+      // Newsletter form (con validación segura)
+      const newsletterForm = document.querySelector(".footer-newsletter form");
+      if (newsletterForm) {
+        newsletterForm.addEventListener("submit", (e) => {
           e.preventDefault();
           const email = e.target.querySelector("input").value;
-          showToast("¡Gracias! Te has suscrito correctamente.", "success");
+          if (typeof showToast === 'function') {
+            showToast("¡Gracias! Te has suscrito correctamente.", "success");
+          } else {
+            alert("¡Gracias! Te has suscrito correctamente.");
+          }
           e.target.reset();
         });
+      }
 
       // ========================================
       // CARGAR PROVEEDORES (MARCAS)
@@ -333,13 +410,22 @@
       }
 
       // ========================================
-      // CARGAR PRODUCTOS DESTACADOS DE NAVIDAD
+      // CARGAR PRODUCTOS DESTACADOS (DINÁMICO POR TEMA)
       // ========================================
-      async function loadFeaturedProducts() {
+      async function loadFeaturedProducts(categoria = null, sort = null) {
         const featuredGrid = document.getElementById("featuredGrid");
 
+        // Construir URL con parámetros dinámicos
+        let url = "/api/productos?limit=4";
+        if (categoria) {
+          url += `&categoria=${categoria}`;
+        }
+        if (sort) {
+          url += `&sort=${sort}`;
+        }
+
         try {
-          const response = await fetch("/api/productos?categoria=7&limit=4");
+          const response = await fetch(url);
           const data = await response.json();
 
           // El backend devuelve: { success, data: { productos: [...] } }
@@ -418,7 +504,25 @@
       // ========================================
       document.addEventListener("DOMContentLoaded", () => {
         loadBrands();
-        loadFeaturedProducts();
+        
+        // Cargar productos según el tema actual
+        setTimeout(() => {
+          if (window.RazoThemeManager) {
+            const currentTheme = window.RazoThemeManager.getCurrentTheme();
+            if (currentTheme) {
+              const sectionConfig = SEASONAL_SECTION_TEXTS[currentTheme.name] || SEASONAL_SECTION_TEXTS.todaOcasion;
+              if (sectionConfig.apiCategory) {
+                loadFeaturedProducts(sectionConfig.apiCategory);
+              } else {
+                loadFeaturedProducts(null, "newest");
+              }
+            } else {
+              loadFeaturedProducts(null, "newest");
+            }
+          } else {
+            loadFeaturedProducts(null, "newest");
+          }
+        }, 150);
       });
     </script>
 

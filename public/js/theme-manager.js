@@ -17,7 +17,7 @@
       displayName: "Navidad",
       className: "theme-navidad",
       icon: "🎄",
-      dateRanges: [{ startMonth: 11, startDay: 1, endMonth: 12, endDay: 31 }],
+      dateRanges: [{ startMonth: 11, startDay: 1, endMonth: 12, endDay: 25 }],
     },
     sanValentin: {
       name: "sanValentin",
@@ -262,25 +262,6 @@
   // ============================================
   // UTILIDADES ADICIONALES
   // ============================================
-
-  /**
-   * Función helper para testing: simula una fecha específica
-   * Uso: testThemeForDate(new Date('2024-12-24'))
-   */
-  window.testThemeForDate = function (testDate) {
-    const manager = new ThemeManager();
-    const theme = manager.detectThemeForDate(testDate);
-
-    console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-    console.log("🧪 TEST DE TEMA PARA FECHA:");
-    console.log(`📅 Fecha: ${testDate.toLocaleDateString("es-MX")}`);
-    console.log(`🎨 Tema detectado: ${theme.displayName} ${theme.icon}`);
-    console.log(`🏷️  Clase CSS: ${theme.className}`);
-    console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-
-    return theme;
-  };
-
   /**
    * Función helper: mostrar todos los temas y sus rangos
    */
