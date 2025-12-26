@@ -511,11 +511,12 @@
         const hasSesion = Boolean(state.sesionId);
         btnRegistrar.disabled = !hasSesion;
 
+        const validados = state.filas.filter((f) => f.estatusFila === "VALIDADO").length;
         const conflictos = state.filas.filter((f) => f.estatusFila === "CONFLICTO").length;
         const canApply =
           hasSesion &&
           state.sesionEstatus === "ABIERTA" &&
-          conflictos === 0 &&
+          validados > 0 &&
           !state.isAgente;
         btnAplicar.disabled = !canApply;
 
@@ -529,12 +530,17 @@
           return;
         }
 
-        if (conflictos > 0) {
-          aplicarHint.textContent = `No se puede aplicar: ${conflictos} conflicto(s).`;
+        if (validados === 0) {
+          aplicarHint.textContent = "No hay productos validados para aplicar.";
           return;
         }
 
-        aplicarHint.textContent = "Listo para aplicar (sin conflictos).";
+        if (conflictos > 0) {
+          aplicarHint.textContent = `Listo para aplicar ${validados} validado(s). ${conflictos} conflicto(s) serán ignorados.`;
+          return;
+        }
+
+        aplicarHint.textContent = `Listo para aplicar ${validados} producto(s) validado(s).`;
       };
 
       const renderDashboard = (data) => {
@@ -805,10 +811,28 @@
           return;
         }
 
+        const validados = state.filas.filter((f) => f.estatusFila === "VALIDADO").length;
+        const conflictos = state.filas.filter((f) => f.estatusFila === "CONFLICTO").length;
+        const pendientes = state.filas.filter((f) => f.estatusFila === "PENDIENTE_A" || f.estatusFila === "PENDIENTE_B").length;
+
+        if (validados === 0) {
+          toast("warning", "No hay productos validados para aplicar");
+          return;
+        }
+
+        let confirmText = `Se aplicará el inventario de ${validados} producto(s) VALIDADO(S).`;
+        if (conflictos > 0) {
+          confirmText += `\n\nLos ${conflictos} producto(s) en CONFLICTO serán ignorados y quedarán registrados en esta sesión cerrada.`;
+        }
+        if (pendientes > 0) {
+          confirmText += `\n\nLos ${pendientes} producto(s) PENDIENTES también serán ignorados.`;
+        }
+        confirmText += "\n\n¿Desea continuar?";
+
         const confirm = await Swal.fire({
           icon: "warning",
-          title: "Aplicar inventario",
-          text: "Se ajustará stock a la cantidad final VALIDADA (Auditoría).",
+          title: "Aplicar inventario parcial",
+          html: confirmText.replace(/\n/g, "<br>"),
           showCancelButton: true,
           confirmButtonText: "Aplicar",
           cancelButtonText: "Cancelar",
@@ -831,10 +855,16 @@
             throw new Error(resp.data?.message || "Error al aplicar");
           }
 
+          const result = resp.data?.data || {};
+          let successMsg = `Inventario aplicado: ${result.filasProcesadas || validados} producto(s) actualizado(s).`;
+          if (conflictos > 0 || pendientes > 0) {
+            successMsg += ` ${conflictos + pendientes} ítem(s) no aplicado(s) quedaron registrados.`;
+          }
+
           await Swal.fire({
             icon: "success",
             title: "Aplicado",
-            text: resp.data?.message || "Inventario ajustado",
+            html: successMsg.replace(/\. /g, ".<br>"),
             confirmButtonColor: "#F97316",
           });
 

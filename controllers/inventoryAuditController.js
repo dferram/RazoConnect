@@ -586,94 +586,151 @@ const aplicarSesion = async (req, res) => {
       });
     }
 
-    const conflictos = await client.query(
+    // Contar validados para verificar que hay al menos uno
+    const validadosCount = await client.query(
       `SELECT COUNT(*)::int AS total
        FROM toma_inventario_conteos
        WHERE sesionid = $1
-         AND estatus_fila = 'CONFLICTO'`,
+         AND estatus_fila = 'VALIDADO'`,
       [sesionId]
     );
 
-    const totalConflictos = Number.parseInt(conflictos.rows?.[0]?.total, 10) || 0;
-    if (totalConflictos > 0) {
+    const totalValidados = Number.parseInt(validadosCount.rows?.[0]?.total, 10) || 0;
+    if (totalValidados === 0) {
       await client.query("ROLLBACK");
       return res.status(409).json({
         success: false,
-        message: "No se puede aplicar: existen filas en CONFLICTO",
+        message: "No se puede aplicar: no hay productos validados",
         data: {
-          conflictos: totalConflictos,
+          validados: 0,
         },
       });
     }
 
-    const rows = await client.query(
-      `SELECT conteoid, varianteid, cantidad_final
+    // Obtener todos los ítems de la sesión para estadísticas
+    const allRows = await client.query(
+      `SELECT conteoid, varianteid, cantidad_final, estatus_fila
        FROM toma_inventario_conteos
        WHERE sesionid = $1
-         AND estatus_fila = 'VALIDADO'
        FOR UPDATE`,
       [sesionId]
     );
 
     const aplicadas = [];
+    const noAplicadas = [];
     let movimientosGenerados = 0;
 
-    for (const r of rows.rows) {
+    for (const r of allRows.rows) {
       const varianteId = Number.parseInt(r.varianteid, 10);
       const cantidadFinal = Number.parseInt(r.cantidad_final, 10);
+      const estatusFila = r.estatus_fila;
 
       if (!Number.isInteger(varianteId) || varianteId <= 0) continue;
-      if (!Number.isInteger(cantidadFinal) || cantidadFinal < 0) continue;
 
-      // Para ajustar a cantidad_final necesitamos el stock actual (bloqueado)
-      const stockQ = await client.query(
-        "SELECT stock FROM producto_variantes WHERE varianteid = $1 FOR UPDATE",
-        [varianteId]
-      );
+      // Solo aplicar si está VALIDADO
+      if (estatusFila === 'VALIDADO') {
+        if (!Number.isInteger(cantidadFinal) || cantidadFinal < 0) continue;
 
-      if (!stockQ.rows.length) {
-        continue;
-      }
+        // Para ajustar a cantidad_final necesitamos el stock actual (bloqueado)
+        const stockQ = await client.query(
+          "SELECT stock FROM producto_variantes WHERE varianteid = $1 FOR UPDATE",
+          [varianteId]
+        );
 
-      const stockActual = Number.parseInt(stockQ.rows[0].stock, 10) || 0;
-      const delta = cantidadFinal - stockActual;
+        if (!stockQ.rows.length) {
+          continue;
+        }
 
-      if (delta !== 0) {
-        await inventoryService.registrarMovimiento(client, {
+        const stockActual = Number.parseInt(stockQ.rows[0].stock, 10) || 0;
+        const delta = cantidadFinal - stockActual;
+
+        if (delta !== 0) {
+          await inventoryService.registrarMovimiento(client, {
+            varianteId,
+            cantidadDelta: delta,
+            motivo: `Auditoría Inventario - Sesión #${sesionId}`,
+            usuarioId: req.user?.id,
+            esExcepcion: false,
+          });
+          movimientosGenerados += 1;
+        }
+
+        aplicadas.push({
+          conteoId: r.conteoid,
           varianteId,
-          cantidadDelta: delta,
-          motivo: `Auditoría Inventario - Sesión #${sesionId}`,
-          usuarioId: req.user?.id,
-          esExcepcion: false,
+          stockAnterior: stockActual,
+          cantidadFinal,
+          delta,
+          estatus: 'APLICADO',
         });
-        movimientosGenerados += 1;
-      }
 
-      aplicadas.push({
-        conteoId: r.conteoid,
-        varianteId,
-        stockAnterior: stockActual,
-        cantidadFinal,
-        delta,
-      });
+        // Marcar el ítem como APLICADO (si la columna existe)
+        try {
+          await client.query(
+            `UPDATE toma_inventario_conteos 
+             SET estatus_aplicacion = 'APLICADO'
+             WHERE conteoid = $1`,
+            [r.conteoid]
+          );
+        } catch (colErr) {
+          // Columna no existe aún, ignorar (migración pendiente)
+        }
+      } else {
+        // CONFLICTO o PENDIENTE: no aplicar, solo registrar
+        noAplicadas.push({
+          conteoId: r.conteoid,
+          varianteId,
+          estatus: estatusFila,
+        });
+
+        // Marcar el ítem como NO_APLICADO (si la columna existe)
+        try {
+          await client.query(
+            `UPDATE toma_inventario_conteos 
+             SET estatus_aplicacion = 'NO_APLICADO'
+             WHERE conteoid = $1`,
+            [r.conteoid]
+          );
+        } catch (colErr) {
+          // Columna no existe aún, ignorar (migración pendiente)
+        }
+      }
     }
 
-    await client.query(
-      "UPDATE toma_inventario_sesiones SET estatus = 'APLICADA' WHERE sesionid = $1",
-      [sesionId]
-    );
+    // Cerrar la sesión (APLICADA si todo fue validado, APLICADA_PARCIAL si hubo conflictos)
+    // Intentar usar APLICADA_PARCIAL, si falla usar APLICADA (migración pendiente)
+    let estatusFinal = noAplicadas.length > 0 ? 'APLICADA_PARCIAL' : 'APLICADA';
+    try {
+      await client.query(
+        "UPDATE toma_inventario_sesiones SET estatus = $1 WHERE sesionid = $2",
+        [estatusFinal, sesionId]
+      );
+    } catch (enumErr) {
+      // APLICADA_PARCIAL no existe en el enum, usar APLICADA
+      estatusFinal = 'APLICADA';
+      await client.query(
+        "UPDATE toma_inventario_sesiones SET estatus = $1 WHERE sesionid = $2",
+        [estatusFinal, sesionId]
+      );
+    }
 
     await client.query("COMMIT");
 
+    const message = noAplicadas.length > 0
+      ? `Auditoría aplicada parcialmente: ${aplicadas.length} producto(s) actualizado(s), ${noAplicadas.length} ítem(s) no aplicado(s) registrados`
+      : "Auditoría aplicada completamente al inventario";
+
     return res.json({
       success: true,
-      message: "Auditoría aplicada al inventario",
+      message,
       data: {
         sesionId,
         filasProcesadas: aplicadas.length,
+        filasNoAplicadas: noAplicadas.length,
         movimientosGenerados,
         aplicadas,
-        estatusSesion: "APLICADA",
+        noAplicadas,
+        estatusSesion: estatusFinal,
       },
     });
   } catch (error) {
