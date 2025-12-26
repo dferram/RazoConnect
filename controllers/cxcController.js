@@ -81,7 +81,6 @@ async function exportarLoteCxC(req, res) {
         worksheet.getColumn(4).width = 10;  // D: Días
         worksheet.getColumn(5).width = 18;  // E: 1-30 días
         worksheet.getColumn(6).width = 18;  // F: 31 o más
-        worksheet.getColumn(7).width = 15;  // G: Código ruta
 
         // 5. Agregar título (fila 2)
         worksheet.mergeCells('B2:E2');
@@ -97,7 +96,7 @@ async function exportarLoteCxC(req, res) {
         
         // 6. Configurar encabezados de columnas (fila 4) - UNA SOLA VEZ
         const headerRow = worksheet.getRow(4);
-        headerRow.values = ['', 'Documento', 'Fecha', '', '1-30', '31 o más', ''];
+        headerRow.values = ['', 'Documento', 'Fecha', 'Días', '1-30', '31 o más'];
         headerRow.font = { bold: true, size: 11 };
         headerRow.alignment = { horizontal: 'center', vertical: 'middle' };
         headerRow.height = 20;
@@ -137,26 +136,22 @@ async function exportarLoteCxC(req, res) {
             clienteRow.getCell(1).font = { bold: true };
             clienteRow.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
             
-            // Columna B: Nombre del Cliente (negrita, sin fondo)
-            clienteRow.getCell(2).value = `${clienteData.nombre} ${clienteData.apellido}`.toUpperCase();
+            // Columna B: Nombre del Cliente con Código de Ruta (negrita, sin fondo)
+            clienteRow.getCell(2).value = `${clienteData.nombre} ${clienteData.apellido} (${clienteData.codigo_ruta})`.toUpperCase();
             clienteRow.getCell(2).font = { bold: true };
             clienteRow.getCell(2).alignment = { horizontal: 'left', vertical: 'middle' };
-            
-            // Columna F: Código de Ruta
-            clienteRow.getCell(6).value = clienteData.codigo_ruta;
-            clienteRow.getCell(6).alignment = { horizontal: 'center', vertical: 'middle' };
             
             currentRow++;
             
             // ========== FILAS DETALLE: Documentos ==========
+            // Capturamos la fila inicial usando lastRow
+            const startRow = worksheet.lastRow.number + 1;
+            
             documentos.forEach((doc) => {
                 const dias = parseInt(doc.diasVencido) || 0;
                 const monto = parseFloat(doc.monto) || 0;
                 
-                const docRow = worksheet.getRow(currentRow);
-                
-                // Columna A: Vacía (sangría visual)
-                docRow.getCell(1).value = '';
+                const docRow = worksheet.addRow(['']); // Agrega nueva fila
                 
                 // Columna B: ID Documento con color de fondo
                 docRow.getCell(2).value = doc.documento;
@@ -177,61 +172,59 @@ async function exportarLoteCxC(req, res) {
                 docRow.getCell(4).value = dias;
                 docRow.getCell(4).alignment = { horizontal: 'center', vertical: 'middle' };
                 
-                // Columna E: Monto si 1-30 días
-                if (dias >= 1 && dias <= 30) {
+                // Asignación de montos según antigüedad
+                if (dias <= 30) {
+                    // Columna E: 1-30 días
                     docRow.getCell(5).value = monto;
-                    docRow.getCell(5).numFmt = '#,##0.00';
+                    docRow.getCell(6).value = 0;
                 } else {
-                    docRow.getCell(5).value = '-';
-                }
-                docRow.getCell(5).alignment = { horizontal: 'right', vertical: 'middle' };
-                
-                // Columna F: Monto si 31+ días
-                if (dias >= 31) {
+                    // Columna F: 31+ días
+                    docRow.getCell(5).value = 0;
                     docRow.getCell(6).value = monto;
-                    docRow.getCell(6).numFmt = '#,##0.00';
-                } else {
-                    docRow.getCell(6).value = '-';
                 }
-                docRow.getCell(6).alignment = { horizontal: 'right', vertical: 'middle' };
                 
-                currentRow++;
+                // Formato de moneda para ambas columnas
+                docRow.getCell(5).numFmt = '"$"#,##0.00';
+                docRow.getCell(6).numFmt = '"$"#,##0.00';
+                docRow.getCell(5).alignment = { horizontal: 'right', vertical: 'middle' };
+                docRow.getCell(6).alignment = { horizontal: 'right', vertical: 'middle' };
             });
             
             // ========== FILA PIE: Subtotal del Cliente ==========
-            const subtotalRow = worksheet.getRow(currentRow);
+            const endRow = worksheet.lastRow.number;
             
-            // Columna B: Total general (opcional, puede ir vacío)
-            subtotalRow.getCell(2).value = totales.total;
-            subtotalRow.getCell(2).numFmt = '#,##0.00';
+            // Agregar fila de totales
+            const subtotalRow = worksheet.addRow(['']);
+            
+            // Columna B: Etiqueta 'TOTAL'
+            subtotalRow.getCell(2).value = 'TOTAL';
             subtotalRow.getCell(2).font = { bold: true };
             subtotalRow.getCell(2).alignment = { horizontal: 'right', vertical: 'middle' };
             
-            // Columna E: Subtotal 1-30 días
-            if (totales.dias_1_30 > 0) {
-                subtotalRow.getCell(5).value = totales.dias_1_30;
-                subtotalRow.getCell(5).numFmt = '#,##0.00';
-            } else {
-                subtotalRow.getCell(5).value = '-';
-            }
+            // Columna E: Total 1-30 días
+            subtotalRow.getCell(5).value = {
+                formula: 'SUM(E' + startRow + ':E' + endRow + ')'
+            };
+            subtotalRow.getCell(5).numFmt = '"$"#,##0.00';
             subtotalRow.getCell(5).font = { bold: true };
             subtotalRow.getCell(5).alignment = { horizontal: 'right', vertical: 'middle' };
             subtotalRow.getCell(5).border = {
                 top: { style: 'thin' }
             };
             
-            // Columna F: Subtotal 31+ días
-            if (totales.dias_31_mas > 0) {
-                subtotalRow.getCell(6).value = totales.dias_31_mas;
-                subtotalRow.getCell(6).numFmt = '#,##0.00';
-            } else {
-                subtotalRow.getCell(6).value = '-';
-            }
+            // Columna F: Total 31+ días
+            subtotalRow.getCell(6).value = {
+                formula: 'SUM(F' + startRow + ':F' + endRow + ')'
+            };
+            subtotalRow.getCell(6).numFmt = '"$"#,##0.00';
             subtotalRow.getCell(6).font = { bold: true };
             subtotalRow.getCell(6).alignment = { horizontal: 'right', vertical: 'middle' };
             subtotalRow.getCell(6).border = {
                 top: { style: 'thin' }
             };
+            
+            // Agregar fila en blanco después del total
+            worksheet.addRow(['']);
             
             currentRow++;
             currentRow++; // Espacio entre clientes

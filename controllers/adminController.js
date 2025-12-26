@@ -4921,6 +4921,62 @@ const updatePedidoEstatus = async (req, res) => {
       );
 
       const row = updateRes.rows[0];
+      
+      // CRITICAL FIX: Create in-app notification for the client
+      const clienteId = row.clienteid;
+      if (clienteId) {
+        try {
+          await crearNotificacionServicio(
+            clienteId,
+            'pedido',
+            `Actualización de Pedido #${pedidoId}`,
+            `Tu pedido ha cambiado de estado a: ${estatusNuevo}`,
+            {
+              url: `/perfil/pedidos`,
+              prioridad: 'normal',
+              metadata: { pedidoId, estatusAnterior, estatusNuevo }
+            }
+          );
+          console.log(`✅ Notificación creada para cliente ${clienteId} - Pedido #${pedidoId}`);
+        } catch (notifError) {
+          console.error('❌ Error al crear notificación in-app:', notifError);
+        }
+      }
+
+      // CRITICAL FIX: Send email notification to the client
+      if (clienteId) {
+        try {
+          const clienteResult = await db.query(
+            'SELECT nombre, apellido, email FROM clientes WHERE clienteid = $1',
+            [clienteId]
+          );
+          
+          if (clienteResult.rows.length > 0) {
+            const cliente = clienteResult.rows[0];
+            const emailCliente = cliente.email;
+            const nombreCliente = [cliente.nombre, cliente.apellido].filter(Boolean).join(' ').trim() || 'Cliente';
+            
+            if (emailCliente) {
+              const { enviarCorreoCambioEstatus } = require('../services/emailService');
+              const emailEnviado = await enviarCorreoCambioEstatus(
+                emailCliente,
+                nombreCliente,
+                pedidoId,
+                estatusNuevo
+              );
+              
+              if (emailEnviado) {
+                console.log(`✅ Email enviado a ${emailCliente} - Pedido #${pedidoId}`);
+              } else {
+                console.error(`❌ Email failed para ${emailCliente} - Pedido #${pedidoId}`);
+              }
+            }
+          }
+        } catch (emailError) {
+          console.error('❌ Error al enviar email de cambio de estatus:', emailError);
+        }
+      }
+
       return res.status(200).json({
         success: true,
         message: "Estatus actualizado correctamente.",
