@@ -9,6 +9,9 @@
     <!-- SWEETALERT2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
+    <!-- EXCELJS -->
+    <script src="https://cdn.jsdelivr.net/npm/exceljs@4.3.0/dist/exceljs.min.js"></script>
+
     <!-- PROTECCIÓN DE AUTENTICACIÓN ADMIN -->
     <script src="js/auth-guard-admin.js"></script>
 
@@ -398,6 +401,7 @@
         }
 
         if (input) input.value = "";
+        hasSessionData = true;
         showToastSuccess("Agregado a sesión");
         persistSesionRecepcion();
         renderizarTablaSesion();
@@ -1016,6 +1020,8 @@
           return acc + montoDePiezas(x.cantidad, piezas, costo);
         }, 0);
 
+        hasSessionData = count > 0;
+
         if (sesionBadge) {
           sesionBadge.textContent = `${count} ÍTEMS`;
         }
@@ -1265,6 +1271,8 @@
 
           clearSesionRecepcionStorage(state.orden.ordenCompraId);
           sesionRecepcion = [];
+          hasSessionData = false;
+          isExported = false;
           renderizarTablaSesion();
           await loadRecepcion(state.orden.ordenCompraId);
           showToastSuccess("Recepción finalizada");
