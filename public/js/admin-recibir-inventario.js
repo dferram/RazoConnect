@@ -144,6 +144,29 @@ async function exportarExcelEntrada() {
             { key: 'H', width: 15 }    // TOTAL
         ];
 
+        // Cargar e insertar logo (dimensiones corregidas para mantener proporción)
+        try {
+            const logoResponse = await fetch('/icon/Logo_Razo.png');
+            const logoBlob = await logoResponse.blob();
+            const logoBuffer = await logoBlob.arrayBuffer();
+            const imageId = workbook.addImage({
+                buffer: logoBuffer,
+                extension: 'png',
+            });
+            worksheet.addImage(imageId, {
+                tl: { col: 0.1, row: 0.1 },
+                ext: { width: 45, height: 45 },
+                editAs: 'oneCell'
+            });
+        } catch (logoError) {
+            console.warn('No se pudo cargar el logo:', logoError);
+        }
+
+        // Ajustar altura de filas para que el logo respire
+        worksheet.getRow(1).height = 20;
+        worksheet.getRow(2).height = 20;
+        worksheet.getRow(3).height = 20;
+
         // ENCABEZADO - Fila 1: Título (B1:E1)
         worksheet.mergeCells('B1:E1');
         const titleCell = worksheet.getCell('B1');

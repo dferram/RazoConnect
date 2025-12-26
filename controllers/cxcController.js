@@ -1,6 +1,8 @@
 const ExcelJS = require('exceljs');
 const db = require('../db');
 const { format } = require('date-fns');
+const path = require('path');
+const fs = require('fs').promises;
 
 /**
  * Exporta los registros de Cuentas por Cobrar a Excel y los marca como exportados
@@ -81,6 +83,28 @@ async function exportarLoteCxC(req, res) {
         worksheet.getColumn(4).width = 10;  // D: Días
         worksheet.getColumn(5).width = 18;  // E: 1-30 días
         worksheet.getColumn(6).width = 18;  // F: 31 o más
+
+        // Cargar e insertar logo (dimensiones corregidas para mantener proporción)
+        try {
+            const logoPath = path.join(__dirname, '..', 'icon', 'Logo_Razo.png');
+            const logoBuffer = await fs.readFile(logoPath);
+            const imageId = workbook.addImage({
+                buffer: logoBuffer,
+                extension: 'png',
+            });
+            worksheet.addImage(imageId, {
+                tl: { col: 0.1, row: 0.1 },
+                ext: { width: 45, height: 45 },
+                editAs: 'oneCell'
+            });
+        } catch (logoError) {
+            console.warn('No se pudo cargar el logo:', logoError);
+        }
+
+        // Ajustar altura de filas para que el logo respire
+        worksheet.getRow(1).height = 20;
+        worksheet.getRow(2).height = 20;
+        worksheet.getRow(3).height = 20;
 
         // 5. Agregar título (fila 2)
         worksheet.mergeCells('B2:E2');

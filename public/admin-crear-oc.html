@@ -6,6 +6,12 @@
     <title>Crear Orden de Compra - Admin RazoConnect</title>
     <link rel="icon" type="image/png" href="/icon/Logo_Razo.png" />
 
+    <!-- SWEETALERT2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- EXCELJS -->
+    <script src="https://cdn.jsdelivr.net/npm/exceljs@4.3.0/dist/exceljs.min.js"></script>
+
     <!-- PROTECCIÓN DE AUTENTICACIÓN ADMIN -->
     <script src="js/auth-guard-admin.js"></script>
 
@@ -201,6 +207,16 @@
                       </div>
                     </div>
                   </div>
+                </div>
+              </div>
+
+              <!-- Botón de exportación -->
+              <div class="admin-content" style="margin-top: 1rem;">
+                <div class="d-flex justify-content-end" style="padding: 1rem; background: white; border-radius: 0.75rem; border: 1px solid rgba(0,0,0,0.1);">
+                  <button id="btn-exportar-oc" type="button" class="btn btn-success" style="display: none;">
+                    <i class="bi bi-file-earmark-excel"></i>
+                    <span class="ms-1">Exportar OC a Excel</span>
+                  </button>
                 </div>
               </div>
 
@@ -649,6 +665,7 @@
           .join("");
 
         calcularTotalesOrdenCompra();
+        toggleExportButton();
       }
 
       function actualizarCosto(index, nuevoCosto) {
@@ -1033,8 +1050,420 @@
           await loadReglasEmpaqueProveedor(value);
           guardarItemsEnSessionStorage();
           actualizarTablaProductos();
+          toggleExportButton();
         });
       }
+
+      // Función para obtener el siguiente folio sugerido
+      function getSuggestedFolioOC() {
+        try {
+          const lastFolio = localStorage.getItem('last_folio_oc');
+          if (!lastFolio) return 'OC-1';
+          
+          const match = lastFolio.match(/OC-(\d+)/);
+          if (match && match[1]) {
+            const nextNumber = parseInt(match[1], 10) + 1;
+            return `OC-${nextNumber}`;
+          }
+          return 'OC-1';
+        } catch (e) {
+          return 'OC-1';
+        }
+      }
+
+      // Función para guardar el último folio usado
+      function saveLastFolioOC(folio) {
+        try {
+          localStorage.setItem('last_folio_oc', folio);
+        } catch (e) {
+          console.error('Error guardando folio OC:', e);
+        }
+      }
+
+      // Función para mostrar/ocultar botón de exportación
+      function toggleExportButton() {
+        const btnExportar = document.getElementById('btn-exportar-oc');
+        const proveedorId = document.getElementById('proveedorId')?.value;
+        const hasProducts = itemsOrdenCompra && itemsOrdenCompra.length > 0;
+        
+        if (btnExportar) {
+          btnExportar.style.display = (proveedorId && hasProducts) ? 'inline-flex' : 'none';
+        }
+      }
+
+      // Función principal de exportación a Excel
+      async function exportarExcelOC(folio) {
+        if (!itemsOrdenCompra || itemsOrdenCompra.length === 0) {
+          Swal.fire({
+            icon: 'warning',
+            title: 'Sin Productos',
+            text: 'No hay productos agregados para exportar.',
+            confirmButtonColor: '#F97316'
+          });
+          return;
+        }
+
+        const proveedorId = document.getElementById('proveedorId')?.value;
+        if (!proveedorId) {
+          Swal.fire({
+            icon: 'warning',
+            title: 'Sin Proveedor',
+            text: 'Debe seleccionar un proveedor antes de exportar.',
+            confirmButtonColor: '#F97316'
+          });
+          return;
+        }
+
+        // Obtener nombre del proveedor
+        const proveedorSelect = document.getElementById('proveedorId');
+        const proveedorNombre = proveedorSelect.options[proveedorSelect.selectedIndex]?.text || 'N/A';
+
+        try {
+          Swal.fire({
+            title: 'Generando Excel...',
+            text: 'Por favor espera mientras se genera el archivo.',
+            allowOutsideClick: false,
+            didOpen: () => { Swal.showLoading(); }
+          });
+
+          const workbook = new ExcelJS.Workbook();
+          const worksheet = workbook.addWorksheet('Orden de Compra');
+
+          // Configurar anchos de columna
+          worksheet.columns = [
+            { key: 'A', width: 8 },    // ID
+            { key: 'B', width: 18 },   // SKU
+            { key: 'C', width: 13.33 }, // Descripción parte 1
+            { key: 'D', width: 13.33 }, // Descripción parte 2
+            { key: 'E', width: 13.33 }, // Descripción parte 3
+            { key: 'F', width: 15 },   // Costo Unitario
+            { key: 'G', width: 15 },   // Piezas Solicitadas
+            { key: 'H', width: 15 }    // TOTAL
+          ];
+
+          // Cargar e insertar logo (dimensiones corregidas para mantener proporción)
+          try {
+            const logoResponse = await fetch('/icon/Logo_Razo.png');
+            const logoBlob = await logoResponse.blob();
+            const logoBuffer = await logoBlob.arrayBuffer();
+            const imageId = workbook.addImage({
+              buffer: logoBuffer,
+              extension: 'png',
+            });
+            worksheet.addImage(imageId, {
+              tl: { col: 0.1, row: 0.1 },
+              ext: { width: 45, height: 45 },
+              editAs: 'oneCell'
+            });
+          } catch (logoError) {
+            console.warn('No se pudo cargar el logo:', logoError);
+          }
+
+          // Ajustar altura de filas para que el logo respire
+          worksheet.getRow(1).height = 20;
+          worksheet.getRow(2).height = 20;
+          worksheet.getRow(3).height = 20;
+
+          // ENCABEZADO - Fila 1: Título (C1:E1)
+          worksheet.mergeCells('C1:E1');
+          const titleCell = worksheet.getCell('C1');
+          titleCell.value = 'ORDEN DE COMPRA';
+          titleCell.font = { name: 'Arial', size: 16, bold: true };
+          titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+          worksheet.getRow(1).height = 30;
+
+          // Fila 1: Etiqueta FOLIO (G1)
+          const folioLabelCell = worksheet.getCell('G1');
+          folioLabelCell.value = 'FOLIO';
+          folioLabelCell.font = { name: 'Arial', size: 9, bold: true };
+          folioLabelCell.alignment = { horizontal: 'right', vertical: 'middle' };
+
+          // Fila 1: Valor del Folio (H1) - ROJO
+          const folioCell = worksheet.getCell('H1');
+          folioCell.value = folio;
+          folioCell.font = { name: 'Arial', size: 14, bold: true, color: { argb: 'FFFF0000' } };
+          folioCell.alignment = { horizontal: 'center', vertical: 'middle' };
+
+          // Fila 2: Fecha
+          const fechaLabelCell = worksheet.getCell('C2');
+          fechaLabelCell.value = 'Fecha:';
+          fechaLabelCell.font = { name: 'Arial', size: 10, bold: true };
+          fechaLabelCell.alignment = { horizontal: 'right', vertical: 'middle' };
+
+          const fechaValueCell = worksheet.getCell('D2');
+          const today = new Date();
+          fechaValueCell.value = today.toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' });
+          fechaValueCell.font = { name: 'Arial', size: 10 };
+          fechaValueCell.alignment = { horizontal: 'left', vertical: 'middle' };
+          worksheet.getRow(2).height = 20;
+
+          // Fila 3: Proveedor
+          const proveedorLabelCell = worksheet.getCell('C3');
+          proveedorLabelCell.value = 'PROVEEDOR:';
+          proveedorLabelCell.font = { name: 'Arial', size: 10, bold: true };
+          proveedorLabelCell.alignment = { horizontal: 'right', vertical: 'middle' };
+
+          worksheet.mergeCells('D3:H3');
+          const proveedorValueCell = worksheet.getCell('D3');
+          proveedorValueCell.value = proveedorNombre;
+          proveedorValueCell.font = { name: 'Arial', size: 10, bold: true, color: { argb: 'FF0000FF' } };
+          proveedorValueCell.alignment = { horizontal: 'left', vertical: 'middle' };
+          worksheet.getRow(3).height = 20;
+
+          // Fila 4: Espacio
+          worksheet.getRow(4).height = 10;
+
+          // Fila 5: Encabezados de tabla
+          const headerRow = worksheet.getRow(5);
+          headerRow.height = 25;
+          
+          const headers = [
+            { col: 'A', text: '#' },
+            { col: 'B', text: 'SKU' },
+            { col: 'C', text: 'Producto + Descripción', merge: true },
+            { col: 'F', text: 'Costo Unitario' },
+            { col: 'G', text: 'Piezas Solicitadas' },
+            { col: 'H', text: 'TOTAL' }
+          ];
+
+          // Combinar celdas para Descripción (C5:E5)
+          worksheet.mergeCells('C5:E5');
+
+          // Aplicar estilos a encabezados
+          headers.forEach(h => {
+            const cell = worksheet.getCell(`${h.col}5`);
+            cell.value = h.text;
+            cell.font = { name: 'Arial', size: 11, bold: true };
+            cell.alignment = { horizontal: 'center', vertical: 'middle' };
+            cell.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: { argb: 'FFEEEEEE' }
+            };
+            cell.border = {
+              top: { style: 'thin', color: { argb: 'FF000000' } },
+              left: { style: 'thin', color: { argb: 'FF000000' } },
+              bottom: { style: 'thin', color: { argb: 'FF000000' } },
+              right: { style: 'thin', color: { argb: 'FF000000' } }
+            };
+          });
+
+          // Datos de productos
+          let currentRow = 6;
+          itemsOrdenCompra.forEach((item, index) => {
+            const row = worksheet.getRow(currentRow);
+            row.height = 20;
+
+            const costo = Number.parseFloat(item.costounitario);
+            const paquetes = Number.parseInt(item.paquetes, 10);
+            const regla = Number.parseInt(item.reglaEmpaque, 10);
+            const c = Number.isFinite(costo) ? costo : 0;
+            const p = Number.isInteger(paquetes) && paquetes > 0 ? paquetes : 1;
+            const r = Number.isInteger(regla) && regla > 0 ? regla : 1;
+            const totalPiezas = p * r;
+
+            // ID / # (Consecutivo)
+            const idCell = worksheet.getCell(`A${currentRow}`);
+            idCell.value = index + 1;
+            idCell.alignment = { horizontal: 'center', vertical: 'middle' };
+            idCell.border = {
+              top: { style: 'thin' },
+              left: { style: 'thin' },
+              bottom: { style: 'thin' },
+              right: { style: 'thin' }
+            };
+
+            // SKU
+            const skuCell = worksheet.getCell(`B${currentRow}`);
+            skuCell.value = item.sku || '';
+            skuCell.alignment = { horizontal: 'left', vertical: 'middle' };
+            skuCell.border = {
+              top: { style: 'thin' },
+              left: { style: 'thin' },
+              bottom: { style: 'thin' },
+              right: { style: 'thin' }
+            };
+
+            // Producto + Descripción (combinada en C-E)
+            worksheet.mergeCells(`C${currentRow}:E${currentRow}`);
+            const descripcionCell = worksheet.getCell(`C${currentRow}`);
+            descripcionCell.value = item.nombre_completo || '';
+            descripcionCell.alignment = { horizontal: 'left', vertical: 'middle' };
+            descripcionCell.border = {
+              top: { style: 'thin' },
+              left: { style: 'thin' },
+              bottom: { style: 'thin' },
+              right: { style: 'thin' }
+            };
+
+            // Costo Unitario
+            const costoCell = worksheet.getCell(`F${currentRow}`);
+            costoCell.value = c;
+            costoCell.numFmt = '$#,##0.00';
+            costoCell.alignment = { horizontal: 'right', vertical: 'middle' };
+            costoCell.border = {
+              top: { style: 'thin' },
+              left: { style: 'thin' },
+              bottom: { style: 'thin' },
+              right: { style: 'thin' }
+            };
+
+            // Piezas Solicitadas
+            const piezasCell = worksheet.getCell(`G${currentRow}`);
+            piezasCell.value = totalPiezas;
+            piezasCell.alignment = { horizontal: 'center', vertical: 'middle' };
+            piezasCell.border = {
+              top: { style: 'thin' },
+              left: { style: 'thin' },
+              bottom: { style: 'thin' },
+              right: { style: 'thin' }
+            };
+
+            // TOTAL (fórmula dinámica)
+            const totalCell = worksheet.getCell(`H${currentRow}`);
+            totalCell.value = { formula: `F${currentRow}*G${currentRow}` };
+            totalCell.numFmt = '$#,##0.00';
+            totalCell.alignment = { horizontal: 'right', vertical: 'middle' };
+            totalCell.border = {
+              top: { style: 'thin' },
+              left: { style: 'thin' },
+              bottom: { style: 'thin' },
+              right: { style: 'thin' }
+            };
+
+            currentRow++;
+          });
+
+          // Fila de TOTAL GENERAL
+          const totalRow = currentRow;
+          worksheet.getRow(totalRow).height = 25;
+
+          // Etiqueta "TOTAL GENERAL" (combinada en F-G)
+          worksheet.mergeCells(`F${totalRow}:G${totalRow}`);
+          const totalLabelCell = worksheet.getCell(`F${totalRow}`);
+          totalLabelCell.value = 'TOTAL GENERAL:';
+          totalLabelCell.font = { name: 'Arial', size: 12, bold: true };
+          totalLabelCell.alignment = { horizontal: 'right', vertical: 'middle' };
+          totalLabelCell.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFFEF3C7' }
+          };
+          totalLabelCell.border = {
+            top: { style: 'medium', color: { argb: 'FF000000' } },
+            left: { style: 'thin', color: { argb: 'FF000000' } },
+            bottom: { style: 'medium', color: { argb: 'FF000000' } },
+            right: { style: 'thin', color: { argb: 'FF000000' } }
+          };
+
+          // Valor del TOTAL GENERAL (fórmula SUM)
+          const totalGeneralCell = worksheet.getCell(`H${totalRow}`);
+          const firstDataRow = 6;
+          const lastDataRow = currentRow - 1;
+          totalGeneralCell.value = { formula: `SUM(H${firstDataRow}:H${lastDataRow})` };
+          totalGeneralCell.numFmt = '$#,##0.00';
+          totalGeneralCell.font = { name: 'Arial', size: 12, bold: true, color: { argb: 'FFF97316' } };
+          totalGeneralCell.alignment = { horizontal: 'right', vertical: 'middle' };
+          totalGeneralCell.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFFEF3C7' }
+          };
+          totalGeneralCell.border = {
+            top: { style: 'medium', color: { argb: 'FF000000' } },
+            left: { style: 'thin', color: { argb: 'FF000000' } },
+            bottom: { style: 'medium', color: { argb: 'FF000000' } },
+            right: { style: 'medium', color: { argb: 'FF000000' } }
+          };
+
+          // Generar archivo
+          const buffer = await workbook.xlsx.writeBuffer();
+          const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `Orden_Compra_${folio}_${new Date().toISOString().slice(0, 10)}.xlsx`;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          window.URL.revokeObjectURL(url);
+
+          // Guardar folio para próxima vez
+          saveLastFolioOC(folio);
+
+          Swal.fire({
+            icon: 'success',
+            title: '✅ Excel Generado',
+            text: `La Orden de Compra ${folio} ha sido descargada exitosamente.`,
+            confirmButtonColor: '#F97316'
+          });
+
+        } catch (error) {
+          console.error('Error generando Excel:', error);
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'No se pudo generar el archivo Excel. Por favor intenta nuevamente.',
+            confirmButtonColor: '#F97316'
+          });
+        }
+      }
+
+      // Event listener para el botón de exportación con lógica de folio
+      document.getElementById('btn-exportar-oc')?.addEventListener('click', async () => {
+        if (!itemsOrdenCompra || itemsOrdenCompra.length === 0) {
+          Swal.fire({
+            icon: 'warning',
+            title: 'Sin Productos',
+            text: 'No hay productos agregados para exportar.',
+            confirmButtonColor: '#F97316'
+          });
+          return;
+        }
+
+        const proveedorId = document.getElementById('proveedorId')?.value;
+        if (!proveedorId) {
+          Swal.fire({
+            icon: 'warning',
+            title: 'Sin Proveedor',
+            text: 'Debe seleccionar un proveedor antes de exportar.',
+            confirmButtonColor: '#F97316'
+          });
+          return;
+        }
+
+        const suggestedFolio = getSuggestedFolioOC();
+
+        const { value: folio } = await Swal.fire({
+          title: '📋 Folio de Orden de Compra',
+          html: `
+            <div style="text-align: left;">
+              <label for="swal-folio-oc" style="display: block; font-weight: 700; margin-bottom: 0.5rem;">Número de Folio:</label>
+              <input id="swal-folio-oc" class="swal2-input" value="${suggestedFolio}" placeholder="Ej: OC-100" style="margin: 0; width: 100%;" />
+              <div style="margin-top: 0.5rem; padding: 0.75rem; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 0.375rem; font-size: 0.875rem;">
+                <strong>💡 Sugerencia:</strong> El siguiente folio consecutivo es <strong>${suggestedFolio}</strong>
+              </div>
+            </div>
+          `,
+          focusConfirm: false,
+          showCancelButton: true,
+          confirmButtonText: 'Generar Excel',
+          cancelButtonText: 'Cancelar',
+          confirmButtonColor: '#F97316',
+          preConfirm: () => {
+            const folioInput = document.getElementById('swal-folio-oc')?.value?.trim();
+            if (!folioInput) {
+              Swal.showValidationMessage('El folio es obligatorio');
+              return null;
+            }
+            return folioInput;
+          }
+        });
+
+        if (!folio) return;
+
+        await exportarExcelOC(folio);
+      });
     </script>
 
     <style>

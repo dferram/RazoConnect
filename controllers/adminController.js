@@ -5240,66 +5240,34 @@ const sanitizeSkuSegment = (input, maxLen, fallback) => {
 
 const generarSkuMaestro = async (
   pool,
-  { proveedorid, tipoproductoid, categoriaid, nombreproducto }
+  { categoriaid }
 ) => {
   if (!pool || typeof pool.query !== "function") {
     throw new Error("pool inválido");
   }
 
-  const yearSegment = String(new Date().getFullYear()).slice(-2);
-
-  const proveedorIdParsed =
-    proveedorid !== undefined && proveedorid !== null
-      ? Number.parseInt(proveedorid, 10)
-      : null;
-  const tipoProductoIdParsed =
-    tipoproductoid !== undefined && tipoproductoid !== null
-      ? Number.parseInt(tipoproductoid, 10)
-      : null;
   const categoriaIdParsed =
     categoriaid !== undefined && categoriaid !== null
       ? Number.parseInt(categoriaid, 10)
       : null;
 
-  const proveedorNombre = await (async () => {
-    if (!Number.isInteger(proveedorIdParsed) || proveedorIdParsed <= 0) {
-      return "GEN";
-    }
-    const r = await pool.query(
-      "SELECT nombreempresa FROM proveedores WHERE proveedorid = $1",
-      [proveedorIdParsed]
-    );
-    return r.rows[0]?.nombreempresa ?? "GEN";
-  })();
+  if (!Number.isInteger(categoriaIdParsed) || categoriaIdParsed <= 0) {
+    throw new Error("CATEGORIA_ID_REQUERIDO_PARA_SKU");
+  }
 
-  const tipoProductoNombre = await (async () => {
-    if (!Number.isInteger(tipoProductoIdParsed) || tipoProductoIdParsed <= 0) {
-      return "GEN";
-    }
-    const r = await pool.query(
-      "SELECT nombre FROM tipoproducto WHERE tipoproductoid = $1",
-      [tipoProductoIdParsed]
-    );
-    return r.rows[0]?.nombre ?? "GEN";
-  })();
+  // Llamar a la función de PostgreSQL para obtener el siguiente SKU
+  const result = await pool.query(
+    "SELECT obtener_siguiente_sku($1) as nuevo_sku",
+    [categoriaIdParsed]
+  );
 
-  const categoriaNombre = await (async () => {
-    if (!Number.isInteger(categoriaIdParsed) || categoriaIdParsed <= 0) {
-      return "GEN";
-    }
-    const r = await pool.query(
-      "SELECT nombre FROM categorias WHERE categoriaid = $1",
-      [categoriaIdParsed]
-    );
-    return r.rows[0]?.nombre ?? "GEN";
-  })();
+  const nuevoSku = result.rows[0]?.nuevo_sku;
 
-  const proveedorSegment = sanitizeSkuSegment(proveedorNombre, 3, "GEN");
-  const tipoSegment = sanitizeSkuSegment(tipoProductoNombre, 3, "GEN");
-  const categoriaSegment = sanitizeSkuSegment(categoriaNombre, 3, "GEN");
-  const nombreSegment = sanitizeSkuSegment(nombreproducto, 4, "PROD");
+  if (!nuevoSku || typeof nuevoSku !== "string") {
+    throw new Error("ERROR_GENERANDO_SKU");
+  }
 
-  return `${yearSegment}-${proveedorSegment}-${tipoSegment}-${categoriaSegment}-${nombreSegment}`;
+  return nuevoSku;
 };
 
 const procesarMedidaParaSkuVariante = (dimensiones) => {
@@ -5541,10 +5509,7 @@ const crearProducto = async (req, res) => {
     ).rows[0]?.tipoproductoid ?? null : null;
 
     const skuMaestroFinal = await generarSkuMaestro(client, {
-      proveedorid: proveedorId,
-      tipoproductoid: tipoProductoIdForSku,
       categoriaid: categoriaIdParsed,
-      nombreproducto: nombre,
     });
 
     const skuExisteResult = await client.query(
@@ -5636,18 +5601,9 @@ const crearProducto = async (req, res) => {
 
     console.log("🟢 [CREAR_PRODUCTO] Producto insertado:", producto);
 
-    const serieSkuBase = (() => {
-      const base =
-        (typeof skuMaestroFinal === "string" && skuMaestroFinal.trim().length
-          ? skuMaestroFinal
-          : typeof nombre === "string" && nombre.trim().length
-          ? nombre
-          : `PROD-${producto.productoid}`) || `PROD-${producto.productoid}`;
-      return base
-        .toUpperCase()
-        .replace(/[^A-Z0-9]+/g, "-")
-        .replace(/^-+|-+$/g, "") || `PROD-${producto.productoid}`;
-    })();
+    // El SKU maestro ya viene en formato híbrido (ej: CAJ-001)
+    // Lo usamos directamente como base para las variantes
+    const serieSkuBase = skuMaestroFinal || `PROD-${producto.productoid}`;
 
     const buildSku = (suffix) => {
       const normalizedSuffix = (suffix || "VAR")
