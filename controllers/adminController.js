@@ -1159,34 +1159,9 @@ const recepcionMasivaOrdenCompra = async (req, res) => {
 
       const solicitado = Number.parseInt(detalle.cantidadsolicitada, 10) || 0;
 
-      const tipoProductoId = Number.parseInt(detalle.tipoproductoid, 10);
-      const reglaEmpaqueIdReq = Number.parseInt(
-        raw?.reglaEmpaqueId ?? raw?.reglaEmpaqueID ?? raw?.reglaId,
-        10
-      );
-
-      if (!Number.isInteger(reglaEmpaqueIdReq) || reglaEmpaqueIdReq <= 0) {
-        await client.query("ROLLBACK");
-        return res.status(400).json({
-          success: false,
-          message:
-            "Debes seleccionar una regla de empaque para cada renglón antes de recepcionar",
-        });
-      }
-
-      const reglaSeleccionada = reglasEmpaqueById.get(reglaEmpaqueIdReq);
-      if (!reglaSeleccionada || reglaSeleccionada.tipoProductoId !== tipoProductoId) {
-        await client.query("ROLLBACK");
-        return res.status(400).json({
-          success: false,
-          message:
-            "Regla de empaque inválida: la regla seleccionada no pertenece al proveedor o no corresponde al tipo de producto",
-        });
-      }
-
       const piezasPorPaqueteSafe = (() => {
-        const candidate = Number.parseInt(reglaSeleccionada.cantidadEmpaque, 10);
-        if (Number.isInteger(candidate) && candidate > 0) return candidate;
+        const fromPayload = Number.parseInt(raw?.piezasPorPaquete ?? raw?.piezasporpaquete, 10);
+        if (Number.isInteger(fromPayload) && fromPayload > 0) return fromPayload;
 
         const parsed = Number.parseInt(detalle.piezasporpaquete, 10);
         if (Number.isInteger(parsed) && parsed > 0) return parsed;

@@ -297,40 +297,14 @@
         items: [],
       };
 
-      const getReglasDisponibles = (item) => {
-        const list = item?.reglas_empaque?.disponibles;
-        return Array.isArray(list) ? list : [];
-      };
-
-      const ensureReglaSeleccionada = (item) => {
-        if (!item || typeof item !== "object") return;
-        const reglas = getReglasDisponibles(item);
-
-        const piezasFallbackRaw =
+      const getPiezasPorPaquete = (item) => {
+        const piezasRaw =
           item._piezasPorPaquete ??
           item.reglas_empaque?.cantidadEmpaque ??
           item.piezasPorPaquete ??
           item.piezasporpaquete;
-        const piezasFallbackParsed = Number.parseInt(piezasFallbackRaw, 10);
-        const piezasFallback =
-          Number.isInteger(piezasFallbackParsed) && piezasFallbackParsed > 0
-            ? piezasFallbackParsed
-            : reglas[0]?.cantidadEmpaque ?? 1;
-
-        const reglaIdRaw =
-          item._reglaEmpaqueId ?? item.reglas_empaque?.reglaEmpaqueIdSeleccionada;
-        const reglaIdParsed = Number.parseInt(reglaIdRaw, 10);
-        const reglaId =
-          Number.isInteger(reglaIdParsed) && reglaIdParsed > 0 ? reglaIdParsed : null;
-
-        let selectedReglaId = reglaId;
-        if (Array.isArray(reglas) && reglas.length > 0) {
-          const matchByPzas = reglas.find((r) => Number.parseInt(r.cantidadEmpaque, 10) === piezasFallback);
-          selectedReglaId = matchByPzas?.reglaId ?? reglas[0]?.reglaId ?? null;
-        }
-
-        item._piezasPorPaquete = piezasFallback;
-        item._reglaEmpaqueId = selectedReglaId;
+        const piezasParsed = Number.parseInt(piezasRaw, 10);
+        return Number.isInteger(piezasParsed) && piezasParsed > 0 ? piezasParsed : 1;
       };
 
       const agregarItemASesion = async (detalleId, inputEl) => {
@@ -342,10 +316,8 @@
           return;
         }
 
-        ensureReglaSeleccionada(item);
-
         const input = inputEl;
-        const piezas = piezasPorPaqueteValue(item);
+        const piezas = getPiezasPorPaquete(item);
         let cantidad = Number.parseInt(input?.value, 10);
         const max = Number.parseInt(input?.dataset?.pendiente, 10) || 0;
 
@@ -384,8 +356,7 @@
             ...sesionRecepcion[existingIdx],
             cantidad:
               (Number.parseInt(sesionRecepcion[existingIdx].cantidad, 10) || 0) + cantidad,
-            piezasPorPaquete: piezas,
-            reglaEmpaqueId: item._reglaEmpaqueId,
+            piezasPorPaquete: piezas
           };
         } else {
           sesionRecepcion.push({
@@ -395,8 +366,7 @@
             nombreProducto: safeText(item.nombreProducto),
             sku: safeText(item.sku),
             piezasPorPaquete: piezas,
-            reglaEmpaqueId: item._reglaEmpaqueId,
-            costoUnitario: costoUnitarioValue(item),
+            costoUnitario: costoUnitarioValue(item)
           });
         }
 
@@ -472,29 +442,12 @@
             raw?.piezasPorPaquete ?? raw?.piezasporpaquete,
             10
           );
-          const reglaEmpaqueIdStored = Number.parseInt(
-            raw?.reglaEmpaqueId ?? raw?.reglaEmpaqueID ?? raw?.reglaId,
-            10
-          );
 
           if (Number.isInteger(piezasPorPaqueteStored) && piezasPorPaqueteStored > 0) {
             base._piezasPorPaquete = piezasPorPaqueteStored;
           }
-          if (Number.isInteger(reglaEmpaqueIdStored) && reglaEmpaqueIdStored > 0) {
-            base._reglaEmpaqueId = reglaEmpaqueIdStored;
-          }
 
-          ensureReglaSeleccionada(base);
-
-          const piezasForCalc = (() => {
-            const rawPzas =
-              base._piezasPorPaquete ??
-              base.reglas_empaque?.cantidadEmpaque ??
-              base.piezasPorPaquete ??
-              base.piezasporpaquete;
-            const parsed = Number.parseInt(rawPzas, 10);
-            return Number.isInteger(parsed) && parsed > 0 ? parsed : 1;
-          })();
+          const piezasForCalc = getPiezasPorPaquete(base);
 
           const solicitadoPzas = (() => {
             const paqRaw = base.cantidadSolicitadaPaquetes ?? base.cantidadsolicitadaPaquetes;
@@ -524,11 +477,7 @@
               (Number.isInteger(piezasPorPaqueteStored) && piezasPorPaqueteStored > 0
                 ? piezasPorPaqueteStored
                 : piezasForCalc),
-            reglaEmpaqueId:
-              (Number.isInteger(reglaEmpaqueIdStored) && reglaEmpaqueIdStored > 0
-                ? reglaEmpaqueIdStored
-                : base?._reglaEmpaqueId || base?.reglas_empaque?.reglaEmpaqueIdSeleccionada || null),
-            costoUnitario: costoUnitarioValue(base),
+            costoUnitario: costoUnitarioValue(base)
           });
         }
 
@@ -634,14 +583,7 @@
       };
 
       const piezasPorPaqueteValue = (item) => {
-        ensureReglaSeleccionada(item);
-        const raw =
-          item._piezasPorPaquete ??
-          item.piezasPorPaquete ??
-          item.piezasporpaquete ??
-          item.reglas_empaque?.cantidadEmpaque;
-        const parsed = Number.parseInt(raw, 10);
-        return Number.isInteger(parsed) && parsed > 0 ? parsed : 1;
+        return getPiezasPorPaquete(item);
       };
 
       const solicitadoPzasValue = (item) => {
@@ -818,76 +760,6 @@
             input.value = String(draft);
           }
           tdInput.appendChild(input);
-
-          const reglas = getReglasDisponibles(item);
-          const helper = document.createElement("div");
-          helper.style.marginTop = "0.35rem";
-          helper.style.fontSize = "0.8rem";
-          helper.style.color = "#6b7280";
-          helper.style.display = "grid";
-          helper.style.gap = "0.25rem";
-
-          const label = document.createElement("div");
-          label.textContent = "Regla de empaque";
-          label.style.fontWeight = "700";
-          helper.appendChild(label);
-
-          const select = document.createElement("select");
-          select.className = "form-select form-select-sm";
-          select.dataset.detalleId = String(item.detalleId);
-
-          if (Array.isArray(reglas) && reglas.length > 0) {
-            ensureReglaSeleccionada(item);
-            for (const r of reglas) {
-              const opt = document.createElement("option");
-              opt.value = r.reglaId ? String(r.reglaId) : "";
-              opt.dataset.piezas = String(Number.parseInt(r.cantidadEmpaque, 10) || 1);
-              opt.textContent = safeText(r.nombreRegla || `Caja x${r.cantidadEmpaque}`);
-
-              if (item._reglaEmpaqueId && r.reglaId && String(r.reglaId) === String(item._reglaEmpaqueId)) {
-                opt.selected = true;
-              } else if (!item._reglaEmpaqueId && Number.parseInt(r.cantidadEmpaque, 10) === piezas) {
-                opt.selected = true;
-              }
-
-              select.appendChild(opt);
-            }
-          } else {
-            const opt = document.createElement("option");
-            opt.value = "";
-            opt.dataset.piezas = String(piezas);
-            opt.textContent = `Regla fija: ${piezas} pzas/paq`;
-            opt.selected = true;
-            select.appendChild(opt);
-            select.disabled = true;
-          }
-
-          select.addEventListener("change", () => {
-            const selected = select.selectedOptions?.[0];
-            const newPzas = Number.parseInt(selected?.dataset?.piezas, 10);
-            const newReglaId = Number.parseInt(select.value, 10);
-
-            if (Number.isInteger(newPzas) && newPzas > 0) {
-              item._piezasPorPaquete = newPzas;
-            }
-            item._reglaEmpaqueId = Number.isInteger(newReglaId) && newReglaId > 0 ? newReglaId : null;
-
-            const idx = sesionRecepcion.findIndex((x) => String(x.detalleId) === String(item.detalleId));
-            if (idx >= 0) {
-              sesionRecepcion[idx] = {
-                ...sesionRecepcion[idx],
-                piezasPorPaquete: piezasPorPaqueteValue(item),
-                reglaEmpaqueId: item._reglaEmpaqueId,
-              };
-              persistSesionRecepcion();
-              renderizarTablaSesion();
-            }
-
-            renderSplit();
-          });
-
-          helper.appendChild(select);
-          tdInput.appendChild(helper);
 
           const renderColor = () => {
             const val = Number.parseInt(input.value, 10);
