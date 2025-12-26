@@ -84,6 +84,32 @@ async function exportarCxC(req, res) {
             worksheet.getCell(`E${rowNumber}`).numFmt = '$#,##0.00';
         });
 
+        // 7. Agregar fila de TOTAL GENERAL
+        const totalRow = rows.length + 2; // Fila después de todos los datos
+        const lastDataRow = rows.length + 1; // Última fila con datos
+        
+        worksheet.addRow({
+            id: '',
+            cliente: 'TOTAL GENERAL',
+            limite: { formula: `SUM(C2:C${lastDataRow})` },
+            deuda: { formula: `SUM(D2:D${lastDataRow})` },
+            disponible: { formula: `SUM(E2:E${lastDataRow})` }
+        });
+
+        // Estilo para la fila de total
+        const totalRowObj = worksheet.getRow(totalRow);
+        totalRowObj.font = { bold: true, size: 12 };
+        totalRowObj.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'E8F4F8' }
+        };
+        
+        // Formato moneda para totales
+        worksheet.getCell(`C${totalRow}`).numFmt = '$#,##0.00';
+        worksheet.getCell(`D${totalRow}`).numFmt = '$#,##0.00';
+        worksheet.getCell(`E${totalRow}`).numFmt = '$#,##0.00';
+
         // 7. Marcar registros como exportados
         await client.query(`
             UPDATE cliente_creditos 

@@ -1882,6 +1882,18 @@
                 const tipoId = parseInt(datosTipo.tipoId, 10);
                 return Number.isInteger(tipoId) && tipoId > 0 ? tipoId : null;
               })(),
+              // CRÍTICO: Capturar reglaid del selector de tipo de producto
+              reglaid: (() => {
+                const datosTipo = window.TipoProductoLoader?.obtenerDatosTipoSeleccionado();
+                if (!datosTipo || datosTipo.esGenerico) return null;
+                
+                // El reglaid viene en el value del select cuando no es genérico
+                const reglaIdRaw = datosTipo.reglaid;
+                if (!reglaIdRaw || reglaIdRaw === '') return null;
+                
+                const reglaId = parseInt(reglaIdRaw, 10);
+                return Number.isInteger(reglaId) && reglaId > 0 ? reglaId : null;
+              })(),
               // Piezas por paquete desde dataset
               piezasPorPaquete: (() => {
                 const datosTipo = window.TipoProductoLoader?.obtenerDatosTipoSeleccionado();

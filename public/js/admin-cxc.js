@@ -41,7 +41,7 @@
     elements.btnCancelarAbono = document.getElementById("btnCancelarAbono");
     elements.btnCerrarModal = document.getElementById("btnCerrarModal");
     elements.btnRecargar = document.getElementById("btnRecargar");
-    elements.btnExportar = document.getElementById("btnExportar");
+    elements.btnExportar = document.getElementById("btn-exportar");
     elements.exportContainer = document.getElementById("exportContainer");
     elements.modal = document.getElementById("abonoModal");
     elements.abonoCliente = document.getElementById("abonoCliente");
