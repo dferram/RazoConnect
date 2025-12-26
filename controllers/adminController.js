@@ -2020,8 +2020,9 @@ const buscarProductosCompra = async (req, res) => {
          pv.color_nombre,
          pv.costounitario,
          pv.stock,
-         COALESCE(pv.url_imagen_variante, img_variante.url_imagen, img_producto.url_imagen) AS url_imagen_variante,
-         pv.piezasporpaquete
+         pv.url_imagen_variante,
+         pv.piezasporpaquete,
+         img_producto.url_imagen AS url_imagen_producto
        FROM producto_variantes pv
        INNER JOIN productos p ON p.productoid = pv.productoid
        LEFT JOIN medidas m ON m.medidaid = pv.medidaid
@@ -2032,16 +2033,9 @@ const buscarProductosCompra = async (req, res) => {
          LIMIT 1
        ) regla ON true
        LEFT JOIN LATERAL (
-         SELECT pvi.url_imagen
-         FROM producto_variante_imagenes pvi
-         WHERE pvi.varianteid = pv.varianteid
-         ORDER BY pvi.orden ASC NULLS LAST, pvi.imagenid ASC
-         LIMIT 1
-       ) img_variante ON true
-       LEFT JOIN LATERAL (
          SELECT pi.url_imagen
          FROM producto_imagenes pi
-         WHERE pi.productoid = pv.productoid
+         WHERE pi.productoid = p.productoid
          ORDER BY pi.orden ASC NULLS LAST, pi.imagenid ASC
          LIMIT 1
        ) img_producto ON true
@@ -2080,6 +2074,7 @@ const buscarProductosCompra = async (req, res) => {
         medidas: medidaLabel || null,
         costounitario: row.costounitario ? Number.parseFloat(row.costounitario) : 0,
         url_imagen_variante: row.url_imagen_variante || null,
+        url_imagen_producto: row.url_imagen_producto || null,
         stock: row.stock ?? 0,
         piezasporpaquete: row.piezasporpaquete ?? 1,
       };
@@ -11725,6 +11720,58 @@ const crearVariante = async (req, res) => {
       const unusedFiles = uploadedFiles.filter((_, idx) => !usedUploadIndexes.has(idx));
       await safeUnlinkUploads(unusedFiles);
 
+      // 🔄 PROPAGACIÓN/HERENCIA DE IMAGEN POR COLOR (VERSIÓN ROBUSTA)
+      if (row.color_nombre) {
+        console.log("--- DEBUG PROPAGACIÓN IMAGEN (CREATE) ---");
+        console.log("Variante ID:", varianteId);
+        console.log("Producto ID:", row.productoid);
+        console.log("Color detectado:", JSON.stringify(row.color_nombre));
+        console.log("URL galería:", galeriaResult.portadaUrl);
+
+        if (galeriaResult.portadaUrl) {
+          // Caso 1: La nueva variante tiene imagen → propagar a hermanas
+          console.log(`🔄 Propagando imagen para color "${row.color_nombre}"`);
+          
+          const propagateResult = await client.query(
+            `UPDATE producto_variantes 
+             SET url_imagen_variante = $1 
+             WHERE productoid = $2 
+             AND TRIM(UPPER(color_nombre)) = TRIM(UPPER($3)) 
+             AND varianteid != $4`,
+            [galeriaResult.portadaUrl, row.productoid, row.color_nombre, varianteId]
+          );
+
+          console.log(`✅ Imágenes sincronizadas en otras ${propagateResult.rowCount} variante(s).`);
+        } else {
+          // Caso 2: La nueva variante NO tiene imagen → heredar de hermana con mismo color
+          const hermanaResult = await client.query(
+            `SELECT url_imagen_variante 
+             FROM producto_variantes 
+             WHERE productoid = $1 
+             AND TRIM(UPPER(color_nombre)) = TRIM(UPPER($2)) 
+             AND url_imagen_variante IS NOT NULL 
+             AND TRIM(url_imagen_variante) != ''
+             LIMIT 1`,
+            [row.productoid, row.color_nombre]
+          );
+
+          if (hermanaResult.rows.length > 0 && hermanaResult.rows[0].url_imagen_variante) {
+            const imagenHeredada = hermanaResult.rows[0].url_imagen_variante;
+            console.log(`🔗 Heredando imagen de variante hermana: ${imagenHeredada}`);
+            
+            await client.query(
+              `UPDATE producto_variantes 
+               SET url_imagen_variante = $1 
+               WHERE varianteid = $2`,
+              [imagenHeredada, varianteId]
+            );
+          } else {
+            console.warn("⚠️ No se encontró variante hermana con imagen para heredar.");
+          }
+        }
+        console.log("------------------------------------------");
+      }
+
       await client.query("COMMIT");
 
       return res.status(201).json({
@@ -12204,6 +12251,40 @@ const actualizarVariante = async (req, res) => {
       const unusedFiles = uploadedFiles.filter((_, idx) => !usedUploadIndexes.has(idx));
       await safeUnlinkUploads(unusedFiles);
 
+      // 🔄 PROPAGACIÓN DE IMAGEN POR COLOR (VERSIÓN ROBUSTA)
+      // Obtener datos frescos de la variante recién guardada
+      const varianteQuery = await client.query(
+        "SELECT productoid, color_nombre, url_imagen_variante FROM producto_variantes WHERE varianteid = $1",
+        [varianteId]
+      );
+
+      const datosVariante = varianteQuery.rows[0];
+
+      // LOGS DE DEPURACIÓN
+      console.log("--- DEBUG PROPAGACIÓN IMAGEN (ATOMIC) ---");
+      console.log("Variante ID:", varianteId);
+      console.log("Producto ID:", datosVariante.productoid);
+      console.log("Color detectado:", JSON.stringify(datosVariante.color_nombre));
+      console.log("URL a propagar:", galeriaResult.portadaUrl);
+
+      // Ejecutar actualización masiva SI hay datos válidos
+      if (datosVariante.color_nombre && galeriaResult.portadaUrl) {
+        // Usamos TRIM y UPPER para evitar errores por espacios o mayúsculas
+        const propagateResult = await client.query(
+          `UPDATE producto_variantes 
+           SET url_imagen_variante = $1 
+           WHERE productoid = $2 
+           AND TRIM(UPPER(color_nombre)) = TRIM(UPPER($3)) 
+           AND varianteid != $4`,
+          [galeriaResult.portadaUrl, datosVariante.productoid, datosVariante.color_nombre, varianteId]
+        );
+
+        console.log(`✅ Imágenes sincronizadas en otras ${propagateResult.rowCount} variante(s).`);
+      } else {
+        console.warn("⚠️ No se propagó: Faltan datos de color o URL.");
+      }
+      console.log("------------------------------------------");
+
       await client.query("COMMIT");
 
       return res.json({
@@ -12434,6 +12515,40 @@ const actualizarVariante = async (req, res) => {
       }
 
       const row = updateRes.rows[0];
+
+      // 🔄 PROPAGACIÓN DE IMAGEN POR COLOR (VERSIÓN ROBUSTA)
+      // Obtener datos frescos de la variante recién guardada
+      const varianteQuery = await db.query(
+        "SELECT productoid, color_nombre, url_imagen_variante FROM producto_variantes WHERE varianteid = $1",
+        [varianteId]
+      );
+
+      const datosVariante = varianteQuery.rows[0];
+
+      // LOGS DE DEPURACIÓN
+      console.log("--- DEBUG PROPAGACIÓN IMAGEN (DIRECT) ---");
+      console.log("Variante ID:", varianteId);
+      console.log("Producto ID:", datosVariante.productoid);
+      console.log("Color detectado:", JSON.stringify(datosVariante.color_nombre));
+      console.log("URL a propagar:", datosVariante.url_imagen_variante);
+
+      // Ejecutar actualización masiva SI hay datos válidos
+      if (datosVariante.color_nombre && datosVariante.url_imagen_variante) {
+        // Usamos TRIM y UPPER para evitar errores por espacios o mayúsculas
+        const propagateResult = await db.query(
+          `UPDATE producto_variantes 
+           SET url_imagen_variante = $1 
+           WHERE productoid = $2 
+           AND TRIM(UPPER(color_nombre)) = TRIM(UPPER($3)) 
+           AND varianteid != $4`,
+          [datosVariante.url_imagen_variante, datosVariante.productoid, datosVariante.color_nombre, varianteId]
+        );
+
+        console.log(`✅ Imágenes sincronizadas en otras ${propagateResult.rowCount} variante(s).`);
+      } else {
+        console.warn("⚠️ No se propagó: Faltan datos de color o URL.");
+      }
+      console.log("------------------------------------------");
 
       await auditService.registrarCambioPasivo(
         req,

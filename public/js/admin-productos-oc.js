@@ -227,7 +227,14 @@ function renderGrid() {
 
   grid.innerHTML = resultados
     .map((p) => {
-      const img = p.imagenUrl || "/images/default-product.png";
+      // ESTRATEGIA DE FALLBACK DE IMAGEN (3 niveles):
+      // 1. Imagen de variante (si existe)
+      // 2. Imagen maestra del producto (si existe)
+      // 3. Placeholder por defecto
+      const imagenVariante = p.imagenUrl || null;
+      const imagenMaestra = (p.variantes && p.variantes[0]?.url_imagen_producto) || null;
+      const img = imagenVariante || imagenMaestra || "/images/default-product.png";
+      
       const nombre = p.nombreproducto || "(Sin nombre)";
       const skuMaestro = p.sku_maestro || "—";
       const medidas = Array.from(p.medidasSet || []);
@@ -400,7 +407,14 @@ function renderVariantesModal(productoId) {
 
   tbody.innerHTML = variantes
     .map((v) => {
-      const img = v.url_imagen_variante || "/images/default-product.png";
+      // ESTRATEGIA DE FALLBACK DE IMAGEN (3 niveles):
+      // 1. Imagen de variante (url_imagen_variante)
+      // 2. Imagen maestra del producto (url_imagen_producto)
+      // 3. Placeholder por defecto
+      const imagenVariante = v.url_imagen_variante || null;
+      const imagenMaestra = v.url_imagen_producto || null;
+      const img = imagenVariante || imagenMaestra || "/images/default-product.png";
+      
       const sku = v.sku || "Sin SKU";
       const medidas = v.medidas || "-";
       const stock = Number.isFinite(Number(v.stock)) ? Number(v.stock) : 0;

@@ -12,6 +12,7 @@ const cxcController = require("../controllers/cxcController");
 const cxpController = require("../controllers/cxpController");
 const inventarioController = require("../controllers/inventarioController");
 const numCuentaController = require("../controllers/numCuentaController");
+const migrationController = require("../controllers/migrationController");
 const upload = require("../middlewares/upload");
 const uploadComprobante = require("../middlewares/uploadComprobante");
 const {
@@ -984,6 +985,16 @@ router.put(
   authenticate,
   authorizeAdmin,
   numCuentaController.actualizarCuentaAdmin
+);
+
+/**
+ * Migración de datos - Sincronizar imágenes de variantes por color
+ */
+router.post(
+  "/migration/sincronizar-imagenes-color",
+  authenticate,
+  authorizeAdmin,
+  migrationController.sincronizarImagenesPorColor
 );
 
 module.exports = router;
