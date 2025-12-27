@@ -457,14 +457,171 @@
     const btnCancelarPago = document.getElementById("btnCancelarPago");
     const btnConfirmarPago = document.getElementById("btnConfirmarPago");
     const paymentCards = document.querySelectorAll("#paymentOptionsPagoCredito .payment-option-card");
+    const debtsTableBody = document.getElementById("debtsTableBody");
+    const selectAllDebts = document.getElementById("selectAllDebts");
+    const montoAPagarInput = document.getElementById("montoAPagar");
     
     let metodoPagoSeleccionado = "mercadopago";
+    let debtItems = [];
+    let fileUploadManager = null;
 
-    function abrirModalPago() {
+    async function cargarDeudaPendiente() {
+      try {
+        const response = await API.apiCall("/cliente/credito?page=1&limit=100", {
+          method: "GET",
+        });
+
+        if (response.ok && response.data?.success) {
+          const movimientos = response.data.data?.movimientos || [];
+          // Filtrar solo cargos (deuda pendiente)
+          debtItems = movimientos
+            .filter(mov => {
+              const tipo = (mov.tipo_movimiento || mov.tipo || "").toString().toLowerCase();
+              return ["cargo", "credito", "compra"].includes(tipo);
+            })
+            .map(mov => ({
+              id: mov.movimientoId || mov.movimiento_id,
+              concepto: mov.descripcion || mov.concepto || "Cargo",
+              fecha: mov.fecha || mov.fecha_movimiento,
+              monto: Math.abs(parseFloat(mov.monto || 0)),
+              selected: false
+            }));
+
+          renderDebtsTable();
+        } else {
+          debtItems = [];
+          renderDebtsTable();
+        }
+      } catch (error) {
+        console.error("Error cargando deuda pendiente:", error);
+        debtItems = [];
+        renderDebtsTable();
+      }
+    }
+
+    function renderDebtsTable() {
+      if (!debtsTableBody) return;
+
+      if (debtItems.length === 0) {
+        debtsTableBody.innerHTML = `
+          <tr>
+            <td colspan="4" class="text-center text-muted">
+              No hay deuda pendiente
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      const html = debtItems.map((item, index) => {
+        const fecha = item.fecha
+          ? new Date(item.fecha).toLocaleDateString("es-MX", {
+              year: "numeric",
+              month: "short",
+              day: "numeric",
+            })
+          : "—";
+
+        return `
+          <tr>
+            <td>
+              <input 
+                type="checkbox" 
+                class="debt-checkbox" 
+                data-index="${index}"
+                ${item.selected ? "checked" : ""}
+                style="cursor: pointer;"
+              />
+            </td>
+            <td>${item.concepto}</td>
+            <td>${fecha}</td>
+            <td class="text-end fw-bold">${formatCurrency(item.monto)}</td>
+          </tr>
+        `;
+      }).join("");
+
+      debtsTableBody.innerHTML = html;
+
+      // Agregar event listeners a los checkboxes
+      debtsTableBody.querySelectorAll(".debt-checkbox").forEach(checkbox => {
+        checkbox.addEventListener("change", handleDebtCheckboxChange);
+      });
+
+      updateSelectAllCheckbox();
+      calculateTotalAmount();
+    }
+
+    function handleDebtCheckboxChange(event) {
+      const index = parseInt(event.target.getAttribute("data-index"), 10);
+      if (debtItems[index]) {
+        debtItems[index].selected = event.target.checked;
+        updateSelectAllCheckbox();
+        calculateTotalAmount();
+      }
+    }
+
+    function updateSelectAllCheckbox() {
+      if (!selectAllDebts || debtItems.length === 0) return;
+
+      const allSelected = debtItems.every(item => item.selected);
+      const someSelected = debtItems.some(item => item.selected);
+
+      selectAllDebts.checked = allSelected;
+      selectAllDebts.indeterminate = someSelected && !allSelected;
+    }
+
+    function calculateTotalAmount() {
+      if (!montoAPagarInput) return;
+
+      const total = debtItems
+        .filter(item => item.selected)
+        .reduce((sum, item) => sum + item.monto, 0);
+
+      montoAPagarInput.value = total.toFixed(2);
+    }
+
+    // Event listener para "Seleccionar todo"
+    selectAllDebts?.addEventListener("change", (event) => {
+      const checked = event.target.checked;
+      debtItems.forEach(item => {
+        item.selected = checked;
+      });
+      renderDebtsTable();
+    });
+
+    // Permitir edición manual del monto
+    montoAPagarInput?.addEventListener("input", () => {
+      // El usuario puede editar manualmente para abonos parciales
+      // No hacemos nada especial aquí, solo permitimos la edición
+    });
+
+    async function abrirModalPago() {
       if (modalPagoCredito) {
         modalPagoCredito.style.display = "flex";
         modalPagoCredito.classList.add("show");
         document.body.style.overflow = "hidden";
+        
+        // Cargar deuda pendiente al abrir el modal
+        await cargarDeudaPendiente();
+        
+        // Inicializar file upload manager si no existe
+        if (!fileUploadManager) {
+          try {
+            fileUploadManager = new FileUploadManager("comprobanteTransferencia", {
+              maxFiles: 5,
+              maxSizeMB: 8,
+              acceptedTypes: ["image/jpeg", "image/jpg", "image/png", "image/webp", "application/pdf"],
+              showPreviews: true,
+              previewContainerId: "comprobantesPreviews",
+              allowMultiple: true,
+              onFilesChange: (files) => {
+                console.log(`📎 ${files.length} archivo(s) seleccionado(s)`);
+              }
+            });
+          } catch (error) {
+            console.warn("FileUploadManager no disponible:", error);
+          }
+        }
       }
     }
 
@@ -510,7 +667,19 @@
 
     // Procesar el pago
     async function procesarPagoCredito() {
-      console.log(`✅ Procesando pago con método: ${metodoPagoSeleccionado}`);
+      // Validar que haya un monto a pagar
+      const montoPagar = parseFloat(montoAPagarInput?.value || 0);
+      if (!montoPagar || montoPagar <= 0) {
+        await Swal.fire({
+          icon: "warning",
+          title: "Monto inválido",
+          text: "Selecciona al menos una deuda o ingresa un monto válido.",
+          confirmButtonColor: "#F97316",
+        });
+        return;
+      }
+
+      console.log(`✅ Procesando pago de ${formatCurrency(montoPagar)} con método: ${metodoPagoSeleccionado}`);
       
       if (metodoPagoSeleccionado === "mercadopago") {
         console.log("💳 Procesando pago con Mercado Pago...");
@@ -522,28 +691,59 @@
           confirmButtonColor: "#F97316",
         });
       } else if (metodoPagoSeleccionado === "transferencia") {
-        console.log("� Procesando pago con transferencia bancaria...");
-        const comprobante = document.getElementById("comprobanteTransferencia");
+        console.log("🏦 Procesando pago con transferencia bancaria...");
         
-        if (!comprobante?.files?.length) {
+        // Validar que haya comprobantes
+        if (fileUploadManager && !fileUploadManager.hasFiles()) {
           await Swal.fire({
             icon: "warning",
             title: "Comprobante requerido",
-            text: "Por favor adjunta tu comprobante de transferencia.",
+            text: "Por favor adjunta al menos un comprobante de transferencia.",
             confirmButtonColor: "#F97316",
           });
           return;
         }
 
-        // TODO: Enviar comprobante al backend
+        // Obtener items seleccionados
+        const selectedDebts = debtItems.filter(item => item.selected);
+        const debtIds = selectedDebts.map(item => item.id);
+
+        console.log("📋 Deudas seleccionadas:", debtIds);
+        console.log("💰 Monto a pagar:", montoPagar);
+        console.log("📎 Archivos adjuntos:", fileUploadManager?.getFileCount() || 0);
+
+        // TODO: Enviar comprobante y datos al backend
+        // const formData = new FormData();
+        // formData.append('monto', montoPagar);
+        // formData.append('debtIds', JSON.stringify(debtIds));
+        // if (fileUploadManager) {
+        //   const files = fileUploadManager.getFiles();
+        //   files.forEach((file, index) => {
+        //     formData.append(`comprobante_${index}`, file);
+        //   });
+        // }
+
         await Swal.fire({
           icon: "success",
           title: "Comprobante recibido",
-          text: "Tu pago será verificado en las próximas 24 horas.",
+          html: `
+            <p>Tu pago de <strong>${formatCurrency(montoPagar)}</strong> será verificado en las próximas 24 horas.</p>
+            <p style="margin-top: 1rem; color: #6b7280; font-size: 0.9rem;">
+              ${selectedDebts.length > 0 ? `Aplicado a ${selectedDebts.length} concepto(s)` : "Abono a cuenta"}
+            </p>
+          `,
           confirmButtonColor: "#F97316",
         });
         
+        // Limpiar y cerrar
+        if (fileUploadManager) {
+          fileUploadManager.clear();
+        }
+        debtItems.forEach(item => item.selected = false);
         cerrarModalPago();
+        
+        // Recargar datos
+        loadCredito();
       }
     }
 
