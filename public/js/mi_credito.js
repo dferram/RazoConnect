@@ -485,27 +485,23 @@
 
     async function cargarDeudaPendiente() {
       try {
-        const response = await API.apiCall("/cliente/credito?page=1&limit=100", {
+        // Usar el nuevo endpoint que calcula saldos pendientes reales
+        const response = await API.apiCall("/cliente/credito/pendientes", {
           method: "GET",
         });
 
         if (response.ok && response.data?.success) {
-          const movimientos = response.data.data?.movimientos || [];
-          // Filtrar solo cargos (deuda pendiente)
-          debtItems = movimientos
-            .filter(mov => {
-              const tipo = (mov.tipo_movimiento || mov.tipo || "").toString().toLowerCase();
-              return ["cargo", "credito", "compra"].includes(tipo);
-            })
-            .map(mov => ({
-              id: mov.movimientoId || mov.movimiento_id,
-              concepto: mov.descripcion || mov.concepto || "Cargo",
-              fecha: mov.fecha || mov.fecha_movimiento,
-              monto: Math.abs(parseFloat(mov.monto || 0)),
-              selected: false,
-              pagoEstatus: mov.pagoEstatus || null,
-              pagoId: mov.pagoId || null
-            }));
+          const movimientosPendientes = response.data.data || [];
+          
+          // Mapear los movimientos pendientes con saldo real
+          debtItems = movimientosPendientes.map(mov => ({
+            id: mov.referenciaId,
+            concepto: mov.concepto || `Cargo ${mov.referenciaId}`,
+            fecha: mov.fecha,
+            monto: parseFloat(mov.saldoPendiente || 0),
+            montoOriginal: parseFloat(mov.montoOriginal || 0),
+            selected: false
+          }));
 
           renderDebtsTable();
         } else {
@@ -542,31 +538,34 @@
             })
           : "—";
 
-        const tienePagoPendiente = item.pagoEstatus === 'PENDIENTE';
-        const disabledAttr = tienePagoPendiente ? 'disabled' : '';
-        const disabledStyle = tienePagoPendiente ? 'opacity: 0.5; cursor: not-allowed;' : 'cursor: pointer;';
-        const estadoPago = tienePagoPendiente 
-          ? '<span class="badge bg-warning text-dark" style="font-size: 0.7rem;">Pago en revisión</span>' 
+        // Verificar si hay abonos parciales
+        const tieneAbonosParciales = item.montoOriginal && item.monto < item.montoOriginal;
+        const infoAbonos = tieneAbonosParciales 
+          ? `<div style="font-size: 0.75rem; color: #059669; margin-top: 0.25rem;">
+               <i class="bi bi-check-circle"></i> Abonado: ${formatCurrency(item.montoOriginal - item.monto)}
+             </div>` 
           : '';
 
         return `
-          <tr style="${tienePagoPendiente ? 'background-color: #fffbeb;' : ''}">
+          <tr>
             <td>
               <input 
                 type="checkbox" 
                 class="debt-checkbox" 
                 data-index="${index}"
                 ${item.selected ? "checked" : ""}
-                ${disabledAttr}
-                style="${disabledStyle}"
+                style="cursor: pointer;"
               />
             </td>
             <td>
-              ${item.concepto}
-              ${estadoPago}
+              <div>${item.concepto}</div>
+              ${infoAbonos}
             </td>
             <td>${fecha}</td>
-            <td class="text-end fw-bold">${formatCurrency(item.monto)}</td>
+            <td class="text-end">
+              <div class="fw-bold text-danger">${formatCurrency(item.monto)}</div>
+              ${tieneAbonosParciales ? `<div style="font-size: 0.75rem; color: #6b7280; text-decoration: line-through;">Original: ${formatCurrency(item.montoOriginal)}</div>` : ''}
+            </td>
           </tr>
         `;
       }).join("");

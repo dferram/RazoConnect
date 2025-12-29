@@ -305,7 +305,7 @@ async function exportarLoteCxC(req, res) {
  * Obtiene métricas del dashboard de cobranza
  */
 async function getMetricasCobranza(req, res) {
-    const client = await pool.connect();
+    const client = await db.pool.connect();
     
     try {
         // Ejecutar consultas en paralelo
@@ -357,7 +357,7 @@ async function getMetricasCobranza(req, res) {
  * Obtiene lista paginada de clientes con crédito
  */
 async function getClientesCredito(req, res) {
-    const client = await pool.connect();
+    const client = await db.pool.connect();
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const offset = (page - 1) * limit;
@@ -411,8 +411,309 @@ async function getClientesCredito(req, res) {
     }
 }
 
+async function obtenerPagosPendientes(req, res) {
+    try {
+        const { rows } = await db.query(`
+            SELECT 
+                pc.pago_id,
+                pc.cliente_id,
+                pc.monto,
+                pc.tipo_pago,
+                pc.comprobante_url,
+                pc.referencia_bancaria,
+                pc.transaccion_id,
+                pc.fecha_pago,
+                pc.movimientos_aplicados,
+                c.nombre,
+                c.apellido,
+                c.email,
+                cc.credito_id,
+                cc.saldo_deudor
+            FROM pagos_clientes pc
+            INNER JOIN clientes c ON c.clienteid = pc.cliente_id
+            LEFT JOIN cliente_creditos cc ON cc.cliente_id = pc.cliente_id AND cc.estado_credito = 'ACTIVO'
+            WHERE pc.estatus = 'PENDIENTE'
+            ORDER BY pc.fecha_pago DESC
+        `);
+
+        return res.json({
+            success: true,
+            data: rows
+        });
+    } catch (error) {
+        console.error('Error obteniendo pagos pendientes:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Error al obtener pagos pendientes'
+        });
+    }
+}
+
+async function gestionarPago(req, res) {
+    const { id } = req.params;
+    const { accion, motivo } = req.body;
+    const adminId = req.user?.adminId || req.user?.userId;
+
+    if (!accion || !['aprobar', 'rechazar'].includes(accion)) {
+        return res.status(400).json({
+            success: false,
+            message: 'Acción inválida. Debe ser "aprobar" o "rechazar"'
+        });
+    }
+
+    const client = await db.pool.connect();
+
+    try {
+        await client.query('BEGIN');
+
+        const { rows: [pago] } = await client.query(
+            'SELECT * FROM pagos_clientes WHERE pago_id = $1',
+            [id]
+        );
+
+        if (!pago) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({
+                success: false,
+                message: 'Pago no encontrado'
+            });
+        }
+
+        if (pago.estatus !== 'PENDIENTE') {
+            await client.query('ROLLBACK');
+            return res.status(400).json({
+                success: false,
+                message: `Este pago ya fue ${pago.estatus.toLowerCase()}`
+            });
+        }
+
+        if (accion === 'aprobar') {
+            const { rows: [credito] } = await client.query(
+                'SELECT credito_id, saldo_deudor FROM cliente_creditos WHERE cliente_id = $1 AND estado_credito = \'ACTIVO\'',
+                [pago.cliente_id]
+            );
+
+            if (!credito) {
+                await client.query('ROLLBACK');
+                return res.status(400).json({
+                    success: false,
+                    message: 'El cliente no tiene un crédito activo'
+                });
+            }
+
+            const nuevoSaldo = Math.max(0, parseFloat(credito.saldo_deudor) - parseFloat(pago.monto));
+
+            await client.query(
+                'UPDATE cliente_creditos SET saldo_deudor = $1, ultima_actualizacion = CURRENT_TIMESTAMP WHERE credito_id = $2',
+                [nuevoSaldo, credito.credito_id]
+            );
+
+            // ========== ALGORITMO DE CONCILIACIÓN: HERENCIA DE REFERENCIA ==========
+            // Obtener los IDs de los movimientos (cargos) que el cliente quiso pagar
+            let movimientosAplicados = [];
+            try {
+                movimientosAplicados = JSON.parse(pago.movimientos_aplicados || '[]');
+            } catch (e) {
+                console.warn(`[PAGO-${pago.pago_id}] Error parseando movimientos_aplicados:`, e);
+                movimientosAplicados = [];
+            }
+
+            if (movimientosAplicados.length > 0) {
+                // Obtener los cargos originales con su referencia_id y monto
+                const { rows: cargosOriginales } = await client.query(`
+                    SELECT 
+                        movimiento_id,
+                        referencia_id,
+                        monto,
+                        descripcion
+                    FROM credito_movimientos
+                    WHERE movimiento_id = ANY($1::int[])
+                      AND tipo_movimiento IN ('CARGO', 'CREDITO', 'COMPRA')
+                    ORDER BY fecha_movimiento ASC
+                `, [movimientosAplicados]);
+
+                if (cargosOriginales.length === 0) {
+                    console.warn(`[PAGO-${pago.pago_id}] No se encontraron cargos originales para los IDs proporcionados`);
+                }
+
+                // Calcular el saldo pendiente de cada cargo (cargo - abonos previos)
+                const cargosConSaldo = [];
+                for (const cargo of cargosOriginales) {
+                    // Obtener el total de abonos previos para este referencia_id
+                    const { rows: [abonosPrevios] } = await client.query(`
+                        SELECT COALESCE(SUM(monto), 0) as total_abonado
+                        FROM credito_movimientos
+                        WHERE credito_id = $1
+                          AND referencia_id = $2
+                          AND tipo_movimiento IN ('ABONO', 'PAGO')
+                    `, [credito.credito_id, cargo.referencia_id]);
+
+                    const saldoPendiente = parseFloat(cargo.monto) - parseFloat(abonosPrevios.total_abonado);
+                    
+                    if (saldoPendiente > 0.01) { // Tolerancia de centavos
+                        cargosConSaldo.push({
+                            ...cargo,
+                            saldoPendiente
+                        });
+                    }
+                }
+
+                // Distribuir el monto del pago entre los cargos pendientes
+                let montoRestante = parseFloat(pago.monto);
+                
+                for (const cargo of cargosConSaldo) {
+                    if (montoRestante <= 0) break;
+
+                    // Determinar cuánto abonar a este cargo (mínimo entre saldo pendiente y monto restante)
+                    const montoAbono = Math.min(cargo.saldoPendiente, montoRestante);
+                    
+                    // Insertar ABONO con el MISMO referencia_id del cargo original (CLAVE DE LA CONCILIACIÓN)
+                    await client.query(`
+                        INSERT INTO credito_movimientos 
+                            (credito_id, tipo_movimiento, monto, referencia_id, descripcion, saldo_despues_movimiento, registrado_por, admin_id)
+                        VALUES 
+                            ($1, 'ABONO', $2, $3, $4, $5, $6, $6)
+                    `, [
+                        credito.credito_id,
+                        montoAbono,
+                        cargo.referencia_id, // ← HERENCIA DE REFERENCIA: Usar el mismo ID del cargo (ej: "PED-9")
+                        `Abono a ${cargo.referencia_id} (Pago PAGO-${pago.pago_id}, Ref: ${pago.referencia_bancaria || pago.transaccion_id || 'N/A'})`,
+                        nuevoSaldo,
+                        adminId
+                    ]);
+
+                    montoRestante -= montoAbono;
+                    
+                    console.log(`[PAGO-${pago.pago_id}] Abono creado: $${montoAbono.toFixed(2)} → ${cargo.referencia_id}`);
+                }
+
+                // Si sobra dinero (pago mayor a deuda), crear un abono genérico
+                if (montoRestante > 0.01) {
+                    await client.query(`
+                        INSERT INTO credito_movimientos 
+                            (credito_id, tipo_movimiento, monto, referencia_id, descripcion, saldo_despues_movimiento, registrado_por, admin_id)
+                        VALUES 
+                            ($1, 'ABONO', $2, $3, $4, $5, $6, $6)
+                    `, [
+                        credito.credito_id,
+                        montoRestante,
+                        `PAGO-${pago.pago_id}`,
+                        `Saldo a favor por pago excedente (Ref: ${pago.referencia_bancaria || pago.transaccion_id || 'N/A'})`,
+                        nuevoSaldo,
+                        adminId
+                    ]);
+                    
+                    console.log(`[PAGO-${pago.pago_id}] Saldo a favor: $${montoRestante.toFixed(2)}`);
+                }
+
+            } else {
+                // Si no hay movimientos aplicados, crear un abono genérico (pago sin asignación específica)
+                await client.query(`
+                    INSERT INTO credito_movimientos 
+                        (credito_id, tipo_movimiento, monto, referencia_id, descripcion, saldo_despues_movimiento, registrado_por, admin_id)
+                    VALUES 
+                        ($1, 'ABONO', $2, $3, $4, $5, $6, $6)
+                `, [
+                    credito.credito_id,
+                    pago.monto,
+                    `PAGO-${pago.pago_id}`,
+                    `Pago genérico sin asignación específica (Ref: ${pago.referencia_bancaria || pago.transaccion_id || 'N/A'})`,
+                    nuevoSaldo,
+                    adminId
+                ]);
+                
+                console.log(`[PAGO-${pago.pago_id}] Abono genérico creado: $${pago.monto}`);
+            }
+
+            await client.query(
+                'UPDATE pagos_clientes SET estatus = \'APROBADO\', fecha_validacion = CURRENT_TIMESTAMP, validado_por = $1 WHERE pago_id = $2',
+                [adminId, id]
+            );
+
+            await client.query('COMMIT');
+
+            return res.json({
+                success: true,
+                message: 'Pago aprobado exitosamente',
+                data: {
+                    pagoId: pago.pago_id,
+                    nuevoSaldo,
+                    movimientosCreados: movimientosAplicados.length
+                }
+            });
+
+        } else if (accion === 'rechazar') {
+            await client.query(
+                'UPDATE pagos_clientes SET estatus = \'RECHAZADO\', fecha_validacion = CURRENT_TIMESTAMP, validado_por = $1, notas = $2 WHERE pago_id = $3',
+                [adminId, motivo || 'Comprobante no válido', id]
+            );
+
+            await client.query('COMMIT');
+
+            return res.json({
+                success: true,
+                message: 'Pago rechazado',
+                data: {
+                    pagoId: pago.pago_id
+                }
+            });
+        }
+
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('Error gestionando pago:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Error al procesar la solicitud'
+        });
+    } finally {
+        client.release();
+    }
+}
+
+async function obtenerHistorialMovimientos(req, res) {
+    const limit = parseInt(req.query.limit) || 100;
+
+    try {
+        const { rows } = await db.query(`
+            SELECT 
+                cm.movimiento_id,
+                cm.tipo_movimiento,
+                cm.monto,
+                cm.referencia_id,
+                cm.descripcion,
+                cm.fecha_movimiento,
+                cm.saldo_despues_movimiento,
+                c.clienteid,
+                c.nombre,
+                c.apellido,
+                c.email,
+                cc.credito_id
+            FROM credito_movimientos cm
+            INNER JOIN cliente_creditos cc ON cc.credito_id = cm.credito_id
+            INNER JOIN clientes c ON c.clienteid = cc.cliente_id
+            ORDER BY cm.fecha_movimiento DESC
+            LIMIT $1
+        `, [limit]);
+
+        return res.json({
+            success: true,
+            data: rows
+        });
+    } catch (error) {
+        console.error('Error obteniendo historial de movimientos:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Error al obtener el historial de movimientos'
+        });
+    }
+}
+
 module.exports = {
     exportarLoteCxC,
     getMetricasCobranza,
-    getClientesCredito
+    getClientesCredito,
+    obtenerPagosPendientes,
+    gestionarPago,
+    obtenerHistorialMovimientos
 };

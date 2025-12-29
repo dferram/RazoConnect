@@ -8,9 +8,9 @@ const {
 const {
   checkAuthCredit,
   obtenerPerfilCredito,
-  enviarSolicitudCredito,
   obtenerMovimientosCredito,
   registrarPagoCliente,
+  obtenerMovimientosPendientes,
 } = require("../controllers/clientes/creditoController");
 const { authenticate } = require("../middlewares/authMiddleware");
 
@@ -23,8 +23,8 @@ router.get(
 
 router.get("/check-auth-credit", authenticate, checkAuthCredit);
 router.get("/perfil-credito", authenticate, obtenerPerfilCredito);
-router.post("/solicitar-credito", authenticate, enviarSolicitudCredito);
 router.get("/credito", authenticate, obtenerMovimientosCredito);
+router.get("/credito/pendientes", authenticate, obtenerMovimientosPendientes);
 router.post("/pagar-credito", authenticate, registrarPagoCliente);
 
 module.exports = router;

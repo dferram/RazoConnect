@@ -458,10 +458,97 @@ const registrarPagoCliente = async (req, res) => {
   }
 };
 
+async function obtenerMovimientosPendientes(req, res) {
+  try {
+    const clienteId = normalizeClienteId(req);
+    if (!clienteId) {
+      return res.status(401).json({
+        success: false,
+        message: "Cliente no autenticado",
+      });
+    }
+
+    if (!isCliente(req)) {
+      return res.status(403).json({
+        success: false,
+        message: "Acceso denegado. Solo clientes pueden consultar sus movimientos pendientes.",
+      });
+    }
+
+    // Obtener crédito activo
+    const creditoActivo = await fetchCreditoActivo(clienteId);
+    if (!creditoActivo) {
+      return res.json({
+        success: true,
+        data: [],
+      });
+    }
+
+    const creditoId = creditoActivo.credito_id;
+
+    // Consulta SQL simplificada que calcula saldos pendientes
+    // Agrupa por referencia_id y resta los abonos de los cargos
+    const query = `
+      SELECT 
+        cm.referencia_id,
+        MIN(cm.fecha_movimiento) as fecha,
+        MIN(CASE WHEN cm.tipo_movimiento IN ('CARGO', 'CREDITO', 'COMPRA') THEN cm.descripcion END) as concepto,
+        
+        -- Calcular saldo pendiente: Suma de Cargos - Suma de Abonos
+        SUM(
+          CASE 
+            WHEN cm.tipo_movimiento IN ('CARGO', 'CREDITO', 'COMPRA') THEN cm.monto 
+            WHEN cm.tipo_movimiento IN ('ABONO', 'PAGO') THEN -cm.monto 
+            ELSE 0 
+          END
+        ) as saldo_pendiente,
+        
+        -- Monto original del cargo
+        MAX(CASE WHEN cm.tipo_movimiento IN ('CARGO', 'CREDITO', 'COMPRA') THEN cm.monto ELSE 0 END) as monto_original
+        
+      FROM credito_movimientos cm
+      WHERE cm.credito_id = $1
+        AND cm.referencia_id IS NOT NULL
+        AND cm.referencia_id != ''
+        AND cm.referencia_id NOT LIKE 'PAGO-%'
+      GROUP BY cm.referencia_id
+      HAVING SUM(
+        CASE 
+          WHEN cm.tipo_movimiento IN ('CARGO', 'CREDITO', 'COMPRA') THEN cm.monto 
+          WHEN cm.tipo_movimiento IN ('ABONO', 'PAGO') THEN -cm.monto 
+          ELSE 0 
+        END
+      ) > 0.01
+      ORDER BY MIN(cm.fecha_movimiento) ASC
+    `;
+
+    const result = await db.query(query, [creditoId]);
+
+    const movimientosPendientes = result.rows.map((row) => ({
+      referenciaId: row.referencia_id,
+      concepto: row.concepto || `Cargo ${row.referencia_id}`,
+      fecha: row.fecha,
+      saldoPendiente: parseFloat(row.saldo_pendiente || 0),
+      montoOriginal: parseFloat(row.monto_original || 0),
+    }));
+
+    return res.json({
+      success: true,
+      data: movimientosPendientes,
+    });
+  } catch (error) {
+    console.error("Error obteniendo movimientos pendientes:", error);
+    return res.status(500).json({
+      success: false,
+      message: "No fue posible obtener los movimientos pendientes",
+    });
+  }
+}
+
 module.exports = {
   checkAuthCredit,
   obtenerPerfilCredito,
-  enviarSolicitudCredito,
   obtenerMovimientosCredito,
   registrarPagoCliente,
+  obtenerMovimientosPendientes,
 };

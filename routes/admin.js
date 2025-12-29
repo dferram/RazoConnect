@@ -608,6 +608,27 @@ router.get(
 );
 
 router.get(
+  "/cxc/pagos-pendientes",
+  authenticate,
+  authorizeAdmin,
+  cxcController.obtenerPagosPendientes
+);
+
+router.post(
+  "/cxc/pagos/:id/gestionar",
+  authenticate,
+  authorizeAdmin,
+  cxcController.gestionarPago
+);
+
+router.get(
+  "/cxc/historial-movimientos",
+  authenticate,
+  authorizeAdmin,
+  cxcController.obtenerHistorialMovimientos
+);
+
+router.get(
   "/cxp/exportar",
   authenticate,
   authorizeAdmin,

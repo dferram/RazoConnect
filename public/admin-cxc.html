@@ -198,6 +198,47 @@
             </div>
           </section>
 
+          <!-- SECCIÓN: PAGOS POR VALIDAR -->
+          <section class="admin-card" id="seccionPagosValidar" style="display: none;">
+            <div style="padding: 1.5rem; border-bottom: 1px solid #e5e7eb;">
+              <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                <div>
+                  <h3 style="margin: 0; font-size: 1.25rem; font-weight: 700; color: #111827;">
+                    <i class="bi bi-clock-history" style="color: #f59e0b;"></i>
+                    Pagos por validar
+                  </h3>
+                  <p style="margin: 0.25rem 0 0; color: #6b7280; font-size: 0.9rem;">
+                    Transferencias bancarias pendientes de aprobación
+                  </p>
+                </div>
+                <span id="badgePagosPendientes" class="admin-badge warning" style="font-size: 0.875rem;">
+                  0 PENDIENTES
+                </span>
+              </div>
+            </div>
+
+            <div class="table-wrapper">
+              <table class="admin-table" id="tablaPagosPendientes">
+                <thead>
+                  <tr>
+                    <th>Fecha</th>
+                    <th>Cliente</th>
+                    <th style="text-align: right;">Monto</th>
+                    <th>Referencia</th>
+                    <th style="text-align: center; width: 200px;">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="tablaPagosPendientesTbody">
+                  <tr>
+                    <td colspan="5" style="text-align: center; padding: 2rem; color: #9ca3af;">
+                      Cargando pagos pendientes...
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
           <section class="admin-card">
             <div class="table-toolbar" style="padding: 1.5rem; margin-bottom: 1rem;">
               <div class="toolbar-left">
@@ -326,6 +367,55 @@
               </div>
             </div>
           </section>
+
+          <!-- SECCIÓN: HISTORIAL DE MOVIMIENTOS FINANCIEROS -->
+          <section class="admin-card">
+            <div style="padding: 1.5rem; border-bottom: 1px solid #e5e7eb;">
+              <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                <div>
+                  <h3 style="margin: 0; font-size: 1.25rem; font-weight: 700; color: #111827;">
+                    <i class="bi bi-clock-history" style="color: #6b7280;"></i>
+                    Historial Reciente de Cargos y Abonos
+                  </h3>
+                  <p style="margin: 0.25rem 0 0; color: #6b7280; font-size: 0.9rem;">
+                    Últimos 100 movimientos financieros del sistema
+                  </p>
+                </div>
+                <span id="badgeHistorialTotal" class="admin-badge secondary" style="font-size: 0.875rem;">
+                  0 MOVIMIENTOS
+                </span>
+              </div>
+            </div>
+
+            <div id="estadoCargaHistorial" class="loading" style="display: none; min-height: 160px;">
+              <div class="spinner"></div>
+            </div>
+
+            <div id="estadoVacioHistorial" class="empty-state" style="display: none;">
+              <img src="/icon/empty-state.svg" alt="" loading="lazy" />
+              <div>
+                <h3>No hay movimientos</h3>
+                <p>Cuando existan movimientos de crédito, aparecerán aquí.</p>
+              </div>
+            </div>
+
+            <div class="table-wrapper">
+              <table id="tablaHistorial" class="admin-table" style="display: none;">
+                <thead>
+                  <tr>
+                    <th style="width: 140px;">Fecha</th>
+                    <th>Cliente</th>
+                    <th style="text-align: center; width: 100px;">Tipo</th>
+                    <th style="text-align: right; width: 130px;">Monto</th>
+                    <th>Referencia</th>
+                    <th>Descripción</th>
+                    <th style="text-align: right; width: 130px;">Saldo Después</th>
+                  </tr>
+                </thead>
+                <tbody id="tablaHistorialTbody"></tbody>
+              </table>
+            </div>
+          </section>
         </div>
       </main>
     </div>
@@ -391,6 +481,58 @@
             <span id="abonoGuardarTxt">Guardar abono</span>
             <span id="abonoGuardarSpinner" class="spinner" style="display: none;"></span>
           </button>
+        </footer>
+      </div>
+    </div>
+
+    <!-- Modal: Ver Detalle de Pago -->
+    <div id="modalDetallePago" class="modal-overlay" style="display: none;">
+      <div class="modal-panel" style="max-width: 1200px; width: 95%;">
+        <header class="modal-panel__header">
+          <div>
+            <p class="eyebrow">Comprobante de pago</p>
+            <h2 id="comprobanteCliente">—</h2>
+            <p class="modal-balance">
+              Monto: <strong id="comprobanteMonto">$0.00</strong>
+            </p>
+          </div>
+          <button
+            id="btnCerrarModalDetalle"
+            type="button"
+            class="btn btn-icon ghost"
+            aria-label="Cerrar modal"
+            title="Cerrar modal"
+          >
+            <i class="bi bi-x-lg" aria-hidden="true"></i>
+          </button>
+        </header>
+        <div class="modal-panel__body" style="max-height: 70vh; overflow-y: auto;">
+          <div id="comprobanteContenido">
+            <p style="color: #9ca3af; text-align: center; padding: 2rem;">Cargando información...</p>
+          </div>
+        </div>
+        <footer class="modal-panel__footer" style="display: flex; gap: 0.75rem; justify-content: space-between; flex-wrap: wrap;">
+          <button id="btnCerrarDetalle" type="button" class="btn btn-secondary">
+            <i class="bi bi-x-circle"></i> Cerrar
+          </button>
+          <div style="display: flex; gap: 0.75rem;">
+            <button 
+              id="btnRechazarDesdeModal" 
+              type="button" 
+              class="btn btn-danger"
+              style="display: flex; align-items: center; gap: 0.5rem;"
+            >
+              <i class="bi bi-x-circle-fill"></i> Rechazar pago
+            </button>
+            <button 
+              id="btnAprobarDesdeModal" 
+              type="button" 
+              class="btn btn-success"
+              style="display: flex; align-items: center; gap: 0.5rem;"
+            >
+              <i class="bi bi-check-circle-fill"></i> Aprobar pago
+            </button>
+          </div>
         </footer>
       </div>
     </div>
