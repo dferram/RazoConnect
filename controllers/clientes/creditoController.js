@@ -125,6 +125,17 @@ const obtenerPerfilCredito = async (req, res) => {
 
     const creditoActivo = await fetchCreditoActivo(clienteId);
     const creditSummary = créditoResumen(creditoActivo);
+    
+    // Obtener pagos pendientes de validación
+    const pagosPendientesQuery = `
+      SELECT COALESCE(SUM(monto), 0) as total_pendiente
+      FROM pagos_clientes
+      WHERE cliente_id = $1
+        AND estatus = 'PENDIENTE'
+    `;
+    const { rows: pagosPendientes } = await db.query(pagosPendientesQuery, [clienteId]);
+    const saldoEnRevision = Number.parseFloat(pagosPendientes[0]?.total_pendiente || 0);
+    
     const data = creditSummary
       ? {
           limite_credito: creditSummary.limiteCredito,
@@ -132,6 +143,8 @@ const obtenerPerfilCredito = async (req, res) => {
           estado_credito: creditSummary.estado,
           saldo_disponible: creditSummary.creditoDisponible,
           dias_gracia: creditSummary.diasGracia,
+          saldo_en_revision: saldoEnRevision,
+          saldo_estimado: Math.max(creditSummary.saldoDeudor - saldoEnRevision, 0),
         }
       : {
           limite_credito: 0,
@@ -139,6 +152,8 @@ const obtenerPerfilCredito = async (req, res) => {
           estado_credito: null,
           saldo_disponible: 0,
           dias_gracia: 0,
+          saldo_en_revision: saldoEnRevision,
+          saldo_estimado: 0,
         };
 
     return res.json({
@@ -297,21 +312,26 @@ const obtenerMovimientosCredito = async (req, res) => {
     const totalMovimientos = parseInt(countResult.rows[0]?.total || 0, 10);
     const totalPages = Math.ceil(totalMovimientos / limit);
 
-    // Obtener los movimientos paginados
+    // Obtener los movimientos paginados con estado de pago
     const movimientosResult = await db.query(
       `SELECT 
-        movimiento_id,
-        tipo_movimiento,
-        monto,
-        saldo_despues_movimiento,
-        referencia_id,
-        descripcion,
-        fecha_movimiento
-       FROM credito_movimientos
-       WHERE credito_id = $1
-       ORDER BY fecha_movimiento DESC
+        cm.movimiento_id,
+        cm.tipo_movimiento,
+        cm.monto,
+        cm.saldo_despues_movimiento,
+        cm.referencia_id,
+        cm.descripcion,
+        cm.fecha_movimiento,
+        pc.pago_id,
+        pc.estatus as pago_estatus
+       FROM credito_movimientos cm
+       LEFT JOIN pagos_clientes pc ON 
+         pc.movimientos_aplicados::jsonb ? cm.movimiento_id::text
+         AND pc.cliente_id = $4
+       WHERE cm.credito_id = $1
+       ORDER BY cm.fecha_movimiento DESC
        LIMIT $2 OFFSET $3`,
-      [creditoId, limit, offset]
+      [creditoId, limit, offset, clienteId]
     );
 
     const movimientos = movimientosResult.rows.map((mov) => ({
@@ -322,6 +342,8 @@ const obtenerMovimientosCredito = async (req, res) => {
       referenciaId: mov.referencia_id,
       descripcion: mov.descripcion,
       fecha: mov.fecha_movimiento,
+      pagoId: mov.pago_id,
+      pagoEstatus: mov.pago_estatus,
     }));
 
     return res.json({
@@ -347,9 +369,99 @@ const obtenerMovimientosCredito = async (req, res) => {
   }
 };
 
+const registrarPagoCliente = async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: "No autenticado",
+      });
+    }
+
+    if (!isCliente(req)) {
+      return res.status(403).json({
+        success: false,
+        message: "Acceso denegado",
+      });
+    }
+
+    const clienteId = normalizeClienteId(req);
+    if (!clienteId) {
+      return res.status(400).json({
+        success: false,
+        message: "Identificador de cliente inválido",
+      });
+    }
+
+    const { monto, tipoPago, movimientosIds, referenciaBancaria, transaccionId } = req.body;
+
+    if (!monto || monto <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "El monto del pago es requerido y debe ser mayor a cero",
+      });
+    }
+
+    if (!tipoPago || !["TRANSFERENCIA", "MERCADOPAGO", "EFECTIVO", "CHEQUE", "OTRO"].includes(tipoPago)) {
+      return res.status(400).json({
+        success: false,
+        message: "Tipo de pago inválido",
+      });
+    }
+
+    const creditoActivo = await fetchCreditoActivo(clienteId);
+    const creditoId = creditoActivo?.credito_id || null;
+
+    const comprobanteUrl = req.body.comprobanteUrl || null;
+    const movimientosAplicados = Array.isArray(movimientosIds) ? movimientosIds : [];
+
+    const insertQuery = `
+      INSERT INTO pagos_clientes 
+        (cliente_id, credito_id, monto, tipo_pago, estatus, comprobante_url, 
+         referencia_bancaria, transaccion_id, movimientos_aplicados)
+      VALUES 
+        ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      RETURNING pago_id, fecha_pago
+    `;
+
+    const values = [
+      clienteId,
+      creditoId,
+      monto,
+      tipoPago,
+      tipoPago === "MERCADOPAGO" ? "APROBADO" : "PENDIENTE",
+      comprobanteUrl,
+      referenciaBancaria || null,
+      transaccionId || null,
+      JSON.stringify(movimientosAplicados),
+    ];
+
+    const { rows } = await db.query(insertQuery, values);
+
+    return res.json({
+      success: true,
+      message: tipoPago === "MERCADOPAGO" 
+        ? "Pago procesado exitosamente" 
+        : "Pago registrado. Será validado en las próximas 24 horas",
+      data: {
+        pagoId: rows[0].pago_id,
+        fechaPago: rows[0].fecha_pago,
+        estatus: tipoPago === "MERCADOPAGO" ? "APROBADO" : "PENDIENTE",
+      },
+    });
+  } catch (error) {
+    console.error("Error registrando pago de cliente:", error);
+    return res.status(500).json({
+      success: false,
+      message: "No fue posible registrar el pago",
+    });
+  }
+};
+
 module.exports = {
   checkAuthCredit,
   obtenerPerfilCredito,
   enviarSolicitudCredito,
   obtenerMovimientosCredito,
+  registrarPagoCliente,
 };

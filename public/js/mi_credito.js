@@ -93,6 +93,8 @@
       const saldo = data?.saldoDeudor ?? data?.saldo ?? 0;
       const disponible =
         data?.creditoDisponible ?? data?.disponible ?? Math.max(limite - saldo, 0);
+      const saldoEnRevision = data?.saldo_en_revision ?? 0;
+      const saldoEstimado = data?.saldo_estimado ?? Math.max(saldo - saldoEnRevision, 0);
 
       if (limiteEl) {
         limiteEl.textContent = formatCurrency(limite);
@@ -106,6 +108,22 @@
             ? disponible
             : Math.max(limite - saldo, 0);
         disponibleEl.textContent = formatCurrency(safeDisponible);
+      }
+
+      // Mostrar/ocultar tarjetas de pagos en revisión y saldo estimado
+      const cardPagosEnRevision = document.getElementById("cardPagosEnRevision");
+      const cardSaldoEstimado = document.getElementById("cardSaldoEstimado");
+      const saldoEnRevisionEl = document.getElementById("saldoEnRevision");
+      const saldoEstimadoEl = document.getElementById("saldoEstimado");
+
+      if (saldoEnRevision > 0) {
+        if (cardPagosEnRevision) cardPagosEnRevision.style.display = "";
+        if (cardSaldoEstimado) cardSaldoEstimado.style.display = "";
+        if (saldoEnRevisionEl) saldoEnRevisionEl.textContent = formatCurrency(saldoEnRevision);
+        if (saldoEstimadoEl) saldoEstimadoEl.textContent = formatCurrency(saldoEstimado);
+      } else {
+        if (cardPagosEnRevision) cardPagosEnRevision.style.display = "none";
+        if (cardSaldoEstimado) cardSaldoEstimado.style.display = "none";
       }
     }
 
@@ -484,7 +502,9 @@
               concepto: mov.descripcion || mov.concepto || "Cargo",
               fecha: mov.fecha || mov.fecha_movimiento,
               monto: Math.abs(parseFloat(mov.monto || 0)),
-              selected: false
+              selected: false,
+              pagoEstatus: mov.pagoEstatus || null,
+              pagoId: mov.pagoId || null
             }));
 
           renderDebtsTable();
@@ -522,18 +542,29 @@
             })
           : "—";
 
+        const tienePagoPendiente = item.pagoEstatus === 'PENDIENTE';
+        const disabledAttr = tienePagoPendiente ? 'disabled' : '';
+        const disabledStyle = tienePagoPendiente ? 'opacity: 0.5; cursor: not-allowed;' : 'cursor: pointer;';
+        const estadoPago = tienePagoPendiente 
+          ? '<span class="badge bg-warning text-dark" style="font-size: 0.7rem;">Pago en revisión</span>' 
+          : '';
+
         return `
-          <tr>
+          <tr style="${tienePagoPendiente ? 'background-color: #fffbeb;' : ''}">
             <td>
               <input 
                 type="checkbox" 
                 class="debt-checkbox" 
                 data-index="${index}"
                 ${item.selected ? "checked" : ""}
-                style="cursor: pointer;"
+                ${disabledAttr}
+                style="${disabledStyle}"
               />
             </td>
-            <td>${item.concepto}</td>
+            <td>
+              ${item.concepto}
+              ${estadoPago}
+            </td>
             <td>${fecha}</td>
             <td class="text-end fw-bold">${formatCurrency(item.monto)}</td>
           </tr>
@@ -712,38 +743,52 @@
         console.log("💰 Monto a pagar:", montoPagar);
         console.log("📎 Archivos adjuntos:", fileUploadManager?.getFileCount() || 0);
 
-        // TODO: Enviar comprobante y datos al backend
-        // const formData = new FormData();
-        // formData.append('monto', montoPagar);
-        // formData.append('debtIds', JSON.stringify(debtIds));
-        // if (fileUploadManager) {
-        //   const files = fileUploadManager.getFiles();
-        //   files.forEach((file, index) => {
-        //     formData.append(`comprobante_${index}`, file);
-        //   });
-        // }
+        try {
+          // Enviar pago al backend
+          const response = await API.apiCall("/cliente/pagar-credito", {
+            method: "POST",
+            body: JSON.stringify({
+              monto: montoPagar,
+              tipoPago: "TRANSFERENCIA",
+              movimientosIds: debtIds,
+              referenciaBancaria: "Transferencia bancaria",
+            }),
+          });
 
-        await Swal.fire({
-          icon: "success",
-          title: "Comprobante recibido",
-          html: `
-            <p>Tu pago de <strong>${formatCurrency(montoPagar)}</strong> será verificado en las próximas 24 horas.</p>
-            <p style="margin-top: 1rem; color: #6b7280; font-size: 0.9rem;">
-              ${selectedDebts.length > 0 ? `Aplicado a ${selectedDebts.length} concepto(s)` : "Abono a cuenta"}
-            </p>
-          `,
-          confirmButtonColor: "#F97316",
-        });
-        
-        // Limpiar y cerrar
-        if (fileUploadManager) {
-          fileUploadManager.clear();
+          if (!response.ok || response.data?.success === false) {
+            throw new Error(response.data?.message || "Error al registrar el pago");
+          }
+
+          await Swal.fire({
+            icon: "success",
+            title: "Comprobante recibido",
+            html: `
+              <p>Tu pago de <strong>${formatCurrency(montoPagar)}</strong> será verificado en las próximas 24 horas.</p>
+              <p style="margin-top: 1rem; color: #6b7280; font-size: 0.9rem;">
+                ${selectedDebts.length > 0 ? `Aplicado a ${selectedDebts.length} concepto(s)` : "Abono a cuenta"}
+              </p>
+            `,
+            confirmButtonColor: "#F97316",
+          });
+          
+          // Limpiar y cerrar
+          if (fileUploadManager) {
+            fileUploadManager.clear();
+          }
+          debtItems.forEach(item => item.selected = false);
+          cerrarModalPago();
+          
+          // Recargar datos
+          loadCredito();
+        } catch (error) {
+          console.error("Error registrando pago:", error);
+          await Swal.fire({
+            icon: "error",
+            title: "Error al registrar pago",
+            text: error.message || "No fue posible registrar tu pago. Inténtalo nuevamente.",
+            confirmButtonColor: "#F97316",
+          });
         }
-        debtItems.forEach(item => item.selected = false);
-        cerrarModalPago();
-        
-        // Recargar datos
-        loadCredito();
       }
     }
 
