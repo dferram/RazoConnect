@@ -1,5 +1,5 @@
 // API Configuration
-const API_BASE_URL = "http://localhost:3000/api";
+const API_BASE_URL = "http://localhost:8080/api";
 
 const ADMIN_TOKEN_KEY = "razoconnect_admin_token";
 const ADMIN_DATA_KEY = "razoconnect_admin";
