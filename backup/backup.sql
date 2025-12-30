@@ -5,7 +5,7 @@
 -- Dumped from database version 17.5
 -- Dumped by pg_dump version 17.5
 
--- Started on 2025-12-29 02:15:42
+-- Started on 2025-12-29 23:05:52
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -2688,7 +2688,7 @@ INSERT INTO public.agentesdeventas (agenteid, nombre, apellido, email, passwordh
 --
 
 INSERT INTO public.carritodecompra (carritoid, clienteid, fechacreacion, ultimamodificacion) VALUES (1, 1, '2025-12-19 17:46:56.916237', '2025-12-26 17:08:47.679796');
-INSERT INTO public.carritodecompra (carritoid, clienteid, fechacreacion, ultimamodificacion) VALUES (2, 2, '2025-12-21 23:06:38.490057', '2025-12-29 02:01:28.225836');
+INSERT INTO public.carritodecompra (carritoid, clienteid, fechacreacion, ultimamodificacion) VALUES (2, 2, '2025-12-21 23:06:38.490057', '2025-12-29 02:32:58.062013');
 
 
 --
@@ -2730,8 +2730,8 @@ INSERT INTO public.categorias (categoriaid, nombre, descripcion, parentcategoria
 -- Data for Name: cliente_creditos; Type: TABLE DATA; Schema: public; Owner: ferram
 --
 
-INSERT INTO public.cliente_creditos (credito_id, cliente_id, limite_credito, saldo_deudor, dias_gracia, estado_credito, fecha_creacion, ultima_actualizacion, exportado_en, reporte_id) VALUES (2, 1, 20000.00, 5994.00, 15, 'ACTIVO', '2025-12-26 16:59:35.424281', '2025-12-26 17:10:47.864788', NULL, NULL);
-INSERT INTO public.cliente_creditos (credito_id, cliente_id, limite_credito, saldo_deudor, dias_gracia, estado_credito, fecha_creacion, ultima_actualizacion, exportado_en, reporte_id) VALUES (1, 2, 5000.00, 896.40, 15, 'ACTIVO', '2025-12-25 01:42:28.676782', '2025-12-29 02:01:37.762643', '2025-12-25 05:49:15.580167', 'CxC-20251225-054915');
+INSERT INTO public.cliente_creditos (credito_id, cliente_id, limite_credito, saldo_deudor, dias_gracia, estado_credito, fecha_creacion, ultima_actualizacion, exportado_en, reporte_id) VALUES (2, 1, 20000.00, 0.00, 15, 'ACTIVO', '2025-12-26 16:59:35.424281', '2025-12-29 02:26:47.864091', NULL, NULL);
+INSERT INTO public.cliente_creditos (credito_id, cliente_id, limite_credito, saldo_deudor, dias_gracia, estado_credito, fecha_creacion, ultima_actualizacion, exportado_en, reporte_id) VALUES (1, 2, 5000.00, 0.00, 15, 'ACTIVO', '2025-12-25 01:42:28.676782', '2025-12-29 02:34:59.970783', '2025-12-25 05:49:15.580167', 'CxC-20251225-054915');
 
 
 --
@@ -2793,6 +2793,19 @@ INSERT INTO public.communicationlogs (logid, "timestamp", destinatario, asunto, 
 INSERT INTO public.communicationlogs (logid, "timestamp", destinatario, asunto, estatusemail, errormensaje, pedidoid, clienteid, proveedorid) VALUES (23, '2025-12-29 02:01:40.445924', 'dferram8@gmail.com', '⚠️ Alerta: Backorder generado para el pedido #8', 'Enviado', NULL, NULL, NULL, NULL);
 INSERT INTO public.communicationlogs (logid, "timestamp", destinatario, asunto, estatusemail, errormensaje, pedidoid, clienteid, proveedorid) VALUES (24, '2025-12-29 02:01:40.657885', 'dferramm@gmail.com', 'Tu pedido RazoConnect ha sido recibido (#8)', 'Enviado', NULL, NULL, NULL, NULL);
 INSERT INTO public.communicationlogs (logid, "timestamp", destinatario, asunto, estatusemail, errormensaje, pedidoid, clienteid, proveedorid) VALUES (25, '2025-12-29 02:01:40.67848', 'dferram8@gmail.com', '💰 Nuevo Pedido #8 - $896.40', 'Enviado', NULL, NULL, NULL, NULL);
+INSERT INTO public.communicationlogs (logid, "timestamp", destinatario, asunto, estatusemail, errormensaje, pedidoid, clienteid, proveedorid) VALUES (26, '2025-12-29 02:31:05.578449', 'dferram8@gmail.com', '💰 Nuevo Pedido #9 - $1234.80', 'Enviado', NULL, NULL, NULL, NULL);
+INSERT INTO public.communicationlogs (logid, "timestamp", destinatario, asunto, estatusemail, errormensaje, pedidoid, clienteid, proveedorid) VALUES (27, '2025-12-29 02:31:05.833855', 'dferramm@gmail.com', 'Tu pedido RazoConnect ha sido recibido (#9)', 'Enviado', NULL, NULL, NULL, NULL);
+INSERT INTO public.communicationlogs (logid, "timestamp", destinatario, asunto, estatusemail, errormensaje, pedidoid, clienteid, proveedorid) VALUES (28, '2025-12-29 02:31:05.859533', 'dferram8@gmail.com', '⚠️ Alerta: Backorder generado para el pedido #9', 'Enviado', NULL, NULL, NULL, NULL);
+INSERT INTO public.communicationlogs (logid, "timestamp", destinatario, asunto, estatusemail, errormensaje, pedidoid, clienteid, proveedorid) VALUES (29, '2025-12-29 02:31:42.057377', 'dferramm@gmail.com', 'Tu pedido RazoConnect ha sido recibido (#10)', 'Enviado', NULL, NULL, NULL, NULL);
+INSERT INTO public.communicationlogs (logid, "timestamp", destinatario, asunto, estatusemail, errormensaje, pedidoid, clienteid, proveedorid) VALUES (30, '2025-12-29 02:31:42.478386', 'dferram8@gmail.com', '💰 Nuevo Pedido #10 - $1904.40', 'Enviado', NULL, NULL, NULL, NULL);
+INSERT INTO public.communicationlogs (logid, "timestamp", destinatario, asunto, estatusemail, errormensaje, pedidoid, clienteid, proveedorid) VALUES (31, '2025-12-29 02:31:42.479077', 'dferram8@gmail.com', '⚠️ Alerta: Backorder generado para el pedido #10', 'Enviado', NULL, NULL, NULL, NULL);
+INSERT INTO public.communicationlogs (logid, "timestamp", destinatario, asunto, estatusemail, errormensaje, pedidoid, clienteid, proveedorid) VALUES (32, '2025-12-29 02:32:19.141644', 'dferram8@gmail.com', '⚠️ Alerta: Backorder generado para el pedido #11', 'Enviado', NULL, NULL, NULL, NULL);
+INSERT INTO public.communicationlogs (logid, "timestamp", destinatario, asunto, estatusemail, errormensaje, pedidoid, clienteid, proveedorid) VALUES (33, '2025-12-29 02:32:19.143006', 'dferram8@gmail.com', '⚠️ Alerta de Stock Bajo: AMO-006-25X25-NEGRO', 'Enviado', NULL, NULL, NULL, NULL);
+INSERT INTO public.communicationlogs (logid, "timestamp", destinatario, asunto, estatusemail, errormensaje, pedidoid, clienteid, proveedorid) VALUES (34, '2025-12-29 02:32:19.15855', 'dferramm@gmail.com', 'Tu pedido RazoConnect ha sido recibido (#11)', 'Enviado', NULL, NULL, NULL, NULL);
+INSERT INTO public.communicationlogs (logid, "timestamp", destinatario, asunto, estatusemail, errormensaje, pedidoid, clienteid, proveedorid) VALUES (35, '2025-12-29 02:32:19.172234', 'dferram8@gmail.com', '💰 Nuevo Pedido #11 - $955.20', 'Enviado', NULL, NULL, NULL, NULL);
+INSERT INTO public.communicationlogs (logid, "timestamp", destinatario, asunto, estatusemail, errormensaje, pedidoid, clienteid, proveedorid) VALUES (36, '2025-12-29 02:33:11.367733', 'dferramm@gmail.com', 'Tu pedido RazoConnect ha sido recibido (#12)', 'Enviado', NULL, NULL, NULL, NULL);
+INSERT INTO public.communicationlogs (logid, "timestamp", destinatario, asunto, estatusemail, errormensaje, pedidoid, clienteid, proveedorid) VALUES (37, '2025-12-29 02:33:11.373212', 'dferram8@gmail.com', '💰 Nuevo Pedido #12 - $634.80', 'Enviado', NULL, NULL, NULL, NULL);
+INSERT INTO public.communicationlogs (logid, "timestamp", destinatario, asunto, estatusemail, errormensaje, pedidoid, clienteid, proveedorid) VALUES (38, '2025-12-29 02:33:11.432512', 'dferram8@gmail.com', '⚠️ Alerta de Stock Bajo: AMO-014', 'Enviado', NULL, NULL, NULL, NULL);
 
 
 --
@@ -2848,16 +2861,12 @@ INSERT INTO public.control_cambios (id, entidad, entidad_id, tipo_cambio, datos_
 -- Data for Name: credito_movimientos; Type: TABLE DATA; Schema: public; Owner: ferram
 --
 
-INSERT INTO public.credito_movimientos (movimiento_id, credito_id, tipo_movimiento, monto, referencia_id, descripcion, fecha_movimiento, saldo_despues_movimiento, registrado_por, admin_id, agente_id) VALUES (1, 1, 'CARGO', 171.60, 'PED-1', 'Compra realizada (Pedido #1)', '2025-12-25 04:39:40.211208', 171.60, NULL, NULL, NULL);
-INSERT INTO public.credito_movimientos (movimiento_id, credito_id, tipo_movimiento, monto, referencia_id, descripcion, fecha_movimiento, saldo_despues_movimiento, registrado_por, admin_id, agente_id) VALUES (2, 1, 'CARGO', 634.80, 'PED-2', 'Compra realizada (Pedido #2)', '2025-12-25 04:48:35.466116', 806.40, NULL, NULL, NULL);
-INSERT INTO public.credito_movimientos (movimiento_id, credito_id, tipo_movimiento, monto, referencia_id, descripcion, fecha_movimiento, saldo_despues_movimiento, registrado_por, admin_id, agente_id) VALUES (3, 1, 'CARGO', 1544.40, 'PED-3', 'Compra realizada (Pedido #3)', '2025-12-25 05:32:44.889936', 2350.80, NULL, NULL, NULL);
-INSERT INTO public.credito_movimientos (movimiento_id, credito_id, tipo_movimiento, monto, referencia_id, descripcion, fecha_movimiento, saldo_despues_movimiento, registrado_por, admin_id, agente_id) VALUES (4, 1, 'CARGO', 343.20, 'PED-4', 'Compra realizada (Pedido #4)', '2025-12-25 11:24:59.074676', 2694.00, NULL, NULL, NULL);
-INSERT INTO public.credito_movimientos (movimiento_id, credito_id, tipo_movimiento, monto, referencia_id, descripcion, fecha_movimiento, saldo_despues_movimiento, registrado_por, admin_id, agente_id) VALUES (5, 1, 'CARGO', 686.40, 'PED-5', 'Compra realizada (Pedido #5)', '2025-12-25 12:16:00.748743', 3380.40, NULL, NULL, NULL);
-INSERT INTO public.credito_movimientos (movimiento_id, credito_id, tipo_movimiento, monto, referencia_id, descripcion, fecha_movimiento, saldo_despues_movimiento, registrado_por, admin_id, agente_id) VALUES (6, 1, 'CARGO', 171.60, 'PED-6', 'Compra realizada (Pedido #6)', '2025-12-25 12:34:25.543147', 3552.00, NULL, NULL, NULL);
-INSERT INTO public.credito_movimientos (movimiento_id, credito_id, tipo_movimiento, monto, referencia_id, descripcion, fecha_movimiento, saldo_despues_movimiento, registrado_por, admin_id, agente_id) VALUES (7, 2, 'CARGO', 5994.00, 'PED-7', 'Compra realizada (Pedido #7)', '2025-12-26 17:10:47.864788', 5994.00, NULL, NULL, NULL);
-INSERT INTO public.credito_movimientos (movimiento_id, credito_id, tipo_movimiento, monto, referencia_id, descripcion, fecha_movimiento, saldo_despues_movimiento, registrado_por, admin_id, agente_id) VALUES (8, 1, 'ABONO', 1000.00, 'PAGO-1', 'Pago validado por transferencia bancaria (Ref: Transferencia bancaria)', '2025-12-29 01:50:15.018607', 2552.00, 2, 2, NULL);
-INSERT INTO public.credito_movimientos (movimiento_id, credito_id, tipo_movimiento, monto, referencia_id, descripcion, fecha_movimiento, saldo_despues_movimiento, registrado_por, admin_id, agente_id) VALUES (9, 1, 'ABONO', 3552.00, 'PAGO-2', 'Pago validado por transferencia bancaria (Ref: Transferencia bancaria)', '2025-12-29 01:52:11.010275', 0.00, 2, 2, NULL);
-INSERT INTO public.credito_movimientos (movimiento_id, credito_id, tipo_movimiento, monto, referencia_id, descripcion, fecha_movimiento, saldo_despues_movimiento, registrado_por, admin_id, agente_id) VALUES (10, 1, 'CARGO', 896.40, 'PED-8', 'Compra realizada (Pedido #8)', '2025-12-29 02:01:37.762643', 896.40, NULL, NULL, NULL);
+INSERT INTO public.credito_movimientos (movimiento_id, credito_id, tipo_movimiento, monto, referencia_id, descripcion, fecha_movimiento, saldo_despues_movimiento, registrado_por, admin_id, agente_id) VALUES (13, 1, 'CARGO', 1234.80, 'PED-9', 'Compra realizada (Pedido #9)', '2025-12-29 02:31:02.579417', 1234.80, NULL, NULL, NULL);
+INSERT INTO public.credito_movimientos (movimiento_id, credito_id, tipo_movimiento, monto, referencia_id, descripcion, fecha_movimiento, saldo_despues_movimiento, registrado_por, admin_id, agente_id) VALUES (14, 1, 'CARGO', 1904.40, 'PED-10', 'Compra realizada (Pedido #10)', '2025-12-29 02:31:35.046362', 3139.20, NULL, NULL, NULL);
+INSERT INTO public.credito_movimientos (movimiento_id, credito_id, tipo_movimiento, monto, referencia_id, descripcion, fecha_movimiento, saldo_despues_movimiento, registrado_por, admin_id, agente_id) VALUES (15, 1, 'CARGO', 955.20, 'PED-11', 'Compra realizada (Pedido #11)', '2025-12-29 02:32:16.496963', 4094.40, NULL, NULL, NULL);
+INSERT INTO public.credito_movimientos (movimiento_id, credito_id, tipo_movimiento, monto, referencia_id, descripcion, fecha_movimiento, saldo_despues_movimiento, registrado_por, admin_id, agente_id) VALUES (16, 1, 'CARGO', 634.80, 'PED-12', 'Compra realizada (Pedido #12)', '2025-12-29 02:33:04.229328', 4729.20, NULL, NULL, NULL);
+INSERT INTO public.credito_movimientos (movimiento_id, credito_id, tipo_movimiento, monto, referencia_id, descripcion, fecha_movimiento, saldo_despues_movimiento, registrado_por, admin_id, agente_id) VALUES (17, 1, 'ABONO', 1234.80, 'PED-9', 'Pago validado por transferencia bancaria (Ref: Transferencia bancaria)', '2025-12-29 02:34:05.660581', 3494.40, 2, 2, NULL);
+INSERT INTO public.credito_movimientos (movimiento_id, credito_id, tipo_movimiento, monto, referencia_id, descripcion, fecha_movimiento, saldo_despues_movimiento, registrado_por, admin_id, agente_id) VALUES (18, 1, 'ABONO', 4729.20, 'PED-10', 'Pago validado por transferencia bancaria (Ref: Transferencia bancaria)', '2025-12-29 02:34:59.970783', 0.00, 2, 2, NULL);
 
 
 --
@@ -2918,6 +2927,11 @@ INSERT INTO public.detallesdelpedido (detalleid, pedidoid, varianteid, cantidadp
 INSERT INTO public.detallesdelpedido (detalleid, pedidoid, varianteid, cantidadpaquetes, precioporpaquete, piezastotales, preciounitario, tamanoid, esbackorder, cantidadsurtida, cantidadbackorder) VALUES (12, 7, 41, 3, 418.80, 36, 34.90, 4, true, 0, 3);
 INSERT INTO public.detallesdelpedido (detalleid, pedidoid, varianteid, cantidadpaquetes, precioporpaquete, piezastotales, preciounitario, tamanoid, esbackorder, cantidadsurtida, cantidadbackorder) VALUES (13, 7, 42, 4, 634.80, 48, 52.90, 4, true, 0, 4);
 INSERT INTO public.detallesdelpedido (detalleid, pedidoid, varianteid, cantidadpaquetes, precioporpaquete, piezastotales, preciounitario, tamanoid, esbackorder, cantidadsurtida, cantidadbackorder) VALUES (14, 8, 40, 3, 298.80, 36, 24.90, 4, true, 0, 3);
+INSERT INTO public.detallesdelpedido (detalleid, pedidoid, varianteid, cantidadpaquetes, precioporpaquete, piezastotales, preciounitario, tamanoid, esbackorder, cantidadsurtida, cantidadbackorder) VALUES (15, 9, 28, 2, 617.40, 12, 102.90, 3, true, 0, 2);
+INSERT INTO public.detallesdelpedido (detalleid, pedidoid, varianteid, cantidadpaquetes, precioporpaquete, piezastotales, preciounitario, tamanoid, esbackorder, cantidadsurtida, cantidadbackorder) VALUES (16, 10, 13, 3, 634.80, 36, 52.90, 4, true, 0, 3);
+INSERT INTO public.detallesdelpedido (detalleid, pedidoid, varianteid, cantidadpaquetes, precioporpaquete, piezastotales, preciounitario, tamanoid, esbackorder, cantidadsurtida, cantidadbackorder) VALUES (17, 11, 7, 2, 238.80, 24, 19.90, 4, false, 2, 0);
+INSERT INTO public.detallesdelpedido (detalleid, pedidoid, varianteid, cantidadpaquetes, precioporpaquete, piezastotales, preciounitario, tamanoid, esbackorder, cantidadsurtida, cantidadbackorder) VALUES (18, 11, 7, 2, 238.80, 24, 19.90, 4, true, 0, 2);
+INSERT INTO public.detallesdelpedido (detalleid, pedidoid, varianteid, cantidadpaquetes, precioporpaquete, piezastotales, preciounitario, tamanoid, esbackorder, cantidadsurtida, cantidadbackorder) VALUES (19, 12, 15, 1, 634.80, 12, 52.90, 4, false, 1, 0);
 
 
 --
@@ -2938,7 +2952,6 @@ INSERT INTO public.detallesordencompra (detalleoc_id, ordencompraid, varianteid,
 INSERT INTO public.detallesordencompra (detalleoc_id, ordencompraid, varianteid, cantidadsolicitada, cantidadrecibida, piezasporpaquete, costounitario, piezasrecibidas) VALUES (10, 6, 8, 1, 0, 12, 20.93, 0);
 INSERT INTO public.detallesordencompra (detalleoc_id, ordencompraid, varianteid, cantidadsolicitada, cantidadrecibida, piezasporpaquete, costounitario, piezasrecibidas) VALUES (11, 6, 9, 1, 0, 12, 27.93, 0);
 INSERT INTO public.detallesordencompra (detalleoc_id, ordencompraid, varianteid, cantidadsolicitada, cantidadrecibida, piezasporpaquete, costounitario, piezasrecibidas) VALUES (12, 6, 6, 1, 0, 12, 13.23, 0);
-INSERT INTO public.detallesordencompra (detalleoc_id, ordencompraid, varianteid, cantidadsolicitada, cantidadrecibida, piezasporpaquete, costounitario, piezasrecibidas) VALUES (13, 6, 7, 1, 0, 12, 13.23, 0);
 INSERT INTO public.detallesordencompra (detalleoc_id, ordencompraid, varianteid, cantidadsolicitada, cantidadrecibida, piezasporpaquete, costounitario, piezasrecibidas) VALUES (14, 6, 1, 1, 0, 12, 27.93, 0);
 INSERT INTO public.detallesordencompra (detalleoc_id, ordencompraid, varianteid, cantidadsolicitada, cantidadrecibida, piezasporpaquete, costounitario, piezasrecibidas) VALUES (15, 6, 2, 1, 0, 12, 34.93, 0);
 INSERT INTO public.detallesordencompra (detalleoc_id, ordencompraid, varianteid, cantidadsolicitada, cantidadrecibida, piezasporpaquete, costounitario, piezasrecibidas) VALUES (16, 6, 3, 1, 0, 12, 20.93, 0);
@@ -2964,6 +2977,9 @@ INSERT INTO public.detallesordencompra (detalleoc_id, ordencompraid, varianteid,
 INSERT INTO public.detallesordencompra (detalleoc_id, ordencompraid, varianteid, cantidadsolicitada, cantidadrecibida, piezasporpaquete, costounitario, piezasrecibidas) VALUES (36, 6, 41, 12, 0, 1, 0.00, 0);
 INSERT INTO public.detallesordencompra (detalleoc_id, ordencompraid, varianteid, cantidadsolicitada, cantidadrecibida, piezasporpaquete, costounitario, piezasrecibidas) VALUES (37, 6, 42, 12, 0, 1, 0.00, 0);
 INSERT INTO public.detallesordencompra (detalleoc_id, ordencompraid, varianteid, cantidadsolicitada, cantidadrecibida, piezasporpaquete, costounitario, piezasrecibidas) VALUES (38, 6, 40, 12, 0, 1, 0.00, 0);
+INSERT INTO public.detallesordencompra (detalleoc_id, ordencompraid, varianteid, cantidadsolicitada, cantidadrecibida, piezasporpaquete, costounitario, piezasrecibidas) VALUES (39, 6, 28, 6, 0, 1, 0.00, 0);
+INSERT INTO public.detallesordencompra (detalleoc_id, ordencompraid, varianteid, cantidadsolicitada, cantidadrecibida, piezasporpaquete, costounitario, piezasrecibidas) VALUES (40, 6, 13, 12, 0, 1, 0.00, 0);
+INSERT INTO public.detallesordencompra (detalleoc_id, ordencompraid, varianteid, cantidadsolicitada, cantidadrecibida, piezasporpaquete, costounitario, piezasrecibidas) VALUES (13, 6, 7, 13, 0, 12, 13.23, 0);
 
 
 --
@@ -3056,6 +3072,8 @@ INSERT INTO public.log_inventario (logid, varianteid, fecha, cantidadcambiado, n
 INSERT INTO public.log_inventario (logid, varianteid, fecha, cantidadcambiado, nuevostock, motivo, usuarioid, es_excepcion, cxp_id) VALUES (26, 15, '2025-12-26 16:45:46.612036', 12, 12, 'Recepción OC #8 (Lote: REM-102)', 2, false, 4);
 INSERT INTO public.log_inventario (logid, varianteid, fecha, cantidadcambiado, nuevostock, motivo, usuarioid, es_excepcion, cxp_id) VALUES (27, 14, '2025-12-26 16:45:46.612036', 12, 12, 'Recepción OC #8 (Lote: REM-102)', 2, false, 4);
 INSERT INTO public.log_inventario (logid, varianteid, fecha, cantidadcambiado, nuevostock, motivo, usuarioid, es_excepcion, cxp_id) VALUES (28, 42, '2025-12-26 17:10:47.864788', -24, 2, 'Venta Pedido #7', 1, false, NULL);
+INSERT INTO public.log_inventario (logid, varianteid, fecha, cantidadcambiado, nuevostock, motivo, usuarioid, es_excepcion, cxp_id) VALUES (29, 44, '2025-12-29 02:32:16.496963', -24, 0, 'Venta Pedido #11', 2, false, NULL);
+INSERT INTO public.log_inventario (logid, varianteid, fecha, cantidadcambiado, nuevostock, motivo, usuarioid, es_excepcion, cxp_id) VALUES (30, 14, '2025-12-29 02:33:04.229328', -12, 0, 'Venta Pedido #12', 2, false, NULL);
 
 
 --
@@ -3131,6 +3149,10 @@ INSERT INTO public.log_movimientos (logid, usuarioid, nombreusuario, rol, accion
 INSERT INTO public.log_movimientos (logid, usuarioid, nombreusuario, rol, accion, entidad, entidadid, detalles, ip, fecha) VALUES (70, 2, 'Fernando Garcia', 'admin', 'LOGIN', 'Admin', 2, '{"email": "fegarcia@hotmail.com", "origen": "admin"}', '::1', '2025-12-29 01:51:26.679781');
 INSERT INTO public.log_movimientos (logid, usuarioid, nombreusuario, rol, accion, entidad, entidadid, detalles, ip, fecha) VALUES (71, 2, 'Fernando Garcia', 'admin', 'LOGIN', 'Admin', 2, '{"email": "fegarcia@hotmail.com", "origen": "admin"}', '::1', '2025-12-29 02:00:50.047702');
 INSERT INTO public.log_movimientos (logid, usuarioid, nombreusuario, rol, accion, entidad, entidadid, detalles, ip, fecha) VALUES (72, 2, 'Fernando Garcia', 'admin', 'LOGIN', 'Admin', 2, '{"email": "fegarcia@hotmail.com", "origen": "admin"}', '::1', '2025-12-29 02:01:47.055847');
+INSERT INTO public.log_movimientos (logid, usuarioid, nombreusuario, rol, accion, entidad, entidadid, detalles, ip, fecha) VALUES (73, 2, 'Fernando Garcia', 'admin', 'LOGIN', 'Admin', 2, '{"email": "fegarcia@hotmail.com", "origen": "admin"}', '::1', '2025-12-29 02:23:15.196811');
+INSERT INTO public.log_movimientos (logid, usuarioid, nombreusuario, rol, accion, entidad, entidadid, detalles, ip, fecha) VALUES (74, 2, 'Fernando Garcia', 'admin', 'LOGIN', 'Admin', 2, '{"email": "fegarcia@hotmail.com", "origen": "admin"}', '::1', '2025-12-29 02:25:17.465547');
+INSERT INTO public.log_movimientos (logid, usuarioid, nombreusuario, rol, accion, entidad, entidadid, detalles, ip, fecha) VALUES (75, 2, 'Fernando Garcia', 'admin', 'LOGIN', 'Admin', 2, '{"email": "fegarcia@hotmail.com", "origen": "admin"}', '::1', '2025-12-29 02:33:39.884112');
+INSERT INTO public.log_movimientos (logid, usuarioid, nombreusuario, rol, accion, entidad, entidadid, detalles, ip, fecha) VALUES (76, 2, 'Fernando Garcia', 'admin', 'LOGIN', 'Admin', 2, '{"email": "fegarcia@hotmail.com", "origen": "admin"}', '::1', '2025-12-29 02:34:52.849064');
 
 
 --
@@ -3211,6 +3233,10 @@ INSERT INTO public.ordenesdecompra (ordencompraid, proveedorid, fechacreacion, f
 
 INSERT INTO public.pagos_clientes (pago_id, cliente_id, credito_id, monto, tipo_pago, estatus, comprobante_url, referencia_bancaria, transaccion_id, fecha_pago, fecha_validacion, validado_por, notas, movimientos_aplicados) VALUES (1, 2, 1, 1000.00, 'TRANSFERENCIA', 'APROBADO', NULL, 'Transferencia bancaria', NULL, '2025-12-29 01:24:59.134773', '2025-12-29 01:50:15.018607', 2, NULL, '[]');
 INSERT INTO public.pagos_clientes (pago_id, cliente_id, credito_id, monto, tipo_pago, estatus, comprobante_url, referencia_bancaria, transaccion_id, fecha_pago, fecha_validacion, validado_por, notas, movimientos_aplicados) VALUES (2, 2, 1, 3552.00, 'TRANSFERENCIA', 'APROBADO', NULL, 'Transferencia bancaria', NULL, '2025-12-29 01:51:12.933837', '2025-12-29 01:52:11.010275', 2, NULL, '[6, 5, 4, 3, 2, 1]');
+INSERT INTO public.pagos_clientes (pago_id, cliente_id, credito_id, monto, tipo_pago, estatus, comprobante_url, referencia_bancaria, transaccion_id, fecha_pago, fecha_validacion, validado_por, notas, movimientos_aplicados) VALUES (3, 2, 1, 3552.00, 'TRANSFERENCIA', 'APROBADO', NULL, 'Transferencia bancaria', NULL, '2025-12-29 02:23:02.387275', '2025-12-29 02:23:38.907428', 2, NULL, '["PED-1", "PED-2", "PED-3", "PED-4", "PED-5", "PED-6"]');
+INSERT INTO public.pagos_clientes (pago_id, cliente_id, credito_id, monto, tipo_pago, estatus, comprobante_url, referencia_bancaria, transaccion_id, fecha_pago, fecha_validacion, validado_por, notas, movimientos_aplicados) VALUES (4, 2, 1, 4448.40, 'TRANSFERENCIA', 'APROBADO', NULL, 'Transferencia bancaria', NULL, '2025-12-29 02:25:08.294392', '2025-12-29 02:25:30.216642', 2, NULL, '["PED-1", "PED-2", "PED-3", "PED-4", "PED-5", "PED-6", "PED-8"]');
+INSERT INTO public.pagos_clientes (pago_id, cliente_id, credito_id, monto, tipo_pago, estatus, comprobante_url, referencia_bancaria, transaccion_id, fecha_pago, fecha_validacion, validado_por, notas, movimientos_aplicados) VALUES (5, 2, 1, 1234.80, 'TRANSFERENCIA', 'APROBADO', NULL, 'Transferencia bancaria', NULL, '2025-12-29 02:33:33.787312', '2025-12-29 02:34:05.660581', 2, NULL, '["PED-9"]');
+INSERT INTO public.pagos_clientes (pago_id, cliente_id, credito_id, monto, tipo_pago, estatus, comprobante_url, referencia_bancaria, transaccion_id, fecha_pago, fecha_validacion, validado_por, notas, movimientos_aplicados) VALUES (6, 2, 1, 4729.20, 'TRANSFERENCIA', 'APROBADO', NULL, 'Transferencia bancaria', NULL, '2025-12-29 02:34:46.775749', '2025-12-29 02:34:59.970783', 2, NULL, '["PED-9", "PED-10", "PED-11", "PED-12"]');
 
 
 --
@@ -3245,6 +3271,10 @@ INSERT INTO public.pedidos (pedidoid, clienteid, agenteid, direccionenvioid, fec
 INSERT INTO public.pedidos (pedidoid, clienteid, agenteid, direccionenvioid, fechapedido, montototal, estatus, costoenvio, es_credito, fecha_vencimiento, pagado, transaccion_id, comprobante_url, metodo_pago) VALUES (6, 2, NULL, 1, '2025-12-25 12:34:25.543147', 171.60, 'Confirmado', 0.00, true, '2026-01-09 12:34:25.543147', false, NULL, NULL, 'credito');
 INSERT INTO public.pedidos (pedidoid, clienteid, agenteid, direccionenvioid, fechapedido, montototal, estatus, costoenvio, es_credito, fecha_vencimiento, pagado, transaccion_id, comprobante_url, metodo_pago) VALUES (7, 1, NULL, 2, '2025-12-26 17:10:47.864788', 5994.00, 'Parcialmente Surtido', 0.00, true, '2026-01-10 17:10:47.864788', false, NULL, NULL, 'credito');
 INSERT INTO public.pedidos (pedidoid, clienteid, agenteid, direccionenvioid, fechapedido, montototal, estatus, costoenvio, es_credito, fecha_vencimiento, pagado, transaccion_id, comprobante_url, metodo_pago) VALUES (8, 2, NULL, 1, '2025-12-29 02:01:37.762643', 896.40, 'Parcialmente Surtido', 0.00, true, '2026-01-13 02:01:37.762643', false, NULL, NULL, 'credito');
+INSERT INTO public.pedidos (pedidoid, clienteid, agenteid, direccionenvioid, fechapedido, montototal, estatus, costoenvio, es_credito, fecha_vencimiento, pagado, transaccion_id, comprobante_url, metodo_pago) VALUES (9, 2, NULL, 1, '2025-12-29 02:31:02.579417', 1234.80, 'Parcialmente Surtido', 0.00, true, '2026-01-13 02:31:02.579417', false, NULL, NULL, 'credito');
+INSERT INTO public.pedidos (pedidoid, clienteid, agenteid, direccionenvioid, fechapedido, montototal, estatus, costoenvio, es_credito, fecha_vencimiento, pagado, transaccion_id, comprobante_url, metodo_pago) VALUES (10, 2, NULL, 1, '2025-12-29 02:31:35.046362', 1904.40, 'Parcialmente Surtido', 0.00, true, '2026-01-13 02:31:35.046362', false, NULL, NULL, 'credito');
+INSERT INTO public.pedidos (pedidoid, clienteid, agenteid, direccionenvioid, fechapedido, montototal, estatus, costoenvio, es_credito, fecha_vencimiento, pagado, transaccion_id, comprobante_url, metodo_pago) VALUES (11, 2, NULL, 1, '2025-12-29 02:32:16.496963', 955.20, 'Parcialmente Surtido', 0.00, true, '2026-01-13 02:32:16.496963', false, NULL, NULL, 'credito');
+INSERT INTO public.pedidos (pedidoid, clienteid, agenteid, direccionenvioid, fechapedido, montototal, estatus, costoenvio, es_credito, fecha_vencimiento, pagado, transaccion_id, comprobante_url, metodo_pago) VALUES (12, 2, NULL, 1, '2025-12-29 02:33:04.229328', 634.80, 'Aprobado', 0.00, true, '2026-01-13 02:33:04.229328', false, NULL, NULL, 'credito');
 
 
 --
@@ -3394,13 +3424,13 @@ INSERT INTO public.producto_variantes (varianteid, sku, dimensiones, costounitar
 INSERT INTO public.producto_variantes (varianteid, sku, dimensiones, costounitario, stock, tipoproductoid, medidaid, productoid, preciounitario, precioofertaunitario, activo, piezasporpaquete, stock_minimo, color_nombre, url_imagen_variante, color_hex) VALUES (16, 'AMO-016', '20x20', 27.93, 24, NULL, NULL, 8, 42.90, NULL, true, 1, 0, NULL, NULL, NULL);
 INSERT INTO public.producto_variantes (varianteid, sku, dimensiones, costounitario, stock, tipoproductoid, medidaid, productoid, preciounitario, precioofertaunitario, activo, piezasporpaquete, stock_minimo, color_nombre, url_imagen_variante, color_hex) VALUES (17, 'AMO-017', '25x25', 34.93, 12, NULL, NULL, 8, 52.90, NULL, true, 1, 0, NULL, NULL, NULL);
 INSERT INTO public.producto_variantes (varianteid, sku, dimensiones, costounitario, stock, tipoproductoid, medidaid, productoid, preciounitario, precioofertaunitario, activo, piezasporpaquete, stock_minimo, color_nombre, url_imagen_variante, color_hex) VALUES (43, 'AMO-006-20X20-NEGRO', '20x20', 27.93, 12, NULL, NULL, 3, 42.90, NULL, true, 1, 0, 'Negro', '/uploads/1766664700177-Captura de pantalla 2025-12-25 060954.png', NULL);
-INSERT INTO public.producto_variantes (varianteid, sku, dimensiones, costounitario, stock, tipoproductoid, medidaid, productoid, preciounitario, precioofertaunitario, activo, piezasporpaquete, stock_minimo, color_nombre, url_imagen_variante, color_hex) VALUES (44, 'AMO-006-25X25-NEGRO', '25x25', 34.93, 24, NULL, NULL, 3, 52.90, NULL, true, 1, 0, 'Negro', '/uploads/1766664700177-Captura de pantalla 2025-12-25 060954.png', NULL);
 INSERT INTO public.producto_variantes (varianteid, sku, dimensiones, costounitario, stock, tipoproductoid, medidaid, productoid, preciounitario, precioofertaunitario, activo, piezasporpaquete, stock_minimo, color_nombre, url_imagen_variante, color_hex) VALUES (8, 'AMO-008', '15x15', 20.93, 36, NULL, NULL, 4, 30.90, NULL, true, 1, 0, NULL, NULL, NULL);
 INSERT INTO public.producto_variantes (varianteid, sku, dimensiones, costounitario, stock, tipoproductoid, medidaid, productoid, preciounitario, precioofertaunitario, activo, piezasporpaquete, stock_minimo, color_nombre, url_imagen_variante, color_hex) VALUES (41, 'NAT-002-GRA', 'Grande', 20.93, 42, NULL, NULL, 13, 34.90, NULL, true, 1, 0, NULL, NULL, NULL);
 INSERT INTO public.producto_variantes (varianteid, sku, dimensiones, costounitario, stock, tipoproductoid, medidaid, productoid, preciounitario, precioofertaunitario, activo, piezasporpaquete, stock_minimo, color_nombre, url_imagen_variante, color_hex) VALUES (31, 'LIS-001-30X30-MAGENT', '30x30', 41.93, 24, NULL, NULL, 11, 64.90, NULL, true, 1, 0, 'Magenta', '/uploads/1766784498740-Captura de pantalla 2025-12-26 151748.png', NULL);
 INSERT INTO public.producto_variantes (varianteid, sku, dimensiones, costounitario, stock, tipoproductoid, medidaid, productoid, preciounitario, precioofertaunitario, activo, piezasporpaquete, stock_minimo, color_nombre, url_imagen_variante, color_hex) VALUES (15, 'AMO-015', '25x25', 34.93, 12, NULL, NULL, 7, 52.90, NULL, true, 1, 0, NULL, NULL, NULL);
-INSERT INTO public.producto_variantes (varianteid, sku, dimensiones, costounitario, stock, tipoproductoid, medidaid, productoid, preciounitario, precioofertaunitario, activo, piezasporpaquete, stock_minimo, color_nombre, url_imagen_variante, color_hex) VALUES (14, 'AMO-014', '20x20', 27.93, 12, NULL, NULL, 7, 42.90, NULL, true, 1, 0, NULL, NULL, NULL);
 INSERT INTO public.producto_variantes (varianteid, sku, dimensiones, costounitario, stock, tipoproductoid, medidaid, productoid, preciounitario, precioofertaunitario, activo, piezasporpaquete, stock_minimo, color_nombre, url_imagen_variante, color_hex) VALUES (42, 'NAT-002-JUM', 'Jumbo', 32.13, 2, NULL, NULL, 13, 52.90, NULL, true, 1, 0, NULL, NULL, NULL);
+INSERT INTO public.producto_variantes (varianteid, sku, dimensiones, costounitario, stock, tipoproductoid, medidaid, productoid, preciounitario, precioofertaunitario, activo, piezasporpaquete, stock_minimo, color_nombre, url_imagen_variante, color_hex) VALUES (44, 'AMO-006-25X25-NEGRO', '25x25', 34.93, 0, NULL, NULL, 3, 52.90, NULL, true, 1, 0, 'Negro', '/uploads/1766664700177-Captura de pantalla 2025-12-25 060954.png', NULL);
+INSERT INTO public.producto_variantes (varianteid, sku, dimensiones, costounitario, stock, tipoproductoid, medidaid, productoid, preciounitario, precioofertaunitario, activo, piezasporpaquete, stock_minimo, color_nombre, url_imagen_variante, color_hex) VALUES (14, 'AMO-014', '20x20', 27.93, 0, NULL, NULL, 7, 42.90, NULL, true, 1, 0, NULL, NULL, NULL);
 
 
 --
@@ -3593,7 +3623,7 @@ SELECT pg_catalog.setval('public.comisiones_comisionid_seq', 1, false);
 -- Name: communicationlogs_logid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.communicationlogs_logid_seq', 25, true);
+SELECT pg_catalog.setval('public.communicationlogs_logid_seq', 38, true);
 
 
 --
@@ -3611,7 +3641,7 @@ SELECT pg_catalog.setval('public.control_cambios_id_seq', 39, true);
 -- Name: credito_movimientos_movimiento_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.credito_movimientos_movimiento_id_seq', 10, true);
+SELECT pg_catalog.setval('public.credito_movimientos_movimiento_id_seq', 18, true);
 
 
 --
@@ -3656,7 +3686,7 @@ SELECT pg_catalog.setval('public.datos_bancarios_empresa_id_seq', 2, true);
 -- Name: detallesdelpedido_detalleid_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.detallesdelpedido_detalleid_seq', 14, true);
+SELECT pg_catalog.setval('public.detallesdelpedido_detalleid_seq', 19, true);
 
 
 --
@@ -3665,7 +3695,7 @@ SELECT pg_catalog.setval('public.detallesdelpedido_detalleid_seq', 14, true);
 -- Name: detallesordencompra_detalleoc_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.detallesordencompra_detalleoc_id_seq', 38, true);
+SELECT pg_catalog.setval('public.detallesordencompra_detalleoc_id_seq', 40, true);
 
 
 --
@@ -3683,7 +3713,7 @@ SELECT pg_catalog.setval('public.estados_estadoid_seq', 32, true);
 -- Name: itemsdelcarrito_itemid_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.itemsdelcarrito_itemid_seq', 16, true);
+SELECT pg_catalog.setval('public.itemsdelcarrito_itemid_seq', 20, true);
 
 
 --
@@ -3701,7 +3731,7 @@ SELECT pg_catalog.setval('public.log_eventosusuario_eventoid_seq', 1, false);
 -- Name: log_inventario_logid_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.log_inventario_logid_seq', 28, true);
+SELECT pg_catalog.setval('public.log_inventario_logid_seq', 30, true);
 
 
 --
@@ -3710,7 +3740,7 @@ SELECT pg_catalog.setval('public.log_inventario_logid_seq', 28, true);
 -- Name: log_movimientos_logid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.log_movimientos_logid_seq', 72, true);
+SELECT pg_catalog.setval('public.log_movimientos_logid_seq', 76, true);
 
 
 --
@@ -3746,7 +3776,7 @@ SELECT pg_catalog.setval('public.ordenesdecompra_ordencompraid_seq', 8, true);
 -- Name: pagos_clientes_pago_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.pagos_clientes_pago_id_seq', 2, true);
+SELECT pg_catalog.setval('public.pagos_clientes_pago_id_seq', 6, true);
 
 
 --
@@ -3773,7 +3803,7 @@ SELECT pg_catalog.setval('public.passwordresettokens_tokenid_seq', 1, false);
 -- Name: pedidos_pedidoid_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.pedidos_pedidoid_seq', 8, true);
+SELECT pg_catalog.setval('public.pedidos_pedidoid_seq', 12, true);
 
 
 --
@@ -5342,7 +5372,7 @@ ALTER TABLE ONLY public.toma_inventario_sesiones
     ADD CONSTRAINT toma_inventario_sesiones_usuario_creador_id_fkey FOREIGN KEY (usuario_creador_id) REFERENCES public.administradores(adminid);
 
 
--- Completed on 2025-12-29 02:15:42
+-- Completed on 2025-12-29 23:05:52
 
 --
 -- PostgreSQL database dump complete
