@@ -9,7 +9,7 @@
 
   // Esperar a que API_BASE_URL esté disponible
   function getApiBaseUrl() {
-    return window.API_BASE_URL || "http://localhost:3000/api";
+    return window.API_BASE_URL || `${window.location.origin}/api`;
   }
 
   /**

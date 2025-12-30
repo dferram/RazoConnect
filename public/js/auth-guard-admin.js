@@ -40,7 +40,7 @@
   }
 
   // Verificar token con el servidor de forma asíncrona
-  const apiBaseUrl = window.API_BASE_URL || "http://localhost:3000/api";
+  const apiBaseUrl = window.API_BASE_URL || `${window.location.origin}/api`;
 
   console.log("🔐 Verificando autenticación de admin...");
   console.log("Token:", adminToken ? "Present" : "Missing");

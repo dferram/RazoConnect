@@ -7,7 +7,7 @@
 (function () {
   "use strict";
 
-  const API_BASE_URL = window.API_BASE_URL || "http://localhost:3000/api";
+  const API_BASE_URL = window.API_BASE_URL || `${window.location.origin}/api`;
   const ADMIN_TOKEN_KEY = "razoconnect_admin_token";
 
   // DOM Elements

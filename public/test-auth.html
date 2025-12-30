@@ -109,7 +109,7 @@
       }
 
       try {
-        const response = await fetch('http://localhost:3000/api/clientes/verify', {
+        const response = await fetch(`${window.location.origin}/api/clientes/verify`, {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -144,7 +144,7 @@
       }
 
       try {
-        const response = await fetch('http://localhost:3000/api/admin/verify', {
+        const response = await fetch(`${window.location.origin}/api/admin/verify`, {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${token}`,

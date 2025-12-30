@@ -11,7 +11,7 @@
 
   // Configuración
   const INACTIVITY_TIME = 5 * 60 * 1000; // 5 minutos en milisegundos
-  const API_BASE_URL = "http://localhost:3000/api";
+  const API_BASE_URL = `${window.location.origin}/api`;
 
   let inactivityTimer = null;
   let lastActivity = Date.now();
