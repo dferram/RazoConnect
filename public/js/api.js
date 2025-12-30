@@ -1,5 +1,7 @@
 // API Configuration
-const API_BASE_URL = "http://localhost:8080/api";
+const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  ? "http://localhost:8080/api"
+  : "https://razoconnect-api.azurewebsites.net/api";
 
 const ADMIN_TOKEN_KEY = "razoconnect_admin_token";
 const ADMIN_DATA_KEY = "razoconnect_admin";
