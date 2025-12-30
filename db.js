@@ -11,6 +11,7 @@ const pool = new Pool({
   max: 20, // Número máximo de clientes en el pool
   idleTimeoutMillis: 30000, // Tiempo de espera antes de cerrar un cliente inactivo
   connectionTimeoutMillis: 2000, // Tiempo de espera para conectar
+  ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false
 });
 
 // Evento de conexión exitosa
