@@ -652,6 +652,16 @@
       }
 
       function getVariantColorImageUrl(variant) {
+        // Prioridad 1: Primera imagen del array de imágenes de la variante
+        if (Array.isArray(variant?.imagenes) && variant.imagenes.length > 0) {
+          const primeraImagen = variant.imagenes[0];
+          const url = primeraImagen?.url || primeraImagen?.urlCompleta || null;
+          if (url && typeof url === 'string' && url.trim()) {
+            return url.trim();
+          }
+        }
+        
+        // Prioridad 2: Propiedad directa url_imagen_variante (legacy)
         const raw =
           variant?.urlImagenVariante ||
           variant?.url_imagen_variante ||
@@ -666,19 +676,42 @@
         const list = Array.isArray(sourceVariants) ? sourceVariants : [];
         const map = new Map();
 
+        console.log("🎨 Construyendo selector de colores...");
+        console.log("Total variantes:", list.length);
+
         list.forEach((v) => {
           const color = getVariantColorNombre(v);
-          if (!color) return;
-          // Solo usar url_imagen_variante, NO hacer fallback a galería del producto maestro
           const imgUrl = getVariantColorImageUrl(v);
-          if (!imgUrl) return;
+          
+          console.log(`Variante ${v.varianteId}:`, {
+            color: color,
+            hasImages: Array.isArray(v.imagenes) && v.imagenes.length > 0,
+            imageCount: v.imagenes?.length || 0,
+            firstImageUrl: imgUrl,
+          });
+
+          if (!color) {
+            console.log(`  ⚠️ Variante ${v.varianteId} sin color, ignorando`);
+            return;
+          }
+          
+          // Solo usar url_imagen_variante, NO hacer fallback a galería del producto maestro
+          if (!imgUrl) {
+            console.log(`  ⚠️ Variante ${v.varianteId} (${color}) sin imagen, ignorando`);
+            return;
+          }
 
           if (!map.has(color)) {
+            console.log(`  ✅ Agregando color: ${color}`);
             map.set(color, v);
+          } else {
+            console.log(`  ℹ️ Color ${color} ya existe, ignorando duplicado`);
           }
         });
 
-        return Array.from(map.values());
+        const result = Array.from(map.values());
+        console.log("🎨 Colores únicos encontrados:", result.length);
+        return result;
       }
 
       function getNikeSelectedImageUrl() {
