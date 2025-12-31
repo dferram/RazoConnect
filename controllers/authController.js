@@ -18,6 +18,10 @@ const {
   aprobarSolicitudes,
 } = require("../services/ChangeRequestService");
 const auditService = require("../services/auditService");
+const {
+  checkEmailGlobalUniqueness,
+  getContextualErrorMessage,
+} = require("../utils/emailValidator");
 
 /**
  * Registro de nuevo cliente
@@ -42,16 +46,17 @@ const registroCliente = async (req, res) => {
       });
     }
 
-    // Verificar si el email ya existe
-    const emailExists = await db.query(
-      "SELECT Email FROM clientes WHERE Email = $1",
-      [Email]
-    );
+    // Verificar unicidad global del email (no debe existir en ninguna tabla)
+    const emailCheck = await checkEmailGlobalUniqueness(Email, "clientes");
 
-    if (emailExists.rows.length > 0) {
+    if (emailCheck.exists) {
+      const errorMessage = getContextualErrorMessage(
+        emailCheck.table,
+        "clientes"
+      );
       return res.status(400).json({
         success: false,
-        message: "El email ya está registrado",
+        message: errorMessage,
       });
     }
 
@@ -138,16 +143,17 @@ const registroAgente = async (req, res) => {
       });
     }
 
-    // Verificar si el email ya existe
-    const emailExists = await db.query(
-      "SELECT Email FROM agentesdeventas WHERE Email = $1",
-      [Email]
-    );
+    // Verificar unicidad global del email (no debe existir en ninguna tabla)
+    const emailCheck = await checkEmailGlobalUniqueness(Email, "agentesdeventas");
 
-    if (emailExists.rows.length > 0) {
+    if (emailCheck.exists) {
+      const errorMessage = getContextualErrorMessage(
+        emailCheck.table,
+        "agentesdeventas"
+      );
       return res.status(400).json({
         success: false,
-        message: "El email ya está registrado",
+        message: errorMessage,
       });
     }
 
@@ -590,16 +596,17 @@ const registroAdmin = async (req, res) => {
       });
     }
 
-    // Verificar si el email ya existe
-    const emailExists = await db.query(
-      "SELECT Email FROM administradores WHERE Email = $1",
-      [Email]
-    );
+    // Verificar unicidad global del email (no debe existir en ninguna tabla)
+    const emailCheck = await checkEmailGlobalUniqueness(Email, "administradores");
 
-    if (emailExists.rows.length > 0) {
+    if (emailCheck.exists) {
+      const errorMessage = getContextualErrorMessage(
+        emailCheck.table,
+        "administradores"
+      );
       return res.status(400).json({
         success: false,
-        message: "El email ya está registrado como administrador",
+        message: errorMessage,
       });
     }
 
@@ -753,16 +760,17 @@ const crearAdmin = async (req, res) => {
       });
     }
 
-    // Verificar si el email ya existe
-    const emailExists = await db.query(
-      "SELECT Email FROM administradores WHERE Email = $1",
-      [email]
-    );
+    // Verificar unicidad global del email (no debe existir en ninguna tabla)
+    const emailCheck = await checkEmailGlobalUniqueness(email, "administradores");
 
-    if (emailExists.rows.length > 0) {
+    if (emailCheck.exists) {
+      const errorMessage = getContextualErrorMessage(
+        emailCheck.table,
+        "administradores"
+      );
       return res.status(400).json({
         success: false,
-        message: "El email ya está registrado como administrador",
+        message: errorMessage,
       });
     }
 

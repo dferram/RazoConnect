@@ -24,6 +24,10 @@ const {
   eliminarImagenCloudinary,
   extraerPublicIdDeUrl,
 } = require("../utils/cloudinaryHelper");
+const {
+  checkEmailGlobalUniqueness,
+  getContextualErrorMessage,
+} = require("../utils/emailValidator");
 const fs = require("fs");
 
 let agenteAdminColumnsCache = null;
@@ -7874,16 +7878,17 @@ const crearAgente = async (req, res) => {
       });
     }
 
-    // Verificar si el email ya existe
-    const emailCheck = await db.query(
-      "SELECT AgenteID FROM AgentesDeVentas WHERE Email = $1",
-      [email]
-    );
+    // Verificar unicidad global del email (no debe existir en ninguna tabla)
+    const emailCheckGlobal = await checkEmailGlobalUniqueness(email, "agentesdeventas");
 
-    if (emailCheck.rows.length > 0) {
+    if (emailCheckGlobal.exists) {
+      const errorMessage = getContextualErrorMessage(
+        emailCheckGlobal.table,
+        "agentesdeventas"
+      );
       return res.status(400).json({
         success: false,
-        message: "El email ya está registrado",
+        message: errorMessage,
       });
     }
 

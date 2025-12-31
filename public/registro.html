@@ -7,6 +7,9 @@
     <link rel="icon" type="image/png" href="/icon/Logo_Razo.png" />
     <link rel="stylesheet" href="css/styles.css" />
     <link rel="stylesheet" href="css/mobile-responsive.css" />
+    
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   </head>
   <body>
     <nav class="navbar">
@@ -297,32 +300,81 @@
             // Save auth data
             saveAuthData(response.data.data.token, response.data.data.cliente);
 
-            // Show success message
-            showToast("¡Registro exitoso! Bienvenido a RazoConnect", "success");
-
-            // Redirect to home
-            setTimeout(() => {
+            // Show success message with SweetAlert2
+            Swal.fire({
+              title: '¡Bienvenido a RazoConnect!',
+              html: `<p>Tu cuenta ha sido creada exitosamente.</p>
+                     <p style="margin-top: 1rem; color: #6b7280;">Serás redirigido al catálogo...</p>`,
+              icon: 'success',
+              confirmButtonText: 'Continuar',
+              confirmButtonColor: '#10b981',
+              timer: 2000,
+              timerProgressBar: true
+            }).then(() => {
               window.location.href = "/inicio.html";
-            }, 500);
+            });
           } else {
             // Show error message
             const errorMessage =
               response.data.message || "Error al registrar la cuenta";
 
-            // Show validation errors if present
-            if (response.data.errors && Array.isArray(response.data.errors)) {
-              const errorList = response.data.errors.join("\n");
-              showAlert(errorList, "error");
+            // Detectar si es error de email duplicado o ya registrado
+            if (errorMessage.toLowerCase().includes("correo") || 
+                errorMessage.toLowerCase().includes("email")) {
+              // Determinar si es staff o cliente
+              const isStaffEmail = errorMessage.toLowerCase().includes("staff") || 
+                                   errorMessage.toLowerCase().includes("administrador") ||
+                                   errorMessage.toLowerCase().includes("agente");
+              
+              Swal.fire({
+                title: '¡Atención!',
+                html: `<p>${errorMessage}</p>
+                       ${isStaffEmail ? 
+                         '<p style="margin-top: 1rem; color: #6b7280;">Si eres parte del equipo, usa tu correo personal para compras.</p>' :
+                         '<p style="margin-top: 1rem; color: #6b7280;">¿Intentas <a href="/login.html" style="color: #f97316; font-weight: 600;">iniciar sesión</a>?</p>'
+                       }`,
+                icon: 'warning',
+                confirmButtonText: 'Entendido',
+                confirmButtonColor: '#f97316',
+                showCancelButton: !isStaffEmail,
+                cancelButtonText: 'Ir a Login',
+                cancelButtonColor: '#6b7280'
+              }).then((result) => {
+                if (result.dismiss === Swal.DismissReason.cancel) {
+                  window.location.href = '/login.html';
+                }
+              });
+            } else if (response.data.errors && Array.isArray(response.data.errors)) {
+              // Errores de validación múltiples
+              Swal.fire({
+                title: 'Errores de validación',
+                html: '<ul style="text-align: left; padding-left: 1.5rem;">' +
+                      response.data.errors.map(err => `<li>${err}</li>`).join('') +
+                      '</ul>',
+                icon: 'error',
+                confirmButtonText: 'Corregir',
+                confirmButtonColor: '#ef4444'
+              });
             } else {
-              showAlert(errorMessage, "error");
+              // Otros errores
+              Swal.fire({
+                title: 'Error',
+                text: errorMessage,
+                icon: 'error',
+                confirmButtonText: 'Entendido',
+                confirmButtonColor: '#ef4444'
+              });
             }
           }
         } catch (error) {
           console.error("Registro error:", error);
-          showAlert(
-            "Error al conectar con el servidor. Intenta nuevamente.",
-            "error"
-          );
+          Swal.fire({
+            title: 'Error de conexión',
+            text: 'No se pudo conectar con el servidor. Por favor, verifica tu conexión a internet e intenta nuevamente.',
+            icon: 'error',
+            confirmButtonText: 'Entendido',
+            confirmButtonColor: '#ef4444'
+          });
         } finally {
           // Reset button state
           submitBtn.disabled = false;

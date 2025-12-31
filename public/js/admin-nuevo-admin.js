@@ -22,27 +22,18 @@
   const alertContainer = document.getElementById("alertContainer");
 
   /**
-   * Muestra una alerta en la página
+   * Muestra una alerta usando SweetAlert2
    */
   function showAlert(message, type = "error") {
-    const alertClass = type === "error" ? "alert-error" : "alert-success";
-    const icon = type === "error" ? "❌" : "✅";
+    const config = {
+      title: type === "error" ? "Error" : "Éxito",
+      html: message,
+      icon: type,
+      confirmButtonText: "Entendido",
+      confirmButtonColor: type === "error" ? "#ef4444" : "#10b981",
+    };
 
-    alertContainer.innerHTML = `
-      <div class="alert ${alertClass}" style="padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
-        ${icon} ${message}
-      </div>
-    `;
-
-    // Auto-hide success messages after 5 seconds
-    if (type === "success") {
-      setTimeout(() => {
-        alertContainer.innerHTML = "";
-      }, 5000);
-    }
-
-    // Scroll to top to show alert
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    Swal.fire(config);
   }
 
   /**
@@ -79,7 +70,15 @@
     }
 
     if (errors.length > 0) {
-      showAlert(errors.join("<br>"), "error");
+      Swal.fire({
+        title: "Errores de validación",
+        html: "<ul style='text-align: left; padding-left: 1.5rem;'>" +
+              errors.map(err => `<li>${err}</li>`).join("") +
+              "</ul>",
+        icon: "error",
+        confirmButtonText: "Corregir",
+        confirmButtonColor: "#ef4444",
+      });
       return false;
     }
 
@@ -107,10 +106,15 @@
     const token = getAdminToken();
 
     if (!token) {
-      showAlert("No estás autenticado. Por favor, inicia sesión.", "error");
-      setTimeout(() => {
+      Swal.fire({
+        title: "No autenticado",
+        text: "No estás autenticado. Por favor, inicia sesión.",
+        icon: "error",
+        confirmButtonText: "Ir a Login",
+        confirmButtonColor: "#ef4444",
+      }).then(() => {
         window.location.href = "/login.html";
-      }, 2000);
+      });
       return;
     }
 
@@ -128,40 +132,81 @@
 
       // Manejo específico de error 403 (Forbidden)
       if (response.status === 403) {
-        showAlert(
-          "❌ No tienes permisos para realizar esta acción. Solo los super-administradores pueden crear nuevos administradores.",
-          "error"
-        );
+        Swal.fire({
+          title: "Acceso denegado",
+          text: "No tienes permisos para realizar esta acción. Solo los super-administradores pueden crear nuevos administradores.",
+          icon: "error",
+          confirmButtonText: "Entendido",
+          confirmButtonColor: "#ef4444",
+        });
         return;
       }
 
-      // Manejo de otros errores
+      // Manejo específico de error 400 (Email duplicado u otros errores de validación)
+      if (response.status === 400) {
+        const errorMessage = data.message || "Error de validación";
+        
+        // Detectar si es error de email duplicado o correo ya registrado
+        if (errorMessage.toLowerCase().includes("correo") || 
+            errorMessage.toLowerCase().includes("email")) {
+          Swal.fire({
+            title: "Correo no disponible",
+            html: `<p>${errorMessage}</p>
+                   <p style="margin-top: 1rem; color: #6b7280;">Por favor, utiliza un email diferente.</p>`,
+            icon: "warning",
+            confirmButtonText: "Entendido",
+            confirmButtonColor: "#f97316",
+          });
+        } else {
+          // Otros errores de validación
+          const errors = data.errors ? data.errors.join("<br>") : "";
+          Swal.fire({
+            title: "Error de validación",
+            html: `${errorMessage}${errors ? "<br><br>" + errors : ""}`,
+            icon: "error",
+            confirmButtonText: "Corregir",
+            confirmButtonColor: "#ef4444",
+          });
+        }
+        return;
+      }
+
+      // Manejo de otros errores HTTP
       if (!response.ok) {
         const errorMessage = data.message || "Error al crear el administrador";
-        const errors = data.errors ? data.errors.join("<br>") : "";
-        showAlert(`${errorMessage}${errors ? "<br>" + errors : ""}`, "error");
+        Swal.fire({
+          title: "Error",
+          text: errorMessage,
+          icon: "error",
+          confirmButtonText: "Entendido",
+          confirmButtonColor: "#ef4444",
+        });
         return;
       }
 
       // Éxito
-      showAlert(
-        `✅ Administrador creado exitosamente: ${data.data.admin.email}`,
-        "success"
-      );
-
-      // Limpiar formulario
-      adminForm.reset();
-
-      // Opcional: Redirigir después de unos segundos
-      setTimeout(() => {
+      Swal.fire({
+        title: "¡Administrador creado!",
+        html: `<p>El administrador <strong>${data.data.admin.email}</strong> ha sido creado exitosamente.</p>
+               <p style="margin-top: 1rem; color: #6b7280;">Rol asignado: <strong>${data.data.admin.rol}</strong></p>`,
+        icon: "success",
+        confirmButtonText: "Continuar",
+        confirmButtonColor: "#10b981",
+      }).then(() => {
+        // Limpiar formulario
+        adminForm.reset();
+        // Redirigir al dashboard
         window.location.href = "/admin-dashboard.html";
-      }, 2000);
+      });
     } catch (error) {
       console.error("Error al crear administrador:", error);
-      showAlert(
-        "Error de conexión. Por favor, verifica tu conexión a internet.",
-        "error"
-      );
+      Swal.fire({
+        title: "Error de conexión",
+        text: "No se pudo conectar con el servidor. Por favor, verifica tu conexión a internet e intenta nuevamente.",
+        icon: "error",
+        confirmButtonText: "Entendido",
+        confirmButtonColor: "#ef4444",
+      });
     }
   }
 
@@ -170,9 +215,6 @@
    */
   async function handleSubmit(event) {
     event.preventDefault();
-
-    // Limpiar alertas previas
-    alertContainer.innerHTML = "";
 
     // Validar formulario
     if (!validateForm()) {

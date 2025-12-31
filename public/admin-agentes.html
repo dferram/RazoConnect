@@ -685,18 +685,50 @@
             const data = await response.json();
 
             if (response.ok && data.success) {
-              showToast(
-                data.message || "Solicitud registrada y pendiente de aprobación",
-                "success"
-              );
+              Swal.fire({
+                title: '¡Agente creado!',
+                html: `<p>El agente <strong>${document.getElementById("nombre").value} ${document.getElementById("apellido").value}</strong> ha sido creado exitosamente.</p>`,
+                icon: 'success',
+                confirmButtonText: 'Continuar',
+                confirmButtonColor: '#10b981'
+              });
               e.target.reset();
               loadAgentes();
             } else {
-              showToast(data.message || "Error al crear agente", "error");
+              const errorMessage = data.message || "Error al crear agente";
+              
+              // Detectar si es error de email duplicado o correo ya registrado
+              if (response.status === 400 && 
+                  (errorMessage.toLowerCase().includes("correo") || 
+                   errorMessage.toLowerCase().includes("email"))) {
+                Swal.fire({
+                  title: 'Correo no disponible',
+                  html: `<p>${errorMessage}</p>
+                         <p style="margin-top: 1rem; color: #6b7280;">Por favor, utiliza un email diferente o verifica si ya existe en el sistema.</p>`,
+                  icon: 'warning',
+                  confirmButtonText: 'Entendido',
+                  confirmButtonColor: '#f97316'
+                });
+              } else {
+                // Otros errores
+                Swal.fire({
+                  title: 'Error',
+                  text: errorMessage,
+                  icon: 'error',
+                  confirmButtonText: 'Entendido',
+                  confirmButtonColor: '#ef4444'
+                });
+              }
             }
           } catch (error) {
             console.error("Error:", error);
-            showToast("Error al conectar con el servidor", "error");
+            Swal.fire({
+              title: 'Error de conexión',
+              text: 'No se pudo conectar con el servidor. Por favor, verifica tu conexión a internet e intenta nuevamente.',
+              icon: 'error',
+              confirmButtonText: 'Entendido',
+              confirmButtonColor: '#ef4444'
+            });
           } finally {
             btn.disabled = false;
             btnText.style.display = "inline";
