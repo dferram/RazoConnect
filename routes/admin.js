@@ -5,6 +5,7 @@ const adminController = require("../controllers/adminController");
 const authController = require("../controllers/authController");
 const bitacoraController = require("../controllers/bitacoraController");
 const changeRequestController = require("../controllers/changeRequestController");
+const cloudinaryController = require("../controllers/cloudinaryController");
 const { analizarRiesgoCredito } = require("../services/creditAnalysisService");
 const inventoryAuditController = require("../controllers/inventoryAuditController");
 const purchaseSuggestionController = require("../controllers/purchaseSuggestionController");
@@ -33,6 +34,15 @@ router.post("/login", adminController.loginAdmin);
 /**
  * Rutas protegidas de admin (requieren autenticación y rol admin)
  */
+
+// Cloudinary signature generation
+router.post(
+  "/cloudinary/signature",
+  authenticate,
+  authorizeAdmin,
+  cloudinaryController.generarFirmaUpload
+);
+
 router.get(
   "/verify",
   authenticate,

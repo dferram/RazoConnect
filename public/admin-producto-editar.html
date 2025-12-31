@@ -932,6 +932,7 @@
     <script src="js/components/admin-header-loader.js"></script>
     <script src="js/components/user-profile.js"></script>
     <script src="js/pack-helpers.js"></script>
+    <script src="js/cloudinaryUpload.js"></script>
     <script>
       const adminToken = localStorage.getItem("razoconnect_admin_token");
 
@@ -2219,6 +2220,38 @@
           let response;
           let data;
 
+          // PASO 1: Subir nuevas imágenes a Cloudinary primero
+          const orderedNewClientIds = Array.from(galeriaPreview?.children || [])
+            .map((el) => (el?.dataset?.clientId || "").toString().trim())
+            .filter(Boolean);
+
+          const uploadedImages = [];
+          if (orderedNewClientIds.length > 0) {
+            console.log("📤 Subiendo", orderedNewClientIds.length, "imágenes a Cloudinary...");
+            for (const clientId of orderedNewClientIds) {
+              const item = (imagenesSeleccionadasMeta || []).find(
+                (it) => it && it.clientId === clientId
+              );
+              if (item && item.file) {
+                try {
+                  const cloudinaryResult = await CloudinaryUpload.subirArchivo(
+                    item.file,
+                    "razoconnect_productos"
+                  );
+                  uploadedImages.push({
+                    clientId: clientId,
+                    url: cloudinaryResult.secure_url,
+                    publicId: cloudinaryResult.public_id,
+                  });
+                } catch (uploadError) {
+                  console.error("Error subiendo imagen:", uploadError);
+                  throw new Error(`Error subiendo imagen: ${uploadError.message}`);
+                }
+              }
+            }
+            console.log("✅ Todas las imágenes subidas a Cloudinary");
+          }
+
           if (isEditing) {
             let activoPayload;
             if (Array.isArray(variantesProducto) && variantesProducto.length) {
@@ -2255,6 +2288,7 @@
             }
             console.log("=========================================");
 
+            // PASO 2: Construir galería con imágenes existentes + nuevas URLs de Cloudinary
             const orderedExisting = Array.from(
               galeriaImagenesVarianteServer?.children || []
             )
@@ -2269,28 +2303,16 @@
               galeria.push({ type: "existing", imagenId });
             });
 
-            const orderedNewClientIds = Array.from(galeriaPreview?.children || [])
-              .map((el) => (el?.dataset?.clientId || "").toString().trim())
-              .filter(Boolean);
-
-            const uploadIndexByClientId = new Map();
-            let uploadIndex = 0;
+            // Agregar nuevas imágenes con sus URLs de Cloudinary
             orderedNewClientIds.forEach((clientId) => {
-              const item = (imagenesSeleccionadasMeta || []).find(
-                (it) => it && it.clientId === clientId
-              );
-              if (!item || !item.file) return;
-              multipart.append("imagenes", item.file);
-              uploadIndexByClientId.set(clientId, uploadIndex);
-              uploadIndex += 1;
-            });
-
-            orderedNewClientIds.forEach((clientId) => {
-              if (!uploadIndexByClientId.has(clientId)) return;
-              galeria.push({
-                type: "new",
-                uploadIndex: uploadIndexByClientId.get(clientId),
-              });
+              const uploadedImage = uploadedImages.find(img => img.clientId === clientId);
+              if (uploadedImage) {
+                galeria.push({
+                  type: "new",
+                  url: uploadedImage.url,
+                  publicId: uploadedImage.publicId,
+                });
+              }
             });
 
             multipart.append("galeria", JSON.stringify(galeria));
@@ -2333,29 +2355,17 @@
             }
             console.log("=========================================");
 
-            const orderedNewClientIds = Array.from(galeriaPreview?.children || [])
-              .map((el) => (el?.dataset?.clientId || "").toString().trim())
-              .filter(Boolean);
-
+            // PASO 2: Construir galería solo con URLs de Cloudinary (ya subidas)
             const galeria = [];
-            const uploadIndexByClientId = new Map();
-            let uploadIndex = 0;
             orderedNewClientIds.forEach((clientId) => {
-              const item = (imagenesSeleccionadasMeta || []).find(
-                (it) => it && it.clientId === clientId
-              );
-              if (!item || !item.file) return;
-              multipart.append("imagenes", item.file);
-              uploadIndexByClientId.set(clientId, uploadIndex);
-              uploadIndex += 1;
-            });
-
-            orderedNewClientIds.forEach((clientId) => {
-              if (!uploadIndexByClientId.has(clientId)) return;
-              galeria.push({
-                type: "new",
-                uploadIndex: uploadIndexByClientId.get(clientId),
-              });
+              const uploadedImage = uploadedImages.find(img => img.clientId === clientId);
+              if (uploadedImage) {
+                galeria.push({
+                  type: "new",
+                  url: uploadedImage.url,
+                  publicId: uploadedImage.publicId,
+                });
+              }
             });
 
             multipart.append("galeria", JSON.stringify(galeria));
