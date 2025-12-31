@@ -1,16 +1,12 @@
 const multer = require("multer");
-const { CloudinaryStorage } = require("multer-storage-cloudinary");
+const CloudinaryStorage = require("./cloudinaryStorage");
 const cloudinary = require("../config/cloudinary");
 const path = require("path");
 
 // Configuración de almacenamiento en Cloudinary para comprobantes
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
-  params: {
-    folder: "razoconnect_comprobantes", // Carpeta en Cloudinary
-    allowed_formats: ["jpg", "jpeg", "png", "pdf"], // Formatos permitidos
-    resource_type: "auto", // Permite imágenes y PDFs
-  },
+  folder: "razoconnect_comprobantes",
 });
 
 const fileFilter = (req, file, cb) => {

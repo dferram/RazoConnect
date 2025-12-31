@@ -1011,6 +1011,8 @@
       let imagenesSeleccionadasMeta = [];
       let varianteServerImagesOrder = [];
       let varianteServerImagesData = [];
+      let sortableVariantePreviewInstance = null;
+      let sortableVarianteServerInstance = null;
 
       if (!productoId || Number.isNaN(productoId)) {
         loadingState.style.display = "none";
@@ -2247,6 +2249,12 @@
             );
             multipart.append("color_nombre", formData.color_nombre || "");
 
+            console.log("=== FRONTEND FORMDATA DEBUG (UPDATE) ===");
+            for (let pair of multipart.entries()) {
+              console.log(pair[0] + ': ' + (pair[1] instanceof File ? pair[1].name : pair[1]));
+            }
+            console.log("=========================================");
+
             const orderedExisting = Array.from(
               galeriaImagenesVarianteServer?.children || []
             )
@@ -2318,6 +2326,12 @@
             );
             multipart.append("stock", String(formData.stock || 0));
             multipart.append("color_nombre", formData.color_nombre || "");
+
+            console.log("=== FRONTEND FORMDATA DEBUG (CREATE) ===");
+            for (let pair of multipart.entries()) {
+              console.log(pair[0] + ': ' + (pair[1] instanceof File ? pair[1].name : pair[1]));
+            }
+            console.log("=========================================");
 
             const orderedNewClientIds = Array.from(galeriaPreview?.children || [])
               .map((el) => (el?.dataset?.clientId || "").toString().trim())

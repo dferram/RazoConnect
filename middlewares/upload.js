@@ -1,20 +1,18 @@
 /**
  * Middleware de carga de archivos usando Multer + Cloudinary
  * Configurado para imágenes de productos
+ * Usa implementación directa de Cloudinary para evitar problemas de firma
  */
 
 const multer = require("multer");
-const { CloudinaryStorage } = require("multer-storage-cloudinary");
+const CloudinaryStorage = require("./cloudinaryStorage");
 const cloudinary = require("../config/cloudinary");
 const path = require("path");
 
 // Configuración de almacenamiento en Cloudinary
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
-  params: {
-    folder: "razoconnect_productos", // Carpeta en Cloudinary
-    allowed_formats: ["jpg", "jpeg", "png", "webp"], // Formatos permitidos
-  },
+  folder: "razoconnect_productos",
 });
 
 // Filtro para solo aceptar imágenes

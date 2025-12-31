@@ -1,20 +1,18 @@
 /**
  * Middleware especializado para carga de imágenes de productos
  * Soporta imagen maestro + imágenes por color usando Cloudinary
+ * Usa implementación directa de Cloudinary para evitar problemas de firma
  */
 
 const multer = require("multer");
-const { CloudinaryStorage } = require("multer-storage-cloudinary");
+const CloudinaryStorage = require("./cloudinaryStorage");
 const cloudinary = require("../config/cloudinary");
 const path = require("path");
 
 // Configuración de almacenamiento en Cloudinary para imágenes de productos
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
-  params: {
-    folder: "razoconnect_productos",
-    allowed_formats: ["jpg", "jpeg", "png", "webp"],
-  },
+  folder: "razoconnect_productos",
 });
 
 // Filtro para solo aceptar imágenes
