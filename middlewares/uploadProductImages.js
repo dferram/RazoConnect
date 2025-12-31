@@ -14,7 +14,6 @@ const storage = new CloudinaryStorage({
   params: {
     folder: "razoconnect_productos",
     allowed_formats: ["jpg", "jpeg", "png", "webp"],
-    transformation: [{ quality: "auto", fetch_format: "auto" }],
   },
 });
 

@@ -303,6 +303,14 @@ router.post(
   adminController.subirImagenesProductoMultiple
 );
 
+// DELETE: Eliminar imagen de producto (físicamente de Cloudinary + BD)
+router.delete(
+  "/productos/imagenes/:id",
+  authenticate,
+  authorizeAdmin,
+  adminController.eliminarImagenProducto
+);
+
 router.post(
   "/variantes",
   authenticate,

@@ -20,6 +20,10 @@ const {
   guardarImagenesColor,
   obtenerImagenesColor,
 } = require("../utils/imageColorHelper");
+const {
+  eliminarImagenCloudinary,
+  extraerPublicIdDeUrl,
+} = require("../utils/cloudinaryHelper");
 const fs = require("fs");
 
 let agenteAdminColumnsCache = null;
@@ -5778,35 +5782,29 @@ const crearProducto = async (req, res) => {
       );
     }
 
-    // Procesar imágenes maestro y por color
-    let imagenMaestroUrl = null;
+    // Procesar imágenes maestro (galería unificada) y por color
+    let imagenesGeneralesGuardadas = [];
     let imagenesColorGuardadas = [];
 
     if (req.files) {
-      // Imagen maestro (principal del producto)
-      if (req.files.imagenMaestro && req.files.imagenMaestro[0]) {
-        imagenMaestroUrl = req.files.imagenMaestro[0].path;
-        await client.query(
-          `INSERT INTO producto_imagenes (productoid, url_imagen, textoalternativo, orden)
-           VALUES ($1, $2, $3, $4)`,
-          [producto.productoid, imagenMaestroUrl, nombre, 1]
-        );
-      }
-
-      // Imágenes generales (legacy - para compatibilidad)
-      if (req.files.imagenes && Array.isArray(req.files.imagenes)) {
-        for (let i = 0; i < req.files.imagenes.length; i++) {
-          const file = req.files.imagenes[i];
-          const orden = imagenMaestroUrl ? i + 2 : i + 1;
-          await client.query(
+      // Galería unificada: todas las imágenes del campo imagenMaestro van a producto_imagenes
+      if (req.files.imagenMaestro && Array.isArray(req.files.imagenMaestro)) {
+        for (let i = 0; i < req.files.imagenMaestro.length; i++) {
+          const file = req.files.imagenMaestro[i];
+          const orden = i + 1; // Primera imagen = portada (orden 1)
+          
+          const result = await client.query(
             `INSERT INTO producto_imagenes (productoid, url_imagen, textoalternativo, orden)
-             VALUES ($1, $2, $3, $4)`,
+             VALUES ($1, $2, $3, $4)
+             RETURNING imagenid, url_imagen, orden`,
             [producto.productoid, file.path, nombre, orden]
           );
+          
+          imagenesGeneralesGuardadas.push(result.rows[0]);
         }
       }
 
-      // Imágenes por color
+      // Imágenes por color (separadas, van a producto_imagenes_color)
       if (req.files.imagenesColor && Array.isArray(req.files.imagenesColor)) {
         const imagenesColorMap = procesarImagenesColor(req.files, variantesInput);
         imagenesColorGuardadas = await guardarImagenesColor(
@@ -5837,7 +5835,7 @@ const crearProducto = async (req, res) => {
         tamanosDisponibles: tamanosAsociados,
         varianteMaestra: null,
         variantes: [],
-        imagenMaestro: imagenMaestroUrl,
+        imagenesGenerales: imagenesGeneralesGuardadas,
         imagenesColor: imagenesColorGuardadas,
       },
     });
@@ -12599,6 +12597,81 @@ const actualizarVariante = async (req, res) => {
   }
 };
 
+/**
+ * Elimina una imagen de producto (físicamente de Cloudinary y de la BD)
+ */
+const eliminarImagenProducto = async (req, res) => {
+  const { id } = req.params; // imagenId
+  const imagenId = Number.parseInt(id, 10);
+
+  if (!Number.isInteger(imagenId) || imagenId <= 0) {
+    return res.status(400).json({
+      success: false,
+      message: "ID de imagen inválido",
+    });
+  }
+
+  try {
+    // Obtener la imagen de la BD para extraer el public_id
+    const imagenResult = await db.query(
+      `SELECT imagenid, productoid, url_imagen
+       FROM producto_imagenes
+       WHERE imagenid = $1`,
+      [imagenId]
+    );
+
+    if (!imagenResult.rows.length) {
+      return res.status(404).json({
+        success: false,
+        message: "Imagen no encontrada",
+      });
+    }
+
+    const imagen = imagenResult.rows[0];
+    const urlImagen = imagen.url_imagen;
+
+    // Extraer public_id de la URL de Cloudinary
+    const publicId = extraerPublicIdDeUrl(urlImagen);
+
+    // Eliminar de Cloudinary si se pudo extraer el public_id
+    if (publicId) {
+      try {
+        await eliminarImagenCloudinary(publicId);
+        console.log(`✅ Imagen eliminada de Cloudinary: ${publicId}`);
+      } catch (cloudinaryError) {
+        console.warn(`⚠️ No se pudo eliminar de Cloudinary: ${publicId}`, cloudinaryError);
+        // Continuar con la eliminación de BD aunque falle Cloudinary
+      }
+    } else {
+      console.warn(`⚠️ No se pudo extraer public_id de URL: ${urlImagen}`);
+    }
+
+    // Eliminar de la base de datos
+    await db.query(
+      `DELETE FROM producto_imagenes WHERE imagenid = $1`,
+      [imagenId]
+    );
+
+    console.log(`✅ Imagen ${imagenId} eliminada de la base de datos`);
+
+    res.json({
+      success: true,
+      message: "Imagen eliminada correctamente",
+      data: {
+        imagenId,
+        productoId: imagen.productoid,
+      },
+    });
+  } catch (error) {
+    console.error(`❌ Error al eliminar imagen ${imagenId}:`, error);
+    res.status(500).json({
+      success: false,
+      message: "Error al eliminar la imagen",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   loginAdmin,
   verifyAdmin,
@@ -12674,6 +12747,7 @@ getMedidasExistentes,
   subirEvidenciaRecepcionOC,
   subirImagenProducto,
   subirImagenesProductoMultiple,
+  eliminarImagenProducto,
   getImagenesVariante,
   subirImagenesVarianteMultiple,
   actualizarOrdenImagenesVariante,
