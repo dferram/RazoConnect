@@ -11560,12 +11560,26 @@ const applyGaleriaVarianteAtomic = async ({
     }
 
     if (type === "new") {
-      const uploadIndex = Number.parseInt(item.uploadIndex ?? item.uploadindex, 10);
-      if (!Number.isInteger(uploadIndex) || uploadIndex < 0) continue;
-      const file = files[uploadIndex];
-      if (!file || !file.path) continue;
+      // Soportar URLs de Cloudinary directas (nuevo sistema) o archivos subidos por multer (legacy)
+      let rutaImagen = null;
+      
+      // Prioridad 1: URL de Cloudinary (nuevo sistema de upload directo)
+      if (item.url && typeof item.url === 'string' && item.url.trim()) {
+        rutaImagen = item.url.trim();
+      } 
+      // Prioridad 2: uploadIndex para archivos de multer (legacy)
+      else {
+        const uploadIndex = Number.parseInt(item.uploadIndex ?? item.uploadindex, 10);
+        if (Number.isInteger(uploadIndex) && uploadIndex >= 0) {
+          const file = files[uploadIndex];
+          if (file && file.path) {
+            rutaImagen = file.path;
+          }
+        }
+      }
+      
+      if (!rutaImagen) continue;
 
-      const rutaImagen = file.path;
       const alt =
         item.textoalternativo !== undefined
           ? (() => {
