@@ -408,6 +408,129 @@ const crearPedido = async (req, res) => {
 
     console.log("✅ [PEDIDO] Monto total válido, continuando...");
 
+    // 4.5. Validar y aplicar cupón si se proporcionó
+    let cuponId = null;
+    let montoDescuento = 0;
+    let montoTotalFinal = montoTotal;
+    const codigoCupon = req.body?.codigoCupon || req.body?.cupon || null;
+
+    if (codigoCupon && typeof codigoCupon === "string" && codigoCupon.trim()) {
+      console.log("🎟️ [CUPÓN] Validando cupón:", codigoCupon);
+      const codigoUpper = codigoCupon.trim().toUpperCase();
+
+      const cuponResult = await client.query(
+        `SELECT 
+          cuponid,
+          codigo,
+          descripcion,
+          tipo_descuento,
+          valor,
+          fecha_inicio,
+          fecha_fin,
+          uso_maximo,
+          usos_actuales,
+          activo,
+          monto_minimo_compra
+        FROM cupones
+        WHERE UPPER(codigo) = $1
+        FOR UPDATE`,
+        [codigoUpper]
+      );
+
+      if (cuponResult.rows.length === 0) {
+        await client.query("ROLLBACK");
+        transactionStarted = false;
+        removeUploadedComprobante();
+        return res.status(400).json({
+          success: false,
+          message: "El cupón no existe",
+        });
+      }
+
+      const cupon = cuponResult.rows[0];
+
+      if (!cupon.activo) {
+        await client.query("ROLLBACK");
+        transactionStarted = false;
+        removeUploadedComprobante();
+        return res.status(400).json({
+          success: false,
+          message: "Este cupón ya no está activo",
+        });
+      }
+
+      const ahora = new Date();
+      const fechaInicio = cupon.fecha_inicio ? new Date(cupon.fecha_inicio) : null;
+      const fechaFin = cupon.fecha_fin ? new Date(cupon.fecha_fin) : null;
+
+      if (fechaInicio && ahora < fechaInicio) {
+        await client.query("ROLLBACK");
+        transactionStarted = false;
+        removeUploadedComprobante();
+        return res.status(400).json({
+          success: false,
+          message: "Este cupón aún no está disponible",
+        });
+      }
+
+      if (fechaFin && ahora > fechaFin) {
+        await client.query("ROLLBACK");
+        transactionStarted = false;
+        removeUploadedComprobante();
+        return res.status(400).json({
+          success: false,
+          message: "Este cupón ya expiró",
+        });
+      }
+
+      const usoMaximo = cupon.uso_maximo ? parseInt(cupon.uso_maximo, 10) : null;
+      const usosActuales = parseInt(cupon.usos_actuales || 0, 10);
+
+      if (usoMaximo !== null && usosActuales >= usoMaximo) {
+        await client.query("ROLLBACK");
+        transactionStarted = false;
+        removeUploadedComprobante();
+        return res.status(400).json({
+          success: false,
+          message: "Este cupón ha alcanzado su límite de usos",
+        });
+      }
+
+      const montoMinimo = parseFloat(cupon.monto_minimo_compra || 0);
+      if (montoTotal < montoMinimo) {
+        await client.query("ROLLBACK");
+        transactionStarted = false;
+        removeUploadedComprobante();
+        return res.status(400).json({
+          success: false,
+          message: `Este cupón requiere una compra mínima de $${montoMinimo.toFixed(2)}`,
+        });
+      }
+
+      const tipoDescuento = (cupon.tipo_descuento || "PORCENTAJE").toUpperCase();
+      const valor = parseFloat(cupon.valor || 0);
+
+      if (tipoDescuento === "PORCENTAJE") {
+        montoDescuento = (montoTotal * valor) / 100;
+      } else if (tipoDescuento === "FIJO") {
+        montoDescuento = valor;
+      }
+
+      montoDescuento = Math.min(montoDescuento, montoTotal);
+      montoDescuento = parseFloat(montoDescuento.toFixed(2));
+      montoTotalFinal = parseFloat((montoTotal - montoDescuento).toFixed(2));
+      cuponId = cupon.cuponid;
+
+      await client.query(
+        "UPDATE cupones SET usos_actuales = usos_actuales + 1 WHERE cuponid = $1",
+        [cuponId]
+      );
+
+      console.log("✅ [CUPÓN] Cupón aplicado exitosamente");
+      console.log("🎟️ [CUPÓN] Descuento:", montoDescuento);
+      console.log("🎟️ [CUPÓN] Total final:", montoTotalFinal);
+    }
+
     // 5. Obtener el agente asignado al cliente (si existe)
     const clienteAgenteResult = await client.query(
       "SELECT AgenteID, Nombre, Email FROM Clientes WHERE ClienteID = $1",
@@ -466,10 +589,10 @@ const crearPedido = async (req, res) => {
     if (metodoPagoEsCredito) {
       console.log("🔍 [CRÉDITO] Iniciando validación de pago con crédito...");
       console.log("🔍 [CRÉDITO] Cliente ID:", clienteId);
-      console.log("🔍 [CRÉDITO] Monto total del pedido:", montoTotal);
-      console.log("🔍 [CRÉDITO] Tipo de montoTotal:", typeof montoTotal);
-      console.log("🔍 [CRÉDITO] ¿Es NaN?:", Number.isNaN(montoTotal));
-      console.log("🔍 [CRÉDITO] ¿Es finito?:", Number.isFinite(montoTotal));
+      console.log("🔍 [CRÉDITO] Monto total del pedido:", montoTotalFinal);
+      console.log("🔍 [CRÉDITO] Tipo de montoTotal:", typeof montoTotalFinal);
+      console.log("🔍 [CRÉDITO] ¿Es NaN?:", Number.isNaN(montoTotalFinal));
+      console.log("🔍 [CRÉDITO] ¿Es finito?:", Number.isFinite(montoTotalFinal));
 
       const creditoResult = await client.query(
         `
@@ -507,10 +630,10 @@ const crearPedido = async (req, res) => {
       console.log("🔍 [CRÉDITO] Límite de crédito:", limiteCredito);
       console.log("🔍 [CRÉDITO] Saldo deudor actual:", saldoDeudor);
       console.log("🔍 [CRÉDITO] Saldo disponible:", saldoDisponible);
-      console.log("🔍 [CRÉDITO] Diferencia (monto - disponible):", montoTotal - saldoDisponible);
-      console.log("🔍 [CRÉDITO] ¿Excede el límite?:", montoTotal - saldoDisponible > 0.009);
+      console.log("🔍 [CRÉDITO] Diferencia (monto - disponible):", montoTotalFinal - saldoDisponible);
+      console.log("🔍 [CRÉDITO] ¿Excede el límite?:", montoTotalFinal - saldoDisponible > 0.009);
 
-      if (montoTotal - saldoDisponible > 0.009) {
+      if (montoTotalFinal - saldoDisponible > 0.009) {
         console.log("❌ [CRÉDITO] Saldo insuficiente para completar la compra");
         await client.query("ROLLBACK");
         transactionStarted = false;
@@ -528,7 +651,7 @@ const crearPedido = async (req, res) => {
         creditoId: creditoRow.credito_id,
         saldoActual: saldoDeudor,
         limiteCredito,
-        nuevoSaldo: parseFloat((saldoDeudor + montoTotal).toFixed(2)),
+        nuevoSaldo: parseFloat((saldoDeudor + montoTotalFinal).toFixed(2)),
       };
     }
 
@@ -581,7 +704,9 @@ const crearPedido = async (req, res) => {
            Fecha_Vencimiento,
            Metodo_Pago,
            Transaccion_ID,
-           Comprobante_URL
+           Comprobante_URL,
+           Cupon_ID,
+           Monto_Descuento
          )
          VALUES (
            $1,
@@ -597,14 +722,16 @@ const crearPedido = async (req, res) => {
            END,
            $9,
            $10,
-           $11
+           $11,
+           $12,
+           $13
          )
-         RETURNING PedidoID, FechaPedido, MontoTotal, Estatus, Fecha_Vencimiento, Es_Credito, Pagado, Metodo_Pago, Transaccion_ID, Comprobante_URL`,
+         RETURNING PedidoID, FechaPedido, MontoTotal, Estatus, Fecha_Vencimiento, Es_Credito, Pagado, Metodo_Pago, Transaccion_ID, Comprobante_URL, Cupon_ID, Monto_Descuento`,
         [
           clienteId,
           agenteId,
           DireccionEnvioID,
-          montoTotal,
+          montoTotalFinal,
           pedidoEstatus,
           metodoPagoEsCredito,
           pedidoPagado,
@@ -612,6 +739,8 @@ const crearPedido = async (req, res) => {
           metodoPago || null,
           pedidoTransaccionId,
           pedidoComprobanteUrl,
+          cuponId,
+          montoDescuento,
         ]
       );
       pedido = pedidoResult.rows[0];
@@ -640,7 +769,7 @@ const crearPedido = async (req, res) => {
          VALUES ($1, 'CARGO', $2, $3, $4, $5)`,
         [
           info.creditoId,
-          montoTotal.toFixed(2),
+          montoTotalFinal.toFixed(2),
           `PED-${pedidoId}`,
           `Compra realizada (Pedido #${pedidoId})`,
           info.nuevoSaldo.toFixed(2),
@@ -895,7 +1024,7 @@ const crearPedido = async (req, res) => {
     // 8. Crear comisión si se usó código de agente
     let comision = null;
     if (agenteId) {
-      const montoComision = montoTotal * 0.2; // 20% de comisión
+      const montoComision = montoTotalFinal * 0.2; // 20% de comisión
       const comisionResult = await client.query(
         `INSERT INTO Comisiones (PedidoID, AgenteID, MontoComision, Estatus)
          VALUES ($1, $2, $3, 'Pendiente')

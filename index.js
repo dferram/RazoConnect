@@ -21,6 +21,7 @@ const staffRoutes = require("./routes/staff");
 const creditosRoutes = require("./routes/creditos");
 const { scheduleDailyMaintenance } = require("./cron/dailyMaintenance");
 const pagosRoutes = require("./routes/pagos");
+const cuponesRoutes = require("./routes/cupones");
 
 // Inicializar la aplicación Express
 const app = express();
@@ -87,6 +88,7 @@ app.use("/api/creditos", creditosRoutes);
 app.use("/api/admin/reportes", reportesRoutes);
 app.use("/api/staff", staffRoutes);
 app.use("/api/pagos", pagosRoutes);
+app.use("/api/cupones", cuponesRoutes);
 
 // Manejo de rutas no encontradas solo para API
 app.use("/api/*", (req, res) => {
