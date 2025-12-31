@@ -245,20 +245,12 @@ function escapeHtml(value) {
     .replace(/'/g, "&#039;");
 }
 
-function buildTipoOptionsHtml(selectedTipoId) {
-  const selected = Number.parseInt(selectedTipoId, 10);
-  const opts = [`<option value="">Selecciona...</option>`];
+function buildTipoDatalistHtml() {
+  const opts = [];
   for (const t of tiposProductoCache) {
-    const id = Number.parseInt(t?.tipoProductoId, 10);
     const nombre = String(t?.nombre ?? "").trim();
-    if (!Number.isInteger(id) || id <= 0) continue;
     if (!nombre) continue;
-    const isSel = Number.isInteger(selected) && selected === id;
-    opts.push(
-      `<option value="${escapeHtml(String(id))}" ${isSel ? "selected" : ""}>${escapeHtml(
-        nombre
-      )}</option>`
-    );
+    opts.push(`<option value="${escapeHtml(nombre)}">${escapeHtml(nombre)}</option>`);
   }
   return opts.join("");
 }
@@ -277,7 +269,7 @@ function addReglaRowToModal(regla) {
   const reglaid = Number.parseInt(regla?.reglaid, 10);
   const reglaidSafe = Number.isInteger(reglaid) && reglaid > 0 ? reglaid : "";
   const tipoId = Number.parseInt(regla?.tipoproductoid, 10);
-  const tipoIdSafe = Number.isInteger(tipoId) && tipoId > 0 ? tipoId : "";
+  const tipoNombre = Number.isInteger(tipoId) && tipoId > 0 ? getTipoNombreById(tipoId) : "";
   const nombre = String(regla?.nombre_regla ?? "").trim();
   const cantidad = Number.parseInt(regla?.cantidadempaque, 10);
   const cantidadSafe = Number.isInteger(cantidad) && cantidad > 0 ? cantidad : "";
@@ -287,9 +279,24 @@ function addReglaRowToModal(regla) {
 
   tr.innerHTML = `
     <td>
-      <select class="form-input" data-field="tipoproductoid" style="height: 42px;">
-        ${buildTipoOptionsHtml(tipoIdSafe)}
-      </select>
+      <div style="position: relative;">
+        <input 
+          class="form-input" 
+          data-field="tipo_nombre" 
+          type="text" 
+          list="tiposProductoList" 
+          placeholder="Selecciona o escribe nuevo tipo" 
+          value="${escapeHtml(tipoNombre)}" 
+          style="height: 42px;" 
+          autocomplete="off"
+        />
+        <datalist id="tiposProductoList">
+          ${buildTipoDatalistHtml()}
+        </datalist>
+        <small style="display: block; margin-top: 0.25rem; color: #6b7280; font-size: 0.75rem;">
+          💡 Puedes seleccionar uno existente o escribir uno nuevo
+        </small>
+      </div>
     </td>
     <td>
       <input class="form-input" data-field="nombre_regla" type="text" maxlength="100" placeholder="Ej: Caja Master" value="${escapeHtml(nombre)}" style="height: 42px;" />
@@ -341,7 +348,7 @@ function collectReglasFromModal() {
 
   const rows = Array.from(tbodyReglasEmpaqueModal.querySelectorAll("tr"));
   for (const tr of rows) {
-    const tipoEl = tr.querySelector('[data-field="tipoproductoid"]');
+    const tipoEl = tr.querySelector('[data-field="tipo_nombre"]');
     const nombreEl = tr.querySelector('[data-field="nombre_regla"]');
     const cantEl = tr.querySelector('[data-field="cantidadempaque"]');
 
@@ -350,13 +357,13 @@ function collectReglasFromModal() {
     const reglaidRaw = String(tr.dataset.reglaid || "").trim();
     const reglaid = Number.parseInt(reglaidRaw, 10);
 
-    const tipoId = Number.parseInt(String(tipoEl.value || "").trim(), 10);
+    const tipoNombre = String(tipoEl.value || "").trim();
     const nombre = String(nombreEl.value || "").trim();
     const cantidad = Number.parseInt(String(cantEl.value || "").trim(), 10);
 
     reglas.push({
       reglaid: Number.isInteger(reglaid) && reglaid > 0 ? reglaid : null,
-      tipoproductoid: Number.isInteger(tipoId) && tipoId > 0 ? tipoId : null,
+      tipo_nombre: tipoNombre,
       nombre_regla: nombre,
       cantidadempaque: Number.isInteger(cantidad) && cantidad > 0 ? cantidad : null,
     });
@@ -374,8 +381,8 @@ function validateReglas(reglas) {
   for (let i = 0; i < list.length; i += 1) {
     const r = list[i] || {};
     const idx = i + 1;
-    if (!Number.isInteger(r.tipoproductoid) || r.tipoproductoid <= 0) {
-      return { ok: false, message: `Fila ${idx}: selecciona un tipo de producto.` };
+    if (!String(r.tipo_nombre || "").trim()) {
+      return { ok: false, message: `Fila ${idx}: ingresa un tipo de producto.` };
     }
     if (!String(r.nombre_regla || "").trim()) {
       return { ok: false, message: `Fila ${idx}: el nombre de la regla es requerido.` };

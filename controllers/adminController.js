@@ -3416,15 +3416,14 @@ const saveReglasEmpaqueMultiples = async (req, res) => {
     }
 
     const reglasNormalized = [];
-    const tipoIdsSet = new Set();
+    const tipoNombresSet = new Set();
     const dupeGuard = new Set();
 
     for (const raw of reglasInput) {
       const reglaidParsed = Number.parseInt(raw?.reglaid, 10);
-      const tipoproductoid = Number.parseInt(
-        raw?.tipoproductoid ?? raw?.tipoProductoId ?? raw?.TipoProductoID,
-        10
-      );
+      const tipoNombre = (raw?.tipo_nombre ?? raw?.tipoNombre ?? "")
+        .toString()
+        .trim();
       const cantidadempaque = Number.parseInt(
         raw?.cantidadempaque ?? raw?.cantidadEmpaque ?? raw?.piezasPorPaquete,
         10
@@ -3435,10 +3434,10 @@ const saveReglasEmpaqueMultiples = async (req, res) => {
 
       const reglaid = Number.isInteger(reglaidParsed) && reglaidParsed > 0 ? reglaidParsed : null;
 
-      if (!Number.isInteger(tipoproductoid) || tipoproductoid <= 0) {
+      if (!tipoNombre) {
         return res.status(400).json({
           success: false,
-          message: "Hay reglas con tipoproductoid inválido",
+          message: "Hay reglas sin tipo de producto especificado",
         });
       }
 
@@ -3457,7 +3456,8 @@ const saveReglasEmpaqueMultiples = async (req, res) => {
       }
 
       const nombreTrim = nombreRegla.length > 100 ? nombreRegla.slice(0, 100) : nombreRegla;
-      const key = `${tipoproductoid}|${cantidadempaque}|${nombreTrim.toLowerCase()}`;
+      const tipoNombreTrim = tipoNombre.length > 50 ? tipoNombre.slice(0, 50) : tipoNombre;
+      const key = `${tipoNombreTrim.toLowerCase()}|${cantidadempaque}|${nombreTrim.toLowerCase()}`;
       if (dupeGuard.has(key)) {
         return res.status(400).json({
           success: false,
@@ -3465,11 +3465,11 @@ const saveReglasEmpaqueMultiples = async (req, res) => {
         });
       }
       dupeGuard.add(key);
-      tipoIdsSet.add(tipoproductoid);
+      tipoNombresSet.add(tipoNombreTrim);
 
       reglasNormalized.push({
         reglaid,
-        tipoproductoid,
+        tipo_nombre: tipoNombreTrim,
         cantidadempaque,
         nombre_regla: nombreTrim,
       });
@@ -3493,26 +3493,55 @@ const saveReglasEmpaqueMultiples = async (req, res) => {
       });
     }
 
-    const tipoIds = Array.from(tipoIdsSet);
-    const tiposCheck = await client.query(
-      `SELECT tipoproductoid
+    const tipoNombres = Array.from(tipoNombresSet);
+    const tiposExistentes = await client.query(
+      `SELECT tipoproductoid, nombre
        FROM tipoproducto
-       WHERE tipoproductoid = ANY($1::int[])`,
-      [tipoIds]
+       WHERE LOWER(nombre) = ANY($1::text[])`,
+      [tipoNombres.map(n => n.toLowerCase())]
     );
 
-    const tiposValidos = new Set(
-      (tiposCheck.rows || []).map((r) => Number.parseInt(r.tipoproductoid, 10))
-    );
+    const tipoNombreToIdMap = new Map();
+    for (const row of tiposExistentes.rows || []) {
+      const id = Number.parseInt(row.tipoproductoid, 10);
+      const nombre = (row.nombre || "").toString().trim();
+      if (Number.isInteger(id) && id > 0 && nombre) {
+        tipoNombreToIdMap.set(nombre.toLowerCase(), id);
+      }
+    }
 
-    for (const tipoId of tipoIds) {
-      if (!tiposValidos.has(tipoId)) {
+    for (const tipoNombre of tipoNombres) {
+      const nombreLower = tipoNombre.toLowerCase();
+      if (!tipoNombreToIdMap.has(nombreLower)) {
+        const insertTipo = await client.query(
+          `INSERT INTO tipoproducto (nombre)
+           VALUES ($1)
+           RETURNING tipoproductoid`,
+          [tipoNombre]
+        );
+        const newId = Number.parseInt(insertTipo.rows?.[0]?.tipoproductoid, 10);
+        if (Number.isInteger(newId) && newId > 0) {
+          tipoNombreToIdMap.set(nombreLower, newId);
+        } else {
+          await client.query("ROLLBACK");
+          return res.status(500).json({
+            success: false,
+            message: `No se pudo crear el tipo de producto: ${tipoNombre}`,
+          });
+        }
+      }
+    }
+
+    for (const r of reglasNormalized) {
+      const tipoId = tipoNombreToIdMap.get(r.tipo_nombre.toLowerCase());
+      if (!tipoId) {
         await client.query("ROLLBACK");
-        return res.status(400).json({
+        return res.status(500).json({
           success: false,
-          message: `Tipo de producto inválido: ${tipoId}`,
+          message: `No se pudo mapear el tipo de producto: ${r.tipo_nombre}`,
         });
       }
+      r.tipoproductoid = tipoId;
     }
 
     const existentesRes = await client.query(
@@ -3532,6 +3561,14 @@ const saveReglasEmpaqueMultiples = async (req, res) => {
     const keepIds = [];
 
     for (const r of reglasNormalized) {
+      if (!r.tipoproductoid) {
+        await client.query("ROLLBACK");
+        return res.status(500).json({
+          success: false,
+          message: "Error interno: tipoproductoid no asignado",
+        });
+      }
+
       if (r.reglaid) {
         if (!existentesSet.has(r.reglaid)) {
           await client.query("ROLLBACK");
