@@ -970,36 +970,41 @@
 
               <div class="payment-options-grid" id="paymentOptions">
                 <label
-                  class="payment-option-card selected"
+                  class="payment-option-card disabled"
                   id="paymentOptionMercadoPago"
                   data-method="mercadopago"
+                  style="pointer-events: none;"
                 >
                   <div class="payment-option-top">
-                    <div class="payment-option-icon">💳</div>
+                    <div class="payment-option-icon" style="opacity: 0.5;">💳</div>
                     <input
                       type="radio"
                       name="metodo_pago"
                       value="mercadopago"
-                      checked
+                      disabled
                     />
                   </div>
                   <div class="payment-option-content">
-                    <h5>Mercado Pago</h5>
-                    <p>Paga con tarjeta o saldo digital y recibe confirmación inmediata.</p>
+                    <h5 style="opacity: 0.6;">Mercado Pago</h5>
+                    <p style="opacity: 0.6;">Paga con tarjeta o saldo digital y recibe confirmación inmediata.</p>
+                    <div style="margin-top: 0.75rem; padding: 0.5rem 0.75rem; background: #fef3c7; border: 1px solid #fbbf24; border-radius: 0.5rem; font-size: 0.85rem; color: #92400e;">
+                      ⚠️ <strong>Temporalmente no disponible.</strong><br>
+                      Por favor, utiliza Crédito Razo o transferencia.
+                    </div>
                   </div>
-                  <span class="payment-option-chip payment-chip-digital"
-                    >Pago digital</span
-                  >
+                  <span class="payment-option-chip payment-chip-digital" style="opacity: 0.5;">
+                    No disponible
+                  </span>
                 </label>
 
                 <label
-                  class="payment-option-card"
+                  class="payment-option-card selected"
                   id="paymentOptionCredito"
                   data-method="credito"
                 >
                   <div class="payment-option-top">
                     <div class="payment-option-icon">🏬</div>
-                    <input type="radio" name="metodo_pago" value="credito" />
+                    <input type="radio" name="metodo_pago" value="credito" checked />
                   </div>
                   <div class="payment-option-content">
                     <h5 style="margin-bottom: 0.5rem;">Crédito Razo</h5>
@@ -2253,6 +2258,29 @@
               return;
             }
             const metodo = (radio.value || "").toLowerCase();
+            
+            // ⚠️ BLOQUEO TEMPORAL DE MERCADO PAGO
+            if (metodo === "mercadopago") {
+              if (typeof Swal !== "undefined" && Swal?.fire) {
+                await Swal.fire({
+                  icon: "warning",
+                  title: "Método de pago no disponible",
+                  html: "<p>Estamos actualizando nuestra plataforma de pagos.</p><p><strong>Por ahora, selecciona otro método de pago:</strong></p><ul style='text-align: left; margin-top: 1rem;'><li>💳 Crédito Razo</li><li>🏦 Transferencia bancaria</li></ul>",
+                  confirmButtonText: "Entendido",
+                  confirmButtonColor: "#F97316",
+                });
+              } else {
+                alert("Mercado Pago está temporalmente deshabilitado. Por favor, utiliza Crédito Razo o transferencia bancaria.");
+              }
+              // Cambiar automáticamente a Crédito si está disponible, sino a Transferencia
+              if (creditoDisponible && creditSummary) {
+                setMetodoPago("credito");
+              } else {
+                setMetodoPago("transferencia");
+              }
+              return;
+            }
+            
             await onMetodoPagoSelected(metodo);
           };
 
@@ -2265,6 +2293,22 @@
               if (radio.disabled || card.classList.contains("disabled")) {
                 return;
               }
+              
+              // ⚠️ BLOQUEO ADICIONAL: Mostrar alerta incluso si intentan hacer clic en la tarjeta deshabilitada
+              const metodo = (radio.value || "").toLowerCase();
+              if (metodo === "mercadopago") {
+                if (typeof Swal !== "undefined" && Swal?.fire) {
+                  Swal.fire({
+                    icon: "warning",
+                    title: "Método de pago no disponible",
+                    html: "<p>Estamos actualizando nuestra plataforma de pagos.</p><p><strong>Por ahora, selecciona otro método de pago:</strong></p><ul style='text-align: left; margin-top: 1rem;'><li>💳 Crédito Razo</li><li>🏦 Transferencia bancaria</li></ul>",
+                    confirmButtonText: "Entendido",
+                    confirmButtonColor: "#F97316",
+                  });
+                }
+                return;
+              }
+              
               radio.checked = true;
               handleSelection();
             });

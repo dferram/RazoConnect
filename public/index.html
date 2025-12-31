@@ -18,7 +18,10 @@
     <nav class="navbar">
       <div class="container navbar-content">
         <a href="/" class="navbar-brand"><img src="/icon/Logo_Razo.png" class="titulo-emoji-reemplazo" alt="Razo">RazoConnect</a>
-        <ul class="navbar-menu">
+        <button class="navbar-toggle" id="navbarToggle" aria-label="Toggle navigation">
+          ☰
+        </button>
+        <ul class="navbar-menu" id="navbarMenu">
           <li><a href="/registro.html" class="navbar-link">Registro</a></li>
           <li>
             <a href="/login.html" class="navbar-link btn-nav">Iniciar sesión</a>
@@ -177,6 +180,40 @@
       if (isAuthenticated()) {
         window.location.href = "/inicio.html";
       }
+
+      // ========================================
+      // MOBILE NAVBAR TOGGLE
+      // ========================================
+      document.addEventListener('DOMContentLoaded', () => {
+        const navbarToggle = document.getElementById('navbarToggle');
+        const navbarMenu = document.getElementById('navbarMenu');
+        
+        if (navbarToggle && navbarMenu) {
+          navbarToggle.addEventListener('click', () => {
+            navbarMenu.classList.toggle('active');
+            // Update aria-expanded for accessibility
+            const isExpanded = navbarMenu.classList.contains('active');
+            navbarToggle.setAttribute('aria-expanded', isExpanded);
+          });
+
+          // Close menu when clicking outside
+          document.addEventListener('click', (e) => {
+            if (!navbarToggle.contains(e.target) && !navbarMenu.contains(e.target)) {
+              navbarMenu.classList.remove('active');
+              navbarToggle.setAttribute('aria-expanded', 'false');
+            }
+          });
+
+          // Close menu when clicking on a link
+          const navLinks = navbarMenu.querySelectorAll('a');
+          navLinks.forEach(link => {
+            link.addEventListener('click', () => {
+              navbarMenu.classList.remove('active');
+              navbarToggle.setAttribute('aria-expanded', 'false');
+            });
+          });
+        }
+      });
 
       // ========================================
       // SISTEMA DE CONTENIDO DINÁMICO POR TEMA

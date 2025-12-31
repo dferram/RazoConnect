@@ -5,10 +5,25 @@ const mercadoPagoController = require("../controllers/mercadoPagoController");
 const db = require("../db");
 const { authenticate, authorize } = require("../middlewares/authMiddleware");
 
+// ⚠️ MERCADO PAGO TEMPORALMENTE DESHABILITADO
+// Para reactivar: Cambiar MERCADOPAGO_ENABLED a true
+const MERCADOPAGO_ENABLED = false;
+
 router.post(
   "/procesar-tarjeta",
   authenticate,
   authorize(["cliente"]),
+  (req, res, next) => {
+    // Bloquear endpoint si Mercado Pago está deshabilitado
+    if (!MERCADOPAGO_ENABLED) {
+      return res.status(503).json({
+        success: false,
+        error: "El método de pago Mercado Pago está deshabilitado temporalmente",
+        message: "Por favor, utiliza Crédito Razo o transferencia bancaria como método de pago alternativo."
+      });
+    }
+    next();
+  },
   mercadoPagoController.procesarPagoTarjeta
 );
 
