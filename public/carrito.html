@@ -715,17 +715,17 @@
               <!-- Cupón de descuento -->
               <div style="margin: 1rem 0; padding-top: 1rem; border-top: 1px solid #e5e7eb;">
                 <label style="font-size: 0.9rem; font-weight: 600; color: #374151; margin-bottom: 0.5rem; display: block;">¿Tienes un cupón?</label>
-                <div style="display: flex; gap: 0.5rem;">
+                <div style="display: flex; gap: 0.5rem; width: 100%;">
                   <input 
                     type="text" 
                     id="cupon-input" 
                     placeholder="Código de cupón" 
-                    style="flex: 1; padding: 0.6rem 0.75rem; border: 1px solid #d1d5db; border-radius: 0.5rem; font-size: 0.9rem; text-transform: uppercase;"
+                    style="flex: 1; min-width: 0; padding: 0.6rem 0.75rem; border: 1px solid #d1d5db; border-radius: 0.5rem; font-size: 0.9rem; text-transform: uppercase;"
                   />
                   <button 
                     id="btn-aplicar-cupon" 
                     class="btn btn-outline-primary" 
-                    style="padding: 0.6rem 1.25rem; white-space: nowrap;"
+                    style="padding: 0.6rem 0.75rem; white-space: nowrap; flex-shrink: 0;"
                   >
                     Aplicar
                   </button>

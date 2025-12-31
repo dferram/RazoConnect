@@ -4,21 +4,36 @@ let modalCupon;
 let editandoCuponId = null;
 
 document.addEventListener("DOMContentLoaded", () => {
-  const token = localStorage.getItem("token");
-  if (!token) {
-    window.location.href = "/login.html";
+  // Verificar autenticación de admin
+  if (!requireAdminAuth()) {
     return;
   }
 
-  modalCupon = new bootstrap.Modal(document.getElementById("modalCupon"));
+  // Esperar a que Bootstrap esté disponible
+  const initModal = () => {
+    if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+      const modalEl = document.getElementById("modalCupon");
+      if (modalEl) {
+        modalCupon = new bootstrap.Modal(modalEl);
+      }
+    }
+  };
+
+  // Intentar inicializar el modal
+  if (typeof bootstrap !== 'undefined') {
+    initModal();
+  } else {
+    // Si Bootstrap no está listo, esperar un poco
+    setTimeout(initModal, 100);
+  }
 
   const btnNuevoCupon = document.getElementById("btn-nuevo-cupon");
   const formCupon = document.getElementById("form-cupon");
   const cuponTipo = document.getElementById("cupon-tipo");
 
-  btnNuevoCupon.addEventListener("click", abrirModalNuevo);
-  formCupon.addEventListener("submit", guardarCupon);
-  cuponTipo.addEventListener("change", actualizarHintValor);
+  if (btnNuevoCupon) btnNuevoCupon.addEventListener("click", abrirModalNuevo);
+  if (formCupon) formCupon.addEventListener("submit", guardarCupon);
+  if (cuponTipo) cuponTipo.addEventListener("change", actualizarHintValor);
 
   cargarCupones();
 });
@@ -38,8 +53,14 @@ function actualizarHintValor() {
 }
 
 async function cargarCupones() {
+  const loadingEl = document.getElementById("loadingCupones");
+  const tabla = document.getElementById("tabla-cupones");
+  
   try {
-    const token = localStorage.getItem("token");
+    if (loadingEl) loadingEl.style.display = "flex";
+    if (tabla) tabla.style.display = "none";
+    
+    const token = localStorage.getItem("razoconnect_admin_token");
     const response = await fetch(`${API_BASE}/cupones/admin/cupones`, {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -60,23 +81,24 @@ async function cargarCupones() {
       title: "Error",
       text: "No se pudieron cargar los cupones",
     });
+  } finally {
+    if (loadingEl) loadingEl.style.display = "none";
   }
 }
 
 function renderizarTablaCupones() {
   const tbody = document.getElementById("cupones-tbody");
+  const tabla = document.getElementById("tabla-cupones");
+  const emptyState = document.getElementById("emptyCupones");
 
   if (cuponesData.length === 0) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="8" class="text-center py-5 text-muted">
-          <i class="bi bi-inbox" style="font-size: 3rem;"></i>
-          <p class="mt-2">No hay cupones registrados</p>
-        </td>
-      </tr>
-    `;
+    if (tabla) tabla.style.display = "none";
+    if (emptyState) emptyState.style.display = "block";
     return;
   }
+
+  if (tabla) tabla.style.display = "table";
+  if (emptyState) emptyState.style.display = "none";
 
   tbody.innerHTML = cuponesData
     .map((cupon) => {
@@ -150,16 +172,31 @@ function renderizarTablaCupones() {
 
 function abrirModalNuevo() {
   editandoCuponId = null;
-  document.getElementById("modalCuponLabel").textContent = "Nuevo Cupón";
-  document.getElementById("form-cupon").reset();
-  document.getElementById("cupon-id").value = "";
+  const labelEl = document.getElementById("modalCuponLabel");
+  const formEl = document.getElementById("form-cupon");
+  const idEl = document.getElementById("cupon-id");
+  
+  if (labelEl) labelEl.textContent = "Nuevo Cupón";
+  if (formEl) formEl.reset();
+  if (idEl) idEl.value = "";
+  
   actualizarHintValor();
-  modalCupon.show();
+  
+  if (modalCupon) {
+    modalCupon.show();
+  } else {
+    // Fallback: intentar inicializar el modal si no existe
+    const modalEl = document.getElementById("modalCupon");
+    if (modalEl && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+      modalCupon = new bootstrap.Modal(modalEl);
+      modalCupon.show();
+    }
+  }
 }
 
 async function editarCupon(cuponId) {
   try {
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("razoconnect_admin_token");
     const response = await fetch(
       `${API_BASE}/cupones/admin/cupones/${cuponId}`,
       {
@@ -278,7 +315,7 @@ async function guardarCupon(e) {
   };
 
   try {
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("razoconnect_admin_token");
     const url = editandoCuponId
       ? `${API_BASE}/cupones/admin/cupones/${editandoCuponId}`
       : `${API_BASE}/cupones/admin/cupones`;
@@ -336,7 +373,7 @@ async function desactivarCupon(cuponId) {
   if (!result.isConfirmed) return;
 
   try {
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("razoconnect_admin_token");
     const response = await fetch(
       `${API_BASE}/cupones/admin/cupones/${cuponId}`,
       {
@@ -372,7 +409,7 @@ async function desactivarCupon(cuponId) {
 
 async function activarCupon(cuponId) {
   try {
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("razoconnect_admin_token");
     const response = await fetch(
       `${API_BASE}/cupones/admin/cupones/${cuponId}`,
       {

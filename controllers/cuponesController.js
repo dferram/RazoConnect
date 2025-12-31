@@ -37,7 +37,8 @@ const validarCupon = async (req, res) => {
         uso_maximo,
         usos_actuales,
         activo,
-        monto_minimo_compra
+        monto_minimo_compra,
+        agenteid
       FROM cupones
       WHERE UPPER(codigo) = $1`,
       [codigoUpper]
@@ -223,8 +224,9 @@ const obtenerCupon = async (req, res) => {
 };
 
 /**
- * Crear un nuevo cupón (Admin)
+ * Crear un nuevo cupón (Admin o Agente)
  * POST /api/admin/cupones
+ * POST /api/agente/cupones
  */
 const crearCupon = async (req, res) => {
   try {
@@ -237,7 +239,12 @@ const crearCupon = async (req, res) => {
       fechaFin,
       usoMaximo,
       montoMinimoCompra,
+      agenteId,
     } = req.body;
+
+    // Detectar si es un agente creando el cupón
+    const esAgente = req.user && req.user.roles && req.user.roles.includes('agente');
+    const agenteIdFinal = esAgente ? (req.user.userId || req.user.id) : (agenteId || null);
 
     if (!codigo || typeof codigo !== "string" || !codigo.trim()) {
       return res.status(400).json({
@@ -283,6 +290,22 @@ const crearCupon = async (req, res) => {
       });
     }
 
+    // VALIDACIÓN: Agentes solo pueden crear cupones de máximo 15%
+    if (esAgente && tipo === "PORCENTAJE" && valorNum > 15) {
+      return res.status(403).json({
+        success: false,
+        message: "Los agentes solo pueden crear cupones de hasta 15% de descuento",
+      });
+    }
+
+    // VALIDACIÓN: Agentes no pueden crear cupones de monto fijo
+    if (esAgente && tipo === "FIJO") {
+      return res.status(403).json({
+        success: false,
+        message: "Los agentes solo pueden crear cupones de tipo PORCENTAJE",
+      });
+    }
+
     const result = await db.query(
       `INSERT INTO cupones (
         codigo,
@@ -293,9 +316,10 @@ const crearCupon = async (req, res) => {
         fecha_fin,
         uso_maximo,
         monto_minimo_compra,
-        activo
+        activo,
+        agenteid
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, true)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, true, $9)
       RETURNING 
         cuponid,
         codigo,
@@ -307,7 +331,8 @@ const crearCupon = async (req, res) => {
         uso_maximo,
         usos_actuales,
         activo,
-        monto_minimo_compra`,
+        monto_minimo_compra,
+        agenteid`,
       [
         codigoUpper,
         descripcion || null,
@@ -317,6 +342,7 @@ const crearCupon = async (req, res) => {
         fechaFin || null,
         usoMaximo ? parseInt(usoMaximo, 10) : null,
         montoMinimoCompra ? parseFloat(montoMinimoCompra) : 0,
+        agenteIdFinal,
       ]
     );
 
@@ -535,6 +561,54 @@ const desactivarCupon = async (req, res) => {
   }
 };
 
+/**
+ * Listar cupones del agente logueado
+ * GET /api/agente/cupones/mis-cupones
+ */
+const listarMisCupones = async (req, res) => {
+  try {
+    const agenteId = req.user.userId || req.user.id;
+
+    if (!agenteId) {
+      return res.status(400).json({
+        success: false,
+        message: "No se pudo identificar al agente",
+      });
+    }
+
+    const result = await db.query(
+      `SELECT 
+        cuponid,
+        codigo,
+        descripcion,
+        tipo_descuento,
+        valor,
+        fecha_inicio,
+        fecha_fin,
+        uso_maximo,
+        usos_actuales,
+        activo,
+        monto_minimo_compra,
+        agenteid
+      FROM cupones
+      WHERE agenteid = $1
+      ORDER BY cuponid DESC`,
+      [agenteId]
+    );
+
+    return res.status(200).json({
+      success: true,
+      data: result.rows,
+    });
+  } catch (error) {
+    console.error("Error al listar cupones del agente:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error al obtener los cupones",
+    });
+  }
+};
+
 module.exports = {
   validarCupon,
   listarCupones,
@@ -542,4 +616,5 @@ module.exports = {
   crearCupon,
   actualizarCupon,
   desactivarCupon,
+  listarMisCupones,
 };
