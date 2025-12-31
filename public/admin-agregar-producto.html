@@ -266,19 +266,49 @@
                   </div>
 
                   <div class="form-group">
+                    <label for="input-imagen-maestro" class="form-label">
+                      Imagen Principal del Producto (Maestro)
+                    </label>
+                    <input
+                      type="file"
+                      id="input-imagen-maestro"
+                      name="imagenMaestro"
+                      class="form-input"
+                      accept="image/jpeg,image/jpg,image/png,image/webp"
+                      style="padding: 0.75rem; cursor: pointer;"
+                    />
+                    <small class="form-hint"
+                      >Imagen de portada del producto. Formatos: JPG, PNG, WEBP. Máximo 5MB.</small
+                    >
+                  </div>
+
+                  <div class="form-group" id="imagenes-color-container" style="display: none;">
+                    <label class="form-label">
+                      Imágenes por Color de Variante
+                    </label>
+                    <div id="imagenes-color-fields">
+                      <!-- Los campos se generarán dinámicamente según los colores -->
+                    </div>
+                    <small class="form-hint"
+                      >Sube una imagen por cada color único de tus variantes. Estas imágenes se mostrarán cuando el cliente seleccione ese color.</small
+                    >
+                  </div>
+
+                  <div class="form-group">
                     <label for="input-imagen" class="form-label">
-                      Fotos del Producto
+                      Fotos Adicionales del Producto (Opcional)
                     </label>
                     <input
                       type="file"
                       id="input-imagen"
+                      name="imagenes"
                       class="form-input"
                       accept="image/jpeg,image/jpg,image/png,image/webp"
                       multiple
                       style="padding: 0.75rem; cursor: pointer;"
                     />
                     <small class="form-hint"
-                      >Sube hasta 12 fotos del producto (se aplicarán a todas las variantes). Formatos permitidos: JPG, PNG, WEBP. Máximo 5MB c/u.</small
+                      >Sube hasta 12 fotos adicionales (galería general). Formatos permitidos: JPG, PNG, WEBP. Máximo 5MB c/u.</small
                     >
 
                     <div id="area-imagenes-existentes" class="mt-3 d-none">
@@ -2371,6 +2401,71 @@
 
       loadMasterProducts();
       loadTamanos();
+
+      // ===== GESTIÓN DE IMÁGENES POR COLOR =====
+      let coloresVariantes = new Set();
+
+      function actualizarCamposImagenesColor() {
+        const container = document.getElementById('imagenes-color-container');
+        const fieldsContainer = document.getElementById('imagenes-color-fields');
+        
+        if (!container || !fieldsContainer) return;
+
+        // Extraer colores únicos de las variantes que el usuario está creando
+        // (En este flujo, las variantes se crean después, así que esto es para edición)
+        // Para creación nueva, se puede activar manualmente o desde otro flujo
+        
+        if (coloresVariantes.size === 0) {
+          container.style.display = 'none';
+          return;
+        }
+
+        container.style.display = 'block';
+        fieldsContainer.innerHTML = '';
+
+        const coloresArray = Array.from(coloresVariantes).sort();
+        
+        coloresArray.forEach((color, index) => {
+          const fieldGroup = document.createElement('div');
+          fieldGroup.className = 'form-group';
+          fieldGroup.style.marginBottom = '1rem';
+          
+          const label = document.createElement('label');
+          label.className = 'form-label';
+          label.textContent = `Imagen para color: ${color}`;
+          label.style.fontWeight = '600';
+          label.style.color = '#4338ca';
+          
+          const input = document.createElement('input');
+          input.type = 'file';
+          input.name = 'imagenesColor';
+          input.className = 'form-input';
+          input.accept = 'image/jpeg,image/jpg,image/png,image/webp';
+          input.style.padding = '0.75rem';
+          input.style.cursor = 'pointer';
+          input.dataset.color = color;
+          
+          fieldGroup.appendChild(label);
+          fieldGroup.appendChild(input);
+          fieldsContainer.appendChild(fieldGroup);
+        });
+      }
+
+      // Función auxiliar para agregar colores (se puede llamar desde el flujo de variantes)
+      window.agregarColorVariante = function(colorNombre) {
+        if (colorNombre && typeof colorNombre === 'string') {
+          coloresVariantes.add(colorNombre.trim().toUpperCase());
+          actualizarCamposImagenesColor();
+        }
+      };
+
+      window.limpiarColoresVariantes = function() {
+        coloresVariantes.clear();
+        actualizarCamposImagenesColor();
+      };
+
+      // Initialize on page load
+      init();
     </script>
   </body>
 </html>

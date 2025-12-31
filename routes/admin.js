@@ -15,6 +15,7 @@ const numCuentaController = require("../controllers/numCuentaController");
 const migrationController = require("../controllers/migrationController");
 const upload = require("../middlewares/upload");
 const uploadComprobante = require("../middlewares/uploadComprobante");
+const uploadProductImages = require("../middlewares/uploadProductImages");
 const {
   authenticate,
   authorizeAdmin,
@@ -235,12 +236,14 @@ router.post(
   "/productos",
   authenticate,
   authorizeAdmin,
+  uploadProductImages,
   adminController.crearProducto
 );
 router.put(
   "/productos/:id",
   authenticate,
   authorizeAdmin,
+  uploadProductImages,
   adminController.actualizarProducto
 );
 

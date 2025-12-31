@@ -965,6 +965,22 @@ const obtenerProductoPorId = async (req, res) => {
     const precioDesde = precios.length ? Math.min(...precios) : null;
     const precioHasta = precios.length ? Math.max(...precios) : null;
 
+    // Obtener imágenes por color
+    const imagenesColorResult = await db.query(
+      `SELECT imagencolorid, color_nombre, url_imagen_cloudinary, fechacreacion
+       FROM producto_imagenes_color
+       WHERE productoid = $1
+       ORDER BY color_nombre ASC, fechacreacion ASC`,
+      [id]
+    );
+
+    const imagenesColor = imagenesColorResult.rows.map((row) => ({
+      imagenColorId: row.imagencolorid,
+      colorNombre: row.color_nombre,
+      urlImagen: row.url_imagen_cloudinary,
+      fechaCreacion: row.fechacreacion,
+    }));
+
     const productoDetalle = {
       productoId: producto.productoid,
       nombreProducto: producto.nombreproducto,
@@ -991,6 +1007,7 @@ const obtenerProductoPorId = async (req, res) => {
         producto: productoDetalle,
         variantes,
         tamanosDisponibles,
+        imagenesColor,
       },
     });
   } catch (error) {

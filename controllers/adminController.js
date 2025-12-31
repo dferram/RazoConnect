@@ -15,6 +15,11 @@ const { generateCodigoAgente } = require("../utils/agentCode");
 const { registrarLog } = require("../services/loggerService");
 const inventoryService = require("../services/inventoryService");
 const auditService = require("../services/auditService");
+const {
+  procesarImagenesColor,
+  guardarImagenesColor,
+  obtenerImagenesColor,
+} = require("../utils/imageColorHelper");
 const fs = require("fs");
 
 let agenteAdminColumnsCache = null;
@@ -5729,6 +5734,45 @@ const crearProducto = async (req, res) => {
       );
     }
 
+    // Procesar imágenes maestro y por color
+    let imagenMaestroUrl = null;
+    let imagenesColorGuardadas = [];
+
+    if (req.files) {
+      // Imagen maestro (principal del producto)
+      if (req.files.imagenMaestro && req.files.imagenMaestro[0]) {
+        imagenMaestroUrl = req.files.imagenMaestro[0].path;
+        await client.query(
+          `INSERT INTO producto_imagenes (productoid, url_imagen, textoalternativo, orden)
+           VALUES ($1, $2, $3, $4)`,
+          [producto.productoid, imagenMaestroUrl, nombre, 1]
+        );
+      }
+
+      // Imágenes generales (legacy - para compatibilidad)
+      if (req.files.imagenes && Array.isArray(req.files.imagenes)) {
+        for (let i = 0; i < req.files.imagenes.length; i++) {
+          const file = req.files.imagenes[i];
+          const orden = imagenMaestroUrl ? i + 2 : i + 1;
+          await client.query(
+            `INSERT INTO producto_imagenes (productoid, url_imagen, textoalternativo, orden)
+             VALUES ($1, $2, $3, $4)`,
+            [producto.productoid, file.path, nombre, orden]
+          );
+        }
+      }
+
+      // Imágenes por color
+      if (req.files.imagenesColor && Array.isArray(req.files.imagenesColor)) {
+        const imagenesColorMap = procesarImagenesColor(req.files, variantesInput);
+        imagenesColorGuardadas = await guardarImagenesColor(
+          client,
+          producto.productoid,
+          imagenesColorMap
+        );
+      }
+    }
+
     await client.query("COMMIT");
     transactionStarted = false;
 
@@ -5749,6 +5793,8 @@ const crearProducto = async (req, res) => {
         tamanosDisponibles: tamanosAsociados,
         varianteMaestra: null,
         variantes: [],
+        imagenMaestro: imagenMaestroUrl,
+        imagenesColor: imagenesColorGuardadas,
       },
     });
 
