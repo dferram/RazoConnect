@@ -14,7 +14,6 @@ const storage = new CloudinaryStorage({
   params: {
     folder: "razoconnect_productos", // Carpeta en Cloudinary
     allowed_formats: ["jpg", "jpeg", "png", "webp"], // Formatos permitidos
-    transformation: [{ quality: "auto", fetch_format: "auto" }], // Optimización automática
   },
 });
 
