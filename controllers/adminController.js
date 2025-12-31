@@ -77,7 +77,7 @@ const subirEvidenciaRecepcionOC = async (req, res) => {
       });
     }
 
-    const url = `/uploads/${req.file.filename}`;
+    const url = req.file.path;
     return res.status(200).json({
       success: true,
       message: "Evidencia subida exitosamente",
@@ -518,7 +518,7 @@ const registrarPagoCuentaPorPagar = async (req, res) => {
     const usuarioId = Number.parseInt(req?.user?.id ?? req?.user?.userId, 10);
     const usuarioFinal = Number.isInteger(usuarioId) && usuarioId > 0 ? usuarioId : null;
 
-    const comprobanteUrl = req.file ? `/uploads/${req.file.filename}` : null;
+    const comprobanteUrl = req.file ? req.file.path : null;
 
     await client.query("BEGIN");
 
@@ -1053,8 +1053,8 @@ const recepcionMasivaOrdenCompra = async (req, res) => {
     );
     const fechaVencimiento = vencResult.rows[0]?.fecha_vencimiento || null;
 
-    const comprobanteUrl = req.file?.filename
-      ? `/uploads/comprobantes/${req.file.filename}`
+    const comprobanteUrl = req.file?.path
+      ? req.file.path
       : null;
 
     const reglasEmpaqueRes = await client.query(
@@ -10712,8 +10712,8 @@ const subirImagenProducto = async (req, res) => {
       });
     }
 
-    // Generar la ruta relativa de la imagen
-    const rutaImagen = `/uploads/${req.file.filename}`;
+    // Obtener la URL de Cloudinary
+    const rutaImagen = req.file.path;
 
     // Verificar si ya existe una imagen principal (orden = 1)
     const existingImageResult = await db.query(
@@ -10831,9 +10831,9 @@ const subirImagenesProductoMultiple = async (req, res) => {
     const imagenesGuardadas = [];
 
     for (const file of archivos) {
-      if (!file || !file.filename) continue;
+      if (!file || !file.path) continue;
 
-      const rutaImagen = `/uploads/${file.filename}`;
+      const rutaImagen = file.path;
       nextOrden += 1;
 
       const insertResult = await db.query(
@@ -11015,9 +11015,9 @@ const subirImagenesVarianteMultiple = async (req, res) => {
     const imagenesGuardadas = [];
 
     for (const file of archivos) {
-      if (!file || !file.filename) continue;
+      if (!file || !file.path) continue;
 
-      const rutaImagen = `/uploads/${file.filename}`;
+      const rutaImagen = file.path;
       nextOrden += 1;
 
       const insertResult = await db.query(
@@ -11360,17 +11360,10 @@ const normalizeUploadedFiles = (req) => {
 };
 
 const safeUnlinkUploads = async (files) => {
-  if (!Array.isArray(files) || !files.length) return;
-
-  await Promise.all(
-    files
-      .filter((f) => f && f.path)
-      .map((f) =>
-        fs.promises
-          .unlink(f.path)
-          .catch(() => null)
-      )
-  );
+  // Con Cloudinary, los archivos se gestionan en la nube
+  // No es necesario eliminar archivos locales
+  // Esta función se mantiene por compatibilidad pero no hace nada
+  return;
 };
 
 const parseGaleriaPayload = (raw) => {
@@ -11456,9 +11449,9 @@ const applyGaleriaVarianteAtomic = async ({
       const uploadIndex = Number.parseInt(item.uploadIndex ?? item.uploadindex, 10);
       if (!Number.isInteger(uploadIndex) || uploadIndex < 0) continue;
       const file = files[uploadIndex];
-      if (!file || !file.filename) continue;
+      if (!file || !file.path) continue;
 
-      const rutaImagen = `/uploads/${file.filename}`;
+      const rutaImagen = file.path;
       const alt =
         item.textoalternativo !== undefined
           ? (() => {

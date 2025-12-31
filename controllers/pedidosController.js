@@ -536,8 +536,8 @@ const crearPedido = async (req, res) => {
       typeof MetodoPago === "object" ? MetodoPago?.referenciaPago || null : null;
 
     const comprobanteUrl =
-      req.file && req.file.filename
-        ? `/uploads/comprobantes/${req.file.filename}`
+      req.file && req.file.path
+        ? req.file.path
         : null;
 
     if (metodoPago === "transferencia" && !comprobanteUrl) {

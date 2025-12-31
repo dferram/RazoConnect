@@ -1,20 +1,15 @@
 const multer = require("multer");
+const { CloudinaryStorage } = require("multer-storage-cloudinary");
+const cloudinary = require("../config/cloudinary");
 const path = require("path");
-const fs = require("fs");
 
-const uploadDir = path.join(__dirname, "..", "public", "uploads", "comprobantes");
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, uploadDir);
-  },
-  filename: function (req, file, cb) {
-    const ext = path.extname(file.originalname || "").toLowerCase();
-    const safeExt = ext && ext.length <= 10 ? ext : "";
-    cb(null, `${Date.now()}${safeExt}`);
+// Configuración de almacenamiento en Cloudinary para comprobantes
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: "razoconnect_comprobantes", // Carpeta en Cloudinary
+    allowed_formats: ["jpg", "jpeg", "png", "pdf"], // Formatos permitidos
+    resource_type: "auto", // Permite imágenes y PDFs
   },
 });
 

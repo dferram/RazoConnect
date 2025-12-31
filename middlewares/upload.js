@@ -1,28 +1,20 @@
 /**
- * Middleware de carga de archivos usando Multer
+ * Middleware de carga de archivos usando Multer + Cloudinary
  * Configurado para imágenes de productos
  */
 
 const multer = require("multer");
+const { CloudinaryStorage } = require("multer-storage-cloudinary");
+const cloudinary = require("../config/cloudinary");
 const path = require("path");
-const fs = require("fs");
 
-// Asegurar que existe la carpeta de uploads
-const uploadDir = path.join(__dirname, "..", "public", "uploads");
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-  console.log("✅ Carpeta uploads creada:", uploadDir);
-}
-
-// Configuración de almacenamiento
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, uploadDir);
-  },
-  filename: function (req, file, cb) {
-    // Generar nombre único: timestamp + nombre original
-    const uniqueName = Date.now() + "-" + file.originalname;
-    cb(null, uniqueName);
+// Configuración de almacenamiento en Cloudinary
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: "razoconnect_productos", // Carpeta en Cloudinary
+    allowed_formats: ["jpg", "jpeg", "png", "webp"], // Formatos permitidos
+    transformation: [{ quality: "auto", fetch_format: "auto" }], // Optimización automática
   },
 });
 
