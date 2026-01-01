@@ -71,8 +71,6 @@
      * Inicializa el gestor de temas
      */
     init() {
-      this.log("🎨 Inicializando Theme Manager...");
-
       // Aplicar tema inicial
       this.applyThemeBasedOnDate();
 
@@ -101,9 +99,6 @@
       const detectedTheme = this.detectThemeForDate(now);
 
       this.applyTheme(detectedTheme);
-
-      this.log(`📅 Fecha actual: ${now.toLocaleDateString("es-MX")}`);
-      this.log(`🎨 Tema aplicado: ${detectedTheme.displayName}`);
     }
 
     /**
@@ -191,7 +186,6 @@
       }
 
       this.applyTheme(theme);
-      this.log(`🎨 Tema manual aplicado: ${theme.displayName}`);
       return true;
     }
 
@@ -226,7 +220,6 @@
     scheduleThemeCheck() {
       // Verificar tema cada hora
       setInterval(() => {
-        this.log("⏰ Verificación periódica de tema...");
         this.applyThemeBasedOnDate();
       }, 60 * 60 * 1000); // 1 hora
     }
@@ -266,26 +259,7 @@
    * Función helper: mostrar todos los temas y sus rangos
    */
   window.showAllThemes = function () {
-    console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-    console.log("📚 TODOS LOS TEMAS DE RAZOCONNECT:");
-    console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-
-    Object.values(THEMES).forEach((theme) => {
-      console.log(`\n${theme.icon} ${theme.displayName}`);
-      console.log(`   Clase: ${theme.className}`);
-
-      if (theme.dateRanges) {
-        theme.dateRanges.forEach((range) => {
-          const startDate = `${range.startDay}/${range.startMonth}`;
-          const endDate = `${range.endDay}/${range.endMonth}`;
-          console.log(`   📅 ${startDate} → ${endDate}`);
-        });
-      } else if (theme.isDefault) {
-        console.log(`   📅 Tema por defecto`);
-      }
-    });
-
-    console.log("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    // Debug function - removed for production
   };
 
   // ============================================

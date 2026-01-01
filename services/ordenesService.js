@@ -48,14 +48,6 @@ async function normalizarCantidadPorReglaEmpaque(
     // PASO 3: Calcular sobrante de stock
     const sobranteStock = cantidadNormalizada - cantidadSolicitada;
 
-    console.log(
-      `📦 Smart Reordering - Producto ${productoID}:`,
-      `\n   Solicitado: ${cantidadSolicitada}`,
-      `\n   Regla Empaque: ${reglaEmpaque} (${descripcionRegla})`,
-      `\n   Normalizado: ${cantidadNormalizada}`,
-      `\n   Sobrante: ${sobranteStock}`
-    );
-
     return {
       cantidadNormalizada,
       reglaEmpaque,

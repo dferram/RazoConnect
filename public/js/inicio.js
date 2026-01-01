@@ -289,8 +289,6 @@
   // INICIALIZAR TODO AL CARGAR LA PÁGINA
   // ========================================
   document.addEventListener("DOMContentLoaded", () => {
-    console.log("🏠 Inicializando página de inicio...");
-
     // 1. Personalizar saludo
     personalizarSaludo();
 
@@ -305,7 +303,5 @@
 
     // 5. Inicializar logout
     initLogout();
-
-    console.log("✅ Página de inicio lista");
   });
 })();

@@ -173,48 +173,26 @@ html, body {
     gap: 2rem !important;
   }
 
-  /* ========== NAVIGATION - LANDING PAGE ========== */
+  /* ========== NAVIGATION - LIMPIO Y SIMPLE ========== */
   
-  /* Navbar - sticky positioning en móviles */
-  .navbar,
-  .navbar.sticky-top {
-    position: sticky !important;
-    top: 0 !important;
-    z-index: 1000 !important;
-    background-color: #ffffff !important;
-    padding: 0.75rem 0 !important;
-    margin: 0 !important;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+  /* Navbar en móviles */
+  .navbar {
+    padding: 0.75rem 0;
   }
 
-  /* ========== ESPACIADO SUPERIOR PARA PÁGINAS ESPECÍFICAS ========== */
-  
-  /* Agregar aire entre el header y el contenido principal */
-  .page-catalogo .container:first-of-type,
-  .page-dashboard .container:first-of-type,
-  .page-carrito .container:first-of-type {
-    padding-top: 2.5rem !important;
+  .navbar-brand img {
+    height: 28px;
   }
 
-  /* Ajuste adicional para el header interno de catálogo */
-  .page-catalogo .container > div:first-child {
-    margin-top: 1rem;
+  /* Espaciador de contenido - usar en páginas que lo necesiten */
+  .main-content-spacer {
+    padding-top: 2rem !important;
   }
 
   .navbar-content {
     flex-direction: column !important;
     align-items: flex-start !important;
     gap: 1rem !important;
-  }
-
-  .navbar-brand {
-    font-size: 1.25rem !important;
-    width: 100%;
-    justify-content: center;
-  }
-
-  .navbar-brand img {
-    height: 1.5em !important;
   }
 
   /* Navbar menu - hamburger style */

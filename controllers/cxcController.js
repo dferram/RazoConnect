@@ -276,8 +276,6 @@ async function exportarLoteCxC(req, res) {
         }
 
         // 8. Registrar en log el reporte generado (para auditoría)
-        console.log(`[CXC EXPORT] Reporte generado: ${reporteId} - ${rows.length} clientes - ${rows.reduce((acc, r) => acc + (r.documentos?.length || 0), 0)} documentos`);
-
         // 9. Commit transacción
         await client.query('COMMIT');
 
@@ -583,8 +581,6 @@ async function gestionarPago(req, res) {
                     ]);
 
                     montoRestante -= montoAbono;
-                    
-                    console.log(`[PAGO-${pago.pago_id}] Abono creado: $${montoAbono.toFixed(2)} → ${cargo.referencia_id}`);
                 }
 
                 // Si sobra dinero (pago mayor a deuda), crear un abono genérico
@@ -602,8 +598,6 @@ async function gestionarPago(req, res) {
                         nuevoSaldo,
                         adminId
                     ]);
-                    
-                    console.log(`[PAGO-${pago.pago_id}] Saldo a favor: $${montoRestante.toFixed(2)}`);
                 }
 
             } else {
@@ -621,8 +615,6 @@ async function gestionarPago(req, res) {
                     nuevoSaldo,
                     adminId
                 ]);
-                
-                console.log(`[PAGO-${pago.pago_id}] Abono genérico creado: $${pago.monto}`);
             }
 
             await client.query(

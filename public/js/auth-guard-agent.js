@@ -44,7 +44,6 @@
     },
   })
     .then((response) => {
-      console.log("🔐 Verificando agente... status:", response.status);
       if (!response.ok) {
         console.error(
           "❌ Response not OK:",
@@ -56,10 +55,7 @@
       return response.json();
     })
     .then((data) => {
-      console.log("📦 Datos recibidos del servidor:", data);
-
       if (!data.success) {
-        console.error("❌ Respuesta no exitosa:", data.message);
         throw new Error("Invalid token");
       }
 
@@ -67,15 +63,11 @@
       const userRol = data.data?.rol;
       const userData = data.data?.agente || data.data?.cliente;
 
-      console.log("🔍 Rol detectado:", userRol, "Datos:", userData);
-
       if (userRol !== "agente") {
-        console.error("❌ Usuario no es agente. Rol:", userRol);
         throw new Error("Usuario no es agente");
       }
 
       if (!userData) {
-        console.error("❌ No se recibieron datos del usuario");
         throw new Error("No se recibieron datos del usuario");
       }
 
@@ -88,8 +80,6 @@
           esAgente: true,
         })
       );
-      console.log("✅ Datos de agente actualizados:", userData);
-      console.log("✅ Agent authenticated successfully");
     })
     .catch((error) => {
       console.error("❌ Agent authentication failed:", error);

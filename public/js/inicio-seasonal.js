@@ -421,8 +421,6 @@
     updateHeroSlider(config);
     updateWelcomeBanner(config);
     updateCountdownWidget(config);
-
-    console.log("🎯 Contenido estacional actualizado:", themeName);
   }
 
   // ============================================
@@ -430,7 +428,6 @@
   // ============================================
 
   document.addEventListener("razo:themeChanged", (event) => {
-    console.log("🎨 Tema cambiado detectado:", event.detail.theme);
     updateSeasonalContent(event.detail.theme);
   });
 
@@ -441,7 +438,6 @@
   function initializeSeasonalContent() {
     if (window.RazoThemeManager && window.RazoThemeManager.getCurrentTheme()) {
       const theme = window.RazoThemeManager.getCurrentTheme();
-      console.log("🚀 Inicializando con tema:", theme.name);
       updateSeasonalContent(theme.name);
     } else {
       setTimeout(initializeSeasonalContent, 50);

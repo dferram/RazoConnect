@@ -100,7 +100,6 @@
       const userInfo = document.querySelector(".admin-user-info");
 
       if (!userInfo) {
-        console.warn("admin-user-info no encontrado en header del agente");
         return;
       }
 
@@ -128,8 +127,6 @@
       if (logoutBtn) {
         logoutBtn.addEventListener("click", handleLogout);
       }
-
-      console.log("✅ Agente header dropdown inicializado");
     }, 500); // Dar tiempo a que se cargue el sidebar
   }
 

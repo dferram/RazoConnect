@@ -19,7 +19,6 @@ async function eliminarImagenCloudinary(publicId) {
     const result = await cloudinary.uploader.destroy(publicId);
     
     if (result.result === "ok") {
-      console.log(`✅ Imagen eliminada de Cloudinary: ${publicId}`);
       return { success: true, publicId, result: result.result };
     } else if (result.result === "not found") {
       console.warn(`⚠️ Imagen no encontrada en Cloudinary: ${publicId}`);

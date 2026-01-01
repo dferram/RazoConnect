@@ -74,15 +74,12 @@
 
   (async function init() {
     try {
-      console.log("🔐 Verificando autenticación de staff...");
-
       // 1) Intentar como admin/superadmin
       const admin = await verifyAdmin();
       if (admin.ok) {
         if (admin.data?.data?.admin) {
           localStorage.setItem("razoconnect_admin", JSON.stringify(admin.data.data.admin));
         }
-        console.log("✅ Staff autenticado como admin");
         return;
       }
 
@@ -100,7 +97,6 @@
             })
           );
         }
-        console.log("✅ Staff autenticado como agente");
         return;
       }
 
@@ -112,7 +108,6 @@
 
       // En caso de error de red temporal, NO limpiar token ni redirigir de inmediato
       // (para no sacar al usuario si el backend está reiniciando).
-      console.warn("⚠️ Error temporal verificando staff. Manteniendo sesión.");
     }
   })();
 })();

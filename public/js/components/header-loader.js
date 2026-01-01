@@ -23,9 +23,6 @@
         isAuthenticated: Boolean(tokenCliente),
       });
 
-      // Navbar es fixed-top (Bootstrap). Reservar espacio.
-      document.body.style.paddingTop = "80px";
-
       inicializarUsuario();
       cargarTiposMenu();
       cargarMarcasMenu();

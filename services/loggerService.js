@@ -74,8 +74,6 @@ const registrarLog = async (req, accion, entidad, entidadId = null, detalles = {
 
     const logCreado = result.rows[0];
     
-    console.log(`✅ [AUDIT] ${accion} ${entidad}${entidadId ? ' #' + entidadId : ''} por ${nombreUsuario} (${rol})`);
-    
     return logCreado;
 
   } catch (error) {

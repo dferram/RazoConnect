@@ -52,15 +52,8 @@ function getAdminTokenPayload() {
 function checkIsSuperAdmin() {
   const payload = getAdminTokenPayload();
   if (!payload) {
-    console.log("❌ No hay token de admin");
     return false;
   }
-
-  console.log("📋 Información del token:");
-  console.log("- Email:", payload.email);
-  console.log("- Rol:", payload.rol);
-  console.log("- Roles:", payload.roles);
-  console.log("- Tipo:", payload.tipo);
 
   // Verificar si tiene el rol de super-admin en el array de roles
   if (Array.isArray(payload.roles)) {
@@ -84,12 +77,9 @@ function checkIsSuperAdmin() {
       payload.rol.toLowerCase() === "super-admin";
 
     if (isSuperAdmin) {
-      console.log("✅ El usuario ES super-administrador");
       return true;
     }
   }
-
-  console.log("❌ El usuario NO es super-administrador");
   return false;
 }
 
@@ -97,52 +87,18 @@ function checkIsSuperAdmin() {
  * Muestra información completa del token en consola
  */
 function debugToken() {
-  console.log("🔍 === DEBUG TOKEN ===");
   const token = localStorage.getItem("razoconnect_admin_token");
 
   if (!token) {
-    console.log("❌ No hay token de admin en localStorage");
     return;
   }
-
-  console.log(
-    "Token (primeros 50 caracteres):",
-    token.substring(0, 50) + "..."
-  );
 
   const payload = decodeJWT(token);
   if (!payload) {
-    console.log("❌ No se pudo decodificar el token");
     return;
   }
 
-  console.log("\n📦 Payload completo:");
-  console.log(JSON.stringify(payload, null, 2));
-
-  console.log("\n🔐 Verificación de permisos:");
   checkIsSuperAdmin();
-
-  console.log("\n⏰ Información de expiración:");
-  if (payload.exp) {
-    const expirationDate = new Date(payload.exp * 1000);
-    const now = new Date();
-    const isExpired = expirationDate < now;
-
-    console.log("- Expira el:", expirationDate.toLocaleString());
-    console.log("- Estado:", isExpired ? "❌ EXPIRADO" : "✅ VÁLIDO");
-
-    if (!isExpired) {
-      const hoursRemaining = Math.floor(
-        (expirationDate - now) / 1000 / 60 / 60
-      );
-      const minutesRemaining = Math.floor(
-        ((expirationDate - now) / 1000 / 60) % 60
-      );
-      console.log(`- Tiempo restante: ${hoursRemaining}h ${minutesRemaining}m`);
-    }
-  }
-
-  console.log("\n===================");
 }
 
 // Exponer funciones globalmente para uso en consola
@@ -153,6 +109,3 @@ window.jwtUtils = {
   debug: debugToken,
 };
 
-console.log("✅ JWT Utils cargado. Usa window.jwtUtils o directamente:");
-console.log("  - jwtUtils.debug()      -> Ver información completa del token");
-console.log("  - jwtUtils.isSuperAdmin() -> Verificar si eres super-admin");

@@ -48,7 +48,6 @@
     },
   })
     .then((response) => {
-      console.log("🔐 Verificando cliente... status:", response.status);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -64,18 +63,12 @@
           "razoconnect_user",
           JSON.stringify(data.data.cliente)
         );
-        console.log(
-          "✅ Datos de cliente actualizados en localStorage:",
-          data.data.cliente
-        );
         window.dispatchEvent(
           new CustomEvent("razoconnect:client-updated", {
             detail: data.data.cliente,
           })
         );
       }
-
-      console.log("✅ Client authenticated successfully");
     })
     .catch((error) => {
       console.error("❌ Client authentication failed:", error);

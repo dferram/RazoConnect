@@ -49,7 +49,6 @@
     const token = getCurrentToken();
 
     if (!token || !userType) {
-      console.log("🔄 No hay token para renovar");
       return;
     }
 
@@ -58,11 +57,6 @@
         userType === "admin"
           ? `${API_BASE_URL}/admin/refresh-token`
           : `${API_BASE_URL}/clientes/refresh-token`;
-
-      console.log("🔄 Renovando token...", {
-        userType,
-        tiempo: new Date().toLocaleTimeString(),
-      });
 
       const response = await fetch(endpoint, {
         method: "POST",
@@ -86,7 +80,6 @@
           localStorage.setItem("razoconnect_token", data.data.token);
         }
 
-        console.log("✅ Token renovado exitosamente");
         return true;
       } else {
         throw new Error("Respuesta inválida del servidor");
@@ -124,7 +117,6 @@
     // Crear nuevo temporizador
     inactivityTimer = setTimeout(() => {
       const timeSinceLastActivity = Date.now() - lastActivity;
-      console.log(`⏱️ 5 minutos de inactividad detectados`);
       refreshToken();
     }, INACTIVITY_TIME);
   }
@@ -152,7 +144,6 @@
     // NO LIMPIAR sesión de ADMIN automáticamente
     // Los admins deben cerrar sesión manualmente usando el botón de logout
     if (userType === "admin") {
-      console.log(" Admin - Sesión persistente (no se limpia automáticamente)");
       return;
     }
 
@@ -164,7 +155,6 @@
       navTimestamp && now - parseInt(navTimestamp) < 500;
 
     if (isNavigating || navigatingProgrammatically || isRecentNavigation) {
-      console.log(" Navegando dentro del sitio - NO se limpia sesión");
       sessionStorage.removeItem("_navigating");
       localStorage.removeItem("_nav_timestamp");
       return;
@@ -173,7 +163,6 @@
     // LIMPIAR tokens de cliente/agente solo si realmente está cerrando
     localStorage.removeItem("razoconnect_token");
     localStorage.removeItem("razoconnect_user");
-    console.log(" Cerrando pestaña - Sesión de cliente limpiada");
   }
 
   /**
@@ -195,14 +184,8 @@
   function init() {
     const token = getCurrentToken();
     if (!token) {
-      console.log("⚠️ No hay token activo - sistema de renovación no iniciado");
       return;
     }
-
-    console.log("🔐 Sistema de renovación de tokens iniciado");
-    console.log(
-      `⏱️ Tiempo de inactividad: ${INACTIVITY_TIME / 1000 / 60} minutos`
-    );
 
     // Eventos de actividad del usuario
     const activityEvents = [
@@ -245,7 +228,6 @@
 
     // Renovar token cada 20 minutos como medida adicional
     setInterval(() => {
-      console.log("🔄 Renovación periódica programada (cada 20 min)");
       refreshToken();
     }, 20 * 60 * 1000); // 20 minutos
   }

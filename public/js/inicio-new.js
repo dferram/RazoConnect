@@ -546,7 +546,6 @@
     if (logoutBtn) {
       logoutBtn.addEventListener("click", (e) => {
         e.preventDefault();
-        console.log('🔴 Cerrando sesión...');
         
         try {
           // Limpiar datos de autenticación
@@ -693,7 +692,6 @@
   // ANALYTICS (OPCIONAL)
   // ========================================
   function trackPageView() {
-    console.log("📊 Página de inicio vista");
     // Aquí puedes agregar Google Analytics, Mixpanel, etc.
   }
 
@@ -701,8 +699,6 @@
   // INICIALIZACIÓN PRINCIPAL
   // ========================================
   async function init() {
-    console.log("🚀 Inicializando página de inicio...");
-
     try {
       // 1. Info del usuario y carrito
       initUserInfo();
@@ -733,8 +729,6 @@
 
       // 10. Analytics
       trackPageView();
-
-      console.log("✅ Página de inicio lista");
     } catch (error) {
       console.error("❌ Error inicializando página:", error);
     }

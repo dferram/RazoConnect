@@ -161,19 +161,12 @@ const crearPedido = async (req, res) => {
   };
 
   try {
-    console.log("🔍 [PEDIDO] === INICIO FINALIZAR PEDIDO ===");
-    console.log("🔍 [PEDIDO] Body recibido:", JSON.stringify(req.body, null, 2));
-    console.log("🔍 [PEDIDO] Usuario autenticado:", req.user);
-
     const clienteId = req.user.userId;
     const rawDireccionEnvioId =
       req.body?.DireccionEnvioID ??
       req.body?.direccionEnvioId ??
       req.body?.direccionenvioid;
     const DireccionEnvioID = Number.parseInt(rawDireccionEnvioId, 10);
-
-    console.log("🔍 [PEDIDO] Cliente ID:", clienteId);
-    console.log("🔍 [PEDIDO] Dirección de envío ID:", DireccionEnvioID);
 
     const rawMetodoPago =
       req.body?.MetodoPago ?? req.body?.metodoPago ?? req.body?.metodo ?? null;
@@ -338,16 +331,7 @@ const crearPedido = async (req, res) => {
     }
 
     // 4. Calcular el monto total CON LÓGICA DE OFERTAS + split (stock + backorder)
-    console.log("🔍 [PEDIDO] Calculando monto total...");
-    console.log("🔍 [PEDIDO] Items en el carrito:", items.length);
-    
     const montoTotal = items.reduce((total, item, index) => {
-      console.log(`🔍 [PEDIDO] --- Item ${index + 1} ---`);
-      console.log("🔍 [PEDIDO] SKU:", item.sku);
-      console.log("🔍 [PEDIDO] Precio unitario (raw):", item.preciounitario);
-      console.log("🔍 [PEDIDO] Precio oferta (raw):", item.precioofertaunitario);
-      console.log("🔍 [PEDIDO] Tamaño valor (raw):", item.tamano_valor);
-      console.log("🔍 [PEDIDO] Cantidad:", item.cantidad);
 
       const precioBase =
         item.preciounitario !== null ? parseFloat(item.preciounitario) : 0;
@@ -359,11 +343,7 @@ const crearPedido = async (req, res) => {
       const tamanoValor =
         item.tamano_valor !== null ? parseInt(item.tamano_valor, 10) : 0;
 
-      console.log("🔍 [PEDIDO] Precio unitario (parsed):", precioUnitario);
-      console.log("🔍 [PEDIDO] Tamaño valor (parsed):", tamanoValor);
-
       if (!tamanoValor || tamanoValor <= 0) {
-        console.log("⚠️ [PEDIDO] Tamaño valor inválido, saltando item");
         return total;
       }
 
@@ -381,22 +361,13 @@ const crearPedido = async (req, res) => {
           ) || 1,
       });
 
-      console.log("🔍 [PEDIDO] Cantidad a cobrar:", split.cantidadTotalCobrar);
       const subtotal = split.cantidadTotalCobrar * tamanoValor * precioUnitario;
-      console.log("🔍 [PEDIDO] Subtotal calculado:", subtotal);
-      console.log("🔍 [PEDIDO] Total acumulado:", total + (Number.isFinite(subtotal) ? subtotal : 0));
       
       return total + (Number.isFinite(subtotal) ? subtotal : 0);
     }, 0);
 
-    console.log("🔍 [PEDIDO] Monto total calculado:", montoTotal);
-    console.log("🔍 [PEDIDO] Tipo:", typeof montoTotal);
-    console.log("🔍 [PEDIDO] ¿Es finito?:", Number.isFinite(montoTotal));
-    console.log("🔍 [PEDIDO] ¿Es mayor a 0?:", montoTotal > 0);
-
     // Validar que el monto total sea válido
     if (!Number.isFinite(montoTotal) || montoTotal <= 0) {
-      console.log("❌ [PEDIDO] Monto total inválido, abortando...");
       await client.query("ROLLBACK");
       transactionStarted = false;
       removeUploadedComprobante();
@@ -406,8 +377,6 @@ const crearPedido = async (req, res) => {
       });
     }
 
-    console.log("✅ [PEDIDO] Monto total válido, continuando...");
-
     // 4.5. Validar y aplicar cupón si se proporcionó
     let cuponId = null;
     let montoDescuento = 0;
@@ -415,7 +384,6 @@ const crearPedido = async (req, res) => {
     const codigoCupon = req.body?.codigoCupon || req.body?.cupon || null;
 
     if (codigoCupon && typeof codigoCupon === "string" && codigoCupon.trim()) {
-      console.log("🎟️ [CUPÓN] Validando cupón:", codigoCupon);
       const codigoUpper = codigoCupon.trim().toUpperCase();
 
       const cuponResult = await client.query(
@@ -525,10 +493,6 @@ const crearPedido = async (req, res) => {
         "UPDATE cupones SET usos_actuales = usos_actuales + 1 WHERE cuponid = $1",
         [cuponId]
       );
-
-      console.log("✅ [CUPÓN] Cupón aplicado exitosamente");
-      console.log("🎟️ [CUPÓN] Descuento:", montoDescuento);
-      console.log("🎟️ [CUPÓN] Total final:", montoTotalFinal);
     }
 
     // 5. Obtener el agente asignado al cliente (si existe)
@@ -587,13 +551,6 @@ const crearPedido = async (req, res) => {
     let diasGracia = 0;
 
     if (metodoPagoEsCredito) {
-      console.log("🔍 [CRÉDITO] Iniciando validación de pago con crédito...");
-      console.log("🔍 [CRÉDITO] Cliente ID:", clienteId);
-      console.log("🔍 [CRÉDITO] Monto total del pedido:", montoTotalFinal);
-      console.log("🔍 [CRÉDITO] Tipo de montoTotal:", typeof montoTotalFinal);
-      console.log("🔍 [CRÉDITO] ¿Es NaN?:", Number.isNaN(montoTotalFinal));
-      console.log("🔍 [CRÉDITO] ¿Es finito?:", Number.isFinite(montoTotalFinal));
-
       const creditoResult = await client.query(
         `
           SELECT credito_id, limite_credito, saldo_deudor, dias_gracia
@@ -605,10 +562,7 @@ const crearPedido = async (req, res) => {
         [clienteId]
       );
 
-      console.log("🔍 [CRÉDITO] Registros encontrados:", creditoResult.rows.length);
-
       if (!creditoResult.rows.length) {
-        console.log("❌ [CRÉDITO] No se encontró línea de crédito activa");
         await client.query("ROLLBACK");
         transactionStarted = false;
         return res.status(400).json({
@@ -619,7 +573,6 @@ const crearPedido = async (req, res) => {
       }
 
       const creditoRow = creditoResult.rows[0];
-      console.log("🔍 [CRÉDITO] Datos del crédito (raw):", creditoRow);
 
       const limiteCredito =
         Number.parseFloat(creditoRow.limite_credito ?? 0) || 0;
@@ -627,14 +580,7 @@ const crearPedido = async (req, res) => {
         Number.parseFloat(creditoRow.saldo_deudor ?? 0) || 0;
       const saldoDisponible = limiteCredito - saldoDeudor;
 
-      console.log("🔍 [CRÉDITO] Límite de crédito:", limiteCredito);
-      console.log("🔍 [CRÉDITO] Saldo deudor actual:", saldoDeudor);
-      console.log("🔍 [CRÉDITO] Saldo disponible:", saldoDisponible);
-      console.log("🔍 [CRÉDITO] Diferencia (monto - disponible):", montoTotalFinal - saldoDisponible);
-      console.log("🔍 [CRÉDITO] ¿Excede el límite?:", montoTotalFinal - saldoDisponible > 0.009);
-
       if (montoTotalFinal - saldoDisponible > 0.009) {
-        console.log("❌ [CRÉDITO] Saldo insuficiente para completar la compra");
         await client.query("ROLLBACK");
         transactionStarted = false;
         return res.status(400).json({

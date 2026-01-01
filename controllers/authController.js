@@ -388,10 +388,8 @@ const login = async (req, res) => {
 const verifyCliente = async (req, res) => {
   try {
     // El middleware authenticate ya verificó el token y agregó req.user
-    console.log("🔍 req.user completo:", req.user);
     const userId = req.user.userId;
     const userRol = req.user.rol;
-    console.log("🔍 userId extraído:", userId, "rol:", userRol);
 
     // Si es agente, buscar en la tabla de agentes
     if (userRol === "agente") {
@@ -434,7 +432,6 @@ const verifyCliente = async (req, res) => {
        WHERE ClienteID = $1 AND Activo = TRUE`,
       [userId]
     );
-    console.log("🔍 Resultado query:", result.rows);
 
     if (result.rows.length === 0) {
       return res.status(404).json({
@@ -497,8 +494,6 @@ const refreshClienteToken = async (req, res) => {
       rol: "cliente",
       email: email,
     });
-
-    console.log("🔄 Token de cliente renovado:", { clienteId, email });
 
     res.json({
       success: true,
@@ -915,11 +910,6 @@ const crearAdmin = async (req, res) => {
             "No se pudo recuperar el administrador después de la auto-aprobación"
           );
         }
-
-        // Log de auditoría
-        console.log(
-          `✅ Super-admin ${req.user.email} creó nuevo admin: ${nuevoAdmin.email} con rol: ${nuevoAdmin.rol} (auto-aprobado)`
-        );
 
         res.status(201).json({
           success: true,

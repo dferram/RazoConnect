@@ -12,7 +12,6 @@ const CloudinaryUpload = {
     const adminToken = localStorage.getItem("razoconnect_admin_token");
     
     if (!adminToken) {
-      console.error("❌ No hay token de administrador");
       
       // Mostrar alerta con SweetAlert si está disponible
       if (typeof Swal !== "undefined" && Swal && typeof Swal.fire === "function") {
@@ -70,19 +69,8 @@ const CloudinaryUpload = {
    * Sube archivo directamente a Cloudinary API
    */
   async subirArchivo(file, folder = "razoconnect_productos") {
-    console.log("=== CLOUDINARY UPLOAD FRONTEND ===");
-    console.log("📁 Folder:", folder);
-    console.log("📄 File:", file.name, file.type, file.size);
-
     // 1. Obtener firma del backend
     const signatureData = await this.obtenerFirma(folder);
-    console.log("🔐 Signature data recibida:", {
-      timestamp: signatureData.timestamp,
-      signature: signatureData.signature,
-      apiKey: signatureData.apiKey,
-      cloudName: signatureData.cloudName,
-      folder: signatureData.folder,
-    });
 
     // 2. Crear FormData con EXACTAMENTE los campos firmados
     const formData = new FormData();
@@ -92,14 +80,8 @@ const CloudinaryUpload = {
     formData.append("signature", signatureData.signature);
     formData.append("folder", signatureData.folder);
 
-    console.log("📦 FormData a enviar:");
-    for (let pair of formData.entries()) {
-      console.log(`   ${pair[0]}: ${pair[1] instanceof File ? pair[1].name : pair[1]}`);
-    }
-
     // 3. Upload directo a Cloudinary API
     const uploadUrl = `https://api.cloudinary.com/v1_1/${signatureData.cloudName}/image/upload`;
-    console.log("🌐 Upload URL:", uploadUrl);
 
     const uploadResponse = await fetch(uploadUrl, {
       method: "POST",
@@ -113,8 +95,6 @@ const CloudinaryUpload = {
     }
 
     const result = await uploadResponse.json();
-    console.log("✅ Upload exitoso:", result.secure_url);
-    console.log("=====================================");
 
     return result;
   },

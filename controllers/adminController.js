@@ -4722,8 +4722,6 @@ const refreshAdminToken = async (req, res) => {
       email: email,
     });
 
-    console.log("🔄 Token de admin renovado:", { adminId, email });
-
     res.json({
       success: true,
       message: "Token renovado exitosamente",
@@ -4964,7 +4962,6 @@ const updatePedidoEstatus = async (req, res) => {
               metadata: { pedidoId, estatusAnterior, estatusNuevo }
             }
           );
-          console.log(`✅ Notificación creada para cliente ${clienteId} - Pedido #${pedidoId}`);
         } catch (notifError) {
           console.error('❌ Error al crear notificación in-app:', notifError);
         }
@@ -4993,7 +4990,7 @@ const updatePedidoEstatus = async (req, res) => {
               );
               
               if (emailEnviado) {
-                console.log(`✅ Email enviado a ${emailCliente} - Pedido #${pedidoId}`);
+                // Email sent
               } else {
                 console.error(`❌ Email failed para ${emailCliente} - Pedido #${pedidoId}`);
               }
@@ -5266,14 +5263,6 @@ const findOrCreateTamanosFromPacks = async (client, packs) => {
     }
   }
 
-  console.log(
-    "🟢 [PACKS] TamanoIDs vinculados desde packs (find-or-create por Cantidad):",
-    {
-      packs: cantidades,
-      tamanoIds: idsResultantes,
-    }
-  );
-
   return idsResultantes;
 };
 
@@ -5386,20 +5375,6 @@ const crearProducto = async (req, res) => {
   } = req.body;
 
   const allowDirect = true;
-
-  // DEBUG BACKEND: inspeccionar qué llega al crear producto maestro
-  console.log("🟢 [CREAR_PRODUCTO] Body recibido:", {
-    nombre,
-    sku_maestro,
-    categoriaId,
-    tipoProducto: tipoProducto ?? tipoProductoRaw,
-    proveedorIdRaw,
-    stockTotalInicialRaw,
-    venderIndividualRaw,
-    tamanoIds,
-    tamanos,
-    packs,
-  });
 
   if (!nombre) {
     return res.status(400).json({
@@ -5651,8 +5626,6 @@ const crearProducto = async (req, res) => {
 
     const producto = result.rows[0];
 
-    console.log("🟢 [CREAR_PRODUCTO] Producto insertado:", producto);
-
     // El SKU maestro ya viene en formato híbrido (ej: CAJ-001)
     // Lo usamos directamente como base para las variantes
     const serieSkuBase = skuMaestroFinal || `PROD-${producto.productoid}`;
@@ -5780,10 +5753,6 @@ const crearProducto = async (req, res) => {
         );
       }
       tamanosAsociados = sanitizedTamanosProducto;
-      console.log(
-        "🟢 [CREAR_PRODUCTO] tamanosAsociados en Producto_TamanosDisponibles:",
-        tamanosAsociados
-      );
     }
 
     // Procesar imágenes maestro (galería unificada) y por color
@@ -6063,13 +6032,6 @@ const crearProducto = async (req, res) => {
     }
 
     await client.query("COMMIT");
-
-    console.log("🟢 [CREAR_PRODUCTO] Transacción COMMIT realizada", {
-      producto,
-      tamanosAsociados,
-      varianteMaestra,
-      variantesCreadasCount: variantesCreadas.length,
-    });
 
     // Registrar solicitud de cambio para PUBLICAR/ACTIVAR el producto maestro (estrategia híbrida)
     try {
@@ -9795,7 +9757,6 @@ const getAllOrdenesCompra = async (req, res) => {
       ORDER BY FechaCreacion DESC 
       LIMIT 10
     `);
-    console.log("🔍 DEBUG - Todas las órdenes recientes:", debugQuery.rows);
 
     let query = `
       SELECT 
@@ -9832,12 +9793,6 @@ const getAllOrdenesCompra = async (req, res) => {
     `;
 
     const result = await db.query(query, values);
-
-    console.log(
-      "🔍 DEBUG - Órdenes de backorder encontradas:",
-      result.rows.length
-    );
-    console.log("🔍 DEBUG - Filtro estatus:", estatus);
 
     res.json({
       success: true,
@@ -10351,12 +10306,6 @@ const recibirInventario = async (req, res) => {
       // silencioso
     }
 
-    console.log("✅ Inventario recibido:", {
-      ordenCompraId,
-      productosActualizados: productosActualizados.length,
-      nuevoEstatus,
-    });
-
     res.json({
       success: true,
       message: "Inventario recibido exitosamente",
@@ -10773,12 +10722,6 @@ const crearOrdenCompra = async (req, res) => {
     // Commit de la transacción
     await client.query("COMMIT");
 
-    console.log("✅ Orden de compra creada:", {
-      ordenCompraId,
-      proveedorId,
-      totalProductos: detallesInsertados.length,
-    });
-
     res.status(201).json({
       success: true,
       message: "Orden de compra creada exitosamente",
@@ -10867,8 +10810,6 @@ const subirImagenProducto = async (req, res) => {
         [id, rutaImagen]
       );
     }
-
-    console.log(`✅ Imagen guardada: producto ${id} -> ${rutaImagen}`);
 
     res.status(200).json({
       success: true,
@@ -10977,11 +10918,6 @@ const subirImagenesProductoMultiple = async (req, res) => {
         message: "No se pudieron guardar las imágenes proporcionadas",
       });
     }
-
-    console.log(
-      `✅ Imágenes guardadas para producto ${id}:`,
-      imagenesGuardadas.map((img) => img.url_imagen)
-    );
 
     const baseUrl = `${req.protocol}://${req.get("host")}`;
 
@@ -12472,16 +12408,6 @@ const actualizarVariante = async (req, res) => {
 
     const nuevoActivo = normalizarBoolean(activo, activoActual);
 
-    console.log("📝 Solicitud de actualización de variante", {
-      varianteId,
-      sku: skuActual,
-      dimensiones: nuevasDimensiones,
-      costoUnitario: nuevoCosto,
-      precioUnitario: nuevoPrecio,
-      precioOfertaUnitario: nuevaOferta,
-      activo: nuevoActivo,
-    });
-
     const normalizarTextoNullable = (raw) => {
       if (raw === undefined) return { usarActual: true, valor: null };
       if (raw === null) return { usarActual: false, valor: null };
@@ -12656,7 +12582,6 @@ const eliminarImagenProducto = async (req, res) => {
     if (publicId) {
       try {
         await eliminarImagenCloudinary(publicId);
-        console.log(`✅ Imagen eliminada de Cloudinary: ${publicId}`);
       } catch (cloudinaryError) {
         console.warn(`⚠️ No se pudo eliminar de Cloudinary: ${publicId}`, cloudinaryError);
         // Continuar con la eliminación de BD aunque falle Cloudinary
@@ -12670,8 +12595,6 @@ const eliminarImagenProducto = async (req, res) => {
       `DELETE FROM producto_imagenes WHERE imagenid = $1`,
       [imagenId]
     );
-
-    console.log(`✅ Imagen ${imagenId} eliminada de la base de datos`);
 
     res.json({
       success: true,

@@ -645,7 +645,7 @@
               previewContainerId: "comprobantesPreviews",
               allowMultiple: true,
               onFilesChange: (files) => {
-                console.log(`📎 ${files.length} archivo(s) seleccionado(s)`);
+                // Files changed
               }
             });
           } catch (error) {
@@ -709,10 +709,7 @@
         return;
       }
 
-      console.log(`✅ Procesando pago de ${formatCurrency(montoPagar)} con método: ${metodoPagoSeleccionado}`);
-      
       if (metodoPagoSeleccionado === "mercadopago") {
-        console.log("💳 Procesando pago con Mercado Pago...");
         // TODO: Integrar con API de Mercado Pago
         await Swal.fire({
           icon: "info",
@@ -721,7 +718,6 @@
           confirmButtonColor: "#F97316",
         });
       } else if (metodoPagoSeleccionado === "transferencia") {
-        console.log("🏦 Procesando pago con transferencia bancaria...");
         
         // Validar que haya comprobantes
         if (fileUploadManager && !fileUploadManager.hasFiles()) {
@@ -737,10 +733,6 @@
         // Obtener items seleccionados
         const selectedDebts = debtItems.filter(item => item.selected);
         const debtIds = selectedDebts.map(item => item.id);
-
-        console.log("📋 Deudas seleccionadas:", debtIds);
-        console.log("💰 Monto a pagar:", montoPagar);
-        console.log("📎 Archivos adjuntos:", fileUploadManager?.getFileCount() || 0);
 
         try {
           // Enviar pago al backend

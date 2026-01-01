@@ -11,8 +11,6 @@ const sincronizarImagenesPorColor = async (req, res) => {
   try {
     await client.query("BEGIN");
 
-    console.log("🔄 Iniciando sincronización de imágenes por color...");
-
     // 1. Obtener todos los productos con variantes que tienen color
     const productosResult = await client.query(`
       SELECT DISTINCT productoid 
@@ -81,15 +79,11 @@ const sincronizarImagenesPorColor = async (req, res) => {
             variantesActualizadas: updateResult.rowCount,
             imagenPropagada: imagenReferencia
           });
-
-          console.log(`✅ Producto ${productoid} - Color "${colorNombre}": ${updateResult.rowCount} variante(s) sincronizada(s)`);
         }
       }
     }
 
     await client.query("COMMIT");
-
-    console.log(`🎉 Sincronización completada: ${totalVariantesActualizadas} variantes actualizadas en ${totalProductos} producto(s)`);
 
     return res.json({
       success: true,

@@ -19,13 +19,8 @@
 
 html,
 body {
-  margin: 0 !important;
-  padding: 0 !important;
-}
-
-#header-container {
-  margin: 0 !important;
-  padding: 0 !important;
+  margin: 0;
+  padding: 0;
 }
 
 /* ============================================
@@ -140,11 +135,19 @@ h3 {
 .navbar {
   background-color: var(--razo-white);
   box-shadow: var(--shadow);
-  padding: 1rem 0;
+  padding: 0.75rem 0;
   position: sticky;
   top: 0;
   z-index: 100;
-  margin: 0 !important;
+  margin: 0;
+}
+
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+/* Espaciador de contenido para páginas internas */
+.main-content-spacer {
+  padding-top: 2rem;
 }
 
 .navbar.fixed-top {

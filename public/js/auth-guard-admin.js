@@ -42,9 +42,6 @@
   // Verificar token con el servidor de forma asíncrona
   const apiBaseUrl = window.API_BASE_URL || `${window.location.origin}/api`;
 
-  console.log("🔐 Verificando autenticación de admin...");
-  console.log("Token:", adminToken ? "Present" : "Missing");
-
   fetch(`${apiBaseUrl}/admin/verify`, {
     method: "GET",
     headers: {
@@ -53,14 +50,12 @@
     },
   })
     .then((response) => {
-      console.log("Response status:", response.status);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       return response.json();
     })
     .then((data) => {
-      console.log("Verify response:", data);
       if (!data.success) {
         throw new Error("Invalid token");
       }
@@ -72,9 +67,6 @@
           JSON.stringify(data.data.admin)
         );
       }
-
-      // Permitir que la página continúe cargando
-      console.log(" Admin authenticated successfully");
     })
     .catch((error) => {
       console.error(" Admin authentication failed:", error);

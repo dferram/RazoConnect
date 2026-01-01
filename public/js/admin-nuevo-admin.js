@@ -244,7 +244,6 @@
    */
   function init() {
     if (!adminForm) {
-      console.error("Formulario no encontrado");
       return;
     }
 
@@ -270,8 +269,6 @@
         passwordInput.style.borderColor = "";
       }
     });
-
-    console.log("✅ Admin Nuevo Admin inicializado");
   }
 
   // Inicializar cuando el DOM esté listo

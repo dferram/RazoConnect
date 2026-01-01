@@ -20,15 +20,11 @@ const generarFirmaUpload = async (req, res) => {
       timestamp: timestamp,
     };
 
-    console.log("=== GENERANDO FIRMA CLOUDINARY ===");
-    console.log("📦 Parámetros a firmar:", paramsToSign);
-    
     // Generar string to sign en orden alfabético
     const stringToSign = Object.keys(paramsToSign)
       .sort()
       .map(key => `${key}=${paramsToSign[key]}`)
       .join('&');
-    console.log("📝 String to sign:", stringToSign);
 
     // Generar firma usando SDK oficial con credenciales del .env
     const apiSecret = (process.env.CLOUDINARY_API_SECRET || "").trim();
@@ -36,9 +32,6 @@ const generarFirmaUpload = async (req, res) => {
       paramsToSign,
       apiSecret
     );
-
-    console.log("🔐 Signature generada:", signature);
-    console.log("===================================");
 
     // Devolver todos los datos necesarios para el upload
     const response = {

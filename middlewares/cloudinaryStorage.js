@@ -21,22 +21,6 @@ class CloudinaryStorage {
       timestamp: timestamp,
     };
 
-    console.log("=== CLOUDINARY UPLOAD DEBUG ===");
-    console.log("📦 Parámetros de upload:", uploadParams);
-    console.log("📁 Folder:", this.folder);
-    console.log("⏰ Timestamp:", timestamp);
-    
-    // Generar string to sign en orden alfabético
-    const paramsArray = Object.keys(uploadParams).sort().map(key => `${key}=${uploadParams[key]}`);
-    const stringToSign = paramsArray.join('&');
-    console.log("📝 String to sign (ordenado alfabéticamente):", stringToSign);
-    
-    // Generar firma usando el método oficial de Cloudinary
-    const signature = this.cloudinary.utils.api_sign_request(uploadParams, this.cloudinary.config().api_secret);
-    console.log("🔐 Signature generada:", signature);
-    console.log("🔑 API Secret length:", this.cloudinary.config().api_secret.length);
-    console.log("===============================");
-
     const uploadStream = this.cloudinary.uploader.upload_stream(
       uploadParams,
       (error, result) => {
@@ -49,7 +33,6 @@ class CloudinaryStorage {
           return cb(error);
         }
 
-        console.log("✅ Upload exitoso a Cloudinary:", result.public_id);
         cb(null, {
           path: result.secure_url,
           filename: result.public_id,
