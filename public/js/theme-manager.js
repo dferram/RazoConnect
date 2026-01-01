@@ -24,7 +24,7 @@
       displayName: "San Valentín",
       className: "theme-sanvalentin",
       icon: "💝",
-      dateRanges: [{ startMonth: 1, startDay: 15, endMonth: 2, endDay: 14 }],
+      dateRanges: [{ startMonth: 1, startDay: 1, endMonth: 2, endDay: 14 }],
     },
     diaMadre: {
       name: "diaMadre",
