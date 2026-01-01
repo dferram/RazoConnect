@@ -83,13 +83,13 @@
               name="email"
               class="form-input"
               placeholder="tu@email.com"
-              required
             />
             <div class="form-error" id="emailError"></div>
+            <small style="color: #6b7280; font-size: 0.875rem; margin-top: 0.25rem; display: block;">Ingresa correo o teléfono (o ambos)</small>
           </div>
 
           <div class="form-group">
-            <label class="form-label" for="telefono">Teléfono (opcional)</label>
+            <label class="form-label" for="telefono">Teléfono</label>
             <input
               type="tel"
               id="telefono"
@@ -236,17 +236,33 @@
           hasError = true;
         }
 
-        if (!email) {
-          document.getElementById("emailError").textContent =
-            "El correo es requerido";
-          document.getElementById("emailError").classList.add("show");
-          emailInput.classList.add("error");
+        // Validar que al menos uno de los dos (email o teléfono) esté presente
+        if (!email && !telefono) {
+          Swal.fire({
+            title: 'Datos incompletos',
+            text: 'Debes ingresar al menos un medio de contacto (Correo o Teléfono).',
+            icon: 'warning',
+            confirmButtonText: 'Entendido',
+            confirmButtonColor: '#f97316'
+          });
           hasError = true;
-        } else if (!validateEmail(email)) {
+        }
+
+        // Validar formato de email solo si se proporcionó
+        if (email && !validateEmail(email)) {
           document.getElementById("emailError").textContent =
             "Formato de correo inválido";
           document.getElementById("emailError").classList.add("show");
           emailInput.classList.add("error");
+          hasError = true;
+        }
+
+        // Validar formato de teléfono solo si se proporcionó
+        if (telefono && (telefono.length < 10 || !/^\d+$/.test(telefono))) {
+          document.getElementById("telefonoError").textContent =
+            "El teléfono debe tener al menos 10 dígitos";
+          document.getElementById("telefonoError").classList.add("show");
+          telefonoInput.classList.add("error");
           hasError = true;
         }
 
@@ -289,7 +305,7 @@
           const formData = {
             Nombre: nombre,
             Apellido: apellido,
-            Email: email,
+            Email: email || null,
             Password: password,
             Telefono: telefono || null,
           };
@@ -318,25 +334,32 @@
             const errorMessage =
               response.data.message || "Error al registrar la cuenta";
 
-            // Detectar si es error de email duplicado o ya registrado
+            // Detectar si es error de email o teléfono duplicado
             if (errorMessage.toLowerCase().includes("correo") || 
-                errorMessage.toLowerCase().includes("email")) {
+                errorMessage.toLowerCase().includes("email") ||
+                errorMessage.toLowerCase().includes("teléfono") ||
+                errorMessage.toLowerCase().includes("telefono")) {
               // Determinar si es staff o cliente
               const isStaffEmail = errorMessage.toLowerCase().includes("staff") || 
                                    errorMessage.toLowerCase().includes("administrador") ||
                                    errorMessage.toLowerCase().includes("agente");
+              
+              const isTelefono = errorMessage.toLowerCase().includes("teléfono") ||
+                                 errorMessage.toLowerCase().includes("telefono");
               
               Swal.fire({
                 title: '¡Atención!',
                 html: `<p>${errorMessage}</p>
                        ${isStaffEmail ? 
                          '<p style="margin-top: 1rem; color: #6b7280;">Si eres parte del equipo, usa tu correo personal para compras.</p>' :
+                         isTelefono ?
+                         '<p style="margin-top: 1rem; color: #6b7280;">Este número ya está asociado a otra cuenta. Usa un teléfono diferente o intenta iniciar sesión.</p>' :
                          '<p style="margin-top: 1rem; color: #6b7280;">¿Intentas <a href="/login.html" style="color: #f97316; font-weight: 600;">iniciar sesión</a>?</p>'
                        }`,
                 icon: 'warning',
                 confirmButtonText: 'Entendido',
                 confirmButtonColor: '#f97316',
-                showCancelButton: !isStaffEmail,
+                showCancelButton: !isStaffEmail && !isTelefono,
                 cancelButtonText: 'Ir a Login',
                 cancelButtonColor: '#6b7280'
               }).then((result) => {

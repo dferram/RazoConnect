@@ -29,47 +29,88 @@ const {
  */
 const registroCliente = async (req, res) => {
   try {
-    const { Nombre, Apellido, Email, Password, Telefono } = req.body;
+    let { Nombre, Apellido, Email, Password, Telefono } = req.body;
 
-    // Validar datos de entrada
-    const validation = validateClienteRegistro({
-      Nombre,
-      Apellido,
-      Email,
-      Password,
-    });
-    if (!validation.valid) {
+    // Normalizar valores vacíos a null
+    Email = Email && Email.trim() !== "" ? Email.trim() : null;
+    Telefono = Telefono && Telefono.trim() !== "" ? Telefono.trim() : null;
+
+    // Validar campos obligatorios
+    const errors = [];
+    if (!Nombre || Nombre.trim() === "") errors.push("El nombre es requerido");
+    if (!Apellido || Apellido.trim() === "") errors.push("El apellido es requerido");
+    if (!Password || Password.trim() === "") errors.push("La contraseña es requerida");
+    if (Password && Password.length < 6) errors.push("La contraseña debe tener al menos 6 caracteres");
+
+    // Validar que al menos uno de los dos (email o teléfono) esté presente
+    if (!Email && !Telefono) {
+      errors.push("Debes proporcionar al menos un medio de contacto (correo o teléfono)");
+    }
+
+    // Validar formato de email si se proporcionó
+    if (Email) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(Email)) {
+        errors.push("El formato del correo electrónico es inválido");
+      }
+    }
+
+    // Validar formato de teléfono si se proporcionó
+    if (Telefono) {
+      if (Telefono.length < 10 || !/^\d+$/.test(Telefono)) {
+        errors.push("El teléfono debe contener al menos 10 dígitos numéricos");
+      }
+    }
+
+    if (errors.length > 0) {
       return res.status(400).json({
         success: false,
         message: "Error de validación",
-        errors: validation.errors,
+        errors,
       });
     }
 
-    // Verificar unicidad global del email (no debe existir en ninguna tabla)
-    const emailCheck = await checkEmailGlobalUniqueness(Email, "clientes");
+    // Verificar unicidad global del email (solo si se proporcionó)
+    if (Email) {
+      const emailCheck = await checkEmailGlobalUniqueness(Email, "clientes");
 
-    if (emailCheck.exists) {
-      const errorMessage = getContextualErrorMessage(
-        emailCheck.table,
-        "clientes"
+      if (emailCheck.exists) {
+        const errorMessage = getContextualErrorMessage(
+          emailCheck.table,
+          "clientes"
+        );
+        return res.status(400).json({
+          success: false,
+          message: errorMessage,
+        });
+      }
+    }
+
+    // Verificar unicidad del teléfono (solo si se proporcionó)
+    if (Telefono) {
+      const telefonoCheck = await db.query(
+        "SELECT ClienteID FROM clientes WHERE Telefono = $1",
+        [Telefono]
       );
-      return res.status(400).json({
-        success: false,
-        message: errorMessage,
-      });
+
+      if (telefonoCheck.rows.length > 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Este número de teléfono ya está registrado en el sistema.",
+        });
+      }
     }
 
     // Hashear la contraseña
     const saltRounds = parseInt(process.env.BCRYPT_ROUNDS) || 10;
     const PasswordHash = await bcrypt.hash(Password, saltRounds);
 
-    // Insertar nuevo cliente
+    // Insertar nuevo cliente (con valores null si no se proporcionaron)
     const result = await db.query(
       `INSERT INTO clientes (Nombre, Apellido, Email, PasswordHash, Telefono)
        VALUES ($1, $2, $3, $4, $5)
        RETURNING ClienteID, Nombre, Apellido, Email, Telefono, FechaDeRegistro`,
-      [Nombre, Apellido, Email, PasswordHash, Telefono || null]
+      [Nombre.trim(), Apellido.trim(), Email, PasswordHash, Telefono]
     );
 
     const nuevoCliente = result.rows[0];
