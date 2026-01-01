@@ -174,3 +174,98 @@
 .sidebar-filtros .price-apply:hover {
   color: var(--razo-orange, #f97316);
 }
+
+/* ============================================
+   MOBILE RESPONSIVE - ANCHO COMPLETO
+   ============================================ */
+@media (max-width: 768px) {
+  .sidebar-filtros {
+    width: 100% !important;
+    max-width: 100% !important;
+    float: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white;
+    border-bottom: 2px solid var(--razo-gray-light, #e5e7eb);
+  }
+
+  /* Búsqueda - ancho completo y más grande */
+  .sidebar-filtros .sidebar-search {
+    margin-bottom: 1.5rem;
+  }
+
+  .sidebar-filtros .sidebar-search-input {
+    width: 100% !important;
+    padding: 1rem 1rem 1rem 3rem !important;
+    font-size: 1rem !important;
+    border-radius: 12px !important;
+  }
+
+  .sidebar-filtros .sidebar-search-icon {
+    left: 1.15rem;
+    font-size: 1.125rem;
+  }
+
+  /* Secciones de filtros - más espaciadas */
+  .sidebar-filtros .filter-section {
+    margin-top: 1.5rem;
+  }
+
+  .sidebar-filtros .filter-section-header {
+    padding: 0.75rem 0 !important;
+  }
+
+  .sidebar-filtros .filter-section-title {
+    font-size: 1rem !important;
+    font-weight: 700;
+  }
+
+  .sidebar-filtros .filter-section-chevron {
+    font-size: 1.125rem;
+  }
+
+  /* Items de filtro - más grandes para táctil */
+  .sidebar-filtros .filter-item {
+    margin: 0.5rem 0;
+  }
+
+  .sidebar-filtros .filter-link {
+    padding: 0.75rem 0 !important;
+    min-height: 44px; /* Tamaño mínimo táctil recomendado */
+  }
+
+  .sidebar-filtros .filter-link .link-text {
+    font-size: 1rem !important;
+  }
+
+  /* Inputs de precio - más grandes */
+  .sidebar-filtros .price-row {
+    gap: 0.75rem;
+  }
+
+  .sidebar-filtros .price-input {
+    padding: 0.875rem 0.75rem !important;
+    font-size: 1rem !important;
+    border-radius: 12px !important;
+  }
+
+  .sidebar-filtros .price-apply {
+    margin-top: 1rem;
+    padding: 0.75rem 1.5rem;
+    background: var(--razo-orange, #f97316);
+    color: white;
+    border-radius: 12px;
+    text-decoration: none;
+    font-weight: 600;
+    text-align: center;
+    display: block;
+    transition: all 0.2s ease;
+  }
+
+  .sidebar-filtros .price-apply:hover {
+    background: var(--razo-orange-dark, #ff7733);
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
+  }
+}

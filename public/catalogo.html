@@ -18,7 +18,7 @@
     <link rel="stylesheet" href="css/components/sidebar-filtros.css" />
     <link rel="stylesheet" href="css/mobile-responsive.css" />
   </head>
-  <body>
+  <body class="page-catalogo">
     <div id="header-container"></div>
 
     <div class="container" style="padding-top: 2rem; padding-bottom: 3rem">
@@ -79,9 +79,22 @@
         </div>
       </div>
 
+      <!-- Botón Toggle Filtros (Solo Móvil) -->
+      <button 
+        id="btn-toggle-filtros" 
+        class="btn-toggle-filtros"
+        type="button"
+        aria-expanded="false"
+        aria-controls="sidebar-filters-container"
+      >
+        <i class="bi bi-funnel"></i>
+        <span>Filtrar y Ordenar</span>
+        <i class="bi bi-chevron-down btn-toggle-filtros-chevron"></i>
+      </button>
+
       <!-- Layout con Sidebar y Contenido -->
       <div style="display: grid; grid-template-columns: 200px 1fr; gap: 3rem">
-        <div id="sidebar-filters-container"></div>
+        <div id="sidebar-filters-container" class="sidebar-filters-wrapper"></div>
 
         <!-- Contenido Principal -->
         <main>
@@ -971,6 +984,55 @@
       actualizarTituloPorTipo();
       filtrosQueryActual = construirQueryString();
       loadProductos(filtrosQueryActual);
+
+      // ========================================
+      // TOGGLE DE FILTROS PARA MÓVILES
+      // ========================================
+      const btnToggleFiltros = document.getElementById('btn-toggle-filtros');
+      const sidebarFiltersWrapper = document.getElementById('sidebar-filters-container');
+
+      if (btnToggleFiltros && sidebarFiltersWrapper) {
+        btnToggleFiltros.addEventListener('click', () => {
+          const isExpanded = btnToggleFiltros.getAttribute('aria-expanded') === 'true';
+          
+          // Toggle estado
+          btnToggleFiltros.setAttribute('aria-expanded', !isExpanded);
+          sidebarFiltersWrapper.classList.toggle('filtros-abiertos');
+          
+          // Cambiar ícono del chevron
+          const chevron = btnToggleFiltros.querySelector('.btn-toggle-filtros-chevron');
+          if (chevron) {
+            if (isExpanded) {
+              chevron.classList.remove('bi-chevron-up');
+              chevron.classList.add('bi-chevron-down');
+            } else {
+              chevron.classList.remove('bi-chevron-down');
+              chevron.classList.add('bi-chevron-up');
+            }
+          }
+        });
+
+        // Cerrar filtros al hacer clic fuera (solo en móvil)
+        document.addEventListener('click', (event) => {
+          if (window.innerWidth <= 768) {
+            const isClickInsideButton = btnToggleFiltros.contains(event.target);
+            const isClickInsideSidebar = sidebarFiltersWrapper.contains(event.target);
+            
+            if (!isClickInsideButton && !isClickInsideSidebar) {
+              if (sidebarFiltersWrapper.classList.contains('filtros-abiertos')) {
+                btnToggleFiltros.setAttribute('aria-expanded', 'false');
+                sidebarFiltersWrapper.classList.remove('filtros-abiertos');
+                
+                const chevron = btnToggleFiltros.querySelector('.btn-toggle-filtros-chevron');
+                if (chevron) {
+                  chevron.classList.remove('bi-chevron-up');
+                  chevron.classList.add('bi-chevron-down');
+                }
+              }
+            }
+          }
+        });
+      }
     </script>
 
     <style>
@@ -1080,6 +1142,85 @@
 
       .stock-filter__checkbox:checked + .check-box::before {
         animation: stockCheckTop 0.4s ease forwards;
+      }
+
+      /* ========================================
+         BOTÓN TOGGLE FILTROS - SOLO MÓVIL
+         ======================================== */
+      .btn-toggle-filtros {
+        display: none; /* Oculto por defecto en escritorio */
+      }
+
+      @media (max-width: 768px) {
+        /* Mostrar botón toggle en móviles */
+        .btn-toggle-filtros {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          width: 100%;
+          padding: 1rem 1.25rem;
+          margin-bottom: 1.5rem;
+          background: white;
+          border: 2px solid var(--razo-gray-light, #e5e7eb);
+          border-radius: 0.75rem;
+          font-size: 1rem;
+          font-weight: 600;
+          color: var(--razo-gray-dark, #374151);
+          cursor: pointer;
+          transition: all 0.3s ease;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .btn-toggle-filtros:hover {
+          border-color: var(--razo-orange, #f97316);
+          box-shadow: 0 4px 8px rgba(249, 115, 22, 0.15);
+        }
+
+        .btn-toggle-filtros:active {
+          transform: scale(0.98);
+        }
+
+        .btn-toggle-filtros span {
+          flex: 1;
+          text-align: left;
+          margin-left: 0.75rem;
+        }
+
+        .btn-toggle-filtros-chevron {
+          transition: transform 0.3s ease;
+          color: var(--razo-orange, #f97316);
+        }
+
+        .btn-toggle-filtros[aria-expanded="true"] {
+          border-color: var(--razo-orange, #f97316);
+          background: rgba(249, 115, 22, 0.05);
+        }
+
+        /* Sidebar de filtros colapsado por defecto en móvil */
+        .sidebar-filters-wrapper {
+          display: none;
+          max-height: 0;
+          overflow: hidden;
+          transition: max-height 0.4s ease, opacity 0.3s ease;
+          opacity: 0;
+          width: 100% !important;
+          float: none !important;
+          margin: 0 !important;
+        }
+
+        /* Sidebar de filtros abierto */
+        .sidebar-filters-wrapper.filtros-abiertos {
+          display: block;
+          max-height: 2000px;
+          opacity: 1;
+          width: 100% !important;
+          margin-bottom: 1.5rem;
+          padding: 1.25rem;
+          background: white;
+          border: 2px solid var(--razo-gray-light, #e5e7eb);
+          border-radius: 0.75rem;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
       }
 
       /* Responsive layout para móviles */

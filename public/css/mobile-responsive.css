@@ -18,6 +18,8 @@ html, body {
   overflow-x: hidden;
   width: 100%;
   max-width: 100vw;
+  margin: 0;
+  padding: 0;
 }
 
 /* Ensure all containers respect viewport width */
@@ -173,9 +175,30 @@ html, body {
 
   /* ========== NAVIGATION - LANDING PAGE ========== */
   
-  /* Navbar - prevent overlapping */
-  .navbar {
+  /* Navbar - sticky positioning en móviles */
+  .navbar,
+  .navbar.sticky-top {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 1000 !important;
+    background-color: #ffffff !important;
     padding: 0.75rem 0 !important;
+    margin: 0 !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+  }
+
+  /* ========== ESPACIADO SUPERIOR PARA PÁGINAS ESPECÍFICAS ========== */
+  
+  /* Agregar aire entre el header y el contenido principal */
+  .page-catalogo .container:first-of-type,
+  .page-dashboard .container:first-of-type,
+  .page-carrito .container:first-of-type {
+    padding-top: 2.5rem !important;
+  }
+
+  /* Ajuste adicional para el header interno de catálogo */
+  .page-catalogo .container > div:first-child {
+    margin-top: 1rem;
   }
 
   .navbar-content {
@@ -644,6 +667,43 @@ html, body {
   .toast {
     font-size: 0.9rem;
     padding: 0.75rem !important;
+  }
+
+  /* ========== CAROUSEL / SLIDER CONTROLS ========== */
+  
+  /* FIX: Reducir botones de navegación del carrusel en móviles */
+  .carousel-btn {
+    width: 28px !important;
+    height: 28px !important;
+    font-size: 0.875rem !important;
+  }
+
+  .carousel-btn.prev {
+    left: 4px !important;
+  }
+
+  .carousel-btn.next {
+    right: 4px !important;
+  }
+
+  /* Botones de control de carrusel Bootstrap (si existen) */
+  .carousel-control-prev-icon,
+  .carousel-control-next-icon {
+    width: 20px !important;
+    height: 20px !important;
+    background-size: 100% 100% !important;
+  }
+
+  /* Botones Swiper (si existen) */
+  .swiper-button-next,
+  .swiper-button-prev {
+    width: 28px !important;
+    height: 28px !important;
+  }
+
+  .swiper-button-next::after,
+  .swiper-button-prev::after {
+    font-size: 1rem !important;
   }
 
   /* ========== SPACING UTILITIES ========== */
