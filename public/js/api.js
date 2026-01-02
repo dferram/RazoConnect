@@ -126,6 +126,7 @@ const apiCall = async (endpoint, options = {}) => {
       "Content-Type": "application/json",
       ...options.headers,
     },
+    credentials: 'include',
     ...options,
   };
 
@@ -310,24 +311,53 @@ const API = {
       headers["Authorization"] = `Bearer ${token}`;
     }
 
-    const response = await fetch(`${API_BASE_URL}/pedidos/finalizar`, {
-      method: "POST",
-      headers,
-      body: formData,
-    });
-
-    let data = {};
     try {
-      data = await response.json();
-    } catch (error) {
-      console.warn("No se pudo parsear la respuesta JSON:", error);
-    }
+      const response = await fetch(`${API_BASE_URL}/pedidos/finalizar`, {
+        method: "POST",
+        headers,
+        credentials: 'include',
+        body: formData,
+      });
 
-    return {
-      ok: response.ok,
-      status: response.status,
-      data,
-    };
+      let data = {};
+      try {
+        data = await response.json();
+      } catch (error) {
+        console.warn("No se pudo parsear la respuesta JSON:", error);
+      }
+
+      // Manejo de sesión expirada sin limpiar auth si la respuesta es exitosa
+      if (response.status === 401) {
+        clearAuthData();
+        if (!sessionExpiredHandled) {
+          sessionExpiredHandled = true;
+          if (typeof Swal !== "undefined" && Swal && typeof Swal.fire === "function") {
+            Swal.fire({
+              icon: "warning",
+              title: "Sesión Expirada",
+              text: "Tu sesión ha expirado. Por favor, inicia sesión nuevamente.",
+              confirmButtonText: "Ir al Login",
+              confirmButtonColor: "#F97316",
+              allowOutsideClick: false,
+            }).then(() => {
+              window.location.href = "/login.html";
+            });
+          } else {
+            window.location.href = "/login.html";
+          }
+        }
+        throw new Error("Sesión expirada");
+      }
+
+      return {
+        ok: response.ok,
+        status: response.status,
+        data,
+      };
+    } catch (error) {
+      console.error("Error en finalizarPedidoTransferencia:", error);
+      throw error;
+    }
   },
 
   getInfoTransferencia: async () => {

@@ -213,16 +213,22 @@ const obtenerProductos = async (req, res) => {
     }
 
     if (proveedorID) {
-      valores.push(parseInt(proveedorID, 10));
-      const indiceProveedor = valores.length;
-      filtros.push(`p.proveedorid_default = $${indiceProveedor}`);
+      const proveedorIDParsed = parseInt(proveedorID, 10);
+      if (!isNaN(proveedorIDParsed)) {
+        valores.push(proveedorIDParsed);
+        const indiceProveedor = valores.length;
+        filtros.push(`p.proveedorid_default = $${indiceProveedor}`);
+      }
     }
 
     // Filtro por categoría
     if (categoria) {
-      valores.push(parseInt(categoria, 10));
-      const indiceCategoria = valores.length;
-      filtros.push(`p.categoriaid = $${indiceCategoria}`);
+      const categoriaParsed = parseInt(categoria, 10);
+      if (!isNaN(categoriaParsed)) {
+        valores.push(categoriaParsed);
+        const indiceCategoria = valores.length;
+        filtros.push(`p.categoriaid = $${indiceCategoria}`);
+      }
     }
 
     const filtroTipoRaw = tipo && String(tipo).trim() ? String(tipo).trim() : null;
