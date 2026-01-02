@@ -11,6 +11,7 @@ const inventoryAuditController = require("../controllers/inventoryAuditControlle
 const purchaseSuggestionController = require("../controllers/purchaseSuggestionController");
 const cxcController = require("../controllers/cxcController");
 const cxpController = require("../controllers/cxpController");
+const pagosController = require("../controllers/admin/pagosController");
 const inventarioController = require("../controllers/inventarioController");
 const numCuentaController = require("../controllers/numCuentaController");
 const migrationController = require("../controllers/migrationController");
@@ -682,6 +683,30 @@ router.get(
   authenticate,
   authorizeAdmin,
   adminController.getProductosRecibidosPorCxp
+);
+
+/**
+ * Validación de pagos por transferencia
+ */
+router.get(
+  "/pagos/pendientes",
+  authenticate,
+  authorizeAdmin,
+  pagosController.getPagosPendientes
+);
+
+router.put(
+  "/pagos/:pagoId/aprobar",
+  authenticate,
+  authorizeAdmin,
+  pagosController.aprobarPago
+);
+
+router.put(
+  "/pagos/:pagoId/rechazar",
+  authenticate,
+  authorizeAdmin,
+  pagosController.rechazarPago
 );
 
 /**

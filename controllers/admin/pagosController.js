@@ -1,0 +1,248 @@
+const db = require('../../db');
+const { registrarCambio } = require('../../services/auditService');
+
+/**
+ * Obtiene la lista de pedidos con pago por transferencia pendientes de validación
+ * @route GET /api/admin/pagos/pendientes
+ */
+async function getPagosPendientes(req, res) {
+  try {
+    const query = `
+      SELECT 
+        p.pedidoid,
+        p.clienteid,
+        p.fechapedido,
+        p.montototal,
+        p.estatus,
+        p.comprobante_url,
+        p.transaccion_id,
+        p.metodo_pago,
+        p.saldo_pendiente,
+        c.nombre,
+        c.apellido,
+        c.email
+      FROM pedidos p
+      INNER JOIN clientes c ON c.clienteid = p.clienteid
+      WHERE p.pagado = false
+        AND p.metodo_pago ILIKE '%transferencia%'
+        AND p.comprobante_url IS NOT NULL
+      ORDER BY p.fechapedido DESC
+    `;
+
+    const { rows } = await db.query(query);
+
+    res.json({
+      success: true,
+      pagos: rows
+    });
+  } catch (error) {
+    console.error('Error al obtener pagos pendientes:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al obtener pagos pendientes',
+      error: error.message
+    });
+  }
+}
+
+/**
+ * Aprueba un pedido con pago por transferencia
+ * @route PUT /api/admin/pagos/:pagoId/aprobar
+ */
+async function aprobarPago(req, res) {
+  const client = await db.pool.connect();
+  const { pagoId } = req.params;
+  const adminId = req.user?.adminId || req.user?.userId;
+
+  try {
+    await client.query('BEGIN');
+
+    const pedidoQuery = await client.query(
+      `SELECT 
+        p.pedidoid,
+        p.clienteid,
+        p.montototal,
+        p.estatus,
+        p.pagado,
+        p.metodo_pago,
+        c.nombre,
+        c.apellido
+      FROM pedidos p
+      INNER JOIN clientes c ON c.clienteid = p.clienteid
+      WHERE p.pedidoid = $1`,
+      [pagoId]
+    );
+
+    if (pedidoQuery.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({
+        success: false,
+        message: 'Pedido no encontrado'
+      });
+    }
+
+    const pedido = pedidoQuery.rows[0];
+
+    if (pedido.pagado) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({
+        success: false,
+        message: 'Este pedido ya fue marcado como pagado'
+      });
+    }
+
+    await client.query(
+      `UPDATE pedidos 
+       SET pagado = true,
+           estatus = 'Confirmado',
+           saldo_pendiente = 0.00
+       WHERE pedidoid = $1`,
+      [pagoId]
+    );
+
+    await client.query(
+      `INSERT INTO notificaciones (clienteid, tipo, titulo, mensaje, prioridad, url)
+       VALUES ($1, 'sistema', 'Pago Aprobado', $2, 'normal', '/mis-pedidos.html')`,
+      [
+        pedido.clienteid,
+        `Tu pago para el pedido #${pagoId} ha sido validado exitosamente.`
+      ]
+    );
+
+    await registrarCambio(
+      'pedidos',
+      pagoId,
+      'UPDATE',
+      { estatus: pedido.estatus, pagado: false },
+      { 
+        estatus: 'Confirmado', 
+        pagado: true,
+        monto: pedido.montototal, 
+        cliente: `${pedido.nombre} ${pedido.apellido}`,
+        accion: 'APROBAR_PAGO_TRANSFERENCIA'
+      },
+      adminId
+    );
+
+    await client.query('COMMIT');
+
+    res.json({
+      success: true,
+      message: 'Pago aprobado exitosamente. El pedido ha sido confirmado.'
+    });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Error al aprobar pago:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al aprobar pago',
+      error: error.message
+    });
+  } finally {
+    client.release();
+  }
+}
+
+/**
+ * Rechaza un pedido con pago por transferencia
+ * @route PUT /api/admin/pagos/:pagoId/rechazar
+ */
+async function rechazarPago(req, res) {
+  const client = await db.pool.connect();
+  const { pagoId } = req.params;
+  const { motivo } = req.body;
+  const adminId = req.user?.adminId || req.user?.userId;
+
+  try {
+    await client.query('BEGIN');
+
+    const pedidoQuery = await client.query(
+      `SELECT 
+        p.pedidoid,
+        p.clienteid,
+        p.montototal,
+        p.estatus,
+        p.pagado,
+        c.nombre,
+        c.apellido
+      FROM pedidos p
+      INNER JOIN clientes c ON c.clienteid = p.clienteid
+      WHERE p.pedidoid = $1`,
+      [pagoId]
+    );
+
+    if (pedidoQuery.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({
+        success: false,
+        message: 'Pedido no encontrado'
+      });
+    }
+
+    const pedido = pedidoQuery.rows[0];
+
+    if (pedido.pagado) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({
+        success: false,
+        message: 'Este pedido ya fue marcado como pagado'
+      });
+    }
+
+    await client.query(
+      `UPDATE pedidos 
+       SET estatus = 'Rechazado',
+           comprobante_url = NULL
+       WHERE pedidoid = $1`,
+      [pagoId]
+    );
+
+    const mensajeRechazo = motivo 
+      ? `Tu comprobante para el pedido #${pagoId} fue rechazado. Motivo: ${motivo}`
+      : `Tu comprobante para el pedido #${pagoId} fue rechazado. Por favor, contacta con soporte.`;
+
+    await client.query(
+      `INSERT INTO notificaciones (clienteid, tipo, titulo, mensaje, prioridad, url)
+       VALUES ($1, 'sistema', 'Problema con tu pago', $2, 'alta', '/mis-pedidos.html')`,
+      [pedido.clienteid, mensajeRechazo]
+    );
+
+    await registrarCambio(
+      'pedidos',
+      pagoId,
+      'UPDATE',
+      { estatus: pedido.estatus, pagado: false },
+      { 
+        estatus: 'Rechazado', 
+        monto: pedido.montototal, 
+        cliente: `${pedido.nombre} ${pedido.apellido}`, 
+        motivo,
+        accion: 'RECHAZAR_PAGO_TRANSFERENCIA'
+      },
+      adminId
+    );
+
+    await client.query('COMMIT');
+
+    res.json({
+      success: true,
+      message: 'Pago rechazado. El pedido ha sido marcado como rechazado.'
+    });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Error al rechazar pago:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al rechazar pago',
+      error: error.message
+    });
+  } finally {
+    client.release();
+  }
+}
+
+module.exports = {
+  getPagosPendientes,
+  aprobarPago,
+  rechazarPago
+};

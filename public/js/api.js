@@ -462,6 +462,68 @@ const API = {
   apiCall: apiCall,
 };
 
+/**
+ * Wrapper function for fetch with automatic authentication
+ * Used by admin pages for direct fetch calls
+ */
+const fetchWithAuth = async (url, options = {}) => {
+  const token = getEffectiveToken();
+  
+  const config = {
+    ...options,
+    headers: {
+      ...options.headers,
+    },
+    credentials: 'include',
+  };
+
+  if (token) {
+    config.headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  // If body is an object and not FormData, stringify it
+  if (options.body && typeof options.body === 'object' && !(options.body instanceof FormData)) {
+    config.body = JSON.stringify(options.body);
+    if (!config.headers['Content-Type']) {
+      config.headers['Content-Type'] = 'application/json';
+    }
+  }
+
+  try {
+    const response = await fetch(url, config);
+
+    // Handle 401 Unauthorized
+    if (response.status === 401) {
+      clearAuthData();
+      
+      if (!sessionExpiredHandled) {
+        sessionExpiredHandled = true;
+        
+        if (typeof Swal !== "undefined" && Swal && typeof Swal.fire === "function") {
+          Swal.fire({
+            icon: "warning",
+            title: "Sesión Expirada",
+            text: "Tu sesión ha expirado por seguridad. Por favor, inicia sesión nuevamente.",
+            confirmButtonText: "Ir al Login",
+            confirmButtonColor: "#F97316",
+            allowOutsideClick: false,
+          }).then(() => {
+            window.location.href = "/login.html";
+          });
+        } else {
+          console.warn("Sesión expirada. Redirigiendo a login...");
+          window.location.href = "/login.html";
+        }
+      }
+    }
+
+    return response;
+  } catch (error) {
+    console.error("Fetch error:", error);
+    throw error;
+  }
+};
+
 // Utility function to show toast notifications
 const showToast = (message, type = "info") => {
   const toast = document.createElement("div");
