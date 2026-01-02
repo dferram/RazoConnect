@@ -178,6 +178,87 @@ Remover la clase `selected` y el atributo `checked` de la tarjeta de Crédito Ra
   </div>
 ```
 
+### Paso 6: Frontend - Habilitar en Modal de Créditos
+
+**Archivo:** `public/mi_credito.html`
+
+**Cambio:** Líneas 666-713
+
+Restaurar la tarjeta de Mercado Pago en el modal de pago de créditos:
+
+```html
+<!-- ANTES (Deshabilitado) -->
+<label
+  class="payment-option-card disabled"
+  id="paymentOptionMercadoPagoPago"
+  data-method="mercadopago"
+  style="pointer-events: none;"
+>
+  <div class="payment-option-top">
+    <div class="payment-option-icon" style="opacity: 0.5;">💳</div>
+    <input
+      type="radio"
+      name="metodo_pago_credito"
+      value="mercadopago"
+      disabled
+    />
+  </div>
+  <div class="payment-option-content">
+    <h5 style="opacity: 0.6;">Mercado Pago</h5>
+    <p style="opacity: 0.6;">Paga con tarjeta o saldo digital y recibe confirmación inmediata.</p>
+    <div style="margin-top: 0.75rem; padding: 0.5rem 0.75rem; background: #fef3c7; border: 1px solid #fbbf24; border-radius: 0.5rem; font-size: 0.85rem; color: #92400e;">
+      ⚠️ <strong>Temporalmente no disponible.</strong><br>
+      Por favor, utiliza transferencia bancaria.
+    </div>
+  </div>
+  <span class="payment-option-chip payment-chip-digital" style="opacity: 0.5;">
+    No disponible
+  </span>
+</label>
+
+<label
+  class="payment-option-card selected"
+  id="paymentOptionTransferenciaPago"
+  data-method="transferencia"
+>
+  <div class="payment-option-top">
+    <div class="payment-option-icon">🏦</div>
+    <input type="radio" name="metodo_pago_credito" value="transferencia" checked />
+  </div>
+
+<!-- DESPUÉS (Habilitado) -->
+<label
+  class="payment-option-card selected"
+  id="paymentOptionMercadoPagoPago"
+  data-method="mercadopago"
+>
+  <div class="payment-option-top">
+    <div class="payment-option-icon">💳</div>
+    <input
+      type="radio"
+      name="metodo_pago_credito"
+      value="mercadopago"
+      checked
+    />
+  </div>
+  <div class="payment-option-content">
+    <h5>Mercado Pago</h5>
+    <p>Paga con tarjeta o saldo digital y recibe confirmación inmediata.</p>
+  </div>
+  <span class="payment-option-chip payment-chip-digital">Pago digital</span>
+</label>
+
+<label
+  class="payment-option-card"
+  id="paymentOptionTransferenciaPago"
+  data-method="transferencia"
+>
+  <div class="payment-option-top">
+    <div class="payment-option-icon">🏦</div>
+    <input type="radio" name="metodo_pago_credito" value="transferencia" />
+  </div>
+```
+
 ---
 
 ## ✅ Verificación Post-Reactivación

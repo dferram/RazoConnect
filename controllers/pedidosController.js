@@ -652,7 +652,8 @@ const crearPedido = async (req, res) => {
            Transaccion_ID,
            Comprobante_URL,
            Cupon_ID,
-           Monto_Descuento
+           Monto_Descuento,
+           Saldo_Pendiente
          )
          VALUES (
            $1,
@@ -670,9 +671,10 @@ const crearPedido = async (req, res) => {
            $10,
            $11,
            $12,
-           $13
+           $13,
+           $14
          )
-         RETURNING PedidoID, FechaPedido, MontoTotal, Estatus, Fecha_Vencimiento, Es_Credito, Pagado, Metodo_Pago, Transaccion_ID, Comprobante_URL, Cupon_ID, Monto_Descuento`,
+         RETURNING PedidoID, FechaPedido, MontoTotal, Estatus, Fecha_Vencimiento, Es_Credito, Pagado, Metodo_Pago, Transaccion_ID, Comprobante_URL, Cupon_ID, Monto_Descuento, Saldo_Pendiente`,
         [
           clienteId,
           agenteId,
@@ -687,6 +689,7 @@ const crearPedido = async (req, res) => {
           pedidoComprobanteUrl,
           cuponId,
           montoDescuento,
+          metodoPagoEsCredito ? montoTotalFinal : 0,
         ]
       );
       pedido = pedidoResult.rows[0];

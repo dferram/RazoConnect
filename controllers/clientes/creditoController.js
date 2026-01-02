@@ -484,45 +484,25 @@ async function obtenerMovimientosPendientes(req, res) {
       });
     }
 
-    const creditoId = creditoActivo.credito_id;
-
-    // Consulta SQL simplificada que calcula saldos pendientes
-    // Agrupa por referencia_id y resta los abonos de los cargos
+    // Consulta directa a tabla pedidos (fuente de verdad)
+    // Ya no calculamos saldos desde credito_movimientos porque los pagos FIFO actualizan pedidos directamente
     const query = `
       SELECT 
-        cm.referencia_id,
-        MIN(cm.fecha_movimiento) as fecha,
-        MIN(CASE WHEN cm.tipo_movimiento IN ('CARGO', 'CREDITO', 'COMPRA') THEN cm.descripcion END) as concepto,
-        
-        -- Calcular saldo pendiente: Suma de Cargos - Suma de Abonos
-        SUM(
-          CASE 
-            WHEN cm.tipo_movimiento IN ('CARGO', 'CREDITO', 'COMPRA') THEN cm.monto 
-            WHEN cm.tipo_movimiento IN ('ABONO', 'PAGO') THEN -cm.monto 
-            ELSE 0 
-          END
-        ) as saldo_pendiente,
-        
-        -- Monto original del cargo
-        MAX(CASE WHEN cm.tipo_movimiento IN ('CARGO', 'CREDITO', 'COMPRA') THEN cm.monto ELSE 0 END) as monto_original
-        
-      FROM credito_movimientos cm
-      WHERE cm.credito_id = $1
-        AND cm.referencia_id IS NOT NULL
-        AND cm.referencia_id != ''
-        AND cm.referencia_id NOT LIKE 'PAGO-%'
-      GROUP BY cm.referencia_id
-      HAVING SUM(
-        CASE 
-          WHEN cm.tipo_movimiento IN ('CARGO', 'CREDITO', 'COMPRA') THEN cm.monto 
-          WHEN cm.tipo_movimiento IN ('ABONO', 'PAGO') THEN -cm.monto 
-          ELSE 0 
-        END
-      ) > 0.01
-      ORDER BY MIN(cm.fecha_movimiento) ASC
+        'PED-' || pedidoid AS referencia_id,
+        fechapedido AS fecha,
+        'Compra realizada (Pedido #' || pedidoid || ')' AS concepto,
+        COALESCE(saldo_pendiente, montototal) AS saldo_pendiente,
+        montototal AS monto_original
+      FROM pedidos
+      WHERE 
+        clienteid = $1 
+        AND es_credito = true 
+        AND pagado = false 
+        AND COALESCE(saldo_pendiente, montototal) > 0.01
+      ORDER BY fechapedido ASC
     `;
 
-    const result = await db.query(query, [creditoId]);
+    const result = await db.query(query, [clienteId]);
 
     const movimientosPendientes = result.rows.map((row) => ({
       referenciaId: row.referencia_id,
