@@ -23,6 +23,8 @@
     bindEvents();
     loadCartera();
     cargarMetricas();
+    cargarClientesConCredito();
+    setDefaultDates();
   });
 
   function cacheElements() {
@@ -52,6 +54,10 @@
     elements.ultimoRefresh = document.getElementById("ultimoRefresh");
     elements.abonoGuardarTxt = document.getElementById("abonoGuardarTxt");
     elements.abonoGuardarSpinner = document.getElementById("abonoGuardarSpinner");
+    elements.filtroFechaDesde = document.getElementById("filtro-fecha-desde");
+    elements.filtroFechaHasta = document.getElementById("filtro-fecha-hasta");
+    elements.filtroCliente = document.getElementById("filtro-cliente");
+    elements.filtroEstadoExport = document.getElementById("filtro-estado-export");
   }
 
   function ensureFontAwesome() {
@@ -97,21 +103,43 @@
 
     elements.btnExportar?.addEventListener("click", async () => {
       try {
+        // Obtener valores de los filtros
+        const fechaDesde = elements.filtroFechaDesde?.value || '';
+        const fechaHasta = elements.filtroFechaHasta?.value || '';
+        const clienteId = elements.filtroCliente?.value || '';
+        const estado = elements.filtroEstadoExport?.value || '';
+
         Swal.fire({
-          title: "Generando Reporte...",
-          text: "Estamos generando el reporte con el estado actual de la cartera.",
+          title: "Generando Reporte Detallado...",
+          html: `
+            <p>Estamos generando el reporte de movimientos con los filtros aplicados.</p>
+            <div style="margin-top: 1rem; padding: 0.75rem; background: #f0f9ff; border-radius: 0.5rem; text-align: left;">
+              <strong style="color: #0369a1;">Filtros aplicados:</strong><br>
+              ${fechaDesde ? `<span style="font-size: 0.875rem;">• Desde: ${fechaDesde}</span><br>` : ''}
+              ${fechaHasta ? `<span style="font-size: 0.875rem;">• Hasta: ${fechaHasta}</span><br>` : ''}
+              ${clienteId ? `<span style="font-size: 0.875rem;">• Cliente específico</span><br>` : ''}
+              ${estado ? `<span style="font-size: 0.875rem;">• Estado: ${estado}</span><br>` : ''}
+              ${!fechaDesde && !fechaHasta && !clienteId && !estado ? '<span style="font-size: 0.875rem; color: #6b7280;">• Sin filtros (todos los movimientos)</span>' : ''}
+            </div>
+          `,
           allowOutsideClick: false,
           didOpen: () => { Swal.showLoading() }
         });
 
-        // Obtener el token JWT del localStorage
         const token = localStorage.getItem('razoconnect_admin_token');
         if (!token) {
           Swal.fire('Error', 'No estás autenticado. Por favor, inicia sesión nuevamente.', 'error');
           return;
         }
 
-        const response = await fetch('/api/admin/cxc/exportar', { 
+        // Construir URL con parámetros de filtro
+        const params = new URLSearchParams();
+        if (fechaDesde) params.append('fechaDesde', fechaDesde);
+        if (fechaHasta) params.append('fechaHasta', fechaHasta);
+        if (clienteId) params.append('clienteId', clienteId);
+        if (estado) params.append('estado', estado);
+
+        const response = await fetch(`/api/admin/cxc/exportar-detallado?${params.toString()}`, { 
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -120,7 +148,12 @@
         });
 
         if (response.status === 404) {
-          Swal.fire('Sin Datos', 'No hay clientes con saldo pendiente para exportar.', 'info');
+          Swal.fire({
+            icon: 'info',
+            title: 'Sin Datos',
+            text: 'No se encontraron movimientos con los filtros aplicados.',
+            confirmButtonColor: '#F97316'
+          });
           return;
         }
 
@@ -131,30 +164,45 @@
 
         if (!response.ok) throw new Error('Error al generar reporte');
 
-        // Descarga del archivo
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `CxC_RazoConnect_${new Date().toISOString().slice(0,10)}.xlsx`;
+        
+        // Obtener nombre del archivo desde el header Content-Disposition
+        const contentDisposition = response.headers.get('Content-Disposition');
+        let filename = `CxC_Detallado_${new Date().toISOString().slice(0,10)}.xlsx`;
+        if (contentDisposition) {
+          const filenameMatch = contentDisposition.match(/filename="?(.+)"?/i);
+          if (filenameMatch) filename = filenameMatch[1];
+        }
+        
+        a.download = filename;
         document.body.appendChild(a);
         a.click();
         a.remove();
         window.URL.revokeObjectURL(url);
 
-        // Éxito y recarga
         Swal.fire({
           icon: 'success',
           title: 'Reporte Descargado',
-          text: 'El reporte refleja el estado actual de la cartera de cobranza.',
+          html: `
+            <p>El reporte detallado de movimientos ha sido generado exitosamente.</p>
+            <p style="margin-top: 0.5rem; font-size: 0.875rem; color: #6b7280;">
+              Incluye: Fecha, Cliente, Tipo (Cargo/Abono), Referencia, Monto y Saldo Acumulado.
+            </p>
+          `,
           confirmButtonColor: '#F97316'
-        }).then(() => {
-          cargarMetricas(); // Recargar métricas
         });
 
       } catch (error) {
         console.error(error);
-        Swal.fire('Error', 'No se pudo generar el reporte.', 'error');
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'No se pudo generar el reporte. Por favor, intenta nuevamente.',
+          confirmButtonColor: '#F97316'
+        });
       }
     });
 
@@ -162,9 +210,14 @@
       const actionBtn = event.target.closest("[data-action]");
       if (!actionBtn) return;
 
-      const { action, creditoId } = actionBtn.dataset;
+      const { action, creditoId, clienteId, saldo } = actionBtn.dataset;
       if (action === "abono") {
         openAbonoModal(Number.parseInt(creditoId, 10));
+      } else if (action === "ver-estado") {
+        event.preventDefault();
+        abrirEstadoCuenta(Number.parseInt(clienteId, 10));
+      } else if (action === "pago-manual") {
+        abrirModalPagoManual(Number.parseInt(creditoId, 10), Number.parseInt(clienteId, 10), parseFloat(saldo));
       }
     });
 
@@ -185,7 +238,7 @@
         showButtonLoading(elements.btnRecargar, true);
       }
 
-      const response = await API.apiCall(`/admin/cxc-summary?page=${page}&limit=${state.itemsPerPage}`, {
+      const response = await API.apiCall(`/admin/cxc/summary-aging?page=${page}&limit=${state.itemsPerPage}`, {
         method: "GET",
       });
 
@@ -328,35 +381,51 @@
   }
 
   function generarFila(cliente) {
-    const estadoEsVencido = cliente.estado === "VENCIDO";
+    const estadoEsVencido = cliente.estado === "SUSPENDIDO";
     const estadoClass = estadoEsVencido ? "text-danger" : "text-success";
     const badgeClass = estadoEsVencido ? "badge bg-danger-subtle text-danger" : "badge bg-success-subtle text-success";
     const ultimoMovimiento = cliente.ultimoMovimiento
       ? formatDate(cliente.ultimoMovimiento)
       : "Sin registro";
 
+    const alCorriente = parseFloat(cliente.alCorriente) || 0;
+    const vencido1a30 = parseFloat(cliente.vencido1a30) || 0;
+    const vencidoMas30 = parseFloat(cliente.vencidoMas30) || 0;
+    const maxDiasVencido = parseInt(cliente.maxDiasVencido) || 0;
+
     return `
       <tr>
         <td>
-          <div class="fw-semibold">${escapeHtml(cliente.clienteNombre || "Cliente sin nombre")}</div>
-          <small class="text-muted">${escapeHtml(cliente.email || "Sin correo")}</small>
+          <a href="#" class="fw-semibold" style="color: #111827; text-decoration: none;" 
+             data-action="ver-estado" data-cliente-id="${cliente.clienteId}" 
+             onmouseover="this.style.color='#f97316'" onmouseout="this.style.color='#111827'">
+            ${escapeHtml(cliente.clienteNombre || "Cliente sin nombre")} ${escapeHtml(cliente.apellido || "")}
+          </a>
+          <small class="text-muted d-block">${escapeHtml(cliente.email || "Sin correo")}</small>
         </td>
         <td class="text-end">${formatCurrency(cliente.limiteCredito)}</td>
         <td class="text-end fw-semibold">${formatCurrency(cliente.saldoDeudor)}</td>
+        <td class="text-end" style="color: #10b981;">${formatCurrency(alCorriente)}</td>
+        <td class="text-end" style="background: #fef3c7; color: #d97706; font-weight: 600;">${formatCurrency(vencido1a30)}</td>
+        <td class="text-end" style="background: #fee2e2; color: #dc2626; font-weight: 700;">${formatCurrency(vencidoMas30)}</td>
         <td class="text-end">${formatCurrency(cliente.disponible)}</td>
         <td>
           <div>${ultimoMovimiento}</div>
           <small class="text-muted">${cliente.ultimoMovimientoDescripcion ? escapeHtml(cliente.ultimoMovimientoDescripcion) : "Sin descripción"}</small>
         </td>
         <td>
-          <span class="${estadoClass} fw-semibold">${cliente.estadoEtiqueta}</span>
-          ${cliente.diasVencido > 0 ? `<div><small class="text-muted">${cliente.diasVencido} días vencido</small></div>` : ""}
+          <span class="${badgeClass}">${estadoEsVencido ? "Suspendido" : "Activo"}</span>
+          ${maxDiasVencido > 0 ? `<div><small class="text-muted">${maxDiasVencido} días máx. vencido</small></div>` : ""}
         </td>
         <td class="text-center">
-          <button class="btn btn-light btn-sm" data-action="abono" data-credito="${cliente.creditoId}">
-            <i class="fa-solid fa-cash-register me-1"></i>
-            <span>Abonar</span>
-          </button>
+          <div style="display: flex; gap: 0.25rem; justify-content: center; flex-wrap: wrap;">
+            <button class="btn btn-light btn-sm" data-action="ver-estado" data-cliente-id="${cliente.clienteId}" title="Ver estado de cuenta">
+              <i class="bi bi-file-text"></i>
+            </button>
+            <button class="btn btn-success btn-sm" data-action="pago-manual" data-credito="${cliente.creditoId}" data-cliente-id="${cliente.clienteId}" data-saldo="${cliente.saldoDeudor}" title="Registrar pago">
+              <i class="bi bi-cash-coin"></i>
+            </button>
+          </div>
         </td>
       </tr>
     `;
@@ -1219,6 +1288,381 @@
 
     tbody.innerHTML = html;
   }
+
+  // ========================================
+  // FUNCIONES AUXILIARES PARA FILTROS
+  // ========================================
+
+  async function cargarClientesConCredito() {
+    try {
+      const response = await API.apiCall("/admin/cxc/clientes-con-credito", {
+        method: "GET",
+      });
+
+      if (response.ok && response.data?.success) {
+        const clientes = response.data.data || [];
+        renderClientesSelector(clientes);
+      } else {
+        console.error("Error cargando clientes:", response.data?.message);
+      }
+    } catch (error) {
+      console.error("Error cargando clientes con crédito:", error);
+    }
+  }
+
+  function renderClientesSelector(clientes) {
+    const selector = elements.filtroCliente;
+    if (!selector) return;
+
+    // Limpiar opciones existentes excepto "Todos"
+    selector.innerHTML = '<option value="">Todos los clientes</option>';
+
+    // Agregar clientes
+    clientes.forEach((cliente) => {
+      const option = document.createElement("option");
+      option.value = cliente.clienteid;
+      const nombreCompleto = `${cliente.nombre || ''} ${cliente.apellido || ''}`.trim();
+      const saldo = formatCurrency(cliente.saldo_deudor || 0);
+      option.textContent = `${nombreCompleto} (${saldo})`;
+      selector.appendChild(option);
+    });
+  }
+
+  function setDefaultDates() {
+    if (!elements.filtroFechaDesde || !elements.filtroFechaHasta) return;
+
+    // Establecer fecha hasta como hoy
+    const hoy = new Date();
+    elements.filtroFechaHasta.value = hoy.toISOString().split('T')[0];
+
+    // Establecer fecha desde como hace 30 días
+    const hace30Dias = new Date();
+    hace30Dias.setDate(hace30Dias.getDate() - 30);
+    elements.filtroFechaDesde.value = hace30Dias.toISOString().split('T')[0];
+  }
+
+  // ========================================
+  // MODAL: ESTADO DE CUENTA (DRILL-DOWN)
+  // ========================================
+
+  async function abrirEstadoCuenta(clienteId) {
+    const modal = document.getElementById("modalEstadoCuenta");
+    if (!modal) return;
+
+    modal.style.display = "flex";
+
+    try {
+      const response = await API.apiCall(`/admin/cxc/estado-cuenta/${clienteId}`, {
+        method: "GET",
+      });
+
+      if (!response.ok || !response.data?.success) {
+        throw new Error(response.data?.message || "Error al cargar estado de cuenta");
+      }
+
+      const { cliente, pedidos, abonos } = response.data.data;
+
+      // Actualizar encabezado
+      document.getElementById("estadoCuentaCliente").textContent = 
+        `${cliente.nombre || ''} ${cliente.apellido || ''}`.trim();
+      document.getElementById("estadoCuentaSaldo").textContent = 
+        formatCurrency(cliente.saldo_deudor);
+
+      // Información del cliente
+      document.getElementById("estadoCuentaInfoCliente").innerHTML = `
+        <div style="margin-bottom: 0.5rem;"><strong>Email:</strong> ${cliente.email || 'N/A'}</div>
+        <div style="margin-bottom: 0.5rem;"><strong>Teléfono:</strong> ${cliente.telefono || 'N/A'}</div>
+        <div><strong>Estado:</strong> <span class="badge ${cliente.estado_credito === 'ACTIVO' ? 'bg-success' : 'bg-danger'}">${cliente.estado_credito}</span></div>
+      `;
+
+      // Resumen de crédito
+      const disponible = parseFloat(cliente.limite_credito) - parseFloat(cliente.saldo_deudor);
+      document.getElementById("estadoCuentaResumenCredito").innerHTML = `
+        <div style="margin-bottom: 0.5rem;"><strong>Límite de Crédito:</strong> ${formatCurrency(cliente.limite_credito)}</div>
+        <div style="margin-bottom: 0.5rem;"><strong>Saldo Deudor:</strong> ${formatCurrency(cliente.saldo_deudor)}</div>
+        <div style="margin-bottom: 0.5rem;"><strong>Disponible:</strong> ${formatCurrency(disponible)}</div>
+        <div><strong>Días de Gracia:</strong> ${cliente.dias_gracia || 0} días</div>
+      `;
+
+      // Renderizar pedidos pendientes
+      renderPedidosPendientes(pedidos);
+
+      // Renderizar últimos abonos
+      renderUltimosAbonos(abonos);
+
+    } catch (error) {
+      console.error("Error cargando estado de cuenta:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: error.message || "No se pudo cargar el estado de cuenta",
+        confirmButtonColor: "#F97316",
+      });
+      modal.style.display = "none";
+    }
+  }
+
+  function renderPedidosPendientes(pedidos) {
+    const tbody = document.getElementById("tablaPedidosPendientesTbody");
+    if (!tbody) return;
+
+    if (pedidos.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="7" style="text-align: center; padding: 2rem; color: #9ca3af;">
+            No hay pedidos pendientes
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    tbody.innerHTML = pedidos.map(pedido => {
+      const fecha = pedido.fechapedido ? new Date(pedido.fechapedido).toLocaleDateString("es-MX") : "—";
+      const vencimiento = pedido.fecha_vencimiento ? new Date(pedido.fecha_vencimiento).toLocaleDateString("es-MX") : "Sin vencimiento";
+      const diasVencido = parseInt(pedido.dias_vencido) || 0;
+      const categoria = pedido.categoria_aging || "—";
+      
+      let categoriaColor = "#6b7280";
+      let categoriaBg = "#f9fafb";
+      if (categoria.includes("1-30")) {
+        categoriaColor = "#d97706";
+        categoriaBg = "#fef3c7";
+      } else if (categoria.includes("+30")) {
+        categoriaColor = "#dc2626";
+        categoriaBg = "#fee2e2";
+      } else if (categoria.includes("corriente")) {
+        categoriaColor = "#10b981";
+        categoriaBg = "#d1fae5";
+      }
+
+      return `
+        <tr>
+          <td><strong>#${pedido.pedidoid}</strong></td>
+          <td>${fecha}</td>
+          <td style="text-align: right;">${formatCurrency(pedido.montototal)}</td>
+          <td style="text-align: right; font-weight: 700; color: #dc2626;">${formatCurrency(pedido.saldo_pendiente)}</td>
+          <td>${vencimiento}</td>
+          <td style="text-align: center;">${diasVencido > 0 ? `<span style="color: #dc2626; font-weight: 600;">${diasVencido}</span>` : '0'}</td>
+          <td>
+            <span style="padding: 0.25rem 0.75rem; border-radius: 0.375rem; font-size: 0.8125rem; font-weight: 600; background: ${categoriaBg}; color: ${categoriaColor};">
+              ${categoria}
+            </span>
+          </td>
+        </tr>
+      `;
+    }).join("");
+  }
+
+  function renderUltimosAbonos(abonos) {
+    const tbody = document.getElementById("tablaUltimosAbonosTbody");
+    if (!tbody) return;
+
+    if (abonos.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="7" style="text-align: center; padding: 2rem; color: #9ca3af;">
+            No hay abonos registrados
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    tbody.innerHTML = abonos.map(abono => {
+      const fecha = abono.fecha_movimiento ? new Date(abono.fecha_movimiento).toLocaleString("es-MX", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+      }) : "—";
+
+      return `
+        <tr>
+          <td style="white-space: nowrap;">${fecha}</td>
+          <td><span class="badge bg-success">${abono.tipo_movimiento}</span></td>
+          <td style="text-align: right; font-weight: 700; color: #16a34a;">${formatCurrency(abono.monto)}</td>
+          <td style="font-size: 0.875rem;">${abono.referencia_id || "—"}</td>
+          <td style="font-size: 0.875rem; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${abono.descripcion || ''}">${abono.descripcion || "—"}</td>
+          <td style="font-size: 0.875rem;">${abono.registrado_por || "Sistema"}</td>
+          <td style="text-align: right; font-weight: 600;">${formatCurrency(abono.saldo_despues_movimiento)}</td>
+        </tr>
+      `;
+    }).join("");
+  }
+
+  // Event listeners para cerrar modal Estado de Cuenta
+  document.getElementById("btnCerrarModalEstadoCuenta")?.addEventListener("click", () => {
+    document.getElementById("modalEstadoCuenta").style.display = "none";
+  });
+
+  document.getElementById("btnCerrarEstadoCuenta")?.addEventListener("click", () => {
+    document.getElementById("modalEstadoCuenta").style.display = "none";
+  });
+
+  document.getElementById("modalEstadoCuenta")?.addEventListener("click", (e) => {
+    if (e.target.id === "modalEstadoCuenta") {
+      e.target.style.display = "none";
+    }
+  });
+
+  // ========================================
+  // MODAL: PAGO MANUAL
+  // ========================================
+
+  let currentPagoManualData = null;
+
+  function abrirModalPagoManual(creditoId, clienteId, saldo) {
+    const cliente = state.cartera.find((item) => item.clienteId === clienteId);
+    if (!cliente) return;
+
+    currentPagoManualData = { creditoId, clienteId, saldo };
+
+    document.getElementById("pagoManualCliente").textContent = 
+      `${cliente.clienteNombre || ''} ${cliente.apellido || ''}`.trim();
+    document.getElementById("pagoManualSaldo").textContent = formatCurrency(saldo);
+
+    // Limpiar formulario
+    document.getElementById("pagoManualMonto").value = "";
+    document.getElementById("pagoManualMetodo").value = "";
+    document.getElementById("pagoManualReferencia").value = "";
+    document.getElementById("pagoManualNotas").value = "";
+
+    document.getElementById("modalPagoManual").style.display = "flex";
+  }
+
+  function cerrarModalPagoManual() {
+    currentPagoManualData = null;
+    document.getElementById("modalPagoManual").style.display = "none";
+  }
+
+  async function procesarPagoManual() {
+    if (!currentPagoManualData) return;
+
+    const monto = parseFloat(document.getElementById("pagoManualMonto").value);
+    const metodoPago = document.getElementById("pagoManualMetodo").value;
+    const referencia = document.getElementById("pagoManualReferencia").value.trim();
+    const notas = document.getElementById("pagoManualNotas").value.trim();
+
+    // Validaciones
+    if (!monto || monto <= 0) {
+      Swal.fire({
+        icon: "warning",
+        title: "Monto inválido",
+        text: "Introduce un monto mayor a 0",
+        confirmButtonColor: "#F97316",
+      });
+      return;
+    }
+
+    if (!metodoPago) {
+      Swal.fire({
+        icon: "warning",
+        title: "Método de pago requerido",
+        text: "Selecciona un método de pago",
+        confirmButtonColor: "#F97316",
+      });
+      return;
+    }
+
+    if (monto > currentPagoManualData.saldo) {
+      Swal.fire({
+        icon: "warning",
+        title: "Monto excede el saldo",
+        text: `El monto ($${monto.toFixed(2)}) no puede ser mayor al saldo deudor ($${currentPagoManualData.saldo.toFixed(2)})`,
+        confirmButtonColor: "#F97316",
+      });
+      return;
+    }
+
+    // Confirmar con el usuario
+    const result = await Swal.fire({
+      icon: "question",
+      title: "¿Confirmar registro de pago?",
+      html: `
+        <div style="text-align: left; padding: 1rem; background: #f9fafb; border-radius: 0.5rem; margin-top: 1rem;">
+          <p style="margin: 0.5rem 0;"><strong>Monto:</strong> ${formatCurrency(monto)}</p>
+          <p style="margin: 0.5rem 0;"><strong>Método:</strong> ${metodoPago}</p>
+          ${referencia ? `<p style="margin: 0.5rem 0;"><strong>Referencia:</strong> ${referencia}</p>` : ''}
+          <p style="margin: 0.5rem 0; color: #dc2626; font-weight: 600;">Este pago se aplicará inmediatamente y no se puede revertir.</p>
+        </div>
+      `,
+      showCancelButton: true,
+      confirmButtonText: "Sí, registrar pago",
+      cancelButtonText: "Cancelar",
+      confirmButtonColor: "#10b981",
+      cancelButtonColor: "#6b7280",
+    });
+
+    if (!result.isConfirmed) return;
+
+    // Deshabilitar botón y mostrar spinner
+    const btnConfirmar = document.getElementById("btnConfirmarPagoManual");
+    const txtGuardar = document.getElementById("pagoManualGuardarTxt");
+    const spinner = document.getElementById("pagoManualGuardarSpinner");
+    
+    btnConfirmar.disabled = true;
+    txtGuardar.style.display = "none";
+    spinner.style.display = "inline-flex";
+
+    try {
+      const response = await API.apiCall("/admin/cxc/registrar-pago-manual", {
+        method: "POST",
+        body: JSON.stringify({
+          creditoId: currentPagoManualData.creditoId,
+          monto,
+          metodoPago,
+          referencia: referencia || null,
+          notas: notas || null,
+        }),
+      });
+
+      if (!response.ok || !response.data?.success) {
+        throw new Error(response.data?.message || "Error al registrar el pago");
+      }
+
+      await Swal.fire({
+        icon: "success",
+        title: "Pago Registrado",
+        html: `
+          <p>El pago de <strong>${formatCurrency(monto)}</strong> ha sido registrado exitosamente.</p>
+          <p style="margin-top: 0.5rem; font-size: 0.875rem; color: #6b7280;">
+            Nuevo saldo: <strong>${formatCurrency(response.data.data.saldoNuevo)}</strong>
+          </p>
+        `,
+        confirmButtonColor: "#F97316",
+      });
+
+      cerrarModalPagoManual();
+      await loadCartera(true);
+      cargarMetricas();
+
+    } catch (error) {
+      console.error("Error registrando pago manual:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: error.message || "No se pudo registrar el pago. Intenta nuevamente.",
+        confirmButtonColor: "#F97316",
+      });
+    } finally {
+      btnConfirmar.disabled = false;
+      txtGuardar.style.display = "inline-flex";
+      spinner.style.display = "none";
+    }
+  }
+
+  // Event listeners para modal Pago Manual
+  document.getElementById("btnCerrarModalPagoManual")?.addEventListener("click", cerrarModalPagoManual);
+  document.getElementById("btnCancelarPagoManual")?.addEventListener("click", cerrarModalPagoManual);
+  document.getElementById("btnConfirmarPagoManual")?.addEventListener("click", procesarPagoManual);
+
+  document.getElementById("modalPagoManual")?.addEventListener("click", (e) => {
+    if (e.target.id === "modalPagoManual") {
+      cerrarModalPagoManual();
+    }
+  });
 
   // Cargar pagos pendientes e historial al iniciar
   document.addEventListener("DOMContentLoaded", () => {

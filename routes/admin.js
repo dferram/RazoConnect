@@ -10,6 +10,8 @@ const { analizarRiesgoCredito } = require("../services/creditAnalysisService");
 const inventoryAuditController = require("../controllers/inventoryAuditController");
 const purchaseSuggestionController = require("../controllers/purchaseSuggestionController");
 const cxcController = require("../controllers/cxcController");
+const cxcDetalladoController = require("../controllers/cxcDetalladoController");
+const cxcEnhancedController = require("../controllers/cxcEnhancedController");
 const cxpController = require("../controllers/cxpController");
 const pagosController = require("../controllers/admin/pagosController");
 const inventarioController = require("../controllers/inventarioController");
@@ -648,6 +650,41 @@ router.get(
   authenticate,
   authorizeAdmin,
   cxcController.obtenerHistorialMovimientos
+);
+
+router.get(
+  "/cxc/exportar-detallado",
+  authenticate,
+  authorizeAdmin,
+  cxcDetalladoController.exportarCxCDetallado
+);
+
+router.get(
+  "/cxc/clientes-con-credito",
+  authenticate,
+  authorizeAdmin,
+  cxcDetalladoController.obtenerClientesConCredito
+);
+
+router.get(
+  "/cxc/summary-aging",
+  authenticate,
+  authorizeAdmin,
+  cxcEnhancedController.getCxcSummaryWithAging
+);
+
+router.get(
+  "/cxc/estado-cuenta/:clienteId",
+  authenticate,
+  authorizeAdmin,
+  cxcEnhancedController.getEstadoCuentaCliente
+);
+
+router.post(
+  "/cxc/registrar-pago-manual",
+  authenticate,
+  authorizeAdmin,
+  cxcEnhancedController.registrarPagoManual
 );
 
 router.get(
