@@ -17,6 +17,84 @@
     <link rel="stylesheet" href="css/styles.css" />
     <link rel="stylesheet" href="css/admin.css" />
       <link rel="stylesheet" href="css/mobile-responsive.css" />
+    <style>
+      /* Estilos para la tarjeta de Proyección de Stock */
+      .inventory-summary-card {
+        background: linear-gradient(135deg, #fff7ed 0%, #ffffff 100%);
+        border: 2px solid #f97316;
+        border-radius: 1rem;
+        padding: 1.5rem;
+        margin-top: 1.5rem;
+        box-shadow: 0 4px 12px rgba(249, 115, 22, 0.1);
+      }
+
+      .stock-projection-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 1.25rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid rgba(249, 115, 22, 0.2);
+      }
+
+      .stock-projection-title {
+        font-size: 1.125rem;
+        font-weight: 700;
+        color: #f97316;
+        margin: 0 0 0.5rem 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .stock-total-value {
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: #f97316;
+        line-height: 1;
+        text-align: right;
+        min-width: 80px;
+      }
+
+      .stock-projection-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.875rem;
+      }
+
+      .stock-projection-table thead th {
+        text-align: left;
+        padding: 0.75rem 0.5rem;
+        font-weight: 600;
+        color: #6b7280;
+        border-bottom: 1px solid #e5e7eb;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.025em;
+      }
+
+      .stock-projection-table tbody td {
+        padding: 0.75rem 0.5rem;
+        border-bottom: 1px solid #f3f4f6;
+      }
+
+      .stock-projection-table tbody tr:last-child td {
+        border-bottom: none;
+      }
+
+      .stock-projection-qty {
+        text-align: right;
+        font-weight: 600;
+        color: #1f2937;
+      }
+
+      .stock-projection-empty {
+        text-align: center;
+        padding: 1.5rem;
+        color: #9ca3af;
+        font-style: italic;
+      }
+    </style>
   </head>
   <body data-page-title="Inventario">
     <div class="admin-layout">
@@ -104,6 +182,42 @@
                   <span class="metric-label">Precio más alto</span>
                   <span class="metric-value" id="detallePrecioHasta">—</span>
                 </div>
+              </div>
+            </div>
+
+            <!-- Tarjeta de Proyección de Stock -->
+            <div id="stockProjectionCard" class="inventory-summary-card" style="display: none;" aria-live="polite">
+              <div class="stock-projection-header">
+                <div>
+                  <h3 class="stock-projection-title">📊 Proyección de Stock</h3>
+                  <p
+                    id="stockProjectionSubtitle"
+                    class="form-hint"
+                    style="margin: 0; font-size: 0.8rem; color: #6b7280;"
+                  >
+                    Paquetes disponibles según el stock actual de cada variante.
+                  </p>
+                </div>
+                <div class="stock-total-value" id="stockProjectionTotal">
+                  0
+                </div>
+              </div>
+              <div id="stockProjectionTableWrapper">
+                <table class="stock-projection-table">
+                  <thead>
+                    <tr>
+                      <th>Presentación</th>
+                      <th class="stock-projection-qty">Disponibles</th>
+                    </tr>
+                  </thead>
+                  <tbody id="stockProjectionTableBody">
+                    <tr>
+                      <td colspan="2" class="stock-projection-empty">
+                        Cargando proyección...
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
             </div>
 
@@ -890,6 +1004,83 @@
         }).format(amount || 0);
       }
 
+      // Calcular proyección de stock
+      function calcularProyeccionStock(variantes = []) {
+        const stockProjectionCard = document.getElementById("stockProjectionCard");
+        const stockProjectionTotal = document.getElementById("stockProjectionTotal");
+        const stockProjectionTableBody = document.getElementById("stockProjectionTableBody");
+
+        if (!variantes || variantes.length === 0) {
+          stockProjectionCard.style.display = "none";
+          return;
+        }
+
+        // Agrupar variantes por presentación y calcular paquetes disponibles
+        const proyecciones = {};
+        let totalPaquetesDisponibles = 0;
+
+        variantes.forEach((variante) => {
+          const stock = typeof variante.stock === "number" ? variante.stock : 0;
+          const piezasPorPaquete = variante.piezasPorPaquete || variante.piezasporpaquete || variante.piezas_por_paquete || 1;
+          
+          // Obtener etiqueta de presentación
+          const presentacion = variante.presentacionEtiqueta || 
+                              (typeof obtenerNombrePack === "function" ? obtenerNombrePack(piezasPorPaquete) : `Paquete de ${piezasPorPaquete}`) ||
+                              `${piezasPorPaquete} pzs`;
+
+          // Calcular paquetes disponibles (floor para no contar paquetes incompletos)
+          const paquetesDisponibles = Math.floor(stock / piezasPorPaquete);
+
+          if (!proyecciones[presentacion]) {
+            proyecciones[presentacion] = {
+              piezasPorPaquete,
+              stockTotal: 0,
+              paquetesDisponibles: 0
+            };
+          }
+
+          proyecciones[presentacion].stockTotal += stock;
+          proyecciones[presentacion].paquetesDisponibles += paquetesDisponibles;
+          totalPaquetesDisponibles += paquetesDisponibles;
+        });
+
+        // Renderizar tabla de proyección
+        const presentaciones = Object.keys(proyecciones);
+        
+        if (presentaciones.length === 0 || totalPaquetesDisponibles === 0) {
+          stockProjectionTableBody.innerHTML = `
+            <tr>
+              <td colspan="2" class="stock-projection-empty">
+                No hay stock suficiente para armar paquetes completos.
+              </td>
+            </tr>
+          `;
+          stockProjectionTotal.textContent = "0";
+          stockProjectionCard.style.display = "block";
+          return;
+        }
+
+        // Ordenar por piezas por paquete (menor a mayor)
+        const presentacionesOrdenadas = presentaciones.sort((a, b) => {
+          return proyecciones[a].piezasPorPaquete - proyecciones[b].piezasPorPaquete;
+        });
+
+        stockProjectionTableBody.innerHTML = presentacionesOrdenadas
+          .map((presentacion) => {
+            const datos = proyecciones[presentacion];
+            return `
+              <tr>
+                <td>${presentacion}</td>
+                <td class="stock-projection-qty">${datos.paquetesDisponibles}</td>
+              </tr>
+            `;
+          })
+          .join("");
+
+        stockProjectionTotal.textContent = totalPaquetesDisponibles;
+        stockProjectionCard.style.display = "block";
+      }
+
       // Search filter
       document.getElementById("searchInput").addEventListener("input", (e) => {
         const searchTerm = e.target.value.toLowerCase();
@@ -1108,6 +1299,9 @@
             typeof precioHasta === "number" ? formatCurrency(precioHasta) : "—";
 
           summaryCard.style.display = "block";
+
+          // Calcular y mostrar proyección de stock
+          calcularProyeccionStock(variantes);
 
           renderDetalleVariantes(variantes);
           toggleDetalleLoading(false);

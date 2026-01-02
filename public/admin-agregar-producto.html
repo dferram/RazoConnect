@@ -489,7 +489,7 @@
                       style="padding: 1rem; cursor: pointer; font-weight: 500;"
                     />
                     <small class="form-hint"
-                      >Sube todas las imágenes generales del producto (portada + galería). La primera imagen será la portada. Formatos: JPG, PNG, WEBP. Máximo 5MB c/u.</small
+                      >Sube las imágenes del producto (portada + galería). Puedes seleccionar archivos en múltiples tandas y se acumularán. La primera imagen será la portada. Formatos: JPG, PNG, WEBP. Máximo 5MB c/u, hasta 12 imágenes total.</small
                     >
 
                     <div id="area-imagenes-existentes" class="preview-section mt-3 d-none">
@@ -1416,6 +1416,9 @@
             window.__categoriasCache = data.data.categorias;
             const select = document.getElementById("categoriaId");
 
+            // Limpiar el select antes de agregar nuevas opciones
+            select.innerHTML = '<option value="">Sin categoría</option>';
+
             data.data.categorias.forEach((cat) => {
               const option = document.createElement("option");
               option.value = cat.categoriaId;
@@ -1897,7 +1900,7 @@
       }
 
       // ===== LÓGICA DE PREVIEW DE IMAGEN =====
-      const inputImagen = document.getElementById("input-imagen");
+      const inputImagen = document.getElementById("input-imagen-maestro");
       const previewContainer = document.getElementById("preview-container");
       const imagenesPreviewGrid = document.getElementById("imagenes-preview");
       const btnClearImages = document.getElementById("btn-clear-images");
@@ -2019,10 +2022,14 @@
           btn.className = "image-remove-btn";
           btn.textContent = "×";
           btn.title = "Eliminar imagen";
+          btn.dataset.fileIndex = String(index);
           btn.addEventListener("click", (e) => {
             e.stopPropagation();
-            selectedImageFiles.splice(index, 1);
-            renderImagesPreview();
+            const indexToRemove = parseInt(e.currentTarget.dataset.fileIndex, 10);
+            if (Number.isInteger(indexToRemove) && indexToRemove >= 0) {
+              selectedImageFiles.splice(indexToRemove, 1);
+              renderImagesPreview();
+            }
           });
 
           card.appendChild(badge);
@@ -2035,19 +2042,13 @@
         actualizarBadgesOrden(imagenesPreviewGrid);
       }
 
-      // Event listener para cambio de archivos
+      // Event listener para cambio de archivos (SELECCIÓN ACUMULATIVA)
       if (inputImagen) {
         inputImagen.addEventListener("change", function (e) {
-          const files = Array.from(e.target.files || []);
+          const newFiles = Array.from(e.target.files || []);
 
-          if (!files.length) {
-            clearSelectedImages();
-            return;
-          }
-
-          if (files.length > 12) {
-            showToast("Puedes subir hasta 12 imágenes por producto", "warning");
-            clearSelectedImages();
+          if (!newFiles.length) {
+            // Si no hay archivos nuevos, no hacer nada (mantener los existentes)
             return;
           }
 
@@ -2059,21 +2060,47 @@
           ];
           const maxSize = 5 * 1024 * 1024; // 5MB
 
-          for (const file of files) {
+          // Validar archivos nuevos antes de agregarlos
+          for (const file of newFiles) {
             if (!validTypes.includes(file.type)) {
               showToast("Solo se permiten imágenes JPG, PNG o WEBP", "error");
-              clearSelectedImages();
+              // Limpiar el input pero NO el array de archivos seleccionados
+              e.target.value = "";
               return;
             }
             if (file.size > maxSize) {
               showToast("Cada imagen no debe superar 5MB", "error");
-              clearSelectedImages();
+              // Limpiar el input pero NO el array de archivos seleccionados
+              e.target.value = "";
               return;
             }
           }
 
-          selectedImageFiles = files;
+          // Verificar límite total después de agregar los nuevos
+          const totalDespuesDeAgregar = selectedImageFiles.length + newFiles.length;
+          if (totalDespuesDeAgregar > 12) {
+            showToast(
+              `Ya tienes ${selectedImageFiles.length} imagen(es). Solo puedes agregar ${12 - selectedImageFiles.length} más (máximo 12 total).`,
+              "warning"
+            );
+            e.target.value = "";
+            return;
+          }
+
+          // ACUMULAR: Agregar los nuevos archivos al array existente
+          selectedImageFiles = [...selectedImageFiles, ...newFiles];
+
+          // Limpiar el input para permitir seleccionar los mismos archivos nuevamente
+          e.target.value = "";
+
+          // Renderizar todas las imágenes acumuladas
           renderImagesPreview();
+
+          // Notificar al usuario
+          showToast(
+            `${newFiles.length} imagen(es) agregada(s). Total: ${selectedImageFiles.length}`,
+            "success"
+          );
         });
       }
 
