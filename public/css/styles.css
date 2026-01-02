@@ -142,6 +142,35 @@ h3 {
   margin: 0;
 }
 
+/* Asegura que los dropdowns del navbar puedan expandirse */
+.navbar .container {
+  overflow: visible;
+}
+
+.navbar .dropdown-menu {
+  display: none;
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  margin-top: 0.35rem;
+  z-index: 2000;
+}
+
+.navbar .dropdown-menu.show {
+  display: block;
+  visibility: visible;
+  opacity: 1;
+}
+
+@media (min-width: 1024px) {
+  /* Hover en desktop */
+  .navbar .dropdown:hover > .dropdown-menu {
+    display: block;
+    visibility: visible;
+    opacity: 1;
+  }
+}
+
 /* ============================================
    UTILITY CLASSES
    ============================================ */

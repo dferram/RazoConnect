@@ -18,6 +18,13 @@
 
       const html = await res.text();
       container.innerHTML = html;
+      
+      // Inicializar dropdowns de Bootstrap después de inyectar el HTML
+      const dropdownElementList = container.querySelectorAll('[data-bs-toggle="dropdown"]');
+      dropdownElementList.forEach(dropdownToggleEl => {
+        new bootstrap.Dropdown(dropdownToggleEl);
+      });
+      
       actualizarIndicadorCredito({
         hasCreditAccess,
         isAuthenticated: Boolean(tokenCliente),
