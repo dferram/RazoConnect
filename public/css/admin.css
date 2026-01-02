@@ -1180,6 +1180,334 @@ body.sidebar-collapsed .admin-main {
 /* ============================================
    RESPONSIVE
    ============================================ */
+
+/* ============================================
+   IPAD AIR 2 OPTIMIZATIONS (768px - 1024px)
+   ============================================ */
+@media only screen and (max-width: 1024px) {
+  /* === LAYOUT PRINCIPAL === */
+  /* Ocultar sidebar lateral y permitir contenido full-width */
+  .admin-sidebar {
+    position: fixed;
+    left: -100%;
+    top: 0;
+    width: var(--admin-sidebar-width);
+    height: 100vh;
+    transition: left 0.3s ease;
+    z-index: 1000;
+  }
+
+  .admin-sidebar.show {
+    left: 0;
+  }
+
+  /* Main content ocupa 100% del ancho */
+  .admin-main {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  /* Header ajustado */
+  .admin-header {
+    padding: 0 1.5rem;
+    height: auto;
+    min-height: var(--admin-header-height);
+    flex-wrap: wrap;
+  }
+
+  .admin-header-title {
+    font-size: 1.25rem;
+  }
+
+  .admin-header.simple .admin-header-title {
+    font-size: 1.75rem;
+  }
+
+  /* Reducir padding del contenido */
+  .admin-content {
+    padding: 1.5rem;
+  }
+
+  /* === TARJETAS KPI (Dashboard) === */
+  /* Grid de 2x2 para mejor legibilidad */
+  .admin-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+
+  .admin-stat-card {
+    padding: 1.25rem;
+  }
+
+  .admin-stat-icon {
+    width: 44px;
+    height: 44px;
+    font-size: 1.25rem;
+  }
+
+  .admin-stat-value {
+    font-size: 1.75rem;
+  }
+
+  /* === TABLAS === */
+  /* Forzar scroll horizontal en tablas */
+  .admin-table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 1rem;
+  }
+
+  .admin-table {
+    min-width: 800px;
+    font-size: 0.8125rem;
+  }
+
+  .admin-table th,
+  .admin-table td {
+    padding: 0.75rem 0.5rem;
+    white-space: nowrap;
+  }
+
+  /* Tablas dentro de modales */
+  .modal-table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .modal-table-scroll {
+    max-height: 50vh;
+  }
+
+  /* === USABILIDAD TÁCTIL === */
+  /* Aumentar tamaño de botones para touch */
+  .btn,
+  .admin-logout-btn,
+  .admin-nav-link {
+    min-height: 44px;
+    padding: 0.75rem 1.25rem;
+    font-size: 0.9375rem;
+  }
+
+  .btn.btn-sm {
+    min-height: 40px;
+    padding: 0.625rem 1rem;
+  }
+
+  /* Inputs y selects más grandes */
+  .form-control,
+  .form-select,
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  input[type="date"],
+  select,
+  textarea {
+    min-height: 44px;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+  }
+
+  /* === MODALES === */
+  .modal {
+    padding: 1rem;
+  }
+
+  .modal-content {
+    max-width: 95%;
+    max-height: 90vh;
+  }
+
+  .modal-content--xl {
+    width: 95%;
+    max-height: 85vh;
+  }
+
+  .modal-header,
+  .modal-body,
+  .modal-footer {
+    padding: 1.25rem;
+  }
+
+  .modal-title {
+    font-size: 1.25rem;
+  }
+
+  /* === PAGINACIÓN === */
+  /* Mantener paginación horizontal y centrada */
+  .pagination {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+
+  .pagination .btn {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0.5rem;
+  }
+
+  /* === BÚSQUEDA Y FILTROS === */
+  .admin-search .search-group {
+    padding: 0.75rem 1rem;
+    flex-wrap: wrap;
+  }
+
+  .admin-search .form-control {
+    min-width: 200px;
+    flex: 1 1 auto;
+  }
+
+  .admin-filter-tabs {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .admin-filter-btn {
+    min-height: 44px;
+    padding: 0.625rem 1.25rem;
+  }
+
+  /* === CARDS Y CONTENEDORES === */
+  .admin-card {
+    border-radius: 0.75rem;
+  }
+
+  .admin-card-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .admin-card-toolbar .btn {
+    width: 100%;
+  }
+
+  /* === GRIDS === */
+  .admin-grid-lg {
+    grid-template-columns: 1fr;
+  }
+
+  /* === QUICK ACTIONS === */
+  .admin-quick-action {
+    padding: 1rem;
+  }
+
+  .admin-quick-action-icon {
+    width: 48px;
+    height: 48px;
+    font-size: 1.5rem;
+  }
+
+  /* === USER INFO === */
+  .admin-user-details {
+    display: none;
+  }
+
+  .admin-user-avatar {
+    width: 44px;
+    height: 44px;
+  }
+
+  /* === DASHBOARD ESPECÍFICO === */
+  .dashboard-actions {
+    flex-direction: column;
+  }
+
+  .dashboard-actions .btn {
+    width: 100%;
+  }
+
+  .dashboard-table-wrapper .admin-card-header {
+    padding: 1.25rem 1.5rem;
+    flex-wrap: wrap;
+  }
+
+  .dashboard-table-wrapper .admin-table-container {
+    padding: 0 1.5rem 1.5rem;
+  }
+
+  /* === BADGES === */
+  .admin-badge,
+  .pedido-estatus-badge {
+    font-size: 0.7rem;
+    padding: 0.35rem 0.65rem;
+  }
+
+  /* === FORMULARIOS === */
+  .modal-form {
+    gap: 1rem;
+  }
+
+  /* === SCROLLBARS === */
+  .admin-table-container::-webkit-scrollbar,
+  .modal-table-container::-webkit-scrollbar {
+    height: 8px;
+  }
+
+  .admin-table-container::-webkit-scrollbar-thumb,
+  .modal-table-container::-webkit-scrollbar-thumb {
+    background: rgba(107, 93, 87, 0.3);
+    border-radius: 4px;
+  }
+
+  /* === BOTÓN MENÚ HAMBURGUESA (si se implementa) === */
+  .admin-menu-toggle {
+    display: block;
+    position: fixed;
+    top: 1rem;
+    left: 1rem;
+    z-index: 999;
+    width: 44px;
+    height: 44px;
+    background: var(--razo-orange);
+    color: white;
+    border: none;
+    border-radius: 0.5rem;
+    font-size: 1.5rem;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(255, 119, 51, 0.3);
+  }
+
+  /* === AJUSTES DE ESPACIADO === */
+  .admin-card-header {
+    padding: 1.25rem;
+  }
+
+  .admin-card-body {
+    padding: 0 1.25rem 1.25rem;
+  }
+
+  /* === EMPTY STATES === */
+  .empty-state {
+    padding: 1.5rem;
+  }
+
+  .empty-state-icon {
+    font-size: 2.25rem;
+  }
+
+  /* === SEARCH CARD === */
+  .search-card {
+    padding: 0.75rem 1rem;
+    flex-wrap: wrap;
+  }
+
+  .search-card input {
+    min-width: 200px;
+    font-size: 1rem;
+  }
+
+  .search-card-submit,
+  .search-card-clear {
+    min-height: 44px;
+    padding: 0.75rem 1.25rem;
+  }
+}
+
+/* ============================================
+   MOBILE PHONES (< 768px)
+   ============================================ */
 @media (max-width: 968px) {
   .admin-sidebar {
     width: 0;
