@@ -1,420 +1,580 @@
-(function () {
-  "use strict";
+// Optimized CxP Module - Consolidated Version & Fixed
+// Estado global
+const state = {
+    currentPage: 1,
+    itemsPerPage: 10,
+    totalPages: 1,
+    totalRecords: 0,
+    filters: {
+        search: '',
+        estatus: '',
+        fechaInicio: '',
+        fechaFin: ''
+    },
+    selectedIds: new Set(),
+    currentCxpId: null
+};
 
-  const el = {
-    btnRefresh: document.getElementById("btnRefresh"),
-    filtroEstatus: document.getElementById("filtroEstatus"),
+// NOTA: Se eliminó la declaración de fetchWithAuth porque ya existe globalmente.
 
-    loadingState: document.getElementById("loadingState"),
-    emptyState: document.getElementById("emptyState"),
-    cxpTable: document.getElementById("cxpTable"),
-    cxpTbody: document.getElementById("cxpTbody"),
-    resultadosBadge: document.getElementById("resultadosBadge"),
-
-    kpiTotalPorPagar: document.getElementById("kpiTotalPorPagar"),
-    kpiVencido: document.getElementById("kpiVencido"),
-    kpiProximo: document.getElementById("kpiProximo"),
-
-    pagoModal: document.getElementById("pagoModal"),
-    btnCerrarModal: document.getElementById("btnCerrarModal"),
-    btnCancelarPago: document.getElementById("btnCancelarPago"),
-    btnGuardarPago: document.getElementById("btnGuardarPago"),
-    btnGuardarPagoText: document.getElementById("btnGuardarPagoText"),
-    btnGuardarPagoSpinner: document.getElementById("btnGuardarPagoSpinner"),
-
-    pagoDeudaActual: document.getElementById("pagoDeudaActual"),
-    pagoMonto: document.getElementById("pagoMonto"),
-    pagoReferencia: document.getElementById("pagoReferencia"),
-    pagoComprobante: document.getElementById("pagoComprobante"),
-  };
-
-  const state = {
-    cuentas: [],
-    cuentaSeleccionada: null,
-  };
-
-  const formatMoney = (value) => {
-    const n = Number.parseFloat(value);
-    const v = Number.isFinite(n) ? n : 0;
-    return v.toLocaleString("es-MX", {
-      style: "currency",
-      currency: "MXN",
-      minimumFractionDigits: 2,
+// Funciones auxiliares
+function formatDate(date) {
+    if (!date) return 'N/A';
+    return new Date(date).toLocaleDateString('es-MX', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
     });
-  };
+}
 
-  const safeText = (value) => (value == null ? "" : String(value));
+function formatCurrency(amount) {
+    return new Intl.NumberFormat('es-MX', {
+        style: 'currency',
+        currency: 'MXN'
+    }).format(amount || 0);
+}
 
-  const parseDateOnly = (value) => {
-    if (!value) return null;
-    const d = new Date(value);
-    if (Number.isNaN(d.getTime())) return null;
-    return new Date(d.getFullYear(), d.getMonth(), d.getDate());
-  };
+function escapeHtml(str) {
+    return (str || '').toString()
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
 
-  const daysDiff = (a, b) => {
-    if (!a || !b) return null;
-    const ms = 24 * 60 * 60 * 1000;
-    return Math.floor((a.getTime() - b.getTime()) / ms);
-  };
-
-  const getDueSeverity = (fechaVencimiento) => {
-    const due = parseDateOnly(fechaVencimiento);
-    if (!due) {
-      return { badge: "secondary", label: "Sin vencimiento", isOverdue: false, isSoon: false };
-    }
-
-    const today = new Date();
-    const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    const diff = daysDiff(due, todayOnly);
-
-    if (diff < 0) {
-      return { badge: "danger", label: "Vencido", isOverdue: true, isSoon: false };
-    }
-
-    if (diff <= 7) {
-      return { badge: "warning", label: "Próximo", isOverdue: false, isSoon: true };
-    }
-
-    return { badge: "success", label: "Al día", isOverdue: false, isSoon: false };
-  };
-
-  const setLoading = (isLoading) => {
-    if (!el.loadingState || !el.emptyState || !el.cxpTable) return;
-    el.loadingState.style.display = isLoading ? "flex" : "none";
-  };
-
-  const setEmpty = (show, text) => {
-    if (!el.emptyState || !el.cxpTable) return;
-    el.emptyState.style.display = show ? "block" : "none";
-    if (text) el.emptyState.textContent = text;
-    el.cxpTable.style.display = show ? "none" : "table";
-  };
-
-  const showToastOk = (title) => {
-    if (typeof Swal === "undefined" || !Swal) return;
-    Swal.fire({
-      toast: true,
-      position: "top-end",
-      icon: "success",
-      title: title || "Listo",
-      showConfirmButton: false,
-      timer: 1400,
-      timerProgressBar: true,
-    });
-  };
-
-  const showToastError = (title) => {
-    if (typeof Swal === "undefined" || !Swal) return;
-    Swal.fire({
-      toast: true,
-      position: "top-end",
-      icon: "error",
-      title: title || "Error",
-      showConfirmButton: false,
-      timer: 2200,
-      timerProgressBar: true,
-    });
-  };
-
-  const openPagoModal = (cuenta) => {
-    state.cuentaSeleccionada = cuenta;
-
-    if (el.pagoDeudaActual) {
-      el.pagoDeudaActual.textContent = formatMoney(cuenta?.restante ?? 0);
-    }
-
-    if (el.pagoMonto) {
-      el.pagoMonto.value = "";
-      el.pagoMonto.max = String(Number.parseFloat(cuenta?.restante ?? 0) || "");
-    }
-
-    if (el.pagoReferencia) {
-      el.pagoReferencia.value = "";
-    }
-
-    if (el.pagoComprobante) {
-      el.pagoComprobante.value = "";
-    }
-
-    if (el.pagoModal) {
-      el.pagoModal.style.display = "flex";
-    }
-  };
-
-  const closePagoModal = () => {
-    state.cuentaSeleccionada = null;
-    if (el.pagoModal) {
-      el.pagoModal.style.display = "none";
-    }
-  };
-
-  const renderKPIs = (cuentas) => {
-    const today = new Date();
-    const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-
-    let totalPorPagar = 0;
-    let vencido = 0;
-    let proximo = 0;
-
-    for (const c of cuentas) {
-      const estatus = safeText(c.estatus).toUpperCase();
-      if (estatus === "PAGADO") continue;
-
-      const restante = Number.parseFloat(c.restante ?? 0) || 0;
-      totalPorPagar += restante;
-
-      const due = parseDateOnly(c.fechaVencimiento);
-      if (!due) continue;
-
-      const diff = daysDiff(due, todayOnly);
-      if (diff < 0) {
-        vencido += restante;
-      } else if (diff <= 7) {
-        proximo += restante;
-      }
-    }
-
-    if (el.kpiTotalPorPagar) el.kpiTotalPorPagar.textContent = formatMoney(totalPorPagar);
-    if (el.kpiVencido) el.kpiVencido.textContent = formatMoney(vencido);
-    if (el.kpiProximo) el.kpiProximo.textContent = formatMoney(proximo);
-  };
-
-  const renderTable = (cuentas) => {
-    if (!el.cxpTbody || !el.cxpTable || !el.resultadosBadge) return;
-
-    el.cxpTbody.innerHTML = "";
-    el.resultadosBadge.textContent = `${cuentas.length} CUENTA${cuentas.length === 1 ? "" : "S"}`;
-
-    if (!cuentas.length) {
-      setEmpty(true, "No hay cuentas por pagar para mostrar.");
-      return;
-    }
-
-    setEmpty(false);
-
-    for (const c of cuentas) {
-      const tr = document.createElement("tr");
-
-      const tdProv = document.createElement("td");
-      tdProv.innerHTML = `
-        <div style="display:flex; align-items:center; gap: 0.6rem;">
-          <div style="width: 34px; height: 34px; border-radius: 0.75rem; background: rgba(249, 115, 22, 0.12); display:flex; align-items:center; justify-content:center; font-weight: 900; color:#9a3412;">🏭</div>
-          <div style="display:grid; gap: 0.15rem;">
-            <div style="font-weight: 800; color: #111827;">${safeText(c.proveedorNombre)}</div>
-            <div style="font-size: 0.85rem; color: #6b7280;">Proveedor #${safeText(c.proveedorId)}</div>
-          </div>
-        </div>
-      `;
-
-      const tdOc = document.createElement("td");
-      tdOc.innerHTML = c.ordenCompraId ? `<strong>#${safeText(c.ordenCompraId)}</strong>` : "—";
-
-      const tdEmi = document.createElement("td");
-      tdEmi.textContent = c.fechaEmision
-        ? new Date(c.fechaEmision).toLocaleDateString("es-MX")
-        : "—";
-
-      const tdVenc = document.createElement("td");
-      const severity = getDueSeverity(c.fechaVencimiento);
-      const vencText = c.fechaVencimiento
-        ? new Date(c.fechaVencimiento).toLocaleDateString("es-MX")
-        : "—";
-      tdVenc.innerHTML = `
-        <div style="display:grid; gap: 0.25rem;">
-          <div style="font-weight: 800; color: ${severity.isOverdue ? "#ef4444" : "#111827"};">${vencText}</div>
-          <div><span class="admin-badge ${severity.badge}">${severity.label}</span></div>
-        </div>
-      `;
-
-      const tdTotal = document.createElement("td");
-      tdTotal.style.textAlign = "right";
-      tdTotal.style.whiteSpace = "nowrap";
-      tdTotal.textContent = formatMoney(c.montoTotal);
-
-      const tdRest = document.createElement("td");
-      tdRest.style.textAlign = "right";
-      tdRest.style.whiteSpace = "nowrap";
-      tdRest.innerHTML = `<strong>${formatMoney(c.restante)}</strong>`;
-
-      const tdEst = document.createElement("td");
-      const estatus = safeText(c.estatus).toUpperCase();
-      const badge = (() => {
-        if (estatus === "PAGADO") return "success";
-        if (estatus === "PARCIAL") return "warning";
-        return "info";
-      })();
-      tdEst.innerHTML = `<span class="admin-badge ${badge}">${estatus}</span>`;
-
-      const tdAcc = document.createElement("td");
-      tdAcc.style.textAlign = "center";
-
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "btn btn-primary";
-      btn.style.padding = "0.45rem 0.75rem";
-      btn.style.fontSize = "0.875rem";
-      btn.innerHTML = "Pagar";
-      btn.title = "Registrar pago";
-      btn.disabled = estatus === "PAGADO";
-      btn.addEventListener("click", () => openPagoModal(c));
-
-      tdAcc.appendChild(btn);
-
-      tr.appendChild(tdProv);
-      tr.appendChild(tdOc);
-      tr.appendChild(tdEmi);
-      tr.appendChild(tdVenc);
-      tr.appendChild(tdTotal);
-      tr.appendChild(tdRest);
-      tr.appendChild(tdEst);
-      tr.appendChild(tdAcc);
-
-      el.cxpTbody.appendChild(tr);
-    }
-  };
-
-  const getFiltered = () => {
-    const filter = safeText(el.filtroEstatus?.value).toUpperCase();
-    const cuentas = Array.isArray(state.cuentas) ? state.cuentas : [];
-    if (!filter) return cuentas;
-    return cuentas.filter((c) => safeText(c.estatus).toUpperCase() === filter);
-  };
-
-  const loadCuentas = async () => {
-    setLoading(true);
+// Cargar KPIs
+async function cargarKPIs() {
     try {
-      const resp = await apiCall("/admin/cuentas-por-pagar", { method: "GET" });
-      if (!resp.ok) {
-        throw new Error(resp.data?.message || "No se pudieron cargar cuentas");
-      }
-
-      state.cuentas = Array.isArray(resp.data?.data?.cuentas) ? resp.data.data.cuentas : [];
-
-      const filtered = getFiltered();
-      renderKPIs(filtered);
-      renderTable(filtered);
+        const response = await fetchWithAuth(`${API_BASE_URL}/admin/cuentas-por-pagar/kpis`);
+        if (!response.ok) throw new Error('Error al cargar KPIs');
+        
+        const data = await response.json();
+        if (!data.success) throw new Error(data.message || 'Error del servidor');
+        
+        const kpis = data.data;
+        document.getElementById('kpiTotalPorPagar').textContent = formatCurrency(kpis.total_por_pagar || 0);
+        document.getElementById('kpiVencido').textContent = formatCurrency(kpis.vencido || 0);
+        document.getElementById('kpiProximo').textContent = formatCurrency(kpis.proximo_vencer || 0);
+        
+        document.getElementById('kpiVencidoSub').textContent = `${kpis.count_vencido || 0} cuenta(s)`;
+        document.getElementById('kpiProximoSub').textContent = `${kpis.count_proximo || 0} cuenta(s)`;
+        
     } catch (error) {
-      console.error(error);
-      setEmpty(true, error.message || "Error cargando cuentas");
-      showToastError(error.message || "Error");
-    } finally {
-      setLoading(false);
+        console.error('Error cargando KPIs:', error);
     }
-  };
+}
 
-  const setGuardarLoading = (isLoading) => {
-    if (!el.btnGuardarPago || !el.btnGuardarPagoText || !el.btnGuardarPagoSpinner) return;
-    el.btnGuardarPago.disabled = isLoading;
-    el.btnGuardarPagoText.style.display = isLoading ? "none" : "inline";
-    el.btnGuardarPagoSpinner.style.display = isLoading ? "inline-block" : "none";
-  };
-
-  const guardarPago = async () => {
-    const cuenta = state.cuentaSeleccionada;
-    if (!cuenta) return;
-
-    const monto = Number.parseFloat(el.pagoMonto?.value);
-    if (!Number.isFinite(monto) || monto <= 0) {
-      showToastError("Monto inválido");
-      return;
-    }
-
-    const restante = Number.parseFloat(cuenta.restante ?? 0) || 0;
-    if (monto > restante) {
-      showToastError("No puedes pagar más que el restante");
-      return;
-    }
-
-    const referencia = safeText(el.pagoReferencia?.value).trim();
-    const file = el.pagoComprobante?.files?.[0] || null;
-
-    const formData = new FormData();
-    formData.append("monto", String(monto));
-    formData.append("referencia", referencia);
-    formData.append("nota", referencia);
-    if (file) {
-      formData.append("comprobante", file);
-    }
-
-    setGuardarLoading(true);
-    try {
-      const token = localStorage.getItem("razoconnect_admin_token");
-      const res = await fetch(
-        `${API_BASE_URL}/admin/cuentas-por-pagar/${encodeURIComponent(cuenta.cxpId)}/registrar-pago`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: token ? `Bearer ${token}` : "",
-          },
-          body: formData,
+// Mostrar/ocultar estado de carga
+function mostrarCargando(mostrar) {
+    const loadingState = document.getElementById('loadingState');
+    const emptyState = document.getElementById('emptyState');
+    const table = document.getElementById('cxpTable');
+    
+    if (mostrar) {
+        loadingState.style.display = 'flex';
+        emptyState.style.display = 'none';
+        table.style.display = 'none';
+    } else {
+        loadingState.style.display = 'none';
+        if (state.totalRecords === 0) {
+            emptyState.style.display = 'block';
+            table.style.display = 'none';
+        } else {
+            emptyState.style.display = 'none';
+            table.style.display = 'table';
         }
-      );
+    }
+}
 
-      const data = await res.json();
-      if (!res.ok || !data?.success) {
-        throw new Error(data?.message || "No se pudo registrar pago");
-      }
-
-      const updated = data?.data?.cuenta;
-      if (updated) {
-        state.cuentas = state.cuentas.map((c) =>
-          Number.parseInt(c.cxpId, 10) === Number.parseInt(updated.cxpId, 10)
-            ? {
-                ...c,
-                montoPagado: updated.montoPagado,
-                restante: updated.restante,
-                estatus: updated.estatus,
-                comprobantePago: updated.comprobantePago,
-                referenciaFactura: updated.referenciaFactura,
-              }
-            : c
-        );
-      }
-
-      showToastOk("Pago registrado");
-      closePagoModal();
-
-      const filtered = getFiltered();
-      renderKPIs(filtered);
-      renderTable(filtered);
+// Cargar tabla con paginación y filtros
+async function cargarTablaCxP(page = state.currentPage) {
+    try {
+        mostrarCargando(true);
+        
+        const params = new URLSearchParams({
+            page: page,
+            limit: state.itemsPerPage
+        });
+        
+        if (state.filters.search) params.append('search', state.filters.search);
+        if (state.filters.estatus) params.append('estatus', state.filters.estatus);
+        if (state.filters.fechaInicio) params.append('fechaInicio', state.filters.fechaInicio);
+        if (state.filters.fechaFin) params.append('fechaFin', state.filters.fechaFin);
+        
+        const response = await fetchWithAuth(`${API_BASE_URL}/admin/cuentas-por-pagar?${params.toString()}`);
+        if (!response.ok) throw new Error('Error al cargar datos');
+        
+        const data = await response.json();
+        if (!data.success) throw new Error(data.message || 'Error del servidor');
+        
+        state.currentPage = data.currentPage;
+        state.totalPages = data.totalPages;
+        state.totalRecords = data.totalRecords;
+        
+        renderizarTabla(data.data);
+        renderizarPaginacion();
+        mostrarCargando(false);
+        
     } catch (error) {
-      console.error(error);
-      showToastError(error.message || "Error");
-    } finally {
-      setGuardarLoading(false);
+        console.error('Error:', error);
+        mostrarCargando(false);
+        Swal.fire('Error', 'No se pudieron cargar los datos.', 'error');
     }
-  };
+}
 
-  if (el.btnRefresh) {
-    el.btnRefresh.addEventListener("click", loadCuentas);
-  }
+// Renderizar tabla con lógica de estatus mejorada
+function renderizarTabla(facturas) {
+    const tbody = document.getElementById('cxpTbody');
+    if (!tbody) return;
+    
+    tbody.innerHTML = facturas.map(factura => {
+        const saldoRestante = factura.saldo_restante || 0;
+        const estatusCalculado = factura.estatus_calculado || factura.estatus;
+        
+        let badgeClass = 'bg-secondary';
+        let estatusTexto = estatusCalculado;
+        
+        if (saldoRestante <= 0) {
+            badgeClass = 'bg-success';
+            estatusTexto = 'PAGADO';
+        } else if (estatusCalculado === 'VENCIDO') {
+            badgeClass = 'bg-danger';
+        } else if (estatusCalculado === 'PARCIAL') {
+            badgeClass = 'bg-info';
+        } else if (estatusCalculado === 'PENDIENTE') {
+            badgeClass = 'bg-warning text-dark';
+        }
+        
+        const isChecked = state.selectedIds.has(factura.cxp_id);
+        const isPagado = saldoRestante <= 0;
+        
+        return `
+            <tr ${isPagado ? 'style="opacity: 0.7;"' : ''}>
+                <td class="text-center">
+                    <input type="checkbox" 
+                           class="form-check-input cxp-checkbox" 
+                           data-id="${factura.cxp_id}"
+                           ${isChecked ? 'checked' : ''}
+                           ${isPagado ? 'disabled' : ''}>
+                </td>
+                <td>
+                    <div class="fw-semibold">${escapeHtml(factura.proveedor)}</div>
+                    ${factura.notas ? `<div class="text-muted small">${escapeHtml(factura.notas)}</div>` : ''}
+                    ${factura.orden_compra_id ? `<div class="text-muted small"><i class="bi bi-box-seam"></i> Origen: OC #${factura.orden_compra_id}</div>` : ''}
+                </td>
+                <td>
+                    ${factura.referencia_factura ? `<div class="fw-semibold">${escapeHtml(factura.referencia_factura)}</div>` : ''}
+                    <div class="text-muted small">ID: ${factura.cxp_id}</div>
+                </td>
+                <td>${formatDate(factura.fecha_emision)}</td>
+                <td>${formatDate(factura.fecha_vencimiento)}</td>
+                <td class="text-end fw-semibold">${formatCurrency(factura.monto_total)}</td>
+                <td class="text-end ${saldoRestante > 0 ? 'text-danger fw-bold' : 'text-success'}">
+                    ${formatCurrency(saldoRestante)}
+                </td>
+                <td>
+                    <span class="badge ${badgeClass}">
+                        ${escapeHtml(estatusTexto)}
+                    </span>
+                </td>
+                <td class="text-center">
+                    <div class="btn-group btn-group-sm" role="group">
+                        ${!isPagado ? `
+                            <button class="btn btn-outline-success" 
+                                    onclick="abrirModalPago(${factura.cxp_id})" 
+                                    title="Registrar pago">
+                                <i class="bi bi-cash-coin"></i>
+                            </button>
+                        ` : ''}
+                        <button class="btn btn-outline-primary" 
+                                onclick="verDetalle(${factura.cxp_id})" 
+                                title="Ver detalle e historial">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }).join('');
+    
+    document.getElementById('resultadosBadge').textContent = `${state.totalRecords} CUENTAS`;
+    
+    attachCheckboxListeners();
+}
 
-  if (el.filtroEstatus) {
-    el.filtroEstatus.addEventListener("change", () => {
-      const filtered = getFiltered();
-      renderKPIs(filtered);
-      renderTable(filtered);
+// Renderizar paginación con estructura Bootstrap 5 correcta
+function renderizarPaginacion() {
+    const paginationContainer = document.getElementById('pagination-controls');
+    if (!paginationContainer) return;
+
+    // Si solo hay una página, ocultar paginación
+    if (state.totalPages <= 1) {
+        paginationContainer.innerHTML = '';
+        return;
+    }
+
+    let html = '<nav aria-label="Navegación de páginas"><ul class="pagination justify-content-center mb-0">';
+
+    // Botón anterior
+    html += `<li class="page-item ${state.currentPage === 1 ? 'disabled' : ''}">
+        <a class="page-link" href="#" onclick="event.preventDefault(); ${state.currentPage > 1 ? `cargarTablaCxP(${state.currentPage - 1})` : 'return false'}" aria-label="Anterior">
+            <i class="bi bi-chevron-left"></i>
+        </a>
+    </li>`;
+
+    // Números de página con lógica inteligente
+    for (let i = 1; i <= state.totalPages; i++) {
+        if (i === 1 || i === state.totalPages || (i >= state.currentPage - 1 && i <= state.currentPage + 1)) {
+            html += `<li class="page-item ${i === state.currentPage ? 'active' : ''}">
+                <a class="page-link" href="#" onclick="event.preventDefault(); cargarTablaCxP(${i})">${i}</a>
+            </li>`;
+        } else if (i === state.currentPage - 2 || i === state.currentPage + 2) {
+            html += '<li class="page-item disabled"><span class="page-link">...</span></li>';
+        }
+    }
+
+    // Botón siguiente
+    html += `<li class="page-item ${state.currentPage === state.totalPages ? 'disabled' : ''}">
+        <a class="page-link" href="#" onclick="event.preventDefault(); ${state.currentPage < state.totalPages ? `cargarTablaCxP(${state.currentPage + 1})` : 'return false'}" aria-label="Siguiente">
+            <i class="bi bi-chevron-right"></i>
+        </a>
+    </li>`;
+
+    html += '</ul></nav>';
+    paginationContainer.innerHTML = html;
+}
+
+// Gestión de selección múltiple
+function attachCheckboxListeners() {
+    document.querySelectorAll('.cxp-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', (e) => {
+            const id = parseInt(e.target.dataset.id);
+            if (e.target.checked) {
+                state.selectedIds.add(id);
+            } else {
+                state.selectedIds.delete(id);
+            }
+            actualizarSeleccionMultiple();
+        });
     });
-  }
+}
 
-  if (el.btnCerrarModal) {
-    el.btnCerrarModal.addEventListener("click", closePagoModal);
-  }
-
-  if (el.btnCancelarPago) {
-    el.btnCancelarPago.addEventListener("click", closePagoModal);
-  }
-
-  if (el.btnGuardarPago) {
-    el.btnGuardarPago.addEventListener("click", guardarPago);
-  }
-
-  window.addEventListener("click", (event) => {
-    if (event.target === el.pagoModal) {
-      closePagoModal();
+function actualizarSeleccionMultiple() {
+    const selectAllCheckbox = document.getElementById('selectAll');
+    if (selectAllCheckbox) {
+        const visibleCheckboxes = document.querySelectorAll('.cxp-checkbox:not([disabled])');
+        const allChecked = visibleCheckboxes.length > 0 && 
+                           Array.from(visibleCheckboxes).every(cb => cb.checked);
+        selectAllCheckbox.checked = allChecked;
     }
-  });
+}
 
-  loadCuentas();
-})();
+// Abrir modal de pago
+async function abrirModalPago(cxpId) {
+    state.currentCxpId = cxpId;
+    
+    try {
+        const response = await fetchWithAuth(`${API_BASE_URL}/admin/cuentas-por-pagar/${cxpId}`);
+        if (!response.ok) throw new Error('Error al cargar detalle');
+        
+        const data = await response.json();
+        if (!data.success) throw new Error(data.message || 'Error del servidor');
+        
+        const cxp = data.data;
+        const saldoRestante = cxp.saldo_restante || 0;
+        
+        document.getElementById('pagoDeudaActual').textContent = formatCurrency(saldoRestante);
+        document.getElementById('pagoMonto').value = saldoRestante.toFixed(2);
+        document.getElementById('pagoMonto').max = saldoRestante;
+        document.getElementById('pagoReferencia').value = '';
+        document.getElementById('pagoComprobante').value = '';
+        document.getElementById('pagoMetodo').value = 'TRANSFERENCIA';
+        document.getElementById('pagoNotas').value = '';
+        
+        if (cxp.historial_pagos && cxp.historial_pagos.length > 0) {
+            renderizarHistorialPagos(cxp.historial_pagos);
+            document.getElementById('historialPagosSection').style.display = 'block';
+        } else {
+            document.getElementById('historialPagosSection').style.display = 'none';
+        }
+        
+        document.getElementById('pagoModal').style.display = 'flex';
+        
+    } catch (error) {
+        console.error('Error:', error);
+        Swal.fire('Error', 'No se pudo cargar la información de la cuenta.', 'error');
+    }
+}
+
+// Renderizar historial de pagos
+function renderizarHistorialPagos(pagos) {
+    const container = document.getElementById('historialPagosList');
+    if (!container) return;
+    
+    container.innerHTML = pagos.map(pago => `
+        <div class="historial-item" style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: start;">
+            <div>
+                <div class="fw-semibold" style="color: #111827;">${formatCurrency(pago.monto)}</div>
+                <div class="text-muted small">${formatDate(pago.fecha_pago)}</div>
+                ${pago.referencia ? `<div class="text-muted small">Ref: ${escapeHtml(pago.referencia)}</div>` : ''}
+                ${pago.notas ? `<div class="text-muted small">${escapeHtml(pago.notas)}</div>` : ''}
+            </div>
+            <div class="text-end">
+                <span class="badge bg-secondary">${escapeHtml(pago.metodo_pago || 'N/A')}</span>
+                ${pago.comprobante_url ? `<a href="${pago.comprobante_url}" target="_blank" class="btn btn-sm btn-link" title="Ver comprobante"><i class="bi bi-paperclip"></i></a>` : ''}
+            </div>
+        </div>
+    `).join('');
+}
+
+// Cerrar modal
+function cerrarModalPago() {
+    document.getElementById('pagoModal').style.display = 'none';
+    state.currentCxpId = null;
+}
+
+// Guardar pago
+async function guardarPago() {
+    if (!state.currentCxpId) return;
+    
+    const monto = parseFloat(document.getElementById('pagoMonto').value);
+    const metodoPago = document.getElementById('pagoMetodo').value;
+    const referencia = document.getElementById('pagoReferencia').value;
+    const notas = document.getElementById('pagoNotas').value;
+    const comprobante = document.getElementById('pagoComprobante').files[0];
+    
+    if (!monto || monto <= 0) {
+        Swal.fire('Error', 'Ingresa un monto válido.', 'error');
+        return;
+    }
+    
+    try {
+        document.getElementById('btnGuardarPagoText').style.display = 'none';
+        document.getElementById('btnGuardarPagoSpinner').style.display = 'inline-block';
+        document.getElementById('btnGuardarPago').disabled = true;
+        
+        const formData = new FormData();
+        formData.append('monto', monto);
+        formData.append('metodoPago', metodoPago);
+        if (referencia) formData.append('referencia', referencia);
+        if (notas) formData.append('notas', notas);
+        if (comprobante) formData.append('comprobante', comprobante);
+        
+        const response = await fetchWithAuth(`${API_BASE_URL}/admin/cuentas-por-pagar/${state.currentCxpId}/pagar`, {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || 'Error al registrar el pago');
+        }
+        
+        await Swal.fire({
+            icon: 'success',
+            title: 'Pago Registrado',
+            text: `Saldo restante: ${formatCurrency(data.data.saldo_restante)}`,
+            timer: 2000
+        });
+        
+        cerrarModalPago();
+        await cargarTablaCxP();
+        await cargarKPIs();
+        
+    } catch (error) {
+        console.error('Error:', error);
+        Swal.fire('Error', error.message || 'No se pudo registrar el pago.', 'error');
+    } finally {
+        document.getElementById('btnGuardarPagoText').style.display = 'inline';
+        document.getElementById('btnGuardarPagoSpinner').style.display = 'none';
+        document.getElementById('btnGuardarPago').disabled = false;
+    }
+}
+
+// Ver detalle de cuenta
+async function verDetalle(cxpId) {
+    try {
+        const response = await fetchWithAuth(`${API_BASE_URL}/admin/cuentas-por-pagar/${cxpId}`);
+        if (!response.ok) throw new Error('Error al cargar detalle');
+        
+        const data = await response.json();
+        if (!data.success) throw new Error(data.message || 'Error del servidor');
+        
+        const cxp = data.data;
+        
+        let historialHtml = '';
+        if (cxp.historial_pagos && cxp.historial_pagos.length > 0) {
+            historialHtml = '<h4 style="margin-top: 1.5rem; font-size: 1rem; border-top: 2px solid #e5e7eb; padding-top: 1rem;">Historial de Pagos</h4><div style="max-height: 300px; overflow-y: auto;">';
+            cxp.historial_pagos.forEach(pago => {
+                historialHtml += `<div style="padding: 0.75rem; border-bottom: 1px solid #eee; display: flex; justify-content: space-between;">
+                    <div>
+                        <strong style="color: #059669;">${formatCurrency(pago.monto)}</strong> - ${formatDate(pago.fecha_pago)}<br>
+                        <small style="color: #6b7280;">Método: ${escapeHtml(pago.metodo_pago || 'N/A')}</small>
+                        ${pago.referencia ? `<br><small style="color: #6b7280;">Ref: ${escapeHtml(pago.referencia)}</small>` : ''}
+                    </div>
+                    ${pago.comprobante_url ? `<a href="${pago.comprobante_url}" target="_blank" class="btn btn-sm btn-link"><i class="bi bi-paperclip"></i></a>` : ''}
+                </div>`;
+            });
+            historialHtml += '</div>';
+        }
+        
+        Swal.fire({
+            title: `Cuenta por Pagar #${cxp.cxp_id}`,
+            html: `
+                <div style="text-align: left;">
+                    <p><strong>Proveedor:</strong> ${escapeHtml(cxp.proveedor)}</p>
+                    <p><strong>Referencia:</strong> ${escapeHtml(cxp.referencia_factura || 'N/A')}</p>
+                    ${cxp.orden_compra_id ? `<p><strong>Origen:</strong> Entrada de Almacén - OC #${cxp.orden_compra_id}</p>` : ''}
+                    <p><strong>Fecha Emisión:</strong> ${formatDate(cxp.fecha_emision)}</p>
+                    <p><strong>Fecha Vencimiento:</strong> ${formatDate(cxp.fecha_vencimiento)}</p>
+                    <hr>
+                    <p><strong>Monto Total:</strong> ${formatCurrency(cxp.monto_total)}</p>
+                    <p><strong>Monto Pagado:</strong> ${formatCurrency(cxp.monto_pagado || 0)}</p>
+                    <p><strong>Saldo Restante:</strong> <span style="color: ${cxp.saldo_restante > 0 ? '#dc3545' : '#28a745'}; font-weight: bold; font-size: 1.2rem;">${formatCurrency(cxp.saldo_restante)}</span></p>
+                    ${cxp.notas ? `<p><strong>Notas:</strong> ${escapeHtml(cxp.notas)}</p>` : ''}
+                    ${historialHtml}
+                </div>
+            `,
+            width: '700px',
+            confirmButtonText: 'Cerrar'
+        });
+        
+    } catch (error) {
+        console.error('Error:', error);
+        Swal.fire('Error', 'No se pudo cargar el detalle.', 'error');
+    }
+}
+
+// Aplicar filtros
+function aplicarFiltros() {
+    state.filters.search = document.getElementById('searchInput')?.value || '';
+    state.filters.estatus = document.getElementById('filtroEstatus')?.value || '';
+    state.filters.fechaInicio = document.getElementById('fechaInicio')?.value || '';
+    state.filters.fechaFin = document.getElementById('fechaFin')?.value || '';
+    
+    state.currentPage = 1;
+    cargarTablaCxP();
+}
+
+// Limpiar filtros
+function limpiarFiltros() {
+    document.getElementById('searchInput').value = '';
+    document.getElementById('filtroEstatus').value = '';
+    document.getElementById('fechaInicio').value = '';
+    document.getElementById('fechaFin').value = '';
+    
+    state.filters = {
+        search: '',
+        estatus: '',
+        fechaInicio: '',
+        fechaFin: ''
+    };
+    
+    state.currentPage = 1;
+    cargarTablaCxP();
+}
+
+// Inicializar y Event Listeners
+document.addEventListener('DOMContentLoaded', () => {
+    cargarKPIs();
+    cargarTablaCxP();
+    
+    document.getElementById('btnRefresh')?.addEventListener('click', () => {
+        cargarKPIs();
+        cargarTablaCxP();
+    });
+    
+    document.getElementById('btnCerrarModal')?.addEventListener('click', cerrarModalPago);
+    document.getElementById('btnCancelarPago')?.addEventListener('click', cerrarModalPago);
+    document.getElementById('btnGuardarPago')?.addEventListener('click', guardarPago);
+    
+    document.getElementById('btnAplicarFiltros')?.addEventListener('click', aplicarFiltros);
+    document.getElementById('btnLimpiarFiltros')?.addEventListener('click', limpiarFiltros);
+    
+    document.getElementById('searchInput')?.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') aplicarFiltros();
+    });
+    
+    document.getElementById('selectAll')?.addEventListener('change', (e) => {
+        const checkboxes = document.querySelectorAll('.cxp-checkbox:not([disabled])');
+        checkboxes.forEach(cb => {
+            cb.checked = e.target.checked;
+            const id = parseInt(cb.dataset.id);
+            if (e.target.checked) {
+                state.selectedIds.add(id);
+            } else {
+                state.selectedIds.delete(id);
+            }
+        });
+    });
+    
+    document.getElementById('pagoModal')?.addEventListener('click', (e) => {
+        if (e.target.id === 'pagoModal') cerrarModalPago();
+    });
+    
+    document.getElementById('filtroEstatus')?.addEventListener('change', aplicarFiltros);
+
+    // Exportación con filtros activos (respeta la vista actual)
+    document.getElementById('btn-exportar')?.addEventListener('click', async () => {
+        try {
+            // Construir parámetros de filtros activos
+            const params = new URLSearchParams();
+            if (state.filters.search) params.append('search', state.filters.search);
+            if (state.filters.estatus) params.append('estatus', state.filters.estatus);
+            if (state.filters.fechaInicio) params.append('fechaInicio', state.filters.fechaInicio);
+            if (state.filters.fechaFin) params.append('fechaFin', state.filters.fechaFin);
+            
+            const queryString = params.toString();
+            const hasFilters = queryString.length > 0;
+            
+            Swal.fire({
+                title: hasFilters ? 'Exportando Vista Filtrada...' : 'Generando Lote de Pagos...',
+                text: hasFilters 
+                    ? 'Exportando solo los registros que coinciden con tus filtros actuales.' 
+                    : 'Por favor espera mientras procesamos los registros pendientes.',
+                allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading() }
+            });
+
+            const url = `${API_BASE_URL}/admin/cxp/exportar${queryString ? `?${queryString}` : ''}`;
+            const response = await fetchWithAuth(url, { method: 'GET' });
+
+            if (response.status === 404) {
+                Swal.fire('Sin Datos', 'No hay registros que coincidan con los filtros aplicados.', 'info');
+                return;
+            }
+
+            if (!response.ok) throw new Error('Error al generar reporte');
+
+            const blob = await response.blob();
+            const downloadUrl = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = downloadUrl;
+            const fileName = hasFilters 
+                ? `CXP_Filtrado_${new Date().toISOString().slice(0,10)}.xlsx`
+                : `CXP_Pendientes_${new Date().toISOString().slice(0,10)}.xlsx`;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(downloadUrl);
+
+            Swal.fire({
+                icon: 'success',
+                title: 'Exportación Exitosa',
+                text: hasFilters 
+                    ? `Se exportaron ${state.totalRecords} registro(s) filtrado(s)` 
+                    : 'Los registros han sido archivados correctamente',
+                timer: 2500
+            }).then(() => {
+                if (!hasFilters) cargarTablaCxP(); // Solo recargar si fue exportación completa
+            });
+
+        } catch (error) {
+            console.error(error);
+            Swal.fire('Error', 'No se pudo generar el reporte.', 'error');
+        }
+    });
+});

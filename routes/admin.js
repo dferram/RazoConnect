@@ -596,18 +596,39 @@ router.put(
 );
 
 router.get(
+  "/cuentas-por-pagar/kpis",
+  authenticate,
+  authorizeAdmin,
+  cxpController.getCxPKPIs
+);
+
+router.get(
   "/cuentas-por-pagar",
   authenticate,
   authorizeAdmin,
-  adminController.getCuentasPorPagar
+  cxpController.getCuentasPorPagar
+);
+
+router.get(
+  "/cuentas-por-pagar/:id",
+  authenticate,
+  authorizeAdmin,
+  cxpController.getCxPDetalle
 );
 
 router.post(
-  "/cuentas-por-pagar/:id/registrar-pago",
+  "/cuentas-por-pagar/:id/pagar",
   authenticate,
   authorizeAdmin,
   uploadComprobante.single("comprobante"),
-  adminController.registrarPagoCuentaPorPagar
+  cxpController.registrarPago
+);
+
+router.get(
+  "/cxp/exportar",
+  authenticate,
+  authorizeAdmin,
+  cxpController.exportarLoteCxP
 );
 
 router.get(

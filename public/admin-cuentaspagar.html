@@ -66,18 +66,46 @@
             </div>
           </section>
 
+          <!-- Barra de búsqueda y filtros -->
+          <section class="admin-card" style="padding: 1.25rem; margin-bottom: 1rem;">
+            <div style="display: grid; gap: 1rem;">
+              <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: end;">
+                <div style="flex: 1; min-width: 250px;">
+                  <label for="searchInput" class="form-label" style="font-size: 0.875rem; margin-bottom: 0.25rem;">Buscar proveedor</label>
+                  <input type="text" id="searchInput" class="form-input" placeholder="Nombre del proveedor..." style="width: 100%;">
+                </div>
+                <div style="min-width: 180px;">
+                  <label for="filtroEstatus" class="form-label" style="font-size: 0.875rem; margin-bottom: 0.25rem;">Estatus</label>
+                  <select id="filtroEstatus" class="form-input" style="width: 100%;">
+                    <option value="">Todos</option>
+                    <option value="PENDIENTE">Pendiente</option>
+                    <option value="PARCIAL">Parcial</option>
+                    <option value="VENCIDO">Vencido</option>
+                    <option value="PAGADO">Pagado</option>
+                  </select>
+                </div>
+                <div style="min-width: 160px;">
+                  <label for="fechaInicio" class="form-label" style="font-size: 0.875rem; margin-bottom: 0.25rem;">Desde</label>
+                  <input type="date" id="fechaInicio" class="form-input" style="width: 100%;">
+                </div>
+                <div style="min-width: 160px;">
+                  <label for="fechaFin" class="form-label" style="font-size: 0.875rem; margin-bottom: 0.25rem;">Hasta</label>
+                  <input type="date" id="fechaFin" class="form-input" style="width: 100%;">
+                </div>
+                <button id="btnAplicarFiltros" type="button" class="btn btn-primary" style="padding: 0.55rem 1.25rem;">
+                  <i class="bi bi-funnel"></i> Filtrar
+                </button>
+                <button id="btnLimpiarFiltros" type="button" class="btn btn-secondary" style="padding: 0.55rem 1rem;">
+                  <i class="bi bi-x-circle"></i> Limpiar
+                </button>
+              </div>
+            </div>
+          </section>
+
           <section class="admin-card" style="padding: 1.25rem;">
             <div style="display:flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; margin-bottom: 0.75rem;">
               <div style="display:flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
                 <span id="resultadosBadge" class="admin-badge secondary">0 CUENTAS</span>
-              </div>
-              <div style="display:flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; justify-content: flex-end;">
-                <select id="filtroEstatus" class="form-input" style="min-width: 180px;" aria-label="Filtrar cuentas por pagar por estatus">
-                  <option value="">Todos</option>
-                  <option value="PENDIENTE">Pendiente</option>
-                  <option value="PARCIAL">Parcial</option>
-                  <option value="PAGADO">Pagado</option>
-                </select>
               </div>
             </div>
 
@@ -93,8 +121,11 @@
               <table class="admin-table" id="cxpTable" style="display:none;">
                 <thead>
                   <tr>
+                    <th style="width: 40px; text-align: center;">
+                      <input type="checkbox" id="selectAll" class="form-check-input" title="Seleccionar todos">
+                    </th>
                     <th>Proveedor</th>
-                    <th>OC Ref</th>
+                    <th>Factura / Ref</th>
                     <th>Fecha Emisión</th>
                     <th>Fecha Vencimiento</th>
                     <th style="text-align:right;">Monto Total</th>
@@ -116,8 +147,11 @@
 
           <!-- Botón de Exportar (siempre visible cuando hay datos) -->
           <div style="margin-top: 1rem;">
-            <div style="display: flex; justify-content: flex-end; padding: 1rem; background: white; border-radius: 0.75rem; border: 1px solid rgba(0,0,0,0.1);">
-              <button id="btn-exportar" type="button" class="btn btn-success">
+            <div style="display: flex; justify-content: flex-end; align-items: center; gap: 1rem; padding: 1rem; background: white; border-radius: 0.75rem; border: 1px solid rgba(0,0,0,0.1);">
+              <small class="text-muted" style="font-size: 0.85rem;">
+                <i class="bi bi-info-circle"></i> La exportación respetará los filtros activos
+              </small>
+              <button id="btn-exportar" type="button" class="btn btn-success" title="Exportar vista actual con filtros aplicados">
                 <i class="bi bi-file-earmark-excel"></i>
                 <span class="ms-1">Exportar a Excel</span>
               </button>
@@ -140,26 +174,51 @@
         </div>
 
         <div style="padding-top: 1.25rem; display: grid; gap: 1rem;">
-          <div style="display:grid; gap: 0.5rem;">
-            <label for="pagoMonto" class="form-label">Monto a pagar</label>
-            <input id="pagoMonto" type="number" class="form-input" min="0" step="0.01" placeholder="0.00" />
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div style="display:grid; gap: 0.5rem;">
+              <label for="pagoMonto" class="form-label">Monto a pagar <span style="color: #dc3545;">*</span></label>
+              <input id="pagoMonto" type="number" class="form-input" min="0" step="0.01" placeholder="0.00" required />
+              <div style="font-size: 0.85rem; color: #6b7280;">Puedes ingresar un abono parcial</div>
+            </div>
+
+            <div style="display:grid; gap: 0.5rem;">
+              <label for="pagoMetodo" class="form-label">Método de pago <span style="color: #dc3545;">*</span></label>
+              <select id="pagoMetodo" class="form-input" required>
+                <option value="TRANSFERENCIA">Transferencia Bancaria</option>
+                <option value="EFECTIVO">Efectivo</option>
+                <option value="CHEQUE">Cheque</option>
+                <option value="TARJETA_CREDITO">Tarjeta de Crédito</option>
+                <option value="TARJETA_DEBITO">Tarjeta de Débito</option>
+              </select>
+            </div>
           </div>
 
           <div style="display:grid; gap: 0.5rem;">
-            <label for="pagoReferencia" class="form-label">Referencia / Nota</label>
-            <input id="pagoReferencia" type="text" class="form-input" placeholder="Ej: Transferencia BBVA #123" />
+            <label for="pagoReferencia" class="form-label">Referencia / Número de operación</label>
+            <input id="pagoReferencia" type="text" class="form-input" placeholder="Ej: Transferencia BBVA #123456 o Cheque #789" />
+          </div>
+
+          <div style="display:grid; gap: 0.5rem;">
+            <label for="pagoNotas" class="form-label">Notas adicionales</label>
+            <textarea id="pagoNotas" class="form-input" rows="2" placeholder="Observaciones o comentarios sobre el pago..."></textarea>
           </div>
 
           <div style="display:grid; gap: 0.5rem;">
             <label for="pagoComprobante" class="form-label">Subir comprobante</label>
             <input id="pagoComprobante" type="file" class="form-input" accept="image/*,application/pdf" />
-            <div style="font-size: 0.85rem; color: #6b7280;">PDF o imagen. Máx. 8MB.</div>
+            <div style="font-size: 0.85rem; color: #6b7280;"><i class="bi bi-info-circle"></i> PDF o imagen. Máx. 8MB. Opcional pero recomendado.</div>
+          </div>
+
+          <!-- Historial de pagos previos -->
+          <div id="historialPagosSection" style="display: none; margin-top: 1rem; padding-top: 1rem; border-top: 2px solid #e5e7eb;">
+            <h3 style="font-size: 1rem; margin-bottom: 0.75rem; color: #111827;"><i class="bi bi-clock-history"></i> Historial de Pagos</h3>
+            <div id="historialPagosList" style="max-height: 200px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 0.5rem;"></div>
           </div>
 
           <div style="display:flex; gap: 1rem; justify-content: flex-end; margin-top: 1.5rem; margin-bottom: 1rem;">
             <button id="btnCancelarPago" type="button" class="btn btn-secondary" style="padding: 0.75rem 1.5rem;">Cancelar</button>
             <button id="btnGuardarPago" type="button" class="btn btn-primary" style="padding: 0.75rem 2rem;">
-              <span id="btnGuardarPagoText">Guardar pago</span>
+              <span id="btnGuardarPagoText"><i class="bi bi-check-circle"></i> Guardar pago</span>
               <span id="btnGuardarPagoSpinner" class="spinner" style="display:none;"></span>
             </button>
           </div>
@@ -172,7 +231,7 @@
     <script src="js/admin-header-dropdown.js"></script>
     <script src="js/components/admin-header-loader.js"></script>
     <script src="js/components/user-profile.js"></script>
-    <script src="js/admin-cuentaspagar.js" defer></script>
+    <script src="js/admin-cuentaspagar.js?v=2" defer></script>
 
     <style>
       .kpi-grid {
@@ -242,5 +301,8 @@
         }
       }
     </style>
+
+    <!-- Sidebar Toggle para iPad/Tablet -->
+    <script src="js/sidebar-toggle.js"></script>
   </body>
 </html>
