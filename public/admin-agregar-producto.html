@@ -714,15 +714,16 @@
                   >
                     <thead>
                       <tr>
-                        <th>#ID</th>
-                        <th>Producto</th>
-                        <th>SKU Maestro</th>
-                        <th>Categoría</th>
-                        <th>Tipo</th>
-                        <th>Venta</th>
-                        <th>Variantes</th>
-                        <th>Precio desde</th>
-                        <th style="width: 10%;">Acciones</th>
+                        <th style="width: 80px; min-width: 80px;">Imagen</th>
+                        <th style="min-width: 200px;">Producto</th>
+                        <th style="width: 120px; min-width: 120px;">SKU Maestro</th>
+                        <th style="width: 140px; min-width: 140px;">Categoría</th>
+                        <th style="width: 100px; min-width: 100px;">Tipo</th>
+                        <th style="width: 100px; min-width: 100px;">Venta</th>
+                        <th style="width: 90px; min-width: 90px;">Variantes</th>
+                        <th style="width: 110px; min-width: 110px;">Precio desde</th>
+                        <th style="width: 160px; min-width: 160px;">Estado</th>
+                        <th style="width: 200px; min-width: 200px;">Acciones</th>
                       </tr>
                     </thead>
                     <tbody id="mastersTableBody"></tbody>
@@ -2579,41 +2580,77 @@
         };
 
         sortedProducts.forEach((prod) => {
-          const variantes = prod.totalVariantes ?? 0;
+          // Map backend field names correctly
+          const productoId = prod.productoid || prod.productoId;
+          const nombreProducto = prod.nombreproducto || prod.nombreProducto;
+          const descripcion = prod.descripcion || "-";
+          const activo = prod.activo === true || prod.activo === 1;
+          const categoriaNombre = prod.categoriaNombre || prod.categoria?.nombre || "Sin categoría";
+          const tipoProducto = prod.tipoProducto || "—";
+          const reglaBackorder = prod.reglaBackorder;
+          const imagenUrl = prod.imagenUrl || (prod.imagenes && prod.imagenes.length > 0 ? prod.imagenes[0].url : null);
+          
+          const variantes = prod.variantesCount || prod.totalVariantes || 0;
           const precioDesde = Number.isFinite(prod.precioDesde)
             ? formatCurrency(prod.precioDesde)
             : "N/D";
           const skuMaestro = prod.sku_maestro || "-";
-          const descripcionRaw = prod.descripcion || "-";
+          
           const row = document.createElement("tr");
           row.innerHTML = `
-            <td>#${prod.productoId}</td>
-            <td>
-              <strong>${prod.nombreProducto}</strong>
-              <div class="table-subtext">
-                <div class="texto-compacto" title="${
-                  (descripcionRaw || "").toString().replace(/"/g, "&quot;")
-                }">${descripcionRaw}</div>
+            <td style="width: 80px; min-width: 80px;">
+              <div style="display: flex; align-items: center; justify-content: center;">
+                ${
+                  imagenUrl
+                    ? `<img src="${imagenUrl}" alt="${nombreProducto}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 0.5rem; border: 2px solid #e5e7eb;" />`
+                    : `<div style="width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #f5f1ed 0%, #e5e7eb 100%); border-radius: 0.5rem; font-size: 1.5rem; opacity: 0.3; border: 2px solid #e5e7eb;">📦</div>`
+                }
               </div>
             </td>
-            <td><span style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;">${skuMaestro}</span></td>
-            <td>${prod.categoria?.nombre || "Sin categoría"}</td>
-            <td>${prod.tipoProducto || "—"}</td>
-            <td>${renderReglaBadge(prod.reglaBackorder)}</td>
-            <td>${variantes} variante${variantes === 1 ? "" : "s"}</td>
-            <td>${precioDesde}</td>
-            <td>
+            <td style="min-width: 200px;">
+              <strong>${nombreProducto}</strong>
+              <div class="table-subtext">
+                <div class="texto-compacto" title="${
+                  (descripcion || "").toString().replace(/"/g, "&quot;")
+                }">${descripcion}</div>
+              </div>
+            </td>
+            <td style="width: 120px; min-width: 120px;"><span style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;">${skuMaestro}</span></td>
+            <td style="width: 140px; min-width: 140px;">${categoriaNombre}</td>
+            <td style="width: 100px; min-width: 100px;">${tipoProducto}</td>
+            <td style="width: 100px; min-width: 100px;">${renderReglaBadge(reglaBackorder)}</td>
+            <td style="width: 90px; min-width: 90px;">${variantes} variante${variantes === 1 ? "" : "s"}</td>
+            <td style="width: 110px; min-width: 110px;">${precioDesde}</td>
+            <td style="width: 160px; min-width: 160px;">
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <span class="visibility-badge ${activo ? 'badge-success' : 'badge-secondary'}" title="${activo ? 'Visible' : 'Oculto'}">
+                  ${activo ? '' : '🚫'} ${activo ? 'Visible' : 'Oculto'}
+                </span>
+                <button
+                  type="button"
+                  class="btn-icon-toggle"
+                  onclick="toggleProductoVisibilidad(${productoId}, ${activo})"
+                  title="${activo ? 'Ocultar producto' : 'Mostrar producto'}"
+                  style="cursor: pointer; background: none; border: none; font-size: 1.25rem; padding: 0.25rem; opacity: 0.7; transition: all 0.2s;"
+                  onmouseover="this.style.opacity='1'; this.style.transform='scale(1.1)'"
+                  onmouseout="this.style.opacity='0.7'; this.style.transform='scale(1)'"
+                >
+                  ${activo ? '🔒' : '🔓'}
+                </button>
+              </div>
+            </td>
+            <td style="width: 200px; min-width: 200px;">
               <div style="display:flex; gap:0.5rem; flex-wrap:wrap; justify-content:flex-end;">
                 <button
                   type="button"
                   class="btn btn-sm btn-outline-primary"
                   title="Editar Producto Maestro"
-                  onclick='prepararEdicion(${prod.productoId})'
+                  onclick='prepararEdicion(${productoId})'
                 >
                   Editar
                 </button>
                 <a
-                  href="admin-producto-editar.html?id=${prod.productoId}"
+                  href="admin-producto-editar.html?id=${productoId}"
                   class="btn btn-sm btn-outline-secondary"
                   title="Editar variantes"
                 >
@@ -2813,6 +2850,74 @@
         actualizarCamposImagenesColor();
       };
 
+      // Toggle product visibility
+      async function toggleProductoVisibilidad(productoId, estadoActual) {
+        const nuevoEstado = !estadoActual;
+        const accion = nuevoEstado ? "mostrar" : "ocultar";
+        const esOcultar = !nuevoEstado;
+
+        const mensaje =
+          `¿Estás seguro de ${accion} este producto en la tienda? ` +
+          (esOcultar ? "Si lo ocultas, dejará de verse en el catálogo para clientes." : "Si lo muestras, será visible en el catálogo.");
+
+        let confirmado = false;
+
+        if (
+          typeof Swal !== "undefined" &&
+          Swal &&
+          typeof Swal.fire === "function"
+        ) {
+          const result = await Swal.fire({
+            icon: esOcultar ? "warning" : "question",
+            title: esOcultar ? "Ocultar producto" : "Mostrar producto",
+            text: mensaje,
+            showCancelButton: true,
+            confirmButtonText: esOcultar ? "Sí, ocultar" : "Sí, mostrar",
+            cancelButtonText: "Cancelar",
+            confirmButtonColor: esOcultar ? "#dc3545" : "#F97316",
+            cancelButtonColor: "#6b7280",
+          });
+          confirmado = !!result.isConfirmed;
+        } else {
+          confirmado = window.confirm(mensaje);
+        }
+
+        if (!confirmado) {
+          return;
+        }
+
+        try {
+          const response = await fetch(
+            `${API_BASE_URL}/admin/productos/${productoId}/toggle-visibilidad`,
+            {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${adminToken}`,
+              },
+              body: JSON.stringify({ activo: nuevoEstado })
+            }
+          );
+
+          const result = await response.json();
+
+          if (response.ok && result.success) {
+            showToast(
+              `Producto ${nuevoEstado ? 'visible' : 'oculto'} exitosamente`,
+              'success'
+            );
+            loadMasterProducts(); // Recargar tabla
+          } else {
+            throw new Error(result.message || 'Error al actualizar');
+          }
+        } catch (error) {
+          console.error('Error al toggle visibilidad:', error);
+          showToast('Error al cambiar visibilidad del producto', 'error');
+        }
+      }
+
+      window.toggleProductoVisibilidad = toggleProductoVisibilidad;
+
       // Limpiar URLs de objeto cuando se cierre o recargue la página (importante para iOS/Safari)
       window.addEventListener('beforeunload', () => {
         previewObjectURLs.forEach(url => {
@@ -2828,5 +2933,52 @@
       // Initialize on page load
       init();
     </script>
+
+    <style>
+      /* Visibility badges and toggle button styles */
+      .visibility-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.375rem;
+        padding: 0.375rem 0.75rem;
+        border-radius: 0.375rem;
+        font-size: 0.875rem;
+        font-weight: 600;
+        white-space: nowrap;
+      }
+
+      .badge-success {
+        background: #d1fae5;
+        color: #065f46;
+        border: 1px solid #6ee7b7;
+      }
+
+      .badge-secondary {
+        background: #e5e7eb;
+        color: #6b7280;
+        border: 1px solid #d1d5db;
+      }
+
+      .btn-icon-toggle {
+        cursor: pointer;
+        background: none;
+        border: none;
+        font-size: 1.25rem;
+        padding: 0.25rem;
+        opacity: 0.7;
+        transition: all 0.2s;
+        border-radius: 0.25rem;
+      }
+
+      .btn-icon-toggle:hover {
+        opacity: 1;
+        transform: scale(1.1);
+        background: rgba(0, 0, 0, 0.05);
+      }
+
+      .btn-icon-toggle:active {
+        transform: scale(0.95);
+      }
+    </style>
   </body>
 </html>

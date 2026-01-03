@@ -262,6 +262,18 @@ router.put(
 );
 
 /**
+ * @route   PUT /api/admin/productos/:id/toggle-visibilidad
+ * @desc    Toggle product visibility (activo field)
+ * @access  Private (Admin only)
+ */
+router.put(
+  "/productos/:id/toggle-visibilidad",
+  authenticate,
+  authorizeAdmin,
+  adminController.toggleProductoVisibilidad
+);
+
+/**
  * @route   POST /api/admin/productos/:id/imagen
  * @desc    Subir imagen para un producto
  * @access  Private (Admin only)
