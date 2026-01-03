@@ -14,8 +14,14 @@
   let sidebar = null;
   let toggleBtn = null;
   let overlay = null;
+  let initialized = false;
 
   function init() {
+    // Solo ejecutar en pantallas pequeñas (iPad y menores)
+    if (window.innerWidth > 1024) {
+      return;
+    }
+
     sidebar = document.querySelector(SIDEBAR_SELECTOR);
     
     if (!sidebar) {
@@ -89,9 +95,11 @@
   }
 
   function openSidebar() {
+    if (!sidebar) return;
+    
     document.body.classList.add(ACTIVE_CLASS);
     sidebar.classList.add('show');
-    overlay.classList.add('show');
+    if (overlay) overlay.classList.add('show');
     
     if (toggleBtn) {
       toggleBtn.setAttribute('aria-expanded', 'true');
@@ -102,9 +110,11 @@
   }
 
   function closeSidebar() {
+    if (!sidebar) return;
+    
     document.body.classList.remove(ACTIVE_CLASS);
     sidebar.classList.remove('show');
-    overlay.classList.remove('show');
+    if (overlay) overlay.classList.remove('show');
     
     if (toggleBtn) {
       toggleBtn.setAttribute('aria-expanded', 'false');
@@ -120,12 +130,34 @@
     }
   }
 
+  // ESCUCHAR EVENTO DE SIDEBAR CARGADO (disparado por layout.js)
+  window.addEventListener('sidebar:loaded', function (e) {
+    if (!initialized) {
+      init();
+      initialized = true;
+    }
+  });
+
+  // FALLBACK: Si el sidebar ya está cargado cuando se ejecuta este script
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
+    document.addEventListener('DOMContentLoaded', function () {
+      setTimeout(function () {
+        if (!initialized && document.querySelector(SIDEBAR_SELECTOR)) {
+          init();
+          initialized = true;
+        }
+      }, 500);
+    });
   } else {
-    init();
+    setTimeout(function () {
+      if (!initialized && document.querySelector(SIDEBAR_SELECTOR)) {
+        init();
+        initialized = true;
+      }
+    }, 500);
   }
 
+  // API pública
   window.sidebarToggle = {
     open: openSidebar,
     close: closeSidebar,
