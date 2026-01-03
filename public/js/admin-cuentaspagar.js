@@ -179,17 +179,19 @@ function renderizarTabla(facturas) {
                     </span>
                 </td>
                 <td class="text-center">
-                    <div class="btn-group btn-group-sm" role="group">
+                    <div style="display: flex; gap: 0.5rem; justify-content: center;">
                         ${!isPagado ? `
-                            <button class="btn btn-outline-success" 
+                            <button class="btn btn-sm btn-outline-success" 
                                     onclick="abrirModalPago(${factura.cxp_id})" 
-                                    title="Registrar pago">
+                                    title="Registrar pago"
+                                    style="padding: 0.25rem 0.5rem; font-size: 0.875rem;">
                                 <i class="bi bi-cash-coin"></i>
                             </button>
                         ` : ''}
-                        <button class="btn btn-outline-primary" 
+                        <button class="btn btn-sm btn-outline-primary" 
                                 onclick="verDetalle(${factura.cxp_id})" 
-                                title="Ver detalle e historial">
+                                title="Ver detalle e historial"
+                                style="padding: 0.25rem 0.5rem; font-size: 0.875rem;">
                             <i class="bi bi-eye"></i>
                         </button>
                     </div>
@@ -282,11 +284,16 @@ async function abrirModalPago(cxpId) {
         if (!data.success) throw new Error(data.message || 'Error del servidor');
         
         const cxp = data.data;
-        const saldoRestante = cxp.saldo_restante || 0;
+        
+        // Sanitización de datos numéricos: convertir saldo_restante a número
+        let saldoRestante = parseFloat(cxp.saldo_restante);
+        if (isNaN(saldoRestante)) {
+            saldoRestante = 0;
+        }
         
         document.getElementById('pagoDeudaActual').textContent = formatCurrency(saldoRestante);
         document.getElementById('pagoMonto').value = saldoRestante.toFixed(2);
-        document.getElementById('pagoMonto').max = saldoRestante;
+        document.getElementById('pagoMonto').max = saldoRestante.toFixed(2);
         document.getElementById('pagoReferencia').value = '';
         document.getElementById('pagoComprobante').value = '';
         document.getElementById('pagoMetodo').value = 'TRANSFERENCIA';
@@ -393,7 +400,7 @@ async function guardarPago() {
     }
 }
 
-// Ver detalle de cuenta
+// Ver detalle de cuenta en modal personalizado
 async function verDetalle(cxpId) {
     try {
         const response = await fetchWithAuth(`${API_BASE_URL}/admin/cuentas-por-pagar/${cxpId}`);
@@ -404,47 +411,71 @@ async function verDetalle(cxpId) {
         
         const cxp = data.data;
         
-        let historialHtml = '';
-        if (cxp.historial_pagos && cxp.historial_pagos.length > 0) {
-            historialHtml = '<h4 style="margin-top: 1.5rem; font-size: 1rem; border-top: 2px solid #e5e7eb; padding-top: 1rem;">Historial de Pagos</h4><div style="max-height: 300px; overflow-y: auto;">';
-            cxp.historial_pagos.forEach(pago => {
-                historialHtml += `<div style="padding: 0.75rem; border-bottom: 1px solid #eee; display: flex; justify-content: space-between;">
-                    <div>
-                        <strong style="color: #059669;">${formatCurrency(pago.monto)}</strong> - ${formatDate(pago.fecha_pago)}<br>
-                        <small style="color: #6b7280;">Método: ${escapeHtml(pago.metodo_pago || 'N/A')}</small>
-                        ${pago.referencia ? `<br><small style="color: #6b7280;">Ref: ${escapeHtml(pago.referencia)}</small>` : ''}
-                    </div>
-                    ${pago.comprobante_url ? `<a href="${pago.comprobante_url}" target="_blank" class="btn btn-sm btn-link"><i class="bi bi-paperclip"></i></a>` : ''}
-                </div>`;
-            });
-            historialHtml += '</div>';
+        // Llenar datos del modal
+        document.getElementById('detalleModalTitle').textContent = `Cuenta por Pagar #${cxp.cxp_id}`;
+        document.getElementById('detalleProveedor').textContent = cxp.proveedor;
+        document.getElementById('detalleReferencia').textContent = cxp.referencia_factura || 'N/A';
+        
+        const origenContainer = document.getElementById('detalleOrigenContainer');
+        const origenEl = document.getElementById('detalleOrigen');
+        if (cxp.orden_compra_id) {
+            origenEl.textContent = `Entrada de Almacén - OC #${cxp.orden_compra_id}`;
+            origenContainer.style.display = 'block';
+        } else {
+            origenContainer.style.display = 'none';
         }
         
-        Swal.fire({
-            title: `Cuenta por Pagar #${cxp.cxp_id}`,
-            html: `
-                <div style="text-align: left;">
-                    <p><strong>Proveedor:</strong> ${escapeHtml(cxp.proveedor)}</p>
-                    <p><strong>Referencia:</strong> ${escapeHtml(cxp.referencia_factura || 'N/A')}</p>
-                    ${cxp.orden_compra_id ? `<p><strong>Origen:</strong> Entrada de Almacén - OC #${cxp.orden_compra_id}</p>` : ''}
-                    <p><strong>Fecha Emisión:</strong> ${formatDate(cxp.fecha_emision)}</p>
-                    <p><strong>Fecha Vencimiento:</strong> ${formatDate(cxp.fecha_vencimiento)}</p>
-                    <hr>
-                    <p><strong>Monto Total:</strong> ${formatCurrency(cxp.monto_total)}</p>
-                    <p><strong>Monto Pagado:</strong> ${formatCurrency(cxp.monto_pagado || 0)}</p>
-                    <p><strong>Saldo Restante:</strong> <span style="color: ${cxp.saldo_restante > 0 ? '#dc3545' : '#28a745'}; font-weight: bold; font-size: 1.2rem;">${formatCurrency(cxp.saldo_restante)}</span></p>
-                    ${cxp.notas ? `<p><strong>Notas:</strong> ${escapeHtml(cxp.notas)}</p>` : ''}
-                    ${historialHtml}
+        document.getElementById('detalleFechaEmision').textContent = formatDate(cxp.fecha_emision);
+        document.getElementById('detalleFechaVencimiento').textContent = formatDate(cxp.fecha_vencimiento);
+        document.getElementById('detalleMontoTotal').textContent = formatCurrency(cxp.monto_total);
+        document.getElementById('detalleMontoPagado').textContent = formatCurrency(cxp.monto_pagado || 0);
+        
+        const saldoEl = document.getElementById('detalleSaldoRestante');
+        saldoEl.textContent = formatCurrency(cxp.saldo_restante);
+        saldoEl.style.color = cxp.saldo_restante > 0 ? '#dc3545' : '#28a745';
+        
+        const notasContainer = document.getElementById('detalleNotasContainer');
+        const notasEl = document.getElementById('detalleNotas');
+        if (cxp.notas) {
+            notasEl.textContent = cxp.notas;
+            notasContainer.style.display = 'block';
+        } else {
+            notasContainer.style.display = 'none';
+        }
+        
+        // Renderizar historial de pagos
+        const historialContainer = document.getElementById('detalleHistorialPagos');
+        const historialSection = document.getElementById('detalleHistorialSection');
+        
+        if (cxp.historial_pagos && cxp.historial_pagos.length > 0) {
+            historialContainer.innerHTML = cxp.historial_pagos.map(pago => `
+                <div style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: start;">
+                    <div>
+                        <div class="fw-semibold" style="color: #059669;">${formatCurrency(pago.monto)}</div>
+                        <div class="text-muted small">${formatDate(pago.fecha_pago)}</div>
+                        <div class="text-muted small">Método: ${escapeHtml(pago.metodo_pago || 'N/A')}</div>
+                        ${pago.referencia ? `<div class="text-muted small">Ref: ${escapeHtml(pago.referencia)}</div>` : ''}
+                    </div>
+                    ${pago.comprobante_url ? `<a href="${pago.comprobante_url}" target="_blank" class="btn btn-sm btn-link" title="Ver comprobante"><i class="bi bi-paperclip"></i></a>` : ''}
                 </div>
-            `,
-            width: '700px',
-            confirmButtonText: 'Cerrar'
-        });
+            `).join('');
+            historialSection.style.display = 'block';
+        } else {
+            historialSection.style.display = 'none';
+        }
+        
+        // Mostrar modal
+        document.getElementById('detalleModal').style.display = 'flex';
         
     } catch (error) {
         console.error('Error:', error);
         Swal.fire('Error', 'No se pudo cargar el detalle.', 'error');
     }
+}
+
+// Cerrar modal de detalle
+function cerrarModalDetalle() {
+    document.getElementById('detalleModal').style.display = 'none';
 }
 
 // Aplicar filtros

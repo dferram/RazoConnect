@@ -226,12 +226,90 @@
       </div>
     </div>
 
-    <script src="js/layout.js" defer></script>`n    <script src="js/sidebar-toggle.js" defer></script>
-    <script src="js/api.js"></script>
+    <!-- Modal de Detalle de CxP -->
+    <div id="detalleModal" class="modal" style="display:none;">
+      <div style="background: white; border-radius: 1rem; max-width: 800px; width: 95%; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);">
+        <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid #e5e7eb;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h3 id="detalleModalTitle" style="margin: 0; font-size: 1.25rem; font-weight: 700; color: #111827;">Cuenta por Pagar</h3>
+            <button onclick="cerrarModalDetalle()" style="background: none; border: none; font-size: 1.5rem; color: #6b7280; cursor: pointer; padding: 0; width: 2rem; height: 2rem; display: flex; align-items: center; justify-content: center;">×</button>
+          </div>
+        </div>
+        
+        <div class="modal-content" style="padding: 1.5rem;">
+          <!-- Información Principal -->
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 1rem;">
+            <div>
+              <label style="display: block; font-size: 0.875rem; font-weight: 600; color: #6b7280; margin-bottom: 0.25rem;">Proveedor</label>
+              <p id="detalleProveedor" style="margin: 0; font-weight: 600; color: #111827;"></p>
+            </div>
+            <div>
+              <label style="display: block; font-size: 0.875rem; font-weight: 600; color: #6b7280; margin-bottom: 0.25rem;">Referencia</label>
+              <p id="detalleReferencia" style="margin: 0; color: #111827;"></p>
+            </div>
+          </div>
+
+          <div id="detalleOrigenContainer" style="margin-bottom: 1rem;">
+            <label style="display: block; font-size: 0.875rem; font-weight: 600; color: #6b7280; margin-bottom: 0.25rem;">Origen</label>
+            <p id="detalleOrigen" style="margin: 0; color: #111827;"></p>
+          </div>
+
+          <!-- Fechas -->
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 1rem;">
+            <div>
+              <label style="display: block; font-size: 0.875rem; font-weight: 600; color: #6b7280; margin-bottom: 0.25rem;">Fecha Emisión</label>
+              <p id="detalleFechaEmision" style="margin: 0; color: #111827;"></p>
+            </div>
+            <div>
+              <label style="display: block; font-size: 0.875rem; font-weight: 600; color: #6b7280; margin-bottom: 0.25rem;">Fecha Vencimiento</label>
+              <p id="detalleFechaVencimiento" style="margin: 0; color: #111827;"></p>
+            </div>
+          </div>
+
+          <!-- Montos -->
+          <div style="background: #f9fafb; border-radius: 0.5rem; padding: 1rem; margin-bottom: 1rem;">
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;">
+              <div>
+                <label style="display: block; font-size: 0.875rem; font-weight: 600; color: #6b7280; margin-bottom: 0.25rem;">Monto Total</label>
+                <p id="detalleMontoTotal" style="margin: 0; font-weight: 700; color: #111827;"></p>
+              </div>
+              <div>
+                <label style="display: block; font-size: 0.875rem; font-weight: 600; color: #6b7280; margin-bottom: 0.25rem;">Monto Pagado</label>
+                <p id="detalleMontoPagado" style="margin: 0; font-weight: 700; color: #059669;"></p>
+              </div>
+              <div>
+                <label style="display: block; font-size: 0.875rem; font-weight: 600; color: #6b7280; margin-bottom: 0.25rem;">Saldo Restante</label>
+                <p id="detalleSaldoRestante" style="margin: 0; font-weight: 700; font-size: 1.25rem;"></p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Notas -->
+          <div id="detalleNotasContainer" style="margin-bottom: 0;">
+            <label style="display: block; font-size: 0.875rem; font-weight: 600; color: #6b7280; margin-bottom: 0.25rem;">Notas</label>
+            <p id="detalleNotas" style="margin: 0; color: #6b7280;"></p>
+          </div>
+
+          <!-- Historial de Pagos -->
+          <div id="detalleHistorialSection" style="display: none; margin-top: 1rem;">
+            <h4 style="font-size: 1rem; font-weight: 700; color: #111827; margin-bottom: 0.75rem; padding-top: 1rem; border-top: 2px solid #e5e7eb;">Historial de Pagos</h4>
+            <div id="detalleHistorialPagos" style="max-height: 300px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 0.5rem;"></div>
+          </div>
+        </div>
+
+        <div style="padding: 1rem 1.5rem; border-top: 1px solid #e5e7eb; display: flex; justify-content: flex-end;">
+          <button onclick="cerrarModalDetalle()" class="btn btn-secondary">Cerrar</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="js/layout.js" defer></script>
+    <script src="js/sidebar-toggle.js" defer></script>
+    <script src="js/api.js?v=3"></script>
     <script src="js/admin-header-dropdown.js"></script>
     <script src="js/components/admin-header-loader.js"></script>
     <script src="js/components/user-profile.js"></script>
-    <script src="js/admin-cuentaspagar.js?v=2" defer></script>
+    <script src="js/admin-cuentaspagar.js?v=4" defer></script>
 
     <style>
       .kpi-grid {
