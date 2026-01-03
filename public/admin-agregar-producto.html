@@ -915,38 +915,38 @@
             if (Number.isInteger(n) && n > 1) packSet.add(n);
           });
 
-          // SOLUCIÓN PROBLEMA 2: Forzar estado del checkbox explícitamente
-          // Esperar a que el DOM esté listo antes de asignar el checkbox
-          await new Promise(resolve => setTimeout(resolve, 100));
-          const ventaIndividualCheckbox = document.getElementById("tamano-unidad");
-          if (ventaIndividualCheckbox) {
-            ventaIndividualCheckbox.checked = Boolean(tieneVentaIndividual);
-          }
-
-          // SOLUCIÓN PROBLEMA 3: Renderizar packs personalizados guardados
+          // SOLUCIÓN PROBLEMA 2 y 3: Primero poblar customPacks, luego forzar checkbox
           customPacks = [];
           const packsArray = Array.from(packSet).sort((a, b) => a - b);
           
-          // Agregar packs al array customPacks primero
+          // Agregar packs al array customPacks
           packsArray.forEach((valor) => {
             if (!customPacks.includes(valor)) {
               customPacks.push(valor);
             }
           });
           
-          // Esperar a que el contenedor de chips esté disponible
-          await new Promise(resolve => setTimeout(resolve, 150));
+          // Esperar a que loadTamanos() haya terminado y las funciones estén disponibles
+          await new Promise(resolve => setTimeout(resolve, 200));
           
-          // Renderizar los chips visuales usando las funciones existentes
-          const chipsContainer = document.getElementById("packsChipsContainer");
-          const suggestionsContainer = document.getElementById("packsSuggestionsContainer");
-          
-          if (chipsContainer && typeof renderPacksChips === "function") {
-            renderPacksChips();
+          // Forzar estado del checkbox DESPUÉS de que el DOM esté listo
+          const ventaIndividualCheckbox = document.getElementById("tamano-unidad");
+          if (ventaIndividualCheckbox) {
+            // Forzar explícitamente el estado correcto
+            if (tieneVentaIndividual) {
+              ventaIndividualCheckbox.checked = true;
+            } else {
+              ventaIndividualCheckbox.checked = false;
+            }
           }
           
-          if (suggestionsContainer && typeof renderPackSuggestions === "function") {
-            renderPackSuggestions();
+          // Renderizar los chips visuales usando las funciones globales
+          if (typeof window.renderPacksChips === "function") {
+            window.renderPacksChips();
+          }
+          
+          if (typeof window.renderPackSuggestions === "function") {
+            window.renderPackSuggestions();
           }
 
           const imagenesServidor = Array.isArray(producto?.imagenes)
@@ -1915,6 +1915,10 @@
 
           renderPacksChips();
           renderPackSuggestions();
+
+          // Exponer funciones globalmente para que prepararEdicion pueda usarlas
+          window.renderPacksChips = renderPacksChips;
+          window.renderPackSuggestions = renderPackSuggestions;
         } catch (error) {
           console.error("Error loading tamaños:", error);
           container.innerHTML = `
@@ -2396,45 +2400,56 @@
                 });
               }
 
+              const nuevoProducto = data.data?.producto;
+
+              // DEBUG: producto maestro creado/actualizado en base de datos
+              console.group("[DEBUG] Producto Maestro en BD");
+              console.log("isEditMode:", isEditMode);
+              console.log("producto:", nuevoProducto);
+              console.log("selectedImageFiles.length:", selectedImageFiles.length);
+              console.groupEnd();
+
+              // CORRECCIÓN: Subir imágenes tanto en creación como en edición
+              if (selectedImageFiles.length > 0) {
+                const productoId = isEditMode 
+                  ? productoIdEditando 
+                  : nuevoProducto?.productoid;
+
+                if (productoId) {
+                  const uploadResult = await subirImagenesProductoMultiple(
+                    productoId,
+                    selectedImageFiles
+                  );
+
+                  if (uploadResult.success) {
+                    showToast(
+                      isEditMode 
+                        ? "Producto actualizado e imágenes guardadas exitosamente."
+                        : "Producto e imágenes guardados exitosamente. Ahora agrega variantes.",
+                      "success"
+                    );
+                  } else {
+                    showToast(
+                      isEditMode
+                        ? "Producto actualizado, pero hubo un error al subir las imágenes."
+                        : "Producto creado, pero hubo un error al subir las imágenes. Puedes intentar subirlas después.",
+                      "warning"
+                    );
+                  }
+                }
+              } else {
+                showToast(
+                  isEditMode
+                    ? "Producto actualizado correctamente."
+                    : "Producto maestro creado. Ahora agrega variantes.",
+                  "success"
+                );
+              }
+
               if (isEditMode) {
                 await loadMasterProducts();
                 resetModoCreacion();
                 return;
-              }
-
-              const nuevoProducto = data.data?.producto;
-
-              // DEBUG: producto maestro creado en base de datos
-              console.group("[DEBUG] Producto Maestro creado en BD");
-              console.log("nuevoProducto:", nuevoProducto);
-              console.log(
-                "Recordatorio: packs y tamaños se asocian en tablas relacionadas (Producto_TamanosDisponibles / campo packs)",
-              );
-              console.groupEnd();
-
-              // Si hay imágenes seleccionadas, subirlas
-              if (selectedImageFiles.length && nuevoProducto?.productoid) {
-                const uploadResult = await subirImagenesProductoMultiple(
-                  nuevoProducto.productoid,
-                  selectedImageFiles
-                );
-
-                if (uploadResult.success) {
-                  showToast(
-                    "Producto e imágenes guardados exitosamente. Ahora agrega variantes.",
-                    "success"
-                  );
-                } else {
-                  showToast(
-                    "Producto creado, pero hubo un error al subir las imágenes. Puedes intentar subirlas después.",
-                    "warning"
-                  );
-                }
-              } else {
-                showToast(
-                  "Producto maestro creado. Ahora agrega variantes.",
-                  "success"
-                );
               }
 
               await loadMasterProducts();
