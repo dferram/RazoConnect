@@ -7345,6 +7345,8 @@ const getCategorias = async (req, res) => {
         c.Descripcion,
         c.ParentCategoriaID,
         c.Activo,
+        c.imagen_url,
+        c.imagen_public_id,
         p.Nombre AS ParentNombre
       FROM Categorias c
       LEFT JOIN Categorias p ON c.ParentCategoriaID = p.CategoriaID
@@ -7361,6 +7363,8 @@ const getCategorias = async (req, res) => {
           parentCategoriaId: row.parentcategoriaid,
           parentNombre: row.parentnombre || null,
           activo: row.activo,
+          imagenUrl: row.imagen_url || null,
+          imagenPublicId: row.imagen_public_id || null,
         })),
       },
     });
@@ -7387,6 +7391,10 @@ const crearCategoria = async (req, res) => {
         message: "El nombre de la categoría es requerido",
       });
     }
+
+    // Obtener datos de imagen si se subió
+    const imagenUrl = req.file?.secure_url || req.file?.path || null;
+    const imagenPublicId = req.file?.public_id || null;
 
     let parentCategoria = null;
 
@@ -7428,6 +7436,8 @@ const crearCategoria = async (req, res) => {
       Descripcion: descripcion?.trim() || null,
       ParentCategoriaID: parentCategoria,
       Activo: activoFinal,
+      ImagenUrl: imagenUrl,
+      ImagenPublicId: imagenPublicId,
     };
 
     const rolesRaw = Array.isArray(req.user?.roles)
@@ -7442,12 +7452,14 @@ const crearCategoria = async (req, res) => {
 
     if (allowDirect) {
       const insertRes = await db.query(
-        "INSERT INTO categorias (nombre, descripcion, parentcategoriaid, activo) VALUES ($1, $2, $3, $4) RETURNING categoriaid, nombre, descripcion, parentcategoriaid, activo",
+        "INSERT INTO categorias (nombre, descripcion, parentcategoriaid, activo, imagen_url, imagen_public_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING categoriaid, nombre, descripcion, parentcategoriaid, activo, imagen_url, imagen_public_id",
         [
           datosNuevos.Nombre,
           datosNuevos.Descripcion,
           datosNuevos.ParentCategoriaID,
           datosNuevos.Activo,
+          datosNuevos.ImagenUrl,
+          datosNuevos.ImagenPublicId,
         ]
       );
 
@@ -7465,6 +7477,8 @@ const crearCategoria = async (req, res) => {
           descripcion: row.descripcion,
           parentcategoriaid: row.parentcategoriaid,
           activo: row.activo,
+          imagen_url: row.imagen_url,
+          imagen_public_id: row.imagen_public_id,
         }
       );
 
@@ -7478,6 +7492,8 @@ const crearCategoria = async (req, res) => {
             descripcion: row.descripcion,
             parentCategoriaId: row.parentcategoriaid,
             activo: row.activo,
+            imagenUrl: row.imagen_url,
+            imagenPublicId: row.imagen_public_id,
           },
         },
       });
@@ -7525,6 +7541,10 @@ const actualizarCategoria = async (req, res) => {
       });
     }
 
+    // Obtener datos de imagen si se subió una nueva
+    const nuevaImagenUrl = req.file?.secure_url || req.file?.path || null;
+    const nuevaImagenPublicId = req.file?.public_id || null;
+
     if (parentCategoriaId && Number(parentCategoriaId) === categoriaId) {
       return res.status(400).json({
         success: false,
@@ -7545,6 +7565,16 @@ const actualizarCategoria = async (req, res) => {
     }
 
     const categoriaActual = categoriaResult.rows[0];
+
+    // Si se subió una nueva imagen, eliminar la anterior de Cloudinary
+    if (nuevaImagenPublicId && categoriaActual.imagen_public_id) {
+      try {
+        await eliminarImagenCloudinary(categoriaActual.imagen_public_id);
+      } catch (error) {
+        console.warn("⚠️ Error al eliminar imagen anterior de Cloudinary:", error);
+        // No bloqueamos la actualización si falla la eliminación
+      }
+    }
 
     let parentCategoria = null;
 
@@ -7590,6 +7620,8 @@ const actualizarCategoria = async (req, res) => {
       ParentCategoriaID:
         parentCategoria !== null ? parentCategoria : categoriaActual.parentcategoriaid,
       Activo: activoFinal,
+      ImagenUrl: nuevaImagenUrl || categoriaActual.imagen_url,
+      ImagenPublicId: nuevaImagenPublicId || categoriaActual.imagen_public_id,
     };
 
     const rolesRaw = Array.isArray(req.user?.roles)
@@ -7604,12 +7636,14 @@ const actualizarCategoria = async (req, res) => {
 
     if (allowDirect) {
       const updateRes = await db.query(
-        "UPDATE categorias SET nombre = $1, descripcion = $2, parentcategoriaid = $3, activo = $4 WHERE categoriaid = $5 RETURNING categoriaid, nombre, descripcion, parentcategoriaid, activo",
+        "UPDATE categorias SET nombre = $1, descripcion = $2, parentcategoriaid = $3, activo = $4, imagen_url = $5, imagen_public_id = $6 WHERE categoriaid = $7 RETURNING categoriaid, nombre, descripcion, parentcategoriaid, activo, imagen_url, imagen_public_id",
         [
           datosNuevos.Nombre,
           datosNuevos.Descripcion,
           datosNuevos.ParentCategoriaID,
           datosNuevos.Activo,
+          datosNuevos.ImagenUrl,
+          datosNuevos.ImagenPublicId,
           categoriaId,
         ]
       );
@@ -7635,6 +7669,8 @@ const actualizarCategoria = async (req, res) => {
           descripcion: row.descripcion,
           parentcategoriaid: row.parentcategoriaid,
           activo: row.activo,
+          imagen_url: row.imagen_url,
+          imagen_public_id: row.imagen_public_id,
         }
       );
 
@@ -7648,6 +7684,8 @@ const actualizarCategoria = async (req, res) => {
             descripcion: row.descripcion,
             parentCategoriaId: row.parentcategoriaid,
             activo: row.activo,
+            imagenUrl: row.imagen_url,
+            imagenPublicId: row.imagen_public_id,
           },
         },
       });

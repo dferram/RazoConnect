@@ -20,6 +20,7 @@ const migrationController = require("../controllers/migrationController");
 const upload = require("../middlewares/upload");
 const uploadComprobante = require("../middlewares/uploadComprobante");
 const uploadProductImages = require("../middlewares/uploadProductImages");
+const uploadCategoryImage = require("../middlewares/uploadCategoryImage");
 const {
   authenticate,
   authorizeAdmin,
@@ -481,12 +482,14 @@ router.post(
   "/categorias",
   authenticate,
   authorizeAdmin,
+  uploadCategoryImage.single("image"),
   adminController.crearCategoria
 );
 router.put(
   "/categorias/:id",
   authenticate,
   authorizeAdmin,
+  uploadCategoryImage.single("image"),
   adminController.actualizarCategoria
 );
 router.delete(

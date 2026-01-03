@@ -5,7 +5,7 @@
 -- Dumped from database version 17.7
 -- Dumped by pg_dump version 17.5
 
--- Started on 2026-01-01 19:25:11
+-- Started on 2026-01-03 17:28:00
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -544,7 +544,9 @@ CREATE TABLE public.categorias (
     nombre character varying(100) NOT NULL,
     descripcion text,
     parentcategoriaid integer,
-    activo boolean DEFAULT true
+    activo boolean DEFAULT true,
+    imagen_url text,
+    imagen_public_id character varying(255)
 );
 
 
@@ -2861,6 +2863,9 @@ COPY cron.job_run_details (jobid, runid, job_pid, database, username, command, s
 
 COPY public.administradores (adminid, nombre, email, passwordhash, rol, activo, fechacreacion, apellido, banco, numero_cuenta, clabe, titular) FROM stdin;
 2	Fernando	fegarcia@hotmail.com	$2b$10$qDMIe7cygYpnw13f67vMn.wxKqlrUV32fWdyXsUoRKDRw1XmrN/ma	superadmin	t	2025-11-06 12:09:59.605448	Garcia                                                                                              	BBVA	12321323123	123123123123123123	Prueba 1
+4	Alejandra Calderón	alecaja.19@gmail.com	$2b$10$bVTxKPf5YFi9wvEC2w8kUeWXjY77aXZEYJfrN2qhn52X0u57g2Lre	admin	t	2026-01-02 20:43:37.083971	                                                                                                    	\N	\N	\N	\N
+5	Lupita García	pupis_gr@icloud.com	$2b$10$SsgX.yO3ttH6aaEh8qISqeJlsn2K2BpAjgjXxNJrVOWSPhw8BwQUi	admin	t	2026-01-02 20:49:05.63054	                                                                                                    	\N	\N	\N	\N
+7	Maricela García	maricelag.e@hotmail.com	$2b$10$JkriMBwuYGdiJlk.Go8JguxXoGnvWzsE0Zsmtn3foSRUr/hk4kyka	admin	t	2026-01-02 23:02:29.212694	                                                                                                    	\N	\N	\N	\N
 \.
 
 
@@ -2883,8 +2888,7 @@ COPY public.agentesdeventas (agenteid, nombre, apellido, email, passwordhash, co
 
 COPY public.carritodecompra (carritoid, clienteid, fechacreacion, ultimamodificacion) FROM stdin;
 1	1	2025-12-19 17:46:56.916237	2025-12-26 17:08:47.679796
-3	3	2025-12-30 18:25:47.523072	2025-12-30 18:26:04.308132
-2	2	2025-12-21 23:06:38.490057	2026-01-02 01:16:26.829533
+2	2	2025-12-21 23:06:38.490057	2026-01-02 06:05:30.155781
 \.
 
 
@@ -2919,11 +2923,11 @@ COPY public.cat_tamanopaquetes (tamanoid, cantidad) FROM stdin;
 -- Data for Name: categorias; Type: TABLE DATA; Schema: public; Owner: ferram
 --
 
-COPY public.categorias (categoriaid, nombre, descripcion, parentcategoriaid, activo) FROM stdin;
-1	Lisas	Cajas perfectas para cualquier época del año!	\N	t
-2	Amor	\N	\N	t
-3	Toda Ocasión	\N	\N	t
-4	Natural	\N	\N	t
+COPY public.categorias (categoriaid, nombre, descripcion, parentcategoriaid, activo, imagen_url, imagen_public_id) FROM stdin;
+1	Lisas	Cajas perfectas para cualquier época del año!	\N	t	\N	\N
+2	Amor	\N	\N	t	\N	\N
+4	Natural	\N	\N	t	\N	\N
+3	Toda Ocasión	Cajas de cumpleaños que dan color a tu regalo 🎁	\N	t	\N	\N
 \.
 
 
@@ -2935,7 +2939,7 @@ COPY public.categorias (categoriaid, nombre, descripcion, parentcategoriaid, act
 
 COPY public.cliente_creditos (credito_id, cliente_id, limite_credito, saldo_deudor, dias_gracia, estado_credito, fecha_creacion, ultima_actualizacion, exportado_en, reporte_id) FROM stdin;
 2	1	20000.00	0.00	15	ACTIVO	2025-12-26 16:59:35.424281	2025-12-29 02:26:47.864091	\N	\N
-1	2	5000.00	0.00	15	ACTIVO	2025-12-25 01:42:28.676782	2025-12-29 02:34:59.970783	2025-12-25 05:49:15.580167	CxC-20251225-054915
+1	2	5000.00	257.40	15	ACTIVO	2025-12-25 01:42:28.676782	2026-01-02 02:25:25.635208	2025-12-25 05:49:15.580167	CxC-20251225-054915
 \.
 
 
@@ -2960,8 +2964,8 @@ COPY public.cliente_direcciones (direccionid, clienteid, etiqueta, receptor, cal
 COPY public.clientes (clienteid, nombre, apellido, email, passwordhash, telefono, fechaderegistro, activo, agenteid, google_id, avatar_url) FROM stdin;
 1	Diego Fernando	Ramírez García	dferram8@gmail.com	\N	\N	2025-12-19 12:11:47.325519	t	\N	112463414682839499861	https://lh3.googleusercontent.com/a/ACg8ocL4vAqVyYj3GucQspTlE6BtmuyoqZqML7L4Zcb7WdwdcHT9m4E=s96-c
 2	Diego Fernando	Ramírez García	dferramm@gmail.com	$2b$10$wO8AHmwoDDh3LXVCnr4vQOsk6kvSQFc8We7oWdDKigyPseuvo6tc2	5560989524	2025-01-21 13:06:50.921092	t	\N	107035380971984210505	https://lh3.googleusercontent.com/a/ACg8ocKNxihdAINOrco8B52uUBljbYq3DjLlFlU9VsDVdeuo9DZ5IQ=s96-c
-3	Lupita	García	pupis_gr@icloud.com	$2b$10$pUi0TSxAs1M2rafjeqwazujlHbNJfXZGBweVQlBBqN6QeQ08/RrfS	4271238646	2025-12-30 18:21:12.4994	t	\N	\N	\N
 4	Lupita	García	pupis.gr.lg@gmail.com	\N	\N	2026-01-01 20:42:19.937169	t	\N	103745902453087048608	https://lh3.googleusercontent.com/a/ACg8ocLj4qSa6qURFQD78mg8e_4f5Pebl1ctU3YaiocCr1kMyguH=s96-c
+5	Ale	Calderon	alecaja.19@gmail.com	\N	\N	2026-01-03 16:59:46.3404	t	\N	109338262232369431358	https://lh3.googleusercontent.com/a/ACg8ocJXm3t_dna-olwAHxEyKcf_0VubmLymz-SNMrdF-vpSmpeNeA=s96-c
 \.
 
 
@@ -3020,6 +3024,21 @@ COPY public.communicationlogs (logid, "timestamp", destinatario, asunto, estatus
 36	2025-12-29 02:33:11.367733	dferramm@gmail.com	Tu pedido RazoConnect ha sido recibido (#12)	Enviado	\N	\N	\N	\N
 37	2025-12-29 02:33:11.373212	dferram8@gmail.com	💰 Nuevo Pedido #12 - $634.80	Enviado	\N	\N	\N	\N
 38	2025-12-29 02:33:11.432512	dferram8@gmail.com	⚠️ Alerta de Stock Bajo: AMO-014	Enviado	\N	\N	\N	\N
+39	2026-01-02 01:34:34.508727	dferram8@gmail.com	⚠️ Alerta: Backorder generado para el pedido #13	Enviado	\N	\N	\N	\N
+40	2026-01-02 01:34:34.522981	dferramm@gmail.com	Tu pedido RazoConnect ha sido recibido (#13)	Enviado	\N	\N	\N	\N
+41	2026-01-02 01:34:34.523865	dferram8@gmail.com	💰 Nuevo Pedido #13 - $128.70	Enviado	\N	\N	\N	\N
+42	2026-01-02 02:04:47.783556	dferram8@gmail.com	💰 Nuevo Pedido #14 - $149.40	Enviado	\N	\N	\N	\N
+43	2026-01-02 02:04:47.798693	dferram8@gmail.com	⚠️ Alerta: Backorder generado para el pedido #14	Enviado	\N	\N	\N	\N
+44	2026-01-02 02:04:48.55453	dferramm@gmail.com	Tu pedido RazoConnect ha sido recibido (#14)	Enviado	\N	\N	\N	\N
+45	2026-01-02 02:14:37.709856	dferramm@gmail.com	Tu pedido RazoConnect ha sido recibido (#15)	Enviado	\N	\N	\N	\N
+46	2026-01-02 02:14:37.717572	dferram8@gmail.com	💰 Nuevo Pedido #15 - $405.60	Enviado	\N	\N	\N	\N
+47	2026-01-02 02:14:37.852963	dferram8@gmail.com	⚠️ Alerta: Backorder generado para el pedido #15	Enviado	\N	\N	\N	\N
+48	2026-01-02 02:14:54.230402	dferram8@gmail.com	⚠️ Alerta: Backorder generado para el pedido #16	Enviado	\N	\N	\N	\N
+49	2026-01-02 02:14:54.253076	dferramm@gmail.com	Tu pedido RazoConnect ha sido recibido (#16)	Enviado	\N	\N	\N	\N
+50	2026-01-02 02:14:54.267843	dferram8@gmail.com	💰 Nuevo Pedido #16 - $257.40	Enviado	\N	\N	\N	\N
+51	2026-01-02 06:05:47.592035	dferram8@gmail.com	⚠️ Alerta: Backorder generado para el pedido #17	Enviado	\N	\N	\N	\N
+52	2026-01-02 06:05:47.593163	dferramm@gmail.com	Tu pedido RazoConnect ha sido recibido (#17)	Enviado	\N	\N	\N	\N
+53	2026-01-02 06:05:47.599589	dferram8@gmail.com	💰 Nuevo Pedido #17 - $128.70	Enviado	\N	\N	\N	\N
 \.
 
 
@@ -3049,6 +3068,7 @@ COPY public.control_cambios (id, entidad, entidad_id, tipo_cambio, datos_anterio
 17	productos	1	UPDATE	{"activo": true, "reglaid": null, "productoid": 1, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "25-FAS-CAJ-AMO-CUBO", "nombreproducto": "Colors Love Cubo"}	{"activo": true, "reglaid": 1, "productoid": 1, "categoriaid": 2, "descripcion": null, "sku_maestro": "25-FAS-CAJ-AMO-CUBO", "nombreproducto": "Colors Love Cubo", "proveedorid_default": 1}	2	APROBADO	2025-12-25 11:31:18.488298	2025-12-25 11:31:18.488298	2
 18	productos	5	UPDATE	{"activo": true, "reglaid": null, "productoid": 5, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "25-FAS-CAJ-AMO-CRAF", "nombreproducto": "Craft"}	{"activo": true, "reglaid": 1, "productoid": 5, "categoriaid": 2, "descripcion": null, "sku_maestro": "25-FAS-CAJ-AMO-CRAF", "nombreproducto": "Craft", "proveedorid_default": 1}	2	APROBADO	2025-12-25 11:31:44.889572	2025-12-25 11:31:44.889572	2
 19	productos	8	UPDATE	{"activo": true, "reglaid": null, "productoid": 8, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "25-FAS-CAJ-AMO-HECH", "nombreproducto": "Hecho en México"}	{"activo": true, "reglaid": 1, "productoid": 8, "categoriaid": 2, "descripcion": null, "sku_maestro": "25-FAS-CAJ-AMO-HECH", "nombreproducto": "Hecho en México", "proveedorid_default": 1}	2	APROBADO	2025-12-25 11:31:56.469369	2025-12-25 11:31:56.469369	2
+60	productos	16	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 16, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "AMO-021", "nombreproducto": "Cubo Novios Guapos"}	4	APROBADO	2026-01-03 21:26:49.225487	2026-01-03 21:26:49.225487	4
 20	productos	2	UPDATE	{"activo": true, "reglaid": null, "productoid": 2, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "25-FAS-CAJ-AMO-LVOR", "nombreproducto": "LV Oro"}	{"activo": true, "reglaid": 1, "productoid": 2, "categoriaid": 2, "descripcion": null, "sku_maestro": "25-FAS-CAJ-AMO-LVOR", "nombreproducto": "LV Oro", "proveedorid_default": 1}	2	APROBADO	2025-12-25 11:32:11.928208	2025-12-25 11:32:11.928208	2
 21	productos	7	UPDATE	{"activo": true, "reglaid": null, "productoid": 7, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "25-FAS-CAJ-AMO-REDB", "nombreproducto": "RedBlack"}	{"activo": true, "reglaid": 1, "productoid": 7, "categoriaid": 2, "descripcion": null, "sku_maestro": "25-FAS-CAJ-AMO-REDB", "nombreproducto": "RedBlack", "proveedorid_default": 1}	2	APROBADO	2025-12-25 11:32:25.472244	2025-12-25 11:32:25.472244	2
 22	pedidos	4	UPDATE	{"estatus": "Parcialmente Surtido", "pedidoid": 4}	{"estatus": "Confirmado", "pedidoid": 4}	2	APROBADO	2025-12-25 12:03:24.101952	2025-12-25 12:03:24.101952	2
@@ -3072,6 +3092,28 @@ COPY public.control_cambios (id, entidad, entidad_id, tipo_cambio, datos_anterio
 40	productos	10	UPDATE	{"activo": true, "reglaid": 5, "productoid": 10, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "AMO-019", "nombreproducto": "Libreta"}	{"activo": true, "reglaid": 5, "productoid": 10, "categoriaid": 2, "descripcion": null, "sku_maestro": "AMO-019", "nombreproducto": "Libreta", "proveedorid_default": 1}	2	APROBADO	2025-12-31 08:52:28.749917	2025-12-31 08:52:28.749917	2
 41	productos	14	INSERT	\N	{"activo": true, "reglaid": 2, "productoid": 14, "categoriaid": 1, "descripcion": null, "proveedorid": 1, "sku_maestro": "LIS-002", "nombreproducto": "Línea Metalizada"}	2	APROBADO	2025-12-31 08:56:50.280269	2025-12-31 08:56:50.280269	2
 42	productos	14	UPDATE	{"activo": true, "reglaid": 2, "productoid": 14, "categoriaid": 1, "descripcion": null, "proveedorid": 1, "sku_maestro": "LIS-002", "nombreproducto": "Línea Metalizada"}	{"activo": true, "reglaid": 1, "productoid": 14, "categoriaid": 1, "descripcion": null, "sku_maestro": "LIS-002", "nombreproducto": "Línea Metalizada", "proveedorid_default": 1}	2	APROBADO	2025-12-31 09:15:49.773776	2025-12-31 09:15:49.773776	2
+43	pedidos	17	UPDATE	{"pagado": false, "estatus": "Parcialmente Surtido"}	{"monto": "128.70", "accion": "APROBAR_PAGO_TRANSFERENCIA", "pagado": true, "cliente": "Diego Fernando Ramírez García", "estatus": "Confirmado"}	2	APROBADO	2026-01-02 06:24:26.956375	2026-01-02 06:24:26.956375	2
+44	admins	4	INSERT	\N	{"rol": "admin", "email": "alecaja.19@gmail.com", "activo": true, "nombre": "Alejandra Calderón", "adminid": 4, "apellido": "                                                                                                    "}	2	APROBADO	2026-01-02 20:43:37.09496	2026-01-02 20:43:37.09496	2
+45	admins	5	INSERT	\N	{"rol": "admin", "email": "pupis_gr@icloud.com", "activo": true, "nombre": "Lupita García", "adminid": 5, "apellido": "                                                                                                    "}	2	APROBADO	2026-01-02 20:49:05.635416	2026-01-02 20:49:05.635416	2
+46	admins	6	INSERT	\N	{"rol": "admin", "email": "maricelag.e@hotmail.com", "activo": true, "nombre": "Maricela García", "adminid": 6, "apellido": "                                                                                                    "}	2	APROBADO	2026-01-02 23:00:58.087258	2026-01-02 23:00:58.087258	2
+47	admins	7	INSERT	\N	{"rol": "admin", "email": "maricelag.e@hotmail.com", "activo": true, "nombre": "Maricela García", "adminid": 7, "apellido": "                                                                                                    "}	2	APROBADO	2026-01-02 23:02:29.217336	2026-01-02 23:02:29.217336	2
+48	productos	4	UPDATE	{"activo": true, "reglaid": 1, "productoid": 4, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "AMO-008", "nombreproducto": "Black"}	{"activo": true, "reglaid": 1, "productoid": 4, "categoriaid": 2, "descripcion": null, "sku_maestro": "AMO-008", "nombreproducto": "Love Black", "proveedorid_default": 1}	4	APROBADO	2026-01-03 17:28:32.748679	2026-01-03 17:28:32.748679	4
+49	productos	1	UPDATE	{"activo": true, "reglaid": 1, "productoid": 1, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "AMO-001", "nombreproducto": "Colors Love Cubo"}	{"activo": true, "reglaid": 1, "productoid": 1, "categoriaid": 2, "descripcion": null, "sku_maestro": "AMO-001", "nombreproducto": "Cubo Colors Love", "proveedorid_default": 1}	4	APROBADO	2026-01-03 17:39:12.68726	2026-01-03 17:39:12.68726	4
+50	productos	4	UPDATE	{"activo": true, "reglaid": 1, "productoid": 4, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "AMO-008", "nombreproducto": "Love Black"}	{"activo": true, "reglaid": 1, "productoid": 4, "categoriaid": 2, "descripcion": null, "sku_maestro": "AMO-008", "nombreproducto": "Cubo Love Black", "proveedorid_default": 1}	4	APROBADO	2026-01-03 17:40:16.957553	2026-01-03 17:40:16.957553	4
+51	productos	8	UPDATE	{"activo": true, "reglaid": 1, "productoid": 8, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "AMO-016", "nombreproducto": "Hecho en México"}	{"activo": true, "reglaid": 2, "productoid": 8, "categoriaid": 2, "descripcion": null, "sku_maestro": "AMO-016", "nombreproducto": "Cubo Hecho en México", "proveedorid_default": 1}	4	APROBADO	2026-01-03 17:51:12.318799	2026-01-03 17:51:12.318799	4
+52	productos	5	UPDATE	{"activo": true, "reglaid": 1, "productoid": 5, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "AMO-010", "nombreproducto": "Craft"}	{"activo": true, "reglaid": 1, "productoid": 5, "categoriaid": 2, "descripcion": null, "sku_maestro": "AMO-010", "nombreproducto": "Cubo Love Craft", "proveedorid_default": 1}	4	APROBADO	2026-01-03 17:57:58.057706	2026-01-03 17:57:58.057706	4
+53	productos	1	UPDATE	{"activo": true, "reglaid": 1, "productoid": 1, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "AMO-001", "nombreproducto": "Cubo Colors Love"}	{"activo": true, "reglaid": 1, "productoid": 1, "categoriaid": 2, "descripcion": null, "sku_maestro": "AMO-001", "nombreproducto": "Cubo Colors Love", "proveedorid_default": 1}	4	APROBADO	2026-01-03 18:03:49.232571	2026-01-03 18:03:49.232571	4
+54	productos	2	UPDATE	{"activo": true, "reglaid": 1, "productoid": 2, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "AMO-003", "nombreproducto": "LV Oro"}	{"activo": true, "reglaid": 1, "productoid": 2, "categoriaid": 2, "descripcion": null, "sku_maestro": "AMO-003", "nombreproducto": "Cubo LV Oro", "proveedorid_default": 1}	4	APROBADO	2026-01-03 18:27:11.516707	2026-01-03 18:27:11.516707	4
+55	productos	2	UPDATE	{"activo": true, "reglaid": 1, "productoid": 2, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "AMO-003", "nombreproducto": "Cubo LV Oro"}	{"activo": true, "reglaid": 1, "productoid": 2, "categoriaid": 2, "descripcion": null, "sku_maestro": "AMO-003", "nombreproducto": "Cubo LV Oro", "proveedorid_default": 1}	4	APROBADO	2026-01-03 18:28:37.913026	2026-01-03 18:28:37.913026	4
+56	productos	9	UPDATE	{"activo": true, "reglaid": 1, "productoid": 9, "categoriaid": 2, "descripcion": "Cubo Acetato", "proveedorid": 1, "sku_maestro": "AMO-018", "nombreproducto": "Cubo Acetato"}	{"activo": true, "reglaid": 1, "productoid": 9, "categoriaid": 2, "descripcion": null, "sku_maestro": "AMO-018", "nombreproducto": "Cubo Acetato", "proveedorid_default": 1}	4	APROBADO	2026-01-03 18:35:39.098118	2026-01-03 18:35:39.098118	4
+57	productos	7	UPDATE	{"activo": true, "reglaid": 1, "productoid": 7, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "AMO-014", "nombreproducto": "RedBlack"}	{"activo": true, "reglaid": 1, "productoid": 7, "categoriaid": 2, "descripcion": null, "sku_maestro": "AMO-014", "nombreproducto": "Cubo RedBlack Love", "proveedorid_default": 1}	4	APROBADO	2026-01-03 19:08:29.186101	2026-01-03 19:08:29.186101	4
+58	productos	6	UPDATE	{"activo": true, "reglaid": 1, "productoid": 6, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "AMO-012", "nombreproducto": "Colores"}	{"activo": true, "reglaid": 1, "productoid": 6, "categoriaid": 2, "descripcion": null, "sku_maestro": "AMO-012", "nombreproducto": "Cubo Colores Amor", "proveedorid_default": 1}	4	APROBADO	2026-01-03 19:13:54.91665	2026-01-03 19:13:54.91665	4
+59	productos	15	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 15, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "AMO-020", "nombreproducto": "Cubo Friends & Love"}	4	APROBADO	2026-01-03 21:20:40.039006	2026-01-03 21:20:40.039006	4
+61	categorias	3	UPDATE	{"activo": true, "nombre": "Toda Ocasión", "categoriaid": 3, "descripcion": null, "parentcategoriaid": null}	{"activo": true, "nombre": "Toda Ocasión", "categoriaid": 3, "descripcion": "Cajas de cumpleaños que dan color a tu regalo", "parentcategoriaid": null}	5	APROBADO	2026-01-03 21:32:20.899793	2026-01-03 21:32:20.899793	5
+62	categorias	3	UPDATE	{"activo": true, "nombre": "Toda Ocasión", "categoriaid": 3, "descripcion": "Cajas de cumpleaños que dan color a tu regalo", "parentcategoriaid": null}	{"activo": true, "nombre": "Toda Ocasión", "categoriaid": 3, "descripcion": "Cajas de cumpleaños que dan color a tu regalo 🎁", "parentcategoriaid": null}	5	APROBADO	2026-01-03 21:33:25.852562	2026-01-03 21:33:25.852562	5
+63	productos	17	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 17, "categoriaid": 3, "descripcion": "Caja craft de colores, ideal para celebrar el cumpleaños de esa persona especial, colores vibrantes con acabdo mate.", "proveedorid": 1, "sku_maestro": "TOD-001", "nombreproducto": "Cubo cumple craft"}	5	APROBADO	2026-01-03 21:48:33.399514	2026-01-03 21:48:33.399514	5
+64	productos	17	UPDATE	{"activo": true, "reglaid": 1, "productoid": 17, "categoriaid": 3, "descripcion": "Caja craft de colores, ideal para celebrar el cumpleaños de esa persona especial, colores vibrantes con acabdo mate.", "proveedorid": 1, "sku_maestro": "TOD-001", "nombreproducto": "Cubo cumple craft"}	{"activo": true, "reglaid": 1, "productoid": 17, "categoriaid": 3, "descripcion": "Caja craft de colores, ideal para celebrar el cumpleaños de esa persona especial, colores vibrantes con acabado mate.", "sku_maestro": "TOD-001", "nombreproducto": "Cubo Cumple Craft", "proveedorid_default": 1}	5	APROBADO	2026-01-03 22:01:05.371984	2026-01-03 22:01:05.371984	5
+65	productos	17	UPDATE	{"activo": true, "reglaid": 1, "productoid": 17, "categoriaid": 3, "descripcion": "Caja craft de colores, ideal para celebrar el cumpleaños de esa persona especial, colores vibrantes con acabado mate.", "proveedorid": 1, "sku_maestro": "TOD-001", "nombreproducto": "Cubo Cumple Craft"}	{"activo": true, "reglaid": 1, "productoid": 17, "categoriaid": 3, "descripcion": "Caja craft de colores, ideal para celebrar el cumpleaños de esa persona especial, colores vibrantes con acabado mate.", "sku_maestro": "TOD-001", "nombreproducto": "Cubo Cumple Craft", "proveedorid_default": 1}	5	APROBADO	2026-01-03 23:11:57.313087	2026-01-03 23:11:57.313087	5
 \.
 
 
@@ -3088,6 +3130,11 @@ COPY public.credito_movimientos (movimiento_id, credito_id, tipo_movimiento, mon
 16	1	CARGO	634.80	PED-12	Compra realizada (Pedido #12)	2025-12-29 02:33:04.229328	4729.20	\N	\N	\N
 17	1	ABONO	1234.80	PED-9	Pago validado por transferencia bancaria (Ref: Transferencia bancaria)	2025-12-29 02:34:05.660581	3494.40	2	2	\N
 18	1	ABONO	4729.20	PED-10	Pago validado por transferencia bancaria (Ref: Transferencia bancaria)	2025-12-29 02:34:59.970783	0.00	2	2	\N
+19	1	CARGO	128.70	PED-13	Compra realizada (Pedido #13)	2026-01-02 01:34:33.245122	128.70	\N	\N	\N
+21	1	ABONO	128.70	PAGO-7	Pago genérico sin asignación específica (Ref: Transferencia bancaria)	2026-01-02 01:40:30.570254	0.00	2	2	\N
+22	1	CARGO	405.60	PED-15	Compra realizada (Pedido #15)	2026-01-02 02:14:36.437379	405.60	\N	\N	\N
+23	1	CARGO	257.40	PED-16	Compra realizada (Pedido #16)	2026-01-02 02:14:53.07082	663.00	\N	\N	\N
+24	1	ABONO	405.60	PAGO-8	Pago genérico sin asignación específica (Ref: Transferencia bancaria)	2026-01-02 02:25:25.635208	257.40	2	2	\N
 \.
 
 
@@ -3108,10 +3155,10 @@ COPY public.cuentas_por_cobrar (cxcid, pedido_id, cliente_id, tipo_movimiento, m
 --
 
 COPY public.cuentas_por_pagar (cxp_id, proveedor_id, orden_compra_id, fecha_emision, fecha_vencimiento, monto_total, monto_pagado, estatus, referencia_factura, comprobante_pago, notas, usuario_creador_id, monto_original, fecha_cierre, exportado_en, reporte_id) FROM stdin;
-3	1	3	2025-12-25 20:03:12.735636	2025-12-25	0.00	0.00	PENDIENTE	REM-101	\N	\N	2	0.00	\N	\N	\N
 2	1	4	2025-12-25 20:02:51.311356	2025-12-25	586.32	586.32	PAGADO	Transferencia	\N	Transferencia	2	586.32	\N	\N	\N
 1	1	5	2025-12-25 19:52:37.128419	2025-12-25	754.32	754.32	PAGADO	Transferencia	\N	Transferencia	2	754.32	\N	\N	\N
-4	1	8	2025-12-26 16:45:46.612036	2025-12-26	5738.88	0.00	PENDIENTE	REM-102	\N	\N	2	5738.88	\N	\N	\N
+3	1	3	2025-12-25 20:03:12.735636	2025-12-25	0.00	0.00	PENDIENTE	REM-101	\N	\N	2	0.00	\N	2026-01-03 01:25:09.943756	CXP-1767403509464
+4	1	8	2025-12-26 16:45:46.612036	2025-12-26	5738.88	0.00	PENDIENTE	REM-102	\N	\N	2	5738.88	\N	2026-01-03 01:25:09.943756	CXP-1767403509464
 \.
 
 
@@ -3173,6 +3220,11 @@ COPY public.detallesdelpedido (detalleid, pedidoid, varianteid, cantidadpaquetes
 17	11	7	2	238.80	24	19.90	4	f	2	0
 18	11	7	2	238.80	24	19.90	4	t	0	2
 19	12	15	1	634.80	12	52.90	4	f	1	0
+20	13	46	2	128.70	6	42.90	2	t	0	2
+21	14	40	1	149.40	6	24.90	3	t	0	1
+22	15	32	2	202.80	24	16.90	4	t	0	2
+23	16	46	1	257.40	6	42.90	3	t	0	1
+24	17	45	2	128.70	6	42.90	2	t	0	2
 \.
 
 
@@ -3214,15 +3266,17 @@ COPY public.detallesordencompra (detalleoc_id, ordencompraid, varianteid, cantid
 30	8	17	1	1	12	34.93	12
 31	8	15	1	1	12	34.93	12
 32	8	14	1	1	12	27.93	12
-33	6	32	6	0	1	0.00	0
 34	6	33	6	0	1	0.00	0
 35	6	34	6	0	1	0.00	0
 36	6	41	12	0	1	0.00	0
 37	6	42	12	0	1	0.00	0
-38	6	40	12	0	1	0.00	0
 39	6	28	6	0	1	0.00	0
 40	6	13	12	0	1	0.00	0
 13	6	7	13	0	12	13.23	0
+38	6	40	24	0	1	0.00	0
+33	6	32	12	0	1	0.00	0
+41	6	46	24	0	1	0.00	0
+42	6	45	12	0	1	0.00	0
 \.
 
 
@@ -3275,7 +3329,6 @@ COPY public.estados (estadoid, nombre, abreviatura) FROM stdin;
 --
 
 COPY public.itemsdelcarrito (itemid, carritoid, varianteid, cantidadpaquetes, tamanoid, cantidad) FROM stdin;
-21	3	40	1	3	1
 \.
 
 
@@ -3433,6 +3486,50 @@ COPY public.log_movimientos (logid, usuarioid, nombreusuario, rol, accion, entid
 100	2	Fernando Garcia	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	169.254.129.2	2025-12-31 12:07:59.314469
 101	2	Fernando Garcia	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	169.254.129.2	2025-12-31 12:08:57.155299
 102	2	Fernando Garcia	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	169.254.129.2	2025-12-31 12:09:29.438594
+103	2	Fernando Garcia	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	::1	2026-01-02 01:33:23.777498
+104	2	Fernando Garcia	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	::1	2026-01-02 01:37:41.471755
+105	2	Fernando Garcia	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	::1	2026-01-02 02:06:37.437288
+106	2	Fernando Garcia	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	::1	2026-01-02 02:24:30.066533
+107	2	Fernando Garcia	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	::1	2026-01-02 06:00:30.81941
+108	2	Fernando Garcia	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	::1	2026-01-02 06:03:05.547716
+109	2	Fernando Garcia	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	::1	2026-01-02 06:05:51.064352
+110	2	Fernando Garcia	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	::1	2026-01-02 06:13:27.927174
+111	2	Fernando Garcia	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	::1	2026-01-02 06:30:49.732409
+112	2	Fernando Garcia	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	::1	2026-01-02 18:17:34.925964
+113	2	Fernando Garcia	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	::1	2026-01-02 18:49:16.021582
+114	2	Fernando Garcia	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	169.254.130.5	2026-01-02 20:42:44.942634
+115	4	Alejandra Calderón	admin	LOGIN	Admin	4	{"email": "alecaja.19@gmail.com", "origen": "admin"}	169.254.130.5	2026-01-02 20:44:14.900334
+116	2	Fernando Garcia	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	169.254.130.5	2026-01-02 20:44:26.367211
+117	2	Fernando Garcia	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	169.254.130.5	2026-01-02 21:05:16.767486
+118	2	Fernando Garcia	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	169.254.130.5	2026-01-02 23:00:28.243395
+119	2	Fernando Garcia	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	::1	2026-01-02 23:11:55.536451
+120	5	Lupita García	admin	LOGIN	Admin	5	{"email": "pupis_gr@icloud.com", "origen": "admin"}	169.254.130.5	2026-01-02 23:14:07.689368
+121	2	Fernando Garcia	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	::1	2026-01-02 23:16:38.200547
+122	2	Fernando Garcia	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	169.254.130.5	2026-01-02 23:27:54.831225
+123	2	Fernando Garcia	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	::1	2026-01-02 23:39:21.1955
+124	5	Lupita García	admin	LOGIN	Admin	5	{"email": "pupis_gr@icloud.com", "origen": "admin"}	169.254.130.3	2026-01-02 23:43:34.464193
+125	5	Lupita García	admin	LOGIN	Admin	5	{"email": "pupis_gr@icloud.com", "origen": "admin"}	169.254.130.6	2026-01-02 23:56:46.570426
+126	5	Lupita García	admin	LOGIN	Admin	5	{"email": "pupis_gr@icloud.com", "origen": "admin"}	169.254.130.6	2026-01-02 23:57:51.843073
+127	5	Lupita García	admin	LOGIN	Admin	5	{"email": "pupis_gr@icloud.com", "origen": "admin"}	169.254.130.3	2026-01-03 00:52:13.571217
+128	2	Fernando Garcia	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	169.254.130.3	2026-01-03 00:57:23.962134
+129	5	Lupita García	admin	LOGIN	Admin	5	{"email": "pupis_gr@icloud.com", "origen": "admin"}	169.254.130.3	2026-01-03 01:18:37.009541
+130	4	Alejandra Calderón	admin	LOGIN	Admin	4	{"email": "alecaja.19@gmail.com", "origen": "admin"}	169.254.129.3	2026-01-03 17:09:38.423387
+131	7	Maricela García	admin	LOGIN	Admin	7	{"email": "maricelag.e@hotmail.com", "origen": "admin"}	169.254.129.3	2026-01-03 17:49:04.790471
+132	4	Alejandra Calderón	admin	LOGIN	Admin	4	{"email": "alecaja.19@gmail.com", "origen": "admin"}	169.254.129.3	2026-01-03 17:53:13.015185
+133	4	Alejandra Calderón	admin	LOGIN	Admin	4	{"email": "alecaja.19@gmail.com", "origen": "admin"}	169.254.129.3	2026-01-03 18:24:45.622807
+134	4	Alejandra Calderón	admin	LOGIN	Admin	4	{"email": "alecaja.19@gmail.com", "origen": "admin"}	169.254.129.3	2026-01-03 19:07:15.110765
+135	4	Alejandra Calderón	admin	LOGIN	Admin	4	{"email": "alecaja.19@gmail.com", "origen": "admin"}	169.254.129.3	2026-01-03 20:16:02.275472
+136	2	Fernando Garcia	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	169.254.129.3	2026-01-03 21:01:08.276248
+137	4	Alejandra Calderón	admin	LOGIN	Admin	4	{"email": "alecaja.19@gmail.com", "origen": "admin"}	169.254.129.3	2026-01-03 21:15:41.340838
+138	5	Lupita García	admin	LOGIN	Admin	5	{"email": "pupis_gr@icloud.com", "origen": "admin"}	169.254.129.3	2026-01-03 21:15:57.685529
+139	5	Lupita García	admin	LOGIN	Admin	5	{"email": "pupis_gr@icloud.com", "origen": "admin"}	169.254.129.3	2026-01-03 21:34:58.791239
+140	2	Fernando Garcia	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	169.254.129.3	2026-01-03 21:45:55.127404
+141	2	Fernando Garcia	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	169.254.129.3	2026-01-03 21:56:14.915422
+142	2	Fernando Garcia	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	169.254.129.6	2026-01-03 22:32:43.122506
+143	5	Lupita García	admin	LOGIN	Admin	5	{"email": "pupis_gr@icloud.com", "origen": "admin"}	169.254.129.6	2026-01-03 22:54:40.291487
+144	5	Lupita García	admin	LOGIN	Admin	5	{"email": "pupis_gr@icloud.com", "origen": "admin"}	169.254.129.6	2026-01-03 23:04:37.280192
+145	5	Lupita García	admin	LOGIN	Admin	5	{"email": "pupis_gr@icloud.com", "origen": "admin"}	169.254.129.5	2026-01-03 23:26:48.695728
+146	2	Fernando Garcia	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	::1	2026-01-03 23:27:26.509021
 \.
 
 
@@ -3491,10 +3588,27 @@ COPY public.notificaciones (notificacionid, clienteid, tipo, titulo, mensaje, le
 40	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Fernando actualizó productos #13.	f	2025-12-26 16:30:15.033207	{"entidad": "productos", "cambio_id": 37, "entidad_id": 13, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
 41	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Fernando actualizó productos #13.	f	2025-12-26 16:32:10.707092	{"entidad": "productos", "cambio_id": 38, "entidad_id": 13, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
 42	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Fernando actualizó productos #13.	f	2025-12-26 16:38:02.664096	{"entidad": "productos", "cambio_id": 39, "entidad_id": 13, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
-43	3	sistema	¡Bienvenido a RazoConnect!	Gracias por unirte. Tu cuenta ha sido creada exitosamente.	f	2025-12-30 18:21:12.515244	{}	\N	normal	\N	\N
 44	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Fernando actualizó productos #10.	f	2025-12-31 08:52:28.763586	{"entidad": "productos", "cambio_id": 40, "entidad_id": 10, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
 45	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Fernando creó productos #14.	f	2025-12-31 08:56:50.290808	{"entidad": "productos", "cambio_id": 41, "entidad_id": 14, "tipo_cambio": "INSERT"}	/admin-bitacora.html	alta	2	\N
 46	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Fernando actualizó productos #14.	f	2025-12-31 09:15:49.786122	{"entidad": "productos", "cambio_id": 42, "entidad_id": 14, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
+50	\N	producto	Cambio aplicado (Auditoría Pasiva)	Fernando modificó pedidos.	f	2026-01-02 06:24:27.001158	{"entidad": "pedidos", "cambio_id": 43, "entidad_id": 17, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
+49	2	sistema	Pago Aprobado	Tu pago para el pedido #17 ha sido validado exitosamente.	t	2026-01-02 06:24:26.82042	{}	/mis-pedidos.html	normal	\N	\N
+55	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Alejandra Calderón actualizó productos #4.	f	2026-01-03 17:28:32.761997	{"entidad": "productos", "cambio_id": 48, "entidad_id": 4, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
+56	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Alejandra Calderón actualizó productos #1.	f	2026-01-03 17:39:12.696694	{"entidad": "productos", "cambio_id": 49, "entidad_id": 1, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
+57	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Alejandra Calderón actualizó productos #4.	f	2026-01-03 17:40:16.96624	{"entidad": "productos", "cambio_id": 50, "entidad_id": 4, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
+58	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Alejandra Calderón actualizó productos #8.	f	2026-01-03 17:51:12.329271	{"entidad": "productos", "cambio_id": 51, "entidad_id": 8, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
+59	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Alejandra Calderón actualizó productos #5.	f	2026-01-03 17:57:58.071309	{"entidad": "productos", "cambio_id": 52, "entidad_id": 5, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
+60	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Alejandra Calderón actualizó productos #1.	f	2026-01-03 18:03:49.24162	{"entidad": "productos", "cambio_id": 53, "entidad_id": 1, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
+61	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Alejandra Calderón actualizó productos #2.	f	2026-01-03 18:27:11.549656	{"entidad": "productos", "cambio_id": 54, "entidad_id": 2, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
+62	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Alejandra Calderón actualizó productos #2.	f	2026-01-03 18:28:37.922475	{"entidad": "productos", "cambio_id": 55, "entidad_id": 2, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
+63	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Alejandra Calderón actualizó productos #9.	f	2026-01-03 18:35:39.110415	{"entidad": "productos", "cambio_id": 56, "entidad_id": 9, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
+64	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Alejandra Calderón actualizó productos #7.	f	2026-01-03 19:08:29.197656	{"entidad": "productos", "cambio_id": 57, "entidad_id": 7, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
+65	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Alejandra Calderón actualizó productos #6.	f	2026-01-03 19:13:54.927394	{"entidad": "productos", "cambio_id": 58, "entidad_id": 6, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
+66	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Alejandra Calderón creó productos #15.	f	2026-01-03 21:20:40.05114	{"entidad": "productos", "cambio_id": 59, "entidad_id": 15, "tipo_cambio": "INSERT"}	/admin-bitacora.html	alta	2	\N
+67	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Alejandra Calderón creó productos #16.	f	2026-01-03 21:26:49.237716	{"entidad": "productos", "cambio_id": 60, "entidad_id": 16, "tipo_cambio": "INSERT"}	/admin-bitacora.html	alta	2	\N
+70	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Lupita García creó productos #17.	f	2026-01-03 21:48:33.410351	{"entidad": "productos", "cambio_id": 63, "entidad_id": 17, "tipo_cambio": "INSERT"}	/admin-bitacora.html	alta	2	\N
+71	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Lupita García actualizó productos #17.	f	2026-01-03 22:01:05.381341	{"entidad": "productos", "cambio_id": 64, "entidad_id": 17, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
+72	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Lupita García actualizó productos #17.	f	2026-01-03 23:11:57.324047	{"entidad": "productos", "cambio_id": 65, "entidad_id": 17, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
 \.
 
 
@@ -3529,6 +3643,8 @@ COPY public.pagos_clientes (pago_id, cliente_id, credito_id, monto, tipo_pago, e
 4	2	1	4448.40	TRANSFERENCIA	APROBADO	\N	Transferencia bancaria	\N	2025-12-29 02:25:08.294392	2025-12-29 02:25:30.216642	2	\N	["PED-1", "PED-2", "PED-3", "PED-4", "PED-5", "PED-6", "PED-8"]
 5	2	1	1234.80	TRANSFERENCIA	APROBADO	\N	Transferencia bancaria	\N	2025-12-29 02:33:33.787312	2025-12-29 02:34:05.660581	2	\N	["PED-9"]
 6	2	1	4729.20	TRANSFERENCIA	APROBADO	\N	Transferencia bancaria	\N	2025-12-29 02:34:46.775749	2025-12-29 02:34:59.970783	2	\N	["PED-9", "PED-10", "PED-11", "PED-12"]
+7	2	1	128.70	TRANSFERENCIA	APROBADO	\N	Transferencia bancaria	\N	2026-01-02 01:37:33.386588	2026-01-02 01:40:30.570254	2	\N	["PED-13"]
+8	2	1	405.60	TRANSFERENCIA	APROBADO	\N	Transferencia bancaria	\N	2026-01-02 02:24:21.180184	2026-01-02 02:25:25.635208	2	\N	["PED-15"]
 \.
 
 
@@ -3561,18 +3677,23 @@ COPY public.passwordresettokens (tokenid, token, clienteid, agenteid, expiraen) 
 --
 
 COPY public.pedidos (pedidoid, clienteid, agenteid, direccionenvioid, fechapedido, montototal, estatus, costoenvio, es_credito, fecha_vencimiento, pagado, transaccion_id, comprobante_url, metodo_pago, cupon_id, monto_descuento, saldo_pendiente) FROM stdin;
-1	2	\N	1	2025-12-25 04:39:40.211208	171.60	Parcialmente Surtido	0.00	t	2026-01-09 04:39:40.211208	f	\N	\N	credito	\N	0.00	171.60
-2	2	\N	1	2025-12-25 04:48:35.466116	634.80	Parcialmente Surtido	0.00	t	2026-01-09 04:48:35.466116	f	\N	\N	credito	\N	0.00	634.80
-3	2	\N	1	2025-12-25 05:32:44.889936	1544.40	Parcialmente Surtido	0.00	t	2026-01-09 05:32:44.889936	f	\N	\N	credito	\N	0.00	1544.40
-4	2	\N	1	2025-12-25 11:24:59.074676	343.20	Entregado	0.00	t	2026-01-09 11:24:59.074676	f	\N	\N	credito	\N	0.00	343.20
-5	2	\N	1	2025-12-25 12:16:00.748743	686.40	Parcialmente Surtido	0.00	t	2026-01-09 12:16:00.748743	f	\N	\N	credito	\N	0.00	686.40
-6	2	\N	1	2025-12-25 12:34:25.543147	171.60	Confirmado	0.00	t	2026-01-09 12:34:25.543147	f	\N	\N	credito	\N	0.00	171.60
 7	1	\N	2	2025-12-26 17:10:47.864788	5994.00	Parcialmente Surtido	0.00	t	2026-01-10 17:10:47.864788	f	\N	\N	credito	\N	0.00	5994.00
-8	2	\N	1	2025-12-29 02:01:37.762643	896.40	Parcialmente Surtido	0.00	t	2026-01-13 02:01:37.762643	f	\N	\N	credito	\N	0.00	896.40
-9	2	\N	1	2025-12-29 02:31:02.579417	1234.80	Parcialmente Surtido	0.00	t	2026-01-13 02:31:02.579417	f	\N	\N	credito	\N	0.00	1234.80
-10	2	\N	1	2025-12-29 02:31:35.046362	1904.40	Parcialmente Surtido	0.00	t	2026-01-13 02:31:35.046362	f	\N	\N	credito	\N	0.00	1904.40
-11	2	\N	1	2025-12-29 02:32:16.496963	955.20	Parcialmente Surtido	0.00	t	2026-01-13 02:32:16.496963	f	\N	\N	credito	\N	0.00	955.20
-12	2	\N	1	2025-12-29 02:33:04.229328	634.80	Aprobado	0.00	t	2026-01-13 02:33:04.229328	f	\N	\N	credito	\N	0.00	634.80
+11	2	\N	1	2025-12-29 02:32:16.496963	955.20	Parcialmente Surtido	0.00	t	2026-01-13 02:32:16.496963	t	\N	\N	credito	\N	0.00	0.00
+12	2	\N	1	2025-12-29 02:33:04.229328	634.80	Aprobado	0.00	t	2026-01-13 02:33:04.229328	t	\N	\N	credito	\N	0.00	0.00
+13	2	\N	1	2026-01-02 01:34:33.245122	128.70	Parcialmente Surtido	0.00	t	2026-01-17 01:34:33.245122	t	\N	\N	credito	\N	0.00	0.00
+14	2	\N	1	2026-01-02 02:04:46.533597	149.40	Parcialmente Surtido	0.00	f	\N	f	\N	https://res.cloudinary.com/daylne1ml/image/upload/v1767319486/razoconnect_comprobantes/aflcoo40hvknxkfcqc0c.png	transferencia	\N	0.00	0.00
+6	2	\N	1	2025-12-25 12:34:25.543147	171.60	Confirmado	0.00	t	2026-01-09 12:34:25.543147	t	\N	\N	credito	\N	0.00	0.00
+5	2	\N	1	2025-12-25 12:16:00.748743	686.40	Parcialmente Surtido	0.00	t	2026-01-09 12:16:00.748743	t	\N	\N	credito	\N	0.00	0.00
+4	2	\N	1	2025-12-25 11:24:59.074676	343.20	Entregado	0.00	t	2026-01-09 11:24:59.074676	t	\N	\N	credito	\N	0.00	0.00
+3	2	\N	1	2025-12-25 05:32:44.889936	1544.40	Parcialmente Surtido	0.00	t	2026-01-09 05:32:44.889936	t	\N	\N	credito	\N	0.00	0.00
+2	2	\N	1	2025-12-25 04:48:35.466116	634.80	Parcialmente Surtido	0.00	t	2026-01-09 04:48:35.466116	t	\N	\N	credito	\N	0.00	0.00
+1	2	\N	1	2025-12-25 04:39:40.211208	171.60	Parcialmente Surtido	0.00	t	2026-01-09 04:39:40.211208	t	\N	\N	credito	\N	0.00	0.00
+8	2	\N	1	2025-12-29 02:01:37.762643	896.40	Parcialmente Surtido	0.00	t	2026-01-13 02:01:37.762643	t	\N	\N	credito	\N	0.00	0.00
+9	2	\N	1	2025-12-29 02:31:02.579417	1234.80	Parcialmente Surtido	0.00	t	2026-01-13 02:31:02.579417	t	\N	\N	credito	\N	0.00	0.00
+10	2	\N	1	2025-12-29 02:31:35.046362	1904.40	Parcialmente Surtido	0.00	t	2026-01-13 02:31:35.046362	t	\N	\N	credito	\N	0.00	0.00
+16	2	\N	1	2026-01-02 02:14:53.07082	257.40	Parcialmente Surtido	0.00	t	2026-01-17 02:14:53.07082	f	\N	\N	credito	\N	0.00	257.40
+15	2	\N	1	2026-01-02 02:14:36.437379	405.60	Parcialmente Surtido	0.00	t	2026-01-17 02:14:36.437379	t	\N	\N	credito	\N	0.00	0.00
+17	2	\N	1	2026-01-02 06:05:46.32696	128.70	Confirmado	0.00	f	\N	t	\N	https://res.cloudinary.com/daylne1ml/image/upload/v1767333945/razoconnect_comprobantes/okgjjcxfvavvg9wtx6gs.png	transferencia	\N	0.00	0.00
 \.
 
 
@@ -3583,53 +3704,63 @@ COPY public.pedidos (pedidoid, clienteid, agenteid, direccionenvioid, fechapedid
 --
 
 COPY public.producto_imagenes (imagenid, url_imagen, textoalternativo, orden, productoid) FROM stdin;
-20	/uploads/1766665229272-Captura de pantalla 2025-12-25 061852.png	\N	2	5
-21	/uploads/1766665229274-Captura de pantalla 2025-12-25 061857.png	\N	3	5
-22	/uploads/1766665229276-Captura de pantalla 2025-12-25 061905.png	\N	4	5
-23	/uploads/1766665229277-Captura de pantalla 2025-12-25 061909.png	\N	5	5
-34	/uploads/1766665656386-Captura de pantalla 2025-12-25 062641.png	\N	1	8
-35	/uploads/1766665656389-Captura de pantalla 2025-12-25 062709.png	\N	2	8
-36	/uploads/1766665656390-Captura de pantalla 2025-12-25 062714.png	\N	3	8
-37	/uploads/1766665656391-Captura de pantalla 2025-12-25 062719.png	\N	4	8
-38	/uploads/1766665656392-Captura de pantalla 2025-12-25 062723.png	\N	5	8
-15	/uploads/1766664848035-Captura de pantalla 2025-12-24 163440.png	\N	1	4
-16	/uploads/1766664848038-Captura de pantalla 2025-12-24 163451.png	\N	2	4
-17	/uploads/1766664848039-Captura de pantalla 2025-12-24 163527.png	\N	3	4
-18	/uploads/1766664848040-Captura de pantalla 2025-12-24 163532.png	\N	4	4
-6	/uploads/1766664426099-Captura de pantalla 2025-12-24 163348.png	\N	1	2
-7	/uploads/1766664426106-Captura de pantalla 2025-12-24 163354.png	\N	2	2
-8	/uploads/1766664426106-Captura de pantalla 2025-12-24 163400.png	\N	3	2
-9	/uploads/1766664426107-Captura de pantalla 2025-12-24 163410.png	\N	4	2
-10	/uploads/1766664426107-Captura de pantalla 2025-12-24 163415.png	\N	5	2
-24	/uploads/1766665395737-Captura de pantalla 2025-12-25 062226.png	\N	1	6
-25	/uploads/1766665395742-Captura de pantalla 2025-12-25 062231.png	\N	2	6
-26	/uploads/1766665395745-Captura de pantalla 2025-12-25 062235.png	\N	3	6
-27	/uploads/1766665395746-Captura de pantalla 2025-12-25 062241.png	\N	4	6
-28	/uploads/1766665395748-Captura de pantalla 2025-12-25 062246.png	\N	5	6
-1	/uploads/1766618057659-Captura de pantalla 2025-12-24 163339.png	\N	1	1
-2	/uploads/1766618057669-Captura de pantalla 2025-12-24 163230.png	\N	2	1
-3	/uploads/1766618057672-Captura de pantalla 2025-12-24 163242.png	\N	3	1
-4	/uploads/1766618057674-Captura de pantalla 2025-12-24 163309.png	\N	4	1
-5	/uploads/1766618057676-Captura de pantalla 2025-12-24 163317.png	\N	5	1
-19	/uploads/1766665229257-Captura de pantalla 2025-12-25 061846.png	\N	1	5
-11	/uploads/1766664426108-Captura de pantalla 2025-12-24 163420.png	\N	6	2
-12	/uploads/1766664426108-Captura de pantalla 2025-12-24 163430.png	\N	7	2
-29	/uploads/1766665543356-Captura de pantalla 2025-12-25 062438.png	\N	1	7
-30	/uploads/1766665543360-Captura de pantalla 2025-12-25 062445.png	\N	2	7
-31	/uploads/1766665543362-Captura de pantalla 2025-12-25 062451.png	\N	3	7
-32	/uploads/1766665543363-Captura de pantalla 2025-12-25 062455.png	\N	4	7
-33	/uploads/1766665543366-Captura de pantalla 2025-12-25 062501.png	\N	5	7
-39	/uploads/1766778746726-Captura de pantalla 2025-12-26 133323.png	\N	1	9
-40	/uploads/1766778746732-Captura de pantalla 2025-12-26 133344.png	\N	2	9
-41	/uploads/1766778746734-Captura de pantalla 2025-12-26 133348.png	\N	3	9
-42	/uploads/1766778746738-Captura de pantalla 2025-12-26 133356.png	\N	4	9
-43	/uploads/1766778746741-Captura de pantalla 2025-12-26 133404.png	\N	5	9
 13	/uploads/1766664642259-Captura de pantalla 2025-12-25 060942.png	\N	1	3
 14	/uploads/1766664642264-Captura de pantalla 2025-12-25 060954.png	\N	2	3
 47	/uploads/1766785521330-Captura de pantalla 2025-12-26 154429.png	\N	1	13
 44	/uploads/1766783087272-Captura de pantalla 2025-12-26 133425.png	\N	1	10
 45	/uploads/1766783087299-Captura de pantalla 2025-12-26 133433.png	\N	2	10
 46	/uploads/1766783087314-Captura de pantalla 2025-12-26 133436.png	\N	3	10
+20	/uploads/1766665229272-Captura de pantalla 2025-12-25 061852.png	\N	2	5
+21	/uploads/1766665229274-Captura de pantalla 2025-12-25 061857.png	\N	3	5
+22	/uploads/1766665229276-Captura de pantalla 2025-12-25 061905.png	\N	4	5
+23	/uploads/1766665229277-Captura de pantalla 2025-12-25 061909.png	\N	5	5
+10	/uploads/1766664426107-Captura de pantalla 2025-12-24 163415.png	\N	5	2
+11	/uploads/1766664426108-Captura de pantalla 2025-12-24 163420.png	\N	6	2
+12	/uploads/1766664426108-Captura de pantalla 2025-12-24 163430.png	\N	7	2
+39	/uploads/1766778746726-Captura de pantalla 2025-12-26 133323.png	\N	1	9
+40	/uploads/1766778746732-Captura de pantalla 2025-12-26 133344.png	\N	2	9
+15	/uploads/1766664848035-Captura de pantalla 2025-12-24 163440.png	\N	1	4
+16	/uploads/1766664848038-Captura de pantalla 2025-12-24 163451.png	\N	2	4
+17	/uploads/1766664848039-Captura de pantalla 2025-12-24 163527.png	\N	3	4
+18	/uploads/1766664848040-Captura de pantalla 2025-12-24 163532.png	\N	4	4
+34	/uploads/1766665656386-Captura de pantalla 2025-12-25 062641.png	\N	1	8
+35	/uploads/1766665656389-Captura de pantalla 2025-12-25 062709.png	\N	2	8
+36	/uploads/1766665656390-Captura de pantalla 2025-12-25 062714.png	\N	3	8
+37	/uploads/1766665656391-Captura de pantalla 2025-12-25 062719.png	\N	4	8
+38	/uploads/1766665656392-Captura de pantalla 2025-12-25 062723.png	\N	5	8
+19	/uploads/1766665229257-Captura de pantalla 2025-12-25 061846.png	\N	1	5
+1	/uploads/1766618057659-Captura de pantalla 2025-12-24 163339.png	\N	1	1
+2	/uploads/1766618057669-Captura de pantalla 2025-12-24 163230.png	\N	2	1
+3	/uploads/1766618057672-Captura de pantalla 2025-12-24 163242.png	\N	3	1
+4	/uploads/1766618057674-Captura de pantalla 2025-12-24 163309.png	\N	4	1
+5	/uploads/1766618057676-Captura de pantalla 2025-12-24 163317.png	\N	5	1
+27	/uploads/1766665395746-Captura de pantalla 2025-12-25 062241.png	\N	4	6
+28	/uploads/1766665395748-Captura de pantalla 2025-12-25 062246.png	\N	5	6
+48	https://res.cloudinary.com/daylne1ml/image/upload/v1767475243/razoconnect_productos/k6hb0nln4aiuchjsbgvo.jpg	\N	1	15
+49	https://res.cloudinary.com/daylne1ml/image/upload/v1767475242/razoconnect_productos/wcmcijyy29haftcjmbnv.jpg	\N	2	15
+50	https://res.cloudinary.com/daylne1ml/image/upload/v1767475242/razoconnect_productos/fsmqnixcuoqnjnkx1moz.jpg	\N	3	15
+51	https://res.cloudinary.com/daylne1ml/image/upload/v1767475242/razoconnect_productos/iktpiknvys2s5zwftpjj.jpg	\N	4	15
+52	https://res.cloudinary.com/daylne1ml/image/upload/v1767475242/razoconnect_productos/e9hmyancb7lsyvqqpmse.jpg	\N	5	15
+6	/uploads/1766664426099-Captura de pantalla 2025-12-24 163348.png	\N	1	2
+7	/uploads/1766664426106-Captura de pantalla 2025-12-24 163354.png	\N	2	2
+8	/uploads/1766664426106-Captura de pantalla 2025-12-24 163400.png	\N	3	2
+9	/uploads/1766664426107-Captura de pantalla 2025-12-24 163410.png	\N	4	2
+41	/uploads/1766778746734-Captura de pantalla 2025-12-26 133348.png	\N	3	9
+42	/uploads/1766778746738-Captura de pantalla 2025-12-26 133356.png	\N	4	9
+43	/uploads/1766778746741-Captura de pantalla 2025-12-26 133404.png	\N	5	9
+29	/uploads/1766665543356-Captura de pantalla 2025-12-25 062438.png	\N	1	7
+30	/uploads/1766665543360-Captura de pantalla 2025-12-25 062445.png	\N	2	7
+31	/uploads/1766665543362-Captura de pantalla 2025-12-25 062451.png	\N	3	7
+32	/uploads/1766665543363-Captura de pantalla 2025-12-25 062455.png	\N	4	7
+33	/uploads/1766665543366-Captura de pantalla 2025-12-25 062501.png	\N	5	7
+24	/uploads/1766665395737-Captura de pantalla 2025-12-25 062226.png	\N	1	6
+25	/uploads/1766665395742-Captura de pantalla 2025-12-25 062231.png	\N	2	6
+26	/uploads/1766665395745-Captura de pantalla 2025-12-25 062235.png	\N	3	6
+53	https://res.cloudinary.com/daylne1ml/image/upload/v1767475611/razoconnect_productos/qk3okhvlcdmyga1dr2ip.jpg	\N	1	16
+54	https://res.cloudinary.com/daylne1ml/image/upload/v1767475611/razoconnect_productos/on2vwb5ui2tmxws5olxr.jpg	\N	2	16
+55	https://res.cloudinary.com/daylne1ml/image/upload/v1767475611/razoconnect_productos/y9ertskkkmpfjiedmnde.jpg	\N	3	16
+56	https://res.cloudinary.com/daylne1ml/image/upload/v1767475611/razoconnect_productos/q8ysh6e9mnntrun0xfnp.jpg	\N	4	16
+57	https://res.cloudinary.com/daylne1ml/image/upload/v1767475611/razoconnect_productos/xojme8kllg0jqo43r1kv.jpg	\N	5	16
 \.
 
 
@@ -3679,6 +3810,14 @@ COPY public.producto_tamanosdisponibles (productoid, tamanoid) FROM stdin;
 13	4
 14	2
 14	3
+15	5
+15	3
+15	4
+16	5
+16	3
+16	4
+17	3
+17	4
 \.
 
 
@@ -3752,6 +3891,27 @@ COPY public.producto_variantes (varianteid, sku, dimensiones, costounitario, sto
 14	AMO-014	20x20	27.93	0	\N	\N	7	42.90	\N	t	1	0	\N	\N
 45	LIS-002-20X20-ORO	20x20	27.93	0	\N	\N	14	42.90	\N	t	1	0	Oro	\N
 46	LIS-002-20X20-PLATA	20x20	27.93	0	\N	\N	14	42.90	\N	t	1	0	Plata	\N
+47	AMO-008-25X25	25x25	34.93	0	\N	\N	4	52.90	\N	t	1	0	\N	\N
+48	AMO-008-30X30	30x30	41.93	0	\N	\N	4	64.90	\N	t	1	0	\N	\N
+49	AMO-008-40X40	40x40	76.93	0	\N	\N	4	117.90	\N	t	1	0	\N	\N
+50	AMO-016-30X30	30x30	41.93	0	\N	\N	8	64.90	\N	t	1	0	\N	\N
+51	AMO-010-25X25	25x25	34.93	0	\N	\N	5	52.90	\N	t	1	0	\N	\N
+52	AMO-010-30X30	30x30	41.93	0	\N	\N	5	64.90	\N	t	1	0	\N	\N
+53	AMO-001-30X30	30x30	41.93	0	\N	\N	1	64.90	\N	t	1	0	\N	\N
+54	AMO-001-40X40	40x40	76.93	0	\N	\N	1	117.90	\N	t	1	0	\N	\N
+55	AMO-001-50X50	50x50	97.93	0	\N	\N	1	147.90	\N	t	1	0	\N	\N
+56	AMO-003-30X30	30x30	41.93	0	\N	\N	2	64.90	\N	t	1	0	\N	\N
+57	AMO-003-40X40	40x40	76.93	0	\N	\N	2	117.90	\N	t	1	0	\N	\N
+58	AMO-014-30X30	30x30	41.93	0	\N	\N	7	64.90	\N	t	1	0	\N	\N
+59	AMO-012-30X30	30x30	41.93	0	\N	\N	6	64.90	\N	t	1	0	\N	\N
+60	AMO-020-20X20	20x20	27.93	0	\N	\N	15	42.90	\N	t	1	0	\N	\N
+61	AMO-020-25X25	25x25	34.93	0	\N	\N	15	52.90	\N	t	1	0	\N	\N
+62	AMO-020-30X30	30x30	41.93	0	\N	\N	15	64.90	\N	t	1	0	\N	\N
+63	AMO-021-20X20	20x20	27.93	0	\N	\N	16	42.90	\N	t	1	0	\N	\N
+64	AMO-021-30X30	30x30	41.93	0	\N	\N	16	64.90	\N	t	1	0	\N	\N
+65	TOD-001-20X20	20x20	27.93	0	\N	\N	17	42.90	\N	t	1	0	\N	\N
+66	TOD-001-25X25	25x25	34.93	0	\N	\N	17	52.90	\N	t	1	0	\N	\N
+67	TOD-001-30X30	30x30	41.93	0	\N	\N	17	64.90	\N	t	1	0	\N	\N
 \.
 
 
@@ -3762,20 +3922,23 @@ COPY public.producto_variantes (varianteid, sku, dimensiones, costounitario, sto
 --
 
 COPY public.productos (productoid, categoriaid, nombreproducto, descripcion, activo, proveedorid_default, sku_maestro, reglaid) FROM stdin;
-4	2	Black	\N	t	1	AMO-008	1
-6	2	Colores	\N	t	1	AMO-012	1
-1	2	Colors Love Cubo	\N	t	1	AMO-001	1
-5	2	Craft	\N	t	1	AMO-010	1
-8	2	Hecho en México	\N	t	1	AMO-016	1
-2	2	LV Oro	\N	t	1	AMO-003	1
-7	2	RedBlack	\N	t	1	AMO-014	1
-9	2	Cubo Acetato	Cubo Acetato	t	1	AMO-018	1
 11	1	Cubo Liso	\N	t	1	LIS-001	2
 3	1	Brillo	\N	t	1	AMO-006	1
 12	4	Cubo Natural	\N	t	1	NAT-001	2
 13	4	Camisera Natural	\N	t	1	NAT-002	1
 10	2	Libreta	\N	t	1	AMO-019	5
 14	1	Línea Metalizada	\N	t	1	LIS-002	1
+4	2	Cubo Love Black	\N	t	1	AMO-008	1
+8	2	Cubo Hecho en México	\N	t	1	AMO-016	2
+5	2	Cubo Love Craft	\N	t	1	AMO-010	1
+1	2	Cubo Colors Love	\N	t	1	AMO-001	1
+2	2	Cubo LV Oro	\N	t	1	AMO-003	1
+9	2	Cubo Acetato	\N	t	1	AMO-018	1
+7	2	Cubo RedBlack Love	\N	t	1	AMO-014	1
+6	2	Cubo Colores Amor	\N	t	1	AMO-012	1
+15	2	Cubo Friends & Love	\N	t	1	AMO-020	1
+16	2	Cubo Novios Guapos	\N	t	1	AMO-021	1
+17	3	Cubo Cumple Craft	Caja craft de colores, ideal para celebrar el cumpleaños de esa persona especial, colores vibrantes con acabado mate.	t	1	TOD-001	1
 \.
 
 
@@ -3888,7 +4051,7 @@ SELECT pg_catalog.setval('cron.runid_seq', 1, false);
 -- Name: administradores_adminid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.administradores_adminid_seq', 3, true);
+SELECT pg_catalog.setval('public.administradores_adminid_seq', 7, true);
 
 
 --
@@ -3960,7 +4123,7 @@ SELECT pg_catalog.setval('public.cliente_direcciones_direccionid_seq', 2, true);
 -- Name: clientes_clienteid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.clientes_clienteid_seq', 4, true);
+SELECT pg_catalog.setval('public.clientes_clienteid_seq', 5, true);
 
 
 --
@@ -3978,7 +4141,7 @@ SELECT pg_catalog.setval('public.comisiones_comisionid_seq', 1, false);
 -- Name: communicationlogs_logid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.communicationlogs_logid_seq', 38, true);
+SELECT pg_catalog.setval('public.communicationlogs_logid_seq', 53, true);
 
 
 --
@@ -3987,7 +4150,7 @@ SELECT pg_catalog.setval('public.communicationlogs_logid_seq', 38, true);
 -- Name: control_cambios_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.control_cambios_id_seq', 42, true);
+SELECT pg_catalog.setval('public.control_cambios_id_seq', 65, true);
 
 
 --
@@ -3996,7 +4159,7 @@ SELECT pg_catalog.setval('public.control_cambios_id_seq', 42, true);
 -- Name: credito_movimientos_movimiento_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.credito_movimientos_movimiento_id_seq', 18, true);
+SELECT pg_catalog.setval('public.credito_movimientos_movimiento_id_seq', 24, true);
 
 
 --
@@ -4050,7 +4213,7 @@ SELECT pg_catalog.setval('public.datos_bancarios_empresa_id_seq', 2, true);
 -- Name: detallesdelpedido_detalleid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.detallesdelpedido_detalleid_seq', 19, true);
+SELECT pg_catalog.setval('public.detallesdelpedido_detalleid_seq', 24, true);
 
 
 --
@@ -4059,7 +4222,7 @@ SELECT pg_catalog.setval('public.detallesdelpedido_detalleid_seq', 19, true);
 -- Name: detallesordencompra_detalleoc_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.detallesordencompra_detalleoc_id_seq', 40, true);
+SELECT pg_catalog.setval('public.detallesordencompra_detalleoc_id_seq', 42, true);
 
 
 --
@@ -4077,7 +4240,7 @@ SELECT pg_catalog.setval('public.estados_estadoid_seq', 32, true);
 -- Name: itemsdelcarrito_itemid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.itemsdelcarrito_itemid_seq', 25, true);
+SELECT pg_catalog.setval('public.itemsdelcarrito_itemid_seq', 30, true);
 
 
 --
@@ -4104,7 +4267,7 @@ SELECT pg_catalog.setval('public.log_inventario_logid_seq', 30, true);
 -- Name: log_movimientos_logid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.log_movimientos_logid_seq', 102, true);
+SELECT pg_catalog.setval('public.log_movimientos_logid_seq', 146, true);
 
 
 --
@@ -4122,7 +4285,7 @@ SELECT pg_catalog.setval('public.medidas_medidaid_seq', 1, false);
 -- Name: notificaciones_notificacionid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.notificaciones_notificacionid_seq', 46, true);
+SELECT pg_catalog.setval('public.notificaciones_notificacionid_seq', 72, true);
 
 
 --
@@ -4140,7 +4303,7 @@ SELECT pg_catalog.setval('public.ordenesdecompra_ordencompraid_seq', 8, true);
 -- Name: pagos_clientes_pago_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.pagos_clientes_pago_id_seq', 6, true);
+SELECT pg_catalog.setval('public.pagos_clientes_pago_id_seq', 8, true);
 
 
 --
@@ -4167,7 +4330,7 @@ SELECT pg_catalog.setval('public.passwordresettokens_tokenid_seq', 1, false);
 -- Name: pedidos_pedidoid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.pedidos_pedidoid_seq', 12, true);
+SELECT pg_catalog.setval('public.pedidos_pedidoid_seq', 17, true);
 
 
 --
@@ -4185,7 +4348,7 @@ SELECT pg_catalog.setval('public.producto_imagenes_color_imagencolorid_seq', 1, 
 -- Name: producto_imagenes_imagenid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.producto_imagenes_imagenid_seq', 47, true);
+SELECT pg_catalog.setval('public.producto_imagenes_imagenid_seq', 57, true);
 
 
 --
@@ -4203,7 +4366,7 @@ SELECT pg_catalog.setval('public.producto_variante_imagenes_imagenid_seq', 11, t
 -- Name: producto_variantes_varianteid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.producto_variantes_varianteid_seq', 46, true);
+SELECT pg_catalog.setval('public.producto_variantes_varianteid_seq', 67, true);
 
 
 --
@@ -4212,7 +4375,7 @@ SELECT pg_catalog.setval('public.producto_variantes_varianteid_seq', 46, true);
 -- Name: productos_productoid_seq1; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.productos_productoid_seq1', 14, true);
+SELECT pg_catalog.setval('public.productos_productoid_seq1', 17, true);
 
 
 --
@@ -6563,7 +6726,7 @@ GRANT SELECT(subsynccommit) ON TABLE pg_catalog.pg_subscription TO azure_pg_admi
 GRANT SELECT(subpublications) ON TABLE pg_catalog.pg_subscription TO azure_pg_admin;
 
 
--- Completed on 2026-01-01 19:25:14
+-- Completed on 2026-01-03 17:28:03
 
 --
 -- PostgreSQL database dump complete
