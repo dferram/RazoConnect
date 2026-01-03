@@ -915,15 +915,39 @@
             if (Number.isInteger(n) && n > 1) packSet.add(n);
           });
 
+          // SOLUCIÓN PROBLEMA 2: Forzar estado del checkbox explícitamente
+          // Esperar a que el DOM esté listo antes de asignar el checkbox
+          await new Promise(resolve => setTimeout(resolve, 100));
           const ventaIndividualCheckbox = document.getElementById("tamano-unidad");
           if (ventaIndividualCheckbox) {
             ventaIndividualCheckbox.checked = Boolean(tieneVentaIndividual);
           }
 
+          // SOLUCIÓN PROBLEMA 3: Renderizar packs personalizados guardados
           customPacks = [];
-          Array.from(packSet)
-            .sort((a, b) => a - b)
-            .forEach((valor) => sugerirPack(valor));
+          const packsArray = Array.from(packSet).sort((a, b) => a - b);
+          
+          // Agregar packs al array customPacks primero
+          packsArray.forEach((valor) => {
+            if (!customPacks.includes(valor)) {
+              customPacks.push(valor);
+            }
+          });
+          
+          // Esperar a que el contenedor de chips esté disponible
+          await new Promise(resolve => setTimeout(resolve, 150));
+          
+          // Renderizar los chips visuales usando las funciones existentes
+          const chipsContainer = document.getElementById("packsChipsContainer");
+          const suggestionsContainer = document.getElementById("packsSuggestionsContainer");
+          
+          if (chipsContainer && typeof renderPacksChips === "function") {
+            renderPacksChips();
+          }
+          
+          if (suggestionsContainer && typeof renderPackSuggestions === "function") {
+            renderPackSuggestions();
+          }
 
           const imagenesServidor = Array.isArray(producto?.imagenes)
             ? producto.imagenes
@@ -1083,16 +1107,23 @@
                 selectProveedor.appendChild(option);
               }
               selectProveedor.value = proveedorTxt;
+              
+              // SOLUCIÓN PROBLEMA 1: Disparar carga de tipos de producto después de asignar proveedor
+              if (window.TipoProductoLoader && typeof window.TipoProductoLoader.cargarTiposProducto === "function") {
+                await window.TipoProductoLoader.cargarTiposProducto(proveedorTxt);
+              }
             }
           }
 
           if (inputTipoProducto) {
             const tipoIdParsed = Number.parseInt(tipoProductoId, 10);
             if (Number.isInteger(tipoIdParsed) && tipoIdParsed > 0) {
-              // Choices.js está inicializado en loadTiposProducto(); seleccionar por value (id)
-              if (tipoProductoChoices) {
+              // SOLUCIÓN PROBLEMA 1 (continuación): Asignar valor después de cargar tipos
+              // Verificar si el select tiene Choices.js instance
+              const choicesInstance = inputTipoProducto.choicesInstance;
+              if (choicesInstance) {
                 try {
-                  tipoProductoChoices.setChoiceByValue(String(tipoIdParsed));
+                  choicesInstance.setChoiceByValue(String(tipoIdParsed));
                 } catch (e) {
                   inputTipoProducto.value = String(tipoIdParsed);
                 }
@@ -1101,9 +1132,10 @@
               }
             } else {
               // No hay ID válido, dejar vacío
-              if (tipoProductoChoices) {
+              const choicesInstance = inputTipoProducto.choicesInstance;
+              if (choicesInstance) {
                 try {
-                  tipoProductoChoices.removeActiveItems();
+                  choicesInstance.removeActiveItems();
                 } catch (e) {
                   inputTipoProducto.value = "";
                 }
