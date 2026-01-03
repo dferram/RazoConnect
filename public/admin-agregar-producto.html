@@ -1906,6 +1906,7 @@
       const imagenesPreviewGrid = document.getElementById("imagenes-preview");
       const btnClearImages = document.getElementById("btn-clear-images");
       let selectedImageFiles = [];
+      let previewObjectURLs = [];
 
       function actualizarBadgesOrden(grid) {
         if (!grid) return;
@@ -1976,6 +1977,17 @@
 
       function clearSelectedImages() {
         selectedImageFiles = [];
+        
+        // Limpiar URLs de objeto para liberar memoria
+        previewObjectURLs.forEach(url => {
+          try {
+            URL.revokeObjectURL(url);
+          } catch (e) {
+            console.warn("Error revocando URL:", e);
+          }
+        });
+        previewObjectURLs = [];
+        
         if (inputImagen) {
           inputImagen.value = "";
         }
@@ -1984,6 +1996,16 @@
 
       function renderImagesPreview() {
         if (!previewContainer || !imagenesPreviewGrid) return;
+
+        // Limpiar URLs antiguas antes de crear nuevas
+        previewObjectURLs.forEach(url => {
+          try {
+            URL.revokeObjectURL(url);
+          } catch (e) {
+            console.warn("Error revocando URL:", e);
+          }
+        });
+        previewObjectURLs = [];
 
         if (!Array.isArray(selectedImageFiles) || selectedImageFiles.length === 0) {
           previewContainer.style.display = "none";
@@ -2011,11 +2033,16 @@
 
           const img = document.createElement("img");
           img.alt = `Vista previa ${index + 1}`;
-          img.src = URL.createObjectURL(file);
-          img.onload = () => {
-            try {
-              URL.revokeObjectURL(img.src);
-            } catch (e) {}
+          
+          // Crear URL de objeto y guardarla para limpieza posterior
+          const objectURL = URL.createObjectURL(file);
+          previewObjectURLs.push(objectURL);
+          img.src = objectURL;
+          
+          // No revocar inmediatamente - mantener URL hasta el próximo render
+          img.onerror = () => {
+            console.error("Error cargando imagen:", file.name);
+            card.style.opacity = "0.5";
           };
 
           const btn = document.createElement("button");
@@ -2738,6 +2765,18 @@
         coloresVariantes.clear();
         actualizarCamposImagenesColor();
       };
+
+      // Limpiar URLs de objeto cuando se cierre o recargue la página (importante para iOS/Safari)
+      window.addEventListener('beforeunload', () => {
+        previewObjectURLs.forEach(url => {
+          try {
+            URL.revokeObjectURL(url);
+          } catch (e) {
+            // Silenciar errores en cleanup
+          }
+        });
+        previewObjectURLs = [];
+      });
 
       // Initialize on page load
       init();
