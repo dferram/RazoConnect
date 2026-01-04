@@ -12233,7 +12233,7 @@ const actualizarVariante = async (req, res) => {
 
       const result = await client.query(
         `SELECT VarianteID, SKU, Dimensiones, CostoUnitario, PrecioUnitario, PrecioOfertaUnitario, Stock, Activo,
-                color_nombre, url_imagen_variante
+                color_nombre
          FROM Producto_Variantes
          WHERE VarianteID = $1`,
         [varianteId]
@@ -12537,18 +12537,11 @@ const actualizarVariante = async (req, res) => {
     if (!colorParsed.usarActual) {
       payloadNuevos.color_nombre = colorParsed.valor;
     }
-    const urlParsed = normalizarTextoNullable(url_imagen_variante);
-    if (!urlParsed.usarActual) {
-      payloadNuevos.url_imagen_variante = urlParsed.valor;
-    }
 
     if (allowDirect) {
       const colorFinal = Object.prototype.hasOwnProperty.call(payloadNuevos, "color_nombre")
         ? payloadNuevos.color_nombre
         : actual.color_nombre ?? actual.color_nombre;
-      const urlFinal = Object.prototype.hasOwnProperty.call(payloadNuevos, "url_imagen_variante")
-        ? payloadNuevos.url_imagen_variante
-        : actual.url_imagen_variante ?? actual.url_imagen_variante;
 
       const updateRes = await db.query(
         `UPDATE producto_variantes
@@ -12557,17 +12550,15 @@ const actualizarVariante = async (req, res) => {
              preciounitario = $3,
              precioofertaunitario = $4,
              color_nombre = $5,
-             url_imagen_variante = $6,
-             activo = $7
-         WHERE varianteid = $8
-         RETURNING varianteid, productoid, sku, dimensiones, costounitario, preciounitario, precioofertaunitario, stock, activo, tipoproductoid, medidaid, color_nombre, url_imagen_variante, piezasporpaquete`,
+             activo = $6
+         WHERE varianteid = $7
+         RETURNING varianteid, productoid, sku, dimensiones, costounitario, preciounitario, precioofertaunitario, stock, activo, tipoproductoid, medidaid, color_nombre, piezasporpaquete`,
         [
           payloadNuevos.dimensiones,
           payloadNuevos.costounitario,
           payloadNuevos.preciounitario,
           payloadNuevos.precioofertaunitario,
           colorFinal,
-          urlFinal,
           payloadNuevos.activo,
           varianteId,
         ]
@@ -12604,7 +12595,6 @@ const actualizarVariante = async (req, res) => {
             sku: row.sku,
             dimensiones: row.dimensiones,
             colorNombre: row.color_nombre || null,
-            urlImagenVariante: row.url_imagen_variante || null,
             costoUnitario:
               row.costounitario !== null ? parseFloat(row.costounitario) : null,
             precioUnitario:
