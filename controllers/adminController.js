@@ -28,6 +28,7 @@ const {
   checkEmailGlobalUniqueness,
   getContextualErrorMessage,
 } = require("../utils/emailValidator");
+const { generarSkuUnico } = require("../utils/skuGenerator");
 const fs = require("fs");
 
 let agenteAdminColumnsCache = null;
@@ -5281,12 +5282,18 @@ const sanitizeSkuSegment = (input, maxLen, fallback) => {
 
 const generarSkuMaestro = async (
   pool,
-  { categoriaid }
+  { categoriaid, nombreProducto }
 ) => {
   if (!pool || typeof pool.query !== "function") {
     throw new Error("pool inválido");
   }
 
+  // Si se proporciona el nombre del producto, usar el nuevo sistema
+  if (nombreProducto && typeof nombreProducto === "string" && nombreProducto.trim().length > 0) {
+    return await generarSkuUnico(nombreProducto.trim());
+  }
+
+  // Fallback al sistema antiguo basado en categoría (por compatibilidad)
   const categoriaIdParsed =
     categoriaid !== undefined && categoriaid !== null
       ? Number.parseInt(categoriaid, 10)
@@ -5537,6 +5544,7 @@ const crearProducto = async (req, res) => {
 
     const skuMaestroFinal = await generarSkuMaestro(client, {
       categoriaid: categoriaIdParsed,
+      nombreProducto: nombre,
     });
 
     const skuExisteResult = await client.query(
