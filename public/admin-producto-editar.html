@@ -268,6 +268,132 @@
           overflow-x: auto;
           -webkit-overflow-scrolling: touch;
         }
+
+        /* ===== CONTENIDO DINÁMICO (JavaScript) ===== */
+        /* Asegurar que elementos generados dinámicamente también respeten límites */
+        
+        /* Product summary: forzar wrap en todos los elementos */
+        .product-summary {
+          max-width: 100%;
+          overflow: hidden;
+        }
+
+        .product-summary h3,
+        .product-summary p,
+        .product-summary div {
+          max-width: 100%;
+          word-wrap: break-word;
+          overflow-wrap: break-word;
+        }
+
+        /* Badges dinámicos: permitir wrap */
+        .badge,
+        .admin-badge,
+        .visibility-badge,
+        .badge-neutral,
+        .badge-success,
+        .badge-info {
+          max-width: 100%;
+          white-space: normal;
+          word-break: break-word;
+        }
+
+        /* Contenedores de badges: wrap */
+        div[style*="display:flex"][style*="flex-wrap"],
+        .badge-group {
+          flex-wrap: wrap !important;
+        }
+
+        /* Product KPIs: asegurar que no excedan */
+        .product-kpi,
+        .product-kpi-label,
+        .product-kpi-value {
+          max-width: 100%;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        /* Imágenes de producto: responsive */
+        .product-summary-image {
+          flex-shrink: 0;
+          max-width: 80px;
+          height: 80px;
+        }
+
+        .product-summary-image img {
+          max-width: 100%;
+          height: auto;
+          object-fit: cover;
+        }
+
+        /* Stock projection table: ajustar */
+        .stock-projection-table {
+          width: 100%;
+          table-layout: fixed;
+        }
+
+        .stock-projection-table th,
+        .stock-projection-table td {
+          word-wrap: break-word;
+          overflow-wrap: break-word;
+        }
+
+        /* Inventory summary card: no overflow */
+        .inventory-summary-card {
+          max-width: 100%;
+          box-sizing: border-box;
+        }
+
+        /* Galería de imágenes: ajustar grid */
+        .product-images-preview,
+        .sortable-grid {
+          max-width: 100%;
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+        }
+
+        /* Asegurar que inline styles no rompan layout */
+        [style*="min-width"] {
+          min-width: auto !important;
+        }
+
+        /* Tablas admin: responsive */
+        .admin-table {
+          width: 100%;
+          table-layout: auto;
+        }
+
+        /* Botones en tablas: ajustar tamaño */
+        .admin-table .btn-sm {
+          padding: 0.5rem 0.75rem;
+          font-size: 0.85rem;
+        }
+
+        /* Actions cell: permitir wrap */
+        .actions-cell {
+          white-space: normal !important;
+        }
+
+        /* Draft banner: responsive */
+        div[style*="background: #fffbeb"] {
+          max-width: 100% !important;
+          box-sizing: border-box !important;
+          word-wrap: break-word !important;
+        }
+
+        /* Summary labels y values */
+        .summary-label,
+        .summary-value {
+          font-size: 0.85rem;
+        }
+
+        /* Asegurar que todos los divs con estilos inline respeten el contenedor */
+        .product-summary-header > *,
+        .product-summary-main > *,
+        .product-summary-text > * {
+          max-width: 100%;
+          box-sizing: border-box;
+        }
       }
 
       .variant-form-card .admin-card-header {
