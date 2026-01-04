@@ -142,6 +142,134 @@
         }
       }
 
+      /* ============================================
+         IPAD PORTRAIT MODE (768px - 1024px)
+         Correcciones para evitar overflow horizontal
+         ============================================ */
+      @media only screen and (min-width: 768px) and (max-width: 1024px) {
+        /* Contenedor principal: 100% width con padding seguro */
+        .product-editor-wrapper {
+          max-width: 100%;
+          width: 100%;
+          padding: 0 1.25rem 2.5rem;
+          box-sizing: border-box;
+        }
+
+        /* Asegurar que todos los elementos internos respeten el contenedor */
+        .product-editor-grid,
+        .admin-card,
+        .variant-form {
+          max-width: 100%;
+          box-sizing: border-box;
+        }
+
+        /* Grid de 2 columnas: forzar wrap cuando no caben */
+        .variant-form .form-grid-2 {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 1rem;
+        }
+
+        .variant-form .form-grid-2 > .form-group {
+          flex: 1 1 calc(50% - 0.5rem);
+          min-width: 280px;
+          max-width: 100%;
+        }
+
+        /* Grid de 3 columnas (Costo, Precio, Descuento): 
+           Apilar verticalmente en portrait para evitar overflow */
+        .variant-form .form-grid-3 {
+          display: flex;
+          flex-direction: column;
+          gap: 1rem;
+        }
+
+        .variant-form .form-grid-3 > .form-group {
+          width: 100%;
+          max-width: 100%;
+        }
+
+        /* Inputs: asegurar que no excedan el contenedor */
+        .form-input,
+        .form-control,
+        input[type="text"],
+        input[type="number"],
+        select,
+        textarea {
+          width: 100%;
+          max-width: 100%;
+          box-sizing: border-box;
+        }
+
+        /* Variant margin: permitir wrap */
+        .variant-margin {
+          flex-wrap: wrap;
+          padding: 1rem;
+        }
+
+        .margin-metrics {
+          width: 100%;
+          justify-content: space-around;
+        }
+
+        /* Summary grid: ajustar columnas */
+        .summary-grid {
+          grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        }
+
+        /* Product summary header: permitir wrap */
+        .product-summary-header {
+          flex-wrap: wrap;
+        }
+
+        .product-summary-kpis {
+          min-width: 100%;
+        }
+
+        /* Admin grid: stack en una columna */
+        .admin-grid-lg {
+          grid-template-columns: 1fr;
+          gap: 1.5rem;
+        }
+
+        /* Inventory summary: no sticky en tablets */
+        .inventory-summary-wrapper {
+          position: static;
+        }
+
+        /* Cards: padding ajustado */
+        .admin-card-body {
+          padding: 0 1.25rem 1.25rem;
+        }
+
+        .admin-card-header {
+          padding: 1.25rem 1.25rem 0.75rem;
+        }
+
+        /* Botones: asegurar que no se desborden */
+        .variant-form button,
+        .btn {
+          max-width: 100%;
+          box-sizing: border-box;
+        }
+
+        /* Preview de imágenes: ajustar tamaño */
+        .product-images-preview-item {
+          width: 70px;
+          height: 70px;
+        }
+
+        /* Tabla de variantes: scroll horizontal si es necesario */
+        .variants-table {
+          min-width: 700px;
+        }
+
+        #variantsTableWrapper {
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+        }
+      }
+
       .variant-form-card .admin-card-header {
         margin-bottom: 1.25rem;
       }
