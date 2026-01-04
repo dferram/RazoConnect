@@ -7302,7 +7302,7 @@ const getAllProductos = async (req, res) => {
             productoid: row.productoid,
             nombreproducto: row.nombreproducto,
             descripcion: row.descripcion,
-            activo: row.activo,
+            activo: row.activo === true || row.activo === 't' || row.activo === 1,
             TipoProductoID:
               row.tipoproductoid !== null && row.tipoproductoid !== undefined
                 ? Number.parseInt(row.tipoproductoid, 10)

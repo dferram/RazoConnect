@@ -650,8 +650,9 @@ const obtenerProductos = async (req, res) => {
       return {
         productoId: productId,
         nombreProducto: row.nombreproducto,
-        sku_maestro: row.sku_maestro || null,
+        skuMaestro: row.sku_maestro || null,
         descripcion: row.descripcion,
+        activo: row.activo === true || row.activo === 't' || row.activo === 1,
         tipoProductoId:
           row.tipo_productoid !== null && row.tipo_productoid !== undefined
             ? Number.parseInt(row.tipo_productoid, 10)

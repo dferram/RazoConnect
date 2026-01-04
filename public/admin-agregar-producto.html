@@ -714,16 +714,12 @@
                   >
                     <thead>
                       <tr>
-                        <th style="width: 80px; min-width: 80px;">Imagen</th>
-                        <th style="min-width: 200px;">Producto</th>
-                        <th style="width: 120px; min-width: 120px;">SKU Maestro</th>
-                        <th style="width: 140px; min-width: 140px;">Categoría</th>
-                        <th style="width: 100px; min-width: 100px;">Tipo</th>
-                        <th style="width: 100px; min-width: 100px;">Venta</th>
-                        <th style="width: 90px; min-width: 90px;">Variantes</th>
-                        <th style="width: 110px; min-width: 110px;">Precio desde</th>
-                        <th style="width: 160px; min-width: 160px;">Estado</th>
-                        <th style="width: 200px; min-width: 200px;">Acciones</th>
+                        <th style="width: 70px;">Imagen</th>
+                        <th style="width: 35%;">Detalles del Producto</th>
+                        <th style="width: 18%;">Categoría</th>
+                        <th style="width: 15%;">Venta</th>
+                        <th style="width: 14%;">Estado</th>
+                        <th style="width: 180px;">Acciones</th>
                       </tr>
                     </thead>
                     <tbody id="mastersTableBody"></tbody>
@@ -1250,7 +1246,20 @@
 
           window.__proveedoresCache = proveedores;
 
+          // Deduplicar proveedores usando un Set para IDs únicos
+          const proveedoresUnicos = [];
+          const idsVistos = new Set();
+
           proveedores.forEach((proveedor) => {
+            const id = proveedor.proveedorid ?? proveedor.proveedorId ?? proveedor.ProveedorID ?? "";
+            if (id && !idsVistos.has(id)) {
+              idsVistos.add(id);
+              proveedoresUnicos.push(proveedor);
+            }
+          });
+
+          // Renderizar solo proveedores únicos
+          proveedoresUnicos.forEach((proveedor) => {
             const option = document.createElement("option");
             option.value = proveedor.proveedorid ?? proveedor.proveedorId ?? proveedor.ProveedorID ?? "";
             option.textContent = proveedor.nombreempresa ?? proveedor.nombreEmpresa ?? proveedor.NombreEmpresa ?? "";
@@ -2579,12 +2588,35 @@
           return `<span style="display:inline-flex; align-items:center; padding:0.2rem 0.6rem; border-radius:999px; font-weight:700; font-size:0.75rem; background:${bg}; color:${fg};">${label}</span>`;
         };
 
+        // Helper function for flexible state validation
+        function esActivo(valor) {
+          // Handle null/undefined
+          if (valor === null || valor === undefined) return false;
+          
+          // Handle boolean
+          if (valor === true) return true;
+          if (valor === false) return false;
+          
+          // Handle numbers
+          if (valor === 1) return true;
+          if (valor === 0) return false;
+          
+          // Handle strings
+          if (typeof valor === 'string') {
+            const valorLower = valor.toLowerCase().trim();
+            if (valorLower === 'true' || valorLower === 'active' || valorLower === '1') return true;
+            if (valorLower === 'false' || valorLower === 'inactive' || valorLower === '0') return false;
+          }
+          
+          // Default: treat any other truthy value as active
+          return Boolean(valor);
+        }
+
         sortedProducts.forEach((prod) => {
           // Map backend field names correctly
           const productoId = prod.productoid || prod.productoId;
           const nombreProducto = prod.nombreproducto || prod.nombreProducto;
-          const descripcion = prod.descripcion || "-";
-          const activo = prod.activo === true || prod.activo === 1;
+          const descripcion = prod.descripcion || "";
           const categoriaNombre = prod.categoriaNombre || prod.categoria?.nombre || "Sin categoría";
           const tipoProducto = prod.tipoProducto || "—";
           const reglaBackorder = prod.reglaBackorder;
@@ -2596,56 +2628,70 @@
             : "N/D";
           const skuMaestro = prod.sku_maestro || "-";
           
+          // DEBUGGING: Log actual state value
+          console.log('Producto:', nombreProducto, '| Estado raw:', prod.activo, '| Tipo:', typeof prod.activo, '| esActivo():', esActivo(prod.activo));
+          
+          // Use flexible validation
+          const activo = esActivo(prod.activo);
+          
           const row = document.createElement("tr");
           row.innerHTML = `
-            <td style="width: 80px; min-width: 80px;">
+            <td style="width: 70px; padding: 0.75rem 0.5rem;">
               <div style="display: flex; align-items: center; justify-content: center;">
                 ${
                   imagenUrl
-                    ? `<img src="${imagenUrl}" alt="${nombreProducto}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 0.5rem; border: 2px solid #e5e7eb;" />`
-                    : `<div style="width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #f5f1ed 0%, #e5e7eb 100%); border-radius: 0.5rem; font-size: 1.5rem; opacity: 0.3; border: 2px solid #e5e7eb;">📦</div>`
+                    ? `<img src="${imagenUrl}" alt="${nombreProducto}" style="width: 55px; height: 55px; object-fit: cover; border-radius: 0.5rem; border: 2px solid #e5e7eb;" />`
+                    : `<div style="width: 55px; height: 55px; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #f5f1ed 0%, #e5e7eb 100%); border-radius: 0.5rem; font-size: 1.5rem; opacity: 0.3; border: 2px solid #e5e7eb;">📦</div>`
                 }
               </div>
             </td>
-            <td style="min-width: 200px;">
-              <strong>${nombreProducto}</strong>
-              <div class="table-subtext">
-                <div class="texto-compacto" title="${
-                  (descripcion || "").toString().replace(/"/g, "&quot;")
-                }">${descripcion}</div>
+            <td style="width: 30%; padding: 0.75rem;">
+              <div style="line-height: 1.4;">
+                <div style="font-weight: 600; font-size: 0.95rem; color: #1f2937; margin-bottom: 0.25rem;">${nombreProducto}</div>
+                <div style="font-size: 0.8rem; color: #6b7280;">
+                  <span style="font-family: ui-monospace, monospace;">SKU: ${skuMaestro}</span>
+                  <span style="margin: 0 0.5rem; color: #d1d5db;">•</span>
+                  <span>ID: #${productoId}</span>
+                  ${descripcion && descripcion.length > 50 ? `<span style="margin: 0 0.5rem; color: #d1d5db;">•</span><span title="${descripcion.replace(/"/g, '&quot;')}">${descripcion.substring(0, 50)}...</span>` : descripcion ? `<span style="margin: 0 0.5rem; color: #d1d5db;">•</span><span>${descripcion}</span>` : ''}
+                </div>
               </div>
             </td>
-            <td style="width: 120px; min-width: 120px;"><span style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;">${skuMaestro}</span></td>
-            <td style="width: 140px; min-width: 140px;">${categoriaNombre}</td>
-            <td style="width: 100px; min-width: 100px;">${tipoProducto}</td>
-            <td style="width: 100px; min-width: 100px;">${renderReglaBadge(reglaBackorder)}</td>
-            <td style="width: 90px; min-width: 90px;">${variantes} variante${variantes === 1 ? "" : "s"}</td>
-            <td style="width: 110px; min-width: 110px;">${precioDesde}</td>
-            <td style="width: 160px; min-width: 160px;">
-              <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <td style="width: 15%; padding: 0.75rem;">
+              <div style="font-size: 0.875rem; color: #374151;">${categoriaNombre}</div>
+            </td>
+            <td style="width: 15%; padding: 0.75rem;">
+              <div style="display: flex; flex-direction: column; gap: 0.35rem;">
+                <div style="font-size: 0.8rem; color: #6b7280;">Tipo: <span style="font-weight: 600; color: #374151;">${tipoProducto}</span></div>
+                <div>${renderReglaBadge(reglaBackorder)}</div>
+                <div style="font-size: 0.75rem; color: #6b7280; margin-top: 0.15rem;">${variantes} variante${variantes === 1 ? '' : 's'}</div>
+              </div>
+            </td>
+            <td style="width: 14%; padding: 0.75rem;">
+              <div style="display: flex; align-items: center; gap: 0.5rem; justify-content: center;">
                 <span class="visibility-badge ${activo ? 'badge-success' : 'badge-secondary'}" title="${activo ? 'Visible' : 'Oculto'}">
-                  ${activo ? '' : '🚫'} ${activo ? 'Visible' : 'Oculto'}
+                  ${activo ? '✓' : '🚫'} ${activo ? 'Visible' : 'Oculto'}
                 </span>
                 <button
                   type="button"
                   class="btn-icon-toggle"
                   onclick="toggleProductoVisibilidad(${productoId}, ${activo})"
                   title="${activo ? 'Ocultar producto' : 'Mostrar producto'}"
-                  style="cursor: pointer; background: none; border: none; font-size: 1.25rem; padding: 0.25rem; opacity: 0.7; transition: all 0.2s;"
-                  onmouseover="this.style.opacity='1'; this.style.transform='scale(1.1)'"
+                  style="cursor: pointer; background: none; border: none; font-size: 1.15rem; padding: 0.25rem; opacity: 0.7; transition: all 0.2s;"
+                  onmouseover="this.style.opacity='1'; this.style.transform='scale(1.15)'"
                   onmouseout="this.style.opacity='0.7'; this.style.transform='scale(1)'"
                 >
                   ${activo ? '🔒' : '🔓'}
                 </button>
               </div>
             </td>
-            <td style="width: 200px; min-width: 200px;">
-              <div style="display:flex; gap:0.5rem; flex-wrap:wrap; justify-content:flex-end;">
+            <td style="width: 180px; padding: 0.75rem;">
+              <div style="display:flex; gap:0.4rem; flex-wrap:wrap; justify-content:flex-end;">
                 <button
                   type="button"
                   class="btn btn-sm btn-outline-primary"
                   title="Editar Producto Maestro"
                   onclick='prepararEdicion(${productoId})'
+                  style="font-size: 0.8rem; padding: 0.35rem 0.65rem;"
                 >
                   Editar
                 </button>
@@ -2653,8 +2699,9 @@
                   href="admin-producto-editar.html?id=${productoId}"
                   class="btn btn-sm btn-outline-secondary"
                   title="Editar variantes"
+                  style="font-size: 0.8rem; padding: 0.35rem 0.65rem;"
                 >
-                  Editar variantes
+                  Variantes
                 </a>
               </div>
             </td>
