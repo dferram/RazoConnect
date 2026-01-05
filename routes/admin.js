@@ -995,6 +995,18 @@ router.post(
   adminController.crearOrdenCompra
 );
 router.post(
+  "/ordenes-compra/:id/items",
+  authenticate,
+  authorizeAdmin,
+  adminController.addItemToOrder
+);
+router.delete(
+  "/ordenes-compra/:id/items/:detalleId",
+  authenticate,
+  authorizeAdmin,
+  adminController.removeItemFromOrder
+);
+router.post(
   "/ordenes-compra/recibir",
   authenticate,
   authorizeAdmin,

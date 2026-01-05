@@ -334,6 +334,138 @@
       </div>
     </div>
 
+    <!-- Modal de Editar Orden -->
+    <div id="editarModal" class="modal">
+      <div class="modal-content modal-content--xl">
+        <div class="modal-header">
+          <h2 class="modal-title">
+            Editar Orden de Compra #<span id="editarOrdenId"></span>
+          </h2>
+          <button class="modal-close-btn" onclick="closeEditarModal()">
+            &times;
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <!-- Información de la Orden -->
+          <div
+            style="
+              background: #f8fafc;
+              padding: 1rem;
+              border-radius: 0.75rem;
+              margin-bottom: 1.5rem;
+            "
+          >
+            <div style="display: flex; gap: 2rem; flex-wrap: wrap;">
+              <div>
+                <p style="font-size: 0.875rem; color: #6b7280; margin-bottom: 0.25rem;">
+                  Proveedor
+                </p>
+                <p style="font-weight: 600; color: #1f2937" id="editarProveedor"></p>
+              </div>
+              <div>
+                <p style="font-size: 0.875rem; color: #6b7280; margin-bottom: 0.25rem;">
+                  Estatus
+                </p>
+                <p style="font-weight: 600" id="editarEstatus"></p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Buscador de Productos -->
+          <div style="background: white; padding: 1.5rem; border-radius: 0.75rem; border: 1px solid #e5e7eb; margin-bottom: 1.5rem;">
+            <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 1rem; color: #374151;">
+              🔍 Agregar Producto
+            </h3>
+            <div style="position: relative;">
+              <input
+                type="text"
+                id="buscarProductoInput"
+                class="form-input"
+                placeholder="Buscar por nombre o SKU..."
+                style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.5rem;"
+              />
+              <div
+                id="resultadosBusqueda"
+                style="
+                  position: absolute;
+                  top: 100%;
+                  left: 0;
+                  right: 0;
+                  background: white;
+                  border: 1px solid #d1d5db;
+                  border-radius: 0.5rem;
+                  margin-top: 0.25rem;
+                  max-height: 300px;
+                  overflow-y: auto;
+                  display: none;
+                  z-index: 1000;
+                  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+                "
+              ></div>
+            </div>
+          </div>
+
+          <!-- Lista de Items Actuales -->
+          <div style="background: white; padding: 1.5rem; border-radius: 0.75rem; border: 1px solid #e5e7eb;">
+            <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 1rem; color: #374151;">
+              📦 Items en la Orden
+            </h3>
+            <div style="overflow-x: auto;">
+              <table class="admin-table" style="min-width: 100%;">
+                <thead>
+                  <tr>
+                    <th>Producto</th>
+                    <th>SKU</th>
+                    <th>Cantidad</th>
+                    <th>Costo Unit.</th>
+                    <th>Subtotal</th>
+                    <th style="width: 100px;">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="editarItemsBody">
+                  <!-- Rows will be inserted here -->
+                </tbody>
+              </table>
+            </div>
+            <div style="margin-top: 1rem; padding-top: 1rem; border-top: 2px solid #e5e7eb; text-align: right;">
+              <p style="font-size: 1.125rem; font-weight: 700; color: #1f2937;">
+                Total: $<span id="editarTotal">0.00</span>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="modal-footer" style="
+          display: flex;
+          justify-content: flex-end;
+          gap: 1rem;
+          padding: 1.5rem;
+          border-top: 1px solid #e5e7eb;
+          background: #f9fafb;
+          margin-top: 1.5rem;
+          margin-bottom: 1rem;
+        ">
+          <button 
+            class="btn btn-secondary" 
+            onclick="closeEditarModal()"
+            style="
+              background: #6b7280;
+              color: white;
+              padding: 0.75rem 1.5rem;
+              border: none;
+              border-radius: 0.5rem;
+              font-weight: 600;
+              cursor: pointer;
+            "
+          >
+            Cerrar
+          </button>
+        </div>
+      </div>
+    </div>
+
     <script src="js/layout.js" defer></script>`n    <script src="js/sidebar-toggle.js" defer></script>
     <script src="js/api.js"></script>
     <script src="js/admin-header-dropdown.js"></script>
@@ -645,6 +777,18 @@
                     style="padding: 0.5rem 1rem; font-size: 0.875rem; flex: 1; min-width: 120px;">
                     Ver Detalle
                   </button>
+                  ${
+                    ['Pendiente', 'Confirmada'].includes(orden.estatus)
+                      ? `
+                    <button 
+                      class="btn" 
+                      onclick="editarOrden(${orden.ordenCompraId})"
+                      style="padding: 0.5rem 1rem; font-size: 0.875rem; flex: 1; min-width: 120px; background: #f97316; color: white;">
+                      ✏️ Editar
+                    </button>
+                  `
+                      : ""
+                  }
                   ${
                     orden.estatus === "Pendiente"
                       ? `
@@ -974,6 +1118,383 @@
             console.warn("Sistema de notificaciones no disponible:", message);
           }
         }
+
+        // ============================================
+        // FUNCIONALIDAD DE EDICIÓN DE ORDEN
+        // ============================================
+
+        let currentEditOrdenId = null;
+        let currentEditDetalles = [];
+        let searchTimeout = null;
+
+        const editarModal = document.getElementById("editarModal");
+        const buscarProductoInput = document.getElementById("buscarProductoInput");
+        const resultadosBusqueda = document.getElementById("resultadosBusqueda");
+        const editarItemsBody = document.getElementById("editarItemsBody");
+
+        // Abrir modal de edición
+        window.editarOrden = async function(ordenCompraId) {
+          try {
+            currentEditOrdenId = ordenCompraId;
+
+            // Cargar detalles de la orden
+            const response = await API.apiCall(
+              `/admin/ordenes-compra/${ordenCompraId}/detalles`,
+              { method: "GET" }
+            );
+
+            if (!response.ok) {
+              throw new Error("Error al cargar detalle de la orden");
+            }
+
+            const { orden, detalles } = response.data.data;
+
+            // Verificar que la orden se puede editar
+            if (!['Pendiente', 'Confirmada'].includes(orden.estatus)) {
+              showToast(`No se puede editar una orden en estatus ${orden.estatus}`, "error");
+              return;
+            }
+
+            // Llenar información del modal
+            document.getElementById("editarOrdenId").textContent = orden.ordenCompraId;
+            document.getElementById("editarProveedor").textContent = orden.proveedorNombre;
+            
+            const estatusBadgeClass = getEstatusBadgeClass(orden.estatus);
+            document.getElementById("editarEstatus").innerHTML = 
+              `<span class="admin-badge ${estatusBadgeClass}">${orden.estatus}</span>`;
+
+            // Guardar detalles actuales
+            currentEditDetalles = detalles.map(d => ({
+              detalleId: d.detalleOcId,
+              varianteId: d.varianteId,
+              nombreProducto: d.nombreProducto,
+              sku: d.sku,
+              cantidadSolicitada: d.cantidadSolicitada,
+              costoUnitario: parseFloat(d.costoUnitario || 0),
+            }));
+
+            // Renderizar items
+            renderEditarItems();
+
+            // Limpiar buscador
+            buscarProductoInput.value = "";
+            resultadosBusqueda.style.display = "none";
+
+            // Mostrar modal
+            editarModal.classList.add("show");
+          } catch (error) {
+            console.error("Error al abrir modal de edición:", error);
+            showToast("Error al cargar la orden para edición", "error");
+          }
+        };
+
+        // Cerrar modal de edición
+        window.closeEditarModal = function() {
+          editarModal.classList.remove("show");
+          currentEditOrdenId = null;
+          currentEditDetalles = [];
+          buscarProductoInput.value = "";
+          resultadosBusqueda.style.display = "none";
+        };
+
+        // Renderizar items de la orden en edición
+        function renderEditarItems() {
+          editarItemsBody.innerHTML = "";
+          let total = 0;
+
+          currentEditDetalles.forEach((item) => {
+            const subtotal = item.cantidadSolicitada * item.costoUnitario;
+            total += subtotal;
+
+            const row = document.createElement("tr");
+            row.innerHTML = `
+              <td>${item.nombreProducto}</td>
+              <td>${item.sku}</td>
+              <td style="text-align: center;">${item.cantidadSolicitada}</td>
+              <td style="text-align: right;">$${item.costoUnitario.toFixed(2)}</td>
+              <td style="text-align: right;">$${subtotal.toFixed(2)}</td>
+              <td style="text-align: center;">
+                <button 
+                  class="btn btn-danger" 
+                  onclick="eliminarItem(${item.detalleId})"
+                  style="padding: 0.5rem 0.75rem; font-size: 0.875rem; background: #dc2626; color: white; border: none; border-radius: 0.375rem; cursor: pointer;"
+                  ${currentEditDetalles.length <= 1 ? 'disabled title="No se puede eliminar el último item"' : ''}
+                >
+                  🗑️
+                </button>
+              </td>
+            `;
+            editarItemsBody.appendChild(row);
+          });
+
+          document.getElementById("editarTotal").textContent = total.toFixed(2);
+        }
+
+        // Buscar productos
+        buscarProductoInput.addEventListener("input", function(e) {
+          const query = e.target.value.trim();
+
+          clearTimeout(searchTimeout);
+
+          if (query.length < 2) {
+            resultadosBusqueda.style.display = "none";
+            return;
+          }
+
+          searchTimeout = setTimeout(async () => {
+            try {
+              const response = await API.apiCall(
+                `/admin/productos/buscar-compra?q=${encodeURIComponent(query)}`,
+                { method: "GET" }
+              );
+
+              if (!response.ok) {
+                throw new Error("Error al buscar productos");
+              }
+
+              const productos = response.data.data || [];
+
+              if (productos.length === 0) {
+                resultadosBusqueda.innerHTML = `
+                  <div style="padding: 1rem; text-align: center; color: #6b7280;">
+                    No se encontraron productos
+                  </div>
+                `;
+                resultadosBusqueda.style.display = "block";
+                return;
+              }
+
+              resultadosBusqueda.innerHTML = productos.map(p => `
+                <div 
+                  class="producto-resultado"
+                  onclick="seleccionarProducto(${p.varianteid}, '${p.nombreproducto.replace(/'/g, "\\'")}', '${p.sku}', ${p.costounitario || 0})"
+                  style="
+                    padding: 0.75rem 1rem;
+                    border-bottom: 1px solid #e5e7eb;
+                    cursor: pointer;
+                    transition: background 0.2s;
+                  "
+                  onmouseover="this.style.background='#f3f4f6'"
+                  onmouseout="this.style.background='white'"
+                >
+                  <div style="font-weight: 600; color: #1f2937;">${p.nombreproducto}</div>
+                  <div style="font-size: 0.875rem; color: #6b7280;">SKU: ${p.sku} | Costo: $${(p.costounitario || 0).toFixed(2)}</div>
+                </div>
+              `).join('');
+
+              resultadosBusqueda.style.display = "block";
+            } catch (error) {
+              console.error("Error al buscar productos:", error);
+              showToast("Error al buscar productos", "error");
+            }
+          }, 300);
+        });
+
+        // Seleccionar producto del buscador
+        window.seleccionarProducto = async function(varianteId, nombreProducto, sku, costoUnitario) {
+          resultadosBusqueda.style.display = "none";
+          buscarProductoInput.value = "";
+
+          // Pedir cantidad
+          if (typeof Swal !== "undefined" && Swal && typeof Swal.fire === "function") {
+            const { value: cantidad, isConfirmed } = await Swal.fire({
+              title: "Agregar Producto",
+              html: `
+                <p style="margin-bottom: 1rem; color: #374151;">
+                  <strong>${nombreProducto}</strong><br>
+                  <span style="font-size: 0.875rem; color: #6b7280;">SKU: ${sku}</span>
+                </p>
+                <input 
+                  id="swal-cantidad" 
+                  type="number" 
+                  class="swal2-input" 
+                  placeholder="Cantidad de paquetes"
+                  min="1"
+                  value="1"
+                  style="width: 80%;"
+                />
+              `,
+              icon: "question",
+              showCancelButton: true,
+              confirmButtonText: "Agregar",
+              cancelButtonText: "Cancelar",
+              confirmButtonColor: "#F97316",
+              preConfirm: () => {
+                const cantidadInput = document.getElementById('swal-cantidad').value;
+                const cantidadParsed = parseInt(cantidadInput, 10);
+                if (!cantidadParsed || cantidadParsed <= 0) {
+                  Swal.showValidationMessage('La cantidad debe ser mayor a 0');
+                  return false;
+                }
+                return cantidadParsed;
+              }
+            });
+
+            if (!isConfirmed || !cantidad) {
+              return;
+            }
+
+            // Agregar item a la orden
+            try {
+              Swal.fire({
+                title: "Agregando producto...",
+                allowOutsideClick: false,
+                didOpen: () => {
+                  Swal.showLoading();
+                },
+              });
+
+              const response = await API.apiCall(
+                `/admin/ordenes-compra/${currentEditOrdenId}/items`,
+                {
+                  method: "POST",
+                  body: JSON.stringify({
+                    varianteId: varianteId,
+                    cantidad: cantidad,
+                    costoUnitario: costoUnitario,
+                    piezasPorPaquete: 1
+                  })
+                }
+              );
+
+              if (!response.ok) {
+                throw new Error(response.data?.message || "Error al agregar producto");
+              }
+
+              await Swal.fire({
+                icon: "success",
+                title: "Producto agregado",
+                text: "El producto se agregó exitosamente a la orden",
+                confirmButtonColor: "#F97316",
+                timer: 2000,
+              });
+
+              // Recargar detalles
+              await recargarDetallesEdicion();
+            } catch (error) {
+              console.error("Error al agregar producto:", error);
+              await Swal.fire({
+                icon: "error",
+                title: "Error",
+                text: error.message || "No se pudo agregar el producto",
+                confirmButtonColor: "#F97316",
+              });
+            }
+          }
+        };
+
+        // Eliminar item de la orden
+        window.eliminarItem = async function(detalleId) {
+          if (currentEditDetalles.length <= 1) {
+            showToast("No se puede eliminar el último item de la orden", "error");
+            return;
+          }
+
+          if (typeof Swal !== "undefined" && Swal && typeof Swal.fire === "function") {
+            const result = await Swal.fire({
+              title: "¿Eliminar producto?",
+              text: "Esta acción no se puede deshacer",
+              icon: "warning",
+              showCancelButton: true,
+              confirmButtonText: "Sí, eliminar",
+              cancelButtonText: "Cancelar",
+              confirmButtonColor: "#dc2626",
+              cancelButtonColor: "#6b7280",
+            });
+
+            if (!result.isConfirmed) {
+              return;
+            }
+
+            try {
+              Swal.fire({
+                title: "Eliminando producto...",
+                allowOutsideClick: false,
+                didOpen: () => {
+                  Swal.showLoading();
+                },
+              });
+
+              const response = await API.apiCall(
+                `/admin/ordenes-compra/${currentEditOrdenId}/items/${detalleId}`,
+                { method: "DELETE" }
+              );
+
+              if (!response.ok) {
+                throw new Error(response.data?.message || "Error al eliminar producto");
+              }
+
+              await Swal.fire({
+                icon: "success",
+                title: "Producto eliminado",
+                text: "El producto se eliminó exitosamente de la orden",
+                confirmButtonColor: "#F97316",
+                timer: 2000,
+              });
+
+              // Recargar detalles
+              await recargarDetallesEdicion();
+            } catch (error) {
+              console.error("Error al eliminar producto:", error);
+              await Swal.fire({
+                icon: "error",
+                title: "Error",
+                text: error.message || "No se pudo eliminar el producto",
+                confirmButtonColor: "#F97316",
+              });
+            }
+          }
+        };
+
+        // Recargar detalles después de agregar/eliminar
+        async function recargarDetallesEdicion() {
+          try {
+            const response = await API.apiCall(
+              `/admin/ordenes-compra/${currentEditOrdenId}/detalles`,
+              { method: "GET" }
+            );
+
+            if (!response.ok) {
+              throw new Error("Error al recargar detalles");
+            }
+
+            const { detalles } = response.data.data;
+
+            currentEditDetalles = detalles.map(d => ({
+              detalleId: d.detalleOcId,
+              varianteId: d.varianteId,
+              nombreProducto: d.nombreProducto,
+              sku: d.sku,
+              cantidadSolicitada: d.cantidadSolicitada,
+              costoUnitario: parseFloat(d.costoUnitario || 0),
+            }));
+
+            renderEditarItems();
+
+            // Recargar también la tabla principal
+            await loadOrdenes();
+          } catch (error) {
+            console.error("Error al recargar detalles:", error);
+            showToast("Error al actualizar la vista", "error");
+          }
+        }
+
+        // Cerrar resultados de búsqueda al hacer clic fuera
+        document.addEventListener("click", function(e) {
+          if (!buscarProductoInput.contains(e.target) && !resultadosBusqueda.contains(e.target)) {
+            resultadosBusqueda.style.display = "none";
+          }
+        });
+
+        // Cerrar modal al hacer clic fuera
+        window.onclick = function(event) {
+          if (event.target === detalleModal) {
+            closeDetalleModal();
+          }
+          if (event.target === editarModal) {
+            closeEditarModal();
+          }
+        };
       })();
     </script>
 
