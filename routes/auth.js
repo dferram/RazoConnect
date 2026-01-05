@@ -161,4 +161,11 @@ router.get(
   agentesController.obtenerComisionesDelAgente
 );
 
+router.get(
+  "/agente/cxc",
+  authenticate,
+  authorize(["agente"]),
+  agentesController.getCxCAgente
+);
+
 module.exports = router;

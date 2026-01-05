@@ -936,6 +936,75 @@ const obtenerComisionesDelAgente = async (req, res) => {
   }
 };
 
+/**
+ * Obtener Cuentas por Cobrar (CxC) del agente logueado
+ * GET /api/agente/cxc
+ */
+const getCxCAgente = async (req, res) => {
+  try {
+    const agenteId = resolveAuthenticatedAgenteId(req.user);
+
+    if (!agenteId) {
+      return res.status(403).json({
+        success: false,
+        message: "No se pudo determinar el agente autenticado",
+      });
+    }
+
+    const cxcQuery = `
+      SELECT 
+        c.clienteid,
+        c.nombre,
+        c.apellido,
+        c.telefono,
+        COALESCE(SUM(p.saldo_pendiente), 0) AS deuda_total,
+        COUNT(p.pedidoid) FILTER (WHERE p.saldo_pendiente > 0 AND p.estatus != 'Cancelado') AS pedidos_pendientes
+      FROM clientes c
+      LEFT JOIN pedidos p ON c.clienteid = p.clienteid
+      WHERE c.agenteid = $1
+        AND c.activo = TRUE
+      GROUP BY c.clienteid, c.nombre, c.apellido, c.telefono
+      HAVING COALESCE(SUM(p.saldo_pendiente), 0) > 0
+      ORDER BY deuda_total DESC
+    `;
+
+    const cxcResult = await db.query(cxcQuery, [agenteId]);
+
+    const totalCartera = cxcResult.rows.reduce(
+      (sum, row) => sum + parseFloat(row.deuda_total || 0),
+      0
+    );
+
+    const clientes = cxcResult.rows.map((row) => ({
+      clienteId: row.clienteid,
+      nombre: row.nombre,
+      apellido: row.apellido,
+      telefono: row.telefono,
+      deudaTotal: parseFloat(row.deuda_total || 0),
+      pedidosPendientes: parseInt(row.pedidos_pendientes || 0, 10),
+    }));
+
+    return res.status(200).json({
+      success: true,
+      message: "Cuentas por cobrar obtenidas exitosamente",
+      data: {
+        resumen: {
+          total_cartera: totalCartera,
+        },
+        clientes,
+        total: clientes.length,
+      },
+    });
+  } catch (error) {
+    console.error("Error al obtener CxC del agente:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error al obtener las cuentas por cobrar",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   vincularCliente,
   obtenerClientesDelAgente,
@@ -944,6 +1013,7 @@ module.exports = {
   obtenerPedidosDelAgente,
   obtenerPedidoDetalleAgente,
   obtenerComisionesDelAgente,
+  getCxCAgente,
   resolveAuthenticatedAgenteId,
   actualizarEstatusPedidoAgente,
   solicitarCambioEstatusPedidoAgente,
