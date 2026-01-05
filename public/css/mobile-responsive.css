@@ -357,16 +357,49 @@ html, body {
     margin-top: 0.5rem;
   }
 
-  /* Product grid - 1 column on mobile */
+  /* Product grid - 1 column on mobile for better proportions */
   .product-grid,
   .products-grid {
     grid-template-columns: 1fr !important;
-    gap: 1rem !important;
+    gap: 1.5rem !important;
+    padding: 0 0.5rem;
   }
 
-  /* Product cards */
+  /* Product card adjustments for single column */
   .product-card {
     max-width: 100%;
+    margin: 0 auto;
+  }
+
+  /* Image container - reduce height slightly for mobile */
+  .imagen-wrapper {
+    aspect-ratio: 1 / 1;
+    max-height: 350px;
+  }
+
+  /* Product info - better spacing */
+  .product-info {
+    padding: 1.25rem 1rem;
+  }
+
+  /* Product title - slightly larger for readability */
+  .product-title {
+    font-size: 1.125rem !important;
+    line-height: 1.4 !important;
+  }
+
+  /* Floating cart button - slightly smaller */
+  .cart-floating-btn {
+    width: 44px !important;
+    height: 44px !important;
+    bottom: 10px !important;
+    right: 10px !important;
+  }
+
+  /* Product badges - slightly smaller */
+  .product-badge {
+    font-size: 0.7rem !important;
+    padding: 0.3rem 0.65rem !important;
   }
 
   .product-card-image {
@@ -718,18 +751,19 @@ html, body {
 }
 
 /* ============================================
-   TABLET LANDSCAPE (< 1024px)
+   TABLET LANDSCAPE (769px - 1024px)
    ============================================ */
-@media (max-width: 1024px) {
+@media (min-width: 769px) and (max-width: 1024px) {
   /* Admin grid - 1 column on tablets */
   .admin-grid-lg {
     grid-template-columns: 1fr !important;
   }
 
-  /* Product grid - 2 columns on tablets */
+  /* Product grid - 2 columns on tablets ONLY (not mobile) */
   .product-grid,
   .products-grid {
     grid-template-columns: repeat(2, 1fr) !important;
+    gap: 1.25rem;
   }
 
   /* Stats grid - 2 columns */
