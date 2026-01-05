@@ -11311,8 +11311,8 @@ const removeItemFromOrder = async (req, res) => {
 
     // Verificar que la orden existe y está en estatus editable
     const ordenCheck = await client.query(
-      `SELECT OrdenCompraID, Estatus, usuario_creador_id 
-       FROM OrdenesDeCompra 
+      `SELECT OrdenCompraID, Estatus, usuario_creador_id
+       FROM OrdenesDeCompra
        WHERE OrdenCompraID = $1`,
       [ordenCompraId]
     );
@@ -11347,7 +11347,7 @@ const removeItemFromOrder = async (req, res) => {
 
     // Verificar que el detalle existe y pertenece a esta orden
     const detalleCheck = await client.query(
-      `SELECT DetalleOC_ID FROM DetallesOrdenCompra 
+      `SELECT DetalleOC_ID FROM DetallesOrdenCompra
        WHERE DetalleOC_ID = $1 AND OrdenCompraID = $2`,
       [detalleId, ordenCompraId]
     );
@@ -11413,6 +11413,119 @@ const removeItemFromOrder = async (req, res) => {
     });
   } finally {
     client.release();
+  }
+};
+
+const getOrderDetailsForExcel = async (req, res) => {
+  try {
+    const ordenCompraId = parseInt(req.params.id, 10);
+
+    if (!Number.isInteger(ordenCompraId) || ordenCompraId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "ID de orden inválido",
+      });
+    }
+
+    // Obtener información completa de la orden
+    const ordenQuery = `
+      SELECT 
+        oc.OrdenCompraID,
+        oc.ProveedorID,
+        oc.FechaCreacion,
+        oc.FechaEntregaEsperada,
+        oc.Estatus,
+        oc.Total,
+        p.NombreEmpresa as ProveedorNombre,
+        p.RFC as ProveedorRFC,
+        p.Telefono as ProveedorTelefono,
+        p.Email as ProveedorEmail
+      FROM OrdenesDeCompra oc
+      INNER JOIN Proveedores p ON oc.ProveedorID = p.ProveedorID
+      WHERE oc.OrdenCompraID = $1
+    `;
+
+    const ordenResult = await db.query(ordenQuery, [ordenCompraId]);
+
+    if (ordenResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Orden de compra no encontrada",
+      });
+    }
+
+    const orden = ordenResult.rows[0];
+
+    // Verificar permisos: solo el creador o superadmin pueden ver
+    if (req.user.rol !== 'superadmin' && orden.usuario_creador_id !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: "No tienes permiso para acceder a esta orden",
+      });
+    }
+
+    // Obtener detalles de productos
+    const detallesQuery = `
+      SELECT 
+        doc.DetalleOC_ID,
+        doc.VarianteID,
+        doc.CantidadSolicitada,
+        doc.CantidadRecibida,
+        doc.PiezasPorPaquete,
+        doc.CostoUnitario,
+        pv.SKU,
+        pv.Dimensiones,
+        pr.NombreProducto,
+        pr.Descripcion as ProductoDescripcion,
+        (doc.CantidadSolicitada * doc.PiezasPorPaquete) as TotalPiezas,
+        (doc.CantidadSolicitada * doc.CostoUnitario) as Subtotal
+      FROM DetallesOrdenCompra doc
+      INNER JOIN Producto_Variantes pv ON doc.VarianteID = pv.VarianteID
+      INNER JOIN Productos pr ON pv.ProductoID = pr.ProductoID
+      WHERE doc.OrdenCompraID = $1
+      ORDER BY doc.DetalleOC_ID ASC
+    `;
+
+    const detallesResult = await db.query(detallesQuery, [ordenCompraId]);
+
+    res.json({
+      success: true,
+      message: "Datos de orden obtenidos exitosamente",
+      data: {
+        orden: {
+          ordenCompraId: orden.ordencompraid,
+          proveedorId: orden.proveedorid,
+          proveedorNombre: orden.proveedornombre,
+          proveedorRFC: orden.proveedorrfc,
+          proveedorTelefono: orden.proveedortelefono,
+          proveedorEmail: orden.proveedoremail,
+          fechaCreacion: orden.fechacreacion,
+          fechaEntregaEsperada: orden.fechaentregaesperada,
+          estatus: orden.estatus,
+          total: parseFloat(orden.total || 0),
+        },
+        productos: detallesResult.rows.map(d => ({
+          detalleOcId: d.detalleoc_id,
+          varianteId: d.varianteid,
+          sku: d.sku,
+          nombreProducto: d.nombreproducto,
+          descripcion: d.productodescripcion,
+          dimensiones: d.dimensiones,
+          cantidadSolicitada: d.cantidadsolicitada,
+          cantidadRecibida: d.cantidadrecibida,
+          piezasPorPaquete: d.piezasporpaquete,
+          costoUnitario: parseFloat(d.costounitario || 0),
+          totalPiezas: parseInt(d.totalpiezas || 0),
+          subtotal: parseFloat(d.subtotal || 0),
+        })),
+      },
+    });
+  } catch (error) {
+    console.error("Error al obtener detalles de orden para Excel:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error al obtener detalles de la orden",
+    });
   }
 };
 
@@ -13335,6 +13448,7 @@ getMedidasExistentes,
   crearOrdenCompra,
   addItemToOrder,
   removeItemFromOrder,
+  getOrderDetailsForExcel,
   cancelarOrdenCompra,
   recibirInventario,
   recibirItemOrdenCompra,

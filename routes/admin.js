@@ -1006,6 +1006,12 @@ router.delete(
   authorizeAdmin,
   adminController.removeItemFromOrder
 );
+router.get(
+  "/ordenes-compra/:id/export",
+  authenticate,
+  authorizeAdmin,
+  adminController.getOrderDetailsForExcel
+);
 router.post(
   "/ordenes-compra/recibir",
   authenticate,
