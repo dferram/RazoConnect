@@ -416,7 +416,8 @@
                     <th>Producto</th>
                     <th>Categoría</th>
                     <th>Estado</th>
-                    <th>Variantes Registradas</th>
+                    <th>Variantes</th>
+                    <th id="thAdministrador" style="display: none;">Administrador</th>
                     <th>Acciones</th>
                   </tr>
                 </thead>
@@ -830,6 +831,14 @@
           const data = await response.json();
           if (data.success) {
             allProducts = data.data.productos;
+            isSuperAdmin = data.data.isSuperAdmin || false;
+            
+            // Mostrar/ocultar columna de administrador según rol
+            const thAdministrador = document.getElementById('thAdministrador');
+            if (thAdministrador) {
+              thAdministrador.style.display = isSuperAdmin ? 'table-cell' : 'none';
+            }
+            
             paginaActual = 1;
             renderProducts();
           }
@@ -841,6 +850,9 @@
           loadingProducts.style.display = "none";
         }
       }
+
+      // Variable global para saber si es Super Admin
+      let isSuperAdmin = false;
 
       // Render products
       function renderProducts(products = null) {
@@ -867,6 +879,9 @@
 
             const nombreProductoSafe = escapeHtml(product.nombreProducto || "");
             const nombreCategoriaSafe = escapeHtml(product.nombreCategoria || "Sin categoría");
+            const adminsRegistrados = isSuperAdmin && product.adminsRegistrados 
+              ? escapeHtml(product.adminsRegistrados) 
+              : '';
             
             return `
           <tr>
@@ -900,6 +915,11 @@
                 product.totalVariantes
               }</span>
             </td>
+            ${isSuperAdmin ? `
+            <td style="font-size: 0.875rem; color: var(--razo-gray-warm);">
+              ${adminsRegistrados || 'N/A'}
+            </td>
+            ` : ''}
             <td>
               <button
                 type="button"

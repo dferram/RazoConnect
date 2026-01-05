@@ -6778,16 +6778,27 @@ const ajustarInventario = async (req, res) => {
  */
 const getInventarioResumen = async (req, res) => {
   try {
+    const userRol = req.user?.rol?.toLowerCase();
+    const isSuperAdmin = userRol === 'superadmin' || userRol === 'super-admin';
+
     const query = `
       SELECT
         p.ProductoID,
         p.NombreProducto,
+        p.Activo,
         c.Nombre AS NombreCategoria,
         COUNT(v.VarianteID) AS TotalVariantes
+        ${isSuperAdmin ? `,
+        STRING_AGG(DISTINCT CONCAT(a.Nombre, ' ', COALESCE(a.Apellido, '')), ', ') AS AdminsRegistrados
+        ` : ''}
       FROM Productos p
       LEFT JOIN Categorias c ON c.CategoriaID = p.CategoriaID
       LEFT JOIN Producto_Variantes v ON v.ProductoID = p.ProductoID
-      GROUP BY p.ProductoID, p.NombreProducto, c.Nombre
+      ${isSuperAdmin ? `
+      LEFT JOIN inventarios_admin ia ON ia.variante_id = v.VarianteID
+      LEFT JOIN administradores a ON a.AdminID = ia.registrado_por
+      ` : ''}
+      GROUP BY p.ProductoID, p.NombreProducto, p.Activo, c.Nombre
       ORDER BY p.NombreProducto ASC
     `;
 
@@ -6796,9 +6807,11 @@ const getInventarioResumen = async (req, res) => {
     const productos = result.rows.map((row) => ({
       productoId: row.productoid,
       nombreProducto: row.nombreproducto,
+      activo: row.activo !== undefined ? row.activo : true,
       nombreCategoria: row.nombrecategoria || "Sin categoría",
       totalVariantes:
         row.totalvariantes !== null ? parseInt(row.totalvariantes, 10) : 0,
+      ...(isSuperAdmin && { adminsRegistrados: row.adminsregistrados || 'N/A' })
     }));
 
     res.json({
@@ -6806,6 +6819,7 @@ const getInventarioResumen = async (req, res) => {
       data: {
         productos,
         total: productos.length,
+        isSuperAdmin
       },
     });
   } catch (error) {
@@ -10250,6 +10264,23 @@ const recibirInventario = async (req, res) => {
          WHERE VarianteID = $2`,
         [cantidadAumentar, detalle.varianteid]
       );
+
+      // 3.5. Registrar en inventarios_admin (UPSERT)
+      const adminIdRegistro = Number.isInteger(usuarioRecibeId) && usuarioRecibeId > 0
+        ? usuarioRecibeId
+        : adminId || null;
+
+      if (adminIdRegistro) {
+        await client.query(
+          `INSERT INTO inventarios_admin (admin_id, variante_id, cantidad, registrado_por, ultima_actualizacion)
+           VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)
+           ON CONFLICT (admin_id, variante_id)
+           DO UPDATE SET 
+             cantidad = inventarios_admin.cantidad + $3,
+             ultima_actualizacion = CURRENT_TIMESTAMP`,
+          [adminIdRegistro, detalle.varianteid, cantidadAumentar, adminIdRegistro]
+        );
+      }
 
       // 4. Registrar movimiento en Log_Inventario
       await client.query(
