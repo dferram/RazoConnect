@@ -135,25 +135,39 @@
               class="detalle-summary"
               style="display: none"
             >
+              <!-- Información del Producto -->
+              <div style="background: #f8fafc; border-radius: 0.75rem; padding: 1.25rem; margin-bottom: 1.5rem; border: 1px solid #e2e8f0;">
+                <h3 style="font-size: 0.875rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1rem;">
+                  📋 Información del Producto
+                </h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                  <div>
+                    <div style="font-size: 0.75rem; color: #64748b; font-weight: 600; margin-bottom: 0.25rem;">SKU Maestro</div>
+                    <div id="modalSkuMaestro" style="font-size: 0.95rem; font-weight: 600; color: #1e293b;">Sin SKU</div>
+                  </div>
+                  <div>
+                    <div style="font-size: 0.75rem; color: #64748b; font-weight: 600; margin-bottom: 0.25rem;">Proveedor</div>
+                    <div id="modalProveedor" style="font-size: 0.95rem; font-weight: 600; color: #1e293b;">Sin asignar</div>
+                  </div>
+                  <div>
+                    <div style="font-size: 0.75rem; color: #64748b; font-weight: 600; margin-bottom: 0.25rem;">Categoría</div>
+                    <div id="modalCategoria" style="font-size: 0.95rem; font-weight: 600; color: #1e293b;">Sin categoría</div>
+                  </div>
+                </div>
+                <div style="margin-top: 1rem;">
+                  <div style="font-size: 0.75rem; color: #64748b; font-weight: 600; margin-bottom: 0.25rem;">Descripción</div>
+                  <div id="modalDescripcion" style="font-size: 0.9rem; color: #475569; line-height: 1.5;">Sin descripción</div>
+                </div>
+              </div>
+
               <div class="detalle-summary-top">
                 <div class="detalle-summary-info">
-                  <div class="detalle-summary-label">Descripción</div>
-                  <p
-                    id="detalleProductoDescripcion"
-                    class="detalle-summary-description"
-                  >
-                    —
-                  </p>
-                </div>
-                <div class="detalle-summary-tags">
-                  <span class="detalle-badge" id="detalleProductoEstado"
-                    >Activo</span
-                  >
-                  <span
-                    class="detalle-badge secondary"
-                    id="detalleProductoCategoria"
-                    >Sin categoría</span
-                  >
+                  <div class="detalle-summary-label">Estado del Producto</div>
+                  <div class="detalle-summary-tags">
+                    <span class="detalle-badge" id="detalleProductoEstado"
+                      >Activo</span
+                    >
+                  </div>
                 </div>
               </div>
 
@@ -1223,7 +1237,7 @@
 
         try {
           const response = await fetch(
-            `${API_BASE_URL}/admin/productos/${productoId}`,
+            `${API_BASE_URL}/admin/inventario/producto-detalle/${productoId}`,
             {
               method: "GET",
               headers: {
@@ -1239,91 +1253,66 @@
             throw new Error(data.message || "No se pudo obtener el producto");
           }
 
-          detalleModalTitle.textContent = `Detalle de Variantes: ${data.data.producto.nombreProducto}`;
-          detalleModalSubtitle.textContent =
-            data.data.producto.descripcion ||
-            "Consulta la información registrada.";
+          const producto = data.data;
+          const variantes = producto.variantes || [];
 
-          const producto = data.data.producto;
-          const variantes = data.data.variantes || [];
+          detalleModalTitle.textContent = `Detalle de Variantes: ${producto.nombreProducto}`;
+          detalleModalSubtitle.textContent = "Consulta la información registrada.";
+
+          // Actualizar información del producto
+          document.getElementById("modalSkuMaestro").textContent = producto.skuMaestro || "Sin SKU";
+          document.getElementById("modalProveedor").textContent = producto.proveedor || "Sin asignar";
+          document.getElementById("modalCategoria").textContent = producto.categoria || "Sin categoría";
+          document.getElementById("modalDescripcion").textContent = producto.descripcion || "Sin descripción";
 
           detalleProductoActual = {
-            producto,
-            variantes,
+            producto: {
+              productoId: producto.productoId,
+              nombreProducto: producto.nombreProducto,
+              activo: producto.activo,
+              totalVariantes: producto.totalVariantes,
+            },
+            variantes: variantes.map(v => ({
+              varianteId: v.varianteId,
+              sku: v.sku,
+              dimensiones: v.caracteristica,
+              stock: v.stock,
+              precioUnitario: v.precio,
+              precioPaquete: v.precio,
+              activo: v.activo
+            })),
           };
 
           const summaryCard = document.getElementById("detalleModalSummary");
-          const descripcionEl = document.getElementById(
-            "detalleProductoDescripcion"
-          );
           const estadoBadge = document.getElementById("detalleProductoEstado");
-          const categoriaBadge = document.getElementById(
-            "detalleProductoCategoria"
-          );
-          const variantesTotalEl = document.getElementById(
-            "detalleTotalVariantes"
-          );
-          const variantesConStockEl = document.getElementById(
-            "detalleVariantesConStock"
-          );
-          const variantesSinStockEl = document.getElementById(
-            "detalleVariantesSinStock"
-          );
+          const variantesTotalEl = document.getElementById("detalleTotalVariantes");
+          const variantesConStockEl = document.getElementById("detalleVariantesConStock");
+          const variantesSinStockEl = document.getElementById("detalleVariantesSinStock");
           const precioDesdeEl = document.getElementById("detallePrecioDesde");
           const precioHastaEl = document.getElementById("detallePrecioHasta");
 
-          descripcionEl.textContent =
-            producto.descripcion || "Sin descripción disponible.";
           estadoBadge.textContent = producto.activo ? "Activo" : "Inactivo";
           estadoBadge.classList.toggle("danger", !producto.activo);
 
-          const categoriaNombre = producto?.categoria?.nombre;
-          if (categoriaNombre) {
-            categoriaBadge.textContent = categoriaNombre;
-            categoriaBadge.style.display = "inline-flex";
-          } else {
-            categoriaBadge.style.display = "none";
-          }
-
-          const totalVariantes = producto.totalVariantes ?? variantes.length;
-          const variantesConStock =
-            producto.variantesConStock ??
-            variantes.filter(
-              (v) => (typeof v.stock === "number" ? v.stock : 0) > 0
-            ).length;
-          const variantesSinStock = Math.max(
-            totalVariantes - variantesConStock,
-            0
-          );
+          const totalVariantes = producto.totalVariantes || 0;
+          const variantesConStock = variantes.filter(v => v.stock > 0).length;
+          const variantesSinStock = totalVariantes - variantesConStock;
 
           variantesTotalEl.textContent = totalVariantes;
           variantesConStockEl.textContent = variantesConStock;
           variantesSinStockEl.textContent = variantesSinStock;
 
-          const precios = variantes
-            .map((v) =>
-              typeof v.precioPaquete === "number" ? v.precioPaquete : null
-            )
-            .filter((v) => v !== null);
+          const precios = variantes.map(v => v.precio).filter(p => p > 0);
+          const precioDesde = precios.length ? Math.min(...precios) : null;
+          const precioHasta = precios.length ? Math.max(...precios) : null;
 
-          const precioDesde =
-            producto.precioDesde ??
-            (precios.length ? Math.min(...precios) : null);
-          const precioHasta =
-            producto.precioHasta ??
-            (precios.length ? Math.max(...precios) : null);
-
-          precioDesdeEl.textContent =
-            typeof precioDesde === "number" ? formatCurrency(precioDesde) : "—";
-          precioHastaEl.textContent =
-            typeof precioHasta === "number" ? formatCurrency(precioHasta) : "—";
+          precioDesdeEl.textContent = precioDesde ? formatCurrency(precioDesde) : "—";
+          precioHastaEl.textContent = precioHasta ? formatCurrency(precioHasta) : "—";
 
           summaryCard.style.display = "block";
 
-          // Calcular y mostrar proyección de stock
-          calcularProyeccionStock(variantes);
-
-          renderDetalleVariantes(variantes);
+          // Renderizar tabla de variantes
+          renderTablaVariantesInventario(variantes);
           toggleDetalleLoading(false);
         } catch (error) {
           console.error("Error al obtener detalle del producto:", error);
@@ -1343,6 +1332,63 @@
           wrap.appendChild(p);
           detalleModalFeedback.appendChild(wrap);
         }
+      }
+
+      function renderTablaVariantesInventario(variantes = []) {
+        if (!variantes.length) {
+          detalleModalFeedback.style.display = "block";
+          detalleModalFeedback.innerHTML = "";
+          const wrap = document.createElement("div");
+          wrap.className = "modal-feedback-empty";
+          const strong = document.createElement("strong");
+          strong.textContent = "Sin variantes registradas.";
+          const p = document.createElement("p");
+          p.textContent = "Agrega variantes para gestionar su inventario.";
+          wrap.appendChild(strong);
+          wrap.appendChild(p);
+          detalleModalFeedback.appendChild(wrap);
+          detalleModalTableWrapper.style.display = "none";
+          return;
+        }
+
+        detalleModalFeedback.style.display = "none";
+        detalleModalTableWrapper.style.display = "block";
+
+        tablaVariantesBody.innerHTML = variantes
+          .map((variant) => {
+            const precio = formatCurrency(variant.precio || 0);
+            const stock = variant.stock || 0;
+            const stockColor = stock > 0 ? "#16a34a" : "#dc2626";
+            const stockWeight = stock > 0 ? "600" : "500";
+
+            return `
+              <tr>
+                <td style="font-weight: 600;">${escapeHtml(variant.sku)}</td>
+                <td>${escapeHtml(variant.caracteristica)}</td>
+                <td style="font-weight: 600; color: #f97316;">${precio}</td>
+                <td class="stock-variante-${variant.varianteId}" style="font-weight: ${stockWeight}; color: ${stockColor};">
+                  ${stock} pzas
+                </td>
+                <td>
+                  <span class="status-badge ${stock > 0 ? 'en-stock' : 'sin-stock'}">
+                    ${stock > 0 ? 'En stock' : 'Sin stock'}
+                  </span>
+                </td>
+                <td style="text-align: center;">
+                  <button
+                    type="button"
+                    class="btn btn-secondary btn-small btn-historial-trigger"
+                    data-variante-id="${variant.varianteId}"
+                    title="Historial"
+                    style="padding: 0.5rem 0.6rem;"
+                  >
+                    🕒
+                  </button>
+                </td>
+              </tr>
+            `;
+          })
+          .join("");
       }
 
       function renderDetalleVariantes(variantes = []) {

@@ -532,6 +532,14 @@ router.get(
   authorizeAdmin,
   adminController.getInventarioResumen
 );
+
+router.get(
+  "/inventario/producto-detalle/:id",
+  authenticate,
+  authorizeAdmin,
+  adminController.getProductoDetalleInventario
+);
+
 // router.post(
 //   "/inventario/ajuste",
 //   authenticate,

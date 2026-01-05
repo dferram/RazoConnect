@@ -6849,6 +6849,152 @@ const getInventarioResumen = async (req, res) => {
 };
 
 /**
+ * Obtener detalle completo de producto para modal de inventario
+ * GET /api/admin/inventario/producto-detalle/:id
+ * Incluye: proveedor, variantes con stock por admin, totales
+ */
+const getProductoDetalleInventario = async (req, res) => {
+  try {
+    const productoId = parseInt(req.params.id, 10);
+    const adminId = req.user?.id;
+
+    if (Number.isNaN(productoId)) {
+      return res.status(400).json({
+        success: false,
+        message: "ProductoID inválido",
+      });
+    }
+
+    if (!adminId) {
+      return res.status(401).json({
+        success: false,
+        message: "Usuario no autenticado",
+      });
+    }
+
+    // Consulta principal con JOINs optimizados
+    const productoQuery = `
+      SELECT
+        p.productoid,
+        p.nombreproducto,
+        p.sku_maestro,
+        p.descripcion,
+        p.proveedorid_default,
+        p.activo,
+        p.categoriaid,
+        prov.nombreempresa AS proveedor_nombre,
+        c.nombre AS categoria_nombre,
+        (
+          SELECT JSON_AGG(
+            JSON_BUILD_OBJECT(
+              'imagenId', pi.imagenid,
+              'url', pi.url_imagen,
+              'textoAlternativo', pi.textoalternativo,
+              'orden', pi.orden
+            ) ORDER BY pi.orden ASC NULLS LAST, pi.imagenid ASC
+          )
+          FROM producto_imagenes pi
+          WHERE pi.productoid = p.productoid
+        ) AS imagenes,
+        (
+          SELECT JSON_AGG(
+            JSON_BUILD_OBJECT(
+              'varianteId', pv.varianteid,
+              'sku', pv.sku,
+              'dimensiones', pv.dimensiones,
+              'colorNombre', pv.color_nombre,
+              'precioUnitario', pv.preciounitario,
+              'stock', COALESCE(ia.cantidad, 0),
+              'activo', pv.activo
+            )
+          )
+          FROM producto_variantes pv
+          LEFT JOIN inventarios_admin ia ON ia.variante_id = pv.varianteid AND ia.admin_id = $2
+          WHERE pv.productoid = p.productoid
+        ) AS lista_variantes,
+        (
+          SELECT COUNT(*)
+          FROM producto_variantes pv
+          WHERE pv.productoid = p.productoid
+        ) AS total_variantes,
+        (
+          SELECT COALESCE(SUM(ia.cantidad), 0)
+          FROM producto_variantes pv
+          LEFT JOIN inventarios_admin ia ON ia.variante_id = pv.varianteid AND ia.admin_id = $2
+          WHERE pv.productoid = p.productoid
+        ) AS total_stock
+      FROM productos p
+      LEFT JOIN proveedores prov ON prov.proveedorid = p.proveedorid_default
+      LEFT JOIN categorias c ON c.categoriaid = p.categoriaid
+      WHERE p.productoid = $1
+    `;
+
+    const result = await db.query(productoQuery, [productoId, adminId]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Producto no encontrado",
+      });
+    }
+
+    const row = result.rows[0];
+    const variantes = row.lista_variantes || [];
+    const imagenes = row.imagenes || [];
+
+    // Debug: Log raw data
+    console.log('Raw variantes data:', JSON.stringify(variantes, null, 2));
+
+    const productoDetalle = {
+      productoId: row.productoid,
+      nombreProducto: row.nombreproducto,
+      skuMaestro: row.sku_maestro || "Sin SKU",
+      descripcion: row.descripcion || "Sin descripción",
+      proveedor: row.proveedor_nombre || "Sin asignar",
+      categoria: row.categoria_nombre || "Sin categoría",
+      activo: row.activo,
+      totalVariantes: parseInt(row.total_variantes, 10) || 0,
+      totalStock: parseInt(row.total_stock, 10) || 0,
+      imagenes: imagenes.map(img => ({
+        imagenId: img.imagenid,
+        url: img.url,
+        textoAlternativo: img.textoalternativo || null,
+        orden: img.orden !== null && img.orden !== undefined ? parseInt(img.orden, 10) : null
+      })),
+      variantes: variantes.map(v => {
+        // PostgreSQL devuelve las claves en minúsculas desde JSON_BUILD_OBJECT
+        const precioRaw = v.precioUnitario || v.preciounitario;
+        const precio = precioRaw !== null && precioRaw !== undefined 
+          ? parseFloat(precioRaw) 
+          : 0;
+        console.log(`Variante ${v.sku}: precioUnitario=${v.precioUnitario}, preciounitario=${v.preciounitario}, parsed=${precio}`);
+        return {
+          varianteId: v.varianteId || v.varianteid,
+          sku: v.sku || "Sin SKU",
+          caracteristica: v.colorNombre || v.colornombre || v.dimensiones || "Sin especificar",
+          precio: precio,
+          stock: parseInt(v.stock, 10) || 0,
+          activo: v.activo !== false
+        };
+      })
+    };
+
+    return res.json({
+      success: true,
+      message: "Detalle de producto obtenido exitosamente",
+      data: productoDetalle,
+    });
+  } catch (error) {
+    console.error("Error al obtener detalle de inventario:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error en el servidor",
+      error: error.message,
+    });
+  }
+};
+
+/**
  * Obtener detalle de un producto maestro con sus variantes
  * GET /api/admin/productos/:id
  */
@@ -12827,6 +12973,7 @@ module.exports = {
   recepcionarMercancia,
   ajustarInventario,
   getInventarioResumen,
+  getProductoDetalleInventario,
   buscarProductosCompra,
   getProductoDetalle,
   getVariantesPendientesProducto,
