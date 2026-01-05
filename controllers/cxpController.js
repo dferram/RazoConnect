@@ -10,7 +10,9 @@ const cloudinary = require('../config/cloudinary');
  */
 async function exportarLoteCxP(req, res) {
     const client = await pool.connect();
-    const { search, estatus, fechaInicio, fechaFin } = req.query;
+    const { search, estatus, fechaInicio, fechaFin, adminId } = req.query;
+    const userRole = req.user.rol;
+    const userId = req.user.id;
     
     // Determinar si es exportación con filtros o lote completo
     const hasFilters = !!(search || estatus || fechaInicio || fechaFin);
@@ -24,6 +26,17 @@ async function exportarLoteCxP(req, res) {
         let whereConditions = ["cxp.estatus NOT IN ('CANCELADO')"];
         let queryParams = [];
         let paramIndex = 1;
+
+        // REGLA DE VISIBILIDAD: Admin solo ve sus registros, SuperAdmin ve todos o filtra por adminId
+        if (userRole === 'admin') {
+            queryParams.push(userId);
+            whereConditions.push(`cxp.usuario_creador_id = $${paramIndex}`);
+            paramIndex++;
+        } else if (userRole === 'superadmin' && adminId) {
+            queryParams.push(parseInt(adminId));
+            whereConditions.push(`cxp.usuario_creador_id = $${paramIndex}`);
+            paramIndex++;
+        }
 
         // Si NO hay filtros, solo exportar pendientes no exportados
         if (!hasFilters) {
@@ -224,8 +237,28 @@ async function exportarLoteCxP(req, res) {
  */
 async function getCxPKPIs(req, res) {
     const client = await pool.connect();
+    const userRole = req.user.rol;
+    const userId = req.user.id;
+    const { adminId } = req.query;
     
     try {
+        let whereConditions = ["estatus NOT IN ('CANCELADO')"];
+        let queryParams = [];
+        let paramIndex = 1;
+
+        // REGLA DE VISIBILIDAD: Admin solo ve sus registros, SuperAdmin ve todos o filtra por adminId
+        if (userRole === 'admin') {
+            queryParams.push(userId);
+            whereConditions.push(`usuario_creador_id = $${paramIndex}`);
+            paramIndex++;
+        } else if (userRole === 'superadmin' && adminId) {
+            queryParams.push(parseInt(adminId));
+            whereConditions.push(`usuario_creador_id = $${paramIndex}`);
+            paramIndex++;
+        }
+
+        const whereClause = whereConditions.join(' AND ');
+
         const { rows } = await client.query(`
             SELECT 
                 SUM(CASE 
@@ -258,8 +291,8 @@ async function getCxPKPIs(req, res) {
                     THEN 1 
                 END) as count_proximo
             FROM cuentas_por_pagar
-            WHERE estatus NOT IN ('CANCELADO')
-        `);
+            WHERE ${whereClause}
+        `, queryParams);
 
         res.json({
             success: true,
@@ -285,12 +318,26 @@ async function getCuentasPorPagar(req, res) {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const offset = (page - 1) * limit;
-    const { search, estatus, fechaInicio, fechaFin } = req.query;
+    const { search, estatus, fechaInicio, fechaFin, adminId } = req.query;
+    const userRole = req.user.rol;
+    const userId = req.user.id;
     
     try {
         let whereConditions = ['cxp.estatus NOT IN (\'CANCELADO\')'];
         let queryParams = [];
         let paramIndex = 1;
+
+        // REGLA DE VISIBILIDAD: Admin solo ve sus registros, SuperAdmin ve todos o filtra por adminId
+        if (userRole === 'admin') {
+            queryParams.push(userId);
+            whereConditions.push(`cxp.usuario_creador_id = $${paramIndex}`);
+            paramIndex++;
+        } else if (userRole === 'superadmin' && adminId) {
+            queryParams.push(parseInt(adminId));
+            whereConditions.push(`cxp.usuario_creador_id = $${paramIndex}`);
+            paramIndex++;
+        }
+        // Si es superadmin sin filtro adminId, ve todos los registros
 
         // Filtro de búsqueda por proveedor
         if (search && search.trim()) {
@@ -343,7 +390,9 @@ async function getCuentasPorPagar(req, res) {
                 cxp.estatus,
                 cxp.referencia_factura,
                 cxp.notas,
+                cxp.usuario_creador_id,
                 p.nombreempresa as proveedor,
+                a.nombre as propietario_nombre,
                 CASE 
                     WHEN (cxp.monto_total - COALESCE(cxp.monto_pagado, 0)) <= 0 THEN 'PAGADO'
                     WHEN cxp.fecha_vencimiento < CURRENT_DATE AND (cxp.monto_total - COALESCE(cxp.monto_pagado, 0)) > 0 THEN 'VENCIDO'
@@ -352,6 +401,7 @@ async function getCuentasPorPagar(req, res) {
                 END as estatus_calculado
             FROM cuentas_por_pagar cxp
             INNER JOIN proveedores p ON p.proveedorid = cxp.proveedor_id
+            LEFT JOIN administradores a ON cxp.usuario_creador_id = a.adminid
             WHERE ${whereClause}
             ORDER BY 
                 CASE 

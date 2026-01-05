@@ -9,10 +9,12 @@ const state = {
         search: '',
         estatus: '',
         fechaInicio: '',
-        fechaFin: ''
+        fechaFin: '',
+        adminId: ''
     },
     selectedIds: new Set(),
-    currentCxpId: null
+    currentCxpId: null,
+    currentUserRole: null
 };
 
 // NOTA: Se eliminó la declaración de fetchWithAuth porque ya existe globalmente.
@@ -46,7 +48,10 @@ function escapeHtml(str) {
 // Cargar KPIs
 async function cargarKPIs() {
     try {
-        const response = await fetchWithAuth(`${API_BASE_URL}/admin/cuentas-por-pagar/kpis`);
+        const params = new URLSearchParams();
+        if (state.filters.adminId) params.append('adminId', state.filters.adminId);
+        const url = `${API_BASE_URL}/admin/cuentas-por-pagar/kpis${params.toString() ? '?' + params.toString() : ''}`;
+        const response = await fetchWithAuth(url);
         if (!response.ok) throw new Error('Error al cargar KPIs');
         
         const data = await response.json();
@@ -101,6 +106,7 @@ async function cargarTablaCxP(page = state.currentPage) {
         if (state.filters.estatus) params.append('estatus', state.filters.estatus);
         if (state.filters.fechaInicio) params.append('fechaInicio', state.filters.fechaInicio);
         if (state.filters.fechaFin) params.append('fechaFin', state.filters.fechaFin);
+        if (state.filters.adminId) params.append('adminId', state.filters.adminId);
         
         const response = await fetchWithAuth(`${API_BASE_URL}/admin/cuentas-por-pagar?${params.toString()}`);
         if (!response.ok) throw new Error('Error al cargar datos');
@@ -149,6 +155,10 @@ function renderizarTabla(facturas) {
         const isChecked = state.selectedIds.has(factura.cxp_id);
         const isPagado = saldoRestante <= 0;
         
+        const propietarioCell = state.currentUserRole === 'superadmin'
+            ? `<td style="color: #6b7280; font-size: 0.875rem;">${escapeHtml(factura.propietario_nombre || 'Sin asignar')}</td>`
+            : '';
+        
         return `
             <tr ${isPagado ? 'style="opacity: 0.7;"' : ''}>
                 <td class="text-center">
@@ -178,6 +188,7 @@ function renderizarTabla(facturas) {
                         ${escapeHtml(estatusTexto)}
                     </span>
                 </td>
+                ${propietarioCell}
                 <td class="text-center">
                     <div style="display: flex; gap: 0.5rem; justify-content: center;">
                         ${!isPagado ? `
@@ -217,7 +228,7 @@ function renderizarPaginacion() {
     }
 
     let html = '<nav aria-label="Navegación de páginas"><ul class="pagination justify-content-center mb-0">';
-
+    
     // Botón anterior
     html += `<li class="page-item ${state.currentPage === 1 ? 'disabled' : ''}">
         <a class="page-link" href="#" onclick="event.preventDefault(); ${state.currentPage > 1 ? `cargarTablaCxP(${state.currentPage - 1})` : 'return false'}" aria-label="Anterior">
@@ -484,9 +495,11 @@ function aplicarFiltros() {
     state.filters.estatus = document.getElementById('filtroEstatus')?.value || '';
     state.filters.fechaInicio = document.getElementById('fechaInicio')?.value || '';
     state.filters.fechaFin = document.getElementById('fechaFin')?.value || '';
+    state.filters.adminId = document.getElementById('filtroAdmin')?.value || '';
     
     state.currentPage = 1;
     cargarTablaCxP();
+    cargarKPIs();
 }
 
 // Limpiar filtros
@@ -495,20 +508,74 @@ function limpiarFiltros() {
     document.getElementById('filtroEstatus').value = '';
     document.getElementById('fechaInicio').value = '';
     document.getElementById('fechaFin').value = '';
+    if (document.getElementById('filtroAdmin')) {
+        document.getElementById('filtroAdmin').value = '';
+    }
     
     state.filters = {
         search: '',
         estatus: '',
         fechaInicio: '',
-        fechaFin: ''
+        fechaFin: '',
+        adminId: ''
     };
     
     state.currentPage = 1;
     cargarTablaCxP();
+    cargarKPIs();
+}
+
+// Cargar lista de administradores para el filtro
+async function loadAdminList() {
+    try {
+        const response = await fetchWithAuth(`${API_BASE_URL}/admin/administradores`);
+        if (!response.ok) return;
+        
+        const data = await response.json();
+        if (data.success && data.data) {
+            const admins = data.data;
+            const filtroAdmin = document.getElementById('filtroAdmin');
+            if (filtroAdmin) {
+                filtroAdmin.innerHTML = '<option value="">Todos los administradores</option>';
+                admins.forEach(admin => {
+                    const option = document.createElement('option');
+                    option.value = admin.adminid;
+                    option.textContent = `${admin.nombre} (${admin.rol === 'superadmin' ? 'Super Admin' : 'Admin'})`;
+                    filtroAdmin.appendChild(option);
+                });
+            }
+        }
+    } catch (error) {
+        console.error('Error cargando lista de administradores:', error);
+    }
+}
+
+// Verificar rol del usuario y mostrar filtro si es superadmin
+async function verificarRolUsuario() {
+    try {
+        const response = await fetchWithAuth(`${API_BASE_URL}/admin/verify`);
+        if (!response.ok) return;
+        
+        const data = await response.json();
+        if (data.success && data.data.admin) {
+            state.currentUserRole = data.data.admin.rol;
+            
+            if (data.data.admin.rol === 'superadmin') {
+                const filtroAdminContainer = document.getElementById('filtroAdminContainer');
+                const thPropietario = document.getElementById('thPropietario');
+                if (filtroAdminContainer) filtroAdminContainer.style.display = 'block';
+                if (thPropietario) thPropietario.style.display = '';
+                await loadAdminList();
+            }
+        }
+    } catch (error) {
+        console.error('Error verificando rol de usuario:', error);
+    }
 }
 
 // Inicializar y Event Listeners
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+    await verificarRolUsuario();
     cargarKPIs();
     cargarTablaCxP();
     
@@ -546,6 +613,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     document.getElementById('filtroEstatus')?.addEventListener('change', aplicarFiltros);
+    document.getElementById('filtroAdmin')?.addEventListener('change', aplicarFiltros);
 
     // Exportación con filtros activos (respeta la vista actual)
     document.getElementById('btn-exportar')?.addEventListener('click', async () => {
@@ -556,6 +624,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (state.filters.estatus) params.append('estatus', state.filters.estatus);
             if (state.filters.fechaInicio) params.append('fechaInicio', state.filters.fechaInicio);
             if (state.filters.fechaFin) params.append('fechaFin', state.filters.fechaFin);
+            if (state.filters.adminId) params.append('adminId', state.filters.adminId);
             
             const queryString = params.toString();
             const hasFilters = queryString.length > 0;

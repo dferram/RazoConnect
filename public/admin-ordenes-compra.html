@@ -42,6 +42,15 @@
               align-items: flex-end;
             "
           >
+            <!-- Filtro de Admin (solo visible para SuperAdmin) -->
+            <div id="filtroAdminContainer" class="filtro-item" style="display: none;">
+              <label for="filtroAdmin" class="form-label"
+                >Filtrar por Administrador</label
+              >
+              <select id="filtroAdmin" class="form-input">
+                <option value="">Todos los administradores</option>
+              </select>
+            </div>
             <div class="filtro-item">
               <label for="filtroEstatus" class="form-label"
                 >Filtrar por estatus</label
@@ -136,6 +145,7 @@
                     <th>Entrega Esperada</th>
                     <th>Productos</th>
                     <th>Estatus</th>
+                    <th id="thPropietario" style="display: none;">Propietario</th>
                     <th style="width: 280px">Acciones</th>
                   </tr>
                 </thead>
@@ -340,6 +350,7 @@
         }
 
         let ordenesData = [];
+        let currentUserRole = null;
 
         // Elements
         const loadingState = document.getElementById("loadingState");
@@ -347,6 +358,8 @@
         const ordenesTable = document.getElementById("ordenesTable");
         const ordenesTableBody = document.getElementById("ordenesTableBody");
         const filtroEstatus = document.getElementById("filtroEstatus");
+        const filtroAdmin = document.getElementById("filtroAdmin");
+        const filtroAdminContainer = document.getElementById("filtroAdminContainer");
         const detalleModal = document.getElementById("detalleModal");
 
         // Cargar órdenes al inicio
@@ -354,6 +367,7 @@
           verifyAndLoadAdmin();
           loadOrdenes();
           filtroEstatus.addEventListener("change", loadOrdenes);
+          filtroAdmin.addEventListener("change", loadOrdenes);
 
           const btnAutoGenerar = document.getElementById("btn-auto-generar");
           if (btnAutoGenerar) {
@@ -451,6 +465,7 @@
             const data = await response.json();
             if (data.success) {
               const admin = data.data.admin;
+              currentUserRole = admin.rol;
               const userNameEl = document.getElementById("userName");
               const userRoleEl = document.getElementById("userRole");
               const userAvatarEl = document.getElementById("userAvatar");
@@ -467,10 +482,36 @@
                   ? `${words[0].charAt(0)}${words[1].charAt(0)}`
                   : admin.nombre.substring(0, 2);
               if (userAvatarEl) userAvatarEl.textContent = initials.toUpperCase();
+
+              // Si es superadmin, mostrar filtro de admin y cargar lista
+              if (admin.rol === 'superadmin') {
+                filtroAdminContainer.style.display = 'block';
+                document.getElementById('thPropietario').style.display = '';
+                await loadAdminList();
+              }
             }
           } catch (error) {
             console.error("Error verifying admin:", error);
             // Mantener valores por defecto en caso de error
+          }
+        }
+
+        // Cargar lista de administradores para el filtro
+        async function loadAdminList() {
+          try {
+            const response = await API.apiCall('/admin/administradores', { method: 'GET' });
+            if (response.ok && response.data.data) {
+              const admins = response.data.data;
+              filtroAdmin.innerHTML = '<option value="">Todos los administradores</option>';
+              admins.forEach(admin => {
+                const option = document.createElement('option');
+                option.value = admin.adminid;
+                option.textContent = `${admin.nombre} (${admin.rol === 'superadmin' ? 'Super Admin' : 'Admin'})`;
+                filtroAdmin.appendChild(option);
+              });
+            }
+          } catch (error) {
+            console.error('Error cargando lista de administradores:', error);
           }
         }
 
@@ -482,9 +523,12 @@
             emptyState.style.display = "none";
 
             const estatus = filtroEstatus.value;
-            const url = estatus
-              ? `/admin/ordenes-compra?estatus=${estatus}`
-              : "/admin/ordenes-compra";
+            const adminId = filtroAdmin.value;
+            let url = '/admin/ordenes-compra?';
+            const params = [];
+            if (estatus) params.push(`estatus=${estatus}`);
+            if (adminId) params.push(`adminId=${adminId}`);
+            url += params.join('&');
 
             const response = await API.apiCall(url, { method: "GET" });
 
@@ -570,6 +614,10 @@
               return val;
             })();
 
+            const propietarioCell = currentUserRole === 'superadmin' 
+              ? `<td style="color: #6b7280; font-size: 0.875rem;">${orden.propietarioNombre || 'Sin asignar'}</td>`
+              : '';
+
             row.innerHTML = `
               <td style="font-weight: 600; color: #374151;">#${
                 orden.ordenCompraId
@@ -588,6 +636,7 @@
               <td><span class="admin-badge ${estatusBadgeClass}">${
                 estatusTexto
               }</span></td>
+              ${propietarioCell}
               <td>
                 <div style="display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap;">
                   <button 

@@ -9879,15 +9879,9 @@ const validarRecepcionCompra = async (req, res) => {
  */
 const getAllOrdenesCompra = async (req, res) => {
   try {
-    const { estatus } = req.query;
-
-    // DEBUG: Ver todas las órdenes primero
-    const debugQuery = await db.query(`
-      SELECT OrdenCompraID, OrigenOC, Estatus 
-      FROM OrdenesDeCompra 
-      ORDER BY FechaCreacion DESC 
-      LIMIT 10
-    `);
+    const { estatus, adminId } = req.query;
+    const userRole = req.user.rol;
+    const userId = req.user.id;
 
     let query = `
       SELECT 
@@ -9897,29 +9891,48 @@ const getAllOrdenesCompra = async (req, res) => {
         oc.FechaEntregaEsperada,
         oc.Estatus,
         oc.OrigenOC,
+        oc.usuario_creador_id,
         p.NombreEmpresa as ProveedorNombre,
-        COUNT(doc.DetalleOC_ID) as TotalProductos
+        COUNT(doc.DetalleOC_ID) as TotalProductos,
+        a.nombre as PropietarioNombre
       FROM OrdenesDeCompra oc
       INNER JOIN Proveedores p ON oc.ProveedorID = p.ProveedorID
       LEFT JOIN DetallesOrdenCompra doc ON oc.OrdenCompraID = doc.OrdenCompraID
+      LEFT JOIN Administradores a ON oc.usuario_creador_id = a.adminid
       WHERE 1=1
     `;
 
     const values = [];
+    let paramIndex = 1;
 
-    // Filtrar por estatus si se proporciona (además del filtro de backorder)
+    // REGLA DE VISIBILIDAD: Admin solo ve sus registros, SuperAdmin ve todos o filtra por adminId
+    if (userRole === 'admin') {
+      query += ` AND oc.usuario_creador_id = $${paramIndex}`;
+      values.push(userId);
+      paramIndex++;
+    } else if (userRole === 'superadmin' && adminId) {
+      // SuperAdmin filtrando por un admin específico
+      query += ` AND oc.usuario_creador_id = $${paramIndex}`;
+      values.push(parseInt(adminId));
+      paramIndex++;
+    }
+    // Si es superadmin sin filtro adminId, ve todos los registros
+
+    // Filtrar por estatus si se proporciona
     if (estatus) {
       if (estatus === "Pendiente,Parcial") {
         query += ` AND oc.Estatus IN ('Pendiente', 'Parcial')`;
       } else {
-        query += ` AND oc.Estatus = $1`;
+        query += ` AND oc.Estatus = $${paramIndex}`;
         values.push(estatus);
+        paramIndex++;
       }
     }
 
     query += `
       GROUP BY oc.OrdenCompraID, oc.ProveedorID, oc.FechaCreacion, 
-               oc.FechaEntregaEsperada, oc.Estatus, oc.OrigenOC, p.NombreEmpresa
+               oc.FechaEntregaEsperada, oc.Estatus, oc.OrigenOC, oc.usuario_creador_id,
+               p.NombreEmpresa, a.nombre
       ORDER BY oc.FechaCreacion DESC
     `;
 
@@ -9938,6 +9951,8 @@ const getAllOrdenesCompra = async (req, res) => {
           estatus: row.estatus,
           origenOC: row.origenoc,
           totalProductos: parseInt(row.totalproductos),
+          usuarioCreadorId: row.usuario_creador_id,
+          propietarioNombre: row.propietarionombre || 'Sin asignar',
         })),
         total: result.rows.length,
       },
@@ -10768,14 +10783,15 @@ const crearOrdenCompra = async (req, res) => {
 
     // 1. Crear la orden de compra
     const ordenQuery = `
-      INSERT INTO OrdenesDeCompra (ProveedorID, FechaEntregaEsperada, Estatus)
-      VALUES ($1, $2, 'Pendiente')
+      INSERT INTO OrdenesDeCompra (ProveedorID, FechaEntregaEsperada, Estatus, usuario_creador_id)
+      VALUES ($1, $2, 'Pendiente', $3)
       RETURNING OrdenCompraID, ProveedorID, FechaCreacion, FechaEntregaEsperada, Estatus
     `;
 
     const ordenResult = await client.query(ordenQuery, [
       proveedorId,
       fechaEntregaEsperada,
+      req.user.id,
     ]);
 
     const ordenCompra = ordenResult.rows[0];
