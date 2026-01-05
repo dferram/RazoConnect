@@ -357,53 +357,134 @@ html, body {
     margin-top: 0.5rem;
   }
 
-  /* Product grid - 1 column on mobile for better proportions */
+  /* ========== PRODUCT GRID - NIKE STYLE 2 COLUMNS ========== */
+  
+  /* Product grid - 2 columns with tight gap for mobile */
   .product-grid,
   .products-grid {
-    grid-template-columns: 1fr !important;
-    gap: 1.5rem !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
     padding: 0 0.5rem;
   }
 
-  /* Product card adjustments for single column */
+  /* Product card - compact and square proportions */
   .product-card {
     max-width: 100%;
-    margin: 0 auto;
+    margin: 0;
+    border-radius: 0.5rem;
+    overflow: hidden;
   }
 
-  /* Image container - reduce height slightly for mobile */
+  /* Image container - force square aspect ratio */
   .imagen-wrapper {
+    aspect-ratio: 1 / 1 !important;
+    max-height: none !important;
+    height: auto !important;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* Product media - cover to fill square container */
+  .product-media {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
     aspect-ratio: 1 / 1;
-    max-height: 350px;
   }
 
-  /* Product info - better spacing */
+  /* Fallback emoji media */
+  .product-media--fallback {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 3rem !important;
+    background: #f5f5f5 !important;
+  }
+
+  /* Product info - compact padding */
   .product-info {
-    padding: 1.25rem 1rem;
+    padding: 8px !important;
   }
 
-  /* Product title - slightly larger for readability */
+  /* Product category - smaller and more compact */
+  .product-category {
+    font-size: 0.65rem !important;
+    padding: 0.1rem 0.45rem !important;
+    margin-bottom: 0.25rem !important;
+  }
+
+  /* Product title - compact with line clamp */
   .product-title {
-    font-size: 1.125rem !important;
-    line-height: 1.4 !important;
+    font-size: 0.9rem !important;
+    line-height: 1.3 !important;
+    margin: 0.25rem 0 !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-height: 2.6em !important;
   }
 
-  /* Floating cart button - slightly smaller */
+  /* Product price - compact */
+  .product-price {
+    font-size: 0.85rem !important;
+    margin-top: 0.35rem !important;
+  }
+
+  /* Price components - smaller */
+  .precio-normal,
+  .precio-oferta {
+    font-size: 0.85rem !important;
+  }
+
+  .precio-original {
+    font-size: 0.75rem !important;
+  }
+
+  /* CTA button - hide on mobile, tap card instead */
+  .product-cta-wrapper {
+    display: none !important;
+  }
+
+  /* Floating cart button - smaller and subtle */
   .cart-floating-btn {
-    width: 44px !important;
-    height: 44px !important;
-    bottom: 10px !important;
-    right: 10px !important;
+    width: 32px !important;
+    height: 32px !important;
+    bottom: 6px !important;
+    right: 6px !important;
+    padding: 0 !important;
   }
 
-  /* Product badges - slightly smaller */
+  .cart-floating-btn svg {
+    width: 16px !important;
+    height: 16px !important;
+  }
+
+  /* Product badges - smaller and tighter */
   .product-badge {
+    font-size: 0.6rem !important;
+    padding: 0.25rem 0.5rem !important;
+    border-radius: 0 0 0.5rem 0 !important;
+  }
+
+  /* Stock info - smaller text */
+  .product-stock {
     font-size: 0.7rem !important;
-    padding: 0.3rem 0.65rem !important;
+    margin-top: 0.25rem !important;
+  }
+
+  /* Medida badge - compact */
+  .product-badge--medida {
+    font-size: 0.6rem !important;
+    padding: 0.2rem 0.4rem !important;
+    margin-top: 0.25rem !important;
   }
 
   .product-card-image {
-    height: 250px !important;
+    height: auto !important;
+    aspect-ratio: 1 / 1 !important;
   }
 
   /* ========== FORMS ========== */
