@@ -1534,12 +1534,28 @@ const upsertCuentaPorPagarForOC = async (client, ordenCompraId, usuarioId) => {
 const getRecepcionOrdenCompra = async (req, res) => {
   try {
     const ordenCompraId = Number.parseInt(req.params.id, 10);
+    const userRole = req.user.rol;
+    const userId = req.user.id;
+
     if (!Number.isInteger(ordenCompraId) || ordenCompraId <= 0) {
       return res.status(400).json({
         success: false,
         message: "ID de orden de compra inválido",
       });
     }
+
+    let whereConditions = ['oc.ordencompraid = $1'];
+    let queryParams = [ordenCompraId];
+    let paramIndex = 2;
+
+    // REGLA DE VISIBILIDAD: Admin solo puede acceder a sus propias órdenes
+    if (userRole === 'admin') {
+      queryParams.push(userId);
+      whereConditions.push(`oc.usuario_creador_id = $${paramIndex}`);
+      paramIndex++;
+    }
+
+    const whereClause = whereConditions.join(' AND ');
 
     const ordenResult = await db.query(
       `SELECT
@@ -1548,18 +1564,19 @@ const getRecepcionOrdenCompra = async (req, res) => {
          oc.fechacreacion,
          oc.fechaentregaesperada,
          oc.estatus,
+         oc.usuario_creador_id,
          p.nombreempresa AS proveedornombre,
          p.contactonombre AS proveedorcontacto
        FROM ordenesdecompra oc
        INNER JOIN proveedores p ON oc.proveedorid = p.proveedorid
-       WHERE oc.ordencompraid = $1`,
-      [ordenCompraId]
+       WHERE ${whereClause}`,
+      queryParams
     );
 
     if (!ordenResult.rows.length) {
       return res.status(404).json({
         success: false,
-        message: "Orden de compra no encontrada",
+        message: "Orden de compra no encontrada o no tienes permiso para acceder a ella",
       });
     }
 
@@ -9530,6 +9547,23 @@ const actualizarProveedor = async (req, res) => {
  */
 const getComprasPendientes = async (req, res) => {
   try {
+    const userRole = req.user.rol;
+    const userId = req.user.id;
+
+    let whereConditions = ["oc.estatus IN ('Pendiente', 'Parcial')"];
+    let queryParams = [];
+    let paramIndex = 1;
+
+    // REGLA DE VISIBILIDAD: Admin solo ve sus órdenes, SuperAdmin ve todas
+    if (userRole === 'admin') {
+      queryParams.push(userId);
+      whereConditions.push(`oc.usuario_creador_id = $${paramIndex}`);
+      paramIndex++;
+    }
+    // Si es superadmin, ve todas las órdenes pendientes/parciales
+
+    const whereClause = whereConditions.join(' AND ');
+
     const result = await db.query(
       `SELECT
          oc.ordencompraid,
@@ -9542,9 +9576,10 @@ const getComprasPendientes = async (req, res) => {
        FROM ordenesdecompra oc
        INNER JOIN proveedores p ON oc.proveedorid = p.proveedorid
        LEFT JOIN detallesordencompra doc ON oc.ordencompraid = doc.ordencompraid
-       WHERE oc.estatus IN ('Pendiente', 'Parcial')
+       WHERE ${whereClause}
        GROUP BY oc.ordencompraid, oc.proveedorid, oc.fechacreacion, oc.fechaentregaesperada, oc.estatus, p.nombreempresa
-       ORDER BY oc.fechacreacion DESC`
+       ORDER BY oc.fechacreacion DESC`,
+      queryParams
     );
 
     return res.json({
@@ -10131,6 +10166,8 @@ const recibirInventario = async (req, res) => {
   try {
     const { ordenCompraId, productos, adminId, discrepancias } = req.body;
     const usuarioRecibeId = Number.parseInt(req?.user?.id ?? req?.user?.userId, 10);
+    const userRole = req.user.rol;
+    const userId = req.user.id;
 
     // Validaciones
     if (!ordenCompraId) {
@@ -10178,17 +10215,23 @@ const recibirInventario = async (req, res) => {
     // Iniciar transacción
     await client.query("BEGIN");
 
-    // Verificar que la orden existe
-    const ordenCheck = await client.query(
-      "SELECT OrdenCompraID, Estatus FROM OrdenesDeCompra WHERE OrdenCompraID = $1",
-      [ordenCompraId]
-    );
+    // Verificar que la orden existe y validar propiedad
+    let ordenCheckQuery = "SELECT OrdenCompraID, Estatus, usuario_creador_id FROM OrdenesDeCompra WHERE OrdenCompraID = $1";
+    let ordenCheckParams = [ordenCompraId];
+
+    // REGLA DE VISIBILIDAD: Admin solo puede recibir inventario de sus propias órdenes
+    if (userRole === 'admin') {
+      ordenCheckQuery += " AND usuario_creador_id = $2";
+      ordenCheckParams.push(userId);
+    }
+
+    const ordenCheck = await client.query(ordenCheckQuery, ordenCheckParams);
 
     if (ordenCheck.rows.length === 0) {
       await client.query("ROLLBACK");
       return res.status(404).json({
         success: false,
-        message: "Orden de compra no encontrada",
+        message: "Orden de compra no encontrada o no tienes permiso para recibir inventario de esta orden",
       });
     }
 
