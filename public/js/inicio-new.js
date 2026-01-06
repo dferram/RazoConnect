@@ -297,12 +297,16 @@
   // ========================================
   // CARGAR OFERTAS FLASH
   // ========================================
-  async function loadFlashSales() {
+  async function loadFlashSales(categoryId = null) {
     const grid = document.getElementById("ofertasTrack");
     if (!grid) return;
 
     try {
-      const response = await fetch("/api/productos?oferta=true&limit=8");
+      let url = "/api/productos?oferta=true&limit=8";
+      if (categoryId) {
+        url += `&categoria=${categoryId}`;
+      }
+      const response = await fetch(url);
       const data = await response.json();
 
       if (
@@ -429,12 +433,16 @@
   // ========================================
   // CARGAR NUEVOS ARRIBOS
   // ========================================
-  async function loadNewArrivals() {
+  async function loadNewArrivals(categoryId = null) {
     const grid = document.getElementById("arrivalsGrid");
     if (!grid) return;
 
     try {
-      const response = await fetch("/api/productos?sort=newest&limit=8");
+      let url = "/api/productos?sort=newest&limit=8";
+      if (categoryId) {
+        url += `&categoria=${categoryId}`;
+      }
+      const response = await fetch(url);
       const data = await response.json();
 
       if (
