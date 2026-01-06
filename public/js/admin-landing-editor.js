@@ -110,7 +110,6 @@
       }));
 
       populateCategorySelects();
-      generateSmartSelects();
     } catch (error) {
       console.error('Error loading categories:', error);
       throw error;
@@ -170,6 +169,61 @@
 
     if (ofertasSelect && ofertasValue) ofertasSelect.value = ofertasValue;
     if (nuevosSelect && nuevosValue) nuevosSelect.value = nuevosValue;
+
+    // Generate smart selects for CTA links
+    generateSmartSelects();
+  }
+
+  // ============================================
+  // GENERATE SMART SELECT OPTIONS
+  // ============================================
+
+  function generateSmartSelectOptions() {
+    let optionsHTML = '';
+
+    // Grupo 1: Páginas Generales
+    optionsHTML += '<optgroup label="📄 Páginas Generales">';
+    optionsHTML += '<option value="/">Inicio</option>';
+    optionsHTML += '<option value="/catalogo.html">Catálogo Completo</option>';
+    optionsHTML += '<option value="/contacto.html">Contacto</option>';
+    optionsHTML += '<option value="/registro.html">Registro</option>';
+    optionsHTML += '</optgroup>';
+
+    // Grupo 2: Categorías Dinámicas
+    if (availableCategories.length > 0) {
+      optionsHTML += '<optgroup label="🏷️ Categorías">';
+      availableCategories.forEach(categoria => {
+        const url = `/catalogo.html?categoria=${categoria.id}`;
+        const label = `Colección: ${categoria.nombre}`;
+        optionsHTML += `<option value="${url}">${label}</option>`;
+      });
+      optionsHTML += '</optgroup>';
+    }
+
+    // Grupo 3: Filtros Especiales
+    optionsHTML += '<optgroup label="⭐ Filtros Especiales">';
+    optionsHTML += '<option value="/catalogo.html?oferta=true">Ofertas</option>';
+    optionsHTML += '<option value="/catalogo.html?sort=newest">Lo Nuevo</option>';
+    optionsHTML += '<option value="/catalogo.html?destacado=true">Destacados</option>';
+    optionsHTML += '</optgroup>';
+
+    return optionsHTML;
+  }
+
+  function generateSmartSelects() {
+    const smartSelectOptions = generateSmartSelectOptions();
+
+    // Actualizar todos los selects de CTA links
+    for (let i = 1; i <= 3; i++) {
+      const select = document.getElementById(`hero_slide_${i}_cta_link`);
+      if (select && select.tagName === 'SELECT') {
+        const currentValue = select.value;
+        select.innerHTML = '<option value="">Seleccionar destino...</option>' + smartSelectOptions;
+        if (currentValue) {
+          select.value = currentValue;
+        }
+      }
+    }
   }
 
   // ============================================
