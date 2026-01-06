@@ -17,6 +17,7 @@ const pagosController = require("../controllers/admin/pagosController");
 const inventarioController = require("../controllers/inventarioController");
 const numCuentaController = require("../controllers/numCuentaController");
 const migrationController = require("../controllers/migrationController");
+const landingEditorController = require("../controllers/landingEditorController");
 const upload = require("../middlewares/upload");
 const uploadComprobante = require("../middlewares/uploadComprobante");
 const uploadProductImages = require("../middlewares/uploadProductImages");
@@ -1181,6 +1182,52 @@ router.post(
   authenticate,
   authorizeAdmin,
   migrationController.sincronizarImagenesPorColor
+);
+
+/**
+ * Landing Page Editor - Gestión de contenido dinámico
+ */
+router.get(
+  "/landing/config",
+  authenticate,
+  authorizeAdmin,
+  landingEditorController.getConfig
+);
+
+router.post(
+  "/landing/draft",
+  authenticate,
+  authorizeAdmin,
+  landingEditorController.saveDraft
+);
+
+router.post(
+  "/landing/publish",
+  authenticate,
+  authorizeAdmin,
+  landingEditorController.publishChanges
+);
+
+router.post(
+  "/landing/upload-image",
+  authenticate,
+  authorizeAdmin,
+  upload.single('image'),
+  landingEditorController.uploadImage
+);
+
+router.get(
+  "/landing/categories",
+  authenticate,
+  authorizeAdmin,
+  landingEditorController.getCategories
+);
+
+router.post(
+  "/landing/reset",
+  authenticate,
+  authorizeAdmin,
+  landingEditorController.resetDraft
 );
 
 module.exports = router;
