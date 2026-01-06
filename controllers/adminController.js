@@ -4847,6 +4847,8 @@ const getAllPedidos = async (req, res) => {
           WHEN a.AgenteID IS NOT NULL THEN a.Nombre || ' ' || a.Apellido 
           ELSE NULL 
         END as AgenteNombre,
+        p.url_evidencia_entrega,
+        p.fecha_entrega_real,
         (SELECT COUNT(*) FROM DetallesDelPedido dp WHERE dp.PedidoID = p.PedidoID) as TotalItems
       FROM Pedidos p
       INNER JOIN Clientes c ON p.ClienteID = c.ClienteID
@@ -4875,6 +4877,8 @@ const getAllPedidos = async (req, res) => {
           estadoNombre: row.estadonombre || null,
           agenteId: row.agenteid,
           agenteNombre: row.agentenombre,
+          urlEvidenciaEntrega: row.url_evidencia_entrega || null,
+          fechaEntregaReal: row.fecha_entrega_real || null,
           totalItems: parseInt(row.totalitems),
         })),
       },
@@ -13384,6 +13388,224 @@ const eliminarImagenProducto = async (req, res) => {
   }
 };
 
+/**
+ * Subir evidencia de entrega (remisión firmada)
+ * POST /api/admin/pedidos/:id/evidencia
+ */
+const subirEvidenciaEntrega = async (req, res) => {
+  try {
+    const pedidoId = Number.parseInt(req.params.id, 10);
+
+    if (!Number.isInteger(pedidoId) || pedidoId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "ID de pedido inválido",
+      });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: "No se proporcionó ningún archivo de evidencia",
+      });
+    }
+
+    const urlEvidencia = req.file.path;
+
+    const pedidoResult = await db.query(
+      "SELECT pedidoid, estatus, clienteid FROM pedidos WHERE pedidoid = $1",
+      [pedidoId]
+    );
+
+    if (pedidoResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Pedido no encontrado",
+      });
+    }
+
+    const updateResult = await db.query(
+      `UPDATE pedidos 
+       SET url_evidencia_entrega = $1, 
+           fecha_entrega_real = NOW(), 
+           estatus = 'Entregado'
+       WHERE pedidoid = $2
+       RETURNING pedidoid, url_evidencia_entrega, fecha_entrega_real, estatus`,
+      [urlEvidencia, pedidoId]
+    );
+
+    const pedido = updateResult.rows[0];
+    const clienteId = pedidoResult.rows[0].clienteid;
+
+    if (clienteId) {
+      try {
+        await crearNotificacionServicio(
+          clienteId,
+          'pedido',
+          `Pedido #${pedidoId} Entregado`,
+          `Tu pedido ha sido entregado exitosamente. La evidencia de entrega ha sido registrada.`,
+          `/pedido-detalle.html?id=${pedidoId}`,
+          'normal'
+        );
+      } catch (notifError) {
+        console.warn("No se pudo crear notificación de entrega:", notifError);
+      }
+    }
+
+    await auditService.registrarCambioPasivo(
+      req,
+      "pedidos",
+      pedidoId,
+      "UPDATE",
+      { estatus: pedidoResult.rows[0].estatus },
+      { estatus: "Entregado", url_evidencia_entrega: urlEvidencia }
+    );
+
+    res.json({
+      success: true,
+      message: "Evidencia de entrega subida exitosamente",
+      data: {
+        pedidoId: pedido.pedidoid,
+        urlEvidencia: pedido.url_evidencia_entrega,
+        fechaEntregaReal: pedido.fecha_entrega_real,
+        estatus: pedido.estatus,
+      },
+    });
+  } catch (error) {
+    console.error("Error al subir evidencia de entrega:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error al subir evidencia de entrega",
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * Obtener datos para generar remisión PDF
+ * GET /api/admin/pedidos/:id/remision
+ */
+const obtenerRemisionPedido = async (req, res) => {
+  try {
+    const pedidoId = Number.parseInt(req.params.id, 10);
+
+    if (!Number.isInteger(pedidoId) || pedidoId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "ID de pedido inválido",
+      });
+    }
+
+    const pedidoQuery = `
+      SELECT 
+        p.pedidoid,
+        p.fechapedido,
+        p.montototal,
+        p.costoenvio,
+        p.estatus,
+        c.nombre as cliente_nombre,
+        c.apellido as cliente_apellido,
+        c.email as cliente_email,
+        c.telefono as cliente_telefono,
+        d.receptor,
+        d.calle,
+        d.ciudad,
+        e.nombre as estado_nombre,
+        a.nombre as agente_nombre,
+        a.apellido as agente_apellido,
+        a.codigoagente
+      FROM pedidos p
+      INNER JOIN clientes c ON p.clienteid = c.clienteid
+      LEFT JOIN cliente_direcciones d ON p.direccionenvioid = d.direccionid
+      LEFT JOIN estados e ON d.estadoid = e.estadoid
+      LEFT JOIN agentesdeventas a ON p.agenteid = a.agenteid
+      WHERE p.pedidoid = $1
+    `;
+
+    const pedidoResult = await db.query(pedidoQuery, [pedidoId]);
+
+    if (pedidoResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Pedido no encontrado",
+      });
+    }
+
+    const pedido = pedidoResult.rows[0];
+
+    const detallesQuery = `
+      SELECT 
+        dp.cantidad,
+        dp.preciounitarioaplicado,
+        dp.piezastotales,
+        pv.sku,
+        pv.dimensiones,
+        prod.nombreproducto,
+        t.etiqueta as tamano_etiqueta,
+        t.valor as tamano_valor
+      FROM detallesdelpedido dp
+      INNER JOIN producto_variantes pv ON pv.varianteid = dp.varianteid
+      INNER JOIN productos prod ON prod.productoid = pv.productoid
+      LEFT JOIN cat_tamanopaquetes t ON t.tamanoid = dp.tamanoid
+      WHERE dp.pedidoid = $1
+      ORDER BY dp.detalleid ASC
+    `;
+
+    const detallesResult = await db.query(detallesQuery, [pedidoId]);
+
+    const items = detallesResult.rows.map((item) => ({
+      sku: item.sku,
+      nombreProducto: item.nombreproducto,
+      dimensiones: item.dimensiones,
+      tamano: item.tamano_etiqueta || 'N/A',
+      cantidad: parseInt(item.cantidad, 10),
+      precioUnitario: parseFloat(item.preciounitarioaplicado),
+      piezasTotales: item.piezastotales,
+      subtotal: parseFloat(
+        (parseInt(item.cantidad, 10) * 
+         (item.tamano_valor || 1) * 
+         parseFloat(item.preciounitarioaplicado)).toFixed(2)
+      ),
+    }));
+
+    res.json({
+      success: true,
+      data: {
+        pedido: {
+          pedidoId: pedido.pedidoid,
+          fechaPedido: pedido.fechapedido,
+          montoTotal: parseFloat(pedido.montototal),
+          costoEnvio: parseFloat(pedido.costoenvio || 0),
+          estatus: pedido.estatus,
+          cliente: {
+            nombre: `${pedido.cliente_nombre} ${pedido.cliente_apellido}`,
+            email: pedido.cliente_email,
+            telefono: pedido.cliente_telefono,
+          },
+          direccion: {
+            receptor: pedido.receptor,
+            calle: pedido.calle,
+            ciudad: pedido.ciudad,
+            estado: pedido.estado_nombre,
+          },
+          agente: pedido.agente_nombre ? {
+            nombre: `${pedido.agente_nombre} ${pedido.agente_apellido}`,
+            codigo: pedido.codigoagente,
+          } : null,
+          items,
+        },
+      },
+    });
+  } catch (error) {
+    console.error("Error al obtener datos de remisión:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error al obtener datos de remisión",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   loginAdmin,
   verifyAdmin,
@@ -13470,4 +13692,6 @@ getMedidasExistentes,
   actualizarOrdenImagenesVariante,
   confirmarOrdenBackorder,
   cancelarOrdenBackorder,
+  subirEvidenciaEntrega,
+  obtenerRemisionPedido,
 };

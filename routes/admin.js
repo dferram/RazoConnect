@@ -829,6 +829,26 @@ router.get(
 );
 
 /**
+ * Evidencia de Entrega / Remisión Firmada
+ */
+const uploadEvidenciaEntrega = require("../middlewares/uploadEvidenciaEntrega");
+
+router.post(
+  "/pedidos/:id/evidencia",
+  authenticate,
+  authorizeAdmin,
+  uploadEvidenciaEntrega.single("evidencia"),
+  adminController.subirEvidenciaEntrega
+);
+
+router.get(
+  "/pedidos/:id/remision",
+  authenticate,
+  authorizeAdmin,
+  adminController.obtenerRemisionPedido
+);
+
+/**
  * Gestión de proveedores
  */
 router.get(

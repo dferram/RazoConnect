@@ -5,7 +5,7 @@
 -- Dumped from database version 17.7
 -- Dumped by pg_dump version 17.5
 
--- Started on 2026-01-04 22:43:34
+-- Started on 2026-01-05 17:47:34
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -2067,11 +2067,31 @@ CREATE TABLE public.pedidos (
     metodo_pago character varying(30),
     cupon_id integer,
     monto_descuento numeric(10,2) DEFAULT 0.00,
-    saldo_pendiente numeric(10,2) DEFAULT 0.00
+    saldo_pendiente numeric(10,2) DEFAULT 0.00,
+    url_evidencia_entrega text,
+    fecha_entrega_real timestamp without time zone
 );
 
 
 ALTER TABLE public.pedidos OWNER TO ferram;
+
+--
+-- TOC entry 5022 (class 0 OID 0)
+-- Dependencies: 286
+-- Name: COLUMN pedidos.url_evidencia_entrega; Type: COMMENT; Schema: public; Owner: ferram
+--
+
+COMMENT ON COLUMN public.pedidos.url_evidencia_entrega IS 'URL de la foto de la remisión firmada por el cliente (Cloudinary)';
+
+
+--
+-- TOC entry 5023 (class 0 OID 0)
+-- Dependencies: 286
+-- Name: COLUMN pedidos.fecha_entrega_real; Type: COMMENT; Schema: public; Owner: ferram
+--
+
+COMMENT ON COLUMN public.pedidos.fecha_entrega_real IS 'Fecha y hora real en que se entregó el pedido y se subió la evidencia';
+
 
 --
 -- TOC entry 287 (class 1259 OID 25262)
@@ -2090,7 +2110,7 @@ CREATE SEQUENCE public.pedidos_pedidoid_seq
 ALTER SEQUENCE public.pedidos_pedidoid_seq OWNER TO ferram;
 
 --
--- TOC entry 5022 (class 0 OID 0)
+-- TOC entry 5024 (class 0 OID 0)
 -- Dependencies: 287
 -- Name: pedidos_pedidoid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -2148,7 +2168,7 @@ CREATE SEQUENCE public.producto_imagenes_color_imagencolorid_seq
 ALTER SEQUENCE public.producto_imagenes_color_imagencolorid_seq OWNER TO ferram;
 
 --
--- TOC entry 5023 (class 0 OID 0)
+-- TOC entry 5025 (class 0 OID 0)
 -- Dependencies: 310
 -- Name: producto_imagenes_color_imagencolorid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -2173,7 +2193,7 @@ CREATE SEQUENCE public.producto_imagenes_imagenid_seq
 ALTER SEQUENCE public.producto_imagenes_imagenid_seq OWNER TO ferram;
 
 --
--- TOC entry 5024 (class 0 OID 0)
+-- TOC entry 5026 (class 0 OID 0)
 -- Dependencies: 289
 -- Name: producto_imagenes_imagenid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -2227,7 +2247,7 @@ CREATE SEQUENCE public.producto_variante_imagenes_imagenid_seq
 ALTER SEQUENCE public.producto_variante_imagenes_imagenid_seq OWNER TO ferram;
 
 --
--- TOC entry 5025 (class 0 OID 0)
+-- TOC entry 5027 (class 0 OID 0)
 -- Dependencies: 292
 -- Name: producto_variante_imagenes_imagenid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -2262,7 +2282,7 @@ CREATE TABLE public.producto_variantes (
 ALTER TABLE public.producto_variantes OWNER TO ferram;
 
 --
--- TOC entry 5026 (class 0 OID 0)
+-- TOC entry 5028 (class 0 OID 0)
 -- Dependencies: 293
 -- Name: COLUMN producto_variantes.stock; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -2271,7 +2291,7 @@ COMMENT ON COLUMN public.producto_variantes.stock IS 'COLUMNA LEGACY - No usar. 
 
 
 --
--- TOC entry 5027 (class 0 OID 0)
+-- TOC entry 5029 (class 0 OID 0)
 -- Dependencies: 293
 -- Name: COLUMN producto_variantes.tipoproductoid; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -2296,7 +2316,7 @@ CREATE SEQUENCE public.producto_variantes_varianteid_seq
 ALTER SEQUENCE public.producto_variantes_varianteid_seq OWNER TO ferram;
 
 --
--- TOC entry 5028 (class 0 OID 0)
+-- TOC entry 5030 (class 0 OID 0)
 -- Dependencies: 294
 -- Name: producto_variantes_varianteid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -2341,7 +2361,7 @@ CREATE SEQUENCE public.productos_productoid_seq1
 ALTER SEQUENCE public.productos_productoid_seq1 OWNER TO ferram;
 
 --
--- TOC entry 5029 (class 0 OID 0)
+-- TOC entry 5031 (class 0 OID 0)
 -- Dependencies: 296
 -- Name: productos_productoid_seq1; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -2383,7 +2403,7 @@ CREATE SEQUENCE public.proveedor_reglas_empaque_reglaid_seq
 ALTER SEQUENCE public.proveedor_reglas_empaque_reglaid_seq OWNER TO ferram;
 
 --
--- TOC entry 5030 (class 0 OID 0)
+-- TOC entry 5032 (class 0 OID 0)
 -- Dependencies: 298
 -- Name: proveedor_reglas_empaque_reglaid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -2447,7 +2467,7 @@ CREATE SEQUENCE public.proveedores_proveedorid_seq
 ALTER SEQUENCE public.proveedores_proveedorid_seq OWNER TO ferram;
 
 --
--- TOC entry 5031 (class 0 OID 0)
+-- TOC entry 5033 (class 0 OID 0)
 -- Dependencies: 300
 -- Name: proveedores_proveedorid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -2490,7 +2510,7 @@ CREATE SEQUENCE public.solicitudes_credito_solicitud_id_seq
 ALTER SEQUENCE public.solicitudes_credito_solicitud_id_seq OWNER TO ferram;
 
 --
--- TOC entry 5032 (class 0 OID 0)
+-- TOC entry 5034 (class 0 OID 0)
 -- Dependencies: 302
 -- Name: solicitudes_credito_solicitud_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -2515,7 +2535,7 @@ CREATE TABLE public.tipoproducto (
 ALTER TABLE public.tipoproducto OWNER TO ferram;
 
 --
--- TOC entry 5033 (class 0 OID 0)
+-- TOC entry 5035 (class 0 OID 0)
 -- Dependencies: 303
 -- Name: TABLE tipoproducto; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -2540,7 +2560,7 @@ CREATE SEQUENCE public.tipoproducto_tipoproductoid_seq
 ALTER SEQUENCE public.tipoproducto_tipoproductoid_seq OWNER TO ferram;
 
 --
--- TOC entry 5034 (class 0 OID 0)
+-- TOC entry 5036 (class 0 OID 0)
 -- Dependencies: 304
 -- Name: tipoproducto_tipoproductoid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -2571,7 +2591,7 @@ CREATE TABLE public.toma_inventario_conteos (
 ALTER TABLE public.toma_inventario_conteos OWNER TO ferram;
 
 --
--- TOC entry 5035 (class 0 OID 0)
+-- TOC entry 5037 (class 0 OID 0)
 -- Dependencies: 305
 -- Name: TABLE toma_inventario_conteos; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -2580,7 +2600,7 @@ COMMENT ON TABLE public.toma_inventario_conteos IS 'Registros individuales de co
 
 
 --
--- TOC entry 5036 (class 0 OID 0)
+-- TOC entry 5038 (class 0 OID 0)
 -- Dependencies: 305
 -- Name: COLUMN toma_inventario_conteos.estatus_aplicacion; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -2605,7 +2625,7 @@ CREATE SEQUENCE public.toma_inventario_conteos_conteoid_seq
 ALTER SEQUENCE public.toma_inventario_conteos_conteoid_seq OWNER TO ferram;
 
 --
--- TOC entry 5037 (class 0 OID 0)
+-- TOC entry 5039 (class 0 OID 0)
 -- Dependencies: 306
 -- Name: toma_inventario_conteos_conteoid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -2631,7 +2651,7 @@ CREATE TABLE public.toma_inventario_sesiones (
 ALTER TABLE public.toma_inventario_sesiones OWNER TO ferram;
 
 --
--- TOC entry 5038 (class 0 OID 0)
+-- TOC entry 5040 (class 0 OID 0)
 -- Dependencies: 307
 -- Name: TABLE toma_inventario_sesiones; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -2656,7 +2676,7 @@ CREATE SEQUENCE public.toma_inventario_sesiones_sesionid_seq
 ALTER SEQUENCE public.toma_inventario_sesiones_sesionid_seq OWNER TO ferram;
 
 --
--- TOC entry 5039 (class 0 OID 0)
+-- TOC entry 5041 (class 0 OID 0)
 -- Dependencies: 308
 -- Name: toma_inventario_sesiones_sesionid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -3086,8 +3106,6 @@ COPY public.agentesdeventas (agenteid, nombre, apellido, email, passwordhash, co
 --
 
 COPY public.carritodecompra (carritoid, clienteid, fechacreacion, ultimamodificacion) FROM stdin;
-2	2	2025-12-21 23:06:38.490057	2026-01-02 06:05:30.155781
-1	1	2025-12-19 17:46:56.916237	2026-01-04 02:58:30.448673
 \.
 
 
@@ -3137,8 +3155,6 @@ COPY public.categorias (categoriaid, nombre, descripcion, parentcategoriaid, act
 --
 
 COPY public.cliente_creditos (credito_id, cliente_id, limite_credito, saldo_deudor, dias_gracia, estado_credito, fecha_creacion, ultima_actualizacion, exportado_en, reporte_id) FROM stdin;
-2	1	20000.00	0.00	15	ACTIVO	2025-12-26 16:59:35.424281	2025-12-29 02:26:47.864091	\N	\N
-1	2	5000.00	257.40	15	ACTIVO	2025-12-25 01:42:28.676782	2026-01-02 02:25:25.635208	2025-12-25 05:49:15.580167	CxC-20251225-054915
 \.
 
 
@@ -3149,8 +3165,6 @@ COPY public.cliente_creditos (credito_id, cliente_id, limite_credito, saldo_deud
 --
 
 COPY public.cliente_direcciones (direccionid, clienteid, etiqueta, receptor, calle, numeroext, numeroint, colonia, ciudad, codigopostal, telefonocontacto, estadoid) FROM stdin;
-1	2	Casa	Fernando Ramírez	Paso de los Toros	1821	28	El Refugio	Querétaro	76146	5560989524	22
-2	1	Casa	Fernando Ramírez	Paso de los Toros	1821	28	El Refugio	Querétaro	76146	5560989524	22
 \.
 
 
@@ -3161,10 +3175,8 @@ COPY public.cliente_direcciones (direccionid, clienteid, etiqueta, receptor, cal
 --
 
 COPY public.clientes (clienteid, nombre, apellido, email, passwordhash, telefono, fechaderegistro, activo, agenteid, google_id, avatar_url) FROM stdin;
-1	Diego Fernando	Ramírez García	dferram8@gmail.com	\N	\N	2025-12-19 12:11:47.325519	t	\N	112463414682839499861	https://lh3.googleusercontent.com/a/ACg8ocL4vAqVyYj3GucQspTlE6BtmuyoqZqML7L4Zcb7WdwdcHT9m4E=s96-c
-2	Diego Fernando	Ramírez García	dferramm@gmail.com	$2b$10$wO8AHmwoDDh3LXVCnr4vQOsk6kvSQFc8We7oWdDKigyPseuvo6tc2	5560989524	2025-01-21 13:06:50.921092	t	\N	107035380971984210505	https://lh3.googleusercontent.com/a/ACg8ocKNxihdAINOrco8B52uUBljbYq3DjLlFlU9VsDVdeuo9DZ5IQ=s96-c
-4	Lupita	García	pupis.gr.lg@gmail.com	\N	\N	2026-01-01 20:42:19.937169	t	\N	103745902453087048608	https://lh3.googleusercontent.com/a/ACg8ocLj4qSa6qURFQD78mg8e_4f5Pebl1ctU3YaiocCr1kMyguH=s96-c
-5	Ale	Calderon	alecaja.19@gmail.com	\N	\N	2026-01-03 16:59:46.3404	t	\N	109338262232369431358	https://lh3.googleusercontent.com/a/ACg8ocJXm3t_dna-olwAHxEyKcf_0VubmLymz-SNMrdF-vpSmpeNeA=s96-c
+1	Fernando	Ramírez	dferramm@gmail.com	$2b$10$ZUcnN9znOWCy8X1RbUEF6.yBpyY3CzbMUVDZ/F27iKXiVDv2lRRmS	5560989524	2026-01-05 05:23:11.396759	t	\N	107035380971984210505	https://lh3.googleusercontent.com/a/ACg8ocKNxihdAINOrco8B52uUBljbYq3DjLlFlU9VsDVdeuo9DZ5IQ=s96-c
+2	Diego Fernando	Ramírez García	dferram8@gmail.com	\N	\N	2026-01-05 20:01:06.815611	t	\N	112463414682839499861	https://lh3.googleusercontent.com/a/ACg8ocL4vAqVyYj3GucQspTlE6BtmuyoqZqML7L4Zcb7WdwdcHT9m4E=s96-c
 \.
 
 
@@ -3185,59 +3197,6 @@ COPY public.comisiones (comisionid, pedidoid, agenteid, montocomision, fechacalc
 --
 
 COPY public.communicationlogs (logid, "timestamp", destinatario, asunto, estatusemail, errormensaje, pedidoid, clienteid, proveedorid) FROM stdin;
-3	2025-12-25 04:39:46.564496	dferram8@gmail.com	💰 Nuevo Pedido #1 - $171.60	Enviado	\N	\N	\N	\N
-1	2025-12-25 04:39:46.562214	dferramm@gmail.com	Tu pedido RazoConnect ha sido recibido (#1)	Enviado	\N	\N	\N	\N
-2	2025-12-25 04:39:46.562757	dferram8@gmail.com	⚠️ Alerta: Backorder generado para el pedido #1	Enviado	\N	\N	\N	\N
-4	2025-12-25 04:48:41.766412	dferramm@gmail.com	Tu pedido RazoConnect ha sido recibido (#2)	Enviado	\N	\N	\N	\N
-5	2025-12-25 04:48:41.7668	dferram8@gmail.com	⚠️ Alerta: Backorder generado para el pedido #2	Enviado	\N	\N	\N	\N
-6	2025-12-25 04:48:41.782046	dferram8@gmail.com	💰 Nuevo Pedido #2 - $634.80	Enviado	\N	\N	\N	\N
-7	2025-12-25 05:32:51.176362	dferram8@gmail.com	💰 Nuevo Pedido #3 - $1544.40	Enviado	\N	\N	\N	\N
-8	2025-12-25 05:32:51.179396	dferram8@gmail.com	⚠️ Alerta: Backorder generado para el pedido #3	Enviado	\N	\N	\N	\N
-9	2025-12-25 05:32:51.199213	dferramm@gmail.com	Tu pedido RazoConnect ha sido recibido (#3)	Enviado	\N	\N	\N	\N
-10	2025-12-25 11:25:08.29327	dferram8@gmail.com	💰 Nuevo Pedido #4 - $343.20	Enviado	\N	\N	\N	\N
-11	2025-12-25 11:25:08.314891	dferramm@gmail.com	Tu pedido RazoConnect ha sido recibido (#4)	Enviado	\N	\N	\N	\N
-12	2025-12-25 11:25:08.315472	dferram8@gmail.com	⚠️ Alerta: Backorder generado para el pedido #4	Enviado	\N	\N	\N	\N
-13	2025-12-25 12:16:07.393122	dferram8@gmail.com	💰 Nuevo Pedido #5 - $686.40	Enviado	\N	\N	\N	\N
-14	2025-12-25 12:16:07.394111	dferramm@gmail.com	Tu pedido RazoConnect ha sido recibido (#5)	Enviado	\N	\N	\N	\N
-15	2025-12-25 12:16:07.399736	dferram8@gmail.com	⚠️ Alerta: Backorder generado para el pedido #5	Enviado	\N	\N	\N	\N
-17	2025-12-25 12:34:27.068359	dferramm@gmail.com	Tu pedido RazoConnect ha sido recibido (#6)	Enviado	\N	\N	\N	\N
-16	2025-12-25 12:34:27.067251	dferram8@gmail.com	💰 Nuevo Pedido #6 - $171.60	Enviado	\N	\N	\N	\N
-18	2025-12-25 12:34:31.964969	dferram8@gmail.com	⚠️ Alerta: Backorder generado para el pedido #6	Enviado	\N	\N	\N	\N
-19	2025-12-26 17:10:54.237893	dferram8@gmail.com	⚠️ Alerta: Backorder generado para el pedido #7	Enviado	\N	\N	\N	\N
-20	2025-12-26 17:10:54.293842	dferram8@gmail.com	💰 Nuevo Pedido #7 - $5994.00	Enviado	\N	\N	\N	\N
-22	2025-12-26 17:10:54.295262	dferram8@gmail.com	Tu pedido RazoConnect ha sido recibido (#7)	Enviado	\N	\N	\N	\N
-21	2025-12-26 17:10:54.294292	dferram8@gmail.com	⚠️ Alerta de Stock Bajo: NAT-002-JUM	Enviado	\N	\N	\N	\N
-23	2025-12-29 02:01:40.445924	dferram8@gmail.com	⚠️ Alerta: Backorder generado para el pedido #8	Enviado	\N	\N	\N	\N
-24	2025-12-29 02:01:40.657885	dferramm@gmail.com	Tu pedido RazoConnect ha sido recibido (#8)	Enviado	\N	\N	\N	\N
-25	2025-12-29 02:01:40.67848	dferram8@gmail.com	💰 Nuevo Pedido #8 - $896.40	Enviado	\N	\N	\N	\N
-26	2025-12-29 02:31:05.578449	dferram8@gmail.com	💰 Nuevo Pedido #9 - $1234.80	Enviado	\N	\N	\N	\N
-27	2025-12-29 02:31:05.833855	dferramm@gmail.com	Tu pedido RazoConnect ha sido recibido (#9)	Enviado	\N	\N	\N	\N
-28	2025-12-29 02:31:05.859533	dferram8@gmail.com	⚠️ Alerta: Backorder generado para el pedido #9	Enviado	\N	\N	\N	\N
-29	2025-12-29 02:31:42.057377	dferramm@gmail.com	Tu pedido RazoConnect ha sido recibido (#10)	Enviado	\N	\N	\N	\N
-30	2025-12-29 02:31:42.478386	dferram8@gmail.com	💰 Nuevo Pedido #10 - $1904.40	Enviado	\N	\N	\N	\N
-31	2025-12-29 02:31:42.479077	dferram8@gmail.com	⚠️ Alerta: Backorder generado para el pedido #10	Enviado	\N	\N	\N	\N
-32	2025-12-29 02:32:19.141644	dferram8@gmail.com	⚠️ Alerta: Backorder generado para el pedido #11	Enviado	\N	\N	\N	\N
-33	2025-12-29 02:32:19.143006	dferram8@gmail.com	⚠️ Alerta de Stock Bajo: AMO-006-25X25-NEGRO	Enviado	\N	\N	\N	\N
-34	2025-12-29 02:32:19.15855	dferramm@gmail.com	Tu pedido RazoConnect ha sido recibido (#11)	Enviado	\N	\N	\N	\N
-35	2025-12-29 02:32:19.172234	dferram8@gmail.com	💰 Nuevo Pedido #11 - $955.20	Enviado	\N	\N	\N	\N
-36	2025-12-29 02:33:11.367733	dferramm@gmail.com	Tu pedido RazoConnect ha sido recibido (#12)	Enviado	\N	\N	\N	\N
-37	2025-12-29 02:33:11.373212	dferram8@gmail.com	💰 Nuevo Pedido #12 - $634.80	Enviado	\N	\N	\N	\N
-38	2025-12-29 02:33:11.432512	dferram8@gmail.com	⚠️ Alerta de Stock Bajo: AMO-014	Enviado	\N	\N	\N	\N
-39	2026-01-02 01:34:34.508727	dferram8@gmail.com	⚠️ Alerta: Backorder generado para el pedido #13	Enviado	\N	\N	\N	\N
-40	2026-01-02 01:34:34.522981	dferramm@gmail.com	Tu pedido RazoConnect ha sido recibido (#13)	Enviado	\N	\N	\N	\N
-41	2026-01-02 01:34:34.523865	dferram8@gmail.com	💰 Nuevo Pedido #13 - $128.70	Enviado	\N	\N	\N	\N
-42	2026-01-02 02:04:47.783556	dferram8@gmail.com	💰 Nuevo Pedido #14 - $149.40	Enviado	\N	\N	\N	\N
-43	2026-01-02 02:04:47.798693	dferram8@gmail.com	⚠️ Alerta: Backorder generado para el pedido #14	Enviado	\N	\N	\N	\N
-44	2026-01-02 02:04:48.55453	dferramm@gmail.com	Tu pedido RazoConnect ha sido recibido (#14)	Enviado	\N	\N	\N	\N
-45	2026-01-02 02:14:37.709856	dferramm@gmail.com	Tu pedido RazoConnect ha sido recibido (#15)	Enviado	\N	\N	\N	\N
-46	2026-01-02 02:14:37.717572	dferram8@gmail.com	💰 Nuevo Pedido #15 - $405.60	Enviado	\N	\N	\N	\N
-47	2026-01-02 02:14:37.852963	dferram8@gmail.com	⚠️ Alerta: Backorder generado para el pedido #15	Enviado	\N	\N	\N	\N
-48	2026-01-02 02:14:54.230402	dferram8@gmail.com	⚠️ Alerta: Backorder generado para el pedido #16	Enviado	\N	\N	\N	\N
-49	2026-01-02 02:14:54.253076	dferramm@gmail.com	Tu pedido RazoConnect ha sido recibido (#16)	Enviado	\N	\N	\N	\N
-50	2026-01-02 02:14:54.267843	dferram8@gmail.com	💰 Nuevo Pedido #16 - $257.40	Enviado	\N	\N	\N	\N
-51	2026-01-02 06:05:47.592035	dferram8@gmail.com	⚠️ Alerta: Backorder generado para el pedido #17	Enviado	\N	\N	\N	\N
-52	2026-01-02 06:05:47.593163	dferramm@gmail.com	Tu pedido RazoConnect ha sido recibido (#17)	Enviado	\N	\N	\N	\N
-53	2026-01-02 06:05:47.599589	dferram8@gmail.com	💰 Nuevo Pedido #17 - $128.70	Enviado	\N	\N	\N	\N
 \.
 
 
@@ -3387,6 +3346,19 @@ COPY public.control_cambios (id, entidad, entidad_id, tipo_cambio, datos_anterio
 137	productos	56	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 56, "categoriaid": 3, "descripcion": "Caja para celebrar a esa persona especial, diseño divertido y tamaño perfecto para un regalo espectacular, con acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "PAL-001", "nombreproducto": "Palomita"}	5	APROBADO	2026-01-04 23:12:58.654783	2026-01-04 23:12:58.654783	5
 138	productos	57	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 57, "categoriaid": 3, "descripcion": "Caja con diseño divertido, ideal para celebrar el cumpleaños de esa persona especial, colores vibrantes acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "MIL-002", "nombreproducto": "Milk Cumple Colors"}	5	APROBADO	2026-01-04 23:59:53.437413	2026-01-04 23:59:53.437413	5
 139	productos	58	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 58, "categoriaid": 3, "descripcion": "Caja con diseños divertidos, perfecta para cervezas ó bebidas, resistente, con estilo y ese look que siempre queda bien. Ideal para armar regalos cool y sorprender, acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "SIX-002", "nombreproducto": "Six Pack Men"}	5	APROBADO	2026-01-05 00:30:01.777644	2026-01-05 00:30:01.777644	5
+140	productos	59	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 59, "categoriaid": 3, "descripcion": "Caja con un diseño original y funcional. Perfecta para entregar regalos especiales con un toque moderno y divertido. Resistente, fácil de armar, con asas, acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "CER-001", "nombreproducto": "Cerillo Party"}	5	APROBADO	2026-01-05 04:48:32.969775	2026-01-05 04:48:32.969775	5
+141	productos	60	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 60, "categoriaid": 3, "descripcion": "Bolsa Kraft de material resistente, con diseños únicos, ideal para sorprender a esa persona especial, acabado mate.", "proveedorid": 1, "sku_maestro": "BOL-001", "nombreproducto": "Bolsa Guapos"}	5	APROBADO	2026-01-05 05:05:37.351594	2026-01-05 05:05:37.351594	5
+142	productos	61	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 61, "categoriaid": 3, "descripcion": "Sobre de dinero, ideal para cuando no sabes que regalar, diseños alegres y divertidos, con acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "SOB-001", "nombreproducto": "Sobre Cumple"}	5	APROBADO	2026-01-05 05:28:54.66734	2026-01-05 05:28:54.66734	5
+143	productos	14	UPDATE	{"activo": true, "reglaid": 1, "productoid": 14, "categoriaid": 1, "descripcion": null, "proveedorid": 1, "sku_maestro": "LIS-002", "nombreproducto": "Línea Metalizada"}	{"activo": true, "reglaid": 1, "productoid": 14, "categoriaid": 1, "descripcion": null, "sku_maestro": "LIS-002", "nombreproducto": "Línea Metalizada", "proveedorid_default": 1}	2	APROBADO	2026-01-05 05:38:48.391989	2026-01-05 05:38:48.391989	2
+144	productos	46	UPDATE	{"activo": true, "reglaid": 1, "productoid": 46, "categoriaid": 4, "descripcion": "Caja baúl de regalo kraft color natural, con un diseño original y funcional. Perfecta para presentar regalos especiales con un toque natural y moderno. Resistente, fácil de armar y personalizar. Disponible en varios tamaños 🎁✨", "proveedorid": 1, "sku_maestro": "CAJ-003", "nombreproducto": "Caja baul"}	{"activo": true, "reglaid": 1, "productoid": 46, "categoriaid": 4, "descripcion": "Caja baúl de regalo kraft color natural, con un diseño original y funcional. Perfecta para presentar regalos especiales con un toque natural y moderno. Resistente, fácil de armar y personalizar. Disponible en varios tamaños 🎁✨", "sku_maestro": "CAJ-003", "nombreproducto": "Caja baul", "proveedorid_default": 1}	7	APROBADO	2026-01-05 19:20:47.345742	2026-01-05 19:20:47.345742	7
+145	productos	45	UPDATE	{"activo": true, "reglaid": 1, "productoid": 45, "categoriaid": 4, "descripcion": "Caja camisera de regalo kraft color natural, elegante y funcional. Ideal para presentar prendas y regalos con un estilo limpio y moderno. Resistente, práctica y fácil de personalizar. Disponible en diferentes tamaños para adaptarse a cada detalle 🎁✨", "proveedorid": 1, "sku_maestro": "CAJ-002", "nombreproducto": "Caja camisera"}	{"activo": true, "reglaid": 1, "productoid": 45, "categoriaid": 4, "descripcion": "Camisera de regalo kraft color natural, elegante y funcional. Ideal para presentar prendas y regalos con un estilo limpio y moderno. Resistente, práctica y fácil de personalizar. Disponible en diferentes tamaños para adaptarse a cada detalle 🎁✨", "sku_maestro": "CAJ-002", "nombreproducto": "Caja camisera", "proveedorid_default": 1}	7	APROBADO	2026-01-05 19:22:06.208084	2026-01-05 19:22:06.208084	7
+146	productos	46	UPDATE	{"activo": true, "reglaid": 1, "productoid": 46, "categoriaid": 4, "descripcion": "Caja baúl de regalo kraft color natural, con un diseño original y funcional. Perfecta para presentar regalos especiales con un toque natural y moderno. Resistente, fácil de armar y personalizar. Disponible en varios tamaños 🎁✨", "proveedorid": 1, "sku_maestro": "CAJ-003", "nombreproducto": "Caja baul"}	{"activo": true, "reglaid": 1, "productoid": 46, "categoriaid": 4, "descripcion": "Baúl de regalo kraft color natural, con un diseño original y funcional. Perfecta para presentar regalos especiales con un toque natural y moderno. Resistente, fácil de armar y personalizar. Disponible en varios tamaños 🎁✨", "sku_maestro": "CAJ-003", "nombreproducto": "Caja baul", "proveedorid_default": 1}	7	APROBADO	2026-01-05 19:22:29.216803	2026-01-05 19:22:29.216803	7
+147	productos	44	UPDATE	{"activo": true, "reglaid": 1, "productoid": 44, "categoriaid": 4, "descripcion": "Caja de regalo kraft natural tipo cubo, simple, bonita y con mucho estilo. Ideal para presentar tus detalles con un look natural y moderno. Resistente, práctica y fácil de personalizar. Disponible en tamaños desde 10 x 10 x 10 cm hasta 65 x 65 x 65 cm ✨🎁", "proveedorid": 1, "sku_maestro": "CAJ-001", "nombreproducto": "Caja cubo"}	{"activo": true, "reglaid": 1, "productoid": 44, "categoriaid": 4, "descripcion": "Cubo kraft natural, simple, bonita y con mucho estilo. Ideal para presentar tus detalles con un look natural y moderno. Resistente, práctica y fácil de personalizar. Disponible en tamaños desde 10 x 10 x 10 cm hasta 65 x 65 x 65 cm ✨🎁", "sku_maestro": "CAJ-001", "nombreproducto": "Caja cubo", "proveedorid_default": 1}	7	APROBADO	2026-01-05 19:24:13.920061	2026-01-05 19:24:13.920061	7
+148	productos	51	UPDATE	{"activo": true, "reglaid": 2, "productoid": 51, "categoriaid": 4, "descripcion": "Caja six pack kraft natural, perfecta para cervezas o bebidas. Resistente, con estilo y ese look natural que siempre queda bien. Ideal para armar regalos cool y sorprender 🍺✨", "proveedorid": 1, "sku_maestro": "SIX-001", "nombreproducto": "Six pack natural"}	{"activo": true, "reglaid": 1, "productoid": 51, "categoriaid": 4, "descripcion": "Six pack kraft natural, perfecta para cervezas o bebidas. Resistente, con estilo y ese look natural que siempre queda bien. Ideal para armar regalos cool y sorprender 🍺✨", "sku_maestro": "SIX-001", "nombreproducto": "Six pack natural", "proveedorid_default": 1}	7	APROBADO	2026-01-05 19:25:16.852431	2026-01-05 19:25:16.852431	7
+149	productos	62	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 62, "categoriaid": 1, "descripcion": "Dale a tus regalos el empaque que merecen con nuestra línea de cajas pasteleras. Diseñadas para combinar resistencia, estilo y practicidad, estas cajas son ideales para regalos especiales.", "proveedorid": 1, "sku_maestro": "PAS-002", "nombreproducto": "Pastelera Toda Ocasión"}	4	APROBADO	2026-01-05 21:44:09.257478	2026-01-05 21:44:09.257478	4
+150	productos	63	INSERT	\N	{"activo": true, "reglaid": 2, "productoid": 63, "categoriaid": 1, "descripcion": "¡Dale un toque de elegancia y ternura a tus detalles! Esta hermosa caja con forma de corazón en colores rosa, lila, rojo y negro, es la opción perfecta para empaques de San Valentín, aniversarios, cumpleaños o cualquier ocasión especial. Su acabado liso y minimalista permite que el regalo sea el verdadero protagonista.", "proveedorid": 1, "sku_maestro": "COR-001", "nombreproducto": "Corazón Liso"}	4	APROBADO	2026-01-05 22:42:21.260266	2026-01-05 22:42:21.260266	4
+151	productos	34	UPDATE	{"activo": true, "reglaid": 1, "productoid": 34, "categoriaid": 2, "descripcion": "¡Expresa tus sentimientos con una explosión de color! Nuestra línea Corazón Colors Love está diseñada para quienes buscan un empaque dinámico, moderno y lleno de alegría. Estas cajas no son solo un envoltorio, son parte del regalo mismo.", "proveedorid": 1, "sku_maestro": "AMO-025", "nombreproducto": "Corazón Colors Love"}	{"activo": true, "reglaid": 1, "productoid": 34, "categoriaid": 2, "descripcion": "¡Expresa tus sentimientos con una explosión de color! Nuestra línea Corazón Colors Love está diseñada para quienes buscan un empaque dinámico, moderno y lleno de alegría. Estas cajas no son solo un envoltorio, son parte del regalo mismo.", "sku_maestro": "AMO-025", "nombreproducto": "Corazón Colors Love", "proveedorid_default": 1}	4	APROBADO	2026-01-05 22:57:42.399531	2026-01-05 22:57:42.399531	4
+152	productos	64	INSERT	\N	{"activo": true, "reglaid": 2, "productoid": 64, "categoriaid": 1, "descripcion": "Eleva la presentación de tus arreglos florales con nuestras cajas exclusivas. Diseñadas específicamente para proteger y resaltar la belleza de las rosas, estas cajas en colores magenta, rosa, lila, rojo y negro,  son la opción perfecta para San Valentín, aniversarios o cualquier ocasión especial.", "proveedorid": 1, "sku_maestro": "CAJ-006", "nombreproducto": "Caja para Rosas"}	4	APROBADO	2026-01-05 23:15:31.257044	2026-01-05 23:15:31.257044	4
 \.
 
 
@@ -3397,17 +3369,6 @@ COPY public.control_cambios (id, entidad, entidad_id, tipo_cambio, datos_anterio
 --
 
 COPY public.credito_movimientos (movimiento_id, credito_id, tipo_movimiento, monto, referencia_id, descripcion, fecha_movimiento, saldo_despues_movimiento, registrado_por, admin_id, agente_id) FROM stdin;
-13	1	CARGO	1234.80	PED-9	Compra realizada (Pedido #9)	2025-12-29 02:31:02.579417	1234.80	\N	\N	\N
-14	1	CARGO	1904.40	PED-10	Compra realizada (Pedido #10)	2025-12-29 02:31:35.046362	3139.20	\N	\N	\N
-15	1	CARGO	955.20	PED-11	Compra realizada (Pedido #11)	2025-12-29 02:32:16.496963	4094.40	\N	\N	\N
-16	1	CARGO	634.80	PED-12	Compra realizada (Pedido #12)	2025-12-29 02:33:04.229328	4729.20	\N	\N	\N
-17	1	ABONO	1234.80	PED-9	Pago validado por transferencia bancaria (Ref: Transferencia bancaria)	2025-12-29 02:34:05.660581	3494.40	2	2	\N
-18	1	ABONO	4729.20	PED-10	Pago validado por transferencia bancaria (Ref: Transferencia bancaria)	2025-12-29 02:34:59.970783	0.00	2	2	\N
-19	1	CARGO	128.70	PED-13	Compra realizada (Pedido #13)	2026-01-02 01:34:33.245122	128.70	\N	\N	\N
-21	1	ABONO	128.70	PAGO-7	Pago genérico sin asignación específica (Ref: Transferencia bancaria)	2026-01-02 01:40:30.570254	0.00	2	2	\N
-22	1	CARGO	405.60	PED-15	Compra realizada (Pedido #15)	2026-01-02 02:14:36.437379	405.60	\N	\N	\N
-23	1	CARGO	257.40	PED-16	Compra realizada (Pedido #16)	2026-01-02 02:14:53.07082	663.00	\N	\N	\N
-24	1	ABONO	405.60	PAGO-8	Pago genérico sin asignación específica (Ref: Transferencia bancaria)	2026-01-02 02:25:25.635208	257.40	2	2	\N
 \.
 
 
@@ -3428,10 +3389,6 @@ COPY public.cuentas_por_cobrar (cxcid, pedido_id, cliente_id, tipo_movimiento, m
 --
 
 COPY public.cuentas_por_pagar (cxp_id, proveedor_id, orden_compra_id, fecha_emision, fecha_vencimiento, monto_total, monto_pagado, estatus, referencia_factura, comprobante_pago, notas, usuario_creador_id, monto_original, fecha_cierre, exportado_en, reporte_id) FROM stdin;
-2	1	4	2025-12-25 20:02:51.311356	2025-12-25	586.32	586.32	PAGADO	Transferencia	\N	Transferencia	2	586.32	\N	\N	\N
-1	1	5	2025-12-25 19:52:37.128419	2025-12-25	754.32	754.32	PAGADO	Transferencia	\N	Transferencia	2	754.32	\N	\N	\N
-3	1	3	2025-12-25 20:03:12.735636	2025-12-25	0.00	0.00	PENDIENTE	REM-101	\N	\N	2	0.00	\N	2026-01-03 01:25:09.943756	CXP-1767403509464
-4	1	8	2025-12-26 16:45:46.612036	2025-12-26	5738.88	0.00	PENDIENTE	REM-102	\N	\N	2	5738.88	\N	2026-01-03 01:25:09.943756	CXP-1767403509464
 \.
 
 
@@ -3462,8 +3419,7 @@ COPY public.cxp_etiquetas_asignadas (asignacion_id, cxp_id, etiqueta_id, fecha_a
 --
 
 COPY public.datos_bancarios_empresa (id, banco, numero_cuenta, clabe, titular, ultima_actualizacion, es_principal) FROM stdin;
-2	PRUEBA	21321321323112	123132131231231232	Prueba 1	2025-12-26 17:22:59.337362	f
-1	Banco Default	0000000000	000000000000000000	RazoConnect S.A.	2025-12-26 17:23:02.814789	t
+2	PRUEBA	21321321323112	123132131231231232	Prueba 1	2025-12-26 17:22:59.337362	t
 \.
 
 
@@ -3474,30 +3430,6 @@ COPY public.datos_bancarios_empresa (id, banco, numero_cuenta, clabe, titular, u
 --
 
 COPY public.detallesdelpedido (detalleid, pedidoid, varianteid, cantidadpaquetes, precioporpaquete, piezastotales, preciounitario, tamanoid, esbackorder, cantidadsurtida, cantidadbackorder) FROM stdin;
-1	1	1	1	171.60	4	42.90	5	t	0	1
-2	2	2	1	634.80	12	52.90	4	t	0	1
-3	3	1	3	514.80	36	42.90	4	t	0	3
-4	4	16	2	171.60	8	42.90	5	t	0	2
-5	5	16	3	171.60	12	42.90	5	t	0	3
-6	5	16	1	514.80	12	42.90	4	t	0	1
-7	6	16	3	171.60	12	42.90	5	t	0	3
-8	7	40	2	298.80	24	24.90	4	f	2	0
-9	7	32	2	202.80	24	16.90	4	t	0	2
-10	7	33	2	250.80	24	20.90	4	t	0	2
-11	7	34	2	346.80	24	28.90	4	t	0	2
-12	7	41	3	418.80	36	34.90	4	t	0	3
-13	7	42	4	634.80	48	52.90	4	t	0	4
-14	8	40	3	298.80	36	24.90	4	t	0	3
-15	9	28	2	617.40	12	102.90	3	t	0	2
-16	10	13	3	634.80	36	52.90	4	t	0	3
-17	11	7	2	238.80	24	19.90	4	f	2	0
-18	11	7	2	238.80	24	19.90	4	t	0	2
-19	12	15	1	634.80	12	52.90	4	f	1	0
-20	13	46	2	128.70	6	42.90	2	t	0	2
-21	14	40	1	149.40	6	24.90	3	t	0	1
-22	15	32	2	202.80	24	16.90	4	t	0	2
-23	16	46	1	257.40	6	42.90	3	t	0	1
-24	17	45	2	128.70	6	42.90	2	t	0	2
 \.
 
 
@@ -3508,48 +3440,6 @@ COPY public.detallesdelpedido (detalleid, pedidoid, varianteid, cantidadpaquetes
 --
 
 COPY public.detallesordencompra (detalleoc_id, ordencompraid, varianteid, cantidadsolicitada, cantidadrecibida, piezasporpaquete, costounitario, piezasrecibidas) FROM stdin;
-2	1	2	1	0	1	0.00	0
-1	1	1	4	0	1	0.00	0
-3	1	16	2	0	1	0.00	0
-4	2	16	4	0	1	0.00	0
-8	5	1	1	1	12	27.93	12
-9	5	2	1	1	12	34.93	12
-6	4	8	1	1	12	20.93	12
-7	4	9	1	1	12	27.93	12
-5	3	16	12	12	1	0.00	12
-10	6	8	1	0	12	20.93	0
-11	6	9	1	0	12	27.93	0
-12	6	6	1	0	12	13.23	0
-14	6	1	1	0	12	27.93	0
-15	6	2	1	0	12	34.93	0
-16	6	3	1	0	12	20.93	0
-17	7	8	1	0	12	20.93	0
-18	8	8	2	2	12	20.93	24
-19	8	41	2	2	12	20.93	24
-20	8	42	1	1	12	32.13	12
-21	8	31	4	4	6	41.93	24
-22	8	30	2	2	6	34.93	12
-23	8	29	2	2	6	27.93	12
-24	8	32	2	2	6	10.43	12
-25	8	33	2	2	6	13.23	12
-26	8	34	2	2	6	17.43	12
-27	8	35	2	2	6	20.93	12
-28	8	36	2	2	6	27.93	12
-29	8	16	1	1	12	27.93	12
-30	8	17	1	1	12	34.93	12
-31	8	15	1	1	12	34.93	12
-32	8	14	1	1	12	27.93	12
-34	6	33	6	0	1	0.00	0
-35	6	34	6	0	1	0.00	0
-36	6	41	12	0	1	0.00	0
-37	6	42	12	0	1	0.00	0
-39	6	28	6	0	1	0.00	0
-40	6	13	12	0	1	0.00	0
-13	6	7	13	0	12	13.23	0
-38	6	40	24	0	1	0.00	0
-33	6	32	12	0	1	0.00	0
-41	6	46	24	0	1	0.00	0
-42	6	45	12	0	1	0.00	0
 \.
 
 
@@ -3602,24 +3492,6 @@ COPY public.estados (estadoid, nombre, abreviatura) FROM stdin;
 --
 
 COPY public.inventarios_admin (inventario_id, admin_id, variante_id, cantidad, ultima_actualizacion, registrado_por) FROM stdin;
-1	2	1	12	2026-01-05 04:33:38.014144	\N
-2	2	2	12	2026-01-05 04:33:38.014144	\N
-3	2	9	12	2026-01-05 04:33:38.014144	\N
-4	2	30	48	2026-01-05 04:33:38.014144	\N
-5	2	29	30	2026-01-05 04:33:38.014144	\N
-6	2	32	12	2026-01-05 04:33:38.014144	\N
-7	2	33	12	2026-01-05 04:33:38.014144	\N
-8	2	34	18	2026-01-05 04:33:38.014144	\N
-9	2	35	12	2026-01-05 04:33:38.014144	\N
-10	2	36	12	2026-01-05 04:33:38.014144	\N
-11	2	16	24	2026-01-05 04:33:38.014144	\N
-12	2	17	12	2026-01-05 04:33:38.014144	\N
-13	2	43	12	2026-01-05 04:33:38.014144	\N
-14	2	8	36	2026-01-05 04:33:38.014144	\N
-15	2	41	42	2026-01-05 04:33:38.014144	\N
-16	2	31	24	2026-01-05 04:33:38.014144	\N
-17	2	15	12	2026-01-05 04:33:38.014144	\N
-18	2	42	2	2026-01-05 04:33:38.014144	\N
 \.
 
 
@@ -3650,36 +3522,6 @@ COPY public.log_eventosusuario (eventoid, "timestamp", clienteid, sessionid, tip
 --
 
 COPY public.log_inventario (logid, varianteid, fecha, cantidadcambiado, nuevostock, motivo, usuarioid, es_excepcion, cxp_id) FROM stdin;
-1	1	2025-12-25 19:52:37.128419	12	12	Recepción OC #5 (Lote: dsd)	2	f	1
-2	2	2025-12-25 19:52:37.128419	12	12	Recepción OC #5 (Lote: dsd)	2	f	1
-3	8	2025-12-25 20:02:51.311356	12	12	Recepción OC #4 (Lote: REM-100)	2	f	2
-4	9	2025-12-25 20:02:51.311356	12	12	Recepción OC #4 (Lote: REM-100)	2	f	2
-5	16	2025-12-25 20:03:12.735636	12	12	Recepción OC #3 (Lote: REM-101)	2	f	3
-6	30	2025-12-26 16:21:28.544089	36	36	Auditoría Inventario - Sesión #1	2	f	\N
-7	43	2025-12-26 16:21:28.544089	12	12	Auditoría Inventario - Sesión #1	2	f	\N
-8	34	2025-12-26 16:21:28.544089	6	6	Auditoría Inventario - Sesión #1	2	f	\N
-9	41	2025-12-26 16:21:28.544089	18	18	Auditoría Inventario - Sesión #1	2	f	\N
-10	29	2025-12-26 16:26:28.884493	18	18	Auditoría Inventario - Sesión #2	2	f	\N
-11	44	2025-12-26 16:26:28.884493	24	24	Auditoría Inventario - Sesión #2	2	f	\N
-12	42	2025-12-26 16:26:28.884493	14	14	Auditoría Inventario - Sesión #2	2	f	\N
-13	8	2025-12-26 16:45:46.612036	24	36	Recepción OC #8 (Lote: REM-102)	2	f	4
-14	41	2025-12-26 16:45:46.612036	24	42	Recepción OC #8 (Lote: REM-102)	2	f	4
-15	42	2025-12-26 16:45:46.612036	12	26	Recepción OC #8 (Lote: REM-102)	2	f	4
-16	31	2025-12-26 16:45:46.612036	24	24	Recepción OC #8 (Lote: REM-102)	2	f	4
-17	30	2025-12-26 16:45:46.612036	12	48	Recepción OC #8 (Lote: REM-102)	2	f	4
-18	29	2025-12-26 16:45:46.612036	12	30	Recepción OC #8 (Lote: REM-102)	2	f	4
-19	32	2025-12-26 16:45:46.612036	12	12	Recepción OC #8 (Lote: REM-102)	2	f	4
-20	33	2025-12-26 16:45:46.612036	12	12	Recepción OC #8 (Lote: REM-102)	2	f	4
-21	34	2025-12-26 16:45:46.612036	12	18	Recepción OC #8 (Lote: REM-102)	2	f	4
-22	35	2025-12-26 16:45:46.612036	12	12	Recepción OC #8 (Lote: REM-102)	2	f	4
-23	36	2025-12-26 16:45:46.612036	12	12	Recepción OC #8 (Lote: REM-102)	2	f	4
-24	16	2025-12-26 16:45:46.612036	12	24	Recepción OC #8 (Lote: REM-102)	2	f	4
-25	17	2025-12-26 16:45:46.612036	12	12	Recepción OC #8 (Lote: REM-102)	2	f	4
-26	15	2025-12-26 16:45:46.612036	12	12	Recepción OC #8 (Lote: REM-102)	2	f	4
-27	14	2025-12-26 16:45:46.612036	12	12	Recepción OC #8 (Lote: REM-102)	2	f	4
-28	42	2025-12-26 17:10:47.864788	-24	2	Venta Pedido #7	1	f	\N
-29	44	2025-12-29 02:32:16.496963	-24	0	Venta Pedido #11	2	f	\N
-30	14	2025-12-29 02:33:04.229328	-12	0	Venta Pedido #12	2	f	\N
 \.
 
 
@@ -3871,6 +3713,30 @@ COPY public.log_movimientos (logid, usuarioid, nombreusuario, rol, accion, entid
 184	5	Lupita García	admin	LOGIN	Admin	5	{"email": "pupis_gr@icloud.com", "origen": "admin"}	169.254.129.2	2026-01-05 04:18:04.456237
 185	2	Fernando Garcia	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	::1	2026-01-05 04:27:30.615296
 186	5	Lupita García	admin	LOGIN	Admin	5	{"email": "pupis_gr@icloud.com", "origen": "admin"}	169.254.129.2	2026-01-05 04:35:20.257872
+187	2	Fernando Garcia	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	::1	2026-01-05 05:01:04.579021
+188	2	Fernando Garcia	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	::1	2026-01-05 05:36:40.670884
+190	5	Lupita García	admin	LOGIN	Admin	5	{"email": "pupis_gr@icloud.com", "origen": "admin"}	169.254.129.5	2026-01-05 05:59:55.963763
+191	5	Lupita García	admin	LOGIN	Admin	5	{"email": "pupis_gr@icloud.com", "origen": "admin"}	169.254.129.5	2026-01-05 06:11:03.340009
+192	2	Fernando Garcia	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	169.254.129.5	2026-01-05 06:42:25.457031
+193	5	Lupita García	admin	LOGIN	Admin	5	{"email": "pupis_gr@icloud.com", "origen": "admin"}	169.254.129.2	2026-01-05 13:07:59.099546
+194	5	Lupita García	admin	LOGIN	Admin	5	{"email": "pupis_gr@icloud.com", "origen": "admin"}	169.254.129.2	2026-01-05 16:11:18.646715
+195	7	Maricela García	admin	LOGIN	Admin	7	{"email": "maricelag.e@hotmail.com", "origen": "admin"}	169.254.129.2	2026-01-05 19:17:51.727503
+196	2	Fernando Garcia	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	169.254.129.2	2026-01-05 20:00:43.043558
+197	4	Alejandra Calderón	admin	LOGIN	Admin	4	{"email": "alecaja.19@gmail.com", "origen": "admin"}	169.254.129.2	2026-01-05 20:23:28.779182
+198	4	Alejandra Calderón	admin	LOGIN	Admin	4	{"email": "alecaja.19@gmail.com", "origen": "admin"}	169.254.129.2	2026-01-05 21:38:04.970952
+199	5	Lupita García	admin	LOGIN	Admin	5	{"email": "pupis_gr@icloud.com", "origen": "admin"}	169.254.129.2	2026-01-05 21:56:57.355835
+200	2	Fernando Garcia	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	169.254.129.2	2026-01-05 21:58:08.515256
+201	2	Fernando Garcia	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	169.254.129.2	2026-01-05 22:01:26.770471
+202	2	Fernando Garcia	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	169.254.129.2	2026-01-05 22:08:30.897174
+203	5	Lupita García	admin	LOGIN	Admin	5	{"email": "pupis_gr@icloud.com", "origen": "admin"}	169.254.129.2	2026-01-05 22:11:50.989431
+204	2	Fernando Garcia	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	169.254.129.2	2026-01-05 22:14:26.0187
+205	4	Alejandra Calderón	admin	LOGIN	Admin	4	{"email": "alecaja.19@gmail.com", "origen": "admin"}	169.254.129.2	2026-01-05 22:21:09.313331
+206	2	Fernando Garcia	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	169.254.129.2	2026-01-05 22:25:59.469563
+207	2	Fernando Garcia	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	169.254.129.2	2026-01-05 22:28:12.344847
+208	2	Fernando Garcia	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	169.254.129.2	2026-01-05 22:33:09.453184
+209	2	Fernando Garcia	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	::1	2026-01-05 22:39:48.671225
+210	4	Alejandra Calderón	admin	LOGIN	Admin	4	{"email": "alecaja.19@gmail.com", "origen": "admin"}	169.254.129.2	2026-01-05 22:42:45.520675
+211	2	Fernando Garcia	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	::1	2026-01-05 22:56:17.279654
 \.
 
 
@@ -3891,135 +3757,20 @@ COPY public.medidas (medidaid, tipoproductoid, nombremedida, descripcion, alto, 
 --
 
 COPY public.notificaciones (notificacionid, clienteid, tipo, titulo, mensaje, leida, fechacreacion, metadata, url, prioridad, administrador_id, agente_id) FROM stdin;
-3	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Fernando creó proveedores #1.	f	2025-12-24 16:37:12.726854	{"entidad": "proveedores", "cambio_id": 2, "entidad_id": 1, "tipo_cambio": "INSERT"}	/admin-bitacora.html	alta	2	\N
-4	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Fernando creó productos #1.	f	2025-12-24 17:14:16.694254	{"entidad": "productos", "cambio_id": 3, "entidad_id": 1, "tipo_cambio": "INSERT"}	/admin-bitacora.html	alta	2	\N
-5	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Fernando actualizó productos #1.	f	2025-12-24 17:15:17.319869	{"entidad": "productos", "cambio_id": 4, "entidad_id": 1, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
-6	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Fernando creó productos #2.	f	2025-12-25 06:07:04.374021	{"entidad": "productos", "cambio_id": 5, "entidad_id": 2, "tipo_cambio": "INSERT"}	/admin-bitacora.html	alta	2	\N
-7	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Fernando creó productos #3.	f	2025-12-25 06:10:40.967142	{"entidad": "productos", "cambio_id": 6, "entidad_id": 3, "tipo_cambio": "INSERT"}	/admin-bitacora.html	alta	2	\N
-8	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Fernando creó productos #4.	f	2025-12-25 06:14:06.922624	{"entidad": "productos", "cambio_id": 7, "entidad_id": 4, "tipo_cambio": "INSERT"}	/admin-bitacora.html	alta	2	\N
-9	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Fernando creó productos #5.	f	2025-12-25 06:20:27.639225	{"entidad": "productos", "cambio_id": 8, "entidad_id": 5, "tipo_cambio": "INSERT"}	/admin-bitacora.html	alta	2	\N
-10	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Fernando creó productos #6.	f	2025-12-25 06:23:13.822462	{"entidad": "productos", "cambio_id": 9, "entidad_id": 6, "tipo_cambio": "INSERT"}	/admin-bitacora.html	alta	2	\N
-11	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Fernando creó productos #7.	f	2025-12-25 06:25:42.061306	{"entidad": "productos", "cambio_id": 10, "entidad_id": 7, "tipo_cambio": "INSERT"}	/admin-bitacora.html	alta	2	\N
-12	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Fernando creó productos #8.	f	2025-12-25 06:27:35.102463	{"entidad": "productos", "cambio_id": 11, "entidad_id": 8, "tipo_cambio": "INSERT"}	/admin-bitacora.html	alta	2	\N
-13	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Fernando actualizó productos #4.	f	2025-12-25 11:28:36.990578	{"entidad": "productos", "cambio_id": 12, "entidad_id": 4, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
-14	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Fernando actualizó productos #4.	f	2025-12-25 11:29:47.977221	{"entidad": "productos", "cambio_id": 13, "entidad_id": 4, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
-15	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Fernando actualizó productos #3.	f	2025-12-25 11:30:03.553541	{"entidad": "productos", "cambio_id": 14, "entidad_id": 3, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
-16	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Fernando actualizó productos #6.	f	2025-12-25 11:30:42.274892	{"entidad": "productos", "cambio_id": 15, "entidad_id": 6, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
-17	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Fernando actualizó productos #6.	f	2025-12-25 11:31:04.690791	{"entidad": "productos", "cambio_id": 16, "entidad_id": 6, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
-18	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Fernando actualizó productos #1.	f	2025-12-25 11:31:18.494085	{"entidad": "productos", "cambio_id": 17, "entidad_id": 1, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
-19	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Fernando actualizó productos #5.	f	2025-12-25 11:31:44.891947	{"entidad": "productos", "cambio_id": 18, "entidad_id": 5, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
-20	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Fernando actualizó productos #8.	f	2025-12-25 11:31:56.482915	{"entidad": "productos", "cambio_id": 19, "entidad_id": 8, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
-21	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Fernando actualizó productos #2.	f	2025-12-25 11:32:11.936784	{"entidad": "productos", "cambio_id": 20, "entidad_id": 2, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
-22	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Fernando actualizó productos #7.	f	2025-12-25 11:32:25.476172	{"entidad": "productos", "cambio_id": 21, "entidad_id": 7, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
-23	\N	pedido	Auditoría Pasiva - Pedido actualizado	El usuario Fernando actualizó el pedido #4.	f	2025-12-25 12:03:24.115311	{"entidad": "pedidos", "cambio_id": 22, "entidad_id": 4, "tipo_cambio": "UPDATE"}	/admin-pedidos.html	alta	2	\N
-24	\N	pedido	Auditoría Pasiva - Pedido actualizado	El usuario Fernando actualizó el pedido #4.	f	2025-12-25 12:03:36.15595	{"entidad": "pedidos", "cambio_id": 23, "entidad_id": 4, "tipo_cambio": "UPDATE"}	/admin-pedidos.html	alta	2	\N
-25	\N	pedido	Auditoría Pasiva - Pedido actualizado	El usuario Fernando actualizó el pedido #4.	f	2025-12-25 12:04:12.946149	{"entidad": "pedidos", "cambio_id": 24, "entidad_id": 4, "tipo_cambio": "UPDATE"}	/admin-pedidos.html	alta	2	\N
-26	\N	pedido	Auditoría Pasiva - Pedido actualizado	El usuario Fernando actualizó el pedido #4.	f	2025-12-25 12:05:20.270511	{"entidad": "pedidos", "cambio_id": 25, "entidad_id": 4, "tipo_cambio": "UPDATE"}	/admin-pedidos.html	alta	2	\N
-27	\N	pedido	Auditoría Pasiva - Pedido actualizado	El usuario Fernando actualizó el pedido #6.	f	2025-12-25 12:35:08.780706	{"entidad": "pedidos", "cambio_id": 26, "entidad_id": 6, "tipo_cambio": "UPDATE"}	/admin-pedidos.html	alta	2	\N
-28	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Fernando creó proveedores #3.	f	2025-12-26 13:40:58.949156	{"entidad": "proveedores", "cambio_id": 27, "entidad_id": 3, "tipo_cambio": "INSERT"}	/admin-bitacora.html	alta	2	\N
-30	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Fernando creó productos #9.	f	2025-12-26 13:52:22.61446	{"entidad": "productos", "cambio_id": 29, "entidad_id": 9, "tipo_cambio": "INSERT"}	/admin-bitacora.html	alta	2	\N
-31	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Fernando actualizó productos #9.	f	2025-12-26 14:55:23.054933	{"entidad": "productos", "cambio_id": 30, "entidad_id": 9, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
-32	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Fernando creó productos #10.	f	2025-12-26 15:04:45.282758	{"entidad": "productos", "cambio_id": 31, "entidad_id": 10, "tipo_cambio": "INSERT"}	/admin-bitacora.html	alta	2	\N
-33	\N	sistema	Auditoría de Inventario Requerida	Se requiere tu participación en la toma de inventario: Inv 26-dic.	f	2025-12-26 15:14:54.217075	\N	/admin-toma-inventario.html?sesionId=1	alta	\N	1
-34	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Fernando creó productos #11.	f	2025-12-26 15:27:12.85772	{"entidad": "productos", "cambio_id": 32, "entidad_id": 11, "tipo_cambio": "INSERT"}	/admin-bitacora.html	alta	2	\N
-35	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Fernando actualizó productos #3.	f	2025-12-26 15:31:45.722832	{"entidad": "productos", "cambio_id": 33, "entidad_id": 3, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
-37	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Fernando creó productos #12.	f	2025-12-26 15:36:29.452485	{"entidad": "productos", "cambio_id": 35, "entidad_id": 12, "tipo_cambio": "INSERT"}	/admin-bitacora.html	alta	2	\N
-38	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Fernando creó productos #13.	f	2025-12-26 15:45:16.851933	{"entidad": "productos", "cambio_id": 36, "entidad_id": 13, "tipo_cambio": "INSERT"}	/admin-bitacora.html	alta	2	\N
-39	\N	sistema	Auditoría de Inventario Requerida	Se requiere tu participación en la toma de inventario: Corrección Inv 26-dic.	f	2025-12-26 16:22:38.634423	\N	/admin-toma-inventario.html?sesionId=2	alta	\N	1
-40	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Fernando actualizó productos #13.	f	2025-12-26 16:30:15.033207	{"entidad": "productos", "cambio_id": 37, "entidad_id": 13, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
-41	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Fernando actualizó productos #13.	f	2025-12-26 16:32:10.707092	{"entidad": "productos", "cambio_id": 38, "entidad_id": 13, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
-42	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Fernando actualizó productos #13.	f	2025-12-26 16:38:02.664096	{"entidad": "productos", "cambio_id": 39, "entidad_id": 13, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
-44	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Fernando actualizó productos #10.	f	2025-12-31 08:52:28.763586	{"entidad": "productos", "cambio_id": 40, "entidad_id": 10, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
-45	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Fernando creó productos #14.	f	2025-12-31 08:56:50.290808	{"entidad": "productos", "cambio_id": 41, "entidad_id": 14, "tipo_cambio": "INSERT"}	/admin-bitacora.html	alta	2	\N
-46	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Fernando actualizó productos #14.	f	2025-12-31 09:15:49.786122	{"entidad": "productos", "cambio_id": 42, "entidad_id": 14, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
-50	\N	producto	Cambio aplicado (Auditoría Pasiva)	Fernando modificó pedidos.	f	2026-01-02 06:24:27.001158	{"entidad": "pedidos", "cambio_id": 43, "entidad_id": 17, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
-49	2	sistema	Pago Aprobado	Tu pago para el pedido #17 ha sido validado exitosamente.	t	2026-01-02 06:24:26.82042	{}	/mis-pedidos.html	normal	\N	\N
-55	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Alejandra Calderón actualizó productos #4.	f	2026-01-03 17:28:32.761997	{"entidad": "productos", "cambio_id": 48, "entidad_id": 4, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
-56	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Alejandra Calderón actualizó productos #1.	f	2026-01-03 17:39:12.696694	{"entidad": "productos", "cambio_id": 49, "entidad_id": 1, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
-57	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Alejandra Calderón actualizó productos #4.	f	2026-01-03 17:40:16.96624	{"entidad": "productos", "cambio_id": 50, "entidad_id": 4, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
-58	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Alejandra Calderón actualizó productos #8.	f	2026-01-03 17:51:12.329271	{"entidad": "productos", "cambio_id": 51, "entidad_id": 8, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
-59	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Alejandra Calderón actualizó productos #5.	f	2026-01-03 17:57:58.071309	{"entidad": "productos", "cambio_id": 52, "entidad_id": 5, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
-60	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Alejandra Calderón actualizó productos #1.	f	2026-01-03 18:03:49.24162	{"entidad": "productos", "cambio_id": 53, "entidad_id": 1, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
-61	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Alejandra Calderón actualizó productos #2.	f	2026-01-03 18:27:11.549656	{"entidad": "productos", "cambio_id": 54, "entidad_id": 2, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
-62	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Alejandra Calderón actualizó productos #2.	f	2026-01-03 18:28:37.922475	{"entidad": "productos", "cambio_id": 55, "entidad_id": 2, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
-63	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Alejandra Calderón actualizó productos #9.	f	2026-01-03 18:35:39.110415	{"entidad": "productos", "cambio_id": 56, "entidad_id": 9, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
-64	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Alejandra Calderón actualizó productos #7.	f	2026-01-03 19:08:29.197656	{"entidad": "productos", "cambio_id": 57, "entidad_id": 7, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
-65	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Alejandra Calderón actualizó productos #6.	f	2026-01-03 19:13:54.927394	{"entidad": "productos", "cambio_id": 58, "entidad_id": 6, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
-66	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Alejandra Calderón creó productos #15.	f	2026-01-03 21:20:40.05114	{"entidad": "productos", "cambio_id": 59, "entidad_id": 15, "tipo_cambio": "INSERT"}	/admin-bitacora.html	alta	2	\N
-67	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Alejandra Calderón creó productos #16.	f	2026-01-03 21:26:49.237716	{"entidad": "productos", "cambio_id": 60, "entidad_id": 16, "tipo_cambio": "INSERT"}	/admin-bitacora.html	alta	2	\N
-70	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Lupita García creó productos #17.	f	2026-01-03 21:48:33.410351	{"entidad": "productos", "cambio_id": 63, "entidad_id": 17, "tipo_cambio": "INSERT"}	/admin-bitacora.html	alta	2	\N
-71	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Lupita García actualizó productos #17.	f	2026-01-03 22:01:05.381341	{"entidad": "productos", "cambio_id": 64, "entidad_id": 17, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
-72	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Lupita García actualizó productos #17.	f	2026-01-03 23:11:57.324047	{"entidad": "productos", "cambio_id": 65, "entidad_id": 17, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
-73	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Lupita García creó productos #18.	f	2026-01-03 23:33:06.072731	{"entidad": "productos", "cambio_id": 66, "entidad_id": 18, "tipo_cambio": "INSERT"}	/admin-bitacora.html	alta	2	\N
-74	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Alejandra Calderón creó productos #19.	f	2026-01-03 23:42:01.853859	{"entidad": "productos", "cambio_id": 67, "entidad_id": 19, "tipo_cambio": "INSERT"}	/admin-bitacora.html	alta	2	\N
-76	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Alejandra Calderón creó productos #20.	f	2026-01-03 23:46:45.08157	{"entidad": "productos", "cambio_id": 69, "entidad_id": 20, "tipo_cambio": "INSERT"}	/admin-bitacora.html	alta	2	\N
-77	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Lupita García actualizó productos #17.	f	2026-01-03 23:48:05.998786	{"entidad": "productos", "cambio_id": 70, "entidad_id": 17, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
-78	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Lupita García actualizó productos #17.	f	2026-01-03 23:55:45.722547	{"entidad": "productos", "cambio_id": 71, "entidad_id": 17, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
-82	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Lupita García actualizó productos #18.	f	2026-01-04 00:06:14.46253	{"entidad": "productos", "cambio_id": 75, "entidad_id": 18, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
-83	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Fernando actualizó productos #2.	f	2026-01-04 00:16:35.860135	{"entidad": "productos", "cambio_id": 76, "entidad_id": 2, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
-84	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Lupita García creó productos #21.	f	2026-01-04 00:28:40.129763	{"entidad": "productos", "cambio_id": 77, "entidad_id": 21, "tipo_cambio": "INSERT"}	/admin-bitacora.html	alta	2	\N
-85	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Alejandra Calderón creó productos #22.	f	2026-01-04 00:35:05.027469	{"entidad": "productos", "cambio_id": 78, "entidad_id": 22, "tipo_cambio": "INSERT"}	/admin-bitacora.html	alta	2	\N
-86	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Lupita García creó productos #23.	f	2026-01-04 00:39:56.126671	{"entidad": "productos", "cambio_id": 79, "entidad_id": 23, "tipo_cambio": "INSERT"}	/admin-bitacora.html	alta	2	\N
-87	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Alejandra Calderón actualizó productos #22.	f	2026-01-04 00:42:22.72708	{"entidad": "productos", "cambio_id": 80, "entidad_id": 22, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
-88	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Lupita García creó productos #24.	f	2026-01-04 00:53:30.403923	{"entidad": "productos", "cambio_id": 81, "entidad_id": 24, "tipo_cambio": "INSERT"}	/admin-bitacora.html	alta	2	\N
-89	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Lupita García actualizó productos #18.	f	2026-01-04 01:02:48.83047	{"entidad": "productos", "cambio_id": 82, "entidad_id": 18, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
-90	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Lupita García creó productos #25.	f	2026-01-04 01:10:36.451111	{"entidad": "productos", "cambio_id": 83, "entidad_id": 25, "tipo_cambio": "INSERT"}	/admin-bitacora.html	alta	2	\N
-91	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Lupita García creó productos #26.	f	2026-01-04 01:23:01.921168	{"entidad": "productos", "cambio_id": 84, "entidad_id": 26, "tipo_cambio": "INSERT"}	/admin-bitacora.html	alta	2	\N
-92	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Lupita García creó productos #27.	f	2026-01-04 01:32:43.271507	{"entidad": "productos", "cambio_id": 85, "entidad_id": 27, "tipo_cambio": "INSERT"}	/admin-bitacora.html	alta	2	\N
-93	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Lupita García creó productos #28.	f	2026-01-04 01:43:29.70828	{"entidad": "productos", "cambio_id": 86, "entidad_id": 28, "tipo_cambio": "INSERT"}	/admin-bitacora.html	alta	2	\N
-94	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Lupita García creó productos #29.	f	2026-01-04 02:03:19.898796	{"entidad": "productos", "cambio_id": 87, "entidad_id": 29, "tipo_cambio": "INSERT"}	/admin-bitacora.html	alta	2	\N
-95	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Lupita García creó productos #30.	f	2026-01-04 02:14:44.949256	{"entidad": "productos", "cambio_id": 88, "entidad_id": 30, "tipo_cambio": "INSERT"}	/admin-bitacora.html	alta	2	\N
-96	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Lupita García creó productos #31.	f	2026-01-04 02:25:32.479509	{"entidad": "productos", "cambio_id": 89, "entidad_id": 31, "tipo_cambio": "INSERT"}	/admin-bitacora.html	alta	2	\N
-97	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Lupita García creó productos #32.	f	2026-01-04 02:46:36.223077	{"entidad": "productos", "cambio_id": 90, "entidad_id": 32, "tipo_cambio": "INSERT"}	/admin-bitacora.html	alta	2	\N
-98	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Lupita García creó productos #33.	f	2026-01-04 02:52:24.071292	{"entidad": "productos", "cambio_id": 91, "entidad_id": 33, "tipo_cambio": "INSERT"}	/admin-bitacora.html	alta	2	\N
-99	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Alejandra Calderón creó productos #34.	f	2026-01-04 02:58:59.161926	{"entidad": "productos", "cambio_id": 92, "entidad_id": 34, "tipo_cambio": "INSERT"}	/admin-bitacora.html	alta	2	\N
-100	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Lupita García creó productos #35.	f	2026-01-04 03:01:17.019058	{"entidad": "productos", "cambio_id": 93, "entidad_id": 35, "tipo_cambio": "INSERT"}	/admin-bitacora.html	alta	2	\N
-101	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Lupita García creó productos #36.	f	2026-01-04 03:13:07.982586	{"entidad": "productos", "cambio_id": 94, "entidad_id": 36, "tipo_cambio": "INSERT"}	/admin-bitacora.html	alta	2	\N
-102	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Alejandra Calderón actualizó productos #3.	f	2026-01-04 03:33:24.430575	{"entidad": "productos", "cambio_id": 95, "entidad_id": 3, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
-103	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Alejandra Calderón creó productos #37.	f	2026-01-04 03:48:08.727443	{"entidad": "productos", "cambio_id": 96, "entidad_id": 37, "tipo_cambio": "INSERT"}	/admin-bitacora.html	alta	2	\N
-104	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Alejandra Calderón creó productos #38.	f	2026-01-04 03:50:25.043506	{"entidad": "productos", "cambio_id": 97, "entidad_id": 38, "tipo_cambio": "INSERT"}	/admin-bitacora.html	alta	2	\N
-105	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Alejandra Calderón creó productos #39.	f	2026-01-04 04:07:58.288343	{"entidad": "productos", "cambio_id": 98, "entidad_id": 39, "tipo_cambio": "INSERT"}	/admin-bitacora.html	alta	2	\N
-106	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Alejandra Calderón creó productos #40.	f	2026-01-04 04:18:06.821028	{"entidad": "productos", "cambio_id": 99, "entidad_id": 40, "tipo_cambio": "INSERT"}	/admin-bitacora.html	alta	2	\N
-107	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Alejandra Calderón actualizó productos #38.	f	2026-01-04 04:28:28.219173	{"entidad": "productos", "cambio_id": 100, "entidad_id": 38, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
-108	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Alejandra Calderón actualizó productos #9.	f	2026-01-04 04:46:05.234729	{"entidad": "productos", "cambio_id": 101, "entidad_id": 9, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
-109	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Alejandra Calderón actualizó productos #6.	f	2026-01-04 04:47:54.42474	{"entidad": "productos", "cambio_id": 102, "entidad_id": 6, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
-110	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Alejandra Calderón actualizó productos #6.	f	2026-01-04 04:48:46.277833	{"entidad": "productos", "cambio_id": 103, "entidad_id": 6, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
-111	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Alejandra Calderón actualizó productos #1.	f	2026-01-04 04:50:03.971176	{"entidad": "productos", "cambio_id": 104, "entidad_id": 1, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
-112	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Alejandra Calderón actualizó productos #15.	f	2026-01-04 04:51:12.423866	{"entidad": "productos", "cambio_id": 105, "entidad_id": 15, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
-113	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Alejandra Calderón actualizó productos #8.	f	2026-01-04 04:52:00.870643	{"entidad": "productos", "cambio_id": 106, "entidad_id": 8, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
-114	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Alejandra Calderón actualizó productos #19.	f	2026-01-04 04:52:56.588698	{"entidad": "productos", "cambio_id": 107, "entidad_id": 19, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
-115	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Alejandra Calderón actualizó productos #4.	f	2026-01-04 04:54:05.791663	{"entidad": "productos", "cambio_id": 108, "entidad_id": 4, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
-116	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Alejandra Calderón actualizó productos #5.	f	2026-01-04 04:54:51.667189	{"entidad": "productos", "cambio_id": 109, "entidad_id": 5, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
-117	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Alejandra Calderón actualizó productos #2.	f	2026-01-04 04:56:02.411349	{"entidad": "productos", "cambio_id": 110, "entidad_id": 2, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
-118	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Alejandra Calderón actualizó productos #16.	f	2026-01-04 04:56:52.480243	{"entidad": "productos", "cambio_id": 111, "entidad_id": 16, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
-119	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Alejandra Calderón actualizó productos #7.	f	2026-01-04 04:57:37.598318	{"entidad": "productos", "cambio_id": 112, "entidad_id": 7, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
-120	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Alejandra Calderón actualizó productos #20.	f	2026-01-04 04:58:30.159662	{"entidad": "productos", "cambio_id": 113, "entidad_id": 20, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
-121	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Alejandra Calderón actualizó productos #10.	f	2026-01-04 05:00:01.872151	{"entidad": "productos", "cambio_id": 114, "entidad_id": 10, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
-122	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Lupita García creó productos #41.	f	2026-01-04 05:19:32.535084	{"entidad": "productos", "cambio_id": 115, "entidad_id": 41, "tipo_cambio": "INSERT"}	/admin-bitacora.html	alta	2	\N
-123	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Lupita García creó productos #42.	f	2026-01-04 13:14:25.913626	{"entidad": "productos", "cambio_id": 116, "entidad_id": 42, "tipo_cambio": "INSERT"}	/admin-bitacora.html	alta	2	\N
-124	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Lupita García actualizó productos #42.	f	2026-01-04 13:24:45.72692	{"entidad": "productos", "cambio_id": 117, "entidad_id": 42, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
-125	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Fernando actualizó productos #42.	f	2026-01-04 18:13:54.449332	{"entidad": "productos", "cambio_id": 118, "entidad_id": 42, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
-126	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Lupita García actualizó productos #42.	f	2026-01-04 19:21:52.415429	{"entidad": "productos", "cambio_id": 119, "entidad_id": 42, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
-127	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Lupita García creó productos #43.	f	2026-01-04 19:43:54.507989	{"entidad": "productos", "cambio_id": 120, "entidad_id": 43, "tipo_cambio": "INSERT"}	/admin-bitacora.html	alta	2	\N
-128	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Maricela García creó productos #44.	f	2026-01-04 21:56:20.948329	{"entidad": "productos", "cambio_id": 121, "entidad_id": 44, "tipo_cambio": "INSERT"}	/admin-bitacora.html	alta	2	\N
-129	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Maricela García actualizó productos #44.	f	2026-01-04 21:58:16.920113	{"entidad": "productos", "cambio_id": 122, "entidad_id": 44, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
-130	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Maricela García actualizó productos #44.	f	2026-01-04 22:01:21.60012	{"entidad": "productos", "cambio_id": 123, "entidad_id": 44, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
-131	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Maricela García actualizó productos #44.	f	2026-01-04 22:07:36.564144	{"entidad": "productos", "cambio_id": 124, "entidad_id": 44, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
-132	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Maricela García creó productos #45.	f	2026-01-04 22:10:51.311677	{"entidad": "productos", "cambio_id": 125, "entidad_id": 45, "tipo_cambio": "INSERT"}	/admin-bitacora.html	alta	2	\N
-133	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Maricela García creó productos #46.	f	2026-01-04 22:14:39.024968	{"entidad": "productos", "cambio_id": 126, "entidad_id": 46, "tipo_cambio": "INSERT"}	/admin-bitacora.html	alta	2	\N
-134	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Lupita García creó productos #47.	f	2026-01-04 22:15:48.785958	{"entidad": "productos", "cambio_id": 127, "entidad_id": 47, "tipo_cambio": "INSERT"}	/admin-bitacora.html	alta	2	\N
-135	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Maricela García actualizó productos #13.	f	2026-01-04 22:17:44.611551	{"entidad": "productos", "cambio_id": 128, "entidad_id": 13, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
-136	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Maricela García creó productos #48.	f	2026-01-04 22:20:08.890854	{"entidad": "productos", "cambio_id": 129, "entidad_id": 48, "tipo_cambio": "INSERT"}	/admin-bitacora.html	alta	2	\N
-137	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Maricela García creó productos #49.	f	2026-01-04 22:23:05.040484	{"entidad": "productos", "cambio_id": 130, "entidad_id": 49, "tipo_cambio": "INSERT"}	/admin-bitacora.html	alta	2	\N
-138	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Lupita García creó productos #50.	f	2026-01-04 22:24:01.826498	{"entidad": "productos", "cambio_id": 131, "entidad_id": 50, "tipo_cambio": "INSERT"}	/admin-bitacora.html	alta	2	\N
-139	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Maricela García creó productos #51.	f	2026-01-04 22:30:13.886199	{"entidad": "productos", "cambio_id": 132, "entidad_id": 51, "tipo_cambio": "INSERT"}	/admin-bitacora.html	alta	2	\N
-140	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Maricela García creó productos #52.	f	2026-01-04 22:33:15.180325	{"entidad": "productos", "cambio_id": 133, "entidad_id": 52, "tipo_cambio": "INSERT"}	/admin-bitacora.html	alta	2	\N
-141	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Lupita García creó productos #53.	f	2026-01-04 22:34:17.931437	{"entidad": "productos", "cambio_id": 134, "entidad_id": 53, "tipo_cambio": "INSERT"}	/admin-bitacora.html	alta	2	\N
-142	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Lupita García creó productos #54.	f	2026-01-04 22:55:01.264603	{"entidad": "productos", "cambio_id": 135, "entidad_id": 54, "tipo_cambio": "INSERT"}	/admin-bitacora.html	alta	2	\N
-143	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Lupita García creó productos #55.	f	2026-01-04 23:06:53.650664	{"entidad": "productos", "cambio_id": 136, "entidad_id": 55, "tipo_cambio": "INSERT"}	/admin-bitacora.html	alta	2	\N
-144	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Lupita García creó productos #56.	f	2026-01-04 23:12:58.664064	{"entidad": "productos", "cambio_id": 137, "entidad_id": 56, "tipo_cambio": "INSERT"}	/admin-bitacora.html	alta	2	\N
-145	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Lupita García creó productos #57.	f	2026-01-04 23:59:53.446348	{"entidad": "productos", "cambio_id": 138, "entidad_id": 57, "tipo_cambio": "INSERT"}	/admin-bitacora.html	alta	2	\N
-146	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Lupita García creó productos #58.	f	2026-01-05 00:30:01.794869	{"entidad": "productos", "cambio_id": 139, "entidad_id": 58, "tipo_cambio": "INSERT"}	/admin-bitacora.html	alta	2	\N
+1	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Lupita García creó productos #59.	f	2026-01-05 04:48:32.979969	{"entidad": "productos", "cambio_id": 140, "entidad_id": 59, "tipo_cambio": "INSERT"}	/admin-bitacora.html	alta	2	\N
+2	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Lupita García creó productos #60.	f	2026-01-05 05:05:37.371742	{"entidad": "productos", "cambio_id": 141, "entidad_id": 60, "tipo_cambio": "INSERT"}	/admin-bitacora.html	alta	2	\N
+3	1	sistema	¡Bienvenido a RazoConnect!	Gracias por unirte. Tu cuenta ha sido creada exitosamente.	f	2026-01-05 05:23:11.412087	{}	\N	normal	\N	\N
+4	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Lupita García creó productos #61.	f	2026-01-05 05:28:54.678866	{"entidad": "productos", "cambio_id": 142, "entidad_id": 61, "tipo_cambio": "INSERT"}	/admin-bitacora.html	alta	2	\N
+5	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Fernando actualizó productos #14.	f	2026-01-05 05:38:48.422089	{"entidad": "productos", "cambio_id": 143, "entidad_id": 14, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
+6	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Maricela García actualizó productos #46.	f	2026-01-05 19:20:47.361353	{"entidad": "productos", "cambio_id": 144, "entidad_id": 46, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
+7	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Maricela García actualizó productos #45.	f	2026-01-05 19:22:06.218044	{"entidad": "productos", "cambio_id": 145, "entidad_id": 45, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
+8	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Maricela García actualizó productos #46.	f	2026-01-05 19:22:29.238063	{"entidad": "productos", "cambio_id": 146, "entidad_id": 46, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
+9	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Maricela García actualizó productos #44.	f	2026-01-05 19:24:13.932724	{"entidad": "productos", "cambio_id": 147, "entidad_id": 44, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
+10	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Maricela García actualizó productos #51.	f	2026-01-05 19:25:16.86342	{"entidad": "productos", "cambio_id": 148, "entidad_id": 51, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
+11	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Alejandra Calderón creó productos #62.	f	2026-01-05 21:44:09.268446	{"entidad": "productos", "cambio_id": 149, "entidad_id": 62, "tipo_cambio": "INSERT"}	/admin-bitacora.html	alta	2	\N
+12	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Alejandra Calderón creó productos #63.	f	2026-01-05 22:42:21.27107	{"entidad": "productos", "cambio_id": 150, "entidad_id": 63, "tipo_cambio": "INSERT"}	/admin-bitacora.html	alta	2	\N
+13	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Alejandra Calderón actualizó productos #34.	f	2026-01-05 22:57:42.412917	{"entidad": "productos", "cambio_id": 151, "entidad_id": 34, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
+14	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Alejandra Calderón creó productos #64.	f	2026-01-05 23:15:31.270822	{"entidad": "productos", "cambio_id": 152, "entidad_id": 64, "tipo_cambio": "INSERT"}	/admin-bitacora.html	alta	2	\N
 \.
 
 
@@ -4030,14 +3781,6 @@ COPY public.notificaciones (notificacionid, clienteid, tipo, titulo, mensaje, le
 --
 
 COPY public.ordenesdecompra (ordencompraid, proveedorid, fechacreacion, fechaentregaesperada, estatus, origenoc, fechasolicitud, total, usuario_creador_id, exportado_en, reporte_id) FROM stdin;
-1	1	2025-12-25 04:39:40.211208	2026-01-08	Cancelada	backorder	2025-12-25 04:39:40.211208	0.00	\N	\N	\N
-2	1	2025-12-25 12:16:00.748743	2026-01-08	Cancelada	backorder	2025-12-25 12:16:00.748743	0.00	\N	\N	\N
-5	1	2025-12-25 15:55:55.965868	2026-01-01	Completada	manual	2025-12-25 15:55:55.965868	754.32	\N	\N	\N
-4	1	2025-12-25 15:07:50.675653	2025-12-26	Completada	manual	2025-12-25 15:07:50.675653	586.32	\N	\N	\N
-3	1	2025-12-25 12:34:25.543147	2026-01-08	Completada	backorder	2025-12-25 12:34:25.543147	335.16	\N	\N	\N
-6	1	2025-12-26 13:32:01.347641	2025-12-27	Pendiente	manual	2025-12-26 13:32:01.347641	159.11	\N	\N	\N
-7	1	2025-12-26 16:38:29.49725	2025-12-27	Pendiente	manual	2025-12-26 16:38:29.49725	20.93	\N	\N	\N
-8	1	2025-12-26 16:42:15.813976	2025-12-31	Completada	manual	2025-12-26 16:42:15.813976	5738.88	\N	\N	\N
 \.
 
 
@@ -4048,14 +3791,6 @@ COPY public.ordenesdecompra (ordencompraid, proveedorid, fechacreacion, fechaent
 --
 
 COPY public.pagos_clientes (pago_id, cliente_id, credito_id, monto, tipo_pago, estatus, comprobante_url, referencia_bancaria, transaccion_id, fecha_pago, fecha_validacion, validado_por, notas, movimientos_aplicados) FROM stdin;
-1	2	1	1000.00	TRANSFERENCIA	APROBADO	\N	Transferencia bancaria	\N	2025-12-29 01:24:59.134773	2025-12-29 01:50:15.018607	2	\N	[]
-2	2	1	3552.00	TRANSFERENCIA	APROBADO	\N	Transferencia bancaria	\N	2025-12-29 01:51:12.933837	2025-12-29 01:52:11.010275	2	\N	[6, 5, 4, 3, 2, 1]
-3	2	1	3552.00	TRANSFERENCIA	APROBADO	\N	Transferencia bancaria	\N	2025-12-29 02:23:02.387275	2025-12-29 02:23:38.907428	2	\N	["PED-1", "PED-2", "PED-3", "PED-4", "PED-5", "PED-6"]
-4	2	1	4448.40	TRANSFERENCIA	APROBADO	\N	Transferencia bancaria	\N	2025-12-29 02:25:08.294392	2025-12-29 02:25:30.216642	2	\N	["PED-1", "PED-2", "PED-3", "PED-4", "PED-5", "PED-6", "PED-8"]
-5	2	1	1234.80	TRANSFERENCIA	APROBADO	\N	Transferencia bancaria	\N	2025-12-29 02:33:33.787312	2025-12-29 02:34:05.660581	2	\N	["PED-9"]
-6	2	1	4729.20	TRANSFERENCIA	APROBADO	\N	Transferencia bancaria	\N	2025-12-29 02:34:46.775749	2025-12-29 02:34:59.970783	2	\N	["PED-9", "PED-10", "PED-11", "PED-12"]
-7	2	1	128.70	TRANSFERENCIA	APROBADO	\N	Transferencia bancaria	\N	2026-01-02 01:37:33.386588	2026-01-02 01:40:30.570254	2	\N	["PED-13"]
-8	2	1	405.60	TRANSFERENCIA	APROBADO	\N	Transferencia bancaria	\N	2026-01-02 02:24:21.180184	2026-01-02 02:25:25.635208	2	\N	["PED-15"]
 \.
 
 
@@ -4066,8 +3801,6 @@ COPY public.pagos_clientes (pago_id, cliente_id, credito_id, monto, tipo_pago, e
 --
 
 COPY public.pagos_cxp (pago_id, cxp_id, fecha_pago, monto, metodo_pago, referencia_bancaria, comprobante_url, nota, usuario_id) FROM stdin;
-1	2	2025-12-25 20:04:06.35046	586.32	\N	Transferencia	\N	Transferencia	2
-2	1	2025-12-25 20:04:18.121912	754.32	\N	Transferencia	\N	Transferencia	2
 \.
 
 
@@ -4087,24 +3820,7 @@ COPY public.passwordresettokens (tokenid, token, clienteid, agenteid, expiraen) 
 -- Data for Name: pedidos; Type: TABLE DATA; Schema: public; Owner: ferram
 --
 
-COPY public.pedidos (pedidoid, clienteid, agenteid, direccionenvioid, fechapedido, montototal, estatus, costoenvio, es_credito, fecha_vencimiento, pagado, transaccion_id, comprobante_url, metodo_pago, cupon_id, monto_descuento, saldo_pendiente) FROM stdin;
-7	1	\N	2	2025-12-26 17:10:47.864788	5994.00	Parcialmente Surtido	0.00	t	2026-01-10 17:10:47.864788	f	\N	\N	credito	\N	0.00	5994.00
-11	2	\N	1	2025-12-29 02:32:16.496963	955.20	Parcialmente Surtido	0.00	t	2026-01-13 02:32:16.496963	t	\N	\N	credito	\N	0.00	0.00
-12	2	\N	1	2025-12-29 02:33:04.229328	634.80	Aprobado	0.00	t	2026-01-13 02:33:04.229328	t	\N	\N	credito	\N	0.00	0.00
-13	2	\N	1	2026-01-02 01:34:33.245122	128.70	Parcialmente Surtido	0.00	t	2026-01-17 01:34:33.245122	t	\N	\N	credito	\N	0.00	0.00
-14	2	\N	1	2026-01-02 02:04:46.533597	149.40	Parcialmente Surtido	0.00	f	\N	f	\N	https://res.cloudinary.com/daylne1ml/image/upload/v1767319486/razoconnect_comprobantes/aflcoo40hvknxkfcqc0c.png	transferencia	\N	0.00	0.00
-6	2	\N	1	2025-12-25 12:34:25.543147	171.60	Confirmado	0.00	t	2026-01-09 12:34:25.543147	t	\N	\N	credito	\N	0.00	0.00
-5	2	\N	1	2025-12-25 12:16:00.748743	686.40	Parcialmente Surtido	0.00	t	2026-01-09 12:16:00.748743	t	\N	\N	credito	\N	0.00	0.00
-4	2	\N	1	2025-12-25 11:24:59.074676	343.20	Entregado	0.00	t	2026-01-09 11:24:59.074676	t	\N	\N	credito	\N	0.00	0.00
-3	2	\N	1	2025-12-25 05:32:44.889936	1544.40	Parcialmente Surtido	0.00	t	2026-01-09 05:32:44.889936	t	\N	\N	credito	\N	0.00	0.00
-2	2	\N	1	2025-12-25 04:48:35.466116	634.80	Parcialmente Surtido	0.00	t	2026-01-09 04:48:35.466116	t	\N	\N	credito	\N	0.00	0.00
-1	2	\N	1	2025-12-25 04:39:40.211208	171.60	Parcialmente Surtido	0.00	t	2026-01-09 04:39:40.211208	t	\N	\N	credito	\N	0.00	0.00
-8	2	\N	1	2025-12-29 02:01:37.762643	896.40	Parcialmente Surtido	0.00	t	2026-01-13 02:01:37.762643	t	\N	\N	credito	\N	0.00	0.00
-9	2	\N	1	2025-12-29 02:31:02.579417	1234.80	Parcialmente Surtido	0.00	t	2026-01-13 02:31:02.579417	t	\N	\N	credito	\N	0.00	0.00
-10	2	\N	1	2025-12-29 02:31:35.046362	1904.40	Parcialmente Surtido	0.00	t	2026-01-13 02:31:35.046362	t	\N	\N	credito	\N	0.00	0.00
-16	2	\N	1	2026-01-02 02:14:53.07082	257.40	Parcialmente Surtido	0.00	t	2026-01-17 02:14:53.07082	f	\N	\N	credito	\N	0.00	257.40
-15	2	\N	1	2026-01-02 02:14:36.437379	405.60	Parcialmente Surtido	0.00	t	2026-01-17 02:14:36.437379	t	\N	\N	credito	\N	0.00	0.00
-17	2	\N	1	2026-01-02 06:05:46.32696	128.70	Confirmado	0.00	f	\N	t	\N	https://res.cloudinary.com/daylne1ml/image/upload/v1767333945/razoconnect_comprobantes/okgjjcxfvavvg9wtx6gs.png	transferencia	\N	0.00	0.00
+COPY public.pedidos (pedidoid, clienteid, agenteid, direccionenvioid, fechapedido, montototal, estatus, costoenvio, es_credito, fecha_vencimiento, pagado, transaccion_id, comprobante_url, metodo_pago, cupon_id, monto_descuento, saldo_pendiente, url_evidencia_entrega, fecha_entrega_real) FROM stdin;
 \.
 
 
@@ -4243,8 +3959,6 @@ COPY public.producto_imagenes (imagenid, url_imagen, textoalternativo, orden, pr
 142	https://res.cloudinary.com/daylne1ml/image/upload/v1767495146/razoconnect_productos/agoika33wjpohrlwxtgy.jpg	\N	3	33
 143	https://res.cloudinary.com/daylne1ml/image/upload/v1767495146/razoconnect_productos/rdz3pnqmtinczs6zk0f0.jpg	\N	4	33
 144	https://res.cloudinary.com/daylne1ml/image/upload/v1767495146/razoconnect_productos/bwibnguy5pgvmudzf7mq.jpg	\N	5	33
-145	https://res.cloudinary.com/daylne1ml/image/upload/v1767495541/razoconnect_productos/xd7w3o13hrkuwvyr8hg1.jpg	\N	1	34
-146	https://res.cloudinary.com/daylne1ml/image/upload/v1767495541/razoconnect_productos/kddi1gqbxt9gvppfzckv.jpg	\N	2	34
 147	https://res.cloudinary.com/daylne1ml/image/upload/v1767495678/razoconnect_productos/msd4lum37xjxtb3zvjwx.jpg	\N	1	35
 148	https://res.cloudinary.com/daylne1ml/image/upload/v1767495678/razoconnect_productos/xbzfomup3dnbn4k3ej4v.jpg	\N	2	35
 149	https://res.cloudinary.com/daylne1ml/image/upload/v1767495678/razoconnect_productos/yekez30gpiwbibmb2gne.jpg	\N	3	35
@@ -4279,7 +3993,6 @@ COPY public.producto_imagenes (imagenid, url_imagen, textoalternativo, orden, pr
 169	https://res.cloudinary.com/daylne1ml/image/upload/v1767503976/razoconnect_productos/kzyguzvsm2lcbyzaljpw.jpg	\N	3	41
 170	https://res.cloudinary.com/daylne1ml/image/upload/v1767503976/razoconnect_productos/yeleu5oxu1gxb6qbmth4.jpg	\N	4	41
 171	https://res.cloudinary.com/daylne1ml/image/upload/v1767503976/razoconnect_productos/q9dealqsxiajjfjgkn67.jpg	\N	5	41
-210	https://res.cloudinary.com/daylne1ml/image/upload/v1767565998/razoconnect_productos/h4eaqsw9jz2tdhrwnkmc.png	\N	1	52
 211	https://res.cloudinary.com/daylne1ml/image/upload/v1767566060/razoconnect_productos/xafczj4c7bejdvza2gax.jpg	\N	1	53
 177	https://res.cloudinary.com/daylne1ml/image/upload/v1767533087/razoconnect_productos/awwki9ovtu9m6x0n5c16.jpg	\N	1	42
 182	https://res.cloudinary.com/daylne1ml/image/upload/v1767533088/razoconnect_productos/b39hxfyn5jgzumalmeww.jpg	\N	2	42
@@ -4290,11 +4003,6 @@ COPY public.producto_imagenes (imagenid, url_imagen, textoalternativo, orden, pr
 191	https://res.cloudinary.com/daylne1ml/image/upload/v1767555836/razoconnect_productos/tpkmvvzikllluufqyqp5.jpg	\N	5	43
 212	https://res.cloudinary.com/daylne1ml/image/upload/v1767566060/razoconnect_productos/ywxiguxbhtbnpepd67to.jpg	\N	2	53
 213	https://res.cloudinary.com/daylne1ml/image/upload/v1767566059/razoconnect_productos/khgwymrwobpvadjyw7qo.jpg	\N	3	53
-192	https://res.cloudinary.com/daylne1ml/image/upload/v1767563790/razoconnect_productos/japv2vtoqrzxvev695x7.jpg	\N	1	44
-193	https://res.cloudinary.com/daylne1ml/image/upload/v1767564458/razoconnect_productos/oisss2x0r1tsyh2e40ts.jpg	\N	2	44
-194	https://res.cloudinary.com/daylne1ml/image/upload/v1767564653/razoconnect_productos/pztt4jb4rkymhi0gekwf.png	\N	1	45
-195	https://res.cloudinary.com/daylne1ml/image/upload/v1767564653/razoconnect_productos/qr2echajqbaoewh7dnon.png	\N	2	45
-196	https://res.cloudinary.com/daylne1ml/image/upload/v1767564892/razoconnect_productos/qc6xbodrvfuzhf6nkaki.png	\N	1	46
 197	https://res.cloudinary.com/daylne1ml/image/upload/v1767564950/razoconnect_productos/irckrm7zjl9d9f88ioou.jpg	\N	1	47
 198	https://res.cloudinary.com/daylne1ml/image/upload/v1767564950/razoconnect_productos/sn9duywhyjhmtpvvckxr.jpg	\N	2	47
 199	https://res.cloudinary.com/daylne1ml/image/upload/v1767564950/razoconnect_productos/drzz33wrx11jdvu2l2ck.jpg	\N	3	47
@@ -4307,7 +4015,6 @@ COPY public.producto_imagenes (imagenid, url_imagen, textoalternativo, orden, pr
 206	https://res.cloudinary.com/daylne1ml/image/upload/v1767565443/razoconnect_productos/xoqw7vdcsyfoqdu7bqlq.jpg	\N	3	50
 207	https://res.cloudinary.com/daylne1ml/image/upload/v1767565443/razoconnect_productos/avg15uiobwu0fienvqi5.jpg	\N	4	50
 208	https://res.cloudinary.com/daylne1ml/image/upload/v1767565443/razoconnect_productos/b1wudhrxgw2pvzva6dhu.jpg	\N	5	50
-209	https://res.cloudinary.com/daylne1ml/image/upload/v1767565815/razoconnect_productos/iegwkxakfijwwxgn0yek.png	\N	1	51
 214	https://res.cloudinary.com/daylne1ml/image/upload/v1767566059/razoconnect_productos/obb3g4ktpd6nnegccef4.jpg	\N	4	53
 215	https://res.cloudinary.com/daylne1ml/image/upload/v1767566059/razoconnect_productos/gqmraecnbhashflwdu1i.jpg	\N	5	53
 216	https://res.cloudinary.com/daylne1ml/image/upload/v1767567305/razoconnect_productos/qvw7e9sj210hlte2eqwn.jpg	\N	1	54
@@ -4332,6 +4039,38 @@ COPY public.producto_imagenes (imagenid, url_imagen, textoalternativo, orden, pr
 235	https://res.cloudinary.com/daylne1ml/image/upload/v1767573003/razoconnect_productos/avvzfrbiieyatlbcak1j.jpg	\N	3	58
 236	https://res.cloudinary.com/daylne1ml/image/upload/v1767573003/razoconnect_productos/dok5bcotepajbwjkyceq.jpg	\N	4	58
 237	https://res.cloudinary.com/daylne1ml/image/upload/v1767573003/razoconnect_productos/rnwrzpkbd3arfjiaop0z.jpg	\N	5	58
+238	https://res.cloudinary.com/daylne1ml/image/upload/v1767588514/razoconnect_productos/dxxeb5hup3vrebwvzq4q.jpg	\N	1	59
+239	https://res.cloudinary.com/daylne1ml/image/upload/v1767588514/razoconnect_productos/sctpdkmfp920jc2ktaze.jpg	\N	2	59
+240	https://res.cloudinary.com/daylne1ml/image/upload/v1767588515/razoconnect_productos/pf2y2grhyrvidr0tmvct.jpg	\N	3	59
+241	https://res.cloudinary.com/daylne1ml/image/upload/v1767588514/razoconnect_productos/q4txhsnydf47ozcjprf5.jpg	\N	4	59
+242	https://res.cloudinary.com/daylne1ml/image/upload/v1767589542/razoconnect_productos/niougqsq6u3ppn1wiwoy.jpg	\N	1	60
+243	https://res.cloudinary.com/daylne1ml/image/upload/v1767589542/razoconnect_productos/ifoctisam3doc4xcigc6.jpg	\N	2	60
+244	https://res.cloudinary.com/daylne1ml/image/upload/v1767589542/razoconnect_productos/ppynjcrtdoq0uce71w4x.jpg	\N	3	60
+245	https://res.cloudinary.com/daylne1ml/image/upload/v1767589542/razoconnect_productos/ier55onjbzziusedu2ui.jpg	\N	4	60
+246	https://res.cloudinary.com/daylne1ml/image/upload/v1767589542/razoconnect_productos/xghepfjsn69vtlusyoxj.jpg	\N	5	60
+247	https://res.cloudinary.com/daylne1ml/image/upload/v1767590937/razoconnect_productos/f5u7fm8gecb4jwmhxfeu.jpg	\N	1	61
+248	https://res.cloudinary.com/daylne1ml/image/upload/v1767590937/razoconnect_productos/yevmkqljnmdb0pjkxq4k.jpg	\N	2	61
+249	https://res.cloudinary.com/daylne1ml/image/upload/v1767590937/razoconnect_productos/il5uwwbciduljldowp6t.jpg	\N	3	61
+250	https://res.cloudinary.com/daylne1ml/image/upload/v1767590937/razoconnect_productos/i3aoalhywlktcfiy5us5.jpg	\N	4	61
+251	https://res.cloudinary.com/daylne1ml/image/upload/v1767590937/razoconnect_productos/o8sibah5wqmg7ziz7h1p.jpg	\N	5	61
+252	https://res.cloudinary.com/daylne1ml/image/upload/v1767590937/razoconnect_productos/oad4qzedlik6peymnd34.jpg	\N	6	61
+253	https://res.cloudinary.com/daylne1ml/image/upload/v1767590937/razoconnect_productos/osrf2v4wyrug17l05zsd.jpg	\N	7	61
+254	https://res.cloudinary.com/daylne1ml/image/upload/v1767591530/razoconnect_productos/opjdtlluuijivi8zsplq.png	\N	1	14
+255	https://res.cloudinary.com/daylne1ml/image/upload/v1767591531/razoconnect_productos/cyhvmrskmwx4qidbnmpc.png	\N	2	14
+256	https://res.cloudinary.com/daylne1ml/image/upload/v1767640849/razoconnect_productos/ny5m4o9uvwvohudsztdc.jpg	\N	1	46
+259	https://res.cloudinary.com/daylne1ml/image/upload/v1767640951/razoconnect_productos/zlnlznbk6za8rqwkes3y.jpg	\N	2	46
+260	https://res.cloudinary.com/daylne1ml/image/upload/v1767640951/razoconnect_productos/ycj0ihy3ky1azrldy5ug.png	\N	3	46
+261	https://res.cloudinary.com/daylne1ml/image/upload/v1767641055/razoconnect_productos/bo5sjtspd7kbbynpxgrw.jpg	\N	1	44
+262	https://res.cloudinary.com/daylne1ml/image/upload/v1767641056/razoconnect_productos/kmwue6ey3nog7l4xhppi.jpg	\N	2	44
+263	https://res.cloudinary.com/daylne1ml/image/upload/v1767641118/razoconnect_productos/nv3snnrkkgusoalqkqw0.jpg	\N	1	51
+264	https://res.cloudinary.com/daylne1ml/image/upload/v1767649451/razoconnect_productos/zubqpq5udoly29e8jzka.jpg	\N	1	62
+265	https://res.cloudinary.com/daylne1ml/image/upload/v1767649451/razoconnect_productos/detxpivr0ageatxde6s7.jpg	\N	2	62
+266	https://res.cloudinary.com/daylne1ml/image/upload/v1767649451/razoconnect_productos/yhjpdkf5exgzoolranay.jpg	\N	3	62
+267	https://res.cloudinary.com/daylne1ml/image/upload/v1767649451/razoconnect_productos/kpfguulmlhzuyzckrmde.jpg	\N	4	62
+268	https://res.cloudinary.com/daylne1ml/image/upload/v1767652943/razoconnect_productos/plnryefvbwts29snny36.jpg	\N	1	63
+145	https://res.cloudinary.com/daylne1ml/image/upload/v1767495541/razoconnect_productos/xd7w3o13hrkuwvyr8hg1.jpg	\N	1	34
+146	https://res.cloudinary.com/daylne1ml/image/upload/v1767495541/razoconnect_productos/kddi1gqbxt9gvppfzckv.jpg	\N	2	34
+269	https://res.cloudinary.com/daylne1ml/image/upload/v1767654933/razoconnect_productos/okhjrhce2cutwpbvsyxa.jpg	\N	1	64
 \.
 
 
@@ -4375,8 +4114,6 @@ COPY public.producto_tamanosdisponibles (productoid, tamanoid) FROM stdin;
 11	2
 11	5
 11	3
-12	3
-12	4
 13	3
 13	4
 14	2
@@ -4448,8 +4185,6 @@ COPY public.producto_tamanosdisponibles (productoid, tamanoid) FROM stdin;
 42	4
 43	3
 44	4
-45	3
-45	4
 46	4
 47	3
 47	4
@@ -4459,7 +4194,6 @@ COPY public.producto_tamanosdisponibles (productoid, tamanoid) FROM stdin;
 50	4
 51	3
 51	4
-52	4
 53	3
 53	4
 54	3
@@ -4472,6 +4206,16 @@ COPY public.producto_tamanosdisponibles (productoid, tamanoid) FROM stdin;
 57	4
 58	3
 58	4
+59	3
+59	4
+60	4
+61	4
+62	3
+62	4
+63	2
+63	3
+64	2
+64	3
 \.
 
 
@@ -4525,9 +4269,6 @@ COPY public.producto_variante_imagenes (imagenid, url_imagen, textoalternativo, 
 42	https://res.cloudinary.com/daylne1ml/image/upload/v1767564269/razoconnect_productos/waytozimectzhlba6k7q.jpg	\N	1	145
 43	https://res.cloudinary.com/daylne1ml/image/upload/v1767564296/razoconnect_productos/k5luph889wvhqf7ssxo9.jpg	\N	1	146
 44	https://res.cloudinary.com/daylne1ml/image/upload/v1767564332/razoconnect_productos/b5gywh8roo3xjsoz2d0p.jpg	\N	1	147
-45	https://res.cloudinary.com/daylne1ml/image/upload/v1767564727/razoconnect_productos/r8maa0m3j6jqrnydrneh.png	\N	1	148
-46	https://res.cloudinary.com/daylne1ml/image/upload/v1767564751/razoconnect_productos/w2esnjn2hc0cdlt3wloh.png	\N	1	149
-47	https://res.cloudinary.com/daylne1ml/image/upload/v1767564768/razoconnect_productos/br2ujequie88uvokkdjq.png	\N	1	150
 48	https://res.cloudinary.com/daylne1ml/image/upload/v1767564937/razoconnect_productos/kgslphzolivll9od2qur.png	\N	1	151
 49	https://res.cloudinary.com/daylne1ml/image/upload/v1767564978/razoconnect_productos/w0sshzlo2xgddtvnfcpi.png	\N	1	152
 50	https://res.cloudinary.com/daylne1ml/image/upload/v1767565005/razoconnect_productos/ogyzdxhqk5qggwqlcrj2.png	\N	1	153
@@ -4537,8 +4278,22 @@ COPY public.producto_variante_imagenes (imagenid, url_imagen, textoalternativo, 
 54	https://res.cloudinary.com/daylne1ml/image/upload/v1767565612/razoconnect_productos/prhxb37t0mzqcgpk9oma.png	\N	1	159
 55	https://res.cloudinary.com/daylne1ml/image/upload/v1767565639/razoconnect_productos/euif0qjmqhfjuuvng9ts.png	\N	1	160
 56	https://res.cloudinary.com/daylne1ml/image/upload/v1767565665/razoconnect_productos/hgo9cpzrcszvftlfacek.png	\N	1	161
-57	https://res.cloudinary.com/daylne1ml/image/upload/v1767566021/razoconnect_productos/usm3cyhxmlces1jgpolo.png	\N	1	162
-58	https://res.cloudinary.com/daylne1ml/image/upload/v1767566045/razoconnect_productos/d42w1kmmc0dexm8n41ot.png	\N	1	163
+59	https://res.cloudinary.com/daylne1ml/image/upload/v1767644870/razoconnect_productos/frtawfp6gpgibd0v2qas.jpg	\N	1	175
+60	https://res.cloudinary.com/daylne1ml/image/upload/v1767644870/razoconnect_productos/pf43oxapykf5l1jkw0fg.jpg	\N	2	175
+61	https://res.cloudinary.com/daylne1ml/image/upload/v1767644871/razoconnect_productos/uv5frsxqsvzarbikkn0z.jpg	\N	3	175
+62	https://res.cloudinary.com/daylne1ml/image/upload/v1767644871/razoconnect_productos/wkbvxdrnn6xqnpkahgcx.jpg	\N	4	175
+63	https://res.cloudinary.com/daylne1ml/image/upload/v1767644872/razoconnect_productos/c5n4vpabe6dqho723ayd.jpg	\N	5	175
+64	https://res.cloudinary.com/daylne1ml/image/upload/v1767644979/razoconnect_productos/bfkmii1plv7i4qrtzats.jpg	\N	1	176
+65	https://res.cloudinary.com/daylne1ml/image/upload/v1767644979/razoconnect_productos/cuqbr09f8ethygphwy6w.jpg	\N	2	176
+66	https://res.cloudinary.com/daylne1ml/image/upload/v1767644980/razoconnect_productos/wlthletb2kcxere6zdx9.jpg	\N	3	176
+67	https://res.cloudinary.com/daylne1ml/image/upload/v1767644981/razoconnect_productos/ejpe6k5sefrgojbtprcp.jpg	\N	4	176
+68	https://res.cloudinary.com/daylne1ml/image/upload/v1767644981/razoconnect_productos/zn6ucqslnnvkj7whoem2.jpg	\N	5	176
+70	https://res.cloudinary.com/daylne1ml/image/upload/v1767654279/razoconnect_productos/msmpdg3wjg01wgogkyyl.jpg	\N	1	182
+69	https://res.cloudinary.com/daylne1ml/image/upload/v1767654228/razoconnect_productos/lkb894x6fwcpcq40nsps.jpg	\N	1	181
+71	https://res.cloudinary.com/daylne1ml/image/upload/v1767654364/razoconnect_productos/rsjcbhdsyn6fpcbmwvkp.jpg	\N	1	183
+72	https://res.cloudinary.com/daylne1ml/image/upload/v1767654438/razoconnect_productos/orasyknkfkwetmtzbfqt.jpg	\N	1	184
+73	https://res.cloudinary.com/daylne1ml/image/upload/v1767654491/razoconnect_productos/ck4huo31mqwxoe9xdghe.jpg	\N	1	185
+74	https://res.cloudinary.com/daylne1ml/image/upload/v1767654534/razoconnect_productos/nr3xy55lbh9gtsmtbqow.jpg	\N	1	186
 \.
 
 
@@ -4549,19 +4304,8 @@ COPY public.producto_variante_imagenes (imagenid, url_imagen, textoalternativo, 
 --
 
 COPY public.producto_variantes (varianteid, sku, dimensiones, costounitario, stock, tipoproductoid, medidaid, productoid, preciounitario, precioofertaunitario, activo, piezasporpaquete, stock_minimo, color_nombre, color_hex) FROM stdin;
-38	NAT-001-50X50	50x50	76.93	0	\N	\N	12	119.90	\N	t	1	0	\N	\N
+175	AMO-025-24X22X10-MEDIAN	Mediano	27.93	0	\N	\N	34	44.90	\N	t	1	0	\N	\N
 18	AMO-018-20X20	20x20	41.93	0	\N	\N	9	62.90	\N	t	1	0	Diseño	\N
-23	AMO-018-15X15-LISO	15x15	34.93	0	\N	\N	9	50.90	\N	t	1	0	Liso	\N
-39	NAT-001-65X65	65x65	104.93	0	\N	\N	12	159.90	\N	t	1	0	\N	\N
-19	AMO-018-25X25	25x25	48.93	0	\N	\N	9	72.90	\N	t	1	0	Diseño	\N
-24	AMO-018-20X20-LISO	20x20	41.93	0	\N	\N	9	62.90	\N	t	1	0	Liso	\N
-25	AMO-018-25X25-LISO	25x25	48.93	0	\N	\N	9	72.90	\N	t	1	0	Liso	\N
-26	AMO-018-30X30-LISO	30x30	55.93	0	\N	\N	9	84.90	\N	t	1	0	Liso	\N
-27	AMO-018-50X50-LISO	50x50	111.93	0	\N	\N	9	167.90	\N	t	1	0	Liso	\N
-1	AMO-001	20x20	27.93	0	\N	\N	1	42.90	\N	t	1	0	\N	\N
-2	AMO-002	25x25	34.93	0	\N	\N	1	52.90	\N	t	1	0	\N	\N
-3	AMO-003	15x15	20.93	0	\N	\N	2	30.90	\N	t	1	0	\N	\N
-4	AMO-004	20x20	27.93	0	\N	\N	2	42.90	\N	t	1	0	\N	\N
 5	AMO-005	25x25	34.93	0	\N	\N	2	52.90	\N	t	1	0	\N	\N
 7	AMO-007	10x10	13.23	0	\N	\N	3	19.90	\N	t	1	0	Negro	\N
 9	AMO-009	20x20	27.93	0	\N	\N	4	42.90	\N	t	1	0	\N	\N
@@ -4572,12 +4316,6 @@ COPY public.producto_variantes (varianteid, sku, dimensiones, costounitario, sto
 28	AMO-019-17X22	17x22	69.93	0	\N	\N	10	102.90	\N	t	1	0	\N	\N
 30	LIS-001-25X25-MAGENT	25x25	34.93	0	\N	\N	11	52.90	\N	t	1	0	Magenta	\N
 29	LIS-001-20X20-MAGENT	20x20	27.93	0	\N	\N	11	42.90	\N	t	1	0	Magenta	\N
-32	NAT-001-10X10	10x10	10.43	0	\N	\N	12	16.90	\N	t	1	0	\N	\N
-33	NAT-001-15X15	15x15	13.23	0	\N	\N	12	20.90	\N	t	1	0	\N	\N
-34	NAT-001-20X20	20x20	17.43	0	\N	\N	12	28.90	\N	t	1	0	\N	\N
-35	NAT-001-25X25	25x25	20.93	0	\N	\N	12	33.90	\N	t	1	0	\N	\N
-36	NAT-001-30X30	30x30	27.93	0	\N	\N	12	46.90	\N	t	1	0	\N	\N
-37	NAT-001-40X40	40x40	48.93	0	\N	\N	12	79.90	\N	t	1	0	\N	\N
 16	AMO-016	20x20	27.93	0	\N	\N	8	42.90	\N	t	1	0	\N	\N
 17	AMO-017	25x25	34.93	0	\N	\N	8	52.90	\N	t	1	0	\N	\N
 43	AMO-006-20X20-NEGRO	20x20	27.93	0	\N	\N	3	42.90	\N	t	1	0	Negro	\N
@@ -4635,6 +4373,7 @@ COPY public.producto_variantes (varianteid, sku, dimensiones, costounitario, sto
 87	TOD-006-25X25	25x25	34.93	0	\N	\N	25	52.90	\N	t	1	0	\N	\N
 88	TOD-006-30X30	30x30	41.93	0	\N	\N	25	64.90	\N	t	1	0	\N	\N
 89	TOD-007-20X20	20x20	27.93	0	\N	\N	26	42.90	\N	t	1	0	\N	\N
+170	CER-001-JUM	Jumbo	55.93	0	\N	\N	59	87.90	\N	t	1	0	\N	\N
 90	TOD-007-25X25	25x25	34.93	0	\N	\N	26	52.90	\N	t	1	0	\N	\N
 91	TOD-007-30X30	30x30	41.93	0	\N	\N	26	64.90	\N	t	1	0	\N	\N
 92	TOD-008-20X20	20x20	27.93	0	\N	\N	27	42.90	\N	t	1	0	\N	\N
@@ -4644,6 +4383,8 @@ COPY public.producto_variantes (varianteid, sku, dimensiones, costounitario, sto
 96	TOD-009-25X25	25x25	34.93	0	\N	\N	28	52.90	\N	t	1	0	\N	\N
 97	TOD-009-30X30	30x30	41.93	0	\N	\N	28	64.90	\N	t	1	0	\N	\N
 98	TOD-010-20X20	20x20	27.93	0	\N	\N	29	42.90	\N	t	1	0	\N	\N
+181	COR-001-GRA-ROSA	Grande	41.93	0	\N	\N	63	67.90	\N	t	1	0	Rosa	\N
+186	COR-001-MED-NEGRO	Mediano	27.93	0	\N	\N	63	44.90	\N	t	1	0	Negro	\N
 99	TOD-010-25X25	25x25	34.93	0	\N	\N	29	52.90	\N	t	1	0	\N	\N
 100	TOD-010-30X30	30x30	41.93	0	\N	\N	29	64.90	\N	t	1	0	\N	\N
 101	TOD-011-50X50	50x50	97.93	0	\N	\N	30	147.90	\N	t	1	0	\N	\N
@@ -4693,9 +4434,6 @@ COPY public.producto_variantes (varianteid, sku, dimensiones, costounitario, sto
 145	CAJ-001-40X40-NATURA	40x40	0.00	0	\N	\N	44	79.90	\N	t	1	0	Natural	\N
 146	CAJ-001-50X50-NATURA	50x50	0.00	0	\N	\N	44	119.90	\N	t	1	0	Natural	\N
 147	CAJ-001-65X65-NATURA	65x65	0.00	0	\N	\N	44	159.90	\N	t	1	0	Natural	\N
-148	CAJ-002-MED-NATURA	Mediana	0.00	0	\N	\N	45	24.90	\N	t	1	0	Natural	\N
-149	CAJ-002-GRA-NATURA	Grande	0.00	0	\N	\N	45	34.90	\N	t	1	0	Natural	\N
-150	CAJ-002-JUM-NATURA	Jumbo	0.00	0	\N	\N	45	52.90	\N	t	1	0	Natural	\N
 151	CAJ-003-25X35-NATURA	25x35	0.00	0	\N	\N	46	52.90	\N	t	1	0	Natural	\N
 152	CAJ-003-30X45-NATURA	30x45	0.00	0	\N	\N	46	69.90	\N	t	1	0	Natural	\N
 153	CAJ-003-40X60-NATURA	40x60	0.00	0	\N	\N	46	109.90	\N	t	1	0	Natural	\N
@@ -4707,14 +4445,35 @@ COPY public.producto_variantes (varianteid, sku, dimensiones, costounitario, sto
 159	CAJ-005-20X40-NATURA	20x40	0.00	0	\N	\N	49	56.90	\N	t	1	0	Natural	\N
 160	CAJ-005-30X60-NATURA	30x60	0.00	0	\N	\N	49	79.90	\N	t	1	0	Natural	\N
 161	CAJ-005-40X80-NATURA	40x80	0.00	0	\N	\N	49	159.90	\N	t	1	0	Natural	\N
-162	CAJ-006-MED-NATURA	Mediana	0.00	0	\N	\N	52	42.90	\N	t	1	0	Natural	\N
-163	CAJ-006-GRA-NATURA	Grande	0.00	0	\N	\N	52	54.90	\N	t	1	0	Natural	\N
+171	BOL-001-23X18X10-MEDIAN	23x18x10	13.93	0	\N	\N	60	22.90	\N	t	1	0	Mediana	\N
+176	AMO-025-34X27X14-GRANDE	Grande	41.93	0	\N	\N	34	67.90	\N	t	1	0	\N	\N
+182	COR-001-MED-LILA	Mediano	27.93	0	\N	\N	63	44.90	\N	t	1	0	Lila	\N
+23	AMO-018-15X15-LISO	15x15	34.93	0	\N	\N	9	50.90	\N	t	1	0	Liso	\N
+19	AMO-018-25X25	25x25	48.93	0	\N	\N	9	72.90	\N	t	1	0	Diseño	\N
+24	AMO-018-20X20-LISO	20x20	41.93	0	\N	\N	9	62.90	\N	t	1	0	Liso	\N
+25	AMO-018-25X25-LISO	25x25	48.93	0	\N	\N	9	72.90	\N	t	1	0	Liso	\N
+26	AMO-018-30X30-LISO	30x30	55.93	0	\N	\N	9	84.90	\N	t	1	0	Liso	\N
+27	AMO-018-50X50-LISO	50x50	111.93	0	\N	\N	9	167.90	\N	t	1	0	Liso	\N
+1	AMO-001	20x20	27.93	0	\N	\N	1	42.90	\N	t	1	0	\N	\N
+2	AMO-002	25x25	34.93	0	\N	\N	1	52.90	\N	t	1	0	\N	\N
+3	AMO-003	15x15	20.93	0	\N	\N	2	30.90	\N	t	1	0	\N	\N
+172	BOL-001-26X33X13-GRANDE	26x33x13	20.93	0	\N	\N	60	32.90	\N	t	1	0	Grande	\N
+177	PAS-002-20X20X13	20X20X13	27.90	0	\N	\N	62	42.90	\N	t	1	0	\N	\N
+183	COR-001-GRA-LILA	Grande	41.93	0	\N	\N	63	67.90	\N	t	1	0	Lila	\N
+4	AMO-004	20x20	27.93	0	\N	\N	2	42.90	\N	t	1	0	\N	\N
+173	BOL-001-33X44X13-JUMBO	33x44x13	27.93	0	\N	\N	60	42.90	\N	t	1	0	Jumbo	\N
+178	PAS-002-25X25X14	25X25X14	32.13	0	\N	\N	62	48.90	\N	t	1	0	\N	\N
+184	COR-001-MED-ROJO	Mediano	27.93	0	\N	\N	63	44.90	\N	t	1	0	Rojo	\N
 164	LUN-001-30X30	30x30	48.93	0	\N	\N	53	74.90	\N	t	1	0	\N	\N
 165	TOR-003-20X40-GRANDE	20x40	48.93	0	\N	\N	54	74.90	\N	t	1	0	Grande	\N
 166	TOR-003-30X60-JUMBO	30x60	69.93	0	\N	\N	54	107.90	\N	t	1	0	Jumbo	\N
 167	BOT-001-34X1050	34x10.50	41.93	0	\N	\N	55	62.90	\N	t	1	0	\N	\N
 168	PAL-001-30X50-GRANDE	30x50	41.93	0	\N	\N	56	64.90	\N	t	1	0	Grande	\N
 169	MIL-002-23X17X32-GRANDE	23x17x32	32.13	0	\N	\N	57	48.90	\N	t	1	0	Grande	\N
+174	BOL-001-35X39X25-GIGANT	35x39x25	34.93	0	\N	\N	60	52.90	\N	t	1	0	Gigante	\N
+179	PAS-002-30X30X145	30x30x14.5	38.43	0	\N	\N	62	59.90	\N	t	1	0	\N	\N
+180	PAS-002-40X40X15	40x40x15	62.93	0	\N	\N	62	97.90	\N	t	1	0	\N	\N
+185	COR-001-GRA-ROJO	Grande	41.93	0	\N	\N	63	67.90	\N	t	1	0	Rojo	\N
 \.
 
 
@@ -4725,9 +4484,12 @@ COPY public.producto_variantes (varianteid, sku, dimensiones, costounitario, sto
 --
 
 COPY public.productos (productoid, categoriaid, nombreproducto, descripcion, activo, proveedorid_default, sku_maestro, reglaid, created_by_admin_id) FROM stdin;
+59	3	Cerillo Party	Caja con un diseño original y funcional. Perfecta para entregar regalos especiales con un toque moderno y divertido. Resistente, fácil de armar, con asas, acabado barniz brillante.	t	1	CER-001	1	\N
+63	1	Corazón Liso	¡Dale un toque de elegancia y ternura a tus detalles! Esta hermosa caja con forma de corazón en colores rosa, lila, rojo y negro, es la opción perfecta para empaques de San Valentín, aniversarios, cumpleaños o cualquier ocasión especial. Su acabado liso y minimalista permite que el regalo sea el verdadero protagonista.	t	1	COR-001	2	\N
 11	1	Cubo Liso	\N	t	1	LIS-001	2	2
-12	4	Cubo Natural	\N	t	1	NAT-001	2	2
+60	3	Bolsa Guapos	Bolsa Kraft de material resistente, con diseños únicos, ideal para sorprender a esa persona especial, acabado mate.	t	1	BOL-001	1	\N
 14	1	Línea Metalizada	\N	t	1	LIS-002	1	2
+34	2	Corazón Colors Love	¡Expresa tus sentimientos con una explosión de color! Nuestra línea Corazón Colors Love está diseñada para quienes buscan un empaque dinámico, moderno y lleno de alegría. Estas cajas no son solo un envoltorio, son parte del regalo mismo.	t	1	AMO-025	1	2
 36	3	Cubo Baby	Hermosas cajas, en tonos pastel, para celebrar la llegada de un ser pequeñito  y muy especial, acabado barniz brillante.	t	1	TOD-016	1	2
 3	1	Cubo Liso Brillo	Estas cajas no solo son contenedores, son parte del regalo mismo. Gracias a su acabado brillante y su vibrante color negro o rojo, son perfectas para San Valentín, aniversarios, cumpleaños o cualquier ocasión especial donde quieras impresionar.	t	1	AMO-006	2	2
 5	2	Cubo Love Craft	¡Haz que cada regalo sea inolvidable desde el primer vistazo! Nuestra línea de cajas Love Craft está diseñada para quienes buscan salir de lo convencional y entregar un detalle lleno de color, arte y emoción.	t	1	AMO-010	1	2
@@ -4756,13 +4518,13 @@ COPY public.productos (productoid, categoriaid, nombreproducto, descripcion, act
 31	3	Cubo Luxe	Cajas de colores divertidos para toda ocasión, en acabado mate.	t	1	TOD-012	1	2
 32	3	Cubo Sports	Cajas con diseños y frases divertidas, con las marcas de tus tenis favoritos, colores con acabado barniz brillante.	t	1	TOD-013	1	2
 33	3	Cubo Marcas	Cajas con diseños y frases divertidas, con marcas de cerveza, ideales para caballero, acabado barniz brillante.	t	1	TOD-014	1	2
-34	2	Corazón Colors Love	¡Expresa tus sentimientos con una explosión de color! Nuestra línea Corazón Colors Love está diseñada para quienes buscan un empaque dinámico, moderno y lleno de alegría. Estas cajas no son solo un envoltorio, son parte del regalo mismo.	t	1	AMO-025	1	2
 35	3	Cubo Incógnita	Cajas para toda ocasión, con colores básicos, pero divertidos, acabado barniz brillante.	t	1	TOD-015	1	2
 6	2	Cubo Colores Amor	¡Haz que cada detalle cuente! Nuestra colección Colores Amor está diseñada para quienes buscan transformar un simple regalo en una experiencia inolvidable. Estas cajas no son solo empaques, son una declaración de afecto con un diseño vibrante y moderno.	t	1	AMO-012	1	2
 19	2	Cubo Love	¡Haz que cada momento especial sea inolvidable! Nuestro Cubo LOVE no es solo una caja, es una experiencia diseñada para expresar tus sentimientos de la forma más creativa y elegante.	t	1	AMO-022	1	2
 4	2	Cubo Love Black	El Cubo Love Black es la opción perfecta para quienes buscan un empaque impactante, moderno y lleno de sentimiento. Diseñada con un fondo negro profundo que hace resaltar colores vibrantes, esta caja no es solo un empaque, sino parte del regalo mismo.	t	1	AMO-008	1	2
 2	2	Cubo LV Oro	Eleva la presentación de tus detalles con nuestra exclusiva línea de Cajas Cubo LV Oro. Diseñadas con un elegante acabado en color oro y tipografía estilizada, estas cajas son perfectas para San Valentín, aniversarios o cualquier ocasión especial donde el amor sea el protagonista.	t	1	AMO-003	1	2
 16	2	Cubo Novios Guapos	¡Lleva tu regalo al siguiente nivel con nuestras cajas decorativas de la línea Novios Guapos! Diseñadas con colores neón, tipografías estilo graffiti y mensajes llenos de amor, estas cajas no son solo un empaque, son parte de la sorpresa.	t	1	AMO-021	1	2
+61	3	Sobre Cumple	Sobre de dinero, ideal para cuando no sabes que regalar, diseños alegres y divertidos, con acabado barniz brillante.	t	1	SOB-001	1	\N
 7	2	Cubo RedBlack Love	Sorprende a esa persona especial con nuestros elegantes cubos decorativos de la colección RedBlack Love. Diseñados con una combinación clásica de rojo, negro y blanco, estos cubos son el empaque perfecto para regalos inolvidables o como un detalle decorativo lleno de sentimiento.	t	1	AMO-014	1	2
 10	2	Libreta	¡Dale estilo a tus notas con estas libretas de diseño exclusivo! Perfectas para regalo o para uso personal, estas libretas combinan un diseño moderno con materiales de alta resistencia.	t	1	AMO-019	5	2
 55	3	Botella Cumple	Caja para celebrar a esa persona especial, color, diseño y tamaño perfecto para una botella de vino, con acabado barniz brillante.	t	1	BOT-001	1	2
@@ -4771,18 +4533,18 @@ COPY public.productos (productoid, categoriaid, nombreproducto, descripcion, act
 43	3	Pastelera De Luxe	Caja con colores intensos, ideal para cualquier ocasión, hotstampin, acabado mate.	t	1	PAS-001	5	2
 57	3	Milk Cumple Colors	Caja con diseño divertido, ideal para celebrar el cumpleaños de esa persona especial, colores vibrantes acabado barniz brillante.	t	1	MIL-002	1	2
 58	3	Six Pack Men	Caja con diseños divertidos, perfecta para cervezas ó bebidas, resistente, con estilo y ese look que siempre queda bien. Ideal para armar regalos cool y sorprender, acabado barniz brillante.	t	1	SIX-002	1	2
-44	4	Caja cubo	Caja de regalo kraft natural tipo cubo, simple, bonita y con mucho estilo. Ideal para presentar tus detalles con un look natural y moderno. Resistente, práctica y fácil de personalizar. Disponible en tamaños desde 10 x 10 x 10 cm hasta 65 x 65 x 65 cm ✨🎁	t	1	CAJ-001	1	2
-45	4	Caja camisera	Caja camisera de regalo kraft color natural, elegante y funcional. Ideal para presentar prendas y regalos con un estilo limpio y moderno. Resistente, práctica y fácil de personalizar. Disponible en diferentes tamaños para adaptarse a cada detalle 🎁✨	t	1	CAJ-002	1	2
-46	4	Caja baul	Caja baúl de regalo kraft color natural, con un diseño original y funcional. Perfecta para presentar regalos especiales con un toque natural y moderno. Resistente, fácil de armar y personalizar. Disponible en varios tamaños 🎁✨	t	1	CAJ-003	1	2
 47	3	Baúl Cumple	Caja para celebrar a esa persona especial, color, diseño y tamaño perfecto para un regalo espectacular, con acabado barniz brillante	t	1	BAU-002	1	2
 13	4	Camisera Natural	Caja camisera de regalo kraft color natural, elegante y funcional. Ideal para presentar prendas y regalos con un estilo limpio y moderno. Resistente, práctica y fácil de personalizar. Disponible en diferentes tamaños para adaptarse a cada detalle 🎁✨	t	1	NAT-002	1	2
 48	4	Caja lunch kraft	Caja tipo lunch kraft natural, práctica y con mucho estilo. Ideal para armar desayunos sorpresa y detalles especiales. Resistente, fácil de armar y perfecta para personalizar y sorprender 🎁✨	t	1	CAJ-004	1	2
 49	4	Caja torre natural	Caja de regalo tipo torre kraft, original y llamativa. Ideal para armar regalos en capas y crear una presentación impactante. Resistente, fácil de armar y perfecta para personalizar con un estilo natural y moderno 🎁✨	t	1	CAJ-005	1	2
 50	3	Baúl Colors Cumple	Caja para celebrar a esa persona especial, color, diseño y tamaño perfecto para un regalo espectacular, con acabado barniz brillante	t	1	BAU-003	1	2
-51	4	Six pack natural	Caja six pack kraft natural, perfecta para cervezas o bebidas. Resistente, con estilo y ese look natural que siempre queda bien. Ideal para armar regalos cool y sorprender 🍺✨	t	1	SIX-001	2	2
-52	4	Caja corazon natural	Caja de regalo en forma de corazón, elaborada en cartón kraft natural. Bonita, resistente y con un toque romántico y moderno. Ideal para detalles especiales, fácil de personalizar y perfecta para sorprender 💛🎁	t	1	CAJ-006	1	2
 53	3	Lunch Party	Caja para celebrar a esa persona especial, ideal para un desayuno sorpresa ó si lo prefieres retiras el interior y colocas tu regalo, color, diseño y tamaño perfecto, con acabado barniz brillante.	t	1	LUN-001	1	2
 54	3	Torre Cumple Colors	Caja para celebrar a esa persona especial, color, diseño y tamaño perfecto para un regalo espectacular, con acabado barniz brillante.	t	1	TOR-003	1	2
+46	4	Caja baul	Baúl de regalo kraft color natural, con un diseño original y funcional. Perfecta para presentar regalos especiales con un toque natural y moderno. Resistente, fácil de armar y personalizar. Disponible en varios tamaños 🎁✨	t	1	CAJ-003	1	2
+44	4	Caja cubo	Cubo kraft natural, simple, bonita y con mucho estilo. Ideal para presentar tus detalles con un look natural y moderno. Resistente, práctica y fácil de personalizar. Disponible en tamaños desde 10 x 10 x 10 cm hasta 65 x 65 x 65 cm ✨🎁	t	1	CAJ-001	1	2
+51	4	Six pack natural	Six pack kraft natural, perfecta para cervezas o bebidas. Resistente, con estilo y ese look natural que siempre queda bien. Ideal para armar regalos cool y sorprender 🍺✨	t	1	SIX-001	1	2
+62	1	Pastelera Toda Ocasión	Dale a tus regalos el empaque que merecen con nuestra línea de cajas pasteleras. Diseñadas para combinar resistencia, estilo y practicidad, estas cajas son ideales para regalos especiales.	t	1	PAS-002	1	\N
+64	1	Caja para Rosas	Eleva la presentación de tus arreglos florales con nuestras cajas exclusivas. Diseñadas específicamente para proteger y resaltar la belleza de las rosas, estas cajas en colores magenta, rosa, lila, rojo y negro,  son la opción perfecta para San Valentín, aniversarios o cualquier ocasión especial.	t	1	CAJ-006	2	\N
 \.
 
 
@@ -4820,8 +4582,6 @@ COPY public.proveedores (proveedorid, nombreempresa, contactonombre, email, tele
 --
 
 COPY public.solicitudes_credito (solicitud_id, cliente_id, monto_solicitado, motivo_uso, estado, fecha_solicitud, comentarios_admin) FROM stdin;
-1	2	5000.00	prueba	APROBADO	2025-12-24 17:24:00.197026	\N
-2	1	20000.00	pruebas	APROBADO	2025-12-26 16:57:41.701303	\N
 \.
 
 
@@ -4846,16 +4606,6 @@ COPY public.tipoproducto (tipoproductoid, nombre, descripcion, activo, fechacrea
 --
 
 COPY public.toma_inventario_conteos (conteoid, sesionid, varianteid, conteo_a, usuario_a_id, conteo_b, usuario_b_id, cantidad_final, estatus_fila, estatus_aplicacion) FROM stdin;
-1	1	29	18	2	16	1	\N	CONFLICTO	NO_APLICADO
-2	1	30	36	2	36	1	36	VALIDADO	APLICADO
-3	1	43	12	2	12	1	12	VALIDADO	APLICADO
-4	1	44	24	2	22	1	\N	CONFLICTO	NO_APLICADO
-5	1	34	6	2	6	1	6	VALIDADO	APLICADO
-6	1	41	18	2	18	1	18	VALIDADO	APLICADO
-7	1	42	14	2	12	1	\N	CONFLICTO	NO_APLICADO
-8	2	29	18	2	18	1	18	VALIDADO	APLICADO
-9	2	44	24	2	24	1	24	VALIDADO	APLICADO
-10	2	42	14	2	14	1	14	VALIDADO	APLICADO
 \.
 
 
@@ -4866,13 +4616,11 @@ COPY public.toma_inventario_conteos (conteoid, sesionid, varianteid, conteo_a, u
 --
 
 COPY public.toma_inventario_sesiones (sesionid, nombre, fechainicio, fechacierre, estatus, usuario_creador_id) FROM stdin;
-1	Inv 26-dic	2025-12-26 15:14:54.21321	\N	APLICADA_PARCIAL	2
-2	Corrección Inv 26-dic	2025-12-26 16:22:38.629212	\N	APLICADA	2
 \.
 
 
 --
--- TOC entry 5040 (class 0 OID 0)
+-- TOC entry 5042 (class 0 OID 0)
 -- Dependencies: 221
 -- Name: jobid_seq; Type: SEQUENCE SET; Schema: cron; Owner: azuresu
 --
@@ -4881,7 +4629,7 @@ SELECT pg_catalog.setval('cron.jobid_seq', 1, false);
 
 
 --
--- TOC entry 5041 (class 0 OID 0)
+-- TOC entry 5043 (class 0 OID 0)
 -- Dependencies: 223
 -- Name: runid_seq; Type: SEQUENCE SET; Schema: cron; Owner: azuresu
 --
@@ -4890,7 +4638,7 @@ SELECT pg_catalog.setval('cron.runid_seq', 1, false);
 
 
 --
--- TOC entry 5042 (class 0 OID 0)
+-- TOC entry 5044 (class 0 OID 0)
 -- Dependencies: 226
 -- Name: administradores_adminid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -4899,7 +4647,7 @@ SELECT pg_catalog.setval('public.administradores_adminid_seq', 7, true);
 
 
 --
--- TOC entry 5043 (class 0 OID 0)
+-- TOC entry 5045 (class 0 OID 0)
 -- Dependencies: 228
 -- Name: agentesdeventas_agenteid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -4908,16 +4656,16 @@ SELECT pg_catalog.setval('public.agentesdeventas_agenteid_seq', 1, true);
 
 
 --
--- TOC entry 5044 (class 0 OID 0)
+-- TOC entry 5046 (class 0 OID 0)
 -- Dependencies: 230
 -- Name: carritodecompra_carritoid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.carritodecompra_carritoid_seq', 3, true);
+SELECT pg_catalog.setval('public.carritodecompra_carritoid_seq', 1, false);
 
 
 --
--- TOC entry 5045 (class 0 OID 0)
+-- TOC entry 5047 (class 0 OID 0)
 -- Dependencies: 232
 -- Name: cat_cxp_etiquetas_etiqueta_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -4926,7 +4674,7 @@ SELECT pg_catalog.setval('public.cat_cxp_etiquetas_etiqueta_id_seq', 1, false);
 
 
 --
--- TOC entry 5046 (class 0 OID 0)
+-- TOC entry 5048 (class 0 OID 0)
 -- Dependencies: 234
 -- Name: cat_tamanopaquetes_tamanoid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -4935,7 +4683,7 @@ SELECT pg_catalog.setval('public.cat_tamanopaquetes_tamanoid_seq', 5, true);
 
 
 --
--- TOC entry 5047 (class 0 OID 0)
+-- TOC entry 5049 (class 0 OID 0)
 -- Dependencies: 236
 -- Name: categorias_categoriaid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -4944,34 +4692,34 @@ SELECT pg_catalog.setval('public.categorias_categoriaid_seq', 4, true);
 
 
 --
--- TOC entry 5048 (class 0 OID 0)
+-- TOC entry 5050 (class 0 OID 0)
 -- Dependencies: 238
 -- Name: cliente_creditos_credito_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.cliente_creditos_credito_id_seq', 2, true);
-
-
---
--- TOC entry 5049 (class 0 OID 0)
--- Dependencies: 240
--- Name: cliente_direcciones_direccionid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
---
-
-SELECT pg_catalog.setval('public.cliente_direcciones_direccionid_seq', 2, true);
-
-
---
--- TOC entry 5050 (class 0 OID 0)
--- Dependencies: 242
--- Name: clientes_clienteid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
---
-
-SELECT pg_catalog.setval('public.clientes_clienteid_seq', 5, true);
+SELECT pg_catalog.setval('public.cliente_creditos_credito_id_seq', 1, false);
 
 
 --
 -- TOC entry 5051 (class 0 OID 0)
+-- Dependencies: 240
+-- Name: cliente_direcciones_direccionid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
+--
+
+SELECT pg_catalog.setval('public.cliente_direcciones_direccionid_seq', 1, false);
+
+
+--
+-- TOC entry 5052 (class 0 OID 0)
+-- Dependencies: 242
+-- Name: clientes_clienteid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
+--
+
+SELECT pg_catalog.setval('public.clientes_clienteid_seq', 2, true);
+
+
+--
+-- TOC entry 5053 (class 0 OID 0)
 -- Dependencies: 244
 -- Name: comisiones_comisionid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -4980,34 +4728,34 @@ SELECT pg_catalog.setval('public.comisiones_comisionid_seq', 1, false);
 
 
 --
--- TOC entry 5052 (class 0 OID 0)
+-- TOC entry 5054 (class 0 OID 0)
 -- Dependencies: 246
 -- Name: communicationlogs_logid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.communicationlogs_logid_seq', 53, true);
-
-
---
--- TOC entry 5053 (class 0 OID 0)
--- Dependencies: 248
--- Name: control_cambios_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
---
-
-SELECT pg_catalog.setval('public.control_cambios_id_seq', 139, true);
-
-
---
--- TOC entry 5054 (class 0 OID 0)
--- Dependencies: 250
--- Name: credito_movimientos_movimiento_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
---
-
-SELECT pg_catalog.setval('public.credito_movimientos_movimiento_id_seq', 24, true);
+SELECT pg_catalog.setval('public.communicationlogs_logid_seq', 1, false);
 
 
 --
 -- TOC entry 5055 (class 0 OID 0)
+-- Dependencies: 248
+-- Name: control_cambios_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
+--
+
+SELECT pg_catalog.setval('public.control_cambios_id_seq', 152, true);
+
+
+--
+-- TOC entry 5056 (class 0 OID 0)
+-- Dependencies: 250
+-- Name: credito_movimientos_movimiento_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
+--
+
+SELECT pg_catalog.setval('public.credito_movimientos_movimiento_id_seq', 1, false);
+
+
+--
+-- TOC entry 5057 (class 0 OID 0)
 -- Dependencies: 252
 -- Name: cuentas_por_cobrar_cxcid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -5016,16 +4764,16 @@ SELECT pg_catalog.setval('public.cuentas_por_cobrar_cxcid_seq', 1, false);
 
 
 --
--- TOC entry 5056 (class 0 OID 0)
+-- TOC entry 5058 (class 0 OID 0)
 -- Dependencies: 254
 -- Name: cuentas_por_pagar_cxp_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.cuentas_por_pagar_cxp_id_seq', 4, true);
+SELECT pg_catalog.setval('public.cuentas_por_pagar_cxp_id_seq', 1, false);
 
 
 --
--- TOC entry 5057 (class 0 OID 0)
+-- TOC entry 5059 (class 0 OID 0)
 -- Dependencies: 312
 -- Name: cupones_cuponid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -5034,7 +4782,7 @@ SELECT pg_catalog.setval('public.cupones_cuponid_seq', 1, false);
 
 
 --
--- TOC entry 5058 (class 0 OID 0)
+-- TOC entry 5060 (class 0 OID 0)
 -- Dependencies: 256
 -- Name: cxp_etiquetas_asignadas_asignacion_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -5043,7 +4791,7 @@ SELECT pg_catalog.setval('public.cxp_etiquetas_asignadas_asignacion_id_seq', 1, 
 
 
 --
--- TOC entry 5059 (class 0 OID 0)
+-- TOC entry 5061 (class 0 OID 0)
 -- Dependencies: 258
 -- Name: datos_bancarios_empresa_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -5052,25 +4800,25 @@ SELECT pg_catalog.setval('public.datos_bancarios_empresa_id_seq', 2, true);
 
 
 --
--- TOC entry 5060 (class 0 OID 0)
+-- TOC entry 5062 (class 0 OID 0)
 -- Dependencies: 260
 -- Name: detallesdelpedido_detalleid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.detallesdelpedido_detalleid_seq', 24, true);
+SELECT pg_catalog.setval('public.detallesdelpedido_detalleid_seq', 1, false);
 
 
 --
--- TOC entry 5061 (class 0 OID 0)
+-- TOC entry 5063 (class 0 OID 0)
 -- Dependencies: 262
 -- Name: detallesordencompra_detalleoc_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.detallesordencompra_detalleoc_id_seq', 42, true);
+SELECT pg_catalog.setval('public.detallesordencompra_detalleoc_id_seq', 1, false);
 
 
 --
--- TOC entry 5062 (class 0 OID 0)
+-- TOC entry 5064 (class 0 OID 0)
 -- Dependencies: 266
 -- Name: estados_estadoid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -5079,25 +4827,25 @@ SELECT pg_catalog.setval('public.estados_estadoid_seq', 32, true);
 
 
 --
--- TOC entry 5063 (class 0 OID 0)
+-- TOC entry 5065 (class 0 OID 0)
 -- Dependencies: 314
 -- Name: inventarios_admin_inventario_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.inventarios_admin_inventario_id_seq', 18, true);
+SELECT pg_catalog.setval('public.inventarios_admin_inventario_id_seq', 1, false);
 
 
 --
--- TOC entry 5064 (class 0 OID 0)
+-- TOC entry 5066 (class 0 OID 0)
 -- Dependencies: 268
 -- Name: itemsdelcarrito_itemid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.itemsdelcarrito_itemid_seq', 31, true);
+SELECT pg_catalog.setval('public.itemsdelcarrito_itemid_seq', 1, false);
 
 
 --
--- TOC entry 5065 (class 0 OID 0)
+-- TOC entry 5067 (class 0 OID 0)
 -- Dependencies: 270
 -- Name: log_eventosusuario_eventoid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -5106,25 +4854,25 @@ SELECT pg_catalog.setval('public.log_eventosusuario_eventoid_seq', 1, false);
 
 
 --
--- TOC entry 5066 (class 0 OID 0)
+-- TOC entry 5068 (class 0 OID 0)
 -- Dependencies: 272
 -- Name: log_inventario_logid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.log_inventario_logid_seq', 30, true);
+SELECT pg_catalog.setval('public.log_inventario_logid_seq', 1, false);
 
 
 --
--- TOC entry 5067 (class 0 OID 0)
+-- TOC entry 5069 (class 0 OID 0)
 -- Dependencies: 274
 -- Name: log_movimientos_logid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.log_movimientos_logid_seq', 186, true);
+SELECT pg_catalog.setval('public.log_movimientos_logid_seq', 211, true);
 
 
 --
--- TOC entry 5068 (class 0 OID 0)
+-- TOC entry 5070 (class 0 OID 0)
 -- Dependencies: 276
 -- Name: medidas_medidaid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -5133,43 +4881,43 @@ SELECT pg_catalog.setval('public.medidas_medidaid_seq', 1, false);
 
 
 --
--- TOC entry 5069 (class 0 OID 0)
+-- TOC entry 5071 (class 0 OID 0)
 -- Dependencies: 277
 -- Name: notificaciones_notificacionid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.notificaciones_notificacionid_seq', 146, true);
-
-
---
--- TOC entry 5070 (class 0 OID 0)
--- Dependencies: 279
--- Name: ordenesdecompra_ordencompraid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
---
-
-SELECT pg_catalog.setval('public.ordenesdecompra_ordencompraid_seq', 8, true);
-
-
---
--- TOC entry 5071 (class 0 OID 0)
--- Dependencies: 281
--- Name: pagos_clientes_pago_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
---
-
-SELECT pg_catalog.setval('public.pagos_clientes_pago_id_seq', 8, true);
+SELECT pg_catalog.setval('public.notificaciones_notificacionid_seq', 14, true);
 
 
 --
 -- TOC entry 5072 (class 0 OID 0)
--- Dependencies: 283
--- Name: pagos_cxp_pago_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
+-- Dependencies: 279
+-- Name: ordenesdecompra_ordencompraid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.pagos_cxp_pago_id_seq', 2, true);
+SELECT pg_catalog.setval('public.ordenesdecompra_ordencompraid_seq', 1, false);
 
 
 --
 -- TOC entry 5073 (class 0 OID 0)
+-- Dependencies: 281
+-- Name: pagos_clientes_pago_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
+--
+
+SELECT pg_catalog.setval('public.pagos_clientes_pago_id_seq', 1, false);
+
+
+--
+-- TOC entry 5074 (class 0 OID 0)
+-- Dependencies: 283
+-- Name: pagos_cxp_pago_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
+--
+
+SELECT pg_catalog.setval('public.pagos_cxp_pago_id_seq', 1, false);
+
+
+--
+-- TOC entry 5075 (class 0 OID 0)
 -- Dependencies: 285
 -- Name: passwordresettokens_tokenid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -5178,16 +4926,16 @@ SELECT pg_catalog.setval('public.passwordresettokens_tokenid_seq', 1, false);
 
 
 --
--- TOC entry 5074 (class 0 OID 0)
+-- TOC entry 5076 (class 0 OID 0)
 -- Dependencies: 287
 -- Name: pedidos_pedidoid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.pedidos_pedidoid_seq', 17, true);
+SELECT pg_catalog.setval('public.pedidos_pedidoid_seq', 1, false);
 
 
 --
--- TOC entry 5075 (class 0 OID 0)
+-- TOC entry 5077 (class 0 OID 0)
 -- Dependencies: 310
 -- Name: producto_imagenes_color_imagencolorid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -5196,43 +4944,43 @@ SELECT pg_catalog.setval('public.producto_imagenes_color_imagencolorid_seq', 1, 
 
 
 --
--- TOC entry 5076 (class 0 OID 0)
+-- TOC entry 5078 (class 0 OID 0)
 -- Dependencies: 289
 -- Name: producto_imagenes_imagenid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.producto_imagenes_imagenid_seq', 237, true);
-
-
---
--- TOC entry 5077 (class 0 OID 0)
--- Dependencies: 292
--- Name: producto_variante_imagenes_imagenid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
---
-
-SELECT pg_catalog.setval('public.producto_variante_imagenes_imagenid_seq', 58, true);
-
-
---
--- TOC entry 5078 (class 0 OID 0)
--- Dependencies: 294
--- Name: producto_variantes_varianteid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
---
-
-SELECT pg_catalog.setval('public.producto_variantes_varianteid_seq', 169, true);
+SELECT pg_catalog.setval('public.producto_imagenes_imagenid_seq', 269, true);
 
 
 --
 -- TOC entry 5079 (class 0 OID 0)
--- Dependencies: 296
--- Name: productos_productoid_seq1; Type: SEQUENCE SET; Schema: public; Owner: ferram
+-- Dependencies: 292
+-- Name: producto_variante_imagenes_imagenid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.productos_productoid_seq1', 58, true);
+SELECT pg_catalog.setval('public.producto_variante_imagenes_imagenid_seq', 74, true);
 
 
 --
 -- TOC entry 5080 (class 0 OID 0)
+-- Dependencies: 294
+-- Name: producto_variantes_varianteid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
+--
+
+SELECT pg_catalog.setval('public.producto_variantes_varianteid_seq', 186, true);
+
+
+--
+-- TOC entry 5081 (class 0 OID 0)
+-- Dependencies: 296
+-- Name: productos_productoid_seq1; Type: SEQUENCE SET; Schema: public; Owner: ferram
+--
+
+SELECT pg_catalog.setval('public.productos_productoid_seq1', 64, true);
+
+
+--
+-- TOC entry 5082 (class 0 OID 0)
 -- Dependencies: 298
 -- Name: proveedor_reglas_empaque_reglaid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -5241,7 +4989,7 @@ SELECT pg_catalog.setval('public.proveedor_reglas_empaque_reglaid_seq', 5, true)
 
 
 --
--- TOC entry 5081 (class 0 OID 0)
+-- TOC entry 5083 (class 0 OID 0)
 -- Dependencies: 300
 -- Name: proveedores_proveedorid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -5250,16 +4998,16 @@ SELECT pg_catalog.setval('public.proveedores_proveedorid_seq', 3, true);
 
 
 --
--- TOC entry 5082 (class 0 OID 0)
+-- TOC entry 5084 (class 0 OID 0)
 -- Dependencies: 302
 -- Name: solicitudes_credito_solicitud_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.solicitudes_credito_solicitud_id_seq', 2, true);
+SELECT pg_catalog.setval('public.solicitudes_credito_solicitud_id_seq', 1, false);
 
 
 --
--- TOC entry 5083 (class 0 OID 0)
+-- TOC entry 5085 (class 0 OID 0)
 -- Dependencies: 304
 -- Name: tipoproducto_tipoproductoid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -5268,21 +5016,21 @@ SELECT pg_catalog.setval('public.tipoproducto_tipoproductoid_seq', 4, true);
 
 
 --
--- TOC entry 5084 (class 0 OID 0)
+-- TOC entry 5086 (class 0 OID 0)
 -- Dependencies: 306
 -- Name: toma_inventario_conteos_conteoid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.toma_inventario_conteos_conteoid_seq', 10, true);
+SELECT pg_catalog.setval('public.toma_inventario_conteos_conteoid_seq', 1, false);
 
 
 --
--- TOC entry 5085 (class 0 OID 0)
+-- TOC entry 5087 (class 0 OID 0)
 -- Dependencies: 308
 -- Name: toma_inventario_sesiones_sesionid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.toma_inventario_sesiones_sesionid_seq', 2, true);
+SELECT pg_catalog.setval('public.toma_inventario_sesiones_sesionid_seq', 1, false);
 
 
 --
@@ -7673,7 +7421,7 @@ GRANT SELECT(subsynccommit) ON TABLE pg_catalog.pg_subscription TO azure_pg_admi
 GRANT SELECT(subpublications) ON TABLE pg_catalog.pg_subscription TO azure_pg_admin;
 
 
--- Completed on 2026-01-04 22:43:36
+-- Completed on 2026-01-05 17:47:37
 
 --
 -- PostgreSQL database dump complete
