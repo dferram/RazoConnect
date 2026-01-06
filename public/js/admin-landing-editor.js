@@ -14,6 +14,11 @@
   let autoSaveTimeout = null;
   let isDirty = false;
   let categories = [];
+  let currentPage = 'inicio';
+  let currentEditingSlide = null;
+  let imageEditModal = null;
+  let cropperInstance = null;
+  let currentImageFile = null;
 
   // ============================================
   // INITIALIZATION
@@ -23,12 +28,16 @@
     showLoading(true);
     
     try {
+      imageEditModal = new bootstrap.Modal(document.getElementById('imageEditModal'));
+      
       await Promise.all([
         loadConfig(),
         loadCategories()
       ]);
 
       setupEventListeners();
+      setupPageSelector();
+      setupImageModal();
       showLoading(false);
     } catch (error) {
       console.error('Error initializing editor:', error);
@@ -45,10 +54,11 @@
   // LOAD CONFIGURATION
   // ============================================
 
-  async function loadConfig() {
+  async function loadConfig(page = null) {
     try {
+      const targetPage = page || currentPage;
       const token = localStorage.getItem('razoconnect_admin_token');
-      const response = await fetch('/api/admin/landing/config', {
+      const response = await fetch(`/api/admin/landing/config?page=${targetPage}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -62,10 +72,13 @@
 
       currentConfig = {};
       data.data.forEach(item => {
-        currentConfig[item.section_key] = {
+        // Remove page prefix for easier access
+        const keyWithoutPrefix = item.section_key.replace(`${targetPage}_`, '');
+        currentConfig[keyWithoutPrefix] = {
           value_draft: item.value_draft,
           value_published: item.value_published,
-          content_type: item.content_type
+          content_type: item.content_type,
+          full_key: item.section_key
         };
       });
 
@@ -179,8 +192,12 @@
 
       if (!uploadArea || !fileInput) continue;
 
-      uploadArea.addEventListener('click', () => {
-        fileInput.click();
+      uploadArea.addEventListener('click', (e) => {
+        if (uploadArea.classList.contains('has-image')) {
+          openImageEditModal(i);
+        } else {
+          fileInput.click();
+        }
       });
 
       fileInput.addEventListener('change', async (e) => {
@@ -270,9 +287,21 @@
     if (!uploadArea) return;
 
     uploadArea.classList.add('has-image');
+    uploadArea.style.cursor = 'pointer';
+    uploadArea.style.position = 'relative';
     uploadArea.innerHTML = `
       <img src="${imageUrl}" alt="Preview Slide ${slideNumber}" class="image-preview" />
+      <div style="position: absolute; top: 0.5rem; right: 0.5rem; background: rgba(0,0,0,0.7); color: white; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem;">
+        <i class="bi bi-pencil"></i> Editar
+      </div>
     `;
+    
+    // Re-attach click handler after innerHTML change
+    uploadArea.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      openImageEditModal(slideNumber);
+    });
   }
 
   // ============================================
@@ -349,38 +378,58 @@
 
   function collectFormData() {
     const updates = [];
+    const pagePrefix = `${currentPage}_`;
 
+    // Hero Slider fields
     for (let i = 1; i <= 3; i++) {
-      const fields = [
-        'image', 'eyebrow', 'title', 'description', 'cta_text', 'cta_link'
-      ];
-
+      const fields = ['image', 'eyebrow', 'title', 'description', 'cta_text', 'cta_link'];
+      
       fields.forEach(field => {
-        const key = `hero_slide_${i}_${field}`;
-        const element = document.getElementById(key);
+        const element = document.getElementById(`hero_slide_${i}_${field}`);
         if (element) {
           updates.push({
-            section_key: key,
+            section_key: `${pagePrefix}hero_slide_${i}_${field}`,
             value: element.value || null
           });
         }
       });
     }
 
-    const ofertasCategory = document.getElementById('section_ofertas_category');
-    if (ofertasCategory) {
-      updates.push({
-        section_key: 'section_ofertas_category',
-        value: ofertasCategory.value || null
-      });
-    }
+    // Product section categories - different for each page
+    if (currentPage === 'inicio') {
+      const ofertasCategory = document.getElementById('section_ofertas_category');
+      const nuevosCategory = document.getElementById('section_nuevos_category');
 
-    const nuevosCategory = document.getElementById('section_nuevos_category');
-    if (nuevosCategory) {
-      updates.push({
-        section_key: 'section_nuevos_category',
-        value: nuevosCategory.value || null
-      });
+      if (ofertasCategory) {
+        updates.push({
+          section_key: `${pagePrefix}section_ofertas_category`,
+          value: ofertasCategory.value || null
+        });
+      }
+
+      if (nuevosCategory) {
+        updates.push({
+          section_key: `${pagePrefix}section_nuevos_category`,
+          value: nuevosCategory.value || null
+        });
+      }
+    } else if (currentPage === 'index') {
+      const destacadosCategory = document.getElementById('section_destacados_category');
+      const popularesCategory = document.getElementById('section_populares_category');
+
+      if (destacadosCategory) {
+        updates.push({
+          section_key: `${pagePrefix}section_destacados_category`,
+          value: destacadosCategory.value || null
+        });
+      }
+
+      if (popularesCategory) {
+        updates.push({
+          section_key: `${pagePrefix}section_populares_category`,
+          value: popularesCategory.value || null
+        });
+      }
     }
 
     return updates;
@@ -571,6 +620,313 @@
       setTimeout(() => {
         indicator.classList.remove('show');
       }, 3000);
+    }
+  }
+
+  // ============================================
+  // PAGE SELECTOR
+  // ============================================
+
+  function setupPageSelector() {
+    const pageSelector = document.getElementById('pageSelector');
+    if (!pageSelector) return;
+
+    pageSelector.addEventListener('change', async (e) => {
+      currentPage = e.target.value;
+      
+      showLoading(true);
+      
+      try {
+        await loadConfig(currentPage);
+        updatePreviewUrl();
+        
+        showLoading(false);
+        
+        Swal.fire({
+          icon: 'success',
+          title: 'Página cambiada',
+          text: `Ahora estás editando: ${currentPage === 'inicio' ? 'Inicio.html' : 'Index.html'}`,
+          timer: 2000,
+          showConfirmButton: false
+        });
+      } catch (error) {
+        showLoading(false);
+        Swal.fire({
+          icon: 'error',
+          title: 'Error al cambiar página',
+          text: error.message || 'No se pudo cargar la configuración de la página'
+        });
+      }
+    });
+  }
+
+  function updatePreviewUrl() {
+    const iframe = document.getElementById('previewIframe');
+    if (!iframe) return;
+
+    const page = currentPage === 'inicio' ? 'inicio.html' : 'index.html';
+    iframe.src = `/${page}?preview=true`;
+  }
+
+  // ============================================
+  // IMAGE EDIT MODAL WITH CROPPER.JS
+  // ============================================
+
+  function setupImageModal() {
+    const modalSaveBtn = document.getElementById('modalSaveImage');
+    const modalReplaceInput = document.getElementById('modalImageReplace');
+    const btnSelectImage = document.getElementById('btnSelectImage');
+    const zoomSlider = document.getElementById('zoomSlider');
+    const zoomIn = document.getElementById('zoomIn');
+    const zoomOut = document.getElementById('zoomOut');
+
+    // Botón para abrir selector de archivos
+    if (btnSelectImage) {
+      btnSelectImage.addEventListener('click', () => {
+        modalReplaceInput.click();
+      });
+    }
+
+    // Cuando se selecciona una imagen
+    if (modalReplaceInput) {
+      modalReplaceInput.addEventListener('change', handleImageSelection);
+    }
+
+    // Guardar imagen recortada
+    if (modalSaveBtn) {
+      modalSaveBtn.addEventListener('click', saveCroppedImage);
+    }
+
+    // Controles de zoom
+    if (zoomSlider) {
+      zoomSlider.addEventListener('input', (e) => {
+        if (cropperInstance) {
+          cropperInstance.zoomTo(parseFloat(e.target.value));
+        }
+      });
+    }
+
+    if (zoomIn) {
+      zoomIn.addEventListener('click', () => {
+        if (cropperInstance) {
+          cropperInstance.zoom(0.1);
+          updateZoomSlider();
+        }
+      });
+    }
+
+    if (zoomOut) {
+      zoomOut.addEventListener('click', () => {
+        if (cropperInstance) {
+          cropperInstance.zoom(-0.1);
+          updateZoomSlider();
+        }
+      });
+    }
+
+    // Limpiar cropper al cerrar modal
+    const modal = document.getElementById('imageEditModal');
+    if (modal) {
+      modal.addEventListener('hidden.bs.modal', destroyCropper);
+    }
+  }
+
+  function handleImageSelection(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Archivo inválido',
+        text: 'Por favor selecciona una imagen válida'
+      });
+      return;
+    }
+
+    currentImageFile = file;
+    const reader = new FileReader();
+
+    reader.onload = (event) => {
+      const cropperImage = document.getElementById('cropperImage');
+      const cropperContainer = document.getElementById('cropperContainer');
+      const modalSaveBtn = document.getElementById('modalSaveImage');
+
+      if (cropperImage && cropperContainer) {
+        cropperImage.src = event.target.result;
+        cropperContainer.style.display = 'block';
+        
+        // Habilitar botón de guardar
+        if (modalSaveBtn) {
+          modalSaveBtn.disabled = false;
+        }
+
+        // Destruir instancia anterior si existe
+        destroyCropper();
+
+        // Inicializar Cropper.js con aspect ratio 16:9
+        cropperInstance = new Cropper(cropperImage, {
+          aspectRatio: 16 / 9,
+          viewMode: 2,
+          dragMode: 'move',
+          autoCropArea: 1,
+          restore: false,
+          guides: true,
+          center: true,
+          highlight: false,
+          cropBoxMovable: false,
+          cropBoxResizable: false,
+          toggleDragModeOnDblclick: false,
+          ready: function() {
+            updateZoomSlider();
+          },
+          zoom: function() {
+            updateZoomSlider();
+          }
+        });
+      }
+    };
+
+    reader.readAsDataURL(file);
+  }
+
+  function updateZoomSlider() {
+    if (!cropperInstance) return;
+    
+    const imageData = cropperInstance.getImageData();
+    const containerData = cropperInstance.getContainerData();
+    
+    // Calcular zoom actual (0 a 1)
+    const currentZoom = imageData.width / imageData.naturalWidth;
+    const maxZoom = 3; // Zoom máximo 3x
+    const normalizedZoom = Math.min(currentZoom / maxZoom, 1);
+    
+    const zoomSlider = document.getElementById('zoomSlider');
+    if (zoomSlider) {
+      zoomSlider.value = normalizedZoom;
+    }
+  }
+
+  function destroyCropper() {
+    if (cropperInstance) {
+      cropperInstance.destroy();
+      cropperInstance = null;
+    }
+
+    const cropperContainer = document.getElementById('cropperContainer');
+    if (cropperContainer) {
+      cropperContainer.style.display = 'none';
+    }
+
+    const modalSaveBtn = document.getElementById('modalSaveImage');
+    if (modalSaveBtn) {
+      modalSaveBtn.disabled = true;
+    }
+
+    const modalReplaceInput = document.getElementById('modalImageReplace');
+    if (modalReplaceInput) {
+      modalReplaceInput.value = '';
+    }
+
+    currentImageFile = null;
+  }
+
+  async function saveCroppedImage() {
+    if (!cropperInstance || !currentEditingSlide) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'No hay imagen para guardar'
+      });
+      return;
+    }
+
+    showLoading(true);
+
+    try {
+      // Obtener canvas recortado
+      const canvas = cropperInstance.getCroppedCanvas({
+        width: 1600,
+        height: 900,
+        imageSmoothingEnabled: true,
+        imageSmoothingQuality: 'high'
+      });
+
+      // Convertir canvas a blob
+      canvas.toBlob(async (blob) => {
+        if (!blob) {
+          throw new Error('No se pudo generar la imagen recortada');
+        }
+
+        // Subir imagen recortada a Cloudinary
+        const token = localStorage.getItem('razoconnect_admin_token');
+        const formData = new FormData();
+        formData.append('image', blob, currentImageFile.name);
+
+        const response = await fetch('/api/admin/landing/upload-image', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          },
+          body: formData
+        });
+
+        const data = await response.json();
+
+        if (!data.success) {
+          throw new Error(data.message || 'Error al subir imagen');
+        }
+
+        const imageUrl = data.data.url;
+        
+        // Actualizar input y preview
+        const imageInput = document.getElementById(`hero_slide_${currentEditingSlide}_image`);
+        if (imageInput) {
+          imageInput.value = imageUrl;
+          showImagePreview(currentEditingSlide, imageUrl);
+        }
+
+        // Trigger auto-save
+        triggerAutoSave();
+
+        // Cerrar modal
+        if (imageEditModal) {
+          imageEditModal.hide();
+        }
+
+        showLoading(false);
+
+        Swal.fire({
+          icon: 'success',
+          title: '¡Imagen guardada!',
+          text: 'La imagen recortada se ha guardado correctamente',
+          timer: 2000,
+          showConfirmButton: false
+        });
+
+        currentEditingSlide = null;
+      }, 'image/jpeg', 0.95);
+
+    } catch (error) {
+      console.error('Error saving cropped image:', error);
+      showLoading(false);
+      
+      Swal.fire({
+        icon: 'error',
+        title: 'Error al guardar',
+        text: error.message || 'No se pudo guardar la imagen recortada'
+      });
+    }
+  }
+
+  function openImageEditModal(slideNumber) {
+    currentEditingSlide = slideNumber;
+    
+    // Reset modal state
+    destroyCropper();
+    
+    if (imageEditModal) {
+      imageEditModal.show();
     }
   }
 

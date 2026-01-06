@@ -3,15 +3,18 @@
  * Manages dynamic content for inicio.html with draft/publish workflow
  */
 
-const pool = require('../config/db');
+const db = require('../db');
 
 /**
  * GET /api/admin/landing/config
  * Get all landing page configuration (draft values for admin)
+ * Query params: ?page=inicio|index
  */
 exports.getConfig = async (req, res) => {
   try {
-    const result = await pool.query(`
+    const page = req.query.page || 'inicio';
+    
+    const result = await db.query(`
       SELECT 
         config_id,
         section_key,
@@ -21,12 +24,14 @@ exports.getConfig = async (req, res) => {
         metadata,
         updated_at
       FROM landing_page_config
+      WHERE section_key LIKE $1
       ORDER BY section_key
-    `);
+    `, [`${page}_%`]);
 
     return res.status(200).json({
       success: true,
-      data: result.rows
+      data: result.rows,
+      page: page
     });
   } catch (error) {
     console.error('Error fetching landing config:', error);
@@ -44,7 +49,7 @@ exports.getConfig = async (req, res) => {
  * Body: { updates: [{ section_key, value }] }
  */
 exports.saveDraft = async (req, res) => {
-  const client = await pool.connect();
+  const client = await db.getClient();
   
   try {
     const { updates } = req.body;
@@ -96,7 +101,7 @@ exports.saveDraft = async (req, res) => {
  * Publish all draft values to production
  */
 exports.publishChanges = async (req, res) => {
-  const client = await pool.connect();
+  const client = await db.getClient();
   
   try {
     await client.query('BEGIN');
@@ -184,7 +189,7 @@ exports.getPublicContent = async (req, res) => {
 
     const usePreview = isPreview && isAdmin;
 
-    const result = await pool.query(`
+    const result = await db.query(`
       SELECT 
         section_key,
         content_type,
@@ -227,7 +232,7 @@ exports.getPublicContent = async (req, res) => {
  */
 exports.getCategories = async (req, res) => {
   try {
-    const result = await pool.query(`
+    const result = await db.query(`
       SELECT 
         categoriaid as id,
         nombre,
@@ -257,7 +262,7 @@ exports.getCategories = async (req, res) => {
  */
 exports.resetDraft = async (req, res) => {
   try {
-    await pool.query(`
+    await db.query(`
       UPDATE landing_page_config
       SET value_draft = NULL, updated_at = CURRENT_TIMESTAMP
       WHERE value_draft IS NOT NULL
