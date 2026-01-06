@@ -247,8 +247,17 @@
 
       if (!uploadArea || !fileInput) continue;
 
-      uploadArea.addEventListener('click', (e) => {
-        if (uploadArea.classList.contains('has-image')) {
+      // Remove any existing listeners to avoid duplicates
+      const newUploadArea = uploadArea.cloneNode(true);
+      uploadArea.parentNode.replaceChild(newUploadArea, uploadArea);
+
+      const finalUploadArea = document.getElementById(`uploadArea${i}`);
+      
+      finalUploadArea.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        if (finalUploadArea.classList.contains('has-image')) {
           openImageEditModal(i);
         } else {
           fileInput.click();
@@ -351,8 +360,12 @@
       </div>
     `;
     
-    // Re-attach click handler after innerHTML change
-    uploadArea.addEventListener('click', (e) => {
+    // Remove old listeners and add new one
+    const newUploadArea = uploadArea.cloneNode(true);
+    uploadArea.parentNode.replaceChild(newUploadArea, uploadArea);
+    
+    const finalArea = document.getElementById(`uploadArea${slideNumber}`);
+    finalArea.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
       openImageEditModal(slideNumber);
