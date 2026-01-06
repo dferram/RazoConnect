@@ -243,6 +243,45 @@
   }
 
   // ============================================
+  // ACTUALIZAR HERO SLIDER CON CONTENIDO DINÁMICO
+  // ============================================
+
+  function updateHeroSliderDynamic(dynamicConfig) {
+    const heroSlides = document.querySelectorAll(".hero-slide");
+    
+    if (!heroSlides || heroSlides.length === 0) return;
+
+    for (let i = 1; i <= 3; i++) {
+      const slide = heroSlides[i - 1];
+      if (!slide) continue;
+
+      const imageUrl = dynamicConfig[`hero_slide_${i}_image`]?.value;
+      const eyebrowText = dynamicConfig[`hero_slide_${i}_eyebrow`]?.value;
+      const titleText = dynamicConfig[`hero_slide_${i}_title`]?.value;
+      const descText = dynamicConfig[`hero_slide_${i}_description`]?.value;
+      const ctaText = dynamicConfig[`hero_slide_${i}_cta_text`]?.value;
+      const ctaLink = dynamicConfig[`hero_slide_${i}_cta_link`]?.value;
+
+      if (imageUrl) {
+        slide.style.backgroundImage = `url('${imageUrl}')`;
+      }
+
+      const eyebrow = slide.querySelector(".hero-eyebrow");
+      const title = slide.querySelector(".hero-title");
+      const description = slide.querySelector(".hero-description");
+      const cta = slide.querySelector(".hero-cta");
+
+      if (eyebrow && eyebrowText) eyebrow.textContent = eyebrowText;
+      if (title && titleText) title.textContent = titleText;
+      if (description && descText) description.textContent = descText;
+      if (cta) {
+        if (ctaText) cta.textContent = ctaText;
+        if (ctaLink) cta.href = ctaLink;
+      }
+    }
+  }
+
+  // ============================================
   // ACTUALIZAR BANNER DE BIENVENIDA
   // ============================================
 
@@ -414,11 +453,16 @@
   // ACTUALIZAR TODO EL CONTENIDO
   // ============================================
 
-  function updateSeasonalContent(themeName) {
+  function updateSeasonalContent(themeName, dynamicConfig = null) {
     const config = SEASONAL_CONFIG[themeName] || SEASONAL_CONFIG.todaOcasion;
     currentTheme = themeName;
 
-    updateHeroSlider(config);
+    if (dynamicConfig) {
+      updateHeroSliderDynamic(dynamicConfig);
+    } else {
+      updateHeroSlider(config);
+    }
+    
     updateWelcomeBanner(config);
     updateCountdownWidget(config);
   }
