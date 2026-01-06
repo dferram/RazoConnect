@@ -1586,13 +1586,47 @@
             return;
           }
 
+          // ============================================
+          // RECOLECCIÓN DE TAMANOS/PACKS (FIX CRÍTICO)
+          // ============================================
+          console.log("📤 [FRONTEND] Recolectando tamanoIds y packs para enviar al backend");
+          
+          // Recolectar tamanoIds desde los checkboxes marcados
+          const tamanoIds = [];
+          
+          // 1. Checkbox de venta individual (valor = 1)
+          const ventaIndividualCheckbox = document.getElementById("tamano-unidad");
+          if (ventaIndividualCheckbox && ventaIndividualCheckbox.checked) {
+            const tamanoId = Number.parseInt(ventaIndividualCheckbox.value, 10);
+            if (Number.isInteger(tamanoId) && tamanoId > 0) {
+              tamanoIds.push(tamanoId);
+            }
+          }
+          
+          // 2. Packs personalizados desde customPacks array
+          if (Array.isArray(customPacks) && customPacks.length > 0) {
+            console.log("📦 [FRONTEND] customPacks detectados:", customPacks);
+            
+            // Para cada pack, necesitamos encontrar su tamanoId en el catálogo
+            // Esto requiere que tengamos acceso a los tamanos cargados
+            // Por ahora, enviaremos los valores y el backend los resolverá
+            // O mejor: buscar en el DOM los tamanoIds correspondientes
+            
+            // Estrategia: enviar los valores de packs y el backend los manejará
+            // El backend ya tiene lógica para crear/encontrar tamanos desde packs
+          }
+
           const payload = {
             nombre: result.value.nombre,
             descripcion: result.value.descripcion,
             categoriaId: result.value.categoriaId,
             proveedorId: result.value.proveedorId,
             activo: result.value.activo,
+            tamanoIds: tamanoIds, // ✅ AGREGADO
+            packs: customPacks,   // ✅ AGREGADO
           };
+
+          console.log("📤 [FRONTEND] Payload completo a enviar:", payload);
 
           const resp = await fetch(`${API_BASE_URL}/admin/productos/${productoId}`, {
             method: "PUT",

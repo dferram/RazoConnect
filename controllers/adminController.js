@@ -6597,6 +6597,98 @@ const actualizarProducto = async (req, res) => {
 
     const productoActualizado = updateProductoRes.rows[0];
 
+    // ============================================
+    // SINCRONIZACIÓN DE RELACIONES: TAMANOS/PACKS
+    // ============================================
+    console.log("🔄 [BACKEND] Sincronizando tamanos/packs para producto:", productoId);
+    console.log("🔄 [BACKEND] tamanoIds recibidos:", tamanoIds);
+    console.log("🔄 [BACKEND] tamanos recibidos:", tamanos);
+
+    // Determinar los tamanoIds a sincronizar
+    let tamanoIdsToSync = [];
+    
+    // Procesar tamanoIds directos
+    if (Array.isArray(tamanoIds) && tamanoIds.length > 0) {
+      tamanoIdsToSync = tamanoIds
+        .map(id => Number.parseInt(id, 10))
+        .filter(id => Number.isInteger(id) && id > 0);
+    } else if (Array.isArray(tamanos) && tamanos.length > 0) {
+      tamanoIdsToSync = tamanos
+        .map(id => Number.parseInt(id, 10))
+        .filter(id => Number.isInteger(id) && id > 0);
+    }
+
+    // Procesar packs array: convertir valores de packs a tamanoIds
+    if (Array.isArray(packs) && packs.length > 0) {
+      console.log("📦 [BACKEND] Procesando packs array:", packs);
+      const tamanoIdsFromPacks = await findOrCreateTamanosFromPacks(client, packs);
+      console.log("📦 [BACKEND] TamanoIds obtenidos de packs:", tamanoIdsFromPacks);
+      
+      // Combinar con los tamanoIds existentes (sin duplicados)
+      tamanoIdsToSync = [...new Set([...tamanoIdsToSync, ...tamanoIdsFromPacks])];
+    }
+
+    console.log("🔄 [BACKEND] tamanoIds a sincronizar (parseados + packs):", tamanoIdsToSync);
+
+    // Si se enviaron tamanoIds (incluso si es un array vacío), sincronizar
+    if (tamanoIds !== undefined || tamanos !== undefined) {
+      // PASO A: Eliminar todas las relaciones antiguas
+      const deleteResult = await client.query(
+        `DELETE FROM producto_tamanosdisponibles WHERE productoid = $1`,
+        [productoId]
+      );
+      console.log(`✅ [BACKEND] Eliminadas ${deleteResult.rowCount} relaciones antiguas de tamanos`);
+
+      // PASO B: Insertar las nuevas relaciones
+      if (tamanoIdsToSync.length > 0) {
+        // Validar que todos los tamanoIds existen en el catálogo
+        const validationResult = await client.query(
+          `SELECT tamanoid FROM cat_tamanopaquetes WHERE tamanoid = ANY($1::int[])`,
+          [tamanoIdsToSync]
+        );
+
+        const validTamanoIds = validationResult.rows.map(row => 
+          Number.parseInt(row.tamanoid, 10)
+        );
+
+        console.log("✅ [BACKEND] TamanoIds válidos en catálogo:", validTamanoIds);
+
+        // Insertar solo los IDs válidos
+        for (const tamanoId of validTamanoIds) {
+          await client.query(
+            `INSERT INTO producto_tamanosdisponibles (productoid, tamanoid)
+             VALUES ($1, $2)
+             ON CONFLICT (productoid, tamanoid) DO NOTHING`,
+            [productoId, tamanoId]
+          );
+        }
+
+        console.log(`✅ [BACKEND] Insertadas ${validTamanoIds.length} nuevas relaciones de tamanos`);
+
+        // Advertir si algunos IDs no eran válidos
+        const invalidIds = tamanoIdsToSync.filter(id => !validTamanoIds.includes(id));
+        if (invalidIds.length > 0) {
+          console.warn(`⚠️ [BACKEND] TamanoIds inválidos ignorados:`, invalidIds);
+        }
+      } else {
+        console.log("ℹ️ [BACKEND] No hay tamanos para insertar (array vacío o undefined)");
+      }
+    } else {
+      console.log("ℹ️ [BACKEND] No se enviaron tamanoIds/tamanos, no se sincroniza");
+    }
+
+    // ============================================
+    // SINCRONIZACIÓN DE RELACIONES: PACKS (si aplica)
+    // ============================================
+    // Nota: Si tienes una tabla de packs personalizados, agregar lógica similar aquí
+    if (packs !== undefined) {
+      console.log("🔄 [BACKEND] Packs recibidos:", packs);
+      // TODO: Implementar sincronización de packs si existe tabla de relación
+      // Ejemplo:
+      // await client.query(`DELETE FROM producto_packs WHERE productoid = $1`, [productoId]);
+      // for (const pack of packs) { ... INSERT ... }
+    }
+
     await client.query("COMMIT");
     transactionStarted = false;
 
@@ -6614,6 +6706,7 @@ const actualizarProducto = async (req, res) => {
       message: "Producto actualizado correctamente.",
       data: {
         productoId,
+        tamanosActualizados: tamanoIdsToSync.length,
       },
     });
   } catch (error) {
