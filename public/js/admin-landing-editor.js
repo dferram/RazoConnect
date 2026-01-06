@@ -18,6 +18,7 @@
   let currentEditingSlide = null;
   let imageEditModal = null;
   let cropperInstance = null;
+  let cropperReady = false; // ✅ Bandera de control de inicialización
   let currentImageFile = null;
   let availableCategories = [];
 
@@ -29,7 +30,21 @@
     showLoading(true);
     
     try {
-      imageEditModal = new bootstrap.Modal(document.getElementById('imageEditModal'));
+      // ✅ SOLUCIÓN DEFINITIVA: Sobrescribir el método _enforceFocus de Bootstrap
+      // Este método es el que causa el error de aria-hidden
+      const originalEnforceFocus = bootstrap.Modal.prototype._enforceFocus;
+      bootstrap.Modal.prototype._enforceFocus = function() {
+        // No hacer nada - deshabilitar completamente el focus trap
+        console.log('Focus trap disabled to prevent aria-hidden errors');
+      };
+      
+      // ✅ Inicializar modal con configuración para evitar errores de aria-hidden
+      const modalElement = document.getElementById('imageEditModal');
+      imageEditModal = new bootstrap.Modal(modalElement, {
+        backdrop: true,
+        keyboard: true,
+        focus: false  // ✅ CRÍTICO: Deshabilitar auto-focus para evitar error aria-hidden
+      });
       
       await Promise.all([
         loadConfig(),
@@ -227,6 +242,62 @@
   }
 
   // ============================================
+  // LIVE PREVIEW SYNCHRONIZATION
+  // ============================================
+
+  function syncTextToPreview(inputId, iframeSelector) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+
+    input.addEventListener('input', function() {
+      try {
+        const previewIframe = document.getElementById('previewIframe');
+        if (!previewIframe || !previewIframe.contentDocument) return;
+
+        const targetElement = previewIframe.contentDocument.querySelector(iframeSelector);
+        if (targetElement) {
+          targetElement.textContent = this.value;
+          console.log(`Live preview updated: ${inputId} -> ${iframeSelector}`);
+        }
+      } catch (error) {
+        console.error('Error syncing to preview:', error);
+      }
+    });
+  }
+
+  function syncImageToPreview(slideNumber, imageUrl) {
+    try {
+      const previewIframe = document.getElementById('previewIframe');
+      if (!previewIframe || !previewIframe.contentDocument) return;
+
+      // Buscar la imagen del slide específico en el carousel
+      const carouselItems = previewIframe.contentDocument.querySelectorAll('.carousel-item');
+      if (carouselItems && carouselItems[slideNumber - 1]) {
+        const targetItem = carouselItems[slideNumber - 1];
+        const img = targetItem.querySelector('img');
+        if (img) {
+          img.src = imageUrl;
+          console.log(`Live preview image updated: Slide ${slideNumber}`);
+        }
+      }
+    } catch (error) {
+      console.error('Error syncing image to preview:', error);
+    }
+  }
+
+  function setupLivePreviewSync() {
+    // Sincronizar textos de los 3 slides
+    for (let i = 1; i <= 3; i++) {
+      syncTextToPreview(`hero_slide_${i}_eyebrow`, `.carousel-item:nth-child(${i}) .hero-eyebrow`);
+      syncTextToPreview(`hero_slide_${i}_title`, `.carousel-item:nth-child(${i}) .hero-title`);
+      syncTextToPreview(`hero_slide_${i}_description`, `.carousel-item:nth-child(${i}) .hero-description`);
+      syncTextToPreview(`hero_slide_${i}_cta_text`, `.carousel-item:nth-child(${i}) .btn-primary`);
+    }
+
+    console.log('Live preview synchronization enabled');
+  }
+
+  // ============================================
   // EVENT LISTENERS
   // ============================================
 
@@ -234,6 +305,7 @@
     setupImageUploads();
     setupFormInputs();
     setupActionButtons();
+    setupLivePreviewSync();
   }
 
   // ============================================
@@ -321,6 +393,10 @@
       }
 
       showImagePreview(slideNumber, imageUrl);
+      
+      // ✅ Sincronizar imagen al preview en tiempo real
+      syncImageToPreview(slideNumber, imageUrl);
+      
       triggerAutoSave();
 
       Swal.fire({
@@ -350,13 +426,18 @@
     const uploadArea = document.getElementById(`uploadArea${slideNumber}`);
     if (!uploadArea) return;
 
+    // Use placeholder if no image URL provided
+    const displayUrl = imageUrl && imageUrl.trim() !== '' 
+      ? imageUrl 
+      : 'https://via.placeholder.com/1600x900/e5e7eb/6b7280?text=Sin+Imagen';
+
     uploadArea.classList.add('has-image');
     uploadArea.style.cursor = 'pointer';
     uploadArea.style.position = 'relative';
     uploadArea.innerHTML = `
-      <img src="${imageUrl}" alt="Preview Slide ${slideNumber}" class="image-preview" />
+      <img src="${displayUrl}" alt="Preview Slide ${slideNumber}" class="image-preview" />
       <div style="position: absolute; top: 0.5rem; right: 0.5rem; background: rgba(0,0,0,0.7); color: white; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem;">
-        <i class="bi bi-pencil"></i> Editar
+        <i class="bi bi-pencil"></i> ${imageUrl ? 'Editar' : 'Subir'}
       </div>
     `;
     
@@ -744,9 +825,6 @@
     const modalSaveBtn = document.getElementById('modalSaveImage');
     const modalReplaceInput = document.getElementById('modalImageReplace');
     const btnSelectImage = document.getElementById('btnSelectImage');
-    const zoomSlider = document.getElementById('zoomSlider');
-    const zoomIn = document.getElementById('zoomIn');
-    const zoomOut = document.getElementById('zoomOut');
 
     // Botón para abrir selector de archivos
     if (btnSelectImage) {
@@ -765,37 +843,47 @@
       modalSaveBtn.addEventListener('click', saveCroppedImage);
     }
 
-    // Controles de zoom
-    if (zoomSlider) {
-      zoomSlider.addEventListener('input', (e) => {
-        if (cropperInstance) {
-          cropperInstance.zoomTo(parseFloat(e.target.value));
-        }
-      });
-    }
-
-    if (zoomIn) {
-      zoomIn.addEventListener('click', () => {
-        if (cropperInstance) {
-          cropperInstance.zoom(0.1);
-          updateZoomSlider();
-        }
-      });
-    }
-
-    if (zoomOut) {
-      zoomOut.addEventListener('click', () => {
-        if (cropperInstance) {
-          cropperInstance.zoom(-0.1);
-          updateZoomSlider();
-        }
-      });
-    }
-
     // Limpiar cropper al cerrar modal
     const modal = document.getElementById('imageEditModal');
     if (modal) {
       modal.addEventListener('hidden.bs.modal', destroyCropper);
+      
+      // ✅ SOLUCIÓN AGRESIVA: Prevenir completamente el focus trap de Bootstrap
+      modal.addEventListener('show.bs.modal', function(e) {
+        // Deshabilitar el enfoque automático de Bootstrap
+        setTimeout(() => {
+          // Remover todos los event listeners de focus del modal
+          const focusableElements = modal.querySelectorAll(
+            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+          );
+          
+          // Hacer que todos los elementos sean accesibles sin restricciones
+          focusableElements.forEach(el => {
+            el.removeAttribute('aria-hidden');
+          });
+          
+          // Remover aria-hidden del modal y sus padres
+          modal.removeAttribute('aria-hidden');
+          
+          // Prevenir que Bootstrap intente hacer focus trap
+          const modalDialog = modal.querySelector('.modal-dialog');
+          if (modalDialog) {
+            modalDialog.removeAttribute('aria-hidden');
+          }
+        }, 0);
+      });
+      
+      // ✅ Limpiar completamente al cerrar
+      modal.addEventListener('hidden.bs.modal', function(e) {
+        document.body.style.overflow = '';
+        document.body.classList.remove('modal-open');
+        
+        // Remover backdrop manualmente si queda
+        const backdrop = document.querySelector('.modal-backdrop');
+        if (backdrop) {
+          backdrop.remove();
+        }
+      });
     }
   }
 
@@ -803,16 +891,20 @@
     const file = e.target.files[0];
     if (!file) return;
 
+    // Validar tipo de archivo
     if (!file.type.startsWith('image/')) {
       Swal.fire({
         icon: 'error',
         title: 'Archivo inválido',
-        text: 'Por favor selecciona una imagen válida'
+        text: 'Por favor selecciona una imagen válida (JPG, PNG, etc.)'
       });
       return;
     }
 
+    // Guardar referencia al archivo
     currentImageFile = file;
+    
+    // Leer archivo con FileReader
     const reader = new FileReader();
 
     reader.onload = (event) => {
@@ -820,70 +912,260 @@
       const cropperContainer = document.getElementById('cropperContainer');
       const modalSaveBtn = document.getElementById('modalSaveImage');
 
-      if (cropperImage && cropperContainer) {
-        cropperImage.src = event.target.result;
-        cropperContainer.style.display = 'block';
-        
-        // Habilitar botón de guardar
-        if (modalSaveBtn) {
-          modalSaveBtn.disabled = false;
-        }
-
-        // Destruir instancia anterior si existe
-        destroyCropper();
-
-        // Inicializar Cropper.js con aspect ratio 16:9
-        cropperInstance = new Cropper(cropperImage, {
-          aspectRatio: 16 / 9,
-          viewMode: 2,
-          dragMode: 'move',
-          autoCropArea: 1,
-          restore: false,
-          guides: true,
-          center: true,
-          highlight: false,
-          cropBoxMovable: false,
-          cropBoxResizable: false,
-          toggleDragModeOnDblclick: false,
-          ready: function() {
-            updateZoomSlider();
-          },
-          zoom: function() {
-            updateZoomSlider();
-          }
+      // Validar que existan los elementos
+      if (!cropperImage || !cropperContainer) {
+        console.error('Cropper elements not found');
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'No se encontraron los elementos del modal'
         });
+        return;
       }
+
+      // Mostrar contenedor del cropper
+      cropperContainer.style.display = 'block';
+      
+      // ✅ CRÍTICO: Deshabilitar botón de guardar hasta que cropper esté listo
+      if (modalSaveBtn) {
+        modalSaveBtn.disabled = true;
+      }
+
+      // Inicializar cropper con la nueva imagen
+      initializeCropper(cropperImage, event.target.result);
+    };
+
+    reader.onerror = (error) => {
+      console.error('Error reading file:', error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error al leer archivo',
+        text: 'No se pudo leer el archivo seleccionado'
+      });
     };
 
     reader.readAsDataURL(file);
   }
 
-  function updateZoomSlider() {
-    if (!cropperInstance) return;
-    
-    const imageData = cropperInstance.getImageData();
-    const containerData = cropperInstance.getContainerData();
-    
-    // Calcular zoom actual (0 a 1)
-    const currentZoom = imageData.width / imageData.naturalWidth;
-    const maxZoom = 3; // Zoom máximo 3x
-    const normalizedZoom = Math.min(currentZoom / maxZoom, 1);
-    
-    const zoomSlider = document.getElementById('zoomSlider');
-    if (zoomSlider) {
-      zoomSlider.value = normalizedZoom;
+  // ============================================
+  // LIVE PREVIEW HELPERS
+  // ============================================
+  
+  // Debounce utility para optimizar actualizaciones
+  function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+      const later = () => {
+        clearTimeout(timeout);
+        func(...args);
+      };
+      clearTimeout(timeout);
+      timeout = setTimeout(later, wait);
+    };
+  }
+
+  // Función auxiliar: Identificar imagen en iframe de preview
+  function getPreviewImageElement() {
+    try {
+      const previewIframe = document.getElementById('previewIframe');
+      if (!previewIframe || !previewIframe.contentWindow) {
+        console.warn('Preview iframe not found or not accessible');
+        return null;
+      }
+
+      const iframeDoc = previewIframe.contentWindow.document;
+      if (!iframeDoc) {
+        console.warn('Cannot access iframe document');
+        return null;
+      }
+
+      // Buscar la imagen del slide que estamos editando
+      // El carousel de Bootstrap usa items con clase .carousel-item.active
+      // y dentro hay un <img> con el slide actual
+      if (!currentEditingSlide) {
+        console.warn('No slide being edited');
+        return null;
+      }
+
+      // Intentar encontrar el slide específico
+      // Primero buscar por el índice del carousel item
+      const carouselItems = iframeDoc.querySelectorAll('.carousel-item');
+      if (carouselItems && carouselItems[currentEditingSlide - 1]) {
+        const targetItem = carouselItems[currentEditingSlide - 1];
+        const img = targetItem.querySelector('img');
+        if (img) {
+          console.log('Found preview image for slide', currentEditingSlide);
+          return img;
+        }
+      }
+
+      // Fallback: buscar imagen activa en el carousel
+      const activeSlide = iframeDoc.querySelector('.carousel-item.active img');
+      if (activeSlide) {
+        console.log('Found active slide image');
+        return activeSlide;
+      }
+
+      console.warn('Could not find preview image element');
+      return null;
+    } catch (error) {
+      console.error('Error accessing preview iframe:', error);
+      return null;
     }
   }
 
+  // Actualizar preview en tiempo real (con debounce)
+  const updateLivePreview = debounce(function() {
+    if (!cropperInstance || !cropperReady) {
+      return;
+    }
+
+    try {
+      // Obtener canvas recortado con baja calidad para velocidad
+      const canvas = cropperInstance.getCroppedCanvas({
+        width: 800,  // Resolución reducida para preview
+        height: 450,
+        imageSmoothingEnabled: true,
+        imageSmoothingQuality: 'low'
+      });
+
+      if (!canvas) {
+        console.warn('Could not get cropped canvas for preview');
+        return;
+      }
+
+      // Convertir a DataURL con compresión
+      const previewDataUrl = canvas.toDataURL('image/jpeg', 0.5);
+
+      // Inyectar en el iframe
+      const previewImg = getPreviewImageElement();
+      if (previewImg) {
+        previewImg.src = previewDataUrl;
+        console.log('Live preview updated');
+      }
+    } catch (error) {
+      console.error('Error updating live preview:', error);
+    }
+  }, 100); // 100ms debounce para balance entre fluidez y rendimiento
+
+  // ============================================
+  // INITIALIZE CROPPER (Robust)
+  // ============================================
+  
+  function initializeCropper(imageElement, imageSrc) {
+    // ✅ PASO 1: Destruir instancia anterior si existe
+    if (cropperInstance) {
+      console.log('Destroying previous cropper instance...');
+      cropperInstance.destroy();
+      cropperInstance = null;
+      cropperReady = false;
+    }
+
+    // ✅ PASO 2: Limpiar handlers previos
+    imageElement.onload = null;
+    imageElement.onerror = null;
+
+    // ✅ PASO 3: Configurar crossOrigin (para archivos locales no es necesario, pero no hace daño)
+    imageElement.crossOrigin = 'anonymous';
+
+    // ✅ PASO 4: Asignar nueva imagen
+    imageElement.src = imageSrc;
+
+    // ✅ PASO 5: Esperar a que la imagen cargue completamente
+    imageElement.onload = function() {
+      try {
+        console.log('Image loaded, initializing Cropper.js...');
+        
+        cropperInstance = new Cropper(imageElement, {
+          aspectRatio: 16 / 9,
+          viewMode: 1,
+          dragMode: 'crop',
+          autoCropArea: 0.8,
+          restore: false,
+          guides: true,
+          center: true,
+          highlight: true,
+          cropBoxMovable: true,
+          cropBoxResizable: true,
+          toggleDragModeOnDblclick: false,
+          background: true,
+          responsive: true,
+          checkOrientation: true,
+          checkCrossOrigin: false,
+          
+          // ✅ CRÍTICO: Solo habilitar botón cuando cropper esté 100% listo
+          ready: function() {
+            console.log('✅ Cropper is ready!');
+            cropperReady = true;
+            
+            const modalSaveBtn = document.getElementById('modalSaveImage');
+            if (modalSaveBtn) {
+              modalSaveBtn.disabled = false;
+              console.log('Save button enabled');
+            }
+
+            // ✅ Actualizar preview inicial
+            updateLivePreview();
+          },
+
+          // ✅ LIVE PREVIEW: Evento crop para sincronización en tiempo real
+          crop: function(event) {
+            // Este evento se dispara cada vez que se mueve o redimensiona el crop box
+            updateLivePreview();
+          }
+        });
+      } catch (error) {
+        console.error('Error initializing cropper:', error);
+        cropperReady = false;
+        
+        const cropperContainer = document.getElementById('cropperContainer');
+        if (cropperContainer) {
+          cropperContainer.style.display = 'none';
+        }
+        
+        Swal.fire({
+          icon: 'error',
+          title: 'Error al inicializar editor',
+          text: 'No se pudo cargar el editor de imágenes. Intenta con otra imagen.'
+        });
+      }
+    };
+
+    // Manejar errores de carga
+    imageElement.onerror = function(error) {
+      console.error('Error loading image:', error);
+      cropperReady = false;
+      
+      const modalSaveBtn = document.getElementById('modalSaveImage');
+      if (modalSaveBtn) {
+        modalSaveBtn.disabled = true;
+      }
+    };
+  }
+
+
   function destroyCropper() {
+    // ✅ Destruir instancia de cropper
     if (cropperInstance) {
       cropperInstance.destroy();
       cropperInstance = null;
     }
 
+    // ✅ Resetear bandera de estado
+    cropperReady = false;
+
     const cropperContainer = document.getElementById('cropperContainer');
+    const cropperImage = document.getElementById('cropperImage');
+    
     if (cropperContainer) {
       cropperContainer.style.display = 'none';
+    }
+
+    // Limpiar imagen del cropper
+    if (cropperImage) {
+      cropperImage.src = '';
+      cropperImage.onload = null;
+      cropperImage.onerror = null;
     }
 
     const modalSaveBtn = document.getElementById('modalSaveImage');
@@ -900,11 +1182,33 @@
   }
 
   async function saveCroppedImage() {
-    if (!cropperInstance || !currentEditingSlide) {
+    // ✅ VALIDACIÓN 1: Verificar que exista instancia de cropper
+    if (!cropperInstance) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'No hay imagen',
+        text: 'Por favor, selecciona una imagen primero'
+      });
+      return;
+    }
+
+    // ✅ VALIDACIÓN 2: Verificar que el cropper esté completamente listo
+    if (!cropperReady) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Espera un momento',
+        text: 'El editor de imágenes aún está cargando. Por favor, espera unos segundos e intenta de nuevo.',
+        confirmButtonText: 'Entendido'
+      });
+      return;
+    }
+
+    // ✅ VALIDACIÓN 3: Verificar que haya un slide seleccionado
+    if (!currentEditingSlide) {
       Swal.fire({
         icon: 'error',
         title: 'Error',
-        text: 'No hay imagen para guardar'
+        text: 'No se ha seleccionado ningún slide para editar'
       });
       return;
     }
@@ -912,13 +1216,37 @@
     showLoading(true);
 
     try {
-      // Obtener canvas recortado
+      // Verificar que el cropper tenga datos de imagen válidos
+      const imageData = cropperInstance.getImageData();
+      if (!imageData || !imageData.naturalWidth) {
+        throw new Error('El editor de imágenes no tiene datos válidos. Por favor, recarga la página e intenta de nuevo.');
+      }
+
+      console.log('Image data valid:', imageData.naturalWidth, 'x', imageData.naturalHeight);
+
+      // Obtener canvas recortado con configuración robusta
       const canvas = cropperInstance.getCroppedCanvas({
         width: 1600,
         height: 900,
+        minWidth: 800,
+        minHeight: 450,
+        maxWidth: 3200,
+        maxHeight: 1800,
+        fillColor: '#fff',
         imageSmoothingEnabled: true,
         imageSmoothingQuality: 'high'
       });
+
+      // Verificar que el canvas se generó correctamente
+      if (!canvas) {
+        throw new Error('No se pudo generar el canvas. Posibles causas:\n\n' +
+          '• La imagen puede tener restricciones CORS\n' +
+          '• La imagen no se ha cargado completamente\n' +
+          '• El área de recorte es inválida\n\n' +
+          'Intenta recargar la página y volver a intentar.');
+      }
+
+      console.log('Canvas generated successfully:', canvas.width, 'x', canvas.height);
 
       // Convertir canvas a blob
       canvas.toBlob(async (blob) => {
@@ -926,10 +1254,23 @@
           throw new Error('No se pudo generar la imagen recortada');
         }
 
+        // ✅ PREVIEW LOCAL INMEDIATO: Crear URL temporal del blob
+        const localBlobUrl = URL.createObjectURL(blob);
+        console.log('Local blob URL created for instant preview:', localBlobUrl);
+        
+        // ✅ Actualizar preview ANTES de subir al servidor
+        syncImageToPreview(currentEditingSlide, localBlobUrl);
+
         // Subir imagen recortada a Cloudinary
         const token = localStorage.getItem('razoconnect_admin_token');
         const formData = new FormData();
-        formData.append('image', blob, currentImageFile.name);
+        
+        // Generar nombre de archivo
+        const fileName = currentImageFile && currentImageFile.name 
+          ? currentImageFile.name 
+          : `hero_slide_${currentEditingSlide}_${Date.now()}.jpg`;
+        
+        formData.append('image', blob, fileName);
 
         const response = await fetch('/api/admin/landing/upload-image', {
           method: 'POST',
@@ -990,9 +1331,44 @@
   function openImageEditModal(slideNumber) {
     currentEditingSlide = slideNumber;
     
-    // Reset modal state
+    // Get current image URL
+    const imageInput = document.getElementById(`hero_slide_${slideNumber}_image`);
+    const currentImageUrl = imageInput ? imageInput.value : null;
+    
+    // Reset modal state first
     destroyCropper();
     
+    // Get modal elements - with null checks
+    const cropperContainer = document.getElementById('cropperContainer');
+    const cropperImage = document.getElementById('cropperImage');
+    const modalSaveBtn = document.getElementById('modalSaveImage');
+    
+    if (!cropperContainer || !cropperImage) {
+      console.error('Modal elements not found:', { cropperContainer, cropperImage });
+      return;
+    }
+    
+    // If there's a current image, load it immediately
+    if (currentImageUrl && currentImageUrl.trim() !== '') {
+      // Show cropper container
+      cropperContainer.style.display = 'block';
+      
+      // ✅ Deshabilitar botón hasta que cropper esté listo
+      if (modalSaveBtn) {
+        modalSaveBtn.disabled = true;
+      }
+      
+      // ✅ Usar función robusta de inicialización
+      initializeCropper(cropperImage, currentImageUrl);
+    } else {
+      // No image yet - show placeholder state
+      cropperContainer.style.display = 'none';
+      if (modalSaveBtn) {
+        modalSaveBtn.disabled = true;
+      }
+    }
+    
+    // Open modal
     if (imageEditModal) {
       imageEditModal.show();
     }
