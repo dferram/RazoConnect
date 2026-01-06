@@ -594,7 +594,9 @@
             const totalPiezas = p * r;
             const subtotal = c * totalPiezas;
 
-            const img = item.url_imagen_variante || "/images/default-product.png";
+            // Intentar múltiples propiedades posibles para la imagen
+            const imagenRaw = item.url_imagen_variante || item.imagen_url || item.secure_url || item.imagen || item.url_imagen || null;
+            const img = resolverImagen(imagenRaw);
             const nombre = item.nombre_completo || "(Sin nombre)";
             const sku = item.sku || "Sin SKU";
             const stock = Number.isFinite(Number(item.stock)) ? Number(item.stock) : 0;
@@ -606,9 +608,10 @@
                 <img
                   src="${img}"
                   alt="${nombre}"
-                  class="oc-product-thumb"
+                  class="img-thumbnail oc-product-thumb"
                   loading="lazy"
-                  onerror="this.src='/images/default-product.png'; this.onerror=null;"
+                  style="width: 56px; height: 56px; object-fit: cover;"
+                  onerror="this.onerror=null; this.src='/images/default-product.png';"
                 />
               </div>
             </td>
@@ -703,6 +706,13 @@
         showToast(`${producto?.nombre_completo || "Producto"} eliminado de la orden`, "info");
       }
 
+      // Función helper para resolver URLs de imágenes
+      function resolverImagen(url) {
+        if (!url) return '/images/default-product.png';
+        if (url.startsWith('http://') || url.startsWith('https://')) return url;
+        return window.location.origin + (url.startsWith('/') ? '' : '/') + url;
+      }
+
       function renderResultadosCompra() {
         const listaProductos = document.getElementById("listaProductos");
         if (!Array.isArray(resultadosCompra) || resultadosCompra.length === 0) {
@@ -713,7 +723,12 @@
 
         listaProductos.innerHTML = resultadosCompra
           .map((r) => {
-            const img = r.url_imagen_variante || "/images/default-product.png";
+            // Diagnóstico: Ver estructura del objeto producto
+            console.log('Producto data:', r);
+            
+            // Intentar múltiples propiedades posibles para la imagen
+            const imagenRaw = r.url_imagen_variante || r.imagen_url || r.secure_url || r.imagen || r.url_imagen || null;
+            const img = resolverImagen(imagenRaw);
             const nombre = r.nombre_completo || "(Sin nombre)";
             const sku = r.sku || "Sin SKU";
             const stock = Number.isFinite(Number(r.stock)) ? Number(r.stock) : 0;
@@ -741,9 +756,10 @@
                   <img
                     src="${img}"
                     alt="${nombre}"
-                    class="oc-product-thumb"
+                    class="img-thumbnail oc-product-thumb"
                     loading="lazy"
-                    onerror="this.src='/images/default-product.png'; this.onerror=null;"
+                    style="width: 56px; height: 56px; object-fit: cover;"
+                    onerror="this.onerror=null; this.src='/images/default-product.png';"
                   />
                 </div>
 
