@@ -200,21 +200,59 @@ exports.getPublicContent = async (req, res) => {
       ORDER BY section_key
     `);
 
-    const config = {};
+    // Transformar datos planos a estructura agrupada por slide
+    const slides = {};
+    
     result.rows.forEach(row => {
-      config[row.section_key] = {
-        value: row.value,
-        type: row.content_type,
-        metadata: row.metadata
-      };
+      const key = row.section_key;
+      
+      // Parsear section_key: "inicio_hero_slide_1_title" -> slide: 1, field: title
+      const match = key.match(/hero_slide_(\d+)_(.+)/);
+      
+      if (match) {
+        const slideNum = match[1];
+        const field = match[2];
+        const slideKey = `hero_slide_${slideNum}`;
+        
+        if (!slides[slideKey]) {
+          slides[slideKey] = {};
+        }
+        
+        // Manejar campos especiales
+        if (field === 'cta_type' || field === 'cta_value' || field === 'cta_text' || field === 'cta_link') {
+          if (!slides[slideKey].cta) {
+            slides[slideKey].cta = {};
+          }
+          
+          // Compatibilidad con formato viejo (cta_link) y nuevo (cta_type/cta_value)
+          if (field === 'cta_link') {
+            // Formato viejo: cta_link contiene la URL directa
+            slides[slideKey].cta.type = 'static';
+            slides[slideKey].cta.value = row.value;
+          } else if (field === 'cta_text') {
+            slides[slideKey].cta.text = row.value;
+          } else {
+            // Formato nuevo: cta_type y cta_value separados
+            const ctaField = field.replace('cta_', '');
+            slides[slideKey].cta[ctaField] = row.value;
+          }
+        } else if (field.startsWith('extra_buttons')) {
+          // Manejar botones extra (si están en JSON)
+          try {
+            slides[slideKey].extra_buttons = JSON.parse(row.value);
+          } catch (e) {
+            slides[slideKey].extra_buttons = [];
+          }
+        } else {
+          // Campos normales: title, eyebrow, description, image
+          slides[slideKey][field] = row.value;
+        }
+      }
     });
 
     return res.status(200).json({
       success: true,
-      data: {
-        config,
-        isPreview: usePreview
-      }
+      data: slides
     });
   } catch (error) {
     console.error('Error fetching public landing content:', error);

@@ -247,17 +247,25 @@
 
   function syncTextToPreview(inputId, iframeSelector) {
     const input = document.getElementById(inputId);
-    if (!input) return;
+    if (!input) {
+      console.warn(`Input not found: ${inputId}`);
+      return;
+    }
 
     input.addEventListener('input', function() {
       try {
         const previewIframe = document.getElementById('previewIframe');
-        if (!previewIframe || !previewIframe.contentDocument) return;
+        if (!previewIframe || !previewIframe.contentDocument) {
+          console.warn('Preview iframe not accessible yet');
+          return;
+        }
 
         const targetElement = previewIframe.contentDocument.querySelector(iframeSelector);
         if (targetElement) {
           targetElement.textContent = this.value;
-          console.log(`Live preview updated: ${inputId} -> ${iframeSelector}`);
+          console.log(`✅ Live preview updated: ${inputId} -> ${iframeSelector}`);
+        } else {
+          console.warn(`⚠️ Target element not found in iframe: ${iframeSelector}`);
         }
       } catch (error) {
         console.error('Error syncing to preview:', error);
@@ -268,7 +276,10 @@
   function syncImageToPreview(slideNumber, imageUrl) {
     try {
       const previewIframe = document.getElementById('previewIframe');
-      if (!previewIframe || !previewIframe.contentDocument) return;
+      if (!previewIframe || !previewIframe.contentDocument) {
+        console.warn('Preview iframe not accessible for image sync');
+        return;
+      }
 
       // Buscar la imagen del slide específico en el carousel
       const carouselItems = previewIframe.contentDocument.querySelectorAll('.carousel-item');
@@ -277,8 +288,12 @@
         const img = targetItem.querySelector('img');
         if (img) {
           img.src = imageUrl;
-          console.log(`Live preview image updated: Slide ${slideNumber}`);
+          console.log(`✅ Live preview image updated: Slide ${slideNumber}`);
+        } else {
+          console.warn(`⚠️ Image element not found in slide ${slideNumber}`);
         }
+      } else {
+        console.warn(`⚠️ Carousel item ${slideNumber} not found in iframe`);
       }
     } catch (error) {
       console.error('Error syncing image to preview:', error);
@@ -286,15 +301,65 @@
   }
 
   function setupLivePreviewSync() {
-    // Sincronizar textos de los 3 slides
-    for (let i = 1; i <= 3; i++) {
-      syncTextToPreview(`hero_slide_${i}_eyebrow`, `.carousel-item:nth-child(${i}) .hero-eyebrow`);
-      syncTextToPreview(`hero_slide_${i}_title`, `.carousel-item:nth-child(${i}) .hero-title`);
-      syncTextToPreview(`hero_slide_${i}_description`, `.carousel-item:nth-child(${i}) .hero-description`);
-      syncTextToPreview(`hero_slide_${i}_cta_text`, `.carousel-item:nth-child(${i}) .btn-primary`);
+    const previewIframe = document.getElementById('previewIframe');
+    
+    if (!previewIframe) {
+      console.error('❌ Preview iframe not found in DOM');
+      return;
     }
 
-    console.log('Live preview synchronization enabled');
+    console.log('🔧 Setting up live preview synchronization...');
+
+    // Función para configurar los listeners una vez que el iframe esté listo
+    function attachSyncListeners() {
+      try {
+        // Verificar acceso al contentDocument
+        if (!previewIframe.contentDocument) {
+          console.error('❌ Cannot access iframe contentDocument (CORS issue?)');
+          return;
+        }
+
+        // Verificar que el carousel existe en el iframe
+        const carouselInIframe = previewIframe.contentDocument.querySelector('.carousel');
+        if (!carouselInIframe) {
+          console.warn('⚠️ Carousel not found in iframe - preview sync disabled');
+          return;
+        }
+
+        console.log('✅ Carousel found in iframe, attaching sync listeners...');
+
+        // Sincronizar textos de los 3 slides con selectores flexibles
+        for (let i = 1; i <= 3; i++) {
+          // Usar nth-child que es más robusto que IDs
+          syncTextToPreview(`hero_slide_${i}_eyebrow`, `.carousel-item:nth-child(${i}) .hero-eyebrow`);
+          syncTextToPreview(`hero_slide_${i}_title`, `.carousel-item:nth-child(${i}) .hero-title`);
+          syncTextToPreview(`hero_slide_${i}_description`, `.carousel-item:nth-child(${i}) .hero-description`);
+          syncTextToPreview(`hero_slide_${i}_cta_text`, `.carousel-item:nth-child(${i}) .btn-primary`);
+        }
+
+        console.log('✅ Live preview synchronization enabled successfully');
+      } catch (error) {
+        console.error('❌ Error setting up live preview:', error);
+      }
+    }
+
+    // ✅ CRÍTICO: Esperar a que el iframe cargue completamente
+    previewIframe.addEventListener('load', function() {
+      console.log('🎬 Preview iframe loaded, waiting for DOM to be ready...');
+      
+      // Esperar un momento adicional para asegurar que el DOM del iframe esté listo
+      setTimeout(() => {
+        attachSyncListeners();
+      }, 800); // Aumentado a 800ms para mayor seguridad
+    });
+
+    // También intentar configurar inmediatamente si el iframe ya está cargado
+    if (previewIframe.contentDocument && previewIframe.contentDocument.readyState === 'complete') {
+      console.log('🎬 Preview iframe already loaded, setting up immediately...');
+      setTimeout(() => {
+        attachSyncListeners();
+      }, 300);
+    }
   }
 
   // ============================================
