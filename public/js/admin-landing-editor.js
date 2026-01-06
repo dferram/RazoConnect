@@ -19,6 +19,7 @@
   let imageEditModal = null;
   let cropperInstance = null;
   let currentImageFile = null;
+  let availableCategories = [];
 
   // ============================================
   // INITIALIZATION
@@ -95,21 +96,21 @@
 
   async function loadCategories() {
     try {
-      const token = localStorage.getItem('razoconnect_admin_token');
-      const response = await fetch('/api/admin/landing/categories', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
+      const response = await fetch('/api/categorias');
       const data = await response.json();
 
       if (!data.success) {
         throw new Error(data.message || 'Error al cargar categorías');
       }
 
-      categories = data.data;
+      categories = data.data.categorias || [];
+      availableCategories = categories.map(cat => ({
+        id: cat.categoriaid || cat.categoriaId,
+        nombre: cat.nombre || cat.Nombre
+      }));
+
       populateCategorySelects();
+      generateSmartSelects();
     } catch (error) {
       console.error('Error loading categories:', error);
       throw error;
