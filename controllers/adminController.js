@@ -7065,10 +7065,17 @@ const getProductoDetalleInventario = async (req, res) => {
           ? parseFloat(precioRaw) 
           : 0;
         console.log(`Variante ${v.sku}: precioUnitario=${v.precioUnitario}, preciounitario=${v.preciounitario}, parsed=${precio}`);
+        
+        // Extract medida and color separately
+        const medida = v.dimensiones || null;
+        const color = v.colorNombre || v.colornombre || null;
+        
         return {
           varianteId: v.varianteId || v.varianteid,
           sku: v.sku || "Sin SKU",
-          caracteristica: v.colorNombre || v.colornombre || v.dimensiones || "Sin especificar",
+          medida: medida,
+          color: color,
+          caracteristica: color || medida || "Sin especificar",
           precio: precio,
           stock: parseInt(v.stock, 10) || 0,
           activo: v.activo !== false

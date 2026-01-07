@@ -305,6 +305,40 @@
   // PRODUCT MODAL
   // ============================================
 
+  /**
+   * Helper function to extract numeric value from measure string
+   * Handles formats like: '10x10', '6 ROSAS', 'XS', 'S', 'M', 'L', 'XL'
+   */
+  function getMeasureValue(medida) {
+    if (!medida || typeof medida !== 'string') return 0;
+
+    const medidaUpper = medida.toUpperCase().trim();
+
+    // Check for clothing sizes
+    const sizeMap = {
+      'XS': 1,
+      'S': 2,
+      'M': 3,
+      'L': 4,
+      'XL': 5,
+      'XXL': 6,
+      'XXXL': 7
+    };
+
+    if (sizeMap[medidaUpper]) {
+      return sizeMap[medidaUpper];
+    }
+
+    // Extract first number found in the string
+    const match = medida.match(/\d+/);
+    if (match) {
+      return parseInt(match[0], 10);
+    }
+
+    // If no number found, return 0
+    return 0;
+  }
+
   async function openProductModal(index) {
     state.currentProductIndex = index;
     const product = state.filteredProducts[index];
@@ -339,115 +373,129 @@
   function renderProductModal(product) {
     const images = product.imagenes || [];
     const mainImage = images.length > 0 ? images[0].url : null;
-    const variants = product.variantes || [];
+    let variants = product.variantes || [];
     const stockTotal = product.totalStock || 0;
+
+    // Sort variants by measure (intelligent sorting)
+    variants = variants.sort((a, b) => {
+      const valueA = getMeasureValue(a.medida);
+      const valueB = getMeasureValue(b.medida);
+      return valueA - valueB;
+    });
 
     elements.modalContent.innerHTML = `
       <div class="product-modal-body">
-        <div class="product-modal-images">
-          ${
-            mainImage
-              ? `<img src="${mainImage}" alt="${product.nombreProducto}" class="product-modal-main-image" id="mainImage" />`
-              : `<div class="product-modal-main-image" style="display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #f5f1ed 0%, #e5e7eb 100%); font-size: 5rem; opacity: 0.3;">📦</div>`
-          }
-          ${
-            images.length > 1
-              ? `
-            <div class="product-modal-thumbnails">
-              ${images
-                .map(
-                  (img, idx) => `
-                <img 
-                  src="${img.url}" 
-                  alt="Imagen ${idx + 1}" 
-                  class="product-modal-thumbnail ${idx === 0 ? 'active' : ''}" 
-                  data-image-url="${img.url}"
-                />
-              `
-                )
-                .join('')}
+        <div class="product-modal-row">
+          <div class="product-modal-images">
+            ${
+              mainImage
+                ? `<img src="${mainImage}" alt="${product.nombreProducto}" class="product-modal-main-image" id="mainImage" />`
+                : `<div class="product-modal-main-image" style="display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #f5f1ed 0%, #e5e7eb 100%); font-size: 5rem; opacity: 0.3;">📦</div>`
+            }
+            ${
+              images.length > 1
+                ? `
+              <div class="product-modal-thumbnails">
+                ${images
+                  .map(
+                    (img, idx) => `
+                  <img 
+                    src="${img.url}" 
+                    alt="Imagen ${idx + 1}" 
+                    class="product-modal-thumbnail ${idx === 0 ? 'active' : ''}" 
+                    data-image-url="${img.url}"
+                  />
+                `
+                  )
+                  .join('')}
+              </div>
+            `
+                : ''
+            }
+          </div>
+
+          <div class="product-modal-info">
+            <div class="product-modal-header">
+              <div class="product-modal-category">${state.selectedCategory?.nombre || 'TODA OCASIÓN'}</div>
+              <h2 class="product-modal-title">${product.nombreProducto}</h2>
+              <div class="product-modal-sku">SKU Maestro: ${product.skuMaestro || 'N/A'}</div>
             </div>
-          `
-              : ''
-          }
-        </div>
 
-        <div class="product-modal-info">
-          <div class="product-modal-header">
-            <div class="product-modal-category">${state.selectedCategory?.nombre || 'TODA OCASIÓN'}</div>
-            <h2 class="product-modal-title">${product.nombreProducto}</h2>
-            <div class="product-modal-sku">SKU Maestro: ${product.skuMaestro || 'N/A'}</div>
-          </div>
-
-          <div class="product-modal-section">
-            <h3 class="product-modal-section-title">Descripción</h3>
-            <p class="product-modal-description">${product.descripcion || 'Sin descripción disponible.'}</p>
-          </div>
-
-          <div class="product-modal-section">
-            <h3 class="product-modal-section-title">Información General</h3>
-            <div class="product-modal-specs">
-              <div class="product-modal-spec">
-                <span class="product-modal-spec-label">STOCK TOTAL</span>
-                <span class="product-modal-spec-value">${stockTotal} unidades</span>
-              </div>
-              <div class="product-modal-spec">
-                <span class="product-modal-spec-label">VARIANTES</span>
-                <span class="product-modal-spec-value">${product.totalVariantes || 0}</span>
-              </div>
-              <div class="product-modal-spec">
-                <span class="product-modal-spec-label">ESTADO</span>
-                <span class="product-modal-spec-value">${product.activo ? 'Activo' : 'Inactivo'}</span>
-              </div>
-              <div class="product-modal-spec">
-                <span class="product-modal-spec-label">PROVEEDOR</span>
-                <span class="product-modal-spec-value">${product.proveedor || 'Sin asignar'}</span>
-              </div>
-            </div>
-          </div>
-
-          ${
-            variants.length > 0
-              ? `
             <div class="product-modal-section">
-              <h3 class="product-modal-section-title">Desglose de Inventario (${variants.length} variantes)</h3>
-              <div style="overflow-x: auto; margin-top: 1rem;">
-                <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
-                  <thead>
-                    <tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0;">
-                      <th style="padding: 0.75rem; text-align: left; font-weight: 600; color: #64748b;">SKU</th>
-                      <th style="padding: 0.75rem; text-align: left; font-weight: 600; color: #64748b;">Característica</th>
-                      <th style="padding: 0.75rem; text-align: left; font-weight: 600; color: #64748b;">Precio</th>
-                      <th style="padding: 0.75rem; text-align: left; font-weight: 600; color: #64748b;">Stock</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    ${variants
-                      .map(
-                        (variant) => {
-                          const stock = variant.stock || 0;
-                          const stockColor = stock > 0 ? '#16a34a' : '#dc2626';
-                          const stockWeight = stock > 0 ? '600' : '500';
-                          const precio = variant.precio || 0;
-                          return `
-                          <tr style="border-bottom: 1px solid #f1f5f9;">
-                            <td style="padding: 0.75rem; font-weight: 600;">${variant.sku || 'Sin SKU'}</td>
-                            <td style="padding: 0.75rem;">${variant.caracteristica || 'Sin especificar'}</td>
-                            <td style="padding: 0.75rem; font-weight: 600; color: #f97316;">$${precio.toFixed(2)}</td>
-                            <td style="padding: 0.75rem; font-weight: ${stockWeight}; color: ${stockColor};">${stock} pzas</td>
-                          </tr>
-                        `;
-                        }
-                      )
-                      .join('')}
-                  </tbody>
-                </table>
+              <h3 class="product-modal-section-title">Descripción</h3>
+              <p class="product-modal-description">${product.descripcion || 'Sin descripción disponible.'}</p>
+            </div>
+
+            <div class="product-modal-section">
+              <h3 class="product-modal-section-title">Información General</h3>
+              <div class="product-modal-specs">
+                <div class="product-modal-spec">
+                  <span class="product-modal-spec-label">STOCK TOTAL</span>
+                  <span class="product-modal-spec-value">${stockTotal} unidades</span>
+                </div>
+                <div class="product-modal-spec">
+                  <span class="product-modal-spec-label">VARIANTES</span>
+                  <span class="product-modal-spec-value">${product.totalVariantes || 0}</span>
+                </div>
+                <div class="product-modal-spec">
+                  <span class="product-modal-spec-label">ESTADO</span>
+                  <span class="product-modal-spec-value">${product.activo ? 'Activo' : 'Inactivo'}</span>
+                </div>
+                <div class="product-modal-spec">
+                  <span class="product-modal-spec-label">PROVEEDOR</span>
+                  <span class="product-modal-spec-value">${product.proveedor || 'Sin asignar'}</span>
+                </div>
               </div>
             </div>
-          `
-              : '<div class="product-modal-section"><p style="color: #64748b; text-align: center; padding: 2rem;">Sin variantes registradas</p></div>'
-          }
+          </div>
         </div>
+
+        ${
+          variants.length > 0
+            ? `
+          <div class="product-modal-variants-section">
+            <h3 class="product-modal-section-title">Desglose de Inventario (${variants.length} variantes)</h3>
+            <div class="product-modal-table-container">
+              <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+                <thead>
+                  <tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0;">
+                    <th style="padding: 0.75rem; text-align: left; font-weight: 600; color: #64748b;">SKU</th>
+                    <th style="padding: 0.75rem; text-align: left; font-weight: 600; color: #64748b;">Medida</th>
+                    <th style="padding: 0.75rem; text-align: left; font-weight: 600; color: #64748b;">Color</th>
+                    <th style="padding: 0.75rem; text-align: left; font-weight: 600; color: #64748b;">Precio</th>
+                    <th style="padding: 0.75rem; text-align: left; font-weight: 600; color: #64748b;">Stock</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${variants
+                    .map(
+                      (variant) => {
+                        const stock = variant.stock || 0;
+                        const stockColor = stock > 0 ? '#16a34a' : '#dc2626';
+                        const stockWeight = stock > 0 ? '600' : '500';
+                        const precio = variant.precio || 0;
+                        const medida = variant.medida || '-';
+                        const color = variant.color || '-';
+                        
+                        return `
+                        <tr style="border-bottom: 1px solid #f1f5f9;">
+                          <td style="padding: 0.75rem; font-weight: 600;">${variant.sku || 'Sin SKU'}</td>
+                          <td style="padding: 0.75rem;">${medida}</td>
+                          <td style="padding: 0.75rem;">${color}</td>
+                          <td style="padding: 0.75rem; font-weight: 600; color: #f97316;">$${precio.toFixed(2)}</td>
+                          <td style="padding: 0.75rem; font-weight: ${stockWeight}; color: ${stockColor};">${stock} pzas</td>
+                        </tr>
+                      `;
+                      }
+                    )
+                    .join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        `
+            : ''
+        }
       </div>
     `;
 
