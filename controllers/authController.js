@@ -518,39 +518,52 @@ const forgotPassword = async (req, res) => {
   if (!email) {
     return res.status(400).json({
       success: false,
-      message: "El email es requerido",
+      message: "El email o teléfono es requerido",
     });
   }
 
-  const genericResponse = {
-    success: true,
-    message:
-      "Si el email está registrado, recibirás instrucciones para restablecer tu contraseña.",
-  };
-
   try {
+    // Buscar por email o teléfono en clientes
     const clienteResult = await db.query(
-      "SELECT ClienteID, Nombre FROM clientes WHERE Email = $1",
+      "SELECT ClienteID, Nombre, Email, Telefono FROM clientes WHERE Email = $1 OR Telefono = $1",
       [email]
     );
 
+    // Buscar por email en agentes (agentes no tienen columna Telefono)
     const agenteResult =
       clienteResult.rows.length === 0
         ? await db.query(
-            "SELECT AgenteID, Nombre FROM agentesdeventas WHERE Email = $1",
+            "SELECT AgenteID, Nombre, Email FROM agentesdeventas WHERE Email = $1",
             [email]
           )
         : { rows: [] };
 
+    // Caso C: Usuario no encontrado
     if (clienteResult.rows.length === 0 && agenteResult.rows.length === 0) {
-      return res.status(200).json(genericResponse);
+      return res.status(200).json({
+        success: true,
+        status: "user_not_found",
+        message: "El correo o teléfono ingresado no está registrado.",
+      });
     }
 
-    const token = crypto.randomBytes(32).toString("hex");
-    const expiration = new Date(Date.now() + 60 * 60 * 1000);
-
+    const usuario = clienteResult.rows[0] || agenteResult.rows[0];
     const clienteId = clienteResult.rows[0]?.clienteid || null;
     const agenteId = agenteResult.rows[0]?.agenteid || null;
+
+    // Caso B: Solo tiene teléfono (email es null) - solo aplica para clientes
+    if (!usuario.email && clienteId) {
+      return res.status(200).json({
+        success: true,
+        status: "phone_only",
+        telefono: usuario.telefono || null,
+        message: "Tu cuenta está registrada solo con teléfono. Contáctanos para recuperarla.",
+      });
+    }
+
+    // Caso A: Tiene email - generar token y enviar correo
+    const token = crypto.randomBytes(32).toString("hex");
+    const expiration = new Date(Date.now() + 60 * 60 * 1000);
 
     await db.query(
       `INSERT INTO passwordresettokens (Token, ClienteID, AgenteID, ExpiraEn)
@@ -559,12 +572,9 @@ const forgotPassword = async (req, res) => {
     );
 
     const resetLink = `${
-      process.env.FRONTEND_BASE_URL || "https://tusitio.com"
+      process.env.FRONTEND_BASE_URL || "http://localhost:3000"
     }/reset-password.html?token=${token}`;
-    const nombre =
-      clienteResult.rows[0]?.nombre ||
-      agenteResult.rows[0]?.nombre ||
-      "cliente";
+    const nombre = usuario.nombre || "usuario";
     const asunto = "Instrucciones para restablecer tu contraseña";
     const cuerpoHtml = `
       <div style="font-family: Arial, sans-serif; color: #1f2937;">
@@ -577,11 +587,15 @@ const forgotPassword = async (req, res) => {
       </div>
     `;
 
-    enviarEmail(email, asunto, cuerpoHtml).catch((err) => {
+    enviarEmail(usuario.email, asunto, cuerpoHtml).catch((err) => {
       console.error("Error enviando correo de reseteo:", err);
     });
 
-    return res.status(200).json(genericResponse);
+    return res.status(200).json({
+      success: true,
+      status: "email_sent",
+      message: "Hemos enviado las instrucciones a tu correo electrónico.",
+    });
   } catch (error) {
     console.error("Error en forgot-password:", error);
     return res.status(500).json({
@@ -1218,6 +1232,87 @@ const googleCallback = async (req, res) => {
   }
 };
 
+/**
+ * Admin reset password for cliente
+ * PUT /api/admin/clientes/:id/reset-password
+ * Permite a un admin restablecer la contraseña de un cliente
+ */
+const adminResetPassword = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { newPassword } = req.body;
+
+    // Validar que se proporcione la nueva contraseña
+    if (!newPassword || newPassword.trim() === '') {
+      return res.status(400).json({
+        success: false,
+        message: 'La nueva contraseña es requerida',
+      });
+    }
+
+    // Validar longitud mínima
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'La contraseña debe tener al menos 6 caracteres',
+      });
+    }
+
+    // Verificar que el cliente existe
+    const clienteCheck = await db.query(
+      'SELECT ClienteID, Nombre, Apellido FROM clientes WHERE ClienteID = $1',
+      [id]
+    );
+
+    if (clienteCheck.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Cliente no encontrado',
+      });
+    }
+
+    // Hashear la nueva contraseña
+    const saltRounds = parseInt(process.env.BCRYPT_ROUNDS) || 10;
+    const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
+
+    // Actualizar la contraseña en la base de datos
+    await db.query(
+      'UPDATE clientes SET PasswordHash = $1 WHERE ClienteID = $2',
+      [hashedPassword, id]
+    );
+
+    // Registrar log de auditoría
+    try {
+      await registrarLog(
+        req,
+        'ACTUALIZAR',
+        'Cliente',
+        id,
+        {
+          accion: 'reset_password',
+          adminId: req.user?.userId || req.user?.id,
+          adminEmail: req.user?.email,
+          clienteNombre: `${clienteCheck.rows[0].nombre} ${clienteCheck.rows[0].apellido}`,
+        }
+      );
+    } catch (logError) {
+      console.error('Error registrando log de reset password:', logError);
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Contraseña restablecida correctamente',
+    });
+  } catch (error) {
+    console.error('Error en adminResetPassword:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al restablecer la contraseña',
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   registroCliente,
   registroAgente,
@@ -1230,4 +1325,5 @@ module.exports = {
   resetPassword,
   getCurrentUser,
   googleCallback,
+  adminResetPassword,
 };

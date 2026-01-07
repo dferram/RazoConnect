@@ -818,6 +818,12 @@ router.put(
   authorizeAdmin,
   adminController.desvincularClienteDeAgente
 );
+router.put(
+  "/clientes/:id/reset-password",
+  authenticate,
+  authorizeAdmin,
+  authController.adminResetPassword
+);
 
 /**
  * Detalle de pedido
