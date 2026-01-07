@@ -1617,6 +1617,43 @@
         return abrev ? `${nombre} (${abrev})` : nombre;
       }
 
+      /**
+       * Extrae un valor numérico de una medida para ordenamiento
+       * @param {string} medida - String de medida (ej: "10x10", "50ml", "6 Piezas", "XL")
+       * @returns {number} - Valor numérico para ordenar
+       */
+      function getMeasureValue(medida) {
+        if (!medida || typeof medida !== 'string') return 999999;
+        
+        const medidaLower = medida.toLowerCase().trim();
+        
+        // Tallas de ropa: asignar valores numéricos
+        const tallasMap = {
+          'xxs': 1, '2xs': 1,
+          'xs': 2,
+          's': 3, 'small': 3, 'chico': 3,
+          'm': 4, 'medium': 4, 'mediano': 4,
+          'l': 5, 'large': 5, 'grande': 5,
+          'xl': 6, 'x-l': 6,
+          'xxl': 7, '2xl': 7, 'x-xl': 7,
+          'xxxl': 8, '3xl': 8, 'xx-xl': 8,
+          'xxxxl': 9, '4xl': 9, 'xxx-xl': 9
+        };
+        
+        if (tallasMap[medidaLower]) {
+          return tallasMap[medidaLower];
+        }
+        
+        // Extraer primer número de la cadena (ej: "10x10" -> 10, "50ml" -> 50, "6 Piezas" -> 6)
+        const match = medida.match(/(\d+(?:\.\d+)?)/);
+        if (match) {
+          return parseFloat(match[1]);
+        }
+        
+        // Si no hay número ni es talla, enviar al final
+        return 999999;
+      }
+
       function renderVariants(variantes) {
         variantCount.textContent = `${variantes.length} variante${
           variantes.length === 1 ? "" : "s"
@@ -1631,7 +1668,18 @@
         variantsEmpty.style.display = "none";
         variantsTableWrapper.style.display = "block";
 
-        variantsTableBody.innerHTML = variantes
+        // Ordenar variantes por medida ascendente antes de renderizar
+        const variantesOrdenadas = [...variantes].sort((a, b) => {
+          const medidaA = a.dimensiones || '';
+          const medidaB = b.dimensiones || '';
+          
+          const valorA = getMeasureValue(medidaA);
+          const valorB = getMeasureValue(medidaB);
+          
+          return valorA - valorB;
+        });
+
+        variantsTableBody.innerHTML = variantesOrdenadas
           .map((variant) => {
             const precio = variant.precioUnitario
               ? formatCurrency(variant.precioUnitario)
