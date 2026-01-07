@@ -26,13 +26,13 @@
 
         <form id="loginForm">
           <div class="form-group">
-            <label class="form-label" for="email">Correo Electrónico</label>
+            <label class="form-label" for="email">Correo Electrónico o Teléfono</label>
             <input
-              type="email"
+              type="text"
               id="email"
               name="email"
               class="form-input"
-              placeholder="tu@email.com"
+              placeholder="ejemplo@correo.com o 5512345678"
               required
             />
             <div class="form-error" id="emailError"></div>
@@ -245,10 +245,11 @@
         }, 5000);
       }
 
-      // Validate email format
-      function validateEmail(email) {
-        const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        return re.test(email);
+      // Validate email or phone format
+      function validateIdentifier(identifier) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        const phoneRegex = /^\d{10}$/;
+        return emailRegex.test(identifier) || phoneRegex.test(identifier);
       }
 
       // Handle form submission
@@ -263,21 +264,21 @@
           .querySelectorAll(".form-input")
           .forEach((el) => el.classList.remove("error"));
 
-        const email = emailInput.value.trim();
+        const identifier = emailInput.value.trim();
         const password = passwordInput.value.trim();
 
         // Validation
         let hasError = false;
 
-        if (!email) {
+        if (!identifier) {
           document.getElementById("emailError").textContent =
-            "El correo es requerido";
+            "El correo o teléfono es requerido";
           document.getElementById("emailError").classList.add("show");
           emailInput.classList.add("error");
           hasError = true;
-        } else if (!validateEmail(email)) {
+        } else if (!validateIdentifier(identifier)) {
           document.getElementById("emailError").textContent =
-            "Formato de correo inválido";
+            "Formato inválido. Ingresa un correo válido o 10 dígitos";
           document.getElementById("emailError").classList.add("show");
           emailInput.classList.add("error");
           hasError = true;
@@ -306,7 +307,7 @@
             const adminResponse = await fetch(`${API_BASE_URL}/admin/login`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ email, password }),
+              body: JSON.stringify({ email: identifier, password }),
             });
 
             const adminData = await adminResponse.json();
@@ -363,7 +364,7 @@
               const clientResponse = await fetch(`${API_BASE_URL}/login`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ Email: email, Password: password }),
+                body: JSON.stringify({ Email: identifier, Password: password }),
               });
 
               const clientData = await clientResponse.json();
@@ -422,7 +423,7 @@
 
           if (!loginSuccessful) {
             showAlert(
-              "Credenciales inválidas. Verifica tu correo y contraseña.",
+              "Credenciales inválidas. Verifica tu correo/teléfono y contraseña.",
               "error"
             );
           }
@@ -442,10 +443,10 @@
 
       // Real-time validation
       emailInput.addEventListener("blur", () => {
-        const email = emailInput.value.trim();
-        if (email && !validateEmail(email)) {
+        const identifier = emailInput.value.trim();
+        if (identifier && !validateIdentifier(identifier)) {
           document.getElementById("emailError").textContent =
-            "Formato de correo inválido";
+            "Formato inválido. Ingresa un correo válido o 10 dígitos";
           document.getElementById("emailError").classList.add("show");
           emailInput.classList.add("error");
         } else {

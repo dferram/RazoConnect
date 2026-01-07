@@ -255,9 +255,10 @@ const registroAgente = async (req, res) => {
 const login = async (req, res) => {
   try {
     const { Email, Password } = req.body;
+    const identifier = Email; // Email puede ser correo o teléfono
 
     // Validar datos de entrada
-    const validation = validateLogin({ Email, Password });
+    const validation = validateLogin({ Email: identifier, Password });
     if (!validation.valid) {
       return res.status(400).json({
         success: false,
@@ -266,10 +267,10 @@ const login = async (req, res) => {
       });
     }
 
-    // Buscar en la tabla de Clientes
+    // Buscar en la tabla de Clientes (por email O teléfono)
     const clienteResult = await db.query(
-      "SELECT ClienteID, Nombre, Apellido, Email, PasswordHash, Telefono FROM clientes WHERE Email = $1",
-      [Email]
+      "SELECT ClienteID, Nombre, Apellido, Email, PasswordHash, Telefono FROM clientes WHERE Email = $1 OR Telefono = $1",
+      [identifier]
     );
 
     if (clienteResult.rows.length > 0) {
@@ -312,10 +313,10 @@ const login = async (req, res) => {
       });
     }
 
-    // Si no es cliente, buscar en la tabla de AgentesDeVentas
+    // Si no es cliente, buscar en la tabla de AgentesDeVentas (por email O teléfono)
     const agenteResult = await db.query(
-      "SELECT AgenteID, Nombre, Apellido, Email, PasswordHash, CodigoAgente, Activo FROM agentesdeventas WHERE Email = $1",
-      [Email]
+      "SELECT AgenteID, Nombre, Apellido, Email, PasswordHash, CodigoAgente, Activo, Telefono FROM agentesdeventas WHERE Email = $1 OR Telefono = $1",
+      [identifier]
     );
 
     if (agenteResult.rows.length > 0) {

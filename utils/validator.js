@@ -27,6 +27,25 @@ const isNotEmpty = (value) => {
 };
 
 /**
+ * Valida formato de teléfono (10 dígitos)
+ * @param {String} phone
+ * @returns {Boolean}
+ */
+const isValidPhone = (phone) => {
+  const phoneRegex = /^\d{10}$/;
+  return phoneRegex.test(phone);
+};
+
+/**
+ * Valida que sea email O teléfono válido
+ * @param {String} identifier
+ * @returns {Boolean}
+ */
+const isValidEmailOrPhone = (identifier) => {
+  return isValidEmail(identifier) || isValidPhone(identifier);
+};
+
+/**
  * Valida los datos de registro de cliente
  * @param {Object} data
  * @returns {Object} { valid: Boolean, errors: Array }
@@ -94,8 +113,10 @@ const validateAgenteRegistro = (data) => {
 const validateLogin = (data) => {
   const errors = [];
 
-  if (!isValidEmail(data.Email)) {
-    errors.push("El email no es válido");
+  if (!isNotEmpty(data.Email)) {
+    errors.push("El correo o teléfono es requerido");
+  } else if (!isValidEmailOrPhone(data.Email)) {
+    errors.push("El formato es inválido. Ingresa un correo válido o 10 dígitos");
   }
 
   if (!isNotEmpty(data.Password)) {
@@ -112,6 +133,8 @@ module.exports = {
   isValidEmail,
   isValidPassword,
   isNotEmpty,
+  isValidPhone,
+  isValidEmailOrPhone,
   validateClienteRegistro,
   validateAgenteRegistro,
   validateLogin,
