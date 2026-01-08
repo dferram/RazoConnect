@@ -48,8 +48,46 @@ const tenantSessionGuard = (req, res, next) => {
       `   Path: ${req.path}`
     );
 
-    // Clear the user session to prevent loops
+    // ============================================
+    // MUERTE SÚBITA DE SESIÓN (BREAK INFINITE LOOP)
+    // ============================================
+    
+    // 1. Clear user object from request
     delete req.user;
+
+    // 2. Logout if using Passport.js
+    if (req.logout && typeof req.logout === 'function') {
+      req.logout((err) => {
+        if (err) {
+          console.error('Error during logout:', err);
+        }
+      });
+    }
+
+    // 3. Destroy session completely
+    if (req.session && typeof req.session.destroy === 'function') {
+      req.session.destroy((err) => {
+        if (err) {
+          console.error('Error destroying session:', err);
+        }
+      });
+    }
+
+    // 4. Clear all session cookies
+    const cookieNames = ['razoconnect.sid', 'connect.sid', 'token', 'jwt'];
+    cookieNames.forEach(cookieName => {
+      res.clearCookie(cookieName, {
+        path: '/',
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+      });
+    });
+
+    // 5. Clear Authorization header (if present)
+    if (req.headers.authorization) {
+      delete req.headers.authorization;
+    }
 
     // Determine if this is an API request or HTML page request
     const isApiRequest = req.path.startsWith('/api/');

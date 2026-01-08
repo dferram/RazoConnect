@@ -328,3 +328,211 @@ footer {
     color: var(--fashion-orange) !important;
     font-weight: 700;
 }
+
+/* ============================================
+   SOBRESCRITURA DE TEMAS ESTACIONALES
+   Fashion mantiene identidad vibrante en todas las temporadas
+   ============================================ */
+
+/* VARIABLES ESTACIONALES FASHION - HOT PINK VIBRANTE */
+.theme-sanvalentin,
+.theme-diamadre,
+.theme-navidad,
+.theme-diapadre,
+.theme-graduaciones,
+.theme-todaocasion {
+    /* Reemplazar colores primarios de temporada con Hot Pink Fashion */
+    --theme-primary: var(--fashion-pink) !important;
+    --theme-primary-light: #ff6bb3 !important;
+    --theme-primary-dark: #d63a7a !important;
+    --theme-primary-rgb: 233, 75, 138 !important;
+    
+    /* Secundario sigue siendo el naranja Fashion */
+    --theme-secondary: var(--fashion-orange) !important;
+    --theme-secondary-light: var(--fashion-gold) !important;
+    --theme-secondary-dark: #e55a00 !important;
+    --theme-secondary-rgb: 255, 106, 0 !important;
+    
+    /* Acento en blanco para contraste moderno */
+    --theme-accent: var(--fashion-white) !important;
+    --theme-accent-light: var(--fashion-white) !important;
+    --theme-accent-dark: #f5f5f5 !important;
+    
+    /* Gradientes Fashion vibrantes */
+    --theme-gradient-primary: linear-gradient(135deg, #E94B8A 0%, #FF6A00 100%) !important;
+    --theme-gradient-hero: linear-gradient(135deg, rgba(233, 75, 138, 0.95) 0%, rgba(255, 106, 0, 0.95) 100%) !important;
+    --theme-gradient-card: linear-gradient(145deg, rgba(233, 75, 138, 0.08) 0%, rgba(255, 106, 0, 0.05) 100%) !important;
+}
+
+/* BANNER DE BIENVENIDA ESTACIONAL */
+.welcome-banner {
+    background: linear-gradient(135deg, var(--fashion-pink) 0%, var(--fashion-orange) 100%) !important;
+}
+
+.welcome-title #userName {
+    color: var(--fashion-white) !important;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* WIDGET DE CUENTA REGRESIVA */
+.countdown-container {
+    background: linear-gradient(135deg, var(--fashion-pink) 0%, var(--fashion-orange) 100%) !important;
+}
+
+.countdown-event-icon {
+    filter: drop-shadow(0 8px 16px rgba(233, 75, 138, 0.4)) !important;
+}
+
+.countdown-cta {
+    background: var(--fashion-white) !important;
+    color: var(--fashion-pink) !important;
+    box-shadow: 0 0 20px rgba(233, 75, 138, 0.5), 0 8px 20px rgba(0, 0, 0, 0.3) !important;
+}
+
+.countdown-cta:hover {
+    background: var(--fashion-gold) !important;
+    color: var(--fashion-carbon) !important;
+    box-shadow: 0 0 30px rgba(255, 196, 0, 0.6), 0 12px 30px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* CATEGORÍAS CON BORDES FASHION */
+.categories-grid .category-card {
+    border: 3px solid var(--fashion-pink) !important;
+}
+
+.categories-grid .category-card:hover {
+    border-color: var(--fashion-orange) !important;
+    box-shadow: 0 0 20px rgba(233, 75, 138, 0.4), 0 8px 20px rgba(0, 0, 0, 0.15) !important;
+}
+
+.categories-grid .category-icon {
+    background: linear-gradient(135deg, var(--fashion-pink) 0%, var(--fashion-orange) 100%) !important;
+    box-shadow: 0 8px 20px rgba(233, 75, 138, 0.3) !important;
+}
+
+/* SECCIÓN DE OFERTAS ESTACIONALES */
+.seasonal-tint::before {
+    background: linear-gradient(90deg, var(--fashion-pink) 0%, var(--fashion-orange) 100%) !important;
+}
+
+.flash-title {
+    color: var(--fashion-pink) !important;
+}
+
+.flash-sales-section .product-card:hover {
+    border-color: var(--fashion-pink) !important;
+}
+
+/* BADGE DE DESCUENTO CON HOT PINK */
+.discount-badge {
+    background: var(--fashion-pink) !important;
+    box-shadow: 0 4px 12px rgba(233, 75, 138, 0.5) !important;
+}
+
+/* SLIDER CONTROLS */
+.slider-dot.active {
+    background: var(--fashion-pink) !important;
+    box-shadow: 0 0 15px rgba(233, 75, 138, 0.7) !important;
+}
+
+/* BOTONES ESTACIONALES */
+.hero-cta,
+.category-link,
+.product-card .btn-primary {
+    background: var(--fashion-pink) !important;
+    border-color: var(--fashion-pink) !important;
+}
+
+.hero-cta:hover,
+.category-link:hover,
+.product-card .btn-primary:hover {
+    background: var(--fashion-orange) !important;
+    border-color: var(--fashion-orange) !important;
+    box-shadow: 0 8px 20px rgba(255, 106, 0, 0.4) !important;
+}
+
+/* HERO BANNER ESTACIONAL */
+#hero-banner {
+    --hero-accent: var(--fashion-pink) !important;
+}
+
+#hero-banner .hero-eyebrow {
+    color: var(--fashion-pink) !important;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* ICONOS Y EMOJIS ESTACIONALES */
+.welcome-icon,
+.countdown-event-icon {
+    filter: drop-shadow(0 4px 12px rgba(233, 75, 138, 0.4)) !important;
+}
+
+/* TARJETAS DE PRODUCTO EN TEMPORADA */
+.product-card {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.product-card:hover {
+    border-color: var(--fashion-pink) !important;
+    box-shadow: 0 8px 24px rgba(233, 75, 138, 0.25) !important;
+}
+
+/* BADGES Y ETIQUETAS ESPECIALES */
+.badge-special,
+.seasonal-badge,
+.promo-badge {
+    background: var(--fashion-pink) !important;
+    color: var(--fashion-white) !important;
+    box-shadow: 0 2px 8px rgba(233, 75, 138, 0.3) !important;
+}
+
+/* SOMBRAS ESTACIONALES FASHION */
+.theme-sanvalentin .card,
+.theme-diamadre .card,
+.theme-navidad .card,
+.theme-diapadre .card,
+.theme-graduaciones .card {
+    box-shadow: 0 4px 12px rgba(233, 75, 138, 0.15) !important;
+}
+
+.theme-sanvalentin .card:hover,
+.theme-diamadre .card:hover,
+.theme-navidad .card:hover,
+.theme-diapadre .card:hover,
+.theme-graduaciones .card:hover {
+    box-shadow: 0 8px 24px rgba(233, 75, 138, 0.25) !important;
+}
+
+/* TEXTOS Y TÍTULOS ESTACIONALES */
+.seasonal-title,
+.event-title,
+.promo-title {
+    color: var(--fashion-pink) !important;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* BORDES Y SEPARADORES */
+.seasonal-divider,
+.theme-border {
+    border-color: var(--fashion-pink) !important;
+}
+
+/* PROGRESS BAR ESTACIONAL */
+.progress-bar.seasonal {
+    background: linear-gradient(90deg, var(--fashion-pink) 0%, var(--fashion-orange) 100%) !important;
+}
+
+/* ANIMACIONES CON GLOW FASHION */
+@keyframes fashionGlow {
+    0%, 100% {
+        box-shadow: 0 0 10px rgba(233, 75, 138, 0.3);
+    }
+    50% {
+        box-shadow: 0 0 20px rgba(233, 75, 138, 0.6);
+    }
+}
+
+.seasonal-highlight,
+.fashion-glow {
+    animation: fashionGlow 2s ease-in-out infinite !important;
+}
