@@ -9,6 +9,7 @@ const express = require("express");
 const path = require("path");
 const cors = require("cors");
 const session = require("express-session");
+const pgSession = require("connect-pg-simple")(session);
 const db = require("./db");
 const passport = require("passport");
 const configurePassport = require("./config/passport");
@@ -45,6 +46,7 @@ const PORT = process.env.PORT || 3000;
 
 // Habilitar proxy (CRÍTICO para Azure - terminación SSL)
 app.set('trust proxy', 1);
+
 // Middlewares
 app.use(cors({
   origin: true,
@@ -53,40 +55,37 @@ app.use(cors({
 app.use(express.json()); // Parsear JSON en el body de las peticiones
 app.use(express.urlencoded({ extended: true })); // Parsear datos de formularios
 
-// Habilitar proxy (CRÍTICO para Azure - terminación SSL)
-app.set('trust proxy', 1);
-
-// Configurar sesiones con configuración dinámica según entorno
+// ============================================================================
+// CONFIGURACIÓN DE SESIONES CON PERSISTENCIA EN POSTGRESQL
+// ============================================================================
+// Usar connect-pg-simple para almacenar sesiones en PostgreSQL
+// Esto evita pérdida de sesiones al reiniciar el servidor y fugas de memoria
 app.use(session({
+  store: new pgSession({
+    pool: db.pool, // Usar el pool existente de conexiones
+    tableName: 'session', // Nombre de la tabla (debe crearse manualmente)
+    createTableIfMissing: false, // No crear automáticamente (mejor control manual)
+    pruneSessionInterval: 60 * 15, // Limpiar sesiones expiradas cada 15 minutos
+    errorLog: console.error.bind(console) // Log de errores
+  }),
   secret: process.env.SESSION_SECRET || 'razoconnect-dev-secret-key-change-in-production',
-  resave: false,
-  saveUninitialized: false,
-  name: 'razoconnect.sid',
-  proxy: true, // <--- Importante forzar esto para Azure
+  resave: false, // No guardar sesión si no hay cambios
+  saveUninitialized: false, // No crear sesión hasta que se almacene algo
+  name: 'razoconnect.sid', // Nombre personalizado de la cookie
+  proxy: true, // CRÍTICO para Azure (terminación SSL en proxy)
   cookie: {
-    secure: isProduction, // TRUE en Azure (HTTPS), FALSE en Localhost (HTTP)
-    httpOnly: true,
-    sameSite: isProduction ? 'none' : 'lax', // 'none' para dominios diferentes en producción, 'lax' para local
-    maxAge: 1000 * 60 * 60 * 24 // 1 día (24 horas)
+    secure: isProduction, // TRUE en HTTPS (Azure), FALSE en HTTP (localhost)
+    httpOnly: true, // Previene acceso desde JavaScript (XSS protection)
+    sameSite: isProduction ? 'none' : 'lax', // 'none' para cross-site en producción
+    maxAge: 1000 * 60 * 60 * 24 * 7 // 7 días (mejorado de 1 día)
   }
 }));
 
-app.use(session({
-    secret: process.env.SESSION_SECRET || 'super_secreto_razo',
-    resave: false,
-    saveUninitialized: false,
-    proxy: true, // <--- Importante forzar esto para Azure
-    cookie: {
-        secure: isProduction, // TRUE en Azure (HTTPS), FALSE en Localhost
-        httpOnly: true,       // Evita robo de cookies por JS
-        sameSite: isProduction ? 'none' : 'lax', // 'none' es vital para cross-site en la nube
-        maxAge: 1000 * 60 * 60 * 24 // 1 día
-    }
-}));
-
 console.log(`🔐 Configuración de sesión: ${isProduction ? 'PRODUCCIÓN' : 'DESARROLLO'}`);
+console.log(`   - Store: PostgreSQL (connect-pg-simple)`);
 console.log(`   - Secure cookies: ${isProduction}`);
 console.log(`   - SameSite: ${isProduction ? 'none' : 'lax'}`);
+console.log(`   - MaxAge: 7 días`);
 console.log(`   - Trust proxy: enabled`);
 
 // Logging de sesiones en desarrollo
