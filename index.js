@@ -18,18 +18,6 @@ app.set('trust proxy', 1);
 // Detectar entorno
 const isProduction = process.env.NODE_ENV === 'production';
 
-app.use(session({
-    secret: process.env.SESSION_SECRET || 'super_secreto_razo',
-    resave: false,
-    saveUninitialized: false,
-    proxy: true, // <--- Importante forzar esto para Azure
-    cookie: {
-        secure: isProduction, // TRUE en Azure (HTTPS), FALSE en Localhost
-        httpOnly: true,       // Evita robo de cookies por JS
-        sameSite: isProduction ? 'none' : 'lax', // 'none' es vital para cross-site en la nube
-        maxAge: 1000 * 60 * 60 * 24 // 1 día
-    }
-}));
 
 // Importar rutas
 const authRoutes = require("./routes/auth");
@@ -73,12 +61,26 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   name: 'razoconnect.sid',
+  proxy: true, // <--- Importante forzar esto para Azure
   cookie: {
     secure: isProduction, // TRUE en Azure (HTTPS), FALSE en Localhost (HTTP)
     httpOnly: true,
     sameSite: isProduction ? 'none' : 'lax', // 'none' para dominios diferentes en producción, 'lax' para local
     maxAge: 1000 * 60 * 60 * 24 // 1 día (24 horas)
   }
+}));
+
+app.use(session({
+    secret: process.env.SESSION_SECRET || 'super_secreto_razo',
+    resave: false,
+    saveUninitialized: false,
+    proxy: true, // <--- Importante forzar esto para Azure
+    cookie: {
+        secure: isProduction, // TRUE en Azure (HTTPS), FALSE en Localhost
+        httpOnly: true,       // Evita robo de cookies por JS
+        sameSite: isProduction ? 'none' : 'lax', // 'none' es vital para cross-site en la nube
+        maxAge: 1000 * 60 * 60 * 24 // 1 día
+    }
 }));
 
 console.log(`🔐 Configuración de sesión: ${isProduction ? 'PRODUCCIÓN' : 'DESARROLLO'}`);

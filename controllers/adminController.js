@@ -13007,10 +13007,12 @@ const actualizarVariante = async (req, res) => {
       } = req.body || {};
 
       const result = await client.query(
-        `SELECT VarianteID, SKU, Dimensiones, CostoUnitario, PrecioUnitario, PrecioOfertaUnitario, Stock, Activo,
-                color_nombre
-         FROM Producto_Variantes
-         WHERE VarianteID = $1`,
+        `SELECT v.VarianteID, v.SKU, v.Dimensiones, v.CostoUnitario, v.PrecioUnitario, v.PrecioOfertaUnitario, v.Stock, v.Activo,
+                v.color_nombre, v.MedidaID, v.ProductoID,
+                m.nombremedida as medida_nombre
+         FROM Producto_Variantes v
+         LEFT JOIN medidas m ON m.medidaid = v.medidaid
+         WHERE v.VarianteID = $1`,
         [varianteId]
       );
       if (!result.rows.length) {
@@ -13089,6 +13091,67 @@ const actualizarVariante = async (req, res) => {
 
       const activoFinal = activo !== undefined ? Boolean(activo) : Boolean(actual.activo);
 
+      // ============================================
+      // DETECCIÓN DE CAMBIOS Y AUDITORÍA
+      // ============================================
+      const cambiosDetectados = [];
+      
+      // Comparar dimensiones
+      if (nuevasDimensiones !== dimensionesActual) {
+        cambiosDetectados.push({
+          campo: 'Dimensiones',
+          valorAnterior: dimensionesActual || 'N/A',
+          valorNuevo: nuevasDimensiones || 'N/A'
+        });
+      }
+      
+      // Comparar costo unitario
+      if (nuevoCosto !== costoActual) {
+        cambiosDetectados.push({
+          campo: 'Costo Unitario',
+          valorAnterior: costoActual !== null ? `$${costoActual.toFixed(2)}` : 'N/A',
+          valorNuevo: nuevoCosto !== null ? `$${nuevoCosto.toFixed(2)}` : 'N/A'
+        });
+      }
+      
+      // Comparar precio unitario
+      if (nuevoPrecio !== precioActual) {
+        cambiosDetectados.push({
+          campo: 'Precio Unitario',
+          valorAnterior: precioActual !== null ? `$${precioActual.toFixed(2)}` : 'N/A',
+          valorNuevo: nuevoPrecio !== null ? `$${nuevoPrecio.toFixed(2)}` : 'N/A'
+        });
+      }
+      
+      // Comparar precio oferta
+      if (nuevaOferta !== ofertaActual) {
+        cambiosDetectados.push({
+          campo: 'Precio Oferta',
+          valorAnterior: ofertaActual !== null ? `$${ofertaActual.toFixed(2)}` : 'Sin oferta',
+          valorNuevo: nuevaOferta !== null ? `$${nuevaOferta.toFixed(2)}` : 'Sin oferta'
+        });
+      }
+      
+      // Comparar color
+      const colorActual = actual.color_nombre || null;
+      if (colorFinal !== colorActual) {
+        cambiosDetectados.push({
+          campo: 'Color',
+          valorAnterior: colorActual || 'Sin color',
+          valorNuevo: colorFinal || 'Sin color'
+        });
+      }
+      
+      // Comparar estado activo
+      const activoActualBool = Boolean(actual.activo);
+      if (activoFinal !== activoActualBool) {
+        cambiosDetectados.push({
+          campo: 'Estado',
+          valorAnterior: activoActualBool ? 'Activo' : 'Inactivo',
+          valorNuevo: activoFinal ? 'Activo' : 'Inactivo'
+        });
+      }
+
       const updateRes = await client.query(
         `UPDATE producto_variantes
          SET dimensiones = $1,
@@ -13109,6 +13172,58 @@ const actualizarVariante = async (req, res) => {
           varianteId,
         ]
       );
+      
+      // ============================================
+      // REGISTRAR CAMBIOS EN BITÁCORA
+      // ============================================
+      if (cambiosDetectados.length > 0) {
+        const usuarioId = req.user?.id || req.user?.userId;
+        const productoId = actual.productoid;
+        
+        for (const cambio of cambiosDetectados) {
+          try {
+            await client.query(
+              `INSERT INTO control_cambios (
+                entidad,
+                entidad_id,
+                tipo_cambio,
+                datos_anteriores,
+                datos_nuevos,
+                usuario_solicitante_id,
+                estado,
+                fecha_resolucion,
+                usuario_resolutor_id
+              )
+              VALUES ($1, $2, $3, $4, $5, $6, 'APROBADO', NOW(), $6)`,
+              [
+                'producto_variantes',
+                varianteId,
+                'UPDATE',
+                JSON.stringify({
+                  productoId: productoId,
+                  varianteId: varianteId,
+                  sku: actual.sku,
+                  campo: cambio.campo,
+                  valorAnterior: cambio.valorAnterior,
+                  medidaNombre: actual.medida_nombre || null
+                }),
+                JSON.stringify({
+                  productoId: productoId,
+                  varianteId: varianteId,
+                  sku: actual.sku,
+                  campo: cambio.campo,
+                  valorNuevo: cambio.valorNuevo,
+                  descripcion: `Producto [${productoId}] - Variante [SKU: ${actual.sku}]: Cambio en ${cambio.campo} de '${cambio.valorAnterior}' a '${cambio.valorNuevo}'`
+                }),
+                usuarioId
+              ]
+            );
+          } catch (logError) {
+            console.error('Error al registrar cambio en bitácora:', logError);
+            // No bloquear la actualización si falla el log
+          }
+        }
+      }
 
       if (!updateRes.rows.length) {
         throw Object.assign(new Error("Variante no encontrada"), { status: 404 });
@@ -13200,10 +13315,12 @@ const actualizarVariante = async (req, res) => {
     } = req.body || {};
 
     const result = await db.query(
-      `SELECT VarianteID, SKU, Dimensiones, CostoUnitario, PrecioUnitario, PrecioOfertaUnitario, Stock, Activo,
-              color_nombre
-       FROM Producto_Variantes
-       WHERE VarianteID = $1`,
+      `SELECT v.VarianteID, v.SKU, v.Dimensiones, v.CostoUnitario, v.PrecioUnitario, v.PrecioOfertaUnitario, v.Stock, v.Activo,
+              v.color_nombre, v.MedidaID, v.ProductoID,
+              m.nombremedida as medida_nombre
+       FROM Producto_Variantes v
+       LEFT JOIN medidas m ON m.medidaid = v.medidaid
+       WHERE v.VarianteID = $1`,
       [varianteId]
     );
 
@@ -13318,6 +13435,66 @@ const actualizarVariante = async (req, res) => {
         ? payloadNuevos.color_nombre
         : actual.color_nombre ?? actual.color_nombre;
 
+      // ============================================
+      // DETECCIÓN DE CAMBIOS Y AUDITORÍA (Non-Atomic Path)
+      // ============================================
+      const cambiosDetectados = [];
+      
+      // Comparar dimensiones
+      if (payloadNuevos.dimensiones !== dimensionesActual) {
+        cambiosDetectados.push({
+          campo: 'Dimensiones',
+          valorAnterior: dimensionesActual || 'N/A',
+          valorNuevo: payloadNuevos.dimensiones || 'N/A'
+        });
+      }
+      
+      // Comparar costo unitario
+      if (payloadNuevos.costounitario !== costoActual) {
+        cambiosDetectados.push({
+          campo: 'Costo Unitario',
+          valorAnterior: costoActual !== null ? `$${costoActual.toFixed(2)}` : 'N/A',
+          valorNuevo: payloadNuevos.costounitario !== null ? `$${payloadNuevos.costounitario.toFixed(2)}` : 'N/A'
+        });
+      }
+      
+      // Comparar precio unitario
+      if (payloadNuevos.preciounitario !== precioActual) {
+        cambiosDetectados.push({
+          campo: 'Precio Unitario',
+          valorAnterior: precioActual !== null ? `$${precioActual.toFixed(2)}` : 'N/A',
+          valorNuevo: payloadNuevos.preciounitario !== null ? `$${payloadNuevos.preciounitario.toFixed(2)}` : 'N/A'
+        });
+      }
+      
+      // Comparar precio oferta
+      if (payloadNuevos.precioofertaunitario !== ofertaActual) {
+        cambiosDetectados.push({
+          campo: 'Precio Oferta',
+          valorAnterior: ofertaActual !== null ? `$${ofertaActual.toFixed(2)}` : 'Sin oferta',
+          valorNuevo: payloadNuevos.precioofertaunitario !== null ? `$${payloadNuevos.precioofertaunitario.toFixed(2)}` : 'Sin oferta'
+        });
+      }
+      
+      // Comparar color
+      const colorActual = actual.color_nombre || null;
+      if (colorFinal !== colorActual) {
+        cambiosDetectados.push({
+          campo: 'Color',
+          valorAnterior: colorActual || 'Sin color',
+          valorNuevo: colorFinal || 'Sin color'
+        });
+      }
+      
+      // Comparar estado activo
+      if (payloadNuevos.activo !== activoActual) {
+        cambiosDetectados.push({
+          campo: 'Estado',
+          valorAnterior: activoActual ? 'Activo' : 'Inactivo',
+          valorNuevo: payloadNuevos.activo ? 'Activo' : 'Inactivo'
+        });
+      }
+
       const updateRes = await db.query(
         `UPDATE producto_variantes
          SET dimensiones = $1,
@@ -13338,6 +13515,58 @@ const actualizarVariante = async (req, res) => {
           varianteId,
         ]
       );
+      
+      // ============================================
+      // REGISTRAR CAMBIOS EN BITÁCORA
+      // ============================================
+      if (cambiosDetectados.length > 0) {
+        const usuarioId = req.user?.id || req.user?.userId;
+        const productoId = actual.productoid;
+        
+        for (const cambio of cambiosDetectados) {
+          try {
+            await db.query(
+              `INSERT INTO control_cambios (
+                entidad,
+                entidad_id,
+                tipo_cambio,
+                datos_anteriores,
+                datos_nuevos,
+                usuario_solicitante_id,
+                estado,
+                fecha_resolucion,
+                usuario_resolutor_id
+              )
+              VALUES ($1, $2, $3, $4, $5, $6, 'APROBADO', NOW(), $6)`,
+              [
+                'producto_variantes',
+                varianteId,
+                'UPDATE',
+                JSON.stringify({
+                  productoId: productoId,
+                  varianteId: varianteId,
+                  sku: actual.sku,
+                  campo: cambio.campo,
+                  valorAnterior: cambio.valorAnterior,
+                  medidaNombre: actual.medida_nombre || null
+                }),
+                JSON.stringify({
+                  productoId: productoId,
+                  varianteId: varianteId,
+                  sku: actual.sku,
+                  campo: cambio.campo,
+                  valorNuevo: cambio.valorNuevo,
+                  descripcion: `Producto [${productoId}] - Variante [SKU: ${actual.sku}]: Cambio en ${cambio.campo} de '${cambio.valorAnterior}' a '${cambio.valorNuevo}'`
+                }),
+                usuarioId
+              ]
+            );
+          } catch (logError) {
+            console.error('Error al registrar cambio en bitácora:', logError);
+            // No bloquear la actualización si falla el log
+          }
+        }
+      }
 
       if (!updateRes.rows.length) {
         return res.status(404).json({
