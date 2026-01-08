@@ -1,6 +1,7 @@
 const express = require("express");
 const path = require("path");
 const cors = require("cors");
+const session = require("express-session");
 require("dotenv").config();
 const db = require("./db");
 const passport = require("passport");
@@ -22,6 +23,10 @@ const creditosRoutes = require("./routes/creditos");
 const { scheduleDailyMaintenance } = require("./cron/dailyMaintenance");
 const pagosRoutes = require("./routes/pagos");
 const cuponesRoutes = require("./routes/cupones");
+const developerRoutes = require("./routes/developer");
+
+// Importar middlewares
+const tenantGuard = require("./middlewares/tenantGuard");
 
 // Inicializar la aplicación Express
 const app = express();
@@ -31,6 +36,19 @@ const PORT = process.env.PORT || 3000;
 app.use(cors()); // Habilitar CORS
 app.use(express.json()); // Parsear JSON en el body de las peticiones
 app.use(express.urlencoded({ extended: true })); // Parsear datos de formularios
+
+// Configurar sesiones
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'razoconnect-dev-secret-key-change-in-production',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    httpOnly: true,
+    maxAge: 24 * 60 * 60 * 1000
+  }
+}));
+
 configurePassport(passport);
 app.use(passport.initialize());
 
