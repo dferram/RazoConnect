@@ -3264,6 +3264,28 @@ const loginAdmin = async (req, res) => {
       [cuenta.nombre, cuenta.apellido].filter(Boolean).join(" ").trim() ||
       cuenta.nombre;
 
+    // ============================================================================
+    // CRÍTICO: PERSISTIR SESIÓN PARA EVITAR EXPULSIÓN INMEDIATA
+    // ============================================================================
+    // Guardar tenant_id y datos de usuario en la sesión de Express
+    // Esto evita que tenantGuard destruya la sesión al detectar un tenant_id "nuevo"
+    if (req.session) {
+      req.session.tenant_id = tenant_id;
+      req.session.userId = cuenta.id;
+      req.session.user = {
+        id: cuenta.id,
+        email: cuenta.email,
+        nombre: cuenta.nombre,
+        apellido: cuenta.apellido,
+        rol: cuenta.rol,
+        tipo: 'admin',
+        adminSource: cuenta.adminSource,
+        tenant_id: tenant_id
+      };
+      
+      console.log(`🔐 [LOGIN ADMIN] Sesión persistida para ${cuenta.email} (Tenant: ${tenant_id})`);
+    }
+
     // Preparar datos de respuesta
     res.json({
       success: true,

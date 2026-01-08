@@ -88,11 +88,24 @@ console.log(`   - SameSite: ${isProduction ? 'none' : 'lax'}`);
 console.log(`   - MaxAge: 7 días`);
 console.log(`   - Trust proxy: enabled`);
 
-// Logging de sesiones en desarrollo
+// ============================================================================
+// DEBUG LOGGING: SESIÓN Y AUTENTICACIÓN
+// ============================================================================
+// Logging detallado de sesiones para debugging de problemas de autenticación
 if (process.env.NODE_ENV !== 'production') {
   app.use((req, res, next) => {
-    if (req.path.startsWith('/developer') || req.path.startsWith('/api/developer')) {
-      console.log('🔐 [Session Middleware] Path:', req.path, 'SessionID:', req.sessionID, 'Session:', req.session);
+    // Log completo para rutas de autenticación
+    if (req.path.startsWith('/api/auth') || req.path.startsWith('/api/admin') || req.path.startsWith('/developer')) {
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log(`🔐 [SESSION DEBUG] ${req.method} ${req.path}`);
+      console.log(`   SessionID: ${req.sessionID || 'NONE'}`);
+      console.log(`   User: ${req.user ? JSON.stringify(req.user) : 'None'}`);
+      console.log(`   Session.user: ${req.session?.user ? JSON.stringify(req.session.user) : 'None'}`);
+      console.log(`   Session.userId: ${req.session?.userId || 'None'}`);
+      console.log(`   Session.tenant_id: ${req.session?.tenant_id || 'None'}`);
+      console.log(`   Tenant: ${req.tenant ? `${req.tenant.nombre_cliente} (ID: ${req.tenant.tenant_id})` : 'None'}`);
+      console.log(`   Cookie: ${req.headers.cookie ? 'Present' : 'Missing'}`);
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     }
     next();
   });
@@ -100,6 +113,7 @@ if (process.env.NODE_ENV !== 'production') {
 
 configurePassport(passport);
 app.use(passport.initialize());
+app.use(passport.session()); // CRÍTICO: Habilitar persistencia de sesión con Passport
 
 // ============================================================================
 // SECCIÓN CRÍTICA: RUTAS DE EXCEPCIÓN (ANTES DEL TENANT GUARD)

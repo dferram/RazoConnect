@@ -72,15 +72,26 @@ async function tenantGuard(req, res, next) {
       return next();
     }
 
-    // Limpiar sesión si el tenant cambió (evita conflictos de cookies entre tenants)
+    // CRÍTICO: Solo destruir sesión si hay un cambio REAL de tenant (no en asignación inicial)
+    // Esto evita que se destruya la sesión de administradores recién loggeados
     if (req.session && req.session.tenant_id && req.session.tenant_id !== tenant.tenant_id) {
       console.warn(`⚠️  Tenant cambió de ${req.session.tenant_id} a ${tenant.tenant_id}. Limpiando sesión...`);
-      req.session.destroy();
+      // Preservar datos críticos antes de destruir
+      const userData = req.session.user;
+      const userId = req.session.userId;
+      req.session.destroy((err) => {
+        if (err) {
+          console.error('Error al destruir sesión:', err);
+        }
+      });
+      // No continuar después de destruir - forzar re-login
+      return res.status(401).json({ error: 'Sesión invalidada por cambio de tenant' });
     }
 
-    // Guardar tenant_id en sesión para futuras validaciones
-    if (req.session) {
+    // Guardar tenant_id en sesión para futuras validaciones (solo si no existe)
+    if (req.session && !req.session.tenant_id) {
       req.session.tenant_id = tenant.tenant_id;
+      console.log(`🔐 Tenant ID ${tenant.tenant_id} asignado a sesión ${req.sessionID}`);
     }
 
     req.tenant = tenant;
