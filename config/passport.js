@@ -42,9 +42,9 @@ const configurePassport = (passport) => {
           user = { ...result.rows[0], type: 'agente', tenant_id: sessionData.tenant_id };
         }
       } else {
-        // Cliente por defecto
+        // Cliente por defecto (incluir Telefono para usuarios registrados solo con teléfono)
         const result = await db.query(
-          'SELECT ClienteID as id, Nombre, Apellido, Email, avatar_url FROM clientes WHERE ClienteID = $1',
+          'SELECT ClienteID as id, Nombre, Apellido, Email, Telefono, avatar_url FROM clientes WHERE ClienteID = $1',
           [sessionData.id]
         );
         if (result.rows.length > 0) {

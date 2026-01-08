@@ -1269,10 +1269,13 @@ const adminResetPassword = async (req, res) => {
       });
     }
 
-    // Verificar que el cliente existe
+    // Obtener tenant_id del middleware para aislamiento
+    const { tenant_id } = req.tenant;
+
+    // Verificar que el cliente existe dentro del tenant
     const clienteCheck = await db.query(
-      'SELECT ClienteID, Nombre, Apellido FROM clientes WHERE ClienteID = $1',
-      [id]
+      'SELECT ClienteID, Nombre, Apellido, tenant_id FROM clientes WHERE ClienteID = $1 AND tenant_id = $2',
+      [id, tenant_id]
     );
 
     if (clienteCheck.rows.length === 0) {
@@ -1286,10 +1289,10 @@ const adminResetPassword = async (req, res) => {
     const saltRounds = parseInt(process.env.BCRYPT_ROUNDS) || 10;
     const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
 
-    // Actualizar la contraseña en la base de datos
+    // Actualizar la contraseña en la base de datos (con tenant_id para seguridad adicional)
     await db.query(
-      'UPDATE clientes SET PasswordHash = $1 WHERE ClienteID = $2',
-      [hashedPassword, id]
+      'UPDATE clientes SET PasswordHash = $1 WHERE ClienteID = $2 AND tenant_id = $3',
+      [hashedPassword, id, tenant_id]
     );
 
     // Registrar log de auditoría
