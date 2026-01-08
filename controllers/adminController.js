@@ -5199,9 +5199,9 @@ const findOrCreateTamanosFromPacks = async (client, packs) => {
 
   // 1) Buscar tamaños existentes por Cantidad
   const existentesResult = await client.query(
-    `SELECT TamanoID, Cantidad
-     FROM Cat_TamanoPaquetes
-     WHERE Cantidad = ANY($1::int[])`,
+    `SELECT tamanoid, cantidad
+     FROM cat_tamanopaquetes
+     WHERE cantidad = ANY($1::int[])`,
     [cantidades]
   );
 
@@ -5224,13 +5224,12 @@ const findOrCreateTamanosFromPacks = async (client, packs) => {
       continue;
     }
 
-    // La tabla Cat_TamanoPaquetes solo tiene columnas TamanoID (PK) y Cantidad,
-    // así que insertamos únicamente Cantidad y dejamos que TamanoID se autogenere.
+    // La tabla cat_tamanopaquetes solo tiene columnas tamanoid (PK), cantidad y tenant_id
     const insertResult = await client.query(
-      `INSERT INTO Cat_TamanoPaquetes (Cantidad)
-       VALUES ($1)
-       RETURNING TamanoID, Cantidad`,
-      [cantidad]
+      `INSERT INTO cat_tamanopaquetes (cantidad, tenant_id)
+       VALUES ($1, $2)
+       RETURNING tamanoid, cantidad`,
+      [cantidad, tenant_id]
     );
 
     const newRow = insertResult.rows[0];
@@ -5709,7 +5708,7 @@ const crearProducto = async (req, res) => {
 
     if (tamanoIdsNecesarios.length) {
       const tamanosCatalogoResult = await client.query(
-        "SELECT * FROM Cat_TamanoPaquetes WHERE TamanoID = ANY($1::int[])",
+        "SELECT tamanoid, cantidad, tenant_id FROM cat_tamanopaquetes WHERE tamanoid = ANY($1::int[])",
         [tamanoIdsNecesarios]
       );
 
@@ -6145,76 +6144,31 @@ const crearProducto = async (req, res) => {
 /**
  * Obtener catálogo de tamaños de paquetes
  * GET /api/admin/tamanos-paquetes
+ * 
+ * SCHEMA (backup.sql):
+ * - tamanoid (PK, integer)
+ * - cantidad (integer, NOT NULL)
+ * - tenant_id (integer, FK to tenants)
  */
 const getTamanosPaquetes = async (req, res) => {
   try {
     const { tenant_id } = req.tenant;
 
     const result = await db.query(
-      `SELECT *
-       FROM Cat_TamanoPaquetes
+      `SELECT tamanoid, cantidad, tenant_id
+       FROM cat_tamanopaquetes
        WHERE tenant_id = $1
-       ORDER BY TipoProductoID, Valor ASC`,
+       ORDER BY cantidad ASC`,
       [tenant_id]
     );
 
-    const valueCandidates = [
-      "valor",
-      "piezas",
-      "piezasporpaquete",
-      "cantidad",
-      "numeropiezas",
-      "tamano",
-      "cantidadpiezas",
-    ];
-
-    const labelCandidates = ["etiqueta", "descripcion", "nombre", "label"];
-
-    const tamanos = result.rows.map((row) => {
-      const tamanoId = Number.parseInt(row.tamanoid, 10);
-
-      let valor = null;
-      for (const field of valueCandidates) {
-        if (
-          Object.prototype.hasOwnProperty.call(row, field) &&
-          row[field] !== null &&
-          row[field] !== undefined
-        ) {
-          const parsed = Number.parseInt(row[field], 10);
-          if (!Number.isNaN(parsed)) {
-            valor = parsed;
-            break;
-          }
-        }
-      }
-
-      let etiqueta = null;
-      for (const field of labelCandidates) {
-        if (
-          Object.prototype.hasOwnProperty.call(row, field) &&
-          typeof row[field] === "string" &&
-          row[field].trim()
-        ) {
-          etiqueta = row[field].trim();
-          break;
-        }
-      }
-
-      return {
-        tamanoId,
-        valor,
-        etiqueta,
-      };
-    });
-
-    tamanos.sort((a, b) => {
-      if (Number.isFinite(a.valor) && Number.isFinite(b.valor)) {
-        return a.valor - b.valor;
-      }
-      if (Number.isFinite(a.valor)) return -1;
-      if (Number.isFinite(b.valor)) return 1;
-      return a.tamanoId - b.tamanoId;
-    });
+    const tamanos = result.rows.map((row) => ({
+      tamanoId: row.tamanoid,
+      cantidad: row.cantidad,
+      valor: row.cantidad, // Alias para compatibilidad con frontend
+      etiqueta: `${row.cantidad} ${row.cantidad === 1 ? 'pieza' : 'piezas'}`,
+      tenant_id: row.tenant_id
+    }));
 
     res.json({
       success: true,
@@ -6228,6 +6182,7 @@ const getTamanosPaquetes = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Error al obtener los tamaños de paquetes",
+      error: error.message
     });
   }
 };
@@ -9008,11 +8963,11 @@ const getPedidoDetalle = async (req, res) => {
         pv.ProductoID,
         pr.NombreProducto,
         row_to_json(ct) as tamano_info
-      FROM DetallesDelPedido dp
-      INNER JOIN Producto_Variantes pv ON dp.VarianteID = pv.VarianteID
-      INNER JOIN Productos pr ON pv.ProductoID = pr.ProductoID
-      LEFT JOIN Cat_TamanoPaquetes ct ON dp.TamanoID = ct.TamanoID
-      WHERE dp.PedidoID = $1`,
+      FROM detallesdelpedido dp
+      INNER JOIN producto_variantes pv ON dp.varianteid = pv.varianteid
+      INNER JOIN productos pr ON pv.productoid = pr.productoid
+      LEFT JOIN cat_tamanopaquetes ct ON dp.tamanoid = ct.tamanoid
+      WHERE dp.pedidoid = $1`,
       [pedidoId]
     );
 

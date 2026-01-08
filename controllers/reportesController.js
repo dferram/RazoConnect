@@ -70,15 +70,15 @@ const getReporteRentabilidad = async (req, res) => {
         (pv.CostoUnitario * dp.PiezasTotales) AS CostoTotal,
         (pv.PrecioUnitario * dp.PiezasTotales) - (pv.CostoUnitario * dp.PiezasTotales) AS GananciaBruta,
         ((pv.PrecioUnitario * dp.PiezasTotales) - (pv.CostoUnitario * dp.PiezasTotales)) - COALESCE(p.CostoEnvio, 0) - COALESCE(c.MontoComision, 0) AS GananciaNeta
-      FROM DetallesDelPedido dp
-      INNER JOIN Pedidos p ON dp.PedidoID = p.PedidoID
+      FROM detallesdelpedido dp
+      INNER JOIN pedidos p ON dp.pedidoid = p.pedidoid
       ${estadoJoinClause}
-      INNER JOIN Producto_Variantes pv ON dp.VarianteID = pv.VarianteID
-      INNER JOIN Productos pr ON pv.ProductoID = pr.ProductoID
-      LEFT JOIN Cat_TamanoPaquetes t ON t.TamanoID = dp.TamanoID
-      LEFT JOIN Comisiones c ON dp.PedidoID = c.PedidoID
+      INNER JOIN producto_variantes pv ON dp.varianteid = pv.varianteid
+      INNER JOIN productos pr ON pv.productoid = pr.productoid
+      LEFT JOIN cat_tamanopaquetes t ON t.tamanoid = dp.tamanoid
+      LEFT JOIN comisiones c ON dp.pedidoid = c.pedidoid
       ${whereClause}
-      ORDER BY p.FechaPedido DESC, dp.DetalleID ASC
+      ORDER BY p.fechapedido DESC, dp.detalleid ASC
     `;
 
     const result = await db.query(query, params);
