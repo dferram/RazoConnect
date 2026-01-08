@@ -34,6 +34,12 @@
     });
 
     const data = await safeJson(res);
+    
+    // Detectar error de tenant mismatch
+    if (res.status === 401 && data?.code === 'TENANT_MISMATCH') {
+      return { ok: false, data, tenantMismatch: true };
+    }
+    
     return { ok: res.ok && data?.success, data };
   }
 
@@ -47,6 +53,11 @@
     });
 
     const data = await safeJson(res);
+    
+    // Detectar error de tenant mismatch
+    if (res.status === 401 && data?.code === 'TENANT_MISMATCH') {
+      return { ok: false, data, tenantMismatch: true };
+    }
 
     const rol = data?.data?.rol;
     const ok = res.ok && data?.success && String(rol || "").toLowerCase() === "agente";
@@ -82,6 +93,14 @@
         }
         return;
       }
+      
+      // Verificar si es error de tenant mismatch
+      if (admin.tenantMismatch) {
+        await deny(
+          "Tu sesión pertenece a otro sitio. Por favor inicia sesión nuevamente en este sitio."
+        );
+        return;
+      }
 
       // 2) Intentar como agente
       const agente = await verifyAgente();
@@ -97,6 +116,14 @@
             })
           );
         }
+        return;
+      }
+      
+      // Verificar si es error de tenant mismatch
+      if (agente.tenantMismatch) {
+        await deny(
+          "Tu sesión pertenece a otro sitio. Por favor inicia sesión nuevamente en este sitio."
+        );
         return;
       }
 

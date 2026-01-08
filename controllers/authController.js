@@ -91,7 +91,7 @@ const registroCliente = async (req, res) => {
     // Verificar unicidad del teléfono dentro del tenant (solo si se proporcionó)
     if (Telefono) {
       const telefonoCheck = await db.query(
-        "SELECT ClienteID FROM clientes WHERE Telefono = $1 AND tenant_id = $2",
+        "SELECT clienteid FROM clientes WHERE telefono = $1 AND tenant_id = $2",
         [Telefono, tenant_id]
       );
 
@@ -109,9 +109,9 @@ const registroCliente = async (req, res) => {
 
     // Insertar nuevo cliente (con valores null si no se proporcionaron)
     const result = await db.query(
-      `INSERT INTO clientes (Nombre, Apellido, Email, PasswordHash, Telefono, tenant_id)
+      `INSERT INTO clientes (nombre, apellido, email, passwordhash, telefono, tenant_id)
        VALUES ($1, $2, $3, $4, $5, $6)
-       RETURNING ClienteID, Nombre, Apellido, Email, Telefono, FechaDeRegistro`,
+       RETURNING clienteid, nombre, apellido, email, telefono, fechaderegistro`,
       [Nombre.trim(), Apellido.trim(), Email, PasswordHash, Telefono, tenant_id]
     );
 
@@ -169,14 +169,14 @@ const registroCliente = async (req, res) => {
  */
 const registroAgente = async (req, res) => {
   try {
-    const { Nombre, Apellido, Email, Password } = req.body;
+    const { nombre, apellido, email, password } = req.body;
 
     // Validar datos de entrada
     const validation = validateAgenteRegistro({
-      Nombre,
-      Apellido,
-      Email,
-      Password,
+      nombre,
+      apellido,
+      email,
+      password,
     });
     if (!validation.valid) {
       return res.status(400).json({
@@ -187,7 +187,7 @@ const registroAgente = async (req, res) => {
     }
 
     // Verificar unicidad global del email (no debe existir en ninguna tabla)
-    const emailCheck = await checkEmailGlobalUniqueness(Email, "agentesdeventas");
+    const emailCheck = await checkEmailGlobalUniqueness(email, "agentesdeventas");
 
     if (emailCheck.exists) {
       const errorMessage = getContextualErrorMessage(
@@ -202,16 +202,16 @@ const registroAgente = async (req, res) => {
 
     // Hashear la contraseña
     const saltRounds = parseInt(process.env.BCRYPT_ROUNDS) || 10;
-    const PasswordHash = await bcrypt.hash(Password, saltRounds);
+    const passwordHash = await bcrypt.hash(password, saltRounds);
 
-    const CodigoAgente = await generateCodigoAgente(db);
+    const codigoAgente = await generateCodigoAgente(db);
 
     // Insertar nuevo agente
     const result = await db.query(
-      `INSERT INTO agentesdeventas (Nombre, Apellido, Email, PasswordHash, CodigoAgente, Activo)
+      `INSERT INTO agentesdeventas (nombre, apellido, email, passwordhash, codigoagente, activo)
        VALUES ($1, $2, $3, $4, $5, TRUE)
-       RETURNING AgenteID, Nombre, Apellido, Email, CodigoAgente, Activo`,
-      [Nombre, Apellido, Email, PasswordHash, CodigoAgente]
+       RETURNING agenteid, nombre, apellido, email, codigoagente, activo`,
+      [nombre, apellido, email, passwordHash, codigoAgente]
     );
 
     const nuevoAgente = result.rows[0];
@@ -256,11 +256,11 @@ const registroAgente = async (req, res) => {
  */
 const login = async (req, res) => {
   try {
-    const { Email, Password } = req.body;
-    const identifier = Email; // Email puede ser correo o teléfono
+    const { email, password } = req.body;
+    const identifier = email; // Email puede ser correo o teléfono
 
     // Validar datos de entrada
-    const validation = validateLogin({ Email: identifier, Password });
+    const validation = validateLogin({ email: identifier, password });
     if (!validation.valid) {
       return res.status(400).json({
         success: false,
@@ -274,7 +274,7 @@ const login = async (req, res) => {
 
     // Buscar en la tabla de Clientes (por email O teléfono Y tenant_id)
     const clienteResult = await db.query(
-      "SELECT ClienteID, Nombre, Apellido, Email, PasswordHash, Telefono FROM clientes WHERE (Email = $1 OR Telefono = $1) AND tenant_id = $2",
+      "SELECT clienteid, nombre, apellido, email, passwordhash, telefono FROM clientes WHERE (email = $1 OR telefono = $1) AND tenant_id = $2",
       [identifier, tenant_id]
     );
 
@@ -283,7 +283,7 @@ const login = async (req, res) => {
 
       // Verificar contraseña
       const passwordMatch = await bcrypt.compare(
-        Password,
+        password,
         cliente.passwordhash
       );
 
@@ -318,10 +318,10 @@ const login = async (req, res) => {
       });
     }
 
-    // Si no es cliente, buscar en la tabla de AgentesDeVentas (por email O teléfono)
+    // Si no es cliente, buscar en la tabla de AgentesDeVentas (solo por email)
     const agenteResult = await db.query(
-      "SELECT AgenteID, Nombre, Apellido, Email, PasswordHash, CodigoAgente, Activo, Telefono FROM agentesdeventas WHERE Email = $1 OR Telefono = $1",
-      [identifier]
+      "SELECT agenteid, nombre, apellido, email, passwordhash, codigoagente, activo FROM agentesdeventas WHERE email = $1 AND tenant_id = $2",
+      [identifier, tenant_id]
     );
 
     if (agenteResult.rows.length > 0) {
@@ -336,7 +336,7 @@ const login = async (req, res) => {
       }
 
       // Verificar contraseña
-      const passwordMatch = await bcrypt.compare(Password, agente.passwordhash);
+      const passwordMatch = await bcrypt.compare(password, agente.passwordhash);
 
       if (!passwordMatch) {
         return res.status(401).json({
@@ -400,9 +400,9 @@ const verifyCliente = async (req, res) => {
     // Si es agente, buscar en la tabla de agentes
     if (userRol === "agente") {
       const agenteResult = await db.query(
-        `SELECT AgenteID, Nombre, Apellido, Email, CodigoAgente, Activo
+        `SELECT agenteid, nombre, apellido, email, codigoagente, activo
          FROM agentesdeventas
-         WHERE AgenteID = $1 AND Activo = TRUE`,
+         WHERE agenteid = $1 AND activo = TRUE`,
         [userId]
       );
 
@@ -434,9 +434,9 @@ const verifyCliente = async (req, res) => {
     // Si es cliente, buscar en la tabla de clientes (filtrado por tenant)
     const { tenant_id } = req.tenant;
     const result = await db.query(
-      `SELECT ClienteID, Nombre, Apellido, Email, Telefono, FechaDeRegistro
+      `SELECT clienteid, nombre, apellido, email, telefono, fechaderegistro
        FROM clientes
-       WHERE ClienteID = $1 AND tenant_id = $2 AND Activo = TRUE`,
+       WHERE clienteid = $1 AND tenant_id = $2 AND activo = TRUE`,
       [userId, tenant_id]
     );
 
@@ -485,7 +485,7 @@ const refreshClienteToken = async (req, res) => {
     // Verificar que el cliente aún existe y está activo (filtrado por tenant)
     const { tenant_id } = req.tenant;
     const result = await db.query(
-      `SELECT ClienteID FROM clientes WHERE ClienteID = $1 AND tenant_id = $2 AND Activo = TRUE`,
+      `SELECT clienteid FROM clientes WHERE clienteid = $1 AND tenant_id = $2 AND activo = TRUE`,
       [clienteId, tenant_id]
     );
 
@@ -535,16 +535,16 @@ const forgotPassword = async (req, res) => {
 
     // Buscar por email o teléfono en clientes (filtrado por tenant)
     const clienteResult = await db.query(
-      "SELECT ClienteID, Nombre, Email, Telefono FROM clientes WHERE (Email = $1 OR Telefono = $1) AND tenant_id = $2",
+      "SELECT clienteid, nombre, email, telefono FROM clientes WHERE (email = $1 OR telefono = $1) AND tenant_id = $2",
       [email, tenant_id]
     );
 
-    // Buscar por email en agentes (agentes no tienen columna Telefono)
+    // Buscar por email en agentes (agentes no tienen columna telefono)
     const agenteResult =
       clienteResult.rows.length === 0
         ? await db.query(
-            "SELECT AgenteID, Nombre, Email FROM agentesdeventas WHERE Email = $1",
-            [email]
+            "SELECT agenteid, nombre, email FROM agentesdeventas WHERE email = $1 AND tenant_id = $2",
+            [email, tenant_id]
           )
         : { rows: [] };
 

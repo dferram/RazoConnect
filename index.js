@@ -38,6 +38,7 @@ const developerRoutes = require("./routes/developer");
 
 // Importar middlewares
 const tenantGuard = require("./middlewares/tenantGuard");
+const validateUserTenant = require("./middlewares/validateUserTenant");
 
 // Inicializar la aplicación Express
 const app = express();
@@ -143,6 +144,13 @@ app.get("/suspended", (req, res) => {
 // ============================================================================
 
 app.use(tenantGuard);
+
+// ============================================================================
+// VALIDACIÓN DE TENANT PARA USUARIOS AUTENTICADOS
+// ============================================================================
+// Este middleware valida que usuarios autenticados pertenezcan al tenant correcto
+// Se ejecuta DESPUÉS de tenantGuard (que detecta el tenant) y passport.session() (que carga el usuario)
+app.use(validateUserTenant);
 
 // ============================================================================
 // ARCHIVOS ESTÁTICOS (PROTEGIDOS POR TENANT GUARD)

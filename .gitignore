@@ -37,3 +37,6 @@ coverage/
 # Temporal
 tmp/
 temp/
+
+# Product images
+product_images/

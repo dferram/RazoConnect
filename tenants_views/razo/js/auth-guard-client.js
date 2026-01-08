@@ -49,7 +49,11 @@
   })
     .then((response) => {
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        return response.json().then(data => {
+          throw { status: response.status, data };
+        }).catch(() => {
+          throw { status: response.status, data: null };
+        });
       }
       return response.json();
     })
@@ -72,6 +76,28 @@
     })
     .catch((error) => {
       console.error("❌ Client authentication failed:", error);
+
+      // Verificar si es error de tenant mismatch
+      if (error.status === 401 && error.data?.code === 'TENANT_MISMATCH') {
+        localStorage.removeItem("razoconnect_token");
+        localStorage.removeItem("razoconnect_user");
+        
+        if (typeof Swal !== "undefined" && Swal && typeof Swal.fire === "function") {
+          Swal.fire({
+            icon: "warning",
+            title: "Sesión de Otro Sitio",
+            text: "Tu sesión pertenece a otro sitio. Por favor inicia sesión nuevamente en este sitio.",
+            confirmButtonText: "Ir al Login",
+            confirmButtonColor: "#F97316",
+            allowOutsideClick: false,
+          }).then(() => {
+            window.location.replace("/login.html");
+          });
+        } else {
+          window.location.replace("/login.html");
+        }
+        return;
+      }
 
       if (adminToken && adminHasAgentRole()) {
         console.warn(

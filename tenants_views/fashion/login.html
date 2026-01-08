@@ -231,8 +231,31 @@
       // Check if admin is already logged in
       const adminToken = localStorage.getItem("Fashion Box_admin_token");
       if (adminToken) {
-        sessionStorage.setItem("_navigating", "true");
-        window.location.href = "/admin-dashboard.html";
+        // Verificar que el token sea válido para este tenant antes de redirigir
+        fetch("/api/admin/verify", {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${adminToken}`,
+            "Content-Type": "application/json",
+          },
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.success) {
+              // Token válido, redirigir
+              sessionStorage.setItem("_navigating", "true");
+              window.location.href = "/admin-dashboard.html";
+            } else {
+              // Token inválido o de otro tenant, limpiar
+              localStorage.removeItem("Fashion Box_admin_token");
+              localStorage.removeItem("razoconnect_admin");
+            }
+          })
+          .catch(() => {
+            // Error al verificar, limpiar token
+            localStorage.removeItem("Fashion Box_admin_token");
+            localStorage.removeItem("razoconnect_admin");
+          });
       }
 
       // Show alert message
