@@ -41,19 +41,25 @@ async function login(req, res) {
       });
     }
 
-    await db.query(
-      'UPDATE developers SET last_login = CURRENT_TIMESTAMP WHERE dev_id = $1',
-      [developer.dev_id]
-    );
-
     req.session.isDeveloper = true;
     req.session.developerId = developer.dev_id;
     req.session.developerUsername = developer.username;
 
-    res.json({ 
-      success: true,
-      message: 'Login exitoso',
-      redirect: '/developer/dashboard'
+    // Guardar sesión explícitamente antes de responder
+    req.session.save((err) => {
+      if (err) {
+        console.error('Error al guardar sesión:', err);
+        return res.status(500).json({ 
+          error: 'Error del servidor',
+          message: 'Error al guardar la sesión' 
+        });
+      }
+
+      res.json({ 
+        success: true,
+        message: 'Login exitoso',
+        redirectUrl: '/developer/dashboard'
+      });
     });
 
   } catch (error) {

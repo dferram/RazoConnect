@@ -200,7 +200,7 @@
                 if (response.ok && data.success) {
                     showAlert('Login exitoso. Redirigiendo...', 'success');
                     setTimeout(() => {
-                        window.location.href = data.redirect || '/developer/dashboard';
+                        window.location.href = data.redirectUrl || data.redirect || '/developer/dashboard';
                     }, 1000);
                 } else {
                     showAlert(data.message || 'Credenciales inválidas');

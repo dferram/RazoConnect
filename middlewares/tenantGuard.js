@@ -18,6 +18,14 @@ const EXCLUDED_PATHS = [
 async function tenantGuard(req, res, next) {
   const path = req.path;
 
+  // PRIORIDAD 1: Excluir rutas de developer completamente (independiente de tenants)
+  if (path.startsWith('/developer') || 
+      path.startsWith('/api/developer') || 
+      path.startsWith('/auth/developer')) {
+    return next();
+  }
+
+  // PRIORIDAD 2: Excluir otras rutas estáticas y de API
   if (EXCLUDED_PATHS.some(excluded => path.startsWith(excluded))) {
     return next();
   }
