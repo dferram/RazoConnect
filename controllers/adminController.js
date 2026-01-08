@@ -681,6 +681,8 @@ const registrarPagoCuentaPorPagar = async (req, res) => {
 
 const getResumenEstadoCuentaProveedores = async (req, res) => {
   try {
+    const { tenant_id } = req.tenant;
+
     const result = await db.query(
       `SELECT
          proveedorid,
@@ -689,7 +691,9 @@ const getResumenEstadoCuentaProveedores = async (req, res) => {
          saldo_pendiente_pago,
          facturas_vivas
        FROM v_resumen_bancario_proveedores
-       ORDER BY saldo_pendiente_pago DESC, nombreempresa ASC`
+       WHERE tenant_id = $1
+       ORDER BY saldo_pendiente_pago DESC, nombreempresa ASC`,
+      [tenant_id]
     );
 
     return res.json({
@@ -715,6 +719,7 @@ const getResumenEstadoCuentaProveedores = async (req, res) => {
 
 const getEstadoCuentaProveedorMovimientos = async (req, res) => {
   try {
+    const { tenant_id } = req.tenant;
     const proveedorId = Number.parseInt(req.params.id, 10);
     if (!Number.isInteger(proveedorId) || proveedorId <= 0) {
       return res.status(400).json({
@@ -726,8 +731,8 @@ const getEstadoCuentaProveedorMovimientos = async (req, res) => {
     const provResult = await db.query(
       `SELECT proveedorid, nombreempresa
        FROM proveedores
-       WHERE proveedorid = $1`,
-      [proveedorId]
+       WHERE proveedorid = $1 AND tenant_id = $2`,
+      [proveedorId, tenant_id]
     );
 
     if (!provResult.rows.length) {
@@ -1868,11 +1873,13 @@ async function registrarAuditoriaReglasEmpaque(client, req, eventos) {
 
 const getTiposProductoAdmin = async (req, res) => {
   try {
+    const { tenant_id } = req.tenant;
     const result = await db.query(
       `SELECT tp.tipoproductoid, tp.nombre, tp.descripcion
        FROM tipoproducto tp
-       WHERE tp.activo = TRUE
-       ORDER BY tp.nombre ASC`
+       WHERE tp.activo = TRUE AND tp.tenant_id = $1
+       ORDER BY tp.nombre ASC`,
+      [tenant_id]
     );
 
     const tipos = (result.rows || []).map((row) => ({
@@ -1901,6 +1908,7 @@ const getTiposProductoAdmin = async (req, res) => {
 
 const crearTipoProductoAdmin = async (req, res) => {
   try {
+    const { tenant_id } = req.tenant;
     const nombreRaw = req.body?.nombre ?? req.body?.Nombre ?? req.body?.tipoProducto;
     const descripcionRaw = req.body?.descripcion ?? req.body?.Descripcion ?? null;
 
@@ -1918,13 +1926,13 @@ const crearTipoProductoAdmin = async (req, res) => {
     }
 
     const insertRes = await db.query(
-      `INSERT INTO tipoproducto (nombre, descripcion, activo)
-       VALUES ($1, $2, TRUE)
-       ON CONFLICT (nombre)
+      `INSERT INTO tipoproducto (nombre, descripcion, activo, tenant_id)
+       VALUES ($1, $2, TRUE, $3)
+       ON CONFLICT (nombre, tenant_id)
        DO UPDATE SET activo = TRUE,
                     descripcion = COALESCE(EXCLUDED.descripcion, tipoproducto.descripcion)
        RETURNING tipoproductoid, nombre, descripcion`,
-      [nombre, descripcion]
+      [nombre, descripcion, tenant_id]
     );
 
     const row = insertRes.rows?.[0];
@@ -1949,6 +1957,7 @@ const crearTipoProductoAdmin = async (req, res) => {
 
 const buscarProductosCompra = async (req, res) => {
   try {
+    const { tenant_id } = req.tenant;
     const qRaw = (req.query.q || "").toString().trim();
     const allRaw = (req.query.all || "").toString().trim().toLowerCase();
     const all = allRaw === "1" || allRaw === "true";
@@ -1995,9 +2004,10 @@ const buscarProductosCompra = async (req, res) => {
     const whereParts = [
       "COALESCE(pv.activo, TRUE) = TRUE",
       "COALESCE(p.activo, TRUE) = TRUE",
+      "p.tenant_id = $2",
     ];
-    const params = [reglasProveedorId];
-    let i = 2;
+    const params = [reglasProveedorId, tenant_id];
+    let i = 3;
 
     if (q) {
       whereParts.push(
@@ -2513,8 +2523,9 @@ const recepcionarMercancia = async (req, res) => {
  */
 const getMovimientosInventario = async (req, res) => {
   try {
-    const where = [];
-    const values = [];
+    const { tenant_id } = req.tenant;
+    const where = [`p.tenant_id = $1`];
+    const values = [tenant_id];
 
     const varianteIdRaw = req.query.varianteId;
     if (varianteIdRaw !== undefined && varianteIdRaw !== null && varianteIdRaw !== "") {
@@ -2574,7 +2585,7 @@ const getMovimientosInventario = async (req, res) => {
     values.push(limit);
     const limitParam = `$${values.length}`;
 
-    const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
+    const whereSql = `WHERE ${where.join(" AND ")}`;
 
     let rows = [];
 
@@ -2692,6 +2703,7 @@ const getMovimientosInventario = async (req, res) => {
  */
 const getHistorialInventarioVariante = async (req, res) => {
   try {
+    const { tenant_id } = req.tenant;
     const varianteId = Number.parseInt(req.params.varianteId, 10);
     if (!Number.isInteger(varianteId) || varianteId <= 0) {
       return res.status(400).json({
@@ -2719,12 +2731,14 @@ const getHistorialInventarioVariante = async (req, res) => {
            NULL
          ) AS usuario
        FROM log_inventario li
+       INNER JOIN producto_variantes pv ON pv.varianteid = li.varianteid
+       INNER JOIN productos p ON p.productoid = pv.productoid
        LEFT JOIN administradores a ON a.adminid = li.usuarioid
        LEFT JOIN agentesdeventas av ON av.agenteid = li.usuarioid
-       WHERE li.varianteid = $1
+       WHERE li.varianteid = $1 AND p.tenant_id = $2
        ORDER BY li.fecha DESC
-       LIMIT $2`,
-      [varianteId, limit]
+       LIMIT $3`,
+      [varianteId, tenant_id, limit]
     );
 
     const movimientos = (rows || []).map((r) => {
@@ -2797,6 +2811,7 @@ const PEDIDO_ESTATUS_EMAIL_TEMPLATES = {
 
 const getProveedorById = async (req, res) => {
   try {
+    const { tenant_id } = req.tenant;
     const proveedorId = Number.parseInt(req.params.id, 10);
     if (!Number.isInteger(proveedorId) || proveedorId <= 0) {
       return res.status(400).json({
@@ -2808,8 +2823,8 @@ const getProveedorById = async (req, res) => {
     const result = await db.query(
       `SELECT *
        FROM Proveedores
-       WHERE ProveedorID = $1`,
-      [proveedorId]
+       WHERE ProveedorID = $1 AND tenant_id = $2`,
+      [proveedorId, tenant_id]
     );
 
     if (result.rows.length === 0) {
@@ -4467,10 +4482,14 @@ const actualizarEstadoCliente = async (req, res) => {
  */
 const getMedidas = async (req, res) => {
   try {
+    const { tenant_id } = req.tenant;
+
     const result = await db.query(
       `SELECT MedidaID, Nombre, Abreviatura
        FROM Medidas
-       ORDER BY Nombre`
+       WHERE tenant_id = $1
+       ORDER BY Nombre ASC`,
+      [tenant_id]
     );
 
     res.json({
@@ -4493,1705 +4512,19 @@ const getMedidas = async (req, res) => {
 };
 
 /**
- * Obtener lista de medidas/dimensiones ya usadas en variantes
- * GET /api/admin/medidas-existentes
- * Devuelve un arreglo de strings en data.medidas
- */
-const getMedidasExistentes = async (req, res) => {
-  try {
-    const result = await db.query(
-      `SELECT DISTINCT TRIM(Dimensiones) AS valor
-       FROM Producto_Variantes
-       WHERE Dimensiones IS NOT NULL AND TRIM(Dimensiones) <> ''
-       ORDER BY TRIM(Dimensiones)`
-    );
-
-    const medidas = result.rows
-      .map((row) => (row.valor || "").trim())
-      .filter((v) => v.length > 0);
-
-    res.json({
-      success: true,
-      data: {
-        medidas,
-      },
-    });
-  } catch (error) {
-    console.error("Error al obtener medidas existentes:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error en el servidor",
-    });
-  }
-};
-
-/**
- * Verificar token de admin
- * GET /api/admin/verify
- */
-const verifyAdmin = async (req, res) => {
-  try {
-    // El middleware ya validó el token y agregó req.user
-    const adminId = req.user.id;
-
-    let adminInfo = null;
-
-    if (req.user.adminSource === "agent") {
-      const agentResult = await db.query(
-        `SELECT 
-          AgenteID,
-          Nombre,
-          Apellido,
-          Email,
-          CodigoAgente,
-          AdminRol
-        FROM AgentesDeVentas
-        WHERE AgenteID = $1 AND Activo = TRUE`,
-        [adminId]
-      );
-
-      if (agentResult.rows.length === 0) {
-        return res.status(404).json({
-          success: false,
-          message: "Administrador no encontrado",
-        });
-      }
-
-      const agente = agentResult.rows[0];
-      const nombreCompleto =
-        [agente.nombre, agente.apellido].filter(Boolean).join(" ").trim() ||
-        agente.nombre;
-
-      adminInfo = {
-        adminId: agente.agenteid,
-        nombre: nombreCompleto,
-        email: agente.email,
-        rol: agente.adminrol || req.user.rol,
-        origen: "agent",
-        codigoAgente: agente.codigoagente || req.user.codigoAgente || null,
-      };
-    } else {
-      const result = await db.query(
-        "SELECT AdminID, Nombre, Apellido, Email, Rol FROM Administradores WHERE AdminID = $1 AND Activo = TRUE",
-        [adminId]
-      );
-
-      if (result.rows.length === 0) {
-        return res.status(404).json({
-          success: false,
-          message: "Administrador no encontrado",
-        });
-      }
-
-      const admin = result.rows[0];
-      const nombreCompleto =
-        [admin.nombre, admin.apellido].filter(Boolean).join(" ").trim() ||
-        admin.nombre;
-
-      adminInfo = {
-        adminId: admin.adminid,
-        nombre: nombreCompleto,
-        email: admin.email,
-        rol: admin.rol,
-        origen: "admin",
-      };
-    }
-
-    res.json({
-      success: true,
-      data: {
-        admin: adminInfo,
-      },
-    });
-  } catch (error) {
-    console.error("Error al verificar admin:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error en el servidor",
-    });
-  }
-};
-
-/**
- * Obtener perfil del admin
- * GET /api/admin/profile
- */
-const getAdminProfile = async (req, res) => {
-  try {
-    const adminId = req.user.id;
-
-    let adminData = null;
-
-    if (req.user.adminSource === "agent") {
-      const agentResult = await db.query(
-        `SELECT 
-          AgenteID,
-          Nombre,
-          Apellido,
-          Email,
-          CodigoAgente,
-          AdminRol,
-          FechaCreacion
-        FROM AgentesDeVentas
-        WHERE AgenteID = $1 AND Activo = TRUE`,
-        [adminId]
-      );
-
-      if (agentResult.rows.length === 0) {
-        return res.status(404).json({
-          success: false,
-          message: "Administrador no encontrado",
-        });
-      }
-
-      const agente = agentResult.rows[0];
-      const nombreCompleto =
-        [agente.nombre, agente.apellido].filter(Boolean).join(" ").trim() ||
-        agente.nombre;
-
-      adminData = {
-        adminId: agente.agenteid,
-        nombre: nombreCompleto,
-        email: agente.email,
-        rol: agente.adminrol || req.user.rol,
-        fechaCreacion: agente.fechacreacion,
-        origen: "agent",
-        codigoAgente: agente.codigoagente || req.user.codigoAgente || null,
-      };
-    } else {
-      const result = await db.query(
-        `SELECT 
-          AdminID, 
-          Nombre, 
-          Apellido,
-          Email, 
-          Rol, 
-          FechaCreacion
-        FROM Administradores 
-        WHERE AdminID = $1 AND Activo = TRUE`,
-        [adminId]
-      );
-
-      if (result.rows.length === 0) {
-        return res.status(404).json({
-          success: false,
-          message: "Administrador no encontrado",
-        });
-      }
-
-      const admin = result.rows[0];
-      const nombreCompleto =
-        [admin.nombre, admin.apellido].filter(Boolean).join(" ").trim() ||
-        admin.nombre;
-
-      adminData = {
-        adminId: admin.adminid,
-        nombre: nombreCompleto,
-        email: admin.email,
-        rol: admin.rol,
-        fechaCreacion: admin.fechacreacion,
-        origen: "admin",
-      };
-    }
-
-    res.json({
-      success: true,
-      data: adminData,
-    });
-  } catch (error) {
-    console.error("Error al obtener perfil de admin:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error en el servidor",
-    });
-  }
-};
-
-/**
- * Renovar token de admin
- * POST /api/admin/refresh-token
- */
-const refreshAdminToken = async (req, res) => {
-  try {
-    // El middleware authenticate ya verificó el token actual
-    const adminId = req.user.id;
-    const email = req.user.email;
-    const tipo = req.user.tipo;
-
-    // Verificar que el admin aún existe
-    const result = await db.query(
-      `SELECT AdminID FROM Administradores WHERE AdminID = $1`,
-      [adminId]
-    );
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "Administrador no encontrado",
-      });
-    }
-
-    // Generar un nuevo token con el mismo payload
-    const { generateToken } = require("../utils/jwtHelper");
-    const newToken = generateToken({
-      userId: adminId,
-      tipo: tipo,
-      rol: req.user.rol,
-      email: email,
-    });
-
-    res.json({
-      success: true,
-      message: "Token renovado exitosamente",
-      data: {
-        token: newToken,
-      },
-    });
-  } catch (error) {
-    console.error("Error refreshing admin token:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error al renovar token",
-    });
-  }
-};
-
-/**
- * Obtener estadísticas del dashboard
- * GET /api/admin/dashboard-stats
- */
-const getDashboardStats = async (req, res) => {
-  try {
-    // Pedidos pendientes
-    const pedidosPendientes = await db.query(
-      `SELECT COUNT(*) as total FROM Pedidos WHERE Estatus = 'Pendiente'`
-    );
-
-    // Total de comisiones pendientes
-    const comisionesPendientes = await db.query(
-      `SELECT COALESCE(SUM(MontoComision), 0) as total 
-       FROM Comisiones 
-       WHERE Estatus = 'Pendiente'`
-    );
-
-    // Variantes con stock bajo (<=5 paquetes)
-    const productosStockBajo = await db.query(
-      `SELECT COUNT(*) AS total
-       FROM Producto_Variantes
-       WHERE COALESCE(Stock, 0) <= 5`
-    );
-
-    // Total de pedidos (para estadística general)
-    const totalPedidos = await db.query(
-      `SELECT COUNT(*) as total FROM Pedidos`
-    );
-
-    // Ingresos totales
-    const ingresosTotales = await db.query(
-      `SELECT COALESCE(SUM(MontoTotal), 0) as total FROM Pedidos`
-    );
-
-    // Clientes totales (tabla Clientes no tiene columna Activo)
-    const clientesActivos = await db.query(
-      `SELECT COUNT(*) as total FROM Clientes`
-    );
-
-    // Agentes activos
-    const agentesActivos = await db.query(
-      `SELECT COUNT(*) as total FROM AgentesDeVentas WHERE Activo = TRUE`
-    );
-
-    res.json({
-      success: true,
-      data: {
-        pedidosPendientes: parseInt(pedidosPendientes.rows[0].total),
-        comisionesPendientes: parseFloat(comisionesPendientes.rows[0].total),
-        productosStockBajo: parseInt(productosStockBajo.rows[0].total),
-        totalPedidos: parseInt(totalPedidos.rows[0].total),
-        ingresosTotales: parseFloat(ingresosTotales.rows[0].total),
-        clientesActivos: parseInt(clientesActivos.rows[0].total),
-        agentesActivos: parseInt(agentesActivos.rows[0].total),
-      },
-    });
-  } catch (error) {
-    console.error("Error al obtener estadísticas:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error en el servidor",
-    });
-  }
-};
-
-/**
- * Obtener todos los pedidos (para administración)
- * GET /api/admin/pedidos
- */
-const getAllPedidos = async (req, res) => {
-  try {
-    const result = await db.query(
-      `SELECT 
-        p.PedidoID,
-        p.ClienteID,
-        c.Nombre || ' ' || c.Apellido as ClienteNombre,
-        c.Email as ClienteEmail,
-        p.FechaPedido,
-        p.MontoTotal,
-        p.CostoEnvio,
-        p.Estatus,
-        p.DireccionEnvioID,
-        CONCAT_WS(', ', d.Calle, d.Ciudad, e.Nombre) as DireccionCompleta,
-        d.EstadoID,
-        e.Nombre as EstadoNombre,
-        p.AgenteID,
-        CASE 
-          WHEN a.AgenteID IS NOT NULL THEN a.Nombre || ' ' || a.Apellido 
-          ELSE NULL 
-        END as AgenteNombre,
-        p.url_evidencia_entrega,
-        p.fecha_entrega_real,
-        (SELECT COUNT(*) FROM DetallesDelPedido dp WHERE dp.PedidoID = p.PedidoID) as TotalItems
-      FROM Pedidos p
-      INNER JOIN Clientes c ON p.ClienteID = c.ClienteID
-      LEFT JOIN Cliente_Direcciones d ON p.DireccionEnvioID = d.DireccionID
-      LEFT JOIN Estados e ON d.EstadoID = e.EstadoID
-      LEFT JOIN AgentesDeVentas a ON p.AgenteID = a.AgenteID
-      ORDER BY p.FechaPedido DESC`
-    );
-
-    res.json({
-      success: true,
-      data: {
-        pedidos: result.rows.map((row) => ({
-          pedidoId: row.pedidoid,
-          clienteId: row.clienteid,
-          clienteNombre: row.clientenombre,
-          clienteEmail: row.clienteemail,
-          fechaPedido: row.fechapedido,
-          montoTotal: parseFloat(row.montototal),
-          costoEnvio:
-            row.costoenvio !== null ? parseFloat(row.costoenvio) : null,
-          estatus: row.estatus,
-          direccionEnvioId: row.direccionenvioid,
-          direccionCompleta: row.direccioncompleta,
-          estadoId: row.estadoid !== null ? parseInt(row.estadoid, 10) : null,
-          estadoNombre: row.estadonombre || null,
-          agenteId: row.agenteid,
-          agenteNombre: row.agentenombre,
-          urlEvidenciaEntrega: row.url_evidencia_entrega || null,
-          fechaEntregaReal: row.fecha_entrega_real || null,
-          totalItems: parseInt(row.totalitems),
-        })),
-      },
-    });
-  } catch (error) {
-    console.error("Error al obtener pedidos:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error en el servidor",
-    });
-  }
-};
-
-/**
- * Actualizar estatus de un pedido
- * PUT /api/admin/pedidos/:id
- */
-const updatePedidoEstatus = async (req, res) => {
-  try {
-    const pedidoId = Number.parseInt(req.params.id, 10);
-    const estatusBody = req.body ? req.body.estatus : null;
-
-    if (!Number.isInteger(pedidoId) || pedidoId <= 0) {
-      return res.status(400).json({
-        success: false,
-        message: "ID de pedido inválido",
-      });
-    }
-
-    const estatusNuevo = typeof estatusBody === "string" ? estatusBody.trim() : "";
-
-    // Permitir cualquier estatus manual (incluye 'Parcialmente Surtido'),
-    // pero auditarlo via control_cambios.
-    if (!estatusNuevo) {
-      return res.status(400).json({
-        success: false,
-        message: "Estatus inválido",
-      });
-    }
-
-    const pedidoResult = await db.query(
-      "SELECT PedidoID, Estatus FROM Pedidos WHERE PedidoID = $1",
-      [pedidoId]
-    );
-
-    if (pedidoResult.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "Pedido no encontrado",
-      });
-    }
-
-    const estatusAnterior = pedidoResult.rows[0].estatus || "Pendiente";
-    const rolRaw = (req?.user?.rol || "").toString().trim().toLowerCase();
-    const rolNorm = rolRaw.replace(/[\s_-]+/g, "");
-    const allowDirect = rolNorm === "superadmin" || rolNorm === "admin" || rolNorm === "agente";
-
-    if (allowDirect) {
-      const oldData = {
-        pedidoid: pedidoId,
-        estatus: estatusAnterior,
-      };
-      const newData = {
-        pedidoid: pedidoId,
-        estatus: estatusNuevo,
-      };
-
-      const updateRes = await db.query(
-        "UPDATE pedidos SET estatus = $1 WHERE pedidoid = $2 RETURNING pedidoid, clienteid, agenteid, direccionenvioid, fechapedido, montototal, estatus, costoenvio",
-        [estatusNuevo, pedidoId]
-      );
-
-      if (!updateRes.rows.length) {
-        return res.status(404).json({
-          success: false,
-          message: "Pedido no encontrado",
-        });
-      }
-
-      await auditService.registrarCambioPasivo(
-        req,
-        "pedidos",
-        pedidoId,
-        "UPDATE",
-        oldData,
-        newData
-      );
-
-      const row = updateRes.rows[0];
-      
-      // CRITICAL FIX: Create in-app notification for the client
-      const clienteId = row.clienteid;
-      if (clienteId) {
-        try {
-          await crearNotificacionServicio(
-            clienteId,
-            'pedido',
-            `Actualización de Pedido #${pedidoId}`,
-            `Tu pedido ha cambiado de estado a: ${estatusNuevo}`,
-            {
-              url: `/perfil/pedidos`,
-              prioridad: 'normal',
-              metadata: { pedidoId, estatusAnterior, estatusNuevo }
-            }
-          );
-        } catch (notifError) {
-          console.error('❌ Error al crear notificación in-app:', notifError);
-        }
-      }
-
-      // CRITICAL FIX: Send email notification to the client
-      if (clienteId) {
-        try {
-          const clienteResult = await db.query(
-            'SELECT nombre, apellido, email FROM clientes WHERE clienteid = $1',
-            [clienteId]
-          );
-          
-          if (clienteResult.rows.length > 0) {
-            const cliente = clienteResult.rows[0];
-            const emailCliente = cliente.email;
-            const nombreCliente = [cliente.nombre, cliente.apellido].filter(Boolean).join(' ').trim() || 'Cliente';
-            
-            if (emailCliente) {
-              const { enviarCorreoCambioEstatus } = require('../services/emailService');
-              const emailEnviado = await enviarCorreoCambioEstatus(
-                emailCliente,
-                nombreCliente,
-                pedidoId,
-                estatusNuevo
-              );
-              
-              if (emailEnviado) {
-                // Email sent
-              } else {
-                console.error(`❌ Email failed para ${emailCliente} - Pedido #${pedidoId}`);
-              }
-            }
-          }
-        } catch (emailError) {
-          console.error('❌ Error al enviar email de cambio de estatus:', emailError);
-        }
-      }
-
-      return res.status(200).json({
-        success: true,
-        message: "Estatus actualizado correctamente.",
-        data: {
-          pedido: {
-            pedidoId: row.pedidoid,
-            clienteId: row.clienteid,
-            agenteId: row.agenteid,
-            direccionEnvioId: row.direccionenvioid,
-            fechaPedido: row.fechapedido,
-            montoTotal: row.montototal !== null ? parseFloat(row.montototal) : null,
-            estatus: row.estatus,
-            costoEnvio: row.costoenvio !== null ? parseFloat(row.costoenvio) : null,
-          },
-        },
-      });
-    }
-
-    await solicitarCambio(
-      req,
-      "pedidos",
-      pedidoId,
-      "UPDATE",
-      { estatus: estatusNuevo },
-      { estatus: estatusAnterior }
-    );
-
-    return res.status(200).json({
-      success: true,
-      message: "Solicitud de cambio de estatus enviada a bitácora.",
-    });
-  } catch (error) {
-    if (error && error.code === "PENDING_CHANGE_EXISTS") {
-      return res.status(409).json({
-        success: false,
-        message:
-          "Ya existe una solicitud pendiente para este registro. Revisa la bitácora.",
-      });
-    }
-    console.error("Error updating order status:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Error al actualizar el estatus del pedido",
-      error: error.message,
-    });
-  }
-};
-
-const devolverStockPedido = async (client, pedidoId, usuarioId) => {
-  const motivoVenta = `Venta Pedido #${pedidoId}`;
-
-  const movimientosResult = await client.query(
-    `SELECT VarianteID, SUM(CantidadCambiado) AS total_cambiado
-     FROM Log_Inventario
-     WHERE Motivo = $1
-     GROUP BY VarianteID`,
-    [motivoVenta]
-  );
-
-  if (!movimientosResult.rows.length) {
-    return;
-  }
-
-  for (const row of movimientosResult.rows) {
-    const varianteId = row.varianteid;
-    const totalCambiadoRaw = row.total_cambiado;
-
-    if (!varianteId || totalCambiadoRaw === null) {
-      continue;
-    }
-
-    const totalCambiado = parseInt(totalCambiadoRaw, 10);
-    if (!Number.isFinite(totalCambiado) || totalCambiado === 0) {
-      continue;
-    }
-
-    const piezasADevolver = -totalCambiado; // totalCambiado es negativo en la venta
-    if (piezasADevolver <= 0) {
-      continue;
-    }
-
-    const stockResult = await client.query(
-      `SELECT COALESCE(Stock, 0) AS stock_actual
-       FROM Producto_Variantes
-       WHERE VarianteID = $1
-       FOR UPDATE`,
-      [varianteId]
-    );
-
-    if (!stockResult.rows.length) {
-      continue;
-    }
-
-    const stockActual = parseInt(stockResult.rows[0].stock_actual, 10) || 0;
-    const nuevoStock = Math.max(stockActual + piezasADevolver, 0);
-
-    await client.query(
-      `UPDATE Producto_Variantes
-       SET Stock = $1
-       WHERE VarianteID = $2`,
-      [nuevoStock, varianteId]
-    );
-
-    await client.query(
-      `INSERT INTO Log_Inventario (VarianteID, CantidadCambiado, NuevoStock, Motivo, UsuarioID)
-       VALUES ($1, $2, $3, $4, $5)`,
-      [
-        varianteId,
-        piezasADevolver,
-        nuevoStock,
-        `Devolución Pedido Cancelado #${pedidoId}`,
-        usuarioId || null,
-      ]
-    );
-  }
-};
-
-const reducirStockPedido = async (client, pedidoId, usuarioId) => {
-  const motivoVenta = `Venta Pedido #${pedidoId}`;
-
-  const movimientosResult = await client.query(
-    `SELECT VarianteID, SUM(CantidadCambiado) AS total_cambiado
-     FROM Log_Inventario
-     WHERE Motivo = $1
-     GROUP BY VarianteID`,
-    [motivoVenta]
-  );
-
-  if (!movimientosResult.rows.length) {
-    return;
-  }
-
-  const variantesAReactivar = [];
-
-  // 1) Validar stock disponible para todas las variantes afectadas
-  for (const row of movimientosResult.rows) {
-    const varianteId = row.varianteid;
-    const totalCambiadoRaw = row.total_cambiado;
-
-    if (!varianteId || totalCambiadoRaw === null) {
-      continue;
-    }
-
-    const totalCambiado = parseInt(totalCambiadoRaw, 10);
-    if (!Number.isFinite(totalCambiado) || totalCambiado === 0) {
-      continue;
-    }
-
-    // totalCambiado es negativo en la venta; necesitamos volver a restar esas piezas
-    const piezasADescontar = -totalCambiado;
-    if (piezasADescontar <= 0) {
-      continue;
-    }
-
-    const stockResult = await client.query(
-      `SELECT COALESCE(Stock, 0) AS stock_actual
-       FROM Producto_Variantes
-       WHERE VarianteID = $1
-       FOR UPDATE`,
-      [varianteId]
-    );
-
-    if (!stockResult.rows.length) {
-      continue;
-    }
-
-    const stockActual = parseInt(stockResult.rows[0].stock_actual, 10) || 0;
-
-    if (stockActual < piezasADescontar) {
-      const error = new Error(
-        `Stock insuficiente para reactivar el pedido #${pedidoId} en la variante ${varianteId}. Actual: ${stockActual}, requerido: ${piezasADescontar}`
-      );
-      error.code = "NO_STOCK_REACTIVACION";
-      throw error;
-    }
-
-    variantesAReactivar.push({ varianteId, stockActual, piezasADescontar });
-  }
-
-  // 2) Aplicar los movimientos de salida de stock
-  for (const variante of variantesAReactivar) {
-    const { varianteId, stockActual, piezasADescontar } = variante;
-    const nuevoStock = Math.max(stockActual - piezasADescontar, 0);
-
-    await client.query(
-      `UPDATE Producto_Variantes
-       SET Stock = $1
-       WHERE VarianteID = $2`,
-      [nuevoStock, varianteId]
-    );
-
-    await client.query(
-      `INSERT INTO Log_Inventario (VarianteID, CantidadCambiado, NuevoStock, Motivo, UsuarioID)
-       VALUES ($1, $2, $3, $4, $5)`,
-      [
-        varianteId,
-        -piezasADescontar,
-        nuevoStock,
-        `Reactivación Pedido #${pedidoId}`,
-        usuarioId || null,
-      ]
-    );
-  }
-};
-
-const findOrCreateTamanosFromPacks = async (client, packs) => {
-  const cantidades = Array.isArray(packs)
-    ? packs
-        .map((p) => Number.parseInt(p, 10))
-        .filter((n) => Number.isInteger(n) && n > 0)
-    : [];
-
-  if (!cantidades.length) {
-    return [];
-  }
-
-  // 1) Buscar tamaños existentes por Cantidad
-  const existentesResult = await client.query(
-    `SELECT TamanoID, Cantidad
-     FROM Cat_TamanoPaquetes
-     WHERE Cantidad = ANY($1::int[])`,
-    [cantidades]
-  );
-
-  const existentesPorCantidad = new Map(); // Cantidad -> TamanoID
-
-  existentesResult.rows.forEach((row) => {
-    const cantidad = Number.parseInt(row.cantidad, 10);
-    const tamanoId = Number.parseInt(row.tamanoid, 10);
-    if (Number.isInteger(cantidad) && Number.isInteger(tamanoId)) {
-      existentesPorCantidad.set(cantidad, tamanoId);
-    }
-  });
-
-  const idsResultantes = [];
-
-  // 2) Para cada cantidad, reutilizar o crear tamaño
-  for (const cantidad of cantidades) {
-    if (existentesPorCantidad.has(cantidad)) {
-      idsResultantes.push(existentesPorCantidad.get(cantidad));
-      continue;
-    }
-
-    // La tabla Cat_TamanoPaquetes solo tiene columnas TamanoID (PK) y Cantidad,
-    // así que insertamos únicamente Cantidad y dejamos que TamanoID se autogenere.
-    const insertResult = await client.query(
-      `INSERT INTO Cat_TamanoPaquetes (Cantidad)
-       VALUES ($1)
-       RETURNING TamanoID, Cantidad`,
-      [cantidad]
-    );
-
-    const newRow = insertResult.rows[0];
-    const nuevoTamanoId = Number.parseInt(newRow.tamanoid, 10);
-    const cantidadCreada = Number.parseInt(newRow.cantidad, 10);
-
-    if (Number.isInteger(nuevoTamanoId) && Number.isInteger(cantidadCreada)) {
-      existentesPorCantidad.set(cantidadCreada, nuevoTamanoId);
-      idsResultantes.push(nuevoTamanoId);
-    }
-  }
-
-  return idsResultantes;
-};
-
-const sanitizeSkuSegment = (input, maxLen, fallback) => {
-  const raw = input === undefined || input === null ? "" : String(input);
-  const normalized = raw
-    .trim()
-    .toUpperCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^A-Z0-9]/g, "");
-
-  const base = normalized.length ? normalized : String(fallback || "");
-  return base.slice(0, maxLen);
-};
-
-const generarSkuMaestro = async (
-  pool,
-  { categoriaid, nombreProducto }
-) => {
-  if (!pool || typeof pool.query !== "function") {
-    throw new Error("pool inválido");
-  }
-
-  // Si se proporciona el nombre del producto, usar el nuevo sistema
-  if (nombreProducto && typeof nombreProducto === "string" && nombreProducto.trim().length > 0) {
-    return await generarSkuUnico(nombreProducto.trim());
-  }
-
-  // Fallback al sistema antiguo basado en categoría (por compatibilidad)
-  const categoriaIdParsed =
-    categoriaid !== undefined && categoriaid !== null
-      ? Number.parseInt(categoriaid, 10)
-      : null;
-
-  if (!Number.isInteger(categoriaIdParsed) || categoriaIdParsed <= 0) {
-    throw new Error("CATEGORIA_ID_REQUERIDO_PARA_SKU");
-  }
-
-  // Llamar a la función de PostgreSQL para obtener el siguiente SKU
-  const result = await pool.query(
-    "SELECT obtener_siguiente_sku($1) as nuevo_sku",
-    [categoriaIdParsed]
-  );
-
-  const nuevoSku = result.rows[0]?.nuevo_sku;
-
-  if (!nuevoSku || typeof nuevoSku !== "string") {
-    throw new Error("ERROR_GENERANDO_SKU");
-  }
-
-  return nuevoSku;
-};
-
-const procesarMedidaParaSkuVariante = (dimensiones) => {
-  const raw = dimensiones === undefined || dimensiones === null ? "" : String(dimensiones);
-  const normalized = raw
-    .trim()
-    .toUpperCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/×/g, "X")
-    .replace(/\s+/g, "")
-    .replace(/[^A-Z0-9]/g, "");
-
-  if (!normalized.length) {
-    return "";
-  }
-
-  const hasNumbers = /\d/.test(normalized);
-  return hasNumbers ? normalized : normalized.slice(0, 3);
-};
-
-const procesarColorParaSkuVariante = (colorNombre) => {
-  const raw = colorNombre === undefined || colorNombre === null ? "" : String(colorNombre);
-  const normalized = raw
-    .trim()
-    .toUpperCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/\s+/g, "")
-    .replace(/[^A-Z0-9]/g, "");
-
-  if (!normalized.length) {
-    return "";
-  }
-
-  return normalized.slice(0, 6);
-};
-
-/**
- * Crear un nuevo producto
- * POST /api/admin/productos
- */
-const crearProducto = async (req, res) => {
-  const {
-    nombre,
-    sku_maestro,
-    descripcion,
-    categoriaId,
-    reglaid: reglaIdRaw,
-    reglaId: reglaIdAlt,
-    TipoProductoID: tipoProductoIdRaw,
-    tipoProducto,
-    TipoProducto: tipoProductoRaw,
-    tamanos,
-    tamanoIds,
-    proveedorId: proveedorIdRaw,
-    activo,
-    stockTotalInicial: stockTotalInicialRaw,
-    venderIndividual: venderIndividualRaw,
-    precioUnitarioBase: precioUnitarioBaseRaw,
-    precioUnitario: precioUnitarioLegacyRaw,
-    variantes: variantesRaw,
-    packs,
-  } = req.body;
-
-  const allowDirect = true;
-
-  if (!nombre) {
-    return res.status(400).json({
-      success: false,
-      message: "El nombre del producto es obligatorio",
-    });
-  }
-
-  const categoriaIdParsed = (() => {
-    if (
-      categoriaId === undefined ||
-      categoriaId === null ||
-      String(categoriaId).trim() === ""
-    ) {
-      return null;
-    }
-    const parsed = Number.parseInt(categoriaId, 10);
-    return Number.isNaN(parsed) ? null : parsed;
-  })();
-
-  if (categoriaIdParsed === null) {
-    return res.status(400).json({
-      success: false,
-      message: "Debes seleccionar una categoría para el producto maestro.",
-    });
-  }
-
-  const client = await db.pool.connect();
-  let transactionStarted = false;
-
-  try {
-    await client.query("BEGIN");
-    transactionStarted = true;
-
-    const proveedorIdRawEffective =
-      proveedorIdRaw ??
-      req.body?.proveedorid_default ??
-      req.body?.proveedorId_Default ??
-      req.body?.ProveedorID_Default ??
-      req.body?.proveedorid ??
-      null;
-
-    let proveedorId = null;
-    if (proveedorIdRawEffective !== undefined && proveedorIdRawEffective !== null) {
-      const parsed = Number.parseInt(proveedorIdRawEffective, 10);
-      if (!Number.isNaN(parsed)) {
-        proveedorId = parsed;
-      }
-    }
-
-    if (proveedorId !== null) {
-      const proveedorResult = await client.query(
-        "SELECT ProveedorID FROM Proveedores WHERE ProveedorID = $1",
-        [proveedorId]
-      );
-
-      if (proveedorResult.rows.length === 0) {
-        await client.query("ROLLBACK");
-        return res.status(400).json({
-          success: false,
-          message: "El proveedor predeterminado no existe",
-        });
-      }
-    }
-
-    // Gestión de visibilidad: respetar lo enviado, por defecto TRUE.
-    const activoFinal = activo !== undefined ? Boolean(activo) : true;
-
-    const reglaId = await (async () => {
-      const rawReglaId = reglaIdRaw ?? reglaIdAlt;
-      if (rawReglaId !== undefined && rawReglaId !== null && String(rawReglaId).trim() !== "") {
-        const parsed = Number.parseInt(rawReglaId, 10);
-        if (!Number.isInteger(parsed) || parsed <= 0) {
-          throw new Error("REGLA_ID_INVALIDO");
-        }
-
-        const existe = await client.query(
-          `SELECT reglaid FROM proveedor_reglas_empaque WHERE reglaid = $1`,
-          [parsed]
-        );
-
-        if (!existe.rows.length) {
-          throw new Error("REGLA_EMPAQUE_NO_EXISTE");
-        }
-
-        return parsed;
-      }
-
-      const tipoProductoNombre = (() => {
-        const raw =
-          tipoProducto !== undefined && tipoProducto !== null
-            ? tipoProducto
-            : tipoProductoRaw;
-        if (raw === undefined || raw === null) {
-          return null;
-        }
-        const txt = String(raw).trim();
-        return txt.length ? txt : null;
-      })();
-
-      const tipoProductoId = await (async () => {
-        if (tipoProductoIdRaw !== undefined && tipoProductoIdRaw !== null && String(tipoProductoIdRaw).trim() !== "") {
-          const parsed = Number.parseInt(tipoProductoIdRaw, 10);
-          if (!Number.isInteger(parsed) || parsed <= 0) {
-            throw new Error("TIPO_PRODUCTO_INVALIDO");
-          }
-
-          const existe = await client.query(
-            `SELECT tipoproductoid
-             FROM tipoproducto
-             WHERE tipoproductoid = $1
-               AND activo = TRUE`,
-            [parsed]
-          );
-
-          if (!existe.rows.length) {
-            throw new Error("TIPO_PRODUCTO_NO_EXISTE");
-          }
-
-          return parsed;
-        }
-
-        if (tipoProductoNombre) {
-          return (
-            await client.query(
-              `INSERT INTO tipoproducto (nombre, descripcion, activo)
-               VALUES ($1, NULL, TRUE)
-               ON CONFLICT (nombre)
-               DO UPDATE SET activo = TRUE
-               RETURNING tipoproductoid`,
-              [tipoProductoNombre]
-            )
-          ).rows[0]?.tipoproductoid ?? null;
-        }
-
-        return null;
-      })();
-
-      if (tipoProductoId && proveedorId) {
-        const reglaRes = await client.query(
-          `SELECT reglaid FROM proveedor_reglas_empaque
-           WHERE proveedorid = $1 AND tipoproductoid = $2
-           LIMIT 1`,
-          [proveedorId, tipoProductoId]
-        );
-        if (reglaRes.rows.length > 0) {
-          return reglaRes.rows[0].reglaid;
-        }
-      }
-
-      return null;
-    })();
-
-    const tipoProductoIdForSku = reglaId ? (
-      await client.query(
-        `SELECT tipoproductoid FROM proveedor_reglas_empaque WHERE reglaid = $1`,
-        [reglaId]
-      )
-    ).rows[0]?.tipoproductoid ?? null : null;
-
-    const skuMaestroFinal = await generarSkuMaestro(client, {
-      categoriaid: categoriaIdParsed,
-      nombreProducto: nombre,
-    });
-
-    const skuExisteResult = await client.query(
-      `SELECT productoid
-       FROM productos
-       WHERE sku_maestro = $1
-       LIMIT 1`,
-      [skuMaestroFinal]
-    );
-
-    if (skuExisteResult.rows.length > 0) {
-      await client.query("ROLLBACK");
-      transactionStarted = false;
-      return res.status(400).json({
-        success: false,
-        message: "El SKU Maestro ya existe. Debe ser único.",
-      });
-    }
-
-    const parseBoolean = (value, defaultValue = false) => {
-      if (typeof value === "boolean") return value;
-      if (typeof value === "string") {
-        const normalized = value.trim().toLowerCase();
-        if (normalized === "true" || normalized === "1") return true;
-        if (normalized === "false" || normalized === "0") return false;
-      }
-      if (typeof value === "number") {
-        if (value === 1) return true;
-        if (value === 0) return false;
-      }
-      return defaultValue;
-    };
-
-    const stockTotalInicial = (() => {
-      if (stockTotalInicialRaw === undefined || stockTotalInicialRaw === null) {
-        return 0;
-      }
-      const parsed = Number.parseInt(stockTotalInicialRaw, 10);
-      if (Number.isNaN(parsed) || parsed < 0) {
-        throw new Error("STOCK_INICIAL_INVALIDO");
-      }
-      return parsed;
-    })();
-
-    const venderIndividual = parseBoolean(venderIndividualRaw, false);
-
-    const precioUnitarioBaseNormalized = (() => {
-      const raw =
-        precioUnitarioBaseRaw !== undefined && precioUnitarioBaseRaw !== null
-          ? precioUnitarioBaseRaw
-          : precioUnitarioLegacyRaw;
-
-      // Si no se venderá por pieza, no necesitamos precio unitario base
-      if (!venderIndividual) {
-        return null;
-      }
-
-      // Si se venderá por pieza pero aún no se define el precio, permitir null.
-      // El precio podrá configurarse posteriormente en la pantalla de variantes.
-      if (raw === undefined || raw === null || String(raw).trim() === "") {
-        return null;
-      }
-
-      const parsed = Number.parseFloat(raw);
-      if (Number.isNaN(parsed) || parsed < 0) {
-        throw new Error("PRECIO_UNITARIO_BASE_INVALIDO");
-      }
-      return Number(parsed.toFixed(4));
-    })();
-
-    const variantesInput = Array.isArray(variantesRaw) ? variantesRaw : [];
-
-    const result = await client.query(
-      `INSERT INTO Productos (NombreProducto, sku_maestro, Descripcion, CategoriaID, ProveedorID_Default, Activo, reglaid)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
-       RETURNING ProductoID, NombreProducto, sku_maestro, Descripcion, CategoriaID, ProveedorID_Default AS ProveedorID, Activo, reglaid`,
-      [
-        nombre,
-        skuMaestroFinal,
-        descripcion || null,
-        categoriaIdParsed,
-        proveedorId,
-        activoFinal,
-        reglaId,
-      ]
-    );
-
-    const producto = result.rows[0];
-
-    // El SKU maestro ya viene en formato híbrido (ej: CAJ-001)
-    // Lo usamos directamente como base para las variantes
-    const serieSkuBase = skuMaestroFinal || `PROD-${producto.productoid}`;
-
-    const buildSku = (suffix) => {
-      const normalizedSuffix = (suffix || "VAR")
-        .toUpperCase()
-        .replace(/[^A-Z0-9]+/g, "-")
-        .replace(/^-+|-+$/g, "");
-      return `${serieSkuBase}-${normalizedSuffix || "VAR"}`;
-    };
-
-    let tamanosAsociados = [];
-
-    // A partir de packs, encontrar/crear tamaños en catálogo y obtener sus IDs
-    const tamanoIdsFromPacks = await findOrCreateTamanosFromPacks(
-      client,
-      packs
-    );
-
-    const tamanosProductoRawBase = Array.isArray(tamanos)
-      ? tamanos
-      : Array.isArray(tamanoIds)
-      ? tamanoIds
-      : [];
-
-    const tamanosProductoRaw = [
-      ...tamanosProductoRawBase,
-      ...tamanoIdsFromPacks,
-    ];
-
-    const sanitizedTamanosProducto = [
-      ...new Set(
-        tamanosProductoRaw
-          .map((id) => Number.parseInt(id, 10))
-          .filter((id) => Number.isInteger(id) && id > 0)
-      ),
-    ];
-
-    const tamanoIdsFromVariantes = [
-      ...new Set(
-        variantesInput
-          .map((v) =>
-            Number.parseInt(v?.tamanoId ?? v?.tamanoid ?? v?.TamanoID, 10)
-          )
-          .filter((id) => Number.isInteger(id) && id > 0)
-      ),
-    ];
-
-    const tamanoIdsNecesarios = [
-      ...new Set([...sanitizedTamanosProducto, ...tamanoIdsFromVariantes]),
-    ];
-
-    const tamanoCatalogoMap = new Map();
-    const valueCandidates = [
-      "valor",
-      "cantidad",
-      "piezas",
-      "piezasporpaquete",
-      "numeropiezas",
-      "tamano",
-      "cantidadpiezas",
-    ];
-
-    const extractValorNumerico = (row) => {
-      for (const field of valueCandidates) {
-        if (
-          Object.prototype.hasOwnProperty.call(row, field) &&
-          row[field] !== null &&
-          row[field] !== undefined
-        ) {
-          const parsed = Number.parseInt(row[field], 10);
-          if (!Number.isNaN(parsed) && parsed > 0) {
-            return parsed;
-          }
-        }
-        const capitalized =
-          field.charAt(0).toUpperCase() + field.slice(1);
-        if (
-          Object.prototype.hasOwnProperty.call(row, capitalized) &&
-          row[capitalized] !== null &&
-          row[capitalized] !== undefined
-        ) {
-          const parsed = Number.parseInt(row[capitalized], 10);
-          if (!Number.isNaN(parsed) && parsed > 0) {
-            return parsed;
-          }
-        }
-      }
-      return null;
-    };
-
-    if (tamanoIdsNecesarios.length) {
-      const tamanosCatalogoResult = await client.query(
-        "SELECT * FROM Cat_TamanoPaquetes WHERE TamanoID = ANY($1::int[])",
-        [tamanoIdsNecesarios]
-      );
-
-      tamanosCatalogoResult.rows.forEach((row) => {
-        const tamanoId = Number.parseInt(row.tamanoid, 10);
-        if (!Number.isInteger(tamanoId)) return;
-        tamanoCatalogoMap.set(tamanoId, {
-          raw: row,
-          valor: extractValorNumerico(row),
-        });
-      });
-
-      for (const requiredId of tamanoIdsNecesarios) {
-        if (!tamanoCatalogoMap.has(requiredId)) {
-          await client.query("ROLLBACK");
-          return res.status(400).json({
-            success: false,
-            message: `El tamaño con ID ${requiredId} no existe en el catálogo`,
-          });
-        }
-      }
-    }
-
-    if (sanitizedTamanosProducto.length) {
-      for (const tamanoId of sanitizedTamanosProducto) {
-        await client.query(
-          `INSERT INTO Producto_TamanosDisponibles (ProductoID, TamanoID)
-           VALUES ($1, $2)`,
-          [producto.productoid, tamanoId]
-        );
-      }
-      tamanosAsociados = sanitizedTamanosProducto;
-    }
-
-    // Procesar imágenes maestro (galería unificada) y por color
-    let imagenesGeneralesGuardadas = [];
-    let imagenesColorGuardadas = [];
-
-    if (req.files) {
-      // Galería unificada: todas las imágenes del campo imagenMaestro van a producto_imagenes
-      if (req.files.imagenMaestro && Array.isArray(req.files.imagenMaestro)) {
-        for (let i = 0; i < req.files.imagenMaestro.length; i++) {
-          const file = req.files.imagenMaestro[i];
-          const orden = i + 1; // Primera imagen = portada (orden 1)
-          
-          const result = await client.query(
-            `INSERT INTO producto_imagenes (productoid, url_imagen, textoalternativo, orden)
-             VALUES ($1, $2, $3, $4)
-             RETURNING imagenid, url_imagen, orden`,
-            [producto.productoid, file.path, nombre, orden]
-          );
-          
-          imagenesGeneralesGuardadas.push(result.rows[0]);
-        }
-      }
-
-      // Imágenes por color (separadas, van a producto_imagenes_color)
-      if (req.files.imagenesColor && Array.isArray(req.files.imagenesColor)) {
-        const imagenesColorMap = procesarImagenesColor(req.files, variantesInput);
-        imagenesColorGuardadas = await guardarImagenesColor(
-          client,
-          producto.productoid,
-          imagenesColorMap
-        );
-      }
-    }
-
-    await client.query("COMMIT");
-    transactionStarted = false;
-
-    await auditService.registrarCambioPasivo(
-      req,
-      "productos",
-      producto.productoid,
-      "INSERT",
-      null,
-      producto
-    );
-
-    return res.status(201).json({
-      success: true,
-      message: "Producto creado correctamente.",
-      data: {
-        producto,
-        tamanosDisponibles: tamanosAsociados,
-        varianteMaestra: null,
-        variantes: [],
-        imagenesGenerales: imagenesGeneralesGuardadas,
-        imagenesColor: imagenesColorGuardadas,
-      },
-    });
-
-    const userId = req.user?.id || req.user?.userId || null;
-
-    const variantesCreadas = [];
-
-    // Usar el SKU base del producto para la variante maestra (sin sufijo UNIT)
-    const masterSku = serieSkuBase;
-    const masterDimensiones = null;
-
-    const masterVarianteResult = await client.query(
-      `INSERT INTO Producto_Variantes (
-        ProductoID,
-        SKU,
-        Dimensiones,
-        CostoUnitario,
-        PrecioUnitario,
-        PrecioOfertaUnitario,
-        Stock,
-        TipoProductoID,
-        MedidaID,
-        Activo,
-        PiezasPorPaquete
-      )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-      RETURNING VarianteID, SKU, Stock, Activo, PiezasPorPaquete`,
-      [
-        producto.productoid,
-        masterSku,
-        masterDimensiones,
-        0, // Costo unitario se define más adelante en las variantes; aquí usamos 0 para respetar NOT NULL
-        precioUnitarioBaseNormalized,
-        null,
-        stockTotalInicial,
-        tipoProductoId,
-        null,
-        venderIndividual,
-        1,
-      ]
-    );
-
-    const varianteMaestra = masterVarianteResult.rows[0];
-    variantesCreadas.push({
-      ...varianteMaestra,
-      esVarianteMaestra: true,
-    });
-
-    if (stockTotalInicial > 0) {
-      await client.query(
-        `INSERT INTO Log_Inventario (VarianteID, CantidadCambiado, NuevoStock, Motivo, UsuarioID)
-         VALUES ($1, $2, $3, $4, $5)`,
-        [
-          varianteMaestra.varianteid,
-          stockTotalInicial,
-          stockTotalInicial,
-          "Stock inicial variante maestra (1 pieza)",
-          userId,
-        ]
-      );
-    }
-
-    const inferPiezasPorPaquete = (variante) => {
-      if (!variante || typeof variante !== "object") return null;
-
-      const candidateKeys = [
-        "piezasPorPaquete",
-        "valor",
-        "cantidad",
-        "piezas",
-        "numeropiezas",
-        "tamanoValor",
-        "pieces",
-        "qty",
-      ];
-
-      for (const key of candidateKeys) {
-        if (variante[key] !== undefined && variante[key] !== null) {
-          const parsed = Number.parseInt(variante[key], 10);
-          if (!Number.isNaN(parsed) && parsed > 0) return parsed;
-        }
-      }
-
-      const tamanoId = Number.parseInt(
-        variante.tamanoId ?? variante.tamanoid ?? variante.TamanoID,
-        10
-      );
-      if (Number.isInteger(tamanoId) && tamanoCatalogoMap.has(tamanoId)) {
-        return tamanoCatalogoMap.get(tamanoId).valor || null;
-      }
-
-      return null;
-    };
-
-    const inferPrecioUnitario = (variante, piezasPorPaquete) => {
-      const candidateKeys = [
-        "precioUnitario",
-        "precio",
-        "price",
-        "precioPorUnidad",
-        "unitPrice",
-      ];
-
-      for (const key of candidateKeys) {
-        if (variante[key] !== undefined && variante[key] !== null) {
-          const parsed = Number.parseFloat(variante[key]);
-          if (!Number.isNaN(parsed) && parsed > 0) {
-            return Number(parsed.toFixed(4));
-          }
-        }
-      }
-
-      const pricePerPackKeys = [
-        "precioPorPaquete",
-        "precioPack",
-        "pricePerPack",
-      ];
-
-      for (const key of pricePerPackKeys) {
-        if (
-          variante[key] !== undefined &&
-          variante[key] !== null &&
-          piezasPorPaquete &&
-          piezasPorPaquete > 0
-        ) {
-          const parsed = Number.parseFloat(variante[key]);
-          if (!Number.isNaN(parsed) && parsed > 0) {
-            return Number((parsed / piezasPorPaquete).toFixed(4));
-          }
-        }
-      }
-
-      return null;
-    };
-
-    for (const [index, variante] of variantesInput.entries()) {
-      if (!variante || typeof variante !== "object") {
-        continue;
-      }
-
-      const piezasPorPaquete = inferPiezasPorPaquete(variante);
-      if (!Number.isInteger(piezasPorPaquete) || piezasPorPaquete <= 1) {
-        continue;
-      }
-
-      const precioUnitarioVariante = inferPrecioUnitario(
-        variante,
-        piezasPorPaquete
-      );
-      if (precioUnitarioVariante === null) {
-        continue;
-      }
-
-      const precioOfertaUnitario =
-        variante.precioOfertaUnitario !== undefined &&
-        variante.precioOfertaUnitario !== null
-          ? Number.parseFloat(variante.precioOfertaUnitario)
-          : null;
-
-      const skuVariante =
-        typeof variante.sku === "string" && variante.sku.trim().length
-          ? variante.sku.trim().toUpperCase()
-          : buildSku(`PACK${piezasPorPaquete}`);
-
-      const dimensionesVariante =
-        variante.dimensiones ||
-        variante.presentacion ||
-        `Pack de ${piezasPorPaquete}`;
-
-      const activoVariante =
-        variante.activo !== undefined && variante.activo !== null
-          ? parseBoolean(variante.activo, true)
-          : true;
-
-      const tipoProductoId =
-        variante.tipoProductoId !== undefined
-          ? variante.tipoProductoId
-          : variante.tipoProductoID;
-
-      const medidaId =
-        variante.medidaId !== undefined ? variante.medidaId : variante.medidaID;
-
-      const insertResult = await client.query(
-        `INSERT INTO Producto_Variantes (
-          ProductoID,
-          SKU,
-          Dimensiones,
-          CostoUnitario,
-          PrecioUnitario,
-          PrecioOfertaUnitario,
-          Stock,
-          TipoProductoID,
-          MedidaID,
-          Activo,
-          PiezasPorPaquete
-        )
-        VALUES ($1, $2, $3, $4, $5, $6, 0, $7, $8, $9, $10)
-        RETURNING VarianteID, SKU, Activo, PiezasPorPaquete`,
-        [
-          producto.productoid,
-          skuVariante,
-          dimensionesVariante || null,
-          variante.costoUnitario || null,
-          precioUnitarioVariante,
-          precioOfertaUnitario && precioOfertaUnitario > 0
-            ? precioOfertaUnitario
-            : null,
-          tipoProductoId || null,
-          medidaId || null,
-          activoVariante,
-          piezasPorPaquete,
-        ]
-      );
-
-      variantesCreadas.push({
-        ...insertResult.rows[0],
-        esVarianteMaestra: false,
-        indice: index,
-      });
-    }
-
-    await client.query("COMMIT");
-
-    // Registrar solicitud de cambio para PUBLICAR/ACTIVAR el producto maestro (estrategia híbrida)
-    try {
-      await solicitarCambio(
-        req,
-        "productos",
-        producto.productoid,
-        "UPDATE",
-        {
-          Activo: true,
-        },
-        producto
-      );
-    } catch (crError) {
-      console.error(
-        "Error al registrar solicitud de cambio para creación de producto:",
-        crError
-      );
-      // No rompemos el flujo principal: el producto queda inactivo si falla el registro
-    }
-
-    res.status(201).json({
-      success: true,
-      message:
-        "Producto creado preliminarmente. Pendiente de aprobación para activación.",
-      data: {
-        producto,
-        tamanosDisponibles: tamanosAsociados,
-        varianteMaestra: varianteMaestra,
-        variantes: variantesCreadas,
-      },
-    });
-
-    // Registrar log de creación de producto (no bloquear el flujo principal)
-    try {
-      registrarLog(req, "CREAR", "Producto", producto.productoid, {
-        nombre: producto.nombreproducto,
-        categoriaId: producto.categoriaid,
-        proveedorId: producto.proveedorid,
-        activo: producto.activo,
-      }).catch((logError) => {
-        console.error("Error guardando log al crear producto:", logError);
-      });
-    } catch (logError) {
-      console.error(
-        "Error interno al preparar log de CREAR Producto:",
-        logError
-      );
-    }
-  } catch (error) {
-    if (transactionStarted) {
-      await client.query("ROLLBACK");
-    }
-
-    if (error && error.message === "TIPO_PRODUCTO_INVALIDO") {
-      return res.status(400).json({
-        success: false,
-        message: "Tipo de producto inválido",
-      });
-    }
-
-    if (error && error.message === "TIPO_PRODUCTO_NO_EXISTE") {
-      return res.status(400).json({
-        success: false,
-        message: "El tipo de producto seleccionado no existe",
-      });
-    }
-
-    if (error && error.code === "23505") {
-      const detail = (error.detail || "").toString().toLowerCase();
-      const constraint = (error.constraint || "").toString().toLowerCase();
-      const haySku =
-        detail.includes("sku") ||
-        detail.includes("sku_maestro") ||
-        constraint.includes("sku") ||
-        constraint.includes("sku_maestro");
-
-      return res.status(409).json({
-        success: false,
-        message: haySku
-          ? "El SKU ingresado ya existe. Por favor utiliza uno diferente."
-          : "Ya existe un registro con este valor duplicado.",
-      });
-    }
-
-    if (
-      error.code === "23502" &&
-      error.table === "productos" &&
-      error.column &&
-      error.column.toLowerCase() === "categoriaid"
-    ) {
-      return res.status(400).json({
-        success: false,
-        message: "Debes seleccionar una categoría para el producto maestro.",
-      });
-    }
-    if (error.message === "STOCK_INICIAL_INVALIDO") {
-      return res.status(400).json({
-        success: false,
-        message:
-          "El stock total inicial debe ser un número entero mayor o igual a 0.",
-      });
-    }
-    if (error.message === "PRECIO_UNITARIO_BASE_INVALIDO") {
-      return res.status(400).json({
-        success: false,
-        message:
-          "Debes proporcionar un precio unitario válido para vender por pieza.",
-      });
-    }
-    console.error("Error al crear producto maestro:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error en el servidor",
-      error: error.message,
-    });
-  } finally {
-    client.release();
-  }
-};
-
-/**
  * Obtener catálogo de tamaños de paquetes
  * GET /api/admin/tamanos-paquetes
  */
-const getTamanosPaquetes = async (_req, res) => {
+const getTamanosPaquetes = async (req, res) => {
   try {
+    const { tenant_id } = req.tenant;
+
     const result = await db.query(
       `SELECT *
        FROM Cat_TamanoPaquetes
-       ORDER BY TamanoID ASC`
+       WHERE tenant_id = $1
+       ORDER BY TipoProductoID, Valor ASC`,
+      [tenant_id]
     );
 
     const valueCandidates = [
@@ -7627,6 +5960,7 @@ const getAllProductos = async (req, res) => {
  */
 const getCategorias = async (req, res) => {
   try {
+    const { tenant_id } = req.tenant;
     const result = await db.query(
       `SELECT 
         c.CategoriaID,
@@ -7639,7 +5973,9 @@ const getCategorias = async (req, res) => {
         p.Nombre AS ParentNombre
       FROM Categorias c
       LEFT JOIN Categorias p ON c.ParentCategoriaID = p.CategoriaID
-      ORDER BY c.Nombre`
+      WHERE c.tenant_id = $1
+      ORDER BY c.Nombre`,
+      [tenant_id]
     );
 
     res.json({
@@ -7672,6 +6008,7 @@ const getCategorias = async (req, res) => {
  */
 const crearCategoria = async (req, res) => {
   try {
+    const { tenant_id } = req.tenant;
     const { nombre, descripcion, parentCategoriaId, activo } = req.body;
 
     if (!nombre || !nombre.trim()) {
@@ -7689,8 +6026,8 @@ const crearCategoria = async (req, res) => {
 
     if (parentCategoriaId !== undefined && parentCategoriaId !== null) {
       const parentResult = await db.query(
-        "SELECT CategoriaID FROM Categorias WHERE CategoriaID = $1",
-        [parentCategoriaId]
+        "SELECT CategoriaID FROM Categorias WHERE CategoriaID = $1 AND tenant_id = $2",
+        [parentCategoriaId, tenant_id]
       );
 
       if (parentResult.rows.length === 0) {
@@ -7706,8 +6043,8 @@ const crearCategoria = async (req, res) => {
     const nombreNormalizado = nombre.trim();
 
     const existente = await db.query(
-      "SELECT CategoriaID FROM Categorias WHERE LOWER(Nombre) = LOWER($1)",
-      [nombreNormalizado]
+      "SELECT CategoriaID FROM Categorias WHERE LOWER(Nombre) = LOWER($1) AND tenant_id = $2",
+      [nombreNormalizado, tenant_id]
     );
 
     if (existente.rows.length > 0) {
@@ -9139,6 +7476,8 @@ const getPedidoDetalle = async (req, res) => {
  */
 const getAllProveedores = async (req, res) => {
   try {
+    const { tenant_id } = req.tenant;
+
     const query = `
       SELECT 
         ProveedorID,
@@ -9170,10 +7509,11 @@ const getAllProveedores = async (req, res) => {
         MinimoCompra,
         AceptaDevoluciones
       FROM Proveedores
+      WHERE tenant_id = $1
       ORDER BY NombreEmpresa ASC
     `;
 
-    const result = await db.query(query);
+    const result = await db.query(query, [tenant_id]);
     const proveedores = result.rows;
 
     res.json({
@@ -9312,6 +7652,8 @@ const crearProveedor = async (req, res) => {
         aceptaDevoluciones !== undefined ? Boolean(aceptaDevoluciones) : null,
     };
 
+    const { tenant_id } = req.tenant;
+
     await client.query("BEGIN");
 
     const insertRes = await client.query(
@@ -9342,9 +7684,10 @@ const crearProveedor = async (req, res) => {
         limitecredito,
         descuentofinanciero,
         minimocompra,
-        aceptadevoluciones
+        aceptadevoluciones,
+        tenant_id
       ) VALUES (
-        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27
+        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28
       ) RETURNING *`,
       [
         datosNuevosProveedor.NombreEmpresa,
@@ -9374,6 +7717,7 @@ const crearProveedor = async (req, res) => {
         datosNuevosProveedor.DescuentoFinanciero,
         datosNuevosProveedor.MinimoCompra,
         datosNuevosProveedor.AceptaDevoluciones,
+        tenant_id,
       ]
     );
 
@@ -9553,10 +7897,12 @@ const actualizarProveedor = async (req, res) => {
       }
     }
 
+    const { tenant_id } = req.tenant;
+
     // Verificar que el proveedor existe y obtener snapshot actual
     const checkQuery =
-      "SELECT * FROM Proveedores WHERE ProveedorID = $1";
-    const checkResult = await client.query(checkQuery, [proveedorId]);
+      "SELECT * FROM Proveedores WHERE ProveedorID = $1 AND tenant_id = $2";
+    const checkResult = await client.query(checkQuery, [proveedorId, tenant_id]);
 
     if (checkResult.rows.length === 0) {
       return res.status(404).json({
@@ -13844,10 +12190,10 @@ const obtenerRemisionPedido = async (req, res) => {
         a.apellido as agente_apellido,
         a.codigoagente
       FROM pedidos p
-      INNER JOIN clientes c ON p.clienteid = c.clienteid
-      LEFT JOIN cliente_direcciones d ON p.direccionenvioid = d.direccionid
-      LEFT JOIN estados e ON d.estadoid = e.estadoid
-      LEFT JOIN agentesdeventas a ON p.agenteid = a.agenteid
+      INNER JOIN clientes c ON c.clienteid = p.clienteid
+      LEFT JOIN cliente_direcciones d ON d.direccionid = p.direccionenvioid
+      LEFT JOIN estados e ON e.estadoid = d.estadoid
+      LEFT JOIN agentesdeventas a ON a.agenteid = p.agenteid
       WHERE p.pedidoid = $1
     `;
 
