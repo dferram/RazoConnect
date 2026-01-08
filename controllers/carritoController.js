@@ -199,6 +199,7 @@ const validateAgregarAlCarritoInput = ({ VarianteID, Cantidad, TamanoID }) => {
  */
 const obtenerCarrito = async (req, res) => {
   try {
+    const { tenant_id } = req.tenant;
     const clienteId = req.user.userId;
 
     // Obtener o crear el carrito del cliente
@@ -258,10 +259,13 @@ const obtenerCarrito = async (req, res) => {
         LIMIT 1
       ) imagen ON TRUE
       WHERE ic.carritoid = $1
+        AND p.tenant_id = $2
+        AND (c.tenant_id = $2 OR c.tenant_id IS NULL)
+        AND (t.tenant_id = $2 OR t.tenant_id IS NULL)
       ORDER BY ic.itemid DESC
     `;
 
-    const itemsResult = await db.query(itemsQuery, [carritoId]);
+    const itemsResult = await db.query(itemsQuery, [carritoId, tenant_id]);
 
     const productosEnCarrito = [
       ...new Set(itemsResult.rows.map((row) => row.productoid).filter(Boolean)),
@@ -270,11 +274,13 @@ const obtenerCarrito = async (req, res) => {
     let masterVariantsMap = new Map();
     if (productosEnCarrito.length) {
       const masterVariantsResult = await db.query(
-        `SELECT ProductoID, VarianteID, COALESCE(Stock, 0) AS Stock
-         FROM Producto_Variantes
-         WHERE ProductoID = ANY($1::int[])
-           AND PiezasPorPaquete = 1`,
-        [productosEnCarrito]
+        `SELECT pv.ProductoID, pv.VarianteID, COALESCE(pv.Stock, 0) AS Stock
+         FROM Producto_Variantes pv
+         INNER JOIN Productos p ON p.ProductoID = pv.ProductoID
+         WHERE pv.ProductoID = ANY($1::int[])
+           AND pv.PiezasPorPaquete = 1
+           AND p.tenant_id = $2`,
+        [productosEnCarrito, tenant_id]
       );
 
       masterVariantsMap = new Map(
@@ -477,6 +483,7 @@ const obtenerCarrito = async (req, res) => {
  */
 const agregarAlCarrito = async (req, res) => {
   try {
+    const { tenant_id } = req.tenant;
     const clienteId = req.user.userId;
     const { VarianteID, Cantidad, TamanoID } = req.body;
     const validationResult = validateAgregarAlCarritoInput({
@@ -512,8 +519,10 @@ const agregarAlCarrito = async (req, res) => {
        LEFT JOIN proveedor_reglas_empaque pre ON pre.reglaid = p.reglaid
        INNER JOIN producto_tamanosdisponibles ptd ON ptd.productoid = p.productoid AND ptd.tamanoid = $2
        INNER JOIN cat_tamanopaquetes t ON t.tamanoid = ptd.tamanoid
-       WHERE pv.varianteid = $1`,
-      [varianteId, tamanoId]
+       WHERE pv.varianteid = $1
+         AND p.tenant_id = $3
+         AND t.tenant_id = $3`,
+      [varianteId, tamanoId, tenant_id]
     );
 
     if (varianteResult.rows.length === 0) {
@@ -564,12 +573,14 @@ const agregarAlCarrito = async (req, res) => {
     }
 
     const masterResult = await db.query(
-      `SELECT VarianteID, COALESCE(Stock, 0) AS Stock
-       FROM Producto_Variantes
-       WHERE ProductoID = $1
-         AND PiezasPorPaquete = 1
+      `SELECT pv.VarianteID, COALESCE(pv.Stock, 0) AS Stock
+       FROM Producto_Variantes pv
+       INNER JOIN Productos p ON p.ProductoID = pv.ProductoID
+       WHERE pv.ProductoID = $1
+         AND pv.PiezasPorPaquete = 1
+         AND p.tenant_id = $2
        LIMIT 1`,
-      [variante.productoid]
+      [variante.productoid, tenant_id]
     );
     const stockFisico =
       masterResult.rows.length > 0

@@ -6,6 +6,7 @@ const db = require("../db");
  */
 const validarCupon = async (req, res) => {
   try {
+    const { tenant_id } = req.tenant;
     const { codigo, subtotal } = req.body;
 
     if (!codigo || typeof codigo !== "string") {
@@ -40,8 +41,8 @@ const validarCupon = async (req, res) => {
         monto_minimo_compra,
         agenteid
       FROM cupones
-      WHERE UPPER(codigo) = $1`,
-      [codigoUpper]
+      WHERE UPPER(codigo) = $1 AND tenant_id = $2`,
+      [codigoUpper, tenant_id]
     );
 
     if (cuponResult.rows.length === 0) {
@@ -140,6 +141,7 @@ const validarCupon = async (req, res) => {
  */
 const listarCupones = async (req, res) => {
   try {
+    const { tenant_id } = req.tenant;
     const result = await db.query(
       `SELECT 
         cuponid,
@@ -154,7 +156,9 @@ const listarCupones = async (req, res) => {
         activo,
         monto_minimo_compra
       FROM cupones
-      ORDER BY cuponid DESC`
+      WHERE tenant_id = $1
+      ORDER BY cuponid DESC`,
+      [tenant_id]
     );
 
     return res.status(200).json({
@@ -176,6 +180,7 @@ const listarCupones = async (req, res) => {
  */
 const obtenerCupon = async (req, res) => {
   try {
+    const { tenant_id } = req.tenant;
     const cuponId = parseInt(req.params.id, 10);
 
     if (!Number.isInteger(cuponId) || cuponId <= 0) {
@@ -199,8 +204,8 @@ const obtenerCupon = async (req, res) => {
         activo,
         monto_minimo_compra
       FROM cupones
-      WHERE cuponid = $1`,
-      [cuponId]
+      WHERE cuponid = $1 AND tenant_id = $2`,
+      [cuponId, tenant_id]
     );
 
     if (result.rows.length === 0) {
@@ -230,6 +235,7 @@ const obtenerCupon = async (req, res) => {
  */
 const crearCupon = async (req, res) => {
   try {
+    const { tenant_id } = req.tenant;
     const {
       codigo,
       descripcion,
@@ -256,8 +262,8 @@ const crearCupon = async (req, res) => {
     const codigoUpper = codigo.trim().toUpperCase();
 
     const existeResult = await db.query(
-      "SELECT cuponid FROM cupones WHERE UPPER(codigo) = $1",
-      [codigoUpper]
+      "SELECT cuponid FROM cupones WHERE UPPER(codigo) = $1 AND tenant_id = $2",
+      [codigoUpper, tenant_id]
     );
 
     if (existeResult.rows.length > 0) {
@@ -317,9 +323,10 @@ const crearCupon = async (req, res) => {
         uso_maximo,
         monto_minimo_compra,
         activo,
-        agenteid
+        agenteid,
+        tenant_id
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, true, $9)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, true, $9, $10)
       RETURNING 
         cuponid,
         codigo,
@@ -343,6 +350,7 @@ const crearCupon = async (req, res) => {
         usoMaximo ? parseInt(usoMaximo, 10) : null,
         montoMinimoCompra ? parseFloat(montoMinimoCompra) : 0,
         agenteIdFinal,
+        tenant_id,
       ]
     );
 
@@ -366,6 +374,7 @@ const crearCupon = async (req, res) => {
  */
 const actualizarCupon = async (req, res) => {
   try {
+    const { tenant_id } = req.tenant;
     const cuponId = parseInt(req.params.id, 10);
 
     if (!Number.isInteger(cuponId) || cuponId <= 0) {
@@ -388,8 +397,8 @@ const actualizarCupon = async (req, res) => {
     } = req.body;
 
     const existeResult = await db.query(
-      "SELECT cuponid FROM cupones WHERE cuponid = $1",
-      [cuponId]
+      "SELECT cuponid FROM cupones WHERE cuponid = $1 AND tenant_id = $2",
+      [cuponId, tenant_id]
     );
 
     if (existeResult.rows.length === 0) {
@@ -402,8 +411,8 @@ const actualizarCupon = async (req, res) => {
     if (codigo) {
       const codigoUpper = codigo.trim().toUpperCase();
       const duplicadoResult = await db.query(
-        "SELECT cuponid FROM cupones WHERE UPPER(codigo) = $1 AND cuponid != $2",
-        [codigoUpper, cuponId]
+        "SELECT cuponid FROM cupones WHERE UPPER(codigo) = $1 AND cuponid != $2 AND tenant_id = $3",
+        [codigoUpper, cuponId, tenant_id]
       );
 
       if (duplicadoResult.rows.length > 0) {
@@ -483,11 +492,12 @@ const actualizarCupon = async (req, res) => {
     }
 
     values.push(cuponId);
+    values.push(tenant_id);
 
     const result = await db.query(
       `UPDATE cupones
       SET ${updates.join(", ")}
-      WHERE cuponid = $${paramCount}
+      WHERE cuponid = $${paramCount} AND tenant_id = $${paramCount + 1}
       RETURNING 
         cuponid,
         codigo,
@@ -523,6 +533,7 @@ const actualizarCupon = async (req, res) => {
  */
 const desactivarCupon = async (req, res) => {
   try {
+    const { tenant_id } = req.tenant;
     const cuponId = parseInt(req.params.id, 10);
 
     if (!Number.isInteger(cuponId) || cuponId <= 0) {
@@ -535,9 +546,9 @@ const desactivarCupon = async (req, res) => {
     const result = await db.query(
       `UPDATE cupones
       SET activo = false
-      WHERE cuponid = $1
+      WHERE cuponid = $1 AND tenant_id = $2
       RETURNING cuponid, codigo, activo`,
-      [cuponId]
+      [cuponId, tenant_id]
     );
 
     if (result.rows.length === 0) {
@@ -567,6 +578,7 @@ const desactivarCupon = async (req, res) => {
  */
 const listarMisCupones = async (req, res) => {
   try {
+    const { tenant_id } = req.tenant;
     const agenteId = req.user.userId || req.user.id;
 
     if (!agenteId) {
@@ -591,9 +603,9 @@ const listarMisCupones = async (req, res) => {
         monto_minimo_compra,
         agenteid
       FROM cupones
-      WHERE agenteid = $1
+      WHERE agenteid = $1 AND tenant_id = $2
       ORDER BY cuponid DESC`,
-      [agenteId]
+      [agenteId, tenant_id]
     );
 
     return res.status(200).json({
