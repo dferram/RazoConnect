@@ -1,11 +1,6 @@
 const bcrypt = require('bcrypt');
-const { Pool } = require('pg');
 const readline = require('readline');
-
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
-});
+const db = require('./db');
 
 const rl = readline.createInterface({
   input: process.stdin,
@@ -43,7 +38,7 @@ async function createDeveloper() {
     const passwordHash = await bcrypt.hash(password, saltRounds);
 
     console.log('💾 Guardando en base de datos...');
-    const result = await pool.query(
+    const result = await db.query(
       'INSERT INTO developers (username, password_hash) VALUES ($1, $2) RETURNING dev_id, username, created_at',
       [username.trim(), passwordHash]
     );
@@ -67,7 +62,7 @@ async function createDeveloper() {
     process.exit(1);
   } finally {
     rl.close();
-    await pool.end();
+    process.exit(0);
   }
 }
 

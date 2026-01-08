@@ -1,18 +1,18 @@
-const { Pool } = require('pg');
-
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
-});
+const db = require('../db');
 
 const EXCLUDED_PATHS = [
   '/developer',
   '/servicio-pausado',
+  '/api/',
   '/css/',
   '/js/',
   '/uploads/',
   '/components/',
-  '/favicon.ico'
+  '/icon/',
+  '/favicon.ico',
+  '/login.html',
+  '/registro.html',
+  '/admin-login.html'
 ];
 
 async function tenantGuard(req, res, next) {
@@ -25,7 +25,7 @@ async function tenantGuard(req, res, next) {
   try {
     const hostname = req.hostname;
 
-    const result = await pool.query(
+    const result = await db.query(
       'SELECT tenant_id, nombre_cliente, is_active FROM tenants WHERE dominio = $1',
       [hostname]
     );
