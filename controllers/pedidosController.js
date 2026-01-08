@@ -161,6 +161,7 @@ const crearPedido = async (req, res) => {
   };
 
   try {
+    const { tenant_id } = req.tenant;
     const clienteId = req.user.userId;
     const rawDireccionEnvioId =
       req.body?.DireccionEnvioID ??
@@ -256,8 +257,10 @@ const crearPedido = async (req, res) => {
       LEFT JOIN proveedor_reglas_empaque pre ON pre.reglaid = p.reglaid
       LEFT JOIN cat_tamanopaquetes t ON t.tamanoid = ic.tamanoid
       WHERE ic.carritoid = $1
+        AND p.tenant_id = $2
+        AND (t.tenant_id = $2 OR t.tenant_id IS NULL)
       FOR UPDATE OF pv`,
-      [carritoId]
+      [carritoId, tenant_id]
     );
 
     if (itemsResult.rows.length === 0) {
@@ -298,12 +301,14 @@ const crearPedido = async (req, res) => {
 
     if (productosEnPedido.length) {
       const masterVariantsResult = await client.query(
-        `SELECT ProductoID, VarianteID, COALESCE(Stock, 0) AS Stock
-         FROM Producto_Variantes
-         WHERE ProductoID = ANY($1::int[])
-           AND PiezasPorPaquete = 1
+        `SELECT pv.ProductoID, pv.VarianteID, COALESCE(pv.Stock, 0) AS Stock
+         FROM Producto_Variantes pv
+         INNER JOIN Productos p ON p.ProductoID = pv.ProductoID
+         WHERE pv.ProductoID = ANY($1::int[])
+           AND pv.PiezasPorPaquete = 1
+           AND p.tenant_id = $2
          FOR UPDATE`,
-        [productosEnPedido]
+        [productosEnPedido, tenant_id]
       );
 
       masterVariantsMap = new Map(
@@ -1170,6 +1175,7 @@ const crearPedido = async (req, res) => {
  */
 const obtenerPedidos = async (req, res) => {
   try {
+    const { tenant_id } = req.tenant;
     const clienteId = req.user.userId;
 
     const query = `
@@ -1190,11 +1196,11 @@ const obtenerPedidos = async (req, res) => {
       LEFT JOIN Cliente_Direcciones d ON p.DireccionEnvioID = d.DireccionID
       LEFT JOIN Estados e ON d.EstadoID = e.EstadoID
       LEFT JOIN AgentesDeVentas a ON p.AgenteID = a.AgenteID
-      WHERE p.ClienteID = $1
+      WHERE p.ClienteID = $1 AND p.tenant_id = $2
       ORDER BY p.FechaPedido DESC
     `;
 
-    const result = await db.query(query, [clienteId]);
+    const result = await db.query(query, [clienteId, tenant_id]);
 
     // Para cada pedido, obtener sus detalles
     const pedidos = await Promise.all(
@@ -1229,10 +1235,12 @@ const obtenerPedidos = async (req, res) => {
           LIMIT 1
         ) imagen ON TRUE
         WHERE dp.pedidoid = $1
+          AND (pr.tenant_id = $2 OR pr.tenant_id IS NULL)
+          AND (ct.tenant_id = $2 OR ct.tenant_id IS NULL)
         ORDER BY dp.detalleid ASC
       `;
 
-        const detallesResult = await db.query(detallesQuery, [pedido.pedidoid]);
+        const detallesResult = await db.query(detallesQuery, [pedido.pedidoid, tenant_id]);
 
         return {
           pedidoId: pedido.pedidoid,
@@ -1330,6 +1338,7 @@ const obtenerPedidos = async (req, res) => {
  */
 const obtenerPedidoPorId = async (req, res) => {
   try {
+    const { tenant_id } = req.tenant;
     const clienteId = req.user.userId;
     const pedidoId = parseInt(req.params.id, 10);
 
@@ -1358,15 +1367,15 @@ const obtenerPedidoPorId = async (req, res) => {
       LEFT JOIN Cliente_Direcciones d ON p.DireccionEnvioID = d.DireccionID
       LEFT JOIN Estados e ON d.EstadoID = e.EstadoID
       LEFT JOIN AgentesDeVentas a ON p.AgenteID = a.AgenteID
-      WHERE p.PedidoID = $1 AND p.ClienteID = $2
+      WHERE p.PedidoID = $1 AND p.ClienteID = $2 AND p.tenant_id = $3
     `;
 
-    const pedidoResult = await db.query(pedidoQuery, [pedidoId, clienteId]);
+    const pedidoResult = await db.query(pedidoQuery, [pedidoId, clienteId, tenant_id]);
 
     if (pedidoResult.rows.length === 0) {
       const existsResult = await db.query(
-        "SELECT ClienteID FROM Pedidos WHERE PedidoID = $1",
-        [pedidoId]
+        "SELECT ClienteID FROM Pedidos WHERE PedidoID = $1 AND tenant_id = $2",
+        [pedidoId, tenant_id]
       );
 
       if (existsResult.rows.length > 0) {
@@ -1415,10 +1424,12 @@ const obtenerPedidoPorId = async (req, res) => {
         LIMIT 1
       ) imagen ON TRUE
       WHERE dp.pedidoid = $1
+        AND prod.tenant_id = $2
+        AND (t.tenant_id = $2 OR t.tenant_id IS NULL)
       ORDER BY dp.detalleid ASC
     `;
 
-    const detallesResult = await db.query(detallesQuery, [pedidoId]);
+    const detallesResult = await db.query(detallesQuery, [pedidoId, tenant_id]);
 
     const direccion = {
       receptor: pedido.receptor,

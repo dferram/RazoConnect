@@ -48,24 +48,25 @@ router.post(
   cloudinaryController.generarFirmaUpload
 );
 
-router.get(
-  "/verify",
-  authenticate,
-  authorizeAdmin,
-  adminController.verifyAdmin
-);
-router.get(
-  "/profile",
-  authenticate,
-  authorizeAdmin,
-  adminController.getAdminProfile
-);
-router.post(
-  "/refresh-token",
-  authenticate,
-  authorizeAdmin,
-  adminController.refreshAdminToken
-);
+// TODO: Implement these admin auth endpoints
+// router.get(
+//   "/verify",
+//   authenticate,
+//   authorizeAdmin,
+//   adminController.verifyAdmin
+// );
+// router.get(
+//   "/profile",
+//   authenticate,
+//   authorizeAdmin,
+//   adminController.getAdminProfile
+// );
+// router.post(
+//   "/refresh-token",
+//   authenticate,
+//   authorizeAdmin,
+//   adminController.refreshAdminToken
+// );
 
 /**
  * Auditoría de Inventario (Nivel 3 - Doble Ciego)

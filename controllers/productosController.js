@@ -6,6 +6,7 @@ const db = require("../db");
  */
 const obtenerProveedoresPublicos = async (req, res) => {
   try {
+    const { tenant_id } = req.tenant;
     const query = `
       SELECT DISTINCT
         prov.ProveedorID,
@@ -13,10 +14,12 @@ const obtenerProveedoresPublicos = async (req, res) => {
       FROM Proveedores prov
       INNER JOIN Productos p ON p.ProveedorID_Default = prov.ProveedorID
       WHERE COALESCE(p.Activo, TRUE) = TRUE
+        AND prov.tenant_id = $1
+        AND p.tenant_id = $1
       ORDER BY prov.NombreEmpresa ASC
     `;
 
-    const result = await db.query(query);
+    const result = await db.query(query, [tenant_id]);
 
     let proveedores = result.rows.map((row) => ({
       proveedorId: row.proveedorid,
@@ -27,7 +30,9 @@ const obtenerProveedoresPublicos = async (req, res) => {
       const fallbackResult = await db.query(
         `SELECT proveedorid, nombreempresa
          FROM proveedores
-         ORDER BY nombreempresa ASC`
+         WHERE tenant_id = $1
+         ORDER BY nombreempresa ASC`,
+        [tenant_id]
       );
 
       proveedores = fallbackResult.rows.map((row) => ({
@@ -56,13 +61,16 @@ const obtenerProveedoresPublicos = async (req, res) => {
 
 const obtenerTiposProducto = async (req, res) => {
   try {
+    const { tenant_id } = req.tenant;
     const result = await db.query(
       `SELECT DISTINCT tp.nombre
        FROM tipoproducto tp
        WHERE tp.activo = TRUE
          AND tp.nombre IS NOT NULL
          AND TRIM(tp.nombre) <> ''
-       ORDER BY tp.nombre ASC`
+         AND tp.tenant_id = $1
+       ORDER BY tp.nombre ASC`,
+      [tenant_id]
     );
 
     const tipos = result.rows
@@ -93,11 +101,14 @@ const obtenerTiposProducto = async (req, res) => {
  */
 const obtenerTiposProductoPublicos = async (req, res) => {
   try {
+    const { tenant_id } = req.tenant;
     const result = await db.query(
       `SELECT tp.tipoproductoid, tp.nombre, tp.descripcion
        FROM tipoproducto tp
        WHERE tp.activo = TRUE
-       ORDER BY tp.nombre ASC`
+         AND tp.tenant_id = $1
+       ORDER BY tp.nombre ASC`,
+      [tenant_id]
     );
 
     const tipos = result.rows.map((row) => ({
@@ -130,6 +141,7 @@ const obtenerTiposProductoPublicos = async (req, res) => {
  */
 const obtenerProductos = async (req, res) => {
   try {
+    const { tenant_id } = req.tenant;
     const {
       search,
       precioMin,
@@ -146,6 +158,11 @@ const obtenerProductos = async (req, res) => {
 
     const filtros = [];
     const valores = [];
+
+    // Add tenant_id filter
+    valores.push(tenant_id);
+    const tenantParamIndex = valores.length;
+    filtros.push(`p.tenant_id = $${tenantParamIndex}`);
 
     if (search) {
       valores.push(`%${search}%`);
@@ -295,6 +312,7 @@ const obtenerProductos = async (req, res) => {
     // FILTRO CRÍTICO: Solo productos y categorías activas (visibilidad para clientes)
     filtros.push(`p.activo = TRUE`);
     filtros.push(`(c.activo = TRUE OR c.activo IS NULL)`);
+    filtros.push(`(c.tenant_id = $${tenantParamIndex} OR c.tenant_id IS NULL)`);
 
     const buildWhereClause = (filtrosFinal) =>
       filtrosFinal.length ? `WHERE ${filtrosFinal.join(" AND ")}` : "";
@@ -713,11 +731,16 @@ const obtenerProductos = async (req, res) => {
  */
 const obtenerDimensiones = async (req, res) => {
   try {
+    const { tenant_id } = req.tenant;
     const result = await db.query(
-      `SELECT DISTINCT TRIM(dimensiones) AS dimension
-       FROM producto_variantes
-       WHERE dimensiones IS NOT NULL AND dimensiones <> ''
-       ORDER BY dimension ASC`
+      `SELECT DISTINCT pv.dimensiones
+       FROM producto_variantes pv
+       INNER JOIN productos p ON p.productoid = pv.productoid
+       WHERE pv.dimensiones IS NOT NULL
+         AND TRIM(pv.dimensiones) <> ''
+         AND p.tenant_id = $1
+       ORDER BY pv.dimensiones ASC`,
+      [tenant_id]
     );
 
     const dimensiones = result.rows.map((row) => row.dimension);
@@ -746,7 +769,8 @@ const obtenerDimensiones = async (req, res) => {
  */
 const obtenerProductoPorId = async (req, res) => {
   try {
-    const { id } = req.params;
+    const { tenant_id } = req.tenant;
+    const id = parseInt(req.params.id, 10);
 
     if (!id || isNaN(id)) {
       return res.status(400).json({
@@ -756,19 +780,19 @@ const obtenerProductoPorId = async (req, res) => {
     }
 
     const productoResult = await db.query(
-      `SELECT
-         p.productoid,
-         p.nombreproducto,
-         p.sku_maestro,
-         p.descripcion,
-         p.activo,
-         p.categoriaid,
-         c.nombre AS categorianombre,
-         c.descripcion AS categoriadescripcion
-       FROM productos p
-       LEFT JOIN categorias c ON p.categoriaid = c.categoriaid
-       WHERE p.productoid = $1`,
-      [id]
+      `SELECT 
+        p.productoid,
+        p.nombreproducto,
+        p.sku_maestro,
+        p.descripcion,
+        p.activo,
+        p.categoriaid,
+        c.nombre AS categorianombre,
+        c.descripcion AS categoriadescripcion
+      FROM productos p
+      LEFT JOIN categorias c ON p.categoriaid = c.categoriaid
+      WHERE p.productoid = $1 AND p.tenant_id = $2`,
+      [id, tenant_id]
     );
 
     if (productoResult.rows.length === 0) {
@@ -822,9 +846,10 @@ const obtenerProductoPorId = async (req, res) => {
            '[]'::json
          ) AS imagenes
        FROM producto_variantes pv
-       WHERE pv.productoid = $1
+       INNER JOIN productos p ON p.productoid = pv.productoid
+       WHERE pv.productoid = $1 AND p.tenant_id = $2
        ORDER BY pv.varianteid ASC`,
-      [id]
+      [id, tenant_id]
     );
 
     const variantesRaw = variantesResult.rows;
@@ -897,10 +922,11 @@ const obtenerProductoPorId = async (req, res) => {
       SELECT ptd.tamanoid, ct.*
       FROM producto_tamanosdisponibles ptd
       INNER JOIN cat_tamanopaquetes ct ON ct.tamanoid = ptd.tamanoid
-      WHERE ptd.productoid = $1
+      INNER JOIN productos p ON p.productoid = ptd.productoid
+      WHERE ptd.productoid = $1 AND p.tenant_id = $2 AND ct.tenant_id = $2
     `;
 
-    const tamanosResult = await db.query(tamanosQuery, [id]);
+    const tamanosResult = await db.query(tamanosQuery, [id, tenant_id]);
 
     const valueCandidates = [
       "valor",
@@ -972,11 +998,12 @@ const obtenerProductoPorId = async (req, res) => {
 
     // Obtener imágenes por color
     const imagenesColorResult = await db.query(
-      `SELECT imagencolorid, color_nombre, url_imagen_cloudinary, fechacreacion
-       FROM producto_imagenes_color
-       WHERE productoid = $1
-       ORDER BY color_nombre ASC, fechacreacion ASC`,
-      [id]
+      `SELECT pic.imagencolorid, pic.color_nombre, pic.url_imagen_cloudinary, pic.fechacreacion
+       FROM producto_imagenes_color pic
+       INNER JOIN productos p ON p.productoid = pic.productoid
+       WHERE pic.productoid = $1 AND p.tenant_id = $2
+       ORDER BY pic.color_nombre ASC, pic.fechacreacion ASC`,
+      [id, tenant_id]
     );
 
     const imagenesColor = imagenesColorResult.rows.map((row) => ({
@@ -1031,6 +1058,7 @@ const obtenerProductoPorId = async (req, res) => {
  */
 const obtenerCategorias = async (req, res) => {
   try {
+    const { tenant_id } = req.tenant;
     const query = `
       SELECT 
         categoriaid,
@@ -1039,10 +1067,11 @@ const obtenerCategorias = async (req, res) => {
         activo
       FROM categorias
       WHERE activo = TRUE
+        AND tenant_id = $1
       ORDER BY nombre ASC
     `;
 
-    const result = await db.query(query);
+    const result = await db.query(query, [tenant_id]);
 
     // Formatear la respuesta
     const categorias = result.rows.map((row) => ({
@@ -1076,6 +1105,7 @@ const obtenerCategorias = async (req, res) => {
  */
 const obtenerAgentesPublicos = async (req, res) => {
   try {
+    const { tenant_id } = req.tenant;
     const query = `
       SELECT 
         agenteid,
@@ -1084,10 +1114,11 @@ const obtenerAgentesPublicos = async (req, res) => {
         apellido
       FROM agentesdeventas
       WHERE activo = true
+        AND tenant_id = $1
       ORDER BY codigoagente ASC
     `;
 
-    const result = await db.query(query);
+    const result = await db.query(query, [tenant_id]);
 
     // Formatear la respuesta
     const agentes = result.rows.map((row) => ({

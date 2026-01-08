@@ -1,0 +1,128 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Catálogo Visual - Admin Fashion Box</title>
+    <link rel="icon" type="image/png" href="/icon/Logo_Fashion.png" />
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- PROTECCIÓN DE AUTENTICACIÓN ADMIN -->
+    <script src="js/auth-guard-admin.js"></script>
+
+    <!-- SISTEMA DE RENOVACIÓN DE TOKENS -->
+    <script src="js/token-refresh.js"></script>
+
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+    />
+    <link rel="stylesheet" href="css/styles-fashion.css" />
+    <link rel="stylesheet" href="css/fashion-theme-fashion.css" />
+    <link rel="stylesheet" href="css/admin-fashion.css" />
+    <link rel="stylesheet" href="css/admin-catalogo-visual-fashion.css" />
+    <link rel="stylesheet" href="css/mobile-responsive-fashion.css" />
+  </head>
+  <body data-sidebar="admin" data-page-title="Catálogo Visual">
+    <div class="admin-layout">
+      <!-- Sidebar -->
+      <div id="sidebar-container"></div>
+
+      <!-- Main Content -->
+      <main class="admin-main">
+        <div id="admin-header-container"></div>
+
+        <div class="admin-content">
+          <!-- Breadcrumb Navigation -->
+          <nav class="catalog-breadcrumb" id="breadcrumb">
+            <a href="#" class="breadcrumb-item active" data-level="categories">
+              Categorías
+            </a>
+          </nav>
+
+          <!-- Search Bar -->
+          <div class="catalog-search-container">
+            <div class="catalog-search-wrapper">
+              <i class="bi bi-search catalog-search-icon"></i>
+              <input
+                type="search"
+                id="searchInput"
+                class="catalog-search-input"
+                placeholder="Buscar..."
+                autocomplete="off"
+              />
+            </div>
+          </div>
+
+          <!-- Categories View (Level 1) -->
+          <div id="categoriesView" class="catalog-view">
+            <div id="categoriesLoading" class="catalog-loading">
+              <div class="spinner"></div>
+              <p>Cargando categorías...</p>
+            </div>
+
+            <div id="categoriesGrid" class="catalog-grid" style="display: none"></div>
+
+            <div id="categoriesEmpty" class="catalog-empty" style="display: none">
+              <div class="empty-state-icon">🏷️</div>
+              <h3 class="empty-state-title">No se encontraron categorías</h3>
+              <p class="empty-state-text">
+                Intenta ajustar tu búsqueda o crea nuevas categorías.
+              </p>
+            </div>
+          </div>
+
+          <!-- Products View (Level 2) -->
+          <div id="productsView" class="catalog-view" style="display: none">
+            <div id="productsLoading" class="catalog-loading">
+              <div class="spinner"></div>
+              <p>Cargando productos...</p>
+            </div>
+
+            <div id="productsGrid" class="catalog-grid" style="display: none"></div>
+
+            <div id="productsEmpty" class="catalog-empty" style="display: none">
+              <div class="empty-state-icon">📦</div>
+              <h3 class="empty-state-title">No se encontraron productos</h3>
+              <p class="empty-state-text">
+                Esta categoría no tiene productos o no coinciden con tu búsqueda.
+              </p>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- Product Detail Modal -->
+    <div id="productModal" class="product-modal" style="display: none">
+      <div class="product-modal-overlay"></div>
+      <div class="product-modal-container">
+        <button class="product-modal-close" id="modalClose">
+          <i class="bi bi-x-lg"></i>
+        </button>
+
+        <!-- Navigation Arrows -->
+        <button class="product-modal-nav product-modal-nav-prev" id="modalPrev">
+          <i class="bi bi-chevron-left"></i>
+        </button>
+        <button class="product-modal-nav product-modal-nav-next" id="modalNext">
+          <i class="bi bi-chevron-right"></i>
+        </button>
+
+        <div class="product-modal-content" id="modalContent">
+          <div class="product-modal-loading">
+            <div class="spinner"></div>
+            <p>Cargando producto...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="js/layout.js" defer></script>
+    <script src="js/sidebar-toggle.js" defer></script>
+    <script src="js/api.js"></script>
+    <script src="js/components/admin-header-loader.js"></script>
+    <script src="js/admin-catalogo-visual.js"></script>
+  </body>
+</html>

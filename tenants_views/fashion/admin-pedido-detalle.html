@@ -1,0 +1,951 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Detalle del Pedido - Fashion Box Admin</title>
+    <link rel="icon" type="image/png" href="/icon/Logo_Fashion.png" />
+
+    <!-- Protección de autenticación -->
+    <script src="js/auth-guard-admin.js"></script>
+    <script src="js/token-refresh.js"></script>
+
+    <link rel="stylesheet" href="css/styles-fashion.css" />
+    <link rel="stylesheet" href="css/fashion-theme-fashion.css" />
+    <link rel="stylesheet" href="css/admin-fashion.css" />
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+      .pedido-detail-wrapper {
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+
+      .pedido-summary-card {
+        background: white;
+        border-radius: 0.75rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+      }
+
+      .pedido-summary-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 1rem;
+        flex-wrap: wrap;
+        margin-bottom: 1.25rem;
+        padding-bottom: 1.25rem;
+        border-bottom: 1px solid var(--border-color);
+      }
+
+      .pedido-numero {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin: 0 0 0.25rem;
+        color: var(--razo-gray-warm);
+      }
+
+      .pedido-fecha {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+      }
+
+      .pedido-estatus-badge {
+        padding: 0.4rem 1rem;
+        border-radius: 2rem;
+        font-weight: 600;
+        font-size: 0.85rem;
+        text-transform: capitalize;
+      }
+
+      .pedido-estatus-badge.pendiente {
+        background: #fff7ed;
+        color: var(--razo-orange);
+      }
+
+      .pedido-estatus-badge.confirmado {
+        background: #dcfce7;
+        color: #16a34a;
+      }
+
+      .pedido-estatus-badge.en-ruta {
+        background: #dbeafe;
+        color: #2563eb;
+      }
+
+      .pedido-estatus-badge.entregado {
+        background: #f0fdf4;
+        color: #15803d;
+      }
+
+      .pedido-estatus-badge.cancelado {
+        background: #fef2f2;
+        color: #dc2626;
+      }
+
+      .pedido-monto-section {
+        display: flex;
+        align-items: baseline;
+        gap: 0.5rem;
+      }
+
+      .pedido-monto-label {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        font-weight: 500;
+      }
+
+      .pedido-monto {
+        font-size: 2rem;
+        font-weight: 700;
+        margin: 0;
+        color: var(--razo-orange);
+      }
+
+      .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+      }
+
+      .info-card {
+        background: white;
+        border-radius: 0.75rem;
+        padding: 1.25rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+      }
+
+      .info-card-title {
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--text-secondary);
+        margin-bottom: 0.75rem;
+        font-weight: 600;
+      }
+
+      .info-card-content h4 {
+        margin: 0 0 0.25rem;
+        font-size: 1rem;
+      }
+
+      .info-card-content p {
+        margin: 0;
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+        line-height: 1.5;
+      }
+
+      .items-card {
+        background: white;
+        border-radius: 0.75rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
+      }
+
+      .items-card-header {
+        padding: 1.25rem;
+        border-bottom: 1px solid var(--border-color);
+        background: #fafafa;
+      }
+
+      .items-card-header h3 {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--razo-gray-warm);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .items-card-header h3::before {
+        content: "📦";
+        font-size: 1.25rem;
+      }
+
+      .item-row {
+        display: flex;
+        gap: 1rem;
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid var(--border-color);
+        align-items: center;
+      }
+
+      .item-row:last-child {
+        border-bottom: none;
+      }
+
+      .item-image-placeholder {
+        width: 60px;
+        height: 60px;
+        border-radius: 0.5rem;
+        background: linear-gradient(135deg, #f5f5f5, #e0e0e0);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #999;
+        font-size: 1.25rem;
+        flex-shrink: 0;
+      }
+
+      .item-info {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .item-name {
+        font-weight: 600;
+        margin: 0 0 0.25rem;
+        font-size: 0.95rem;
+      }
+
+      .item-meta {
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+      }
+
+      .item-meta span {
+        display: inline-block;
+        margin-right: 0.75rem;
+      }
+
+      .item-pricing {
+        text-align: right;
+        flex-shrink: 0;
+      }
+
+      .item-subtotal {
+        font-weight: 600;
+        font-size: 1rem;
+        color: var(--razo-gray-warm);
+      }
+
+      .item-unit-price {
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+      }
+
+      .items-total {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1.25rem;
+        background: #fafafa;
+        font-weight: 600;
+      }
+
+      .items-total-label {
+        font-size: 1rem;
+      }
+
+      .items-total-value {
+        font-size: 1.25rem;
+        color: var(--razo-orange);
+      }
+
+      .loading-state,
+      .error-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 50vh;
+        text-align: center;
+        padding: 3rem 1rem;
+      }
+
+      .error-state {
+        color: var(--danger-color);
+      }
+
+      @media (max-width: 640px) {
+        .pedido-summary-header {
+          flex-direction: column;
+        }
+
+        .item-row {
+          flex-wrap: wrap;
+        }
+
+        .item-pricing {
+          width: 100%;
+          text-align: left;
+          margin-top: 0.5rem;
+          padding-top: 0.5rem;
+          border-top: 1px dashed var(--border-color);
+        }
+      }
+    </style>
+      <link rel="stylesheet" href="css/mobile-responsive-fashion.css" />
+  </head>
+  <body data-sidebar="admin" data-page-title="Detalle del pedido">
+    <div class="admin-layout">
+      <div id="sidebar-container"></div>
+
+      <main class="admin-main">
+        <div id="admin-header-container"></div>
+
+        <div class="admin-content">
+          <div style="display: flex; justify-content: flex-start; margin-bottom: 1rem;">
+            <button
+              type="button"
+              class="btn btn-outline btn-sm"
+              onclick="sessionStorage.setItem('_navigating', 'true'); localStorage.setItem('_nav_timestamp', Date.now().toString()); window.location.href='/admin-pedidos.html';"
+            >
+              ← Volver a pedidos
+            </button>
+          </div>
+          <div class="pedido-detail-wrapper">
+            <!-- Loading state -->
+            <div id="loadingState" class="loading-state">
+              <div class="spinner"></div>
+              <p>Cargando detalle del pedido...</p>
+            </div>
+
+            <!-- Error state -->
+            <div id="errorState" class="error-state" style="display: none">
+              <p id="errorMessage">No se pudo cargar el pedido</p>
+              <button
+                type="button"
+                class="btn btn-outline btn-sm"
+                onclick="sessionStorage.setItem('_navigating', 'true'); localStorage.setItem('_nav_timestamp', Date.now().toString()); window.location.href='/admin-pedidos.html';"
+              >
+                ← Volver a pedidos
+              </button>
+            </div>
+
+            <!-- Content -->
+            <div id="contentWrapper" style="display: none">
+              <!-- Pedido summary card -->
+              <div class="pedido-summary-card">
+                <div class="pedido-summary-header">
+                  <div>
+                    <h2 class="pedido-numero" id="pedidoNumero">
+                      Pedido #000000
+                    </h2>
+                    <p class="pedido-fecha" id="pedidoFecha">--</p>
+                  </div>
+                  <div class="d-flex align-items-center gap-2">
+                    <span
+                      class="pedido-estatus-badge pendiente"
+                      id="pedidoEstatus"
+                      >--</span
+                    >
+                  </div>
+                </div>
+                <div class="pedido-monto-section">
+                  <span class="pedido-monto-label">Monto total:</span>
+                  <span class="pedido-monto" id="pedidoMonto">$0.00</span>
+                </div>
+              </div>
+
+              <!-- Info cards grid -->
+              <div class="info-grid">
+                <div class="info-card">
+                  <div class="info-card-title">👤 Cliente</div>
+                  <div class="info-card-content">
+                    <h4 id="clienteNombre">--</h4>
+                    <p id="clienteContacto">--</p>
+                  </div>
+                </div>
+                <div class="info-card">
+                  <div class="info-card-title">📍 Dirección de envío</div>
+                  <div class="info-card-content">
+                    <h4 id="direccionReceptor">--</h4>
+                    <p id="direccionCompleta">--</p>
+                  </div>
+                </div>
+                <div class="info-card" id="agenteCard" style="display: none">
+                  <div class="info-card-title">🤝 Agente</div>
+                  <div class="info-card-content">
+                    <h4 id="agenteNombre">--</h4>
+                    <p id="agenteCodigo">--</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Items list -->
+              <div class="items-card">
+                <div class="items-card-header">
+                  <h3>Productos del pedido</h3>
+                </div>
+                <div id="itemsContainer">
+                  <!-- Items will be rendered here -->
+                </div>
+                <div class="items-total">
+                  <span class="items-total-label">Total del pedido</span>
+                  <span class="items-total-value" id="itemsTotal">$0.00</span>
+                </div>
+              </div>
+
+              <div
+                class="pedido-actions"
+                style="
+                  margin-top: 1.75rem;
+                  display: flex;
+                  justify-content: flex-end;
+                "
+              >
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-primary"
+                  id="btnCambiarEstatus"
+                  onclick="openStatusModalFromDetalle()"
+                >
+                  Editar estado
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- Modal para cambiar estatus -->
+    <div id="statusModal" class="modal">
+      <div class="modal-content modal-content--xl">
+        <div class="modal-header">
+          <h2 class="modal-title">Cambiar Estatus del Pedido</h2>
+          <button class="modal-close-btn" onclick="closeStatusModal()">
+            &times;
+          </button>
+        </div>
+        <div class="modal-body">
+          <p style="margin-bottom: 1.5rem">
+            <strong style="font-size: 1.125rem"
+              >Pedido #<span id="modalPedidoId"></span></strong
+            ><br />
+            <span style="color: var(--text-secondary); font-size: 0.875rem">
+              Cliente: <span id="modalClienteNombre"></span>
+            </span>
+          </p>
+
+          <div class="form-group" style="margin-bottom: 1.5rem">
+            <label
+              class="form-label"
+              style="font-weight: 600; margin-bottom: 0.5rem; display: block"
+              >Nuevo Estatus:</label
+            >
+            <select
+              id="modalNuevoEstatus"
+              class="form-input"
+              style="width: 100%; padding: 0.75rem; font-size: 1rem"
+              aria-label="Nuevo estatus del pedido"
+            >
+              <option value="Pendiente">Pendiente</option>
+              <option value="Parcialmente Surtido">Parcialmente Surtido</option>
+              <option value="Confirmado">Confirmado ⚠️ (Reduce Stock)</option>
+              <option value="Enviado">Enviado</option>
+              <option value="Entregado">Entregado</option>
+              <option value="Cancelado">Cancelado</option>
+            </select>
+          </div>
+
+          <div
+            style="
+              background: var(--razo-cream);
+              padding: 1rem;
+              border-radius: 0.5rem;
+              border-left: 4px solid var(--razo-orange);
+              margin-bottom: 1.5rem;
+            "
+          >
+            <p style="font-size: 0.875rem; margin: 0">
+              <strong>⚠️ Importante:</strong> Al cambiar a "Confirmado", se
+              reducirá automáticamente el stock de los productos y se registrará
+              en el log de inventario.
+            </p>
+          </div>
+
+          <div
+            style="
+              display: flex;
+              gap: 1rem;
+              margin-top: 1.5rem;
+              margin-bottom: 1rem;
+            "
+          >
+            <button
+              type="button"
+              class="btn btn-secondary"
+              onclick="closeStatusModal()"
+              style="flex: 1"
+            >
+              Cancelar
+            </button>
+            <button
+              class="btn btn-primary"
+              onclick="updateOrderStatus()"
+              id="btnConfirmar"
+              style="flex: 1"
+            >
+              <span id="btnConfirmarText">Confirmar Cambio</span>
+              <div
+                class="spinner"
+                id="btnConfirmarSpinner"
+                style="display: none"
+              ></div>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="js/layout.js" defer></script>
+    <script src="js/sidebar-toggle.js" defer></script>
+    <script src="js/api.js"></script>
+    <script src="js/admin-header-dropdown.js"></script>
+    <script src="js/components/admin-header-loader.js"></script>
+    <script src="js/components/user-profile.js"></script>
+    <script>
+      (function () {
+        "use strict";
+
+        if (!requireAdminAuth()) {
+          return;
+        }
+
+        const adminToken = localStorage.getItem("Fashion Box_admin_token");
+        if (!adminToken) {
+          window.location.href = "/login.html";
+          return;
+        }
+
+        let selectedOrderId = null;
+        let selectedOrderStatus = null;
+
+        document.addEventListener("DOMContentLoaded", init);
+
+        async function init() {
+          const urlParams = new URLSearchParams(window.location.search);
+          const pedidoId = parseInt(urlParams.get("id"), 10);
+
+          const loadingState = document.getElementById("loadingState");
+          const errorState = document.getElementById("errorState");
+          const errorMessage = document.getElementById("errorMessage");
+          const contentWrapper = document.getElementById("contentWrapper");
+
+          if (!pedidoId || Number.isNaN(pedidoId)) {
+            loadingState.style.display = "none";
+            errorMessage.textContent = "ID de pedido inválido";
+            errorState.style.display = "block";
+            showToast("ID de pedido inválido", "error");
+            return;
+          }
+
+          try {
+            const response = await API.obtenerPedidoDetalle(pedidoId);
+
+            if (!response.ok || !response.data.success) {
+              throw new Error(
+                response.data?.message || "No se pudo cargar el pedido"
+              );
+            }
+
+            const { pedido, productos } = response.data.data;
+
+            // Render pedido header
+            document.getElementById(
+              "pedidoNumero"
+            ).textContent = `Pedido #${String(pedido.pedidoId).padStart(
+              6,
+              "0"
+            )}`;
+            document.getElementById("pedidoFecha").textContent = formatDate(
+              pedido.fechaPedido
+            );
+
+            const estatusEl = document.getElementById("pedidoEstatus");
+            estatusEl.textContent = pedido.estatus || "";
+
+            const estatusValor = (pedido.estatus || "").toString().toLowerCase();
+            let estatusClass = "pedido-estatus-badge pendiente";
+
+            if (estatusValor === "pendiente") estatusClass = "pedido-estatus-badge pendiente";
+            else if (estatusValor === "confirmado") estatusClass = "pedido-estatus-badge confirmado";
+            else if (
+              estatusValor === "enviado" ||
+              estatusValor === "en ruta" ||
+              estatusValor === "en_ruta" ||
+              estatusValor === "en-ruta"
+            ) {
+              estatusClass = "pedido-estatus-badge enviado";
+            } else if (estatusValor === "entregado") {
+              estatusClass = "pedido-estatus-badge entregado";
+            } else if (estatusValor === "cancelado") {
+              estatusClass = "pedido-estatus-badge cancelado";
+            } else if (estatusValor === "completado") {
+              estatusClass = "pedido-estatus-badge completado";
+            }
+
+            estatusEl.className = estatusClass;
+
+            selectedOrderId = pedido.pedidoId;
+            selectedOrderStatus = pedido.estatus || "";
+
+            const btnCambiarEstatus = document.getElementById("btnCambiarEstatus");
+            if (btnCambiarEstatus) {
+              btnCambiarEstatus.disabled = false;
+              btnCambiarEstatus.removeAttribute("disabled");
+            }
+
+            document.getElementById("pedidoMonto").textContent = formatCurrency(
+              pedido.montoTotal
+            );
+
+            // Render cliente info
+            document.getElementById("clienteNombre").textContent =
+              pedido.cliente.nombre || "Sin nombre";
+
+            const contactoParts = [];
+            if (pedido.cliente.email)
+              contactoParts.push(`📧 ${pedido.cliente.email}`);
+            if (pedido.cliente.telefono)
+              contactoParts.push(`📞 ${pedido.cliente.telefono}`);
+            document.getElementById("clienteContacto").innerHTML =
+              contactoParts.join("<br>") || "Sin información de contacto";
+
+            // Render direccion
+            const direccion = pedido.direccion;
+            document.getElementById("direccionReceptor").textContent =
+              "Dirección de envío";
+
+            const direccionParts = [];
+            if (direccion.calle) {
+              let calleCompleta = direccion.calle;
+              if (direccion.numeroExterior)
+                calleCompleta += ` #${direccion.numeroExterior}`;
+              if (direccion.numeroInterior)
+                calleCompleta += `, Int. ${direccion.numeroInterior}`;
+              direccionParts.push(calleCompleta);
+            }
+            if (direccion.colonia) direccionParts.push(direccion.colonia);
+            if (direccion.ciudad || direccion.estadoNombre) {
+              direccionParts.push(
+                [direccion.ciudad, direccion.estadoNombre]
+                  .filter(Boolean)
+                  .join(", ")
+              );
+            }
+            if (direccion.codigoPostal)
+              direccionParts.push(`CP ${direccion.codigoPostal}`);
+
+            document.getElementById("direccionCompleta").innerHTML =
+              direccionParts.join("<br>") || "Sin dirección";
+
+            // Render agente si existe
+            if (pedido.agente) {
+              const agenteCard = document.getElementById("agenteCard");
+              agenteCard.style.display = "block";
+              document.getElementById("agenteNombre").textContent =
+                pedido.agente.nombre;
+              document.getElementById(
+                "agenteCodigo"
+              ).textContent = `Código: ${pedido.agente.codigo}`;
+            }
+
+            // Render items
+            const itemsContainer = document.getElementById("itemsContainer");
+            itemsContainer.innerHTML = productos
+              .map(
+                (item) => `
+              <div class="item-row">
+                <div class="item-image-placeholder">📦</div>
+                <div class="item-info">
+                  <p class="item-name">${item.nombre}</p>
+                  <p class="item-meta">
+                    <span>SKU: ${item.sku || "N/A"}</span>
+                    ${
+                      item.dimensiones ? `<span>${item.dimensiones}</span>` : ""
+                    }
+                    ${
+                      item.piezasPorPaquete
+                        ? `<span>${item.piezasPorPaquete} pzas/paquete</span>`
+                        : ""
+                    }
+                  </p>
+                </div>
+                <div class="item-pricing">
+                  <p class="item-subtotal">${formatCurrency(item.subtotal)}</p>
+                  <p class="item-unit-price">${
+                    item.cantidadPaquetes
+                  } paquetes × ${formatCurrency(item.precioPorPaquete)}</p>
+                </div>
+              </div>
+            `
+              )
+              .join("");
+
+            document.getElementById("itemsTotal").textContent = formatCurrency(
+              pedido.montoTotal
+            );
+
+            loadingState.style.display = "none";
+            contentWrapper.style.display = "block";
+          } catch (error) {
+            console.error("Error loading order detail:", error);
+            const errorMsg = error.message || "Error al cargar el pedido";
+            loadingState.style.display = "none";
+            errorMessage.textContent = errorMsg;
+            errorState.style.display = "block";
+            showToast(errorMsg, "error");
+          }
+        }
+
+        window.openStatusModalFromDetalle = function () {
+          if (!selectedOrderId) {
+            showToast(
+              "No se pudo identificar el pedido seleccionado.",
+              "error"
+            );
+            return;
+          }
+
+          const statusModal = document.getElementById("statusModal");
+          const modalPedidoId = document.getElementById("modalPedidoId");
+          const modalClienteNombre =
+            document.getElementById("modalClienteNombre");
+          const modalNuevoEstatus =
+            document.getElementById("modalNuevoEstatus");
+
+          if (modalPedidoId) modalPedidoId.textContent = selectedOrderId;
+
+          const clienteNombreEl = document.getElementById("clienteNombre");
+          if (modalClienteNombre && clienteNombreEl) {
+            modalClienteNombre.textContent =
+              clienteNombreEl.textContent || "Cliente";
+          }
+
+          if (modalNuevoEstatus && selectedOrderStatus) {
+            modalNuevoEstatus.value = selectedOrderStatus;
+          }
+
+          if (statusModal) {
+            statusModal.style.display = "flex";
+          }
+        };
+
+        window.closeStatusModal = function () {
+          const statusModal = document.getElementById("statusModal");
+          if (statusModal) statusModal.style.display = "none";
+        };
+
+        async function updateOrderStatus() {
+          if (!selectedOrderId) return;
+
+          const modalNuevoEstatus =
+            document.getElementById("modalNuevoEstatus");
+          const btnConfirmar = document.getElementById("btnConfirmar");
+          const btnConfirmarText =
+            document.getElementById("btnConfirmarText");
+          const btnConfirmarSpinner =
+            document.getElementById("btnConfirmarSpinner");
+
+          // Validate elements exist
+          if (!modalNuevoEstatus || !btnConfirmar) {
+            console.error("Required elements not found in DOM");
+            return;
+          }
+
+          const nuevoEstatus = modalNuevoEstatus.value;
+          const estatusActual = selectedOrderStatus || "";
+          const nuevoLower = (nuevoEstatus || "").toString().toLowerCase();
+          const actualLower = (estatusActual || "").toString().toLowerCase();
+
+          let swalConfig = null;
+          let fallbackMessage =
+            "¿Deseas actualizar el estatus y notificar al cliente?";
+
+          if (
+            typeof Swal !== "undefined" &&
+            Swal &&
+            typeof Swal.fire === "function"
+          ) {
+            if (nuevoLower === "cancelado" && actualLower !== "cancelado") {
+              swalConfig = {
+                icon: "warning",
+                title: "¿Cancelar pedido?",
+                text:
+                  "⚠️ Se devolverán los productos al inventario y se enviará un correo de cancelación al cliente.",
+                showCancelButton: true,
+                confirmButtonText: "Sí, cancelar",
+                cancelButtonText: "No, mantener",
+                confirmButtonColor: "#dc3545",
+                cancelButtonColor: "#6c757d",
+              };
+              fallbackMessage = swalConfig.text;
+            } else if (
+              actualLower === "cancelado" &&
+              nuevoLower !== "cancelado"
+            ) {
+              swalConfig = {
+                icon: "question",
+                title: "¿Reactivar pedido?",
+                text:
+                  "⚠️ Se volverá a descontar el stock. Asegúrate de tener existencias.",
+                showCancelButton: true,
+                confirmButtonText: "Sí, reactivar",
+                cancelButtonText: "No, mantener cancelado",
+                confirmButtonColor: "#0d6efd",
+                cancelButtonColor: "#6c757d",
+              };
+              fallbackMessage = swalConfig.text;
+            } else {
+              swalConfig = {
+                icon: "question",
+                title: "Actualizar estatus",
+                text:
+                  "¿Deseas actualizar el estatus y notificar al cliente?",
+                showCancelButton: true,
+                confirmButtonText: "Sí, actualizar",
+                cancelButtonText: "Cancelar",
+                confirmButtonColor: "#F97316",
+                cancelButtonColor: "#6c757d",
+              };
+              fallbackMessage = swalConfig.text;
+            }
+
+            const result = await Swal.fire(swalConfig);
+            if (!result.isConfirmed) {
+              return;
+            }
+          } else {
+            const confirmed = window.confirm(fallbackMessage);
+            if (!confirmed) {
+              return;
+            }
+          }
+
+          const originalBtnText = btnConfirmarText
+            ? btnConfirmarText.textContent
+            : btnConfirmar.textContent;
+          if (btnConfirmarText) {
+            btnConfirmarText.dataset.originalText = originalBtnText;
+          } else {
+            btnConfirmar.dataset.originalText = originalBtnText;
+          }
+
+          try {
+            btnConfirmar.disabled = true;
+            if (btnConfirmarText) {
+              btnConfirmarText.textContent = "Enviando...";
+              btnConfirmarText.style.display = "inline";
+            } else {
+              btnConfirmar.textContent = "Enviando...";
+            }
+            if (btnConfirmarSpinner)
+              btnConfirmarSpinner.style.display = "block";
+
+            const resp = await apiCall(`/admin/pedidos/${encodeURIComponent(selectedOrderId)}`,
+              {
+                method: "PUT",
+                body: JSON.stringify({ estatus: nuevoEstatus }),
+              }
+            );
+
+            const data = resp.data;
+
+            if (resp.ok && data && data.success) {
+              closeStatusModal();
+
+              const message = (data.message || "").toString();
+              const isAuditFlow = message.toLowerCase().includes("bitácora") || message.toLowerCase().includes("auditor");
+              const swalIcon = isAuditFlow ? "info" : "success";
+              const swalTitle = isAuditFlow ? "Solicitud en Espera" : "Estatus actualizado";
+              const swalText = isAuditFlow
+                ? "El cambio de estatus ha sido registrado en la bitácora. Debes aprobarlo en la sección de Auditoría para que se aplique."
+                : (message || "Estatus actualizado correctamente.");
+
+              if (
+                typeof Swal !== "undefined" &&
+                Swal &&
+                typeof Swal.fire === "function"
+              ) {
+                await Swal.fire({
+                  icon: swalIcon,
+                  title: swalTitle,
+                  text: swalText,
+                  confirmButtonColor: "#F97316",
+                });
+              } else {
+                showToast(swalText, isAuditFlow ? "info" : "success");
+              }
+
+              // Éxito: mantener deshabilitado hasta recarga
+              window.location.reload();
+            } else {
+              showToast(
+                data?.message || "Error al actualizar pedido",
+                "error"
+              );
+
+              // Error de validación/respuesta: re-habilitar
+              btnConfirmar.disabled = false;
+              if (btnConfirmarText) {
+                btnConfirmarText.textContent =
+                  btnConfirmarText.dataset.originalText || "Confirmar Cambio";
+              } else {
+                btnConfirmar.textContent =
+                  btnConfirmar.dataset.originalText || "Confirmar Cambio";
+              }
+              if (btnConfirmarSpinner)
+                btnConfirmarSpinner.style.display = "none";
+            }
+          } catch (error) {
+            console.error("Error updating order:", error);
+            showToast("Error al conectar con el servidor", "error");
+
+            // Error catch: re-habilitar
+            btnConfirmar.disabled = false;
+            if (btnConfirmarText) {
+              btnConfirmarText.textContent =
+                btnConfirmarText.dataset.originalText || "Confirmar Cambio";
+            } else {
+              btnConfirmar.textContent =
+                btnConfirmar.dataset.originalText || "Confirmar Cambio";
+            }
+            if (btnConfirmarSpinner)
+              btnConfirmarSpinner.style.display = "none";
+          } finally {
+            // El estado del botón se maneja dentro de success/error para evitar doble envío.
+          }
+        }
+
+        window.addEventListener("click", function (event) {
+          const statusModal = document.getElementById("statusModal");
+          if (event.target === statusModal) {
+            closeStatusModal();
+          }
+        });
+
+        function formatCurrency(value) {
+          if (value === null || value === undefined) return "$0.00";
+          const amount = Number.parseFloat(value);
+          if (Number.isNaN(amount)) return "$0.00";
+          return new Intl.NumberFormat("es-MX", {
+            style: "currency",
+            currency: "MXN",
+            minimumFractionDigits: 2,
+          }).format(amount);
+        }
+
+        function formatDate(value) {
+          if (!value) return "—";
+          const date = new Date(value);
+          if (Number.isNaN(date.getTime())) return "—";
+          return date.toLocaleDateString("es-MX", {
+            weekday: "long",
+            day: "numeric",
+            month: "long",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          });
+        }
+      })();
+    </script>
+  </body>
+</html>

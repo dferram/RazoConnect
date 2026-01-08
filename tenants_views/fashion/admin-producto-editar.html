@@ -1,0 +1,2907 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Editar Producto - Admin Fashion Box</title>
+    <link rel="icon" type="image/png" href="/icon/Logo_Fashion.png" />
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.14.0/Sortable.min.js"></script>
+
+    <!-- PROTECCIÓN DE AUTENTICACIÓN ADMIN -->
+    <script src="js/auth-guard-admin.js"></script>
+
+    <!-- SISTEMA DE RENOVACIÓN DE TOKENS -->
+    <script src="js/token-refresh.js"></script>
+
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+    />
+
+    <link rel="stylesheet" href="css/styles-fashion.css" />
+    <link rel="stylesheet" href="css/fashion-theme-fashion.css" />
+    <link rel="stylesheet" href="css/admin-fashion.css" />
+    <style>
+      .product-editor-wrapper {
+        max-width: 1080px;
+        margin: 0 auto;
+        padding: 0 1.5rem 2.5rem;
+        width: 100%;
+      }
+
+      .product-editor-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 1.75rem;
+        margin-bottom: 2rem;
+      }
+
+      @media (min-width: 1024px) {
+        .product-editor-grid > * {
+          flex: 1 1 auto;
+        }
+      }
+
+      .product-summary h3 {
+        margin-bottom: 0.5rem;
+        font-size: 1.25rem;
+      }
+
+      .product-summary p {
+        margin-bottom: 1rem;
+        line-height: 1.6;
+      }
+
+      .product-summary-header {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+        margin-bottom: 0.75rem;
+      }
+
+      .product-summary-image {
+        flex: 0 0 auto;
+        width: 100px;
+        height: 100px;
+        border-radius: 0.75rem;
+        overflow: hidden;
+        background: #f3f4f6;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .product-summary-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .product-summary-text {
+        flex: 1 1 auto;
+      }
+
+      .summary-grid {
+        display: grid;
+        gap: 0.75rem;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      }
+
+      .variant-form .form-grid-2,
+      .variant-form .form-grid-3 {
+        display: grid;
+        gap: 1rem;
+      }
+
+      .variant-form .form-grid-2 {
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      }
+
+      .variant-form .form-grid-3 {
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      }
+
+      .variant-margin {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1.25rem;
+        background: #fff7ed;
+        padding: 1rem 1.25rem;
+        border-radius: 0.75rem;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        margin-top: 1rem;
+        margin-bottom: 1rem;
+        flex-wrap: wrap;
+      }
+
+      .variant-margin h3 {
+        margin: 0 0 0.25rem;
+        font-size: 1rem;
+      }
+
+      .margin-metrics {
+        display: flex;
+        gap: 1.75rem;
+        flex-wrap: wrap;
+      }
+
+      .margin-metrics > div {
+        min-width: 120px;
+      }
+
+      @media (max-width: 640px) {
+        .product-editor-wrapper {
+          padding: 0 1rem 2.5rem;
+        }
+
+        .variant-margin {
+          padding: 0.85rem 1rem;
+        }
+      }
+
+      /* ============================================
+         IPAD PORTRAIT MODE (768px - 1024px)
+         Correcciones para evitar overflow horizontal
+         ============================================ */
+      @media only screen and (min-width: 768px) and (max-width: 1024px) {
+        /* Contenedor principal: 100% width con padding seguro */
+        .product-editor-wrapper {
+          max-width: 100%;
+          width: 100%;
+          padding: 0 1.25rem 2.5rem;
+          box-sizing: border-box;
+        }
+
+        /* Asegurar que todos los elementos internos respeten el contenedor */
+        .product-editor-grid,
+        .admin-card,
+        .variant-form {
+          max-width: 100%;
+          box-sizing: border-box;
+        }
+
+        /* Grid de 2 columnas: forzar wrap cuando no caben */
+        .variant-form .form-grid-2 {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 1rem;
+        }
+
+        .variant-form .form-grid-2 > .form-group {
+          flex: 1 1 calc(50% - 0.5rem);
+          min-width: 280px;
+          max-width: 100%;
+        }
+
+        /* Grid de 3 columnas (Costo, Precio, Descuento): 
+           Apilar verticalmente en portrait para evitar overflow */
+        .variant-form .form-grid-3 {
+          display: flex;
+          flex-direction: column;
+          gap: 1rem;
+        }
+
+        .variant-form .form-grid-3 > .form-group {
+          width: 100%;
+          max-width: 100%;
+        }
+
+        /* Inputs: asegurar que no excedan el contenedor */
+        .form-input,
+        .form-control,
+        input[type="text"],
+        input[type="number"],
+        select,
+        textarea {
+          width: 100%;
+          max-width: 100%;
+          box-sizing: border-box;
+        }
+
+        /* Variant margin: permitir wrap */
+        .variant-margin {
+          flex-wrap: wrap;
+          padding: 1rem;
+        }
+
+        .margin-metrics {
+          width: 100%;
+          justify-content: space-around;
+        }
+
+        /* Summary grid: ajustar columnas */
+        .summary-grid {
+          grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        }
+
+        /* Product summary header: permitir wrap */
+        .product-summary-header {
+          flex-wrap: wrap;
+        }
+
+        .product-summary-kpis {
+          min-width: 100%;
+        }
+
+        /* Admin grid: stack en una columna */
+        .admin-grid-lg {
+          grid-template-columns: 1fr;
+          gap: 1.5rem;
+        }
+
+        /* Inventory summary: no sticky en tablets */
+        .inventory-summary-wrapper {
+          position: static;
+        }
+
+        /* Cards: padding ajustado */
+        .admin-card-body {
+          padding: 0 1.25rem 1.25rem;
+        }
+
+        .admin-card-header {
+          padding: 1.25rem 1.25rem 0.75rem;
+        }
+
+        /* Botones: asegurar que no se desborden */
+        .variant-form button,
+        .btn {
+          max-width: 100%;
+          box-sizing: border-box;
+        }
+
+        /* Preview de imágenes: ajustar tamaño */
+        .product-images-preview-item {
+          width: 70px;
+          height: 70px;
+        }
+
+        /* Tabla de variantes: scroll horizontal si es necesario */
+        .variants-table {
+          min-width: 700px;
+        }
+
+        #variantsTableWrapper {
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+        }
+
+        /* ===== CONTENIDO DINÁMICO (JavaScript) ===== */
+        /* Asegurar que elementos generados dinámicamente también respeten límites */
+        
+        /* Product summary: forzar wrap en todos los elementos */
+        .product-summary {
+          max-width: 100%;
+          overflow: hidden;
+        }
+
+        .product-summary h3,
+        .product-summary p,
+        .product-summary div {
+          max-width: 100%;
+          word-wrap: break-word;
+          overflow-wrap: break-word;
+        }
+
+        /* Badges dinámicos: permitir wrap */
+        .badge,
+        .admin-badge,
+        .visibility-badge,
+        .badge-neutral,
+        .badge-success,
+        .badge-info {
+          max-width: 100%;
+          white-space: normal;
+          word-break: break-word;
+        }
+
+        /* Contenedores de badges: wrap */
+        div[style*="display:flex"][style*="flex-wrap"],
+        .badge-group {
+          flex-wrap: wrap !important;
+        }
+
+        /* Product KPIs: asegurar que no excedan */
+        .product-kpi,
+        .product-kpi-label,
+        .product-kpi-value {
+          max-width: 100%;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        /* Imágenes de producto: responsive */
+        .product-summary-image {
+          flex-shrink: 0;
+          max-width: 80px;
+          height: 80px;
+        }
+
+        .product-summary-image img {
+          max-width: 100%;
+          height: auto;
+          object-fit: cover;
+        }
+
+        /* Stock projection table: ajustar */
+        .stock-projection-table {
+          width: 100%;
+          table-layout: fixed;
+        }
+
+        .stock-projection-table th,
+        .stock-projection-table td {
+          word-wrap: break-word;
+          overflow-wrap: break-word;
+        }
+
+        /* Inventory summary card: no overflow */
+        .inventory-summary-card {
+          max-width: 100%;
+          box-sizing: border-box;
+        }
+
+        /* Galería de imágenes: ajustar grid */
+        .product-images-preview,
+        .sortable-grid {
+          max-width: 100%;
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+        }
+
+        /* Asegurar que inline styles no rompan layout */
+        [style*="min-width"] {
+          min-width: auto !important;
+        }
+
+        /* Tablas admin: responsive */
+        .admin-table {
+          width: 100%;
+          table-layout: auto;
+        }
+
+        /* Botones en tablas: ajustar tamaño */
+        .admin-table .btn-sm {
+          padding: 0.5rem 0.75rem;
+          font-size: 0.85rem;
+        }
+
+        /* Actions cell: permitir wrap */
+        .actions-cell {
+          white-space: normal !important;
+        }
+
+        /* Draft banner: responsive */
+        div[style*="background: #fffbeb"] {
+          max-width: 100% !important;
+          box-sizing: border-box !important;
+          word-wrap: break-word !important;
+        }
+
+        /* Summary labels y values */
+        .summary-label,
+        .summary-value {
+          font-size: 0.85rem;
+        }
+
+        /* Asegurar que todos los divs con estilos inline respeten el contenedor */
+        .product-summary-header > *,
+        .product-summary-main > *,
+        .product-summary-text > * {
+          max-width: 100%;
+          box-sizing: border-box;
+        }
+      }
+
+      .variant-form-card .admin-card-header {
+        margin-bottom: 1.25rem;
+      }
+
+      .variant-form-card .variant-form {
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+      }
+
+      .variant-form-card {
+        margin-bottom: 2rem;
+      }
+
+      .product-editor-header .admin-header-title {
+        margin-bottom: 0;
+      }
+
+      .product-editor-header .admin-header-subtitle {
+        margin: 0;
+        color: var(--text-secondary);
+      }
+
+      .variant-table thead th {
+        font-size: 0.8rem;
+      }
+
+      .variants-table tbody td {
+        vertical-align: middle;
+      }
+
+      .variants-table td:first-child {
+        font-weight: 600;
+        color: var(--razo-gray-warm);
+      }
+
+      .variant-table-card .admin-card-header {
+        margin-bottom: 1rem;
+      }
+
+      .variant-table-card .admin-card-body {
+        padding-top: 0;
+      }
+
+      /* Visibility badges and toggle button styles */
+      .visibility-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.375rem;
+        padding: 0.375rem 0.75rem;
+        border-radius: 0.375rem;
+        font-size: 0.875rem;
+        font-weight: 600;
+        white-space: nowrap;
+      }
+
+      .badge-success {
+        background: #d1fae5;
+        color: #065f46;
+        border: 1px solid #6ee7b7;
+      }
+
+      .badge-secondary {
+        background: #e5e7eb;
+        color: #6b7280;
+        border: 1px solid #d1d5db;
+      }
+
+      .btn-icon-toggle {
+        cursor: pointer;
+        background: none;
+        border: none;
+        font-size: 1.25rem;
+        padding: 0.25rem;
+        opacity: 0.7;
+        transition: all 0.2s;
+        border-radius: 0.25rem;
+      }
+
+      .btn-icon-toggle:hover {
+        opacity: 1;
+        transform: scale(1.1);
+        background: rgba(0, 0, 0, 0.05);
+      }
+
+      .btn-icon-toggle:active {
+        transform: scale(0.95);
+      }
+
+      .variant-editor-grid {
+        align-items: flex-start;
+      }
+
+      .inventory-summary-card {
+        background: #fff9f4;
+        border-radius: 0.9rem;
+        border: 1px solid rgba(255, 153, 102, 0.4);
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+        padding: 1.1rem 1.25rem 1.25rem;
+      }
+
+      @media (min-width: 1024px) {
+        .inventory-summary-card {
+          position: static;
+        }
+      }
+
+      .stock-projection-title {
+        margin: 0 0 0.35rem;
+        font-family: "Poppins", sans-serif;
+        font-size: 1.05rem;
+        font-weight: 600;
+        color: var(--razo-orange-dark);
+      }
+
+      .stock-projection-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        gap: 0.75rem;
+        margin-bottom: 0.75rem;
+      }
+
+      .stock-total-value {
+        font-family: "Poppins", sans-serif;
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--razo-orange-dark);
+      }
+
+      .stock-projection-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.85rem;
+      }
+
+      .stock-projection-table th,
+      .stock-projection-table td {
+        padding: 0.4rem 0.25rem;
+      }
+
+      .stock-projection-table th {
+        text-align: left;
+        font-weight: 600;
+        color: rgba(55, 65, 81, 0.85);
+        border-bottom: 1px solid rgba(209, 213, 219, 0.8);
+      }
+
+      .stock-projection-table tbody tr:nth-child(even) {
+        background: #fff7f1;
+      }
+
+      .stock-projection-table tbody tr:nth-child(odd) {
+        background: #ffffff;
+      }
+
+      .stock-projection-label {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+      }
+
+      .stock-projection-label-icon {
+        font-size: 1rem;
+      }
+
+      .stock-projection-qty {
+        text-align: right;
+        font-weight: 600;
+        color: var(--razo-gray-dark);
+      }
+
+      .stock-projection-empty {
+        padding: 0.5rem 0;
+        font-size: 0.8rem;
+        color: rgba(75, 85, 99, 0.85);
+      }
+
+      .product-images-uploader {
+        margin-top: 1rem;
+        padding-top: 0.75rem;
+        border-top: 1px solid rgba(209, 213, 219, 0.6);
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      .product-images-preview {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+      }
+
+      .product-images-preview-item {
+        position: relative;
+        width: 80px;
+        height: 80px;
+        border-radius: 0.5rem;
+        overflow: hidden;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+      }
+
+      .product-images-preview-item img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .product-images-preview-remove {
+        position: absolute;
+        top: 4px;
+        right: 4px;
+        width: 20px;
+        height: 20px;
+        border-radius: 999px;
+        border: none;
+        background: rgba(239, 68, 68, 0.9);
+        color: #fff;
+        font-size: 0.8rem;
+        line-height: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+      }
+
+      .sortable-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .sortable-ghost {
+        opacity: 0.6;
+        background: rgba(59, 130, 246, 0.12);
+      }
+
+      .image-order-badge {
+        position: absolute;
+        top: 6px;
+        left: 6px;
+        padding: 0.15rem 0.45rem;
+        border-radius: 999px;
+        font-size: 0.72rem;
+        font-weight: 800;
+        color: #fff;
+        background: rgba(17, 24, 39, 0.85);
+        box-shadow: 0 4px 10px rgba(15, 23, 42, 0.18);
+      }
+
+      /* Layout mejorado para resumen y KPIs */
+      .product-summary-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+      }
+
+      .product-summary-main {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+
+      .product-summary-kpis {
+        display: grid;
+        grid-auto-rows: minmax(0, 1fr);
+        gap: 0.5rem;
+        min-width: 220px;
+      }
+
+      .product-kpi {
+        background: #fff7f1;
+        border-radius: 0.75rem;
+        padding: 0.5rem 0.75rem;
+        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+      }
+
+      .product-kpi-label {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--razo-gray-warm);
+        margin-bottom: 0.15rem;
+      }
+
+      .product-kpi-value {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--razo-orange-dark);
+      }
+
+      .inventory-summary-wrapper {
+        position: sticky;
+        top: 1rem;
+      }
+
+      @media (max-width: 1024px) {
+        .inventory-summary-wrapper {
+          position: static;
+          margin-top: 1.5rem;
+        }
+      }
+
+      .variants-table td.actions-cell {
+        text-align: right;
+        white-space: nowrap;
+      }
+
+      .badge.badge-neutral {
+        background: #f3f4f6;
+        color: #374151;
+        border-radius: 999px;
+        padding: 0.25rem 0.75rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+      }
+    </style>
+      <link rel="stylesheet" href="css/mobile-responsive-fashion.css" />
+  </head>
+  <body data-sidebar="admin" data-page-title="Editar producto maestro">
+    <div class="admin-layout">
+      <!-- Sidebar -->
+      <div id="sidebar-container"></div>
+
+      <!-- Main Content -->
+      <main class="admin-main">
+        <div id="admin-header-container"></div>
+
+        <div style="padding: 0 1.5rem; margin-top: 0.5rem">
+          <p class="admin-header-subtitle" id="productBreadcrumb">Cargando...</p>
+        </div>
+
+        <div class="admin-content" id="contentWrapper" style="display: none">
+          <div class="product-editor-wrapper">
+            <div class="product-editor-grid">
+              <!-- Product summary -->
+              <section class="admin-card product-summary-card">
+                <div
+                  class="admin-card-header"
+                  style="
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    gap: 1rem;
+                  "
+                >
+                  <div>
+                    <h2 class="admin-card-title" style="margin-bottom: 0.25rem">
+                      Información general
+                    </h2>
+                    <p
+                      class="admin-header-subtitle"
+                      style="margin-bottom: 0"
+                      id="productMeta"
+                    >
+                      -
+                    </p>
+                  </div>
+                  <div
+                    id="pricingBadges"
+                    class="badge-group"
+                    style="display: flex; gap: 0.5rem"
+                  ></div>
+                </div>
+                <div class="admin-card-body" id="productSummary">
+                  <!-- populated dynamically -->
+                </div>
+              </section>
+
+              <!-- Create variant form + stock projection sidebar -->
+              <section class="admin-card variant-form-card">
+                <div class="admin-card-header">
+                  <h2 class="admin-card-title">Agregar nueva variante</h2>
+                  <p class="admin-header-subtitle" style="margin-bottom: 0">
+                    Define SKU, precios y stock inicial para activar el producto
+                    en el catálogo.
+                  </p>
+                </div>
+                <div class="admin-card-body">
+                  <div class="admin-grid-lg variant-editor-grid">
+                    <div>
+                      <form id="variantForm" class="variant-form">
+                      <div class="form-group">
+                        <label for="sku" class="form-label">SKU</label>
+                        <input
+                          type="text"
+                          id="sku"
+                          class="form-input"
+                          placeholder="Generado automáticamente"
+                          readonly
+                        />
+                        <small
+                          id="skuSuggestion"
+                          class="form-hint"
+                          style="display: none; color: var(--razo-orange)"
+                        >
+                          💡 Sugerencia: <span id="skuSuggestionText"></span>
+                          <button
+                            type="button"
+                            id="applySkuSuggestion"
+                            style="
+                              background: none;
+                              border: none;
+                              color: var(--primary-color);
+                              cursor: pointer;
+                              text-decoration: underline;
+                              font-size: inherit;
+                            "
+                          >
+                            Usar
+                          </button>
+                        </small>
+                      </div>
+
+                      <div class="form-grid-2">
+                        <div class="form-group">
+                          <label for="dimensiones" class="form-label"
+                            >Dimensiones / Medidas</label
+                          >
+                          <input
+                            type="text"
+                            id="dimensiones"
+                            class="form-input"
+                            placeholder="Ej: 10x10x10 cm o 25 piezas"
+                            list="listaMedidas"
+                          />
+                          <datalist id="listaMedidas"></datalist>
+                        </div>
+                        <div class="form-group">
+                          <label for="stock" class="form-label">
+                            Stock inicial (piezas)
+                            <span
+                              class="info-icon"
+                              style="margin-left: 0.25rem; cursor: help; font-size: 0.85em; color: var(--text-secondary);"
+                              title="Cantidad total disponible en inventario físico."
+                              >ⓘ</span
+                            >
+                          </label>
+                          <input
+                            type="number"
+                            id="stock"
+                            class="form-input bg-light"
+                            min="0"
+                            step="1"
+                            value="0"
+                            disabled
+                            title="Gestionar en Inventario"
+                          />
+                          <div
+                            id="stockInfoAlert"
+                            class="form-hint"
+                            style="margin-top: 0.35rem; color: var(--text-secondary); font-size: 0.8rem;"
+                          >
+                            Gestionar en Inventario
+                          </div>
+                          <div
+                            id="stockInfoBadges"
+                            style="display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.25rem; font-size: 0.78rem;"
+                          ></div>
+                        </div>
+                      </div>
+
+                      <div class="form-grid-2">
+                        <div class="form-group" style="grid-column: 1 / -1;">
+                          <label for="color_nombre" class="form-label"
+                            >Color</label
+                          >
+                          <input
+                            type="text"
+                            id="color_nombre"
+                            class="form-input"
+                            placeholder="Ej: Rosa, Azul"
+                          />
+                        </div>
+                      </div>
+
+                      <div
+                        class="product-images-uploader"
+                        id="variantImagesUploader"
+                        style="display: flex"
+                      >
+                        <div
+                          style="display:flex; align-items:center; justify-content:space-between; gap: 0.75rem; flex-wrap: wrap;"
+                        >
+                          <strong style="font-size: 0.95rem; color: var(--text-primary);"
+                            >Imágenes de la variante</strong
+                          >
+                          <span
+                            id="variantImagesStatus"
+                            style="font-size: 0.85rem; color: var(--text-secondary);"
+                          ></span>
+                        </div>
+
+                        <input
+                          type="file"
+                          id="productImagesInput"
+                          class="form-input"
+                          accept="image/jpeg,image/jpg,image/png,image/webp"
+                          multiple
+                        />
+
+                        <div
+                          style="display:flex; justify-content:flex-end; gap: 0.75rem; flex-wrap: wrap;"
+                        >
+                          <button
+                            type="button"
+                            class="btn btn-secondary"
+                            id="clearImagesSelectionBtn"
+                          >
+                            Limpiar selección
+                          </button>
+                        </div>
+
+                        <div>
+                          <div
+                            style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.35rem;"
+                          >
+                            Vista previa (arrastra para ordenar antes de subir)
+                          </div>
+                          <div
+                            id="galeriaPreview"
+                            class="product-images-preview sortable-grid"
+                          ></div>
+                        </div>
+
+                        <div id="variantServerImagesBlock" style="display: none;">
+                          <div
+                            style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.35rem;"
+                          >
+                            Imágenes guardadas (arrastra para reordenar)
+                          </div>
+                          <div
+                            id="galeriaImagenesVarianteServer"
+                            class="d-flex flex-wrap gap-2 sortable-grid"
+                          ></div>
+                        </div>
+                      </div>
+
+                      <div class="form-grid-3">
+                        <div class="form-group">
+                          <label for="costoUnitario" class="form-label"
+                            >Costo unitario (MXN)</label
+                          >
+                          <input
+                            type="number"
+                            id="costoUnitario"
+                            class="form-input"
+                            min="0"
+                            step="0.01"
+                            placeholder="0.00"
+                          />
+                        </div>
+                        <div class="form-group">
+                          <label for="precioUnitario" class="form-label"
+                            >Precio unitario (MXN) *</label
+                          >
+                          <input
+                            type="number"
+                            id="precioUnitario"
+                            class="form-input"
+                            min="0"
+                            step="0.01"
+                            placeholder="0.00"
+                            required
+                          />
+                        </div>
+                        <div class="form-group">
+                          <label for="precioOferta" class="form-label">
+                            💰 Porcentaje de Descuento (%)
+                            <span
+                              style="color: var(--razo-orange); font-size: 0.875rem"
+                              >- Opcional</span
+                            >
+                          </label>
+                          <input
+                            type="number"
+                            id="precioOferta"
+                            class="form-input"
+                            min="0"
+                            step="0.01"
+                            placeholder="Ej: 10, 20, 50"
+                            style="border: 2px solid var(--razo-orange)"
+                          />
+                          <small
+                            class="form-hint"
+                            style="color: var(--razo-orange)"
+                          >
+                            ⚡ Si defines un porcentaje de descuento, se calculará el
+                            precio final de la oferta.
+                          </small>
+                          <small
+                            id="precioOfertaPreview"
+                            class="form-hint"
+                            style="display:block; color: var(--text-secondary); margin-top: 0.25rem;"
+                          >
+                            Precio final resultante: $0.00
+                          </small>
+                        </div>
+                      </div>
+
+                      <div class="variant-margin" id="variantMargin">
+                        <div>
+                          <h3>Resumen económico</h3>
+                          <p id="marginMessage">
+                            Ingresa costo y precio para calcular la ganancia.
+                          </p>
+                        </div>
+                        <div
+                          class="margin-metrics"
+                          id="marginMetrics"
+                          style="display: none"
+                        >
+                          <div>
+                            <span class="summary-label">Costo unitario</span>
+                            <span class="summary-value" id="costPerUnit"
+                              >$0.00</span
+                            >
+                          </div>
+                          <div>
+                            <span class="summary-label">Ganancia por unidad</span>
+                            <span class="summary-value" id="profitPerUnit"
+                              >$0.00</span
+                            >
+                          </div>
+                          <div>
+                            <span class="summary-label">Margen</span>
+                            <span class="summary-value" id="marginPercentage"
+                              >0%</span
+                            >
+                          </div>
+                        </div>
+                      </div>
+
+                      <div
+                        style="display: flex; justify-content: flex-end; gap: 1rem"
+                      >
+                        <button
+                          type="reset"
+                          class="btn btn-secondary"
+                          id="resetVariantBtn"
+                        >
+                          Limpiar
+                        </button>
+                        <button
+                          type="submit"
+                          class="btn btn-primary"
+                          id="saveVariantBtn"
+                          style="
+                            display: inline-flex;
+                            align-items: center;
+                            justify-content: center;
+                            gap: 0.75rem;
+                          "
+                        >
+                          <span id="variantBtnText">Guardar variante</span>
+                          <div
+                            class="spinner"
+                            id="variantBtnSpinner"
+                            style="
+                              display: none;
+                              width: 18px;
+                              height: 18px;
+                              border-width: 2px;
+                            "
+                          ></div>
+                        </button>
+                      </div>
+                    </form>
+                    </div>
+                    <aside class="inventory-summary-wrapper">
+                      <div class="inventory-summary-card" aria-live="polite">
+                        <div class="stock-projection-header">
+                          <div>
+                            <h3 class="stock-projection-title">📊 Proyección de Stock</h3>
+                            <p
+                              id="stockProjectionSubtitle"
+                              class="form-hint"
+                              style="margin: 0; font-size: 0.8rem; color: var(--text-secondary);"
+                            >
+                              Define el stock inicial para ver cuántos paquetes puedes armar con cada presentación.
+                            </p>
+                          </div>
+                          <div class="stock-total-value" id="stockProjectionTotal">
+                            0
+                          </div>
+                        </div>
+                        <div id="stockProjectionTableWrapper">
+                          <table class="stock-projection-table">
+                            <thead>
+                              <tr>
+                                <th>Presentación</th>
+                                <th class="stock-projection-qty">Disponibles</th>
+                              </tr>
+                            </thead>
+                            <tbody id="stockProjectionTableBody">
+                              <tr>
+                                <td colspan="2" class="stock-projection-empty">
+                                  Aún no se ha definido stock para esta variante.
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </aside>
+                  </div>
+                </div>
+              </section>
+            </div>
+
+            <!-- Variants list -->
+            <section
+              class="admin-card variant-table-card"
+              style="margin-bottom: 1.5rem"
+            >
+              <div
+                class="admin-card-header"
+                style="
+                  display: flex;
+                  justify-content: space-between;
+                  align-items: center;
+                  margin-bottom: 1.25rem;
+                "
+              >
+                <h2 class="admin-card-title">Variantes registradas</h2>
+                <span id="variantCount" class="badge badge-neutral"></span>
+              </div>
+              <div class="admin-card-body" id="variantsContainer">
+                <div
+                  class="empty-state"
+                  id="variantsEmpty"
+                  style="display: none"
+                >
+                  <div class="empty-state-icon">🧩</div>
+                  <h3 class="empty-state-title">Sin variantes registradas</h3>
+                  <p class="empty-state-text">
+                    Agrega la primera variante usando el formulario superior.
+                  </p>
+                </div>
+
+                <div id="variantsTableWrapper" style="display: none">
+                  <table class="admin-table variants-table">
+                    <thead>
+                      <tr>
+                        <th>SKU</th>
+                        <th>Descripción</th>
+                        <th>Color</th>
+                        <th>Precio unitario</th>
+                        <th>Costo unitario</th>
+                        <th title="Gestionar en Inventario">Stock</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody id="variantsTableBody"></tbody>
+                  </table>
+                </div>
+              </div>
+            </section>
+
+          </div>
+        </div>
+
+        <div id="loadingState" class="loading" style="display: flex">
+          <div class="spinner"></div>
+        </div>
+
+        <div id="errorState" class="empty-state" style="display: none">
+          <div class="empty-state-icon">❌</div>
+          <h2 class="empty-state-title">No se pudo cargar el producto</h2>
+          <p class="empty-state-text">
+            Verifica el enlace o regresa a la lista de productos.
+          </p>
+          <a href="/admin-agregar-producto.html" class="btn btn-secondary"
+            >Volver</a
+          >
+        </div>
+      </main>
+    </div>
+
+    <script src="js/layout.js" defer></script>
+    <script src="js/sidebar-toggle.js" defer></script>
+    <script src="js/admin-header-dropdown.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/components/admin-header-loader.js"></script>
+    <script src="js/components/user-profile.js"></script>
+    <script src="js/pack-helpers.js"></script>
+    <script src="js/cloudinaryUpload.js"></script>
+    <script>
+      const adminToken = localStorage.getItem("Fashion Box_admin_token");
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const productoId = parseInt(urlParams.get("id"), 10);
+
+      const loadingState = document.getElementById("loadingState");
+      const errorState = document.getElementById("errorState");
+      const contentWrapper = document.getElementById("contentWrapper");
+      const productSummary = document.getElementById("productSummary");
+      const productBreadcrumb = document.getElementById("productBreadcrumb");
+      const variantsEmpty = document.getElementById("variantsEmpty");
+      const variantsTableWrapper = document.getElementById(
+        "variantsTableWrapper"
+      );
+      const variantsTableBody = document.getElementById("variantsTableBody");
+      const variantCount = document.getElementById("variantCount");
+
+      const variantForm = document.getElementById("variantForm");
+      const variantBtnText = document.getElementById("variantBtnText");
+      const variantBtnSpinner = document.getElementById("variantBtnSpinner");
+      const saveVariantBtn = document.getElementById("saveVariantBtn");
+      const resetVariantBtn = document.getElementById("resetVariantBtn");
+
+      const variantMargin = document.getElementById("variantMargin");
+      const marginMetrics = document.getElementById("marginMetrics");
+      const marginMessage = document.getElementById("marginMessage");
+      const costPerPackage = document.getElementById("costPerPackage");
+      const profitPerPackage = document.getElementById("profitPerPackage");
+      const marginPercentage = document.getElementById("marginPercentage");
+      const precioUnitarioInput = document.getElementById("precioUnitario");
+      const precioOfertaInput = document.getElementById("precioOferta");
+      const precioOfertaPreview = document.getElementById("precioOfertaPreview");
+      const skuInput = document.getElementById("sku");
+      const dimensionesInput = document.getElementById("dimensiones");
+      const medidasDatalist = document.getElementById("listaMedidas");
+      const colorNombreInput = document.getElementById("color_nombre");
+      const urlImagenVarianteInput = document.getElementById("url_imagen_variante");
+      const portadaPreviewImg = document.getElementById("variantePortadaPreviewImg");
+      const portadaPreviewText = document.getElementById(
+        "variantePortadaPreviewText"
+      );
+      const variantImagesUploader = document.getElementById("variantImagesUploader");
+      const variantImagesStatus = document.getElementById("variantImagesStatus");
+      const variantServerImagesBlock = document.getElementById(
+        "variantServerImagesBlock"
+      );
+      const galeriaImagenesVarianteServer = document.getElementById(
+        "galeriaImagenesVarianteServer"
+      );
+      const skuSuggestion = document.getElementById("skuSuggestion");
+      const skuSuggestionText = document.getElementById("skuSuggestionText");
+      const applySkuSuggestion = document.getElementById("applySkuSuggestion");
+      const stockInput = document.getElementById("stock");
+      const stockInfoAlert = document.getElementById("stockInfoAlert");
+      const stockInfoBadges = document.getElementById("stockInfoBadges");
+      const stockProjectionTotal = document.getElementById(
+        "stockProjectionTotal"
+      );
+      const stockProjectionTableBody = document.getElementById(
+        "stockProjectionTableBody"
+      );
+      const stockProjectionSubtitle = document.getElementById(
+        "stockProjectionSubtitle"
+      );
+
+      const productImagesInput = document.getElementById("productImagesInput");
+      const galeriaPreview = document.getElementById("galeriaPreview");
+      const clearImagesSelectionBtn = document.getElementById(
+        "clearImagesSelectionBtn"
+      );
+
+      let skuMaestroBase = null;
+      let tamanosConfiguradosMaestro = [];
+      let variantesProducto = [];
+      let editingVarianteId = null;
+      let imagenesSeleccionadasMeta = [];
+      let varianteServerImagesOrder = [];
+      let varianteServerImagesData = [];
+      let sortableVariantePreviewInstance = null;
+      let sortableVarianteServerInstance = null;
+
+      if (!productoId || Number.isNaN(productoId)) {
+        loadingState.style.display = "none";
+        errorState.style.display = "flex";
+      }
+
+      const waitForElementById = (id, timeoutMs = 1500) =>
+        new Promise((resolve) => {
+          const startedAt = Date.now();
+
+          const tick = () => {
+            const el = document.getElementById(id);
+            if (el) return resolve(el);
+            if (Date.now() - startedAt >= timeoutMs) return resolve(null);
+            requestAnimationFrame(tick);
+          };
+
+          tick();
+        });
+
+      async function verifyAndLoadAdmin() {
+        try {
+          const response = await fetch(`${API_BASE_URL}/admin/verify`, {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${adminToken}`,
+              "Content-Type": "application/json",
+            },
+          });
+
+          if (!response.ok) throw new Error("Invalid token");
+
+          const data = await response.json();
+          if (data.success) {
+            const admin = data?.data?.admin || null;
+            if (!admin) return;
+
+            try {
+              localStorage.setItem("Fashion Box_admin", JSON.stringify(admin));
+            } catch (e) {
+              console.warn("No se pudo persistir Fashion Box_admin:", e);
+            }
+
+            const nombre = (admin.nombre || "Admin").toString().trim();
+            const rolRaw = (admin.rol || "").toString().toLowerCase();
+            const rolTexto =
+              rolRaw === "superadmin" || rolRaw === "super admin"
+                ? "Super Admin"
+                : "Admin";
+
+            const words = nombre.split(" ").filter(Boolean);
+            const initials =
+              words.length >= 2
+                ? `${words[0].charAt(0)}${words[1].charAt(0)}`
+                : nombre.substring(0, 2);
+
+            const iniciales = initials.toUpperCase();
+
+            const [legacyNameEl, legacyRoleEl, legacyAvatarEl] =
+              await Promise.all([
+                waitForElementById("userName"),
+                waitForElementById("userRole"),
+                waitForElementById("userAvatar"),
+              ]);
+
+            if (legacyNameEl) legacyNameEl.textContent = nombre;
+            if (legacyRoleEl) legacyRoleEl.textContent = rolTexto;
+            if (legacyAvatarEl) legacyAvatarEl.textContent = iniciales;
+
+            const [headerNameEl, headerRoleEl, headerAvatarEl] =
+              await Promise.all([
+                waitForElementById("headerUserName"),
+                waitForElementById("headerUserRole"),
+                waitForElementById("headerUserAvatar"),
+              ]);
+
+            if (headerNameEl) headerNameEl.textContent = nombre;
+            if (headerRoleEl) headerRoleEl.textContent = rolTexto;
+            if (headerAvatarEl) headerAvatarEl.textContent = iniciales;
+          }
+        } catch (error) {
+          console.error("Error verifying admin:", error);
+          localStorage.removeItem("Fashion Box_admin_token");
+          localStorage.removeItem("Fashion Box_admin");
+          window.location.href = "/login.html";
+        }
+      }
+
+      async function loadMedidasExistentes() {
+        if (!medidasDatalist) return;
+
+        try {
+          const response = await fetch(
+            `${API_BASE_URL}/admin/medidas-existentes`,
+            {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${adminToken}`,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+
+          if (!response.ok) {
+            console.warn(
+              "No se pudieron cargar las medidas existentes:",
+              response.status
+            );
+            return;
+          }
+
+          const data = await response.json();
+          const medidas = Array.isArray(data?.data?.medidas)
+            ? data.data.medidas
+            : [];
+
+          medidasDatalist.innerHTML = medidas
+            .map((valor) => {
+              const texto = String(valor || "").trim();
+              if (!texto) return "";
+              return `<option value="${texto}"></option>`;
+            })
+            .join("");
+        } catch (error) {
+          console.error("Error al cargar medidas existentes:", error);
+        }
+      }
+
+      async function loadProducto() {
+        try {
+          loadingState.style.display = "flex";
+          contentWrapper.style.display = "none";
+          errorState.style.display = "none";
+
+          const response = await API.getProductoById(productoId);
+
+          if (response.ok && response.data.success) {
+            const { producto, variantes, tamanosDisponibles } =
+              response.data.data;
+
+            productBreadcrumb.textContent = `Producto #${producto.productoId}`;
+
+            // Guardar el SKU Maestro para sugerencias de SKU
+            skuMaestroBase = producto.sku_maestro || producto.skuMaestro || null;
+
+            // Guardar configuración de presentaciones (pieza / packs) del maestro
+            tamanosConfiguradosMaestro = Array.isArray(tamanosDisponibles)
+              ? tamanosDisponibles
+              : [];
+
+            const variantesReales = Array.isArray(variantes) ? variantes : [];
+
+            let variantesPendientes = [];
+            try {
+              const pendingResp = await API.apiCall(
+                `/admin/productos/${productoId}/variantes-pendientes`,
+                { method: "GET" }
+              );
+
+              if (pendingResp.ok && pendingResp.data?.success) {
+                variantesPendientes = Array.isArray(pendingResp.data?.data?.variantes)
+                  ? pendingResp.data.data.variantes
+                  : [];
+              }
+            } catch (e) {
+              console.warn("No se pudieron cargar variantes pendientes:", e);
+            }
+
+            // Fusionar reales + pendientes (las pendientes solo existen en control_cambios)
+            variantesProducto = [...variantesReales, ...variantesPendientes];
+
+            renderProductSummary(producto, variantesProducto);
+            renderVariants(variantesProducto);
+            renderStockInfoForVariant();
+
+            loadingState.style.display = "none";
+            contentWrapper.style.display = "grid";
+          } else {
+            throw new Error(
+              response.data?.message || "No se pudo obtener el producto"
+            );
+          }
+        } catch (error) {
+          console.error("Error loading product:", error);
+          loadingState.style.display = "none";
+          errorState.style.display = "flex";
+        }
+      }
+
+      // Función para generar sugerencia de SKU
+      function generateSkuSuggestion() {
+        if (!skuMaestroBase) {
+          skuSuggestion.style.display = "none";
+          return;
+        }
+
+        const dimensiones = dimensionesInput.value.trim();
+        if (!dimensiones) {
+          skuSuggestion.style.display = "none";
+          return;
+        }
+
+        // Limpiar dimensiones para el SKU (quitar espacios, caracteres especiales)
+        const dimensionesLimpias = dimensiones
+          .toUpperCase()
+          .replace(/\s+/g, "")
+          .replace(/[^A-Z0-9X]/gi, "-");
+
+        const colorRaw = (colorNombreInput?.value || "").toString().trim();
+        const colorLimpio = colorRaw
+          ? colorRaw
+              .toUpperCase()
+              .normalize("NFD")
+              .replace(/[\u0300-\u036f]/g, "")
+              .replace(/\s+/g, "")
+              .replace(/[^A-Z0-9]/g, "")
+              .slice(0, 6)
+          : "";
+
+        const sugerencia = colorLimpio
+          ? `${skuMaestroBase}-${dimensionesLimpias}-${colorLimpio}`
+          : `${skuMaestroBase}-${dimensionesLimpias}`;
+        if (skuInput) {
+          skuInput.value = sugerencia;
+        }
+        skuSuggestion.style.display = "none";
+      }
+
+      function renderProductSummary(producto, variantes) {
+        const totalVariantes = Array.isArray(variantes) ? variantes.length : 0;
+        const variantesConStock = (Array.isArray(variantes) ? variantes : []).filter(
+          (v) => (v.stock || 0) > 0
+        ).length;
+
+        const stockTotal = (Array.isArray(variantes) ? variantes : []).reduce(
+          (sum, v) => sum + (Number.isFinite(v.stock) ? v.stock : 0),
+          0
+        );
+
+        const precioMin = producto.precioDesde
+          ? formatCurrency(producto.precioDesde)
+          : "N/D";
+        const precioMax = producto.precioHasta
+          ? formatCurrency(producto.precioHasta)
+          : "N/D";
+
+        productMeta.textContent = `Producto #${producto.productoId}`;
+
+        pricingBadges.innerHTML = "";
+        if (producto.precioDesde) {
+          const badge = document.createElement("span");
+          badge.className = "badge badge-success";
+          badge.textContent = `Precio desde ${precioMin}`;
+          pricingBadges.appendChild(badge);
+        }
+        if (
+          producto.precioHasta &&
+          producto.precioHasta !== producto.precioDesde
+        ) {
+          const badgeMax = document.createElement("span");
+          badgeMax.className = "badge badge-info";
+          badgeMax.textContent = `Precio hasta ${precioMax}`;
+          pricingBadges.appendChild(badgeMax);
+        }
+
+        // Buscar imagen principal a partir de las variantes
+        let mainImageUrl = null;
+        let mainImageAlt = null;
+        if (Array.isArray(variantes) && variantes.length) {
+          for (const v of variantes) {
+            if (Array.isArray(v.imagenes) && v.imagenes.length) {
+              const img = v.imagenes[0];
+              if (img && img.url) {
+                mainImageUrl = img.url;
+                mainImageAlt = img.alt || producto.nombreProducto || "Producto";
+                break;
+              }
+            }
+          }
+        }
+
+        const imageHtml = mainImageUrl
+          ? `<div class="product-summary-image"><img src="${mainImageUrl}" alt="${
+              mainImageAlt || "Producto"
+            }" /></div>`
+          : `<div class="product-summary-image"><span style="font-size: 1.75rem;">📦</span></div>`;
+
+        const categoriaNombre = producto.categoria?.nombre || "Sin categoría";
+        const codigoModelo = producto.sku_maestro || producto.skuMaestro || "No definido";
+
+        const isDraft = producto.activo === false;
+
+        const draftBannerHtml = isDraft
+          ? `<div style="margin-bottom:0.75rem; padding:0.75rem 1rem; border-radius:0.75rem; background: #fffbeb; border:1px solid #fed7aa; color:#92400e; font-size:0.9rem; display:flex; align-items:flex-start; gap:0.5rem;">
+              <span style="font-size:1.1rem;">⚠️</span>
+              <div>
+                <strong>Este producto está en modo BORRADOR.</strong>
+                <div>Los clientes no pueden verlo hasta que un SuperAdmin apruebe la creación o sus variantes.</div>
+              </div>
+            </div>`
+          : "";
+
+        productSummary.innerHTML = `
+        <div class="product-summary">
+          ${draftBannerHtml}
+          <div class="product-summary-header">
+            <div class="product-summary-main">
+              ${imageHtml}
+              <div class="product-summary-text">
+                <h3>${producto.nombreProducto}</h3>
+                <div style="display:flex; flex-wrap:wrap; gap:0.5rem; margin-bottom:0.5rem;">
+                  <span class="badge" style="background:#f3f4f6; color:#374151; border-radius:999px; font-size:0.75rem; font-weight:600; padding:0.25rem 0.75rem;">
+                    ${categoriaNombre}
+                  </span>
+                  <span class="badge" style="background:#eef2ff; color:#4b5563; border-radius:999px; font-size:0.75rem; font-weight:600; padding:0.25rem 0.75rem;">
+                    SKU Maestro: ${codigoModelo}
+                  </span>
+                </div>
+                <p style="color: var(--text-secondary);">
+                  ${producto.descripcion || "Sin descripción registrada."}
+                </p>
+              </div>
+            </div>
+            <div class="product-summary-kpis">
+              <div class="product-kpi">
+                <div class="product-kpi-label">Total variantes</div>
+                <div class="product-kpi-value">${totalVariantes}</div>
+              </div>
+              <div class="product-kpi">
+                <div class="product-kpi-label">Stock total</div>
+                <div class="product-kpi-value">${stockTotal.toLocaleString("es-MX")}</div>
+              </div>
+              <div class="product-kpi">
+                <div class="product-kpi-label">Rango de precios</div>
+                <div class="product-kpi-value">${precioMin} – ${precioMax}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+      }
+
+      function formatMedidaLabel(medida) {
+        if (!medida) return null;
+        const nombre = medida.nombre || "";
+        const abrev = medida.abreviatura || "";
+        return abrev ? `${nombre} (${abrev})` : nombre;
+      }
+
+      /**
+       * Extrae un valor numérico de una medida para ordenamiento
+       * @param {string} medida - String de medida (ej: "10x10", "50ml", "6 Piezas", "XL")
+       * @returns {number} - Valor numérico para ordenar
+       */
+      function getMeasureValue(medida) {
+        if (!medida || typeof medida !== 'string') return 999999;
+        
+        const medidaLower = medida.toLowerCase().trim();
+        
+        // Tallas de ropa: asignar valores numéricos
+        const tallasMap = {
+          'xxs': 1, '2xs': 1,
+          'xs': 2,
+          's': 3, 'small': 3, 'chico': 3,
+          'm': 4, 'medium': 4, 'mediano': 4,
+          'l': 5, 'large': 5, 'grande': 5,
+          'xl': 6, 'x-l': 6,
+          'xxl': 7, '2xl': 7, 'x-xl': 7,
+          'xxxl': 8, '3xl': 8, 'xx-xl': 8,
+          'xxxxl': 9, '4xl': 9, 'xxx-xl': 9
+        };
+        
+        if (tallasMap[medidaLower]) {
+          return tallasMap[medidaLower];
+        }
+        
+        // Extraer primer número de la cadena (ej: "10x10" -> 10, "50ml" -> 50, "6 Piezas" -> 6)
+        const match = medida.match(/(\d+(?:\.\d+)?)/);
+        if (match) {
+          return parseFloat(match[1]);
+        }
+        
+        // Si no hay número ni es talla, enviar al final
+        return 999999;
+      }
+
+      function renderVariants(variantes) {
+        variantCount.textContent = `${variantes.length} variante${
+          variantes.length === 1 ? "" : "s"
+        }`;
+
+        if (!Array.isArray(variantes) || variantes.length === 0) {
+          variantsEmpty.style.display = "block";
+          variantsTableWrapper.style.display = "none";
+          return;
+        }
+
+        variantsEmpty.style.display = "none";
+        variantsTableWrapper.style.display = "block";
+
+        // Ordenar variantes por medida ascendente antes de renderizar
+        const variantesOrdenadas = [...variantes].sort((a, b) => {
+          const medidaA = a.dimensiones || '';
+          const medidaB = b.dimensiones || '';
+          
+          const valorA = getMeasureValue(medidaA);
+          const valorB = getMeasureValue(medidaB);
+          
+          return valorA - valorB;
+        });
+
+        variantsTableBody.innerHTML = variantesOrdenadas
+          .map((variant) => {
+            const precio = variant.precioUnitario
+              ? formatCurrency(variant.precioUnitario)
+              : "N/D";
+            const costo = variant.costoUnitario
+              ? formatCurrency(variant.costoUnitario)
+              : "N/D";
+            const stock = Number.isFinite(variant.stock) ? variant.stock : "0";
+            const color = (
+              variant.colorNombre ||
+              variant.color_nombre ||
+              variant.ColorNombre ||
+              ""
+            )
+              .toString()
+              .trim();
+            const isPending = !!variant.isPending;
+
+            if (isPending) {
+              return `
+          <tr class="table-warning">
+            <td>${variant.sku || "Sin SKU"}</td>
+            <td>${variant.dimensiones || "Sin dimensiones"}</td>
+            <td>${color || "-"}</td>
+            <td>${precio}</td>
+            <td>${costo}</td>
+            <td>${stock}</td>
+            <td>
+              <span class="badge bg-warning text-dark" style="font-weight:700;">
+                ⏳ En Revisión
+              </span>
+            </td>
+            <td class="actions-cell">
+              <span class="badge bg-secondary">Acciones bloqueadas</span>
+            </td>
+          </tr>
+        `;
+            }
+
+            const activo = variant.activo !== undefined ? variant.activo : true;
+            const estadoBadgeClass = activo ? 'badge-success' : 'badge-secondary';
+            const estadoTexto = activo ? 'Visible' : 'Oculto';
+            const estadoIcon = activo ? '' : '🚫';
+
+            return `
+          <tr>
+            <td>${variant.sku || "Sin SKU"}</td>
+            <td>${variant.dimensiones || "Sin dimensiones"}</td>
+            <td>${color || "-"}</td>
+            <td>${precio}</td>
+            <td>${costo}</td>
+            <td>${stock}</td>
+            <td>
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <span class="visibility-badge ${estadoBadgeClass}" title="${estadoTexto}">
+                  ${estadoIcon} ${estadoTexto}
+                </span>
+                <button
+                  type="button"
+                  class="btn-icon-toggle"
+                  onclick="toggleVarianteVisibilidad(${variant.varianteId}, ${activo})"
+                  title="${activo ? 'Ocultar variante' : 'Mostrar variante'}"
+                >
+                  ${activo ? '🔒' : '🔓'}
+                </button>
+              </div>
+            </td>
+            <td class="actions-cell">
+              <button
+                type="button"
+                class="btn btn-secondary btn-sm"
+                onclick="iniciarEdicionVariante(${variant.varianteId})"
+                title="Editar variante"
+              >
+                ✏️
+              </button>
+            </td>
+          </tr>
+        `;
+          })
+          .join("");
+      }
+
+      async function cancelarSolicitudVariante(controlId) {
+        const idNumero = Number.parseInt(controlId, 10);
+        if (!Number.isInteger(idNumero)) {
+          console.warn(
+            "ID de control de cambio inválido para cancelar solicitud:",
+            controlId
+          );
+          return;
+        }
+
+        const result = await Swal.fire({
+          title: "¿Estás seguro de cancelar esta solicitud de creación?",
+          text: "Esta operación rechazará la solicitud pendiente en el panel de aprobaciones.",
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonText: "Sí, cancelar",
+          cancelButtonText: "No, volver",
+          confirmButtonColor: "#EF4444",
+          cancelButtonColor: "#6b7280",
+        });
+
+        if (!result.isConfirmed) {
+          return;
+        }
+
+        try {
+          const response = await API.apiCall("/admin/cambios/rechazar-lote", {
+            method: "POST",
+            body: JSON.stringify({ ids: [idNumero] }),
+          });
+
+          if (!response.ok || !response.data?.success) {
+            throw new Error(
+              response.data?.message || "No se pudo cancelar la solicitud"
+            );
+          }
+
+          showToast("Solicitud cancelada correctamente", "success");
+          await loadProducto();
+        } catch (error) {
+          console.error("Error al cancelar solicitud de variante:", error);
+          Swal.fire({
+            icon: "error",
+            title: "Error",
+            text: error.message || "No se pudo cancelar la solicitud",
+            confirmButtonColor: "#F97316",
+          });
+        }
+      }
+
+      function buildPresentacionLabel(tamano) {
+        if (!tamano) return null;
+
+        const rawValor = tamano.valor ?? tamano.Valor ?? null;
+        const valor = Number.isFinite(rawValor)
+          ? rawValor
+          : parseInt(rawValor, 10);
+
+        const etiqueta = (tamano.etiqueta || tamano.Etiqueta || "").trim();
+
+        if (Number.isFinite(valor) && valor > 0) {
+          if (valor === 1) return etiqueta || "Venta Individual";
+          return etiqueta || obtenerNombrePack(valor);
+        }
+
+        return etiqueta || `Presentación ${tamano.tamanoId}`;
+      }
+
+      function renderStockInfoForVariant() {
+        if (!stockInfoAlert || !stockInfoBadges) return;
+
+        const presentaciones = Array.isArray(tamanosConfiguradosMaestro)
+          ? tamanosConfiguradosMaestro
+          : [];
+
+        const totalPiezas = parseInt(stockInput?.value || "0", 10);
+        const safeTotal =
+          Number.isFinite(totalPiezas) && totalPiezas > 0 ? totalPiezas : 0;
+
+        if (stockProjectionTotal) {
+          stockProjectionTotal.textContent = safeTotal.toLocaleString("es-MX");
+        }
+
+        if (!presentaciones.length) {
+          stockInfoAlert.textContent =
+            "El stock se asignará solo a esta variante (sin presentaciones adicionales configuradas en el producto maestro).";
+          stockInfoBadges.innerHTML = "";
+
+          if (stockProjectionSubtitle) {
+            stockProjectionSubtitle.textContent =
+              "Esta variante usa el stock únicamente en forma individual (sin packs configurados).";
+          }
+
+          if (stockProjectionTableBody) {
+            stockProjectionTableBody.innerHTML = `
+              <tr>
+                <td colspan="2" class="stock-projection-empty">
+                  No hay presentaciones configuradas para este producto maestro.
+                </td>
+              </tr>
+            `;
+          }
+
+          return;
+        }
+
+        stockInfoAlert.textContent =
+          "ℹ️ El stock que ingreses aquí será compartido automáticamente para:";
+
+        const badgesHtml = presentaciones
+          .map((t) => {
+            const label = buildPresentacionLabel(t);
+            if (!label) return "";
+            const rawValor = t.valor ?? t.Valor ?? null;
+            const valor = Number.isFinite(rawValor)
+              ? rawValor
+              : parseInt(rawValor, 10);
+
+            const icon = valor === 1 ? "✅" : "📦";
+            return `<span class="badge badge-neutral" style="display:inline-flex; align-items:center; gap:0.25rem;">
+        ${icon} ${label}
+      </span>`;
+          })
+          .join("");
+
+        stockInfoBadges.innerHTML = badgesHtml;
+
+        if (stockProjectionSubtitle) {
+          stockProjectionSubtitle.textContent =
+            "Con el stock inicial calcularemos cuántos paquetes puedes armar en cada presentación.";
+        }
+
+        updateStockCapacityPreview();
+      }
+
+      function updateStockCapacityPreview() {
+        if (!stockInput || !stockProjectionTotal || !stockProjectionTableBody)
+          return;
+
+        const totalPiezas = parseInt(stockInput.value, 10);
+        const safeTotal =
+          Number.isFinite(totalPiezas) && totalPiezas > 0 ? totalPiezas : 0;
+
+        stockProjectionTotal.textContent = safeTotal.toLocaleString("es-MX");
+
+        const presentaciones = Array.isArray(tamanosConfiguradosMaestro)
+          ? tamanosConfiguradosMaestro
+          : [];
+
+        if (!presentaciones.length || safeTotal === 0) {
+          stockProjectionTableBody.innerHTML = `
+            <tr>
+              <td colspan="2" class="stock-projection-empty">
+                Define stock inicial para ver cómo se reparte entre las presentaciones.
+              </td>
+            </tr>
+          `;
+          return;
+        }
+
+        const rows = [];
+
+        presentaciones.forEach((t) => {
+          const rawValor = t.valor ?? t.Valor ?? null;
+          const valor = Number.isFinite(rawValor)
+            ? rawValor
+            : parseInt(rawValor, 10);
+
+          if (!Number.isFinite(valor) || valor <= 0) return;
+
+          const maxPacks = Math.floor(safeTotal / valor);
+          if (maxPacks < 1) return;
+
+          const label = buildPresentacionLabel(t);
+          if (!label) return;
+
+          const icon = valor === 1 ? "✅" : "📦";
+
+          rows.push(`
+            <tr>
+              <td>
+                <div class="stock-projection-label">
+                  <span class="stock-projection-label-icon">${icon}</span>
+                  <span>${label}</span>
+                </div>
+              </td>
+              <td class="stock-projection-qty">${maxPacks.toLocaleString(
+                "es-MX"
+              )}</td>
+            </tr>
+          `);
+        });
+
+        if (!rows.length) {
+          stockProjectionTableBody.innerHTML = `
+            <tr>
+              <td colspan="2" class="stock-projection-empty">
+                Con este stock no se alcanza a formar ningún pack completo en las presentaciones configuradas.
+              </td>
+            </tr>
+          `;
+          return;
+        }
+
+        stockProjectionTableBody.innerHTML = rows.join("");
+      }
+
+      function resetVariantFormState() {
+        editingVarianteId = null;
+        if (variantForm) {
+          variantForm.reset();
+        }
+        if (colorNombreInput) {
+          colorNombreInput.value = "";
+        }
+        if (urlImagenVarianteInput) {
+          urlImagenVarianteInput.value = "";
+        }
+
+        if (portadaPreviewImg) {
+          portadaPreviewImg.style.display = "none";
+          portadaPreviewImg.removeAttribute("src");
+        }
+        if (portadaPreviewText) {
+          portadaPreviewText.textContent = "Sin imagen";
+        }
+
+        imagenesSeleccionadasMeta = [];
+        if (productImagesInput) {
+          productImagesInput.value = "";
+        }
+        if (galeriaPreview) {
+          galeriaPreview.innerHTML = "";
+        }
+        if (galeriaImagenesVarianteServer) {
+          galeriaImagenesVarianteServer.innerHTML = "";
+        }
+        if (variantServerImagesBlock) {
+          variantServerImagesBlock.style.display = "none";
+        }
+        if (variantImagesUploader) {
+          variantImagesUploader.style.display = "flex";
+        }
+        if (variantImagesStatus) {
+          variantImagesStatus.textContent = "Nueva variante";
+        }
+        varianteServerImagesOrder = [];
+        sortableVariantePreviewInstance = null;
+        sortableVarianteServerInstance = null;
+        if (stockInput) {
+          stockInput.value = "0";
+          stockInput.disabled = true;
+          stockInput.classList.add("bg-light");
+          stockInput.setAttribute("title", "Gestionar en Inventario");
+        }
+        if (variantBtnText) {
+          variantBtnText.textContent = "Guardar variante";
+        }
+        if (marginMetrics) {
+          marginMetrics.style.display = "none";
+        }
+        if (marginMessage) {
+          marginMessage.style.display = "block";
+          marginMessage.textContent =
+            "Ingresa costo y precio para calcular la ganancia.";
+        }
+        updateStockCapacityPreview();
+      }
+
+      function iniciarEdicionVariante(varianteId) {
+        if (!Array.isArray(variantesProducto) || !variantesProducto.length) {
+          return;
+        }
+
+        const idNumero = Number.parseInt(varianteId, 10);
+        if (!Number.isInteger(idNumero)) return;
+
+        const variante = variantesProducto.find((v) => {
+          const vid = v.varianteId ?? v.varianteid;
+          return Number.parseInt(vid, 10) === idNumero;
+        });
+
+        if (!variante) {
+          console.warn("Variante no encontrada para edición", varianteId);
+          return;
+        }
+
+        // Debug: verificar presentaciones/packs configurados en el maestro
+        console.log(
+          "🔎 Presentaciones configuradas en el producto maestro (tamanosConfiguradosMaestro):",
+          tamanosConfiguradosMaestro
+        );
+
+        editingVarianteId = idNumero;
+
+        if (skuInput) {
+          skuInput.value = variante.sku || "";
+        }
+        if (dimensionesInput) {
+          dimensionesInput.value = variante.dimensiones || "";
+        }
+
+        if (colorNombreInput) {
+          const colorValue =
+            variante.colorNombre || variante.color_nombre || variante.ColorNombre || "";
+          colorNombreInput.value = String(colorValue || "");
+        }
+        if (urlImagenVarianteInput) {
+          const urlValue =
+            variante.urlImagenVariante ||
+            variante.url_imagen_variante ||
+            variante.UrlImagenVariante ||
+            "";
+          urlImagenVarianteInput.value = String(urlValue || "");
+        }
+
+        const portadaUrl = (urlImagenVarianteInput?.value || "").toString().trim();
+        if (portadaPreviewImg && portadaPreviewText) {
+          if (portadaUrl) {
+            portadaPreviewImg.src = portadaUrl;
+            portadaPreviewImg.style.display = "block";
+            portadaPreviewText.textContent = "Imagen principal";
+          } else {
+            portadaPreviewImg.style.display = "none";
+            portadaPreviewImg.removeAttribute("src");
+            portadaPreviewText.textContent = "Sin imagen";
+          }
+        }
+
+        if (variantImagesUploader) {
+          variantImagesUploader.style.display = "flex";
+        }
+
+        imagenesSeleccionadasMeta = [];
+        if (productImagesInput) {
+          productImagesInput.value = "";
+        }
+        renderGaleriaPreview();
+        cargarImagenesVarianteDesdeServidor(idNumero);
+
+        const costoInputEl = document.getElementById("costoUnitario");
+        const precioInputEl = document.getElementById("precioUnitario");
+        const ofertaInputEl = document.getElementById("precioOferta");
+        const stockInputEl = document.getElementById("stock");
+
+        const costoVal =
+          typeof variante.costoUnitario === "number" &&
+          !Number.isNaN(variante.costoUnitario)
+            ? variante.costoUnitario
+            : null;
+        const precioVal =
+          typeof variante.precioUnitario === "number" &&
+          !Number.isNaN(variante.precioUnitario)
+            ? variante.precioUnitario
+            : null;
+        const ofertaVal =
+          typeof variante.precioOfertaUnitario === "number" &&
+          !Number.isNaN(variante.precioOfertaUnitario)
+            ? variante.precioOfertaUnitario
+            : null;
+
+        if (costoInputEl) {
+          costoInputEl.value = costoVal !== null ? String(costoVal) : "";
+        }
+        if (precioInputEl) {
+          precioInputEl.value = precioVal !== null ? String(precioVal) : "";
+        }
+        if (ofertaInputEl) {
+          if (ofertaVal !== null && Number.isFinite(precioVal) && precioVal > 0) {
+            const descuentoPct = ((precioVal - ofertaVal) / precioVal) * 100;
+            ofertaInputEl.value = descuentoPct > 0 ? descuentoPct.toFixed(1) : "";
+          } else {
+            ofertaInputEl.value = "";
+          }
+        }
+        if (stockInputEl) {
+          const stockVal =
+            typeof variante.stock === "number" && !Number.isNaN(variante.stock)
+              ? variante.stock
+              : 0;
+          stockInputEl.value = String(stockVal);
+          stockInputEl.disabled = true;
+          stockInputEl.classList.add("bg-light");
+          stockInputEl.setAttribute("title", "Gestionar en Inventario");
+        }
+
+        if (variantBtnText) {
+          variantBtnText.textContent = "Actualizar variante";
+        }
+
+        calculateMarginPreview();
+        updatePrecioOfertaPreview();
+      }
+
+      function formatCurrency(amount) {
+        return new Intl.NumberFormat("es-MX", {
+          style: "currency",
+          currency: "MXN",
+        }).format(amount);
+      }
+
+      function updatePrecioOfertaPreview() {
+        if (!precioOfertaPreview) return;
+
+        const precioBase = parseFloat(precioUnitarioInput?.value);
+        const descuentoRaw = precioOfertaInput?.value;
+
+        if (!Number.isFinite(precioBase) || precioBase <= 0) {
+          precioOfertaPreview.textContent = "Precio final resultante: $0.00";
+          return;
+        }
+
+        const porcentaje = parseFloat(descuentoRaw);
+
+        if (!Number.isFinite(porcentaje) || porcentaje <= 0) {
+          // Sin descuento: mostrar el precio base
+          precioOfertaPreview.textContent = `Precio final resultante: ${formatCurrency(precioBase)}`;
+          return;
+        }
+
+        const porcentajeClamped = Math.min(Math.max(porcentaje, 0), 100);
+        const precioFinal = precioBase - precioBase * (porcentajeClamped / 100);
+
+        precioOfertaPreview.textContent = `Precio final resultante: ${formatCurrency(precioFinal)}`;
+      }
+
+      function actualizarBadgeOrdenGrid(grid) {
+        if (!grid) return;
+        const items = Array.from(grid.children || []).filter(
+          (el) => el && el.classList && el.classList.contains("sortable-item")
+        );
+        items.forEach((el, idx) => {
+          const badge = el.querySelector(".image-order-badge");
+          if (!badge) return;
+          badge.textContent = idx === 0 ? "⭐" : String(idx + 1);
+          badge.style.background =
+            idx === 0 ? "var(--razo-orange)" : "rgba(17, 24, 39, 0.85)";
+        });
+      }
+
+      function initSortableVariantePreview() {
+        if (!galeriaPreview) return;
+        if (typeof Sortable === "undefined") return;
+        if (sortableVariantePreviewInstance) return;
+
+        sortableVariantePreviewInstance = new Sortable(galeriaPreview, {
+          animation: 150,
+          ghostClass: "sortable-ghost",
+          onEnd: function (evt) {
+            const oldIndex = evt.oldIndex;
+            const newIndex = evt.newIndex;
+            if (oldIndex === undefined || newIndex === undefined) return;
+            if (oldIndex === newIndex) return;
+            if (!Array.isArray(imagenesSeleccionadasMeta)) return;
+
+            const moved = imagenesSeleccionadasMeta.splice(oldIndex, 1)[0];
+            imagenesSeleccionadasMeta.splice(newIndex, 0, moved);
+            renderGaleriaPreview();
+          },
+        });
+      }
+
+      function initSortableVarianteServer() {
+        if (!galeriaImagenesVarianteServer) return;
+        if (typeof Sortable === "undefined") return;
+        if (sortableVarianteServerInstance) return;
+
+        sortableVarianteServerInstance = new Sortable(galeriaImagenesVarianteServer, {
+          animation: 150,
+          ghostClass: "sortable-ghost",
+          onEnd: function () {
+            const ordered = Array.from(galeriaImagenesVarianteServer.children || [])
+              .map((el) => (el?.dataset?.url || "").toString().trim())
+              .filter(Boolean);
+            varianteServerImagesOrder = ordered;
+            actualizarBadgeOrdenGrid(galeriaImagenesVarianteServer);
+          },
+        });
+      }
+
+      function renderGaleriaPreview() {
+        if (!galeriaPreview) return;
+        galeriaPreview.innerHTML = "";
+
+        if (!Array.isArray(imagenesSeleccionadasMeta) || !imagenesSeleccionadasMeta.length) {
+          return;
+        }
+
+        imagenesSeleccionadasMeta.forEach((item, index) => {
+          const file = item?.file;
+          if (!file) return;
+
+          const wrapper = document.createElement("div");
+          wrapper.style.position = "relative";
+          wrapper.style.width = "86px";
+          wrapper.style.height = "86px";
+          wrapper.style.borderRadius = "12px";
+          wrapper.style.overflow = "hidden";
+          wrapper.style.border = "1px solid rgba(209, 213, 219, 0.9)";
+          wrapper.style.boxShadow = "0 6px 16px rgba(15, 23, 42, 0.10)";
+          wrapper.style.cursor = "move";
+          wrapper.classList.add("sortable-item");
+          wrapper.dataset.clientId = item.clientId;
+
+          const badge = document.createElement("div");
+          badge.className = "image-order-badge";
+          badge.textContent = index === 0 ? "⭐" : String(index + 1);
+          badge.style.background =
+            index === 0 ? "var(--razo-orange)" : "rgba(17, 24, 39, 0.85)";
+
+          const img = document.createElement("img");
+          img.alt = "Vista previa";
+          img.style.width = "100%";
+          img.style.height = "100%";
+          img.style.objectFit = "cover";
+          img.src = URL.createObjectURL(file);
+          img.onload = () => {
+            try {
+              URL.revokeObjectURL(img.src);
+            } catch (e) {}
+          };
+
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.textContent = "×";
+          btn.className = "product-images-preview-remove";
+          btn.addEventListener("click", () => {
+            imagenesSeleccionadasMeta.splice(index, 1);
+            renderGaleriaPreview();
+          });
+
+          wrapper.appendChild(badge);
+          wrapper.appendChild(img);
+          wrapper.appendChild(btn);
+          galeriaPreview.appendChild(wrapper);
+        });
+
+        initSortableVariantePreview();
+      }
+
+      async function cargarImagenesVarianteDesdeServidor(varianteId) {
+        const idNumero = Number.parseInt(varianteId, 10);
+        if (!Number.isInteger(idNumero) || idNumero <= 0) return;
+
+        if (variantImagesStatus) {
+          variantImagesStatus.textContent = `Variante #${idNumero}`;
+        }
+
+        try {
+          const response = await fetch(
+            `${API_BASE_URL}/admin/variantes/${idNumero}/imagenes`,
+            {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${adminToken}`,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+
+          const data = await response.json();
+          if (!response.ok || !data.success) {
+            throw new Error(data.message || "No se pudieron cargar las imágenes");
+          }
+
+          const imagenes = Array.isArray(data?.data?.imagenes) ? data.data.imagenes : [];
+
+          varianteServerImagesData = imagenes
+            .map((row) => {
+              const imagenId = Number.parseInt(row.imagenId ?? row.imagenid, 10);
+              const url = (row.urlCompleta || row.rutaImagen || "").toString().trim();
+              return {
+                imagenId: Number.isInteger(imagenId) ? imagenId : null,
+                url,
+                textoAlternativo: row.textoAlternativo || row.textoalternativo || null,
+                orden: row.orden,
+              };
+            })
+            .filter((img) => img.imagenId && img.url);
+
+          if (galeriaImagenesVarianteServer) {
+            galeriaImagenesVarianteServer.innerHTML = "";
+          }
+
+          if (imagenes.length && galeriaImagenesVarianteServer) {
+            imagenes.forEach((img, idx) => {
+              const url = (img.urlCompleta || img.rutaImagen || "").toString().trim();
+              if (!url) return;
+
+              const imagenId = Number.parseInt(img.imagenId ?? img.imagenid, 10);
+
+              const wrapper = document.createElement("div");
+              wrapper.style.position = "relative";
+              wrapper.style.width = "86px";
+              wrapper.style.height = "86px";
+              wrapper.style.borderRadius = "12px";
+              wrapper.style.overflow = "hidden";
+              wrapper.style.border = "1px solid rgba(209, 213, 219, 0.9)";
+              wrapper.style.boxShadow = "0 6px 16px rgba(15, 23, 42, 0.10)";
+              wrapper.style.cursor = "move";
+              wrapper.classList.add("sortable-item");
+              wrapper.dataset.url = url;
+              if (Number.isInteger(imagenId)) {
+                wrapper.dataset.imagenId = String(imagenId);
+              }
+
+              const badge = document.createElement("div");
+              badge.className = "image-order-badge";
+              badge.textContent = idx === 0 ? "⭐" : String(idx + 1);
+              badge.style.background =
+                idx === 0 ? "var(--razo-orange)" : "rgba(17, 24, 39, 0.85)";
+
+              const imageEl = document.createElement("img");
+              imageEl.src = url;
+              imageEl.alt = img.textoAlternativo || `Imagen ${idx + 1}`;
+              imageEl.style.width = "100%";
+              imageEl.style.height = "100%";
+              imageEl.style.objectFit = "cover";
+              imageEl.loading = "lazy";
+
+              const btn = document.createElement("button");
+              btn.type = "button";
+              btn.textContent = "×";
+              btn.className = "product-images-preview-remove";
+              btn.addEventListener("click", () => {
+                wrapper.remove();
+                varianteServerImagesOrder = Array.from(
+                  galeriaImagenesVarianteServer.children || []
+                )
+                  .map((el) => (el?.dataset?.url || "").toString().trim())
+                  .filter(Boolean);
+                actualizarBadgeOrdenGrid(galeriaImagenesVarianteServer);
+              });
+
+              wrapper.appendChild(badge);
+              wrapper.appendChild(imageEl);
+              wrapper.appendChild(btn);
+              galeriaImagenesVarianteServer.appendChild(wrapper);
+            });
+
+            varianteServerImagesOrder = Array.from(
+              galeriaImagenesVarianteServer.children || []
+            )
+              .map((el) => (el?.dataset?.url || "").toString().trim())
+              .filter(Boolean);
+
+            if (variantServerImagesBlock) {
+              variantServerImagesBlock.style.display = "block";
+            }
+
+            initSortableVarianteServer();
+            actualizarBadgeOrdenGrid(galeriaImagenesVarianteServer);
+          } else if (variantServerImagesBlock) {
+            variantServerImagesBlock.style.display = "none";
+            varianteServerImagesOrder = [];
+          }
+
+          const portadaUrl = (data?.data?.portadaUrl || "").toString().trim();
+          if (urlImagenVarianteInput) {
+            urlImagenVarianteInput.value = portadaUrl || "";
+          }
+          if (portadaPreviewImg && portadaPreviewText) {
+            if (portadaUrl) {
+              portadaPreviewImg.src = portadaUrl;
+              portadaPreviewImg.style.display = "block";
+              portadaPreviewText.textContent = "Imagen principal";
+            } else {
+              portadaPreviewImg.style.display = "none";
+              portadaPreviewImg.removeAttribute("src");
+              portadaPreviewText.textContent = "Sin imagen";
+            }
+          }
+        } catch (error) {
+          console.error("Error al cargar imágenes de variante:", error);
+          if (variantImagesStatus) {
+            variantImagesStatus.textContent = "No se pudieron cargar imágenes";
+          }
+        }
+      }
+
+      function buildClientId() {
+        return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      }
+
+      if (productImagesInput) {
+        productImagesInput.addEventListener("change", (event) => {
+          const files = Array.from(event.target.files || []);
+          imagenesSeleccionadasMeta = files.map((file) => ({
+            clientId: buildClientId(),
+            file,
+          }));
+          renderGaleriaPreview();
+        });
+      }
+
+      if (clearImagesSelectionBtn) {
+        clearImagesSelectionBtn.addEventListener("click", () => {
+          imagenesSeleccionadasMeta = [];
+          if (productImagesInput) {
+            productImagesInput.value = "";
+          }
+          renderGaleriaPreview();
+        });
+      }
+
+      variantForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const precioUnitarioRaw = document.getElementById("precioUnitario").value;
+        const descuentoRaw = document.getElementById("precioOferta").value.trim();
+        const precioBase = parseFloat(precioUnitarioRaw);
+
+        let precioOfertaUnitario = null;
+        if (
+          Number.isFinite(precioBase) &&
+          precioBase > 0 &&
+          descuentoRaw !== ""
+        ) {
+          const porcentaje = parseFloat(descuentoRaw);
+          if (Number.isFinite(porcentaje) && porcentaje > 0) {
+            const porcentajeClamped = Math.min(Math.max(porcentaje, 0), 100);
+            const precioFinal =
+              precioBase - precioBase * (porcentajeClamped / 100);
+            precioOfertaUnitario = Number(precioFinal.toFixed(2));
+          }
+        }
+        const isEditing = Number.isInteger(editingVarianteId);
+        const colorNombreRaw = (colorNombreInput?.value || "").toString().trim();
+        const formData = {
+          productoId,
+          dimensiones:
+            document.getElementById("dimensiones").value.trim() || null,
+          precioUnitario: precioBase,
+          precioOfertaUnitario,
+          costoUnitario: document.getElementById("costoUnitario").value
+            ? parseFloat(document.getElementById("costoUnitario").value)
+            : null,
+          stock: document.getElementById("stock").value
+            ? parseInt(document.getElementById("stock").value, 10)
+            : 0,
+          tipoProductoId: null,
+          medidaId: null,
+          color_nombre: colorNombreRaw === "" ? null : colorNombreRaw,
+        };
+
+        if (
+          !Number.isFinite(formData.precioUnitario) ||
+          formData.precioUnitario <= 0
+        ) {
+          showToast("El precio unitario debe ser mayor a 0", "warning");
+          return;
+        }
+
+        try {
+          saveVariantBtn.disabled = true;
+          variantBtnText.style.display = "none";
+          variantBtnSpinner.style.display = "inline-block";
+          let response;
+          let data;
+
+          // PASO 1: Subir nuevas imágenes a Cloudinary primero
+          const orderedNewClientIds = Array.from(galeriaPreview?.children || [])
+            .map((el) => (el?.dataset?.clientId || "").toString().trim())
+            .filter(Boolean);
+
+          const uploadedImages = [];
+          if (orderedNewClientIds.length > 0) {
+            console.log("📤 Subiendo", orderedNewClientIds.length, "imágenes a Cloudinary...");
+            for (const clientId of orderedNewClientIds) {
+              const item = (imagenesSeleccionadasMeta || []).find(
+                (it) => it && it.clientId === clientId
+              );
+              if (item && item.file) {
+                try {
+                  const cloudinaryResult = await CloudinaryUpload.subirArchivo(
+                    item.file,
+                    "Fashion Box_productos"
+                  );
+                  uploadedImages.push({
+                    clientId: clientId,
+                    url: cloudinaryResult.secure_url,
+                    publicId: cloudinaryResult.public_id,
+                  });
+                } catch (uploadError) {
+                  console.error("Error subiendo imagen:", uploadError);
+                  throw new Error(`Error subiendo imagen: ${uploadError.message}`);
+                }
+              }
+            }
+            console.log("✅ Todas las imágenes subidas a Cloudinary");
+          }
+
+          if (isEditing) {
+            let activoPayload;
+            if (Array.isArray(variantesProducto) && variantesProducto.length) {
+              const varianteOriginal = variantesProducto.find((v) => {
+                const vid = v.varianteId ?? v.varianteid;
+                return (
+                  Number.parseInt(vid, 10) ===
+                  Number.parseInt(editingVarianteId, 10)
+                );
+              });
+              if (varianteOriginal && varianteOriginal.activo !== undefined) {
+                activoPayload = varianteOriginal.activo;
+              }
+            }
+
+            const multipart = new FormData();
+            multipart.append("dimensiones", formData.dimensiones || "");
+            multipart.append(
+              "costoUnitario",
+              formData.costoUnitario === null ? "" : String(formData.costoUnitario)
+            );
+            multipart.append("precioUnitario", String(formData.precioUnitario));
+            multipart.append(
+              "precioOfertaUnitario",
+              formData.precioOfertaUnitario === null
+                ? ""
+                : String(formData.precioOfertaUnitario)
+            );
+            multipart.append("color_nombre", formData.color_nombre || "");
+
+            console.log("=== FRONTEND FORMDATA DEBUG (UPDATE) ===");
+            for (let pair of multipart.entries()) {
+              console.log(pair[0] + ': ' + (pair[1] instanceof File ? pair[1].name : pair[1]));
+            }
+            console.log("=========================================");
+
+            // PASO 2: Construir galería con imágenes existentes + nuevas URLs de Cloudinary
+            const orderedExisting = Array.from(
+              galeriaImagenesVarianteServer?.children || []
+            )
+              .map((el) => {
+                const imagenId = Number.parseInt(el?.dataset?.imagenId, 10);
+                return Number.isInteger(imagenId) ? imagenId : null;
+              })
+              .filter(Boolean);
+
+            const galeria = [];
+            orderedExisting.forEach((imagenId) => {
+              galeria.push({ type: "existing", imagenId });
+            });
+
+            // Agregar nuevas imágenes con sus URLs de Cloudinary
+            orderedNewClientIds.forEach((clientId) => {
+              const uploadedImage = uploadedImages.find(img => img.clientId === clientId);
+              if (uploadedImage) {
+                galeria.push({
+                  type: "new",
+                  url: uploadedImage.url,
+                  publicId: uploadedImage.publicId,
+                });
+              }
+            });
+
+            multipart.append("galeria", JSON.stringify(galeria));
+
+            if (activoPayload !== undefined) {
+              multipart.append("activo", String(!!activoPayload));
+            }
+
+            response = await fetch(
+              `${API_BASE_URL}/admin/variantes/${editingVarianteId}`,
+              {
+                method: "PUT",
+                headers: {
+                  Authorization: `Bearer ${adminToken}`,
+                },
+                body: multipart,
+              }
+            );
+          } else {
+            const multipart = new FormData();
+            multipart.append("productoId", String(formData.productoId));
+            multipart.append("dimensiones", formData.dimensiones || "");
+            multipart.append(
+              "costoUnitario",
+              formData.costoUnitario === null ? "" : String(formData.costoUnitario)
+            );
+            multipart.append("precioUnitario", String(formData.precioUnitario));
+            multipart.append(
+              "precioOfertaUnitario",
+              formData.precioOfertaUnitario === null
+                ? ""
+                : String(formData.precioOfertaUnitario)
+            );
+            multipart.append("stock", String(formData.stock || 0));
+            multipart.append("color_nombre", formData.color_nombre || "");
+
+            console.log("=== FRONTEND FORMDATA DEBUG (CREATE) ===");
+            for (let pair of multipart.entries()) {
+              console.log(pair[0] + ': ' + (pair[1] instanceof File ? pair[1].name : pair[1]));
+            }
+            console.log("=========================================");
+
+            // PASO 2: Construir galería solo con URLs de Cloudinary (ya subidas)
+            const galeria = [];
+            orderedNewClientIds.forEach((clientId) => {
+              const uploadedImage = uploadedImages.find(img => img.clientId === clientId);
+              if (uploadedImage) {
+                galeria.push({
+                  type: "new",
+                  url: uploadedImage.url,
+                  publicId: uploadedImage.publicId,
+                });
+              }
+            });
+
+            multipart.append("galeria", JSON.stringify(galeria));
+
+            response = await fetch(`${API_BASE_URL}/admin/variantes`, {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${adminToken}`,
+              },
+              body: multipart,
+            });
+          }
+
+          data = await response.json();
+
+          if (response.ok && data.success) {
+            showToast(
+              isEditing
+                ? "Variante actualizada correctamente"
+                : "Variante creada correctamente",
+              "success"
+            );
+            resetVariantFormState();
+            await loadProducto();
+          } else {
+            throw new Error(
+              data.message ||
+                (isEditing
+                  ? "Error al actualizar variante"
+                  : "Error al crear variante")
+            );
+          }
+        } catch (error) {
+          console.error("Error al crear variante:", error);
+          if (
+            typeof Swal !== "undefined" &&
+            Swal &&
+            typeof Swal.fire === "function"
+          ) {
+            await Swal.fire({
+              icon: "warning",
+              title: "No se pudo guardar",
+              text: error.message || "Error desconocido",
+              confirmButtonColor: "#F97316",
+            });
+          } else {
+            showToast(error.message || "No se pudo guardar", "error");
+          }
+        } finally {
+          saveVariantBtn.disabled = false;
+          variantBtnText.style.display = "inline";
+          variantBtnSpinner.style.display = "none";
+        }
+      });
+
+      ["costoUnitario", "precioUnitario"].forEach((id) => {
+        document
+          .getElementById(id)
+          .addEventListener("input", calculateMarginPreview);
+      });
+
+      if (precioUnitarioInput) {
+        precioUnitarioInput.addEventListener("input", updatePrecioOfertaPreview);
+      }
+      if (precioOfertaInput) {
+        precioOfertaInput.addEventListener("input", updatePrecioOfertaPreview);
+      }
+
+      resetVariantBtn.addEventListener("click", () => {
+        editingVarianteId = null;
+        if (variantBtnText) {
+          variantBtnText.textContent = "Guardar variante";
+        }
+        marginMetrics.style.display = "none";
+        marginMessage.textContent =
+          "Ingresa costo y precio para calcular la ganancia.";
+        if (precioOfertaPreview) {
+          precioOfertaPreview.textContent = "Precio final resultante: $0.00";
+        }
+      });
+
+      function calculateMarginPreview() {
+        const costoUnit = parseFloat(
+          document.getElementById("costoUnitario").value
+        );
+        const precio = parseFloat(
+          document.getElementById("precioUnitario").value
+        );
+
+        if (
+          !Number.isFinite(precio) ||
+          precio <= 0 ||
+          !Number.isFinite(costoUnit) ||
+          costoUnit < 0
+        ) {
+          marginMetrics.style.display = "none";
+          marginMessage.style.display = "block";
+          marginMessage.textContent =
+            "Ingresa costo y precio para calcular la ganancia.";
+          return;
+        }
+
+        const costoUnitarioValue = Number.isFinite(costoUnit) ? costoUnit : 0;
+        const ganancia = precio - costoUnitarioValue;
+        const margen = precio > 0 ? (ganancia / precio) * 100 : 0;
+
+        costPerUnit.textContent = formatCurrency(costoUnitarioValue);
+        profitPerUnit.textContent = formatCurrency(ganancia);
+        marginPercentage.textContent = `${margen.toFixed(1)}%`;
+
+        marginMetrics.style.display = "grid";
+        marginMessage.textContent =
+          ganancia >= 0
+            ? "Excelente, estás generando ganancia por unidad."
+            : "Atención: el costo supera al precio, revisa los datos.";
+        profitPerUnit.style.color =
+          ganancia >= 0 ? "var(--success-color)" : "var(--danger-color)";
+        marginPercentage.style.color =
+          ganancia >= 0 ? "var(--success-color)" : "var(--danger-color)";
+      }
+
+      // Event listener para sugerir SKU cuando cambian las dimensiones
+      if (dimensionesInput) {
+        dimensionesInput.addEventListener("input", generateSkuSuggestion);
+        dimensionesInput.addEventListener("blur", generateSkuSuggestion);
+        dimensionesInput.addEventListener("keyup", generateSkuSuggestion);
+        dimensionesInput.addEventListener("change", generateSkuSuggestion);
+      }
+
+      // Event listener para sugerir SKU cuando cambia el color
+      if (colorNombreInput) {
+        colorNombreInput.addEventListener("input", generateSkuSuggestion);
+        colorNombreInput.addEventListener("blur", generateSkuSuggestion);
+        colorNombreInput.addEventListener("keyup", generateSkuSuggestion);
+        colorNombreInput.addEventListener("change", generateSkuSuggestion);
+      }
+
+      // Event listener para aplicar la sugerencia de SKU
+      if (applySkuSuggestion) {
+        applySkuSuggestion.addEventListener("click", () => {
+          if (skuSuggestionText && skuInput) {
+            skuInput.value = skuSuggestionText.textContent;
+            skuSuggestion.style.display = "none";
+            skuInput.focus();
+          }
+        });
+      }
+
+      if (stockInput) {
+        stockInput.addEventListener("input", updateStockCapacityPreview);
+        stockInput.addEventListener("blur", updateStockCapacityPreview);
+      }
+
+      // Toggle variant visibility
+      async function toggleVarianteVisibilidad(varianteId, estadoActual) {
+        const nuevoEstado = !estadoActual;
+        const accion = nuevoEstado ? "mostrar" : "ocultar";
+        const esOcultar = !nuevoEstado;
+
+        console.log('🔄 Toggle variante:', { varianteId, estadoActual, nuevoEstado });
+
+        const mensaje = `¿Estás seguro de ${accion} esta variante?`;
+        let confirmado = false;
+
+        if (
+          typeof Swal !== "undefined" &&
+          Swal &&
+          typeof Swal.fire === "function"
+        ) {
+          const result = await Swal.fire({
+            icon: esOcultar ? "warning" : "question",
+            title: esOcultar ? "Ocultar variante" : "Mostrar variante",
+            text: mensaje,
+            showCancelButton: true,
+            confirmButtonText: esOcultar ? "Sí, ocultar" : "Sí, mostrar",
+            cancelButtonText: "Cancelar",
+            confirmButtonColor: esOcultar ? "#dc3545" : "#F97316",
+            cancelButtonColor: "#6b7280",
+          });
+          confirmado = !!result.isConfirmed;
+        } else {
+          confirmado = window.confirm(mensaje);
+        }
+
+        if (!confirmado) {
+          return;
+        }
+
+        try {
+          const response = await API.apiCall(
+            `/admin/variantes/${varianteId}`,
+            {
+              method: 'PUT',
+              body: JSON.stringify({ activo: nuevoEstado })
+            }
+          );
+
+          console.log('📥 Response del backend:', response);
+
+          if (response.ok && response.data && response.data.success) {
+            showToast(
+              `Variante ${nuevoEstado ? 'visible' : 'oculta'} exitosamente`,
+              'success'
+            );
+            console.log('🔄 Recargando producto...');
+            await loadProducto(); // Recargar producto y variantes
+            console.log('✅ Producto recargado');
+          } else {
+            const errorMsg = response.data?.message || 'Error al actualizar variante';
+            console.error('❌ Error del backend:', errorMsg);
+            throw new Error(errorMsg);
+          }
+        } catch (error) {
+          console.error('💥 Error al toggle visibilidad:', error);
+          showToast(error.message || 'Error al cambiar visibilidad de la variante', 'error');
+        }
+      }
+
+      async function init() {
+        if (!adminToken) {
+          window.location.href = "/login.html";
+          return;
+        }
+
+        await verifyAndLoadAdmin();
+        await loadMedidasExistentes();
+        if (productoId && !Number.isNaN(productoId)) {
+          await loadProducto();
+        }
+      }
+
+      init();
+    </script>
+  </body>
+</html>

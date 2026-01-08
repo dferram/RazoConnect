@@ -111,7 +111,7 @@ app.use("/api/developer", developerRoutes);
 
 // Ruta de servicio suspendido (sin tenantGuard - CRÍTICO para evitar bucle infinito)
 app.get("/suspended", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "suspended.html"));
+  res.sendFile(path.join(__dirname, "tenants_views", "razo", "suspended.html"));
 });
 
 // ============================================================================
@@ -134,8 +134,26 @@ app.use(tenantGuard);
 // ARCHIVOS ESTÁTICOS (PROTEGIDOS POR TENANT GUARD)
 // ============================================================================
 
-// Servir archivos estáticos del frontend
-app.use(express.static(path.join(__dirname, "public")));
+// Middleware dinámico de archivos estáticos basado en tenant
+app.use((req, res, next) => {
+  // Determinar carpeta del tenant dinámicamente desde la base de datos
+  // El campo 'tema' en la tabla tenants define qué carpeta usar ('razo' o 'fashion')
+  const tenantFolder = req.tenant?.tema || 'razo'; // Default a 'razo' si no hay tema
+  const tenantPath = path.join(__dirname, 'tenants_views', tenantFolder);
+  
+  // DEBUG: Logging para archivos CSS
+  if (req.path.includes('.css')) {
+    console.log('--- DEBUG ESTÁTICOS ---');
+    console.log('Path solicitado:', req.path);
+    console.log('Tenant folder:', tenantFolder);
+    console.log('Buscando en:', path.join(tenantPath, req.path));
+    console.log('Path absoluto completo:', path.resolve(tenantPath, req.path.substring(1)));
+  }
+  
+  // AISLAMIENTO TOTAL: Cada tenant sirve SOLO sus propios archivos
+  // Si un archivo no existe, debe dar error 404, NO cargar del otro tenant
+  express.static(tenantPath)(req, res, next);
+});
 
 // Servir iconos (favicon y otros) desde la carpeta /icon
 app.use("/icon", express.static(path.join(__dirname, "icon")));
@@ -210,7 +228,10 @@ app.use("/api/*", (req, res) => {
 
 // Redirigir rutas no encontradas a index
 app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "index.html"));
+  // Determinar carpeta del tenant dinámicamente desde la base de datos
+  // El campo 'tema' en la tabla tenants define qué carpeta usar ('razo' o 'fashion')
+  const tenantFolder = req.tenant?.tema || 'razo'; // Default a 'razo' si no hay tema
+  res.sendFile(path.join(__dirname, "tenants_views", tenantFolder, "index.html"));
 });
 
 // Manejo de errores global

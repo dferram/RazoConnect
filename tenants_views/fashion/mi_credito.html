@@ -1,0 +1,879 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mi Crédito - Fashion Box</title>
+    <link rel="icon" type="image/png" href="/icon/Logo_Fashion.png" />
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="js/auth-guard-client.js"></script>
+    <script src="js/token-refresh.js"></script>
+
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/styles-fashion.css" />
+    <link rel="stylesheet" href="css/fashion-theme-fashion.css" />
+    <link rel="stylesheet" href="css/admin-fashion.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <style>
+      /* Modal Styles */
+      .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .modal.show {
+        display: flex;
+      }
+
+      .modal-content {
+        background: var(--surface);
+        border-radius: 0.5rem;
+        padding: 2rem;
+        max-width: 600px;
+        width: 90%;
+        max-height: 90vh;
+        overflow-y: auto;
+      }
+
+      /* Payment Options Grid */
+      .payment-section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+        gap: 0.75rem;
+      }
+
+      .payment-section-header h4 {
+        margin: 0;
+        font-weight: 700;
+        font-size: 1.1rem;
+      }
+
+      .payment-options-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+        gap: 1rem;
+      }
+
+      .payment-option-card {
+        position: relative;
+        border: 2px solid #e5e7eb;
+        border-radius: 1.1rem;
+        padding: 1.1rem 1.2rem;
+        background: #fff;
+        display: flex;
+        flex-direction: column;
+        gap: 0.65rem;
+        cursor: pointer;
+        transition: all 0.25s ease;
+        box-shadow: 0 6px 24px rgba(15, 23, 42, 0.06);
+      }
+
+      .payment-option-card:hover {
+        border-color: var(--razo-orange);
+        box-shadow: 0 12px 32px rgba(249, 115, 22, 0.15);
+      }
+
+      .payment-option-card.selected {
+        border-color: var(--razo-orange);
+        background: linear-gradient(135deg, #fff7ed 0%, #fff 100%);
+        box-shadow: 0 18px 36px rgba(249, 115, 22, 0.2);
+      }
+
+      .payment-option-card.disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+        box-shadow: none;
+      }
+
+      .payment-option-card input[type="radio"] {
+        accent-color: var(--razo-orange);
+        width: 18px;
+        height: 18px;
+        margin: 0;
+      }
+
+      .payment-option-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
+      }
+
+      .payment-option-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.35rem;
+        background: rgba(249, 115, 22, 0.12);
+        color: var(--razo-orange);
+      }
+
+      .payment-option-content h5 {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 700;
+        color: #0f172a;
+      }
+
+      .payment-option-content p {
+        margin: 0.25rem 0 0;
+        color: #6b7280;
+        font-size: 0.92rem;
+        line-height: 1.4;
+      }
+
+      .payment-option-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        border-radius: 999px;
+        padding: 0.25rem 0.75rem;
+        font-size: 0.8rem;
+        font-weight: 600;
+      }
+
+      .payment-chip-digital {
+        background: rgba(86, 196, 150, 0.15);
+        color: #0f766e;
+      }
+
+      .payment-chip-transfer {
+        background: rgba(14, 165, 233, 0.12);
+        color: #0369a1;
+      }
+
+      .payment-error {
+        margin-top: 1rem;
+        display: none;
+        align-items: flex-start;
+        gap: 0.5rem;
+        background: #fee2e2;
+        color: #b91c1c;
+        border: 1px solid #fecaca;
+        border-radius: 0.75rem;
+        padding: 0.85rem 1rem;
+        font-size: 0.9rem;
+      }
+
+      .payment-error.show {
+        display: flex;
+      }
+
+      /* Payment Info Panels */
+      .payment-info-panels {
+        margin-top: 1.5rem;
+      }
+
+      .payment-info-card {
+        display: none;
+      }
+
+      .payment-info-card.show {
+        display: block;
+      }
+
+      /* Mercado Pago Form */
+      .mercadopago-form-container {
+        border: 1px solid #e5e7eb;
+        border-radius: 1rem;
+        padding: 1.25rem;
+        background: #fff;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+      }
+
+      .mercadopago-form-container h5 {
+        margin: 0 0 0.5rem 0;
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: #0f172a;
+      }
+
+      .mp-form-grid {
+        display: grid;
+        gap: 1rem;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      }
+
+      .mp-form-field {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+      }
+
+      .mp-form-field label {
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: #111827;
+      }
+
+      .mp-form-field input {
+        width: 100%;
+        border: 1px solid #d1d5db;
+        border-radius: 0.75rem;
+        padding: 0.65rem 0.85rem;
+        font-size: 0.95rem;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .mp-form-field input:focus {
+        outline: none;
+        border-color: var(--razo-orange);
+        box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.2);
+      }
+
+      .mp-form-two-cols {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+      }
+
+      /* Bank Info */
+      .bank-info-card {
+        background: #fff;
+        border-radius: 0.9rem;
+        padding: 1.25rem;
+        border: 1px solid #e5e7eb;
+      }
+
+      .bank-info-header {
+        margin-bottom: 1rem;
+      }
+
+      .bank-info-header h5 {
+        margin: 0 0 0.25rem 0;
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: #0f172a;
+      }
+
+      .bank-info-header p {
+        margin: 0;
+        color: #6b7280;
+        font-size: 0.9rem;
+      }
+
+      .bank-info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1rem;
+      }
+
+      .bank-info-grid > div {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+      }
+
+      .bank-info-grid span {
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        color: #9ca3af;
+        letter-spacing: 0.05em;
+      }
+
+      .bank-info-grid strong {
+        font-weight: 600;
+        color: #111827;
+        font-size: 0.95rem;
+      }
+
+      /* Responsive */
+      @media (max-width: 640px) {
+        .payment-options-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .mp-form-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .mp-form-two-cols {
+          grid-template-columns: 1fr;
+        }
+
+        .bank-info-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+      <link rel="stylesheet" href="css/mobile-responsive-fashion.css" />
+  </head>
+  <body>
+    <div id="header-container"></div>
+
+    <main class="container" style="padding-top: 2rem; padding-bottom: 3rem;">
+      <header style="margin-bottom: 2rem;">
+        <p
+          style="
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            font-size: 0.85rem;
+            color: var(--razo-gray-warm);
+            margin-bottom: 0.5rem;
+          "
+        >
+          Finanzas del cliente
+        </p>
+        <h1 style="font-size: 2.25rem; font-weight: 700; margin-bottom: 0.5rem;">
+          Mi crédito
+        </h1>
+        <p style="color: var(--razo-gray-warm); max-width: 620px;">
+          Consulta tu línea de crédito, saldo deudor y movimientos más recientes.
+          Mantente al día y liquida tu saldo cuando lo necesites.
+        </p>
+      </header>
+
+      <div id="creditOverviewSection">
+        <section class="admin-stats-grid" style="margin-bottom: 2rem;">
+          <article class="admin-stat-card">
+            <div class="admin-stat-header">
+              <div class="admin-stat-content">
+                <h3>Límite de crédito</h3>
+                <div class="admin-stat-value" id="limiteCredito">$0.00</div>
+                <div class="admin-stat-change neutral">
+                  Asignado por Fashion Box
+                </div>
+              </div>
+              <div class="admin-stat-icon orange">💳</div>
+            </div>
+          </article>
+
+          <article class="admin-stat-card">
+            <div class="admin-stat-header">
+              <div class="admin-stat-content">
+                <h3>Saldo deudor</h3>
+                <div class="admin-stat-value" id="saldoDeudor">$0.00</div>
+                <div class="admin-stat-change danger">
+                  Actualizado en tiempo real
+                </div>
+              </div>
+              <div class="admin-stat-icon red">⚠️</div>
+            </div>
+          </article>
+
+          <article class="admin-stat-card" id="cardPagosEnRevision" style="display: none;">
+            <div class="admin-stat-header">
+              <div class="admin-stat-content">
+                <h3>Pagos en revisión</h3>
+                <div class="admin-stat-value" id="saldoEnRevision">$0.00</div>
+                <div class="admin-stat-change" style="color: #f59e0b;">
+                  🕒 Pendiente de validación
+                </div>
+              </div>
+              <div class="admin-stat-icon" style="background: rgba(245, 158, 11, 0.12); color: #f59e0b;">⏳</div>
+            </div>
+          </article>
+
+          <article class="admin-stat-card" id="cardSaldoEstimado" style="display: none;">
+            <div class="admin-stat-header">
+              <div class="admin-stat-content">
+                <h3>Saldo estimado</h3>
+                <div class="admin-stat-value" id="saldoEstimado">$0.00</div>
+                <div class="admin-stat-change" style="color: #6b7280;">
+                  Tras aplicar pagos pendientes
+                </div>
+              </div>
+              <div class="admin-stat-icon" style="background: rgba(107, 114, 128, 0.12); color: #6b7280;">📊</div>
+            </div>
+          </article>
+
+          <article class="admin-stat-card">
+            <div class="admin-stat-header">
+              <div class="admin-stat-content">
+                <h3>Disponible</h3>
+                <div class="admin-stat-value" id="creditoDisponible">$0.00</div>
+                <div class="admin-stat-change positive">
+                  Crédito libre para nuevos pedidos
+                </div>
+              </div>
+              <div class="admin-stat-icon turquoise">💠</div>
+            </div>
+          </article>
+        </section>
+
+        <section class="admin-table-container">
+          <div class="admin-table-header">
+            <div>
+              <h2 class="admin-table-title">Movimientos de crédito</h2>
+              <p class="admin-table-subtitle" style="margin: 0; color: var(--razo-gray-warm);">
+                Últimas operaciones registradas en tu estado de cuenta.
+              </p>
+            </div>
+            <button class="btn btn-primary" id="btnPagarSaldo">Pagar saldo</button>
+          </div>
+
+          <div
+            id="creditError"
+            class="alert alert-error"
+            style="display: none;"
+          >
+            No fue posible obtener la información de tu crédito. Intenta recargar la
+            página.
+          </div>
+
+          <table class="admin-table" aria-live="polite">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Concepto</th>
+                <th>Tipo</th>
+                <th class="text-end">Monto</th>
+              </tr>
+            </thead>
+            <tbody id="movimientosTableBody">
+              <tr id="movimientosLoadingRow">
+                <td colspan="4" class="table-empty-state">
+                  Cargando movimientos...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div
+            id="movimientosEmpty"
+            class="empty-state"
+            style="display: none;"
+          >
+            <div class="empty-state-icon">📄</div>
+            <h3 class="empty-state-title">Sin movimientos registrados</h3>
+            <p class="empty-state-text">
+              Cuando se genere un cargo o abono, aparecerá aquí.
+            </p>
+          </div>
+
+          <!-- Paginación de movimientos -->
+          <div 
+            id="movimientosPagination" 
+            class="d-flex justify-content-between align-items-center mt-3"
+            style="display: none !important;"
+          >
+          </div>
+        </section>
+      </div>
+
+      <section
+        id="solicitudCreditoSection"
+        class="admin-table-container"
+        style="display: none; margin-top: 2rem;"
+      >
+        <div class="admin-table-header">
+          <div>
+            <h2 class="admin-table-title">Solicitud de crédito</h2>
+            <p class="admin-table-subtitle" style="margin: 0; color: var(--razo-gray-warm);">
+              Completa los datos y nuestro equipo validará tu línea de crédito.
+            </p>
+          </div>
+        </div>
+
+        <form id="solicitudCreditoForm" class="row g-4">
+          <div class="col-12 col-md-6">
+            <label for="montoSolicitado" class="form-label">Monto solicitado</label>
+            <div class="input-group">
+              <span class="input-group-text">$</span>
+              <input
+                type="number"
+                min="0"
+                step="500"
+                class="form-control"
+                id="montoSolicitado"
+                placeholder="Ej. 50,000"
+                required
+              />
+            </div>
+          </div>
+
+          <div class="col-12 col-md-6">
+            <label for="ingresosMensuales" class="form-label">Ingresos mensuales estimados</label>
+            <div class="input-group">
+              <span class="input-group-text">$</span>
+              <input
+                type="number"
+                min="0"
+                step="1000"
+                class="form-control"
+                id="ingresosMensuales"
+                placeholder="Ej. 120,000"
+                required
+              />
+            </div>
+          </div>
+
+          <div class="col-12">
+            <label for="motivoCredito" class="form-label">Motivo del crédito</label>
+            <textarea
+              id="motivoCredito"
+              class="form-control"
+              rows="4"
+              placeholder="Describe cómo utilizarás la línea de crédito (inventario, nuevos proyectos, etc.)"
+              required
+            ></textarea>
+          </div>
+
+          <div class="col-12 col-md-6">
+            <label for="plazoPreferido" class="form-label">Plazo de pago preferido</label>
+            <select id="plazoPreferido" class="form-select" required>
+              <option value="" selected disabled>Selecciona una opción</option>
+              <option value="15">15 días</option>
+              <option value="30">30 días</option>
+              <option value="45">45 días</option>
+            </select>
+          </div>
+
+          <div class="col-12">
+            <button type="submit" class="btn btn-primary w-100" id="btnEnviarSolicitud">
+              Enviar solicitud
+            </button>
+          </div>
+        </form>
+      </section>
+    </main>
+
+    <!-- Modal de Pago de Crédito -->
+    <div id="modalPagoCredito" class="modal" style="display: none;">
+      <div
+        class="modal-content"
+        style="
+          background: white;
+          padding: 2rem;
+          border-radius: 1rem;
+          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+          max-width: 600px;
+        "
+      >
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+          <h2 style="font-size: 1.5rem; font-weight: bold; margin: 0;">
+            Pagar saldo de crédito
+          </h2>
+          <button
+            id="btnCerrarModalPago"
+            style="
+              background: #f3f4f6;
+              border: none;
+              width: 40px;
+              height: 40px;
+              border-radius: 50%;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              cursor: pointer;
+              transition: all 0.2s ease;
+              color: #6b7280;
+              font-size: 1.25rem;
+            "
+            aria-label="Cerrar modal"
+          >
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+
+        <div id="pagoContent">
+          <!-- Sección de selección de deuda -->
+          <div id="debtSelectionSection" style="margin-bottom: 2rem;">
+            <h4 style="font-weight: 600; margin-bottom: 1rem;">Selecciona qué deseas pagar</h4>
+            <div style="
+              background: #f9fafb;
+              border: 1px solid #e5e7eb;
+              border-radius: 0.75rem;
+              padding: 1rem;
+              margin-bottom: 1rem;
+            ">
+              <table class="table table-sm" style="margin-bottom: 0;">
+                <thead>
+                  <tr>
+                    <th style="width: 40px;">
+                      <input type="checkbox" id="selectAllDebts" style="cursor: pointer;" />
+                    </th>
+                    <th>Concepto</th>
+                    <th>Fecha</th>
+                    <th class="text-end">Monto</th>
+                  </tr>
+                </thead>
+                <tbody id="debtsTableBody">
+                  <tr>
+                    <td colspan="4" class="text-center text-muted">
+                      Cargando deuda pendiente...
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            
+            <!-- Monto a pagar -->
+            <div style="
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              padding: 1rem;
+              background: linear-gradient(135deg, #fff7ed 0%, #fff 100%);
+              border: 2px solid var(--razo-orange);
+              border-radius: 0.75rem;
+              margin-bottom: 1rem;
+            ">
+              <div>
+                <label for="montoAPagar" style="font-weight: 600; margin-bottom: 0.25rem; display: block;">
+                  Monto a pagar
+                </label>
+                <small style="color: #6b7280;">Puedes editar para abono parcial</small>
+              </div>
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <span style="font-size: 1.5rem; font-weight: 700;">$</span>
+                <input
+                  type="number"
+                  id="montoAPagar"
+                  min="0"
+                  step="0.01"
+                  value="0.00"
+                  style="
+                    width: 180px;
+                    font-size: 1.5rem;
+                    font-weight: 700;
+                    text-align: right;
+                    border: 2px solid #e5e7eb;
+                    border-radius: 0.5rem;
+                    padding: 0.5rem;
+                  "
+                />
+              </div>
+            </div>
+          </div>
+
+          <div id="paymentSection">
+            <div class="payment-section-header" style="margin-bottom: 1.5rem;">
+              <h4 style="font-weight: 600; margin-bottom: 0.5rem;">Selecciona método de pago</h4>
+              <span style="color: #6b7280; font-size: 0.875rem;">
+                Elige la opción que mejor se adapte para liquidar tu saldo.
+              </span>
+            </div>
+
+            <div class="payment-options-grid" id="paymentOptionsPagoCredito">
+              <label
+                class="payment-option-card disabled"
+                id="paymentOptionMercadoPagoPago"
+                data-method="mercadopago"
+                style="pointer-events: none;"
+              >
+                <div class="payment-option-top">
+                  <div class="payment-option-icon" style="opacity: 0.5;">💳</div>
+                  <input
+                    type="radio"
+                    name="metodo_pago_credito"
+                    value="mercadopago"
+                    disabled
+                  />
+                </div>
+                <div class="payment-option-content">
+                  <h5 style="opacity: 0.6;">Mercado Pago</h5>
+                  <p style="opacity: 0.6;">Paga con tarjeta o saldo digital y recibe confirmación inmediata.</p>
+                  <div style="margin-top: 0.75rem; padding: 0.5rem 0.75rem; background: #fef3c7; border: 1px solid #fbbf24; border-radius: 0.5rem; font-size: 0.85rem; color: #92400e;">
+                    ⚠️ <strong>Temporalmente no disponible.</strong><br>
+                    Por favor, utiliza transferencia bancaria.
+                  </div>
+                </div>
+                <span class="payment-option-chip payment-chip-digital" style="opacity: 0.5;">
+                  No disponible
+                </span>
+              </label>
+
+              <label
+                class="payment-option-card selected"
+                id="paymentOptionTransferenciaPago"
+                data-method="transferencia"
+              >
+                <div class="payment-option-top">
+                  <div class="payment-option-icon">🏦</div>
+                  <input
+                    type="radio"
+                    name="metodo_pago_credito"
+                    value="transferencia"
+                    checked
+                  />
+                </div>
+                <div class="payment-option-content">
+                  <h5>Transferencia bancaria</h5>
+                  <p>Recibirás los datos bancarios y deberás adjuntar tu comprobante.</p>
+                </div>
+                <span class="payment-option-chip payment-chip-transfer">SPEI / Depósito</span>
+              </label>
+            </div>
+
+            <div class="payment-error" id="paymentErrorPago" style="display: none;">
+              <i class="bi bi-exclamation-triangle-fill"></i>
+              <div id="paymentErrorMessagePago"></div>
+            </div>
+
+            <div class="payment-info-panels">
+              <section class="payment-info-card" id="info-mercadopago-pago">
+                <div class="mercadopago-form-container">
+                  <h5>Ingresa los datos de tu tarjeta</h5>
+                  <p style="color: #6b7280; font-size: 0.875rem; margin-bottom: 1rem;">
+                    Procesaremos el pago de tu saldo de crédito de forma segura.
+                  </p>
+                  <div class="mp-form-grid">
+                    <div class="mp-form-field">
+                      <label for="mpCardholderNamePago">Nombre del titular</label>
+                      <input
+                        type="text"
+                        id="mpCardholderNamePago"
+                        placeholder="Nombre impreso en la tarjeta"
+                        autocomplete="off"
+                      />
+                    </div>
+                    <div class="mp-form-field">
+                      <label for="mpCardNumberPago">Número de tarjeta</label>
+                      <input
+                        type="text"
+                        id="mpCardNumberPago"
+                        inputmode="numeric"
+                        maxlength="22"
+                        placeholder="0000 0000 0000 0000"
+                        autocomplete="off"
+                      />
+                    </div>
+                    <div class="mp-form-two-cols">
+                      <div class="mp-form-field">
+                        <label for="mpExpMonthPago">Mes expiración</label>
+                        <input
+                          type="text"
+                          id="mpExpMonthPago"
+                          inputmode="numeric"
+                          maxlength="2"
+                          placeholder="MM"
+                          autocomplete="off"
+                        />
+                      </div>
+                      <div class="mp-form-field">
+                        <label for="mpExpYearPago">Año expiración</label>
+                        <input
+                          type="text"
+                          id="mpExpYearPago"
+                          inputmode="numeric"
+                          maxlength="4"
+                          placeholder="AAAA"
+                          autocomplete="off"
+                        />
+                      </div>
+                    </div>
+                    <div class="mp-form-field">
+                      <label for="mpSecurityCodePago">CVV</label>
+                      <input
+                        type="text"
+                        id="mpSecurityCodePago"
+                        inputmode="numeric"
+                        maxlength="4"
+                        placeholder="CVV"
+                        autocomplete="off"
+                      />
+                    </div>
+                  </div>
+                  <div class="mp-form-field" style="margin-top: 0.25rem">
+                    <label for="mpIdentificationNumberPago">Documento (opcional)</label>
+                    <input
+                      type="text"
+                      id="mpIdentificationNumberPago"
+                      placeholder="RFC / CURP"
+                      autocomplete="off"
+                    />
+                  </div>
+                </div>
+              </section>
+
+              <section class="payment-info-card" id="info-transferencia-pago" style="display: none;">
+                <div class="bank-info-card">
+                  <div class="bank-info-header">
+                    <div>
+                      <h5>Datos bancarios de Fashion Box</h5>
+                      <p>Realiza tu transferencia y adjunta el comprobante.</p>
+                    </div>
+                  </div>
+                  <div class="bank-info-grid">
+                    <div>
+                      <span>Banco</span>
+                      <strong>BBVA Bancomer</strong>
+                    </div>
+                    <div>
+                      <span>Cuenta</span>
+                      <strong>0123456789</strong>
+                    </div>
+                    <div>
+                      <span>CLABE</span>
+                      <strong>012345678901234567</strong>
+                    </div>
+                    <div>
+                      <span>Beneficiario</span>
+                      <strong>Fashion Box S.A. de C.V.</strong>
+                    </div>
+                  </div>
+                  <div style="margin-top: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">
+                      Adjuntar comprobante(s)
+                    </label>
+                    <input
+                      type="file"
+                      id="comprobanteTransferencia"
+                      accept="image/*,.pdf"
+                      style="
+                        width: 100%;
+                        padding: 0.75rem;
+                        border: 2px dashed #e5e7eb;
+                        border-radius: 0.5rem;
+                        cursor: pointer;
+                      "
+                    />
+                    <div id="comprobantesPreviews" style="display: none;"></div>
+                    <small style="color: #6b7280; display: block; margin-top: 0.5rem;">
+                      Puedes seleccionar múltiples archivos. Máx. 8MB por archivo.
+                    </small>
+                  </div>
+                </div>
+              </section>
+            </div>
+
+            <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+              <button
+                id="btnCancelarPago"
+                class="btn btn-secondary"
+                style="flex: 1;"
+              >
+                Cancelar
+              </button>
+              <button
+                id="btnConfirmarPago"
+                class="btn btn-primary"
+                style="flex: 1;"
+              >
+                Confirmar pago
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="footer-container"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/api.js"></script>
+    <script src="/js/components/file-upload-manager.js"></script>
+    <script src="js/mi_credito.js"></script>
+    <script src="/js/components/header-loader.js"></script>
+    <script src="/js/components/footer-loader.js"></script>
+  </body>
+</html>

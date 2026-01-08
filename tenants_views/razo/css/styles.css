@@ -8,7 +8,7 @@
 @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Inter:wght@400;500;600&family=Pacifico&display=swap");
 
 /* Import Sistema de Temas Estacionales */
-@import url("theme-variables.css");
+@import url("/css/theme-variables.css");
 
 /* Reset and Base Styles */
 * {

@@ -681,6 +681,8 @@ const registrarPagoCuentaPorPagar = async (req, res) => {
 
 const getResumenEstadoCuentaProveedores = async (req, res) => {
   try {
+    const { tenant_id } = req.tenant;
+
     const result = await db.query(
       `SELECT
          proveedorid,
@@ -689,7 +691,9 @@ const getResumenEstadoCuentaProveedores = async (req, res) => {
          saldo_pendiente_pago,
          facturas_vivas
        FROM v_resumen_bancario_proveedores
-       ORDER BY saldo_pendiente_pago DESC, nombreempresa ASC`
+       WHERE tenant_id = $1
+       ORDER BY saldo_pendiente_pago DESC, nombreempresa ASC`,
+      [tenant_id]
     );
 
     return res.json({
@@ -715,6 +719,7 @@ const getResumenEstadoCuentaProveedores = async (req, res) => {
 
 const getEstadoCuentaProveedorMovimientos = async (req, res) => {
   try {
+    const { tenant_id } = req.tenant;
     const proveedorId = Number.parseInt(req.params.id, 10);
     if (!Number.isInteger(proveedorId) || proveedorId <= 0) {
       return res.status(400).json({
@@ -726,8 +731,8 @@ const getEstadoCuentaProveedorMovimientos = async (req, res) => {
     const provResult = await db.query(
       `SELECT proveedorid, nombreempresa
        FROM proveedores
-       WHERE proveedorid = $1`,
-      [proveedorId]
+       WHERE proveedorid = $1 AND tenant_id = $2`,
+      [proveedorId, tenant_id]
     );
 
     if (!provResult.rows.length) {
@@ -1868,11 +1873,13 @@ async function registrarAuditoriaReglasEmpaque(client, req, eventos) {
 
 const getTiposProductoAdmin = async (req, res) => {
   try {
+    const { tenant_id } = req.tenant;
     const result = await db.query(
       `SELECT tp.tipoproductoid, tp.nombre, tp.descripcion
        FROM tipoproducto tp
-       WHERE tp.activo = TRUE
-       ORDER BY tp.nombre ASC`
+       WHERE tp.activo = TRUE AND tp.tenant_id = $1
+       ORDER BY tp.nombre ASC`,
+      [tenant_id]
     );
 
     const tipos = (result.rows || []).map((row) => ({
@@ -1901,6 +1908,7 @@ const getTiposProductoAdmin = async (req, res) => {
 
 const crearTipoProductoAdmin = async (req, res) => {
   try {
+    const { tenant_id } = req.tenant;
     const nombreRaw = req.body?.nombre ?? req.body?.Nombre ?? req.body?.tipoProducto;
     const descripcionRaw = req.body?.descripcion ?? req.body?.Descripcion ?? null;
 
@@ -1918,13 +1926,13 @@ const crearTipoProductoAdmin = async (req, res) => {
     }
 
     const insertRes = await db.query(
-      `INSERT INTO tipoproducto (nombre, descripcion, activo)
-       VALUES ($1, $2, TRUE)
-       ON CONFLICT (nombre)
+      `INSERT INTO tipoproducto (nombre, descripcion, activo, tenant_id)
+       VALUES ($1, $2, TRUE, $3)
+       ON CONFLICT (nombre, tenant_id)
        DO UPDATE SET activo = TRUE,
                     descripcion = COALESCE(EXCLUDED.descripcion, tipoproducto.descripcion)
        RETURNING tipoproductoid, nombre, descripcion`,
-      [nombre, descripcion]
+      [nombre, descripcion, tenant_id]
     );
 
     const row = insertRes.rows?.[0];
@@ -1949,6 +1957,7 @@ const crearTipoProductoAdmin = async (req, res) => {
 
 const buscarProductosCompra = async (req, res) => {
   try {
+    const { tenant_id } = req.tenant;
     const qRaw = (req.query.q || "").toString().trim();
     const allRaw = (req.query.all || "").toString().trim().toLowerCase();
     const all = allRaw === "1" || allRaw === "true";
@@ -1995,9 +2004,10 @@ const buscarProductosCompra = async (req, res) => {
     const whereParts = [
       "COALESCE(pv.activo, TRUE) = TRUE",
       "COALESCE(p.activo, TRUE) = TRUE",
+      "p.tenant_id = $2",
     ];
-    const params = [reglasProveedorId];
-    let i = 2;
+    const params = [reglasProveedorId, tenant_id];
+    let i = 3;
 
     if (q) {
       whereParts.push(
@@ -2513,8 +2523,9 @@ const recepcionarMercancia = async (req, res) => {
  */
 const getMovimientosInventario = async (req, res) => {
   try {
-    const where = [];
-    const values = [];
+    const { tenant_id } = req.tenant;
+    const where = [`p.tenant_id = $1`];
+    const values = [tenant_id];
 
     const varianteIdRaw = req.query.varianteId;
     if (varianteIdRaw !== undefined && varianteIdRaw !== null && varianteIdRaw !== "") {
@@ -2574,7 +2585,7 @@ const getMovimientosInventario = async (req, res) => {
     values.push(limit);
     const limitParam = `$${values.length}`;
 
-    const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
+    const whereSql = `WHERE ${where.join(" AND ")}`;
 
     let rows = [];
 
@@ -2692,6 +2703,7 @@ const getMovimientosInventario = async (req, res) => {
  */
 const getHistorialInventarioVariante = async (req, res) => {
   try {
+    const { tenant_id } = req.tenant;
     const varianteId = Number.parseInt(req.params.varianteId, 10);
     if (!Number.isInteger(varianteId) || varianteId <= 0) {
       return res.status(400).json({
@@ -2719,12 +2731,14 @@ const getHistorialInventarioVariante = async (req, res) => {
            NULL
          ) AS usuario
        FROM log_inventario li
+       INNER JOIN producto_variantes pv ON pv.varianteid = li.varianteid
+       INNER JOIN productos p ON p.productoid = pv.productoid
        LEFT JOIN administradores a ON a.adminid = li.usuarioid
        LEFT JOIN agentesdeventas av ON av.agenteid = li.usuarioid
-       WHERE li.varianteid = $1
+       WHERE li.varianteid = $1 AND p.tenant_id = $2
        ORDER BY li.fecha DESC
-       LIMIT $2`,
-      [varianteId, limit]
+       LIMIT $3`,
+      [varianteId, tenant_id, limit]
     );
 
     const movimientos = (rows || []).map((r) => {
@@ -2797,6 +2811,7 @@ const PEDIDO_ESTATUS_EMAIL_TEMPLATES = {
 
 const getProveedorById = async (req, res) => {
   try {
+    const { tenant_id } = req.tenant;
     const proveedorId = Number.parseInt(req.params.id, 10);
     if (!Number.isInteger(proveedorId) || proveedorId <= 0) {
       return res.status(400).json({
@@ -2808,8 +2823,8 @@ const getProveedorById = async (req, res) => {
     const result = await db.query(
       `SELECT *
        FROM Proveedores
-       WHERE ProveedorID = $1`,
-      [proveedorId]
+       WHERE ProveedorID = $1 AND tenant_id = $2`,
+      [proveedorId, tenant_id]
     );
 
     if (result.rows.length === 0) {
@@ -3087,10 +3102,20 @@ const loginAdmin = async (req, res) => {
       });
     }
 
-    // Buscar administrador por email
+    // CRITICAL SECURITY: Validar tenant_id del request
+    if (!req.tenant || !req.tenant.tenant_id) {
+      return res.status(400).json({
+        success: false,
+        message: "Tenant no identificado",
+      });
+    }
+
+    const { tenant_id } = req.tenant;
+
+    // Buscar administrador por email Y tenant_id (aislamiento multi-tenant)
     const result = await db.query(
-      "SELECT * FROM Administradores WHERE Email = $1 AND Activo = TRUE",
-      [email]
+      "SELECT * FROM Administradores WHERE Email = $1 AND tenant_id = $2 AND Activo = TRUE",
+      [email, tenant_id]
     );
 
     let cuenta = null;
@@ -3121,7 +3146,7 @@ const loginAdmin = async (req, res) => {
           CodigoAgente,
           Activo
         FROM AgentesDeVentas
-        WHERE Email = $1 AND Activo = TRUE
+        WHERE Email = $1 AND tenant_id = $2 AND Activo = TRUE
       `;
 
       if (hasEsAdminColumn && hasAdminRolColumn) {
@@ -3137,7 +3162,7 @@ const loginAdmin = async (req, res) => {
             EsAdmin,
             AdminRol
           FROM AgentesDeVentas
-          WHERE Email = $1 AND Activo = TRUE
+          WHERE Email = $1 AND tenant_id = $2 AND Activo = TRUE
         `;
       } else if (hasEsAdminColumn) {
         agenteQueryText = `
@@ -3151,7 +3176,7 @@ const loginAdmin = async (req, res) => {
             Activo,
             EsAdmin
           FROM AgentesDeVentas
-          WHERE Email = $1 AND Activo = TRUE
+          WHERE Email = $1 AND tenant_id = $2 AND Activo = TRUE
         `;
       } else if (hasAdminRolColumn) {
         agenteQueryText = `
@@ -3165,11 +3190,11 @@ const loginAdmin = async (req, res) => {
             Activo,
             AdminRol
           FROM AgentesDeVentas
-          WHERE Email = $1 AND Activo = TRUE
+          WHERE Email = $1 AND tenant_id = $2 AND Activo = TRUE
         `;
       }
 
-      const agenteResult = await db.query(agenteQueryText, [email]);
+      const agenteResult = await db.query(agenteQueryText, [email, tenant_id]);
 
       if (agenteResult.rows.length > 0) {
         const agente = agenteResult.rows[0];
@@ -3218,6 +3243,7 @@ const loginAdmin = async (req, res) => {
       tipo: "admin",
       roles: cuenta.roles,
       adminSource: cuenta.adminSource,
+      tenant_id: tenant_id,
     };
 
     if (cuenta.adminSource === "agent") {
@@ -3282,6 +3308,321 @@ const loginAdmin = async (req, res) => {
       message: "Error en el servidor",
     });
   }
+};
+
+/**
+ * Obtener estadísticas del dashboard de administrador
+ * GET /api/admin/dashboard-stats
+ */
+const getDashboardStats = async (req, res) => {
+  try {
+    const { tenant_id } = req.tenant;
+
+    // Obtener total de pedidos
+    const pedidosResult = await db.query(
+      `SELECT COUNT(*) as total FROM Pedidos WHERE tenant_id = $1`,
+      [tenant_id]
+    );
+
+    // Obtener pedidos pendientes
+    const pedidosPendientesResult = await db.query(
+      `SELECT COUNT(*) as total FROM Pedidos 
+       WHERE tenant_id = $1 AND Estatus IN ('Pendiente', 'Procesando')`,
+      [tenant_id]
+    );
+
+    // Obtener total de clientes activos
+    const clientesResult = await db.query(
+      `SELECT COUNT(*) as total FROM Clientes 
+       WHERE tenant_id = $1 AND Activo = TRUE`,
+      [tenant_id]
+    );
+
+    // Obtener ventas del mes actual
+    const ventasMesResult = await db.query(
+      `SELECT COALESCE(SUM(MontoTotal), 0) as total 
+       FROM Pedidos 
+       WHERE tenant_id = $1 
+       AND EXTRACT(MONTH FROM FechaPedido) = EXTRACT(MONTH FROM CURRENT_DATE)
+       AND EXTRACT(YEAR FROM FechaPedido) = EXTRACT(YEAR FROM CURRENT_DATE)
+       AND Estatus NOT IN ('Cancelado')`,
+      [tenant_id]
+    );
+
+    res.json({
+      success: true,
+      data: {
+        totalPedidos: parseInt(pedidosResult.rows[0].total),
+        pedidosPendientes: parseInt(pedidosPendientesResult.rows[0].total),
+        clientesActivos: parseInt(clientesResult.rows[0].total),
+        ventasMes: parseFloat(ventasMesResult.rows[0].total)
+      }
+    });
+  } catch (error) {
+    console.error("Error al obtener estadísticas del dashboard:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error al obtener estadísticas",
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Obtener todos los pedidos (para gestión admin)
+ * GET /api/admin/pedidos
+ */
+const getAllPedidos = async (req, res) => {
+  try {
+    const { tenant_id } = req.tenant;
+    const { estatus, clienteId, agenteId, fechaInicio, fechaFin } = req.query;
+
+    let query = `
+      SELECT 
+        p.PedidoID,
+        p.FechaPedido,
+        p.MontoTotal,
+        p.Estatus,
+        p.CostoEnvio,
+        c.Nombre as ClienteNombre,
+        c.Apellido as ClienteApellido,
+        c.Email as ClienteEmail,
+        a.Nombre as AgenteNombre,
+        a.Apellido as AgenteApellido,
+        a.CodigoAgente,
+        d.Ciudad,
+        d.EstadoID,
+        e.Nombre as EstadoNombre
+      FROM Pedidos p
+      LEFT JOIN Clientes c ON p.ClienteID = c.ClienteID
+      LEFT JOIN AgentesDeVentas a ON p.AgenteID = a.AgenteID
+      LEFT JOIN Cliente_Direcciones d ON p.DireccionEnvioID = d.DireccionID
+      LEFT JOIN Estados e ON d.EstadoID = e.EstadoID
+      WHERE p.tenant_id = $1
+    `;
+
+    const params = [tenant_id];
+    let paramIndex = 2;
+
+    if (estatus) {
+      query += ` AND p.Estatus = $${paramIndex}`;
+      params.push(estatus);
+      paramIndex++;
+    }
+
+    if (clienteId) {
+      query += ` AND p.ClienteID = $${paramIndex}`;
+      params.push(parseInt(clienteId));
+      paramIndex++;
+    }
+
+    if (agenteId) {
+      query += ` AND p.AgenteID = $${paramIndex}`;
+      params.push(parseInt(agenteId));
+      paramIndex++;
+    }
+
+    if (fechaInicio) {
+      query += ` AND p.FechaPedido >= $${paramIndex}`;
+      params.push(fechaInicio);
+      paramIndex++;
+    }
+
+    if (fechaFin) {
+      query += ` AND p.FechaPedido <= $${paramIndex}`;
+      params.push(fechaFin);
+      paramIndex++;
+    }
+
+    query += ` ORDER BY p.FechaPedido DESC`;
+
+    const result = await db.query(query, params);
+
+    const pedidos = result.rows.map(row => ({
+      pedidoId: row.pedidoid,
+      fechaPedido: row.fechapedido,
+      montoTotal: parseFloat(row.montototal),
+      costoEnvio: row.costoenvio ? parseFloat(row.costoenvio) : 0,
+      estatus: row.estatus,
+      cliente: {
+        nombre: row.clientenombre,
+        apellido: row.clienteapellido,
+        email: row.clienteemail
+      },
+      agente: row.agentenombre ? {
+        nombre: row.agentenombre,
+        apellido: row.agenteapellido,
+        codigoAgente: row.codigoagente
+      } : null,
+      direccion: {
+        ciudad: row.ciudad,
+        estadoId: row.estadoid,
+        estado: row.estadonombre
+      }
+    }));
+
+    res.json({
+      success: true,
+      data: pedidos
+    });
+  } catch (error) {
+    console.error("Error al obtener pedidos:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error al obtener pedidos",
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Actualizar estatus de un pedido
+ * PUT /api/admin/pedidos/:id
+ */
+const updatePedidoEstatus = async (req, res) => {
+  try {
+    const { tenant_id } = req.tenant;
+    const pedidoId = parseInt(req.params.id);
+    const { estatus } = req.body;
+
+    if (!estatus) {
+      return res.status(400).json({
+        success: false,
+        message: "El estatus es requerido"
+      });
+    }
+
+    const estatusValidos = ['Pendiente', 'Procesando', 'Enviado', 'Entregado', 'Cancelado'];
+    if (!estatusValidos.includes(estatus)) {
+      return res.status(400).json({
+        success: false,
+        message: "Estatus inválido"
+      });
+    }
+
+    const result = await db.query(
+      `UPDATE Pedidos 
+       SET Estatus = $1, FechaActualizacion = NOW()
+       WHERE PedidoID = $2 AND tenant_id = $3
+       RETURNING *`,
+      [estatus, pedidoId, tenant_id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Pedido no encontrado"
+      });
+    }
+
+    // Crear notificación para el cliente
+    try {
+      await crearNotificacionServicio({
+        clienteId: result.rows[0].clienteid,
+        tipo: 'pedido',
+        titulo: `Pedido ${estatus}`,
+        mensaje: `Tu pedido #${pedidoId} ha sido actualizado a: ${estatus}`,
+        url: `/dashboard.html?tab=pedidos`,
+        prioridad: 'normal',
+        metadata: { pedidoId }
+      });
+    } catch (notifError) {
+      console.error("Error al crear notificación:", notifError);
+    }
+
+    res.json({
+      success: true,
+      message: "Estatus actualizado correctamente",
+      data: {
+        pedidoId: result.rows[0].pedidoid,
+        estatus: result.rows[0].estatus
+      }
+    });
+  } catch (error) {
+    console.error("Error al actualizar estatus del pedido:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error al actualizar estatus",
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Crear un nuevo producto
+ * POST /api/admin/productos
+ */
+const crearProducto = async (req, res) => {
+  try {
+    const { tenant_id } = req.tenant;
+    const {
+      nombreProducto,
+      descripcion,
+      categoriaId,
+      proveedorId,
+      reglaid,
+      precioBase,
+      activo = true,
+      destacado = false
+    } = req.body;
+
+    // Validaciones básicas
+    if (!nombreProducto || !proveedorId) {
+      return res.status(400).json({
+        success: false,
+        message: "Nombre del producto y proveedor son requeridos"
+      });
+    }
+
+    // Generar SKU único
+    const sku = await generarSkuUnico(nombreProducto, tenant_id);
+
+    const result = await db.query(
+      `INSERT INTO Productos 
+       (NombreProducto, Descripcion, CategoriaID, ProveedorID, ReglaID, 
+        PrecioBase, SKU, Activo, Destacado, tenant_id, FechaCreacion)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW())
+       RETURNING *`,
+      [
+        nombreProducto,
+        descripcion || null,
+        categoriaId || null,
+        proveedorId,
+        reglaid || null,
+        precioBase || 0,
+        sku,
+        activo,
+        destacado,
+        tenant_id
+      ]
+    );
+
+    res.status(201).json({
+      success: true,
+      message: "Producto creado exitosamente",
+      data: {
+        productoId: result.rows[0].productoid,
+        nombreProducto: result.rows[0].nombreproducto,
+        sku: result.rows[0].sku
+      }
+    });
+  } catch (error) {
+    console.error("Error al crear producto:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error al crear producto",
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Obtener medidas existentes (alias para getMedidas)
+ * GET /api/admin/medidas-existentes
+ */
+const getMedidasExistentes = async (req, res) => {
+  // Esta función es un alias de getMedidas para compatibilidad
+  return getMedidas(req, res);
 };
 
 const getReglasEmpaqueProveedor = async (req, res) => {
@@ -4467,10 +4808,14 @@ const actualizarEstadoCliente = async (req, res) => {
  */
 const getMedidas = async (req, res) => {
   try {
+    const { tenant_id } = req.tenant;
+
     const result = await db.query(
       `SELECT MedidaID, Nombre, Abreviatura
        FROM Medidas
-       ORDER BY Nombre`
+       WHERE tenant_id = $1
+       ORDER BY Nombre ASC`,
+      [tenant_id]
     );
 
     res.json({
@@ -6186,12 +6531,16 @@ const crearProducto = async (req, res) => {
  * Obtener catálogo de tamaños de paquetes
  * GET /api/admin/tamanos-paquetes
  */
-const getTamanosPaquetes = async (_req, res) => {
+const getTamanosPaquetes = async (req, res) => {
   try {
+    const { tenant_id } = req.tenant;
+
     const result = await db.query(
       `SELECT *
        FROM Cat_TamanoPaquetes
-       ORDER BY TamanoID ASC`
+       WHERE tenant_id = $1
+       ORDER BY TipoProductoID, Valor ASC`,
+      [tenant_id]
     );
 
     const valueCandidates = [
@@ -7627,6 +7976,7 @@ const getAllProductos = async (req, res) => {
  */
 const getCategorias = async (req, res) => {
   try {
+    const { tenant_id } = req.tenant;
     const result = await db.query(
       `SELECT 
         c.CategoriaID,
@@ -7639,7 +7989,9 @@ const getCategorias = async (req, res) => {
         p.Nombre AS ParentNombre
       FROM Categorias c
       LEFT JOIN Categorias p ON c.ParentCategoriaID = p.CategoriaID
-      ORDER BY c.Nombre`
+      WHERE c.tenant_id = $1
+      ORDER BY c.Nombre`,
+      [tenant_id]
     );
 
     res.json({
@@ -7672,6 +8024,7 @@ const getCategorias = async (req, res) => {
  */
 const crearCategoria = async (req, res) => {
   try {
+    const { tenant_id } = req.tenant;
     const { nombre, descripcion, parentCategoriaId, activo } = req.body;
 
     if (!nombre || !nombre.trim()) {
@@ -7689,8 +8042,8 @@ const crearCategoria = async (req, res) => {
 
     if (parentCategoriaId !== undefined && parentCategoriaId !== null) {
       const parentResult = await db.query(
-        "SELECT CategoriaID FROM Categorias WHERE CategoriaID = $1",
-        [parentCategoriaId]
+        "SELECT CategoriaID FROM Categorias WHERE CategoriaID = $1 AND tenant_id = $2",
+        [parentCategoriaId, tenant_id]
       );
 
       if (parentResult.rows.length === 0) {
@@ -7706,8 +8059,8 @@ const crearCategoria = async (req, res) => {
     const nombreNormalizado = nombre.trim();
 
     const existente = await db.query(
-      "SELECT CategoriaID FROM Categorias WHERE LOWER(Nombre) = LOWER($1)",
-      [nombreNormalizado]
+      "SELECT CategoriaID FROM Categorias WHERE LOWER(Nombre) = LOWER($1) AND tenant_id = $2",
+      [nombreNormalizado, tenant_id]
     );
 
     if (existente.rows.length > 0) {
@@ -9139,6 +9492,8 @@ const getPedidoDetalle = async (req, res) => {
  */
 const getAllProveedores = async (req, res) => {
   try {
+    const { tenant_id } = req.tenant;
+
     const query = `
       SELECT 
         ProveedorID,
@@ -9170,10 +9525,11 @@ const getAllProveedores = async (req, res) => {
         MinimoCompra,
         AceptaDevoluciones
       FROM Proveedores
+      WHERE tenant_id = $1
       ORDER BY NombreEmpresa ASC
     `;
 
-    const result = await db.query(query);
+    const result = await db.query(query, [tenant_id]);
     const proveedores = result.rows;
 
     res.json({
@@ -9312,6 +9668,8 @@ const crearProveedor = async (req, res) => {
         aceptaDevoluciones !== undefined ? Boolean(aceptaDevoluciones) : null,
     };
 
+    const { tenant_id } = req.tenant;
+
     await client.query("BEGIN");
 
     const insertRes = await client.query(
@@ -9342,9 +9700,10 @@ const crearProveedor = async (req, res) => {
         limitecredito,
         descuentofinanciero,
         minimocompra,
-        aceptadevoluciones
+        aceptadevoluciones,
+        tenant_id
       ) VALUES (
-        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27
+        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28
       ) RETURNING *`,
       [
         datosNuevosProveedor.NombreEmpresa,
@@ -9374,6 +9733,7 @@ const crearProveedor = async (req, res) => {
         datosNuevosProveedor.DescuentoFinanciero,
         datosNuevosProveedor.MinimoCompra,
         datosNuevosProveedor.AceptaDevoluciones,
+        tenant_id,
       ]
     );
 
@@ -9553,10 +9913,12 @@ const actualizarProveedor = async (req, res) => {
       }
     }
 
+    const { tenant_id } = req.tenant;
+
     // Verificar que el proveedor existe y obtener snapshot actual
     const checkQuery =
-      "SELECT * FROM Proveedores WHERE ProveedorID = $1";
-    const checkResult = await client.query(checkQuery, [proveedorId]);
+      "SELECT * FROM Proveedores WHERE ProveedorID = $1 AND tenant_id = $2";
+    const checkResult = await client.query(checkQuery, [proveedorId, tenant_id]);
 
     if (checkResult.rows.length === 0) {
       return res.status(404).json({
@@ -13844,10 +14206,10 @@ const obtenerRemisionPedido = async (req, res) => {
         a.apellido as agente_apellido,
         a.codigoagente
       FROM pedidos p
-      INNER JOIN clientes c ON p.clienteid = c.clienteid
-      LEFT JOIN cliente_direcciones d ON p.direccionenvioid = d.direccionid
-      LEFT JOIN estados e ON d.estadoid = e.estadoid
-      LEFT JOIN agentesdeventas a ON p.agenteid = a.agenteid
+      INNER JOIN clientes c ON c.clienteid = p.clienteid
+      LEFT JOIN cliente_direcciones d ON d.direccionid = p.direccionenvioid
+      LEFT JOIN estados e ON e.estadoid = d.estadoid
+      LEFT JOIN agentesdeventas a ON a.agenteid = p.agenteid
       WHERE p.pedidoid = $1
     `;
 
@@ -13937,14 +14299,11 @@ const obtenerRemisionPedido = async (req, res) => {
 
 module.exports = {
   loginAdmin,
-  verifyAdmin,
-  getAdminProfile,
-  refreshAdminToken,
   getDashboardStats,
   getAllPedidos,
+  updatePedidoEstatus,
   confirmarPedido,
   updateCostoEnvio,
-  updatePedidoEstatus,
   getPedidoDetalle,
   getMovimientosInventario,
   getHistorialInventarioVariante,
@@ -13965,7 +14324,7 @@ module.exports = {
   actualizarCategoria,
   eliminarCategoria,
   getMedidas,
-getMedidasExistentes,
+  getMedidasExistentes,
   crearVariante,
   actualizarVariante,
   crearAgente,

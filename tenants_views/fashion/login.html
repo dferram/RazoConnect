@@ -1,0 +1,463 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Iniciar sesión - Fashion Box | Regalando Sonrisas</title>
+    <link rel="icon" type="image/png" href="/icon/Logo_Fashion.png" />
+    <link rel="stylesheet" href="css/styles-fashion.css" />
+    <link rel="stylesheet" href="css/fashion-theme-fashion.css" />
+    <link rel="stylesheet" href="css/mobile-responsive-fashion.css" />
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="container navbar-content">
+        <a href="/" class="navbar-brand"><img src="/icon/Logo_Fashion.png" class="titulo-emoji-reemplazo" alt="Fashion Box">Fashion Box</a>
+        <ul class="navbar-menu">
+          <li><a href="/registro.html" class="navbar-link">Registro</a></li>
+        </ul>
+      </div>
+    </nav>
+
+    <div class="container">
+      <div class="form-container">
+        <h1 class="form-title">Iniciar sesión</h1>
+        <br />
+        <div id="alert" style="display: none"></div>
+
+        <form id="loginForm">
+          <div class="form-group">
+            <label class="form-label" for="email">Correo Electrónico o Teléfono</label>
+            <input
+              type="text"
+              id="email"
+              name="email"
+              class="form-input"
+              placeholder="ejemplo@correo.com o 5512345678"
+              required
+            />
+            <div class="form-error" id="emailError"></div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="password">Contraseña</label>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              class="form-input"
+              placeholder="••••••••"
+              required
+            />
+            <div class="form-error" id="passwordError"></div>
+          </div>
+
+          <button
+            type="submit"
+            class="btn btn-primary btn-block"
+            id="submitBtn"
+          >
+            <span id="btnText">Iniciar sesión</span>
+            <div
+              class="spinner"
+              id="btnSpinner"
+              style="
+                display: none;
+                width: 20px;
+                height: 20px;
+                border-width: 2px;
+              "
+            ></div>
+          </button>
+
+          <a
+            href="#"
+            class="btn-google"
+            id="googleLoginBtn"
+            onclick="iniciarGooglePopup(event)"
+          >
+            <img
+              src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+              alt="Google logo"
+            />
+            <span>Continuar con Google</span>
+          </a>
+
+          <p class="text-center mt-2">
+            <a href="/forgot-password.html" class="link-underline"
+              >Olvidé mi contraseña</a
+            >
+          </p>
+        </form>
+
+        <p class="text-center mt-3" style="color: var(--text-secondary)">
+          ¿No tienes cuenta?
+          <a
+            href="/registro.html"
+            style="color: var(--primary-color); text-decoration: none"
+            >Crear cuenta</a
+          >
+        </p>
+      </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script>
+      const loginForm = document.getElementById("loginForm");
+      const emailInput = document.getElementById("email");
+      const passwordInput = document.getElementById("password");
+      const submitBtn = document.getElementById("submitBtn");
+      const btnText = document.getElementById("btnText");
+      const btnSpinner = document.getElementById("btnSpinner");
+      const alertDiv = document.getElementById("alert");
+
+      const GOOGLE_POPUP_MESSAGE_TYPE = "GOOGLE_SUCCESS";
+
+      function iniciarGooglePopup(event) {
+        if (event && event.preventDefault) {
+          event.preventDefault();
+        }
+
+        const width = 500;
+        const height = 600;
+
+        const dualScreenLeft =
+          window.screenLeft !== undefined ? window.screenLeft : window.screenX;
+        const dualScreenTop =
+          window.screenTop !== undefined ? window.screenTop : window.screenY;
+
+        const screenWidth =
+          window.innerWidth ||
+          document.documentElement.clientWidth ||
+          window.screen.width;
+        const screenHeight =
+          window.innerHeight ||
+          document.documentElement.clientHeight ||
+          window.screen.height;
+
+        const left = dualScreenLeft + (screenWidth - width) / 2;
+        const top = dualScreenTop + (screenHeight - height) / 2;
+
+        const features = `scrollbars=yes,resizable=yes,width=${width},height=${height},top=${top},left=${left}`;
+
+        const popup = window.open(
+          "/api/auth/google",
+          "google_login_popup",
+          features
+        );
+
+        if (!popup) {
+          showAlert(
+            "No se pudo abrir la ventana de Google. Verifica el bloqueador de ventanas emergentes.",
+            "error"
+          );
+          return;
+        }
+
+        popup.focus();
+      }
+
+      window.addEventListener(
+        "message",
+        (event) => {
+          try {
+            if (!event.data || event.data.type !== GOOGLE_POPUP_MESSAGE_TYPE) {
+              return;
+            }
+
+            const expectedOrigin = window.location.origin;
+            if (event.origin && event.origin !== expectedOrigin) {
+              return;
+            }
+
+            const { token, user } = event.data;
+
+            if (token) {
+              localStorage.setItem("Fashion Box_token", token);
+            }
+
+            if (user) {
+              localStorage.setItem("Fashion Box_user", JSON.stringify(user));
+            }
+
+            if (typeof showToast === "function") {
+              showToast("Inicio de sesión con Google exitoso", "success");
+            }
+
+            setTimeout(() => {
+              sessionStorage.setItem("_navigating", "true");
+              window.location.href = "/inicio.html";
+            }, 500);
+          } catch (err) {
+            console.error("Error al procesar mensaje de Google:", err);
+          }
+        },
+        false
+      );
+
+      const params = new URLSearchParams(window.location.search);
+      const googleToken = params.get("googleToken");
+
+      if (googleToken) {
+        const nombre = params.get("nombre") || "";
+        const apellido = params.get("apellido") || "";
+        const emailFromQuery = params.get("email") || "";
+        const avatarUrl = params.get("avatarUrl") || null;
+
+        const usuario = {
+          nombre,
+          apellido,
+          email: emailFromQuery,
+          rol: "cliente",
+          avatarUrl,
+        };
+
+        localStorage.setItem("Fashion Box_token", googleToken);
+        localStorage.setItem("Fashion Box_user", JSON.stringify(usuario));
+
+        showToast("Inicio de sesión con Google exitoso", "success");
+
+        setTimeout(() => {
+          sessionStorage.setItem("_navigating", "true");
+          window.location.href = "/inicio.html";
+        }, 500);
+      }
+
+      // Check if user is already logged in
+      if (isAuthenticated()) {
+        window.location.href = "/inicio.html";
+      }
+
+      // Check if admin is already logged in
+      const adminToken = localStorage.getItem("Fashion Box_admin_token");
+      if (adminToken) {
+        sessionStorage.setItem("_navigating", "true");
+        window.location.href = "/admin-dashboard.html";
+      }
+
+      // Show alert message
+      function showAlert(message, type = "error") {
+        alertDiv.className = `alert alert-${type}`;
+        alertDiv.textContent = message;
+        alertDiv.style.display = "block";
+
+        setTimeout(() => {
+          alertDiv.style.display = "none";
+        }, 5000);
+      }
+
+      // Validate email or phone format
+      function validateIdentifier(identifier) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        const phoneRegex = /^\d{10}$/;
+        return emailRegex.test(identifier) || phoneRegex.test(identifier);
+      }
+
+      // Handle form submission
+      loginForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        // Clear previous errors
+        document
+          .querySelectorAll(".form-error")
+          .forEach((el) => el.classList.remove("show"));
+        document
+          .querySelectorAll(".form-input")
+          .forEach((el) => el.classList.remove("error"));
+
+        const identifier = emailInput.value.trim();
+        const password = passwordInput.value.trim();
+
+        // Validation
+        let hasError = false;
+
+        if (!identifier) {
+          document.getElementById("emailError").textContent =
+            "El correo o teléfono es requerido";
+          document.getElementById("emailError").classList.add("show");
+          emailInput.classList.add("error");
+          hasError = true;
+        } else if (!validateIdentifier(identifier)) {
+          document.getElementById("emailError").textContent =
+            "Formato inválido. Ingresa un correo válido o 10 dígitos";
+          document.getElementById("emailError").classList.add("show");
+          emailInput.classList.add("error");
+          hasError = true;
+        }
+
+        if (!password) {
+          document.getElementById("passwordError").textContent =
+            "La contraseña es requerida";
+          document.getElementById("passwordError").classList.add("show");
+          passwordInput.classList.add("error");
+          hasError = true;
+        }
+
+        if (hasError) return;
+
+        // Show loading state
+        submitBtn.disabled = true;
+        btnText.style.display = "none";
+        btnSpinner.style.display = "block";
+
+        try {
+          let loginSuccessful = false;
+
+          // Intentar primero como administrador para priorizar agentes con permisos de admin
+          try {
+            const adminResponse = await fetch(`${API_BASE_URL}/admin/login`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ email: identifier, password }),
+            });
+
+            const adminData = await adminResponse.json();
+
+            if (adminResponse.ok && adminData.success) {
+              localStorage.setItem(
+                "Fashion Box_admin_token",
+                adminData.data.token
+              );
+              localStorage.setItem(
+                "Fashion Box_admin",
+                JSON.stringify(adminData.data.admin)
+              );
+
+              // Verificar si es agente para redirigir al panel de agente
+              const adminInfo = adminData.data.admin || {};
+              const adminRol = adminInfo.rol;
+              const origen = adminInfo.origen;
+              const esAgente =
+                adminRol === "agente" ||
+                origen === "agent" ||
+                adminInfo.esAgente === true ||
+                adminInfo.codigoAgente;
+
+              console.log("🔍 Admin login info:", {
+                adminRol,
+                origen,
+                esAgente,
+                adminInfo,
+              });
+
+              if (esAgente) {
+                showToast("¡Bienvenido Agente!", "success");
+                setTimeout(() => {
+                  sessionStorage.setItem("_navigating", "true");
+                  window.location.href = "/agente-dashboard.html";
+                }, 500);
+              } else {
+                showToast("¡Bienvenido Administrador!", "success");
+                setTimeout(() => {
+                  sessionStorage.setItem("_navigating", "true");
+                  window.location.href = "/admin-dashboard.html";
+                }, 500);
+              }
+              loginSuccessful = true;
+            }
+          } catch (adminError) {
+            console.error("Admin login error:", adminError);
+          }
+
+          // Si no es admin, intenta como cliente/agente
+          if (!loginSuccessful) {
+            try {
+              const clientResponse = await fetch(`${API_BASE_URL}/login`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ Email: identifier, Password: password }),
+              });
+
+              const clientData = await clientResponse.json();
+
+              if (clientResponse.ok && clientData.success) {
+                const rol =
+                  clientData.data.rol || clientData.data.usuario?.rol || null;
+                const usuario = {
+                  ...clientData.data.usuario,
+                  rol,
+                };
+
+                if (rol === "agente") {
+                  // AGENTE: Guardar como admin token para el panel de agente
+                  localStorage.setItem(
+                    "Fashion Box_admin_token",
+                    clientData.data.token
+                  );
+                  localStorage.setItem(
+                    "Fashion Box_admin",
+                    JSON.stringify({
+                      ...usuario,
+                      rol: "agente",
+                      esAgente: true,
+                    })
+                  );
+
+                  showToast("¡Bienvenido Agente!", "success");
+                  setTimeout(() => {
+                    sessionStorage.setItem("_navigating", "true");
+                    window.location.href = "/agente-dashboard.html";
+                  }, 500);
+                } else {
+                  // CLIENTE: Guardar como token normal
+                  localStorage.setItem(
+                    "Fashion Box_token",
+                    clientData.data.token
+                  );
+                  localStorage.setItem(
+                    "Fashion Box_user",
+                    JSON.stringify(usuario)
+                  );
+
+                  showToast("¡Bienvenido!", "success");
+                  setTimeout(() => {
+                    sessionStorage.setItem("_navigating", "true");
+                    window.location.href = "/inicio.html";
+                  }, 500);
+                }
+                loginSuccessful = true;
+              }
+            } catch (clientError) {
+              console.log("No es cliente/agente:", clientError);
+            }
+          }
+
+          if (!loginSuccessful) {
+            showAlert(
+              "Credenciales inválidas. Verifica tu correo/teléfono y contraseña.",
+              "error"
+            );
+          }
+        } catch (error) {
+          console.error("Login error:", error);
+          showAlert(
+            "Error al conectar con el servidor. Intenta nuevamente.",
+            "error"
+          );
+        } finally {
+          // Reset button state
+          submitBtn.disabled = false;
+          btnText.style.display = "inline";
+          btnSpinner.style.display = "none";
+        }
+      });
+
+      // Real-time validation
+      emailInput.addEventListener("blur", () => {
+        const identifier = emailInput.value.trim();
+        if (identifier && !validateIdentifier(identifier)) {
+          document.getElementById("emailError").textContent =
+            "Formato inválido. Ingresa un correo válido o 10 dígitos";
+          document.getElementById("emailError").classList.add("show");
+          emailInput.classList.add("error");
+        } else {
+          document.getElementById("emailError").classList.remove("show");
+          emailInput.classList.remove("error");
+        }
+      });
+    </script>
+
+    <!-- Sistema de Temas Estacionales -->
+    <script src="/js/theme-manager.js"></script>
+  </body>
+</html>

@@ -70,27 +70,29 @@ const registroCliente = async (req, res) => {
       });
     }
 
-    // Verificar unicidad global del email (solo si se proporcionó)
-    if (Email) {
-      const emailCheck = await checkEmailGlobalUniqueness(Email, "clientes");
+    // Obtener tenant_id del middleware
+    const { tenant_id } = req.tenant;
 
-      if (emailCheck.exists) {
-        const errorMessage = getContextualErrorMessage(
-          emailCheck.table,
-          "clientes"
-        );
+    // Verificar unicidad del email dentro del tenant (solo si se proporcionó)
+    if (Email) {
+      const emailCheck = await db.query(
+        "SELECT ClienteID FROM clientes WHERE Email = $1 AND tenant_id = $2",
+        [Email, tenant_id]
+      );
+
+      if (emailCheck.rows.length > 0) {
         return res.status(400).json({
           success: false,
-          message: errorMessage,
+          message: "Este correo electrónico ya está registrado.",
         });
       }
     }
 
-    // Verificar unicidad del teléfono (solo si se proporcionó)
+    // Verificar unicidad del teléfono dentro del tenant (solo si se proporcionó)
     if (Telefono) {
       const telefonoCheck = await db.query(
-        "SELECT ClienteID FROM clientes WHERE Telefono = $1",
-        [Telefono]
+        "SELECT ClienteID FROM clientes WHERE Telefono = $1 AND tenant_id = $2",
+        [Telefono, tenant_id]
       );
 
       if (telefonoCheck.rows.length > 0) {
@@ -107,10 +109,10 @@ const registroCliente = async (req, res) => {
 
     // Insertar nuevo cliente (con valores null si no se proporcionaron)
     const result = await db.query(
-      `INSERT INTO clientes (Nombre, Apellido, Email, PasswordHash, Telefono)
-       VALUES ($1, $2, $3, $4, $5)
+      `INSERT INTO clientes (Nombre, Apellido, Email, PasswordHash, Telefono, tenant_id)
+       VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING ClienteID, Nombre, Apellido, Email, Telefono, FechaDeRegistro`,
-      [Nombre.trim(), Apellido.trim(), Email, PasswordHash, Telefono]
+      [Nombre.trim(), Apellido.trim(), Email, PasswordHash, Telefono, tenant_id]
     );
 
     const nuevoCliente = result.rows[0];
@@ -267,10 +269,13 @@ const login = async (req, res) => {
       });
     }
 
-    // Buscar en la tabla de Clientes (por email O teléfono)
+    // Obtener tenant_id del middleware
+    const { tenant_id } = req.tenant;
+
+    // Buscar en la tabla de Clientes (por email O teléfono Y tenant_id)
     const clienteResult = await db.query(
-      "SELECT ClienteID, Nombre, Apellido, Email, PasswordHash, Telefono FROM clientes WHERE Email = $1 OR Telefono = $1",
-      [identifier]
+      "SELECT ClienteID, Nombre, Apellido, Email, PasswordHash, Telefono FROM clientes WHERE (Email = $1 OR Telefono = $1) AND tenant_id = $2",
+      [identifier, tenant_id]
     );
 
     if (clienteResult.rows.length > 0) {
@@ -426,12 +431,13 @@ const verifyCliente = async (req, res) => {
       });
     }
 
-    // Si es cliente, buscar en la tabla de clientes
+    // Si es cliente, buscar en la tabla de clientes (filtrado por tenant)
+    const { tenant_id } = req.tenant;
     const result = await db.query(
       `SELECT ClienteID, Nombre, Apellido, Email, Telefono, FechaDeRegistro
        FROM clientes
-       WHERE ClienteID = $1 AND Activo = TRUE`,
-      [userId]
+       WHERE ClienteID = $1 AND tenant_id = $2 AND Activo = TRUE`,
+      [userId, tenant_id]
     );
 
     if (result.rows.length === 0) {
@@ -476,10 +482,11 @@ const refreshClienteToken = async (req, res) => {
     const clienteId = req.user.userId;
     const email = req.user.email;
 
-    // Verificar que el cliente aún existe y está activo
+    // Verificar que el cliente aún existe y está activo (filtrado por tenant)
+    const { tenant_id } = req.tenant;
     const result = await db.query(
-      `SELECT ClienteID FROM clientes WHERE ClienteID = $1 AND Activo = TRUE`,
-      [clienteId]
+      `SELECT ClienteID FROM clientes WHERE ClienteID = $1 AND tenant_id = $2 AND Activo = TRUE`,
+      [clienteId, tenant_id]
     );
 
     if (result.rows.length === 0) {
@@ -523,10 +530,13 @@ const forgotPassword = async (req, res) => {
   }
 
   try {
-    // Buscar por email o teléfono en clientes
+    // Obtener tenant_id del middleware
+    const { tenant_id } = req.tenant;
+
+    // Buscar por email o teléfono en clientes (filtrado por tenant)
     const clienteResult = await db.query(
-      "SELECT ClienteID, Nombre, Email, Telefono FROM clientes WHERE Email = $1 OR Telefono = $1",
-      [email]
+      "SELECT ClienteID, Nombre, Email, Telefono FROM clientes WHERE (Email = $1 OR Telefono = $1) AND tenant_id = $2",
+      [email, tenant_id]
     );
 
     // Buscar por email en agentes (agentes no tienen columna Telefono)
@@ -1084,7 +1094,8 @@ const getCurrentUser = async (req, res) => {
         break;
 
       case "cliente":
-        // Consultar tabla Clientes
+        // Consultar tabla Clientes (filtrado por tenant)
+        const { tenant_id } = req.tenant;
         const clienteQuery = `
           SELECT 
             ClienteID,
@@ -1093,9 +1104,9 @@ const getCurrentUser = async (req, res) => {
             Email,
             NombreEmpresa
           FROM clientes
-          WHERE ClienteID = $1
+          WHERE ClienteID = $1 AND tenant_id = $2
         `;
-        const clienteResult = await db.query(clienteQuery, [efectiveUserId]);
+        const clienteResult = await db.query(clienteQuery, [efectiveUserId, tenant_id]);
 
         if (clienteResult.rows.length === 0) {
           return res.status(404).json({

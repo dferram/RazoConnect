@@ -1,0 +1,785 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gestión de Categorías - Admin Fashion Box</title>
+    <link rel="icon" type="image/png" href="/icon/Logo_Fashion.png" />
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- PROTECCIÓN DE AUTENTICACIÓN ADMIN -->
+    <script src="js/auth-guard-admin.js"></script>
+
+    <!-- SISTEMA DE RENOVACIÓN DE TOKENS -->
+    <script src="js/token-refresh.js"></script>
+
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+    />
+    <link rel="stylesheet" href="css/styles-fashion.css" />
+    <link rel="stylesheet" href="css/fashion-theme-fashion.css" />
+    <link rel="stylesheet" href="css/admin-fashion.css" />
+      <link rel="stylesheet" href="css/mobile-responsive-fashion.css" />
+  </head>
+  <body data-sidebar="admin" data-page-title="Gestión de categorías">
+    <div class="admin-layout">
+      <!-- Sidebar -->
+      <div id="sidebar-container"></div>
+
+      <!-- Main Content -->
+      <main class="admin-main">
+        <div id="admin-header-container"></div>
+
+        <div class="admin-content">
+          <!-- Formulario para crear categoría -->
+          <div class="admin-table-container" style="margin-bottom: 2rem">
+            <div class="admin-table-header">
+              <h2 class="admin-table-title">Agregar nueva categoría</h2>
+            </div>
+
+            <form id="categoriaForm" style="padding: 1.5rem">
+              <div class="form-group">
+                <label for="nombre" class="form-label">Nombre *</label>
+                <input type="text" id="nombre" class="form-input" required />
+              </div>
+
+              <div class="form-group">
+                <label for="descripcion" class="form-label">Descripción</label>
+                <textarea
+                  id="descripcion"
+                  class="form-input"
+                  rows="3"
+                  placeholder="Describe brevemente la categoría"
+                ></textarea>
+              </div>
+
+              <!-- Imagen de portada -->
+              <div class="form-group">
+                <label class="form-label">Imagen de portada</label>
+                <div class="image-upload-container">
+                  <input
+                    type="file"
+                    id="imagenInput"
+                    accept="image/jpeg,image/jpg,image/png,image/webp"
+                    style="display: none;"
+                  />
+                  <div id="imagePreviewContainer" style="display: none;">
+                    <div class="image-preview-wrapper">
+                      <img id="imagePreview" class="image-preview" />
+                      <button
+                        type="button"
+                        class="btn-remove-image"
+                        id="btnRemoveImage"
+                        title="Eliminar imagen"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    class="btn btn-secondary"
+                    id="btnSelectImage"
+                    style="width: 100%;"
+                  >
+                    <i class="bi bi-image"></i>
+                    Seleccionar imagen
+                  </button>
+                  <small style="color: #6b7280; display: block; margin-top: 0.5rem;">
+                    Formatos: JPG, PNG, WEBP. Máximo 5MB.
+                  </small>
+                </div>
+              </div>
+
+              <!-- Switch de visibilidad -->
+              <div class="switch-container">
+                <label class="switch-label" for="activoSwitch">
+                  <div class="switch-toggle">
+                    <input type="checkbox" id="activoSwitch" checked />
+                    <div class="switch-toggle"></div>
+                  </div>
+                  <span class="switch-text">Mostrar en Tienda</span>
+                </label>
+                <small style="color: #6b7280; font-size: 0.875rem;">
+                  Desactiva para temporadas fuera de fecha (ej: Navidad en Julio)
+                </small>
+              </div>
+
+              <div
+                style="
+                  display: flex;
+                  justify-content: flex-end;
+                  gap: 1rem;
+                  margin-top: 1.5rem;
+                "
+              >
+                <button type="reset" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.875rem;">Limpiar</button>
+                <button type="submit" class="btn btn-primary" id="guardarBtn" style="padding: 0.5rem 1rem; font-size: 0.875rem;">
+                  <span id="guardarBtnText">Guardar categoría</span>
+                  <div
+                    class="spinner"
+                    id="guardarBtnSpinner"
+                    style="display: none"
+                  ></div>
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Listado de categorías -->
+          <div class="admin-table-container">
+            <div class="admin-table-header">
+              <h2 class="admin-table-title">Listado de categorías</h2>
+              <button class="btn btn-secondary" id="btnRefrescar" style="padding: 0.5rem 1rem; font-size: 0.875rem;">
+                Actualizar
+              </button>
+            </div>
+
+            <div id="loadingCategorias" class="loading">
+              <div class="spinner"></div>
+            </div>
+
+            <div style="overflow-x: auto">
+              <table
+                class="admin-table"
+                id="categoriasTable"
+                style="display: none"
+              >
+                <thead>
+                  <tr>
+                    <th>Nombre</th>
+                    <th>Descripción</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="categoriasTableBody"></tbody>
+              </table>
+            </div>
+
+            <div id="emptyCategorias" class="empty-state" style="display: none">
+              <div class="empty-state-icon">🏷️</div>
+              <h3 class="empty-state-title">No hay categorías registradas</h3>
+              <p class="empty-state-text">
+                Crea una categoría para iniciar la gestión del catálogo.
+              </p>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <script src="js/layout.js" defer></script>
+    <script src="js/sidebar-toggle.js" defer></script>
+    <script src="js/api.js"></script>
+    <script src="js/components/admin-header-loader.js"></script>
+    <script>
+      const adminToken = localStorage.getItem("Fashion Box_admin_token");
+
+      if (!adminToken) {
+        window.location.href = "/login.html";
+      }
+
+      async function verifyAndLoadAdmin() {
+        try {
+          const response = await fetch(`${API_BASE_URL}/admin/verify`, {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${adminToken}`,
+              "Content-Type": "application/json",
+            },
+          });
+
+          if (!response.ok) {
+            throw new Error("Token inválido");
+          }
+
+          const data = await response.json();
+
+          if (data.success && data.data?.admin) {
+            localStorage.setItem("Fashion Box_admin", JSON.stringify(data.data.admin));
+          }
+        } catch (error) {
+          console.error("Error verificando admin:", error);
+          localStorage.removeItem("Fashion Box_admin_token");
+          localStorage.removeItem("Fashion Box_admin");
+          window.location.href = "/login.html";
+        }
+      }
+
+      verifyAndLoadAdmin();
+      const categoriasTable = document.getElementById("categoriasTable");
+      const categoriasTableBody = document.getElementById(
+        "categoriasTableBody"
+      );
+      const loadingCategorias = document.getElementById("loadingCategorias");
+      const emptyCategorias = document.getElementById("emptyCategorias");
+      const btnRefrescar = document.getElementById("btnRefrescar");
+      const categoriaForm = document.getElementById("categoriaForm");
+      const guardarBtn = document.getElementById("guardarBtn");
+      const guardarBtnText = document.getElementById("guardarBtnText");
+      const guardarBtnSpinner = document.getElementById("guardarBtnSpinner");
+
+      let categoriasCache = [];
+      let categoriaEditando = null;
+      let selectedImageFile = null;
+
+      const applyFormDefaults = () => {
+        categoriaEditando = null;
+        selectedImageFile = null;
+        guardarBtn.disabled = false;
+        guardarBtnText.textContent = "Guardar categoría";
+        guardarBtnText.style.display = "inline";
+        guardarBtnSpinner.style.display = "none";
+        document.getElementById('imagePreviewContainer').style.display = 'none';
+        document.getElementById('imagePreview').src = '';
+      };
+
+      const headers = {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${adminToken}`,
+      };
+
+      const fetchCategorias = async () => {
+        try {
+          loadingCategorias.style.display = "flex";
+          categoriasTable.style.display = "none";
+          emptyCategorias.style.display = "none";
+
+          const response = await fetch(`${API_BASE_URL}/admin/categorias`, {
+            method: "GET",
+            headers,
+          });
+
+          const result = await response.json();
+
+          if (!response.ok || !result.success) {
+            throw new Error(
+              result.message || "No se pudieron cargar las categorías"
+            );
+          }
+
+          categoriasCache = result.data.categorias || [];
+          renderCategorias();
+        } catch (error) {
+          console.error("Error al cargar categorías:", error);
+          showToast(error.message || "Error al cargar categorías", "error");
+          categoriasTable.style.display = "none";
+          emptyCategorias.style.display = "flex";
+        } finally {
+          loadingCategorias.style.display = "none";
+        }
+      };
+
+      const renderCategorias = () => {
+        if (!categoriasCache.length) {
+          categoriasTable.style.display = "none";
+          emptyCategorias.style.display = "flex";
+          return;
+        }
+
+        categoriasTableBody.innerHTML = categoriasCache
+          .map((cat) => {
+            const activo = cat.activo !== undefined ? cat.activo : true;
+            const estadoBadgeClass = activo ? 'badge-success' : 'badge-secondary';
+            const estadoTexto = activo ? 'Visible' : 'Oculto';
+            const estadoIcon = activo ? '' : '🚫';
+            const imagenHtml = cat.imagenUrl 
+              ? `<img src="${cat.imagenUrl}" alt="${cat.nombre}" style="width: 40px; height: 40px; object-fit: cover; border-radius: 0.375rem; margin-right: 0.5rem;" />`
+              : '';
+
+            return `
+            <tr>
+              <td>
+                <div style="display: flex; align-items: center;">
+                  ${imagenHtml}
+                  <span>${cat.nombre}</span>
+                </div>
+              </td>
+              <td>${
+                cat.descripcion ||
+                '<span class="text-muted">Sin descripción</span>'
+              }</td>
+              <td>
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                  <span class="visibility-badge ${estadoBadgeClass}" title="${estadoTexto}">
+                    ${estadoIcon} ${estadoTexto}
+                  </span>
+                  <button
+                    type="button"
+                    class="btn-icon-toggle"
+                    onclick="toggleCategoriaVisibilidad(${cat.categoriaId}, ${activo})"
+                    title="${activo ? 'Ocultar categoría' : 'Mostrar categoría'}"
+                    style="cursor: pointer; background: none; border: none; font-size: 1.25rem; padding: 0.25rem; opacity: 0.7; transition: all 0.2s;"
+                    onmouseover="this.style.opacity='1'; this.style.transform='scale(1.1)'"
+                    onmouseout="this.style.opacity='0.7'; this.style.transform='scale(1)'"
+                  >
+                    ${activo ? '🔒' : '🔓'}
+                  </button>
+                </div>
+              </td>
+              <td>
+                <div class="table-actions">
+                  <button class="btn btn-secondary btn-sm" data-action="edit" data-id="${
+                    cat.categoriaId
+                  }">Editar</button>
+                </div>
+              </td>
+            </tr>
+          `;
+          })
+          .join("");
+
+        categoriasTable.style.display = "table";
+        emptyCategorias.style.display = "none";
+      };
+
+      const resetForm = () => {
+        categoriaForm.reset();
+        applyFormDefaults();
+      };
+
+      categoriaForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+
+        const nombre = categoriaForm.nombre.value.trim();
+        const descripcion = categoriaForm.descripcion.value.trim() || null;
+        const activo = document.getElementById('activoSwitch').checked;
+
+        if (!nombre) {
+          showToast("El nombre es obligatorio", "warning");
+          return;
+        }
+
+        guardarBtn.disabled = true;
+        guardarBtnSpinner.style.display = "inline-block";
+        guardarBtnText.style.display = "none";
+
+        try {
+          // Usar FormData para enviar archivo e información
+          const formData = new FormData();
+          formData.append('nombre', nombre);
+          if (descripcion) formData.append('descripcion', descripcion);
+          formData.append('activo', activo);
+          if (selectedImageFile) {
+            formData.append('image', selectedImageFile);
+          }
+
+          let response;
+
+          if (categoriaEditando) {
+            response = await fetch(
+              `${API_BASE_URL}/admin/categorias/${categoriaEditando.categoriaId}`,
+              {
+                method: "PUT",
+                headers: {
+                  Authorization: `Bearer ${adminToken}`,
+                },
+                body: formData,
+              }
+            );
+          } else {
+            response = await fetch(`${API_BASE_URL}/admin/categorias`, {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${adminToken}`,
+              },
+              body: formData,
+            });
+          }
+
+          const result = await response.json();
+
+          if (!response.ok || !result.success) {
+            throw new Error(result.message || "Error al guardar la categoría");
+          }
+
+          showToast(
+            result.message || "Categoría guardada correctamente",
+            "success"
+          );
+          resetForm();
+          fetchCategorias();
+        } catch (error) {
+          console.error("Error al guardar la categoría:", error);
+          showToast(
+            error.message || "No se pudo guardar la categoría",
+            "error"
+          );
+        } finally {
+          guardarBtn.disabled = false;
+          guardarBtnSpinner.style.display = "none";
+          guardarBtnText.style.display = "inline";
+        }
+      });
+
+      categoriasTableBody.addEventListener("click", async (event) => {
+        const actionBtn = event.target.closest("button[data-action]");
+        if (!actionBtn) return;
+
+        const action = actionBtn.dataset.action;
+        const id = parseInt(actionBtn.dataset.id, 10);
+
+        const categoria = categoriasCache.find((cat) => cat.categoriaId === id);
+        if (!categoria) return;
+
+        if (action === "edit") {
+          categoriaEditando = categoria;
+          categoriaForm.nombre.value = categoria.nombre;
+          categoriaForm.descripcion.value = categoria.descripcion || "";
+          document.getElementById('activoSwitch').checked = categoria.activo;
+          
+          // Mostrar imagen actual si existe
+          if (categoria.imagenUrl) {
+            document.getElementById('imagePreview').src = categoria.imagenUrl;
+            document.getElementById('imagePreviewContainer').style.display = 'block';
+          } else {
+            document.getElementById('imagePreviewContainer').style.display = 'none';
+          }
+          
+          guardarBtnText.textContent = "Actualizar categoría";
+          showToast(`Editando categoría: ${categoria.nombre}`, "info");
+          
+          // Scroll al formulario
+          categoriaForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+
+      btnRefrescar.addEventListener("click", () => {
+        fetchCategorias();
+      });
+
+      categoriaForm.addEventListener("reset", () => {
+        requestAnimationFrame(() => {
+          applyFormDefaults();
+          showToast("Formulario limpiado", "info");
+        });
+      });
+
+      // Manejo de imagen
+      const imagenInput = document.getElementById('imagenInput');
+      const btnSelectImage = document.getElementById('btnSelectImage');
+      const btnRemoveImage = document.getElementById('btnRemoveImage');
+      const imagePreview = document.getElementById('imagePreview');
+      const imagePreviewContainer = document.getElementById('imagePreviewContainer');
+
+      btnSelectImage.addEventListener('click', () => {
+        imagenInput.click();
+      });
+
+      imagenInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        // Validar tipo
+        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+        if (!allowedTypes.includes(file.type)) {
+          showToast('Solo se permiten imágenes JPG, PNG o WEBP', 'error');
+          imagenInput.value = '';
+          return;
+        }
+
+        // Validar tamaño (5MB)
+        if (file.size > 5 * 1024 * 1024) {
+          showToast('La imagen no debe superar 5MB', 'error');
+          imagenInput.value = '';
+          return;
+        }
+
+        selectedImageFile = file;
+
+        // Mostrar preview
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          imagePreview.src = e.target.result;
+          imagePreviewContainer.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+      });
+
+      btnRemoveImage.addEventListener('click', () => {
+        selectedImageFile = null;
+        imagenInput.value = '';
+        imagePreview.src = '';
+        imagePreviewContainer.style.display = 'none';
+      });
+
+      // Inicialización
+      // Toggle category visibility (quick action)
+      async function toggleCategoriaVisibilidad(categoriaId, estadoActual) {
+        const nuevoEstado = !estadoActual;
+        const accion = nuevoEstado ? "mostrar" : "ocultar";
+        const esOcultar = !nuevoEstado;
+
+        const mensaje =
+          `¿Estás seguro de ${accion} esta categoría en la tienda? ` +
+          "Si la ocultas, todos los productos de esta categoría dejarán de verse en la tienda.";
+
+        let confirmado = false;
+
+        if (
+          typeof Swal !== "undefined" &&
+          Swal &&
+          typeof Swal.fire === "function"
+        ) {
+          const result = await Swal.fire({
+            icon: esOcultar ? "warning" : "question",
+            title: esOcultar ? "Ocultar categoría" : "Mostrar categoría",
+            text: mensaje,
+            showCancelButton: true,
+            confirmButtonText: esOcultar ? "Sí, ocultar" : "Sí, mostrar",
+            cancelButtonText: "Cancelar",
+            confirmButtonColor: esOcultar ? "#dc3545" : "#F97316",
+            cancelButtonColor: "#6b7280",
+          });
+          confirmado = !!result.isConfirmed;
+        } else {
+          confirmado = window.confirm(mensaje);
+        }
+
+        if (!confirmado) {
+          return;
+        }
+
+        try {
+          const response = await API.apiCall(
+            `/admin/categorias/${categoriaId}`,
+            {
+              method: 'PUT',
+              body: JSON.stringify({ activo: nuevoEstado })
+            }
+          );
+
+          if (response.ok) {
+            showToast(
+              `Categoría ${nuevoEstado ? 'visible' : 'oculta'} exitosamente`,
+              'success'
+            );
+            fetchCategorias(); // Recargar tabla
+          } else {
+            throw new Error(response.data?.message || 'Error al actualizar');
+          }
+        } catch (error) {
+          console.error('Error al toggle visibilidad:', error);
+          showToast('Error al cambiar visibilidad de la categoría', 'error');
+        }
+      }
+
+      window.addEventListener("DOMContentLoaded", () => {
+        fetchCategorias();
+      });
+    </script>
+
+    <style>
+      /* Visibility badges and toggle button styles */
+      .visibility-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.375rem;
+        padding: 0.375rem 0.75rem;
+        border-radius: 0.375rem;
+        font-size: 0.875rem;
+        font-weight: 600;
+        white-space: nowrap;
+      }
+
+      .badge-success {
+        background: #d1fae5;
+        color: #065f46;
+        border: 1px solid #6ee7b7;
+      }
+
+      .badge-secondary {
+        background: #e5e7eb;
+        color: #6b7280;
+        border: 1px solid #d1d5db;
+      }
+
+      .btn-icon-toggle {
+        cursor: pointer;
+        background: none;
+        border: none;
+        font-size: 1.25rem;
+        padding: 0.25rem;
+        opacity: 0.7;
+        transition: all 0.2s;
+        border-radius: 0.25rem;
+      }
+
+      .btn-icon-toggle:hover {
+        opacity: 1;
+        transform: scale(1.1);
+        background: rgba(0, 0, 0, 0.05);
+      }
+
+      .btn-icon-toggle:active {
+        transform: scale(0.95);
+      }
+
+      /* Switch toggle styles */
+      .switch-container {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        padding: 1rem;
+        background: #f9fafb;
+        border-radius: 0.5rem;
+        border: 1px solid #e5e7eb;
+      }
+
+      .switch-label {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        cursor: pointer;
+        -webkit-user-select: none;
+        user-select: none;
+      }
+
+      .switch-toggle {
+        position: relative;
+        width: 44px;
+        height: 24px;
+        flex-shrink: 0;
+      }
+
+      .switch-toggle input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+        position: absolute;
+      }
+
+      .switch-toggle > div {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: #d1d5db;
+        border-radius: 12px;
+        transition: background 0.3s;
+        cursor: pointer;
+      }
+
+      .switch-toggle > div::after {
+        content: '';
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 20px;
+        height: 20px;
+        background: white;
+        border-radius: 50%;
+        transition: transform 0.3s;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+      }
+
+      .switch-toggle input:checked + div {
+        background: #16a34a;
+      }
+
+      .switch-toggle input:checked + div::after {
+        transform: translateX(20px);
+      }
+
+      .switch-text {
+        font-weight: 500;
+        color: #374151;
+      }
+
+      /* Small buttons */
+      .btn-sm {
+        padding: 0.375rem 0.75rem !important;
+        font-size: 0.8125rem !important;
+        border-radius: 0.375rem !important;
+      }
+
+      /* Table actions buttons */
+      .table-actions {
+        display: flex;
+        gap: 0.5rem;
+        justify-content: flex-end;
+      }
+
+      /* Image upload styles */
+      .image-upload-container {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      .image-preview-wrapper {
+        position: relative;
+        display: inline-block;
+        margin-bottom: 0.75rem;
+      }
+
+      .image-preview {
+        width: 200px;
+        height: 200px;
+        object-fit: cover;
+        border-radius: 0.75rem;
+        border: 2px solid #e5e7eb;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .btn-remove-image {
+        position: absolute;
+        top: -8px;
+        right: -8px;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: #ef4444;
+        color: white;
+        border: 2px solid white;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        font-weight: bold;
+        transition: all 0.2s;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      }
+
+      .btn-remove-image:hover {
+        background: #dc2626;
+        transform: scale(1.1);
+      }
+
+      .btn-remove-image:active {
+        transform: scale(0.95);
+      }
+
+      .form-group {
+        margin-bottom: 1.25rem;
+      }
+
+      .form-label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+        color: #374151;
+      }
+
+      .form-input {
+        width: 100%;
+        padding: 0.625rem;
+        border: 1px solid #d1d5db;
+        border-radius: 0.5rem;
+        font-size: 0.9375rem;
+        transition: border-color 0.2s;
+      }
+
+      .form-input:focus {
+        outline: none;
+        border-color: #F97316;
+        box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
+      }
+    </style>
+  </body>
+</html>

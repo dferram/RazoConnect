@@ -1,0 +1,1859 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Detalle del Producto - Fashion Box</title>
+    <link rel="icon" type="image/png" href="/icon/Logo_Fashion.png" />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+    />
+    <link rel="stylesheet" href="css/styles-fashion.css" />
+    <link rel="stylesheet" href="css/fashion-theme-fashion.css" />
+    <style>
+      .product-layout {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        align-items: start;
+      }
+
+      .product-info-card {
+        background: var(--surface);
+        border-radius: 0.75rem;
+        box-shadow: var(--shadow);
+        padding: 1rem 1.25rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+        max-height: calc(100vh - 120px);
+        overflow-y: auto;
+      }
+
+      .product-info-card::-webkit-scrollbar {
+        width: 6px;
+      }
+
+      .product-info-card::-webkit-scrollbar-thumb {
+        background: rgba(0, 0, 0, 0.15);
+        border-radius: 999px;
+      }
+
+      .product-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.68rem;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: var(--text-secondary);
+        gap: 0.75rem;
+      }
+
+      .product-meta span {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .product-name {
+        font-size: 1.35rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin: 0;
+        line-height: 1.1;
+      }
+
+      .section-heading {
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin: 0;
+        color: var(--text-primary);
+      }
+
+      .compact-section {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+      }
+
+      .compact-label {
+        font-size: 0.78rem;
+        font-weight: 500;
+        color: var(--text-secondary);
+      }
+
+      .variant-select {
+        width: 100%;
+      }
+
+      .variant-helper {
+        color: var(--text-secondary);
+        font-size: 0.75rem;
+      }
+
+      .tamano-section {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+      }
+
+      .tamano-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.3rem 0.45rem;
+      }
+
+      .tamano-btn {
+        padding: 0.28rem 0.65rem;
+        font-size: 0.8rem;
+        border-radius: 0.45rem;
+      }
+
+      .tamano-select {
+        display: none;
+        width: 100%;
+        margin-top: 0.35rem;
+      }
+
+      .tamano-description {
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+        display: none;
+      }
+
+      .price-card {
+        background: var(--background);
+        border-radius: 0.75rem;
+        padding: 0.65rem 0.75rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.55rem;
+      }
+
+      .price-row {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.5rem;
+        align-items: end;
+      }
+
+      .price-item {
+        display: flex;
+        flex-direction: column;
+        gap: 0.2rem;
+      }
+
+      .price-label {
+        font-size: 0.68rem;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: var(--text-secondary);
+      }
+
+      .price-value {
+        font-size: 1.05rem;
+        font-weight: 600;
+        color: var(--text-primary);
+      }
+
+      .price-value.package {
+        font-size: 1.2rem;
+        color: var(--primary-color);
+      }
+
+      .backorder-alert {
+        display: none;
+        padding: 0.65rem 0.75rem;
+        border-radius: 0.5rem;
+        background-color: rgba(251, 191, 36, 0.18);
+        color: #92400e;
+        font-size: 0.8rem;
+      }
+
+      .detail-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.4rem;
+      }
+
+      .detail-chip {
+        background: var(--background);
+        border-radius: 0.6rem;
+        padding: 0.45rem 0.6rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.12rem;
+      }
+
+      .detail-label {
+        font-size: 0.68rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-secondary);
+      }
+
+      .detail-value {
+        font-size: 0.88rem;
+        font-weight: 600;
+        color: var(--text-primary);
+      }
+
+      .description-compact {
+        gap: 0.3rem;
+      }
+
+      .description-compact p {
+        color: var(--text-secondary);
+        font-size: 0.85rem;
+        line-height: 1.3;
+        margin: 0;
+      }
+
+      .quantity-section {
+        border-top: 1px solid var(--border-color);
+        padding-top: 0.65rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      .quantity-label {
+        font-size: 0.8rem;
+        font-weight: 500;
+        color: var(--text-secondary);
+      }
+
+      .quantity-controls {
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+      }
+
+      .quantity-controls button {
+        padding: 0.28rem 0.55rem;
+      }
+
+      .quantity-controls input {
+        width: 72px;
+        text-align: center;
+      }
+
+      .quantity-total {
+        color: var(--text-secondary);
+        font-size: 0.75rem;
+      }
+
+      .cta-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+      }
+
+      .cta-actions .btn {
+        width: 100%;
+      }
+
+      .backorder-message {
+        display: none;
+        font-size: 0.8rem;
+        color: var(--warning-color, #dd6b20);
+      }
+
+      .galeria-sticky {
+        position: sticky;
+        top: 1.25rem;
+      }
+
+      .producto-galeria-container {
+        display: flex;
+        gap: 1.25rem;
+        align-items: flex-start;
+        flex-wrap: wrap;
+      }
+
+      .galeria-thumbnails {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        width: 80px;
+        max-height: 500px;
+        overflow-y: auto;
+      }
+
+      .galeria-main {
+        flex: 1 1 320px;
+        min-width: 260px;
+      }
+
+      .galeria-main img {
+        width: 100%;
+        max-height: 500px;
+        object-fit: contain;
+        border-radius: 0.5rem;
+        box-shadow: var(--shadow-lg);
+        background: #f5f5f5;
+        padding: 1rem;
+      }
+
+      .thumb-img {
+        width: 100%;
+        height: 80px;
+        object-fit: cover;
+        border-radius: 0.45rem;
+        cursor: pointer;
+        border: 2px solid transparent;
+        box-shadow: var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.08));
+        transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.1s ease;
+      }
+
+      .thumb-img:hover {
+        border-color: var(--primary-color, #2563eb);
+        box-shadow: var(--shadow, 0 4px 10px rgba(0, 0, 0, 0.12));
+        transform: translateY(-1px);
+      }
+
+      .thumb-img.active {
+        border-color: var(--primary-color, #2563eb);
+        box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.4);
+      }
+
+      @media (max-width: 992px) {
+        .product-layout {
+          grid-template-columns: 1fr;
+          gap: 1.75rem;
+        }
+
+        .galeria-sticky {
+          position: static;
+        }
+
+        .producto-galeria-container {
+          flex-direction: column-reverse;
+        }
+
+        .galeria-thumbnails {
+          flex-direction: row;
+          width: 100%;
+          max-height: none;
+          overflow-x: auto;
+        }
+
+        .thumb-img {
+          width: 80px;
+          height: 80px;
+        }
+      }
+
+      @media (max-width: 768px) {
+        .price-row {
+          grid-template-columns: 1fr;
+        }
+
+        .detail-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 520px) {
+        .detail-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .nike-selector-container {
+        margin-top: 0.9rem;
+        width: 100%;
+        flex: 0 0 100%;
+      }
+
+      .nike-label {
+        font-size: 0.85rem;
+        margin: 0 0 0.5rem;
+        color: var(--text-primary);
+      }
+
+      .nike-thumbnails-row {
+        display: flex;
+        gap: 0.65rem;
+        overflow-x: auto;
+        padding-bottom: 0.35rem;
+      }
+
+      .nike-thumb {
+        width: 60px;
+        height: 60px;
+        object-fit: cover;
+        border-radius: 0.6rem;
+        cursor: pointer;
+        border: 1px solid rgba(0, 0, 0, 0.15);
+        transition: transform 0.15s ease, opacity 0.15s ease, border 0.15s ease;
+        flex: 0 0 auto;
+      }
+
+      .nike-thumb.active {
+        border: 3px solid #111;
+      }
+
+      .nike-thumb:hover {
+        opacity: 0.85;
+        transform: scale(1.03);
+      }
+    </style>
+    <link rel="stylesheet" href="css/mobile-responsive-fashion.css" />
+  </head>
+  <body>
+    <div id="header-container"></div>
+
+    <div class="container" style="padding-top: 2rem; padding-bottom: 3rem">
+      <!-- Loading State -->
+      <div id="loadingState" class="loading">
+        <div class="spinner"></div>
+      </div>
+
+      <!-- Product Details -->
+      <div id="productDetails" style="display: none">
+        <div class="product-layout">
+          <!-- Images Section -->
+          <div class="galeria-sticky">
+            <div class="producto-galeria-container">
+              <div id="thumbnailGallery" class="galeria-thumbnails"></div>
+              <div class="galeria-main">
+                <img
+                  id="mainImage"
+                  src=""
+                  alt=""
+                />
+              </div>
+              <div
+                id="nikeSelectorContainer"
+                class="nike-selector-container"
+                style="display: none"
+              >
+                <p class="nike-label" id="nikeSelectedColorLabel"></p>
+                <div class="nike-thumbnails-row" id="nikeThumbnailsRow"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Product Info Section -->
+          <div>
+            <div class="product-info-card">
+              <div class="product-meta">
+                <span id="productCategory"></span>
+                <span id="productSKU"></span>
+              </div>
+
+              <h1 id="productName" class="product-name"></h1>
+
+              <!-- Variant Selection -->
+              <div class="compact-section">
+                <label for="variantSelect" class="form-label compact-label"
+                  >Selecciona la variante</label
+                >
+                <select id="variantSelect" class="form-input variant-select">
+                  <option value="" disabled selected>
+                    Cargando variantes...
+                  </option>
+                </select>
+                <p id="variantAvailability" class="variant-helper"></p>
+              </div>
+
+              <!-- Package Size Selection -->
+              <div class="compact-section tamano-section">
+                <h3 class="section-heading">Presentaciones disponibles</h3>
+                <div id="tamanoButtons" class="tamano-buttons"></div>
+                <select
+                  id="tamanoSelect"
+                  class="form-input tamano-select"
+                ></select>
+                <p id="tamanoDescripcion" class="tamano-description"></p>
+              </div>
+
+              <!-- Price Section -->
+              <div class="price-card">
+                <div class="price-row">
+                  <div class="price-item">
+                    <span class="price-label">Precio por paquete</span>
+                    <span id="precioPaquete" class="price-value package"></span>
+                  </div>
+                  <div class="price-item">
+                    <span class="price-label">Precio por pieza</span>
+                    <span id="precioPieza" class="price-value"></span>
+                  </div>
+                </div>
+                <div id="backorderAlert" class="backorder-alert"></div>
+              </div>
+
+              <!-- Product Details -->
+              <div class="compact-section">
+                <h3 class="section-heading">Detalles del Producto</h3>
+                <div class="detail-grid">
+                  <div class="detail-chip">
+                    <span class="detail-label">Piezas por paquete</span>
+                    <span id="piezasPorPaquete" class="detail-value"></span>
+                  </div>
+                  <div class="detail-chip">
+                    <span class="detail-label">Dimensiones</span>
+                    <span id="dimensiones" class="detail-value"></span>
+                  </div>
+                  <div class="detail-chip">
+                    <span class="detail-label">Stock disponible</span>
+                    <span id="stock" class="detail-value"></span>
+                  </div>
+                </div>
+                <div id="backorderMessage" class="backorder-message"></div>
+              </div>
+
+              <!-- Description -->
+              <div class="compact-section description-compact">
+                <h3 class="section-heading">Descripción</h3>
+                <p id="productDescription"></p>
+              </div>
+
+              <!-- Add to Cart Section -->
+              <div class="quantity-section">
+                <div>
+                  <span class="quantity-label">Cantidad de paquetes</span>
+                  <div class="quantity-controls">
+                    <button id="decreaseBtn" class="btn btn-secondary">
+                      -
+                    </button>
+                    <input
+                      type="number"
+                      id="cantidad"
+                      class="form-input"
+                      value="1"
+                      min="1"
+                      max="999"
+                    />
+                    <button id="increaseBtn" class="btn btn-secondary">
+                      +
+                    </button>
+                  </div>
+                  <p id="totalPiezas" class="quantity-total"></p>
+                </div>
+
+                <div class="cta-actions">
+                  <button class="btn btn-primary" id="addToCartBtn">
+                    <span id="btnText">Agregar al carrito</span>
+                    <div
+                      class="spinner"
+                      id="btnSpinner"
+                      style="
+                        display: none;
+                        width: 20px;
+                        height: 20px;
+                        border-width: 2px;
+                      "
+                    ></div>
+                  </button>
+
+                  <a href="/catalogo.html" class="btn btn-secondary">
+                    ← Volver a Productos
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Error State -->
+      <div id="errorState" class="empty-state" style="display: none">
+        <div class="empty-state-icon">❌</div>
+        <h2 class="empty-state-title">Producto no encontrado</h2>
+        <p class="empty-state-text">
+          El producto que buscas no existe o no está disponible
+        </p>
+        <a href="/dashboard.html" class="btn btn-primary">Ver Productos</a>
+      </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/pack-helpers.js"></script>
+    <script src="js/carritoService.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/components/header-loader.js"></script>
+    <script>
+      // Check authentication
+      if (!requireAuth()) {
+        // User is not authenticated, redirected to login
+      }
+
+      const loadingState = document.getElementById("loadingState");
+      const productDetails = document.getElementById("productDetails");
+      const errorState = document.getElementById("errorState");
+
+      // Product elements
+      const mainImage = document.getElementById("mainImage");
+      const thumbnailGallery = document.getElementById("thumbnailGallery");
+      const productCategory = document.getElementById("productCategory");
+      const productName = document.getElementById("productName");
+      const productSKU = document.getElementById("productSKU");
+      const precioPaquete = document.getElementById("precioPaquete");
+      const precioPieza = document.getElementById("precioPieza");
+      const piezasPorPaquete = document.getElementById("piezasPorPaquete");
+      const dimensiones = document.getElementById("dimensiones");
+      const stock = document.getElementById("stock");
+      const productDescription = document.getElementById("productDescription");
+      const cantidadInput = document.getElementById("cantidad");
+      const totalPiezas = document.getElementById("totalPiezas");
+      const addToCartBtn = document.getElementById("addToCartBtn");
+      const decreaseBtn = document.getElementById("decreaseBtn");
+      const increaseBtn = document.getElementById("increaseBtn");
+      const btnText = document.getElementById("btnText");
+      const btnSpinner = document.getElementById("btnSpinner");
+      const variantSelect = document.getElementById("variantSelect");
+      const variantAvailability = document.getElementById(
+        "variantAvailability"
+      );
+      const backorderMessage = document.getElementById("backorderMessage");
+      const backorderAlert = document.getElementById("backorderAlert");
+      const tamanoButtons = document.getElementById("tamanoButtons");
+      const tamanoSelect = document.getElementById("tamanoSelect");
+      const tamanoDescripcion = document.getElementById("tamanoDescripcion");
+      const precioPaqueteLabel = document.querySelector(
+        ".price-row .price-item:first-child .price-label"
+      );
+
+      let producto = null;
+      let variantes = [];
+      let tamanosDisponibles = [];
+      let varianteSeleccionada = null;
+      let tamanoSeleccionado = null;
+      let maxPiezasPresentacion = null;
+      let selectedColorNombre = null;
+      let uniqueColorVariants = [];
+      const placeholderImage =
+        "https://placehold.co/500x500?text=Sin+Imagen";
+
+      const nikeSelectorContainer = document.getElementById(
+        "nikeSelectorContainer"
+      );
+      const nikeSelectedColorLabel = document.getElementById(
+        "nikeSelectedColorLabel"
+      );
+      const nikeThumbnailsRow = document.getElementById("nikeThumbnailsRow");
+
+      function getVariantColorNombre(variant) {
+        const raw =
+          variant?.colorNombre ||
+          variant?.color_nombre ||
+          variant?.ColorNombre ||
+          variant?.Color_Nombre ||
+          null;
+        const txt = raw !== null && raw !== undefined ? String(raw).trim() : "";
+        return txt || null;
+      }
+
+      function getVariantColorImageUrl(variant) {
+        // Prioridad 1: Primera imagen del array de imágenes de la variante
+        if (Array.isArray(variant?.imagenes) && variant.imagenes.length > 0) {
+          const primeraImagen = variant.imagenes[0];
+          const url = primeraImagen?.url || primeraImagen?.urlCompleta || null;
+          if (url && typeof url === 'string' && url.trim()) {
+            return url.trim();
+          }
+        }
+        
+        // Prioridad 2: Propiedad directa url_imagen_variante (legacy)
+        const raw =
+          variant?.urlImagenVariante ||
+          variant?.url_imagen_variante ||
+          variant?.UrlImagenVariante ||
+          variant?.Url_Imagen_Variante ||
+          null;
+        const txt = raw !== null && raw !== undefined ? String(raw).trim() : "";
+        return txt || null;
+      }
+
+      function buildUniqueColorVariants(sourceVariants) {
+        const list = Array.isArray(sourceVariants) ? sourceVariants : [];
+        const map = new Map();
+
+        console.log("🎨 Construyendo selector de colores...");
+        console.log("Total variantes:", list.length);
+
+        list.forEach((v) => {
+          const color = getVariantColorNombre(v);
+          const imgUrl = getVariantColorImageUrl(v);
+          
+          console.log(`Variante ${v.varianteId}:`, {
+            color: color,
+            hasImages: Array.isArray(v.imagenes) && v.imagenes.length > 0,
+            imageCount: v.imagenes?.length || 0,
+            firstImageUrl: imgUrl,
+          });
+
+          if (!color) {
+            console.log(`  ⚠️ Variante ${v.varianteId} sin color, ignorando`);
+            return;
+          }
+          
+          // Solo usar url_imagen_variante, NO hacer fallback a galería del producto maestro
+          if (!imgUrl) {
+            console.log(`  ⚠️ Variante ${v.varianteId} (${color}) sin imagen, ignorando`);
+            return;
+          }
+
+          if (!map.has(color)) {
+            console.log(`  ✅ Agregando color: ${color}`);
+            map.set(color, v);
+          } else {
+            console.log(`  ℹ️ Color ${color} ya existe, ignorando duplicado`);
+          }
+        });
+
+        const result = Array.from(map.values());
+        console.log("🎨 Colores únicos encontrados:", result.length);
+        return result;
+      }
+
+      function getNikeSelectedImageUrl() {
+        if (!selectedColorNombre) return null;
+        const entry = uniqueColorVariants.find(
+          (v) => getVariantColorNombre(v) === selectedColorNombre
+        );
+        if (!entry) return null;
+        // Solo usar url_imagen_variante, NO hacer fallback a galería del producto maestro
+        return getVariantColorImageUrl(entry);
+      }
+
+      function getVariantesFiltradasPorColor() {
+        if (!selectedColorNombre) return [];
+        if (!Array.isArray(variantes) || !variantes.length) return [];
+        const filtered = variantes.filter(
+          (v) => getVariantColorNombre(v) === selectedColorNombre
+        );
+        return filtered;
+      }
+
+      function syncVarianteSeleccionadaConColor() {
+        const filtered = getVariantesFiltradasPorColor();
+        if (!filtered.length) return;
+
+        const currentColor = getVariantColorNombre(varianteSeleccionada);
+        if (!varianteSeleccionada || currentColor !== selectedColorNombre) {
+          varianteSeleccionada = filtered[0] || null;
+        }
+      }
+
+      function renderNikeSelector() {
+        if (!nikeSelectorContainer || !nikeThumbnailsRow || !nikeSelectedColorLabel) {
+          return;
+        }
+
+        uniqueColorVariants = buildUniqueColorVariants(variantes);
+
+        if (!uniqueColorVariants.length) {
+          nikeSelectorContainer.style.display = "none";
+          return;
+        }
+
+        if (!selectedColorNombre) {
+          selectedColorNombre = getVariantColorNombre(uniqueColorVariants[0]);
+        }
+
+        nikeSelectorContainer.style.display = "block";
+        nikeSelectedColorLabel.innerHTML = `Color: <strong>${
+          selectedColorNombre || "-"
+        }</strong>`;
+
+        nikeThumbnailsRow.innerHTML = "";
+
+        uniqueColorVariants.forEach((variant) => {
+          const color = getVariantColorNombre(variant);
+          const url = getVariantColorImageUrl(variant);
+          if (!color || !url) return;
+
+          const thumb = document.createElement("img");
+          thumb.src = url;
+          thumb.alt = color;
+          thumb.className = "nike-thumb";
+          if (color === selectedColorNombre) {
+            thumb.classList.add("active");
+          }
+          thumb.addEventListener("click", () => {
+            selectedColorNombre = color;
+            renderNikeSelector();
+            syncVarianteSeleccionadaConColor();
+            renderVariantOptions();
+
+            const urlSeleccionada = getNikeSelectedImageUrl();
+            if (mainImage && urlSeleccionada) {
+              mainImage.src = urlSeleccionada;
+              mainImage.alt = color;
+            }
+
+            if (varianteSeleccionada) {
+              setVarianteSeleccionada(varianteSeleccionada.varianteId);
+            }
+          });
+          nikeThumbnailsRow.appendChild(thumb);
+        });
+      }
+
+      // Get product ID from URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const productoId = urlParams.get("id");
+
+      if (!productoId) {
+        loadingState.style.display = "none";
+        errorState.style.display = "block";
+      }
+
+      // Format currency
+      function formatCurrency(amount) {
+        return new Intl.NumberFormat("es-MX", {
+          style: "currency",
+          currency: "MXN",
+        }).format(amount);
+      }
+
+      // Update total pieces display
+      function obtenerStockDisponibleVariante(variante) {
+        if (!variante) return 0;
+        if (typeof variante.stock === "number") {
+          return Math.max(variante.stock, 0);
+        }
+        const parsed = parseInt(variante.stock, 10);
+        return Number.isFinite(parsed) ? Math.max(parsed, 0) : 0;
+      }
+
+      function actualizarStockUI(variante) {
+        if (!stock || !cantidadInput || !addToCartBtn) {
+          return;
+        }
+
+        if (!variante) {
+          stock.textContent = "Sin stock disponible";
+          stock.classList.add("text-danger");
+          cantidadInput.disabled = true;
+          cantidadInput.value = 0;
+          addToCartBtn.disabled = true;
+          return;
+        }
+
+        // Interpretar el stock de la variante como STOCK EN PIEZAS totales
+        const stockPiezas = obtenerStockDisponibleVariante(variante);
+
+        // Piezas por paquete del pack actualmente seleccionado en la UI
+        const piezasPackSeleccionado = obtenerPiezasPorPaquete();
+
+        let stockPaquetes = 0;
+
+        if (
+          Number.isFinite(stockPiezas) &&
+          stockPiezas >= 0 &&
+          Number.isFinite(piezasPackSeleccionado) &&
+          piezasPackSeleccionado > 0
+        ) {
+          // Cuántos packs completos se pueden armar con las piezas disponibles
+          stockPaquetes = Math.floor(stockPiezas / piezasPackSeleccionado);
+        }
+
+        console.log(
+          "Variante cambiada:",
+          variante?.dimensiones || variante?.medida || variante?.tamano || "N/D",
+          "Stock (piezas) variante base:",
+          stockPiezas,
+          "PiezasPackSeleccionado:",
+          piezasPackSeleccionado,
+          "Stock mostrado (paquetes):",
+          stockPaquetes
+        );
+
+        if (!Number.isFinite(stockPaquetes) || stockPaquetes < 1) {
+          stock.textContent = "Sin stock inmediato (Disponible bajo pedido)";
+          stock.classList.add("text-danger");
+          cantidadInput.disabled = false;
+          addToCartBtn.disabled = false;
+          cantidadInput.max = 999;
+          if (
+            !Number.isFinite(parseInt(cantidadInput.value, 10)) ||
+            parseInt(cantidadInput.value, 10) < 1
+          ) {
+            cantidadInput.value = 1;
+          }
+        } else {
+          stock.textContent = `Stock disponible: ${stockPaquetes} paquetes`;
+          stock.classList.remove("text-danger");
+          cantidadInput.disabled = false;
+          addToCartBtn.disabled = false;
+          cantidadInput.max = stockPaquetes;
+          if (
+            !Number.isFinite(parseInt(cantidadInput.value, 10)) ||
+            parseInt(cantidadInput.value, 10) < 1 ||
+            parseInt(cantidadInput.value, 10) > stockPaquetes
+          ) {
+            cantidadInput.value = 1;
+          }
+        }
+      }
+
+      function clampCantidadPorStock() {
+        if (!cantidadInput) return;
+        const max = parseInt(cantidadInput.max, 10);
+        let value = parseInt(cantidadInput.value, 10);
+
+        if (!Number.isFinite(value) || value < 1) {
+          value = 1;
+        }
+
+        if (Number.isFinite(max) && max > 0 && value > max) {
+          value = max;
+          if (typeof showToast === "function") {
+            showToast(
+              `Solo hay ${max} paquete${max === 1 ? "" : "s"} disponibles.`,
+              "info"
+            );
+          }
+        }
+
+        cantidadInput.value = value;
+      }
+
+      function updateTotalPiezas() {
+        if (!varianteSeleccionada) {
+          totalPiezas.textContent = "";
+          return;
+        }
+
+        const cantidad = parseInt(cantidadInput.value, 10) || 0;
+        const piezasPorPaqueteVariante = obtenerPiezasPorPaquete();
+
+        if (cantidad > 0 && piezasPorPaqueteVariante > 0) {
+          const total = cantidad * piezasPorPaqueteVariante;
+          totalPiezas.textContent = `Total: ${total} piezas`;
+        } else {
+          totalPiezas.textContent = "";
+        }
+      }
+
+      function obtenerPiezasPorPaquete() {
+        if (tamanoSeleccionado) {
+          const rawValor =
+            tamanoSeleccionado.valor ?? tamanoSeleccionado.Valor ?? null;
+          const valor = Number.isFinite(rawValor)
+            ? rawValor
+            : parseInt(rawValor, 10);
+
+          if (Number.isFinite(valor) && valor > 0) {
+            return valor;
+          }
+        }
+
+        const fallback =
+          typeof varianteSeleccionada?.piezasPorPaquete === "number"
+            ? varianteSeleccionada.piezasPorPaquete
+            : parseInt(varianteSeleccionada?.piezasPorPaquete, 10) || 0;
+
+        return fallback;
+      }
+
+      function encontrarVariantePorTamano(tamano) {
+        if (!tamano || !Array.isArray(variantes) || variantes.length === 0) {
+          return null;
+        }
+
+        const piezasTamano = Number.isFinite(tamano.valor)
+          ? tamano.valor
+          : parseInt(tamano.valor, 10);
+
+        if (!Number.isFinite(piezasTamano) || piezasTamano <= 0) {
+          return null;
+        }
+
+        const dimensionActual = (
+          varianteSeleccionada?.dimensiones || ""
+        )
+          .toString()
+          .trim()
+          .toLowerCase();
+
+        const varianteEncontrada =
+          variantes.find((v) => {
+            const dim = (v.dimensiones || "")
+              .toString()
+              .trim()
+              .toLowerCase();
+            const piezas =
+              typeof v.piezasPorPaquete === "number"
+                ? v.piezasPorPaquete
+                : parseInt(v.piezasPorPaquete, 10) || 0;
+            return dim === dimensionActual && piezas === piezasTamano;
+          }) || null;
+
+        return varianteEncontrada;
+      }
+
+      function renderVariantImages(variant) {
+        const imagenes = Array.isArray(variant?.imagenes)
+          ? variant.imagenes
+          : [];
+        thumbnailGallery.innerHTML = "";
+
+        const fallbackAlt = producto?.nombreProducto || "Producto";
+
+        function cambiarImagenPrincipalDesdeThumb(thumbEl, url, alt) {
+          if (!mainImage) return;
+          mainImage.src = url || placeholderImage;
+          mainImage.alt = alt || fallbackAlt;
+
+          if (thumbnailGallery) {
+            thumbnailGallery
+              .querySelectorAll(".thumb-img")
+              .forEach((el) => el.classList.remove("active"));
+          }
+          if (thumbEl) {
+            thumbEl.classList.add("active");
+          }
+        }
+
+        // Si la variante tiene imágenes, mostrar TODAS en la galería
+        if (imagenes.length > 0) {
+          thumbnailGallery.style.display = "flex";
+          
+          // Mostrar la primera imagen como principal
+          const primeraImagen = imagenes[0];
+          const urlInicial = primeraImagen?.url || primeraImagen?.urlCompleta || placeholderImage;
+          const altInicial = primeraImagen?.alt || fallbackAlt;
+          cambiarImagenPrincipalDesdeThumb(null, urlInicial, altInicial);
+
+          // Renderizar todas las miniaturas
+          imagenes.forEach((img, index) => {
+            const thumb = document.createElement("img");
+            thumb.src = img.url || img.urlCompleta || placeholderImage;
+            thumb.alt = img.alt || fallbackAlt;
+            thumb.className = "thumb-img";
+            
+            // Marcar la primera como activa
+            if (index === 0) {
+              thumb.classList.add("active");
+            }
+            
+            // Click handler para cambiar imagen principal
+            thumb.addEventListener("click", () => {
+              cambiarImagenPrincipalDesdeThumb(
+                thumb,
+                img.url || img.urlCompleta || placeholderImage,
+                thumb.alt
+              );
+            });
+            
+            thumbnailGallery.appendChild(thumb);
+          });
+        } else {
+          // Sin imágenes: mostrar placeholder
+          thumbnailGallery.style.display = "none";
+          mainImage.src = placeholderImage;
+          mainImage.alt = fallbackAlt;
+        }
+      }
+
+      function actualizarInformacionVariante() {
+        if (!varianteSeleccionada) {
+          productSKU.textContent = "SKU no disponible";
+          precioPaquete.textContent = "No disponible";
+          precioPieza.textContent = "No disponible";
+          piezasPorPaquete.textContent = "N/D";
+          dimensiones.textContent = "No especificado";
+          stock.textContent = "Sin stock";
+          stock.style.color = "var(--error-color, #e53e3e)";
+          if (variantAvailability) {
+            variantAvailability.textContent =
+              "Sin variantes disponibles para este producto.";
+          }
+          addToCartBtn.disabled = true;
+          cantidadInput.disabled = true;
+          decreaseBtn.disabled = true;
+          increaseBtn.disabled = true;
+          updateTotalPiezas();
+          return;
+        }
+
+        const sku = varianteSeleccionada.sku || "N/D";
+        const piezasVariante = obtenerPiezasPorPaquete();
+
+        // LÓGICA DE PRECIOS CON OFERTA
+        const precioBase =
+          typeof varianteSeleccionada.precioUnitario === "number"
+            ? varianteSeleccionada.precioUnitario
+            : parseFloat(varianteSeleccionada.precioUnitario);
+        const precioOferta = varianteSeleccionada.precioOfertaUnitario
+          ? typeof varianteSeleccionada.precioOfertaUnitario === "number"
+            ? varianteSeleccionada.precioOfertaUnitario
+            : parseFloat(varianteSeleccionada.precioOfertaUnitario)
+          : null;
+
+        // Si existe precio de oferta, úsalo. Si no, usa precio base.
+        const precioUnitario = precioOferta || precioBase;
+        const tieneOferta =
+          precioOferta !== null &&
+          precioOferta > 0 &&
+          precioOferta < precioBase;
+
+        const precioPaqueteValor =
+          Number.isFinite(precioUnitario) && piezasVariante
+            ? precioUnitario * piezasVariante
+            : null;
+        const precioPiezaValor = Number.isFinite(precioUnitario)
+          ? precioUnitario
+          : null;
+        const stockDisponible = obtenerStockDisponibleVariante(
+          varianteSeleccionada
+        );
+
+        if (precioPaqueteLabel) {
+          if (Number.isInteger(maxPiezasPresentacion) && maxPiezasPresentacion > 0) {
+            if (piezasVariante === 1) {
+              precioPaqueteLabel.textContent = "Precio por pieza";
+            } else if (piezasVariante === maxPiezasPresentacion) {
+              precioPaqueteLabel.textContent = "Precio por paquete";
+            } else if (Number.isFinite(piezasVariante) && piezasVariante > 1) {
+              precioPaqueteLabel.textContent = "Precio por serie";
+            } else {
+              precioPaqueteLabel.textContent = "Precio por paquete";
+            }
+          } else {
+            precioPaqueteLabel.textContent = "Precio por paquete";
+          }
+        }
+
+        productSKU.textContent = `SKU: ${sku}`;
+
+        // Mostrar precio con oferta usando clases CSS
+        if (tieneOferta && Number.isFinite(precioPaqueteValor)) {
+          const precioBaseValor =
+            Number.isFinite(precioBase) && piezasVariante
+              ? precioBase * piezasVariante
+              : null;
+          const descuento = Math.round(
+            ((precioBase - precioOferta) / precioBase) * 100
+          );
+          precioPaquete.innerHTML = `
+            <div class="precio-contenedor">
+              <span class="precio-original">${formatCurrency(precioBaseValor)}</span>
+              <span class="precio-oferta">${formatCurrency(precioPaqueteValor)}</span>
+              <span class="descuento-badge">-${descuento}%</span>
+            </div>
+          `;
+        } else {
+          precioPaquete.innerHTML = Number.isFinite(precioPaqueteValor)
+            ? `<span class="precio-normal">${formatCurrency(precioPaqueteValor)}</span>`
+            : '<span class="precio-normal">No disponible</span>';
+        }
+
+        // Mostrar precio por pieza con oferta usando clases CSS
+        if (tieneOferta && Number.isFinite(precioPiezaValor)) {
+          precioPieza.innerHTML = `
+            <div class="precio-contenedor">
+              <span class="precio-original">${formatCurrency(precioBase)}</span>
+              <span class="precio-oferta">${formatCurrency(precioPiezaValor)}</span>
+            </div>
+          `;
+        } else {
+          precioPieza.innerHTML = Number.isFinite(precioPiezaValor)
+            ? `<span class="precio-normal">${formatCurrency(precioPiezaValor)}</span>`
+            : '<span class="precio-normal">No disponible</span>';
+        }
+        piezasPorPaquete.textContent = piezasVariante || "N/D";
+
+        // DIMENSIONES: deben mostrar siempre la medida física de la variante
+        // (ej. "10x10"), independiente del pack seleccionado.
+        const medidaFisicaCruda =
+          varianteSeleccionada.dimensiones ||
+          varianteSeleccionada.medida ||
+          null;
+
+        let dimensionTexto =
+          (medidaFisicaCruda && String(medidaFisicaCruda).trim()) ||
+          "No especificada";
+
+        if (
+          typeof dimensionTexto === "string" &&
+          dimensionTexto.trim().toLowerCase() === "unidad individual"
+        ) {
+          // Evitar mostrar el placeholder de algunas variantes maestras
+          dimensionTexto = "No especificada";
+        }
+
+        dimensiones.textContent = dimensionTexto;
+
+        // Backorder habilitado: no deshabilitar controles aunque no haya stock inmediato.
+        // El texto/color del stock se controla en actualizarStockVisual().
+
+        if (variantAvailability) {
+          variantAvailability.textContent = "Puedes pedir más piezas aunque no haya stock inmediato.";
+          variantAvailability.style.color = "var(--text-secondary)";
+        }
+
+        if (backorderMessage) {
+          backorderMessage.style.display = "none";
+        }
+
+        cantidadInput.disabled = false;
+        decreaseBtn.disabled = false;
+        increaseBtn.disabled = false;
+        addToCartBtn.disabled = false;
+
+        cantidadInput.max = 999;
+        clampCantidadMaxima();
+
+        renderVariantImages(varianteSeleccionada);
+        updateTotalPiezas();
+        renderBackorderAlert();
+        actualizarDescripcionTamano();
+        actualizarStockVisual();
+      }
+
+      function renderVariantOptions() {
+        if (!variantSelect) return;
+
+        if (!Array.isArray(variantes) || variantes.length === 0) {
+          variantSelect.innerHTML =
+            '<option value="">Sin variantes disponibles</option>';
+          variantSelect.disabled = true;
+          actualizarInformacionVariante();
+          return;
+        }
+
+        const variantesFiltradasColor = getVariantesFiltradasPorColor();
+        const variantesBase = variantesFiltradasColor.length
+          ? variantesFiltradasColor
+          : variantes;
+
+        const tieneMedidaFisica = (variant) => {
+          const dimCruda =
+            variant.dimensiones ||
+            variant.Dimension ||
+            variant.medida ||
+            variant.Medida ||
+            null;
+
+          if (!dimCruda) return false;
+          const dimTexto = String(dimCruda).trim().toLowerCase();
+          return dimTexto && dimTexto !== "unidad individual";
+        };
+
+        const variantesConMedida = Array.isArray(variantesBase)
+          ? variantesBase.filter((v) => tieneMedidaFisica(v))
+          : [];
+
+        const listaParaRenderizar =
+          variantesConMedida.length > 0 ? variantesConMedida : variantesBase;
+
+        // Si la variante seleccionada actual no tiene medida física y existe
+        // alguna variante con medida, usar esa variante como selección por defecto.
+        if (
+          varianteSeleccionada &&
+          !listaParaRenderizar.some(
+            (v) => v.varianteId === varianteSeleccionada.varianteId
+          ) &&
+          listaParaRenderizar.length > 0
+        ) {
+          varianteSeleccionada = listaParaRenderizar[0];
+        }
+
+        variantSelect.disabled = false;
+        variantSelect.innerHTML = listaParaRenderizar
+          .map((variant) => {
+            // Si existen variantes con medida física y esta variante no tiene,
+            // no mostrarla en el select.
+            if (
+              variantesConMedida.length > 0 &&
+              !tieneMedidaFisica(variant)
+            ) {
+              return "";
+            }
+
+            const labelParts = [];
+
+            const dimCruda =
+              variant.dimensiones ||
+              variant.Dimension ||
+              variant.medida ||
+              variant.Medida ||
+              null;
+
+            if (dimCruda) {
+              const dimTexto = String(dimCruda).trim();
+              if (dimTexto && dimTexto.toLowerCase() !== "unidad individual") {
+                labelParts.push(dimTexto);
+              }
+            }
+            const label =
+              labelParts.length > 0
+                ? labelParts.join(" • ")
+                : `Variante ${variant.varianteId}`;
+            return `<option value="${variant.varianteId}">${label}</option>`;
+          })
+          .join("");
+
+        if (varianteSeleccionada) {
+          variantSelect.value = String(varianteSeleccionada.varianteId);
+        }
+      }
+
+      function setVarianteSeleccionada(varianteId) {
+        const varianteIdNumero = parseInt(varianteId, 10);
+        const nuevaVariante = variantes.find(
+          (v) => v.varianteId === varianteIdNumero
+        );
+
+        if (!nuevaVariante) {
+          return;
+        }
+
+        varianteSeleccionada = nuevaVariante;
+
+        const nuevoColor = getVariantColorNombre(varianteSeleccionada);
+        if (nuevoColor && nuevoColor !== selectedColorNombre) {
+          selectedColorNombre = nuevoColor;
+          renderNikeSelector();
+        }
+
+        if (
+          variantSelect &&
+          variantSelect.value !== String(varianteSeleccionada.varianteId)
+        ) {
+          variantSelect.value = String(varianteSeleccionada.varianteId);
+        }
+
+        actualizarInformacionVariante();
+        actualizarStockUI(varianteSeleccionada);
+        actualizarStockVisual();
+      }
+
+      function getCarritoCache() {
+        const keys = [
+          "Fashion Box_carrito",
+          "Fashion Box_cart",
+          "Fashion Box_cart_cache",
+        ];
+
+        for (const key of keys) {
+          const raw = localStorage.getItem(key);
+          if (!raw) continue;
+          try {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) {
+              return { key, items: parsed };
+            }
+          } catch (_) {}
+        }
+
+        return { key: "Fashion Box_cart_cache", items: [] };
+      }
+
+      function setCarritoCache(key, items) {
+        try {
+          localStorage.setItem(key, JSON.stringify(Array.isArray(items) ? items : []));
+        } catch (_) {}
+      }
+
+      function getCantidadEnCarrito(varianteId, tamanoId) {
+        if (!varianteId || !tamanoId) return 0;
+
+        const { items } = getCarritoCache();
+        let total = 0;
+
+        for (const item of items) {
+          const vId = Number.parseInt(item?.varianteId ?? item?.VarianteID ?? item?.varianteid, 10);
+          const tId = Number.parseInt(item?.tamanoId ?? item?.TamanoID ?? item?.tamanoid, 10);
+          const qty = Number.parseInt(item?.cantidad ?? item?.Cantidad ?? item?.cantidadPaquetes ?? item?.cantidadpaquetes, 10);
+
+          if (
+            Number.isInteger(vId) &&
+            Number.isInteger(tId) &&
+            vId === Number.parseInt(varianteId, 10) &&
+            tId === Number.parseInt(tamanoId, 10)
+          ) {
+            if (Number.isInteger(qty) && qty > 0) {
+              total += qty;
+            }
+          }
+        }
+
+        return total;
+      }
+
+      function upsertCantidadEnCarrito(varianteId, tamanoId, cantidadAgregar) {
+        const parsedVar = Number.parseInt(varianteId, 10);
+        const parsedTam = Number.parseInt(tamanoId, 10);
+        const parsedQty = Number.parseInt(cantidadAgregar, 10);
+        if (!Number.isInteger(parsedVar) || !Number.isInteger(parsedTam) || !Number.isInteger(parsedQty) || parsedQty <= 0) {
+          return;
+        }
+
+        const cache = getCarritoCache();
+        const items = Array.isArray(cache.items) ? [...cache.items] : [];
+
+        const idx = items.findIndex((it) => {
+          const vId = Number.parseInt(it?.varianteId ?? it?.VarianteID ?? it?.varianteid, 10);
+          const tId = Number.parseInt(it?.tamanoId ?? it?.TamanoID ?? it?.tamanoid, 10);
+          return Number.isInteger(vId) && Number.isInteger(tId) && vId === parsedVar && tId === parsedTam;
+        });
+
+        if (idx >= 0) {
+          const currentQty = Number.parseInt(items[idx]?.cantidad ?? items[idx]?.Cantidad ?? 0, 10);
+          const nextQty = (Number.isInteger(currentQty) ? currentQty : 0) + parsedQty;
+          items[idx] = {
+            ...items[idx],
+            varianteId: parsedVar,
+            tamanoId: parsedTam,
+            cantidad: nextQty,
+          };
+        } else {
+          items.push({
+            varianteId: parsedVar,
+            tamanoId: parsedTam,
+            cantidad: parsedQty,
+          });
+        }
+
+        setCarritoCache(cache.key, items);
+      }
+
+      function actualizarStockVisual() {
+        try {
+          if (!stock || !varianteSeleccionada || !tamanoSeleccionado) {
+            return;
+          }
+
+          const stockPiezas = obtenerStockDisponibleVariante(varianteSeleccionada);
+          const piezasPorPaqueteSeleccionado = obtenerPiezasPorPaquete();
+
+          const stockRealPaquetes = (() => {
+            const piezas = Number.parseInt(stockPiezas, 10);
+            const ppp = Number.parseInt(piezasPorPaqueteSeleccionado, 10);
+            if (!Number.isInteger(piezas) || piezas <= 0) return 0;
+            if (!Number.isInteger(ppp) || ppp <= 0) return piezas;
+            return Math.floor(piezas / ppp);
+          })();
+
+          const cantidadEnCarrito = getCantidadEnCarrito(
+            varianteSeleccionada.varianteId,
+            tamanoSeleccionado.tamanoId
+          );
+
+          let stockVisual = stockRealPaquetes - cantidadEnCarrito;
+          if (!Number.isFinite(stockVisual) || Number.isNaN(stockVisual)) {
+            stockVisual = stockRealPaquetes;
+          }
+          if (stockVisual < 0) stockVisual = 0;
+
+          if (stockVisual > 0) {
+            stock.textContent = `Stock disponible: ${stockVisual} paquetes`;
+            stock.style.color = "var(--success-color)";
+          } else {
+            stock.textContent = "Sin stock inmediato (Disponible bajo pedido)";
+            stock.style.color = "var(--warning-color, #DD6B20)";
+          }
+        } catch (e) {
+          console.error("Error actualizando stock visual:", e);
+        }
+      }
+
+      function renderTamanos() {
+        if (!Array.isArray(tamanosDisponibles) || !tamanoButtons) {
+          return;
+        }
+
+        if (!tamanosDisponibles.length) {
+          tamanoButtons.style.display = "none";
+          tamanoSelect.style.display = "none";
+          tamanoSeleccionado = null;
+          actualizarInformacionVariante();
+          return;
+        }
+
+        const usarBotones = tamanosDisponibles.length <= 4;
+        tamanoButtons.style.display = usarBotones ? "flex" : "none";
+        tamanoSelect.style.display = usarBotones ? "none" : "block";
+
+        const obtenerPiezasTamano = (tamano) => {
+          if (!tamano) return null;
+          const raw =
+            tamano.valor ??
+            tamano.cantidad ??
+            tamano.piezas ??
+            tamano.piezasPorPaquete ??
+            tamano.piezasporpaquete ??
+            null;
+          const parsed = Number.parseInt(raw, 10);
+          return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+        };
+
+        const piezasLista = tamanosDisponibles
+          .map((t) => obtenerPiezasTamano(t))
+          .filter((v) => Number.isInteger(v) && v > 0);
+
+        maxPiezasPresentacion = piezasLista.length
+          ? Math.max(...piezasLista)
+          : null;
+
+        const generarEtiqueta = (tamano) => {
+          const piezas = obtenerPiezasTamano(tamano);
+          if (!Number.isInteger(piezas) || piezas <= 0) {
+            return `Presentación ${tamano.tamanoId}`;
+          }
+
+          if (piezas === 1) {
+            return "Pieza";
+          }
+
+          if (Number.isInteger(maxPiezasPresentacion) && piezas === maxPiezasPresentacion) {
+            return `Paquete de ${piezas}`;
+          }
+
+          return `Serie de ${piezas}`;
+        };
+
+        if (usarBotones) {
+          tamanoButtons.innerHTML = "";
+          tamanosDisponibles.forEach((tamano) => {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = "btn btn-secondary tamano-btn";
+            button.dataset.tamanoId = tamano.tamanoId;
+            button.textContent = generarEtiqueta(tamano);
+
+            button.addEventListener("click", () => {
+              tamanoSeleccionado = tamano;
+              actualizarSeleccionTamano();
+            });
+
+            tamanoButtons.appendChild(button);
+          });
+        } else {
+          // Para el select, solo mostrar la cantidad de piezas por paquete
+          // usando la etiqueta simple del pack (sin precio ni stock).
+          const optionsHtml = tamanosDisponibles
+            .map((tamano) => {
+              const etiquetaSimple = generarEtiqueta(tamano);
+              return `<option value="${tamano.tamanoId}">${etiquetaSimple}</option>`;
+            })
+            .join("");
+
+          tamanoSelect.innerHTML = optionsHtml;
+          tamanoSelect.onchange = (event) => {
+            const valor = parseInt(event.target.value, 10);
+            const encontrado = tamanosDisponibles.find(
+              (tam) => tam.tamanoId === valor
+            );
+            if (encontrado) {
+              tamanoSeleccionado = encontrado;
+              actualizarSeleccionTamano();
+            }
+          };
+        }
+
+        tamanoSeleccionado = tamanosDisponibles[0];
+        actualizarSeleccionTamano();
+      }
+
+      function actualizarSeleccionTamano() {
+        if (!tamanoSeleccionado) {
+          return;
+        }
+
+        if (tamanoButtons.style.display === "flex") {
+          tamanoButtons.querySelectorAll("button").forEach((btn) => {
+            const activo =
+              parseInt(btn.dataset.tamanoId, 10) ===
+              tamanoSeleccionado.tamanoId;
+            btn.classList.toggle("btn-primary", activo);
+            btn.classList.toggle("btn-secondary", !activo);
+          });
+        } else if (tamanoSelect.style.display === "block") {
+          tamanoSelect.value = tamanoSeleccionado.tamanoId;
+        }
+
+        // Recalcular precios y stock usando la variante actualmente seleccionada
+        // y el pack elegido, sin buscar variantes independientes por pack.
+        actualizarInformacionVariante();
+        actualizarStockUI(varianteSeleccionada);
+        actualizarStockVisual();
+      }
+
+      function actualizarDescripcionTamano() {
+        if (!tamanoDescripcion) {
+          return;
+        }
+
+        if (!tamanoSeleccionado) {
+          tamanoDescripcion.style.display = "none";
+          return;
+        }
+
+        const piezas = obtenerPiezasPorPaquete();
+        const etiqueta = null;
+
+        const partes = [];
+        if (
+          tamanoSeleccionado &&
+          typeof tamanoSeleccionado === "object" &&
+          typeof maxPiezasPresentacion === "number" &&
+          maxPiezasPresentacion > 0
+        ) {
+          const valor = Number.parseInt(tamanoSeleccionado.valor, 10);
+          if (Number.isInteger(valor) && valor > 0) {
+            if (valor === 1) {
+              partes.push("Pieza");
+            } else if (valor === maxPiezasPresentacion) {
+              partes.push(`Paquete de ${valor}`);
+            } else {
+              partes.push(`Serie de ${valor}`);
+            }
+          }
+        }
+        if (Number.isFinite(piezas) && piezas > 0) {
+          partes.push(`${piezas} piezas por paquete`);
+        }
+
+        tamanoDescripcion.textContent = partes.join(" • ");
+        tamanoDescripcion.style.display = partes.length ? "block" : "none";
+      }
+
+      // Load product details
+      async function loadProducto() {
+        try {
+          loadingState.style.display = "flex";
+          productDetails.style.display = "none";
+          errorState.style.display = "none";
+
+          const response = await API.getProductoById(productoId);
+
+          if (response.ok && response.data.success) {
+            const data = response.data.data;
+            producto = data.producto;
+            variantes = Array.isArray(data.variantes) ? data.variantes : [];
+            tamanosDisponibles = Array.isArray(data.tamanosDisponibles)
+              ? data.tamanosDisponibles
+              : [];
+            varianteSeleccionada = variantes[0] || null;
+
+            selectedColorNombre = getVariantColorNombre(varianteSeleccionada);
+            renderNikeSelector();
+            syncVarianteSeleccionadaConColor();
+
+            // Set product info (master)
+            productCategory.textContent =
+              producto?.categoria?.nombre || "Sin categoría";
+            productName.textContent =
+              producto?.nombreProducto || "Producto sin nombre";
+            productDescription.textContent =
+              producto?.descripcion || "Sin descripción disponible.";
+
+            renderVariantOptions();
+            renderTamanos();
+
+            if (variantSelect) {
+              variantSelect.addEventListener("change", (event) => {
+                setVarianteSeleccionada(event.target.value);
+              });
+            }
+
+            if (varianteSeleccionada) {
+              setVarianteSeleccionada(varianteSeleccionada.varianteId);
+            } else {
+              actualizarInformacionVariante();
+              mainImage.src = placeholderImage;
+              mainImage.alt = producto?.nombreProducto || "Producto";
+              thumbnailGallery.style.display = "none";
+            }
+
+            // Show product details
+            loadingState.style.display = "none";
+            productDetails.style.display = "block";
+          } else {
+            throw new Error(response.data.message || "Producto no encontrado");
+          }
+        } catch (error) {
+          console.error("Error loading product:", error);
+          loadingState.style.display = "none";
+          errorState.style.display = "block";
+        }
+      }
+
+      // Handle quantity changes
+      decreaseBtn.addEventListener("click", () => {
+        const current = parseInt(cantidadInput.value) || 1;
+        if (current > 1) {
+          cantidadInput.value = current - 1;
+          updateTotalPiezas();
+          renderBackorderAlert();
+        }
+      });
+
+      increaseBtn.addEventListener("click", () => {
+        const current = parseInt(cantidadInput.value) || 1;
+        const next = Math.min(current + 1, 999);
+        cantidadInput.value = next;
+        updateTotalPiezas();
+        renderBackorderAlert();
+      });
+
+      function clampCantidadMaxima() {
+        const raw = parseInt(cantidadInput.value, 10);
+        if (!Number.isFinite(raw) || Number.isNaN(raw) || raw < 1) {
+          cantidadInput.value = 1;
+          return;
+        }
+        if (raw > 999) {
+          cantidadInput.value = 999;
+        }
+      }
+
+      function renderBackorderAlert() {
+        if (!backorderAlert || !varianteSeleccionada) {
+          return;
+        }
+
+        const stockDisponible = obtenerStockDisponibleVariante(
+          varianteSeleccionada
+        ); // piezas totales
+        const piezasPorPaqueteSeleccionado = obtenerPiezasPorPaquete();
+        const cantidadPaquetes = parseInt(cantidadInput.value, 10) || 0;
+        const piezasSolicitadas =
+          cantidadPaquetes *
+          (Number.isFinite(piezasPorPaqueteSeleccionado)
+            ? piezasPorPaqueteSeleccionado
+            : 0);
+
+        backorderAlert.style.display = "none";
+        backorderAlert.textContent = "";
+
+        if (!Number.isFinite(stockDisponible) || stockDisponible <= 0) {
+          backorderAlert.style.display = "block";
+          backorderAlert.textContent =
+            "Producto bajo pedido. Se solicitará a proveedor.";
+          return;
+        }
+
+        if (
+          !Number.isFinite(piezasSolicitadas) ||
+          piezasSolicitadas <= stockDisponible
+        ) {
+          return;
+        }
+
+        const piezasInmediatas = stockDisponible;
+        const piezasBackorder = piezasSolicitadas - stockDisponible;
+        backorderAlert.style.display = "block";
+        backorderAlert.textContent = `¡Atención! Solo tenemos ${piezasInmediatas} piezas disponibles inmediatas. El resto (${piezasBackorder}) se solicitará a proveedor y tomará más tiempo.`;
+      }
+
+      cantidadInput.addEventListener("input", () => {
+        clampCantidadMaxima();
+        const value = parseInt(cantidadInput.value, 10);
+        if (value < 1 || Number.isNaN(value)) {
+          cantidadInput.value = 1;
+        }
+        updateTotalPiezas();
+        renderBackorderAlert();
+      });
+
+      // Handle add to cart
+      addToCartBtn.addEventListener("click", async () => {
+        if (!varianteSeleccionada) {
+          showToast("Selecciona una variante para continuar", "warning");
+          return;
+        }
+
+        if (!tamanoSeleccionado) {
+          showToast(
+            "Selecciona una presentación (pack) antes de agregar al carrito",
+            "warning"
+          );
+          return;
+        }
+
+        const cantidad = parseInt(cantidadInput.value) || 0;
+        const stockPiezas = obtenerStockDisponibleVariante(varianteSeleccionada);
+        const piezasPorPaqueteSeleccionado = obtenerPiezasPorPaquete();
+
+        const stockRealPaquetes = (() => {
+          const piezas = Number.parseInt(stockPiezas, 10);
+          const ppp = Number.parseInt(piezasPorPaqueteSeleccionado, 10);
+
+          if (!Number.isFinite(piezas) || Number.isNaN(piezas) || piezas <= 0) {
+            return 0;
+          }
+          if (!Number.isFinite(ppp) || Number.isNaN(ppp) || ppp <= 0) {
+            return piezas;
+          }
+
+          return Math.floor(piezas / ppp);
+        })();
+
+        if (cantidad < 1) {
+          showToast("La cantidad debe ser mayor a 0", "warning");
+          return;
+        }
+
+        // Show loading state
+        addToCartBtn.disabled = true;
+        btnText.style.display = "none";
+        btnSpinner.style.display = "block";
+
+        try {
+          await CarritoService.agregarItem({
+            varianteId: varianteSeleccionada.varianteId,
+            cantidad,
+            tamanoId: tamanoSeleccionado.tamanoId,
+          });
+
+          upsertCantidadEnCarrito(
+            varianteSeleccionada.varianteId,
+            tamanoSeleccionado.tamanoId,
+            cantidad
+          );
+
+          cantidadInput.value = 1;
+          updateTotalPiezas();
+          actualizarStockVisual();
+
+          if (typeof window.updateCartBadge === "function") {
+            window.updateCartBadge();
+          }
+
+          if (cantidad > stockRealPaquetes) {
+            const surtido = Math.max(stockRealPaquetes, 0);
+            const pendiente = Math.max(cantidad - surtido, 0);
+
+            showToast(
+              `Agregado correctamente. ${surtido} inmediato${surtido === 1 ? "" : "s"}, ${pendiente} en backorder.`,
+              "info"
+            );
+          } else {
+            showToast("Agregado correctamente.", "success");
+          }
+        } catch (error) {
+          console.error("Error adding to cart:", error);
+        } finally {
+          // Reset button state
+          addToCartBtn.disabled = false;
+          btnText.style.display = "inline";
+          btnSpinner.style.display = "none";
+          renderBackorderAlert();
+        }
+      });
+
+      // Load product on page load
+      if (productoId) {
+        loadProducto();
+      }
+    </script>
+
+    <!-- Sistema de Temas Estacionales -->
+    <script src="/js/theme-manager.js"></script>
+  </body>
+</html>

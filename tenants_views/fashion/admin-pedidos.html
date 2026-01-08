@@ -1,0 +1,1070 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gestión de Pedidos - Admin Fashion Box</title>
+    <link rel="icon" type="image/png" href="/icon/Logo_Fashion.png" />
+
+    <!-- PROTECCIÓN DE AUTENTICACIÓN ADMIN -->
+    <script src="js/auth-guard-admin.js"></script>
+
+    <!-- SISTEMA DE RENOVACIÓN DE TOKENS -->
+    <script src="js/token-refresh.js"></script>
+
+    <link rel="stylesheet" href="css/styles-fashion.css" />
+    <link rel="stylesheet" href="css/fashion-theme-fashion.css" />
+    <link rel="stylesheet" href="css/admin-fashion.css" />
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+      <link rel="stylesheet" href="css/mobile-responsive-fashion.css" />
+  </head>
+  <body data-page-title="Gestión de Pedidos">
+    <div class="admin-layout">
+      <!-- Sidebar -->
+      <div id="sidebar-container"></div>
+
+      <!-- Main Content -->
+      <main class="admin-main">
+        <div id="admin-header-container"></div>
+
+        <div class="admin-content">
+          <!-- Filters -->
+          <div
+            class="admin-table-container"
+            style="margin-bottom: 1.5rem; padding: 1rem"
+          >
+            <div style="display: flex; gap: 1rem; align-items: center">
+              <label for="statusFilter" style="font-weight: 600">Filtrar por estatus:</label>
+              <select
+                id="statusFilter"
+                style="
+                  padding: 0.5rem 1rem;
+                  border: 2px solid var(--razo-gray-light);
+                  border-radius: 0.5rem;
+                  font-family: 'Inter', sans-serif;
+                "
+              >
+                <option value="">Todos</option>
+                <option value="Pendiente">Pendiente</option>
+                <option value="Confirmado">Confirmado</option>
+                <option value="Enviado">Enviado</option>
+                <option value="Entregado">Entregado</option>
+                <option value="Cancelado">Cancelado</option>
+              </select>
+              <button
+                class="btn btn-secondary"
+                onclick="loadOrders()"
+                style="padding: 0.5rem 1.5rem"
+              >
+                Actualizar
+              </button>
+            </div>
+          </div>
+
+          <!-- Orders Table -->
+          <div class="admin-table-container">
+            <div class="admin-table-header">
+              <h2 class="admin-table-title">Todos los pedidos</h2>
+            </div>
+
+            <div id="loadingOrders" class="loading">
+              <div class="spinner"></div>
+            </div>
+
+            <div style="overflow-x: auto">
+              <table class="admin-table" id="ordersTable" style="display: none">
+                <thead>
+                  <tr>
+                    <th>#ID</th>
+                    <th>Cliente</th>
+                    <th>Fecha</th>
+                    <th>Items</th>
+                    <th>Total</th>
+                    <th>Agente</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="ordersTableBody">
+                  <!-- Orders will be loaded here -->
+                </tbody>
+              </table>
+            </div>
+
+            <div id="emptyOrders" class="empty-state" style="display: none">
+              <div class="empty-state-icon">📦</div>
+              <h3 class="empty-state-title">No hay pedidos</h3>
+              <p class="empty-state-text">
+                Los pedidos aparecerán aquí cuando los clientes realicen compras
+              </p>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- Modal para subir evidencia de entrega -->
+    <div id="evidenciaModal" class="modal">
+      <div class="modal-content modal-content--xl">
+        <div class="modal-header">
+          <h2 class="modal-title">Subir Evidencia de Entrega</h2>
+          <button class="modal-close-btn" onclick="cerrarModalEvidencia()">&times;</button>
+        </div>
+        <div class="modal-body">
+          <p style="margin-bottom: 1.5rem">
+            <strong style="font-size: 1.125rem">Pedido #<span id="evidenciaPedidoId"></span></strong><br />
+            <span style="color: var(--text-secondary); font-size: 0.875rem">
+              Sube la foto de la remisión firmada por el cliente
+            </span>
+          </p>
+
+          <div class="form-group" style="margin-bottom: 1.5rem">
+            <label class="form-label" style="font-weight: 600; margin-bottom: 0.5rem; display: block">
+              Seleccionar archivo (JPG, PNG, PDF):
+            </label>
+            <input 
+              type="file" 
+              id="evidenciaFile" 
+              accept="image/jpeg,image/jpg,image/png,application/pdf"
+              class="form-input"
+              style="width: 100%; padding: 0.75rem; font-size: 1rem"
+            />
+          </div>
+
+          <div style="background: var(--razo-cream); padding: 1rem; border-radius: 0.5rem; border-left: 4px solid var(--razo-orange); margin-bottom: 1.5rem;">
+            <p style="font-size: 0.875rem; margin: 0">
+              <strong>ℹ️ Nota:</strong> Al subir la evidencia, el pedido se marcará automáticamente como "Entregado" y se registrará la fecha de entrega.
+            </p>
+          </div>
+
+          <div style="display: flex; gap: 1rem; margin-top: 1.5rem; margin-bottom: 1rem">
+            <button type="button" class="btn btn-secondary" onclick="cerrarModalEvidencia()" style="flex: 1">
+              Cancelar
+            </button>
+            <button class="btn btn-primary" onclick="subirEvidencia()" id="btnSubirEvidencia" style="flex: 1">
+              <span id="btnSubirEvidenciaText">Subir Evidencia</span>
+              <div class="spinner" id="btnSubirEvidenciaSpinner" style="display: none"></div>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal para ver evidencia de entrega -->
+    <div id="verEvidenciaModal" class="modal">
+      <div class="modal-content modal-content--xl">
+        <div class="modal-header">
+          <h2 class="modal-title">Evidencia de Entrega</h2>
+          <button class="modal-close-btn" onclick="cerrarModalVerEvidencia()">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div style="text-align: center;">
+            <img id="evidenciaImagen" src="" alt="Evidencia de entrega" style="max-width: 100%; max-height: 70vh; border-radius: 0.5rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1);" />
+          </div>
+          <div style="display: flex; gap: 1rem; margin-top: 1.5rem; margin-bottom: 1rem">
+            <button type="button" class="btn btn-secondary" onclick="cerrarModalVerEvidencia()" style="flex: 1">
+              Cerrar
+            </button>
+            <a id="evidenciaDownloadLink" href="" target="_blank" class="btn btn-primary" style="flex: 1; text-align: center; text-decoration: none;">
+              Descargar Evidencia
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal para cambiar estatus -->
+    <div id="statusModal" class="modal">
+      <div class="modal-content modal-content--xl">
+        <div class="modal-header">
+          <h2 class="modal-title">Cambiar Estatus del Pedido</h2>
+          <button class="modal-close-btn" onclick="closeStatusModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+
+        <p style="margin-bottom: 1.5rem">
+          <strong style="font-size: 1.125rem"
+            >Pedido #<span id="modalPedidoId"></span></strong
+          ><br />
+          <span style="color: var(--text-secondary); font-size: 0.875rem">
+            Cliente: <span id="modalClienteNombre"></span>
+          </span>
+        </p>
+
+        <div class="form-group" style="margin-bottom: 1.5rem">
+          <label
+            class="form-label"
+            style="font-weight: 600; margin-bottom: 0.5rem; display: block"
+            >Nuevo Estatus:</label
+          >
+          <select
+            id="modalNuevoEstatus"
+            class="form-input"
+            style="width: 100%; padding: 0.75rem; font-size: 1rem"
+          >
+            <option value="Pendiente">Pendiente</option>
+            <option value="Confirmado">Confirmado ⚠️ (Reduce Stock)</option>
+            <option value="Enviado">Enviado</option>
+            <option value="Entregado">Entregado</option>
+            <option value="Cancelado">Cancelado</option>
+          </select>
+        </div>
+
+        <div
+          style="
+            background: var(--razo-cream);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border-left: 4px solid var(--razo-orange);
+            margin-bottom: 1.5rem;
+          "
+        >
+          <p style="font-size: 0.875rem; margin: 0">
+            <strong>⚠️ Importante:</strong> Al cambiar a "Confirmado", se
+            reducirá automáticamente el stock de los productos y se registrará
+            en el log de inventario.
+          </p>
+        </div>
+
+        <div style="display: flex; gap: 1rem; margin-top: 1.5rem; margin-bottom: 1rem">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            onclick="closeStatusModal()"
+            style="flex: 1"
+          >
+            Cancelar
+          </button>
+          <button
+            class="btn btn-primary"
+            onclick="updateOrderStatus()"
+            id="btnConfirmar"
+            style="flex: 1"
+          >
+            <span id="btnConfirmarText">Confirmar Cambio</span>
+            <div class="spinner" id="btnConfirmarSpinner" style="display: none"></div>
+          </button>
+        </div>
+
+        </div>
+      </div>
+    </div>
+
+    <script src="js/layout.js" defer></script>
+    <script src="js/sidebar-toggle.js" defer></script>
+    <script src="js/api.js"></script>
+    <script src="js/components/admin-header-loader.js"></script>
+    <script src="js/components/user-profile.js"></script>
+    <script src="js/admin-header-dropdown.js"></script>
+    <script>
+      // Authentication check
+      const adminToken = localStorage.getItem("Fashion Box_admin_token");
+      if (!adminToken) {
+        window.location.href = "/login.html";
+      }
+
+      // Mapea el estatus del pedido a un badge normalizado con diseño admin-badge info
+      function getPedidoStatusBadgeClass(estatus) {
+        const value = (estatus || "").toString().toLowerCase();
+
+        if (value === "pendiente") return "pedido-estatus-badge pendiente";
+        if (value === "confirmado") return "pedido-estatus-badge confirmado";
+        if (
+          value === "enviado" ||
+          value === "en ruta" ||
+          value === "en_ruta" ||
+          value === "en-ruta"
+        ) {
+          return "pedido-estatus-badge enviado";
+        }
+        if (value === "entregado") return "pedido-estatus-badge entregado";
+        if (value === "cancelado") return "pedido-estatus-badge cancelado";
+        if (value === "completado") return "pedido-estatus-badge completado";
+
+        return "pedido-estatus-badge pendiente";
+      }
+
+      let currentOrders = [];
+      let selectedOrderId = null;
+      let selectedOrderStatus = null;
+
+      // Load orders
+      async function loadOrders() {
+        document.getElementById("loadingOrders").style.display = "flex";
+        document.getElementById("ordersTable").style.display = "none";
+        document.getElementById("emptyOrders").style.display = "none";
+        const ordersTableBody = document.getElementById("ordersTableBody");
+        const statusFilterEl = document.getElementById("statusFilter");
+
+        if (!ordersTableBody || !statusFilterEl) {
+          console.error("Required elements not found in DOM");
+          return;
+        }
+
+        const statusFilter = statusFilterEl ? statusFilterEl.value : "";
+
+        try {
+          loadingOrders.style.display = "flex";
+          ordersTable.style.display = "none";
+          emptyOrders.style.display = "none";
+
+          const response = await fetch(`${API_BASE_URL}/admin/pedidos`, {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${adminToken}`,
+              "Content-Type": "application/json",
+            },
+          });
+
+          if (!response.ok) {
+            throw new Error("Error al cargar pedidos");
+          }
+
+          const data = await response.json();
+          if (data.success) {
+            currentOrders = data.data.pedidos;
+
+            // Filter by status if selected
+            let filteredOrders = currentOrders;
+            if (statusFilter) {
+              filteredOrders = currentOrders.filter(
+                (order) => order.estatus === statusFilter
+              );
+            }
+
+            if (filteredOrders.length === 0) {
+              emptyOrders.style.display = "block";
+            } else {
+              ordersTableBody.innerHTML = filteredOrders
+                .map((order) => {
+                  const badgeClass = getPedidoStatusBadgeClass(order.estatus);
+
+                  const fecha = new Date(order.fechaPedido).toLocaleDateString(
+                    "es-MX"
+                  );
+
+                  return `
+                <tr>
+                  <td><strong>#${order.pedidoId}</strong></td>
+                  <td>
+                    <div style="font-weight: 600;">${order.clienteNombre}</div>
+                    <div style="font-size: 0.875rem; color: var(--razo-gray-warm);">${
+                      order.clienteEmail
+                    }</div>
+                  </td>
+                  <td>${fecha}</td>
+                  <td>${order.totalItems} items</td>
+                  <td><strong>${formatCurrency(order.montoTotal)}</strong></td>
+                  <td>${order.agenteNombre || "-"}</td>
+                  <td><span class="${badgeClass}">${order.estatus}</span></td>
+                  <td>
+                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                      <button 
+                        class="btn btn-secondary" 
+                        style="padding: 0.5rem 1rem; font-size: 0.875rem;"
+                        onclick="verDetallePedido(${order.pedidoId})">
+                        Ver detalle
+                      </button>
+                      <button
+                        class="btn btn-primary"
+                        style="padding: 0.5rem 1rem; font-size: 0.875rem;"
+                        onclick="openStatusModal(${order.pedidoId}, '${
+                    order.clienteNombre
+                  }', '${order.estatus}')">
+                        Cambiar estatus
+                      </button>
+                      <button
+                        class="btn btn-info"
+                        style="padding: 0.5rem 1rem; font-size: 0.875rem; background: #17a2b8; color: white;"
+                        onclick="generarRemision(${order.pedidoId})"
+                        title="Generar remisión para firma">
+                        📄 Remisión
+                      </button>
+                      ${order.urlEvidenciaEntrega ? `
+                        <button
+                          class="btn btn-success"
+                          style="padding: 0.5rem 1rem; font-size: 0.875rem;"
+                          onclick="verEvidencia('${order.urlEvidenciaEntrega}')"
+                          title="Ver evidencia de entrega">
+                          ✅ Ver Firma
+                        </button>
+                      ` : `
+                        <button
+                          class="btn"
+                          style="padding: 0.5rem 1rem; font-size: 0.875rem; background: #ffc107; color: #000;"
+                          onclick="abrirModalSubirEvidencia(${order.pedidoId})"
+                          title="Subir foto de remisión firmada">
+                          📷 Subir Firma
+                        </button>
+                      `}
+                    </div>
+                  </td>
+                </tr>
+              `;
+                })
+                .join("");
+
+              ordersTable.style.display = "table";
+            }
+          }
+        } catch (error) {
+          console.error("Error loading orders:", error);
+          showToast("Error al cargar pedidos", "error");
+          emptyOrders.style.display = "block";
+        } finally {
+          loadingOrders.style.display = "none";
+        }
+      }
+
+      // Format currency
+      function formatCurrency(amount) {
+        return new Intl.NumberFormat("es-MX", {
+          style: "currency",
+          currency: "MXN",
+        }).format(amount || 0);
+      }
+
+      // Navigate to order detail page
+      function verDetallePedido(pedidoId) {
+        // Establecer flags de navegación
+        sessionStorage.setItem("_navigating", "true");
+        localStorage.setItem("_nav_timestamp", Date.now().toString());
+        // Redirigir inmediatamente
+        window.location.href = `/admin-pedido-detalle.html?id=${pedidoId}`;
+      }
+
+      // Open status modal
+      function openStatusModal(pedidoId, clienteNombre, estatusActual) {
+        selectedOrderId = pedidoId;
+        selectedOrderStatus = estatusActual || null;
+        
+        const modalPedidoId = document.getElementById("modalPedidoId");
+        const modalClienteNombre = document.getElementById("modalClienteNombre");
+        const modalNuevoEstatus = document.getElementById("modalNuevoEstatus");
+        const statusModal = document.getElementById("statusModal");
+
+        if (modalPedidoId) modalPedidoId.textContent = pedidoId;
+        if (modalClienteNombre) modalClienteNombre.textContent = clienteNombre;
+        if (modalNuevoEstatus) modalNuevoEstatus.value = estatusActual;
+        if (statusModal) statusModal.style.display = "flex";
+      }
+
+      // Close status modal
+      function closeStatusModal() {
+        const statusModal = document.getElementById("statusModal");
+        if (statusModal) statusModal.style.display = "none";
+        selectedOrderId = null;
+      }
+
+      // Update order status
+      async function updateOrderStatus() {
+        if (!selectedOrderId) return;
+
+        const modalNuevoEstatus = document.getElementById("modalNuevoEstatus");
+        const btnConfirmar = document.getElementById("btnConfirmar");
+        const btnConfirmarText = document.getElementById("btnConfirmarText");
+        const btnConfirmarSpinner = document.getElementById("btnConfirmarSpinner");
+
+        // Validate elements exist
+        if (!modalNuevoEstatus || !btnConfirmar) {
+          console.error("Required elements not found in DOM");
+          return;
+        }
+
+        const nuevoEstatus = modalNuevoEstatus.value;
+        const estatusActual = selectedOrderStatus || "";
+        const nuevoLower = (nuevoEstatus || "").toString().toLowerCase();
+        const actualLower = (estatusActual || "").toString().toLowerCase();
+
+        let swalConfig = null;
+        let fallbackMessage = "¿Deseas actualizar el estatus y notificar al cliente?";
+
+        if (
+          typeof Swal !== "undefined" &&
+          Swal &&
+          typeof Swal.fire === "function"
+        ) {
+          if (nuevoLower === "cancelado" && actualLower !== "cancelado") {
+            swalConfig = {
+              icon: "warning",
+              title: "¿Cancelar pedido?",
+              text:
+                "⚠️ Se devolverán los productos al inventario y se enviará un correo de cancelación al cliente.",
+              showCancelButton: true,
+              confirmButtonText: "Sí, cancelar",
+              cancelButtonText: "No, mantener",
+              confirmButtonColor: "#dc3545",
+              cancelButtonColor: "#6c757d",
+            };
+            fallbackMessage = swalConfig.text;
+          } else if (
+            actualLower === "cancelado" &&
+            nuevoLower !== "cancelado"
+          ) {
+            swalConfig = {
+              icon: "question",
+              title: "¿Reactivar pedido?",
+              text:
+                "⚠️ Se volverá a descontar el stock. Asegúrate de tener existencias.",
+              showCancelButton: true,
+              confirmButtonText: "Sí, reactivar",
+              cancelButtonText: "No, mantener cancelado",
+              confirmButtonColor: "#0d6efd",
+              cancelButtonColor: "#6c757d",
+            };
+            fallbackMessage = swalConfig.text;
+          } else {
+            swalConfig = {
+              icon: "question",
+              title: "Actualizar estatus",
+              text:
+                "¿Deseas actualizar el estatus y notificar al cliente?",
+              showCancelButton: true,
+              confirmButtonText: "Sí, actualizar",
+              cancelButtonText: "Cancelar",
+              confirmButtonColor: "#F97316",
+              cancelButtonColor: "#6c757d",
+            };
+            fallbackMessage = swalConfig.text;
+          }
+
+          const result = await Swal.fire(swalConfig);
+          if (!result.isConfirmed) {
+            return;
+          }
+        } else {
+          const confirmed = window.confirm(fallbackMessage);
+          if (!confirmed) {
+            return;
+          }
+        }
+
+        try {
+          btnConfirmar.disabled = true;
+          if (btnConfirmarText) btnConfirmarText.style.display = "none";
+          if (btnConfirmarSpinner) btnConfirmarSpinner.style.display = "block";
+
+          const response = await fetch(
+            `${API_BASE_URL}/admin/pedidos/${selectedOrderId}`,
+            {
+              method: "PUT",
+              headers: {
+                Authorization: `Bearer ${adminToken}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ estatus: nuevoEstatus }),
+            }
+          );
+
+          const data = await response.json();
+
+          if (response.ok && data.success) {
+            showToast(
+              `Pedido #${selectedOrderId} actualizado a ${nuevoEstatus}`,
+              "success"
+            );
+            closeStatusModal();
+            loadOrders(); // Reload orders
+          } else {
+            showToast(data.message || "Error al actualizar pedido", "error");
+          }
+        } catch (error) {
+          console.error("Error updating order:", error);
+          showToast("Error al conectar con el servidor", "error");
+        } finally {
+          if (btnConfirmar) btnConfirmar.disabled = false;
+          if (btnConfirmarText) btnConfirmarText.style.display = "inline";
+          if (btnConfirmarSpinner) btnConfirmarSpinner.style.display = "none";
+        }
+      }
+
+      // Status filter change
+      document.getElementById("statusFilter").addEventListener("change", () => {
+        loadOrders();
+      });
+
+      // Navigation handling for non-implemented modules
+      const navLinks = document.querySelectorAll(
+        ".admin-nav-link[data-module]"
+      );
+      navLinks.forEach((link) => {
+        link.addEventListener("click", (e) => {
+          e.preventDefault();
+          const moduleName = link.querySelector("span:last-child").textContent;
+          showToast(`Módulo "${moduleName}" próximamente disponible`, "info");
+        });
+      });
+
+      // Proof of Delivery Functions
+      let selectedPedidoIdEvidencia = null;
+
+      function abrirModalSubirEvidencia(pedidoId) {
+        selectedPedidoIdEvidencia = pedidoId;
+        document.getElementById("evidenciaPedidoId").textContent = pedidoId;
+        document.getElementById("evidenciaFile").value = "";
+        document.getElementById("evidenciaModal").style.display = "flex";
+      }
+
+      function cerrarModalEvidencia() {
+        document.getElementById("evidenciaModal").style.display = "none";
+        selectedPedidoIdEvidencia = null;
+      }
+
+      async function subirEvidencia() {
+        if (!selectedPedidoIdEvidencia) return;
+
+        const fileInput = document.getElementById("evidenciaFile");
+        const btnSubir = document.getElementById("btnSubirEvidencia");
+        const btnSubirText = document.getElementById("btnSubirEvidenciaText");
+        const btnSubirSpinner = document.getElementById("btnSubirEvidenciaSpinner");
+
+        if (!fileInput.files || fileInput.files.length === 0) {
+          showToast("Por favor selecciona un archivo", "error");
+          return;
+        }
+
+        const file = fileInput.files[0];
+        const maxSize = 10 * 1024 * 1024;
+
+        if (file.size > maxSize) {
+          showToast("El archivo es demasiado grande. Máximo 10MB", "error");
+          return;
+        }
+
+        try {
+          btnSubir.disabled = true;
+          btnSubirText.style.display = "none";
+          btnSubirSpinner.style.display = "block";
+
+          const formData = new FormData();
+          formData.append("evidencia", file);
+
+          const response = await fetch(
+            `${API_BASE_URL}/admin/pedidos/${selectedPedidoIdEvidencia}/evidencia`,
+            {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${adminToken}`,
+              },
+              body: formData,
+            }
+          );
+
+          const data = await response.json();
+
+          if (response.ok && data.success) {
+            showToast("Evidencia de entrega subida exitosamente", "success");
+            cerrarModalEvidencia();
+            loadOrders();
+          } else {
+            showToast(data.message || "Error al subir evidencia", "error");
+          }
+        } catch (error) {
+          console.error("Error al subir evidencia:", error);
+          showToast("Error al conectar con el servidor", "error");
+        } finally {
+          btnSubir.disabled = false;
+          btnSubirText.style.display = "inline";
+          btnSubirSpinner.style.display = "none";
+        }
+      }
+
+      function verEvidencia(url) {
+        document.getElementById("evidenciaImagen").src = url;
+        document.getElementById("evidenciaDownloadLink").href = url;
+        document.getElementById("verEvidenciaModal").style.display = "flex";
+      }
+
+      function cerrarModalVerEvidencia() {
+        document.getElementById("verEvidenciaModal").style.display = "none";
+      }
+
+      async function generarRemision(pedidoId) {
+        try {
+          const response = await fetch(
+            `${API_BASE_URL}/admin/pedidos/${pedidoId}/remision`,
+            {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${adminToken}`,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+
+          if (!response.ok) {
+            throw new Error("Error al obtener datos de remisión");
+          }
+
+          const data = await response.json();
+          if (data.success) {
+            generarPDFRemision(data.data.pedido);
+          } else {
+            showToast(data.message || "Error al generar remisión", "error");
+          }
+        } catch (error) {
+          console.error("Error al generar remisión:", error);
+          showToast("Error al generar remisión", "error");
+        }
+      }
+
+      function generarPDFRemision(pedido) {
+        const ventana = window.open("", "_blank");
+        
+        const html = `
+          <!DOCTYPE html>
+          <html lang="es">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Remisión - Pedido #${pedido.pedidoId}</title>
+            <style>
+              * { margin: 0; padding: 0; box-sizing: border-box; }
+              body { 
+                font-family: Arial, sans-serif; 
+                padding: 2rem; 
+                max-width: 800px; 
+                margin: 0 auto;
+                line-height: 1.6;
+              }
+              .header { 
+                text-align: center; 
+                margin-bottom: 2rem; 
+                border-bottom: 3px solid #F97316;
+                padding-bottom: 1rem;
+              }
+              .header h1 { color: #F97316; font-size: 2rem; margin-bottom: 0.5rem; }
+              .info-section { margin-bottom: 1.5rem; }
+              .info-section h2 { 
+                color: #333; 
+                font-size: 1.2rem; 
+                margin-bottom: 0.5rem;
+                border-bottom: 2px solid #eee;
+                padding-bottom: 0.25rem;
+              }
+              .info-row { 
+                display: flex; 
+                margin-bottom: 0.5rem;
+                padding: 0.25rem 0;
+              }
+              .info-label { 
+                font-weight: bold; 
+                width: 150px; 
+                color: #555;
+              }
+              .info-value { flex: 1; }
+              table { 
+                width: 100%; 
+                border-collapse: collapse; 
+                margin: 1rem 0;
+              }
+              th, td { 
+                border: 1px solid #ddd; 
+                padding: 0.75rem; 
+                text-align: left;
+              }
+              th { 
+                background-color: #F97316; 
+                color: white; 
+                font-weight: bold;
+              }
+              tr:nth-child(even) { background-color: #f9f9f9; }
+              .total { 
+                text-align: right; 
+                font-size: 1.2rem; 
+                font-weight: bold; 
+                margin-top: 1rem;
+                padding: 1rem;
+                background: #f5f5f5;
+                border-radius: 0.5rem;
+              }
+              .firma-section { 
+                margin-top: 4rem; 
+                padding-top: 2rem;
+                border-top: 2px solid #eee;
+              }
+              .firma-box { 
+                margin-top: 3rem; 
+                border-top: 2px solid #333; 
+                padding-top: 0.5rem;
+                text-align: center;
+              }
+              .firma-label { 
+                font-weight: bold; 
+                margin-top: 0.5rem;
+              }
+              @media print {
+                body { padding: 1rem; }
+                .no-print { display: none; }
+              }
+              .btn-print {
+                background: #F97316;
+                color: white;
+                border: none;
+                padding: 1rem 2rem;
+                font-size: 1rem;
+                border-radius: 0.5rem;
+                cursor: pointer;
+                margin: 1rem 0;
+              }
+              .btn-print:hover { background: #e86305; }
+            </style>
+          </head>
+          <body>
+            <div class="no-print">
+              <button class="btn-print" onclick="window.print()">🖨️ Imprimir Remisión</button>
+            </div>
+
+            <div class="header">
+              <h1>REMISIÓN DE ENTREGA</h1>
+              <p>Fashion Box - Sistema de Gestión</p>
+            </div>
+
+            <div class="info-section">
+              <h2>Información del Pedido</h2>
+              <div class="info-row">
+                <span class="info-label">Pedido #:</span>
+                <span class="info-value">${pedido.pedidoId}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Fecha:</span>
+                <span class="info-value">${new Date(pedido.fechaPedido).toLocaleDateString('es-MX', { 
+                  year: 'numeric', month: 'long', day: 'numeric' 
+                })}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Estatus:</span>
+                <span class="info-value">${pedido.estatus}</span>
+              </div>
+            </div>
+
+            <div class="info-section">
+              <h2>Datos del Cliente</h2>
+              <div class="info-row">
+                <span class="info-label">Nombre:</span>
+                <span class="info-value">${pedido.cliente.nombre}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Email:</span>
+                <span class="info-value">${pedido.cliente.email}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Teléfono:</span>
+                <span class="info-value">${pedido.cliente.telefono || 'N/A'}</span>
+              </div>
+            </div>
+
+            <div class="info-section">
+              <h2>Dirección de Entrega</h2>
+              <div class="info-row">
+                <span class="info-label">Receptor:</span>
+                <span class="info-value">${pedido.direccion.receptor}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Dirección:</span>
+                <span class="info-value">${pedido.direccion.calle}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Ciudad:</span>
+                <span class="info-value">${pedido.direccion.ciudad}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Estado:</span>
+                <span class="info-value">${pedido.direccion.estado}</span>
+              </div>
+            </div>
+
+            ${pedido.agente ? `
+            <div class="info-section">
+              <h2>Agente de Ventas</h2>
+              <div class="info-row">
+                <span class="info-label">Nombre:</span>
+                <span class="info-value">${pedido.agente.nombre}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Código:</span>
+                <span class="info-value">${pedido.agente.codigo}</span>
+              </div>
+            </div>
+            ` : ''}
+
+            <div class="info-section">
+              <h2>Detalle de Productos</h2>
+              <table>
+                <thead>
+                  <tr>
+                    <th>SKU</th>
+                    <th>Producto</th>
+                    <th>Tamaño</th>
+                    <th>Cantidad</th>
+                    <th>Precio Unit.</th>
+                    <th>Subtotal</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${pedido.items.map(item => `
+                    <tr>
+                      <td>${item.sku}</td>
+                      <td>${item.nombreProducto}</td>
+                      <td>${item.tamano}</td>
+                      <td>${item.cantidad}</td>
+                      <td>$${item.precioUnitario.toFixed(2)}</td>
+                      <td>$${item.subtotal.toFixed(2)}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+
+            <div class="total">
+              <div>Costo de Envío: $${pedido.costoEnvio.toFixed(2)}</div>
+              <div style="font-size: 1.5rem; color: #F97316; margin-top: 0.5rem;">
+                Total: $${pedido.montoTotal.toFixed(2)} MXN
+              </div>
+            </div>
+
+            <div class="firma-section">
+              <h2>Confirmación de Recepción</h2>
+              <p style="margin: 1rem 0;">
+                Yo, <strong>${pedido.direccion.receptor}</strong>, confirmo haber recibido 
+                la mercancía descrita en esta remisión en buen estado y conforme a lo solicitado.
+              </p>
+              
+              <div class="firma-box">
+                <div style="height: 80px;"></div>
+                <div class="firma-label">Firma del Cliente</div>
+              </div>
+
+              <div style="display: flex; justify-content: space-between; margin-top: 2rem;">
+                <div style="width: 45%;">
+                  <div class="firma-box">
+                    <div class="firma-label">Nombre y Firma</div>
+                  </div>
+                </div>
+                <div style="width: 45%;">
+                  <div class="firma-box">
+                    <div class="firma-label">Fecha de Recepción</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="no-print" style="margin-top: 2rem; text-align: center;">
+              <button class="btn-print" onclick="window.print()">🖨️ Imprimir Remisión</button>
+            </div>
+          </body>
+          </html>
+        `;
+
+        ventana.document.write(html);
+        ventana.document.close();
+      }
+
+      // Initialize
+      loadOrders();
+
+      // Close modal when clicking outside
+      window.onclick = function (event) {
+        const statusModal = document.getElementById("statusModal");
+        const evidenciaModal = document.getElementById("evidenciaModal");
+        const verEvidenciaModal = document.getElementById("verEvidenciaModal");
+
+        if (event.target == statusModal) {
+          closeStatusModal();
+        }
+        if (event.target == evidenciaModal) {
+          cerrarModalEvidencia();
+        }
+        if (event.target == verEvidenciaModal) {
+          cerrarModalVerEvidencia();
+        }
+      };
+    </script>
+
+    <style>
+      /* Modal styles */
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.6);
+        -webkit-backdrop-filter: blur(4px);
+        backdrop-filter: blur(4px);
+        justify-content: center;
+        align-items: center;
+        padding: 1rem;
+        overflow-y: auto;
+      }
+
+      .modal-content {
+        animation: modalSlideIn 0.3s ease-out;
+        max-height: 90vh;
+        overflow-y: auto;
+        position: relative;
+      }
+
+      .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid var(--razo-gray-light);
+      }
+
+      .modal-header h2 {
+        margin: 0;
+        font-size: 1.5rem;
+        color: var(--razo-gray-dark);
+      }
+
+      .modal-close {
+        background: none;
+        border: none;
+        font-size: 2rem;
+        cursor: pointer;
+        color: var(--razo-gray-warm);
+        line-height: 1;
+        padding: 0;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        transition: all 0.2s;
+      }
+
+      .modal-close:hover {
+        background-color: var(--razo-gray-light);
+        color: var(--razo-orange);
+      }
+
+      .modal-body {
+        margin-bottom: 0;
+      }
+
+      @keyframes modalSlideIn {
+        from {
+          transform: translateY(-50px);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+
+      @media (max-width: 768px) {
+        .modal-content {
+          max-width: 95% !important;
+          padding: 1.5rem !important;
+        }
+      }
+    </style>
+  </body>
+</html>

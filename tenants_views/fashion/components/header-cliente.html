@@ -1,0 +1,93 @@
+﻿<nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
+  <div class="container">
+    <a class="navbar-brand d-flex align-items-center gap-2" href="/inicio.html">
+      <img src="/icon/Logo_Fashion.png" alt="Fashion Box" style="height: 28px; width: auto;" />
+      <span style="font-weight: 800; color: #1B5E20;">Fashion Box</span>
+    </a>
+
+    <button
+      class="navbar-toggler"
+      type="button"
+      data-bs-toggle="collapse"
+      data-bs-target="#navbarCliente"
+      aria-controls="navbarCliente"
+      aria-expanded="false"
+      aria-label="Toggle navigation"
+    >
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarCliente">
+      <ul class="navbar-nav mx-auto mb-2 mb-lg-0">
+        <li class="nav-item">
+          <a class="nav-link" href="/inicio.html">Inicio</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/catalogo.html">Productos</a>
+        </li>
+
+        <li class="nav-item dropdown">
+          <a
+            class="nav-link dropdown-toggle"
+            href="#"
+            id="dropdownTipos"
+            role="button"
+            data-bs-toggle="dropdown"
+            aria-expanded="false"
+          >
+            Explorar por Tipo
+          </a>
+          <ul class="dropdown-menu" aria-labelledby="dropdownTipos" id="listaTiposProducto">
+            <li><span class="dropdown-item-text">Cargando...</span></li>
+          </ul>
+        </li>
+
+        <li class="nav-item dropdown">
+          <a
+            class="nav-link dropdown-toggle"
+            href="#"
+            id="dropdownMarcas"
+            role="button"
+            data-bs-toggle="dropdown"
+            aria-expanded="false"
+          >
+            Marcas
+          </a>
+          <ul class="dropdown-menu" aria-labelledby="dropdownMarcas" id="listaMarcas">
+            <li><span class="dropdown-item-text">Cargando...</span></li>
+          </ul>
+        </li>
+
+        <li class="nav-item" id="navCreditoLink">
+          <a class="nav-link d-flex align-items-center gap-2" href="/mi_credito.html">
+            <span id="creditLinkLabel">Mi Crédito</span>
+          </a>
+        </li>
+      </ul>
+
+      <ul class="navbar-nav ms-auto mb-2 mb-lg-0 align-items-lg-center" style="gap: 0.25rem;">
+        <li class="nav-item">
+          <a class="nav-link position-relative" href="/carrito.html" title="Carrito">
+            <span style="font-size: 1.05rem;">🛒</span>
+            <span id="cartRedDot" class="cart-badge" style="display: none;"></span>
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link" href="/dashboard.html" title="Mi cuenta" id="userGreeting">
+            <span id="headerNombreUsuario">Iniciar Sesión</span>
+            <span
+              id="badgeNotificaciones"
+              class="badge bg-danger rounded-pill d-none"
+              style="font-size: 0.7em; position: relative; top: -5px;"
+            >0</span>
+          </a>
+        </li>
+
+        <li class="nav-item" id="headerLogoutItem" style="display: none;">
+          <a class="nav-link" href="#" id="logoutBtn">Cerrar Sesión</a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>

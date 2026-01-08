@@ -1,0 +1,559 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bitácora de Auditoría - Admin Fashion Box</title>
+    <link rel="icon" type="image/png" href="/icon/Logo_Fashion.png" />
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- PROTECCIÓN DE AUTENTICACIÓN ADMIN -->
+    <script src="js/auth-guard-admin.js"></script>
+
+    <!-- SISTEMA DE RENOVACIÓN DE TOKENS -->
+    <script src="js/token-refresh.js"></script>
+
+    <link rel="stylesheet" href="css/styles-fashion.css" />
+    <link rel="stylesheet" href="css/fashion-theme-fashion.css" />
+    <link rel="stylesheet" href="css/admin-fashion.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css"
+    />
+    <style>
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+      }
+
+      .stat-card {
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+        background: #ffffff;
+        border-radius: 1rem;
+        padding: 0.9rem 1.1rem;
+        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+        border-left: 5px solid var(--kpi-color, #e5e7eb);
+        transition: transform 0.12s ease, box-shadow 0.12s ease;
+      }
+
+      .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(15, 23, 42, 0.14);
+      }
+
+      .stat-card-icon {
+        flex-shrink: 0;
+        width: 2.3rem;
+        height: 2.3rem;
+        border-radius: 999px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.1rem;
+        background: rgba(15, 23, 42, 0.04);
+        color: var(--kpi-color, #f97316);
+      }
+
+      .stat-card-content {
+        display: flex;
+        flex-direction: column;
+        gap: 0.15rem;
+      }
+
+      .stat-value {
+        font-size: 1.6rem;
+        font-weight: 700;
+        margin: 0;
+        color: #111827;
+      }
+
+      .stat-label {
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: #6b7280;
+      }
+
+      .stat-subtitle {
+        font-size: 0.75rem;
+        color: #9ca3af;
+      }
+
+      .stat-card--creaciones {
+        --kpi-color: #10b981;
+      }
+
+      .stat-card--ediciones {
+        --kpi-color: #3b82f6;
+      }
+
+      .stat-card--eliminaciones {
+        --kpi-color: #ef4444;
+      }
+
+      .stat-card--pendientes {
+        --kpi-color: #f59e0b;
+      }
+
+      .stat-card--neutro {
+        --kpi-color: #e5e7eb;
+      }
+
+      .filters-container {
+        background: white;
+        padding: 1.25rem;
+        border-radius: 1rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      }
+
+      .filters-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+      }
+
+      .log-table {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+      }
+
+      .log-table th {
+        background: var(--razo-gray-light);
+        padding: 0.5rem 0.75rem;
+        text-align: left;
+        font-weight: 600;
+        color: var(--razo-gray-dark);
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .log-table td {
+        padding: 0.6rem 0.75rem;
+        border-bottom: 1px solid var(--border-color);
+      }
+
+      .log-table tr:hover {
+        background: rgba(249, 115, 22, 0.03);
+      }
+
+      .action-badge {
+        display: inline-block;
+        padding: 0.25rem 0.7rem;
+        border-radius: 999px;
+        font-size: 0.72rem;
+        font-weight: 600;
+        text-transform: uppercase;
+      }
+
+      .action-badge.crear {
+        background: #dcfce7;
+        color: #166534;
+      }
+
+      .action-badge.editar {
+        background: #dbeafe;
+        color: #1d4ed8;
+      }
+
+      .action-badge.eliminar {
+        background: #fee2e2;
+        color: #b91c1c;
+      }
+
+      .action-badge.login {
+        background: #e0e7ff;
+        color: #3730a3;
+      }
+
+      .action-badge.activar {
+        background: #dcfce7;
+        color: #166534;
+      }
+
+      .action-badge.desactivar {
+        background: #fef3c7;
+        color: #92400e;
+      }
+
+      .details-cell {
+        max-width: 220px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        cursor: pointer;
+        color: var(--razo-orange);
+        font-size: 0.8rem;
+      }
+
+      .details-cell:hover {
+        text-decoration: underline;
+      }
+
+      /* Modal de detalles */
+      .modal-details {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 9999;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .modal-details.active {
+        display: flex;
+      }
+
+      .modal-content {
+        background: white;
+        padding: 2rem;
+        border-radius: 1rem;
+        max-width: 600px;
+        width: 90%;
+        max-height: 80vh;
+        overflow-y: auto;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+      }
+
+      .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid var(--border-color);
+      }
+
+      .modal-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--razo-gray-dark);
+      }
+
+      .btn-close-modal {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: var(--razo-gray-warm);
+        padding: 0;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        transition: all 0.2s;
+      }
+
+      .btn-close-modal:hover {
+        background: var(--razo-gray-light);
+        color: var(--razo-gray-dark);
+      }
+
+      .detail-item {
+        margin-bottom: 1rem;
+        padding: 0.75rem;
+        background: var(--razo-gray-light);
+        border-radius: 0.5rem;
+      }
+
+      .detail-label {
+        font-weight: 600;
+        color: var(--razo-gray-dark);
+        margin-bottom: 0.25rem;
+        font-size: 0.875rem;
+      }
+
+      .detail-value {
+        color: var(--razo-gray-warm);
+        font-family: 'Courier New', monospace;
+        background: white;
+        padding: 0.5rem;
+        border-radius: 0.25rem;
+        word-break: break-all;
+      }
+
+      .swal-change-popup {
+        max-width: 1200px;
+        width: 95% !important;
+        border-radius: 1rem;
+        padding-top: 1.5rem;
+      }
+
+      .swal-change-header {
+        margin: -0.75rem -0.75rem 1rem;
+        border-radius: 0.75rem;
+        padding: 0.9rem 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+      }
+
+      .swal-change-header-icon {
+        width: 2.5rem;
+        height: 2.5rem;
+        border-radius: 999px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.4rem;
+        background: rgba(0, 0, 0, 0.03);
+      }
+
+      .swal-change-header-text {
+        display: flex;
+        flex-direction: column;
+        gap: 0.1rem;
+      }
+
+      .swal-change-header-title {
+        font-size: 1rem;
+        font-weight: 700;
+      }
+
+      .swal-change-header-subtitle {
+        font-size: 0.82rem;
+        opacity: 0.9;
+      }
+
+      .swal-change-header-insert {
+        background: #ecfdf3;
+        border: 1px solid #bbf7d0;
+        color: #166534;
+      }
+
+      .swal-change-header-update {
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
+        color: #1d4ed8;
+      }
+
+      .swal-change-header-delete {
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        color: #b91c1c;
+      }
+
+      .swal-change-header-neutral {
+        background: #f3f4f6;
+        border: 1px solid #e5e7eb;
+        color: #111827;
+      }
+
+      .swal2-confirm.swal2-confirm-neutral {
+        background-color: #111827 !important;
+        border-radius: 999px;
+        padding: 0.6rem 1.6rem;
+        margin-top: 1.5rem;
+        margin-bottom: 1rem;
+      }
+
+      .swal2-confirm.swal2-confirm-primary {
+        background-color: #F97316 !important;
+        color: #ffffff !important;
+        border-radius: 999px;
+        padding: 0.6rem 1.6rem;
+        margin-top: 1.5rem;
+        margin-bottom: 1rem;
+      }
+
+      .swal-change-body {
+        margin-top: 0.5rem;
+      }
+
+      .swal-change-header-center {
+        justify-content: center;
+        text-align: center;
+      }
+
+      .swal-change-header-center .swal-change-header-text {
+        align-items: center;
+      }
+
+      .swal-change-header-center .swal-change-header-title {
+        font-size: 1.4rem;
+      }
+
+      .change-table-update th {
+        border-bottom-width: 1px;
+      }
+
+      .change-value-old,
+      .change-value-new {
+        vertical-align: top;
+        padding: 0.35rem 0.6rem;
+      }
+
+      .change-value-old {
+        background: #fee2e2;
+        font-weight: 600;
+        color: #b91c1c;
+      }
+
+      .change-value-new {
+        background: #d1fae5;
+        font-weight: 700;
+        color: #166534;
+      }
+
+      .change-value-new-filled {
+        box-shadow: 0 0 0 1px #16a34a inset;
+      }
+
+      .change-arrow {
+        margin: 0 0.35rem;
+        color: #9ca3af;
+        font-size: 0.85rem;
+        text-align: center;
+      }
+
+      .change-card-delete {
+        border-radius: 0.75rem;
+        border: 1px solid #fecaca;
+        background: #fef2f2;
+        padding: 1rem 1.25rem;
+      }
+    </style>
+      <link rel="stylesheet" href="css/mobile-responsive-fashion.css" />
+  </head>
+  <body data-page-title="Bitácora de Auditoría">
+    <div class="admin-layout">
+      <!-- Sidebar -->
+      <div id="sidebar-container"></div>
+
+      <!-- Main Content -->
+      <main class="admin-main">
+        <div id="admin-header-container"></div>
+
+        <div class="admin-content">
+          <!-- Filtros -->
+          <div class="filters-container">
+            <h2 style="margin: 0 0 1rem 0; color: var(--razo-gray-dark);">
+              🔧 Filtros de Búsqueda
+            </h2>
+            <div class="filters-grid">
+              <div>
+                <label class="form-label" for="filtroUsuario">Usuario</label>
+                <select
+                  id="filtroUsuario"
+                  class="form-input"
+                  aria-label="Filtrar por usuario"
+                >
+                  <option value="">Todos los usuarios</option>
+                </select>
+              </div>
+              <div>
+                <label class="form-label" for="filtroAccion">Acción</label>
+                <select
+                  id="filtroAccion"
+                  class="form-input"
+                  aria-label="Filtrar por acción"
+                >
+                  <option value="">Todas las acciones</option>
+                  <option value="INSERT">Crear</option>
+                  <option value="UPDATE">Editar</option>
+                  <option value="DELETE">Eliminar</option>
+                </select>
+              </div>
+              <div>
+                <label class="form-label" for="filtroEntidad">Entidad</label>
+                <select
+                  id="filtroEntidad"
+                  class="form-input"
+                  aria-label="Filtrar por entidad"
+                >
+                  <option value="">Todas las entidades</option>
+                </select>
+              </div>
+              <div>
+                <label class="form-label" for="filtroFechaInicio">Fecha Inicio</label>
+                <input
+                  type="date"
+                  id="filtroFechaInicio"
+                  class="form-input"
+                  aria-label="Seleccionar fecha de inicio"
+                />
+              </div>
+              <div>
+                <label class="form-label" for="filtroFechaFin">Fecha Fin</label>
+                <input
+                  type="date"
+                  id="filtroFechaFin"
+                  class="form-input"
+                  aria-label="Seleccionar fecha de fin"
+                />
+              </div>
+              <div style="display: flex; align-items: end; gap: 0.5rem;">
+                <button class="btn btn-primary" onclick="aplicarFiltros()" style="flex: 1;">
+                  Buscar
+                </button>
+                <button class="btn btn-secondary" onclick="limpiarFiltros()" style="flex: 1;">
+                  Limpiar
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Historial de Auditoría -->
+          <div class="admin-table-container">
+            <div class="admin-table-header" style="align-items: center; gap: 1rem; flex-wrap: wrap;">
+              <h2 class="admin-table-title">Historial de Actividad</h2>
+              <div style="display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap;">
+                <button class="btn btn-secondary" type="button" id="btnRefrescarHistorial">
+                  🔄 Refrescar
+                </button>
+              </div>
+            </div>
+
+            <div id="historialLoading" style="display: flex; justify-content: center; padding: 3rem;">
+              <div class="spinner"></div>
+            </div>
+
+            <div id="historialTableContainer" style="display: none; overflow-x: auto;">
+              <table class="log-table" id="tabla-historial">
+                <thead>
+                  <tr>
+                    <th>Fecha/Hora</th>
+                    <th>Usuario</th>
+                    <th>Acción</th>
+                    <th>Entidad</th>
+                    <th>Detalles</th>
+                  </tr>
+                </thead>
+                <tbody id="tablaHistorialBody"></tbody>
+              </table>
+            </div>
+
+            <div id="historialEmpty" class="empty-state" style="display: none;">
+              <div class="empty-state-icon">📋</div>
+              <p class="empty-state-text">No hay movimientos registrados</p>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <script src="js/layout.js" defer></script>
+    <script src="js/sidebar-toggle.js" defer></script>
+    <script src="js/api.js"></script>
+    <script src="js/admin-header-dropdown.js"></script>
+    <script src="js/components/admin-header-loader.js"></script>
+    <script src="js/components/user-profile.js"></script>
+    <script src="js/date-helpers.js"></script>
+    <script src="js/admin-bitacora.js" defer></script>
+  </body>
+</html>

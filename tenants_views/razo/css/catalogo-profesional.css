@@ -1,0 +1,386 @@
+/* Sidebar de Filtros */
+.catalog-sidebar {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  max-width: 200px;
+  overflow-x: hidden;
+}
+
+/* Secciones de filtros con línea divisoria */
+.filter-section {
+  padding-bottom: 1.5rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid #eee;
+}
+
+.filter-section:last-child {
+  border-bottom: none;
+}
+
+/* Títulos de filtros */
+.filter-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #111;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 1rem;
+}
+
+/* Inputs de precio en línea */
+.price-inputs-container {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.price-input {
+  flex: 1;
+  min-width: 0;
+  background: #F5F5F5;
+  border: none;
+  padding: 0.65rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  color: #111;
+  outline: none;
+  transition: background 0.2s;
+  box-sizing: border-box;
+}
+
+.price-input:focus {
+  background: #EBEBEB;
+}
+
+.price-input::placeholder {
+  color: #999;
+}
+
+.price-separator {
+  color: #999;
+  font-weight: 500;
+  flex-shrink: 0;
+  font-size: 0.875rem;
+}
+
+/* Ocultar botón flotante de carrito */
+.cart-floating-btn {
+  display: none !important;
+}
+
+/* Checkboxes personalizados para marcas */
+.marca-item {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 0;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.marca-item:hover {
+  padding-left: 0.25rem;
+}
+
+.marca-checkbox {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 2px solid #ccc;
+  border-radius: 3px;
+  margin-right: 0.75rem;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s;
+}
+
+.marca-checkbox:checked {
+  background: #111;
+  border-color: #111;
+}
+
+.marca-checkbox:checked::after {
+  content: "✓";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.marca-label {
+  font-size: 0.875rem;
+  color: #111;
+  cursor: pointer;
+}
+
+/* Botón Aplicar Filtros - Estilo profesional */
+.btn-apply-filters {
+  width: 100%;
+  height: 44px;
+  background: #FF6B35;
+  color: white;
+  border: none;
+  border-radius: 30px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-apply-filters:hover {
+  background: #333;
+}
+
+/* Título de página */
+.catalog-main-title {
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: #111;
+  margin-bottom: 0.5rem;
+}
+
+.catalog-subtitle {
+  font-size: 0.95rem;
+  color: #757575;
+  font-weight: 400;
+}
+
+/* Toolbar de ordenamiento */
+.catalog-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #eee;
+}
+
+.product-count-text {
+  font-size: 0.875rem;
+  color: #757575;
+}
+
+.sort-select {
+  background: white;
+  border: 1px solid #e5e5e5;
+  padding: 0.5rem 2rem 0.5rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  color: #111;
+  cursor: pointer;
+  outline: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%23111' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+}
+
+.sort-select:hover {
+  border-color: #ccc;
+}
+
+/* Títulos de producto en tarjeta */
+.product-card .product-title {
+  color: #111 !important;
+}
+
+.product-card:hover .product-title {
+  color: var(--razo-orange, #FF7733) !important;
+}
+
+.product-category {
+  color: #757575 !important;
+}
+
+/* ====================================
+   HEADER MODERNO - NARANJA PROTAGONISTA
+   ==================================== */
+
+/* Navbar Links - Gris con hover naranja */
+.navbar-link {
+  color: #333 !important;
+  transition: color 0.3s ease;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.navbar-link:hover,
+.navbar-link-active {
+  color: #FF8C00 !important;
+  font-weight: 600;
+}
+
+/* Barra de búsqueda moderna - Estilo píldora */
+.search-container-modern {
+  position: relative;
+  width: 100%;
+  max-width: 520px;
+}
+
+.search-input-modern {
+  width: 100%;
+  padding: 0.875rem 3.5rem 0.875rem 1.5rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 50px;
+  font-size: 0.95rem;
+  color: #111;
+  background: white;
+  outline: none;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.search-input-modern:focus {
+  border-color: #FF8C00;
+  box-shadow: 0 4px 12px rgba(255, 140, 0, 0.15);
+}
+
+.search-input-modern::placeholder {
+  color: #999;
+}
+
+.search-icon-modern {
+  position: absolute;
+  right: 1.25rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #FF8C00;
+  transition: all 0.2s ease;
+}
+
+.search-input-modern:focus + .search-icon-modern {
+  transform: translateY(-50%) scale(1.05);
+  color: #FF6B00;
+}
+
+/* Icono de carrito moderno con badge */
+.cart-modern {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  color: #FF8C00;
+  font-size: 1.5rem;
+  text-decoration: none;
+  transition: transform 0.2s ease;
+  cursor: pointer;
+}
+
+.cart-modern:hover {
+  transform: scale(1.1);
+}
+
+.cart-modern .cart-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #FF8C00;
+  color: white;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  border: 2px solid white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  animation: badge-pop 0.3s ease;
+}
+
+@keyframes badge-pop {
+  0% {
+    transform: scale(0);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* User greeting con hover naranja */
+#userGreeting {
+  color: #333 !important;
+  transition: color 0.3s ease;
+  font-weight: 500;
+}
+
+#userGreeting:hover {
+  color: #FF8C00 !important;
+}
+
+/* Dropdown marcas con hover naranja */
+.navbar-dropdown-toggle {
+  color: #333 !important;
+  cursor: pointer;
+  transition: color 0.3s ease;
+  font-weight: 500;
+}
+
+.navbar-dropdown-toggle:hover {
+  color: #FF8C00 !important;
+}
+
+.products-grid .product-card {
+  border: 1px solid #eeeeee;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+}
+
+.products-grid .product-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.12);
+}
+
+.products-grid .product-card .imagen-wrapper {
+  border-radius: 0.75rem 0.75rem 0 0;
+}
+
+.products-grid .product-card .product-info {
+  padding: 1rem 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.products-grid .product-card .product-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #111111;
+  order: 1;
+}
+
+.products-grid .product-card .product-category {
+  font-size: 0.8rem;
+  color: #6b7280 !important;
+  order: 2;
+  align-self: flex-start;
+  background-color: #f3f4f6;
+  border-radius: 999px;
+  padding: 0.15rem 0.65rem;
+  margin-bottom: 0.15rem;
+}
+
+.products-grid .product-card .product-badge {
+  top: 0;
+  left: 0;
+  padding: 0.45rem 0.9rem;
+  border-radius: 0 0 0.75rem 0;
+}
+
+.products-grid .product-card .product-cta-wrapper {
+  margin-top: 0.75rem;
+}
+
+.products-grid .product-card .product-cta-btn {
+  border-radius: 999px;
+  font-size: 0.9rem;
+  justify-content: center;
+}

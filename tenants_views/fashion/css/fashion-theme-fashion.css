@@ -1,0 +1,538 @@
+/**
+ * Fashion Box Theme - Custom Color Palette
+ * 
+ * Paleta de Colores:
+ * - Fondo General: #FFFFFF (Blanco limpio)
+ * - Header/Footer/Textos H1: #2B2B2B (Gris carbón)
+ * - Subtítulos/Iconos: #4A4A4A (Gris medio)
+ * - Color Primario (Botones/Links): #FF6A00 (Naranja Fashion)
+ * - Hover de Botones: #FFC400 (Amarillo dorado)
+ * - Acentos/Badges: #2FA44F (Verde rana) y #2D9CDB (Azul regalo)
+ * - Detalles 'Chic': #E94B8A (Rosa acento)
+ */
+
+:root {
+    --fashion-white: #FFFFFF;
+    --fashion-carbon: #2B2B2B;
+    --fashion-gray: #4A4A4A;
+    --fashion-orange: #FF6A00;
+    --fashion-gold: #FFC400;
+    --fashion-green: #2FA44F;
+    --fashion-blue: #2D9CDB;
+    --fashion-pink: #E94B8A;
+}
+
+/* ========== FONDO GENERAL ========== */
+body {
+    background-color: var(--fashion-white) !important;
+}
+
+/* ========== HEADER & FOOTER ========== */
+header,
+.navbar,
+nav,
+footer,
+.admin-header,
+.header-container {
+    background-color: var(--fashion-carbon) !important;
+    color: var(--fashion-white) !important;
+}
+
+.navbar-brand,
+.navbar-nav .nav-link,
+footer a,
+.admin-header a {
+    color: var(--fashion-white) !important;
+}
+
+.navbar-nav .nav-link:hover,
+footer a:hover {
+    color: var(--fashion-gold) !important;
+}
+
+/* ========== TÍTULOS Y TEXTOS ========== */
+h1,
+.page-title,
+.admin-title {
+    color: var(--fashion-carbon) !important;
+}
+
+h2, h3, h4, h5, h6,
+.subtitle,
+.section-title {
+    color: var(--fashion-gray) !important;
+}
+
+/* ========== BOTONES PRIMARIOS ========== */
+.btn-primary,
+.btn-add,
+.btn-save,
+.btn-submit,
+button[type="submit"]:not(.btn-secondary):not(.btn-danger):not(.btn-success) {
+    background-color: var(--fashion-orange) !important;
+    border-color: var(--fashion-orange) !important;
+    color: var(--fashion-white) !important;
+}
+
+.btn-primary:hover,
+.btn-add:hover,
+.btn-save:hover,
+.btn-submit:hover,
+button[type="submit"]:hover:not(.btn-secondary):not(.btn-danger):not(.btn-success) {
+    background-color: var(--fashion-gold) !important;
+    border-color: var(--fashion-gold) !important;
+    color: var(--fashion-carbon) !important;
+}
+
+/* ========== LINKS Y ENLACES ========== */
+a:not(.btn):not(.nav-link):not(.dropdown-item) {
+    color: var(--fashion-orange) !important;
+}
+
+a:not(.btn):not(.nav-link):not(.dropdown-item):hover {
+    color: var(--fashion-gold) !important;
+}
+
+/* ========== BADGES Y ACENTOS ========== */
+.badge-success,
+.badge.bg-success,
+.status-success {
+    background-color: var(--fashion-green) !important;
+}
+
+.badge-info,
+.badge.bg-info,
+.status-info {
+    background-color: var(--fashion-blue) !important;
+}
+
+.badge-primary,
+.badge.bg-primary {
+    background-color: var(--fashion-orange) !important;
+}
+
+/* Acento Rosa para elementos especiales */
+.badge-special,
+.highlight,
+.featured {
+    background-color: var(--fashion-pink) !important;
+    color: var(--fashion-white) !important;
+}
+
+/* ========== ICONOS ========== */
+i,
+.icon,
+.bi {
+    color: var(--fashion-gray) !important;
+}
+
+.btn i,
+.btn .icon,
+.btn .bi {
+    color: inherit !important;
+}
+
+/* ========== TARJETAS Y CONTENEDORES ========== */
+.card,
+.admin-stat-card,
+.product-card {
+    background-color: var(--fashion-white) !important;
+    border: 1px solid rgba(75, 75, 75, 0.1) !important;
+}
+
+.card-header {
+    background-color: var(--fashion-carbon) !important;
+    color: var(--fashion-white) !important;
+}
+
+/* ========== TABLAS ========== */
+.table thead th {
+    background-color: var(--fashion-carbon) !important;
+    color: var(--fashion-white) !important;
+}
+
+.table-striped tbody tr:nth-of-type(odd) {
+    background-color: rgba(255, 106, 0, 0.05) !important;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(255, 196, 0, 0.1) !important;
+}
+
+/* ========== FORMULARIOS ========== */
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--fashion-orange) !important;
+    box-shadow: 0 0 0 0.2rem rgba(255, 106, 0, 0.25) !important;
+}
+
+/* ========== SIDEBAR ========== */
+.sidebar,
+.admin-sidebar {
+    background-color: var(--fashion-carbon) !important;
+}
+
+.sidebar a,
+.admin-sidebar a {
+    color: var(--fashion-white) !important;
+}
+
+.sidebar a:hover,
+.admin-sidebar a:hover,
+.sidebar a.active,
+.admin-sidebar a.active {
+    background-color: var(--fashion-orange) !important;
+    color: var(--fashion-white) !important;
+}
+
+/* ========== CARRITO Y NOTIFICACIONES ========== */
+.cart-badge,
+.notification-badge {
+    background-color: var(--fashion-pink) !important;
+}
+
+/* ========== PRECIO Y MONEDA ========== */
+.price,
+.precio,
+.amount {
+    color: var(--fashion-orange) !important;
+    font-weight: 600;
+}
+
+/* ========== ESTADOS Y ALERTAS ========== */
+.alert-success {
+    background-color: rgba(47, 164, 79, 0.1) !important;
+    border-color: var(--fashion-green) !important;
+    color: var(--fashion-carbon) !important;
+}
+
+.alert-info {
+    background-color: rgba(45, 156, 219, 0.1) !important;
+    border-color: var(--fashion-blue) !important;
+    color: var(--fashion-carbon) !important;
+}
+
+.alert-warning {
+    background-color: rgba(255, 196, 0, 0.1) !important;
+    border-color: var(--fashion-gold) !important;
+    color: var(--fashion-carbon) !important;
+}
+
+/* ========== PAGINACIÓN ========== */
+.pagination .page-link {
+    color: var(--fashion-orange) !important;
+}
+
+.pagination .page-item.active .page-link {
+    background-color: var(--fashion-orange) !important;
+    border-color: var(--fashion-orange) !important;
+}
+
+.pagination .page-link:hover {
+    background-color: var(--fashion-gold) !important;
+    color: var(--fashion-carbon) !important;
+}
+
+/* ========== PROGRESS BAR ========== */
+.progress-bar {
+    background-color: var(--fashion-orange) !important;
+}
+
+/* ========== DROPDOWN ========== */
+.dropdown-item:hover,
+.dropdown-item:focus {
+    background-color: rgba(255, 106, 0, 0.1) !important;
+    color: var(--fashion-orange) !important;
+}
+
+/* ========== MODAL ========== */
+.modal-header {
+    background-color: var(--fashion-carbon) !important;
+    color: var(--fashion-white) !important;
+}
+
+.modal-header .btn-close {
+    filter: invert(1);
+}
+
+/* ========== SPINNER Y LOADING ========== */
+.spinner-border,
+.spinner-grow {
+    color: var(--fashion-orange) !important;
+}
+
+/* ========== BREADCRUMB ========== */
+.breadcrumb-item.active {
+    color: var(--fashion-orange) !important;
+}
+
+.breadcrumb-item a {
+    color: var(--fashion-gray) !important;
+}
+
+.breadcrumb-item a:hover {
+    color: var(--fashion-orange) !important;
+}
+
+/* ========== CUSTOM SCROLLBAR ========== */
+::-webkit-scrollbar-thumb {
+    background-color: var(--fashion-gray) !important;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background-color: var(--fashion-orange) !important;
+}
+
+/* ========== BOTONES SECUNDARIOS ========== */
+.btn-outline-primary {
+    color: var(--fashion-orange) !important;
+    border-color: var(--fashion-orange) !important;
+}
+
+.btn-outline-primary:hover {
+    background-color: var(--fashion-orange) !important;
+    color: var(--fashion-white) !important;
+}
+
+/* ========== INPUTS CON ICONOS ========== */
+.input-group-text {
+    background-color: var(--fashion-carbon) !important;
+    color: var(--fashion-white) !important;
+    border-color: var(--fashion-carbon) !important;
+}
+
+/* ========== TABS ========== */
+.nav-tabs .nav-link.active {
+    color: var(--fashion-orange) !important;
+    border-color: var(--fashion-orange) var(--fashion-orange) var(--fashion-white) !important;
+}
+
+.nav-tabs .nav-link:hover {
+    color: var(--fashion-gold) !important;
+}
+
+/* ========== LISTA DE PRODUCTOS ========== */
+.product-card:hover {
+    border-color: var(--fashion-orange) !important;
+    box-shadow: 0 4px 12px rgba(255, 106, 0, 0.2) !important;
+}
+
+/* ========== FOOTER ESPECÍFICO ========== */
+footer {
+    border-top: 3px solid var(--fashion-orange) !important;
+}
+
+/* ========== LOGO Y BRANDING ========== */
+.logo-text,
+.brand-name {
+    color: var(--fashion-orange) !important;
+    font-weight: 700;
+}
+
+/* ============================================
+   SOBRESCRITURA DE TEMAS ESTACIONALES
+   Fashion mantiene identidad vibrante en todas las temporadas
+   ============================================ */
+
+/* VARIABLES ESTACIONALES FASHION - HOT PINK VIBRANTE */
+.theme-sanvalentin,
+.theme-diamadre,
+.theme-navidad,
+.theme-diapadre,
+.theme-graduaciones,
+.theme-todaocasion {
+    /* Reemplazar colores primarios de temporada con Hot Pink Fashion */
+    --theme-primary: var(--fashion-pink) !important;
+    --theme-primary-light: #ff6bb3 !important;
+    --theme-primary-dark: #d63a7a !important;
+    --theme-primary-rgb: 233, 75, 138 !important;
+    
+    /* Secundario sigue siendo el naranja Fashion */
+    --theme-secondary: var(--fashion-orange) !important;
+    --theme-secondary-light: var(--fashion-gold) !important;
+    --theme-secondary-dark: #e55a00 !important;
+    --theme-secondary-rgb: 255, 106, 0 !important;
+    
+    /* Acento en blanco para contraste moderno */
+    --theme-accent: var(--fashion-white) !important;
+    --theme-accent-light: var(--fashion-white) !important;
+    --theme-accent-dark: #f5f5f5 !important;
+    
+    /* Gradientes Fashion vibrantes */
+    --theme-gradient-primary: linear-gradient(135deg, #E94B8A 0%, #FF6A00 100%) !important;
+    --theme-gradient-hero: linear-gradient(135deg, rgba(233, 75, 138, 0.95) 0%, rgba(255, 106, 0, 0.95) 100%) !important;
+    --theme-gradient-card: linear-gradient(145deg, rgba(233, 75, 138, 0.08) 0%, rgba(255, 106, 0, 0.05) 100%) !important;
+}
+
+/* BANNER DE BIENVENIDA ESTACIONAL */
+.welcome-banner {
+    background: linear-gradient(135deg, var(--fashion-pink) 0%, var(--fashion-orange) 100%) !important;
+}
+
+.welcome-title #userName {
+    color: var(--fashion-white) !important;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* WIDGET DE CUENTA REGRESIVA */
+.countdown-container {
+    background: linear-gradient(135deg, var(--fashion-pink) 0%, var(--fashion-orange) 100%) !important;
+}
+
+.countdown-event-icon {
+    filter: drop-shadow(0 8px 16px rgba(233, 75, 138, 0.4)) !important;
+}
+
+.countdown-cta {
+    background: var(--fashion-white) !important;
+    color: var(--fashion-pink) !important;
+    box-shadow: 0 0 20px rgba(233, 75, 138, 0.5), 0 8px 20px rgba(0, 0, 0, 0.3) !important;
+}
+
+.countdown-cta:hover {
+    background: var(--fashion-gold) !important;
+    color: var(--fashion-carbon) !important;
+    box-shadow: 0 0 30px rgba(255, 196, 0, 0.6), 0 12px 30px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* CATEGORÍAS CON BORDES FASHION */
+.categories-grid .category-card {
+    border: 3px solid var(--fashion-pink) !important;
+}
+
+.categories-grid .category-card:hover {
+    border-color: var(--fashion-orange) !important;
+    box-shadow: 0 0 20px rgba(233, 75, 138, 0.4), 0 8px 20px rgba(0, 0, 0, 0.15) !important;
+}
+
+.categories-grid .category-icon {
+    background: linear-gradient(135deg, var(--fashion-pink) 0%, var(--fashion-orange) 100%) !important;
+    box-shadow: 0 8px 20px rgba(233, 75, 138, 0.3) !important;
+}
+
+/* SECCIÓN DE OFERTAS ESTACIONALES */
+.seasonal-tint::before {
+    background: linear-gradient(90deg, var(--fashion-pink) 0%, var(--fashion-orange) 100%) !important;
+}
+
+.flash-title {
+    color: var(--fashion-pink) !important;
+}
+
+.flash-sales-section .product-card:hover {
+    border-color: var(--fashion-pink) !important;
+}
+
+/* BADGE DE DESCUENTO CON HOT PINK */
+.discount-badge {
+    background: var(--fashion-pink) !important;
+    box-shadow: 0 4px 12px rgba(233, 75, 138, 0.5) !important;
+}
+
+/* SLIDER CONTROLS */
+.slider-dot.active {
+    background: var(--fashion-pink) !important;
+    box-shadow: 0 0 15px rgba(233, 75, 138, 0.7) !important;
+}
+
+/* BOTONES ESTACIONALES */
+.hero-cta,
+.category-link,
+.product-card .btn-primary {
+    background: var(--fashion-pink) !important;
+    border-color: var(--fashion-pink) !important;
+}
+
+.hero-cta:hover,
+.category-link:hover,
+.product-card .btn-primary:hover {
+    background: var(--fashion-orange) !important;
+    border-color: var(--fashion-orange) !important;
+    box-shadow: 0 8px 20px rgba(255, 106, 0, 0.4) !important;
+}
+
+/* HERO BANNER ESTACIONAL */
+#hero-banner {
+    --hero-accent: var(--fashion-pink) !important;
+}
+
+#hero-banner .hero-eyebrow {
+    color: var(--fashion-pink) !important;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* ICONOS Y EMOJIS ESTACIONALES */
+.welcome-icon,
+.countdown-event-icon {
+    filter: drop-shadow(0 4px 12px rgba(233, 75, 138, 0.4)) !important;
+}
+
+/* TARJETAS DE PRODUCTO EN TEMPORADA */
+.product-card {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.product-card:hover {
+    border-color: var(--fashion-pink) !important;
+    box-shadow: 0 8px 24px rgba(233, 75, 138, 0.25) !important;
+}
+
+/* BADGES Y ETIQUETAS ESPECIALES */
+.badge-special,
+.seasonal-badge,
+.promo-badge {
+    background: var(--fashion-pink) !important;
+    color: var(--fashion-white) !important;
+    box-shadow: 0 2px 8px rgba(233, 75, 138, 0.3) !important;
+}
+
+/* SOMBRAS ESTACIONALES FASHION */
+.theme-sanvalentin .card,
+.theme-diamadre .card,
+.theme-navidad .card,
+.theme-diapadre .card,
+.theme-graduaciones .card {
+    box-shadow: 0 4px 12px rgba(233, 75, 138, 0.15) !important;
+}
+
+.theme-sanvalentin .card:hover,
+.theme-diamadre .card:hover,
+.theme-navidad .card:hover,
+.theme-diapadre .card:hover,
+.theme-graduaciones .card:hover {
+    box-shadow: 0 8px 24px rgba(233, 75, 138, 0.25) !important;
+}
+
+/* TEXTOS Y TÍTULOS ESTACIONALES */
+.seasonal-title,
+.event-title,
+.promo-title {
+    color: var(--fashion-pink) !important;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* BORDES Y SEPARADORES */
+.seasonal-divider,
+.theme-border {
+    border-color: var(--fashion-pink) !important;
+}
+
+/* PROGRESS BAR ESTACIONAL */
+.progress-bar.seasonal {
+    background: linear-gradient(90deg, var(--fashion-pink) 0%, var(--fashion-orange) 100%) !important;
+}
+
+/* ANIMACIONES CON GLOW FASHION */
+@keyframes fashionGlow {
+    0%, 100% {
+        box-shadow: 0 0 10px rgba(233, 75, 138, 0.3);
+    }
+    50% {
+        box-shadow: 0 0 20px rgba(233, 75, 138, 0.6);
+    }
+}
+
+.seasonal-highlight,
+.fashion-glow {
+    animation: fashionGlow 2s ease-in-out infinite !important;
+}

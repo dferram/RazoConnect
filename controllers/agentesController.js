@@ -22,6 +22,7 @@ const resolveAuthenticatedAgenteId = (user) => {
  */
 const obtenerClientesDisponibles = async (req, res) => {
   try {
+    const { tenant_id } = req.tenant;
     const agenteId = resolveAuthenticatedAgenteId(req.user);
 
     if (!agenteId) {
@@ -36,7 +37,9 @@ const obtenerClientesDisponibles = async (req, res) => {
        FROM Clientes
        WHERE agenteid IS NULL
          AND activo = TRUE
-       ORDER BY nombre ASC, apellido ASC`
+         AND tenant_id = $1
+       ORDER BY nombre ASC, apellido ASC`,
+      [tenant_id]
     );
 
     const clientes = result.rows.map((row) => ({
@@ -66,6 +69,7 @@ const obtenerClientesDisponibles = async (req, res) => {
 
 const solicitarConfirmacionPedidoAgente = async (req, res) => {
   try {
+    const { tenant_id } = req.tenant;
     if (!req.user || req.user.rol !== "agente") {
       return res.status(403).json({
         success: false,
@@ -94,8 +98,9 @@ const solicitarConfirmacionPedidoAgente = async (req, res) => {
       `SELECT p.pedidoid, p.estatus
        FROM Pedidos p
        INNER JOIN Clientes c ON c.ClienteID = p.ClienteID
-       WHERE p.PedidoID = $1 AND c.AgenteID = $2`,
-      [pedidoId, agenteId]
+       WHERE p.PedidoID = $1 AND c.AgenteID = $2
+         AND p.tenant_id = $3 AND c.tenant_id = $3`,
+      [pedidoId, agenteId, tenant_id]
     );
 
     if (pedidoResult.rows.length === 0) {
@@ -151,6 +156,7 @@ const solicitarConfirmacionPedidoAgente = async (req, res) => {
  */
 const vincularCliente = async (req, res) => {
   try {
+    const { tenant_id } = req.tenant;
     const agenteId = resolveAuthenticatedAgenteId(req.user);
 
     if (!agenteId) {
@@ -180,8 +186,8 @@ const vincularCliente = async (req, res) => {
     const clienteResult = await db.query(
       `SELECT clienteid, nombre, apellido, email, telefono, agenteid
        FROM Clientes
-       WHERE LOWER(email) = $1`,
-      [emailNormalizado]
+       WHERE LOWER(email) = $1 AND tenant_id = $2`,
+      [emailNormalizado, tenant_id]
     );
 
     if (clienteResult.rows.length === 0) {
@@ -220,9 +226,9 @@ const vincularCliente = async (req, res) => {
     const updateResult = await db.query(
       `UPDATE Clientes
        SET agenteid = $1
-       WHERE clienteid = $2
+       WHERE clienteid = $2 AND tenant_id = $3
        RETURNING clienteid, nombre, apellido, email, telefono, agenteid`,
-      [agenteId, cliente.clienteid]
+      [agenteId, cliente.clienteid, tenant_id]
     );
 
     const clienteActualizado = updateResult.rows[0];
@@ -257,6 +263,7 @@ const vincularCliente = async (req, res) => {
  */
 const obtenerClientesDelAgente = async (req, res) => {
   try {
+    const { tenant_id } = req.tenant;
     const agenteId = resolveAuthenticatedAgenteId(req.user);
 
     if (!agenteId) {
@@ -268,10 +275,10 @@ const obtenerClientesDelAgente = async (req, res) => {
 
     const searchTermRaw =
       typeof req.query.search === "string" ? req.query.search.trim() : "";
-    const params = [agenteId];
+    const params = [agenteId, tenant_id];
     let query = `SELECT clienteid, nombre, apellido, email, telefono, fechaderegistro
                  FROM Clientes
-                 WHERE agenteid = $1`;
+                 WHERE agenteid = $1 AND tenant_id = $2`;
 
     if (searchTermRaw) {
       params.push(`%${searchTermRaw.toLowerCase()}%`);
@@ -314,6 +321,7 @@ const obtenerClientesDelAgente = async (req, res) => {
 
 const obtenerDashboardStats = async (req, res) => {
   try {
+    const { tenant_id } = req.tenant;
     const agenteId = resolveAuthenticatedAgenteId(req.user);
 
     if (!agenteId) {
@@ -328,8 +336,10 @@ const obtenerDashboardStats = async (req, res) => {
        FROM Pedidos p
        INNER JOIN Clientes c ON c.clienteid = p.clienteid
        WHERE c.agenteid = $1
+         AND p.tenant_id = $2
+         AND c.tenant_id = $2
          AND DATE_TRUNC('month', p.fechapedido) = DATE_TRUNC('month', CURRENT_DATE)`,
-      [agenteId]
+      [agenteId, tenant_id]
     );
 
     const comisionesQuery = await db.query(

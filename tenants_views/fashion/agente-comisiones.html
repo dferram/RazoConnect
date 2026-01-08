@@ -1,0 +1,107 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mis Comisiones - Fashion Box</title>
+    <link rel="icon" type="image/png" href="/icon/Logo_Fashion.png" />
+
+    <!-- Protección de autenticación -->
+    <script src="js/auth-guard-agent.js"></script>
+    <script src="js/token-refresh.js"></script>
+
+    <link rel="stylesheet" href="css/styles-fashion.css" />
+    <link rel="stylesheet" href="css/fashion-theme-fashion.css" />
+    <link rel="stylesheet" href="css/admin-fashion.css" />
+      <link rel="stylesheet" href="css/mobile-responsive-fashion.css" />
+  </head>
+  <body data-sidebar="agent" data-page-title="Mis Comisiones">
+    <div class="admin-layout">
+      <div id="sidebar-container"></div>
+
+      <main class="admin-main">
+        <div id="admin-header-container"></div>
+
+        <div class="admin-content">
+          <div class="admin-stats-grid">
+            <div class="admin-stat-card">
+              <div class="admin-stat-header">
+                <div class="admin-stat-content">
+                  <h3>Total pagado</h3>
+                  <div class="admin-stat-value" id="totalPagado">$0.00</div>
+                  <div class="admin-stat-change positive" id="totalPagadoCount">
+                    0 comisiones
+                  </div>
+                </div>
+                <div class="admin-stat-icon green">💵</div>
+              </div>
+            </div>
+            <div class="admin-stat-card">
+              <div class="admin-stat-header">
+                <div class="admin-stat-content">
+                  <h3>Total pendiente</h3>
+                  <div class="admin-stat-value" id="totalPendiente">$0.00</div>
+                  <div
+                    class="admin-stat-change warning"
+                    id="totalPendienteCount"
+                  >
+                    0 comisiones
+                  </div>
+                </div>
+                <div class="admin-stat-icon orange">⏳</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="admin-card">
+            <div class="admin-card-header">
+              <h2 class="admin-card-title">Historial de comisiones</h2>
+              <p class="admin-card-subtitle">
+                Revisa cada comisión asociada a tus pedidos y su estado actual.
+              </p>
+            </div>
+            <div class="admin-card-body">
+              <div class="admin-table-container">
+                <div
+                  class="admin-table-header"
+                  style="justify-content: flex-end"
+                >
+                  <button
+                    type="button"
+                    class="btn btn-secondary"
+                    id="btnRefrescarComisiones"
+                  >
+                    Refrescar
+                  </button>
+                </div>
+                <table class="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Fecha</th>
+                      <th>ID Pedido</th>
+                      <th>Monto</th>
+                      <th>Estatus</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tablaComisionesBody">
+                    <tr id="tablaComisionesEmpty">
+                      <td colspan="4" class="table-empty-state">
+                        Cargando comisiones...
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <script src="js/layout.js" defer></script>
+    <script src="js/api.js"></script>
+    <script src="js/components/agente-header-loader.js"></script>
+    <script src="js/components/user-profile.js"></script>
+    <script src="js/agente-comisiones.js"></script>
+  </body>
+</html>

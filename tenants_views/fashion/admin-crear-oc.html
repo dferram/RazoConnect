@@ -1,0 +1,1563 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Crear Orden de Compra - Admin Fashion Box</title>
+    <link rel="icon" type="image/png" href="/icon/Logo_Fashion.png" />
+
+    <!-- SWEETALERT2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- EXCELJS -->
+    <script src="https://cdn.jsdelivr.net/npm/exceljs@4.3.0/dist/exceljs.min.js"></script>
+
+    <!-- PROTECCIÓN DE AUTENTICACIÓN ADMIN -->
+    <script src="js/auth-guard-admin.js"></script>
+
+    <!-- SISTEMA DE RENOVACIÓN DE TOKENS -->
+    <script src="js/token-refresh.js"></script>
+
+    <link rel="stylesheet" href="css/styles-fashion.css" />
+    <link rel="stylesheet" href="css/fashion-theme-fashion.css" />
+    <link rel="stylesheet" href="css/admin-fashion.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css"
+    />
+      <link rel="stylesheet" href="css/mobile-responsive-fashion.css" />
+  </head>
+  <body data-page-title="Nueva orden de compra">
+    <div class="admin-layout">
+      <!-- Sidebar -->
+      <div id="sidebar-container"></div>
+
+      <!-- Main Content -->
+      <main class="admin-main">
+        <div id="admin-header-container"></div>
+
+        <div class="admin-content">
+          <!-- Formulario Principal -->
+          <div
+            class="admin-table-container"
+            style="max-width: 1000px; margin: 0 auto"
+          >
+            <form id="ordenCompraForm">
+              <!-- Información General -->
+              <div
+                style="
+                  background: #fff8f0;
+                  padding: 1.5rem;
+                  border-radius: 0.75rem;
+                  margin-bottom: 2rem;
+                "
+              >
+                <div
+                  style="
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    gap: 1rem;
+                    margin: 0 0 1rem 0;
+                  "
+                >
+                  <h3
+                    style="
+                      margin: 0;
+                      color: var(--razo-orange);
+                      font-size: 1.125rem;
+                    "
+                  >
+                    📋 Información General
+                  </h3>
+                  <div
+                    style="
+                      padding: 0.35rem 0.6rem;
+                      border-radius: 999px;
+                      background: #fff7ed;
+                      border: 1px solid #fed7aa;
+                      color: #9a3412;
+                      font-weight: 800;
+                      font-size: 0.9rem;
+                      white-space: nowrap;
+                    "
+                    aria-label="Número de orden de compra"
+                  >
+                    OC #<span id="ocNumero">Nueva</span>
+                  </div>
+                </div>
+
+                <div
+                  style="
+                    display: grid;
+                    grid-template-columns: repeat(2, 1fr);
+                    gap: 1.5rem;
+                  "
+                >
+                  <div class="form-group">
+                    <label for="proveedorId" class="form-label"
+                      >Proveedor <span style="color: red">*</span></label
+                    >
+                    <select id="proveedorId" class="form-input" required>
+                      <option value="">Seleccionar proveedor...</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="fechaEntregaEsperada" class="form-label"
+                      >Fecha de Entrega Esperada
+                      <span style="color: red">*</span></label
+                    >
+                    <input
+                      type="date"
+                      id="fechaEntregaEsperada"
+                      class="form-input"
+                      required
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <!-- Productos -->
+              <div style="margin-bottom: 2rem">
+                <div
+                  style="
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-bottom: 1rem;
+                  "
+                >
+                  <h2
+                    style="
+                      margin: 0;
+                      color: var(--razo-gray-dark);
+                      font-size: 1.125rem;
+                    "
+                  >
+                    🛍️ Productos a Solicitar
+                  </h2>
+                  <button
+                    type="button"
+                    class="btn btn-primary"
+                    onclick="irAProductosOC()"
+                    style="padding: 0.5rem 1rem"
+                  >
+                    ➕ Agregar Producto
+                  </button>
+                </div>
+
+                <div id="productosContainer">
+                  <div class="empty-state" id="emptyProductos">
+                    <div class="empty-state-icon">📦</div>
+                    <h3 class="empty-state-title">
+                      No hay productos agregados
+                    </h3>
+                    <p class="empty-state-text">
+                      Haz clic en "Agregar Producto" para comenzar
+                    </p>
+                  </div>
+
+                  <div
+                    id="productosTable"
+                    style="display: none; overflow-x: auto"
+                  >
+                    <table class="admin-table">
+                      <thead>
+                        <tr>
+                          <th>Imagen</th>
+                          <th>Producto / SKU</th>
+                          <th style="width: 170px;">Costo Unitario</th>
+                          <th style="width: 140px;">Paquetes</th>
+                          <th style="width: 160px;">Total Piezas</th>
+                          <th style="width: 160px;">Subtotal</th>
+                          <th style="width: 140px;">Acciones</th>
+                        </tr>
+                      </thead>
+                      <tbody id="productosTableBody">
+                        <!-- Productos seleccionados aparecerán aquí -->
+                      </tbody>
+                    </table>
+
+                    <div
+                      style="
+                        display: flex;
+                        justify-content: flex-end;
+                        padding: 1rem 0;
+                        border-top: 1px solid var(--razo-gray-light);
+                      "
+                    >
+                      <div
+                        style="
+                          background: #fff8f0;
+                          border: 1px solid #fed7aa;
+                          border-radius: 0.75rem;
+                          padding: 0.75rem 1rem;
+                          min-width: 260px;
+                          text-align: right;
+                        "
+                      >
+                        <div style="font-size: 0.875rem; color: var(--razo-gray-warm);">
+                          Total General
+                        </div>
+                        <div
+                          id="ocTotalGeneral"
+                          style="font-size: 1.25rem; font-weight: 800; color: var(--razo-orange);"
+                        >
+                          $0.00
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Botón de exportación -->
+              <div class="admin-content" style="margin-top: 1rem;">
+                <div class="d-flex justify-content-end" style="padding: 1rem; background: white; border-radius: 0.75rem; border: 1px solid rgba(0,0,0,0.1);">
+                  <button id="btn-exportar-oc" type="button" class="btn btn-success" style="display: none;">
+                    <i class="bi bi-file-earmark-excel"></i>
+                    <span class="ms-1">Exportar OC a Excel</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Botones de acción -->
+              <div
+                style="
+                  display: flex;
+                  gap: 1rem;
+                  justify-content: flex-end;
+                  padding-top: 1.5rem;
+                  border-top: 2px solid var(--razo-gray-light);
+                "
+              >
+                <a
+                  href="/admin-proveedores.html"
+                  class="btn btn-secondary"
+                  style="
+                    padding: 0.75rem 1.5rem;
+                    text-decoration: none;
+                    display: inline-block;
+                  "
+                >
+                  Cancelar
+                </a>
+                <button
+                  type="submit"
+                  class="btn btn-primary"
+                  id="btnGuardar"
+                  style="padding: 0.75rem 2rem"
+                >
+                  <span id="btnGuardarText">Guardar Orden de Compra</span>
+                  <div
+                    class="spinner"
+                    id="btnGuardarSpinner"
+                    style="display: none"
+                  ></div>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- Modal para seleccionar producto -->
+    <div id="productoModal" class="modal">
+      <div class="modal-dialog modal-xl">
+        <div
+          class="modal-content"
+          style="
+            background: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            width: 100%;
+          "
+        >
+          <div
+            class="modal-header"
+            style="
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              margin-bottom: 1.5rem;
+              padding-bottom: 1rem;
+              border-bottom: 2px solid #f5f1ed;
+            "
+          >
+            <h2 style="margin: 0; font-size: 1.5rem; color: #2d3748">
+              Agregar Producto
+            </h2>
+            <button
+              class="modal-close"
+              onclick="closeProductoModal()"
+              style="
+                background: none;
+                border: none;
+                font-size: 2rem;
+                cursor: pointer;
+                color: #6b5d57;
+                line-height: 1;
+                padding: 0;
+                width: 32px;
+                height: 32px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 50%;
+                transition: all 0.2s;
+              "
+            >
+              &times;
+            </button>
+          </div>
+
+          <div class="modal-body">
+            <!-- Búsqueda de productos -->
+            <div class="form-group">
+              <label for="buscarProducto" class="form-label"
+                >Buscar Producto</label
+              >
+              <input
+                type="text"
+                id="buscarProducto"
+                class="form-input"
+                placeholder="Buscar por SKU, Nombre o Color..."
+                oninput="onBuscarCompraInput()"
+                style="padding: 0.85rem 1rem; font-size: 1rem;"
+              />
+            </div>
+
+            <!-- Loading -->
+            <div id="loadingProductos" class="loading" style="display: none">
+              <div class="spinner"></div>
+            </div>
+
+            <!-- Lista de productos -->
+            <div
+              id="listaProductos"
+              style="
+                max-height: 400px;
+                overflow-y: auto;
+                border: 1px solid var(--razo-gray-light);
+                border-radius: 0.5rem;
+              "
+            >
+              <div style="padding: 1.25rem; color: var(--razo-gray-warm);">
+                Escribe para buscar productos.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="js/layout.js" defer></script>
+    <script src="js/sidebar-toggle.js" defer></script>
+    <script src="js/api.js"></script>
+    <script src="js/admin-header-dropdown.js"></script>
+    <script src="js/components/admin-header-loader.js"></script>
+    <script src="js/components/user-profile.js"></script>
+    <script>
+      // Authentication check
+      const ocNumeroEl = document.getElementById("ocNumero");
+      const adminToken = localStorage.getItem("Fashion Box_admin_token");
+      if (!adminToken) {
+        window.location.href = "/login.html";
+      }
+
+      const OC_ITEMS_STORAGE_KEY = "Fashion Box_oc_items";
+
+      let itemsOrdenCompra = [];
+      let resultadosCompra = [];
+      let reglasEmpaqueProveedor = {};
+      let buscarCompraDebounce = null;
+
+      function cargarItemsDesdeSessionStorage() {
+        try {
+          const raw = sessionStorage.getItem(OC_ITEMS_STORAGE_KEY);
+          const parsed = raw ? JSON.parse(raw) : [];
+          if (Array.isArray(parsed)) {
+            itemsOrdenCompra = parsed.map((it) => {
+              const reglaEmpaque = Number.parseInt(it.reglaEmpaque, 10);
+              const regla = Number.isInteger(reglaEmpaque) && reglaEmpaque > 0 ? reglaEmpaque : 1;
+
+              const paquetesRaw = it.paquetes ?? it.cantidad ?? 1;
+              const paquetesParsed = Number.parseInt(paquetesRaw, 10);
+              const paquetes = Number.isInteger(paquetesParsed) && paquetesParsed > 0 ? paquetesParsed : 1;
+
+              return {
+                ...it,
+                reglaEmpaque: regla,
+                paquetes,
+              };
+            });
+          }
+        } catch (e) {
+          // silencioso
+        }
+      }
+
+      function guardarItemsEnSessionStorage() {
+        try {
+          sessionStorage.setItem(OC_ITEMS_STORAGE_KEY, JSON.stringify(itemsOrdenCompra || []));
+        } catch (e) {
+          // silencioso
+        }
+      }
+
+      function irAProductosOC() {
+        guardarItemsEnSessionStorage();
+        const proveedorId = document.getElementById("proveedorId")?.value;
+        if (!proveedorId) {
+          showToast("Debe seleccionar un proveedor para aplicar reglas de empaque", "warning");
+          return;
+        }
+        const qs = proveedorId ? `?proveedorId=${encodeURIComponent(proveedorId)}` : "";
+        window.location.href = `/admin-productos-oc.html${qs}`;
+      }
+
+      function obtenerEtiquetaVariante(vari) {
+        if (!vari) return "Sin medida";
+        if (vari.dimensiones && vari.dimensiones.trim().length > 0) {
+          return vari.dimensiones.trim();
+        }
+        if (vari.medidaNombre && vari.medidaNombre.trim().length > 0) {
+          return vari.medidaNombre.trim();
+        }
+        if (Number.isFinite(vari.medidaId)) {
+          return `Medida #${vari.medidaId}`;
+        }
+        return "Sin medida";
+      }
+
+      // Verify admin token
+      async function verifyAndLoadAdmin() {
+        try {
+          const response = await fetch(`${API_BASE_URL}/admin/verify`, {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${adminToken}`,
+              "Content-Type": "application/json",
+            },
+          });
+
+          if (!response.ok) throw new Error("Invalid token");
+
+          const data = await response.json();
+          if (data.success) {
+            const admin = data.data.admin;
+            const userNameEl = document.getElementById("userName");
+            const userRoleEl = document.getElementById("userRole");
+            const userAvatarEl = document.getElementById("userAvatar");
+            if (userNameEl) userNameEl.textContent = admin.nombre;
+            if (userRoleEl) {
+              userRoleEl.textContent =
+                admin.rol === "superadmin" ? "Super Admin" : "Admin";
+            }
+
+            const words = admin.nombre.split(" ");
+            const initials =
+              words.length >= 2
+                ? `${words[0].charAt(0)}${words[1].charAt(0)}`
+                : admin.nombre.substring(0, 2);
+            if (userAvatarEl) userAvatarEl.textContent = initials.toUpperCase();
+          }
+        } catch (error) {
+          console.error("Error verifying admin:", error);
+          localStorage.removeItem("Fashion Box_admin_token");
+          localStorage.removeItem("Fashion Box_admin");
+          window.location.href = "/login.html";
+        }
+      }
+
+      // Cargar proveedores
+      async function loadProveedores() {
+        try {
+          const response = await fetch(`${API_BASE_URL}/admin/proveedores`, {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${adminToken}`,
+              "Content-Type": "application/json",
+            },
+          });
+
+          if (!response.ok) throw new Error("Error al cargar proveedores");
+
+          const data = await response.json();
+          if (data.success) {
+            const select = document.getElementById("proveedorId");
+            data.data.proveedores.forEach((proveedor) => {
+              const option = document.createElement("option");
+              option.value = proveedor.proveedorid;
+              option.textContent = proveedor.nombreempresa;
+              select.appendChild(option);
+            });
+          }
+        } catch (error) {
+          console.error("Error loading proveedores:", error);
+          showToast("Error al cargar proveedores", "error");
+        }
+      }
+
+      async function loadReglasEmpaqueProveedor(proveedorId) {
+        reglasEmpaqueProveedor = {};
+
+        const parsed = Number.parseInt(proveedorId, 10);
+        if (!Number.isInteger(parsed) || parsed <= 0) {
+          return;
+        }
+
+        try {
+          const response = await fetch(
+            `${API_BASE_URL}/admin/proveedores/${parsed}/reglas`,
+            {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${adminToken}`,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+
+          if (!response.ok) {
+            reglasEmpaqueProveedor = {};
+            return;
+          }
+
+          const data = await response.json();
+          const reglas = data?.data?.reglas;
+          if (reglas && typeof reglas === "object") {
+            reglasEmpaqueProveedor = reglas;
+          }
+        } catch (error) {
+          console.error("Error loading reglas de empaque:", error);
+          reglasEmpaqueProveedor = {};
+        }
+      }
+
+      function formatMoney(value) {
+        const n = Number(value);
+        const safe = Number.isFinite(n) ? n : 0;
+        return new Intl.NumberFormat("es-MX", {
+          style: "currency",
+          currency: "MXN",
+        }).format(safe);
+      }
+
+      function setOcNumero(value) {
+        if (!ocNumeroEl) return;
+        const id = Number.parseInt(value, 10);
+        ocNumeroEl.textContent = Number.isInteger(id) && id > 0 ? String(id) : "Nueva";
+      }
+
+      function calcularTotalesOrdenCompra() {
+        const total = (itemsOrdenCompra || []).reduce((acc, item) => {
+          const costo = Number.parseFloat(item.costounitario);
+          const paquetes = Number.parseInt(item.paquetes, 10);
+          const regla = Number.parseInt(item.reglaEmpaque, 10);
+          const c = Number.isFinite(costo) ? costo : 0;
+          const p = Number.isInteger(paquetes) && paquetes > 0 ? paquetes : 0;
+          const r = Number.isInteger(regla) && regla > 0 ? regla : 1;
+          return acc + c * (p * r);
+        }, 0);
+
+        const totalEl = document.getElementById("ocTotalGeneral");
+        if (totalEl) totalEl.textContent = formatMoney(total);
+      }
+
+      // Actualizar tabla de productos seleccionados
+      function actualizarTablaProductos() {
+        const emptyProductos = document.getElementById("emptyProductos");
+        const productosTable = document.getElementById("productosTable");
+        const productosTableBody =
+          document.getElementById("productosTableBody");
+
+        if (itemsOrdenCompra.length === 0) {
+          emptyProductos.style.display = "block";
+          productosTable.style.display = "none";
+          calcularTotalesOrdenCompra();
+          return;
+        }
+
+        emptyProductos.style.display = "none";
+        productosTable.style.display = "block";
+
+        productosTableBody.innerHTML = itemsOrdenCompra
+          .map((item, index) => {
+            const costo = Number.parseFloat(item.costounitario);
+            const paquetes = Number.parseInt(item.paquetes, 10);
+            const regla = Number.parseInt(item.reglaEmpaque, 10);
+            const c = Number.isFinite(costo) ? costo : 0;
+            const p = Number.isInteger(paquetes) && paquetes > 0 ? paquetes : 1;
+            const r = Number.isInteger(regla) && regla > 0 ? regla : 1;
+            const totalPiezas = p * r;
+            const subtotal = c * totalPiezas;
+
+            // Intentar múltiples propiedades posibles para la imagen
+            const imagenRaw = item.url_imagen_variante || item.imagen_url || item.secure_url || item.imagen || item.url_imagen || null;
+            const img = resolverImagen(imagenRaw);
+            const nombre = item.nombre_completo || "(Sin nombre)";
+            const sku = item.sku || "Sin SKU";
+            const stock = Number.isFinite(Number(item.stock)) ? Number(item.stock) : 0;
+
+            return `
+          <tr>
+            <td style="width: 70px;">
+              <div class="oc-product-thumb-wrapper" style="width: 56px; height: 56px;">
+                <img
+                  src="${img}"
+                  alt="${nombre}"
+                  class="img-thumbnail oc-product-thumb"
+                  loading="lazy"
+                  style="width: 56px; height: 56px; object-fit: cover;"
+                  onerror="this.onerror=null; this.src='/images/default-product.png';"
+                />
+              </div>
+            </td>
+            <td>
+              <div style="font-weight: 700; color: var(--razo-gray-dark);">${nombre}</div>
+              <div style="font-size: 0.8rem; color: var(--razo-gray-warm); margin-top: 0.25rem;">
+                SKU: <code style="background: #f0f0f0; padding: 0.15rem 0.35rem; border-radius: 0.25rem;">${sku}</code>
+                <span style="margin-left: 0.5rem;">Stock: <strong>${stock}</strong></span>
+              </div>
+            </td>
+            <td>
+              <input
+                type="number"
+                class="form-input"
+                min="0"
+                step="0.01"
+                value="${c.toFixed(2)}"
+                onchange="actualizarCosto(${index}, this.value)"
+                style="padding: 0.5rem;"
+              />
+            </td>
+            <td>
+              <input
+                type="number"
+                class="form-input"
+                min="1"
+                step="1"
+                value="${p}"
+                onchange="actualizarPaquetes(${index}, this.value)"
+                style="padding: 0.5rem;"
+              />
+            </td>
+            <td style="font-weight: 800; color: var(--razo-gray-dark);">
+              ${totalPiezas}
+              <div style="font-size: 0.75rem; color: var(--razo-gray-warm); font-weight: 600; margin-top: 0.15rem;">
+                (${p} x ${r})
+              </div>
+            </td>
+            <td style="font-weight: 800; color: var(--razo-gray-dark);">
+              ${formatMoney(subtotal)}
+            </td>
+            <td>
+              <button
+                type="button"
+                class="btn btn-danger"
+                onclick="eliminarProducto(${index})"
+                style="padding: 0.5rem 1rem; font-size: 0.875rem;"
+              >
+                🗑️ Eliminar
+              </button>
+            </td>
+          </tr>
+        `;
+          })
+          .join("");
+
+        calcularTotalesOrdenCompra();
+        toggleExportButton();
+      }
+
+      function actualizarCosto(index, nuevoCosto) {
+        const costo = Number.parseFloat(nuevoCosto);
+        if (!Number.isFinite(costo) || costo < 0) {
+          showToast("El costo debe ser un número válido", "warning");
+          actualizarTablaProductos();
+          return;
+        }
+        itemsOrdenCompra[index].costounitario = costo;
+        guardarItemsEnSessionStorage();
+        actualizarTablaProductos();
+      }
+
+      // Actualizar paquetes de un producto
+      function actualizarPaquetes(index, nuevaCantidad) {
+        const cantidad = Number.parseInt(nuevaCantidad, 10);
+        if (Number.isInteger(cantidad) && cantidad > 0) {
+          itemsOrdenCompra[index].paquetes = cantidad;
+          guardarItemsEnSessionStorage();
+          actualizarTablaProductos();
+        } else {
+          showToast("Los paquetes deben ser un entero mayor a 0", "error");
+          actualizarTablaProductos();
+        }
+      }
+
+      // Eliminar producto
+      function eliminarProducto(index) {
+        const producto = itemsOrdenCompra[index];
+        itemsOrdenCompra.splice(index, 1);
+        guardarItemsEnSessionStorage();
+        actualizarTablaProductos();
+        showToast(`${producto?.nombre_completo || "Producto"} eliminado de la orden`, "info");
+      }
+
+      // Función helper para resolver URLs de imágenes
+      function resolverImagen(url) {
+        if (!url) return '/images/default-product.png';
+        if (url.startsWith('http://') || url.startsWith('https://')) return url;
+        return window.location.origin + (url.startsWith('/') ? '' : '/') + url;
+      }
+
+      function renderResultadosCompra() {
+        const listaProductos = document.getElementById("listaProductos");
+        if (!Array.isArray(resultadosCompra) || resultadosCompra.length === 0) {
+          listaProductos.innerHTML =
+            '<div style="padding: 1.25rem; text-align: center; color: var(--razo-gray-warm);">No se encontraron productos</div>';
+          return;
+        }
+
+        listaProductos.innerHTML = resultadosCompra
+          .map((r) => {
+            // Diagnóstico: Ver estructura del objeto producto
+            console.log('Producto data:', r);
+            
+            // Intentar múltiples propiedades posibles para la imagen
+            const imagenRaw = r.url_imagen_variante || r.imagen_url || r.secure_url || r.imagen || r.url_imagen || null;
+            const img = resolverImagen(imagenRaw);
+            const nombre = r.nombre_completo || "(Sin nombre)";
+            const sku = r.sku || "Sin SKU";
+            const stock = Number.isFinite(Number(r.stock)) ? Number(r.stock) : 0;
+            const costo = Number.isFinite(Number(r.costounitario))
+              ? Number(r.costounitario)
+              : 0;
+            const reglaEmpaqueRaw = r.cantidad_empaque ?? r.regla_empaque ?? 1;
+            const reglaEmpaque = Number.parseInt(reglaEmpaqueRaw, 10);
+            const regla = Number.isInteger(reglaEmpaque) && reglaEmpaque > 0 ? reglaEmpaque : 1;
+            const ventaLabel = regla === 1 ? "Unidad" : `Paquete de ${regla} pzas`;
+
+            const stockClass = stock <= 0 ? "text-danger" : "";
+
+            return `
+              <div
+                style="
+                  padding: 0.9rem 1rem;
+                  border-bottom: 1px solid var(--razo-gray-light);
+                  display: flex;
+                  align-items: center;
+                  gap: 0.9rem;
+                "
+              >
+                <div class="oc-product-thumb-wrapper" style="width: 56px; height: 56px;">
+                  <img
+                    src="${img}"
+                    alt="${nombre}"
+                    class="img-thumbnail oc-product-thumb"
+                    loading="lazy"
+                    style="width: 56px; height: 56px; object-fit: cover;"
+                    onerror="this.onerror=null; this.src='/images/default-product.png';"
+                  />
+                </div>
+
+                <div style="flex: 1; min-width: 0;">
+                  <div style="font-weight: 800; color: var(--razo-gray-dark); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                    ${nombre}
+                  </div>
+                  <div style="font-size: 0.8rem; color: var(--razo-gray-warm); margin-top: 0.25rem;">
+                    SKU: <code style="background: #f0f0f0; padding: 0.12rem 0.35rem; border-radius: 0.25rem;">${sku}</code>
+                    <span class="${stockClass}" style="margin-left: 0.5rem;">Stock: <strong>${stock}</strong></span>
+                    <span style="margin-left: 0.5rem;">Costo: <strong>${formatMoney(costo)}</strong></span>
+                  </div>
+                  <div style="font-size: 0.8rem; color: #9a3412; margin-top: 0.25rem; font-weight: 800;">
+                    Venta por: ${ventaLabel}
+                  </div>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                  <input
+                    type="number"
+                    id="modalQty-${r.varianteid}"
+                    class="form-input"
+                    min="1"
+                    value="1"
+                    style="width: 110px; padding: 0.5rem;"
+                  />
+                  <button
+                    type="button"
+                    class="btn btn-primary"
+                    onclick="agregarDesdeModal(${r.varianteid})"
+                    style="padding: 0.5rem 1rem; font-size: 0.875rem;"
+                  >
+                    Agregar
+                  </button>
+                </div>
+              </div>
+            `;
+          })
+          .join("");
+      }
+
+      async function buscarProductosCompra(termino) {
+        const listaProductos = document.getElementById("listaProductos");
+        if (!termino || termino.trim().length < 2) {
+          resultadosCompra = [];
+          listaProductos.innerHTML =
+            '<div style="padding: 1.25rem; color: var(--razo-gray-warm);">Escribe para buscar productos.</div>';
+          return;
+        }
+
+        document.getElementById("loadingProductos").style.display = "flex";
+
+        try {
+          const response = await fetch(
+            `${API_BASE_URL}/admin/productos/buscar-compra?q=${encodeURIComponent(
+              termino.trim()
+            )}`,
+            {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${adminToken}`,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+
+          const data = await response.json();
+          if (!response.ok || !data.success) {
+            resultadosCompra = [];
+            listaProductos.innerHTML =
+              '<div style="padding: 1.25rem; text-align: center; color: var(--razo-gray-warm);">No se pudo cargar la búsqueda</div>';
+            return;
+          }
+
+          resultadosCompra = Array.isArray(data?.data?.resultados)
+            ? data.data.resultados
+            : [];
+          renderResultadosCompra();
+        } catch (error) {
+          console.error("Error buscando productos:", error);
+          resultadosCompra = [];
+          listaProductos.innerHTML =
+            '<div style="padding: 1.25rem; text-align: center; color: var(--razo-gray-warm);">Error al conectar con el servidor</div>';
+        } finally {
+          document.getElementById("loadingProductos").style.display = "none";
+        }
+      }
+
+      function onBuscarCompraInput() {
+        const term = document.getElementById("buscarProducto")?.value || "";
+        if (buscarCompraDebounce) clearTimeout(buscarCompraDebounce);
+        buscarCompraDebounce = setTimeout(() => {
+          buscarProductosCompra(term);
+        }, 250);
+      }
+
+      function agregarDesdeModal(varianteId) {
+        const proveedorIdActual = document.getElementById("proveedorId")?.value;
+        if (!proveedorIdActual) {
+          showToast("Debe seleccionar un proveedor antes de agregar productos", "warning");
+          return;
+        }
+
+        const r = (resultadosCompra || []).find((x) => x.varianteid === varianteId);
+        if (!r) return;
+
+        const qtyEl = document.getElementById(`modalQty-${varianteId}`);
+        const qtyRaw = qtyEl ? qtyEl.value : "1";
+        const qty = Number.parseInt(qtyRaw, 10);
+        const cantidad = Number.isInteger(qty) && qty > 0 ? qty : 1;
+
+        const reglaEmpaqueRaw = r.cantidad_empaque ?? r.regla_empaque ?? 1;
+        const reglaEmpaque = Number.parseInt(reglaEmpaqueRaw, 10);
+        const regla = Number.isInteger(reglaEmpaque) && reglaEmpaque > 0 ? reglaEmpaque : 1;
+
+        const existenteIndex = itemsOrdenCompra.findIndex(
+          (it) => it.varianteid === r.varianteid
+        );
+
+        if (existenteIndex >= 0) {
+          const prev = Number.parseInt(itemsOrdenCompra[existenteIndex].paquetes, 10);
+          itemsOrdenCompra[existenteIndex].paquetes =
+            (Number.isInteger(prev) && prev > 0 ? prev : 0) + cantidad;
+          itemsOrdenCompra[existenteIndex].reglaEmpaque = regla;
+        } else {
+          itemsOrdenCompra.push({
+            varianteid: r.varianteid,
+            sku: r.sku,
+            nombre_completo: r.nombre_completo,
+            costounitario: Number.isFinite(Number(r.costounitario))
+              ? Number(r.costounitario)
+              : 0,
+            url_imagen_variante: r.url_imagen_variante,
+            stock: r.stock,
+            paquetes: cantidad,
+            reglaEmpaque: regla,
+          });
+        }
+
+        guardarItemsEnSessionStorage();
+        actualizarTablaProductos();
+        showToast("Producto agregado a la orden", "success");
+      }
+
+      // Abrir modal de productos
+      function openProductoModal() {
+        document.getElementById("buscarProducto").value = "";
+        resultadosCompra = [];
+        document.getElementById("listaProductos").innerHTML =
+          '<div style="padding: 1.25rem; color: var(--razo-gray-warm);">Escribe para buscar productos.</div>';
+        document.getElementById("productoModal").style.display = "flex";
+        setTimeout(() => {
+          try {
+            document.getElementById("buscarProducto")?.focus();
+          } catch (e) {
+            // silencioso
+          }
+        }, 50);
+      }
+
+      // Cerrar modal de productos
+      function closeProductoModal() {
+        document.getElementById("productoModal").style.display = "none";
+      }
+
+      // Enviar formulario
+      document
+        .getElementById("ordenCompraForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+
+          const proveedorId = document.getElementById("proveedorId").value;
+          const fechaEntregaEsperada = document.getElementById(
+            "fechaEntregaEsperada"
+          ).value;
+
+          if (!proveedorId) {
+            showToast("Debe seleccionar un proveedor", "error");
+            return;
+          }
+
+          if (!fechaEntregaEsperada) {
+            showToast("Debe especificar una fecha de entrega", "error");
+            return;
+          }
+
+          if (itemsOrdenCompra.length === 0) {
+            showToast("Debe agregar al menos un producto", "error");
+            return;
+          }
+
+          const btnGuardar = document.getElementById("btnGuardar");
+          const btnGuardarText = document.getElementById("btnGuardarText");
+          const btnGuardarSpinner =
+            document.getElementById("btnGuardarSpinner");
+
+          try {
+            btnGuardar.disabled = true;
+            btnGuardarText.style.display = "none";
+            btnGuardarSpinner.style.display = "block";
+
+            const response = await fetch(
+              `${API_BASE_URL}/admin/ordenes-compra`,
+              {
+                method: "POST",
+                headers: {
+                  Authorization: `Bearer ${adminToken}`,
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  proveedorId: parseInt(proveedorId),
+                  fechaEntregaEsperada,
+                  productos: itemsOrdenCompra.map((p) => ({
+                    varianteId: p.varianteid,
+                    cantidadSolicitada: Number.parseInt(p.paquetes, 10) || 1,
+                    piezasPorPaquete: Number.parseInt(p.reglaEmpaque, 10) || 1,
+                    costoUnitario: p.costounitario,
+                  })),
+                }),
+              }
+            );
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+              const newId = data?.data?.ordenCompra?.ordenCompraId;
+              setOcNumero(newId);
+              showToast(
+                `Orden de compra creada exitosamente${newId ? ` (OC #${newId})` : ""}`,
+                "success"
+              );
+              setTimeout(() => {
+                try {
+                  sessionStorage.setItem("_navigating", "true");
+                } catch (storageError) {
+                  console.warn(
+                    "No se pudo registrar navegación en sessionStorage:",
+                    storageError
+                  );
+                }
+                const id = Number.parseInt(newId, 10);
+                window.location.href = Number.isInteger(id) && id > 0
+                  ? `/admin-recibir-inventario.html?ordenId=${encodeURIComponent(String(id))}`
+                  : "/admin-recibir-inventario.html";
+              }, 1200);
+            } else {
+              showToast(
+                data.message || "Error al crear orden de compra",
+                "error"
+              );
+            }
+          } catch (error) {
+            console.error("Error saving orden:", error);
+            showToast("Error al conectar con el servidor", "error");
+          } finally {
+            btnGuardar.disabled = false;
+            btnGuardarText.style.display = "inline";
+            btnGuardarSpinner.style.display = "none";
+          }
+        });
+
+      // Establecer fecha mínima (hoy)
+      const today = new Date().toISOString().split("T")[0];
+      document
+        .getElementById("fechaEntregaEsperada")
+        .setAttribute("min", today);
+
+      (() => {
+        const params = new URLSearchParams(window.location.search);
+        const ordenIdParam = params.get("ordenId");
+        setOcNumero(ordenIdParam);
+      })();
+
+      // Navigation handling for non-implemented modules
+      const navLinks = document.querySelectorAll(
+        ".admin-nav-link[data-module]"
+      );
+      navLinks.forEach((link) => {
+        link.addEventListener("click", (e) => {
+          e.preventDefault();
+          const moduleName = link.querySelector("span:last-child").textContent;
+          showToast(`Módulo "${moduleName}" próximamente disponible`, "info");
+        });
+      });
+
+      // Close modal when clicking outside
+      window.onclick = function (event) {
+        const modal = document.getElementById("productoModal");
+        if (event.target == modal) {
+          closeProductoModal();
+        }
+      };
+
+      // Initialize
+      verifyAndLoadAdmin();
+      loadProveedores();
+
+      cargarItemsDesdeSessionStorage();
+      actualizarTablaProductos();
+
+      const proveedorSelect = document.getElementById("proveedorId");
+      if (proveedorSelect) {
+        proveedorSelect.addEventListener("change", async (e) => {
+          const value = e.target.value;
+          await loadReglasEmpaqueProveedor(value);
+          guardarItemsEnSessionStorage();
+          actualizarTablaProductos();
+          toggleExportButton();
+        });
+      }
+
+      // Función para obtener el siguiente folio sugerido
+      function getSuggestedFolioOC() {
+        try {
+          const lastFolio = localStorage.getItem('last_folio_oc');
+          if (!lastFolio) return 'OC-1';
+          
+          const match = lastFolio.match(/OC-(\d+)/);
+          if (match && match[1]) {
+            const nextNumber = parseInt(match[1], 10) + 1;
+            return `OC-${nextNumber}`;
+          }
+          return 'OC-1';
+        } catch (e) {
+          return 'OC-1';
+        }
+      }
+
+      // Función para guardar el último folio usado
+      function saveLastFolioOC(folio) {
+        try {
+          localStorage.setItem('last_folio_oc', folio);
+        } catch (e) {
+          console.error('Error guardando folio OC:', e);
+        }
+      }
+
+      // Función para mostrar/ocultar botón de exportación
+      function toggleExportButton() {
+        const btnExportar = document.getElementById('btn-exportar-oc');
+        const proveedorId = document.getElementById('proveedorId')?.value;
+        const hasProducts = itemsOrdenCompra && itemsOrdenCompra.length > 0;
+        
+        if (btnExportar) {
+          btnExportar.style.display = (proveedorId && hasProducts) ? 'inline-flex' : 'none';
+        }
+      }
+
+      // Función principal de exportación a Excel
+      async function exportarExcelOC(folio) {
+        if (!itemsOrdenCompra || itemsOrdenCompra.length === 0) {
+          Swal.fire({
+            icon: 'warning',
+            title: 'Sin Productos',
+            text: 'No hay productos agregados para exportar.',
+            confirmButtonColor: '#F97316'
+          });
+          return;
+        }
+
+        const proveedorId = document.getElementById('proveedorId')?.value;
+        if (!proveedorId) {
+          Swal.fire({
+            icon: 'warning',
+            title: 'Sin Proveedor',
+            text: 'Debe seleccionar un proveedor antes de exportar.',
+            confirmButtonColor: '#F97316'
+          });
+          return;
+        }
+
+        // Obtener nombre del proveedor
+        const proveedorSelect = document.getElementById('proveedorId');
+        const proveedorNombre = proveedorSelect.options[proveedorSelect.selectedIndex]?.text || 'N/A';
+
+        try {
+          Swal.fire({
+            title: 'Generando Excel...',
+            text: 'Por favor espera mientras se genera el archivo.',
+            allowOutsideClick: false,
+            didOpen: () => { Swal.showLoading(); }
+          });
+
+          const workbook = new ExcelJS.Workbook();
+          const worksheet = workbook.addWorksheet('Orden de Compra');
+
+          // Configurar anchos de columna
+          worksheet.columns = [
+            { key: 'A', width: 8 },    // ID
+            { key: 'B', width: 18 },   // SKU
+            { key: 'C', width: 13.33 }, // Descripción parte 1
+            { key: 'D', width: 13.33 }, // Descripción parte 2
+            { key: 'E', width: 13.33 }, // Descripción parte 3
+            { key: 'F', width: 15 },   // Costo Unitario
+            { key: 'G', width: 15 },   // Piezas Solicitadas
+            { key: 'H', width: 15 }    // TOTAL
+          ];
+
+          // Cargar e insertar logo (dimensiones corregidas para mantener proporción)
+          try {
+            const logoResponse = await fetch('/icon/Logo_Fashion.png');
+            const logoBlob = await logoResponse.blob();
+            const logoBuffer = await logoBlob.arrayBuffer();
+            const imageId = workbook.addImage({
+              buffer: logoBuffer,
+              extension: 'png',
+            });
+            worksheet.addImage(imageId, {
+              tl: { col: 0.1, row: 0.1 },
+              ext: { width: 45, height: 45 },
+              editAs: 'oneCell'
+            });
+          } catch (logoError) {
+            console.warn('No se pudo cargar el logo:', logoError);
+          }
+
+          // Ajustar altura de filas para que el logo respire
+          worksheet.getRow(1).height = 20;
+          worksheet.getRow(2).height = 20;
+          worksheet.getRow(3).height = 20;
+
+          // ENCABEZADO - Fila 1: Título (C1:E1)
+          worksheet.mergeCells('C1:E1');
+          const titleCell = worksheet.getCell('C1');
+          titleCell.value = 'ORDEN DE COMPRA';
+          titleCell.font = { name: 'Arial', size: 16, bold: true };
+          titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+          worksheet.getRow(1).height = 30;
+
+          // Fila 1: Etiqueta FOLIO (G1)
+          const folioLabelCell = worksheet.getCell('G1');
+          folioLabelCell.value = 'FOLIO';
+          folioLabelCell.font = { name: 'Arial', size: 9, bold: true };
+          folioLabelCell.alignment = { horizontal: 'right', vertical: 'middle' };
+
+          // Fila 1: Valor del Folio (H1) - ROJO
+          const folioCell = worksheet.getCell('H1');
+          folioCell.value = folio;
+          folioCell.font = { name: 'Arial', size: 14, bold: true, color: { argb: 'FFFF0000' } };
+          folioCell.alignment = { horizontal: 'center', vertical: 'middle' };
+
+          // Fila 2: Fecha
+          const fechaLabelCell = worksheet.getCell('C2');
+          fechaLabelCell.value = 'Fecha:';
+          fechaLabelCell.font = { name: 'Arial', size: 10, bold: true };
+          fechaLabelCell.alignment = { horizontal: 'right', vertical: 'middle' };
+
+          const fechaValueCell = worksheet.getCell('D2');
+          const today = new Date();
+          fechaValueCell.value = today.toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' });
+          fechaValueCell.font = { name: 'Arial', size: 10 };
+          fechaValueCell.alignment = { horizontal: 'left', vertical: 'middle' };
+          worksheet.getRow(2).height = 20;
+
+          // Fila 3: Proveedor
+          const proveedorLabelCell = worksheet.getCell('C3');
+          proveedorLabelCell.value = 'PROVEEDOR:';
+          proveedorLabelCell.font = { name: 'Arial', size: 10, bold: true };
+          proveedorLabelCell.alignment = { horizontal: 'right', vertical: 'middle' };
+
+          worksheet.mergeCells('D3:H3');
+          const proveedorValueCell = worksheet.getCell('D3');
+          proveedorValueCell.value = proveedorNombre;
+          proveedorValueCell.font = { name: 'Arial', size: 10, bold: true, color: { argb: 'FF0000FF' } };
+          proveedorValueCell.alignment = { horizontal: 'left', vertical: 'middle' };
+          worksheet.getRow(3).height = 20;
+
+          // Fila 4: Espacio
+          worksheet.getRow(4).height = 10;
+
+          // Fila 5: Encabezados de tabla
+          const headerRow = worksheet.getRow(5);
+          headerRow.height = 25;
+          
+          const headers = [
+            { col: 'A', text: '#' },
+            { col: 'B', text: 'SKU' },
+            { col: 'C', text: 'Producto + Descripción', merge: true },
+            { col: 'F', text: 'Costo Unitario' },
+            { col: 'G', text: 'Piezas Solicitadas' },
+            { col: 'H', text: 'TOTAL' }
+          ];
+
+          // Combinar celdas para Descripción (C5:E5)
+          worksheet.mergeCells('C5:E5');
+
+          // Aplicar estilos a encabezados
+          headers.forEach(h => {
+            const cell = worksheet.getCell(`${h.col}5`);
+            cell.value = h.text;
+            cell.font = { name: 'Arial', size: 11, bold: true };
+            cell.alignment = { horizontal: 'center', vertical: 'middle' };
+            cell.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: { argb: 'FFEEEEEE' }
+            };
+            cell.border = {
+              top: { style: 'thin', color: { argb: 'FF000000' } },
+              left: { style: 'thin', color: { argb: 'FF000000' } },
+              bottom: { style: 'thin', color: { argb: 'FF000000' } },
+              right: { style: 'thin', color: { argb: 'FF000000' } }
+            };
+          });
+
+          // Datos de productos
+          let currentRow = 6;
+          itemsOrdenCompra.forEach((item, index) => {
+            const row = worksheet.getRow(currentRow);
+            row.height = 20;
+
+            const costo = Number.parseFloat(item.costounitario);
+            const paquetes = Number.parseInt(item.paquetes, 10);
+            const regla = Number.parseInt(item.reglaEmpaque, 10);
+            const c = Number.isFinite(costo) ? costo : 0;
+            const p = Number.isInteger(paquetes) && paquetes > 0 ? paquetes : 1;
+            const r = Number.isInteger(regla) && regla > 0 ? regla : 1;
+            const totalPiezas = p * r;
+
+            // ID / # (Consecutivo)
+            const idCell = worksheet.getCell(`A${currentRow}`);
+            idCell.value = index + 1;
+            idCell.alignment = { horizontal: 'center', vertical: 'middle' };
+            idCell.border = {
+              top: { style: 'thin' },
+              left: { style: 'thin' },
+              bottom: { style: 'thin' },
+              right: { style: 'thin' }
+            };
+
+            // SKU
+            const skuCell = worksheet.getCell(`B${currentRow}`);
+            skuCell.value = item.sku || '';
+            skuCell.alignment = { horizontal: 'left', vertical: 'middle' };
+            skuCell.border = {
+              top: { style: 'thin' },
+              left: { style: 'thin' },
+              bottom: { style: 'thin' },
+              right: { style: 'thin' }
+            };
+
+            // Producto + Descripción (combinada en C-E)
+            worksheet.mergeCells(`C${currentRow}:E${currentRow}`);
+            const descripcionCell = worksheet.getCell(`C${currentRow}`);
+            descripcionCell.value = item.nombre_completo || '';
+            descripcionCell.alignment = { horizontal: 'left', vertical: 'middle' };
+            descripcionCell.border = {
+              top: { style: 'thin' },
+              left: { style: 'thin' },
+              bottom: { style: 'thin' },
+              right: { style: 'thin' }
+            };
+
+            // Costo Unitario
+            const costoCell = worksheet.getCell(`F${currentRow}`);
+            costoCell.value = c;
+            costoCell.numFmt = '$#,##0.00';
+            costoCell.alignment = { horizontal: 'right', vertical: 'middle' };
+            costoCell.border = {
+              top: { style: 'thin' },
+              left: { style: 'thin' },
+              bottom: { style: 'thin' },
+              right: { style: 'thin' }
+            };
+
+            // Piezas Solicitadas
+            const piezasCell = worksheet.getCell(`G${currentRow}`);
+            piezasCell.value = totalPiezas;
+            piezasCell.alignment = { horizontal: 'center', vertical: 'middle' };
+            piezasCell.border = {
+              top: { style: 'thin' },
+              left: { style: 'thin' },
+              bottom: { style: 'thin' },
+              right: { style: 'thin' }
+            };
+
+            // TOTAL (fórmula dinámica)
+            const totalCell = worksheet.getCell(`H${currentRow}`);
+            totalCell.value = { formula: `F${currentRow}*G${currentRow}` };
+            totalCell.numFmt = '$#,##0.00';
+            totalCell.alignment = { horizontal: 'right', vertical: 'middle' };
+            totalCell.border = {
+              top: { style: 'thin' },
+              left: { style: 'thin' },
+              bottom: { style: 'thin' },
+              right: { style: 'thin' }
+            };
+
+            currentRow++;
+          });
+
+          // Fila de TOTAL GENERAL
+          const totalRow = currentRow;
+          worksheet.getRow(totalRow).height = 25;
+
+          // Etiqueta "TOTAL GENERAL" (combinada en F-G)
+          worksheet.mergeCells(`F${totalRow}:G${totalRow}`);
+          const totalLabelCell = worksheet.getCell(`F${totalRow}`);
+          totalLabelCell.value = 'TOTAL GENERAL:';
+          totalLabelCell.font = { name: 'Arial', size: 12, bold: true };
+          totalLabelCell.alignment = { horizontal: 'right', vertical: 'middle' };
+          totalLabelCell.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFFEF3C7' }
+          };
+          totalLabelCell.border = {
+            top: { style: 'medium', color: { argb: 'FF000000' } },
+            left: { style: 'thin', color: { argb: 'FF000000' } },
+            bottom: { style: 'medium', color: { argb: 'FF000000' } },
+            right: { style: 'thin', color: { argb: 'FF000000' } }
+          };
+
+          // Valor del TOTAL GENERAL (fórmula SUM)
+          const totalGeneralCell = worksheet.getCell(`H${totalRow}`);
+          const firstDataRow = 6;
+          const lastDataRow = currentRow - 1;
+          totalGeneralCell.value = { formula: `SUM(H${firstDataRow}:H${lastDataRow})` };
+          totalGeneralCell.numFmt = '$#,##0.00';
+          totalGeneralCell.font = { name: 'Arial', size: 12, bold: true, color: { argb: 'FFF97316' } };
+          totalGeneralCell.alignment = { horizontal: 'right', vertical: 'middle' };
+          totalGeneralCell.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFFEF3C7' }
+          };
+          totalGeneralCell.border = {
+            top: { style: 'medium', color: { argb: 'FF000000' } },
+            left: { style: 'thin', color: { argb: 'FF000000' } },
+            bottom: { style: 'medium', color: { argb: 'FF000000' } },
+            right: { style: 'medium', color: { argb: 'FF000000' } }
+          };
+
+          // Generar archivo
+          const buffer = await workbook.xlsx.writeBuffer();
+          const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `Orden_Compra_${folio}_${new Date().toISOString().slice(0, 10)}.xlsx`;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          window.URL.revokeObjectURL(url);
+
+          // Guardar folio para próxima vez
+          saveLastFolioOC(folio);
+
+          Swal.fire({
+            icon: 'success',
+            title: '✅ Excel Generado',
+            text: `La Orden de Compra ${folio} ha sido descargada exitosamente.`,
+            confirmButtonColor: '#F97316'
+          });
+
+        } catch (error) {
+          console.error('Error generando Excel:', error);
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'No se pudo generar el archivo Excel. Por favor intenta nuevamente.',
+            confirmButtonColor: '#F97316'
+          });
+        }
+      }
+
+      // Event listener para el botón de exportación con lógica de folio
+      document.getElementById('btn-exportar-oc')?.addEventListener('click', async () => {
+        if (!itemsOrdenCompra || itemsOrdenCompra.length === 0) {
+          Swal.fire({
+            icon: 'warning',
+            title: 'Sin Productos',
+            text: 'No hay productos agregados para exportar.',
+            confirmButtonColor: '#F97316'
+          });
+          return;
+        }
+
+        const proveedorId = document.getElementById('proveedorId')?.value;
+        if (!proveedorId) {
+          Swal.fire({
+            icon: 'warning',
+            title: 'Sin Proveedor',
+            text: 'Debe seleccionar un proveedor antes de exportar.',
+            confirmButtonColor: '#F97316'
+          });
+          return;
+        }
+
+        const suggestedFolio = getSuggestedFolioOC();
+
+        const { value: folio } = await Swal.fire({
+          title: '📋 Folio de Orden de Compra',
+          html: `
+            <div style="text-align: left;">
+              <label for="swal-folio-oc" style="display: block; font-weight: 700; margin-bottom: 0.5rem;">Número de Folio:</label>
+              <input id="swal-folio-oc" class="swal2-input" value="${suggestedFolio}" placeholder="Ej: OC-100" style="margin: 0; width: 100%;" />
+              <div style="margin-top: 0.5rem; padding: 0.75rem; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 0.375rem; font-size: 0.875rem;">
+                <strong>💡 Sugerencia:</strong> El siguiente folio consecutivo es <strong>${suggestedFolio}</strong>
+              </div>
+            </div>
+          `,
+          focusConfirm: false,
+          showCancelButton: true,
+          confirmButtonText: 'Generar Excel',
+          cancelButtonText: 'Cancelar',
+          confirmButtonColor: '#F97316',
+          preConfirm: () => {
+            const folioInput = document.getElementById('swal-folio-oc')?.value?.trim();
+            if (!folioInput) {
+              Swal.showValidationMessage('El folio es obligatorio');
+              return null;
+            }
+            return folioInput;
+          }
+        });
+
+        if (!folio) return;
+
+        await exportarExcelOC(folio);
+      });
+    </script>
+
+    <style>
+      /* Modal styles */
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.6);
+        -webkit-backdrop-filter: blur(4px);
+        backdrop-filter: blur(4px);
+        justify-content: center;
+        align-items: center;
+        padding: 1rem;
+        overflow-y: auto;
+      }
+
+      .modal-content {
+        animation: modalSlideIn 0.3s ease-out;
+        max-height: 90vh;
+        overflow-y: auto;
+        position: relative;
+      }
+
+      .modal-dialog.modal-xl {
+        width: 100%;
+        max-width: 1200px;
+      }
+
+      .modal-close:hover {
+        background-color: var(--razo-gray-light);
+        color: var(--razo-orange);
+      }
+
+      @keyframes modalSlideIn {
+        from {
+          transform: translateY(-50px);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+
+      .text-danger {
+        color: #ef4444;
+      }
+
+      .oc-product-thumb-wrapper {
+        width: 50px;
+        height: 50px;
+        border-radius: 4px;
+        overflow: hidden;
+        background: #f3f4f6;
+        flex-shrink: 0;
+      }
+
+      .oc-product-thumb {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+
+      @media (max-width: 768px) {
+        .modal-content {
+          max-width: 95% !important;
+          padding: 1.5rem !important;
+        }
+      }
+    </style>
+  </body>
+</html>

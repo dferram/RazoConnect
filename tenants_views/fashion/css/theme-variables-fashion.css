@@ -1,0 +1,418 @@
+/**
+ * Fashion Box - Variables de Temas Estacionales (Dark Redesign)
+ * Define paletas de colores oscuras con verde y rojo para cada temporada
+ * @version 2.0.0
+ */
+
+/* ============================================
+   TEMA BASE / TODA OCASIÓN (Default) - DARK
+   Verde Oscuro, Rojo Intenso, Fondo Oscuro
+   ============================================ */
+
+:root,
+.theme-todaocasion {
+  /* Colores Primarios - Verde Oscuro Fashion */
+  --theme-primary: #1B5E20;
+  --theme-primary-light: #2E7D32;
+  --theme-primary-dark: #0D3E10;
+  --theme-primary-rgb: 27, 94, 32;
+
+  /* Colores Secundarios - Rojo Intenso */
+  --theme-secondary: #D32F2F;
+  --theme-secondary-light: #E57373;
+  --theme-secondary-dark: #B71C1C;
+  --theme-secondary-rgb: 211, 47, 47;
+
+  /* Colores de Acento - Blanco */
+  --theme-accent: #ffffff;
+  --theme-accent-light: #ffffff;
+  --theme-accent-dark: #f5f5f5;
+
+  /* Gradientes Dark */
+  --theme-gradient-primary: linear-gradient(135deg, #1B5E20 0%, #D32F2F 100%);
+  --theme-gradient-hero: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+  --theme-gradient-card: linear-gradient(145deg, rgba(27, 94, 32, 0.05) 0%, rgba(211, 47, 47, 0.05) 100%);
+
+  /* Colores de Fondo - Oscuros */
+  --theme-bg-primary: #1a1a1a;
+  --theme-bg-secondary: #2a2a2a;
+  --theme-bg-tertiary: #3a3a3a;
+
+  /* Colores de Superficie (Cards, Modals) */
+  --theme-surface: #ffffff;
+  --theme-surface-hover: #f5f5f5;
+  --theme-surface-elevated: #ffffff;
+
+  /* Sombras Oscuras */
+  --theme-shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.3);
+  --theme-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --theme-shadow-lg: 0 12px 26px rgba(27, 94, 32, 0.3);
+  --theme-shadow-xl: 0 20px 40px rgba(0, 0, 0, 0.5);
+
+  /* Tipografía */
+  --theme-font-title: "Poppins", sans-serif;
+  --theme-font-body: "Inter", sans-serif;
+  --theme-font-weight-title: 700;
+  --theme-font-weight-body: 400;
+
+  /* Emojis/Iconos decorativos */
+  --theme-icon-primary: "🎁";
+  --theme-icon-secondary: "✨";
+
+  /* Decoración de fondo */
+  --theme-pattern-opacity: 0.03;
+  --theme-pattern-url: none;
+}
+
+/* ============================================
+   TEMA NAVIDAD 🎄 - DARK FASHION
+   Verde Oscuro, Rojo Intenso, Fondo Negro
+   ============================================ */
+
+.theme-navidad {
+  /* Colores Primarios - Verde Oscuro */
+  --theme-primary: #1B5E20;
+  --theme-primary-light: #2E7D32;
+  --theme-primary-dark: #0D3E10;
+  --theme-primary-rgb: 27, 94, 32;
+
+  /* Colores Secundarios - Rojo Intenso */
+  --theme-secondary: #D32F2F;
+  --theme-secondary-light: #E57373;
+  --theme-secondary-dark: #B71C1C;
+  --theme-secondary-rgb: 211, 47, 47;
+
+  /* Colores de Acento - Blanco */
+  --theme-accent: #ffffff;
+  --theme-accent-light: #ffffff;
+  --theme-accent-dark: #f5f5f5;
+
+  /* Gradientes Navideños Dark */
+  --theme-gradient-primary: linear-gradient(135deg, #1B5E20 0%, #D32F2F 50%, #ffffff 100%);
+  --theme-gradient-hero: linear-gradient(135deg, rgba(27, 94, 32, 0.95) 0%, rgba(211, 47, 47, 0.95) 100%);
+  --theme-gradient-card: linear-gradient(145deg, rgba(27, 94, 32, 0.08) 0%, rgba(211, 47, 47, 0.08) 100%);
+
+  /* Colores de Fondo - Negro */
+  --theme-bg-primary: #0a0a0a;
+  --theme-bg-secondary: #1a1a1a;
+  --theme-bg-tertiary: #2a2a2a;
+
+  /* Colores de Superficie */
+  --theme-surface: #ffffff;
+  --theme-surface-hover: #f5f5f5;
+  --theme-surface-elevated: #ffffff;
+
+  /* Sombras con toque festivo */
+  --theme-shadow-sm: 0 2px 4px rgba(27, 94, 32, 0.3);
+  --theme-shadow-md: 0 4px 12px rgba(27, 94, 32, 0.4);
+  --theme-shadow-lg: 0 12px 26px rgba(27, 94, 32, 0.5);
+  --theme-shadow-xl: 0 20px 40px rgba(0, 0, 0, 0.6);
+
+  /* Tipografía */
+  --theme-font-title: "Poppins", sans-serif;
+  --theme-font-body: "Inter", sans-serif;
+  --theme-font-weight-title: 700;
+  --theme-font-weight-body: 400;
+
+  /* Iconos temáticos */
+  --theme-icon-primary: "🎄";
+  --theme-icon-secondary: "🎅";
+
+  /* Patrón decorativo */
+  --theme-pattern-opacity: 0.04;
+  --theme-pattern-url: url("data:image/svg+xml,%3Csvg width='40' height='40' xmlns='http://www.w3.org/2000/svg'%3E%3Ctext x='10' y='25' font-size='20'%3E🎄%3C/text%3E%3C/svg%3E");
+}
+
+/* ============================================
+   TEMA SAN VALENTÍN 💝 - DARK FASHION
+   Verde Oscuro, Rojo Intenso, Fondo Negro
+   ============================================ */
+
+.theme-sanvalentin {
+  /* Colores Primarios - Verde Oscuro */
+  --theme-primary: #1B5E20;
+  --theme-primary-light: #2E7D32;
+  --theme-primary-dark: #0D3E10;
+  --theme-primary-rgb: 27, 94, 32;
+
+  /* Colores Secundarios - Rojo Intenso */
+  --theme-secondary: #D32F2F;
+  --theme-secondary-light: #E57373;
+  --theme-secondary-dark: #B71C1C;
+  --theme-secondary-rgb: 211, 47, 47;
+
+  /* Colores de Acento - Blanco */
+  --theme-accent: #ffffff;
+  --theme-accent-light: #ffffff;
+  --theme-accent-dark: #f5f5f5;
+
+  /* Gradientes Románticos Dark */
+  --theme-gradient-primary: linear-gradient(135deg, #1B5E20 0%, #D32F2F 100%);
+  --theme-gradient-hero: linear-gradient(135deg, rgba(27, 94, 32, 0.95) 0%, rgba(211, 47, 47, 0.95) 100%);
+  --theme-gradient-card: linear-gradient(145deg, rgba(27, 94, 32, 0.1) 0%, rgba(211, 47, 47, 0.05) 100%);
+
+  /* Colores de Fondo - Negro */
+  --theme-bg-primary: #0a0a0a;
+  --theme-bg-secondary: #1a1a1a;
+  --theme-bg-tertiary: #2a2a2a;
+
+  /* Colores de Superficie */
+  --theme-surface: #ffffff;
+  --theme-surface-hover: #f5f5f5;
+  --theme-surface-elevated: #ffffff;
+
+  /* Sombras suaves y románticas */
+  --theme-shadow-sm: 0 2px 4px rgba(27, 94, 32, 0.3);
+  --theme-shadow-md: 0 4px 12px rgba(27, 94, 32, 0.4);
+  --theme-shadow-lg: 0 12px 26px rgba(211, 47, 47, 0.4);
+  --theme-shadow-xl: 0 20px 40px rgba(0, 0, 0, 0.5);
+
+  /* Tipografía Romántica */
+  --theme-font-title: "Pacifico", "Poppins", cursive, sans-serif;
+  --theme-font-body: "Inter", sans-serif;
+  --theme-font-weight-title: 400;
+  --theme-font-weight-body: 400;
+
+  /* Iconos temáticos */
+  --theme-icon-primary: "💝";
+  --theme-icon-secondary: "💕";
+
+  /* Patrón decorativo */
+  --theme-pattern-opacity: 0.04;
+  --theme-pattern-url: url("data:image/svg+xml,%3Csvg width='40' height='40' xmlns='http://www.w3.org/2000/svg'%3E%3Ctext x='10' y='25' font-size='20'%3E💕%3C/text%3E%3C/svg%3E");
+}
+
+/* ============================================
+   TEMA DÍA DE LA MADRE 👩‍👧‍👦 - DARK FASHION
+   Verde Oscuro, Rojo Intenso, Fondo Negro
+   ============================================ */
+
+.theme-diamadre {
+  /* Colores Primarios - Verde Oscuro */
+  --theme-primary: #1B5E20;
+  --theme-primary-light: #2E7D32;
+  --theme-primary-dark: #0D3E10;
+  --theme-primary-rgb: 27, 94, 32;
+
+  /* Colores Secundarios - Rojo Intenso */
+  --theme-secondary: #D32F2F;
+  --theme-secondary-light: #E57373;
+  --theme-secondary-dark: #B71C1C;
+  --theme-secondary-rgb: 211, 47, 47;
+
+  /* Colores de Acento - Blanco */
+  --theme-accent: #ffffff;
+  --theme-accent-light: #ffffff;
+  --theme-accent-dark: #f5f5f5;
+
+  /* Gradientes Maternales Dark */
+  --theme-gradient-primary: linear-gradient(135deg, #1B5E20 0%, #D32F2F 100%);
+  --theme-gradient-hero: linear-gradient(135deg, rgba(27, 94, 32, 0.95) 0%, rgba(211, 47, 47, 0.95) 100%);
+  --theme-gradient-card: linear-gradient(145deg, rgba(27, 94, 32, 0.1) 0%, rgba(211, 47, 47, 0.05) 100%);
+
+  /* Colores de Fondo - Negro */
+  --theme-bg-primary: #0a0a0a;
+  --theme-bg-secondary: #1a1a1a;
+  --theme-bg-tertiary: #2a2a2a;
+
+  /* Colores de Superficie */
+  --theme-surface: #ffffff;
+  --theme-surface-hover: #f5f5f5;
+  --theme-surface-elevated: #ffffff;
+
+  /* Sombras delicadas */
+  --theme-shadow-sm: 0 2px 4px rgba(27, 94, 32, 0.3);
+  --theme-shadow-md: 0 4px 12px rgba(27, 94, 32, 0.4);
+  --theme-shadow-lg: 0 12px 26px rgba(211, 47, 47, 0.4);
+  --theme-shadow-xl: 0 20px 40px rgba(0, 0, 0, 0.5);
+
+  /* Tipografía */
+  --theme-font-title: "Poppins", sans-serif;
+  --theme-font-body: "Inter", sans-serif;
+  --theme-font-weight-title: 600;
+  --theme-font-weight-body: 400;
+
+  /* Iconos temáticos */
+  --theme-icon-primary: "👩‍👧‍👦";
+  --theme-icon-secondary: "🌷";
+
+  /* Patrón decorativo */
+  --theme-pattern-opacity: 0.03;
+  --theme-pattern-url: url("data:image/svg+xml,%3Csvg width='40' height='40' xmlns='http://www.w3.org/2000/svg'%3E%3Ctext x='10' y='25' font-size='20'%3E🌷%3C/text%3E%3C/svg%3E");
+}
+
+/* ============================================
+   TEMA DÍA DEL PADRE 👨‍👦 - DARK FASHION
+   Verde Oscuro, Rojo Intenso, Fondo Negro
+   ============================================ */
+
+.theme-diapadre {
+  /* Colores Primarios - Verde Oscuro */
+  --theme-primary: #1B5E20;
+  --theme-primary-light: #2E7D32;
+  --theme-primary-dark: #0D3E10;
+  --theme-primary-rgb: 27, 94, 32;
+
+  /* Colores Secundarios - Rojo Intenso */
+  --theme-secondary: #D32F2F;
+  --theme-secondary-light: #E57373;
+  --theme-secondary-dark: #B71C1C;
+  --theme-secondary-rgb: 211, 47, 47;
+
+  /* Colores de Acento - Blanco */
+  --theme-accent: #ffffff;
+  --theme-accent-light: #ffffff;
+  --theme-accent-dark: #f5f5f5;
+
+  /* Gradientes Sobrios Dark */
+  --theme-gradient-primary: linear-gradient(135deg, #1B5E20 0%, #D32F2F 100%);
+  --theme-gradient-hero: linear-gradient(135deg, rgba(27, 94, 32, 0.95) 0%, rgba(211, 47, 47, 0.95) 100%);
+  --theme-gradient-card: linear-gradient(145deg, rgba(27, 94, 32, 0.05) 0%, rgba(211, 47, 47, 0.08) 100%);
+
+  /* Colores de Fondo - Negro */
+  --theme-bg-primary: #0a0a0a;
+  --theme-bg-secondary: #1a1a1a;
+  --theme-bg-tertiary: #2a2a2a;
+
+  /* Colores de Superficie */
+  --theme-surface: #ffffff;
+  --theme-surface-hover: #f5f5f5;
+  --theme-surface-elevated: #ffffff;
+
+  /* Sombras elegantes */
+  --theme-shadow-sm: 0 2px 4px rgba(27, 94, 32, 0.3);
+  --theme-shadow-md: 0 4px 12px rgba(27, 94, 32, 0.4);
+  --theme-shadow-lg: 0 12px 26px rgba(27, 94, 32, 0.5);
+  --theme-shadow-xl: 0 20px 40px rgba(0, 0, 0, 0.5);
+
+  /* Tipografía - Estilo Sobrio */
+  --theme-font-title: "Poppins", sans-serif;
+  --theme-font-body: "Inter", sans-serif;
+  --theme-font-weight-title: 700;
+  --theme-font-weight-body: 400;
+
+  /* Iconos temáticos */
+  --theme-icon-primary: "👨‍👦";
+  --theme-icon-secondary: "👔";
+
+  /* Patrón decorativo */
+  --theme-pattern-opacity: 0.02;
+  --theme-pattern-url: url("data:image/svg+xml,%3Csvg width='40' height='40' xmlns='http://www.w3.org/2000/svg'%3E%3Ctext x='10' y='25' font-size='20'%3E👔%3C/text%3E%3C/svg%3E");
+}
+
+/* ============================================
+   TEMA GRADUACIONES 🎓 - DARK FASHION
+   Verde Oscuro, Rojo Intenso, Fondo Negro
+   ============================================ */
+
+.theme-graduaciones {
+  /* Colores Primarios - Verde Oscuro */
+  --theme-primary: #1B5E20;
+  --theme-primary-light: #2E7D32;
+  --theme-primary-dark: #0D3E10;
+  --theme-primary-rgb: 27, 94, 32;
+
+  /* Colores Secundarios - Rojo Intenso */
+  --theme-secondary: #D32F2F;
+  --theme-secondary-light: #E57373;
+  --theme-secondary-dark: #B71C1C;
+  --theme-secondary-rgb: 211, 47, 47;
+
+  /* Colores de Acento - Blanco */
+  --theme-accent: #ffffff;
+  --theme-accent-light: #ffffff;
+  --theme-accent-dark: #f5f5f5;
+
+  /* Gradientes Premium Dark */
+  --theme-gradient-primary: linear-gradient(135deg, #1B5E20 0%, #D32F2F 100%);
+  --theme-gradient-hero: linear-gradient(135deg, rgba(27, 94, 32, 0.95) 0%, rgba(211, 47, 47, 0.95) 100%);
+  --theme-gradient-card: linear-gradient(145deg, rgba(27, 94, 32, 0.05) 0%, rgba(211, 47, 47, 0.08) 100%);
+
+  /* Colores de Fondo - Negro */
+  --theme-bg-primary: #0a0a0a;
+  --theme-bg-secondary: #1a1a1a;
+  --theme-bg-tertiary: #2a2a2a;
+
+  /* Colores de Superficie */
+  --theme-surface: #ffffff;
+  --theme-surface-hover: #f5f5f5;
+  --theme-surface-elevated: #ffffff;
+
+  /* Sombras elegantes y profundas */
+  --theme-shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.4);
+  --theme-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+  --theme-shadow-lg: 0 12px 26px rgba(0, 0, 0, 0.6);
+  --theme-shadow-xl: 0 20px 40px rgba(0, 0, 0, 0.7);
+
+  /* Tipografía - Estilo Premium */
+  --theme-font-title: "Poppins", sans-serif;
+  --theme-font-body: "Inter", sans-serif;
+  --theme-font-weight-title: 700;
+  --theme-font-weight-body: 400;
+
+  /* Iconos temáticos */
+  --theme-icon-primary: "🎓";
+  --theme-icon-secondary: "📜";
+
+  /* Patrón decorativo */
+  --theme-pattern-opacity: 0.02;
+  --theme-pattern-url: url("data:image/svg+xml,%3Csvg width='40' height='40' xmlns='http://www.w3.org/2000/svg'%3E%3Ctext x='10' y='25' font-size='20'%3E🎓%3C/text%3E%3C/svg%3E");
+}
+
+/* ============================================
+   TRANSICIONES SUAVES ENTRE TEMAS
+   ============================================ */
+
+body {
+  transition: background-color 0.6s ease, color 0.6s ease;
+}
+
+/* Transiciones para botones y elementos interactivos */
+.btn,
+.card,
+.navbar,
+.product-card,
+.hero-section {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ============================================
+   APLICACIÓN DE PATRONES DECORATIVOS
+   (Opcional - activar según preferencia)
+   ============================================ */
+
+body[data-theme-patterns="true"]::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: var(--theme-pattern-url);
+  background-repeat: repeat;
+  background-size: 40px 40px;
+  opacity: var(--theme-pattern-opacity);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ============================================
+   UTILIDADES PARA TESTING Y DEBUG
+   ============================================ */
+
+/* Indicador visual del tema actual (solo en desarrollo) */
+body[data-theme-debug="true"]::after {
+  content: var(--theme-icon-primary) " Tema activo";
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: var(--theme-primary);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  box-shadow: var(--theme-shadow-lg);
+  z-index: 9999;
+  pointer-events: none;
+}
