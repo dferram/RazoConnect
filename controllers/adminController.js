@@ -3102,10 +3102,20 @@ const loginAdmin = async (req, res) => {
       });
     }
 
-    // Buscar administrador por email
+    // CRITICAL SECURITY: Validar tenant_id del request
+    if (!req.tenant || !req.tenant.tenant_id) {
+      return res.status(400).json({
+        success: false,
+        message: "Tenant no identificado",
+      });
+    }
+
+    const { tenant_id } = req.tenant;
+
+    // Buscar administrador por email Y tenant_id (aislamiento multi-tenant)
     const result = await db.query(
-      "SELECT * FROM Administradores WHERE Email = $1 AND Activo = TRUE",
-      [email]
+      "SELECT * FROM Administradores WHERE Email = $1 AND tenant_id = $2 AND Activo = TRUE",
+      [email, tenant_id]
     );
 
     let cuenta = null;
@@ -3136,7 +3146,7 @@ const loginAdmin = async (req, res) => {
           CodigoAgente,
           Activo
         FROM AgentesDeVentas
-        WHERE Email = $1 AND Activo = TRUE
+        WHERE Email = $1 AND tenant_id = $2 AND Activo = TRUE
       `;
 
       if (hasEsAdminColumn && hasAdminRolColumn) {
@@ -3152,7 +3162,7 @@ const loginAdmin = async (req, res) => {
             EsAdmin,
             AdminRol
           FROM AgentesDeVentas
-          WHERE Email = $1 AND Activo = TRUE
+          WHERE Email = $1 AND tenant_id = $2 AND Activo = TRUE
         `;
       } else if (hasEsAdminColumn) {
         agenteQueryText = `
@@ -3166,7 +3176,7 @@ const loginAdmin = async (req, res) => {
             Activo,
             EsAdmin
           FROM AgentesDeVentas
-          WHERE Email = $1 AND Activo = TRUE
+          WHERE Email = $1 AND tenant_id = $2 AND Activo = TRUE
         `;
       } else if (hasAdminRolColumn) {
         agenteQueryText = `
@@ -3180,11 +3190,11 @@ const loginAdmin = async (req, res) => {
             Activo,
             AdminRol
           FROM AgentesDeVentas
-          WHERE Email = $1 AND Activo = TRUE
+          WHERE Email = $1 AND tenant_id = $2 AND Activo = TRUE
         `;
       }
 
-      const agenteResult = await db.query(agenteQueryText, [email]);
+      const agenteResult = await db.query(agenteQueryText, [email, tenant_id]);
 
       if (agenteResult.rows.length > 0) {
         const agente = agenteResult.rows[0];
@@ -3233,6 +3243,7 @@ const loginAdmin = async (req, res) => {
       tipo: "admin",
       roles: cuenta.roles,
       adminSource: cuenta.adminSource,
+      tenant_id: tenant_id,
     };
 
     if (cuenta.adminSource === "agent") {
@@ -3297,6 +3308,321 @@ const loginAdmin = async (req, res) => {
       message: "Error en el servidor",
     });
   }
+};
+
+/**
+ * Obtener estadísticas del dashboard de administrador
+ * GET /api/admin/dashboard-stats
+ */
+const getDashboardStats = async (req, res) => {
+  try {
+    const { tenant_id } = req.tenant;
+
+    // Obtener total de pedidos
+    const pedidosResult = await db.query(
+      `SELECT COUNT(*) as total FROM Pedidos WHERE tenant_id = $1`,
+      [tenant_id]
+    );
+
+    // Obtener pedidos pendientes
+    const pedidosPendientesResult = await db.query(
+      `SELECT COUNT(*) as total FROM Pedidos 
+       WHERE tenant_id = $1 AND Estatus IN ('Pendiente', 'Procesando')`,
+      [tenant_id]
+    );
+
+    // Obtener total de clientes activos
+    const clientesResult = await db.query(
+      `SELECT COUNT(*) as total FROM Clientes 
+       WHERE tenant_id = $1 AND Activo = TRUE`,
+      [tenant_id]
+    );
+
+    // Obtener ventas del mes actual
+    const ventasMesResult = await db.query(
+      `SELECT COALESCE(SUM(MontoTotal), 0) as total 
+       FROM Pedidos 
+       WHERE tenant_id = $1 
+       AND EXTRACT(MONTH FROM FechaPedido) = EXTRACT(MONTH FROM CURRENT_DATE)
+       AND EXTRACT(YEAR FROM FechaPedido) = EXTRACT(YEAR FROM CURRENT_DATE)
+       AND Estatus NOT IN ('Cancelado')`,
+      [tenant_id]
+    );
+
+    res.json({
+      success: true,
+      data: {
+        totalPedidos: parseInt(pedidosResult.rows[0].total),
+        pedidosPendientes: parseInt(pedidosPendientesResult.rows[0].total),
+        clientesActivos: parseInt(clientesResult.rows[0].total),
+        ventasMes: parseFloat(ventasMesResult.rows[0].total)
+      }
+    });
+  } catch (error) {
+    console.error("Error al obtener estadísticas del dashboard:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error al obtener estadísticas",
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Obtener todos los pedidos (para gestión admin)
+ * GET /api/admin/pedidos
+ */
+const getAllPedidos = async (req, res) => {
+  try {
+    const { tenant_id } = req.tenant;
+    const { estatus, clienteId, agenteId, fechaInicio, fechaFin } = req.query;
+
+    let query = `
+      SELECT 
+        p.PedidoID,
+        p.FechaPedido,
+        p.MontoTotal,
+        p.Estatus,
+        p.CostoEnvio,
+        c.Nombre as ClienteNombre,
+        c.Apellido as ClienteApellido,
+        c.Email as ClienteEmail,
+        a.Nombre as AgenteNombre,
+        a.Apellido as AgenteApellido,
+        a.CodigoAgente,
+        d.Ciudad,
+        d.EstadoID,
+        e.Nombre as EstadoNombre
+      FROM Pedidos p
+      LEFT JOIN Clientes c ON p.ClienteID = c.ClienteID
+      LEFT JOIN AgentesDeVentas a ON p.AgenteID = a.AgenteID
+      LEFT JOIN Cliente_Direcciones d ON p.DireccionEnvioID = d.DireccionID
+      LEFT JOIN Estados e ON d.EstadoID = e.EstadoID
+      WHERE p.tenant_id = $1
+    `;
+
+    const params = [tenant_id];
+    let paramIndex = 2;
+
+    if (estatus) {
+      query += ` AND p.Estatus = $${paramIndex}`;
+      params.push(estatus);
+      paramIndex++;
+    }
+
+    if (clienteId) {
+      query += ` AND p.ClienteID = $${paramIndex}`;
+      params.push(parseInt(clienteId));
+      paramIndex++;
+    }
+
+    if (agenteId) {
+      query += ` AND p.AgenteID = $${paramIndex}`;
+      params.push(parseInt(agenteId));
+      paramIndex++;
+    }
+
+    if (fechaInicio) {
+      query += ` AND p.FechaPedido >= $${paramIndex}`;
+      params.push(fechaInicio);
+      paramIndex++;
+    }
+
+    if (fechaFin) {
+      query += ` AND p.FechaPedido <= $${paramIndex}`;
+      params.push(fechaFin);
+      paramIndex++;
+    }
+
+    query += ` ORDER BY p.FechaPedido DESC`;
+
+    const result = await db.query(query, params);
+
+    const pedidos = result.rows.map(row => ({
+      pedidoId: row.pedidoid,
+      fechaPedido: row.fechapedido,
+      montoTotal: parseFloat(row.montototal),
+      costoEnvio: row.costoenvio ? parseFloat(row.costoenvio) : 0,
+      estatus: row.estatus,
+      cliente: {
+        nombre: row.clientenombre,
+        apellido: row.clienteapellido,
+        email: row.clienteemail
+      },
+      agente: row.agentenombre ? {
+        nombre: row.agentenombre,
+        apellido: row.agenteapellido,
+        codigoAgente: row.codigoagente
+      } : null,
+      direccion: {
+        ciudad: row.ciudad,
+        estadoId: row.estadoid,
+        estado: row.estadonombre
+      }
+    }));
+
+    res.json({
+      success: true,
+      data: pedidos
+    });
+  } catch (error) {
+    console.error("Error al obtener pedidos:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error al obtener pedidos",
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Actualizar estatus de un pedido
+ * PUT /api/admin/pedidos/:id
+ */
+const updatePedidoEstatus = async (req, res) => {
+  try {
+    const { tenant_id } = req.tenant;
+    const pedidoId = parseInt(req.params.id);
+    const { estatus } = req.body;
+
+    if (!estatus) {
+      return res.status(400).json({
+        success: false,
+        message: "El estatus es requerido"
+      });
+    }
+
+    const estatusValidos = ['Pendiente', 'Procesando', 'Enviado', 'Entregado', 'Cancelado'];
+    if (!estatusValidos.includes(estatus)) {
+      return res.status(400).json({
+        success: false,
+        message: "Estatus inválido"
+      });
+    }
+
+    const result = await db.query(
+      `UPDATE Pedidos 
+       SET Estatus = $1, FechaActualizacion = NOW()
+       WHERE PedidoID = $2 AND tenant_id = $3
+       RETURNING *`,
+      [estatus, pedidoId, tenant_id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Pedido no encontrado"
+      });
+    }
+
+    // Crear notificación para el cliente
+    try {
+      await crearNotificacionServicio({
+        clienteId: result.rows[0].clienteid,
+        tipo: 'pedido',
+        titulo: `Pedido ${estatus}`,
+        mensaje: `Tu pedido #${pedidoId} ha sido actualizado a: ${estatus}`,
+        url: `/dashboard.html?tab=pedidos`,
+        prioridad: 'normal',
+        metadata: { pedidoId }
+      });
+    } catch (notifError) {
+      console.error("Error al crear notificación:", notifError);
+    }
+
+    res.json({
+      success: true,
+      message: "Estatus actualizado correctamente",
+      data: {
+        pedidoId: result.rows[0].pedidoid,
+        estatus: result.rows[0].estatus
+      }
+    });
+  } catch (error) {
+    console.error("Error al actualizar estatus del pedido:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error al actualizar estatus",
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Crear un nuevo producto
+ * POST /api/admin/productos
+ */
+const crearProducto = async (req, res) => {
+  try {
+    const { tenant_id } = req.tenant;
+    const {
+      nombreProducto,
+      descripcion,
+      categoriaId,
+      proveedorId,
+      reglaid,
+      precioBase,
+      activo = true,
+      destacado = false
+    } = req.body;
+
+    // Validaciones básicas
+    if (!nombreProducto || !proveedorId) {
+      return res.status(400).json({
+        success: false,
+        message: "Nombre del producto y proveedor son requeridos"
+      });
+    }
+
+    // Generar SKU único
+    const sku = await generarSkuUnico(nombreProducto, tenant_id);
+
+    const result = await db.query(
+      `INSERT INTO Productos 
+       (NombreProducto, Descripcion, CategoriaID, ProveedorID, ReglaID, 
+        PrecioBase, SKU, Activo, Destacado, tenant_id, FechaCreacion)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW())
+       RETURNING *`,
+      [
+        nombreProducto,
+        descripcion || null,
+        categoriaId || null,
+        proveedorId,
+        reglaid || null,
+        precioBase || 0,
+        sku,
+        activo,
+        destacado,
+        tenant_id
+      ]
+    );
+
+    res.status(201).json({
+      success: true,
+      message: "Producto creado exitosamente",
+      data: {
+        productoId: result.rows[0].productoid,
+        nombreProducto: result.rows[0].nombreproducto,
+        sku: result.rows[0].sku
+      }
+    });
+  } catch (error) {
+    console.error("Error al crear producto:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error al crear producto",
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Obtener medidas existentes (alias para getMedidas)
+ * GET /api/admin/medidas-existentes
+ */
+const getMedidasExistentes = async (req, res) => {
+  // Esta función es un alias de getMedidas para compatibilidad
+  return getMedidas(req, res);
 };
 
 const getReglasEmpaqueProveedor = async (req, res) => {
@@ -12283,14 +12609,11 @@ const obtenerRemisionPedido = async (req, res) => {
 
 module.exports = {
   loginAdmin,
-  verifyAdmin,
-  getAdminProfile,
-  refreshAdminToken,
   getDashboardStats,
   getAllPedidos,
+  updatePedidoEstatus,
   confirmarPedido,
   updateCostoEnvio,
-  updatePedidoEstatus,
   getPedidoDetalle,
   getMovimientosInventario,
   getHistorialInventarioVariante,
@@ -12311,7 +12634,7 @@ module.exports = {
   actualizarCategoria,
   eliminarCategoria,
   getMedidas,
-getMedidasExistentes,
+  getMedidasExistentes,
   crearVariante,
   actualizarVariante,
   crearAgente,

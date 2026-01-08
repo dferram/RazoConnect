@@ -1,5 +1,6 @@
 const { verifyToken } = require("../utils/jwtHelper");
 const db = require("../db");
+const tenantSessionGuard = require("./tenantSessionGuard");
 
 function normalizeRole(role) {
   return (role || "").toString().trim().toLowerCase();
@@ -78,7 +79,7 @@ const authenticate = async (req, res, next) => {
         codigoAgente: decoded?.codigoAgente || agenteResult.rows[0].codigoagente || null,
       };
 
-      return next();
+      return tenantSessionGuard(req, res, next);
     }
 
     if (isClienteToken) {
@@ -103,7 +104,7 @@ const authenticate = async (req, res, next) => {
         email: decoded?.email || clienteResult.rows[0].email || null,
       };
 
-      return next();
+      return tenantSessionGuard(req, res, next);
     }
 
     // 2) Si no es agente por token, validar primero contra administradores (activo)
@@ -127,7 +128,7 @@ const authenticate = async (req, res, next) => {
         email: decoded?.email || adminResult.rows[0].email || null,
       };
 
-      return next();
+      return tenantSessionGuard(req, res, next);
     }
 
     // 3) Fallback: si no existe en administradores, buscar como agente (activo)
@@ -147,7 +148,7 @@ const authenticate = async (req, res, next) => {
         codigoAgente: decoded?.codigoAgente || agenteFallback.rows[0].codigoagente || null,
       };
 
-      return next();
+      return tenantSessionGuard(req, res, next);
     }
 
     return res.status(401).json({
