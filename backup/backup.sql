@@ -5,7 +5,7 @@
 -- Dumped from database version 17.7
 -- Dumped by pg_dump version 17.5
 
--- Started on 2026-01-07 18:07:57
+-- Started on 2026-01-07 20:43:10
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -3584,6 +3584,7 @@ COPY public.control_cambios (id, entidad, entidad_id, tipo_cambio, datos_anterio
 148	productos	51	UPDATE	{"activo": true, "reglaid": 2, "productoid": 51, "categoriaid": 4, "descripcion": "Caja six pack kraft natural, perfecta para cervezas o bebidas. Resistente, con estilo y ese look natural que siempre queda bien. Ideal para armar regalos cool y sorprender 🍺✨", "proveedorid": 1, "sku_maestro": "SIX-001", "nombreproducto": "Six pack natural"}	{"activo": true, "reglaid": 1, "productoid": 51, "categoriaid": 4, "descripcion": "Six pack kraft natural, perfecta para cervezas o bebidas. Resistente, con estilo y ese look natural que siempre queda bien. Ideal para armar regalos cool y sorprender 🍺✨", "sku_maestro": "SIX-001", "nombreproducto": "Six pack natural", "proveedorid_default": 1}	7	APROBADO	2026-01-05 19:25:16.852431	2026-01-05 19:25:16.852431	7
 149	productos	62	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 62, "categoriaid": 1, "descripcion": "Dale a tus regalos el empaque que merecen con nuestra línea de cajas pasteleras. Diseñadas para combinar resistencia, estilo y practicidad, estas cajas son ideales para regalos especiales.", "proveedorid": 1, "sku_maestro": "PAS-002", "nombreproducto": "Pastelera Toda Ocasión"}	4	APROBADO	2026-01-05 21:44:09.257478	2026-01-05 21:44:09.257478	4
 150	productos	63	INSERT	\N	{"activo": true, "reglaid": 2, "productoid": 63, "categoriaid": 1, "descripcion": "¡Dale un toque de elegancia y ternura a tus detalles! Esta hermosa caja con forma de corazón en colores rosa, lila, rojo y negro, es la opción perfecta para empaques de San Valentín, aniversarios, cumpleaños o cualquier ocasión especial. Su acabado liso y minimalista permite que el regalo sea el verdadero protagonista.", "proveedorid": 1, "sku_maestro": "COR-001", "nombreproducto": "Corazón Liso"}	4	APROBADO	2026-01-05 22:42:21.260266	2026-01-05 22:42:21.260266	4
+186	productos	50	UPDATE	{"activo": true, "reglaid": 1, "productoid": 50, "categoriaid": 3, "descripcion": "Caja para celebrar a esa persona especial, color, diseño y tamaño perfecto para un regalo espectacular, con acabado barniz brillante", "proveedorid": 1, "sku_maestro": "BAU-003", "nombreproducto": "Baúl Colors Cumple"}	{"activo": true, "reglaid": 1, "productoid": 50, "categoriaid": 3, "descripcion": "Caja para celebrar a esa persona especial, color, diseño y tamaño perfecto para un regalo espectacular, con acabado barniz brillante", "sku_maestro": "BAU-003", "nombreproducto": "Baúl Colors", "proveedorid_default": 1}	2	APROBADO	2026-01-08 01:10:47.495876	2026-01-08 01:10:47.495876	2
 151	productos	34	UPDATE	{"activo": true, "reglaid": 1, "productoid": 34, "categoriaid": 2, "descripcion": "¡Expresa tus sentimientos con una explosión de color! Nuestra línea Corazón Colors Love está diseñada para quienes buscan un empaque dinámico, moderno y lleno de alegría. Estas cajas no son solo un envoltorio, son parte del regalo mismo.", "proveedorid": 1, "sku_maestro": "AMO-025", "nombreproducto": "Corazón Colors Love"}	{"activo": true, "reglaid": 1, "productoid": 34, "categoriaid": 2, "descripcion": "¡Expresa tus sentimientos con una explosión de color! Nuestra línea Corazón Colors Love está diseñada para quienes buscan un empaque dinámico, moderno y lleno de alegría. Estas cajas no son solo un envoltorio, son parte del regalo mismo.", "sku_maestro": "AMO-025", "nombreproducto": "Corazón Colors Love", "proveedorid_default": 1}	4	APROBADO	2026-01-05 22:57:42.399531	2026-01-05 22:57:42.399531	4
 152	productos	64	INSERT	\N	{"activo": true, "reglaid": 2, "productoid": 64, "categoriaid": 1, "descripcion": "Eleva la presentación de tus arreglos florales con nuestras cajas exclusivas. Diseñadas específicamente para proteger y resaltar la belleza de las rosas, estas cajas en colores magenta, rosa, lila, rojo y negro,  son la opción perfecta para San Valentín, aniversarios o cualquier ocasión especial.", "proveedorid": 1, "sku_maestro": "CAJ-006", "nombreproducto": "Caja para Rosas"}	4	APROBADO	2026-01-05 23:15:31.257044	2026-01-05 23:15:31.257044	4
 153	productos	64	UPDATE	{"activo": true, "reglaid": 2, "productoid": 64, "categoriaid": 1, "descripcion": "Eleva la presentación de tus arreglos florales con nuestras cajas exclusivas. Diseñadas específicamente para proteger y resaltar la belleza de las rosas, estas cajas en colores magenta, rosa, lila, rojo y negro,  son la opción perfecta para San Valentín, aniversarios o cualquier ocasión especial.", "proveedorid": 1, "sku_maestro": "CAJ-006", "nombreproducto": "Caja para Rosas"}	{"activo": true, "reglaid": 2, "productoid": 64, "categoriaid": 1, "descripcion": "Eleva la presentación de tus arreglos florales con nuestras cajas exclusivas. Diseñadas específicamente para proteger y resaltar la belleza de las rosas, estas cajas en colores magenta, rosa, lila, rojo y negro,  son la opción perfecta para San Valentín, aniversarios o cualquier ocasión especial.", "sku_maestro": "CAJ-006", "nombreproducto": "Caja para Rosas", "proveedorid_default": 1}	4	APROBADO	2026-01-06 04:25:11.845515	2026-01-06 04:25:11.845515	4
@@ -3619,6 +3620,9 @@ COPY public.control_cambios (id, entidad, entidad_id, tipo_cambio, datos_anterio
 183	productos	46	UPDATE	{"activo": true, "reglaid": 1, "productoid": 46, "categoriaid": 4, "descripcion": "Baúl de regalo kraft color natural, con un diseño original y funcional. Perfecta para presentar regalos especiales con un toque natural y moderno. Resistente, fácil de armar y personalizar. Disponible en varios tamaños 🎁✨", "proveedorid": 1, "sku_maestro": "CAJ-003", "nombreproducto": "Baúl Natural"}	{"activo": true, "reglaid": 1, "productoid": 46, "categoriaid": 4, "descripcion": "Caja baúl de regalo kraft color natural, con un diseño original y funcional. Perfecta para presentar regalos especiales con un toque natural y moderno. Resistente, fácil de armar y personalizar. Disponible en varios tamaños 🎁✨", "sku_maestro": "CAJ-003", "nombreproducto": "Baúl Natural", "proveedorid_default": 1}	7	APROBADO	2026-01-06 18:27:37.855563	2026-01-06 18:27:37.855563	7
 184	productos	13	UPDATE	{"activo": true, "reglaid": 1, "productoid": 13, "categoriaid": 4, "descripcion": "Camisera de regalo natural, elegante y funcional. Ideal para presentar prendas y regalos con un estilo limpio y moderno. Resistente, práctica y fácil de personalizar. Disponible en diferentes tamaños para adaptarse a cada detalle 🎁✨", "proveedorid": 1, "sku_maestro": "NAT-002", "nombreproducto": "Camisera Natural"}	{"activo": true, "reglaid": 1, "productoid": 13, "categoriaid": 4, "descripcion": "Caja camisera de regalo natural, elegante y funcional. Ideal para presentar prendas y regalos con un estilo limpio y moderno. Resistente, práctica y fácil de personalizar. Disponible en diferentes tamaños para adaptarse a cada detalle 🎁✨", "sku_maestro": "NAT-002", "nombreproducto": "Camisera Natural", "proveedorid_default": 1}	7	APROBADO	2026-01-06 18:28:58.864888	2026-01-06 18:28:58.864888	7
 185	productos	11	UPDATE	{"activo": true, "reglaid": 2, "productoid": 11, "categoriaid": 1, "descripcion": null, "proveedorid": 1, "sku_maestro": "LIS-001", "nombreproducto": "Cubo Liso"}	{"activo": true, "reglaid": 1, "productoid": 11, "categoriaid": 1, "descripcion": null, "sku_maestro": "LIS-001", "nombreproducto": "Cubo Liso", "proveedorid_default": 1}	5	APROBADO	2026-01-07 00:52:36.983021	2026-01-07 00:52:36.983021	5
+187	productos	50	UPDATE	{"activo": true, "reglaid": 1, "productoid": 50, "categoriaid": 3, "descripcion": "Caja para celebrar a esa persona especial, color, diseño y tamaño perfecto para un regalo espectacular, con acabado barniz brillante", "proveedorid": 1, "sku_maestro": "BAU-003", "nombreproducto": "Baúl Colors"}	{"activo": true, "reglaid": 1, "productoid": 50, "categoriaid": 3, "descripcion": "Caja para celebrar a esa persona especial, color, diseño y tamaño perfecto para un regalo espectacular, con acabado barniz brillante", "sku_maestro": "BAU-003", "nombreproducto": "Baúl Colors Cumple", "proveedorid_default": 1}	2	APROBADO	2026-01-08 01:11:06.583567	2026-01-08 01:11:06.583567	2
+188	producto_variantes	168	UPDATE	{"sku": "PAL-001-30X50-GRANDE", "campo": "Dimensiones", "productoId": 56, "varianteId": 168, "medidaNombre": null, "valorAnterior": "30x50"}	{"sku": "PAL-001-30X50-GRANDE", "campo": "Dimensiones", "productoId": 56, "valorNuevo": "Grande", "varianteId": 168, "descripcion": "Producto [56] - Variante [SKU: PAL-001-30X50-GRANDE]: Cambio en Dimensiones de '30x50' a 'Grande'"}	5	APROBADO	2026-01-08 02:02:38.444425	2026-01-08 02:02:38.444425	5
+189	producto_variantes	168	UPDATE	{"sku": "PAL-001-30X50-GRANDE", "campo": "Color", "productoId": 56, "varianteId": 168, "medidaNombre": null, "valorAnterior": "Grande"}	{"sku": "PAL-001-30X50-GRANDE", "campo": "Color", "productoId": 56, "valorNuevo": "Sin color", "varianteId": 168, "descripcion": "Producto [56] - Variante [SKU: PAL-001-30X50-GRANDE]: Cambio en Color de 'Grande' a 'Sin color'"}	5	APROBADO	2026-01-08 02:02:38.444425	2026-01-08 02:02:38.444425	5
 \.
 
 
@@ -3806,6 +3810,7 @@ COPY public.detallesordencompra (detalleoc_id, ordencompraid, varianteid, cantid
 --
 
 COPY public.developers (dev_id, username, password_hash, created_at) FROM stdin;
+2	ferram_dev	$2b$12$mW4.cDyV7xdvOn6z0fzzS.990Qcg2iDURbHk5uL/QHVDCSzi8Ud56	2026-01-08 00:18:36.057612
 \.
 
 
@@ -4205,6 +4210,10 @@ COPY public.log_movimientos (logid, usuarioid, nombreusuario, rol, accion, entid
 240	2	Fernando Garcia	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	169.254.129.2	2026-01-07 22:41:43.061784
 241	5	Lupita García	admin	LOGIN	Admin	5	{"email": "pupis_gr@icloud.com", "origen": "admin"}	169.254.129.2	2026-01-07 23:24:25.980021
 242	5	Lupita García	admin	LOGIN	Admin	5	{"email": "pupis_gr@icloud.com", "origen": "admin"}	169.254.129.2	2026-01-07 23:47:45.185654
+243	2	Fernando Garcia	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	169.254.129.6	2026-01-08 00:24:40.005743
+244	5	Lupita García	admin	LOGIN	Admin	5	{"email": "pupis_gr@icloud.com", "origen": "admin"}	169.254.129.3	2026-01-08 00:38:04.268056
+245	5	Lupita García	admin	LOGIN	Admin	5	{"email": "pupis_gr@icloud.com", "origen": "admin"}	189.128.58.98:49387	2026-01-08 02:00:40.665296
+246	2	Fernando Garcia	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	189.128.58.98:5279	2026-01-08 02:04:07.486476
 \.
 
 
@@ -4273,6 +4282,8 @@ COPY public.notificaciones (notificacionid, clienteid, tipo, titulo, mensaje, le
 47	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Maricela García actualizó productos #13.	f	2026-01-06 18:28:58.878326	{"entidad": "productos", "cambio_id": 184, "entidad_id": 13, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
 48	4	sistema	¡Bienvenido a RazoConnect!	Gracias por unirte. Tu cuenta ha sido creada exitosamente.	f	2026-01-06 23:51:33.77011	{}	\N	normal	\N	\N
 49	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Lupita García actualizó productos #11.	f	2026-01-07 00:52:36.994918	{"entidad": "productos", "cambio_id": 185, "entidad_id": 11, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
+50	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Fernando actualizó productos #50.	f	2026-01-08 01:10:47.507503	{"entidad": "productos", "cambio_id": 186, "entidad_id": 50, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
+51	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Fernando actualizó productos #50.	f	2026-01-08 01:11:06.592756	{"entidad": "productos", "cambio_id": 187, "entidad_id": 50, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N
 \.
 
 
@@ -4508,11 +4519,6 @@ COPY public.producto_imagenes (imagenid, url_imagen, textoalternativo, orden, pr
 199	https://res.cloudinary.com/daylne1ml/image/upload/v1767564950/razoconnect_productos/drzz33wrx11jdvu2l2ck.jpg	\N	3	47
 200	https://res.cloudinary.com/daylne1ml/image/upload/v1767564951/razoconnect_productos/bsnuj5bfx3d7yqpfldpk.jpg	\N	4	47
 201	https://res.cloudinary.com/daylne1ml/image/upload/v1767564950/razoconnect_productos/dwirirhnyukyeavnk123.jpg	\N	5	47
-204	https://res.cloudinary.com/daylne1ml/image/upload/v1767565443/razoconnect_productos/a28zpeaa496wzugug22a.jpg	\N	1	50
-205	https://res.cloudinary.com/daylne1ml/image/upload/v1767565443/razoconnect_productos/xroxw6wzjqos6unp199a.jpg	\N	2	50
-206	https://res.cloudinary.com/daylne1ml/image/upload/v1767565443/razoconnect_productos/xoqw7vdcsyfoqdu7bqlq.jpg	\N	3	50
-207	https://res.cloudinary.com/daylne1ml/image/upload/v1767565443/razoconnect_productos/avg15uiobwu0fienvqi5.jpg	\N	4	50
-208	https://res.cloudinary.com/daylne1ml/image/upload/v1767565443/razoconnect_productos/b1wudhrxgw2pvzva6dhu.jpg	\N	5	50
 214	https://res.cloudinary.com/daylne1ml/image/upload/v1767566059/razoconnect_productos/obb3g4ktpd6nnegccef4.jpg	\N	4	53
 215	https://res.cloudinary.com/daylne1ml/image/upload/v1767566059/razoconnect_productos/gqmraecnbhashflwdu1i.jpg	\N	5	53
 216	https://res.cloudinary.com/daylne1ml/image/upload/v1767567305/razoconnect_productos/qvw7e9sj210hlte2eqwn.jpg	\N	1	54
@@ -4538,6 +4544,11 @@ COPY public.producto_imagenes (imagenid, url_imagen, textoalternativo, orden, pr
 191	https://res.cloudinary.com/daylne1ml/image/upload/v1767555836/razoconnect_productos/tpkmvvzikllluufqyqp5.jpg	\N	5	43
 202	https://res.cloudinary.com/daylne1ml/image/upload/v1767565210/razoconnect_productos/z6astrzowxdpfbajvblj.png	\N	1	48
 203	https://res.cloudinary.com/daylne1ml/image/upload/v1767565388/razoconnect_productos/sgiy0stlm7rhqfdz74b2.png	\N	1	49
+204	https://res.cloudinary.com/daylne1ml/image/upload/v1767565443/razoconnect_productos/a28zpeaa496wzugug22a.jpg	\N	1	50
+205	https://res.cloudinary.com/daylne1ml/image/upload/v1767565443/razoconnect_productos/xroxw6wzjqos6unp199a.jpg	\N	2	50
+206	https://res.cloudinary.com/daylne1ml/image/upload/v1767565443/razoconnect_productos/xoqw7vdcsyfoqdu7bqlq.jpg	\N	3	50
+207	https://res.cloudinary.com/daylne1ml/image/upload/v1767565443/razoconnect_productos/avg15uiobwu0fienvqi5.jpg	\N	4	50
+208	https://res.cloudinary.com/daylne1ml/image/upload/v1767565443/razoconnect_productos/b1wudhrxgw2pvzva6dhu.jpg	\N	5	50
 233	https://res.cloudinary.com/daylne1ml/image/upload/v1767573003/razoconnect_productos/enug7jf9pdme4puy72gv.jpg	\N	1	58
 234	https://res.cloudinary.com/daylne1ml/image/upload/v1767573003/razoconnect_productos/twihiqtsjpaaxrnxhsu0.jpg	\N	2	58
 235	https://res.cloudinary.com/daylne1ml/image/upload/v1767573003/razoconnect_productos/avvzfrbiieyatlbcak1j.jpg	\N	3	58
@@ -4697,8 +4708,6 @@ COPY public.producto_tamanosdisponibles (productoid, tamanoid) FROM stdin;
 47	3
 47	4
 49	4
-50	3
-50	4
 51	3
 51	4
 53	3
@@ -4736,6 +4745,9 @@ COPY public.producto_tamanosdisponibles (productoid, tamanoid) FROM stdin;
 13	4
 11	3
 11	4
+50	1
+50	3
+50	4
 \.
 
 
@@ -4841,6 +4853,16 @@ COPY public.producto_variante_imagenes (imagenid, url_imagen, textoalternativo, 
 106	https://res.cloudinary.com/daylne1ml/image/upload/v1767681475/razoconnect_productos/irggflgqdnluzen1z2cj.jpg	\N	4	206
 107	https://res.cloudinary.com/daylne1ml/image/upload/v1767681475/razoconnect_productos/qjksahsiglufebteh3rg.jpg	\N	5	206
 56	https://res.cloudinary.com/daylne1ml/image/upload/v1767565665/razoconnect_productos/hgo9cpzrcszvftlfacek.png	\N	1	161
+108	https://res.cloudinary.com/daylne1ml/image/upload/v1767834468/razoconnect_productos/eb5w1nshgloskoyjp6w1.jpg	\N	1	165
+109	https://res.cloudinary.com/daylne1ml/image/upload/v1767834468/razoconnect_productos/kct3gq8mnowebvio3yud.jpg	\N	2	165
+110	https://res.cloudinary.com/daylne1ml/image/upload/v1767834469/razoconnect_productos/cqubmvm6eyr7bynehppj.jpg	\N	3	165
+111	https://res.cloudinary.com/daylne1ml/image/upload/v1767834470/razoconnect_productos/fzoegptweteuxt0mdtus.jpg	\N	4	165
+112	https://res.cloudinary.com/daylne1ml/image/upload/v1767834471/razoconnect_productos/hc7ahxihdiqz9fpjkvko.jpg	\N	5	165
+113	https://res.cloudinary.com/daylne1ml/image/upload/v1767834555/razoconnect_productos/vpvimkb4v3g6cqy8hrly.jpg	\N	1	166
+114	https://res.cloudinary.com/daylne1ml/image/upload/v1767834556/razoconnect_productos/ktvbeya2qf73ctuef2wt.jpg	\N	2	166
+115	https://res.cloudinary.com/daylne1ml/image/upload/v1767834557/razoconnect_productos/dfmerqaouk7kt3qw2jup.jpg	\N	3	166
+116	https://res.cloudinary.com/daylne1ml/image/upload/v1767834558/razoconnect_productos/rwbbfj3usj64t5tytsaa.jpg	\N	4	166
+117	https://res.cloudinary.com/daylne1ml/image/upload/v1767834559/razoconnect_productos/ujum4kks47ecoqmwxs51.jpg	\N	5	166
 \.
 
 
@@ -5028,10 +5050,7 @@ COPY public.producto_variantes (varianteid, sku, dimensiones, costounitario, sto
 197	MIL-003-GRA	Grande	32.13	0	\N	\N	65	48.90	\N	t	1	0	\N	\N
 204	COR-001-GRA-NEGRO	Grande	41.93	0	\N	\N	63	67.90	\N	t	1	0	Negro	\N
 164	LUN-001-30X30	30x30	48.93	0	\N	\N	53	74.90	\N	t	1	0	\N	\N
-165	TOR-003-20X40-GRANDE	20x40	48.93	0	\N	\N	54	74.90	\N	t	1	0	Grande	\N
-166	TOR-003-30X60-JUMBO	30x60	69.93	0	\N	\N	54	107.90	\N	t	1	0	Jumbo	\N
 167	BOT-001-34X1050	34x10.50	41.93	0	\N	\N	55	62.90	\N	t	1	0	\N	\N
-168	PAL-001-30X50-GRANDE	30x50	41.93	0	\N	\N	56	64.90	\N	t	1	0	Grande	\N
 169	MIL-002-23X17X32-GRANDE	23x17x32	32.13	0	\N	\N	57	48.90	\N	t	1	0	Grande	\N
 174	BOL-001-35X39X25-GIGANT	35x39x25	34.93	0	\N	\N	60	52.90	\N	t	1	0	Gigante	\N
 179	PAS-002-30X30X145	30x30x14.5	38.43	0	\N	\N	62	59.90	\N	t	1	0	\N	\N
@@ -5042,6 +5061,9 @@ COPY public.producto_variantes (varianteid, sku, dimensiones, costounitario, sto
 199	CAJ-007-GRA	Grande	27.93	0	\N	\N	66	42.90	\N	t	1	0	\N	\N
 200	CAJ-007-GIG	Gigante	34.93	0	\N	\N	66	52.90	\N	t	1	0	\N	\N
 205	BAU-001-25X35	25x35	45.43	0	\N	\N	39	69.90	\N	t	1	0	\N	\N
+165	TOR-003-20X40-GRANDE	Grande	48.93	0	\N	\N	54	74.90	\N	t	1	0	\N	\N
+166	TOR-003-30X60-JUMBO	Jumbo	69.93	0	\N	\N	54	107.90	\N	t	1	0	\N	\N
+168	PAL-001-30X50-GRANDE	Grande	41.93	0	\N	\N	56	64.90	\N	t	1	0	\N	\N
 \.
 
 
@@ -5103,7 +5125,6 @@ COPY public.productos (productoid, categoriaid, nombreproducto, descripcion, act
 57	3	Milk Cumple Colors	Caja con diseño divertido, ideal para celebrar el cumpleaños de esa persona especial, colores vibrantes acabado barniz brillante.	t	1	MIL-002	1	2
 58	3	Six Pack Men	Caja con diseños divertidos, perfecta para cervezas ó bebidas, resistente, con estilo y ese look que siempre queda bien. Ideal para armar regalos cool y sorprender, acabado barniz brillante.	t	1	SIX-002	1	2
 47	3	Baúl Cumple	Caja para celebrar a esa persona especial, color, diseño y tamaño perfecto para un regalo espectacular, con acabado barniz brillante	t	1	BAU-002	1	2
-50	3	Baúl Colors Cumple	Caja para celebrar a esa persona especial, color, diseño y tamaño perfecto para un regalo espectacular, con acabado barniz brillante	t	1	BAU-003	1	2
 53	3	Lunch Party	Caja para celebrar a esa persona especial, ideal para un desayuno sorpresa ó si lo prefieres retiras el interior y colocas tu regalo, color, diseño y tamaño perfecto, con acabado barniz brillante.	t	1	LUN-001	1	2
 54	3	Torre Cumple Colors	Caja para celebrar a esa persona especial, color, diseño y tamaño perfecto para un regalo espectacular, con acabado barniz brillante.	t	1	TOR-003	1	2
 64	1	Caja para Rosas	Eleva la presentación de tus arreglos florales con nuestras cajas exclusivas. Diseñadas específicamente para proteger y resaltar la belleza de las rosas, estas cajas en colores magenta, rosa, lila, rojo y negro,  son la opción perfecta para San Valentín, aniversarios o cualquier ocasión especial.	t	1	CAJ-006	2	\N
@@ -5114,6 +5135,7 @@ COPY public.productos (productoid, categoriaid, nombreproducto, descripcion, act
 43	3	Pastelera De Luxe	Caja con colores intensos, ideal para cualquier ocasión, hotstampin, acabado mate.	t	1	PAS-001	1	2
 51	4	Six Pack Natural	Six pack kraft natural, perfecta para cervezas o bebidas. Resistente, con estilo y ese look natural que siempre queda bien. Ideal para armar regalos cool y sorprender 🍺✨	t	1	SIX-001	1	2
 44	4	Cubo Natural	Cubo kraft natural, simple, bonita y con mucho estilo. Ideal para presentar tus detalles con un look natural y moderno. Resistente, práctica y fácil de personalizar. Disponible en tamaños desde 10 x 10 x 10 cm hasta 65 x 65 x 65 cm ✨🎁	t	1	CAJ-001	1	2
+50	3	Baúl Colors Cumple	Caja para celebrar a esa persona especial, color, diseño y tamaño perfecto para un regalo espectacular, con acabado barniz brillante	t	1	BAU-003	1	2
 48	4	Lunch Natural	Caja tipo lunch kraft natural, práctica y con mucho estilo. Ideal para armar desayunos sorpresa y detalles especiales. Resistente, fácil de armar y perfecta para personalizar y sorprender 🎁✨	t	1	CAJ-004	1	2
 46	4	Baúl Natural	Caja baúl de regalo kraft color natural, con un diseño original y funcional. Perfecta para presentar regalos especiales con un toque natural y moderno. Resistente, fácil de armar y personalizar. Disponible en varios tamaños 🎁✨	t	1	CAJ-003	1	2
 \.
@@ -5163,7 +5185,7 @@ COPY public.solicitudes_credito (solicitud_id, cliente_id, monto_solicitado, mot
 --
 
 COPY public.tenants (tenant_id, nombre_cliente, dominio, is_active, created_at) FROM stdin;
-1	Razo Connect		t	2026-01-07 23:40:05.099814
+1	Razo Connect	razoconnect-api-hwafd9ghd8axfeas.mexicocentral-01.azurewebsites.net	t	2026-01-07 23:40:05.099814
 \.
 
 
@@ -5324,7 +5346,7 @@ SELECT pg_catalog.setval('public.communicationlogs_logid_seq', 1, true);
 -- Name: control_cambios_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.control_cambios_id_seq', 185, true);
+SELECT pg_catalog.setval('public.control_cambios_id_seq', 189, true);
 
 
 --
@@ -5405,7 +5427,7 @@ SELECT pg_catalog.setval('public.detallesordencompra_detalleoc_id_seq', 96, true
 -- Name: developers_dev_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.developers_dev_id_seq', 1, false);
+SELECT pg_catalog.setval('public.developers_dev_id_seq', 2, true);
 
 
 --
@@ -5468,7 +5490,7 @@ SELECT pg_catalog.setval('public.log_inventario_logid_seq', 1, false);
 -- Name: log_movimientos_logid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.log_movimientos_logid_seq', 242, true);
+SELECT pg_catalog.setval('public.log_movimientos_logid_seq', 246, true);
 
 
 --
@@ -5486,7 +5508,7 @@ SELECT pg_catalog.setval('public.medidas_medidaid_seq', 1, false);
 -- Name: notificaciones_notificacionid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.notificaciones_notificacionid_seq', 49, true);
+SELECT pg_catalog.setval('public.notificaciones_notificacionid_seq', 51, true);
 
 
 --
@@ -5558,7 +5580,7 @@ SELECT pg_catalog.setval('public.producto_imagenes_imagenid_seq', 281, true);
 -- Name: producto_variante_imagenes_imagenid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.producto_variante_imagenes_imagenid_seq', 107, true);
+SELECT pg_catalog.setval('public.producto_variante_imagenes_imagenid_seq', 117, true);
 
 
 --
@@ -8100,7 +8122,7 @@ GRANT SELECT(subsynccommit) ON TABLE pg_catalog.pg_subscription TO azure_pg_admi
 GRANT SELECT(subpublications) ON TABLE pg_catalog.pg_subscription TO azure_pg_admin;
 
 
--- Completed on 2026-01-07 18:07:59
+-- Completed on 2026-01-07 20:43:15
 
 --
 -- PostgreSQL database dump complete

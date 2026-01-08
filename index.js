@@ -112,7 +112,7 @@ app.use("/api/developer", developerRoutes);
 
 // Ruta de servicio suspendido (sin tenantGuard - CRÍTICO para evitar bucle infinito)
 app.get("/suspended", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "suspended.html"));
+  res.sendFile(path.join(__dirname, "tenants_views", "razo", "suspended.html"));
 });
 
 // ============================================================================
@@ -135,8 +135,27 @@ app.use(tenantGuard);
 // ARCHIVOS ESTÁTICOS (PROTEGIDOS POR TENANT GUARD)
 // ============================================================================
 
-// Servir archivos estáticos del frontend
-app.use(express.static(path.join(__dirname, "public")));
+// Middleware dinámico de archivos estáticos basado en tenant
+app.use((req, res, next) => {
+  // Si no hay tenant (rutas whitelisted), usar razo por defecto
+  const tenantFolder = req.tenant?.tenant_id === 1 ? 'razo' : 'fashion';
+  const tenantPath = path.join(__dirname, 'tenants_views', tenantFolder);
+  
+  // Intentar servir desde la carpeta del tenant
+  express.static(tenantPath)(req, res, (err) => {
+    if (err) {
+      return next(err);
+    }
+    
+    // Si el archivo no existe en fashion, intentar fallback a razo (para JS comunes)
+    if (tenantFolder === 'fashion') {
+      const razoPath = path.join(__dirname, 'tenants_views', 'razo');
+      express.static(razoPath)(req, res, next);
+    } else {
+      next();
+    }
+  });
+});
 
 // Servir iconos (favicon y otros) desde la carpeta /icon
 app.use("/icon", express.static(path.join(__dirname, "icon")));
@@ -211,7 +230,8 @@ app.use("/api/*", (req, res) => {
 
 // Redirigir rutas no encontradas a index
 app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "index.html"));
+  const tenantFolder = req.tenant?.tenant_id === 1 ? 'razo' : 'fashion';
+  res.sendFile(path.join(__dirname, "tenants_views", tenantFolder, "index.html"));
 });
 
 // Manejo de errores global
