@@ -195,8 +195,8 @@
   --theme-shadow-xl: 0 20px 40px rgba(248, 187, 208, 0.25);
 
   /* Tipografía Romántica */
-  --theme-font-title: "Pacifico", "Poppins", cursive, sans-serif;
-  --theme-font-body: "Inter", sans-serif;
+  --theme-font-title: "Pacifico", cursive;
+  --theme-font-body: "Poppins", sans-serif;
   --theme-font-weight-title: 400;
   --theme-font-weight-body: 400;
 

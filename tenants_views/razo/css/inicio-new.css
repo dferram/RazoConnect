@@ -221,12 +221,13 @@
 }
 
 .hero-eyebrow {
-  font-size: 0.95rem;
+  font-size: 1.25rem;
   text-transform: uppercase;
   letter-spacing: 2px;
-  font-weight: 600;
+  font-weight: 700;
   margin-bottom: 1rem;
-  color: #ff9966;
+  color: #ffffff;
+  text-shadow: 2px 4px 8px rgba(0, 0, 0, 0.5);
 }
 
 .hero-title {
@@ -234,14 +235,17 @@
   font-weight: 900;
   line-height: 1;
   margin-bottom: 1.5rem;
+  color: #ffffff;
   text-shadow: 2px 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .hero-description {
-  font-size: 1.25rem;
+  font-size: 1.5rem;
   margin-bottom: 2.5rem;
   opacity: 0.95;
   line-height: 1.6;
+  font-weight: 500;
+  text-shadow: 2px 4px 8px rgba(0, 0, 0, 0.5);
 }
 
 .hero-cta {
