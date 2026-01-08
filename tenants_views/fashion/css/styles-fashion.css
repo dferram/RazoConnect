@@ -69,8 +69,8 @@ body {
    ============================================ */
 body {
   font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background-color: var(--fashion-cream);
-  color: var(--fashion-gray-warm);
+  background-color: #ffffff;
+  color: #ffffff;
   line-height: 1.6;
   font-size: 16px;
   font-weight: 400;
@@ -197,7 +197,7 @@ h3 {
   font-family: "Poppins", sans-serif;
   font-size: 1.75rem;
   font-weight: 700;
-  color: var(--fashion-white);
+  color: #FFD700;
   text-decoration: none;
   display: flex;
   align-items: center;
@@ -225,9 +225,9 @@ h3 {
   list-style: none;
 }
 
-/* CAMBIO 1: Texto del menú en blanco */
+/* CAMBIO 1: Texto del menú en amarillo */
 .navbar-link {
-  color: var(--fashion-white);
+  color: #FFD700;
   text-decoration: none;
   font-weight: 500;
   transition: color 0.3s;
@@ -294,7 +294,7 @@ h3 {
 }
 
 .navbar-dropdown-toggle {
-  color: var(--fashion-white);
+  color: #FFD700;
   text-decoration: none;
   font-weight: 500;
   transition: color 0.3s;
@@ -630,7 +630,7 @@ h3 {
 .hero-title {
   font-size: 3.5rem;
   font-weight: 700;
-  color: var(--fashion-white);
+  color: white;
   margin-bottom: 1.5rem;
   line-height: 1.1;
 }
@@ -735,12 +735,12 @@ h3 {
 
 .feature-card h3 {
   font-size: 1.25rem;
-  color: var(--fashion-red);
+  color: #000000;
   margin-bottom: 0.75rem;
 }
 
 .feature-card p {
-  color: var(--fashion-gray-warm);
+  color: #333333;
   line-height: 1.6;
 }
 
