@@ -13,8 +13,6 @@ const db = require("./db");
 const passport = require("passport");
 const configurePassport = require("./config/passport");
 
-// Habilitar proxy (CRÍTICO para Azure - terminación SSL)
-app.set('trust proxy', 1);
 // Detectar entorno
 const isProduction = process.env.NODE_ENV === 'production';
 
@@ -44,6 +42,9 @@ const tenantGuard = require("./middlewares/tenantGuard");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+
+// Habilitar proxy (CRÍTICO para Azure - terminación SSL)
+app.set('trust proxy', 1);
 // Middlewares
 app.use(cors({
   origin: true,
