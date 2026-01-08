@@ -4289,9 +4289,12 @@ const getAgenteClientes = async (req, res) => {
       });
     }
 
+    // CRITICAL: Filter by tenant_id for multi-tenant isolation
+    const { tenant_id } = req.tenant;
+
     const agenteResult = await db.query(
-      `SELECT AgenteID FROM AgentesDeVentas WHERE AgenteID = $1`,
-      [agenteId]
+      `SELECT AgenteID FROM AgentesDeVentas WHERE AgenteID = $1 AND tenant_id = $2`,
+      [agenteId, tenant_id]
     );
 
     if (agenteResult.rowCount === 0) {
@@ -4370,9 +4373,12 @@ const desvincularClienteDeAgente = async (req, res) => {
       });
     }
 
+    // CRITICAL: Filter by tenant_id for multi-tenant isolation
+    const { tenant_id } = req.tenant;
+
     const snapshotResult = await db.query(
-      "SELECT * FROM Clientes WHERE ClienteID = $1",
-      [clienteId]
+      "SELECT * FROM Clientes WHERE ClienteID = $1 AND tenant_id = $2",
+      [clienteId, tenant_id]
     );
 
     if (snapshotResult.rows.length === 0) {
@@ -4382,19 +4388,16 @@ const desvincularClienteDeAgente = async (req, res) => {
       });
     }
 
-    const clienteActual = snapshotResult.rows[0];
+    const datosAnteriores = snapshotResult.rows[0];
+    const datosNuevos = { ...datosAnteriores, agenteid: null };
 
-    const rol = (req?.user?.rol || "").toString().trim().toLowerCase();
-    const allowDirect = rol === "admin" || rol === "superadmin";
-
-    const datosNuevos = {
-      AgenteID: null,
-    };
+    const rolUsuario = (req?.user?.rol || "").toString().trim().toLowerCase();
+    const allowDirect = rolUsuario === "admin" || rolUsuario === "superadmin";
 
     if (allowDirect) {
       const updateRes = await db.query(
-        "UPDATE clientes SET agenteid = $1 WHERE clienteid = $2 RETURNING clienteid, nombre, apellido, email, telefono, activo, agenteid",
-        [null, clienteId]
+        "UPDATE clientes SET agenteid = $1 WHERE clienteid = $2 AND tenant_id = $3 RETURNING clienteid, nombre, apellido, email, telefono, activo, agenteid",
+        [null, clienteId, tenant_id]
       );
 
       if (!updateRes.rows.length) {
@@ -4539,6 +4542,9 @@ const getClienteDetalle = async (req, res) => {
       });
     }
 
+    // CRITICAL: Filter by tenant_id for multi-tenant isolation
+    const { tenant_id } = req.tenant;
+
     const clienteQuery = `
       SELECT 
         ClienteID,
@@ -4549,10 +4555,10 @@ const getClienteDetalle = async (req, res) => {
         Activo,
         FechaDeRegistro
       FROM Clientes
-      WHERE ClienteID = $1
+      WHERE ClienteID = $1 AND tenant_id = $2
     `;
 
-    const clienteResult = await db.query(clienteQuery, [clienteId]);
+    const clienteResult = await db.query(clienteQuery, [clienteId, tenant_id]);
 
     if (clienteResult.rows.length === 0) {
       return res.status(404).json({
@@ -4674,9 +4680,12 @@ const actualizarEstadoCliente = async (req, res) => {
       });
     }
 
+    // CRITICAL: Filter by tenant_id for multi-tenant isolation
+    const { tenant_id } = req.tenant;
+
     const snapshotResult = await db.query(
-      "SELECT * FROM Clientes WHERE ClienteID = $1",
-      [clienteId]
+      "SELECT * FROM Clientes WHERE ClienteID = $1 AND tenant_id = $2",
+      [clienteId, tenant_id]
     );
 
     if (snapshotResult.rows.length === 0) {
@@ -4697,8 +4706,8 @@ const actualizarEstadoCliente = async (req, res) => {
 
     if (allowDirect) {
       const updateRes = await db.query(
-        "UPDATE clientes SET activo = $1 WHERE clienteid = $2 RETURNING clienteid, activo",
-        [activo, clienteId]
+        "UPDATE clientes SET activo = $1 WHERE clienteid = $2 AND tenant_id = $3 RETURNING clienteid, activo",
+        [activo, clienteId, tenant_id]
       );
 
       if (!updateRes.rows.length) {
@@ -8183,10 +8192,13 @@ const crearAgente = async (req, res) => {
     const rol = (req?.user?.rol || "").toString().trim().toLowerCase();
     const allowDirect = rol === "admin" || rol === "superadmin";
 
+    // CRITICAL: Include tenant_id for multi-tenant isolation
+    const { tenant_id } = req.tenant;
+
     if (allowDirect) {
       const insertRes = await db.query(
-        "INSERT INTO agentesdeventas (nombre, apellido, email, passwordhash, codigoagente, activo, esadmin, adminrol) VALUES ($1, $2, $3, $4, $5, TRUE, FALSE, NULL) RETURNING agenteid, nombre, apellido, email, codigoagente, activo, esadmin, adminrol",
-        [nombre.trim(), apellido.trim(), email, hashedPassword, nuevoCodigoAgente]
+        "INSERT INTO agentesdeventas (nombre, apellido, email, passwordhash, codigoagente, activo, esadmin, adminrol, tenant_id) VALUES ($1, $2, $3, $4, $5, TRUE, FALSE, NULL, $6) RETURNING agenteid, nombre, apellido, email, codigoagente, activo, esadmin, adminrol",
+        [nombre.trim(), apellido.trim(), email, hashedPassword, nuevoCodigoAgente, tenant_id]
       );
 
       const row = insertRes.rows[0];
@@ -8348,6 +8360,9 @@ const crearAgente = async (req, res) => {
  */
 const getAllAgentes = async (req, res) => {
   try {
+    // CRITICAL: Filter by tenant_id for multi-tenant isolation
+    const { tenant_id } = req.tenant;
+
     const result = await db.query(
       `SELECT 
         a.AgenteID,
@@ -8362,8 +8377,10 @@ const getAllAgentes = async (req, res) => {
       FROM AgentesDeVentas a
       LEFT JOIN Pedidos p ON a.AgenteID = p.AgenteID
       LEFT JOIN Comisiones c ON a.AgenteID = c.AgenteID
+      WHERE a.tenant_id = $1
       GROUP BY a.AgenteID
-      ORDER BY a.AgenteID DESC`
+      ORDER BY a.AgenteID DESC`,
+      [tenant_id]
     );
 
     const agentesReales = result.rows.map((row) => ({
@@ -8459,13 +8476,16 @@ const getAgenteDetalle = async (req, res) => {
   try {
     const agenteId = parseInt(req.params.id);
 
+    // CRITICAL: Filter by tenant_id for multi-tenant isolation
+    const { tenant_id } = req.tenant;
+
     // Obtener información del agente
     const agenteResult = await db.query(
       `SELECT 
         AgenteID, Nombre, Apellido, Email, CodigoAgente, Activo
       FROM AgentesDeVentas
-      WHERE AgenteID = $1`,
-      [agenteId]
+      WHERE AgenteID = $1 AND tenant_id = $2`,
+      [agenteId, tenant_id]
     );
 
     if (agenteResult.rows.length === 0) {
@@ -8548,9 +8568,12 @@ const desactivarAgente = async (req, res) => {
   try {
     const agenteId = parseInt(req.params.id);
 
+    // CRITICAL: Filter by tenant_id for multi-tenant isolation
+    const { tenant_id } = req.tenant;
+
     const snapshotResult = await db.query(
-      "SELECT * FROM AgentesDeVentas WHERE AgenteID = $1",
-      [agenteId]
+      "SELECT * FROM AgentesDeVentas WHERE AgenteID = $1 AND tenant_id = $2",
+      [agenteId, tenant_id]
     );
 
     if (snapshotResult.rows.length === 0) {
@@ -8571,8 +8594,8 @@ const desactivarAgente = async (req, res) => {
 
     if (allowDirect) {
       const updateRes = await db.query(
-        "UPDATE agentesdeventas SET activo = FALSE WHERE agenteid = $1 RETURNING agenteid, nombre, apellido, email, codigoagente, activo, esadmin, adminrol",
-        [agenteId]
+        "UPDATE agentesdeventas SET activo = FALSE WHERE agenteid = $1 AND tenant_id = $2 RETURNING agenteid, nombre, apellido, email, codigoagente, activo, esadmin, adminrol",
+        [agenteId, tenant_id]
       );
 
       if (!updateRes.rows.length) {
@@ -8854,6 +8877,9 @@ const pagarComision = async (req, res) => {
  */
 const getAllClientes = async (req, res) => {
   try {
+    // CRITICAL: Filter by tenant_id for multi-tenant isolation
+    const { tenant_id } = req.tenant;
+
     const result = await db.query(
       `SELECT 
         c.ClienteID,
@@ -8867,8 +8893,10 @@ const getAllClientes = async (req, res) => {
         COALESCE(SUM(p.MontoTotal), 0) AS MontoTotalCompras
       FROM Clientes c
       LEFT JOIN Pedidos p ON c.ClienteID = p.ClienteID
+      WHERE c.tenant_id = $1
       GROUP BY c.ClienteID
-      ORDER BY c.FechaDeRegistro DESC`
+      ORDER BY c.FechaDeRegistro DESC`,
+      [tenant_id]
     );
 
     res.json({

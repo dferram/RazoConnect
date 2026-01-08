@@ -535,3 +535,67 @@ body {
     }
   }
 }
+
+/* ============================================
+   ESTILOS ESPECÍFICOS PARA SAN VALENTÍN
+   Aplica Pacifico y mejora contraste
+   ============================================ */
+
+/* Aplicar Pacifico a títulos solo en San Valentín */
+body.theme-sanvalentin h1,
+body.theme-sanvalentin h2,
+body.theme-sanvalentin h3,
+body.theme-sanvalentin .hero-title,
+body.theme-sanvalentin .welcome-title,
+body.theme-sanvalentin .countdown-event-title,
+body.theme-sanvalentin .section-title {
+  font-family: "Pacifico", cursive;
+  font-weight: 400;
+}
+
+/* Texto blanco con sombra para banners de San Valentín */
+body.theme-sanvalentin .hero-eyebrow,
+body.theme-sanvalentin .hero-title,
+body.theme-sanvalentin .hero-description {
+  color: #ffffff !important;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3), 
+               1px 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+/* Texto "OFERTAS" más grande en San Valentín - 200% más grande */
+body.theme-sanvalentin .hero-eyebrow {
+  font-size: 4em !important;
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+
+/* Títulos del carrusel con Pacifico */
+body.theme-sanvalentin .hero-title {
+  font-size: clamp(3.5rem, 10vw, 7rem);
+  line-height: 1.1;
+  letter-spacing: 0.02em;
+}
+
+/* Descripción más legible */
+body.theme-sanvalentin .hero-description {
+  font-family: "Poppins", sans-serif;
+  font-size: 1.5rem;
+  font-weight: 500;
+}
+
+/* Títulos de secciones con Pacifico */
+body.theme-sanvalentin .welcome-title,
+body.theme-sanvalentin .countdown-event-title {
+  font-family: "Pacifico", cursive;
+  font-weight: 400;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Asegurar que el cuerpo de texto sea legible */
+body.theme-sanvalentin p,
+body.theme-sanvalentin .hero-description,
+body.theme-sanvalentin .welcome-subtitle,
+body.theme-sanvalentin .countdown-event-subtitle {
+  font-family: "Poppins", sans-serif;
+}
