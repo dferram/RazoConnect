@@ -6,12 +6,6 @@ const WHITELISTED_PATHS = [
   '/auth/developer',
   '/suspended',
   '/suspended.html',
-  '/css/',
-  '/js/',
-  '/images/',
-  '/assets/',
-  '/uploads/',
-  '/components/',
   '/icon/',
   '/favicon.ico'
 ];

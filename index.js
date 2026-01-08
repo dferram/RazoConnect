@@ -142,6 +142,15 @@ app.use((req, res, next) => {
   const tenantFolder = req.tenant?.tema || 'razo'; // Default a 'razo' si no hay tema
   const tenantPath = path.join(__dirname, 'tenants_views', tenantFolder);
   
+  // DEBUG: Logging para archivos CSS
+  if (req.path.includes('.css')) {
+    console.log('--- DEBUG ESTÁTICOS ---');
+    console.log('Path solicitado:', req.path);
+    console.log('Tenant folder:', tenantFolder);
+    console.log('Buscando en:', path.join(tenantPath, req.path));
+    console.log('Path absoluto completo:', path.resolve(tenantPath, req.path.substring(1)));
+  }
+  
   // AISLAMIENTO TOTAL: Cada tenant sirve SOLO sus propios archivos
   // Si un archivo no existe, debe dar error 404, NO cargar del otro tenant
   express.static(tenantPath)(req, res, next);
