@@ -709,6 +709,7 @@ const agregarAlCarrito = async (req, res) => {
  */
 const actualizarCarrito = async (req, res) => {
   try {
+    const { tenant_id } = req.tenant;
     const clienteId = req.user.userId;
     const varianteId = parseInt(req.params.varianteId);
     const { CantidadPaquetes, TamanoID } = req.body;
@@ -744,9 +745,9 @@ const actualizarCarrito = async (req, res) => {
        FROM producto_variantes pv
        INNER JOIN productos p ON p.productoid = pv.productoid
        LEFT JOIN proveedor_reglas_empaque pre ON pre.reglaid = p.reglaid
-       WHERE pv.varianteid = $1
+       WHERE pv.varianteid = $1 AND p.tenant_id = $2
        LIMIT 1`,
-      [varianteId]
+      [varianteId, tenant_id]
     );
 
     if (varianteResult.rows.length === 0) {
@@ -759,12 +760,14 @@ const actualizarCarrito = async (req, res) => {
     const variante = varianteResult.rows[0];
 
     const masterResult = await db.query(
-      `SELECT VarianteID, COALESCE(Stock, 0) AS Stock
-       FROM Producto_Variantes
-       WHERE ProductoID = $1
-         AND PiezasPorPaquete = 1
+      `SELECT pv.VarianteID, COALESCE(pv.Stock, 0) AS Stock
+       FROM Producto_Variantes pv
+       INNER JOIN Productos p ON p.ProductoID = pv.ProductoID
+       WHERE pv.ProductoID = $1
+         AND pv.PiezasPorPaquete = 1
+         AND p.tenant_id = $2
        LIMIT 1`,
-      [variante.productoid]
+      [variante.productoid, tenant_id]
     );
     const stockFisico =
       masterResult.rows.length > 0
@@ -795,8 +798,9 @@ const actualizarCarrito = async (req, res) => {
          row_to_json(t) AS tamano_info
        FROM itemsdelcarrito ic
        LEFT JOIN cat_tamanopaquetes t ON t.tamanoid = ic.tamanoid
-       WHERE ic.carritoid = $1 AND ic.varianteid = $2 AND ic.tamanoid = $3`,
-      [carritoId, varianteId, tamanoId]
+       WHERE ic.carritoid = $1 AND ic.varianteid = $2 AND ic.tamanoid = $3
+         AND (t.tenant_id = $4 OR t.tenant_id IS NULL)`,
+      [carritoId, varianteId, tamanoId, tenant_id]
     );
 
     if (itemActualResult.rows.length === 0) {
@@ -907,6 +911,7 @@ const actualizarCarrito = async (req, res) => {
  */
 const cambiarVarianteItemCarrito = async (req, res) => {
   try {
+    const { tenant_id } = req.tenant;
     const clienteId = req.user.userId;
     const itemId = parseInt(req.params.itemId, 10);
     const { NuevaVarianteID, TamanoID } = req.body || {};
@@ -952,9 +957,10 @@ const cambiarVarianteItemCarrito = async (req, res) => {
          pv.productoid
        FROM itemsdelcarrito ic
        INNER JOIN producto_variantes pv ON pv.varianteid = ic.varianteid
-       WHERE ic.carritoid = $1 AND ic.itemid = $2
+       INNER JOIN productos p ON p.productoid = pv.productoid
+       WHERE ic.carritoid = $1 AND ic.itemid = $2 AND p.tenant_id = $3
        LIMIT 1`,
-      [carritoId, itemId]
+      [carritoId, itemId, tenant_id]
     );
 
     if (itemResult.rows.length === 0) {
@@ -1014,9 +1020,12 @@ const cambiarVarianteItemCarrito = async (req, res) => {
        INNER JOIN productos p ON p.productoid = pv.productoid
        INNER JOIN producto_tamanosdisponibles ptd ON ptd.productoid = p.productoid AND ptd.tamanoid = $3
        INNER JOIN cat_tamanopaquetes t ON t.tamanoid = ptd.tamanoid
+       LEFT JOIN proveedor_reglas_empaque pre ON pre.reglaid = p.reglaid
        WHERE pv.varianteid = $1 AND pv.productoid = $2
+         AND p.tenant_id = $4
+         AND t.tenant_id = $4
        LIMIT 1`,
-      [nuevaVarianteId, productId, tamanoIdFinal]
+      [nuevaVarianteId, productId, tamanoIdFinal, tenant_id]
     );
 
     if (varianteResult.rows.length === 0) {
@@ -1039,12 +1048,14 @@ const cambiarVarianteItemCarrito = async (req, res) => {
     }
 
     const masterResult = await db.query(
-      `SELECT VarianteID, COALESCE(Stock, 0) AS Stock
-       FROM Producto_Variantes
-       WHERE ProductoID = $1
-         AND PiezasPorPaquete = 1
+      `SELECT pv.VarianteID, COALESCE(pv.Stock, 0) AS Stock
+       FROM Producto_Variantes pv
+       INNER JOIN Productos p ON p.ProductoID = pv.ProductoID
+       WHERE pv.ProductoID = $1
+         AND pv.PiezasPorPaquete = 1
+         AND p.tenant_id = $2
        LIMIT 1`,
-      [variante.productoid]
+      [variante.productoid, tenant_id]
     );
     const stockFisico =
       masterResult.rows.length > 0
@@ -1153,6 +1164,7 @@ const cambiarVarianteItemCarrito = async (req, res) => {
  */
 const eliminarDelCarrito = async (req, res) => {
   try {
+    const { tenant_id } = req.tenant;
     const clienteId = req.user.userId;
     const itemId = parseInt(req.params.itemId, 10);
 
