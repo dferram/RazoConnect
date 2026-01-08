@@ -4731,13 +4731,13 @@ const refreshAdminToken = async (req, res) => {
       });
     }
 
-    // Generar un nuevo token con el mismo payload
+    // Generar un nuevo token con el mismo payload (defensive: ensure email is never undefined)
     const { generateToken } = require("../utils/jwtHelper");
     const newToken = generateToken({
       userId: adminId,
       tipo: tipo,
       rol: req.user.rol,
-      email: email,
+      email: email || null,
     });
 
     res.json({

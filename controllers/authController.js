@@ -115,11 +115,11 @@ const registroCliente = async (req, res) => {
 
     const nuevoCliente = result.rows[0];
 
-    // Generar token JWT
+    // Generar token JWT (defensive: ensure email is never undefined)
     const token = generateToken({
       userId: nuevoCliente.clienteid,
       rol: "cliente",
-      email: nuevoCliente.email,
+      email: nuevoCliente.email || null,
     });
 
     try {
@@ -289,11 +289,11 @@ const login = async (req, res) => {
         });
       }
 
-      // Generar token JWT
+      // Generar token JWT (defensive: ensure email is never undefined)
       const token = generateToken({
         userId: cliente.clienteid,
         rol: "cliente",
-        email: cliente.email,
+        email: cliente.email || null,
       });
 
       return res.status(200).json({
@@ -489,11 +489,11 @@ const refreshClienteToken = async (req, res) => {
       });
     }
 
-    // Generar un nuevo token con el mismo payload
+    // Generar un nuevo token con el mismo payload (defensive: ensure email is never undefined)
     const newToken = generateToken({
       userId: clienteId,
       rol: "cliente",
-      email: email,
+      email: email || null,
     });
 
     res.json({
