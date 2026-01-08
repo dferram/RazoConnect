@@ -1,0 +1,1315 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gestión de Proveedores - Admin Fashion Box</title>
+    <link rel="icon" type="image/png" href="/icon/Logo_Razo.png" />
+
+    <!-- PROTECCIÓN DE AUTENTICACIÓN ADMIN -->
+    <script src="js/auth-guard-admin.js"></script>
+
+    <!-- SISTEMA DE RENOVACIÓN DE TOKENS -->
+    <script src="js/token-refresh.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <link rel="stylesheet" href="css/styles.css" />`n    <link rel="stylesheet" href="css/fashion-theme.css" />
+    <link rel="stylesheet" href="css/admin.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css"
+    />
+      <link rel="stylesheet" href="css/mobile-responsive.css" />
+  </head>
+  <body data-page-title="Gestión de proveedores">
+    <div class="admin-layout">
+      <!-- Sidebar -->
+      <div id="sidebar-container"></div>
+
+      <!-- Main Content -->
+      <main class="admin-main">
+        <div id="admin-header-container"></div>
+
+        <div class="admin-content">
+          <!-- Actions Bar -->
+          <div
+            class="admin-table-container"
+            style="margin-bottom: 1.5rem; padding: 1rem"
+          >
+            <div
+              style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+              "
+            >
+              <div>
+                <h2
+                  style="
+                    margin: 0;
+                    font-size: 1.25rem;
+                    color: var(--razo-gray-dark);
+                  "
+                >
+                  📋 Lista de Proveedores
+                </h2>
+                <p
+                  style="
+                    margin: 0.5rem 0 0 0;
+                    color: var(--razo-gray-warm);
+                    font-size: 0.875rem;
+                  "
+                >
+                  Gestiona tus proveedores y sus datos de contacto
+                </p>
+              </div>
+              <button
+                class="btn btn-primary"
+                onclick="openProveedorModal()"
+                style="padding: 0.75rem 1.5rem"
+              >
+                ➕ Agregar Proveedor
+              </button>
+            </div>
+          </div>
+
+          <!-- Proveedores Table -->
+          <div class="admin-table-container">
+            <div id="loadingProveedores" class="loading">
+              <div class="spinner"></div>
+            </div>
+
+            <div style="overflow-x: auto">
+              <table
+                class="admin-table"
+                id="proveedoresTable"
+                style="display: none"
+              >
+                <thead>
+                  <tr>
+                    <th>#ID</th>
+                    <th>Empresa</th>
+                    <th>Contacto</th>
+                    <th>Email</th>
+                    <th>Teléfono</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="proveedoresTableBody">
+                  <!-- Proveedores will be loaded here -->
+                </tbody>
+              </table>
+            </div>
+
+            <div
+              id="emptyProveedores"
+              class="empty-state"
+              style="display: none"
+            >
+              <div class="empty-state-icon">🏭</div>
+              <h3 class="empty-state-title">No hay proveedores</h3>
+              <p class="empty-state-text">
+                Comienza agregando un proveedor haciendo clic en "Agregar
+                Proveedor"
+              </p>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- Modal para agregar/editar proveedor -->
+    <div id="proveedorModal" class="modal">
+      <div
+        class="modal-content"
+        style="
+          background: white;
+          padding: 2rem;
+          border-radius: 1rem;
+          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+          max-width: 1200px;
+          width: 95%;
+        "
+      >
+        <div
+          class="modal-header"
+          style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #f5f1ed;
+          "
+        >
+          <h2
+            id="modalTitle"
+            style="margin: 0; font-size: 1.5rem; color: #2d3748"
+          >
+            Nuevo Proveedor
+          </h2>
+          <button
+            class="modal-close"
+            onclick="closeProveedorModal()"
+            style="
+              background: none;
+              border: none;
+              font-size: 2rem;
+              cursor: pointer;
+              color: #6b5d57;
+              line-height: 1;
+              padding: 0;
+              width: 32px;
+              height: 32px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              border-radius: 50%;
+              transition: all 0.2s;
+            "
+          >
+            &times;
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <form id="proveedorForm">
+            <input type="hidden" id="proveedorId" />
+
+            <!-- Nota informativa -->
+            <div
+              class="alert alert-info"
+              style="font-size: 0.875rem; margin-bottom: 1.5rem; grid-column: 1 / -1"
+            >
+              <strong>ℹ️ Nota:</strong> Solo el nombre de la empresa es
+              obligatorio. Los demás campos son opcionales.
+            </div>
+
+            <!-- SECCIÓN: INFORMACIÓN EMPRESARIAL -->
+            <fieldset style="grid-column: 1 / -1; border: none; padding: 0; margin: 1.5rem 0 1rem 0;">
+              <legend style="font-size: 1rem; font-weight: 600; color: var(--razo-orange); margin-bottom: 0.75rem; padding: 0;">🏢 Información Empresarial</legend>
+            </fieldset>
+
+            <div class="form-grid">
+              <div class="form-group" style="grid-column: 1 / -1;">
+                <label for="nombreEmpresa" class="form-label"
+                  >Nombre Comercial <span style="color: red">*</span></label
+                >
+                <input
+                  type="text"
+                  id="nombreEmpresa"
+                  class="form-input"
+                  placeholder="Ej: Distribuidora ABC"
+                  required
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="razonSocial" class="form-label">Razón Social</label>
+                <input
+                  type="text"
+                  id="razonSocial"
+                  class="form-input"
+                  placeholder="Ej: Distribuidora ABC S.A. de C.V."
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="rfc" class="form-label">RFC</label>
+                <input
+                  type="text"
+                  id="rfc"
+                  class="form-input"
+                  placeholder="Ej: ABC123456XYZ"
+                  maxlength="13"
+                />
+              </div>
+
+              <div class="form-group" style="grid-column: 1 / -1;">
+                <label for="regimenFiscal" class="form-label">Régimen Fiscal</label>
+                <input
+                  type="text"
+                  id="regimenFiscal"
+                  class="form-input"
+                  placeholder="Ej: 601 - General de Ley Personas Morales"
+                />
+              </div>
+            </div>
+
+            <!-- SECCIÓN: DIRECCIÓN FISCAL -->
+            <fieldset style="grid-column: 1 / -1; border: none; padding: 0; margin: 1.5rem 0 1rem 0;">
+              <legend style="font-size: 1rem; font-weight: 600; color: var(--razo-orange); margin-bottom: 0.75rem; padding: 0;">📍 Dirección Fiscal</legend>
+            </fieldset>
+
+            <div class="form-grid">
+              <div class="form-group" style="grid-column: 1 / -1;">
+                <label for="calle" class="form-label">Calle y Número</label>
+                <input
+                  type="text"
+                  id="calle"
+                  class="form-input"
+                  placeholder="Ej: Av. Insurgentes 1234"
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="colonia" class="form-label">Colonia</label>
+                <input
+                  type="text"
+                  id="colonia"
+                  class="form-input"
+                  placeholder="Ej: Del Valle"
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="cp" class="form-label">Código Postal</label>
+                <input
+                  type="text"
+                  id="cp"
+                  class="form-input"
+                  placeholder="Ej: 03100"
+                  maxlength="5"
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="ciudad" class="form-label">Ciudad</label>
+                <input
+                  type="text"
+                  id="ciudad"
+                  class="form-input"
+                  placeholder="Ej: Ciudad de México"
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="estado" class="form-label">Estado</label>
+                <input
+                  type="text"
+                  id="estado"
+                  class="form-input"
+                  placeholder="Ej: CDMX"
+                />
+              </div>
+            </div>
+
+            <!-- SECCIÓN: CONTACTOS -->
+            <fieldset style="grid-column: 1 / -1; border: none; padding: 0; margin: 1.5rem 0 1rem 0;">
+              <legend style="font-size: 1rem; font-weight: 600; color: var(--razo-orange); margin-bottom: 0.75rem; padding: 0;">👥 Contactos</legend>
+            </fieldset>
+
+            <div class="form-grid">
+              <!-- Contacto General -->
+              <div class="form-group">
+                <label for="contactoNombre" class="form-label">Contacto General</label>
+                <input
+                  type="text"
+                  id="contactoNombre"
+                  class="form-input"
+                  placeholder="Nombre del contacto"
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="telefono" class="form-label">Teléfono</label>
+                <input
+                  type="tel"
+                  id="telefono"
+                  class="form-input"
+                  placeholder="555-1234-5678"
+                />
+              </div>
+
+              <div class="form-group" style="grid-column: 1 / -1;">
+                <label for="email" class="form-label">Email</label>
+                <input
+                  type="email"
+                  id="email"
+                  class="form-input"
+                  placeholder="contacto@empresa.com"
+                />
+              </div>
+
+              <!-- Representante de Ventas -->
+              <div class="form-group" style="grid-column: 1 / -1; margin-top: 1rem;">
+                <strong style="color: var(--razo-gray-dark); font-size: 0.9rem;">Representante de Ventas</strong>
+              </div>
+
+              <div class="form-group">
+                <label for="nombreRepresentanteVentas" class="form-label">Nombre</label>
+                <input
+                  type="text"
+                  id="nombreRepresentanteVentas"
+                  class="form-input"
+                  placeholder="Nombre del representante"
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="celularVentas" class="form-label">Celular</label>
+                <input
+                  type="tel"
+                  id="celularVentas"
+                  class="form-input"
+                  placeholder="555-9876-5432"
+                />
+              </div>
+
+              <div class="form-group" style="grid-column: 1 / -1;">
+                <label for="emailVentas" class="form-label">Email Ventas</label>
+                <input
+                  type="email"
+                  id="emailVentas"
+                  class="form-input"
+                  placeholder="ventas@empresa.com"
+                />
+              </div>
+
+              <!-- Contacto de Cobranza -->
+              <div class="form-group" style="grid-column: 1 / -1; margin-top: 1rem;">
+                <strong style="color: var(--razo-gray-dark); font-size: 0.9rem;">Contacto de Cobranza</strong>
+              </div>
+
+              <div class="form-group">
+                <label for="nombreContactoCobranza" class="form-label">Nombre</label>
+                <input
+                  type="text"
+                  id="nombreContactoCobranza"
+                  class="form-input"
+                  placeholder="Nombre del contacto"
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="telefonoCobranza" class="form-label">Teléfono</label>
+                <input
+                  type="tel"
+                  id="telefonoCobranza"
+                  class="form-input"
+                  placeholder="555-1111-2222"
+                />
+              </div>
+
+              <div class="form-group" style="grid-column: 1 / -1;">
+                <label for="emailCobranza" class="form-label">Email Cobranza</label>
+                <input
+                  type="email"
+                  id="emailCobranza"
+                  class="form-input"
+                  placeholder="cobranza@empresa.com"
+                />
+              </div>
+            </div>
+
+            <!-- SECCIÓN: INFORMACIÓN BANCARIA -->
+            <fieldset style="grid-column: 1 / -1; border: none; padding: 0; margin: 1.5rem 0 1rem 0;">
+              <legend style="font-size: 1rem; font-weight: 600; color: var(--razo-orange); margin-bottom: 0.75rem; padding: 0;">💳 Información Bancaria</legend>
+            </fieldset>
+
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="banco" class="form-label">Banco</label>
+                <input
+                  type="text"
+                  id="banco"
+                  class="form-input"
+                  placeholder="Ej: BBVA, Santander"
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="numeroCuenta" class="form-label">Número de Cuenta</label>
+                <input
+                  type="text"
+                  id="numeroCuenta"
+                  class="form-input"
+                  placeholder="Últimos 4 dígitos"
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="clabe" class="form-label">CLABE Interbancaria</label>
+                <input
+                  type="text"
+                  id="clabe"
+                  class="form-input"
+                  placeholder="18 dígitos"
+                  maxlength="18"
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="referenciaPago" class="form-label">Referencia de Pago</label>
+                <input
+                  type="text"
+                  id="referenciaPago"
+                  class="form-input"
+                  placeholder="Referencia o concepto"
+                />
+              </div>
+            </div>
+
+            <!-- SECCIÓN: CONDICIONES COMERCIALES -->
+            <fieldset style="grid-column: 1 / -1; border: none; padding: 0; margin: 1.5rem 0 1rem 0;">
+              <legend style="font-size: 1rem; font-weight: 600; color: var(--razo-orange); margin-bottom: 0.75rem; padding: 0;">💰 Condiciones Comerciales</legend>
+            </fieldset>
+
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="diasCredito" class="form-label">Días de Crédito</label>
+                <input
+                  type="number"
+                  id="diasCredito"
+                  class="form-input"
+                  placeholder="Ej: 30, 60, 90"
+                  min="0"
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="limiteCredito" class="form-label">Límite de Crédito ($)</label>
+                <input
+                  type="number"
+                  id="limiteCredito"
+                  class="form-input"
+                  placeholder="Ej: 50000"
+                  min="0"
+                  step="0.01"
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="descuentoFinanciero" class="form-label">Descuento Financiero</label>
+                <input
+                  type="text"
+                  id="descuentoFinanciero"
+                  class="form-input"
+                  placeholder="Ej: 2% a 10 días"
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="minimoCompra" class="form-label">Mínimo de Compra ($)</label>
+                <input
+                  type="number"
+                  id="minimoCompra"
+                  class="form-input"
+                  placeholder="Ej: 5000"
+                  min="0"
+                  step="0.01"
+                />
+              </div>
+
+              <div class="form-group" style="grid-column: 1 / -1;">
+                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                  <input
+                    type="checkbox"
+                    id="aceptaDevoluciones"
+                    style="width: auto;"
+                  />
+                  <span class="form-label" style="margin: 0;">Acepta Devoluciones</span>
+                </label>
+              </div>
+            </div>
+
+            <fieldset style="grid-column: 1 / -1; border: none; padding: 0; margin: 1.5rem 0 1rem 0;">
+              <legend style="font-size: 1rem; font-weight: 600; color: var(--razo-orange); margin-bottom: 0.75rem; padding: 0;">📦 Configuración de Empaques</legend>
+            </fieldset>
+
+            <div class="admin-table-container" style="grid-column: 1 / -1; padding: 1rem; margin-bottom: 0.75rem;">
+              <div class="form-grid" style="margin-bottom: 0.75rem;">
+                <div class="form-group" style="grid-column: 1 / -1;">
+                  <label for="selectTipoProductoRegla" class="form-label">Tipo de Producto</label>
+                  <div style="display:flex; gap:0.5rem; align-items:center;">
+                    <select id="selectTipoProductoRegla" class="form-input" style="flex: 1;" title="Tipo de Producto">
+                      <option value="">Selecciona un tipo...</option>
+                    </select>
+                    <button
+                      type="button"
+                      id="btnCrearTipoProductoRegla"
+                      class="btn btn-light"
+                      title="Crear tipo de producto"
+                      style="padding: 0.5rem 0.75rem;"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label for="inputPiezasPorPaqueteRegla" class="form-label">Piezas por Paquete</label>
+                  <input
+                    type="number"
+                    id="inputPiezasPorPaqueteRegla"
+                    class="form-input"
+                    placeholder="Ej: 24"
+                    min="1"
+                  />
+                </div>
+
+                <div class="form-group" style="display:flex; align-items:end;">
+                  <button
+                    type="button"
+                    id="btnAgregarReglaEmpaque"
+                    class="btn btn-primary"
+                    style="width: 100%;"
+                  >
+                    Agregar / Actualizar Regla
+                  </button>
+                </div>
+              </div>
+
+              <div style="overflow-x: auto;">
+                <table class="admin-table" style="margin: 0;">
+                  <thead>
+                    <tr>
+                      <th>Tipo de Producto</th>
+                      <th>Piezas</th>
+                      <th style="width: 110px;">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tablaReglasEmpaquePreviewBody">
+                    <tr>
+                      <td colspan="3" style="text-align:center; color: var(--razo-gray-warm);">Sin reglas configuradas</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 1rem; margin-top: 1.5rem; margin-bottom: 1rem">
+              <button
+                type="submit"
+                class="btn btn-primary"
+                id="btnGuardar"
+                style="flex: 1"
+              >
+                <span id="btnGuardarText">Guardar Proveedor</span>
+                <div
+                  class="spinner"
+                  id="btnGuardarSpinner"
+                  style="display: none"
+                ></div>
+              </button>
+              <button
+                type="button"
+                class="btn btn-secondary"
+                onclick="closeProveedorModal()"
+                style="flex: 1"
+              >
+                Cancelar
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <script src="js/layout.js" defer></script>`n    <script src="js/sidebar-toggle.js" defer></script>
+    <script src="js/api.js"></script>
+    <script src="js/admin-header-dropdown.js"></script>
+    <script src="js/components/admin-header-loader.js"></script>
+    <script src="js/components/user-profile.js"></script>
+    <script>
+      // Authentication check
+      const adminToken = localStorage.getItem("Fashion Box_admin_token");
+      if (!adminToken) {
+        window.location.href = "/login.html";
+      }
+
+      let currentProveedores = [];
+      let editingProveedorId = null;
+      let isSuperAdmin = false;
+
+      let tiposProductoAdminCache = [];
+      let reglasEmpaque = [];
+
+      const selectTipoProductoRegla = document.getElementById("selectTipoProductoRegla");
+      const btnCrearTipoProductoRegla = document.getElementById("btnCrearTipoProductoRegla");
+      const inputPiezasPorPaqueteRegla = document.getElementById("inputPiezasPorPaqueteRegla");
+      const btnAgregarReglaEmpaque = document.getElementById("btnAgregarReglaEmpaque");
+      const tablaReglasEmpaquePreviewBody = document.getElementById(
+        "tablaReglasEmpaquePreviewBody"
+      );
+
+      function resetReglasEmpaque() {
+        reglasEmpaque = [];
+        if (inputPiezasPorPaqueteRegla) inputPiezasPorPaqueteRegla.value = "";
+        if (selectTipoProductoRegla) selectTipoProductoRegla.value = "";
+        renderReglasEmpaquePreview();
+      }
+
+      function getTipoProductoNombreById(tipoId) {
+        const id = Number.parseInt(tipoId, 10);
+        if (!Number.isInteger(id) || id <= 0) return "";
+        const match = (tiposProductoAdminCache || []).find(
+          (t) => Number.parseInt(t?.tipoProductoId, 10) === id
+        );
+        return match?.nombre ? String(match.nombre) : "";
+      }
+
+      function renderReglasEmpaquePreview() {
+        if (!tablaReglasEmpaquePreviewBody) return;
+
+        if (!Array.isArray(reglasEmpaque) || reglasEmpaque.length === 0) {
+          tablaReglasEmpaquePreviewBody.innerHTML =
+            '<tr><td colspan="3" style="text-align:center; color: var(--razo-gray-warm);">Sin reglas configuradas</td></tr>';
+          return;
+        }
+
+        const rows = reglasEmpaque
+          .slice()
+          .sort((a, b) => {
+            const an = getTipoProductoNombreById(a.tipoProductoId);
+            const bn = getTipoProductoNombreById(b.tipoProductoId);
+            return an.localeCompare(bn);
+          })
+          .map((r) => {
+            const tipoId = Number.parseInt(r.tipoProductoId, 10);
+            const piezas = Number.parseInt(r.piezasPorPaquete, 10);
+            const nombre = getTipoProductoNombreById(tipoId) || `#${tipoId}`;
+            return `
+              <tr>
+                <td>${nombre}</td>
+                <td>${piezas}</td>
+                <td>
+                  <button
+                    type="button"
+                    class="btn btn-light"
+                    style="padding: 0.4rem 0.6rem; font-size: 0.85rem;"
+                    onclick="editarReglaEmpaqueModal(${tipoId}, ${piezas})"
+                    title="Editar"
+                  >
+                    ✏️
+                  </button>
+                </td>
+              </tr>
+            `;
+          })
+          .join("");
+
+        tablaReglasEmpaquePreviewBody.innerHTML = rows;
+      }
+
+      window.editarReglaEmpaqueModal = function (tipoProductoId, piezasPorPaquete) {
+        const tipoId = Number.parseInt(tipoProductoId, 10);
+        const piezas = Number.parseInt(piezasPorPaquete, 10);
+        if (selectTipoProductoRegla) selectTipoProductoRegla.value = String(tipoId);
+        if (inputPiezasPorPaqueteRegla) inputPiezasPorPaqueteRegla.value = String(piezas);
+      };
+
+      async function loadTiposProductoAdmin() {
+        const response = await fetch(`${API_BASE_URL}/admin/tipos-producto`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${adminToken}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+          throw new Error(data.message || "No se pudieron cargar los tipos de producto");
+        }
+
+        tiposProductoAdminCache = Array.isArray(data?.data?.tipos) ? data.data.tipos : [];
+        if (selectTipoProductoRegla) {
+          const prev = selectTipoProductoRegla.value;
+          selectTipoProductoRegla.innerHTML = '<option value="">Selecciona un tipo...</option>';
+          tiposProductoAdminCache.forEach((t) => {
+            const opt = document.createElement("option");
+            opt.value = String(t.tipoProductoId);
+            opt.textContent = t.nombre;
+            selectTipoProductoRegla.appendChild(opt);
+          });
+          selectTipoProductoRegla.value = prev;
+        }
+        renderReglasEmpaquePreview();
+      }
+
+      async function crearTipoProductoRapido() {
+        const result = await Swal.fire({
+          title: "Nuevo Tipo de Producto",
+          input: "text",
+          inputPlaceholder: "Ej: Caja",
+          showCancelButton: true,
+          confirmButtonText: "Crear",
+          cancelButtonText: "Cancelar",
+          confirmButtonColor: "#F97316",
+          cancelButtonColor: "#6b7280",
+          inputValidator: (value) => {
+            const txt = String(value || "").trim();
+            if (!txt) return "Ingresa un nombre";
+            return undefined;
+          },
+        });
+
+        if (!result.isConfirmed) return;
+
+        const nombre = String(result.value || "").trim();
+        const response = await fetch(`${API_BASE_URL}/admin/tipos-producto`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${adminToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ nombre }),
+        });
+
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+          throw new Error(data.message || "No se pudo crear el tipo");
+        }
+
+        await loadTiposProductoAdmin();
+        if (selectTipoProductoRegla && data?.data?.tipoProductoId) {
+          selectTipoProductoRegla.value = String(data.data.tipoProductoId);
+        }
+      }
+
+      async function loadReglasEmpaqueProveedorIntoArray(proveedorId) {
+        const response = await fetch(
+          `${API_BASE_URL}/admin/proveedores/${proveedorId}/reglas`,
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${adminToken}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+          throw new Error(data.message || "No se pudieron cargar las reglas");
+        }
+
+        const reglasMap = data?.data?.reglas && typeof data.data.reglas === "object"
+          ? data.data.reglas
+          : {};
+
+        reglasEmpaque = Object.entries(reglasMap)
+          .map(([tipoId, cantidad]) => ({
+            tipoProductoId: Number.parseInt(tipoId, 10),
+            piezasPorPaquete: Number.parseInt(cantidad, 10),
+          }))
+          .filter(
+            (r) =>
+              Number.isInteger(r.tipoProductoId) &&
+              r.tipoProductoId > 0 &&
+              Number.isInteger(r.piezasPorPaquete) &&
+              r.piezasPorPaquete > 0
+          );
+
+        renderReglasEmpaquePreview();
+      }
+
+      async function applyReglasEmpaque(proveedorId) {
+        const provId = Number.parseInt(proveedorId, 10);
+        if (!Number.isInteger(provId) || provId <= 0) {
+          throw new Error("Proveedor inválido para aplicar reglas");
+        }
+
+        for (const regla of reglasEmpaque) {
+          const tipoId = Number.parseInt(regla.tipoProductoId, 10);
+          const cantidad = Number.parseInt(regla.piezasPorPaquete, 10);
+          if (!Number.isInteger(tipoId) || tipoId <= 0) continue;
+          if (!Number.isInteger(cantidad) || cantidad <= 0) continue;
+
+          const response = await fetch(
+            `${API_BASE_URL}/admin/proveedores/${provId}/reglas`,
+            {
+              method: "PUT",
+              headers: {
+                Authorization: `Bearer ${adminToken}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                TipoProductoID: tipoId,
+                cantidadEmpaque: cantidad,
+              }),
+            }
+          );
+          const data = await response.json();
+          if (!response.ok || !data.success) {
+            throw new Error(data.message || "No se pudieron aplicar las reglas");
+          }
+        }
+      }
+
+      // Verify admin token
+      async function verifyAndLoadAdmin() {
+        try {
+          const response = await fetch(`${API_BASE_URL}/admin/verify`, {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${adminToken}`,
+              "Content-Type": "application/json",
+            },
+          });
+
+          if (!response.ok) {
+            throw new Error("Invalid token");
+          }
+
+          const data = await response.json();
+          if (data.success) {
+            const admin = data.data.admin;
+            const userNameEl = document.getElementById("userName");
+            const userRoleEl = document.getElementById("userRole");
+            const userAvatarEl = document.getElementById("userAvatar");
+
+            if (userNameEl) userNameEl.textContent = admin.nombre;
+            if (userRoleEl) {
+              userRoleEl.textContent =
+                admin.rol === "superadmin" ? "Super Admin" : "Admin";
+            }
+
+            isSuperAdmin = admin.rol === "superadmin";
+            const words = admin.nombre.split(" ");
+            const initials =
+              words.length >= 2
+                ? `${words[0].charAt(0)}${words[1].charAt(0)}`
+                : admin.nombre.substring(0, 2);
+            if (userAvatarEl) userAvatarEl.textContent = initials.toUpperCase();
+          }
+        } catch (error) {
+          console.error("Error verifying admin:", error);
+          localStorage.removeItem("Fashion Box_admin_token");
+          localStorage.removeItem("Fashion Box_admin");
+          window.location.href = "/login.html";
+        }
+      }
+
+      // Load proveedores
+      async function loadProveedores() {
+        const loadingProveedores =
+          document.getElementById("loadingProveedores");
+        const proveedoresTable = document.getElementById("proveedoresTable");
+        const emptyProveedores = document.getElementById("emptyProveedores");
+        const proveedoresTableBody = document.getElementById(
+          "proveedoresTableBody"
+        );
+
+        try {
+          loadingProveedores.style.display = "flex";
+          proveedoresTable.style.display = "none";
+          emptyProveedores.style.display = "none";
+
+          const response = await fetch(`${API_BASE_URL}/admin/proveedores`, {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${adminToken}`,
+              "Content-Type": "application/json",
+            },
+          });
+
+          if (!response.ok) {
+            throw new Error("Error al cargar proveedores");
+          }
+
+          const data = await response.json();
+          if (data.success) {
+            currentProveedores = data.data.proveedores;
+
+            if (currentProveedores.length === 0) {
+              emptyProveedores.style.display = "block";
+            } else {
+              proveedoresTableBody.innerHTML = currentProveedores
+                .map((proveedor) => {
+                  return `
+              <tr>
+                <td><strong>#${proveedor.proveedorid}</strong></td>
+                <td>
+                  <div style="font-weight: 600; color: var(--razo-gray-dark);">${
+                    proveedor.nombreempresa
+                  }</div>
+                </td>
+                <td>${proveedor.contactonombre || "-"}</td>
+                <td>${proveedor.email || "-"}</td>
+                <td>${proveedor.telefono || "-"}</td>
+                <td>
+                  <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+                    <button 
+                      class="btn btn-light" 
+                      style="padding: 0.5rem 0.75rem; font-size: 0.875rem;"
+                      title="Ver Detalle"
+                      onclick="window.location.href='/admin-proveedor-detalle.html?id=${proveedor.proveedorid}'">
+                      Ver detalles
+                    </button>
+                    <button 
+                      class="btn btn-primary" 
+                      style="padding: 0.5rem 1rem; font-size: 0.875rem;"
+                      onclick="editProveedor(${proveedor.proveedorid})">
+                      ✏️ Editar
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            `;
+                })
+                .join("");
+
+              proveedoresTable.style.display = "table";
+            }
+          }
+        } catch (error) {
+          console.error("Error loading proveedores:", error);
+          showToast("Error al cargar proveedores", "error");
+          emptyProveedores.style.display = "block";
+        } finally {
+          loadingProveedores.style.display = "none";
+        }
+      }
+
+      // Open modal to create new proveedor
+      async function openProveedorModal() {
+        editingProveedorId = null;
+        document.getElementById("modalTitle").textContent = "Nuevo Proveedor";
+        document.getElementById("btnGuardarText").textContent =
+          "Guardar Proveedor";
+        document.getElementById("proveedorForm").reset();
+        document.getElementById("proveedorId").value = "";
+        resetReglasEmpaque();
+        try {
+          await loadTiposProductoAdmin();
+        } catch (e) {
+          // ignore
+        }
+        document.getElementById("proveedorModal").style.display = "flex";
+      }
+
+      // Edit proveedor
+      async function editProveedor(proveedorId) {
+        const proveedor = currentProveedores.find(
+          (p) => p.proveedorid === proveedorId
+        );
+        if (!proveedor) return;
+
+        editingProveedorId = proveedorId;
+        document.getElementById("modalTitle").textContent = "Editar Proveedor";
+        document.getElementById("btnGuardarText").textContent =
+          "Actualizar Proveedor";
+
+        // Basic fields
+        document.getElementById("proveedorId").value = proveedorId;
+        document.getElementById("nombreEmpresa").value = proveedor.nombreempresa;
+        document.getElementById("contactoNombre").value = proveedor.contactonombre || "";
+        document.getElementById("email").value = proveedor.email || "";
+        document.getElementById("telefono").value = proveedor.telefono || "";
+
+        // Fiscal fields
+        document.getElementById("razonSocial").value = proveedor.razonsocial || "";
+        document.getElementById("rfc").value = proveedor.rfc || "";
+        document.getElementById("regimenFiscal").value = proveedor.regimenfiscal || "";
+
+        // Address fields
+        document.getElementById("calle").value = proveedor.calle || "";
+        document.getElementById("colonia").value = proveedor.colonia || "";
+        document.getElementById("cp").value = proveedor.codigopostal || "";
+        document.getElementById("ciudad").value = proveedor.ciudad || "";
+        document.getElementById("estado").value = proveedor.estado || "";
+
+        // Sales contact fields
+        document.getElementById("nombreRepresentanteVentas").value = proveedor.nombrerepresentanteventas || "";
+        document.getElementById("celularVentas").value = proveedor.celularventas || "";
+        document.getElementById("emailVentas").value = proveedor.emailventas || "";
+
+        // Collection contact fields
+        document.getElementById("nombreContactoCobranza").value = proveedor.nombrecontactocobranza || "";
+        document.getElementById("telefonoCobranza").value = proveedor.telefonocobranza || "";
+        document.getElementById("emailCobranza").value = proveedor.emailcobranza || "";
+
+        // Banking fields
+        document.getElementById("banco").value = proveedor.banco || "";
+        document.getElementById("numeroCuenta").value = proveedor.numerocuenta || "";
+        document.getElementById("clabe").value = proveedor.clabe || "";
+        document.getElementById("referenciaPago").value = proveedor.referenciapago || "";
+
+        // Credit and commercial fields
+        document.getElementById("diasCredito").value = proveedor.diascredito || "";
+        document.getElementById("limiteCredito").value = proveedor.limitecredito || "";
+        document.getElementById("descuentoFinanciero").value = proveedor.descuentofinanciero || "";
+        document.getElementById("minimoCompra").value = proveedor.minimocompra || "";
+        document.getElementById("aceptaDevoluciones").checked = proveedor.aceptadevoluciones || false;
+
+        resetReglasEmpaque();
+        try {
+          await loadTiposProductoAdmin();
+          await loadReglasEmpaqueProveedorIntoArray(proveedorId);
+        } catch (e) {
+          // ignore
+        }
+        document.getElementById("proveedorModal").style.display = "flex";
+      }
+
+      // Close modal
+      function closeProveedorModal() {
+        document.getElementById("proveedorModal").style.display = "none";
+        editingProveedorId = null;
+        document.getElementById("proveedorForm").reset();
+        resetReglasEmpaque();
+      }
+
+      // Submit form
+      document
+        .getElementById("proveedorForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+
+          // Helper function to get value or empty string
+          const getValue = (id) => {
+            const element = document.getElementById(id);
+            return element ? element.value.trim() : "";
+          };
+
+          const nombreEmpresa = getValue("nombreEmpresa");
+
+          if (!nombreEmpresa) {
+            showToast("El nombre de la empresa es requerido", "error");
+            return;
+          }
+
+          const btnGuardar = document.getElementById("btnGuardar");
+          const btnGuardarText = document.getElementById("btnGuardarText");
+          const btnGuardarSpinner =
+            document.getElementById("btnGuardarSpinner");
+
+          try {
+            btnGuardar.disabled = true;
+            btnGuardarText.style.display = "none";
+            btnGuardarSpinner.style.display = "block";
+
+            const url = editingProveedorId
+              ? `${API_BASE_URL}/admin/proveedores/${editingProveedorId}`
+              : `${API_BASE_URL}/admin/proveedores`;
+
+            const method = editingProveedorId ? "PUT" : "POST";
+
+            // Collect all form data
+            const formData = {
+              nombreEmpresa,
+              contactoNombre: getValue("contactoNombre") || null,
+              email: getValue("email") || null,
+              telefono: getValue("telefono") || null,
+              razonSocial: getValue("razonSocial") || null,
+              rfc: getValue("rfc") || null,
+              regimenFiscal: getValue("regimenFiscal") || null,
+              calle: getValue("calle") || null,
+              colonia: getValue("colonia") || null,
+              cp: getValue("cp") || null,
+              ciudad: getValue("ciudad") || null,
+              estado: getValue("estado") || null,
+              nombreRepresentanteVentas: getValue("nombreRepresentanteVentas") || null,
+              celularVentas: getValue("celularVentas") || null,
+              emailVentas: getValue("emailVentas") || null,
+              nombreContactoCobranza: getValue("nombreContactoCobranza") || null,
+              telefonoCobranza: getValue("telefonoCobranza") || null,
+              emailCobranza: getValue("emailCobranza") || null,
+              banco: getValue("banco") || null,
+              numeroCuenta: getValue("numeroCuenta") || null,
+              clabe: getValue("clabe") || null,
+              referenciaPago: getValue("referenciaPago") || null,
+              diasCredito: getValue("diasCredito") || null,
+              limiteCredito: getValue("limiteCredito") || null,
+              descuentoFinanciero: getValue("descuentoFinanciero") || null,
+              minimoCompra: getValue("minimoCompra") || null,
+              aceptaDevoluciones: document.getElementById("aceptaDevoluciones").checked,
+              reglasEmpaque,
+            };
+
+            const response = await fetch(url, {
+              method: method,
+              headers: {
+                Authorization: `Bearer ${adminToken}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(formData),
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+              const proveedorIdRespuesta =
+                data?.data?.proveedorId ?? data?.data?.proveedorid ?? editingProveedorId;
+              try {
+                if (Array.isArray(reglasEmpaque) && reglasEmpaque.length) {
+                  await applyReglasEmpaque(proveedorIdRespuesta);
+                }
+              } catch (e) {
+                showToast(
+                  e.message || "Proveedor guardado, pero falló la aplicación de reglas de empaque",
+                  "error"
+                );
+                if (!editingProveedorId && proveedorIdRespuesta) {
+                  editingProveedorId = proveedorIdRespuesta;
+                  document.getElementById("proveedorId").value = proveedorIdRespuesta;
+                  document.getElementById("modalTitle").textContent = "Editar Proveedor";
+                  document.getElementById("btnGuardarText").textContent =
+                    "Actualizar Proveedor";
+                }
+                return;
+              }
+
+              showToast(
+                data.message ||
+                  (editingProveedorId
+                    ? "Proveedor actualizado correctamente."
+                    : "Proveedor creado correctamente."),
+                "success"
+              );
+              closeProveedorModal();
+              loadProveedores();
+            } else {
+              showToast(data.message || "Error al guardar proveedor", "error");
+            }
+          } catch (error) {
+            console.error("Error saving proveedor:", error);
+            showToast("Error al conectar con el servidor", "error");
+          } finally {
+            btnGuardar.disabled = false;
+            btnGuardarText.style.display = "inline";
+            btnGuardarSpinner.style.display = "none";
+          }
+        });
+
+      // Navigation handling for non-implemented modules
+      const navLinks = document.querySelectorAll(
+        ".admin-nav-link[data-module]"
+      );
+      navLinks.forEach((link) => {
+        link.addEventListener("click", (e) => {
+          e.preventDefault();
+          const moduleName = link.querySelector("span:last-child").textContent;
+          showToast(`Módulo "${moduleName}" próximamente disponible`, "info");
+        });
+      });
+
+      // Initialize
+      verifyAndLoadAdmin();
+      loadProveedores();
+
+      // Close modal when clicking outside
+      window.onclick = function (event) {
+        const modal = document.getElementById("proveedorModal");
+        if (event.target == modal) {
+          closeProveedorModal();
+        }
+      };
+
+      if (btnCrearTipoProductoRegla) {
+        btnCrearTipoProductoRegla.addEventListener("click", async () => {
+          try {
+            await crearTipoProductoRapido();
+          } catch (e) {
+            showToast(e.message || "Error al crear tipo", "error");
+          }
+        });
+      }
+
+      if (btnAgregarReglaEmpaque) {
+        btnAgregarReglaEmpaque.addEventListener("click", async () => {
+          const tipoId = Number.parseInt(selectTipoProductoRegla?.value, 10);
+          const piezas = Number.parseInt(inputPiezasPorPaqueteRegla?.value, 10);
+
+          if (!Number.isInteger(tipoId) || tipoId <= 0) {
+            showToast("Selecciona un tipo de producto", "error");
+            return;
+          }
+          if (!Number.isInteger(piezas) || piezas <= 0) {
+            showToast("Ingresa piezas por paquete (min 1)", "error");
+            return;
+          }
+
+          const idx = reglasEmpaque.findIndex(
+            (r) => Number.parseInt(r.tipoProductoId, 10) === tipoId
+          );
+          if (idx >= 0) {
+            reglasEmpaque[idx].piezasPorPaquete = piezas;
+          } else {
+            reglasEmpaque.push({
+              tipoProductoId: tipoId,
+              piezasPorPaquete: piezas,
+            });
+          }
+
+          if (inputPiezasPorPaqueteRegla) inputPiezasPorPaqueteRegla.value = "";
+          if (selectTipoProductoRegla) selectTipoProductoRegla.value = "";
+          renderReglasEmpaquePreview();
+        });
+      }
+    </script>
+
+    <style>
+      /* Modal styles */
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.6);
+        -webkit-backdrop-filter: blur(4px);
+        backdrop-filter: blur(4px);
+        justify-content: center;
+        align-items: center;
+        padding: 1rem;
+        overflow-y: auto;
+      }
+
+      .modal-content {
+        animation: modalSlideIn 0.3s ease-out;
+        max-height: 90vh;
+        overflow-y: auto;
+        position: relative;
+      }
+
+      .modal-close:hover {
+        background-color: var(--razo-gray-light);
+        color: var(--razo-orange);
+      }
+
+      /* Two-column form grid */
+      .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+        margin-bottom: 0.5rem;
+      }
+
+      @keyframes modalSlideIn {
+        from {
+          transform: translateY(-50px);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+
+      @media (max-width: 768px) {
+        .modal-content {
+          width: 95% !important;
+          padding: 1.5rem !important;
+        }
+        
+        /* Stack to single column on mobile */
+        .form-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+      
+      @media (max-width: 480px) {
+        .modal-content {
+          width: 98% !important;
+          padding: 1rem !important;
+        }
+      }
+    </style>
+  </body>
+</html>

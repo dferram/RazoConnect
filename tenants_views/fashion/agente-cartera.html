@@ -1,0 +1,198 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mi Cartera - Fashion Box</title>
+    <link rel="icon" type="image/png" href="/icon/Logo_Razo.png" />
+
+    <!-- Protección de autenticación -->
+    <script src="js/auth-guard-agent.js"></script>
+    <script src="js/token-refresh.js"></script>
+
+    <link rel="stylesheet" href="css/styles.css" />`n    <link rel="stylesheet" href="css/fashion-theme.css" />
+    <link rel="stylesheet" href="css/admin.css" />
+      <link rel="stylesheet" href="css/mobile-responsive.css" />
+  </head>
+  <body data-sidebar="agent" data-page-title="Mi Cartera">
+    <div class="admin-layout">
+      <div id="sidebar-container"></div>
+
+      <main class="admin-main">
+        <div id="admin-header-container"></div>
+
+        <div class="admin-content">
+          <div class="admin-card">
+            <div class="admin-card-header">
+              <div>
+                <h2 class="admin-card-title">Clientes vinculados</h2>
+                <p class="admin-card-subtitle">
+                  Listado actualizado de los clientes que forman parte de tu
+                  cartera.
+                </p>
+              </div>
+              <div class="admin-card-header-actions">
+                <button
+                  type="button"
+                  class="btn btn-primary btn-sm"
+                  id="btnAbrirModalVincular"
+                >
+                  <span class="btn-icon">+</span>
+                  Vincular Cliente
+                </button>
+              </div>
+            </div>
+            <div class="admin-card-body">
+              <div class="admin-card-toolbar admin-card-toolbar--align-left">
+                <form
+                  id="clientesSearchForm"
+                  class="admin-search admin-search--compact"
+                  role="search"
+                >
+                  <div class="search-group">
+                    <input
+                      id="clientesSearchInput"
+                      type="search"
+                      class="form-control"
+                      placeholder="Buscar por nombre o correo..."
+                      aria-label="Buscar clientes"
+                    />
+                    <button type="submit" class="btn btn-primary btn-sm">
+                      Buscar
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-secondary btn-sm"
+                      id="btnLimpiarBusqueda"
+                    >
+                      Limpiar
+                    </button>
+                  </div>
+                </form>
+                <button
+                  type="button"
+                  class="btn btn-secondary btn-sm"
+                  id="btnRecargarClientes"
+                >
+                  Recargar
+                </button>
+              </div>
+              <div class="admin-table-container">
+                <table class="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Nombre</th>
+                      <th>Email</th>
+                      <th>Teléfono</th>
+                      <th>Fecha de registro</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody id="clientesTablaBody">
+                    <tr id="clientesEmptyRow">
+                      <td colspan="5" class="table-empty-state">
+                        Cargando cartera...
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <div class="modal" id="modal-vincular-cliente" aria-hidden="true">
+      <div class="modal-content modal-content--xl">
+        <div class="modal-header">
+          <h2 class="modal-title">Agregar Cliente a mi Cartera</h2>
+          <button
+            type="button"
+            class="modal-close-btn"
+            id="btnCerrarModalVincular"
+            aria-label="Cerrar"
+          >
+            ×
+          </button>
+        </div>
+        <div class="modal-body">
+          <p class="modal-description">
+            Selecciona un cliente registrado que aún no ha sido asignado para
+            sumarlo a tu cartera.
+          </p>
+          <form
+            id="formBuscarClienteDisponible"
+            class="admin-search admin-search--compact"
+            role="search"
+          >
+            <div class="search-group">
+              <input
+                type="search"
+                id="clientesDisponiblesSearchInput"
+                class="form-control"
+                placeholder="Buscar por nombre o correo..."
+                aria-label="Buscar clientes disponibles"
+              />
+              <button type="submit" class="btn btn-primary btn-sm">
+                Buscar
+              </button>
+              <button
+                type="button"
+                class="btn btn-secondary btn-sm"
+                id="btnLimpiarBusquedaDisponibles"
+              >
+                Limpiar
+              </button>
+            </div>
+          </form>
+
+          <div class="modal-table-container">
+            <div class="modal-table-scroll">
+              <table class="admin-table" id="tablaClientesDisponibles">
+                <thead>
+                  <tr>
+                    <th style="width: 48px"></th>
+                    <th>Nombre</th>
+                    <th>Email</th>
+                    <th>Teléfono</th>
+                  </tr>
+                </thead>
+                <tbody id="clientesDisponiblesBody">
+                  <tr
+                    class="table-empty-state-row"
+                    id="clientesDisponiblesEmpty"
+                  >
+                    <td colspan="4">Cargando clientes disponibles...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            id="btnCancelarVincular"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            class="btn btn-primary"
+            id="btnConfirmarVincular"
+          >
+            Vincular
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script src="js/layout.js" defer></script>
+    <script src="js/api.js"></script>
+    <script src="js/components/agente-header-loader.js"></script>
+    <script src="js/components/user-profile.js"></script>
+    <script src="js/agente-cartera.js"></script>
+  </body>
+</html>

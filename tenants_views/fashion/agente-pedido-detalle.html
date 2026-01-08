@@ -1,0 +1,1088 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Detalle del Pedido - Fashion Box</title>
+    <link rel="icon" type="image/png" href="/icon/Logo_Razo.png" />
+
+    <!-- Protección de autenticación -->
+    <script src="js/auth-guard-agent.js"></script>
+    <script src="js/token-refresh.js"></script>
+
+    <link rel="stylesheet" href="css/styles.css" />`n    <link rel="stylesheet" href="css/fashion-theme.css" />
+    <link rel="stylesheet" href="css/admin.css" />
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+      .pedido-detail-wrapper {
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+
+      .pedido-summary-card {
+        background: white;
+        border-radius: 0.75rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+      }
+
+      .pedido-summary-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 1rem;
+        flex-wrap: wrap;
+        margin-bottom: 1.25rem;
+        padding-bottom: 1.25rem;
+        border-bottom: 1px solid var(--border-color);
+      }
+
+      .pedido-numero {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin: 0 0 0.25rem;
+        color: var(--razo-gray-warm);
+      }
+
+      .pedido-fecha {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+      }
+
+      .pedido-estatus-badge {
+        padding: 0.4rem 1rem;
+        border-radius: 2rem;
+        font-weight: 600;
+        font-size: 0.85rem;
+        text-transform: capitalize;
+      }
+
+      .pedido-estatus-badge.pendiente {
+        background: #fff7ed;
+        color: var(--razo-orange);
+      }
+
+      .pedido-estatus-badge.confirmado {
+        background: #dcfce7;
+        color: #16a34a;
+      }
+
+      .pedido-estatus-badge.en-ruta {
+        background: #dbeafe;
+        color: #2563eb;
+      }
+
+      .pedido-estatus-badge.entregado {
+        background: #f0fdf4;
+        color: #15803d;
+      }
+
+      .pedido-estatus-badge.cancelado {
+        background: #fef2f2;
+        color: #dc2626;
+      }
+
+      .pedido-monto-section {
+        display: flex;
+        align-items: baseline;
+        gap: 0.5rem;
+      }
+
+      .pedido-monto-label {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        font-weight: 500;
+      }
+
+      .pedido-monto {
+        font-size: 2rem;
+        font-weight: 700;
+        margin: 0;
+        color: var(--razo-orange);
+      }
+
+      .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+      }
+
+      .info-card {
+        background: white;
+        border-radius: 0.75rem;
+        padding: 1.25rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+      }
+
+      .info-card-title {
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--text-secondary);
+        margin-bottom: 0.75rem;
+        font-weight: 600;
+      }
+
+      .info-card-content h4 {
+        margin: 0 0 0.25rem;
+        font-size: 1rem;
+      }
+
+      .info-card-content p {
+        margin: 0;
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+        line-height: 1.5;
+      }
+
+      .info-card-content a {
+        color: var(--primary-color);
+        text-decoration: none;
+      }
+
+      .info-card-content a:hover {
+        text-decoration: underline;
+      }
+
+      .items-card {
+        background: white;
+        border-radius: 0.75rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
+      }
+
+      .items-card-header {
+        padding: 1.25rem;
+        border-bottom: 1px solid var(--border-color);
+        background: #fafafa;
+      }
+
+      .items-card-header h3 {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--razo-gray-warm);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .items-card-header h3::before {
+        content: "📦";
+        font-size: 1.25rem;
+      }
+
+      .item-row {
+        display: flex;
+        gap: 1rem;
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid var(--border-color);
+        align-items: center;
+      }
+
+      .item-row:last-child {
+        border-bottom: none;
+      }
+
+      .item-image {
+        width: 60px;
+        height: 60px;
+        border-radius: 0.5rem;
+        object-fit: cover;
+        background: #f5f5f5;
+        flex-shrink: 0;
+      }
+
+      .item-image-placeholder {
+        width: 60px;
+        height: 60px;
+        border-radius: 0.5rem;
+        background: linear-gradient(135deg, #f5f5f5, #e0e0e0);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #999;
+        font-size: 1.25rem;
+        flex-shrink: 0;
+      }
+
+      .item-info {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .item-name {
+        font-weight: 600;
+        margin: 0 0 0.25rem;
+        font-size: 0.95rem;
+      }
+
+      .item-meta {
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+      }
+
+      .item-meta span {
+        display: inline-block;
+        margin-right: 0.75rem;
+      }
+
+      .item-pricing {
+        text-align: right;
+        flex-shrink: 0;
+      }
+
+      .item-subtotal {
+        font-weight: 600;
+        font-size: 1rem;
+        color: var(--razo-gray-warm);
+      }
+
+      .item-unit-price {
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+      }
+
+      .items-total {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1.25rem;
+        background: #fafafa;
+        font-weight: 600;
+      }
+
+      .items-total-label {
+        font-size: 1rem;
+      }
+
+      .items-total-value {
+        font-size: 1.25rem;
+        color: var(--razo-orange);
+      }
+
+      .back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--text-secondary);
+        text-decoration: none;
+        font-size: 0.9rem;
+        margin-bottom: 1rem;
+        transition: color 0.2s;
+      }
+
+      .back-link:hover {
+        color: var(--primary-color);
+      }
+
+      .loading-state,
+      .error-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 50vh;
+        text-align: center;
+        padding: 3rem 1rem;
+      }
+
+      .error-state {
+        color: var(--danger-color);
+      }
+
+      @media (max-width: 640px) {
+        .pedido-header-top {
+          flex-direction: column;
+        }
+
+        .item-row {
+          flex-wrap: wrap;
+        }
+
+        .item-pricing {
+          width: 100%;
+          text-align: left;
+          margin-top: 0.5rem;
+          padding-top: 0.5rem;
+          border-top: 1px dashed var(--border-color);
+        }
+      }
+    </style>
+      <link rel="stylesheet" href="css/mobile-responsive.css" />
+  </head>
+  <body data-sidebar="agent" data-page-title="Detalle del Pedido">
+    <div class="admin-layout">
+      <div id="sidebar-container"></div>
+
+      <main class="admin-main">
+        <div id="admin-header-container"></div>
+
+        <div class="admin-content">
+          <div style="margin-bottom: 1rem;">
+            <button
+              type="button"
+              class="btn btn-outline btn-sm"
+              onclick="sessionStorage.setItem('_navigating', 'true'); localStorage.setItem('_nav_timestamp', Date.now().toString()); window.location.href='/agente-pedidos.html';"
+            >
+              ← Volver a pedidos
+            </button>
+          </div>
+          <div class="pedido-detail-wrapper">
+            <!-- Loading state -->
+            <div id="loadingState" class="loading-state">
+              <div class="spinner"></div>
+              <p>Cargando detalle del pedido...</p>
+            </div>
+
+            <!-- Error state -->
+            <div id="errorState" class="error-state" style="display: none">
+              <p id="errorMessage">No se pudo cargar el pedido</p>
+              <button
+                type="button"
+                class="btn btn-outline btn-sm"
+                onclick="sessionStorage.setItem('_navigating', 'true'); localStorage.setItem('_nav_timestamp', Date.now().toString()); window.location.href='/agente-pedidos.html';"
+              >
+                ← Volver a pedidos
+              </button>
+            </div>
+
+            <!-- Content -->
+            <div id="contentWrapper" style="display: none">
+              <!-- Pedido summary card -->
+              <div class="pedido-summary-card">
+                <div class="pedido-summary-header">
+                  <div>
+                    <h2 class="pedido-numero" id="pedidoNumero">
+                      Pedido #000000
+                    </h2>
+                    <p class="pedido-fecha" id="pedidoFecha">--</p>
+                  </div>
+                  <div class="d-flex align-items-center gap-2">
+                    <span
+                      class="pedido-estatus-badge pendiente"
+                      id="pedidoEstatus"
+                      >--</span
+                    >
+                  </div>
+                </div>
+                <div class="pedido-monto-section">
+                  <span class="pedido-monto-label">Monto total:</span>
+                  <span class="pedido-monto" id="pedidoMonto">$0.00</span>
+                </div>
+              </div>
+
+              <!-- Info cards grid -->
+              <div class="info-grid">
+                <div class="info-card">
+                  <div class="info-card-title">👤 Cliente</div>
+                  <div class="info-card-content">
+                    <h4 id="clienteNombre">--</h4>
+                    <p id="clienteContacto">--</p>
+                  </div>
+                </div>
+                <div class="info-card">
+                  <div class="info-card-title">📍 Dirección de envío</div>
+                  <div class="info-card-content">
+                    <h4 id="direccionReceptor">--</h4>
+                    <p id="direccionCompleta">--</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Items list -->
+              <div class="items-card">
+                <div class="items-card-header">
+                  <h3>Productos del pedido</h3>
+                </div>
+                <div id="itemsContainer">
+                  <!-- Items will be rendered here -->
+                </div>
+                <div class="items-total">
+                  <span class="items-total-label">Total del pedido</span>
+                  <span class="items-total-value" id="itemsTotal">$0.00</span>
+                </div>
+              </div>
+
+              <div
+                class="pedido-actions"
+                style="
+                  margin-top: 1.75rem;
+                  display: flex;
+                  justify-content: flex-end;
+                  gap: 0.75rem;
+                "
+              >
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-primary"
+                  id="btnSolicitarCambio"
+                  style="display: none;"
+                  onclick="abrirModalSolicitudDesdeDetalle()"
+                >
+                  Solicitar cambio
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-sm"
+                  id="btnSolicitarConfirmacion"
+                  style="display: none; background: #F97316; border-color: #F97316; color: #fff;"
+                >
+                  Solicitar Confirmación
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <div
+      id="modalStatusAgente"
+      class="modal"
+      tabindex="-1"
+      style="background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px); display: none;"
+    >
+      <div
+        class="modal-dialog modal-dialog-centered"
+        style="max-width: none; width: auto; display: flex; justify-content: center;"
+      >
+        <div
+          class="modal-content modal-content--xl"
+          style="width: 95%; max-width: 600px; background: #fff; border-radius: 1rem; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);"
+        >
+          <div
+            class="modal-header"
+            style="padding: 1.5rem; border-bottom: 2px solid #f3f4f6; display: flex; justify-content: space-between; align-items: center;"
+          >
+            <h2
+              class="modal-title"
+              style="font-size: 1.5rem; font-weight: 700; color: #111827; margin: 0;"
+            >
+              Solicitar Cambio de Estatus
+            </h2>
+            <button
+              type="button"
+              class="modal-close-btn"
+              aria-label="Close"
+              onclick="cerrarModalStatusAgente()"
+              style="background: transparent; border: none; font-size: 1.5rem; cursor: pointer; color: #9ca3af;"
+            >
+              ×
+            </button>
+          </div>
+
+          <div class="modal-body" style="padding: 1.5rem;">
+            <div class="mb-4">
+              <p style="font-size: 1.125rem; color: #374151; margin-bottom: 0.5rem;">
+                <strong>Pedido #<span id="modalPedidoId"></span></strong>
+                <span class="text-muted" style="font-size: 0.875rem;">
+                  - Cliente: <span id="modalClienteNombre"></span>
+                </span>
+              </p>
+            </div>
+
+            <div class="form-group mb-4">
+              <label
+                class="form-label"
+                style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #374151;"
+              >
+                Nuevo Estatus Propuesto:
+              </label>
+              <select
+                id="selectNuevoEstatus"
+                class="form-input"
+                style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.5rem; font-size: 1rem;"
+              >
+                <option value="Confirmado">Confirmado</option>
+                <option value="Cancelado">Cancelado</option>
+              </select>
+            </div>
+
+            <div
+              style="background-color: #fff7ed; border-left: 4px solid #F97316; padding: 1rem; border-radius: 0.5rem;"
+            >
+              <p style="margin: 0; font-size: 0.875rem; color: #9a3412;">
+                <strong>⚠️ Solicitud de Cambio:</strong>
+                Esta acción enviará una notificación al Administrador para su
+                aprobación. El stock y el estatus no cambiarán hasta que sea
+                autorizado.
+              </p>
+            </div>
+
+            <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+              <button
+                type="button"
+                class="btn btn-secondary"
+                onclick="cerrarModalStatusAgente()"
+                style="flex: 1; padding: 0.75rem; border-radius: 0.5rem; background-color: #f3f4f6; color: #374151; border: 1px solid #d1d5db; font-weight: 600;"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                class="btn btn-primary"
+                onclick="enviarSolicitudEstatusDesdeDetalle()"
+                id="btnEnviarSolicitudEstatus"
+                style="flex: 1; padding: 0.75rem; border-radius: 0.5rem; background-color: #F97316; color: white; border: none; font-weight: 600;"
+              >
+                Enviar Solicitud
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="js/layout.js" defer></script>
+    <script src="js/api.js"></script>
+    <script src="js/components/user-profile.js"></script>
+    <script src="js/components/agente-header-loader.js"></script>
+    <script>
+      (function () {
+        "use strict";
+
+        if (!requireAgentAuth()) {
+          return;
+        }
+
+        let selectedPedidoForStatus = null;
+
+        document.addEventListener("DOMContentLoaded", init);
+
+        async function init() {
+          const urlParams = new URLSearchParams(window.location.search);
+          const pedidoId = parseInt(urlParams.get("id"), 10);
+
+          const loadingState = document.getElementById("loadingState");
+          const errorState = document.getElementById("errorState");
+          const errorMessage = document.getElementById("errorMessage");
+          const contentWrapper = document.getElementById("contentWrapper");
+
+          if (!pedidoId || Number.isNaN(pedidoId)) {
+            loadingState.style.display = "none";
+            errorMessage.textContent = "ID de pedido inválido";
+            errorState.style.display = "block";
+            showToast("ID de pedido inválido", "error");
+            return;
+          }
+
+          try {
+            const response = await API.obtenerPedidoDetalleAgente(pedidoId);
+
+            if (!response.ok || !response.data.success) {
+              throw new Error(
+                response.data?.message || "No se pudo cargar el pedido"
+              );
+            }
+
+            const { pedido, cliente, direccion, items } = response.data.data;
+
+            // Render pedido header
+            document.getElementById(
+              "pedidoNumero"
+            ).textContent = `Pedido #${pedido.numeroPedido}`;
+            document.getElementById("pedidoFecha").textContent = formatDate(
+              pedido.fechaPedido
+            );
+
+            const estatusEl = document.getElementById("pedidoEstatus");
+            estatusEl.textContent = pedido.estatus || "";
+
+            const estatusValor = (pedido.estatus || "").toString().toLowerCase();
+            let estatusClass = "pedido-estatus-badge pendiente";
+
+            if (estatusValor === "pendiente") estatusClass = "pedido-estatus-badge pendiente";
+            else if (estatusValor === "confirmado") estatusClass = "pedido-estatus-badge confirmado";
+            else if (
+              estatusValor === "enviado" ||
+              estatusValor === "en ruta" ||
+              estatusValor === "en_ruta" ||
+              estatusValor === "en-ruta"
+            ) {
+              estatusClass = "pedido-estatus-badge enviado";
+            } else if (estatusValor === "entregado") {
+              estatusClass = "pedido-estatus-badge entregado";
+            } else if (estatusValor === "cancelado") {
+              estatusClass = "pedido-estatus-badge cancelado";
+            } else if (estatusValor === "completado") {
+              estatusClass = "pedido-estatus-badge completado";
+            }
+
+            estatusEl.className = estatusClass;
+
+            const btnSolicitarConfirmacion = document.getElementById(
+              "btnSolicitarConfirmacion"
+            );
+            if (btnSolicitarConfirmacion) {
+              const esConfirmado = estatusValor === "confirmado";
+              btnSolicitarConfirmacion.style.display = esConfirmado
+                ? "none"
+                : "inline-flex";
+
+              btnSolicitarConfirmacion.addEventListener("mouseenter", () => {
+                btnSolicitarConfirmacion.style.filter = "brightness(0.95)";
+              });
+              btnSolicitarConfirmacion.addEventListener("mouseleave", () => {
+                btnSolicitarConfirmacion.style.filter = "none";
+              });
+
+              btnSolicitarConfirmacion.onclick = async () => {
+                const token = localStorage.getItem("Fashion Box_admin_token");
+
+                if (!token) {
+                  showToast("Sesión expirada. Inicia sesión nuevamente.", "warning");
+                  setTimeout(() => window.location.href = "/login.html", 600);
+                  return;
+                }
+
+                const result = await Swal.fire({
+                  title: "¿Deseas enviar este pedido a confirmación?",
+                  text: "Se generará una solicitud para revisión del administrador.",
+                  icon: "question",
+                  showCancelButton: true,
+                  confirmButtonText: "Sí, enviar",
+                  cancelButtonText: "Cancelar",
+                  confirmButtonColor: "#16a34a",
+                });
+
+                if (!result.isConfirmed) return;
+
+                const originalBtnText =
+                  btnSolicitarConfirmacion.dataset.originalText ||
+                  btnSolicitarConfirmacion.textContent;
+                btnSolicitarConfirmacion.dataset.originalText = originalBtnText;
+
+                try {
+                  btnSolicitarConfirmacion.disabled = true;
+                  btnSolicitarConfirmacion.textContent = "Enviando...";
+
+                  const resp = await fetch(
+                    `${API_BASE_URL}/agentes/pedidos/${pedidoId}/solicitar-confirmacion`,
+                    {
+                      method: "POST",
+                      headers: {
+                        Authorization: `Bearer ${token}`,
+                        "Content-Type": "application/json",
+                      },
+                    }
+                  );
+
+                  const dataConfirm = await resp.json();
+
+                  if (!resp.ok || !dataConfirm.success) {
+                    throw new Error(
+                      dataConfirm.message || "No se pudo enviar la solicitud"
+                    );
+                  }
+
+                  await Swal.fire({
+                    icon: "warning",
+                    title: "Solicitud Enviada",
+                    text: "El administrador revisará el pedido.",
+                    confirmButtonColor: "#F97316",
+                  });
+
+                  window.location.reload();
+                } catch (err) {
+                  console.error("Error solicitando confirmación:", err);
+                  await Swal.fire({
+                    icon: "error",
+                    title: "No se pudo enviar",
+                    text: err.message || "Error desconocido",
+                    confirmButtonColor: "#F97316",
+                  });
+
+                  // Error: permitir reintento
+                  btnSolicitarConfirmacion.disabled = false;
+                  btnSolicitarConfirmacion.textContent =
+                    btnSolicitarConfirmacion.dataset.originalText ||
+                    "Solicitar Confirmación";
+                } finally {
+                  // En éxito se recarga la página; no re-habilitar aquí para prevenir doble envío.
+                }
+              };
+            }
+
+            selectedPedidoForStatus = {
+              id: pedido.id || pedido.pedidoId || pedido.numeroPedido,
+              estatusActual: pedido.estatus || "",
+              cliente:
+                [cliente.nombre, cliente.apellido].filter(Boolean).join(" ") ||
+                "Cliente",
+            };
+
+            const btnSolicitarCambio =
+              document.getElementById("btnSolicitarCambio");
+            if (btnSolicitarCambio) {
+              const puedeSolicitar =
+                estatusValor === "pendiente" || estatusValor === "confirmado";
+              btnSolicitarCambio.style.display = puedeSolicitar
+                ? "inline-block"
+                : "none";
+            }
+
+            document.getElementById("pedidoMonto").textContent = formatCurrency(
+              pedido.montoTotal
+            );
+
+            // Render cliente info
+            document.getElementById("clienteNombre").textContent =
+              [cliente.nombre, cliente.apellido].filter(Boolean).join(" ") ||
+              "Sin nombre";
+
+            const contactoParts = [];
+            if (cliente.email) contactoParts.push(`📧 ${cliente.email}`);
+            if (cliente.telefono) contactoParts.push(`📞 ${cliente.telefono}`);
+            document.getElementById("clienteContacto").innerHTML =
+              contactoParts.join("<br>") || "Sin información de contacto";
+
+            // Render direccion
+            document.getElementById("direccionReceptor").textContent =
+              direccion.receptor || "Sin receptor";
+
+            const direccionParts = [];
+            if (direccion.calle) {
+              let calleCompleta = direccion.calle;
+              if (direccion.numeroExterior)
+                calleCompleta += ` #${direccion.numeroExterior}`;
+              if (direccion.numeroInterior)
+                calleCompleta += `, Int. ${direccion.numeroInterior}`;
+              direccionParts.push(calleCompleta);
+            }
+            if (direccion.colonia) direccionParts.push(direccion.colonia);
+            if (direccion.ciudad || direccion.estado) {
+              direccionParts.push(
+                [direccion.ciudad, direccion.estado].filter(Boolean).join(", ")
+              );
+            }
+            if (direccion.codigoPostal)
+              direccionParts.push(`CP ${direccion.codigoPostal}`);
+            if (direccion.telefonoContacto)
+              direccionParts.push(`📞 ${direccion.telefonoContacto}`);
+
+            document.getElementById("direccionCompleta").innerHTML =
+              direccionParts.join("<br>") || "Sin dirección";
+
+            // Render items
+            const itemsContainer = document.getElementById("itemsContainer");
+            itemsContainer.innerHTML = items
+              .map(
+                (item) => `
+              <div class="item-row">
+                ${
+                  item.imagenUrl
+                    ? `<img src="${item.imagenUrl}" alt="${item.nombreProducto}" class="item-image" />`
+                    : `<div class="item-image-placeholder">📦</div>`
+                }
+                <div class="item-info">
+                  <p class="item-name">${item.nombreProducto}</p>
+                  <p class="item-meta">
+                    <span>SKU: ${item.sku || "N/A"}</span>
+                    ${
+                      item.dimensiones ? `<span>${item.dimensiones}</span>` : ""
+                    }
+                    ${item.tamano ? `<span>${item.tamano}</span>` : ""}
+                  </p>
+                </div>
+                <div class="item-pricing">
+                  <p class="item-subtotal">${formatCurrency(item.subtotal)}</p>
+                  <p class="item-unit-price">${
+                    item.cantidad
+                  } × ${formatCurrency(item.precioPorPaquete)}</p>
+                </div>
+              </div>
+            `
+              )
+              .join("");
+
+            document.getElementById("itemsTotal").textContent = formatCurrency(
+              pedido.montoTotal
+            );
+
+            loadingState.style.display = "none";
+            contentWrapper.style.display = "block";
+          } catch (error) {
+            console.error("Error loading order detail:", error);
+            const errorMsg = error.message || "Error al cargar el pedido";
+            loadingState.style.display = "none";
+            errorMessage.textContent = errorMsg;
+            errorState.style.display = "block";
+            showToast(errorMsg, "error");
+          }
+        }
+
+        window.abrirModalSolicitudDesdeDetalle = function () {
+          if (!selectedPedidoForStatus || !selectedPedidoForStatus.id) {
+            showToast(
+              "No hay un pedido seleccionado para actualizar.",
+              "error"
+            );
+            return;
+          }
+
+          const modalEl = document.getElementById("modalStatusAgente");
+          const idEl = document.getElementById("modalPedidoId");
+          const clienteEl = document.getElementById("modalClienteNombre");
+          const selectEl = document.getElementById("selectNuevoEstatus");
+
+          if (idEl) {
+            idEl.textContent = selectedPedidoForStatus.id;
+          }
+
+          if (clienteEl) {
+            clienteEl.textContent = selectedPedidoForStatus.cliente;
+          }
+
+          if (selectEl) {
+            const opciones = Array.from(selectEl.options || []);
+            const estatusLower = (
+              selectedPedidoForStatus.estatusActual || ""
+            )
+              .toString()
+              .toLowerCase();
+
+            const esPendiente = estatusLower === "pendiente";
+            const esConfirmado = ["confirmado", "validado"].includes(
+              estatusLower
+            );
+
+            opciones.forEach((opt) => {
+              const valueLower = (opt.value || "").toString().toLowerCase();
+
+              opt.disabled = false;
+              opt.hidden = false;
+
+              if (esPendiente) {
+                return;
+              }
+
+              if (esConfirmado) {
+                if (valueLower === "confirmado") {
+                  opt.disabled = true;
+                  opt.hidden = true;
+                }
+                if (valueLower === "cancelado") {
+                  opt.disabled = false;
+                  opt.hidden = false;
+                }
+              }
+            });
+
+            if (esPendiente) {
+              selectEl.value = "Confirmado";
+            } else if (esConfirmado) {
+              selectEl.value = "Cancelado";
+            } else {
+              const primeraVisible = opciones.find(
+                (opt) => !opt.disabled && !opt.hidden
+              );
+              if (primeraVisible) {
+                selectEl.value = primeraVisible.value;
+              }
+            }
+          }
+
+          if (modalEl) {
+            modalEl.style.display = "flex";
+          }
+        };
+
+        window.cerrarModalStatusAgente = function () {
+          const modalEl = document.getElementById("modalStatusAgente");
+          if (!modalEl) return;
+          modalEl.style.display = "none";
+        };
+
+        window.enviarSolicitudEstatusDesdeDetalle = async function () {
+          if (!selectedPedidoForStatus || !selectedPedidoForStatus.id) {
+            showToast(
+              "No hay un pedido seleccionado para actualizar.",
+              "error"
+            );
+            return;
+          }
+
+          const btnEnviar = document.getElementById("btnEnviarSolicitudEstatus");
+
+          const selectEl = document.getElementById("selectNuevoEstatus");
+          if (!selectEl) {
+            showToast("No se encontró el selector de estatus.", "error");
+            return;
+          }
+
+          const nuevoEstatus = selectEl.value;
+          if (!nuevoEstatus) {
+            showToast("Selecciona un nuevo estatus.", "warning");
+            return;
+          }
+
+          const nuevoLower = (nuevoEstatus || "").toString().toLowerCase();
+          const estatusActual =
+            (selectedPedidoForStatus.estatusActual || "").toString();
+          const actualLower = estatusActual.toLowerCase();
+
+          let swalConfig = null;
+          let fallbackMessage =
+            "¿Deseas enviar la solicitud de cambio de estatus al administrador?";
+
+          if (
+            typeof Swal !== "undefined" &&
+            Swal &&
+            typeof Swal.fire === "function"
+          ) {
+            if (nuevoLower === "cancelado") {
+              swalConfig = {
+                icon: "warning",
+                title: "¿Solicitar cancelación?",
+                text:
+                  "⚠️ Se enviará una solicitud al administrador. Si se aprueba, se devolverán los productos al inventario y se notificará al cliente.",
+                showCancelButton: true,
+                confirmButtonText: "Sí, solicitar cancelación",
+                cancelButtonText: "No, mantener pedido",
+                confirmButtonColor: "#dc3545",
+                cancelButtonColor: "#6b7280",
+              };
+              fallbackMessage = swalConfig.text;
+            } else {
+              swalConfig = {
+                icon: "question",
+                title: "¿Solicitar actualización?",
+                text:
+                  "⚠️ Se enviará una solicitud al administrador para actualizar el estatus y notificar al cliente.",
+                showCancelButton: true,
+                confirmButtonText: "Sí, enviar solicitud",
+                cancelButtonText: "Cancelar",
+                confirmButtonColor: "#F97316",
+                cancelButtonColor: "#6b7280",
+              };
+              fallbackMessage = swalConfig.text;
+            }
+
+            const result = await Swal.fire(swalConfig);
+            if (!result.isConfirmed) {
+              return;
+            }
+          } else {
+            const confirmed = window.confirm(fallbackMessage);
+            if (!confirmed) {
+              return;
+            }
+          }
+
+          if (btnEnviar) {
+            const originalText =
+              btnEnviar.dataset.originalText || btnEnviar.textContent;
+            btnEnviar.dataset.originalText = originalText;
+            btnEnviar.disabled = true;
+            btnEnviar.textContent = "Enviando...";
+          }
+
+          try {
+            const response = await API.solicitarCambioEstatusPedidoAgente(
+              selectedPedidoForStatus.id,
+              nuevoEstatus
+            );
+
+            if (!response.ok || !response.data?.success) {
+              throw new Error(
+                response.data?.message ||
+                  "No fue posible registrar la solicitud de cambio de estatus"
+              );
+            }
+
+            cerrarModalStatusAgente();
+
+            const mensaje =
+              response.data.message ||
+              "Solicitud registrada. El administrador revisará el cambio.";
+
+            if (
+              typeof Swal !== "undefined" &&
+              Swal &&
+              typeof Swal.fire === "function"
+            ) {
+              await Swal.fire({
+                icon: "success",
+                title: "Solicitud enviada",
+                text: mensaje,
+                confirmButtonColor: "#F97316",
+              });
+            } else {
+              showToast(mensaje, "success");
+            }
+
+            window.location.reload();
+          } catch (error) {
+            console.error(
+              "Error al registrar solicitud de cambio de estatus del pedido:",
+              error
+            );
+
+            if (
+              typeof Swal !== "undefined" &&
+              Swal &&
+              typeof Swal.fire === "function"
+            ) {
+              Swal.fire({
+                icon: "error",
+                title: "No se pudo registrar la solicitud",
+                text:
+                  error.message ||
+                  "Ocurrió un error al enviar la solicitud de cambio de estatus.",
+                confirmButtonColor: "#F97316",
+              });
+            } else {
+              showToast(
+                error.message ||
+                  "Ocurrió un error al enviar la solicitud de cambio de estatus.",
+                "error"
+              );
+            }
+
+            // Error: permitir reintento
+            if (btnEnviar) {
+              btnEnviar.disabled = false;
+              btnEnviar.textContent =
+                btnEnviar.dataset.originalText || "Enviar Solicitud";
+            }
+          }
+        };
+
+        document.addEventListener("click", function (event) {
+          const modalEl = document.getElementById("modalStatusAgente");
+          if (event.target === modalEl) {
+            cerrarModalStatusAgente();
+          }
+        });
+
+        function formatCurrency(value) {
+          if (value === null || value === undefined) return "$0.00";
+          const amount = Number.parseFloat(value);
+          if (Number.isNaN(amount)) return "$0.00";
+          return new Intl.NumberFormat("es-MX", {
+            style: "currency",
+            currency: "MXN",
+            minimumFractionDigits: 2,
+          }).format(amount);
+        }
+
+        function formatDate(value) {
+          if (!value) return "—";
+          const date = new Date(value);
+          if (Number.isNaN(date.getTime())) return "—";
+          return date.toLocaleDateString("es-MX", {
+            weekday: "long",
+            day: "numeric",
+            month: "long",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          });
+        }
+      })();
+    </script>
+  </body>
+</html>

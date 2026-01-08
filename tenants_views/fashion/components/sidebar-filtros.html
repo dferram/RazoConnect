@@ -1,0 +1,67 @@
+﻿<aside class="sidebar-filtros" aria-label="Filtros">
+  <div class="sidebar-search" style="margin-bottom: 1.25rem;">
+    <span class="sidebar-search-icon" aria-hidden="true">
+      <i class="bi bi-search"></i>
+    </span>
+    <input
+      type="search"
+      id="sidebarFiltroBuscar"
+      class="sidebar-search-input"
+      placeholder="Buscar"
+      autocomplete="off"
+    />
+  </div>
+
+  <section class="filter-section is-open" data-filter-accordion>
+    <button type="button" class="filter-section-header" data-filter-accordion-toggle>
+      <h3 class="filter-section-title" style="margin: 0;">Categorías</h3>
+      <span class="filter-section-chevron" aria-hidden="true">
+        <i class="bi bi-chevron-down"></i>
+      </span>
+    </button>
+    <div class="filter-section-body">
+      <ul class="filter-list" id="sidebarFiltroCategorias">
+        <li class="filter-item">
+          <span class="text-muted" style="font-size: 0.9rem;">Cargando...</span>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <section
+    class="filter-section is-open"
+    id="sidebarFiltroMarcasSection"
+    data-filter-accordion
+  >
+    <button type="button" class="filter-section-header" data-filter-accordion-toggle>
+      <h3 class="filter-section-title" style="margin: 0;">Marcas</h3>
+      <span class="filter-section-chevron" aria-hidden="true">
+        <i class="bi bi-chevron-down"></i>
+      </span>
+    </button>
+    <div class="filter-section-body">
+      <ul class="filter-list" id="sidebarFiltroMarcas">
+        <li class="filter-item">
+          <span class="text-muted" style="font-size: 0.9rem;">Cargando...</span>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="filter-section is-open" data-filter-accordion>
+    <button type="button" class="filter-section-header" data-filter-accordion-toggle>
+      <h3 class="filter-section-title" style="margin: 0;">Rango de Precio</h3>
+      <span class="filter-section-chevron" aria-hidden="true">
+        <i class="bi bi-chevron-down"></i>
+      </span>
+    </button>
+    <div class="filter-section-body">
+      <div class="price-row">
+        <input type="number" id="sidebarPrecioMin" class="price-input" min="0" step="1" aria-label="Precio mínimo" />
+        <span class="price-sep" aria-hidden="true">—</span>
+        <input type="number" id="sidebarPrecioMax" class="price-input" min="0" step="1" aria-label="Precio máximo" />
+      </div>
+      <a href="#" class="price-apply" id="sidebarPrecioAplicar">Aplicar</a>
+    </div>
+  </section>
+</aside>

@@ -1,0 +1,481 @@
+/**
+ * RazoConnect - Inicio Seasonal
+ * Estilos adaptativos para la página de inicio según tema estacional
+ * @version 1.0.0
+ */
+
+/* ============================================
+   BANNER DE BIENVENIDA DINÁMICO
+   ============================================ */
+
+.welcome-banner {
+  background: var(--theme-gradient-primary);
+  padding: 2rem 0;
+  margin-bottom: 2rem;
+  box-shadow: var(--theme-shadow-md);
+}
+
+.welcome-content {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+}
+
+.welcome-icon {
+  font-size: 4rem;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.2));
+  animation: welcomeBounce 3s ease-in-out infinite;
+}
+
+@keyframes welcomeBounce {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-10px) rotate(-5deg);
+  }
+  75% {
+    transform: translateY(-10px) rotate(5deg);
+  }
+}
+
+.welcome-text {
+  flex: 1;
+}
+
+.welcome-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: white;
+  margin-bottom: 0.5rem;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.welcome-title #userName {
+  color: var(--theme-accent);
+  font-weight: 800;
+}
+
+.welcome-subtitle {
+  font-size: 1.125rem;
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+}
+
+/* ============================================
+   WIDGET DE CUENTA REGRESIVA ESTACIONAL
+   ============================================ */
+
+.countdown-widget {
+  margin-bottom: 3rem;
+  animation: slideDown 0.6s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.countdown-container {
+  background: linear-gradient(
+    135deg,
+    var(--theme-primary) 0%,
+    var(--theme-secondary) 100%
+  );
+  border-radius: 1.5rem;
+  padding: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 3rem;
+  box-shadow: var(--theme-shadow-xl);
+  position: relative;
+  overflow: hidden;
+}
+
+.countdown-container::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.1) 25%,
+    transparent 25%,
+    transparent 50%,
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0.1) 75%,
+    transparent 75%,
+    transparent
+  );
+  background-size: 50px 50px;
+  opacity: 0.3;
+  animation: patternMove 20s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes patternMove {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 50px 50px;
+  }
+}
+
+/* Info del evento */
+.countdown-info {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex: 1;
+  z-index: 1;
+}
+
+.countdown-event-icon {
+  font-size: 4.5rem;
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.3));
+  animation: iconPulse 2s ease-in-out infinite;
+}
+
+@keyframes iconPulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+.countdown-event-title {
+  font-size: 2rem;
+  font-weight: 800;
+  color: white;
+  margin-bottom: 0.5rem;
+  text-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.countdown-event-subtitle {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+/* Display del contador */
+.countdown-display {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  z-index: 1;
+}
+
+.countdown-box {
+  background: rgba(255, 255, 255, 0.2);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border-radius: 1rem;
+  padding: 1.5rem 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 100px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+.countdown-number {
+  font-size: 3rem;
+  font-weight: 800;
+  color: white;
+  line-height: 1;
+  text-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.countdown-text {
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.9);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-top: 0.5rem;
+  font-weight: 600;
+}
+
+.countdown-separator {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: white;
+  opacity: 0.7;
+}
+
+/* CTA del contador */
+.countdown-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1.25rem 2.5rem;
+  background: var(--theme-accent);
+  color: var(--theme-primary);
+  font-weight: 700;
+  font-size: 1.125rem;
+  text-decoration: none;
+  border-radius: 50px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 0 20px var(--theme-accent), 0 8px 20px rgba(0, 0, 0, 0.3);
+  z-index: 1;
+}
+
+.countdown-cta:hover {
+  transform: translateY(-4px) scale(1.05);
+  box-shadow: 0 0 30px var(--theme-accent), 0 12px 30px rgba(0, 0, 0, 0.4);
+}
+
+/* ============================================
+   CATEGORÍAS CON BORDES DEL TEMA
+   ============================================ */
+
+.categories-grid .category-card {
+  border: 3px solid var(--theme-primary);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.categories-grid .category-card:hover {
+  border-color: var(--theme-accent);
+  box-shadow: 0 0 20px rgba(var(--theme-primary-rgb), 0.3),
+    var(--theme-shadow-lg);
+  transform: translateY(-8px);
+}
+
+.categories-grid .category-icon {
+  background: var(--theme-gradient-primary);
+  box-shadow: 0 8px 20px rgba(var(--theme-primary-rgb), 0.3);
+}
+
+/* ============================================
+   SECCIÓN DE OFERTAS CON TINTE ESTACIONAL
+   ============================================ */
+
+.seasonal-tint {
+  background: linear-gradient(
+    180deg,
+    rgba(var(--theme-primary-rgb), 0.03) 0%,
+    rgba(var(--theme-secondary-rgb), 0.03) 100%
+  );
+  position: relative;
+}
+
+.seasonal-tint::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--theme-gradient-primary);
+  opacity: 0.5;
+}
+
+.flash-title {
+  color: var(--theme-primary);
+}
+
+.flash-sales-section .product-card {
+  border: 2px solid transparent;
+  transition: border-color 0.3s;
+}
+
+.flash-sales-section .product-card:hover {
+  border-color: var(--theme-primary);
+}
+
+/* Badge de descuento con color del tema */
+.discount-badge {
+  background: var(--theme-primary);
+  box-shadow: 0 4px 12px rgba(var(--theme-primary-rgb), 0.4);
+}
+
+/* ============================================
+   SLIDER CONTROLS CON COLORES DEL TEMA
+   ============================================ */
+
+.slider-dot {
+  background: rgba(var(--theme-primary-rgb), 0.3);
+}
+
+.slider-dot.active {
+  background: var(--theme-primary);
+  box-shadow: 0 0 15px rgba(var(--theme-primary-rgb), 0.6);
+}
+
+/* ============================================
+   BOTONES ADAPTADOS AL TEMA
+   ============================================ */
+
+.hero-cta,
+.category-link,
+.product-card .btn-primary {
+  background: var(--theme-primary);
+  color: white;
+  transition: all 0.3s;
+}
+
+.hero-cta:hover,
+.category-link:hover,
+.product-card .btn-primary:hover {
+  background: var(--theme-primary-dark);
+  box-shadow: var(--theme-shadow-lg);
+}
+
+#hero-banner {
+  --hero-accent: #F97316;
+}
+
+#hero-banner .hero-eyebrow {
+  color: var(--hero-accent);
+}
+
+#hero-banner .hero-title {
+  color: white;
+}
+
+#hero-banner.tema-sanvalentin .hero-slide::before,
+#hero-banner.tema-diamadre .hero-slide::before,
+#hero-banner.tema-diapadre .hero-slide::before,
+#hero-banner.tema-graduaciones .hero-slide::before,
+#hero-banner.tema-navidad .hero-slide::before,
+#hero-banner.tema-todaocasion .hero-slide::before {
+  background: linear-gradient(to right, rgba(0, 0, 0, 0.65), transparent);
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 1024px) {
+  .countdown-container {
+    flex-direction: column;
+    text-align: center;
+    padding: 2rem;
+  }
+
+  .countdown-info {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .countdown-display {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 768px) {
+  .welcome-content {
+    flex-direction: column;
+    text-align: center;
+    gap: 1rem;
+  }
+
+  .welcome-icon {
+    font-size: 3rem;
+  }
+
+  .welcome-title {
+    font-size: 1.5rem;
+  }
+
+  .welcome-subtitle {
+    font-size: 1rem;
+  }
+
+  .countdown-event-icon {
+    font-size: 3.5rem;
+  }
+
+  .countdown-event-title {
+    font-size: 1.5rem;
+  }
+
+  .countdown-box {
+    min-width: 80px;
+    padding: 1rem 1.5rem;
+  }
+
+  .countdown-number {
+    font-size: 2.5rem;
+  }
+
+  .countdown-separator {
+    font-size: 2rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .countdown-container {
+    padding: 1.5rem;
+  }
+
+  .countdown-display {
+    gap: 0.5rem;
+  }
+
+  .countdown-box {
+    min-width: 70px;
+    padding: 0.75rem 1rem;
+  }
+
+  .countdown-number {
+    font-size: 2rem;
+  }
+
+  .countdown-text {
+    font-size: 0.75rem;
+  }
+
+  .countdown-separator {
+    display: none;
+  }
+
+  .countdown-cta {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* ============================================
+   ANIMACIONES SUAVES
+   ============================================ */
+
+@media (prefers-reduced-motion: no-preference) {
+  .welcome-banner,
+  .countdown-widget {
+    animation-duration: 0.6s;
+    animation-timing-function: ease-out;
+    animation-fill-mode: both;
+  }
+
+  .welcome-banner {
+    animation-name: fadeInDown;
+  }
+
+  @keyframes fadeInDown {
+    from {
+      opacity: 0;
+      transform: translateY(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}

@@ -1,0 +1,616 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Evaluación de Solicitudes de Crédito</title>
+    <link rel="icon" type="image/png" href="/icon/Logo_Razo.png" />
+
+    <!-- Protección de autenticación admin -->
+    <script src="js/auth-guard-admin.js"></script>
+    <script src="js/token-refresh.js"></script>
+
+    <link rel="stylesheet" href="css/styles.css" />`n    <link rel="stylesheet" href="css/fashion-theme.css" />
+    <link rel="stylesheet" href="css/admin.css" />
+    <link rel="stylesheet" href="css/components/credit-score-card.css" />
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+      <link rel="stylesheet" href="css/mobile-responsive.css" />
+  </head>
+  <body data-sidebar="admin">
+    <div class="admin-layout">
+      <div id="sidebar-container"></div>
+
+      <main class="admin-main">
+        <div id="admin-header-container"></div>
+
+        <div class="admin-content">
+          <!-- KPIs resumen -->
+          <section class="admin-stats-grid" id="statsContainer">
+            <article class="admin-stat-card">
+              <div class="admin-stat-header">
+                <div class="admin-stat-icon orange">💳</div>
+                <span class="admin-badge info">Pendientes</span>
+              </div>
+              <div class="admin-stat-content">
+                <h3>Solicitudes Pendientes</h3>
+                <div class="admin-stat-value" id="statTotalPendientes">0</div>
+              </div>
+            </article>
+
+            <article class="admin-stat-card">
+              <div class="admin-stat-header">
+                <div class="admin-stat-icon green">💰</div>
+                <span class="admin-badge success">Monto</span>
+              </div>
+              <div class="admin-stat-content">
+                <h3>Monto Total Solicitado</h3>
+                <div class="admin-stat-value" id="statMontoTotal">$0.00</div>
+              </div>
+            </article>
+
+            <article class="admin-stat-card">
+              <div class="admin-stat-header">
+                <div class="admin-stat-icon red">⚠️</div>
+                <span class="admin-badge danger">Riesgo</span>
+              </div>
+              <div class="admin-stat-content">
+                <h3>Solicitudes Alto Riesgo</h3>
+                <div class="admin-stat-value" id="statAltoRiesgo">0</div>
+              </div>
+            </article>
+          </section>
+
+          <!-- Tabla de solicitudes -->
+          <section class="admin-table-container">
+            <div class="admin-table-header">
+              <h2 class="admin-table-title">Solicitudes de Crédito Pendientes</h2>
+            </div>
+
+            <div id="solicitudesLoading" class="loading" style="display: flex">
+              <div class="spinner"></div>
+            </div>
+
+            <div style="overflow-x: auto">
+              <table class="admin-table" id="tablaSolicitudes" style="display: none">
+                <thead>
+                  <tr>
+                    <th>Fecha</th>
+                    <th>Cliente</th>
+                    <th>Monto</th>
+                    <th>Motivo</th>
+                    <th>Score</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="tablaSolicitudesBody"></tbody>
+              </table>
+            </div>
+
+            <div id="solicitudesEmpty" class="empty-state" style="display: none">
+              <div class="empty-state-icon">✅</div>
+              <h3 class="empty-state-title">No hay solicitudes pendientes</h3>
+              <p class="empty-state-text">
+                Todas las solicitudes han sido procesadas.
+              </p>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <script src="js/layout.js" defer></script>`n    <script src="js/sidebar-toggle.js" defer></script>
+    <script src="js/api.js"></script>
+    <script src="js/components/admin-header-loader.js"></script>
+    <script src="js/components/user-profile.js"></script>
+    <script>
+      (function () {
+        "use strict";
+
+        const adminToken = localStorage.getItem("Fashion Box_admin_token");
+        if (!adminToken) {
+          window.location.href = "/login.html";
+          return;
+        }
+
+        let solicitudesPendientes = [];
+
+        document.addEventListener("DOMContentLoaded", () => {
+          cargarSolicitudesPendientes();
+        });
+
+        function formatCurrency(value) {
+          const amount = Number.parseFloat(value ?? 0) || 0;
+          return new Intl.NumberFormat("es-MX", {
+            style: "currency",
+            currency: "MXN",
+            minimumFractionDigits: 2,
+          }).format(amount);
+        }
+
+        function formatearFecha(value) {
+          if (!value) return "—";
+          const date = new Date(value);
+          if (Number.isNaN(date.getTime())) return "—";
+          return date.toLocaleString("es-MX", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          });
+        }
+
+        function formatearAntiguedad(meses) {
+          if (meses < 1) return "Menos de 1 mes";
+          if (meses === 1) return "1 mes";
+          if (meses < 12) return `${meses} meses`;
+          const años = Math.floor(meses / 12);
+          const mesesRestantes = meses % 12;
+          if (mesesRestantes === 0) {
+            return años === 1 ? "1 año" : `${años} años`;
+          }
+          return años === 1
+            ? `1 año y ${mesesRestantes} ${mesesRestantes === 1 ? "mes" : "meses"}`
+            : `${años} años y ${mesesRestantes} ${mesesRestantes === 1 ? "mes" : "meses"}`;
+        }
+
+        function getBadgeColor(nivelRiesgo) {
+          switch (nivelRiesgo) {
+            case "BAJO":
+              return "success";
+            case "MEDIO":
+              return "warning";
+            case "ALTO":
+              return "danger";
+            default:
+              return "secondary";
+          }
+        }
+
+        async function cargarSolicitudesPendientes() {
+          const loading = document.getElementById("solicitudesLoading");
+          const tabla = document.getElementById("tablaSolicitudes");
+          const tbody = document.getElementById("tablaSolicitudesBody");
+          const empty = document.getElementById("solicitudesEmpty");
+
+          loading.style.display = "flex";
+          tabla.style.display = "none";
+          empty.style.display = "none";
+
+          try {
+            const response = await fetch(`${API_BASE_URL}/creditos/pendientes`, {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${adminToken}`,
+                "Content-Type": "application/json",
+              },
+            });
+
+            const data = await response.json();
+
+            if (!response.ok || !data.success) {
+              throw new Error(data.message || "Error al cargar solicitudes pendientes");
+            }
+
+            solicitudesPendientes = data.data.solicitudes || [];
+
+            // Actualizar stats
+            document.getElementById("statTotalPendientes").textContent = data.data.stats.total_pendientes;
+            document.getElementById("statMontoTotal").textContent = formatCurrency(data.data.stats.monto_total_pendiente);
+            document.getElementById("statAltoRiesgo").textContent = data.data.stats.solicitudes_alto_riesgo;
+
+            if (!solicitudesPendientes.length) {
+              empty.style.display = "block";
+              return;
+            }
+
+            tbody.innerHTML = solicitudesPendientes
+              .map((solicitud) => {
+                return `
+                  <tr data-solicitud-id="${solicitud.solicitud_id}">
+                    <td>${formatearFecha(solicitud.fecha_solicitud)}</td>
+                    <td>
+                      <div style="font-weight:600;">${solicitud.nombre_cliente}</div>
+                      <div style="font-size:0.75rem;color:var(--razo-gray-warm);">
+                        ID: ${solicitud.cliente_id}
+                      </div>
+                    </td>
+                    <td style="font-weight:600;">${formatCurrency(solicitud.monto_solicitado)}</td>
+                    <td>${solicitud.motivo_uso || "—"}</td>
+                    <td>
+                      <button
+                        type="button"
+                        class="btn btn-secondary btn-sm"
+                        onclick="analizarSolicitud(${solicitud.solicitud_id})"
+                      >
+                        Ver Score
+                      </button>
+                    </td>
+                    <td>
+                      <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+                        <button
+                          type="button"
+                          class="btn btn-primary btn-sm"
+                          onclick="aprobarSolicitud(${solicitud.solicitud_id})"
+                        >
+                          Aprobar
+                        </button>
+                        <button
+                          type="button"
+                          class="btn btn-outline btn-sm"
+                          onclick="rechazarSolicitud(${solicitud.solicitud_id})"
+                        >
+                          Rechazar
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                `;
+              })
+              .join("");
+
+            tabla.style.display = "table";
+          } catch (error) {
+            console.error("Error al cargar solicitudes pendientes:", error);
+            empty.style.display = "block";
+            Swal.fire({
+              icon: "error",
+              title: "Error",
+              text: error.message || "No se pudieron cargar las solicitudes",
+              confirmButtonColor: "#F97316",
+            });
+          } finally {
+            loading.style.display = "none";
+          }
+        }
+
+        function encontrarSolicitudPorId(id) {
+          return solicitudesPendientes.find((s) => s.solicitud_id === id) || null;
+        }
+
+        window.analizarSolicitud = async function (id) {
+          const solicitud = encontrarSolicitudPorId(Number(id));
+          if (!solicitud) return;
+
+          try {
+            const response = await fetch(`${API_BASE_URL}/creditos/analisis/${id}`, {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${adminToken}`,
+                "Content-Type": "application/json",
+              },
+            });
+
+            const data = await response.json();
+
+            if (!response.ok || !data.success) {
+              throw new Error(data.message || "Error al analizar solicitud");
+            }
+
+            const analisis = data.data;
+            const badgeColor = getBadgeColor(analisis.evaluacion.nivel_riesgo);
+
+            const contenido = `
+              <div class="credit-analysis">
+                <!-- Sección 1: Perfil -->
+                <div class="analysis-section">
+                  <h4 class="section-title">Perfil del Cliente</h4>
+                  <div class="profile-stats">
+                    <div class="stat-item">
+                      <span class="stat-label">Antigüedad</span>
+                      <span class="stat-value">
+                        <span class="badge bg-${getBadgeColor(analisis.metricas.antiguedad_meses > 6 ? 'BAJO' : analisis.metricas.antiguedad_meses > 1 ? 'MEDIO' : 'ALTO')}">
+                          ${formatearAntiguedad(analisis.metricas.antiguedad_meses)}
+                        </span>
+                      </span>
+                    </div>
+                    <div class="stat-item">
+                      <span class="stat-label">Total Pedidos</span>
+                      <span class="stat-value">${analisis.metricas.pedidos_totales}</span>
+                    </div>
+                    <div class="stat-item">
+                      <span class="stat-label">Compra Máxima</span>
+                      <span class="stat-value">${formatCurrency(analisis.metricas.compra_maxima)}</span>
+                    </div>
+                    <div class="stat-item">
+                      <span class="stat-label">Promedio Mensual</span>
+                      <span class="stat-value">${formatCurrency(analisis.metricas.promedio_compra)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Sección 2: La Solicitud -->
+                <div class="analysis-section">
+                  <h4 class="section-title">Análisis de la Solicitud</h4>
+                  <div class="request-comparison">
+                    <div class="comparison-bar">
+                      <div class="bar-label">Monto Solicitado vs Máximo Histórico</div>
+                      <div class="bar-container">
+                        <div class="bar-base" style="width:100%;">
+                          ${formatCurrency(analisis.metricas.compra_maxima)}
+                        </div>
+                        <div class="bar-request" style="width:${(analisis.solicitud.monto_solicitado / analisis.metricas.compra_maxima * 100).toFixed(0)}%;">
+                          ${formatCurrency(analisis.solicitud.monto_solicitado)}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Sección 3: Veredicto -->
+                <div class="analysis-section">
+                  <div class="alert alert-${badgeColor}">
+                    <h4 class="alert-heading">
+                      <span class="badge bg-${badgeColor}">Riesgo ${analisis.evaluacion.nivel_riesgo}</span>
+                    </h4>
+                    <p class="mb-0">
+                      El sistema sugiere <strong>${analisis.evaluacion.sugerencia}</strong> porque:<br>
+                      ${analisis.evaluacion.mensaje_advertencia}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            `;
+
+            const result = await Swal.fire({
+              title: `Evaluación de Crédito - ${solicitud.nombre_cliente}`,
+              html: contenido,
+              width: "800px",
+              showCancelButton: true,
+              showDenyButton: true,
+              confirmButtonText: "Aprobar",
+              denyButtonText: "Rechazar",
+              cancelButtonText: "Cerrar",
+              confirmButtonColor: "#22c55e",
+              denyButtonColor: "#ef4444",
+              customClass: {
+                container: "credit-analysis-modal"
+              }
+            });
+
+            if (result.isDismissed) return;
+
+            if (result.isConfirmed) {
+              // Aprobar
+              const { value: limite } = await Swal.fire({
+                title: "Establecer Límite de Crédito",
+                input: "number",
+                inputLabel: "Monto Aprobado ($)",
+                inputValue: solicitud.monto_solicitado,
+                showCancelButton: true,
+                inputValidator: (value) => {
+                  if (!value || value <= 0) {
+                    return "Por favor ingresa un monto válido";
+                  }
+                }
+              });
+
+              if (!limite) return;
+
+              const response = await fetch(`${API_BASE_URL}/creditos/aprobar`, {
+                method: "POST",
+                headers: {
+                  Authorization: `Bearer ${adminToken}`,
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  solicitud_id: id,
+                  limite_aprobado: limite
+                })
+              });
+
+              const data = await response.json();
+
+              if (!response.ok || !data.success) {
+                throw new Error(data.message || "Error al aprobar solicitud");
+              }
+
+              await Swal.fire({
+                icon: "success",
+                title: "¡Solicitud Aprobada!",
+                text: "La línea de crédito ha sido creada correctamente.",
+                confirmButtonColor: "#22c55e",
+              });
+            } else {
+              // Rechazar
+              const { value: motivo } = await Swal.fire({
+                title: "Motivo del Rechazo",
+                input: "textarea",
+                inputLabel: "Especifica el motivo del rechazo",
+                inputPlaceholder: "Ingresa el motivo...",
+                showCancelButton: true,
+                inputValidator: (value) => {
+                  if (!value?.trim()) {
+                    return "Por favor ingresa un motivo";
+                  }
+                }
+              });
+
+              if (!motivo) return;
+
+              const response = await fetch(`${API_BASE_URL}/creditos/rechazar`, {
+                method: "POST",
+                headers: {
+                  Authorization: `Bearer ${adminToken}`,
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  solicitud_id: id,
+                  motivo_rechazo: motivo.trim()
+                })
+              });
+
+              const data = await response.json();
+
+              if (!response.ok || !data.success) {
+                throw new Error(data.message || "Error al rechazar solicitud");
+              }
+
+              await Swal.fire({
+                icon: "success",
+                title: "Solicitud Rechazada",
+                text: "Se ha notificado al cliente.",
+                confirmButtonColor: "#22c55e",
+              });
+            }
+
+            await cargarSolicitudesPendientes();
+          } catch (error) {
+            console.error("Error:", error);
+            Swal.fire({
+              icon: "error",
+              title: "Error",
+              text: error.message || "Ocurrió un error",
+              confirmButtonColor: "#F97316",
+            });
+          }
+        };
+      })();
+    </script>
+
+    <style>
+      .credit-analysis {
+        padding: 1rem;
+      }
+
+      .analysis-section {
+        margin-bottom: 2rem;
+      }
+
+      .section-title {
+        font-size: 1.1rem;
+        margin-bottom: 1rem;
+        color: var(--razo-gray-dark);
+      }
+
+      .profile-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+      }
+
+      .stat-item {
+        padding: 1rem;
+        background: #f8fafc;
+        border-radius: 0.5rem;
+      }
+
+      .stat-label {
+        display: block;
+        font-size: 0.875rem;
+        color: var(--razo-gray-warm);
+        margin-bottom: 0.25rem;
+      }
+
+      .stat-value {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--razo-gray-dark);
+      }
+
+      .request-comparison {
+        background: #f8fafc;
+        padding: 1.5rem;
+        border-radius: 0.5rem;
+      }
+
+      .comparison-bar {
+        margin-bottom: 1rem;
+      }
+
+      .bar-label {
+        font-size: 0.875rem;
+        color: var(--razo-gray-warm);
+        margin-bottom: 0.5rem;
+      }
+
+      .bar-container {
+        position: relative;
+        height: 2rem;
+        background: #e2e8f0;
+        border-radius: 0.25rem;
+        overflow: hidden;
+      }
+
+      .bar-base {
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 100%;
+        background: #94a3b8;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        padding: 0 0.5rem;
+        font-size: 0.875rem;
+      }
+
+      .bar-request {
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 100%;
+        background: var(--razo-orange);
+        color: white;
+        display: flex;
+        align-items: center;
+        padding: 0 0.5rem;
+        font-size: 0.875rem;
+      }
+
+      .alert {
+        padding: 1rem;
+        border-radius: 0.5rem;
+        margin-bottom: 1rem;
+      }
+
+      .alert-success {
+        background-color: #f0fdf4;
+        border: 1px solid #bbf7d0;
+      }
+
+      .alert-warning {
+        background-color: #fefce8;
+        border: 1px solid #fef08a;
+      }
+
+      .alert-danger {
+        background-color: #fef2f2;
+        border: 1px solid #fecaca;
+      }
+
+      .alert-heading {
+        margin-bottom: 0.75rem;
+      }
+
+      .badge {
+        padding: 0.35em 0.65em;
+        font-size: 0.75em;
+        font-weight: 700;
+        color: #fff;
+        text-align: center;
+        white-space: nowrap;
+        vertical-align: baseline;
+        border-radius: 0.25rem;
+      }
+
+      .bg-success {
+        background-color: #22c55e;
+      }
+
+      .bg-warning {
+        background-color: #eab308;
+      }
+
+      .bg-danger {
+        background-color: #ef4444;
+      }
+
+      .credit-analysis-modal .swal2-html-container {
+        margin: 0;
+        padding: 1rem;
+      }
+    </style>
+  </body>
+</html>

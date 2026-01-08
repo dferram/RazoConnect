@@ -1,0 +1,352 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Reportes - Admin Fashion Box</title>
+    <link rel="icon" type="image/png" href="/icon/Logo_Razo.png" />
+    <link rel="stylesheet" href="css/styles.css" />`n    <link rel="stylesheet" href="css/fashion-theme.css" />
+    <link rel="stylesheet" href="css/admin.css" />
+    <script src="js/auth-guard-admin.js"></script>
+    <script src="js/token-refresh.js"></script>
+      <link rel="stylesheet" href="css/mobile-responsive.css" />
+  </head>
+  <body data-page-title="Reportes">
+    <div class="admin-layout">
+      <!-- Sidebar -->
+      <div id="sidebar-container"></div>
+
+      <!-- Main Content -->
+      <main class="admin-main">
+        <div id="admin-header-container"></div>
+
+        <div class="admin-content" style="display: grid; gap: 1.5rem">
+          <!-- Filtros -->
+          <section
+            class="admin-card"
+            style="
+              padding: 1.5rem;
+              display: flex;
+              flex-wrap: wrap;
+              gap: 1rem;
+              align-items: flex-end;
+            "
+          >
+            <div class="filtro-item">
+              <label for="fechaDesde" class="form-label">Desde</label>
+              <input type="date" id="fechaDesde" class="form-input" />
+            </div>
+            <div class="filtro-item">
+              <label for="fechaHasta" class="form-label">Hasta</label>
+              <input type="date" id="fechaHasta" class="form-input" />
+            </div>
+            <div class="filtro-item">
+              <label for="filtro-estado-select" class="form-label"
+                >Filtrar por Estado</label
+              >
+              <select id="filtro-estado-select" class="form-input">
+                <option value="">Todos los estados</option>
+              </select>
+            </div>
+            <button
+              id="generarReporteBtn"
+              class="btn btn-primary"
+              style="height: fit-content; padding: 0.75rem 1.5rem"
+            >
+              Generar reporte
+            </button>
+          </section>
+
+          <!-- Resumen -->
+          <section
+            class="admin-card"
+            style="
+              padding: 1.5rem;
+              display: grid;
+              grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+              gap: 1rem;
+            "
+          >
+            <div
+              class="admin-stat-card"
+              style="padding: 1rem; background: #fff7f1"
+            >
+              <h3
+                style="
+                  margin: 0;
+                  font-size: 0.9rem;
+                  color: var(--razo-gray-warm);
+                "
+              >
+                Venta bruta total
+              </h3>
+              <p
+                id="totalVenta"
+                style="
+                  margin: 0.5rem 0 0;
+                  font-size: 1.4rem;
+                  font-weight: 600;
+                  color: var(--razo-orange, #ff6b35);
+                "
+              >
+                $0.00
+              </p>
+            </div>
+            <div
+              class="admin-stat-card"
+              style="padding: 1rem; background: #f0f7ff"
+            >
+              <h3
+                style="
+                  margin: 0;
+                  font-size: 0.9rem;
+                  color: var(--razo-gray-warm);
+                "
+              >
+                Costo total
+              </h3>
+              <p
+                id="totalCosto"
+                style="
+                  margin: 0.5rem 0 0;
+                  font-size: 1.4rem;
+                  font-weight: 600;
+                  color: #2563eb;
+                "
+              >
+                $0.00
+              </p>
+            </div>
+            <div
+              class="admin-stat-card"
+              style="padding: 1rem; background: #f2fff5"
+            >
+              <h3
+                style="
+                  margin: 0;
+                  font-size: 0.9rem;
+                  color: var(--razo-gray-warm);
+                "
+              >
+                Ganancia bruta total
+              </h3>
+              <p
+                id="totalGananciaBruta"
+                style="
+                  margin: 0.5rem 0 0;
+                  font-size: 1.4rem;
+                  font-weight: 600;
+                  color: #16a34a;
+                "
+              >
+                $0.00
+              </p>
+            </div>
+            <div
+              class="admin-stat-card"
+              style="padding: 1rem; background: #fff0f5"
+            >
+              <h3
+                style="
+                  margin: 0;
+                  font-size: 0.9rem;
+                  color: var(--razo-gray-warm);
+                "
+              >
+                Comisiones totales
+              </h3>
+              <p
+                id="totalComisiones"
+                style="
+                  margin: 0.5rem 0 0;
+                  font-size: 1.4rem;
+                  font-weight: 600;
+                  color: #db2777;
+                "
+              >
+                $0.00
+              </p>
+            </div>
+            <div
+              class="admin-stat-card"
+              style="padding: 1rem; background: #f0fff4"
+            >
+              <h3
+                style="
+                  margin: 0;
+                  font-size: 0.9rem;
+                  color: var(--razo-gray-warm);
+                "
+              >
+                Costo de envío total
+              </h3>
+              <p
+                id="totalCostoEnvio"
+                style="
+                  margin: 0.5rem 0 0;
+                  font-size: 1.4rem;
+                  font-weight: 600;
+                  color: #15803d;
+                "
+              >
+                $0.00
+              </p>
+            </div>
+            <div
+              class="admin-stat-card"
+              style="padding: 1rem; background: #e2f0ff"
+            >
+              <h3
+                style="
+                  margin: 0;
+                  font-size: 0.9rem;
+                  color: var(--razo-gray-warm);
+                "
+              >
+                Ganancia neta total
+              </h3>
+              <p
+                id="totalGananciaNeta"
+                style="
+                  margin: 0.5rem 0 0;
+                  font-size: 1.4rem;
+                  font-weight: 600;
+                  color: #1d4ed8;
+                "
+              >
+                $0.00
+              </p>
+            </div>
+          </section>
+
+          <!-- Tabla Rentabilidad -->
+          <section class="admin-card" style="padding: 1.5rem">
+            <div
+              style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 1rem;
+              "
+            >
+              <h2
+                style="
+                  margin: 0;
+                  font-size: 1.2rem;
+                  color: var(--razo-orange, #ff6b35);
+                "
+              >
+                Detalle por línea de pedido
+              </h2>
+              <span id="resultadosBadge" class="admin-badge secondary"
+                >0 resultados</span
+              >
+            </div>
+
+            <div
+              id="loadingReporte"
+              class="loading"
+              style="display: none; min-height: 120px"
+            >
+              <div class="spinner"></div>
+            </div>
+
+            <div style="overflow-x: auto">
+              <table
+                class="admin-table"
+                id="reportesTable"
+                style="display: none"
+              >
+                <thead>
+                  <tr>
+                    <th>Fecha</th>
+                    <th>Pedido ID</th>
+                    <th>Producto maestro</th>
+                    <th>Presentación</th>
+                    <th>Variante (SKU)</th>
+                    <th>Venta bruta</th>
+                    <th>Costo total</th>
+                    <th>Ganancia bruta</th>
+                    <th>Comisiones</th>
+                    <th>Costo envío</th>
+                    <th>Ganancia neta</th>
+                  </tr>
+                </thead>
+                <tbody id="reportesTableBody"></tbody>
+              </table>
+            </div>
+
+            <div id="emptyReporte" class="empty-state" style="display: none">
+              <div class="empty-state-icon">📑</div>
+              <h3 class="empty-state-title">Sin resultados</h3>
+              <p class="empty-state-text">
+                Ajusta los filtros de fecha y vuelve a generar el reporte.
+              </p>
+            </div>
+          </section>
+
+          <!-- Aging Backorders -->
+          <section class="admin-card" style="padding: 1.5rem">
+            <div
+              style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 1rem;
+              "
+            >
+              <h2
+                style="
+                  margin: 0;
+                  font-size: 1.2rem;
+                  color: var(--razo-orange, #ff6b35);
+                "
+              >
+                Reporte de Antigüedad de Backorders
+              </h2>
+              <span id="agingResultadosBadge" class="admin-badge secondary"
+                >0 pedidos</span
+              >
+            </div>
+
+            <div
+              id="loadingAging"
+              class="loading"
+              style="display: none; min-height: 120px"
+            >
+              <div class="spinner"></div>
+            </div>
+
+            <div style="overflow-x: auto">
+              <table class="admin-table" id="agingTable" style="display: none">
+                <thead>
+                  <tr>
+                    <th>ID Pedido</th>
+                    <th>Cliente</th>
+                    <th>Fecha de Pedido</th>
+                    <th>Estatus de Surtido</th>
+                    <th>Días Pendiente</th>
+                  </tr>
+                </thead>
+                <tbody id="agingTableBody"></tbody>
+              </table>
+            </div>
+
+            <div id="emptyAging" class="empty-state" style="display: none">
+              <div class="empty-state-icon">⏳</div>
+              <h3 class="empty-state-title">Sin backorders pendientes</h3>
+              <p class="empty-state-text">¡Todos los pedidos están al día!</p>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <script src="js/layout.js" defer></script>`n    <script src="js/sidebar-toggle.js" defer></script>
+    <script src="js/api.js"></script>
+    <script src="js/components/admin-header-loader.js"></script>
+    <script src="js/components/user-profile.js"></script>
+    <script src="js/admin-header-dropdown.js"></script>
+    <script src="js/admin-reportes.js"></script>
+  </body>
+</html>

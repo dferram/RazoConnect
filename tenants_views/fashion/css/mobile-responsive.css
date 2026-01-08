@@ -1,0 +1,1088 @@
+/* ============================================
+   RAZOCONNECT - MOBILE RESPONSIVE FIXES
+   Mobile-First Design System
+   Breakpoints: 480px, 768px, 1024px
+   ============================================ */
+
+/* ============================================
+   GLOBAL RESPONSIVE IMAGES
+   ============================================ */
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Prevent horizontal scroll */
+html, body {
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100vw;
+  margin: 0;
+  padding: 0;
+}
+
+/* Ensure all containers respect viewport width */
+* {
+  box-sizing: border-box;
+}
+
+/* Prevent text from forcing horizontal scroll */
+.container,
+.hero-content,
+.benefits-section,
+.landing-brands,
+.landing-featured {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* ============================================
+   DESKTOP NAVBAR - HIDE HAMBURGER
+   ============================================ */
+.navbar-toggle {
+  display: none;
+}
+
+@media (min-width: 769px) {
+  .navbar-toggle {
+    display: none !important;
+  }
+  
+  .navbar-menu {
+    display: flex !important;
+  }
+}
+
+/* ============================================
+   MOBILE FIRST - BASE STYLES (< 480px)
+   ============================================ */
+@media (max-width: 480px) {
+  /* Typography adjustments */
+  h1 {
+    font-size: 1.75rem !important;
+    line-height: 1.2;
+  }
+
+  h2 {
+    font-size: 1.5rem !important;
+    line-height: 1.3;
+  }
+
+  h3 {
+    font-size: 1.25rem !important;
+  }
+
+  /* Hero section typography - extra small screens */
+  .hero-title {
+    font-size: 1.75rem !important;
+    line-height: 1.2 !important;
+    margin-bottom: 1rem !important;
+  }
+
+  .hero-subtitle {
+    font-size: 1rem !important;
+    line-height: 1.4 !important;
+    padding: 0.5rem 1rem !important;
+  }
+
+  .hero-icon {
+    font-size: 2.5rem !important;
+    width: 70px !important;
+    height: 70px !important;
+  }
+
+  /* Section titles */
+  .section-title,
+  .landing-section-title {
+    font-size: 1.5rem !important;
+  }
+
+  .section-subtitle,
+  .landing-section-subtitle {
+    font-size: 1rem !important;
+  }
+
+  /* Container padding reduction */
+  .container,
+  .admin-container {
+    padding: 0 0.75rem !important;
+  }
+
+  /* Form containers */
+  .form-container,
+  .admin-login-box {
+    padding: 1rem !important;
+    margin: 0.5rem !important;
+    max-width: 100% !important;
+  }
+
+  /* Buttons full width on small mobile */
+  .btn,
+  .admin-btn,
+  button[type="submit"] {
+    width: 100%;
+    padding: 0.875rem 1rem;
+    font-size: 0.9rem;
+  }
+
+  /* Input fields */
+  input,
+  select,
+  textarea {
+    font-size: 16px !important; /* Prevents iOS zoom */
+    width: 100%;
+  }
+
+  /* Cards padding */
+  .product-card,
+  .admin-card,
+  .stat-card {
+    padding: 1rem !important;
+  }
+
+  /* Modal adjustments */
+  .modal-content {
+    margin: 0.5rem !important;
+    padding: 1rem !important;
+    max-width: calc(100% - 1rem) !important;
+  }
+}
+
+/* ============================================
+   TABLET & MOBILE (< 768px)
+   ============================================ */
+@media (max-width: 768px) {
+  /* ========== LAYOUT ========== */
+  
+  /* Hero sections - stack vertically */
+  .hero-content {
+    grid-template-columns: 1fr !important;
+    gap: 1.5rem !important;
+  }
+
+  .hero-image {
+    order: -1; /* Image first on mobile */
+    max-height: 300px;
+  }
+
+  /* Footer - single column */
+  .footer-content,
+  .rz-footer-top {
+    grid-template-columns: 1fr !important;
+    gap: 2rem !important;
+  }
+
+  /* ========== NAVIGATION - LIMPIO Y SIMPLE ========== */
+  
+  /* Navbar en móviles */
+  .navbar {
+    padding: 0.75rem 0;
+  }
+
+  .navbar-brand img {
+    height: 28px;
+  }
+
+  /* Espaciador de contenido - usar en páginas que lo necesiten */
+  .main-content-spacer {
+    padding-top: 2rem !important;
+  }
+
+  .navbar-content {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 1rem !important;
+  }
+
+  /* Navbar menu - hamburger style */
+  .navbar-menu {
+    display: none;
+    flex-direction: column !important;
+    width: 100%;
+    gap: 0.75rem !important;
+    padding: 1rem 0;
+    background: white;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+
+  .navbar-menu.active {
+    display: flex !important;
+  }
+
+  .navbar-menu li {
+    width: 100%;
+    text-align: center;
+  }
+
+  .navbar-menu .btn {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 0.875rem 1.5rem !important;
+    margin: 0 !important;
+  }
+
+  .navbar-menu .navbar-link {
+    display: block;
+    padding: 0.75rem 1rem;
+    width: 100%;
+  }
+
+  /* Hamburger toggle button */
+  .navbar-toggle {
+    display: block !important;
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: transparent;
+    border: none;
+    font-size: 1.75rem;
+    cursor: pointer;
+    color: var(--razo-orange, #ff9966);
+    z-index: 1000;
+    padding: 0.5rem;
+    line-height: 1;
+    transition: transform 0.3s ease;
+  }
+
+  .navbar-toggle:hover {
+    transform: scale(1.1);
+  }
+
+  .navbar-toggle:active {
+    transform: scale(0.95);
+  }
+
+  /* Navbar container adjustments */
+  .navbar-container {
+    position: relative;
+  }
+
+  .navbar-search {
+    order: 3;
+    width: 100%;
+  }
+
+  /* ========== ADMIN PANEL ========== */
+  
+  /* Admin sidebar - collapse or hide */
+  .admin-sidebar {
+    position: fixed;
+    left: -100%;
+    top: 0;
+    height: 100vh;
+    width: 280px;
+    z-index: 9999;
+    transition: left 0.3s ease;
+  }
+
+  .admin-sidebar.active {
+    left: 0;
+  }
+
+  /* Admin main content - full width */
+  .admin-main-content {
+    margin-left: 0 !important;
+    padding: 1rem !important;
+  }
+
+  /* Admin header adjustments */
+  .admin-header {
+    padding: 1rem !important;
+  }
+
+  /* Admin grids - single column */
+  .admin-grid-lg,
+  .admin-stats-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+  }
+
+  /* Admin cards */
+  .admin-card {
+    padding: 1rem !important;
+    margin-bottom: 1rem;
+  }
+
+  .admin-card-header {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 1rem;
+  }
+
+  .admin-card-toolbar {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  /* ========== TABLES ========== */
+  
+  /* Table containers with horizontal scroll */
+  .admin-table-container,
+  .table-responsive,
+  .dashboard-table-wrapper {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 0.5rem;
+  }
+
+  /* Table styling for mobile */
+  .admin-table {
+    font-size: 0.75rem !important;
+    min-width: 600px; /* Force horizontal scroll instead of breaking */
+  }
+
+  .admin-table th,
+  .admin-table td {
+    padding: 0.5rem !important;
+    white-space: nowrap;
+  }
+
+  /* Modal tables */
+  .modal-table-scroll {
+    max-height: 60vh !important;
+  }
+
+  /* ========== CART & PRODUCTS ========== */
+  
+  /* Cart items - 2 columns (image + content) */
+  .cart-item {
+    grid-template-columns: 80px 1fr !important;
+    gap: 0.75rem !important;
+  }
+
+  .cart-item-actions {
+    grid-column: 1 / -1;
+    margin-top: 0.5rem;
+  }
+
+  /* ========== PRODUCT GRID - NIKE STYLE 2 COLUMNS ========== */
+  
+  /* Product grid - 2 columns with tight gap for mobile */
+  .product-grid,
+  .products-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+    padding: 0 0.5rem;
+  }
+
+  /* Product card - compact and square proportions */
+  .product-card {
+    max-width: 100%;
+    margin: 0;
+    border-radius: 0.5rem;
+    overflow: hidden;
+  }
+
+  /* Image container - force square aspect ratio */
+  .imagen-wrapper {
+    aspect-ratio: 1 / 1 !important;
+    max-height: none !important;
+    height: auto !important;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* Product media - cover to fill square container */
+  .product-media {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    aspect-ratio: 1 / 1;
+  }
+
+  /* Fallback emoji media */
+  .product-media--fallback {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 3rem !important;
+    background: #f5f5f5 !important;
+  }
+
+  /* Product info - compact padding */
+  .product-info {
+    padding: 8px !important;
+  }
+
+  /* Product category - smaller and more compact */
+  .product-category {
+    font-size: 0.65rem !important;
+    padding: 0.1rem 0.45rem !important;
+    margin-bottom: 0.25rem !important;
+  }
+
+  /* Product title - compact with line clamp */
+  .product-title {
+    font-size: 0.9rem !important;
+    line-height: 1.3 !important;
+    margin: 0.25rem 0 !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-height: 2.6em !important;
+  }
+
+  /* Product price - compact */
+  .product-price {
+    font-size: 0.85rem !important;
+    margin-top: 0.35rem !important;
+  }
+
+  /* Price components - smaller */
+  .precio-normal,
+  .precio-oferta {
+    font-size: 0.85rem !important;
+  }
+
+  .precio-original {
+    font-size: 0.75rem !important;
+  }
+
+  /* CTA button - hide on mobile, tap card instead */
+  .product-cta-wrapper {
+    display: none !important;
+  }
+
+  /* Floating cart button - smaller and subtle */
+  .cart-floating-btn {
+    width: 32px !important;
+    height: 32px !important;
+    bottom: 6px !important;
+    right: 6px !important;
+    padding: 0 !important;
+  }
+
+  .cart-floating-btn svg {
+    width: 16px !important;
+    height: 16px !important;
+  }
+
+  /* Product badges - smaller and tighter */
+  .product-badge {
+    font-size: 0.6rem !important;
+    padding: 0.25rem 0.5rem !important;
+    border-radius: 0 0 0.5rem 0 !important;
+  }
+
+  /* Stock info - smaller text */
+  .product-stock {
+    font-size: 0.7rem !important;
+    margin-top: 0.25rem !important;
+  }
+
+  /* Medida badge - compact */
+  .product-badge--medida {
+    font-size: 0.6rem !important;
+    padding: 0.2rem 0.4rem !important;
+    margin-top: 0.25rem !important;
+  }
+
+  .product-card-image {
+    height: auto !important;
+    aspect-ratio: 1 / 1 !important;
+  }
+
+  /* ========== FORMS ========== */
+  
+  /* Form groups stack vertically */
+  .form-row,
+  .form-group-row {
+    flex-direction: column !important;
+    gap: 1rem;
+  }
+
+  .form-group {
+    width: 100% !important;
+  }
+
+  /* Form labels */
+  label {
+    font-size: 0.9rem;
+  }
+
+  /* Input groups */
+  .input-group {
+    flex-direction: column;
+  }
+
+  .input-group-text {
+    width: 100%;
+    border-radius: 0.5rem 0.5rem 0 0 !important;
+  }
+
+  .input-group input {
+    border-radius: 0 0 0.5rem 0.5rem !important;
+  }
+
+  /* ========== MODALS ========== */
+  
+  .modal-content {
+    width: 95vw !important;
+    max-width: 95vw !important;
+    margin: 1rem auto !important;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  .modal-header {
+    padding: 1rem !important;
+  }
+
+  .modal-body {
+    padding: 1rem !important;
+  }
+
+  .modal-footer {
+    padding: 1rem !important;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .modal-footer .btn {
+    width: 100%;
+  }
+
+  /* ========== STATS & METRICS ========== */
+  
+  .stats-grid,
+  .metrics-grid,
+  .testimonials-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+  }
+
+  .stat-card {
+    text-align: center;
+  }
+
+  /* ========== FEATURES & BENEFITS ========== */
+  
+  .features-grid,
+  .benefits-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1.5rem !important;
+  }
+
+  /* Benefits section - prevent overflow */
+  .benefits-section {
+    padding: 3rem 0 !important;
+    overflow-x: hidden;
+  }
+
+  .benefit-card {
+    padding: 1.5rem !important;
+    margin: 0 0.5rem;
+  }
+
+  /* Brands grid - single column */
+  .landing-brands-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1.5rem !important;
+  }
+
+  .brand-card {
+    margin: 0 0.5rem;
+  }
+
+  /* Featured products grid - single column */
+  .landing-featured-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1.5rem !important;
+  }
+
+  .featured-card {
+    max-width: 100%;
+    margin: 0 0.5rem;
+  }
+
+  .featured-card-image {
+    height: 200px !important;
+  }
+
+  /* Landing sections - proper spacing */
+  .landing-brands,
+  .landing-featured {
+    padding: 3rem 0 !important;
+  }
+
+  .landing-section-title {
+    font-size: 1.75rem !important;
+    margin-bottom: 0.75rem !important;
+  }
+
+  .landing-section-subtitle {
+    font-size: 1rem !important;
+    margin-bottom: 2rem !important;
+  }
+
+  /* ========== BUTTONS & ACTIONS ========== */
+  
+  /* Button groups stack vertically */
+  .btn-group,
+  .button-group,
+  .hero-ctas {
+    flex-direction: column !important;
+    width: 100%;
+  }
+
+  .btn-group .btn,
+  .button-group .btn {
+    width: 100%;
+    margin: 0.25rem 0;
+  }
+
+  /* Hero CTA buttons - stack with proper spacing */
+  .hero-cta-group {
+    flex-direction: column !important;
+    gap: 1rem !important;
+    width: 100%;
+  }
+
+  .btn-hero-primary,
+  .btn-hero-secondary {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 1rem 2rem !important;
+    font-size: 1rem !important;
+    text-align: center;
+    box-sizing: border-box;
+  }
+
+  /* Remove pseudo-elements that may cause visual artifacts */
+  .btn-hero-primary::before,
+  .btn-hero-primary::after,
+  .btn-hero-secondary::before,
+  .btn-hero-secondary::after {
+    display: none !important;
+  }
+
+  /* Featured section button fixes */
+  .btn-view-all {
+    width: 100% !important;
+    max-width: 300px;
+    padding: 0.875rem 2rem !important;
+    font-size: 1rem !important;
+    box-sizing: border-box;
+  }
+
+  .landing-featured-cta {
+    padding: 0 1rem;
+  }
+
+  /* Hero trust indicators - stack vertically */
+  .hero-trust {
+    flex-direction: column !important;
+    gap: 0.75rem !important;
+    align-items: center;
+  }
+
+  .hero-trust-item {
+    font-size: 0.9rem !important;
+    text-align: center;
+  }
+
+  /* Action buttons */
+  .admin-actions,
+  .dashboard-actions {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  /* ========== FILTERS & SIDEBAR ========== */
+  
+  /* Sidebar filters - collapse by default */
+  .sidebar-filtros,
+  .filters-sidebar {
+    position: fixed;
+    left: -100%;
+    top: 0;
+    height: 100vh;
+    width: 280px;
+    z-index: 9998;
+    transition: left 0.3s ease;
+    overflow-y: auto;
+  }
+
+  .sidebar-filtros.active,
+  .filters-sidebar.active {
+    left: 0;
+  }
+
+  /* Filter toggle button */
+  .filter-toggle-btn {
+    display: block !important;
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 9997;
+  }
+
+  /* ========== NOTIFICATIONS & DROPDOWNS ========== */
+  
+  .notifications-dropdown,
+  .user-dropdown {
+    position: fixed !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    width: 90vw !important;
+    max-width: 400px;
+  }
+
+  /* ========== PAGINATION ========== */
+  
+  .pagination {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.25rem;
+  }
+
+  .pagination .page-link {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+  }
+
+  /* ========== BREADCRUMBS ========== */
+  
+  .breadcrumb {
+    font-size: 0.8rem;
+    flex-wrap: wrap;
+  }
+
+  /* ========== ALERTS & TOASTS ========== */
+  
+  .alert,
+  .toast {
+    font-size: 0.9rem;
+    padding: 0.75rem !important;
+  }
+
+  /* ========== CAROUSEL / SLIDER CONTROLS ========== */
+  
+  /* FIX: Reducir botones de navegación del carrusel en móviles */
+  .carousel-btn {
+    width: 28px !important;
+    height: 28px !important;
+    font-size: 0.875rem !important;
+  }
+
+  .carousel-btn.prev {
+    left: 4px !important;
+  }
+
+  .carousel-btn.next {
+    right: 4px !important;
+  }
+
+  /* Botones de control de carrusel Bootstrap (si existen) */
+  .carousel-control-prev-icon,
+  .carousel-control-next-icon {
+    width: 20px !important;
+    height: 20px !important;
+    background-size: 100% 100% !important;
+  }
+
+  /* Botones Swiper (si existen) */
+  .swiper-button-next,
+  .swiper-button-prev {
+    width: 28px !important;
+    height: 28px !important;
+  }
+
+  .swiper-button-next::after,
+  .swiper-button-prev::after {
+    font-size: 1rem !important;
+  }
+
+  /* ========== SPACING UTILITIES ========== */
+  
+  /* Reduce large paddings */
+  .py-5,
+  .pt-5,
+  .pb-5 {
+    padding-top: 2rem !important;
+    padding-bottom: 2rem !important;
+  }
+
+  .px-5,
+  .pl-5,
+  .pr-5 {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+
+  /* Reduce large margins */
+  .my-5,
+  .mt-5,
+  .mb-5 {
+    margin-top: 2rem !important;
+    margin-bottom: 2rem !important;
+  }
+
+  .mx-5,
+  .ml-5,
+  .mr-5 {
+    margin-left: 1rem !important;
+    margin-right: 1rem !important;
+  }
+}
+
+/* ============================================
+   TABLET LANDSCAPE (769px - 1024px)
+   ============================================ */
+@media (min-width: 769px) and (max-width: 1024px) {
+  /* Admin grid - 1 column on tablets */
+  .admin-grid-lg {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Product grid - 2 columns on tablets ONLY (not mobile) */
+  .product-grid,
+  .products-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 1.25rem;
+  }
+
+  /* Stats grid - 2 columns */
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  /* Features grid - 2 columns */
+  .features-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  /* Reduce container max-width */
+  .container {
+    max-width: 100% !important;
+    padding: 0 1.5rem !important;
+  }
+
+  /* Admin sidebar - reduce width */
+  .admin-sidebar {
+    width: 240px;
+  }
+
+  /* Table font size */
+  .admin-table {
+    font-size: 0.85rem;
+  }
+}
+
+/* ============================================
+   LANDSCAPE ORIENTATION FIXES
+   ============================================ */
+@media (max-height: 600px) and (orientation: landscape) {
+  /* Reduce header heights */
+  .admin-header,
+  .navbar {
+    padding: 0.5rem 1rem !important;
+  }
+
+  /* Reduce modal heights */
+  .modal-content {
+    max-height: 85vh !important;
+  }
+
+  /* Compact form spacing */
+  .form-group {
+    margin-bottom: 0.75rem !important;
+  }
+}
+
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+
+/* Hide on mobile */
+.hide-mobile {
+  display: none !important;
+}
+
+@media (min-width: 769px) {
+  .hide-mobile {
+    display: block !important;
+  }
+}
+
+/* Show only on mobile */
+.show-mobile {
+  display: block !important;
+}
+
+@media (min-width: 769px) {
+  .show-mobile {
+    display: none !important;
+  }
+}
+
+/* Responsive text alignment */
+@media (max-width: 768px) {
+  .text-center-mobile {
+    text-align: center !important;
+  }
+
+  .text-left-mobile {
+    text-align: left !important;
+  }
+}
+
+/* Full width on mobile */
+@media (max-width: 768px) {
+  .full-width-mobile {
+    width: 100% !important;
+  }
+}
+
+/* Stack on mobile */
+@media (max-width: 768px) {
+  .stack-mobile {
+    flex-direction: column !important;
+  }
+}
+
+/* ============================================
+   SCROLLBAR STYLING FOR MOBILE
+   ============================================ */
+@media (max-width: 768px) {
+  /* Thin scrollbars for better mobile UX */
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 2px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.3);
+  }
+}
+
+/* ============================================
+   TOUCH IMPROVEMENTS
+   ============================================ */
+@media (max-width: 768px) {
+  /* Larger touch targets */
+  a,
+  button,
+  .btn,
+  input[type="checkbox"],
+  input[type="radio"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Prevent text size adjustment */
+  body {
+    -webkit-text-size-adjust: 100%;
+    -ms-text-size-adjust: 100%;
+  }
+
+  /* Remove tap highlight */
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+/* ============================================
+   PRINT STYLES
+   ============================================ */
+@media print {
+  /* Hide navigation and non-essential elements */
+  .navbar,
+  .admin-sidebar,
+  .footer,
+  .btn,
+  .admin-actions,
+  .filter-toggle-btn {
+    display: none !important;
+  }
+
+  /* Full width for printing */
+  .container,
+  .admin-main-content {
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Remove shadows and backgrounds */
+  .admin-card,
+  .product-card {
+    box-shadow: none !important;
+    border: 1px solid #ddd !important;
+  }
+
+  /* Ensure tables fit */
+  .admin-table {
+    font-size: 10pt;
+  }
+}
+
+/* ============================================
+   ACCESSIBILITY IMPROVEMENTS
+   ============================================ */
+
+/* Focus visible for keyboard navigation */
+@media (max-width: 768px) {
+  *:focus-visible {
+    outline: 3px solid var(--razo-orange, #ff9966);
+    outline-offset: 2px;
+  }
+
+  /* Skip to main content link */
+  .skip-to-main {
+    position: absolute;
+    left: -9999px;
+    z-index: 999;
+  }
+
+  .skip-to-main:focus {
+    left: 50%;
+    transform: translateX(-50%);
+    top: 10px;
+    background: var(--razo-orange, #ff9966);
+    color: white;
+    padding: 1rem;
+    border-radius: 0.5rem;
+  }
+}
+
+/* ============================================
+   PERFORMANCE OPTIMIZATIONS
+   ============================================ */
+@media (max-width: 768px) {
+  /* Reduce animations on mobile for performance */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  /* Optimize images */
+  img {
+    image-rendering: -webkit-optimize-contrast;
+  }
+}

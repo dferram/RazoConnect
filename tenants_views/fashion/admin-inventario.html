@@ -1,0 +1,2555 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gestión de Inventario - Admin Fashion Box</title>
+    <link rel="icon" type="image/png" href="/icon/Logo_Razo.png" />
+
+    <!-- PROTECCIÓN DE AUTENTICACIÓN ADMIN -->
+    <script src="js/auth-guard-admin.js"></script>
+
+    <!-- SISTEMA DE RENOVACIÓN DE TOKENS -->
+    <script src="js/token-refresh.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <link rel="stylesheet" href="css/styles.css" />`n    <link rel="stylesheet" href="css/fashion-theme.css" />
+    <link rel="stylesheet" href="css/admin.css" />
+      <link rel="stylesheet" href="css/mobile-responsive.css" />
+    <style>
+      /* Estilos para la tarjeta de Proyección de Stock */
+      .inventory-summary-card {
+        background: linear-gradient(135deg, #fff7ed 0%, #ffffff 100%);
+        border: 2px solid #f97316;
+        border-radius: 1rem;
+        padding: 1.5rem;
+        margin-top: 1.5rem;
+        box-shadow: 0 4px 12px rgba(249, 115, 22, 0.1);
+      }
+
+      .stock-projection-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 1.25rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid rgba(249, 115, 22, 0.2);
+      }
+
+      .stock-projection-title {
+        font-size: 1.125rem;
+        font-weight: 700;
+        color: #f97316;
+        margin: 0 0 0.5rem 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .stock-total-value {
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: #f97316;
+        line-height: 1;
+        text-align: right;
+        min-width: 80px;
+      }
+
+      .stock-projection-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.875rem;
+      }
+
+      .stock-projection-table thead th {
+        text-align: left;
+        padding: 0.75rem 0.5rem;
+        font-weight: 600;
+        color: #6b7280;
+        border-bottom: 1px solid #e5e7eb;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.025em;
+      }
+
+      .stock-projection-table tbody td {
+        padding: 0.75rem 0.5rem;
+        border-bottom: 1px solid #f3f4f6;
+      }
+
+      .stock-projection-table tbody tr:last-child td {
+        border-bottom: none;
+      }
+
+      .stock-projection-qty {
+        text-align: right;
+        font-weight: 600;
+        color: #1f2937;
+      }
+
+      .stock-projection-empty {
+        text-align: center;
+        padding: 1.5rem;
+        color: #9ca3af;
+        font-style: italic;
+      }
+    </style>
+  </head>
+  <body data-page-title="Inventario">
+    <div class="admin-layout">
+      <!-- Sidebar -->
+      <div id="sidebar-container"></div>
+
+      <!-- Modal detalle de variantes -->
+      <div id="detalleModal" class="modal">
+        <div class="modal-content modal-detalle">
+          <div class="detalle-modal-header">
+            <div class="detalle-title-wrapper">
+              <span class="detalle-title-icon">📦</span>
+              <div>
+                <h2 id="detalleModalTitle">Detalle de Variantes</h2>
+                <p id="detalleModalSubtitle" class="detalle-modal-subtitle">
+                  Revisa la información de cada variante registrada.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              class="modal-close-btn"
+              id="btnCerrarDetalle"
+              aria-label="Cerrar"
+            >
+              ×
+            </button>
+          </div>
+
+          <div id="detalleModalLoading" class="modal-loading">
+            <div class="spinner"></div>
+            <p>Cargando detalles del producto…</p>
+          </div>
+
+          <div class="detalle-modal-body">
+            <div
+              id="detalleModalSummary"
+              class="detalle-summary"
+              style="display: none"
+            >
+              <!-- Información del Producto -->
+              <div style="background: #f8fafc; border-radius: 0.75rem; padding: 1.25rem; margin-bottom: 1.5rem; border: 1px solid #e2e8f0;">
+                <h3 style="font-size: 0.875rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1rem;">
+                  📋 Información del Producto
+                </h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                  <div>
+                    <div style="font-size: 0.75rem; color: #64748b; font-weight: 600; margin-bottom: 0.25rem;">SKU Maestro</div>
+                    <div id="modalSkuMaestro" style="font-size: 0.95rem; font-weight: 600; color: #1e293b;">Sin SKU</div>
+                  </div>
+                  <div>
+                    <div style="font-size: 0.75rem; color: #64748b; font-weight: 600; margin-bottom: 0.25rem;">Proveedor</div>
+                    <div id="modalProveedor" style="font-size: 0.95rem; font-weight: 600; color: #1e293b;">Sin asignar</div>
+                  </div>
+                  <div>
+                    <div style="font-size: 0.75rem; color: #64748b; font-weight: 600; margin-bottom: 0.25rem;">Categoría</div>
+                    <div id="modalCategoria" style="font-size: 0.95rem; font-weight: 600; color: #1e293b;">Sin categoría</div>
+                  </div>
+                </div>
+                <div style="margin-top: 1rem;">
+                  <div style="font-size: 0.75rem; color: #64748b; font-weight: 600; margin-bottom: 0.25rem;">Descripción</div>
+                  <div id="modalDescripcion" style="font-size: 0.9rem; color: #475569; line-height: 1.5;">Sin descripción</div>
+                </div>
+              </div>
+
+              <div class="detalle-summary-top">
+                <div class="detalle-summary-info">
+                  <div class="detalle-summary-label">Estado del Producto</div>
+                  <div class="detalle-summary-tags">
+                    <span class="detalle-badge" id="detalleProductoEstado"
+                      >Activo</span
+                    >
+                  </div>
+                </div>
+              </div>
+
+              <div class="detalle-metrics">
+                <div class="detalle-metric-card gradient-orange">
+                  <span class="metric-label">Total de variantes</span>
+                  <span class="metric-value" id="detalleTotalVariantes">0</span>
+                </div>
+                <div class="detalle-metric-card gradient-purple">
+                  <span class="metric-label">Variantes con stock</span>
+                  <span class="metric-value" id="detalleVariantesConStock"
+                    >0</span
+                  >
+                </div>
+                <div class="detalle-metric-card soft-card">
+                  <span class="metric-label">Variantes sin stock</span>
+                  <span class="metric-value" id="detalleVariantesSinStock"
+                    >0</span
+                  >
+                </div>
+                <div class="detalle-metric-card outline-card">
+                  <span class="metric-label">Precio más bajo</span>
+                  <span class="metric-value" id="detallePrecioDesde">—</span>
+                </div>
+                <div class="detalle-metric-card outline-card">
+                  <span class="metric-label">Precio más alto</span>
+                  <span class="metric-value" id="detallePrecioHasta">—</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tarjeta de Proyección de Stock -->
+            <div id="stockProjectionCard" class="inventory-summary-card" style="display: none;" aria-live="polite">
+              <div class="stock-projection-header">
+                <div>
+                  <h3 class="stock-projection-title">📊 Proyección de Stock</h3>
+                  <p
+                    id="stockProjectionSubtitle"
+                    class="form-hint"
+                    style="margin: 0; font-size: 0.8rem; color: #6b7280;"
+                  >
+                    Paquetes disponibles según el stock actual de cada variante.
+                  </p>
+                </div>
+                <div class="stock-total-value" id="stockProjectionTotal">
+                  0
+                </div>
+              </div>
+              <div id="stockProjectionTableWrapper">
+                <table class="stock-projection-table">
+                  <thead>
+                    <tr>
+                      <th>Presentación</th>
+                      <th class="stock-projection-qty">Disponibles</th>
+                    </tr>
+                  </thead>
+                  <tbody id="stockProjectionTableBody">
+                    <tr>
+                      <td colspan="2" class="stock-projection-empty">
+                        Cargando proyección...
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div
+              id="detalleModalFeedback"
+              class="modal-feedback"
+              style="display: none"
+            ></div>
+
+            <div
+              id="detalleModalTableWrapper"
+              class="modal-table-wrapper"
+              style="display: none"
+            >
+              <table id="tabla-variantes" class="modal-table">
+                <thead>
+                  <tr>
+                    <th>SKU</th>
+                    <th>Dimensiones</th>
+                    <th>Precio/Paquete</th>
+                    <th>Stock</th>
+                    <th>Estado</th>
+                    <th style="text-align: center">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="detalle-modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              id="btnCerrarDetalleFooter"
+            >
+              Cerrar
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal recepción de mercancía -->
+      <div id="recepcionModal" class="modal">
+        <div
+          class="modal-content"
+          style="
+            background: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+          "
+        >
+          <div style="margin-bottom: 1.5rem">
+            <h2
+              id="recepcionModalTitle"
+              style="
+                font-size: 1.5rem;
+                font-weight: 700;
+                color: #2d3748;
+                margin-bottom: 0.25rem;
+              "
+            >
+              Recepción
+            </h2>
+            <p id="recepcionModalSubtitle" style="color: #718096; font-size: 0.875rem">
+              Registra la entrada de mercancía por bultos/cajas.
+            </p>
+          </div>
+
+          <div class="form-group">
+            <label for="recepcionCantidadBultos" class="form-label"
+              >Cantidad de empaque:</label
+            >
+            <input
+              type="number"
+              id="recepcionCantidadBultos"
+              class="form-input"
+              placeholder="0"
+              min="1"
+              required
+            />
+            <div
+              id="recepcionPreview"
+              style="margin-top: 0.5rem; color: #4b5563; font-size: 0.9rem"
+            >
+              Se ingresarán +0 unidades al inventario.
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-top: 1rem">
+            <label class="switch-label" style="display:flex; gap:0.75rem; align-items:center;">
+              <input type="checkbox" id="recepcionEsExcepcion" />
+              <span>¿Registrar Excepción/Anomalía?</span>
+            </label>
+          </div>
+
+          <div class="form-group" id="recepcionDetalleExcepcionGroup" style="display:none;">
+            <label for="recepcionDetalleExcepcion" class="form-label"
+              >Detalle del problema (obligatorio):</label
+            >
+            <input
+              type="text"
+              id="recepcionDetalleExcepcion"
+              class="form-input"
+              placeholder="Ej: caja dañada, faltante, humedad..."
+            />
+          </div>
+
+          <div class="form-group" style="margin-top: 0.5rem">
+            <label for="recepcionComentarios" class="form-label">Comentarios (opcional):</label>
+            <input
+              type="text"
+              id="recepcionComentarios"
+              class="form-input"
+              placeholder="Ej: proveedor X, OC #123..."
+            />
+          </div>
+
+          <div class="alert alert-info" style="font-size: 0.875rem">
+            <strong>ℹ️ Nota:</strong> Esta recepción se registrará en el log de
+            inventario.
+          </div>
+
+          <div style="display: flex; gap: 1rem; margin-top: 1.5rem">
+            <button
+              class="btn btn-primary"
+              id="btnConfirmarRecepcion"
+              style="flex: 1; background: #4f46e5; border-color: #4f46e5"
+              type="button"
+            >
+              <span id="btnRecepcionText">Confirmar recepción</span>
+              <div
+                class="spinner"
+                id="btnRecepcionSpinner"
+                style="display: none"
+              ></div>
+            </button>
+            <button
+              class="btn btn-secondary"
+              id="btnCancelarRecepcion"
+              type="button"
+              style="flex: 1"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Content -->
+      <main class="admin-main">
+        <div id="admin-header-container"></div>
+
+        <div class="admin-content">
+          <!-- Products Table -->
+          <div class="admin-table-container">
+            <div class="admin-table-header">
+              <h2 class="admin-table-title">Productos en inventario</h2>
+              <div style="display: flex; gap: 1rem">
+                <input
+                  type="text"
+                  id="searchInput"
+                  placeholder="Buscar producto..."
+                  style="
+                    padding: 0.5rem 1rem;
+                    border: 2px solid var(--razo-gray-light);
+                    border-radius: 0.5rem;
+                    font-family: 'Inter', sans-serif;
+                    width: 250px;
+                  "
+                />
+                <button
+                  class="btn btn-secondary"
+                  onclick="loadProductos()"
+                  style="padding: 0.5rem 1.5rem"
+                >
+                  Actualizar
+                </button>
+              </div>
+            </div>
+
+            <div id="loadingProducts" class="loading">
+              <div class="spinner"></div>
+            </div>
+
+            <div style="overflow-x: auto">
+              <table
+                class="admin-table"
+                id="productsTable"
+                style="display: none"
+              >
+                <thead>
+                  <tr>
+                    <th>Producto</th>
+                    <th>Categoría</th>
+                    <th>Estado</th>
+                    <th>Variantes</th>
+                    <th id="thAdministrador" style="display: none;">Administrador</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="productsTableBody">
+                  <!-- Products will be loaded here -->
+                </tbody>
+              </table>
+            </div>
+
+            <div id="emptyProducts" class="empty-state" style="display: none">
+              <div class="empty-state-icon">📦</div>
+              <h3 class="empty-state-title">No hay productos</h3>
+              <p class="empty-state-text">
+                Comienza agregando tu primer producto
+              </p>
+              <a
+                href="/admin-agregar-producto.html"
+                class="btn btn-primary"
+                style="text-decoration: none; display: inline-block"
+              >
+                + Agregar Producto
+              </a>
+            </div>
+
+            <!-- Paginación -->
+            <div
+              id="paginationContainer"
+              style="
+                display: none;
+                margin-top: 1.5rem;
+                padding: 1rem;
+                border-top: 1px solid #e5e7eb;
+              "
+            >
+              <div
+                style="
+                  display: flex;
+                  justify-content: space-between;
+                  align-items: center;
+                  flex-wrap: wrap;
+                  gap: 1rem;
+                "
+              >
+                <!-- Información de registros -->
+                <div style="color: var(--razo-gray-warm); font-size: 0.875rem">
+                  Mostrando <strong id="pageStart">1</strong> a
+                  <strong id="pageEnd">10</strong> de
+                  <strong id="totalRecords">0</strong> productos
+                </div>
+
+                <!-- Controles de paginación -->
+                <div style="display: flex; gap: 0.5rem; align-items: center">
+                  <button
+                    id="btnPrevPage"
+                    onclick="cambiarPagina('prev')"
+                    class="btn btn-secondary"
+                    style="
+                      padding: 0.5rem 1rem;
+                      font-size: 0.875rem;
+                      display: flex;
+                      align-items: center;
+                      gap: 0.5rem;
+                    "
+                    disabled
+                  >
+                    ← Anterior
+                  </button>
+
+                  <div id="pageNumbers" style="display: flex; gap: 0.25rem">
+                    <!-- Los números de página se generarán dinámicamente -->
+                  </div>
+
+                  <button
+                    id="btnNextPage"
+                    onclick="cambiarPagina('next')"
+                    class="btn btn-secondary"
+                    style="
+                      padding: 0.5rem 1rem;
+                      font-size: 0.875rem;
+                      display: flex;
+                      align-items: center;
+                      gap: 0.5rem;
+                    "
+                  >
+                    Siguiente →
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- Modal para ajustar stock -->
+    <div id="ajusteModal" class="modal">
+      <div
+        class="modal-content"
+        style="
+          background: white;
+          padding: 2rem;
+          border-radius: 1rem;
+          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+          max-width: 550px;
+        "
+      >
+        <div style="margin-bottom: 1.5rem">
+          <h2
+            style="
+              font-size: 1.5rem;
+              font-weight: 700;
+              color: #2d3748;
+              margin-bottom: 0.25rem;
+            "
+          >
+            Ajustar stock
+          </h2>
+          <p style="color: #718096; font-size: 0.875rem">
+            Modifica el inventario del producto
+          </p>
+        </div>
+        <div>
+          <p style="margin-bottom: 1rem">
+            <strong><span id="modalProductoNombre"></span></strong><br />
+            <span style="color: var(--razo-gray-warm)"
+              >Variante seleccionada:
+              <span id="modalVarianteResumen"></span></span
+            ><br />
+            <span style="color: var(--razo-gray-warm)"
+              >Stock actual:
+              <strong id="modalStockActual">0</strong> piezas</span
+            >
+          </p>
+
+          <div class="form-group">
+            <label for="modalVariante" class="form-label"
+              >Selecciona la variante / medida</label
+            >
+            <select id="modalVariante" class="form-input"></select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Tipo de Ajuste:</label>
+            <div style="display: flex; gap: 1rem; margin-bottom: 1rem">
+              <button
+                class="btn btn-success"
+                id="btnEntrada"
+                onclick="setTipoAjuste('entrada')"
+                style="flex: 1; padding: 0.75rem"
+              >
+                ➕ Entrada
+              </button>
+              <button
+                class="btn btn-danger"
+                id="btnSalida"
+                onclick="setTipoAjuste('salida')"
+                style="flex: 1; padding: 0.75rem"
+              >
+                ➖ Salida
+              </button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="modalCantidad" class="form-label"
+              >Cantidad (piezas sueltas):</label
+            >
+            <input
+              type="number"
+              id="modalCantidad"
+              class="form-input"
+              placeholder="0"
+              min="1"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="modalMotivo" class="form-label"
+              >Motivo del ajuste:</label
+            >
+            <select id="modalMotivo" class="form-input">
+              <option value="">Seleccionar motivo...</option>
+            </select>
+          </div>
+
+          <div class="form-group" id="motivoOtroGroup" style="display: none">
+            <label for="modalMotivoOtro" class="form-label"
+              >Especificar motivo:</label
+            >
+            <input
+              type="text"
+              id="modalMotivoOtro"
+              class="form-input"
+              placeholder="Describe el motivo..."
+            />
+          </div>
+
+          <div class="alert alert-info" style="font-size: 0.875rem">
+            <strong>ℹ️ Nota:</strong> Este ajuste se registrará en el log de
+            inventario con tu ID de administrador.
+          </div>
+
+          <div style="display: flex; gap: 1rem; margin-top: 1.5rem">
+            <button
+              class="btn btn-primary"
+              onclick="realizarAjuste()"
+              id="btnConfirmarAjuste"
+              style="flex: 1"
+            >
+              <span id="btnAjusteText">Confirmar ajuste</span>
+              <div
+                class="spinner"
+                id="btnAjusteSpinner"
+                style="display: none"
+              ></div>
+            </button>
+            <button
+              class="btn btn-secondary"
+              onclick="closeAjusteModal()"
+              style="flex: 1"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="js/layout.js" defer></script>`n    <script src="js/sidebar-toggle.js" defer></script>
+    <script src="js/api.js"></script>
+    <script src="js/pack-helpers.js"></script>
+    <script src="js/components/admin-header-loader.js"></script>
+    <script src="js/components/user-profile.js"></script>
+    <script src="js/admin-header-dropdown.js"></script>
+    <script>
+      console.log("📄 Cargando página de inventario...");
+
+      function escapeHtml(value) {
+        return (value ?? "")
+          .toString()
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/\"/g, "&quot;")
+          .replace(/'/g, "&#039;");
+      }
+
+      // Authentication check
+      const adminToken = localStorage.getItem("Fashion Box_admin_token");
+      console.log(
+        "🔑 Token en inventario:",
+        adminToken ? "Present (length: " + adminToken.length + ")" : "Missing"
+      );
+
+      if (!adminToken) {
+        console.warn("⚠️ No hay token en inventario, redirigiendo a login");
+        window.location.href = "/login.html";
+      } else {
+        console.log("✅ Token encontrado, continuando carga de página");
+      }
+
+      let allProducts = [];
+      let selectedProduct = null;
+      let tipoAjuste = null; // 'entrada' o 'salida'
+      let detalleProductoActual = null;
+      let shouldReopenDetalle = false;
+
+      // Variables de paginación
+      let paginaActual = 1;
+      const registrosPorPagina = 10;
+
+      const productsTableBody = document.getElementById("productsTableBody");
+      const productsTable = document.getElementById("productsTable");
+      const emptyProducts = document.getElementById("emptyProducts");
+      const pagination = document.getElementById("paginationContainer");
+      const loadingProducts = document.getElementById("loadingProducts");
+
+      const ajusteModal = document.getElementById("ajusteModal");
+      const modalVarianteSelect = document.getElementById("modalVariante");
+      const modalProductoNombre = document.getElementById(
+        "modalProductoNombre"
+      );
+      const modalCantidadInput = document.getElementById("modalCantidad");
+      const modalMotivoSelect = document.getElementById("modalMotivo");
+      const modalMotivoOtroInput = document.getElementById("modalMotivoOtro");
+      const modalMotivoOtroGroup = document.getElementById("motivoOtroGroup");
+      const modalVarianteResumen = document.getElementById(
+        "modalVarianteResumen"
+      );
+      const modalStockActual = document.getElementById("modalStockActual");
+      const btnEntrada = document.getElementById("btnEntrada");
+      const btnSalida = document.getElementById("btnSalida");
+      const btnConfirmarAjuste = document.getElementById("btnConfirmarAjuste");
+      const btnAjusteText = document.getElementById("btnAjusteText");
+      const btnAjusteSpinner = document.getElementById("btnAjusteSpinner");
+
+      const recepcionModal = document.getElementById("recepcionModal");
+      const recepcionModalTitle = document.getElementById("recepcionModalTitle");
+      const recepcionModalSubtitle = document.getElementById(
+        "recepcionModalSubtitle"
+      );
+      const recepcionCantidadBultos = document.getElementById(
+        "recepcionCantidadBultos"
+      );
+      const recepcionPreview = document.getElementById("recepcionPreview");
+      const recepcionEsExcepcion = document.getElementById("recepcionEsExcepcion");
+      const recepcionDetalleExcepcionGroup = document.getElementById(
+        "recepcionDetalleExcepcionGroup"
+      );
+      const recepcionDetalleExcepcion = document.getElementById(
+        "recepcionDetalleExcepcion"
+      );
+      const recepcionComentarios = document.getElementById("recepcionComentarios");
+      const btnConfirmarRecepcion = document.getElementById(
+        "btnConfirmarRecepcion"
+      );
+      const btnCancelarRecepcion = document.getElementById("btnCancelarRecepcion");
+      const btnRecepcionText = document.getElementById("btnRecepcionText");
+      const btnRecepcionSpinner = document.getElementById("btnRecepcionSpinner");
+
+      let recepcionVarianteActual = null;
+      let recepcionProductoActual = null;
+
+      const detalleModal = document.getElementById("detalleModal");
+      const detalleModalTitle = document.getElementById("detalleModalTitle");
+      const detalleModalSubtitle = document.getElementById(
+        "detalleModalSubtitle"
+      );
+      const detalleModalLoading = document.getElementById(
+        "detalleModalLoading"
+      );
+      const detalleModalFeedback = document.getElementById(
+        "detalleModalFeedback"
+      );
+      const detalleModalTableWrapper = document.getElementById(
+        "detalleModalTableWrapper"
+      );
+      const tablaVariantesBody = document.querySelector(
+        "#tabla-variantes tbody"
+      );
+      const btnCerrarDetalle = document.getElementById("btnCerrarDetalle");
+      const btnCerrarDetalleFooter = document.getElementById(
+        "btnCerrarDetalleFooter"
+      );
+
+      // Verify admin
+      async function verifyAndLoadAdmin() {
+        try {
+          console.log("🔐 Verificando admin en página de inventario...");
+
+          const response = await fetch(`${API_BASE_URL}/admin/verify`, {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${adminToken}`,
+              "Content-Type": "application/json",
+            },
+          });
+
+          console.log("📡 Response status desde inventario:", response.status);
+
+          if (!response.ok) throw new Error("Invalid token");
+
+          const data = await response.json();
+          console.log("📥 Verify response en inventario:", data);
+          if (data.success) {
+            const admin = data.data.admin;
+            const nameEl = document.getElementById("headerUserName");
+            const roleEl = document.getElementById("headerUserRole");
+            const avatarEl = document.getElementById("headerUserAvatar");
+
+            if (nameEl) nameEl.textContent = admin.nombre;
+            if (roleEl) {
+              roleEl.textContent = admin.rol === "superadmin" ? "Super Admin" : "Admin";
+            }
+
+            const words = admin.nombre.split(" ");
+            const initials =
+              words.length >= 2
+                ? `${words[0].charAt(0)}${words[1].charAt(0)}`
+                : admin.nombre.substring(0, 2);
+            if (avatarEl) avatarEl.textContent = initials.toUpperCase();
+          }
+        } catch (error) {
+          console.error("Error verifying admin:", error);
+          localStorage.removeItem("Fashion Box_admin_token");
+          localStorage.removeItem("Fashion Box_admin");
+          window.location.href = "/login.html";
+        }
+      }
+
+      // Load products
+      async function loadProductos() {
+        try {
+          loadingProducts.style.display = "flex";
+          productsTable.style.display = "none";
+          emptyProducts.style.display = "none";
+
+          const response = await fetch(`${API_BASE_URL}/admin/inventario`, {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${adminToken}`,
+              "Content-Type": "application/json",
+            },
+          });
+
+          if (!response.ok) {
+            throw new Error("Error al cargar productos");
+          }
+
+          const data = await response.json();
+          if (data.success) {
+            allProducts = data.data.productos;
+            isSuperAdmin = data.data.isSuperAdmin || false;
+            
+            // Mostrar/ocultar columna de administrador según rol
+            const thAdministrador = document.getElementById('thAdministrador');
+            if (thAdministrador) {
+              thAdministrador.style.display = isSuperAdmin ? 'table-cell' : 'none';
+            }
+            
+            paginaActual = 1;
+            renderProducts();
+          }
+        } catch (error) {
+          console.error("Error loading products:", error);
+          showToast("Error al cargar productos", "error");
+          emptyProducts.style.display = "block";
+        } finally {
+          loadingProducts.style.display = "none";
+        }
+      }
+
+      // Variable global para saber si es Super Admin
+      let isSuperAdmin = false;
+
+      // Render products
+      function renderProducts(products = null) {
+        // Si no se pasan productos, usar allProducts con paginación
+        const productosAMostrar = products || allProducts;
+
+        if (productosAMostrar.length === 0) {
+          emptyProducts.style.display = "block";
+          pagination.style.display = "none";
+          return;
+        }
+
+        // Calcular paginación
+        const inicio = (paginaActual - 1) * registrosPorPagina;
+        const fin = inicio + registrosPorPagina;
+        const productosPagina = productosAMostrar.slice(inicio, fin);
+
+        productsTableBody.innerHTML = productosPagina
+          .map((product) => {
+            const activo = product.activo !== undefined ? product.activo : true;
+            const estadoBadgeClass = activo ? 'badge-success' : 'badge-secondary';
+            const estadoTexto = activo ? 'Visible' : 'Oculto';
+            const estadoIcon = activo ? '' : '🚫';
+
+            const nombreProductoSafe = escapeHtml(product.nombreProducto || "");
+            const nombreCategoriaSafe = escapeHtml(product.nombreCategoria || "Sin categoría");
+            const adminsRegistrados = isSuperAdmin && product.adminsRegistrados 
+              ? escapeHtml(product.adminsRegistrados) 
+              : '';
+            
+            return `
+          <tr>
+            <td>
+              <div style="font-weight: 600;">${nombreProductoSafe}</div>
+              <div style="font-size: 0.875rem; color: var(--razo-gray-warm);">ID: ${
+                product.productoId
+              }</div>
+            </td>
+            <td>${nombreCategoriaSafe}</td>
+            <td>
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <span class="visibility-badge ${estadoBadgeClass}" title="${estadoTexto}">
+                  ${estadoIcon} ${estadoTexto}
+                </span>
+                <button
+                  type="button"
+                  class="btn-icon-toggle"
+                  onclick="toggleProductoVisibilidad(${product.productoId}, ${activo})"
+                  title="${activo ? 'Ocultar producto' : 'Mostrar producto'}"
+                  style="cursor: pointer; background: none; border: none; font-size: 1.25rem; padding: 0.25rem; opacity: 0.7; transition: all 0.2s;"
+                  onmouseover="this.style.opacity='1'; this.style.transform='scale(1.1)'"
+                  onmouseout="this.style.opacity='0.7'; this.style.transform='scale(1)'"
+                >
+                  ${activo ? '🔒' : '🔓'}
+                </button>
+              </div>
+            </td>
+            <td>
+              <span class="admin-badge secondary" style="font-size: 0.9rem;">${
+                product.totalVariantes
+              }</span>
+            </td>
+            ${isSuperAdmin ? `
+            <td style="font-size: 0.875rem; color: var(--razo-gray-warm);">
+              ${adminsRegistrados || 'N/A'}
+            </td>
+            ` : ''}
+            <td>
+              <button
+                type="button"
+                class="btn btn-primary btn-detalle"
+                data-productoid="${product.productoId}"
+                style="padding: 0.625rem 1.25rem; font-size: 0.875rem; border-radius: 0.5rem; display: inline-flex; align-items: center; gap: 0.5rem; box-shadow: rgba(0, 0, 0, 0.1) 0px 2px 4px; transition: 0.2s; transform: translateY(0px);"
+              >
+                Ver Detalles
+              </button>
+            </td>
+          </tr>
+        `;
+          })
+          .join("");
+
+        productsTable.style.display = "table";
+
+        // Mostrar paginación solo si no se pasaron productos filtrados
+        if (!products) {
+          pagination.style.display = "block";
+          actualizarPaginacion();
+        } else {
+          pagination.style.display = "none";
+        }
+      }
+
+      // Actualizar controles de paginación
+      function actualizarPaginacion() {
+        const totalPaginas = Math.ceil(allProducts.length / registrosPorPagina);
+        const inicio = (paginaActual - 1) * registrosPorPagina + 1;
+        const fin = Math.min(
+          paginaActual * registrosPorPagina,
+          allProducts.length
+        );
+
+        // Actualizar información
+        document.getElementById("pageStart").textContent = inicio;
+        document.getElementById("pageEnd").textContent = fin;
+        document.getElementById("totalRecords").textContent =
+          allProducts.length;
+
+        // Actualizar botones prev/next
+        document.getElementById("btnPrevPage").disabled = paginaActual === 1;
+        document.getElementById("btnNextPage").disabled =
+          paginaActual === totalPaginas;
+
+        // Generar números de página
+        const pageNumbers = document.getElementById("pageNumbers");
+        pageNumbers.innerHTML = "";
+
+        // Mostrar máximo 5 números de página
+        let startPage = Math.max(1, paginaActual - 2);
+        let endPage = Math.min(totalPaginas, startPage + 4);
+
+        if (endPage - startPage < 4) {
+          startPage = Math.max(1, endPage - 4);
+        }
+
+        for (let i = startPage; i <= endPage; i++) {
+          const pageBtn = document.createElement("button");
+          pageBtn.textContent = i;
+          pageBtn.className = "btn";
+          pageBtn.style.cssText = `
+          padding: 0.5rem 0.75rem;
+          font-size: 0.875rem;
+          min-width: 2.5rem;
+          ${
+            i === paginaActual
+              ? "background: var(--razo-orange); color: white; font-weight: 600;"
+              : "background: white; color: var(--razo-gray-dark); border: 1px solid #E5E7EB;"
+          }
+        `;
+          pageBtn.onclick = () => irAPagina(i);
+          pageNumbers.appendChild(pageBtn);
+        }
+      }
+
+      // Cambiar de página
+      function cambiarPagina(direccion) {
+        const totalPaginas = Math.ceil(allProducts.length / registrosPorPagina);
+
+        if (direccion === "prev" && paginaActual > 1) {
+          paginaActual--;
+        } else if (direccion === "next" && paginaActual < totalPaginas) {
+          paginaActual++;
+        }
+
+        renderProducts();
+      }
+
+      // Ir a página específica
+      function irAPagina(pagina) {
+        paginaActual = pagina;
+        renderProducts();
+      }
+
+      // Format currency
+      function formatCurrency(amount) {
+        return new Intl.NumberFormat("es-MX", {
+          style: "currency",
+          currency: "MXN",
+        }).format(amount || 0);
+      }
+
+      // Calcular proyección de stock
+      function calcularProyeccionStock(variantes = []) {
+        const stockProjectionCard = document.getElementById("stockProjectionCard");
+        const stockProjectionTotal = document.getElementById("stockProjectionTotal");
+        const stockProjectionTableBody = document.getElementById("stockProjectionTableBody");
+
+        if (!variantes || variantes.length === 0) {
+          stockProjectionCard.style.display = "none";
+          return;
+        }
+
+        // Agrupar variantes por presentación y calcular paquetes disponibles
+        const proyecciones = {};
+        let totalPaquetesDisponibles = 0;
+
+        variantes.forEach((variante) => {
+          const stock = typeof variante.stock === "number" ? variante.stock : 0;
+          const piezasPorPaquete = variante.piezasPorPaquete || variante.piezasporpaquete || variante.piezas_por_paquete || 1;
+          
+          // Obtener etiqueta de presentación
+          const presentacion = variante.presentacionEtiqueta || 
+                              (typeof obtenerNombrePack === "function" ? obtenerNombrePack(piezasPorPaquete) : `Paquete de ${piezasPorPaquete}`) ||
+                              `${piezasPorPaquete} pzs`;
+
+          // Calcular paquetes disponibles (floor para no contar paquetes incompletos)
+          const paquetesDisponibles = Math.floor(stock / piezasPorPaquete);
+
+          if (!proyecciones[presentacion]) {
+            proyecciones[presentacion] = {
+              piezasPorPaquete,
+              stockTotal: 0,
+              paquetesDisponibles: 0
+            };
+          }
+
+          proyecciones[presentacion].stockTotal += stock;
+          proyecciones[presentacion].paquetesDisponibles += paquetesDisponibles;
+          totalPaquetesDisponibles += paquetesDisponibles;
+        });
+
+        // Renderizar tabla de proyección
+        const presentaciones = Object.keys(proyecciones);
+        
+        if (presentaciones.length === 0 || totalPaquetesDisponibles === 0) {
+          stockProjectionTableBody.innerHTML = `
+            <tr>
+              <td colspan="2" class="stock-projection-empty">
+                No hay stock suficiente para armar paquetes completos.
+              </td>
+            </tr>
+          `;
+          stockProjectionTotal.textContent = "0";
+          stockProjectionCard.style.display = "block";
+          return;
+        }
+
+        // Ordenar por piezas por paquete (menor a mayor)
+        const presentacionesOrdenadas = presentaciones.sort((a, b) => {
+          return proyecciones[a].piezasPorPaquete - proyecciones[b].piezasPorPaquete;
+        });
+
+        stockProjectionTableBody.innerHTML = presentacionesOrdenadas
+          .map((presentacion) => {
+            const datos = proyecciones[presentacion];
+            return `
+              <tr>
+                <td>${presentacion}</td>
+                <td class="stock-projection-qty">${datos.paquetesDisponibles}</td>
+              </tr>
+            `;
+          })
+          .join("");
+
+        stockProjectionTotal.textContent = totalPaquetesDisponibles;
+        stockProjectionCard.style.display = "block";
+      }
+
+      // Search filter
+      document.getElementById("searchInput").addEventListener("input", (e) => {
+        const searchTerm = e.target.value.toLowerCase();
+
+        if (searchTerm === "") {
+          // Si no hay búsqueda, mostrar todos con paginación
+          paginaActual = 1;
+          renderProducts();
+        } else {
+          // Si hay búsqueda, mostrar filtrados sin paginación
+          const filtered = allProducts.filter((p) => {
+            const matchesNombre = p.nombreProducto
+              .toLowerCase()
+              .includes(searchTerm);
+            const matchesCategoria = (p.nombreCategoria || "")
+              .toLowerCase()
+              .includes(searchTerm);
+            return matchesNombre || matchesCategoria;
+          });
+          renderProducts(filtered);
+        }
+      });
+
+      // Eventos de botones de detalle y ajuste
+      productsTableBody.addEventListener("click", (event) => {
+        const detalleBtn = event.target.closest(".btn-detalle");
+        if (!detalleBtn) return;
+
+        const productoId = parseInt(detalleBtn.dataset.productoid, 10);
+        if (!productoId) {
+          showToast("Producto inválido", "warning");
+          return;
+        }
+
+        openDetalleModal(productoId);
+      });
+
+      tablaVariantesBody.addEventListener("click", (event) => {
+        const historialBtn = event.target.closest(".btn-historial-trigger");
+        if (historialBtn) {
+          const varianteId = parseInt(historialBtn.dataset.varianteId, 10);
+          if (Number.isNaN(varianteId)) {
+            showToast("Variante inválida", "warning");
+            return;
+          }
+          window.location.href = `/admin-movimientos.html?varianteId=${varianteId}`;
+          return;
+        }
+
+        const recepcionBtn = event.target.closest(".btn-recepcion");
+        if (recepcionBtn) {
+          const varianteId = parseInt(recepcionBtn.dataset.varianteId, 10);
+          if (!detalleProductoActual || Number.isNaN(varianteId)) {
+            showToast("Variante no disponible", "warning");
+            return;
+          }
+
+          const variante = (detalleProductoActual.variantes || []).find(
+            (v) => v.varianteId === varianteId
+          );
+
+          if (!variante) {
+            showToast("Variante no encontrada", "warning");
+            return;
+          }
+
+          openRecepcionModal(detalleProductoActual.producto, variante);
+          return;
+        }
+
+        const ajusteBtn = event.target.closest(".btn-ajuste");
+        if (!ajusteBtn) return;
+
+        const varianteId = parseInt(ajusteBtn.dataset.varianteId, 10);
+        if (!detalleProductoActual || Number.isNaN(varianteId)) {
+          showToast("Variante no disponible", "warning");
+          return;
+        }
+
+        const variante = (detalleProductoActual.variantes || []).find(
+          (v) => v.varianteId === varianteId
+        );
+        if (!variante) {
+          showToast("Variante no encontrada", "warning");
+          return;
+        }
+
+        openAjusteModal(detalleProductoActual.producto, variante);
+      });
+
+      btnCerrarDetalle.addEventListener("click", closeDetalleModal);
+      btnCerrarDetalleFooter.addEventListener("click", closeDetalleModal);
+
+      btnCancelarRecepcion.addEventListener("click", closeRecepcionModal);
+      btnConfirmarRecepcion.addEventListener("click", realizarRecepcion);
+      recepcionCantidadBultos.addEventListener("input", actualizarPreviewRecepcion);
+      recepcionEsExcepcion.addEventListener("change", () => {
+        recepcionDetalleExcepcionGroup.style.display = recepcionEsExcepcion.checked
+          ? "block"
+          : "none";
+      });
+
+      modalVarianteSelect.addEventListener("change", actualizarResumenVariante);
+      modalMotivoSelect.addEventListener("change", (e) => {
+        modalMotivoOtroGroup.style.display =
+          e.target.value === "Otro" ? "block" : "none";
+      });
+
+      async function openDetalleModal(productoId, { keepOpen = false } = {}) {
+        if (!keepOpen) {
+          detalleModal.style.display = "flex";
+        } else if (detalleModal.style.display !== "flex") {
+          detalleModal.style.display = "flex";
+        }
+
+        toggleDetalleLoading(true);
+        detalleModalFeedback.style.display = "none";
+        detalleModalTableWrapper.style.display = "none";
+        tablaVariantesBody.innerHTML = "";
+
+        try {
+          const response = await fetch(
+            `${API_BASE_URL}/admin/inventario/producto-detalle/${productoId}`,
+            {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${adminToken}`,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+
+          const data = await response.json();
+
+          if (!response.ok || !data.success) {
+            throw new Error(data.message || "No se pudo obtener el producto");
+          }
+
+          const producto = data.data;
+          const variantes = producto.variantes || [];
+
+          detalleModalTitle.textContent = `Detalle de Variantes: ${producto.nombreProducto}`;
+          detalleModalSubtitle.textContent = "Consulta la información registrada.";
+
+          // Actualizar información del producto
+          document.getElementById("modalSkuMaestro").textContent = producto.skuMaestro || "Sin SKU";
+          document.getElementById("modalProveedor").textContent = producto.proveedor || "Sin asignar";
+          document.getElementById("modalCategoria").textContent = producto.categoria || "Sin categoría";
+          document.getElementById("modalDescripcion").textContent = producto.descripcion || "Sin descripción";
+
+          detalleProductoActual = {
+            producto: {
+              productoId: producto.productoId,
+              nombreProducto: producto.nombreProducto,
+              activo: producto.activo,
+              totalVariantes: producto.totalVariantes,
+            },
+            variantes: variantes.map(v => ({
+              varianteId: v.varianteId,
+              sku: v.sku,
+              dimensiones: v.caracteristica,
+              stock: v.stock,
+              precioUnitario: v.precio,
+              precioPaquete: v.precio,
+              activo: v.activo
+            })),
+          };
+
+          const summaryCard = document.getElementById("detalleModalSummary");
+          const estadoBadge = document.getElementById("detalleProductoEstado");
+          const variantesTotalEl = document.getElementById("detalleTotalVariantes");
+          const variantesConStockEl = document.getElementById("detalleVariantesConStock");
+          const variantesSinStockEl = document.getElementById("detalleVariantesSinStock");
+          const precioDesdeEl = document.getElementById("detallePrecioDesde");
+          const precioHastaEl = document.getElementById("detallePrecioHasta");
+
+          estadoBadge.textContent = producto.activo ? "Activo" : "Inactivo";
+          estadoBadge.classList.toggle("danger", !producto.activo);
+
+          const totalVariantes = producto.totalVariantes || 0;
+          const variantesConStock = variantes.filter(v => v.stock > 0).length;
+          const variantesSinStock = totalVariantes - variantesConStock;
+
+          variantesTotalEl.textContent = totalVariantes;
+          variantesConStockEl.textContent = variantesConStock;
+          variantesSinStockEl.textContent = variantesSinStock;
+
+          const precios = variantes.map(v => v.precio).filter(p => p > 0);
+          const precioDesde = precios.length ? Math.min(...precios) : null;
+          const precioHasta = precios.length ? Math.max(...precios) : null;
+
+          precioDesdeEl.textContent = precioDesde ? formatCurrency(precioDesde) : "—";
+          precioHastaEl.textContent = precioHasta ? formatCurrency(precioHasta) : "—";
+
+          summaryCard.style.display = "block";
+
+          // Renderizar tabla de variantes
+          renderTablaVariantesInventario(variantes);
+          toggleDetalleLoading(false);
+        } catch (error) {
+          console.error("Error al obtener detalle del producto:", error);
+          toggleDetalleLoading(false);
+          detalleModalFeedback.style.display = "block";
+          detalleModalTableWrapper.style.display = "none";
+          document.getElementById("detalleModalSummary").style.display = "none";
+
+          detalleModalFeedback.innerHTML = "";
+          const wrap = document.createElement("div");
+          wrap.className = "modal-feedback-error";
+          const strong = document.createElement("strong");
+          strong.textContent = "No se pudo cargar el producto.";
+          const p = document.createElement("p");
+          p.textContent = error?.message || "Intenta nuevamente más tarde.";
+          wrap.appendChild(strong);
+          wrap.appendChild(p);
+          detalleModalFeedback.appendChild(wrap);
+        }
+      }
+
+      function renderTablaVariantesInventario(variantes = []) {
+        if (!variantes.length) {
+          detalleModalFeedback.style.display = "block";
+          detalleModalFeedback.innerHTML = "";
+          const wrap = document.createElement("div");
+          wrap.className = "modal-feedback-empty";
+          const strong = document.createElement("strong");
+          strong.textContent = "Sin variantes registradas.";
+          const p = document.createElement("p");
+          p.textContent = "Agrega variantes para gestionar su inventario.";
+          wrap.appendChild(strong);
+          wrap.appendChild(p);
+          detalleModalFeedback.appendChild(wrap);
+          detalleModalTableWrapper.style.display = "none";
+          return;
+        }
+
+        detalleModalFeedback.style.display = "none";
+        detalleModalTableWrapper.style.display = "block";
+
+        tablaVariantesBody.innerHTML = variantes
+          .map((variant) => {
+            const precio = formatCurrency(variant.precio || 0);
+            const stock = variant.stock || 0;
+            const stockColor = stock > 0 ? "#16a34a" : "#dc2626";
+            const stockWeight = stock > 0 ? "600" : "500";
+
+            return `
+              <tr>
+                <td style="font-weight: 600;">${escapeHtml(variant.sku)}</td>
+                <td>${escapeHtml(variant.caracteristica)}</td>
+                <td style="font-weight: 600; color: #f97316;">${precio}</td>
+                <td class="stock-variante-${variant.varianteId}" style="font-weight: ${stockWeight}; color: ${stockColor};">
+                  ${stock} pzas
+                </td>
+                <td>
+                  <span class="status-badge ${stock > 0 ? 'en-stock' : 'sin-stock'}">
+                    ${stock > 0 ? 'En stock' : 'Sin stock'}
+                  </span>
+                </td>
+                <td style="text-align: center;">
+                  <button
+                    type="button"
+                    class="btn btn-secondary btn-small btn-historial-trigger"
+                    data-variante-id="${variant.varianteId}"
+                    title="Historial"
+                    style="padding: 0.5rem 0.6rem;"
+                  >
+                    🕒
+                  </button>
+                </td>
+              </tr>
+            `;
+          })
+          .join("");
+      }
+
+      function renderDetalleVariantes(variantes = []) {
+        const lista = Array.isArray(variantes) ? variantes : [];
+
+        // Filtrar variantes que no tienen una medida física real
+        // (dimensión vacía o placeholder "Unidad individual").
+        const variantesVisibles = lista.filter((variant) => {
+          const dimRaw = (variant.dimensiones || "").toString().trim();
+          if (!dimRaw) return false;
+          const dimLower = dimRaw.toLowerCase();
+          return dimLower !== "unidad individual";
+        });
+
+        if (!variantesVisibles.length) {
+          detalleModalFeedback.style.display = "block";
+          detalleModalFeedback.innerHTML = "";
+          const wrap = document.createElement("div");
+          wrap.className = "modal-feedback-empty";
+          const strong = document.createElement("strong");
+          strong.textContent = "Sin variantes registradas.";
+          const p = document.createElement("p");
+          p.textContent = "Agrega variantes para gestionar su inventario.";
+          wrap.appendChild(strong);
+          wrap.appendChild(p);
+          detalleModalFeedback.appendChild(wrap);
+          detalleModalTableWrapper.style.display = "none";
+          document.getElementById("detalleModalSummary").style.display =
+            "block";
+          return;
+        }
+
+        detalleModalFeedback.style.display = "none";
+        detalleModalTableWrapper.style.display = "block";
+
+        const tipoProductoRaw = (
+          detalleProductoActual?.producto?.tipoProducto ||
+          detalleProductoActual?.producto?.tipo ||
+          ""
+        )
+          .toString()
+          .trim()
+          .toLowerCase();
+        const unidadStock = tipoProductoRaw.includes("caja") ? "packs" : "pzas";
+
+        tablaVariantesBody.innerHTML = variantesVisibles
+          .map((variant) => {
+            const precio =
+              typeof variant.precioPaquete === "number"
+                ? formatCurrency(variant.precioPaquete)
+                : "N/A";
+
+            // Las "dimensiones" deben representar una medida física real,
+            // no el placeholder "Unidad individual".
+            let dimensionesCrudas = variant.dimensiones || "";
+            let dimensiones =
+              dimensionesCrudas &&
+              typeof dimensionesCrudas === "string" &&
+              dimensionesCrudas.trim().toLowerCase() !== "unidad individual"
+                ? dimensionesCrudas.trim()
+                : "Sin dimensiones";
+            const stock = typeof variant.stock === "number" ? variant.stock : 0;
+            const estadoClase = stock > 0 ? "en-stock" : "sin-stock";
+            const estadoTexto = stock > 0 ? "En stock" : "Sin stock";
+            const presentacion =
+              (variant.presentacionEtiqueta &&
+                variant.presentacionEtiqueta.trim()) ||
+              (Number.isFinite(variant.tamanoValorReferencia) &&
+              variant.tamanoValorReferencia > 0
+                ? variant.tamanoValorReferencia === 1
+                  ? "Pieza individual"
+                  : (typeof obtenerNombrePack === "function"
+                      ? obtenerNombrePack(variant.tamanoValorReferencia)
+                      : `Paquete de ${variant.tamanoValorReferencia}`)
+                : "Presentación estándar");
+
+            const skuSafe = escapeHtml(variant.sku || "Sin SKU");
+            const dimensionesSafe = escapeHtml(dimensiones);
+            const presentacionSafe = escapeHtml(presentacion);
+            const precioSafe = escapeHtml(precio);
+
+            return `
+          <tr>
+            <td>${skuSafe}</td>
+            <td>${dimensionesSafe}</td>
+            <td>
+              <div style="display:flex; flex-direction:column; gap:0.25rem;">
+                <span>${precioSafe}</span>
+                <span style="font-size:0.75rem; color: var(--text-secondary);">${presentacionSafe}</span>
+              </div>
+            </td>
+            <td class="stock-variante-${variant.varianteId}">${stock} ${unidadStock}</td>
+            <td>
+              <span class="status-badge ${estadoClase}">${estadoTexto}</span>
+            </td>
+            <td style="text-align: center;">
+              <div style="display:inline-flex; align-items:center; gap:0.5rem;">
+                <button
+                  type="button"
+                  class="btn btn-secondary btn-small btn-historial-trigger"
+                  data-variante-id="${variant.varianteId}"
+                  title="Historial"
+                  style="padding: 0.5rem 0.6rem;"
+                >
+                  🕒
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+          })
+          .join("");
+      }
+
+      function toggleDetalleLoading(isLoading) {
+        detalleModalLoading.style.display = isLoading ? "flex" : "none";
+        if (isLoading) {
+          detalleModalFeedback.style.display = "none";
+          detalleModalTableWrapper.style.display = "none";
+        }
+      }
+
+      function closeDetalleModal() {
+        detalleModal.style.display = "none";
+        detalleModalFeedback.style.display = "none";
+        detalleModalTableWrapper.style.display = "none";
+        tablaVariantesBody.innerHTML = "";
+        detalleProductoActual = null;
+        shouldReopenDetalle = false;
+      }
+
+      function openAjusteModal(producto, variantePreseleccionada = null) {
+        if (!producto) {
+          showToast("Producto no válido", "warning");
+          return;
+        }
+
+        selectedProduct = producto;
+        tipoAjuste = null;
+        modalVarianteSelect.innerHTML = "";
+        modalVarianteSelect.disabled = false;
+
+        const variantes =
+          detalleProductoActual?.producto?.productoId === producto.productoId
+            ? detalleProductoActual.variantes || []
+            : [];
+
+        // Filtrar variantes sin medida física real para no mostrarlas en el ajuste
+        const variantesVisibles = variantes.filter((variant) => {
+          const dimRaw = (variant.dimensiones || "").toString().trim();
+          if (!dimRaw) return false;
+          const dimLower = dimRaw.toLowerCase();
+          return dimLower !== "unidad individual";
+        });
+
+        if (!variantesVisibles.length) {
+          modalVarianteSelect.innerHTML =
+            '<option value="" disabled>No hay variantes registradas</option>';
+          modalVarianteSelect.disabled = true;
+        } else {
+          variantesVisibles.forEach((variant) => {
+            const option = document.createElement("option");
+            option.value = variant.varianteId;
+            option.dataset.stock = variant.stock ?? 0;
+            option.dataset.sku = variant.sku || "Sin SKU";
+
+            let dimensionesCrudas = variant.dimensiones || "";
+            let dimensionesSanitizadas =
+              dimensionesCrudas &&
+              typeof dimensionesCrudas === "string" &&
+              dimensionesCrudas.trim().toLowerCase() !== "unidad individual"
+                ? dimensionesCrudas.trim()
+                : "Sin dimensiones";
+
+            option.dataset.dimensiones = dimensionesSanitizadas;
+            option.textContent = `${option.dataset.sku} • ${option.dataset.dimensiones}`;
+            modalVarianteSelect.appendChild(option);
+          });
+
+          const defaultVarianteId =
+            variantePreseleccionada?.varianteId || variantesVisibles[0].varianteId;
+          modalVarianteSelect.value = defaultVarianteId;
+        }
+
+        modalProductoNombre.textContent =
+          producto.nombreProducto || `Producto #${producto.productoId}`;
+        modalCantidadInput.value = "";
+        modalMotivoSelect.value = "";
+        modalMotivoOtroInput.value = "";
+        modalMotivoOtroGroup.style.display = "none";
+        btnEntrada.style.opacity = "0.6";
+        btnSalida.style.opacity = "0.6";
+
+        // Motivos: limpiar al abrir, se llenan al elegir Entrada/Salida
+        resetMotivosSelect();
+
+        actualizarResumenVariante();
+
+        shouldReopenDetalle = detalleModal.style.display === "flex";
+        if (shouldReopenDetalle) {
+          detalleModal.style.display = "none";
+        }
+
+        ajusteModal.style.display = "flex";
+      }
+
+      function closeAjusteModal() {
+        ajusteModal.style.display = "none";
+        selectedProduct = null;
+        tipoAjuste = null;
+        modalVarianteSelect.innerHTML = "";
+        modalVarianteSelect.disabled = false;
+
+        if (shouldReopenDetalle && detalleProductoActual) {
+          detalleModal.style.display = "flex";
+        }
+        shouldReopenDetalle = false;
+      }
+
+      function setTipoAjuste(tipo) {
+        tipoAjuste = tipo;
+        btnEntrada.style.opacity = tipo === "entrada" ? "1" : "0.6";
+        btnSalida.style.opacity = tipo === "salida" ? "1" : "0.6";
+
+        populateMotivos(tipo);
+      }
+
+      const motivosInventario = {
+        entrada: [
+          { val: "compra", text: "Recepción de Compra" },
+          { val: "devolucion", text: "Devolución de Cliente" },
+          { val: "ajuste_in", text: "Ajuste Inventario (+)" },
+        ],
+        salida: [
+          { val: "merma", text: "Merma / Daño" },
+          { val: "uso_interno", text: "Uso Interno / Regalo" },
+          { val: "ajuste_out", text: "Ajuste Inventario (-)" },
+        ],
+      };
+
+      function resetMotivosSelect() {
+        modalMotivoSelect.innerHTML =
+          '<option value="">Seleccionar motivo...</option>';
+        modalMotivoSelect.value = "";
+        modalMotivoOtroInput.value = "";
+        modalMotivoOtroGroup.style.display = "none";
+      }
+
+      function populateMotivos(tipo) {
+        resetMotivosSelect();
+        const opciones = motivosInventario?.[tipo] || [];
+        opciones.forEach((opt) => {
+          const optionEl = document.createElement("option");
+          optionEl.value = opt.val;
+          optionEl.textContent = opt.text;
+          modalMotivoSelect.appendChild(optionEl);
+        });
+      }
+
+      async function realizarAjuste() {
+        if (!selectedProduct || !tipoAjuste) {
+          showToast("Selecciona la variante y el tipo de ajuste", "warning");
+          return;
+        }
+
+        const varianteId = modalVarianteSelect.value
+          ? parseInt(modalVarianteSelect.value, 10)
+          : null;
+        const cantidad = parseInt(modalCantidadInput.value, 10);
+        const motivoSeleccionado = modalMotivoSelect.value;
+        const motivoOtro = modalMotivoOtroInput.value.trim();
+
+        if (!varianteId) {
+          showToast("Selecciona la variante a ajustar", "warning");
+          return;
+        }
+
+        if (!cantidad || cantidad <= 0) {
+          showToast("Ingresa una cantidad válida", "warning");
+          return;
+        }
+
+        if (!motivoSeleccionado) {
+          showToast("Selecciona el motivo del ajuste", "warning");
+          return;
+        }
+
+        if (motivoSeleccionado === "Otro" && !motivoOtro) {
+          showToast("Especifica el motivo del ajuste", "warning");
+          return;
+        }
+
+        const motivo =
+          motivoSeleccionado === "Otro" ? motivoOtro : motivoSeleccionado;
+        const tipoMovimiento = tipoAjuste === "salida" ? "SALIDA" : "ENTRADA";
+
+        const adminRaw = localStorage.getItem("Fashion Box_admin");
+        let usuarioId = null;
+        if (adminRaw) {
+          try {
+            const admin = JSON.parse(adminRaw);
+            const id = Number.parseInt(admin?.id ?? admin?.adminId ?? admin?.adminid, 10);
+            usuarioId = Number.isFinite(id) ? id : null;
+          } catch (e) {
+            // ignore
+          }
+        }
+
+        try {
+          btnConfirmarAjuste.disabled = true;
+          btnAjusteText.style.display = "none";
+          btnAjusteSpinner.style.display = "block";
+
+          const response = await fetch(
+            `${API_BASE_URL}/admin/inventario/ajuste`,
+            {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${adminToken}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                varianteId,
+                tipoMovimiento,
+                cantidad,
+                motivo,
+                usuarioId,
+              }),
+            }
+          );
+
+          const data = await response.json();
+
+          if (!response.ok || !data.success) {
+            throw new Error(data.message || "No se pudo ajustar el inventario");
+          }
+
+          const nuevoStock =
+            typeof data.nuevoStock === "number"
+              ? data.nuevoStock
+              : data.data?.stockNuevo;
+
+          if (typeof nuevoStock === "number") {
+            // Actualizar select (para que el resumen y stock actual se mantengan)
+            const option = modalVarianteSelect.querySelector(
+              `option[value="${varianteId}"]`
+            );
+            if (option) {
+              option.dataset.stock = String(nuevoStock);
+            }
+
+            // Actualizar resumen del modal
+            modalStockActual.textContent = nuevoStock;
+
+            // Actualizar celda stock dentro del modal detalle (si está visible)
+            const celdaStock = document.querySelector(
+              `.stock-variante-${varianteId}`
+            );
+            if (celdaStock) {
+              const unidad = celdaStock.innerText.split(" ")[1] || "pzas";
+              celdaStock.innerText = `${nuevoStock} ${unidad}`;
+            }
+          }
+
+          if (typeof Swal !== "undefined" && Swal && typeof Swal.fire === "function") {
+            await Swal.fire({
+              icon: "success",
+              title: "Ajuste exitoso",
+              text:
+                typeof nuevoStock === "number"
+                  ? `Nuevo stock: ${nuevoStock}`
+                  : "Inventario ajustado exitosamente.",
+              confirmButtonColor: "#F97316",
+            });
+          }
+
+          closeAjusteModal();
+
+          // Fallback: refrescar detalle para mantener consistencia con métricas
+          const productoId = selectedProduct?.productoId || selectedProduct?.productoid;
+          if (productoId) {
+            openDetalleModal(productoId, { keepOpen: true });
+          }
+        } catch (error) {
+          console.error("Error ajustando inventario:", error);
+
+          if (typeof Swal !== "undefined" && Swal && typeof Swal.fire === "function") {
+            await Swal.fire({
+              icon: "error",
+              title: "No se pudo ajustar el inventario",
+              text: error.message || "Error al ajustar inventario",
+              confirmButtonColor: "#F97316",
+            });
+          } else {
+            showToast(error.message || "Error al ajustar inventario", "error");
+          }
+        } finally {
+          btnConfirmarAjuste.disabled = false;
+          btnAjusteText.style.display = "inline";
+          btnAjusteSpinner.style.display = "none";
+        }
+      }
+
+      function actualizarResumenVariante() {
+        const option =
+          modalVarianteSelect.options[modalVarianteSelect.selectedIndex];
+        const sku = option?.dataset.sku || "Sin SKU";
+        const dimensiones = option?.dataset.dimensiones || "Sin medidas";
+        const stock = option ? parseInt(option.dataset.stock, 10) || 0 : 0;
+
+        modalVarianteResumen.textContent = `${sku} • ${dimensiones}`;
+        modalStockActual.textContent = stock;
+      }
+
+      // Navigation handling
+      const navLinks = document.querySelectorAll(
+        ".admin-nav-link[data-module]"
+      );
+      navLinks.forEach((link) => {
+        link.addEventListener("click", (e) => {
+          e.preventDefault();
+          const moduleName = link.querySelector("span:last-child").textContent;
+          showToast(`Módulo "${moduleName}" próximamente disponible`, "info");
+        });
+      });
+
+      // Close modal when clicking outside
+      window.onclick = function (event) {
+        if (event.target === ajusteModal) {
+          closeAjusteModal();
+        }
+        if (event.target === detalleModal) {
+          closeDetalleModal();
+        }
+        if (event.target === recepcionModal) {
+          closeRecepcionModal();
+        }
+      };
+
+      // Cerrar modal con Escape
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          if (ajusteModal.style.display === "flex") {
+            closeAjusteModal();
+          } else if (detalleModal.style.display === "flex") {
+            closeDetalleModal();
+          } else if (recepcionModal.style.display === "flex") {
+            closeRecepcionModal();
+          }
+        }
+      });
+
+      function closeRecepcionModal() {
+        recepcionModal.style.display = "none";
+        recepcionVarianteActual = null;
+        recepcionProductoActual = null;
+        recepcionCantidadBultos.value = "";
+        recepcionComentarios.value = "";
+        recepcionEsExcepcion.checked = false;
+        recepcionDetalleExcepcion.value = "";
+        recepcionDetalleExcepcionGroup.style.display = "none";
+        recepcionPreview.textContent = "";
+        recepcionPreview.style.marginTop = "0.5rem";
+        recepcionPreview.style.fontSize = "0.9rem";
+        recepcionPreview.style.fontWeight = "500";
+        recepcionPreview.style.color = "#4b5563";
+      }
+
+      function getEtiquetaEmpaque(variante) {
+        const tipo = (variante?.tipoEmpaque || "").toString().trim();
+        if (tipo) return tipo;
+
+        const tipoProductoRaw = (
+          detalleProductoActual?.producto?.tipoProducto ||
+          detalleProductoActual?.producto?.tipo ||
+          ""
+        )
+          .toString()
+          .trim()
+          .toLowerCase();
+
+        if (tipoProductoRaw.includes("caja")) return "cajas";
+        if (tipoProductoRaw.includes("bolsa")) return "bolsas";
+        return "bultos";
+      }
+
+      function getPiezasPorPaquete(variante) {
+        const n = Number.parseInt(variante?.piezasPorPaquete, 10);
+        return Number.isInteger(n) && n > 0 ? n : 1;
+      }
+
+      function openRecepcionModal(producto, variante) {
+        recepcionProductoActual = producto;
+        recepcionVarianteActual = variante;
+
+        const nombre = producto?.nombreProducto || producto?.nombre || "Producto";
+        const sku = variante?.sku ? ` (${variante.sku})` : "";
+        const tipoEmpaque = getEtiquetaEmpaque(variante);
+
+        recepcionModalTitle.textContent = `Recepción de ${nombre}${sku}`;
+        recepcionModalSubtitle.textContent = `Ingresa la cantidad de ${tipoEmpaque} recibidos.`;
+
+        // Ajustar label dinámico
+        const label = recepcionModal.querySelector(
+          'label[for="recepcionCantidadBultos"]'
+        );
+        if (label) {
+          label.textContent = `Cantidad de ${tipoEmpaque}:`;
+        }
+
+        recepcionModal.style.display = "flex";
+        actualizarPreviewRecepcion();
+        recepcionCantidadBultos.focus();
+      }
+
+      function actualizarPreviewRecepcion() {
+        const cantidad = Number.parseInt(recepcionCantidadBultos.value, 10) || 0;
+        const varianteActual = recepcionVarianteActual;
+
+        const factor = getPiezasPorPaquete(varianteActual);
+        const totalUnidades = cantidad * factor;
+        const nombreEmpaque = getEtiquetaEmpaque(varianteActual) || "bultos";
+
+        recepcionPreview.style.marginTop = "0.5rem";
+        recepcionPreview.style.fontSize = "0.9rem";
+        recepcionPreview.style.fontWeight = "600";
+
+        if (cantidad > 0) {
+          if (factor > 1) {
+            recepcionPreview.textContent = `Se ingresarán: ${cantidad} ${nombreEmpaque} × ${factor} pzas = +${totalUnidades} unidades.`;
+            recepcionPreview.style.color = "#4f46e5";
+          } else {
+            recepcionPreview.textContent = `Se ingresarán: +${totalUnidades} unidades.`;
+            recepcionPreview.style.color = "#16a34a";
+          }
+        } else {
+          recepcionPreview.textContent = "";
+          recepcionPreview.style.color = "#4b5563";
+        }
+      }
+
+      async function realizarRecepcion() {
+        if (!recepcionVarianteActual || !recepcionProductoActual) {
+          showToast("Selecciona una variante para recepcionar", "warning");
+          return;
+        }
+
+        const varianteId = Number.parseInt(recepcionVarianteActual.varianteId, 10);
+        const cantidadBultos = Number.parseInt(recepcionCantidadBultos.value, 10);
+        const comentarios = (recepcionComentarios.value || "").toString().trim();
+        const esExcepcion = Boolean(recepcionEsExcepcion.checked);
+        const detalleExcepcion = (recepcionDetalleExcepcion.value || "")
+          .toString()
+          .trim();
+
+        if (!Number.isInteger(varianteId) || varianteId <= 0) {
+          showToast("Variante inválida", "warning");
+          return;
+        }
+
+        if (!Number.isInteger(cantidadBultos) || cantidadBultos <= 0) {
+          showToast("Ingresa una cantidad válida", "warning");
+          return;
+        }
+
+        if (esExcepcion && !detalleExcepcion) {
+          showToast("Indica el detalle del problema", "warning");
+          return;
+        }
+
+        // Si hay excepción, el detalle debe ir forzosamente en comentarios (backend requiere comentarios)
+        const comentariosFinal = esExcepcion
+          ? detalleExcepcion + (comentarios ? ` | ${comentarios}` : "")
+          : comentarios;
+
+        try {
+          btnConfirmarRecepcion.disabled = true;
+          btnRecepcionText.style.display = "none";
+          btnRecepcionSpinner.style.display = "block";
+
+          const response = await fetch(`${API_BASE_URL}/admin/recepcion`, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${adminToken}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              varianteId,
+              cantidadBultos,
+              esExcepcion,
+              comentarios: comentariosFinal,
+            }),
+          });
+
+          const data = await response.json();
+          if (!response.ok || !data.success) {
+            throw new Error(data.message || "No se pudo registrar la recepción");
+          }
+
+          const nuevoStock = data.nuevoStock;
+          if (typeof nuevoStock === "number") {
+            // Actualizar dataset en select del ajuste (si existe la opción)
+            const option = modalVarianteSelect.querySelector(
+              `option[value="${varianteId}"]`
+            );
+            if (option) {
+              option.dataset.stock = String(nuevoStock);
+            }
+
+            // Actualizar celda stock en modal detalle
+            const celdaStock = document.querySelector(
+              `.stock-variante-${varianteId}`
+            );
+            if (celdaStock) {
+              const unidad = celdaStock.innerText.split(" ")[1] || "pzas";
+              celdaStock.innerText = `${nuevoStock} ${unidad}`;
+            }
+          }
+
+          await Swal.fire({
+            icon: "success",
+            title: "Recepción registrada",
+            text: data.message || "Recepción registrada exitosamente",
+            confirmButtonColor: "#F97316",
+          });
+
+          closeRecepcionModal();
+
+          // Refrescar detalle para consistencia (sin cerrar)
+          const productoId =
+            recepcionProductoActual?.productoId || recepcionProductoActual?.productoid;
+          if (productoId) {
+            openDetalleModal(productoId, { keepOpen: true });
+          }
+        } catch (error) {
+          console.error("Error en recepción:", error);
+          await Swal.fire({
+            icon: "error",
+            title: "Error",
+            text: error.message || "No se pudo registrar la recepción",
+            confirmButtonColor: "#F97316",
+          });
+        } finally {
+          btnConfirmarRecepcion.disabled = false;
+          btnRecepcionText.style.display = "inline";
+          btnRecepcionSpinner.style.display = "none";
+        }
+      }
+
+      // Toggle product visibility (quick action)
+      async function toggleProductoVisibilidad(productoId, estadoActual) {
+        const nuevoEstado = !estadoActual;
+        const accion = nuevoEstado ? "mostrar" : "ocultar";
+        const esOcultar = !nuevoEstado;
+
+        const mensaje = `¿Estás seguro de ${accion} este producto en la tienda?`;
+        let confirmado = false;
+
+        if (
+          typeof Swal !== "undefined" &&
+          Swal &&
+          typeof Swal.fire === "function"
+        ) {
+          const swalConfig = {
+            icon: esOcultar ? "warning" : "question",
+            title: esOcultar ? "Ocultar producto" : "Mostrar producto",
+            text: mensaje,
+            showCancelButton: true,
+            confirmButtonText: esOcultar ? "Sí, ocultar" : "Sí, mostrar",
+            cancelButtonText: "Cancelar",
+            confirmButtonColor: esOcultar ? "#dc3545" : "#F97316",
+            cancelButtonColor: "#6b7280",
+          };
+
+          const result = await Swal.fire(swalConfig);
+          confirmado = !!result.isConfirmed;
+        } else {
+          confirmado = window.confirm(mensaje);
+        }
+
+        if (!confirmado) {
+          return;
+        }
+
+        try {
+          const response = await API.apiCall(
+            `/admin/productos/${productoId}`,
+            {
+              method: 'PUT',
+              body: JSON.stringify({ activo: nuevoEstado })
+            }
+          );
+
+          if (response.ok) {
+            showToast(
+              `Producto ${nuevoEstado ? 'visible' : 'oculto'} exitosamente`,
+              'success'
+            );
+            loadProductos(); // Recargar tabla
+          } else {
+            throw new Error(response.data?.message || 'Error al actualizar');
+          }
+        } catch (error) {
+          console.error('Error al toggle visibilidad:', error);
+          showToast('Error al cambiar visibilidad del producto', 'error');
+        }
+      }
+
+      // Initialize
+      verifyAndLoadAdmin();
+      loadProductos();
+    </script>
+
+    <style>
+      /* Modal styles */
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.6);
+        -webkit-backdrop-filter: blur(4px);
+        backdrop-filter: blur(4px);
+        justify-content: center;
+        align-items: center;
+        padding: 1rem;
+        overflow-y: auto;
+      }
+
+      .modal-detalle {
+        background: white;
+        padding: 2rem;
+        border-radius: 1.25rem;
+        box-shadow: 0 25px 70px rgba(15, 23, 42, 0.25);
+        max-width: 960px;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+      }
+
+      .detalle-modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-bottom: 1.5rem;
+        border-bottom: 1px solid #f1f5f9;
+      }
+
+      .detalle-title-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+      }
+
+      .detalle-title-icon {
+        font-size: 2.5rem;
+      }
+
+      .detalle-modal-header h2 {
+        margin: 0;
+        font-size: 1.6rem;
+        color: #f97316;
+      }
+
+      .detalle-modal-subtitle {
+        margin: 0.35rem 0 0;
+        color: #6b7280;
+        font-size: 0.95rem;
+      }
+
+      .detalle-modal-body {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+      }
+
+      .detalle-summary {
+        background: #fff7ed;
+        border-radius: 1.25rem;
+        padding: 1.5rem;
+        border: 1px solid rgba(253, 186, 116, 0.45);
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.65);
+      }
+
+      .detalle-summary-top {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        justify-content: space-between;
+        align-items: flex-start;
+      }
+
+      .detalle-summary-info {
+        max-width: 550px;
+      }
+
+      .detalle-summary-label {
+        font-weight: 600;
+        color: #fb923c;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.08em;
+        margin-bottom: 0.35rem;
+      }
+
+      .detalle-summary-description {
+        margin: 0;
+        color: #374151;
+        line-height: 1.5;
+      }
+
+      .detalle-summary-tags {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+      }
+
+      select.form-input {
+        color: #1f2937;
+      }
+
+      select.form-input option {
+        color: #1f2937;
+        background-color: #ffffff;
+      }
+
+      .detalle-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.35rem 0.75rem;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        background: #34d399;
+        color: #064e3b;
+        border: 1px solid rgba(52, 211, 153, 0.35);
+      }
+
+      .detalle-badge.secondary {
+        background: #bae6fd;
+        color: #0c4a6e;
+        border: 1px solid rgba(14, 165, 233, 0.3);
+      }
+
+      .detalle-badge.danger {
+        background: #fee2e2;
+        color: #991b1b;
+        border: 1px solid rgba(248, 113, 113, 0.4);
+      }
+
+      .detalle-metrics {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: 1rem;
+        margin-top: 1.5rem;
+      }
+
+      .detalle-metric-card {
+        border-radius: 1rem;
+        padding: 1rem 1.15rem;
+        background: linear-gradient(135deg, #ff7a18, #ffae42);
+        color: #ffffff;
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+        min-height: 110px;
+        box-shadow: 0 12px 24px rgba(251, 146, 60, 0.3);
+        border: 1px solid rgba(251, 146, 60, 0.5);
+      }
+
+      .gradient-orange,
+      .gradient-purple,
+      .soft-card,
+      .outline-card {
+        background: linear-gradient(135deg, #ff7a18, #ffae42);
+        color: #ffffff;
+        box-shadow: 0 12px 24px rgba(251, 146, 60, 0.3);
+        border: 1px solid rgba(251, 146, 60, 0.5);
+      }
+
+      .metric-label {
+        font-size: 0.8rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        font-weight: 600;
+        opacity: 0.85;
+        color: rgba(255, 255, 255, 0.85);
+      }
+
+      .metric-value {
+        font-size: 2rem;
+        font-weight: 700;
+        line-height: 1;
+        color: #ffffff;
+      }
+
+      .modal-table th,
+      .modal-table td {
+        color: #1f2937;
+      }
+
+      .detalle-modal-footer {
+        display: flex;
+        justify-content: flex-end;
+        padding-top: 1rem;
+      }
+
+      .modal-close-btn {
+        background: transparent;
+        border: none;
+        font-size: 2rem;
+        line-height: 1;
+        cursor: pointer;
+        color: #9ca3af;
+        transition: color 0.2s ease;
+      }
+
+      .modal-close-btn:hover {
+        color: #4b5563;
+      }
+
+      .modal-loading {
+        display: none;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+        color: #4b5563;
+        padding: 2rem;
+      }
+
+      .modal-table-wrapper {
+        border: 1px solid #e5e7eb;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.6);
+      }
+
+      .modal-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.95rem;
+      }
+
+      .modal-table thead {
+        background: #f8fafc;
+        color: #0f172a;
+      }
+
+      .modal-table th,
+      .modal-table td {
+        padding: 0.85rem 1rem;
+        text-align: left;
+        border-bottom: 1px solid #e2e8f0;
+      }
+
+      .modal-table tbody tr:hover {
+        background: #f1f5f9;
+      }
+
+      .modal-table tbody tr:last-child td {
+        border-bottom: none;
+      }
+
+      .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.25rem 0.65rem;
+        border-radius: 999px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+      }
+
+      .status-badge.en-stock {
+        background: rgba(34, 197, 94, 0.12);
+        color: #15803d;
+        border: 1px solid rgba(34, 197, 94, 0.25);
+      }
+
+      .status-badge.sin-stock {
+        background: rgba(239, 68, 68, 0.12);
+        color: #b91c1c;
+        border: 1px solid rgba(239, 68, 68, 0.25);
+      }
+
+      .btn-small {
+        padding: 0.45rem 0.9rem;
+        font-size: 0.85rem;
+        border-radius: 0.75rem;
+      }
+
+      .btn-ajuste {
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.35rem;
+        cursor: pointer;
+      }
+
+      .modal-feedback {
+        border-radius: 1rem;
+        padding: 1.5rem;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+      }
+
+      .modal-feedback-error {
+        color: #b91c1c;
+      }
+
+      .modal-feedback-empty {
+        color: #475569;
+      }
+
+      .modal-content {
+        animation: modalSlideIn 0.3s ease-out;
+        max-height: 90vh;
+        overflow-y: auto;
+      }
+
+      @keyframes modalSlideIn {
+        from {
+          transform: translateY(-50px);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+
+      @media (max-width: 768px) {
+        .modal-content {
+          max-width: 95% !important;
+          padding: 1.5rem !important;
+        }
+
+        .modal-detalle {
+          padding: 1.5rem;
+        }
+
+        .modal-table-wrapper {
+          overflow-x: auto;
+        }
+      }
+
+      /* Visibility badges and toggle button styles */
+      .visibility-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.375rem;
+        padding: 0.375rem 0.75rem;
+        border-radius: 0.375rem;
+        font-size: 0.875rem;
+        font-weight: 600;
+        white-space: nowrap;
+      }
+
+      .badge-success {
+        background: #d1fae5;
+        color: #065f46;
+        border: 1px solid #6ee7b7;
+      }
+
+      .badge-secondary {
+        background: #e5e7eb;
+        color: #6b7280;
+        border: 1px solid #d1d5db;
+      }
+
+      .btn-icon-toggle {
+        cursor: pointer;
+        background: none;
+        border: none;
+        font-size: 1.25rem;
+        padding: 0.25rem;
+        opacity: 0.7;
+        transition: all 0.2s;
+        border-radius: 0.25rem;
+      }
+
+      .btn-icon-toggle:hover {
+        opacity: 1;
+        transform: scale(1.1);
+        background: rgba(0, 0, 0, 0.05);
+      }
+
+      .btn-icon-toggle:active {
+        transform: scale(0.95);
+      }
+
+      /* Switch toggle styles for forms */
+      .switch-container {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 1rem;
+        background: #f9fafb;
+        border-radius: 0.5rem;
+        border: 1px solid #e5e7eb;
+      }
+
+      .switch-label {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        cursor: pointer;
+        -webkit-user-select: none;
+        user-select: none;
+      }
+
+      .switch-toggle {
+        position: relative;
+        width: 44px;
+        height: 24px;
+        background: #d1d5db;
+        border-radius: 12px;
+        transition: background 0.3s;
+        cursor: pointer;
+      }
+
+      .switch-toggle input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+
+      .switch-toggle::after {
+        content: '';
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 20px;
+        height: 20px;
+        background: white;
+        border-radius: 50%;
+        transition: transform 0.3s;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+      }
+
+      .switch-toggle input:checked + .switch-toggle {
+        background: #16a34a;
+      }
+
+      .switch-toggle input:checked + .switch-toggle::after {
+        transform: translateX(20px);
+      }
+
+      .switch-text {
+        font-weight: 500;
+        color: #374151;
+      }
+    </style>
+  </body>
+</html>
