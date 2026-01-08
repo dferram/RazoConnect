@@ -19,7 +19,7 @@ async function login(req, res) {
       });
     }
 
-    const result = await pool.query(
+    const result = await db.query(
       'SELECT dev_id, username, password_hash FROM developers WHERE username = $1',
       [username]
     );
@@ -41,7 +41,7 @@ async function login(req, res) {
       });
     }
 
-    await pool.query(
+    await db.query(
       'UPDATE developers SET last_login = CURRENT_TIMESTAMP WHERE dev_id = $1',
       [developer.dev_id]
     );
@@ -81,7 +81,7 @@ async function dashboardPage(req, res) {
 
 async function getTenants(req, res) {
   try {
-    const result = await pool.query(
+    const result = await db.query(
       'SELECT tenant_id, nombre_cliente, dominio, is_active, created_at FROM tenants ORDER BY created_at DESC'
     );
 
@@ -110,7 +110,7 @@ async function toggleTenantStatus(req, res) {
       });
     }
 
-    const result = await pool.query(
+    const result = await db.query(
       'UPDATE tenants SET is_active = NOT is_active WHERE tenant_id = $1 RETURNING tenant_id, nombre_cliente, is_active',
       [tenantId]
     );
