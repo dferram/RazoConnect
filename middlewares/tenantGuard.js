@@ -28,32 +28,69 @@ async function tenantGuard(req, res, next) {
   }
 
   try {
-    const hostname = req.hostname;
+    let tenant;
+    let detectionMethod;
 
-    const result = await db.query(
-      'SELECT tenant_id, nombre_cliente, is_active FROM tenants WHERE dominio = $1',
-      [hostname]
-    );
+    // PRIORIDAD 1: FORCE_TENANT_ID (para desarrollo/testing)
+    if (process.env.FORCE_TENANT_ID) {
+      const forcedTenantId = parseInt(process.env.FORCE_TENANT_ID, 10);
+      console.log(`🔧 FORCE_TENANT_ID detectado: ${forcedTenantId}`);
+      
+      const result = await db.query(
+        'SELECT tenant_id, nombre_cliente, is_active, tema FROM tenants WHERE tenant_id = $1',
+        [forcedTenantId]
+      );
 
-    if (result.rows.length === 0) {
-      console.warn(`⚠️  Tenant no encontrado para dominio: ${hostname}`);
+      if (result.rows.length === 0) {
+        console.error(`❌ FORCE_TENANT_ID=${forcedTenantId} no existe en la base de datos`);
+        return res.status(500).send('Configuración de tenant inválida');
+      }
+
+      tenant = result.rows[0];
+      detectionMethod = 'FORCE_TENANT_ID';
+    } 
+    // PRIORIDAD 2: Detección por dominio (producción)
+    else {
+      const hostname = req.hostname;
+      const result = await db.query(
+        'SELECT tenant_id, nombre_cliente, is_active, tema FROM tenants WHERE dominio = $1',
+        [hostname]
+      );
+
+      if (result.rows.length === 0) {
+        console.warn(`⚠️  Tenant no encontrado para dominio: ${hostname}`);
+        if (path !== '/suspended') {
+          return res.redirect('/suspended');
+        }
+        return next();
+      }
+
+      tenant = result.rows[0];
+      detectionMethod = `hostname: ${hostname}`;
+    }
+
+    // Verificar si el tenant está activo
+    if (tenant.is_active === false) {
+      console.warn(`🚫 Servicio suspendido para tenant: ${tenant.nombre_cliente}`);
       if (path !== '/suspended') {
         return res.redirect('/suspended');
       }
       return next();
     }
 
-    const tenant = result.rows[0];
+    // Limpiar sesión si el tenant cambió (evita conflictos de cookies entre tenants)
+    if (req.session && req.session.tenant_id && req.session.tenant_id !== tenant.tenant_id) {
+      console.warn(`⚠️  Tenant cambió de ${req.session.tenant_id} a ${tenant.tenant_id}. Limpiando sesión...`);
+      req.session.destroy();
+    }
 
-    if (tenant.is_active === false) {
-      console.warn(`🚫 Servicio suspendido para tenant: ${tenant.nombre_cliente} (${hostname})`);
-      if (path !== '/suspended') {
-        return res.redirect('/suspended');
-      }
-      return next();
+    // Guardar tenant_id en sesión para futuras validaciones
+    if (req.session) {
+      req.session.tenant_id = tenant.tenant_id;
     }
 
     req.tenant = tenant;
+    console.log(`✅ Tenant detectado: ${tenant.nombre_cliente} (ID: ${tenant.tenant_id}) via ${detectionMethod}`);
     next();
 
   } catch (error) {

@@ -135,30 +135,16 @@ app.use(tenantGuard);
 // ARCHIVOS ESTÁTICOS (PROTEGIDOS POR TENANT GUARD)
 // ============================================================================
 
-// Servir archivos CSS de Fashion explícitamente (para desarrollo en localhost)
-app.use('/css', express.static(path.join(__dirname, 'tenants_views', 'fashion', 'css')));
-
 // Middleware dinámico de archivos estáticos basado en tenant
 app.use((req, res, next) => {
-  // Si no hay tenant (localhost/desarrollo), usar razo por defecto
-  // Tenant ID 1 = Razo, otros = Fashion
-  const tenantFolder = (!req.tenant || req.tenant.tenant_id === 1) ? 'razo' : 'fashion';
+  // Determinar carpeta del tenant dinámicamente desde la base de datos
+  // El campo 'tema' en la tabla tenants define qué carpeta usar ('razo' o 'fashion')
+  const tenantFolder = req.tenant?.tema || 'razo'; // Default a 'razo' si no hay tema
   const tenantPath = path.join(__dirname, 'tenants_views', tenantFolder);
   
-  // Intentar servir desde la carpeta del tenant
-  express.static(tenantPath)(req, res, (err) => {
-    if (err) {
-      return next(err);
-    }
-    
-    // Si el archivo no existe en fashion, intentar fallback a razo (para JS comunes)
-    if (tenantFolder === 'fashion') {
-      const razoPath = path.join(__dirname, 'tenants_views', 'razo');
-      express.static(razoPath)(req, res, next);
-    } else {
-      next();
-    }
-  });
+  // AISLAMIENTO TOTAL: Cada tenant sirve SOLO sus propios archivos
+  // Si un archivo no existe, debe dar error 404, NO cargar del otro tenant
+  express.static(tenantPath)(req, res, next);
 });
 
 // Servir iconos (favicon y otros) desde la carpeta /icon
@@ -234,8 +220,9 @@ app.use("/api/*", (req, res) => {
 
 // Redirigir rutas no encontradas a index
 app.get("*", (req, res) => {
-  // Si no hay tenant (localhost/desarrollo), usar razo por defecto
-  const tenantFolder = (!req.tenant || req.tenant.tenant_id === 1) ? 'razo' : 'fashion';
+  // Determinar carpeta del tenant dinámicamente desde la base de datos
+  // El campo 'tema' en la tabla tenants define qué carpeta usar ('razo' o 'fashion')
+  const tenantFolder = req.tenant?.tema || 'razo'; // Default a 'razo' si no hay tema
   res.sendFile(path.join(__dirname, "tenants_views", tenantFolder, "index.html"));
 });
 

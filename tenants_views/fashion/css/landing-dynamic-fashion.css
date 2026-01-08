@@ -314,14 +314,14 @@
 .benefit-title {
   font-size: 1.5rem;
   font-weight: 700;
-  color: var(--theme-primary);
+  color: black;
   margin-bottom: 1rem;
 }
 
 .benefit-text {
   font-size: 1rem;
   line-height: 1.6;
-  color: var(--theme-secondary);
+  color:  black;
   opacity: 0.85;
 }
 

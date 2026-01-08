@@ -146,7 +146,7 @@ async function exportarExcelEntrada() {
 
         // Cargar e insertar logo (dimensiones corregidas para mantener proporción)
         try {
-            const logoResponse = await fetch('/icon/Logo_Razo.png');
+            const logoResponse = await fetch('/icon/Logo_Fashion.png');
             const logoBlob = await logoResponse.blob();
             const logoBuffer = await logoBlob.arrayBuffer();
             const imageId = workbook.addImage({

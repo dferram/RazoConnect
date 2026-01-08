@@ -44,7 +44,7 @@
     detectarContextoPagina();
 
     try {
-      const res = await fetch("/components/sidebar-filtros.html", {
+      const res = await fetch("components/sidebar-filtros.html", {
         headers: { "Content-Type": "text/html; charset=utf-8" },
       });
       if (!res.ok) {

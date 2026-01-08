@@ -28,7 +28,7 @@
     }
 
     try {
-      const res = await fetch("/components/admin-header.html", {
+      const res = await fetch("components/admin-header.html", {
         headers: { "Content-Type": "text/html; charset=utf-8" },
       });
       if (!res.ok) {

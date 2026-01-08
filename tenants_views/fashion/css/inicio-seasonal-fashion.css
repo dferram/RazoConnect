@@ -280,6 +280,21 @@ body {
 }
 
 /* ============================================
+   EXCEPCIÓN: Tarjetas de beneficios con texto NEGRO
+   ============================================ */
+
+.benefit-card,
+.benefit-card *,
+.benefit-title,
+.benefit-text,
+.benefits-section .benefit-card h1,
+.benefits-section .benefit-card h2,
+.benefits-section .benefit-card h3,
+.benefits-section .benefit-card p {
+  color: black !important;
+}
+
+/* ============================================
    CATEGORÍAS CON BORDES DEL TEMA - DARK
    ============================================ */
 

@@ -5,7 +5,7 @@
     const container = document.getElementById("admin-header-container");
     if (!container) return;
 
-    fetch("/components/admin-header.html")
+    fetch("components/admin-header.html")
       .then((response) => response.text())
       .then((html) => {
         container.innerHTML = html;

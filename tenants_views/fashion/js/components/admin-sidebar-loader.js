@@ -11,7 +11,7 @@
     if (!container) return;
 
     try {
-      const response = await fetch('/components/sidebar-admin.html');
+      const response = await fetch('components/sidebar-admin.html');
       if (!response.ok) {
         throw new Error(`Error al cargar sidebar: ${response.status}`);
       }
