@@ -125,7 +125,7 @@
         <div class="login-body">
             <div id="alert-container"></div>
             
-            <form id="loginForm">
+            <form id="loginForm" action="/api/developer/login" method="POST">
                 <div class="mb-3">
                     <label for="username" class="form-label">
                         <i class="bi bi-person-circle"></i> Username
@@ -172,47 +172,21 @@
             `;
         }
 
-        loginForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
+        loginForm.addEventListener('submit', (e) => {
             const username = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value;
 
             if (!username || !password) {
+                e.preventDefault();
                 showAlert('Por favor completa todos los campos');
                 return;
             }
 
             btnLogin.disabled = true;
             btnLogin.innerHTML = '<i class="bi bi-hourglass-split"></i> Verificando...';
-
-            try {
-                const response = await fetch('/api/developer/login', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ username, password })
-                });
-
-                const data = await response.json();
-
-                if (response.ok && data.success) {
-                    showAlert('Login exitoso. Redirigiendo...', 'success');
-                    setTimeout(() => {
-                        window.location.href = data.redirectUrl || data.redirect || '/developer/dashboard';
-                    }, 1000);
-                } else {
-                    showAlert(data.message || 'Credenciales inválidas');
-                    btnLogin.disabled = false;
-                    btnLogin.innerHTML = '<i class="bi bi-box-arrow-in-right"></i> Iniciar Sesión';
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                showAlert('Error de conexión. Intenta nuevamente.');
-                btnLogin.disabled = false;
-                btnLogin.innerHTML = '<i class="bi bi-box-arrow-in-right"></i> Iniciar Sesión';
-            }
+            
+            // Permitir que el formulario se envíe de forma tradicional
+            // El servidor redirigirá automáticamente con la cookie de sesión
         });
     </script>
 </body>

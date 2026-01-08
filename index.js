@@ -33,7 +33,10 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middlewares
-app.use(cors()); // Habilitar CORS
+app.use(cors({
+  origin: true,
+  credentials: true
+})); // Habilitar CORS con credenciales
 app.use(express.json()); // Parsear JSON en el body de las peticiones
 app.use(express.urlencoded({ extended: true })); // Parsear datos de formularios
 
@@ -42,12 +45,24 @@ app.use(session({
   secret: process.env.SESSION_SECRET || 'razoconnect-dev-secret-key-change-in-production',
   resave: false,
   saveUninitialized: false,
+  name: 'razoconnect.sid',
   cookie: {
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000
+    maxAge: 24 * 60 * 60 * 1000,
+    sameSite: 'lax'
   }
 }));
+
+// Logging de sesiones en desarrollo
+if (process.env.NODE_ENV !== 'production') {
+  app.use((req, res, next) => {
+    if (req.path.startsWith('/developer') || req.path.startsWith('/api/developer')) {
+      console.log('🔐 [Session Middleware] Path:', req.path, 'SessionID:', req.sessionID, 'Session:', req.session);
+    }
+    next();
+  });
+}
 
 configurePassport(passport);
 app.use(passport.initialize());

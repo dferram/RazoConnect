@@ -41,25 +41,31 @@ async function login(req, res) {
       });
     }
 
+    // Configurar datos de sesión
     req.session.isDeveloper = true;
     req.session.developerId = developer.dev_id;
     req.session.developerUsername = developer.username;
 
-    // Guardar sesión explícitamente antes de responder
+    console.log('📝 [Developer Login] Sesión configurada:', {
+      sessionID: req.sessionID,
+      isDeveloper: req.session.isDeveloper,
+      developerId: req.session.developerId,
+      username: req.session.developerUsername
+    });
+
+    // Guardar sesión explícitamente antes de redirigir
     req.session.save((err) => {
       if (err) {
-        console.error('Error al guardar sesión:', err);
-        return res.status(500).json({ 
-          error: 'Error del servidor',
-          message: 'Error al guardar la sesión' 
-        });
+        console.error('❌ [Developer Login] Error al guardar sesión:', err);
+        return res.status(500).send('Error al guardar la sesión');
       }
 
-      res.json({ 
-        success: true,
-        message: 'Login exitoso',
-        redirectUrl: '/developer/dashboard'
-      });
+      console.log('✅ [Developer Login] Sesión guardada exitosamente para:', developer.username);
+      console.log('🔄 [Developer Login] Redirigiendo a dashboard con sessionID:', req.sessionID);
+
+      // Redirigir directamente desde el servidor (HTTP 302)
+      // Esto asegura que la cookie se envíe en la siguiente petición
+      res.redirect('/developer/dashboard');
     });
 
   } catch (error) {

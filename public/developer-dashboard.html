@@ -253,7 +253,9 @@
 
         async function loadTenants() {
             try {
-                const response = await fetch('/api/developer/tenants');
+                const response = await fetch('/api/developer/tenants', {
+                    credentials: 'include'
+                });
                 const data = await response.json();
 
                 loadingSpinner.style.display = 'none';
@@ -322,6 +324,7 @@
                     headers: {
                         'Content-Type': 'application/json'
                     },
+                    credentials: 'include',
                     body: JSON.stringify({ tenantId })
                 });
 
@@ -349,7 +352,8 @@
 
             try {
                 const response = await fetch('/api/developer/logout', {
-                    method: 'POST'
+                    method: 'POST',
+                    credentials: 'include'
                 });
 
                 const data = await response.json();
