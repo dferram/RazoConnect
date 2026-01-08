@@ -3466,6 +3466,7 @@ const getAllPedidos = async (req, res) => {
       montoTotal: parseFloat(row.montototal),
       costoEnvio: row.costoenvio ? parseFloat(row.costoenvio) : 0,
       estatus: row.estatus,
+      clienteNombre: `${row.clientenombre || ''} ${row.clienteapellido || ''}`.trim(),
       cliente: {
         nombre: row.clientenombre,
         apellido: row.clienteapellido,
@@ -3485,7 +3486,9 @@ const getAllPedidos = async (req, res) => {
 
     res.json({
       success: true,
-      data: pedidos
+      data: {
+        pedidos: pedidos
+      }
     });
   } catch (error) {
     console.error("Error al obtener pedidos:", error);

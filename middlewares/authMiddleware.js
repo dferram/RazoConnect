@@ -56,13 +56,14 @@ const authenticate = async (req, res, next) => {
     const isClienteToken = rolesFromToken.includes("cliente");
 
     // 1) Si el token declara agente, validar contra agentesdeventas (activo)
+    // CRÍTICO: Agentes son globales (no tienen tenant_id), validar solo por ID y estado
     if (isAgenteToken) {
       const agenteResult = await db.query(
-        "SELECT agenteid, activo, email, codigoagente FROM agentesdeventas WHERE agenteid = $1 LIMIT 1",
+        "SELECT agenteid, activo, email, codigoagente FROM agentesdeventas WHERE agenteid = $1 AND activo = TRUE LIMIT 1",
         [userId]
       );
 
-      if (!agenteResult.rows.length || agenteResult.rows[0].activo !== true) {
+      if (!agenteResult.rows.length) {
         return res.status(401).json({
           success: false,
           message: "Agente no autorizado o inactivo",
@@ -83,12 +84,22 @@ const authenticate = async (req, res, next) => {
     }
 
     if (isClienteToken) {
+      // CRÍTICO: Clientes están aislados por tenant_id
+      const tenantIdFromToken = decoded?.tenant_id || req.tenant?.tenant_id;
+      
+      if (!tenantIdFromToken) {
+        return res.status(401).json({
+          success: false,
+          message: "Token de cliente sin tenant_id válido",
+        });
+      }
+
       const clienteResult = await db.query(
-        "SELECT clienteid, activo, email FROM clientes WHERE clienteid = $1 LIMIT 1",
-        [userId]
+        "SELECT clienteid, activo, email, tenant_id FROM clientes WHERE clienteid = $1 AND tenant_id = $2 AND activo = TRUE LIMIT 1",
+        [userId, tenantIdFromToken]
       );
 
-      if (!clienteResult.rows.length || clienteResult.rows[0].activo !== true) {
+      if (!clienteResult.rows.length) {
         return res.status(401).json({
           success: false,
           message: "Cliente no autorizado o inactivo",
@@ -102,15 +113,26 @@ const authenticate = async (req, res, next) => {
         rol: "cliente",
         roles: ["cliente"],
         email: decoded?.email || clienteResult.rows[0].email || null,
+        tenant_id: clienteResult.rows[0].tenant_id,
       };
 
       return tenantSessionGuard(req, res, next);
     }
 
     // 2) Si no es agente por token, validar primero contra administradores (activo)
+    // CRÍTICO: Filtrar por tenant_id para aislamiento multi-tenant
+    const tenantIdFromToken = decoded?.tenant_id || req.tenant?.tenant_id;
+    
+    if (!tenantIdFromToken) {
+      return res.status(401).json({
+        success: false,
+        message: "Token sin tenant_id válido",
+      });
+    }
+
     const adminResult = await db.query(
-      "SELECT adminid, rol, activo, email FROM administradores WHERE adminid = $1 LIMIT 1",
-      [userId]
+      "SELECT adminid, rol, activo, email, tenant_id FROM administradores WHERE adminid = $1 AND tenant_id = $2 AND activo = TRUE LIMIT 1",
+      [userId, tenantIdFromToken]
     );
 
     if (adminResult.rows.length && adminResult.rows[0].activo === true) {
@@ -126,18 +148,20 @@ const authenticate = async (req, res, next) => {
         rol: rolFinal,
         roles: [rolFinal],
         email: decoded?.email || adminResult.rows[0].email || null,
+        tenant_id: adminResult.rows[0].tenant_id,
       };
 
       return tenantSessionGuard(req, res, next);
     }
 
     // 3) Fallback: si no existe en administradores, buscar como agente (activo)
+    // Agentes son globales, no requieren tenant_id
     const agenteFallback = await db.query(
-      "SELECT agenteid, activo, email, codigoagente FROM agentesdeventas WHERE agenteid = $1 LIMIT 1",
+      "SELECT agenteid, activo, email, codigoagente FROM agentesdeventas WHERE agenteid = $1 AND activo = TRUE LIMIT 1",
       [userId]
     );
 
-    if (agenteFallback.rows.length && agenteFallback.rows[0].activo === true) {
+    if (agenteFallback.rows.length) {
       req.user = {
         ...decoded,
         id: userId,
