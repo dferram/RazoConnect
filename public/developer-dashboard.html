@@ -6,6 +6,7 @@
     <title>Developer Dashboard - RazoConnect</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         :root {
             --razo-orange: #F97316;
@@ -315,8 +316,45 @@
         }
 
         async function toggleTenantStatus(tenantId, switchElement) {
-            const originalState = switchElement.checked;
+            const newState = switchElement.checked;
+            const originalState = !newState;
+            
+            // Revertir visualmente mientras se confirma
+            switchElement.checked = originalState;
+            
+            // Configurar mensaje según la acción
+            const isBlocking = !newState;
+            const config = isBlocking ? {
+                title: '¿Suspender Servicio?',
+                text: 'El cliente perderá acceso inmediato. ¿Confirmar?',
+                icon: 'warning',
+                confirmButtonColor: '#d33',
+                confirmButtonText: '<i class="bi bi-x-circle"></i> Sí, Suspender'
+            } : {
+                title: '¿Reactivar Servicio?',
+                text: 'El cliente recuperará el acceso. ¿Confirmar?',
+                icon: 'question',
+                confirmButtonColor: '#10b981',
+                confirmButtonText: '<i class="bi bi-check-circle"></i> Sí, Reactivar'
+            };
+
+            // Mostrar confirmación
+            const result = await Swal.fire({
+                ...config,
+                showCancelButton: true,
+                cancelButtonText: 'Cancelar',
+                cancelButtonColor: '#6b7280',
+                reverseButtons: true
+            });
+
+            // Si cancela, mantener el estado original
+            if (!result.isConfirmed) {
+                return;
+            }
+
+            // Si confirma, proceder con el cambio
             switchElement.disabled = true;
+            switchElement.checked = newState;
 
             try {
                 const response = await fetch('/api/developer/tenants/toggle', {
@@ -331,17 +369,35 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    console.log(`✅ ${data.message}`);
+                    // Toast de éxito
+                    Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        icon: 'success',
+                        title: isBlocking ? 'Servicio suspendido' : 'Servicio reactivado',
+                        showConfirmButton: false,
+                        timer: 3000,
+                        timerProgressBar: true
+                    });
+                    
                     await loadTenants();
                 } else {
-                    console.error('Error:', data.message);
-                    switchElement.checked = !originalState;
-                    alert(data.message || 'Error al cambiar el estado');
+                    // Revertir en caso de error
+                    switchElement.checked = originalState;
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: data.message || 'Error al cambiar el estado'
+                    });
                 }
             } catch (error) {
                 console.error('Error:', error);
-                switchElement.checked = !originalState;
-                alert('Error de conexión al cambiar el estado');
+                switchElement.checked = originalState;
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error de Conexión',
+                    text: 'No se pudo cambiar el estado del servicio'
+                });
             } finally {
                 switchElement.disabled = false;
             }

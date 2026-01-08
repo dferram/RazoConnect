@@ -1,11 +1,22 @@
+require("dotenv").config();
+console.log('--- DEBUG DE VARIABLES ---');
+console.log('1. Valor crudo de NODE_ENV:', process.env.NODE_ENV);
+console.log('2. Tipo de dato:', typeof process.env.NODE_ENV);
+console.log('3. ¿Es production?:', process.env.NODE_ENV === 'production');
+console.log('--------------------------');
+
 const express = require("express");
 const path = require("path");
 const cors = require("cors");
 const session = require("express-session");
-require("dotenv").config();
 const db = require("./db");
 const passport = require("passport");
 const configurePassport = require("./config/passport");
+
+// Habilitar proxy (CRÍTICO para Azure - terminación SSL)
+app.set('trust proxy', 1);
+// Detectar entorno
+const isProduction = process.env.NODE_ENV === 'production';
 
 // Importar rutas
 const authRoutes = require("./routes/auth");
@@ -40,19 +51,27 @@ app.use(cors({
 app.use(express.json()); // Parsear JSON en el body de las peticiones
 app.use(express.urlencoded({ extended: true })); // Parsear datos de formularios
 
-// Configurar sesiones
+// Habilitar proxy (CRÍTICO para Azure - terminación SSL)
+app.set('trust proxy', 1);
+
+// Configurar sesiones con configuración dinámica según entorno
 app.use(session({
   secret: process.env.SESSION_SECRET || 'razoconnect-dev-secret-key-change-in-production',
   resave: false,
   saveUninitialized: false,
   name: 'razoconnect.sid',
   cookie: {
-    secure: process.env.NODE_ENV === 'production',
+    secure: isProduction, // TRUE en Azure (HTTPS), FALSE en Localhost (HTTP)
     httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000,
-    sameSite: 'lax'
+    sameSite: isProduction ? 'none' : 'lax', // 'none' para dominios diferentes en producción, 'lax' para local
+    maxAge: 1000 * 60 * 60 * 24 // 1 día (24 horas)
   }
 }));
+
+console.log(`🔐 Configuración de sesión: ${isProduction ? 'PRODUCCIÓN' : 'DESARROLLO'}`);
+console.log(`   - Secure cookies: ${isProduction}`);
+console.log(`   - SameSite: ${isProduction ? 'none' : 'lax'}`);
+console.log(`   - Trust proxy: enabled`);
 
 // Logging de sesiones en desarrollo
 if (process.env.NODE_ENV !== 'production') {
