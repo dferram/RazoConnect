@@ -137,8 +137,9 @@ app.use(tenantGuard);
 
 // Middleware dinámico de archivos estáticos basado en tenant
 app.use((req, res, next) => {
-  // Si no hay tenant (rutas whitelisted), usar razo por defecto
-  const tenantFolder = req.tenant?.tenant_id === 1 ? 'razo' : 'fashion';
+  // Si no hay tenant (localhost/desarrollo), usar razo por defecto
+  // Tenant ID 1 = Razo, otros = Fashion
+  const tenantFolder = (!req.tenant || req.tenant.tenant_id === 1) ? 'razo' : 'fashion';
   const tenantPath = path.join(__dirname, 'tenants_views', tenantFolder);
   
   // Intentar servir desde la carpeta del tenant
@@ -230,7 +231,8 @@ app.use("/api/*", (req, res) => {
 
 // Redirigir rutas no encontradas a index
 app.get("*", (req, res) => {
-  const tenantFolder = req.tenant?.tenant_id === 1 ? 'razo' : 'fashion';
+  // Si no hay tenant (localhost/desarrollo), usar razo por defecto
+  const tenantFolder = (!req.tenant || req.tenant.tenant_id === 1) ? 'razo' : 'fashion';
   res.sendFile(path.join(__dirname, "tenants_views", tenantFolder, "index.html"));
 });
 
