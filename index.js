@@ -92,6 +92,18 @@ app.get("/api/health", async (req, res) => {
   }
 });
 
+// Rutas de Developer (sin tenantGuard)
+app.use("/developer", developerRoutes);
+app.use("/api/developer", developerRoutes);
+
+// Ruta de servicio pausado (sin tenantGuard)
+app.get("/servicio-pausado", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "servicio-pausado.html"));
+});
+
+// Aplicar tenantGuard a todas las rutas públicas
+app.use(tenantGuard);
+
 // Rutas de la API
 app.use("/api", authRoutes);
 app.use("/api", productosRoutes);
