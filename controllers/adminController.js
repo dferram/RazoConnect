@@ -3549,74 +3549,6 @@ const updatePedidoEstatus = async (req, res) => {
 };
 
 /**
- * Crear un nuevo producto
- * POST /api/admin/productos
- */
-const crearProducto = async (req, res) => {
-  try {
-    const { tenant_id } = req.tenant;
-    const {
-      nombreProducto,
-      descripcion,
-      categoriaId,
-      proveedorId,
-      reglaid,
-      precioBase,
-      activo = true,
-      destacado = false
-    } = req.body;
-
-    // Validaciones básicas
-    if (!nombreProducto || !proveedorId) {
-      return res.status(400).json({
-        success: false,
-        message: "Nombre del producto y proveedor son requeridos"
-      });
-    }
-
-    // Generar SKU único
-    const sku = await generarSkuUnico(nombreProducto, tenant_id);
-
-    const result = await db.query(
-      `INSERT INTO Productos 
-       (NombreProducto, Descripcion, CategoriaID, ProveedorID, ReglaID, 
-        PrecioBase, SKU, Activo, Destacado, tenant_id, FechaCreacion)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW())
-       RETURNING *`,
-      [
-        nombreProducto,
-        descripcion || null,
-        categoriaId || null,
-        proveedorId,
-        reglaid || null,
-        precioBase || 0,
-        sku,
-        activo,
-        destacado,
-        tenant_id
-      ]
-    );
-
-    res.status(201).json({
-      success: true,
-      message: "Producto creado exitosamente",
-      data: {
-        productoId: result.rows[0].productoid,
-        nombreProducto: result.rows[0].nombreproducto,
-        sku: result.rows[0].sku
-      }
-    });
-  } catch (error) {
-    console.error("Error al crear producto:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error al crear producto",
-      error: error.message
-    });
-  }
-};
-
-/**
  * Obtener medidas existentes (alias para getMedidas)
  * GET /api/admin/medidas-existentes
  */
@@ -4837,38 +4769,6 @@ const getMedidas = async (req, res) => {
   }
 };
 
-/**
- * Obtener lista de medidas/dimensiones ya usadas en variantes
- * GET /api/admin/medidas-existentes
- * Devuelve un arreglo de strings en data.medidas
- */
-const getMedidasExistentes = async (req, res) => {
-  try {
-    const result = await db.query(
-      `SELECT DISTINCT TRIM(Dimensiones) AS valor
-       FROM Producto_Variantes
-       WHERE Dimensiones IS NOT NULL AND TRIM(Dimensiones) <> ''
-       ORDER BY TRIM(Dimensiones)`
-    );
-
-    const medidas = result.rows
-      .map((row) => (row.valor || "").trim())
-      .filter((v) => v.length > 0);
-
-    res.json({
-      success: true,
-      data: {
-        medidas,
-      },
-    });
-  } catch (error) {
-    console.error("Error al obtener medidas existentes:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error en el servidor",
-    });
-  }
-};
 
 /**
  * Verificar token de admin
@@ -5101,320 +5001,8 @@ const refreshAdminToken = async (req, res) => {
   }
 };
 
-/**
- * Obtener estadísticas del dashboard
- * GET /api/admin/dashboard-stats
- */
-const getDashboardStats = async (req, res) => {
-  try {
-    // Pedidos pendientes
-    const pedidosPendientes = await db.query(
-      `SELECT COUNT(*) as total FROM Pedidos WHERE Estatus = 'Pendiente'`
-    );
 
-    // Total de comisiones pendientes
-    const comisionesPendientes = await db.query(
-      `SELECT COALESCE(SUM(MontoComision), 0) as total 
-       FROM Comisiones 
-       WHERE Estatus = 'Pendiente'`
-    );
 
-    // Variantes con stock bajo (<=5 paquetes)
-    const productosStockBajo = await db.query(
-      `SELECT COUNT(*) AS total
-       FROM Producto_Variantes
-       WHERE COALESCE(Stock, 0) <= 5`
-    );
-
-    // Total de pedidos (para estadística general)
-    const totalPedidos = await db.query(
-      `SELECT COUNT(*) as total FROM Pedidos`
-    );
-
-    // Ingresos totales
-    const ingresosTotales = await db.query(
-      `SELECT COALESCE(SUM(MontoTotal), 0) as total FROM Pedidos`
-    );
-
-    // Clientes totales (tabla Clientes no tiene columna Activo)
-    const clientesActivos = await db.query(
-      `SELECT COUNT(*) as total FROM Clientes`
-    );
-
-    // Agentes activos
-    const agentesActivos = await db.query(
-      `SELECT COUNT(*) as total FROM AgentesDeVentas WHERE Activo = TRUE`
-    );
-
-    res.json({
-      success: true,
-      data: {
-        pedidosPendientes: parseInt(pedidosPendientes.rows[0].total),
-        comisionesPendientes: parseFloat(comisionesPendientes.rows[0].total),
-        productosStockBajo: parseInt(productosStockBajo.rows[0].total),
-        totalPedidos: parseInt(totalPedidos.rows[0].total),
-        ingresosTotales: parseFloat(ingresosTotales.rows[0].total),
-        clientesActivos: parseInt(clientesActivos.rows[0].total),
-        agentesActivos: parseInt(agentesActivos.rows[0].total),
-      },
-    });
-  } catch (error) {
-    console.error("Error al obtener estadísticas:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error en el servidor",
-    });
-  }
-};
-
-/**
- * Obtener todos los pedidos (para administración)
- * GET /api/admin/pedidos
- */
-const getAllPedidos = async (req, res) => {
-  try {
-    const result = await db.query(
-      `SELECT 
-        p.PedidoID,
-        p.ClienteID,
-        c.Nombre || ' ' || c.Apellido as ClienteNombre,
-        c.Email as ClienteEmail,
-        p.FechaPedido,
-        p.MontoTotal,
-        p.CostoEnvio,
-        p.Estatus,
-        p.DireccionEnvioID,
-        CONCAT_WS(', ', d.Calle, d.Ciudad, e.Nombre) as DireccionCompleta,
-        d.EstadoID,
-        e.Nombre as EstadoNombre,
-        p.AgenteID,
-        CASE 
-          WHEN a.AgenteID IS NOT NULL THEN a.Nombre || ' ' || a.Apellido 
-          ELSE NULL 
-        END as AgenteNombre,
-        p.url_evidencia_entrega,
-        p.fecha_entrega_real,
-        (SELECT COUNT(*) FROM DetallesDelPedido dp WHERE dp.PedidoID = p.PedidoID) as TotalItems
-      FROM Pedidos p
-      INNER JOIN Clientes c ON p.ClienteID = c.ClienteID
-      LEFT JOIN Cliente_Direcciones d ON p.DireccionEnvioID = d.DireccionID
-      LEFT JOIN Estados e ON d.EstadoID = e.EstadoID
-      LEFT JOIN AgentesDeVentas a ON p.AgenteID = a.AgenteID
-      ORDER BY p.FechaPedido DESC`
-    );
-
-    res.json({
-      success: true,
-      data: {
-        pedidos: result.rows.map((row) => ({
-          pedidoId: row.pedidoid,
-          clienteId: row.clienteid,
-          clienteNombre: row.clientenombre,
-          clienteEmail: row.clienteemail,
-          fechaPedido: row.fechapedido,
-          montoTotal: parseFloat(row.montototal),
-          costoEnvio:
-            row.costoenvio !== null ? parseFloat(row.costoenvio) : null,
-          estatus: row.estatus,
-          direccionEnvioId: row.direccionenvioid,
-          direccionCompleta: row.direccioncompleta,
-          estadoId: row.estadoid !== null ? parseInt(row.estadoid, 10) : null,
-          estadoNombre: row.estadonombre || null,
-          agenteId: row.agenteid,
-          agenteNombre: row.agentenombre,
-          urlEvidenciaEntrega: row.url_evidencia_entrega || null,
-          fechaEntregaReal: row.fecha_entrega_real || null,
-          totalItems: parseInt(row.totalitems),
-        })),
-      },
-    });
-  } catch (error) {
-    console.error("Error al obtener pedidos:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error en el servidor",
-    });
-  }
-};
-
-/**
- * Actualizar estatus de un pedido
- * PUT /api/admin/pedidos/:id
- */
-const updatePedidoEstatus = async (req, res) => {
-  try {
-    const pedidoId = Number.parseInt(req.params.id, 10);
-    const estatusBody = req.body ? req.body.estatus : null;
-
-    if (!Number.isInteger(pedidoId) || pedidoId <= 0) {
-      return res.status(400).json({
-        success: false,
-        message: "ID de pedido inválido",
-      });
-    }
-
-    const estatusNuevo = typeof estatusBody === "string" ? estatusBody.trim() : "";
-
-    // Permitir cualquier estatus manual (incluye 'Parcialmente Surtido'),
-    // pero auditarlo via control_cambios.
-    if (!estatusNuevo) {
-      return res.status(400).json({
-        success: false,
-        message: "Estatus inválido",
-      });
-    }
-
-    const pedidoResult = await db.query(
-      "SELECT PedidoID, Estatus FROM Pedidos WHERE PedidoID = $1",
-      [pedidoId]
-    );
-
-    if (pedidoResult.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "Pedido no encontrado",
-      });
-    }
-
-    const estatusAnterior = pedidoResult.rows[0].estatus || "Pendiente";
-    const rolRaw = (req?.user?.rol || "").toString().trim().toLowerCase();
-    const rolNorm = rolRaw.replace(/[\s_-]+/g, "");
-    const allowDirect = rolNorm === "superadmin" || rolNorm === "admin" || rolNorm === "agente";
-
-    if (allowDirect) {
-      const oldData = {
-        pedidoid: pedidoId,
-        estatus: estatusAnterior,
-      };
-      const newData = {
-        pedidoid: pedidoId,
-        estatus: estatusNuevo,
-      };
-
-      const updateRes = await db.query(
-        "UPDATE pedidos SET estatus = $1 WHERE pedidoid = $2 RETURNING pedidoid, clienteid, agenteid, direccionenvioid, fechapedido, montototal, estatus, costoenvio",
-        [estatusNuevo, pedidoId]
-      );
-
-      if (!updateRes.rows.length) {
-        return res.status(404).json({
-          success: false,
-          message: "Pedido no encontrado",
-        });
-      }
-
-      await auditService.registrarCambioPasivo(
-        req,
-        "pedidos",
-        pedidoId,
-        "UPDATE",
-        oldData,
-        newData
-      );
-
-      const row = updateRes.rows[0];
-      
-      // CRITICAL FIX: Create in-app notification for the client
-      const clienteId = row.clienteid;
-      if (clienteId) {
-        try {
-          await crearNotificacionServicio(
-            clienteId,
-            'pedido',
-            `Actualización de Pedido #${pedidoId}`,
-            `Tu pedido ha cambiado de estado a: ${estatusNuevo}`,
-            {
-              url: `/perfil/pedidos`,
-              prioridad: 'normal',
-              metadata: { pedidoId, estatusAnterior, estatusNuevo }
-            }
-          );
-        } catch (notifError) {
-          console.error('❌ Error al crear notificación in-app:', notifError);
-        }
-      }
-
-      // CRITICAL FIX: Send email notification to the client
-      if (clienteId) {
-        try {
-          const clienteResult = await db.query(
-            'SELECT nombre, apellido, email FROM clientes WHERE clienteid = $1',
-            [clienteId]
-          );
-          
-          if (clienteResult.rows.length > 0) {
-            const cliente = clienteResult.rows[0];
-            const emailCliente = cliente.email;
-            const nombreCliente = [cliente.nombre, cliente.apellido].filter(Boolean).join(' ').trim() || 'Cliente';
-            
-            if (emailCliente) {
-              const { enviarCorreoCambioEstatus } = require('../services/emailService');
-              const emailEnviado = await enviarCorreoCambioEstatus(
-                emailCliente,
-                nombreCliente,
-                pedidoId,
-                estatusNuevo
-              );
-              
-              if (emailEnviado) {
-                // Email sent
-              } else {
-                console.error(`❌ Email failed para ${emailCliente} - Pedido #${pedidoId}`);
-              }
-            }
-          }
-        } catch (emailError) {
-          console.error('❌ Error al enviar email de cambio de estatus:', emailError);
-        }
-      }
-
-      return res.status(200).json({
-        success: true,
-        message: "Estatus actualizado correctamente.",
-        data: {
-          pedido: {
-            pedidoId: row.pedidoid,
-            clienteId: row.clienteid,
-            agenteId: row.agenteid,
-            direccionEnvioId: row.direccionenvioid,
-            fechaPedido: row.fechapedido,
-            montoTotal: row.montototal !== null ? parseFloat(row.montototal) : null,
-            estatus: row.estatus,
-            costoEnvio: row.costoenvio !== null ? parseFloat(row.costoenvio) : null,
-          },
-        },
-      });
-    }
-
-    await solicitarCambio(
-      req,
-      "pedidos",
-      pedidoId,
-      "UPDATE",
-      { estatus: estatusNuevo },
-      { estatus: estatusAnterior }
-    );
-
-    return res.status(200).json({
-      success: true,
-      message: "Solicitud de cambio de estatus enviada a bitácora.",
-    });
-  } catch (error) {
-    if (error && error.code === "PENDING_CHANGE_EXISTS") {
-      return res.status(409).json({
-        success: false,
-        message:
-          "Ya existe una solicitud pendiente para este registro. Revisa la bitácora.",
-      });
-    }
-    console.error("Error updating order status:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Error al actualizar el estatus del pedido",
-      error: error.message,
-    });
-  }
-};
 
 const devolverStockPedido = async (client, pedidoId, usuarioId) => {
   const motivoVenta = `Venta Pedido #${pedidoId}`;
@@ -5725,6 +5313,7 @@ const procesarColorParaSkuVariante = (colorNombre) => {
  * POST /api/admin/productos
  */
 const crearProducto = async (req, res) => {
+  const { tenant_id } = req.tenant;
   const {
     nombre,
     sku_maestro,
@@ -5984,8 +5573,8 @@ const crearProducto = async (req, res) => {
     const variantesInput = Array.isArray(variantesRaw) ? variantesRaw : [];
 
     const result = await client.query(
-      `INSERT INTO Productos (NombreProducto, sku_maestro, Descripcion, CategoriaID, ProveedorID_Default, Activo, reglaid)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
+      `INSERT INTO Productos (NombreProducto, sku_maestro, Descripcion, CategoriaID, ProveedorID_Default, Activo, reglaid, tenant_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
        RETURNING ProductoID, NombreProducto, sku_maestro, Descripcion, CategoriaID, ProveedorID_Default AS ProveedorID, Activo, reglaid`,
       [
         nombre,
@@ -5995,6 +5584,7 @@ const crearProducto = async (req, res) => {
         proveedorId,
         activoFinal,
         reglaId,
+        tenant_id,
       ]
     );
 
