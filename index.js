@@ -102,17 +102,57 @@ if (process.env.NODE_ENV !== 'production') {
 configurePassport(passport);
 app.use(passport.initialize());
 
+// ============================================================================
+// SECCIÓN CRÍTICA: RUTAS DE EXCEPCIÓN (ANTES DEL TENANT GUARD)
+// ============================================================================
+
+// Rutas de Developer (sin tenantGuard - acceso administrativo siempre disponible)
+app.use("/developer", developerRoutes);
+app.use("/api/developer", developerRoutes);
+
+// Ruta de servicio suspendido (sin tenantGuard - CRÍTICO para evitar bucle infinito)
+app.get("/suspended", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "suspended.html"));
+});
+
+// ============================================================================
+// MIDDLEWARE DE SEGURIDAD: TENANT GUARD
+// ============================================================================
+// IMPORTANTE: Este middleware se ejecuta ANTES de:
+// - Archivos estáticos (login.html, registro.html, etc.)
+// - Rutas de API (/api/auth, /api/productos, etc.)
+// - Cualquier otra ruta pública
+//
+// El middleware tiene lógica interna para permitir:
+// - /suspended (página de bloqueo)
+// - /developer (panel administrativo)
+// - /css, /js, /images, /assets (recursos estáticos)
+// ============================================================================
+
+app.use(tenantGuard);
+
+// ============================================================================
+// ARCHIVOS ESTÁTICOS (PROTEGIDOS POR TENANT GUARD)
+// ============================================================================
+
 // Servir archivos estáticos del frontend
 app.use(express.static(path.join(__dirname, "public")));
 
 // Servir iconos (favicon y otros) desde la carpeta /icon
 app.use("/icon", express.static(path.join(__dirname, "icon")));
 
-// Middleware de logging simple
+// ============================================================================
+// MIDDLEWARE DE LOGGING
+// ============================================================================
+
 app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
   next();
 });
+
+// ============================================================================
+// ENDPOINTS DE UTILIDAD
+// ============================================================================
 
 // Endpoint de prueba
 app.get("/api", (req, res) => {
@@ -142,19 +182,10 @@ app.get("/api/health", async (req, res) => {
   }
 });
 
-// Rutas de Developer (sin tenantGuard)
-app.use("/developer", developerRoutes);
-app.use("/api/developer", developerRoutes);
+// ============================================================================
+// RUTAS DE LA APLICACIÓN (PROTEGIDAS POR TENANT GUARD)
+// ============================================================================
 
-// Ruta de servicio suspendido (sin tenantGuard - CRÍTICO para evitar bucle infinito)
-app.get("/suspended", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "suspended.html"));
-});
-
-// Aplicar tenantGuard a todas las rutas públicas
-app.use(tenantGuard);
-
-// Rutas de la API
 app.use("/api", authRoutes);
 app.use("/api", productosRoutes);
 app.use("/api", carritoRoutes);
