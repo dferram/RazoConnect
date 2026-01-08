@@ -135,6 +135,9 @@ app.use(tenantGuard);
 // ARCHIVOS ESTÁTICOS (PROTEGIDOS POR TENANT GUARD)
 // ============================================================================
 
+// Servir archivos CSS de Fashion explícitamente (para desarrollo en localhost)
+app.use('/css', express.static(path.join(__dirname, 'tenants_views', 'fashion', 'css')));
+
 // Middleware dinámico de archivos estáticos basado en tenant
 app.use((req, res, next) => {
   // Si no hay tenant (localhost/desarrollo), usar razo por defecto

@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Crear Orden de Compra - Admin Fashion Box</title>
-    <link rel="icon" type="image/png" href="/icon/Logo_Razo.png" />
+    <link rel="icon" type="image/png" href="/icon/Logo_Fashion.png" />
 
     <!-- SWEETALERT2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -18,14 +18,14 @@
     <!-- SISTEMA DE RENOVACIÓN DE TOKENS -->
     <script src="js/token-refresh.js"></script>
 
-    <link rel="stylesheet" href="css/styles.css" />
-    <link rel="stylesheet" href="css/fashion-theme.css" />
-    <link rel="stylesheet" href="css/admin.css" />
+    <link rel="stylesheet" href="css/styles-fashion.css" />
+    <link rel="stylesheet" href="css/fashion-theme-fashion.css" />
+    <link rel="stylesheet" href="css/admin-fashion.css" />
     <link
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css"
     />
-      <link rel="stylesheet" href="css/mobile-responsive.css" />
+      <link rel="stylesheet" href="css/mobile-responsive-fashion.css" />
   </head>
   <body data-page-title="Nueva orden de compra">
     <div class="admin-layout">
@@ -1162,7 +1162,7 @@
 
           // Cargar e insertar logo (dimensiones corregidas para mantener proporción)
           try {
-            const logoResponse = await fetch('/icon/Logo_Razo.png');
+            const logoResponse = await fetch('/icon/Logo_Fashion.png');
             const logoBlob = await logoResponse.blob();
             const logoBuffer = await logoBlob.arrayBuffer();
             const imageId = workbook.addImage({
