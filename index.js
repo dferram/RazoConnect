@@ -145,9 +145,9 @@ app.get("/api/health", async (req, res) => {
 app.use("/developer", developerRoutes);
 app.use("/api/developer", developerRoutes);
 
-// Ruta de servicio pausado (sin tenantGuard)
-app.get("/servicio-pausado", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "servicio-pausado.html"));
+// Ruta de servicio suspendido (sin tenantGuard - CRÍTICO para evitar bucle infinito)
+app.get("/suspended", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "suspended.html"));
 });
 
 // Aplicar tenantGuard a todas las rutas públicas

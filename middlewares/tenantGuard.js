@@ -1,32 +1,29 @@
 const db = require('../db');
 
-const EXCLUDED_PATHS = [
+const WHITELISTED_PATHS = [
   '/developer',
-  '/servicio-pausado',
-  '/api/',
+  '/api/developer',
+  '/auth/developer',
+  '/suspended',
+  '/suspended.html',
   '/css/',
   '/js/',
+  '/images/',
+  '/assets/',
   '/uploads/',
   '/components/',
   '/icon/',
-  '/favicon.ico',
-  '/login.html',
-  '/registro.html',
-  '/admin-login.html'
+  '/favicon.ico'
 ];
 
 async function tenantGuard(req, res, next) {
   const path = req.path;
 
-  // PRIORIDAD 1: Excluir rutas de developer completamente (independiente de tenants)
-  if (path.startsWith('/developer') || 
-      path.startsWith('/api/developer') || 
-      path.startsWith('/auth/developer')) {
+  if (WHITELISTED_PATHS.some(whitelisted => path.startsWith(whitelisted))) {
     return next();
   }
 
-  // PRIORIDAD 2: Excluir otras rutas estáticas y de API
-  if (EXCLUDED_PATHS.some(excluded => path.startsWith(excluded))) {
+  if (path === '/suspended' || path === '/suspended.html') {
     return next();
   }
 
@@ -40,14 +37,20 @@ async function tenantGuard(req, res, next) {
 
     if (result.rows.length === 0) {
       console.warn(`⚠️  Tenant no encontrado para dominio: ${hostname}`);
-      return res.redirect('/servicio-pausado');
+      if (path !== '/suspended') {
+        return res.redirect('/suspended');
+      }
+      return next();
     }
 
     const tenant = result.rows[0];
 
     if (tenant.is_active === false) {
-      console.warn(`🚫 Servicio bloqueado para tenant: ${tenant.nombre_cliente} (${hostname})`);
-      return res.redirect('/servicio-pausado');
+      console.warn(`🚫 Servicio suspendido para tenant: ${tenant.nombre_cliente} (${hostname})`);
+      if (path !== '/suspended') {
+        return res.redirect('/suspended');
+      }
+      return next();
     }
 
     req.tenant = tenant;
