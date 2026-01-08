@@ -9,7 +9,7 @@
       const tokenCliente = getTokenCliente();
       const hasCreditAccess = await verificarCreditoCliente(tokenCliente);
 
-      const res = await fetch("/components/header-cliente.html", {
+      const res = await fetch("components/header-cliente.html", {
         headers: { "Content-Type": "text/html; charset=utf-8" },
       });
       if (!res.ok) {

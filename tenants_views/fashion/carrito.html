@@ -1741,7 +1741,7 @@
             icon: "error",
             title,
             text: message,
-            confirmButtonColor: "#F97316",
+            confirmButtonColor: "#1B5E20",
           });
         } else {
           showToast(message, "error");
@@ -2273,12 +2273,12 @@
                 await Swal.fire({
                   icon: "warning",
                   title: "Método de pago no disponible",
-                  html: "<p>Estamos actualizando nuestra plataforma de pagos.</p><p><strong>Por ahora, selecciona otro método de pago:</strong></p><ul style='text-align: left; margin-top: 1rem;'><li>💳 Crédito Razo</li><li>🏦 Transferencia bancaria</li></ul>",
+                  html: "<p>Estamos actualizando nuestra plataforma de pagos.</p><p><strong>Por ahora, selecciona otro método de pago:</strong></p><ul style='text-align: left; margin-top: 1rem;'><li>💳 Crédito Fashion Box</li><li>🏦 Transferencia bancaria</li></ul>",
                   confirmButtonText: "Entendido",
-                  confirmButtonColor: "#F97316",
+                  confirmButtonColor: "#1B5E20",
                 });
               } else {
-                alert("Mercado Pago está temporalmente deshabilitado. Por favor, utiliza Crédito Razo o transferencia bancaria.");
+                alert("Mercado Pago está temporalmente deshabilitado. Por favor, utiliza Crédito Fashion Box o transferencia bancaria.");
               }
               // Cambiar automáticamente a Crédito si está disponible, sino a Transferencia
               if (creditoDisponible && creditSummary) {
@@ -2309,9 +2309,9 @@
                   Swal.fire({
                     icon: "warning",
                     title: "Método de pago no disponible",
-                    html: "<p>Estamos actualizando nuestra plataforma de pagos.</p><p><strong>Por ahora, selecciona otro método de pago:</strong></p><ul style='text-align: left; margin-top: 1rem;'><li>💳 Crédito Razo</li><li>🏦 Transferencia bancaria</li></ul>",
+                    html: "<p>Estamos actualizando nuestra plataforma de pagos.</p><p><strong>Por ahora, selecciona otro método de pago:</strong></p><ul style='text-align: left; margin-top: 1rem;'><li>💳 Crédito Fashion Box</li><li>🏦 Transferencia bancaria</li></ul>",
                     confirmButtonText: "Entendido",
-                    confirmButtonColor: "#F97316",
+                    confirmButtonColor: "#1B5E20",
                   });
                 }
                 return;
@@ -2341,7 +2341,7 @@
           showCancelButton: true,
           confirmButtonText: "Sí, continuar",
           cancelButtonText: "No, cancelar",
-          confirmButtonColor: "#F97316",
+          confirmButtonColor: "#1B5E20",
         });
 
         return modal.isConfirmed;

@@ -239,6 +239,47 @@
 }
 
 /* ============================================
+   SECCIONES CON TEXTO BLANCO
+   ============================================ */
+
+.section-title,
+.section-subtitle,
+.flash-title,
+.flash-subtitle,
+.hero-title,
+.hero-description,
+.hero-eyebrow,
+.countdown-event-title,
+.countdown-event-subtitle,
+h1, h2, h3, h4, h5, h6,
+p {
+  color: white !important;
+}
+
+/* Ensure body text is also white on dark sections */
+body {
+  color: #333333;
+}
+
+.welcome-banner,
+.countdown-widget,
+.hero-slider,
+.categories-section,
+.flash-sales-section,
+.new-arrivals-section {
+  color: white !important;
+}
+
+.welcome-banner *,
+.countdown-widget *,
+.hero-slider *,
+.categories-section *,
+.flash-sales-section *,
+.new-arrivals-section * {
+  color: white !important;
+}
+
+/* ============================================
    CATEGORÍAS CON BORDES DEL TEMA - DARK
    ============================================ */
 
@@ -246,6 +287,11 @@
   border: 3px solid #1B5E20;
   background: #1a1a1a;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.category-card .category-name,
+.category-card h3 {
+  color: white !important;
 }
 
 .categories-grid .category-card:hover {

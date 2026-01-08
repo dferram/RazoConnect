@@ -6,7 +6,7 @@
     if (!container) return;
 
     try {
-      const res = await fetch("/components/header-public.html", {
+      const res = await fetch("components/header-public.html", {
         headers: { "Content-Type": "text/html; charset=utf-8" },
       });
       if (!res.ok) {

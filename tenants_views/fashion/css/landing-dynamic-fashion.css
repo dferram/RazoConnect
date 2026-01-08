@@ -34,14 +34,14 @@
   z-index: 1;
 }
 
-/* Overlay con gradiente del tema */
+/* Overlay con gradiente oscuro cyber-romance (Negro a Magenta) */
 .hero-overlay {
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: var(--theme-gradient-hero);
+  background: linear-gradient(135deg, #000000 0%, #E94B8A 100%);
   opacity: 0.92;
   z-index: 2;
 }
@@ -55,18 +55,14 @@
   max-width: 900px;
   animation: heroFadeIn 1s ease-out;
 
-  /* Fondo adaptativo con color del tema */
-  background: linear-gradient(
-    135deg,
-    rgba(var(--theme-primary-rgb), 0.85) 0%,
-    rgba(var(--theme-secondary-rgb), 0.85) 100%
-  );
+  /* Glassmorphism - Negro con transparencia y efecto cristal esmerilado */
+  background: rgba(0, 0, 0, 0.6);
   border-radius: 2rem;
-  -webkit-backdrop-filter: blur(20px);
-  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  border: 1px solid #E94B8A;
 }
 
 @keyframes heroFadeIn {
@@ -143,7 +139,7 @@
   margin-bottom: 3rem;
 }
 
-/* Botón Primario con efecto GLOW del tema */
+/* Botón Primario con efecto GLOW - Verde Oscuro Fashion */
 .btn-hero-primary {
   display: inline-block;
   padding: 1.25rem 3rem;
@@ -155,13 +151,13 @@
   position: relative;
   overflow: hidden;
 
-  /* Usa colores del tema */
-  background: var(--theme-accent);
-  color: var(--theme-primary);
+  /* Verde oscuro Fashion Box */
+  background: linear-gradient(135deg, #1B5E20, #0D3E10);
+  color: white;
 
-  /* Efecto GLOW con color de acento del tema */
-  box-shadow: 0 0 20px var(--theme-accent),
-    0 0 40px rgba(var(--theme-accent-rgb, 255, 255, 255), 0.5),
+  /* Efecto GLOW verde */
+  box-shadow: 0 0 20px rgba(27, 94, 32, 0.6),
+    0 0 40px rgba(27, 94, 32, 0.4),
     0 8px 20px rgba(0, 0, 0, 0.3);
 }
 
@@ -183,8 +179,9 @@
 
 .btn-hero-primary:hover {
   transform: translateY(-4px) scale(1.05);
-  box-shadow: 0 0 30px var(--theme-accent),
-    0 0 60px rgba(var(--theme-accent-rgb, 255, 255, 255), 0.7),
+  background: linear-gradient(135deg, #2E7D32, #1B5E20);
+  box-shadow: 0 0 30px rgba(27, 94, 32, 0.8),
+    0 0 60px rgba(27, 94, 32, 0.6),
     0 12px 30px rgba(0, 0, 0, 0.4);
 }
 

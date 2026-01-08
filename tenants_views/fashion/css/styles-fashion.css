@@ -192,12 +192,12 @@ h3 {
   align-items: center;
 }
 
-/* CAMBIO 5: Logo más grande */
+/* CAMBIO 5: Logo más grande - Fashion Box Green */
 .navbar-brand {
   font-family: "Poppins", sans-serif;
   font-size: 1.75rem;
   font-weight: 700;
-  color: #FFD700;
+  color: #1B5E20;
   text-decoration: none;
   display: flex;
   align-items: center;
@@ -225,9 +225,9 @@ h3 {
   list-style: none;
 }
 
-/* CAMBIO 1: Texto del menú en amarillo */
+/* CAMBIO 1: Texto del menú en verde Fashion Box */
 .navbar-link {
-  color: #FFD700;
+  color: #1B5E20;
   text-decoration: none;
   font-weight: 500;
   transition: color 0.3s;
@@ -885,17 +885,19 @@ h3 {
 .form-input {
   width: 100%;
   padding: 0.875rem 1rem;
-  border: 2px solid var(--fashion-gray-light);
+  border: 2px solid #e5e7eb;
   border-radius: 0.75rem;
   font-size: 1rem;
   font-family: "Inter", sans-serif;
   transition: border-color 0.3s, box-shadow 0.3s;
+  background: white;
+  color: #1f2937;
 }
 
 .form-input:focus {
   outline: none;
-  border-color: var(--fashion-green);
-  box-shadow: 0 0 0 3px rgba(27, 94, 32, 0.1);
+  border-color: #E94B8A;
+  box-shadow: 0 0 0 3px rgba(233, 75, 138, 0.1);
 }
 
 .form-input.error {
@@ -1771,7 +1773,7 @@ footer::after {
   gap: 0.5rem;
   padding: 0.4rem;
   border-radius: 999px;
-  background: rgba(26, 26, 26, 0.6);
+  background: #2B2B2B;
   border: 1px solid rgba(148, 163, 184, 0.3);
   -webkit-backdrop-filter: blur(12px);
   backdrop-filter: blur(12px);
