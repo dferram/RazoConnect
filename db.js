@@ -19,8 +19,9 @@ pool.on('connect', () => {
 });
 
 pool.on('error', (err) => {
-  console.error('❌ Error inesperado en el cliente de PostgreSQL:', err);
-  process.exit(-1);
+  console.error('❌ Error inesperado en el cliente de PostgreSQL:', err.message);
+  // NO matar el servidor - el pool manejará la reconexión automáticamente
+  // Solo logear el error para debugging
 });
 
 const testConnection = async () => {

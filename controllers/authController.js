@@ -122,6 +122,7 @@ const registroCliente = async (req, res) => {
       userId: nuevoCliente.clienteid,
       rol: "cliente",
       email: nuevoCliente.email || null,
+      tenant_id: tenant_id,
     });
 
     try {
@@ -255,37 +256,47 @@ const registroAgente = async (req, res) => {
  * POST /api/login
  */
 const login = async (req, res) => {
+  console.log('🚀 [LOGIN] Función login ejecutada');
+  console.log('🚀 [LOGIN] Body recibido:', { email: req.body.email, password: '***' });
   try {
     const { email, password } = req.body;
     const identifier = email; // Email puede ser correo o teléfono
 
-    // Validar datos de entrada
-    const validation = validateLogin({ email: identifier, password });
+    // Validar datos de entrada (el validador espera Email y Password con mayúscula)
+    const validation = validateLogin({ Email: identifier, Password: password });
+    console.log('🔐 [LOGIN DEBUG] Validación resultado:', validation);
     if (!validation.valid) {
+      console.log('❌ [LOGIN DEBUG] Validación falló:', validation.errors);
       return res.status(400).json({
         success: false,
         message: "Error de validación",
         errors: validation.errors,
       });
     }
+    console.log('✅ [LOGIN DEBUG] Validación exitosa, continuando...');
 
     // Obtener tenant_id del middleware
     const { tenant_id } = req.tenant;
+    console.log('🔐 [LOGIN DEBUG] Intentando login:', { identifier, tenant_id });
 
     // Buscar en la tabla de Clientes (por email O teléfono Y tenant_id)
     const clienteResult = await db.query(
       "SELECT clienteid, nombre, apellido, email, passwordhash, telefono FROM clientes WHERE (email = $1 OR telefono = $1) AND tenant_id = $2",
       [identifier, tenant_id]
     );
+    console.log('🔐 [LOGIN DEBUG] Clientes encontrados:', clienteResult.rows.length);
 
     if (clienteResult.rows.length > 0) {
       const cliente = clienteResult.rows[0];
 
       // Verificar contraseña
+      console.log('🔐 [LOGIN DEBUG] Comparando contraseñas para cliente:', cliente.clienteid);
+      console.log('🔐 [LOGIN DEBUG] Password hash en DB:', cliente.passwordhash ? 'Existe' : 'NULL');
       const passwordMatch = await bcrypt.compare(
         password,
         cliente.passwordhash
       );
+      console.log('🔐 [LOGIN DEBUG] Password match resultado:', passwordMatch);
 
       if (!passwordMatch) {
         return res.status(401).json({
@@ -299,6 +310,7 @@ const login = async (req, res) => {
         userId: cliente.clienteid,
         rol: "cliente",
         email: cliente.email || null,
+        tenant_id: tenant_id,
       });
 
       return res.status(200).json({
@@ -501,6 +513,7 @@ const refreshClienteToken = async (req, res) => {
       userId: clienteId,
       rol: "cliente",
       email: email || null,
+      tenant_id: tenant_id,
     });
 
     res.json({
@@ -1170,16 +1183,21 @@ const googleCallback = async (req, res) => {
       return res.redirect("/login.html?error=google_auth_failed");
     }
 
-    const { clienteId, nombre, apellido, email, avatarUrl } = req.user;
+    const { clienteId, nombre, apellido, email, avatarUrl, tenant_id } = req.user;
 
     if (!clienteId || !email) {
       return res.redirect("/login.html?error=google_auth_invalid_user");
+    }
+
+    if (!tenant_id) {
+      return res.redirect("/login.html?error=google_auth_no_tenant");
     }
 
     const token = generateToken({
       userId: clienteId,
       rol: "cliente",
       email,
+      tenant_id: tenant_id,
     });
 
     const userPayload = {

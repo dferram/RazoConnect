@@ -79,8 +79,9 @@ const configurePassport = (passport) => {
         clientID,
         clientSecret,
         callbackURL: "/api/auth/google/callback",
+        passReqToCallback: true
       },
-      async (accessToken, refreshToken, profile, done) => {
+      async (req, accessToken, refreshToken, profile, done) => {
         try {
           const googleId = profile.id;
           const email =
@@ -99,13 +100,18 @@ const configurePassport = (passport) => {
             return done(new Error("Perfil de Google sin id"), null);
           }
 
+          const tenant_id = req.tenant?.tenant_id;
+          if (!tenant_id) {
+            return done(new Error("Tenant no identificado en Google OAuth"), null);
+          }
+
           let cliente = null;
 
           let result = await db.query(
-            `SELECT ClienteID, Nombre, Apellido, Email, google_id, avatar_url
+            `SELECT ClienteID, Nombre, Apellido, Email, google_id, avatar_url, tenant_id
              FROM clientes
-             WHERE google_id = $1`,
-            [googleId]
+             WHERE google_id = $1 AND tenant_id = $2`,
+            [googleId, tenant_id]
           );
 
           if (result.rows.length > 0) {
@@ -113,17 +119,17 @@ const configurePassport = (passport) => {
 
             if (avatarUrl && avatarUrl !== cliente.avatar_url) {
               await db.query(
-                `UPDATE clientes SET avatar_url = $1 WHERE ClienteID = $2`,
-                [avatarUrl, cliente.clienteid]
+                `UPDATE clientes SET avatar_url = $1 WHERE ClienteID = $2 AND tenant_id = $3`,
+                [avatarUrl, cliente.clienteid, tenant_id]
               );
               cliente.avatar_url = avatarUrl;
             }
           } else if (email) {
             result = await db.query(
-              `SELECT ClienteID, Nombre, Apellido, Email, google_id, avatar_url
+              `SELECT ClienteID, Nombre, Apellido, Email, google_id, avatar_url, tenant_id
                FROM clientes
-               WHERE Email = $1`,
-              [email]
+               WHERE Email = $1 AND tenant_id = $2`,
+              [email, tenant_id]
             );
 
             if (result.rows.length > 0) {
@@ -133,8 +139,8 @@ const configurePassport = (passport) => {
                 `UPDATE clientes
                  SET google_id = $1,
                      avatar_url = COALESCE($2, avatar_url)
-                 WHERE ClienteID = $3`,
-                [googleId, avatarUrl || null, cliente.clienteid]
+                 WHERE ClienteID = $3 AND tenant_id = $4`,
+                [googleId, avatarUrl || null, cliente.clienteid, tenant_id]
               );
 
               cliente.google_id = googleId;
@@ -150,10 +156,10 @@ const configurePassport = (passport) => {
                 "";
 
               const insert = await db.query(
-                `INSERT INTO clientes (Nombre, Apellido, Email, PasswordHash, google_id, avatar_url)
-                 VALUES ($1, $2, $3, $4, $5, $6)
-                 RETURNING ClienteID, Nombre, Apellido, Email, google_id, avatar_url`,
-                [nombre, apellido, email, null, googleId, avatarUrl || null]
+                `INSERT INTO clientes (Nombre, Apellido, Email, PasswordHash, google_id, avatar_url, tenant_id)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7)
+                 RETURNING ClienteID, Nombre, Apellido, Email, google_id, avatar_url, tenant_id`,
+                [nombre, apellido, email, null, googleId, avatarUrl || null, tenant_id]
               );
 
               cliente = insert.rows[0];
@@ -171,6 +177,7 @@ const configurePassport = (passport) => {
             apellido: cliente.apellido,
             email: cliente.email,
             avatarUrl: cliente.avatar_url || avatarUrl || null,
+            tenant_id: cliente.tenant_id,
           };
 
           return done(null, payload);
