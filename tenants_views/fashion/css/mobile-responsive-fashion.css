@@ -346,15 +346,127 @@ html, body {
 
   /* ========== CART & PRODUCTS ========== */
   
-  /* Cart items - 2 columns (image + content) */
+  /* Cart items - Mobile optimized layout */
   .cart-item {
-    grid-template-columns: 80px 1fr !important;
+    display: flex !important;
+    flex-direction: column !important;
+    padding: 1rem !important;
+    gap: 0 !important;
+    position: relative;
+  }
+
+  .cart-item-image {
+    width: 100% !important;
+    max-width: 120px !important;
+    height: auto !important;
+    aspect-ratio: 1 / 1 !important;
+    object-fit: cover !important;
+    border-radius: 0.5rem !important;
+    margin: 0 auto 1rem auto !important;
+  }
+
+  .cart-item-info {
+    width: 100% !important;
+    padding: 0 !important;
+  }
+
+  .cart-item-title {
+    font-size: 1rem !important;
+    line-height: 1.4 !important;
+    margin-bottom: 0.75rem !important;
+    word-break: break-word !important;
+  }
+
+  .cart-item-details {
+    font-size: 0.875rem !important;
+    line-height: 1.6 !important;
+    margin-bottom: 0.75rem !important;
+    word-break: break-word !important;
+  }
+
+  /* Status badges container - Flexbox with wrap */
+  .cart-item-info > p:has(.badge),
+  .cart-item-badges {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 0.5rem !important;
+    margin: 0.75rem 0 !important;
+  }
+
+  /* Individual badges - ensure proper spacing */
+  .cart-item .badge {
+    font-size: 0.75rem !important;
+    padding: 0.35rem 0.65rem !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* Quantity controls - Better alignment */
+  .cart-item-info > div[style*="display: flex"] {
+    flex-wrap: wrap !important;
+    justify-content: space-between !important;
+    align-items: center !important;
     gap: 0.75rem !important;
+    margin-top: 1rem !important;
+  }
+
+  /* Quantity buttons group */
+  .cart-item-info > div > div[style*="background"] {
+    flex-shrink: 0 !important;
+  }
+
+  /* Price section - Better hierarchy */
+  .cart-item-price {
+    width: 100% !important;
+    margin-top: 1rem !important;
+    padding-top: 1rem !important;
+    border-top: 1px solid rgba(0, 0, 0, 0.1) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.5rem !important;
+  }
+
+  .cart-item-subtotal {
+    font-size: 1.5rem !important;
+    font-weight: 700 !important;
+    color: var(--razo-orange, #F97316) !important;
+    margin: 0 !important;
+  }
+
+  /* Delete button - repositioned for mobile */
+  .cart-item > button[onclick*="eliminarProducto"] {
+    position: absolute !important;
+    top: 0.75rem !important;
+    right: 0.75rem !important;
+    width: 32px !important;
+    height: 32px !important;
+    font-size: 1rem !important;
+    z-index: 10 !important;
+  }
+
+  /* Change variant button */
+  .cart-item-change-variant {
+    font-size: 0.8rem !important;
+    padding: 0.25rem 0.5rem !important;
+    display: inline-block !important;
   }
 
   .cart-item-actions {
     grid-column: 1 / -1;
     margin-top: 0.5rem;
+  }
+
+  /* Cart summary - Stack on mobile */
+  #cartContent > div[style*="grid-template-columns"] {
+    display: flex !important;
+    flex-direction: column-reverse !important;
+    gap: 1.5rem !important;
+  }
+
+  #cartContent .summary {
+    position: static !important;
+    width: 100% !important;
+    margin-bottom: 1.5rem !important;
   }
 
   /* ========== PRODUCT GRID - NIKE STYLE 2 COLUMNS ========== */
