@@ -3125,8 +3125,8 @@ const loginAdmin = async (req, res) => {
       cuenta = {
         id: admin.adminid,
         email: admin.email,
-        nombre: admin.nombre,
-        apellido: admin.apellido || "",
+        nombre: (admin.nombre || "").trim(),
+        apellido: (admin.apellido || "").trim(),
         rol: admin.rol,
         passwordHash: admin.passwordhash,
         adminSource: "admin",
@@ -3207,8 +3207,8 @@ const loginAdmin = async (req, res) => {
           cuenta = {
             id: agente.agenteid,
             email: agente.email,
-            nombre: agente.nombre,
-            apellido: agente.apellido || "",
+            nombre: (agente.nombre || "").trim(),
+            apellido: (agente.apellido || "").trim(),
             rol: adminRol,
             passwordHash: agente.passwordhash,
             adminSource: "agent",
@@ -3261,8 +3261,9 @@ const loginAdmin = async (req, res) => {
     );
 
     const nombreCompleto =
-      [cuenta.nombre, cuenta.apellido].filter(Boolean).join(" ").trim() ||
-      cuenta.nombre;
+      [cuenta.nombre?.trim(), cuenta.apellido?.trim()].filter(Boolean).join(" ").trim() ||
+      cuenta.nombre?.trim() ||
+      "Admin";
 
     // ============================================================================
     // CRÍTICO: PERSISTIR SESIÓN PARA EVITAR EXPULSIÓN INMEDIATA
@@ -4812,6 +4813,7 @@ const verifyAdmin = async (req, res) => {
   try {
     // El middleware ya validó el token y agregó req.user
     const adminId = req.user.id;
+    const { tenant_id } = req.tenant;
 
     let adminInfo = null;
 
@@ -4825,8 +4827,8 @@ const verifyAdmin = async (req, res) => {
           CodigoAgente,
           AdminRol
         FROM AgentesDeVentas
-        WHERE AgenteID = $1 AND Activo = TRUE`,
-        [adminId]
+        WHERE AgenteID = $1 AND tenant_id = $2 AND Activo = TRUE`,
+        [adminId, tenant_id]
       );
 
       if (agentResult.rows.length === 0) {
@@ -4838,8 +4840,8 @@ const verifyAdmin = async (req, res) => {
 
       const agente = agentResult.rows[0];
       const nombreCompleto =
-        [agente.nombre, agente.apellido].filter(Boolean).join(" ").trim() ||
-        agente.nombre;
+        [(agente.nombre || "").trim(), (agente.apellido || "").trim()].filter(Boolean).join(" ").trim() ||
+        "Admin";
 
       adminInfo = {
         adminId: agente.agenteid,
@@ -4851,8 +4853,8 @@ const verifyAdmin = async (req, res) => {
       };
     } else {
       const result = await db.query(
-        "SELECT AdminID, Nombre, Apellido, Email, Rol FROM Administradores WHERE AdminID = $1 AND Activo = TRUE",
-        [adminId]
+        "SELECT AdminID, Nombre, Apellido, Email, Rol FROM Administradores WHERE AdminID = $1 AND tenant_id = $2 AND Activo = TRUE",
+        [adminId, tenant_id]
       );
 
       if (result.rows.length === 0) {
@@ -4864,8 +4866,8 @@ const verifyAdmin = async (req, res) => {
 
       const admin = result.rows[0];
       const nombreCompleto =
-        [admin.nombre, admin.apellido].filter(Boolean).join(" ").trim() ||
-        admin.nombre;
+        [(admin.nombre || "").trim(), (admin.apellido || "").trim()].filter(Boolean).join(" ").trim() ||
+        "Admin";
 
       adminInfo = {
         adminId: admin.adminid,

@@ -46,7 +46,7 @@
     return `${first}${second || ""}`.toUpperCase();
   }
 
-  function initializeHeader() {
+  async function initializeHeader() {
     // 1. Cargar Datos del Usuario (LocalStorage)
     let adminData = null;
     try {
@@ -59,6 +59,37 @@
     if (!adminData) {
       window.location.href = "/login.html";
       return;
+    }
+
+    // 2. Verificar y actualizar datos del usuario desde el servidor
+    const token = localStorage.getItem("razoconnect_admin_token");
+    if (token) {
+      try {
+        const response = await fetch("/api/admin/verify", {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.data.admin) {
+            // Actualizar localStorage con datos frescos
+            adminData = {
+              ...adminData,
+              nombre: data.data.admin.nombre,
+              rol: data.data.admin.rol,
+              origen: data.data.admin.origen,
+            };
+            localStorage.setItem("razoconnect_admin", JSON.stringify(adminData));
+          }
+        }
+      } catch (error) {
+        console.error("Error al verificar admin:", error);
+        // Continuar con los datos del localStorage si falla la verificación
+      }
     }
 
     const nombre = (adminData.nombre || "Admin").toString().trim();

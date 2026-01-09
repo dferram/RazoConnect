@@ -53,20 +53,7 @@ router.get(
   "/verify",
   authenticate,
   authorizeAdmin,
-  (req, res) => {
-    // Si llegamos aquí, el token es válido y el usuario es admin
-    res.json({
-      success: true,
-      data: {
-        admin: {
-          adminId: req.user.id || req.user.userId,
-          nombre: req.user.nombre || "Admin",
-          email: req.user.email,
-          rol: req.user.rol,
-        },
-      },
-    });
-  }
+  adminController.verifyAdmin
 );
 
 /**
