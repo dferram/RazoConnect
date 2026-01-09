@@ -36,17 +36,6 @@ router.post("/login", authController.login);
  */
 router.get("/clientes/verify", authenticate, authController.verifyCliente);
 
-/**
- * @route   POST /api/clientes/refresh-token
- * @desc    Renovar token de cliente
- * @access  Private (requiere token de cliente)
- */
-router.post(
-  "/clientes/refresh-token",
-  authenticate,
-  authController.refreshClienteToken
-);
-
 router.post("/auth/forgot-password", authController.forgotPassword);
 router.post("/auth/reset-password", authController.resetPassword);
 

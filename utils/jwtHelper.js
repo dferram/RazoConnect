@@ -15,11 +15,12 @@ const resolveJwtSecret = () => {
 /**
  * Genera un token JWT
  * @param {Object} payload - Datos a incluir en el token (userId, rol)
+ * @param {String} expiresIn - Duración del token (opcional, por defecto 30d)
  * @returns {String} Token JWT
  */
-const generateToken = (payload) => {
+const generateToken = (payload, expiresIn = null) => {
   return jwt.sign(payload, resolveJwtSecret(), {
-    expiresIn: process.env.JWT_EXPIRES_IN || "30d",
+    expiresIn: expiresIn || process.env.JWT_EXPIRES_IN || "30d",
   });
 };
 

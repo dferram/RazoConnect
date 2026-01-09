@@ -10,6 +10,7 @@ const {
   validateClienteRegistro,
   validateAgenteRegistro,
   validateLogin,
+  cleanPhone,
 } = require("../utils/validator");
 const { generateCodigoAgente } = require("../utils/agentCode");
 const { registrarLog } = require("../services/loggerService");
@@ -117,13 +118,13 @@ const registroCliente = async (req, res) => {
 
     const nuevoCliente = result.rows[0];
 
-    // Generar token JWT (defensive: ensure email is never undefined)
+    // Generar token JWT con duración de 1 año para sesión persistente
     const token = generateToken({
       userId: nuevoCliente.clienteid,
       rol: "cliente",
       email: nuevoCliente.email || null,
       tenant_id: tenant_id,
-    });
+    }, '365d');
 
     try {
       await crearNotificacion(
@@ -187,13 +188,18 @@ const registroCliente = async (req, res) => {
  */
 const registroAgente = async (req, res) => {
   try {
-    const { nombre, apellido, email, password } = req.body;
+    let { nombre, apellido, email, telefono, password } = req.body;
+
+    // Normalizar valores vacíos a null
+    email = email && email.trim() !== "" ? email.trim() : null;
+    telefono = telefono && telefono.trim() !== "" ? cleanPhone(telefono.trim()) : null;
 
     // Validar datos de entrada
     const validation = validateAgenteRegistro({
       nombre,
       apellido,
       email,
+      telefono,
       password,
     });
     if (!validation.valid) {
@@ -204,18 +210,37 @@ const registroAgente = async (req, res) => {
       });
     }
 
-    // Verificar unicidad global del email (no debe existir en ninguna tabla)
-    const emailCheck = await checkEmailGlobalUniqueness(email, "agentesdeventas");
+    // Obtener tenant_id del middleware
+    const { tenant_id } = req.tenant;
 
-    if (emailCheck.exists) {
-      const errorMessage = getContextualErrorMessage(
-        emailCheck.table,
-        "agentesdeventas"
+    // Verificar unicidad del email dentro del tenant (solo si se proporcionó)
+    if (email) {
+      const emailCheck = await db.query(
+        "SELECT agenteid FROM agentesdeventas WHERE email = $1 AND tenant_id = $2",
+        [email, tenant_id]
       );
-      return res.status(400).json({
-        success: false,
-        message: errorMessage,
-      });
+
+      if (emailCheck.rows.length > 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Este correo electrónico ya está registrado.",
+        });
+      }
+    }
+
+    // Verificar unicidad del teléfono dentro del tenant (solo si se proporcionó)
+    if (telefono) {
+      const telefonoCheck = await db.query(
+        "SELECT agenteid FROM agentesdeventas WHERE telefono = $1 AND tenant_id = $2",
+        [telefono, tenant_id]
+      );
+
+      if (telefonoCheck.rows.length > 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Este número de teléfono ya está registrado en el sistema.",
+        });
+      }
     }
 
     // Hashear la contraseña
@@ -224,12 +249,12 @@ const registroAgente = async (req, res) => {
 
     const codigoAgente = await generateCodigoAgente(db);
 
-    // Insertar nuevo agente
+    // Insertar nuevo agente (con valores null si no se proporcionaron)
     const result = await db.query(
-      `INSERT INTO agentesdeventas (nombre, apellido, email, passwordhash, codigoagente, activo)
-       VALUES ($1, $2, $3, $4, $5, TRUE)
-       RETURNING agenteid, nombre, apellido, email, codigoagente, activo`,
-      [nombre, apellido, email, passwordHash, codigoAgente]
+      `INSERT INTO agentesdeventas (nombre, apellido, email, telefono, passwordhash, codigoagente, activo, tenant_id)
+       VALUES ($1, $2, $3, $4, $5, $6, TRUE, $7)
+       RETURNING agenteid, nombre, apellido, email, telefono, codigoagente, activo`,
+      [nombre, apellido, email, telefono, passwordHash, codigoAgente, tenant_id]
     );
 
     const nuevoAgente = result.rows[0];
@@ -239,8 +264,10 @@ const registroAgente = async (req, res) => {
       userId: nuevoAgente.agenteid,
       rol: "agente",
       roles: ["agente"],
-      email: nuevoAgente.email,
+      email: nuevoAgente.email || null,
+      telefono: nuevoAgente.telefono || null,
       codigoAgente: nuevoAgente.codigoagente,
+      tenant_id: tenant_id,
     });
 
     res.status(201).json({
@@ -252,6 +279,7 @@ const registroAgente = async (req, res) => {
           nombre: nuevoAgente.nombre,
           apellido: nuevoAgente.apellido,
           email: nuevoAgente.email,
+          telefono: nuevoAgente.telefono,
           codigoAgente: nuevoAgente.codigoagente,
           activo: nuevoAgente.activo,
         },
@@ -322,13 +350,13 @@ const login = async (req, res) => {
         });
       }
 
-      // Generar token JWT (defensive: ensure email is never undefined)
+      // Generar token JWT con duración de 1 año para sesión persistente
       const token = generateToken({
         userId: cliente.clienteid,
         rol: "cliente",
         email: cliente.email || null,
         tenant_id: tenant_id,
-      });
+      }, '365d');
 
       return res.status(200).json({
         success: true,
@@ -347,9 +375,9 @@ const login = async (req, res) => {
       });
     }
 
-    // Si no es cliente, buscar en la tabla de AgentesDeVentas (solo por email)
+    // Si no es cliente, buscar en la tabla de AgentesDeVentas (por email O teléfono)
     const agenteResult = await db.query(
-      "SELECT agenteid, nombre, apellido, email, passwordhash, codigoagente, activo FROM agentesdeventas WHERE email = $1 AND tenant_id = $2",
+      "SELECT agenteid, nombre, apellido, email, telefono, passwordhash, codigoagente, activo FROM agentesdeventas WHERE (email = $1 OR telefono = $1) AND tenant_id = $2",
       [identifier, tenant_id]
     );
 
@@ -379,8 +407,10 @@ const login = async (req, res) => {
         userId: agente.agenteid,
         rol: "agente",
         roles: ["agente"],
-        email: agente.email,
+        email: agente.email || null,
+        telefono: agente.telefono || null,
         codigoAgente: agente.codigoagente,
+        tenant_id: tenant_id,
       });
 
       return res.status(200).json({
@@ -393,6 +423,7 @@ const login = async (req, res) => {
             nombre: agente.nombre,
             apellido: agente.apellido,
             email: agente.email,
+            telefono: agente.telefono,
             codigoAgente: agente.codigoagente,
             activo: agente.activo,
           },
@@ -429,7 +460,7 @@ const verifyCliente = async (req, res) => {
     // Si es agente, buscar en la tabla de agentes
     if (userRol === "agente") {
       const agenteResult = await db.query(
-        `SELECT agenteid, nombre, apellido, email, codigoagente, activo
+        `SELECT agenteid, nombre, apellido, email, telefono, codigoagente, activo
          FROM agentesdeventas
          WHERE agenteid = $1 AND activo = TRUE`,
         [userId]
@@ -453,6 +484,7 @@ const verifyCliente = async (req, res) => {
             nombre: agente.nombre,
             apellido: agente.apellido,
             email: agente.email,
+            telefono: agente.telefono,
             codigoAgente: agente.codigoagente,
             activo: agente.activo,
           },
@@ -502,9 +534,13 @@ const verifyCliente = async (req, res) => {
 };
 
 /**
+ * DEPRECATED: Token refresh disabled for 1-year persistent sessions
+ * Clients now receive tokens valid for 365 days without refresh mechanism
+ * 
  * Renovar token de cliente
  * POST /api/clientes/refresh-token
  */
+/*
 const refreshClienteToken = async (req, res) => {
   try {
     // El middleware authenticate ya verificó el token actual
@@ -560,6 +596,7 @@ const refreshClienteToken = async (req, res) => {
     });
   }
 };
+*/
 
 const forgotPassword = async (req, res) => {
   const { email } = req.body;
@@ -581,11 +618,11 @@ const forgotPassword = async (req, res) => {
       [email, tenant_id]
     );
 
-    // Buscar por email en agentes (agentes no tienen columna telefono)
+    // Buscar por email o teléfono en agentes
     const agenteResult =
       clienteResult.rows.length === 0
         ? await db.query(
-            "SELECT agenteid, nombre, email FROM agentesdeventas WHERE email = $1 AND tenant_id = $2",
+            "SELECT agenteid, nombre, email, telefono FROM agentesdeventas WHERE (email = $1 OR telefono = $1) AND tenant_id = $2",
             [email, tenant_id]
           )
         : { rows: [] };
@@ -1223,7 +1260,7 @@ const googleCallback = async (req, res) => {
       rol: "cliente",
       email,
       tenant_id: tenant_id,
-    });
+    }, '365d');
 
     const userPayload = {
       nombre: nombre || "",
@@ -1377,7 +1414,6 @@ module.exports = {
   crearAdmin,
   login,
   verifyCliente,
-  refreshClienteToken,
   forgotPassword,
   resetPassword,
   getCurrentUser,

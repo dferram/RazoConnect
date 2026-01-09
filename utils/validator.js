@@ -27,13 +27,24 @@ const isNotEmpty = (value) => {
 };
 
 /**
+ * Limpia un número de teléfono (quita espacios, guiones, paréntesis)
+ * @param {String} phone
+ * @returns {String}
+ */
+const cleanPhone = (phone) => {
+  if (!phone || typeof phone !== 'string') return '';
+  return phone.replace(/[\s\-\(\)]/g, '');
+};
+
+/**
  * Valida formato de teléfono (10 dígitos)
  * @param {String} phone
  * @returns {Boolean}
  */
 const isValidPhone = (phone) => {
+  const cleaned = cleanPhone(phone);
   const phoneRegex = /^\d{10}$/;
-  return phoneRegex.test(phone);
+  return phoneRegex.test(cleaned);
 };
 
 /**
@@ -77,25 +88,39 @@ const validateClienteRegistro = (data) => {
 
 /**
  * Valida los datos de registro de agente
- * @param {Object} data
+ * @param {Object} data - { nombre, apellido, email, telefono, password }
  * @returns {Object} { valid: Boolean, errors: Array }
  */
 const validateAgenteRegistro = (data) => {
   const errors = [];
 
-  if (!isNotEmpty(data.Nombre)) {
+  if (!isNotEmpty(data.nombre)) {
     errors.push("El nombre es requerido");
   }
 
-  if (!isNotEmpty(data.Apellido)) {
+  if (!isNotEmpty(data.apellido)) {
     errors.push("El apellido es requerido");
   }
 
-  if (!isValidEmail(data.Email)) {
-    errors.push("El email no es válido");
+  // Al menos uno de los dos (email o telefono) debe estar presente
+  const hasEmail = data.email && data.email.trim() !== '';
+  const hasTelefono = data.telefono && data.telefono.trim() !== '';
+
+  if (!hasEmail && !hasTelefono) {
+    errors.push("Debes proporcionar al menos un medio de contacto (correo o teléfono)");
   }
 
-  if (!isValidPassword(data.Password)) {
+  // Validar email si se proporcionó
+  if (hasEmail && !isValidEmail(data.email)) {
+    errors.push("El formato del email no es válido");
+  }
+
+  // Validar teléfono si se proporcionó
+  if (hasTelefono && !isValidPhone(data.telefono)) {
+    errors.push("El teléfono debe contener exactamente 10 dígitos numéricos");
+  }
+
+  if (!isValidPassword(data.password)) {
     errors.push("La contraseña debe tener al menos 6 caracteres");
   }
 
@@ -135,6 +160,7 @@ module.exports = {
   isNotEmpty,
   isValidPhone,
   isValidEmailOrPhone,
+  cleanPhone,
   validateClienteRegistro,
   validateAgenteRegistro,
   validateLogin,
