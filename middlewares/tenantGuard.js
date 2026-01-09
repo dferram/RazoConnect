@@ -1,5 +1,4 @@
 const db = require('../db');
-const { getTenantByDomain, extractRootDomain } = require('../config/domainMapper');
 
 const WHITELISTED_PATHS = [
   '/developer',
@@ -13,6 +12,20 @@ const WHITELISTED_PATHS = [
   '/favicon.ico'
 ];
 
+/**
+ * Normaliza el dominio removiendo 'www.' y convirtiendo a minúsculas
+ */
+function normalizeDomain(hostname) {
+  let normalized = hostname.toLowerCase().trim();
+  
+  // Remover www. si existe
+  if (normalized.startsWith('www.')) {
+    normalized = normalized.substring(4);
+  }
+  
+  return normalized;
+}
+
 async function tenantGuard(req, res, next) {
   const path = req.path;
 
@@ -24,13 +37,13 @@ async function tenantGuard(req, res, next) {
     let tenant;
     let detectionMethod;
 
-    // PRIORIDAD 1: FORCE_TENANT_ID (para desarrollo/testing)
+    // PRIORIDAD 1: FORCE_TENANT_ID (para desarrollo/testing con localhost)
     if (process.env.FORCE_TENANT_ID) {
       const forcedTenantId = parseInt(process.env.FORCE_TENANT_ID, 10);
       console.log(`🔧 FORCE_TENANT_ID detectado: ${forcedTenantId}`);
       
       const result = await db.query(
-        'SELECT tenant_id, nombre_cliente, is_active, tema FROM tenants WHERE tenant_id = $1',
+        'SELECT tenant_id, nombre_cliente, is_active, tema, dominio FROM tenants WHERE tenant_id = $1',
         [forcedTenantId]
       );
 
@@ -40,33 +53,45 @@ async function tenantGuard(req, res, next) {
       }
 
       tenant = result.rows[0];
-      tenant.dominio = 'localhost';
-      detectionMethod = 'FORCE_TENANT_ID';
+      detectionMethod = 'FORCE_TENANT_ID (desarrollo)';
     } 
-    // PRIORIDAD 2: Detección por dominio raíz (producción)
+    // PRIORIDAD 2: Detección por dominio (producción)
     else {
-      const hostname = req.hostname;
-      const rootDomain = extractRootDomain(hostname);
+      const hostname = req.hostname || req.headers.host?.split(':')[0];
       
-      console.log(`🔍 Hostname: ${hostname} | Root Domain: ${rootDomain}`);
+      console.log(`🔍 Hostname original: ${hostname}`);
       
       // SEGURIDAD: Redirigir desde URL de Azure a dominio principal
-      if (hostname.includes('azurewebsites.net')) {
+      if (hostname && hostname.includes('azurewebsites.net')) {
         console.warn(`⚠️  Acceso directo desde Azure detectado: ${hostname}`);
         return res.redirect(301, `https://razo.com.mx${req.originalUrl}`);
       }
       
-      tenant = await getTenantByDomain(rootDomain);
+      // Normalizar dominio (remover www., convertir a minúsculas)
+      const normalizedDomain = normalizeDomain(hostname);
+      console.log(`🔍 Dominio normalizado: ${normalizedDomain}`);
+      
+      // Buscar tenant en BD por dominio normalizado
+      const result = await db.query(
+        `SELECT tenant_id, nombre_cliente, is_active, tema, dominio 
+         FROM tenants 
+         WHERE LOWER(REPLACE(dominio, 'www.', '')) = $1 
+         AND dominio IS NOT NULL`,
+        [normalizedDomain]
+      );
 
-      if (!tenant) {
-        console.warn(`⚠️  Tenant no encontrado para dominio: ${hostname} (root: ${rootDomain})`);
+      if (result.rows.length === 0) {
+        console.warn(`⚠️  Tenant no encontrado para dominio: ${hostname} (normalizado: ${normalizedDomain})`);
+        console.warn(`⚠️  Verifica que el dominio esté registrado en la tabla tenants`);
+        
         if (path !== '/tienda-no-encontrada' && path !== '/tienda-no-encontrada.html') {
           return res.redirect('/tienda-no-encontrada.html');
         }
         return next();
       }
 
-      detectionMethod = `root domain: ${rootDomain}`;
+      tenant = result.rows[0];
+      detectionMethod = `dominio: ${normalizedDomain}`;
     }
 
     // Verificar si el tenant está activo
