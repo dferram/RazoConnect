@@ -49,6 +49,7 @@
     let currentSearch = "";
     let clientesDisponibles = [];
     let filtroDisponibles = "";
+    let selectedClientEmail = null;
 
     const debounce = (fn, delay = 350) => {
       let timer;
@@ -259,7 +260,7 @@
           const telefono = cliente.telefono || "—";
           const isSelected = cliente.email?.toLowerCase() === selectedEmail;
           return `
-            <tr data-email="${cliente.email}">
+            <tr data-email="${cliente.email}" class="cliente-row ${isSelected ? 'selected-row' : ''}" style="cursor: pointer;">
               <td class="table-radio">
                 <input
                   type="radio"
@@ -334,10 +335,7 @@
     }
 
     function getClienteSeleccionado() {
-      const seleccionado = document.querySelector(
-        'input[name="cliente-disponible"]:checked'
-      );
-      return seleccionado?.value?.trim().toLowerCase() || "";
+      return selectedClientEmail || "";
     }
 
     async function openModalVincular() {
@@ -357,6 +355,7 @@
       vincularForm?.reset();
       clientesDisponibles = [];
       filtroDisponibles = "";
+      selectedClientEmail = null;
       if (clientesDisponiblesBody) {
         clientesDisponiblesBody.innerHTML = `
           <tr class="table-empty-state-row">
@@ -373,7 +372,7 @@
 
       const email = getClienteSeleccionado();
       if (!email) {
-        showToast("Selecciona un cliente disponible", "warning");
+        showToast("Por favor selecciona un cliente primero", "warning");
         return;
       }
 
@@ -423,11 +422,24 @@
       filtrarClientesDisponibles("");
       clientesDisponiblesSearchInput.focus();
     });
-    clientesDisponiblesBody?.addEventListener("change", (event) => {
-      if (event.target.name === "cliente-disponible") {
-        // Rerender to ensure only one row visually selected if needed
-        filtrarClientesDisponibles(clientesDisponiblesSearchInput.value || "");
+    clientesDisponiblesBody?.addEventListener("click", (event) => {
+      const row = event.target.closest(".cliente-row");
+      if (!row) return;
+
+      const email = row.dataset.email;
+      if (!email) return;
+
+      selectedClientEmail = email.trim().toLowerCase();
+
+      const radioInput = row.querySelector('input[type="radio"]');
+      if (radioInput) {
+        radioInput.checked = true;
       }
+
+      document.querySelectorAll(".cliente-row").forEach((r) => {
+        r.classList.remove("selected-row");
+      });
+      row.classList.add("selected-row");
     });
     vincularForm?.addEventListener("submit", (event) => {
       event.preventDefault();
