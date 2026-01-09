@@ -493,12 +493,23 @@ const refreshClienteToken = async (req, res) => {
     // El middleware authenticate ya verificó el token actual
     const clienteId = req.user.userId;
     const email = req.user.email;
+    
+    // CRITICAL: Preserve tenant_id from ORIGINAL token, not from middleware
+    // This prevents session corruption during auto-refresh
+    const originalTenantId = req.user.tenant_id;
+    
+    if (!originalTenantId) {
+      console.error(`❌ CRITICAL: Token refresh attempted for user ${clienteId} without tenant_id in token`);
+      return res.status(401).json({
+        success: false,
+        message: "Token inválido: falta tenant_id",
+      });
+    }
 
     // Verificar que el cliente aún existe y está activo (filtrado por tenant)
-    const { tenant_id } = req.tenant;
     const result = await db.query(
-      `SELECT clienteid FROM clientes WHERE clienteid = $1 AND tenant_id = $2 AND activo = TRUE`,
-      [clienteId, tenant_id]
+      `SELECT clienteid, telefono FROM clientes WHERE clienteid = $1 AND tenant_id = $2 AND activo = TRUE`,
+      [clienteId, originalTenantId]
     );
 
     if (result.rows.length === 0) {
@@ -508,12 +519,13 @@ const refreshClienteToken = async (req, res) => {
       });
     }
 
-    // Generar un nuevo token con el mismo payload (defensive: ensure email is never undefined)
+    // Generar un nuevo token PRESERVANDO el tenant_id original
+    // DEFENSIVE: Ensure email and tenant_id are never undefined
     const newToken = generateToken({
       userId: clienteId,
       rol: "cliente",
       email: email || null,
-      tenant_id: tenant_id,
+      tenant_id: originalTenantId,
     });
 
     res.json({

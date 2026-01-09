@@ -32,8 +32,12 @@ const tenantSessionGuard = (req, res, next) => {
   const userTenantId = req.user.tenant_id;
 
   // If user token doesn't have tenant_id, allow (backward compatibility for old tokens)
+  // This should only happen during migration or for very old tokens
   if (!userTenantId) {
-    console.warn(`⚠️  User ${req.user.email || req.user.id} has token without tenant_id`);
+    console.warn(
+      `⚠️  BACKWARD COMPATIBILITY: User ${req.user.email || req.user.id} has token without tenant_id.\n` +
+      `   This token should be refreshed on next activity. Path: ${req.path}`
+    );
     return next();
   }
 

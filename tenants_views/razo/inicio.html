@@ -275,5 +275,17 @@
     
     <!-- ✅ CRÍTICO: Cargador de Landing Page desde CMS -->
     <script src="/js/landing-content-loader.js"></script>
+    
+    <!-- ✅ xCore Live Preview Receiver (only in preview mode) -->
+    <script>
+      // Load preview receiver only when in preview mode
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('preview') === 'true') {
+        const script = document.createElement('script');
+        script.src = '/js/xcore-preview-receiver.js';
+        document.body.appendChild(script);
+        console.log('🎯 xCore Preview Mode: Receiver script loaded');
+      }
+    </script>
   </body>
 </html>

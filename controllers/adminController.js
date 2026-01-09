@@ -4996,27 +4996,39 @@ const refreshAdminToken = async (req, res) => {
     const adminId = req.user.id;
     const email = req.user.email;
     const tipo = req.user.tipo;
+    
+    // CRITICAL: Preserve tenant_id from ORIGINAL token
+    const originalTenantId = req.user.tenant_id;
+    
+    if (!originalTenantId) {
+      console.error(`❌ CRITICAL: Admin token refresh attempted for user ${adminId} without tenant_id in token`);
+      return res.status(401).json({
+        success: false,
+        message: "Token inválido: falta tenant_id",
+      });
+    }
 
-    // Verificar que el admin aún existe
+    // Verificar que el admin aún existe y pertenece al tenant correcto
     const result = await db.query(
-      `SELECT AdminID FROM Administradores WHERE AdminID = $1`,
-      [adminId]
+      `SELECT AdminID FROM Administradores WHERE AdminID = $1 AND tenant_id = $2 AND Activo = TRUE`,
+      [adminId, originalTenantId]
     );
 
     if (result.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        message: "Administrador no encontrado",
+        message: "Administrador no encontrado o inactivo",
       });
     }
 
-    // Generar un nuevo token con el mismo payload (defensive: ensure email is never undefined)
+    // Generar un nuevo token PRESERVANDO el tenant_id original
     const { generateToken } = require("../utils/jwtHelper");
     const newToken = generateToken({
       userId: adminId,
       tipo: tipo,
       rol: req.user.rol,
       email: email || null,
+      tenant_id: originalTenantId,
     });
 
     res.json({

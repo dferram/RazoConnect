@@ -242,64 +242,90 @@
   }
 
   // ============================================
-  // LIVE PREVIEW SYNCHRONIZATION
+  // LIVE PREVIEW SYNCHRONIZATION (PostMessage)
   // ============================================
 
-  function syncTextToPreview(inputId, iframeSelector) {
-    const input = document.getElementById(inputId);
-    if (!input) {
-      console.warn(`Input not found: ${inputId}`);
+  // Debounce utility for optimized real-time updates
+  function debouncePreview(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+      const later = () => {
+        clearTimeout(timeout);
+        func(...args);
+      };
+      clearTimeout(timeout);
+      timeout = setTimeout(later, wait);
+    };
+  }
+
+  // Collect all current form data for preview
+  function collectPreviewData() {
+    const data = {
+      slides: []
+    };
+
+    // Collect data for all 3 slides
+    for (let i = 1; i <= 3; i++) {
+      const slideData = {
+        slideNumber: i,
+        image: document.getElementById(`hero_slide_${i}_image`)?.value || '',
+        eyebrow: document.getElementById(`hero_slide_${i}_eyebrow`)?.value || '',
+        title: document.getElementById(`hero_slide_${i}_title`)?.value || '',
+        description: document.getElementById(`hero_slide_${i}_description`)?.value || '',
+        ctaText: document.getElementById(`hero_slide_${i}_cta_text`)?.value || '',
+        ctaLink: document.getElementById(`hero_slide_${i}_cta_link`)?.value || ''
+      };
+      data.slides.push(slideData);
+    }
+
+    // Collect section category data
+    data.sections = {
+      ofertas_category: document.getElementById('section_ofertas_category')?.value || '',
+      nuevos_category: document.getElementById('section_nuevos_category')?.value || ''
+    };
+
+    return data;
+  }
+
+  // Send preview data to iframe via postMessage
+  const sendPreviewUpdate = debouncePreview(function() {
+    const previewIframe = document.getElementById('previewIframe');
+    if (!previewIframe || !previewIframe.contentWindow) {
+      console.warn('⚠️ Preview iframe not accessible');
       return;
     }
 
-    input.addEventListener('input', function() {
-      try {
-        const previewIframe = document.getElementById('previewIframe');
-        if (!previewIframe || !previewIframe.contentDocument) {
-          console.warn('Preview iframe not accessible yet');
-          return;
-        }
+    const data = collectPreviewData();
+    
+    // Send message to iframe
+    previewIframe.contentWindow.postMessage({
+      type: 'XCORE_PREVIEW_UPDATE',
+      data: data,
+      timestamp: Date.now()
+    }, '*');
 
-        const targetElement = previewIframe.contentDocument.querySelector(iframeSelector);
-        if (targetElement) {
-          targetElement.textContent = this.value;
-          console.log(`✅ Live preview updated: ${inputId} -> ${iframeSelector}`);
-        } else {
-          console.warn(`⚠️ Target element not found in iframe: ${iframeSelector}`);
-        }
-      } catch (error) {
-        console.error('Error syncing to preview:', error);
-      }
-    });
-  }
+    console.log('📤 Preview update sent via postMessage:', data);
+  }, 100); // 100ms debounce for smooth real-time updates
 
+  // Sync image to preview (immediate, no debounce)
   function syncImageToPreview(slideNumber, imageUrl) {
-    try {
-      const previewIframe = document.getElementById('previewIframe');
-      if (!previewIframe || !previewIframe.contentDocument) {
-        console.warn('Preview iframe not accessible for image sync');
-        return;
-      }
-
-      // Buscar la imagen del slide específico en el carousel
-      const carouselItems = previewIframe.contentDocument.querySelectorAll('.carousel-item');
-      if (carouselItems && carouselItems[slideNumber - 1]) {
-        const targetItem = carouselItems[slideNumber - 1];
-        const img = targetItem.querySelector('img');
-        if (img) {
-          img.src = imageUrl;
-          console.log(`✅ Live preview image updated: Slide ${slideNumber}`);
-        } else {
-          console.warn(`⚠️ Image element not found in slide ${slideNumber}`);
-        }
-      } else {
-        console.warn(`⚠️ Carousel item ${slideNumber} not found in iframe`);
-      }
-    } catch (error) {
-      console.error('Error syncing image to preview:', error);
+    const previewIframe = document.getElementById('previewIframe');
+    if (!previewIframe || !previewIframe.contentWindow) {
+      console.warn('⚠️ Preview iframe not accessible for image sync');
+      return;
     }
+
+    previewIframe.contentWindow.postMessage({
+      type: 'XCORE_IMAGE_UPDATE',
+      slideNumber: slideNumber,
+      imageUrl: imageUrl,
+      timestamp: Date.now()
+    }, '*');
+
+    console.log(`📤 Image update sent for slide ${slideNumber}:`, imageUrl);
   }
 
+  // Setup live preview synchronization
   function setupLivePreviewSync() {
     const previewIframe = document.getElementById('previewIframe');
     
@@ -308,58 +334,39 @@
       return;
     }
 
-    console.log('🔧 Setting up live preview synchronization...');
+    console.log('🔧 Setting up postMessage-based live preview...');
 
-    // Función para configurar los listeners una vez que el iframe esté listo
-    function attachSyncListeners() {
-      try {
-        // Verificar acceso al contentDocument
-        if (!previewIframe.contentDocument) {
-          console.error('❌ Cannot access iframe contentDocument (CORS issue?)');
-          return;
-        }
-
-        // Verificar que el carousel existe en el iframe
-        const carouselInIframe = previewIframe.contentDocument.querySelector('.carousel');
-        if (!carouselInIframe) {
-          console.warn('⚠️ Carousel not found in iframe - preview sync disabled');
-          return;
-        }
-
-        console.log('✅ Carousel found in iframe, attaching sync listeners...');
-
-        // Sincronizar textos de los 3 slides con selectores flexibles
-        for (let i = 1; i <= 3; i++) {
-          // Usar nth-child que es más robusto que IDs
-          syncTextToPreview(`hero_slide_${i}_eyebrow`, `.carousel-item:nth-child(${i}) .hero-eyebrow`);
-          syncTextToPreview(`hero_slide_${i}_title`, `.carousel-item:nth-child(${i}) .hero-title`);
-          syncTextToPreview(`hero_slide_${i}_description`, `.carousel-item:nth-child(${i}) .hero-description`);
-          syncTextToPreview(`hero_slide_${i}_cta_text`, `.carousel-item:nth-child(${i}) .btn-primary`);
-        }
-
-        console.log('✅ Live preview synchronization enabled successfully');
-      } catch (error) {
-        console.error('❌ Error setting up live preview:', error);
-      }
-    }
-
-    // ✅ CRÍTICO: Esperar a que el iframe cargue completamente
+    // Wait for iframe to load, then send initial data
     previewIframe.addEventListener('load', function() {
-      console.log('🎬 Preview iframe loaded, waiting for DOM to be ready...');
+      console.log('🎬 Preview iframe loaded, sending initial data...');
       
-      // Esperar un momento adicional para asegurar que el DOM del iframe esté listo
       setTimeout(() => {
-        attachSyncListeners();
-      }, 800); // Aumentado a 800ms para mayor seguridad
+        sendPreviewUpdate();
+      }, 500);
     });
 
-    // También intentar configurar inmediatamente si el iframe ya está cargado
+    // If iframe is already loaded, send data immediately
     if (previewIframe.contentDocument && previewIframe.contentDocument.readyState === 'complete') {
-      console.log('🎬 Preview iframe already loaded, setting up immediately...');
+      console.log('🎬 Preview iframe already loaded, sending data...');
       setTimeout(() => {
-        attachSyncListeners();
+        sendPreviewUpdate();
       }, 300);
     }
+
+    // Attach input listeners to all form fields
+    const formElements = document.querySelectorAll('input[id^="hero_"], textarea[id^="hero_"], select[id^="hero_"], select[id^="section_"]');
+    
+    formElements.forEach(element => {
+      element.addEventListener('input', () => {
+        sendPreviewUpdate();
+      });
+      
+      element.addEventListener('change', () => {
+        sendPreviewUpdate();
+      });
+    });
+
+    console.log(`✅ Live preview enabled on ${formElements.length} form elements`);
   }
 
   // ============================================
@@ -1013,11 +1020,11 @@
   }
 
   // ============================================
-  // LIVE PREVIEW HELPERS
+  // CROPPER LIVE PREVIEW HELPERS
   // ============================================
   
-  // Debounce utility para optimizar actualizaciones
-  function debounce(func, wait) {
+  // Debounce utility for cropper updates
+  function debounceCropper(func, wait) {
     let timeout;
     return function executedFunction(...args) {
       const later = () => {
@@ -1080,7 +1087,7 @@
   }
 
   // Actualizar preview en tiempo real (con debounce)
-  const updateLivePreview = debounce(function() {
+  const updateLivePreview = debounceCropper(function() {
     if (!cropperInstance || !cropperReady) {
       return;
     }
