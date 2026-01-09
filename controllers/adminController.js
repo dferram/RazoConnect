@@ -15,6 +15,7 @@ const { generateCodigoAgente } = require("../utils/agentCode");
 const { registrarLog } = require("../services/loggerService");
 const inventoryService = require("../services/inventoryService");
 const auditService = require("../services/auditService");
+const auditLogger = require("../services/auditLogger");
 const {
   procesarImagenesColor,
   guardarImagenesColor,
@@ -5837,14 +5838,34 @@ const crearProducto = async (req, res) => {
     await client.query("COMMIT");
     transactionStarted = false;
 
-    await auditService.registrarCambioPasivo(
-      req,
-      "productos",
-      producto.productoid,
-      "INSERT",
-      null,
-      producto
-    );
+    // ============================================
+    // AUDITORÍA EXHAUSTIVA: CREACIÓN DE PRODUCTO
+    // ============================================
+    try {
+      await auditLogger.registrarCreacion({
+        usuarioId: req.user?.id || req.user?.userId || null,
+        nombreUsuario: req.user?.nombre || req.user?.email || 'Sistema',
+        rol: req.user?.rol || req.user?.tipo || 'admin',
+        entidad: 'Producto',
+        entidadId: producto.productoid,
+        datos: {
+          nombreproducto: producto.nombreproducto,
+          sku_maestro: producto.sku_maestro,
+          descripcion: producto.descripcion,
+          categoriaid: producto.categoriaid,
+          proveedorid_default: producto.proveedorid,
+          activo: producto.activo,
+          reglaid: producto.reglaid,
+          tamanosAsociados: tamanosAsociados,
+          cantidadImagenes: imagenesGeneralesGuardadas.length,
+          cantidadImagenesColor: imagenesColorGuardadas.length
+        },
+        ip: req.ip || req.connection?.remoteAddress || null,
+        tenantId: tenant_id
+      });
+    } catch (auditError) {
+      console.error('Error al registrar auditoría de creación de producto:', auditError);
+    }
 
     return res.status(201).json({
       success: true,
@@ -6670,14 +6691,38 @@ const actualizarProducto = async (req, res) => {
     await client.query("COMMIT");
     transactionStarted = false;
 
-    await auditService.registrarCambioPasivo(
-      req,
-      "productos",
-      productoId,
-      "UPDATE",
-      productoActual,
-      productoActualizado
-    );
+    // ============================================
+    // AUDITORÍA EXHAUSTIVA: ACTUALIZACIÓN CON DIFF
+    // ============================================
+    try {
+      await auditLogger.registrarActualizacion({
+        usuarioId: req.user?.id || req.user?.userId || null,
+        nombreUsuario: req.user?.nombre || req.user?.email || 'Sistema',
+        rol: req.user?.rol || req.user?.tipo || 'admin',
+        entidad: 'Producto',
+        entidadId: productoId,
+        datosAnteriores: {
+          nombreproducto: productoActual.nombreproducto,
+          descripcion: productoActual.descripcion,
+          categoriaid: productoActual.categoriaid,
+          proveedorid_default: productoActual.proveedorid,
+          activo: productoActual.activo,
+          reglaid: productoActual.reglaid
+        },
+        datosNuevos: {
+          nombreproducto: productoActualizado.nombreproducto,
+          descripcion: productoActualizado.descripcion,
+          categoriaid: productoActualizado.categoriaid,
+          proveedorid_default: productoActualizado.proveedorid_default,
+          activo: productoActualizado.activo,
+          reglaid: productoActualizado.reglaid
+        },
+        ip: req.ip || req.connection?.remoteAddress || null,
+        tenantId: tenant_id
+      });
+    } catch (auditError) {
+      console.error('Error al registrar auditoría de actualización de producto:', auditError);
+    }
 
     return res.json({
       success: true,
@@ -12639,8 +12684,8 @@ const crearVariante = async (req, res) => {
       const row = insertRes.rows[0];
       const varianteId = row.varianteid;
 
-      // Generar SKU final con el ID de la variante (formato: SKU_MAESTRO-0001)
-      const varianteIdPadded = String(varianteId).padStart(4, '0');
+      // Generar SKU final con el ID de la variante (formato: SKU_MAESTRO-00001)
+      const varianteIdPadded = String(varianteId).padStart(5, '0');
       const skuFinal = `${skuMaestroSan}-${varianteIdPadded}`;
 
       // Actualizar el SKU con el ID real
@@ -12675,6 +12720,38 @@ const crearVariante = async (req, res) => {
       // in producto_variante_imagenes table, not in producto_variantes.url_imagen_variante
 
       await client.query("COMMIT");
+
+      // ============================================
+      // AUDITORÍA EXHAUSTIVA: CREACIÓN DE VARIANTE
+      // ============================================
+      try {
+        await auditLogger.registrarCreacion({
+          usuarioId: req.user?.id || req.user?.userId || null,
+          nombreUsuario: req.user?.nombre || req.user?.email || 'Sistema',
+          rol: req.user?.rol || req.user?.tipo || 'admin',
+          entidad: 'Variante',
+          entidadId: row.varianteid,
+          datos: {
+            productoid: row.productoid,
+            sku: row.sku,
+            dimensiones: row.dimensiones,
+            costounitario: row.costounitario,
+            preciounitario: row.preciounitario,
+            precioofertaunitario: row.precioofertaunitario,
+            stock: row.stock,
+            tipoproductoid: row.tipoproductoid,
+            medidaid: row.medidaid,
+            color_nombre: row.color_nombre,
+            activo: row.activo,
+            piezasporpaquete: row.piezasporpaquete,
+            cantidadImagenes: galeriaResult?.imagenes?.length || 0
+          },
+          ip: req.ip || req.connection?.remoteAddress || null,
+          tenantId: req.tenant?.tenant_id || 1
+        });
+      } catch (auditError) {
+        console.error('Error al registrar auditoría de creación de variante:', auditError);
+      }
 
       return res.status(201).json({
         success: true,
@@ -12892,8 +12969,8 @@ const crearVariante = async (req, res) => {
       const row = insertRes.rows[0];
       const varianteId = row.varianteid;
 
-      // Generar SKU final con el ID de la variante (formato: SKU_MAESTRO-0001)
-      const varianteIdPadded = String(varianteId).padStart(4, '0');
+      // Generar SKU final con el ID de la variante (formato: SKU_MAESTRO-00001)
+      const varianteIdPadded = String(varianteId).padStart(5, '0');
       const skuFinal = `${skuMaestroSan}-${varianteIdPadded}`;
 
       // Actualizar el SKU con el ID real
@@ -13182,58 +13259,6 @@ const actualizarVariante = async (req, res) => {
           varianteId,
         ]
       );
-      
-      // ============================================
-      // REGISTRAR CAMBIOS EN BITÁCORA
-      // ============================================
-      if (cambiosDetectados.length > 0) {
-        const usuarioId = req.user?.id || req.user?.userId;
-        const productoId = actual.productoid;
-        
-        for (const cambio of cambiosDetectados) {
-          try {
-            await client.query(
-              `INSERT INTO control_cambios (
-                entidad,
-                entidad_id,
-                tipo_cambio,
-                datos_anteriores,
-                datos_nuevos,
-                usuario_solicitante_id,
-                estado,
-                fecha_resolucion,
-                usuario_resolutor_id
-              )
-              VALUES ($1, $2, $3, $4, $5, $6, 'APROBADO', NOW(), $6)`,
-              [
-                'producto_variantes',
-                varianteId,
-                'UPDATE',
-                JSON.stringify({
-                  productoId: productoId,
-                  varianteId: varianteId,
-                  sku: actual.sku,
-                  campo: cambio.campo,
-                  valorAnterior: cambio.valorAnterior,
-                  medidaNombre: actual.medida_nombre || null
-                }),
-                JSON.stringify({
-                  productoId: productoId,
-                  varianteId: varianteId,
-                  sku: actual.sku,
-                  campo: cambio.campo,
-                  valorNuevo: cambio.valorNuevo,
-                  descripcion: `Producto [${productoId}] - Variante [SKU: ${actual.sku}]: Cambio en ${cambio.campo} de '${cambio.valorAnterior}' a '${cambio.valorNuevo}'`
-                }),
-                usuarioId
-              ]
-            );
-          } catch (logError) {
-            console.error('Error al registrar cambio en bitácora:', logError);
-            // No bloquear la actualización si falla el log
-          }
-        }
-      }
 
       if (!updateRes.rows.length) {
         throw Object.assign(new Error("Variante no encontrada"), { status: 404 });
@@ -13263,6 +13288,41 @@ const actualizarVariante = async (req, res) => {
       // in producto_variante_imagenes table, not in producto_variantes.url_imagen_variante
 
       await client.query("COMMIT");
+
+      // ============================================
+      // AUDITORÍA EXHAUSTIVA: ACTUALIZACIÓN CON DIFF
+      // ============================================
+      try {
+        await auditLogger.registrarActualizacion({
+          usuarioId: req.user?.id || req.user?.userId || null,
+          nombreUsuario: req.user?.nombre || req.user?.email || 'Sistema',
+          rol: req.user?.rol || req.user?.tipo || 'admin',
+          entidad: 'Variante',
+          entidadId: varianteId,
+          datosAnteriores: {
+            sku: actual.sku,
+            dimensiones: dimensionesActual,
+            costounitario: costoActual,
+            preciounitario: precioActual,
+            precioofertaunitario: ofertaActual,
+            color_nombre: actual.color_nombre,
+            activo: actual.activo
+          },
+          datosNuevos: {
+            sku: row.sku,
+            dimensiones: row.dimensiones,
+            costounitario: row.costounitario !== null ? parseFloat(row.costounitario) : null,
+            preciounitario: row.preciounitario !== null ? parseFloat(row.preciounitario) : null,
+            precioofertaunitario: row.precioofertaunitario !== null ? parseFloat(row.precioofertaunitario) : null,
+            color_nombre: row.color_nombre,
+            activo: row.activo
+          },
+          ip: req.ip || req.connection?.remoteAddress || null,
+          tenantId: req.tenant?.tenant_id || 1
+        });
+      } catch (auditError) {
+        console.error('Error al registrar auditoría de actualización de variante:', auditError);
+      }
 
       return res.json({
         success: true,

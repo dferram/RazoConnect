@@ -284,7 +284,337 @@ function typeIsValid(t) {
   return t === "INSERT" || t === "UPDATE" || t === "DELETE";
 }
 
+/**
+ * ============================================
+ * AUDIT WRAPPER - PATRÓN INTERCEPTOR
+ * ============================================
+ * Higher-Order Function que intercepta operaciones CRUD
+ * y registra automáticamente cambios en log_movimientos
+ */
+
+/**
+ * Mapeo de entidades a sus queries de obtención de estado
+ */
+const ENTITY_QUERIES = {
+  clientes: {
+    table: 'clientes',
+    idColumn: 'clienteid',
+    query: 'SELECT * FROM clientes WHERE clienteid = $1'
+  },
+  pedidos: {
+    table: 'pedidos',
+    idColumn: 'pedidoid',
+    query: 'SELECT * FROM pedidos WHERE pedidoid = $1'
+  },
+  proveedores: {
+    table: 'proveedores',
+    idColumn: 'proveedorid',
+    query: 'SELECT * FROM proveedores WHERE proveedorid = $1'
+  },
+  producto_variantes: {
+    table: 'producto_variantes',
+    idColumn: 'varianteid',
+    query: 'SELECT * FROM producto_variantes WHERE varianteid = $1'
+  },
+  productos: {
+    table: 'productos',
+    idColumn: 'productoid',
+    query: 'SELECT * FROM productos WHERE productoid = $1'
+  },
+  categorias: {
+    table: 'categorias',
+    idColumn: 'categoriaid',
+    query: 'SELECT * FROM categorias WHERE categoriaid = $1'
+  },
+  agentesdeventas: {
+    table: 'agentesdeventas',
+    idColumn: 'agenteid',
+    query: 'SELECT * FROM agentesdeventas WHERE agenteid = $1'
+  },
+  administradores: {
+    table: 'administradores',
+    idColumn: 'adminid',
+    query: 'SELECT * FROM administradores WHERE adminid = $1'
+  },
+  ordenescompra: {
+    table: 'ordenescompra',
+    idColumn: 'ordencompraid',
+    query: 'SELECT * FROM ordenescompra WHERE ordencompraid = $1'
+  }
+};
+
+/**
+ * Genera un diff detallado comparando dos objetos
+ * Solo retorna los campos que cambiaron
+ */
+function generarDiff(datosAnteriores, datosNuevos) {
+  const cambios = {};
+  
+  if (!datosAnteriores || !datosNuevos) {
+    return cambios;
+  }
+
+  const todasLasClaves = new Set([
+    ...Object.keys(datosAnteriores),
+    ...Object.keys(datosNuevos)
+  ]);
+
+  for (const clave of todasLasClaves) {
+    const valorAnterior = datosAnteriores[clave];
+    const valorNuevo = datosNuevos[clave];
+
+    // Comparación profunda
+    if (JSON.stringify(valorAnterior) !== JSON.stringify(valorNuevo)) {
+      cambios[clave] = {
+        antes: valorAnterior !== undefined ? valorAnterior : null,
+        ahora: valorNuevo !== undefined ? valorNuevo : null
+      };
+    }
+  }
+
+  return cambios;
+}
+
+/**
+ * Obtiene el estado actual de un registro desde la base de datos
+ */
+async function obtenerEstadoActual(entidad, idRegistro, client = null) {
+  const entityConfig = ENTITY_QUERIES[entidad.toLowerCase()];
+  
+  if (!entityConfig) {
+    throw new Error(`Entidad "${entidad}" no configurada en ENTITY_QUERIES`);
+  }
+
+  const dbClient = client || db;
+  const result = await dbClient.query(entityConfig.query, [idRegistro]);
+  
+  return result.rows[0] || null;
+}
+
+/**
+ * FUNCIÓN PRINCIPAL: wrapWithAudit
+ * 
+ * Higher-Order Function que envuelve operaciones CRUD con auditoría automática
+ * 
+ * @param {Object} params - Parámetros de auditoría
+ * @param {number} params.usuarioId - ID del usuario que realiza la operación
+ * @param {string} params.nombreUsuario - Nombre del usuario
+ * @param {string} params.rol - Rol del usuario
+ * @param {string} params.entidad - Nombre de la entidad (tabla)
+ * @param {Function} params.operacion - Función asíncrona que ejecuta el cambio real
+ * @param {number} params.idRegistro - ID del registro a modificar/eliminar (null para INSERT)
+ * @param {string} params.tipoAccion - 'INSERT', 'UPDATE', 'DELETE'
+ * @param {string} params.ip - IP del usuario
+ * @param {number} params.tenantId - ID del tenant
+ * @param {Object} params.client - Cliente de base de datos (para transacciones)
+ * @param {Object} params.datosNuevosManual - Datos nuevos manuales (opcional, para INSERT)
+ * 
+ * @returns {Promise<Object>} Resultado de la operación + metadata de auditoría
+ */
+async function wrapWithAudit({
+  usuarioId,
+  nombreUsuario,
+  rol,
+  entidad,
+  operacion,
+  idRegistro = null,
+  tipoAccion,
+  ip = null,
+  tenantId = 1,
+  client = null,
+  datosNuevosManual = null
+}) {
+  // Validaciones
+  if (!entidad || typeof entidad !== 'string') {
+    throw new Error('Parámetro "entidad" es requerido y debe ser string');
+  }
+
+  if (typeof operacion !== 'function') {
+    throw new Error('Parámetro "operacion" debe ser una función');
+  }
+
+  const tipoAccionUpper = String(tipoAccion).toUpperCase();
+  if (!['INSERT', 'UPDATE', 'DELETE'].includes(tipoAccionUpper)) {
+    throw new Error('tipoAccion debe ser INSERT, UPDATE o DELETE');
+  }
+
+  const entidadNormalizada = entidad.toLowerCase();
+  let datosAnteriores = null;
+  let datosNuevos = null;
+  let resultado = null;
+
+  try {
+    // ============================================
+    // PASO A: PRE-EJECUCIÓN (Obtener estado anterior)
+    // ============================================
+    if ((tipoAccionUpper === 'UPDATE' || tipoAccionUpper === 'DELETE') && idRegistro) {
+      try {
+        datosAnteriores = await obtenerEstadoActual(entidadNormalizada, idRegistro, client);
+      } catch (error) {
+        console.warn(`No se pudo obtener estado anterior de ${entidad} #${idRegistro}:`, error.message);
+        // Continuar sin datos anteriores
+      }
+    }
+
+    // ============================================
+    // PASO B: EJECUCIÓN (Ejecutar la operación real)
+    // ============================================
+    resultado = await operacion();
+
+    // ============================================
+    // PASO C: POST-EJECUCIÓN (Obtener estado nuevo)
+    // ============================================
+    if (tipoAccionUpper === 'UPDATE' && idRegistro) {
+      try {
+        datosNuevos = await obtenerEstadoActual(entidadNormalizada, idRegistro, client);
+      } catch (error) {
+        console.warn(`No se pudo obtener estado nuevo de ${entidad} #${idRegistro}:`, error.message);
+        datosNuevos = datosNuevosManual || resultado;
+      }
+    } else if (tipoAccionUpper === 'INSERT') {
+      // Para INSERT, usar datos manuales o resultado
+      datosNuevos = datosNuevosManual || resultado;
+    } else if (tipoAccionUpper === 'DELETE') {
+      // Para DELETE, datosNuevos es null (registro eliminado)
+      datosNuevos = null;
+    }
+
+    // ============================================
+    // PASO D: DIFFING Y LOGGING
+    // ============================================
+    let detallesJson = {};
+
+    if (tipoAccionUpper === 'UPDATE') {
+      const cambios = generarDiff(datosAnteriores, datosNuevos);
+      const camposModificados = Object.keys(cambios);
+      
+      detallesJson = {
+        tipo: 'actualizacion',
+        cambios: cambios,
+        resumen: camposModificados.length > 0 
+          ? `${camposModificados.length} campo(s) modificado(s): ${camposModificados.join(', ')}`
+          : 'Sin cambios detectados'
+      };
+    } else if (tipoAccionUpper === 'DELETE') {
+      detallesJson = {
+        tipo: 'eliminacion',
+        snapshot: datosAnteriores,
+        mensaje: 'Registro eliminado - snapshot completo guardado'
+      };
+    } else if (tipoAccionUpper === 'INSERT') {
+      detallesJson = {
+        tipo: 'creacion',
+        datos: datosNuevos
+      };
+    }
+
+    // Insertar en log_movimientos
+    const accionLog = tipoAccionUpper === 'INSERT' ? 'CREAR' 
+                    : tipoAccionUpper === 'UPDATE' ? 'EDITAR'
+                    : 'ELIMINAR';
+
+    const logQuery = `
+      INSERT INTO log_movimientos (
+        usuarioid,
+        nombreusuario,
+        rol,
+        accion,
+        entidad,
+        entidadid,
+        detalles,
+        ip,
+        tenant_id
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      RETURNING logid
+    `;
+
+    const logValues = [
+      usuarioId || null,
+      nombreUsuario || 'Sistema',
+      rol || 'sistema',
+      accionLog,
+      entidad,
+      idRegistro || null,
+      JSON.stringify(detallesJson),
+      ip || null,
+      tenantId || 1
+    ];
+
+    const dbClient = client || db;
+    const logResult = await dbClient.query(logQuery, logValues);
+    const logId = logResult.rows[0]?.logid;
+
+    // Retornar resultado + metadata de auditoría
+    return {
+      resultado,
+      auditoria: {
+        logId,
+        entidad,
+        idRegistro,
+        tipoAccion: tipoAccionUpper,
+        cambiosDetectados: tipoAccionUpper === 'UPDATE' ? Object.keys(generarDiff(datosAnteriores, datosNuevos)).length : null
+      }
+    };
+
+  } catch (error) {
+    // Si la operación falla, registrar el intento fallido
+    console.error(`Error en wrapWithAudit para ${entidad}:`, error);
+    
+    try {
+      const dbClient = client || db;
+      await dbClient.query(
+        `INSERT INTO log_movimientos (
+          usuarioid, nombreusuario, rol, accion, entidad, entidadid, 
+          detalles, ip, tenant_id
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+        [
+          usuarioId || null,
+          nombreUsuario || 'Sistema',
+          rol || 'sistema',
+          'OTRO',
+          entidad,
+          idRegistro || null,
+          JSON.stringify({
+            tipo: 'error',
+            mensaje: error.message,
+            accionIntentada: tipoAccion
+          }),
+          ip || null,
+          tenantId || 1
+        ]
+      );
+    } catch (logError) {
+      console.error('Error al registrar fallo en auditoría:', logError);
+    }
+
+    throw error;
+  }
+}
+
+/**
+ * Versión simplificada de wrapWithAudit para usar con req object
+ */
+async function wrapWithAuditFromReq(req, entidad, operacion, idRegistro, tipoAccion, client = null, datosNuevosManual = null) {
+  return wrapWithAudit({
+    usuarioId: req.user?.id || req.user?.userId || null,
+    nombreUsuario: req.user?.nombre || req.user?.email || 'Sistema',
+    rol: req.user?.rol || req.user?.tipo || 'sistema',
+    entidad,
+    operacion,
+    idRegistro,
+    tipoAccion,
+    ip: req.ip || req.connection?.remoteAddress || null,
+    tenantId: req.tenant?.tenant_id || 1,
+    client,
+    datosNuevosManual
+  });
+}
+
 module.exports = {
   registrarCambio,
   registrarCambioPasivo,
+  wrapWithAudit,
+  wrapWithAuditFromReq,
+  generarDiff,
+  obtenerEstadoActual
 };
