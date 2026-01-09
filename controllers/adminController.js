@@ -8292,8 +8292,8 @@ const crearAgente = async (req, res) => {
 
     if (allowDirect) {
       const insertRes = await db.query(
-        "INSERT INTO agentesdeventas (nombre, apellido, email, passwordhash, codigoagente, activo, esadmin, adminrol, tenant_id) VALUES ($1, $2, $3, $4, $5, TRUE, FALSE, NULL, $6) RETURNING agenteid, nombre, apellido, email, codigoagente, activo, esadmin, adminrol",
-        [nombre.trim(), apellido.trim(), email, hashedPassword, nuevoCodigoAgente, tenant_id]
+        "INSERT INTO agentesdeventas (nombre, apellido, email, telefono, passwordhash, codigoagente, activo, esadmin, adminrol, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, TRUE, FALSE, NULL, $7) RETURNING agenteid, nombre, apellido, email, telefono, codigoagente, activo, esadmin, adminrol",
+        [nombre.trim(), apellido.trim(), email, telefono, hashedPassword, nuevoCodigoAgente, tenant_id]
       );
 
       const row = insertRes.rows[0];
