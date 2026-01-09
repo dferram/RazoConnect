@@ -5209,7 +5209,7 @@ const reducirStockPedido = async (client, pedidoId, usuarioId) => {
   }
 };
 
-const findOrCreateTamanosFromPacks = async (client, packs) => {
+const findOrCreateTamanosFromPacks = async (client, packs, tenant_id) => {
   const cantidades = Array.isArray(packs)
     ? packs
         .map((p) => Number.parseInt(p, 10))
@@ -5224,8 +5224,8 @@ const findOrCreateTamanosFromPacks = async (client, packs) => {
   const existentesResult = await client.query(
     `SELECT tamanoid, cantidad
      FROM cat_tamanopaquetes
-     WHERE cantidad = ANY($1::int[])`,
-    [cantidades]
+     WHERE cantidad = ANY($1::int[]) AND tenant_id = $2`,
+    [cantidades, tenant_id]
   );
 
   const existentesPorCantidad = new Map(); // Cantidad -> TamanoID
@@ -5654,7 +5654,8 @@ const crearProducto = async (req, res) => {
     // A partir de packs, encontrar/crear tamaños en catálogo y obtener sus IDs
     const tamanoIdsFromPacks = await findOrCreateTamanosFromPacks(
       client,
-      packs
+      packs,
+      tenant_id
     );
 
     const tamanosProductoRawBase = Array.isArray(tamanos)
@@ -6215,6 +6216,7 @@ const getTamanosPaquetes = async (req, res) => {
  * PUT /api/admin/productos/:id
  */
 const actualizarProducto = async (req, res) => {
+  const { tenant_id } = req.tenant;
   const productoId = Number.parseInt(req.params.id, 10);
 
   if (!Number.isInteger(productoId) || productoId <= 0) {
@@ -6563,7 +6565,7 @@ const actualizarProducto = async (req, res) => {
     // Procesar packs array: convertir valores de packs a tamanoIds
     if (Array.isArray(packs) && packs.length > 0) {
       console.log("📦 [BACKEND] Procesando packs array:", packs);
-      const tamanoIdsFromPacks = await findOrCreateTamanosFromPacks(client, packs);
+      const tamanoIdsFromPacks = await findOrCreateTamanosFromPacks(client, packs, tenant_id);
       console.log("📦 [BACKEND] TamanoIds obtenidos de packs:", tamanoIdsFromPacks);
       
       // Combinar con los tamanoIds existentes (sin duplicados)
