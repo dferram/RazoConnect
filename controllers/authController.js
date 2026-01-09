@@ -2,7 +2,7 @@ const bcrypt = require("bcrypt");
 const db = require("../db");
 const { generateToken } = require("../utils/jwtHelper");
 const crypto = require("crypto");
-const { enviarEmail } = require("../services/emailService");
+const { enviarEmail, sendTemplatedEmail } = require("../services/emailService");
 const {
   crearNotificacion,
 } = require("../services/notificacionesService");
@@ -137,6 +137,23 @@ const registroCliente = async (req, res) => {
         "No se pudo crear la notificación de bienvenida:",
         notificacionError
       );
+    }
+
+    // Enviar correo de bienvenida con plantilla profesional
+    if (Email) {
+      try {
+        const frontendUrl = process.env.FRONTEND_BASE_URL || "https://razo.com.mx";
+        await sendTemplatedEmail(Email, "¡Bienvenido a RazoConnect!", {
+          title: "¡Bienvenido a RazoConnect!",
+          name: `${Nombre} ${Apellido}`,
+          message: `Nos alegra que te hayas unido a nuestra comunidad. Tu cuenta ha sido creada exitosamente y ya puedes comenzar a explorar nuestro catálogo de productos.`,
+          buttonText: "Explorar Catálogo",
+          buttonUrl: `${frontendUrl}/catalogo.html`,
+          additionalInfo: "Si tienes alguna pregunta o necesitas ayuda, nuestro equipo de soporte está disponible para asistirte."
+        });
+      } catch (emailError) {
+        console.error("Error enviando correo de bienvenida:", emailError);
+      }
     }
 
     res.status(201).json({
@@ -606,23 +623,19 @@ const forgotPassword = async (req, res) => {
       [token, clienteId, agenteId, expiration]
     );
 
-    const resetLink = `${
-      process.env.FRONTEND_BASE_URL || "http://localhost:3000"
-    }/reset-password.html?token=${token}`;
+    const frontendUrl = process.env.FRONTEND_BASE_URL || "https://razo.com.mx";
+    const resetLink = `${frontendUrl}/reset-password.html?token=${token}`;
     const nombre = usuario.nombre || "usuario";
     const asunto = "Instrucciones para restablecer tu contraseña";
-    const cuerpoHtml = `
-      <div style="font-family: Arial, sans-serif; color: #1f2937;">
-        <h2 style="color:#0ea5e9;">Hola ${nombre}</h2>
-        <p>Recibimos una solicitud para restablecer tu contraseña.</p>
-        <p>Puedes continuar haciendo clic en el siguiente enlace:</p>
-        <p><a href="${resetLink}" style="color:#f97316;">Restablecer contraseña</a></p>
-        <p>El enlace expira en 1 hora. Si no solicitaste el cambio, ignora este correo.</p>
-        <p style="margin-top: 1.5rem;">Equipo RazoConnect</p>
-      </div>
-    `;
 
-    enviarEmail(usuario.email, asunto, cuerpoHtml).catch((err) => {
+    sendTemplatedEmail(usuario.email, asunto, {
+      title: "Recuperación de Contraseña",
+      name: nombre,
+      message: `Recibimos una solicitud para restablecer tu contraseña. Si fuiste tú quien la solicitó, haz clic en el botón de abajo para continuar.`,
+      buttonText: "Restablecer Contraseña",
+      buttonUrl: resetLink,
+      additionalInfo: `<strong>⏰ Este enlace expira en 1 hora.</strong><br><br>Si no solicitaste este cambio, puedes ignorar este correo de forma segura. Tu contraseña no será modificada.`
+    }).catch((err) => {
       console.error("Error enviando correo de reseteo:", err);
     });
 

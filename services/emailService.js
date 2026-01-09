@@ -1,11 +1,14 @@
 require("dotenv").config();
 const nodemailer = require("nodemailer");
+const handlebars = require("handlebars");
+const fs = require("fs");
+const path = require("path");
 const db = require("../db");
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
   port: process.env.SMTP_PORT,
-  secure: false, // Es false para el puerto 587
+  secure: false,
   auth: {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
@@ -45,41 +48,24 @@ async function enviarEmail(destinatario, asunto, cuerpoHtml) {
   }
 }
 
-function buildCambioEstatusHtml(nombreCliente, pedidoId, nuevoEstatus) {
-  const frontendUrl =
-    process.env.FRONTEND_BASE_URL?.replace(/\/$/, "") ||
-    "https://midominio.com";
-  const pedidoUrl = `${frontendUrl}/perfil/pedidos`;
-
-  return `
-    <div style="font-family: Arial, sans-serif; color: #111827; padding: 24px;">
-      <h2 style="color:#111827; margin-bottom: 16px;">Actualización de tu pedido</h2>
-      <p style="margin: 0 0 12px 0;">Hola ${nombreCliente || "cliente"},</p>
-      <p style="margin: 0 0 16px 0;">
-        Tu pedido <strong>#${pedidoId}</strong> ha cambiado de estado a:
-        <strong>${nuevoEstatus}</strong>.
-      </p>
-      <a href="${pedidoUrl}"
-        style="
-          display: inline-block;
-          padding: 12px 20px;
-          background-color: #ff6b35;
-          color: #ffffff;
-          border-radius: 8px;
-          text-decoration: none;
-          font-weight: 600;
-          margin-top: 8px;
-        ">
-        Ver Pedido
-      </a>
-      <p style="margin-top: 24px; font-size: 0.9rem; color: #6b7280;">
-        Si no reconoces esta actualización, por favor contáctanos.
-      </p>
-      <p style="margin-top: 6px; font-size: 0.9rem; color: #94a3b8;">
-        Equipo RazoConnect
-      </p>
-    </div>
-  `;
+async function sendTemplatedEmail(to, subject, templateData) {
+  try {
+    const templatePath = path.join(__dirname, "../templates/master-email.hbs");
+    const templateSource = fs.readFileSync(templatePath, "utf8");
+    const template = handlebars.compile(templateSource);
+    
+    const data = {
+      ...templateData,
+      year: new Date().getFullYear(),
+    };
+    
+    const htmlContent = template(data);
+    
+    return await enviarEmail(to, subject, htmlContent);
+  } catch (error) {
+    console.error("Error enviando correo con plantilla:", error);
+    return false;
+  }
 }
 
 async function enviarCorreoCambioEstatus(
@@ -88,16 +74,33 @@ async function enviarCorreoCambioEstatus(
   pedidoId,
   nuevoEstatus
 ) {
+  const frontendUrl = process.env.FRONTEND_BASE_URL || "https://razo.com.mx";
   const asunto = `Actualización de tu Pedido #${pedidoId}`;
-  const cuerpoHtml = buildCambioEstatusHtml(
-    nombreCliente,
-    pedidoId,
-    nuevoEstatus
-  );
-  return enviarEmail(emailCliente, asunto, cuerpoHtml);
+  
+  const estatusEmojis = {
+    'Pendiente': '⏳',
+    'Confirmado': '✅',
+    'En Proceso': '📦',
+    'Enviado': '🚚',
+    'Entregado': '✨',
+    'Cancelado': '❌',
+    'Parcialmente Surtido': '⚠️'
+  };
+  
+  const emoji = estatusEmojis[nuevoEstatus] || '📋';
+  
+  return sendTemplatedEmail(emailCliente, asunto, {
+    title: 'Actualización de Pedido',
+    name: nombreCliente,
+    message: `Tu pedido <strong>#${pedidoId}</strong> ha sido actualizado.<br><br><div style="background: linear-gradient(135deg, #F97316 0%, #ea580c 100%); color: white; padding: 16px; border-radius: 8px; text-align: center; font-size: 18px; font-weight: 600; margin: 16px 0;">${emoji} ${nuevoEstatus}</div>`,
+    buttonText: 'Ver Detalles del Pedido',
+    buttonUrl: `${frontendUrl}/perfil/pedidos`,
+    additionalInfo: 'Si no reconoces esta actualización o tienes alguna pregunta, no dudes en contactarnos.'
+  });
 }
 
 module.exports = {
   enviarEmail,
+  sendTemplatedEmail,
   enviarCorreoCambioEstatus,
 };

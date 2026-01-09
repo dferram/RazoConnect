@@ -1,7 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const db = require("../db");
-const { enviarEmail } = require("../services/emailService");
+const { enviarEmail, sendTemplatedEmail } = require("../services/emailService");
 const {
   generarOrdenCompraAutomatica,
   generarBackorderProveedor,
@@ -250,7 +250,8 @@ const crearPedido = async (req, res) => {
         pv.precioofertaunitario,
         pv.stock,
         p.nombreproducto,
-        p.proveedorid_default
+        p.proveedorid_default,
+        p.imagenurl
       FROM itemsdelcarrito ic
       INNER JOIN producto_variantes pv ON pv.varianteid = ic.varianteid
       INNER JOIN productos p ON p.productoid = pv.productoid
@@ -874,6 +875,7 @@ const crearPedido = async (req, res) => {
           subtotalSurtido,
           sku: item.sku,
           dimensiones: item.dimensiones,
+          imagenUrl: item.imagenurl,
           reglaBackorder: split.reglaBackorder,
           ajusteAplicado: split.ajusteAplicado,
           cantidadTotalCobrar: split.cantidadTotalCobrar,
@@ -929,6 +931,7 @@ const crearPedido = async (req, res) => {
           subtotalSurtido: 0,
           sku: item.sku,
           dimensiones: item.dimensiones,
+          imagenUrl: item.imagenurl,
           reglaBackorder: split.reglaBackorder,
           ajusteAplicado: split.ajusteAplicado,
           cantidadTotalCobrar: split.cantidadTotalCobrar,
@@ -1030,22 +1033,46 @@ const crearPedido = async (req, res) => {
 
     const emailCliente = req.user?.email || clienteEmailDb;
     if (emailCliente) {
-      const asunto = `Tu pedido RazoConnect ha sido recibido (#${pedido.pedidoid})`;
-      const cuerpoHtml = `
-        <div style="font-family: Arial, sans-serif; color: #1f2937;">
-          <h2 style="color:#f97316;">¡Gracias por tu compra!</h2>
-          <p>Hemos recibido tu pedido <strong>#${
-            pedido.pedidoid
-          }</strong> y ya estamos procesándolo.</p>
-          <p>Monto total: <strong>$${parseFloat(pedido.montototal).toFixed(
-            2
-          )}</strong></p>
-          <p>Te avisaremos cuando esté confirmado y en camino.</p>
-          <p style="margin-top: 1.5rem;">Equipo RazoConnect</p>
-        </div>
-      `;
+      const asunto = `Confirmación de Pedido #${pedido.pedidoid}`;
+      
+      // Construir detalles de productos para el correo
+      const productosParaEmail = detallesPedido.map(detalle => {
+        const imagenUrl = detalle.imagenUrl || 'https://via.placeholder.com/60x60/e5e7eb/6b7280?text=Producto';
+        const variant = detalle.dimensiones ? `${detalle.dimensiones}` : null;
+        const precioFormateado = `$${parseFloat(detalle.precioPorPaquete || 0).toFixed(2)}`;
+        
+        return {
+          name: detalle.nombreProducto || 'Producto',
+          variant: variant,
+          quantity: detalle.cantidad || 0,
+          price: precioFormateado,
+          image: imagenUrl
+        };
+      });
 
-      enviarEmail(emailCliente, asunto, cuerpoHtml).catch((err) => {
+      const subtotalCalculado = detallesPedido.reduce((sum, d) => {
+        return sum + (parseFloat(d.precioPorPaquete || 0) * (d.cantidad || 0));
+      }, 0);
+
+      const orderDetails = {
+        id: pedido.pedidoid,
+        items: productosParaEmail,
+        subtotal: `$${subtotalCalculado.toFixed(2)}`,
+        shipping: costoEnvio ? `$${parseFloat(costoEnvio).toFixed(2)}` : '$0.00',
+        total: `$${parseFloat(pedido.montototal).toFixed(2)}`
+      };
+
+      const frontendUrl = process.env.FRONTEND_BASE_URL || 'https://razo.com.mx';
+      
+      sendTemplatedEmail(emailCliente, asunto, {
+        title: '¡Pedido Confirmado!',
+        name: clienteNombre,
+        message: `Hemos recibido tu pedido y ya estamos trabajando en prepararlo. Te notificaremos cuando esté listo para envío.`,
+        orderDetails: orderDetails,
+        buttonText: 'Ver Mi Pedido',
+        buttonUrl: `${frontendUrl}/perfil/pedidos`,
+        additionalInfo: `<strong>Método de Pago:</strong> ${metodoPago === 'credito' ? 'Crédito' : metodoPago === 'transferencia' ? 'Transferencia' : 'Efectivo'}<br><strong>Estatus:</strong> ${pedido.estatus}`
+      }).catch((err) => {
         console.error("No se pudo enviar correo de recibo de pedido:", err);
       });
     }
