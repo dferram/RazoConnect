@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tienda No Encontrada | xCore</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --razo-orange: #F97316;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        }
+
+        .error-container {
+            background: white;
+            border-radius: 2rem;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 3rem;
+            max-width: 600px;
+            text-align: center;
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .error-icon {
+            font-size: 6rem;
+            color: var(--razo-orange);
+            margin-bottom: 1.5rem;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-20px);
+            }
+        }
+
+        .error-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 1rem;
+        }
+
+        .error-message {
+            font-size: 1.1rem;
+            color: #6b5d57;
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+
+        .domain-info {
+            background: #f5f1ed;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            border-left: 4px solid var(--razo-orange);
+        }
+
+        .domain-info strong {
+            color: var(--razo-orange);
+            font-weight: 600;
+        }
+
+        .btn-primary {
+            background: var(--razo-orange);
+            border: none;
+            padding: 0.875rem 2rem;
+            border-radius: 0.75rem;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            background: #ea580c;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(249, 115, 22, 0.3);
+        }
+
+        .footer-text {
+            margin-top: 2rem;
+            font-size: 0.875rem;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <div class="error-container">
+        <i class="bi bi-shop-window error-icon"></i>
+        <h1 class="error-title">Tienda No Encontrada</h1>
+        <p class="error-message">
+            El dominio al que intentas acceder no está registrado en nuestro sistema.
+        </p>
+        
+        <div class="domain-info">
+            <p class="mb-0">
+                <strong>Dominio solicitado:</strong> <span id="current-domain">Cargando...</span>
+            </p>
+        </div>
+
+        <div class="alert alert-info" role="alert">
+            <i class="bi bi-info-circle me-2"></i>
+            Si eres el propietario de esta tienda, verifica que el dominio esté correctamente configurado en la base de datos.
+        </div>
+
+        <a href="mailto:soporte@xcore.com" class="btn btn-primary">
+            <i class="bi bi-envelope me-2"></i>
+            Contactar Soporte
+        </a>
+
+        <p class="footer-text">
+            xCore Multi-Tenant Platform &copy; 2026
+        </p>
+    </div>
+
+    <script>
+        document.getElementById('current-domain').textContent = window.location.hostname;
+    </script>
+</body>
+</html>

@@ -1,4 +1,5 @@
 const db = require('../db');
+const { getTenantByDomain, extractRootDomain } = require('../config/domainMapper');
 
 const WHITELISTED_PATHS = [
   '/developer',
@@ -6,6 +7,8 @@ const WHITELISTED_PATHS = [
   '/auth/developer',
   '/suspended',
   '/suspended.html',
+  '/tienda-no-encontrada',
+  '/tienda-no-encontrada.html',
   '/icon/',
   '/favicon.ico'
 ];
@@ -14,10 +17,6 @@ async function tenantGuard(req, res, next) {
   const path = req.path;
 
   if (WHITELISTED_PATHS.some(whitelisted => path.startsWith(whitelisted))) {
-    return next();
-  }
-
-  if (path === '/suspended' || path === '/suspended.html') {
     return next();
   }
 
@@ -41,42 +40,47 @@ async function tenantGuard(req, res, next) {
       }
 
       tenant = result.rows[0];
+      tenant.dominio = 'localhost';
       detectionMethod = 'FORCE_TENANT_ID';
     } 
-    // PRIORIDAD 2: Detección por dominio (producción)
+    // PRIORIDAD 2: Detección por dominio raíz (producción)
     else {
       const hostname = req.hostname;
-      const result = await db.query(
-        'SELECT tenant_id, nombre_cliente, is_active, tema FROM tenants WHERE dominio = $1',
-        [hostname]
-      );
+      const rootDomain = extractRootDomain(hostname);
+      
+      console.log(`🔍 Hostname: ${hostname} | Root Domain: ${rootDomain}`);
+      
+      tenant = await getTenantByDomain(rootDomain);
 
-      if (result.rows.length === 0) {
-        console.warn(`⚠️  Tenant no encontrado para dominio: ${hostname}`);
-        if (path !== '/suspended') {
-          return res.redirect('/suspended');
+      if (!tenant) {
+        console.warn(`⚠️  Tenant no encontrado para dominio: ${hostname} (root: ${rootDomain})`);
+        if (path !== '/tienda-no-encontrada' && path !== '/tienda-no-encontrada.html') {
+          return res.redirect('/tienda-no-encontrada.html');
         }
         return next();
       }
 
-      tenant = result.rows[0];
-      detectionMethod = `hostname: ${hostname}`;
+      detectionMethod = `root domain: ${rootDomain}`;
     }
 
     // Verificar si el tenant está activo
     if (tenant.is_active === false) {
       console.warn(`🚫 Servicio suspendido para tenant: ${tenant.nombre_cliente}`);
-      if (path !== '/suspended') {
-        return res.redirect('/suspended');
+      if (path !== '/suspended' && path !== '/suspended.html') {
+        return res.redirect('/suspended.html');
       }
       return next();
     }
 
-    // Si hay un cambio de tenant en la sesión, limpiar el tenant_id anterior
-    // El middleware validateUserTenant se encargará de validar usuarios autenticados
+    // Si hay un cambio de tenant en la sesión, destruir la sesión completamente
+    // para evitar contaminación entre dominios
     if (req.session && req.session.tenant_id && req.session.tenant_id !== tenant.tenant_id) {
-      console.warn(`⚠️  Tenant cambió de ${req.session.tenant_id} a ${tenant.tenant_id}. Actualizando sesión...`);
-      delete req.session.tenant_id;
+      console.warn(`⚠️  Tenant cambió de ${req.session.tenant_id} a ${tenant.tenant_id}. Destruyendo sesión...`);
+      req.session.destroy((err) => {
+        if (err) {
+          console.error('Error al destruir sesión:', err);
+        }
+      });
     }
 
     // Guardar tenant_id en sesión para futuras validaciones

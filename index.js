@@ -8,8 +8,6 @@ console.log('--------------------------');
 const express = require("express");
 const path = require("path");
 const cors = require("cors");
-const session = require("express-session");
-const pgSession = require("connect-pg-simple")(session);
 const db = require("./db");
 const passport = require("passport");
 const configurePassport = require("./config/passport");
@@ -39,6 +37,7 @@ const developerRoutes = require("./routes/developer");
 // Importar middlewares
 const tenantGuard = require("./middlewares/tenantGuard");
 const validateUserTenant = require("./middlewares/validateUserTenant");
+const createDynamicSessionMiddleware = require("./middlewares/dynamicSessionConfig");
 
 // Inicializar la aplicación Express
 const app = express();
@@ -57,37 +56,19 @@ app.use(express.json()); // Parsear JSON en el body de las peticiones
 app.use(express.urlencoded({ extended: true })); // Parsear datos de formularios
 
 // ============================================================================
-// CONFIGURACIÓN DE SESIONES CON PERSISTENCIA EN POSTGRESQL
+// CONFIGURACIÓN DE SESIONES CON PERSISTENCIA EN POSTGRESQL Y DOMINIO DINÁMICO
 // ============================================================================
 // Usar connect-pg-simple para almacenar sesiones en PostgreSQL
-// Esto evita pérdida de sesiones al reiniciar el servidor y fugas de memoria
-app.use(session({
-  store: new pgSession({
-    pool: db.pool, // Usar el pool existente de conexiones
-    tableName: 'session', // Nombre de la tabla (debe crearse manualmente)
-    createTableIfMissing: false, // No crear automáticamente (mejor control manual)
-    pruneSessionInterval: 60 * 15, // Limpiar sesiones expiradas cada 15 minutos
-    errorLog: console.error.bind(console) // Log de errores
-  }),
-  secret: process.env.SESSION_SECRET || 'razoconnect-dev-secret-key-change-in-production',
-  resave: false, // No guardar sesión si no hay cambios
-  saveUninitialized: false, // No crear sesión hasta que se almacene algo
-  name: 'razoconnect.sid', // Nombre personalizado de la cookie
-  proxy: true, // CRÍTICO para Azure (terminación SSL en proxy)
-  cookie: {
-    secure: isProduction, // TRUE en HTTPS (Azure), FALSE en HTTP (localhost)
-    httpOnly: true, // Previene acceso desde JavaScript (XSS protection)
-    sameSite: isProduction ? 'none' : 'lax', // 'none' para cross-site en producción
-    maxAge: 1000 * 60 * 60 * 24 * 7 // 7 días (mejorado de 1 día)
-  }
-}));
+// El middleware dinámico configura cookies específicas por dominio para aislamiento total
+app.use(createDynamicSessionMiddleware());
 
 console.log(`🔐 Configuración de sesión: ${isProduction ? 'PRODUCCIÓN' : 'DESARROLLO'}`);
 console.log(`   - Store: PostgreSQL (connect-pg-simple)`);
 console.log(`   - Secure cookies: ${isProduction}`);
-console.log(`   - SameSite: ${isProduction ? 'none' : 'lax'}`);
+console.log(`   - SameSite: lax`);
 console.log(`   - MaxAge: 7 días`);
 console.log(`   - Trust proxy: enabled`);
+console.log(`   - Domain isolation: ENABLED (dynamic per request)`);
 
 // ============================================================================
 // DEBUG LOGGING: SESIÓN Y AUTENTICACIÓN
@@ -126,7 +107,20 @@ app.use("/api/developer", developerRoutes);
 
 // Ruta de servicio suspendido (sin tenantGuard - CRÍTICO para evitar bucle infinito)
 app.get("/suspended", (req, res) => {
-  res.sendFile(path.join(__dirname, "tenants_views", "razo", "suspended.html"));
+  res.sendFile(path.join(__dirname, "tenants_views", "suspended.html"));
+});
+
+app.get('/suspended.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'tenants_views', 'suspended.html'));
+});
+
+// Página de tienda no encontrada (debe estar ANTES del tenantGuard)
+app.get('/tienda-no-encontrada', (req, res) => {
+  res.sendFile(path.join(__dirname, 'tenants_views', 'tienda-no-encontrada.html'));
+});
+
+app.get('/tienda-no-encontrada.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'tenants_views', 'tienda-no-encontrada.html'));
 });
 
 // ============================================================================
