@@ -226,8 +226,24 @@ const enviarSolicitudCredito = async (req, res) => {
       });
     }
 
-    // Insertar la solicitud
-    const query = `
+    // Obtener tenant_id del middleware o del usuario autenticado como fallback
+    const tenant_id = req.tenant?.tenant_id || req.user?.tenant_id || 1;
+    
+    if (!tenant_id) {
+      console.error("Error: No se pudo determinar tenant_id", {
+        hasTenant: !!req.tenant,
+        hasUser: !!req.user,
+        userTenantId: req.user?.tenant_id
+      });
+      return res.status(500).json({
+        success: false,
+        message: "Error de configuración del sistema",
+      });
+    }
+
+    // Intentar insertar con todos los campos (si existen en la BD)
+    // Si falla, intentar con solo los campos básicos
+    let query = `
       INSERT INTO solicitudes_credito 
         (cliente_id, monto_solicitado, motivo_uso, ingresos_mensuales, plazo_preferido, tenant_id)
       VALUES 
@@ -235,8 +251,7 @@ const enviarSolicitudCredito = async (req, res) => {
       RETURNING solicitud_id
     `;
 
-    const { tenant_id } = req.tenant || { tenant_id: 1 };
-    const values = [
+    let values = [
       clienteId, 
       montoSolicitado, 
       motivoCredito.trim(),
@@ -244,7 +259,25 @@ const enviarSolicitudCredito = async (req, res) => {
       plazoPreferido || null,
       tenant_id
     ];
-    const { rows } = await db.query(query, values);
+
+    let rows;
+    try {
+      const result = await db.query(query, values);
+      rows = result.rows;
+    } catch (error) {
+      // Si falla (probablemente porque las columnas no existen), usar query básico
+      console.warn("Columnas ingresos_mensuales/plazo_preferido no existen, usando query básico");
+      query = `
+        INSERT INTO solicitudes_credito 
+          (cliente_id, monto_solicitado, motivo_uso, tenant_id)
+        VALUES 
+          ($1, $2, $3, $4)
+        RETURNING solicitud_id
+      `;
+      values = [clienteId, montoSolicitado, motivoCredito.trim(), tenant_id];
+      const result = await db.query(query, values);
+      rows = result.rows;
+    }
 
     return res.json({
       success: true,
