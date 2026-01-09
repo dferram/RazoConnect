@@ -1,4 +1,5 @@
 const db = require("../db");
+const { sendTemplatedEmail } = require("../services/emailService");
 
 const NIVEL_RIESGO = {
   BAJO: "BAJO",
@@ -225,16 +226,41 @@ async function aprobarSolicitud(req, res) {
       [`Aprobado por administrador ${req.user.id}`, solicitudId]
     );
 
-    // 5. Crear notificación para el cliente
-    await client.query(
-      `INSERT INTO notificaciones 
-         (clienteid, tipo, titulo, mensaje, prioridad)
-       VALUES 
-         ($1, 'sistema', '¡Crédito Aprobado!', 'Tu solicitud de crédito ha sido aprobada. Ya puedes realizar compras a crédito.', 'alta')`,
+    // 5. Obtener datos del cliente para notificaciones
+    const { rows: [cliente] } = await client.query(
+      `SELECT nombre, apellido, email FROM clientes WHERE clienteid = $1`,
       [solicitud.cliente_id]
     );
 
+    // 6. Crear notificación in-app para el cliente
+    await client.query(
+      `INSERT INTO notificaciones 
+         (clienteid, tipo, titulo, mensaje, prioridad, url)
+       VALUES 
+         ($1, 'sistema', '¡Crédito Aprobado!', 'Tu solicitud de crédito ha sido aprobada. Ya puedes realizar compras a crédito por un monto de $' || $2 || '.', 'alta', '/perfil/creditos')`,
+      [solicitud.cliente_id, solicitud.monto_solicitado]
+    );
+
     await client.query('COMMIT');
+
+    // 7. Enviar email de forma asíncrona (no bloqueante)
+    if (cliente && cliente.email) {
+      const frontendUrl = process.env.FRONTEND_BASE_URL || 'https://razo.com.mx';
+      const nombreCompleto = `${cliente.nombre} ${cliente.apellido}`;
+      
+      sendTemplatedEmail(
+        cliente.email,
+        '¡Felicidades! Tu Crédito Razo ha sido Aprobado',
+        {
+          title: '¡Solicitud Aprobada!',
+          name: nombreCompleto,
+          message: `Nos complace informarte que tu solicitud de crédito ha sido aprobada exitosamente. Ahora dispones de un límite de crédito de <strong>$${Number(solicitud.monto_solicitado).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong> para tus compras.`,
+          buttonText: 'Ver mi Saldo',
+          buttonUrl: `${frontendUrl}/perfil/creditos`,
+          additionalInfo: 'Puedes comenzar a realizar compras a crédito de inmediato. Recuerda revisar tus movimientos y saldos regularmente.'
+        }
+      ).catch(err => console.error('Error enviando email de aprobación de crédito:', err));
+    }
 
     return res.json({
       success: true,
@@ -284,25 +310,59 @@ async function rechazarSolicitud(req, res) {
       });
     }
 
-    // 2. Actualizar estado de la solicitud
+    // 2. Obtener datos del cliente para notificaciones
+    const { rows: [cliente] } = await client.query(
+      `SELECT nombre, apellido, email FROM clientes WHERE clienteid = $1`,
+      [solicitud.cliente_id]
+    );
+
+    // 3. Actualizar estado de la solicitud
+    const motivoRechazo = motivo || `Rechazado por administrador ${req.user.id}`;
     await client.query(
       `UPDATE solicitudes_credito 
        SET estado = 'RECHAZADO',
            comentarios_admin = $1
        WHERE solicitud_id = $2`,
-      [motivo || `Rechazado por administrador ${req.user.id}`, solicitudId]
+      [motivoRechazo, solicitudId]
     );
 
-    // 3. Crear notificación para el cliente
+    // 4. Crear notificación in-app para el cliente
+    const mensajeNotificacion = motivo 
+      ? `Tu solicitud de crédito ha sido rechazada. Motivo: ${motivo}` 
+      : 'Tu solicitud de crédito ha sido rechazada. Contacta a tu agente para más información.';
+    
     await client.query(
       `INSERT INTO notificaciones 
-         (clienteid, tipo, titulo, mensaje, prioridad)
+         (clienteid, tipo, titulo, mensaje, prioridad, url)
        VALUES 
-         ($1, 'sistema', 'Solicitud de Crédito Rechazada', 'Tu solicitud de crédito ha sido rechazada. Contacta a tu agente para más información.', 'alta')`,
-      [solicitud.cliente_id]
+         ($1, 'sistema', 'Actualización de Solicitud de Crédito', $2, 'alta', '/contacto')`,
+      [solicitud.cliente_id, mensajeNotificacion]
     );
 
     await client.query('COMMIT');
+
+    // 5. Enviar email de forma asíncrona (no bloqueante)
+    if (cliente && cliente.email) {
+      const frontendUrl = process.env.FRONTEND_BASE_URL || 'https://razo.com.mx';
+      const nombreCompleto = `${cliente.nombre} ${cliente.apellido}`;
+      
+      const mensajeEmail = motivo
+        ? `Hemos revisado tu solicitud de crédito. Lamentamos informarte que en esta ocasión no ha sido posible aprobarla.<br><br><strong>Motivo:</strong> ${motivo}`
+        : 'Hemos revisado tu solicitud de crédito. Lamentamos informarte que en esta ocasión no ha sido posible aprobarla.';
+      
+      sendTemplatedEmail(
+        cliente.email,
+        'Actualización sobre tu Solicitud de Crédito',
+        {
+          title: 'Estado de tu Solicitud',
+          name: nombreCompleto,
+          message: mensajeEmail,
+          buttonText: 'Contactar Soporte',
+          buttonUrl: `${frontendUrl}/contacto`,
+          additionalInfo: 'Si tienes preguntas sobre esta decisión, nuestro equipo está disponible para ayudarte.'
+        }
+      ).catch(err => console.error('Error enviando email de rechazo de crédito:', err));
+    }
 
     return res.json({
       success: true,
