@@ -5,7 +5,7 @@
 -- Dumped from database version 17.7
 -- Dumped by pg_dump version 17.5
 
--- Started on 2026-01-08 03:06:12
+-- Started on 2026-01-09 13:31:28
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -28,7 +28,7 @@ CREATE EXTENSION IF NOT EXISTS pg_cron WITH SCHEMA pg_catalog;
 
 
 --
--- TOC entry 5004 (class 0 OID 0)
+-- TOC entry 5010 (class 0 OID 0)
 -- Dependencies: 3
 -- Name: EXTENSION pg_cron; Type: COMMENT; Schema: -; Owner: 
 --
@@ -55,7 +55,7 @@ CREATE EXTENSION IF NOT EXISTS azure WITH SCHEMA pg_catalog;
 
 
 --
--- TOC entry 5006 (class 0 OID 0)
+-- TOC entry 5012 (class 0 OID 0)
 -- Dependencies: 4
 -- Name: EXTENSION azure; Type: COMMENT; Schema: -; Owner: 
 --
@@ -72,7 +72,7 @@ CREATE EXTENSION IF NOT EXISTS pgaadauth WITH SCHEMA pg_catalog;
 
 
 --
--- TOC entry 5007 (class 0 OID 0)
+-- TOC entry 5013 (class 0 OID 0)
 -- Dependencies: 2
 -- Name: EXTENSION pgaadauth; Type: COMMENT; Schema: -; Owner: 
 --
@@ -192,7 +192,7 @@ $$;
 ALTER FUNCTION public.get_stock_admin(p_admin_id integer, p_variante_id integer) OWNER TO ferram;
 
 --
--- TOC entry 5031 (class 0 OID 0)
+-- TOC entry 5037 (class 0 OID 0)
 -- Dependencies: 351
 -- Name: FUNCTION get_stock_admin(p_admin_id integer, p_variante_id integer); Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -407,7 +407,7 @@ $$;
 ALTER FUNCTION public.upsert_inventario_admin(p_admin_id integer, p_variante_id integer, p_cantidad_incremento integer) OWNER TO ferram;
 
 --
--- TOC entry 5032 (class 0 OID 0)
+-- TOC entry 5038 (class 0 OID 0)
 -- Dependencies: 353
 -- Name: FUNCTION upsert_inventario_admin(p_admin_id integer, p_variante_id integer, p_cantidad_incremento integer); Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -460,7 +460,7 @@ CREATE SEQUENCE public.administradores_adminid_seq
 ALTER SEQUENCE public.administradores_adminid_seq OWNER TO ferram;
 
 --
--- TOC entry 5092 (class 0 OID 0)
+-- TOC entry 5098 (class 0 OID 0)
 -- Dependencies: 226
 -- Name: administradores_adminid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -477,7 +477,7 @@ CREATE TABLE public.agentesdeventas (
     agenteid integer NOT NULL,
     nombre character varying(100) NOT NULL,
     apellido character varying(100) NOT NULL,
-    email character varying(255) NOT NULL,
+    email character varying(255),
     passwordhash character varying(255) NOT NULL,
     codigoagente character varying(50) NOT NULL,
     activo boolean DEFAULT true,
@@ -487,7 +487,8 @@ CREATE TABLE public.agentesdeventas (
     numero_cuenta character varying(50),
     clabe character varying(20),
     titular character varying(255),
-    tenant_id integer DEFAULT 1
+    tenant_id integer DEFAULT 1,
+    telefono character varying(20)
 );
 
 
@@ -510,7 +511,7 @@ CREATE SEQUENCE public.agentesdeventas_agenteid_seq
 ALTER SEQUENCE public.agentesdeventas_agenteid_seq OWNER TO ferram;
 
 --
--- TOC entry 5093 (class 0 OID 0)
+-- TOC entry 5099 (class 0 OID 0)
 -- Dependencies: 228
 -- Name: agentesdeventas_agenteid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -550,7 +551,7 @@ CREATE SEQUENCE public.carritodecompra_carritoid_seq
 ALTER SEQUENCE public.carritodecompra_carritoid_seq OWNER TO ferram;
 
 --
--- TOC entry 5094 (class 0 OID 0)
+-- TOC entry 5100 (class 0 OID 0)
 -- Dependencies: 230
 -- Name: carritodecompra_carritoid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -591,7 +592,7 @@ CREATE SEQUENCE public.cat_cxp_etiquetas_etiqueta_id_seq
 ALTER SEQUENCE public.cat_cxp_etiquetas_etiqueta_id_seq OWNER TO ferram;
 
 --
--- TOC entry 5095 (class 0 OID 0)
+-- TOC entry 5101 (class 0 OID 0)
 -- Dependencies: 232
 -- Name: cat_cxp_etiquetas_etiqueta_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -630,7 +631,7 @@ CREATE SEQUENCE public.cat_tamanopaquetes_tamanoid_seq
 ALTER SEQUENCE public.cat_tamanopaquetes_tamanoid_seq OWNER TO ferram;
 
 --
--- TOC entry 5096 (class 0 OID 0)
+-- TOC entry 5102 (class 0 OID 0)
 -- Dependencies: 234
 -- Name: cat_tamanopaquetes_tamanoid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -674,7 +675,7 @@ CREATE SEQUENCE public.categorias_categoriaid_seq
 ALTER SEQUENCE public.categorias_categoriaid_seq OWNER TO ferram;
 
 --
--- TOC entry 5097 (class 0 OID 0)
+-- TOC entry 5103 (class 0 OID 0)
 -- Dependencies: 236
 -- Name: categorias_categoriaid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -723,7 +724,7 @@ CREATE SEQUENCE public.cliente_creditos_credito_id_seq
 ALTER SEQUENCE public.cliente_creditos_credito_id_seq OWNER TO ferram;
 
 --
--- TOC entry 5098 (class 0 OID 0)
+-- TOC entry 5104 (class 0 OID 0)
 -- Dependencies: 238
 -- Name: cliente_creditos_credito_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -771,7 +772,7 @@ CREATE SEQUENCE public.cliente_direcciones_direccionid_seq
 ALTER SEQUENCE public.cliente_direcciones_direccionid_seq OWNER TO ferram;
 
 --
--- TOC entry 5099 (class 0 OID 0)
+-- TOC entry 5105 (class 0 OID 0)
 -- Dependencies: 240
 -- Name: cliente_direcciones_direccionid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -820,7 +821,7 @@ CREATE SEQUENCE public.clientes_clienteid_seq
 ALTER SEQUENCE public.clientes_clienteid_seq OWNER TO ferram;
 
 --
--- TOC entry 5100 (class 0 OID 0)
+-- TOC entry 5106 (class 0 OID 0)
 -- Dependencies: 242
 -- Name: clientes_clienteid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -862,7 +863,7 @@ CREATE SEQUENCE public.comisiones_comisionid_seq
 ALTER SEQUENCE public.comisiones_comisionid_seq OWNER TO ferram;
 
 --
--- TOC entry 5101 (class 0 OID 0)
+-- TOC entry 5107 (class 0 OID 0)
 -- Dependencies: 244
 -- Name: comisiones_comisionid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -908,7 +909,7 @@ CREATE SEQUENCE public.communicationlogs_logid_seq
 ALTER SEQUENCE public.communicationlogs_logid_seq OWNER TO ferram;
 
 --
--- TOC entry 5102 (class 0 OID 0)
+-- TOC entry 5108 (class 0 OID 0)
 -- Dependencies: 246
 -- Name: communicationlogs_logid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -955,7 +956,7 @@ CREATE SEQUENCE public.control_cambios_id_seq
 ALTER SEQUENCE public.control_cambios_id_seq OWNER TO ferram;
 
 --
--- TOC entry 5103 (class 0 OID 0)
+-- TOC entry 5109 (class 0 OID 0)
 -- Dependencies: 248
 -- Name: control_cambios_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -1002,7 +1003,7 @@ CREATE SEQUENCE public.credito_movimientos_movimiento_id_seq
 ALTER SEQUENCE public.credito_movimientos_movimiento_id_seq OWNER TO ferram;
 
 --
--- TOC entry 5104 (class 0 OID 0)
+-- TOC entry 5110 (class 0 OID 0)
 -- Dependencies: 250
 -- Name: credito_movimientos_movimiento_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -1046,7 +1047,7 @@ CREATE SEQUENCE public.cuentas_por_cobrar_cxcid_seq
 ALTER SEQUENCE public.cuentas_por_cobrar_cxcid_seq OWNER TO ferram;
 
 --
--- TOC entry 5105 (class 0 OID 0)
+-- TOC entry 5111 (class 0 OID 0)
 -- Dependencies: 252
 -- Name: cuentas_por_cobrar_cxcid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -1102,7 +1103,7 @@ CREATE SEQUENCE public.cuentas_por_pagar_cxp_id_seq
 ALTER SEQUENCE public.cuentas_por_pagar_cxp_id_seq OWNER TO ferram;
 
 --
--- TOC entry 5106 (class 0 OID 0)
+-- TOC entry 5112 (class 0 OID 0)
 -- Dependencies: 254
 -- Name: cuentas_por_pagar_cxp_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -1135,7 +1136,7 @@ CREATE TABLE public.cupones (
 ALTER TABLE public.cupones OWNER TO ferram;
 
 --
--- TOC entry 5107 (class 0 OID 0)
+-- TOC entry 5113 (class 0 OID 0)
 -- Dependencies: 313
 -- Name: COLUMN cupones.agente_id; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -1160,7 +1161,7 @@ CREATE SEQUENCE public.cupones_cuponid_seq
 ALTER SEQUENCE public.cupones_cuponid_seq OWNER TO ferram;
 
 --
--- TOC entry 5108 (class 0 OID 0)
+-- TOC entry 5114 (class 0 OID 0)
 -- Dependencies: 312
 -- Name: cupones_cuponid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -1200,7 +1201,7 @@ CREATE SEQUENCE public.cxp_etiquetas_asignadas_asignacion_id_seq
 ALTER SEQUENCE public.cxp_etiquetas_asignadas_asignacion_id_seq OWNER TO ferram;
 
 --
--- TOC entry 5109 (class 0 OID 0)
+-- TOC entry 5115 (class 0 OID 0)
 -- Dependencies: 256
 -- Name: cxp_etiquetas_asignadas_asignacion_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -1243,7 +1244,7 @@ CREATE SEQUENCE public.datos_bancarios_empresa_id_seq
 ALTER SEQUENCE public.datos_bancarios_empresa_id_seq OWNER TO ferram;
 
 --
--- TOC entry 5110 (class 0 OID 0)
+-- TOC entry 5116 (class 0 OID 0)
 -- Dependencies: 258
 -- Name: datos_bancarios_empresa_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -1290,7 +1291,7 @@ CREATE SEQUENCE public.detallesdelpedido_detalleid_seq
 ALTER SEQUENCE public.detallesdelpedido_detalleid_seq OWNER TO ferram;
 
 --
--- TOC entry 5111 (class 0 OID 0)
+-- TOC entry 5117 (class 0 OID 0)
 -- Dependencies: 260
 -- Name: detallesdelpedido_detalleid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -1335,7 +1336,7 @@ CREATE SEQUENCE public.detallesordencompra_detalleoc_id_seq
 ALTER SEQUENCE public.detallesordencompra_detalleoc_id_seq OWNER TO ferram;
 
 --
--- TOC entry 5112 (class 0 OID 0)
+-- TOC entry 5118 (class 0 OID 0)
 -- Dependencies: 262
 -- Name: detallesordencompra_detalleoc_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -1375,7 +1376,7 @@ CREATE SEQUENCE public.developers_dev_id_seq
 ALTER SEQUENCE public.developers_dev_id_seq OWNER TO ferram;
 
 --
--- TOC entry 5113 (class 0 OID 0)
+-- TOC entry 5119 (class 0 OID 0)
 -- Dependencies: 320
 -- Name: developers_dev_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -1411,7 +1412,7 @@ CREATE TABLE public.notificaciones (
 ALTER TABLE public.notificaciones OWNER TO ferram;
 
 --
--- TOC entry 5114 (class 0 OID 0)
+-- TOC entry 5120 (class 0 OID 0)
 -- Dependencies: 263
 -- Name: TABLE notificaciones; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -1420,7 +1421,7 @@ COMMENT ON TABLE public.notificaciones IS 'Notificaciones para clientes del sist
 
 
 --
--- TOC entry 5115 (class 0 OID 0)
+-- TOC entry 5121 (class 0 OID 0)
 -- Dependencies: 263
 -- Name: COLUMN notificaciones.tipo; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -1429,7 +1430,7 @@ COMMENT ON COLUMN public.notificaciones.tipo IS 'Tipo de notificación: pedido, 
 
 
 --
--- TOC entry 5116 (class 0 OID 0)
+-- TOC entry 5122 (class 0 OID 0)
 -- Dependencies: 263
 -- Name: COLUMN notificaciones.metadata; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -1438,7 +1439,7 @@ COMMENT ON COLUMN public.notificaciones.metadata IS 'Información adicional en f
 
 
 --
--- TOC entry 5117 (class 0 OID 0)
+-- TOC entry 5123 (class 0 OID 0)
 -- Dependencies: 263
 -- Name: COLUMN notificaciones.url; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -1447,7 +1448,7 @@ COMMENT ON COLUMN public.notificaciones.url IS 'URL de redirección al hacer cli
 
 
 --
--- TOC entry 5118 (class 0 OID 0)
+-- TOC entry 5124 (class 0 OID 0)
 -- Dependencies: 263
 -- Name: COLUMN notificaciones.prioridad; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -1477,7 +1478,7 @@ CREATE VIEW public.estadisticas_notificaciones AS
 ALTER VIEW public.estadisticas_notificaciones OWNER TO ferram;
 
 --
--- TOC entry 5119 (class 0 OID 0)
+-- TOC entry 5125 (class 0 OID 0)
 -- Dependencies: 264
 -- Name: VIEW estadisticas_notificaciones; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -1516,7 +1517,7 @@ CREATE SEQUENCE public.estados_estadoid_seq
 ALTER SEQUENCE public.estados_estadoid_seq OWNER TO ferram;
 
 --
--- TOC entry 5120 (class 0 OID 0)
+-- TOC entry 5126 (class 0 OID 0)
 -- Dependencies: 266
 -- Name: estados_estadoid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -1544,7 +1545,7 @@ CREATE TABLE public.inventarios_admin (
 ALTER TABLE public.inventarios_admin OWNER TO ferram;
 
 --
--- TOC entry 5121 (class 0 OID 0)
+-- TOC entry 5127 (class 0 OID 0)
 -- Dependencies: 315
 -- Name: TABLE inventarios_admin; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -1553,7 +1554,7 @@ COMMENT ON TABLE public.inventarios_admin IS 'Tabla de inventario segregado por 
 
 
 --
--- TOC entry 5122 (class 0 OID 0)
+-- TOC entry 5128 (class 0 OID 0)
 -- Dependencies: 315
 -- Name: COLUMN inventarios_admin.admin_id; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -1562,7 +1563,7 @@ COMMENT ON COLUMN public.inventarios_admin.admin_id IS 'ID del administrador due
 
 
 --
--- TOC entry 5123 (class 0 OID 0)
+-- TOC entry 5129 (class 0 OID 0)
 -- Dependencies: 315
 -- Name: COLUMN inventarios_admin.variante_id; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -1571,7 +1572,7 @@ COMMENT ON COLUMN public.inventarios_admin.variante_id IS 'ID de la variante de 
 
 
 --
--- TOC entry 5124 (class 0 OID 0)
+-- TOC entry 5130 (class 0 OID 0)
 -- Dependencies: 315
 -- Name: COLUMN inventarios_admin.cantidad; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -1580,7 +1581,7 @@ COMMENT ON COLUMN public.inventarios_admin.cantidad IS 'Cantidad de piezas dispo
 
 
 --
--- TOC entry 5125 (class 0 OID 0)
+-- TOC entry 5131 (class 0 OID 0)
 -- Dependencies: 315
 -- Name: COLUMN inventarios_admin.ultima_actualizacion; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -1589,7 +1590,7 @@ COMMENT ON COLUMN public.inventarios_admin.ultima_actualizacion IS 'Timestamp de
 
 
 --
--- TOC entry 5126 (class 0 OID 0)
+-- TOC entry 5132 (class 0 OID 0)
 -- Dependencies: 315
 -- Name: COLUMN inventarios_admin.registrado_por; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -1614,7 +1615,7 @@ CREATE SEQUENCE public.inventarios_admin_inventario_id_seq
 ALTER SEQUENCE public.inventarios_admin_inventario_id_seq OWNER TO ferram;
 
 --
--- TOC entry 5127 (class 0 OID 0)
+-- TOC entry 5133 (class 0 OID 0)
 -- Dependencies: 314
 -- Name: inventarios_admin_inventario_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -1656,7 +1657,7 @@ CREATE SEQUENCE public.itemsdelcarrito_itemid_seq
 ALTER SEQUENCE public.itemsdelcarrito_itemid_seq OWNER TO ferram;
 
 --
--- TOC entry 5128 (class 0 OID 0)
+-- TOC entry 5134 (class 0 OID 0)
 -- Dependencies: 268
 -- Name: itemsdelcarrito_itemid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -1686,7 +1687,7 @@ CREATE TABLE public.landing_page_config (
 ALTER TABLE public.landing_page_config OWNER TO ferram;
 
 --
--- TOC entry 5129 (class 0 OID 0)
+-- TOC entry 5135 (class 0 OID 0)
 -- Dependencies: 317
 -- Name: TABLE landing_page_config; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -1695,7 +1696,7 @@ COMMENT ON TABLE public.landing_page_config IS 'Stores dynamic content configura
 
 
 --
--- TOC entry 5130 (class 0 OID 0)
+-- TOC entry 5136 (class 0 OID 0)
 -- Dependencies: 317
 -- Name: COLUMN landing_page_config.section_key; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -1704,7 +1705,7 @@ COMMENT ON COLUMN public.landing_page_config.section_key IS 'Unique identifier f
 
 
 --
--- TOC entry 5131 (class 0 OID 0)
+-- TOC entry 5137 (class 0 OID 0)
 -- Dependencies: 317
 -- Name: COLUMN landing_page_config.content_type; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -1713,7 +1714,7 @@ COMMENT ON COLUMN public.landing_page_config.content_type IS 'Type of content: i
 
 
 --
--- TOC entry 5132 (class 0 OID 0)
+-- TOC entry 5138 (class 0 OID 0)
 -- Dependencies: 317
 -- Name: COLUMN landing_page_config.value_draft; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -1722,7 +1723,7 @@ COMMENT ON COLUMN public.landing_page_config.value_draft IS 'Draft value (not vi
 
 
 --
--- TOC entry 5133 (class 0 OID 0)
+-- TOC entry 5139 (class 0 OID 0)
 -- Dependencies: 317
 -- Name: COLUMN landing_page_config.value_published; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -1731,7 +1732,7 @@ COMMENT ON COLUMN public.landing_page_config.value_published IS 'Published value
 
 
 --
--- TOC entry 5134 (class 0 OID 0)
+-- TOC entry 5140 (class 0 OID 0)
 -- Dependencies: 317
 -- Name: COLUMN landing_page_config.metadata; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -1756,7 +1757,7 @@ CREATE SEQUENCE public.landing_page_config_config_id_seq
 ALTER SEQUENCE public.landing_page_config_config_id_seq OWNER TO ferram;
 
 --
--- TOC entry 5135 (class 0 OID 0)
+-- TOC entry 5141 (class 0 OID 0)
 -- Dependencies: 316
 -- Name: landing_page_config_config_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -1799,7 +1800,7 @@ CREATE SEQUENCE public.log_eventosusuario_eventoid_seq
 ALTER SEQUENCE public.log_eventosusuario_eventoid_seq OWNER TO ferram;
 
 --
--- TOC entry 5136 (class 0 OID 0)
+-- TOC entry 5142 (class 0 OID 0)
 -- Dependencies: 270
 -- Name: log_eventosusuario_eventoid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -1845,7 +1846,7 @@ CREATE SEQUENCE public.log_inventario_logid_seq
 ALTER SEQUENCE public.log_inventario_logid_seq OWNER TO ferram;
 
 --
--- TOC entry 5137 (class 0 OID 0)
+-- TOC entry 5143 (class 0 OID 0)
 -- Dependencies: 272
 -- Name: log_inventario_logid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -1893,7 +1894,7 @@ CREATE SEQUENCE public.log_movimientos_logid_seq
 ALTER SEQUENCE public.log_movimientos_logid_seq OWNER TO ferram;
 
 --
--- TOC entry 5138 (class 0 OID 0)
+-- TOC entry 5144 (class 0 OID 0)
 -- Dependencies: 274
 -- Name: log_movimientos_logid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -1925,7 +1926,7 @@ CREATE TABLE public.medidas (
 ALTER TABLE public.medidas OWNER TO ferram;
 
 --
--- TOC entry 5139 (class 0 OID 0)
+-- TOC entry 5145 (class 0 OID 0)
 -- Dependencies: 275
 -- Name: TABLE medidas; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -1950,7 +1951,7 @@ CREATE SEQUENCE public.medidas_medidaid_seq
 ALTER SEQUENCE public.medidas_medidaid_seq OWNER TO ferram;
 
 --
--- TOC entry 5140 (class 0 OID 0)
+-- TOC entry 5146 (class 0 OID 0)
 -- Dependencies: 276
 -- Name: medidas_medidaid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -1975,7 +1976,7 @@ CREATE SEQUENCE public.notificaciones_notificacionid_seq
 ALTER SEQUENCE public.notificaciones_notificacionid_seq OWNER TO ferram;
 
 --
--- TOC entry 5141 (class 0 OID 0)
+-- TOC entry 5147 (class 0 OID 0)
 -- Dependencies: 277
 -- Name: notificaciones_notificacionid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -2007,7 +2008,7 @@ CREATE TABLE public.ordenesdecompra (
 ALTER TABLE public.ordenesdecompra OWNER TO ferram;
 
 --
--- TOC entry 5142 (class 0 OID 0)
+-- TOC entry 5148 (class 0 OID 0)
 -- Dependencies: 278
 -- Name: COLUMN ordenesdecompra.origenoc; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -2032,7 +2033,7 @@ CREATE SEQUENCE public.ordenesdecompra_ordencompraid_seq
 ALTER SEQUENCE public.ordenesdecompra_ordencompraid_seq OWNER TO ferram;
 
 --
--- TOC entry 5143 (class 0 OID 0)
+-- TOC entry 5149 (class 0 OID 0)
 -- Dependencies: 279
 -- Name: ordenesdecompra_ordencompraid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -2070,7 +2071,7 @@ CREATE TABLE public.pagos_clientes (
 ALTER TABLE public.pagos_clientes OWNER TO ferram;
 
 --
--- TOC entry 5144 (class 0 OID 0)
+-- TOC entry 5150 (class 0 OID 0)
 -- Dependencies: 280
 -- Name: TABLE pagos_clientes; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -2079,7 +2080,7 @@ COMMENT ON TABLE public.pagos_clientes IS 'Registro de pagos realizados por clie
 
 
 --
--- TOC entry 5145 (class 0 OID 0)
+-- TOC entry 5151 (class 0 OID 0)
 -- Dependencies: 280
 -- Name: COLUMN pagos_clientes.tipo_pago; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -2088,7 +2089,7 @@ COMMENT ON COLUMN public.pagos_clientes.tipo_pago IS 'Método de pago utilizado 
 
 
 --
--- TOC entry 5146 (class 0 OID 0)
+-- TOC entry 5152 (class 0 OID 0)
 -- Dependencies: 280
 -- Name: COLUMN pagos_clientes.estatus; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -2097,7 +2098,7 @@ COMMENT ON COLUMN public.pagos_clientes.estatus IS 'PENDIENTE: En revisión | AP
 
 
 --
--- TOC entry 5147 (class 0 OID 0)
+-- TOC entry 5153 (class 0 OID 0)
 -- Dependencies: 280
 -- Name: COLUMN pagos_clientes.movimientos_aplicados; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -2122,7 +2123,7 @@ CREATE SEQUENCE public.pagos_clientes_pago_id_seq
 ALTER SEQUENCE public.pagos_clientes_pago_id_seq OWNER TO ferram;
 
 --
--- TOC entry 5148 (class 0 OID 0)
+-- TOC entry 5154 (class 0 OID 0)
 -- Dependencies: 281
 -- Name: pagos_clientes_pago_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -2169,7 +2170,7 @@ CREATE SEQUENCE public.pagos_cxp_pago_id_seq
 ALTER SEQUENCE public.pagos_cxp_pago_id_seq OWNER TO ferram;
 
 --
--- TOC entry 5149 (class 0 OID 0)
+-- TOC entry 5155 (class 0 OID 0)
 -- Dependencies: 283
 -- Name: pagos_cxp_pago_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -2211,7 +2212,7 @@ CREATE SEQUENCE public.passwordresettokens_tokenid_seq
 ALTER SEQUENCE public.passwordresettokens_tokenid_seq OWNER TO ferram;
 
 --
--- TOC entry 5150 (class 0 OID 0)
+-- TOC entry 5156 (class 0 OID 0)
 -- Dependencies: 285
 -- Name: passwordresettokens_tokenid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -2251,7 +2252,7 @@ CREATE TABLE public.pedidos (
 ALTER TABLE public.pedidos OWNER TO ferram;
 
 --
--- TOC entry 5151 (class 0 OID 0)
+-- TOC entry 5157 (class 0 OID 0)
 -- Dependencies: 286
 -- Name: COLUMN pedidos.url_evidencia_entrega; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -2260,7 +2261,7 @@ COMMENT ON COLUMN public.pedidos.url_evidencia_entrega IS 'URL de la foto de la 
 
 
 --
--- TOC entry 5152 (class 0 OID 0)
+-- TOC entry 5158 (class 0 OID 0)
 -- Dependencies: 286
 -- Name: COLUMN pedidos.fecha_entrega_real; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -2285,7 +2286,7 @@ CREATE SEQUENCE public.pedidos_pedidoid_seq
 ALTER SEQUENCE public.pedidos_pedidoid_seq OWNER TO ferram;
 
 --
--- TOC entry 5153 (class 0 OID 0)
+-- TOC entry 5159 (class 0 OID 0)
 -- Dependencies: 287
 -- Name: pedidos_pedidoid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -2343,7 +2344,7 @@ CREATE SEQUENCE public.producto_imagenes_color_imagencolorid_seq
 ALTER SEQUENCE public.producto_imagenes_color_imagencolorid_seq OWNER TO ferram;
 
 --
--- TOC entry 5154 (class 0 OID 0)
+-- TOC entry 5160 (class 0 OID 0)
 -- Dependencies: 310
 -- Name: producto_imagenes_color_imagencolorid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -2368,7 +2369,7 @@ CREATE SEQUENCE public.producto_imagenes_imagenid_seq
 ALTER SEQUENCE public.producto_imagenes_imagenid_seq OWNER TO ferram;
 
 --
--- TOC entry 5155 (class 0 OID 0)
+-- TOC entry 5161 (class 0 OID 0)
 -- Dependencies: 289
 -- Name: producto_imagenes_imagenid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -2422,7 +2423,7 @@ CREATE SEQUENCE public.producto_variante_imagenes_imagenid_seq
 ALTER SEQUENCE public.producto_variante_imagenes_imagenid_seq OWNER TO ferram;
 
 --
--- TOC entry 5156 (class 0 OID 0)
+-- TOC entry 5162 (class 0 OID 0)
 -- Dependencies: 292
 -- Name: producto_variante_imagenes_imagenid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -2458,7 +2459,7 @@ CREATE TABLE public.producto_variantes (
 ALTER TABLE public.producto_variantes OWNER TO ferram;
 
 --
--- TOC entry 5157 (class 0 OID 0)
+-- TOC entry 5163 (class 0 OID 0)
 -- Dependencies: 293
 -- Name: COLUMN producto_variantes.stock; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -2467,7 +2468,7 @@ COMMENT ON COLUMN public.producto_variantes.stock IS 'COLUMNA LEGACY - No usar. 
 
 
 --
--- TOC entry 5158 (class 0 OID 0)
+-- TOC entry 5164 (class 0 OID 0)
 -- Dependencies: 293
 -- Name: COLUMN producto_variantes.tipoproductoid; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -2492,7 +2493,7 @@ CREATE SEQUENCE public.producto_variantes_varianteid_seq
 ALTER SEQUENCE public.producto_variantes_varianteid_seq OWNER TO ferram;
 
 --
--- TOC entry 5159 (class 0 OID 0)
+-- TOC entry 5165 (class 0 OID 0)
 -- Dependencies: 294
 -- Name: producto_variantes_varianteid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -2538,7 +2539,7 @@ CREATE SEQUENCE public.productos_productoid_seq1
 ALTER SEQUENCE public.productos_productoid_seq1 OWNER TO ferram;
 
 --
--- TOC entry 5160 (class 0 OID 0)
+-- TOC entry 5166 (class 0 OID 0)
 -- Dependencies: 296
 -- Name: productos_productoid_seq1; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -2580,7 +2581,7 @@ CREATE SEQUENCE public.proveedor_reglas_empaque_reglaid_seq
 ALTER SEQUENCE public.proveedor_reglas_empaque_reglaid_seq OWNER TO ferram;
 
 --
--- TOC entry 5161 (class 0 OID 0)
+-- TOC entry 5167 (class 0 OID 0)
 -- Dependencies: 298
 -- Name: proveedor_reglas_empaque_reglaid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -2645,7 +2646,7 @@ CREATE SEQUENCE public.proveedores_proveedorid_seq
 ALTER SEQUENCE public.proveedores_proveedorid_seq OWNER TO ferram;
 
 --
--- TOC entry 5162 (class 0 OID 0)
+-- TOC entry 5168 (class 0 OID 0)
 -- Dependencies: 300
 -- Name: proveedores_proveedorid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -2668,7 +2669,7 @@ CREATE TABLE public.session (
 ALTER TABLE public.session OWNER TO ferram;
 
 --
--- TOC entry 5163 (class 0 OID 0)
+-- TOC entry 5169 (class 0 OID 0)
 -- Dependencies: 322
 -- Name: TABLE session; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -2677,7 +2678,7 @@ COMMENT ON TABLE public.session IS 'Tabla de sesiones de usuario para express-se
 
 
 --
--- TOC entry 5164 (class 0 OID 0)
+-- TOC entry 5170 (class 0 OID 0)
 -- Dependencies: 322
 -- Name: COLUMN session.sid; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -2686,7 +2687,7 @@ COMMENT ON COLUMN public.session.sid IS 'Session ID único generado por express-
 
 
 --
--- TOC entry 5165 (class 0 OID 0)
+-- TOC entry 5171 (class 0 OID 0)
 -- Dependencies: 322
 -- Name: COLUMN session.sess; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -2695,7 +2696,7 @@ COMMENT ON COLUMN public.session.sess IS 'Datos de la sesión en formato JSON (u
 
 
 --
--- TOC entry 5166 (class 0 OID 0)
+-- TOC entry 5172 (class 0 OID 0)
 -- Dependencies: 322
 -- Name: COLUMN session.expire; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -2716,11 +2717,31 @@ CREATE TABLE public.solicitudes_credito (
     estado character varying(20) DEFAULT 'PENDIENTE'::character varying,
     fecha_solicitud timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
     comentarios_admin text,
-    tenant_id integer DEFAULT 1
+    tenant_id integer DEFAULT 1,
+    ingresos_mensuales numeric(15,2),
+    plazo_preferido integer
 );
 
 
 ALTER TABLE public.solicitudes_credito OWNER TO ferram;
+
+--
+-- TOC entry 5173 (class 0 OID 0)
+-- Dependencies: 301
+-- Name: COLUMN solicitudes_credito.ingresos_mensuales; Type: COMMENT; Schema: public; Owner: ferram
+--
+
+COMMENT ON COLUMN public.solicitudes_credito.ingresos_mensuales IS 'Ingresos mensuales estimados del cliente';
+
+
+--
+-- TOC entry 5174 (class 0 OID 0)
+-- Dependencies: 301
+-- Name: COLUMN solicitudes_credito.plazo_preferido; Type: COMMENT; Schema: public; Owner: ferram
+--
+
+COMMENT ON COLUMN public.solicitudes_credito.plazo_preferido IS 'Plazo de pago preferido en días (15, 30, 45)';
+
 
 --
 -- TOC entry 302 (class 1259 OID 25318)
@@ -2739,7 +2760,7 @@ CREATE SEQUENCE public.solicitudes_credito_solicitud_id_seq
 ALTER SEQUENCE public.solicitudes_credito_solicitud_id_seq OWNER TO ferram;
 
 --
--- TOC entry 5167 (class 0 OID 0)
+-- TOC entry 5175 (class 0 OID 0)
 -- Dependencies: 302
 -- Name: solicitudes_credito_solicitud_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -2757,7 +2778,8 @@ CREATE TABLE public.tenants (
     nombre_cliente character varying(100) NOT NULL,
     dominio character varying(100),
     is_active boolean DEFAULT true,
-    created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+    created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    tema character varying(50) DEFAULT 'razo'::character varying
 );
 
 
@@ -2780,7 +2802,7 @@ CREATE SEQUENCE public.tenants_tenant_id_seq
 ALTER SEQUENCE public.tenants_tenant_id_seq OWNER TO ferram;
 
 --
--- TOC entry 5168 (class 0 OID 0)
+-- TOC entry 5176 (class 0 OID 0)
 -- Dependencies: 318
 -- Name: tenants_tenant_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -2806,7 +2828,7 @@ CREATE TABLE public.tipoproducto (
 ALTER TABLE public.tipoproducto OWNER TO ferram;
 
 --
--- TOC entry 5169 (class 0 OID 0)
+-- TOC entry 5177 (class 0 OID 0)
 -- Dependencies: 303
 -- Name: TABLE tipoproducto; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -2831,7 +2853,7 @@ CREATE SEQUENCE public.tipoproducto_tipoproductoid_seq
 ALTER SEQUENCE public.tipoproducto_tipoproductoid_seq OWNER TO ferram;
 
 --
--- TOC entry 5170 (class 0 OID 0)
+-- TOC entry 5178 (class 0 OID 0)
 -- Dependencies: 304
 -- Name: tipoproducto_tipoproductoid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -2862,7 +2884,7 @@ CREATE TABLE public.toma_inventario_conteos (
 ALTER TABLE public.toma_inventario_conteos OWNER TO ferram;
 
 --
--- TOC entry 5171 (class 0 OID 0)
+-- TOC entry 5179 (class 0 OID 0)
 -- Dependencies: 305
 -- Name: TABLE toma_inventario_conteos; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -2871,7 +2893,7 @@ COMMENT ON TABLE public.toma_inventario_conteos IS 'Registros individuales de co
 
 
 --
--- TOC entry 5172 (class 0 OID 0)
+-- TOC entry 5180 (class 0 OID 0)
 -- Dependencies: 305
 -- Name: COLUMN toma_inventario_conteos.estatus_aplicacion; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -2896,7 +2918,7 @@ CREATE SEQUENCE public.toma_inventario_conteos_conteoid_seq
 ALTER SEQUENCE public.toma_inventario_conteos_conteoid_seq OWNER TO ferram;
 
 --
--- TOC entry 5173 (class 0 OID 0)
+-- TOC entry 5181 (class 0 OID 0)
 -- Dependencies: 306
 -- Name: toma_inventario_conteos_conteoid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -2922,7 +2944,7 @@ CREATE TABLE public.toma_inventario_sesiones (
 ALTER TABLE public.toma_inventario_sesiones OWNER TO ferram;
 
 --
--- TOC entry 5174 (class 0 OID 0)
+-- TOC entry 5182 (class 0 OID 0)
 -- Dependencies: 307
 -- Name: TABLE toma_inventario_sesiones; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -2947,7 +2969,7 @@ CREATE SEQUENCE public.toma_inventario_sesiones_sesionid_seq
 ALTER SEQUENCE public.toma_inventario_sesiones_sesionid_seq OWNER TO ferram;
 
 --
--- TOC entry 5175 (class 0 OID 0)
+-- TOC entry 5183 (class 0 OID 0)
 -- Dependencies: 308
 -- Name: toma_inventario_sesiones_sesionid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -3134,7 +3156,7 @@ ALTER TABLE ONLY public.detallesordencompra ALTER COLUMN detalleoc_id SET DEFAUL
 
 
 --
--- TOC entry 4415 (class 2604 OID 26158)
+-- TOC entry 4416 (class 2604 OID 26158)
 -- Name: developers dev_id; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -3370,7 +3392,7 @@ COPY cron.job_run_details (jobid, runid, job_pid, database, username, command, s
 
 
 --
--- TOC entry 4903 (class 0 OID 25022)
+-- TOC entry 4909 (class 0 OID 25022)
 -- Dependencies: 225
 -- Data for Name: administradores; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -3380,38 +3402,42 @@ COPY public.administradores (adminid, nombre, email, passwordhash, rol, activo, 
 4	Alejandra Calderón	alecaja.19@gmail.com	$2b$10$bVTxKPf5YFi9wvEC2w8kUeWXjY77aXZEYJfrN2qhn52X0u57g2Lre	admin	t	2026-01-02 20:43:37.083971	                                                                                                    	\N	\N	\N	\N	1
 5	Lupita García	pupis_gr@icloud.com	$2b$10$SsgX.yO3ttH6aaEh8qISqeJlsn2K2BpAjgjXxNJrVOWSPhw8BwQUi	admin	t	2026-01-02 20:49:05.63054	                                                                                                    	\N	\N	\N	\N	1
 7	Maricela García	maricelag.e@hotmail.com	$2b$10$JkriMBwuYGdiJlk.Go8JguxXoGnvWzsE0Zsmtn3foSRUr/hk4kyka	admin	t	2026-01-02 23:02:29.212694	                                                                                                    	\N	\N	\N	\N	1
+8	Admin Fashion	dferram8@gmail.com	$2b$12$VUyJzfYb0aE9Cv.rdaDJX.UPqlPbt88oQS8THkdCQy7CpEzi5nv4C	superadmin	t	2026-01-09 08:20:40.830108	\N	\N	\N	\N	\N	5
 \.
 
 
 --
--- TOC entry 4905 (class 0 OID 25031)
+-- TOC entry 4911 (class 0 OID 25031)
 -- Dependencies: 227
 -- Data for Name: agentesdeventas; Type: TABLE DATA; Schema: public; Owner: ferram
 --
 
-COPY public.agentesdeventas (agenteid, nombre, apellido, email, passwordhash, codigoagente, activo, esadmin, adminrol, banco, numero_cuenta, clabe, titular, tenant_id) FROM stdin;
-1	Lupita	García	pupis_gr@hotmail.com	$2b$10$6t8maMlHk52sLRQ4PSGnJe0y/6gbIlEQYtlNgba/HwV1LzArkqfie	AG0001	t	f	\N	\N	\N	\N	\N	1
-2	José	García	jofegara.78@gmail.com	$2b$10$hW5OBaBiUbRPIK7nzbpXAeUFHNuulZEoR.FtLI.gkDcTR0PMi0.Y6	AG0002	t	f	\N	\N	\N	\N	\N	1
+COPY public.agentesdeventas (agenteid, nombre, apellido, email, passwordhash, codigoagente, activo, esadmin, adminrol, banco, numero_cuenta, clabe, titular, tenant_id, telefono) FROM stdin;
+1	Lupita	García	pupis_gr@hotmail.com	$2b$10$6t8maMlHk52sLRQ4PSGnJe0y/6gbIlEQYtlNgba/HwV1LzArkqfie	AG0001	t	f	\N	\N	\N	\N	\N	1	\N
+2	José	García	jofegara.78@gmail.com	$2b$10$hW5OBaBiUbRPIK7nzbpXAeUFHNuulZEoR.FtLI.gkDcTR0PMi0.Y6	AG0002	t	f	\N	\N	\N	\N	\N	1	\N
 \.
 
 
 --
--- TOC entry 4907 (class 0 OID 25039)
+-- TOC entry 4913 (class 0 OID 25039)
 -- Dependencies: 229
 -- Data for Name: carritodecompra; Type: TABLE DATA; Schema: public; Owner: ferram
 --
 
 COPY public.carritodecompra (carritoid, clienteid, fechacreacion, ultimamodificacion) FROM stdin;
-1	1	2026-01-06 18:27:31.675743	\N
-2	4	2026-01-06 23:52:33.779927	2026-01-06 23:52:33.779927
 3	5	2026-01-08 04:08:04.928834	2026-01-08 04:37:49.866157
 4	6	2026-01-08 04:27:44.741416	2026-01-08 04:40:38.920743
-5	2	2026-01-08 04:39:16.915714	2026-01-08 07:44:09.850294
+8	12	2026-01-09 05:04:01.552558	\N
+6	10	2026-01-08 19:00:15.681398	2026-01-08 23:12:32.356962
+7	11	2026-01-09 00:12:57.780982	2026-01-09 11:54:21.852514
+1	1	2026-01-06 18:27:31.675743	2026-01-09 17:31:01.740061
+2	4	2026-01-06 23:52:33.779927	2026-01-09 02:57:40.950232
+5	2	2026-01-08 04:39:16.915714	2026-01-09 03:16:39.747419
 \.
 
 
 --
--- TOC entry 4909 (class 0 OID 25044)
+-- TOC entry 4915 (class 0 OID 25044)
 -- Dependencies: 231
 -- Data for Name: cat_cxp_etiquetas; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -3421,7 +3447,7 @@ COPY public.cat_cxp_etiquetas (etiqueta_id, nombre, color_hex, icono, activo) FR
 
 
 --
--- TOC entry 4911 (class 0 OID 25050)
+-- TOC entry 4917 (class 0 OID 25050)
 -- Dependencies: 233
 -- Data for Name: cat_tamanopaquetes; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -3432,11 +3458,12 @@ COPY public.cat_tamanopaquetes (tamanoid, cantidad, tenant_id) FROM stdin;
 3	6	1
 4	12	1
 5	4	1
+6	30	1
 \.
 
 
 --
--- TOC entry 4913 (class 0 OID 25054)
+-- TOC entry 4919 (class 0 OID 25054)
 -- Dependencies: 235
 -- Data for Name: categorias; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -3450,7 +3477,7 @@ COPY public.categorias (categoriaid, nombre, descripcion, parentcategoriaid, act
 
 
 --
--- TOC entry 4915 (class 0 OID 25061)
+-- TOC entry 4921 (class 0 OID 25061)
 -- Dependencies: 237
 -- Data for Name: cliente_creditos; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -3460,33 +3487,39 @@ COPY public.cliente_creditos (credito_id, cliente_id, limite_credito, saldo_deud
 
 
 --
--- TOC entry 4917 (class 0 OID 25074)
+-- TOC entry 4923 (class 0 OID 25074)
 -- Dependencies: 239
 -- Data for Name: cliente_direcciones; Type: TABLE DATA; Schema: public; Owner: ferram
 --
 
 COPY public.cliente_direcciones (direccionid, clienteid, etiqueta, receptor, calle, numeroext, numeroint, colonia, ciudad, codigopostal, telefonocontacto, estadoid) FROM stdin;
+1	11	Pasaje local 1	Angel Balderas	Simon	12	3	Centro	Tula	57470	\N	13
 \.
 
 
 --
--- TOC entry 4919 (class 0 OID 25080)
+-- TOC entry 4925 (class 0 OID 25080)
 -- Dependencies: 241
 -- Data for Name: clientes; Type: TABLE DATA; Schema: public; Owner: ferram
 --
 
 COPY public.clientes (clienteid, nombre, apellido, email, passwordhash, telefono, fechaderegistro, activo, agenteid, google_id, avatar_url, tenant_id) FROM stdin;
-1	Fernando	Ramírez	dferramm@gmail.com	$2b$10$ZUcnN9znOWCy8X1RbUEF6.yBpyY3CzbMUVDZ/F27iKXiVDv2lRRmS	5560989524	2026-01-05 05:23:11.396759	t	\N	107035380971984210505	https://lh3.googleusercontent.com/a/ACg8ocKNxihdAINOrco8B52uUBljbYq3DjLlFlU9VsDVdeuo9DZ5IQ=s96-c	1
 2	Diego Fernando	Ramírez García	dferram8@gmail.com	\N	\N	2026-01-05 20:01:06.815611	t	\N	112463414682839499861	https://lh3.googleusercontent.com/a/ACg8ocL4vAqVyYj3GucQspTlE6BtmuyoqZqML7L4Zcb7WdwdcHT9m4E=s96-c	1
 3	Maria Teresa	Garcia	\N	$2b$10$Zkbye7ng5W0WaF7U.D7zre.ggz4qw0MMsYZRrKUh5s6yy.mOvtSu2	5526125531	2026-01-06 18:10:42.362124	t	\N	\N	\N	1
-4	Nohemi	Zuñiga	\N	$2b$10$FBFKnpHsawMgchp1rv2IJOOvSkp.xO2ZxxG1207UAdHEdUdMbg.xC	7731158195	2026-01-06 23:51:33.737605	t	\N	\N	\N	1
 5	Veronica	Romero	\N	$2b$10$xrA/.fj4ziYVIZ4GR76z7.gpIJpUPDX/1PxAz70VnCsReHqF1gxri	7721292464	2026-01-08 04:05:07.879159	t	\N	\N	\N	1
 6	Nayeli	Mendoza	\N	$2b$10$pxQmFRjQGr4lTphshLNFReZAbCQPOIAKkbG.Gv3aqpr.e4pDD2WhC	4426537609	2026-01-08 04:26:28.880347	t	\N	\N	\N	1
+8	Diego	Ramírez	dferramm@gmail.com	$2b$10$RFed0OHDhTc/FetYN9Jj8uQs2ltb28fNVG6TcdIKdxetPmKhWBhe6	\N	2026-01-08 09:09:22.977068	t	\N	\N	\N	3
+9	Diego	Ramírez	dferram8@gmail.com	$2b$10$fZba6hEA7WslcZhJB6h4WOa3eXIEKYh3F/JLgASsCknuh3sS7AkNC	\N	2026-01-08 16:56:05.436888	t	\N	\N	\N	5
+10	Ivan	Domínguez	ivansd2609@gmail.com	\N	\N	2026-01-08 18:57:29.907786	t	\N	101408660806328968970	https://lh3.googleusercontent.com/a/ACg8ocJBF6U4C-PLKI0ODs_W9IgM5r3fLYgU7QDHJSgVRjiS_hGorQ=s96-c	1
+11	Angel	Papeleria Ericka	\N	$2b$10$raMQl4hT62w2j10kYU.pzOjS33auSY/wG7F7H.uQ.dXodCKElRzX.	5549133937	2026-01-08 20:08:25.111413	t	\N	\N	\N	1
+1	Fernando	Ramírez	dferramm@gmail.com	$2b$10$8i0ae1xaybg256lKNIw9OuH4gBFFN1AbMuCcafyfNNSX.b5KNns06	5560989524	2026-01-05 05:23:11.396759	t	\N	107035380971984210505	https://lh3.googleusercontent.com/a/ACg8ocKNxihdAINOrco8B52uUBljbYq3DjLlFlU9VsDVdeuo9DZ5IQ=s96-c	1
+4	Nohemi	Zuñiga	\N	$2b$10$VuYQ2ZnhY8n.PcE.yr2AmuofY3WwfH/xsftKLtzT5zwRDtayWjgMK	7731158195	2026-01-06 23:51:33.737605	t	\N	\N	\N	1
+12	Fernando	Garcia  Espinosa	\N	$2b$10$QWMkh8QUH1y1Ed5KkhRP5eDPa7bsjBtQq/z8m3FdH2/OdZf.ORddC	5529135154	2026-01-09 05:03:34.255381	t	\N	\N	\N	1
 \.
 
 
 --
--- TOC entry 4921 (class 0 OID 25088)
+-- TOC entry 4927 (class 0 OID 25088)
 -- Dependencies: 243
 -- Data for Name: comisiones; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -3496,18 +3529,23 @@ COPY public.comisiones (comisionid, pedidoid, agenteid, montocomision, fechacalc
 
 
 --
--- TOC entry 4923 (class 0 OID 25094)
+-- TOC entry 4929 (class 0 OID 25094)
 -- Dependencies: 245
 -- Data for Name: communicationlogs; Type: TABLE DATA; Schema: public; Owner: ferram
 --
 
 COPY public.communicationlogs (logid, "timestamp", destinatario, asunto, estatusemail, errormensaje, pedidoid, clienteid, proveedorid) FROM stdin;
 1	2026-01-07 23:22:16.133393	dferramm@gmail.com	Instrucciones para restablecer tu contraseña	Enviado	\N	\N	\N	\N
+2	2026-01-09 16:31:42.372312	dferramm@gmail.com	Instrucciones para restablecer tu contraseña	Enviado	\N	\N	\N	\N
+3	2026-01-09 16:32:24.586598	dferramm@gmail.com	Instrucciones para restablecer tu contraseña	Enviado	\N	\N	\N	\N
+4	2026-01-09 16:40:07.871179	dferramm@gmail.com	Instrucciones para restablecer tu contraseña	Enviado	\N	\N	\N	\N
+5	2026-01-09 16:42:01.893451	dferramm@gmail.com	Instrucciones para restablecer tu contraseña	Enviado	\N	\N	\N	\N
+6	2026-01-09 16:51:18.847384	dferramm@gmail.com	Instrucciones para restablecer tu contraseña	Enviado	\N	\N	\N	\N
 \.
 
 
 --
--- TOC entry 4925 (class 0 OID 25102)
+-- TOC entry 4931 (class 0 OID 25102)
 -- Dependencies: 247
 -- Data for Name: control_cambios; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -3743,11 +3781,46 @@ COPY public.control_cambios (id, entidad, entidad_id, tipo_cambio, datos_anterio
 227	producto_variantes	173	UPDATE	{"sku": "BOL-001-33X44X13-JUMBO", "campo": "Dimensiones", "productoId": 60, "varianteId": 173, "medidaNombre": null, "valorAnterior": "33x44x13"}	{"sku": "BOL-001-33X44X13-JUMBO", "campo": "Dimensiones", "productoId": 60, "valorNuevo": "Jumbo", "varianteId": 173, "descripcion": "Producto [60] - Variante [SKU: BOL-001-33X44X13-JUMBO]: Cambio en Dimensiones de '33x44x13' a 'Jumbo'"}	5	APROBADO	2026-01-08 08:20:31.46318	2026-01-08 08:20:31.46318	5
 228	producto_variantes	173	UPDATE	{"sku": "BOL-001-33X44X13-JUMBO", "campo": "Color", "productoId": 60, "varianteId": 173, "medidaNombre": null, "valorAnterior": "Jumbo"}	{"sku": "BOL-001-33X44X13-JUMBO", "campo": "Color", "productoId": 60, "valorNuevo": "Sin color", "varianteId": 173, "descripcion": "Producto [60] - Variante [SKU: BOL-001-33X44X13-JUMBO]: Cambio en Color de 'Jumbo' a 'Sin color'"}	5	APROBADO	2026-01-08 08:20:31.46318	2026-01-08 08:20:31.46318	5
 229	producto_variantes	174	UPDATE	{"sku": "BOL-001-35X39X25-GIGANT", "campo": "Dimensiones", "productoId": 60, "varianteId": 174, "medidaNombre": null, "valorAnterior": "35x39x25"}	{"sku": "BOL-001-35X39X25-GIGANT", "campo": "Dimensiones", "productoId": 60, "valorNuevo": "Gigante", "varianteId": 174, "descripcion": "Producto [60] - Variante [SKU: BOL-001-35X39X25-GIGANT]: Cambio en Dimensiones de '35x39x25' a 'Gigante'"}	5	APROBADO	2026-01-08 08:21:08.840329	2026-01-08 08:21:08.840329	5
+231	productos	17	UPDATE	{"activo": true, "reglaid": 1, "productoid": 17, "categoriaid": 3, "descripcion": "Caja craft de colores, ideal para celebrar el cumpleaños de esa persona especial, colores vibrantes con acabado mate.", "proveedorid": 1, "sku_maestro": "TOD-001", "nombreproducto": "Cubo Cumple Craft"}	{"activo": true, "reglaid": 1, "productoid": 17, "categoriaid": 3, "descripcion": "Caja craft de colores, ideal para celebrar el cumpleaños de esa persona especial, colores vibrantes con acabado mate.", "sku_maestro": "TOD-001", "nombreproducto": "Cubo Cumple Craft", "proveedorid_default": 1}	5	APROBADO	2026-01-08 20:59:01.269237	2026-01-08 20:59:01.269237	5
+232	productos	11	UPDATE	{"activo": true, "reglaid": 1, "productoid": 11, "categoriaid": 1, "descripcion": null, "proveedorid": 1, "sku_maestro": "LIS-001", "nombreproducto": "Cubo Liso"}	{"activo": true, "reglaid": 1, "productoid": 11, "categoriaid": 1, "descripcion": "¡Dale un toque de color y estilo a tus regalos! Estas cajas de color son ideales para quienes buscan resistencia y una presentación impecable. Su diseño vibrante y moderno las hace perfectas, con acabado mate.", "sku_maestro": "LIS-001", "nombreproducto": "Cubo Liso", "proveedorid_default": 1}	5	APROBADO	2026-01-08 23:58:37.153346	2026-01-08 23:58:37.153346	5
+233	productos	67	UPDATE	{"activo": true, "reglaid": 1, "productoid": 67, "categoriaid": 1, "descripcion": "¡Dale un toque de color y estilo a tus entregas! Estas bolsas de color son ideales para quienes buscan resistencia y una presentación impecable. Su diseño vibrante y moderno las hace perfectas para boutiques, papelerías o eventos especiales.", "proveedorid": 1, "sku_maestro": "BOL-002", "nombreproducto": "Bolsa Boutique Colores"}	{"activo": true, "reglaid": 6, "productoid": 67, "categoriaid": 1, "descripcion": "¡Dale un toque de color y estilo a tus entregas! Estas bolsas de color son ideales para quienes buscan resistencia y una presentación impecable. Su diseño vibrante y moderno las hace perfectas para boutiques, papelerías o eventos especiales.", "sku_maestro": "BOL-002", "nombreproducto": "Bolsa Boutique Colores", "proveedorid_default": 1}	2	APROBADO	2026-01-09 00:02:37.429502	2026-01-09 00:02:37.429502	2
+234	productos	60	UPDATE	{"activo": true, "reglaid": 1, "productoid": 60, "categoriaid": 3, "descripcion": "Bolsa Kraft de material resistente, con diseños únicos, ideal para sorprender a esa persona especial, acabado mate.", "proveedorid": 1, "sku_maestro": "BOL-001", "nombreproducto": "Bolsa Guapos"}	{"activo": true, "reglaid": 6, "productoid": 60, "categoriaid": 3, "descripcion": "Bolsa Kraft de material resistente, con diseños únicos, ideal para sorprender a esa persona especial, acabado mate.", "sku_maestro": "BOL-001", "nombreproducto": "Bolsa Guapos", "proveedorid_default": 1}	2	APROBADO	2026-01-09 00:02:46.003932	2026-01-09 00:02:46.003932	2
+235	productos	66	UPDATE	{"activo": true, "reglaid": 1, "productoid": 66, "categoriaid": 1, "descripcion": "Dale a tus regalos una presentación inolvidable con nuestra Cajabolsa, el híbrido perfecto entre una caja resistente y una bolsa práctica. Este modelo destaca por su vibrante color rojo y un acabado de alta calidad diseñado para sorprender.", "proveedorid": 1, "sku_maestro": "CAJ-007", "nombreproducto": "Caja Bolsa"}	{"activo": true, "reglaid": 6, "productoid": 66, "categoriaid": 1, "descripcion": "Dale a tus regalos una presentación inolvidable con nuestra Cajabolsa, el híbrido perfecto entre una caja resistente y una bolsa práctica. Este modelo destaca por su vibrante color rojo y un acabado de alta calidad diseñado para sorprender.", "sku_maestro": "CAJ-007", "nombreproducto": "Caja Bolsa", "proveedorid_default": 1}	2	APROBADO	2026-01-09 00:02:59.177456	2026-01-09 00:02:59.177456	2
+236	productos	68	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 68, "categoriaid": 1, "descripcion": "¡Haz que cada momento especial sea inolvidable! Nuestro Cubo Gis no es solo una caja, es una experiencia diseñada para expresar tus sentimientos de la forma más creativa. Pinta de colores tu caja y haz de ese obsequio  algo muy especial. No incluye gises. Acabado mate.", "proveedorid": 1, "sku_maestro": "CUB-002", "nombreproducto": "Cubo Gis"}	5	APROBADO	2026-01-09 03:26:25.602286	2026-01-09 03:26:25.602286	5
+237	productos	9	UPDATE	{"activo": true, "reglaid": 1, "productoid": 9, "categoriaid": 2, "descripcion": "¡Eleva tus regalos al siguiente nivel con nuestros Cubos Corazón de Acetato! Diseñados para combinar elegancia y sentimiento, estos cubos son la base ideal para arreglos florales, desayunos sorpresa, dulces o peluches.", "proveedorid": 1, "sku_maestro": "AMO-018", "nombreproducto": "Cubo Acetato"}	{"activo": true, "reglaid": 1, "productoid": 9, "categoriaid": 2, "descripcion": "¡Eleva tus regalos al siguiente nivel con nuestros Cubos Corazón de Acetato! Diseñados para combinar elegancia y sentimiento, estos cubos son la base ideal para arreglos florales, desayunos sorpresa, dulces o peluches.", "sku_maestro": "AMO-018", "nombreproducto": "Cubo Acetato", "proveedorid_default": 1}	4	APROBADO	2026-01-09 04:27:54.556431	2026-01-09 04:27:54.556431	4
+238	productos	9	UPDATE	{"activo": true, "reglaid": 1, "productoid": 9, "categoriaid": 2, "descripcion": "¡Eleva tus regalos al siguiente nivel con nuestros Cubos Corazón de Acetato! Diseñados para combinar elegancia y sentimiento, estos cubos son la base ideal para arreglos florales, desayunos sorpresa, dulces o peluches.", "proveedorid": 1, "sku_maestro": "AMO-018", "nombreproducto": "Cubo Acetato"}	{"activo": true, "reglaid": 1, "productoid": 9, "categoriaid": 2, "descripcion": "¡Eleva tus regalos al siguiente nivel con nuestros Cubos Corazón de Acetato! Diseñados para combinar elegancia y sentimiento, estos cubos son la base ideal para arreglos florales, desayunos sorpresa, dulces o peluches.", "sku_maestro": "AMO-018", "nombreproducto": "Cubo Acetato", "proveedorid_default": 1}	4	APROBADO	2026-01-09 04:29:09.656146	2026-01-09 04:29:09.656146	4
+239	productos	6	UPDATE	{"activo": true, "reglaid": 1, "productoid": 6, "categoriaid": 2, "descripcion": "¡Haz que cada detalle cuente! Nuestra colección Colores Amor está diseñada para quienes buscan transformar un simple regalo en una experiencia inolvidable. Estas cajas no son solo empaques, son una declaración de afecto con un diseño vibrante y moderno.", "proveedorid": 1, "sku_maestro": "AMO-012", "nombreproducto": "Cubo Colores Amor"}	{"activo": true, "reglaid": 1, "productoid": 6, "categoriaid": 2, "descripcion": "¡Haz que cada detalle cuente! Nuestra colección Colores Amor está diseñada para quienes buscan transformar un simple regalo en una experiencia inolvidable. Estas cajas no son solo empaques, son una declaración de afecto con un diseño vibrante y moderno.", "sku_maestro": "AMO-012", "nombreproducto": "Cubo Colores Amor", "proveedorid_default": 1}	4	APROBADO	2026-01-09 04:43:20.559675	2026-01-09 04:43:20.559675	4
+240	productos	6	UPDATE	{"activo": true, "reglaid": 1, "productoid": 6, "categoriaid": 2, "descripcion": "¡Haz que cada detalle cuente! Nuestra colección Colores Amor está diseñada para quienes buscan transformar un simple regalo en una experiencia inolvidable. Estas cajas no son solo empaques, son una declaración de afecto con un diseño vibrante y moderno.", "proveedorid": 1, "sku_maestro": "AMO-012", "nombreproducto": "Cubo Colores Amor"}	{"activo": true, "reglaid": 1, "productoid": 6, "categoriaid": 2, "descripcion": "¡Haz que cada detalle cuente! Nuestra colección Colores Amor está diseñada para quienes buscan transformar un simple regalo en una experiencia inolvidable. Estas cajas no son solo empaques, son una declaración de afecto con un diseño vibrante y moderno.", "sku_maestro": "AMO-012", "nombreproducto": "Cubo Colores Amor", "proveedorid_default": 1}	4	APROBADO	2026-01-09 05:17:50.941758	2026-01-09 05:17:50.941758	4
+241	productos	1	UPDATE	{"activo": true, "reglaid": 1, "productoid": 1, "categoriaid": 2, "descripcion": "Dale un toque de color y alegría a tus detalles con nuestro Cubo Colors Love. Diseñado especialmente para quienes no temen expresar su cariño de forma vibrante, este cubo decorativo es mucho más que una caja: es el complemento ideal que hará que tu regalo destaque desde el primer momento.", "proveedorid": 1, "sku_maestro": "AMO-001", "nombreproducto": "Cubo Colors Love"}	{"activo": true, "reglaid": 1, "productoid": 1, "categoriaid": 2, "descripcion": "Dale un toque de color y alegría a tus detalles con nuestro Cubo Colors Love. Diseñado especialmente para quienes no temen expresar su cariño de forma vibrante, este cubo decorativo es mucho más que una caja: es el complemento ideal que hará que tu regalo destaque desde el primer momento.", "sku_maestro": "AMO-001", "nombreproducto": "Cubo Colors Love", "proveedorid_default": 1}	4	APROBADO	2026-01-09 05:20:12.208654	2026-01-09 05:20:12.208654	4
+242	productos	8	UPDATE	{"activo": true, "reglaid": 1, "productoid": 8, "categoriaid": 2, "descripcion": "Dale un toque auténtico y vibrante a tus detalles con nuestras cajas de regalo temáticas. Diseñadas con el icónico sello de \\"Hecho en México\\", estas cajas no solo sirven como empaque, sino como un elemento decorativo de alta calidad que resalta el orgullo nacional.", "proveedorid": 1, "sku_maestro": "AMO-016", "nombreproducto": "Cubo Hecho en México"}	{"activo": true, "reglaid": 1, "productoid": 8, "categoriaid": 2, "descripcion": "Dale un toque auténtico y vibrante a tus detalles con nuestras cajas de regalo temáticas. Diseñadas con el icónico sello de \\"Hecho en México\\", estas cajas no solo sirven como empaque, sino como un elemento decorativo de alta calidad que resalta el orgullo nacional.", "sku_maestro": "AMO-016", "nombreproducto": "Cubo Hecho en México", "proveedorid_default": 1}	4	APROBADO	2026-01-09 05:22:00.297927	2026-01-09 05:22:00.297927	4
+243	productos	3	UPDATE	{"activo": true, "reglaid": 2, "productoid": 3, "categoriaid": 1, "descripcion": "Estas cajas no solo son contenedores, son parte del regalo mismo. Gracias a su acabado brillante y su vibrante color negro o rojo, son perfectas para San Valentín, aniversarios, cumpleaños o cualquier ocasión especial donde quieras impresionar.", "proveedorid": 1, "sku_maestro": "AMO-006", "nombreproducto": "Cubo Liso Brillo"}	{"activo": true, "reglaid": 1, "productoid": 3, "categoriaid": 1, "descripcion": "Estas cajas no solo son contenedores, son parte del regalo mismo. Gracias a su acabado brillante y su vibrante color negro o rojo, son perfectas para San Valentín, aniversarios, cumpleaños o cualquier ocasión especial donde quieras impresionar.", "sku_maestro": "AMO-006", "nombreproducto": "Cubo Liso Brillo", "proveedorid_default": 1}	4	APROBADO	2026-01-09 05:23:11.067513	2026-01-09 05:23:11.067513	4
+244	productos	4	UPDATE	{"activo": true, "reglaid": 1, "productoid": 4, "categoriaid": 2, "descripcion": "El Cubo Love Black es la opción perfecta para quienes buscan un empaque impactante, moderno y lleno de sentimiento. Diseñada con un fondo negro profundo que hace resaltar colores vibrantes, esta caja no es solo un empaque, sino parte del regalo mismo.", "proveedorid": 1, "sku_maestro": "AMO-008", "nombreproducto": "Cubo Love Black"}	{"activo": true, "reglaid": 1, "productoid": 4, "categoriaid": 2, "descripcion": "El Cubo Love Black es la opción perfecta para quienes buscan un empaque impactante, moderno y lleno de sentimiento. Diseñada con un fondo negro profundo que hace resaltar colores vibrantes, esta caja no es solo un empaque, sino parte del regalo mismo.", "sku_maestro": "AMO-008", "nombreproducto": "Cubo Love Black", "proveedorid_default": 1}	4	APROBADO	2026-01-09 05:39:04.361288	2026-01-09 05:39:04.361288	4
+245	productos	5	UPDATE	{"activo": true, "reglaid": 1, "productoid": 5, "categoriaid": 2, "descripcion": "¡Haz que cada regalo sea inolvidable desde el primer vistazo! Nuestra línea de cajas Love Craft está diseñada para quienes buscan salir de lo convencional y entregar un detalle lleno de color, arte y emoción.", "proveedorid": 1, "sku_maestro": "AMO-010", "nombreproducto": "Cubo Love Craft"}	{"activo": true, "reglaid": 1, "productoid": 5, "categoriaid": 2, "descripcion": "¡Haz que cada regalo sea inolvidable desde el primer vistazo! Nuestra línea de cajas Love Craft está diseñada para quienes buscan salir de lo convencional y entregar un detalle lleno de color, arte y emoción.", "sku_maestro": "AMO-010", "nombreproducto": "Cubo Love Craft", "proveedorid_default": 1}	4	APROBADO	2026-01-09 05:42:25.427513	2026-01-09 05:42:25.427513	4
+246	productos	5	UPDATE	{"activo": true, "reglaid": 1, "productoid": 5, "categoriaid": 2, "descripcion": "¡Haz que cada regalo sea inolvidable desde el primer vistazo! Nuestra línea de cajas Love Craft está diseñada para quienes buscan salir de lo convencional y entregar un detalle lleno de color, arte y emoción.", "proveedorid": 1, "sku_maestro": "AMO-010", "nombreproducto": "Cubo Love Craft"}	{"activo": true, "reglaid": 1, "productoid": 5, "categoriaid": 2, "descripcion": "¡Haz que cada regalo sea inolvidable desde el primer vistazo! Nuestra línea de cajas Love Craft está diseñada para quienes buscan salir de lo convencional y entregar un detalle lleno de color, arte y emoción.", "sku_maestro": "AMO-010", "nombreproducto": "Cubo Love Craft", "proveedorid_default": 1}	4	APROBADO	2026-01-09 05:43:55.714702	2026-01-09 05:43:55.714702	4
+247	productos	5	UPDATE	{"activo": true, "reglaid": 1, "productoid": 5, "categoriaid": 2, "descripcion": "¡Haz que cada regalo sea inolvidable desde el primer vistazo! Nuestra línea de cajas Love Craft está diseñada para quienes buscan salir de lo convencional y entregar un detalle lleno de color, arte y emoción.", "proveedorid": 1, "sku_maestro": "AMO-010", "nombreproducto": "Cubo Love Craft"}	{"activo": true, "reglaid": 1, "productoid": 5, "categoriaid": 2, "descripcion": "¡Haz que cada regalo sea inolvidable desde el primer vistazo! Nuestra línea de cajas Love Craft está diseñada para quienes buscan salir de lo convencional y entregar un detalle lleno de color, arte y emoción.", "sku_maestro": "AMO-010", "nombreproducto": "Cubo Love Craft", "proveedorid_default": 1}	4	APROBADO	2026-01-09 05:44:37.504534	2026-01-09 05:44:37.504534	4
+248	productos	2	UPDATE	{"activo": true, "reglaid": 1, "productoid": 2, "categoriaid": 2, "descripcion": "Eleva la presentación de tus detalles con nuestra exclusiva línea de Cajas Cubo LV Oro. Diseñadas con un elegante acabado en color oro y tipografía estilizada, estas cajas son perfectas para San Valentín, aniversarios o cualquier ocasión especial donde el amor sea el protagonista.", "proveedorid": 1, "sku_maestro": "AMO-003", "nombreproducto": "Cubo LV Oro"}	{"activo": true, "reglaid": 1, "productoid": 2, "categoriaid": 2, "descripcion": "Eleva la presentación de tus detalles con nuestra exclusiva línea de Cajas Cubo LV Oro. Diseñadas con un elegante acabado en color oro y tipografía estilizada, estas cajas son perfectas para San Valentín, aniversarios o cualquier ocasión especial donde el amor sea el protagonista.", "sku_maestro": "AMO-003", "nombreproducto": "Cubo LV Oro", "proveedorid_default": 1}	4	APROBADO	2026-01-09 05:45:48.444528	2026-01-09 05:45:48.444528	4
+249	productos	7	UPDATE	{"activo": true, "reglaid": 1, "productoid": 7, "categoriaid": 2, "descripcion": "Sorprende a esa persona especial con nuestros elegantes cubos decorativos de la colección RedBlack Love. Diseñados con una combinación clásica de rojo, negro y blanco, estos cubos son el empaque perfecto para regalos inolvidables o como un detalle decorativo lleno de sentimiento.", "proveedorid": 1, "sku_maestro": "AMO-014", "nombreproducto": "Cubo RedBlack Love"}	{"activo": true, "reglaid": 1, "productoid": 7, "categoriaid": 2, "descripcion": "Sorprende a esa persona especial con nuestros elegantes cubos decorativos de la colección RedBlack Love. Diseñados con una combinación clásica de rojo, negro y blanco, estos cubos son el empaque perfecto para regalos inolvidables o como un detalle decorativo lleno de sentimiento.", "sku_maestro": "AMO-014", "nombreproducto": "Cubo RedBlack Love", "proveedorid_default": 1}	4	APROBADO	2026-01-09 05:47:44.406035	2026-01-09 05:47:44.406035	4
+250	productos	10	UPDATE	{"activo": true, "reglaid": 5, "productoid": 10, "categoriaid": 2, "descripcion": "¡Dale estilo a tus notas con estas libretas de diseño exclusivo! Perfectas para regalo o para uso personal, estas libretas combinan un diseño moderno con materiales de alta resistencia.", "proveedorid": 1, "sku_maestro": "AMO-019", "nombreproducto": "Libreta"}	{"activo": true, "reglaid": 5, "productoid": 10, "categoriaid": 2, "descripcion": "¡Dale estilo a tus notas con estas libretas de diseño exclusivo! Perfectas para regalo o para uso personal, estas libretas combinan un diseño moderno con materiales de alta resistencia.", "sku_maestro": "AMO-019", "nombreproducto": "Libreta", "proveedorid_default": 1}	4	APROBADO	2026-01-09 05:48:42.046711	2026-01-09 05:48:42.046711	4
+251	productos	13	UPDATE	{"activo": true, "reglaid": 1, "productoid": 13, "categoriaid": 4, "descripcion": "Caja camisera de regalo natural, elegante y funcional. Ideal para presentar prendas y regalos con un estilo limpio y moderno. Resistente, práctica y fácil de personalizar. Disponible en diferentes tamaños para adaptarse a cada detalle 🎁✨", "proveedorid": 1, "sku_maestro": "NAT-002", "nombreproducto": "Camisera Natural"}	{"activo": true, "reglaid": 1, "productoid": 13, "categoriaid": 4, "descripcion": "Caja camisera de regalo natural, elegante y funcional. Ideal para presentar prendas y regalos con un estilo limpio y moderno. Resistente, práctica y fácil de personalizar. Disponible en diferentes tamaños para adaptarse a cada detalle 🎁✨", "sku_maestro": "NAT-002", "nombreproducto": "Camisera Natural", "proveedorid_default": 1}	4	APROBADO	2026-01-09 05:51:16.066524	2026-01-09 05:51:16.066524	4
+252	producto_variantes	217	UPDATE	{"sku": "SIX-001-6-DISENO", "campo": "Costo Unitario", "productoId": 51, "varianteId": 217, "medidaNombre": null, "valorAnterior": "$20.93"}	{"sku": "SIX-001-6-DISENO", "campo": "Costo Unitario", "productoId": 51, "valorNuevo": "$13.93", "varianteId": 217, "descripcion": "Producto [51] - Variante [SKU: SIX-001-6-DISENO]: Cambio en Costo Unitario de '$20.93' a '$13.93'"}	4	APROBADO	2026-01-09 05:58:31.443537	2026-01-09 05:58:31.443537	4
+253	producto_variantes	217	UPDATE	{"sku": "SIX-001-6-DISENO", "campo": "Precio Unitario", "productoId": 51, "varianteId": 217, "medidaNombre": null, "valorAnterior": "$32.90"}	{"sku": "SIX-001-6-DISENO", "campo": "Precio Unitario", "productoId": 51, "valorNuevo": "$22.90", "varianteId": 217, "descripcion": "Producto [51] - Variante [SKU: SIX-001-6-DISENO]: Cambio en Precio Unitario de '$32.90' a '$22.90'"}	4	APROBADO	2026-01-09 05:58:31.443537	2026-01-09 05:58:31.443537	4
+254	producto_variantes	217	UPDATE	{"sku": "SIX-001-6-DISENO", "campo": "Color", "productoId": 51, "varianteId": 217, "medidaNombre": null, "valorAnterior": "Diseño"}	{"sku": "SIX-001-6-DISENO", "campo": "Color", "productoId": 51, "valorNuevo": "Natural", "varianteId": 217, "descripcion": "Producto [51] - Variante [SKU: SIX-001-6-DISENO]: Cambio en Color de 'Diseño' a 'Natural'"}	4	APROBADO	2026-01-09 05:58:31.443537	2026-01-09 05:58:31.443537	4
+255	productos	13	UPDATE	{"activo": true, "reglaid": 1, "productoid": 13, "categoriaid": 4, "descripcion": "Caja camisera de regalo natural, elegante y funcional. Ideal para presentar prendas y regalos con un estilo limpio y moderno. Resistente, práctica y fácil de personalizar. Disponible en diferentes tamaños para adaptarse a cada detalle 🎁✨", "proveedorid": 1, "sku_maestro": "NAT-002", "nombreproducto": "Camisera Natural"}	{"activo": true, "reglaid": 1, "productoid": 13, "categoriaid": 4, "descripcion": "Caja camisera de regalo natural, elegante y funcional. Ideal para presentar prendas y regalos con un estilo limpio y moderno. Resistente, práctica y fácil de personalizar. Disponible en diferentes tamaños para adaptarse a cada detalle 🎁✨", "sku_maestro": "NAT-002", "nombreproducto": "Camisera Natural", "proveedorid_default": 1}	4	APROBADO	2026-01-09 06:15:11.697858	2026-01-09 06:15:11.697858	4
+256	productos	61	UPDATE	{"activo": true, "reglaid": 1, "productoid": 61, "categoriaid": 3, "descripcion": "Sobre de dinero, ideal para cuando no sabes que regalar, diseños alegres y divertidos, con acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "SOB-001", "nombreproducto": "Sobre Cumple"}	{"activo": true, "reglaid": 8, "productoid": 61, "categoriaid": 3, "descripcion": "Sobre de dinero, ideal para cuando no sabes que regalar, diseños alegres y divertidos, con acabado barniz brillante.", "sku_maestro": "SOB-001", "nombreproducto": "Sobre Cumple", "proveedorid_default": 1}	2	APROBADO	2026-01-09 06:31:07.71101	2026-01-09 06:31:07.71101	2
+257	productos	61	UPDATE	{"activo": true, "reglaid": 8, "productoid": 61, "categoriaid": 3, "descripcion": "Sobre de dinero, ideal para cuando no sabes que regalar, diseños alegres y divertidos, con acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "SOB-001", "nombreproducto": "Sobre Cumple"}	{"activo": true, "reglaid": 8, "productoid": 61, "categoriaid": 3, "descripcion": "Sobre de dinero, ideal para cuando no sabes que regalar, diseños alegres y divertidos, con acabado barniz brillante.", "sku_maestro": "SOB-001", "nombreproducto": "Sobre Cumple", "proveedorid_default": 1}	4	APROBADO	2026-01-09 06:38:26.620648	2026-01-09 06:38:26.620648	4
+258	productos	3	UPDATE	{"activo": true, "reglaid": 1, "productoid": 3, "categoriaid": 1, "descripcion": "Estas cajas no solo son contenedores, son parte del regalo mismo. Gracias a su acabado brillante y su vibrante color negro o rojo, son perfectas para San Valentín, aniversarios, cumpleaños o cualquier ocasión especial donde quieras impresionar.", "proveedorid": 1, "sku_maestro": "AMO-006", "nombreproducto": "Cubo Liso Brillo"}	{"activo": true, "reglaid": 2, "productoid": 3, "categoriaid": 1, "descripcion": "Estas cajas no solo son empaques, son parte del regalo mismo. Gracias a su acabado brillante y sus vibrantes colores, son perfectas para San Valentín, aniversarios, cumpleaños o cualquier ocasión especial, en donde quieras impresionar.", "sku_maestro": "AMO-006", "nombreproducto": "Cubo Liso Brillo", "proveedorid_default": 1}	5	APROBADO	2026-01-09 06:48:26.682908	2026-01-09 06:48:26.682908	5
+259	productos	61	UPDATE	{"activo": true, "reglaid": 8, "productoid": 61, "categoriaid": 3, "descripcion": "Sobre de dinero, ideal para cuando no sabes que regalar, diseños alegres y divertidos, con acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "COD-00061", "nombreproducto": "Sobre Cumple"}	{"activo": true, "reglaid": 8, "productoid": 61, "categoriaid": 3, "descripcion": "Sobre de dinero, ideal para cuando no sabes que regalar, diseños alegres y divertidos, con acabado barniz brillante.", "sku_maestro": "COD-00061", "nombreproducto": "Sobre Cumple", "proveedorid_default": 1}	2	APROBADO	2026-01-09 08:12:03.00022	2026-01-09 08:12:03.00022	2
+260	producto_variantes	220	UPDATE	{"sku": "COD-00003-00220", "campo": "Color", "productoId": 3, "varianteId": 220, "medidaNombre": null, "valorAnterior": "Azul oscuro"}	{"sku": "COD-00003-00220", "campo": "Color", "productoId": 3, "valorNuevo": "Azul Oscuro", "varianteId": 220, "descripcion": "Producto [3] - Variante [SKU: COD-00003-00220]: Cambio en Color de 'Azul oscuro' a 'Azul Oscuro'"}	5	APROBADO	2026-01-09 17:08:59.174014	2026-01-09 17:08:59.174014	5
+261	productos	3	UPDATE	{"activo": true, "reglaid": 2, "productoid": 3, "categoriaid": 1, "descripcion": "Estas cajas no solo son empaques, son parte del regalo mismo. Gracias a su acabado brillante y sus vibrantes colores, son perfectas para San Valentín, aniversarios, cumpleaños o cualquier ocasión especial, en donde quieras impresionar.", "proveedorid": 1, "sku_maestro": "COD-00003", "nombreproducto": "Cubo Liso Brillo"}	{"activo": true, "reglaid": 1, "productoid": 3, "categoriaid": 1, "descripcion": "Estas cajas no solo son empaques, son parte del regalo mismo. Gracias a su acabado brillante y sus vibrantes colores, son perfectas para San Valentín, aniversarios, cumpleaños o cualquier ocasión especial, en donde quieras impresionar.", "sku_maestro": "COD-00003", "nombreproducto": "Cubo Liso Brillo", "proveedorid_default": 1}	5	APROBADO	2026-01-09 17:12:29.856776	2026-01-09 17:12:29.856776	5
+262	productos	3	UPDATE	{"activo": true, "reglaid": 1, "productoid": 3, "categoriaid": 1, "descripcion": "Estas cajas no solo son empaques, son parte del regalo mismo. Gracias a su acabado brillante y sus vibrantes colores, son perfectas para San Valentín, aniversarios, cumpleaños o cualquier ocasión especial, en donde quieras impresionar.", "proveedorid": 1, "sku_maestro": "COD-00003", "nombreproducto": "Cubo Liso Brillo"}	{"activo": true, "reglaid": 1, "productoid": 3, "categoriaid": 1, "descripcion": "Estas cajas no solo son empaques, son parte del regalo mismo. Gracias a su acabado brillante y sus vibrantes colores, son perfectas para San Valentín, aniversarios, cumpleaños o cualquier ocasión especial, en donde quieras impresionar.", "sku_maestro": "COD-00003", "nombreproducto": "Cubo Liso Brillo", "proveedorid_default": 1}	5	APROBADO	2026-01-09 17:14:46.292233	2026-01-09 17:14:46.292233	5
+263	productos	69	INSERT	\N	{"activo": true, "reglaid": 2, "productoid": 69, "categoriaid": 1, "descripcion": "¡Haz que cada regalo sea inolvidable desde el primer vistazo! Nuestra línea de cajas Bolas Brillo, está diseñada para quienes buscan salir de lo convencional y entregar un detalle lleno de color.", "proveedorid": 1, "sku_maestro": "CUB-001", "nombreproducto": "Cubo Bolas Brillo"}	5	APROBADO	2026-01-09 17:29:12.096616	2026-01-09 17:29:12.096616	5
+264	productos	14	UPDATE	{"activo": true, "reglaid": 1, "productoid": 14, "categoriaid": 1, "descripcion": null, "proveedorid": 1, "sku_maestro": "COD-00014", "nombreproducto": "Línea Metalizada"}	{"activo": true, "reglaid": 2, "productoid": 14, "categoriaid": 1, "descripcion": "¡Haz que cada regalo sea inolvidable! Nuestra línea de cajas Metaliadas está diseñada para quienes buscan salir de lo convencional y entregar un detalle lleno de color, elegancia y emoción.", "sku_maestro": "COD-00014", "nombreproducto": "Cubo Metalizado", "proveedorid_default": 1}	5	APROBADO	2026-01-09 17:41:24.093999	2026-01-09 17:41:24.093999	5
+265	productos	14	UPDATE	{"activo": true, "reglaid": 2, "productoid": 14, "categoriaid": 1, "descripcion": "¡Haz que cada regalo sea inolvidable! Nuestra línea de cajas Metaliadas está diseñada para quienes buscan salir de lo convencional y entregar un detalle lleno de color, elegancia y emoción.", "proveedorid": 1, "sku_maestro": "COD-00014", "nombreproducto": "Cubo Metalizado"}	{"activo": true, "reglaid": 2, "productoid": 14, "categoriaid": 1, "descripcion": "¡Haz que cada regalo sea inolvidable! Nuestra línea de cajas Metaliadas está diseñada para quienes buscan salir de lo convencional y entregar un detalle lleno de color, elegancia y emoción.", "sku_maestro": "COD-00014", "nombreproducto": "Cubo Metalizado", "proveedorid_default": 1}	5	APROBADO	2026-01-09 17:49:10.295439	2026-01-09 17:49:10.295439	5
 \.
 
 
 --
--- TOC entry 4927 (class 0 OID 25110)
+-- TOC entry 4933 (class 0 OID 25110)
 -- Dependencies: 249
 -- Data for Name: credito_movimientos; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -3757,7 +3830,7 @@ COPY public.credito_movimientos (movimiento_id, credito_id, tipo_movimiento, mon
 
 
 --
--- TOC entry 4929 (class 0 OID 25117)
+-- TOC entry 4935 (class 0 OID 25117)
 -- Dependencies: 251
 -- Data for Name: cuentas_por_cobrar; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -3767,7 +3840,7 @@ COPY public.cuentas_por_cobrar (cxcid, pedido_id, cliente_id, tipo_movimiento, m
 
 
 --
--- TOC entry 4931 (class 0 OID 25122)
+-- TOC entry 4937 (class 0 OID 25122)
 -- Dependencies: 253
 -- Data for Name: cuentas_por_pagar; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -3777,7 +3850,7 @@ COPY public.cuentas_por_pagar (cxp_id, proveedor_id, orden_compra_id, fecha_emis
 
 
 --
--- TOC entry 4989 (class 0 OID 25893)
+-- TOC entry 4995 (class 0 OID 25893)
 -- Dependencies: 313
 -- Data for Name: cupones; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -3787,7 +3860,7 @@ COPY public.cupones (cuponid, codigo, descripcion, tipo_descuento, valor, fecha_
 
 
 --
--- TOC entry 4933 (class 0 OID 25135)
+-- TOC entry 4939 (class 0 OID 25135)
 -- Dependencies: 255
 -- Data for Name: cxp_etiquetas_asignadas; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -3797,7 +3870,7 @@ COPY public.cxp_etiquetas_asignadas (asignacion_id, cxp_id, etiqueta_id, fecha_a
 
 
 --
--- TOC entry 4935 (class 0 OID 25140)
+-- TOC entry 4941 (class 0 OID 25140)
 -- Dependencies: 257
 -- Data for Name: datos_bancarios_empresa; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -3808,7 +3881,7 @@ COPY public.datos_bancarios_empresa (id, banco, numero_cuenta, clabe, titular, u
 
 
 --
--- TOC entry 4937 (class 0 OID 25146)
+-- TOC entry 4943 (class 0 OID 25146)
 -- Dependencies: 259
 -- Data for Name: detallesdelpedido; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -3818,7 +3891,7 @@ COPY public.detallesdelpedido (detalleid, pedidoid, varianteid, cantidadpaquetes
 
 
 --
--- TOC entry 4939 (class 0 OID 25153)
+-- TOC entry 4945 (class 0 OID 25153)
 -- Dependencies: 261
 -- Data for Name: detallesordencompra; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -3924,7 +3997,7 @@ COPY public.detallesordencompra (detalleoc_id, ordencompraid, varianteid, cantid
 
 
 --
--- TOC entry 4997 (class 0 OID 26155)
+-- TOC entry 5003 (class 0 OID 26155)
 -- Dependencies: 321
 -- Data for Name: developers; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -3935,7 +4008,7 @@ COPY public.developers (dev_id, username, password_hash, created_at) FROM stdin;
 
 
 --
--- TOC entry 4942 (class 0 OID 25179)
+-- TOC entry 4948 (class 0 OID 25179)
 -- Dependencies: 265
 -- Data for Name: estados; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -3977,7 +4050,7 @@ COPY public.estados (estadoid, nombre, abreviatura) FROM stdin;
 
 
 --
--- TOC entry 4991 (class 0 OID 25938)
+-- TOC entry 4997 (class 0 OID 25938)
 -- Dependencies: 315
 -- Data for Name: inventarios_admin; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -3987,7 +4060,7 @@ COPY public.inventarios_admin (inventario_id, admin_id, variante_id, cantidad, u
 
 
 --
--- TOC entry 4944 (class 0 OID 25183)
+-- TOC entry 4950 (class 0 OID 25183)
 -- Dependencies: 267
 -- Data for Name: itemsdelcarrito; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -4001,11 +4074,25 @@ COPY public.itemsdelcarrito (itemid, carritoid, varianteid, cantidadpaquetes, ta
 6	3	10	1	4	1
 7	3	207	1	4	1
 10	4	14	1	4	1
+11	6	181	1	2	1
+12	6	170	2	5	2
+13	6	201	13	3	13
+15	2	198	2	5	2
+14	2	201	3	3	3
+22	2	171	1	4	1
+23	5	201	1	3	1
+24	5	198	1	5	1
+21	7	114	1	4	1
+25	7	96	1	5	1
+28	7	99	1	5	1
+29	7	100	1	5	1
+27	7	98	1	5	1
+26	7	97	1	5	1
 \.
 
 
 --
--- TOC entry 4993 (class 0 OID 26114)
+-- TOC entry 4999 (class 0 OID 26114)
 -- Dependencies: 317
 -- Data for Name: landing_page_config; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -4031,11 +4118,11 @@ COPY public.landing_page_config (config_id, section_key, content_type, value_dra
 18	hero_slide_3_cta_link	text	\N	/catalogo.html	{"order": 3}	2026-01-06 04:25:50.079105	2026-01-06 04:25:50.079105	1
 19	section_ofertas_category	category_id	\N	\N	{"label": "Ofertas Relámpago", "section": "ofertas"}	2026-01-06 04:25:50.079105	2026-01-06 04:25:50.079105	1
 20	section_nuevos_category	category_id	\N	\N	{"label": "Nuevos Productos", "section": "nuevos"}	2026-01-06 04:25:50.079105	2026-01-06 04:25:50.079105	1
-38	inicio_hero_slide_3_cta_link	text	\N	/catalogo.html	{"page": "inicio", "slide": 3}	2026-01-06 05:04:55.674988	2026-01-08 08:31:13.462744	1
-36	inicio_hero_slide_3_description	text	Productos de alta calidad para tu negocio	Productos de alta calidad para tu negocio	{"page": "inicio", "slide": 3}	2026-01-06 05:04:55.674988	2026-01-08 08:31:22.232936	1
-37	inicio_hero_slide_3_cta_text	text	Ver Catálogo	Ver Catálogo	{"page": "inicio", "slide": 3}	2026-01-06 05:04:55.674988	2026-01-08 08:31:22.232936	1
-35	inicio_hero_slide_3_title	text	Los Mejores Productos	Los Mejores Productos	{"page": "inicio", "slide": 3}	2026-01-06 05:04:55.674988	2026-01-08 08:31:22.232936	1
-32	inicio_hero_slide_2_cta_link	text	\N	/catalogo.html?sort=newest	{"page": "inicio", "slide": 2}	2026-01-06 05:04:55.674988	2026-01-08 08:31:13.462744	1
+38	inicio_hero_slide_3_cta_link	text	/catalogo.html	/catalogo.html	{"page": "inicio", "slide": 3}	2026-01-06 05:04:55.674988	2026-01-09 00:10:38.559734	1
+32	inicio_hero_slide_2_cta_link	text	/catalogo.html?sort=newest	/catalogo.html?sort=newest	{"page": "inicio", "slide": 2}	2026-01-06 05:04:55.674988	2026-01-09 00:10:38.559734	1
+35	inicio_hero_slide_3_title	text	Los Mejores Productos	Los Mejores Productos	{"page": "inicio", "slide": 3}	2026-01-06 05:04:55.674988	2026-01-09 00:10:38.559734	1
+36	inicio_hero_slide_3_description	text	Productos de alta calidad para tu negocio	Productos de alta calidad para tu negocio	{"page": "inicio", "slide": 3}	2026-01-06 05:04:55.674988	2026-01-09 00:10:38.559734	1
+37	inicio_hero_slide_3_cta_text	text	Ver Catálogo	Ver Catálogo	{"page": "inicio", "slide": 3}	2026-01-06 05:04:55.674988	2026-01-09 00:10:38.559734	1
 41	index_hero_slide_1_image	image_url	\N	https://images.unsplash.com/photo-1607083206325-caf1edba7a0f?w=1600&h=900&fit=crop	{"page": "index", "slide": 1}	2026-01-06 05:04:55.674988	2026-01-06 05:04:55.674988	1
 42	index_hero_slide_1_eyebrow	text	\N	Bienvenido a RazoConnect	{"page": "index", "slide": 1}	2026-01-06 05:04:55.674988	2026-01-06 05:04:55.674988	1
 43	index_hero_slide_1_title	text	\N	Tu Proveedor de Confianza	{"page": "index", "slide": 1}	2026-01-06 05:04:55.674988	2026-01-06 05:04:55.674988	1
@@ -4056,26 +4143,26 @@ COPY public.landing_page_config (config_id, section_key, content_type, value_dra
 58	index_hero_slide_3_cta_link	text	\N	/registro.html	{"page": "index", "slide": 3}	2026-01-06 05:04:55.674988	2026-01-06 05:04:55.674988	1
 59	index_section_destacados_category	category_id	\N	\N	{"page": "index", "label": "Productos Destacados", "section": "featured"}	2026-01-06 05:04:55.674988	2026-01-06 05:04:55.674988	1
 60	index_section_populares_category	category_id	\N	\N	{"page": "index", "label": "Más Populares", "section": "popular"}	2026-01-06 05:04:55.674988	2026-01-06 05:04:55.674988	1
-21	inicio_hero_slide_1_image	image_url	https://res.cloudinary.com/daylne1ml/image/upload/v1767689552/razoconnect/landing/ksfhinlh8dpqtrx8vsg8.jpg	https://res.cloudinary.com/daylne1ml/image/upload/v1767689552/razoconnect/landing/ksfhinlh8dpqtrx8vsg8.jpg	{"page": "inicio", "slide": 1}	2026-01-06 05:04:55.674988	2026-01-08 08:31:22.232936	1
-22	inicio_hero_slide_1_eyebrow	text	Ofertas	Ofertas	{"page": "inicio", "slide": 1}	2026-01-06 05:04:55.674988	2026-01-08 08:31:22.232936	1
-23	inicio_hero_slide_1_title	text	Hasta 40% OFF	Hasta 40% OFF	{"page": "inicio", "slide": 1}	2026-01-06 05:04:55.674988	2026-01-08 08:31:22.232936	1
-24	inicio_hero_slide_1_description	text	Descuentos increíbles en productos seleccionados	Descuentos increíbles en productos seleccionados	{"page": "inicio", "slide": 1}	2026-01-06 05:04:55.674988	2026-01-08 08:31:22.232936	1
-25	inicio_hero_slide_1_cta_text	text	Catálogo de Amor	Catálogo de Amor	{"page": "inicio", "slide": 1}	2026-01-06 05:04:55.674988	2026-01-08 08:31:22.232936	1
-27	inicio_hero_slide_2_image	image_url	https://res.cloudinary.com/daylne1ml/image/upload/v1767689599/razoconnect/landing/lhkeffilizj2gsikjxre.jpg	https://res.cloudinary.com/daylne1ml/image/upload/v1767689599/razoconnect/landing/lhkeffilizj2gsikjxre.jpg	{"page": "inicio", "slide": 2}	2026-01-06 05:04:55.674988	2026-01-08 08:31:22.232936	1
-26	inicio_hero_slide_1_cta_link	text	\N	/catalogo.html?oferta=true	{"page": "inicio", "slide": 1}	2026-01-06 05:04:55.674988	2026-01-08 08:31:13.462744	1
-39	inicio_section_ofertas_category	category_id	\N	\N	{"page": "inicio", "label": "Ofertas Relámpago", "section": "flash_sales"}	2026-01-06 05:04:55.674988	2026-01-08 08:31:13.462744	1
-28	inicio_hero_slide_2_eyebrow	text	Nuevos Productos	Nuevos Productos	{"page": "inicio", "slide": 2}	2026-01-06 05:04:55.674988	2026-01-08 08:31:22.232936	1
-29	inicio_hero_slide_2_title	text	Recién Llegados	Recién Llegados	{"page": "inicio", "slide": 2}	2026-01-06 05:04:55.674988	2026-01-08 08:31:22.232936	1
-30	inicio_hero_slide_2_description	text	Descubre las últimas novedades de nuestro catálogo	Descubre las últimas novedades de nuestro catálogo	{"page": "inicio", "slide": 2}	2026-01-06 05:04:55.674988	2026-01-08 08:31:22.232936	1
-31	inicio_hero_slide_2_cta_text	text	Ver Novedades	Ver Novedades	{"page": "inicio", "slide": 2}	2026-01-06 05:04:55.674988	2026-01-08 08:31:22.232936	1
-33	inicio_hero_slide_3_image	image_url	https://res.cloudinary.com/daylne1ml/image/upload/v1767861070/razoconnect/landing/qzv1h9zvytko5indvgey.jpg	https://res.cloudinary.com/daylne1ml/image/upload/v1767861070/razoconnect/landing/qzv1h9zvytko5indvgey.jpg	{"page": "inicio", "slide": 3}	2026-01-06 05:04:55.674988	2026-01-08 08:31:22.232936	1
-34	inicio_hero_slide_3_eyebrow	text	Calidad Premium	Calidad Premium	{"page": "inicio", "slide": 3}	2026-01-06 05:04:55.674988	2026-01-08 08:31:22.232936	1
-40	inicio_section_nuevos_category	category_id	undefined	undefined	{"page": "inicio", "label": "Nuevos Productos", "section": "new_arrivals"}	2026-01-06 05:04:55.674988	2026-01-08 08:31:22.232936	1
+21	inicio_hero_slide_1_image	image_url	https://res.cloudinary.com/daylne1ml/image/upload/v1767689552/razoconnect/landing/ksfhinlh8dpqtrx8vsg8.jpg	https://res.cloudinary.com/daylne1ml/image/upload/v1767689552/razoconnect/landing/ksfhinlh8dpqtrx8vsg8.jpg	{"page": "inicio", "slide": 1}	2026-01-06 05:04:55.674988	2026-01-09 00:10:38.559734	1
+22	inicio_hero_slide_1_eyebrow	text	Presentando...	Presentando...	{"page": "inicio", "slide": 1}	2026-01-06 05:04:55.674988	2026-01-09 00:10:38.559734	1
+23	inicio_hero_slide_1_title	text	Nuestro nuevo sitio web!	Nuestro nuevo sitio web!	{"page": "inicio", "slide": 1}	2026-01-06 05:04:55.674988	2026-01-09 00:10:38.559734	1
+24	inicio_hero_slide_1_description	text	Navega y busca el producto adecuado para ti 	Navega y busca el producto adecuado para ti 	{"page": "inicio", "slide": 1}	2026-01-06 05:04:55.674988	2026-01-09 00:10:38.559734	1
+25	inicio_hero_slide_1_cta_text	text	Catálogo de Amor	Catálogo de Amor	{"page": "inicio", "slide": 1}	2026-01-06 05:04:55.674988	2026-01-09 00:10:38.559734	1
+26	inicio_hero_slide_1_cta_link	text	/catalogo.html?oferta=true	/catalogo.html?oferta=true	{"page": "inicio", "slide": 1}	2026-01-06 05:04:55.674988	2026-01-09 00:10:38.559734	1
+27	inicio_hero_slide_2_image	image_url	https://res.cloudinary.com/daylne1ml/image/upload/v1767689599/razoconnect/landing/lhkeffilizj2gsikjxre.jpg	https://res.cloudinary.com/daylne1ml/image/upload/v1767689599/razoconnect/landing/lhkeffilizj2gsikjxre.jpg	{"page": "inicio", "slide": 2}	2026-01-06 05:04:55.674988	2026-01-09 00:10:38.559734	1
+40	inicio_section_nuevos_category	category_id	undefined	undefined	{"page": "inicio", "label": "Nuevos Productos", "section": "new_arrivals"}	2026-01-06 05:04:55.674988	2026-01-09 00:10:38.559734	1
+39	inicio_section_ofertas_category	category_id	\N	\N	{"page": "inicio", "label": "Ofertas Relámpago", "section": "flash_sales"}	2026-01-06 05:04:55.674988	2026-01-09 00:10:19.81733	1
+28	inicio_hero_slide_2_eyebrow	text	Nuevos Productos	Nuevos Productos	{"page": "inicio", "slide": 2}	2026-01-06 05:04:55.674988	2026-01-09 00:10:38.559734	1
+29	inicio_hero_slide_2_title	text	Recién Llegados	Recién Llegados	{"page": "inicio", "slide": 2}	2026-01-06 05:04:55.674988	2026-01-09 00:10:38.559734	1
+30	inicio_hero_slide_2_description	text	Descubre las últimas novedades de nuestro catálogo	Descubre las últimas novedades de nuestro catálogo	{"page": "inicio", "slide": 2}	2026-01-06 05:04:55.674988	2026-01-09 00:10:38.559734	1
+31	inicio_hero_slide_2_cta_text	text	Ver Novedades	Ver Novedades	{"page": "inicio", "slide": 2}	2026-01-06 05:04:55.674988	2026-01-09 00:10:38.559734	1
+33	inicio_hero_slide_3_image	image_url	https://res.cloudinary.com/daylne1ml/image/upload/v1767861070/razoconnect/landing/qzv1h9zvytko5indvgey.jpg	https://res.cloudinary.com/daylne1ml/image/upload/v1767861070/razoconnect/landing/qzv1h9zvytko5indvgey.jpg	{"page": "inicio", "slide": 3}	2026-01-06 05:04:55.674988	2026-01-09 00:10:38.559734	1
+34	inicio_hero_slide_3_eyebrow	text	Calidad Premium	Calidad Premium	{"page": "inicio", "slide": 3}	2026-01-06 05:04:55.674988	2026-01-09 00:10:38.559734	1
 \.
 
 
 --
--- TOC entry 4946 (class 0 OID 25187)
+-- TOC entry 4952 (class 0 OID 25187)
 -- Dependencies: 269
 -- Data for Name: log_eventosusuario; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -4085,7 +4172,7 @@ COPY public.log_eventosusuario (eventoid, "timestamp", clienteid, sessionid, tip
 
 
 --
--- TOC entry 4948 (class 0 OID 25194)
+-- TOC entry 4954 (class 0 OID 25194)
 -- Dependencies: 271
 -- Data for Name: log_inventario; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -4095,7 +4182,7 @@ COPY public.log_inventario (logid, varianteid, fecha, cantidadcambiado, nuevosto
 
 
 --
--- TOC entry 4950 (class 0 OID 25200)
+-- TOC entry 4956 (class 0 OID 25200)
 -- Dependencies: 273
 -- Data for Name: log_movimientos; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -4350,11 +4437,62 @@ COPY public.log_movimientos (logid, usuarioid, nombreusuario, rol, accion, entid
 253	5	Lupita García	admin	LOGIN	Admin	5	{"email": "pupis_gr@icloud.com", "origen": "admin"}	189.128.58.98:64425	2026-01-08 07:39:44.200715	1
 254	2	Fernando Garcia	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	189.128.58.98:39007	2026-01-08 07:51:41.810947	1
 255	2	Fernando Garcia	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	189.128.58.98:51507	2026-01-08 08:27:30.193861	1
+256	5	Lupita García	admin	LOGIN	Admin	5	{"email": "pupis_gr@icloud.com", "origen": "admin"}	189.128.58.98:53689	2026-01-08 09:34:36.748063	1
+257	2	Fernando Garcia	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	189.128.58.98:49966	2026-01-08 16:01:27.3017	1
+258	2	Fernando Garcia	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	189.128.58.98:55141	2026-01-08 16:01:32.710445	1
+259	2	Fernando Garcia	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	189.128.58.98:55141	2026-01-08 16:01:45.120611	1
+260	2	Fernando Garcia	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	::1	2026-01-08 16:09:45.890329	1
+261	2	Fernando Garcia	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	::1	2026-01-08 16:09:52.637234	1
+262	2	Fernando Garcia	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	::1	2026-01-08 16:12:54.636654	1
+263	5	Lupita García	admin	LOGIN	Admin	5	{"email": "pupis_gr@icloud.com", "origen": "admin"}	189.128.58.98:53742	2026-01-08 16:13:44.944092	1
+264	5	Lupita García	admin	LOGIN	Admin	5	{"email": "pupis_gr@icloud.com", "origen": "admin"}	189.128.58.98:53743	2026-01-08 16:13:52.241306	1
+265	2	Fernando Garcia	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	189.128.58.98:3475	2026-01-08 16:21:01.372637	1
+267	5	Lupita García	admin	LOGIN	Admin	5	{"email": "pupis_gr@icloud.com", "origen": "admin"}	189.128.58.98:58808	2026-01-08 20:57:57.269813	1
+268	2	Fernando Garcia	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	::1	2026-01-08 20:59:04.163242	1
+270	2	Fernando Garcia	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	::1	2026-01-08 21:04:12.484121	1
+272	5	Lupita García	admin	LOGIN	Admin	5	{"email": "pupis_gr@icloud.com", "origen": "admin"}	189.128.58.98:55329	2026-01-08 23:36:47.071479	1
+273	2	Fernando Garcia	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	189.128.58.98:7166	2026-01-08 23:41:47.35489	1
+274	5	Lupita García	admin	LOGIN	Admin	5	{"email": "pupis_gr@icloud.com", "origen": "admin"}	189.128.58.98:55343	2026-01-08 23:50:19.584296	1
+275	2	Fernando Garcia	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	189.128.58.98:6763	2026-01-09 00:01:31.67191	1
+276	2	Fernando Garcia	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	189.128.58.98:35330	2026-01-09 00:09:38.334331	1
+277	5	Lupita García	admin	LOGIN	Admin	5	{"email": "pupis_gr@icloud.com", "origen": "admin"}	189.128.58.98:53503	2026-01-09 01:21:15.497219	1
+278	5	Lupita García	admin	LOGIN	Admin	5	{"email": "pupis_gr@icloud.com", "origen": "admin"}	189.128.58.98:53693	2026-01-09 03:12:08.64995	1
+279	5	Lupita García	admin	LOGIN	Admin	5	{"email": "pupis_gr@icloud.com", "origen": "admin"}	189.128.58.98:53802	2026-01-09 03:47:23.601768	1
+280	4	Alejandra Calderón	admin	LOGIN	Admin	4	{"email": "alecaja.19@gmail.com", "origen": "admin"}	187.145.85.16:52265	2026-01-09 04:16:03.829739	1
+281	4	Alejandra Calderón	admin	LOGIN	Admin	4	{"email": "alecaja.19@gmail.com", "origen": "admin"}	187.145.85.16:52411	2026-01-09 04:27:05.569649	1
+282	4	Alejandra Calderón	admin	LOGIN	Admin	4	{"email": "alecaja.19@gmail.com", "origen": "admin"}	187.145.85.16:52447	2026-01-09 04:34:20.508292	1
+283	5	Lupita García	admin	LOGIN	Admin	5	{"email": "pupis_gr@icloud.com", "origen": "admin"}	189.128.58.98:64183	2026-01-09 04:39:10.101679	1
+284	4	Alejandra Calderón	admin	LOGIN	Admin	4	{"email": "alecaja.19@gmail.com", "origen": "admin"}	187.145.85.16:52488	2026-01-09 04:41:20.305124	1
+285	4	Alejandra Calderón	admin	LOGIN	Admin	4	{"email": "alecaja.19@gmail.com", "origen": "admin"}	187.145.85.16:52636	2026-01-09 05:16:22.843952	1
+286	4	Alejandra Calderón	admin	LOGIN	Admin	4	{"email": "alecaja.19@gmail.com", "origen": "admin"}	187.145.85.16:52704	2026-01-09 05:26:55.004327	1
+287	5	Lupita García	admin	LOGIN	Admin	5	{"email": "pupis_gr@icloud.com", "origen": "admin"}	189.128.58.98:64213	2026-01-09 05:46:01.748532	1
+288	2	Fernando Garcia	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	189.128.58.98:54508	2026-01-09 06:10:52.332337	1
+289	4	Alejandra Calderón	admin	LOGIN	Admin	4	{"email": "alecaja.19@gmail.com", "origen": "admin"}	187.145.85.16:52911	2026-01-09 06:12:12.216719	1
+290	2	Fernando Garcia	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	189.128.58.98:30438	2026-01-09 06:20:53.215072	1
+291	2	Fernando Garcia	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	::1	2026-01-09 06:25:24.182425	1
+292	4	Alejandra Calderón	admin	LOGIN	Admin	4	{"email": "alecaja.19@gmail.com", "origen": "admin"}	187.145.85.16:53073	2026-01-09 06:37:45.809675	1
+293	5	Lupita García	admin	LOGIN	Admin	5	{"email": "pupis_gr@icloud.com", "origen": "admin"}	189.128.58.98:57949	2026-01-09 06:42:06.314011	1
+294	2	Fernando Garcia	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	189.128.58.98:48961	2026-01-09 07:55:26.076147	1
+295	2	Fernando Garcia	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	::1	2026-01-09 07:59:09.602314	1
+296	2	Fernando Garcia	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	::1	2026-01-09 08:06:43.351281	1
+297	5	Lupita García	admin	LOGIN	Admin	5	{"email": "pupis_gr@icloud.com", "origen": "admin"}	189.128.58.98:50061	2026-01-09 08:21:04.001199	1
+298	8	Admin Fashion	admin	LOGIN	Admin	8	{"email": "dferram8@gmail.com", "origen": "admin"}	::1	2026-01-09 08:23:29.570933	1
+299	5	Lupita García	admin	LOGIN	Admin	5	{"email": "pupis_gr@icloud.com", "origen": "admin"}	189.128.58.98:58657	2026-01-09 16:31:56.569758	1
+300	2	Fernando Garcia	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	189.128.58.98:2811	2026-01-09 16:52:20.732273	1
+301	2	Fernando Garcia	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	189.128.58.98:39055	2026-01-09 17:31:22.847406	1
+302	5	Lupita García	admin	LOGIN	Admin	5	{"email": "pupis_gr@icloud.com", "origen": "admin"}	189.128.58.98:52225	2026-01-09 17:37:37.244239	1
+303	2	Fernando Garcia	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	189.128.58.98:26733	2026-01-09 19:12:57.958776	1
+304	5	Lupita García	admin	LOGIN	Admin	5	{"email": "pupis_gr@icloud.com", "origen": "admin"}	189.128.58.98:63606	2026-01-09 19:23:24.08998	1
+305	5	pupis_gr@icloud.com	admin	CREAR	Variante	237	{"tipo": "creacion", "datos": {"sku": "COD-00014-00237", "stock": 0, "activo": true, "medidaid": null, "productoid": 14, "dimensiones": "25x25", "color_nombre": "Oro", "costounitario": "34.93", "preciounitario": "52.90", "tipoproductoid": null, "cantidadImagenes": 0, "piezasporpaquete": 1, "precioofertaunitario": null}}	189.128.58.98:63620	2026-01-09 19:26:13.813928	1
+306	5	pupis_gr@icloud.com	admin	CREAR	Variante	238	{"tipo": "creacion", "datos": {"sku": "COD-00014-00238", "stock": 0, "activo": true, "medidaid": null, "productoid": 14, "dimensiones": "30x30", "color_nombre": "Oro", "costounitario": "41.93", "preciounitario": "64.90", "tipoproductoid": null, "cantidadImagenes": 0, "piezasporpaquete": 1, "precioofertaunitario": null}}	189.128.58.98:63621	2026-01-09 19:26:54.541945	1
+307	2	Fernando Garcia	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	189.128.58.98:4761	2026-01-09 19:28:02.080688	1
+308	5	pupis_gr@icloud.com	admin	CREAR	Variante	239	{"tipo": "creacion", "datos": {"sku": "COD-00014-00239", "stock": 0, "activo": true, "medidaid": null, "productoid": 14, "dimensiones": "25x25", "color_nombre": "Plata", "costounitario": "34.93", "preciounitario": "52.90", "tipoproductoid": null, "cantidadImagenes": 0, "piezasporpaquete": 1, "precioofertaunitario": null}}	189.128.58.98:63623	2026-01-09 19:28:26.226359	1
+309	5	pupis_gr@icloud.com	admin	CREAR	Variante	240	{"tipo": "creacion", "datos": {"sku": "COD-00014-00240", "stock": 0, "activo": true, "medidaid": null, "productoid": 14, "dimensiones": "30x30", "color_nombre": "Plata", "costounitario": "41.93", "preciounitario": "64.90", "tipoproductoid": null, "cantidadImagenes": 0, "piezasporpaquete": 1, "precioofertaunitario": null}}	189.128.58.98:63624	2026-01-09 19:29:02.906795	1
 \.
 
 
 --
--- TOC entry 4952 (class 0 OID 25208)
+-- TOC entry 4958 (class 0 OID 25208)
 -- Dependencies: 275
 -- Data for Name: medidas; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -4364,7 +4502,7 @@ COPY public.medidas (medidaid, tipoproductoid, nombremedida, descripcion, alto, 
 
 
 --
--- TOC entry 4941 (class 0 OID 25162)
+-- TOC entry 4947 (class 0 OID 25162)
 -- Dependencies: 263
 -- Data for Name: notificaciones; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -4453,11 +4591,51 @@ COPY public.notificaciones (notificacionid, clienteid, tipo, titulo, mensaje, le
 82	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Lupita García actualizó productos #56.	f	2026-01-08 07:23:36.33277	{"entidad": "productos", "cambio_id": 220, "entidad_id": 56, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N	1
 83	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Lupita García actualizó productos #58.	f	2026-01-08 07:33:34.959267	{"entidad": "productos", "cambio_id": 221, "entidad_id": 58, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N	1
 84	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Lupita García actualizó productos #54.	f	2026-01-08 07:36:27.265771	{"entidad": "productos", "cambio_id": 222, "entidad_id": 54, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N	1
+85	8	sistema	¡Bienvenido a RazoConnect!	Gracias por unirte. Tu cuenta ha sido creada exitosamente.	f	2026-01-08 09:09:22.99223	{}	\N	normal	\N	\N	1
+86	9	sistema	¡Bienvenido a RazoConnect!	Gracias por unirte. Tu cuenta ha sido creada exitosamente.	f	2026-01-08 16:56:05.459016	{}	\N	normal	\N	\N	1
+87	11	sistema	¡Bienvenido a RazoConnect!	Gracias por unirte. Tu cuenta ha sido creada exitosamente.	f	2026-01-08 20:08:25.132077	{}	\N	normal	\N	\N	1
+88	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Lupita García actualizó productos #17.	f	2026-01-08 20:59:01.286777	{"entidad": "productos", "cambio_id": 231, "entidad_id": 17, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N	1
+89	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Lupita García actualizó productos #11.	f	2026-01-08 23:58:37.168553	{"entidad": "productos", "cambio_id": 232, "entidad_id": 11, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N	1
+90	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Fernando actualizó productos #67.	f	2026-01-09 00:02:37.437645	{"entidad": "productos", "cambio_id": 233, "entidad_id": 67, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N	1
+91	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Fernando actualizó productos #60.	f	2026-01-09 00:02:46.009537	{"entidad": "productos", "cambio_id": 234, "entidad_id": 60, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N	1
+92	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Fernando actualizó productos #66.	f	2026-01-09 00:02:59.183998	{"entidad": "productos", "cambio_id": 235, "entidad_id": 66, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N	1
+93	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Lupita García creó productos #68.	f	2026-01-09 03:26:25.613835	{"entidad": "productos", "cambio_id": 236, "entidad_id": 68, "tipo_cambio": "INSERT"}	/admin-bitacora.html	alta	2	\N	1
+94	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Alejandra Calderón actualizó productos #9.	f	2026-01-09 04:27:54.567524	{"entidad": "productos", "cambio_id": 237, "entidad_id": 9, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N	1
+95	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Alejandra Calderón actualizó productos #9.	f	2026-01-09 04:29:09.6636	{"entidad": "productos", "cambio_id": 238, "entidad_id": 9, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N	1
+96	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Alejandra Calderón actualizó productos #6.	f	2026-01-09 04:43:20.576165	{"entidad": "productos", "cambio_id": 239, "entidad_id": 6, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N	1
+97	12	sistema	¡Bienvenido a RazoConnect!	Gracias por unirte. Tu cuenta ha sido creada exitosamente.	f	2026-01-09 05:03:34.31469	{}	\N	normal	\N	\N	1
+98	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Alejandra Calderón actualizó productos #6.	f	2026-01-09 05:17:50.965827	{"entidad": "productos", "cambio_id": 240, "entidad_id": 6, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N	1
+99	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Alejandra Calderón actualizó productos #1.	f	2026-01-09 05:20:12.220625	{"entidad": "productos", "cambio_id": 241, "entidad_id": 1, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N	1
+100	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Alejandra Calderón actualizó productos #8.	f	2026-01-09 05:22:00.309862	{"entidad": "productos", "cambio_id": 242, "entidad_id": 8, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N	1
+101	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Alejandra Calderón actualizó productos #3.	f	2026-01-09 05:23:11.078715	{"entidad": "productos", "cambio_id": 243, "entidad_id": 3, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N	1
+102	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Alejandra Calderón actualizó productos #4.	f	2026-01-09 05:39:04.373387	{"entidad": "productos", "cambio_id": 244, "entidad_id": 4, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N	1
+103	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Alejandra Calderón actualizó productos #5.	f	2026-01-09 05:42:25.441227	{"entidad": "productos", "cambio_id": 245, "entidad_id": 5, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N	1
+104	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Alejandra Calderón actualizó productos #5.	f	2026-01-09 05:43:55.726767	{"entidad": "productos", "cambio_id": 246, "entidad_id": 5, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N	1
+105	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Alejandra Calderón actualizó productos #5.	f	2026-01-09 05:44:37.524779	{"entidad": "productos", "cambio_id": 247, "entidad_id": 5, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N	1
+106	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Alejandra Calderón actualizó productos #2.	f	2026-01-09 05:45:48.463137	{"entidad": "productos", "cambio_id": 248, "entidad_id": 2, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N	1
+107	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Alejandra Calderón actualizó productos #7.	f	2026-01-09 05:47:44.419558	{"entidad": "productos", "cambio_id": 249, "entidad_id": 7, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N	1
+108	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Alejandra Calderón actualizó productos #10.	f	2026-01-09 05:48:42.05828	{"entidad": "productos", "cambio_id": 250, "entidad_id": 10, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N	1
+109	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Alejandra Calderón actualizó productos #13.	f	2026-01-09 05:51:16.09071	{"entidad": "productos", "cambio_id": 251, "entidad_id": 13, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N	1
+110	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Alejandra Calderón actualizó productos #13.	f	2026-01-09 06:15:11.708233	{"entidad": "productos", "cambio_id": 255, "entidad_id": 13, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N	1
+111	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Fernando actualizó productos #61.	f	2026-01-09 06:31:07.746353	{"entidad": "productos", "cambio_id": 256, "entidad_id": 61, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N	1
+112	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Alejandra Calderón actualizó productos #61.	f	2026-01-09 06:38:26.635798	{"entidad": "productos", "cambio_id": 257, "entidad_id": 61, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N	1
+113	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Lupita García actualizó productos #3.	f	2026-01-09 06:48:26.696318	{"entidad": "productos", "cambio_id": 258, "entidad_id": 3, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N	1
+114	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Fernando actualizó productos #61.	f	2026-01-09 08:12:03.029199	{"entidad": "productos", "cambio_id": 259, "entidad_id": 61, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N	1
+115	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Lupita García actualizó productos #3.	f	2026-01-09 17:12:29.871042	{"entidad": "productos", "cambio_id": 261, "entidad_id": 3, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N	1
+116	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Lupita García actualizó productos #3.	f	2026-01-09 17:12:29.880529	{"entidad": "productos", "cambio_id": 261, "entidad_id": 3, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	8	\N	1
+117	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Lupita García actualizó productos #3.	f	2026-01-09 17:14:46.306912	{"entidad": "productos", "cambio_id": 262, "entidad_id": 3, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N	1
+118	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Lupita García actualizó productos #3.	f	2026-01-09 17:14:46.311293	{"entidad": "productos", "cambio_id": 262, "entidad_id": 3, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	8	\N	1
+119	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Lupita García creó productos #69.	f	2026-01-09 17:29:12.109354	{"entidad": "productos", "cambio_id": 263, "entidad_id": 69, "tipo_cambio": "INSERT"}	/admin-bitacora.html	alta	2	\N	1
+120	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Lupita García creó productos #69.	f	2026-01-09 17:29:12.114573	{"entidad": "productos", "cambio_id": 263, "entidad_id": 69, "tipo_cambio": "INSERT"}	/admin-bitacora.html	alta	8	\N	1
+121	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Lupita García actualizó productos #14.	f	2026-01-09 17:41:24.105648	{"entidad": "productos", "cambio_id": 264, "entidad_id": 14, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N	1
+122	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Lupita García actualizó productos #14.	f	2026-01-09 17:41:24.111627	{"entidad": "productos", "cambio_id": 264, "entidad_id": 14, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	8	\N	1
+123	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Lupita García actualizó productos #14.	f	2026-01-09 17:49:10.307008	{"entidad": "productos", "cambio_id": 265, "entidad_id": 14, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	2	\N	1
+124	\N	producto	Auditoría Pasiva - Cambio aplicado	El usuario Lupita García actualizó productos #14.	f	2026-01-09 17:49:10.313658	{"entidad": "productos", "cambio_id": 265, "entidad_id": 14, "tipo_cambio": "UPDATE"}	/admin-bitacora.html	alta	8	\N	1
 \.
 
 
 --
--- TOC entry 4955 (class 0 OID 25217)
+-- TOC entry 4961 (class 0 OID 25217)
 -- Dependencies: 278
 -- Data for Name: ordenesdecompra; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -4468,7 +4646,7 @@ COPY public.ordenesdecompra (ordencompraid, proveedorid, fechacreacion, fechaent
 
 
 --
--- TOC entry 4957 (class 0 OID 25227)
+-- TOC entry 4963 (class 0 OID 25227)
 -- Dependencies: 280
 -- Data for Name: pagos_clientes; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -4478,7 +4656,7 @@ COPY public.pagos_clientes (pago_id, cliente_id, credito_id, monto, tipo_pago, e
 
 
 --
--- TOC entry 4959 (class 0 OID 25239)
+-- TOC entry 4965 (class 0 OID 25239)
 -- Dependencies: 282
 -- Data for Name: pagos_cxp; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -4488,18 +4666,23 @@ COPY public.pagos_cxp (pago_id, cxp_id, fecha_pago, monto, metodo_pago, referenc
 
 
 --
--- TOC entry 4961 (class 0 OID 25247)
+-- TOC entry 4967 (class 0 OID 25247)
 -- Dependencies: 284
 -- Data for Name: passwordresettokens; Type: TABLE DATA; Schema: public; Owner: ferram
 --
 
 COPY public.passwordresettokens (tokenid, token, clienteid, agenteid, expiraen) FROM stdin;
 1	9b6a0f868284ac32906eb0257ea57950a6c7567757fd101cace17f76af542495	1	\N	2026-01-07 18:22:15.256
+2	8f48dd28be333a414c917552981931b65a8afba66f1ef61c90a5ecc55634bdc1	1	\N	2026-01-09 17:31:41.179
+3	440cfc3aba7b81f578ad05c03cabebc92fe59aea12f18783267c5826c82c05df	1	\N	2026-01-09 17:32:23.462
+4	6eca9dcffa978d425c229aa77b451b24edb5e701726fe52fbbff4986f87ea904	1	\N	2026-01-09 17:40:06.574
+5	1030b41815a76a8881e3d61fe3bb2e4ec6db816acb6c5bb0ebc201d69b350868	1	\N	2026-01-09 17:42:00.18
+6	8154a50b5465ecf66e5b94f743a7f7a8b6e24c82b035c8d4326545ce3124a07f	1	\N	2026-01-09 17:51:17.502
 \.
 
 
 --
--- TOC entry 4963 (class 0 OID 25252)
+-- TOC entry 4969 (class 0 OID 25252)
 -- Dependencies: 286
 -- Data for Name: pedidos; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -4509,70 +4692,36 @@ COPY public.pedidos (pedidoid, clienteid, agenteid, direccionenvioid, fechapedid
 
 
 --
--- TOC entry 4965 (class 0 OID 25263)
+-- TOC entry 4971 (class 0 OID 25263)
 -- Dependencies: 288
 -- Data for Name: producto_imagenes; Type: TABLE DATA; Schema: public; Owner: ferram
 --
 
 COPY public.producto_imagenes (imagenid, url_imagen, textoalternativo, orden, productoid) FROM stdin;
-47	/uploads/1766785521330-Captura de pantalla 2025-12-26 154429.png	\N	1	13
-29	/uploads/1766665543356-Captura de pantalla 2025-12-25 062438.png	\N	1	7
-13	/uploads/1766664642259-Captura de pantalla 2025-12-25 060942.png	\N	1	3
-6	/uploads/1766664426099-Captura de pantalla 2025-12-24 163348.png	\N	1	2
-7	/uploads/1766664426106-Captura de pantalla 2025-12-24 163354.png	\N	2	2
-8	/uploads/1766664426106-Captura de pantalla 2025-12-24 163400.png	\N	3	2
-9	/uploads/1766664426107-Captura de pantalla 2025-12-24 163410.png	\N	4	2
+323	https://res.cloudinary.com/daylne1ml/image/upload/v1767937668/razoconnect_productos/wmxpno644ebglay1yg1v.jpg	\N	1	7
+324	https://res.cloudinary.com/daylne1ml/image/upload/v1767937668/razoconnect_productos/ifzn01fgut0wvizieufm.jpg	\N	2	7
+325	https://res.cloudinary.com/daylne1ml/image/upload/v1767937668/razoconnect_productos/rfwgi4g5qfr9zjr1kc07.jpg	\N	3	7
+326	https://res.cloudinary.com/daylne1ml/image/upload/v1767937668/razoconnect_productos/a5okklb5yzsed99n13e9.jpg	\N	4	7
+327	https://res.cloudinary.com/daylne1ml/image/upload/v1767937668/razoconnect_productos/nbfpnmxg29gwbpa5c0xs.jpg	\N	5	7
 53	https://res.cloudinary.com/daylne1ml/image/upload/v1767475611/razoconnect_productos/qk3okhvlcdmyga1dr2ip.jpg	\N	1	16
 54	https://res.cloudinary.com/daylne1ml/image/upload/v1767475611/razoconnect_productos/on2vwb5ui2tmxws5olxr.jpg	\N	2	16
 55	https://res.cloudinary.com/daylne1ml/image/upload/v1767475611/razoconnect_productos/y9ertskkkmpfjiedmnde.jpg	\N	3	16
-1	/uploads/1766618057659-Captura de pantalla 2025-12-24 163339.png	\N	1	1
-2	/uploads/1766618057669-Captura de pantalla 2025-12-24 163230.png	\N	2	1
 58	https://res.cloudinary.com/daylne1ml/image/upload/v1767483725/razoconnect_productos/ogdaikwviuedwbn3kpft.jpg	\N	1	19
 59	https://res.cloudinary.com/daylne1ml/image/upload/v1767483725/razoconnect_productos/nc4zgvxq7j6spj6q9zbh.jpg	\N	2	19
 60	https://res.cloudinary.com/daylne1ml/image/upload/v1767483725/razoconnect_productos/hd95ocsmvjp6yrkgvjek.jpg	\N	3	19
 61	https://res.cloudinary.com/daylne1ml/image/upload/v1767483725/razoconnect_productos/celkc8ljs9cdqyx8zpjx.jpg	\N	4	19
-15	/uploads/1766664848035-Captura de pantalla 2025-12-24 163440.png	\N	1	4
-10	/uploads/1766664426107-Captura de pantalla 2025-12-24 163415.png	\N	5	2
 48	https://res.cloudinary.com/daylne1ml/image/upload/v1767475243/razoconnect_productos/k6hb0nln4aiuchjsbgvo.jpg	\N	1	15
 49	https://res.cloudinary.com/daylne1ml/image/upload/v1767475242/razoconnect_productos/wcmcijyy29haftcjmbnv.jpg	\N	2	15
 50	https://res.cloudinary.com/daylne1ml/image/upload/v1767475242/razoconnect_productos/fsmqnixcuoqnjnkx1moz.jpg	\N	3	15
 51	https://res.cloudinary.com/daylne1ml/image/upload/v1767475242/razoconnect_productos/iktpiknvys2s5zwftpjj.jpg	\N	4	15
-34	/uploads/1766665656386-Captura de pantalla 2025-12-25 062641.png	\N	1	8
-24	/uploads/1766665395737-Captura de pantalla 2025-12-25 062226.png	\N	1	6
-25	/uploads/1766665395742-Captura de pantalla 2025-12-25 062231.png	\N	2	6
 56	https://res.cloudinary.com/daylne1ml/image/upload/v1767475611/razoconnect_productos/q8ysh6e9mnntrun0xfnp.jpg	\N	4	16
 57	https://res.cloudinary.com/daylne1ml/image/upload/v1767475611/razoconnect_productos/xojme8kllg0jqo43r1kv.jpg	\N	5	16
-19	/uploads/1766665229257-Captura de pantalla 2025-12-25 061846.png	\N	1	5
-20	/uploads/1766665229272-Captura de pantalla 2025-12-25 061852.png	\N	2	5
-3	/uploads/1766618057672-Captura de pantalla 2025-12-24 163242.png	\N	3	1
-4	/uploads/1766618057674-Captura de pantalla 2025-12-24 163309.png	\N	4	1
-5	/uploads/1766618057676-Captura de pantalla 2025-12-24 163317.png	\N	5	1
 63	https://res.cloudinary.com/daylne1ml/image/upload/v1767484007/razoconnect_productos/t6wrdhp3p9g8qdood1q9.jpg	\N	1	20
 64	https://res.cloudinary.com/daylne1ml/image/upload/v1767484007/razoconnect_productos/lvgjlmkbmzqoc8t2f5a8.jpg	\N	2	20
 65	https://res.cloudinary.com/daylne1ml/image/upload/v1767484007/razoconnect_productos/k4fkesryz1ux8jxpjih1.jpg	\N	3	20
-44	/uploads/1766783087272-Captura de pantalla 2025-12-26 133425.png	\N	1	10
-45	/uploads/1766783087299-Captura de pantalla 2025-12-26 133433.png	\N	2	10
-26	/uploads/1766665395745-Captura de pantalla 2025-12-25 062235.png	\N	3	6
-27	/uploads/1766665395746-Captura de pantalla 2025-12-25 062241.png	\N	4	6
-28	/uploads/1766665395748-Captura de pantalla 2025-12-25 062246.png	\N	5	6
-30	/uploads/1766665543360-Captura de pantalla 2025-12-25 062445.png	\N	2	7
-39	/uploads/1766778746726-Captura de pantalla 2025-12-26 133323.png	\N	1	9
-35	/uploads/1766665656389-Captura de pantalla 2025-12-25 062709.png	\N	2	8
-36	/uploads/1766665656390-Captura de pantalla 2025-12-25 062714.png	\N	3	8
-37	/uploads/1766665656391-Captura de pantalla 2025-12-25 062719.png	\N	4	8
-38	/uploads/1766665656392-Captura de pantalla 2025-12-25 062723.png	\N	5	8
-16	/uploads/1766664848038-Captura de pantalla 2025-12-24 163451.png	\N	2	4
-17	/uploads/1766664848039-Captura de pantalla 2025-12-24 163527.png	\N	3	4
-18	/uploads/1766664848040-Captura de pantalla 2025-12-24 163532.png	\N	4	4
-11	/uploads/1766664426108-Captura de pantalla 2025-12-24 163420.png	\N	6	2
-12	/uploads/1766664426108-Captura de pantalla 2025-12-24 163430.png	\N	7	2
-21	/uploads/1766665229274-Captura de pantalla 2025-12-25 061857.png	\N	3	5
-22	/uploads/1766665229276-Captura de pantalla 2025-12-25 061905.png	\N	4	5
-23	/uploads/1766665229277-Captura de pantalla 2025-12-25 061909.png	\N	5	5
-46	/uploads/1766783087314-Captura de pantalla 2025-12-26 133436.png	\N	3	10
-31	/uploads/1766665543362-Captura de pantalla 2025-12-25 062451.png	\N	3	7
-32	/uploads/1766665543363-Captura de pantalla 2025-12-25 062455.png	\N	4	7
-33	/uploads/1766665543366-Captura de pantalla 2025-12-25 062501.png	\N	5	7
+328	https://res.cloudinary.com/daylne1ml/image/upload/v1767937726/razoconnect_productos/s1vzaxpejbb5cmnrnzph.jpg	\N	1	10
+329	https://res.cloudinary.com/daylne1ml/image/upload/v1767937726/razoconnect_productos/y3xr3al9vtcnogwi1tvn.jpg	\N	2	10
+330	https://res.cloudinary.com/daylne1ml/image/upload/v1767937726/razoconnect_productos/pypuigwc1rsvjibf3b0v.jpg	\N	3	10
 92	https://res.cloudinary.com/daylne1ml/image/upload/v1767486907/razoconnect_productos/lh2quieimcbartklrexg.jpg	\N	1	22
 93	https://res.cloudinary.com/daylne1ml/image/upload/v1767486907/razoconnect_productos/xy1vug3qxa15qvv9yujs.jpg	\N	2	22
 99	https://res.cloudinary.com/daylne1ml/image/upload/v1767488012/razoconnect_productos/el5o4voa0bucibncbzlp.jpg	\N	1	24
@@ -4596,11 +4745,6 @@ COPY public.producto_imagenes (imagenid, url_imagen, textoalternativo, orden, pr
 106	https://res.cloudinary.com/daylne1ml/image/upload/v1767489039/razoconnect_productos/lsqfko2exg2zplkbwlti.jpg	\N	3	25
 107	https://res.cloudinary.com/daylne1ml/image/upload/v1767489038/razoconnect_productos/oliwfagmx7xhurddx5t6.jpg	\N	4	25
 108	https://res.cloudinary.com/daylne1ml/image/upload/v1767489039/razoconnect_productos/tpbkqyaauutjwupjogso.jpg	\N	5	25
-75	https://res.cloudinary.com/daylne1ml/image/upload/v1767484547/razoconnect_productos/yccwuoo5p3pbhaguxtgs.jpg	\N	1	17
-76	https://res.cloudinary.com/daylne1ml/image/upload/v1767484548/razoconnect_productos/elrrrfz4nhd4ueyxkhip.jpg	\N	2	17
-77	https://res.cloudinary.com/daylne1ml/image/upload/v1767484547/razoconnect_productos/tljhmo0fopiyu2vulcov.jpg	\N	3	17
-78	https://res.cloudinary.com/daylne1ml/image/upload/v1767484547/razoconnect_productos/mw5gycxnqudrgso6txef.jpg	\N	4	17
-79	https://res.cloudinary.com/daylne1ml/image/upload/v1767484548/razoconnect_productos/aiaosbb6lzl1n59jt5p9.jpg	\N	5	17
 86	https://res.cloudinary.com/daylne1ml/image/upload/v1767485176/razoconnect_productos/tfeyme7hpu5lvxsfaz7d.jpg	\N	1	18
 82	https://res.cloudinary.com/daylne1ml/image/upload/v1767485176/razoconnect_productos/kxhkxil71tzrlnbbqujy.jpg	\N	2	18
 83	https://res.cloudinary.com/daylne1ml/image/upload/v1767485176/razoconnect_productos/omsr4cyvnk7jhk8lyqjg.jpg	\N	3	18
@@ -4617,6 +4761,12 @@ COPY public.producto_imagenes (imagenid, url_imagen, textoalternativo, orden, pr
 116	https://res.cloudinary.com/daylne1ml/image/upload/v1767490365/razoconnect_productos/nbnuclbaedg7vcimxtsm.jpg	\N	3	27
 117	https://res.cloudinary.com/daylne1ml/image/upload/v1767490365/razoconnect_productos/sxaqfbi4eibqgnebqnk5.jpg	\N	4	27
 118	https://res.cloudinary.com/daylne1ml/image/upload/v1767490365/razoconnect_productos/ezbkiif4leqqvunyzmqh.jpg	\N	5	27
+75	https://res.cloudinary.com/daylne1ml/image/upload/v1767484547/razoconnect_productos/yccwuoo5p3pbhaguxtgs.jpg	\N	1	17
+76	https://res.cloudinary.com/daylne1ml/image/upload/v1767484548/razoconnect_productos/elrrrfz4nhd4ueyxkhip.jpg	\N	2	17
+77	https://res.cloudinary.com/daylne1ml/image/upload/v1767484547/razoconnect_productos/tljhmo0fopiyu2vulcov.jpg	\N	3	17
+78	https://res.cloudinary.com/daylne1ml/image/upload/v1767484547/razoconnect_productos/mw5gycxnqudrgso6txef.jpg	\N	4	17
+79	https://res.cloudinary.com/daylne1ml/image/upload/v1767484548/razoconnect_productos/aiaosbb6lzl1n59jt5p9.jpg	\N	5	17
+331	https://res.cloudinary.com/daylne1ml/image/upload/v1767939314/razoconnect_productos/ip3hmk5nispszdv0ga0f.jpg	\N	1	13
 157	https://res.cloudinary.com/daylne1ml/image/upload/v1767498491/razoconnect_productos/ltgkvzqv7smnlhwtuu9r.jpg	\N	1	37
 158	https://res.cloudinary.com/daylne1ml/image/upload/v1767498491/razoconnect_productos/jom67q3dxd2ogyevsqpa.jpg	\N	2	37
 159	https://res.cloudinary.com/daylne1ml/image/upload/v1767498491/razoconnect_productos/kxxvkcwzdtanz2wzpijc.jpg	\N	3	37
@@ -4625,16 +4775,11 @@ COPY public.producto_imagenes (imagenid, url_imagen, textoalternativo, orden, pr
 164	https://res.cloudinary.com/daylne1ml/image/upload/v1767500910/razoconnect_productos/sdquvjvjaajsuuzslbnz.jpg	\N	1	38
 165	https://res.cloudinary.com/daylne1ml/image/upload/v1767500910/razoconnect_productos/kyibh0o07j3gpmpd5aat.jpg	\N	2	38
 166	https://res.cloudinary.com/daylne1ml/image/upload/v1767500910/razoconnect_productos/v0a2ckwgoonawdiecpkk.jpg	\N	3	38
-40	/uploads/1766778746732-Captura de pantalla 2025-12-26 133344.png	\N	2	9
-41	/uploads/1766778746734-Captura de pantalla 2025-12-26 133348.png	\N	3	9
-42	/uploads/1766778746738-Captura de pantalla 2025-12-26 133356.png	\N	4	9
-43	/uploads/1766778746741-Captura de pantalla 2025-12-26 133404.png	\N	5	9
 52	https://res.cloudinary.com/daylne1ml/image/upload/v1767475242/razoconnect_productos/e9hmyancb7lsyvqqpmse.jpg	\N	5	15
 62	https://res.cloudinary.com/daylne1ml/image/upload/v1767483725/razoconnect_productos/ncifrreftouvvp3k47uh.jpg	\N	5	19
 66	https://res.cloudinary.com/daylne1ml/image/upload/v1767484007/razoconnect_productos/ovtlyvtcgpdoo4xd8iv0.jpg	\N	4	20
 67	https://res.cloudinary.com/daylne1ml/image/upload/v1767484007/razoconnect_productos/lwkiemavhsx9oz66fsbw.jpg	\N	5	20
 160	https://res.cloudinary.com/daylne1ml/image/upload/v1767499681/razoconnect_productos/mpxw8saohvrhnyowaxtr.jpg	\N	1	39
-14	/uploads/1766664642264-Captura de pantalla 2025-12-25 060954.png	\N	2	3
 161	https://res.cloudinary.com/daylne1ml/image/upload/v1767499681/razoconnect_productos/olzmmflbgolfvvznfamh.jpg	\N	2	39
 152	https://res.cloudinary.com/daylne1ml/image/upload/v1767496390/razoconnect_productos/f2zo6hblkjusty51q48r.jpg	\N	1	36
 153	https://res.cloudinary.com/daylne1ml/image/upload/v1767496390/razoconnect_productos/uyn4sabk47nusqbpqkmx.jpg	\N	2	36
@@ -4709,11 +4854,6 @@ COPY public.producto_imagenes (imagenid, url_imagen, textoalternativo, orden, pr
 227	https://res.cloudinary.com/daylne1ml/image/upload/v1767568380/razoconnect_productos/gkrxtmwewknxu7ezv5ss.jpg	\N	5	56
 216	https://res.cloudinary.com/daylne1ml/image/upload/v1767567305/razoconnect_productos/qvw7e9sj210hlte2eqwn.jpg	\N	1	54
 217	https://res.cloudinary.com/daylne1ml/image/upload/v1767567305/razoconnect_productos/gxu6viy8y6sbt4uuey9i.jpg	\N	2	54
-242	https://res.cloudinary.com/daylne1ml/image/upload/v1767589542/razoconnect_productos/niougqsq6u3ppn1wiwoy.jpg	\N	1	60
-243	https://res.cloudinary.com/daylne1ml/image/upload/v1767589542/razoconnect_productos/ifoctisam3doc4xcigc6.jpg	\N	2	60
-244	https://res.cloudinary.com/daylne1ml/image/upload/v1767589542/razoconnect_productos/ppynjcrtdoq0uce71w4x.jpg	\N	3	60
-245	https://res.cloudinary.com/daylne1ml/image/upload/v1767589542/razoconnect_productos/ier55onjbzziusedu2ui.jpg	\N	4	60
-246	https://res.cloudinary.com/daylne1ml/image/upload/v1767589542/razoconnect_productos/xghepfjsn69vtlusyoxj.jpg	\N	5	60
 247	https://res.cloudinary.com/daylne1ml/image/upload/v1767590937/razoconnect_productos/f5u7fm8gecb4jwmhxfeu.jpg	\N	1	61
 248	https://res.cloudinary.com/daylne1ml/image/upload/v1767590937/razoconnect_productos/yevmkqljnmdb0pjkxq4k.jpg	\N	2	61
 249	https://res.cloudinary.com/daylne1ml/image/upload/v1767590937/razoconnect_productos/il5uwwbciduljldowp6t.jpg	\N	3	61
@@ -4721,9 +4861,7 @@ COPY public.producto_imagenes (imagenid, url_imagen, textoalternativo, orden, pr
 251	https://res.cloudinary.com/daylne1ml/image/upload/v1767590937/razoconnect_productos/o8sibah5wqmg7ziz7h1p.jpg	\N	5	61
 252	https://res.cloudinary.com/daylne1ml/image/upload/v1767590937/razoconnect_productos/oad4qzedlik6peymnd34.jpg	\N	6	61
 253	https://res.cloudinary.com/daylne1ml/image/upload/v1767590937/razoconnect_productos/osrf2v4wyrug17l05zsd.jpg	\N	7	61
-254	https://res.cloudinary.com/daylne1ml/image/upload/v1767591530/razoconnect_productos/opjdtlluuijivi8zsplq.png	\N	1	14
-255	https://res.cloudinary.com/daylne1ml/image/upload/v1767591531/razoconnect_productos/cyhvmrskmwx4qidbnmpc.png	\N	2	14
-275	https://res.cloudinary.com/daylne1ml/image/upload/v1767747160/razoconnect_productos/tnpum3nvk49cxhpoaslx.jpg	\N	1	11
+332	https://res.cloudinary.com/daylne1ml/image/upload/v1767978888/razoconnect_productos/zl8eqbeaherfjccgmnpn.jpg	\N	1	3
 264	https://res.cloudinary.com/daylne1ml/image/upload/v1767649451/razoconnect_productos/zubqpq5udoly29e8jzka.jpg	\N	1	62
 265	https://res.cloudinary.com/daylne1ml/image/upload/v1767649451/razoconnect_productos/detxpivr0ageatxde6s7.jpg	\N	2	62
 266	https://res.cloudinary.com/daylne1ml/image/upload/v1767649451/razoconnect_productos/yhjpdkf5exgzoolranay.jpg	\N	3	62
@@ -4735,18 +4873,12 @@ COPY public.producto_imagenes (imagenid, url_imagen, textoalternativo, orden, pr
 270	https://res.cloudinary.com/daylne1ml/image/upload/v1767674234/razoconnect_productos/duhl1avsr4mvtmjbfgfq.jpg	\N	1	65
 271	https://res.cloudinary.com/daylne1ml/image/upload/v1767674234/razoconnect_productos/bea7nqdvjikq8280zuri.jpg	\N	2	65
 272	https://res.cloudinary.com/daylne1ml/image/upload/v1767674234/razoconnect_productos/yzrukbdh2846pnslakz7.jpg	\N	3	65
-273	https://res.cloudinary.com/daylne1ml/image/upload/v1767674342/razoconnect_productos/o2mtmsr13hafwnmlnmy3.jpg	\N	1	66
 261	https://res.cloudinary.com/daylne1ml/image/upload/v1767641055/razoconnect_productos/bo5sjtspd7kbbynpxgrw.jpg	\N	1	44
-274	https://res.cloudinary.com/daylne1ml/image/upload/v1767674570/razoconnect_productos/xsurh6fww38u47zqzgbe.jpg	\N	1	67
+244	https://res.cloudinary.com/daylne1ml/image/upload/v1767589542/razoconnect_productos/ppynjcrtdoq0uce71w4x.jpg	\N	3	60
 262	https://res.cloudinary.com/daylne1ml/image/upload/v1767641056/razoconnect_productos/kmwue6ey3nog7l4xhppi.jpg	\N	2	44
-276	https://res.cloudinary.com/daylne1ml/image/upload/v1767747160/razoconnect_productos/bmn9fxpjvr6opiofqp2i.jpg	\N	2	11
-277	https://res.cloudinary.com/daylne1ml/image/upload/v1767747160/razoconnect_productos/vrzuhjhkq1eicfgj0vxc.jpg	\N	3	11
-278	https://res.cloudinary.com/daylne1ml/image/upload/v1767747160/razoconnect_productos/vm5ccvzwinao3bzukqll.jpg	\N	4	11
 263	https://res.cloudinary.com/daylne1ml/image/upload/v1767641118/razoconnect_productos/nv3snnrkkgusoalqkqw0.jpg	\N	1	51
 256	https://res.cloudinary.com/daylne1ml/image/upload/v1767640849/razoconnect_productos/ny5m4o9uvwvohudsztdc.jpg	\N	1	46
-279	https://res.cloudinary.com/daylne1ml/image/upload/v1767747160/razoconnect_productos/lvkms2yh7v9txnoypozk.jpg	\N	5	11
-280	https://res.cloudinary.com/daylne1ml/image/upload/v1767747160/razoconnect_productos/i86wgrv2frrarjpkgibf.jpg	\N	6	11
-281	https://res.cloudinary.com/daylne1ml/image/upload/v1767747160/razoconnect_productos/hlq1e33cu9vtqjwgqnmu.jpg	\N	7	11
+254	https://res.cloudinary.com/daylne1ml/image/upload/v1767591530/razoconnect_productos/opjdtlluuijivi8zsplq.png	\N	1	14
 238	https://res.cloudinary.com/daylne1ml/image/upload/v1767588514/razoconnect_productos/dxxeb5hup3vrebwvzq4q.jpg	\N	1	59
 239	https://res.cloudinary.com/daylne1ml/image/upload/v1767588514/razoconnect_productos/sctpdkmfp920jc2ktaze.jpg	\N	2	59
 240	https://res.cloudinary.com/daylne1ml/image/upload/v1767588515/razoconnect_productos/pf2y2grhyrvidr0tmvct.jpg	\N	3	59
@@ -4756,20 +4888,71 @@ COPY public.producto_imagenes (imagenid, url_imagen, textoalternativo, orden, pr
 156	https://res.cloudinary.com/daylne1ml/image/upload/v1767496390/razoconnect_productos/j0qpj3w9pwonvqcylf6w.jpg	\N	5	36
 110	https://res.cloudinary.com/daylne1ml/image/upload/v1767489787/razoconnect_productos/tntgpuyoqo4c2jdhwfbt.jpg	\N	2	26
 111	https://res.cloudinary.com/daylne1ml/image/upload/v1767489787/razoconnect_productos/q25aylmrsmw9rq32gpsf.jpg	\N	3	26
+275	https://res.cloudinary.com/daylne1ml/image/upload/v1767747160/razoconnect_productos/tnpum3nvk49cxhpoaslx.jpg	\N	1	11
+276	https://res.cloudinary.com/daylne1ml/image/upload/v1767747160/razoconnect_productos/bmn9fxpjvr6opiofqp2i.jpg	\N	2	11
+277	https://res.cloudinary.com/daylne1ml/image/upload/v1767747160/razoconnect_productos/vrzuhjhkq1eicfgj0vxc.jpg	\N	3	11
+278	https://res.cloudinary.com/daylne1ml/image/upload/v1767747160/razoconnect_productos/vm5ccvzwinao3bzukqll.jpg	\N	4	11
+274	https://res.cloudinary.com/daylne1ml/image/upload/v1767674570/razoconnect_productos/xsurh6fww38u47zqzgbe.jpg	\N	1	67
+242	https://res.cloudinary.com/daylne1ml/image/upload/v1767589542/razoconnect_productos/niougqsq6u3ppn1wiwoy.jpg	\N	1	60
+243	https://res.cloudinary.com/daylne1ml/image/upload/v1767589542/razoconnect_productos/ifoctisam3doc4xcigc6.jpg	\N	2	60
+245	https://res.cloudinary.com/daylne1ml/image/upload/v1767589542/razoconnect_productos/ier55onjbzziusedu2ui.jpg	\N	4	60
+246	https://res.cloudinary.com/daylne1ml/image/upload/v1767589542/razoconnect_productos/xghepfjsn69vtlusyoxj.jpg	\N	5	60
+273	https://res.cloudinary.com/daylne1ml/image/upload/v1767674342/razoconnect_productos/o2mtmsr13hafwnmlnmy3.jpg	\N	1	66
 112	https://res.cloudinary.com/daylne1ml/image/upload/v1767489787/razoconnect_productos/zydq6w1xp6zxlzjnenqy.jpg	\N	4	26
 113	https://res.cloudinary.com/daylne1ml/image/upload/v1767489787/razoconnect_productos/y0j0j8ucgkuamjgdxusn.jpg	\N	5	26
-80	https://res.cloudinary.com/daylne1ml/image/upload/v1767484548/razoconnect_productos/gyagxg3hqv0rckbzmjaj.jpg	\N	6	17
-81	https://res.cloudinary.com/daylne1ml/image/upload/v1767484547/razoconnect_productos/kdxhbmlvxgavcxadj4qz.jpg	\N	7	17
 233	https://res.cloudinary.com/daylne1ml/image/upload/v1767573003/razoconnect_productos/enug7jf9pdme4puy72gv.jpg	\N	1	58
 234	https://res.cloudinary.com/daylne1ml/image/upload/v1767573003/razoconnect_productos/twihiqtsjpaaxrnxhsu0.jpg	\N	2	58
 235	https://res.cloudinary.com/daylne1ml/image/upload/v1767573003/razoconnect_productos/avvzfrbiieyatlbcak1j.jpg	\N	3	58
 236	https://res.cloudinary.com/daylne1ml/image/upload/v1767573003/razoconnect_productos/dok5bcotepajbwjkyceq.jpg	\N	4	58
 237	https://res.cloudinary.com/daylne1ml/image/upload/v1767573003/razoconnect_productos/rnwrzpkbd3arfjiaop0z.jpg	\N	5	58
+80	https://res.cloudinary.com/daylne1ml/image/upload/v1767484548/razoconnect_productos/gyagxg3hqv0rckbzmjaj.jpg	\N	6	17
+81	https://res.cloudinary.com/daylne1ml/image/upload/v1767484547/razoconnect_productos/kdxhbmlvxgavcxadj4qz.jpg	\N	7	17
+279	https://res.cloudinary.com/daylne1ml/image/upload/v1767747160/razoconnect_productos/lvkms2yh7v9txnoypozk.jpg	\N	5	11
+280	https://res.cloudinary.com/daylne1ml/image/upload/v1767747160/razoconnect_productos/i86wgrv2frrarjpkgibf.jpg	\N	6	11
+281	https://res.cloudinary.com/daylne1ml/image/upload/v1767747160/razoconnect_productos/hlq1e33cu9vtqjwgqnmu.jpg	\N	7	11
+282	https://res.cloudinary.com/daylne1ml/image/upload/v1767929188/razoconnect_productos/cawx3caqxhc9vgiougl3.jpg	\N	1	68
+283	https://res.cloudinary.com/daylne1ml/image/upload/v1767929188/razoconnect_productos/zisreyuuh5ckha1tnuum.jpg	\N	2	68
+284	https://res.cloudinary.com/daylne1ml/image/upload/v1767929188/razoconnect_productos/mxj5z9tdfcqcocn31ao8.jpg	\N	3	68
+285	https://res.cloudinary.com/daylne1ml/image/upload/v1767929188/razoconnect_productos/ontd4cjqfpxt1qiecgqg.jpg	\N	4	68
+286	https://res.cloudinary.com/daylne1ml/image/upload/v1767929188/razoconnect_productos/cop8cyytznjnavnpjnxc.jpg	\N	5	68
+287	https://res.cloudinary.com/daylne1ml/image/upload/v1767932877/razoconnect_productos/nwrrk2ygq6xstzwzdlvf.jpg	\N	1	9
+288	https://res.cloudinary.com/daylne1ml/image/upload/v1767932877/razoconnect_productos/tk7lcy4pealuqihij5nr.jpg	\N	2	9
+289	https://res.cloudinary.com/daylne1ml/image/upload/v1767935873/razoconnect_productos/maw5sixg6wgvqiata9kw.jpg	\N	1	6
+290	https://res.cloudinary.com/daylne1ml/image/upload/v1767935873/razoconnect_productos/oqcw097nmu0ykg42mhze.jpg	\N	2	6
+291	https://res.cloudinary.com/daylne1ml/image/upload/v1767935873/razoconnect_productos/k3s4maq5lxdjfrhvc7d6.jpg	\N	3	6
+292	https://res.cloudinary.com/daylne1ml/image/upload/v1767935873/razoconnect_productos/f3klafrxd2rfcfnckvnr.jpg	\N	4	6
+293	https://res.cloudinary.com/daylne1ml/image/upload/v1767935873/razoconnect_productos/zvdwdelkylaoj4a0klui.jpg	\N	5	6
+294	https://res.cloudinary.com/daylne1ml/image/upload/v1767936015/razoconnect_productos/cik1pgipovobr6v7gw63.jpg	\N	1	1
+295	https://res.cloudinary.com/daylne1ml/image/upload/v1767936015/razoconnect_productos/bjke0pcqvqirgvx6n7oz.jpg	\N	2	1
+296	https://res.cloudinary.com/daylne1ml/image/upload/v1767936015/razoconnect_productos/rzxpwidyfsoxzyzpr7va.jpg	\N	3	1
+297	https://res.cloudinary.com/daylne1ml/image/upload/v1767936015/razoconnect_productos/ocfmtg3hbktecutykxdw.jpg	\N	4	1
+298	https://res.cloudinary.com/daylne1ml/image/upload/v1767936015/razoconnect_productos/o245f9cfq8pij6bizlww.jpg	\N	5	1
+299	https://res.cloudinary.com/daylne1ml/image/upload/v1767936122/razoconnect_productos/icajh3ipwbl8tjiouf0k.jpg	\N	1	8
+300	https://res.cloudinary.com/daylne1ml/image/upload/v1767936122/razoconnect_productos/e5s7rjznlvctup9rwd7n.jpg	\N	2	8
+301	https://res.cloudinary.com/daylne1ml/image/upload/v1767936122/razoconnect_productos/grpyiq6jovrxxncnofzq.jpg	\N	3	8
+302	https://res.cloudinary.com/daylne1ml/image/upload/v1767936122/razoconnect_productos/ksavgde4n0zlyzcxa3pq.jpg	\N	4	8
+303	https://res.cloudinary.com/daylne1ml/image/upload/v1767936122/razoconnect_productos/x22dbukrlwabfegwxnkp.jpg	\N	5	8
+306	https://res.cloudinary.com/daylne1ml/image/upload/v1767937148/razoconnect_productos/enfv761gjjmskphocuss.jpg	\N	1	4
+307	https://res.cloudinary.com/daylne1ml/image/upload/v1767937148/razoconnect_productos/xqjai1m60kmi5afsjieg.jpg	\N	2	4
+308	https://res.cloudinary.com/daylne1ml/image/upload/v1767937148/razoconnect_productos/k8hnzitrrb01iks8uglm.jpg	\N	3	4
+309	https://res.cloudinary.com/daylne1ml/image/upload/v1767937148/razoconnect_productos/chf8von0ywsubmgylhpl.jpg	\N	4	4
+310	https://res.cloudinary.com/daylne1ml/image/upload/v1767937148/razoconnect_productos/cwjy1dbu3wwnr8wt1s2g.jpg	\N	5	4
+333	https://res.cloudinary.com/daylne1ml/image/upload/v1767979764/razoconnect_productos/ioeqtzec18alehq2mx2m.jpg	\N	1	69
+315	https://res.cloudinary.com/daylne1ml/image/upload/v1767937438/razoconnect_productos/znw198lb8d7y9olgpho7.jpg	\N	2	5
+314	https://res.cloudinary.com/daylne1ml/image/upload/v1767937438/razoconnect_productos/k1gxnahnecytffsrciyp.jpg	\N	3	5
+313	https://res.cloudinary.com/daylne1ml/image/upload/v1767937438/razoconnect_productos/apkokw4bxmziinypinbi.jpg	\N	1	5
+316	https://res.cloudinary.com/daylne1ml/image/upload/v1767937550/razoconnect_productos/adf1gmfusgqeyd17d3ru.jpg	\N	1	2
+317	https://res.cloudinary.com/daylne1ml/image/upload/v1767937550/razoconnect_productos/xrao07qqjgjm3rmj8vtn.jpg	\N	2	2
+318	https://res.cloudinary.com/daylne1ml/image/upload/v1767937550/razoconnect_productos/lxlrda36kmar7nfn20wa.jpg	\N	3	2
+319	https://res.cloudinary.com/daylne1ml/image/upload/v1767937550/razoconnect_productos/oai1obaadtf701wlbaml.jpg	\N	4	2
+320	https://res.cloudinary.com/daylne1ml/image/upload/v1767937550/razoconnect_productos/p8oqizunjxcowsuwd3cr.jpg	\N	5	2
+321	https://res.cloudinary.com/daylne1ml/image/upload/v1767937550/razoconnect_productos/s5fhm5gxzskaq49yti68.jpg	\N	6	2
+322	https://res.cloudinary.com/daylne1ml/image/upload/v1767937550/razoconnect_productos/wigrvoscudnodmezktc8.jpg	\N	7	2
 \.
 
 
 --
--- TOC entry 4987 (class 0 OID 25877)
+-- TOC entry 4993 (class 0 OID 25877)
 -- Dependencies: 311
 -- Data for Name: producto_imagenes_color; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -4779,50 +4962,60 @@ COPY public.producto_imagenes_color (imagencolorid, productoid, color_nombre, ur
 
 
 --
--- TOC entry 4967 (class 0 OID 25270)
+-- TOC entry 4973 (class 0 OID 25270)
 -- Dependencies: 290
 -- Data for Name: producto_tamanosdisponibles; Type: TABLE DATA; Schema: public; Owner: ferram
 --
 
 COPY public.producto_tamanosdisponibles (productoid, tamanoid) FROM stdin;
-1	5
-1	4
-2	3
-2	4
-3	3
-3	4
-4	5
-4	4
 54	3
 54	4
-6	5
-6	4
 54	5
-8	5
-8	4
-9	5
-9	3
-9	4
-10	3
-14	2
-14	3
+17	3
+17	4
+11	3
+11	4
+67	3
+67	4
+60	4
+66	3
 15	5
 15	3
 15	4
 16	5
 16	3
 16	4
+66	4
+66	5
+68	5
+68	3
 19	5
 19	3
 19	4
 20	5
 20	3
 20	4
+68	4
 22	3
 22	4
+9	3
+9	4
+9	5
+6	3
+6	4
+6	5
+1	3
+1	4
+1	5
+8	3
+8	4
+8	5
+4	3
+4	4
 34	5
 34	3
 34	4
+4	5
 37	5
 37	3
 37	4
@@ -4837,11 +5030,22 @@ COPY public.producto_tamanosdisponibles (productoid, tamanoid) FROM stdin;
 40	4
 43	3
 44	4
+5	3
+5	4
+5	5
+2	3
+2	4
+7	3
 49	4
+7	4
+7	5
 51	3
 51	4
-60	4
-61	4
+10	3
+13	3
+13	4
+61	6
+3	2
 62	3
 62	4
 63	2
@@ -4850,23 +5054,13 @@ COPY public.producto_tamanosdisponibles (productoid, tamanoid) FROM stdin;
 64	3
 65	3
 65	4
-66	5
-66	3
-66	4
-67	3
-67	4
+3	3
+69	2
+69	3
 48	4
 46	4
-13	3
-13	4
-11	3
-11	4
-7	3
-7	4
-7	5
-5	3
-5	4
-5	5
+14	2
+14	3
 50	3
 50	4
 50	5
@@ -4897,9 +5091,6 @@ COPY public.producto_tamanosdisponibles (productoid, tamanoid) FROM stdin;
 25	3
 25	4
 25	5
-17	3
-17	4
-17	5
 18	3
 18	4
 18	5
@@ -4949,26 +5140,17 @@ COPY public.producto_tamanosdisponibles (productoid, tamanoid) FROM stdin;
 
 
 --
--- TOC entry 4968 (class 0 OID 25273)
+-- TOC entry 4974 (class 0 OID 25273)
 -- Dependencies: 291
 -- Data for Name: producto_variante_imagenes; Type: TABLE DATA; Schema: public; Owner: ferram
 --
 
 COPY public.producto_variante_imagenes (imagenid, url_imagen, textoalternativo, orden, varianteid) FROM stdin;
-2	/uploads/1766664700177-Captura de pantalla 2025-12-25 060954.png	\N	1	7
-4	/uploads/1766780491765-Captura de pantalla 2025-12-26 133323.png	\N	1	18
-5	/uploads/1766780491771-Captura de pantalla 2025-12-26 133344.png	\N	2	18
-6	/uploads/1766780491774-Captura de pantalla 2025-12-26 133348.png	\N	3	18
-7	/uploads/1766780491775-Captura de pantalla 2025-12-26 133356.png	\N	4	18
-8	/uploads/1766780491793-Captura de pantalla 2025-12-26 133404.png	\N	5	18
-9	/uploads/1766780708466-Captura de pantalla 2025-12-26 133314.png	\N	1	23
-11	https://res.cloudinary.com/daylne1ml/image/upload/v1767182907/razoconnect_productos/vdzf7ow2wfo08nehdjlf.png	\N	1	46
 17	https://res.cloudinary.com/daylne1ml/image/upload/v1767487174/razoconnect_productos/qxjgiedlbsytuwkj1r15.jpg	\N	1	78
 18	https://res.cloudinary.com/daylne1ml/image/upload/v1767487174/razoconnect_productos/n27tslr2n647yx27c5we.jpg	\N	2	78
 19	https://res.cloudinary.com/daylne1ml/image/upload/v1767487175/razoconnect_productos/xn9osvqqghspegnqpvhe.jpg	\N	3	78
 20	https://res.cloudinary.com/daylne1ml/image/upload/v1767487176/razoconnect_productos/io1gj59xwhqhwrbg3rjn.jpg	\N	4	78
 21	https://res.cloudinary.com/daylne1ml/image/upload/v1767487176/razoconnect_productos/nfgelqburchikgkvprh4.jpg	\N	5	78
-1	/uploads/1766664669210-Captura de pantalla 2025-12-25 060942.png	\N	1	6
 12	https://res.cloudinary.com/daylne1ml/image/upload/v1767487053/razoconnect_productos/ynl4n9m3hjsi2elrwpkr.jpg	\N	1	77
 13	https://res.cloudinary.com/daylne1ml/image/upload/v1767487054/razoconnect_productos/ivuvk1swstrlouoykuwg.jpg	\N	2	77
 14	https://res.cloudinary.com/daylne1ml/image/upload/v1767487055/razoconnect_productos/fkrsv0rzmvocki94wl4k.jpg	\N	3	77
@@ -5026,18 +5208,6 @@ COPY public.producto_variante_imagenes (imagenid, url_imagen, textoalternativo, 
 80	https://res.cloudinary.com/daylne1ml/image/upload/v1767674625/razoconnect_productos/wj5pkpcyeya0m9jltlwu.jpg	\N	1	201
 81	https://res.cloudinary.com/daylne1ml/image/upload/v1767674673/razoconnect_productos/td8hn5reb9dyp4zjog0b.jpg	\N	1	202
 82	https://res.cloudinary.com/daylne1ml/image/upload/v1767674716/razoconnect_productos/puvlsvt2rhnnp8ydg9zi.jpg	\N	1	203
-84	https://res.cloudinary.com/daylne1ml/image/upload/v1767677520/razoconnect_productos/mayudofuu9a3e5zdnykl.jpg	\N	1	43
-86	https://res.cloudinary.com/daylne1ml/image/upload/v1767678335/razoconnect_productos/v25u8mbzolktzhjthkv8.jpg	\N	1	124
-87	https://res.cloudinary.com/daylne1ml/image/upload/v1767678895/razoconnect_productos/xqdh3frzpa2ksdvs4dse.jpg	\N	1	123
-88	https://res.cloudinary.com/daylne1ml/image/upload/v1767678938/razoconnect_productos/sptgidkebak8bdjq3xhl.jpg	\N	1	122
-89	https://res.cloudinary.com/daylne1ml/image/upload/v1767678980/razoconnect_productos/syvjolzoxopqfir9ss6d.jpg	\N	1	121
-90	https://res.cloudinary.com/daylne1ml/image/upload/v1767679039/razoconnect_productos/ywc3s9lg9ij9puhaek5f.jpg	\N	1	120
-91	https://res.cloudinary.com/daylne1ml/image/upload/v1767679096/razoconnect_productos/iaqglvi0ljrgsrmokq7r.jpg	\N	1	119
-92	https://res.cloudinary.com/daylne1ml/image/upload/v1767679134/razoconnect_productos/y9ejvumpfjxvzggefnqm.jpg	\N	1	118
-93	https://res.cloudinary.com/daylne1ml/image/upload/v1767679195/razoconnect_productos/p7ar5r3b03y8qlovhagc.jpg	\N	1	117
-94	https://res.cloudinary.com/daylne1ml/image/upload/v1767679245/razoconnect_productos/gteybogkuf6d2gdem5z7.jpg	\N	1	116
-95	https://res.cloudinary.com/daylne1ml/image/upload/v1767679277/razoconnect_productos/dxbtiinmsshcxmtnzimx.jpg	\N	1	115
-96	https://res.cloudinary.com/daylne1ml/image/upload/v1767679318/razoconnect_productos/vsj9nszexzewhtkoo0gf.jpg	\N	1	44
 97	https://res.cloudinary.com/daylne1ml/image/upload/v1767679781/razoconnect_productos/tacvfvno2scv31iyy0ql.jpg	\N	1	204
 98	https://res.cloudinary.com/daylne1ml/image/upload/v1767681399/razoconnect_productos/gmkh2jfiaxamzvgaezj6.jpg	\N	1	205
 99	https://res.cloudinary.com/daylne1ml/image/upload/v1767681399/razoconnect_productos/hqz5argzeogvawfabplu.jpg	\N	2	205
@@ -5060,286 +5230,366 @@ COPY public.producto_variante_imagenes (imagenid, url_imagen, textoalternativo, 
 115	https://res.cloudinary.com/daylne1ml/image/upload/v1767834557/razoconnect_productos/dfmerqaouk7kt3qw2jup.jpg	\N	3	166
 116	https://res.cloudinary.com/daylne1ml/image/upload/v1767834558/razoconnect_productos/rwbbfj3usj64t5tytsaa.jpg	\N	4	166
 117	https://res.cloudinary.com/daylne1ml/image/upload/v1767834559/razoconnect_productos/ujum4kks47ecoqmwxs51.jpg	\N	5	166
+118	https://res.cloudinary.com/daylne1ml/image/upload/v1767932933/razoconnect_productos/rio3fzaorprjiin9c4pt.jpg	\N	1	23
+119	https://res.cloudinary.com/daylne1ml/image/upload/v1767933031/razoconnect_productos/bqqner1wppu2ne5lzzjx.jpg	\N	1	18
+120	https://res.cloudinary.com/daylne1ml/image/upload/v1767933032/razoconnect_productos/rj0zt4tgb6cyi9dtcvng.jpg	\N	2	18
+121	https://res.cloudinary.com/daylne1ml/image/upload/v1767933032/razoconnect_productos/nxiwkaad1bhcutyoyuno.jpg	\N	3	18
+122	https://res.cloudinary.com/daylne1ml/image/upload/v1767933033/razoconnect_productos/fyw0uexthz29jxljqviq.jpg	\N	4	18
+123	https://res.cloudinary.com/daylne1ml/image/upload/v1767933034/razoconnect_productos/w9zriq5ngzze6wgnt5xo.jpg	\N	5	18
+124	https://res.cloudinary.com/daylne1ml/image/upload/v1767933354/razoconnect_productos/vsnxk1wuzgvsnrmknqxe.jpg	\N	1	19
+125	https://res.cloudinary.com/daylne1ml/image/upload/v1767933355/razoconnect_productos/owe4seqyqgzarshpi19c.jpg	\N	2	19
+126	https://res.cloudinary.com/daylne1ml/image/upload/v1767933355/razoconnect_productos/nzsvyfpbx3jisnmuyadg.jpg	\N	3	19
+127	https://res.cloudinary.com/daylne1ml/image/upload/v1767933356/razoconnect_productos/jrhh7af2bsuvzhlnhw9v.jpg	\N	4	19
+128	https://res.cloudinary.com/daylne1ml/image/upload/v1767933356/razoconnect_productos/ryrtomsdcdlq2zfxutav.jpg	\N	5	19
+129	https://res.cloudinary.com/daylne1ml/image/upload/v1767933383/razoconnect_productos/holqpvheij0ouht86lln.jpg	\N	1	25
+130	https://res.cloudinary.com/daylne1ml/image/upload/v1767933405/razoconnect_productos/ckyzu2plfyejsj9fh6ny.jpg	\N	1	26
+131	https://res.cloudinary.com/daylne1ml/image/upload/v1767933428/razoconnect_productos/ptkyqlyuehsxpakgerxl.jpg	\N	1	27
+132	https://res.cloudinary.com/daylne1ml/image/upload/v1767936492/razoconnect_productos/rwutmkkjsmwvipfbmyji.jpg	\N	1	124
+133	https://res.cloudinary.com/daylne1ml/image/upload/v1767936535/razoconnect_productos/bwebqrrtkxmaghrh2huk.jpg	\N	1	123
+134	https://res.cloudinary.com/daylne1ml/image/upload/v1767936600/razoconnect_productos/s8puwnpoh11ogcetuge3.jpg	\N	1	122
+135	https://res.cloudinary.com/daylne1ml/image/upload/v1767936680/razoconnect_productos/fgulxj9rwqed7dlmakrb.jpg	\N	1	121
+136	https://res.cloudinary.com/daylne1ml/image/upload/v1767936716/razoconnect_productos/bebn6cpbpvugt6mzlkvz.jpg	\N	1	120
+138	https://res.cloudinary.com/daylne1ml/image/upload/v1767936780/razoconnect_productos/ptoxohrbbbwtgs8giaht.jpg	\N	1	119
+139	https://res.cloudinary.com/daylne1ml/image/upload/v1767936812/razoconnect_productos/vnhxia19lclnuyvyu5ak.jpg	\N	1	118
+140	https://res.cloudinary.com/daylne1ml/image/upload/v1767936866/razoconnect_productos/xosfvoem6fyxdhprjgob.jpg	\N	1	44
+141	https://res.cloudinary.com/daylne1ml/image/upload/v1767936897/razoconnect_productos/r4kmb7vg0dxqaoxwbzx2.jpg	\N	1	116
+142	https://res.cloudinary.com/daylne1ml/image/upload/v1767936926/razoconnect_productos/zzqewxuqnauwulafgvus.jpg	\N	1	43
+143	https://res.cloudinary.com/daylne1ml/image/upload/v1767936953/razoconnect_productos/czcfynxua4qqfqvzcmco.jpg	\N	1	117
+144	https://res.cloudinary.com/daylne1ml/image/upload/v1767936985/razoconnect_productos/oayb6c7hhipowvi1qfsy.jpg	\N	1	115
+145	https://res.cloudinary.com/daylne1ml/image/upload/v1767937011/razoconnect_productos/jgjrtdigsbuxqj6folfm.jpg	\N	1	7
+146	https://res.cloudinary.com/daylne1ml/image/upload/v1767937045/razoconnect_productos/yp2ltusnrlsxndqygzkg.jpg	\N	1	6
+148	https://res.cloudinary.com/daylne1ml/image/upload/v1767976625/razoconnect_productos/pc6lebxjc8gmqoqdnhak.jpg	\N	1	223
+149	https://res.cloudinary.com/daylne1ml/image/upload/v1767976817/razoconnect_productos/vatqs57ym5arle17qyzh.jpg	\N	1	226
+150	https://res.cloudinary.com/daylne1ml/image/upload/v1767977091/razoconnect_productos/k5a1fzzhzzecjdygtim5.jpg	\N	1	229
+151	https://res.cloudinary.com/daylne1ml/image/upload/v1767977481/razoconnect_productos/aetfajdprh9nqs3gcszl.jpg	\N	1	232
+158	https://res.cloudinary.com/daylne1ml/image/upload/v1767977091/razoconnect_productos/k5a1fzzhzzecjdygtim5.jpg	\N	1	230
+147	https://res.cloudinary.com/daylne1ml/image/upload/v1767947038/razoconnect_productos/knys6u7oudalppsi5ig4.jpg	\N	1	220
+152	https://res.cloudinary.com/daylne1ml/image/upload/v1767947038/razoconnect_productos/knys6u7oudalppsi5ig4.jpg	\N	1	221
+153	https://res.cloudinary.com/daylne1ml/image/upload/v1767947038/razoconnect_productos/knys6u7oudalppsi5ig4.jpg	\N	1	222
+154	https://res.cloudinary.com/daylne1ml/image/upload/v1767976625/razoconnect_productos/pc6lebxjc8gmqoqdnhak.jpg	\N	1	224
+155	https://res.cloudinary.com/daylne1ml/image/upload/v1767976625/razoconnect_productos/pc6lebxjc8gmqoqdnhak.jpg	\N	1	225
+156	https://res.cloudinary.com/daylne1ml/image/upload/v1767976817/razoconnect_productos/vatqs57ym5arle17qyzh.jpg	\N	1	227
+157	https://res.cloudinary.com/daylne1ml/image/upload/v1767976817/razoconnect_productos/vatqs57ym5arle17qyzh.jpg	\N	1	228
+159	https://res.cloudinary.com/daylne1ml/image/upload/v1767977091/razoconnect_productos/k5a1fzzhzzecjdygtim5.jpg	\N	1	231
+160	https://res.cloudinary.com/daylne1ml/image/upload/v1767977481/razoconnect_productos/aetfajdprh9nqs3gcszl.jpg	\N	1	233
+161	https://res.cloudinary.com/daylne1ml/image/upload/v1767977481/razoconnect_productos/aetfajdprh9nqs3gcszl.jpg	\N	1	234
+162	https://res.cloudinary.com/daylne1ml/image/upload/v1767986734/razoconnect_productos/jxfemyrler9ypbei8elg.jpg	\N	1	45
+163	https://res.cloudinary.com/daylne1ml/image/upload/v1767986868/razoconnect_productos/ohlnjkko7u08zmafarep.jpg	\N	1	46
 \.
 
 
 --
--- TOC entry 4970 (class 0 OID 25280)
+-- TOC entry 4976 (class 0 OID 25280)
 -- Dependencies: 293
 -- Data for Name: producto_variantes; Type: TABLE DATA; Schema: public; Owner: ferram
 --
 
 COPY public.producto_variantes (varianteid, sku, dimensiones, costounitario, stock, tipoproductoid, medidaid, productoid, preciounitario, precioofertaunitario, activo, piezasporpaquete, stock_minimo, color_nombre, color_hex, tenant_id) FROM stdin;
-175	AMO-025-24X22X10-MEDIAN	Mediano	27.93	0	\N	\N	34	44.90	\N	t	1	0	\N	\N	1
-18	AMO-018-20X20	20x20	41.93	0	\N	\N	9	62.90	\N	t	1	0	Diseño	\N	1
-5	AMO-005	25x25	34.93	0	\N	\N	2	52.90	\N	t	1	0	\N	\N	1
-7	AMO-007	10x10	13.23	0	\N	\N	3	19.90	\N	t	1	0	Negro	\N	1
-9	AMO-009	20x20	27.93	0	\N	\N	4	42.90	\N	t	1	0	\N	\N	1
-10	AMO-010	10x10	13.23	0	\N	\N	5	19.90	\N	t	1	0	\N	\N	1
-11	AMO-011	20x20	27.93	0	\N	\N	5	42.90	\N	t	1	0	\N	\N	1
-12	AMO-012	20x20	27.93	0	\N	\N	6	42.90	\N	t	1	0	\N	\N	1
-13	AMO-013	25x25	34.93	0	\N	\N	6	52.90	\N	t	1	0	\N	\N	1
-28	AMO-019-17X22	17x22	69.93	0	\N	\N	10	102.90	\N	t	1	0	\N	\N	1
-16	AMO-016	20x20	27.93	0	\N	\N	8	42.90	\N	t	1	0	\N	\N	1
-17	AMO-017	25x25	34.93	0	\N	\N	8	52.90	\N	t	1	0	\N	\N	1
-8	AMO-008	15x15	20.93	0	\N	\N	4	30.90	\N	t	1	0	\N	\N	1
-41	NAT-002-GRA	Grande	20.93	0	\N	\N	13	34.90	\N	t	1	0	\N	\N	1
-15	AMO-015	25x25	34.93	0	\N	\N	7	52.90	\N	t	1	0	\N	\N	1
-42	NAT-002-JUM	Jumbo	32.13	0	\N	\N	13	52.90	\N	t	1	0	\N	\N	1
-14	AMO-014	20x20	27.93	0	\N	\N	7	42.90	\N	t	1	0	\N	\N	1
-45	LIS-002-20X20-ORO	20x20	27.93	0	\N	\N	14	42.90	\N	t	1	0	Oro	\N	1
-46	LIS-002-20X20-PLATA	20x20	27.93	0	\N	\N	14	42.90	\N	t	1	0	Plata	\N	1
-47	AMO-008-25X25	25x25	34.93	0	\N	\N	4	52.90	\N	t	1	0	\N	\N	1
-48	AMO-008-30X30	30x30	41.93	0	\N	\N	4	64.90	\N	t	1	0	\N	\N	1
-49	AMO-008-40X40	40x40	76.93	0	\N	\N	4	117.90	\N	t	1	0	\N	\N	1
-50	AMO-016-30X30	30x30	41.93	0	\N	\N	8	64.90	\N	t	1	0	\N	\N	1
-51	AMO-010-25X25	25x25	34.93	0	\N	\N	5	52.90	\N	t	1	0	\N	\N	1
-52	AMO-010-30X30	30x30	41.93	0	\N	\N	5	64.90	\N	t	1	0	\N	\N	1
-53	AMO-001-30X30	30x30	41.93	0	\N	\N	1	64.90	\N	t	1	0	\N	\N	1
-54	AMO-001-40X40	40x40	76.93	0	\N	\N	1	117.90	\N	t	1	0	\N	\N	1
-55	AMO-001-50X50	50x50	97.93	0	\N	\N	1	147.90	\N	t	1	0	\N	\N	1
-56	AMO-003-30X30	30x30	41.93	0	\N	\N	2	64.90	\N	t	1	0	\N	\N	1
-57	AMO-003-40X40	40x40	76.93	0	\N	\N	2	117.90	\N	t	1	0	\N	\N	1
-58	AMO-014-30X30	30x30	41.93	0	\N	\N	7	64.90	\N	t	1	0	\N	\N	1
-59	AMO-012-30X30	30x30	41.93	0	\N	\N	6	64.90	\N	t	1	0	\N	\N	1
-60	AMO-020-20X20	20x20	27.93	0	\N	\N	15	42.90	\N	t	1	0	\N	\N	1
-61	AMO-020-25X25	25x25	34.93	0	\N	\N	15	52.90	\N	t	1	0	\N	\N	1
-62	AMO-020-30X30	30x30	41.93	0	\N	\N	15	64.90	\N	t	1	0	\N	\N	1
-63	AMO-021-20X20	20x20	27.93	0	\N	\N	16	42.90	\N	t	1	0	\N	\N	1
-64	AMO-021-30X30	30x30	41.93	0	\N	\N	16	64.90	\N	t	1	0	\N	\N	1
-65	TOD-001-20X20	20x20	27.93	0	\N	\N	17	42.90	\N	t	1	0	\N	\N	1
-66	TOD-001-25X25	25x25	34.93	0	\N	\N	17	52.90	\N	t	1	0	\N	\N	1
-67	TOD-001-30X30	30x30	41.93	0	\N	\N	17	64.90	\N	t	1	0	\N	\N	1
-68	TOD-002-20X20	20x20	27.93	0	\N	\N	18	42.90	\N	t	1	0	\N	\N	1
-69	TOD-002-25X25	25x25	34.93	0	\N	\N	18	52.90	\N	t	1	0	\N	\N	1
-70	AMO-022-15X15	15x15	20.93	0	\N	\N	19	30.90	\N	t	1	0	\N	\N	1
-71	AMO-022-50X50	50x50	97.93	0	\N	\N	19	147.90	\N	t	1	0	\N	\N	1
-72	TOD-002-30X30	30x30	41.93	0	\N	\N	18	64.90	\N	t	1	0	\N	\N	1
-73	AMO-023-10X10	10x10	13.23	0	\N	\N	20	19.90	\N	t	1	0	\N	\N	1
-74	TOD-003-20X20	20x20	27.93	0	\N	\N	21	42.90	\N	t	1	0	\N	\N	1
-75	TOD-003-25X25	25x25	34.93	0	\N	\N	21	52.90	\N	t	1	0	\N	\N	1
-76	TOD-003-30X30	30x30	41.93	0	\N	\N	21	64.90	\N	t	1	0	\N	\N	1
-78	AMO-024-46X32-GIGANT	46x32	48.93	0	\N	\N	22	77.90	\N	t	1	0	Gigante	\N	1
-6	AMO-006	10x10	13.23	0	\N	\N	3	19.90	\N	t	1	0	Rojo	\N	1
-77	AMO-024-GRA-GRANDE	30x25	34.93	0	\N	\N	22	52.90	\N	t	1	0	Grande	\N	1
-79	TOD-004-20X20	20x20	27.93	0	\N	\N	23	42.90	\N	t	1	0	\N	\N	1
-80	TOD-004-25X25	25x25	34.93	0	\N	\N	23	52.90	\N	t	1	0	\N	\N	1
-81	TOD-004-30X30	30x30	41.93	0	\N	\N	23	64.90	\N	t	1	0	\N	\N	1
-40	NAT-002-MED	Mediana	13.93	0	\N	\N	13	24.90	\N	t	1	0	\N	\N	1
-82	TOD-005-10X10	10x10	13.23	0	\N	\N	24	19.90	\N	t	1	0	\N	\N	1
-83	TOD-005-20X20	20x20	27.93	0	\N	\N	24	42.90	\N	t	1	0	\N	\N	1
-84	TOD-005-25X25	25x25	34.93	0	\N	\N	24	52.90	\N	t	1	0	\N	\N	1
-85	TOD-005-30X30	30x30	41.93	0	\N	\N	24	64.90	\N	t	1	0	\N	\N	1
-86	TOD-005-40X40	40x40	76.93	0	\N	\N	24	117.90	\N	t	1	0	\N	\N	1
-87	TOD-006-25X25	25x25	34.93	0	\N	\N	25	52.90	\N	t	1	0	\N	\N	1
-88	TOD-006-30X30	30x30	41.93	0	\N	\N	25	64.90	\N	t	1	0	\N	\N	1
-89	TOD-007-20X20	20x20	27.93	0	\N	\N	26	42.90	\N	t	1	0	\N	\N	1
-170	CER-001-JUM	Jumbo	55.93	0	\N	\N	59	87.90	\N	t	1	0	\N	\N	1
-90	TOD-007-25X25	25x25	34.93	0	\N	\N	26	52.90	\N	t	1	0	\N	\N	1
-91	TOD-007-30X30	30x30	41.93	0	\N	\N	26	64.90	\N	t	1	0	\N	\N	1
-92	TOD-008-20X20	20x20	27.93	0	\N	\N	27	42.90	\N	t	1	0	\N	\N	1
-93	TOD-008-25X25	25x25	34.93	0	\N	\N	27	52.90	\N	t	1	0	\N	\N	1
-94	TOD-008-30X30	30x30	41.93	0	\N	\N	27	64.90	\N	t	1	0	\N	\N	1
-95	TOD-009-15X15	15x15	20.93	0	\N	\N	28	30.90	\N	t	1	0	\N	\N	1
-96	TOD-009-25X25	25x25	34.93	0	\N	\N	28	52.90	\N	t	1	0	\N	\N	1
-97	TOD-009-30X30	30x30	41.93	0	\N	\N	28	64.90	\N	t	1	0	\N	\N	1
-98	TOD-010-20X20	20x20	27.93	0	\N	\N	29	42.90	\N	t	1	0	\N	\N	1
-181	COR-001-GRA-ROSA	Grande	41.93	0	\N	\N	63	67.90	\N	t	1	0	Rosa	\N	1
-186	COR-001-MED-NEGRO	Mediano	27.93	0	\N	\N	63	44.90	\N	t	1	0	Negro	\N	1
-191	CAJ-006-6ROSAS-LILA	6 Rosas	27.93	0	\N	\N	64	44.90	\N	t	1	0	Lila	\N	1
-201	BOL-002-GRA	Grande	13.93	0	\N	\N	67	22.90	\N	t	1	0	\N	\N	1
-206	BAU-001-30X45	30x45	69.93	0	\N	\N	39	107.90	\N	t	1	0	\N	\N	1
-43	AMO-006-20X20-NEGRO	20x20	27.93	0	\N	\N	3	42.90	\N	t	1	0	Negro	\N	1
-44	AMO-006-25X25-NEGRO	25x25	34.93	0	\N	\N	3	52.90	\N	t	1	0	Negro	\N	1
-29	LIS-001-20X20	20x20	27.93	0	\N	\N	11	42.90	\N	t	1	0	\N	\N	1
-99	TOD-010-25X25	25x25	34.93	0	\N	\N	29	52.90	\N	t	1	0	\N	\N	1
-100	TOD-010-30X30	30x30	41.93	0	\N	\N	29	64.90	\N	t	1	0	\N	\N	1
-101	TOD-011-50X50	50x50	97.93	0	\N	\N	30	147.90	\N	t	1	0	\N	\N	1
-102	TOD-012-20X20	20x20	27.93	0	\N	\N	31	42.90	\N	t	1	0	\N	\N	1
-103	TOD-012-25X25	25x25	34.93	0	\N	\N	31	52.90	\N	t	1	0	\N	\N	1
-104	TOD-012-30X30	30x30	41.93	0	\N	\N	31	64.90	\N	t	1	0	\N	\N	1
-105	TOD-013-30X30	30x30	41.93	0	\N	\N	32	64.90	\N	t	1	0	\N	\N	1
-106	TOD-014-20X20	20x20	27.93	0	\N	\N	33	42.90	\N	t	1	0	\N	\N	1
-107	TOD-014-25X25	25x25	34.93	0	\N	\N	33	52.90	\N	t	1	0	\N	\N	1
-108	TOD-014-30X30	30x30	41.93	0	\N	\N	33	64.90	\N	t	1	0	\N	\N	1
-109	TOD-015-20X20	20x20	27.93	0	\N	\N	35	42.90	\N	t	1	0	\N	\N	1
-110	TOD-015-25X25	25x25	34.93	0	\N	\N	35	52.90	\N	t	1	0	\N	\N	1
-111	TOD-015-30X30	30x30	41.93	0	\N	\N	35	64.90	\N	t	1	0	\N	\N	1
-112	TOD-016-20X20	20x20	27.93	0	\N	\N	36	42.90	\N	t	1	0	\N	\N	1
-113	TOD-016-25X25	25x25	34.93	0	\N	\N	36	52.90	\N	t	1	0	\N	\N	1
-114	TOD-016-30X30	30x30	41.93	0	\N	\N	36	64.90	\N	t	1	0	\N	\N	1
-125	TOR-001-15X30	15x30	32.13	0	\N	\N	37	48.90	\N	t	1	0	\N	\N	1
-126	TOR-001-30X60	30x60	69.93	0	\N	\N	37	107.90	\N	t	1	0	\N	\N	1
-127	TOR-002-20X40	20x40	48.93	0	\N	\N	38	74.90	\N	t	1	0	\N	\N	1
-128	TOR-002-40X80	40x80	139.93	0	\N	\N	38	209.90	\N	t	1	0	\N	\N	1
-129	MIL-001-21X15X23-MEDIAN	21x15x23	27.93	0	\N	\N	40	42.90	\N	t	1	0	Mediana	\N	1
-130	MIL-001-23X17X32-GRANDE	23x17x32	32.13	0	\N	\N	40	48.90	\N	t	1	0	Grande	\N	1
-131	CUB-001-20X20	20x20	27.93	0	\N	\N	41	42.90	\N	t	1	0	\N	\N	1
-132	CUB-001-25X25	25x25	34.93	0	\N	\N	41	52.90	\N	t	1	0	\N	\N	1
-133	CUB-001-30X30	30x30	41.93	0	\N	\N	41	64.90	\N	t	1	0	\N	\N	1
-136	PAS-001-20X20X13	20x20x13	34.93	0	\N	\N	43	52.90	\N	t	1	0	\N	\N	1
-137	PAS-001-25X25X14	25x25x14	39.13	0	\N	\N	43	58.90	\N	t	1	0	\N	\N	1
-138	PAS-001-30X30X145	30x30x14.5	45.43	0	\N	\N	43	69.90	\N	t	1	0	\N	\N	1
-139	PAS-001-40X40X15	40x40x15	69.93	0	\N	\N	43	107.90	\N	t	1	0	\N	\N	1
-154	BAU-002-25X35	25x35	45.43	0	\N	\N	47	69.90	\N	t	1	0	\N	\N	1
-158	BAU-003-30X45	30x45	69.93	0	\N	\N	50	107.90	\N	t	1	0	\N	\N	1
-176	AMO-025-34X27X14-GRANDE	Grande	41.93	0	\N	\N	34	67.90	\N	t	1	0	\N	\N	1
-182	COR-001-MED-LILA	Mediano	27.93	0	\N	\N	63	44.90	\N	t	1	0	Lila	\N	1
-187	CAJ-006-6ROSAS-MAGENT	6 Rosas	27.90	0	\N	\N	64	44.90	\N	t	1	0	Magenta	\N	1
-192	CAJ-006-12ROSAS-LILA	12 Rosas	41.93	0	\N	\N	64	67.90	\N	t	1	0	Lila	\N	1
-202	BOL-002-JUM	Jumbo	17.43	0	\N	\N	67	27.90	\N	t	1	0	\N	\N	1
-124	AMO-006-50X50-ROJO	50x50	97.93	0	\N	\N	3	147.90	\N	t	1	0	Rojo	\N	1
-123	AMO-006-50X50-NEGRO	50x50	97.93	0	\N	\N	3	147.90	\N	t	1	0	Negro	\N	1
-122	AMO-006-40X40-ROJO	40x40	76.93	0	\N	\N	3	117.90	\N	t	1	0	Rojo	\N	1
-121	AMO-006-40X40-NEGRO	40x40	76.93	0	\N	\N	3	117.90	\N	t	1	0	Negro	\N	1
-120	AMO-006-30X30-ROJO	30x30	41.93	0	\N	\N	3	64.90	\N	t	1	0	Rojo	\N	1
-119	AMO-006-30X25-NEGRO	30x30	41.93	0	\N	\N	3	64.90	\N	t	1	0	Negro	\N	1
-118	AMO-006-25X25-ROJO	25x25	34.93	0	\N	\N	3	52.90	\N	t	1	0	Rojo	\N	1
-117	AMO-006-15X15-NEGRO	15x15	20.93	0	\N	\N	3	30.90	\N	t	1	0	Negro	\N	1
-116	AMO-006-20X20-ROJO	20x20	27.93	0	\N	\N	3	42.90	\N	t	1	0	Rojo	\N	1
-115	AMO-006-15X15-ROJO	15x15	20.93	0	\N	\N	3	30.90	\N	t	1	0	Rojo	\N	1
-141	CAJ-001-15X15-NATURA	15x15	13.23	0	\N	\N	44	20.90	\N	t	1	0	Natural	\N	1
-151	CAJ-003-25X35-NATURA	25x35	32.13	0	\N	\N	46	52.90	\N	t	1	0	\N	\N	1
-152	CAJ-003-30X45-NATURA	30x45	41.93	0	\N	\N	46	69.90	\N	t	1	0	\N	\N	1
-153	CAJ-003-40X60-NATURA	40x60	69.93	0	\N	\N	46	109.90	\N	t	1	0	\N	\N	1
-140	CAJ-001-10X10-NATURA	10x10	10.43	0	\N	\N	44	16.90	\N	t	1	0	Natural	\N	1
-142	CAJ-001-20X20-NATURA	20x20	17.43	0	\N	\N	44	28.90	\N	t	1	0	Natural	\N	1
-143	CAJ-001-25X25-NATURA	25x25	20.93	0	\N	\N	44	33.90	\N	t	1	0	Natural	\N	1
-144	CAJ-001-30X30-NATURA	30x30	27.93	0	\N	\N	44	46.90	\N	t	1	0	Natural	\N	1
-145	CAJ-001-40X40-NATURA	40x40	48.93	0	\N	\N	44	79.90	\N	t	1	0	Natural	\N	1
-146	CAJ-001-50X50-NATURA	50x50	76.93	0	\N	\N	44	119.90	\N	t	1	0	Natural	\N	1
-147	CAJ-001-65X65-NATURA	65x65	104.93	0	\N	\N	44	159.90	\N	t	1	0	Natural	\N	1
-155	CAJ-004-20X20X13-NATURA	20x20x13	20.93	0	\N	\N	48	34.90	\N	t	1	0	Natural	\N	1
-156	CAJ-004-30X30X13-NATURA	30x30x13	27.93	0	\N	\N	48	46.90	\N	t	1	0	Natural	\N	1
-157	CAJ-005-15X30-NATURA	15x30	27.93	0	\N	\N	49	43.90	\N	t	1	0	Natural	\N	1
-159	CAJ-005-20X40-NATURA	20x40	34.93	0	\N	\N	49	56.90	\N	t	1	0	Natural	\N	1
-160	CAJ-005-30X60-NATURA	30x60	48.93	0	\N	\N	49	79.90	\N	t	1	0	Natural	\N	1
-161	CAJ-005-40X80-NATURA	40x80	104.93	0	\N	\N	49	159.90	\N	t	1	0	Natural	\N	1
-207	LIS-001-10X10	10x10	13.23	0	\N	\N	11	19.90	\N	t	1	0	\N	\N	1
-134	CAM-001-30X25-GRANDE	Grande	34.93	0	\N	\N	42	52.90	\N	t	1	0	\N	\N	1
-135	CAM-001-46X32-GIGANT	Gigante	48.93	0	\N	\N	42	77.90	\N	t	1	0	\N	\N	1
-171	BOL-001-23X18X10-MEDIAN	Mediana	13.93	0	\N	\N	60	22.90	\N	t	1	0	\N	\N	1
-23	AMO-018-15X15-LISO	15x15	34.93	0	\N	\N	9	50.90	\N	t	1	0	Liso	\N	1
-19	AMO-018-25X25	25x25	48.93	0	\N	\N	9	72.90	\N	t	1	0	Diseño	\N	1
-24	AMO-018-20X20-LISO	20x20	41.93	0	\N	\N	9	62.90	\N	t	1	0	Liso	\N	1
-25	AMO-018-25X25-LISO	25x25	48.93	0	\N	\N	9	72.90	\N	t	1	0	Liso	\N	1
-26	AMO-018-30X30-LISO	30x30	55.93	0	\N	\N	9	84.90	\N	t	1	0	Liso	\N	1
-27	AMO-018-50X50-LISO	50x50	111.93	0	\N	\N	9	167.90	\N	t	1	0	Liso	\N	1
-1	AMO-001	20x20	27.93	0	\N	\N	1	42.90	\N	t	1	0	\N	\N	1
-2	AMO-002	25x25	34.93	0	\N	\N	1	52.90	\N	t	1	0	\N	\N	1
-3	AMO-003	15x15	20.93	0	\N	\N	2	30.90	\N	t	1	0	\N	\N	1
-177	PAS-002-20X20X13	20X20X13	27.90	0	\N	\N	62	42.90	\N	t	1	0	\N	\N	1
-183	COR-001-GRA-LILA	Grande	41.93	0	\N	\N	63	67.90	\N	t	1	0	Lila	\N	1
-188	CAJ-006-12ROSAS-MAGENT	12 Rosas	41.93	0	\N	\N	64	67.90	\N	t	1	0	Magenta	\N	1
-193	CAJ-006-6ROSAS-ROJO	6 Rosas	27.93	0	\N	\N	64	44.90	\N	t	1	0	Rojo	\N	1
-194	CAJ-006-12ROSAS-ROJO	12 Rosas	41.93	0	\N	\N	64	67.90	\N	t	1	0	Rojo	\N	1
-195	CAJ-006-6ROSAS-NEGRO	6 Rosas	27.93	0	\N	\N	64	44.90	\N	t	1	0	Negro	\N	1
-196	CAJ-006-12ROSAS-NEGRO	12 Rosas	41.93	0	\N	\N	64	67.90	\N	t	1	0	Negro	\N	1
-203	BOL-002-GIG	Gigante	27.93	0	\N	\N	67	42.90	\N	t	1	0	\N	\N	1
-30	LIS-001-25X25	25x25	34.93	0	\N	\N	11	52.90	\N	t	1	0	\N	\N	1
-31	LIS-001-30X30	30x30	41.93	0	\N	\N	11	64.90	\N	t	1	0	\N	\N	1
-172	BOL-001-26X33X13-GRANDE	Grande	20.93	0	\N	\N	60	32.90	\N	t	1	0	\N	\N	1
-4	AMO-004	20x20	27.93	0	\N	\N	2	42.90	\N	t	1	0	\N	\N	1
-178	PAS-002-25X25X14	25X25X14	32.13	0	\N	\N	62	48.90	\N	t	1	0	\N	\N	1
-184	COR-001-MED-ROJO	Mediano	27.93	0	\N	\N	63	44.90	\N	t	1	0	Rojo	\N	1
-189	CAJ-006-6ROSAS-ROSA	6 Rosas	27.93	0	\N	\N	64	44.90	\N	t	1	0	Rosa	\N	1
-197	MIL-003-GRA	Grande	32.13	0	\N	\N	65	48.90	\N	t	1	0	\N	\N	1
-204	COR-001-GRA-NEGRO	Grande	41.93	0	\N	\N	63	67.90	\N	t	1	0	Negro	\N	1
-173	BOL-001-33X44X13-JUMBO	Jumbo	27.93	0	\N	\N	60	42.90	\N	t	1	0	\N	\N	1
-164	LUN-001-30X30	30x30	48.93	0	\N	\N	53	74.90	\N	t	1	0	\N	\N	1
-167	BOT-001-34X1050	34x10.50	41.93	0	\N	\N	55	62.90	\N	t	1	0	\N	\N	1
-179	PAS-002-30X30X145	30x30x14.5	38.43	0	\N	\N	62	59.90	\N	t	1	0	\N	\N	1
-180	PAS-002-40X40X15	40x40x15	62.93	0	\N	\N	62	97.90	\N	t	1	0	\N	\N	1
-185	COR-001-GRA-ROJO	Grande	41.93	0	\N	\N	63	67.90	\N	t	1	0	Rojo	\N	1
-190	CAJ-006-12ROSAS-ROSA	12 Rosas	41.93	0	\N	\N	64	67.90	\N	t	1	0	Rosa	\N	1
-198	CAJ-007-MED	Mediana	20.93	0	\N	\N	66	32.90	\N	t	1	0	\N	\N	1
-199	CAJ-007-GRA	Grande	27.93	0	\N	\N	66	42.90	\N	t	1	0	\N	\N	1
-200	CAJ-007-GIG	Gigante	34.93	0	\N	\N	66	52.90	\N	t	1	0	\N	\N	1
-205	BAU-001-25X35	25x35	45.43	0	\N	\N	39	69.90	\N	t	1	0	\N	\N	1
-165	TOR-003-20X40-GRANDE	Grande	48.93	0	\N	\N	54	74.90	\N	t	1	0	\N	\N	1
-166	TOR-003-30X60-JUMBO	Jumbo	69.93	0	\N	\N	54	107.90	\N	t	1	0	\N	\N	1
-168	PAL-001-30X50-GRANDE	Grande	41.93	0	\N	\N	56	64.90	\N	t	1	0	\N	\N	1
-169	MIL-002-23X17X32-GRANDE	Grande	32.13	0	\N	\N	57	48.90	\N	t	1	0	\N	\N	1
-174	BOL-001-35X39X25-GIGANT	Gigante	34.93	0	\N	\N	60	52.90	\N	t	1	0	\N	\N	1
+78	COD-00022-00078	46x32	48.93	0	\N	\N	22	77.90	\N	t	1	0	Gigante	\N	1
+175	COD-00034-00175	Mediano	27.93	0	\N	\N	34	44.90	\N	t	1	0	\N	\N	1
+225	COD-00003-00225	30x30	41.93	0	\N	\N	3	64.90	\N	t	1	0	Azul Cielo	\N	1
+230	COD-00003-00230	25x25	34.93	0	\N	\N	3	52.90	\N	t	1	0	Rosa	\N	1
+235	CUB-001-0235	20x20	27.93	0	\N	\N	69	42.90	\N	t	1	0	\N	\N	1
+220	COD-00003-00220	20x20	27.93	0	\N	\N	3	42.90	\N	t	1	0	Azul Oscuro	\N	1
+240	COD-00014-00240	30x30	41.93	0	\N	\N	14	64.90	\N	t	1	0	Plata	\N	1
+44	COD-00003-00044	25x25	34.93	0	\N	\N	3	52.90	\N	t	1	0	Negro	\N	1
+129	COD-00040-00129	21x15x23	27.93	0	\N	\N	40	42.90	\N	t	1	0	Mediana	\N	1
+130	COD-00040-00130	23x17x32	32.13	0	\N	\N	40	48.90	\N	t	1	0	Grande	\N	1
+134	COD-00042-00134	Grande	34.93	0	\N	\N	42	52.90	\N	t	1	0	\N	\N	1
+135	COD-00042-00135	Gigante	48.93	0	\N	\N	42	77.90	\N	t	1	0	\N	\N	1
+140	COD-00044-00140	10x10	10.43	0	\N	\N	44	16.90	\N	t	1	0	Natural	\N	1
+141	COD-00044-00141	15x15	13.23	0	\N	\N	44	20.90	\N	t	1	0	Natural	\N	1
+142	COD-00044-00142	20x20	17.43	0	\N	\N	44	28.90	\N	t	1	0	Natural	\N	1
+143	COD-00044-00143	25x25	20.93	0	\N	\N	44	33.90	\N	t	1	0	Natural	\N	1
+144	COD-00044-00144	30x30	27.93	0	\N	\N	44	46.90	\N	t	1	0	Natural	\N	1
+145	COD-00044-00145	40x40	48.93	0	\N	\N	44	79.90	\N	t	1	0	Natural	\N	1
+146	COD-00044-00146	50x50	76.93	0	\N	\N	44	119.90	\N	t	1	0	Natural	\N	1
+147	COD-00044-00147	65x65	104.93	0	\N	\N	44	159.90	\N	t	1	0	Natural	\N	1
+151	COD-00046-00151	25x35	32.13	0	\N	\N	46	52.90	\N	t	1	0	\N	\N	1
+152	COD-00046-00152	30x45	41.93	0	\N	\N	46	69.90	\N	t	1	0	\N	\N	1
+153	COD-00046-00153	40x60	69.93	0	\N	\N	46	109.90	\N	t	1	0	\N	\N	1
+155	COD-00048-00155	20x20x13	20.93	0	\N	\N	48	34.90	\N	t	1	0	Natural	\N	1
+156	COD-00048-00156	30x30x13	27.93	0	\N	\N	48	46.90	\N	t	1	0	Natural	\N	1
+157	COD-00049-00157	15x30	27.93	0	\N	\N	49	43.90	\N	t	1	0	Natural	\N	1
+159	COD-00049-00159	20x40	34.93	0	\N	\N	49	56.90	\N	t	1	0	Natural	\N	1
+160	COD-00049-00160	30x60	48.93	0	\N	\N	49	79.90	\N	t	1	0	Natural	\N	1
+161	COD-00049-00161	40x80	104.93	0	\N	\N	49	159.90	\N	t	1	0	Natural	\N	1
+171	COD-00060-00171	Mediana	13.93	0	\N	\N	60	22.90	\N	t	1	0	\N	\N	1
+176	COD-00034-00176	Grande	41.93	0	\N	\N	34	67.90	\N	t	1	0	\N	\N	1
+187	COD-00064-00187	6 Rosas	27.90	0	\N	\N	64	44.90	\N	t	1	0	Magenta	\N	1
+192	COD-00064-00192	12 Rosas	41.93	0	\N	\N	64	67.90	\N	t	1	0	Lila	\N	1
+221	COD-00003-00221	25x25	34.93	0	\N	\N	3	52.90	\N	t	1	0	Azul Oscuro	\N	1
+226	COD-00003-00226	20x20	27.93	0	\N	\N	3	42.90	\N	t	1	0	Magenta	\N	1
+231	COD-00003-00231	30x30	41.93	0	\N	\N	3	64.90	\N	t	1	0	Rosa	\N	1
+236	CUB-001-0236	30x30	41.93	0	\N	\N	69	64.90	\N	t	1	0	\N	\N	1
+5	COD-00002-00005	25x25	34.93	0	\N	\N	2	52.90	\N	t	1	0	\N	\N	1
+99	COD-00029-00099	25x25	34.93	0	\N	\N	29	52.90	\N	t	1	0	\N	\N	1
+9	COD-00004-00009	20x20	27.93	0	\N	\N	4	42.90	\N	t	1	0	\N	\N	1
+10	COD-00005-00010	10x10	13.23	0	\N	\N	5	19.90	\N	t	1	0	\N	\N	1
+11	COD-00005-00011	20x20	27.93	0	\N	\N	5	42.90	\N	t	1	0	\N	\N	1
+12	COD-00006-00012	20x20	27.93	0	\N	\N	6	42.90	\N	t	1	0	\N	\N	1
+13	COD-00006-00013	25x25	34.93	0	\N	\N	6	52.90	\N	t	1	0	\N	\N	1
+28	COD-00010-00028	17x22	69.93	0	\N	\N	10	102.90	\N	t	1	0	\N	\N	1
+16	COD-00008-00016	20x20	27.93	0	\N	\N	8	42.90	\N	t	1	0	\N	\N	1
+100	COD-00029-00100	30x30	41.93	0	\N	\N	29	64.90	\N	t	1	0	\N	\N	1
+1	COD-00001-00001	20x20	27.93	0	\N	\N	1	42.90	\N	t	1	0	\N	\N	1
+2	COD-00001-00002	25x25	34.93	0	\N	\N	1	52.90	\N	t	1	0	\N	\N	1
+3	COD-00002-00003	15x15	20.93	0	\N	\N	2	30.90	\N	t	1	0	\N	\N	1
+177	COD-00062-00177	20X20X13	27.90	0	\N	\N	62	42.90	\N	t	1	0	\N	\N	1
+183	COD-00063-00183	Grande	41.93	0	\N	\N	63	67.90	\N	t	1	0	Lila	\N	1
+193	COD-00064-00193	6 Rosas	27.93	0	\N	\N	64	44.90	\N	t	1	0	Rojo	\N	1
+203	COD-00067-00203	Gigante	27.93	0	\N	\N	67	42.90	\N	t	1	0	\N	\N	1
+172	COD-00060-00172	Grande	20.93	0	\N	\N	60	32.90	\N	t	1	0	\N	\N	1
+188	COD-00064-00188	12 Rosas	41.93	0	\N	\N	64	67.90	\N	t	1	0	Magenta	\N	1
+194	COD-00064-00194	12 Rosas	41.93	0	\N	\N	64	67.90	\N	t	1	0	Rojo	\N	1
+195	COD-00064-00195	6 Rosas	27.93	0	\N	\N	64	44.90	\N	t	1	0	Negro	\N	1
+196	COD-00064-00196	12 Rosas	41.93	0	\N	\N	64	67.90	\N	t	1	0	Negro	\N	1
+222	COD-00003-00222	30x30	41.93	0	\N	\N	3	64.90	\N	t	1	0	Azul Oscuro	\N	1
+227	COD-00003-00227	25x25	34.93	0	\N	\N	3	52.90	\N	t	1	0	Magenta	\N	1
+232	COD-00003-00232	20x20	27.93	0	\N	\N	3	42.90	\N	t	1	0	Lila	\N	1
+45	COD-00014-00045	20x20	27.93	0	\N	\N	14	42.90	\N	t	1	0	Oro	\N	1
+237	COD-00014-00237	25x25	34.93	0	\N	\N	14	52.90	\N	t	1	0	Oro	\N	1
+46	COD-00014-00046	20x20	27.93	0	\N	\N	14	42.90	\N	t	1	0	Plata	\N	1
+17	COD-00008-00017	25x25	34.93	0	\N	\N	8	52.90	\N	t	1	0	\N	\N	1
+8	COD-00004-00008	15x15	20.93	0	\N	\N	4	30.90	\N	t	1	0	\N	\N	1
+41	COD-00013-00041	Grande	20.93	0	\N	\N	13	34.90	\N	t	1	0	\N	\N	1
+15	COD-00007-00015	25x25	34.93	0	\N	\N	7	52.90	\N	t	1	0	\N	\N	1
+42	COD-00013-00042	Jumbo	32.13	0	\N	\N	13	52.90	\N	t	1	0	\N	\N	1
+14	COD-00007-00014	20x20	27.93	0	\N	\N	7	42.90	\N	t	1	0	\N	\N	1
+47	COD-00004-00047	25x25	34.93	0	\N	\N	4	52.90	\N	t	1	0	\N	\N	1
+48	COD-00004-00048	30x30	41.93	0	\N	\N	4	64.90	\N	t	1	0	\N	\N	1
+49	COD-00004-00049	40x40	76.93	0	\N	\N	4	117.90	\N	t	1	0	\N	\N	1
+50	COD-00008-00050	30x30	41.93	0	\N	\N	8	64.90	\N	t	1	0	\N	\N	1
+51	COD-00005-00051	25x25	34.93	0	\N	\N	5	52.90	\N	t	1	0	\N	\N	1
+52	COD-00005-00052	30x30	41.93	0	\N	\N	5	64.90	\N	t	1	0	\N	\N	1
+53	COD-00001-00053	30x30	41.93	0	\N	\N	1	64.90	\N	t	1	0	\N	\N	1
+54	COD-00001-00054	40x40	76.93	0	\N	\N	1	117.90	\N	t	1	0	\N	\N	1
+55	COD-00001-00055	50x50	97.93	0	\N	\N	1	147.90	\N	t	1	0	\N	\N	1
+56	COD-00002-00056	30x30	41.93	0	\N	\N	2	64.90	\N	t	1	0	\N	\N	1
+57	COD-00002-00057	40x40	76.93	0	\N	\N	2	117.90	\N	t	1	0	\N	\N	1
+58	COD-00007-00058	30x30	41.93	0	\N	\N	7	64.90	\N	t	1	0	\N	\N	1
+59	COD-00006-00059	30x30	41.93	0	\N	\N	6	64.90	\N	t	1	0	\N	\N	1
+60	COD-00015-00060	20x20	27.93	0	\N	\N	15	42.90	\N	t	1	0	\N	\N	1
+61	COD-00015-00061	25x25	34.93	0	\N	\N	15	52.90	\N	t	1	0	\N	\N	1
+62	COD-00015-00062	30x30	41.93	0	\N	\N	15	64.90	\N	t	1	0	\N	\N	1
+63	COD-00016-00063	20x20	27.93	0	\N	\N	16	42.90	\N	t	1	0	\N	\N	1
+64	COD-00016-00064	30x30	41.93	0	\N	\N	16	64.90	\N	t	1	0	\N	\N	1
+65	COD-00017-00065	20x20	27.93	0	\N	\N	17	42.90	\N	t	1	0	\N	\N	1
+66	COD-00017-00066	25x25	34.93	0	\N	\N	17	52.90	\N	t	1	0	\N	\N	1
+67	COD-00017-00067	30x30	41.93	0	\N	\N	17	64.90	\N	t	1	0	\N	\N	1
+68	COD-00018-00068	20x20	27.93	0	\N	\N	18	42.90	\N	t	1	0	\N	\N	1
+69	COD-00018-00069	25x25	34.93	0	\N	\N	18	52.90	\N	t	1	0	\N	\N	1
+70	COD-00019-00070	15x15	20.93	0	\N	\N	19	30.90	\N	t	1	0	\N	\N	1
+71	COD-00019-00071	50x50	97.93	0	\N	\N	19	147.90	\N	t	1	0	\N	\N	1
+72	COD-00018-00072	30x30	41.93	0	\N	\N	18	64.90	\N	t	1	0	\N	\N	1
+73	COD-00020-00073	10x10	13.23	0	\N	\N	20	19.90	\N	t	1	0	\N	\N	1
+74	COD-00021-00074	20x20	27.93	0	\N	\N	21	42.90	\N	t	1	0	\N	\N	1
+75	COD-00021-00075	25x25	34.93	0	\N	\N	21	52.90	\N	t	1	0	\N	\N	1
+76	COD-00021-00076	30x30	41.93	0	\N	\N	21	64.90	\N	t	1	0	\N	\N	1
+77	COD-00022-00077	30x25	34.93	0	\N	\N	22	52.90	\N	t	1	0	Grande	\N	1
+79	COD-00023-00079	20x20	27.93	0	\N	\N	23	42.90	\N	t	1	0	\N	\N	1
+80	COD-00023-00080	25x25	34.93	0	\N	\N	23	52.90	\N	t	1	0	\N	\N	1
+81	COD-00023-00081	30x30	41.93	0	\N	\N	23	64.90	\N	t	1	0	\N	\N	1
+40	COD-00013-00040	Mediana	13.93	0	\N	\N	13	24.90	\N	t	1	0	\N	\N	1
+82	COD-00024-00082	10x10	13.23	0	\N	\N	24	19.90	\N	t	1	0	\N	\N	1
+83	COD-00024-00083	20x20	27.93	0	\N	\N	24	42.90	\N	t	1	0	\N	\N	1
+84	COD-00024-00084	25x25	34.93	0	\N	\N	24	52.90	\N	t	1	0	\N	\N	1
+85	COD-00024-00085	30x30	41.93	0	\N	\N	24	64.90	\N	t	1	0	\N	\N	1
+30	COD-00011-00030	25x25	34.93	0	\N	\N	11	52.90	\N	t	1	0	\N	\N	1
+31	COD-00011-00031	30x30	41.93	0	\N	\N	11	64.90	\N	t	1	0	\N	\N	1
+173	COD-00060-00173	Jumbo	27.93	0	\N	\N	60	42.90	\N	t	1	0	\N	\N	1
+223	COD-00003-00223	20x20	27.93	0	\N	\N	3	42.90	\N	t	1	0	Azul Cielo	\N	1
+228	COD-00003-00228	30x30	41.93	0	\N	\N	3	64.90	\N	t	1	0	Magenta	\N	1
+86	COD-00024-00086	40x40	76.93	0	\N	\N	24	117.90	\N	t	1	0	\N	\N	1
+87	COD-00025-00087	25x25	34.93	0	\N	\N	25	52.90	\N	t	1	0	\N	\N	1
+88	COD-00025-00088	30x30	41.93	0	\N	\N	25	64.90	\N	t	1	0	\N	\N	1
+89	COD-00026-00089	20x20	27.93	0	\N	\N	26	42.90	\N	t	1	0	\N	\N	1
+170	COD-00059-00170	Jumbo	55.93	0	\N	\N	59	87.90	\N	t	1	0	\N	\N	1
+90	COD-00026-00090	25x25	34.93	0	\N	\N	26	52.90	\N	t	1	0	\N	\N	1
+91	COD-00026-00091	30x30	41.93	0	\N	\N	26	64.90	\N	t	1	0	\N	\N	1
+92	COD-00027-00092	20x20	27.93	0	\N	\N	27	42.90	\N	t	1	0	\N	\N	1
+93	COD-00027-00093	25x25	34.93	0	\N	\N	27	52.90	\N	t	1	0	\N	\N	1
+94	COD-00027-00094	30x30	41.93	0	\N	\N	27	64.90	\N	t	1	0	\N	\N	1
+95	COD-00028-00095	15x15	20.93	0	\N	\N	28	30.90	\N	t	1	0	\N	\N	1
+96	COD-00028-00096	25x25	34.93	0	\N	\N	28	52.90	\N	t	1	0	\N	\N	1
+97	COD-00028-00097	30x30	41.93	0	\N	\N	28	64.90	\N	t	1	0	\N	\N	1
+98	COD-00029-00098	20x20	27.93	0	\N	\N	29	42.90	\N	t	1	0	\N	\N	1
+181	COD-00063-00181	Grande	41.93	0	\N	\N	63	67.90	\N	t	1	0	Rosa	\N	1
+186	COD-00063-00186	Mediano	27.93	0	\N	\N	63	44.90	\N	t	1	0	Negro	\N	1
+191	COD-00064-00191	6 Rosas	27.93	0	\N	\N	64	44.90	\N	t	1	0	Lila	\N	1
+201	COD-00067-00201	Grande	13.93	0	\N	\N	67	22.90	\N	t	1	0	\N	\N	1
+206	COD-00039-00206	30x45	69.93	0	\N	\N	39	107.90	\N	t	1	0	\N	\N	1
+7	COD-00003-00007	10x10	13.23	0	\N	\N	3	19.90	\N	t	1	0	Negro	\N	1
+43	COD-00003-00043	20x20	27.93	0	\N	\N	3	42.90	\N	t	1	0	Negro	\N	1
+29	COD-00011-00029	20x20	27.93	0	\N	\N	11	42.90	\N	t	1	0	\N	\N	1
+210	COD-00011-00210	50x50	97.93	0	\N	\N	11	147.90	\N	t	1	0	\N	\N	1
+215	COD-00068-00215	30x30	41.93	0	\N	\N	68	64.90	\N	t	1	0	\N	\N	1
+6	COD-00003-00006	10x10	13.23	0	\N	\N	3	19.90	\N	t	1	0	Rojo	\N	1
+18	COD-00009-00018	20x20	41.93	0	\N	\N	9	62.90	\N	t	1	0	Diseño	\N	1
+101	COD-00030-00101	50x50	97.93	0	\N	\N	30	147.90	\N	t	1	0	\N	\N	1
+102	COD-00031-00102	20x20	27.93	0	\N	\N	31	42.90	\N	t	1	0	\N	\N	1
+103	COD-00031-00103	25x25	34.93	0	\N	\N	31	52.90	\N	t	1	0	\N	\N	1
+104	COD-00031-00104	30x30	41.93	0	\N	\N	31	64.90	\N	t	1	0	\N	\N	1
+105	COD-00032-00105	30x30	41.93	0	\N	\N	32	64.90	\N	t	1	0	\N	\N	1
+106	COD-00033-00106	20x20	27.93	0	\N	\N	33	42.90	\N	t	1	0	\N	\N	1
+107	COD-00033-00107	25x25	34.93	0	\N	\N	33	52.90	\N	t	1	0	\N	\N	1
+108	COD-00033-00108	30x30	41.93	0	\N	\N	33	64.90	\N	t	1	0	\N	\N	1
+109	COD-00035-00109	20x20	27.93	0	\N	\N	35	42.90	\N	t	1	0	\N	\N	1
+110	COD-00035-00110	25x25	34.93	0	\N	\N	35	52.90	\N	t	1	0	\N	\N	1
+111	COD-00035-00111	30x30	41.93	0	\N	\N	35	64.90	\N	t	1	0	\N	\N	1
+112	COD-00036-00112	20x20	27.93	0	\N	\N	36	42.90	\N	t	1	0	\N	\N	1
+113	COD-00036-00113	25x25	34.93	0	\N	\N	36	52.90	\N	t	1	0	\N	\N	1
+114	COD-00036-00114	30x30	41.93	0	\N	\N	36	64.90	\N	t	1	0	\N	\N	1
+125	COD-00037-00125	15x30	32.13	0	\N	\N	37	48.90	\N	t	1	0	\N	\N	1
+126	COD-00037-00126	30x60	69.93	0	\N	\N	37	107.90	\N	t	1	0	\N	\N	1
+127	COD-00038-00127	20x40	48.93	0	\N	\N	38	74.90	\N	t	1	0	\N	\N	1
+128	COD-00038-00128	40x80	139.93	0	\N	\N	38	209.90	\N	t	1	0	\N	\N	1
+131	COD-00041-00131	20x20	27.93	0	\N	\N	41	42.90	\N	t	1	0	\N	\N	1
+132	COD-00041-00132	25x25	34.93	0	\N	\N	41	52.90	\N	t	1	0	\N	\N	1
+133	COD-00041-00133	30x30	41.93	0	\N	\N	41	64.90	\N	t	1	0	\N	\N	1
+136	COD-00043-00136	20x20x13	34.93	0	\N	\N	43	52.90	\N	t	1	0	\N	\N	1
+137	COD-00043-00137	25x25x14	39.13	0	\N	\N	43	58.90	\N	t	1	0	\N	\N	1
+138	COD-00043-00138	30x30x14.5	45.43	0	\N	\N	43	69.90	\N	t	1	0	\N	\N	1
+139	COD-00043-00139	40x40x15	69.93	0	\N	\N	43	107.90	\N	t	1	0	\N	\N	1
+154	COD-00047-00154	25x35	45.43	0	\N	\N	47	69.90	\N	t	1	0	\N	\N	1
+158	COD-00050-00158	30x45	69.93	0	\N	\N	50	107.90	\N	t	1	0	\N	\N	1
+182	COD-00063-00182	Mediano	27.93	0	\N	\N	63	44.90	\N	t	1	0	Lila	\N	1
+202	COD-00067-00202	Jumbo	17.43	0	\N	\N	67	27.90	\N	t	1	0	\N	\N	1
+122	COD-00003-00122	40x40	76.93	0	\N	\N	3	117.90	\N	t	1	0	Rojo	\N	1
+121	COD-00003-00121	40x40	76.93	0	\N	\N	3	117.90	\N	t	1	0	Negro	\N	1
+120	COD-00003-00120	30x30	41.93	0	\N	\N	3	64.90	\N	t	1	0	Rojo	\N	1
+116	COD-00003-00116	20x20	27.93	0	\N	\N	3	42.90	\N	t	1	0	Rojo	\N	1
+119	COD-00003-00119	30x30	41.93	0	\N	\N	3	64.90	\N	t	1	0	Negro	\N	1
+118	COD-00003-00118	25x25	34.93	0	\N	\N	3	52.90	\N	t	1	0	Rojo	\N	1
+117	COD-00003-00117	15x15	20.93	0	\N	\N	3	30.90	\N	t	1	0	Negro	\N	1
+115	COD-00003-00115	15x15	20.93	0	\N	\N	3	30.90	\N	t	1	0	Rojo	\N	1
+207	COD-00011-00207	10x10	13.23	0	\N	\N	11	19.90	\N	t	1	0	\N	\N	1
+211	COD-00068-00211	10x10	13.23	0	\N	\N	68	19.90	\N	t	1	0	\N	\N	1
+216	COD-00068-00216	40x40	76.93	0	\N	\N	68	117.90	\N	t	1	0	\N	\N	1
+124	COD-00003-00124	50x50	97.93	0	\N	\N	3	147.90	\N	t	1	0	Rojo	\N	1
+123	COD-00003-00123	50x50	97.93	0	\N	\N	3	147.90	\N	t	1	0	Negro	\N	1
+212	COD-00068-00212	15x15	20.93	0	\N	\N	68	30.90	\N	t	1	0	\N	\N	1
+178	COD-00062-00178	25X25X14	32.13	0	\N	\N	62	48.90	\N	t	1	0	\N	\N	1
+233	COD-00003-00233	25x25	34.93	0	\N	\N	3	52.90	\N	t	1	0	Lila	\N	1
+238	COD-00014-00238	30x30	41.93	0	\N	\N	14	64.90	\N	t	1	0	Oro	\N	1
+165	COD-00054-00165	Grande	48.93	0	\N	\N	54	74.90	\N	t	1	0	\N	\N	1
+168	COD-00056-00168	Grande	41.93	0	\N	\N	56	64.90	\N	t	1	0	\N	\N	1
+169	COD-00057-00169	Grande	32.13	0	\N	\N	57	48.90	\N	t	1	0	\N	\N	1
+174	COD-00060-00174	Gigante	34.93	0	\N	\N	60	52.90	\N	t	1	0	\N	\N	1
+190	COD-00064-00190	12 Rosas	41.93	0	\N	\N	64	67.90	\N	t	1	0	Rosa	\N	1
+229	COD-00003-00229	20x20	27.93	0	\N	\N	3	42.90	\N	t	1	0	Rosa	\N	1
+234	COD-00003-00234	30x30	41.93	0	\N	\N	3	64.90	\N	t	1	0	Lila	\N	1
+224	COD-00003-00224	25x25	34.93	0	\N	\N	3	52.90	\N	t	1	0	Azul Cielo	\N	1
+239	COD-00014-00239	25x25	34.93	0	\N	\N	14	52.90	\N	t	1	0	Plata	\N	1
+23	COD-00009-00023	15x15	34.93	0	\N	\N	9	50.90	\N	t	1	0	Liso	\N	1
+24	COD-00009-00024	20x20	41.93	0	\N	\N	9	62.90	\N	t	1	0	Liso	\N	1
+19	COD-00009-00019	25x25	48.93	0	\N	\N	9	72.90	\N	t	1	0	Diseño	\N	1
+25	COD-00009-00025	25x25	48.93	0	\N	\N	9	72.90	\N	t	1	0	Liso	\N	1
+26	COD-00009-00026	30x30	55.93	0	\N	\N	9	84.90	\N	t	1	0	Liso	\N	1
+27	COD-00009-00027	50x50	111.93	0	\N	\N	9	167.90	\N	t	1	0	Liso	\N	1
+217	COD-00051-00217	6	13.93	0	\N	\N	51	22.90	\N	t	1	0	Natural	\N	1
+4	COD-00002-00004	20x20	27.93	0	\N	\N	2	42.90	\N	t	1	0	\N	\N	1
+184	COD-00063-00184	Mediano	27.93	0	\N	\N	63	44.90	\N	t	1	0	Rojo	\N	1
+189	COD-00064-00189	6 Rosas	27.93	0	\N	\N	64	44.90	\N	t	1	0	Rosa	\N	1
+197	COD-00065-00197	Grande	32.13	0	\N	\N	65	48.90	\N	t	1	0	\N	\N	1
+204	COD-00063-00204	Grande	41.93	0	\N	\N	63	67.90	\N	t	1	0	Negro	\N	1
+208	COD-00011-00208	15x15	20.93	0	\N	\N	11	30.90	\N	t	1	0	\N	\N	1
+213	COD-00068-00213	20x20	27.93	0	\N	\N	68	42.90	\N	t	1	0	\N	\N	1
+218	COD-00058-00218	6	20.93	0	\N	\N	58	32.90	\N	t	1	0	\N	\N	1
+164	COD-00053-00164	30x30	48.93	0	\N	\N	53	74.90	\N	t	1	0	\N	\N	1
+167	COD-00055-00167	34x10.50	41.93	0	\N	\N	55	62.90	\N	t	1	0	\N	\N	1
+179	COD-00062-00179	30x30x14.5	38.43	0	\N	\N	62	59.90	\N	t	1	0	\N	\N	1
+180	COD-00062-00180	40x40x15	62.93	0	\N	\N	62	97.90	\N	t	1	0	\N	\N	1
+185	COD-00063-00185	Grande	41.93	0	\N	\N	63	67.90	\N	t	1	0	Rojo	\N	1
+198	COD-00066-00198	Mediana	20.93	0	\N	\N	66	32.90	\N	t	1	0	\N	\N	1
+199	COD-00066-00199	Grande	27.93	0	\N	\N	66	42.90	\N	t	1	0	\N	\N	1
+200	COD-00066-00200	Gigante	34.93	0	\N	\N	66	52.90	\N	t	1	0	\N	\N	1
+205	COD-00039-00205	25x35	45.43	0	\N	\N	39	69.90	\N	t	1	0	\N	\N	1
+166	COD-00054-00166	Jumbo	69.93	0	\N	\N	54	107.90	\N	t	1	0	\N	\N	1
+209	COD-00011-00209	40x40	76.93	0	\N	\N	11	117.90	\N	t	1	0	\N	\N	1
+214	COD-00068-00214	25x25	34.93	0	\N	\N	68	52.90	\N	t	1	0	\N	\N	1
+219	COD-00061-00219	30	6.93	0	\N	\N	61	12.90	\N	t	1	0	\N	\N	1
 \.
 
 
 --
--- TOC entry 4972 (class 0 OID 25293)
+-- TOC entry 4978 (class 0 OID 25293)
 -- Dependencies: 295
 -- Data for Name: productos; Type: TABLE DATA; Schema: public; Owner: ferram
 --
 
 COPY public.productos (productoid, categoriaid, nombreproducto, descripcion, activo, proveedorid_default, sku_maestro, reglaid, created_by_admin_id, tenant_id) FROM stdin;
-63	1	Corazón Liso	¡Dale un toque de elegancia y ternura a tus detalles! Esta hermosa caja con forma de corazón en colores rosa, lila, rojo y negro, es la opción perfecta para empaques de San Valentín, aniversarios, cumpleaños o cualquier ocasión especial. Su acabado liso y minimalista permite que el regalo sea el verdadero protagonista.	t	1	COR-001	2	\N	1
-65	1	Milk Lisa Colores	Dale un toque vibrante y profesional a tus regalos con nuestras cajas tipo "milk box". Ahora con un acabado mejorado en barniz, estas cajas no solo lucen increíbles, sino que ofrecen una textura premium y mayor durabilidad.	t	1	MIL-003	1	\N	1
-11	1	Cubo Liso	\N	t	1	LIS-001	1	2	1
-59	3	Cerillo Party	Caja con un diseño original y funcional. Perfecta para entregar regalos especiales con un toque moderno y divertido. Resistente, fácil de armar, con asas, acabado barniz brillante.	t	1	CER-001	1	\N	1
-60	3	Bolsa Guapos	Bolsa Kraft de material resistente, con diseños únicos, ideal para sorprender a esa persona especial, acabado mate.	t	1	BOL-001	1	\N	1
-14	1	Línea Metalizada	\N	t	1	LIS-002	1	2	1
-34	2	Corazón Colors Love	¡Expresa tus sentimientos con una explosión de color! Nuestra línea Corazón Colors Love está diseñada para quienes buscan un empaque dinámico, moderno y lleno de alegría. Estas cajas no son solo un envoltorio, son parte del regalo mismo.	t	1	AMO-025	1	2	1
-66	1	Caja Bolsa	Dale a tus regalos una presentación inolvidable con nuestra Cajabolsa, el híbrido perfecto entre una caja resistente y una bolsa práctica. Este modelo destaca por su vibrante color rojo y un acabado de alta calidad diseñado para sorprender.	t	1	CAJ-007	1	\N	1
-3	1	Cubo Liso Brillo	Estas cajas no solo son contenedores, son parte del regalo mismo. Gracias a su acabado brillante y su vibrante color negro o rojo, son perfectas para San Valentín, aniversarios, cumpleaños o cualquier ocasión especial donde quieras impresionar.	t	1	AMO-006	2	2	1
-5	2	Cubo Love Craft	¡Haz que cada regalo sea inolvidable desde el primer vistazo! Nuestra línea de cajas Love Craft está diseñada para quienes buscan salir de lo convencional y entregar un detalle lleno de color, arte y emoción.	t	1	AMO-010	1	2	1
-36	3	Cubo Baby	Hermosas cajas, en tonos pastel, para celebrar la llegada de un ser pequeñito  y muy especial, acabado barniz brillante.	t	1	TOD-016	1	2	1
-41	3	Cubo Pesca y Cacería	Cajas para caballero toda ocasión, diseños sobrios para festejar a esa persona especial, acabado barniz brillante.	t	1	CUB-001	1	2	1
-20	2	Cubo TQM	El Cubo TQM es una caja de regalo premium que combina un diseño moderno con mensajes sentimentales. Su forma cúbica y compacta la hace ideal para contener joyería, dulces finos, lociones o pequeños detalles significativos.	t	1	AMO-023	1	2	1
-15	2	Cubo Friends & Love	¡Haz que tu regalo destaque desde el primer momento! Nuestra colección Friends & Love combina un diseño urbano tipo graffiti con mensajes llenos de sentimiento, perfectos para cualquier ocasión especial.	t	1	AMO-020	1	2	1
-37	2	Torre RedBlack	Sorprende a esa persona especial con nuestras Torres RedBlack, cajas de regalo premium diseñadas para cautivar. Con un estilo moderno y una combinación vibrante de colores rojo, blanco y negro, estas torres son más que un empaque: son un mensaje de amor por sí mismas.	t	1	TOR-001	1	2	1
-1	2	Cubo Colors Love	Dale un toque de color y alegría a tus detalles con nuestro Cubo Colors Love. Diseñado especialmente para quienes no temen expresar su cariño de forma vibrante, este cubo decorativo es mucho más que una caja: es el complemento ideal que hará que tu regalo destaque desde el primer momento.	t	1	AMO-001	1	2	1
-8	2	Cubo Hecho en México	Dale un toque auténtico y vibrante a tus detalles con nuestras cajas de regalo temáticas. Diseñadas con el icónico sello de "Hecho en México", estas cajas no solo sirven como empaque, sino como un elemento decorativo de alta calidad que resalta el orgullo nacional.	t	1	AMO-016	1	2	1
-40	2	Milk Love	Estas cajas de regalo tipo "cartón de leche" son una opción creativa y encantadora para cualquier detalle especial. Su diseño único combina la nostalgia de un envase clásico con mensajes modernos y románticos.	t	1	MIL-001	1	2	1
-38	2	Torre Love	Sorprende a esa persona especial con nuestra Torre Love, una caja de regalo decorativa diseñada para cautivar. Con un estilo moderno y vibrante, es el empaque ideal para arreglos florales, dulces, peluches o cualquier sorpresa inolvidable.	t	1	TOR-002	1	2	1
-9	2	Cubo Acetato	¡Eleva tus regalos al siguiente nivel con nuestros Cubos Corazón de Acetato! Diseñados para combinar elegancia y sentimiento, estos cubos son la base ideal para arreglos florales, desayunos sorpresa, dulces o peluches.	t	1	AMO-018	1	2	1
-22	2	Camisera Colors Love	Estas cajas de regalo tipo "Camisera" son perfectas para quienes buscan un empaque vibrante, alegre y lleno de sentimiento. Su diseño "Colors Love" destaca por una explosión de colores neón, tipografías estilo pop-art y mensajes románticos que las hacen ideales para San Valentín, aniversarios o cualquier ocasión especial.	t	1	AMO-024	1	2	1
-6	2	Cubo Colores Amor	¡Haz que cada detalle cuente! Nuestra colección Colores Amor está diseñada para quienes buscan transformar un simple regalo en una experiencia inolvidable. Estas cajas no son solo empaques, son una declaración de afecto con un diseño vibrante y moderno.	t	1	AMO-012	1	2	1
-19	2	Cubo Love	¡Haz que cada momento especial sea inolvidable! Nuestro Cubo LOVE no es solo una caja, es una experiencia diseñada para expresar tus sentimientos de la forma más creativa y elegante.	t	1	AMO-022	1	2	1
-4	2	Cubo Love Black	El Cubo Love Black es la opción perfecta para quienes buscan un empaque impactante, moderno y lleno de sentimiento. Diseñada con un fondo negro profundo que hace resaltar colores vibrantes, esta caja no es solo un empaque, sino parte del regalo mismo.	t	1	AMO-008	1	2	1
-2	2	Cubo LV Oro	Eleva la presentación de tus detalles con nuestra exclusiva línea de Cajas Cubo LV Oro. Diseñadas con un elegante acabado en color oro y tipografía estilizada, estas cajas son perfectas para San Valentín, aniversarios o cualquier ocasión especial donde el amor sea el protagonista.	t	1	AMO-003	1	2	1
-16	2	Cubo Novios Guapos	¡Lleva tu regalo al siguiente nivel con nuestras cajas decorativas de la línea Novios Guapos! Diseñadas con colores neón, tipografías estilo graffiti y mensajes llenos de amor, estas cajas no son solo un empaque, son parte de la sorpresa.	t	1	AMO-021	1	2	1
-61	3	Sobre Cumple	Sobre de dinero, ideal para cuando no sabes que regalar, diseños alegres y divertidos, con acabado barniz brillante.	t	1	SOB-001	1	\N	1
-39	2	Baúl Colors Love	¡Dale un toque vibrante y lleno de vida a tus detalles! Nuestra línea de Baúles Colors Love está diseñada para quienes no temen expresar sus sentimientos con fuerza y color. Ideales para envolver regalos, guardar recuerdos o decorar espacios con un estilo moderno y dinámico.	t	1	BAU-001	1	2	1
-26	3	Cubo Bolas y Rayas	Cubo craft, bolas y rayas de colores, ideal para cualquier ocasión, colores sobrios en acabado mate.	t	1	TOD-007	1	2	1
-23	3	Cubo Botana	Caja con diseños divertidos, ideal para esa persona tan especial, colores vibrantes acabado barniz brillante	t	1	TOD-004	1	2	1
-21	3	Cubo Cómics	Caja con diseño, ideal para celebraciones especiales, colores vibrantes con acabado barniz brillante.	t	1	TOD-003	1	2	1
-25	3	Cubo Cumple Colors	Caja de colores, empaques perfectos para tus detalles, diseñadas para convertir un regalo en una experiencia inolvidable, colores espectaculares con acabado barniz brillante.	t	1	TOD-006	1	2	1
-17	3	Cubo Cumple Craft	Caja craft de colores, ideal para celebrar el cumpleaños de esa persona especial, colores vibrantes con acabado mate.	t	1	TOD-001	1	2	1
-18	3	Cubo Cumple Graffiti	Caja con diseño, ideal para celebrar el cumpleaños de esa persona especial, colores vibrantes acabado barniz brillante.	t	1	TOD-002	1	2	1
-30	3	Cubo Cumple White	Caja, que por su medida es perfecta para un regalo increíble, diseños de cumpleaños para esa persona especial, acabado barniz brillante.	t	1	TOD-011	1	2	1
-24	3	Cubo Felicidades	Caja con diseños espectaculares, felicitaciones increíbles y todo en un solo empaque, colores vibrantes acabado barniz brillante.	t	1	TOD-005	1	2	1
-28	3	Cubo Feliz	Cajas con diseño divertido, ideales para cumpleaños ó cualquier celebración especial, colores explosivos con acabado barniz brillante.	t	1	TOD-009	1	2	1
-35	3	Cubo Incógnita	Cajas para toda ocasión, con colores básicos, pero divertidos, acabado barniz brillante.	t	1	TOD-015	1	2	1
-31	3	Cubo Luxe	Cajas de colores divertidos para toda ocasión, en acabado mate.	t	1	TOD-012	1	2	1
-33	3	Cubo Marcas	Cajas con diseños y frases divertidas, con marcas de cerveza, ideales para caballero, acabado barniz brillante.	t	1	TOD-014	1	2	1
-29	3	Cubo Nice	Caja con diseños de marcas aesthetic, divertidas para cualquier ocasión, con acabado barniz brillante.	t	1	TOD-010	1	2	1
-27	3	Cubo Paris-London	Cubo con diseños bonitos y tiernos, para toda ocasión, colores con un toque de dulzura, acabado barniz brillante.	t	1	TOD-008	1	2	1
-32	3	Cubo Sports	Cajas con diseños y frases divertidas, con las marcas de tus tenis favoritos, colores con acabado barniz brillante.	t	1	TOD-013	1	2	1
-10	2	Libreta	¡Dale estilo a tus notas con estas libretas de diseño exclusivo! Perfectas para regalo o para uso personal, estas libretas combinan un diseño moderno con materiales de alta resistencia.	t	1	AMO-019	5	2	1
-64	1	Caja para Rosas	Eleva la presentación de tus arreglos florales con nuestras cajas exclusivas. Diseñadas específicamente para proteger y resaltar la belleza de las rosas, estas cajas en colores magenta, rosa, lila, rojo y negro,  son la opción perfecta para San Valentín, aniversarios o cualquier ocasión especial.	t	1	CAJ-006	2	\N	1
-49	4	Torre Natural	Caja de regalo tipo torre kraft, original y llamativa. Ideal para armar regalos en capas y crear una presentación impactante. Resistente, fácil de armar y perfecta para personalizar con un estilo natural y moderno 🎁✨	t	1	CAJ-005	1	2	1
-13	4	Camisera Natural	Caja camisera de regalo natural, elegante y funcional. Ideal para presentar prendas y regalos con un estilo limpio y moderno. Resistente, práctica y fácil de personalizar. Disponible en diferentes tamaños para adaptarse a cada detalle 🎁✨	t	1	NAT-002	1	2	1
-47	3	Baúl Cumple	Caja para celebrar a esa persona especial, color, diseño y tamaño perfecto para un regalo espectacular, con acabado barniz brillante	t	1	BAU-002	1	2	1
-62	1	Pastelera Toda Ocasión	Dale a tus regalos el empaque que merecen con nuestra línea de cajas pasteleras. Diseñadas para combinar resistencia, estilo y practicidad, estas cajas son ideales para regalos especiales.	t	1	PAS-002	1	\N	1
-57	3	Milk Cumple Colors	Caja con diseño divertido, ideal para celebrar el cumpleaños de esa persona especial, colores vibrantes acabado barniz brillante.	t	1	MIL-002	1	2	1
-67	1	Bolsa Boutique Colores	¡Dale un toque de color y estilo a tus entregas! Estas bolsas de color son ideales para quienes buscan resistencia y una presentación impecable. Su diseño vibrante y moderno las hace perfectas para boutiques, papelerías o eventos especiales.	t	1	BOL-002	1	\N	1
-43	3	Pastelera De Luxe	Caja con colores intensos, ideal para cualquier ocasión, hotstampin, acabado mate.	t	1	PAS-001	1	2	1
-51	4	Six Pack Natural	Six pack kraft natural, perfecta para cervezas o bebidas. Resistente, con estilo y ese look natural que siempre queda bien. Ideal para armar regalos cool y sorprender 🍺✨	t	1	SIX-001	1	2	1
-56	3	Palomita	Caja para celebrar a esa persona especial, diseño divertido y tamaño perfecto para un regalo espectacular, con acabado barniz brillante.	t	1	PAL-001	1	2	1
-44	4	Cubo Natural	Cubo kraft natural, simple, bonita y con mucho estilo. Ideal para presentar tus detalles con un look natural y moderno. Resistente, práctica y fácil de personalizar. Disponible en tamaños desde 10 x 10 x 10 cm hasta 65 x 65 x 65 cm ✨🎁	t	1	CAJ-001	1	2	1
-58	3	Six Pack Men	Caja con diseños divertidos, perfecta para cervezas ó bebidas, resistente, con estilo y ese look que siempre queda bien. Ideal para armar regalos cool y sorprender, acabado barniz brillante.	t	1	SIX-002	1	2	1
-7	2	Cubo RedBlack Love	Sorprende a esa persona especial con nuestros elegantes cubos decorativos de la colección RedBlack Love. Diseñados con una combinación clásica de rojo, negro y blanco, estos cubos son el empaque perfecto para regalos inolvidables o como un detalle decorativo lleno de sentimiento.	t	1	AMO-014	1	2	1
-48	4	Lunch Natural	Caja tipo lunch kraft natural, práctica y con mucho estilo. Ideal para armar desayunos sorpresa y detalles especiales. Resistente, fácil de armar y perfecta para personalizar y sorprender 🎁✨	t	1	CAJ-004	1	2	1
-46	4	Baúl Natural	Caja baúl de regalo kraft color natural, con un diseño original y funcional. Perfecta para presentar regalos especiales con un toque natural y moderno. Resistente, fácil de armar y personalizar. Disponible en varios tamaños 🎁✨	t	1	CAJ-003	1	2	1
-50	3	Baúl Colors Cumple	Caja para celebrar a esa persona especial, color, diseño y tamaño perfecto para un regalo espectacular, con acabado barniz brillante	t	1	BAU-003	1	2	1
-55	3	Botella Cumple	Caja para celebrar a esa persona especial, color, diseño y tamaño perfecto para una botella de vino, con acabado barniz brillante.	t	1	BOT-001	1	2	1
-42	3	Camisera Cumple	Caja con colores fascinantes, que harán de tu regalo una experiencia única, diseños coloridos para esa celebración especial, en acabado barniz brillante.	t	1	CAM-001	1	2	1
-53	3	Lunch Party	Caja para celebrar a esa persona especial, ideal para un desayuno sorpresa ó si lo prefieres retiras el interior y colocas tu regalo, color, diseño y tamaño perfecto, con acabado barniz brillante.	t	1	LUN-001	1	2	1
-54	3	Torre Cumple Colors	Caja para celebrar a esa persona especial, color, diseño y tamaño perfecto para un regalo espectacular, con acabado barniz brillante.	t	1	TOR-003	1	2	1
+69	1	Cubo Bolas Brillo	¡Haz que cada regalo sea inolvidable desde el primer vistazo! Nuestra línea de cajas Bolas Brillo, está diseñada para quienes buscan salir de lo convencional y entregar un detalle lleno de color.	t	1	CUB-001	2	\N	1
+63	1	Corazón Liso	¡Dale un toque de elegancia y ternura a tus detalles! Esta hermosa caja con forma de corazón en colores rosa, lila, rojo y negro, es la opción perfecta para empaques de San Valentín, aniversarios, cumpleaños o cualquier ocasión especial. Su acabado liso y minimalista permite que el regalo sea el verdadero protagonista.	t	1	COD-00063	2	\N	1
+65	1	Milk Lisa Colores	Dale un toque vibrante y profesional a tus regalos con nuestras cajas tipo "milk box". Ahora con un acabado mejorado en barniz, estas cajas no solo lucen increíbles, sino que ofrecen una textura premium y mayor durabilidad.	t	1	COD-00065	1	\N	1
+59	3	Cerillo Party	Caja con un diseño original y funcional. Perfecta para entregar regalos especiales con un toque moderno y divertido. Resistente, fácil de armar, con asas, acabado barniz brillante.	t	1	COD-00059	1	\N	1
+11	1	Cubo Liso	¡Dale un toque de color y estilo a tus regalos! Estas cajas de color son ideales para quienes buscan resistencia y una presentación impecable. Su diseño vibrante y moderno las hace perfectas, con acabado mate.	t	1	COD-00011	1	2	1
+68	1	Cubo Gis	¡Haz que cada momento especial sea inolvidable! Nuestro Cubo Gis no es solo una caja, es una experiencia diseñada para expresar tus sentimientos de la forma más creativa. Pinta de colores tu caja y haz de ese obsequio  algo muy especial. No incluye gises. Acabado mate.	t	1	COD-00068	1	\N	1
+22	2	Camisera Colors Love	Estas cajas de regalo tipo "Camisera" son perfectas para quienes buscan un empaque vibrante, alegre y lleno de sentimiento. Su diseño "Colors Love" destaca por una explosión de colores neón, tipografías estilo pop-art y mensajes románticos que las hacen ideales para San Valentín, aniversarios o cualquier ocasión especial.	t	1	COD-00022	1	2	1
+19	2	Cubo Love	¡Haz que cada momento especial sea inolvidable! Nuestro Cubo LOVE no es solo una caja, es una experiencia diseñada para expresar tus sentimientos de la forma más creativa y elegante.	t	1	COD-00019	1	2	1
+16	2	Cubo Novios Guapos	¡Lleva tu regalo al siguiente nivel con nuestras cajas decorativas de la línea Novios Guapos! Diseñadas con colores neón, tipografías estilo graffiti y mensajes llenos de amor, estas cajas no son solo un empaque, son parte de la sorpresa.	t	1	COD-00016	1	2	1
+39	2	Baúl Colors Love	¡Dale un toque vibrante y lleno de vida a tus detalles! Nuestra línea de Baúles Colors Love está diseñada para quienes no temen expresar sus sentimientos con fuerza y color. Ideales para envolver regalos, guardar recuerdos o decorar espacios con un estilo moderno y dinámico.	t	1	COD-00039	1	2	1
+23	3	Cubo Botana	Caja con diseños divertidos, ideal para esa persona tan especial, colores vibrantes acabado barniz brillante	t	1	COD-00023	1	2	1
+21	3	Cubo Cómics	Caja con diseño, ideal para celebraciones especiales, colores vibrantes con acabado barniz brillante.	t	1	COD-00021	1	2	1
+25	3	Cubo Cumple Colors	Caja de colores, empaques perfectos para tus detalles, diseñadas para convertir un regalo en una experiencia inolvidable, colores espectaculares con acabado barniz brillante.	t	1	COD-00025	1	2	1
+1	2	Cubo Colors Love	Dale un toque de color y alegría a tus detalles con nuestro Cubo Colors Love. Diseñado especialmente para quienes no temen expresar su cariño de forma vibrante, este cubo decorativo es mucho más que una caja: es el complemento ideal que hará que tu regalo destaque desde el primer momento.	t	1	COD-00001	1	2	1
+18	3	Cubo Cumple Graffiti	Caja con diseño, ideal para celebrar el cumpleaños de esa persona especial, colores vibrantes acabado barniz brillante.	t	1	COD-00018	1	2	1
+30	3	Cubo Cumple White	Caja, que por su medida es perfecta para un regalo increíble, diseños de cumpleaños para esa persona especial, acabado barniz brillante.	t	1	COD-00030	1	2	1
+24	3	Cubo Felicidades	Caja con diseños espectaculares, felicitaciones increíbles y todo en un solo empaque, colores vibrantes acabado barniz brillante.	t	1	COD-00024	1	2	1
+28	3	Cubo Feliz	Cajas con diseño divertido, ideales para cumpleaños ó cualquier celebración especial, colores explosivos con acabado barniz brillante.	t	1	COD-00028	1	2	1
+35	3	Cubo Incógnita	Cajas para toda ocasión, con colores básicos, pero divertidos, acabado barniz brillante.	t	1	COD-00035	1	2	1
+31	3	Cubo Luxe	Cajas de colores divertidos para toda ocasión, en acabado mate.	t	1	COD-00031	1	2	1
+33	3	Cubo Marcas	Cajas con diseños y frases divertidas, con marcas de cerveza, ideales para caballero, acabado barniz brillante.	t	1	COD-00033	1	2	1
+29	3	Cubo Nice	Caja con diseños de marcas aesthetic, divertidas para cualquier ocasión, con acabado barniz brillante.	t	1	COD-00029	1	2	1
+27	3	Cubo Paris-London	Cubo con diseños bonitos y tiernos, para toda ocasión, colores con un toque de dulzura, acabado barniz brillante.	t	1	COD-00027	1	2	1
+3	1	Cubo Liso Brillo	Estas cajas no solo son empaques, son parte del regalo mismo. Gracias a su acabado brillante y sus vibrantes colores, son perfectas para San Valentín, aniversarios, cumpleaños o cualquier ocasión especial, en donde quieras impresionar.	t	1	COD-00003	1	2	1
+14	1	Cubo Metalizado	¡Haz que cada regalo sea inolvidable! Nuestra línea de cajas Metaliadas está diseñada para quienes buscan salir de lo convencional y entregar un detalle lleno de color, elegancia y emoción.	t	1	COD-00014	2	2	1
+34	2	Corazón Colors Love	¡Expresa tus sentimientos con una explosión de color! Nuestra línea Corazón Colors Love está diseñada para quienes buscan un empaque dinámico, moderno y lleno de alegría. Estas cajas no son solo un envoltorio, son parte del regalo mismo.	t	1	COD-00034	1	2	1
+5	2	Cubo Love Craft	¡Haz que cada regalo sea inolvidable desde el primer vistazo! Nuestra línea de cajas Love Craft está diseñada para quienes buscan salir de lo convencional y entregar un detalle lleno de color, arte y emoción.	t	1	COD-00005	1	2	1
+36	3	Cubo Baby	Hermosas cajas, en tonos pastel, para celebrar la llegada de un ser pequeñito  y muy especial, acabado barniz brillante.	t	1	COD-00036	1	2	1
+41	3	Cubo Pesca y Cacería	Cajas para caballero toda ocasión, diseños sobrios para festejar a esa persona especial, acabado barniz brillante.	t	1	COD-00041	1	2	1
+60	3	Bolsa Guapos	Bolsa Kraft de material resistente, con diseños únicos, ideal para sorprender a esa persona especial, acabado mate.	t	1	COD-00060	6	\N	1
+66	1	Caja Bolsa	Dale a tus regalos una presentación inolvidable con nuestra Cajabolsa, el híbrido perfecto entre una caja resistente y una bolsa práctica. Este modelo destaca por su vibrante color rojo y un acabado de alta calidad diseñado para sorprender.	t	1	COD-00066	6	\N	1
+9	2	Cubo Acetato	¡Eleva tus regalos al siguiente nivel con nuestros Cubos Corazón de Acetato! Diseñados para combinar elegancia y sentimiento, estos cubos son la base ideal para arreglos florales, desayunos sorpresa, dulces o peluches.	t	1	COD-00009	1	2	1
+20	2	Cubo TQM	El Cubo TQM es una caja de regalo premium que combina un diseño moderno con mensajes sentimentales. Su forma cúbica y compacta la hace ideal para contener joyería, dulces finos, lociones o pequeños detalles significativos.	t	1	COD-00020	1	2	1
+32	3	Cubo Sports	Cajas con diseños y frases divertidas, con las marcas de tus tenis favoritos, colores con acabado barniz brillante.	t	1	COD-00032	1	2	1
+17	3	Cubo Cumple Craft	Caja craft de colores, ideal para celebrar el cumpleaños de esa persona especial, colores vibrantes con acabado mate.	t	1	COD-00017	1	2	1
+6	2	Cubo Colores Amor	¡Haz que cada detalle cuente! Nuestra colección Colores Amor está diseñada para quienes buscan transformar un simple regalo en una experiencia inolvidable. Estas cajas no son solo empaques, son una declaración de afecto con un diseño vibrante y moderno.	t	1	COD-00006	1	2	1
+8	2	Cubo Hecho en México	Dale un toque auténtico y vibrante a tus detalles con nuestras cajas de regalo temáticas. Diseñadas con el icónico sello de "Hecho en México", estas cajas no solo sirven como empaque, sino como un elemento decorativo de alta calidad que resalta el orgullo nacional.	t	1	COD-00008	1	2	1
+4	2	Cubo Love Black	El Cubo Love Black es la opción perfecta para quienes buscan un empaque impactante, moderno y lleno de sentimiento. Diseñada con un fondo negro profundo que hace resaltar colores vibrantes, esta caja no es solo un empaque, sino parte del regalo mismo.	t	1	COD-00004	1	2	1
+15	2	Cubo Friends & Love	¡Haz que tu regalo destaque desde el primer momento! Nuestra colección Friends & Love combina un diseño urbano tipo graffiti con mensajes llenos de sentimiento, perfectos para cualquier ocasión especial.	t	1	COD-00015	1	2	1
+26	3	Cubo Bolas y Rayas	Cubo craft, bolas y rayas de colores, ideal para cualquier ocasión, colores sobrios en acabado mate.	t	1	COD-00026	1	2	1
+64	1	Caja para Rosas	Eleva la presentación de tus arreglos florales con nuestras cajas exclusivas. Diseñadas específicamente para proteger y resaltar la belleza de las rosas, estas cajas en colores magenta, rosa, lila, rojo y negro,  son la opción perfecta para San Valentín, aniversarios o cualquier ocasión especial.	t	1	COD-00064	2	\N	1
+49	4	Torre Natural	Caja de regalo tipo torre kraft, original y llamativa. Ideal para armar regalos en capas y crear una presentación impactante. Resistente, fácil de armar y perfecta para personalizar con un estilo natural y moderno 🎁✨	t	1	COD-00049	1	2	1
+47	3	Baúl Cumple	Caja para celebrar a esa persona especial, color, diseño y tamaño perfecto para un regalo espectacular, con acabado barniz brillante	t	1	COD-00047	1	2	1
+37	2	Torre RedBlack	Sorprende a esa persona especial con nuestras Torres RedBlack, cajas de regalo premium diseñadas para cautivar. Con un estilo moderno y una combinación vibrante de colores rojo, blanco y negro, estas torres son más que un empaque: son un mensaje de amor por sí mismas.	t	1	COD-00037	1	2	1
+40	2	Milk Love	Estas cajas de regalo tipo "cartón de leche" son una opción creativa y encantadora para cualquier detalle especial. Su diseño único combina la nostalgia de un envase clásico con mensajes modernos y románticos.	t	1	COD-00040	1	2	1
+38	2	Torre Love	Sorprende a esa persona especial con nuestra Torre Love, una caja de regalo decorativa diseñada para cautivar. Con un estilo moderno y vibrante, es el empaque ideal para arreglos florales, dulces, peluches o cualquier sorpresa inolvidable.	t	1	COD-00038	1	2	1
+62	1	Pastelera Toda Ocasión	Dale a tus regalos el empaque que merecen con nuestra línea de cajas pasteleras. Diseñadas para combinar resistencia, estilo y practicidad, estas cajas son ideales para regalos especiales.	t	1	COD-00062	1	\N	1
+2	2	Cubo LV Oro	Eleva la presentación de tus detalles con nuestra exclusiva línea de Cajas Cubo LV Oro. Diseñadas con un elegante acabado en color oro y tipografía estilizada, estas cajas son perfectas para San Valentín, aniversarios o cualquier ocasión especial donde el amor sea el protagonista.	t	1	COD-00002	1	2	1
+57	3	Milk Cumple Colors	Caja con diseño divertido, ideal para celebrar el cumpleaños de esa persona especial, colores vibrantes acabado barniz brillante.	t	1	COD-00057	1	2	1
+10	2	Libreta	¡Dale estilo a tus notas con estas libretas de diseño exclusivo! Perfectas para regalo o para uso personal, estas libretas combinan un diseño moderno con materiales de alta resistencia.	t	1	COD-00010	5	2	1
+43	3	Pastelera De Luxe	Caja con colores intensos, ideal para cualquier ocasión, hotstampin, acabado mate.	t	1	COD-00043	1	2	1
+51	4	Six Pack Natural	Six pack kraft natural, perfecta para cervezas o bebidas. Resistente, con estilo y ese look natural que siempre queda bien. Ideal para armar regalos cool y sorprender 🍺✨	t	1	COD-00051	1	2	1
+56	3	Palomita	Caja para celebrar a esa persona especial, diseño divertido y tamaño perfecto para un regalo espectacular, con acabado barniz brillante.	t	1	COD-00056	1	2	1
+44	4	Cubo Natural	Cubo kraft natural, simple, bonita y con mucho estilo. Ideal para presentar tus detalles con un look natural y moderno. Resistente, práctica y fácil de personalizar. Disponible en tamaños desde 10 x 10 x 10 cm hasta 65 x 65 x 65 cm ✨🎁	t	1	COD-00044	1	2	1
+58	3	Six Pack Men	Caja con diseños divertidos, perfecta para cervezas ó bebidas, resistente, con estilo y ese look que siempre queda bien. Ideal para armar regalos cool y sorprender, acabado barniz brillante.	t	1	COD-00058	1	2	1
+48	4	Lunch Natural	Caja tipo lunch kraft natural, práctica y con mucho estilo. Ideal para armar desayunos sorpresa y detalles especiales. Resistente, fácil de armar y perfecta para personalizar y sorprender 🎁✨	t	1	COD-00048	1	2	1
+46	4	Baúl Natural	Caja baúl de regalo kraft color natural, con un diseño original y funcional. Perfecta para presentar regalos especiales con un toque natural y moderno. Resistente, fácil de armar y personalizar. Disponible en varios tamaños 🎁✨	t	1	COD-00046	1	2	1
+50	3	Baúl Colors Cumple	Caja para celebrar a esa persona especial, color, diseño y tamaño perfecto para un regalo espectacular, con acabado barniz brillante	t	1	COD-00050	1	2	1
+55	3	Botella Cumple	Caja para celebrar a esa persona especial, color, diseño y tamaño perfecto para una botella de vino, con acabado barniz brillante.	t	1	COD-00055	1	2	1
+42	3	Camisera Cumple	Caja con colores fascinantes, que harán de tu regalo una experiencia única, diseños coloridos para esa celebración especial, en acabado barniz brillante.	t	1	COD-00042	1	2	1
+53	3	Lunch Party	Caja para celebrar a esa persona especial, ideal para un desayuno sorpresa ó si lo prefieres retiras el interior y colocas tu regalo, color, diseño y tamaño perfecto, con acabado barniz brillante.	t	1	COD-00053	1	2	1
+54	3	Torre Cumple Colors	Caja para celebrar a esa persona especial, color, diseño y tamaño perfecto para un regalo espectacular, con acabado barniz brillante.	t	1	COD-00054	1	2	1
+67	1	Bolsa Boutique Colores	¡Dale un toque de color y estilo a tus entregas! Estas bolsas de color son ideales para quienes buscan resistencia y una presentación impecable. Su diseño vibrante y moderno las hace perfectas para boutiques, papelerías o eventos especiales.	t	1	COD-00067	6	\N	1
+7	2	Cubo RedBlack Love	Sorprende a esa persona especial con nuestros elegantes cubos decorativos de la colección RedBlack Love. Diseñados con una combinación clásica de rojo, negro y blanco, estos cubos son el empaque perfecto para regalos inolvidables o como un detalle decorativo lleno de sentimiento.	t	1	COD-00007	1	2	1
+13	4	Camisera Natural	Caja camisera de regalo natural, elegante y funcional. Ideal para presentar prendas y regalos con un estilo limpio y moderno. Resistente, práctica y fácil de personalizar. Disponible en diferentes tamaños para adaptarse a cada detalle 🎁✨	t	1	COD-00013	1	2	1
+61	3	Sobre Cumple	Sobre de dinero, ideal para cuando no sabes que regalar, diseños alegres y divertidos, con acabado barniz brillante.	t	1	COD-00061	8	\N	1
 \.
 
 
 --
--- TOC entry 4974 (class 0 OID 25300)
+-- TOC entry 4980 (class 0 OID 25300)
 -- Dependencies: 297
 -- Data for Name: proveedor_reglas_empaque; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -5349,12 +5599,14 @@ COPY public.proveedor_reglas_empaque (reglaid, proveedorid, tipoproductoid, cant
 4	3	1	10	Caja (10)	\N
 2	1	1	6	Caja (6)	\N
 1	1	1	12	Caja (12)	\N
+6	1	3	12	Bolsa (12)	\N
 5	1	4	6	Libretas (6)	\N
+8	1	6	30	Sobres (30)	\N
 \.
 
 
 --
--- TOC entry 4976 (class 0 OID 25305)
+-- TOC entry 4982 (class 0 OID 25305)
 -- Dependencies: 299
 -- Data for Name: proveedores; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -5366,39 +5618,264 @@ COPY public.proveedores (proveedorid, nombreempresa, contactonombre, email, tele
 
 
 --
--- TOC entry 4998 (class 0 OID 26350)
+-- TOC entry 5004 (class 0 OID 26350)
 -- Dependencies: 322
 -- Data for Name: session; Type: TABLE DATA; Schema: public; Owner: ferram
 --
 
 COPY public.session (sid, sess, expire) FROM stdin;
+urMdl9glatQrEcyg_F-giT0v8K7x3NMA	{"cookie":{"originalMaxAge":604799999,"expires":"2026-01-15T13:30:48.283Z","secure":true,"httpOnly":true,"path":"/","sameSite":"none"},"tenant_id":1}	2026-01-15 13:30:49
+7CqeA-sWZifs32aPQHT6CuvbZE2V_vyH	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-15T15:32:54.506Z","secure":true,"httpOnly":true,"path":"/","sameSite":"none"},"tenant_id":1}	2026-01-15 15:32:55
+WQjZloV75COdzKMmcR2yK6LLbCfItPzp	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-15T12:18:18.504Z","secure":true,"httpOnly":true,"path":"/","sameSite":"none"},"tenant_id":3}	2026-01-15 12:18:19
+89DJvuBcWsr75ECfcwIwF1HIJR7oGCGI	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-15T12:18:18.780Z","secure":true,"httpOnly":true,"path":"/","sameSite":"none"},"tenant_id":1}	2026-01-15 12:18:19
+pB6B-gsgxpmV-2g1zo0v-hncedj9N1YF	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-15T15:32:54.528Z","secure":true,"httpOnly":true,"path":"/","sameSite":"none"},"tenant_id":1}	2026-01-15 15:32:55
+NrivP6CTA2xgeQpTWev_m73l8cqZyppE	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-15T16:17:49.513Z","secure":true,"httpOnly":true,"path":"/","sameSite":"none"},"tenant_id":3}	2026-01-15 16:17:50
+MrSLlFVqcG0gs-Eg0t6ANrp6YfhQiunx	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-15T20:24:25.888Z","secure":true,"httpOnly":true,"path":"/","sameSite":"none"},"tenant_id":3}	2026-01-15 20:24:26
+ys99hGGR0Izztj9t7NvV7l-ZIKxowd_E	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-15T12:18:18.836Z","secure":true,"httpOnly":true,"path":"/","sameSite":"none"},"tenant_id":1}	2026-01-15 12:18:19
+rlYVax6wbLu2bv2OoW6jjz3rP5Ptoj1z	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-15T20:57:51.843Z","secure":true,"httpOnly":true,"path":"/","sameSite":"none"},"tenant_id":3}	2026-01-15 20:57:52
+ZZZdCSfVlF5q_Z_h2FY9P3rJDojxZXk2	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-15T21:03:38.227Z","secure":true,"httpOnly":true,"path":"/","sameSite":"none"},"tenant_id":3}	2026-01-15 21:03:39
+UrTyxCet-m4pGSMnGVS1g4USMLBgcBsU	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T00:08:24.771Z","secure":true,"httpOnly":true,"path":"/","sameSite":"none"},"tenant_id":3}	2026-01-16 00:08:25
+lVqmQLfMUMPIgYg4sXJaGNtAgp-3Ll5V	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T01:17:46.653Z","secure":true,"httpOnly":true,"path":"/","sameSite":"none"},"tenant_id":1}	2026-01-16 01:17:47
+sl6jRqHtbSF1yy7fps9kidcSZ1dtbSsU	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-15T16:13:48.066Z","secure":true,"httpOnly":true,"path":"/","sameSite":"none"},"tenant_id":3}	2026-01-15 16:13:49
+o13fwpYtEC6YYAf059yO89U4zctbsLQe	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T01:17:47.068Z","secure":true,"httpOnly":true,"path":"/","sameSite":"none"},"tenant_id":1}	2026-01-16 01:17:48
+qLLnqx4XeC9h5WBbIhz2s1N4kz3AqFCh	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T02:11:29.195Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 02:11:30
+RX1K4VWyE1KC8nOCaj7z7c23XOFcw3UJ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T03:44:09.804Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 03:44:10
+k0a7TtdBCUQ5jU0tngWyc-3xtOqQmjht	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-15T18:56:58.118Z","secure":true,"httpOnly":true,"path":"/","sameSite":"none"},"tenant_id":1}	2026-01-15 23:15:52
+pNQmyunEZG62ZXVKn53ZAWmEEdbnC08p	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-15T16:21:01.369Z","secure":true,"httpOnly":true,"path":"/","sameSite":"none"},"tenant_id":1,"userId":2,"user":{"id":2,"email":"fegarcia@hotmail.com","nombre":"Fernando","apellido":"Garcia                                                                                              ","rol":"superadmin","tipo":"admin","adminSource":"admin","tenant_id":1}}	2026-01-16 00:18:46
+1apzFARH9i9zM6SOMy0ppCiO4t_FS-fW	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T16:40:17.522Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":3}	2026-01-16 16:40:18
+HQsqUZdHllwYs0FBnGDRRY_eF0D9ONo-	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T02:34:25.204Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 02:34:26
+PFeswQYzCv8Qb4K-9eKSAuYcCNHNYWkv	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-15T18:57:34.539Z","secure":true,"httpOnly":true,"path":"/","sameSite":"none"},"tenant_id":1}	2026-01-15 18:57:39
+qKc_1Y8uF-Ortal2Rt9NKFlMmGk9FOQj	{"cookie":{"originalMaxAge":604799997,"expires":"2026-01-16T02:33:46.365Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 02:33:49
+97BrBz2AGnMPwXId-JSbZhz5JeusTDVi	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T02:34:25.741Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 02:34:26
+YhBbH0kxYV85HBVcSAduifeC9Lh6SVnw	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T01:45:11.969Z","secure":true,"httpOnly":true,"path":"/","sameSite":"none"},"tenant_id":1}	2026-01-16 01:45:14
+jZ8udjZ_azymUq9pLlKDs7oUd1GNt-1N	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T01:17:51.229Z","secure":true,"httpOnly":true,"path":"/","sameSite":"none"},"tenant_id":1}	2026-01-16 01:18:17
+FzHelWjrJRvvjyK2rbWjr-j8pqKZRuPk	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T01:45:08.783Z","secure":true,"httpOnly":true,"path":"/","sameSite":"none"},"tenant_id":1}	2026-01-16 01:45:09
+eMOHdrvlJzjD3icSdob63qq_s7YNtnaj	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-15T21:13:49.986Z","secure":true,"httpOnly":true,"path":"/","sameSite":"none"},"tenant_id":3}	2026-01-15 21:13:50
+EtsbkUZ8BaTFzoB8W-SyMPtIm76wgKl4	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T01:09:34.633Z","secure":true,"httpOnly":true,"path":"/","sameSite":"none"},"tenant_id":1}	2026-01-16 01:09:38
+o_d1NrAloX1mVUYEu3PQMr0xSY3nfGUu	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-15T19:00:12.770Z","secure":true,"httpOnly":true,"path":"/","sameSite":"none"},"tenant_id":1}	2026-01-15 19:00:15
+jOUVd6nq0kWdD5EKpLwF3-Vvh-xqc0Eh	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T02:19:07.808Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 02:19:08
+greVxh4DbqG-fAMWqxVyBa74PJDpau26	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T01:46:04.155Z","secure":true,"httpOnly":true,"path":"/","sameSite":"none"},"tenant_id":1}	2026-01-16 01:48:52
+FeotYWNSVGexye2brB-xjYBeRB2oXZZq	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T01:49:20.657Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":5}	2026-01-16 01:49:21
+nzX_BogCijlBrZZ5i8IOxxjXsEUn0m9w	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T02:19:10.161Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 02:19:46
+q74m5jo0vaKz9Azdo4GY_tiG0CiFTO5N	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-15T15:32:54.128Z","secure":true,"httpOnly":true,"path":"/","sameSite":"none"},"tenant_id":3}	2026-01-15 15:32:55
+qYKc8sr7uojFr8KXwqQIcs61KhaB0wuw	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-15T16:13:52.238Z","secure":true,"httpOnly":true,"path":"/","sameSite":"none"},"tenant_id":1,"userId":5,"user":{"id":5,"email":"pupis_gr@icloud.com","nombre":"Lupita García","apellido":"                                                                                                    ","rol":"admin","tipo":"admin","adminSource":"admin","tenant_id":1}}	2026-01-16 00:14:47
+DoKE1_r4-SuBrOEul_YXu3ZQSXq4WQ11	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T01:49:14.235Z","secure":true,"httpOnly":true,"path":"/","sameSite":"none"},"tenant_id":1}	2026-01-16 01:49:15
+yEUUhhfJPvTT0k0NUY5V03vmIOzg16m-	{"cookie":{"originalMaxAge":604799993,"expires":"2026-01-16T02:04:31.786Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":5}	2026-01-16 02:04:32
+fQs4hUqeWP-O7Y1tY8cOyNPClQ3lYJUw	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T02:17:52.923Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 02:17:53
+9itjUgZ8_chEkWBqOHohQNit0U0wS5SY	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T02:17:53.038Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 02:17:54
+8JbDqxWP5V8XljbkYcAsEREaTlrL7ldP	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-15T20:59:04.169Z","secure":false,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1,"userId":2,"user":{"id":2,"email":"fegarcia@hotmail.com","nombre":"Fernando","apellido":"Garcia                                                                                              ","rol":"superadmin","tipo":"admin","adminSource":"admin","tenant_id":1}}	2026-01-15 22:12:49
+ojI00xVbehrYwPs2haiGhBYJComeCUN-	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T02:17:53.264Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 02:17:54
+S0tC8WrbrxiDpcqgnbyQ_FQYB5BYvD5X	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T02:17:53.545Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 02:17:54
+-76Eo4jz-ow9WMLB6wBFPaS2032CM1Yg	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-15T18:57:33.963Z","secure":true,"httpOnly":true,"path":"/","sameSite":"none"},"tenant_id":1}	2026-01-15 18:57:35
+9q1PlbLWlGd4FkDNlp-qkRNxe6cpGaSc	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T02:33:48.876Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 02:33:49
+AUgs3PN0XawJ1BzbjB9m8supVUsIvYoE	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-15T20:58:20.248Z","secure":true,"httpOnly":true,"path":"/","sameSite":"none"},"tenant_id":3}	2026-01-15 20:58:21
+ZKqQxk4fang8a5DVVWeWHxbQ0vl3gg2o	{"cookie":{"originalMaxAge":604799999,"expires":"2026-01-16T03:58:53.229Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 03:58:54
+NjW0K0r86qnLejUAryVK5YK4O9X1JyQU	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T02:34:28.660Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 02:34:30
+OHvXlxLHAljtyoDDWAoHIo5eDI-8jq00	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T02:34:28.760Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 02:34:30
+e-Bn4d0TyLxrvmtujU-wfA940yw787Bw	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-15T16:20:24.371Z","secure":true,"httpOnly":true,"path":"/","sameSite":"none"},"tenant_id":3}	2026-01-15 16:20:25
+7LlEXh4uUIMk0lqVSelVpWWLw3K79NSC	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-15T16:48:00.737Z","secure":true,"httpOnly":true,"path":"/","sameSite":"none"},"tenant_id":3}	2026-01-15 16:48:01
+3UiW2QMMR1JmzMx9dD8isFw5ZV5jYplY	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T06:50:56.914Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":3}	2026-01-16 06:50:57
+CFCc_aH9ZJ9iM-1LXuRDa9CGuq2brESz	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T02:17:54.100Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 02:17:56
+_ah_VUVmfjYecG2mkCKBSxgmiRgmQCqr	{"cookie":{"originalMaxAge":604799995,"expires":"2026-01-16T02:44:39.818Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 02:44:40
+YsYZJL6-kGNsrwxrIsQ4i4rmWva2j6yC	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T02:44:40.506Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 02:44:41
+-eZ_14aqHj2I_9S2xIzMiMeCv0lJOGfN	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T02:54:10.271Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 02:54:11
+FNEH54VG8gGL9fQSd1A3Rt_aCrTiUp5V	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T03:58:53.457Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 03:58:54
+reRVHrlhDFJ6yxUnaRCrVakejarJ2bcP	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-15T19:00:32.334Z","secure":true,"httpOnly":true,"path":"/","sameSite":"none"},"tenant_id":1}	2026-01-15 19:00:35
+ovmDdlxLLTRbyR8Nkqlxtndx3_QgjXx_	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-15T12:18:18.783Z","secure":true,"httpOnly":true,"path":"/","sameSite":"none"},"tenant_id":1}	2026-01-16 01:17:32
+tfORVbKpca9pxEFU_9X_R65r4TQekxdn	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T00:22:03.767Z","secure":true,"httpOnly":true,"path":"/","sameSite":"none"},"tenant_id":1}	2026-01-16 00:22:04
+8VQTA6cgVCgbeSTXFr9KJQ8f_t6CwM8T	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T01:10:19.198Z","secure":true,"httpOnly":true,"path":"/","sameSite":"none"},"tenant_id":1}	2026-01-16 01:10:20
+GMIpAG7knF4Jw6lkwLo3b9bY-0l0fRwl	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T01:18:38.636Z","secure":true,"httpOnly":true,"path":"/","sameSite":"none"},"tenant_id":1}	2026-01-16 01:18:39
+rb7bWXLGpSDqSr7CXl3UOYlV_vGOdfao	{"cookie":{"originalMaxAge":604799998,"expires":"2026-01-16T03:06:19.663Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 03:06:21
+OnLryW3BbiXTb7EjRIgzVN_fOb1AntSV	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T03:19:23.860Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 03:19:26
+Q-43gjtyYhvbnTjc6g1a8z9HcSoJdkac	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T01:21:15.486Z","secure":true,"httpOnly":true,"path":"/","sameSite":"none"},"tenant_id":1,"userId":5,"user":{"id":5,"email":"pupis_gr@icloud.com","nombre":"Lupita García","apellido":"","rol":"admin","tipo":"admin","adminSource":"admin","tenant_id":1}}	2026-01-16 01:34:28
+KJNEHLKXUChnbrlplZyIoP3Xtu4aKddq	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T02:08:36.632Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 02:10:15
+dYK14fn2B4WyqtSH--3rfiqtWhgAbGzi	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T01:44:22.064Z","secure":true,"httpOnly":true,"path":"/","sameSite":"none"},"tenant_id":1}	2026-01-16 01:44:23
+Dy8pCvGtO3mbqd2bP3K6sYW0Vcm-vNfc	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T01:44:42.006Z","secure":true,"httpOnly":true,"path":"/","sameSite":"none"},"tenant_id":1}	2026-01-16 01:44:43
+dVd8vkd8KjWAjnVLlKehUmQUhVfZCGJI	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T01:44:42.258Z","secure":true,"httpOnly":true,"path":"/","sameSite":"none"},"tenant_id":1}	2026-01-16 01:44:43
+mh6Wn0r_IJy9Wja3CmHbpriqqRmow9JK	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T02:17:54.553Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 02:17:55
+9WVjShg1X0fOqPGQXfMZqFG-HyajIxVh	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T01:05:37.104Z","secure":true,"httpOnly":true,"path":"/","sameSite":"none"},"tenant_id":3}	2026-01-16 01:05:38
+I16OUVkEnsK5blOf12EhhrIeA21H19Ow	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T04:56:15.646Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 04:56:16
+IwR9DCl8ELQeq9DtktNVWAaqeZQFhuUh	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T07:09:24.583Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":3}	2026-01-16 07:09:25
+6L_AgsmdaJHkzSi79k5S7yPFBN7Li8A-	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T03:06:41.211Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 03:06:42
+54IVvliCo4UowNGZ-Myn_dj5o7u7UP42	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T05:09:11.782Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 05:09:12
+FOu8kcvIWrX6LF08rWWFR6e65hwFEB1C	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T03:06:52.248Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 03:06:53
+HtHNnwX3mrI9sxAoJZLDS-YwE5UnmQrj	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T02:34:58.789Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 02:35:20
+I31LHCjlvr_ySRfOjcluQt5oay5tThxf	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T02:49:42.976Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 02:49:43
+aDiEryWv3nXkOJTf3EimoCgrhLnvG4Gd	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T03:06:56.958Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 03:06:57
+I4JsJlLSdbsJmR6x0SBzSn0e1vB_CwgF	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T04:20:09.203Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 04:20:11
+Pf8QSJHTCoLMohFDTmBVd0XFnA0vIJit	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T02:34:25.063Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 02:34:26
+RQFe6ew5srIOkBj-f_xKgMab-w-omM2R	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T03:59:26.346Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 03:59:28
+6VfdqSH0mOmsyovp7HNkgT_jvzlO1piC	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T01:44:47.972Z","secure":true,"httpOnly":true,"path":"/","sameSite":"none"},"tenant_id":1}	2026-01-16 01:46:14
+GwjGHsS8Iuo3LQ6TuIq-UitvGmq2bGYw	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T01:49:14.272Z","secure":true,"httpOnly":true,"path":"/","sameSite":"none"},"tenant_id":1}	2026-01-16 01:49:15
+Hn_zkLPA7vtf6B84r8zy9JVW1JxKueGe	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T01:49:20.676Z","secure":true,"httpOnly":true,"path":"/","sameSite":"none"},"tenant_id":1}	2026-01-16 01:49:21
+fUE3sdafjE75rbcgSkxoYvWgYiZLI42l	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T02:06:42.768Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":3}	2026-01-16 02:06:43
+erzganwE26gZH4XMrOm71OH_2dHC7u5G	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T02:09:55.687Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":3}	2026-01-16 02:09:56
+bQvhB0xvxaYLNgdGNKt0O_5BrDZrnEAw	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T09:00:30.198Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 09:00:31
+N_fRvmYYyLR2O0m3UKB9q1ZaD4_T7Edd	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T02:34:59.572Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 02:35:01
+jaOAuTHclZWefKfFRrq6bCKmjy3VMMcy	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T05:09:15.738Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 05:09:16
+DGfkdWCmJ9x3f-SMD7qAjAzxxuJBjRvv	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T02:49:43.667Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 02:49:44
+MA19_EBL4Q8u7mH60H68JBVNY6Sol9CW	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T04:26:06.632Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 04:26:08
+o6flV5Umx8V4StOSNNrmEDYQUEJlHO2i	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T02:49:46.290Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 02:49:47
+PBJqBgEamJhHnvRPVO8Mx9tPNtpSTQ50	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T02:49:46.882Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 02:49:47
+hCGWqrwxswwnIqJKUQ2QrcK_poY5G7ts	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T02:49:47.610Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 02:49:48
+fqdA2m5QJtwWz-RzyvjMhVv3gFfvuPym	{"cookie":{"originalMaxAge":604799986,"expires":"2026-01-16T02:54:10.259Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 02:54:11
+3_EdEdkq_jS_QWDtICJ22ImoSyYWnCjN	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T02:56:47.296Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 02:56:48
+zuAarFJaY4zAU2rMs4kWxBy69BjBY8CW	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T02:56:47.547Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 02:56:48
+Fi-MPG4kNuf6xG4ZhPkZ1mCIuxjWx43A	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T02:54:19.874Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 02:54:49
+mqu4vdSCsM8San380av1f-2v2AiiQxfi	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T03:15:40.255Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 03:15:42
+1x9k5jRuaD0tig75cEbJ0Fab_SuqFac7	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T03:15:40.413Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 03:15:42
+sC9Fr7NNkrkQY0Azj9UAPYf5pdxgT_xV	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T05:09:27.517Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 05:09:45
+BRoUjc5cYLumAraLBWTFaL8Arpmn_FFd	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T05:09:23.185Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 05:10:03
+MUhc05BCu2uHjPxzppsnVrblfjAPLbcU	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T09:00:30.438Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 09:00:31
+ht-tKgNfTlycq5E-5zV2fmCzGZbtFifP	{"cookie":{"originalMaxAge":604799999,"expires":"2026-01-16T09:12:44.621Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 09:12:45
+3MMPOv7rVY-HAfzOy_EFXYGTCOjhTFe9	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T11:09:31.291Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 11:09:32
+PLVOiOJWZg-F9K_7mvVL_UwTzcsTgc_9	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T12:15:10.771Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 12:15:11
+EVT89sSNIYE0q0h44p8ljf5lDgFIxFJS	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T05:51:42.828Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 05:51:45
+ZyQwwZln4Z8Xerzv8VLN62qTI5f4vQcS	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T08:15:10.216Z","secure":false,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":5}	2026-01-16 08:15:11
+SBuqKwDgmZBtoDVgCM3bhNDMFOzwSYhy	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T08:15:10.398Z","secure":false,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":5}	2026-01-16 08:15:11
+kxqTs_RpXKYVu6xGnBn935Jgv5RvgVm7	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T08:15:10.412Z","secure":false,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":5}	2026-01-16 08:15:11
+Zf3R22t8VjvKd1aEr0GpUu9LztYImKpM	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T04:25:59.582Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 04:26:02
+VHuW17OOuHmWP0tTbOeXIyyvucfafEP2	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T07:31:43.457Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":3}	2026-01-16 07:31:44
+-xvKeMRDCcvRQ1TFimOpBD7djoMX_sKa	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T05:28:54.790Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 05:28:55
+y_RGtZk3n6-4w-H0uRgMSIJ9JAreWYze	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T05:28:55.044Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 05:28:56
+NXOR7sdZcg2pbOyRe9Qjfjx4HHAlR33S	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T05:28:55.422Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 05:28:56
+pOGBMO3LZx3nDdaeSOPihORwLmvssxAp	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T05:28:55.685Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 05:28:56
+j0yVoOAcwbfjBDVqAg6cVN_xbSOQVqhF	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T02:56:29.312Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 05:29:15
+AD5DxDtfBUWahifmuo_JpkYbWrX1Eixf	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T05:07:55.120Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 05:07:56
+JL264mFlQoDOJe6DJLnW6RGczM1asDHN	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T05:09:11.824Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 05:09:12
+-PhJPmYQaYGWFiSvwqNbyMOAqcnuYc6w	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T04:02:31.582Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 04:02:32
+tYIfg2DP3-kaAMwlxdN_WLe8cwOzNPpP	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T04:02:31.599Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 04:02:32
+aJ3kMQVB0Jqw4phxvDHceM0bIeVOB5j6	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T05:51:09.048Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 05:51:10
+9PEVy0fm-SHZXWi5kKnAU_cSTNg6n_Zw	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T05:51:09.259Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 05:51:10
+_6ylZ1oW6c9fu23_WFwijVm-SzlS9heM	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T05:09:15.660Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 05:09:16
+6rtiHFcrESx6nHRmXtOV54XbUs79Ii6K	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T05:09:23.825Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 05:09:25
+L4IgvO2Zdt2gkOUxZ_CM0UUgIlLimHB6	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T05:09:16.099Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 05:09:17
+REQyng_wLNhSOV4gAV8UriSqRbV12dU7	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T05:09:15.758Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 05:09:16
+HCxvKSCoEQD9617i6tSYlXTrJbAhubSy	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T05:09:15.286Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 05:09:19
+RtvyitHHcO-Wq-_2GvO9JIxhEhCSR5Z4	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T05:09:19.470Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 05:09:20
+1FYcm_XW8g0wt0wfYw_eKfYBFwLiATfs	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T05:09:19.489Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 05:09:20
+pHbgKqSJ1rmY-0vlBdrisafQNx3iwwVd	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T05:09:15.518Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 05:09:20
+qQxDBeFrXFg43DEOST7GrVxge0yxAX2c	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T05:09:21.583Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 05:09:27
+Lx2F7xjpnGF358pkWINDKep_RE_EPR7u	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T05:09:23.658Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 05:09:30
+he6YUKUEeb8QdsnmYyyY2pqzCx7RYlHB	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T05:09:24.301Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 05:09:33
+f7RFcmj7qGkGGO3VXd0IhtFVrBzXvAUI	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T05:09:28.128Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 05:09:38
+2UUgobekAquy1uI-VkoClhlpR7_C5W7y	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T09:28:57.770Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 09:28:58
+eiW-WNRo7Y_JmBURvepr7rypNG-y4Xm0	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T05:09:25.304Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 05:09:28
+maC3GcGUkiOdN6D-Tum22STTnF29IOc2	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T09:28:58.038Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 09:28:59
+TUpRJpfptG7jGCbUH9hyNNba8CtJ-yq_	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T09:28:58.382Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 09:28:59
+EwYYeuUscVmjcoZ7Qh2noUYY_nM8NecW	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T09:28:58.626Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 09:28:59
+L3QYhF6Bh9LEnP_E18Shike-uO00Sb22	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T11:09:32.239Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 11:09:33
+8jToKd6Vi-PhrOjvRj-3Px8M9f4uXSAi	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T11:09:33.055Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 11:09:34
+sJ53Lxe2kzAvr4iCkQBo-XechjJJdkie	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T13:29:00.034Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 13:29:01
+w1Tf_X7_9gh4Ttr5GD1Y8rdkslhXX7xX	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T13:29:00.365Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 13:29:01
+tK_nUQQVcKwU0xn1nzhp5JIP7PvepyKB	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T13:29:00.742Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 13:29:01
+c98uwX_8j3njl7NY4evWyRvGbhYslUBk	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T16:57:20.274Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 16:57:21
+zCrxEpZzZhzh9kEfU0hw7pKOGeZ2m3gR	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T13:29:01.048Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 13:29:02
+s_tTadldhxEjNQfy9QEoo0ddI9r_OX4-	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T05:08:27.037Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 05:08:29
+xJYt8DMIlXt-ZolAVynU3Pz-jZLsD8Cn	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T05:09:15.750Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 05:09:16
+CnIRIE3a8dKo_22xE7TWXpJGC_JTqc0C	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T05:09:19.199Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 05:09:20
+RmX1gQHthRNyw3wB3uK1KH9AmnrCwJxO	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T05:09:19.452Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 05:09:20
+WWwx6zqyDT8M4rdXx7kmBcjfTZkHPY26	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T16:27:44.411Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":3}	2026-01-16 16:27:45
+C5glEnB_rt-tFjGsN1lrJpnZEo-mwOqX	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T05:09:19.935Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 05:09:20
+yZv45Q2jAreiVell5yGXUPD7zP6MXt48	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T18:07:09.270Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":3}	2026-01-16 18:07:10
+jiGArGGdCdOFaYnHYa8Cp_UBHLFc6KkY	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T18:29:54.565Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 18:29:55
+9YFjIWvWCdGOR2kzOZhlSHKeiEpq5VNT	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T05:09:25.077Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 05:09:31
+Qe5lZdp5riSvf48VWH5qUfNZGrEfp4TU	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T19:09:34.768Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 19:09:35
+KeXj5OJcSFWcWZBBaBrLAMuY_aaUhqTr	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T05:09:19.916Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 05:09:21
+3DE0imyEVPvoZsOTw_2bm_7dFVlviq7Y	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T16:44:49.278Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":3}	2026-01-16 16:44:50
+mo7UMlVW1C-RZ3x5aluM2u-N4SPgg7OZ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T04:16:03.766Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1,"userId":4,"user":{"id":4,"email":"alecaja.19@gmail.com","nombre":"Alejandra Calderón","apellido":"","rol":"admin","tipo":"admin","adminSource":"admin","tenant_id":1}}	2026-01-16 06:41:50
+ybebl96OfvP2K23zpIyLi3pBT9n6pguw	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T09:01:09.692Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 09:01:12
+WwccRFPhFu9X95ER18f5jRbwT2f6OVlN	{"cookie":{"originalMaxAge":604799999,"expires":"2026-01-16T10:00:01.879Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 10:00:02
+tjawpTeKQDBkjsX9Ow_NBq0pN92C7Dk0	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T10:00:02.394Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 10:00:03
+p5pTWrP3jqrXy32XEiM6e_mUfa7c1Qn-	{"cookie":{"originalMaxAge":604799999,"expires":"2026-01-16T13:43:29.079Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 13:43:30
+_jA5PAaU7MExl0H8IGkxEeaORoQvq54K	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T13:43:29.318Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 13:43:30
+PVZnZV_N3hDOq7GQQIF9004Ly-vZDSYm	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T17:09:21.332Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 17:09:22
+tdNLaaWBpdzRCp71ty1vzmBLWRg1qYQG	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T19:14:46.151Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":3}	2026-01-16 19:14:47
+SaK3s5GduNH-1f-7waj2DfpiKXVGVBMM	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T17:09:22.678Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 17:09:23
+KKqovnXEMTTjgSr1DsAp3hlS5M-ZL3ho	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T16:29:53.853Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 16:29:54
+82NL_yAd2s3Z1sjLEO1E06XxR_pxMYc-	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T16:29:54.395Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 16:29:55
+nKkZ5X5IS_yi6OffOd-z_4f57_3Rn692	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T16:29:56.928Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 16:29:57
+6sYhWNtXne7bbl8dZqIowWMoVMsfYZGe	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T06:44:21.962Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 06:44:33
+FkvquvbST5GPV5X6CVsdRjJHeEIZEVhf	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T06:35:48.882Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":3}	2026-01-16 06:35:49
+6KrOwqyXebFlCm-Uq93Ox4RBH4X8pfFE	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T16:29:57.457Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 16:29:58
+CgsgouXeQpUp-p7E9G3jOV6kF8p-5SNk	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T16:30:08.806Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 16:30:09
+JIW26OGZFvjo1AVo6j58Esv0K40Eiw_-	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T16:30:09.354Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 16:30:10
+3Dgf0u-ufIgFSEG5jPtSLWrueQHLVGIa	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T16:51:27.446Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":3}	2026-01-16 16:51:28
+13hfWKIYlVpTgTKRlv40jNheVPfbNYbT	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T16:30:20.794Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 16:30:21
+BD5L_Zd68UmVwOs607Ejeh2CUXlklZx2	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T16:30:21.359Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 16:30:22
+H87Z0QE7jZq6S22lRTjYuFonEBa0LNEI	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T03:12:08.635Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1,"userId":5,"user":{"id":5,"email":"pupis_gr@icloud.com","nombre":"Lupita García","apellido":"","rol":"admin","tipo":"admin","adminSource":"admin","tenant_id":1}}	2026-01-16 19:29:04
+JDzVi7LtcQ1WGc9ie-IgwzwbICM2Z27k	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T03:08:21.049Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 19:24:16
+bw_5kvyt4J7ImokjGML-jJ0sIqhAWP1s	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T10:00:51.233Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 10:00:54
+7rY2LBAeJCpW9WNCvcaV-3PmE3j0YHjz	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T08:23:28.854Z","secure":false,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":5,"userId":8,"user":{"id":8,"email":"dferram8@gmail.com","nombre":"Admin Fashion","apellido":"","rol":"superadmin","tipo":"admin","adminSource":"admin","tenant_id":5}}	2026-01-16 08:23:36
+hb7i80M283bW32R-Mhy7w5SMeKFTKqUl	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T02:07:55.911Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 17:34:52
+E2uOgtZcdbqBoonjGsONN_wDDk-6UHCW	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T17:53:27.916Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":3}	2026-01-16 17:53:28
+h3KSKH39wLbA-yA1v1aDIg7RNMwICNvo	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T06:10:52.328Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1,"userId":2,"user":{"id":2,"email":"fegarcia@hotmail.com","nombre":"Fernando","apellido":"Garcia","rol":"superadmin","tipo":"admin","adminSource":"admin","tenant_id":1}}	2026-01-16 18:19:34
+sna-7JWoTovW7Ro-mFbsdk9v24L98CLX	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T18:29:54.575Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 18:29:55
+Q53_cEInJQVoXeRlR5kAM9cRBgGPzMFe	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T18:29:54.584Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 18:29:55
+5GvblZpg_pAZqGhC7VguswFlqT29kVei	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T18:29:55.237Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 18:29:56
+0WYGpYAQhNoWSaCvi5EhMFrPN-lnvH6q	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T07:59:08.913Z","secure":false,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1,"userId":2,"user":{"id":2,"email":"fegarcia@hotmail.com","nombre":"Fernando","apellido":"Garcia","rol":"superadmin","tipo":"admin","adminSource":"admin","tenant_id":1}}	2026-01-16 19:26:54
+ULJtYL1GTJxnnvZBb5g8x7IbJNdddyp_	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T13:44:08.431Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 13:44:10
+TthvLclBs3svB7belqFrMkenRCMWlxjk	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T06:20:53.194Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1,"isDeveloper":true,"developerId":2,"developerUsername":"ferram_dev","userId":2,"user":{"id":2,"email":"fegarcia@hotmail.com","nombre":"Fernando","apellido":"Garcia","rol":"superadmin","tipo":"admin","adminSource":"admin","tenant_id":1}}	2026-01-16 19:29:19
+4ORs8v9kmFvTqXQ-UVEPHDSZUrtMIPsk	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T19:16:34.885Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":3}	2026-01-16 19:16:35
+KGor80gNhIDPxOhocQ1qibSl4iyJJIO-	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T10:14:28.239Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 10:14:29
+fEn-kGgjlVwgfACS1pQU8_BVyCW5x5Nf	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T08:45:04.756Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 08:45:05
+7OIe72-WEhLv9Hzofgm9VwZzi2_djX_M	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T08:45:32.387Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 08:45:33
+kXx_faFXB5imiEzixOPprVoZgY0RTaFK	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T10:14:31.785Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 10:14:32
+y55A-NzBr0_vQG13WeUwzYA4J9KJRWs_	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T10:14:52.352Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 10:14:53
+cEaiAPBHUagjUQAhaJgzHcA2JqBDKJSZ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T10:14:55.906Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 10:14:56
+ltBW2UCMXJdPJF92j3Dj-L0rMFtVavsK	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T10:14:55.962Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 10:14:56
+7lalDoyJdm7LITQHDIJ4o3RAej7xFCTq	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T10:14:56.135Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 10:14:57
+bS3Ya-e_ocsBDBZL3_wOBRq-Ozd9rX3Q	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T16:32:31.051Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 16:32:32
+CLS7xXUzZG4nYyGUL5N8CmHnE0XraP-o	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T17:54:49.894Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 17:54:50
+7QuXQDZncJ6bTNvU_iRhgqsussHv9Ngf	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T18:29:20.461Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 18:29:21
+x0XtaLaajQy17Z7BNsFCQw3dU_wYqeRu	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T18:29:24.288Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 18:29:25
+F98csJQbS8pTQ1TatKHfTLxgpRuxdCj5	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T18:29:24.627Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 18:29:25
+nJl4PUNae-AYtUuuvmtTmzRtjyXgMLXG	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T18:29:52.283Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 18:29:53
+lp2JUuR2VzmFNoq3It3hC4RC9OZUSs55	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T18:29:54.275Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 18:29:55
+zngMnZwp2kQWfUz1j48JbtcEPUQoPZ_V	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T18:29:54.353Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 18:29:55
+01PMn5nOK24cT7d8gHytdbYzEQjTdK96	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T19:27:10.629Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":3}	2026-01-16 19:27:11
+9wDFYZHcX3q8KImyTSxUwowGiRLIxESp	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T18:29:54.486Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 18:29:55
+-mYjg5SFvB_gugh7rjCTbsMzTinnm8in	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T14:03:55.890Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 19:11:06
+Z5brqQArn3hmxMSKDiOjXZiFtupHxnyk	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T18:38:23.034Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 18:38:24
+3LrvrCYJVaTUKhsULyGkUiPqHZOE5ZtD	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T17:54:50.523Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 17:55:10
+F2puZnCW64-sv6DPMScnXXMFIzuKfKiN	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T18:38:14.739Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 18:38:49
+V-nK4HXC12R0qJc8VUKHQ-BmX3WFeOil	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T16:32:31.666Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 16:33:34
+XTjgcDk6Hy4s6NCkjFfQ8M5lTA-9eNLb	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T08:15:10.422Z","secure":false,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":5}	2026-01-16 08:15:11
+pekXo2gVLPsACOt9vcVfRa90Fe5GKFaj	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T08:15:10.431Z","secure":false,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":5}	2026-01-16 08:15:11
+wsRAsNBhAqVaAIk0jERJEVVjyfx_c_DU	{"cookie":{"originalMaxAge":604799992,"expires":"2026-01-16T08:51:11.565Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 08:51:12
+Fl33ExiJwhk5MR5QYkeelu2prd-FSXXa	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T10:14:56.145Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 10:14:57
+dCSIIpGTsB4vqbBzgVyIbMQ6LAKK4LPp	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T10:14:56.510Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 10:14:57
+uwVlPLZefQdrucxBMoPMLlXI5EX8xWzM	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T18:29:54.294Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 18:29:55
+8vjtL3LqEjIdixS_UfzPrbcAfQZ4LYHJ	{"cookie":{"originalMaxAge":604799995,"expires":"2026-01-16T18:50:44.880Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 18:50:45
 \.
 
 
 --
--- TOC entry 4978 (class 0 OID 25311)
+-- TOC entry 4984 (class 0 OID 25311)
 -- Dependencies: 301
 -- Data for Name: solicitudes_credito; Type: TABLE DATA; Schema: public; Owner: ferram
 --
 
-COPY public.solicitudes_credito (solicitud_id, cliente_id, monto_solicitado, motivo_uso, estado, fecha_solicitud, comentarios_admin, tenant_id) FROM stdin;
+COPY public.solicitudes_credito (solicitud_id, cliente_id, monto_solicitado, motivo_uso, estado, fecha_solicitud, comentarios_admin, tenant_id, ingresos_mensuales, plazo_preferido) FROM stdin;
 \.
 
 
 --
--- TOC entry 4995 (class 0 OID 26144)
+-- TOC entry 5001 (class 0 OID 26144)
 -- Dependencies: 319
 -- Data for Name: tenants; Type: TABLE DATA; Schema: public; Owner: ferram
 --
 
-COPY public.tenants (tenant_id, nombre_cliente, dominio, is_active, created_at) FROM stdin;
-3	Razo Local	localhost	t	2026-01-08 03:05:43.285306
-1	Razo Connect	razoconnect-api-hwafd9ghd8axfeas.mexicocentral-01.azurewebsites.net	t	2026-01-07 23:40:05.099814
+COPY public.tenants (tenant_id, nombre_cliente, dominio, is_active, created_at, tema) FROM stdin;
+3	Razo Local	localhost	t	2026-01-08 03:05:43.285306	razo
+5	Fashion Box	localhost	t	2026-01-08 09:42:26.557872	fashion
+2	Fashion Box	fashionbox.com	t	2026-01-08 09:57:13.53425	fashion
+1	Razo Connect	razo.com.mx	t	2026-01-07 23:40:05.099814	razo
 \.
 
 
 --
--- TOC entry 4980 (class 0 OID 25319)
+-- TOC entry 4986 (class 0 OID 25319)
 -- Dependencies: 303
 -- Data for Name: tipoproducto; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -5408,11 +5885,13 @@ COPY public.tipoproducto (tipoproductoid, nombre, descripcion, activo, fechacrea
 2	Peluche	\N	t	2025-12-12 11:10:10.356383	1
 3	Bolsa	\N	t	2025-12-12 18:54:55.894453	1
 4	Cuadernos	\N	t	2025-12-12 18:57:10.106707	1
+5	Sobre	\N	t	2026-01-09 06:05:03.199575	1
+6	Sobres	\N	t	2026-01-09 06:05:20.334008	1
 \.
 
 
 --
--- TOC entry 4982 (class 0 OID 25327)
+-- TOC entry 4988 (class 0 OID 25327)
 -- Dependencies: 305
 -- Data for Name: toma_inventario_conteos; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -5422,7 +5901,7 @@ COPY public.toma_inventario_conteos (conteoid, sesionid, varianteid, conteo_a, u
 
 
 --
--- TOC entry 4984 (class 0 OID 25334)
+-- TOC entry 4990 (class 0 OID 25334)
 -- Dependencies: 307
 -- Data for Name: toma_inventario_sesiones; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -5432,7 +5911,7 @@ COPY public.toma_inventario_sesiones (sesionid, nombre, fechainicio, fechacierre
 
 
 --
--- TOC entry 5176 (class 0 OID 0)
+-- TOC entry 5184 (class 0 OID 0)
 -- Dependencies: 221
 -- Name: jobid_seq; Type: SEQUENCE SET; Schema: cron; Owner: azuresu
 --
@@ -5441,7 +5920,7 @@ SELECT pg_catalog.setval('cron.jobid_seq', 1, false);
 
 
 --
--- TOC entry 5177 (class 0 OID 0)
+-- TOC entry 5185 (class 0 OID 0)
 -- Dependencies: 223
 -- Name: runid_seq; Type: SEQUENCE SET; Schema: cron; Owner: azuresu
 --
@@ -5450,16 +5929,16 @@ SELECT pg_catalog.setval('cron.runid_seq', 1, false);
 
 
 --
--- TOC entry 5178 (class 0 OID 0)
+-- TOC entry 5186 (class 0 OID 0)
 -- Dependencies: 226
 -- Name: administradores_adminid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.administradores_adminid_seq', 7, true);
+SELECT pg_catalog.setval('public.administradores_adminid_seq', 8, true);
 
 
 --
--- TOC entry 5179 (class 0 OID 0)
+-- TOC entry 5187 (class 0 OID 0)
 -- Dependencies: 228
 -- Name: agentesdeventas_agenteid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -5468,16 +5947,16 @@ SELECT pg_catalog.setval('public.agentesdeventas_agenteid_seq', 2, true);
 
 
 --
--- TOC entry 5180 (class 0 OID 0)
+-- TOC entry 5188 (class 0 OID 0)
 -- Dependencies: 230
 -- Name: carritodecompra_carritoid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.carritodecompra_carritoid_seq', 5, true);
+SELECT pg_catalog.setval('public.carritodecompra_carritoid_seq', 8, true);
 
 
 --
--- TOC entry 5181 (class 0 OID 0)
+-- TOC entry 5189 (class 0 OID 0)
 -- Dependencies: 232
 -- Name: cat_cxp_etiquetas_etiqueta_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -5486,16 +5965,16 @@ SELECT pg_catalog.setval('public.cat_cxp_etiquetas_etiqueta_id_seq', 1, false);
 
 
 --
--- TOC entry 5182 (class 0 OID 0)
+-- TOC entry 5190 (class 0 OID 0)
 -- Dependencies: 234
 -- Name: cat_tamanopaquetes_tamanoid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.cat_tamanopaquetes_tamanoid_seq', 5, true);
+SELECT pg_catalog.setval('public.cat_tamanopaquetes_tamanoid_seq', 6, true);
 
 
 --
--- TOC entry 5183 (class 0 OID 0)
+-- TOC entry 5191 (class 0 OID 0)
 -- Dependencies: 236
 -- Name: categorias_categoriaid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -5504,7 +5983,7 @@ SELECT pg_catalog.setval('public.categorias_categoriaid_seq', 4, true);
 
 
 --
--- TOC entry 5184 (class 0 OID 0)
+-- TOC entry 5192 (class 0 OID 0)
 -- Dependencies: 238
 -- Name: cliente_creditos_credito_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -5513,25 +5992,25 @@ SELECT pg_catalog.setval('public.cliente_creditos_credito_id_seq', 1, false);
 
 
 --
--- TOC entry 5185 (class 0 OID 0)
+-- TOC entry 5193 (class 0 OID 0)
 -- Dependencies: 240
 -- Name: cliente_direcciones_direccionid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.cliente_direcciones_direccionid_seq', 1, false);
+SELECT pg_catalog.setval('public.cliente_direcciones_direccionid_seq', 1, true);
 
 
 --
--- TOC entry 5186 (class 0 OID 0)
+-- TOC entry 5194 (class 0 OID 0)
 -- Dependencies: 242
 -- Name: clientes_clienteid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.clientes_clienteid_seq', 7, true);
+SELECT pg_catalog.setval('public.clientes_clienteid_seq', 12, true);
 
 
 --
--- TOC entry 5187 (class 0 OID 0)
+-- TOC entry 5195 (class 0 OID 0)
 -- Dependencies: 244
 -- Name: comisiones_comisionid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -5540,25 +6019,25 @@ SELECT pg_catalog.setval('public.comisiones_comisionid_seq', 1, false);
 
 
 --
--- TOC entry 5188 (class 0 OID 0)
+-- TOC entry 5196 (class 0 OID 0)
 -- Dependencies: 246
 -- Name: communicationlogs_logid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.communicationlogs_logid_seq', 1, true);
+SELECT pg_catalog.setval('public.communicationlogs_logid_seq', 6, true);
 
 
 --
--- TOC entry 5189 (class 0 OID 0)
+-- TOC entry 5197 (class 0 OID 0)
 -- Dependencies: 248
 -- Name: control_cambios_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.control_cambios_id_seq', 230, true);
+SELECT pg_catalog.setval('public.control_cambios_id_seq', 265, true);
 
 
 --
--- TOC entry 5190 (class 0 OID 0)
+-- TOC entry 5198 (class 0 OID 0)
 -- Dependencies: 250
 -- Name: credito_movimientos_movimiento_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -5567,7 +6046,7 @@ SELECT pg_catalog.setval('public.credito_movimientos_movimiento_id_seq', 1, fals
 
 
 --
--- TOC entry 5191 (class 0 OID 0)
+-- TOC entry 5199 (class 0 OID 0)
 -- Dependencies: 252
 -- Name: cuentas_por_cobrar_cxcid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -5576,7 +6055,7 @@ SELECT pg_catalog.setval('public.cuentas_por_cobrar_cxcid_seq', 1, false);
 
 
 --
--- TOC entry 5192 (class 0 OID 0)
+-- TOC entry 5200 (class 0 OID 0)
 -- Dependencies: 254
 -- Name: cuentas_por_pagar_cxp_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -5585,7 +6064,7 @@ SELECT pg_catalog.setval('public.cuentas_por_pagar_cxp_id_seq', 1, false);
 
 
 --
--- TOC entry 5193 (class 0 OID 0)
+-- TOC entry 5201 (class 0 OID 0)
 -- Dependencies: 312
 -- Name: cupones_cuponid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -5594,7 +6073,7 @@ SELECT pg_catalog.setval('public.cupones_cuponid_seq', 1, false);
 
 
 --
--- TOC entry 5194 (class 0 OID 0)
+-- TOC entry 5202 (class 0 OID 0)
 -- Dependencies: 256
 -- Name: cxp_etiquetas_asignadas_asignacion_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -5603,7 +6082,7 @@ SELECT pg_catalog.setval('public.cxp_etiquetas_asignadas_asignacion_id_seq', 1, 
 
 
 --
--- TOC entry 5195 (class 0 OID 0)
+-- TOC entry 5203 (class 0 OID 0)
 -- Dependencies: 258
 -- Name: datos_bancarios_empresa_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -5612,7 +6091,7 @@ SELECT pg_catalog.setval('public.datos_bancarios_empresa_id_seq', 2, true);
 
 
 --
--- TOC entry 5196 (class 0 OID 0)
+-- TOC entry 5204 (class 0 OID 0)
 -- Dependencies: 260
 -- Name: detallesdelpedido_detalleid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -5621,7 +6100,7 @@ SELECT pg_catalog.setval('public.detallesdelpedido_detalleid_seq', 1, false);
 
 
 --
--- TOC entry 5197 (class 0 OID 0)
+-- TOC entry 5205 (class 0 OID 0)
 -- Dependencies: 262
 -- Name: detallesordencompra_detalleoc_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -5630,7 +6109,7 @@ SELECT pg_catalog.setval('public.detallesordencompra_detalleoc_id_seq', 96, true
 
 
 --
--- TOC entry 5198 (class 0 OID 0)
+-- TOC entry 5206 (class 0 OID 0)
 -- Dependencies: 320
 -- Name: developers_dev_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -5639,7 +6118,7 @@ SELECT pg_catalog.setval('public.developers_dev_id_seq', 2, true);
 
 
 --
--- TOC entry 5199 (class 0 OID 0)
+-- TOC entry 5207 (class 0 OID 0)
 -- Dependencies: 266
 -- Name: estados_estadoid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -5648,7 +6127,7 @@ SELECT pg_catalog.setval('public.estados_estadoid_seq', 32, true);
 
 
 --
--- TOC entry 5200 (class 0 OID 0)
+-- TOC entry 5208 (class 0 OID 0)
 -- Dependencies: 314
 -- Name: inventarios_admin_inventario_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -5657,16 +6136,16 @@ SELECT pg_catalog.setval('public.inventarios_admin_inventario_id_seq', 1, false)
 
 
 --
--- TOC entry 5201 (class 0 OID 0)
+-- TOC entry 5209 (class 0 OID 0)
 -- Dependencies: 268
 -- Name: itemsdelcarrito_itemid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.itemsdelcarrito_itemid_seq', 10, true);
+SELECT pg_catalog.setval('public.itemsdelcarrito_itemid_seq', 34, true);
 
 
 --
--- TOC entry 5202 (class 0 OID 0)
+-- TOC entry 5210 (class 0 OID 0)
 -- Dependencies: 316
 -- Name: landing_page_config_config_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -5675,7 +6154,7 @@ SELECT pg_catalog.setval('public.landing_page_config_config_id_seq', 60, true);
 
 
 --
--- TOC entry 5203 (class 0 OID 0)
+-- TOC entry 5211 (class 0 OID 0)
 -- Dependencies: 270
 -- Name: log_eventosusuario_eventoid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -5684,7 +6163,7 @@ SELECT pg_catalog.setval('public.log_eventosusuario_eventoid_seq', 1, false);
 
 
 --
--- TOC entry 5204 (class 0 OID 0)
+-- TOC entry 5212 (class 0 OID 0)
 -- Dependencies: 272
 -- Name: log_inventario_logid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -5693,16 +6172,16 @@ SELECT pg_catalog.setval('public.log_inventario_logid_seq', 1, false);
 
 
 --
--- TOC entry 5205 (class 0 OID 0)
+-- TOC entry 5213 (class 0 OID 0)
 -- Dependencies: 274
 -- Name: log_movimientos_logid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.log_movimientos_logid_seq', 255, true);
+SELECT pg_catalog.setval('public.log_movimientos_logid_seq', 309, true);
 
 
 --
--- TOC entry 5206 (class 0 OID 0)
+-- TOC entry 5214 (class 0 OID 0)
 -- Dependencies: 276
 -- Name: medidas_medidaid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -5711,16 +6190,16 @@ SELECT pg_catalog.setval('public.medidas_medidaid_seq', 1, false);
 
 
 --
--- TOC entry 5207 (class 0 OID 0)
+-- TOC entry 5215 (class 0 OID 0)
 -- Dependencies: 277
 -- Name: notificaciones_notificacionid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.notificaciones_notificacionid_seq', 84, true);
+SELECT pg_catalog.setval('public.notificaciones_notificacionid_seq', 124, true);
 
 
 --
--- TOC entry 5208 (class 0 OID 0)
+-- TOC entry 5216 (class 0 OID 0)
 -- Dependencies: 279
 -- Name: ordenesdecompra_ordencompraid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -5729,7 +6208,7 @@ SELECT pg_catalog.setval('public.ordenesdecompra_ordencompraid_seq', 1, true);
 
 
 --
--- TOC entry 5209 (class 0 OID 0)
+-- TOC entry 5217 (class 0 OID 0)
 -- Dependencies: 281
 -- Name: pagos_clientes_pago_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -5738,7 +6217,7 @@ SELECT pg_catalog.setval('public.pagos_clientes_pago_id_seq', 1, false);
 
 
 --
--- TOC entry 5210 (class 0 OID 0)
+-- TOC entry 5218 (class 0 OID 0)
 -- Dependencies: 283
 -- Name: pagos_cxp_pago_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -5747,16 +6226,16 @@ SELECT pg_catalog.setval('public.pagos_cxp_pago_id_seq', 1, false);
 
 
 --
--- TOC entry 5211 (class 0 OID 0)
+-- TOC entry 5219 (class 0 OID 0)
 -- Dependencies: 285
 -- Name: passwordresettokens_tokenid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.passwordresettokens_tokenid_seq', 1, true);
+SELECT pg_catalog.setval('public.passwordresettokens_tokenid_seq', 6, true);
 
 
 --
--- TOC entry 5212 (class 0 OID 0)
+-- TOC entry 5220 (class 0 OID 0)
 -- Dependencies: 287
 -- Name: pedidos_pedidoid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -5765,7 +6244,7 @@ SELECT pg_catalog.setval('public.pedidos_pedidoid_seq', 1, false);
 
 
 --
--- TOC entry 5213 (class 0 OID 0)
+-- TOC entry 5221 (class 0 OID 0)
 -- Dependencies: 310
 -- Name: producto_imagenes_color_imagencolorid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -5774,52 +6253,52 @@ SELECT pg_catalog.setval('public.producto_imagenes_color_imagencolorid_seq', 1, 
 
 
 --
--- TOC entry 5214 (class 0 OID 0)
+-- TOC entry 5222 (class 0 OID 0)
 -- Dependencies: 289
 -- Name: producto_imagenes_imagenid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.producto_imagenes_imagenid_seq', 281, true);
+SELECT pg_catalog.setval('public.producto_imagenes_imagenid_seq', 333, true);
 
 
 --
--- TOC entry 5215 (class 0 OID 0)
+-- TOC entry 5223 (class 0 OID 0)
 -- Dependencies: 292
 -- Name: producto_variante_imagenes_imagenid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.producto_variante_imagenes_imagenid_seq', 117, true);
+SELECT pg_catalog.setval('public.producto_variante_imagenes_imagenid_seq', 163, true);
 
 
 --
--- TOC entry 5216 (class 0 OID 0)
+-- TOC entry 5224 (class 0 OID 0)
 -- Dependencies: 294
 -- Name: producto_variantes_varianteid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.producto_variantes_varianteid_seq', 207, true);
+SELECT pg_catalog.setval('public.producto_variantes_varianteid_seq', 240, true);
 
 
 --
--- TOC entry 5217 (class 0 OID 0)
+-- TOC entry 5225 (class 0 OID 0)
 -- Dependencies: 296
 -- Name: productos_productoid_seq1; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.productos_productoid_seq1', 67, true);
+SELECT pg_catalog.setval('public.productos_productoid_seq1', 69, true);
 
 
 --
--- TOC entry 5218 (class 0 OID 0)
+-- TOC entry 5226 (class 0 OID 0)
 -- Dependencies: 298
 -- Name: proveedor_reglas_empaque_reglaid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.proveedor_reglas_empaque_reglaid_seq', 5, true);
+SELECT pg_catalog.setval('public.proveedor_reglas_empaque_reglaid_seq', 8, true);
 
 
 --
--- TOC entry 5219 (class 0 OID 0)
+-- TOC entry 5227 (class 0 OID 0)
 -- Dependencies: 300
 -- Name: proveedores_proveedorid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -5828,7 +6307,7 @@ SELECT pg_catalog.setval('public.proveedores_proveedorid_seq', 3, true);
 
 
 --
--- TOC entry 5220 (class 0 OID 0)
+-- TOC entry 5228 (class 0 OID 0)
 -- Dependencies: 302
 -- Name: solicitudes_credito_solicitud_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -5837,25 +6316,25 @@ SELECT pg_catalog.setval('public.solicitudes_credito_solicitud_id_seq', 1, false
 
 
 --
--- TOC entry 5221 (class 0 OID 0)
+-- TOC entry 5229 (class 0 OID 0)
 -- Dependencies: 318
 -- Name: tenants_tenant_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.tenants_tenant_id_seq', 3, true);
+SELECT pg_catalog.setval('public.tenants_tenant_id_seq', 5, true);
 
 
 --
--- TOC entry 5222 (class 0 OID 0)
+-- TOC entry 5230 (class 0 OID 0)
 -- Dependencies: 304
 -- Name: tipoproducto_tipoproductoid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.tipoproducto_tipoproductoid_seq', 4, true);
+SELECT pg_catalog.setval('public.tipoproducto_tipoproductoid_seq', 6, true);
 
 
 --
--- TOC entry 5223 (class 0 OID 0)
+-- TOC entry 5231 (class 0 OID 0)
 -- Dependencies: 306
 -- Name: toma_inventario_conteos_conteoid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -5864,7 +6343,7 @@ SELECT pg_catalog.setval('public.toma_inventario_conteos_conteoid_seq', 1, false
 
 
 --
--- TOC entry 5224 (class 0 OID 0)
+-- TOC entry 5232 (class 0 OID 0)
 -- Dependencies: 308
 -- Name: toma_inventario_sesiones_sesionid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -5873,7 +6352,7 @@ SELECT pg_catalog.setval('public.toma_inventario_sesiones_sesionid_seq', 1, fals
 
 
 --
--- TOC entry 4444 (class 2606 OID 25389)
+-- TOC entry 4445 (class 2606 OID 25389)
 -- Name: administradores administradores_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -5882,7 +6361,7 @@ ALTER TABLE ONLY public.administradores
 
 
 --
--- TOC entry 4449 (class 2606 OID 25395)
+-- TOC entry 4450 (class 2606 OID 25395)
 -- Name: agentesdeventas agentesdeventas_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -5891,7 +6370,16 @@ ALTER TABLE ONLY public.agentesdeventas
 
 
 --
--- TOC entry 4456 (class 2606 OID 25397)
+-- TOC entry 4452 (class 2606 OID 26523)
+-- Name: agentesdeventas agentesdeventas_telefono_key; Type: CONSTRAINT; Schema: public; Owner: ferram
+--
+
+ALTER TABLE ONLY public.agentesdeventas
+    ADD CONSTRAINT agentesdeventas_telefono_key UNIQUE (telefono);
+
+
+--
+-- TOC entry 4460 (class 2606 OID 25397)
 -- Name: carritodecompra carritodecompra_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -5900,7 +6388,7 @@ ALTER TABLE ONLY public.carritodecompra
 
 
 --
--- TOC entry 4458 (class 2606 OID 25399)
+-- TOC entry 4462 (class 2606 OID 25399)
 -- Name: cat_cxp_etiquetas cat_cxp_etiquetas_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -5909,7 +6397,7 @@ ALTER TABLE ONLY public.cat_cxp_etiquetas
 
 
 --
--- TOC entry 4460 (class 2606 OID 25403)
+-- TOC entry 4464 (class 2606 OID 25403)
 -- Name: cat_tamanopaquetes cat_tamanopaquetes_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -5918,7 +6406,7 @@ ALTER TABLE ONLY public.cat_tamanopaquetes
 
 
 --
--- TOC entry 4465 (class 2606 OID 25405)
+-- TOC entry 4469 (class 2606 OID 25405)
 -- Name: categorias categorias_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -5927,7 +6415,7 @@ ALTER TABLE ONLY public.categorias
 
 
 --
--- TOC entry 4469 (class 2606 OID 25407)
+-- TOC entry 4473 (class 2606 OID 25407)
 -- Name: cliente_creditos cliente_creditos_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -5936,7 +6424,7 @@ ALTER TABLE ONLY public.cliente_creditos
 
 
 --
--- TOC entry 4474 (class 2606 OID 25409)
+-- TOC entry 4478 (class 2606 OID 25409)
 -- Name: cliente_direcciones cliente_direcciones_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -5945,7 +6433,7 @@ ALTER TABLE ONLY public.cliente_direcciones
 
 
 --
--- TOC entry 4476 (class 2606 OID 25415)
+-- TOC entry 4480 (class 2606 OID 25415)
 -- Name: clientes clientes_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -5954,7 +6442,7 @@ ALTER TABLE ONLY public.clientes
 
 
 --
--- TOC entry 4478 (class 2606 OID 25920)
+-- TOC entry 4482 (class 2606 OID 25920)
 -- Name: clientes clientes_telefono_key; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -5963,7 +6451,7 @@ ALTER TABLE ONLY public.clientes
 
 
 --
--- TOC entry 4486 (class 2606 OID 25417)
+-- TOC entry 4490 (class 2606 OID 25417)
 -- Name: comisiones comisiones_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -5972,7 +6460,7 @@ ALTER TABLE ONLY public.comisiones
 
 
 --
--- TOC entry 4488 (class 2606 OID 25419)
+-- TOC entry 4492 (class 2606 OID 25419)
 -- Name: communicationlogs communicationlogs_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -5981,7 +6469,7 @@ ALTER TABLE ONLY public.communicationlogs
 
 
 --
--- TOC entry 4490 (class 2606 OID 25421)
+-- TOC entry 4494 (class 2606 OID 25421)
 -- Name: control_cambios control_cambios_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -5990,7 +6478,7 @@ ALTER TABLE ONLY public.control_cambios
 
 
 --
--- TOC entry 4494 (class 2606 OID 25423)
+-- TOC entry 4498 (class 2606 OID 25423)
 -- Name: credito_movimientos credito_movimientos_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -5999,7 +6487,7 @@ ALTER TABLE ONLY public.credito_movimientos
 
 
 --
--- TOC entry 4496 (class 2606 OID 25425)
+-- TOC entry 4500 (class 2606 OID 25425)
 -- Name: cuentas_por_cobrar cuentas_por_cobrar_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6008,7 +6496,7 @@ ALTER TABLE ONLY public.cuentas_por_cobrar
 
 
 --
--- TOC entry 4499 (class 2606 OID 25427)
+-- TOC entry 4503 (class 2606 OID 25427)
 -- Name: cuentas_por_pagar cuentas_por_pagar_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6017,7 +6505,7 @@ ALTER TABLE ONLY public.cuentas_por_pagar
 
 
 --
--- TOC entry 4628 (class 2606 OID 25905)
+-- TOC entry 4634 (class 2606 OID 25905)
 -- Name: cupones cupones_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6026,7 +6514,7 @@ ALTER TABLE ONLY public.cupones
 
 
 --
--- TOC entry 4509 (class 2606 OID 25429)
+-- TOC entry 4513 (class 2606 OID 25429)
 -- Name: cxp_etiquetas_asignadas cxp_etiquetas_asignadas_cxp_id_etiqueta_id_key; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6035,7 +6523,7 @@ ALTER TABLE ONLY public.cxp_etiquetas_asignadas
 
 
 --
--- TOC entry 4511 (class 2606 OID 25431)
+-- TOC entry 4515 (class 2606 OID 25431)
 -- Name: cxp_etiquetas_asignadas cxp_etiquetas_asignadas_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6044,7 +6532,7 @@ ALTER TABLE ONLY public.cxp_etiquetas_asignadas
 
 
 --
--- TOC entry 4513 (class 2606 OID 25433)
+-- TOC entry 4517 (class 2606 OID 25433)
 -- Name: datos_bancarios_empresa datos_bancarios_empresa_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6053,7 +6541,7 @@ ALTER TABLE ONLY public.datos_bancarios_empresa
 
 
 --
--- TOC entry 4516 (class 2606 OID 25435)
+-- TOC entry 4520 (class 2606 OID 25435)
 -- Name: detallesdelpedido detallesdelpedido_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6062,7 +6550,7 @@ ALTER TABLE ONLY public.detallesdelpedido
 
 
 --
--- TOC entry 4518 (class 2606 OID 25437)
+-- TOC entry 4522 (class 2606 OID 25437)
 -- Name: detallesordencompra detallesordencompra_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6071,7 +6559,7 @@ ALTER TABLE ONLY public.detallesordencompra
 
 
 --
--- TOC entry 4650 (class 2606 OID 26161)
+-- TOC entry 4656 (class 2606 OID 26161)
 -- Name: developers developers_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6080,7 +6568,7 @@ ALTER TABLE ONLY public.developers
 
 
 --
--- TOC entry 4652 (class 2606 OID 26163)
+-- TOC entry 4658 (class 2606 OID 26163)
 -- Name: developers developers_username_key; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6089,7 +6577,7 @@ ALTER TABLE ONLY public.developers
 
 
 --
--- TOC entry 4480 (class 2606 OID 26362)
+-- TOC entry 4484 (class 2606 OID 26362)
 -- Name: clientes email_tenant_unique; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6098,7 +6586,7 @@ ALTER TABLE ONLY public.clientes
 
 
 --
--- TOC entry 4527 (class 2606 OID 25439)
+-- TOC entry 4531 (class 2606 OID 25439)
 -- Name: estados estados_abreviatura_key; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6107,7 +6595,7 @@ ALTER TABLE ONLY public.estados
 
 
 --
--- TOC entry 4529 (class 2606 OID 25441)
+-- TOC entry 4533 (class 2606 OID 25441)
 -- Name: estados estados_nombre_key; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6116,7 +6604,7 @@ ALTER TABLE ONLY public.estados
 
 
 --
--- TOC entry 4531 (class 2606 OID 25443)
+-- TOC entry 4535 (class 2606 OID 25443)
 -- Name: estados estados_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6125,7 +6613,7 @@ ALTER TABLE ONLY public.estados
 
 
 --
--- TOC entry 4637 (class 2606 OID 25946)
+-- TOC entry 4643 (class 2606 OID 25946)
 -- Name: inventarios_admin inventarios_admin_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6134,7 +6622,7 @@ ALTER TABLE ONLY public.inventarios_admin
 
 
 --
--- TOC entry 4533 (class 2606 OID 25445)
+-- TOC entry 4537 (class 2606 OID 25445)
 -- Name: itemsdelcarrito itemsdelcarrito_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6143,7 +6631,7 @@ ALTER TABLE ONLY public.itemsdelcarrito
 
 
 --
--- TOC entry 4642 (class 2606 OID 26125)
+-- TOC entry 4648 (class 2606 OID 26125)
 -- Name: landing_page_config landing_page_config_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6152,7 +6640,7 @@ ALTER TABLE ONLY public.landing_page_config
 
 
 --
--- TOC entry 4539 (class 2606 OID 25447)
+-- TOC entry 4543 (class 2606 OID 25447)
 -- Name: log_eventosusuario log_eventosusuario_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6161,7 +6649,7 @@ ALTER TABLE ONLY public.log_eventosusuario
 
 
 --
--- TOC entry 4544 (class 2606 OID 25449)
+-- TOC entry 4548 (class 2606 OID 25449)
 -- Name: log_inventario log_inventario_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6170,7 +6658,7 @@ ALTER TABLE ONLY public.log_inventario
 
 
 --
--- TOC entry 4550 (class 2606 OID 25451)
+-- TOC entry 4554 (class 2606 OID 25451)
 -- Name: log_movimientos log_movimientos_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6179,7 +6667,7 @@ ALTER TABLE ONLY public.log_movimientos
 
 
 --
--- TOC entry 4554 (class 2606 OID 25453)
+-- TOC entry 4558 (class 2606 OID 25453)
 -- Name: medidas medidas_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6188,7 +6676,7 @@ ALTER TABLE ONLY public.medidas
 
 
 --
--- TOC entry 4525 (class 2606 OID 25457)
+-- TOC entry 4529 (class 2606 OID 25457)
 -- Name: notificaciones notificaciones_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6197,7 +6685,7 @@ ALTER TABLE ONLY public.notificaciones
 
 
 --
--- TOC entry 4561 (class 2606 OID 25459)
+-- TOC entry 4565 (class 2606 OID 25459)
 -- Name: ordenesdecompra ordenesdecompra_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6206,7 +6694,7 @@ ALTER TABLE ONLY public.ordenesdecompra
 
 
 --
--- TOC entry 4568 (class 2606 OID 25461)
+-- TOC entry 4572 (class 2606 OID 25461)
 -- Name: pagos_clientes pagos_clientes_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6215,7 +6703,7 @@ ALTER TABLE ONLY public.pagos_clientes
 
 
 --
--- TOC entry 4572 (class 2606 OID 25463)
+-- TOC entry 4576 (class 2606 OID 25463)
 -- Name: pagos_cxp pagos_cxp_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6224,7 +6712,7 @@ ALTER TABLE ONLY public.pagos_cxp
 
 
 --
--- TOC entry 4574 (class 2606 OID 25465)
+-- TOC entry 4578 (class 2606 OID 25465)
 -- Name: passwordresettokens passwordresettokens_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6233,7 +6721,7 @@ ALTER TABLE ONLY public.passwordresettokens
 
 
 --
--- TOC entry 4576 (class 2606 OID 25467)
+-- TOC entry 4580 (class 2606 OID 25467)
 -- Name: passwordresettokens passwordresettokens_token_key; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6242,7 +6730,7 @@ ALTER TABLE ONLY public.passwordresettokens
 
 
 --
--- TOC entry 4579 (class 2606 OID 25469)
+-- TOC entry 4583 (class 2606 OID 25469)
 -- Name: pedidos pedidos_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6251,7 +6739,7 @@ ALTER TABLE ONLY public.pedidos
 
 
 --
--- TOC entry 4626 (class 2606 OID 25885)
+-- TOC entry 4632 (class 2606 OID 25885)
 -- Name: producto_imagenes_color producto_imagenes_color_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6260,7 +6748,7 @@ ALTER TABLE ONLY public.producto_imagenes_color
 
 
 --
--- TOC entry 4581 (class 2606 OID 25471)
+-- TOC entry 4585 (class 2606 OID 25471)
 -- Name: producto_imagenes producto_imagenes_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6269,7 +6757,7 @@ ALTER TABLE ONLY public.producto_imagenes
 
 
 --
--- TOC entry 4583 (class 2606 OID 25473)
+-- TOC entry 4587 (class 2606 OID 25473)
 -- Name: producto_tamanosdisponibles producto_tamanosdisponibles_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6278,7 +6766,7 @@ ALTER TABLE ONLY public.producto_tamanosdisponibles
 
 
 --
--- TOC entry 4587 (class 2606 OID 25475)
+-- TOC entry 4591 (class 2606 OID 25475)
 -- Name: producto_variante_imagenes producto_variante_imagenes_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6287,7 +6775,7 @@ ALTER TABLE ONLY public.producto_variante_imagenes
 
 
 --
--- TOC entry 4593 (class 2606 OID 25477)
+-- TOC entry 4598 (class 2606 OID 25477)
 -- Name: producto_variantes productos_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6296,7 +6784,7 @@ ALTER TABLE ONLY public.producto_variantes
 
 
 --
--- TOC entry 4600 (class 2606 OID 25479)
+-- TOC entry 4606 (class 2606 OID 25479)
 -- Name: productos productos_pkey1; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6305,7 +6793,7 @@ ALTER TABLE ONLY public.productos
 
 
 --
--- TOC entry 4604 (class 2606 OID 25485)
+-- TOC entry 4610 (class 2606 OID 25485)
 -- Name: proveedor_reglas_empaque proveedor_reglas_empaque_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6314,7 +6802,7 @@ ALTER TABLE ONLY public.proveedor_reglas_empaque
 
 
 --
--- TOC entry 4607 (class 2606 OID 25487)
+-- TOC entry 4613 (class 2606 OID 25487)
 -- Name: proveedores proveedores_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6323,7 +6811,7 @@ ALTER TABLE ONLY public.proveedores
 
 
 --
--- TOC entry 4655 (class 2606 OID 26356)
+-- TOC entry 4661 (class 2606 OID 26356)
 -- Name: session session_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6332,7 +6820,7 @@ ALTER TABLE ONLY public.session
 
 
 --
--- TOC entry 4609 (class 2606 OID 25489)
+-- TOC entry 4615 (class 2606 OID 25489)
 -- Name: solicitudes_credito solicitudes_credito_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6341,16 +6829,7 @@ ALTER TABLE ONLY public.solicitudes_credito
 
 
 --
--- TOC entry 4646 (class 2606 OID 26153)
--- Name: tenants tenants_dominio_key; Type: CONSTRAINT; Schema: public; Owner: ferram
---
-
-ALTER TABLE ONLY public.tenants
-    ADD CONSTRAINT tenants_dominio_key UNIQUE (dominio);
-
-
---
--- TOC entry 4648 (class 2606 OID 26151)
+-- TOC entry 4653 (class 2606 OID 26151)
 -- Name: tenants tenants_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6359,7 +6838,7 @@ ALTER TABLE ONLY public.tenants
 
 
 --
--- TOC entry 4612 (class 2606 OID 25493)
+-- TOC entry 4618 (class 2606 OID 25493)
 -- Name: tipoproducto tipoproducto_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6368,7 +6847,7 @@ ALTER TABLE ONLY public.tipoproducto
 
 
 --
--- TOC entry 4619 (class 2606 OID 25495)
+-- TOC entry 4625 (class 2606 OID 25495)
 -- Name: toma_inventario_conteos toma_inventario_conteos_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6377,7 +6856,7 @@ ALTER TABLE ONLY public.toma_inventario_conteos
 
 
 --
--- TOC entry 4623 (class 2606 OID 25497)
+-- TOC entry 4629 (class 2606 OID 25497)
 -- Name: toma_inventario_sesiones toma_inventario_sesiones_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6386,7 +6865,7 @@ ALTER TABLE ONLY public.toma_inventario_sesiones
 
 
 --
--- TOC entry 4639 (class 2606 OID 25948)
+-- TOC entry 4645 (class 2606 OID 25948)
 -- Name: inventarios_admin uk_admin_variante; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6395,7 +6874,7 @@ ALTER TABLE ONLY public.inventarios_admin
 
 
 --
--- TOC entry 4447 (class 2606 OID 26172)
+-- TOC entry 4448 (class 2606 OID 26172)
 -- Name: administradores unique_admin_email_per_tenant; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6404,7 +6883,7 @@ ALTER TABLE ONLY public.administradores
 
 
 --
--- TOC entry 4452 (class 2606 OID 26183)
+-- TOC entry 4456 (class 2606 OID 26183)
 -- Name: agentesdeventas unique_agente_codigo_per_tenant; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6413,7 +6892,7 @@ ALTER TABLE ONLY public.agentesdeventas
 
 
 --
--- TOC entry 4454 (class 2606 OID 26181)
+-- TOC entry 4458 (class 2606 OID 26181)
 -- Name: agentesdeventas unique_agente_email_per_tenant; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6422,7 +6901,7 @@ ALTER TABLE ONLY public.agentesdeventas
 
 
 --
--- TOC entry 4472 (class 2606 OID 25499)
+-- TOC entry 4476 (class 2606 OID 25499)
 -- Name: cliente_creditos unique_cliente_credito; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6431,7 +6910,7 @@ ALTER TABLE ONLY public.cliente_creditos
 
 
 --
--- TOC entry 4484 (class 2606 OID 26192)
+-- TOC entry 4488 (class 2606 OID 26192)
 -- Name: clientes unique_cliente_email_per_tenant; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6440,7 +6919,7 @@ ALTER TABLE ONLY public.clientes
 
 
 --
--- TOC entry 4631 (class 2606 OID 26260)
+-- TOC entry 4637 (class 2606 OID 26260)
 -- Name: cupones unique_cupon_per_tenant; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6449,7 +6928,7 @@ ALTER TABLE ONLY public.cupones
 
 
 --
--- TOC entry 4644 (class 2606 OID 26330)
+-- TOC entry 4650 (class 2606 OID 26330)
 -- Name: landing_page_config unique_landing_section_per_tenant; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6458,7 +6937,7 @@ ALTER TABLE ONLY public.landing_page_config
 
 
 --
--- TOC entry 4556 (class 2606 OID 26233)
+-- TOC entry 4560 (class 2606 OID 26233)
 -- Name: medidas unique_medida_per_tenant; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6467,7 +6946,7 @@ ALTER TABLE ONLY public.medidas
 
 
 --
--- TOC entry 4602 (class 2606 OID 26242)
+-- TOC entry 4608 (class 2606 OID 26242)
 -- Name: productos unique_sku_maestro_per_tenant; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6476,7 +6955,7 @@ ALTER TABLE ONLY public.productos
 
 
 --
--- TOC entry 4595 (class 2606 OID 26251)
+-- TOC entry 4600 (class 2606 OID 26251)
 -- Name: producto_variantes unique_sku_variante_per_tenant; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6485,7 +6964,7 @@ ALTER TABLE ONLY public.producto_variantes
 
 
 --
--- TOC entry 4463 (class 2606 OID 26224)
+-- TOC entry 4467 (class 2606 OID 26224)
 -- Name: cat_tamanopaquetes unique_tamano_per_tenant; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6494,7 +6973,7 @@ ALTER TABLE ONLY public.cat_tamanopaquetes
 
 
 --
--- TOC entry 4614 (class 2606 OID 26215)
+-- TOC entry 4620 (class 2606 OID 26215)
 -- Name: tipoproducto unique_tipoproducto_per_tenant; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6503,7 +6982,7 @@ ALTER TABLE ONLY public.tipoproducto
 
 
 --
--- TOC entry 4507 (class 2606 OID 25501)
+-- TOC entry 4511 (class 2606 OID 25501)
 -- Name: cuentas_por_pagar unq_orden_referencia; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6512,7 +6991,7 @@ ALTER TABLE ONLY public.cuentas_por_pagar
 
 
 --
--- TOC entry 4621 (class 2606 OID 25503)
+-- TOC entry 4627 (class 2606 OID 25503)
 -- Name: toma_inventario_conteos unq_sesion_variante; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6521,7 +7000,7 @@ ALTER TABLE ONLY public.toma_inventario_conteos
 
 
 --
--- TOC entry 4653 (class 1259 OID 26357)
+-- TOC entry 4659 (class 1259 OID 26357)
 -- Name: IDX_session_expire; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -6529,7 +7008,7 @@ CREATE INDEX "IDX_session_expire" ON public.session USING btree (expire);
 
 
 --
--- TOC entry 4445 (class 1259 OID 26173)
+-- TOC entry 4446 (class 1259 OID 26173)
 -- Name: idx_administradores_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -6537,7 +7016,15 @@ CREATE INDEX idx_administradores_tenant ON public.administradores USING btree (t
 
 
 --
--- TOC entry 4450 (class 1259 OID 26184)
+-- TOC entry 4453 (class 1259 OID 26524)
+-- Name: idx_agentes_telefono; Type: INDEX; Schema: public; Owner: ferram
+--
+
+CREATE INDEX idx_agentes_telefono ON public.agentesdeventas USING btree (telefono);
+
+
+--
+-- TOC entry 4454 (class 1259 OID 26184)
 -- Name: idx_agentes_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -6545,7 +7032,7 @@ CREATE INDEX idx_agentes_tenant ON public.agentesdeventas USING btree (tenant_id
 
 
 --
--- TOC entry 4466 (class 1259 OID 25504)
+-- TOC entry 4470 (class 1259 OID 25504)
 -- Name: idx_categoria_activo; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -6553,7 +7040,7 @@ CREATE INDEX idx_categoria_activo ON public.categorias USING btree (activo);
 
 
 --
--- TOC entry 4467 (class 1259 OID 26207)
+-- TOC entry 4471 (class 1259 OID 26207)
 -- Name: idx_categorias_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -6561,7 +7048,7 @@ CREATE INDEX idx_categorias_tenant ON public.categorias USING btree (tenant_id);
 
 
 --
--- TOC entry 4481 (class 1259 OID 25505)
+-- TOC entry 4485 (class 1259 OID 25505)
 -- Name: idx_cliente_agente; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -6569,7 +7056,7 @@ CREATE INDEX idx_cliente_agente ON public.clientes USING btree (agenteid);
 
 
 --
--- TOC entry 4470 (class 1259 OID 25506)
+-- TOC entry 4474 (class 1259 OID 25506)
 -- Name: idx_cliente_creditos_exportacion; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -6577,7 +7064,7 @@ CREATE INDEX idx_cliente_creditos_exportacion ON public.cliente_creditos USING b
 
 
 --
--- TOC entry 4482 (class 1259 OID 26193)
+-- TOC entry 4486 (class 1259 OID 26193)
 -- Name: idx_clientes_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -6585,7 +7072,7 @@ CREATE INDEX idx_clientes_tenant ON public.clientes USING btree (tenant_id);
 
 
 --
--- TOC entry 4615 (class 1259 OID 25507)
+-- TOC entry 4621 (class 1259 OID 25507)
 -- Name: idx_conteos_estatus; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -6593,7 +7080,7 @@ CREATE INDEX idx_conteos_estatus ON public.toma_inventario_conteos USING btree (
 
 
 --
--- TOC entry 4616 (class 1259 OID 25508)
+-- TOC entry 4622 (class 1259 OID 25508)
 -- Name: idx_conteos_estatus_aplicacion; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -6601,7 +7088,7 @@ CREATE INDEX idx_conteos_estatus_aplicacion ON public.toma_inventario_conteos US
 
 
 --
--- TOC entry 4617 (class 1259 OID 25509)
+-- TOC entry 4623 (class 1259 OID 25509)
 -- Name: idx_conteos_sesion; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -6609,7 +7096,7 @@ CREATE INDEX idx_conteos_sesion ON public.toma_inventario_conteos USING btree (s
 
 
 --
--- TOC entry 4491 (class 1259 OID 25510)
+-- TOC entry 4495 (class 1259 OID 25510)
 -- Name: idx_control_cambios_entidad; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -6617,7 +7104,7 @@ CREATE INDEX idx_control_cambios_entidad ON public.control_cambios USING btree (
 
 
 --
--- TOC entry 4492 (class 1259 OID 25511)
+-- TOC entry 4496 (class 1259 OID 25511)
 -- Name: idx_control_cambios_estado; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -6625,7 +7112,7 @@ CREATE INDEX idx_control_cambios_estado ON public.control_cambios USING btree (e
 
 
 --
--- TOC entry 4629 (class 1259 OID 26261)
+-- TOC entry 4635 (class 1259 OID 26261)
 -- Name: idx_cupones_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -6633,7 +7120,7 @@ CREATE INDEX idx_cupones_tenant ON public.cupones USING btree (tenant_id);
 
 
 --
--- TOC entry 4497 (class 1259 OID 26296)
+-- TOC entry 4501 (class 1259 OID 26296)
 -- Name: idx_cxc_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -6641,7 +7128,7 @@ CREATE INDEX idx_cxc_tenant ON public.cuentas_por_cobrar USING btree (tenant_id)
 
 
 --
--- TOC entry 4500 (class 1259 OID 25512)
+-- TOC entry 4504 (class 1259 OID 25512)
 -- Name: idx_cxp_estatus; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -6649,7 +7136,7 @@ CREATE INDEX idx_cxp_estatus ON public.cuentas_por_pagar USING btree (estatus);
 
 
 --
--- TOC entry 4501 (class 1259 OID 25513)
+-- TOC entry 4505 (class 1259 OID 25513)
 -- Name: idx_cxp_exportacion; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -6657,7 +7144,7 @@ CREATE INDEX idx_cxp_exportacion ON public.cuentas_por_pagar USING btree (export
 
 
 --
--- TOC entry 4502 (class 1259 OID 25514)
+-- TOC entry 4506 (class 1259 OID 25514)
 -- Name: idx_cxp_fecha_cierre; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -6665,7 +7152,7 @@ CREATE INDEX idx_cxp_fecha_cierre ON public.cuentas_por_pagar USING btree (fecha
 
 
 --
--- TOC entry 4503 (class 1259 OID 25515)
+-- TOC entry 4507 (class 1259 OID 25515)
 -- Name: idx_cxp_proveedor; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -6673,7 +7160,7 @@ CREATE INDEX idx_cxp_proveedor ON public.cuentas_por_pagar USING btree (proveedo
 
 
 --
--- TOC entry 4504 (class 1259 OID 26289)
+-- TOC entry 4508 (class 1259 OID 26289)
 -- Name: idx_cxp_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -6681,7 +7168,7 @@ CREATE INDEX idx_cxp_tenant ON public.cuentas_por_pagar USING btree (tenant_id);
 
 
 --
--- TOC entry 4505 (class 1259 OID 25516)
+-- TOC entry 4509 (class 1259 OID 25516)
 -- Name: idx_cxp_vencimiento; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -6689,7 +7176,7 @@ CREATE INDEX idx_cxp_vencimiento ON public.cuentas_por_pagar USING btree (fecha_
 
 
 --
--- TOC entry 4514 (class 1259 OID 25517)
+-- TOC entry 4518 (class 1259 OID 25517)
 -- Name: idx_datos_bancarios_principal; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -6697,7 +7184,7 @@ CREATE INDEX idx_datos_bancarios_principal ON public.datos_bancarios_empresa USI
 
 
 --
--- TOC entry 4632 (class 1259 OID 25959)
+-- TOC entry 4638 (class 1259 OID 25959)
 -- Name: idx_inventarios_admin_admin_id; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -6705,7 +7192,7 @@ CREATE INDEX idx_inventarios_admin_admin_id ON public.inventarios_admin USING bt
 
 
 --
--- TOC entry 4633 (class 1259 OID 25961)
+-- TOC entry 4639 (class 1259 OID 25961)
 -- Name: idx_inventarios_admin_cantidad; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -6713,7 +7200,7 @@ CREATE INDEX idx_inventarios_admin_cantidad ON public.inventarios_admin USING bt
 
 
 --
--- TOC entry 4634 (class 1259 OID 25960)
+-- TOC entry 4640 (class 1259 OID 25960)
 -- Name: idx_inventarios_admin_variante_id; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -6721,7 +7208,7 @@ CREATE INDEX idx_inventarios_admin_variante_id ON public.inventarios_admin USING
 
 
 --
--- TOC entry 4635 (class 1259 OID 26268)
+-- TOC entry 4641 (class 1259 OID 26268)
 -- Name: idx_inventarios_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -6729,7 +7216,7 @@ CREATE INDEX idx_inventarios_tenant ON public.inventarios_admin USING btree (ten
 
 
 --
--- TOC entry 4640 (class 1259 OID 26128)
+-- TOC entry 4646 (class 1259 OID 26128)
 -- Name: idx_landing_config_section; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -6737,7 +7224,7 @@ CREATE INDEX idx_landing_config_section ON public.landing_page_config USING btre
 
 
 --
--- TOC entry 4545 (class 1259 OID 25518)
+-- TOC entry 4549 (class 1259 OID 25518)
 -- Name: idx_log_accion; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -6745,7 +7232,7 @@ CREATE INDEX idx_log_accion ON public.log_movimientos USING btree (accion);
 
 
 --
--- TOC entry 4534 (class 1259 OID 25519)
+-- TOC entry 4538 (class 1259 OID 25519)
 -- Name: idx_log_clienteid; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -6753,7 +7240,7 @@ CREATE INDEX idx_log_clienteid ON public.log_eventosusuario USING btree (cliente
 
 
 --
--- TOC entry 4546 (class 1259 OID 25520)
+-- TOC entry 4550 (class 1259 OID 25520)
 -- Name: idx_log_entidad; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -6761,7 +7248,7 @@ CREATE INDEX idx_log_entidad ON public.log_movimientos USING btree (entidad, ent
 
 
 --
--- TOC entry 4547 (class 1259 OID 25521)
+-- TOC entry 4551 (class 1259 OID 25521)
 -- Name: idx_log_fecha; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -6769,7 +7256,7 @@ CREATE INDEX idx_log_fecha ON public.log_movimientos USING btree (fecha DESC);
 
 
 --
--- TOC entry 4540 (class 1259 OID 25522)
+-- TOC entry 4544 (class 1259 OID 25522)
 -- Name: idx_log_inventario_cxp; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -6777,7 +7264,7 @@ CREATE INDEX idx_log_inventario_cxp ON public.log_inventario USING btree (cxp_id
 
 
 --
--- TOC entry 4541 (class 1259 OID 25523)
+-- TOC entry 4545 (class 1259 OID 25523)
 -- Name: idx_log_inventario_cxp_id; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -6785,7 +7272,7 @@ CREATE INDEX idx_log_inventario_cxp_id ON public.log_inventario USING btree (cxp
 
 
 --
--- TOC entry 4542 (class 1259 OID 25524)
+-- TOC entry 4546 (class 1259 OID 25524)
 -- Name: idx_log_inventario_excepcion; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -6793,7 +7280,7 @@ CREATE INDEX idx_log_inventario_excepcion ON public.log_inventario USING btree (
 
 
 --
--- TOC entry 4535 (class 1259 OID 25525)
+-- TOC entry 4539 (class 1259 OID 25525)
 -- Name: idx_log_timestamp; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -6801,7 +7288,7 @@ CREATE INDEX idx_log_timestamp ON public.log_eventosusuario USING btree ("timest
 
 
 --
--- TOC entry 4536 (class 1259 OID 25526)
+-- TOC entry 4540 (class 1259 OID 25526)
 -- Name: idx_log_tipoevento; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -6809,7 +7296,7 @@ CREATE INDEX idx_log_tipoevento ON public.log_eventosusuario USING btree (tipoev
 
 
 --
--- TOC entry 4548 (class 1259 OID 25527)
+-- TOC entry 4552 (class 1259 OID 25527)
 -- Name: idx_log_usuario; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -6817,7 +7304,7 @@ CREATE INDEX idx_log_usuario ON public.log_movimientos USING btree (usuarioid);
 
 
 --
--- TOC entry 4537 (class 1259 OID 25528)
+-- TOC entry 4541 (class 1259 OID 25528)
 -- Name: idx_log_varianteid; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -6825,7 +7312,7 @@ CREATE INDEX idx_log_varianteid ON public.log_eventosusuario USING btree (varian
 
 
 --
--- TOC entry 4551 (class 1259 OID 26234)
+-- TOC entry 4555 (class 1259 OID 26234)
 -- Name: idx_medidas_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -6833,7 +7320,7 @@ CREATE INDEX idx_medidas_tenant ON public.medidas USING btree (tenant_id);
 
 
 --
--- TOC entry 4552 (class 1259 OID 25529)
+-- TOC entry 4556 (class 1259 OID 25529)
 -- Name: idx_medidas_tipoproducto; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -6841,7 +7328,7 @@ CREATE INDEX idx_medidas_tipoproducto ON public.medidas USING btree (tipoproduct
 
 
 --
--- TOC entry 4519 (class 1259 OID 25530)
+-- TOC entry 4523 (class 1259 OID 25530)
 -- Name: idx_notificaciones_clienteid; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -6849,7 +7336,7 @@ CREATE INDEX idx_notificaciones_clienteid ON public.notificaciones USING btree (
 
 
 --
--- TOC entry 4520 (class 1259 OID 25531)
+-- TOC entry 4524 (class 1259 OID 25531)
 -- Name: idx_notificaciones_fecha; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -6857,7 +7344,7 @@ CREATE INDEX idx_notificaciones_fecha ON public.notificaciones USING btree (fech
 
 
 --
--- TOC entry 4521 (class 1259 OID 25532)
+-- TOC entry 4525 (class 1259 OID 25532)
 -- Name: idx_notificaciones_leida; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -6865,7 +7352,7 @@ CREATE INDEX idx_notificaciones_leida ON public.notificaciones USING btree (leid
 
 
 --
--- TOC entry 4522 (class 1259 OID 26337)
+-- TOC entry 4526 (class 1259 OID 26337)
 -- Name: idx_notificaciones_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -6873,7 +7360,7 @@ CREATE INDEX idx_notificaciones_tenant ON public.notificaciones USING btree (ten
 
 
 --
--- TOC entry 4523 (class 1259 OID 25533)
+-- TOC entry 4527 (class 1259 OID 25533)
 -- Name: idx_notificaciones_tipo; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -6881,7 +7368,7 @@ CREATE INDEX idx_notificaciones_tipo ON public.notificaciones USING btree (tipo)
 
 
 --
--- TOC entry 4557 (class 1259 OID 25534)
+-- TOC entry 4561 (class 1259 OID 25534)
 -- Name: idx_ordenes_exportacion_pendientes; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -6889,7 +7376,7 @@ CREATE INDEX idx_ordenes_exportacion_pendientes ON public.ordenesdecompra USING 
 
 
 --
--- TOC entry 4558 (class 1259 OID 26282)
+-- TOC entry 4562 (class 1259 OID 26282)
 -- Name: idx_ordenes_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -6897,7 +7384,7 @@ CREATE INDEX idx_ordenes_tenant ON public.ordenesdecompra USING btree (tenant_id
 
 
 --
--- TOC entry 4559 (class 1259 OID 25535)
+-- TOC entry 4563 (class 1259 OID 25535)
 -- Name: idx_ordenesdecompra_origenoc; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -6905,7 +7392,7 @@ CREATE INDEX idx_ordenesdecompra_origenoc ON public.ordenesdecompra USING btree 
 
 
 --
--- TOC entry 4562 (class 1259 OID 25536)
+-- TOC entry 4566 (class 1259 OID 25536)
 -- Name: idx_pagos_clientes_cliente; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -6913,7 +7400,7 @@ CREATE INDEX idx_pagos_clientes_cliente ON public.pagos_clientes USING btree (cl
 
 
 --
--- TOC entry 4563 (class 1259 OID 25537)
+-- TOC entry 4567 (class 1259 OID 25537)
 -- Name: idx_pagos_clientes_credito; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -6921,7 +7408,7 @@ CREATE INDEX idx_pagos_clientes_credito ON public.pagos_clientes USING btree (cr
 
 
 --
--- TOC entry 4564 (class 1259 OID 25538)
+-- TOC entry 4568 (class 1259 OID 25538)
 -- Name: idx_pagos_clientes_estatus; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -6929,7 +7416,7 @@ CREATE INDEX idx_pagos_clientes_estatus ON public.pagos_clientes USING btree (es
 
 
 --
--- TOC entry 4565 (class 1259 OID 25539)
+-- TOC entry 4569 (class 1259 OID 25539)
 -- Name: idx_pagos_clientes_fecha; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -6937,7 +7424,7 @@ CREATE INDEX idx_pagos_clientes_fecha ON public.pagos_clientes USING btree (fech
 
 
 --
--- TOC entry 4566 (class 1259 OID 26303)
+-- TOC entry 4570 (class 1259 OID 26303)
 -- Name: idx_pagos_clientes_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -6945,7 +7432,7 @@ CREATE INDEX idx_pagos_clientes_tenant ON public.pagos_clientes USING btree (ten
 
 
 --
--- TOC entry 4569 (class 1259 OID 26310)
+-- TOC entry 4573 (class 1259 OID 26310)
 -- Name: idx_pagos_cxp_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -6953,7 +7440,7 @@ CREATE INDEX idx_pagos_cxp_tenant ON public.pagos_cxp USING btree (tenant_id);
 
 
 --
--- TOC entry 4570 (class 1259 OID 25540)
+-- TOC entry 4574 (class 1259 OID 25540)
 -- Name: idx_pagos_historial; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -6961,7 +7448,7 @@ CREATE INDEX idx_pagos_historial ON public.pagos_cxp USING btree (cxp_id);
 
 
 --
--- TOC entry 4577 (class 1259 OID 26275)
+-- TOC entry 4581 (class 1259 OID 26275)
 -- Name: idx_pedidos_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -6969,7 +7456,7 @@ CREATE INDEX idx_pedidos_tenant ON public.pedidos USING btree (tenant_id);
 
 
 --
--- TOC entry 4596 (class 1259 OID 25541)
+-- TOC entry 4601 (class 1259 OID 25541)
 -- Name: idx_producto_activo; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -6977,7 +7464,7 @@ CREATE INDEX idx_producto_activo ON public.productos USING btree (activo);
 
 
 --
--- TOC entry 4624 (class 1259 OID 25891)
+-- TOC entry 4630 (class 1259 OID 25891)
 -- Name: idx_producto_color_busqueda; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -6985,7 +7472,7 @@ CREATE INDEX idx_producto_color_busqueda ON public.producto_imagenes_color USING
 
 
 --
--- TOC entry 4588 (class 1259 OID 25542)
+-- TOC entry 4592 (class 1259 OID 25542)
 -- Name: idx_producto_oferta; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -6993,7 +7480,7 @@ CREATE INDEX idx_producto_oferta ON public.producto_variantes USING btree (preci
 
 
 --
--- TOC entry 4584 (class 1259 OID 25543)
+-- TOC entry 4588 (class 1259 OID 25543)
 -- Name: idx_producto_variante_imagenes_varianteid; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7001,7 +7488,7 @@ CREATE INDEX idx_producto_variante_imagenes_varianteid ON public.producto_varian
 
 
 --
--- TOC entry 4585 (class 1259 OID 25544)
+-- TOC entry 4589 (class 1259 OID 25544)
 -- Name: idx_producto_variante_imagenes_varianteid_orden; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7009,7 +7496,7 @@ CREATE INDEX idx_producto_variante_imagenes_varianteid_orden ON public.producto_
 
 
 --
--- TOC entry 4597 (class 1259 OID 25935)
+-- TOC entry 4602 (class 1259 OID 25935)
 -- Name: idx_productos_admin_creator; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7017,7 +7504,15 @@ CREATE INDEX idx_productos_admin_creator ON public.productos USING btree (create
 
 
 --
--- TOC entry 4598 (class 1259 OID 26243)
+-- TOC entry 4603 (class 1259 OID 26464)
+-- Name: idx_productos_sku_maestro; Type: INDEX; Schema: public; Owner: ferram
+--
+
+CREATE INDEX idx_productos_sku_maestro ON public.productos USING btree (sku_maestro);
+
+
+--
+-- TOC entry 4604 (class 1259 OID 26243)
 -- Name: idx_productos_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7025,7 +7520,7 @@ CREATE INDEX idx_productos_tenant ON public.productos USING btree (tenant_id);
 
 
 --
--- TOC entry 4589 (class 1259 OID 25545)
+-- TOC entry 4593 (class 1259 OID 25545)
 -- Name: idx_productos_tipoproducto; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7033,7 +7528,7 @@ CREATE INDEX idx_productos_tipoproducto ON public.producto_variantes USING btree
 
 
 --
--- TOC entry 4605 (class 1259 OID 26200)
+-- TOC entry 4611 (class 1259 OID 26200)
 -- Name: idx_proveedores_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7041,7 +7536,7 @@ CREATE INDEX idx_proveedores_tenant ON public.proveedores USING btree (tenant_id
 
 
 --
--- TOC entry 4461 (class 1259 OID 26225)
+-- TOC entry 4465 (class 1259 OID 26225)
 -- Name: idx_tamanopaquetes_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7049,7 +7544,15 @@ CREATE INDEX idx_tamanopaquetes_tenant ON public.cat_tamanopaquetes USING btree 
 
 
 --
--- TOC entry 4610 (class 1259 OID 26216)
+-- TOC entry 4651 (class 1259 OID 26371)
+-- Name: idx_tenants_dominio; Type: INDEX; Schema: public; Owner: ferram
+--
+
+CREATE INDEX idx_tenants_dominio ON public.tenants USING btree (dominio) WHERE (dominio IS NOT NULL);
+
+
+--
+-- TOC entry 4616 (class 1259 OID 26216)
 -- Name: idx_tipoproducto_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7057,7 +7560,7 @@ CREATE INDEX idx_tipoproducto_tenant ON public.tipoproducto USING btree (tenant_
 
 
 --
--- TOC entry 4590 (class 1259 OID 25546)
+-- TOC entry 4594 (class 1259 OID 25546)
 -- Name: idx_variantes_color_nombre; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7065,7 +7568,15 @@ CREATE INDEX idx_variantes_color_nombre ON public.producto_variantes USING btree
 
 
 --
--- TOC entry 4591 (class 1259 OID 26252)
+-- TOC entry 4595 (class 1259 OID 26465)
+-- Name: idx_variantes_sku; Type: INDEX; Schema: public; Owner: ferram
+--
+
+CREATE INDEX idx_variantes_sku ON public.producto_variantes USING btree (sku);
+
+
+--
+-- TOC entry 4596 (class 1259 OID 26252)
 -- Name: idx_variantes_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7073,7 +7584,15 @@ CREATE INDEX idx_variantes_tenant ON public.producto_variantes USING btree (tena
 
 
 --
--- TOC entry 4754 (class 2620 OID 25963)
+-- TOC entry 4654 (class 1259 OID 26373)
+-- Name: unique_tenant_dominio_production; Type: INDEX; Schema: public; Owner: ferram
+--
+
+CREATE UNIQUE INDEX unique_tenant_dominio_production ON public.tenants USING btree (dominio) WHERE ((dominio IS NOT NULL) AND ((dominio)::text <> 'localhost'::text));
+
+
+--
+-- TOC entry 4760 (class 2620 OID 25963)
 -- Name: inventarios_admin trg_update_inventarios_admin_timestamp; Type: TRIGGER; Schema: public; Owner: ferram
 --
 
@@ -7081,7 +7600,7 @@ CREATE TRIGGER trg_update_inventarios_admin_timestamp BEFORE UPDATE ON public.in
 
 
 --
--- TOC entry 4753 (class 2620 OID 25547)
+-- TOC entry 4759 (class 2620 OID 25547)
 -- Name: notificaciones trigger_limitar_notificaciones; Type: TRIGGER; Schema: public; Owner: ferram
 --
 
@@ -7089,7 +7608,7 @@ CREATE TRIGGER trigger_limitar_notificaciones AFTER INSERT ON public.notificacio
 
 
 --
--- TOC entry 4752 (class 2620 OID 25548)
+-- TOC entry 4758 (class 2620 OID 25548)
 -- Name: cliente_creditos trigger_update_credito_fecha; Type: TRIGGER; Schema: public; Owner: ferram
 --
 
@@ -7097,7 +7616,7 @@ CREATE TRIGGER trigger_update_credito_fecha BEFORE UPDATE ON public.cliente_cred
 
 
 --
--- TOC entry 4755 (class 2620 OID 26130)
+-- TOC entry 4761 (class 2620 OID 26130)
 -- Name: landing_page_config trigger_update_landing_config_timestamp; Type: TRIGGER; Schema: public; Owner: ferram
 --
 
@@ -7105,7 +7624,7 @@ CREATE TRIGGER trigger_update_landing_config_timestamp BEFORE UPDATE ON public.l
 
 
 --
--- TOC entry 4656 (class 2606 OID 26166)
+-- TOC entry 4662 (class 2606 OID 26166)
 -- Name: administradores administradores_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7114,7 +7633,7 @@ ALTER TABLE ONLY public.administradores
 
 
 --
--- TOC entry 4657 (class 2606 OID 26175)
+-- TOC entry 4663 (class 2606 OID 26175)
 -- Name: agentesdeventas agentesdeventas_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7123,7 +7642,7 @@ ALTER TABLE ONLY public.agentesdeventas
 
 
 --
--- TOC entry 4658 (class 2606 OID 25549)
+-- TOC entry 4664 (class 2606 OID 25549)
 -- Name: carritodecompra carritodecompra_clienteid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7132,7 +7651,7 @@ ALTER TABLE ONLY public.carritodecompra
 
 
 --
--- TOC entry 4659 (class 2606 OID 26218)
+-- TOC entry 4665 (class 2606 OID 26218)
 -- Name: cat_tamanopaquetes cat_tamanopaquetes_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7141,7 +7660,7 @@ ALTER TABLE ONLY public.cat_tamanopaquetes
 
 
 --
--- TOC entry 4660 (class 2606 OID 25554)
+-- TOC entry 4666 (class 2606 OID 25554)
 -- Name: categorias categorias_parentcategoriaid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7150,7 +7669,7 @@ ALTER TABLE ONLY public.categorias
 
 
 --
--- TOC entry 4661 (class 2606 OID 26202)
+-- TOC entry 4667 (class 2606 OID 26202)
 -- Name: categorias categorias_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7159,7 +7678,7 @@ ALTER TABLE ONLY public.categorias
 
 
 --
--- TOC entry 4662 (class 2606 OID 26312)
+-- TOC entry 4668 (class 2606 OID 26312)
 -- Name: cliente_creditos cliente_creditos_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7168,7 +7687,7 @@ ALTER TABLE ONLY public.cliente_creditos
 
 
 --
--- TOC entry 4664 (class 2606 OID 25559)
+-- TOC entry 4670 (class 2606 OID 25559)
 -- Name: cliente_direcciones cliente_direcciones_clienteid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7177,7 +7696,7 @@ ALTER TABLE ONLY public.cliente_direcciones
 
 
 --
--- TOC entry 4666 (class 2606 OID 26186)
+-- TOC entry 4672 (class 2606 OID 26186)
 -- Name: clientes clientes_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7186,7 +7705,7 @@ ALTER TABLE ONLY public.clientes
 
 
 --
--- TOC entry 4668 (class 2606 OID 25564)
+-- TOC entry 4674 (class 2606 OID 25564)
 -- Name: comisiones comisiones_agenteid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7195,7 +7714,7 @@ ALTER TABLE ONLY public.comisiones
 
 
 --
--- TOC entry 4669 (class 2606 OID 25569)
+-- TOC entry 4675 (class 2606 OID 25569)
 -- Name: comisiones comisiones_pedidoid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7204,7 +7723,7 @@ ALTER TABLE ONLY public.comisiones
 
 
 --
--- TOC entry 4676 (class 2606 OID 25574)
+-- TOC entry 4682 (class 2606 OID 25574)
 -- Name: cuentas_por_cobrar cuentas_por_cobrar_cliente_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7213,7 +7732,7 @@ ALTER TABLE ONLY public.cuentas_por_cobrar
 
 
 --
--- TOC entry 4677 (class 2606 OID 25579)
+-- TOC entry 4683 (class 2606 OID 25579)
 -- Name: cuentas_por_cobrar cuentas_por_cobrar_pedido_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7222,7 +7741,7 @@ ALTER TABLE ONLY public.cuentas_por_cobrar
 
 
 --
--- TOC entry 4678 (class 2606 OID 26291)
+-- TOC entry 4684 (class 2606 OID 26291)
 -- Name: cuentas_por_cobrar cuentas_por_cobrar_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7231,7 +7750,7 @@ ALTER TABLE ONLY public.cuentas_por_cobrar
 
 
 --
--- TOC entry 4679 (class 2606 OID 25584)
+-- TOC entry 4685 (class 2606 OID 25584)
 -- Name: cuentas_por_pagar cuentas_por_pagar_orden_compra_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7240,7 +7759,7 @@ ALTER TABLE ONLY public.cuentas_por_pagar
 
 
 --
--- TOC entry 4680 (class 2606 OID 25589)
+-- TOC entry 4686 (class 2606 OID 25589)
 -- Name: cuentas_por_pagar cuentas_por_pagar_proveedor_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7249,7 +7768,7 @@ ALTER TABLE ONLY public.cuentas_por_pagar
 
 
 --
--- TOC entry 4681 (class 2606 OID 26284)
+-- TOC entry 4687 (class 2606 OID 26284)
 -- Name: cuentas_por_pagar cuentas_por_pagar_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7258,7 +7777,7 @@ ALTER TABLE ONLY public.cuentas_por_pagar
 
 
 --
--- TOC entry 4745 (class 2606 OID 25914)
+-- TOC entry 4751 (class 2606 OID 25914)
 -- Name: cupones cupones_agente_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7267,7 +7786,7 @@ ALTER TABLE ONLY public.cupones
 
 
 --
--- TOC entry 4746 (class 2606 OID 26254)
+-- TOC entry 4752 (class 2606 OID 26254)
 -- Name: cupones cupones_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7276,7 +7795,7 @@ ALTER TABLE ONLY public.cupones
 
 
 --
--- TOC entry 4682 (class 2606 OID 25594)
+-- TOC entry 4688 (class 2606 OID 25594)
 -- Name: cxp_etiquetas_asignadas cxp_etiquetas_asignadas_cxp_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7285,7 +7804,7 @@ ALTER TABLE ONLY public.cxp_etiquetas_asignadas
 
 
 --
--- TOC entry 4683 (class 2606 OID 25599)
+-- TOC entry 4689 (class 2606 OID 25599)
 -- Name: cxp_etiquetas_asignadas cxp_etiquetas_asignadas_etiqueta_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7294,7 +7813,7 @@ ALTER TABLE ONLY public.cxp_etiquetas_asignadas
 
 
 --
--- TOC entry 4684 (class 2606 OID 25604)
+-- TOC entry 4690 (class 2606 OID 25604)
 -- Name: detallesdelpedido detallesdelpedido_pedidoid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7303,7 +7822,7 @@ ALTER TABLE ONLY public.detallesdelpedido
 
 
 --
--- TOC entry 4687 (class 2606 OID 25609)
+-- TOC entry 4693 (class 2606 OID 25609)
 -- Name: detallesordencompra detallesordencompra_ordencompraid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7312,7 +7831,7 @@ ALTER TABLE ONLY public.detallesordencompra
 
 
 --
--- TOC entry 4673 (class 2606 OID 25614)
+-- TOC entry 4679 (class 2606 OID 25614)
 -- Name: credito_movimientos fk_admin_registro; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7321,7 +7840,7 @@ ALTER TABLE ONLY public.credito_movimientos
 
 
 --
--- TOC entry 4674 (class 2606 OID 25619)
+-- TOC entry 4680 (class 2606 OID 25619)
 -- Name: credito_movimientos fk_agente_registro; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7330,7 +7849,7 @@ ALTER TABLE ONLY public.credito_movimientos
 
 
 --
--- TOC entry 4670 (class 2606 OID 25624)
+-- TOC entry 4676 (class 2606 OID 25624)
 -- Name: communicationlogs fk_cliente; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7339,7 +7858,7 @@ ALTER TABLE ONLY public.communicationlogs
 
 
 --
--- TOC entry 4667 (class 2606 OID 25629)
+-- TOC entry 4673 (class 2606 OID 25629)
 -- Name: clientes fk_cliente_agente; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7348,7 +7867,7 @@ ALTER TABLE ONLY public.clientes
 
 
 --
--- TOC entry 4663 (class 2606 OID 25634)
+-- TOC entry 4669 (class 2606 OID 25634)
 -- Name: cliente_creditos fk_cliente_credito; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7357,7 +7876,7 @@ ALTER TABLE ONLY public.cliente_creditos
 
 
 --
--- TOC entry 4665 (class 2606 OID 25639)
+-- TOC entry 4671 (class 2606 OID 25639)
 -- Name: cliente_direcciones fk_cliente_estado; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7366,7 +7885,7 @@ ALTER TABLE ONLY public.cliente_direcciones
 
 
 --
--- TOC entry 4685 (class 2606 OID 25644)
+-- TOC entry 4691 (class 2606 OID 25644)
 -- Name: detallesdelpedido fk_detalles_tamano; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7375,7 +7894,7 @@ ALTER TABLE ONLY public.detallesdelpedido
 
 
 --
--- TOC entry 4686 (class 2606 OID 25649)
+-- TOC entry 4692 (class 2606 OID 25649)
 -- Name: detallesdelpedido fk_detallesdelpedido_varianteid; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7384,7 +7903,7 @@ ALTER TABLE ONLY public.detallesdelpedido
 
 
 --
--- TOC entry 4688 (class 2606 OID 25654)
+-- TOC entry 4694 (class 2606 OID 25654)
 -- Name: detallesordencompra fk_detallesordencompra_varianteid; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7393,7 +7912,7 @@ ALTER TABLE ONLY public.detallesordencompra
 
 
 --
--- TOC entry 4722 (class 2606 OID 25659)
+-- TOC entry 4728 (class 2606 OID 25659)
 -- Name: producto_imagenes fk_imagen_producto_maestro; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7402,7 +7921,7 @@ ALTER TABLE ONLY public.producto_imagenes
 
 
 --
--- TOC entry 4744 (class 2606 OID 25886)
+-- TOC entry 4750 (class 2606 OID 25886)
 -- Name: producto_imagenes_color fk_imagencolor_producto; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7411,7 +7930,7 @@ ALTER TABLE ONLY public.producto_imagenes_color
 
 
 --
--- TOC entry 4747 (class 2606 OID 25949)
+-- TOC entry 4753 (class 2606 OID 25949)
 -- Name: inventarios_admin fk_inventarios_admin_admin; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7420,7 +7939,7 @@ ALTER TABLE ONLY public.inventarios_admin
 
 
 --
--- TOC entry 4748 (class 2606 OID 25966)
+-- TOC entry 4754 (class 2606 OID 25966)
 -- Name: inventarios_admin fk_inventarios_admin_registrado_por; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7429,7 +7948,7 @@ ALTER TABLE ONLY public.inventarios_admin
 
 
 --
--- TOC entry 4749 (class 2606 OID 25954)
+-- TOC entry 4755 (class 2606 OID 25954)
 -- Name: inventarios_admin fk_inventarios_admin_variante; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7438,7 +7957,7 @@ ALTER TABLE ONLY public.inventarios_admin
 
 
 --
--- TOC entry 4693 (class 2606 OID 25664)
+-- TOC entry 4699 (class 2606 OID 25664)
 -- Name: itemsdelcarrito fk_items_tamano; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7447,7 +7966,7 @@ ALTER TABLE ONLY public.itemsdelcarrito
 
 
 --
--- TOC entry 4694 (class 2606 OID 25669)
+-- TOC entry 4700 (class 2606 OID 25669)
 -- Name: itemsdelcarrito fk_itemsdelcarrito_varianteid; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7456,7 +7975,7 @@ ALTER TABLE ONLY public.itemsdelcarrito
 
 
 --
--- TOC entry 4696 (class 2606 OID 25674)
+-- TOC entry 4702 (class 2606 OID 25674)
 -- Name: log_eventosusuario fk_log_cliente; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7465,7 +7984,7 @@ ALTER TABLE ONLY public.log_eventosusuario
 
 
 --
--- TOC entry 4701 (class 2606 OID 25679)
+-- TOC entry 4707 (class 2606 OID 25679)
 -- Name: log_movimientos fk_log_usuario; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7474,7 +7993,7 @@ ALTER TABLE ONLY public.log_movimientos
 
 
 --
--- TOC entry 4697 (class 2606 OID 25684)
+-- TOC entry 4703 (class 2606 OID 25684)
 -- Name: log_eventosusuario fk_log_variante; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7483,7 +8002,7 @@ ALTER TABLE ONLY public.log_eventosusuario
 
 
 --
--- TOC entry 4698 (class 2606 OID 25689)
+-- TOC entry 4704 (class 2606 OID 25689)
 -- Name: log_inventario fk_loginventario_varianteid; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7492,7 +8011,7 @@ ALTER TABLE ONLY public.log_inventario
 
 
 --
--- TOC entry 4675 (class 2606 OID 25694)
+-- TOC entry 4681 (class 2606 OID 25694)
 -- Name: credito_movimientos fk_movimiento_credito; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7501,7 +8020,7 @@ ALTER TABLE ONLY public.credito_movimientos
 
 
 --
--- TOC entry 4708 (class 2606 OID 25699)
+-- TOC entry 4714 (class 2606 OID 25699)
 -- Name: pagos_clientes fk_pagos_clientes_cliente; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7510,7 +8029,7 @@ ALTER TABLE ONLY public.pagos_clientes
 
 
 --
--- TOC entry 4709 (class 2606 OID 25704)
+-- TOC entry 4715 (class 2606 OID 25704)
 -- Name: pagos_clientes fk_pagos_clientes_credito; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7519,7 +8038,7 @@ ALTER TABLE ONLY public.pagos_clientes
 
 
 --
--- TOC entry 4710 (class 2606 OID 25709)
+-- TOC entry 4716 (class 2606 OID 25709)
 -- Name: pagos_clientes fk_pagos_clientes_validador; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7528,7 +8047,7 @@ ALTER TABLE ONLY public.pagos_clientes
 
 
 --
--- TOC entry 4712 (class 2606 OID 25714)
+-- TOC entry 4718 (class 2606 OID 25714)
 -- Name: pagos_cxp fk_pagos_cxp; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7537,7 +8056,7 @@ ALTER TABLE ONLY public.pagos_cxp
 
 
 --
--- TOC entry 4713 (class 2606 OID 25719)
+-- TOC entry 4719 (class 2606 OID 25719)
 -- Name: pagos_cxp fk_pagos_usuario; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7546,7 +8065,7 @@ ALTER TABLE ONLY public.pagos_cxp
 
 
 --
--- TOC entry 4715 (class 2606 OID 25724)
+-- TOC entry 4721 (class 2606 OID 25724)
 -- Name: passwordresettokens fk_passwordreset_agente; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7555,7 +8074,7 @@ ALTER TABLE ONLY public.passwordresettokens
 
 
 --
--- TOC entry 4716 (class 2606 OID 25729)
+-- TOC entry 4722 (class 2606 OID 25729)
 -- Name: passwordresettokens fk_passwordreset_cliente; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7564,7 +8083,7 @@ ALTER TABLE ONLY public.passwordresettokens
 
 
 --
--- TOC entry 4671 (class 2606 OID 25734)
+-- TOC entry 4677 (class 2606 OID 25734)
 -- Name: communicationlogs fk_pedido; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7573,7 +8092,7 @@ ALTER TABLE ONLY public.communicationlogs
 
 
 --
--- TOC entry 4730 (class 2606 OID 25930)
+-- TOC entry 4736 (class 2606 OID 25930)
 -- Name: productos fk_producto_admin_creator; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7582,7 +8101,7 @@ ALTER TABLE ONLY public.productos
 
 
 --
--- TOC entry 4726 (class 2606 OID 25739)
+-- TOC entry 4732 (class 2606 OID 25739)
 -- Name: producto_variantes fk_producto_maestro; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7591,7 +8110,7 @@ ALTER TABLE ONLY public.producto_variantes
 
 
 --
--- TOC entry 4731 (class 2606 OID 25744)
+-- TOC entry 4737 (class 2606 OID 25744)
 -- Name: productos fk_producto_regla_empaque; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7600,7 +8119,7 @@ ALTER TABLE ONLY public.productos
 
 
 --
--- TOC entry 4672 (class 2606 OID 25749)
+-- TOC entry 4678 (class 2606 OID 25749)
 -- Name: communicationlogs fk_proveedor; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7609,7 +8128,7 @@ ALTER TABLE ONLY public.communicationlogs
 
 
 --
--- TOC entry 4732 (class 2606 OID 25754)
+-- TOC entry 4738 (class 2606 OID 25754)
 -- Name: productos fk_proveedor_default; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7618,7 +8137,7 @@ ALTER TABLE ONLY public.productos
 
 
 --
--- TOC entry 4735 (class 2606 OID 25759)
+-- TOC entry 4741 (class 2606 OID 25759)
 -- Name: proveedor_reglas_empaque fk_regla_proveedor; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7627,7 +8146,7 @@ ALTER TABLE ONLY public.proveedor_reglas_empaque
 
 
 --
--- TOC entry 4736 (class 2606 OID 25764)
+-- TOC entry 4742 (class 2606 OID 25764)
 -- Name: proveedor_reglas_empaque fk_regla_tipo; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7636,7 +8155,7 @@ ALTER TABLE ONLY public.proveedor_reglas_empaque
 
 
 --
--- TOC entry 4738 (class 2606 OID 25769)
+-- TOC entry 4744 (class 2606 OID 25769)
 -- Name: solicitudes_credito fk_solicitud_cliente; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7645,7 +8164,7 @@ ALTER TABLE ONLY public.solicitudes_credito
 
 
 --
--- TOC entry 4723 (class 2606 OID 25774)
+-- TOC entry 4729 (class 2606 OID 25774)
 -- Name: producto_tamanosdisponibles fk_tamanos_producto; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7654,7 +8173,7 @@ ALTER TABLE ONLY public.producto_tamanosdisponibles
 
 
 --
--- TOC entry 4724 (class 2606 OID 25779)
+-- TOC entry 4730 (class 2606 OID 25779)
 -- Name: producto_tamanosdisponibles fk_tamanos_tamano; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7663,7 +8182,7 @@ ALTER TABLE ONLY public.producto_tamanosdisponibles
 
 
 --
--- TOC entry 4750 (class 2606 OID 26263)
+-- TOC entry 4756 (class 2606 OID 26263)
 -- Name: inventarios_admin inventarios_admin_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7672,7 +8191,7 @@ ALTER TABLE ONLY public.inventarios_admin
 
 
 --
--- TOC entry 4695 (class 2606 OID 25784)
+-- TOC entry 4701 (class 2606 OID 25784)
 -- Name: itemsdelcarrito itemsdelcarrito_carritoid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7681,7 +8200,7 @@ ALTER TABLE ONLY public.itemsdelcarrito
 
 
 --
--- TOC entry 4751 (class 2606 OID 26324)
+-- TOC entry 4757 (class 2606 OID 26324)
 -- Name: landing_page_config landing_page_config_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7690,7 +8209,7 @@ ALTER TABLE ONLY public.landing_page_config
 
 
 --
--- TOC entry 4699 (class 2606 OID 25789)
+-- TOC entry 4705 (class 2606 OID 25789)
 -- Name: log_inventario log_inventario_cxp_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7699,7 +8218,7 @@ ALTER TABLE ONLY public.log_inventario
 
 
 --
--- TOC entry 4700 (class 2606 OID 26345)
+-- TOC entry 4706 (class 2606 OID 26345)
 -- Name: log_inventario log_inventario_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7708,7 +8227,7 @@ ALTER TABLE ONLY public.log_inventario
 
 
 --
--- TOC entry 4702 (class 2606 OID 26339)
+-- TOC entry 4708 (class 2606 OID 26339)
 -- Name: log_movimientos log_movimientos_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7717,7 +8236,7 @@ ALTER TABLE ONLY public.log_movimientos
 
 
 --
--- TOC entry 4703 (class 2606 OID 26227)
+-- TOC entry 4709 (class 2606 OID 26227)
 -- Name: medidas medidas_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7726,7 +8245,7 @@ ALTER TABLE ONLY public.medidas
 
 
 --
--- TOC entry 4704 (class 2606 OID 25794)
+-- TOC entry 4710 (class 2606 OID 25794)
 -- Name: medidas medidas_tipoproductoid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7735,7 +8254,7 @@ ALTER TABLE ONLY public.medidas
 
 
 --
--- TOC entry 4689 (class 2606 OID 25799)
+-- TOC entry 4695 (class 2606 OID 25799)
 -- Name: notificaciones notificaciones_administrador_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7744,7 +8263,7 @@ ALTER TABLE ONLY public.notificaciones
 
 
 --
--- TOC entry 4690 (class 2606 OID 25804)
+-- TOC entry 4696 (class 2606 OID 25804)
 -- Name: notificaciones notificaciones_agente_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7753,7 +8272,7 @@ ALTER TABLE ONLY public.notificaciones
 
 
 --
--- TOC entry 4691 (class 2606 OID 25809)
+-- TOC entry 4697 (class 2606 OID 25809)
 -- Name: notificaciones notificaciones_clienteid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7762,7 +8281,7 @@ ALTER TABLE ONLY public.notificaciones
 
 
 --
--- TOC entry 4692 (class 2606 OID 26332)
+-- TOC entry 4698 (class 2606 OID 26332)
 -- Name: notificaciones notificaciones_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7771,7 +8290,7 @@ ALTER TABLE ONLY public.notificaciones
 
 
 --
--- TOC entry 4705 (class 2606 OID 25814)
+-- TOC entry 4711 (class 2606 OID 25814)
 -- Name: ordenesdecompra ordenesdecompra_proveedorid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7780,7 +8299,7 @@ ALTER TABLE ONLY public.ordenesdecompra
 
 
 --
--- TOC entry 4706 (class 2606 OID 26277)
+-- TOC entry 4712 (class 2606 OID 26277)
 -- Name: ordenesdecompra ordenesdecompra_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7789,7 +8308,7 @@ ALTER TABLE ONLY public.ordenesdecompra
 
 
 --
--- TOC entry 4707 (class 2606 OID 25819)
+-- TOC entry 4713 (class 2606 OID 25819)
 -- Name: ordenesdecompra ordenesdecompra_usuario_creador_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7798,7 +8317,7 @@ ALTER TABLE ONLY public.ordenesdecompra
 
 
 --
--- TOC entry 4711 (class 2606 OID 26298)
+-- TOC entry 4717 (class 2606 OID 26298)
 -- Name: pagos_clientes pagos_clientes_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7807,7 +8326,7 @@ ALTER TABLE ONLY public.pagos_clientes
 
 
 --
--- TOC entry 4714 (class 2606 OID 26305)
+-- TOC entry 4720 (class 2606 OID 26305)
 -- Name: pagos_cxp pagos_cxp_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7816,7 +8335,7 @@ ALTER TABLE ONLY public.pagos_cxp
 
 
 --
--- TOC entry 4717 (class 2606 OID 25824)
+-- TOC entry 4723 (class 2606 OID 25824)
 -- Name: pedidos pedidos_agenteid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7825,7 +8344,7 @@ ALTER TABLE ONLY public.pedidos
 
 
 --
--- TOC entry 4718 (class 2606 OID 25829)
+-- TOC entry 4724 (class 2606 OID 25829)
 -- Name: pedidos pedidos_clienteid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7834,7 +8353,7 @@ ALTER TABLE ONLY public.pedidos
 
 
 --
--- TOC entry 4719 (class 2606 OID 25908)
+-- TOC entry 4725 (class 2606 OID 25908)
 -- Name: pedidos pedidos_cupon_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7843,7 +8362,7 @@ ALTER TABLE ONLY public.pedidos
 
 
 --
--- TOC entry 4720 (class 2606 OID 25834)
+-- TOC entry 4726 (class 2606 OID 25834)
 -- Name: pedidos pedidos_direccionenvioid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7852,7 +8371,7 @@ ALTER TABLE ONLY public.pedidos
 
 
 --
--- TOC entry 4721 (class 2606 OID 26270)
+-- TOC entry 4727 (class 2606 OID 26270)
 -- Name: pedidos pedidos_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7861,7 +8380,7 @@ ALTER TABLE ONLY public.pedidos
 
 
 --
--- TOC entry 4725 (class 2606 OID 25839)
+-- TOC entry 4731 (class 2606 OID 25839)
 -- Name: producto_variante_imagenes producto_variante_imagenes_varianteid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7870,7 +8389,7 @@ ALTER TABLE ONLY public.producto_variante_imagenes
 
 
 --
--- TOC entry 4727 (class 2606 OID 26245)
+-- TOC entry 4733 (class 2606 OID 26245)
 -- Name: producto_variantes producto_variantes_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7879,7 +8398,7 @@ ALTER TABLE ONLY public.producto_variantes
 
 
 --
--- TOC entry 4733 (class 2606 OID 25844)
+-- TOC entry 4739 (class 2606 OID 25844)
 -- Name: productos productos_categoriaid_fkey1; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7888,7 +8407,7 @@ ALTER TABLE ONLY public.productos
 
 
 --
--- TOC entry 4728 (class 2606 OID 25849)
+-- TOC entry 4734 (class 2606 OID 25849)
 -- Name: producto_variantes productos_medidaid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7897,7 +8416,7 @@ ALTER TABLE ONLY public.producto_variantes
 
 
 --
--- TOC entry 4734 (class 2606 OID 26236)
+-- TOC entry 4740 (class 2606 OID 26236)
 -- Name: productos productos_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7906,7 +8425,7 @@ ALTER TABLE ONLY public.productos
 
 
 --
--- TOC entry 4729 (class 2606 OID 25854)
+-- TOC entry 4735 (class 2606 OID 25854)
 -- Name: producto_variantes productos_tipoproductoid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7915,7 +8434,7 @@ ALTER TABLE ONLY public.producto_variantes
 
 
 --
--- TOC entry 4737 (class 2606 OID 26195)
+-- TOC entry 4743 (class 2606 OID 26195)
 -- Name: proveedores proveedores_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7924,7 +8443,7 @@ ALTER TABLE ONLY public.proveedores
 
 
 --
--- TOC entry 4739 (class 2606 OID 26318)
+-- TOC entry 4745 (class 2606 OID 26318)
 -- Name: solicitudes_credito solicitudes_credito_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7933,7 +8452,7 @@ ALTER TABLE ONLY public.solicitudes_credito
 
 
 --
--- TOC entry 4740 (class 2606 OID 26209)
+-- TOC entry 4746 (class 2606 OID 26209)
 -- Name: tipoproducto tipoproducto_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7942,7 +8461,7 @@ ALTER TABLE ONLY public.tipoproducto
 
 
 --
--- TOC entry 4741 (class 2606 OID 25859)
+-- TOC entry 4747 (class 2606 OID 25859)
 -- Name: toma_inventario_conteos toma_inventario_conteos_sesionid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7951,7 +8470,7 @@ ALTER TABLE ONLY public.toma_inventario_conteos
 
 
 --
--- TOC entry 4742 (class 2606 OID 25864)
+-- TOC entry 4748 (class 2606 OID 25864)
 -- Name: toma_inventario_conteos toma_inventario_conteos_varianteid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7960,7 +8479,7 @@ ALTER TABLE ONLY public.toma_inventario_conteos
 
 
 --
--- TOC entry 4743 (class 2606 OID 25869)
+-- TOC entry 4749 (class 2606 OID 25869)
 -- Name: toma_inventario_sesiones toma_inventario_sesiones_usuario_creador_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7969,7 +8488,7 @@ ALTER TABLE ONLY public.toma_inventario_sesiones
 
 
 --
--- TOC entry 5005 (class 0 OID 0)
+-- TOC entry 5011 (class 0 OID 0)
 -- Dependencies: 9
 -- Name: SCHEMA cron; Type: ACL; Schema: -; Owner: azuresu
 --
@@ -7978,7 +8497,7 @@ GRANT USAGE ON SCHEMA cron TO azure_pg_admin WITH GRANT OPTION;
 
 
 --
--- TOC entry 5008 (class 0 OID 0)
+-- TOC entry 5014 (class 0 OID 0)
 -- Dependencies: 358
 -- Name: FUNCTION alter_job(job_id bigint, schedule text, command text, database text, username text, active boolean); Type: ACL; Schema: cron; Owner: azuresu
 --
@@ -7987,7 +8506,7 @@ GRANT ALL ON FUNCTION cron.alter_job(job_id bigint, schedule text, command text,
 
 
 --
--- TOC entry 5009 (class 0 OID 0)
+-- TOC entry 5015 (class 0 OID 0)
 -- Dependencies: 357
 -- Name: FUNCTION job_cache_invalidate(); Type: ACL; Schema: cron; Owner: azuresu
 --
@@ -7996,7 +8515,7 @@ GRANT ALL ON FUNCTION cron.job_cache_invalidate() TO azure_pg_admin WITH GRANT O
 
 
 --
--- TOC entry 5010 (class 0 OID 0)
+-- TOC entry 5016 (class 0 OID 0)
 -- Dependencies: 355
 -- Name: FUNCTION schedule(schedule text, command text); Type: ACL; Schema: cron; Owner: azuresu
 --
@@ -8005,7 +8524,7 @@ GRANT ALL ON FUNCTION cron.schedule(schedule text, command text) TO azure_pg_adm
 
 
 --
--- TOC entry 5011 (class 0 OID 0)
+-- TOC entry 5017 (class 0 OID 0)
 -- Dependencies: 329
 -- Name: FUNCTION schedule(job_name text, schedule text, command text); Type: ACL; Schema: cron; Owner: azuresu
 --
@@ -8014,7 +8533,7 @@ GRANT ALL ON FUNCTION cron.schedule(job_name text, schedule text, command text) 
 
 
 --
--- TOC entry 5012 (class 0 OID 0)
+-- TOC entry 5018 (class 0 OID 0)
 -- Dependencies: 359
 -- Name: FUNCTION schedule_in_database(job_name text, schedule text, command text, database text, username text, active boolean); Type: ACL; Schema: cron; Owner: azuresu
 --
@@ -8023,7 +8542,7 @@ GRANT ALL ON FUNCTION cron.schedule_in_database(job_name text, schedule text, co
 
 
 --
--- TOC entry 5013 (class 0 OID 0)
+-- TOC entry 5019 (class 0 OID 0)
 -- Dependencies: 356
 -- Name: FUNCTION unschedule(job_id bigint); Type: ACL; Schema: cron; Owner: azuresu
 --
@@ -8032,7 +8551,7 @@ GRANT ALL ON FUNCTION cron.unschedule(job_id bigint) TO azure_pg_admin WITH GRAN
 
 
 --
--- TOC entry 5014 (class 0 OID 0)
+-- TOC entry 5020 (class 0 OID 0)
 -- Dependencies: 360
 -- Name: FUNCTION unschedule(job_name text); Type: ACL; Schema: cron; Owner: azuresu
 --
@@ -8041,7 +8560,7 @@ GRANT ALL ON FUNCTION cron.unschedule(job_name text) TO azure_pg_admin WITH GRAN
 
 
 --
--- TOC entry 5015 (class 0 OID 0)
+-- TOC entry 5021 (class 0 OID 0)
 -- Dependencies: 330
 -- Name: FUNCTION pg_replication_origin_advance(text, pg_lsn); Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -8050,7 +8569,7 @@ GRANT ALL ON FUNCTION pg_catalog.pg_replication_origin_advance(text, pg_lsn) TO 
 
 
 --
--- TOC entry 5016 (class 0 OID 0)
+-- TOC entry 5022 (class 0 OID 0)
 -- Dependencies: 331
 -- Name: FUNCTION pg_replication_origin_create(text); Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -8059,7 +8578,7 @@ GRANT ALL ON FUNCTION pg_catalog.pg_replication_origin_create(text) TO azure_pg_
 
 
 --
--- TOC entry 5017 (class 0 OID 0)
+-- TOC entry 5023 (class 0 OID 0)
 -- Dependencies: 332
 -- Name: FUNCTION pg_replication_origin_drop(text); Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -8068,7 +8587,7 @@ GRANT ALL ON FUNCTION pg_catalog.pg_replication_origin_drop(text) TO azure_pg_ad
 
 
 --
--- TOC entry 5018 (class 0 OID 0)
+-- TOC entry 5024 (class 0 OID 0)
 -- Dependencies: 323
 -- Name: FUNCTION pg_replication_origin_oid(text); Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -8077,7 +8596,7 @@ GRANT ALL ON FUNCTION pg_catalog.pg_replication_origin_oid(text) TO azure_pg_adm
 
 
 --
--- TOC entry 5019 (class 0 OID 0)
+-- TOC entry 5025 (class 0 OID 0)
 -- Dependencies: 324
 -- Name: FUNCTION pg_replication_origin_progress(text, boolean); Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -8086,7 +8605,7 @@ GRANT ALL ON FUNCTION pg_catalog.pg_replication_origin_progress(text, boolean) T
 
 
 --
--- TOC entry 5020 (class 0 OID 0)
+-- TOC entry 5026 (class 0 OID 0)
 -- Dependencies: 333
 -- Name: FUNCTION pg_replication_origin_session_is_setup(); Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -8095,7 +8614,7 @@ GRANT ALL ON FUNCTION pg_catalog.pg_replication_origin_session_is_setup() TO azu
 
 
 --
--- TOC entry 5021 (class 0 OID 0)
+-- TOC entry 5027 (class 0 OID 0)
 -- Dependencies: 334
 -- Name: FUNCTION pg_replication_origin_session_progress(boolean); Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -8104,7 +8623,7 @@ GRANT ALL ON FUNCTION pg_catalog.pg_replication_origin_session_progress(boolean)
 
 
 --
--- TOC entry 5022 (class 0 OID 0)
+-- TOC entry 5028 (class 0 OID 0)
 -- Dependencies: 335
 -- Name: FUNCTION pg_replication_origin_session_reset(); Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -8113,7 +8632,7 @@ GRANT ALL ON FUNCTION pg_catalog.pg_replication_origin_session_reset() TO azure_
 
 
 --
--- TOC entry 5023 (class 0 OID 0)
+-- TOC entry 5029 (class 0 OID 0)
 -- Dependencies: 336
 -- Name: FUNCTION pg_replication_origin_session_setup(text); Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -8122,7 +8641,7 @@ GRANT ALL ON FUNCTION pg_catalog.pg_replication_origin_session_setup(text) TO az
 
 
 --
--- TOC entry 5024 (class 0 OID 0)
+-- TOC entry 5030 (class 0 OID 0)
 -- Dependencies: 339
 -- Name: FUNCTION pg_replication_origin_xact_reset(); Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -8131,7 +8650,7 @@ GRANT ALL ON FUNCTION pg_catalog.pg_replication_origin_xact_reset() TO azure_pg_
 
 
 --
--- TOC entry 5025 (class 0 OID 0)
+-- TOC entry 5031 (class 0 OID 0)
 -- Dependencies: 337
 -- Name: FUNCTION pg_replication_origin_xact_setup(pg_lsn, timestamp with time zone); Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -8140,7 +8659,7 @@ GRANT ALL ON FUNCTION pg_catalog.pg_replication_origin_xact_setup(pg_lsn, timest
 
 
 --
--- TOC entry 5026 (class 0 OID 0)
+-- TOC entry 5032 (class 0 OID 0)
 -- Dependencies: 338
 -- Name: FUNCTION pg_show_replication_origin_status(OUT local_id oid, OUT external_id text, OUT remote_lsn pg_lsn, OUT local_lsn pg_lsn); Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -8149,7 +8668,7 @@ GRANT ALL ON FUNCTION pg_catalog.pg_show_replication_origin_status(OUT local_id 
 
 
 --
--- TOC entry 5027 (class 0 OID 0)
+-- TOC entry 5033 (class 0 OID 0)
 -- Dependencies: 326
 -- Name: FUNCTION pg_stat_reset(); Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -8158,7 +8677,7 @@ GRANT ALL ON FUNCTION pg_catalog.pg_stat_reset() TO azure_pg_admin;
 
 
 --
--- TOC entry 5028 (class 0 OID 0)
+-- TOC entry 5034 (class 0 OID 0)
 -- Dependencies: 325
 -- Name: FUNCTION pg_stat_reset_shared(target text); Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -8167,7 +8686,7 @@ GRANT ALL ON FUNCTION pg_catalog.pg_stat_reset_shared(target text) TO azure_pg_a
 
 
 --
--- TOC entry 5029 (class 0 OID 0)
+-- TOC entry 5035 (class 0 OID 0)
 -- Dependencies: 328
 -- Name: FUNCTION pg_stat_reset_single_function_counters(oid); Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -8176,7 +8695,7 @@ GRANT ALL ON FUNCTION pg_catalog.pg_stat_reset_single_function_counters(oid) TO 
 
 
 --
--- TOC entry 5030 (class 0 OID 0)
+-- TOC entry 5036 (class 0 OID 0)
 -- Dependencies: 327
 -- Name: FUNCTION pg_stat_reset_single_table_counters(oid); Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -8185,7 +8704,7 @@ GRANT ALL ON FUNCTION pg_catalog.pg_stat_reset_single_table_counters(oid) TO azu
 
 
 --
--- TOC entry 5033 (class 0 OID 0)
+-- TOC entry 5039 (class 0 OID 0)
 -- Dependencies: 102
 -- Name: COLUMN pg_config.name; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -8194,7 +8713,7 @@ GRANT SELECT(name) ON TABLE pg_catalog.pg_config TO azure_pg_admin;
 
 
 --
--- TOC entry 5034 (class 0 OID 0)
+-- TOC entry 5040 (class 0 OID 0)
 -- Dependencies: 102
 -- Name: COLUMN pg_config.setting; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -8203,7 +8722,7 @@ GRANT SELECT(setting) ON TABLE pg_catalog.pg_config TO azure_pg_admin;
 
 
 --
--- TOC entry 5035 (class 0 OID 0)
+-- TOC entry 5041 (class 0 OID 0)
 -- Dependencies: 98
 -- Name: COLUMN pg_hba_file_rules.line_number; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -8212,7 +8731,7 @@ GRANT SELECT(line_number) ON TABLE pg_catalog.pg_hba_file_rules TO azure_pg_admi
 
 
 --
--- TOC entry 5036 (class 0 OID 0)
+-- TOC entry 5042 (class 0 OID 0)
 -- Dependencies: 98
 -- Name: COLUMN pg_hba_file_rules.type; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -8221,7 +8740,7 @@ GRANT SELECT(type) ON TABLE pg_catalog.pg_hba_file_rules TO azure_pg_admin;
 
 
 --
--- TOC entry 5037 (class 0 OID 0)
+-- TOC entry 5043 (class 0 OID 0)
 -- Dependencies: 98
 -- Name: COLUMN pg_hba_file_rules.database; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -8230,7 +8749,7 @@ GRANT SELECT(database) ON TABLE pg_catalog.pg_hba_file_rules TO azure_pg_admin;
 
 
 --
--- TOC entry 5038 (class 0 OID 0)
+-- TOC entry 5044 (class 0 OID 0)
 -- Dependencies: 98
 -- Name: COLUMN pg_hba_file_rules.user_name; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -8239,7 +8758,7 @@ GRANT SELECT(user_name) ON TABLE pg_catalog.pg_hba_file_rules TO azure_pg_admin;
 
 
 --
--- TOC entry 5039 (class 0 OID 0)
+-- TOC entry 5045 (class 0 OID 0)
 -- Dependencies: 98
 -- Name: COLUMN pg_hba_file_rules.address; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -8248,7 +8767,7 @@ GRANT SELECT(address) ON TABLE pg_catalog.pg_hba_file_rules TO azure_pg_admin;
 
 
 --
--- TOC entry 5040 (class 0 OID 0)
+-- TOC entry 5046 (class 0 OID 0)
 -- Dependencies: 98
 -- Name: COLUMN pg_hba_file_rules.netmask; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -8257,7 +8776,7 @@ GRANT SELECT(netmask) ON TABLE pg_catalog.pg_hba_file_rules TO azure_pg_admin;
 
 
 --
--- TOC entry 5041 (class 0 OID 0)
+-- TOC entry 5047 (class 0 OID 0)
 -- Dependencies: 98
 -- Name: COLUMN pg_hba_file_rules.auth_method; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -8266,7 +8785,7 @@ GRANT SELECT(auth_method) ON TABLE pg_catalog.pg_hba_file_rules TO azure_pg_admi
 
 
 --
--- TOC entry 5042 (class 0 OID 0)
+-- TOC entry 5048 (class 0 OID 0)
 -- Dependencies: 98
 -- Name: COLUMN pg_hba_file_rules.options; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -8275,7 +8794,7 @@ GRANT SELECT(options) ON TABLE pg_catalog.pg_hba_file_rules TO azure_pg_admin;
 
 
 --
--- TOC entry 5043 (class 0 OID 0)
+-- TOC entry 5049 (class 0 OID 0)
 -- Dependencies: 98
 -- Name: COLUMN pg_hba_file_rules.error; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -8284,7 +8803,7 @@ GRANT SELECT(error) ON TABLE pg_catalog.pg_hba_file_rules TO azure_pg_admin;
 
 
 --
--- TOC entry 5044 (class 0 OID 0)
+-- TOC entry 5050 (class 0 OID 0)
 -- Dependencies: 149
 -- Name: COLUMN pg_replication_origin_status.local_id; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -8293,7 +8812,7 @@ GRANT SELECT(local_id) ON TABLE pg_catalog.pg_replication_origin_status TO azure
 
 
 --
--- TOC entry 5045 (class 0 OID 0)
+-- TOC entry 5051 (class 0 OID 0)
 -- Dependencies: 149
 -- Name: COLUMN pg_replication_origin_status.external_id; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -8302,7 +8821,7 @@ GRANT SELECT(external_id) ON TABLE pg_catalog.pg_replication_origin_status TO az
 
 
 --
--- TOC entry 5046 (class 0 OID 0)
+-- TOC entry 5052 (class 0 OID 0)
 -- Dependencies: 149
 -- Name: COLUMN pg_replication_origin_status.remote_lsn; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -8311,7 +8830,7 @@ GRANT SELECT(remote_lsn) ON TABLE pg_catalog.pg_replication_origin_status TO azu
 
 
 --
--- TOC entry 5047 (class 0 OID 0)
+-- TOC entry 5053 (class 0 OID 0)
 -- Dependencies: 149
 -- Name: COLUMN pg_replication_origin_status.local_lsn; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -8320,7 +8839,7 @@ GRANT SELECT(local_lsn) ON TABLE pg_catalog.pg_replication_origin_status TO azur
 
 
 --
--- TOC entry 5048 (class 0 OID 0)
+-- TOC entry 5054 (class 0 OID 0)
 -- Dependencies: 103
 -- Name: COLUMN pg_shmem_allocations.name; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -8329,7 +8848,7 @@ GRANT SELECT(name) ON TABLE pg_catalog.pg_shmem_allocations TO azure_pg_admin;
 
 
 --
--- TOC entry 5049 (class 0 OID 0)
+-- TOC entry 5055 (class 0 OID 0)
 -- Dependencies: 103
 -- Name: COLUMN pg_shmem_allocations.off; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -8338,7 +8857,7 @@ GRANT SELECT(off) ON TABLE pg_catalog.pg_shmem_allocations TO azure_pg_admin;
 
 
 --
--- TOC entry 5050 (class 0 OID 0)
+-- TOC entry 5056 (class 0 OID 0)
 -- Dependencies: 103
 -- Name: COLUMN pg_shmem_allocations.size; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -8347,7 +8866,7 @@ GRANT SELECT(size) ON TABLE pg_catalog.pg_shmem_allocations TO azure_pg_admin;
 
 
 --
--- TOC entry 5051 (class 0 OID 0)
+-- TOC entry 5057 (class 0 OID 0)
 -- Dependencies: 103
 -- Name: COLUMN pg_shmem_allocations.allocated_size; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -8356,7 +8875,7 @@ GRANT SELECT(allocated_size) ON TABLE pg_catalog.pg_shmem_allocations TO azure_p
 
 
 --
--- TOC entry 5052 (class 0 OID 0)
+-- TOC entry 5058 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.starelid; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -8365,7 +8884,7 @@ GRANT SELECT(starelid) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5053 (class 0 OID 0)
+-- TOC entry 5059 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.staattnum; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -8374,7 +8893,7 @@ GRANT SELECT(staattnum) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5054 (class 0 OID 0)
+-- TOC entry 5060 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.stainherit; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -8383,7 +8902,7 @@ GRANT SELECT(stainherit) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5055 (class 0 OID 0)
+-- TOC entry 5061 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.stanullfrac; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -8392,7 +8911,7 @@ GRANT SELECT(stanullfrac) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5056 (class 0 OID 0)
+-- TOC entry 5062 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.stawidth; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -8401,7 +8920,7 @@ GRANT SELECT(stawidth) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5057 (class 0 OID 0)
+-- TOC entry 5063 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.stadistinct; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -8410,7 +8929,7 @@ GRANT SELECT(stadistinct) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5058 (class 0 OID 0)
+-- TOC entry 5064 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.stakind1; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -8419,7 +8938,7 @@ GRANT SELECT(stakind1) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5059 (class 0 OID 0)
+-- TOC entry 5065 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.stakind2; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -8428,7 +8947,7 @@ GRANT SELECT(stakind2) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5060 (class 0 OID 0)
+-- TOC entry 5066 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.stakind3; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -8437,7 +8956,7 @@ GRANT SELECT(stakind3) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5061 (class 0 OID 0)
+-- TOC entry 5067 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.stakind4; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -8446,7 +8965,7 @@ GRANT SELECT(stakind4) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5062 (class 0 OID 0)
+-- TOC entry 5068 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.stakind5; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -8455,7 +8974,7 @@ GRANT SELECT(stakind5) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5063 (class 0 OID 0)
+-- TOC entry 5069 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.staop1; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -8464,7 +8983,7 @@ GRANT SELECT(staop1) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5064 (class 0 OID 0)
+-- TOC entry 5070 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.staop2; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -8473,7 +8992,7 @@ GRANT SELECT(staop2) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5065 (class 0 OID 0)
+-- TOC entry 5071 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.staop3; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -8482,7 +9001,7 @@ GRANT SELECT(staop3) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5066 (class 0 OID 0)
+-- TOC entry 5072 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.staop4; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -8491,7 +9010,7 @@ GRANT SELECT(staop4) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5067 (class 0 OID 0)
+-- TOC entry 5073 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.staop5; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -8500,7 +9019,7 @@ GRANT SELECT(staop5) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5068 (class 0 OID 0)
+-- TOC entry 5074 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.stacoll1; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -8509,7 +9028,7 @@ GRANT SELECT(stacoll1) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5069 (class 0 OID 0)
+-- TOC entry 5075 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.stacoll2; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -8518,7 +9037,7 @@ GRANT SELECT(stacoll2) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5070 (class 0 OID 0)
+-- TOC entry 5076 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.stacoll3; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -8527,7 +9046,7 @@ GRANT SELECT(stacoll3) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5071 (class 0 OID 0)
+-- TOC entry 5077 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.stacoll4; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -8536,7 +9055,7 @@ GRANT SELECT(stacoll4) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5072 (class 0 OID 0)
+-- TOC entry 5078 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.stacoll5; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -8545,7 +9064,7 @@ GRANT SELECT(stacoll5) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5073 (class 0 OID 0)
+-- TOC entry 5079 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.stanumbers1; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -8554,7 +9073,7 @@ GRANT SELECT(stanumbers1) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5074 (class 0 OID 0)
+-- TOC entry 5080 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.stanumbers2; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -8563,7 +9082,7 @@ GRANT SELECT(stanumbers2) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5075 (class 0 OID 0)
+-- TOC entry 5081 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.stanumbers3; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -8572,7 +9091,7 @@ GRANT SELECT(stanumbers3) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5076 (class 0 OID 0)
+-- TOC entry 5082 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.stanumbers4; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -8581,7 +9100,7 @@ GRANT SELECT(stanumbers4) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5077 (class 0 OID 0)
+-- TOC entry 5083 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.stanumbers5; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -8590,7 +9109,7 @@ GRANT SELECT(stanumbers5) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5078 (class 0 OID 0)
+-- TOC entry 5084 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.stavalues1; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -8599,7 +9118,7 @@ GRANT SELECT(stavalues1) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5079 (class 0 OID 0)
+-- TOC entry 5085 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.stavalues2; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -8608,7 +9127,7 @@ GRANT SELECT(stavalues2) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5080 (class 0 OID 0)
+-- TOC entry 5086 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.stavalues3; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -8617,7 +9136,7 @@ GRANT SELECT(stavalues3) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5081 (class 0 OID 0)
+-- TOC entry 5087 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.stavalues4; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -8626,7 +9145,7 @@ GRANT SELECT(stavalues4) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5082 (class 0 OID 0)
+-- TOC entry 5088 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.stavalues5; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -8635,7 +9154,7 @@ GRANT SELECT(stavalues5) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5083 (class 0 OID 0)
+-- TOC entry 5089 (class 0 OID 0)
 -- Dependencies: 68
 -- Name: COLUMN pg_subscription.oid; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -8644,7 +9163,7 @@ GRANT SELECT(oid) ON TABLE pg_catalog.pg_subscription TO azure_pg_admin;
 
 
 --
--- TOC entry 5084 (class 0 OID 0)
+-- TOC entry 5090 (class 0 OID 0)
 -- Dependencies: 68
 -- Name: COLUMN pg_subscription.subdbid; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -8653,7 +9172,7 @@ GRANT SELECT(subdbid) ON TABLE pg_catalog.pg_subscription TO azure_pg_admin;
 
 
 --
--- TOC entry 5085 (class 0 OID 0)
+-- TOC entry 5091 (class 0 OID 0)
 -- Dependencies: 68
 -- Name: COLUMN pg_subscription.subname; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -8662,7 +9181,7 @@ GRANT SELECT(subname) ON TABLE pg_catalog.pg_subscription TO azure_pg_admin;
 
 
 --
--- TOC entry 5086 (class 0 OID 0)
+-- TOC entry 5092 (class 0 OID 0)
 -- Dependencies: 68
 -- Name: COLUMN pg_subscription.subowner; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -8671,7 +9190,7 @@ GRANT SELECT(subowner) ON TABLE pg_catalog.pg_subscription TO azure_pg_admin;
 
 
 --
--- TOC entry 5087 (class 0 OID 0)
+-- TOC entry 5093 (class 0 OID 0)
 -- Dependencies: 68
 -- Name: COLUMN pg_subscription.subenabled; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -8680,7 +9199,7 @@ GRANT SELECT(subenabled) ON TABLE pg_catalog.pg_subscription TO azure_pg_admin;
 
 
 --
--- TOC entry 5088 (class 0 OID 0)
+-- TOC entry 5094 (class 0 OID 0)
 -- Dependencies: 68
 -- Name: COLUMN pg_subscription.subconninfo; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -8689,7 +9208,7 @@ GRANT SELECT(subconninfo) ON TABLE pg_catalog.pg_subscription TO azure_pg_admin;
 
 
 --
--- TOC entry 5089 (class 0 OID 0)
+-- TOC entry 5095 (class 0 OID 0)
 -- Dependencies: 68
 -- Name: COLUMN pg_subscription.subslotname; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -8698,7 +9217,7 @@ GRANT SELECT(subslotname) ON TABLE pg_catalog.pg_subscription TO azure_pg_admin;
 
 
 --
--- TOC entry 5090 (class 0 OID 0)
+-- TOC entry 5096 (class 0 OID 0)
 -- Dependencies: 68
 -- Name: COLUMN pg_subscription.subsynccommit; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -8707,7 +9226,7 @@ GRANT SELECT(subsynccommit) ON TABLE pg_catalog.pg_subscription TO azure_pg_admi
 
 
 --
--- TOC entry 5091 (class 0 OID 0)
+-- TOC entry 5097 (class 0 OID 0)
 -- Dependencies: 68
 -- Name: COLUMN pg_subscription.subpublications; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -8715,7 +9234,7 @@ GRANT SELECT(subsynccommit) ON TABLE pg_catalog.pg_subscription TO azure_pg_admi
 GRANT SELECT(subpublications) ON TABLE pg_catalog.pg_subscription TO azure_pg_admin;
 
 
--- Completed on 2026-01-08 03:06:15
+-- Completed on 2026-01-09 13:31:30
 
 --
 -- PostgreSQL database dump complete

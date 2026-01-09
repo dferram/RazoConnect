@@ -43,3 +43,6 @@ product_images/
 
 # Documentación
 docs/
+
+# Backups de la base de datos
+backup/
