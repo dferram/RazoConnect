@@ -50,6 +50,12 @@ async function tenantGuard(req, res, next) {
       
       console.log(`🔍 Hostname: ${hostname} | Root Domain: ${rootDomain}`);
       
+      // SEGURIDAD: Redirigir desde URL de Azure a dominio principal
+      if (hostname.includes('azurewebsites.net')) {
+        console.warn(`⚠️  Acceso directo desde Azure detectado: ${hostname}`);
+        return res.redirect(301, `https://razo.com.mx${req.originalUrl}`);
+      }
+      
       tenant = await getTenantByDomain(rootDomain);
 
       if (!tenant) {
