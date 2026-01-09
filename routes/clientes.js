@@ -11,6 +11,7 @@ const {
   obtenerMovimientosCredito,
   registrarPagoCliente,
   obtenerMovimientosPendientes,
+  enviarSolicitudCredito,
 } = require("../controllers/clientes/creditoController");
 const { authenticate } = require("../middlewares/authMiddleware");
 
@@ -26,5 +27,6 @@ router.get("/perfil-credito", authenticate, obtenerPerfilCredito);
 router.get("/credito", authenticate, obtenerMovimientosCredito);
 router.get("/credito/pendientes", authenticate, obtenerMovimientosPendientes);
 router.post("/pagar-credito", authenticate, registrarPagoCliente);
+router.post("/solicitar-credito", authenticate, enviarSolicitudCredito);
 
 module.exports = router;

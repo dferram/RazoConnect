@@ -3,18 +3,17 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>EvaluaciÛn de Solicitudes de CrÈdito</title>
-    <link rel="icon" type="image/png" href="/icon/Logo_Fashion.png" />
+    <title>Evaluaci√≥n de Solicitudes de Cr√©dito</title>
+    <link rel="icon" type="image/png" href="/icon/Logo_Razo.png" />
 
-    <!-- ProtecciÛn de autenticaciÛn admin -->
+    <!-- Protecci√≥n de autenticaci√≥n admin -->
     <script src="js/auth-guard-admin.js"></script>
 
-    <link rel="stylesheet" href="css/styles-fashion.css" />
-    <link rel="stylesheet" href="css/fashion-theme-fashion.css" />
-    <link rel="stylesheet" href="css/admin-fashion.css" />
-    <link rel="stylesheet" href="css/components/credit-score-card-fashion.css" />
+    <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/admin.css" />
+    <link rel="stylesheet" href="css/components/credit-score-card.css" />
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-      <link rel="stylesheet" href="css/mobile-responsive-fashion.css" />
+      <link rel="stylesheet" href="css/mobile-responsive.css" />
   </head>
   <body data-sidebar="admin">
     <div class="admin-layout">
@@ -28,7 +27,7 @@
           <section class="admin-stats-grid" id="statsContainer">
             <article class="admin-stat-card">
               <div class="admin-stat-header">
-                <div class="admin-stat-icon orange">??</div>
+                <div class="admin-stat-icon orange">üí≥</div>
                 <span class="admin-badge info">Pendientes</span>
               </div>
               <div class="admin-stat-content">
@@ -39,7 +38,7 @@
 
             <article class="admin-stat-card">
               <div class="admin-stat-header">
-                <div class="admin-stat-icon green">??</div>
+                <div class="admin-stat-icon green">üí∞</div>
                 <span class="admin-badge success">Monto</span>
               </div>
               <div class="admin-stat-content">
@@ -50,7 +49,7 @@
 
             <article class="admin-stat-card">
               <div class="admin-stat-header">
-                <div class="admin-stat-icon red">??</div>
+                <div class="admin-stat-icon red">‚ö†Ô∏è</div>
                 <span class="admin-badge danger">Riesgo</span>
               </div>
               <div class="admin-stat-content">
@@ -63,7 +62,7 @@
           <!-- Tabla de solicitudes -->
           <section class="admin-table-container">
             <div class="admin-table-header">
-              <h2 class="admin-table-title">Solicitudes de CrÈdito Pendientes</h2>
+              <h2 class="admin-table-title">Solicitudes de Cr√©dito Pendientes</h2>
             </div>
 
             <div id="solicitudesLoading" class="loading" style="display: flex">
@@ -87,7 +86,7 @@
             </div>
 
             <div id="solicitudesEmpty" class="empty-state" style="display: none">
-              <div class="empty-state-icon">?</div>
+              <div class="empty-state-icon">‚úÖ</div>
               <h3 class="empty-state-title">No hay solicitudes pendientes</h3>
               <p class="empty-state-text">
                 Todas las solicitudes han sido procesadas.
@@ -98,8 +97,7 @@
       </main>
     </div>
 
-    <script src="js/layout.js" defer></script>
-    <script src="js/sidebar-toggle.js" defer></script>
+    <script src="js/layout.js" defer></script>`n    <script src="js/sidebar-toggle.js" defer></script>
     <script src="js/api.js"></script>
     <script src="js/components/admin-header-loader.js"></script>
     <script src="js/components/user-profile.js"></script>
@@ -107,7 +105,7 @@
       (function () {
         "use strict";
 
-        const adminToken = localStorage.getItem("Fashion Box_admin_token");
+        const adminToken = localStorage.getItem("razoconnect_admin_token");
         if (!adminToken) {
           window.location.href = "/login.html";
           return;
@@ -129,9 +127,9 @@
         }
 
         function formatearFecha(value) {
-          if (!value) return "ó";
+          if (!value) return "‚Äî";
           const date = new Date(value);
-          if (Number.isNaN(date.getTime())) return "ó";
+          if (Number.isNaN(date.getTime())) return "‚Äî";
           return date.toLocaleString("es-MX", {
             day: "2-digit",
             month: "short",
@@ -145,14 +143,14 @@
           if (meses < 1) return "Menos de 1 mes";
           if (meses === 1) return "1 mes";
           if (meses < 12) return `${meses} meses`;
-          const aÒos = Math.floor(meses / 12);
+          const a√±os = Math.floor(meses / 12);
           const mesesRestantes = meses % 12;
           if (mesesRestantes === 0) {
-            return aÒos === 1 ? "1 aÒo" : `${aÒos} aÒos`;
+            return a√±os === 1 ? "1 a√±o" : `${a√±os} a√±os`;
           }
-          return aÒos === 1
-            ? `1 aÒo y ${mesesRestantes} ${mesesRestantes === 1 ? "mes" : "meses"}`
-            : `${aÒos} aÒos y ${mesesRestantes} ${mesesRestantes === 1 ? "mes" : "meses"}`;
+          return a√±os === 1
+            ? `1 a√±o y ${mesesRestantes} ${mesesRestantes === 1 ? "mes" : "meses"}`
+            : `${a√±os} a√±os y ${mesesRestantes} ${mesesRestantes === 1 ? "mes" : "meses"}`;
         }
 
         function getBadgeColor(nivelRiesgo) {
@@ -217,7 +215,7 @@
                       </div>
                     </td>
                     <td style="font-weight:600;">${formatCurrency(solicitud.monto_solicitado)}</td>
-                    <td>${solicitud.motivo_uso || "ó"}</td>
+                    <td>${solicitud.motivo_uso || "‚Äî"}</td>
                     <td>
                       <button
                         type="button"
@@ -293,12 +291,12 @@
 
             const contenido = `
               <div class="credit-analysis">
-                <!-- SecciÛn 1: Perfil -->
+                <!-- Secci√≥n 1: Perfil -->
                 <div class="analysis-section">
                   <h4 class="section-title">Perfil del Cliente</h4>
                   <div class="profile-stats">
                     <div class="stat-item">
-                      <span class="stat-label">Antig¸edad</span>
+                      <span class="stat-label">Antig√ºedad</span>
                       <span class="stat-value">
                         <span class="badge bg-${getBadgeColor(analisis.metricas.antiguedad_meses > 6 ? 'BAJO' : analisis.metricas.antiguedad_meses > 1 ? 'MEDIO' : 'ALTO')}">
                           ${formatearAntiguedad(analisis.metricas.antiguedad_meses)}
@@ -310,7 +308,7 @@
                       <span class="stat-value">${analisis.metricas.pedidos_totales}</span>
                     </div>
                     <div class="stat-item">
-                      <span class="stat-label">Compra M·xima</span>
+                      <span class="stat-label">Compra M√°xima</span>
                       <span class="stat-value">${formatCurrency(analisis.metricas.compra_maxima)}</span>
                     </div>
                     <div class="stat-item">
@@ -320,12 +318,12 @@
                   </div>
                 </div>
 
-                <!-- SecciÛn 2: La Solicitud -->
+                <!-- Secci√≥n 2: La Solicitud -->
                 <div class="analysis-section">
-                  <h4 class="section-title">An·lisis de la Solicitud</h4>
+                  <h4 class="section-title">An√°lisis de la Solicitud</h4>
                   <div class="request-comparison">
                     <div class="comparison-bar">
-                      <div class="bar-label">Monto Solicitado vs M·ximo HistÛrico</div>
+                      <div class="bar-label">Monto Solicitado vs M√°ximo Hist√≥rico</div>
                       <div class="bar-container">
                         <div class="bar-base" style="width:100%;">
                           ${formatCurrency(analisis.metricas.compra_maxima)}
@@ -338,7 +336,7 @@
                   </div>
                 </div>
 
-                <!-- SecciÛn 3: Veredicto -->
+                <!-- Secci√≥n 3: Veredicto -->
                 <div class="analysis-section">
                   <div class="alert alert-${badgeColor}">
                     <h4 class="alert-heading">
@@ -354,7 +352,7 @@
             `;
 
             const result = await Swal.fire({
-              title: `EvaluaciÛn de CrÈdito - ${solicitud.nombre_cliente}`,
+              title: `Evaluaci√≥n de Cr√©dito - ${solicitud.nombre_cliente}`,
               html: contenido,
               width: "800px",
               showCancelButton: true,
@@ -372,21 +370,69 @@
             if (result.isDismissed) return;
 
             if (result.isConfirmed) {
-              // Aprobar
-              const { value: limite } = await Swal.fire({
-                title: "Establecer LÌmite de CrÈdito",
-                input: "number",
-                inputLabel: "Monto Aprobado ($)",
-                inputValue: solicitud.monto_solicitado,
+              // Aprobar - Solicitar l√≠mite y plazo de pago
+              const { value: formValues } = await Swal.fire({
+                title: "Aprobar L√≠nea de Cr√©dito",
+                html: `
+                  <div style="text-align: left;">
+                    <div style="margin-bottom: 1.5rem;">
+                      <label for="swal-limite" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">
+                        L√≠mite de Cr√©dito ($)
+                      </label>
+                      <input 
+                        type="number" 
+                        id="swal-limite" 
+                        class="swal2-input" 
+                        value="${solicitud.monto_solicitado}"
+                        min="0"
+                        step="100"
+                        style="margin: 0; width: 100%;"
+                      />
+                    </div>
+                    <div style="margin-bottom: 1rem;">
+                      <label for="swal-plazo" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">
+                        Plazo de Pago (d√≠as)
+                      </label>
+                      <select 
+                        id="swal-plazo" 
+                        class="swal2-input" 
+                        style="margin: 0; width: 100%;"
+                      >
+                        <option value="15" ${solicitud.plazo_preferido === 15 ? 'selected' : ''}>15 d√≠as</option>
+                        <option value="30" ${!solicitud.plazo_preferido || solicitud.plazo_preferido === 30 ? 'selected' : ''}>30 d√≠as</option>
+                        <option value="45" ${solicitud.plazo_preferido === 45 ? 'selected' : ''}>45 d√≠as</option>
+                        <option value="60">60 d√≠as</option>
+                      </select>
+                    </div>
+                  </div>
+                `,
                 showCancelButton: true,
-                inputValidator: (value) => {
-                  if (!value || value <= 0) {
-                    return "Por favor ingresa un monto v·lido";
+                confirmButtonText: "Aprobar",
+                cancelButtonText: "Cancelar",
+                confirmButtonColor: "#22c55e",
+                focusConfirm: false,
+                preConfirm: () => {
+                  const limite = document.getElementById('swal-limite').value;
+                  const plazo = document.getElementById('swal-plazo').value;
+                  
+                  if (!limite || parseFloat(limite) <= 0) {
+                    Swal.showValidationMessage('Por favor ingresa un l√≠mite v√°lido');
+                    return false;
                   }
+                  
+                  if (!plazo || parseInt(plazo) <= 0) {
+                    Swal.showValidationMessage('Por favor selecciona un plazo v√°lido');
+                    return false;
+                  }
+                  
+                  return {
+                    limite: parseFloat(limite),
+                    plazo: parseInt(plazo)
+                  };
                 }
               });
 
-              if (!limite) return;
+              if (!formValues) return;
 
               const response = await fetch(`${API_BASE_URL}/creditos/aprobar`, {
                 method: "POST",
@@ -396,7 +442,8 @@
                 },
                 body: JSON.stringify({
                   solicitud_id: id,
-                  limite_aprobado: limite
+                  limite_aprobado: formValues.limite,
+                  dias_gracia: formValues.plazo
                 })
               });
 
@@ -408,8 +455,8 @@
 
               await Swal.fire({
                 icon: "success",
-                title: "°Solicitud Aprobada!",
-                text: "La lÌnea de crÈdito ha sido creada correctamente.",
+                title: "¬°Solicitud Aprobada!",
+                text: "La l√≠nea de cr√©dito ha sido creada correctamente.",
                 confirmButtonColor: "#22c55e",
               });
             } else {
@@ -461,7 +508,7 @@
             Swal.fire({
               icon: "error",
               title: "Error",
-              text: error.message || "OcurriÛ un error",
+              text: error.message || "Ocurri√≥ un error",
               confirmButtonColor: "#F97316",
             });
           }

@@ -218,7 +218,7 @@ const enviarSolicitudCredito = async (req, res) => {
       });
     }
 
-    const { montoSolicitado, motivoCredito } = req.body;
+    const { montoSolicitado, motivoCredito, ingresosMensuales, plazoPreferido } = req.body;
     if (!montoSolicitado || montoSolicitado <= 0 || !motivoCredito?.trim()) {
       return res.status(400).json({
         success: false,
@@ -229,13 +229,21 @@ const enviarSolicitudCredito = async (req, res) => {
     // Insertar la solicitud
     const query = `
       INSERT INTO solicitudes_credito 
-        (cliente_id, monto_solicitado, motivo_uso)
+        (cliente_id, monto_solicitado, motivo_uso, ingresos_mensuales, plazo_preferido, tenant_id)
       VALUES 
-        ($1, $2, $3)
+        ($1, $2, $3, $4, $5, $6)
       RETURNING solicitud_id
     `;
 
-    const values = [clienteId, montoSolicitado, motivoCredito.trim()];
+    const { tenant_id } = req.tenant || { tenant_id: 1 };
+    const values = [
+      clienteId, 
+      montoSolicitado, 
+      motivoCredito.trim(),
+      ingresosMensuales || null,
+      plazoPreferido || null,
+      tenant_id
+    ];
     const { rows } = await db.query(query, values);
 
     return res.json({
@@ -531,4 +539,5 @@ module.exports = {
   obtenerMovimientosCredito,
   registrarPagoCliente,
   obtenerMovimientosPendientes,
+  enviarSolicitudCredito,
 };

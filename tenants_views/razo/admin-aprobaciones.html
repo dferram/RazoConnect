@@ -370,21 +370,69 @@
             if (result.isDismissed) return;
 
             if (result.isConfirmed) {
-              // Aprobar
-              const { value: limite } = await Swal.fire({
-                title: "Establecer Límite de Crédito",
-                input: "number",
-                inputLabel: "Monto Aprobado ($)",
-                inputValue: solicitud.monto_solicitado,
+              // Aprobar - Solicitar límite y plazo de pago
+              const { value: formValues } = await Swal.fire({
+                title: "Aprobar Línea de Crédito",
+                html: `
+                  <div style="text-align: left;">
+                    <div style="margin-bottom: 1.5rem;">
+                      <label for="swal-limite" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">
+                        Límite de Crédito ($)
+                      </label>
+                      <input 
+                        type="number" 
+                        id="swal-limite" 
+                        class="swal2-input" 
+                        value="${solicitud.monto_solicitado}"
+                        min="0"
+                        step="100"
+                        style="margin: 0; width: 100%;"
+                      />
+                    </div>
+                    <div style="margin-bottom: 1rem;">
+                      <label for="swal-plazo" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">
+                        Plazo de Pago (días)
+                      </label>
+                      <select 
+                        id="swal-plazo" 
+                        class="swal2-input" 
+                        style="margin: 0; width: 100%;"
+                      >
+                        <option value="15" ${solicitud.plazo_preferido === 15 ? 'selected' : ''}>15 días</option>
+                        <option value="30" ${!solicitud.plazo_preferido || solicitud.plazo_preferido === 30 ? 'selected' : ''}>30 días</option>
+                        <option value="45" ${solicitud.plazo_preferido === 45 ? 'selected' : ''}>45 días</option>
+                        <option value="60">60 días</option>
+                      </select>
+                    </div>
+                  </div>
+                `,
                 showCancelButton: true,
-                inputValidator: (value) => {
-                  if (!value || value <= 0) {
-                    return "Por favor ingresa un monto válido";
+                confirmButtonText: "Aprobar",
+                cancelButtonText: "Cancelar",
+                confirmButtonColor: "#22c55e",
+                focusConfirm: false,
+                preConfirm: () => {
+                  const limite = document.getElementById('swal-limite').value;
+                  const plazo = document.getElementById('swal-plazo').value;
+                  
+                  if (!limite || parseFloat(limite) <= 0) {
+                    Swal.showValidationMessage('Por favor ingresa un límite válido');
+                    return false;
                   }
+                  
+                  if (!plazo || parseInt(plazo) <= 0) {
+                    Swal.showValidationMessage('Por favor selecciona un plazo válido');
+                    return false;
+                  }
+                  
+                  return {
+                    limite: parseFloat(limite),
+                    plazo: parseInt(plazo)
+                  };
                 }
               });
 
-              if (!limite) return;
+              if (!formValues) return;
 
               const response = await fetch(`${API_BASE_URL}/creditos/aprobar`, {
                 method: "POST",
@@ -394,7 +442,8 @@
                 },
                 body: JSON.stringify({
                   solicitud_id: id,
-                  limite_aprobado: limite
+                  limite_aprobado: formValues.limite,
+                  dias_gracia: formValues.plazo
                 })
               });
 
