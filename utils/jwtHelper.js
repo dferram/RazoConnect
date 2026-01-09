@@ -19,7 +19,7 @@ const resolveJwtSecret = () => {
  */
 const generateToken = (payload) => {
   return jwt.sign(payload, resolveJwtSecret(), {
-    expiresIn: process.env.JWT_EXPIRES_IN || "24h",
+    expiresIn: process.env.JWT_EXPIRES_IN || "30d",
   });
 };
 

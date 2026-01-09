@@ -3257,7 +3257,7 @@ const loginAdmin = async (req, res) => {
     const token = jwt.sign(
       tokenPayload,
       process.env.JWT_SECRET,
-      { expiresIn: "8h" } // Token válido por 8 horas
+      { expiresIn: "30d" } // Token válido por 30 días
     );
 
     const nombreCompleto =

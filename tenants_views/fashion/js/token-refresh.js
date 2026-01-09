@@ -1,20 +1,18 @@
 /**
- * SISTEMA DE GESTIÓN DE SESIONES SEGURAS
- * - Renueva el token después de 5 minutos de inactividad
- * - LIMPIA la sesión al cerrar el navegador/pestaña (requiere nuevo login)
- * - Renovación periódica cada 20 minutos
- * - Detecta actividad del usuario (mouse, teclado, scroll, touch)
+ * SISTEMA DE SESIÓN PERSISTENTE E-COMMERCE
+ * - El usuario permanece logueado por 30 días
+ * - La sesión persiste aunque cierre el navegador o reinicie el PC
+ * - Solo se cierra sesión con el botón "Cerrar Sesión"
+ * - Renovación REACTIVA: Solo renueva si quedan <2 días de vida al cargar la página
+ * - Sin listeners de actividad (mejor rendimiento)
  */
 
 (function () {
   "use strict";
 
   // Configuración
-  const INACTIVITY_TIME = 5 * 60 * 1000; // 5 minutos en milisegundos
   const API_BASE_URL = `${window.location.origin}/api`;
-
-  let inactivityTimer = null;
-  let lastActivity = Date.now();
+  const RENEWAL_THRESHOLD = 2 * 24 * 60 * 60 * 1000; // 2 días en milisegundos
 
   /**
    * Determinar si es cliente o admin según el token almacenado
@@ -42,15 +40,62 @@
   }
 
   /**
-   * Renovar el token con el servidor
+   * Decodificar JWT sin verificar firma (solo para leer expiración)
    */
-  async function refreshToken() {
+  function decodeJWT(token) {
+    try {
+      if (!token) return null;
+      const parts = token.split(".");
+      if (parts.length !== 3) return null;
+      
+      const payload = parts[1];
+      const base64 = payload.replace(/-/g, "+").replace(/_/g, "/");
+      const jsonPayload = decodeURIComponent(
+        atob(base64)
+          .split("")
+          .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+          .join("")
+      );
+      
+      return JSON.parse(jsonPayload);
+    } catch (error) {
+      console.error("❌ Error decodificando JWT:", error);
+      return null;
+    }
+  }
+
+  /**
+   * Verificar si el token está próximo a expirar (<2 días)
+   */
+  function isTokenNearExpiration(token) {
+    const payload = decodeJWT(token);
+    if (!payload || !payload.exp) return false;
+    
+    const expirationTime = payload.exp * 1000; // Convertir a milisegundos
+    const currentTime = Date.now();
+    const timeRemaining = expirationTime - currentTime;
+    
+    return timeRemaining < RENEWAL_THRESHOLD && timeRemaining > 0;
+  }
+
+  /**
+   * Renovar el token con el servidor (SOLO si está próximo a expirar)
+   */
+  async function renewTokenIfNeeded() {
     const userType = getUserType();
     const token = getCurrentToken();
 
     if (!token || !userType) {
       return;
     }
+
+    // Verificar si necesita renovación
+    if (!isTokenNearExpiration(token)) {
+      console.log("✅ Token válido, no requiere renovación");
+      return;
+    }
+
+    console.log("⚠️ Token próximo a expirar, renovando...");
 
     try {
       const endpoint =
@@ -80,6 +125,7 @@
           localStorage.setItem("razoconnect_token", data.data.token);
         }
 
+        console.log("✅ Token renovado exitosamente");
         return true;
       } else {
         throw new Error("Respuesta inválida del servidor");
@@ -103,133 +149,22 @@
     }
   }
 
-  /**
-   * Resetear el temporizador de inactividad
-   */
-  function resetInactivityTimer() {
-    lastActivity = Date.now();
-
-    // Limpiar el temporizador anterior
-    if (inactivityTimer) {
-      clearTimeout(inactivityTimer);
-    }
-
-    // Crear nuevo temporizador
-    inactivityTimer = setTimeout(() => {
-      const timeSinceLastActivity = Date.now() - lastActivity;
-      refreshToken();
-    }, INACTIVITY_TIME);
-  }
 
   /**
-   * Manejar actividad del usuario
+   * Inicializar el sistema de sesión persistente con renovación reactiva
+   * - Sin listeners de actividad (mejor rendimiento)
+   * - Sin limpieza al cerrar navegador
+   * - Renovación REACTIVA: Solo al cargar página si quedan <2 días
    */
-  function handleUserActivity() {
-    resetInactivityTimer();
-  }
-
-  /**
-   * Variable para detectar si el usuario está navegando o cerrando
-   */
-  let isNavigating = false;
-
-  /**
-   * Limpiar sesión SOLO al CERRAR la pestaña (NO al navegar)
-   * NOTA: Para administradores, NO limpiamos la sesión automáticamente por seguridad
-   */
-  function handlePageUnload(event) {
-    const userType = getUserType();
-    if (!userType) return;
-
-    // NO LIMPIAR sesión de ADMIN automáticamente
-    // Los admins deben cerrar sesión manualmente usando el botón de logout
-    if (userType === "admin") {
-      return;
-    }
-
-    // Para CLIENTES y AGENTES: verificar si está navegando
-    const navigatingProgrammatically = sessionStorage.getItem("_navigating");
-    const navTimestamp = localStorage.getItem("_nav_timestamp");
-    const now = Date.now();
-    const isRecentNavigation =
-      navTimestamp && now - parseInt(navTimestamp) < 500;
-
-    if (isNavigating || navigatingProgrammatically || isRecentNavigation) {
-      sessionStorage.removeItem("_navigating");
-      localStorage.removeItem("_nav_timestamp");
-      return;
-    }
-
-    // LIMPIAR tokens de cliente/agente solo si realmente está cerrando
-    localStorage.removeItem("razoconnect_token");
-    localStorage.removeItem("razoconnect_user");
-  }
-
-  /**
-   * Detectar clicks en enlaces internos
-   */
-  function handleInternalNavigation(event) {
-    // Marcar que está navegando
-    isNavigating = true;
-
-    // Resetear después de 100ms (suficiente para que beforeunload se ejecute)
-    setTimeout(() => {
-      isNavigating = false;
-    }, 100);
-  }
-
-  /**
-   * Inicializar el sistema de renovación
-   */
-  function init() {
+  async function init() {
     const token = getCurrentToken();
     if (!token) {
       return;
     }
 
-    // Eventos de actividad del usuario
-    const activityEvents = [
-      "mousedown",
-      "mousemove",
-      "keypress",
-      "scroll",
-      "touchstart",
-      "click",
-    ];
-
-    // Agregar listeners para detectar actividad
-    activityEvents.forEach((event) => {
-      document.addEventListener(event, handleUserActivity, true);
-    });
-
-    // Detectar clicks en enlaces para saber si está navegando
-    document.addEventListener(
-      "click",
-      (event) => {
-        // Buscar si el click fue en un enlace o dentro de uno
-        let target = event.target;
-        while (target && target !== document) {
-          if (target.tagName === "A" && target.href) {
-            // Es un enlace - marcar como navegación
-            handleInternalNavigation(event);
-            break;
-          }
-          target = target.parentElement;
-        }
-      },
-      true
-    );
-
-    // Listener para cuando el usuario cierra/sale de la página
-    window.addEventListener("beforeunload", handlePageUnload);
-
-    // Iniciar el temporizador
-    resetInactivityTimer();
-
-    // Renovar token cada 20 minutos como medida adicional
-    setInterval(() => {
-      refreshToken();
-    }, 20 * 60 * 1000); // 20 minutos
+    // RENOVACIÓN REACTIVA: Verificar al cargar la página
+    // Si el token está próximo a expirar (<2 días), renovarlo
+    await renewTokenIfNeeded();
   }
 
   // Inicializar cuando el DOM esté listo
