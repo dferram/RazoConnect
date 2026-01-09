@@ -13911,6 +13911,8 @@ const obtenerRemisionPedido = async (req, res) => {
 
 module.exports = {
   loginAdmin,
+  verifyAdmin,
+  refreshAdminToken,
   getDashboardStats,
   getAllPedidos,
   updatePedidoEstatus,
