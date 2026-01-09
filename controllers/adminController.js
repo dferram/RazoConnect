@@ -8258,25 +8258,38 @@ const crearAgente = async (req, res) => {
     const { nombre, apellido, email, password, telefono } = req.body;
 
     // Validaciones
-    if (!nombre || !apellido || !email || !password) {
+    if (!nombre || !apellido || !password) {
       return res.status(400).json({
         success: false,
         message: "Todos los campos obligatorios deben ser proporcionados",
       });
     }
 
-    // Verificar unicidad global del email (no debe existir en ninguna tabla)
-    const emailCheckGlobal = await checkEmailGlobalUniqueness(email, "agentesdeventas");
+    // Validar que al menos teléfono o email estén presentes
+    const emailProvided = email && email.trim() !== "";
+    const telefonoProvided = telefono && telefono.trim() !== "";
 
-    if (emailCheckGlobal.exists) {
-      const errorMessage = getContextualErrorMessage(
-        emailCheckGlobal.table,
-        "agentesdeventas"
-      );
+    if (!emailProvided && !telefonoProvided) {
       return res.status(400).json({
         success: false,
-        message: errorMessage,
+        message: "Debes proporcionar al menos un teléfono o un email para el agente",
       });
+    }
+
+    // Verificar unicidad global del email solo si se proporciona
+    if (emailProvided) {
+      const emailCheckGlobal = await checkEmailGlobalUniqueness(email, "agentesdeventas");
+
+      if (emailCheckGlobal.exists) {
+        const errorMessage = getContextualErrorMessage(
+          emailCheckGlobal.table,
+          "agentesdeventas"
+        );
+        return res.status(400).json({
+          success: false,
+          message: errorMessage,
+        });
+      }
     }
 
     const nuevoCodigoAgente = await generateCodigoAgente(db);
