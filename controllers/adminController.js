@@ -12039,6 +12039,67 @@ const subirImagenesVarianteMultiple = async (req, res) => {
       });
     }
 
+    // ============================================
+    // REPLICACIÓN AUTOMÁTICA A VARIANTES HERMANAS
+    // ============================================
+    console.log(`[REPLICACION_IMG] Iniciando replicación para varianteId: ${varianteId}`);
+    
+    try {
+      // Obtener productoid y color_nombre de la variante actual
+      const varianteInfoResult = await db.query(
+        `SELECT productoid, color_nombre 
+         FROM producto_variantes 
+         WHERE varianteid = $1`,
+        [varianteId]
+      );
+
+      if (varianteInfoResult.rows.length > 0) {
+        const { productoid, color_nombre } = varianteInfoResult.rows[0];
+        console.log(`[REPLICACION_IMG] Variante origen - ProductoID: ${productoid}, Color: ${color_nombre}`);
+
+        // Buscar variantes hermanas (mismo producto + color) que NO tengan imágenes
+        const variantesHermanasResult = await db.query(
+          `SELECT pv.varianteid
+           FROM producto_variantes pv
+           WHERE pv.productoid = $1
+             AND pv.varianteid != $2
+             AND (pv.color_nombre = $3 OR (pv.color_nombre IS NULL AND $3 IS NULL))
+             AND NOT EXISTS (
+               SELECT 1 
+               FROM producto_variante_imagenes pvi 
+               WHERE pvi.varianteid = pv.varianteid
+             )`,
+          [productoid, varianteId, color_nombre]
+        );
+
+        const variantesHermanas = variantesHermanasResult.rows;
+        console.log(`[REPLICACION_IMG] Variantes hermanas sin imágenes encontradas: ${variantesHermanas.length}`);
+
+        if (variantesHermanas.length > 0) {
+          // Replicar cada imagen guardada a todas las variantes hermanas
+          for (const hermana of variantesHermanas) {
+            console.log(`[REPLICACION_IMG] Replicando ${imagenesGuardadas.length} imágenes a varianteId: ${hermana.varianteid}`);
+            
+            for (const img of imagenesGuardadas) {
+              await db.query(
+                `INSERT INTO producto_variante_imagenes (varianteid, url_imagen, textoalternativo, orden)
+                 VALUES ($1, $2, $3, $4)`,
+                [hermana.varianteid, img.url_imagen, img.textoalternativo, img.orden]
+              );
+            }
+          }
+          console.log(`[REPLICACION_IMG] Replicación completada exitosamente para ${variantesHermanas.length} variantes`);
+        } else {
+          console.log(`[REPLICACION_IMG] No hay variantes hermanas sin imágenes para replicar`);
+        }
+      } else {
+        console.log(`[REPLICACION_IMG] No se pudo obtener información de la variante origen`);
+      }
+    } catch (replicacionError) {
+      // No fallar la operación principal si falla la replicación
+      console.error(`[REPLICACION_IMG] Error durante replicación (operación principal exitosa):`, replicacionError);
+    }
+
     const portadaResult = await db.query(
       `SELECT url_imagen
        FROM producto_variante_imagenes
@@ -12510,6 +12571,69 @@ const applyGaleriaVarianteAtomic = async ({
     orden: row.orden,
   }));
 
+  // ============================================
+  // REPLICACIÓN AUTOMÁTICA A VARIANTES HERMANAS
+  // ============================================
+  if (imagenes.length > 0) {
+    console.log(`[REPLICACION_IMG] Iniciando replicación desde applyGaleriaVarianteAtomic para varianteId: ${varianteId}`);
+    
+    try {
+      // Obtener productoid y color_nombre de la variante actual
+      const varianteInfoResult = await client.query(
+        `SELECT productoid, color_nombre 
+         FROM producto_variantes 
+         WHERE varianteid = $1`,
+        [varianteId]
+      );
+
+      if (varianteInfoResult.rows.length > 0) {
+        const { productoid, color_nombre } = varianteInfoResult.rows[0];
+        console.log(`[REPLICACION_IMG] Variante origen - ProductoID: ${productoid}, Color: ${color_nombre}`);
+
+        // Buscar variantes hermanas (mismo producto + color) que NO tengan imágenes
+        const variantesHermanasResult = await client.query(
+          `SELECT pv.varianteid
+           FROM producto_variantes pv
+           WHERE pv.productoid = $1
+             AND pv.varianteid != $2
+             AND (pv.color_nombre = $3 OR (pv.color_nombre IS NULL AND $3 IS NULL))
+             AND NOT EXISTS (
+               SELECT 1 
+               FROM producto_variante_imagenes pvi 
+               WHERE pvi.varianteid = pv.varianteid
+             )`,
+          [productoid, varianteId, color_nombre]
+        );
+
+        const variantesHermanas = variantesHermanasResult.rows;
+        console.log(`[REPLICACION_IMG] Variantes hermanas sin imágenes encontradas: ${variantesHermanas.length}`);
+
+        if (variantesHermanas.length > 0) {
+          // Replicar cada imagen a todas las variantes hermanas
+          for (const hermana of variantesHermanas) {
+            console.log(`[REPLICACION_IMG] Replicando ${imagenes.length} imágenes a varianteId: ${hermana.varianteid}`);
+            
+            for (const img of imagenesFinalRes.rows) {
+              await client.query(
+                `INSERT INTO producto_variante_imagenes (varianteid, url_imagen, textoalternativo, orden)
+                 VALUES ($1, $2, $3, $4)`,
+                [hermana.varianteid, img.url_imagen, img.textoalternativo, img.orden]
+              );
+            }
+          }
+          console.log(`[REPLICACION_IMG] Replicación completada exitosamente para ${variantesHermanas.length} variantes`);
+        } else {
+          console.log(`[REPLICACION_IMG] No hay variantes hermanas sin imágenes para replicar`);
+        }
+      } else {
+        console.log(`[REPLICACION_IMG] No se pudo obtener información de la variante origen`);
+      }
+    } catch (replicacionError) {
+      // No fallar la operación principal si falla la replicación
+      console.error(`[REPLICACION_IMG] Error durante replicación en applyGaleriaVarianteAtomic:`, replicacionError);
+    }
+  }
+
   return {
     portadaUrl: portadaRuta ? `${baseUrl}${portadaRuta}` : null,
     imagenes,
@@ -12716,8 +12840,8 @@ const crearVariante = async (req, res) => {
       const unusedFiles = uploadedFiles.filter((_, idx) => !usedUploadIndexes.has(idx));
       await safeUnlinkUploads(unusedFiles);
 
-      // Note: Image propagation by color has been disabled as images are now stored
-      // in producto_variante_imagenes table, not in producto_variantes.url_imagen_variante
+      // Note: Image propagation by color is now handled automatically in applyGaleriaVarianteAtomic
+      // for producto_variante_imagenes table
 
       await client.query("COMMIT");
 
@@ -13284,8 +13408,8 @@ const actualizarVariante = async (req, res) => {
       const unusedFiles = uploadedFiles.filter((_, idx) => !usedUploadIndexes.has(idx));
       await safeUnlinkUploads(unusedFiles);
 
-      // Note: Image propagation by color has been disabled as images are now stored
-      // in producto_variante_imagenes table, not in producto_variantes.url_imagen_variante
+      // Note: Image propagation by color is now handled automatically in applyGaleriaVarianteAtomic
+      // for producto_variante_imagenes table
 
       await client.query("COMMIT");
 
@@ -13647,8 +13771,8 @@ const actualizarVariante = async (req, res) => {
 
       const row = updateRes.rows[0];
 
-      // Note: Image propagation by color has been disabled as images are now stored
-      // in producto_variante_imagenes table, not in producto_variantes.url_imagen_variante
+      // Note: Image propagation by color is now handled automatically in subirImagenesVarianteMultiple
+      // for producto_variante_imagenes table
 
       await auditService.registrarCambioPasivo(
         req,
