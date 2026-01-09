@@ -1812,26 +1812,60 @@ async function getReglasEmpaqueProveedorSnapshot(client, proveedorId) {
 
 async function upsertReglaEmpaque(client, proveedorId, tipoProductoId, cantidadEmpaque) {
   try {
-    const res = await client.query(
-      `INSERT INTO proveedor_reglas_empaque (proveedorid, tipoproductoid, cantidadempaque)
-       VALUES ($1, $2, $3)
-       ON CONFLICT (proveedorid, tipoproductoid)
-       DO UPDATE SET cantidadempaque = EXCLUDED.cantidadempaque
-       RETURNING reglaid`,
-      [proveedorId, tipoProductoId, cantidadEmpaque]
+    // Check if a record already exists
+    const checkRes = await client.query(
+      `SELECT reglaid FROM proveedor_reglas_empaque 
+       WHERE proveedorid = $1 AND tipoproductoid = $2`,
+      [proveedorId, tipoProductoId]
     );
-    return res.rows?.[0]?.reglaid ?? null;
-  } catch (dbError) {
-    if (dbError && dbError.code === "42703") {
+
+    if (checkRes.rows.length > 0) {
+      // Update existing record
+      const reglaid = checkRes.rows[0].reglaid;
+      await client.query(
+        `UPDATE proveedor_reglas_empaque 
+         SET cantidadempaque = $1 
+         WHERE reglaid = $2`,
+        [cantidadEmpaque, reglaid]
+      );
+      return reglaid;
+    } else {
+      // Insert new record
       const res = await client.query(
-        `INSERT INTO proveedor_reglas_empaque (proveedorid, tipoproductoid, piezasporpaquete)
+        `INSERT INTO proveedor_reglas_empaque (proveedorid, tipoproductoid, cantidadempaque)
          VALUES ($1, $2, $3)
-         ON CONFLICT (proveedorid, tipoproductoid)
-         DO UPDATE SET piezasporpaquete = EXCLUDED.piezasporpaquete
          RETURNING reglaid`,
         [proveedorId, tipoProductoId, cantidadEmpaque]
       );
       return res.rows?.[0]?.reglaid ?? null;
+    }
+  } catch (dbError) {
+    // Fallback for legacy column name
+    if (dbError && dbError.code === "42703") {
+      const checkRes = await client.query(
+        `SELECT reglaid FROM proveedor_reglas_empaque 
+         WHERE proveedorid = $1 AND tipoproductoid = $2`,
+        [proveedorId, tipoProductoId]
+      );
+
+      if (checkRes.rows.length > 0) {
+        const reglaid = checkRes.rows[0].reglaid;
+        await client.query(
+          `UPDATE proveedor_reglas_empaque 
+           SET piezasporpaquete = $1 
+           WHERE reglaid = $2`,
+          [cantidadEmpaque, reglaid]
+        );
+        return reglaid;
+      } else {
+        const res = await client.query(
+          `INSERT INTO proveedor_reglas_empaque (proveedorid, tipoproductoid, piezasporpaquete)
+           VALUES ($1, $2, $3)
+           RETURNING reglaid`,
+          [proveedorId, tipoProductoId, cantidadEmpaque]
+        );
+        return res.rows?.[0]?.reglaid ?? null;
+      }
     }
     throw dbError;
   }
@@ -12573,27 +12607,14 @@ const crearVariante = async (req, res) => {
         );
       }
 
-      const medidaProcesada = procesarMedidaParaSkuVariante(dimensionesFinal);
-      if (!medidaProcesada) {
-        throw Object.assign(new Error("No se pudo procesar dimensiones para generar el SKU"), {
-          status: 400,
-        });
-      }
-
       const colorFinal = (() => {
         if (color_nombre === undefined || color_nombre === null) return null;
         const txt = String(color_nombre).trim();
         return txt.length ? txt : null;
       })();
 
-      const colorSegment = procesarColorParaSkuVariante(colorFinal);
-
       const skuMaestroSan = skuMaestroBase.toUpperCase().replace(/\s+/g, "");
-      const maxSkuLen = 50;
-      const remaining = maxSkuLen - (skuMaestroSan.length + 1);
-      const tailRaw = colorSegment ? `${medidaProcesada}-${colorSegment}` : medidaProcesada;
-      const tail = remaining > 0 ? tailRaw.slice(0, remaining).replace(/-+$/g, "") : "";
-      const skuFinal = remaining > 0 && tail ? `${skuMaestroSan}-${tail}` : skuMaestroSan.slice(0, maxSkuLen);
+      const skuTemporal = `${skuMaestroSan}-TEMP`;
 
       const insertRes = await client.query(
         `INSERT INTO producto_variantes
@@ -12602,7 +12623,7 @@ const crearVariante = async (req, res) => {
          RETURNING varianteid, productoid, sku, dimensiones, costounitario, preciounitario, precioofertaunitario, stock, tipoproductoid, medidaid, color_nombre, activo, piezasporpaquete`,
         [
           parsedProductoId,
-          skuFinal,
+          skuTemporal,
           dimensionesFinal,
           costoUnitarioNum,
           stockNum,
@@ -12617,6 +12638,19 @@ const crearVariante = async (req, res) => {
 
       const row = insertRes.rows[0];
       const varianteId = row.varianteid;
+
+      // Generar SKU final con el ID de la variante (formato: SKU_MAESTRO-0001)
+      const varianteIdPadded = String(varianteId).padStart(4, '0');
+      const skuFinal = `${skuMaestroSan}-${varianteIdPadded}`;
+
+      // Actualizar el SKU con el ID real
+      await client.query(
+        'UPDATE producto_variantes SET sku = $1 WHERE varianteid = $2',
+        [skuFinal, varianteId]
+      );
+
+      // Actualizar el row con el SKU final
+      row.sku = skuFinal;
       const baseUrl = `${req.protocol}://${req.get("host")}`;
 
       const galeriaResult = await applyGaleriaVarianteAtomic({
@@ -12808,14 +12842,6 @@ const crearVariante = async (req, res) => {
       });
     }
 
-    const medidaProcesada = procesarMedidaParaSkuVariante(dimensionesFinal);
-    if (!medidaProcesada) {
-      return res.status(400).json({
-        success: false,
-        message: "No se pudo procesar dimensiones para generar el SKU",
-      });
-    }
-
     const colorFinal =
       color_nombre === undefined || color_nombre === null
         ? null
@@ -12824,19 +12850,13 @@ const crearVariante = async (req, res) => {
             return txt.length ? txt : null;
           })();
 
-    const colorSegment = procesarColorParaSkuVariante(colorFinal);
-
     const skuMaestroSan = skuMaestroBase.toUpperCase().replace(/\s+/g, "");
-    const maxSkuLen = 50;
-    const remaining = maxSkuLen - (skuMaestroSan.length + 1);
-    const tailRaw = colorSegment ? `${medidaProcesada}-${colorSegment}` : medidaProcesada;
-    const tail = remaining > 0 ? tailRaw.slice(0, remaining).replace(/-+$/g, "") : "";
-    const skuFinal = remaining > 0 && tail ? `${skuMaestroSan}-${tail}` : skuMaestroSan.slice(0, maxSkuLen);
+    const skuTemporal = `${skuMaestroSan}-TEMP`;
 
     // Usar nombres de columnas reales de Producto_Variantes (en minúsculas)
     const payloadNuevos = {
       productoid: parsedProductoId,
-      sku: skuFinal,
+      sku: skuTemporal,
       dimensiones: dimensionesFinal,
       costounitario: costoUnitarioNum,
       preciounitario: precioUnitarioNum,
@@ -12870,6 +12890,20 @@ const crearVariante = async (req, res) => {
       );
 
       const row = insertRes.rows[0];
+      const varianteId = row.varianteid;
+
+      // Generar SKU final con el ID de la variante (formato: SKU_MAESTRO-0001)
+      const varianteIdPadded = String(varianteId).padStart(4, '0');
+      const skuFinal = `${skuMaestroSan}-${varianteIdPadded}`;
+
+      // Actualizar el SKU con el ID real
+      await db.query(
+        'UPDATE producto_variantes SET sku = $1 WHERE varianteid = $2',
+        [skuFinal, varianteId]
+      );
+
+      // Actualizar el row con el SKU final
+      row.sku = skuFinal;
 
       await auditService.registrarCambioPasivo(
         req,
