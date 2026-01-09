@@ -117,6 +117,51 @@ const requireAuth = () => {
 // Flag para evitar mostrar múltiples modales de sesión expirada
 let sessionExpiredHandled = false;
 
+// Validate token structure on page load
+const validateTokenStructure = () => {
+  const token = getToken();
+  if (!token) return true; // No token is valid state
+  
+  try {
+    // Decode JWT payload (without verification - just structure check)
+    const parts = token.split('.');
+    if (parts.length !== 3) {
+      console.warn('⚠️  Token malformado detectado (partes incorrectas). Limpiando...');
+      clearAuthData();
+      return false;
+    }
+    
+    const payload = JSON.parse(atob(parts[1]));
+    
+    // Check for required fields based on role
+    if (payload.rol === 'cliente' && !payload.tenant_id) {
+      console.warn('⚠️  Token de cliente sin tenant_id detectado. Limpiando...');
+      clearAuthData();
+      return false;
+    }
+    
+    // Check token expiration
+    if (payload.exp && payload.exp * 1000 < Date.now()) {
+      console.warn('⚠️  Token expirado detectado. Limpiando...');
+      clearAuthData();
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('❌ Error validando estructura del token:', error);
+    clearAuthData();
+    return false;
+  }
+};
+
+// Run validation on script load
+if (typeof window !== 'undefined') {
+  window.addEventListener('DOMContentLoaded', () => {
+    validateTokenStructure();
+  });
+}
+
 // API call wrapper con manejo automático de token y sesión expirada
 const apiCall = async (endpoint, options = {}) => {
   const token = getEffectiveToken();

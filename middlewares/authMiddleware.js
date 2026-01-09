@@ -24,6 +24,7 @@ const authenticate = async (req, res, next) => {
     const authHeader = req.headers.authorization;
 
     if (!authHeader) {
+      console.warn(`⚠️  [AUTH] Token no proporcionado - Path: ${req.path}`);
       return res.status(401).json({
         success: false,
         message: "Token no proporcionado",
@@ -36,7 +37,17 @@ const authenticate = async (req, res, next) => {
       : authHeader;
 
     // Verificar y decodificar el token
-    const decoded = verifyToken(token);
+    let decoded;
+    try {
+      decoded = verifyToken(token);
+    } catch (verifyError) {
+      console.error(`❌ [AUTH] Token verification failed - Path: ${req.path}`, verifyError.message);
+      return res.status(401).json({
+        success: false,
+        message: "Token inválido o expirado",
+        error: verifyError.message,
+      });
+    }
 
     const rawUserId =
       decoded?.userId ?? decoded?.id ?? decoded?.userid ?? decoded?.AdminID ?? decoded?.adminId;
@@ -88,6 +99,11 @@ const authenticate = async (req, res, next) => {
       const tenantIdFromToken = decoded?.tenant_id || req.tenant?.tenant_id;
       
       if (!tenantIdFromToken) {
+        console.error(
+          `❌ [AUTH] Cliente token sin tenant_id - UserID: ${userId}, Path: ${req.path}\n` +
+          `   Token tenant_id: ${decoded?.tenant_id}\n` +
+          `   Req.tenant: ${req.tenant?.tenant_id}`
+        );
         return res.status(401).json({
           success: false,
           message: "Token de cliente sin tenant_id válido",
@@ -100,6 +116,9 @@ const authenticate = async (req, res, next) => {
       );
 
       if (!clienteResult.rows.length) {
+        console.error(
+          `❌ [AUTH] Cliente no encontrado o inactivo - UserID: ${userId}, TenantID: ${tenantIdFromToken}, Path: ${req.path}`
+        );
         return res.status(401).json({
           success: false,
           message: "Cliente no autorizado o inactivo",
