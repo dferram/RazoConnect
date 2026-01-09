@@ -1,17 +1,14 @@
-Ôªø<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Gesti√≥n de Agentes - Admin Fashion Box</title>
+    <title>GestiÛn de Agentes - Admin Fashion Box</title>
     <link rel="icon" type="image/png" href="/icon/Logo_Fashion.png" />
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <!-- PROTECCI√ìN DE AUTENTICACI√ìN ADMIN -->
+    <!-- PROTECCI”N DE AUTENTICACI”N ADMIN -->
     <script src="js/auth-guard-admin.js"></script>
-
-    <!-- SISTEMA DE RENOVACI√ìN DE TOKENS -->
-    <script src="js/token-refresh.js"></script>
 
     <link rel="stylesheet" href="css/styles-fashion.css" />
     <link rel="stylesheet" href="css/fashion-theme-fashion.css" />
@@ -22,7 +19,7 @@
     />
       <link rel="stylesheet" href="css/mobile-responsive-fashion.css" />
   </head>
-  <body data-page-title="Gesti√≥n de agentes">
+  <body data-page-title="GestiÛn de agentes">
     <div class="admin-layout">
       <!-- Sidebar -->
       <div id="sidebar-container"></div>
@@ -63,7 +60,7 @@
                   <input type="email" id="email" class="form-input" required />
                 </div>
                 <div class="form-group">
-                  <label for="password" class="form-label">Contrase√±a *</label>
+                  <label for="password" class="form-label">ContraseÒa *</label>
                   <input
                     type="password"
                     id="password"
@@ -110,7 +107,7 @@
                   <tr>
                     <th>Nombre</th>
                     <th>Email</th>
-                    <th>C√≥digo</th>
+                    <th>CÛdigo</th>
                     <th>Total Ventas</th>
                     <th>Monto Vendido</th>
                     <th>Comisiones</th>
@@ -122,12 +119,12 @@
               </table>
             </div>
             <div id="emptyAgents" class="empty-state" style="display: none">
-              <div class="empty-state-icon">üíº</div>
+              <div class="empty-state-icon">??</div>
               <h3 class="empty-state-title">No hay agentes</h3>
               <p class="empty-state-text">Crea tu primer agente de ventas</p>
             </div>
 
-            <!-- Paginaci√≥n -->
+            <!-- PaginaciÛn -->
             <div
               id="paginationContainer"
               style="
@@ -146,14 +143,14 @@
                   gap: 1rem;
                 "
               >
-                <!-- Informaci√≥n de registros -->
+                <!-- InformaciÛn de registros -->
                 <div style="color: var(--razo-gray-warm); font-size: 0.875rem">
                   Mostrando <strong id="pageStart">1</strong> a
                   <strong id="pageEnd">10</strong> de
                   <strong id="totalRecords">0</strong> agentes
                 </div>
 
-                <!-- Controles de paginaci√≥n -->
+                <!-- Controles de paginaciÛn -->
                 <div style="display: flex; gap: 0.5rem; align-items: center">
                   <button
                     id="btnPrevPage"
@@ -168,11 +165,11 @@
                     "
                     disabled
                   >
-                    ‚Üê Anterior
+                    ? Anterior
                   </button>
 
                   <div id="pageNumbers" style="display: flex; gap: 0.25rem">
-                    <!-- Los n√∫meros de p√°gina se generar√°n din√°micamente -->
+                    <!-- Los n˙meros de p·gina se generar·n din·micamente -->
                   </div>
 
                   <button
@@ -187,7 +184,7 @@
                       gap: 0.5rem;
                     "
                   >
-                    Siguiente ‚Üí
+                    Siguiente ?
                   </button>
                 </div>
               </div>
@@ -247,7 +244,7 @@
               font-weight: 600;
             "
           >
-            üë§ Detalle del Agente
+            ?? Detalle del Agente
           </h2>
           <div style="display: flex; align-items: center; gap: 0.75rem">
             <a
@@ -262,7 +259,7 @@
                 text-decoration: none;
               "
             >
-              <span aria-hidden="true">üîó</span>
+              <span aria-hidden="true">??</span>
               <span>Ver Perfil Completo</span>
             </a>
             <button
@@ -290,7 +287,7 @@
           </div>
         </div>
         <div id="detalleAgenteModalBody">
-          <!-- El contenido se llenar√° din√°micamente -->
+          <!-- El contenido se llenar· din·micamente -->
         </div>
       </div>
     </div>
@@ -305,7 +302,7 @@
       const adminToken = localStorage.getItem("Fashion Box_admin_token");
       if (!adminToken) window.location.href = "/login.html";
 
-      // Variables de estado y paginaci√≥n
+      // Variables de estado y paginaciÛn
       let todosLosAgentes = [];
       let paginaActual = 1;
       const registrosPorPagina = 10;
@@ -356,10 +353,10 @@
 
         if (typeof Swal !== "undefined" && Swal && typeof Swal.fire === "function") {
           const result = await Swal.fire({
-            title: "¬øAprobar esta solicitud de creaci√≥n de agente?",
+            title: "øAprobar esta solicitud de creaciÛn de agente?",
             icon: "question",
             showCancelButton: true,
-            confirmButtonText: "S√≠, aprobar",
+            confirmButtonText: "SÌ, aprobar",
             cancelButtonText: "Cancelar",
             confirmButtonColor: "#F97316",
             cancelButtonColor: "#6b7280",
@@ -370,7 +367,7 @@
           }
         } else {
           console.warn(
-            "SweetAlert2 no disponible; acci√≥n de aprobarSolicitudAgente cancelada."
+            "SweetAlert2 no disponible; acciÛn de aprobarSolicitudAgente cancelada."
           );
           return;
         }
@@ -406,10 +403,10 @@
 
         if (typeof Swal !== "undefined" && Swal && typeof Swal.fire === "function") {
           const result = await Swal.fire({
-            title: "¬øRechazar esta solicitud de creaci√≥n de agente?",
+            title: "øRechazar esta solicitud de creaciÛn de agente?",
             icon: "warning",
             showCancelButton: true,
-            confirmButtonText: "S√≠, rechazar",
+            confirmButtonText: "SÌ, rechazar",
             cancelButtonText: "Cancelar",
             confirmButtonColor: "#F97316",
             cancelButtonColor: "#6b7280",
@@ -420,7 +417,7 @@
           }
         } else {
           console.warn(
-            "SweetAlert2 no disponible; acci√≥n de rechazarSolicitudAgente cancelada."
+            "SweetAlert2 no disponible; acciÛn de rechazarSolicitudAgente cancelada."
           );
           return;
         }
@@ -484,7 +481,7 @@
         }
       }
 
-      // Renderizar agentes con paginaci√≥n
+      // Renderizar agentes con paginaciÛn
       function renderAgentes() {
         const tbody = document.getElementById("agentsTableBody");
         const table = document.getElementById("agentsTable");
@@ -503,30 +500,30 @@
                 ? `<button 
                     class="btn btn-success btn-sm" 
                     style="margin-right:0.35rem;"
-                    title="Aprobar solicitud de creaci√≥n"
+                    title="Aprobar solicitud de creaciÛn"
                     onclick="aprobarSolicitudAgente(${controlId})">
-                    ‚úî
+                    ?
                   </button>
                   <button 
                     class="btn btn-danger btn-sm" 
-                    title="Rechazar solicitud de creaci√≥n"
+                    title="Rechazar solicitud de creaciÛn"
                     onclick="rechazarSolicitudAgente(${controlId})">
-                    ‚úñ
+                    ?
                   </button>`
-                : `<span style="font-size:0.8rem; color: var(--razo-gray-warm);">En revisi√≥n</span>`;
+                : `<span style="font-size:0.8rem; color: var(--razo-gray-warm);">En revisiÛn</span>`;
 
               return `
         <tr class="table-warning">
           <td><strong>${a.nombre} ${a.apellido}</strong></td>
           <td>${a.email}</td>
           <td><span class="admin-badge info">${
-            a.codigoAgente || "‚Äî"
+            a.codigoAgente || "ó"
           }</span></td>
           <td>${a.totalVentas}</td>
           <td><strong>$${a.montoTotalVentas.toLocaleString()}</strong></td>
           <td><strong style="color: var(--success-color)">$${a.comisionesTotales.toLocaleString()}</strong></td>
           <td>
-            <span class="admin-badge warning">‚è≥ Por Confirmar</span>
+            <span class="admin-badge warning">? Por Confirmar</span>
           </td>
           <td>
             <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items:center;">
@@ -542,7 +539,7 @@
           <td><strong>${a.nombre} ${a.apellido}</strong></td>
           <td>${a.email}</td>
           <td><span class="admin-badge info">${
-            a.codigoAgente || "‚Äî"
+            a.codigoAgente || "ó"
           }</span></td>
           <td>${a.totalVentas}</td>
           <td><strong>$${a.montoTotalVentas.toLocaleString()}</strong></td>
@@ -584,7 +581,7 @@
         actualizarPaginacion();
       }
 
-      // Actualizar controles de paginaci√≥n
+      // Actualizar controles de paginaciÛn
       function actualizarPaginacion() {
         const totalPaginas = Math.ceil(
           todosLosAgentes.length / registrosPorPagina
@@ -595,7 +592,7 @@
           todosLosAgentes.length
         );
 
-        // Actualizar informaci√≥n
+        // Actualizar informaciÛn
         document.getElementById("pageStart").textContent = inicio;
         document.getElementById("pageEnd").textContent = fin;
         document.getElementById("totalRecords").textContent =
@@ -606,11 +603,11 @@
         document.getElementById("btnNextPage").disabled =
           paginaActual === totalPaginas;
 
-        // Generar n√∫meros de p√°gina
+        // Generar n˙meros de p·gina
         const pageNumbers = document.getElementById("pageNumbers");
         pageNumbers.innerHTML = "";
 
-        // Mostrar m√°ximo 5 n√∫meros de p√°gina
+        // Mostrar m·ximo 5 n˙meros de p·gina
         let startPage = Math.max(1, paginaActual - 2);
         let endPage = Math.min(totalPaginas, startPage + 4);
 
@@ -637,7 +634,7 @@
         }
       }
 
-      // Cambiar de p√°gina
+      // Cambiar de p·gina
       function cambiarPagina(direccion) {
         const totalPaginas = Math.ceil(
           todosLosAgentes.length / registrosPorPagina
@@ -652,7 +649,7 @@
         renderAgentes();
       }
 
-      // Ir a p√°gina espec√≠fica
+      // Ir a p·gina especÌfica
       function irAPagina(pagina) {
         paginaActual = pagina;
         renderAgentes();
@@ -688,7 +685,7 @@
 
             if (response.ok && data.success) {
               Swal.fire({
-                title: '¬°Agente creado!',
+                title: '°Agente creado!',
                 html: `<p>El agente <strong>${document.getElementById("nombre").value} ${document.getElementById("apellido").value}</strong> ha sido creado exitosamente.</p>`,
                 icon: 'success',
                 confirmButtonText: 'Continuar',
@@ -725,8 +722,8 @@
           } catch (error) {
             console.error("Error:", error);
             Swal.fire({
-              title: 'Error de conexi√≥n',
-              text: 'No se pudo conectar con el servidor. Por favor, verifica tu conexi√≥n a internet e intenta nuevamente.',
+              title: 'Error de conexiÛn',
+              text: 'No se pudo conectar con el servidor. Por favor, verifica tu conexiÛn a internet e intenta nuevamente.',
               icon: 'error',
               confirmButtonText: 'Entendido',
               confirmButtonColor: '#ef4444'
@@ -741,11 +738,11 @@
       async function desactivarAgente(id, nombre) {
         if (typeof Swal !== "undefined" && Swal && typeof Swal.fire === "function") {
           const result = await Swal.fire({
-            title: "¬øDesactivar agente?",
-            text: `¬øDesactivar al agente ${nombre}?`,
+            title: "øDesactivar agente?",
+            text: `øDesactivar al agente ${nombre}?`,
             icon: "warning",
             showCancelButton: true,
-            confirmButtonText: "S√≠, desactivar",
+            confirmButtonText: "SÌ, desactivar",
             cancelButtonText: "Cancelar",
             confirmButtonColor: "#F97316",
             cancelButtonColor: "#6b7280",
@@ -756,7 +753,7 @@
           }
         } else {
           console.warn(
-            "SweetAlert2 no disponible; acci√≥n de desactivarAgente cancelada."
+            "SweetAlert2 no disponible; acciÛn de desactivarAgente cancelada."
           );
           return;
         }
@@ -821,7 +818,7 @@
             );
 
             const contenido = `
-            <!-- Informaci√≥n del Agente -->
+            <!-- InformaciÛn del Agente -->
             <div style="background: var(--razo-cream); padding: 1.25rem; border-radius: 0.75rem; margin-bottom: 1.5rem; border-left: 4px solid var(--razo-orange);">
               <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
                 <div>
@@ -837,7 +834,7 @@
                   }</p>
                 </div>
                 <div>
-                  <p style="margin: 0.5rem 0; font-size: 0.875rem;"><strong style="color: var(--razo-gray-warm);">C√≥digo:</strong></p>
+                  <p style="margin: 0.5rem 0; font-size: 0.875rem;"><strong style="color: var(--razo-gray-warm);">CÛdigo:</strong></p>
                   <p style="margin: 0;"><span class="admin-badge info">${
                     agente.codigoAgente
                   }</span></p>
@@ -851,7 +848,7 @@
               </div>
             </div>
 
-            <!-- Estad√≠sticas -->
+            <!-- EstadÌsticas -->
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
               <div style="background: linear-gradient(135deg, #ff7a18, #ffae42); padding: 1.25rem; border-radius: 0.75rem; color: white; box-shadow: 0 12px 24px rgba(251, 146, 60, 0.3); border: 1px solid rgba(251, 146, 60, 0.45);">
                 <p style="margin: 0; font-size: 0.875rem; opacity: 0.9;">Total Ventas</p>
@@ -867,7 +864,7 @@
 
             <!-- Ventas -->
             <div style="margin-bottom: 1.5rem;">
-              <h3 style="margin: 0 0 0.75rem 0; font-size: 1rem; color: #2D3748; font-weight: 600;">üõí Ventas Realizadas (${
+              <h3 style="margin: 0 0 0.75rem 0; font-size: 1rem; color: #2D3748; font-weight: 600;">?? Ventas Realizadas (${
                 ventas.length
               })</h3>
               ${
@@ -921,7 +918,7 @@
 
             <!-- Comisiones -->
             <div>
-              <h3 style="margin: 0 0 0.75rem 0; font-size: 1rem; color: #2D3748; font-weight: 600;">üí∞ Comisiones (${
+              <h3 style="margin: 0 0 0.75rem 0; font-size: 1rem; color: #2D3748; font-weight: 600;">?? Comisiones (${
                 comisiones.length
               })</h3>
               ${
@@ -931,7 +928,7 @@
                   <table class="admin-table" style="font-size: 0.875rem;">
                     <thead>
                       <tr style="background: #F9FAFB;">
-                        <th style="padding: 0.75rem;">#Comisi√≥n</th>
+                        <th style="padding: 0.75rem;">#ComisiÛn</th>
                         <th style="padding: 0.75rem;">#Pedido</th>
                         <th style="padding: 0.75rem;">Monto</th>
                         <th style="padding: 0.75rem;">Estado</th>
@@ -995,9 +992,9 @@
           link.addEventListener("click", (e) => {
             e.preventDefault();
             showToast(
-              `M√≥dulo "${
+              `MÛdulo "${
                 link.querySelector("span:last-child").textContent
-              }" pr√≥ximamente`,
+              }" prÛximamente`,
               "info"
             );
           });

@@ -1,14 +1,13 @@
-Ôªø<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Evaluaci√≥n de Solicitudes de Cr√©dito</title>
+    <title>EvaluaciÛn de Solicitudes de CrÈdito</title>
     <link rel="icon" type="image/png" href="/icon/Logo_Fashion.png" />
 
-    <!-- Protecci√≥n de autenticaci√≥n admin -->
+    <!-- ProtecciÛn de autenticaciÛn admin -->
     <script src="js/auth-guard-admin.js"></script>
-    <script src="js/token-refresh.js"></script>
 
     <link rel="stylesheet" href="css/styles-fashion.css" />
     <link rel="stylesheet" href="css/fashion-theme-fashion.css" />
@@ -29,7 +28,7 @@
           <section class="admin-stats-grid" id="statsContainer">
             <article class="admin-stat-card">
               <div class="admin-stat-header">
-                <div class="admin-stat-icon orange">üí≥</div>
+                <div class="admin-stat-icon orange">??</div>
                 <span class="admin-badge info">Pendientes</span>
               </div>
               <div class="admin-stat-content">
@@ -40,7 +39,7 @@
 
             <article class="admin-stat-card">
               <div class="admin-stat-header">
-                <div class="admin-stat-icon green">üí∞</div>
+                <div class="admin-stat-icon green">??</div>
                 <span class="admin-badge success">Monto</span>
               </div>
               <div class="admin-stat-content">
@@ -51,7 +50,7 @@
 
             <article class="admin-stat-card">
               <div class="admin-stat-header">
-                <div class="admin-stat-icon red">‚ö†Ô∏è</div>
+                <div class="admin-stat-icon red">??</div>
                 <span class="admin-badge danger">Riesgo</span>
               </div>
               <div class="admin-stat-content">
@@ -64,7 +63,7 @@
           <!-- Tabla de solicitudes -->
           <section class="admin-table-container">
             <div class="admin-table-header">
-              <h2 class="admin-table-title">Solicitudes de Cr√©dito Pendientes</h2>
+              <h2 class="admin-table-title">Solicitudes de CrÈdito Pendientes</h2>
             </div>
 
             <div id="solicitudesLoading" class="loading" style="display: flex">
@@ -88,7 +87,7 @@
             </div>
 
             <div id="solicitudesEmpty" class="empty-state" style="display: none">
-              <div class="empty-state-icon">‚úÖ</div>
+              <div class="empty-state-icon">?</div>
               <h3 class="empty-state-title">No hay solicitudes pendientes</h3>
               <p class="empty-state-text">
                 Todas las solicitudes han sido procesadas.
@@ -130,9 +129,9 @@
         }
 
         function formatearFecha(value) {
-          if (!value) return "‚Äî";
+          if (!value) return "ó";
           const date = new Date(value);
-          if (Number.isNaN(date.getTime())) return "‚Äî";
+          if (Number.isNaN(date.getTime())) return "ó";
           return date.toLocaleString("es-MX", {
             day: "2-digit",
             month: "short",
@@ -146,14 +145,14 @@
           if (meses < 1) return "Menos de 1 mes";
           if (meses === 1) return "1 mes";
           if (meses < 12) return `${meses} meses`;
-          const a√±os = Math.floor(meses / 12);
+          const aÒos = Math.floor(meses / 12);
           const mesesRestantes = meses % 12;
           if (mesesRestantes === 0) {
-            return a√±os === 1 ? "1 a√±o" : `${a√±os} a√±os`;
+            return aÒos === 1 ? "1 aÒo" : `${aÒos} aÒos`;
           }
-          return a√±os === 1
-            ? `1 a√±o y ${mesesRestantes} ${mesesRestantes === 1 ? "mes" : "meses"}`
-            : `${a√±os} a√±os y ${mesesRestantes} ${mesesRestantes === 1 ? "mes" : "meses"}`;
+          return aÒos === 1
+            ? `1 aÒo y ${mesesRestantes} ${mesesRestantes === 1 ? "mes" : "meses"}`
+            : `${aÒos} aÒos y ${mesesRestantes} ${mesesRestantes === 1 ? "mes" : "meses"}`;
         }
 
         function getBadgeColor(nivelRiesgo) {
@@ -218,7 +217,7 @@
                       </div>
                     </td>
                     <td style="font-weight:600;">${formatCurrency(solicitud.monto_solicitado)}</td>
-                    <td>${solicitud.motivo_uso || "‚Äî"}</td>
+                    <td>${solicitud.motivo_uso || "ó"}</td>
                     <td>
                       <button
                         type="button"
@@ -294,12 +293,12 @@
 
             const contenido = `
               <div class="credit-analysis">
-                <!-- Secci√≥n 1: Perfil -->
+                <!-- SecciÛn 1: Perfil -->
                 <div class="analysis-section">
                   <h4 class="section-title">Perfil del Cliente</h4>
                   <div class="profile-stats">
                     <div class="stat-item">
-                      <span class="stat-label">Antig√ºedad</span>
+                      <span class="stat-label">Antig¸edad</span>
                       <span class="stat-value">
                         <span class="badge bg-${getBadgeColor(analisis.metricas.antiguedad_meses > 6 ? 'BAJO' : analisis.metricas.antiguedad_meses > 1 ? 'MEDIO' : 'ALTO')}">
                           ${formatearAntiguedad(analisis.metricas.antiguedad_meses)}
@@ -311,7 +310,7 @@
                       <span class="stat-value">${analisis.metricas.pedidos_totales}</span>
                     </div>
                     <div class="stat-item">
-                      <span class="stat-label">Compra M√°xima</span>
+                      <span class="stat-label">Compra M·xima</span>
                       <span class="stat-value">${formatCurrency(analisis.metricas.compra_maxima)}</span>
                     </div>
                     <div class="stat-item">
@@ -321,12 +320,12 @@
                   </div>
                 </div>
 
-                <!-- Secci√≥n 2: La Solicitud -->
+                <!-- SecciÛn 2: La Solicitud -->
                 <div class="analysis-section">
-                  <h4 class="section-title">An√°lisis de la Solicitud</h4>
+                  <h4 class="section-title">An·lisis de la Solicitud</h4>
                   <div class="request-comparison">
                     <div class="comparison-bar">
-                      <div class="bar-label">Monto Solicitado vs M√°ximo Hist√≥rico</div>
+                      <div class="bar-label">Monto Solicitado vs M·ximo HistÛrico</div>
                       <div class="bar-container">
                         <div class="bar-base" style="width:100%;">
                           ${formatCurrency(analisis.metricas.compra_maxima)}
@@ -339,7 +338,7 @@
                   </div>
                 </div>
 
-                <!-- Secci√≥n 3: Veredicto -->
+                <!-- SecciÛn 3: Veredicto -->
                 <div class="analysis-section">
                   <div class="alert alert-${badgeColor}">
                     <h4 class="alert-heading">
@@ -355,7 +354,7 @@
             `;
 
             const result = await Swal.fire({
-              title: `Evaluaci√≥n de Cr√©dito - ${solicitud.nombre_cliente}`,
+              title: `EvaluaciÛn de CrÈdito - ${solicitud.nombre_cliente}`,
               html: contenido,
               width: "800px",
               showCancelButton: true,
@@ -375,14 +374,14 @@
             if (result.isConfirmed) {
               // Aprobar
               const { value: limite } = await Swal.fire({
-                title: "Establecer L√≠mite de Cr√©dito",
+                title: "Establecer LÌmite de CrÈdito",
                 input: "number",
                 inputLabel: "Monto Aprobado ($)",
                 inputValue: solicitud.monto_solicitado,
                 showCancelButton: true,
                 inputValidator: (value) => {
                   if (!value || value <= 0) {
-                    return "Por favor ingresa un monto v√°lido";
+                    return "Por favor ingresa un monto v·lido";
                   }
                 }
               });
@@ -409,8 +408,8 @@
 
               await Swal.fire({
                 icon: "success",
-                title: "¬°Solicitud Aprobada!",
-                text: "La l√≠nea de cr√©dito ha sido creada correctamente.",
+                title: "°Solicitud Aprobada!",
+                text: "La lÌnea de crÈdito ha sido creada correctamente.",
                 confirmButtonColor: "#22c55e",
               });
             } else {
@@ -462,7 +461,7 @@
             Swal.fire({
               icon: "error",
               title: "Error",
-              text: error.message || "Ocurri√≥ un error",
+              text: error.message || "OcurriÛ un error",
               confirmButtonColor: "#F97316",
             });
           }

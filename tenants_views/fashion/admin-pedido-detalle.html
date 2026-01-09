@@ -1,4 +1,4 @@
-Ôªø<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
@@ -6,9 +6,8 @@
     <title>Detalle del Pedido - Fashion Box Admin</title>
     <link rel="icon" type="image/png" href="/icon/Logo_Fashion.png" />
 
-    <!-- Protecci√≥n de autenticaci√≥n -->
+    <!-- ProtecciÛn de autenticaciÛn -->
     <script src="js/auth-guard-admin.js"></script>
-    <script src="js/token-refresh.js"></script>
 
     <link rel="stylesheet" href="css/styles-fashion.css" />
     <link rel="stylesheet" href="css/fashion-theme-fashion.css" />
@@ -162,7 +161,7 @@
       }
 
       .items-card-header h3::before {
-        content: "üì¶";
+        content: "??";
         font-size: 1.25rem;
       }
 
@@ -295,7 +294,7 @@
               class="btn btn-outline btn-sm"
               onclick="sessionStorage.setItem('_navigating', 'true'); localStorage.setItem('_nav_timestamp', Date.now().toString()); window.location.href='/admin-pedidos.html';"
             >
-              ‚Üê Volver a pedidos
+              ? Volver a pedidos
             </button>
           </div>
           <div class="pedido-detail-wrapper">
@@ -313,7 +312,7 @@
                 class="btn btn-outline btn-sm"
                 onclick="sessionStorage.setItem('_navigating', 'true'); localStorage.setItem('_nav_timestamp', Date.now().toString()); window.location.href='/admin-pedidos.html';"
               >
-                ‚Üê Volver a pedidos
+                ? Volver a pedidos
               </button>
             </div>
 
@@ -345,21 +344,21 @@
               <!-- Info cards grid -->
               <div class="info-grid">
                 <div class="info-card">
-                  <div class="info-card-title">üë§ Cliente</div>
+                  <div class="info-card-title">?? Cliente</div>
                   <div class="info-card-content">
                     <h4 id="clienteNombre">--</h4>
                     <p id="clienteContacto">--</p>
                   </div>
                 </div>
                 <div class="info-card">
-                  <div class="info-card-title">üìç Direcci√≥n de env√≠o</div>
+                  <div class="info-card-title">?? DirecciÛn de envÌo</div>
                   <div class="info-card-content">
                     <h4 id="direccionReceptor">--</h4>
                     <p id="direccionCompleta">--</p>
                   </div>
                 </div>
                 <div class="info-card" id="agenteCard" style="display: none">
-                  <div class="info-card-title">ü§ù Agente</div>
+                  <div class="info-card-title">?? Agente</div>
                   <div class="info-card-content">
                     <h4 id="agenteNombre">--</h4>
                     <p id="agenteCodigo">--</p>
@@ -437,7 +436,7 @@
             >
               <option value="Pendiente">Pendiente</option>
               <option value="Parcialmente Surtido">Parcialmente Surtido</option>
-              <option value="Confirmado">Confirmado ‚ö†Ô∏è (Reduce Stock)</option>
+              <option value="Confirmado">Confirmado ?? (Reduce Stock)</option>
               <option value="Enviado">Enviado</option>
               <option value="Entregado">Entregado</option>
               <option value="Cancelado">Cancelado</option>
@@ -454,8 +453,8 @@
             "
           >
             <p style="font-size: 0.875rem; margin: 0">
-              <strong>‚ö†Ô∏è Importante:</strong> Al cambiar a "Confirmado", se
-              reducir√° autom√°ticamente el stock de los productos y se registrar√°
+              <strong>?? Importante:</strong> Al cambiar a "Confirmado", se
+              reducir· autom·ticamente el stock de los productos y se registrar·
               en el log de inventario.
             </p>
           </div>
@@ -530,9 +529,9 @@
 
           if (!pedidoId || Number.isNaN(pedidoId)) {
             loadingState.style.display = "none";
-            errorMessage.textContent = "ID de pedido inv√°lido";
+            errorMessage.textContent = "ID de pedido inv·lido";
             errorState.style.display = "block";
-            showToast("ID de pedido inv√°lido", "error");
+            showToast("ID de pedido inv·lido", "error");
             return;
           }
 
@@ -602,16 +601,16 @@
 
             const contactoParts = [];
             if (pedido.cliente.email)
-              contactoParts.push(`üìß ${pedido.cliente.email}`);
+              contactoParts.push(`?? ${pedido.cliente.email}`);
             if (pedido.cliente.telefono)
-              contactoParts.push(`üìû ${pedido.cliente.telefono}`);
+              contactoParts.push(`?? ${pedido.cliente.telefono}`);
             document.getElementById("clienteContacto").innerHTML =
-              contactoParts.join("<br>") || "Sin informaci√≥n de contacto";
+              contactoParts.join("<br>") || "Sin informaciÛn de contacto";
 
             // Render direccion
             const direccion = pedido.direccion;
             document.getElementById("direccionReceptor").textContent =
-              "Direcci√≥n de env√≠o";
+              "DirecciÛn de envÌo";
 
             const direccionParts = [];
             if (direccion.calle) {
@@ -634,7 +633,7 @@
               direccionParts.push(`CP ${direccion.codigoPostal}`);
 
             document.getElementById("direccionCompleta").innerHTML =
-              direccionParts.join("<br>") || "Sin direcci√≥n";
+              direccionParts.join("<br>") || "Sin direcciÛn";
 
             // Render agente si existe
             if (pedido.agente) {
@@ -644,7 +643,7 @@
                 pedido.agente.nombre;
               document.getElementById(
                 "agenteCodigo"
-              ).textContent = `C√≥digo: ${pedido.agente.codigo}`;
+              ).textContent = `CÛdigo: ${pedido.agente.codigo}`;
             }
 
             // Render items
@@ -653,7 +652,7 @@
               .map(
                 (item) => `
               <div class="item-row">
-                <div class="item-image-placeholder">üì¶</div>
+                <div class="item-image-placeholder">??</div>
                 <div class="item-info">
                   <p class="item-name">${item.nombre}</p>
                   <p class="item-meta">
@@ -672,7 +671,7 @@
                   <p class="item-subtotal">${formatCurrency(item.subtotal)}</p>
                   <p class="item-unit-price">${
                     item.cantidadPaquetes
-                  } paquetes √ó ${formatCurrency(item.precioPorPaquete)}</p>
+                  } paquetes ◊ ${formatCurrency(item.precioPorPaquete)}</p>
                 </div>
               </div>
             `
@@ -757,7 +756,7 @@
 
           let swalConfig = null;
           let fallbackMessage =
-            "¬øDeseas actualizar el estatus y notificar al cliente?";
+            "øDeseas actualizar el estatus y notificar al cliente?";
 
           if (
             typeof Swal !== "undefined" &&
@@ -767,11 +766,11 @@
             if (nuevoLower === "cancelado" && actualLower !== "cancelado") {
               swalConfig = {
                 icon: "warning",
-                title: "¬øCancelar pedido?",
+                title: "øCancelar pedido?",
                 text:
-                  "‚ö†Ô∏è Se devolver√°n los productos al inventario y se enviar√° un correo de cancelaci√≥n al cliente.",
+                  "?? Se devolver·n los productos al inventario y se enviar· un correo de cancelaciÛn al cliente.",
                 showCancelButton: true,
-                confirmButtonText: "S√≠, cancelar",
+                confirmButtonText: "SÌ, cancelar",
                 cancelButtonText: "No, mantener",
                 confirmButtonColor: "#dc3545",
                 cancelButtonColor: "#6c757d",
@@ -783,11 +782,11 @@
             ) {
               swalConfig = {
                 icon: "question",
-                title: "¬øReactivar pedido?",
+                title: "øReactivar pedido?",
                 text:
-                  "‚ö†Ô∏è Se volver√° a descontar el stock. Aseg√∫rate de tener existencias.",
+                  "?? Se volver· a descontar el stock. Aseg˙rate de tener existencias.",
                 showCancelButton: true,
-                confirmButtonText: "S√≠, reactivar",
+                confirmButtonText: "SÌ, reactivar",
                 cancelButtonText: "No, mantener cancelado",
                 confirmButtonColor: "#0d6efd",
                 cancelButtonColor: "#6c757d",
@@ -798,9 +797,9 @@
                 icon: "question",
                 title: "Actualizar estatus",
                 text:
-                  "¬øDeseas actualizar el estatus y notificar al cliente?",
+                  "øDeseas actualizar el estatus y notificar al cliente?",
                 showCancelButton: true,
-                confirmButtonText: "S√≠, actualizar",
+                confirmButtonText: "SÌ, actualizar",
                 cancelButtonText: "Cancelar",
                 confirmButtonColor: "#F97316",
                 cancelButtonColor: "#6c757d",
@@ -852,11 +851,11 @@
               closeStatusModal();
 
               const message = (data.message || "").toString();
-              const isAuditFlow = message.toLowerCase().includes("bit√°cora") || message.toLowerCase().includes("auditor");
+              const isAuditFlow = message.toLowerCase().includes("bit·cora") || message.toLowerCase().includes("auditor");
               const swalIcon = isAuditFlow ? "info" : "success";
               const swalTitle = isAuditFlow ? "Solicitud en Espera" : "Estatus actualizado";
               const swalText = isAuditFlow
-                ? "El cambio de estatus ha sido registrado en la bit√°cora. Debes aprobarlo en la secci√≥n de Auditor√≠a para que se aplique."
+                ? "El cambio de estatus ha sido registrado en la bit·cora. Debes aprobarlo en la secciÛn de AuditorÌa para que se aplique."
                 : (message || "Estatus actualizado correctamente.");
 
               if (
@@ -874,7 +873,7 @@
                 showToast(swalText, isAuditFlow ? "info" : "success");
               }
 
-              // √âxito: mantener deshabilitado hasta recarga
+              // …xito: mantener deshabilitado hasta recarga
               window.location.reload();
             } else {
               showToast(
@@ -882,7 +881,7 @@
                 "error"
               );
 
-              // Error de validaci√≥n/respuesta: re-habilitar
+              // Error de validaciÛn/respuesta: re-habilitar
               btnConfirmar.disabled = false;
               if (btnConfirmarText) {
                 btnConfirmarText.textContent =
@@ -910,7 +909,7 @@
             if (btnConfirmarSpinner)
               btnConfirmarSpinner.style.display = "none";
           } finally {
-            // El estado del bot√≥n se maneja dentro de success/error para evitar doble env√≠o.
+            // El estado del botÛn se maneja dentro de success/error para evitar doble envÌo.
           }
         }
 
@@ -933,9 +932,9 @@
         }
 
         function formatDate(value) {
-          if (!value) return "‚Äî";
+          if (!value) return "ó";
           const date = new Date(value);
-          if (Number.isNaN(date.getTime())) return "‚Äî";
+          if (Number.isNaN(date.getTime())) return "ó";
           return date.toLocaleDateString("es-MX", {
             weekday: "long",
             day: "numeric",

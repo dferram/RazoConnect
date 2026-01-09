@@ -1,4 +1,4 @@
-ï»¿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
@@ -6,11 +6,8 @@
     <title>Movimientos (Kardex) - Admin Fashion Box</title>
     <link rel="icon" type="image/png" href="/icon/Logo_Fashion.png" />
 
-    <!-- PROTECCIÃ“N DE AUTENTICACIÃ“N ADMIN -->
+    <!-- PROTECCIÓN DE AUTENTICACIÓN ADMIN -->
     <script src="js/auth-guard-admin.js"></script>
-
-    <!-- SISTEMA DE RENOVACIÃ“N DE TOKENS -->
-    <script src="js/token-refresh.js"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -36,7 +33,7 @@
               <div>
                 <h2 class="admin-table-title">Movimientos (Kardex)</h2>
                 <p style="margin: 0; color: var(--razo-gray-warm); font-size: 0.9rem">
-                  Consulta los Ãºltimos movimientos de inventario y filtra por variante, tipo, fechas o texto.
+                  Consulta los últimos movimientos de inventario y filtra por variante, tipo, fechas o texto.
                 </p>
               </div>
 
@@ -164,7 +161,7 @@
             </div>
 
             <div id="movimientosEmpty" class="empty-state" style="display:none; padding:2rem;">
-              <div class="empty-state-icon">ðŸ§¾</div>
+              <div class="empty-state-icon">??</div>
               <h3 class="empty-state-title">Sin movimientos</h3>
               <p class="empty-state-text">No hay registros con los filtros actuales.</p>
             </div>
@@ -217,9 +214,9 @@
       }
 
       function formatDateParts(value) {
-        if (!value) return { fecha: "â€”", hora: "" };
+        if (!value) return { fecha: "—", hora: "" };
         const d = new Date(value);
-        if (Number.isNaN(d.getTime())) return { fecha: "â€”", hora: "" };
+        if (Number.isNaN(d.getTime())) return { fecha: "—", hora: "" };
         const pad = (n) => String(n).padStart(2, "0");
         const fecha = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
         const hora = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
@@ -284,7 +281,7 @@
                 aria-label="Quitar filtro de variante"
                 title="Quitar filtro"
               >
-                Ã—
+                ×
               </button>
             </span>
           </div>
@@ -318,17 +315,17 @@
           ? "bg-green-100 text-green-800"
           : "bg-red-100 text-red-800";
         const badgeText = isEntrada ? "Entrada" : "Salida";
-        const badgeIcon = isEntrada ? "â¬†" : "â¬‡";
+        const badgeIcon = isEntrada ? "?" : "?";
         const { fecha, hora } = formatDateParts(m.fecha);
         const cantidad = Number.isFinite(Number(m.cantidad)) ? Number(m.cantidad) : 0;
         const isExcepcion = m.esExcepcion === true;
 
-        const productoNombre = (m.productoNombre || "â€”").toString();
-        const sku = (m.sku || "â€”").toString();
-        const motivo = m.motivo ? m.motivo.toString() : "â€”";
+        const productoNombre = (m.productoNombre || "—").toString();
+        const sku = (m.sku || "—").toString();
+        const motivo = m.motivo ? m.motivo.toString() : "—";
 
-        const usuario = m.usuario || (m.usuarioId ? `#${m.usuarioId}` : "â€”");
-        const usuarioText = (usuario || "â€”").toString();
+        const usuario = m.usuario || (m.usuarioId ? `#${m.usuarioId}` : "—");
+        const usuarioText = (usuario || "—").toString();
         const initial = getUserInitial(usuarioText);
 
         const tr = document.createElement("tr");
@@ -374,7 +371,7 @@
           const excBadge = document.createElement("span");
           excBadge.className =
             "inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800";
-          excBadge.textContent = "ExcepciÃ³n";
+          excBadge.textContent = "Excepción";
           tipoWrap.appendChild(excBadge);
         }
 
@@ -500,7 +497,7 @@
       }
 
       btnAplicarFiltros.addEventListener("click", () => {
-        // No reescribimos la URL (para permitir limpiar con botÃ³n), solo recargamos la tabla
+        // No reescribimos la URL (para permitir limpiar con botón), solo recargamos la tabla
         loadMovimientos();
       });
 

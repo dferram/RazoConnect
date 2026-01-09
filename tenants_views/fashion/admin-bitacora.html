@@ -1,18 +1,15 @@
-ï»¿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>BitÃ¡cora de AuditorÃ­a - Admin Fashion Box</title>
+    <title>Bitácora de Auditoría - Admin Fashion Box</title>
     <link rel="icon" type="image/png" href="/icon/Logo_Fashion.png" />
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-    <!-- PROTECCIÃ“N DE AUTENTICACIÃ“N ADMIN -->
+    <!-- PROTECCIÓN DE AUTENTICACIÓN ADMIN -->
     <script src="js/auth-guard-admin.js"></script>
-
-    <!-- SISTEMA DE RENOVACIÃ“N DE TOKENS -->
-    <script src="js/token-refresh.js"></script>
 
     <link rel="stylesheet" href="css/styles-fashion.css" />
     <link rel="stylesheet" href="css/fashion-theme-fashion.css" />
@@ -430,7 +427,7 @@
     </style>
       <link rel="stylesheet" href="css/mobile-responsive-fashion.css" />
   </head>
-  <body data-page-title="BitÃ¡cora de AuditorÃ­a">
+  <body data-page-title="Bitácora de Auditoría">
     <div class="admin-layout">
       <!-- Sidebar -->
       <div id="sidebar-container"></div>
@@ -443,7 +440,7 @@
           <!-- Filtros -->
           <div class="filters-container">
             <h2 style="margin: 0 0 1rem 0; color: var(--razo-gray-dark);">
-              ðŸ”§ Filtros de BÃºsqueda
+              ?? Filtros de Búsqueda
             </h2>
             <div class="filters-grid">
               <div>
@@ -457,11 +454,11 @@
                 </select>
               </div>
               <div>
-                <label class="form-label" for="filtroAccion">AcciÃ³n</label>
+                <label class="form-label" for="filtroAccion">Acción</label>
                 <select
                   id="filtroAccion"
                   class="form-input"
-                  aria-label="Filtrar por acciÃ³n"
+                  aria-label="Filtrar por acción"
                 >
                   <option value="">Todas las acciones</option>
                   <option value="INSERT">Crear</option>
@@ -508,13 +505,13 @@
             </div>
           </div>
 
-          <!-- Historial de AuditorÃ­a -->
+          <!-- Historial de Auditoría -->
           <div class="admin-table-container">
             <div class="admin-table-header" style="align-items: center; gap: 1rem; flex-wrap: wrap;">
               <h2 class="admin-table-title">Historial de Actividad</h2>
               <div style="display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap;">
                 <button class="btn btn-secondary" type="button" id="btnRefrescarHistorial">
-                  ðŸ”„ Refrescar
+                  ?? Refrescar
                 </button>
               </div>
             </div>
@@ -529,7 +526,7 @@
                   <tr>
                     <th>Fecha/Hora</th>
                     <th>Usuario</th>
-                    <th>AcciÃ³n</th>
+                    <th>Acción</th>
                     <th>Entidad</th>
                     <th>Detalles</th>
                   </tr>
@@ -539,7 +536,7 @@
             </div>
 
             <div id="historialEmpty" class="empty-state" style="display: none;">
-              <div class="empty-state-icon">ðŸ“‹</div>
+              <div class="empty-state-icon">??</div>
               <p class="empty-state-text">No hay movimientos registrados</p>
             </div>
           </div>

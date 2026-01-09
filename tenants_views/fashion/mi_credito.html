@@ -1,14 +1,13 @@
-Ôªø<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Mi Cr√©dito - Fashion Box</title>
+    <title>Mi CrÈdito - Fashion Box</title>
     <link rel="icon" type="image/png" href="/icon/Logo_Fashion.png" />
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="js/auth-guard-client.js"></script>
-    <script src="js/token-refresh.js"></script>
 
     <link
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
@@ -333,11 +332,11 @@
           Finanzas del cliente
         </p>
         <h1 style="font-size: 2.25rem; font-weight: 700; margin-bottom: 0.5rem;">
-          Mi cr√©dito
+          Mi crÈdito
         </h1>
         <p style="color: var(--razo-gray-warm); max-width: 620px;">
-          Consulta tu l√≠nea de cr√©dito, saldo deudor y movimientos m√°s recientes.
-          Mantente al d√≠a y liquida tu saldo cuando lo necesites.
+          Consulta tu lÌnea de crÈdito, saldo deudor y movimientos m·s recientes.
+          Mantente al dÌa y liquida tu saldo cuando lo necesites.
         </p>
       </header>
 
@@ -346,13 +345,13 @@
           <article class="admin-stat-card">
             <div class="admin-stat-header">
               <div class="admin-stat-content">
-                <h3>L√≠mite de cr√©dito</h3>
+                <h3>LÌmite de crÈdito</h3>
                 <div class="admin-stat-value" id="limiteCredito">$0.00</div>
                 <div class="admin-stat-change neutral">
                   Asignado por Fashion Box
                 </div>
               </div>
-              <div class="admin-stat-icon orange">üí≥</div>
+              <div class="admin-stat-icon orange">??</div>
             </div>
           </article>
 
@@ -365,20 +364,20 @@
                   Actualizado en tiempo real
                 </div>
               </div>
-              <div class="admin-stat-icon red">‚ö†Ô∏è</div>
+              <div class="admin-stat-icon red">??</div>
             </div>
           </article>
 
           <article class="admin-stat-card" id="cardPagosEnRevision" style="display: none;">
             <div class="admin-stat-header">
               <div class="admin-stat-content">
-                <h3>Pagos en revisi√≥n</h3>
+                <h3>Pagos en revisiÛn</h3>
                 <div class="admin-stat-value" id="saldoEnRevision">$0.00</div>
                 <div class="admin-stat-change" style="color: #f59e0b;">
-                  üïí Pendiente de validaci√≥n
+                  ?? Pendiente de validaciÛn
                 </div>
               </div>
-              <div class="admin-stat-icon" style="background: rgba(245, 158, 11, 0.12); color: #f59e0b;">‚è≥</div>
+              <div class="admin-stat-icon" style="background: rgba(245, 158, 11, 0.12); color: #f59e0b;">?</div>
             </div>
           </article>
 
@@ -391,7 +390,7 @@
                   Tras aplicar pagos pendientes
                 </div>
               </div>
-              <div class="admin-stat-icon" style="background: rgba(107, 114, 128, 0.12); color: #6b7280;">üìä</div>
+              <div class="admin-stat-icon" style="background: rgba(107, 114, 128, 0.12); color: #6b7280;">??</div>
             </div>
           </article>
 
@@ -401,10 +400,10 @@
                 <h3>Disponible</h3>
                 <div class="admin-stat-value" id="creditoDisponible">$0.00</div>
                 <div class="admin-stat-change positive">
-                  Cr√©dito libre para nuevos pedidos
+                  CrÈdito libre para nuevos pedidos
                 </div>
               </div>
-              <div class="admin-stat-icon turquoise">üí†</div>
+              <div class="admin-stat-icon turquoise">??</div>
             </div>
           </article>
         </section>
@@ -412,9 +411,9 @@
         <section class="admin-table-container">
           <div class="admin-table-header">
             <div>
-              <h2 class="admin-table-title">Movimientos de cr√©dito</h2>
+              <h2 class="admin-table-title">Movimientos de crÈdito</h2>
               <p class="admin-table-subtitle" style="margin: 0; color: var(--razo-gray-warm);">
-                √öltimas operaciones registradas en tu estado de cuenta.
+                ⁄ltimas operaciones registradas en tu estado de cuenta.
               </p>
             </div>
             <button class="btn btn-primary" id="btnPagarSaldo">Pagar saldo</button>
@@ -425,8 +424,8 @@
             class="alert alert-error"
             style="display: none;"
           >
-            No fue posible obtener la informaci√≥n de tu cr√©dito. Intenta recargar la
-            p√°gina.
+            No fue posible obtener la informaciÛn de tu crÈdito. Intenta recargar la
+            p·gina.
           </div>
 
           <table class="admin-table" aria-live="polite">
@@ -452,14 +451,14 @@
             class="empty-state"
             style="display: none;"
           >
-            <div class="empty-state-icon">üìÑ</div>
+            <div class="empty-state-icon">??</div>
             <h3 class="empty-state-title">Sin movimientos registrados</h3>
             <p class="empty-state-text">
-              Cuando se genere un cargo o abono, aparecer√° aqu√≠.
+              Cuando se genere un cargo o abono, aparecer· aquÌ.
             </p>
           </div>
 
-          <!-- Paginaci√≥n de movimientos -->
+          <!-- PaginaciÛn de movimientos -->
           <div 
             id="movimientosPagination" 
             class="d-flex justify-content-between align-items-center mt-3"
@@ -476,9 +475,9 @@
       >
         <div class="admin-table-header">
           <div>
-            <h2 class="admin-table-title">Solicitud de cr√©dito</h2>
+            <h2 class="admin-table-title">Solicitud de crÈdito</h2>
             <p class="admin-table-subtitle" style="margin: 0; color: var(--razo-gray-warm);">
-              Completa los datos y nuestro equipo validar√° tu l√≠nea de cr√©dito.
+              Completa los datos y nuestro equipo validar· tu lÌnea de crÈdito.
             </p>
           </div>
         </div>
@@ -517,12 +516,12 @@
           </div>
 
           <div class="col-12">
-            <label for="motivoCredito" class="form-label">Motivo del cr√©dito</label>
+            <label for="motivoCredito" class="form-label">Motivo del crÈdito</label>
             <textarea
               id="motivoCredito"
               class="form-control"
               rows="4"
-              placeholder="Describe c√≥mo utilizar√°s la l√≠nea de cr√©dito (inventario, nuevos proyectos, etc.)"
+              placeholder="Describe cÛmo utilizar·s la lÌnea de crÈdito (inventario, nuevos proyectos, etc.)"
               required
             ></textarea>
           </div>
@@ -530,10 +529,10 @@
           <div class="col-12 col-md-6">
             <label for="plazoPreferido" class="form-label">Plazo de pago preferido</label>
             <select id="plazoPreferido" class="form-select" required>
-              <option value="" selected disabled>Selecciona una opci√≥n</option>
-              <option value="15">15 d√≠as</option>
-              <option value="30">30 d√≠as</option>
-              <option value="45">45 d√≠as</option>
+              <option value="" selected disabled>Selecciona una opciÛn</option>
+              <option value="15">15 dÌas</option>
+              <option value="30">30 dÌas</option>
+              <option value="45">45 dÌas</option>
             </select>
           </div>
 
@@ -546,7 +545,7 @@
       </section>
     </main>
 
-    <!-- Modal de Pago de Cr√©dito -->
+    <!-- Modal de Pago de CrÈdito -->
     <div id="modalPagoCredito" class="modal" style="display: none;">
       <div
         class="modal-content"
@@ -560,7 +559,7 @@
       >
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
           <h2 style="font-size: 1.5rem; font-weight: bold; margin: 0;">
-            Pagar saldo de cr√©dito
+            Pagar saldo de crÈdito
           </h2>
           <button
             id="btnCerrarModalPago"
@@ -585,9 +584,9 @@
         </div>
 
         <div id="pagoContent">
-          <!-- Secci√≥n de selecci√≥n de deuda -->
+          <!-- SecciÛn de selecciÛn de deuda -->
           <div id="debtSelectionSection" style="margin-bottom: 2rem;">
-            <h4 style="font-weight: 600; margin-bottom: 1rem;">Selecciona qu√© deseas pagar</h4>
+            <h4 style="font-weight: 600; margin-bottom: 1rem;">Selecciona quÈ deseas pagar</h4>
             <div style="
               background: #f9fafb;
               border: 1px solid #e5e7eb;
@@ -657,9 +656,9 @@
 
           <div id="paymentSection">
             <div class="payment-section-header" style="margin-bottom: 1.5rem;">
-              <h4 style="font-weight: 600; margin-bottom: 0.5rem;">Selecciona m√©todo de pago</h4>
+              <h4 style="font-weight: 600; margin-bottom: 0.5rem;">Selecciona mÈtodo de pago</h4>
               <span style="color: #6b7280; font-size: 0.875rem;">
-                Elige la opci√≥n que mejor se adapte para liquidar tu saldo.
+                Elige la opciÛn que mejor se adapte para liquidar tu saldo.
               </span>
             </div>
 
@@ -671,7 +670,7 @@
                 style="pointer-events: none;"
               >
                 <div class="payment-option-top">
-                  <div class="payment-option-icon" style="opacity: 0.5;">üí≥</div>
+                  <div class="payment-option-icon" style="opacity: 0.5;">??</div>
                   <input
                     type="radio"
                     name="metodo_pago_credito"
@@ -681,9 +680,9 @@
                 </div>
                 <div class="payment-option-content">
                   <h5 style="opacity: 0.6;">Mercado Pago</h5>
-                  <p style="opacity: 0.6;">Paga con tarjeta o saldo digital y recibe confirmaci√≥n inmediata.</p>
+                  <p style="opacity: 0.6;">Paga con tarjeta o saldo digital y recibe confirmaciÛn inmediata.</p>
                   <div style="margin-top: 0.75rem; padding: 0.5rem 0.75rem; background: #fef3c7; border: 1px solid #fbbf24; border-radius: 0.5rem; font-size: 0.85rem; color: #92400e;">
-                    ‚ö†Ô∏è <strong>Temporalmente no disponible.</strong><br>
+                    ?? <strong>Temporalmente no disponible.</strong><br>
                     Por favor, utiliza transferencia bancaria.
                   </div>
                 </div>
@@ -698,7 +697,7 @@
                 data-method="transferencia"
               >
                 <div class="payment-option-top">
-                  <div class="payment-option-icon">üè¶</div>
+                  <div class="payment-option-icon">??</div>
                   <input
                     type="radio"
                     name="metodo_pago_credito"
@@ -708,9 +707,9 @@
                 </div>
                 <div class="payment-option-content">
                   <h5>Transferencia bancaria</h5>
-                  <p>Recibir√°s los datos bancarios y deber√°s adjuntar tu comprobante.</p>
+                  <p>Recibir·s los datos bancarios y deber·s adjuntar tu comprobante.</p>
                 </div>
-                <span class="payment-option-chip payment-chip-transfer">SPEI / Dep√≥sito</span>
+                <span class="payment-option-chip payment-chip-transfer">SPEI / DepÛsito</span>
               </label>
             </div>
 
@@ -724,7 +723,7 @@
                 <div class="mercadopago-form-container">
                   <h5>Ingresa los datos de tu tarjeta</h5>
                   <p style="color: #6b7280; font-size: 0.875rem; margin-bottom: 1rem;">
-                    Procesaremos el pago de tu saldo de cr√©dito de forma segura.
+                    Procesaremos el pago de tu saldo de crÈdito de forma segura.
                   </p>
                   <div class="mp-form-grid">
                     <div class="mp-form-field">
@@ -737,7 +736,7 @@
                       />
                     </div>
                     <div class="mp-form-field">
-                      <label for="mpCardNumberPago">N√∫mero de tarjeta</label>
+                      <label for="mpCardNumberPago">N˙mero de tarjeta</label>
                       <input
                         type="text"
                         id="mpCardNumberPago"
@@ -749,7 +748,7 @@
                     </div>
                     <div class="mp-form-two-cols">
                       <div class="mp-form-field">
-                        <label for="mpExpMonthPago">Mes expiraci√≥n</label>
+                        <label for="mpExpMonthPago">Mes expiraciÛn</label>
                         <input
                           type="text"
                           id="mpExpMonthPago"
@@ -760,7 +759,7 @@
                         />
                       </div>
                       <div class="mp-form-field">
-                        <label for="mpExpYearPago">A√±o expiraci√≥n</label>
+                        <label for="mpExpYearPago">AÒo expiraciÛn</label>
                         <input
                           type="text"
                           id="mpExpYearPago"
@@ -839,7 +838,7 @@
                     />
                     <div id="comprobantesPreviews" style="display: none;"></div>
                     <small style="color: #6b7280; display: block; margin-top: 0.5rem;">
-                      Puedes seleccionar m√∫ltiples archivos. M√°x. 8MB por archivo.
+                      Puedes seleccionar m˙ltiples archivos. M·x. 8MB por archivo.
                     </small>
                   </div>
                 </div>

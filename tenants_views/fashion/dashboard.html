@@ -1,4 +1,4 @@
-ï»¿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
@@ -8,11 +8,8 @@
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-    <!-- PROTECCIÃ“N DE AUTENTICACIÃ“N - Debe cargarse PRIMERO -->
+    <!-- PROTECCIÓN DE AUTENTICACIÓN - Debe cargarse PRIMERO -->
     <script src="js/auth-guard-client.js"></script>
-
-    <!-- SISTEMA DE RENOVACIÃ“N DE TOKENS -->
-    <script src="js/token-refresh.js"></script>
 
     <link
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
@@ -240,11 +237,11 @@
 
       <!-- Tabs -->
       <div class="tabs">
-        <button class="tab active" data-tab="perfil">ğŸ‘¤ Perfil</button>
-        <button class="tab" data-tab="direcciones">ğŸ“ Direcciones</button>
-        <button class="tab" data-tab="pedidos">ğŸ“¦ Pedidos</button>
+        <button class="tab active" data-tab="perfil">?? Perfil</button>
+        <button class="tab" data-tab="direcciones">?? Direcciones</button>
+        <button class="tab" data-tab="pedidos">?? Pedidos</button>
         <button class="tab" data-tab="notificaciones">
-          ğŸ”” Notificaciones
+          ?? Notificaciones
           <span id="notifBadge" class="notif-badge" style="display: none;">0</span>
         </button>
       </div>
@@ -252,7 +249,7 @@
       <!-- Tab: Perfil -->
       <div class="tab-content active" id="perfil">
         <div class="card">
-          <h2 class="card-header">InformaciÃ³n personal</h2>
+          <h2 class="card-header">Información personal</h2>
           <div id="perfilContent"></div>
         </div>
       </div>
@@ -273,7 +270,7 @@
             id="btnNuevaDireccion"
             onclick="openDireccionModal()"
           >
-            Agregar nueva direcciÃ³n
+            Agregar nueva dirección
           </button>
         </div>
 
@@ -284,10 +281,10 @@
         <div id="direccionesList"></div>
 
         <div id="emptyDirecciones" class="empty-state" style="display: none">
-          <div class="empty-state-icon">ğŸ“</div>
+          <div class="empty-state-icon">??</div>
           <h3 class="empty-state-title">No tienes direcciones guardadas</h3>
           <p class="empty-state-text">
-            Agrega una direcciÃ³n para realizar tus pedidos
+            Agrega una dirección para realizar tus pedidos
           </p>
         </div>
       </div>
@@ -305,10 +302,10 @@
         <div id="pedidosList"></div>
 
         <div id="emptyPedidos" class="empty-state" style="display: none">
-          <div class="empty-state-icon">ğŸ“¦</div>
-          <h3 class="empty-state-title">No tienes pedidos aÃºn</h3>
+          <div class="empty-state-icon">??</div>
+          <h3 class="empty-state-title">No tienes pedidos aún</h3>
           <p class="empty-state-text">
-            Explora nuestro catÃ¡logo y realiza tu primer pedido
+            Explora nuestro catálogo y realiza tu primer pedido
           </p>
           <a href="/catalogo.html" class="btn btn-primary">Ver Productos</a>
         </div>
@@ -318,14 +315,14 @@
       <div class="tab-content" id="notificaciones">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
           <h2 style="font-size: 1.5rem; font-weight: 600;">
-            ğŸ”” Mis Notificaciones
+            ?? Mis Notificaciones
           </h2>
           <button 
             class="btn btn-secondary" 
             id="btnMarcarTodasLeidas"
             style="display: none;"
           >
-            Marcar todas como leÃ­das
+            Marcar todas como leídas
           </button>
         </div>
 
@@ -336,7 +333,7 @@
         <div id="notificacionesList"></div>
 
         <div id="emptyNotificaciones" class="empty-state" style="display: none">
-          <div class="empty-state-icon">ğŸ””</div>
+          <div class="empty-state-icon">??</div>
           <h3 class="empty-state-title">No tienes notificaciones</h3>
           <p class="empty-state-text">
             Te notificaremos cuando haya cambios en tus pedidos o nuevas ofertas
@@ -345,7 +342,7 @@
       </div>
     </div>
 
-    <!-- Modal: Nueva DirecciÃ³n -->
+    <!-- Modal: Nueva Dirección -->
     <div id="modalDireccion" class="modal">
       <div
         class="modal-content"
@@ -365,10 +362,10 @@
             color: #2d3748;
           "
         >
-          Nueva DirecciÃ³n
+          Nueva Dirección
         </h2>
         <p style="color: #718096; font-size: 0.875rem; margin-bottom: 1.5rem">
-          Agrega una direcciÃ³n para realizar tus pedidos
+          Agrega una dirección para realizar tus pedidos
         </p>
 
         <form id="formDireccion">
@@ -406,7 +403,7 @@
 
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem">
             <div class="form-group">
-              <label class="form-label" for="numeroExt">NÃºmero Exterior</label>
+              <label class="form-label" for="numeroExt">Número Exterior</label>
               <input
                 type="text"
                 id="numeroExt"
@@ -416,7 +413,7 @@
             </div>
 
             <div class="form-group">
-              <label class="form-label" for="numeroInt">NÃºmero Interior</label>
+              <label class="form-label" for="numeroInt">Número Interior</label>
               <input
                 type="text"
                 id="numeroInt"
@@ -459,7 +456,7 @@
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem">
             <div class="form-group">
               <label class="form-label" for="codigoPostal"
-                >CÃ³digo Postal *</label
+                >Código Postal *</label
               >
               <input
                 type="text"
@@ -471,7 +468,7 @@
             </div>
 
             <div class="form-group">
-              <label class="form-label" for="telefonoContacto">TelÃ©fono</label>
+              <label class="form-label" for="telefonoContacto">Teléfono</label>
               <input
                 type="tel"
                 id="telefonoContacto"
@@ -488,7 +485,7 @@
               style="flex: 1"
               id="btnGuardarDireccion"
             >
-              <span id="btnGuardarText">Guardar DirecciÃ³n</span>
+              <span id="btnGuardarText">Guardar Dirección</span>
               <div
                 class="spinner"
                 id="btnGuardarSpinner"
@@ -623,7 +620,7 @@
         const telefono = userData.telefono || "No especificado";
         const fechaRegistro =
           userData.fechaDeRegistro || userData.fechaderegistro || null;
-        const fechaFormateada = formatDateSafe(fechaRegistro) !== "â€”" 
+        const fechaFormateada = formatDateSafe(fechaRegistro) !== "—" 
           ? formatDateSafe(fechaRegistro)
           : "N/A";
 
@@ -638,7 +635,7 @@
             <span>${email}</span>
           </div>
           <div style="display: grid; grid-template-columns: 150px 1fr; align-items: center; padding: 0.75rem; border-bottom: 1px solid var(--border-color);">
-            <strong>TelÃ©fono:</strong>
+            <strong>Teléfono:</strong>
             <span>${telefono}</span>
           </div>
           <div style="display: grid; grid-template-columns: 150px 1fr; align-items: center; padding: 0.75rem;">
@@ -660,23 +657,23 @@
       // Get product emoji based on name
       function getProductEmoji(productName) {
         const name = productName.toLowerCase();
-        if (name.includes("short")) return "ğŸ©³";
-        if (name.includes("lente")) return "ğŸ˜";
-        if (name.includes("blusa")) return "ğŸ‘š";
-        if (name.includes("vestido") || name.includes("dama")) return "ğŸ‘—";
-        if (name.includes("camisa")) return "ğŸ‘”";
-        if (name.includes("pantalon")) return "ğŸ‘–";
-        if (name.includes("jeans")) return "ğŸ‘–";
-        if (name.includes("falda")) return "ğŸ‘—";
+        if (name.includes("short")) return "??";
+        if (name.includes("lente")) return "??";
+        if (name.includes("blusa")) return "??";
+        if (name.includes("vestido") || name.includes("dama")) return "??";
+        if (name.includes("camisa")) return "??";
+        if (name.includes("pantalon")) return "??";
+        if (name.includes("jeans")) return "??";
+        if (name.includes("falda")) return "??";
         if (
           name.includes("bolsa") ||
           name.includes("joyeria") ||
-          name.includes("joyerÃ­a")
+          name.includes("joyería")
         )
-          return "ğŸ‘œ";
-        if (name.includes("zapato")) return "ğŸ‘";
-        if (name.includes("gorra")) return "ğŸ§¢";
-        return "ğŸ“¦";
+          return "??";
+        if (name.includes("zapato")) return "??";
+        if (name.includes("gorra")) return "??";
+        return "??";
       }
 
       function getPedidoStatusBadgeClass(estatus) {
@@ -723,13 +720,13 @@
                 <div style="background: linear-gradient(135deg, var(--razo-turquoise) 0%, var(--razo-blue) 100%); padding: 1rem 1.5rem; display: flex; align-items: center; justify-content: space-between;">
                   <div style="display: flex; align-items: center; gap: 0.75rem;">
                     <div style="background: rgba(255,255,255,0.2); padding: 0.5rem; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center;">
-                      <span style="font-size: 1.25rem;">ğŸ“</span>
+                      <span style="font-size: 1.25rem;">??</span>
                     </div>
                     <div>
                       <div style="color: white; font-weight: 700; font-size: 1.125rem;">${
-                        d.etiqueta || "DirecciÃ³n"
+                        d.etiqueta || "Dirección"
                       }</div>
-                      <div style="color: rgba(255,255,255,0.8); font-size: 0.875rem;">DirecciÃ³n de envÃ­o</div>
+                      <div style="color: rgba(255,255,255,0.8); font-size: 0.875rem;">Dirección de envío</div>
                     </div>
                   </div>
                 </div>
@@ -739,7 +736,7 @@
                   <!-- Receptor -->
                   <div style="display: flex; align-items: start; gap: 0.75rem; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--razo-gray-light);">
                     <div style="background: var(--razo-orange-light); color: var(--razo-orange); padding: 0.5rem; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center; min-width: 2.5rem; height: 2.5rem;">
-                      <span style="font-size: 1.125rem;">ğŸ‘¤</span>
+                      <span style="font-size: 1.125rem;">??</span>
                     </div>
                     <div>
                       <div style="font-size: 0.75rem; color: var(--razo-gray-warm); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; margin-bottom: 0.25rem;">Receptor</div>
@@ -749,13 +746,13 @@
                     </div>
                   </div>
                   
-                  <!-- DirecciÃ³n -->
+                  <!-- Dirección -->
                   <div style="display: flex; align-items: start; gap: 0.75rem; margin-bottom: 1rem;">
                     <div style="background: var(--razo-turquoise-light); color: var(--razo-turquoise); padding: 0.5rem; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center; min-width: 2.5rem; height: 2.5rem;">
-                      <span style="font-size: 1.125rem;">ğŸ </span>
+                      <span style="font-size: 1.125rem;">??</span>
                     </div>
                     <div style="flex: 1;">
-                      <div style="font-size: 0.75rem; color: var(--razo-gray-warm); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; margin-bottom: 0.25rem;">DirecciÃ³n completa</div>
+                      <div style="font-size: 0.75rem; color: var(--razo-gray-warm); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; margin-bottom: 0.25rem;">Dirección completa</div>
                       <div style="color: var(--razo-gray-dark); font-size: 0.9375rem; line-height: 1.6;">
                         ${d.calle} ${d.numeroExt || ""} ${
                     d.numeroInt ? "Int. " + d.numeroInt : ""
@@ -771,13 +768,13 @@
                   ${
                     d.telefonoContacto
                       ? `
-                  <!-- TelÃ©fono -->
+                  <!-- Teléfono -->
                   <div style="display: flex; align-items: start; gap: 0.75rem;">
                     <div style="background: var(--razo-blue-light); color: var(--razo-blue); padding: 0.5rem; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center; min-width: 2.5rem; height: 2.5rem;">
-                      <span style="font-size: 1.125rem;">ğŸ“</span>
+                      <span style="font-size: 1.125rem;">??</span>
                     </div>
                     <div>
-                      <div style="font-size: 0.75rem; color: var(--razo-gray-warm); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; margin-bottom: 0.25rem;">TelÃ©fono</div>
+                      <div style="font-size: 0.75rem; color: var(--razo-gray-warm); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; margin-bottom: 0.25rem;">Teléfono</div>
                       <div style="font-weight: 600; color: var(--razo-gray-dark); font-size: 0.9375rem;">${d.telefonoContacto}</div>
                     </div>
                   </div>
@@ -826,7 +823,7 @@
                   <div style="background: linear-gradient(135deg, var(--razo-orange) 0%, var(--razo-orange-dark) 100%); padding: 1.25rem 1.5rem; display: flex; justify-content: space-between; align-items: center;">
                     <div style="display: flex; align-items: center; gap: 0.75rem;">
                       <div style="background: rgba(255,255,255,0.2); padding: 0.75rem; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center;">
-                        <span style="font-size: 1.5rem;">ğŸ“¦</span>
+                        <span style="font-size: 1.5rem;">??</span>
                       </div>
                       <div>
                         <div style="color: white; font-weight: 700; font-size: 1.25rem;">Pedido #${
@@ -861,7 +858,7 @@
                               <div><strong>SKU:</strong> ${item.sku}</div>
                               <div><strong>${
                                 item.cantidad || 0
-                              }</strong> paquete(s) Ã— ${formatCurrency(
+                              }</strong> paquete(s) × ${formatCurrency(
                             item.precioPorPaquete || 0
                           )}</div>
                               <div><strong>Total piezas:</strong> ${
@@ -883,16 +880,16 @@
                         .join("")}
                     </div>
 
-                    <!-- InformaciÃ³n de envÃ­o y agente -->
+                    <!-- Información de envío y agente -->
                     <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 2px solid var(--razo-gray-light);">
                       <div style="display: grid; gap: 1rem; margin-bottom: 1.5rem;">
-                        <!-- EnvÃ­o a -->
+                        <!-- Envío a -->
                         <div style="display: flex; align-items: start; gap: 0.75rem;">
                           <div style="background: var(--razo-turquoise-light); color: var(--razo-turquoise-dark); padding: 0.5rem; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center; min-width: 2.5rem; height: 2.5rem;">
-                            <span style="font-size: 1.125rem;">ğŸšš</span>
+                            <span style="font-size: 1.125rem;">??</span>
                           </div>
                           <div style="flex: 1;">
-                            <div style="font-size: 0.75rem; color: var(--razo-gray-warm); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; margin-bottom: 0.25rem;">EnvÃ­o a</div>
+                            <div style="font-size: 0.75rem; color: var(--razo-gray-warm); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; margin-bottom: 0.25rem;">Envío a</div>
                             <div style="font-weight: 600; color: var(--razo-gray-dark);">${
                               p.direccion.receptor
                             }</div>
@@ -908,12 +905,12 @@
                         <!-- Agente -->
                         <div style="display: flex; align-items: start; gap: 0.75rem;">
                           <div style="background: var(--razo-blue-light); color: var(--razo-blue); padding: 0.5rem; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center; min-width: 2.5rem; height: 2.5rem;">
-                            <span style="font-size: 1.125rem;">ğŸ‘¤</span>
+                            <span style="font-size: 1.125rem;">??</span>
                           </div>
                           <div style="flex: 1;">
                             <div style="font-size: 0.75rem; color: var(--razo-gray-warm); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; margin-bottom: 0.25rem;">Agente</div>
                             <div style="font-weight: 600; color: var(--razo-gray-dark);">${p.agente.nombre} ${p.agente.apellido}</div>
-                            <div style="font-size: 0.875rem; color: var(--razo-gray-warm);">CÃ³digo: ${p.agente.codigoAgente}</div>
+                            <div style="font-size: 0.875rem; color: var(--razo-gray-warm);">Código: ${p.agente.codigoAgente}</div>
                           </div>
                         </div>
                         `
@@ -989,13 +986,13 @@
                   const fechaFormato = formatDateTime(n.fecha);
                   
                   const iconos = {
-                    'pedido': 'ğŸ“¦',
-                    'backorder': 'âš ï¸',
-                    'oferta': 'ğŸ',
-                    'temporada': 'ğŸ„',
-                    'general': 'ğŸ“¢'
+                    'pedido': '??',
+                    'backorder': '??',
+                    'oferta': '??',
+                    'temporada': '??',
+                    'general': '??'
                   };
-                  const icono = iconos[n.tipo] || 'ğŸ””';
+                  const icono = iconos[n.tipo] || '??';
 
                   return `
                     <div class="notificacion-card ${n.leida ? '' : 'no-leida'}" data-notif-id="${n.notificacionId}">
@@ -1012,14 +1009,14 @@
                             ${n.mensaje}
                           </p>
                           <div style="display: flex; gap: 1rem; align-items: center; font-size: 0.875rem; color: var(--razo-gray-warm);">
-                            <span>ğŸ• ${fechaFormato}</span>
+                            <span>?? ${fechaFormato}</span>
                             ${!n.leida ? `
                               <button 
                                 class="btn-link" 
                                 onclick="marcarComoLeida(${n.notificacionId})"
                                 style="color: var(--razo-orange); cursor: pointer; border: none; background: none; padding: 0;"
                               >
-                                Marcar como leÃ­da
+                                Marcar como leída
                               </button>
                             ` : ''}
                             <button 
@@ -1048,7 +1045,7 @@
         }
       }
 
-      // Marcar como leÃ­da
+      // Marcar como leída
       async function marcarComoLeida(notifId) {
         try {
           const response = await API.apiCall(`/notificaciones/${notifId}/marcar-leida`, {
@@ -1056,20 +1053,20 @@
           });
 
           if (response.ok) {
-            showToast("NotificaciÃ³n marcada como leÃ­da", "success");
+            showToast("Notificación marcada como leída", "success");
             loadNotificaciones(); // Recargar
           } else {
-            throw new Error("Error al marcar como leÃ­da");
+            throw new Error("Error al marcar como leída");
           }
         } catch (error) {
           console.error("Error:", error);
-          showToast("Error al actualizar notificaciÃ³n", "error");
+          showToast("Error al actualizar notificación", "error");
         }
       }
 
-      // Marcar todas como leÃ­das
+      // Marcar todas como leídas
       btnMarcarTodasLeidas.addEventListener("click", async () => {
-        const mensaje = "Â¿Marcar todas las notificaciones como leÃ­das?";
+        const mensaje = "¿Marcar todas las notificaciones como leídas?";
         let confirmado = false;
 
         if (
@@ -1079,10 +1076,10 @@
         ) {
           const result = await Swal.fire({
             icon: "question",
-            title: "Marcar todas como leÃ­das",
+            title: "Marcar todas como leídas",
             text: mensaje,
             showCancelButton: true,
-            confirmButtonText: "SÃ­, marcar todas",
+            confirmButtonText: "Sí, marcar todas",
             cancelButtonText: "Cancelar",
             confirmButtonColor: "#1B5E20",
             cancelButtonColor: "#6b7280",
@@ -1102,7 +1099,7 @@
           });
 
           if (response.ok) {
-            showToast("Todas las notificaciones fueron marcadas como leÃ­das", "success");
+            showToast("Todas las notificaciones fueron marcadas como leídas", "success");
             loadNotificaciones(); // Recargar
           } else {
             throw new Error("Error al marcar todas");
@@ -1113,9 +1110,9 @@
         }
       });
 
-      // Eliminar notificaciÃ³n
+      // Eliminar notificación
       async function eliminarNotificacion(notifId) {
-        const mensaje = "Â¿Eliminar esta notificaciÃ³n?";
+        const mensaje = "¿Eliminar esta notificación?";
         let confirmado = false;
 
         if (
@@ -1125,10 +1122,10 @@
         ) {
           const result = await Swal.fire({
             icon: "warning",
-            title: "Eliminar notificaciÃ³n",
+            title: "Eliminar notificación",
             text: mensaje,
             showCancelButton: true,
-            confirmButtonText: "SÃ­, eliminar",
+            confirmButtonText: "Sí, eliminar",
             cancelButtonText: "Cancelar",
             confirmButtonColor: "#dc3545",
             cancelButtonColor: "#6b7280",
@@ -1148,14 +1145,14 @@
           });
 
           if (response.ok) {
-            showToast("NotificaciÃ³n eliminada", "success");
+            showToast("Notificación eliminada", "success");
             loadNotificaciones(); // Recargar
           } else {
             throw new Error("Error al eliminar");
           }
         } catch (error) {
           console.error("Error:", error);
-          showToast("Error al eliminar notificaciÃ³n", "error");
+          showToast("Error al eliminar notificación", "error");
         }
       }
 
@@ -1216,21 +1213,21 @@
           };
 
           if (!formData.EstadoID) {
-            showToast("Selecciona un estado vÃ¡lido", "warning");
+            showToast("Selecciona un estado válido", "warning");
             return;
           }
 
           const response = await API.crearDireccion(formData);
 
           if (response.ok && response.data.success) {
-            showToast("DirecciÃ³n guardada exitosamente", "success");
+            showToast("Dirección guardada exitosamente", "success");
             modalDireccion.classList.remove("show");
             formDireccion.reset();
             loadDirecciones();
             resetEstadoSelect();
           } else {
             showToast(
-              response.data.message || "Error al guardar direcciÃ³n",
+              response.data.message || "Error al guardar dirección",
               "error"
             );
           }
@@ -1246,7 +1243,7 @@
 
       // Initialize
       window.addEventListener("Fashion Box:client-updated", () => {
-        console.log("ğŸ”„ Cliente actualizado, refrescando perfil...");
+        console.log("?? Cliente actualizado, refrescando perfil...");
         displayPerfil();
       });
 

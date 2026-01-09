@@ -1,25 +1,22 @@
-ï»¿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>RecepciÃ³n Blindada (OC) - Admin Fashion Box</title>
+    <title>Recepción Blindada (OC) - Admin Fashion Box</title>
     <link rel="icon" type="image/png" href="/icon/Logo_Fashion.png" />
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-    <!-- PROTECCIÃ“N DE AUTENTICACIÃ“N ADMIN -->
+    <!-- PROTECCIÓN DE AUTENTICACIÓN ADMIN -->
     <script src="js/auth-guard-admin.js"></script>
-
-    <!-- SISTEMA DE RENOVACIÃ“N DE TOKENS -->
-    <script src="js/token-refresh.js"></script>
 
     <link rel="stylesheet" href="css/styles-fashion.css" />
     <link rel="stylesheet" href="css/fashion-theme-fashion.css" />
     <link rel="stylesheet" href="css/admin-fashion.css" />
       <link rel="stylesheet" href="css/mobile-responsive-fashion.css" />
   </head>
-  <body data-page-title="RecepciÃ³n Blindada (OC)">
+  <body data-page-title="Recepción Blindada (OC)">
     <div class="admin-layout">
       <!-- Sidebar -->
       <div id="sidebar-container"></div>
@@ -42,7 +39,7 @@
               <div style="min-width: 280px; flex: 1">
                 <label for="ocSelect" class="form-label">Orden de Compra</label>
                 <select id="ocSelect" class="form-input">
-                  <option value="">Cargando Ã³rdenesâ€¦</option>
+                  <option value="">Cargando órdenes…</option>
                 </select>
               </div>
 
@@ -50,8 +47,8 @@
                 <div style="font-size: 0.85rem; color: #6b7280">
                   Proveedor
                 </div>
-                <div id="ocProveedor" style="font-weight: 600">â€”</div>
-                <div id="ocMeta" style="font-size: 0.85rem; color: #6b7280">â€”</div>
+                <div id="ocProveedor" style="font-weight: 600">—</div>
+                <div id="ocMeta" style="font-size: 0.85rem; color: #6b7280">—</div>
               </div>
 
               <div
@@ -64,7 +61,7 @@
                 "
               >
                 <div style="font-weight: 700; color: #9a3412">
-                  RecepciÃ³n Blindada
+                  Recepción Blindada
                 </div>
                 <div style="font-size: 0.9rem; color: #9a3412">
                   No se muestran cantidades esperadas. Si el conteo no coincide, no se
@@ -97,7 +94,7 @@
                   style="background: var(--razo-orange, #f97316); border: none"
                   disabled
                 >
-                  Confirmar recepciÃ³n
+                  Confirmar recepción
                 </button>
               </div>
             </div>
@@ -238,13 +235,13 @@
         ocSelect.innerHTML = "";
         const opt = document.createElement("option");
         opt.value = "";
-        opt.textContent = "Cargando Ã³rdenesâ€¦";
+        opt.textContent = "Cargando órdenes…";
         ocSelect.appendChild(opt);
 
         try {
           const resp = await apiCall("/admin/compras/pendientes", { method: "GET" });
           if (!resp.ok) {
-            throw new Error(resp.data?.message || "No se pudo cargar Ã³rdenes");
+            throw new Error(resp.data?.message || "No se pudo cargar órdenes");
           }
 
           const ordenes = Array.isArray(resp.data?.data?.ordenes)
@@ -255,14 +252,14 @@
           const placeholder = document.createElement("option");
           placeholder.value = "";
           placeholder.textContent = ordenes.length
-            ? "Selecciona una OCâ€¦"
+            ? "Selecciona una OC…"
             : "No hay OCs pendientes";
           ocSelect.appendChild(placeholder);
 
           for (const oc of ordenes) {
             const option = document.createElement("option");
             option.value = String(oc.ordenCompraId);
-            option.textContent = `OC #${oc.ordenCompraId} â€” ${safeText(
+            option.textContent = `OC #${oc.ordenCompraId} — ${safeText(
               oc.proveedorNombre
             )} (${safeText(oc.estatus)})`;
             option.dataset.proveedorNombre = safeText(oc.proveedorNombre);
@@ -282,7 +279,7 @@
           option.value = "";
           option.textContent = "Error cargando OCs";
           ocSelect.appendChild(option);
-          setEmpty("No se pudieron cargar las Ã³rdenes pendientes.");
+          setEmpty("No se pudieron cargar las órdenes pendientes.");
         }
       };
 
@@ -306,12 +303,12 @@
             ? resp.data.data.items
             : [];
 
-          ocProveedor.textContent = safeText(state.orden?.proveedorNombre || "â€”");
+          ocProveedor.textContent = safeText(state.orden?.proveedorNombre || "—");
           ocMeta.textContent = state.orden
-            ? `Estatus: ${safeText(state.orden.estatus)} Â· CreaciÃ³n: ${safeText(
+            ? `Estatus: ${safeText(state.orden.estatus)} · Creación: ${safeText(
                 state.orden.fechaCreacion
               )}`
-            : "â€”";
+            : "—";
 
           renderItems();
         } catch (error) {
@@ -338,14 +335,14 @@
         if (!id) {
           state.orden = null;
           state.items = [];
-          ocProveedor.textContent = "â€”";
-          ocMeta.textContent = "â€”";
+          ocProveedor.textContent = "—";
+          ocMeta.textContent = "—";
           setEmpty("Selecciona una orden de compra para empezar.");
           return;
         }
 
-        ocProveedor.textContent = safeText(selected?.dataset?.proveedorNombre || "â€”");
-        ocMeta.textContent = "â€”";
+        ocProveedor.textContent = safeText(selected?.dataset?.proveedorNombre || "—");
+        ocMeta.textContent = "—";
         await loadDetalleCiego(id);
       });
 
@@ -356,8 +353,8 @@
 
         const confirm = await Swal.fire({
           icon: "warning",
-          title: "Confirmar recepciÃ³n blindada",
-          text: "Si el conteo no coincide, se rechazarÃ¡ y no se actualizarÃ¡ inventario.",
+          title: "Confirmar recepción blindada",
+          text: "Si el conteo no coincide, se rechazará y no se actualizará inventario.",
           showCancelButton: true,
           confirmButtonText: "Validar",
           cancelButtonText: "Cancelar",
@@ -383,7 +380,7 @@
           if (resp.ok) {
             await Swal.fire({
               icon: "success",
-              title: "RecepciÃ³n registrada",
+              title: "Recepción registrada",
               text: resp.data?.message || "Inventario actualizado.",
               confirmButtonColor: "#F97316",
             });
@@ -391,8 +388,8 @@
             ocSelect.value = "";
             state.orden = null;
             state.items = [];
-            ocProveedor.textContent = "â€”";
-            ocMeta.textContent = "â€”";
+            ocProveedor.textContent = "—";
+            ocMeta.textContent = "—";
             setEmpty("Selecciona una orden de compra para empezar.");
             return;
           }
@@ -408,13 +405,13 @@
             return;
           }
 
-          throw new Error(resp.data?.message || "Error al validar recepciÃ³n");
+          throw new Error(resp.data?.message || "Error al validar recepción");
         } catch (error) {
           console.error(error);
           await Swal.fire({
             icon: "error",
             title: "Error",
-            text: error.message || "No se pudo validar recepciÃ³n",
+            text: error.message || "No se pudo validar recepción",
             confirmButtonColor: "#F97316",
           });
         } finally {

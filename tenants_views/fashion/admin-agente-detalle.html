@@ -1,4 +1,4 @@
-ï»¿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
@@ -6,11 +6,8 @@
     <title>Detalle del Agente - Admin Fashion Box</title>
     <link rel="icon" type="image/png" href="/icon/Logo_Fashion.png" />
 
-    <!-- PROTECCIÃ“N DE AUTENTICACIÃ“N ADMIN -->
+    <!-- PROTECCIÓN DE AUTENTICACIÓN ADMIN -->
     <script src="js/auth-guard-admin.js"></script>
-
-    <!-- SISTEMA DE RENOVACIÃ“N DE TOKENS -->
-    <script src="js/token-refresh.js"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
@@ -58,7 +55,7 @@
               <div class="admin-stat-card">
                 <div class="admin-stat-header">
                   <div class="admin-stat-content">
-                    <h3>InformaciÃ³n del Agente</h3>
+                    <h3>Información del Agente</h3>
                     <div style="margin-top: 1rem">
                       <p
                         style="
@@ -74,10 +71,10 @@
                         <strong>Email:</strong> <span id="agentEmail">-</span>
                       </p>
                       <p style="color: var(--razo-gray-warm); margin: 0.5rem 0">
-                        <strong>CÃ³digo:</strong> <span id="agentCode">-</span>
+                        <strong>Código:</strong> <span id="agentCode">-</span>
                       </p>
                       <p style="color: var(--razo-gray-warm); margin: 0.5rem 0">
-                        <strong>TelÃ©fono:</strong>
+                        <strong>Teléfono:</strong>
                         <span id="agentPhone">-</span>
                       </p>
                       <p style="margin: 0.5rem 0">
@@ -85,18 +82,18 @@
                       </p>
                     </div>
                   </div>
-                  <div class="admin-stat-icon purple">ðŸ’¼</div>
+                  <div class="admin-stat-icon purple">??</div>
                 </div>
               </div>
 
               <div class="admin-stat-card">
                 <div class="admin-stat-header">
                   <div class="admin-stat-content">
-                    <h3>EstadÃ­sticas de Ventas</h3>
+                    <h3>Estadísticas de Ventas</h3>
                     <div class="admin-stat-value" id="totalVentas">0</div>
                     <p style="color: var(--razo-gray-warm)">Ventas totales</p>
                   </div>
-                  <div class="admin-stat-icon orange">ðŸ“¦</div>
+                  <div class="admin-stat-icon orange">??</div>
                 </div>
               </div>
 
@@ -107,7 +104,7 @@
                     <div class="admin-stat-value" id="totalComisiones">$0</div>
                     <p style="color: var(--razo-gray-warm)">Acumuladas</p>
                   </div>
-                  <div class="admin-stat-icon green">ðŸ’°</div>
+                  <div class="admin-stat-icon green">??</div>
                 </div>
               </div>
             </div>
@@ -121,7 +118,7 @@
                   class="btn btn-light btn-sm"
                   id="btnRefrescarClientes"
                 >
-                  <span aria-hidden="true">ðŸ”„</span>
+                  <span aria-hidden="true">??</span>
                   <span>Refrescar</span>
                 </button>
               </div>
@@ -146,7 +143,7 @@
                 </table>
               </div>
               <div id="emptyClientes" class="empty-state" style="display: none">
-                <p>Este agente aÃºn no tiene clientes asignados</p>
+                <p>Este agente aún no tiene clientes asignados</p>
               </div>
             </div>
 
@@ -183,11 +180,11 @@
                 <table class="admin-table">
                   <thead>
                     <tr>
-                      <th>#ComisiÃ³n</th>
+                      <th>#Comisión</th>
                       <th>#Pedido</th>
                       <th>Monto</th>
                       <th>Estado</th>
-                      <th>Fecha GeneraciÃ³n</th>
+                      <th>Fecha Generación</th>
                       <th>Fecha Pago</th>
                     </tr>
                   </thead>
@@ -234,11 +231,11 @@
 
       function formatDateToMX(value) {
         if (!value) {
-          return "â€”";
+          return "—";
         }
         const date = new Date(value);
         if (Number.isNaN(date.getTime())) {
-          return "â€”";
+          return "—";
         }
         return date.toLocaleDateString("es-MX", {
           year: "numeric",
@@ -299,12 +296,12 @@
                   <div style="font-size: 0.85rem; color: var(--razo-gray-warm);">
                     Pedidos: ${
                       cliente.totalPedidos ?? 0
-                    } Â· Compras: ${formatCurrencyMXN(
+                    } · Compras: ${formatCurrencyMXN(
               cliente.montoTotalCompras || 0
             )}
                   </div>
                 </td>
-                <td>${cliente.email || "â€”"}</td>
+                <td>${cliente.email || "—"}</td>
                 <td>${formatDateToMX(cliente.fechaRegistro)}</td>
                 <td>
                   <button
@@ -396,7 +393,7 @@
             ).textContent = `${agente.nombre} ${agente.apellido}`;
             document.getElementById("agentEmail").textContent = agente.email;
             document.getElementById("agentCode").textContent =
-              agente.codigoAgente || "â€”";
+              agente.codigoAgente || "—";
             document.getElementById("agentPhone").textContent =
               agente.telefono || "No registrado";
 
@@ -406,7 +403,7 @@
               agente.activo ? "success" : "danger"
             }`;
 
-            // EstadÃ­sticas
+            // Estadísticas
             document.getElementById("totalVentas").textContent = ventas.length;
             const totalComisiones = comisiones.reduce(
               (sum, c) => sum + c.montoComision,
@@ -478,7 +475,7 @@
                   c.estatus === "Pagada" ? "success" : "warning"
                 }">${c.estatus}</span></td>
                 <td>${formatDateSafe(c.fechaGeneracion)}</td>
-                <td>${formatDateSafe(c.fechaPago) !== "â€”" ? formatDateSafe(c.fechaPago) : "-"}</td>
+                <td>${formatDateSafe(c.fechaPago) !== "—" ? formatDateSafe(c.fechaPago) : "-"}</td>
               </tr>
             `
                 )
@@ -601,8 +598,8 @@
         }
 
         const confirmMessage = clienteNombre
-          ? `Â¿Deseas desvincular a ${clienteNombre} de este agente?`
-          : "Â¿Deseas desvincular a este cliente del agente?";
+          ? `¿Deseas desvincular a ${clienteNombre} de este agente?`
+          : "¿Deseas desvincular a este cliente del agente?";
 
         let confirmado = false;
 
@@ -616,7 +613,7 @@
             title: "Desvincular cliente",
             text: confirmMessage,
             showCancelButton: true,
-            confirmButtonText: "SÃ­, desvincular",
+            confirmButtonText: "Sí, desvincular",
             cancelButtonText: "Cancelar",
             confirmButtonColor: "#dc3545",
             cancelButtonColor: "#6b7280",

@@ -1,16 +1,13 @@
-Ôªø<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Gesti√≥n de Pedidos - Admin Fashion Box</title>
+    <title>GestiÛn de Pedidos - Admin Fashion Box</title>
     <link rel="icon" type="image/png" href="/icon/Logo_Fashion.png" />
 
-    <!-- PROTECCI√ìN DE AUTENTICACI√ìN ADMIN -->
+    <!-- PROTECCI”N DE AUTENTICACI”N ADMIN -->
     <script src="js/auth-guard-admin.js"></script>
-
-    <!-- SISTEMA DE RENOVACI√ìN DE TOKENS -->
-    <script src="js/token-refresh.js"></script>
 
     <link rel="stylesheet" href="css/styles-fashion.css" />
     <link rel="stylesheet" href="css/fashion-theme-fashion.css" />
@@ -18,7 +15,7 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
       <link rel="stylesheet" href="css/mobile-responsive-fashion.css" />
   </head>
-  <body data-page-title="Gesti√≥n de Pedidos">
+  <body data-page-title="GestiÛn de Pedidos">
     <div class="admin-layout">
       <!-- Sidebar -->
       <div id="sidebar-container"></div>
@@ -92,10 +89,10 @@
             </div>
 
             <div id="emptyOrders" class="empty-state" style="display: none">
-              <div class="empty-state-icon">üì¶</div>
+              <div class="empty-state-icon">??</div>
               <h3 class="empty-state-title">No hay pedidos</h3>
               <p class="empty-state-text">
-                Los pedidos aparecer√°n aqu√≠ cuando los clientes realicen compras
+                Los pedidos aparecer·n aquÌ cuando los clientes realicen compras
               </p>
             </div>
           </div>
@@ -114,7 +111,7 @@
           <p style="margin-bottom: 1.5rem">
             <strong style="font-size: 1.125rem">Pedido #<span id="evidenciaPedidoId"></span></strong><br />
             <span style="color: var(--text-secondary); font-size: 0.875rem">
-              Sube la foto de la remisi√≥n firmada por el cliente
+              Sube la foto de la remisiÛn firmada por el cliente
             </span>
           </p>
 
@@ -133,7 +130,7 @@
 
           <div style="background: var(--razo-cream); padding: 1rem; border-radius: 0.5rem; border-left: 4px solid var(--razo-orange); margin-bottom: 1.5rem;">
             <p style="font-size: 0.875rem; margin: 0">
-              <strong>‚ÑπÔ∏è Nota:</strong> Al subir la evidencia, el pedido se marcar√° autom√°ticamente como "Entregado" y se registrar√° la fecha de entrega.
+              <strong>?? Nota:</strong> Al subir la evidencia, el pedido se marcar· autom·ticamente como "Entregado" y se registrar· la fecha de entrega.
             </p>
           </div>
 
@@ -203,7 +200,7 @@
             style="width: 100%; padding: 0.75rem; font-size: 1rem"
           >
             <option value="Pendiente">Pendiente</option>
-            <option value="Confirmado">Confirmado ‚ö†Ô∏è (Reduce Stock)</option>
+            <option value="Confirmado">Confirmado ?? (Reduce Stock)</option>
             <option value="Enviado">Enviado</option>
             <option value="Entregado">Entregado</option>
             <option value="Cancelado">Cancelado</option>
@@ -220,8 +217,8 @@
           "
         >
           <p style="font-size: 0.875rem; margin: 0">
-            <strong>‚ö†Ô∏è Importante:</strong> Al cambiar a "Confirmado", se
-            reducir√° autom√°ticamente el stock de los productos y se registrar√°
+            <strong>?? Importante:</strong> Al cambiar a "Confirmado", se
+            reducir· autom·ticamente el stock de los productos y se registrar·
             en el log de inventario.
           </p>
         </div>
@@ -263,7 +260,7 @@
         window.location.href = "/login.html";
       }
 
-      // Mapea el estatus del pedido a un badge normalizado con dise√±o admin-badge info
+      // Mapea el estatus del pedido a un badge normalizado con diseÒo admin-badge info
       function getPedidoStatusBadgeClass(estatus) {
         const value = (estatus || "").toString().toLowerCase();
 
@@ -377,8 +374,8 @@
                         class="btn btn-info"
                         style="padding: 0.5rem 1rem; font-size: 0.875rem; background: #17a2b8; color: white;"
                         onclick="generarRemision(${order.pedidoId})"
-                        title="Generar remisi√≥n para firma">
-                        üìÑ Remisi√≥n
+                        title="Generar remisiÛn para firma">
+                        ?? RemisiÛn
                       </button>
                       ${order.urlEvidenciaEntrega ? `
                         <button
@@ -386,15 +383,15 @@
                           style="padding: 0.5rem 1rem; font-size: 0.875rem;"
                           onclick="verEvidencia('${order.urlEvidenciaEntrega}')"
                           title="Ver evidencia de entrega">
-                          ‚úÖ Ver Firma
+                          ? Ver Firma
                         </button>
                       ` : `
                         <button
                           class="btn"
                           style="padding: 0.5rem 1rem; font-size: 0.875rem; background: #ffc107; color: #000;"
                           onclick="abrirModalSubirEvidencia(${order.pedidoId})"
-                          title="Subir foto de remisi√≥n firmada">
-                          üì∑ Subir Firma
+                          title="Subir foto de remisiÛn firmada">
+                          ?? Subir Firma
                         </button>
                       `}
                     </div>
@@ -426,7 +423,7 @@
 
       // Navigate to order detail page
       function verDetallePedido(pedidoId) {
-        // Establecer flags de navegaci√≥n
+        // Establecer flags de navegaciÛn
         sessionStorage.setItem("_navigating", "true");
         localStorage.setItem("_nav_timestamp", Date.now().toString());
         // Redirigir inmediatamente
@@ -477,7 +474,7 @@
         const actualLower = (estatusActual || "").toString().toLowerCase();
 
         let swalConfig = null;
-        let fallbackMessage = "¬øDeseas actualizar el estatus y notificar al cliente?";
+        let fallbackMessage = "øDeseas actualizar el estatus y notificar al cliente?";
 
         if (
           typeof Swal !== "undefined" &&
@@ -487,11 +484,11 @@
           if (nuevoLower === "cancelado" && actualLower !== "cancelado") {
             swalConfig = {
               icon: "warning",
-              title: "¬øCancelar pedido?",
+              title: "øCancelar pedido?",
               text:
-                "‚ö†Ô∏è Se devolver√°n los productos al inventario y se enviar√° un correo de cancelaci√≥n al cliente.",
+                "?? Se devolver·n los productos al inventario y se enviar· un correo de cancelaciÛn al cliente.",
               showCancelButton: true,
-              confirmButtonText: "S√≠, cancelar",
+              confirmButtonText: "SÌ, cancelar",
               cancelButtonText: "No, mantener",
               confirmButtonColor: "#dc3545",
               cancelButtonColor: "#6c757d",
@@ -503,11 +500,11 @@
           ) {
             swalConfig = {
               icon: "question",
-              title: "¬øReactivar pedido?",
+              title: "øReactivar pedido?",
               text:
-                "‚ö†Ô∏è Se volver√° a descontar el stock. Aseg√∫rate de tener existencias.",
+                "?? Se volver· a descontar el stock. Aseg˙rate de tener existencias.",
               showCancelButton: true,
-              confirmButtonText: "S√≠, reactivar",
+              confirmButtonText: "SÌ, reactivar",
               cancelButtonText: "No, mantener cancelado",
               confirmButtonColor: "#0d6efd",
               cancelButtonColor: "#6c757d",
@@ -518,9 +515,9 @@
               icon: "question",
               title: "Actualizar estatus",
               text:
-                "¬øDeseas actualizar el estatus y notificar al cliente?",
+                "øDeseas actualizar el estatus y notificar al cliente?",
               showCancelButton: true,
-              confirmButtonText: "S√≠, actualizar",
+              confirmButtonText: "SÌ, actualizar",
               cancelButtonText: "Cancelar",
               confirmButtonColor: "#F97316",
               cancelButtonColor: "#6c757d",
@@ -591,7 +588,7 @@
         link.addEventListener("click", (e) => {
           e.preventDefault();
           const moduleName = link.querySelector("span:last-child").textContent;
-          showToast(`M√≥dulo "${moduleName}" pr√≥ximamente disponible`, "info");
+          showToast(`MÛdulo "${moduleName}" prÛximamente disponible`, "info");
         });
       });
 
@@ -627,7 +624,7 @@
         const maxSize = 10 * 1024 * 1024;
 
         if (file.size > maxSize) {
-          showToast("El archivo es demasiado grande. M√°ximo 10MB", "error");
+          showToast("El archivo es demasiado grande. M·ximo 10MB", "error");
           return;
         }
 
@@ -693,18 +690,18 @@
           );
 
           if (!response.ok) {
-            throw new Error("Error al obtener datos de remisi√≥n");
+            throw new Error("Error al obtener datos de remisiÛn");
           }
 
           const data = await response.json();
           if (data.success) {
             generarPDFRemision(data.data.pedido);
           } else {
-            showToast(data.message || "Error al generar remisi√≥n", "error");
+            showToast(data.message || "Error al generar remisiÛn", "error");
           }
         } catch (error) {
-          console.error("Error al generar remisi√≥n:", error);
-          showToast("Error al generar remisi√≥n", "error");
+          console.error("Error al generar remisiÛn:", error);
+          showToast("Error al generar remisiÛn", "error");
         }
       }
 
@@ -717,7 +714,7 @@
           <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Remisi√≥n - Pedido #${pedido.pedidoId}</title>
+            <title>RemisiÛn - Pedido #${pedido.pedidoId}</title>
             <style>
               * { margin: 0; padding: 0; box-sizing: border-box; }
               body { 
@@ -812,16 +809,16 @@
           </head>
           <body>
             <div class="no-print">
-              <button class="btn-print" onclick="window.print()">üñ®Ô∏è Imprimir Remisi√≥n</button>
+              <button class="btn-print" onclick="window.print()">??? Imprimir RemisiÛn</button>
             </div>
 
             <div class="header">
-              <h1>REMISI√ìN DE ENTREGA</h1>
-              <p>Fashion Box - Sistema de Gesti√≥n</p>
+              <h1>REMISI”N DE ENTREGA</h1>
+              <p>Fashion Box - Sistema de GestiÛn</p>
             </div>
 
             <div class="info-section">
-              <h2>Informaci√≥n del Pedido</h2>
+              <h2>InformaciÛn del Pedido</h2>
               <div class="info-row">
                 <span class="info-label">Pedido #:</span>
                 <span class="info-value">${pedido.pedidoId}</span>
@@ -849,19 +846,19 @@
                 <span class="info-value">${pedido.cliente.email}</span>
               </div>
               <div class="info-row">
-                <span class="info-label">Tel√©fono:</span>
+                <span class="info-label">TelÈfono:</span>
                 <span class="info-value">${pedido.cliente.telefono || 'N/A'}</span>
               </div>
             </div>
 
             <div class="info-section">
-              <h2>Direcci√≥n de Entrega</h2>
+              <h2>DirecciÛn de Entrega</h2>
               <div class="info-row">
                 <span class="info-label">Receptor:</span>
                 <span class="info-value">${pedido.direccion.receptor}</span>
               </div>
               <div class="info-row">
-                <span class="info-label">Direcci√≥n:</span>
+                <span class="info-label">DirecciÛn:</span>
                 <span class="info-value">${pedido.direccion.calle}</span>
               </div>
               <div class="info-row">
@@ -882,7 +879,7 @@
                 <span class="info-value">${pedido.agente.nombre}</span>
               </div>
               <div class="info-row">
-                <span class="info-label">C√≥digo:</span>
+                <span class="info-label">CÛdigo:</span>
                 <span class="info-value">${pedido.agente.codigo}</span>
               </div>
             </div>
@@ -895,7 +892,7 @@
                   <tr>
                     <th>SKU</th>
                     <th>Producto</th>
-                    <th>Tama√±o</th>
+                    <th>TamaÒo</th>
                     <th>Cantidad</th>
                     <th>Precio Unit.</th>
                     <th>Subtotal</th>
@@ -917,17 +914,17 @@
             </div>
 
             <div class="total">
-              <div>Costo de Env√≠o: $${pedido.costoEnvio.toFixed(2)}</div>
+              <div>Costo de EnvÌo: $${pedido.costoEnvio.toFixed(2)}</div>
               <div style="font-size: 1.5rem; color: #F97316; margin-top: 0.5rem;">
                 Total: $${pedido.montoTotal.toFixed(2)} MXN
               </div>
             </div>
 
             <div class="firma-section">
-              <h2>Confirmaci√≥n de Recepci√≥n</h2>
+              <h2>ConfirmaciÛn de RecepciÛn</h2>
               <p style="margin: 1rem 0;">
                 Yo, <strong>${pedido.direccion.receptor}</strong>, confirmo haber recibido 
-                la mercanc√≠a descrita en esta remisi√≥n en buen estado y conforme a lo solicitado.
+                la mercancÌa descrita en esta remisiÛn en buen estado y conforme a lo solicitado.
               </p>
               
               <div class="firma-box">
@@ -943,14 +940,14 @@
                 </div>
                 <div style="width: 45%;">
                   <div class="firma-box">
-                    <div class="firma-label">Fecha de Recepci√≥n</div>
+                    <div class="firma-label">Fecha de RecepciÛn</div>
                   </div>
                 </div>
               </div>
             </div>
 
             <div class="no-print" style="margin-top: 2rem; text-align: center;">
-              <button class="btn-print" onclick="window.print()">üñ®Ô∏è Imprimir Remisi√≥n</button>
+              <button class="btn-print" onclick="window.print()">??? Imprimir RemisiÛn</button>
             </div>
           </body>
           </html>

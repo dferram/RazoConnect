@@ -1,9 +1,9 @@
-Ôªø<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>√ìrdenes de Compra - Admin Fashion Box</title>
+    <title>”rdenes de Compra - Admin Fashion Box</title>
     <link rel="icon" type="image/png" href="/icon/Logo_Fashion.png" />
 
     <!-- SWEETALERT2 -->
@@ -12,9 +12,8 @@
     <!-- EXCELJS -->
     <script src="https://cdn.jsdelivr.net/npm/exceljs@4.3.0/dist/exceljs.min.js"></script>
 
-    <!-- PROTECCI√ìN DE AUTENTICACI√ìN ADMIN -->
+    <!-- PROTECCI”N DE AUTENTICACI”N ADMIN -->
     <script src="js/auth-guard-admin.js"></script>
-    <script src="js/token-refresh.js"></script>
 
     <link rel="stylesheet" href="css/styles-fashion.css" />
     <link rel="stylesheet" href="css/fashion-theme-fashion.css" />
@@ -25,7 +24,7 @@
     />
       <link rel="stylesheet" href="css/mobile-responsive-fashion.css" />
   </head>
-  <body data-page-title="√ìrdenes de Compra (Backorders)">
+  <body data-page-title="”rdenes de Compra (Backorders)">
     <div class="admin-layout">
       <!-- Sidebar -->
       <div id="sidebar-container"></div>
@@ -75,13 +74,13 @@
               "
             >
               <p style="margin: 0; font-size: 0.875rem; color: #0369a1">
-                ‚ÑπÔ∏è Las √≥rdenes de backorder se generan autom√°ticamente cuando un
+                ?? Las Ûrdenes de backorder se generan autom·ticamente cuando un
                 pedido excede el stock disponible
               </p>
             </div>
           </section>
 
-          <!-- Tabla de √ìrdenes de Compra -->
+          <!-- Tabla de ”rdenes de Compra -->
           <section class="admin-card" style="padding: 1.5rem">
             <div
               style="
@@ -98,7 +97,7 @@
                   color: var(--razo-orange, #ff6b35);
                 "
               >
-                √ìrdenes de Compra por Backorder
+                ”rdenes de Compra por Backorder
               </h2>
               <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; justify-content: flex-end;">
                 <button
@@ -118,7 +117,7 @@
                   onmouseover="this.style.background='#4338ca'"
                   onmouseout="this.style.background='#4f46e5'"
                 >
-                  ü§ñ Generar Sugerencias
+                  ?? Generar Sugerencias
                 </button>
                 <span id="resultadosBadge" class="admin-badge secondary"
                   >0 RESULTADOS</span
@@ -145,7 +144,7 @@
                     <th>ID</th>
                     <th>Origen</th>
                     <th>Proveedor</th>
-                    <th>Fecha Creaci√≥n</th>
+                    <th>Fecha CreaciÛn</th>
                     <th>Entrega Esperada</th>
                     <th>Productos</th>
                     <th>Estatus</th>
@@ -160,14 +159,14 @@
             </div>
 
             <div id="emptyState" class="empty-state" style="display: none">
-              <div class="empty-state-icon">üì¶</div>
+              <div class="empty-state-icon">??</div>
               <h3 class="empty-state-title">
-                No hay √≥rdenes de backorder pendientes
+                No hay Ûrdenes de backorder pendientes
               </h3>
               <p class="empty-state-text">
                 Cuando un pedido genere un backorder, la orden de compra al
-                proveedor aparecer√° aqu√≠ autom√°ticamente. Podr√°s confirmar el
-                pedido y registrar la recepci√≥n de inventario.
+                proveedor aparecer· aquÌ autom·ticamente. Podr·s confirmar el
+                pedido y registrar la recepciÛn de inventario.
               </p>
             </div>
           </section>
@@ -188,7 +187,7 @@
         </div>
 
         <div class="modal-body">
-          <!-- Informaci√≥n de la Orden -->
+          <!-- InformaciÛn de la Orden -->
           <div
             style="
               background: #f8fafc;
@@ -227,7 +226,7 @@
                     margin-bottom: 0.25rem;
                   "
                 >
-                  Fecha Creaci√≥n
+                  Fecha CreaciÛn
                 </p>
                 <p
                   style="font-weight: 600; color: #1f2937"
@@ -351,7 +350,7 @@
         </div>
 
         <div class="modal-body">
-          <!-- Informaci√≥n de la Orden -->
+          <!-- InformaciÛn de la Orden -->
           <div
             style="
               background: #f8fafc;
@@ -379,7 +378,7 @@
           <!-- Buscador de Productos -->
           <div style="background: white; padding: 1.5rem; border-radius: 0.75rem; border: 1px solid #e5e7eb; margin-bottom: 1.5rem;">
             <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 1rem; color: #374151;">
-              üîç Agregar Producto
+              ?? Agregar Producto
             </h3>
             <div style="position: relative;">
               <input
@@ -413,7 +412,7 @@
           <!-- Lista de Items Actuales -->
           <div style="background: white; padding: 1.5rem; border-radius: 0.75rem; border: 1px solid #e5e7eb;">
             <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 1rem; color: #374151;">
-              üì¶ Items en la Orden
+              ?? Items en la Orden
             </h3>
             <div style="overflow-x: auto;">
               <table class="admin-table" style="min-width: 100%;">
@@ -499,7 +498,7 @@
         const filtroAdminContainer = document.getElementById("filtroAdminContainer");
         const detalleModal = document.getElementById("detalleModal");
 
-        // Cargar √≥rdenes al inicio
+        // Cargar Ûrdenes al inicio
         document.addEventListener("DOMContentLoaded", function () {
           verifyAndLoadAdmin();
           loadOrdenes();
@@ -517,7 +516,7 @@
                 ) {
                   Swal.fire({
                     title: "Analizando inventario...",
-                    text: "Generando √≥rdenes sugeridas por stock bajo.",
+                    text: "Generando Ûrdenes sugeridas por stock bajo.",
                     allowOutsideClick: false,
                     didOpen: () => {
                       Swal.showLoading();
@@ -532,7 +531,7 @@
 
                 if (!response.ok) {
                   throw new Error(
-                    response.data?.message || "No se pudo generar autom√°ticamente"
+                    response.data?.message || "No se pudo generar autom·ticamente"
                   );
                 }
 
@@ -551,19 +550,19 @@
                       Number.isInteger(Number.parseInt(ordenesCreadas, 10))
                         ? Number.parseInt(ordenesCreadas, 10)
                         : 0
-                    } √≥rdenes autom√°ticamente.`,
+                    } Ûrdenes autom·ticamente.`,
                     confirmButtonColor: "#F97316",
                   });
                 } else {
                   showToast(
-                    `Se generaron ${ordenesCreadas || 0} √≥rdenes autom√°ticamente.`,
+                    `Se generaron ${ordenesCreadas || 0} Ûrdenes autom·ticamente.`,
                     "success"
                   );
                 }
 
                 await loadOrdenes();
               } catch (error) {
-                console.error("Error auto-generando √≥rdenes:", error);
+                console.error("Error auto-generando Ûrdenes:", error);
 
                 if (
                   typeof Swal !== "undefined" &&
@@ -577,14 +576,14 @@
                     confirmButtonColor: "#F97316",
                   });
                 } else {
-                  showToast(error.message || "Error al generar √≥rdenes", "error");
+                  showToast(error.message || "Error al generar Ûrdenes", "error");
                 }
               }
             });
           }
         });
 
-        // Verificar y cargar informaci√≥n del admin desde la base de datos
+        // Verificar y cargar informaciÛn del admin desde la base de datos
         async function verifyAndLoadAdmin() {
           try {
             const response = await fetch(`${API_BASE_URL}/admin/verify`, {
@@ -652,7 +651,7 @@
           }
         }
 
-        // Cargar √≥rdenes de compra
+        // Cargar Ûrdenes de compra
         async function loadOrdenes() {
           try {
             loadingState.style.display = "block";
@@ -669,37 +668,37 @@
 
             const response = await API.apiCall(url, { method: "GET" });
 
-            console.log("üîç FRONTEND - Respuesta del API:", response);
-            console.log("üîç FRONTEND - response.ok:", response.ok);
-            console.log("üîç FRONTEND - response.data:", response.data);
+            console.log("?? FRONTEND - Respuesta del API:", response);
+            console.log("?? FRONTEND - response.ok:", response.ok);
+            console.log("?? FRONTEND - response.data:", response.data);
             console.log(
-              "üîç FRONTEND - response.data.ordenes:",
+              "?? FRONTEND - response.data.ordenes:",
               response.data?.ordenes
             );
             console.log(
-              "üîç FRONTEND - JSON completo:",
+              "?? FRONTEND - JSON completo:",
               JSON.stringify(response, null, 2)
             );
 
             if (!response.ok) {
-              throw new Error("Error al cargar √≥rdenes de compra");
+              throw new Error("Error al cargar Ûrdenes de compra");
             }
 
             ordenesData = response.data.data?.ordenes || [];
 
-            console.log("üîç FRONTEND - ordenesData recibido:", ordenesData);
+            console.log("?? FRONTEND - ordenesData recibido:", ordenesData);
             console.log(
-              "üîç FRONTEND - cantidad de √≥rdenes:",
+              "?? FRONTEND - cantidad de Ûrdenes:",
               ordenesData.length
             );
 
             loadingState.style.display = "none";
 
             if (ordenesData.length === 0) {
-              console.log("üîç FRONTEND - Mostrando empty state");
+              console.log("?? FRONTEND - Mostrando empty state");
               emptyState.style.display = "block";
             } else {
-              console.log("üîç FRONTEND - Renderizando √≥rdenes");
+              console.log("?? FRONTEND - Renderizando Ûrdenes");
               renderOrdenes();
               ordenesTable.style.display = "block";
             }
@@ -707,11 +706,11 @@
             console.error("Error:", error);
             loadingState.style.display = "none";
             emptyState.style.display = "block";
-            showToast("Error al cargar √≥rdenes de compra", "error");
+            showToast("Error al cargar Ûrdenes de compra", "error");
           }
         }
 
-        // Renderizar tabla de √≥rdenes
+        // Renderizar tabla de Ûrdenes
         function renderOrdenes() {
           ordenesTableBody.innerHTML = "";
 
@@ -789,7 +788,7 @@
                       class="btn" 
                       onclick="editarOrden(${orden.ordenCompraId})"
                       style="padding: 0.5rem 1rem; font-size: 0.875rem; flex: 1; min-width: 120px; background: #f97316; color: white;">
-                      ‚úèÔ∏è Editar
+                      ?? Editar
                     </button>
                   `
                       : ""
@@ -798,7 +797,7 @@
                     class="btn btn-success" 
                     onclick="exportarOrdenExcel(${orden.ordenCompraId})"
                     style="padding: 0.5rem 1rem; font-size: 0.875rem; flex: 1; min-width: 120px;">
-                    üìÑ Excel
+                    ?? Excel
                   </button>
                   ${
                     orden.estatus === "Pendiente"
@@ -826,11 +825,11 @@
 
           if (typeof Swal !== "undefined" && Swal && typeof Swal.fire === "function") {
             const result = await Swal.fire({
-              title: "¬øConfirmar pedido al proveedor?",
-              text: "Se abrir√° la p√°gina para registrar la recepci√≥n de inventario.",
+              title: "øConfirmar pedido al proveedor?",
+              text: "Se abrir· la p·gina para registrar la recepciÛn de inventario.",
               icon: "warning",
               showCancelButton: true,
-              confirmButtonText: "S√≠, continuar",
+              confirmButtonText: "SÌ, continuar",
               cancelButtonText: "Cancelar",
               confirmButtonColor: "#F97316",
               cancelButtonColor: "#6b7280",
@@ -841,7 +840,7 @@
             }
           } else {
             console.warn(
-              "SweetAlert2 no disponible; acci√≥n de confirmarPedido cancelada."
+              "SweetAlert2 no disponible; acciÛn de confirmarPedido cancelada."
             );
             return;
           }
@@ -852,28 +851,28 @@
         // Ver detalle de orden
         window.verDetalle = async function (ordenCompraId) {
           try {
-            console.log('üîç Cargando detalle de orden:', ordenCompraId);
+            console.log('?? Cargando detalle de orden:', ordenCompraId);
             const response = await API.apiCall(
               `/admin/ordenes-compra/${ordenCompraId}/detalles`,
               { method: "GET" }
             );
 
-            console.log('üì¶ Respuesta recibida:', response);
+            console.log('?? Respuesta recibida:', response);
 
             if (!response.ok) {
-              console.error('‚ùå Respuesta no OK:', response);
+              console.error('? Respuesta no OK:', response);
               throw new Error("Error al cargar detalle");
             }
 
             if (response.data && response.data.data) {
-              console.log('‚úÖ Mostrando modal con data:', response.data.data);
+              console.log('? Mostrando modal con data:', response.data.data);
               mostrarDetalle(response.data.data);
             } else {
-              console.error('‚ùå Formato de respuesta incorrecto:', response);
+              console.error('? Formato de respuesta incorrecto:', response);
               throw new Error("Formato de respuesta incorrecto");
             }
           } catch (error) {
-            console.error("‚ùå Error completo:", error);
+            console.error("? Error completo:", error);
             showToast("Error al cargar detalle de la orden", "error");
           }
         };
@@ -883,11 +882,11 @@
 
         // Mostrar modal de detalle
         function mostrarDetalle(data) {
-          console.log('üéØ mostrarDetalle llamada con:', data);
+          console.log('?? mostrarDetalle llamada con:', data);
           const { orden, detalles } = data;
 
           if (!orden || !detalles) {
-            console.error('‚ùå Datos incompletos:', { orden, detalles });
+            console.error('? Datos incompletos:', { orden, detalles });
             showToast("Error: datos incompletos", "error");
             return;
           }
@@ -927,9 +926,9 @@
             productosBody.appendChild(row);
           });
 
-          console.log('üé¨ Abriendo modal...');
+          console.log('?? Abriendo modal...');
           detalleModal.classList.add("show");
-          console.log('‚úÖ Modal abierto, clase "show" agregada');
+          console.log('? Modal abierto, clase "show" agregada');
         }
 
         // Cerrar modal
@@ -937,7 +936,7 @@
           detalleModal.classList.remove("show");
         };
 
-        // Clase de badge seg√∫n estatus
+        // Clase de badge seg˙n estatus
         function getEstatusBadgeClass(estatus) {
           const classes = {
             Pendiente: "badge-warning",
@@ -975,11 +974,11 @@
 
           if (typeof Swal !== "undefined" && Swal && typeof Swal.fire === "function") {
             const result = await Swal.fire({
-              title: "¬øConfirmar orden de backorder?",
-              text: "Se marcar√° esta orden como procesada.",
+              title: "øConfirmar orden de backorder?",
+              text: "Se marcar· esta orden como procesada.",
               icon: "warning",
               showCancelButton: true,
-              confirmButtonText: "S√≠, confirmar",
+              confirmButtonText: "SÌ, confirmar",
               cancelButtonText: "Cancelar",
               confirmButtonColor: "#F97316",
               cancelButtonColor: "#6b7280",
@@ -990,7 +989,7 @@
             }
           } else {
             console.warn(
-              "SweetAlert2 no disponible; acci√≥n de confirmarOrdenBackorder cancelada."
+              "SweetAlert2 no disponible; acciÛn de confirmarOrdenBackorder cancelada."
             );
             return;
           }
@@ -1021,25 +1020,25 @@
               title: "Cancelar Orden de Compra",
               html: `
                 <p style="margin-bottom: 1rem; color: #6b7280;">
-                  Esta acci√≥n cancelar√° la orden #${currentOrdenId} y notificar√° autom√°ticamente a todos los clientes afectados.
+                  Esta acciÛn cancelar· la orden #${currentOrdenId} y notificar· autom·ticamente a todos los clientes afectados.
                 </p>
                 <textarea 
                   id="swal-motivo" 
                   class="swal2-input" 
-                  placeholder="Motivo de cancelaci√≥n (requerido)..."
+                  placeholder="Motivo de cancelaciÛn (requerido)..."
                   style="height: 100px; resize: vertical; width: 90%;"
                 ></textarea>
               `,
               icon: "warning",
               showCancelButton: true,
-              confirmButtonText: "S√≠, cancelar orden",
+              confirmButtonText: "SÌ, cancelar orden",
               cancelButtonText: "No, mantener orden",
               confirmButtonColor: "#dc2626",
               cancelButtonColor: "#6b7280",
               preConfirm: () => {
                 const motivoInput = document.getElementById('swal-motivo').value;
                 if (!motivoInput || motivoInput.trim() === '') {
-                  Swal.showValidationMessage('El motivo de cancelaci√≥n es requerido');
+                  Swal.showValidationMessage('El motivo de cancelaciÛn es requerido');
                   return false;
                 }
                 return motivoInput.trim();
@@ -1097,8 +1096,8 @@
               });
             }
           } else {
-            console.error("SweetAlert2 no est√° disponible");
-            alert("Error: SweetAlert2 no est√° cargado");
+            console.error("SweetAlert2 no est· disponible");
+            alert("Error: SweetAlert2 no est· cargado");
           }
         };
 
@@ -1131,7 +1130,7 @@
         }
 
         // ============================================
-        // FUNCIONALIDAD DE EDICI√ìN DE ORDEN
+        // FUNCIONALIDAD DE EDICI”N DE ORDEN
         // ============================================
 
         let currentEditOrdenId = null;
@@ -1143,7 +1142,7 @@
         const resultadosBusqueda = document.getElementById("resultadosBusqueda");
         const editarItemsBody = document.getElementById("editarItemsBody");
 
-        // Abrir modal de edici√≥n
+        // Abrir modal de ediciÛn
         window.editarOrden = async function(ordenCompraId) {
           try {
             currentEditOrdenId = ordenCompraId;
@@ -1167,7 +1166,7 @@ o se puede editar una orden en estatus ${orden.estatus}`, "error");
               return;
             }
 
-            // Llenar informaci√≥n del modal
+            // Llenar informaciÛn del modal
             document.getElementById("editarOrdenId").textContent = orden.ordenCompraId;
             document.getElementById("editarProveedor").textContent = orden.proveedorNombre;
             
@@ -1195,12 +1194,12 @@ o se puede editar una orden en estatus ${orden.estatus}`, "error");
             // Mostrar modal
             editarModal.classList.add("show");
           } catch (error) {
-            console.error("Error al abrir modal de edici√≥n:", error);
-            showToast("Error al cargar la orden para edici√≥n", "error");
+            console.error("Error al abrir modal de ediciÛn:", error);
+            showToast("Error al cargar la orden para ediciÛn", "error");
           }
         };
 
-        // Cerrar modal de edici√≥n
+        // Cerrar modal de ediciÛn
         window.closeEditarModal = function() {
           editarModal.classList.remove("show");
           currentEditOrdenId = null;
@@ -1209,7 +1208,7 @@ o se puede editar una orden en estatus ${orden.estatus}`, "error");
           resultadosBusqueda.style.display = "none";
         };
 
-        // Renderizar items de la orden en edici√≥n
+        // Renderizar items de la orden en ediciÛn
         function renderEditarItems() {
           editarItemsBody.innerHTML = "";
           let total = 0;
@@ -1230,9 +1229,9 @@ o se puede editar una orden en estatus ${orden.estatus}`, "error");
                   class="btn btn-danger" 
                   onclick="eliminarItem(${item.detalleId})"
                   style="padding: 0.5rem 0.75rem; font-size: 0.875rem; background: #dc2626; color: white; border: none; border-radius: 0.375rem; cursor: pointer;"
-                  ${currentEditDetalles.length <= 1 ? 'disabled title="No se puede eliminar el √∫ltimo item"' : ''}
+                  ${currentEditDetalles.length <= 1 ? 'disabled title="No se puede eliminar el ˙ltimo item"' : ''}
                 >
-                  üóëÔ∏è
+                  ???
                 </button>
               </td>
             `;
@@ -1376,7 +1375,7 @@ o se puede editar una orden en estatus ${orden.estatus}`, "error");
               await Swal.fire({
                 icon: "success",
                 title: "Producto agregado",
-                text: "El producto se agreg√≥ exitosamente a la orden",
+                text: "El producto se agregÛ exitosamente a la orden",
                 confirmButtonColor: "#F97316",
                 timer: 2000,
               });
@@ -1398,17 +1397,17 @@ o se puede editar una orden en estatus ${orden.estatus}`, "error");
         // Eliminar item de la orden
         window.eliminarItem = async function(detalleId) {
           if (currentEditDetalles.length <= 1) {
-            showToast("No se puede eliminar el √∫ltimo item de la orden", "error");
+            showToast("No se puede eliminar el ˙ltimo item de la orden", "error");
             return;
           }
 
           if (typeof Swal !== "undefined" && Swal && typeof Swal.fire === "function") {
             const result = await Swal.fire({
-              title: "¬øEliminar producto?",
-              text: "Esta acci√≥n no se puede deshacer",
+              title: "øEliminar producto?",
+              text: "Esta acciÛn no se puede deshacer",
               icon: "warning",
               showCancelButton: true,
-              confirmButtonText: "S√≠, eliminar",
+              confirmButtonText: "SÌ, eliminar",
               cancelButtonText: "Cancelar",
               confirmButtonColor: "#dc2626",
               cancelButtonColor: "#6b7280",
@@ -1439,7 +1438,7 @@ o se puede editar una orden en estatus ${orden.estatus}`, "error");
               await Swal.fire({
                 icon: "success",
                 title: "Producto eliminado",
-                text: "El producto se elimin√≥ exitosamente de la orden",
+                text: "El producto se eliminÛ exitosamente de la orden",
                 confirmButtonColor: "#F97316",
                 timer: 2000,
               });
@@ -1458,7 +1457,7 @@ o se puede editar una orden en estatus ${orden.estatus}`, "error");
           }
         };
 
-        // Recargar detalles despu√©s de agregar/eliminar
+        // Recargar detalles despuÈs de agregar/eliminar
         async function recargarDetallesEdicion() {
           try {
             const response = await API.apiCall(
@@ -1483,7 +1482,7 @@ o se puede editar una orden en estatus ${orden.estatus}`, "error");
 
             renderEditarItems();
 
-            // Recargar tambi√©n la tabla principal
+            // Recargar tambiÈn la tabla principal
             await loadOrdenes();
           } catch (error) {
             console.error("Error al recargar detalles:", error);
@@ -1491,7 +1490,7 @@ o se puede editar una orden en estatus ${orden.estatus}`, "error");
           }
         }
 
-        // Cerrar resultados de b√∫squeda al hacer clic fuera
+        // Cerrar resultados de b˙squeda al hacer clic fuera
         document.addEventListener("click", function(e) {
           if (!buscarProductoInput.contains(e.target) && !resultadosBusqueda.contains(e.target)) {
             resultadosBusqueda.style.display = "none";
@@ -1509,7 +1508,7 @@ o se puede editar una orden en estatus ${orden.estatus}`, "error");
         };
 
         // ============================================
-        // EXPORTACI√ìN A EXCEL
+        // EXPORTACI”N A EXCEL
         // ============================================
 
         window.exportarOrdenExcel = async function(ordenCompraId) {
@@ -1519,13 +1518,13 @@ o se puede editar una orden en estatus ${orden.estatus}`, "error");
               const suggestedFolio = getSuggestedFolioOC();
               
               const { value: folio } = await Swal.fire({
-                title: 'üìã Folio de Orden de Compra',
+                title: '?? Folio de Orden de Compra',
                 html: `
                   <div style="text-align: left;">
-                    <label for="swal-folio-oc" style="display: block; font-weight: 700; margin-bottom: 0.5rem;">N√∫mero de Folio:</label>
+                    <label for="swal-folio-oc" style="display: block; font-weight: 700; margin-bottom: 0.5rem;">N˙mero de Folio:</label>
                     <input id="swal-folio-oc" class="swal2-input" value="${suggestedFolio}" placeholder="Ej: OC-100" style="margin: 0; width: 100%;" />
                     <div style="margin-top: 0.5rem; padding: 0.75rem; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 0.375rem; font-size: 0.875rem;">
-                      <strong>üí° Sugerencia:</strong> El siguiente folio consecutivo es <strong>${suggestedFolio}</strong>
+                      <strong>?? Sugerencia:</strong> El siguiente folio consecutivo es <strong>${suggestedFolio}</strong>
                     </div>
                   </div>
                 `,
@@ -1585,14 +1584,14 @@ o se puede editar una orden en estatus ${orden.estatus}`, "error");
 
               await Swal.fire({
                 icon: 'success',
-                title: '‚úÖ Excel Generado',
+                title: '? Excel Generado',
                 text: `La Orden de Compra ${folio} ha sido descargada exitosamente.`,
                 confirmButtonColor: '#F97316'
               });
 
             } else {
-              console.error("SweetAlert2 no est√° disponible");
-              alert("Error: SweetAlert2 no est√° cargado");
+              console.error("SweetAlert2 no est· disponible");
+              alert("Error: SweetAlert2 no est· cargado");
             }
           } catch (error) {
             console.error("Error al exportar orden a Excel:", error);
@@ -1609,7 +1608,7 @@ o se puede editar una orden en estatus ${orden.estatus}`, "error");
 
         async function generarExcelOrden(folio, orden, productos) {
           if (typeof ExcelJS === 'undefined') {
-            throw new Error('ExcelJS no est√° cargado');
+            throw new Error('ExcelJS no est· cargado');
           }
 
           const workbook = new ExcelJS.Workbook();
@@ -1651,7 +1650,7 @@ o se puede editar una orden en estatus ${orden.estatus}`, "error");
           worksheet.getRow(3).height = 20;
           worksheet.getRow(4).height = 10;
 
-          // ENCABEZADO - Fila 1: T√≠tulo
+          // ENCABEZADO - Fila 1: TÌtulo
           worksheet.mergeCells('C1:E1');
           const titleCell = worksheet.getCell('C1');
           titleCell.value = 'ORDEN DE COMPRA';
@@ -1700,7 +1699,7 @@ o se puede editar una orden en estatus ${orden.estatus}`, "error");
           const headers = [
             { col: 'A', text: '#' },
             { col: 'B', text: 'SKU' },
-            { col: 'C', text: 'Producto + Descripci√≥n', merge: true },
+            { col: 'C', text: 'Producto + DescripciÛn', merge: true },
             { col: 'F', text: 'Costo Unitario' },
             { col: 'G', text: 'Piezas Solicitadas' },
             { col: 'H', text: 'TOTAL' }
@@ -1758,7 +1757,7 @@ o se puede editar una orden en estatus ${orden.estatus}`, "error");
               right: { style: 'thin' }
             };
 
-            // Producto + Descripci√≥n
+            // Producto + DescripciÛn
             worksheet.mergeCells(`C${currentRow}:E${currentRow}`);
             const descripcionCell = worksheet.getCell(`C${currentRow}`);
             descripcionCell.value = nombreCompleto;
@@ -1931,7 +1930,7 @@ o se puede editar una orden en estatus ${orden.estatus}`, "error");
         }
       }
 
-      /* Badge styles espec√≠ficos para √≥rdenes de compra */
+      /* Badge styles especÌficos para Ûrdenes de compra */
       .badge-warning {
         background: #fff7ed;
         color: #f97316;

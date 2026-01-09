@@ -1,16 +1,13 @@
-Ôªø<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Gesti√≥n de Inventario - Admin Fashion Box</title>
+    <title>GestiÛn de Inventario - Admin Fashion Box</title>
     <link rel="icon" type="image/png" href="/icon/Logo_Fashion.png" />
 
-    <!-- PROTECCI√ìN DE AUTENTICACI√ìN ADMIN -->
+    <!-- PROTECCI”N DE AUTENTICACI”N ADMIN -->
     <script src="js/auth-guard-admin.js"></script>
-
-    <!-- SISTEMA DE RENOVACI√ìN DE TOKENS -->
-    <script src="js/token-refresh.js"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
@@ -19,7 +16,7 @@
     <link rel="stylesheet" href="css/admin-fashion.css" />
       <link rel="stylesheet" href="css/mobile-responsive-fashion.css" />
     <style>
-      /* Estilos para la tarjeta de Proyecci√≥n de Stock */
+      /* Estilos para la tarjeta de ProyecciÛn de Stock */
       .inventory-summary-card {
         background: linear-gradient(135deg, #fff7ed 0%, #ffffff 100%);
         border: 2px solid #f97316;
@@ -107,11 +104,11 @@
         <div class="modal-content modal-detalle">
           <div class="detalle-modal-header">
             <div class="detalle-title-wrapper">
-              <span class="detalle-title-icon">üì¶</span>
+              <span class="detalle-title-icon">??</span>
               <div>
                 <h2 id="detalleModalTitle">Detalle de Variantes</h2>
                 <p id="detalleModalSubtitle" class="detalle-modal-subtitle">
-                  Revisa la informaci√≥n de cada variante registrada.
+                  Revisa la informaciÛn de cada variante registrada.
                 </p>
               </div>
             </div>
@@ -121,13 +118,13 @@
               id="btnCerrarDetalle"
               aria-label="Cerrar"
             >
-              √ó
+              ◊
             </button>
           </div>
 
           <div id="detalleModalLoading" class="modal-loading">
             <div class="spinner"></div>
-            <p>Cargando detalles del producto‚Ä¶</p>
+            <p>Cargando detalles del productoÖ</p>
           </div>
 
           <div class="detalle-modal-body">
@@ -136,10 +133,10 @@
               class="detalle-summary"
               style="display: none"
             >
-              <!-- Informaci√≥n del Producto -->
+              <!-- InformaciÛn del Producto -->
               <div style="background: #f8fafc; border-radius: 0.75rem; padding: 1.25rem; margin-bottom: 1.5rem; border: 1px solid #e2e8f0;">
                 <h3 style="font-size: 0.875rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1rem;">
-                  üìã Informaci√≥n del Producto
+                  ?? InformaciÛn del Producto
                 </h3>
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
                   <div>
@@ -151,13 +148,13 @@
                     <div id="modalProveedor" style="font-size: 0.95rem; font-weight: 600; color: #1e293b;">Sin asignar</div>
                   </div>
                   <div>
-                    <div style="font-size: 0.75rem; color: #64748b; font-weight: 600; margin-bottom: 0.25rem;">Categor√≠a</div>
-                    <div id="modalCategoria" style="font-size: 0.95rem; font-weight: 600; color: #1e293b;">Sin categor√≠a</div>
+                    <div style="font-size: 0.75rem; color: #64748b; font-weight: 600; margin-bottom: 0.25rem;">CategorÌa</div>
+                    <div id="modalCategoria" style="font-size: 0.95rem; font-weight: 600; color: #1e293b;">Sin categorÌa</div>
                   </div>
                 </div>
                 <div style="margin-top: 1rem;">
-                  <div style="font-size: 0.75rem; color: #64748b; font-weight: 600; margin-bottom: 0.25rem;">Descripci√≥n</div>
-                  <div id="modalDescripcion" style="font-size: 0.9rem; color: #475569; line-height: 1.5;">Sin descripci√≥n</div>
+                  <div style="font-size: 0.75rem; color: #64748b; font-weight: 600; margin-bottom: 0.25rem;">DescripciÛn</div>
+                  <div id="modalDescripcion" style="font-size: 0.9rem; color: #475569; line-height: 1.5;">Sin descripciÛn</div>
                 </div>
               </div>
 
@@ -190,27 +187,27 @@
                   >
                 </div>
                 <div class="detalle-metric-card outline-card">
-                  <span class="metric-label">Precio m√°s bajo</span>
-                  <span class="metric-value" id="detallePrecioDesde">‚Äî</span>
+                  <span class="metric-label">Precio m·s bajo</span>
+                  <span class="metric-value" id="detallePrecioDesde">ó</span>
                 </div>
                 <div class="detalle-metric-card outline-card">
-                  <span class="metric-label">Precio m√°s alto</span>
-                  <span class="metric-value" id="detallePrecioHasta">‚Äî</span>
+                  <span class="metric-label">Precio m·s alto</span>
+                  <span class="metric-value" id="detallePrecioHasta">ó</span>
                 </div>
               </div>
             </div>
 
-            <!-- Tarjeta de Proyecci√≥n de Stock -->
+            <!-- Tarjeta de ProyecciÛn de Stock -->
             <div id="stockProjectionCard" class="inventory-summary-card" style="display: none;" aria-live="polite">
               <div class="stock-projection-header">
                 <div>
-                  <h3 class="stock-projection-title">üìä Proyecci√≥n de Stock</h3>
+                  <h3 class="stock-projection-title">?? ProyecciÛn de Stock</h3>
                   <p
                     id="stockProjectionSubtitle"
                     class="form-hint"
                     style="margin: 0; font-size: 0.8rem; color: #6b7280;"
                   >
-                    Paquetes disponibles seg√∫n el stock actual de cada variante.
+                    Paquetes disponibles seg˙n el stock actual de cada variante.
                   </p>
                 </div>
                 <div class="stock-total-value" id="stockProjectionTotal">
@@ -221,14 +218,14 @@
                 <table class="stock-projection-table">
                   <thead>
                     <tr>
-                      <th>Presentaci√≥n</th>
+                      <th>PresentaciÛn</th>
                       <th class="stock-projection-qty">Disponibles</th>
                     </tr>
                   </thead>
                   <tbody id="stockProjectionTableBody">
                     <tr>
                       <td colspan="2" class="stock-projection-empty">
-                        Cargando proyecci√≥n...
+                        Cargando proyecciÛn...
                       </td>
                     </tr>
                   </tbody>
@@ -275,7 +272,7 @@
         </div>
       </div>
 
-      <!-- Modal recepci√≥n de mercanc√≠a -->
+      <!-- Modal recepciÛn de mercancÌa -->
       <div id="recepcionModal" class="modal">
         <div
           class="modal-content"
@@ -297,10 +294,10 @@
                 margin-bottom: 0.25rem;
               "
             >
-              Recepci√≥n
+              RecepciÛn
             </h2>
             <p id="recepcionModalSubtitle" style="color: #718096; font-size: 0.875rem">
-              Registra la entrada de mercanc√≠a por bultos/cajas.
+              Registra la entrada de mercancÌa por bultos/cajas.
             </p>
           </div>
 
@@ -320,14 +317,14 @@
               id="recepcionPreview"
               style="margin-top: 0.5rem; color: #4b5563; font-size: 0.9rem"
             >
-              Se ingresar√°n +0 unidades al inventario.
+              Se ingresar·n +0 unidades al inventario.
             </div>
           </div>
 
           <div class="form-group" style="margin-top: 1rem">
             <label class="switch-label" style="display:flex; gap:0.75rem; align-items:center;">
               <input type="checkbox" id="recepcionEsExcepcion" />
-              <span>¬øRegistrar Excepci√≥n/Anomal√≠a?</span>
+              <span>øRegistrar ExcepciÛn/AnomalÌa?</span>
             </label>
           </div>
 
@@ -339,7 +336,7 @@
               type="text"
               id="recepcionDetalleExcepcion"
               class="form-input"
-              placeholder="Ej: caja da√±ada, faltante, humedad..."
+              placeholder="Ej: caja daÒada, faltante, humedad..."
             />
           </div>
 
@@ -354,7 +351,7 @@
           </div>
 
           <div class="alert alert-info" style="font-size: 0.875rem">
-            <strong>‚ÑπÔ∏è Nota:</strong> Esta recepci√≥n se registrar√° en el log de
+            <strong>?? Nota:</strong> Esta recepciÛn se registrar· en el log de
             inventario.
           </div>
 
@@ -365,7 +362,7 @@
               style="flex: 1; background: #4f46e5; border-color: #4f46e5"
               type="button"
             >
-              <span id="btnRecepcionText">Confirmar recepci√≥n</span>
+              <span id="btnRecepcionText">Confirmar recepciÛn</span>
               <div
                 class="spinner"
                 id="btnRecepcionSpinner"
@@ -429,7 +426,7 @@
                 <thead>
                   <tr>
                     <th>Producto</th>
-                    <th>Categor√≠a</th>
+                    <th>CategorÌa</th>
                     <th>Estado</th>
                     <th>Variantes</th>
                     <th id="thAdministrador" style="display: none;">Administrador</th>
@@ -443,7 +440,7 @@
             </div>
 
             <div id="emptyProducts" class="empty-state" style="display: none">
-              <div class="empty-state-icon">üì¶</div>
+              <div class="empty-state-icon">??</div>
               <h3 class="empty-state-title">No hay productos</h3>
               <p class="empty-state-text">
                 Comienza agregando tu primer producto
@@ -457,7 +454,7 @@
               </a>
             </div>
 
-            <!-- Paginaci√≥n -->
+            <!-- PaginaciÛn -->
             <div
               id="paginationContainer"
               style="
@@ -476,14 +473,14 @@
                   gap: 1rem;
                 "
               >
-                <!-- Informaci√≥n de registros -->
+                <!-- InformaciÛn de registros -->
                 <div style="color: var(--razo-gray-warm); font-size: 0.875rem">
                   Mostrando <strong id="pageStart">1</strong> a
                   <strong id="pageEnd">10</strong> de
                   <strong id="totalRecords">0</strong> productos
                 </div>
 
-                <!-- Controles de paginaci√≥n -->
+                <!-- Controles de paginaciÛn -->
                 <div style="display: flex; gap: 0.5rem; align-items: center">
                   <button
                     id="btnPrevPage"
@@ -498,11 +495,11 @@
                     "
                     disabled
                   >
-                    ‚Üê Anterior
+                    ? Anterior
                   </button>
 
                   <div id="pageNumbers" style="display: flex; gap: 0.25rem">
-                    <!-- Los n√∫meros de p√°gina se generar√°n din√°micamente -->
+                    <!-- Los n˙meros de p·gina se generar·n din·micamente -->
                   </div>
 
                   <button
@@ -517,7 +514,7 @@
                       gap: 0.5rem;
                     "
                   >
-                    Siguiente ‚Üí
+                    Siguiente ?
                   </button>
                 </div>
               </div>
@@ -583,7 +580,7 @@
                 onclick="setTipoAjuste('entrada')"
                 style="flex: 1; padding: 0.75rem"
               >
-                ‚ûï Entrada
+                ? Entrada
               </button>
               <button
                 class="btn btn-danger"
@@ -591,7 +588,7 @@
                 onclick="setTipoAjuste('salida')"
                 style="flex: 1; padding: 0.75rem"
               >
-                ‚ûñ Salida
+                ? Salida
               </button>
             </div>
           </div>
@@ -632,7 +629,7 @@
           </div>
 
           <div class="alert alert-info" style="font-size: 0.875rem">
-            <strong>‚ÑπÔ∏è Nota:</strong> Este ajuste se registrar√° en el log de
+            <strong>?? Nota:</strong> Este ajuste se registrar· en el log de
             inventario con tu ID de administrador.
           </div>
 
@@ -670,7 +667,7 @@
     <script src="js/components/user-profile.js"></script>
     <script src="js/admin-header-dropdown.js"></script>
     <script>
-      console.log("üìÑ Cargando p√°gina de inventario...");
+      console.log("?? Cargando p·gina de inventario...");
 
       function escapeHtml(value) {
         return (value ?? "")
@@ -685,15 +682,15 @@
       // Authentication check
       const adminToken = localStorage.getItem("Fashion Box_admin_token");
       console.log(
-        "üîë Token en inventario:",
+        "?? Token en inventario:",
         adminToken ? "Present (length: " + adminToken.length + ")" : "Missing"
       );
 
       if (!adminToken) {
-        console.warn("‚ö†Ô∏è No hay token en inventario, redirigiendo a login");
+        console.warn("?? No hay token en inventario, redirigiendo a login");
         window.location.href = "/login.html";
       } else {
-        console.log("‚úÖ Token encontrado, continuando carga de p√°gina");
+        console.log("? Token encontrado, continuando carga de p·gina");
       }
 
       let allProducts = [];
@@ -702,7 +699,7 @@
       let detalleProductoActual = null;
       let shouldReopenDetalle = false;
 
-      // Variables de paginaci√≥n
+      // Variables de paginaciÛn
       let paginaActual = 1;
       const registrosPorPagina = 10;
 
@@ -783,7 +780,7 @@
       // Verify admin
       async function verifyAndLoadAdmin() {
         try {
-          console.log("üîê Verificando admin en p√°gina de inventario...");
+          console.log("?? Verificando admin en p·gina de inventario...");
 
           const response = await fetch(`${API_BASE_URL}/admin/verify`, {
             method: "GET",
@@ -793,12 +790,12 @@
             },
           });
 
-          console.log("üì° Response status desde inventario:", response.status);
+          console.log("?? Response status desde inventario:", response.status);
 
           if (!response.ok) throw new Error("Invalid token");
 
           const data = await response.json();
-          console.log("üì• Verify response en inventario:", data);
+          console.log("?? Verify response en inventario:", data);
           if (data.success) {
             const admin = data.data.admin;
             const nameEl = document.getElementById("headerUserName");
@@ -849,7 +846,7 @@
             allProducts = data.data.productos;
             isSuperAdmin = data.data.isSuperAdmin || false;
             
-            // Mostrar/ocultar columna de administrador seg√∫n rol
+            // Mostrar/ocultar columna de administrador seg˙n rol
             const thAdministrador = document.getElementById('thAdministrador');
             if (thAdministrador) {
               thAdministrador.style.display = isSuperAdmin ? 'table-cell' : 'none';
@@ -872,7 +869,7 @@
 
       // Render products
       function renderProducts(products = null) {
-        // Si no se pasan productos, usar allProducts con paginaci√≥n
+        // Si no se pasan productos, usar allProducts con paginaciÛn
         const productosAMostrar = products || allProducts;
 
         if (productosAMostrar.length === 0) {
@@ -881,7 +878,7 @@
           return;
         }
 
-        // Calcular paginaci√≥n
+        // Calcular paginaciÛn
         const inicio = (paginaActual - 1) * registrosPorPagina;
         const fin = inicio + registrosPorPagina;
         const productosPagina = productosAMostrar.slice(inicio, fin);
@@ -891,10 +888,10 @@
             const activo = product.activo !== undefined ? product.activo : true;
             const estadoBadgeClass = activo ? 'badge-success' : 'badge-secondary';
             const estadoTexto = activo ? 'Visible' : 'Oculto';
-            const estadoIcon = activo ? '' : 'üö´';
+            const estadoIcon = activo ? '' : '??';
 
             const nombreProductoSafe = escapeHtml(product.nombreProducto || "");
-            const nombreCategoriaSafe = escapeHtml(product.nombreCategoria || "Sin categor√≠a");
+            const nombreCategoriaSafe = escapeHtml(product.nombreCategoria || "Sin categorÌa");
             const adminsRegistrados = isSuperAdmin && product.adminsRegistrados 
               ? escapeHtml(product.adminsRegistrados) 
               : '';
@@ -922,7 +919,7 @@
                   onmouseover="this.style.opacity='1'; this.style.transform='scale(1.1)'"
                   onmouseout="this.style.opacity='0.7'; this.style.transform='scale(1)'"
                 >
-                  ${activo ? 'üîí' : 'üîì'}
+                  ${activo ? '??' : '??'}
                 </button>
               </div>
             </td>
@@ -953,7 +950,7 @@
 
         productsTable.style.display = "table";
 
-        // Mostrar paginaci√≥n solo si no se pasaron productos filtrados
+        // Mostrar paginaciÛn solo si no se pasaron productos filtrados
         if (!products) {
           pagination.style.display = "block";
           actualizarPaginacion();
@@ -962,7 +959,7 @@
         }
       }
 
-      // Actualizar controles de paginaci√≥n
+      // Actualizar controles de paginaciÛn
       function actualizarPaginacion() {
         const totalPaginas = Math.ceil(allProducts.length / registrosPorPagina);
         const inicio = (paginaActual - 1) * registrosPorPagina + 1;
@@ -971,7 +968,7 @@
           allProducts.length
         );
 
-        // Actualizar informaci√≥n
+        // Actualizar informaciÛn
         document.getElementById("pageStart").textContent = inicio;
         document.getElementById("pageEnd").textContent = fin;
         document.getElementById("totalRecords").textContent =
@@ -982,11 +979,11 @@
         document.getElementById("btnNextPage").disabled =
           paginaActual === totalPaginas;
 
-        // Generar n√∫meros de p√°gina
+        // Generar n˙meros de p·gina
         const pageNumbers = document.getElementById("pageNumbers");
         pageNumbers.innerHTML = "";
 
-        // Mostrar m√°ximo 5 n√∫meros de p√°gina
+        // Mostrar m·ximo 5 n˙meros de p·gina
         let startPage = Math.max(1, paginaActual - 2);
         let endPage = Math.min(totalPaginas, startPage + 4);
 
@@ -1013,7 +1010,7 @@
         }
       }
 
-      // Cambiar de p√°gina
+      // Cambiar de p·gina
       function cambiarPagina(direccion) {
         const totalPaginas = Math.ceil(allProducts.length / registrosPorPagina);
 
@@ -1026,7 +1023,7 @@
         renderProducts();
       }
 
-      // Ir a p√°gina espec√≠fica
+      // Ir a p·gina especÌfica
       function irAPagina(pagina) {
         paginaActual = pagina;
         renderProducts();
@@ -1040,7 +1037,7 @@
         }).format(amount || 0);
       }
 
-      // Calcular proyecci√≥n de stock
+      // Calcular proyecciÛn de stock
       function calcularProyeccionStock(variantes = []) {
         const stockProjectionCard = document.getElementById("stockProjectionCard");
         const stockProjectionTotal = document.getElementById("stockProjectionTotal");
@@ -1051,7 +1048,7 @@
           return;
         }
 
-        // Agrupar variantes por presentaci√≥n y calcular paquetes disponibles
+        // Agrupar variantes por presentaciÛn y calcular paquetes disponibles
         const proyecciones = {};
         let totalPaquetesDisponibles = 0;
 
@@ -1059,7 +1056,7 @@
           const stock = typeof variante.stock === "number" ? variante.stock : 0;
           const piezasPorPaquete = variante.piezasPorPaquete || variante.piezasporpaquete || variante.piezas_por_paquete || 1;
           
-          // Obtener etiqueta de presentaci√≥n
+          // Obtener etiqueta de presentaciÛn
           const presentacion = variante.presentacionEtiqueta || 
                               (typeof obtenerNombrePack === "function" ? obtenerNombrePack(piezasPorPaquete) : `Paquete de ${piezasPorPaquete}`) ||
                               `${piezasPorPaquete} pzs`;
@@ -1080,7 +1077,7 @@
           totalPaquetesDisponibles += paquetesDisponibles;
         });
 
-        // Renderizar tabla de proyecci√≥n
+        // Renderizar tabla de proyecciÛn
         const presentaciones = Object.keys(proyecciones);
         
         if (presentaciones.length === 0 || totalPaquetesDisponibles === 0) {
@@ -1122,11 +1119,11 @@
         const searchTerm = e.target.value.toLowerCase();
 
         if (searchTerm === "") {
-          // Si no hay b√∫squeda, mostrar todos con paginaci√≥n
+          // Si no hay b˙squeda, mostrar todos con paginaciÛn
           paginaActual = 1;
           renderProducts();
         } else {
-          // Si hay b√∫squeda, mostrar filtrados sin paginaci√≥n
+          // Si hay b˙squeda, mostrar filtrados sin paginaciÛn
           const filtered = allProducts.filter((p) => {
             const matchesNombre = p.nombreProducto
               .toLowerCase()
@@ -1147,7 +1144,7 @@
 
         const productoId = parseInt(detalleBtn.dataset.productoid, 10);
         if (!productoId) {
-          showToast("Producto inv√°lido", "warning");
+          showToast("Producto inv·lido", "warning");
           return;
         }
 
@@ -1159,7 +1156,7 @@
         if (historialBtn) {
           const varianteId = parseInt(historialBtn.dataset.varianteId, 10);
           if (Number.isNaN(varianteId)) {
-            showToast("Variante inv√°lida", "warning");
+            showToast("Variante inv·lida", "warning");
             return;
           }
           window.location.href = `/admin-movimientos.html?varianteId=${varianteId}`;
@@ -1259,13 +1256,13 @@
           const variantes = producto.variantes || [];
 
           detalleModalTitle.textContent = `Detalle de Variantes: ${producto.nombreProducto}`;
-          detalleModalSubtitle.textContent = "Consulta la informaci√≥n registrada.";
+          detalleModalSubtitle.textContent = "Consulta la informaciÛn registrada.";
 
-          // Actualizar informaci√≥n del producto
+          // Actualizar informaciÛn del producto
           document.getElementById("modalSkuMaestro").textContent = producto.skuMaestro || "Sin SKU";
           document.getElementById("modalProveedor").textContent = producto.proveedor || "Sin asignar";
-          document.getElementById("modalCategoria").textContent = producto.categoria || "Sin categor√≠a";
-          document.getElementById("modalDescripcion").textContent = producto.descripcion || "Sin descripci√≥n";
+          document.getElementById("modalCategoria").textContent = producto.categoria || "Sin categorÌa";
+          document.getElementById("modalDescripcion").textContent = producto.descripcion || "Sin descripciÛn";
 
           detalleProductoActual = {
             producto: {
@@ -1308,8 +1305,8 @@
           const precioDesde = precios.length ? Math.min(...precios) : null;
           const precioHasta = precios.length ? Math.max(...precios) : null;
 
-          precioDesdeEl.textContent = precioDesde ? formatCurrency(precioDesde) : "‚Äî";
-          precioHastaEl.textContent = precioHasta ? formatCurrency(precioHasta) : "‚Äî";
+          precioDesdeEl.textContent = precioDesde ? formatCurrency(precioDesde) : "ó";
+          precioHastaEl.textContent = precioHasta ? formatCurrency(precioHasta) : "ó";
 
           summaryCard.style.display = "block";
 
@@ -1329,7 +1326,7 @@
           const strong = document.createElement("strong");
           strong.textContent = "No se pudo cargar el producto.";
           const p = document.createElement("p");
-          p.textContent = error?.message || "Intenta nuevamente m√°s tarde.";
+          p.textContent = error?.message || "Intenta nuevamente m·s tarde.";
           wrap.appendChild(strong);
           wrap.appendChild(p);
           detalleModalFeedback.appendChild(wrap);
@@ -1384,7 +1381,7 @@
                     title="Historial"
                     style="padding: 0.5rem 0.6rem;"
                   >
-                    üïí
+                    ??
                   </button>
                 </td>
               </tr>
@@ -1396,8 +1393,8 @@
       function renderDetalleVariantes(variantes = []) {
         const lista = Array.isArray(variantes) ? variantes : [];
 
-        // Filtrar variantes que no tienen una medida f√≠sica real
-        // (dimensi√≥n vac√≠a o placeholder "Unidad individual").
+        // Filtrar variantes que no tienen una medida fÌsica real
+        // (dimensiÛn vacÌa o placeholder "Unidad individual").
         const variantesVisibles = lista.filter((variant) => {
           const dimRaw = (variant.dimensiones || "").toString().trim();
           if (!dimRaw) return false;
@@ -1443,7 +1440,7 @@
                 ? formatCurrency(variant.precioPaquete)
                 : "N/A";
 
-            // Las "dimensiones" deben representar una medida f√≠sica real,
+            // Las "dimensiones" deben representar una medida fÌsica real,
             // no el placeholder "Unidad individual".
             let dimensionesCrudas = variant.dimensiones || "";
             let dimensiones =
@@ -1465,7 +1462,7 @@
                   : (typeof obtenerNombrePack === "function"
                       ? obtenerNombrePack(variant.tamanoValorReferencia)
                       : `Paquete de ${variant.tamanoValorReferencia}`)
-                : "Presentaci√≥n est√°ndar");
+                : "PresentaciÛn est·ndar");
 
             const skuSafe = escapeHtml(variant.sku || "Sin SKU");
             const dimensionesSafe = escapeHtml(dimensiones);
@@ -1495,7 +1492,7 @@
                   title="Historial"
                   style="padding: 0.5rem 0.6rem;"
                 >
-                  üïí
+                  ??
                 </button>
               </div>
             </td>
@@ -1524,7 +1521,7 @@
 
       function openAjusteModal(producto, variantePreseleccionada = null) {
         if (!producto) {
-          showToast("Producto no v√°lido", "warning");
+          showToast("Producto no v·lido", "warning");
           return;
         }
 
@@ -1538,7 +1535,7 @@
             ? detalleProductoActual.variantes || []
             : [];
 
-        // Filtrar variantes sin medida f√≠sica real para no mostrarlas en el ajuste
+        // Filtrar variantes sin medida fÌsica real para no mostrarlas en el ajuste
         const variantesVisibles = variantes.filter((variant) => {
           const dimRaw = (variant.dimensiones || "").toString().trim();
           if (!dimRaw) return false;
@@ -1566,7 +1563,7 @@
                 : "Sin dimensiones";
 
             option.dataset.dimensiones = dimensionesSanitizadas;
-            option.textContent = `${option.dataset.sku} ‚Ä¢ ${option.dataset.dimensiones}`;
+            option.textContent = `${option.dataset.sku} ï ${option.dataset.dimensiones}`;
             modalVarianteSelect.appendChild(option);
           });
 
@@ -1620,12 +1617,12 @@
 
       const motivosInventario = {
         entrada: [
-          { val: "compra", text: "Recepci√≥n de Compra" },
-          { val: "devolucion", text: "Devoluci√≥n de Cliente" },
+          { val: "compra", text: "RecepciÛn de Compra" },
+          { val: "devolucion", text: "DevoluciÛn de Cliente" },
           { val: "ajuste_in", text: "Ajuste Inventario (+)" },
         ],
         salida: [
-          { val: "merma", text: "Merma / Da√±o" },
+          { val: "merma", text: "Merma / DaÒo" },
           { val: "uso_interno", text: "Uso Interno / Regalo" },
           { val: "ajuste_out", text: "Ajuste Inventario (-)" },
         ],
@@ -1669,7 +1666,7 @@
         }
 
         if (!cantidad || cantidad <= 0) {
-          showToast("Ingresa una cantidad v√°lida", "warning");
+          showToast("Ingresa una cantidad v·lida", "warning");
           return;
         }
 
@@ -1745,7 +1742,7 @@
             // Actualizar resumen del modal
             modalStockActual.textContent = nuevoStock;
 
-            // Actualizar celda stock dentro del modal detalle (si est√° visible)
+            // Actualizar celda stock dentro del modal detalle (si est· visible)
             const celdaStock = document.querySelector(
               `.stock-variante-${varianteId}`
             );
@@ -1770,7 +1767,7 @@ uevo stock: ${nuevoStock}`
 
           closeAjusteModal();
 
-          // Fallback: refrescar detalle para mantener consistencia con m√©tricas
+          // Fallback: refrescar detalle para mantener consistencia con mÈtricas
           const productoId = selectedProduct?.productoId || selectedProduct?.productoid;
           if (productoId) {
             openDetalleModal(productoId, { keepOpen: true });
@@ -1802,7 +1799,7 @@ uevo stock: ${nuevoStock}`
         const dimensiones = option?.dataset.dimensiones || "Sin medidas";
         const stock = option ? parseInt(option.dataset.stock, 10) || 0 : 0;
 
-        modalVarianteResumen.textContent = `${sku} ‚Ä¢ ${dimensiones}`;
+        modalVarianteResumen.textContent = `${sku} ï ${dimensiones}`;
         modalStockActual.textContent = stock;
       }
 
@@ -1814,7 +1811,7 @@ uevo stock: ${nuevoStock}`
         link.addEventListener("click", (e) => {
           e.preventDefault();
           const moduleName = link.querySelector("span:last-child").textContent;
-          showToast(`M√≥dulo "${moduleName}" pr√≥ximamente disponible`, "info");
+          showToast(`MÛdulo "${moduleName}" prÛximamente disponible`, "info");
         });
       });
 
@@ -1891,10 +1888,10 @@ uevo stock: ${nuevoStock}`
         const sku = variante?.sku ? ` (${variante.sku})` : "";
         const tipoEmpaque = getEtiquetaEmpaque(variante);
 
-        recepcionModalTitle.textContent = `Recepci√≥n de ${nombre}${sku}`;
+        recepcionModalTitle.textContent = `RecepciÛn de ${nombre}${sku}`;
         recepcionModalSubtitle.textContent = `Ingresa la cantidad de ${tipoEmpaque} recibidos.`;
 
-        // Ajustar label din√°mico
+        // Ajustar label din·mico
         const label = recepcionModal.querySelector(
           'label[for="recepcionCantidadBultos"]'
         );
@@ -1921,10 +1918,10 @@ uevo stock: ${nuevoStock}`
 
         if (cantidad > 0) {
           if (factor > 1) {
-            recepcionPreview.textContent = `Se ingresar√°n: ${cantidad} ${nombreEmpaque} √ó ${factor} pzas = +${totalUnidades} unidades.`;
+            recepcionPreview.textContent = `Se ingresar·n: ${cantidad} ${nombreEmpaque} ◊ ${factor} pzas = +${totalUnidades} unidades.`;
             recepcionPreview.style.color = "#4f46e5";
           } else {
-            recepcionPreview.textContent = `Se ingresar√°n: +${totalUnidades} unidades.`;
+            recepcionPreview.textContent = `Se ingresar·n: +${totalUnidades} unidades.`;
             recepcionPreview.style.color = "#16a34a";
           }
         } else {
@@ -1948,12 +1945,12 @@ uevo stock: ${nuevoStock}`
           .trim();
 
         if (!Number.isInteger(varianteId) || varianteId <= 0) {
-          showToast("Variante inv√°lida", "warning");
+          showToast("Variante inv·lida", "warning");
           return;
         }
 
         if (!Number.isInteger(cantidadBultos) || cantidadBultos <= 0) {
-          showToast("Ingresa una cantidad v√°lida", "warning");
+          showToast("Ingresa una cantidad v·lida", "warning");
           return;
         }
 
@@ -1962,7 +1959,7 @@ uevo stock: ${nuevoStock}`
           return;
         }
 
-        // Si hay excepci√≥n, el detalle debe ir forzosamente en comentarios (backend requiere comentarios)
+        // Si hay excepciÛn, el detalle debe ir forzosamente en comentarios (backend requiere comentarios)
         const comentariosFinal = esExcepcion
           ? detalleExcepcion + (comentarios ? ` | ${comentarios}` : "")
           : comentarios;
@@ -1988,12 +1985,12 @@ uevo stock: ${nuevoStock}`
 
           const data = await response.json();
           if (!response.ok || !data.success) {
-            throw new Error(data.message || "No se pudo registrar la recepci√≥n");
+            throw new Error(data.message || "No se pudo registrar la recepciÛn");
           }
 
           const nuevoStock = data.nuevoStock;
           if (typeof nuevoStock === "number") {
-            // Actualizar dataset en select del ajuste (si existe la opci√≥n)
+            // Actualizar dataset en select del ajuste (si existe la opciÛn)
             const option = modalVarianteSelect.querySelector(
               `option[value="${varianteId}"]`
             );
@@ -2013,8 +2010,8 @@ uevo stock: ${nuevoStock}`
 
           await Swal.fire({
             icon: "success",
-            title: "Recepci√≥n registrada",
-            text: data.message || "Recepci√≥n registrada exitosamente",
+            title: "RecepciÛn registrada",
+            text: data.message || "RecepciÛn registrada exitosamente",
             confirmButtonColor: "#F97316",
           });
 
@@ -2027,11 +2024,11 @@ uevo stock: ${nuevoStock}`
             openDetalleModal(productoId, { keepOpen: true });
           }
         } catch (error) {
-          console.error("Error en recepci√≥n:", error);
+          console.error("Error en recepciÛn:", error);
           await Swal.fire({
             icon: "error",
             title: "Error",
-            text: error.message || "No se pudo registrar la recepci√≥n",
+            text: error.message || "No se pudo registrar la recepciÛn",
             confirmButtonColor: "#F97316",
           });
         } finally {
@@ -2047,7 +2044,7 @@ uevo stock: ${nuevoStock}`
         const accion = nuevoEstado ? "mostrar" : "ocultar";
         const esOcultar = !nuevoEstado;
 
-        const mensaje = `¬øEst√°s seguro de ${accion} este producto en la tienda?`;
+        const mensaje = `øEst·s seguro de ${accion} este producto en la tienda?`;
         let confirmado = false;
 
         if (
@@ -2060,7 +2057,7 @@ uevo stock: ${nuevoStock}`
             title: esOcultar ? "Ocultar producto" : "Mostrar producto",
             text: mensaje,
             showCancelButton: true,
-            confirmButtonText: esOcultar ? "S√≠, ocultar" : "S√≠, mostrar",
+            confirmButtonText: esOcultar ? "SÌ, ocultar" : "SÌ, mostrar",
             cancelButtonText: "Cancelar",
             confirmButtonColor: esOcultar ? "#dc3545" : "#F97316",
             cancelButtonColor: "#6b7280",

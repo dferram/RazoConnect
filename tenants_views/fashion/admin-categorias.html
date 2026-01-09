@@ -1,18 +1,15 @@
-Ôªø<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Gesti√≥n de Categor√≠as - Admin Fashion Box</title>
+    <title>GestiÛn de CategorÌas - Admin Fashion Box</title>
     <link rel="icon" type="image/png" href="/icon/Logo_Fashion.png" />
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-    <!-- PROTECCI√ìN DE AUTENTICACI√ìN ADMIN -->
+    <!-- PROTECCI”N DE AUTENTICACI”N ADMIN -->
     <script src="js/auth-guard-admin.js"></script>
-
-    <!-- SISTEMA DE RENOVACI√ìN DE TOKENS -->
-    <script src="js/token-refresh.js"></script>
 
     <link
       rel="stylesheet"
@@ -23,7 +20,7 @@
     <link rel="stylesheet" href="css/admin-fashion.css" />
       <link rel="stylesheet" href="css/mobile-responsive-fashion.css" />
   </head>
-  <body data-sidebar="admin" data-page-title="Gesti√≥n de categor√≠as">
+  <body data-sidebar="admin" data-page-title="GestiÛn de categorÌas">
     <div class="admin-layout">
       <!-- Sidebar -->
       <div id="sidebar-container"></div>
@@ -33,10 +30,10 @@
         <div id="admin-header-container"></div>
 
         <div class="admin-content">
-          <!-- Formulario para crear categor√≠a -->
+          <!-- Formulario para crear categorÌa -->
           <div class="admin-table-container" style="margin-bottom: 2rem">
             <div class="admin-table-header">
-              <h2 class="admin-table-title">Agregar nueva categor√≠a</h2>
+              <h2 class="admin-table-title">Agregar nueva categorÌa</h2>
             </div>
 
             <form id="categoriaForm" style="padding: 1.5rem">
@@ -46,12 +43,12 @@
               </div>
 
               <div class="form-group">
-                <label for="descripcion" class="form-label">Descripci√≥n</label>
+                <label for="descripcion" class="form-label">DescripciÛn</label>
                 <textarea
                   id="descripcion"
                   class="form-input"
                   rows="3"
-                  placeholder="Describe brevemente la categor√≠a"
+                  placeholder="Describe brevemente la categorÌa"
                 ></textarea>
               </div>
 
@@ -74,7 +71,7 @@
                         id="btnRemoveImage"
                         title="Eliminar imagen"
                       >
-                        ‚úï
+                        ?
                       </button>
                     </div>
                   </div>
@@ -88,7 +85,7 @@
                     Seleccionar imagen
                   </button>
                   <small style="color: #6b7280; display: block; margin-top: 0.5rem;">
-                    Formatos: JPG, PNG, WEBP. M√°ximo 5MB.
+                    Formatos: JPG, PNG, WEBP. M·ximo 5MB.
                   </small>
                 </div>
               </div>
@@ -117,7 +114,7 @@
               >
                 <button type="reset" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.875rem;">Limpiar</button>
                 <button type="submit" class="btn btn-primary" id="guardarBtn" style="padding: 0.5rem 1rem; font-size: 0.875rem;">
-                  <span id="guardarBtnText">Guardar categor√≠a</span>
+                  <span id="guardarBtnText">Guardar categorÌa</span>
                   <div
                     class="spinner"
                     id="guardarBtnSpinner"
@@ -128,10 +125,10 @@
             </form>
           </div>
 
-          <!-- Listado de categor√≠as -->
+          <!-- Listado de categorÌas -->
           <div class="admin-table-container">
             <div class="admin-table-header">
-              <h2 class="admin-table-title">Listado de categor√≠as</h2>
+              <h2 class="admin-table-title">Listado de categorÌas</h2>
               <button class="btn btn-secondary" id="btnRefrescar" style="padding: 0.5rem 1rem; font-size: 0.875rem;">
                 Actualizar
               </button>
@@ -150,7 +147,7 @@
                 <thead>
                   <tr>
                     <th>Nombre</th>
-                    <th>Descripci√≥n</th>
+                    <th>DescripciÛn</th>
                     <th>Estado</th>
                     <th>Acciones</th>
                   </tr>
@@ -160,10 +157,10 @@
             </div>
 
             <div id="emptyCategorias" class="empty-state" style="display: none">
-              <div class="empty-state-icon">üè∑Ô∏è</div>
-              <h3 class="empty-state-title">No hay categor√≠as registradas</h3>
+              <div class="empty-state-icon">???</div>
+              <h3 class="empty-state-title">No hay categorÌas registradas</h3>
               <p class="empty-state-text">
-                Crea una categor√≠a para iniciar la gesti√≥n del cat√°logo.
+                Crea una categorÌa para iniciar la gestiÛn del cat·logo.
               </p>
             </div>
           </div>
@@ -193,7 +190,7 @@
           });
 
           if (!response.ok) {
-            throw new Error("Token inv√°lido");
+            throw new Error("Token inv·lido");
           }
 
           const data = await response.json();
@@ -230,7 +227,7 @@
         categoriaEditando = null;
         selectedImageFile = null;
         guardarBtn.disabled = false;
-        guardarBtnText.textContent = "Guardar categor√≠a";
+        guardarBtnText.textContent = "Guardar categorÌa";
         guardarBtnText.style.display = "inline";
         guardarBtnSpinner.style.display = "none";
         document.getElementById('imagePreviewContainer').style.display = 'none';
@@ -257,15 +254,15 @@
 
           if (!response.ok || !result.success) {
             throw new Error(
-              result.message || "No se pudieron cargar las categor√≠as"
+              result.message || "No se pudieron cargar las categorÌas"
             );
           }
 
           categoriasCache = result.data.categorias || [];
           renderCategorias();
         } catch (error) {
-          console.error("Error al cargar categor√≠as:", error);
-          showToast(error.message || "Error al cargar categor√≠as", "error");
+          console.error("Error al cargar categorÌas:", error);
+          showToast(error.message || "Error al cargar categorÌas", "error");
           categoriasTable.style.display = "none";
           emptyCategorias.style.display = "flex";
         } finally {
@@ -285,7 +282,7 @@
             const activo = cat.activo !== undefined ? cat.activo : true;
             const estadoBadgeClass = activo ? 'badge-success' : 'badge-secondary';
             const estadoTexto = activo ? 'Visible' : 'Oculto';
-            const estadoIcon = activo ? '' : 'üö´';
+            const estadoIcon = activo ? '' : '??';
             const imagenHtml = cat.imagenUrl 
               ? `<img src="${cat.imagenUrl}" alt="${cat.nombre}" style="width: 40px; height: 40px; object-fit: cover; border-radius: 0.375rem; margin-right: 0.5rem;" />`
               : '';
@@ -300,7 +297,7 @@
               </td>
               <td>${
                 cat.descripcion ||
-                '<span class="text-muted">Sin descripci√≥n</span>'
+                '<span class="text-muted">Sin descripciÛn</span>'
               }</td>
               <td>
                 <div style="display: flex; align-items: center; gap: 0.5rem;">
@@ -311,12 +308,12 @@
                     type="button"
                     class="btn-icon-toggle"
                     onclick="toggleCategoriaVisibilidad(${cat.categoriaId}, ${activo})"
-                    title="${activo ? 'Ocultar categor√≠a' : 'Mostrar categor√≠a'}"
+                    title="${activo ? 'Ocultar categorÌa' : 'Mostrar categorÌa'}"
                     style="cursor: pointer; background: none; border: none; font-size: 1.25rem; padding: 0.25rem; opacity: 0.7; transition: all 0.2s;"
                     onmouseover="this.style.opacity='1'; this.style.transform='scale(1.1)'"
                     onmouseout="this.style.opacity='0.7'; this.style.transform='scale(1)'"
                   >
-                    ${activo ? 'üîí' : 'üîì'}
+                    ${activo ? '??' : '??'}
                   </button>
                 </div>
               </td>
@@ -358,7 +355,7 @@
         guardarBtnText.style.display = "none";
 
         try {
-          // Usar FormData para enviar archivo e informaci√≥n
+          // Usar FormData para enviar archivo e informaciÛn
           const formData = new FormData();
           formData.append('nombre', nombre);
           if (descripcion) formData.append('descripcion', descripcion);
@@ -393,19 +390,19 @@
           const result = await response.json();
 
           if (!response.ok || !result.success) {
-            throw new Error(result.message || "Error al guardar la categor√≠a");
+            throw new Error(result.message || "Error al guardar la categorÌa");
           }
 
           showToast(
-            result.message || "Categor√≠a guardada correctamente",
+            result.message || "CategorÌa guardada correctamente",
             "success"
           );
           resetForm();
           fetchCategorias();
         } catch (error) {
-          console.error("Error al guardar la categor√≠a:", error);
+          console.error("Error al guardar la categorÌa:", error);
           showToast(
-            error.message || "No se pudo guardar la categor√≠a",
+            error.message || "No se pudo guardar la categorÌa",
             "error"
           );
         } finally {
@@ -439,8 +436,8 @@
             document.getElementById('imagePreviewContainer').style.display = 'none';
           }
           
-          guardarBtnText.textContent = "Actualizar categor√≠a";
-          showToast(`Editando categor√≠a: ${categoria.nombre}`, "info");
+          guardarBtnText.textContent = "Actualizar categorÌa";
+          showToast(`Editando categorÌa: ${categoria.nombre}`, "info");
           
           // Scroll al formulario
           categoriaForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -476,12 +473,12 @@
         // Validar tipo
         const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
         if (!allowedTypes.includes(file.type)) {
-          showToast('Solo se permiten im√°genes JPG, PNG o WEBP', 'error');
+          showToast('Solo se permiten im·genes JPG, PNG o WEBP', 'error');
           imagenInput.value = '';
           return;
         }
 
-        // Validar tama√±o (5MB)
+        // Validar tamaÒo (5MB)
         if (file.size > 5 * 1024 * 1024) {
           showToast('La imagen no debe superar 5MB', 'error');
           imagenInput.value = '';
@@ -506,7 +503,7 @@
         imagePreviewContainer.style.display = 'none';
       });
 
-      // Inicializaci√≥n
+      // InicializaciÛn
       // Toggle category visibility (quick action)
       async function toggleCategoriaVisibilidad(categoriaId, estadoActual) {
         const nuevoEstado = !estadoActual;
@@ -514,8 +511,8 @@
         const esOcultar = !nuevoEstado;
 
         const mensaje =
-          `¬øEst√°s seguro de ${accion} esta categor√≠a en la tienda? ` +
-          "Si la ocultas, todos los productos de esta categor√≠a dejar√°n de verse en la tienda.";
+          `øEst·s seguro de ${accion} esta categorÌa en la tienda? ` +
+          "Si la ocultas, todos los productos de esta categorÌa dejar·n de verse en la tienda.";
 
         let confirmado = false;
 
@@ -526,10 +523,10 @@
         ) {
           const result = await Swal.fire({
             icon: esOcultar ? "warning" : "question",
-            title: esOcultar ? "Ocultar categor√≠a" : "Mostrar categor√≠a",
+            title: esOcultar ? "Ocultar categorÌa" : "Mostrar categorÌa",
             text: mensaje,
             showCancelButton: true,
-            confirmButtonText: esOcultar ? "S√≠, ocultar" : "S√≠, mostrar",
+            confirmButtonText: esOcultar ? "SÌ, ocultar" : "SÌ, mostrar",
             cancelButtonText: "Cancelar",
             confirmButtonColor: esOcultar ? "#dc3545" : "#F97316",
             cancelButtonColor: "#6b7280",
@@ -554,7 +551,7 @@
 
           if (response.ok) {
             showToast(
-              `Categor√≠a ${nuevoEstado ? 'visible' : 'oculta'} exitosamente`,
+              `CategorÌa ${nuevoEstado ? 'visible' : 'oculta'} exitosamente`,
               'success'
             );
             fetchCategorias(); // Recargar tabla
@@ -563,7 +560,7 @@
           }
         } catch (error) {
           console.error('Error al toggle visibilidad:', error);
-          showToast('Error al cambiar visibilidad de la categor√≠a', 'error');
+          showToast('Error al cambiar visibilidad de la categorÌa', 'error');
         }
       }
 

@@ -1,4 +1,4 @@
-Ôªø<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
@@ -9,11 +9,8 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://sdk.mercadopago.com/js/v2"></script>
 
-    <!-- PROTECCI√ìN DE AUTENTICACI√ìN - Debe cargarse PRIMERO -->
+    <!-- PROTECCI”N DE AUTENTICACI”N - Debe cargarse PRIMERO -->
     <script src="js/auth-guard-client.js"></script>
-
-    <!-- SISTEMA DE RENOVACI√ìN DE TOKENS -->
-    <script src="js/token-refresh.js"></script>
 
     <link
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
@@ -365,7 +362,7 @@
         font-weight: 700;
       }
 
-      /* Estilos para la nueva tarjeta de Cr√©dito Razo */
+      /* Estilos para la nueva tarjeta de CrÈdito Razo */
       .credit-amount-display {
         margin-bottom: 0.75rem;
       }
@@ -411,7 +408,7 @@
         background: linear-gradient(90deg, #ef4444 0%, #dc2626 100%);
       }
 
-      /* Estado activo mejorado para Cr√©dito Razo */
+      /* Estado activo mejorado para CrÈdito Razo */
       #paymentOptionCredito.selected {
         background: linear-gradient(135deg, #fff7ed 0%, #fffbf5 100%);
       }
@@ -676,8 +673,8 @@
 
       <!-- Empty State -->
       <div id="emptyState" class="empty-state" style="display: none">
-        <div class="empty-state-icon">üõí</div>
-        <h2 class="empty-state-title">Tu carrito est√° vac√≠o</h2>
+        <div class="empty-state-icon">??</div>
+        <h2 class="empty-state-title">Tu carrito est· vacÌo</h2>
         <p class="empty-state-text">Agrega productos para comenzar tu compra</p>
         <a href="/catalogo.html" class="btn btn-primary">Ver Productos</a>
       </div>
@@ -720,14 +717,14 @@
                 <span id="summarySubtotal">$0.00</span>
               </div>
 
-              <!-- Cup√≥n de descuento -->
+              <!-- CupÛn de descuento -->
               <div style="margin: 1rem 0; padding-top: 1rem; border-top: 1px solid #e5e7eb;">
-                <label style="font-size: 0.9rem; font-weight: 600; color: #374151; margin-bottom: 0.5rem; display: block;">¬øTienes un cup√≥n?</label>
+                <label style="font-size: 0.9rem; font-weight: 600; color: #374151; margin-bottom: 0.5rem; display: block;">øTienes un cupÛn?</label>
                 <div style="display: flex; gap: 0.5rem; width: 100%;">
                   <input 
                     type="text" 
                     id="cupon-input" 
-                    placeholder="C√≥digo de cup√≥n" 
+                    placeholder="CÛdigo de cupÛn" 
                     style="flex: 1; min-width: 0; padding: 0.6rem 0.75rem; border: 1px solid #d1d5db; border-radius: 0.5rem; font-size: 0.9rem; text-transform: uppercase;"
                   />
                   <button 
@@ -764,13 +761,13 @@
                   text-align: center;
                 "
               >
-                Agregar m√°s productos
+                Agregar m·s productos
               </a>
             </div>
 
             <div class="alert alert-info mt-3" style="font-size: 0.875rem">
-              üí° <strong>Nota:</strong> Los precios son por paquete. Cada
-              paquete contiene m√∫ltiples piezas seg√∫n el producto.
+              ?? <strong>Nota:</strong> Los precios son por paquete. Cada
+              paquete contiene m˙ltiples piezas seg˙n el producto.
             </div>
           </div>
         </div>
@@ -790,7 +787,7 @@
           text-align: center;
         "
       >
-        <div style="font-size: 4rem; margin-bottom: 1rem">‚úÖ</div>
+        <div style="font-size: 4rem; margin-bottom: 1rem">?</div>
         <h2
           style="
             font-size: 2rem;
@@ -799,7 +796,7 @@
             color: var(--success-color);
           "
         >
-          ¬°Pedido confirmado!
+          °Pedido confirmado!
         </h2>
         <p
           style="
@@ -808,8 +805,8 @@
             margin-bottom: 2rem;
           "
         >
-          Tu pedido ha sido creado exitosamente. Pronto recibir√°s una
-          confirmaci√≥n.
+          Tu pedido ha sido creado exitosamente. Pronto recibir·s una
+          confirmaciÛn.
         </p>
 
         <div style="display: flex; flex-direction: column; gap: 1rem">
@@ -864,7 +861,7 @@
               box-shadow: 0 10px 25px rgba(255, 119, 51, 0.35);
             "
           >
-            üóëÔ∏è
+            ???
           </div>
           <h2
             style="
@@ -874,10 +871,10 @@
               color: #2d3748;
             "
           >
-            ¬øEliminar producto?
+            øEliminar producto?
           </h2>
           <p style="color: #718096; font-size: 1rem; line-height: 1.5">
-            ¬øDeseas eliminar "<span id="modalEliminarNombre"></span>" del
+            øDeseas eliminar "<span id="modalEliminarNombre"></span>" del
             carrito?
           </p>
         </div>
@@ -948,7 +945,7 @@
           <!-- Step 1: Select Address -->
           <div id="stepDireccion">
             <h3 style="font-weight: 600; margin-bottom: 1rem">
-              Selecciona tu direcci√≥n de env√≠o
+              Selecciona tu direcciÛn de envÌo
             </h3>
 
             <div id="loadingDirecciones" class="loading">
@@ -963,16 +960,16 @@
                 <a
                   href="/dashboard.html"
                   style="color: var(--primary-color); font-weight: 600"
-                  >Agregar una direcci√≥n</a
+                  >Agregar una direcciÛn</a
                 >
               </div>
             </div>
 
             <div id="paymentSection" style="margin-top: 1.75rem">
               <div class="payment-section-header">
-                <h4>Selecciona m√©todo de pago</h4>
+                <h4>Selecciona mÈtodo de pago</h4>
                 <span class="payment-inline-helper"
-                  >Puedes elegir la opci√≥n que mejor se adapte a esta compra.</span
+                  >Puedes elegir la opciÛn que mejor se adapte a esta compra.</span
                 >
               </div>
 
@@ -984,7 +981,7 @@
                   style="pointer-events: none;"
                 >
                   <div class="payment-option-top">
-                    <div class="payment-option-icon" style="opacity: 0.5;">üí≥</div>
+                    <div class="payment-option-icon" style="opacity: 0.5;">??</div>
                     <input
                       type="radio"
                       name="metodo_pago"
@@ -994,10 +991,10 @@
                   </div>
                   <div class="payment-option-content">
                     <h5 style="opacity: 0.6;">Mercado Pago</h5>
-                    <p style="opacity: 0.6;">Paga con tarjeta o saldo digital y recibe confirmaci√≥n inmediata.</p>
+                    <p style="opacity: 0.6;">Paga con tarjeta o saldo digital y recibe confirmaciÛn inmediata.</p>
                     <div style="margin-top: 0.75rem; padding: 0.5rem 0.75rem; background: #fef3c7; border: 1px solid #fbbf24; border-radius: 0.5rem; font-size: 0.85rem; color: #92400e;">
-                      ‚ö†Ô∏è <strong>Temporalmente no disponible.</strong><br>
-                      Por favor, utiliza Cr√©dito Razo o transferencia.
+                      ?? <strong>Temporalmente no disponible.</strong><br>
+                      Por favor, utiliza CrÈdito Razo o transferencia.
                     </div>
                   </div>
                   <span class="payment-option-chip payment-chip-digital" style="opacity: 0.5;">
@@ -1011,11 +1008,11 @@
                   data-method="credito"
                 >
                   <div class="payment-option-top">
-                    <div class="payment-option-icon">üè¨</div>
+                    <div class="payment-option-icon">??</div>
                     <input type="radio" name="metodo_pago" value="credito" checked />
                   </div>
                   <div class="payment-option-content">
-                    <h5 style="margin-bottom: 0.5rem;">Cr√©dito Razo</h5>
+                    <h5 style="margin-bottom: 0.5rem;">CrÈdito Razo</h5>
                     <div class="credit-amount-display" id="creditAmountDisplay">
                       <div class="credit-amount-value" id="creditCardBalanceText">$0.00</div>
                       <div class="credit-amount-label">Disponible para comprar ahora</div>
@@ -1033,7 +1030,7 @@
                   data-method="transferencia"
                 >
                   <div class="payment-option-top">
-                    <div class="payment-option-icon">üè¶</div>
+                    <div class="payment-option-icon">??</div>
                     <input
                       type="radio"
                       name="metodo_pago"
@@ -1042,10 +1039,10 @@
                   </div>
                   <div class="payment-option-content">
                     <h5>Transferencia bancaria</h5>
-                    <p>Recibir√°s los datos bancarios y deber√°s adjuntar tu comprobante.</p>
+                    <p>Recibir·s los datos bancarios y deber·s adjuntar tu comprobante.</p>
                   </div>
                   <span class="payment-option-chip payment-chip-transfer"
-                    >SPEI / Dep√≥sito</span
+                    >SPEI / DepÛsito</span
                   >
                 </label>
               </div>
@@ -1070,7 +1067,7 @@
                         />
                       </div>
                       <div class="mp-form-field">
-                        <label for="mpCardNumber">N√∫mero de tarjeta</label>
+                        <label for="mpCardNumber">N˙mero de tarjeta</label>
                         <input
                           type="text"
                           id="mpCardNumber"
@@ -1082,7 +1079,7 @@
                       </div>
                       <div class="mp-form-two-cols">
                         <div class="mp-form-field">
-                          <label for="mpExpMonth">Mes expiraci√≥n</label>
+                          <label for="mpExpMonth">Mes expiraciÛn</label>
                           <input
                             type="text"
                             id="mpExpMonth"
@@ -1093,7 +1090,7 @@
                           />
                         </div>
                         <div class="mp-form-field">
-                          <label for="mpExpYear">A√±o expiraci√≥n</label>
+                          <label for="mpExpYear">AÒo expiraciÛn</label>
                           <input
                             type="text"
                             id="mpExpYear"
@@ -1145,7 +1142,7 @@
                     </div>
                     <div class="credit-summary-row">
                       <div>
-                        <span>Fecha l√≠mite de pago</span>
+                        <span>Fecha lÌmite de pago</span>
                         <strong id="credito-fecha-limite">--/--/--</strong>
                       </div>
                       <div>
@@ -1154,7 +1151,7 @@
                       </div>
                     </div>
                     <p class="credit-summary-helper">
-                      Confirmaremos tu compra y actualizaremos tu l√≠nea al instante.
+                      Confirmaremos tu compra y actualizaremos tu lÌnea al instante.
                     </p>
                   </div>
                 </section>
@@ -1168,29 +1165,29 @@
                       </div>
                       <div class="bank-status-pill" id="transferInfoStatus">
                         <span class="spinner" id="transferInfoSpinner"></span>
-                        <span id="transferInfoMessage">Cargando informaci√≥n‚Ä¶</span>
+                        <span id="transferInfoMessage">Cargando informaciÛnÖ</span>
                       </div>
                     </div>
                     <div class="bank-info-grid" id="transferBankData">
                       <div>
                         <span>Banco</span>
-                        <strong id="transf-banco">‚Äî</strong>
+                        <strong id="transf-banco">ó</strong>
                       </div>
                       <div>
                         <span>Cuenta</span>
-                        <strong id="transf-cuenta">‚Äî</strong>
+                        <strong id="transf-cuenta">ó</strong>
                       </div>
                       <div>
                         <span>CLABE</span>
-                        <strong id="transf-clabe">‚Äî</strong>
+                        <strong id="transf-clabe">ó</strong>
                       </div>
                       <div>
                         <span>Titular</span>
-                        <strong id="transf-titular">‚Äî</strong>
+                        <strong id="transf-titular">ó</strong>
                       </div>
                       <div>
                         <span>Referencia</span>
-                        <strong id="transf-referencia">‚Äî</strong>
+                        <strong id="transf-referencia">ó</strong>
                       </div>
                     </div>
                   </div>
@@ -1207,7 +1204,7 @@
                         <i class="bi bi-paperclip"></i>
                         <span id="transferFileName"></span>
                         <button type="button" id="btnRemoveTransferFile" aria-label="Eliminar archivo">
-                          √ó
+                          ◊
                         </button>
                       </div>
                       <small>Sube una foto clara de tu comprobante para validar el pedido.</small>
@@ -1286,7 +1283,7 @@
             "
             aria-label="Cerrar"
           >
-            √ó
+            ◊
           </button>
         </div>
 
@@ -1575,7 +1572,7 @@
           transferInfoSpinner.style.display = "inline-block";
         }
         if (transferInfoMessage) {
-          transferInfoMessage.textContent = "Cargando informaci√≥n‚Ä¶";
+          transferInfoMessage.textContent = "Cargando informaciÛnÖ";
         }
 
         try {
@@ -1583,17 +1580,17 @@
           if (!response.ok || !response.data?.success) {
             throw new Error(
               response.data?.message ||
-                "No se pudo obtener la informaci√≥n bancaria en este momento."
+                "No se pudo obtener la informaciÛn bancaria en este momento."
             );
           }
 
           const cuenta = response.data.cuenta || {};
           const numeroCuenta =
-            cuenta.numeroCuenta || cuenta.numero_cuenta || cuenta.cuenta || "‚Äî";
+            cuenta.numeroCuenta || cuenta.numero_cuenta || cuenta.cuenta || "ó";
           const clabe =
-            cuenta.clabe || cuenta.clabeInterbancaria || cuenta.clabe_interbancaria || "‚Äî";
-          const banco = cuenta.banco || "‚Äî";
-          const titular = cuenta.titular || cuenta.nombreTitular || "‚Äî";
+            cuenta.clabe || cuenta.clabeInterbancaria || cuenta.clabe_interbancaria || "ó";
+          const banco = cuenta.banco || "ó";
+          const titular = cuenta.titular || cuenta.nombreTitular || "ó";
           const referencia =
             cuenta.referencia ||
             cuenta.referenciaPago ||
@@ -1601,7 +1598,7 @@
             cuenta.referenciaTransferencia ||
             cuenta.reference ||
             cuenta.nota ||
-            "‚Äî";
+            "ó";
 
           if (transferBancoText) transferBancoText.textContent = banco;
           if (transferCuentaText) transferCuentaText.textContent = numeroCuenta;
@@ -1616,10 +1613,10 @@
 
           transferInfoLoaded = true;
         } catch (error) {
-          console.error("No se pudo cargar la informaci√≥n de transferencia:", error);
+          console.error("No se pudo cargar la informaciÛn de transferencia:", error);
           transferInfoError =
             error?.message ||
-            "No se pudo cargar la informaci√≥n bancaria. Intenta nuevamente.";
+            "No se pudo cargar la informaciÛn bancaria. Intenta nuevamente.";
           if (transferInfoMessage) {
             transferInfoMessage.textContent = transferInfoError;
           }
@@ -1662,7 +1659,7 @@
           if (!response.ok || !response.data?.success) {
             throw new Error(
               response.data?.message ||
-                "No se pudo obtener tu perfil de cr√©dito en este momento."
+                "No se pudo obtener tu perfil de crÈdito en este momento."
             );
           }
 
@@ -1718,12 +1715,12 @@
           paymentProfileLoaded = true;
           syncUiFromSummary();
         } catch (error) {
-          console.error("No se pudo inicializar el perfil de cr√©dito:", error);
+          console.error("No se pudo inicializar el perfil de crÈdito:", error);
           creditSummary = null;
           creditoDisponible = false;
           setCreditoBadge(
             "danger",
-            "No pudimos validar tu cr√©dito. Intenta m√°s tarde."
+            "No pudimos validar tu crÈdito. Intenta m·s tarde."
           );
           aplicarResumenCreditoUI();
           updateCreditCardState();
@@ -1748,7 +1745,7 @@
         }
       }
 
-      async function showSuccessAlert(message, title = "¬°Pedido registrado!") {
+      async function showSuccessAlert(message, title = "°Pedido registrado!") {
         if (typeof Swal !== "undefined" && Swal?.fire) {
           await Swal.fire({
             icon: "success",
@@ -1782,7 +1779,7 @@
           window.updateCartBadge();
         }
         await showSuccessAlert(
-          "¬°Pedido registrado exitosamente! Gracias por tu compra."
+          "°Pedido registrado exitosamente! Gracias por tu compra."
         );
         window.location.href = "/inicio.html";
       }
@@ -1820,7 +1817,7 @@
 
         const textoRegla =
           regla === "PAQUETE"
-            ? " (M√≠nimo de producci√≥n requerido)"
+            ? " (MÌnimo de producciÛn requerido)"
             : "";
         const mensaje = `Se ha ajustado tu pedido: ${surtida} disponibles + ${backorder} en backorder${textoRegla}.`;
 
@@ -1856,7 +1853,7 @@
           return mpInstance;
         }
         if (typeof MercadoPago === "undefined") {
-          console.warn("SDK de Mercado Pago no disponible todav√≠a.");
+          console.warn("SDK de Mercado Pago no disponible todavÌa.");
           return null;
         }
         try {
@@ -1903,13 +1900,13 @@
           errores.push("El nombre del titular es obligatorio.");
         }
         if (!data.cardNumber || data.cardNumber.length < 13) {
-          errores.push("El n√∫mero de tarjeta no es v√°lido.");
+          errores.push("El n˙mero de tarjeta no es v·lido.");
         }
         if (!data.expirationMonth || data.expirationMonth.length !== 2) {
-          errores.push("Ingresa el mes de expiraci√≥n en formato MM.");
+          errores.push("Ingresa el mes de expiraciÛn en formato MM.");
         }
         if (!data.expirationYear || data.expirationYear.length < 2) {
-          errores.push("Ingresa el a√±o de expiraci√≥n en formato AAAA.");
+          errores.push("Ingresa el aÒo de expiraciÛn en formato AAAA.");
         }
         if (!data.securityCode || data.securityCode.length < 3) {
           errores.push("Ingresa el CVV correcto.");
@@ -1921,7 +1918,7 @@
         const mp = initializeMercadoPago();
         if (!mp) {
           throw new Error(
-            "El SDK de Mercado Pago no est√° listo. Intenta nuevamente."
+            "El SDK de Mercado Pago no est· listo. Intenta nuevamente."
           );
         }
 
@@ -1963,7 +1960,7 @@
           }
 
           if (!tokenResponse?.id) {
-            throw new Error("Mercado Pago no devolvi√≥ un token v√°lido.");
+            throw new Error("Mercado Pago no devolviÛ un token v·lido.");
           }
 
           return tokenResponse.id;
@@ -1975,7 +1972,7 @@
           const message =
             error?.message ||
             error?.errorMessage ||
-            "No se pudo tokenizar la tarjeta. Revisa los datos e int√©ntalo nuevamente.";
+            "No se pudo tokenizar la tarjeta. Revisa los datos e intÈntalo nuevamente.";
 
           if (typeof Swal !== "undefined" && Swal?.fire) {
             await Swal.fire({
@@ -2125,7 +2122,7 @@
 
         if (metodoPagoSeleccionado === "credito") {
           if (!creditoDisponible || !creditSummary) {
-            errorMessage = "Tu cuenta a√∫n no tiene cr√©dito habilitado.";
+            errorMessage = "Tu cuenta a˙n no tiene crÈdito habilitado.";
           } else {
             const disponible = Number.parseFloat(
               creditSummary.creditoDisponible || 0
@@ -2193,7 +2190,7 @@
           const porcentajeDisponible = (disponible / limite) * 100;
           creditCapacityFill.style.width = `${Math.min(porcentajeDisponible, 100)}%`;
           
-          // Cambiar color seg√∫n el porcentaje disponible
+          // Cambiar color seg˙n el porcentaje disponible
           creditCapacityFill.className = "credit-capacity-fill";
           if (porcentajeDisponible < 25) {
             creditCapacityFill.classList.add("low");
@@ -2267,20 +2264,20 @@
             }
             const metodo = (radio.value || "").toLowerCase();
             
-            // ‚ö†Ô∏è BLOQUEO TEMPORAL DE MERCADO PAGO
+            // ?? BLOQUEO TEMPORAL DE MERCADO PAGO
             if (metodo === "mercadopago") {
               if (typeof Swal !== "undefined" && Swal?.fire) {
                 await Swal.fire({
                   icon: "warning",
-                  title: "M√©todo de pago no disponible",
-                  html: "<p>Estamos actualizando nuestra plataforma de pagos.</p><p><strong>Por ahora, selecciona otro m√©todo de pago:</strong></p><ul style='text-align: left; margin-top: 1rem;'><li>üí≥ Cr√©dito Fashion Box</li><li>üè¶ Transferencia bancaria</li></ul>",
+                  title: "MÈtodo de pago no disponible",
+                  html: "<p>Estamos actualizando nuestra plataforma de pagos.</p><p><strong>Por ahora, selecciona otro mÈtodo de pago:</strong></p><ul style='text-align: left; margin-top: 1rem;'><li>?? CrÈdito Fashion Box</li><li>?? Transferencia bancaria</li></ul>",
                   confirmButtonText: "Entendido",
                   confirmButtonColor: "#1B5E20",
                 });
               } else {
-                alert("Mercado Pago est√° temporalmente deshabilitado. Por favor, utiliza Cr√©dito Fashion Box o transferencia bancaria.");
+                alert("Mercado Pago est· temporalmente deshabilitado. Por favor, utiliza CrÈdito Fashion Box o transferencia bancaria.");
               }
-              // Cambiar autom√°ticamente a Cr√©dito si est√° disponible, sino a Transferencia
+              // Cambiar autom·ticamente a CrÈdito si est· disponible, sino a Transferencia
               if (creditoDisponible && creditSummary) {
                 setMetodoPago("credito");
               } else {
@@ -2302,14 +2299,14 @@
                 return;
               }
               
-              // ‚ö†Ô∏è BLOQUEO ADICIONAL: Mostrar alerta incluso si intentan hacer clic en la tarjeta deshabilitada
+              // ?? BLOQUEO ADICIONAL: Mostrar alerta incluso si intentan hacer clic en la tarjeta deshabilitada
               const metodo = (radio.value || "").toLowerCase();
               if (metodo === "mercadopago") {
                 if (typeof Swal !== "undefined" && Swal?.fire) {
                   Swal.fire({
                     icon: "warning",
-                    title: "M√©todo de pago no disponible",
-                    html: "<p>Estamos actualizando nuestra plataforma de pagos.</p><p><strong>Por ahora, selecciona otro m√©todo de pago:</strong></p><ul style='text-align: left; margin-top: 1rem;'><li>üí≥ Cr√©dito Fashion Box</li><li>üè¶ Transferencia bancaria</li></ul>",
+                    title: "MÈtodo de pago no disponible",
+                    html: "<p>Estamos actualizando nuestra plataforma de pagos.</p><p><strong>Por ahora, selecciona otro mÈtodo de pago:</strong></p><ul style='text-align: left; margin-top: 1rem;'><li>?? CrÈdito Fashion Box</li><li>?? Transferencia bancaria</li></ul>",
                     confirmButtonText: "Entendido",
                     confirmButtonColor: "#1B5E20",
                   });
@@ -2330,16 +2327,16 @@
       async function confirmarUsoCredito() {
         if (typeof Swal === "undefined" || !Swal?.fire) {
           return window.confirm(
-            "Esta compra se cargar√° a tu l√≠nea de cr√©dito. ¬øDeseas continuar?"
+            "Esta compra se cargar· a tu lÌnea de crÈdito. øDeseas continuar?"
           );
         }
 
         const modal = await Swal.fire({
-          title: "¬øCargar compra a tu cr√©dito?",
-          text: "Esta compra se cargar√° a tu l√≠nea de cr√©dito. ¬øDeseas continuar?",
+          title: "øCargar compra a tu crÈdito?",
+          text: "Esta compra se cargar· a tu lÌnea de crÈdito. øDeseas continuar?",
           icon: "question",
           showCancelButton: true,
-          confirmButtonText: "S√≠, continuar",
+          confirmButtonText: "SÌ, continuar",
           cancelButtonText: "No, cancelar",
           confirmButtonColor: "#1B5E20",
         });
@@ -2373,7 +2370,7 @@
               : `Paquete de ${piezasPorPaquete}`;
           }
 
-          return "Presentaci√≥n est√°ndar";
+          return "PresentaciÛn est·ndar";
         })();
         const cantidadSolicitada =
           typeof item.cantidadPaquetesSolicitada === "number"
@@ -2435,7 +2432,7 @@
             ? `
               <div style="display:flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.75rem;">
                 <span style="display:inline-flex; align-items:center; gap:0.35rem; padding: 0.25rem 0.6rem; border-radius: 999px; background: #dcfce7; color: #166534; font-weight: 700; font-size: 0.75rem;">
-                  Env√≠o hoy: ${totalPiezasSurtidas} pzs
+                  EnvÌo hoy: ${totalPiezasSurtidas} pzs
                 </span>
                 <span style="display:inline-flex; align-items:center; gap:0.35rem; padding: 0.25rem 0.6rem; border-radius: 999px; background: #fef3c7; color: #92400e; font-weight: 700; font-size: 0.75rem;">
                   Backorder: ${totalPiezasBackorder} pzs
@@ -2445,7 +2442,7 @@
                 </span>
                 ${
                   ajusteAplicado && reglaBackorder === "PAQUETE"
-                    ? `<span style="display:inline-flex; align-items:center; gap:0.35rem; padding: 0.25rem 0.6rem; border-radius: 999px; background: rgba(249, 115, 22, 0.12); color: #9a3412; font-weight: 800; font-size: 0.75rem;">M√≠nimo 12</span>`
+                    ? `<span style="display:inline-flex; align-items:center; gap:0.35rem; padding: 0.25rem 0.6rem; border-radius: 999px; background: rgba(249, 115, 22, 0.12); color: #9a3412; font-weight: 800; font-size: 0.75rem;">MÌnimo 12</span>`
                     : ""
                 }
               </div>
@@ -2454,7 +2451,7 @@
 
         const conflictBadge = conflictInfo
           ? `<div style="margin-top: 0.5rem; padding: 0.4rem 0.6rem; border-radius: 0.5rem; background: #fee2e2; color: #b91c1c; font-size: 0.75rem;">
-              ‚ö† Stock combinado excedido: intentas ${conflictInfo.totalPiezas} piezas y solo hay ${conflictInfo.stock}.
+              ? Stock combinado excedido: intentas ${conflictInfo.totalPiezas} piezas y solo hay ${conflictInfo.stock}.
             </div>`
           : "";
 
@@ -2509,7 +2506,7 @@
                   ${cantidadSolicitada <= 1 ? "disabled" : ""}
                   onmouseover="this.style.background='var(--razo-orange)'; this.style.color='white'"
                   onmouseout="this.style.background='white'; this.style.color='var(--razo-orange)'"
-                >‚àí</button>
+                >-</button>
                 <span style="font-weight: 700; font-size: 1.125rem; min-width: 40px; text-align: center; color: var(--razo-gray-dark);">${
                   cantidadSolicitada
                 }</span>
@@ -2545,7 +2542,7 @@
             </p>
           </div>
           
-          <!-- Bot√≥n eliminar -->
+          <!-- BotÛn eliminar -->
           <button 
             onclick="eliminarProducto(${item.itemId}, '${(
           producto.nombreProducto || "Producto"
@@ -2554,7 +2551,7 @@
             title="Eliminar producto"
             onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 8px rgba(220,38,38,0.3)'"
             onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)'"
-          >üóëÔ∏è</button>
+          >???</button>
         </div>
       `;
       }
@@ -2596,7 +2593,7 @@
 
           const entry = porVariante.get(varianteId);
           entry.totalPiezas += piezas;
-          entry.stock = stockDisponible; // √∫ltimo valor, deber√≠an ser iguales
+          entry.stock = stockDisponible; // ˙ltimo valor, deberÌan ser iguales
         });
 
         const conflictos = {};
@@ -2620,7 +2617,7 @@
 
         const item = carritoData.items.find((it) => it.itemId === itemId);
         if (!item) {
-          showToast("No se encontr√≥ el producto en el carrito", "error");
+          showToast("No se encontrÛ el producto en el carrito", "error");
           return;
         }
 
@@ -2967,7 +2964,7 @@
           console.error("Error loading cart:", error);
           loadingState.style.display = "none";
           showToast(
-            "Error al cargar el carrito. Intenta recargar la p√°gina.",
+            "Error al cargar el carrito. Intenta recargar la p·gina.",
             "error"
           );
         }
@@ -2999,7 +2996,7 @@
                     <span>${d.receptor}</span>
                     ${
                       d.etiqueta
-                        ? `<span class="direccion-etiqueta">üìç ${d.etiqueta}</span>`
+                        ? `<span class="direccion-etiqueta">?? ${d.etiqueta}</span>`
                         : ""
                     }
                   </div>
@@ -3047,7 +3044,7 @@
       // Handle checkout
       checkoutBtn.addEventListener("click", async () => {
         if (!carritoData || carritoData.items.length === 0) {
-          showToast("Tu carrito est√° vac√≠o", "warning");
+          showToast("Tu carrito est· vacÌo", "warning");
           return;
         }
 
@@ -3063,7 +3060,7 @@
         event?.preventDefault?.();
 
         if (!selectedDireccionId) {
-          showToast("Por favor selecciona una direcci√≥n de env√≠o", "warning");
+          showToast("Por favor selecciona una direcciÛn de envÌo", "warning");
           return;
         }
 
@@ -3089,7 +3086,7 @@
         if (isCredito) {
           if (!creditoDisponible || !creditSummary) {
             showErrorAlert(
-              "Tu l√≠nea de cr√©dito no est√° disponible. Selecciona otro m√©todo de pago."
+              "Tu lÌnea de crÈdito no est· disponible. Selecciona otro mÈtodo de pago."
             );
             return;
           }
@@ -3172,9 +3169,9 @@
 
             const payload = buildPedidoPayload(extraMetodoFields);
             
-            // üîç DEBUG: Ver exactamente qu√© se env√≠a al backend
+            // ?? DEBUG: Ver exactamente quÈ se envÌa al backend
             console.log("=== DEBUG CHECKOUT ===");
-            console.log("M√©todo de pago:", metodoPagoSeleccionado);
+            console.log("MÈtodo de pago:", metodoPagoSeleccionado);
             console.log("Monto total del carrito:", getCarritoTotal());
             console.log("Payload completo:", JSON.stringify(payload, null, 2));
             console.log("=====================");
@@ -3184,7 +3181,7 @@
             if (!response.ok || !response.data?.success) {
               throw new Error(
                 response.data?.message ||
-                  "No se pudo registrar tu pedido. Intenta m√°s tarde."
+                  "No se pudo registrar tu pedido. Intenta m·s tarde."
               );
             }
           }
@@ -3202,7 +3199,7 @@
           }
           showErrorAlert(
             error?.message ||
-              "Ocurri√≥ un error al procesar tu pedido. Int√©ntalo nuevamente."
+              "OcurriÛ un error al procesar tu pedido. IntÈntalo nuevamente."
           );
         } finally {
           isConfirmingPedido = false;
@@ -3225,7 +3222,7 @@
         if (e.target === modalCambiarVariante) {
           cerrarModalCambiarVariante();
         }
-        // El modal de √©xito NO se cierra al hacer clic fuera (forzar al usuario a elegir una acci√≥n)
+        // El modal de Èxito NO se cierra al hacer clic fuera (forzar al usuario a elegir una acciÛn)
       });
 
       document.addEventListener("keydown", (e) => {
@@ -3242,12 +3239,12 @@
       // Actualizar cantidad de producto
       async function actualizarCantidad(varianteId, tamanoId, nuevaCantidad) {
         if (nuevaCantidad < 1) {
-          showToast("La cantidad m√≠nima es 1 paquete", "warning");
+          showToast("La cantidad mÌnima es 1 paquete", "warning");
           return;
         }
 
         if (nuevaCantidad > 999) {
-          showToast("La cantidad m√°xima es 999 paquetes", "warning");
+          showToast("La cantidad m·xima es 999 paquetes", "warning");
           return;
         }
 

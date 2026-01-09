@@ -1,4 +1,4 @@
-ï»¿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
@@ -6,11 +6,8 @@
     <title>Clientes - Admin Fashion Box</title>
     <link rel="icon" type="image/png" href="/icon/Logo_Fashion.png" />
 
-    <!-- PROTECCIÃ“N DE AUTENTICACIÃ“N ADMIN -->
+    <!-- PROTECCIÓN DE AUTENTICACIÓN ADMIN -->
     <script src="js/auth-guard-admin.js"></script>
-
-    <!-- SISTEMA DE RENOVACIÃ“N DE TOKENS -->
-    <script src="js/token-refresh.js"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
@@ -44,7 +41,7 @@
                 color: var(--razo-orange, #ff6b35);
               "
             >
-              ðŸ‘¥ Lista de clientes
+              ?? Lista de clientes
             </h2>
           </div>
 
@@ -63,7 +60,7 @@
                   <tr>
                     <th>Cliente</th>
                     <th>Email</th>
-                    <th>TelÃ©fono</th>
+                    <th>Teléfono</th>
                     <th>Estado</th>
                     <th>Acciones</th>
                   </tr>
@@ -73,10 +70,10 @@
             </div>
 
             <div id="emptyClientes" class="empty-state" style="display: none">
-              <div class="empty-state-icon">ðŸ‘¥</div>
+              <div class="empty-state-icon">??</div>
               <h3 class="empty-state-title">No hay clientes registrados</h3>
               <p class="empty-state-text">
-                Los clientes aparecerÃ¡n aquÃ­ cuando se registren o realicen
+                Los clientes aparecerán aquí cuando se registren o realicen
                 pedidos.
               </p>
             </div>
@@ -89,13 +86,13 @@
     <div id="modalResetPassword" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;">
       <div style="background: white; border-radius: 1rem; padding: 2rem; max-width: 500px; width: 90%; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
         <h3 style="margin: 0 0 1rem 0; color: var(--razo-orange, #f97316); font-size: 1.25rem;">
-          <i class="bi bi-key-fill"></i> Restablecer contraseÃ±a
+          <i class="bi bi-key-fill"></i> Restablecer contraseña
         </h3>
         <p style="margin-bottom: 1.5rem; color: #6b7280;">Cliente: <strong id="resetClienteName"></strong></p>
         
         <div class="form-group" style="margin-bottom: 1rem;">
-          <label class="form-label" for="newPassword">Nueva contraseÃ±a</label>
-          <input type="text" id="newPassword" class="form-input" placeholder="Ingresa nueva contraseÃ±a" style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.5rem;">
+          <label class="form-label" for="newPassword">Nueva contraseña</label>
+          <input type="text" id="newPassword" class="form-input" placeholder="Ingresa nueva contraseña" style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.5rem;">
         </div>
         
         <button type="button" class="btn btn-secondary" onclick="generateRandomPassword()" style="margin-bottom: 1.5rem; padding: 0.5rem 1rem; font-size: 0.85rem;">
@@ -215,7 +212,7 @@
           : '<span class="admin-badge danger">Inactivo</span>';
 
         const toggleLabel = cliente.activo ? "Desactivar" : "Activar";
-        const toggleIcon = cliente.activo ? "ðŸš«" : "âœ…";
+        const toggleIcon = cliente.activo ? "??" : "?";
 
         return `
         <tr>
@@ -238,7 +235,7 @@
             </a>
             <button class="btn btn-warning" style="padding: 0.5rem 1rem; font-size: 0.85rem;" onclick="openResetPasswordModal(${
               cliente.clienteId
-            }, '${nombreCompleto}')" title="Restablecer contraseÃ±a">
+            }, '${nombreCompleto}')" title="Restablecer contraseña">
               <i class="bi bi-key-fill"></i>
             </button>
             <button class="btn ${
@@ -254,7 +251,7 @@
       }
 
       async function toggleEstadoCliente(clienteId, activoActual) {
-        const mensaje = `Â¿Seguro que deseas ${
+        const mensaje = `¿Seguro que deseas ${
           activoActual ? "desactivar" : "activar"
         } este cliente?`;
 
@@ -270,7 +267,7 @@
             title: activoActual ? "Desactivar cliente" : "Activar cliente",
             text: mensaje,
             showCancelButton: true,
-            confirmButtonText: activoActual ? "SÃ­, desactivar" : "SÃ­, activar",
+            confirmButtonText: activoActual ? "Sí, desactivar" : "Sí, activar",
             cancelButtonText: "Cancelar",
             confirmButtonColor: activoActual ? "#dc3545" : "#16a34a",
             cancelButtonColor: "#6b7280",
@@ -352,10 +349,10 @@
             Swal.fire({
               icon: 'warning',
               title: 'Campo requerido',
-              text: 'Por favor ingresa una nueva contraseÃ±a',
+              text: 'Por favor ingresa una nueva contraseña',
             });
           } else {
-            alert('Por favor ingresa una nueva contraseÃ±a');
+            alert('Por favor ingresa una nueva contraseña');
           }
           return;
         }
@@ -364,11 +361,11 @@
           if (typeof Swal !== 'undefined') {
             Swal.fire({
               icon: 'warning',
-              title: 'ContraseÃ±a muy corta',
-              text: 'La contraseÃ±a debe tener al menos 6 caracteres',
+              title: 'Contraseña muy corta',
+              text: 'La contraseña debe tener al menos 6 caracteres',
             });
           } else {
-            alert('La contraseÃ±a debe tener al menos 6 caracteres');
+            alert('La contraseña debe tener al menos 6 caracteres');
           }
           return;
         }
@@ -393,19 +390,19 @@
 
           const data = await response.json();
           if (!response.ok || !data.success) {
-            throw new Error(data.message || 'Error al restablecer contraseÃ±a');
+            throw new Error(data.message || 'Error al restablecer contraseña');
           }
 
           if (typeof Swal !== 'undefined') {
             Swal.fire({
               icon: 'success',
-              title: 'ContraseÃ±a actualizada',
-              text: 'La contraseÃ±a ha sido restablecida correctamente',
+              title: 'Contraseña actualizada',
+              text: 'La contraseña ha sido restablecida correctamente',
               timer: 2000,
               showConfirmButton: false,
             });
           } else {
-            alert('ContraseÃ±a actualizada correctamente');
+            alert('Contraseña actualizada correctamente');
           }
 
           closeResetPasswordModal();
@@ -415,10 +412,10 @@
             Swal.fire({
               icon: 'error',
               title: 'Error',
-              text: error.message || 'No se pudo restablecer la contraseÃ±a',
+              text: error.message || 'No se pudo restablecer la contraseña',
             });
           } else {
-            alert(error.message || 'No se pudo restablecer la contraseÃ±a');
+            alert(error.message || 'No se pudo restablecer la contraseña');
           }
         } finally {
           btnSave.disabled = false;
@@ -433,7 +430,7 @@
         }
       });
 
-      // Inicializar pÃ¡gina
+      // Inicializar página
       verifyAndLoadAdmin();
       loadClientes();
     </script>

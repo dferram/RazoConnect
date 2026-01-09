@@ -1,16 +1,13 @@
-Ôªø<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Gesti√≥n de Cupones - Admin Fashion Box</title>
+    <title>GestiÛn de Cupones - Admin Fashion Box</title>
     <link rel="icon" type="image/png" href="/icon/Logo_Fashion.png" />
 
-    <!-- PROTECCI√ìN DE AUTENTICACI√ìN ADMIN -->
+    <!-- PROTECCI”N DE AUTENTICACI”N ADMIN -->
     <script src="js/auth-guard-admin.js"></script>
-
-    <!-- SISTEMA DE RENOVACI√ìN DE TOKENS -->
-    <script src="js/token-refresh.js"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
@@ -26,7 +23,7 @@
     />
     <link rel="stylesheet" href="css/mobile-responsive-fashion.css" />
   </head>
-  <body data-page-title="Gesti√≥n de Cupones">
+  <body data-page-title="GestiÛn de Cupones">
     <div class="admin-layout">
       <!-- Sidebar -->
       <div id="sidebar-container"></div>
@@ -59,7 +56,7 @@
                     color: var(--text-primary);
                   "
                 >
-                  üéüÔ∏è Gesti√≥n de Cupones
+                  ??? GestiÛn de Cupones
                 </h2>
                 <p
                   style="
@@ -68,7 +65,7 @@
                     color: var(--text-secondary);
                   "
                 >
-                  Administra c√≥digos promocionales y descuentos
+                  Administra cÛdigos promocionales y descuentos
                 </p>
               </div>
               <button
@@ -78,7 +75,7 @@
                 style="padding: 0.75rem 1.5rem"
               >
                 <i class="bi bi-plus-circle"></i>
-                <span style="margin-left: 0.5rem">Nuevo Cup√≥n</span>
+                <span style="margin-left: 0.5rem">Nuevo CupÛn</span>
               </button>
             </div>
           </div>
@@ -93,8 +90,8 @@
               <table class="admin-table" id="tabla-cupones">
                 <thead>
                   <tr>
-                    <th>C√≥digo</th>
-                    <th>Descripci√≥n</th>
+                    <th>CÛdigo</th>
+                    <th>DescripciÛn</th>
                     <th>Tipo</th>
                     <th>Valor</th>
                     <th>Usos</th>
@@ -114,10 +111,10 @@
             </div>
 
             <div id="emptyCupones" class="empty-state" style="display: none">
-              <div class="empty-state-icon">üéüÔ∏è</div>
+              <div class="empty-state-icon">???</div>
               <h3 class="empty-state-title">No hay cupones registrados</h3>
               <p class="empty-state-text">
-                Los cupones de descuento aparecer√°n aqu√≠ cuando los crees.
+                Los cupones de descuento aparecer·n aquÌ cuando los crees.
               </p>
             </div>
           </div>
@@ -125,7 +122,7 @@
       </main>
     </div>
 
-    <!-- Modal Cup√≥n -->
+    <!-- Modal CupÛn -->
     <div class="modal fade" id="modalCupon" tabindex="-1" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
         <div
@@ -136,7 +133,7 @@
             class="modal-header"
             style="border-bottom: 1px solid #e5e7eb; padding: 1.5rem;"
           >
-            <h5 class="modal-title" id="modalCuponLabel" style="font-weight: 600; font-size: 1.25rem; color: #111827;">Nuevo Cup√≥n</h5>
+            <h5 class="modal-title" id="modalCuponLabel" style="font-weight: 600; font-size: 1.25rem; color: #111827;">Nuevo CupÛn</h5>
             <button
               type="button"
               class="btn-close"
@@ -151,17 +148,17 @@
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label for="cupon-codigo" class="form-label" style="font-weight: 600; color: #111827; margin-bottom: 0.5rem; display: block;">C√≥digo del Cup√≥n <span style="color: #ef4444;">*</span></label>
+                                    <label for="cupon-codigo" class="form-label" style="font-weight: 600; color: #111827; margin-bottom: 0.5rem; display: block;">CÛdigo del CupÛn <span style="color: #ef4444;">*</span></label>
                                     <input type="text" class="form-control" id="cupon-codigo" required 
                                         placeholder="Ej: NIKE20, VERANO2025" 
                                         style="text-transform: uppercase; padding: 0.75rem 1rem; border: 2px solid #e5e7eb; border-radius: 0.5rem; font-size: 0.95rem; transition: all 0.2s;">
-                                    <small style="display: block; margin-top: 0.375rem; font-size: 0.8125rem; color: #6b7280;">El c√≥digo se convertir√° autom√°ticamente a may√∫sculas</small>
+                                    <small style="display: block; margin-top: 0.375rem; font-size: 0.8125rem; color: #6b7280;">El cÛdigo se convertir· autom·ticamente a may˙sculas</small>
                                 </div>
                             </div>
                             
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label for="cupon-descripcion" class="form-label" style="font-weight: 600; color: #111827; margin-bottom: 0.5rem; display: block;">Descripci√≥n</label>
+                                    <label for="cupon-descripcion" class="form-label" style="font-weight: 600; color: #111827; margin-bottom: 0.5rem; display: block;">DescripciÛn</label>
                                     <input type="text" class="form-control" id="cupon-descripcion" 
                                         placeholder="Ej: Descuento de verano" 
                                         style="padding: 0.75rem 1rem; border: 2px solid #e5e7eb; border-radius: 0.5rem; font-size: 0.95rem; transition: all 0.2s;">
@@ -191,11 +188,11 @@
                             
                             <div class="col-md-4">
                                 <div class="form-group">
-                                    <label for="cupon-monto-minimo" class="form-label" style="font-weight: 600; color: #111827; margin-bottom: 0.5rem; display: block;">Compra M√≠nima ($)</label>
+                                    <label for="cupon-monto-minimo" class="form-label" style="font-weight: 600; color: #111827; margin-bottom: 0.5rem; display: block;">Compra MÌnima ($)</label>
                                     <input type="number" class="form-control" id="cupon-monto-minimo" 
                                         min="0" step="0.01" value="0" placeholder="0.00" 
                                         style="padding: 0.75rem 1rem; border: 2px solid #e5e7eb; border-radius: 0.5rem; font-size: 0.95rem; transition: all 0.2s;">
-                                    <small style="display: block; margin-top: 0.375rem; font-size: 0.8125rem; color: #6b7280;">Deja en 0 para sin m√≠nimo</small>
+                                    <small style="display: block; margin-top: 0.375rem; font-size: 0.8125rem; color: #6b7280;">Deja en 0 para sin mÌnimo</small>
                                 </div>
                             </div>
                             
@@ -217,11 +214,11 @@
                             
                             <div class="col-md-4">
                                 <div class="form-group">
-                                    <label for="cupon-uso-maximo" class="form-label" style="font-weight: 600; color: #111827; margin-bottom: 0.5rem; display: block;">Usos M√°ximos</label>
+                                    <label for="cupon-uso-maximo" class="form-label" style="font-weight: 600; color: #111827; margin-bottom: 0.5rem; display: block;">Usos M·ximos</label>
                                     <input type="number" class="form-control" id="cupon-uso-maximo" 
                                         min="1" step="1" placeholder="Ilimitado" 
                                         style="padding: 0.75rem 1rem; border: 2px solid #e5e7eb; border-radius: 0.5rem; font-size: 0.95rem; transition: all 0.2s;">
-                                    <small style="display: block; margin-top: 0.375rem; font-size: 0.8125rem; color: #6b7280;">Deja vac√≠o para ilimitado</small>
+                                    <small style="display: block; margin-top: 0.375rem; font-size: 0.8125rem; color: #6b7280;">Deja vacÌo para ilimitado</small>
                                 </div>
                             </div>
                         </div>
@@ -232,7 +229,7 @@
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
                     <button type="submit" class="btn btn-primary" id="btn-guardar-cupon" form="form-cupon">
                       <i class="bi bi-save"></i>
-                      <span style="margin-left: 0.5rem">Guardar Cup√≥n</span>
+                      <span style="margin-left: 0.5rem">Guardar CupÛn</span>
                     </button>
                   </div>
                 </div>

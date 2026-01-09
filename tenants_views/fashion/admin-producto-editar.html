@@ -1,4 +1,4 @@
-Ôªø<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
@@ -10,11 +10,8 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.14.0/Sortable.min.js"></script>
 
-    <!-- PROTECCI√ìN DE AUTENTICACI√ìN ADMIN -->
+    <!-- PROTECCI”N DE AUTENTICACI”N ADMIN -->
     <script src="js/auth-guard-admin.js"></script>
-
-    <!-- SISTEMA DE RENOVACI√ìN DE TOKENS -->
-    <script src="js/token-refresh.js"></script>
 
     <link
       rel="stylesheet"
@@ -254,7 +251,7 @@
           box-sizing: border-box;
         }
 
-        /* Preview de im√°genes: ajustar tama√±o */
+        /* Preview de im·genes: ajustar tamaÒo */
         .product-images-preview-item {
           width: 70px;
           height: 70px;
@@ -270,8 +267,8 @@
           -webkit-overflow-scrolling: touch;
         }
 
-        /* ===== CONTENIDO DIN√ÅMICO (JavaScript) ===== */
-        /* Asegurar que elementos generados din√°micamente tambi√©n respeten l√≠mites */
+        /* ===== CONTENIDO DIN¡MICO (JavaScript) ===== */
+        /* Asegurar que elementos generados din·micamente tambiÈn respeten lÌmites */
         
         /* Product summary: forzar wrap en todos los elementos */
         .product-summary {
@@ -287,7 +284,7 @@
           overflow-wrap: break-word;
         }
 
-        /* Badges din√°micos: permitir wrap */
+        /* Badges din·micos: permitir wrap */
         .badge,
         .admin-badge,
         .visibility-badge,
@@ -314,7 +311,7 @@
           text-overflow: ellipsis;
         }
 
-        /* Im√°genes de producto: responsive */
+        /* Im·genes de producto: responsive */
         .product-summary-image {
           flex-shrink: 0;
           max-width: 80px;
@@ -345,7 +342,7 @@
           box-sizing: border-box;
         }
 
-        /* Galer√≠a de im√°genes: ajustar grid */
+        /* GalerÌa de im·genes: ajustar grid */
         .product-images-preview,
         .sortable-grid {
           max-width: 100%;
@@ -364,7 +361,7 @@
           table-layout: auto;
         }
 
-        /* Botones en tablas: ajustar tama√±o */
+        /* Botones en tablas: ajustar tamaÒo */
         .admin-table .btn-sm {
           padding: 0.5rem 0.75rem;
           font-size: 0.85rem;
@@ -749,7 +746,7 @@
                 >
                   <div>
                     <h2 class="admin-card-title" style="margin-bottom: 0.25rem">
-                      Informaci√≥n general
+                      InformaciÛn general
                     </h2>
                     <p
                       class="admin-header-subtitle"
@@ -776,7 +773,7 @@
                   <h2 class="admin-card-title">Agregar nueva variante</h2>
                   <p class="admin-header-subtitle" style="margin-bottom: 0">
                     Define SKU, precios y stock inicial para activar el producto
-                    en el cat√°logo.
+                    en el cat·logo.
                   </p>
                 </div>
                 <div class="admin-card-body">
@@ -789,7 +786,7 @@
                           type="text"
                           id="sku"
                           class="form-input"
-                          placeholder="Generado autom√°ticamente"
+                          placeholder="Generado autom·ticamente"
                           readonly
                         />
                         <small
@@ -797,7 +794,7 @@
                           class="form-hint"
                           style="display: none; color: var(--razo-orange)"
                         >
-                          üí° Sugerencia: <span id="skuSuggestionText"></span>
+                          ?? Sugerencia: <span id="skuSuggestionText"></span>
                           <button
                             type="button"
                             id="applySkuSuggestion"
@@ -835,8 +832,8 @@
                             <span
                               class="info-icon"
                               style="margin-left: 0.25rem; cursor: help; font-size: 0.85em; color: var(--text-secondary);"
-                              title="Cantidad total disponible en inventario f√≠sico."
-                              >‚ìò</span
+                              title="Cantidad total disponible en inventario fÌsico."
+                              >?</span
                             >
                           </label>
                           <input
@@ -886,7 +883,7 @@
                           style="display:flex; align-items:center; justify-content:space-between; gap: 0.75rem; flex-wrap: wrap;"
                         >
                           <strong style="font-size: 0.95rem; color: var(--text-primary);"
-                            >Im√°genes de la variante</strong
+                            >Im·genes de la variante</strong
                           >
                           <span
                             id="variantImagesStatus"
@@ -910,7 +907,7 @@
                             class="btn btn-secondary"
                             id="clearImagesSelectionBtn"
                           >
-                            Limpiar selecci√≥n
+                            Limpiar selecciÛn
                           </button>
                         </div>
 
@@ -930,7 +927,7 @@
                           <div
                             style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.35rem;"
                           >
-                            Im√°genes guardadas (arrastra para reordenar)
+                            Im·genes guardadas (arrastra para reordenar)
                           </div>
                           <div
                             id="galeriaImagenesVarianteServer"
@@ -969,7 +966,7 @@
                         </div>
                         <div class="form-group">
                           <label for="precioOferta" class="form-label">
-                            üí∞ Porcentaje de Descuento (%)
+                            ?? Porcentaje de Descuento (%)
                             <span
                               style="color: var(--razo-orange); font-size: 0.875rem"
                               >- Opcional</span
@@ -988,7 +985,7 @@
                             class="form-hint"
                             style="color: var(--razo-orange)"
                           >
-                            ‚ö° Si defines un porcentaje de descuento, se calcular√° el
+                            ? Si defines un porcentaje de descuento, se calcular· el
                             precio final de la oferta.
                           </small>
                           <small
@@ -1003,7 +1000,7 @@
 
                       <div class="variant-margin" id="variantMargin">
                         <div>
-                          <h3>Resumen econ√≥mico</h3>
+                          <h3>Resumen econÛmico</h3>
                           <p id="marginMessage">
                             Ingresa costo y precio para calcular la ganancia.
                           </p>
@@ -1074,13 +1071,13 @@
                       <div class="inventory-summary-card" aria-live="polite">
                         <div class="stock-projection-header">
                           <div>
-                            <h3 class="stock-projection-title">üìä Proyecci√≥n de Stock</h3>
+                            <h3 class="stock-projection-title">?? ProyecciÛn de Stock</h3>
                             <p
                               id="stockProjectionSubtitle"
                               class="form-hint"
                               style="margin: 0; font-size: 0.8rem; color: var(--text-secondary);"
                             >
-                              Define el stock inicial para ver cu√°ntos paquetes puedes armar con cada presentaci√≥n.
+                              Define el stock inicial para ver cu·ntos paquetes puedes armar con cada presentaciÛn.
                             </p>
                           </div>
                           <div class="stock-total-value" id="stockProjectionTotal">
@@ -1091,14 +1088,14 @@
                           <table class="stock-projection-table">
                             <thead>
                               <tr>
-                                <th>Presentaci√≥n</th>
+                                <th>PresentaciÛn</th>
                                 <th class="stock-projection-qty">Disponibles</th>
                               </tr>
                             </thead>
                             <tbody id="stockProjectionTableBody">
                               <tr>
                                 <td colspan="2" class="stock-projection-empty">
-                                  A√∫n no se ha definido stock para esta variante.
+                                  A˙n no se ha definido stock para esta variante.
                                 </td>
                               </tr>
                             </tbody>
@@ -1134,7 +1131,7 @@
                   id="variantsEmpty"
                   style="display: none"
                 >
-                  <div class="empty-state-icon">üß©</div>
+                  <div class="empty-state-icon">??</div>
                   <h3 class="empty-state-title">Sin variantes registradas</h3>
                   <p class="empty-state-text">
                     Agrega la primera variante usando el formulario superior.
@@ -1146,7 +1143,7 @@
                     <thead>
                       <tr>
                         <th>SKU</th>
-                        <th>Descripci√≥n</th>
+                        <th>DescripciÛn</th>
                         <th>Color</th>
                         <th>Precio unitario</th>
                         <th>Costo unitario</th>
@@ -1169,7 +1166,7 @@
         </div>
 
         <div id="errorState" class="empty-state" style="display: none">
-          <div class="empty-state-icon">‚ùå</div>
+          <div class="empty-state-icon">?</div>
           <h2 class="empty-state-title">No se pudo cargar el producto</h2>
           <p class="empty-state-text">
             Verifica el enlace o regresa a la lista de productos.
@@ -1415,7 +1412,7 @@
             // Guardar el SKU Maestro para sugerencias de SKU
             skuMaestroBase = producto.sku_maestro || producto.skuMaestro || null;
 
-            // Guardar configuraci√≥n de presentaciones (pieza / packs) del maestro
+            // Guardar configuraciÛn de presentaciones (pieza / packs) del maestro
             tamanosConfiguradosMaestro = Array.isArray(tamanosDisponibles)
               ? tamanosDisponibles
               : [];
@@ -1459,7 +1456,7 @@
         }
       }
 
-      // Funci√≥n para generar sugerencia de SKU
+      // FunciÛn para generar sugerencia de SKU
       function generateSkuSuggestion() {
         if (!skuMaestroBase) {
           skuSuggestion.style.display = "none";
@@ -1555,19 +1552,19 @@
           ? `<div class="product-summary-image"><img src="${mainImageUrl}" alt="${
               mainImageAlt || "Producto"
             }" /></div>`
-          : `<div class="product-summary-image"><span style="font-size: 1.75rem;">üì¶</span></div>`;
+          : `<div class="product-summary-image"><span style="font-size: 1.75rem;">??</span></div>`;
 
-        const categoriaNombre = producto.categoria?.nombre || "Sin categor√≠a";
+        const categoriaNombre = producto.categoria?.nombre || "Sin categorÌa";
         const codigoModelo = producto.sku_maestro || producto.skuMaestro || "No definido";
 
         const isDraft = producto.activo === false;
 
         const draftBannerHtml = isDraft
           ? `<div style="margin-bottom:0.75rem; padding:0.75rem 1rem; border-radius:0.75rem; background: #fffbeb; border:1px solid #fed7aa; color:#92400e; font-size:0.9rem; display:flex; align-items:flex-start; gap:0.5rem;">
-              <span style="font-size:1.1rem;">‚ö†Ô∏è</span>
+              <span style="font-size:1.1rem;">??</span>
               <div>
-                <strong>Este producto est√° en modo BORRADOR.</strong>
-                <div>Los clientes no pueden verlo hasta que un SuperAdmin apruebe la creaci√≥n o sus variantes.</div>
+                <strong>Este producto est· en modo BORRADOR.</strong>
+                <div>Los clientes no pueden verlo hasta que un SuperAdmin apruebe la creaciÛn o sus variantes.</div>
               </div>
             </div>`
           : "";
@@ -1589,7 +1586,7 @@
                   </span>
                 </div>
                 <p style="color: var(--text-secondary);">
-                  ${producto.descripcion || "Sin descripci√≥n registrada."}
+                  ${producto.descripcion || "Sin descripciÛn registrada."}
                 </p>
               </div>
             </div>
@@ -1604,7 +1601,7 @@
               </div>
               <div class="product-kpi">
                 <div class="product-kpi-label">Rango de precios</div>
-                <div class="product-kpi-value">${precioMin} ‚Äì ${precioMax}</div>
+                <div class="product-kpi-value">${precioMin} ñ ${precioMax}</div>
               </div>
             </div>
           </div>
@@ -1620,16 +1617,16 @@
       }
 
       /**
-       * Extrae un valor num√©rico de una medida para ordenamiento
+       * Extrae un valor numÈrico de una medida para ordenamiento
        * @param {string} medida - String de medida (ej: "10x10", "50ml", "6 Piezas", "XL")
-       * @returns {number} - Valor num√©rico para ordenar
+       * @returns {number} - Valor numÈrico para ordenar
        */
       function getMeasureValue(medida) {
         if (!medida || typeof medida !== 'string') return 999999;
         
         const medidaLower = medida.toLowerCase().trim();
         
-        // Tallas de ropa: asignar valores num√©ricos
+        // Tallas de ropa: asignar valores numÈricos
         const tallasMap = {
           'xxs': 1, '2xs': 1,
           'xs': 2,
@@ -1646,13 +1643,13 @@
           return tallasMap[medidaLower];
         }
         
-        // Extraer primer n√∫mero de la cadena (ej: "10x10" -> 10, "50ml" -> 50, "6 Piezas" -> 6)
+        // Extraer primer n˙mero de la cadena (ej: "10x10" -> 10, "50ml" -> 50, "6 Piezas" -> 6)
         const match = medida.match(/(\d+(?:\.\d+)?)/);
         if (match) {
           return parseFloat(match[1]);
         }
         
-        // Si no hay n√∫mero ni es talla, enviar al final
+        // Si no hay n˙mero ni es talla, enviar al final
         return 999999;
       }
 
@@ -1711,7 +1708,7 @@
             <td>${stock}</td>
             <td>
               <span class="badge bg-warning text-dark" style="font-weight:700;">
-                ‚è≥ En Revisi√≥n
+                ? En RevisiÛn
               </span>
             </td>
             <td class="actions-cell">
@@ -1724,7 +1721,7 @@
             const activo = variant.activo !== undefined ? variant.activo : true;
             const estadoBadgeClass = activo ? 'badge-success' : 'badge-secondary';
             const estadoTexto = activo ? 'Visible' : 'Oculto';
-            const estadoIcon = activo ? '' : 'üö´';
+            const estadoIcon = activo ? '' : '??';
 
             return `
           <tr>
@@ -1745,7 +1742,7 @@
                   onclick="toggleVarianteVisibilidad(${variant.varianteId}, ${activo})"
                   title="${activo ? 'Ocultar variante' : 'Mostrar variante'}"
                 >
-                  ${activo ? 'üîí' : 'üîì'}
+                  ${activo ? '??' : '??'}
                 </button>
               </div>
             </td>
@@ -1756,7 +1753,7 @@
                 onclick="iniciarEdicionVariante(${variant.varianteId})"
                 title="Editar variante"
               >
-                ‚úèÔ∏è
+                ??
               </button>
             </td>
           </tr>
@@ -1769,18 +1766,18 @@
         const idNumero = Number.parseInt(controlId, 10);
         if (!Number.isInteger(idNumero)) {
           console.warn(
-            "ID de control de cambio inv√°lido para cancelar solicitud:",
+            "ID de control de cambio inv·lido para cancelar solicitud:",
             controlId
           );
           return;
         }
 
         const result = await Swal.fire({
-          title: "¬øEst√°s seguro de cancelar esta solicitud de creaci√≥n?",
-          text: "Esta operaci√≥n rechazar√° la solicitud pendiente en el panel de aprobaciones.",
+          title: "øEst·s seguro de cancelar esta solicitud de creaciÛn?",
+          text: "Esta operaciÛn rechazar· la solicitud pendiente en el panel de aprobaciones.",
           icon: "warning",
           showCancelButton: true,
-          confirmButtonText: "S√≠, cancelar",
+          confirmButtonText: "SÌ, cancelar",
           cancelButtonText: "No, volver",
           confirmButtonColor: "#EF4444",
           cancelButtonColor: "#6b7280",
@@ -1830,7 +1827,7 @@
           return etiqueta || obtenerNombrePack(valor);
         }
 
-        return etiqueta || `Presentaci√≥n ${tamano.tamanoId}`;
+        return etiqueta || `PresentaciÛn ${tamano.tamanoId}`;
       }
 
       function renderStockInfoForVariant() {
@@ -1850,12 +1847,12 @@
 
         if (!presentaciones.length) {
           stockInfoAlert.textContent =
-            "El stock se asignar√° solo a esta variante (sin presentaciones adicionales configuradas en el producto maestro).";
+            "El stock se asignar· solo a esta variante (sin presentaciones adicionales configuradas en el producto maestro).";
           stockInfoBadges.innerHTML = "";
 
           if (stockProjectionSubtitle) {
             stockProjectionSubtitle.textContent =
-              "Esta variante usa el stock √∫nicamente en forma individual (sin packs configurados).";
+              "Esta variante usa el stock ˙nicamente en forma individual (sin packs configurados).";
           }
 
           if (stockProjectionTableBody) {
@@ -1872,7 +1869,7 @@
         }
 
         stockInfoAlert.textContent =
-          "‚ÑπÔ∏è El stock que ingreses aqu√≠ ser√° compartido autom√°ticamente para:";
+          "?? El stock que ingreses aquÌ ser· compartido autom·ticamente para:";
 
         const badgesHtml = presentaciones
           .map((t) => {
@@ -1883,7 +1880,7 @@
               ? rawValor
               : parseInt(rawValor, 10);
 
-            const icon = valor === 1 ? "‚úÖ" : "üì¶";
+            const icon = valor === 1 ? "?" : "??";
             return `<span class="badge badge-neutral" style="display:inline-flex; align-items:center; gap:0.25rem;">
         ${icon} ${label}
       </span>`;
@@ -1894,7 +1891,7 @@
 
         if (stockProjectionSubtitle) {
           stockProjectionSubtitle.textContent =
-            "Con el stock inicial calcularemos cu√°ntos paquetes puedes armar en cada presentaci√≥n.";
+            "Con el stock inicial calcularemos cu·ntos paquetes puedes armar en cada presentaciÛn.";
         }
 
         updateStockCapacityPreview();
@@ -1918,7 +1915,7 @@
           stockProjectionTableBody.innerHTML = `
             <tr>
               <td colspan="2" class="stock-projection-empty">
-                Define stock inicial para ver c√≥mo se reparte entre las presentaciones.
+                Define stock inicial para ver cÛmo se reparte entre las presentaciones.
               </td>
             </tr>
           `;
@@ -1941,7 +1938,7 @@
           const label = buildPresentacionLabel(t);
           if (!label) return;
 
-          const icon = valor === 1 ? "‚úÖ" : "üì¶";
+          const icon = valor === 1 ? "?" : "??";
 
           rows.push(`
             <tr>
@@ -1962,7 +1959,7 @@
           stockProjectionTableBody.innerHTML = `
             <tr>
               <td colspan="2" class="stock-projection-empty">
-                Con este stock no se alcanza a formar ning√∫n pack completo en las presentaciones configuradas.
+                Con este stock no se alcanza a formar ning˙n pack completo en las presentaciones configuradas.
               </td>
             </tr>
           `;
@@ -2048,13 +2045,13 @@
         });
 
         if (!variante) {
-          console.warn("Variante no encontrada para edici√≥n", varianteId);
+          console.warn("Variante no encontrada para ediciÛn", varianteId);
           return;
         }
 
         // Debug: verificar presentaciones/packs configurados en el maestro
         console.log(
-          "üîé Presentaciones configuradas en el producto maestro (tamanosConfiguradosMaestro):",
+          "?? Presentaciones configuradas en el producto maestro (tamanosConfiguradosMaestro):",
           tamanosConfiguradosMaestro
         );
 
@@ -2199,7 +2196,7 @@
         items.forEach((el, idx) => {
           const badge = el.querySelector(".image-order-badge");
           if (!badge) return;
-          badge.textContent = idx === 0 ? "‚≠ê" : String(idx + 1);
+          badge.textContent = idx === 0 ? "?" : String(idx + 1);
           badge.style.background =
             idx === 0 ? "var(--razo-orange)" : "rgba(17, 24, 39, 0.85)";
         });
@@ -2271,7 +2268,7 @@
 
           const badge = document.createElement("div");
           badge.className = "image-order-badge";
-          badge.textContent = index === 0 ? "‚≠ê" : String(index + 1);
+          badge.textContent = index === 0 ? "?" : String(index + 1);
           badge.style.background =
             index === 0 ? "var(--razo-orange)" : "rgba(17, 24, 39, 0.85)";
 
@@ -2289,7 +2286,7 @@
 
           const btn = document.createElement("button");
           btn.type = "button";
-          btn.textContent = "√ó";
+          btn.textContent = "◊";
           btn.className = "product-images-preview-remove";
           btn.addEventListener("click", () => {
             imagenesSeleccionadasMeta.splice(index, 1);
@@ -2327,7 +2324,7 @@
 
           const data = await response.json();
           if (!response.ok || !data.success) {
-            throw new Error(data.message || "No se pudieron cargar las im√°genes");
+            throw new Error(data.message || "No se pudieron cargar las im·genes");
           }
 
           const imagenes = Array.isArray(data?.data?.imagenes) ? data.data.imagenes : [];
@@ -2373,7 +2370,7 @@
 
               const badge = document.createElement("div");
               badge.className = "image-order-badge";
-              badge.textContent = idx === 0 ? "‚≠ê" : String(idx + 1);
+              badge.textContent = idx === 0 ? "?" : String(idx + 1);
               badge.style.background =
                 idx === 0 ? "var(--razo-orange)" : "rgba(17, 24, 39, 0.85)";
 
@@ -2387,7 +2384,7 @@
 
               const btn = document.createElement("button");
               btn.type = "button";
-              btn.textContent = "√ó";
+              btn.textContent = "◊";
               btn.className = "product-images-preview-remove";
               btn.addEventListener("click", () => {
                 wrapper.remove();
@@ -2438,9 +2435,9 @@
             }
           }
         } catch (error) {
-          console.error("Error al cargar im√°genes de variante:", error);
+          console.error("Error al cargar im·genes de variante:", error);
           if (variantImagesStatus) {
-            variantImagesStatus.textContent = "No se pudieron cargar im√°genes";
+            variantImagesStatus.textContent = "No se pudieron cargar im·genes";
           }
         }
       }
@@ -2524,14 +2521,14 @@
           let response;
           let data;
 
-          // PASO 1: Subir nuevas im√°genes a Cloudinary primero
+          // PASO 1: Subir nuevas im·genes a Cloudinary primero
           const orderedNewClientIds = Array.from(galeriaPreview?.children || [])
             .map((el) => (el?.dataset?.clientId || "").toString().trim())
             .filter(Boolean);
 
           const uploadedImages = [];
           if (orderedNewClientIds.length > 0) {
-            console.log("üì§ Subiendo", orderedNewClientIds.length, "im√°genes a Cloudinary...");
+            console.log("?? Subiendo", orderedNewClientIds.length, "im·genes a Cloudinary...");
             for (const clientId of orderedNewClientIds) {
               const item = (imagenesSeleccionadasMeta || []).find(
                 (it) => it && it.clientId === clientId
@@ -2553,7 +2550,7 @@
                 }
               }
             }
-            console.log("‚úÖ Todas las im√°genes subidas a Cloudinary");
+            console.log("? Todas las im·genes subidas a Cloudinary");
           }
 
           if (isEditing) {
@@ -2592,7 +2589,7 @@
             }
             console.log("=========================================");
 
-            // PASO 2: Construir galer√≠a con im√°genes existentes + nuevas URLs de Cloudinary
+            // PASO 2: Construir galerÌa con im·genes existentes + nuevas URLs de Cloudinary
             const orderedExisting = Array.from(
               galeriaImagenesVarianteServer?.children || []
             )
@@ -2607,7 +2604,7 @@
               galeria.push({ type: "existing", imagenId });
             });
 
-            // Agregar nuevas im√°genes con sus URLs de Cloudinary
+            // Agregar nuevas im·genes con sus URLs de Cloudinary
             orderedNewClientIds.forEach((clientId) => {
               const uploadedImage = uploadedImages.find(img => img.clientId === clientId);
               if (uploadedImage) {
@@ -2659,7 +2656,7 @@
             }
             console.log("=========================================");
 
-            // PASO 2: Construir galer√≠a solo con URLs de Cloudinary (ya subidas)
+            // PASO 2: Construir galerÌa solo con URLs de Cloudinary (ya subidas)
             const galeria = [];
             orderedNewClientIds.forEach((clientId) => {
               const uploadedImage = uploadedImages.find(img => img.clientId === clientId);
@@ -2783,8 +2780,8 @@
         marginMetrics.style.display = "grid";
         marginMessage.textContent =
           ganancia >= 0
-            ? "Excelente, est√°s generando ganancia por unidad."
-            : "Atenci√≥n: el costo supera al precio, revisa los datos.";
+            ? "Excelente, est·s generando ganancia por unidad."
+            : "AtenciÛn: el costo supera al precio, revisa los datos.";
         profitPerUnit.style.color =
           ganancia >= 0 ? "var(--success-color)" : "var(--danger-color)";
         marginPercentage.style.color =
@@ -2829,9 +2826,9 @@
         const accion = nuevoEstado ? "mostrar" : "ocultar";
         const esOcultar = !nuevoEstado;
 
-        console.log('üîÑ Toggle variante:', { varianteId, estadoActual, nuevoEstado });
+        console.log('?? Toggle variante:', { varianteId, estadoActual, nuevoEstado });
 
-        const mensaje = `¬øEst√°s seguro de ${accion} esta variante?`;
+        const mensaje = `øEst·s seguro de ${accion} esta variante?`;
         let confirmado = false;
 
         if (
@@ -2844,7 +2841,7 @@
             title: esOcultar ? "Ocultar variante" : "Mostrar variante",
             text: mensaje,
             showCancelButton: true,
-            confirmButtonText: esOcultar ? "S√≠, ocultar" : "S√≠, mostrar",
+            confirmButtonText: esOcultar ? "SÌ, ocultar" : "SÌ, mostrar",
             cancelButtonText: "Cancelar",
             confirmButtonColor: esOcultar ? "#dc3545" : "#F97316",
             cancelButtonColor: "#6b7280",
@@ -2867,23 +2864,23 @@
             }
           );
 
-          console.log('üì• Response del backend:', response);
+          console.log('?? Response del backend:', response);
 
           if (response.ok && response.data && response.data.success) {
             showToast(
               `Variante ${nuevoEstado ? 'visible' : 'oculta'} exitosamente`,
               'success'
             );
-            console.log('üîÑ Recargando producto...');
+            console.log('?? Recargando producto...');
             await loadProducto(); // Recargar producto y variantes
-            console.log('‚úÖ Producto recargado');
+            console.log('? Producto recargado');
           } else {
             const errorMsg = response.data?.message || 'Error al actualizar variante';
-            console.error('‚ùå Error del backend:', errorMsg);
+            console.error('? Error del backend:', errorMsg);
             throw new Error(errorMsg);
           }
         } catch (error) {
-          console.error('üí• Error al toggle visibilidad:', error);
+          console.error('?? Error al toggle visibilidad:', error);
           showToast(error.message || 'Error al cambiar visibilidad de la variante', 'error');
         }
       }

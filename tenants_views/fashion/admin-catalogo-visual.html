@@ -1,18 +1,15 @@
-ï»¿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>CatÃ¡logo Visual - Admin Fashion Box</title>
+    <title>Catálogo Visual - Admin Fashion Box</title>
     <link rel="icon" type="image/png" href="/icon/Logo_Fashion.png" />
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-    <!-- PROTECCIÃ“N DE AUTENTICACIÃ“N ADMIN -->
+    <!-- PROTECCIÓN DE AUTENTICACIÓN ADMIN -->
     <script src="js/auth-guard-admin.js"></script>
-
-    <!-- SISTEMA DE RENOVACIÃ“N DE TOKENS -->
-    <script src="js/token-refresh.js"></script>
 
     <link
       rel="stylesheet"
@@ -24,7 +21,7 @@
     <link rel="stylesheet" href="css/admin-catalogo-visual-fashion.css" />
     <link rel="stylesheet" href="css/mobile-responsive-fashion.css" />
   </head>
-  <body data-sidebar="admin" data-page-title="CatÃ¡logo Visual">
+  <body data-sidebar="admin" data-page-title="Catálogo Visual">
     <div class="admin-layout">
       <!-- Sidebar -->
       <div id="sidebar-container"></div>
@@ -37,7 +34,7 @@
           <!-- Breadcrumb Navigation -->
           <nav class="catalog-breadcrumb" id="breadcrumb">
             <a href="#" class="breadcrumb-item active" data-level="categories">
-              CategorÃ­as
+              Categorías
             </a>
           </nav>
 
@@ -59,16 +56,16 @@
           <div id="categoriesView" class="catalog-view">
             <div id="categoriesLoading" class="catalog-loading">
               <div class="spinner"></div>
-              <p>Cargando categorÃ­as...</p>
+              <p>Cargando categorías...</p>
             </div>
 
             <div id="categoriesGrid" class="catalog-grid" style="display: none"></div>
 
             <div id="categoriesEmpty" class="catalog-empty" style="display: none">
-              <div class="empty-state-icon">ğŸ·ï¸</div>
-              <h3 class="empty-state-title">No se encontraron categorÃ­as</h3>
+              <div class="empty-state-icon">???</div>
+              <h3 class="empty-state-title">No se encontraron categorías</h3>
               <p class="empty-state-text">
-                Intenta ajustar tu bÃºsqueda o crea nuevas categorÃ­as.
+                Intenta ajustar tu búsqueda o crea nuevas categorías.
               </p>
             </div>
           </div>
@@ -83,10 +80,10 @@
             <div id="productsGrid" class="catalog-grid" style="display: none"></div>
 
             <div id="productsEmpty" class="catalog-empty" style="display: none">
-              <div class="empty-state-icon">ğŸ“¦</div>
+              <div class="empty-state-icon">??</div>
               <h3 class="empty-state-title">No se encontraron productos</h3>
               <p class="empty-state-text">
-                Esta categorÃ­a no tiene productos o no coinciden con tu bÃºsqueda.
+                Esta categoría no tiene productos o no coinciden con tu búsqueda.
               </p>
             </div>
           </div>

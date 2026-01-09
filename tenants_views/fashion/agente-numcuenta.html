@@ -1,4 +1,4 @@
-ï»¿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
@@ -8,7 +8,6 @@
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="js/auth-guard-agent.js"></script>
-    <script src="js/token-refresh.js"></script>
 
     <link
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
@@ -34,10 +33,10 @@
           <section class="admin-card" style="padding: 1.5rem; display: grid; gap: 1rem;">
             <div style="display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; align-items: center;">
               <div>
-                <p class="simple-hero__eyebrow">Cobranza Â· Perfil del agente</p>
+                <p class="simple-hero__eyebrow">Cobranza · Perfil del agente</p>
                 <h2 style="margin: 0; font-size: 1.5rem;">Mis Datos de Cobranza</h2>
                 <p style="margin: 0.35rem 0 0; color: #6b7280; max-width: 640px;">
-                  Completa la cuenta donde deseas recibir las transferencias de tus clientes. Esta informaciÃ³n aparecerÃ¡ en el checkout cuando el cliente estÃ© asignado a ti y elija Transferencia Bancaria.
+                  Completa la cuenta donde deseas recibir las transferencias de tus clientes. Esta información aparecerá en el checkout cuando el cliente esté asignado a ti y elija Transferencia Bancaria.
                 </p>
               </div>
               <button id="btnGuardarDatos" type="button" class="btn btn-primary" style="min-width: 220px;">
@@ -49,7 +48,7 @@
 
           <section class="admin-card" style="display: grid; gap: 1.25rem;">
             <div class="alert alert-info" role="alert" style="margin: 0;">
-              <strong>Nota:</strong> Esta es la cuenta que verÃ¡n tus clientes asignados al seleccionar Transferencia Bancaria.
+              <strong>Nota:</strong> Esta es la cuenta que verán tus clientes asignados al seleccionar Transferencia Bancaria.
             </div>
 
             <div class="row g-4">
@@ -60,23 +59,23 @@
                   <div style="display: grid; gap: 0.5rem; font-size: 0.95rem;">
                     <div>
                       <p class="preview-label">Banco</p>
-                      <p id="previewBanco" class="preview-value">â€”</p>
+                      <p id="previewBanco" class="preview-value">—</p>
                     </div>
                     <div>
                       <p class="preview-label">Titular</p>
-                      <p id="previewTitular" class="preview-value">â€”</p>
+                      <p id="previewTitular" class="preview-value">—</p>
                     </div>
                     <div>
                       <p class="preview-label">Cuenta</p>
-                      <p id="previewCuenta" class="preview-value">â€”</p>
+                      <p id="previewCuenta" class="preview-value">—</p>
                     </div>
                     <div>
                       <p class="preview-label">CLABE</p>
-                      <p id="previewClabe" class="preview-value">â€”</p>
+                      <p id="previewClabe" class="preview-value">—</p>
                     </div>
                   </div>
                   <p style="margin-top: 1.25rem; font-size: 0.85rem; color: rgba(248, 250, 252, 0.75);">
-                    * Se sincroniza automÃ¡ticamente al guardar cambios.
+                    * Se sincroniza automáticamente al guardar cambios.
                   </p>
                 </div>
               </div>
@@ -85,20 +84,20 @@
                 <form id="formDatosAgente" class="form-grid" style="display: grid; gap: 1rem;">
                   <label class="form-group">
                     <span>Banco</span>
-                    <input id="inputBanco" name="banco" type="text" class="form-input" placeholder="InstituciÃ³n financiera" required />
+                    <input id="inputBanco" name="banco" type="text" class="form-input" placeholder="Institución financiera" required />
                   </label>
                   <label class="form-group">
                     <span>Nombre del titular</span>
-                    <input id="inputTitular" name="titular" type="text" class="form-input" placeholder="Tu nombre o razÃ³n social" required />
+                    <input id="inputTitular" name="titular" type="text" class="form-input" placeholder="Tu nombre o razón social" required />
                   </label>
                   <label class="form-group">
-                    <span>NÃºmero de cuenta</span>
+                    <span>Número de cuenta</span>
                     <input
                       id="inputCuenta"
                       name="numeroCuenta"
                       type="text"
                       class="form-input"
-                      placeholder="Solo nÃºmeros"
+                      placeholder="Solo números"
                       inputmode="numeric"
                       pattern="[0-9]+"
                       maxlength="20"
@@ -112,7 +111,7 @@
                       name="clabe"
                       type="text"
                       class="form-input"
-                      placeholder="18 dÃ­gitos"
+                      placeholder="18 dígitos"
                       inputmode="numeric"
                       pattern="[0-9]{18}"
                       maxlength="18"

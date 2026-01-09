@@ -1,9 +1,9 @@
-Ôªø<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Recepci√≥n de Inventario - Admin Fashion Box</title>
+    <title>RecepciÛn de Inventario - Admin Fashion Box</title>
     <link rel="icon" type="image/png" href="/icon/Logo_Fashion.png" />
 
     <!-- SWEETALERT2 -->
@@ -12,11 +12,8 @@
     <!-- EXCELJS -->
     <script src="https://cdn.jsdelivr.net/npm/exceljs@4.3.0/dist/exceljs.min.js"></script>
 
-    <!-- PROTECCI√ìN DE AUTENTICACI√ìN ADMIN -->
+    <!-- PROTECCI”N DE AUTENTICACI”N ADMIN -->
     <script src="js/auth-guard-admin.js"></script>
-
-    <!-- SISTEMA DE RENOVACI√ìN DE TOKENS -->
-    <script src="js/token-refresh.js"></script>
 
     <link rel="stylesheet" href="css/styles-fashion.css" />
     <link rel="stylesheet" href="css/fashion-theme-fashion.css" />
@@ -37,7 +34,7 @@
         <div id="admin-header-container"></div>
 
         <div class="admin-content" style="display: grid; gap: 1.25rem">
-          <!-- √ìrdenes de Compra Pendientes -->
+          <!-- ”rdenes de Compra Pendientes -->
           <section class="admin-card" style="padding: 1.25rem">
             <div
               style="
@@ -54,21 +51,21 @@
                   id="ocSearch"
                   type="text"
                   class="form-input"
-                  placeholder="Ej: 120 ¬∑ Proveedor..."
+                  placeholder="Ej: 120 ∑ Proveedor..."
                 />
               </div>
 
               <div style="min-width: 320px; flex: 1">
                 <label for="ocSelect" class="form-label">Orden de Compra</label>
                 <select id="ocSelect" class="form-input" disabled>
-                  <option value="">Cargando √≥rdenes‚Ä¶</option>
+                  <option value="">Cargando ÛrdenesÖ</option>
                 </select>
               </div>
 
               <div style="display: grid; gap: 0.25rem; min-width: 240px">
                 <div style="font-size: 0.85rem; color: #6b7280">Proveedor</div>
-                <div id="ocProveedor" style="font-weight: 700; color: #111827">‚Äî</div>
-                <div id="ocMeta" style="font-size: 0.85rem; color: #6b7280">‚Äî</div>
+                <div id="ocProveedor" style="font-weight: 700; color: #111827">ó</div>
+                <div id="ocMeta" style="font-size: 0.85rem; color: #6b7280">ó</div>
               </div>
             </div>
           </section>
@@ -84,8 +81,8 @@
                 margin-bottom: 0.75rem;
               "
             >
-              <h2 style="margin: 0; font-size: 1.1rem">Auditor√≠a de Recepci√≥n</h2>
-              <span id="ocBadge" class="admin-badge secondary">‚Äî</span>
+              <h2 style="margin: 0; font-size: 1.1rem">AuditorÌa de RecepciÛn</h2>
+              <span id="ocBadge" class="admin-badge secondary">ó</span>
             </div>
 
             <div
@@ -120,7 +117,7 @@
                     "
                   >
                     <div style="font-weight: 800; color: #111827">
-                      üìú Ordenado (Pendiente)
+                      ?? Ordenado (Pendiente)
                     </div>
                     <div id="pendienteBadge" class="admin-badge info">0 PENDIENTES</div>
                   </div>
@@ -162,7 +159,7 @@
                     "
                   >
                     <div style="font-weight: 800; color: #111827">
-                      ‚úÖ Recibido (Confirmado)
+                      ? Recibido (Confirmado)
                     </div>
                     <div id="recibidoBadge" class="admin-badge secondary">0 RECIBIDOS</div>
                   </div>
@@ -203,13 +200,13 @@
                     "
                   >
                     <div style="font-weight: 800; color: #111827">
-                      üßæ Resumen de Sesi√≥n
+                      ?? Resumen de SesiÛn
                     </div>
-                    <div id="sesionBadge" class="admin-badge secondary">0 √çTEMS</div>
+                    <div id="sesionBadge" class="admin-badge secondary">0 ÕTEMS</div>
                   </div>
 
                   <div id="sesionEmpty" style="color: #6b7280; font-size: 0.95rem; padding: 0.75rem; border: 1px dashed rgba(107, 114, 128, 0.35); border-radius: 0.75rem;">
-                    Agrega cantidades a la sesi√≥n para finalizar la recepci√≥n en un solo paso.
+                    Agrega cantidades a la sesiÛn para finalizar la recepciÛn en un solo paso.
                   </div>
 
                   <div id="sesionTableWrap" class="table-responsive" style="display:none;">
@@ -227,7 +224,7 @@
                   </div>
 
                   <div class="d-flex justify-content-between align-items-center mt-3 p-3 bg-light rounded border">
-                    <span class="fw-bold text-muted">Total Sesi√≥n:</span>
+                    <span class="fw-bold text-muted">Total SesiÛn:</span>
                     <span class="fs-5 fw-bold" style="color:#111827;" id="lbl-total-sesion">$0.00</span>
                   </div>
 
@@ -238,7 +235,7 @@
                       class="btn btn-primary w-100"
                       disabled
                     >
-                      üìù Finalizar Recepci√≥n y Generar Cuenta por Pagar
+                      ?? Finalizar RecepciÛn y Generar Cuenta por Pagar
                     </button>
                   </div>
                 </div>
@@ -247,7 +244,7 @@
             <div id="pagination-controls" class="pagination-controls"></div>
           </section>
 
-          <!-- Bot√≥n de Exportar (siempre visible cuando hay datos) -->
+          <!-- BotÛn de Exportar (siempre visible cuando hay datos) -->
           <div style="margin-top: 1rem;">
             <div style="display: flex; justify-content: flex-end; padding: 1rem; background: white; border-radius: 0.75rem; border: 1px solid rgba(0,0,0,0.1);">
               <button id="btn-exportar-entradas" type="button" class="btn btn-success">
@@ -315,7 +312,7 @@
           (x) => String(x.detalleId) === String(detalleId)
         );
         if (!item) {
-          showToastError("No se encontr√≥ el item");
+          showToastError("No se encontrÛ el item");
           return;
         }
 
@@ -325,7 +322,7 @@
         const max = Number.parseInt(input?.dataset?.pendiente, 10) || 0;
 
         if (!Number.isInteger(cantidad) || cantidad <= 0) {
-          showToastError("Ingresa una cantidad v√°lida");
+          showToastError("Ingresa una cantidad v·lida");
           return;
         }
 
@@ -333,9 +330,9 @@
           if (typeof Swal !== "undefined" && Swal && typeof Swal.fire === "function") {
             const resp = await Swal.fire({
               icon: "warning",
-              title: "Est√°s recibiendo m√°s de lo solicitado. ¬øDeseas continuar?",
+              title: "Est·s recibiendo m·s de lo solicitado. øDeseas continuar?",
               showCancelButton: true,
-              confirmButtonText: "S√≠, continuar",
+              confirmButtonText: "SÌ, continuar",
               cancelButtonText: "Cancelar",
               confirmButtonColor: "#F97316",
             });
@@ -375,7 +372,7 @@
 
         if (input) input.value = "";
         hasSessionData = true;
-        showToastSuccess("Agregado a sesi√≥n");
+        showToastSuccess("Agregado a sesiÛn");
         persistSesionRecepcion();
         renderizarTablaSesion();
         renderSplit();
@@ -515,7 +512,7 @@
         const id = safeText(oc.ordenCompraId);
         const prov = safeText(oc.proveedorNombre);
         const est = safeText(oc.estatus);
-        return `OC #${id} ‚Äî ${prov} (${est})`;
+        return `OC #${id} ó ${prov} (${est})`;
       };
 
       const renderOrdenes = (filterText) => {
@@ -530,7 +527,7 @@
         const placeholder = document.createElement("option");
         placeholder.value = "";
         placeholder.textContent = ordenes.length
-          ? "Selecciona una OC‚Ä¶"
+          ? "Selecciona una OCÖ"
           : "No hay OCs con ese filtro";
         ocSelect.appendChild(placeholder);
 
@@ -550,14 +547,14 @@
 
       const loadOrdenes = async () => {
         ocSelect.disabled = true;
-        ocSelect.innerHTML = "<option value=\"\">Cargando √≥rdenes‚Ä¶</option>";
+        ocSelect.innerHTML = "<option value=\"\">Cargando ÛrdenesÖ</option>";
         try {
           const resp = await apiCall("/admin/ordenes-compra?estatus=Pendiente,Parcial", {
             method: "GET",
           });
 
           if (!resp.ok) {
-            throw new Error(resp.data?.message || "No se pudieron cargar √≥rdenes");
+            throw new Error(resp.data?.message || "No se pudieron cargar Ûrdenes");
           }
 
           state.ordenes = Array.isArray(resp.data?.data?.ordenes)
@@ -581,7 +578,7 @@
         } catch (error) {
           ocSelect.disabled = true;
           ocSelect.innerHTML = "<option value=\"\">Error cargando OCs</option>";
-          setEmpty(error.message || "No se pudieron cargar √≥rdenes");
+          setEmpty(error.message || "No se pudieron cargar Ûrdenes");
         }
       };
 
@@ -785,7 +782,7 @@
           const btn = document.createElement("button");
           btn.type = "button";
           btn.className = "btn btn-primary btn-agregar-sesion";
-          btn.textContent = "‚ûï Agregar";
+          btn.textContent = "? Agregar";
           btn.style.padding = "0.45rem 0.75rem";
           btn.style.fontSize = "0.875rem";
           btn.dataset.detalleId = String(item.detalleId);
@@ -849,7 +846,7 @@
           top.style.gap = "0.75rem";
           top.innerHTML = `
             <div style="font-weight: 800; color: ${isDone ? "#10b981" : "#f59e0b"}">
-              ${isDone ? "‚úÖ Completo" : "üü° Parcial"}
+              ${isDone ? "? Completo" : "?? Parcial"}
             </div>
             <div style="font-size: 0.85rem; color: #6b7280">${recibidoPzas}/${solicitadoPzas}</div>
           `;
@@ -898,7 +895,7 @@
         hasSessionData = count > 0;
 
         if (sesionBadge) {
-          sesionBadge.textContent = `${count} √çTEMS`;
+          sesionBadge.textContent = `${count} ÕTEMS`;
         }
         if (lblTotalSesion) {
           lblTotalSesion.textContent = formatMoneyMx(totalMonto);
@@ -912,7 +909,7 @@
         }
         if (btnFinalizarRecepcion) {
           btnFinalizarRecepcion.style.display = count ? "inline-flex" : "none";
-          btnFinalizarRecepcion.textContent = `üìù Finalizar Recepci√≥n y Generar Cuenta por Pagar (${count} √≠tems)`;
+          btnFinalizarRecepcion.textContent = `?? Finalizar RecepciÛn y Generar Cuenta por Pagar (${count} Ìtems)`;
         }
 
         if (btnConfirmarGenerarCxp) {
@@ -922,7 +919,7 @@
 
         if (sesionFloatingCounter) {
           sesionFloatingCounter.style.display = count ? "block" : "none";
-          sesionFloatingCounter.textContent = `Items en sesi√≥n: ${count} | Total: ${formatMoneyMx(totalMonto)}`;
+          sesionFloatingCounter.textContent = `Items en sesiÛn: ${count} | Total: ${formatMoneyMx(totalMonto)}`;
         }
 
         if (!tbodySesion) return;
@@ -1001,14 +998,14 @@
           if (typeof Swal !== "undefined" && Swal && typeof Swal.fire === "function") {
             await Swal.fire({
               icon: "warning",
-              title: "Sesi√≥n Expirada",
-              text: "Tu sesi√≥n ha expirado. Por favor inicia sesi√≥n nuevamente.",
+              title: "SesiÛn Expirada",
+              text: "Tu sesiÛn ha expirado. Por favor inicia sesiÛn nuevamente.",
               confirmButtonColor: "#F97316",
               allowOutsideClick: false,
             });
           }
           window.location.href = "/login.html";
-          throw new Error("Sesi√≥n expirada");
+          throw new Error("SesiÛn expirada");
         }
 
         return { ok: response.ok, status: response.status, data };
@@ -1020,11 +1017,11 @@
           return;
         }
         if (!Array.isArray(sesionRecepcion) || sesionRecepcion.length === 0) {
-          showToastError("No hay items en la sesi√≥n");
+          showToastError("No hay items en la sesiÛn");
           return;
         }
 
-        // Calcular totales para el modal de confirmaci√≥n
+        // Calcular totales para el modal de confirmaciÛn
         let totalPiezasSesion = 0;
         let montoTotalSesion = 0;
         const itemsOrden = Array.isArray(state.items) ? state.items : [];
@@ -1033,7 +1030,7 @@
         let tablaResumen = '<table style="width:100%; border-collapse: collapse; margin: 1rem 0;">';
         tablaResumen += '<thead><tr style="background: #f3f4f6; text-align: left;">';
         tablaResumen += '<th style="padding: 0.5rem; border: 1px solid #e5e7eb;">Producto</th>';
-        tablaResumen += '<th style="padding: 0.5rem; border: 1px solid #e5e7eb; text-align: center;">Piezas Sesi√≥n</th>';
+        tablaResumen += '<th style="padding: 0.5rem; border: 1px solid #e5e7eb; text-align: center;">Piezas SesiÛn</th>';
         tablaResumen += '<th style="padding: 0.5rem; border: 1px solid #e5e7eb; text-align: center;">Total Recibido</th>';
         tablaResumen += '<th style="padding: 0.5rem; border: 1px solid #e5e7eb; text-align: right;">Subtotal</th>';
         tablaResumen += '</tr></thead><tbody>';
@@ -1046,10 +1043,10 @@
           const piezasPorPaquete = Number.parseInt(itemSesion.piezasPorPaquete || itemSesion.piezasporpaquete, 10) || 1;
           const costoUnitario = Number.parseFloat(itemSesion.costoUnitario || itemSesion.costounitario) || 0;
           
-          // Cantidad ya recibida en BD (antes de esta sesi√≥n)
+          // Cantidad ya recibida en BD (antes de esta sesiÛn)
           const cantidadRecibidaBD = itemOC ? recibidoPzasValue(itemOC) : 0;
           
-          // Total final = Lo que ya hab√≠a + Lo que acabo de picar
+          // Total final = Lo que ya habÌa + Lo que acabo de picar
           const totalFinal = cantidadRecibidaBD + cantidadSesion;
           
           // Calcular subtotal
@@ -1073,15 +1070,15 @@
         tablaResumen += `<td style="padding: 0.75rem; border: 1px solid #e5e7eb; text-align: right; color: #F97316; font-size: 1.1rem;">${formatMoneyMx(montoTotalSesion)}</td>`;
         tablaResumen += '</tr></tfoot></table>';
 
-        // Modal de confirmaci√≥n con resumen
+        // Modal de confirmaciÛn con resumen
         const confirmacion = await Swal.fire({
-          title: 'üìã Confirmar Recepci√≥n',
+          title: '?? Confirmar RecepciÛn',
           html: `
             <div style="text-align: left;">
-              <p style="margin-bottom: 1rem; color: #6b7280;">Revisa el resumen de la recepci√≥n antes de continuar:</p>
+              <p style="margin-bottom: 1rem; color: #6b7280;">Revisa el resumen de la recepciÛn antes de continuar:</p>
               ${tablaResumen}
               <div style="margin-top: 1rem; padding: 0.75rem; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 0.375rem;">
-                <strong>‚ö†Ô∏è Nota:</strong> Esta acci√≥n generar√° una Cuenta por Pagar y actualizar√° el inventario.
+                <strong>?? Nota:</strong> Esta acciÛn generar· una Cuenta por Pagar y actualizar· el inventario.
               </div>
             </div>
           `,
@@ -1097,23 +1094,23 @@
           return;
         }
 
-        // Modal para capturar remisi√≥n y archivo con sugerencia inteligente
+        // Modal para capturar remisiÛn y archivo con sugerencia inteligente
         const sugerenciaRemision = getSuggestedRemision();
         const lastRemision = localStorage.getItem('last_remision_code');
         
         const modal = await Swal.fire({
-          title: "üìù Finalizar Recepci√≥n y Generar Cuenta por Pagar",
+          title: "?? Finalizar RecepciÛn y Generar Cuenta por Pagar",
           html: `
             <div style="text-align:left;">
-              <label for="swalRef" style="display:block; font-weight:700; margin-bottom:0.35rem;">N√∫mero de Remisi√≥n/Factura</label>
+              <label for="swalRef" style="display:block; font-weight:700; margin-bottom:0.35rem;">N˙mero de RemisiÛn/Factura</label>
               <input id="swalRef" class="swal2-input" value="${sugerenciaRemision}" placeholder="Ej: REM-5002" style="margin:0;" />
               ${sugerenciaRemision ? `
                 <div style="margin-top: 0.5rem; padding: 0.75rem; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 0.375rem; font-size: 0.875rem;">
-                  <strong>üí° Sugerencia:</strong> El consecutivo anterior fue <strong>${lastRemision}</strong>
+                  <strong>?? Sugerencia:</strong> El consecutivo anterior fue <strong>${lastRemision}</strong>
                 </div>
               ` : ''}
               <div style="height: 0.75rem;"></div>
-              <label for="swalFile" style="display:block; font-weight:700; margin-bottom:0.35rem;">Foto de Remisi√≥n (opcional)</label>
+              <label for="swalFile" style="display:block; font-weight:700; margin-bottom:0.35rem;">Foto de RemisiÛn (opcional)</label>
               <input id="swalFile" type="file" class="swal2-file" accept="image/*,application/pdf" />
             </div>
           `,
@@ -1125,11 +1122,11 @@
           preConfirm: () => {
             const ref = document.getElementById("swalRef")?.value?.trim();
             if (!ref) {
-              Swal.showValidationMessage("El n√∫mero de remisi√≥n/factura es obligatorio");
+              Swal.showValidationMessage("El n˙mero de remisiÛn/factura es obligatorio");
               return null;
             }
             
-            // Guardar la remisi√≥n para la pr√≥xima vez
+            // Guardar la remisiÛn para la prÛxima vez
             saveLastRemision(ref);
             
             const file = document.getElementById("swalFile")?.files?.[0] || null;
@@ -1153,7 +1150,7 @@
           if (btnFinalizarRecepcion) btnFinalizarRecepcion.disabled = true;
           const resp = await apiCallFormData("/admin/recepcion-masiva", fd);
           if (!resp.ok) {
-            throw new Error(resp.data?.message || "No se pudo finalizar recepci√≥n");
+            throw new Error(resp.data?.message || "No se pudo finalizar recepciÛn");
           }
 
           clearSesionRecepcionStorage(state.orden.ordenCompraId);
@@ -1162,7 +1159,7 @@
           isExported = false;
           renderizarTablaSesion();
           await loadRecepcion(state.orden.ordenCompraId);
-          showToastSuccess("Recepci√≥n finalizada");
+          showToastSuccess("RecepciÛn finalizada");
         } catch (error) {
           console.error(error);
           showToastError(error.message || "Error al finalizar");
@@ -1186,14 +1183,14 @@
           );
 
           if (!resp.ok) {
-            throw new Error(resp.data?.message || "No se pudo cargar recepci√≥n");
+            throw new Error(resp.data?.message || "No se pudo cargar recepciÛn");
           }
 
           state.orden = resp.data?.data?.orden || null;
           state.items = Array.isArray(resp.data?.data?.items) ? resp.data.data.items : [];
 
           if (!state.orden) {
-            setEmpty("No se encontr√≥ informaci√≥n de la orden");
+            setEmpty("No se encontrÛ informaciÛn de la orden");
             return;
           }
 
@@ -1204,10 +1201,10 @@
             if (Array.isArray(stored) && stored.length > 0) {
               const confirm = await Swal.fire({
                 icon: "question",
-                title: "Recuperar sesi√≥n",
-                text: "Se encontr√≥ una sesi√≥n previa sin finalizar. ¬øDeseas recuperarla?",
+                title: "Recuperar sesiÛn",
+                text: "Se encontrÛ una sesiÛn previa sin finalizar. øDeseas recuperarla?",
                 showCancelButton: true,
-                confirmButtonText: "S√≠, recuperar",
+                confirmButtonText: "SÌ, recuperar",
                 cancelButtonText: "No",
                 confirmButtonColor: "#F97316",
               });
@@ -1219,9 +1216,9 @@
             }
           }
 
-          ocProveedor.textContent = safeText(state.orden.proveedorNombre || "‚Äî");
+          ocProveedor.textContent = safeText(state.orden.proveedorNombre || "ó");
           ocMeta.textContent = `Estatus: ${safeText(state.orden.estatus)}`;
-          ocBadge.textContent = `OC #${safeText(state.orden.ordenCompraId)} ¬∑ ${safeText(
+          ocBadge.textContent = `OC #${safeText(state.orden.ordenCompraId)} ∑ ${safeText(
             state.orden.estatus
           )}`;
 
@@ -1230,7 +1227,7 @@
           renderizarTablaSesion();
         } catch (error) {
           console.error(error);
-          setEmpty(error.message || "Error al cargar recepci√≥n");
+          setEmpty(error.message || "Error al cargar recepciÛn");
         } finally {
           setLoading(false);
         }
@@ -1270,16 +1267,16 @@
         if (!id) {
           state.orden = null;
           state.items = [];
-          ocProveedor.textContent = "‚Äî";
-          ocMeta.textContent = "‚Äî";
-          ocBadge.textContent = "‚Äî";
+          ocProveedor.textContent = "ó";
+          ocMeta.textContent = "ó";
+          ocBadge.textContent = "ó";
           setEmpty("Selecciona una orden de compra para empezar.");
           return;
         }
 
-        ocProveedor.textContent = safeText(selected?.dataset?.proveedorNombre || "‚Äî");
-        ocMeta.textContent = "‚Äî";
-        ocBadge.textContent = `OC #${safeText(id)} ¬∑ Cargando‚Ä¶`;
+        ocProveedor.textContent = safeText(selected?.dataset?.proveedorNombre || "ó");
+        ocMeta.textContent = "ó";
+        ocBadge.textContent = `OC #${safeText(id)} ∑ CargandoÖ`;
         await loadRecepcion(id);
       });
 
@@ -1405,7 +1402,7 @@
         }
       }
 
-      /* Im√°genes de producto miniatura en tablas */
+      /* Im·genes de producto miniatura en tablas */
       .img-mini-tabla {
         width: 40px;
         height: 40px;
@@ -1421,7 +1418,7 @@
         text-overflow: ellipsis;
       }
 
-      /* Inputs de cantidad m√°s compactos */
+      /* Inputs de cantidad m·s compactos */
       .input-mini-tabla {
         max-width: 80px;
         padding: 0.25rem 0.5rem;
@@ -1444,7 +1441,7 @@
         background: #ecfdf5;
       }
 
-      /* Asegurar grid responsivo aunque Bootstrap no est√© cargado */
+      /* Asegurar grid responsivo aunque Bootstrap no estÈ cargado */
       #recepcionSplit .row {
         display: flex;
         flex-wrap: wrap;

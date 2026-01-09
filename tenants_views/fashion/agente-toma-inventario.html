@@ -1,16 +1,15 @@
-ï»¿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AuditorÃ­a de Inventario - Agente Fashion Box</title>
+    <title>Auditoría de Inventario - Agente Fashion Box</title>
     <link rel="icon" type="image/png" href="/icon/Logo_Fashion.png" />
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-    <!-- ProtecciÃ³n de autenticaciÃ³n -->
+    <!-- Protección de autenticación -->
     <script src="js/auth-guard-agent.js"></script>
-    <script src="js/token-refresh.js"></script>
 
     <link
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
@@ -21,7 +20,7 @@
     <link rel="stylesheet" href="css/admin-fashion.css" />
       <link rel="stylesheet" href="css/mobile-responsive-fashion.css" />
   </head>
-  <body data-sidebar="agent" data-page-title="AuditorÃ­a de Inventario">
+  <body data-sidebar="agent" data-page-title="Auditoría de Inventario">
     <div class="admin-layout">
       <div id="sidebar-container"></div>
 
@@ -32,17 +31,17 @@
           <section class="admin-card" style="padding: 1.25rem">
             <div style="display: grid; gap: 1rem">
               <div>
-                <h2 class="admin-card-title" style="margin: 0">AuditorÃ­a de Inventario</h2>
+                <h2 class="admin-card-title" style="margin: 0">Auditoría de Inventario</h2>
                 <p class="admin-card-subtitle" style="margin: 0.25rem 0 0 0">
-                  Registra conteos por SKU seleccionando una sesiÃ³n activa.
+                  Registra conteos por SKU seleccionando una sesión activa.
                 </p>
               </div>
 
               <div style="display: grid; gap: 0.75rem; grid-template-columns: 1fr;">
                 <div style="min-width: 280px">
-                  <label for="sesionSelect" class="form-label">SesiÃ³n activa</label>
+                  <label for="sesionSelect" class="form-label">Sesión activa</label>
                   <select id="sesionSelect" class="form-input">
-                    <option value="">Selecciona una sesiÃ³nâ€¦</option>
+                    <option value="">Selecciona una sesión…</option>
                   </select>
                 </div>
 
@@ -61,7 +60,7 @@
                         id="skuInput"
                         type="text"
                         class="form-input"
-                        placeholder="Busca por SKU o nombreâ€¦"
+                        placeholder="Busca por SKU o nombre…"
                         autocomplete="off"
                         style="font-size: 1.1rem; padding: 0.85rem"
                       />
@@ -139,7 +138,7 @@
                     color: #6b7280;
                   "
                 >
-                  Ãšltimo registro: â€”
+                  Último registro: —
                 </div>
               </div>
             </div>
@@ -302,7 +301,7 @@
 
           const optDefault = document.createElement("option");
           optDefault.value = "";
-          optDefault.textContent = "Selecciona una sesiÃ³nâ€¦";
+          optDefault.textContent = "Selecciona una sesión…";
           sesionSelect.appendChild(optDefault);
 
           for (const s of sesiones) {
@@ -321,7 +320,7 @@
 
       const getAgenteToken = () => {
         // En este proyecto, los agentes usan token de staff/admin (Fashion Box_admin_token)
-        // porque el backend expone endpoints de auditorÃ­a bajo /api/admin y se autoriza con authorizeAdminOrAgente.
+        // porque el backend expone endpoints de auditoría bajo /api/admin y se autoriza con authorizeAdminOrAgente.
         return localStorage.getItem("Fashion Box_admin_token");
       };
 
@@ -356,8 +355,8 @@
           if (!Number.isInteger(sesionId) || sesionId <= 0) {
             Swal.fire({
               icon: "warning",
-              title: "Selecciona una sesiÃ³n",
-              text: "Debes seleccionar una sesiÃ³n activa antes de registrar.",
+              title: "Selecciona una sesión",
+              text: "Debes seleccionar una sesión activa antes de registrar.",
               confirmButtonColor: "#F97316",
             });
             return;
@@ -377,8 +376,8 @@
           if (!Number.isInteger(cantidad) || cantidad < 0) {
             Swal.fire({
               icon: "warning",
-              title: "Cantidad invÃ¡lida",
-              text: "La cantidad debe ser un nÃºmero entero mayor o igual a 0.",
+              title: "Cantidad inválida",
+              text: "La cantidad debe ser un número entero mayor o igual a 0.",
               confirmButtonColor: "#F97316",
             });
             cantidadInput.focus();
@@ -400,7 +399,7 @@
             Swal.fire({
               icon: "error",
               title: "Error de Permisos",
-              text: "Tu usuario no estÃ¡ autorizado para auditar en este momento.",
+              text: "Tu usuario no está autorizado para auditar en este momento.",
               confirmButtonColor: "#F97316",
             });
             updateControls();
@@ -425,9 +424,9 @@
             return;
           }
 
-          ultimoRegistro.textContent = `Ãšltimo registro: SKU ${safeText(
+          ultimoRegistro.textContent = `Último registro: SKU ${safeText(
             skuInput.value
-          )} Â· Cantidad ${safeText(cantidad)} Â· ${new Date().toLocaleString()}`;
+          )} · Cantidad ${safeText(cantidad)} · ${new Date().toLocaleString()}`;
 
           Swal.fire({
             toast: true,

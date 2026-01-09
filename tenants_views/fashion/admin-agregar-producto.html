@@ -1,4 +1,4 @@
-Ôªø<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
@@ -6,11 +6,8 @@
     <title>Agregar Producto - Admin Fashion Box</title>
     <link rel="icon" type="image/png" href="/icon/Logo_Fashion.png" />
 
-    <!-- PROTECCI√ìN DE AUTENTICACI√ìN ADMIN -->
+    <!-- PROTECCI”N DE AUTENTICACI”N ADMIN -->
     <script src="js/auth-guard-admin.js"></script>
-
-    <!-- SISTEMA DE RENOVACI√ìN DE TOKENS -->
-    <script src="js/token-refresh.js"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
@@ -134,7 +131,7 @@
         max-height: 2.4em;
       }
 
-      /* Grid responsivo para im√°genes - Tailwind-inspired */
+      /* Grid responsivo para im·genes - Tailwind-inspired */
       .sortable-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
@@ -223,7 +220,7 @@
         transform: scale(1.05);
       }
 
-      /* Bot√≥n de eliminaci√≥n mejorado */
+      /* BotÛn de eliminaciÛn mejorado */
       .image-remove-btn {
         position: absolute;
         top: 8px;
@@ -385,7 +382,7 @@
           <div class="admin-grid-two-columns">
             <div class="admin-table-container">
               <div class="admin-table-header">
-                <h2 class="admin-table-title">Informaci√≥n del producto</h2>
+                <h2 class="admin-table-title">InformaciÛn del producto</h2>
               </div>
 
               <form id="productoForm" style="padding: 1.5rem">
@@ -401,7 +398,7 @@
                       "
                     >
                       Primero crea el <strong>producto maestro</strong> con su
-                      informaci√≥n general. Despu√©s se te redirigir√° a la
+                      informaciÛn general. DespuÈs se te redirigir· a la
                       pantalla para agregar las variantes (SKU, precios, stock).
                     </p>
                   </div>
@@ -426,33 +423,33 @@
                       id="inputSkuMaestro"
                       name="inputSkuMaestro"
                       class="form-input"
-                      placeholder="Generado autom√°ticamente"
+                      placeholder="Generado autom·ticamente"
                       maxlength="50"
                       readonly
                     />
                     <small class="form-hint">
-                      SKU principal del producto maestro. Se genera autom√°ticamente.
+                      SKU principal del producto maestro. Se genera autom·ticamente.
                     </small>
                   </div>
 
                   <div class="form-group">
                     <label for="descripcion" class="form-label"
-                      >Descripci√≥n</label
+                      >DescripciÛn</label
                     >
                     <textarea
                       id="descripcion"
                       class="form-input"
                       rows="4"
-                      placeholder="Describe las caracter√≠sticas generales del producto..."
+                      placeholder="Describe las caracterÌsticas generales del producto..."
                     ></textarea>
                   </div>
 
                   <div class="form-group">
                     <label for="categoriaId" class="form-label"
-                      >Categor√≠a</label
+                      >CategorÌa</label
                     >
                     <select id="categoriaId" class="form-input">
-                      <option value="">Sin categor√≠a</option>
+                      <option value="">Sin categorÌa</option>
                     </select>
                   </div>
 
@@ -464,8 +461,8 @@
                       <option value="">-- Selecciona un proveedor --</option>
                     </select>
                     <small class="form-hint"
-                      >Necesario para generar √≥rdenes de compra
-                      autom√°ticas.</small
+                      >Necesario para generar Ûrdenes de compra
+                      autom·ticas.</small
                     >
                   </div>
 
@@ -478,7 +475,7 @@
 
                   <div class="form-group">
                     <label for="input-imagen-maestro" class="form-label">
-                      Galer√≠a General del Producto (Portada + Im√°genes Adicionales)
+                      GalerÌa General del Producto (Portada + Im·genes Adicionales)
                     </label>
                     <input
                       type="file"
@@ -490,7 +487,7 @@
                       style="padding: 1rem; cursor: pointer; font-weight: 500;"
                     />
                     <small class="form-hint"
-                      >Sube las im√°genes del producto (portada + galer√≠a). Puedes seleccionar archivos en m√∫ltiples tandas y se acumular√°n. La primera imagen ser√° la portada. Formatos: JPG, PNG, WEBP. M√°ximo 5MB c/u, hasta 12 im√°genes total.</small
+                      >Sube las im·genes del producto (portada + galerÌa). Puedes seleccionar archivos en m˙ltiples tandas y se acumular·n. La primera imagen ser· la portada. Formatos: JPG, PNG, WEBP. M·ximo 5MB c/u, hasta 12 im·genes total.</small
                     >
 
                     <div id="area-imagenes-existentes" class="preview-section mt-3 d-none">
@@ -501,7 +498,7 @@
                             <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
                             <line x1="12" y1="22.08" x2="12" y2="12"></line>
                           </svg>
-                          <span>Im√°genes en el Servidor</span>
+                          <span>Im·genes en el Servidor</span>
                         </div>
                       </div>
                       <div id="galeria-imagenes-server" class="sortable-grid"></div>
@@ -512,7 +509,7 @@
                             <line x1="12" y1="8" x2="12" y2="12"></line>
                             <line x1="12" y1="16" x2="12.01" y2="16"></line>
                           </svg>
-                          <strong>Nota:</strong> Estas im√°genes ya est√°n guardadas. Puedes reordenarlas o eliminarlas permanentemente.
+                          <strong>Nota:</strong> Estas im·genes ya est·n guardadas. Puedes reordenarlas o eliminarlas permanentemente.
                         </p>
                       </div>
                     </div>
@@ -525,7 +522,7 @@
                             <circle cx="8.5" cy="8.5" r="1.5"></circle>
                             <polyline points="21 15 16 10 5 21"></polyline>
                           </svg>
-                          <span>Previsualizaci√≥n</span>
+                          <span>PrevisualizaciÛn</span>
                           <span id="preview-count" class="preview-count">0</span>
                         </div>
                         <button
@@ -538,7 +535,7 @@
                             <polyline points="3 6 5 6 21 6"></polyline>
                             <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                           </svg>
-                          Limpiar selecci√≥n
+                          Limpiar selecciÛn
                         </button>
                       </div>
                       <div id="imagenes-preview" class="sortable-grid"></div>
@@ -549,7 +546,7 @@
                             <line x1="12" y1="8" x2="12" y2="12"></line>
                             <line x1="12" y1="16" x2="12.01" y2="16"></line>
                           </svg>
-                          <strong>Tip:</strong> Arrastra las im√°genes para reordenarlas. La primera ser√° la portada del producto.
+                          <strong>Tip:</strong> Arrastra las im·genes para reordenarlas. La primera ser· la portada del producto.
                         </p>
                       </div>
                     </div>
@@ -557,13 +554,13 @@
 
                   <div class="form-group" id="imagenes-color-container" style="display: none;">
                     <label class="form-label">
-                      Im√°genes por Color de Variante
+                      Im·genes por Color de Variante
                     </label>
                     <div id="imagenes-color-fields">
-                      <!-- Los campos se generar√°n din√°micamente seg√∫n los colores -->
+                      <!-- Los campos se generar·n din·micamente seg˙n los colores -->
                     </div>
                     <small class="form-hint"
-                      >Sube una imagen por cada color √∫nico de tus variantes. Estas im√°genes se mostrar√°n cuando el cliente seleccione ese color.</small
+                      >Sube una imagen por cada color ˙nico de tus variantes. Estas im·genes se mostrar·n cuando el cliente seleccione ese color.</small
                     >
                   </div>
 
@@ -572,27 +569,27 @@
                     <label class="form-label">Presentaciones Disponibles</label>
                     <div id="presentacionesContainer" class="checkbox-grid">
                       <div class="empty-state" id="presentacionesPlaceholder">
-                        <div class="empty-state-icon">‚è≥</div>
-                        <h3 class="empty-state-title">Cargando tama√±os...</h3>
+                        <div class="empty-state-icon">?</div>
+                        <h3 class="empty-state-title">Cargando tamaÒos...</h3>
                         <p class="empty-state-text">
-                          Espera un momento mientras obtenemos el cat√°logo.
+                          Espera un momento mientras obtenemos el cat·logo.
                         </p>
                       </div>
                     </div>
                     <small class="form-hint"
-                      >Selecciona c√≥mo se vender√° este producto maestro.
+                      >Selecciona cÛmo se vender· este producto maestro.
                     </small>
                   </div>
 
                   <div class="alert alert-warning" style="margin-top: 0.5rem">
-                    <strong>Despu√©s de guardar:</strong>
+                    <strong>DespuÈs de guardar:</strong>
                     <ul style="margin: 0.5rem 0 0 1.2rem; font-size: 0.9rem">
                       <li>
                         Define las variantes (SKU, precio, stock) en la
                         siguiente pantalla.
                       </li>
                       <li>
-                        Puedes agregar m√∫ltiples variantes por producto maestro.
+                        Puedes agregar m˙ltiples variantes por producto maestro.
                       </li>
                     </ul>
                   </div>
@@ -618,7 +615,7 @@
                       id="btnCancelarEdicion"
                       style="display: none"
                     >
-                      Cancelar Edici√≥n
+                      Cancelar EdiciÛn
                     </button>
                     <button
                       type="submit"
@@ -717,7 +714,7 @@
                       <tr>
                         <th style="width: 70px;">Imagen</th>
                         <th style="width: 35%;">Detalles del Producto</th>
-                        <th style="width: 18%;">Categor√≠a</th>
+                        <th style="width: 18%;">CategorÌa</th>
                         <th style="width: 15%;">Venta</th>
                         <th style="width: 14%;">Estado</th>
                         <th style="width: 180px;">Acciones</th>
@@ -732,7 +729,7 @@
                   id="mastersEmpty"
                   style="display: none"
                 >
-                  <div class="empty-state-icon">üì¶</div>
+                  <div class="empty-state-icon">??</div>
                   <h3 class="empty-state-title">Sin productos maestros</h3>
                   <p class="empty-state-text">
                     Crea uno con el formulario para comenzar.
@@ -780,7 +777,7 @@
 
         bindTipoProductoEmpaqueAutomation();
 
-        // Modo edici√≥n: si viene ?id= en la URL, cargar el producto DESPU√âS de poblar selects
+        // Modo ediciÛn: si viene ?id= en la URL, cargar el producto DESPU…S de poblar selects
         try {
           const params = new URLSearchParams(window.location.search);
           const idRaw = params.get("id");
@@ -789,7 +786,7 @@
             await prepararEdicion(parsedId);
           }
         } catch (e) {
-          console.warn("No se pudo leer id de la URL para edici√≥n:", e);
+          console.warn("No se pudo leer id de la URL para ediciÛn:", e);
         }
       }
 
@@ -856,7 +853,7 @@
           const inputTipoProducto = document.getElementById("inputTipoProducto");
 
           if (!id || !inputProductoIdEditando) {
-            showToast("ID de producto inv√°lido", "warning");
+            showToast("ID de producto inv·lido", "warning");
             return;
           }
 
@@ -913,7 +910,7 @@
             if (Number.isInteger(n) && n > 1) packSet.add(n);
           });
 
-          // SOLUCI√ìN PROBLEMA 2 y 3: Primero poblar customPacks, luego forzar checkbox
+          // SOLUCI”N PROBLEMA 2 y 3: Primero poblar customPacks, luego forzar checkbox
           customPacks = [];
           const packsArray = Array.from(packSet).sort((a, b) => a - b);
           
@@ -924,13 +921,13 @@
             }
           });
           
-          // Esperar a que loadTamanos() haya terminado y las funciones est√©n disponibles
+          // Esperar a que loadTamanos() haya terminado y las funciones estÈn disponibles
           await new Promise(resolve => setTimeout(resolve, 200));
           
-          // Forzar estado del checkbox DESPU√âS de que el DOM est√© listo
+          // Forzar estado del checkbox DESPU…S de que el DOM estÈ listo
           const ventaIndividualCheckbox = document.getElementById("tamano-unidad");
           if (ventaIndividualCheckbox) {
-            // Forzar expl√≠citamente el estado correcto
+            // Forzar explÌcitamente el estado correcto
             if (tieneVentaIndividual) {
               ventaIndividualCheckbox.checked = true;
             } else {
@@ -984,18 +981,18 @@
 
                 const badge = document.createElement("div");
                 badge.className = idx === 0 ? "image-order-badge portada" : "image-order-badge";
-                badge.textContent = idx === 0 ? "‚≠ê PORTADA" : String(idx + 1);
+                badge.textContent = idx === 0 ? "? PORTADA" : String(idx + 1);
 
                 const imageEl = document.createElement("img");
                 imageEl.src = img.url;
                 imageEl.alt = img.alt || `Imagen ${idx + 1}`;
                 imageEl.loading = "lazy";
 
-                // Bot√≥n de eliminaci√≥n f√≠sica (Cloudinary + BD)
+                // BotÛn de eliminaciÛn fÌsica (Cloudinary + BD)
                 const btn = document.createElement("button");
                 btn.type = "button";
                 btn.className = "image-remove-btn";
-                btn.textContent = "√ó";
+                btn.textContent = "◊";
                 btn.title = "Eliminar imagen permanentemente";
                 btn.addEventListener("click", async () => {
                   const imagenId = wrapper.dataset.imagenId;
@@ -1005,13 +1002,13 @@
                   }
 
                   const confirmDelete = await Swal.fire({
-                    title: "¬øEliminar imagen?",
-                    text: "Esta acci√≥n eliminar√° la imagen de Cloudinary y la base de datos. No se puede deshacer.",
+                    title: "øEliminar imagen?",
+                    text: "Esta acciÛn eliminar· la imagen de Cloudinary y la base de datos. No se puede deshacer.",
                     icon: "warning",
                     showCancelButton: true,
                     confirmButtonColor: "#ef4444",
                     cancelButtonColor: "#6b7280",
-                    confirmButtonText: "S√≠, eliminar",
+                    confirmButtonText: "SÌ, eliminar",
                     cancelButtonText: "Cancelar",
                   });
 
@@ -1038,7 +1035,7 @@
                     // Actualizar badges de orden
                     actualizarBadgesOrden(galeriaImagenesServer);
                     
-                    // Si no quedan im√°genes, ocultar la secci√≥n
+                    // Si no quedan im·genes, ocultar la secciÛn
                     if (galeriaImagenesServer.children.length === 0) {
                       areaImagenesExistentes.classList.add("d-none");
                     }
@@ -1094,7 +1091,7 @@
               selectProveedor.value = "";
             } else {
               const proveedorTxt = String(proveedorId);
-              // Si por alguna raz√≥n a√∫n no existe la opci√≥n, insertarla antes de asignar
+              // Si por alguna razÛn a˙n no existe la opciÛn, insertarla antes de asignar
               const exists = Array.from(selectProveedor.options || []).some(
                 (opt) => String(opt.value) === proveedorTxt
               );
@@ -1106,7 +1103,7 @@
               }
               selectProveedor.value = proveedorTxt;
               
-              // SOLUCI√ìN PROBLEMA 1: Disparar carga de tipos de producto despu√©s de asignar proveedor
+              // SOLUCI”N PROBLEMA 1: Disparar carga de tipos de producto despuÈs de asignar proveedor
               if (window.TipoProductoLoader && typeof window.TipoProductoLoader.cargarTiposProducto === "function") {
                 await window.TipoProductoLoader.cargarTiposProducto(proveedorTxt);
               }
@@ -1116,7 +1113,7 @@
           if (inputTipoProducto) {
             const tipoIdParsed = Number.parseInt(tipoProductoId, 10);
             if (Number.isInteger(tipoIdParsed) && tipoIdParsed > 0) {
-              // SOLUCI√ìN PROBLEMA 1 (continuaci√≥n): Asignar valor despu√©s de cargar tipos
+              // SOLUCI”N PROBLEMA 1 (continuaciÛn): Asignar valor despuÈs de cargar tipos
               // Verificar si el select tiene Choices.js instance
               const choicesInstance = inputTipoProducto.choicesInstance;
               if (choicesInstance) {
@@ -1129,7 +1126,7 @@
                 inputTipoProducto.value = String(tipoIdParsed);
               }
             } else {
-              // No hay ID v√°lido, dejar vac√≠o
+              // No hay ID v·lido, dejar vacÌo
               const choicesInstance = inputTipoProducto.choicesInstance;
               if (choicesInstance) {
                 try {
@@ -1149,7 +1146,7 @@
 
           window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
         } catch (error) {
-          console.error("Error preparando edici√≥n:", error);
+          console.error("Error preparando ediciÛn:", error);
           if (typeof Swal !== "undefined" && Swal && typeof Swal.fire === "function") {
             await Swal.fire({
               icon: "warning",
@@ -1242,12 +1239,12 @@
           const proveedores = data?.data?.proveedores;
 
           if (!data.success || !Array.isArray(proveedores)) {
-            throw new Error("Respuesta inv√°lida del servidor");
+            throw new Error("Respuesta inv·lida del servidor");
           }
 
           window.__proveedoresCache = proveedores;
 
-          // Deduplicar proveedores usando un Set para IDs √∫nicos
+          // Deduplicar proveedores usando un Set para IDs ˙nicos
           const proveedoresUnicos = [];
           const idsVistos = new Set();
 
@@ -1259,7 +1256,7 @@
             }
           });
 
-          // Renderizar solo proveedores √∫nicos
+          // Renderizar solo proveedores ˙nicos
           proveedoresUnicos.forEach((proveedor) => {
             const option = document.createElement("option");
             option.value = proveedor.proveedorid ?? proveedor.proveedorId ?? proveedor.ProveedorID ?? "";
@@ -1286,7 +1283,7 @@
         const parsed = Number.parseInt(valor, 10);
         if (!Number.isInteger(parsed) || parsed < 2) return;
 
-        // Si ya est√° en customPacks, no hacemos nada
+        // Si ya est· en customPacks, no hacemos nada
         if (Array.isArray(customPacks) && customPacks.includes(parsed)) {
           return;
         }
@@ -1300,7 +1297,7 @@
           return;
         }
 
-        // Si no existe sugerencia, lo agregamos usando el input/bot√≥n existente
+        // Si no existe sugerencia, lo agregamos usando el input/botÛn existente
         const packInput = document.getElementById("nuevoPackInput");
         const agregarBtn = document.getElementById("agregarPackBtn");
         if (packInput) {
@@ -1340,12 +1337,12 @@
           ventaIndividualCheckbox.checked = false;
         }
 
-        // Sugerir/pre-seleccionar pack seg√∫n regla
+        // Sugerir/pre-seleccionar pack seg˙n regla
         sugerirPack(cantidad);
 
         if (typeof showToast === "function") {
           showToast(
-            `Configuraci√≥n aplicada: Venta por Docena (${cantidad} pzs) seg√∫n proveedor.`,
+            `ConfiguraciÛn aplicada: Venta por Docena (${cantidad} pzs) seg˙n proveedor.`,
             "info"
           );
         }
@@ -1441,7 +1438,7 @@
         }
       }
 
-      // Load categor√≠as
+      // Load categorÌas
       async function loadCategorias() {
         try {
           const response = await fetch(`${API_BASE_URL}/categorias`, {
@@ -1461,7 +1458,7 @@
             const select = document.getElementById("categoriaId");
 
             // Limpiar el select antes de agregar nuevas opciones
-            select.innerHTML = '<option value="">Sin categor√≠a</option>';
+            select.innerHTML = '<option value="">Sin categorÌa</option>';
 
             data.data.categorias.forEach((cat) => {
               const option = document.createElement("option");
@@ -1471,9 +1468,9 @@
             });
           }
         } catch (error) {
-          console.error("Error loading categor√≠as:", error);
+          console.error("Error loading categorÌas:", error);
           showToast(
-            "No se pudieron cargar las categor√≠as. Intenta nuevamente.",
+            "No se pudieron cargar las categorÌas. Intenta nuevamente.",
             "error"
           );
         }
@@ -1483,7 +1480,7 @@
         try {
           const productoId = producto?.productoId;
           if (!productoId) {
-            showToast("Producto inv√°lido para edici√≥n", "warning");
+            showToast("Producto inv·lido para ediciÛn", "warning");
             return;
           }
 
@@ -1501,7 +1498,7 @@
           const activoActual = producto?.activo !== undefined ? producto.activo : true;
 
           const optionsCategorias = [
-            '<option value="">Sin categor√≠a</option>',
+            '<option value="">Sin categorÌa</option>',
             ...categorias.map((cat) => {
               const id = cat.categoriaId ?? cat.categoriaid;
               const nombre = cat.nombre || "";
@@ -1531,13 +1528,13 @@
                 }" />
               </div>
               <div>
-                <label style="font-weight:600; display:block; margin-bottom:0.35rem;">Descripci√≥n</label>
+                <label style="font-weight:600; display:block; margin-bottom:0.35rem;">DescripciÛn</label>
                 <textarea id="swalDescMaestro" class="form-control" rows="4">${
                   (producto?.descripcion || "").toString()
                 }</textarea>
               </div>
               <div>
-                <label style="font-weight:600; display:block; margin-bottom:0.35rem;">Categor√≠a</label>
+                <label style="font-weight:600; display:block; margin-bottom:0.35rem;">CategorÌa</label>
                 <select id="swalCategoriaMaestro" class="form-control">${optionsCategorias}</select>
               </div>
               <div>
@@ -1588,9 +1585,9 @@
           }
 
           // ============================================
-          // RECOLECCI√ìN DE TAMANOS/PACKS (FIX CR√çTICO)
+          // RECOLECCI”N DE TAMANOS/PACKS (FIX CRÕTICO)
           // ============================================
-          console.log("üì§ [FRONTEND] Recolectando tamanoIds y packs para enviar al backend");
+          console.log("?? [FRONTEND] Recolectando tamanoIds y packs para enviar al backend");
           
           // Recolectar tamanoIds desde los checkboxes marcados
           const tamanoIds = [];
@@ -1606,15 +1603,15 @@
           
           // 2. Packs personalizados desde customPacks array
           if (Array.isArray(customPacks) && customPacks.length > 0) {
-            console.log("üì¶ [FRONTEND] customPacks detectados:", customPacks);
+            console.log("?? [FRONTEND] customPacks detectados:", customPacks);
             
-            // Para cada pack, necesitamos encontrar su tamanoId en el cat√°logo
+            // Para cada pack, necesitamos encontrar su tamanoId en el cat·logo
             // Esto requiere que tengamos acceso a los tamanos cargados
-            // Por ahora, enviaremos los valores y el backend los resolver√°
+            // Por ahora, enviaremos los valores y el backend los resolver·
             // O mejor: buscar en el DOM los tamanoIds correspondientes
             
-            // Estrategia: enviar los valores de packs y el backend los manejar√°
-            // El backend ya tiene l√≥gica para crear/encontrar tamanos desde packs
+            // Estrategia: enviar los valores de packs y el backend los manejar·
+            // El backend ya tiene lÛgica para crear/encontrar tamanos desde packs
           }
 
           const payload = {
@@ -1623,11 +1620,11 @@
             categoriaId: result.value.categoriaId,
             proveedorId: result.value.proveedorId,
             activo: result.value.activo,
-            tamanoIds: tamanoIds, // ‚úÖ AGREGADO
-            packs: customPacks,   // ‚úÖ AGREGADO
+            tamanoIds: tamanoIds, // ? AGREGADO
+            packs: customPacks,   // ? AGREGADO
           };
 
-          console.log("üì§ [FRONTEND] Payload completo a enviar:", payload);
+          console.log("?? [FRONTEND] Payload completo a enviar:", payload);
 
           const resp = await fetch(`${API_BASE_URL}/admin/productos/${productoId}`, {
             method: "PUT",
@@ -1663,7 +1660,7 @@
         }
       }
 
-      // Load tama√±os de paquetes (solo para identificar "Venta por Pieza")
+      // Load tamaÒos de paquetes (solo para identificar "Venta por Pieza")
       async function loadTamanos() {
         const container = document.getElementById("presentacionesContainer");
         const placeholder = document.getElementById(
@@ -1690,7 +1687,7 @@
 
           const data = await response.json();
           if (!data.success || !Array.isArray(data.data?.tamanos)) {
-            throw new Error("Respuesta inv√°lida del servidor");
+            throw new Error("Respuesta inv·lida del servidor");
           }
 
           const tamanos = data.data.tamanos;
@@ -1739,10 +1736,10 @@
             `
             : `
               <div class="empty-state" style="margin-top: 0.5rem">
-                <div class="empty-state-icon">‚ö†Ô∏è</div>
-                <h3 class="empty-state-title">Falta tama√±o de unidad</h3>
+                <div class="empty-state-icon">??</div>
+                <h3 class="empty-state-title">Falta tamaÒo de unidad</h3>
                 <p class="empty-state-text">
-                  Registra un tama√±o con valor 1 en Cat_TamanoPaquetes para habilitar la venta por pieza.
+                  Registra un tamaÒo con valor 1 en Cat_TamanoPaquetes para habilitar la venta por pieza.
                 </p>
               </div>
             `;
@@ -1753,7 +1750,7 @@
                 <p class="form-label" style="margin-bottom: 0.5rem;">Venta individual</p>
                 ${ventaIndividualCheckboxHtml}
                 <small class="form-hint">
-                  Marca esta opci√≥n si este producto se podr√° vender por pieza suelta.
+                  Marca esta opciÛn si este producto se podr· vender por pieza suelta.
                 </small>
               </div>
 
@@ -1878,7 +1875,7 @@
             if (!Array.isArray(customPacks) || customPacks.length === 0) {
               chipsContainer.innerHTML = `
                 <span style="font-size: 0.85rem; color: #6b7280;">
-                  A√∫n no has agregado packs.
+                  A˙n no has agregado packs.
                 </span>
               `;
               return;
@@ -1897,7 +1894,7 @@
                     <span>${typeof obtenerNombrePack === "function"
                       ? obtenerNombrePack(n)
                       : `Paquete de ${n}`}</span>
-                    <span class="pack-chip-icon" aria-hidden="true">√ó</span>
+                    <span class="pack-chip-icon" aria-hidden="true">◊</span>
                   </button>
                 `
               )
@@ -1921,7 +1918,7 @@
 
             if (!Number.isInteger(parsed) || parsed < 2) {
               showToast(
-                "Ingresa un n√∫mero entero mayor o igual a 2 para crear un pack.",
+                "Ingresa un n˙mero entero mayor o igual a 2 para crear un pack.",
                 "warning"
               );
               return;
@@ -1965,23 +1962,23 @@
           window.renderPacksChips = renderPacksChips;
           window.renderPackSuggestions = renderPackSuggestions;
         } catch (error) {
-          console.error("Error loading tama√±os:", error);
+          console.error("Error loading tamaÒos:", error);
           container.innerHTML = `
             <div class="empty-state" style="margin-top: 0.75rem">
-              <div class="empty-state-icon">‚ö†Ô∏è</div>
+              <div class="empty-state-icon">??</div>
               <h3 class="empty-state-title">No se pudieron cargar</h3>
               <p class="empty-state-text">
-                Intenta refrescar la p√°gina o vuelve m√°s tarde.
+                Intenta refrescar la p·gina o vuelve m·s tarde.
               </p>
             </div>`;
           showToast(
-            "No se pudieron cargar los tama√±os disponibles. Intenta nuevamente.",
+            "No se pudieron cargar los tamaÒos disponibles. Intenta nuevamente.",
             "error"
           );
         }
       }
 
-      // ===== L√ìGICA DE PREVIEW DE IMAGEN =====
+      // ===== L”GICA DE PREVIEW DE IMAGEN =====
       const inputImagen = document.getElementById("input-imagen-maestro");
       const previewContainer = document.getElementById("preview-container");
       const imagenesPreviewGrid = document.getElementById("imagenes-preview");
@@ -1997,7 +1994,7 @@
         items.forEach((el, idx) => {
           const badge = el.querySelector(".image-order-badge");
           if (badge) {
-            badge.textContent = idx === 0 ? "‚≠ê PORTADA" : String(idx + 1);
+            badge.textContent = idx === 0 ? "? PORTADA" : String(idx + 1);
             if (idx === 0) {
               badge.classList.add("portada");
             } else {
@@ -2110,7 +2107,7 @@
 
           const badge = document.createElement("div");
           badge.className = index === 0 ? "image-order-badge portada" : "image-order-badge";
-          badge.textContent = index === 0 ? "‚≠ê PORTADA" : String(index + 1);
+          badge.textContent = index === 0 ? "? PORTADA" : String(index + 1);
 
           const img = document.createElement("img");
           img.alt = `Vista previa ${index + 1}`;
@@ -2120,7 +2117,7 @@
           previewObjectURLs.push(objectURL);
           img.src = objectURL;
           
-          // No revocar inmediatamente - mantener URL hasta el pr√≥ximo render
+          // No revocar inmediatamente - mantener URL hasta el prÛximo render
           img.onerror = () => {
             console.error("Error cargando imagen:", file.name);
             card.style.opacity = "0.5";
@@ -2129,7 +2126,7 @@
           const btn = document.createElement("button");
           btn.type = "button";
           btn.className = "image-remove-btn";
-          btn.textContent = "√ó";
+          btn.textContent = "◊";
           btn.title = "Eliminar imagen";
           btn.dataset.fileIndex = String(index);
           btn.addEventListener("click", (e) => {
@@ -2151,7 +2148,7 @@
         actualizarBadgesOrden(imagenesPreviewGrid);
       }
 
-      // Event listener para cambio de archivos (SELECCI√ìN ACUMULATIVA)
+      // Event listener para cambio de archivos (SELECCI”N ACUMULATIVA)
       if (inputImagen) {
         inputImagen.addEventListener("change", function (e) {
           const newFiles = Array.from(e.target.files || []);
@@ -2172,7 +2169,7 @@
           // Validar archivos nuevos antes de agregarlos
           for (const file of newFiles) {
             if (!validTypes.includes(file.type)) {
-              showToast("Solo se permiten im√°genes JPG, PNG o WEBP", "error");
+              showToast("Solo se permiten im·genes JPG, PNG o WEBP", "error");
               // Limpiar el input pero NO el array de archivos seleccionados
               e.target.value = "";
               return;
@@ -2185,11 +2182,11 @@
             }
           }
 
-          // Verificar l√≠mite total despu√©s de agregar los nuevos
+          // Verificar lÌmite total despuÈs de agregar los nuevos
           const totalDespuesDeAgregar = selectedImageFiles.length + newFiles.length;
           if (totalDespuesDeAgregar > 12) {
             showToast(
-              `Ya tienes ${selectedImageFiles.length} imagen(es). Solo puedes agregar ${12 - selectedImageFiles.length} m√°s (m√°ximo 12 total).`,
+              `Ya tienes ${selectedImageFiles.length} imagen(es). Solo puedes agregar ${12 - selectedImageFiles.length} m·s (m·ximo 12 total).`,
               "warning"
             );
             e.target.value = "";
@@ -2202,7 +2199,7 @@
           // Limpiar el input para permitir seleccionar los mismos archivos nuevamente
           e.target.value = "";
 
-          // Renderizar todas las im√°genes acumuladas
+          // Renderizar todas las im·genes acumuladas
           renderImagesPreview();
 
           // Notificar al usuario
@@ -2217,7 +2214,7 @@
         btnClearImages.addEventListener("click", clearSelectedImages);
       }
 
-      // ===== FUNCI√ìN PARA SUBIR IMAGEN(ES) =====
+      // ===== FUNCI”N PARA SUBIR IMAGEN(ES) =====
       async function subirImagenProducto(productoId, imageFile) {
         try {
           const formData = new FormData();
@@ -2254,7 +2251,7 @@
 
           if (!rawCategoriaId) {
             showToast(
-              "Selecciona una categor√≠a para el producto maestro.",
+              "Selecciona una categorÌa para el producto maestro.",
               "warning"
             );
             return;
@@ -2287,7 +2284,7 @@
               descripcion:
                 document.getElementById("descripcion").value.trim() || null,
               categoriaId: document.getElementById("categoriaId").value || null,
-              // CR√çTICO: Usar dataset en lugar del value del select
+              // CRÕTICO: Usar dataset en lugar del value del select
               TipoProductoID: (() => {
                 // Usar helper function del TipoProductoLoader
                 const datosTipo = window.TipoProductoLoader?.obtenerDatosTipoSeleccionado();
@@ -2296,12 +2293,12 @@
                 const tipoId = parseInt(datosTipo.tipoId, 10);
                 return Number.isInteger(tipoId) && tipoId > 0 ? tipoId : null;
               })(),
-              // CR√çTICO: Capturar reglaid del selector de tipo de producto
+              // CRÕTICO: Capturar reglaid del selector de tipo de producto
               reglaid: (() => {
                 const datosTipo = window.TipoProductoLoader?.obtenerDatosTipoSeleccionado();
                 if (!datosTipo || datosTipo.esGenerico) return null;
                 
-                // El reglaid viene en el value del select cuando no es gen√©rico
+                // El reglaid viene en el value del select cuando no es genÈrico
                 const reglaIdRaw = datosTipo.reglaid;
                 if (!reglaIdRaw || reglaIdRaw === '') return null;
                 
@@ -2327,7 +2324,7 @@
                   return null;
                 }
                 
-                // Podr√≠a ser un tipo nuevo (solo si Choices.js permite agregar)
+                // PodrÌa ser un tipo nuevo (solo si Choices.js permite agregar)
                 return selectTipo.value.trim() || null;
               })(),
               proveedorId: (() => {
@@ -2358,7 +2355,7 @@
 
             formData.venderIndividual = venderIndividual;
 
-            // DEBUG: inspeccionar qu√© se est√° enviando al backend al crear producto maestro
+            // DEBUG: inspeccionar quÈ se est· enviando al backend al crear producto maestro
             console.group("[DEBUG] Crear Producto Maestro - Payload");
             console.log("URL:", `${API_BASE_URL}/admin/productos`);
             console.log("Payload (formData):", formData);
@@ -2367,7 +2364,7 @@
             console.log("venderIndividual:", formData.venderIndividual);
             console.groupEnd();
 
-            // Exponer √∫ltimo payload en window para inspecci√≥n manual
+            // Exponer ˙ltimo payload en window para inspecciÛn manual
             window.__RAZO_DEBUG_ULTIMO_PRODUCTO_MAESTRO_PAYLOAD = formData;
 
             if (productoIdEditando) {
@@ -2412,7 +2409,7 @@
             if (response.status === 401) {
               throw new Error(
                 data.message ||
-                  "Sesi√≥n expirada. Por favor, inicia sesi√≥n nuevamente."
+                  "SesiÛn expirada. Por favor, inicia sesiÛn nuevamente."
               );
             }
 
@@ -2439,7 +2436,7 @@
                   icon: "success",
                   title: "Guardado",
                   text: isEditMode
-                    ? data.message || "Solicitud enviada para aprobaci√≥n."
+                    ? data.message || "Solicitud enviada para aprobaciÛn."
                     : "Producto maestro creado. Ahora agrega variantes.",
                   confirmButtonColor: "#F97316",
                 });
@@ -2454,7 +2451,7 @@
               console.log("selectedImageFiles.length:", selectedImageFiles.length);
               console.groupEnd();
 
-              // CORRECCI√ìN: Subir im√°genes tanto en creaci√≥n como en edici√≥n
+              // CORRECCI”N: Subir im·genes tanto en creaciÛn como en ediciÛn
               if (selectedImageFiles.length > 0) {
                 const productoId = isEditMode 
                   ? productoIdEditando 
@@ -2469,15 +2466,15 @@
                   if (uploadResult.success) {
                     showToast(
                       isEditMode 
-                        ? "Producto actualizado e im√°genes guardadas exitosamente."
-                        : "Producto e im√°genes guardados exitosamente. Ahora agrega variantes.",
+                        ? "Producto actualizado e im·genes guardadas exitosamente."
+                        : "Producto e im·genes guardados exitosamente. Ahora agrega variantes.",
                       "success"
                     );
                   } else {
                     showToast(
                       isEditMode
-                        ? "Producto actualizado, pero hubo un error al subir las im√°genes."
-                        : "Producto creado, pero hubo un error al subir las im√°genes. Puedes intentar subirlas despu√©s.",
+                        ? "Producto actualizado, pero hubo un error al subir las im·genes."
+                        : "Producto creado, pero hubo un error al subir las im·genes. Puedes intentar subirlas despuÈs.",
                       "warning"
                     );
                   }
@@ -2552,7 +2549,7 @@
         link.addEventListener("click", (e) => {
           e.preventDefault();
           const moduleName = link.querySelector("span:last-child").textContent;
-          showToast(`M√≥dulo "${moduleName}" pr√≥ximamente disponible`, "info");
+          showToast(`MÛdulo "${moduleName}" prÛximamente disponible`, "info");
         });
       });
 
@@ -2590,7 +2587,7 @@
           mastersEmpty.querySelector(".empty-state-title").textContent =
             "Error al cargar productos";
           mastersEmpty.querySelector(".empty-state-text").textContent =
-            "Intenta actualizar la lista m√°s tarde.";
+            "Intenta actualizar la lista m·s tarde.";
         } finally {
           mastersLoading.style.display = "none";
         }
@@ -2652,8 +2649,8 @@
           const productoId = prod.productoid || prod.productoId;
           const nombreProducto = prod.nombreproducto || prod.nombreProducto;
           const descripcion = prod.descripcion || "";
-          const categoriaNombre = prod.categoriaNombre || prod.categoria?.nombre || "Sin categor√≠a";
-          const tipoProducto = prod.tipoProducto || "‚Äî";
+          const categoriaNombre = prod.categoriaNombre || prod.categoria?.nombre || "Sin categorÌa";
+          const tipoProducto = prod.tipoProducto || "ó";
           const reglaBackorder = prod.reglaBackorder;
           const imagenUrl = prod.imagenUrl || (prod.imagenes && prod.imagenes.length > 0 ? prod.imagenes[0].url : null);
           
@@ -2676,7 +2673,7 @@
                 ${
                   imagenUrl
                     ? `<img src="${imagenUrl}" alt="${nombreProducto}" style="width: 55px; height: 55px; object-fit: cover; border-radius: 0.5rem; border: 2px solid #e5e7eb;" />`
-                    : `<div style="width: 55px; height: 55px; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #f5f1ed 0%, #e5e7eb 100%); border-radius: 0.5rem; font-size: 1.5rem; opacity: 0.3; border: 2px solid #e5e7eb;">üì¶</div>`
+                    : `<div style="width: 55px; height: 55px; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #f5f1ed 0%, #e5e7eb 100%); border-radius: 0.5rem; font-size: 1.5rem; opacity: 0.3; border: 2px solid #e5e7eb;">??</div>`
                 }
               </div>
             </td>
@@ -2685,9 +2682,9 @@
                 <div style="font-weight: 600; font-size: 0.95rem; color: #1f2937; margin-bottom: 0.25rem;">${nombreProducto}</div>
                 <div style="font-size: 0.8rem; color: #6b7280;">
                   <span style="font-family: ui-monospace, monospace;">SKU: ${skuMaestro}</span>
-                  <span style="margin: 0 0.5rem; color: #d1d5db;">‚Ä¢</span>
+                  <span style="margin: 0 0.5rem; color: #d1d5db;">ï</span>
                   <span>ID: #${productoId}</span>
-                  ${descripcion && descripcion.length > 50 ? `<span style="margin: 0 0.5rem; color: #d1d5db;">‚Ä¢</span><span title="${descripcion.replace(/"/g, '&quot;')}">${descripcion.substring(0, 50)}...</span>` : descripcion ? `<span style="margin: 0 0.5rem; color: #d1d5db;">‚Ä¢</span><span>${descripcion}</span>` : ''}
+                  ${descripcion && descripcion.length > 50 ? `<span style="margin: 0 0.5rem; color: #d1d5db;">ï</span><span title="${descripcion.replace(/"/g, '&quot;')}">${descripcion.substring(0, 50)}...</span>` : descripcion ? `<span style="margin: 0 0.5rem; color: #d1d5db;">ï</span><span>${descripcion}</span>` : ''}
                 </div>
               </div>
             </td>
@@ -2704,7 +2701,7 @@
             <td style="width: 14%; padding: 0.75rem;">
               <div style="display: flex; align-items: center; gap: 0.5rem; justify-content: center;">
                 <span class="visibility-badge ${activo ? 'badge-success' : 'badge-secondary'}" title="${activo ? 'Visible' : 'Oculto'}">
-                  ${activo ? '‚úì' : 'üö´'} ${activo ? 'Visible' : 'Oculto'}
+                  ${activo ? '?' : '??'} ${activo ? 'Visible' : 'Oculto'}
                 </span>
                 <button
                   type="button"
@@ -2715,7 +2712,7 @@
                   onmouseover="this.style.opacity='1'; this.style.transform='scale(1.15)'"
                   onmouseout="this.style.opacity='0.7'; this.style.transform='scale(1)'"
                 >
-                  ${activo ? 'üîí' : 'üîì'}
+                  ${activo ? '??' : '??'}
                 </button>
               </div>
             </td>
@@ -2801,7 +2798,7 @@
         } else {
           setMastersEmptyMessage(
             "Sin resultados",
-            "No se encontraron productos que coincidan con la b√∫squeda."
+            "No se encontraron productos que coincidan con la b˙squeda."
           );
           productsToTable([]);
         }
@@ -2870,7 +2867,7 @@
       loadMasterProducts();
       loadTamanos();
 
-      // ===== GESTI√ìN DE IM√ÅGENES POR COLOR =====
+      // ===== GESTI”N DE IM¡GENES POR COLOR =====
       let coloresVariantes = new Set();
 
       function actualizarCamposImagenesColor() {
@@ -2879,9 +2876,9 @@
         
         if (!container || !fieldsContainer) return;
 
-        // Extraer colores √∫nicos de las variantes que el usuario est√° creando
-        // (En este flujo, las variantes se crean despu√©s, as√≠ que esto es para edici√≥n)
-        // Para creaci√≥n nueva, se puede activar manualmente o desde otro flujo
+        // Extraer colores ˙nicos de las variantes que el usuario est· creando
+        // (En este flujo, las variantes se crean despuÈs, asÌ que esto es para ediciÛn)
+        // Para creaciÛn nueva, se puede activar manualmente o desde otro flujo
         
         if (coloresVariantes.size === 0) {
           container.style.display = 'none';
@@ -2919,7 +2916,7 @@
         });
       }
 
-      // Funci√≥n auxiliar para agregar colores (se puede llamar desde el flujo de variantes)
+      // FunciÛn auxiliar para agregar colores (se puede llamar desde el flujo de variantes)
       window.agregarColorVariante = function(colorNombre) {
         if (colorNombre && typeof colorNombre === 'string') {
           coloresVariantes.add(colorNombre.trim().toUpperCase());
@@ -2939,8 +2936,8 @@
         const esOcultar = !nuevoEstado;
 
         const mensaje =
-          `¬øEst√°s seguro de ${accion} este producto en la tienda? ` +
-          (esOcultar ? "Si lo ocultas, dejar√° de verse en el cat√°logo para clientes." : "Si lo muestras, ser√° visible en el cat√°logo.");
+          `øEst·s seguro de ${accion} este producto en la tienda? ` +
+          (esOcultar ? "Si lo ocultas, dejar· de verse en el cat·logo para clientes." : "Si lo muestras, ser· visible en el cat·logo.");
 
         let confirmado = false;
 
@@ -2954,7 +2951,7 @@
             title: esOcultar ? "Ocultar producto" : "Mostrar producto",
             text: mensaje,
             showCancelButton: true,
-            confirmButtonText: esOcultar ? "S√≠, ocultar" : "S√≠, mostrar",
+            confirmButtonText: esOcultar ? "SÌ, ocultar" : "SÌ, mostrar",
             cancelButtonText: "Cancelar",
             confirmButtonColor: esOcultar ? "#dc3545" : "#F97316",
             cancelButtonColor: "#6b7280",
@@ -3000,7 +2997,7 @@
 
       window.toggleProductoVisibilidad = toggleProductoVisibilidad;
 
-      // Limpiar URLs de objeto cuando se cierre o recargue la p√°gina (importante para iOS/Safari)
+      // Limpiar URLs de objeto cuando se cierre o recargue la p·gina (importante para iOS/Safari)
       window.addEventListener('beforeunload', () => {
         previewObjectURLs.forEach(url => {
           try {

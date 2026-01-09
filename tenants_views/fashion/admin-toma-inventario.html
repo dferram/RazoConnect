@@ -1,18 +1,15 @@
-ï»¿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AuditorÃ­a de Inventario (Doble Ciego) - Admin Fashion Box</title>
+    <title>Auditoría de Inventario (Doble Ciego) - Admin Fashion Box</title>
     <link rel="icon" type="image/png" href="/icon/Logo_Fashion.png" />
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-    <!-- PROTECCIÃ“N DE AUTENTICACIÃ“N ADMIN -->
+    <!-- PROTECCIÓN DE AUTENTICACIÓN ADMIN -->
     <script src="js/auth-guard-admin.js"></script>
-
-    <!-- SISTEMA DE RENOVACIÃ“N DE TOKENS -->
-    <script src="js/token-refresh.js"></script>
 
     <link
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
@@ -23,7 +20,7 @@
     <link rel="stylesheet" href="css/admin-fashion.css" />
       <link rel="stylesheet" href="css/mobile-responsive-fashion.css" />
   </head>
-  <body data-page-title="AuditorÃ­a Inventario">
+  <body data-page-title="Auditoría Inventario">
     <div class="admin-layout">
       <!-- Sidebar -->
       <div id="sidebar-container"></div>
@@ -44,12 +41,12 @@
               "
             >
               <div style="min-width: 280px; flex: 1" id="crearSesionBlock">
-                <label for="sesionNombre" class="form-label">Nueva sesiÃ³n</label>
+                <label for="sesionNombre" class="form-label">Nueva sesión</label>
                 <div style="display: flex; gap: 0.75rem; flex-wrap: wrap">
                   <input
                     id="sesionNombre"
                     class="form-input"
-                    placeholder="Ej: AuditorÃ­a Sucursal Centro"
+                    placeholder="Ej: Auditoría Sucursal Centro"
                     style="min-width: 260px; flex: 1"
                   />
                   <button
@@ -64,17 +61,17 @@
               </div>
 
               <div style="min-width: 280px">
-                <label for="sesionSelect" class="form-label">SesiÃ³n activa</label>
+                <label for="sesionSelect" class="form-label">Sesión activa</label>
                 <select id="sesionSelect" class="form-input">
-                  <option value="">Selecciona una sesiÃ³nâ€¦</option>
+                  <option value="">Selecciona una sesión…</option>
                 </select>
               </div>
 
               <div style="display: grid; gap: 0.25rem; min-width: 280px">
                 <div style="font-size: 0.85rem; color: #6b7280">Estatus</div>
-                <div id="sesionEstatus" style="font-weight: 700">â€”</div>
+                <div id="sesionEstatus" style="font-weight: 700">—</div>
                 <div id="sesionStats" style="font-size: 0.85rem; color: #6b7280">
-                  â€”
+                  —
                 </div>
               </div>
             </div>
@@ -133,7 +130,7 @@
                           id="skuInput"
                           type="text"
                           class="form-input"
-                          placeholder="Busca por SKU o nombreâ€¦"
+                          placeholder="Busca por SKU o nombre…"
                           autocomplete="off"
                           style="font-size: 1.1rem; padding: 0.85rem"
                         />
@@ -210,7 +207,7 @@
                       color: #6b7280;
                     "
                   >
-                    Ãšltimo registro: â€”
+                    Último registro: —
                   </div>
                 </div>
               </div>
@@ -250,7 +247,7 @@
                     id="aplicarHint"
                     style="font-size: 0.9rem; color: #6b7280"
                   >
-                    â€”
+                    —
                   </div>
                 </div>
 
@@ -360,7 +357,7 @@
           if (btnRefrescar) btnRefrescar.style.display = "none";
           if (auditorTabLi) auditorTabLi.style.display = "none";
 
-          // Forzar pestaÃ±a Operador
+          // Forzar pestaña Operador
           try {
             const opTabBtn = document.getElementById("operador-tab");
             if (opTabBtn) {
@@ -474,7 +471,7 @@
         if (!skuInput || !resultadosBusqueda) return;
         const q = safeText(skuInput.value).trim();
 
-        // Al cambiar texto, invalidar selecciÃ³n previa
+        // Al cambiar texto, invalidar selección previa
         varianteIdSeleccionada.value = "";
 
         if (searchTimer) {
@@ -524,13 +521,13 @@
         btnAplicar.disabled = !canApply;
 
         if (!hasSesion) {
-          aplicarHint.textContent = "Selecciona una sesiÃ³n.";
+          aplicarHint.textContent = "Selecciona una sesión.";
           return;
         }
 
         if (state.sesionEstatus !== "ABIERTA") {
           aplicarHint.textContent = 
-o se puede aplicar: sesiÃ³n ${safeText(state.sesionEstatus)}.`;
+o se puede aplicar: sesión ${safeText(state.sesionEstatus)}.`;
           return;
         }
 
@@ -540,7 +537,7 @@ o se puede aplicar: sesiÃ³n ${safeText(state.sesionEstatus)}.`;
         }
 
         if (conflictos > 0) {
-          aplicarHint.textContent = `Listo para aplicar ${validados} validado(s). ${conflictos} conflicto(s) serÃ¡n ignorados.`;
+          aplicarHint.textContent = `Listo para aplicar ${validados} validado(s). ${conflictos} conflicto(s) serán ignorados.`;
           return;
         }
 
@@ -553,12 +550,12 @@ o se puede aplicar: sesiÃ³n ${safeText(state.sesionEstatus)}.`;
         state.filas = filas;
         state.sesionEstatus = data?.sesion?.estatus || null;
 
-        sesionEstatus.textContent = safeText(state.sesionEstatus || "â€”");
+        sesionEstatus.textContent = safeText(state.sesionEstatus || "—");
 
         const stats = data?.stats || {};
-        sesionStats.textContent = `Total: ${safeText(stats.total || 0)} Â· Validados: ${safeText(
+        sesionStats.textContent = `Total: ${safeText(stats.total || 0)} · Validados: ${safeText(
           stats.validados || 0
-        )} Â· Conflictos: ${safeText(stats.conflictos || 0)} Â· Pendientes: ${safeText(
+        )} · Conflictos: ${safeText(stats.conflictos || 0)} · Pendientes: ${safeText(
           stats.pendientes || 0
         )}`;
 
@@ -593,9 +590,9 @@ o se puede aplicar: sesiÃ³n ${safeText(state.sesionEstatus)}.`;
 
           const tdDetalle = document.createElement("td");
           if (f.estatusFila === "CONFLICTO") {
-            const aTxt = f.conteoA == null ? "ðŸ”’" : safeText(f.conteoA);
-            const bTxt = f.conteoB == null ? "ðŸ”’" : safeText(f.conteoB);
-            tdDetalle.textContent = `A: ${aTxt} Â· B: ${bTxt}`;
+            const aTxt = f.conteoA == null ? "??" : safeText(f.conteoA);
+            const bTxt = f.conteoB == null ? "??" : safeText(f.conteoB);
+            tdDetalle.textContent = `A: ${aTxt} · B: ${bTxt}`;
           } else if (f.estatusFila === "VALIDADO") {
             tdDetalle.textContent = `Final: ${safeText(f.cantidadFinal)}`;
           } else {
@@ -618,13 +615,13 @@ o se puede aplicar: sesiÃ³n ${safeText(state.sesionEstatus)}.`;
 
         const placeholder = document.createElement("option");
         placeholder.value = "";
-        placeholder.textContent = "Selecciona una sesiÃ³nâ€¦";
+        placeholder.textContent = "Selecciona una sesión…";
         sesionSelect.appendChild(placeholder);
 
         for (const s of sesiones) {
           const option = document.createElement("option");
           option.value = String(s.sesionId);
-          option.textContent = `#${s.sesionId} â€” ${safeText(s.nombre)} (${safeText(
+          option.textContent = `#${s.sesionId} — ${safeText(s.nombre)} (${safeText(
             s.estatus
           )})`;
           sesionSelect.appendChild(option);
@@ -696,7 +693,7 @@ o se puede aplicar: sesiÃ³n ${safeText(state.sesionEstatus)}.`;
         }
         const nombre = safeText(sesionNombre.value).trim();
         if (!nombre) {
-          toast("warning", "Escribe un nombre de sesiÃ³n");
+          toast("warning", "Escribe un nombre de sesión");
           return;
         }
 
@@ -708,31 +705,31 @@ o se puede aplicar: sesiÃ³n ${safeText(state.sesionEstatus)}.`;
           });
 
           if (!resp.ok) {
-            throw new Error(resp.data?.message || "No se pudo crear sesiÃ³n");
+            throw new Error(resp.data?.message || "No se pudo crear sesión");
           }
 
           const sesion = resp.data?.data?.sesion;
           if (!sesion?.sesionId) {
-            throw new Error("Respuesta invÃ¡lida del servidor");
+            throw new Error("Respuesta inválida del servidor");
           }
 
           const option = document.createElement("option");
           option.value = String(sesion.sesionId);
-          option.textContent = `#${sesion.sesionId} â€” ${safeText(sesion.nombre)}`;
+          option.textContent = `#${sesion.sesionId} — ${safeText(sesion.nombre)}`;
           sesionSelect.appendChild(option);
 
           sesionSelect.value = String(sesion.sesionId);
           state.sesionId = sesion.sesionId;
           state.sesionEstatus = sesion.estatus;
 
-          toast("success", "SesiÃ³n creada");
+          toast("success", "Sesión creada");
           sesionNombre.value = "";
 
           skuInput.focus();
           await loadDashboard();
         } catch (error) {
           console.error(error);
-          toast("error", error.message || "Error al crear sesiÃ³n");
+          toast("error", error.message || "Error al crear sesión");
         } finally {
           btnCrearSesion.disabled = false;
           updateControls();
@@ -741,7 +738,7 @@ o se puede aplicar: sesiÃ³n ${safeText(state.sesionEstatus)}.`;
 
       const registrarConteo = async () => {
         if (!state.sesionId) {
-          toast("warning", "Selecciona una sesiÃ³n");
+          toast("warning", "Selecciona una sesión");
           return;
         }
 
@@ -762,7 +759,7 @@ o se puede aplicar: sesiÃ³n ${safeText(state.sesionEstatus)}.`;
         }
 
         if (cantidad < 0) {
-          toast("warning", "Cantidad invÃ¡lida");
+          toast("warning", "Cantidad inválida");
           cantidadInput.focus();
           return;
         }
@@ -785,9 +782,9 @@ o se puede aplicar: sesiÃ³n ${safeText(state.sesionEstatus)}.`;
           }
 
           toast("success", `Registrado: ${sku} (${cantidad})`);
-          ultimoRegistro.textContent = `Ãšltimo registro: ${safeText(
+          ultimoRegistro.textContent = `Último registro: ${safeText(
             sku
-          )} Â· Cantidad: ${cantidad} Â· Estatus: ${safeText(
+          )} · Cantidad: ${cantidad} · Estatus: ${safeText(
             resp.data?.data?.conteo?.estatusFila
           )}`;
 
@@ -824,14 +821,14 @@ o se puede aplicar: sesiÃ³n ${safeText(state.sesionEstatus)}.`;
           return;
         }
 
-        let confirmText = `Se aplicarÃ¡ el inventario de ${validados} producto(s) VALIDADO(S).`;
+        let confirmText = `Se aplicará el inventario de ${validados} producto(s) VALIDADO(S).`;
         if (conflictos > 0) {
-          confirmText += `\n\nLos ${conflictos} producto(s) en CONFLICTO serÃ¡n ignorados y quedarÃ¡n registrados en esta sesiÃ³n cerrada.`;
+          confirmText += `\n\nLos ${conflictos} producto(s) en CONFLICTO serán ignorados y quedarán registrados en esta sesión cerrada.`;
         }
         if (pendientes > 0) {
-          confirmText += `\n\nLos ${pendientes} producto(s) PENDIENTES tambiÃ©n serÃ¡n ignorados.`;
+          confirmText += `\n\nLos ${pendientes} producto(s) PENDIENTES también serán ignorados.`;
         }
-        confirmText += "\n\nÂ¿Desea continuar?";
+        confirmText += "\n\n¿Desea continuar?";
 
         const confirm = await Swal.fire({
           icon: "warning",
@@ -862,7 +859,7 @@ o se puede aplicar: sesiÃ³n ${safeText(state.sesionEstatus)}.`;
           const result = resp.data?.data || {};
           let successMsg = `Inventario aplicado: ${result.filasProcesadas || validados} producto(s) actualizado(s).`;
           if (conflictos > 0 || pendientes > 0) {
-            successMsg += ` ${conflictos + pendientes} Ã­tem(s) no aplicado(s) quedaron registrados.`;
+            successMsg += ` ${conflictos + pendientes} ítem(s) no aplicado(s) quedaron registrados.`;
           }
 
           await Swal.fire({
@@ -897,8 +894,8 @@ o se puede aplicar: sesiÃ³n ${safeText(state.sesionEstatus)}.`;
           state.sesionId = null;
           state.sesionEstatus = null;
           state.filas = [];
-          sesionEstatus.textContent = "â€”";
-          sesionStats.textContent = "â€”";
+          sesionEstatus.textContent = "—";
+          sesionStats.textContent = "—";
           dashboardTable.style.display = "none";
           updateControls();
           return;
@@ -936,7 +933,7 @@ o se puede aplicar: sesiÃ³n ${safeText(state.sesionEstatus)}.`;
       updateControls();
       applyRoleRestrictions();
 
-      // Auto-seleccionar sesiÃ³n desde querystring (?sesionId=123)
+      // Auto-seleccionar sesión desde querystring (?sesionId=123)
       try {
         const params = new URLSearchParams(window.location.search);
         const sesionIdParam = Number.parseInt(params.get("sesionId"), 10);

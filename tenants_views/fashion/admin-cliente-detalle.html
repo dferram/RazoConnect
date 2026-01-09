@@ -1,4 +1,4 @@
-Ôªø<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
@@ -7,11 +7,8 @@
     <link rel="icon" type="image/png" href="/icon/Logo_Fashion.png" />
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <!-- PROTECCI√ìN DE AUTENTICACI√ìN ADMIN -->
+    <!-- PROTECCI”N DE AUTENTICACI”N ADMIN -->
     <script src="js/auth-guard-admin.js"></script>
-
-    <!-- SISTEMA DE RENOVACI√ìN DE TOKENS -->
-    <script src="js/token-refresh.js"></script>
 
     <link rel="stylesheet" href="css/styles-fashion.css" />
     <link rel="stylesheet" href="css/fashion-theme-fashion.css" />
@@ -30,12 +27,12 @@
         <div class="admin-content" style="display: grid; gap: 1.5rem;">
           <section class="admin-card" style="padding: 1.5rem; display: flex; justify-content: space-between; gap: 1.25rem; flex-wrap: wrap; align-items: center;">
             <div>
-              <p class="eyebrow" style="margin-bottom: 0.4rem;">Clientes ¬∑ Seguimiento individual</p>
+              <p class="eyebrow" style="margin-bottom: 0.4rem;">Clientes ∑ Seguimiento individual</p>
               <h2 style="margin: 0; font-size: clamp(1.4rem, 3vw, 2rem);" id="clienteTitulo">
                 Detalle del cliente
               </h2>
               <p style="margin: 0.35rem 0 0; color: var(--razo-gray-warm);" id="clienteSubtitle">
-                Consulta la informaci√≥n completa del cliente
+                Consulta la informaciÛn completa del cliente
               </p>
             </div>
             <div id="estadoBadge"></div>
@@ -64,10 +61,10 @@
           </div>
 
           <div id="errorState" class="empty-state" style="display: none">
-            <div class="empty-state-icon">‚ö†Ô∏è</div>
+            <div class="empty-state-icon">??</div>
             <h3 class="empty-state-title">No se pudo cargar el cliente</h3>
             <p class="empty-state-text" id="errorMessage">
-              Intenta nuevamente m√°s tarde.
+              Intenta nuevamente m·s tarde.
             </p>
             <button
               class="btn btn-primary"
@@ -95,7 +92,7 @@
                   color: var(--razo-orange, #ff6b35);
                 "
               >
-                üßæ Perfil del cliente
+                ?? Perfil del cliente
               </h2>
               <div
                 style="
@@ -153,7 +150,7 @@
                       text-transform: uppercase;
                     "
                   >
-                    Tel√©fono
+                    TelÈfono
                   </h3>
                   <p
                     style="margin: 0.25rem 0 0; color: var(--razo-gray-dark)"
@@ -201,7 +198,7 @@
                       color: var(--razo-orange, #ff6b35);
                     "
                   >
-                    üì¶ Historial de pedidos
+                    ?? Historial de pedidos
                   </h2>
                   <p
                     style="
@@ -223,13 +220,13 @@
                 class="empty-state"
                 style="display: none; padding: 1.5rem; gap: 0.35rem"
               >
-                <div class="empty-state-icon">üóíÔ∏è</div>
+                <div class="empty-state-icon">???</div>
                 <div>
                   <h3 class="empty-state-title" style="margin-bottom: 0.25rem">
                     Sin pedidos registrados
                   </h3>
                   <p class="empty-state-text" style="margin: 0">
-                    Cuando el cliente realice compras aparecer√°n aqu√≠.
+                    Cuando el cliente realice compras aparecer·n aquÌ.
                   </p>
                 </div>
               </div>
@@ -242,7 +239,7 @@
                       <th>Fecha</th>
                       <th>Monto</th>
                       <th>Estatus</th>
-                      <th>Direcci√≥n</th>
+                      <th>DirecciÛn</th>
                     </tr>
                   </thead>
                   <tbody id="pedidosTableBody"></tbody>
@@ -268,7 +265,7 @@
                       color: var(--razo-orange, #ff6b35);
                     "
                   >
-                    üè† Direcciones guardadas
+                    ?? Direcciones guardadas
                   </h2>
                   <p
                     style="
@@ -290,13 +287,13 @@
                 class="empty-state"
                 style="display: none; padding: 1.5rem; gap: 0.35rem"
               >
-                <div class="empty-state-icon">üì≠</div>
+                <div class="empty-state-icon">??</div>
                 <div>
                   <h3 class="empty-state-title" style="margin-bottom: 0.25rem">
                     Sin direcciones guardadas
                   </h3>
                   <p class="empty-state-text" style="margin: 0">
-                    El cliente todav√≠a no ha agregado direcciones de env√≠o.
+                    El cliente todavÌa no ha agregado direcciones de envÌo.
                   </p>
                 </div>
               </div>
@@ -327,7 +324,7 @@
         if (typeof Swal !== "undefined" && Swal && typeof Swal.fire === "function") {
           Swal.fire({
             icon: "warning",
-            title: "Cliente no v√°lido",
+            title: "Cliente no v·lido",
             text: "Regresando al listado de clientes.",
             confirmButtonText: "Ir al listado",
             confirmButtonColor: "#F97316",
@@ -335,7 +332,7 @@
             window.location.href = "/admin-clientes.html";
           });
         } else {
-          console.warn("Cliente no v√°lido. Redirigiendo al listado de clientes...");
+          console.warn("Cliente no v·lido. Redirigiendo al listado de clientes...");
           window.location.href = "/admin-clientes.html";
         }
       }
@@ -428,7 +425,7 @@
         document.getElementById("clienteEmail").textContent =
           cliente.email || "Sin email";
         document.getElementById("clienteTelefono").textContent =
-          cliente.telefono || "Sin tel√©fono";
+          cliente.telefono || "Sin telÈfono";
         document.getElementById("clienteFecha").textContent =
           cliente.fechaCreacion
             ? new Date(cliente.fechaCreacion).toLocaleDateString("es-MX", {
@@ -475,7 +472,7 @@
                   month: "short",
                   day: "numeric",
                 })
-              : "‚Äî";
+              : "ó";
             const monto = pedido.montoTotal
               ? `$${Number(pedido.montoTotal).toFixed(2)}`
               : "$0.00";
@@ -533,7 +530,7 @@
 
         direccionesVacio.style.display = "none";
         direccionesLista.style.display = "grid";
-        totalDireccionesBadge.textContent = `${direcciones.length} direcci√≥n${
+        totalDireccionesBadge.textContent = `${direcciones.length} direcciÛn${
           direcciones.length === 1 ? "" : "es"
         }`;
 
@@ -562,13 +559,13 @@
               }</strong>
             </div>
             <div style="color: var(--razo-gray-dark); font-size: 0.95rem;">${
-              lineaDireccion || "Sin direcci√≥n completa"
+              lineaDireccion || "Sin direcciÛn completa"
             }</div>
             <div style="color: var(--razo-gray-warm); font-size: 0.85rem; margin-top: 0.25rem;">${
               zona || "Zona no especificada"
             }</div>
             <div style="margin-top: 0.35rem; font-size: 0.85rem; color: var(--razo-gray-warm);">
-              CP: ${direccion.codigoPostal || "s/d"} ‚Ä¢ Tel: ${
+              CP: ${direccion.codigoPostal || "s/d"} ï Tel: ${
               direccion.telefonoContacto || "s/d"
             }
             </div>

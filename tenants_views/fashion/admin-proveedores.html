@@ -1,16 +1,13 @@
-Ôªø<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Gesti√≥n de Proveedores - Admin Fashion Box</title>
+    <title>GestiÛn de Proveedores - Admin Fashion Box</title>
     <link rel="icon" type="image/png" href="/icon/Logo_Fashion.png" />
 
-    <!-- PROTECCI√ìN DE AUTENTICACI√ìN ADMIN -->
+    <!-- PROTECCI”N DE AUTENTICACI”N ADMIN -->
     <script src="js/auth-guard-admin.js"></script>
-
-    <!-- SISTEMA DE RENOVACI√ìN DE TOKENS -->
-    <script src="js/token-refresh.js"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
@@ -23,7 +20,7 @@
     />
       <link rel="stylesheet" href="css/mobile-responsive-fashion.css" />
   </head>
-  <body data-page-title="Gesti√≥n de proveedores">
+  <body data-page-title="GestiÛn de proveedores">
     <div class="admin-layout">
       <!-- Sidebar -->
       <div id="sidebar-container"></div>
@@ -53,7 +50,7 @@
                     color: var(--razo-gray-dark);
                   "
                 >
-                  üìã Lista de Proveedores
+                  ?? Lista de Proveedores
                 </h2>
                 <p
                   style="
@@ -70,7 +67,7 @@
                 onclick="openProveedorModal()"
                 style="padding: 0.75rem 1.5rem"
               >
-                ‚ûï Agregar Proveedor
+                ? Agregar Proveedor
               </button>
             </div>
           </div>
@@ -93,7 +90,7 @@
                     <th>Empresa</th>
                     <th>Contacto</th>
                     <th>Email</th>
-                    <th>Tel√©fono</th>
+                    <th>TelÈfono</th>
                     <th>Acciones</th>
                   </tr>
                 </thead>
@@ -108,7 +105,7 @@
               class="empty-state"
               style="display: none"
             >
-              <div class="empty-state-icon">üè≠</div>
+              <div class="empty-state-icon">??</div>
               <h3 class="empty-state-title">No hay proveedores</h3>
               <p class="empty-state-text">
                 Comienza agregando un proveedor haciendo clic en "Agregar
@@ -183,13 +180,13 @@
               class="alert alert-info"
               style="font-size: 0.875rem; margin-bottom: 1.5rem; grid-column: 1 / -1"
             >
-              <strong>‚ÑπÔ∏è Nota:</strong> Solo el nombre de la empresa es
-              obligatorio. Los dem√°s campos son opcionales.
+              <strong>?? Nota:</strong> Solo el nombre de la empresa es
+              obligatorio. Los dem·s campos son opcionales.
             </div>
 
-            <!-- SECCI√ìN: INFORMACI√ìN EMPRESARIAL -->
+            <!-- SECCI”N: INFORMACI”N EMPRESARIAL -->
             <fieldset style="grid-column: 1 / -1; border: none; padding: 0; margin: 1.5rem 0 1rem 0;">
-              <legend style="font-size: 1rem; font-weight: 600; color: var(--razo-orange); margin-bottom: 0.75rem; padding: 0;">üè¢ Informaci√≥n Empresarial</legend>
+              <legend style="font-size: 1rem; font-weight: 600; color: var(--razo-orange); margin-bottom: 0.75rem; padding: 0;">?? InformaciÛn Empresarial</legend>
             </fieldset>
 
             <div class="form-grid">
@@ -207,7 +204,7 @@
               </div>
 
               <div class="form-group">
-                <label for="razonSocial" class="form-label">Raz√≥n Social</label>
+                <label for="razonSocial" class="form-label">RazÛn Social</label>
                 <input
                   type="text"
                   id="razonSocial"
@@ -228,7 +225,7 @@
               </div>
 
               <div class="form-group" style="grid-column: 1 / -1;">
-                <label for="regimenFiscal" class="form-label">R√©gimen Fiscal</label>
+                <label for="regimenFiscal" class="form-label">RÈgimen Fiscal</label>
                 <input
                   type="text"
                   id="regimenFiscal"
@@ -238,14 +235,14 @@
               </div>
             </div>
 
-            <!-- SECCI√ìN: DIRECCI√ìN FISCAL -->
+            <!-- SECCI”N: DIRECCI”N FISCAL -->
             <fieldset style="grid-column: 1 / -1; border: none; padding: 0; margin: 1.5rem 0 1rem 0;">
-              <legend style="font-size: 1rem; font-weight: 600; color: var(--razo-orange); margin-bottom: 0.75rem; padding: 0;">üìç Direcci√≥n Fiscal</legend>
+              <legend style="font-size: 1rem; font-weight: 600; color: var(--razo-orange); margin-bottom: 0.75rem; padding: 0;">?? DirecciÛn Fiscal</legend>
             </fieldset>
 
             <div class="form-grid">
               <div class="form-group" style="grid-column: 1 / -1;">
-                <label for="calle" class="form-label">Calle y N√∫mero</label>
+                <label for="calle" class="form-label">Calle y N˙mero</label>
                 <input
                   type="text"
                   id="calle"
@@ -265,7 +262,7 @@
               </div>
 
               <div class="form-group">
-                <label for="cp" class="form-label">C√≥digo Postal</label>
+                <label for="cp" class="form-label">CÛdigo Postal</label>
                 <input
                   type="text"
                   id="cp"
@@ -281,7 +278,7 @@
                   type="text"
                   id="ciudad"
                   class="form-input"
-                  placeholder="Ej: Ciudad de M√©xico"
+                  placeholder="Ej: Ciudad de MÈxico"
                 />
               </div>
 
@@ -296,9 +293,9 @@
               </div>
             </div>
 
-            <!-- SECCI√ìN: CONTACTOS -->
+            <!-- SECCI”N: CONTACTOS -->
             <fieldset style="grid-column: 1 / -1; border: none; padding: 0; margin: 1.5rem 0 1rem 0;">
-              <legend style="font-size: 1rem; font-weight: 600; color: var(--razo-orange); margin-bottom: 0.75rem; padding: 0;">üë• Contactos</legend>
+              <legend style="font-size: 1rem; font-weight: 600; color: var(--razo-orange); margin-bottom: 0.75rem; padding: 0;">?? Contactos</legend>
             </fieldset>
 
             <div class="form-grid">
@@ -314,7 +311,7 @@
               </div>
 
               <div class="form-group">
-                <label for="telefono" class="form-label">Tel√©fono</label>
+                <label for="telefono" class="form-label">TelÈfono</label>
                 <input
                   type="tel"
                   id="telefono"
@@ -384,7 +381,7 @@
               </div>
 
               <div class="form-group">
-                <label for="telefonoCobranza" class="form-label">Tel√©fono</label>
+                <label for="telefonoCobranza" class="form-label">TelÈfono</label>
                 <input
                   type="tel"
                   id="telefonoCobranza"
@@ -404,9 +401,9 @@
               </div>
             </div>
 
-            <!-- SECCI√ìN: INFORMACI√ìN BANCARIA -->
+            <!-- SECCI”N: INFORMACI”N BANCARIA -->
             <fieldset style="grid-column: 1 / -1; border: none; padding: 0; margin: 1.5rem 0 1rem 0;">
-              <legend style="font-size: 1rem; font-weight: 600; color: var(--razo-orange); margin-bottom: 0.75rem; padding: 0;">üí≥ Informaci√≥n Bancaria</legend>
+              <legend style="font-size: 1rem; font-weight: 600; color: var(--razo-orange); margin-bottom: 0.75rem; padding: 0;">?? InformaciÛn Bancaria</legend>
             </fieldset>
 
             <div class="form-grid">
@@ -421,12 +418,12 @@
               </div>
 
               <div class="form-group">
-                <label for="numeroCuenta" class="form-label">N√∫mero de Cuenta</label>
+                <label for="numeroCuenta" class="form-label">N˙mero de Cuenta</label>
                 <input
                   type="text"
                   id="numeroCuenta"
                   class="form-input"
-                  placeholder="√öltimos 4 d√≠gitos"
+                  placeholder="⁄ltimos 4 dÌgitos"
                 />
               </div>
 
@@ -436,7 +433,7 @@
                   type="text"
                   id="clabe"
                   class="form-input"
-                  placeholder="18 d√≠gitos"
+                  placeholder="18 dÌgitos"
                   maxlength="18"
                 />
               </div>
@@ -452,14 +449,14 @@
               </div>
             </div>
 
-            <!-- SECCI√ìN: CONDICIONES COMERCIALES -->
+            <!-- SECCI”N: CONDICIONES COMERCIALES -->
             <fieldset style="grid-column: 1 / -1; border: none; padding: 0; margin: 1.5rem 0 1rem 0;">
-              <legend style="font-size: 1rem; font-weight: 600; color: var(--razo-orange); margin-bottom: 0.75rem; padding: 0;">üí∞ Condiciones Comerciales</legend>
+              <legend style="font-size: 1rem; font-weight: 600; color: var(--razo-orange); margin-bottom: 0.75rem; padding: 0;">?? Condiciones Comerciales</legend>
             </fieldset>
 
             <div class="form-grid">
               <div class="form-group">
-                <label for="diasCredito" class="form-label">D√≠as de Cr√©dito</label>
+                <label for="diasCredito" class="form-label">DÌas de CrÈdito</label>
                 <input
                   type="number"
                   id="diasCredito"
@@ -470,7 +467,7 @@
               </div>
 
               <div class="form-group">
-                <label for="limiteCredito" class="form-label">L√≠mite de Cr√©dito ($)</label>
+                <label for="limiteCredito" class="form-label">LÌmite de CrÈdito ($)</label>
                 <input
                   type="number"
                   id="limiteCredito"
@@ -487,12 +484,12 @@
                   type="text"
                   id="descuentoFinanciero"
                   class="form-input"
-                  placeholder="Ej: 2% a 10 d√≠as"
+                  placeholder="Ej: 2% a 10 dÌas"
                 />
               </div>
 
               <div class="form-group">
-                <label for="minimoCompra" class="form-label">M√≠nimo de Compra ($)</label>
+                <label for="minimoCompra" class="form-label">MÌnimo de Compra ($)</label>
                 <input
                   type="number"
                   id="minimoCompra"
@@ -516,7 +513,7 @@
             </div>
 
             <fieldset style="grid-column: 1 / -1; border: none; padding: 0; margin: 1.5rem 0 1rem 0;">
-              <legend style="font-size: 1rem; font-weight: 600; color: var(--razo-orange); margin-bottom: 0.75rem; padding: 0;">üì¶ Configuraci√≥n de Empaques</legend>
+              <legend style="font-size: 1rem; font-weight: 600; color: var(--razo-orange); margin-bottom: 0.75rem; padding: 0;">?? ConfiguraciÛn de Empaques</legend>
             </fieldset>
 
             <div class="admin-table-container" style="grid-column: 1 / -1; padding: 1rem; margin-bottom: 0.75rem;">
@@ -684,7 +681,7 @@
                     onclick="editarReglaEmpaqueModal(${tipoId}, ${piezas})"
                     title="Editar"
                   >
-                    ‚úèÔ∏è
+                    ??
                   </button>
                 </td>
               </tr>
@@ -811,7 +808,7 @@
       async function applyReglasEmpaque(proveedorId) {
         const provId = Number.parseInt(proveedorId, 10);
         if (!Number.isInteger(provId) || provId <= 0) {
-          throw new Error("Proveedor inv√°lido para aplicar reglas");
+          throw new Error("Proveedor inv·lido para aplicar reglas");
         }
 
         for (const regla of reglasEmpaque) {
@@ -945,7 +942,7 @@
                       class="btn btn-primary" 
                       style="padding: 0.5rem 1rem; font-size: 0.875rem;"
                       onclick="editProveedor(${proveedor.proveedorid})">
-                      ‚úèÔ∏è Editar
+                      ?? Editar
                     </button>
                   </div>
                 </td>
@@ -1142,7 +1139,7 @@
                 }
               } catch (e) {
                 showToast(
-                  e.message || "Proveedor guardado, pero fall√≥ la aplicaci√≥n de reglas de empaque",
+                  e.message || "Proveedor guardado, pero fallÛ la aplicaciÛn de reglas de empaque",
                   "error"
                 );
                 if (!editingProveedorId && proveedorIdRespuesta) {
@@ -1185,7 +1182,7 @@
         link.addEventListener("click", (e) => {
           e.preventDefault();
           const moduleName = link.querySelector("span:last-child").textContent;
-          showToast(`M√≥dulo "${moduleName}" pr√≥ximamente disponible`, "info");
+          showToast(`MÛdulo "${moduleName}" prÛximamente disponible`, "info");
         });
       });
 

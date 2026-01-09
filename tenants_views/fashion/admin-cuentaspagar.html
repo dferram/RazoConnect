@@ -1,4 +1,4 @@
-ï»¿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
@@ -8,11 +8,8 @@
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-    <!-- PROTECCIÃ“N DE AUTENTICACIÃ“N ADMIN -->
+    <!-- PROTECCIÓN DE AUTENTICACIÓN ADMIN -->
     <script src="js/auth-guard-admin.js"></script>
-
-    <!-- SISTEMA DE RENOVACIÃ“N DE TOKENS -->
-    <script src="js/token-refresh.js"></script>
 
     <link rel="stylesheet" href="css/styles-fashion.css" />
     <link rel="stylesheet" href="css/fashion-theme-fashion.css" />
@@ -60,14 +57,14 @@
                 <div class="kpi-sub" id="kpiVencidoSub">Fecha anterior a hoy</div>
               </div>
               <div class="kpi-card kpi-warning">
-                <div class="kpi-title">PrÃ³ximo a vencer</div>
+                <div class="kpi-title">Próximo a vencer</div>
                 <div class="kpi-value" id="kpiProximo">$0</div>
-                <div class="kpi-sub" id="kpiProximoSub">Siguientes 7 dÃ­as</div>
+                <div class="kpi-sub" id="kpiProximoSub">Siguientes 7 días</div>
               </div>
             </div>
           </section>
 
-          <!-- Barra de bÃºsqueda y filtros -->
+          <!-- Barra de búsqueda y filtros -->
           <section class="admin-card" style="padding: 1.25rem; margin-bottom: 1rem;">
             <div style="display: grid; gap: 1rem;">
               <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: end;">
@@ -134,7 +131,7 @@
                     </th>
                     <th>Proveedor</th>
                     <th>Factura / Ref</th>
-                    <th>Fecha EmisiÃ³n</th>
+                    <th>Fecha Emisión</th>
                     <th>Fecha Vencimiento</th>
                     <th style="text-align:right;">Monto Total</th>
                     <th style="text-align:right;">Restante</th>
@@ -147,18 +144,18 @@
               </table>
 
               <div class="d-flex justify-content-between align-items-center mt-3 mb-4">
-                <nav aria-label="NavegaciÃ³n de tabla">
+                <nav aria-label="Navegación de tabla">
                   <ul class="pagination mb-0" id="pagination-controls"></ul>
                 </nav>
               </div>
             </div>
           </section>
 
-          <!-- BotÃ³n de Exportar (siempre visible cuando hay datos) -->
+          <!-- Botón de Exportar (siempre visible cuando hay datos) -->
           <div style="margin-top: 1rem;">
             <div style="display: flex; justify-content: flex-end; align-items: center; gap: 1rem; padding: 1rem; background: white; border-radius: 0.75rem; border: 1px solid rgba(0,0,0,0.1);">
               <small class="text-muted" style="font-size: 0.85rem;">
-                <i class="bi bi-info-circle"></i> La exportaciÃ³n respetarÃ¡ los filtros activos
+                <i class="bi bi-info-circle"></i> La exportación respetará los filtros activos
               </small>
               <button id="btn-exportar" type="button" class="btn btn-success" title="Exportar vista actual con filtros aplicados">
                 <i class="bi bi-file-earmark-excel"></i>
@@ -191,19 +188,19 @@
             </div>
 
             <div style="display:grid; gap: 0.5rem;">
-              <label for="pagoMetodo" class="form-label">MÃ©todo de pago <span style="color: #dc3545;">*</span></label>
+              <label for="pagoMetodo" class="form-label">Método de pago <span style="color: #dc3545;">*</span></label>
               <select id="pagoMetodo" class="form-input" required>
                 <option value="TRANSFERENCIA">Transferencia Bancaria</option>
                 <option value="EFECTIVO">Efectivo</option>
                 <option value="CHEQUE">Cheque</option>
-                <option value="TARJETA_CREDITO">Tarjeta de CrÃ©dito</option>
-                <option value="TARJETA_DEBITO">Tarjeta de DÃ©bito</option>
+                <option value="TARJETA_CREDITO">Tarjeta de Crédito</option>
+                <option value="TARJETA_DEBITO">Tarjeta de Débito</option>
               </select>
             </div>
           </div>
 
           <div style="display:grid; gap: 0.5rem;">
-            <label for="pagoReferencia" class="form-label">Referencia / NÃºmero de operaciÃ³n</label>
+            <label for="pagoReferencia" class="form-label">Referencia / Número de operación</label>
             <input id="pagoReferencia" type="text" class="form-input" placeholder="Ej: Transferencia BBVA #123456 o Cheque #789" />
           </div>
 
@@ -215,7 +212,7 @@
           <div style="display:grid; gap: 0.5rem;">
             <label for="pagoComprobante" class="form-label">Subir comprobante</label>
             <input id="pagoComprobante" type="file" class="form-input" accept="image/*,application/pdf" />
-            <div style="font-size: 0.85rem; color: #6b7280;"><i class="bi bi-info-circle"></i> PDF o imagen. MÃ¡x. 8MB. Opcional pero recomendado.</div>
+            <div style="font-size: 0.85rem; color: #6b7280;"><i class="bi bi-info-circle"></i> PDF o imagen. Máx. 8MB. Opcional pero recomendado.</div>
           </div>
 
           <!-- Historial de pagos previos -->
@@ -241,12 +238,12 @@
         <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid #e5e7eb;">
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <h3 id="detalleModalTitle" style="margin: 0; font-size: 1.25rem; font-weight: 700; color: #111827;">Cuenta por Pagar</h3>
-            <button onclick="cerrarModalDetalle()" style="background: none; border: none; font-size: 1.5rem; color: #6b7280; cursor: pointer; padding: 0; width: 2rem; height: 2rem; display: flex; align-items: center; justify-content: center;">Ã—</button>
+            <button onclick="cerrarModalDetalle()" style="background: none; border: none; font-size: 1.5rem; color: #6b7280; cursor: pointer; padding: 0; width: 2rem; height: 2rem; display: flex; align-items: center; justify-content: center;">×</button>
           </div>
         </div>
         
         <div class="modal-content" style="padding: 1.5rem;">
-          <!-- InformaciÃ³n Principal -->
+          <!-- Información Principal -->
           <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 1rem;">
             <div>
               <label style="display: block; font-size: 0.875rem; font-weight: 600; color: #6b7280; margin-bottom: 0.25rem;">Proveedor</label>
@@ -266,7 +263,7 @@
           <!-- Fechas -->
           <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 1rem;">
             <div>
-              <label style="display: block; font-size: 0.875rem; font-weight: 600; color: #6b7280; margin-bottom: 0.25rem;">Fecha EmisiÃ³n</label>
+              <label style="display: block; font-size: 0.875rem; font-weight: 600; color: #6b7280; margin-bottom: 0.25rem;">Fecha Emisión</label>
               <p id="detalleFechaEmision" style="margin: 0; color: #111827;"></p>
             </div>
             <div>
