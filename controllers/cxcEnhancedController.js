@@ -32,6 +32,7 @@ async function getCxcSummaryWithAging(req, res) {
                     COALESCE(p.saldo_pendiente, p.montototal) as saldo_pedido,
                     p.fecha_vencimiento,
                     p.fechapedido,
+                    p.estatus_deuda,
                     CASE 
                         WHEN p.fecha_vencimiento IS NULL THEN 0
                         WHEN p.fecha_vencimiento::date > CURRENT_DATE THEN 0
@@ -68,6 +69,7 @@ async function getCxcSummaryWithAging(req, res) {
                 COALESCE(ab.vencido_1_30, 0) as "vencido1a30",
                 COALESCE(ab.vencido_mas_30, 0) as "vencidoMas30",
                 COALESCE(ab.max_dias_vencido, 0) as "maxDiasVencido",
+                cc.dias_gracia as "diasCreditoPersonalizado",
                 cc.ultima_actualizacion as "ultimoMovimiento",
                 (
                     SELECT cm.descripcion 
@@ -170,7 +172,7 @@ async function getEstadoCuentaCliente(req, res) {
                 cc.limite_credito,
                 cc.saldo_deudor,
                 cc.estado_credito,
-                cc.dias_gracia,
+                cc.dias_gracia as dias_credito_personalizado,
                 cc.ultima_actualizacion as ultimo_movimiento
             FROM clientes c
             INNER JOIN cliente_creditos cc ON cc.cliente_id = c.clienteid
@@ -193,6 +195,7 @@ async function getEstadoCuentaCliente(req, res) {
                 COALESCE(p.saldo_pendiente, p.montototal) as saldo_pendiente,
                 p.fecha_vencimiento,
                 p.estatus,
+                p.estatus_deuda,
                 CASE 
                     WHEN p.fecha_vencimiento IS NULL THEN 0
                     WHEN p.fecha_vencimiento::date > CURRENT_DATE THEN 0

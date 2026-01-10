@@ -1,5 +1,6 @@
 const cron = require("node-cron");
 const db = require("../db");
+const { mantenimientoDiarioDeudas } = require('./debtExpirationService');
 
 const DAILY_SCHEDULE = "0 8 * * *"; // Todos los días a las 8:00 AM
 
@@ -135,8 +136,12 @@ const suspendDelinquentClients = async () => {
 const runDailyMaintenance = async () => {
   try {
     console.info("[CRON] Ejecutando mantenimiento diario de crédito...");
+    
+    await mantenimientoDiarioDeudas();
+    
     await sendDueSoonNotifications();
     await suspendDelinquentClients();
+    
     console.info("[CRON] Mantenimiento diario completado.");
   } catch (error) {
     console.error("[CRON] Error durante mantenimiento diario:", error);

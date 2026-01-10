@@ -283,6 +283,25 @@ const crearPedido = async (req, res) => {
       };
     });
 
+    // Validar que todos los items tengan tamano_valor válido
+    const itemsInvalidos = items.filter(item => !item.tamano_valor || item.tamano_valor <= 0);
+    if (itemsInvalidos.length > 0) {
+      await client.query("ROLLBACK");
+      transactionStarted = false;
+      removeUploadedComprobante();
+      
+      const detallesError = itemsInvalidos.map(item => 
+        `${item.nombreproducto} (SKU: ${item.sku}) - TamanoID: ${item.tamanoid || 'NULL'}`
+      ).join(', ');
+      
+      console.error('Items del carrito sin presentación válida:', detallesError);
+      
+      return res.status(400).json({
+        success: false,
+        message: "Algunos productos en tu carrito no tienen una presentación válida. Por favor, elimínalos y vuelve a agregarlos.",
+      });
+    }
+
     const multiploPorKey = new Map();
     for (const item of items) {
       const key = `${item.proveedorid_default || 0}:${item.tipoproductoid || 0}`;
