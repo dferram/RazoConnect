@@ -67,12 +67,14 @@ async function normalizarCantidadPorReglaEmpaque(
  * @param {object} client - Cliente de base de datos activo dentro de la transacción.
  * @param {number|string} varianteId - Identificador de la variante a surtir.
  * @param {number|string} cantidadFaltante - Cantidad de piezas faltantes que se deben solicitar.
+ * @param {number} tenantId - ID del tenant para aislamiento multi-tenant.
  * @returns {Promise<object>} - Información de la orden de compra afectada.
  */
 async function generarOrdenCompraAutomatica(
   client,
   varianteId,
-  cantidadFaltante
+  cantidadFaltante,
+  tenantId = 1
 ) {
   const dbClient = client || (await db.pool.connect());
   const releaseClient = !client;
@@ -116,10 +118,10 @@ async function generarOrdenCompraAutomatica(
     const ordenPendienteResult = await dbClient.query(
       `SELECT OrdenCompraID
          FROM OrdenesDeCompra
-        WHERE ProveedorID = $1 AND Estatus = 'Pendiente'
+        WHERE ProveedorID = $1 AND Estatus = 'Pendiente' AND tenant_id = $2
         ORDER BY FechaCreacion ASC
         LIMIT 1`,
-      [proveedorId]
+      [proveedorId, tenantId]
     );
 
     let ordenCompraId;
@@ -130,10 +132,10 @@ async function generarOrdenCompraAutomatica(
     } else {
       esOrdenNueva = true;
       const nuevaOrdenResult = await dbClient.query(
-        `INSERT INTO OrdenesDeCompra (ProveedorID, FechaEntregaEsperada, Estatus, OrigenOC)
-         VALUES ($1, NOW() + INTERVAL '14 days', 'Pendiente', 'backorder')
+        `INSERT INTO OrdenesDeCompra (ProveedorID, FechaEntregaEsperada, Estatus, OrigenOC, tenant_id)
+         VALUES ($1, NOW() + INTERVAL '14 days', 'Pendiente', 'backorder', $2)
          RETURNING OrdenCompraID`,
-        [proveedorId]
+        [proveedorId, tenantId]
       );
 
       ordenCompraId = nuevaOrdenResult.rows[0].ordencompraid;
@@ -216,6 +218,7 @@ async function generarOrdenCompraAutomatica(
  * @param {number|null} tamanoID - ID del tamaño del paquete (puede ser NULL).
  * @param {number|null} usuarioCreadorId - ID del usuario que genera el backorder (puede ser NULL).
  * @param {number|null} pedidoOrigenId - ID del pedido de cliente que originó este backorder.
+ * @param {number} tenantId - ID del tenant para aislamiento multi-tenant.
  * @returns {Promise<object>} - Información de la orden de compra generada.
  */
 async function generarBackorderProveedor(
@@ -225,7 +228,8 @@ async function generarBackorderProveedor(
   cantidadFaltante,
   tamanoID,
   usuarioCreadorId = null,
-  pedidoOrigenId = null
+  pedidoOrigenId = null,
+  tenantId = 1
 ) {
   try {
     // Validar parámetros
@@ -290,11 +294,12 @@ async function generarBackorderProveedor(
         Estatus, 
         OrigenOC, 
         usuario_creador_id,
-        pedido_origen_id
+        pedido_origen_id,
+        tenant_id
       )
-      VALUES ($1, NOW() + INTERVAL '14 days', 'Pendiente', 'backorder', $2, $3)
+      VALUES ($1, NOW() + INTERVAL '14 days', 'Pendiente', 'backorder', $2, $3, $4)
       RETURNING OrdenCompraID`,
-      [proveedorID, usuarioCreadorId, pedidoOrigenId]
+      [proveedorID, usuarioCreadorId, pedidoOrigenId, tenantId]
     );
     ordenCompraID = nuevaOrdenResult.rows[0].ordencompraid;
 
@@ -351,13 +356,15 @@ async function generarBackorderProveedor(
  * @param {Array} productosBackorder - Array de productos con backorder [{productoID, varianteID, cantidadFaltante, tamanoID, proveedorID}]
  * @param {number|null} usuarioCreadorId - ID del usuario que genera el backorder (puede ser NULL).
  * @param {number|null} pedidoOrigenId - ID del pedido de cliente que originó estos backorders.
+ * @param {number} tenantId - ID del tenant para aislamiento multi-tenant.
  * @returns {Promise<Array>} - Array de órdenes de compra generadas.
  */
 async function generarBackordersAgrupados(
   client,
   productosBackorder,
   usuarioCreadorId = null,
-  pedidoOrigenId = null
+  pedidoOrigenId = null,
+  tenantId = 1
 ) {
   try {
     if (!Array.isArray(productosBackorder) || productosBackorder.length === 0) {
@@ -386,7 +393,7 @@ async function generarBackordersAgrupados(
     const ordenesGeneradas = [];
 
     for (const [proveedorID, productos] of productosPorProveedor.entries()) {
-      // Crear la orden de compra
+      // Crear la orden de compra con tenant_id para aislamiento
       const nuevaOrdenResult = await client.query(
         `INSERT INTO OrdenesDeCompra (
           ProveedorID, 
@@ -394,11 +401,12 @@ async function generarBackordersAgrupados(
           Estatus, 
           OrigenOC, 
           usuario_creador_id,
-          pedido_origen_id
+          pedido_origen_id,
+          tenant_id
         )
-        VALUES ($1, NOW() + INTERVAL '14 days', 'Pendiente', 'backorder', $2, $3)
+        VALUES ($1, NOW() + INTERVAL '14 days', 'Pendiente', 'backorder', $2, $3, $4)
         RETURNING OrdenCompraID`,
-        [proveedorID, usuarioCreadorId, pedidoOrigenId]
+        [proveedorID, usuarioCreadorId, pedidoOrigenId, tenantId]
       );
       
       const ordenCompraID = nuevaOrdenResult.rows[0].ordencompraid;

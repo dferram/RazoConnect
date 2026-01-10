@@ -1326,9 +1326,10 @@ const recepcionMasivaOrdenCompra = async (req, res) => {
     const montoOriginalOrden =
       Number.parseFloat(totalOrdenResult.rows[0]?.total_orden ?? 0) || 0;
 
-    await client.query("UPDATE ordenesdecompra SET total = $1 WHERE ordencompraid = $2", [
+    await client.query("UPDATE ordenesdecompra SET total = $1 WHERE ordencompraid = $2 AND tenant_id = $3", [
       montoOriginalOrden,
       ordenCompraId,
+      req.tenant.tenant_id,
     ]);
 
     const cxpInsert = await client.query(
@@ -1394,9 +1395,10 @@ const recepcionMasivaOrdenCompra = async (req, res) => {
     );
     const faltantes = Number.parseInt(faltantesResult.rows[0]?.faltantes, 10) || 0;
     const nuevoEstatusOC = faltantes === 0 ? "Completada" : "Parcial";
-    await client.query("UPDATE ordenesdecompra SET estatus = $1 WHERE ordencompraid = $2", [
+    await client.query("UPDATE ordenesdecompra SET estatus = $1 WHERE ordencompraid = $2 AND tenant_id = $3", [
       nuevoEstatusOC,
       ordenCompraId,
+      req.tenant.tenant_id,
     ]);
 
     await client.query("COMMIT");
@@ -1479,9 +1481,10 @@ const upsertCuentaPorPagarForOC = async (client, ordenCompraId, usuarioId) => {
   );
 
   const totalOrden = Number.parseFloat(totalOrdenResult.rows[0]?.total_orden ?? 0) || 0;
-  await client.query("UPDATE OrdenesDeCompra SET Total = $1 WHERE OrdenCompraID = $2", [
+  await client.query("UPDATE OrdenesDeCompra SET Total = $1 WHERE OrdenCompraID = $2 AND tenant_id = $3", [
     totalOrden,
     ordenCompraId,
+    req.tenant.tenant_id,
   ]);
 
   const montoTotal = Number.parseFloat(montoResult.rows[0]?.monto_total ?? 0) || 0;
@@ -10057,9 +10060,10 @@ const validarRecepcionCompra = async (req, res) => {
 
     await client.query("BEGIN");
 
+    const { tenant_id } = req.tenant;
     const ordenLock = await client.query(
-      "SELECT OrdenCompraID, Estatus FROM OrdenesDeCompra WHERE OrdenCompraID = $1 FOR UPDATE",
-      [ordenCompraId]
+      "SELECT OrdenCompraID, Estatus FROM OrdenesDeCompra WHERE OrdenCompraID = $1 AND tenant_id = $2 FOR UPDATE",
+      [ordenCompraId, tenant_id]
     );
 
     if (!ordenLock.rows.length) {
@@ -10192,8 +10196,8 @@ const validarRecepcionCompra = async (req, res) => {
     }
 
     await client.query(
-      "UPDATE OrdenesDeCompra SET Estatus = 'Completada' WHERE OrdenCompraID = $1",
-      [ordenCompraId]
+      "UPDATE OrdenesDeCompra SET Estatus = 'Completada' WHERE OrdenCompraID = $1 AND tenant_id = $2",
+      [ordenCompraId, tenant_id]
     );
 
     await client.query("COMMIT");
@@ -10235,6 +10239,7 @@ const getAllOrdenesCompra = async (req, res) => {
     const { estatus, adminId } = req.query;
     const userRole = req.user.rol;
     const userId = req.user.id;
+    const { tenant_id } = req.tenant;
 
     let query = `
       SELECT 
@@ -10252,11 +10257,11 @@ const getAllOrdenesCompra = async (req, res) => {
       INNER JOIN Proveedores p ON oc.ProveedorID = p.ProveedorID
       LEFT JOIN DetallesOrdenCompra doc ON oc.OrdenCompraID = doc.OrdenCompraID
       LEFT JOIN Administradores a ON oc.usuario_creador_id = a.adminid
-      WHERE 1=1
+      WHERE oc.tenant_id = $1
     `;
 
-    const values = [];
-    let paramIndex = 1;
+    const values = [tenant_id];
+    let paramIndex = 2;
 
     // REGLA DE VISIBILIDAD: Admin solo ve sus registros + backorders del sistema (NULL), SuperAdmin ve todos o filtra por adminId
     if (userRole === 'admin') {
@@ -10534,13 +10539,14 @@ const recibirInventario = async (req, res) => {
     // Iniciar transacción
     await client.query("BEGIN");
 
+    const { tenant_id } = req.tenant;
     // Verificar que la orden existe y validar propiedad
-    let ordenCheckQuery = "SELECT OrdenCompraID, Estatus, usuario_creador_id FROM OrdenesDeCompra WHERE OrdenCompraID = $1";
-    let ordenCheckParams = [ordenCompraId];
+    let ordenCheckQuery = "SELECT OrdenCompraID, Estatus, usuario_creador_id FROM OrdenesDeCompra WHERE OrdenCompraID = $1 AND tenant_id = $2";
+    let ordenCheckParams = [ordenCompraId, tenant_id];
 
     // REGLA DE VISIBILIDAD: Admin solo puede recibir inventario de sus propias órdenes
     if (userRole === 'admin') {
-      ordenCheckQuery += " AND usuario_creador_id = $2";
+      ordenCheckQuery += " AND usuario_creador_id = $3";
       ordenCheckParams.push(userId);
     }
 
@@ -10781,8 +10787,8 @@ const recibirInventario = async (req, res) => {
     }
 
     await client.query(
-      "UPDATE OrdenesDeCompra SET Estatus = $1 WHERE OrdenCompraID = $2",
-      [nuevoEstatus, ordenCompraId]
+      "UPDATE OrdenesDeCompra SET Estatus = $1 WHERE OrdenCompraID = $2 AND tenant_id = $3",
+      [nuevoEstatus, ordenCompraId, tenant_id]
     );
 
     let cuentaPorPagar = null;
@@ -10893,9 +10899,10 @@ const recibirItemOrdenCompra = async (req, res) => {
 
     await client.query("BEGIN");
 
+    const { tenant_id } = req.tenant;
     const ordenLock = await client.query(
-      "SELECT OrdenCompraID, Estatus FROM OrdenesDeCompra WHERE OrdenCompraID = $1 FOR UPDATE",
-      [ordenCompraId]
+      "SELECT OrdenCompraID, Estatus FROM OrdenesDeCompra WHERE OrdenCompraID = $1 AND tenant_id = $2 FOR UPDATE",
+      [ordenCompraId, tenant_id]
     );
     if (!ordenLock.rows.length) {
       await client.query("ROLLBACK");
@@ -11006,8 +11013,8 @@ const recibirItemOrdenCompra = async (req, res) => {
     const nuevoEstatusOC = faltantes === 0 ? "Completada" : "Parcial";
 
     await client.query(
-      "UPDATE OrdenesDeCompra SET Estatus = $1 WHERE OrdenCompraID = $2",
-      [nuevoEstatusOC, ordenCompraId]
+      "UPDATE OrdenesDeCompra SET Estatus = $1 WHERE OrdenCompraID = $2 AND tenant_id = $3",
+      [nuevoEstatusOC, ordenCompraId, req.tenant.tenant_id]
     );
 
     let cuentaPorPagar = null;
@@ -11240,9 +11247,10 @@ const crearOrdenCompra = async (req, res) => {
     }
 
     const totalMonetario = totalCents / 100;
-    await client.query("UPDATE OrdenesDeCompra SET Total = $1 WHERE OrdenCompraID = $2", [
+    await client.query("UPDATE OrdenesDeCompra SET Total = $1 WHERE OrdenCompraID = $2 AND tenant_id = $3", [
       totalMonetario,
       ordenCompraId,
+      req.tenant.tenant_id,
     ]);
 
     // Commit de la transacción
@@ -11428,8 +11436,8 @@ const addItemToOrder = async (req, res) => {
     const nuevoTotal = parseFloat(totalResult.rows[0].total);
 
     await client.query(
-      `UPDATE OrdenesDeCompra SET Total = $1 WHERE OrdenCompraID = $2`,
-      [nuevoTotal, ordenCompraId]
+      `UPDATE OrdenesDeCompra SET Total = $1 WHERE OrdenCompraID = $2 AND tenant_id = $3`,
+      [nuevoTotal, ordenCompraId, req.tenant.tenant_id]
     );
 
     await client.query("COMMIT");
@@ -11564,8 +11572,8 @@ const removeItemFromOrder = async (req, res) => {
     const nuevoTotal = parseFloat(totalResult.rows[0].total);
 
     await client.query(
-      `UPDATE OrdenesDeCompra SET Total = $1 WHERE OrdenCompraID = $2`,
-      [nuevoTotal, ordenCompraId]
+      `UPDATE OrdenesDeCompra SET Total = $1 WHERE OrdenCompraID = $2 AND tenant_id = $3`,
+      [nuevoTotal, ordenCompraId, req.tenant.tenant_id]
     );
 
     await client.query("COMMIT");
@@ -12286,8 +12294,8 @@ const confirmarOrdenBackorder = async (req, res) => {
     await db.query(
       `UPDATE ordenesdecompra 
        SET estatus = 'Confirmada'
-       WHERE ordencompraid = $1`,
-      [ordenCompraId]
+       WHERE ordencompraid = $1 AND tenant_id = $2`,
+      [ordenCompraId, req.tenant.tenant_id]
     );
 
     // Obtener clientes afectados por productos en backorder
@@ -12348,10 +12356,11 @@ const cancelarOrdenBackorder = async (req, res) => {
       });
     }
 
+    const { tenant_id } = req.tenant;
     // Verificar que la orden existe
     const ordenResult = await db.query(
-      `SELECT * FROM ordenesdecompra WHERE ordencompraid = $1`,
-      [ordenCompraId]
+      `SELECT * FROM ordenesdecompra WHERE ordencompraid = $1 AND tenant_id = $2`,
+      [ordenCompraId, tenant_id]
     );
 
     if (ordenResult.rows.length === 0) {
@@ -12365,8 +12374,8 @@ const cancelarOrdenBackorder = async (req, res) => {
     await db.query(
       `UPDATE ordenesdecompra 
        SET estatus = 'Cancelada'
-       WHERE ordencompraid = $1`,
-      [ordenCompraId]
+       WHERE ordencompraid = $1 AND tenant_id = $2`,
+      [ordenCompraId, tenant_id]
     );
 
     // Obtener clientes afectados
