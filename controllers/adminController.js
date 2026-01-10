@@ -1963,6 +1963,13 @@ const crearTipoProductoAdmin = async (req, res) => {
       });
     }
 
+    if (!isNaN(nombre) && !isNaN(parseFloat(nombre))) {
+      return res.status(400).json({
+        success: false,
+        message: "El nombre del tipo de producto no puede ser un número. Usa un nombre descriptivo (ej: 'Caja Grande', 'Peluche').",
+      });
+    }
+
     const insertRes = await db.query(
       `INSERT INTO tipoproducto (nombre, descripcion, activo, tenant_id)
        VALUES ($1, $2, TRUE, $3)
@@ -3808,6 +3815,13 @@ const saveReglasEmpaqueMultiples = async (req, res) => {
         return res.status(400).json({
           success: false,
           message: "Hay reglas sin tipo de producto especificado",
+        });
+      }
+
+      if (!isNaN(tipoNombre) && !isNaN(parseFloat(tipoNombre))) {
+        return res.status(400).json({
+          success: false,
+          message: `El nombre del tipo de producto no puede ser un número. Usa un nombre descriptivo (ej: 'Caja Grande', 'Peluche'). Valor recibido: "${tipoNombre}"`,
         });
       }
 

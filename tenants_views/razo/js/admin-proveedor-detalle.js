@@ -381,9 +381,16 @@ function validateReglas(reglas) {
   for (let i = 0; i < list.length; i += 1) {
     const r = list[i] || {};
     const idx = i + 1;
-    if (!String(r.tipo_nombre || "").trim()) {
+    const tipoNombre = String(r.tipo_nombre || "").trim();
+    
+    if (!tipoNombre) {
       return { ok: false, message: `Fila ${idx}: ingresa un tipo de producto.` };
     }
+    
+    if (!isNaN(tipoNombre) && !isNaN(parseFloat(tipoNombre))) {
+      return { ok: false, message: `Fila ${idx}: el tipo de producto no puede ser un número. Usa un nombre descriptivo (ej: "Caja Grande", "Peluche").` };
+    }
+    
     if (!String(r.nombre_regla || "").trim()) {
       return { ok: false, message: `Fila ${idx}: el nombre de la regla es requerido.` };
     }
