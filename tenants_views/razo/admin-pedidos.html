@@ -254,6 +254,7 @@
     <script src="js/components/admin-header-loader.js"></script>
     <script src="js/components/user-profile.js"></script>
     <script src="js/admin-header-dropdown.js"></script>
+    <script src="js/admin-generar-remision.js"></script>
     <script>
       // Authentication check
       const adminToken = localStorage.getItem("razoconnect_admin_token");
@@ -374,9 +375,9 @@
                       <button
                         class="btn btn-info"
                         style="padding: 0.5rem 1rem; font-size: 0.875rem; background: #17a2b8; color: white;"
-                        onclick="generarRemision(${order.pedidoId})"
-                        title="Generar remisión para firma">
-                        📄 Remisión
+                        onclick="abrirModalGenerarRemision(${order.pedidoId})"
+                        title="Generar remisión de entrega">
+                        📄 Generar Remisión
                       </button>
                       ${order.urlEvidenciaEntrega ? `
                         <button

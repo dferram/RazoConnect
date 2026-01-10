@@ -33,6 +33,7 @@ const { scheduleDailyMaintenance } = require("./cron/dailyMaintenance");
 const pagosRoutes = require("./routes/pagos");
 const cuponesRoutes = require("./routes/cupones");
 const developerRoutes = require("./routes/developer");
+const remisionesRoutes = require("./routes/remisiones");
 
 // Importar middlewares
 const tenantGuard = require("./middlewares/tenantGuard");
@@ -233,6 +234,7 @@ app.use("/api/admin/reportes", reportesRoutes);
 app.use("/api/staff", staffRoutes);
 app.use("/api/pagos", pagosRoutes);
 app.use("/api/cupones", cuponesRoutes);
+app.use("/api/remisiones", remisionesRoutes);
 
 // Manejo de rutas no encontradas solo para API
 app.use("/api/*", (req, res) => {
