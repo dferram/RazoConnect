@@ -14072,8 +14072,8 @@ const obtenerRemisionPedido = async (req, res) => {
 
     const detallesQuery = `
       SELECT 
-        dp.cantidad,
-        dp.preciounitarioaplicado,
+        dp.cantidadpaquetes,
+        dp.preciounitario,
         dp.piezastotales,
         pv.sku,
         pv.dimensiones,
@@ -14095,13 +14095,13 @@ const obtenerRemisionPedido = async (req, res) => {
       nombreProducto: item.nombreproducto,
       dimensiones: item.dimensiones,
       tamano: item.tamano_etiqueta || 'N/A',
-      cantidad: parseInt(item.cantidad, 10),
-      precioUnitario: parseFloat(item.preciounitarioaplicado),
+      cantidad: parseInt(item.cantidadpaquetes, 10),
+      precioUnitario: parseFloat(item.preciounitario),
       piezasTotales: item.piezastotales,
       subtotal: parseFloat(
-        (parseInt(item.cantidad, 10) * 
+        (parseInt(item.cantidadpaquetes, 10) * 
          (item.tamano_valor || 1) * 
-         parseFloat(item.preciounitarioaplicado)).toFixed(2)
+         parseFloat(item.preciounitario)).toFixed(2)
       ),
     }));
 
