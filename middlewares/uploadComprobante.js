@@ -10,13 +10,15 @@ const storage = new CloudinaryStorage({
 });
 
 const fileFilter = (req, file, cb) => {
-  const allowedExtensions = /jpeg|jpg|png|pdf/;
-  const allowedMimeTypes = /^(image\/(jpeg|jpg|png)|application\/pdf)$/;
+  const allowedExtensions = /jpeg|jpg|png|pdf|heic|heif/;
+  const allowedMimeTypes = /^(image\/(jpeg|jpg|png|heic|heif)|application\/pdf)$/;
 
   const extname = allowedExtensions.test(
     path.extname(file.originalname).toLowerCase()
   );
-  const mimetype = allowedMimeTypes.test(file.mimetype);
+  const mimetype = allowedMimeTypes.test(file.mimetype) ||
+                   (file.mimetype === 'application/octet-stream' && 
+                    /\.(heic|heif)$/i.test(file.originalname));
 
   if (extname && mimetype) {
     return cb(null, true);
@@ -24,7 +26,7 @@ const fileFilter = (req, file, cb) => {
 
   cb(
     new Error(
-      "Solo se permiten comprobantes en formato PDF o imagen (JPG, PNG, JPEG)"
+      "Solo se permiten comprobantes en formato PDF o imagen (JPG, PNG, HEIC)"
     ),
     false
   );
@@ -34,7 +36,7 @@ const uploadComprobante = multer({
   storage: storage,
   fileFilter: fileFilter,
   limits: {
-    fileSize: 8 * 1024 * 1024,
+    fileSize: 15 * 1024 * 1024, // Aumentado para iOS
   },
 });
 

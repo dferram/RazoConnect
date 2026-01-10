@@ -14,24 +14,26 @@ const storage = new CloudinaryStorage({
   folder: "categories",
 });
 
-// Filtro para solo aceptar imágenes
+// Filtro para solo aceptar imágenes (incluye HEIC/HEIF de iOS)
 const fileFilter = (req, file, cb) => {
-  // Extensiones permitidas
-  const allowedExtensions = /jpeg|jpg|png|webp/;
-  // MIME types permitidos
-  const allowedMimeTypes = /image\/(jpeg|jpg|png|webp)/;
+  // Extensiones permitidas (incluye formatos de iOS)
+  const allowedExtensions = /jpeg|jpg|png|webp|heic|heif|tiff|tif/;
+  // MIME types permitidos (iOS puede enviar image/heic o application/octet-stream)
+  const allowedMimeTypes = /image\/(jpeg|jpg|png|webp|heic|heif|tiff)/;
 
   const extname = allowedExtensions.test(
     path.extname(file.originalname).toLowerCase()
   );
-  const mimetype = allowedMimeTypes.test(file.mimetype);
+  const mimetype = allowedMimeTypes.test(file.mimetype) || 
+                   (file.mimetype === 'application/octet-stream' && 
+                    /\.(heic|heif)$/i.test(file.originalname));
 
   if (extname && mimetype) {
     return cb(null, true);
   } else {
     cb(
       new Error(
-        "Solo se permiten archivos de imagen (JPG, PNG, JPEG, WEBP)"
+        "Solo se permiten archivos de imagen (JPG, PNG, WEBP, HEIC)"
       ),
       false
     );
@@ -43,7 +45,7 @@ const uploadCategoryImage = multer({
   storage: storage,
   fileFilter: fileFilter,
   limits: {
-    fileSize: 5 * 1024 * 1024, // Límite de 5MB
+    fileSize: 15 * 1024 * 1024, // Límite de 15MB (iOS puede enviar archivos grandes que procesaremos)
   },
 });
 

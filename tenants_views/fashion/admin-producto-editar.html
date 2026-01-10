@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ï»¿<!DOCTYPE html>
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
@@ -10,7 +10,7 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.14.0/Sortable.min.js"></script>
 
-    <!-- PROTECCIÓN DE AUTENTICACIÓN ADMIN -->
+    <!-- PROTECCIï¿½N DE AUTENTICACIï¿½N ADMIN -->
     <script src="js/auth-guard-admin.js"></script>
 
     <link
@@ -251,7 +251,7 @@
           box-sizing: border-box;
         }
 
-        /* Preview de imágenes: ajustar tamaño */
+        /* Preview de imï¿½genes: ajustar tamaï¿½o */
         .product-images-preview-item {
           width: 70px;
           height: 70px;
@@ -267,8 +267,8 @@
           -webkit-overflow-scrolling: touch;
         }
 
-        /* ===== CONTENIDO DINÁMICO (JavaScript) ===== */
-        /* Asegurar que elementos generados dinámicamente también respeten límites */
+        /* ===== CONTENIDO DINï¿½MICO (JavaScript) ===== */
+        /* Asegurar que elementos generados dinï¿½micamente tambiï¿½n respeten lï¿½mites */
         
         /* Product summary: forzar wrap en todos los elementos */
         .product-summary {
@@ -284,7 +284,7 @@
           overflow-wrap: break-word;
         }
 
-        /* Badges dinámicos: permitir wrap */
+        /* Badges dinï¿½micos: permitir wrap */
         .badge,
         .admin-badge,
         .visibility-badge,
@@ -311,7 +311,7 @@
           text-overflow: ellipsis;
         }
 
-        /* Imágenes de producto: responsive */
+        /* Imï¿½genes de producto: responsive */
         .product-summary-image {
           flex-shrink: 0;
           max-width: 80px;
@@ -342,7 +342,7 @@
           box-sizing: border-box;
         }
 
-        /* Galería de imágenes: ajustar grid */
+        /* Galerï¿½a de imï¿½genes: ajustar grid */
         .product-images-preview,
         .sortable-grid {
           max-width: 100%;
@@ -361,7 +361,7 @@
           table-layout: auto;
         }
 
-        /* Botones en tablas: ajustar tamaño */
+        /* Botones en tablas: ajustar tamaï¿½o */
         .admin-table .btn-sm {
           padding: 0.5rem 0.75rem;
           font-size: 0.85rem;
@@ -746,7 +746,7 @@
                 >
                   <div>
                     <h2 class="admin-card-title" style="margin-bottom: 0.25rem">
-                      Información general
+                      Informaciï¿½n general
                     </h2>
                     <p
                       class="admin-header-subtitle"
@@ -773,7 +773,7 @@
                   <h2 class="admin-card-title">Agregar nueva variante</h2>
                   <p class="admin-header-subtitle" style="margin-bottom: 0">
                     Define SKU, precios y stock inicial para activar el producto
-                    en el catálogo.
+                    en el catï¿½logo.
                   </p>
                 </div>
                 <div class="admin-card-body">
@@ -786,7 +786,7 @@
                           type="text"
                           id="sku"
                           class="form-input"
-                          placeholder="Generado automáticamente"
+                          placeholder="Generado automï¿½ticamente"
                           readonly
                         />
                         <small
@@ -832,7 +832,7 @@
                             <span
                               class="info-icon"
                               style="margin-left: 0.25rem; cursor: help; font-size: 0.85em; color: var(--text-secondary);"
-                              title="Cantidad total disponible en inventario físico."
+                              title="Cantidad total disponible en inventario fï¿½sico."
                               >?</span
                             >
                           </label>
@@ -883,7 +883,7 @@
                           style="display:flex; align-items:center; justify-content:space-between; gap: 0.75rem; flex-wrap: wrap;"
                         >
                           <strong style="font-size: 0.95rem; color: var(--text-primary);"
-                            >Imágenes de la variante</strong
+                            >Imï¿½genes de la variante</strong
                           >
                           <span
                             id="variantImagesStatus"
@@ -895,7 +895,7 @@
                           type="file"
                           id="productImagesInput"
                           class="form-input"
-                          accept="image/jpeg,image/jpg,image/png,image/webp"
+                          accept="image/png,image/jpeg,image/jpg,image/webp,image/heic,image/heif"
                           multiple
                         />
 
@@ -907,7 +907,7 @@
                             class="btn btn-secondary"
                             id="clearImagesSelectionBtn"
                           >
-                            Limpiar selección
+                            Limpiar selecciï¿½n
                           </button>
                         </div>
 
@@ -927,7 +927,7 @@
                           <div
                             style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.35rem;"
                           >
-                            Imágenes guardadas (arrastra para reordenar)
+                            Imï¿½genes guardadas (arrastra para reordenar)
                           </div>
                           <div
                             id="galeriaImagenesVarianteServer"
@@ -985,7 +985,7 @@
                             class="form-hint"
                             style="color: var(--razo-orange)"
                           >
-                            ? Si defines un porcentaje de descuento, se calculará el
+                            ? Si defines un porcentaje de descuento, se calcularï¿½ el
                             precio final de la oferta.
                           </small>
                           <small
@@ -1000,7 +1000,7 @@
 
                       <div class="variant-margin" id="variantMargin">
                         <div>
-                          <h3>Resumen económico</h3>
+                          <h3>Resumen econï¿½mico</h3>
                           <p id="marginMessage">
                             Ingresa costo y precio para calcular la ganancia.
                           </p>
@@ -1071,13 +1071,13 @@
                       <div class="inventory-summary-card" aria-live="polite">
                         <div class="stock-projection-header">
                           <div>
-                            <h3 class="stock-projection-title">?? Proyección de Stock</h3>
+                            <h3 class="stock-projection-title">?? Proyecciï¿½n de Stock</h3>
                             <p
                               id="stockProjectionSubtitle"
                               class="form-hint"
                               style="margin: 0; font-size: 0.8rem; color: var(--text-secondary);"
                             >
-                              Define el stock inicial para ver cuántos paquetes puedes armar con cada presentación.
+                              Define el stock inicial para ver cuï¿½ntos paquetes puedes armar con cada presentaciï¿½n.
                             </p>
                           </div>
                           <div class="stock-total-value" id="stockProjectionTotal">
@@ -1088,14 +1088,14 @@
                           <table class="stock-projection-table">
                             <thead>
                               <tr>
-                                <th>Presentación</th>
+                                <th>Presentaciï¿½n</th>
                                 <th class="stock-projection-qty">Disponibles</th>
                               </tr>
                             </thead>
                             <tbody id="stockProjectionTableBody">
                               <tr>
                                 <td colspan="2" class="stock-projection-empty">
-                                  Aún no se ha definido stock para esta variante.
+                                  Aï¿½n no se ha definido stock para esta variante.
                                 </td>
                               </tr>
                             </tbody>
@@ -1143,7 +1143,7 @@
                     <thead>
                       <tr>
                         <th>SKU</th>
-                        <th>Descripción</th>
+                        <th>Descripciï¿½n</th>
                         <th>Color</th>
                         <th>Precio unitario</th>
                         <th>Costo unitario</th>
@@ -1412,7 +1412,7 @@
             // Guardar el SKU Maestro para sugerencias de SKU
             skuMaestroBase = producto.sku_maestro || producto.skuMaestro || null;
 
-            // Guardar configuración de presentaciones (pieza / packs) del maestro
+            // Guardar configuraciï¿½n de presentaciones (pieza / packs) del maestro
             tamanosConfiguradosMaestro = Array.isArray(tamanosDisponibles)
               ? tamanosDisponibles
               : [];
@@ -1456,7 +1456,7 @@
         }
       }
 
-      // Función para generar sugerencia de SKU
+      // Funciï¿½n para generar sugerencia de SKU
       function generateSkuSuggestion() {
         if (!skuMaestroBase) {
           skuSuggestion.style.display = "none";
@@ -1554,7 +1554,7 @@
             }" /></div>`
           : `<div class="product-summary-image"><span style="font-size: 1.75rem;">??</span></div>`;
 
-        const categoriaNombre = producto.categoria?.nombre || "Sin categoría";
+        const categoriaNombre = producto.categoria?.nombre || "Sin categorï¿½a";
         const codigoModelo = producto.sku_maestro || producto.skuMaestro || "No definido";
 
         const isDraft = producto.activo === false;
@@ -1563,8 +1563,8 @@
           ? `<div style="margin-bottom:0.75rem; padding:0.75rem 1rem; border-radius:0.75rem; background: #fffbeb; border:1px solid #fed7aa; color:#92400e; font-size:0.9rem; display:flex; align-items:flex-start; gap:0.5rem;">
               <span style="font-size:1.1rem;">??</span>
               <div>
-                <strong>Este producto está en modo BORRADOR.</strong>
-                <div>Los clientes no pueden verlo hasta que un SuperAdmin apruebe la creación o sus variantes.</div>
+                <strong>Este producto estï¿½ en modo BORRADOR.</strong>
+                <div>Los clientes no pueden verlo hasta que un SuperAdmin apruebe la creaciï¿½n o sus variantes.</div>
               </div>
             </div>`
           : "";
@@ -1586,7 +1586,7 @@
                   </span>
                 </div>
                 <p style="color: var(--text-secondary);">
-                  ${producto.descripcion || "Sin descripción registrada."}
+                  ${producto.descripcion || "Sin descripciï¿½n registrada."}
                 </p>
               </div>
             </div>
@@ -1601,7 +1601,7 @@
               </div>
               <div class="product-kpi">
                 <div class="product-kpi-label">Rango de precios</div>
-                <div class="product-kpi-value">${precioMin} – ${precioMax}</div>
+                <div class="product-kpi-value">${precioMin} ï¿½ ${precioMax}</div>
               </div>
             </div>
           </div>
@@ -1617,16 +1617,16 @@
       }
 
       /**
-       * Extrae un valor numérico de una medida para ordenamiento
+       * Extrae un valor numï¿½rico de una medida para ordenamiento
        * @param {string} medida - String de medida (ej: "10x10", "50ml", "6 Piezas", "XL")
-       * @returns {number} - Valor numérico para ordenar
+       * @returns {number} - Valor numï¿½rico para ordenar
        */
       function getMeasureValue(medida) {
         if (!medida || typeof medida !== 'string') return 999999;
         
         const medidaLower = medida.toLowerCase().trim();
         
-        // Tallas de ropa: asignar valores numéricos
+        // Tallas de ropa: asignar valores numï¿½ricos
         const tallasMap = {
           'xxs': 1, '2xs': 1,
           'xs': 2,
@@ -1643,13 +1643,13 @@
           return tallasMap[medidaLower];
         }
         
-        // Extraer primer número de la cadena (ej: "10x10" -> 10, "50ml" -> 50, "6 Piezas" -> 6)
+        // Extraer primer nï¿½mero de la cadena (ej: "10x10" -> 10, "50ml" -> 50, "6 Piezas" -> 6)
         const match = medida.match(/(\d+(?:\.\d+)?)/);
         if (match) {
           return parseFloat(match[1]);
         }
         
-        // Si no hay número ni es talla, enviar al final
+        // Si no hay nï¿½mero ni es talla, enviar al final
         return 999999;
       }
 
@@ -1708,7 +1708,7 @@
             <td>${stock}</td>
             <td>
               <span class="badge bg-warning text-dark" style="font-weight:700;">
-                ? En Revisión
+                ? En Revisiï¿½n
               </span>
             </td>
             <td class="actions-cell">
@@ -1766,18 +1766,18 @@
         const idNumero = Number.parseInt(controlId, 10);
         if (!Number.isInteger(idNumero)) {
           console.warn(
-            "ID de control de cambio inválido para cancelar solicitud:",
+            "ID de control de cambio invï¿½lido para cancelar solicitud:",
             controlId
           );
           return;
         }
 
         const result = await Swal.fire({
-          title: "¿Estás seguro de cancelar esta solicitud de creación?",
-          text: "Esta operación rechazará la solicitud pendiente en el panel de aprobaciones.",
+          title: "ï¿½Estï¿½s seguro de cancelar esta solicitud de creaciï¿½n?",
+          text: "Esta operaciï¿½n rechazarï¿½ la solicitud pendiente en el panel de aprobaciones.",
           icon: "warning",
           showCancelButton: true,
-          confirmButtonText: "Sí, cancelar",
+          confirmButtonText: "Sï¿½, cancelar",
           cancelButtonText: "No, volver",
           confirmButtonColor: "#EF4444",
           cancelButtonColor: "#6b7280",
@@ -1827,7 +1827,7 @@
           return etiqueta || obtenerNombrePack(valor);
         }
 
-        return etiqueta || `Presentación ${tamano.tamanoId}`;
+        return etiqueta || `Presentaciï¿½n ${tamano.tamanoId}`;
       }
 
       function renderStockInfoForVariant() {
@@ -1847,12 +1847,12 @@
 
         if (!presentaciones.length) {
           stockInfoAlert.textContent =
-            "El stock se asignará solo a esta variante (sin presentaciones adicionales configuradas en el producto maestro).";
+            "El stock se asignarï¿½ solo a esta variante (sin presentaciones adicionales configuradas en el producto maestro).";
           stockInfoBadges.innerHTML = "";
 
           if (stockProjectionSubtitle) {
             stockProjectionSubtitle.textContent =
-              "Esta variante usa el stock únicamente en forma individual (sin packs configurados).";
+              "Esta variante usa el stock ï¿½nicamente en forma individual (sin packs configurados).";
           }
 
           if (stockProjectionTableBody) {
@@ -1869,7 +1869,7 @@
         }
 
         stockInfoAlert.textContent =
-          "?? El stock que ingreses aquí será compartido automáticamente para:";
+          "?? El stock que ingreses aquï¿½ serï¿½ compartido automï¿½ticamente para:";
 
         const badgesHtml = presentaciones
           .map((t) => {
@@ -1891,7 +1891,7 @@
 
         if (stockProjectionSubtitle) {
           stockProjectionSubtitle.textContent =
-            "Con el stock inicial calcularemos cuántos paquetes puedes armar en cada presentación.";
+            "Con el stock inicial calcularemos cuï¿½ntos paquetes puedes armar en cada presentaciï¿½n.";
         }
 
         updateStockCapacityPreview();
@@ -1915,7 +1915,7 @@
           stockProjectionTableBody.innerHTML = `
             <tr>
               <td colspan="2" class="stock-projection-empty">
-                Define stock inicial para ver cómo se reparte entre las presentaciones.
+                Define stock inicial para ver cï¿½mo se reparte entre las presentaciones.
               </td>
             </tr>
           `;
@@ -1959,7 +1959,7 @@
           stockProjectionTableBody.innerHTML = `
             <tr>
               <td colspan="2" class="stock-projection-empty">
-                Con este stock no se alcanza a formar ningún pack completo en las presentaciones configuradas.
+                Con este stock no se alcanza a formar ningï¿½n pack completo en las presentaciones configuradas.
               </td>
             </tr>
           `;
@@ -2045,7 +2045,7 @@
         });
 
         if (!variante) {
-          console.warn("Variante no encontrada para edición", varianteId);
+          console.warn("Variante no encontrada para ediciï¿½n", varianteId);
           return;
         }
 
@@ -2286,7 +2286,7 @@
 
           const btn = document.createElement("button");
           btn.type = "button";
-          btn.textContent = "×";
+          btn.textContent = "ï¿½";
           btn.className = "product-images-preview-remove";
           btn.addEventListener("click", () => {
             imagenesSeleccionadasMeta.splice(index, 1);
@@ -2324,7 +2324,7 @@
 
           const data = await response.json();
           if (!response.ok || !data.success) {
-            throw new Error(data.message || "No se pudieron cargar las imágenes");
+            throw new Error(data.message || "No se pudieron cargar las imï¿½genes");
           }
 
           const imagenes = Array.isArray(data?.data?.imagenes) ? data.data.imagenes : [];
@@ -2384,7 +2384,7 @@
 
               const btn = document.createElement("button");
               btn.type = "button";
-              btn.textContent = "×";
+              btn.textContent = "ï¿½";
               btn.className = "product-images-preview-remove";
               btn.addEventListener("click", () => {
                 wrapper.remove();
@@ -2435,9 +2435,9 @@
             }
           }
         } catch (error) {
-          console.error("Error al cargar imágenes de variante:", error);
+          console.error("Error al cargar imï¿½genes de variante:", error);
           if (variantImagesStatus) {
-            variantImagesStatus.textContent = "No se pudieron cargar imágenes";
+            variantImagesStatus.textContent = "No se pudieron cargar imï¿½genes";
           }
         }
       }
@@ -2521,14 +2521,14 @@
           let response;
           let data;
 
-          // PASO 1: Subir nuevas imágenes a Cloudinary primero
+          // PASO 1: Subir nuevas imï¿½genes a Cloudinary primero
           const orderedNewClientIds = Array.from(galeriaPreview?.children || [])
             .map((el) => (el?.dataset?.clientId || "").toString().trim())
             .filter(Boolean);
 
           const uploadedImages = [];
           if (orderedNewClientIds.length > 0) {
-            console.log("?? Subiendo", orderedNewClientIds.length, "imágenes a Cloudinary...");
+            console.log("?? Subiendo", orderedNewClientIds.length, "imï¿½genes a Cloudinary...");
             for (const clientId of orderedNewClientIds) {
               const item = (imagenesSeleccionadasMeta || []).find(
                 (it) => it && it.clientId === clientId
@@ -2550,7 +2550,7 @@
                 }
               }
             }
-            console.log("? Todas las imágenes subidas a Cloudinary");
+            console.log("? Todas las imï¿½genes subidas a Cloudinary");
           }
 
           if (isEditing) {
@@ -2589,7 +2589,7 @@
             }
             console.log("=========================================");
 
-            // PASO 2: Construir galería con imágenes existentes + nuevas URLs de Cloudinary
+            // PASO 2: Construir galerï¿½a con imï¿½genes existentes + nuevas URLs de Cloudinary
             const orderedExisting = Array.from(
               galeriaImagenesVarianteServer?.children || []
             )
@@ -2604,7 +2604,7 @@
               galeria.push({ type: "existing", imagenId });
             });
 
-            // Agregar nuevas imágenes con sus URLs de Cloudinary
+            // Agregar nuevas imï¿½genes con sus URLs de Cloudinary
             orderedNewClientIds.forEach((clientId) => {
               const uploadedImage = uploadedImages.find(img => img.clientId === clientId);
               if (uploadedImage) {
@@ -2656,7 +2656,7 @@
             }
             console.log("=========================================");
 
-            // PASO 2: Construir galería solo con URLs de Cloudinary (ya subidas)
+            // PASO 2: Construir galerï¿½a solo con URLs de Cloudinary (ya subidas)
             const galeria = [];
             orderedNewClientIds.forEach((clientId) => {
               const uploadedImage = uploadedImages.find(img => img.clientId === clientId);
@@ -2780,8 +2780,8 @@
         marginMetrics.style.display = "grid";
         marginMessage.textContent =
           ganancia >= 0
-            ? "Excelente, estás generando ganancia por unidad."
-            : "Atención: el costo supera al precio, revisa los datos.";
+            ? "Excelente, estï¿½s generando ganancia por unidad."
+            : "Atenciï¿½n: el costo supera al precio, revisa los datos.";
         profitPerUnit.style.color =
           ganancia >= 0 ? "var(--success-color)" : "var(--danger-color)";
         marginPercentage.style.color =
@@ -2828,7 +2828,7 @@
 
         console.log('?? Toggle variante:', { varianteId, estadoActual, nuevoEstado });
 
-        const mensaje = `¿Estás seguro de ${accion} esta variante?`;
+        const mensaje = `ï¿½Estï¿½s seguro de ${accion} esta variante?`;
         let confirmado = false;
 
         if (
@@ -2841,7 +2841,7 @@
             title: esOcultar ? "Ocultar variante" : "Mostrar variante",
             text: mensaje,
             showCancelButton: true,
-            confirmButtonText: esOcultar ? "Sí, ocultar" : "Sí, mostrar",
+            confirmButtonText: esOcultar ? "Sï¿½, ocultar" : "Sï¿½, mostrar",
             cancelButtonText: "Cancelar",
             confirmButtonColor: esOcultar ? "#dc3545" : "#F97316",
             cancelButtonColor: "#6b7280",
