@@ -1,222 +1,368 @@
-# RazoConnect 
+# RazoConnect
 
 ![Node.js](https://img.shields.io/badge/Node.js-v18+-green.svg)
 ![Express](https://img.shields.io/badge/Express-4.18.2-blue.svg)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-v17+-blue.svg)
 ![Bootstrap](https://img.shields.io/badge/Bootstrap-5.0-purple.svg)
+![Azure](https://img.shields.io/badge/Azure-Cloud-0078D4.svg)
 
-Sistema integral de E-commerce y gestión de inventario diseñado para optimizar operaciones comerciales B2B.
+Sistema SaaS Multi-Tenant de E-commerce y gestión de inventario B2B diseñado para optimizar operaciones comerciales con aislamiento completo de datos por cliente.
 
-## Características Principales
+## Descripción
 
-- Sistema de autenticación multi-rol (Clientes, Agentes, Administradores)
-- Catálogo de productos con gestión de variantes y paquetes
-- Sistema de carrito de compras y pedidos
-- Gestión de créditos y cuentas por pagar
-- Panel administrativo completo
-- Sistema de notificaciones en tiempo real
-- Reportes y estadísticas
-- Gestión de comisiones para agentes
+RazoConnect es una plataforma integral que permite a múltiples empresas (tenants) gestionar sus operaciones de venta, inventario, créditos y comisiones desde una única instancia de la aplicación, manteniendo un aislamiento total de datos entre clientes.
+
+### Características Destacadas
+
+- **Multi-Tenant**: Una instancia sirve múltiples clientes con dominios personalizados
+- **E-commerce B2B**: Catálogo de productos, carrito, checkout y seguimiento de pedidos
+- **Gestión de Inventario**: Órdenes de compra, recepción, movimientos y auditoría
+- **Sistema de Créditos**: Líneas de crédito, CXC, alertas de vencimiento
+- **Comisiones Automatizadas**: Cálculo y seguimiento de comisiones para agentes
+- **Reportes Avanzados**: Ventas, inventario, comisiones con exportación a Excel
+
+## Documentación
+
+La documentación completa del sistema está organizada en los siguientes documentos:
+
+### 1. [Arquitectura del Sistema](docs/ARQUITECTURA.md)
+
+Documentación técnica detallada sobre la arquitectura Multi-Tenant:
+
+- Stack tecnológico completo (Node.js, Express, PostgreSQL, Azure)
+- Arquitectura Multi-Tenant con base de datos compartida
+- Modelo de datos y relaciones entre tablas
+- Seguridad en múltiples capas (Tenant Guard, JWT, validación de sesiones)
+- Flujo de autenticación y autorización
+- Middleware pipeline y orden de ejecución
+- Diagramas de arquitectura y flujo de datos
+- Consideraciones de escalabilidad
+
+**Ideal para**: Desarrolladores que necesitan entender la arquitectura técnica del sistema.
+
+### 2. [Guía Funcional](docs/GUIA_FUNCIONAL.md)
+
+Guía completa de funcionalidades y flujos de negocio:
+
+- Roles del sistema: Super Admin, Admin, Agente, Cliente
+- Flujos de negocio principales (ventas, inventario, créditos, comisiones)
+- Módulo de Ventas: catálogo, carrito, checkout, cupones
+- Módulo de Inventario: órdenes de compra, recepción, movimientos
+- Módulo de Créditos: CXC, límites, validaciones
+- Módulo de Comisiones: cálculo automático, reportes
+- Casos de uso detallados paso a paso
+
+**Ideal para**: Administradores, usuarios finales y analistas de negocio.
+
+### 3. [Despliegue y Troubleshooting](docs/DESPLIEGUE_Y_TROUBLESHOOTING.md)
+
+Guía práctica de despliegue y solución de problemas:
+
+- Configuración del entorno de desarrollo local
+- Despliegue paso a paso en Azure App Service
+- Configuración de Azure Database for PostgreSQL
+- Configuración de dominios personalizados y SSL
+- CI/CD con GitHub Actions
+- Problemas comunes y soluciones (encoding UTF-8, sesiones, performance)
+- Monitoreo con Azure Monitor
+- Plan de recuperación ante desastres
+- Mantenimiento y backups
+
+**Ideal para**: DevOps, administradores de sistemas y desarrolladores.
+
+### 4. [Reactivación de MercadoPago](docs/MERCADOPAGO_REACTIVACION.md)
+
+Guía específica para la integración con MercadoPago (no modificar).
+
+## Inicio Rápido
+
+### Requisitos Previos
+
+- Node.js v18 o superior
+- PostgreSQL v17 o superior
+- Git
+- Cuenta de Azure (para producción)
+
+### Instalación Local
+
+```bash
+# Clonar el repositorio
+git clone https://github.com/tu-usuario/RazoConnect.git
+cd RazoConnect
+
+# Instalar dependencias
+npm install
+
+# Configurar variables de entorno
+cp .env.example .env
+# Editar .env con tus credenciales
+```
+
+### Configurar Variables de Entorno
+
+Crear archivo `.env` en la raíz:
+
+```env
+# Entorno
+NODE_ENV=development
+
+# Base de Datos
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=razoconnect
+DB_USER=postgres
+DB_PASSWORD=tu_password
+DB_SSL=false
+
+# Seguridad
+JWT_SECRET=tu_jwt_secret_muy_seguro_minimo_32_caracteres
+SESSION_SECRET=tu_session_secret_muy_seguro
+
+# Desarrollo Local
+FORCE_TENANT_ID=1
+
+# Puerto
+PORT=3000
+
+# Cloudinary (Imágenes)
+CLOUDINARY_CLOUD_NAME=tu_cloud_name
+CLOUDINARY_API_KEY=tu_api_key
+CLOUDINARY_API_SECRET=tu_api_secret
+
+# Email
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USER=tu_email@gmail.com
+EMAIL_PASSWORD=tu_password_app
+EMAIL_FROM=noreply@tudominio.com
+
+# MercadoPago
+MERCADOPAGO_ACCESS_TOKEN=tu_access_token
+
+# Frontend
+FRONTEND_BASE_URL=http://localhost:3000
+
+# Super Admin
+SUPER_ADMIN_KEY=tu_clave_super_secreta
+```
+
+### Configurar Base de Datos
+
+```bash
+# Crear base de datos
+psql -U postgres
+CREATE DATABASE razoconnect;
+\q
+
+# Restaurar backup (si existe)
+psql -U postgres -d razoconnect -f backup/backup11.sql
+
+# Crear tenant de prueba
+psql -U postgres -d razoconnect -c "INSERT INTO tenants (nombre_cliente, dominio, tema, is_active) VALUES ('Razo', 'localhost', 'razo', true);"
+```
+
+### Iniciar Servidor
+
+```bash
+npm start
+```
+
+El servidor estará disponible en `http://localhost:3000`
+
+Verificar endpoints:
+- `http://localhost:3000/api` - Mensaje de bienvenida
+- `http://localhost:3000/api/health` - Estado de la base de datos
 
 ## Tecnologías
 
-- **Backend:** Node.js con Express
-- **Base de Datos:** PostgreSQL
-- **Frontend:** HTML5, JavaScript Vanilla, Bootstrap 5
-- **Autenticación:** JWT, Passport (Google OAuth)
-- **Email:** Nodemailer
-- **Procesamiento de Pagos:** MercadoPago
-- **Tareas Programadas:** node-cron
+### Backend
+- **Runtime**: Node.js v18+
+- **Framework**: Express.js 4.18.2
+- **Base de Datos**: PostgreSQL v17+ (Azure Database)
+- **Autenticación**: JWT + Passport.js (Google OAuth)
+- **Sesiones**: express-session + connect-pg-simple
+- **Tareas Programadas**: node-cron
 
-## Arquitectura del Proyecto
+### Frontend
+- **Lenguaje**: JavaScript Vanilla (ES6+)
+- **Framework CSS**: Bootstrap 5
+- **Arquitectura**: Component-Based con inyección dinámica
 
-<details>
-<summary>Controllers</summary>
+### Infraestructura
+- **Hosting**: Azure App Service
+- **Base de Datos**: Azure Database for PostgreSQL
+- **CDN de Imágenes**: Cloudinary
+- **CI/CD**: GitHub Actions
+- **Email**: Nodemailer (SMTP)
+- **Pagos**: MercadoPago SDK
 
-| Archivo | Responsabilidad Específica |
-|---------|---------------------------|
-| `adminController.js` | Gestión completa del panel administrativo: CRUD de productos, gestión de inventario, aprobación de cambios y monitoreo de operaciones. |
-| `agentesController.js` | Control de agentes de venta: gestión de cartera, cálculo de comisiones y métricas de rendimiento. |
-| `authController.js` | Autenticación completa: login tradicional, OAuth con Google, manejo de JWT y roles de acceso. |
-| `carritoController.js` | Lógica del carrito: agregar/quitar productos, validar stock, aplicar descuentos y procesar checkout. |
-| `creditoController.js` | Gestión de créditos: límites, saldos, historial y validación de operaciones crediticias. |
-| `cxpController.js` | Control de cuentas por pagar: registro de facturas, pagos y seguimiento de vencimientos. |
-| `inventarioController.js` | Control de inventario: entradas, salidas, ajustes y validación de stock. |
-| `pedidosController.js` | Procesamiento de pedidos: creación, seguimiento, backorder y actualización de estados. |
-| `productosController.js` | Gestión de productos: CRUD, variantes, precios y categorización. |
-| `reportesController.js` | Generación de reportes: ventas, inventario, comisiones y estados financieros. |
+## Arquitectura Multi-Tenant
 
-</details>
+RazoConnect implementa un modelo Multi-Tenant con base de datos compartida y aislamiento por columna `tenant_id`:
 
-<details>
-<summary>Routes</summary>
+- Una única instancia de la aplicación sirve a múltiples clientes
+- Una única base de datos PostgreSQL con aislamiento por `tenant_id`
+- Cada tenant tiene su propio dominio personalizado (ej: `razo.com.mx`, `fashion.com.mx`)
+- Seguridad en múltiples capas: Tenant Guard, JWT, validación de sesiones
+- Archivos estáticos aislados por tenant (carpetas `tenants_views/razo` y `tenants_views/fashion`)
 
-| Archivo | Responsabilidad Específica |
-|---------|---------------------------|
-| `admin.js` | Rutas protegidas del panel admin: `/api/admin/*` con validación de roles. |
-| `auth.js` | Endpoints de autenticación: login, registro, refresh token y OAuth. |
-| `carrito.js` | Rutas de carrito: gestión de productos y proceso de compra. |
-| `clientes.js` | API de clientes: perfil, direcciones y preferencias. |
-| `pagos.js` | Integración con MercadoPago y gestión de transacciones. |
-| `pedidos.js` | Gestión de órdenes: creación, seguimiento y actualizaciones. |
-| `productos.js` | API de productos: catálogo, búsqueda y filtrado. |
-| `staff.js` | Rutas específicas para personal interno y agentes. |
+### Detección de Tenant
 
-</details>
+El sistema detecta el tenant activo mediante:
 
-<details>
-<summary>Services</summary>
+1. **Por Dominio (Producción)**: Detecta automáticamente el tenant basándose en el dominio de la petición
+2. **Por Variable de Entorno (Desarrollo)**: Usa `FORCE_TENANT_ID` para desarrollo local
 
-| Archivo | Responsabilidad Específica |
-|---------|---------------------------|
-| `ChangeRequestService.js` | Control de cambios y aprobaciones en sistema. |
-| `auditService.js` | Registro de auditoría de operaciones críticas. |
-| `emailService.js` | Envío de correos transaccionales y notificaciones. |
-| `inventoryService.js` | Lógica de negocio para gestión de inventario. |
-| `notificacionesService.js` | Sistema de notificaciones en tiempo real. |
-| `ordenesService.js` | Procesamiento y seguimiento de órdenes de compra. |
+### Roles del Sistema
 
-</details>
+- **Super Admin (Developer)**: Acceso completo a todos los tenants, gestión de la plataforma
+- **Admin (Administrador de Tenant)**: Control completo de su tenant específico
+- **Agente de Ventas**: Acceso a cartera de clientes y comisiones
+- **Cliente**: Acceso a catálogo, carrito y pedidos propios
 
-<details>
-<summary>Middleware</summary>
+## Estructura del Proyecto
 
-| Archivo | Responsabilidad Específica |
-|---------|---------------------------|
-| `authMiddleware.js` | Validación de JWT y roles de usuario. |
-| `checkClienteCredit.js` | Validación de límites de crédito en operaciones. |
-| `checkCreditStatus.js` | Verificación de estado crediticio activo. |
-| `notificaciones.js` | Middleware de notificaciones en tiempo real. |
-| `upload.js` | Gestión de carga de archivos y validación. |
-
-</details>
-
-<details>
-<summary>Public/Components</summary>
-
-| Archivo | Responsabilidad Específica |
-|---------|---------------------------|
-| `header-cliente.html` | Navbar principal con carrito y notificaciones. |
-| `admin-header.html` | Header del panel administrativo con menú de gestión. |
-| `sidebar-filtros.html` | Filtros de catálogo: categorías, precios, marcas. |
-| `footer.html` | Footer común con enlaces y copyright. |
-
-</details>
-
-<details>
-<summary>Public/JS</summary>
-
-| Archivo | Responsabilidad Específica |
-|---------|---------------------------|
-| `api.js` | Cliente API para comunicación con backend. |
-| `carritoService.js` | Gestión del carrito en el frontend. |
-| `jwt-utils.js` | Manejo de tokens JWT en cliente. |
-| `theme-manager.js` | Control de temas estacionales. |
-| `admin-*.js` | Scripts específicos del panel admin. |
-| `agente-*.js` | Funcionalidad del portal de agentes. |
-
-</details>
-
-<details>
-<summary>Public/Pages</summary>
-
-| Vista | Funcionalidad |
-|-------|---------------|
-| `catalogo.html` | Listado de productos con filtros. |
-| `producto-detalle.html` | Vista detallada de producto con variantes. |
-| `carrito.html` | Carrito de compras y checkout. |
-| `admin-*.html` | Vistas del panel administrativo. |
-| `agente-*.html` | Portal de agentes de venta. |
-
-</details>
-
-### Flujo de Datos y Dependencias
-
-```mermaid
-graph TD
-    A[Cliente Web] --> B[Routes]
-    B --> C[Controllers]
-    C --> D[Services]
-    D --> E[Base de Datos]
-    C --> F[Middlewares]
-    D --> G[External APIs]
+```
+RazoConnect/
+├── config/              # Configuración (Passport, Cloudinary, Domain Mapper)
+├── controllers/         # Lógica de negocio
+│   ├── admin/          # Controladores de admin
+│   └── clientes/       # Controladores de clientes
+├── cron/               # Tareas programadas
+├── docs/               # Documentación técnica
+├── middlewares/        # Middlewares personalizados
+├── routes/             # Definición de rutas
+├── services/           # Servicios de negocio
+├── tenants_views/      # Vistas por tenant
+│   ├── razo/          # Tema Razo
+│   └── fashion/       # Tema Fashion
+├── utils/              # Utilidades
+├── .env                # Variables de entorno (no versionado)
+├── db.js               # Configuración de PostgreSQL
+├── index.js            # Punto de entrada de la aplicación
+└── package.json        # Dependencias
 ```
 
-### Patrones de Diseño
+## Módulos Principales
 
-1. **MVC Modificado**
-   - Routes: Enrutamiento y validación inicial
-   - Controllers: Lógica de negocio
-   - Services: Capa de abstracción para operaciones complejas
+### Gestión de Ventas
+- Catálogo de productos con variantes (tamaños, colores, dimensiones)
+- Sistema de packs configurables (venta por unidad, 6, 12, 24, etc.)
+- Carrito de compras con validación de stock en tiempo real
+- Sistema de cupones de descuento
+- Checkout con múltiples direcciones de envío
+- Seguimiento de pedidos con estados (Pendiente, Surtido, Enviado, Entregado)
 
-2. **Middleware Pipeline**
-   - Autenticación
-   - Validación de roles
-   - Verificación de crédito
-   - Logging y auditoría
+### Gestión de Inventario
+- Órdenes de compra a proveedores
+- Recepción de inventario con validación de reglas de empaque
+- Movimientos de inventario (entradas, salidas, ajustes)
+- Auditoría completa de movimientos
+- Alertas de stock bajo
 
-3. **Component-Based Frontend**
-   - Componentes reutilizables
-   - Inyección dinámica vía loaders
-   - Gestión de estado con localStorage
+### Sistema de Créditos
+- Líneas de crédito configurables por cliente
+- Validación automática de límites en cada compra
+- Cuentas por cobrar (CXC) con fechas de vencimiento
+- Alertas de deudas próximas a vencer
+- Registro de pagos y liberación de crédito
 
-### Rutas Principales
+### Comisiones de Agentes
+- Cálculo automático de comisiones al entregar pedidos
+- Esquemas de comisión configurables por agente
+- Dashboard para agentes con métricas de ventas
+- Gestión de cartera de clientes asignados
+- Reportes de comisiones pagadas y pendientes
 
-#### API Routes
-
-| Ruta | Descripción |
-|------|-------------|
-| `/api/auth` | Autenticación y registro |
-| `/api/productos` | Gestión de productos y catálogo |
-| `/api/carrito` | Operaciones del carrito de compras |
-| `/api/pedidos` | Gestión de pedidos |
-| `/api/admin` | Panel administrativo |
-| `/api/cliente` | Operaciones de clientes |
-| `/api/staff` | Gestión de personal |
-| `/api/pagos` | Procesamiento de pagos |
-
-#### Frontend Pages
-
-| Ruta | Archivo | Descripción |
-|------|---------|-------------|
-| `/` | `index.html` | Página principal/catálogo |
-| `/admin` | `admin-*.html` | Panel administrativo |
-| `/agente` | `agente-*.html` | Portal de agentes |
-| `/producto` | `producto-detalle.html` | Detalles de producto |
-| `/carrito` | `carrito.html` | Carrito de compras |
-| `/cuenta` | `cuenta-*.html` | Gestión de cuenta de usuario |
+### Reportes y Análisis
+- Reportes de ventas por período
+- Inventario valorizado
+- Análisis de clientes y productos más vendidos
+- Comisiones de agentes
+- Exportación a Excel con formato profesional
 
 ## Seguridad
 
-- Autenticación JWT para API
-- Middleware de autorización por roles
-- Validación de datos en endpoints
-- Sanitización de entradas
-- Control de acceso basado en roles (RBAC)
-- Protección contra CSRF
+El sistema implementa múltiples capas de seguridad:
 
-## Componentes Reutilizables
+1. **Tenant Guard**: Middleware que detecta y valida el tenant en cada petición
+2. **Autenticación JWT**: Tokens con expiración de 7 días
+3. **Validación de Tenant**: Verifica que usuarios autenticados pertenezcan al tenant correcto
+4. **Aislamiento de Datos**: Todas las queries incluyen filtro por `tenant_id`
+5. **Sesiones Persistentes**: Almacenadas en PostgreSQL con aislamiento por dominio
+6. **HTTPS**: Forzado en producción con certificados SSL de Azure
 
-El sistema utiliza componentes HTML modulares ubicados en `/public/components/`:
-- Header Cliente (`header-cliente.html`)
-- Header Admin/Staff (`admin-header.html`)
-- Sidebar Filtros (`sidebar-filtros.html`)
-- Footer común (`footer.html`)
+## Despliegue en Producción
 
-## Diseño y Estilo
+Para desplegar en Azure App Service:
 
-- Tema principal con `--razo-orange` (#F97316)
-- Diseño responsivo con Bootstrap 5
-- Componentes consistentes con bordes redondeados y sombras suaves
-- Modales estandarizados para formularios administrativos
+1. Crear recursos en Azure (App Service, PostgreSQL)
+2. Configurar variables de entorno en Azure
+3. Configurar base de datos y restaurar backup
+4. Configurar GitHub Actions para CI/CD
+5. Configurar dominios personalizados y SSL
+6. Verificar funcionamiento
+
+Ver guía completa en [Despliegue y Troubleshooting](docs/DESPLIEGUE_Y_TROUBLESHOOTING.md).
+
+## Problemas Comunes
+
+### Error de Encoding (Acentos)
+**Solución**: Configurar UTF-8 en PostgreSQL y en la conexión de Node.js
+```sql
+ALTER DATABASE razoconnect SET client_encoding TO 'UTF8';
+```
+
+### Sesión No Persiste
+**Solución**: Verificar configuración de CORS con `credentials: true` y cookie `sameSite: 'lax'`
+
+### Tenant No Encontrado
+**Solución**: Verificar que el dominio esté registrado en la tabla `tenants`
+
+Ver más soluciones en [Despliegue y Troubleshooting](docs/DESPLIEGUE_Y_TROUBLESHOOTING.md).
 
 ## Mantenimiento
 
-- Sistema de logs para comunicaciones
-- Tareas de mantenimiento diario automatizadas
-- Respaldos periódicos de base de datos
-- Monitoreo de rendimiento y salud del sistema
+### Tareas Automatizadas
+El sistema ejecuta diariamente:
+- Limpieza de sesiones expiradas
+- Verificación de deudas vencidas
+- Alertas de stock bajo
+- Generación de reportes automáticos
+
+### Backups
+Configurar backups automáticos en Azure Database for PostgreSQL:
+- Retención: 7-35 días
+- Geo-redundancia según necesidad
+
+### Monitoreo
+Configurar alertas en Azure Monitor para:
+- CPU > 80%
+- Memoria > 80%
+- Tiempo de respuesta > 5s
+- Errores HTTP 5xx
+
+## Contribución
+
+Este es un proyecto privado. Para contribuir:
+
+1. Crear branch desde `main`
+2. Realizar cambios y commits
+3. Crear Pull Request
+4. Esperar revisión y aprobación
+5. GitHub Actions desplegará automáticamente a producción
+
+## Soporte
+
+Para soporte técnico o preguntas:
+- Revisar la documentación en la carpeta `docs/`
+- Consultar la sección de problemas comunes
+- Revisar logs en Azure Portal
 
 ## Licencia
 
-Este proyecto está bajo la Licencia ISC. Ver el archivo `LICENSE` para más detalles.
+Este proyecto está bajo la Licencia ISC.
+
+## Contacto
+
+Para más información sobre el proyecto, contactar al equipo de desarrollo.
