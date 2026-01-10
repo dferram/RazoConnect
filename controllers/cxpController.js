@@ -22,10 +22,16 @@ async function exportarLoteCxP(req, res) {
             await client.query('BEGIN');
         }
 
+        const tenant_id = req.tenant?.tenant_id || req.user?.tenantId || 1;
+        
         // Construir query dinámico con filtros
         let whereConditions = ["cxp.estatus NOT IN ('CANCELADO')"];
-        let queryParams = [];
-        let paramIndex = 1;
+        let queryParams = [tenant_id];
+        let paramIndex = 2;
+        
+        // CRÍTICO: Filtrar por tenant_id
+        whereConditions.push(`cxp.tenant_id = $1`);
+        whereConditions.push(`p.tenant_id = $1`);
 
         // REGLA DE VISIBILIDAD: Admin solo ve sus registros, SuperAdmin ve todos o filtra por adminId
         if (userRole === 'admin') {
@@ -240,11 +246,15 @@ async function getCxPKPIs(req, res) {
     const userRole = req.user.rol;
     const userId = req.user.id;
     const { adminId } = req.query;
+    const tenant_id = req.tenant?.tenant_id || req.user?.tenantId || 1;
     
     try {
         let whereConditions = ["estatus NOT IN ('CANCELADO')"];
-        let queryParams = [];
-        let paramIndex = 1;
+        let queryParams = [tenant_id];
+        let paramIndex = 2;
+        
+        // CRÍTICO: Filtrar por tenant_id
+        whereConditions.push(`tenant_id = $1`);
 
         // REGLA DE VISIBILIDAD: Admin solo ve sus registros, SuperAdmin ve todos o filtra por adminId
         if (userRole === 'admin') {
@@ -321,11 +331,16 @@ async function getCuentasPorPagar(req, res) {
     const { search, estatus, fechaInicio, fechaFin, adminId } = req.query;
     const userRole = req.user.rol;
     const userId = req.user.id;
+    const tenant_id = req.tenant?.tenant_id || req.user?.tenantId || 1;
     
     try {
         let whereConditions = ['cxp.estatus NOT IN (\'CANCELADO\')'];
-        let queryParams = [];
-        let paramIndex = 1;
+        let queryParams = [tenant_id];
+        let paramIndex = 2;
+        
+        // CRÍTICO: Filtrar por tenant_id
+        whereConditions.push(`cxp.tenant_id = $1`);
+        whereConditions.push(`p.tenant_id = $1`);
 
         // REGLA DE VISIBILIDAD: Admin solo ve sus registros, SuperAdmin ve todos o filtra por adminId
         if (userRole === 'admin') {
@@ -439,6 +454,7 @@ async function getCuentasPorPagar(req, res) {
 async function getCxPDetalle(req, res) {
     const client = await pool.connect();
     const { id } = req.params;
+    const tenant_id = req.tenant?.tenant_id || req.user?.tenantId || 1;
     
     try {
         // Obtener cuenta por pagar
@@ -449,8 +465,8 @@ async function getCxPDetalle(req, res) {
                 (cxp.monto_total - COALESCE(cxp.monto_pagado, 0)) as saldo_restante
             FROM cuentas_por_pagar cxp
             INNER JOIN proveedores p ON p.proveedorid = cxp.proveedor_id
-            WHERE cxp.cxp_id = $1
-        `, [id]);
+            WHERE cxp.cxp_id = $1 AND cxp.tenant_id = $2 AND p.tenant_id = $2
+        `, [id, tenant_id]);
 
         if (!cxp) {
             return res.status(404).json({
@@ -502,26 +518,38 @@ async function registrarPago(req, res) {
     const { id } = req.params;
     const { monto, metodoPago, referencia, notas } = req.body;
     const usuarioId = req.user.id;
+    const tenant_id = req.tenant?.tenant_id || req.user?.tenantId || 1;
     
     try {
         await client.query('BEGIN');
 
-        // Validar que la cuenta existe y obtener saldo
+        // CRÍTICO: Validar que la cuenta existe, pertenece al tenant y obtener saldo
         const { rows: [cxp] } = await client.query(`
             SELECT 
                 cxp_id,
                 monto_total,
                 COALESCE(monto_pagado, 0) as monto_pagado,
-                estatus
+                estatus,
+                tenant_id
             FROM cuentas_por_pagar
-            WHERE cxp_id = $1
-        `, [id]);
+            WHERE cxp_id = $1 AND tenant_id = $2
+        `, [id, tenant_id]);
 
         if (!cxp) {
             await client.query('ROLLBACK');
             return res.status(404).json({
                 success: false,
-                message: 'Cuenta por pagar no encontrada'
+                message: 'Cuenta por pagar no encontrada o no pertenece a tu tenant'
+            });
+        }
+        
+        // Validación adicional de seguridad
+        if (cxp.tenant_id !== tenant_id) {
+            await client.query('ROLLBACK');
+            console.error(`⚠️ INTENTO DE PAGO CROSS-TENANT: CXP ${id} pertenece a tenant ${cxp.tenant_id}, usuario intenta desde tenant ${tenant_id}`);
+            return res.status(403).json({
+                success: false,
+                message: 'No tienes permiso para pagar esta deuda'
             });
         }
 
@@ -578,10 +606,11 @@ async function registrarPago(req, res) {
                 referencia_bancaria,
                 comprobante_url,
                 nota,
-                usuario_id
-            ) VALUES ($1, $2, NOW(), $3, $4, $5, $6, $7)
+                usuario_id,
+                tenant_id
+            ) VALUES ($1, $2, NOW(), $3, $4, $5, $6, $7, $8)
             RETURNING pago_id, fecha_pago
-        `, [id, montoPago, metodoPago || 'TRANSFERENCIA', referencia, comprobanteUrl, notas, usuarioId]);
+        `, [id, montoPago, metodoPago || 'TRANSFERENCIA', referencia, comprobanteUrl, notas, usuarioId, tenant_id]);
 
         // Actualizar monto pagado y estatus
         const nuevoMontoPagado = cxp.monto_pagado + montoPago;

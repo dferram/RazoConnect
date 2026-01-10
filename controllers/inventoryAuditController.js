@@ -29,12 +29,17 @@ const crearSesion = async (req, res) => {
     }
 
     const usuarioCreadorId = req.user?.id ?? null;
+    const tenant_id = req.tenant?.tenant_id || req.user?.tenantId || 1;
+    
+    if (!tenant_id) {
+      console.warn('⚠️ Missing TenantID context in crearSesion');
+    }
 
     const result = await db.query(
-      `INSERT INTO toma_inventario_sesiones (nombre, estatus, usuario_creador_id)
-       VALUES ($1, 'ABIERTA', $2)
+      `INSERT INTO toma_inventario_sesiones (nombre, estatus, usuario_creador_id, tenant_id)
+       VALUES ($1, 'ABIERTA', $2, $3)
        RETURNING sesionid, nombre, estatus, usuario_creador_id`,
-      [nombre, usuarioCreadorId]
+      [nombre, usuarioCreadorId, tenant_id]
     );
 
     const sesionId = result.rows[0].sesionid;
@@ -104,13 +109,16 @@ const listarSesiones = async (req, res) => {
     const estatusRaw = (req.query?.estatus || "ABIERTA").toString().trim();
     const estatus = estatusRaw || "ABIERTA";
 
+    const tenant_id = req.tenant?.tenant_id || req.user?.tenantId || 1;
+    
     const result = await db.query(
       `SELECT sesionid, nombre, estatus, usuario_creador_id
        FROM toma_inventario_sesiones
        WHERE ($1::text IS NULL OR estatus = $1::estatus_sesion_enum)
+         AND tenant_id = $2
        ORDER BY sesionid DESC
        LIMIT 50`,
-      [estatus]
+      [estatus, tenant_id]
     );
 
     return res.json({
@@ -148,6 +156,8 @@ const buscarProductos = async (req, res) => {
 
     const q = `%${qRaw}%`;
 
+    const tenant_id = req.tenant?.tenant_id || req.user?.tenantId || 1;
+    
     const result = await db.query(
       `SELECT
          pv.varianteid,
@@ -158,12 +168,13 @@ const buscarProductos = async (req, res) => {
        FROM producto_variantes pv
        INNER JOIN productos pr ON pr.productoid = pv.productoid
        LEFT JOIN producto_imagenes pi ON pi.productoid = pr.productoid AND pi.orden = 1
-       WHERE pv.sku ILIKE $1
+       WHERE (pv.sku ILIKE $1
           OR pr.nombreproducto ILIKE $1
-          OR COALESCE(pv.dimensiones, '') ILIKE $1
+          OR COALESCE(pv.dimensiones, '') ILIKE $1)
+         AND pr.tenant_id = $2
        ORDER BY pr.nombreproducto ASC
        LIMIT 20`,
-      [q]
+      [q, tenant_id]
     );
 
     return res.json({
@@ -202,13 +213,15 @@ const getVariantePorSku = async (req, res) => {
       });
     }
 
+    const tenant_id = req.tenant?.tenant_id || req.user?.tenantId || 1;
+    
     const result = await db.query(
       `SELECT pv.varianteid, pv.sku, pr.nombreproducto
        FROM producto_variantes pv
        INNER JOIN productos pr ON pr.productoid = pv.productoid
-       WHERE pv.sku = $1
+       WHERE pv.sku = $1 AND pr.tenant_id = $2
        LIMIT 1`,
-      [sku]
+      [sku, tenant_id]
     );
 
     if (!result.rows.length) {
@@ -289,14 +302,16 @@ const registrarConteo = async (req, res) => {
       });
     }
 
+    const tenant_id = req.tenant?.tenant_id || req.user?.tenantId || 1;
+    
     await client.query("BEGIN");
 
     const sesionLock = await client.query(
-      `SELECT sesionid, nombre, estatus
+      `SELECT sesionid, nombre, estatus, tenant_id
        FROM toma_inventario_sesiones
-       WHERE sesionid = $1
+       WHERE sesionid = $1 AND tenant_id = $2
        FOR UPDATE`,
-      [sesionId]
+      [sesionId, tenant_id]
     );
 
     if (!sesionLock.rows.length) {
@@ -325,12 +340,28 @@ const registrarConteo = async (req, res) => {
 
     let row;
 
+    // CRÍTICO: Validar que la variante pertenece al mismo tenant de la sesión
+    const varianteCheck = await client.query(
+      `SELECT pv.varianteid FROM producto_variantes pv
+       INNER JOIN productos pr ON pr.productoid = pv.productoid
+       WHERE pv.varianteid = $1 AND pr.tenant_id = $2`,
+      [varianteId, sesionLock.rows[0].tenant_id]
+    );
+    
+    if (!varianteCheck.rows.length) {
+      await client.query("ROLLBACK");
+      return res.status(403).json({
+        success: false,
+        message: "No puedes contar productos de otro tenant",
+      });
+    }
+    
     if (!existing.rows.length) {
       const inserted = await client.query(
-        `INSERT INTO toma_inventario_conteos (sesionid, varianteid, conteo_a, usuario_a_id, estatus_fila)
-         VALUES ($1, $2, $3, $4, 'PENDIENTE_B')
+        `INSERT INTO toma_inventario_conteos (sesionid, varianteid, conteo_a, usuario_a_id, estatus_fila, tenant_id)
+         VALUES ($1, $2, $3, $4, 'PENDIENTE_B', $5)
          RETURNING conteoid, sesionid, varianteid, conteo_a, usuario_a_id, conteo_b, usuario_b_id, cantidad_final, estatus_fila`,
-        [sesionId, varianteId, cantidad, usuarioId]
+        [sesionId, varianteId, cantidad, usuarioId, sesionLock.rows[0].tenant_id]
       );
 
       row = inserted.rows[0];
@@ -448,11 +479,13 @@ const getDashboardSesion = async (req, res) => {
       });
     }
 
+    const tenant_id = req.tenant?.tenant_id || req.user?.tenantId || 1;
+    
     const sesionResult = await db.query(
       `SELECT sesionid, nombre, estatus, usuario_creador_id
        FROM toma_inventario_sesiones
-       WHERE sesionid = $1`,
-      [sesionId]
+       WHERE sesionid = $1 AND tenant_id = $2`,
+      [sesionId, tenant_id]
     );
 
     if (!sesionResult.rows.length) {
@@ -560,14 +593,16 @@ const aplicarSesion = async (req, res) => {
       });
     }
 
+    const tenant_id = req.tenant?.tenant_id || req.user?.tenantId || 1;
+    
     await client.query("BEGIN");
 
     const sesionLock = await client.query(
       `SELECT sesionid, estatus
        FROM toma_inventario_sesiones
-       WHERE sesionid = $1
+       WHERE sesionid = $1 AND tenant_id = $2
        FOR UPDATE`,
-      [sesionId]
+      [sesionId, tenant_id]
     );
 
     if (!sesionLock.rows.length) {
