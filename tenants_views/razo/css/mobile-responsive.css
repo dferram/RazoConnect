@@ -1587,3 +1587,331 @@ html, body {
     width: 100% !important;
   }
 }
+
+/* ============================================
+   TABLET RESPONSIVE - PRODUCTS TABLE CARD VIEW
+   iPad Vertical Mode (max-width: 1024px)
+   ============================================ */
+@media (max-width: 1024px) {
+  /* ========== ADMIN PRODUCTS TABLE - CARD TRANSFORMATION ========== */
+  
+  /* Hide table headers - no column headers needed in card view */
+  #productsTable thead {
+    display: none !important;
+  }
+
+  /* Transform table structure to block layout */
+  #productsTable,
+  #productsTable tbody {
+    display: block !important;
+    width: 100%;
+  }
+
+  /* Transform each row into a beautiful card */
+  #productsTable tbody tr {
+    display: flex !important;
+    flex-direction: column !important;
+    background: white;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 1rem;
+    padding: 0;
+    margin-bottom: 15px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    transition: all 0.3s ease;
+    position: relative;
+  }
+
+  #productsTable tbody tr:hover {
+    box-shadow: 0 6px 20px rgba(249, 115, 22, 0.15);
+    transform: translateY(-2px);
+  }
+
+  #productsTable tbody tr:last-child {
+    margin-bottom: 0;
+  }
+
+  /* Reset all table cells to block display */
+  #productsTable tbody td {
+    display: block !important;
+    padding: 0 !important;
+    border: none !important;
+    text-align: left !important;
+    width: 100% !important;
+  }
+
+  /* ========== CARD HEADER - Image + Product Name/SKU ========== */
+  
+  /* First cell: Product Name/ID - Header with image-like layout */
+  #productsTable tbody tr td:nth-child(1) {
+    background: linear-gradient(135deg, #fff7ed 0%, #ffffff 100%);
+    padding: 1.25rem !important;
+    border-bottom: 2px solid rgba(249, 115, 22, 0.1) !important;
+    display: flex !important;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  /* Product icon/placeholder (using emoji or first letter) */
+  #productsTable tbody tr td:nth-child(1)::before {
+    content: "📦";
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 80px;
+    min-width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, var(--razo-orange, #F97316), var(--razo-orange-dark, #ea580c));
+    border-radius: 0.75rem;
+    font-size: 2.5rem;
+    box-shadow: 0 4px 12px rgba(249, 115, 22, 0.25);
+    flex-shrink: 0;
+  }
+
+  /* Product name and ID styling */
+  #productsTable tbody tr td:nth-child(1) > div {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  #productsTable tbody tr td:nth-child(1) > div > div:first-child {
+    font-size: 1.125rem !important;
+    font-weight: 700 !important;
+    color: #1f2d3d;
+    line-height: 1.3;
+  }
+
+  #productsTable tbody tr td:nth-child(1) > div > div:last-child {
+    font-size: 0.875rem !important;
+    color: var(--razo-gray-warm, #6b5d57);
+    font-weight: 500;
+  }
+
+  /* ========== CARD BODY - Secondary Information Grid ========== */
+  
+  /* Container for category, estado, variantes */
+  #productsTable tbody tr td:nth-child(2),
+  #productsTable tbody tr td:nth-child(3),
+  #productsTable tbody tr td:nth-child(4),
+  #productsTable tbody tr td:nth-child(5) {
+    padding: 0.875rem 1.25rem !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important;
+    display: flex !important;
+    justify-content: space-between;
+    align-items: center;
+    min-height: 52px;
+  }
+
+  /* Add labels using pseudo-elements */
+  #productsTable tbody tr td:nth-child(2)::before {
+    content: "Categoría:";
+    font-weight: 600;
+    color: var(--razo-gray-warm, #6b5d57);
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  #productsTable tbody tr td:nth-child(3)::before {
+    content: "Estado:";
+    font-weight: 600;
+    color: var(--razo-gray-warm, #6b5d57);
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  #productsTable tbody tr td:nth-child(4)::before {
+    content: "Variantes:";
+    font-weight: 600;
+    color: var(--razo-gray-warm, #6b5d57);
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  /* Administrador column (only visible for superadmin) */
+  #productsTable tbody tr td:nth-child(5) {
+    display: flex !important;
+  }
+
+  #productsTable tbody tr td:nth-child(5)::before {
+    content: "Administrador:";
+    font-weight: 600;
+    color: var(--razo-gray-warm, #6b5d57);
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  /* Style the estado badges and toggle button container */
+  #productsTable tbody tr td:nth-child(3) > div {
+    display: flex !important;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  /* Visibility badges styling */
+  #productsTable tbody tr td .visibility-badge {
+    padding: 0.35rem 0.75rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+
+  #productsTable tbody tr td .visibility-badge.badge-success {
+    background: rgba(34, 197, 94, 0.1);
+    color: #16a34a;
+  }
+
+  #productsTable tbody tr td .visibility-badge.badge-secondary {
+    background: rgba(107, 93, 87, 0.1);
+    color: #6b5d57;
+  }
+
+  /* Toggle button styling */
+  #productsTable tbody tr td .btn-icon-toggle {
+    min-width: 44px !important;
+    min-height: 44px !important;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem !important;
+    padding: 0.5rem !important;
+    border-radius: 0.5rem;
+    transition: all 0.2s ease;
+  }
+
+  #productsTable tbody tr td .btn-icon-toggle:hover {
+    background: rgba(249, 115, 22, 0.1);
+  }
+
+  /* Variantes badge styling */
+  #productsTable tbody tr td .admin-badge {
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-size: 1rem !important;
+    font-weight: 700;
+    background: linear-gradient(135deg, #a855f7, #9333ea);
+    color: white;
+    box-shadow: 0 2px 8px rgba(168, 85, 247, 0.25);
+  }
+
+  /* ========== CARD FOOTER - Action Buttons ========== */
+  
+  /* Last cell: Actions - Full width footer with touch-friendly button */
+  #productsTable tbody tr td:last-child {
+    padding: 1.25rem !important;
+    background: rgba(249, 115, 22, 0.02);
+    border-top: 2px solid rgba(249, 115, 22, 0.1) !important;
+    border-bottom: none !important;
+  }
+
+  #productsTable tbody tr td:last-child::before {
+    display: none !important;
+  }
+
+  /* Action button - full width and touch-friendly */
+  #productsTable tbody tr td:last-child .btn {
+    width: 100% !important;
+    min-height: 52px !important;
+    padding: 1rem 1.5rem !important;
+    font-size: 1rem !important;
+    font-weight: 600 !important;
+    border-radius: 0.75rem !important;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    background: linear-gradient(135deg, var(--razo-orange, #F97316), var(--razo-orange-dark, #ea580c)) !important;
+    color: white !important;
+    border: none !important;
+    box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3) !important;
+    transition: all 0.3s ease !important;
+    cursor: pointer;
+  }
+
+  #productsTable tbody tr td:last-child .btn:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 20px rgba(249, 115, 22, 0.4) !important;
+  }
+
+  #productsTable tbody tr td:last-child .btn:active {
+    transform: translateY(0) !important;
+  }
+
+  /* ========== EMPTY STATE & LOADING ========== */
+  
+  /* Empty state row - keep centered */
+  #productsTable tbody tr.table-empty-state,
+  #productsTable tbody tr:has(.empty-state-icon) {
+    display: block !important;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    padding: 3rem 1.5rem !important;
+    text-align: center;
+    margin-bottom: 0;
+  }
+
+  #productsTable tbody tr.table-empty-state td,
+  #productsTable tbody tr:has(.empty-state-icon) td {
+    display: block !important;
+    padding: 0 !important;
+    text-align: center !important;
+    border: none !important;
+  }
+
+  #productsTable tbody tr.table-empty-state td::before,
+  #productsTable tbody tr:has(.empty-state-icon) td::before {
+    display: none !important;
+  }
+
+  /* ========== TABLE CONTAINER ADJUSTMENTS ========== */
+  
+  /* Remove horizontal scroll on tablet */
+  .admin-table-container,
+  #productsTable {
+    overflow-x: visible !important;
+  }
+
+  /* Ensure proper spacing */
+  .admin-content {
+    padding: 1.5rem !important;
+  }
+
+  /* Table header (title and search) - stack on tablet */
+  .admin-table-header {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 1rem !important;
+    margin-bottom: 1.5rem;
+  }
+
+  .admin-table-header input[type="text"],
+  .admin-table-header input[type="search"] {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* Pagination - better mobile layout */
+  #paginationContainer {
+    padding: 1rem !important;
+  }
+
+  #paginationContainer > div {
+    flex-direction: column !important;
+    gap: 1rem !important;
+    text-align: center;
+  }
+
+  #paginationContainer .btn {
+    min-width: 120px;
+    padding: 0.75rem 1.25rem !important;
+  }
+}

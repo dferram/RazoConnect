@@ -9201,7 +9201,7 @@ const getAllProveedores = async (req, res) => {
     const { tenant_id } = req.tenant;
 
     const query = `
-      SELECT 
+      SELECT DISTINCT ON (ProveedorID)
         ProveedorID,
         NombreEmpresa,
         ContactoNombre,
@@ -9232,7 +9232,7 @@ const getAllProveedores = async (req, res) => {
         AceptaDevoluciones
       FROM Proveedores
       WHERE tenant_id = $1
-      ORDER BY NombreEmpresa ASC
+      ORDER BY ProveedorID, NombreEmpresa ASC
     `;
 
     const result = await db.query(query, [tenant_id]);
