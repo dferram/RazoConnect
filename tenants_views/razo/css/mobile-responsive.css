@@ -347,6 +347,53 @@ html, body {
     padding: 1rem 1rem 1rem 4rem !important; /* Space for hamburger */
     height: auto !important;
     min-height: 60px;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 0.75rem !important;
+  }
+
+  /* Admin header left - title section */
+  .admin-header-left {
+    width: 100%;
+    order: 1;
+  }
+
+  /* Admin header title - smaller on mobile */
+  .admin-header-title {
+    font-size: 1.25rem !important;
+    margin: 0;
+  }
+
+  /* Admin header actions - user dropdown */
+  .admin-header-actions {
+    width: 100%;
+    order: 2;
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  /* User info - compact on mobile */
+  .admin-user-info {
+    gap: 0.5rem !important;
+  }
+
+  .admin-user-avatar {
+    width: 36px !important;
+    height: 36px !important;
+    font-size: 1rem !important;
+  }
+
+  .admin-user-details {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .admin-user-name {
+    font-size: 0.8rem !important;
+  }
+
+  .admin-user-role {
+    font-size: 0.7rem !important;
   }
 
   /* Admin content - add top padding for hamburger button */
@@ -396,15 +443,44 @@ html, body {
 
   .search-group {
     flex-direction: column !important;
-    gap: 0.5rem !important;
+    gap: 0.75rem !important;
   }
 
   .search-group input {
     width: 100% !important;
+    margin-bottom: 0 !important;
   }
 
   .search-group .btn {
     width: 100% !important;
+    margin-bottom: 0.5rem !important;
+  }
+
+  /* Toolbar buttons and inputs - stack vertically */
+  .table-toolbar {
+    padding: 1rem !important;
+  }
+
+  .toolbar-left {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.75rem !important;
+    width: 100%;
+  }
+
+  .toolbar-left .input-icon {
+    width: 100%;
+  }
+
+  .toolbar-left .input-icon input {
+    width: 100% !important;
+  }
+
+  /* Filter buttons and inputs - full width stacking */
+  .admin-card-toolbar .btn,
+  .table-toolbar .btn {
+    width: 100% !important;
+    margin-bottom: 0.5rem !important;
   }
 
   /* ========== TABLES - CLASSIC VIEW WITH HORIZONTAL SCROLL ========== */
@@ -412,12 +488,23 @@ html, body {
   /* Force table containers to enable horizontal scrolling */
   .admin-table-container,
   .table-responsive,
-  .dashboard-table-wrapper {
+  .dashboard-table-wrapper,
+  .table-wrapper {
     display: block !important;
     width: 100% !important;
     overflow-x: auto !important;
     -webkit-overflow-scrolling: touch !important;
     border-radius: 0.5rem;
+    position: relative;
+  }
+
+  /* Nested table-responsive inside containers */
+  .admin-table-container .table-responsive,
+  .table-wrapper .table-responsive {
+    display: block !important;
+    width: 100% !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
   }
 
   /* Keep table structure intact - NO card transformation */
@@ -1430,6 +1517,35 @@ html, body {
     min-width: auto;
     padding: 0.625rem 1rem !important;
     font-size: 0.875rem !important;
+  }
+
+  /* ========== LIST GROUP ITEMS - RADIO/CHECKBOX LISTS ========== */
+  
+  /* Fix oversized radio button/checkbox list items */
+  .list-group-item {
+    padding: 0.75rem 1rem !important;
+    margin-bottom: 0.35rem !important;
+    font-size: 0.9rem !important;
+    line-height: 1.4 !important;
+  }
+
+  .list-group-item input[type="radio"],
+  .list-group-item input[type="checkbox"] {
+    width: 20px !important;
+    height: 20px !important;
+    margin-right: 0.75rem !important;
+    flex-shrink: 0;
+  }
+
+  .list-group-item label {
+    margin-bottom: 0 !important;
+    font-size: 0.9rem !important;
+    cursor: pointer;
+  }
+
+  /* Compact spacing for filter lists */
+  .list-group {
+    gap: 0.25rem !important;
   }
 
   /* ========== FORM IMPROVEMENTS ========== */

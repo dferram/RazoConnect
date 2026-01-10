@@ -44,12 +44,14 @@
 
   async function loadCxCData() {
     try {
-      showLoading();
-
       const token = localStorage.getItem("token");
       if (!token) {
-        throw new Error("No se encontró token de autenticación");
+        console.warn("No se encontró token de autenticación. Redirigiendo a login...");
+        window.location.href = "/login-agente.html";
+        return;
       }
+
+      showLoading();
 
       const response = await fetch("/api/agente/cxc", {
         method: "GET",
@@ -61,7 +63,11 @@
 
       if (!response.ok) {
         if (response.status === 401 || response.status === 403) {
-          throw new Error("Sesión expirada. Por favor, inicia sesión nuevamente.");
+          console.warn("Sesión expirada. Redirigiendo a login...");
+          localStorage.removeItem("token");
+          localStorage.removeItem("razoconnect_admin");
+          window.location.href = "/login-agente.html";
+          return;
         }
         throw new Error(`Error al cargar datos: ${response.status}`);
       }
