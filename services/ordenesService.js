@@ -205,7 +205,8 @@ async function generarOrdenCompraAutomatica(
 }
 
 /**
- * Genera o actualiza una Orden de Compra para surtir un backorder de un producto específico.
+ * Genera una NUEVA Orden de Compra para surtir un backorder de un producto específico.
+ * REGLA DE NEGOCIO: Cada backorder crea una orden independiente (Trazabilidad 1:1).
  * Esta función opera dentro de una transacción existente.
  *
  * @param {object} client - Cliente de base de datos activo dentro de la transacción.
@@ -214,7 +215,8 @@ async function generarOrdenCompraAutomatica(
  * @param {number} cantidadFaltante - Cantidad de paquetes faltantes que se deben solicitar.
  * @param {number|null} tamanoID - ID del tamaño del paquete (puede ser NULL).
  * @param {number|null} usuarioCreadorId - ID del usuario que genera el backorder (puede ser NULL).
- * @returns {Promise<object>} - Información de la orden de compra generada/actualizada.
+ * @param {number|null} pedidoOrigenId - ID del pedido de cliente que originó este backorder.
+ * @returns {Promise<object>} - Información de la orden de compra generada.
  */
 async function generarBackorderProveedor(
   client,
@@ -222,7 +224,8 @@ async function generarBackorderProveedor(
   varianteID,
   cantidadFaltante,
   tamanoID,
-  usuarioCreadorId = null
+  usuarioCreadorId = null,
+  pedidoOrigenId = null
 ) {
   try {
     // Validar parámetros
@@ -274,36 +277,28 @@ async function generarBackorderProveedor(
       );
     }
 
-    // PASO 2: Buscar Orden Abierta (Pendiente)
-    const ordenPendienteResult = await client.query(
-      `SELECT OrdenCompraID
-       FROM OrdenesDeCompra
-       WHERE ProveedorID = $1 AND Estatus = 'Pendiente'
-       ORDER BY FechaCreacion ASC
-       LIMIT 1`,
-      [proveedorID]
-    );
-
+    // PASO 2: CREAR NUEVA ORDEN DE COMPRA (Trazabilidad 1:1)
+    // NOTA: Se eliminó la búsqueda de órdenes pendientes para garantizar
+    // que cada backorder genere una orden independiente con trazabilidad al pedido origen
     let ordenCompraID;
-    let esOrdenNueva = false;
+    const esOrdenNueva = true;
 
-    // PASO 3: Crear o Reutilizar Orden
-    if (ordenPendienteResult.rows.length === 0) {
-      // NO existe orden pendiente -> Crear nueva
-      const nuevaOrdenResult = await client.query(
-        `INSERT INTO OrdenesDeCompra (ProveedorID, FechaEntregaEsperada, Estatus, OrigenOC, usuario_creador_id)
-         VALUES ($1, NOW() + INTERVAL '14 days', 'Pendiente', 'backorder', $2)
-         RETURNING OrdenCompraID`,
-        [proveedorID, usuarioCreadorId]
-      );
-      ordenCompraID = nuevaOrdenResult.rows[0].ordencompraid;
-      esOrdenNueva = true;
-    } else {
-      // SÍ existe orden pendiente -> Reutilizar
-      ordenCompraID = ordenPendienteResult.rows[0].ordencompraid;
-    }
+    const nuevaOrdenResult = await client.query(
+      `INSERT INTO OrdenesDeCompra (
+        ProveedorID, 
+        FechaEntregaEsperada, 
+        Estatus, 
+        OrigenOC, 
+        usuario_creador_id,
+        pedido_origen_id
+      )
+      VALUES ($1, NOW() + INTERVAL '14 days', 'Pendiente', 'backorder', $2, $3)
+      RETURNING OrdenCompraID`,
+      [proveedorID, usuarioCreadorId, pedidoOrigenId]
+    );
+    ordenCompraID = nuevaOrdenResult.rows[0].ordencompraid;
 
-    // PASO 4: SMART REORDERING - Normalizar cantidad según regla de empaque
+    // PASO 3: SMART REORDERING - Normalizar cantidad según regla de empaque
     const normalizacionResult = await normalizarCantidadPorReglaEmpaque(
       client,
       productoIdNumero,
@@ -312,41 +307,17 @@ async function generarBackorderProveedor(
 
     const cantidadNormalizada = normalizacionResult.cantidadNormalizada;
 
-    // PASO 5: Agregar/Actualizar Producto en DetallesOrdenCompra
-    const detalleExistenteResult = await client.query(
-      `SELECT DetalleOC_ID, CantidadSolicitada
-       FROM DetallesOrdenCompra
-       WHERE OrdenCompraID = $1 AND VarianteID = $2`,
-      [ordenCompraID, varianteIdNumero]
+    // PASO 4: Agregar Producto en DetallesOrdenCompra
+    // NOTA: Como siempre creamos una orden nueva, no necesitamos verificar existencia
+    const insertResult = await client.query(
+      `INSERT INTO DetallesOrdenCompra 
+       (OrdenCompraID, VarianteID, CantidadSolicitada, CantidadRecibida)
+       VALUES ($1, $2, $3, 0)
+       RETURNING DetalleOC_ID, CantidadSolicitada`,
+      [ordenCompraID, varianteIdNumero, cantidadNormalizada]
     );
-
-    let detalleOrdenID;
-    let cantidadTotal;
-
-    if (detalleExistenteResult.rows.length > 0) {
-      // Ya existe el producto -> UPDATE (incrementar cantidad NORMALIZADA)
-      const detalleExistente = detalleExistenteResult.rows[0];
-      const updateResult = await client.query(
-        `UPDATE DetallesOrdenCompra
-         SET CantidadSolicitada = CantidadSolicitada + $1
-         WHERE DetalleOC_ID = $2
-         RETURNING DetalleOC_ID, CantidadSolicitada`,
-        [cantidadNormalizada, detalleExistente.detalleoc_id]
-      );
-      detalleOrdenID = updateResult.rows[0].detalleoc_id;
-      cantidadTotal = updateResult.rows[0].cantidadsolicitada;
-    } else {
-      // No existe el producto -> INSERT (nuevo detalle con cantidad NORMALIZADA)
-      const insertResult = await client.query(
-        `INSERT INTO DetallesOrdenCompra 
-         (OrdenCompraID, VarianteID, CantidadSolicitada, CantidadRecibida)
-         VALUES ($1, $2, $3, 0)
-         RETURNING DetalleOC_ID, CantidadSolicitada`,
-        [ordenCompraID, varianteIdNumero, cantidadNormalizada]
-      );
-      detalleOrdenID = insertResult.rows[0].detalleoc_id;
-      cantidadTotal = insertResult.rows[0].cantidadsolicitada;
-    }
+    const detalleOrdenID = insertResult.rows[0].detalleoc_id;
+    const cantidadTotal = insertResult.rows[0].cantidadsolicitada;
 
     return {
       success: true,
@@ -362,9 +333,8 @@ async function generarBackorderProveedor(
       sobranteStock: normalizacionResult.sobranteStock,
       detalleOrdenID,
       esOrdenNueva,
-      mensaje: esOrdenNueva
-        ? `Orden de compra ${ordenCompraID} creada para proveedor ${proveedorID} (Smart Reordering aplicado)`
-        : `Orden de compra ${ordenCompraID} actualizada (Smart Reordering aplicado)`,
+      mensaje: `Orden de compra ${ordenCompraID} creada para proveedor ${proveedorID}${pedidoOrigenId ? ` (Pedido #${pedidoOrigenId})` : ''} - Trazabilidad 1:1`,
+      pedidoOrigenId,
     };
   } catch (error) {
     console.error("Error en generarBackorderProveedor:", error);
