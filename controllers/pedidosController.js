@@ -251,7 +251,10 @@ const crearPedido = async (req, res) => {
         pv.stock,
         p.nombreproducto,
         p.proveedorid_default,
-        p.imagenurl
+        COALESCE(
+          (SELECT url_imagen FROM producto_variante_imagenes WHERE varianteid = pv.varianteid ORDER BY orden LIMIT 1),
+          (SELECT url_imagen FROM producto_imagenes WHERE productoid = p.productoid ORDER BY orden LIMIT 1)
+        ) AS imagenurl
       FROM itemsdelcarrito ic
       INNER JOIN producto_variantes pv ON pv.varianteid = ic.varianteid
       INNER JOIN productos p ON p.productoid = pv.productoid
