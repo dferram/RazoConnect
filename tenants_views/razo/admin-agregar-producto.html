@@ -748,6 +748,7 @@
     <script src="js/admin-header-dropdown.js"></script>
     <script src="js/api.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+    <script src="js/utils/form-data-binding-helper.js"></script>
     <script src="js/components/admin-header-loader.js"></script>
     <script src="js/components/tipo-producto-loader.js"></script>
     <script>
@@ -1114,29 +1115,55 @@
           if (inputTipoProducto) {
             const tipoIdParsed = Number.parseInt(tipoProductoId, 10);
             if (Number.isInteger(tipoIdParsed) && tipoIdParsed > 0) {
-              // SOLUCIÓN PROBLEMA 1 (continuación): Asignar valor después de cargar tipos
-              // Verificar si el select tiene Choices.js instance
-              const choicesInstance = inputTipoProducto.choicesInstance;
-              if (choicesInstance) {
-                try {
-                  choicesInstance.setChoiceByValue(String(tipoIdParsed));
-                } catch (e) {
-                  inputTipoProducto.value = String(tipoIdParsed);
+              // SOLUCIÓN MEJORADA: Usar helper de data binding con normalización
+              console.log('[EditarProducto] Intentando establecer tipo de producto:', tipoIdParsed);
+              
+              // Esperar un momento para que Choices.js termine de renderizar
+              setTimeout(() => {
+                if (window.FormDataBinding) {
+                  const success = window.FormDataBinding.setChoicesValue(
+                    inputTipoProducto,
+                    String(tipoIdParsed),
+                    { useDataset: true, datasetKey: 'tipoId' }
+                  );
+                  
+                  if (!success) {
+                    console.warn('[EditarProducto] No se pudo establecer tipo, intentando con reglaId');
+                    // Intentar con reglaId si existe
+                    if (producto.reglaId || producto.reglaid) {
+                      const reglaId = producto.reglaId || producto.reglaid;
+                      window.FormDataBinding.setChoicesValue(inputTipoProducto, String(reglaId));
+                    }
+                  }
+                } else {
+                  // Fallback si el helper no está disponible
+                  const choicesInstance = inputTipoProducto.choicesInstance;
+                  if (choicesInstance) {
+                    try {
+                      choicesInstance.setChoiceByValue(String(tipoIdParsed));
+                    } catch (e) {
+                      inputTipoProducto.value = String(tipoIdParsed);
+                    }
+                  } else {
+                    inputTipoProducto.value = String(tipoIdParsed);
+                  }
                 }
-              } else {
-                inputTipoProducto.value = String(tipoIdParsed);
-              }
+              }, 300);
             } else {
               // No hay ID válido, dejar vacío
-              const choicesInstance = inputTipoProducto.choicesInstance;
-              if (choicesInstance) {
-                try {
-                  choicesInstance.removeActiveItems();
-                } catch (e) {
+              if (window.FormDataBinding) {
+                window.FormDataBinding.setChoicesValue(inputTipoProducto, '');
+              } else {
+                const choicesInstance = inputTipoProducto.choicesInstance;
+                if (choicesInstance) {
+                  try {
+                    choicesInstance.removeActiveItems();
+                  } catch (e) {
+                    inputTipoProducto.value = "";
+                  }
+                } else {
                   inputTipoProducto.value = "";
                 }
-              } else {
-                inputTipoProducto.value = "";
               }
             }
           }
