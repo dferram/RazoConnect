@@ -220,6 +220,7 @@ const obtenerCarrito = async (req, res) => {
     const carritoId = carritoResult.rows[0].carritoid;
 
     // Obtener los items del carrito con información de productos y tamaño seleccionado
+    // PRIORIDAD: Imagen de variante > Imagen de producto
     const itemsQuery = `
       SELECT
         ic.itemid,
@@ -241,8 +242,8 @@ const obtenerCarrito = async (req, res) => {
         c.nombre AS categorianombre,
         c.descripcion AS categoriadescripcion,
         row_to_json(t) AS tamano_info,
-        imagen.url_imagen,
-        imagen.textoalternativo
+        COALESCE(imagen_variante.url_imagen, imagen_producto.url_imagen) AS url_imagen,
+        COALESCE(imagen_variante.textoalternativo, imagen_producto.textoalternativo) AS textoalternativo
       FROM itemsdelcarrito ic
       INNER JOIN producto_variantes pv ON pv.varianteid = ic.varianteid
       INNER JOIN productos p ON p.productoid = pv.productoid
@@ -251,13 +252,22 @@ const obtenerCarrito = async (req, res) => {
       LEFT JOIN cat_tamanopaquetes t ON t.tamanoid = ic.tamanoid
       LEFT JOIN LATERAL (
         SELECT
+          pvi.url_imagen,
+          pvi.textoalternativo
+        FROM producto_variante_imagenes pvi
+        WHERE pvi.varianteid = ic.varianteid
+        ORDER BY pvi.orden ASC NULLS LAST, pvi.imagenid ASC
+        LIMIT 1
+      ) imagen_variante ON TRUE
+      LEFT JOIN LATERAL (
+        SELECT
           pi.url_imagen,
           pi.textoalternativo
         FROM producto_imagenes pi
         WHERE pi.productoid = pv.productoid
         ORDER BY pi.orden ASC NULLS LAST, pi.imagenid ASC
         LIMIT 1
-      ) imagen ON TRUE
+      ) imagen_producto ON TRUE
       WHERE ic.carritoid = $1
         AND p.tenant_id = $2
         AND (c.tenant_id = $2 OR c.tenant_id IS NULL)
