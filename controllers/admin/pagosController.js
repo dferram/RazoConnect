@@ -7,6 +7,8 @@ const { registrarCambio } = require('../../services/auditService');
  */
 async function getPagosPendientes(req, res) {
   try {
+    const tenant_id = req.tenant?.tenant_id || 1;
+    
     const query = `
       SELECT 
         p.pedidoid,
@@ -26,10 +28,12 @@ async function getPagosPendientes(req, res) {
       WHERE p.pagado = false
         AND p.metodo_pago ILIKE '%transferencia%'
         AND p.comprobante_url IS NOT NULL
+        AND p.tenant_id = $1
+        AND c.tenant_id = $1
       ORDER BY p.fechapedido DESC
     `;
 
-    const { rows } = await db.query(query);
+    const { rows } = await db.query(query, [tenant_id]);
 
     res.json({
       success: true,
@@ -53,6 +57,7 @@ async function aprobarPago(req, res) {
   const client = await db.pool.connect();
   const { pagoId } = req.params;
   const adminId = req.user?.adminId || req.user?.userId;
+  const tenant_id = req.tenant?.tenant_id || 1;
 
   try {
     await client.query('BEGIN');
@@ -69,8 +74,8 @@ async function aprobarPago(req, res) {
         c.apellido
       FROM pedidos p
       INNER JOIN clientes c ON c.clienteid = p.clienteid
-      WHERE p.pedidoid = $1`,
-      [pagoId]
+      WHERE p.pedidoid = $1 AND p.tenant_id = $2 AND c.tenant_id = $2`,
+      [pagoId, tenant_id]
     );
 
     if (pedidoQuery.rows.length === 0) {
@@ -96,16 +101,17 @@ async function aprobarPago(req, res) {
        SET pagado = true,
            estatus = 'Confirmado',
            saldo_pendiente = 0.00
-       WHERE pedidoid = $1`,
-      [pagoId]
+       WHERE pedidoid = $1 AND tenant_id = $2`,
+      [pagoId, tenant_id]
     );
 
     await client.query(
-      `INSERT INTO notificaciones (clienteid, tipo, titulo, mensaje, prioridad, url)
-       VALUES ($1, 'sistema', 'Pago Aprobado', $2, 'normal', '/mis-pedidos.html')`,
+      `INSERT INTO notificaciones (clienteid, tipo, titulo, mensaje, prioridad, url, tenant_id)
+       VALUES ($1, 'sistema', 'Pago Aprobado', $2, 'normal', '/mis-pedidos.html', $3)`,
       [
         pedido.clienteid,
-        `Tu pago para el pedido #${pagoId} ha sido validado exitosamente.`
+        `Tu pago para el pedido #${pagoId} ha sido validado exitosamente.`,
+        tenant_id
       ]
     );
 
@@ -152,6 +158,7 @@ async function rechazarPago(req, res) {
   const { pagoId } = req.params;
   const { motivo } = req.body;
   const adminId = req.user?.adminId || req.user?.userId;
+  const tenant_id = req.tenant?.tenant_id || 1;
 
   try {
     await client.query('BEGIN');
@@ -167,8 +174,8 @@ async function rechazarPago(req, res) {
         c.apellido
       FROM pedidos p
       INNER JOIN clientes c ON c.clienteid = p.clienteid
-      WHERE p.pedidoid = $1`,
-      [pagoId]
+      WHERE p.pedidoid = $1 AND p.tenant_id = $2 AND c.tenant_id = $2`,
+      [pagoId, tenant_id]
     );
 
     if (pedidoQuery.rows.length === 0) {
@@ -193,8 +200,8 @@ async function rechazarPago(req, res) {
       `UPDATE pedidos 
        SET estatus = 'Rechazado',
            comprobante_url = NULL
-       WHERE pedidoid = $1`,
-      [pagoId]
+       WHERE pedidoid = $1 AND tenant_id = $2`,
+      [pagoId, tenant_id]
     );
 
     const mensajeRechazo = motivo 
@@ -202,9 +209,9 @@ async function rechazarPago(req, res) {
       : `Tu comprobante para el pedido #${pagoId} fue rechazado. Por favor, contacta con soporte.`;
 
     await client.query(
-      `INSERT INTO notificaciones (clienteid, tipo, titulo, mensaje, prioridad, url)
-       VALUES ($1, 'sistema', 'Problema con tu pago', $2, 'alta', '/mis-pedidos.html')`,
-      [pedido.clienteid, mensajeRechazo]
+      `INSERT INTO notificaciones (clienteid, tipo, titulo, mensaje, prioridad, url, tenant_id)
+       VALUES ($1, 'sistema', 'Problema con tu pago', $2, 'alta', '/mis-pedidos.html', $3)`,
+      [pedido.clienteid, mensajeRechazo, tenant_id]
     );
 
     await registrarCambio(

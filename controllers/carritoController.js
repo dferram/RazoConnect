@@ -204,15 +204,15 @@ const obtenerCarrito = async (req, res) => {
 
     // Obtener o crear el carrito del cliente
     let carritoResult = await db.query(
-      "SELECT carritoid FROM carritodecompra WHERE clienteid = $1",
-      [clienteId]
+      "SELECT carritoid FROM carritodecompra WHERE clienteid = $1 AND tenant_id = $2",
+      [clienteId, tenant_id]
     );
 
     // Si no existe carrito, crear uno nuevo
     if (carritoResult.rows.length === 0) {
       const nuevoCarrito = await db.query(
-        "INSERT INTO carritodecompra (clienteid) VALUES ($1) RETURNING carritoid",
-        [clienteId]
+        "INSERT INTO carritodecompra (clienteid, tenant_id) VALUES ($1, $2) RETURNING carritoid",
+        [clienteId, tenant_id]
       );
       carritoResult = nuevoCarrito;
     }
@@ -594,24 +594,24 @@ const agregarAlCarrito = async (req, res) => {
 
     // Obtener o crear el carrito del cliente
     let carritoResult = await db.query(
-      "SELECT carritoid FROM carritodecompra WHERE clienteid = $1",
-      [clienteId]
+      "SELECT carritoid FROM carritodecompra WHERE clienteid = $1 AND tenant_id = $2",
+      [clienteId, tenant_id]
     );
 
     let carritoId;
     if (carritoResult.rows.length === 0) {
       // Crear nuevo carrito
       const nuevoCarrito = await db.query(
-        "INSERT INTO carritodecompra (clienteid, ultimamodificacion) VALUES ($1, NOW()) RETURNING carritoid",
-        [clienteId]
+        "INSERT INTO carritodecompra (clienteid, tenant_id, ultimamodificacion) VALUES ($1, $2, NOW()) RETURNING carritoid",
+        [clienteId, tenant_id]
       );
       carritoId = nuevoCarrito.rows[0].carritoid;
     } else {
       carritoId = carritoResult.rows[0].carritoid;
       // Actualizar última modificación
       await db.query(
-        "UPDATE carritodecompra SET ultimamodificacion = NOW() WHERE carritoid = $1",
-        [carritoId]
+        "UPDATE carritodecompra SET ultimamodificacion = NOW() WHERE carritoid = $1 AND tenant_id = $2",
+        [carritoId, tenant_id]
       );
     }
 
@@ -636,8 +636,8 @@ const agregarAlCarrito = async (req, res) => {
     } else {
       // Insertar nuevo item
       itemResult = await db.query(
-        "INSERT INTO itemsdelcarrito (carritoid, varianteid, tamanoid, cantidadpaquetes, cantidad) VALUES ($1, $2, $3, $4, $4) RETURNING itemid, varianteid, tamanoid, cantidadpaquetes, cantidad",
-        [carritoId, varianteId, tamanoId, cantidadEntera]
+        "INSERT INTO itemsdelcarrito (carritoid, varianteid, tamanoid, cantidadpaquetes, cantidad, tenant_id) VALUES ($1, $2, $3, $4, $4, $5) RETURNING itemid, varianteid, tamanoid, cantidadpaquetes, cantidad",
+        [carritoId, varianteId, tamanoId, cantidadEntera, tenant_id]
       );
     }
 
@@ -776,8 +776,8 @@ const actualizarCarrito = async (req, res) => {
 
     // Obtener el carrito del cliente
     const carritoResult = await db.query(
-      "SELECT carritoid FROM carritodecompra WHERE clienteid = $1",
-      [clienteId]
+      "SELECT carritoid FROM carritodecompra WHERE clienteid = $1 AND tenant_id = $2",
+      [clienteId, tenant_id]
     );
 
     if (carritoResult.rows.length === 0) {
@@ -841,8 +841,8 @@ const actualizarCarrito = async (req, res) => {
 
     // Actualizar última modificación del carrito
     await db.query(
-      "UPDATE carritodecompra SET ultimamodificacion = NOW() WHERE carritoid = $1",
-      [carritoId]
+      "UPDATE carritodecompra SET ultimamodificacion = NOW() WHERE carritoid = $1 AND tenant_id = $2",
+      [carritoId, tenant_id]
     );
 
     const item = updateResult.rows[0];
@@ -1094,8 +1094,8 @@ const cambiarVarianteItemCarrito = async (req, res) => {
 
     // Actualizar última modificación del carrito
     await db.query(
-      "UPDATE carritodecompra SET ultimamodificacion = NOW() WHERE carritoid = $1",
-      [carritoId]
+      "UPDATE carritodecompra SET ultimamodificacion = NOW() WHERE carritoid = $1 AND tenant_id = $2",
+      [carritoId, tenant_id]
     );
 
     const itemActualizado = updateResult.rows[0];
@@ -1205,8 +1205,8 @@ const eliminarDelCarrito = async (req, res) => {
 
     // Actualizar última modificación del carrito
     await db.query(
-      "UPDATE carritodecompra SET ultimamodificacion = NOW() WHERE carritoid = $1",
-      [carritoId]
+      "UPDATE carritodecompra SET ultimamodificacion = NOW() WHERE carritoid = $1 AND tenant_id = $2",
+      [carritoId, tenant_id]
     );
 
     res.status(200).json({

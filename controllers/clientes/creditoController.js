@@ -10,16 +10,18 @@ const normalizeClienteId = (req) => {
 const isCliente = (req) =>
   (req.user?.rol || "").toString().trim().toLowerCase() === "cliente";
 
-const fetchCreditoActivo = async (clienteId) => {
+const fetchCreditoActivo = async (clienteId, tenantId = null) => {
   const query = `
     SELECT credito_id, limite_credito, saldo_deudor, estado_credito, dias_gracia, fecha_creacion, ultima_actualizacion
     FROM cliente_creditos
     WHERE cliente_id = $1
       AND estado_credito = 'ACTIVO'
+      ${tenantId ? 'AND tenant_id = $2' : ''}
     LIMIT 1
   `;
 
-  const { rows } = await db.query(query, [clienteId]);
+  const params = tenantId ? [clienteId, tenantId] : [clienteId];
+  const { rows } = await db.query(query, params);
   return rows.length ? rows[0] : null;
 };
 
@@ -47,7 +49,8 @@ const checkAuthCredit = async (req, res) => {
       });
     }
 
-    const creditoActivo = await fetchCreditoActivo(clienteId);
+    const tenant_id = req.tenant?.tenant_id || 1;
+    const creditoActivo = await fetchCreditoActivo(clienteId, tenant_id);
     const creditSummary = créditoResumen(creditoActivo);
 
     // Verificar si tiene una solicitud pendiente
@@ -56,10 +59,11 @@ const checkAuthCredit = async (req, res) => {
       FROM solicitudes_credito 
       WHERE cliente_id = $1 
         AND estado = 'PENDIENTE'
+        AND tenant_id = $2
       ORDER BY fecha_solicitud DESC
       LIMIT 1
     `;
-    const { rows: pendientes } = await db.query(checkPendiente, [clienteId]);
+    const { rows: pendientes } = await db.query(checkPendiente, [clienteId, tenant_id]);
     const hasPendingRequest = pendientes.length > 0;
     const pendingRequest = pendientes.length > 0 ? pendientes[0] : null;
 
@@ -123,7 +127,8 @@ const obtenerPerfilCredito = async (req, res) => {
       });
     }
 
-    const creditoActivo = await fetchCreditoActivo(clienteId);
+    const tenant_id = req.tenant?.tenant_id || 1;
+    const creditoActivo = await fetchCreditoActivo(clienteId, tenant_id);
     const creditSummary = créditoResumen(creditoActivo);
     
     // Obtener pagos pendientes de validación
@@ -132,8 +137,9 @@ const obtenerPerfilCredito = async (req, res) => {
       FROM pagos_clientes
       WHERE cliente_id = $1
         AND estatus = 'PENDIENTE'
+        AND tenant_id = $2
     `;
-    const { rows: pagosPendientes } = await db.query(pagosPendientesQuery, [clienteId]);
+    const { rows: pagosPendientes } = await db.query(pagosPendientesQuery, [clienteId, tenant_id]);
     const saldoEnRevision = Number.parseFloat(pagosPendientes[0]?.total_pendiente || 0);
     
     const data = creditSummary
@@ -193,15 +199,19 @@ const enviarSolicitudCredito = async (req, res) => {
       });
     }
 
+    // Obtener tenant_id del middleware o del usuario autenticado como fallback
+    const tenant_id = req.tenant?.tenant_id || req.user?.tenant_id || 1;
+    
     // Validar que no tenga una solicitud pendiente
     const checkPendiente = `
       SELECT solicitud_id 
       FROM solicitudes_credito 
       WHERE cliente_id = $1 
         AND estado = 'PENDIENTE'
+        AND tenant_id = $2
       LIMIT 1
     `;
-    const { rows: pendientes } = await db.query(checkPendiente, [clienteId]);
+    const { rows: pendientes } = await db.query(checkPendiente, [clienteId, tenant_id]);
     if (pendientes.length > 0) {
       return res.status(400).json({
         success: false,
@@ -210,7 +220,7 @@ const enviarSolicitudCredito = async (req, res) => {
     }
 
     // Validar que no tenga un crédito activo
-    const creditoActivo = await fetchCreditoActivo(clienteId);
+    const creditoActivo = await fetchCreditoActivo(clienteId, tenant_id);
     if (creditoActivo) {
       return res.status(400).json({
         success: false,
@@ -225,9 +235,6 @@ const enviarSolicitudCredito = async (req, res) => {
         message: "El monto solicitado y motivo son requeridos",
       });
     }
-
-    // Obtener tenant_id del middleware o del usuario autenticado como fallback
-    const tenant_id = req.tenant?.tenant_id || req.user?.tenant_id || 1;
     
     if (!tenant_id) {
       console.error("Error: No se pudo determinar tenant_id", {
@@ -343,12 +350,14 @@ const obtenerMovimientosCredito = async (req, res) => {
 
     const creditoId = creditoActivo.credito_id;
 
+    const tenant_id = req.tenant?.tenant_id || 1;
+    
     // Obtener el total de movimientos
     const countResult = await db.query(
       `SELECT COUNT(*) as total
        FROM credito_movimientos
-       WHERE credito_id = $1`,
-      [creditoId]
+       WHERE credito_id = $1 AND tenant_id = $2`,
+      [creditoId, tenant_id]
     );
     const totalMovimientos = parseInt(countResult.rows[0]?.total || 0, 10);
     const totalPages = Math.ceil(totalMovimientos / limit);
@@ -368,11 +377,13 @@ const obtenerMovimientosCredito = async (req, res) => {
        FROM credito_movimientos cm
        LEFT JOIN pagos_clientes pc ON 
          pc.movimientos_aplicados::jsonb ? cm.movimiento_id::text
-         AND pc.cliente_id = $4
+         AND pc.cliente_id = $5
+         AND pc.tenant_id = $6
        WHERE cm.credito_id = $1
+         AND cm.tenant_id = $2
        ORDER BY cm.fecha_movimiento DESC
-       LIMIT $2 OFFSET $3`,
-      [creditoId, limit, offset, clienteId]
+       LIMIT $3 OFFSET $4`,
+      [creditoId, tenant_id, limit, offset, clienteId, tenant_id]
     );
 
     const movimientos = movimientosResult.rows.map((mov) => ({
@@ -450,7 +461,8 @@ const registrarPagoCliente = async (req, res) => {
       });
     }
 
-    const creditoActivo = await fetchCreditoActivo(clienteId);
+    const tenant_id = req.tenant?.tenant_id || 1;
+    const creditoActivo = await fetchCreditoActivo(clienteId, tenant_id);
     const creditoId = creditoActivo?.credito_id || null;
 
     const comprobanteUrl = req.body.comprobanteUrl || null;
@@ -459,9 +471,9 @@ const registrarPagoCliente = async (req, res) => {
     const insertQuery = `
       INSERT INTO pagos_clientes 
         (cliente_id, credito_id, monto, tipo_pago, estatus, comprobante_url, 
-         referencia_bancaria, transaccion_id, movimientos_aplicados)
+         referencia_bancaria, transaccion_id, movimientos_aplicados, tenant_id)
       VALUES 
-        ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
       RETURNING pago_id, fecha_pago
     `;
 
@@ -475,6 +487,7 @@ const registrarPagoCliente = async (req, res) => {
       referenciaBancaria || null,
       transaccionId || null,
       JSON.stringify(movimientosAplicados),
+      tenant_id,
     ];
 
     const { rows } = await db.query(insertQuery, values);
@@ -516,8 +529,10 @@ async function obtenerMovimientosPendientes(req, res) {
       });
     }
 
+    const tenant_id = req.tenant?.tenant_id || 1;
+    
     // Obtener crédito activo
-    const creditoActivo = await fetchCreditoActivo(clienteId);
+    const creditoActivo = await fetchCreditoActivo(clienteId, tenant_id);
     if (!creditoActivo) {
       return res.json({
         success: true,
@@ -540,10 +555,11 @@ async function obtenerMovimientosPendientes(req, res) {
         AND es_credito = true 
         AND pagado = false 
         AND COALESCE(saldo_pendiente, montototal) > 0.01
+        AND tenant_id = $2
       ORDER BY fechapedido ASC
     `;
 
-    const result = await db.query(query, [clienteId]);
+    const result = await db.query(query, [clienteId, tenant_id]);
 
     const movimientosPendientes = result.rows.map((row) => ({
       referenciaId: row.referencia_id,

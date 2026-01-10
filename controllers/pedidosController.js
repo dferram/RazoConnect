@@ -218,8 +218,8 @@ const crearPedido = async (req, res) => {
 
     // 2. Obtener el carrito del cliente
     const carritoResult = await client.query(
-      "SELECT CarritoID FROM CarritoDeCompra WHERE ClienteID = $1",
-      [clienteId]
+      "SELECT CarritoID FROM CarritoDeCompra WHERE ClienteID = $1 AND tenant_id = $2",
+      [clienteId, tenant_id]
     );
 
     if (carritoResult.rows.length === 0) {
@@ -682,7 +682,8 @@ const crearPedido = async (req, res) => {
            Comprobante_URL,
            Cupon_ID,
            Monto_Descuento,
-           Saldo_Pendiente
+           Saldo_Pendiente,
+           tenant_id
          )
          VALUES (
            $1,
@@ -701,7 +702,8 @@ const crearPedido = async (req, res) => {
            $11,
            $12,
            $13,
-           $14
+           $14,
+           $15
          )
          RETURNING PedidoID, FechaPedido, MontoTotal, Estatus, Fecha_Vencimiento, Es_Credito, Pagado, Metodo_Pago, Transaccion_ID, Comprobante_URL, Cupon_ID, Monto_Descuento, Saldo_Pendiente`,
         [
@@ -719,6 +721,7 @@ const crearPedido = async (req, res) => {
           cuponId,
           montoDescuento,
           metodoPagoEsCredito ? montoTotalFinal : 0,
+          tenant_id,
         ]
       );
       pedido = pedidoResult.rows[0];
@@ -742,15 +745,17 @@ const crearPedido = async (req, res) => {
            monto,
            referencia_id,
            descripcion,
-           saldo_despues_movimiento
+           saldo_despues_movimiento,
+           tenant_id
          )
-         VALUES ($1, 'CARGO', $2, $3, $4, $5)`,
+         VALUES ($1, 'CARGO', $2, $3, $4, $5, $6)`,
         [
           info.creditoId,
           montoTotalFinal.toFixed(2),
           `PED-${pedidoId}`,
           `Compra realizada (Pedido #${pedidoId})`,
           info.nuevoSaldo.toFixed(2),
+          tenant_id,
         ]
       );
 
@@ -854,9 +859,10 @@ const crearPedido = async (req, res) => {
              PrecioUnitario,
              EsBackorder,
              CantidadSurtida,
-             CantidadBackorder
+             CantidadBackorder,
+             tenant_id
            )
-           VALUES ($1, $2, $3, $4, $5, $6, $7, FALSE, $4, 0)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, FALSE, $4, 0, $8)
            RETURNING DetalleID`,
           [
             pedidoId,
@@ -866,6 +872,7 @@ const crearPedido = async (req, res) => {
             precioPorPaquete,
             piezasSurtidas,
             precioUnitario.toFixed(2),
+            tenant_id,
           ]
         );
 
@@ -910,9 +917,10 @@ const crearPedido = async (req, res) => {
              PrecioUnitario,
              EsBackorder,
              CantidadSurtida,
-             CantidadBackorder
+             CantidadBackorder,
+             tenant_id
            )
-           VALUES ($1, $2, $3, $4, $5, $6, $7, TRUE, 0, $4)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, TRUE, 0, $4, $8)
            RETURNING DetalleID`,
           [
             pedidoId,
@@ -922,6 +930,7 @@ const crearPedido = async (req, res) => {
             precioPorPaquete,
             piezasBackorder,
             precioUnitario.toFixed(2),
+            tenant_id,
           ]
         );
 
@@ -964,14 +973,15 @@ const crearPedido = async (req, res) => {
         );
 
         await client.query(
-          `INSERT INTO Log_Inventario (VarianteID, CantidadCambiado, NuevoStock, Motivo, UsuarioID)
-           VALUES ($1, $2, $3, $4, $5)`,
+          `INSERT INTO Log_Inventario (VarianteID, CantidadCambiado, NuevoStock, Motivo, UsuarioID, tenant_id)
+           VALUES ($1, $2, $3, $4, $5, $6)`,
           [
             masterInfo.varianteId,
             -piezasSurtidas,
             nuevoStockMaestro,
             `Venta Pedido #${pedidoId}`,
             clienteId,
+            tenant_id,
           ]
         );
 
@@ -1033,10 +1043,10 @@ const crearPedido = async (req, res) => {
     if (agenteId) {
       const montoComision = montoTotalFinal * 0.2; // 20% de comisión
       const comisionResult = await client.query(
-        `INSERT INTO Comisiones (PedidoID, AgenteID, MontoComision, Estatus)
-         VALUES ($1, $2, $3, 'Pendiente')
+        `INSERT INTO Comisiones (PedidoID, AgenteID, MontoComision, Estatus, tenant_id)
+         VALUES ($1, $2, $3, 'Pendiente', $4)
          RETURNING ComisionID, MontoComision, FechaCalculo`,
-        [pedidoId, agenteId, montoComision]
+        [pedidoId, agenteId, montoComision, tenant_id]
       );
 
       comision = {
