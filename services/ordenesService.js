@@ -213,6 +213,7 @@ async function generarOrdenCompraAutomatica(
  * @param {number} varianteID - ID de la variante del producto.
  * @param {number} cantidadFaltante - Cantidad de paquetes faltantes que se deben solicitar.
  * @param {number|null} tamanoID - ID del tamaño del paquete (puede ser NULL).
+ * @param {number|null} usuarioCreadorId - ID del usuario que genera el backorder (puede ser NULL).
  * @returns {Promise<object>} - Información de la orden de compra generada/actualizada.
  */
 async function generarBackorderProveedor(
@@ -220,7 +221,8 @@ async function generarBackorderProveedor(
   productoID,
   varianteID,
   cantidadFaltante,
-  tamanoID
+  tamanoID,
+  usuarioCreadorId = null
 ) {
   try {
     // Validar parámetros
@@ -289,10 +291,10 @@ async function generarBackorderProveedor(
     if (ordenPendienteResult.rows.length === 0) {
       // NO existe orden pendiente -> Crear nueva
       const nuevaOrdenResult = await client.query(
-        `INSERT INTO OrdenesDeCompra (ProveedorID, FechaEntregaEsperada, Estatus, OrigenOC)
-         VALUES ($1, NOW() + INTERVAL '14 days', 'Pendiente', 'backorder')
+        `INSERT INTO OrdenesDeCompra (ProveedorID, FechaEntregaEsperada, Estatus, OrigenOC, usuario_creador_id)
+         VALUES ($1, NOW() + INTERVAL '14 days', 'Pendiente', 'backorder', $2)
          RETURNING OrdenCompraID`,
-        [proveedorID]
+        [proveedorID, usuarioCreadorId]
       );
       ordenCompraID = nuevaOrdenResult.rows[0].ordencompraid;
       esOrdenNueva = true;

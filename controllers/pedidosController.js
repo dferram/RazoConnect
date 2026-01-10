@@ -832,7 +832,8 @@ const crearPedido = async (req, res) => {
           item.productoid, // ProductoID
           item.varianteid, // VarianteID
           cantidadBackorder, // Cantidad de PAQUETES faltantes (ajustada por regla)
-          item.tamanoid // TamanoID (puede ser null)
+          item.tamanoid, // TamanoID (puede ser null)
+          null // usuarioCreadorId (NULL para backorders generados por clientes)
         );
 
         backordersGenerados.push({

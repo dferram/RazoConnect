@@ -10258,9 +10258,10 @@ const getAllOrdenesCompra = async (req, res) => {
     const values = [];
     let paramIndex = 1;
 
-    // REGLA DE VISIBILIDAD: Admin solo ve sus registros, SuperAdmin ve todos o filtra por adminId
+    // REGLA DE VISIBILIDAD: Admin solo ve sus registros + backorders del sistema (NULL), SuperAdmin ve todos o filtra por adminId
     if (userRole === 'admin') {
-      query += ` AND oc.usuario_creador_id = $${paramIndex}`;
+      // Admin ve sus propias órdenes + backorders generados por el sistema (usuario_creador_id IS NULL)
+      query += ` AND (oc.usuario_creador_id = $${paramIndex} OR oc.usuario_creador_id IS NULL)`;
       values.push(userId);
       paramIndex++;
     } else if (userRole === 'superadmin' && adminId) {
