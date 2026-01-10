@@ -30,7 +30,7 @@ const {
  */
 const registroCliente = async (req, res) => {
   try {
-    let { Nombre, Apellido, Email, Password, Telefono } = req.body;
+    let { Nombre, Apellido, Email, Password, Telefono, numero_cliente } = req.body;
 
     // Normalizar valores vacíos a null
     Email = Email && Email.trim() !== "" ? Email.trim() : null;
@@ -74,6 +74,21 @@ const registroCliente = async (req, res) => {
     // Obtener tenant_id del middleware
     const { tenant_id } = req.tenant;
 
+    // ESCENARIO A: Validar numero_cliente si fue proporcionado (creación manual por admin)
+    if (numero_cliente && numero_cliente.trim() !== "") {
+      const numeroClienteCheck = await db.query(
+        "SELECT clienteid FROM clientes WHERE numero_cliente = $1 AND tenant_id = $2",
+        [numero_cliente.trim(), tenant_id]
+      );
+
+      if (numeroClienteCheck.rows.length > 0) {
+        return res.status(400).json({
+          success: false,
+          message: "El número de cliente ya está en uso.",
+        });
+      }
+    }
+
     // Verificar unicidad del email dentro del tenant (solo si se proporcionó)
     if (Email) {
       const emailCheck = await db.query(
@@ -108,15 +123,41 @@ const registroCliente = async (req, res) => {
     const saltRounds = parseInt(process.env.BCRYPT_ROUNDS) || 10;
     const PasswordHash = await bcrypt.hash(Password, saltRounds);
 
-    // Insertar nuevo cliente (con valores null si no se proporcionaron)
+    // ESCENARIO A: Usar numero_cliente proporcionado si existe
+    // ESCENARIO B: Auto-generar si no se proporcionó (registro web)
+    let numeroClienteFinal = null;
+    
+    if (numero_cliente && numero_cliente.trim() !== "") {
+      // Creación manual por admin - usar el valor proporcionado
+      numeroClienteFinal = numero_cliente.trim();
+    }
+    // Si no se proporcionó, se generará después del INSERT usando el clienteid
+
+    // Insertar nuevo cliente
     const result = await db.query(
-      `INSERT INTO clientes (nombre, apellido, email, passwordhash, telefono, tenant_id)
-       VALUES ($1, $2, $3, $4, $5, $6)
-       RETURNING clienteid, nombre, apellido, email, telefono, fechaderegistro`,
-      [Nombre.trim(), Apellido.trim(), Email, PasswordHash, Telefono, tenant_id]
+      `INSERT INTO clientes (nombre, apellido, email, passwordhash, telefono, tenant_id, numero_cliente)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       RETURNING clienteid, nombre, apellido, email, telefono, fechaderegistro, numero_cliente`,
+      [Nombre.trim(), Apellido.trim(), Email, PasswordHash, Telefono, tenant_id, numeroClienteFinal]
     );
 
     const nuevoCliente = result.rows[0];
+
+    // ESCENARIO B: Si no se proporcionó numero_cliente, auto-generar ahora
+    if (!numeroClienteFinal) {
+      const numeroClienteGenerado = `RZ-WEB-${nuevoCliente.clienteid}`;
+      
+      try {
+        await db.query(
+          "UPDATE clientes SET numero_cliente = $1 WHERE clienteid = $2 AND tenant_id = $3",
+          [numeroClienteGenerado, nuevoCliente.clienteid, tenant_id]
+        );
+        nuevoCliente.numero_cliente = numeroClienteGenerado;
+      } catch (updateError) {
+        console.error("Error al generar numero_cliente automático:", updateError);
+        // Continuar aunque falle la actualización - no es crítico para el registro
+      }
+    }
 
     // Generar token JWT con duración de 1 año para sesión persistente
     const token = generateToken({
@@ -167,6 +208,7 @@ const registroCliente = async (req, res) => {
           apellido: nuevoCliente.apellido,
           email: nuevoCliente.email,
           telefono: nuevoCliente.telefono,
+          numeroCliente: nuevoCliente.numero_cliente,
           fechaDeRegistro: nuevoCliente.fechaderegistro,
         },
         token,
@@ -174,6 +216,15 @@ const registroCliente = async (req, res) => {
     });
   } catch (error) {
     console.error("Error en registro de cliente:", error);
+    
+    // Manejar error de duplicate key específicamente
+    if (error.code === '23505' && error.constraint && error.constraint.includes('numero_cliente')) {
+      return res.status(400).json({
+        success: false,
+        message: "El número de cliente ya está en uso.",
+      });
+    }
+    
     res.status(500).json({
       success: false,
       message: "Error al registrar el cliente",
