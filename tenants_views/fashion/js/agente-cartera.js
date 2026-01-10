@@ -49,7 +49,7 @@
     let currentSearch = "";
     let clientesDisponibles = [];
     let filtroDisponibles = "";
-    let selectedClientEmail = null;
+    let selectedClientId = null;
 
     const debounce = (fn, delay = 350) => {
       let timer;
@@ -232,7 +232,7 @@
       }, 400);
     }
 
-    function renderClientesDisponibles(lista, selectedEmail = "") {
+    function renderClientesDisponibles(lista, selectedId = null) {
       if (!clientesDisponiblesBody || !clientesDisponiblesEmpty) {
         return;
       }
@@ -258,14 +258,14 @@
             [cliente.nombre, cliente.apellido].filter(Boolean).join(" ") ||
             "Sin nombre";
           const telefono = cliente.telefono || "—";
-          const isSelected = cliente.email?.toLowerCase() === selectedEmail;
+          const isSelected = cliente.clienteId === selectedId;
           return `
-            <tr data-email="${cliente.email}" class="cliente-row ${isSelected ? 'selected-row' : ''}" style="cursor: pointer;">
+            <tr data-cliente-id="${cliente.clienteId}" class="cliente-row ${isSelected ? 'selected-row' : ''}" style="cursor: pointer;">
               <td class="table-radio">
                 <input
                   type="radio"
                   name="cliente-disponible"
-                  value="${cliente.email}"
+                  value="${cliente.clienteId}"
                   ${isSelected ? "checked" : ""}
                   aria-label="Seleccionar ${nombreCompleto}"
                 />
@@ -335,7 +335,7 @@
     }
 
     function getClienteSeleccionado() {
-      return selectedClientEmail || "";
+      return selectedClientId || null;
     }
 
     async function openModalVincular() {
@@ -355,7 +355,7 @@
       vincularForm?.reset();
       clientesDisponibles = [];
       filtroDisponibles = "";
-      selectedClientEmail = null;
+      selectedClientId = null;
       if (clientesDisponiblesBody) {
         clientesDisponiblesBody.innerHTML = `
           <tr class="table-empty-state-row">
@@ -370,15 +370,15 @@
         return;
       }
 
-      const email = getClienteSeleccionado();
-      if (!email) {
+      const clienteId = getClienteSeleccionado();
+      if (!clienteId) {
         showToast("Por favor selecciona un cliente primero", "warning");
         return;
       }
 
       try {
         btnConfirmarVincular.disabled = true;
-        const response = await API.vincularClienteAgente(email);
+        const response = await API.vincularClienteAgente(clienteId);
 
         if (!response.ok || !response.data?.success) {
           const errorMessage =
@@ -426,10 +426,10 @@
       const row = event.target.closest(".cliente-row");
       if (!row) return;
 
-      const email = row.dataset.email;
-      if (!email) return;
+      const clienteId = row.dataset.clienteId;
+      if (!clienteId) return;
 
-      selectedClientEmail = email.trim().toLowerCase();
+      selectedClientId = parseInt(clienteId, 10);
 
       const radioInput = row.querySelector('input[type="radio"]');
       if (radioInput) {

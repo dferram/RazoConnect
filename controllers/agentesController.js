@@ -165,35 +165,35 @@ const vincularCliente = async (req, res) => {
         message: "No se pudo determinar el agente autenticado",
       });
     }
-    const { emailCliente } = req.body;
+    const { clienteId } = req.body;
 
-    if (!emailCliente || typeof emailCliente !== "string") {
+    if (!clienteId) {
       return res.status(400).json({
         success: false,
-        message: "El email del cliente es requerido",
+        message: "El ID del cliente es requerido",
       });
     }
 
-    const emailNormalizado = emailCliente.trim().toLowerCase();
+    const clienteIdParsed = parseInt(clienteId, 10);
 
-    if (!isValidEmail(emailNormalizado)) {
+    if (!Number.isInteger(clienteIdParsed) || clienteIdParsed <= 0) {
       return res.status(400).json({
         success: false,
-        message: "El email del cliente no es válido",
+        message: "El ID del cliente no es válido",
       });
     }
 
     const clienteResult = await db.query(
       `SELECT clienteid, nombre, apellido, email, telefono, agenteid
        FROM Clientes
-       WHERE LOWER(email) = $1 AND tenant_id = $2`,
-      [emailNormalizado, tenant_id]
+       WHERE clienteid = $1 AND tenant_id = $2`,
+      [clienteIdParsed, tenant_id]
     );
 
     if (clienteResult.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        message: "No se encontró un cliente con ese correo",
+        message: "No se encontró el cliente",
       });
     }
 

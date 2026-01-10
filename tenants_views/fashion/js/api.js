@@ -432,10 +432,10 @@ const API = {
   },
 
   // Agentes endpoints
-  vincularClienteAgente: async (emailCliente) => {
+  vincularClienteAgente: async (clienteId) => {
     return apiCall("/agentes/vincular-cliente", {
       method: "POST",
-      body: JSON.stringify({ emailCliente }),
+      body: JSON.stringify({ clienteId }),
     });
   },
 
