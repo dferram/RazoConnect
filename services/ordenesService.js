@@ -342,7 +342,122 @@ async function generarBackorderProveedor(
   }
 }
 
+/**
+ * Genera Órdenes de Compra agrupadas por proveedor para múltiples productos en backorder.
+ * REGLA DE NEGOCIO: Un pedido genera UNA orden por proveedor (agrupación por ProveedorID).
+ * Esta función opera dentro de una transacción existente.
+ *
+ * @param {object} client - Cliente de base de datos activo dentro de la transacción.
+ * @param {Array} productosBackorder - Array de productos con backorder [{productoID, varianteID, cantidadFaltante, tamanoID, proveedorID}]
+ * @param {number|null} usuarioCreadorId - ID del usuario que genera el backorder (puede ser NULL).
+ * @param {number|null} pedidoOrigenId - ID del pedido de cliente que originó estos backorders.
+ * @returns {Promise<Array>} - Array de órdenes de compra generadas.
+ */
+async function generarBackordersAgrupados(
+  client,
+  productosBackorder,
+  usuarioCreadorId = null,
+  pedidoOrigenId = null
+) {
+  try {
+    if (!Array.isArray(productosBackorder) || productosBackorder.length === 0) {
+      return [];
+    }
+
+    // PASO 1: Agrupar productos por ProveedorID
+    const productosPorProveedor = new Map();
+
+    for (const item of productosBackorder) {
+      const proveedorID = item.proveedorID;
+      
+      if (!proveedorID) {
+        console.warn(`Producto ${item.productoID} no tiene proveedor asignado, se omite del backorder`);
+        continue;
+      }
+
+      if (!productosPorProveedor.has(proveedorID)) {
+        productosPorProveedor.set(proveedorID, []);
+      }
+
+      productosPorProveedor.get(proveedorID).push(item);
+    }
+
+    // PASO 2: Crear UNA orden de compra por cada proveedor
+    const ordenesGeneradas = [];
+
+    for (const [proveedorID, productos] of productosPorProveedor.entries()) {
+      // Crear la orden de compra
+      const nuevaOrdenResult = await client.query(
+        `INSERT INTO OrdenesDeCompra (
+          ProveedorID, 
+          FechaEntregaEsperada, 
+          Estatus, 
+          OrigenOC, 
+          usuario_creador_id,
+          pedido_origen_id
+        )
+        VALUES ($1, NOW() + INTERVAL '14 days', 'Pendiente', 'backorder', $2, $3)
+        RETURNING OrdenCompraID`,
+        [proveedorID, usuarioCreadorId, pedidoOrigenId]
+      );
+      
+      const ordenCompraID = nuevaOrdenResult.rows[0].ordencompraid;
+      const detallesInsertados = [];
+
+      // PASO 3: Insertar TODOS los productos de este proveedor en la orden
+      for (const producto of productos) {
+        const productoIdNumero = parseInt(producto.productoID, 10);
+        const varianteIdNumero = parseInt(producto.varianteID, 10);
+        const cantidadSolicitada = parseInt(producto.cantidadFaltante, 10);
+
+        // Normalizar cantidad según regla de empaque
+        const normalizacionResult = await normalizarCantidadPorReglaEmpaque(
+          client,
+          productoIdNumero,
+          cantidadSolicitada
+        );
+
+        const cantidadNormalizada = normalizacionResult.cantidadNormalizada;
+
+        // Insertar detalle en la orden
+        const insertResult = await client.query(
+          `INSERT INTO DetallesOrdenCompra 
+           (OrdenCompraID, VarianteID, CantidadSolicitada, CantidadRecibida)
+           VALUES ($1, $2, $3, 0)
+           RETURNING DetalleOC_ID, CantidadSolicitada`,
+          [ordenCompraID, varianteIdNumero, cantidadNormalizada]
+        );
+
+        detallesInsertados.push({
+          detalleOrdenID: insertResult.rows[0].detalleoc_id,
+          varianteID: varianteIdNumero,
+          productoID: productoIdNumero,
+          cantidadSolicitada: cantidadSolicitada,
+          cantidadNormalizada: cantidadNormalizada,
+          reglaEmpaque: normalizacionResult.reglaEmpaque,
+        });
+      }
+
+      ordenesGeneradas.push({
+        success: true,
+        ordenCompraID,
+        proveedorID,
+        pedidoOrigenId,
+        totalProductos: productos.length,
+        detalles: detallesInsertados,
+        mensaje: `Orden de compra ${ordenCompraID} creada para proveedor ${proveedorID} con ${productos.length} producto(s) del Pedido #${pedidoOrigenId}`,
+      });
+    }
+
+    return ordenesGeneradas;
+  } catch (error) {
+    console.error('Error en generarBackordersAgrupados:', error);
+    throw error;
+  }
+}
+
 module.exports = {
   generarOrdenCompraAutomatica,
   generarBackorderProveedor,
+  generarBackordersAgrupados,
 };

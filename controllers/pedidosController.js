@@ -5,6 +5,7 @@ const { enviarEmail, sendTemplatedEmail } = require("../services/emailService");
 const {
   generarOrdenCompraAutomatica,
   generarBackorderProveedor,
+  generarBackordersAgrupados,
 } = require("../services/ordenesService");
 const { checkStockBajo } = require("../utils/stockAlerts");
 
@@ -765,6 +766,7 @@ const crearPedido = async (req, res) => {
     // 7. Crear los detalles del pedido y actualizar inventario
     const detallesPedido = [];
     const backordersGenerados = [];
+    const itemsConBackorder = []; // Acumular items para procesamiento agrupado
     let pedidoTieneBackorder = false;
     for (const item of items) {
       const tamanoValor =
@@ -824,29 +826,18 @@ const crearPedido = async (req, res) => {
         (precioUnitario * piezasSurtidas).toFixed(2)
       );
 
-      // PUNTO CLAVE: Si hay backorder, generar orden de compra al proveedor
+      // PUNTO CLAVE: Si hay backorder, acumular para procesamiento agrupado
       if (cantidadBackorder > 0) {
         pedidoTieneBackorder = true;
-        const resultadoBackorder = await generarBackorderProveedor(
-          client,
-          item.productoid, // ProductoID
-          item.varianteid, // VarianteID
-          cantidadBackorder, // Cantidad de PAQUETES faltantes (ajustada por regla)
-          item.tamanoid, // TamanoID (puede ser null)
-          null, // usuarioCreadorId (NULL para backorders generados por clientes)
-          pedidoId // pedidoOrigenId - Trazabilidad 1:1
-        );
-
-        backordersGenerados.push({
-          varianteId: item.varianteid,
+        itemsConBackorder.push({
+          productoID: item.productoid,
+          varianteID: item.varianteid,
+          cantidadFaltante: cantidadBackorder,
+          tamanoID: item.tamanoid,
+          proveedorID: item.proveedorid_default,
           sku: item.sku,
-          productoId: item.productoid,
           nombreProducto: item.nombreproducto,
-          cantidadPaquetesFaltantes: cantidadBackorder,
           cantidadPiezasFaltantes: piezasBackorder,
-          ordenCompraId: resultadoBackorder.ordenCompraID,
-          proveedorId: resultadoBackorder.proveedorID,
-          esOrdenNueva: resultadoBackorder.esOrdenNueva,
         });
       }
 
@@ -988,6 +979,40 @@ const crearPedido = async (req, res) => {
       }
 
       // detallesPedido se llena con las líneas insertadas (surtido / backorder)
+    }
+
+    // PROCESAMIENTO AGRUPADO DE BACKORDERS
+    // Después de procesar todos los items, generar órdenes de compra agrupadas por proveedor
+    if (itemsConBackorder.length > 0) {
+      const ordenesGeneradas = await generarBackordersAgrupados(
+        client,
+        itemsConBackorder,
+        null, // usuarioCreadorId (NULL para backorders generados por clientes)
+        pedidoId // pedidoOrigenId - Trazabilidad al pedido
+      );
+
+      // Mapear resultados para el array de backordersGenerados
+      for (const orden of ordenesGeneradas) {
+        for (const detalle of orden.detalles) {
+          const itemOriginal = itemsConBackorder.find(
+            i => i.varianteID === detalle.varianteID
+          );
+          
+          if (itemOriginal) {
+            backordersGenerados.push({
+              varianteId: detalle.varianteID,
+              sku: itemOriginal.sku,
+              productoId: detalle.productoID,
+              nombreProducto: itemOriginal.nombreProducto,
+              cantidadPaquetesFaltantes: detalle.cantidadSolicitada,
+              cantidadPiezasFaltantes: itemOriginal.cantidadPiezasFaltantes,
+              ordenCompraId: orden.ordenCompraID,
+              proveedorId: orden.proveedorID,
+              esOrdenNueva: true,
+            });
+          }
+        }
+      }
     }
 
     if (pedidoTieneBackorder) {
