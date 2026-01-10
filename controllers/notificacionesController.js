@@ -420,12 +420,13 @@ const crearNotificacion = async (clienteId, notificacion) => {
   } = notificacion;
 
   try {
+    const tenant_id = req.tenant?.tenant_id || req.user?.tenantId || 1;
     const result = await db.query(
       `INSERT INTO notificaciones 
-       (clienteid, tipo, titulo, mensaje, url, prioridad, metadata)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       (clienteid, tipo, titulo, mensaje, url, prioridad, metadata, tenant_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
        RETURNING *`,
-      [clienteId, tipo, titulo, mensaje, url, prioridad, JSON.stringify(metadata)]
+      [clienteId, tipo, titulo, mensaje, url, prioridad, JSON.stringify(metadata), tenant_id]
     );
 
     return result.rows[0];

@@ -383,6 +383,7 @@ async function registrarPagoManual(req, res) {
         ]);
 
         // PASO 4: INSERT en log_movimientos (BITÁCORA DE SEGURIDAD)
+        const tenant_id = req.tenant?.tenant_id || 1;
         await client.query(`
             INSERT INTO log_movimientos (
                 usuarioid,
@@ -392,8 +393,9 @@ async function registrarPagoManual(req, res) {
                 entidad,
                 entidadid,
                 detalles,
-                ip
-            ) VALUES ($1, $2, $3, 'CREAR', 'PAGO_MANUAL', $4, $5, $6)
+                ip,
+                tenant_id
+            ) VALUES ($1, $2, $3, 'CREAR', 'PAGO_MANUAL', $4, $5, $6, $7)
         `, [
             adminId,
             adminNombre,

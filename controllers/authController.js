@@ -706,9 +706,9 @@ const forgotPassword = async (req, res) => {
     const expiration = new Date(Date.now() + 60 * 60 * 1000);
 
     await db.query(
-      `INSERT INTO passwordresettokens (Token, ClienteID, AgenteID, ExpiraEn)
-       VALUES ($1, $2, $3, $4)`,
-      [token, clienteId, agenteId, expiration]
+      `INSERT INTO passwordresettokens (Token, ClienteID, AgenteID, ExpiraEn, tenant_id)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [token, clienteId, agenteId, expiration, tenant_id]
     );
 
     const frontendUrl = process.env.FRONTEND_BASE_URL || "https://razo.com.mx";
