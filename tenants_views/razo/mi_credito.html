@@ -293,6 +293,88 @@
         font-size: 0.95rem;
       }
 
+      /* ============================================
+         NUMERIC INPUT FIXES - CRITICAL FOR MOBILE
+         ============================================ */
+      
+      /* Remove native spinners (arrows) from number inputs */
+      input[type="number"]::-webkit-inner-spin-button,
+      input[type="number"]::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+      }
+
+      input[type="number"] {
+        -moz-appearance: textfield; /* Firefox */
+        appearance: textfield;
+      }
+
+      /* Input Group - Proper Flexbox Layout */
+      .input-group {
+        display: flex !important;
+        align-items: center !important;
+        width: 100% !important;
+        position: relative !important;
+      }
+
+      /* Currency Symbol - Fixed Width, No Shrink */
+      .input-group-text {
+        flex-shrink: 0 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        padding: 0.75rem 1rem !important;
+        font-size: 1.125rem !important;
+        font-weight: 600 !important;
+        background: #f9fafb !important;
+        border: 1px solid #d1d5db !important;
+        border-right: none !important;
+        border-radius: 0.75rem 0 0 0.75rem !important;
+        color: #374151 !important;
+        min-width: 48px !important;
+      }
+
+      /* Numeric Input - Flexible Width */
+      .input-group input[type="number"] {
+        flex: 1 !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        font-size: 16px !important; /* Prevent iOS zoom */
+        padding: 0.75rem 1rem !important;
+        border: 1px solid #d1d5db !important;
+        border-radius: 0 0.75rem 0.75rem 0 !important;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
+      }
+
+      .input-group input[type="number"]:focus {
+        outline: none !important;
+        border-color: var(--razo-orange) !important;
+        box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1) !important;
+        z-index: 2 !important;
+      }
+
+      /* Form Controls - Mobile Touch Targets */
+      .form-control,
+      .form-select {
+        font-size: 16px !important; /* Prevent iOS zoom */
+        padding: 0.75rem 1rem !important;
+        min-height: 48px !important; /* Adequate touch target */
+        border-radius: 0.75rem !important;
+      }
+
+      /* Modal Numeric Input - Special Styling */
+      #montoAPagar {
+        -webkit-appearance: none !important;
+        -moz-appearance: textfield !important;
+        appearance: none !important;
+      }
+
+      #montoAPagar::-webkit-inner-spin-button,
+      #montoAPagar::-webkit-outer-spin-button {
+        -webkit-appearance: none !important;
+        margin: 0 !important;
+      }
+
       /* Responsive */
       @media (max-width: 640px) {
         .payment-options-grid {
@@ -309,6 +391,34 @@
 
         .bank-info-grid {
           grid-template-columns: 1fr;
+        }
+
+        /* Mobile-specific input adjustments */
+        .input-group-text {
+          padding: 0.875rem 1rem !important;
+          font-size: 1.25rem !important;
+          min-width: 52px !important;
+        }
+
+        .input-group input[type="number"] {
+          padding: 0.875rem 1rem !important;
+          font-size: 16px !important; /* Critical: prevents zoom */
+        }
+
+        /* Form labels - better readability */
+        .form-label {
+          font-size: 0.95rem !important;
+          font-weight: 600 !important;
+          margin-bottom: 0.5rem !important;
+          color: #111827 !important;
+        }
+
+        /* Modal amount input - larger on mobile */
+        #montoAPagar {
+          width: 100% !important;
+          max-width: 200px !important;
+          font-size: 1.75rem !important;
+          padding: 0.75rem !important;
         }
       }
     </style>
