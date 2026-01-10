@@ -275,6 +275,9 @@ html, body {
     width: 280px;
     z-index: 9999;
     transition: left 0.3s ease;
+    overflow-y: auto !important;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
   }
 
   .admin-sidebar.active {
@@ -316,27 +319,66 @@ html, body {
     flex-direction: column;
   }
 
-  /* ========== TABLES ========== */
+  /* ========== TABLES - CLASSIC VIEW WITH HORIZONTAL SCROLL ========== */
   
-  /* Table containers with horizontal scroll */
+  /* Force table containers to enable horizontal scrolling */
   .admin-table-container,
   .table-responsive,
   .dashboard-table-wrapper {
+    display: block !important;
+    width: 100% !important;
     overflow-x: auto !important;
-    -webkit-overflow-scrolling: touch;
+    -webkit-overflow-scrolling: touch !important;
     border-radius: 0.5rem;
   }
 
-  /* Table styling for mobile */
-  .admin-table {
-    font-size: 0.75rem !important;
-    min-width: 600px; /* Force horizontal scroll instead of breaking */
+  /* Keep table structure intact - NO card transformation */
+  .admin-table,
+  .admin-table thead,
+  .admin-table tbody,
+  .admin-table tr {
+    display: table !important;
+    width: 100% !important;
+  }
+
+  .admin-table thead {
+    display: table-header-group !important;
+  }
+
+  .admin-table tbody {
+    display: table-row-group !important;
+  }
+
+  .admin-table tr {
+    display: table-row !important;
   }
 
   .admin-table th,
   .admin-table td {
-    padding: 0.5rem !important;
-    white-space: nowrap;
+    display: table-cell !important;
+    white-space: nowrap !important;
+    padding: 0.75rem 0.5rem !important;
+    vertical-align: middle !important;
+  }
+
+  /* Ensure minimum table width to trigger horizontal scroll */
+  .admin-table {
+    min-width: 800px !important;
+    font-size: 0.8rem !important;
+  }
+
+  /* Remove any ::before pseudo-elements */
+  .admin-table tbody td::before {
+    display: none !important;
+    content: none !important;
+  }
+
+  /* Buttons in table cells - keep inline */
+  .admin-table tbody td .btn {
+    width: auto !important;
+    margin: 0.25rem !important;
+    padding: 0.5rem 0.75rem !important;
+    font-size: 0.8rem !important;
   }
 
   /* Modal tables */

@@ -407,100 +407,66 @@ html, body {
     width: 100% !important;
   }
 
-  /* ========== TABLES - CARD VIEW ON MOBILE ========== */
+  /* ========== TABLES - CLASSIC VIEW WITH HORIZONTAL SCROLL ========== */
   
-  /* Hide table headers on mobile */
-  .admin-table thead {
-    display: none;
-  }
-
-  /* Transform table rows into cards */
-  .admin-table,
-  .admin-table tbody {
-    display: block;
-    width: 100%;
-  }
-
-  .admin-table tbody tr {
-    display: block;
-    background: white;
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    border-radius: 0.75rem;
-    padding: 1rem;
-    margin-bottom: 1rem;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-    position: relative;
-  }
-
-  .admin-table tbody tr:last-child {
-    margin-bottom: 0;
-  }
-
-  /* Transform table cells into key-value pairs */
-  .admin-table tbody td {
-    display: block;
-    text-align: left !important;
-    padding: 0.5rem 0 !important;
-    border: none !important;
-    position: relative;
-    padding-left: 45% !important;
-    min-height: 32px;
-  }
-
-  /* Add labels before each cell using data-label attribute */
-  .admin-table tbody td::before {
-    content: attr(data-label);
-    position: absolute;
-    left: 0;
-    top: 0.5rem;
-    font-weight: 600;
-    color: var(--razo-gray-warm, #6b5d57);
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    width: 40%;
-  }
-
-  /* Action buttons in table cells */
-  .admin-table tbody td:last-child {
-    padding-top: 1rem !important;
-    padding-left: 0 !important;
-    border-top: 1px solid rgba(0, 0, 0, 0.1) !important;
-    margin-top: 0.5rem;
-  }
-
-  .admin-table tbody td:last-child::before {
-    display: none;
-  }
-
-  .admin-table tbody td .btn {
-    width: 100%;
-    margin-bottom: 0.5rem;
-  }
-
-  .admin-table tbody td .btn:last-child {
-    margin-bottom: 0;
-  }
-
-  /* Empty state row */
-  .table-empty-state,
-  .table-empty-state-row td {
-    padding: 2rem 1rem !important;
-    text-align: center !important;
-  }
-
-  .table-empty-state::before,
-  .table-empty-state-row td::before {
-    display: none !important;
-  }
-
-  /* Table containers */
+  /* Force table containers to enable horizontal scrolling */
   .admin-table-container,
   .table-responsive,
   .dashboard-table-wrapper {
-    overflow-x: visible !important;
-    -webkit-overflow-scrolling: touch;
+    display: block !important;
+    width: 100% !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
     border-radius: 0.5rem;
+  }
+
+  /* Keep table structure intact - NO card transformation */
+  .admin-table,
+  .admin-table thead,
+  .admin-table tbody,
+  .admin-table tr {
+    display: table !important;
+    width: 100% !important;
+  }
+
+  .admin-table thead {
+    display: table-header-group !important;
+  }
+
+  .admin-table tbody {
+    display: table-row-group !important;
+  }
+
+  .admin-table tr {
+    display: table-row !important;
+  }
+
+  .admin-table th,
+  .admin-table td {
+    display: table-cell !important;
+    white-space: nowrap !important;
+    padding: 0.75rem 0.5rem !important;
+    vertical-align: middle !important;
+  }
+
+  /* Ensure minimum table width to trigger horizontal scroll */
+  .admin-table {
+    min-width: 800px !important;
+    font-size: 0.8rem !important;
+  }
+
+  /* Remove any ::before pseudo-elements that might have been added */
+  .admin-table tbody td::before {
+    display: none !important;
+    content: none !important;
+  }
+
+  /* Buttons in table cells - keep inline */
+  .admin-table tbody td .btn {
+    width: auto !important;
+    margin: 0.25rem !important;
+    padding: 0.5rem 0.75rem !important;
+    font-size: 0.8rem !important;
   }
 
   /* Modal tables */
@@ -1188,158 +1154,119 @@ html, body {
 
 /* ============================================
    GLOBAL RESPONSIVE TABLES - TABLETS & iPADS
-   Transform ALL tables to card layout on devices < 1024px
-   Fixes iPad vertical orientation and tablet issues
+   Force CLASSIC table view with horizontal scroll on ALL devices
    ============================================ */
 @media (max-width: 1024px) {
-  /* Force all table elements to block display */
+  /* Force table containers to enable horizontal scrolling */
   table,
   .admin-table,
   .table,
-  .responsive-table {
+  .responsive-table,
+  .admin-table-container,
+  .table-responsive,
+  .dashboard-table-wrapper,
+  .table-container {
     display: block !important;
     width: 100% !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
   }
 
+  /* Keep table structure - NO transformation */
   table thead,
   .admin-table thead,
   .table thead,
   .responsive-table thead {
-    position: absolute !important;
-    top: -9999px !important;
-    left: -9999px !important;
-    visibility: hidden !important;
-    opacity: 0 !important;
+    display: table-header-group !important;
+    position: static !important;
+    visibility: visible !important;
+    opacity: 1 !important;
   }
 
   table tbody,
   .admin-table tbody,
   .table tbody,
   .responsive-table tbody {
-    display: block !important;
-    width: 100% !important;
+    display: table-row-group !important;
   }
 
-  /* Transform each row into a card */
   table tbody tr,
   .admin-table tbody tr,
   .table tbody tr,
   .responsive-table tbody tr {
-    display: block !important;
-    background: white !important;
-    border: 1px solid rgba(0, 0, 0, 0.1) !important;
-    border-radius: 0.75rem !important;
-    padding: 1rem !important;
-    margin-bottom: 1rem !important;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05) !important;
-    position: relative !important;
-  }
-
-  table tbody tr:last-child,
-  .admin-table tbody tr:last-child,
-  .table tbody tr:last-child,
-  .responsive-table tbody tr:last-child {
+    display: table-row !important;
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
     margin-bottom: 0 !important;
+    box-shadow: none !important;
   }
 
-  /* Transform cells into rows with labels */
+  /* Keep cells as table cells with nowrap */
   table tbody td,
   .admin-table tbody td,
   .table tbody td,
-  .responsive-table tbody td {
-    display: block !important;
+  .responsive-table tbody td,
+  table thead th,
+  .admin-table thead th,
+  .table thead th,
+  .responsive-table thead th {
+    display: table-cell !important;
     text-align: left !important;
-    padding: 0.5rem 0 !important;
-    padding-left: 45% !important;
-    border: none !important;
-    position: relative !important;
-    min-height: 32px !important;
+    padding: 0.75rem 0.5rem !important;
+    white-space: nowrap !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1) !important;
+    position: static !important;
+    min-height: auto !important;
+    vertical-align: middle !important;
   }
 
-  /* Add labels before each cell using data-label attribute */
+  /* Remove all ::before pseudo-elements */
   table tbody td::before,
   .admin-table tbody td::before,
   .table tbody td::before,
   .responsive-table tbody td::before {
-    content: attr(data-label) !important;
-    position: absolute !important;
-    left: 0 !important;
-    top: 0.5rem !important;
-    font-weight: 600 !important;
-    color: var(--razo-gray-warm, #6b5d57) !important;
-    font-size: 0.8rem !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.5px !important;
-    width: 40% !important;
+    display: none !important;
+    content: none !important;
   }
 
-  /* Action buttons column - full width at bottom */
+  /* Ensure minimum width to trigger scroll */
+  table,
+  .admin-table,
+  .table,
+  .responsive-table {
+    min-width: 800px !important;
+    font-size: 0.85rem !important;
+  }
+
+  /* Action buttons - keep inline, reduce size */
   table tbody td:last-child,
   .admin-table tbody td:last-child,
   .table tbody td:last-child,
   .responsive-table tbody td:last-child {
-    padding-top: 1rem !important;
-    padding-left: 0 !important;
-    border-top: 1px solid rgba(0, 0, 0, 0.1) !important;
-    margin-top: 0.5rem !important;
+    padding: 0.75rem 0.5rem !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1) !important;
   }
 
-  table tbody td:last-child::before,
-  .admin-table tbody td:last-child::before,
-  .table tbody td:last-child::before,
-  .responsive-table tbody td:last-child::before {
-    display: none !important;
-  }
-
-  /* Buttons in action cells - full width */
+  /* Buttons in action cells - compact inline */
   table tbody td .btn,
   .admin-table tbody td .btn,
   .table tbody td .btn,
   .responsive-table tbody td .btn {
-    width: 100% !important;
-    margin-bottom: 0.5rem !important;
+    width: auto !important;
+    margin: 0.25rem !important;
+    padding: 0.5rem 0.75rem !important;
+    font-size: 0.8rem !important;
   }
 
-  table tbody td .btn:last-child,
-  .admin-table tbody td .btn:last-child,
-  .table tbody td .btn:last-child,
-  .responsive-table tbody td .btn:last-child {
-    margin-bottom: 0 !important;
-  }
-
-  /* Empty state rows */
-  .table-empty-state,
-  .table-empty-state-row,
-  table tbody tr.empty-state,
-  .admin-table tbody tr.empty-state {
-    padding: 2rem 1rem !important;
-    text-align: center !important;
-  }
-
+  /* Empty state rows - center text */
   .table-empty-state td,
   .table-empty-state-row td,
   table tbody tr.empty-state td,
   .admin-table tbody tr.empty-state td {
-    padding: 2rem 1rem !important;
     text-align: center !important;
-    padding-left: 1rem !important;
-  }
-
-  .table-empty-state td::before,
-  .table-empty-state-row td::before,
-  table tbody tr.empty-state td::before,
-  .admin-table tbody tr.empty-state td::before {
-    display: none !important;
-  }
-
-  /* Table containers - remove horizontal scroll */
-  .admin-table-container,
-  .table-responsive,
-  .dashboard-table-wrapper,
-  .table-container {
-    overflow-x: visible !important;
-    -webkit-overflow-scrolling: touch !important;
-    border-radius: 0.5rem !important;
+    padding: 2rem 1rem !important;
   }
 
   /* Images in table cells */
