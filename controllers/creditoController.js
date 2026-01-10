@@ -48,7 +48,7 @@ async function analizarRiesgoSolicitud(solicitudId) {
 
   if (antiguedadMeses > 6 && montoSolicitado <= maxTicketHistorico * 1.5 && pedidos.length > 3) {
     nivelRiesgo = NIVEL_RIESGO.BAJO;
-    mensajeAdvertencia.push("Cliente con buen historial y solicitud dentro de parámetros seguros.");
+    mensajeAdvertencia.push("Cliente con buen historial y solicitud dentro de parÃ¡metros seguros.");
   } else if (antiguedadMeses >= 1 && antiguedadMeses <= 6 && montoSolicitado <= maxTicketHistorico * 2.5) {
     nivelRiesgo = NIVEL_RIESGO.MEDIO;
     mensajeAdvertencia.push("Cliente relativamente nuevo o monto elevado respecto a su historial.");
@@ -106,7 +106,7 @@ async function analizarRiesgoCredito(req, res) {
   try {
     const solicitudId = Number(req.params.solicitud_id);
     if (!Number.isInteger(solicitudId)) {
-      return res.status(400).json({ success: false, message: "ID de solicitud inválido" });
+      return res.status(400).json({ success: false, message: "ID de solicitud invÃ¡lido" });
     }
 
     const solicitudQuery = `
