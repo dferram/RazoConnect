@@ -55,6 +55,7 @@ const obtenerEstados = async (req, res) => {
 const obtenerDirecciones = async (req, res) => {
   try {
     const clienteId = req.user.userId;
+    const tenant_id = req.tenant?.tenant_id || req.user?.tenantId || 1;
 
     const query = `
       SELECT 
@@ -72,11 +73,12 @@ const obtenerDirecciones = async (req, res) => {
         e.Nombre AS EstadoNombre
       FROM Cliente_Direcciones cd
       LEFT JOIN Estados e ON cd.EstadoID = e.EstadoID
-      WHERE cd.ClienteID = $1
+      INNER JOIN Clientes c ON cd.ClienteID = c.ClienteID
+      WHERE cd.ClienteID = $1 AND c.tenant_id = $2
       ORDER BY cd.DireccionID DESC
     `;
 
-    const result = await db.query(query, [clienteId]);
+    const result = await db.query(query, [clienteId, tenant_id]);
 
     const direcciones = result.rows.map(mapDireccionRow);
 
@@ -106,6 +108,7 @@ const obtenerDirecciones = async (req, res) => {
 const crearDireccion = async (req, res) => {
   try {
     const clienteId = req.user.userId;
+    const tenant_id = req.tenant?.tenant_id || req.user?.tenantId || 1;
     const {
       Etiqueta,
       Receptor,
@@ -128,13 +131,26 @@ const crearDireccion = async (req, res) => {
         message: 'Receptor, Calle, Ciudad, EstadoID y Código Postal son requeridos'
       });
     }
+    
+    // CRÍTICO: Validar que el cliente pertenece al tenant
+    const clienteCheck = await db.query(
+      'SELECT ClienteID FROM Clientes WHERE ClienteID = $1 AND tenant_id = $2',
+      [clienteId, tenant_id]
+    );
+    
+    if (!clienteCheck.rows.length) {
+      return res.status(403).json({
+        success: false,
+        message: 'No tienes permiso para crear direcciones para este cliente'
+      });
+    }
 
     const query = `
       INSERT INTO Cliente_Direcciones (
         ClienteID, Etiqueta, Receptor, Calle, NumeroExt, NumeroInt,
-        Colonia, Ciudad, EstadoID, CodigoPostal, TelefonoContacto
+        Colonia, Ciudad, EstadoID, CodigoPostal, TelefonoContacto, tenant_id
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
       RETURNING DireccionID
     `;
 
@@ -149,7 +165,8 @@ const crearDireccion = async (req, res) => {
       Ciudad,
       estadoId,
       CodigoPostal,
-      TelefonoContacto || null
+      TelefonoContacto || null,
+      tenant_id
     ]);
 
     const direccionId = insertResult.rows[0].direccionid;

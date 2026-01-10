@@ -1879,6 +1879,8 @@ async function registrarAuditoriaReglasEmpaque(client, req, eventos) {
   const solicitanteId = Number.parseInt(req?.user?.id ?? req?.user?.userId, 10);
   if (!Number.isInteger(solicitanteId) || solicitanteId <= 0) return;
 
+  const tenant_id = req?.tenant?.tenant_id || 1;
+  
   for (const ev of eventos) {
     try {
       await client.query(
@@ -1891,9 +1893,10 @@ async function registrarAuditoriaReglasEmpaque(client, req, eventos) {
            usuario_solicitante_id,
            estado,
            fecha_resolucion,
-           usuario_resolutor_id
+           usuario_resolutor_id,
+           tenant_id
          )
-         VALUES ($1, $2, $3, $4, $5, $6, 'APROBADO', NOW(), $6)`,
+         VALUES ($1, $2, $3, $4, $5, $6, 'APROBADO', NOW(), $6, $7)`,
         [
           "proveedor_reglas_empaque",
           ev.entidadId ?? null,
@@ -1901,6 +1904,7 @@ async function registrarAuditoriaReglasEmpaque(client, req, eventos) {
           ev.datosAnteriores ? JSON.stringify(ev.datosAnteriores) : null,
           JSON.stringify(ev.datosNuevos || {}),
           solicitanteId,
+          tenant_id,
         ]
       );
     } catch (e) {
@@ -4256,6 +4260,7 @@ const saveReglaEmpaque = async (req, res) => {
     );
     const adminNombre = adminNombreResult.rows[0]?.nombre || "Usuario";
 
+    const tenant_id = req.tenant?.tenant_id || 1;
     const cambioRes = await client.query(
       `INSERT INTO control_cambios (
          entidad,
@@ -4266,9 +4271,10 @@ const saveReglaEmpaque = async (req, res) => {
          usuario_solicitante_id,
          estado,
          fecha_resolucion,
-         usuario_resolutor_id
+         usuario_resolutor_id,
+         tenant_id
        )
-       VALUES ($1, $2, $3, $4, $5, $6, 'APROBADO', NOW(), $6)
+       VALUES ($1, $2, $3, $4, $5, $6, 'APROBADO', NOW(), $6, $7)
        RETURNING id`,
       [
         "proveedor_reglas_empaque",
@@ -5833,10 +5839,10 @@ const crearProducto = async (req, res) => {
           const orden = i + 1; // Primera imagen = portada (orden 1)
           
           const result = await client.query(
-            `INSERT INTO producto_imagenes (productoid, url_imagen, textoalternativo, orden)
-             VALUES ($1, $2, $3, $4)
+            `INSERT INTO producto_imagenes (productoid, url_imagen, textoalternativo, orden, tenant_id)
+             VALUES ($1, $2, $3, $4, $5)
              RETURNING imagenid, url_imagen, orden`,
-            [producto.productoid, file.path, nombre, orden]
+            [producto.productoid, file.path, nombre, orden, tenant_id]
           );
           
           imagenesGeneralesGuardadas.push(result.rows[0]);
@@ -11788,11 +11794,12 @@ const subirImagenProducto = async (req, res) => {
       );
     } else {
       // Insertar nueva imagen principal
+      const tenant_id = req.tenant?.tenant_id || 1;
       imagenResult = await db.query(
-        `INSERT INTO producto_imagenes (productoid, url_imagen, orden)
-         VALUES ($1, $2, 1)
+        `INSERT INTO producto_imagenes (productoid, url_imagen, orden, tenant_id)
+         VALUES ($1, $2, 1, $3)
          RETURNING imagenid, url_imagen`,
-        [id, rutaImagen]
+        [id, rutaImagen, tenant_id]
       );
     }
 
@@ -11887,11 +11894,12 @@ const subirImagenesProductoMultiple = async (req, res) => {
       const rutaImagen = file.path;
       nextOrden += 1;
 
+      const tenant_id = req.tenant?.tenant_id || 1;
       const insertResult = await db.query(
-        `INSERT INTO producto_imagenes (productoid, url_imagen, textoalternativo, orden)
-         VALUES ($1, $2, NULL, $3)
+        `INSERT INTO producto_imagenes (productoid, url_imagen, textoalternativo, orden, tenant_id)
+         VALUES ($1, $2, NULL, $3, $4)
          RETURNING imagenid, url_imagen, textoalternativo, orden`,
-        [id, rutaImagen, nextOrden]
+        [id, rutaImagen, nextOrden, tenant_id]
       );
 
       imagenesGuardadas.push(insertResult.rows[0]);
@@ -13766,6 +13774,7 @@ const actualizarVariante = async (req, res) => {
         
         for (const cambio of cambiosDetectados) {
           try {
+            const tenant_id = req.tenant?.tenant_id || 1;
             await db.query(
               `INSERT INTO control_cambios (
                 entidad,
@@ -13776,9 +13785,10 @@ const actualizarVariante = async (req, res) => {
                 usuario_solicitante_id,
                 estado,
                 fecha_resolucion,
-                usuario_resolutor_id
+                usuario_resolutor_id,
+                tenant_id
               )
-              VALUES ($1, $2, $3, $4, $5, $6, 'APROBADO', NOW(), $6)`,
+              VALUES ($1, $2, $3, $4, $5, $6, 'APROBADO', NOW(), $6, $7)`,
               [
                 'producto_variantes',
                 varianteId,
