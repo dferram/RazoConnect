@@ -8281,7 +8281,7 @@ const eliminarCategoria = async (req, res) => {
  */
 const crearAgente = async (req, res) => {
   try {
-    const { nombre, apellido, email, password, telefono } = req.body;
+    const { nombre, apellido, email, password, telefono, porcentaje_comision } = req.body;
 
     // Validaciones
     if (!nombre || !apellido || !password) {
@@ -8323,6 +8323,18 @@ const crearAgente = async (req, res) => {
     // Hash de la contraseña
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Validar y establecer porcentaje de comisión (default 5.00%)
+    let porcentajeComision = 5.00;
+    if (porcentaje_comision !== undefined && porcentaje_comision !== null && porcentaje_comision !== '') {
+      porcentajeComision = parseFloat(porcentaje_comision);
+      if (isNaN(porcentajeComision) || porcentajeComision < 0 || porcentajeComision > 100) {
+        return res.status(400).json({
+          success: false,
+          message: "El porcentaje de comisión debe estar entre 0 y 100",
+        });
+      }
+    }
+
     const rol = (req?.user?.rol || "").toString().trim().toLowerCase();
     const allowDirect = rol === "admin" || rol === "superadmin";
 
@@ -8331,8 +8343,8 @@ const crearAgente = async (req, res) => {
 
     if (allowDirect) {
       const insertRes = await db.query(
-        "INSERT INTO agentesdeventas (nombre, apellido, email, telefono, passwordhash, codigoagente, activo, esadmin, adminrol, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, TRUE, FALSE, NULL, $7) RETURNING agenteid, nombre, apellido, email, telefono, codigoagente, activo, esadmin, adminrol",
-        [nombre.trim(), apellido.trim(), email, telefono, hashedPassword, nuevoCodigoAgente, tenant_id]
+        "INSERT INTO agentesdeventas (nombre, apellido, email, telefono, passwordhash, codigoagente, activo, esadmin, adminrol, tenant_id, porcentaje_comision) VALUES ($1, $2, $3, $4, $5, $6, TRUE, FALSE, NULL, $7, $8) RETURNING agenteid, nombre, apellido, email, telefono, codigoagente, activo, esadmin, adminrol, porcentaje_comision",
+        [nombre.trim(), apellido.trim(), email, telefono, hashedPassword, nuevoCodigoAgente, tenant_id, porcentajeComision]
       );
 
       const row = insertRes.rows[0];
@@ -8352,6 +8364,7 @@ const crearAgente = async (req, res) => {
           activo: row.activo,
           esadmin: row.esadmin,
           adminrol: row.adminrol,
+          porcentaje_comision: row.porcentaje_comision,
         }
       );
 
@@ -8364,6 +8377,7 @@ const crearAgente = async (req, res) => {
           apellido: row.apellido,
           email: row.email,
           codigoAgente: row.codigoagente,
+          porcentajeComision: row.porcentaje_comision,
           solicitudId: null,
         },
       });
@@ -8377,6 +8391,7 @@ const crearAgente = async (req, res) => {
       PasswordHash: hashedPassword,
       CodigoAgente: nuevoCodigoAgente,
       Activo: true,
+      PorcentajeComision: porcentajeComision,
     };
 
     const resultado = await solicitarCambio(
@@ -8505,6 +8520,8 @@ const getAllAgentes = async (req, res) => {
         a.Email,
         a.CodigoAgente,
         a.Activo,
+        a.Telefono,
+        a.porcentaje_comision,
         COUNT(DISTINCT p.PedidoID) as TotalVentas,
         COALESCE(SUM(p.MontoTotal), 0) as MontoTotalVentas,
         COALESCE(SUM(c.MontoComision), 0) as ComisionesTotales
@@ -8512,7 +8529,7 @@ const getAllAgentes = async (req, res) => {
       LEFT JOIN Pedidos p ON a.AgenteID = p.AgenteID
       LEFT JOIN Comisiones c ON a.AgenteID = c.AgenteID
       WHERE a.tenant_id = $1
-      GROUP BY a.AgenteID
+      GROUP BY a.AgenteID, a.Nombre, a.Apellido, a.Email, a.CodigoAgente, a.Activo, a.Telefono, a.porcentaje_comision
       ORDER BY a.AgenteID DESC`,
       [tenant_id]
     );
@@ -8526,6 +8543,7 @@ const getAllAgentes = async (req, res) => {
       telefono: row.telefono,
       activo: row.activo,
       fechaCreacion: row.fechacreacion,
+      porcentajeComision: row.porcentaje_comision ? parseFloat(row.porcentaje_comision) : 5.00,
       totalVentas: parseInt(row.totalventas),
       montoTotalVentas: parseFloat(row.montototalventas),
       comisionesTotales: parseFloat(row.comisionestotales),
@@ -8566,6 +8584,9 @@ const getAllAgentes = async (req, res) => {
           datos.Activo !== undefined && datos.Activo !== null
             ? Boolean(datos.Activo)
             : true;
+        const porcentajeComision = datos.PorcentajeComision !== undefined && datos.PorcentajeComision !== null
+            ? parseFloat(datos.PorcentajeComision)
+            : 5.00;
 
         return {
           agenteId: null,
@@ -8576,6 +8597,7 @@ const getAllAgentes = async (req, res) => {
           telefono,
           activo,
           fechaCreacion: null,
+          porcentajeComision,
           totalVentas: 0,
           montoTotalVentas: 0,
           comisionesTotales: 0,

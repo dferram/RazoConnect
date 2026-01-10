@@ -78,6 +78,23 @@
                     required
                   />
                 </div>
+                <div class="form-group">
+                  <label for="porcentaje_comision" class="form-label">
+                    Porcentaje de Comisión (%)
+                    <span style="color: var(--razo-gray-warm); font-weight: normal; font-size: 0.875rem;">
+                      (Default: 5%)
+                    </span>
+                  </label>
+                  <input
+                    type="number"
+                    id="porcentaje_comision"
+                    class="form-input"
+                    min="0"
+                    max="100"
+                    step="0.01"
+                    placeholder="5.00"
+                  />
+                </div>
               </div>
               <div
                 style="
@@ -119,6 +136,7 @@
                     <th>Email</th>
                     <th>Teléfono</th>
                     <th>Código</th>
+                    <th>% Comisión</th>
                     <th>Total Ventas</th>
                     <th>Monto Vendido</th>
                     <th>Comisiones</th>
@@ -531,6 +549,7 @@
           <td><span class="admin-badge info">${
             a.codigoAgente || "—"
           }</span></td>
+          <td><strong style="color: var(--razo-orange);">${a.porcentajeComision || 5.00}%</strong></td>
           <td>${a.totalVentas}</td>
           <td><strong>$${a.montoTotalVentas.toLocaleString()}</strong></td>
           <td><strong style="color: var(--success-color)">$${a.comisionesTotales.toLocaleString()}</strong></td>
@@ -554,6 +573,7 @@
           <td><span class="admin-badge info">${
             a.codigoAgente || "—"
           }</span></td>
+          <td><strong style="color: var(--razo-orange);">${a.porcentajeComision || 5.00}%</strong></td>
           <td>${a.totalVentas}</td>
           <td><strong>$${a.montoTotalVentas.toLocaleString()}</strong></td>
           <td><strong style="color: var(--success-color)">$${a.comisionesTotales.toLocaleString()}</strong></td>
@@ -696,6 +716,8 @@
             btnText.style.display = "none";
             btnSpinner.style.display = "block";
 
+            const porcentajeComision = document.getElementById("porcentaje_comision").value;
+            
             const response = await fetch(`${API_BASE_URL}/admin/agentes`, {
               method: "POST",
               headers: {
@@ -708,6 +730,7 @@
                 telefono: document.getElementById("telefono").value,
                 email: document.getElementById("email").value,
                 password: document.getElementById("password").value,
+                porcentaje_comision: porcentajeComision || null,
               }),
             });
             const data = await response.json();

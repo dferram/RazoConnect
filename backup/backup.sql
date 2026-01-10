@@ -5,7 +5,7 @@
 -- Dumped from database version 17.7
 -- Dumped by pg_dump version 17.5
 
--- Started on 2026-01-09 23:26:23
+-- Started on 2026-01-10 16:46:00
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -28,7 +28,7 @@ CREATE EXTENSION IF NOT EXISTS pg_cron WITH SCHEMA pg_catalog;
 
 
 --
--- TOC entry 5045 (class 0 OID 0)
+-- TOC entry 5153 (class 0 OID 0)
 -- Dependencies: 3
 -- Name: EXTENSION pg_cron; Type: COMMENT; Schema: -; Owner: 
 --
@@ -55,7 +55,7 @@ CREATE EXTENSION IF NOT EXISTS azure WITH SCHEMA pg_catalog;
 
 
 --
--- TOC entry 5047 (class 0 OID 0)
+-- TOC entry 5155 (class 0 OID 0)
 -- Dependencies: 4
 -- Name: EXTENSION azure; Type: COMMENT; Schema: -; Owner: 
 --
@@ -72,7 +72,7 @@ CREATE EXTENSION IF NOT EXISTS pgaadauth WITH SCHEMA pg_catalog;
 
 
 --
--- TOC entry 5048 (class 0 OID 0)
+-- TOC entry 5156 (class 0 OID 0)
 -- Dependencies: 2
 -- Name: EXTENSION pgaadauth; Type: COMMENT; Schema: -; Owner: 
 --
@@ -81,7 +81,7 @@ COMMENT ON EXTENSION pgaadauth IS 'Microsoft Entra ID Authentication';
 
 
 --
--- TOC entry 990 (class 1247 OID 24963)
+-- TOC entry 997 (class 1247 OID 24963)
 -- Name: estado_solicitud_enum; Type: TYPE; Schema: public; Owner: ferram
 --
 
@@ -95,7 +95,7 @@ CREATE TYPE public.estado_solicitud_enum AS ENUM (
 ALTER TYPE public.estado_solicitud_enum OWNER TO ferram;
 
 --
--- TOC entry 993 (class 1247 OID 24970)
+-- TOC entry 1000 (class 1247 OID 24970)
 -- Name: estatus_aplicacion_enum; Type: TYPE; Schema: public; Owner: ferram
 --
 
@@ -109,7 +109,7 @@ CREATE TYPE public.estatus_aplicacion_enum AS ENUM (
 ALTER TYPE public.estatus_aplicacion_enum OWNER TO ferram;
 
 --
--- TOC entry 996 (class 1247 OID 24978)
+-- TOC entry 1003 (class 1247 OID 24978)
 -- Name: estatus_conteo_enum; Type: TYPE; Schema: public; Owner: ferram
 --
 
@@ -124,7 +124,7 @@ CREATE TYPE public.estatus_conteo_enum AS ENUM (
 ALTER TYPE public.estatus_conteo_enum OWNER TO ferram;
 
 --
--- TOC entry 999 (class 1247 OID 24988)
+-- TOC entry 1006 (class 1247 OID 24988)
 -- Name: estatus_cxp_enum; Type: TYPE; Schema: public; Owner: ferram
 --
 
@@ -140,7 +140,7 @@ CREATE TYPE public.estatus_cxp_enum AS ENUM (
 ALTER TYPE public.estatus_cxp_enum OWNER TO ferram;
 
 --
--- TOC entry 1002 (class 1247 OID 25000)
+-- TOC entry 1009 (class 1247 OID 25000)
 -- Name: estatus_sesion_enum; Type: TYPE; Schema: public; Owner: ferram
 --
 
@@ -155,7 +155,7 @@ CREATE TYPE public.estatus_sesion_enum AS ENUM (
 ALTER TYPE public.estatus_sesion_enum OWNER TO ferram;
 
 --
--- TOC entry 1005 (class 1247 OID 25010)
+-- TOC entry 1012 (class 1247 OID 25010)
 -- Name: tipo_cambio_enum; Type: TYPE; Schema: public; Owner: ferram
 --
 
@@ -169,7 +169,7 @@ CREATE TYPE public.tipo_cambio_enum AS ENUM (
 ALTER TYPE public.tipo_cambio_enum OWNER TO ferram;
 
 --
--- TOC entry 367 (class 1255 OID 26600)
+-- TOC entry 372 (class 1255 OID 26600)
 -- Name: actualizar_estatus_deuda_vencida(); Type: FUNCTION; Schema: public; Owner: ferram
 --
 
@@ -207,7 +207,53 @@ $$;
 ALTER FUNCTION public.actualizar_estatus_deuda_vencida() OWNER TO ferram;
 
 --
--- TOC entry 352 (class 1255 OID 25964)
+-- TOC entry 374 (class 1255 OID 27007)
+-- Name: generar_folio_remision(integer); Type: FUNCTION; Schema: public; Owner: ferram
+--
+
+CREATE FUNCTION public.generar_folio_remision(p_tenant_id integer) RETURNS character varying
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    v_anio VARCHAR(4);
+    v_consecutivo INTEGER;
+    v_folio VARCHAR(50);
+BEGIN
+    v_anio := TO_CHAR(CURRENT_DATE, 'YYYY');
+    
+    -- Obtener el siguiente consecutivo para este año y tenant
+    SELECT COALESCE(MAX(
+        CAST(
+            SUBSTRING(folio FROM 'REM-' || v_anio || '-([0-9]+)')
+            AS INTEGER
+        )
+    ), 0) + 1
+    INTO v_consecutivo
+    FROM public.remisiones
+    WHERE folio LIKE 'REM-' || v_anio || '-%'
+    AND tenant_id = p_tenant_id;
+    
+    -- Formatear con padding de 5 dígitos
+    v_folio := 'REM-' || v_anio || '-' || LPAD(v_consecutivo::TEXT, 5, '0');
+    
+    RETURN v_folio;
+END;
+$$;
+
+
+ALTER FUNCTION public.generar_folio_remision(p_tenant_id integer) OWNER TO ferram;
+
+--
+-- TOC entry 5180 (class 0 OID 0)
+-- Dependencies: 374
+-- Name: FUNCTION generar_folio_remision(p_tenant_id integer); Type: COMMENT; Schema: public; Owner: ferram
+--
+
+COMMENT ON FUNCTION public.generar_folio_remision(p_tenant_id integer) IS 'Genera folio único para remisión (formato: REM-YYYY-00001)';
+
+
+--
+-- TOC entry 357 (class 1255 OID 25964)
 -- Name: get_stock_admin(integer, integer); Type: FUNCTION; Schema: public; Owner: ferram
 --
 
@@ -230,8 +276,8 @@ $$;
 ALTER FUNCTION public.get_stock_admin(p_admin_id integer, p_variante_id integer) OWNER TO ferram;
 
 --
--- TOC entry 5072 (class 0 OID 0)
--- Dependencies: 352
+-- TOC entry 5181 (class 0 OID 0)
+-- Dependencies: 357
 -- Name: FUNCTION get_stock_admin(p_admin_id integer, p_variante_id integer); Type: COMMENT; Schema: public; Owner: ferram
 --
 
@@ -239,7 +285,7 @@ COMMENT ON FUNCTION public.get_stock_admin(p_admin_id integer, p_variante_id int
 
 
 --
--- TOC entry 362 (class 1255 OID 25017)
+-- TOC entry 367 (class 1255 OID 25017)
 -- Name: limitar_notificaciones_por_cliente(); Type: FUNCTION; Schema: public; Owner: ferram
 --
 
@@ -268,7 +314,7 @@ $$;
 ALTER FUNCTION public.limitar_notificaciones_por_cliente() OWNER TO ferram;
 
 --
--- TOC entry 363 (class 1255 OID 25018)
+-- TOC entry 368 (class 1255 OID 25018)
 -- Name: limpiar_notificaciones_antiguas(); Type: FUNCTION; Schema: public; Owner: ferram
 --
 
@@ -291,7 +337,7 @@ $$;
 ALTER FUNCTION public.limpiar_notificaciones_antiguas() OWNER TO ferram;
 
 --
--- TOC entry 364 (class 1255 OID 25019)
+-- TOC entry 369 (class 1255 OID 25019)
 -- Name: obtener_siguiente_sku(integer); Type: FUNCTION; Schema: public; Owner: ferram
 --
 
@@ -338,7 +384,7 @@ $$;
 ALTER FUNCTION public.obtener_siguiente_sku(p_categoria_id integer) OWNER TO ferram;
 
 --
--- TOC entry 365 (class 1255 OID 25020)
+-- TOC entry 370 (class 1255 OID 25020)
 -- Name: suspender_clientes_morosos(); Type: FUNCTION; Schema: public; Owner: ferram
 --
 
@@ -368,7 +414,7 @@ $$;
 ALTER FUNCTION public.suspender_clientes_morosos() OWNER TO ferram;
 
 --
--- TOC entry 368 (class 1255 OID 26601)
+-- TOC entry 373 (class 1255 OID 26601)
 -- Name: trigger_actualizar_estatus_deuda(); Type: FUNCTION; Schema: public; Owner: ferram
 --
 
@@ -404,7 +450,7 @@ $$;
 ALTER FUNCTION public.trigger_actualizar_estatus_deuda() OWNER TO ferram;
 
 --
--- TOC entry 345 (class 1255 OID 25962)
+-- TOC entry 350 (class 1255 OID 25962)
 -- Name: update_inventarios_admin_timestamp(); Type: FUNCTION; Schema: public; Owner: ferram
 --
 
@@ -421,7 +467,7 @@ $$;
 ALTER FUNCTION public.update_inventarios_admin_timestamp() OWNER TO ferram;
 
 --
--- TOC entry 355 (class 1255 OID 26129)
+-- TOC entry 360 (class 1255 OID 26129)
 -- Name: update_landing_config_timestamp(); Type: FUNCTION; Schema: public; Owner: ferram
 --
 
@@ -438,7 +484,24 @@ $$;
 ALTER FUNCTION public.update_landing_config_timestamp() OWNER TO ferram;
 
 --
--- TOC entry 366 (class 1255 OID 25021)
+-- TOC entry 375 (class 1255 OID 27019)
+-- Name: update_remision_timestamp(); Type: FUNCTION; Schema: public; Owner: ferram
+--
+
+CREATE FUNCTION public.update_remision_timestamp() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    NEW.updated_at = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION public.update_remision_timestamp() OWNER TO ferram;
+
+--
+-- TOC entry 371 (class 1255 OID 25021)
 -- Name: update_ultima_actualizacion(); Type: FUNCTION; Schema: public; Owner: ferram
 --
 
@@ -455,7 +518,7 @@ $$;
 ALTER FUNCTION public.update_ultima_actualizacion() OWNER TO ferram;
 
 --
--- TOC entry 354 (class 1255 OID 25965)
+-- TOC entry 359 (class 1255 OID 25965)
 -- Name: upsert_inventario_admin(integer, integer, integer); Type: FUNCTION; Schema: public; Owner: ferram
 --
 
@@ -481,8 +544,8 @@ $$;
 ALTER FUNCTION public.upsert_inventario_admin(p_admin_id integer, p_variante_id integer, p_cantidad_incremento integer) OWNER TO ferram;
 
 --
--- TOC entry 5073 (class 0 OID 0)
--- Dependencies: 354
+-- TOC entry 5182 (class 0 OID 0)
+-- Dependencies: 359
 -- Name: FUNCTION upsert_inventario_admin(p_admin_id integer, p_variante_id integer, p_cantidad_incremento integer); Type: COMMENT; Schema: public; Owner: ferram
 --
 
@@ -534,7 +597,7 @@ CREATE SEQUENCE public.administradores_adminid_seq
 ALTER SEQUENCE public.administradores_adminid_seq OWNER TO ferram;
 
 --
--- TOC entry 5133 (class 0 OID 0)
+-- TOC entry 5242 (class 0 OID 0)
 -- Dependencies: 226
 -- Name: administradores_adminid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -563,11 +626,22 @@ CREATE TABLE public.agentesdeventas (
     titular character varying(255),
     tenant_id integer DEFAULT 1,
     telefono character varying(20),
-    CONSTRAINT check_contacto_agente CHECK (((email IS NOT NULL) OR (telefono IS NOT NULL)))
+    porcentaje_comision numeric(5,2) DEFAULT 5.00,
+    CONSTRAINT check_contacto_agente CHECK (((email IS NOT NULL) OR (telefono IS NOT NULL))),
+    CONSTRAINT check_porcentaje_comision_range CHECK (((porcentaje_comision >= (0)::numeric) AND (porcentaje_comision <= (100)::numeric)))
 );
 
 
 ALTER TABLE public.agentesdeventas OWNER TO ferram;
+
+--
+-- TOC entry 5243 (class 0 OID 0)
+-- Dependencies: 227
+-- Name: COLUMN agentesdeventas.porcentaje_comision; Type: COMMENT; Schema: public; Owner: ferram
+--
+
+COMMENT ON COLUMN public.agentesdeventas.porcentaje_comision IS 'Porcentaje de comisión del agente sobre ventas (0-100). Default: 5.00%';
+
 
 --
 -- TOC entry 228 (class 1259 OID 25038)
@@ -586,7 +660,7 @@ CREATE SEQUENCE public.agentesdeventas_agenteid_seq
 ALTER SEQUENCE public.agentesdeventas_agenteid_seq OWNER TO ferram;
 
 --
--- TOC entry 5134 (class 0 OID 0)
+-- TOC entry 5244 (class 0 OID 0)
 -- Dependencies: 228
 -- Name: agentesdeventas_agenteid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -603,7 +677,8 @@ CREATE TABLE public.carritodecompra (
     carritoid integer NOT NULL,
     clienteid integer NOT NULL,
     fechacreacion timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
-    ultimamodificacion timestamp without time zone
+    ultimamodificacion timestamp without time zone,
+    tenant_id integer DEFAULT 1
 );
 
 
@@ -626,7 +701,7 @@ CREATE SEQUENCE public.carritodecompra_carritoid_seq
 ALTER SEQUENCE public.carritodecompra_carritoid_seq OWNER TO ferram;
 
 --
--- TOC entry 5135 (class 0 OID 0)
+-- TOC entry 5245 (class 0 OID 0)
 -- Dependencies: 230
 -- Name: carritodecompra_carritoid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -668,7 +743,7 @@ CREATE SEQUENCE public.cat_cxp_etiquetas_etiqueta_id_seq
 ALTER SEQUENCE public.cat_cxp_etiquetas_etiqueta_id_seq OWNER TO ferram;
 
 --
--- TOC entry 5136 (class 0 OID 0)
+-- TOC entry 5246 (class 0 OID 0)
 -- Dependencies: 232
 -- Name: cat_cxp_etiquetas_etiqueta_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -707,7 +782,7 @@ CREATE SEQUENCE public.cat_tamanopaquetes_tamanoid_seq
 ALTER SEQUENCE public.cat_tamanopaquetes_tamanoid_seq OWNER TO ferram;
 
 --
--- TOC entry 5137 (class 0 OID 0)
+-- TOC entry 5247 (class 0 OID 0)
 -- Dependencies: 234
 -- Name: cat_tamanopaquetes_tamanoid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -751,7 +826,7 @@ CREATE SEQUENCE public.categorias_categoriaid_seq
 ALTER SEQUENCE public.categorias_categoriaid_seq OWNER TO ferram;
 
 --
--- TOC entry 5138 (class 0 OID 0)
+-- TOC entry 5248 (class 0 OID 0)
 -- Dependencies: 236
 -- Name: categorias_categoriaid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -785,7 +860,7 @@ CREATE TABLE public.cliente_creditos (
 ALTER TABLE public.cliente_creditos OWNER TO ferram;
 
 --
--- TOC entry 5139 (class 0 OID 0)
+-- TOC entry 5249 (class 0 OID 0)
 -- Dependencies: 237
 -- Name: COLUMN cliente_creditos.dias_credito; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -810,7 +885,7 @@ CREATE SEQUENCE public.cliente_creditos_credito_id_seq
 ALTER SEQUENCE public.cliente_creditos_credito_id_seq OWNER TO ferram;
 
 --
--- TOC entry 5140 (class 0 OID 0)
+-- TOC entry 5250 (class 0 OID 0)
 -- Dependencies: 238
 -- Name: cliente_creditos_credito_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -859,7 +934,7 @@ CREATE SEQUENCE public.cliente_direcciones_direccionid_seq
 ALTER SEQUENCE public.cliente_direcciones_direccionid_seq OWNER TO ferram;
 
 --
--- TOC entry 5141 (class 0 OID 0)
+-- TOC entry 5251 (class 0 OID 0)
 -- Dependencies: 240
 -- Name: cliente_direcciones_direccionid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -909,7 +984,7 @@ CREATE SEQUENCE public.clientes_clienteid_seq
 ALTER SEQUENCE public.clientes_clienteid_seq OWNER TO ferram;
 
 --
--- TOC entry 5142 (class 0 OID 0)
+-- TOC entry 5252 (class 0 OID 0)
 -- Dependencies: 242
 -- Name: clientes_clienteid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -952,7 +1027,7 @@ CREATE SEQUENCE public.comisiones_comisionid_seq
 ALTER SEQUENCE public.comisiones_comisionid_seq OWNER TO ferram;
 
 --
--- TOC entry 5143 (class 0 OID 0)
+-- TOC entry 5253 (class 0 OID 0)
 -- Dependencies: 244
 -- Name: comisiones_comisionid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -975,6 +1050,7 @@ CREATE TABLE public.communicationlogs (
     pedidoid integer,
     clienteid integer,
     proveedorid integer,
+    tenant_id integer DEFAULT 1,
     CONSTRAINT communicationlogs_estatusemail_check CHECK (((estatusemail)::text = ANY (ARRAY[('Enviado'::character varying)::text, ('Fallido'::character varying)::text])))
 );
 
@@ -998,7 +1074,7 @@ CREATE SEQUENCE public.communicationlogs_logid_seq
 ALTER SEQUENCE public.communicationlogs_logid_seq OWNER TO ferram;
 
 --
--- TOC entry 5144 (class 0 OID 0)
+-- TOC entry 5254 (class 0 OID 0)
 -- Dependencies: 246
 -- Name: communicationlogs_logid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -1022,7 +1098,8 @@ CREATE TABLE public.control_cambios (
     estado public.estado_solicitud_enum DEFAULT 'PENDIENTE'::public.estado_solicitud_enum NOT NULL,
     fecha_solicitud timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
     fecha_resolucion timestamp without time zone,
-    usuario_resolutor_id integer
+    usuario_resolutor_id integer,
+    tenant_id integer DEFAULT 1
 );
 
 
@@ -1045,7 +1122,7 @@ CREATE SEQUENCE public.control_cambios_id_seq
 ALTER SEQUENCE public.control_cambios_id_seq OWNER TO ferram;
 
 --
--- TOC entry 5145 (class 0 OID 0)
+-- TOC entry 5255 (class 0 OID 0)
 -- Dependencies: 248
 -- Name: control_cambios_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -1069,7 +1146,8 @@ CREATE TABLE public.credito_movimientos (
     saldo_despues_movimiento numeric(15,2) NOT NULL,
     registrado_por integer,
     admin_id integer,
-    agente_id integer
+    agente_id integer,
+    tenant_id integer DEFAULT 1
 );
 
 
@@ -1092,7 +1170,7 @@ CREATE SEQUENCE public.credito_movimientos_movimiento_id_seq
 ALTER SEQUENCE public.credito_movimientos_movimiento_id_seq OWNER TO ferram;
 
 --
--- TOC entry 5146 (class 0 OID 0)
+-- TOC entry 5256 (class 0 OID 0)
 -- Dependencies: 250
 -- Name: credito_movimientos_movimiento_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -1113,11 +1191,21 @@ CREATE TABLE public.cuentas_por_cobrar (
     monto numeric(10,2) NOT NULL,
     descripcion character varying(255),
     fecha_movimiento timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
-    tenant_id integer DEFAULT 1
+    tenant_id integer DEFAULT 1,
+    remision_id integer
 );
 
 
 ALTER TABLE public.cuentas_por_cobrar OWNER TO ferram;
+
+--
+-- TOC entry 5257 (class 0 OID 0)
+-- Dependencies: 251
+-- Name: COLUMN cuentas_por_cobrar.remision_id; Type: COMMENT; Schema: public; Owner: ferram
+--
+
+COMMENT ON COLUMN public.cuentas_por_cobrar.remision_id IS 'Vincula el movimiento CXC con la remisión que lo generó (nueva lógica de negocio)';
+
 
 --
 -- TOC entry 252 (class 1259 OID 25121)
@@ -1136,7 +1224,7 @@ CREATE SEQUENCE public.cuentas_por_cobrar_cxcid_seq
 ALTER SEQUENCE public.cuentas_por_cobrar_cxcid_seq OWNER TO ferram;
 
 --
--- TOC entry 5147 (class 0 OID 0)
+-- TOC entry 5258 (class 0 OID 0)
 -- Dependencies: 252
 -- Name: cuentas_por_cobrar_cxcid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -1192,7 +1280,7 @@ CREATE SEQUENCE public.cuentas_por_pagar_cxp_id_seq
 ALTER SEQUENCE public.cuentas_por_pagar_cxp_id_seq OWNER TO ferram;
 
 --
--- TOC entry 5148 (class 0 OID 0)
+-- TOC entry 5259 (class 0 OID 0)
 -- Dependencies: 254
 -- Name: cuentas_por_pagar_cxp_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -1225,7 +1313,7 @@ CREATE TABLE public.cupones (
 ALTER TABLE public.cupones OWNER TO ferram;
 
 --
--- TOC entry 5149 (class 0 OID 0)
+-- TOC entry 5260 (class 0 OID 0)
 -- Dependencies: 313
 -- Name: COLUMN cupones.agente_id; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -1250,7 +1338,7 @@ CREATE SEQUENCE public.cupones_cuponid_seq
 ALTER SEQUENCE public.cupones_cuponid_seq OWNER TO ferram;
 
 --
--- TOC entry 5150 (class 0 OID 0)
+-- TOC entry 5261 (class 0 OID 0)
 -- Dependencies: 312
 -- Name: cupones_cuponid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -1267,7 +1355,8 @@ CREATE TABLE public.cxp_etiquetas_asignadas (
     asignacion_id integer NOT NULL,
     cxp_id integer NOT NULL,
     etiqueta_id integer NOT NULL,
-    fecha_asignacion timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+    fecha_asignacion timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    tenant_id integer DEFAULT 1
 );
 
 
@@ -1290,7 +1379,7 @@ CREATE SEQUENCE public.cxp_etiquetas_asignadas_asignacion_id_seq
 ALTER SEQUENCE public.cxp_etiquetas_asignadas_asignacion_id_seq OWNER TO ferram;
 
 --
--- TOC entry 5151 (class 0 OID 0)
+-- TOC entry 5262 (class 0 OID 0)
 -- Dependencies: 256
 -- Name: cxp_etiquetas_asignadas_asignacion_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -1310,7 +1399,8 @@ CREATE TABLE public.datos_bancarios_empresa (
     clabe character varying(20),
     titular character varying(255) NOT NULL,
     ultima_actualizacion timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
-    es_principal boolean DEFAULT false
+    es_principal boolean DEFAULT false,
+    tenant_id integer DEFAULT 1
 );
 
 
@@ -1333,12 +1423,97 @@ CREATE SEQUENCE public.datos_bancarios_empresa_id_seq
 ALTER SEQUENCE public.datos_bancarios_empresa_id_seq OWNER TO ferram;
 
 --
--- TOC entry 5152 (class 0 OID 0)
+-- TOC entry 5263 (class 0 OID 0)
 -- Dependencies: 258
 -- Name: datos_bancarios_empresa_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
 
 ALTER SEQUENCE public.datos_bancarios_empresa_id_seq OWNED BY public.datos_bancarios_empresa.id;
+
+
+--
+-- TOC entry 327 (class 1259 OID 26969)
+-- Name: detalles_remision; Type: TABLE; Schema: public; Owner: ferram
+--
+
+CREATE TABLE public.detalles_remision (
+    detalle_remision_id integer NOT NULL,
+    remision_id integer NOT NULL,
+    detalle_pedido_id integer NOT NULL,
+    variante_id integer NOT NULL,
+    cantidad_paquetes_surtidos integer NOT NULL,
+    piezas_surtidas integer NOT NULL,
+    precio_unitario numeric(10,2) NOT NULL,
+    tamano_id integer,
+    subtotal numeric(10,2) NOT NULL,
+    tenant_id integer DEFAULT 1 NOT NULL,
+    CONSTRAINT chk_cantidad_positiva CHECK (((cantidad_paquetes_surtidos > 0) AND (piezas_surtidas > 0))),
+    CONSTRAINT detalles_remision_cantidad_paquetes_surtidos_check CHECK ((cantidad_paquetes_surtidos > 0)),
+    CONSTRAINT detalles_remision_piezas_surtidas_check CHECK ((piezas_surtidas > 0))
+);
+
+
+ALTER TABLE public.detalles_remision OWNER TO ferram;
+
+--
+-- TOC entry 5264 (class 0 OID 0)
+-- Dependencies: 327
+-- Name: TABLE detalles_remision; Type: COMMENT; Schema: public; Owner: ferram
+--
+
+COMMENT ON TABLE public.detalles_remision IS 'Detalle de productos incluidos en cada remisión (permite entregas parciales)';
+
+
+--
+-- TOC entry 5265 (class 0 OID 0)
+-- Dependencies: 327
+-- Name: COLUMN detalles_remision.cantidad_paquetes_surtidos; Type: COMMENT; Schema: public; Owner: ferram
+--
+
+COMMENT ON COLUMN public.detalles_remision.cantidad_paquetes_surtidos IS 'Cantidad de paquetes que se están entregando en esta remisión';
+
+
+--
+-- TOC entry 5266 (class 0 OID 0)
+-- Dependencies: 327
+-- Name: COLUMN detalles_remision.piezas_surtidas; Type: COMMENT; Schema: public; Owner: ferram
+--
+
+COMMENT ON COLUMN public.detalles_remision.piezas_surtidas IS 'Total de piezas surtidas (cantidad_paquetes * tamaño)';
+
+
+--
+-- TOC entry 5267 (class 0 OID 0)
+-- Dependencies: 327
+-- Name: COLUMN detalles_remision.subtotal; Type: COMMENT; Schema: public; Owner: ferram
+--
+
+COMMENT ON COLUMN public.detalles_remision.subtotal IS 'Subtotal de este item (precio_unitario * piezas_surtidas)';
+
+
+--
+-- TOC entry 326 (class 1259 OID 26968)
+-- Name: detalles_remision_detalle_remision_id_seq; Type: SEQUENCE; Schema: public; Owner: ferram
+--
+
+CREATE SEQUENCE public.detalles_remision_detalle_remision_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.detalles_remision_detalle_remision_id_seq OWNER TO ferram;
+
+--
+-- TOC entry 5268 (class 0 OID 0)
+-- Dependencies: 326
+-- Name: detalles_remision_detalle_remision_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
+--
+
+ALTER SEQUENCE public.detalles_remision_detalle_remision_id_seq OWNED BY public.detalles_remision.detalle_remision_id;
 
 
 --
@@ -1358,11 +1533,21 @@ CREATE TABLE public.detallesdelpedido (
     esbackorder boolean DEFAULT false,
     cantidadsurtida integer DEFAULT 0,
     cantidadbackorder integer DEFAULT 0,
-    tenant_id integer DEFAULT 1
+    tenant_id integer DEFAULT 1,
+    cantidad_surtida_remisiones integer DEFAULT 0
 );
 
 
 ALTER TABLE public.detallesdelpedido OWNER TO ferram;
+
+--
+-- TOC entry 5269 (class 0 OID 0)
+-- Dependencies: 259
+-- Name: COLUMN detallesdelpedido.cantidad_surtida_remisiones; Type: COMMENT; Schema: public; Owner: ferram
+--
+
+COMMENT ON COLUMN public.detallesdelpedido.cantidad_surtida_remisiones IS 'Cantidad de paquetes ya surtidos en remisiones';
+
 
 --
 -- TOC entry 260 (class 1259 OID 25152)
@@ -1381,7 +1566,7 @@ CREATE SEQUENCE public.detallesdelpedido_detalleid_seq
 ALTER SEQUENCE public.detallesdelpedido_detalleid_seq OWNER TO ferram;
 
 --
--- TOC entry 5153 (class 0 OID 0)
+-- TOC entry 5270 (class 0 OID 0)
 -- Dependencies: 260
 -- Name: detallesdelpedido_detalleid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -1427,7 +1612,7 @@ CREATE SEQUENCE public.detallesordencompra_detalleoc_id_seq
 ALTER SEQUENCE public.detallesordencompra_detalleoc_id_seq OWNER TO ferram;
 
 --
--- TOC entry 5154 (class 0 OID 0)
+-- TOC entry 5271 (class 0 OID 0)
 -- Dependencies: 262
 -- Name: detallesordencompra_detalleoc_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -1467,7 +1652,7 @@ CREATE SEQUENCE public.developers_dev_id_seq
 ALTER SEQUENCE public.developers_dev_id_seq OWNER TO ferram;
 
 --
--- TOC entry 5155 (class 0 OID 0)
+-- TOC entry 5272 (class 0 OID 0)
 -- Dependencies: 320
 -- Name: developers_dev_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -1503,7 +1688,7 @@ CREATE TABLE public.notificaciones (
 ALTER TABLE public.notificaciones OWNER TO ferram;
 
 --
--- TOC entry 5156 (class 0 OID 0)
+-- TOC entry 5273 (class 0 OID 0)
 -- Dependencies: 263
 -- Name: TABLE notificaciones; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -1512,7 +1697,7 @@ COMMENT ON TABLE public.notificaciones IS 'Notificaciones para clientes del sist
 
 
 --
--- TOC entry 5157 (class 0 OID 0)
+-- TOC entry 5274 (class 0 OID 0)
 -- Dependencies: 263
 -- Name: COLUMN notificaciones.tipo; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -1521,7 +1706,7 @@ COMMENT ON COLUMN public.notificaciones.tipo IS 'Tipo de notificación: pedido, 
 
 
 --
--- TOC entry 5158 (class 0 OID 0)
+-- TOC entry 5275 (class 0 OID 0)
 -- Dependencies: 263
 -- Name: COLUMN notificaciones.metadata; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -1530,7 +1715,7 @@ COMMENT ON COLUMN public.notificaciones.metadata IS 'Información adicional en f
 
 
 --
--- TOC entry 5159 (class 0 OID 0)
+-- TOC entry 5276 (class 0 OID 0)
 -- Dependencies: 263
 -- Name: COLUMN notificaciones.url; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -1539,7 +1724,7 @@ COMMENT ON COLUMN public.notificaciones.url IS 'URL de redirección al hacer cli
 
 
 --
--- TOC entry 5160 (class 0 OID 0)
+-- TOC entry 5277 (class 0 OID 0)
 -- Dependencies: 263
 -- Name: COLUMN notificaciones.prioridad; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -1569,7 +1754,7 @@ CREATE VIEW public.estadisticas_notificaciones AS
 ALTER VIEW public.estadisticas_notificaciones OWNER TO ferram;
 
 --
--- TOC entry 5161 (class 0 OID 0)
+-- TOC entry 5278 (class 0 OID 0)
 -- Dependencies: 264
 -- Name: VIEW estadisticas_notificaciones; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -1608,7 +1793,7 @@ CREATE SEQUENCE public.estados_estadoid_seq
 ALTER SEQUENCE public.estados_estadoid_seq OWNER TO ferram;
 
 --
--- TOC entry 5162 (class 0 OID 0)
+-- TOC entry 5279 (class 0 OID 0)
 -- Dependencies: 266
 -- Name: estados_estadoid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -1636,7 +1821,7 @@ CREATE TABLE public.inventarios_admin (
 ALTER TABLE public.inventarios_admin OWNER TO ferram;
 
 --
--- TOC entry 5163 (class 0 OID 0)
+-- TOC entry 5280 (class 0 OID 0)
 -- Dependencies: 315
 -- Name: TABLE inventarios_admin; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -1645,7 +1830,7 @@ COMMENT ON TABLE public.inventarios_admin IS 'Tabla de inventario segregado por 
 
 
 --
--- TOC entry 5164 (class 0 OID 0)
+-- TOC entry 5281 (class 0 OID 0)
 -- Dependencies: 315
 -- Name: COLUMN inventarios_admin.admin_id; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -1654,7 +1839,7 @@ COMMENT ON COLUMN public.inventarios_admin.admin_id IS 'ID del administrador due
 
 
 --
--- TOC entry 5165 (class 0 OID 0)
+-- TOC entry 5282 (class 0 OID 0)
 -- Dependencies: 315
 -- Name: COLUMN inventarios_admin.variante_id; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -1663,7 +1848,7 @@ COMMENT ON COLUMN public.inventarios_admin.variante_id IS 'ID de la variante de 
 
 
 --
--- TOC entry 5166 (class 0 OID 0)
+-- TOC entry 5283 (class 0 OID 0)
 -- Dependencies: 315
 -- Name: COLUMN inventarios_admin.cantidad; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -1672,7 +1857,7 @@ COMMENT ON COLUMN public.inventarios_admin.cantidad IS 'Cantidad de piezas dispo
 
 
 --
--- TOC entry 5167 (class 0 OID 0)
+-- TOC entry 5284 (class 0 OID 0)
 -- Dependencies: 315
 -- Name: COLUMN inventarios_admin.ultima_actualizacion; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -1681,7 +1866,7 @@ COMMENT ON COLUMN public.inventarios_admin.ultima_actualizacion IS 'Timestamp de
 
 
 --
--- TOC entry 5168 (class 0 OID 0)
+-- TOC entry 5285 (class 0 OID 0)
 -- Dependencies: 315
 -- Name: COLUMN inventarios_admin.registrado_por; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -1706,7 +1891,7 @@ CREATE SEQUENCE public.inventarios_admin_inventario_id_seq
 ALTER SEQUENCE public.inventarios_admin_inventario_id_seq OWNER TO ferram;
 
 --
--- TOC entry 5169 (class 0 OID 0)
+-- TOC entry 5286 (class 0 OID 0)
 -- Dependencies: 314
 -- Name: inventarios_admin_inventario_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -1725,7 +1910,8 @@ CREATE TABLE public.itemsdelcarrito (
     varianteid integer NOT NULL,
     cantidadpaquetes integer NOT NULL,
     tamanoid integer,
-    cantidad integer
+    cantidad integer,
+    tenant_id integer DEFAULT 1
 );
 
 
@@ -1748,7 +1934,7 @@ CREATE SEQUENCE public.itemsdelcarrito_itemid_seq
 ALTER SEQUENCE public.itemsdelcarrito_itemid_seq OWNER TO ferram;
 
 --
--- TOC entry 5170 (class 0 OID 0)
+-- TOC entry 5287 (class 0 OID 0)
 -- Dependencies: 268
 -- Name: itemsdelcarrito_itemid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -1778,7 +1964,7 @@ CREATE TABLE public.landing_page_config (
 ALTER TABLE public.landing_page_config OWNER TO ferram;
 
 --
--- TOC entry 5171 (class 0 OID 0)
+-- TOC entry 5288 (class 0 OID 0)
 -- Dependencies: 317
 -- Name: TABLE landing_page_config; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -1787,7 +1973,7 @@ COMMENT ON TABLE public.landing_page_config IS 'Stores dynamic content configura
 
 
 --
--- TOC entry 5172 (class 0 OID 0)
+-- TOC entry 5289 (class 0 OID 0)
 -- Dependencies: 317
 -- Name: COLUMN landing_page_config.section_key; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -1796,7 +1982,7 @@ COMMENT ON COLUMN public.landing_page_config.section_key IS 'Unique identifier f
 
 
 --
--- TOC entry 5173 (class 0 OID 0)
+-- TOC entry 5290 (class 0 OID 0)
 -- Dependencies: 317
 -- Name: COLUMN landing_page_config.content_type; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -1805,7 +1991,7 @@ COMMENT ON COLUMN public.landing_page_config.content_type IS 'Type of content: i
 
 
 --
--- TOC entry 5174 (class 0 OID 0)
+-- TOC entry 5291 (class 0 OID 0)
 -- Dependencies: 317
 -- Name: COLUMN landing_page_config.value_draft; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -1814,7 +2000,7 @@ COMMENT ON COLUMN public.landing_page_config.value_draft IS 'Draft value (not vi
 
 
 --
--- TOC entry 5175 (class 0 OID 0)
+-- TOC entry 5292 (class 0 OID 0)
 -- Dependencies: 317
 -- Name: COLUMN landing_page_config.value_published; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -1823,7 +2009,7 @@ COMMENT ON COLUMN public.landing_page_config.value_published IS 'Published value
 
 
 --
--- TOC entry 5176 (class 0 OID 0)
+-- TOC entry 5293 (class 0 OID 0)
 -- Dependencies: 317
 -- Name: COLUMN landing_page_config.metadata; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -1848,7 +2034,7 @@ CREATE SEQUENCE public.landing_page_config_config_id_seq
 ALTER SEQUENCE public.landing_page_config_config_id_seq OWNER TO ferram;
 
 --
--- TOC entry 5177 (class 0 OID 0)
+-- TOC entry 5294 (class 0 OID 0)
 -- Dependencies: 316
 -- Name: landing_page_config_config_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -1868,7 +2054,8 @@ CREATE TABLE public.log_eventosusuario (
     sessionid character varying(255),
     tipoevento character varying(50) NOT NULL,
     varianteid integer,
-    contextojson jsonb
+    contextojson jsonb,
+    tenant_id integer DEFAULT 1
 );
 
 
@@ -1891,7 +2078,7 @@ CREATE SEQUENCE public.log_eventosusuario_eventoid_seq
 ALTER SEQUENCE public.log_eventosusuario_eventoid_seq OWNER TO ferram;
 
 --
--- TOC entry 5178 (class 0 OID 0)
+-- TOC entry 5295 (class 0 OID 0)
 -- Dependencies: 270
 -- Name: log_eventosusuario_eventoid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -1937,7 +2124,7 @@ CREATE SEQUENCE public.log_inventario_logid_seq
 ALTER SEQUENCE public.log_inventario_logid_seq OWNER TO ferram;
 
 --
--- TOC entry 5179 (class 0 OID 0)
+-- TOC entry 5296 (class 0 OID 0)
 -- Dependencies: 272
 -- Name: log_inventario_logid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -1985,7 +2172,7 @@ CREATE SEQUENCE public.log_movimientos_logid_seq
 ALTER SEQUENCE public.log_movimientos_logid_seq OWNER TO ferram;
 
 --
--- TOC entry 5180 (class 0 OID 0)
+-- TOC entry 5297 (class 0 OID 0)
 -- Dependencies: 274
 -- Name: log_movimientos_logid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -2017,7 +2204,7 @@ CREATE TABLE public.medidas (
 ALTER TABLE public.medidas OWNER TO ferram;
 
 --
--- TOC entry 5181 (class 0 OID 0)
+-- TOC entry 5298 (class 0 OID 0)
 -- Dependencies: 275
 -- Name: TABLE medidas; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -2042,7 +2229,7 @@ CREATE SEQUENCE public.medidas_medidaid_seq
 ALTER SEQUENCE public.medidas_medidaid_seq OWNER TO ferram;
 
 --
--- TOC entry 5182 (class 0 OID 0)
+-- TOC entry 5299 (class 0 OID 0)
 -- Dependencies: 276
 -- Name: medidas_medidaid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -2067,7 +2254,7 @@ CREATE SEQUENCE public.notificaciones_notificacionid_seq
 ALTER SEQUENCE public.notificaciones_notificacionid_seq OWNER TO ferram;
 
 --
--- TOC entry 5183 (class 0 OID 0)
+-- TOC entry 5300 (class 0 OID 0)
 -- Dependencies: 277
 -- Name: notificaciones_notificacionid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -2100,7 +2287,7 @@ CREATE TABLE public.ordenesdecompra (
 ALTER TABLE public.ordenesdecompra OWNER TO ferram;
 
 --
--- TOC entry 5184 (class 0 OID 0)
+-- TOC entry 5301 (class 0 OID 0)
 -- Dependencies: 278
 -- Name: COLUMN ordenesdecompra.origenoc; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -2109,7 +2296,7 @@ COMMENT ON COLUMN public.ordenesdecompra.origenoc IS 'Origen de la orden: manual
 
 
 --
--- TOC entry 5185 (class 0 OID 0)
+-- TOC entry 5302 (class 0 OID 0)
 -- Dependencies: 278
 -- Name: COLUMN ordenesdecompra.pedido_origen_id; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -2134,7 +2321,7 @@ CREATE SEQUENCE public.ordenesdecompra_ordencompraid_seq
 ALTER SEQUENCE public.ordenesdecompra_ordencompraid_seq OWNER TO ferram;
 
 --
--- TOC entry 5186 (class 0 OID 0)
+-- TOC entry 5303 (class 0 OID 0)
 -- Dependencies: 279
 -- Name: ordenesdecompra_ordencompraid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -2172,7 +2359,7 @@ CREATE TABLE public.pagos_clientes (
 ALTER TABLE public.pagos_clientes OWNER TO ferram;
 
 --
--- TOC entry 5187 (class 0 OID 0)
+-- TOC entry 5304 (class 0 OID 0)
 -- Dependencies: 280
 -- Name: TABLE pagos_clientes; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -2181,7 +2368,7 @@ COMMENT ON TABLE public.pagos_clientes IS 'Registro de pagos realizados por clie
 
 
 --
--- TOC entry 5188 (class 0 OID 0)
+-- TOC entry 5305 (class 0 OID 0)
 -- Dependencies: 280
 -- Name: COLUMN pagos_clientes.tipo_pago; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -2190,7 +2377,7 @@ COMMENT ON COLUMN public.pagos_clientes.tipo_pago IS 'Método de pago utilizado 
 
 
 --
--- TOC entry 5189 (class 0 OID 0)
+-- TOC entry 5306 (class 0 OID 0)
 -- Dependencies: 280
 -- Name: COLUMN pagos_clientes.estatus; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -2199,7 +2386,7 @@ COMMENT ON COLUMN public.pagos_clientes.estatus IS 'PENDIENTE: En revisión | AP
 
 
 --
--- TOC entry 5190 (class 0 OID 0)
+-- TOC entry 5307 (class 0 OID 0)
 -- Dependencies: 280
 -- Name: COLUMN pagos_clientes.movimientos_aplicados; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -2224,7 +2411,7 @@ CREATE SEQUENCE public.pagos_clientes_pago_id_seq
 ALTER SEQUENCE public.pagos_clientes_pago_id_seq OWNER TO ferram;
 
 --
--- TOC entry 5191 (class 0 OID 0)
+-- TOC entry 5308 (class 0 OID 0)
 -- Dependencies: 281
 -- Name: pagos_clientes_pago_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -2271,7 +2458,7 @@ CREATE SEQUENCE public.pagos_cxp_pago_id_seq
 ALTER SEQUENCE public.pagos_cxp_pago_id_seq OWNER TO ferram;
 
 --
--- TOC entry 5192 (class 0 OID 0)
+-- TOC entry 5309 (class 0 OID 0)
 -- Dependencies: 283
 -- Name: pagos_cxp_pago_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -2290,6 +2477,7 @@ CREATE TABLE public.passwordresettokens (
     clienteid integer,
     agenteid integer,
     expiraen timestamp without time zone NOT NULL,
+    tenant_id integer DEFAULT 1,
     CONSTRAINT chk_passwordreset_referencia CHECK ((((clienteid IS NOT NULL) AND (agenteid IS NULL)) OR ((clienteid IS NULL) AND (agenteid IS NOT NULL))))
 );
 
@@ -2313,7 +2501,7 @@ CREATE SEQUENCE public.passwordresettokens_tokenid_seq
 ALTER SEQUENCE public.passwordresettokens_tokenid_seq OWNER TO ferram;
 
 --
--- TOC entry 5193 (class 0 OID 0)
+-- TOC entry 5310 (class 0 OID 0)
 -- Dependencies: 285
 -- Name: passwordresettokens_tokenid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -2348,14 +2536,16 @@ CREATE TABLE public.pedidos (
     fecha_entrega_real timestamp without time zone,
     tenant_id integer DEFAULT 1,
     estatus_deuda character varying(20) DEFAULT 'PENDIENTE'::character varying,
-    dias_atraso integer DEFAULT 0
+    dias_atraso integer DEFAULT 0,
+    tiene_remisiones boolean DEFAULT false,
+    completamente_surtido boolean DEFAULT false
 );
 
 
 ALTER TABLE public.pedidos OWNER TO ferram;
 
 --
--- TOC entry 5194 (class 0 OID 0)
+-- TOC entry 5311 (class 0 OID 0)
 -- Dependencies: 286
 -- Name: COLUMN pedidos.url_evidencia_entrega; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -2364,7 +2554,7 @@ COMMENT ON COLUMN public.pedidos.url_evidencia_entrega IS 'URL de la foto de la 
 
 
 --
--- TOC entry 5195 (class 0 OID 0)
+-- TOC entry 5312 (class 0 OID 0)
 -- Dependencies: 286
 -- Name: COLUMN pedidos.fecha_entrega_real; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -2373,7 +2563,7 @@ COMMENT ON COLUMN public.pedidos.fecha_entrega_real IS 'Fecha y hora real en que
 
 
 --
--- TOC entry 5196 (class 0 OID 0)
+-- TOC entry 5313 (class 0 OID 0)
 -- Dependencies: 286
 -- Name: COLUMN pedidos.estatus_deuda; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -2382,12 +2572,30 @@ COMMENT ON COLUMN public.pedidos.estatus_deuda IS 'Estado de la deuda: PENDIENTE
 
 
 --
--- TOC entry 5197 (class 0 OID 0)
+-- TOC entry 5314 (class 0 OID 0)
 -- Dependencies: 286
 -- Name: COLUMN pedidos.dias_atraso; Type: COMMENT; Schema: public; Owner: ferram
 --
 
 COMMENT ON COLUMN public.pedidos.dias_atraso IS 'Días de atraso (Actualizado diariamente por Cron Job)';
+
+
+--
+-- TOC entry 5315 (class 0 OID 0)
+-- Dependencies: 286
+-- Name: COLUMN pedidos.tiene_remisiones; Type: COMMENT; Schema: public; Owner: ferram
+--
+
+COMMENT ON COLUMN public.pedidos.tiene_remisiones IS 'Indica si el pedido tiene remisiones generadas';
+
+
+--
+-- TOC entry 5316 (class 0 OID 0)
+-- Dependencies: 286
+-- Name: COLUMN pedidos.completamente_surtido; Type: COMMENT; Schema: public; Owner: ferram
+--
+
+COMMENT ON COLUMN public.pedidos.completamente_surtido IS 'TRUE cuando todos los productos han sido surtidos vía remisiones';
 
 
 --
@@ -2407,7 +2615,7 @@ CREATE SEQUENCE public.pedidos_pedidoid_seq
 ALTER SEQUENCE public.pedidos_pedidoid_seq OWNER TO ferram;
 
 --
--- TOC entry 5198 (class 0 OID 0)
+-- TOC entry 5317 (class 0 OID 0)
 -- Dependencies: 287
 -- Name: pedidos_pedidoid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -2443,7 +2651,8 @@ CREATE TABLE public.producto_imagenes_color (
     color_nombre character varying(100) NOT NULL,
     url_imagen_cloudinary text NOT NULL,
     public_id_cloudinary character varying(100),
-    fechacreacion timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+    fechacreacion timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    tenant_id integer DEFAULT 1
 );
 
 
@@ -2466,7 +2675,7 @@ CREATE SEQUENCE public.producto_imagenes_color_imagencolorid_seq
 ALTER SEQUENCE public.producto_imagenes_color_imagencolorid_seq OWNER TO ferram;
 
 --
--- TOC entry 5199 (class 0 OID 0)
+-- TOC entry 5318 (class 0 OID 0)
 -- Dependencies: 310
 -- Name: producto_imagenes_color_imagencolorid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -2491,7 +2700,7 @@ CREATE SEQUENCE public.producto_imagenes_imagenid_seq
 ALTER SEQUENCE public.producto_imagenes_imagenid_seq OWNER TO ferram;
 
 --
--- TOC entry 5200 (class 0 OID 0)
+-- TOC entry 5319 (class 0 OID 0)
 -- Dependencies: 289
 -- Name: producto_imagenes_imagenid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -2506,7 +2715,8 @@ ALTER SEQUENCE public.producto_imagenes_imagenid_seq OWNED BY public.producto_im
 
 CREATE TABLE public.producto_tamanosdisponibles (
     productoid integer NOT NULL,
-    tamanoid integer NOT NULL
+    tamanoid integer NOT NULL,
+    tenant_id integer DEFAULT 1
 );
 
 
@@ -2522,7 +2732,8 @@ CREATE TABLE public.producto_variante_imagenes (
     url_imagen character varying(1024) NOT NULL,
     textoalternativo character varying(255),
     orden integer DEFAULT 0,
-    varianteid integer NOT NULL
+    varianteid integer NOT NULL,
+    tenant_id integer DEFAULT 1
 );
 
 
@@ -2545,7 +2756,7 @@ CREATE SEQUENCE public.producto_variante_imagenes_imagenid_seq
 ALTER SEQUENCE public.producto_variante_imagenes_imagenid_seq OWNER TO ferram;
 
 --
--- TOC entry 5201 (class 0 OID 0)
+-- TOC entry 5320 (class 0 OID 0)
 -- Dependencies: 292
 -- Name: producto_variante_imagenes_imagenid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -2581,7 +2792,7 @@ CREATE TABLE public.producto_variantes (
 ALTER TABLE public.producto_variantes OWNER TO ferram;
 
 --
--- TOC entry 5202 (class 0 OID 0)
+-- TOC entry 5321 (class 0 OID 0)
 -- Dependencies: 293
 -- Name: COLUMN producto_variantes.stock; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -2590,7 +2801,7 @@ COMMENT ON COLUMN public.producto_variantes.stock IS 'COLUMNA LEGACY - No usar. 
 
 
 --
--- TOC entry 5203 (class 0 OID 0)
+-- TOC entry 5322 (class 0 OID 0)
 -- Dependencies: 293
 -- Name: COLUMN producto_variantes.tipoproductoid; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -2615,7 +2826,7 @@ CREATE SEQUENCE public.producto_variantes_varianteid_seq
 ALTER SEQUENCE public.producto_variantes_varianteid_seq OWNER TO ferram;
 
 --
--- TOC entry 5204 (class 0 OID 0)
+-- TOC entry 5323 (class 0 OID 0)
 -- Dependencies: 294
 -- Name: producto_variantes_varianteid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -2661,7 +2872,7 @@ CREATE SEQUENCE public.productos_productoid_seq1
 ALTER SEQUENCE public.productos_productoid_seq1 OWNER TO ferram;
 
 --
--- TOC entry 5205 (class 0 OID 0)
+-- TOC entry 5324 (class 0 OID 0)
 -- Dependencies: 296
 -- Name: productos_productoid_seq1; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -2680,7 +2891,8 @@ CREATE TABLE public.proveedor_reglas_empaque (
     tipoproductoid integer NOT NULL,
     cantidadempaque integer DEFAULT 1,
     descripcion character varying(100),
-    nombre_regla character varying(120)
+    nombre_regla character varying(120),
+    tenant_id integer DEFAULT 1
 );
 
 
@@ -2703,7 +2915,7 @@ CREATE SEQUENCE public.proveedor_reglas_empaque_reglaid_seq
 ALTER SEQUENCE public.proveedor_reglas_empaque_reglaid_seq OWNER TO ferram;
 
 --
--- TOC entry 5206 (class 0 OID 0)
+-- TOC entry 5325 (class 0 OID 0)
 -- Dependencies: 298
 -- Name: proveedor_reglas_empaque_reglaid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -2768,12 +2980,107 @@ CREATE SEQUENCE public.proveedores_proveedorid_seq
 ALTER SEQUENCE public.proveedores_proveedorid_seq OWNER TO ferram;
 
 --
--- TOC entry 5207 (class 0 OID 0)
+-- TOC entry 5326 (class 0 OID 0)
 -- Dependencies: 300
 -- Name: proveedores_proveedorid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
 
 ALTER SEQUENCE public.proveedores_proveedorid_seq OWNED BY public.proveedores.proveedorid;
+
+
+--
+-- TOC entry 325 (class 1259 OID 26936)
+-- Name: remisiones; Type: TABLE; Schema: public; Owner: ferram
+--
+
+CREATE TABLE public.remisiones (
+    remision_id integer NOT NULL,
+    pedido_id integer NOT NULL,
+    cliente_id integer NOT NULL,
+    agente_id integer,
+    folio character varying(50) NOT NULL,
+    fecha_emision timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    total_remision numeric(10,2) DEFAULT 0.00 NOT NULL,
+    estado character varying(20) DEFAULT 'BORRADOR'::character varying NOT NULL,
+    pdf_url text,
+    notas text,
+    tenant_id integer DEFAULT 1 NOT NULL,
+    created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT chk_estado_remision CHECK (((estado)::text = ANY ((ARRAY['BORRADOR'::character varying, 'EMITIDA'::character varying, 'ENTREGADA'::character varying, 'CANCELADA'::character varying])::text[])))
+);
+
+
+ALTER TABLE public.remisiones OWNER TO ferram;
+
+--
+-- TOC entry 5327 (class 0 OID 0)
+-- Dependencies: 325
+-- Name: TABLE remisiones; Type: COMMENT; Schema: public; Owner: ferram
+--
+
+COMMENT ON TABLE public.remisiones IS 'Remisiones (Delivery Notes) - Documento que confirma qué productos se están entregando realmente';
+
+
+--
+-- TOC entry 5328 (class 0 OID 0)
+-- Dependencies: 325
+-- Name: COLUMN remisiones.folio; Type: COMMENT; Schema: public; Owner: ferram
+--
+
+COMMENT ON COLUMN public.remisiones.folio IS 'Folio único de la remisión (ej: REM-2026-00001)';
+
+
+--
+-- TOC entry 5329 (class 0 OID 0)
+-- Dependencies: 325
+-- Name: COLUMN remisiones.total_remision; Type: COMMENT; Schema: public; Owner: ferram
+--
+
+COMMENT ON COLUMN public.remisiones.total_remision IS 'Monto total de la remisión (solo productos surtidos, sin backorders)';
+
+
+--
+-- TOC entry 5330 (class 0 OID 0)
+-- Dependencies: 325
+-- Name: COLUMN remisiones.estado; Type: COMMENT; Schema: public; Owner: ferram
+--
+
+COMMENT ON COLUMN public.remisiones.estado IS 'BORRADOR: En proceso | EMITIDA: Confirmada y genera CXC | ENTREGADA: Cliente recibió | CANCELADA: Anulada';
+
+
+--
+-- TOC entry 5331 (class 0 OID 0)
+-- Dependencies: 325
+-- Name: COLUMN remisiones.pdf_url; Type: COMMENT; Schema: public; Owner: ferram
+--
+
+COMMENT ON COLUMN public.remisiones.pdf_url IS 'URL del PDF/ticket de la remisión generado';
+
+
+--
+-- TOC entry 324 (class 1259 OID 26935)
+-- Name: remisiones_remision_id_seq; Type: SEQUENCE; Schema: public; Owner: ferram
+--
+
+CREATE SEQUENCE public.remisiones_remision_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.remisiones_remision_id_seq OWNER TO ferram;
+
+--
+-- TOC entry 5332 (class 0 OID 0)
+-- Dependencies: 324
+-- Name: remisiones_remision_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
+--
+
+ALTER SEQUENCE public.remisiones_remision_id_seq OWNED BY public.remisiones.remision_id;
 
 
 --
@@ -2791,7 +3098,7 @@ CREATE TABLE public.session (
 ALTER TABLE public.session OWNER TO ferram;
 
 --
--- TOC entry 5208 (class 0 OID 0)
+-- TOC entry 5333 (class 0 OID 0)
 -- Dependencies: 322
 -- Name: TABLE session; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -2800,7 +3107,7 @@ COMMENT ON TABLE public.session IS 'Tabla de sesiones de usuario para express-se
 
 
 --
--- TOC entry 5209 (class 0 OID 0)
+-- TOC entry 5334 (class 0 OID 0)
 -- Dependencies: 322
 -- Name: COLUMN session.sid; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -2809,7 +3116,7 @@ COMMENT ON COLUMN public.session.sid IS 'Session ID único generado por express-
 
 
 --
--- TOC entry 5210 (class 0 OID 0)
+-- TOC entry 5335 (class 0 OID 0)
 -- Dependencies: 322
 -- Name: COLUMN session.sess; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -2818,7 +3125,7 @@ COMMENT ON COLUMN public.session.sess IS 'Datos de la sesión en formato JSON (u
 
 
 --
--- TOC entry 5211 (class 0 OID 0)
+-- TOC entry 5336 (class 0 OID 0)
 -- Dependencies: 322
 -- Name: COLUMN session.expire; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -2848,7 +3155,7 @@ CREATE TABLE public.solicitudes_credito (
 ALTER TABLE public.solicitudes_credito OWNER TO ferram;
 
 --
--- TOC entry 5212 (class 0 OID 0)
+-- TOC entry 5337 (class 0 OID 0)
 -- Dependencies: 301
 -- Name: COLUMN solicitudes_credito.ingresos_mensuales; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -2857,7 +3164,7 @@ COMMENT ON COLUMN public.solicitudes_credito.ingresos_mensuales IS 'Ingresos men
 
 
 --
--- TOC entry 5213 (class 0 OID 0)
+-- TOC entry 5338 (class 0 OID 0)
 -- Dependencies: 301
 -- Name: COLUMN solicitudes_credito.plazo_preferido; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -2882,7 +3189,7 @@ CREATE SEQUENCE public.solicitudes_credito_solicitud_id_seq
 ALTER SEQUENCE public.solicitudes_credito_solicitud_id_seq OWNER TO ferram;
 
 --
--- TOC entry 5214 (class 0 OID 0)
+-- TOC entry 5339 (class 0 OID 0)
 -- Dependencies: 302
 -- Name: solicitudes_credito_solicitud_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -2924,7 +3231,7 @@ CREATE SEQUENCE public.tenants_tenant_id_seq
 ALTER SEQUENCE public.tenants_tenant_id_seq OWNER TO ferram;
 
 --
--- TOC entry 5215 (class 0 OID 0)
+-- TOC entry 5340 (class 0 OID 0)
 -- Dependencies: 318
 -- Name: tenants_tenant_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -2950,7 +3257,7 @@ CREATE TABLE public.tipoproducto (
 ALTER TABLE public.tipoproducto OWNER TO ferram;
 
 --
--- TOC entry 5216 (class 0 OID 0)
+-- TOC entry 5341 (class 0 OID 0)
 -- Dependencies: 303
 -- Name: TABLE tipoproducto; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -2975,7 +3282,7 @@ CREATE SEQUENCE public.tipoproducto_tipoproductoid_seq
 ALTER SEQUENCE public.tipoproducto_tipoproductoid_seq OWNER TO ferram;
 
 --
--- TOC entry 5217 (class 0 OID 0)
+-- TOC entry 5342 (class 0 OID 0)
 -- Dependencies: 304
 -- Name: tipoproducto_tipoproductoid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -2999,6 +3306,7 @@ CREATE TABLE public.toma_inventario_conteos (
     cantidad_final integer,
     estatus_fila public.estatus_conteo_enum DEFAULT 'PENDIENTE_A'::public.estatus_conteo_enum NOT NULL,
     estatus_aplicacion public.estatus_aplicacion_enum DEFAULT 'PENDIENTE'::public.estatus_aplicacion_enum,
+    tenant_id integer DEFAULT 1,
     CONSTRAINT chk_usuarios_auditoria CHECK ((((conteo_a IS NULL) AND (usuario_a_id IS NULL)) OR ((conteo_a IS NOT NULL) AND (usuario_a_id IS NOT NULL))))
 );
 
@@ -3006,7 +3314,7 @@ CREATE TABLE public.toma_inventario_conteos (
 ALTER TABLE public.toma_inventario_conteos OWNER TO ferram;
 
 --
--- TOC entry 5218 (class 0 OID 0)
+-- TOC entry 5343 (class 0 OID 0)
 -- Dependencies: 305
 -- Name: TABLE toma_inventario_conteos; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -3015,7 +3323,7 @@ COMMENT ON TABLE public.toma_inventario_conteos IS 'Registros individuales de co
 
 
 --
--- TOC entry 5219 (class 0 OID 0)
+-- TOC entry 5344 (class 0 OID 0)
 -- Dependencies: 305
 -- Name: COLUMN toma_inventario_conteos.estatus_aplicacion; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -3040,7 +3348,7 @@ CREATE SEQUENCE public.toma_inventario_conteos_conteoid_seq
 ALTER SEQUENCE public.toma_inventario_conteos_conteoid_seq OWNER TO ferram;
 
 --
--- TOC entry 5220 (class 0 OID 0)
+-- TOC entry 5345 (class 0 OID 0)
 -- Dependencies: 306
 -- Name: toma_inventario_conteos_conteoid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -3059,14 +3367,15 @@ CREATE TABLE public.toma_inventario_sesiones (
     fechainicio timestamp without time zone DEFAULT now(),
     fechacierre timestamp without time zone,
     estatus public.estatus_sesion_enum DEFAULT 'ABIERTA'::public.estatus_sesion_enum NOT NULL,
-    usuario_creador_id integer
+    usuario_creador_id integer,
+    tenant_id integer DEFAULT 1
 );
 
 
 ALTER TABLE public.toma_inventario_sesiones OWNER TO ferram;
 
 --
--- TOC entry 5221 (class 0 OID 0)
+-- TOC entry 5346 (class 0 OID 0)
 -- Dependencies: 307
 -- Name: TABLE toma_inventario_sesiones; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -3091,12 +3400,54 @@ CREATE SEQUENCE public.toma_inventario_sesiones_sesionid_seq
 ALTER SEQUENCE public.toma_inventario_sesiones_sesionid_seq OWNER TO ferram;
 
 --
--- TOC entry 5222 (class 0 OID 0)
+-- TOC entry 5347 (class 0 OID 0)
 -- Dependencies: 308
 -- Name: toma_inventario_sesiones_sesionid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
 
 ALTER SEQUENCE public.toma_inventario_sesiones_sesionid_seq OWNED BY public.toma_inventario_sesiones.sesionid;
+
+
+--
+-- TOC entry 328 (class 1259 OID 27030)
+-- Name: v_remisiones_completas; Type: VIEW; Schema: public; Owner: ferram
+--
+
+CREATE VIEW public.v_remisiones_completas AS
+ SELECT r.remision_id,
+    r.folio,
+    r.fecha_emision,
+    r.total_remision,
+    r.estado,
+    r.pdf_url,
+    r.notas,
+    p.pedidoid,
+    p.montototal AS total_pedido_original,
+    c.clienteid,
+    c.nombre AS cliente_nombre,
+    c.apellido AS cliente_apellido,
+    a.agenteid,
+    a.nombre AS agente_nombre,
+    count(dr.detalle_remision_id) AS total_items,
+    sum(dr.piezas_surtidas) AS total_piezas_surtidas,
+    r.tenant_id
+   FROM ((((public.remisiones r
+     JOIN public.pedidos p ON ((r.pedido_id = p.pedidoid)))
+     JOIN public.clientes c ON ((r.cliente_id = c.clienteid)))
+     LEFT JOIN public.agentesdeventas a ON ((r.agente_id = a.agenteid)))
+     LEFT JOIN public.detalles_remision dr ON ((r.remision_id = dr.remision_id)))
+  GROUP BY r.remision_id, r.folio, r.fecha_emision, r.total_remision, r.estado, r.pdf_url, r.notas, p.pedidoid, p.montototal, c.clienteid, c.nombre, c.apellido, a.agenteid, a.nombre, r.tenant_id;
+
+
+ALTER VIEW public.v_remisiones_completas OWNER TO ferram;
+
+--
+-- TOC entry 5348 (class 0 OID 0)
+-- Dependencies: 328
+-- Name: VIEW v_remisiones_completas; Type: COMMENT; Schema: public; Owner: ferram
+--
+
+COMMENT ON VIEW public.v_remisiones_completas IS 'Vista consolidada de remisiones con información de pedido, cliente y agente';
 
 
 --
@@ -3155,7 +3506,7 @@ CREATE VIEW public.vista_cxc_con_vencimiento AS
 ALTER VIEW public.vista_cxc_con_vencimiento OWNER TO ferram;
 
 --
--- TOC entry 4251 (class 2604 OID 25345)
+-- TOC entry 4267 (class 2604 OID 25345)
 -- Name: administradores adminid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -3163,7 +3514,7 @@ ALTER TABLE ONLY public.administradores ALTER COLUMN adminid SET DEFAULT nextval
 
 
 --
--- TOC entry 4256 (class 2604 OID 25346)
+-- TOC entry 4272 (class 2604 OID 25346)
 -- Name: agentesdeventas agenteid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -3171,7 +3522,7 @@ ALTER TABLE ONLY public.agentesdeventas ALTER COLUMN agenteid SET DEFAULT nextva
 
 
 --
--- TOC entry 4260 (class 2604 OID 25347)
+-- TOC entry 4277 (class 2604 OID 25347)
 -- Name: carritodecompra carritoid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -3179,7 +3530,7 @@ ALTER TABLE ONLY public.carritodecompra ALTER COLUMN carritoid SET DEFAULT nextv
 
 
 --
--- TOC entry 4262 (class 2604 OID 25348)
+-- TOC entry 4280 (class 2604 OID 25348)
 -- Name: cat_cxp_etiquetas etiqueta_id; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -3187,7 +3538,7 @@ ALTER TABLE ONLY public.cat_cxp_etiquetas ALTER COLUMN etiqueta_id SET DEFAULT n
 
 
 --
--- TOC entry 4266 (class 2604 OID 25349)
+-- TOC entry 4284 (class 2604 OID 25349)
 -- Name: cat_tamanopaquetes tamanoid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -3195,7 +3546,7 @@ ALTER TABLE ONLY public.cat_tamanopaquetes ALTER COLUMN tamanoid SET DEFAULT nex
 
 
 --
--- TOC entry 4268 (class 2604 OID 25350)
+-- TOC entry 4286 (class 2604 OID 25350)
 -- Name: categorias categoriaid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -3203,7 +3554,7 @@ ALTER TABLE ONLY public.categorias ALTER COLUMN categoriaid SET DEFAULT nextval(
 
 
 --
--- TOC entry 4271 (class 2604 OID 25351)
+-- TOC entry 4289 (class 2604 OID 25351)
 -- Name: cliente_creditos credito_id; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -3211,7 +3562,7 @@ ALTER TABLE ONLY public.cliente_creditos ALTER COLUMN credito_id SET DEFAULT nex
 
 
 --
--- TOC entry 4281 (class 2604 OID 25352)
+-- TOC entry 4299 (class 2604 OID 25352)
 -- Name: cliente_direcciones direccionid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -3219,7 +3570,7 @@ ALTER TABLE ONLY public.cliente_direcciones ALTER COLUMN direccionid SET DEFAULT
 
 
 --
--- TOC entry 4283 (class 2604 OID 25353)
+-- TOC entry 4301 (class 2604 OID 25353)
 -- Name: clientes clienteid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -3227,7 +3578,7 @@ ALTER TABLE ONLY public.clientes ALTER COLUMN clienteid SET DEFAULT nextval('pub
 
 
 --
--- TOC entry 4287 (class 2604 OID 25354)
+-- TOC entry 4305 (class 2604 OID 25354)
 -- Name: comisiones comisionid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -3235,7 +3586,7 @@ ALTER TABLE ONLY public.comisiones ALTER COLUMN comisionid SET DEFAULT nextval('
 
 
 --
--- TOC entry 4291 (class 2604 OID 25355)
+-- TOC entry 4309 (class 2604 OID 25355)
 -- Name: communicationlogs logid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -3243,7 +3594,7 @@ ALTER TABLE ONLY public.communicationlogs ALTER COLUMN logid SET DEFAULT nextval
 
 
 --
--- TOC entry 4293 (class 2604 OID 25356)
+-- TOC entry 4312 (class 2604 OID 25356)
 -- Name: control_cambios id; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -3251,7 +3602,7 @@ ALTER TABLE ONLY public.control_cambios ALTER COLUMN id SET DEFAULT nextval('pub
 
 
 --
--- TOC entry 4296 (class 2604 OID 25357)
+-- TOC entry 4316 (class 2604 OID 25357)
 -- Name: credito_movimientos movimiento_id; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -3259,7 +3610,7 @@ ALTER TABLE ONLY public.credito_movimientos ALTER COLUMN movimiento_id SET DEFAU
 
 
 --
--- TOC entry 4298 (class 2604 OID 25358)
+-- TOC entry 4319 (class 2604 OID 25358)
 -- Name: cuentas_por_cobrar cxcid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -3267,7 +3618,7 @@ ALTER TABLE ONLY public.cuentas_por_cobrar ALTER COLUMN cxcid SET DEFAULT nextva
 
 
 --
--- TOC entry 4301 (class 2604 OID 25359)
+-- TOC entry 4322 (class 2604 OID 25359)
 -- Name: cuentas_por_pagar cxp_id; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -3275,7 +3626,7 @@ ALTER TABLE ONLY public.cuentas_por_pagar ALTER COLUMN cxp_id SET DEFAULT nextva
 
 
 --
--- TOC entry 4411 (class 2604 OID 25896)
+-- TOC entry 4446 (class 2604 OID 25896)
 -- Name: cupones cuponid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -3283,7 +3634,7 @@ ALTER TABLE ONLY public.cupones ALTER COLUMN cuponid SET DEFAULT nextval('public
 
 
 --
--- TOC entry 4307 (class 2604 OID 25360)
+-- TOC entry 4328 (class 2604 OID 25360)
 -- Name: cxp_etiquetas_asignadas asignacion_id; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -3291,7 +3642,7 @@ ALTER TABLE ONLY public.cxp_etiquetas_asignadas ALTER COLUMN asignacion_id SET D
 
 
 --
--- TOC entry 4309 (class 2604 OID 25361)
+-- TOC entry 4331 (class 2604 OID 25361)
 -- Name: datos_bancarios_empresa id; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -3299,7 +3650,15 @@ ALTER TABLE ONLY public.datos_bancarios_empresa ALTER COLUMN id SET DEFAULT next
 
 
 --
--- TOC entry 4312 (class 2604 OID 25362)
+-- TOC entry 4475 (class 2604 OID 26972)
+-- Name: detalles_remision detalle_remision_id; Type: DEFAULT; Schema: public; Owner: ferram
+--
+
+ALTER TABLE ONLY public.detalles_remision ALTER COLUMN detalle_remision_id SET DEFAULT nextval('public.detalles_remision_detalle_remision_id_seq'::regclass);
+
+
+--
+-- TOC entry 4335 (class 2604 OID 25362)
 -- Name: detallesdelpedido detalleid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -3307,7 +3666,7 @@ ALTER TABLE ONLY public.detallesdelpedido ALTER COLUMN detalleid SET DEFAULT nex
 
 
 --
--- TOC entry 4317 (class 2604 OID 25363)
+-- TOC entry 4341 (class 2604 OID 25363)
 -- Name: detallesordencompra detalleoc_id; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -3315,7 +3674,7 @@ ALTER TABLE ONLY public.detallesordencompra ALTER COLUMN detalleoc_id SET DEFAUL
 
 
 --
--- TOC entry 4431 (class 2604 OID 26158)
+-- TOC entry 4466 (class 2604 OID 26158)
 -- Name: developers dev_id; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -3323,7 +3682,7 @@ ALTER TABLE ONLY public.developers ALTER COLUMN dev_id SET DEFAULT nextval('publ
 
 
 --
--- TOC entry 4329 (class 2604 OID 25364)
+-- TOC entry 4353 (class 2604 OID 25364)
 -- Name: estados estadoid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -3331,7 +3690,7 @@ ALTER TABLE ONLY public.estados ALTER COLUMN estadoid SET DEFAULT nextval('publi
 
 
 --
--- TOC entry 4418 (class 2604 OID 25941)
+-- TOC entry 4453 (class 2604 OID 25941)
 -- Name: inventarios_admin inventario_id; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -3339,7 +3698,7 @@ ALTER TABLE ONLY public.inventarios_admin ALTER COLUMN inventario_id SET DEFAULT
 
 
 --
--- TOC entry 4330 (class 2604 OID 25365)
+-- TOC entry 4354 (class 2604 OID 25365)
 -- Name: itemsdelcarrito itemid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -3347,7 +3706,7 @@ ALTER TABLE ONLY public.itemsdelcarrito ALTER COLUMN itemid SET DEFAULT nextval(
 
 
 --
--- TOC entry 4422 (class 2604 OID 26117)
+-- TOC entry 4457 (class 2604 OID 26117)
 -- Name: landing_page_config config_id; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -3355,7 +3714,7 @@ ALTER TABLE ONLY public.landing_page_config ALTER COLUMN config_id SET DEFAULT n
 
 
 --
--- TOC entry 4331 (class 2604 OID 25366)
+-- TOC entry 4356 (class 2604 OID 25366)
 -- Name: log_eventosusuario eventoid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -3363,7 +3722,7 @@ ALTER TABLE ONLY public.log_eventosusuario ALTER COLUMN eventoid SET DEFAULT nex
 
 
 --
--- TOC entry 4333 (class 2604 OID 25367)
+-- TOC entry 4359 (class 2604 OID 25367)
 -- Name: log_inventario logid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -3371,7 +3730,7 @@ ALTER TABLE ONLY public.log_inventario ALTER COLUMN logid SET DEFAULT nextval('p
 
 
 --
--- TOC entry 4337 (class 2604 OID 25368)
+-- TOC entry 4363 (class 2604 OID 25368)
 -- Name: log_movimientos logid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -3379,7 +3738,7 @@ ALTER TABLE ONLY public.log_movimientos ALTER COLUMN logid SET DEFAULT nextval('
 
 
 --
--- TOC entry 4340 (class 2604 OID 25369)
+-- TOC entry 4366 (class 2604 OID 25369)
 -- Name: medidas medidaid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -3387,7 +3746,7 @@ ALTER TABLE ONLY public.medidas ALTER COLUMN medidaid SET DEFAULT nextval('publi
 
 
 --
--- TOC entry 4323 (class 2604 OID 25370)
+-- TOC entry 4347 (class 2604 OID 25370)
 -- Name: notificaciones notificacionid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -3395,7 +3754,7 @@ ALTER TABLE ONLY public.notificaciones ALTER COLUMN notificacionid SET DEFAULT n
 
 
 --
--- TOC entry 4346 (class 2604 OID 25371)
+-- TOC entry 4372 (class 2604 OID 25371)
 -- Name: ordenesdecompra ordencompraid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -3403,7 +3762,7 @@ ALTER TABLE ONLY public.ordenesdecompra ALTER COLUMN ordencompraid SET DEFAULT n
 
 
 --
--- TOC entry 4354 (class 2604 OID 25372)
+-- TOC entry 4380 (class 2604 OID 25372)
 -- Name: pagos_clientes pago_id; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -3411,7 +3770,7 @@ ALTER TABLE ONLY public.pagos_clientes ALTER COLUMN pago_id SET DEFAULT nextval(
 
 
 --
--- TOC entry 4359 (class 2604 OID 25373)
+-- TOC entry 4385 (class 2604 OID 25373)
 -- Name: pagos_cxp pago_id; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -3419,7 +3778,7 @@ ALTER TABLE ONLY public.pagos_cxp ALTER COLUMN pago_id SET DEFAULT nextval('publ
 
 
 --
--- TOC entry 4362 (class 2604 OID 25374)
+-- TOC entry 4388 (class 2604 OID 25374)
 -- Name: passwordresettokens tokenid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -3427,7 +3786,7 @@ ALTER TABLE ONLY public.passwordresettokens ALTER COLUMN tokenid SET DEFAULT nex
 
 
 --
--- TOC entry 4363 (class 2604 OID 25375)
+-- TOC entry 4390 (class 2604 OID 25375)
 -- Name: pedidos pedidoid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -3435,7 +3794,7 @@ ALTER TABLE ONLY public.pedidos ALTER COLUMN pedidoid SET DEFAULT nextval('publi
 
 
 --
--- TOC entry 4374 (class 2604 OID 25376)
+-- TOC entry 4403 (class 2604 OID 25376)
 -- Name: producto_imagenes imagenid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -3443,7 +3802,7 @@ ALTER TABLE ONLY public.producto_imagenes ALTER COLUMN imagenid SET DEFAULT next
 
 
 --
--- TOC entry 4409 (class 2604 OID 25880)
+-- TOC entry 4443 (class 2604 OID 25880)
 -- Name: producto_imagenes_color imagencolorid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -3451,7 +3810,7 @@ ALTER TABLE ONLY public.producto_imagenes_color ALTER COLUMN imagencolorid SET D
 
 
 --
--- TOC entry 4377 (class 2604 OID 25377)
+-- TOC entry 4407 (class 2604 OID 25377)
 -- Name: producto_variante_imagenes imagenid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -3459,7 +3818,7 @@ ALTER TABLE ONLY public.producto_variante_imagenes ALTER COLUMN imagenid SET DEF
 
 
 --
--- TOC entry 4379 (class 2604 OID 25378)
+-- TOC entry 4410 (class 2604 OID 25378)
 -- Name: producto_variantes varianteid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -3467,7 +3826,7 @@ ALTER TABLE ONLY public.producto_variantes ALTER COLUMN varianteid SET DEFAULT n
 
 
 --
--- TOC entry 4388 (class 2604 OID 25379)
+-- TOC entry 4419 (class 2604 OID 25379)
 -- Name: productos productoid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -3475,7 +3834,7 @@ ALTER TABLE ONLY public.productos ALTER COLUMN productoid SET DEFAULT nextval('p
 
 
 --
--- TOC entry 4391 (class 2604 OID 25380)
+-- TOC entry 4422 (class 2604 OID 25380)
 -- Name: proveedor_reglas_empaque reglaid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -3483,7 +3842,7 @@ ALTER TABLE ONLY public.proveedor_reglas_empaque ALTER COLUMN reglaid SET DEFAUL
 
 
 --
--- TOC entry 4393 (class 2604 OID 25381)
+-- TOC entry 4425 (class 2604 OID 25381)
 -- Name: proveedores proveedorid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -3491,7 +3850,15 @@ ALTER TABLE ONLY public.proveedores ALTER COLUMN proveedorid SET DEFAULT nextval
 
 
 --
--- TOC entry 4395 (class 2604 OID 25382)
+-- TOC entry 4468 (class 2604 OID 26939)
+-- Name: remisiones remision_id; Type: DEFAULT; Schema: public; Owner: ferram
+--
+
+ALTER TABLE ONLY public.remisiones ALTER COLUMN remision_id SET DEFAULT nextval('public.remisiones_remision_id_seq'::regclass);
+
+
+--
+-- TOC entry 4427 (class 2604 OID 25382)
 -- Name: solicitudes_credito solicitud_id; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -3499,7 +3866,7 @@ ALTER TABLE ONLY public.solicitudes_credito ALTER COLUMN solicitud_id SET DEFAUL
 
 
 --
--- TOC entry 4427 (class 2604 OID 26147)
+-- TOC entry 4462 (class 2604 OID 26147)
 -- Name: tenants tenant_id; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -3507,7 +3874,7 @@ ALTER TABLE ONLY public.tenants ALTER COLUMN tenant_id SET DEFAULT nextval('publ
 
 
 --
--- TOC entry 4399 (class 2604 OID 25383)
+-- TOC entry 4431 (class 2604 OID 25383)
 -- Name: tipoproducto tipoproductoid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -3515,7 +3882,7 @@ ALTER TABLE ONLY public.tipoproducto ALTER COLUMN tipoproductoid SET DEFAULT nex
 
 
 --
--- TOC entry 4403 (class 2604 OID 25384)
+-- TOC entry 4435 (class 2604 OID 25384)
 -- Name: toma_inventario_conteos conteoid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -3523,7 +3890,7 @@ ALTER TABLE ONLY public.toma_inventario_conteos ALTER COLUMN conteoid SET DEFAUL
 
 
 --
--- TOC entry 4406 (class 2604 OID 25385)
+-- TOC entry 4439 (class 2604 OID 25385)
 -- Name: toma_inventario_sesiones sesionid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -3531,7 +3898,7 @@ ALTER TABLE ONLY public.toma_inventario_sesiones ALTER COLUMN sesionid SET DEFAU
 
 
 --
--- TOC entry 4240 (class 0 OID 24745)
+-- TOC entry 4256 (class 0 OID 24745)
 -- Dependencies: 222
 -- Data for Name: job; Type: TABLE DATA; Schema: cron; Owner: azuresu
 --
@@ -3542,7 +3909,7 @@ COPY cron.job (jobid, schedule, command, nodename, nodeport, database, username,
 
 
 --
--- TOC entry 4242 (class 0 OID 24764)
+-- TOC entry 4258 (class 0 OID 24764)
 -- Dependencies: 224
 -- Data for Name: job_run_details; Type: TABLE DATA; Schema: cron; Owner: azuresu
 --
@@ -3552,7 +3919,7 @@ COPY cron.job_run_details (jobid, runid, job_pid, database, username, command, s
 
 
 --
--- TOC entry 4944 (class 0 OID 25022)
+-- TOC entry 5048 (class 0 OID 25022)
 -- Dependencies: 225
 -- Data for Name: administradores; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -3567,40 +3934,40 @@ COPY public.administradores (adminid, nombre, email, passwordhash, rol, activo, 
 
 
 --
--- TOC entry 4946 (class 0 OID 25031)
+-- TOC entry 5050 (class 0 OID 25031)
 -- Dependencies: 227
 -- Data for Name: agentesdeventas; Type: TABLE DATA; Schema: public; Owner: ferram
 --
 
-COPY public.agentesdeventas (agenteid, nombre, apellido, email, passwordhash, codigoagente, activo, esadmin, adminrol, banco, numero_cuenta, clabe, titular, tenant_id, telefono) FROM stdin;
-1	Lupita	García	pupis_gr@hotmail.com	$2b$10$6t8maMlHk52sLRQ4PSGnJe0y/6gbIlEQYtlNgba/HwV1LzArkqfie	AG0001	t	f	\N	\N	\N	\N	\N	1	\N
-2	José	García	jofegara.78@gmail.com	$2b$10$hW5OBaBiUbRPIK7nzbpXAeUFHNuulZEoR.FtLI.gkDcTR0PMi0.Y6	AG0002	t	f	\N	\N	\N	\N	\N	1	\N
-3	Fernando	García		$2b$10$4GuEFqJEGO7ti/swQw2cJOb1vSYmwSnEAvCeT6UUIwe/XD20.9//.	AG0003	t	f	\N	\N	\N	\N	\N	1	5529135154
+COPY public.agentesdeventas (agenteid, nombre, apellido, email, passwordhash, codigoagente, activo, esadmin, adminrol, banco, numero_cuenta, clabe, titular, tenant_id, telefono, porcentaje_comision) FROM stdin;
+1	Lupita	García	pupis_gr@hotmail.com	$2b$10$6t8maMlHk52sLRQ4PSGnJe0y/6gbIlEQYtlNgba/HwV1LzArkqfie	AG0001	t	f	\N	\N	\N	\N	\N	1	\N	5.00
+2	José	García	jofegara.78@gmail.com	$2b$10$hW5OBaBiUbRPIK7nzbpXAeUFHNuulZEoR.FtLI.gkDcTR0PMi0.Y6	AG0002	t	f	\N	\N	\N	\N	\N	1	\N	5.00
+3	Fernando	García		$2b$10$4GuEFqJEGO7ti/swQw2cJOb1vSYmwSnEAvCeT6UUIwe/XD20.9//.	AG0003	t	f	\N	\N	\N	\N	\N	1	5529135154	5.00
 \.
 
 
 --
--- TOC entry 4948 (class 0 OID 25039)
+-- TOC entry 5052 (class 0 OID 25039)
 -- Dependencies: 229
 -- Data for Name: carritodecompra; Type: TABLE DATA; Schema: public; Owner: ferram
 --
 
-COPY public.carritodecompra (carritoid, clienteid, fechacreacion, ultimamodificacion) FROM stdin;
-11	15	2026-01-10 04:38:01.059612	2026-01-10 04:44:13.600112
-4	6	2026-01-08 04:27:44.741416	2026-01-10 05:16:28.6314
-6	10	2026-01-08 19:00:15.681398	2026-01-08 23:12:32.356962
-7	11	2026-01-09 00:12:57.780982	2026-01-09 11:54:21.852514
-1	1	2026-01-06 18:27:31.675743	2026-01-10 05:24:20.696648
-9	13	2026-01-10 01:30:28.766748	2026-01-10 01:51:57.590384
-2	4	2026-01-06 23:52:33.779927	2026-01-09 02:57:40.950232
-5	2	2026-01-08 04:39:16.915714	2026-01-09 03:16:39.747419
-10	14	2026-01-10 03:04:05.117318	2026-01-10 03:44:49.45821
-3	5	2026-01-08 04:08:04.928834	2026-01-10 03:56:43.920858
+COPY public.carritodecompra (carritoid, clienteid, fechacreacion, ultimamodificacion, tenant_id) FROM stdin;
+11	15	2026-01-10 04:38:01.059612	2026-01-10 04:44:13.600112	1
+4	6	2026-01-08 04:27:44.741416	2026-01-10 05:16:28.6314	1
+1	1	2026-01-06 18:27:31.675743	2026-01-10 05:24:20.696648	1
+9	13	2026-01-10 01:30:28.766748	2026-01-10 01:51:57.590384	1
+2	4	2026-01-06 23:52:33.779927	2026-01-09 02:57:40.950232	1
+10	14	2026-01-10 03:04:05.117318	2026-01-10 03:44:49.45821	1
+3	5	2026-01-08 04:08:04.928834	2026-01-10 03:56:43.920858	1
+7	11	2026-01-09 00:12:57.780982	2026-01-10 11:08:44.492805	1
+5	2	2026-01-08 04:39:16.915714	2026-01-10 15:47:02.894244	1
+6	10	2026-01-08 19:00:15.681398	2026-01-10 18:46:12.67717	1
 \.
 
 
 --
--- TOC entry 4950 (class 0 OID 25044)
+-- TOC entry 5054 (class 0 OID 25044)
 -- Dependencies: 231
 -- Data for Name: cat_cxp_etiquetas; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -3610,7 +3977,7 @@ COPY public.cat_cxp_etiquetas (etiqueta_id, nombre, color_hex, icono, activo, te
 
 
 --
--- TOC entry 4952 (class 0 OID 25050)
+-- TOC entry 5056 (class 0 OID 25050)
 -- Dependencies: 233
 -- Data for Name: cat_tamanopaquetes; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -3626,7 +3993,7 @@ COPY public.cat_tamanopaquetes (tamanoid, cantidad, tenant_id) FROM stdin;
 
 
 --
--- TOC entry 4954 (class 0 OID 25054)
+-- TOC entry 5058 (class 0 OID 25054)
 -- Dependencies: 235
 -- Data for Name: categorias; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -3640,7 +4007,7 @@ COPY public.categorias (categoriaid, nombre, descripcion, parentcategoriaid, act
 
 
 --
--- TOC entry 4956 (class 0 OID 25061)
+-- TOC entry 5060 (class 0 OID 25061)
 -- Dependencies: 237
 -- Data for Name: cliente_creditos; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -3650,11 +4017,12 @@ COPY public.cliente_creditos (credito_id, cliente_id, limite_credito, saldo_deud
 2	13	4000.00	2989.20	15	ACTIVO	2026-01-10 01:58:55.299096	2026-01-10 02:19:20.708121	\N	\N	1	15
 3	14	9000.00	3318.00	15	ACTIVO	2026-01-10 04:02:57.380947	2026-01-10 04:11:53.991453	\N	\N	1	30
 4	5	20000.00	3220.80	15	ACTIVO	2026-01-10 04:46:21.20041	2026-01-10 04:48:32.370162	\N	\N	1	30
+5	11	5000.00	1892.80	15	ACTIVO	2026-01-10 20:06:52.186428	2026-01-10 20:16:43.838777	\N	\N	1	30
 \.
 
 
 --
--- TOC entry 4958 (class 0 OID 25074)
+-- TOC entry 5062 (class 0 OID 25074)
 -- Dependencies: 239
 -- Data for Name: cliente_direcciones; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -3669,7 +4037,7 @@ COPY public.cliente_direcciones (direccionid, clienteid, etiqueta, receptor, cal
 
 
 --
--- TOC entry 4960 (class 0 OID 25080)
+-- TOC entry 5064 (class 0 OID 25080)
 -- Dependencies: 241
 -- Data for Name: clientes; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -3679,20 +4047,20 @@ COPY public.clientes (clienteid, nombre, apellido, email, passwordhash, telefono
 5	Veronica	Romero	\N	$2b$10$xrA/.fj4ziYVIZ4GR76z7.gpIJpUPDX/1PxAz70VnCsReHqF1gxri	7721292464	2026-01-08 04:05:07.879159	t	2	\N	\N	1	COD-5
 14	Margarita	Conejo	\N	$2b$10$qPkm7UHz7KbTLw4K1.zTbO.7baer2A5bN/8MC0JOJ2szkp/UJDboW	4121207052	2026-01-10 03:03:36.919418	t	1	\N	\N	1	RZ-WEB-14
 15	Alejandro	Camarena	\N	$2b$10$vhkTHmmkBKUAHjGd9uupN.UOqsGrbaF7tk52H.glEfF6Xh/l2caFG	4426089743	2026-01-10 04:23:02.352961	t	1	\N	\N	1	RZ-WEB-15
+11	Angel	Papeleria Ericka	\N	$2b$10$raMQl4hT62w2j10kYU.pzOjS33auSY/wG7F7H.uQ.dXodCKElRzX.	5549133937	2026-01-08 20:08:25.111413	t	3	\N	\N	1	COD-11
+4	Nohemi	Zuñiga	\N	$2b$10$VuYQ2ZnhY8n.PcE.yr2AmuofY3WwfH/xsftKLtzT5zwRDtayWjgMK	7731158195	2026-01-06 23:51:33.737605	t	3	\N	\N	1	COD-4
 2	Diego Fernando	Ramírez García	dferram8@gmail.com	\N	\N	2026-01-05 20:01:06.815611	t	\N	112463414682839499861	https://lh3.googleusercontent.com/a/ACg8ocL4vAqVyYj3GucQspTlE6BtmuyoqZqML7L4Zcb7WdwdcHT9m4E=s96-c	1	COD-2
 3	Maria Teresa	Garcia	\N	$2b$10$Zkbye7ng5W0WaF7U.D7zre.ggz4qw0MMsYZRrKUh5s6yy.mOvtSu2	5526125531	2026-01-06 18:10:42.362124	t	\N	\N	\N	1	COD-3
 8	Diego	Ramírez	dferramm@gmail.com	$2b$10$RFed0OHDhTc/FetYN9Jj8uQs2ltb28fNVG6TcdIKdxetPmKhWBhe6	\N	2026-01-08 09:09:22.977068	t	\N	\N	\N	3	COD-8
 9	Diego	Ramírez	dferram8@gmail.com	$2b$10$fZba6hEA7WslcZhJB6h4WOa3eXIEKYh3F/JLgASsCknuh3sS7AkNC	\N	2026-01-08 16:56:05.436888	t	\N	\N	\N	5	COD-9
 10	Ivan	Domínguez	ivansd2609@gmail.com	\N	\N	2026-01-08 18:57:29.907786	t	\N	101408660806328968970	https://lh3.googleusercontent.com/a/ACg8ocJBF6U4C-PLKI0ODs_W9IgM5r3fLYgU7QDHJSgVRjiS_hGorQ=s96-c	1	COD-10
-11	Angel	Papeleria Ericka	\N	$2b$10$raMQl4hT62w2j10kYU.pzOjS33auSY/wG7F7H.uQ.dXodCKElRzX.	5549133937	2026-01-08 20:08:25.111413	t	\N	\N	\N	1	COD-11
 1	Fernando	Ramírez	dferramm@gmail.com	$2b$10$8i0ae1xaybg256lKNIw9OuH4gBFFN1AbMuCcafyfNNSX.b5KNns06	5560989524	2026-01-05 05:23:11.396759	t	\N	107035380971984210505	https://lh3.googleusercontent.com/a/ACg8ocKNxihdAINOrco8B52uUBljbYq3DjLlFlU9VsDVdeuo9DZ5IQ=s96-c	1	COD-1
-4	Nohemi	Zuñiga	\N	$2b$10$VuYQ2ZnhY8n.PcE.yr2AmuofY3WwfH/xsftKLtzT5zwRDtayWjgMK	7731158195	2026-01-06 23:51:33.737605	t	\N	\N	\N	1	COD-4
 13	Linda	Bretado	\N	$2b$10$xcZMYsGt2K3POuXdFrwrWedvK9g3GB2dUxBFNbMlXsqe0HyevwusC	4428243311	2026-01-10 01:27:34.90479	t	1	\N	\N	1	RZ-WEB-13
 \.
 
 
 --
--- TOC entry 4962 (class 0 OID 25088)
+-- TOC entry 5066 (class 0 OID 25088)
 -- Dependencies: 243
 -- Data for Name: comisiones; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -3700,335 +4068,339 @@ COPY public.clientes (clienteid, nombre, apellido, email, passwordhash, telefono
 COPY public.comisiones (comisionid, pedidoid, agenteid, montocomision, fechacalculo, estatus, tenant_id) FROM stdin;
 1	1	1	597.84	2026-01-10 02:19:20.708121	Pendiente	1
 2	3	2	644.16	2026-01-10 04:48:32.370162	Pendiente	1
+3	4	3	378.56	2026-01-10 20:16:43.838777	Pendiente	1
 \.
 
 
 --
--- TOC entry 4964 (class 0 OID 25094)
+-- TOC entry 5068 (class 0 OID 25094)
 -- Dependencies: 245
 -- Data for Name: communicationlogs; Type: TABLE DATA; Schema: public; Owner: ferram
 --
 
-COPY public.communicationlogs (logid, "timestamp", destinatario, asunto, estatusemail, errormensaje, pedidoid, clienteid, proveedorid) FROM stdin;
-1	2026-01-07 23:22:16.133393	dferramm@gmail.com	Instrucciones para restablecer tu contraseña	Enviado	\N	\N	\N	\N
-2	2026-01-09 16:31:42.372312	dferramm@gmail.com	Instrucciones para restablecer tu contraseña	Enviado	\N	\N	\N	\N
-3	2026-01-09 16:32:24.586598	dferramm@gmail.com	Instrucciones para restablecer tu contraseña	Enviado	\N	\N	\N	\N
-4	2026-01-09 16:40:07.871179	dferramm@gmail.com	Instrucciones para restablecer tu contraseña	Enviado	\N	\N	\N	\N
-5	2026-01-09 16:42:01.893451	dferramm@gmail.com	Instrucciones para restablecer tu contraseña	Enviado	\N	\N	\N	\N
-6	2026-01-09 16:51:18.847384	dferramm@gmail.com	Instrucciones para restablecer tu contraseña	Enviado	\N	\N	\N	\N
-7	2026-01-10 02:19:22.117972	dferram8@gmail.com	💰 Nuevo Pedido #1 - $2989.20	Enviado	\N	\N	\N	\N
-8	2026-01-10 02:19:22.167084	pupis_gr@hotmail.com	🔔 Tu cliente Linda ha realizado un pedido (#1)	Enviado	\N	\N	\N	\N
-9	2026-01-10 02:19:22.167432	dferram8@gmail.com	⚠️ Alerta: Backorder generado para el pedido #1	Enviado	\N	\N	\N	\N
-10	2026-01-10 04:11:55.474516	dferram8@gmail.com	⚠️ Alerta: Backorder generado para el pedido #2	Enviado	\N	\N	\N	\N
-11	2026-01-10 04:11:55.505238	dferram8@gmail.com	💰 Nuevo Pedido #2 - $3318.00	Enviado	\N	\N	\N	\N
-12	2026-01-10 04:48:33.959707	jofegara.78@gmail.com	🔔 Tu cliente Veronica ha realizado un pedido (#3)	Enviado	\N	\N	\N	\N
-13	2026-01-10 04:48:33.969962	dferram8@gmail.com	💰 Nuevo Pedido #3 - $3220.80	Enviado	\N	\N	\N	\N
-14	2026-01-10 04:48:33.994474	dferram8@gmail.com	⚠️ Alerta: Backorder generado para el pedido #3	Enviado	\N	\N	\N	\N
+COPY public.communicationlogs (logid, "timestamp", destinatario, asunto, estatusemail, errormensaje, pedidoid, clienteid, proveedorid, tenant_id) FROM stdin;
+1	2026-01-07 23:22:16.133393	dferramm@gmail.com	Instrucciones para restablecer tu contraseña	Enviado	\N	\N	\N	\N	1
+2	2026-01-09 16:31:42.372312	dferramm@gmail.com	Instrucciones para restablecer tu contraseña	Enviado	\N	\N	\N	\N	1
+3	2026-01-09 16:32:24.586598	dferramm@gmail.com	Instrucciones para restablecer tu contraseña	Enviado	\N	\N	\N	\N	1
+4	2026-01-09 16:40:07.871179	dferramm@gmail.com	Instrucciones para restablecer tu contraseña	Enviado	\N	\N	\N	\N	1
+5	2026-01-09 16:42:01.893451	dferramm@gmail.com	Instrucciones para restablecer tu contraseña	Enviado	\N	\N	\N	\N	1
+6	2026-01-09 16:51:18.847384	dferramm@gmail.com	Instrucciones para restablecer tu contraseña	Enviado	\N	\N	\N	\N	1
+7	2026-01-10 02:19:22.117972	dferram8@gmail.com	💰 Nuevo Pedido #1 - $2989.20	Enviado	\N	\N	\N	\N	1
+8	2026-01-10 02:19:22.167084	pupis_gr@hotmail.com	🔔 Tu cliente Linda ha realizado un pedido (#1)	Enviado	\N	\N	\N	\N	1
+9	2026-01-10 02:19:22.167432	dferram8@gmail.com	⚠️ Alerta: Backorder generado para el pedido #1	Enviado	\N	\N	\N	\N	1
+10	2026-01-10 04:11:55.474516	dferram8@gmail.com	⚠️ Alerta: Backorder generado para el pedido #2	Enviado	\N	\N	\N	\N	1
+11	2026-01-10 04:11:55.505238	dferram8@gmail.com	💰 Nuevo Pedido #2 - $3318.00	Enviado	\N	\N	\N	\N	1
+12	2026-01-10 04:48:33.959707	jofegara.78@gmail.com	🔔 Tu cliente Veronica ha realizado un pedido (#3)	Enviado	\N	\N	\N	\N	1
+13	2026-01-10 04:48:33.969962	dferram8@gmail.com	💰 Nuevo Pedido #3 - $3220.80	Enviado	\N	\N	\N	\N	1
+14	2026-01-10 04:48:33.994474	dferram8@gmail.com	⚠️ Alerta: Backorder generado para el pedido #3	Enviado	\N	\N	\N	\N	1
+15	2026-01-10 20:16:45.335573	dferram8@gmail.com	⚠️ Alerta: Backorder generado para el pedido #4	Enviado	\N	\N	\N	\N	1
+16	2026-01-10 20:16:45.36322	dferram8@gmail.com	💰 Nuevo Pedido #4 - $1892.80	Enviado	\N	\N	\N	\N	1
 \.
 
 
 --
--- TOC entry 4966 (class 0 OID 25102)
+-- TOC entry 5070 (class 0 OID 25102)
 -- Dependencies: 247
 -- Data for Name: control_cambios; Type: TABLE DATA; Schema: public; Owner: ferram
 --
 
-COPY public.control_cambios (id, entidad, entidad_id, tipo_cambio, datos_anteriores, datos_nuevos, usuario_solicitante_id, estado, fecha_solicitud, fecha_resolucion, usuario_resolutor_id) FROM stdin;
-1	categorias	2	INSERT	\N	{"activo": true, "nombre": "Amor", "categoriaid": 2, "descripcion": null, "parentcategoriaid": null}	2	APROBADO	2025-12-24 16:36:57.883671	2025-12-24 16:36:57.883671	2
-2	proveedores	1	INSERT	\N	{"rfc": null, "banco": null, "calle": null, "clabe": null, "email": null, "ciudad": null, "estado": null, "colonia": null, "telefono": null, "diascredito": null, "emailventas": null, "proveedorid": 1, "razonsocial": null, "codigopostal": null, "minimocompra": null, "numerocuenta": null, "celularventas": null, "emailcobranza": null, "limitecredito": null, "nombreempresa": "Fashion", "regimenfiscal": null, "contactonombre": null, "referenciapago": null, "telefonocobranza": null, "aceptadevoluciones": false, "descuentofinanciero": null, "nombrecontactocobranza": null, "nombrerepresentanteventas": null}	2	APROBADO	2025-12-24 16:37:12.72206	2025-12-24 16:37:12.72206	2
-3	productos	1	INSERT	\N	{"activo": true, "productoid": 1, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "25-FAS-CAJ-AMO-CUBO", "nombreproducto": "Cubo Colors Love"}	2	APROBADO	2025-12-24 17:14:16.684696	2025-12-24 17:14:16.684696	2
-4	productos	1	UPDATE	{"activo": true, "productoid": 1, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "25-FAS-CAJ-AMO-CUBO", "nombreproducto": "Cubo Colors Love", "tipoproductoid": null}	{"activo": true, "productoid": 1, "categoriaid": 2, "descripcion": null, "sku_maestro": "25-FAS-CAJ-AMO-CUBO", "nombreproducto": "Colors Love Cubo", "tipoproductoid": null, "proveedorid_default": 1}	2	APROBADO	2025-12-24 17:15:17.316257	2025-12-24 17:15:17.316257	2
-5	productos	2	INSERT	\N	{"activo": true, "productoid": 2, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "25-FAS-CAJ-AMO-LVOR", "nombreproducto": "LV Oro"}	2	APROBADO	2025-12-25 06:07:04.366391	2025-12-25 06:07:04.366391	2
-6	productos	3	INSERT	\N	{"activo": true, "productoid": 3, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "25-FAS-CAJ-AMO-BRIL", "nombreproducto": "Brillo"}	2	APROBADO	2025-12-25 06:10:40.960643	2025-12-25 06:10:40.960643	2
-7	productos	4	INSERT	\N	{"activo": true, "productoid": 4, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "25-FAS-CAJ-AMO-BLAC", "nombreproducto": "Black"}	2	APROBADO	2025-12-25 06:14:06.917618	2025-12-25 06:14:06.917618	2
-8	productos	5	INSERT	\N	{"activo": true, "productoid": 5, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "25-FAS-CAJ-AMO-CRAF", "nombreproducto": "Craft"}	2	APROBADO	2025-12-25 06:20:27.633495	2025-12-25 06:20:27.633495	2
-9	productos	6	INSERT	\N	{"activo": true, "productoid": 6, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "25-FAS-CAJ-AMO-COLO", "nombreproducto": "Colores"}	2	APROBADO	2025-12-25 06:23:13.818184	2025-12-25 06:23:13.818184	2
-10	productos	7	INSERT	\N	{"activo": true, "productoid": 7, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "25-FAS-CAJ-AMO-REDB", "nombreproducto": "RedBlack"}	2	APROBADO	2025-12-25 06:25:42.055698	2025-12-25 06:25:42.055698	2
-11	productos	8	INSERT	\N	{"activo": true, "productoid": 8, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "25-FAS-CAJ-AMO-HECH", "nombreproducto": "Hecho en México"}	2	APROBADO	2025-12-25 06:27:35.096206	2025-12-25 06:27:35.096206	2
-12	productos	4	UPDATE	{"activo": true, "reglaid": null, "productoid": 4, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "25-FAS-CAJ-AMO-BLAC", "nombreproducto": "Black"}	{"activo": true, "reglaid": 1, "productoid": 4, "categoriaid": 2, "descripcion": null, "sku_maestro": "25-FAS-CAJ-AMO-BLAC", "nombreproducto": "Black", "proveedorid_default": 1}	2	APROBADO	2025-12-25 11:28:36.979176	2025-12-25 11:28:36.979176	2
-13	productos	4	UPDATE	{"activo": true, "reglaid": 1, "productoid": 4, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "25-FAS-CAJ-AMO-BLAC", "nombreproducto": "Black"}	{"activo": true, "reglaid": 1, "productoid": 4, "categoriaid": 2, "descripcion": null, "sku_maestro": "25-FAS-CAJ-AMO-BLAC", "nombreproducto": "Black", "proveedorid_default": 1}	2	APROBADO	2025-12-25 11:29:47.971708	2025-12-25 11:29:47.971708	2
-14	productos	3	UPDATE	{"activo": true, "reglaid": null, "productoid": 3, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "25-FAS-CAJ-AMO-BRIL", "nombreproducto": "Brillo"}	{"activo": true, "reglaid": 1, "productoid": 3, "categoriaid": 2, "descripcion": null, "sku_maestro": "25-FAS-CAJ-AMO-BRIL", "nombreproducto": "Brillo", "proveedorid_default": 1}	2	APROBADO	2025-12-25 11:30:03.549911	2025-12-25 11:30:03.549911	2
-15	productos	6	UPDATE	{"activo": true, "reglaid": null, "productoid": 6, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "25-FAS-CAJ-AMO-COLO", "nombreproducto": "Colores"}	{"activo": true, "reglaid": null, "productoid": 6, "categoriaid": 2, "descripcion": null, "sku_maestro": "25-FAS-CAJ-AMO-COLO", "nombreproducto": "Colores", "proveedorid_default": 1}	2	APROBADO	2025-12-25 11:30:42.251757	2025-12-25 11:30:42.251757	2
-16	productos	6	UPDATE	{"activo": true, "reglaid": null, "productoid": 6, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "25-FAS-CAJ-AMO-COLO", "nombreproducto": "Colores"}	{"activo": true, "reglaid": 1, "productoid": 6, "categoriaid": 2, "descripcion": null, "sku_maestro": "25-FAS-CAJ-AMO-COLO", "nombreproducto": "Colores", "proveedorid_default": 1}	2	APROBADO	2025-12-25 11:31:04.688062	2025-12-25 11:31:04.688062	2
-17	productos	1	UPDATE	{"activo": true, "reglaid": null, "productoid": 1, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "25-FAS-CAJ-AMO-CUBO", "nombreproducto": "Colors Love Cubo"}	{"activo": true, "reglaid": 1, "productoid": 1, "categoriaid": 2, "descripcion": null, "sku_maestro": "25-FAS-CAJ-AMO-CUBO", "nombreproducto": "Colors Love Cubo", "proveedorid_default": 1}	2	APROBADO	2025-12-25 11:31:18.488298	2025-12-25 11:31:18.488298	2
-18	productos	5	UPDATE	{"activo": true, "reglaid": null, "productoid": 5, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "25-FAS-CAJ-AMO-CRAF", "nombreproducto": "Craft"}	{"activo": true, "reglaid": 1, "productoid": 5, "categoriaid": 2, "descripcion": null, "sku_maestro": "25-FAS-CAJ-AMO-CRAF", "nombreproducto": "Craft", "proveedorid_default": 1}	2	APROBADO	2025-12-25 11:31:44.889572	2025-12-25 11:31:44.889572	2
-19	productos	8	UPDATE	{"activo": true, "reglaid": null, "productoid": 8, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "25-FAS-CAJ-AMO-HECH", "nombreproducto": "Hecho en México"}	{"activo": true, "reglaid": 1, "productoid": 8, "categoriaid": 2, "descripcion": null, "sku_maestro": "25-FAS-CAJ-AMO-HECH", "nombreproducto": "Hecho en México", "proveedorid_default": 1}	2	APROBADO	2025-12-25 11:31:56.469369	2025-12-25 11:31:56.469369	2
-60	productos	16	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 16, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "AMO-021", "nombreproducto": "Cubo Novios Guapos"}	4	APROBADO	2026-01-03 21:26:49.225487	2026-01-03 21:26:49.225487	4
-20	productos	2	UPDATE	{"activo": true, "reglaid": null, "productoid": 2, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "25-FAS-CAJ-AMO-LVOR", "nombreproducto": "LV Oro"}	{"activo": true, "reglaid": 1, "productoid": 2, "categoriaid": 2, "descripcion": null, "sku_maestro": "25-FAS-CAJ-AMO-LVOR", "nombreproducto": "LV Oro", "proveedorid_default": 1}	2	APROBADO	2025-12-25 11:32:11.928208	2025-12-25 11:32:11.928208	2
-21	productos	7	UPDATE	{"activo": true, "reglaid": null, "productoid": 7, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "25-FAS-CAJ-AMO-REDB", "nombreproducto": "RedBlack"}	{"activo": true, "reglaid": 1, "productoid": 7, "categoriaid": 2, "descripcion": null, "sku_maestro": "25-FAS-CAJ-AMO-REDB", "nombreproducto": "RedBlack", "proveedorid_default": 1}	2	APROBADO	2025-12-25 11:32:25.472244	2025-12-25 11:32:25.472244	2
-22	pedidos	4	UPDATE	{"estatus": "Parcialmente Surtido", "pedidoid": 4}	{"estatus": "Confirmado", "pedidoid": 4}	2	APROBADO	2025-12-25 12:03:24.101952	2025-12-25 12:03:24.101952	2
-23	pedidos	4	UPDATE	{"estatus": "Confirmado", "pedidoid": 4}	{"estatus": "Enviado", "pedidoid": 4}	2	APROBADO	2025-12-25 12:03:36.153384	2025-12-25 12:03:36.153384	2
-24	pedidos	4	UPDATE	{"estatus": "Enviado", "pedidoid": 4}	{"estatus": "Confirmado", "pedidoid": 4}	2	APROBADO	2025-12-25 12:04:12.9404	2025-12-25 12:04:12.9404	2
-25	pedidos	4	UPDATE	{"estatus": "Confirmado", "pedidoid": 4}	{"estatus": "Entregado", "pedidoid": 4}	2	APROBADO	2025-12-25 12:05:20.262903	2025-12-25 12:05:20.262903	2
-26	pedidos	6	UPDATE	{"estatus": "Parcialmente Surtido", "pedidoid": 6}	{"estatus": "Confirmado", "pedidoid": 6}	2	APROBADO	2025-12-25 12:35:08.770103	2025-12-25 12:35:08.770103	2
-27	proveedores	3	INSERT	\N	{"rfc": null, "banco": null, "calle": null, "clabe": null, "email": null, "ciudad": null, "estado": null, "colonia": null, "telefono": null, "diascredito": null, "emailventas": null, "proveedorid": 3, "razonsocial": null, "codigopostal": null, "minimocompra": null, "numerocuenta": null, "celularventas": null, "emailcobranza": null, "limitecredito": null, "nombreempresa": "ExploWorld", "regimenfiscal": null, "contactonombre": null, "referenciapago": null, "telefonocobranza": null, "aceptadevoluciones": false, "descuentofinanciero": null, "nombrecontactocobranza": null, "nombrerepresentanteventas": null}	2	APROBADO	2025-12-26 13:40:58.939631	2025-12-26 13:40:58.939631	2
-28	categorias	3	INSERT	\N	{"activo": true, "nombre": "Toda Ocasión", "categoriaid": 3, "descripcion": null, "parentcategoriaid": null}	2	APROBADO	2025-12-26 13:43:56.448044	2025-12-26 13:43:56.448044	2
-29	productos	9	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 9, "categoriaid": 2, "descripcion": "Cubo Acetato", "proveedorid": 1, "sku_maestro": "AMO-018", "nombreproducto": "Cubo Acetato"}	2	APROBADO	2025-12-26 13:52:22.610319	2025-12-26 13:52:22.610319	2
-30	productos	9	UPDATE	{"activo": true, "reglaid": 1, "productoid": 9, "categoriaid": 2, "descripcion": "Cubo Acetato", "proveedorid": 1, "sku_maestro": "AMO-018", "nombreproducto": "Cubo Acetato"}	{"activo": true, "reglaid": 1, "productoid": 9, "categoriaid": 2, "descripcion": "Cubo Acetato", "sku_maestro": "AMO-018", "nombreproducto": "Cubo Acetato", "proveedorid_default": 1}	2	APROBADO	2025-12-26 14:55:23.048718	2025-12-26 14:55:23.048718	2
-31	productos	10	INSERT	\N	{"activo": true, "reglaid": 5, "productoid": 10, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "AMO-019", "nombreproducto": "Libreta"}	2	APROBADO	2025-12-26 15:04:45.274991	2025-12-26 15:04:45.274991	2
-32	productos	11	INSERT	\N	{"activo": true, "reglaid": 2, "productoid": 11, "categoriaid": 1, "descripcion": null, "proveedorid": 1, "sku_maestro": "LIS-001", "nombreproducto": "Cubo Liso"}	2	APROBADO	2025-12-26 15:27:12.852081	2025-12-26 15:27:12.852081	2
-33	productos	3	UPDATE	{"activo": true, "reglaid": 1, "productoid": 3, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "AMO-006", "nombreproducto": "Brillo"}	{"activo": true, "reglaid": 1, "productoid": 3, "categoriaid": 1, "descripcion": null, "sku_maestro": "AMO-006", "nombreproducto": "Brillo", "proveedorid_default": 1}	2	APROBADO	2025-12-26 15:31:45.71898	2025-12-26 15:31:45.71898	2
-34	categorias	4	INSERT	\N	{"activo": true, "nombre": "Natural", "categoriaid": 4, "descripcion": null, "parentcategoriaid": null}	2	APROBADO	2025-12-26 15:33:03.471727	2025-12-26 15:33:03.471727	2
-35	productos	12	INSERT	\N	{"activo": true, "reglaid": 2, "productoid": 12, "categoriaid": 4, "descripcion": null, "proveedorid": 1, "sku_maestro": "NAT-001", "nombreproducto": "Cubo Natural"}	2	APROBADO	2025-12-26 15:36:29.447567	2025-12-26 15:36:29.447567	2
-36	productos	13	INSERT	\N	{"activo": true, "reglaid": 2, "productoid": 13, "categoriaid": 4, "descripcion": null, "proveedorid": 1, "sku_maestro": "NAT-002", "nombreproducto": "Camisera Natural"}	2	APROBADO	2025-12-26 15:45:16.84568	2025-12-26 15:45:16.84568	2
-37	productos	13	UPDATE	{"activo": true, "reglaid": 2, "productoid": 13, "categoriaid": 4, "descripcion": null, "proveedorid": 1, "sku_maestro": "NAT-002", "nombreproducto": "Camisera Natural"}	{"activo": true, "reglaid": 2, "productoid": 13, "categoriaid": 4, "descripcion": null, "sku_maestro": "NAT-002", "nombreproducto": "Camisera Natural", "proveedorid_default": 1}	2	APROBADO	2025-12-26 16:30:15.027754	2025-12-26 16:30:15.027754	2
-38	productos	13	UPDATE	{"activo": true, "reglaid": 2, "productoid": 13, "categoriaid": 4, "descripcion": null, "proveedorid": 1, "sku_maestro": "NAT-002", "nombreproducto": "Camisera Natural"}	{"activo": true, "reglaid": 2, "productoid": 13, "categoriaid": 4, "descripcion": null, "sku_maestro": "NAT-002", "nombreproducto": "Camisera Natural", "proveedorid_default": 1}	2	APROBADO	2025-12-26 16:32:10.704473	2025-12-26 16:32:10.704473	2
-39	productos	13	UPDATE	{"activo": true, "reglaid": 2, "productoid": 13, "categoriaid": 4, "descripcion": null, "proveedorid": 1, "sku_maestro": "NAT-002", "nombreproducto": "Camisera Natural"}	{"activo": true, "reglaid": 1, "productoid": 13, "categoriaid": 4, "descripcion": null, "sku_maestro": "NAT-002", "nombreproducto": "Camisera Natural", "proveedorid_default": 1}	2	APROBADO	2025-12-26 16:38:02.654604	2025-12-26 16:38:02.654604	2
-40	productos	10	UPDATE	{"activo": true, "reglaid": 5, "productoid": 10, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "AMO-019", "nombreproducto": "Libreta"}	{"activo": true, "reglaid": 5, "productoid": 10, "categoriaid": 2, "descripcion": null, "sku_maestro": "AMO-019", "nombreproducto": "Libreta", "proveedorid_default": 1}	2	APROBADO	2025-12-31 08:52:28.749917	2025-12-31 08:52:28.749917	2
-41	productos	14	INSERT	\N	{"activo": true, "reglaid": 2, "productoid": 14, "categoriaid": 1, "descripcion": null, "proveedorid": 1, "sku_maestro": "LIS-002", "nombreproducto": "Línea Metalizada"}	2	APROBADO	2025-12-31 08:56:50.280269	2025-12-31 08:56:50.280269	2
-42	productos	14	UPDATE	{"activo": true, "reglaid": 2, "productoid": 14, "categoriaid": 1, "descripcion": null, "proveedorid": 1, "sku_maestro": "LIS-002", "nombreproducto": "Línea Metalizada"}	{"activo": true, "reglaid": 1, "productoid": 14, "categoriaid": 1, "descripcion": null, "sku_maestro": "LIS-002", "nombreproducto": "Línea Metalizada", "proveedorid_default": 1}	2	APROBADO	2025-12-31 09:15:49.773776	2025-12-31 09:15:49.773776	2
-43	pedidos	17	UPDATE	{"pagado": false, "estatus": "Parcialmente Surtido"}	{"monto": "128.70", "accion": "APROBAR_PAGO_TRANSFERENCIA", "pagado": true, "cliente": "Diego Fernando Ramírez García", "estatus": "Confirmado"}	2	APROBADO	2026-01-02 06:24:26.956375	2026-01-02 06:24:26.956375	2
-44	admins	4	INSERT	\N	{"rol": "admin", "email": "alecaja.19@gmail.com", "activo": true, "nombre": "Alejandra Calderón", "adminid": 4, "apellido": "                                                                                                    "}	2	APROBADO	2026-01-02 20:43:37.09496	2026-01-02 20:43:37.09496	2
-45	admins	5	INSERT	\N	{"rol": "admin", "email": "pupis_gr@icloud.com", "activo": true, "nombre": "Lupita García", "adminid": 5, "apellido": "                                                                                                    "}	2	APROBADO	2026-01-02 20:49:05.635416	2026-01-02 20:49:05.635416	2
-46	admins	6	INSERT	\N	{"rol": "admin", "email": "maricelag.e@hotmail.com", "activo": true, "nombre": "Maricela García", "adminid": 6, "apellido": "                                                                                                    "}	2	APROBADO	2026-01-02 23:00:58.087258	2026-01-02 23:00:58.087258	2
-47	admins	7	INSERT	\N	{"rol": "admin", "email": "maricelag.e@hotmail.com", "activo": true, "nombre": "Maricela García", "adminid": 7, "apellido": "                                                                                                    "}	2	APROBADO	2026-01-02 23:02:29.217336	2026-01-02 23:02:29.217336	2
-48	productos	4	UPDATE	{"activo": true, "reglaid": 1, "productoid": 4, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "AMO-008", "nombreproducto": "Black"}	{"activo": true, "reglaid": 1, "productoid": 4, "categoriaid": 2, "descripcion": null, "sku_maestro": "AMO-008", "nombreproducto": "Love Black", "proveedorid_default": 1}	4	APROBADO	2026-01-03 17:28:32.748679	2026-01-03 17:28:32.748679	4
-49	productos	1	UPDATE	{"activo": true, "reglaid": 1, "productoid": 1, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "AMO-001", "nombreproducto": "Colors Love Cubo"}	{"activo": true, "reglaid": 1, "productoid": 1, "categoriaid": 2, "descripcion": null, "sku_maestro": "AMO-001", "nombreproducto": "Cubo Colors Love", "proveedorid_default": 1}	4	APROBADO	2026-01-03 17:39:12.68726	2026-01-03 17:39:12.68726	4
-50	productos	4	UPDATE	{"activo": true, "reglaid": 1, "productoid": 4, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "AMO-008", "nombreproducto": "Love Black"}	{"activo": true, "reglaid": 1, "productoid": 4, "categoriaid": 2, "descripcion": null, "sku_maestro": "AMO-008", "nombreproducto": "Cubo Love Black", "proveedorid_default": 1}	4	APROBADO	2026-01-03 17:40:16.957553	2026-01-03 17:40:16.957553	4
-51	productos	8	UPDATE	{"activo": true, "reglaid": 1, "productoid": 8, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "AMO-016", "nombreproducto": "Hecho en México"}	{"activo": true, "reglaid": 2, "productoid": 8, "categoriaid": 2, "descripcion": null, "sku_maestro": "AMO-016", "nombreproducto": "Cubo Hecho en México", "proveedorid_default": 1}	4	APROBADO	2026-01-03 17:51:12.318799	2026-01-03 17:51:12.318799	4
-52	productos	5	UPDATE	{"activo": true, "reglaid": 1, "productoid": 5, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "AMO-010", "nombreproducto": "Craft"}	{"activo": true, "reglaid": 1, "productoid": 5, "categoriaid": 2, "descripcion": null, "sku_maestro": "AMO-010", "nombreproducto": "Cubo Love Craft", "proveedorid_default": 1}	4	APROBADO	2026-01-03 17:57:58.057706	2026-01-03 17:57:58.057706	4
-53	productos	1	UPDATE	{"activo": true, "reglaid": 1, "productoid": 1, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "AMO-001", "nombreproducto": "Cubo Colors Love"}	{"activo": true, "reglaid": 1, "productoid": 1, "categoriaid": 2, "descripcion": null, "sku_maestro": "AMO-001", "nombreproducto": "Cubo Colors Love", "proveedorid_default": 1}	4	APROBADO	2026-01-03 18:03:49.232571	2026-01-03 18:03:49.232571	4
-54	productos	2	UPDATE	{"activo": true, "reglaid": 1, "productoid": 2, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "AMO-003", "nombreproducto": "LV Oro"}	{"activo": true, "reglaid": 1, "productoid": 2, "categoriaid": 2, "descripcion": null, "sku_maestro": "AMO-003", "nombreproducto": "Cubo LV Oro", "proveedorid_default": 1}	4	APROBADO	2026-01-03 18:27:11.516707	2026-01-03 18:27:11.516707	4
-55	productos	2	UPDATE	{"activo": true, "reglaid": 1, "productoid": 2, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "AMO-003", "nombreproducto": "Cubo LV Oro"}	{"activo": true, "reglaid": 1, "productoid": 2, "categoriaid": 2, "descripcion": null, "sku_maestro": "AMO-003", "nombreproducto": "Cubo LV Oro", "proveedorid_default": 1}	4	APROBADO	2026-01-03 18:28:37.913026	2026-01-03 18:28:37.913026	4
-56	productos	9	UPDATE	{"activo": true, "reglaid": 1, "productoid": 9, "categoriaid": 2, "descripcion": "Cubo Acetato", "proveedorid": 1, "sku_maestro": "AMO-018", "nombreproducto": "Cubo Acetato"}	{"activo": true, "reglaid": 1, "productoid": 9, "categoriaid": 2, "descripcion": null, "sku_maestro": "AMO-018", "nombreproducto": "Cubo Acetato", "proveedorid_default": 1}	4	APROBADO	2026-01-03 18:35:39.098118	2026-01-03 18:35:39.098118	4
-57	productos	7	UPDATE	{"activo": true, "reglaid": 1, "productoid": 7, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "AMO-014", "nombreproducto": "RedBlack"}	{"activo": true, "reglaid": 1, "productoid": 7, "categoriaid": 2, "descripcion": null, "sku_maestro": "AMO-014", "nombreproducto": "Cubo RedBlack Love", "proveedorid_default": 1}	4	APROBADO	2026-01-03 19:08:29.186101	2026-01-03 19:08:29.186101	4
-58	productos	6	UPDATE	{"activo": true, "reglaid": 1, "productoid": 6, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "AMO-012", "nombreproducto": "Colores"}	{"activo": true, "reglaid": 1, "productoid": 6, "categoriaid": 2, "descripcion": null, "sku_maestro": "AMO-012", "nombreproducto": "Cubo Colores Amor", "proveedorid_default": 1}	4	APROBADO	2026-01-03 19:13:54.91665	2026-01-03 19:13:54.91665	4
-59	productos	15	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 15, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "AMO-020", "nombreproducto": "Cubo Friends & Love"}	4	APROBADO	2026-01-03 21:20:40.039006	2026-01-03 21:20:40.039006	4
-61	categorias	3	UPDATE	{"activo": true, "nombre": "Toda Ocasión", "categoriaid": 3, "descripcion": null, "parentcategoriaid": null}	{"activo": true, "nombre": "Toda Ocasión", "categoriaid": 3, "descripcion": "Cajas de cumpleaños que dan color a tu regalo", "parentcategoriaid": null}	5	APROBADO	2026-01-03 21:32:20.899793	2026-01-03 21:32:20.899793	5
-62	categorias	3	UPDATE	{"activo": true, "nombre": "Toda Ocasión", "categoriaid": 3, "descripcion": "Cajas de cumpleaños que dan color a tu regalo", "parentcategoriaid": null}	{"activo": true, "nombre": "Toda Ocasión", "categoriaid": 3, "descripcion": "Cajas de cumpleaños que dan color a tu regalo 🎁", "parentcategoriaid": null}	5	APROBADO	2026-01-03 21:33:25.852562	2026-01-03 21:33:25.852562	5
-63	productos	17	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 17, "categoriaid": 3, "descripcion": "Caja craft de colores, ideal para celebrar el cumpleaños de esa persona especial, colores vibrantes con acabdo mate.", "proveedorid": 1, "sku_maestro": "TOD-001", "nombreproducto": "Cubo cumple craft"}	5	APROBADO	2026-01-03 21:48:33.399514	2026-01-03 21:48:33.399514	5
-64	productos	17	UPDATE	{"activo": true, "reglaid": 1, "productoid": 17, "categoriaid": 3, "descripcion": "Caja craft de colores, ideal para celebrar el cumpleaños de esa persona especial, colores vibrantes con acabdo mate.", "proveedorid": 1, "sku_maestro": "TOD-001", "nombreproducto": "Cubo cumple craft"}	{"activo": true, "reglaid": 1, "productoid": 17, "categoriaid": 3, "descripcion": "Caja craft de colores, ideal para celebrar el cumpleaños de esa persona especial, colores vibrantes con acabado mate.", "sku_maestro": "TOD-001", "nombreproducto": "Cubo Cumple Craft", "proveedorid_default": 1}	5	APROBADO	2026-01-03 22:01:05.371984	2026-01-03 22:01:05.371984	5
-65	productos	17	UPDATE	{"activo": true, "reglaid": 1, "productoid": 17, "categoriaid": 3, "descripcion": "Caja craft de colores, ideal para celebrar el cumpleaños de esa persona especial, colores vibrantes con acabado mate.", "proveedorid": 1, "sku_maestro": "TOD-001", "nombreproducto": "Cubo Cumple Craft"}	{"activo": true, "reglaid": 1, "productoid": 17, "categoriaid": 3, "descripcion": "Caja craft de colores, ideal para celebrar el cumpleaños de esa persona especial, colores vibrantes con acabado mate.", "sku_maestro": "TOD-001", "nombreproducto": "Cubo Cumple Craft", "proveedorid_default": 1}	5	APROBADO	2026-01-03 23:11:57.313087	2026-01-03 23:11:57.313087	5
-66	productos	18	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 18, "categoriaid": 3, "descripcion": "Caja con diseño, ideal para celebrar el cumpleaños de esa persona especial, colores vibrantes acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "TOD-002", "nombreproducto": "Cubo Cumple Graffiti"}	5	APROBADO	2026-01-03 23:33:06.059573	2026-01-03 23:33:06.059573	5
-67	productos	19	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 19, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "AMO-022", "nombreproducto": "Cubo Love"}	4	APROBADO	2026-01-03 23:42:01.833775	2026-01-03 23:42:01.833775	4
-68	categorias	2	UPDATE	{"activo": true, "nombre": "Amor", "imagen_url": null, "categoriaid": 2, "descripcion": null, "imagen_public_id": null, "parentcategoriaid": null}	{"activo": true, "nombre": "Amor", "imagen_url": "https://res.cloudinary.com/daylne1ml/image/upload/v1767483819/categories/hxivvedrcy19xk06ugjn.png", "categoriaid": 2, "descripcion": null, "imagen_public_id": "categories/hxivvedrcy19xk06ugjn", "parentcategoriaid": null}	2	APROBADO	2026-01-03 23:43:39.569988	2026-01-03 23:43:39.569988	2
-69	productos	20	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 20, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "AMO-023", "nombreproducto": "Cubo TQM"}	4	APROBADO	2026-01-03 23:46:45.070513	2026-01-03 23:46:45.070513	4
-70	productos	17	UPDATE	{"activo": true, "reglaid": 1, "productoid": 17, "categoriaid": 3, "descripcion": "Caja craft de colores, ideal para celebrar el cumpleaños de esa persona especial, colores vibrantes con acabado mate.", "proveedorid": 1, "sku_maestro": "TOD-001", "nombreproducto": "Cubo Cumple Craft"}	{"activo": true, "reglaid": 1, "productoid": 17, "categoriaid": 3, "descripcion": "Caja craft de colores, ideal para celebrar el cumpleaños de esa persona especial, colores vibrantes con acabado mate.", "sku_maestro": "TOD-001", "nombreproducto": "Cubo Cumple Craft", "proveedorid_default": 1}	5	APROBADO	2026-01-03 23:48:05.98786	2026-01-03 23:48:05.98786	5
-71	productos	17	UPDATE	{"activo": true, "reglaid": 1, "productoid": 17, "categoriaid": 3, "descripcion": "Caja craft de colores, ideal para celebrar el cumpleaños de esa persona especial, colores vibrantes con acabado mate.", "proveedorid": 1, "sku_maestro": "TOD-001", "nombreproducto": "Cubo Cumple Craft"}	{"activo": true, "reglaid": 1, "productoid": 17, "categoriaid": 3, "descripcion": "Caja craft de colores, ideal para celebrar el cumpleaños de esa persona especial, colores vibrantes con acabado mate.", "sku_maestro": "TOD-001", "nombreproducto": "Cubo Cumple Craft", "proveedorid_default": 1}	5	APROBADO	2026-01-03 23:55:45.712137	2026-01-03 23:55:45.712137	5
-72	categorias	3	UPDATE	{"activo": true, "nombre": "Toda Ocasión", "imagen_url": null, "categoriaid": 3, "descripcion": "Cajas de cumpleaños que dan color a tu regalo 🎁", "imagen_public_id": null, "parentcategoriaid": null}	{"activo": true, "nombre": "Toda ocasión", "imagen_url": "https://res.cloudinary.com/daylne1ml/image/upload/v1767484732/categories/mrfszpgqjl4zvot4bei0.png", "categoriaid": 3, "descripcion": "Cajas de cumpleaños que dan color a tu regalo 🎁", "imagen_public_id": "categories/mrfszpgqjl4zvot4bei0", "parentcategoriaid": null}	2	APROBADO	2026-01-03 23:58:53.327293	2026-01-03 23:58:53.327293	2
-73	categorias	1	UPDATE	{"activo": true, "nombre": "Lisas", "imagen_url": null, "categoriaid": 1, "descripcion": "Cajas perfectas para cualquier época del año!", "imagen_public_id": null, "parentcategoriaid": null}	{"activo": true, "nombre": "Lisas", "imagen_url": "https://res.cloudinary.com/daylne1ml/image/upload/v1767484774/categories/idyffvrvkmy3o9dmxsuw.png", "categoriaid": 1, "descripcion": "Cajas perfectas para cualquier época del año!", "imagen_public_id": "categories/idyffvrvkmy3o9dmxsuw", "parentcategoriaid": null}	2	APROBADO	2026-01-03 23:59:35.541278	2026-01-03 23:59:35.541278	2
-74	categorias	4	UPDATE	{"activo": true, "nombre": "Natural", "imagen_url": null, "categoriaid": 4, "descripcion": null, "imagen_public_id": null, "parentcategoriaid": null}	{"activo": true, "nombre": "Natural", "imagen_url": "https://res.cloudinary.com/daylne1ml/image/upload/v1767484784/categories/t49i7w3jzlrrtvfgj7bw.png", "categoriaid": 4, "descripcion": null, "imagen_public_id": "categories/t49i7w3jzlrrtvfgj7bw", "parentcategoriaid": null}	2	APROBADO	2026-01-03 23:59:45.019098	2026-01-03 23:59:45.019098	2
-90	productos	32	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 32, "categoriaid": 3, "descripcion": "Cajas con diseños y frases divertidas, con las marcas de tus tenis favoritos, colores con acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "TOD-013", "nombreproducto": "Cubo Sports"}	5	APROBADO	2026-01-04 02:46:36.211577	2026-01-04 02:46:36.211577	5
-75	productos	18	UPDATE	{"activo": true, "reglaid": 1, "productoid": 18, "categoriaid": 3, "descripcion": "Caja con diseño, ideal para celebrar el cumpleaños de esa persona especial, colores vibrantes acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "TOD-002", "nombreproducto": "Cubo Cumple Graffiti"}	{"activo": true, "reglaid": 1, "productoid": 18, "categoriaid": 3, "descripcion": "Caja con diseño, ideal para celebrar el cumpleaños de esa persona especial, colores vibrantes acabado barniz brillante.", "sku_maestro": "TOD-002", "nombreproducto": "Cubo Cumple Graffiti", "proveedorid_default": 1}	5	APROBADO	2026-01-04 00:06:14.450959	2026-01-04 00:06:14.450959	5
-76	productos	2	UPDATE	{"activo": true, "productoid": 2}	{"activo": true, "productoid": 2}	2	APROBADO	2026-01-04 00:16:35.822105	2026-01-04 00:16:35.822105	2
-77	productos	21	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 21, "categoriaid": 3, "descripcion": "Caja con diseño, ideal para celebraciones especiales, colores vibrantes con acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "TOD-003", "nombreproducto": "Cubo Cómics"}	5	APROBADO	2026-01-04 00:28:40.120763	2026-01-04 00:28:40.120763	5
-78	productos	22	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 22, "categoriaid": 2, "descripcion": "Estas cajas de regalo tipo \\"Camisera\\" son perfectas para quienes buscan un empaque vibrante, alegre y lleno de sentimiento. Su diseño \\"Colors Love\\" destaca por una explosión de colores neón, tipografías estilo pop-art y mensajes románticos que las hacen ideales para San Valentín, aniversarios o cualquier ocasión especial.", "proveedorid": 1, "sku_maestro": "AMO-024", "nombreproducto": "Camisera Colors Love"}	4	APROBADO	2026-01-04 00:35:05.017191	2026-01-04 00:35:05.017191	4
-79	productos	23	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 23, "categoriaid": 3, "descripcion": "Caja con diseños divertidos, ideal para esa persona tan especial, colores vibrantes acabado barniz brillante", "proveedorid": 1, "sku_maestro": "TOD-004", "nombreproducto": "Cubo Botana"}	5	APROBADO	2026-01-04 00:39:56.115123	2026-01-04 00:39:56.115123	5
-80	productos	22	UPDATE	{"activo": true, "reglaid": 1, "productoid": 22, "categoriaid": 2, "descripcion": "Estas cajas de regalo tipo \\"Camisera\\" son perfectas para quienes buscan un empaque vibrante, alegre y lleno de sentimiento. Su diseño \\"Colors Love\\" destaca por una explosión de colores neón, tipografías estilo pop-art y mensajes románticos que las hacen ideales para San Valentín, aniversarios o cualquier ocasión especial.", "proveedorid": 1, "sku_maestro": "AMO-024", "nombreproducto": "Camisera Colors Love"}	{"activo": true, "reglaid": 1, "productoid": 22, "categoriaid": 2, "descripcion": "Estas cajas de regalo tipo \\"Camisera\\" son perfectas para quienes buscan un empaque vibrante, alegre y lleno de sentimiento. Su diseño \\"Colors Love\\" destaca por una explosión de colores neón, tipografías estilo pop-art y mensajes románticos que las hacen ideales para San Valentín, aniversarios o cualquier ocasión especial.", "sku_maestro": "AMO-024", "nombreproducto": "Camisera Colors Love", "proveedorid_default": 1}	4	APROBADO	2026-01-04 00:42:22.716293	2026-01-04 00:42:22.716293	4
-81	productos	24	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 24, "categoriaid": 3, "descripcion": "Caja con diseños espectaculares, felicitaciones increíbles y todo en un solo empaque, colores vibrantes acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "TOD-005", "nombreproducto": "Cubo Felicidades"}	5	APROBADO	2026-01-04 00:53:30.39235	2026-01-04 00:53:30.39235	5
-82	productos	18	UPDATE	{"activo": true, "reglaid": 1, "productoid": 18, "categoriaid": 3, "descripcion": "Caja con diseño, ideal para celebrar el cumpleaños de esa persona especial, colores vibrantes acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "TOD-002", "nombreproducto": "Cubo Cumple Graffiti"}	{"activo": true, "reglaid": 1, "productoid": 18, "categoriaid": 3, "descripcion": "Caja con diseño, ideal para celebrar el cumpleaños de esa persona especial, colores vibrantes acabado barniz brillante.", "sku_maestro": "TOD-002", "nombreproducto": "Cubo Cumple Graffiti", "proveedorid_default": 1}	5	APROBADO	2026-01-04 01:02:48.820168	2026-01-04 01:02:48.820168	5
-83	productos	25	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 25, "categoriaid": 3, "descripcion": "Caja de colores, empaques perfectos para tus detalles, diseñadas para convertir un regalo en una experiencia inolvidable, colores espectaculares con acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "TOD-006", "nombreproducto": "Cubo Cumple Colors"}	5	APROBADO	2026-01-04 01:10:36.441724	2026-01-04 01:10:36.441724	5
-84	productos	26	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 26, "categoriaid": 3, "descripcion": "Cubo craft, bolas y rayas de colores, ideal para cualquier ocasión, colores sobrios en acabado mate.", "proveedorid": 1, "sku_maestro": "TOD-007", "nombreproducto": "Cubo Bolas y Rayas"}	5	APROBADO	2026-01-04 01:23:01.910872	2026-01-04 01:23:01.910872	5
-85	productos	27	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 27, "categoriaid": 3, "descripcion": "Cubo con diseños bonitos y tiernos, para toda ocasión, colores con un toque de dulzura, acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "TOD-008", "nombreproducto": "Cubo Paris-London"}	5	APROBADO	2026-01-04 01:32:43.262065	2026-01-04 01:32:43.262065	5
-86	productos	28	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 28, "categoriaid": 3, "descripcion": "Cajas con diseño divertido, ideales para cumpleaños ó cualquier celebración especial, colores explosivos con acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "TOD-009", "nombreproducto": "Cubo Feliz"}	5	APROBADO	2026-01-04 01:43:29.696735	2026-01-04 01:43:29.696735	5
-87	productos	29	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 29, "categoriaid": 3, "descripcion": "Caja con diseños de marcas aesthetic, divertidas para cualquier ocasión, con acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "TOD-010", "nombreproducto": "Cubo Nice"}	5	APROBADO	2026-01-04 02:03:19.888578	2026-01-04 02:03:19.888578	5
-88	productos	30	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 30, "categoriaid": 3, "descripcion": "Caja, que por su medida es perfecta para un regalo increíble, diseños de cumpleaños para esa persona especial, acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "TOD-011", "nombreproducto": "Cubo Cumple White"}	5	APROBADO	2026-01-04 02:14:44.937414	2026-01-04 02:14:44.937414	5
-89	productos	31	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 31, "categoriaid": 3, "descripcion": "Cajas de colores divertidos para toda ocasión, en acabado mate.", "proveedorid": 1, "sku_maestro": "TOD-012", "nombreproducto": "Cubo Luxe"}	5	APROBADO	2026-01-04 02:25:32.467718	2026-01-04 02:25:32.467718	5
-91	productos	33	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 33, "categoriaid": 3, "descripcion": "Cajas con diseños y frases divertidas, con marcas de cerveza, ideales para caballero, acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "TOD-014", "nombreproducto": "Cubo Marcas"}	5	APROBADO	2026-01-04 02:52:24.060686	2026-01-04 02:52:24.060686	5
-92	productos	34	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 34, "categoriaid": 2, "descripcion": "¡Expresa tus sentimientos con una explosión de color! Nuestra línea Corazón Colors Love está diseñada para quienes buscan un empaque dinámico, moderno y lleno de alegría. Estas cajas no son solo un envoltorio, son parte del regalo mismo.", "proveedorid": 1, "sku_maestro": "AMO-025", "nombreproducto": "Corazón Colors Love"}	4	APROBADO	2026-01-04 02:58:59.151672	2026-01-04 02:58:59.151672	4
-93	productos	35	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 35, "categoriaid": 3, "descripcion": "Cajas para toda ocasión, con colores básicos, pero divertidos, acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "TOD-015", "nombreproducto": "Cubo Incógnita"}	5	APROBADO	2026-01-04 03:01:17.007599	2026-01-04 03:01:17.007599	5
-94	productos	36	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 36, "categoriaid": 3, "descripcion": "Hermosas cajas, en tonos pastel, para celebrar la llegada de un ser pequeñito  y muy especial, acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "TOD-016", "nombreproducto": "Cubo Baby"}	5	APROBADO	2026-01-04 03:13:07.969117	2026-01-04 03:13:07.969117	5
-95	productos	3	UPDATE	{"activo": true, "reglaid": 1, "productoid": 3, "categoriaid": 1, "descripcion": null, "proveedorid": 1, "sku_maestro": "AMO-006", "nombreproducto": "Brillo"}	{"activo": true, "reglaid": 2, "productoid": 3, "categoriaid": 1, "descripcion": "Estas cajas no solo son contenedores, son parte del regalo mismo. Gracias a su acabado brillante y su vibrante color negro o rojo, son perfectas para San Valentín, aniversarios, cumpleaños o cualquier ocasión especial donde quieras impresionar.", "sku_maestro": "AMO-006", "nombreproducto": "Cubo Liso Brillo", "proveedorid_default": 1}	4	APROBADO	2026-01-04 03:33:24.419971	2026-01-04 03:33:24.419971	4
-96	productos	37	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 37, "categoriaid": 2, "descripcion": "Sorprende a esa persona especial con nuestras Torres RedBlack, cajas de regalo premium diseñadas para cautivar. Con un estilo moderno y una combinación vibrante de colores rojo, blanco y negro, estas torres son más que un empaque: son un mensaje de amor por sí mismas.", "proveedorid": 1, "sku_maestro": "TOR-001", "nombreproducto": "Torre RedBlack"}	4	APROBADO	2026-01-04 03:48:08.714171	2026-01-04 03:48:08.714171	4
-97	productos	38	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 38, "categoriaid": 2, "descripcion": "Sorprende a esa persona especial con nuestra Torre Love, una caja de regalo decorativa diseñada para cautivar. Con un estilo moderno y vibrante, es el empaque ideal para arreglos florales, dulces, peluches o cualquier sorpresa inolvidable.", "proveedorid": 1, "sku_maestro": "TOR-002", "nombreproducto": "Torre Love"}	4	APROBADO	2026-01-04 03:50:25.035807	2026-01-04 03:50:25.035807	4
-98	productos	39	INSERT	\N	{"activo": true, "reglaid": 2, "productoid": 39, "categoriaid": 2, "descripcion": "¡Dale un toque vibrante y lleno de vida a tus detalles! Nuestra línea de Baúles Colors Love está diseñada para quienes no temen expresar sus sentimientos con fuerza y color. Ideales para envolver regalos, guardar recuerdos o decorar espacios con un estilo moderno y dinámico.", "proveedorid": 1, "sku_maestro": "BAU-001", "nombreproducto": "Baúl Colors Love"}	4	APROBADO	2026-01-04 04:07:58.273793	2026-01-04 04:07:58.273793	4
-99	productos	40	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 40, "categoriaid": 2, "descripcion": "Estas cajas de regalo tipo \\"cartón de leche\\" son una opción creativa y encantadora para cualquier detalle especial. Su diseño único combina la nostalgia de un envase clásico con mensajes modernos y románticos.", "proveedorid": 1, "sku_maestro": "MIL-001", "nombreproducto": "Milk Love"}	4	APROBADO	2026-01-04 04:18:06.809342	2026-01-04 04:18:06.809342	4
-100	productos	38	UPDATE	{"activo": true, "reglaid": 1, "productoid": 38, "categoriaid": 2, "descripcion": "Sorprende a esa persona especial con nuestra Torre Love, una caja de regalo decorativa diseñada para cautivar. Con un estilo moderno y vibrante, es el empaque ideal para arreglos florales, dulces, peluches o cualquier sorpresa inolvidable.", "proveedorid": 1, "sku_maestro": "TOR-002", "nombreproducto": "Torre Love"}	{"activo": true, "reglaid": 1, "productoid": 38, "categoriaid": 2, "descripcion": "Sorprende a esa persona especial con nuestra Torre Love, una caja de regalo decorativa diseñada para cautivar. Con un estilo moderno y vibrante, es el empaque ideal para arreglos florales, dulces, peluches o cualquier sorpresa inolvidable.", "sku_maestro": "TOR-002", "nombreproducto": "Torre Love", "proveedorid_default": 1}	4	APROBADO	2026-01-04 04:28:28.207964	2026-01-04 04:28:28.207964	4
-101	productos	9	UPDATE	{"activo": true, "reglaid": 1, "productoid": 9, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "AMO-018", "nombreproducto": "Cubo Acetato"}	{"activo": true, "reglaid": 1, "productoid": 9, "categoriaid": 2, "descripcion": "¡Eleva tus regalos al siguiente nivel con nuestros Cubos Corazón de Acetato! Diseñados para combinar elegancia y sentimiento, estos cubos son la base ideal para arreglos florales, desayunos sorpresa, dulces o peluches.", "sku_maestro": "AMO-018", "nombreproducto": "Cubo Acetato", "proveedorid_default": 1}	4	APROBADO	2026-01-04 04:46:05.223944	2026-01-04 04:46:05.223944	4
-102	productos	6	UPDATE	{"activo": true, "reglaid": 1, "productoid": 6, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "AMO-012", "nombreproducto": "Cubo Colores Amor"}	{"activo": true, "reglaid": 1, "productoid": 6, "categoriaid": 2, "descripcion": "¡Haz que cada detalle cuente! Nuestra colección Colores Amor está diseñada para quienes buscan transformar un simple regalo en una experiencia inolvidable. Estas cajas no son solo empaques, son una declaración de afecto con un diseño vibrante y moderno.", "sku_maestro": "AMO-012", "nombreproducto": "Cubo Colores Amor", "proveedorid_default": 1}	4	APROBADO	2026-01-04 04:47:54.413547	2026-01-04 04:47:54.413547	4
-113	productos	20	UPDATE	{"activo": true, "reglaid": 1, "productoid": 20, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "AMO-023", "nombreproducto": "Cubo TQM"}	{"activo": true, "reglaid": 1, "productoid": 20, "categoriaid": 2, "descripcion": "El Cubo TQM es una caja de regalo premium que combina un diseño moderno con mensajes sentimentales. Su forma cúbica y compacta la hace ideal para contener joyería, dulces finos, lociones o pequeños detalles significativos.", "sku_maestro": "AMO-023", "nombreproducto": "Cubo TQM", "proveedorid_default": 1}	4	APROBADO	2026-01-04 04:58:30.150167	2026-01-04 04:58:30.150167	4
-103	productos	6	UPDATE	{"activo": true, "reglaid": 1, "productoid": 6, "categoriaid": 2, "descripcion": "¡Haz que cada detalle cuente! Nuestra colección Colores Amor está diseñada para quienes buscan transformar un simple regalo en una experiencia inolvidable. Estas cajas no son solo empaques, son una declaración de afecto con un diseño vibrante y moderno.", "proveedorid": 1, "sku_maestro": "AMO-012", "nombreproducto": "Cubo Colores Amor"}	{"activo": true, "reglaid": 1, "productoid": 6, "categoriaid": 2, "descripcion": "¡Haz que cada detalle cuente! Nuestra colección Colores Amor está diseñada para quienes buscan transformar un simple regalo en una experiencia inolvidable. Estas cajas no son solo empaques, son una declaración de afecto con un diseño vibrante y moderno.", "sku_maestro": "AMO-012", "nombreproducto": "Cubo Colores Amor", "proveedorid_default": 1}	4	APROBADO	2026-01-04 04:48:46.268383	2026-01-04 04:48:46.268383	4
-104	productos	1	UPDATE	{"activo": true, "reglaid": 1, "productoid": 1, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "AMO-001", "nombreproducto": "Cubo Colors Love"}	{"activo": true, "reglaid": 1, "productoid": 1, "categoriaid": 2, "descripcion": "Dale un toque de color y alegría a tus detalles con nuestro Cubo Colors Love. Diseñado especialmente para quienes no temen expresar su cariño de forma vibrante, este cubo decorativo es mucho más que una caja: es el complemento ideal que hará que tu regalo destaque desde el primer momento.", "sku_maestro": "AMO-001", "nombreproducto": "Cubo Colors Love", "proveedorid_default": 1}	4	APROBADO	2026-01-04 04:50:03.960348	2026-01-04 04:50:03.960348	4
-105	productos	15	UPDATE	{"activo": true, "reglaid": 1, "productoid": 15, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "AMO-020", "nombreproducto": "Cubo Friends & Love"}	{"activo": true, "reglaid": 1, "productoid": 15, "categoriaid": 2, "descripcion": "¡Haz que tu regalo destaque desde el primer momento! Nuestra colección Friends & Love combina un diseño urbano tipo graffiti con mensajes llenos de sentimiento, perfectos para cualquier ocasión especial.", "sku_maestro": "AMO-020", "nombreproducto": "Cubo Friends & Love", "proveedorid_default": 1}	4	APROBADO	2026-01-04 04:51:12.411405	2026-01-04 04:51:12.411405	4
-106	productos	8	UPDATE	{"activo": true, "reglaid": 2, "productoid": 8, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "AMO-016", "nombreproducto": "Cubo Hecho en México"}	{"activo": true, "reglaid": 1, "productoid": 8, "categoriaid": 2, "descripcion": "Dale un toque auténtico y vibrante a tus detalles con nuestras cajas de regalo temáticas. Diseñadas con el icónico sello de \\"Hecho en México\\", estas cajas no solo sirven como empaque, sino como un elemento decorativo de alta calidad que resalta el orgullo nacional.", "sku_maestro": "AMO-016", "nombreproducto": "Cubo Hecho en México", "proveedorid_default": 1}	4	APROBADO	2026-01-04 04:52:00.860716	2026-01-04 04:52:00.860716	4
-107	productos	19	UPDATE	{"activo": true, "reglaid": 1, "productoid": 19, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "AMO-022", "nombreproducto": "Cubo Love"}	{"activo": true, "reglaid": 1, "productoid": 19, "categoriaid": 2, "descripcion": "¡Haz que cada momento especial sea inolvidable! Nuestro Cubo LOVE no es solo una caja, es una experiencia diseñada para expresar tus sentimientos de la forma más creativa y elegante.", "sku_maestro": "AMO-022", "nombreproducto": "Cubo Love", "proveedorid_default": 1}	4	APROBADO	2026-01-04 04:52:56.576323	2026-01-04 04:52:56.576323	4
-108	productos	4	UPDATE	{"activo": true, "reglaid": 1, "productoid": 4, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "AMO-008", "nombreproducto": "Cubo Love Black"}	{"activo": true, "reglaid": 1, "productoid": 4, "categoriaid": 2, "descripcion": "El Cubo Love Black es la opción perfecta para quienes buscan un empaque impactante, moderno y lleno de sentimiento. Diseñada con un fondo negro profundo que hace resaltar colores vibrantes, esta caja no es solo un empaque, sino parte del regalo mismo.", "sku_maestro": "AMO-008", "nombreproducto": "Cubo Love Black", "proveedorid_default": 1}	4	APROBADO	2026-01-04 04:54:05.780054	2026-01-04 04:54:05.780054	4
-109	productos	5	UPDATE	{"activo": true, "reglaid": 1, "productoid": 5, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "AMO-010", "nombreproducto": "Cubo Love Craft"}	{"activo": true, "reglaid": 1, "productoid": 5, "categoriaid": 2, "descripcion": "¡Haz que cada regalo sea inolvidable desde el primer vistazo! Nuestra línea de cajas Love Craft está diseñada para quienes buscan salir de lo convencional y entregar un detalle lleno de color, arte y emoción.", "sku_maestro": "AMO-010", "nombreproducto": "Cubo Love Craft", "proveedorid_default": 1}	4	APROBADO	2026-01-04 04:54:51.657231	2026-01-04 04:54:51.657231	4
-110	productos	2	UPDATE	{"activo": true, "reglaid": 1, "productoid": 2, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "AMO-003", "nombreproducto": "Cubo LV Oro"}	{"activo": true, "reglaid": 1, "productoid": 2, "categoriaid": 2, "descripcion": "Eleva la presentación de tus detalles con nuestra exclusiva línea de Cajas Cubo LV Oro. Diseñadas con un elegante acabado en color oro y tipografía estilizada, estas cajas son perfectas para San Valentín, aniversarios o cualquier ocasión especial donde el amor sea el protagonista.", "sku_maestro": "AMO-003", "nombreproducto": "Cubo LV Oro", "proveedorid_default": 1}	4	APROBADO	2026-01-04 04:56:02.400255	2026-01-04 04:56:02.400255	4
-111	productos	16	UPDATE	{"activo": true, "reglaid": 1, "productoid": 16, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "AMO-021", "nombreproducto": "Cubo Novios Guapos"}	{"activo": true, "reglaid": 1, "productoid": 16, "categoriaid": 2, "descripcion": "¡Lleva tu regalo al siguiente nivel con nuestras cajas decorativas de la línea Novios Guapos! Diseñadas con colores neón, tipografías estilo graffiti y mensajes llenos de amor, estas cajas no son solo un empaque, son parte de la sorpresa.", "sku_maestro": "AMO-021", "nombreproducto": "Cubo Novios Guapos", "proveedorid_default": 1}	4	APROBADO	2026-01-04 04:56:52.472804	2026-01-04 04:56:52.472804	4
-112	productos	7	UPDATE	{"activo": true, "reglaid": 1, "productoid": 7, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "AMO-014", "nombreproducto": "Cubo RedBlack Love"}	{"activo": true, "reglaid": 1, "productoid": 7, "categoriaid": 2, "descripcion": "Sorprende a esa persona especial con nuestros elegantes cubos decorativos de la colección RedBlack Love. Diseñados con una combinación clásica de rojo, negro y blanco, estos cubos son el empaque perfecto para regalos inolvidables o como un detalle decorativo lleno de sentimiento.", "sku_maestro": "AMO-014", "nombreproducto": "Cubo RedBlack Love", "proveedorid_default": 1}	4	APROBADO	2026-01-04 04:57:37.585851	2026-01-04 04:57:37.585851	4
-114	productos	10	UPDATE	{"activo": true, "reglaid": 5, "productoid": 10, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "AMO-019", "nombreproducto": "Libreta"}	{"activo": true, "reglaid": 5, "productoid": 10, "categoriaid": 2, "descripcion": "¡Dale estilo a tus notas con estas libretas de diseño exclusivo! Perfectas para regalo o para uso personal, estas libretas combinan un diseño moderno con materiales de alta resistencia.", "sku_maestro": "AMO-019", "nombreproducto": "Libreta", "proveedorid_default": 1}	4	APROBADO	2026-01-04 05:00:01.850146	2026-01-04 05:00:01.850146	4
-115	productos	41	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 41, "categoriaid": 3, "descripcion": "Cajas para caballero toda ocasión, diseños sobrios para festejar a esa persona especial, acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "CUB-001", "nombreproducto": "Cubo Pesca y Cacería"}	5	APROBADO	2026-01-04 05:19:32.525278	2026-01-04 05:19:32.525278	5
-116	productos	42	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 42, "categoriaid": 3, "descripcion": "Caja con colores fascinantes, que harán de tu regalo una experiencia única, diseños coloridos para esa celebración especial, en acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "CAM-001", "nombreproducto": "Camisera Grande Cumple"}	5	APROBADO	2026-01-04 13:14:25.899296	2026-01-04 13:14:25.899296	5
-117	productos	42	UPDATE	{"activo": true, "reglaid": 1, "productoid": 42, "categoriaid": 3, "descripcion": "Caja con colores fascinantes, que harán de tu regalo una experiencia única, diseños coloridos para esa celebración especial, en acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "CAM-001", "nombreproducto": "Camisera Grande Cumple"}	{"activo": true, "reglaid": 1, "productoid": 42, "categoriaid": 3, "descripcion": "Caja con colores fascinantes, que harán de tu regalo una experiencia única, diseños coloridos para esa celebración especial, en acabado barniz brillante.", "sku_maestro": "CAM-001", "nombreproducto": "Camisera Cumple", "proveedorid_default": 1}	5	APROBADO	2026-01-04 13:24:45.71658	2026-01-04 13:24:45.71658	5
-118	productos	42	UPDATE	{"activo": true, "reglaid": 1, "productoid": 42, "categoriaid": 3, "descripcion": "Caja con colores fascinantes, que harán de tu regalo una experiencia única, diseños coloridos para esa celebración especial, en acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "CAM-001", "nombreproducto": "Camisera Cumple"}	{"activo": true, "reglaid": 1, "productoid": 42, "categoriaid": 3, "descripcion": "Caja con colores fascinantes, que harán de tu regalo una experiencia única, diseños coloridos para esa celebración especial, en acabado barniz brillante.", "sku_maestro": "CAM-001", "nombreproducto": "Camisera Cumple", "proveedorid_default": 1}	2	APROBADO	2026-01-04 18:13:54.433485	2026-01-04 18:13:54.433485	2
-119	productos	42	UPDATE	{"activo": true, "reglaid": 1, "productoid": 42, "categoriaid": 3, "descripcion": "Caja con colores fascinantes, que harán de tu regalo una experiencia única, diseños coloridos para esa celebración especial, en acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "CAM-001", "nombreproducto": "Camisera Cumple"}	{"activo": true, "reglaid": 1, "productoid": 42, "categoriaid": 3, "descripcion": "Caja con colores fascinantes, que harán de tu regalo una experiencia única, diseños coloridos para esa celebración especial, en acabado barniz brillante.", "sku_maestro": "CAM-001", "nombreproducto": "Camisera Cumple", "proveedorid_default": 1}	5	APROBADO	2026-01-04 19:21:52.400226	2026-01-04 19:21:52.400226	5
-120	productos	43	INSERT	\N	{"activo": true, "reglaid": 5, "productoid": 43, "categoriaid": 3, "descripcion": "Caja con colores intensos, ideal para cualquier ocasión, hotstampin, acabado mate.", "proveedorid": 1, "sku_maestro": "PAS-001", "nombreproducto": "Pastelera De Luxe"}	5	APROBADO	2026-01-04 19:43:54.498723	2026-01-04 19:43:54.498723	5
-121	productos	44	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 44, "categoriaid": 4, "descripcion": "Caja de regalo kraft natural 10 x 10 cm, simple y bonita. Ideal para envolver detalles pequeños con un toque natural y moderno. Resistente, práctica y fácil de personalizar.", "proveedorid": 1, "sku_maestro": "CAJ-001", "nombreproducto": "Caja cubo 10x10"}	7	APROBADO	2026-01-04 21:56:20.938851	2026-01-04 21:56:20.938851	7
-122	productos	44	UPDATE	{"activo": true, "reglaid": 1, "productoid": 44, "categoriaid": 4, "descripcion": "Caja de regalo kraft natural 10 x 10 cm, simple y bonita. Ideal para envolver detalles pequeños con un toque natural y moderno. Resistente, práctica y fácil de personalizar.", "proveedorid": 1, "sku_maestro": "CAJ-001", "nombreproducto": "Caja cubo 10x10"}	{"activo": true, "reglaid": 1, "productoid": 44, "categoriaid": 4, "descripcion": "Caja de regalo kraft natural 10 x 10 cm, simple y bonita. Ideal para envolver detalles pequeños con un toque natural y moderno. Resistente, práctica y fácil de personalizar.", "sku_maestro": "CAJ-001", "nombreproducto": "Caja cubo 10x10", "proveedorid_default": 1}	7	APROBADO	2026-01-04 21:58:16.910759	2026-01-04 21:58:16.910759	7
-123	productos	44	UPDATE	{"activo": true, "reglaid": 1, "productoid": 44, "categoriaid": 4, "descripcion": "Caja de regalo kraft natural 10 x 10 cm, simple y bonita. Ideal para envolver detalles pequeños con un toque natural y moderno. Resistente, práctica y fácil de personalizar.", "proveedorid": 1, "sku_maestro": "CAJ-001", "nombreproducto": "Caja cubo 10x10"}	{"activo": true, "reglaid": 1, "productoid": 44, "categoriaid": 4, "descripcion": "Caja de regalo kraft natural tipo cubo, simple, bonita y con mucho estilo. Ideal para presentar tus detalles con un look natural y moderno. Resistente, práctica y fácil de personalizar. Disponible en tamaños desde 10 x 10 x 10 cm hasta 65 x 65 x 65 cm ✨🎁", "sku_maestro": "CAJ-001", "nombreproducto": "Caja cubo", "proveedorid_default": 1}	7	APROBADO	2026-01-04 22:01:21.583169	2026-01-04 22:01:21.583169	7
-124	productos	44	UPDATE	{"activo": true, "reglaid": 1, "productoid": 44, "categoriaid": 4, "descripcion": "Caja de regalo kraft natural tipo cubo, simple, bonita y con mucho estilo. Ideal para presentar tus detalles con un look natural y moderno. Resistente, práctica y fácil de personalizar. Disponible en tamaños desde 10 x 10 x 10 cm hasta 65 x 65 x 65 cm ✨🎁", "proveedorid": 1, "sku_maestro": "CAJ-001", "nombreproducto": "Caja cubo"}	{"activo": true, "reglaid": 1, "productoid": 44, "categoriaid": 4, "descripcion": "Caja de regalo kraft natural tipo cubo, simple, bonita y con mucho estilo. Ideal para presentar tus detalles con un look natural y moderno. Resistente, práctica y fácil de personalizar. Disponible en tamaños desde 10 x 10 x 10 cm hasta 65 x 65 x 65 cm ✨🎁", "sku_maestro": "CAJ-001", "nombreproducto": "Caja cubo", "proveedorid_default": 1}	7	APROBADO	2026-01-04 22:07:36.550678	2026-01-04 22:07:36.550678	7
-125	productos	45	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 45, "categoriaid": 4, "descripcion": "Caja camisera de regalo kraft color natural, elegante y funcional. Ideal para presentar prendas y regalos con un estilo limpio y moderno. Resistente, práctica y fácil de personalizar. Disponible en diferentes tamaños para adaptarse a cada detalle 🎁✨", "proveedorid": 1, "sku_maestro": "CAJ-002", "nombreproducto": "Caja camisera"}	7	APROBADO	2026-01-04 22:10:51.299318	2026-01-04 22:10:51.299318	7
-126	productos	46	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 46, "categoriaid": 4, "descripcion": "Caja baúl de regalo kraft color natural, con un diseño original y funcional. Perfecta para presentar regalos especiales con un toque natural y moderno. Resistente, fácil de armar y personalizar. Disponible en varios tamaños 🎁✨", "proveedorid": 1, "sku_maestro": "CAJ-003", "nombreproducto": "Caja baul"}	7	APROBADO	2026-01-04 22:14:39.015287	2026-01-04 22:14:39.015287	7
-127	productos	47	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 47, "categoriaid": 3, "descripcion": "Caja para celebrar a esa persona especial, color, diseño y tamaño perfecto para un regalo espectacular, con acabado barniz brillante", "proveedorid": 1, "sku_maestro": "BAU-002", "nombreproducto": "Baúl Cumple"}	5	APROBADO	2026-01-04 22:15:48.777274	2026-01-04 22:15:48.777274	5
-128	productos	13	UPDATE	{"activo": true, "reglaid": 1, "productoid": 13, "categoriaid": 4, "descripcion": null, "proveedorid": 1, "sku_maestro": "NAT-002", "nombreproducto": "Camisera Natural"}	{"activo": true, "reglaid": 1, "productoid": 13, "categoriaid": 4, "descripcion": "Caja camisera de regalo kraft color natural, elegante y funcional. Ideal para presentar prendas y regalos con un estilo limpio y moderno. Resistente, práctica y fácil de personalizar. Disponible en diferentes tamaños para adaptarse a cada detalle 🎁✨", "sku_maestro": "NAT-002", "nombreproducto": "Camisera Natural", "proveedorid_default": 1}	7	APROBADO	2026-01-04 22:17:44.600314	2026-01-04 22:17:44.600314	7
-129	productos	48	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 48, "categoriaid": 4, "descripcion": "Caja tipo lunch kraft natural, práctica y con mucho estilo. Ideal para armar desayunos sorpresa y detalles especiales. Resistente, fácil de armar y perfecta para personalizar y sorprender 🎁✨", "proveedorid": 1, "sku_maestro": "CAJ-004", "nombreproducto": "Caja lunch kraft"}	7	APROBADO	2026-01-04 22:20:08.881175	2026-01-04 22:20:08.881175	7
-130	productos	49	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 49, "categoriaid": 4, "descripcion": "Caja de regalo tipo torre kraft, original y llamativa. Ideal para armar regalos en capas y crear una presentación impactante. Resistente, fácil de armar y perfecta para personalizar con un estilo natural y moderno 🎁✨", "proveedorid": 1, "sku_maestro": "CAJ-005", "nombreproducto": "Caja torre natural"}	7	APROBADO	2026-01-04 22:23:05.031916	2026-01-04 22:23:05.031916	7
-131	productos	50	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 50, "categoriaid": 3, "descripcion": "Caja para celebrar a esa persona especial, color, diseño y tamaño perfecto para un regalo espectacular, con acabado barniz brillante", "proveedorid": 1, "sku_maestro": "BAU-003", "nombreproducto": "Baúl Colors Cumple"}	5	APROBADO	2026-01-04 22:24:01.818454	2026-01-04 22:24:01.818454	5
-132	productos	51	INSERT	\N	{"activo": true, "reglaid": 2, "productoid": 51, "categoriaid": 4, "descripcion": "Caja six pack kraft natural, perfecta para cervezas o bebidas. Resistente, con estilo y ese look natural que siempre queda bien. Ideal para armar regalos cool y sorprender 🍺✨", "proveedorid": 1, "sku_maestro": "SIX-001", "nombreproducto": "Six pack natural"}	7	APROBADO	2026-01-04 22:30:13.875708	2026-01-04 22:30:13.875708	7
-133	productos	52	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 52, "categoriaid": 4, "descripcion": "Caja de regalo en forma de corazón, elaborada en cartón kraft natural. Bonita, resistente y con un toque romántico y moderno. Ideal para detalles especiales, fácil de personalizar y perfecta para sorprender 💛🎁", "proveedorid": 1, "sku_maestro": "CAJ-006", "nombreproducto": "Caja corazon natural"}	7	APROBADO	2026-01-04 22:33:15.169906	2026-01-04 22:33:15.169906	7
-134	productos	53	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 53, "categoriaid": 3, "descripcion": "Caja para celebrar a esa persona especial, ideal para un desayuno sorpresa ó si lo prefieres retiras el interior y colocas tu regalo, color, diseño y tamaño perfecto, con acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "LUN-001", "nombreproducto": "Lunch Party"}	5	APROBADO	2026-01-04 22:34:17.923262	2026-01-04 22:34:17.923262	5
-135	productos	54	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 54, "categoriaid": 3, "descripcion": "Caja para celebrar a esa persona especial, color, diseño y tamaño perfecto para un regalo espectacular, con acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "TOR-003", "nombreproducto": "Torre Cumple Colors"}	5	APROBADO	2026-01-04 22:55:01.231357	2026-01-04 22:55:01.231357	5
-136	productos	55	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 55, "categoriaid": 3, "descripcion": "Caja para celebrar a esa persona especial, color, diseño y tamaño perfecto para una botella de vino, con acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "BOT-001", "nombreproducto": "Botella Cumple"}	5	APROBADO	2026-01-04 23:06:53.641059	2026-01-04 23:06:53.641059	5
-137	productos	56	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 56, "categoriaid": 3, "descripcion": "Caja para celebrar a esa persona especial, diseño divertido y tamaño perfecto para un regalo espectacular, con acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "PAL-001", "nombreproducto": "Palomita"}	5	APROBADO	2026-01-04 23:12:58.654783	2026-01-04 23:12:58.654783	5
-138	productos	57	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 57, "categoriaid": 3, "descripcion": "Caja con diseño divertido, ideal para celebrar el cumpleaños de esa persona especial, colores vibrantes acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "MIL-002", "nombreproducto": "Milk Cumple Colors"}	5	APROBADO	2026-01-04 23:59:53.437413	2026-01-04 23:59:53.437413	5
-139	productos	58	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 58, "categoriaid": 3, "descripcion": "Caja con diseños divertidos, perfecta para cervezas ó bebidas, resistente, con estilo y ese look que siempre queda bien. Ideal para armar regalos cool y sorprender, acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "SIX-002", "nombreproducto": "Six Pack Men"}	5	APROBADO	2026-01-05 00:30:01.777644	2026-01-05 00:30:01.777644	5
-140	productos	59	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 59, "categoriaid": 3, "descripcion": "Caja con un diseño original y funcional. Perfecta para entregar regalos especiales con un toque moderno y divertido. Resistente, fácil de armar, con asas, acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "CER-001", "nombreproducto": "Cerillo Party"}	5	APROBADO	2026-01-05 04:48:32.969775	2026-01-05 04:48:32.969775	5
-141	productos	60	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 60, "categoriaid": 3, "descripcion": "Bolsa Kraft de material resistente, con diseños únicos, ideal para sorprender a esa persona especial, acabado mate.", "proveedorid": 1, "sku_maestro": "BOL-001", "nombreproducto": "Bolsa Guapos"}	5	APROBADO	2026-01-05 05:05:37.351594	2026-01-05 05:05:37.351594	5
-142	productos	61	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 61, "categoriaid": 3, "descripcion": "Sobre de dinero, ideal para cuando no sabes que regalar, diseños alegres y divertidos, con acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "SOB-001", "nombreproducto": "Sobre Cumple"}	5	APROBADO	2026-01-05 05:28:54.66734	2026-01-05 05:28:54.66734	5
-143	productos	14	UPDATE	{"activo": true, "reglaid": 1, "productoid": 14, "categoriaid": 1, "descripcion": null, "proveedorid": 1, "sku_maestro": "LIS-002", "nombreproducto": "Línea Metalizada"}	{"activo": true, "reglaid": 1, "productoid": 14, "categoriaid": 1, "descripcion": null, "sku_maestro": "LIS-002", "nombreproducto": "Línea Metalizada", "proveedorid_default": 1}	2	APROBADO	2026-01-05 05:38:48.391989	2026-01-05 05:38:48.391989	2
-144	productos	46	UPDATE	{"activo": true, "reglaid": 1, "productoid": 46, "categoriaid": 4, "descripcion": "Caja baúl de regalo kraft color natural, con un diseño original y funcional. Perfecta para presentar regalos especiales con un toque natural y moderno. Resistente, fácil de armar y personalizar. Disponible en varios tamaños 🎁✨", "proveedorid": 1, "sku_maestro": "CAJ-003", "nombreproducto": "Caja baul"}	{"activo": true, "reglaid": 1, "productoid": 46, "categoriaid": 4, "descripcion": "Caja baúl de regalo kraft color natural, con un diseño original y funcional. Perfecta para presentar regalos especiales con un toque natural y moderno. Resistente, fácil de armar y personalizar. Disponible en varios tamaños 🎁✨", "sku_maestro": "CAJ-003", "nombreproducto": "Caja baul", "proveedorid_default": 1}	7	APROBADO	2026-01-05 19:20:47.345742	2026-01-05 19:20:47.345742	7
-145	productos	45	UPDATE	{"activo": true, "reglaid": 1, "productoid": 45, "categoriaid": 4, "descripcion": "Caja camisera de regalo kraft color natural, elegante y funcional. Ideal para presentar prendas y regalos con un estilo limpio y moderno. Resistente, práctica y fácil de personalizar. Disponible en diferentes tamaños para adaptarse a cada detalle 🎁✨", "proveedorid": 1, "sku_maestro": "CAJ-002", "nombreproducto": "Caja camisera"}	{"activo": true, "reglaid": 1, "productoid": 45, "categoriaid": 4, "descripcion": "Camisera de regalo kraft color natural, elegante y funcional. Ideal para presentar prendas y regalos con un estilo limpio y moderno. Resistente, práctica y fácil de personalizar. Disponible en diferentes tamaños para adaptarse a cada detalle 🎁✨", "sku_maestro": "CAJ-002", "nombreproducto": "Caja camisera", "proveedorid_default": 1}	7	APROBADO	2026-01-05 19:22:06.208084	2026-01-05 19:22:06.208084	7
-146	productos	46	UPDATE	{"activo": true, "reglaid": 1, "productoid": 46, "categoriaid": 4, "descripcion": "Caja baúl de regalo kraft color natural, con un diseño original y funcional. Perfecta para presentar regalos especiales con un toque natural y moderno. Resistente, fácil de armar y personalizar. Disponible en varios tamaños 🎁✨", "proveedorid": 1, "sku_maestro": "CAJ-003", "nombreproducto": "Caja baul"}	{"activo": true, "reglaid": 1, "productoid": 46, "categoriaid": 4, "descripcion": "Baúl de regalo kraft color natural, con un diseño original y funcional. Perfecta para presentar regalos especiales con un toque natural y moderno. Resistente, fácil de armar y personalizar. Disponible en varios tamaños 🎁✨", "sku_maestro": "CAJ-003", "nombreproducto": "Caja baul", "proveedorid_default": 1}	7	APROBADO	2026-01-05 19:22:29.216803	2026-01-05 19:22:29.216803	7
-147	productos	44	UPDATE	{"activo": true, "reglaid": 1, "productoid": 44, "categoriaid": 4, "descripcion": "Caja de regalo kraft natural tipo cubo, simple, bonita y con mucho estilo. Ideal para presentar tus detalles con un look natural y moderno. Resistente, práctica y fácil de personalizar. Disponible en tamaños desde 10 x 10 x 10 cm hasta 65 x 65 x 65 cm ✨🎁", "proveedorid": 1, "sku_maestro": "CAJ-001", "nombreproducto": "Caja cubo"}	{"activo": true, "reglaid": 1, "productoid": 44, "categoriaid": 4, "descripcion": "Cubo kraft natural, simple, bonita y con mucho estilo. Ideal para presentar tus detalles con un look natural y moderno. Resistente, práctica y fácil de personalizar. Disponible en tamaños desde 10 x 10 x 10 cm hasta 65 x 65 x 65 cm ✨🎁", "sku_maestro": "CAJ-001", "nombreproducto": "Caja cubo", "proveedorid_default": 1}	7	APROBADO	2026-01-05 19:24:13.920061	2026-01-05 19:24:13.920061	7
-148	productos	51	UPDATE	{"activo": true, "reglaid": 2, "productoid": 51, "categoriaid": 4, "descripcion": "Caja six pack kraft natural, perfecta para cervezas o bebidas. Resistente, con estilo y ese look natural que siempre queda bien. Ideal para armar regalos cool y sorprender 🍺✨", "proveedorid": 1, "sku_maestro": "SIX-001", "nombreproducto": "Six pack natural"}	{"activo": true, "reglaid": 1, "productoid": 51, "categoriaid": 4, "descripcion": "Six pack kraft natural, perfecta para cervezas o bebidas. Resistente, con estilo y ese look natural que siempre queda bien. Ideal para armar regalos cool y sorprender 🍺✨", "sku_maestro": "SIX-001", "nombreproducto": "Six pack natural", "proveedorid_default": 1}	7	APROBADO	2026-01-05 19:25:16.852431	2026-01-05 19:25:16.852431	7
-149	productos	62	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 62, "categoriaid": 1, "descripcion": "Dale a tus regalos el empaque que merecen con nuestra línea de cajas pasteleras. Diseñadas para combinar resistencia, estilo y practicidad, estas cajas son ideales para regalos especiales.", "proveedorid": 1, "sku_maestro": "PAS-002", "nombreproducto": "Pastelera Toda Ocasión"}	4	APROBADO	2026-01-05 21:44:09.257478	2026-01-05 21:44:09.257478	4
-150	productos	63	INSERT	\N	{"activo": true, "reglaid": 2, "productoid": 63, "categoriaid": 1, "descripcion": "¡Dale un toque de elegancia y ternura a tus detalles! Esta hermosa caja con forma de corazón en colores rosa, lila, rojo y negro, es la opción perfecta para empaques de San Valentín, aniversarios, cumpleaños o cualquier ocasión especial. Su acabado liso y minimalista permite que el regalo sea el verdadero protagonista.", "proveedorid": 1, "sku_maestro": "COR-001", "nombreproducto": "Corazón Liso"}	4	APROBADO	2026-01-05 22:42:21.260266	2026-01-05 22:42:21.260266	4
-186	productos	50	UPDATE	{"activo": true, "reglaid": 1, "productoid": 50, "categoriaid": 3, "descripcion": "Caja para celebrar a esa persona especial, color, diseño y tamaño perfecto para un regalo espectacular, con acabado barniz brillante", "proveedorid": 1, "sku_maestro": "BAU-003", "nombreproducto": "Baúl Colors Cumple"}	{"activo": true, "reglaid": 1, "productoid": 50, "categoriaid": 3, "descripcion": "Caja para celebrar a esa persona especial, color, diseño y tamaño perfecto para un regalo espectacular, con acabado barniz brillante", "sku_maestro": "BAU-003", "nombreproducto": "Baúl Colors", "proveedorid_default": 1}	2	APROBADO	2026-01-08 01:10:47.495876	2026-01-08 01:10:47.495876	2
-151	productos	34	UPDATE	{"activo": true, "reglaid": 1, "productoid": 34, "categoriaid": 2, "descripcion": "¡Expresa tus sentimientos con una explosión de color! Nuestra línea Corazón Colors Love está diseñada para quienes buscan un empaque dinámico, moderno y lleno de alegría. Estas cajas no son solo un envoltorio, son parte del regalo mismo.", "proveedorid": 1, "sku_maestro": "AMO-025", "nombreproducto": "Corazón Colors Love"}	{"activo": true, "reglaid": 1, "productoid": 34, "categoriaid": 2, "descripcion": "¡Expresa tus sentimientos con una explosión de color! Nuestra línea Corazón Colors Love está diseñada para quienes buscan un empaque dinámico, moderno y lleno de alegría. Estas cajas no son solo un envoltorio, son parte del regalo mismo.", "sku_maestro": "AMO-025", "nombreproducto": "Corazón Colors Love", "proveedorid_default": 1}	4	APROBADO	2026-01-05 22:57:42.399531	2026-01-05 22:57:42.399531	4
-152	productos	64	INSERT	\N	{"activo": true, "reglaid": 2, "productoid": 64, "categoriaid": 1, "descripcion": "Eleva la presentación de tus arreglos florales con nuestras cajas exclusivas. Diseñadas específicamente para proteger y resaltar la belleza de las rosas, estas cajas en colores magenta, rosa, lila, rojo y negro,  son la opción perfecta para San Valentín, aniversarios o cualquier ocasión especial.", "proveedorid": 1, "sku_maestro": "CAJ-006", "nombreproducto": "Caja para Rosas"}	4	APROBADO	2026-01-05 23:15:31.257044	2026-01-05 23:15:31.257044	4
-153	productos	64	UPDATE	{"activo": true, "reglaid": 2, "productoid": 64, "categoriaid": 1, "descripcion": "Eleva la presentación de tus arreglos florales con nuestras cajas exclusivas. Diseñadas específicamente para proteger y resaltar la belleza de las rosas, estas cajas en colores magenta, rosa, lila, rojo y negro,  son la opción perfecta para San Valentín, aniversarios o cualquier ocasión especial.", "proveedorid": 1, "sku_maestro": "CAJ-006", "nombreproducto": "Caja para Rosas"}	{"activo": true, "reglaid": 2, "productoid": 64, "categoriaid": 1, "descripcion": "Eleva la presentación de tus arreglos florales con nuestras cajas exclusivas. Diseñadas específicamente para proteger y resaltar la belleza de las rosas, estas cajas en colores magenta, rosa, lila, rojo y negro,  son la opción perfecta para San Valentín, aniversarios o cualquier ocasión especial.", "sku_maestro": "CAJ-006", "nombreproducto": "Caja para Rosas", "proveedorid_default": 1}	4	APROBADO	2026-01-06 04:25:11.845515	2026-01-06 04:25:11.845515	4
-154	productos	65	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 65, "categoriaid": 1, "descripcion": "Dale un toque vibrante y profesional a tus regalos con nuestras cajas tipo \\"milk box\\". Ahora con un acabado mejorado en barniz, estas cajas no solo lucen increíbles, sino que ofrecen una textura premium y mayor durabilidad.", "proveedorid": 1, "sku_maestro": "MIL-003", "nombreproducto": "Milk Lisa Colores"}	4	APROBADO	2026-01-06 04:37:09.896437	2026-01-06 04:37:09.896437	4
-155	productos	66	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 66, "categoriaid": 1, "descripcion": "Dale a tus regalos una presentación inolvidable con nuestra Cajabolsa, el híbrido perfecto entre una caja resistente y una bolsa práctica. Este modelo destaca por su vibrante color rojo y un acabado de alta calidad diseñado para sorprender.", "proveedorid": 1, "sku_maestro": "CAJ-007", "nombreproducto": "Caja Bolsa"}	4	APROBADO	2026-01-06 04:38:59.992287	2026-01-06 04:38:59.992287	4
-156	productos	67	INSERT	\N	{"activo": true, "reglaid": null, "productoid": 67, "categoriaid": 1, "descripcion": "¡Dale un toque de color y estilo a tus entregas! Estas bolsas de color son ideales para quienes buscan resistencia y una presentación impecable. Su diseño vibrante y moderno las hace perfectas para boutiques, papelerías o eventos especiales.", "proveedorid": 1, "sku_maestro": "BOL-002", "nombreproducto": "Bolsa Boutique Colores"}	4	APROBADO	2026-01-06 04:42:48.36018	2026-01-06 04:42:48.36018	4
-157	agentes	2	INSERT	\N	{"email": "jofegara.78@gmail.com", "activo": true, "nombre": "José", "esadmin": false, "adminrol": null, "agenteid": 2, "apellido": "García", "codigoagente": "AG0002"}	4	APROBADO	2026-01-06 04:55:41.470809	2026-01-06 04:55:41.470809	4
-158	productos	3	UPDATE	{"activo": true, "reglaid": 2, "productoid": 3, "categoriaid": 1, "descripcion": "Estas cajas no solo son contenedores, son parte del regalo mismo. Gracias a su acabado brillante y su vibrante color negro o rojo, son perfectas para San Valentín, aniversarios, cumpleaños o cualquier ocasión especial donde quieras impresionar.", "proveedorid": 1, "sku_maestro": "AMO-006", "nombreproducto": "Cubo Liso Brillo"}	{"activo": true, "reglaid": 2, "productoid": 3, "categoriaid": 1, "descripcion": "Estas cajas no solo son contenedores, son parte del regalo mismo. Gracias a su acabado brillante y su vibrante color negro o rojo, son perfectas para San Valentín, aniversarios, cumpleaños o cualquier ocasión especial donde quieras impresionar.", "sku_maestro": "AMO-006", "nombreproducto": "Cubo Liso Brillo", "proveedorid_default": 1}	4	APROBADO	2026-01-06 05:43:09.801925	2026-01-06 05:43:09.801925	4
-159	productos	3	UPDATE	{"activo": true, "reglaid": 2, "productoid": 3, "categoriaid": 1, "descripcion": "Estas cajas no solo son contenedores, son parte del regalo mismo. Gracias a su acabado brillante y su vibrante color negro o rojo, son perfectas para San Valentín, aniversarios, cumpleaños o cualquier ocasión especial donde quieras impresionar.", "proveedorid": 1, "sku_maestro": "AMO-006", "nombreproducto": "Cubo Liso Brillo"}	{"activo": true, "reglaid": 2, "productoid": 3, "categoriaid": 1, "descripcion": "Estas cajas no solo son contenedores, son parte del regalo mismo. Gracias a su acabado brillante y su vibrante color negro o rojo, son perfectas para San Valentín, aniversarios, cumpleaños o cualquier ocasión especial donde quieras impresionar.", "sku_maestro": "AMO-006", "nombreproducto": "Cubo Liso Brillo", "proveedorid_default": 1}	4	APROBADO	2026-01-06 05:46:41.779808	2026-01-06 05:46:41.779808	4
-160	productos	3	UPDATE	{"activo": true, "reglaid": 2, "productoid": 3, "categoriaid": 1, "descripcion": "Estas cajas no solo son contenedores, son parte del regalo mismo. Gracias a su acabado brillante y su vibrante color negro o rojo, son perfectas para San Valentín, aniversarios, cumpleaños o cualquier ocasión especial donde quieras impresionar.", "proveedorid": 1, "sku_maestro": "AMO-006", "nombreproducto": "Cubo Liso Brillo"}	{"activo": true, "reglaid": 2, "productoid": 3, "categoriaid": 1, "descripcion": "Estas cajas no solo son contenedores, son parte del regalo mismo. Gracias a su acabado brillante y su vibrante color negro o rojo, son perfectas para San Valentín, aniversarios, cumpleaños o cualquier ocasión especial donde quieras impresionar.", "sku_maestro": "AMO-006", "nombreproducto": "Cubo Liso Brillo", "proveedorid_default": 1}	4	APROBADO	2026-01-06 05:47:46.005621	2026-01-06 05:47:46.005621	4
-161	productos	3	UPDATE	{"activo": true, "reglaid": 2, "productoid": 3, "categoriaid": 1, "descripcion": "Estas cajas no solo son contenedores, son parte del regalo mismo. Gracias a su acabado brillante y su vibrante color negro o rojo, son perfectas para San Valentín, aniversarios, cumpleaños o cualquier ocasión especial donde quieras impresionar.", "proveedorid": 1, "sku_maestro": "AMO-006", "nombreproducto": "Cubo Liso Brillo"}	{"activo": true, "reglaid": 2, "productoid": 3, "categoriaid": 1, "descripcion": "Estas cajas no solo son contenedores, son parte del regalo mismo. Gracias a su acabado brillante y su vibrante color negro o rojo, son perfectas para San Valentín, aniversarios, cumpleaños o cualquier ocasión especial donde quieras impresionar.", "sku_maestro": "AMO-006", "nombreproducto": "Cubo Liso Brillo", "proveedorid_default": 1}	4	APROBADO	2026-01-06 05:48:39.014008	2026-01-06 05:48:39.014008	4
-162	productos	3	UPDATE	{"activo": true, "reglaid": 2, "productoid": 3, "categoriaid": 1, "descripcion": "Estas cajas no solo son contenedores, son parte del regalo mismo. Gracias a su acabado brillante y su vibrante color negro o rojo, son perfectas para San Valentín, aniversarios, cumpleaños o cualquier ocasión especial donde quieras impresionar.", "proveedorid": 1, "sku_maestro": "AMO-006", "nombreproducto": "Cubo Liso Brillo"}	{"activo": true, "reglaid": 1, "productoid": 3, "categoriaid": 1, "descripcion": "Estas cajas no solo son contenedores, son parte del regalo mismo. Gracias a su acabado brillante y su vibrante color negro o rojo, son perfectas para San Valentín, aniversarios, cumpleaños o cualquier ocasión especial donde quieras impresionar.", "sku_maestro": "AMO-006", "nombreproducto": "Cubo Liso Bri", "proveedorid_default": 1}	2	APROBADO	2026-01-06 05:49:50.591563	2026-01-06 05:49:50.591563	2
-163	productos	3	UPDATE	{"activo": true, "reglaid": 1, "productoid": 3, "categoriaid": 1, "descripcion": "Estas cajas no solo son contenedores, son parte del regalo mismo. Gracias a su acabado brillante y su vibrante color negro o rojo, son perfectas para San Valentín, aniversarios, cumpleaños o cualquier ocasión especial donde quieras impresionar.", "proveedorid": 1, "sku_maestro": "AMO-006", "nombreproducto": "Cubo Liso Bri"}	{"activo": true, "reglaid": 1, "productoid": 3, "categoriaid": 1, "descripcion": "Estas cajas no solo son contenedores, son parte del regalo mismo. Gracias a su acabado brillante y su vibrante color negro o rojo, son perfectas para San Valentín, aniversarios, cumpleaños o cualquier ocasión especial donde quieras impresionar.", "sku_maestro": "AMO-006", "nombreproducto": "Cubo Liso Brillo", "proveedorid_default": 1}	2	APROBADO	2026-01-06 05:50:09.747911	2026-01-06 05:50:09.747911	2
-164	productos	3	UPDATE	{"activo": true, "reglaid": 1, "productoid": 3, "categoriaid": 1, "descripcion": "Estas cajas no solo son contenedores, son parte del regalo mismo. Gracias a su acabado brillante y su vibrante color negro o rojo, son perfectas para San Valentín, aniversarios, cumpleaños o cualquier ocasión especial donde quieras impresionar.", "proveedorid": 1, "sku_maestro": "AMO-006", "nombreproducto": "Cubo Liso Brillo"}	{"activo": true, "reglaid": 2, "productoid": 3, "categoriaid": 1, "descripcion": "Estas cajas no solo son contenedores, son parte del regalo mismo. Gracias a su acabado brillante y su vibrante color negro o rojo, son perfectas para San Valentín, aniversarios, cumpleaños o cualquier ocasión especial donde quieras impresionar.", "sku_maestro": "AMO-006", "nombreproducto": "Cubo Liso Brillo", "proveedorid_default": 1}	2	APROBADO	2026-01-06 05:51:16.96787	2026-01-06 05:51:16.96787	2
-165	productos	3	UPDATE	{"activo": true, "reglaid": 2, "productoid": 3, "categoriaid": 1, "descripcion": "Estas cajas no solo son contenedores, son parte del regalo mismo. Gracias a su acabado brillante y su vibrante color negro o rojo, son perfectas para San Valentín, aniversarios, cumpleaños o cualquier ocasión especial donde quieras impresionar.", "proveedorid": 1, "sku_maestro": "AMO-006", "nombreproducto": "Cubo Liso Brillo"}	{"activo": true, "reglaid": 2, "productoid": 3, "categoriaid": 1, "descripcion": "Estas cajas no solo son contenedores, son parte del regalo mismo. Gracias a su acabado brillante y su vibrante color negro o rojo, son perfectas para San Valentín, aniversarios, cumpleaños o cualquier ocasión especial donde quieras impresionar.", "sku_maestro": "AMO-006", "nombreproducto": "Cubo Liso Brillo", "proveedorid_default": 1}	4	APROBADO	2026-01-06 05:53:20.948703	2026-01-06 05:53:20.948703	4
-166	productos	67	UPDATE	{"activo": true, "reglaid": null, "productoid": 67, "categoriaid": 1, "descripcion": "¡Dale un toque de color y estilo a tus entregas! Estas bolsas de color son ideales para quienes buscan resistencia y una presentación impecable. Su diseño vibrante y moderno las hace perfectas para boutiques, papelerías o eventos especiales.", "proveedorid": 1, "sku_maestro": "BOL-002", "nombreproducto": "Bolsa Boutique Colores"}	{"activo": true, "reglaid": null, "productoid": 67, "categoriaid": 1, "descripcion": "¡Dale un toque de color y estilo a tus entregas! Estas bolsas de color son ideales para quienes buscan resistencia y una presentación impecable. Su diseño vibrante y moderno las hace perfectas para boutiques, papelerías o eventos especiales.", "sku_maestro": "BOL-002", "nombreproducto": "Bolsa Boutique Colores", "proveedorid_default": 1}	4	APROBADO	2026-01-06 06:13:31.356954	2026-01-06 06:13:31.356954	4
-167	productos	67	UPDATE	{"activo": true, "reglaid": null, "productoid": 67, "categoriaid": 1, "descripcion": "¡Dale un toque de color y estilo a tus entregas! Estas bolsas de color son ideales para quienes buscan resistencia y una presentación impecable. Su diseño vibrante y moderno las hace perfectas para boutiques, papelerías o eventos especiales.", "proveedorid": 1, "sku_maestro": "BOL-002", "nombreproducto": "Bolsa Boutique Colores"}	{"activo": true, "reglaid": 1, "productoid": 67, "categoriaid": 1, "descripcion": "¡Dale un toque de color y estilo a tus entregas! Estas bolsas de color son ideales para quienes buscan resistencia y una presentación impecable. Su diseño vibrante y moderno las hace perfectas para boutiques, papelerías o eventos especiales.", "sku_maestro": "BOL-002", "nombreproducto": "Bolsa Boutique Colores", "proveedorid_default": 1}	4	APROBADO	2026-01-06 06:17:45.483564	2026-01-06 06:17:45.483564	4
-176	productos	48	UPDATE	{"activo": true, "reglaid": 1, "productoid": 48, "categoriaid": 4, "descripcion": "Caja tipo lunch kraft natural, práctica y con mucho estilo. Ideal para armar desayunos sorpresa y detalles especiales. Resistente, fácil de armar y perfecta para personalizar y sorprender 🎁✨", "proveedorid": 1, "sku_maestro": "CAJ-004", "nombreproducto": "Caja lunch kraft"}	{"activo": true, "reglaid": 1, "productoid": 48, "categoriaid": 4, "descripcion": "Caja tipo lunch kraft natural, práctica y con mucho estilo. Ideal para armar desayunos sorpresa y detalles especiales. Resistente, fácil de armar y perfecta para personalizar y sorprender 🎁✨", "sku_maestro": "CAJ-004", "nombreproducto": "Lunch Natural", "proveedorid_default": 1}	4	APROBADO	2026-01-06 07:21:27.225091	2026-01-06 07:21:27.225091	4
-168	productos	39	UPDATE	{"activo": true, "reglaid": 2, "productoid": 39, "categoriaid": 2, "descripcion": "¡Dale un toque vibrante y lleno de vida a tus detalles! Nuestra línea de Baúles Colors Love está diseñada para quienes no temen expresar sus sentimientos con fuerza y color. Ideales para envolver regalos, guardar recuerdos o decorar espacios con un estilo moderno y dinámico.", "proveedorid": 1, "sku_maestro": "BAU-001", "nombreproducto": "Baúl Colors Love"}	{"activo": true, "reglaid": 1, "productoid": 39, "categoriaid": 2, "descripcion": "¡Dale un toque vibrante y lleno de vida a tus detalles! Nuestra línea de Baúles Colors Love está diseñada para quienes no temen expresar sus sentimientos con fuerza y color. Ideales para envolver regalos, guardar recuerdos o decorar espacios con un estilo moderno y dinámico.", "sku_maestro": "BAU-001", "nombreproducto": "Baúl Colors Love", "proveedorid_default": 1}	4	APROBADO	2026-01-06 06:40:00.539096	2026-01-06 06:40:00.539096	4
-169	productos	43	UPDATE	{"activo": true, "reglaid": 5, "productoid": 43, "categoriaid": 3, "descripcion": "Caja con colores intensos, ideal para cualquier ocasión, hotstampin, acabado mate.", "proveedorid": 1, "sku_maestro": "PAS-001", "nombreproducto": "Pastelera De Luxe"}	{"activo": true, "reglaid": 1, "productoid": 43, "categoriaid": 3, "descripcion": "Caja con colores intensos, ideal para cualquier ocasión, hotstampin, acabado mate.", "sku_maestro": "PAS-001", "nombreproducto": "Pastelera De Luxe", "proveedorid_default": 1}	4	APROBADO	2026-01-06 06:47:28.176135	2026-01-06 06:47:28.176135	4
-170	productos	46	UPDATE	{"activo": true, "reglaid": 1, "productoid": 46, "categoriaid": 4, "descripcion": "Baúl de regalo kraft color natural, con un diseño original y funcional. Perfecta para presentar regalos especiales con un toque natural y moderno. Resistente, fácil de armar y personalizar. Disponible en varios tamaños 🎁✨", "proveedorid": 1, "sku_maestro": "CAJ-003", "nombreproducto": "Caja baul"}	{"activo": true, "reglaid": 1, "productoid": 46, "categoriaid": 4, "descripcion": "Baúl de regalo kraft color natural, con un diseño original y funcional. Perfecta para presentar regalos especiales con un toque natural y moderno. Resistente, fácil de armar y personalizar. Disponible en varios tamaños 🎁✨", "sku_maestro": "CAJ-003", "nombreproducto": "Baúl Natural", "proveedorid_default": 1}	5	APROBADO	2026-01-06 07:01:02.533405	2026-01-06 07:01:02.533405	5
-171	productos	46	UPDATE	{"activo": true, "reglaid": 1, "productoid": 46, "categoriaid": 4, "descripcion": "Baúl de regalo kraft color natural, con un diseño original y funcional. Perfecta para presentar regalos especiales con un toque natural y moderno. Resistente, fácil de armar y personalizar. Disponible en varios tamaños 🎁✨", "proveedorid": 1, "sku_maestro": "CAJ-003", "nombreproducto": "Baúl Natural"}	{"activo": true, "reglaid": 1, "productoid": 46, "categoriaid": 4, "descripcion": "Baúl de regalo kraft color natural, con un diseño original y funcional. Perfecta para presentar regalos especiales con un toque natural y moderno. Resistente, fácil de armar y personalizar. Disponible en varios tamaños 🎁✨", "sku_maestro": "CAJ-003", "nombreproducto": "Baúl Natural", "proveedorid_default": 1}	5	APROBADO	2026-01-06 07:07:01.703903	2026-01-06 07:07:01.703903	5
-172	productos	46	UPDATE	{"activo": true, "reglaid": 1, "productoid": 46, "categoriaid": 4, "descripcion": "Baúl de regalo kraft color natural, con un diseño original y funcional. Perfecta para presentar regalos especiales con un toque natural y moderno. Resistente, fácil de armar y personalizar. Disponible en varios tamaños 🎁✨", "proveedorid": 1, "sku_maestro": "CAJ-003", "nombreproducto": "Baúl Natural"}	{"activo": true, "reglaid": 1, "productoid": 46, "categoriaid": 4, "descripcion": "Baúl de regalo kraft color natural, con un diseño original y funcional. Perfecta para presentar regalos especiales con un toque natural y moderno. Resistente, fácil de armar y personalizar. Disponible en varios tamaños 🎁✨", "sku_maestro": "CAJ-003", "nombreproducto": "Baúl Natural", "proveedorid_default": 1}	4	APROBADO	2026-01-06 07:08:39.064796	2026-01-06 07:08:39.064796	4
-173	productos	46	UPDATE	{"activo": true, "reglaid": 1, "productoid": 46, "categoriaid": 4, "descripcion": "Baúl de regalo kraft color natural, con un diseño original y funcional. Perfecta para presentar regalos especiales con un toque natural y moderno. Resistente, fácil de armar y personalizar. Disponible en varios tamaños 🎁✨", "proveedorid": 1, "sku_maestro": "CAJ-003", "nombreproducto": "Baúl Natural"}	{"activo": true, "reglaid": 1, "productoid": 46, "categoriaid": 4, "descripcion": "Baúl de regalo kraft color natural, con un diseño original y funcional. Perfecta para presentar regalos especiales con un toque natural y moderno. Resistente, fácil de armar y personalizar. Disponible en varios tamaños 🎁✨", "sku_maestro": "CAJ-003", "nombreproducto": "Baúl Natural", "proveedorid_default": 1}	4	APROBADO	2026-01-06 07:09:42.459039	2026-01-06 07:09:42.459039	4
-174	productos	44	UPDATE	{"activo": true, "reglaid": 1, "productoid": 44, "categoriaid": 4, "descripcion": "Cubo kraft natural, simple, bonita y con mucho estilo. Ideal para presentar tus detalles con un look natural y moderno. Resistente, práctica y fácil de personalizar. Disponible en tamaños desde 10 x 10 x 10 cm hasta 65 x 65 x 65 cm ✨🎁", "proveedorid": 1, "sku_maestro": "CAJ-001", "nombreproducto": "Caja cubo"}	{"activo": true, "reglaid": 1, "productoid": 44, "categoriaid": 4, "descripcion": "Cubo kraft natural, simple, bonita y con mucho estilo. Ideal para presentar tus detalles con un look natural y moderno. Resistente, práctica y fácil de personalizar. Disponible en tamaños desde 10 x 10 x 10 cm hasta 65 x 65 x 65 cm ✨🎁", "sku_maestro": "CAJ-001", "nombreproducto": "Cubo Natural", "proveedorid_default": 1}	4	APROBADO	2026-01-06 07:14:36.638619	2026-01-06 07:14:36.638619	4
-175	productos	44	UPDATE	{"activo": true, "reglaid": 1, "productoid": 44, "categoriaid": 4, "descripcion": "Cubo kraft natural, simple, bonita y con mucho estilo. Ideal para presentar tus detalles con un look natural y moderno. Resistente, práctica y fácil de personalizar. Disponible en tamaños desde 10 x 10 x 10 cm hasta 65 x 65 x 65 cm ✨🎁", "proveedorid": 1, "sku_maestro": "CAJ-001", "nombreproducto": "Cubo Natural"}	{"activo": true, "reglaid": 1, "productoid": 44, "categoriaid": 4, "descripcion": "Cubo kraft natural, simple, bonita y con mucho estilo. Ideal para presentar tus detalles con un look natural y moderno. Resistente, práctica y fácil de personalizar. Disponible en tamaños desde 10 x 10 x 10 cm hasta 65 x 65 x 65 cm ✨🎁", "sku_maestro": "CAJ-001", "nombreproducto": "Cubo Natural", "proveedorid_default": 1}	4	APROBADO	2026-01-06 07:15:58.338953	2026-01-06 07:15:58.338953	4
-177	productos	49	UPDATE	{"activo": true, "reglaid": 1, "productoid": 49, "categoriaid": 4, "descripcion": "Caja de regalo tipo torre kraft, original y llamativa. Ideal para armar regalos en capas y crear una presentación impactante. Resistente, fácil de armar y perfecta para personalizar con un estilo natural y moderno 🎁✨", "proveedorid": 1, "sku_maestro": "CAJ-005", "nombreproducto": "Caja torre natural"}	{"activo": true, "reglaid": 1, "productoid": 49, "categoriaid": 4, "descripcion": "Caja de regalo tipo torre kraft, original y llamativa. Ideal para armar regalos en capas y crear una presentación impactante. Resistente, fácil de armar y perfecta para personalizar con un estilo natural y moderno 🎁✨", "sku_maestro": "CAJ-005", "nombreproducto": "Torre Natural", "proveedorid_default": 1}	4	APROBADO	2026-01-06 07:23:42.474727	2026-01-06 07:23:42.474727	4
-178	productos	49	UPDATE	{"activo": true, "reglaid": 1, "productoid": 49, "categoriaid": 4, "descripcion": "Caja de regalo tipo torre kraft, original y llamativa. Ideal para armar regalos en capas y crear una presentación impactante. Resistente, fácil de armar y perfecta para personalizar con un estilo natural y moderno 🎁✨", "proveedorid": 1, "sku_maestro": "CAJ-005", "nombreproducto": "Torre Natural"}	{"activo": true, "reglaid": 1, "productoid": 49, "categoriaid": 4, "descripcion": "Caja de regalo tipo torre kraft, original y llamativa. Ideal para armar regalos en capas y crear una presentación impactante. Resistente, fácil de armar y perfecta para personalizar con un estilo natural y moderno 🎁✨", "sku_maestro": "CAJ-005", "nombreproducto": "Torre Natural", "proveedorid_default": 1}	4	APROBADO	2026-01-06 07:24:15.210238	2026-01-06 07:24:15.210238	4
-179	productos	51	UPDATE	{"activo": true, "reglaid": 1, "productoid": 51, "categoriaid": 4, "descripcion": "Six pack kraft natural, perfecta para cervezas o bebidas. Resistente, con estilo y ese look natural que siempre queda bien. Ideal para armar regalos cool y sorprender 🍺✨", "proveedorid": 1, "sku_maestro": "SIX-001", "nombreproducto": "Six pack natural"}	{"activo": true, "reglaid": 1, "productoid": 51, "categoriaid": 4, "descripcion": "Six pack kraft natural, perfecta para cervezas o bebidas. Resistente, con estilo y ese look natural que siempre queda bien. Ideal para armar regalos cool y sorprender 🍺✨", "sku_maestro": "SIX-001", "nombreproducto": "Sixpack Natural", "proveedorid_default": 1}	4	APROBADO	2026-01-06 07:29:32.945352	2026-01-06 07:29:32.945352	4
-180	productos	51	UPDATE	{"activo": true, "reglaid": 1, "productoid": 51, "categoriaid": 4, "descripcion": "Six pack kraft natural, perfecta para cervezas o bebidas. Resistente, con estilo y ese look natural que siempre queda bien. Ideal para armar regalos cool y sorprender 🍺✨", "proveedorid": 1, "sku_maestro": "SIX-001", "nombreproducto": "Sixpack Natural"}	{"activo": true, "reglaid": 1, "productoid": 51, "categoriaid": 4, "descripcion": "Six pack kraft natural, perfecta para cervezas o bebidas. Resistente, con estilo y ese look natural que siempre queda bien. Ideal para armar regalos cool y sorprender 🍺✨", "sku_maestro": "SIX-001", "nombreproducto": "Six Pack Natural", "proveedorid_default": 1}	4	APROBADO	2026-01-06 07:29:55.847825	2026-01-06 07:29:55.847825	4
-181	productos	13	UPDATE	{"activo": true, "reglaid": 1, "productoid": 13, "categoriaid": 4, "descripcion": "Caja camisera de regalo kraft color natural, elegante y funcional. Ideal para presentar prendas y regalos con un estilo limpio y moderno. Resistente, práctica y fácil de personalizar. Disponible en diferentes tamaños para adaptarse a cada detalle 🎁✨", "proveedorid": 1, "sku_maestro": "NAT-002", "nombreproducto": "Camisera Natural"}	{"activo": true, "reglaid": 1, "productoid": 13, "categoriaid": 4, "descripcion": "Camisera de regalo natural, elegante y funcional. Ideal para presentar prendas y regalos con un estilo limpio y moderno. Resistente, práctica y fácil de personalizar. Disponible en diferentes tamaños para adaptarse a cada detalle 🎁✨", "sku_maestro": "NAT-002", "nombreproducto": "Camisera Natural", "proveedorid_default": 1}	7	APROBADO	2026-01-06 18:20:13.192577	2026-01-06 18:20:13.192577	7
-182	productos	48	UPDATE	{"activo": true, "reglaid": 1, "productoid": 48, "categoriaid": 4, "descripcion": "Caja tipo lunch kraft natural, práctica y con mucho estilo. Ideal para armar desayunos sorpresa y detalles especiales. Resistente, fácil de armar y perfecta para personalizar y sorprender 🎁✨", "proveedorid": 1, "sku_maestro": "CAJ-004", "nombreproducto": "Lunch Natural"}	{"activo": true, "reglaid": 1, "productoid": 48, "categoriaid": 4, "descripcion": "Caja tipo lunch kraft natural, práctica y con mucho estilo. Ideal para armar desayunos sorpresa y detalles especiales. Resistente, fácil de armar y perfecta para personalizar y sorprender 🎁✨", "sku_maestro": "CAJ-004", "nombreproducto": "Lunch Natural", "proveedorid_default": 1}	7	APROBADO	2026-01-06 18:25:45.403717	2026-01-06 18:25:45.403717	7
-183	productos	46	UPDATE	{"activo": true, "reglaid": 1, "productoid": 46, "categoriaid": 4, "descripcion": "Baúl de regalo kraft color natural, con un diseño original y funcional. Perfecta para presentar regalos especiales con un toque natural y moderno. Resistente, fácil de armar y personalizar. Disponible en varios tamaños 🎁✨", "proveedorid": 1, "sku_maestro": "CAJ-003", "nombreproducto": "Baúl Natural"}	{"activo": true, "reglaid": 1, "productoid": 46, "categoriaid": 4, "descripcion": "Caja baúl de regalo kraft color natural, con un diseño original y funcional. Perfecta para presentar regalos especiales con un toque natural y moderno. Resistente, fácil de armar y personalizar. Disponible en varios tamaños 🎁✨", "sku_maestro": "CAJ-003", "nombreproducto": "Baúl Natural", "proveedorid_default": 1}	7	APROBADO	2026-01-06 18:27:37.855563	2026-01-06 18:27:37.855563	7
-184	productos	13	UPDATE	{"activo": true, "reglaid": 1, "productoid": 13, "categoriaid": 4, "descripcion": "Camisera de regalo natural, elegante y funcional. Ideal para presentar prendas y regalos con un estilo limpio y moderno. Resistente, práctica y fácil de personalizar. Disponible en diferentes tamaños para adaptarse a cada detalle 🎁✨", "proveedorid": 1, "sku_maestro": "NAT-002", "nombreproducto": "Camisera Natural"}	{"activo": true, "reglaid": 1, "productoid": 13, "categoriaid": 4, "descripcion": "Caja camisera de regalo natural, elegante y funcional. Ideal para presentar prendas y regalos con un estilo limpio y moderno. Resistente, práctica y fácil de personalizar. Disponible en diferentes tamaños para adaptarse a cada detalle 🎁✨", "sku_maestro": "NAT-002", "nombreproducto": "Camisera Natural", "proveedorid_default": 1}	7	APROBADO	2026-01-06 18:28:58.864888	2026-01-06 18:28:58.864888	7
-185	productos	11	UPDATE	{"activo": true, "reglaid": 2, "productoid": 11, "categoriaid": 1, "descripcion": null, "proveedorid": 1, "sku_maestro": "LIS-001", "nombreproducto": "Cubo Liso"}	{"activo": true, "reglaid": 1, "productoid": 11, "categoriaid": 1, "descripcion": null, "sku_maestro": "LIS-001", "nombreproducto": "Cubo Liso", "proveedorid_default": 1}	5	APROBADO	2026-01-07 00:52:36.983021	2026-01-07 00:52:36.983021	5
-187	productos	50	UPDATE	{"activo": true, "reglaid": 1, "productoid": 50, "categoriaid": 3, "descripcion": "Caja para celebrar a esa persona especial, color, diseño y tamaño perfecto para un regalo espectacular, con acabado barniz brillante", "proveedorid": 1, "sku_maestro": "BAU-003", "nombreproducto": "Baúl Colors"}	{"activo": true, "reglaid": 1, "productoid": 50, "categoriaid": 3, "descripcion": "Caja para celebrar a esa persona especial, color, diseño y tamaño perfecto para un regalo espectacular, con acabado barniz brillante", "sku_maestro": "BAU-003", "nombreproducto": "Baúl Colors Cumple", "proveedorid_default": 1}	2	APROBADO	2026-01-08 01:11:06.583567	2026-01-08 01:11:06.583567	2
-188	producto_variantes	168	UPDATE	{"sku": "PAL-001-30X50-GRANDE", "campo": "Dimensiones", "productoId": 56, "varianteId": 168, "medidaNombre": null, "valorAnterior": "30x50"}	{"sku": "PAL-001-30X50-GRANDE", "campo": "Dimensiones", "productoId": 56, "valorNuevo": "Grande", "varianteId": 168, "descripcion": "Producto [56] - Variante [SKU: PAL-001-30X50-GRANDE]: Cambio en Dimensiones de '30x50' a 'Grande'"}	5	APROBADO	2026-01-08 02:02:38.444425	2026-01-08 02:02:38.444425	5
-189	producto_variantes	168	UPDATE	{"sku": "PAL-001-30X50-GRANDE", "campo": "Color", "productoId": 56, "varianteId": 168, "medidaNombre": null, "valorAnterior": "Grande"}	{"sku": "PAL-001-30X50-GRANDE", "campo": "Color", "productoId": 56, "valorNuevo": "Sin color", "varianteId": 168, "descripcion": "Producto [56] - Variante [SKU: PAL-001-30X50-GRANDE]: Cambio en Color de 'Grande' a 'Sin color'"}	5	APROBADO	2026-01-08 02:02:38.444425	2026-01-08 02:02:38.444425	5
-190	producto_variantes	169	UPDATE	{"sku": "MIL-002-23X17X32-GRANDE", "campo": "Dimensiones", "productoId": 57, "varianteId": 169, "medidaNombre": null, "valorAnterior": "23x17x32"}	{"sku": "MIL-002-23X17X32-GRANDE", "campo": "Dimensiones", "productoId": 57, "valorNuevo": "Grande", "varianteId": 169, "descripcion": "Producto [57] - Variante [SKU: MIL-002-23X17X32-GRANDE]: Cambio en Dimensiones de '23x17x32' a 'Grande'"}	5	APROBADO	2026-01-08 03:21:18.50097	2026-01-08 03:21:18.50097	5
-191	producto_variantes	169	UPDATE	{"sku": "MIL-002-23X17X32-GRANDE", "campo": "Color", "productoId": 57, "varianteId": 169, "medidaNombre": null, "valorAnterior": "Grande"}	{"sku": "MIL-002-23X17X32-GRANDE", "campo": "Color", "productoId": 57, "valorNuevo": "Sin color", "varianteId": 169, "descripcion": "Producto [57] - Variante [SKU: MIL-002-23X17X32-GRANDE]: Cambio en Color de 'Grande' a 'Sin color'"}	5	APROBADO	2026-01-08 03:21:18.50097	2026-01-08 03:21:18.50097	5
-192	productos	7	UPDATE	{"activo": true, "reglaid": 1, "productoid": 7, "categoriaid": 2, "descripcion": "Sorprende a esa persona especial con nuestros elegantes cubos decorativos de la colección RedBlack Love. Diseñados con una combinación clásica de rojo, negro y blanco, estos cubos son el empaque perfecto para regalos inolvidables o como un detalle decorativo lleno de sentimiento.", "proveedorid": 1, "sku_maestro": "AMO-014", "nombreproducto": "Cubo RedBlack Love"}	{"activo": true, "reglaid": 1, "productoid": 7, "categoriaid": 2, "descripcion": "Sorprende a esa persona especial con nuestros elegantes cubos decorativos de la colección RedBlack Love. Diseñados con una combinación clásica de rojo, negro y blanco, estos cubos son el empaque perfecto para regalos inolvidables o como un detalle decorativo lleno de sentimiento.", "sku_maestro": "AMO-014", "nombreproducto": "Cubo RedBlack Love", "proveedorid_default": 1}	4	APROBADO	2026-01-08 04:29:57.292141	2026-01-08 04:29:57.292141	4
-193	productos	5	UPDATE	{"activo": true, "reglaid": 1, "productoid": 5, "categoriaid": 2, "descripcion": "¡Haz que cada regalo sea inolvidable desde el primer vistazo! Nuestra línea de cajas Love Craft está diseñada para quienes buscan salir de lo convencional y entregar un detalle lleno de color, arte y emoción.", "proveedorid": 1, "sku_maestro": "AMO-010", "nombreproducto": "Cubo Love Craft"}	{"activo": true, "reglaid": 1, "productoid": 5, "categoriaid": 2, "descripcion": "¡Haz que cada regalo sea inolvidable desde el primer vistazo! Nuestra línea de cajas Love Craft está diseñada para quienes buscan salir de lo convencional y entregar un detalle lleno de color, arte y emoción.", "sku_maestro": "AMO-010", "nombreproducto": "Cubo Love Craft", "proveedorid_default": 1}	4	APROBADO	2026-01-08 04:30:30.7431	2026-01-08 04:30:30.7431	4
-194	productos	50	UPDATE	{"activo": true, "reglaid": 1, "productoid": 50, "categoriaid": 3, "descripcion": "Caja para celebrar a esa persona especial, color, diseño y tamaño perfecto para un regalo espectacular, con acabado barniz brillante", "proveedorid": 1, "sku_maestro": "BAU-003", "nombreproducto": "Baúl Colors Cumple"}	{"activo": true, "reglaid": 1, "productoid": 50, "categoriaid": 3, "descripcion": "Caja para celebrar a esa persona especial, color, diseño y tamaño perfecto para un regalo espectacular, con acabado barniz brillante", "sku_maestro": "BAU-003", "nombreproducto": "Baúl Colors Cumple", "proveedorid_default": 1}	5	APROBADO	2026-01-08 06:59:55.033811	2026-01-08 06:59:55.033811	5
-195	productos	47	UPDATE	{"activo": true, "reglaid": 1, "productoid": 47, "categoriaid": 3, "descripcion": "Caja para celebrar a esa persona especial, color, diseño y tamaño perfecto para un regalo espectacular, con acabado barniz brillante", "proveedorid": 1, "sku_maestro": "BAU-002", "nombreproducto": "Baúl Cumple"}	{"activo": true, "reglaid": 1, "productoid": 47, "categoriaid": 3, "descripcion": "Caja para celebrar a esa persona especial, color, diseño y tamaño perfecto para un regalo espectacular, con acabado barniz brillante", "sku_maestro": "BAU-002", "nombreproducto": "Baúl Cumple", "proveedorid_default": 1}	5	APROBADO	2026-01-08 07:06:23.966923	2026-01-08 07:06:23.966923	5
-196	productos	55	UPDATE	{"activo": true, "reglaid": 1, "productoid": 55, "categoriaid": 3, "descripcion": "Caja para celebrar a esa persona especial, color, diseño y tamaño perfecto para una botella de vino, con acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "BOT-001", "nombreproducto": "Botella Cumple"}	{"activo": true, "reglaid": 1, "productoid": 55, "categoriaid": 3, "descripcion": "Caja para celebrar a esa persona especial, color, diseño y tamaño perfecto para una botella de vino, con acabado barniz brillante.", "sku_maestro": "BOT-001", "nombreproducto": "Botella Cumple", "proveedorid_default": 1}	5	APROBADO	2026-01-08 07:08:30.927937	2026-01-08 07:08:30.927937	5
-197	productos	42	UPDATE	{"activo": true, "reglaid": 1, "productoid": 42, "categoriaid": 3, "descripcion": "Caja con colores fascinantes, que harán de tu regalo una experiencia única, diseños coloridos para esa celebración especial, en acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "CAM-001", "nombreproducto": "Camisera Cumple"}	{"activo": true, "reglaid": 1, "productoid": 42, "categoriaid": 3, "descripcion": "Caja con colores fascinantes, que harán de tu regalo una experiencia única, diseños coloridos para esa celebración especial, en acabado barniz brillante.", "sku_maestro": "CAM-001", "nombreproducto": "Camisera Cumple", "proveedorid_default": 1}	5	APROBADO	2026-01-08 07:09:10.716959	2026-01-08 07:09:10.716959	5
-198	productos	55	UPDATE	{"activo": true, "reglaid": 1, "productoid": 55, "categoriaid": 3, "descripcion": "Caja para celebrar a esa persona especial, color, diseño y tamaño perfecto para una botella de vino, con acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "BOT-001", "nombreproducto": "Botella Cumple"}	{"activo": true, "reglaid": 1, "productoid": 55, "categoriaid": 3, "descripcion": "Caja para celebrar a esa persona especial, color, diseño y tamaño perfecto para una botella de vino, con acabado barniz brillante.", "sku_maestro": "BOT-001", "nombreproducto": "Botella Cumple", "proveedorid_default": 1}	5	APROBADO	2026-01-08 07:10:01.260282	2026-01-08 07:10:01.260282	5
-199	productos	42	UPDATE	{"activo": true, "reglaid": 1, "productoid": 42, "categoriaid": 3, "descripcion": "Caja con colores fascinantes, que harán de tu regalo una experiencia única, diseños coloridos para esa celebración especial, en acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "CAM-001", "nombreproducto": "Camisera Cumple"}	{"activo": true, "reglaid": 1, "productoid": 42, "categoriaid": 3, "descripcion": "Caja con colores fascinantes, que harán de tu regalo una experiencia única, diseños coloridos para esa celebración especial, en acabado barniz brillante.", "sku_maestro": "CAM-001", "nombreproducto": "Camisera Cumple", "proveedorid_default": 1}	5	APROBADO	2026-01-08 07:10:39.404341	2026-01-08 07:10:39.404341	5
-200	productos	59	UPDATE	{"activo": true, "reglaid": 1, "productoid": 59, "categoriaid": 3, "descripcion": "Caja con un diseño original y funcional. Perfecta para entregar regalos especiales con un toque moderno y divertido. Resistente, fácil de armar, con asas, acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "CER-001", "nombreproducto": "Cerillo Party"}	{"activo": true, "reglaid": 1, "productoid": 59, "categoriaid": 3, "descripcion": "Caja con un diseño original y funcional. Perfecta para entregar regalos especiales con un toque moderno y divertido. Resistente, fácil de armar, con asas, acabado barniz brillante.", "sku_maestro": "CER-001", "nombreproducto": "Cerillo Party", "proveedorid_default": 1}	5	APROBADO	2026-01-08 07:11:24.765865	2026-01-08 07:11:24.765865	5
-201	productos	36	UPDATE	{"activo": true, "reglaid": 1, "productoid": 36, "categoriaid": 3, "descripcion": "Hermosas cajas, en tonos pastel, para celebrar la llegada de un ser pequeñito  y muy especial, acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "TOD-016", "nombreproducto": "Cubo Baby"}	{"activo": true, "reglaid": 1, "productoid": 36, "categoriaid": 3, "descripcion": "Hermosas cajas, en tonos pastel, para celebrar la llegada de un ser pequeñito  y muy especial, acabado barniz brillante.", "sku_maestro": "TOD-016", "nombreproducto": "Cubo Baby", "proveedorid_default": 1}	5	APROBADO	2026-01-08 07:12:07.624045	2026-01-08 07:12:07.624045	5
-202	productos	26	UPDATE	{"activo": true, "reglaid": 1, "productoid": 26, "categoriaid": 3, "descripcion": "Cubo craft, bolas y rayas de colores, ideal para cualquier ocasión, colores sobrios en acabado mate.", "proveedorid": 1, "sku_maestro": "TOD-007", "nombreproducto": "Cubo Bolas y Rayas"}	{"activo": true, "reglaid": 1, "productoid": 26, "categoriaid": 3, "descripcion": "Cubo craft, bolas y rayas de colores, ideal para cualquier ocasión, colores sobrios en acabado mate.", "sku_maestro": "TOD-007", "nombreproducto": "Cubo Bolas y Rayas", "proveedorid_default": 1}	5	APROBADO	2026-01-08 07:12:35.044299	2026-01-08 07:12:35.044299	5
-203	productos	23	UPDATE	{"activo": true, "reglaid": 1, "productoid": 23, "categoriaid": 3, "descripcion": "Caja con diseños divertidos, ideal para esa persona tan especial, colores vibrantes acabado barniz brillante", "proveedorid": 1, "sku_maestro": "TOD-004", "nombreproducto": "Cubo Botana"}	{"activo": true, "reglaid": 1, "productoid": 23, "categoriaid": 3, "descripcion": "Caja con diseños divertidos, ideal para esa persona tan especial, colores vibrantes acabado barniz brillante", "sku_maestro": "TOD-004", "nombreproducto": "Cubo Botana", "proveedorid_default": 1}	5	APROBADO	2026-01-08 07:13:25.626135	2026-01-08 07:13:25.626135	5
-204	productos	21	UPDATE	{"activo": true, "reglaid": 1, "productoid": 21, "categoriaid": 3, "descripcion": "Caja con diseño, ideal para celebraciones especiales, colores vibrantes con acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "TOD-003", "nombreproducto": "Cubo Cómics"}	{"activo": true, "reglaid": 1, "productoid": 21, "categoriaid": 3, "descripcion": "Caja con diseño, ideal para celebraciones especiales, colores vibrantes con acabado barniz brillante.", "sku_maestro": "TOD-003", "nombreproducto": "Cubo Cómics", "proveedorid_default": 1}	5	APROBADO	2026-01-08 07:13:55.043641	2026-01-08 07:13:55.043641	5
-205	productos	25	UPDATE	{"activo": true, "reglaid": 1, "productoid": 25, "categoriaid": 3, "descripcion": "Caja de colores, empaques perfectos para tus detalles, diseñadas para convertir un regalo en una experiencia inolvidable, colores espectaculares con acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "TOD-006", "nombreproducto": "Cubo Cumple Colors"}	{"activo": true, "reglaid": 1, "productoid": 25, "categoriaid": 3, "descripcion": "Caja de colores, empaques perfectos para tus detalles, diseñadas para convertir un regalo en una experiencia inolvidable, colores espectaculares con acabado barniz brillante.", "sku_maestro": "TOD-006", "nombreproducto": "Cubo Cumple Colors", "proveedorid_default": 1}	5	APROBADO	2026-01-08 07:15:00.486969	2026-01-08 07:15:00.486969	5
-206	productos	17	UPDATE	{"activo": true, "reglaid": 1, "productoid": 17, "categoriaid": 3, "descripcion": "Caja craft de colores, ideal para celebrar el cumpleaños de esa persona especial, colores vibrantes con acabado mate.", "proveedorid": 1, "sku_maestro": "TOD-001", "nombreproducto": "Cubo Cumple Craft"}	{"activo": true, "reglaid": 1, "productoid": 17, "categoriaid": 3, "descripcion": "Caja craft de colores, ideal para celebrar el cumpleaños de esa persona especial, colores vibrantes con acabado mate.", "sku_maestro": "TOD-001", "nombreproducto": "Cubo Cumple Craft", "proveedorid_default": 1}	5	APROBADO	2026-01-08 07:15:28.852651	2026-01-08 07:15:28.852651	5
-207	productos	18	UPDATE	{"activo": true, "reglaid": 1, "productoid": 18, "categoriaid": 3, "descripcion": "Caja con diseño, ideal para celebrar el cumpleaños de esa persona especial, colores vibrantes acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "TOD-002", "nombreproducto": "Cubo Cumple Graffiti"}	{"activo": true, "reglaid": 1, "productoid": 18, "categoriaid": 3, "descripcion": "Caja con diseño, ideal para celebrar el cumpleaños de esa persona especial, colores vibrantes acabado barniz brillante.", "sku_maestro": "TOD-002", "nombreproducto": "Cubo Cumple Graffiti", "proveedorid_default": 1}	5	APROBADO	2026-01-08 07:16:16.414227	2026-01-08 07:16:16.414227	5
-208	productos	30	UPDATE	{"activo": true, "reglaid": 1, "productoid": 30, "categoriaid": 3, "descripcion": "Caja, que por su medida es perfecta para un regalo increíble, diseños de cumpleaños para esa persona especial, acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "TOD-011", "nombreproducto": "Cubo Cumple White"}	{"activo": true, "reglaid": 1, "productoid": 30, "categoriaid": 3, "descripcion": "Caja, que por su medida es perfecta para un regalo increíble, diseños de cumpleaños para esa persona especial, acabado barniz brillante.", "sku_maestro": "TOD-011", "nombreproducto": "Cubo Cumple White", "proveedorid_default": 1}	5	APROBADO	2026-01-08 07:16:39.159425	2026-01-08 07:16:39.159425	5
-209	productos	24	UPDATE	{"activo": true, "reglaid": 1, "productoid": 24, "categoriaid": 3, "descripcion": "Caja con diseños espectaculares, felicitaciones increíbles y todo en un solo empaque, colores vibrantes acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "TOD-005", "nombreproducto": "Cubo Felicidades"}	{"activo": true, "reglaid": 1, "productoid": 24, "categoriaid": 3, "descripcion": "Caja con diseños espectaculares, felicitaciones increíbles y todo en un solo empaque, colores vibrantes acabado barniz brillante.", "sku_maestro": "TOD-005", "nombreproducto": "Cubo Felicidades", "proveedorid_default": 1}	5	APROBADO	2026-01-08 07:17:00.988659	2026-01-08 07:17:00.988659	5
-210	productos	28	UPDATE	{"activo": true, "reglaid": 1, "productoid": 28, "categoriaid": 3, "descripcion": "Cajas con diseño divertido, ideales para cumpleaños ó cualquier celebración especial, colores explosivos con acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "TOD-009", "nombreproducto": "Cubo Feliz"}	{"activo": true, "reglaid": 1, "productoid": 28, "categoriaid": 3, "descripcion": "Cajas con diseño divertido, ideales para cumpleaños ó cualquier celebración especial, colores explosivos con acabado barniz brillante.", "sku_maestro": "TOD-009", "nombreproducto": "Cubo Feliz", "proveedorid_default": 1}	5	APROBADO	2026-01-08 07:17:25.924287	2026-01-08 07:17:25.924287	5
-211	productos	35	UPDATE	{"activo": true, "reglaid": 1, "productoid": 35, "categoriaid": 3, "descripcion": "Cajas para toda ocasión, con colores básicos, pero divertidos, acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "TOD-015", "nombreproducto": "Cubo Incógnita"}	{"activo": true, "reglaid": 1, "productoid": 35, "categoriaid": 3, "descripcion": "Cajas para toda ocasión, con colores básicos, pero divertidos, acabado barniz brillante.", "sku_maestro": "TOD-015", "nombreproducto": "Cubo Incógnita", "proveedorid_default": 1}	5	APROBADO	2026-01-08 07:18:01.663543	2026-01-08 07:18:01.663543	5
-212	productos	31	UPDATE	{"activo": true, "reglaid": 1, "productoid": 31, "categoriaid": 3, "descripcion": "Cajas de colores divertidos para toda ocasión, en acabado mate.", "proveedorid": 1, "sku_maestro": "TOD-012", "nombreproducto": "Cubo Luxe"}	{"activo": true, "reglaid": 1, "productoid": 31, "categoriaid": 3, "descripcion": "Cajas de colores divertidos para toda ocasión, en acabado mate.", "sku_maestro": "TOD-012", "nombreproducto": "Cubo Luxe", "proveedorid_default": 1}	5	APROBADO	2026-01-08 07:19:10.609653	2026-01-08 07:19:10.609653	5
-213	productos	33	UPDATE	{"activo": true, "reglaid": 1, "productoid": 33, "categoriaid": 3, "descripcion": "Cajas con diseños y frases divertidas, con marcas de cerveza, ideales para caballero, acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "TOD-014", "nombreproducto": "Cubo Marcas"}	{"activo": true, "reglaid": 1, "productoid": 33, "categoriaid": 3, "descripcion": "Cajas con diseños y frases divertidas, con marcas de cerveza, ideales para caballero, acabado barniz brillante.", "sku_maestro": "TOD-014", "nombreproducto": "Cubo Marcas", "proveedorid_default": 1}	5	APROBADO	2026-01-08 07:19:33.462089	2026-01-08 07:19:33.462089	5
-214	productos	29	UPDATE	{"activo": true, "reglaid": 1, "productoid": 29, "categoriaid": 3, "descripcion": "Caja con diseños de marcas aesthetic, divertidas para cualquier ocasión, con acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "TOD-010", "nombreproducto": "Cubo Nice"}	{"activo": true, "reglaid": 1, "productoid": 29, "categoriaid": 3, "descripcion": "Caja con diseños de marcas aesthetic, divertidas para cualquier ocasión, con acabado barniz brillante.", "sku_maestro": "TOD-010", "nombreproducto": "Cubo Nice", "proveedorid_default": 1}	5	APROBADO	2026-01-08 07:19:55.717895	2026-01-08 07:19:55.717895	5
-215	productos	27	UPDATE	{"activo": true, "reglaid": 1, "productoid": 27, "categoriaid": 3, "descripcion": "Cubo con diseños bonitos y tiernos, para toda ocasión, colores con un toque de dulzura, acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "TOD-008", "nombreproducto": "Cubo Paris-London"}	{"activo": true, "reglaid": 1, "productoid": 27, "categoriaid": 3, "descripcion": "Cubo con diseños bonitos y tiernos, para toda ocasión, colores con un toque de dulzura, acabado barniz brillante.", "sku_maestro": "TOD-008", "nombreproducto": "Cubo Paris-London", "proveedorid_default": 1}	5	APROBADO	2026-01-08 07:20:20.923651	2026-01-08 07:20:20.923651	5
-216	productos	41	UPDATE	{"activo": true, "reglaid": 1, "productoid": 41, "categoriaid": 3, "descripcion": "Cajas para caballero toda ocasión, diseños sobrios para festejar a esa persona especial, acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "CUB-001", "nombreproducto": "Cubo Pesca y Cacería"}	{"activo": true, "reglaid": 1, "productoid": 41, "categoriaid": 3, "descripcion": "Cajas para caballero toda ocasión, diseños sobrios para festejar a esa persona especial, acabado barniz brillante.", "sku_maestro": "CUB-001", "nombreproducto": "Cubo Pesca y Cacería", "proveedorid_default": 1}	5	APROBADO	2026-01-08 07:20:52.018866	2026-01-08 07:20:52.018866	5
-217	productos	32	UPDATE	{"activo": true, "reglaid": 1, "productoid": 32, "categoriaid": 3, "descripcion": "Cajas con diseños y frases divertidas, con las marcas de tus tenis favoritos, colores con acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "TOD-013", "nombreproducto": "Cubo Sports"}	{"activo": true, "reglaid": 1, "productoid": 32, "categoriaid": 3, "descripcion": "Cajas con diseños y frases divertidas, con las marcas de tus tenis favoritos, colores con acabado barniz brillante.", "sku_maestro": "TOD-013", "nombreproducto": "Cubo Sports", "proveedorid_default": 1}	5	APROBADO	2026-01-08 07:21:21.058693	2026-01-08 07:21:21.058693	5
-230	producto_variantes	174	UPDATE	{"sku": "BOL-001-35X39X25-GIGANT", "campo": "Color", "productoId": 60, "varianteId": 174, "medidaNombre": null, "valorAnterior": "Gigante"}	{"sku": "BOL-001-35X39X25-GIGANT", "campo": "Color", "productoId": 60, "valorNuevo": "Sin color", "varianteId": 174, "descripcion": "Producto [60] - Variante [SKU: BOL-001-35X39X25-GIGANT]: Cambio en Color de 'Gigante' a 'Sin color'"}	5	APROBADO	2026-01-08 08:21:08.840329	2026-01-08 08:21:08.840329	5
-218	productos	53	UPDATE	{"activo": true, "reglaid": 1, "productoid": 53, "categoriaid": 3, "descripcion": "Caja para celebrar a esa persona especial, ideal para un desayuno sorpresa ó si lo prefieres retiras el interior y colocas tu regalo, color, diseño y tamaño perfecto, con acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "LUN-001", "nombreproducto": "Lunch Party"}	{"activo": true, "reglaid": 1, "productoid": 53, "categoriaid": 3, "descripcion": "Caja para celebrar a esa persona especial, ideal para un desayuno sorpresa ó si lo prefieres retiras el interior y colocas tu regalo, color, diseño y tamaño perfecto, con acabado barniz brillante.", "sku_maestro": "LUN-001", "nombreproducto": "Lunch Party", "proveedorid_default": 1}	5	APROBADO	2026-01-08 07:21:58.778038	2026-01-08 07:21:58.778038	5
-219	productos	57	UPDATE	{"activo": true, "reglaid": 1, "productoid": 57, "categoriaid": 3, "descripcion": "Caja con diseño divertido, ideal para celebrar el cumpleaños de esa persona especial, colores vibrantes acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "MIL-002", "nombreproducto": "Milk Cumple Colors"}	{"activo": true, "reglaid": 1, "productoid": 57, "categoriaid": 3, "descripcion": "Caja con diseño divertido, ideal para celebrar el cumpleaños de esa persona especial, colores vibrantes acabado barniz brillante.", "sku_maestro": "MIL-002", "nombreproducto": "Milk Cumple Colors", "proveedorid_default": 1}	5	APROBADO	2026-01-08 07:22:29.607972	2026-01-08 07:22:29.607972	5
-220	productos	56	UPDATE	{"activo": true, "reglaid": 1, "productoid": 56, "categoriaid": 3, "descripcion": "Caja para celebrar a esa persona especial, diseño divertido y tamaño perfecto para un regalo espectacular, con acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "PAL-001", "nombreproducto": "Palomita"}	{"activo": true, "reglaid": 1, "productoid": 56, "categoriaid": 3, "descripcion": "Caja para celebrar a esa persona especial, diseño divertido y tamaño perfecto para un regalo espectacular, con acabado barniz brillante.", "sku_maestro": "PAL-001", "nombreproducto": "Palomita", "proveedorid_default": 1}	5	APROBADO	2026-01-08 07:23:36.323145	2026-01-08 07:23:36.323145	5
-221	productos	58	UPDATE	{"activo": true, "reglaid": 1, "productoid": 58, "categoriaid": 3, "descripcion": "Caja con diseños divertidos, perfecta para cervezas ó bebidas, resistente, con estilo y ese look que siempre queda bien. Ideal para armar regalos cool y sorprender, acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "SIX-002", "nombreproducto": "Six Pack Men"}	{"activo": true, "reglaid": 1, "productoid": 58, "categoriaid": 3, "descripcion": "Caja con diseños divertidos, perfecta para cervezas ó bebidas, resistente, con estilo y ese look que siempre queda bien. Ideal para armar regalos cool y sorprender, acabado barniz brillante.", "sku_maestro": "SIX-002", "nombreproducto": "Six Pack Men", "proveedorid_default": 1}	5	APROBADO	2026-01-08 07:33:34.946504	2026-01-08 07:33:34.946504	5
-222	productos	54	UPDATE	{"activo": true, "reglaid": 1, "productoid": 54, "categoriaid": 3, "descripcion": "Caja para celebrar a esa persona especial, color, diseño y tamaño perfecto para un regalo espectacular, con acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "TOR-003", "nombreproducto": "Torre Cumple Colors"}	{"activo": true, "reglaid": 1, "productoid": 54, "categoriaid": 3, "descripcion": "Caja para celebrar a esa persona especial, color, diseño y tamaño perfecto para un regalo espectacular, con acabado barniz brillante.", "sku_maestro": "TOR-003", "nombreproducto": "Torre Cumple Colors", "proveedorid_default": 1}	5	APROBADO	2026-01-08 07:36:27.250865	2026-01-08 07:36:27.250865	5
-223	producto_variantes	171	UPDATE	{"sku": "BOL-001-23X18X10-MEDIAN", "campo": "Dimensiones", "productoId": 60, "varianteId": 171, "medidaNombre": null, "valorAnterior": "23x18x10"}	{"sku": "BOL-001-23X18X10-MEDIAN", "campo": "Dimensiones", "productoId": 60, "valorNuevo": "Mediana", "varianteId": 171, "descripcion": "Producto [60] - Variante [SKU: BOL-001-23X18X10-MEDIAN]: Cambio en Dimensiones de '23x18x10' a 'Mediana'"}	5	APROBADO	2026-01-08 08:18:47.31038	2026-01-08 08:18:47.31038	5
-224	producto_variantes	171	UPDATE	{"sku": "BOL-001-23X18X10-MEDIAN", "campo": "Color", "productoId": 60, "varianteId": 171, "medidaNombre": null, "valorAnterior": "Mediana"}	{"sku": "BOL-001-23X18X10-MEDIAN", "campo": "Color", "productoId": 60, "valorNuevo": "Sin color", "varianteId": 171, "descripcion": "Producto [60] - Variante [SKU: BOL-001-23X18X10-MEDIAN]: Cambio en Color de 'Mediana' a 'Sin color'"}	5	APROBADO	2026-01-08 08:18:47.31038	2026-01-08 08:18:47.31038	5
-225	producto_variantes	172	UPDATE	{"sku": "BOL-001-26X33X13-GRANDE", "campo": "Dimensiones", "productoId": 60, "varianteId": 172, "medidaNombre": null, "valorAnterior": "26x33x13"}	{"sku": "BOL-001-26X33X13-GRANDE", "campo": "Dimensiones", "productoId": 60, "valorNuevo": "Grande", "varianteId": 172, "descripcion": "Producto [60] - Variante [SKU: BOL-001-26X33X13-GRANDE]: Cambio en Dimensiones de '26x33x13' a 'Grande'"}	5	APROBADO	2026-01-08 08:19:44.638792	2026-01-08 08:19:44.638792	5
-226	producto_variantes	172	UPDATE	{"sku": "BOL-001-26X33X13-GRANDE", "campo": "Color", "productoId": 60, "varianteId": 172, "medidaNombre": null, "valorAnterior": "Grande"}	{"sku": "BOL-001-26X33X13-GRANDE", "campo": "Color", "productoId": 60, "valorNuevo": "Sin color", "varianteId": 172, "descripcion": "Producto [60] - Variante [SKU: BOL-001-26X33X13-GRANDE]: Cambio en Color de 'Grande' a 'Sin color'"}	5	APROBADO	2026-01-08 08:19:44.638792	2026-01-08 08:19:44.638792	5
-227	producto_variantes	173	UPDATE	{"sku": "BOL-001-33X44X13-JUMBO", "campo": "Dimensiones", "productoId": 60, "varianteId": 173, "medidaNombre": null, "valorAnterior": "33x44x13"}	{"sku": "BOL-001-33X44X13-JUMBO", "campo": "Dimensiones", "productoId": 60, "valorNuevo": "Jumbo", "varianteId": 173, "descripcion": "Producto [60] - Variante [SKU: BOL-001-33X44X13-JUMBO]: Cambio en Dimensiones de '33x44x13' a 'Jumbo'"}	5	APROBADO	2026-01-08 08:20:31.46318	2026-01-08 08:20:31.46318	5
-228	producto_variantes	173	UPDATE	{"sku": "BOL-001-33X44X13-JUMBO", "campo": "Color", "productoId": 60, "varianteId": 173, "medidaNombre": null, "valorAnterior": "Jumbo"}	{"sku": "BOL-001-33X44X13-JUMBO", "campo": "Color", "productoId": 60, "valorNuevo": "Sin color", "varianteId": 173, "descripcion": "Producto [60] - Variante [SKU: BOL-001-33X44X13-JUMBO]: Cambio en Color de 'Jumbo' a 'Sin color'"}	5	APROBADO	2026-01-08 08:20:31.46318	2026-01-08 08:20:31.46318	5
-229	producto_variantes	174	UPDATE	{"sku": "BOL-001-35X39X25-GIGANT", "campo": "Dimensiones", "productoId": 60, "varianteId": 174, "medidaNombre": null, "valorAnterior": "35x39x25"}	{"sku": "BOL-001-35X39X25-GIGANT", "campo": "Dimensiones", "productoId": 60, "valorNuevo": "Gigante", "varianteId": 174, "descripcion": "Producto [60] - Variante [SKU: BOL-001-35X39X25-GIGANT]: Cambio en Dimensiones de '35x39x25' a 'Gigante'"}	5	APROBADO	2026-01-08 08:21:08.840329	2026-01-08 08:21:08.840329	5
-231	productos	17	UPDATE	{"activo": true, "reglaid": 1, "productoid": 17, "categoriaid": 3, "descripcion": "Caja craft de colores, ideal para celebrar el cumpleaños de esa persona especial, colores vibrantes con acabado mate.", "proveedorid": 1, "sku_maestro": "TOD-001", "nombreproducto": "Cubo Cumple Craft"}	{"activo": true, "reglaid": 1, "productoid": 17, "categoriaid": 3, "descripcion": "Caja craft de colores, ideal para celebrar el cumpleaños de esa persona especial, colores vibrantes con acabado mate.", "sku_maestro": "TOD-001", "nombreproducto": "Cubo Cumple Craft", "proveedorid_default": 1}	5	APROBADO	2026-01-08 20:59:01.269237	2026-01-08 20:59:01.269237	5
-232	productos	11	UPDATE	{"activo": true, "reglaid": 1, "productoid": 11, "categoriaid": 1, "descripcion": null, "proveedorid": 1, "sku_maestro": "LIS-001", "nombreproducto": "Cubo Liso"}	{"activo": true, "reglaid": 1, "productoid": 11, "categoriaid": 1, "descripcion": "¡Dale un toque de color y estilo a tus regalos! Estas cajas de color son ideales para quienes buscan resistencia y una presentación impecable. Su diseño vibrante y moderno las hace perfectas, con acabado mate.", "sku_maestro": "LIS-001", "nombreproducto": "Cubo Liso", "proveedorid_default": 1}	5	APROBADO	2026-01-08 23:58:37.153346	2026-01-08 23:58:37.153346	5
-233	productos	67	UPDATE	{"activo": true, "reglaid": 1, "productoid": 67, "categoriaid": 1, "descripcion": "¡Dale un toque de color y estilo a tus entregas! Estas bolsas de color son ideales para quienes buscan resistencia y una presentación impecable. Su diseño vibrante y moderno las hace perfectas para boutiques, papelerías o eventos especiales.", "proveedorid": 1, "sku_maestro": "BOL-002", "nombreproducto": "Bolsa Boutique Colores"}	{"activo": true, "reglaid": 6, "productoid": 67, "categoriaid": 1, "descripcion": "¡Dale un toque de color y estilo a tus entregas! Estas bolsas de color son ideales para quienes buscan resistencia y una presentación impecable. Su diseño vibrante y moderno las hace perfectas para boutiques, papelerías o eventos especiales.", "sku_maestro": "BOL-002", "nombreproducto": "Bolsa Boutique Colores", "proveedorid_default": 1}	2	APROBADO	2026-01-09 00:02:37.429502	2026-01-09 00:02:37.429502	2
-234	productos	60	UPDATE	{"activo": true, "reglaid": 1, "productoid": 60, "categoriaid": 3, "descripcion": "Bolsa Kraft de material resistente, con diseños únicos, ideal para sorprender a esa persona especial, acabado mate.", "proveedorid": 1, "sku_maestro": "BOL-001", "nombreproducto": "Bolsa Guapos"}	{"activo": true, "reglaid": 6, "productoid": 60, "categoriaid": 3, "descripcion": "Bolsa Kraft de material resistente, con diseños únicos, ideal para sorprender a esa persona especial, acabado mate.", "sku_maestro": "BOL-001", "nombreproducto": "Bolsa Guapos", "proveedorid_default": 1}	2	APROBADO	2026-01-09 00:02:46.003932	2026-01-09 00:02:46.003932	2
-235	productos	66	UPDATE	{"activo": true, "reglaid": 1, "productoid": 66, "categoriaid": 1, "descripcion": "Dale a tus regalos una presentación inolvidable con nuestra Cajabolsa, el híbrido perfecto entre una caja resistente y una bolsa práctica. Este modelo destaca por su vibrante color rojo y un acabado de alta calidad diseñado para sorprender.", "proveedorid": 1, "sku_maestro": "CAJ-007", "nombreproducto": "Caja Bolsa"}	{"activo": true, "reglaid": 6, "productoid": 66, "categoriaid": 1, "descripcion": "Dale a tus regalos una presentación inolvidable con nuestra Cajabolsa, el híbrido perfecto entre una caja resistente y una bolsa práctica. Este modelo destaca por su vibrante color rojo y un acabado de alta calidad diseñado para sorprender.", "sku_maestro": "CAJ-007", "nombreproducto": "Caja Bolsa", "proveedorid_default": 1}	2	APROBADO	2026-01-09 00:02:59.177456	2026-01-09 00:02:59.177456	2
-236	productos	68	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 68, "categoriaid": 1, "descripcion": "¡Haz que cada momento especial sea inolvidable! Nuestro Cubo Gis no es solo una caja, es una experiencia diseñada para expresar tus sentimientos de la forma más creativa. Pinta de colores tu caja y haz de ese obsequio  algo muy especial. No incluye gises. Acabado mate.", "proveedorid": 1, "sku_maestro": "CUB-002", "nombreproducto": "Cubo Gis"}	5	APROBADO	2026-01-09 03:26:25.602286	2026-01-09 03:26:25.602286	5
-237	productos	9	UPDATE	{"activo": true, "reglaid": 1, "productoid": 9, "categoriaid": 2, "descripcion": "¡Eleva tus regalos al siguiente nivel con nuestros Cubos Corazón de Acetato! Diseñados para combinar elegancia y sentimiento, estos cubos son la base ideal para arreglos florales, desayunos sorpresa, dulces o peluches.", "proveedorid": 1, "sku_maestro": "AMO-018", "nombreproducto": "Cubo Acetato"}	{"activo": true, "reglaid": 1, "productoid": 9, "categoriaid": 2, "descripcion": "¡Eleva tus regalos al siguiente nivel con nuestros Cubos Corazón de Acetato! Diseñados para combinar elegancia y sentimiento, estos cubos son la base ideal para arreglos florales, desayunos sorpresa, dulces o peluches.", "sku_maestro": "AMO-018", "nombreproducto": "Cubo Acetato", "proveedorid_default": 1}	4	APROBADO	2026-01-09 04:27:54.556431	2026-01-09 04:27:54.556431	4
-238	productos	9	UPDATE	{"activo": true, "reglaid": 1, "productoid": 9, "categoriaid": 2, "descripcion": "¡Eleva tus regalos al siguiente nivel con nuestros Cubos Corazón de Acetato! Diseñados para combinar elegancia y sentimiento, estos cubos son la base ideal para arreglos florales, desayunos sorpresa, dulces o peluches.", "proveedorid": 1, "sku_maestro": "AMO-018", "nombreproducto": "Cubo Acetato"}	{"activo": true, "reglaid": 1, "productoid": 9, "categoriaid": 2, "descripcion": "¡Eleva tus regalos al siguiente nivel con nuestros Cubos Corazón de Acetato! Diseñados para combinar elegancia y sentimiento, estos cubos son la base ideal para arreglos florales, desayunos sorpresa, dulces o peluches.", "sku_maestro": "AMO-018", "nombreproducto": "Cubo Acetato", "proveedorid_default": 1}	4	APROBADO	2026-01-09 04:29:09.656146	2026-01-09 04:29:09.656146	4
-239	productos	6	UPDATE	{"activo": true, "reglaid": 1, "productoid": 6, "categoriaid": 2, "descripcion": "¡Haz que cada detalle cuente! Nuestra colección Colores Amor está diseñada para quienes buscan transformar un simple regalo en una experiencia inolvidable. Estas cajas no son solo empaques, son una declaración de afecto con un diseño vibrante y moderno.", "proveedorid": 1, "sku_maestro": "AMO-012", "nombreproducto": "Cubo Colores Amor"}	{"activo": true, "reglaid": 1, "productoid": 6, "categoriaid": 2, "descripcion": "¡Haz que cada detalle cuente! Nuestra colección Colores Amor está diseñada para quienes buscan transformar un simple regalo en una experiencia inolvidable. Estas cajas no son solo empaques, son una declaración de afecto con un diseño vibrante y moderno.", "sku_maestro": "AMO-012", "nombreproducto": "Cubo Colores Amor", "proveedorid_default": 1}	4	APROBADO	2026-01-09 04:43:20.559675	2026-01-09 04:43:20.559675	4
-240	productos	6	UPDATE	{"activo": true, "reglaid": 1, "productoid": 6, "categoriaid": 2, "descripcion": "¡Haz que cada detalle cuente! Nuestra colección Colores Amor está diseñada para quienes buscan transformar un simple regalo en una experiencia inolvidable. Estas cajas no son solo empaques, son una declaración de afecto con un diseño vibrante y moderno.", "proveedorid": 1, "sku_maestro": "AMO-012", "nombreproducto": "Cubo Colores Amor"}	{"activo": true, "reglaid": 1, "productoid": 6, "categoriaid": 2, "descripcion": "¡Haz que cada detalle cuente! Nuestra colección Colores Amor está diseñada para quienes buscan transformar un simple regalo en una experiencia inolvidable. Estas cajas no son solo empaques, son una declaración de afecto con un diseño vibrante y moderno.", "sku_maestro": "AMO-012", "nombreproducto": "Cubo Colores Amor", "proveedorid_default": 1}	4	APROBADO	2026-01-09 05:17:50.941758	2026-01-09 05:17:50.941758	4
-241	productos	1	UPDATE	{"activo": true, "reglaid": 1, "productoid": 1, "categoriaid": 2, "descripcion": "Dale un toque de color y alegría a tus detalles con nuestro Cubo Colors Love. Diseñado especialmente para quienes no temen expresar su cariño de forma vibrante, este cubo decorativo es mucho más que una caja: es el complemento ideal que hará que tu regalo destaque desde el primer momento.", "proveedorid": 1, "sku_maestro": "AMO-001", "nombreproducto": "Cubo Colors Love"}	{"activo": true, "reglaid": 1, "productoid": 1, "categoriaid": 2, "descripcion": "Dale un toque de color y alegría a tus detalles con nuestro Cubo Colors Love. Diseñado especialmente para quienes no temen expresar su cariño de forma vibrante, este cubo decorativo es mucho más que una caja: es el complemento ideal que hará que tu regalo destaque desde el primer momento.", "sku_maestro": "AMO-001", "nombreproducto": "Cubo Colors Love", "proveedorid_default": 1}	4	APROBADO	2026-01-09 05:20:12.208654	2026-01-09 05:20:12.208654	4
-242	productos	8	UPDATE	{"activo": true, "reglaid": 1, "productoid": 8, "categoriaid": 2, "descripcion": "Dale un toque auténtico y vibrante a tus detalles con nuestras cajas de regalo temáticas. Diseñadas con el icónico sello de \\"Hecho en México\\", estas cajas no solo sirven como empaque, sino como un elemento decorativo de alta calidad que resalta el orgullo nacional.", "proveedorid": 1, "sku_maestro": "AMO-016", "nombreproducto": "Cubo Hecho en México"}	{"activo": true, "reglaid": 1, "productoid": 8, "categoriaid": 2, "descripcion": "Dale un toque auténtico y vibrante a tus detalles con nuestras cajas de regalo temáticas. Diseñadas con el icónico sello de \\"Hecho en México\\", estas cajas no solo sirven como empaque, sino como un elemento decorativo de alta calidad que resalta el orgullo nacional.", "sku_maestro": "AMO-016", "nombreproducto": "Cubo Hecho en México", "proveedorid_default": 1}	4	APROBADO	2026-01-09 05:22:00.297927	2026-01-09 05:22:00.297927	4
-243	productos	3	UPDATE	{"activo": true, "reglaid": 2, "productoid": 3, "categoriaid": 1, "descripcion": "Estas cajas no solo son contenedores, son parte del regalo mismo. Gracias a su acabado brillante y su vibrante color negro o rojo, son perfectas para San Valentín, aniversarios, cumpleaños o cualquier ocasión especial donde quieras impresionar.", "proveedorid": 1, "sku_maestro": "AMO-006", "nombreproducto": "Cubo Liso Brillo"}	{"activo": true, "reglaid": 1, "productoid": 3, "categoriaid": 1, "descripcion": "Estas cajas no solo son contenedores, son parte del regalo mismo. Gracias a su acabado brillante y su vibrante color negro o rojo, son perfectas para San Valentín, aniversarios, cumpleaños o cualquier ocasión especial donde quieras impresionar.", "sku_maestro": "AMO-006", "nombreproducto": "Cubo Liso Brillo", "proveedorid_default": 1}	4	APROBADO	2026-01-09 05:23:11.067513	2026-01-09 05:23:11.067513	4
-244	productos	4	UPDATE	{"activo": true, "reglaid": 1, "productoid": 4, "categoriaid": 2, "descripcion": "El Cubo Love Black es la opción perfecta para quienes buscan un empaque impactante, moderno y lleno de sentimiento. Diseñada con un fondo negro profundo que hace resaltar colores vibrantes, esta caja no es solo un empaque, sino parte del regalo mismo.", "proveedorid": 1, "sku_maestro": "AMO-008", "nombreproducto": "Cubo Love Black"}	{"activo": true, "reglaid": 1, "productoid": 4, "categoriaid": 2, "descripcion": "El Cubo Love Black es la opción perfecta para quienes buscan un empaque impactante, moderno y lleno de sentimiento. Diseñada con un fondo negro profundo que hace resaltar colores vibrantes, esta caja no es solo un empaque, sino parte del regalo mismo.", "sku_maestro": "AMO-008", "nombreproducto": "Cubo Love Black", "proveedorid_default": 1}	4	APROBADO	2026-01-09 05:39:04.361288	2026-01-09 05:39:04.361288	4
-245	productos	5	UPDATE	{"activo": true, "reglaid": 1, "productoid": 5, "categoriaid": 2, "descripcion": "¡Haz que cada regalo sea inolvidable desde el primer vistazo! Nuestra línea de cajas Love Craft está diseñada para quienes buscan salir de lo convencional y entregar un detalle lleno de color, arte y emoción.", "proveedorid": 1, "sku_maestro": "AMO-010", "nombreproducto": "Cubo Love Craft"}	{"activo": true, "reglaid": 1, "productoid": 5, "categoriaid": 2, "descripcion": "¡Haz que cada regalo sea inolvidable desde el primer vistazo! Nuestra línea de cajas Love Craft está diseñada para quienes buscan salir de lo convencional y entregar un detalle lleno de color, arte y emoción.", "sku_maestro": "AMO-010", "nombreproducto": "Cubo Love Craft", "proveedorid_default": 1}	4	APROBADO	2026-01-09 05:42:25.427513	2026-01-09 05:42:25.427513	4
-246	productos	5	UPDATE	{"activo": true, "reglaid": 1, "productoid": 5, "categoriaid": 2, "descripcion": "¡Haz que cada regalo sea inolvidable desde el primer vistazo! Nuestra línea de cajas Love Craft está diseñada para quienes buscan salir de lo convencional y entregar un detalle lleno de color, arte y emoción.", "proveedorid": 1, "sku_maestro": "AMO-010", "nombreproducto": "Cubo Love Craft"}	{"activo": true, "reglaid": 1, "productoid": 5, "categoriaid": 2, "descripcion": "¡Haz que cada regalo sea inolvidable desde el primer vistazo! Nuestra línea de cajas Love Craft está diseñada para quienes buscan salir de lo convencional y entregar un detalle lleno de color, arte y emoción.", "sku_maestro": "AMO-010", "nombreproducto": "Cubo Love Craft", "proveedorid_default": 1}	4	APROBADO	2026-01-09 05:43:55.714702	2026-01-09 05:43:55.714702	4
-247	productos	5	UPDATE	{"activo": true, "reglaid": 1, "productoid": 5, "categoriaid": 2, "descripcion": "¡Haz que cada regalo sea inolvidable desde el primer vistazo! Nuestra línea de cajas Love Craft está diseñada para quienes buscan salir de lo convencional y entregar un detalle lleno de color, arte y emoción.", "proveedorid": 1, "sku_maestro": "AMO-010", "nombreproducto": "Cubo Love Craft"}	{"activo": true, "reglaid": 1, "productoid": 5, "categoriaid": 2, "descripcion": "¡Haz que cada regalo sea inolvidable desde el primer vistazo! Nuestra línea de cajas Love Craft está diseñada para quienes buscan salir de lo convencional y entregar un detalle lleno de color, arte y emoción.", "sku_maestro": "AMO-010", "nombreproducto": "Cubo Love Craft", "proveedorid_default": 1}	4	APROBADO	2026-01-09 05:44:37.504534	2026-01-09 05:44:37.504534	4
-248	productos	2	UPDATE	{"activo": true, "reglaid": 1, "productoid": 2, "categoriaid": 2, "descripcion": "Eleva la presentación de tus detalles con nuestra exclusiva línea de Cajas Cubo LV Oro. Diseñadas con un elegante acabado en color oro y tipografía estilizada, estas cajas son perfectas para San Valentín, aniversarios o cualquier ocasión especial donde el amor sea el protagonista.", "proveedorid": 1, "sku_maestro": "AMO-003", "nombreproducto": "Cubo LV Oro"}	{"activo": true, "reglaid": 1, "productoid": 2, "categoriaid": 2, "descripcion": "Eleva la presentación de tus detalles con nuestra exclusiva línea de Cajas Cubo LV Oro. Diseñadas con un elegante acabado en color oro y tipografía estilizada, estas cajas son perfectas para San Valentín, aniversarios o cualquier ocasión especial donde el amor sea el protagonista.", "sku_maestro": "AMO-003", "nombreproducto": "Cubo LV Oro", "proveedorid_default": 1}	4	APROBADO	2026-01-09 05:45:48.444528	2026-01-09 05:45:48.444528	4
-249	productos	7	UPDATE	{"activo": true, "reglaid": 1, "productoid": 7, "categoriaid": 2, "descripcion": "Sorprende a esa persona especial con nuestros elegantes cubos decorativos de la colección RedBlack Love. Diseñados con una combinación clásica de rojo, negro y blanco, estos cubos son el empaque perfecto para regalos inolvidables o como un detalle decorativo lleno de sentimiento.", "proveedorid": 1, "sku_maestro": "AMO-014", "nombreproducto": "Cubo RedBlack Love"}	{"activo": true, "reglaid": 1, "productoid": 7, "categoriaid": 2, "descripcion": "Sorprende a esa persona especial con nuestros elegantes cubos decorativos de la colección RedBlack Love. Diseñados con una combinación clásica de rojo, negro y blanco, estos cubos son el empaque perfecto para regalos inolvidables o como un detalle decorativo lleno de sentimiento.", "sku_maestro": "AMO-014", "nombreproducto": "Cubo RedBlack Love", "proveedorid_default": 1}	4	APROBADO	2026-01-09 05:47:44.406035	2026-01-09 05:47:44.406035	4
-250	productos	10	UPDATE	{"activo": true, "reglaid": 5, "productoid": 10, "categoriaid": 2, "descripcion": "¡Dale estilo a tus notas con estas libretas de diseño exclusivo! Perfectas para regalo o para uso personal, estas libretas combinan un diseño moderno con materiales de alta resistencia.", "proveedorid": 1, "sku_maestro": "AMO-019", "nombreproducto": "Libreta"}	{"activo": true, "reglaid": 5, "productoid": 10, "categoriaid": 2, "descripcion": "¡Dale estilo a tus notas con estas libretas de diseño exclusivo! Perfectas para regalo o para uso personal, estas libretas combinan un diseño moderno con materiales de alta resistencia.", "sku_maestro": "AMO-019", "nombreproducto": "Libreta", "proveedorid_default": 1}	4	APROBADO	2026-01-09 05:48:42.046711	2026-01-09 05:48:42.046711	4
-251	productos	13	UPDATE	{"activo": true, "reglaid": 1, "productoid": 13, "categoriaid": 4, "descripcion": "Caja camisera de regalo natural, elegante y funcional. Ideal para presentar prendas y regalos con un estilo limpio y moderno. Resistente, práctica y fácil de personalizar. Disponible en diferentes tamaños para adaptarse a cada detalle 🎁✨", "proveedorid": 1, "sku_maestro": "NAT-002", "nombreproducto": "Camisera Natural"}	{"activo": true, "reglaid": 1, "productoid": 13, "categoriaid": 4, "descripcion": "Caja camisera de regalo natural, elegante y funcional. Ideal para presentar prendas y regalos con un estilo limpio y moderno. Resistente, práctica y fácil de personalizar. Disponible en diferentes tamaños para adaptarse a cada detalle 🎁✨", "sku_maestro": "NAT-002", "nombreproducto": "Camisera Natural", "proveedorid_default": 1}	4	APROBADO	2026-01-09 05:51:16.066524	2026-01-09 05:51:16.066524	4
-252	producto_variantes	217	UPDATE	{"sku": "SIX-001-6-DISENO", "campo": "Costo Unitario", "productoId": 51, "varianteId": 217, "medidaNombre": null, "valorAnterior": "$20.93"}	{"sku": "SIX-001-6-DISENO", "campo": "Costo Unitario", "productoId": 51, "valorNuevo": "$13.93", "varianteId": 217, "descripcion": "Producto [51] - Variante [SKU: SIX-001-6-DISENO]: Cambio en Costo Unitario de '$20.93' a '$13.93'"}	4	APROBADO	2026-01-09 05:58:31.443537	2026-01-09 05:58:31.443537	4
-253	producto_variantes	217	UPDATE	{"sku": "SIX-001-6-DISENO", "campo": "Precio Unitario", "productoId": 51, "varianteId": 217, "medidaNombre": null, "valorAnterior": "$32.90"}	{"sku": "SIX-001-6-DISENO", "campo": "Precio Unitario", "productoId": 51, "valorNuevo": "$22.90", "varianteId": 217, "descripcion": "Producto [51] - Variante [SKU: SIX-001-6-DISENO]: Cambio en Precio Unitario de '$32.90' a '$22.90'"}	4	APROBADO	2026-01-09 05:58:31.443537	2026-01-09 05:58:31.443537	4
-254	producto_variantes	217	UPDATE	{"sku": "SIX-001-6-DISENO", "campo": "Color", "productoId": 51, "varianteId": 217, "medidaNombre": null, "valorAnterior": "Diseño"}	{"sku": "SIX-001-6-DISENO", "campo": "Color", "productoId": 51, "valorNuevo": "Natural", "varianteId": 217, "descripcion": "Producto [51] - Variante [SKU: SIX-001-6-DISENO]: Cambio en Color de 'Diseño' a 'Natural'"}	4	APROBADO	2026-01-09 05:58:31.443537	2026-01-09 05:58:31.443537	4
-255	productos	13	UPDATE	{"activo": true, "reglaid": 1, "productoid": 13, "categoriaid": 4, "descripcion": "Caja camisera de regalo natural, elegante y funcional. Ideal para presentar prendas y regalos con un estilo limpio y moderno. Resistente, práctica y fácil de personalizar. Disponible en diferentes tamaños para adaptarse a cada detalle 🎁✨", "proveedorid": 1, "sku_maestro": "NAT-002", "nombreproducto": "Camisera Natural"}	{"activo": true, "reglaid": 1, "productoid": 13, "categoriaid": 4, "descripcion": "Caja camisera de regalo natural, elegante y funcional. Ideal para presentar prendas y regalos con un estilo limpio y moderno. Resistente, práctica y fácil de personalizar. Disponible en diferentes tamaños para adaptarse a cada detalle 🎁✨", "sku_maestro": "NAT-002", "nombreproducto": "Camisera Natural", "proveedorid_default": 1}	4	APROBADO	2026-01-09 06:15:11.697858	2026-01-09 06:15:11.697858	4
-256	productos	61	UPDATE	{"activo": true, "reglaid": 1, "productoid": 61, "categoriaid": 3, "descripcion": "Sobre de dinero, ideal para cuando no sabes que regalar, diseños alegres y divertidos, con acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "SOB-001", "nombreproducto": "Sobre Cumple"}	{"activo": true, "reglaid": 8, "productoid": 61, "categoriaid": 3, "descripcion": "Sobre de dinero, ideal para cuando no sabes que regalar, diseños alegres y divertidos, con acabado barniz brillante.", "sku_maestro": "SOB-001", "nombreproducto": "Sobre Cumple", "proveedorid_default": 1}	2	APROBADO	2026-01-09 06:31:07.71101	2026-01-09 06:31:07.71101	2
-257	productos	61	UPDATE	{"activo": true, "reglaid": 8, "productoid": 61, "categoriaid": 3, "descripcion": "Sobre de dinero, ideal para cuando no sabes que regalar, diseños alegres y divertidos, con acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "SOB-001", "nombreproducto": "Sobre Cumple"}	{"activo": true, "reglaid": 8, "productoid": 61, "categoriaid": 3, "descripcion": "Sobre de dinero, ideal para cuando no sabes que regalar, diseños alegres y divertidos, con acabado barniz brillante.", "sku_maestro": "SOB-001", "nombreproducto": "Sobre Cumple", "proveedorid_default": 1}	4	APROBADO	2026-01-09 06:38:26.620648	2026-01-09 06:38:26.620648	4
-258	productos	3	UPDATE	{"activo": true, "reglaid": 1, "productoid": 3, "categoriaid": 1, "descripcion": "Estas cajas no solo son contenedores, son parte del regalo mismo. Gracias a su acabado brillante y su vibrante color negro o rojo, son perfectas para San Valentín, aniversarios, cumpleaños o cualquier ocasión especial donde quieras impresionar.", "proveedorid": 1, "sku_maestro": "AMO-006", "nombreproducto": "Cubo Liso Brillo"}	{"activo": true, "reglaid": 2, "productoid": 3, "categoriaid": 1, "descripcion": "Estas cajas no solo son empaques, son parte del regalo mismo. Gracias a su acabado brillante y sus vibrantes colores, son perfectas para San Valentín, aniversarios, cumpleaños o cualquier ocasión especial, en donde quieras impresionar.", "sku_maestro": "AMO-006", "nombreproducto": "Cubo Liso Brillo", "proveedorid_default": 1}	5	APROBADO	2026-01-09 06:48:26.682908	2026-01-09 06:48:26.682908	5
-259	productos	61	UPDATE	{"activo": true, "reglaid": 8, "productoid": 61, "categoriaid": 3, "descripcion": "Sobre de dinero, ideal para cuando no sabes que regalar, diseños alegres y divertidos, con acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "COD-00061", "nombreproducto": "Sobre Cumple"}	{"activo": true, "reglaid": 8, "productoid": 61, "categoriaid": 3, "descripcion": "Sobre de dinero, ideal para cuando no sabes que regalar, diseños alegres y divertidos, con acabado barniz brillante.", "sku_maestro": "COD-00061", "nombreproducto": "Sobre Cumple", "proveedorid_default": 1}	2	APROBADO	2026-01-09 08:12:03.00022	2026-01-09 08:12:03.00022	2
-260	producto_variantes	220	UPDATE	{"sku": "COD-00003-00220", "campo": "Color", "productoId": 3, "varianteId": 220, "medidaNombre": null, "valorAnterior": "Azul oscuro"}	{"sku": "COD-00003-00220", "campo": "Color", "productoId": 3, "valorNuevo": "Azul Oscuro", "varianteId": 220, "descripcion": "Producto [3] - Variante [SKU: COD-00003-00220]: Cambio en Color de 'Azul oscuro' a 'Azul Oscuro'"}	5	APROBADO	2026-01-09 17:08:59.174014	2026-01-09 17:08:59.174014	5
-261	productos	3	UPDATE	{"activo": true, "reglaid": 2, "productoid": 3, "categoriaid": 1, "descripcion": "Estas cajas no solo son empaques, son parte del regalo mismo. Gracias a su acabado brillante y sus vibrantes colores, son perfectas para San Valentín, aniversarios, cumpleaños o cualquier ocasión especial, en donde quieras impresionar.", "proveedorid": 1, "sku_maestro": "COD-00003", "nombreproducto": "Cubo Liso Brillo"}	{"activo": true, "reglaid": 1, "productoid": 3, "categoriaid": 1, "descripcion": "Estas cajas no solo son empaques, son parte del regalo mismo. Gracias a su acabado brillante y sus vibrantes colores, son perfectas para San Valentín, aniversarios, cumpleaños o cualquier ocasión especial, en donde quieras impresionar.", "sku_maestro": "COD-00003", "nombreproducto": "Cubo Liso Brillo", "proveedorid_default": 1}	5	APROBADO	2026-01-09 17:12:29.856776	2026-01-09 17:12:29.856776	5
-262	productos	3	UPDATE	{"activo": true, "reglaid": 1, "productoid": 3, "categoriaid": 1, "descripcion": "Estas cajas no solo son empaques, son parte del regalo mismo. Gracias a su acabado brillante y sus vibrantes colores, son perfectas para San Valentín, aniversarios, cumpleaños o cualquier ocasión especial, en donde quieras impresionar.", "proveedorid": 1, "sku_maestro": "COD-00003", "nombreproducto": "Cubo Liso Brillo"}	{"activo": true, "reglaid": 1, "productoid": 3, "categoriaid": 1, "descripcion": "Estas cajas no solo son empaques, son parte del regalo mismo. Gracias a su acabado brillante y sus vibrantes colores, son perfectas para San Valentín, aniversarios, cumpleaños o cualquier ocasión especial, en donde quieras impresionar.", "sku_maestro": "COD-00003", "nombreproducto": "Cubo Liso Brillo", "proveedorid_default": 1}	5	APROBADO	2026-01-09 17:14:46.292233	2026-01-09 17:14:46.292233	5
-263	productos	69	INSERT	\N	{"activo": true, "reglaid": 2, "productoid": 69, "categoriaid": 1, "descripcion": "¡Haz que cada regalo sea inolvidable desde el primer vistazo! Nuestra línea de cajas Bolas Brillo, está diseñada para quienes buscan salir de lo convencional y entregar un detalle lleno de color.", "proveedorid": 1, "sku_maestro": "CUB-001", "nombreproducto": "Cubo Bolas Brillo"}	5	APROBADO	2026-01-09 17:29:12.096616	2026-01-09 17:29:12.096616	5
-264	productos	14	UPDATE	{"activo": true, "reglaid": 1, "productoid": 14, "categoriaid": 1, "descripcion": null, "proveedorid": 1, "sku_maestro": "COD-00014", "nombreproducto": "Línea Metalizada"}	{"activo": true, "reglaid": 2, "productoid": 14, "categoriaid": 1, "descripcion": "¡Haz que cada regalo sea inolvidable! Nuestra línea de cajas Metaliadas está diseñada para quienes buscan salir de lo convencional y entregar un detalle lleno de color, elegancia y emoción.", "sku_maestro": "COD-00014", "nombreproducto": "Cubo Metalizado", "proveedorid_default": 1}	5	APROBADO	2026-01-09 17:41:24.093999	2026-01-09 17:41:24.093999	5
-265	productos	14	UPDATE	{"activo": true, "reglaid": 2, "productoid": 14, "categoriaid": 1, "descripcion": "¡Haz que cada regalo sea inolvidable! Nuestra línea de cajas Metaliadas está diseñada para quienes buscan salir de lo convencional y entregar un detalle lleno de color, elegancia y emoción.", "proveedorid": 1, "sku_maestro": "COD-00014", "nombreproducto": "Cubo Metalizado"}	{"activo": true, "reglaid": 2, "productoid": 14, "categoriaid": 1, "descripcion": "¡Haz que cada regalo sea inolvidable! Nuestra línea de cajas Metaliadas está diseñada para quienes buscan salir de lo convencional y entregar un detalle lleno de color, elegancia y emoción.", "sku_maestro": "COD-00014", "nombreproducto": "Cubo Metalizado", "proveedorid_default": 1}	5	APROBADO	2026-01-09 17:49:10.295439	2026-01-09 17:49:10.295439	5
-266	agentes	3	INSERT	\N	{"email": "", "activo": true, "nombre": "Fernando", "esadmin": false, "adminrol": null, "agenteid": 3, "apellido": "García", "codigoagente": "AG0003"}	2	APROBADO	2026-01-09 20:09:28.121981	2026-01-09 20:09:28.121981	2
-267	proveedores	4	INSERT	\N	{"rfc": null, "banco": null, "calle": null, "clabe": null, "email": null, "ciudad": null, "estado": null, "colonia": null, "telefono": null, "tenant_id": 1, "diascredito": null, "emailventas": null, "proveedorid": 4, "razonsocial": null, "codigopostal": null, "minimocompra": null, "numerocuenta": null, "celularventas": null, "emailcobranza": null, "limitecredito": null, "nombreempresa": "Envolturas Ferrusca", "regimenfiscal": null, "contactonombre": null, "referenciapago": null, "telefonocobranza": null, "aceptadevoluciones": false, "descuentofinanciero": null, "nombrecontactocobranza": null, "nombrerepresentanteventas": null}	5	APROBADO	2026-01-10 00:26:51.929216	2026-01-10 00:26:51.929216	5
+COPY public.control_cambios (id, entidad, entidad_id, tipo_cambio, datos_anteriores, datos_nuevos, usuario_solicitante_id, estado, fecha_solicitud, fecha_resolucion, usuario_resolutor_id, tenant_id) FROM stdin;
+76	productos	2	UPDATE	{"activo": true, "productoid": 2}	{"activo": true, "productoid": 2}	2	APROBADO	2026-01-04 00:16:35.822105	2026-01-04 00:16:35.822105	2	1
+79	productos	23	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 23, "categoriaid": 3, "descripcion": "Caja con diseños divertidos, ideal para esa persona tan especial, colores vibrantes acabado barniz brillante", "proveedorid": 1, "sku_maestro": "TOD-004", "nombreproducto": "Cubo Botana"}	5	APROBADO	2026-01-04 00:39:56.115123	2026-01-04 00:39:56.115123	5	1
+21	productos	7	UPDATE	{"activo": true, "reglaid": null, "productoid": 7, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "25-FAS-CAJ-AMO-REDB", "nombreproducto": "RedBlack"}	{"activo": true, "reglaid": 1, "productoid": 7, "categoriaid": 2, "descripcion": null, "sku_maestro": "25-FAS-CAJ-AMO-REDB", "nombreproducto": "RedBlack", "proveedorid_default": 1}	2	APROBADO	2025-12-25 11:32:25.472244	2025-12-25 11:32:25.472244	2	1
+22	pedidos	4	UPDATE	{"estatus": "Parcialmente Surtido", "pedidoid": 4}	{"estatus": "Confirmado", "pedidoid": 4}	2	APROBADO	2025-12-25 12:03:24.101952	2025-12-25 12:03:24.101952	2	1
+23	pedidos	4	UPDATE	{"estatus": "Confirmado", "pedidoid": 4}	{"estatus": "Enviado", "pedidoid": 4}	2	APROBADO	2025-12-25 12:03:36.153384	2025-12-25 12:03:36.153384	2	1
+24	pedidos	4	UPDATE	{"estatus": "Enviado", "pedidoid": 4}	{"estatus": "Confirmado", "pedidoid": 4}	2	APROBADO	2025-12-25 12:04:12.9404	2025-12-25 12:04:12.9404	2	1
+25	pedidos	4	UPDATE	{"estatus": "Confirmado", "pedidoid": 4}	{"estatus": "Entregado", "pedidoid": 4}	2	APROBADO	2025-12-25 12:05:20.262903	2025-12-25 12:05:20.262903	2	1
+26	pedidos	6	UPDATE	{"estatus": "Parcialmente Surtido", "pedidoid": 6}	{"estatus": "Confirmado", "pedidoid": 6}	2	APROBADO	2025-12-25 12:35:08.770103	2025-12-25 12:35:08.770103	2	1
+1	categorias	2	INSERT	\N	{"activo": true, "nombre": "Amor", "categoriaid": 2, "descripcion": null, "parentcategoriaid": null}	2	APROBADO	2025-12-24 16:36:57.883671	2025-12-24 16:36:57.883671	2	1
+20	productos	2	UPDATE	{"activo": true, "reglaid": null, "productoid": 2, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "25-FAS-CAJ-AMO-LVOR", "nombreproducto": "LV Oro"}	{"activo": true, "reglaid": 1, "productoid": 2, "categoriaid": 2, "descripcion": null, "sku_maestro": "25-FAS-CAJ-AMO-LVOR", "nombreproducto": "LV Oro", "proveedorid_default": 1}	2	APROBADO	2025-12-25 11:32:11.928208	2025-12-25 11:32:11.928208	2	1
+2	proveedores	1	INSERT	\N	{"rfc": null, "banco": null, "calle": null, "clabe": null, "email": null, "ciudad": null, "estado": null, "colonia": null, "telefono": null, "diascredito": null, "emailventas": null, "proveedorid": 1, "razonsocial": null, "codigopostal": null, "minimocompra": null, "numerocuenta": null, "celularventas": null, "emailcobranza": null, "limitecredito": null, "nombreempresa": "Fashion", "regimenfiscal": null, "contactonombre": null, "referenciapago": null, "telefonocobranza": null, "aceptadevoluciones": false, "descuentofinanciero": null, "nombrecontactocobranza": null, "nombrerepresentanteventas": null}	2	APROBADO	2025-12-24 16:37:12.72206	2025-12-24 16:37:12.72206	2	1
+3	productos	1	INSERT	\N	{"activo": true, "productoid": 1, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "25-FAS-CAJ-AMO-CUBO", "nombreproducto": "Cubo Colors Love"}	2	APROBADO	2025-12-24 17:14:16.684696	2025-12-24 17:14:16.684696	2	1
+4	productos	1	UPDATE	{"activo": true, "productoid": 1, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "25-FAS-CAJ-AMO-CUBO", "nombreproducto": "Cubo Colors Love", "tipoproductoid": null}	{"activo": true, "productoid": 1, "categoriaid": 2, "descripcion": null, "sku_maestro": "25-FAS-CAJ-AMO-CUBO", "nombreproducto": "Colors Love Cubo", "tipoproductoid": null, "proveedorid_default": 1}	2	APROBADO	2025-12-24 17:15:17.316257	2025-12-24 17:15:17.316257	2	1
+5	productos	2	INSERT	\N	{"activo": true, "productoid": 2, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "25-FAS-CAJ-AMO-LVOR", "nombreproducto": "LV Oro"}	2	APROBADO	2025-12-25 06:07:04.366391	2025-12-25 06:07:04.366391	2	1
+6	productos	3	INSERT	\N	{"activo": true, "productoid": 3, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "25-FAS-CAJ-AMO-BRIL", "nombreproducto": "Brillo"}	2	APROBADO	2025-12-25 06:10:40.960643	2025-12-25 06:10:40.960643	2	1
+7	productos	4	INSERT	\N	{"activo": true, "productoid": 4, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "25-FAS-CAJ-AMO-BLAC", "nombreproducto": "Black"}	2	APROBADO	2025-12-25 06:14:06.917618	2025-12-25 06:14:06.917618	2	1
+8	productos	5	INSERT	\N	{"activo": true, "productoid": 5, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "25-FAS-CAJ-AMO-CRAF", "nombreproducto": "Craft"}	2	APROBADO	2025-12-25 06:20:27.633495	2025-12-25 06:20:27.633495	2	1
+9	productos	6	INSERT	\N	{"activo": true, "productoid": 6, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "25-FAS-CAJ-AMO-COLO", "nombreproducto": "Colores"}	2	APROBADO	2025-12-25 06:23:13.818184	2025-12-25 06:23:13.818184	2	1
+10	productos	7	INSERT	\N	{"activo": true, "productoid": 7, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "25-FAS-CAJ-AMO-REDB", "nombreproducto": "RedBlack"}	2	APROBADO	2025-12-25 06:25:42.055698	2025-12-25 06:25:42.055698	2	1
+11	productos	8	INSERT	\N	{"activo": true, "productoid": 8, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "25-FAS-CAJ-AMO-HECH", "nombreproducto": "Hecho en México"}	2	APROBADO	2025-12-25 06:27:35.096206	2025-12-25 06:27:35.096206	2	1
+12	productos	4	UPDATE	{"activo": true, "reglaid": null, "productoid": 4, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "25-FAS-CAJ-AMO-BLAC", "nombreproducto": "Black"}	{"activo": true, "reglaid": 1, "productoid": 4, "categoriaid": 2, "descripcion": null, "sku_maestro": "25-FAS-CAJ-AMO-BLAC", "nombreproducto": "Black", "proveedorid_default": 1}	2	APROBADO	2025-12-25 11:28:36.979176	2025-12-25 11:28:36.979176	2	1
+13	productos	4	UPDATE	{"activo": true, "reglaid": 1, "productoid": 4, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "25-FAS-CAJ-AMO-BLAC", "nombreproducto": "Black"}	{"activo": true, "reglaid": 1, "productoid": 4, "categoriaid": 2, "descripcion": null, "sku_maestro": "25-FAS-CAJ-AMO-BLAC", "nombreproducto": "Black", "proveedorid_default": 1}	2	APROBADO	2025-12-25 11:29:47.971708	2025-12-25 11:29:47.971708	2	1
+14	productos	3	UPDATE	{"activo": true, "reglaid": null, "productoid": 3, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "25-FAS-CAJ-AMO-BRIL", "nombreproducto": "Brillo"}	{"activo": true, "reglaid": 1, "productoid": 3, "categoriaid": 2, "descripcion": null, "sku_maestro": "25-FAS-CAJ-AMO-BRIL", "nombreproducto": "Brillo", "proveedorid_default": 1}	2	APROBADO	2025-12-25 11:30:03.549911	2025-12-25 11:30:03.549911	2	1
+15	productos	6	UPDATE	{"activo": true, "reglaid": null, "productoid": 6, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "25-FAS-CAJ-AMO-COLO", "nombreproducto": "Colores"}	{"activo": true, "reglaid": null, "productoid": 6, "categoriaid": 2, "descripcion": null, "sku_maestro": "25-FAS-CAJ-AMO-COLO", "nombreproducto": "Colores", "proveedorid_default": 1}	2	APROBADO	2025-12-25 11:30:42.251757	2025-12-25 11:30:42.251757	2	1
+16	productos	6	UPDATE	{"activo": true, "reglaid": null, "productoid": 6, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "25-FAS-CAJ-AMO-COLO", "nombreproducto": "Colores"}	{"activo": true, "reglaid": 1, "productoid": 6, "categoriaid": 2, "descripcion": null, "sku_maestro": "25-FAS-CAJ-AMO-COLO", "nombreproducto": "Colores", "proveedorid_default": 1}	2	APROBADO	2025-12-25 11:31:04.688062	2025-12-25 11:31:04.688062	2	1
+17	productos	1	UPDATE	{"activo": true, "reglaid": null, "productoid": 1, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "25-FAS-CAJ-AMO-CUBO", "nombreproducto": "Colors Love Cubo"}	{"activo": true, "reglaid": 1, "productoid": 1, "categoriaid": 2, "descripcion": null, "sku_maestro": "25-FAS-CAJ-AMO-CUBO", "nombreproducto": "Colors Love Cubo", "proveedorid_default": 1}	2	APROBADO	2025-12-25 11:31:18.488298	2025-12-25 11:31:18.488298	2	1
+18	productos	5	UPDATE	{"activo": true, "reglaid": null, "productoid": 5, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "25-FAS-CAJ-AMO-CRAF", "nombreproducto": "Craft"}	{"activo": true, "reglaid": 1, "productoid": 5, "categoriaid": 2, "descripcion": null, "sku_maestro": "25-FAS-CAJ-AMO-CRAF", "nombreproducto": "Craft", "proveedorid_default": 1}	2	APROBADO	2025-12-25 11:31:44.889572	2025-12-25 11:31:44.889572	2	1
+19	productos	8	UPDATE	{"activo": true, "reglaid": null, "productoid": 8, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "25-FAS-CAJ-AMO-HECH", "nombreproducto": "Hecho en México"}	{"activo": true, "reglaid": 1, "productoid": 8, "categoriaid": 2, "descripcion": null, "sku_maestro": "25-FAS-CAJ-AMO-HECH", "nombreproducto": "Hecho en México", "proveedorid_default": 1}	2	APROBADO	2025-12-25 11:31:56.469369	2025-12-25 11:31:56.469369	2	1
+60	productos	16	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 16, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "AMO-021", "nombreproducto": "Cubo Novios Guapos"}	4	APROBADO	2026-01-03 21:26:49.225487	2026-01-03 21:26:49.225487	4	1
+27	proveedores	3	INSERT	\N	{"rfc": null, "banco": null, "calle": null, "clabe": null, "email": null, "ciudad": null, "estado": null, "colonia": null, "telefono": null, "diascredito": null, "emailventas": null, "proveedorid": 3, "razonsocial": null, "codigopostal": null, "minimocompra": null, "numerocuenta": null, "celularventas": null, "emailcobranza": null, "limitecredito": null, "nombreempresa": "ExploWorld", "regimenfiscal": null, "contactonombre": null, "referenciapago": null, "telefonocobranza": null, "aceptadevoluciones": false, "descuentofinanciero": null, "nombrecontactocobranza": null, "nombrerepresentanteventas": null}	2	APROBADO	2025-12-26 13:40:58.939631	2025-12-26 13:40:58.939631	2	1
+28	categorias	3	INSERT	\N	{"activo": true, "nombre": "Toda Ocasión", "categoriaid": 3, "descripcion": null, "parentcategoriaid": null}	2	APROBADO	2025-12-26 13:43:56.448044	2025-12-26 13:43:56.448044	2	1
+29	productos	9	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 9, "categoriaid": 2, "descripcion": "Cubo Acetato", "proveedorid": 1, "sku_maestro": "AMO-018", "nombreproducto": "Cubo Acetato"}	2	APROBADO	2025-12-26 13:52:22.610319	2025-12-26 13:52:22.610319	2	1
+30	productos	9	UPDATE	{"activo": true, "reglaid": 1, "productoid": 9, "categoriaid": 2, "descripcion": "Cubo Acetato", "proveedorid": 1, "sku_maestro": "AMO-018", "nombreproducto": "Cubo Acetato"}	{"activo": true, "reglaid": 1, "productoid": 9, "categoriaid": 2, "descripcion": "Cubo Acetato", "sku_maestro": "AMO-018", "nombreproducto": "Cubo Acetato", "proveedorid_default": 1}	2	APROBADO	2025-12-26 14:55:23.048718	2025-12-26 14:55:23.048718	2	1
+31	productos	10	INSERT	\N	{"activo": true, "reglaid": 5, "productoid": 10, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "AMO-019", "nombreproducto": "Libreta"}	2	APROBADO	2025-12-26 15:04:45.274991	2025-12-26 15:04:45.274991	2	1
+32	productos	11	INSERT	\N	{"activo": true, "reglaid": 2, "productoid": 11, "categoriaid": 1, "descripcion": null, "proveedorid": 1, "sku_maestro": "LIS-001", "nombreproducto": "Cubo Liso"}	2	APROBADO	2025-12-26 15:27:12.852081	2025-12-26 15:27:12.852081	2	1
+33	productos	3	UPDATE	{"activo": true, "reglaid": 1, "productoid": 3, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "AMO-006", "nombreproducto": "Brillo"}	{"activo": true, "reglaid": 1, "productoid": 3, "categoriaid": 1, "descripcion": null, "sku_maestro": "AMO-006", "nombreproducto": "Brillo", "proveedorid_default": 1}	2	APROBADO	2025-12-26 15:31:45.71898	2025-12-26 15:31:45.71898	2	1
+34	categorias	4	INSERT	\N	{"activo": true, "nombre": "Natural", "categoriaid": 4, "descripcion": null, "parentcategoriaid": null}	2	APROBADO	2025-12-26 15:33:03.471727	2025-12-26 15:33:03.471727	2	1
+35	productos	12	INSERT	\N	{"activo": true, "reglaid": 2, "productoid": 12, "categoriaid": 4, "descripcion": null, "proveedorid": 1, "sku_maestro": "NAT-001", "nombreproducto": "Cubo Natural"}	2	APROBADO	2025-12-26 15:36:29.447567	2025-12-26 15:36:29.447567	2	1
+36	productos	13	INSERT	\N	{"activo": true, "reglaid": 2, "productoid": 13, "categoriaid": 4, "descripcion": null, "proveedorid": 1, "sku_maestro": "NAT-002", "nombreproducto": "Camisera Natural"}	2	APROBADO	2025-12-26 15:45:16.84568	2025-12-26 15:45:16.84568	2	1
+37	productos	13	UPDATE	{"activo": true, "reglaid": 2, "productoid": 13, "categoriaid": 4, "descripcion": null, "proveedorid": 1, "sku_maestro": "NAT-002", "nombreproducto": "Camisera Natural"}	{"activo": true, "reglaid": 2, "productoid": 13, "categoriaid": 4, "descripcion": null, "sku_maestro": "NAT-002", "nombreproducto": "Camisera Natural", "proveedorid_default": 1}	2	APROBADO	2025-12-26 16:30:15.027754	2025-12-26 16:30:15.027754	2	1
+38	productos	13	UPDATE	{"activo": true, "reglaid": 2, "productoid": 13, "categoriaid": 4, "descripcion": null, "proveedorid": 1, "sku_maestro": "NAT-002", "nombreproducto": "Camisera Natural"}	{"activo": true, "reglaid": 2, "productoid": 13, "categoriaid": 4, "descripcion": null, "sku_maestro": "NAT-002", "nombreproducto": "Camisera Natural", "proveedorid_default": 1}	2	APROBADO	2025-12-26 16:32:10.704473	2025-12-26 16:32:10.704473	2	1
+39	productos	13	UPDATE	{"activo": true, "reglaid": 2, "productoid": 13, "categoriaid": 4, "descripcion": null, "proveedorid": 1, "sku_maestro": "NAT-002", "nombreproducto": "Camisera Natural"}	{"activo": true, "reglaid": 1, "productoid": 13, "categoriaid": 4, "descripcion": null, "sku_maestro": "NAT-002", "nombreproducto": "Camisera Natural", "proveedorid_default": 1}	2	APROBADO	2025-12-26 16:38:02.654604	2025-12-26 16:38:02.654604	2	1
+40	productos	10	UPDATE	{"activo": true, "reglaid": 5, "productoid": 10, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "AMO-019", "nombreproducto": "Libreta"}	{"activo": true, "reglaid": 5, "productoid": 10, "categoriaid": 2, "descripcion": null, "sku_maestro": "AMO-019", "nombreproducto": "Libreta", "proveedorid_default": 1}	2	APROBADO	2025-12-31 08:52:28.749917	2025-12-31 08:52:28.749917	2	1
+41	productos	14	INSERT	\N	{"activo": true, "reglaid": 2, "productoid": 14, "categoriaid": 1, "descripcion": null, "proveedorid": 1, "sku_maestro": "LIS-002", "nombreproducto": "Línea Metalizada"}	2	APROBADO	2025-12-31 08:56:50.280269	2025-12-31 08:56:50.280269	2	1
+42	productos	14	UPDATE	{"activo": true, "reglaid": 2, "productoid": 14, "categoriaid": 1, "descripcion": null, "proveedorid": 1, "sku_maestro": "LIS-002", "nombreproducto": "Línea Metalizada"}	{"activo": true, "reglaid": 1, "productoid": 14, "categoriaid": 1, "descripcion": null, "sku_maestro": "LIS-002", "nombreproducto": "Línea Metalizada", "proveedorid_default": 1}	2	APROBADO	2025-12-31 09:15:49.773776	2025-12-31 09:15:49.773776	2	1
+43	pedidos	17	UPDATE	{"pagado": false, "estatus": "Parcialmente Surtido"}	{"monto": "128.70", "accion": "APROBAR_PAGO_TRANSFERENCIA", "pagado": true, "cliente": "Diego Fernando Ramírez García", "estatus": "Confirmado"}	2	APROBADO	2026-01-02 06:24:26.956375	2026-01-02 06:24:26.956375	2	1
+44	admins	4	INSERT	\N	{"rol": "admin", "email": "alecaja.19@gmail.com", "activo": true, "nombre": "Alejandra Calderón", "adminid": 4, "apellido": "                                                                                                    "}	2	APROBADO	2026-01-02 20:43:37.09496	2026-01-02 20:43:37.09496	2	1
+45	admins	5	INSERT	\N	{"rol": "admin", "email": "pupis_gr@icloud.com", "activo": true, "nombre": "Lupita García", "adminid": 5, "apellido": "                                                                                                    "}	2	APROBADO	2026-01-02 20:49:05.635416	2026-01-02 20:49:05.635416	2	1
+46	admins	6	INSERT	\N	{"rol": "admin", "email": "maricelag.e@hotmail.com", "activo": true, "nombre": "Maricela García", "adminid": 6, "apellido": "                                                                                                    "}	2	APROBADO	2026-01-02 23:00:58.087258	2026-01-02 23:00:58.087258	2	1
+47	admins	7	INSERT	\N	{"rol": "admin", "email": "maricelag.e@hotmail.com", "activo": true, "nombre": "Maricela García", "adminid": 7, "apellido": "                                                                                                    "}	2	APROBADO	2026-01-02 23:02:29.217336	2026-01-02 23:02:29.217336	2	1
+48	productos	4	UPDATE	{"activo": true, "reglaid": 1, "productoid": 4, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "AMO-008", "nombreproducto": "Black"}	{"activo": true, "reglaid": 1, "productoid": 4, "categoriaid": 2, "descripcion": null, "sku_maestro": "AMO-008", "nombreproducto": "Love Black", "proveedorid_default": 1}	4	APROBADO	2026-01-03 17:28:32.748679	2026-01-03 17:28:32.748679	4	1
+49	productos	1	UPDATE	{"activo": true, "reglaid": 1, "productoid": 1, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "AMO-001", "nombreproducto": "Colors Love Cubo"}	{"activo": true, "reglaid": 1, "productoid": 1, "categoriaid": 2, "descripcion": null, "sku_maestro": "AMO-001", "nombreproducto": "Cubo Colors Love", "proveedorid_default": 1}	4	APROBADO	2026-01-03 17:39:12.68726	2026-01-03 17:39:12.68726	4	1
+50	productos	4	UPDATE	{"activo": true, "reglaid": 1, "productoid": 4, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "AMO-008", "nombreproducto": "Love Black"}	{"activo": true, "reglaid": 1, "productoid": 4, "categoriaid": 2, "descripcion": null, "sku_maestro": "AMO-008", "nombreproducto": "Cubo Love Black", "proveedorid_default": 1}	4	APROBADO	2026-01-03 17:40:16.957553	2026-01-03 17:40:16.957553	4	1
+51	productos	8	UPDATE	{"activo": true, "reglaid": 1, "productoid": 8, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "AMO-016", "nombreproducto": "Hecho en México"}	{"activo": true, "reglaid": 2, "productoid": 8, "categoriaid": 2, "descripcion": null, "sku_maestro": "AMO-016", "nombreproducto": "Cubo Hecho en México", "proveedorid_default": 1}	4	APROBADO	2026-01-03 17:51:12.318799	2026-01-03 17:51:12.318799	4	1
+52	productos	5	UPDATE	{"activo": true, "reglaid": 1, "productoid": 5, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "AMO-010", "nombreproducto": "Craft"}	{"activo": true, "reglaid": 1, "productoid": 5, "categoriaid": 2, "descripcion": null, "sku_maestro": "AMO-010", "nombreproducto": "Cubo Love Craft", "proveedorid_default": 1}	4	APROBADO	2026-01-03 17:57:58.057706	2026-01-03 17:57:58.057706	4	1
+53	productos	1	UPDATE	{"activo": true, "reglaid": 1, "productoid": 1, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "AMO-001", "nombreproducto": "Cubo Colors Love"}	{"activo": true, "reglaid": 1, "productoid": 1, "categoriaid": 2, "descripcion": null, "sku_maestro": "AMO-001", "nombreproducto": "Cubo Colors Love", "proveedorid_default": 1}	4	APROBADO	2026-01-03 18:03:49.232571	2026-01-03 18:03:49.232571	4	1
+54	productos	2	UPDATE	{"activo": true, "reglaid": 1, "productoid": 2, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "AMO-003", "nombreproducto": "LV Oro"}	{"activo": true, "reglaid": 1, "productoid": 2, "categoriaid": 2, "descripcion": null, "sku_maestro": "AMO-003", "nombreproducto": "Cubo LV Oro", "proveedorid_default": 1}	4	APROBADO	2026-01-03 18:27:11.516707	2026-01-03 18:27:11.516707	4	1
+55	productos	2	UPDATE	{"activo": true, "reglaid": 1, "productoid": 2, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "AMO-003", "nombreproducto": "Cubo LV Oro"}	{"activo": true, "reglaid": 1, "productoid": 2, "categoriaid": 2, "descripcion": null, "sku_maestro": "AMO-003", "nombreproducto": "Cubo LV Oro", "proveedorid_default": 1}	4	APROBADO	2026-01-03 18:28:37.913026	2026-01-03 18:28:37.913026	4	1
+56	productos	9	UPDATE	{"activo": true, "reglaid": 1, "productoid": 9, "categoriaid": 2, "descripcion": "Cubo Acetato", "proveedorid": 1, "sku_maestro": "AMO-018", "nombreproducto": "Cubo Acetato"}	{"activo": true, "reglaid": 1, "productoid": 9, "categoriaid": 2, "descripcion": null, "sku_maestro": "AMO-018", "nombreproducto": "Cubo Acetato", "proveedorid_default": 1}	4	APROBADO	2026-01-03 18:35:39.098118	2026-01-03 18:35:39.098118	4	1
+57	productos	7	UPDATE	{"activo": true, "reglaid": 1, "productoid": 7, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "AMO-014", "nombreproducto": "RedBlack"}	{"activo": true, "reglaid": 1, "productoid": 7, "categoriaid": 2, "descripcion": null, "sku_maestro": "AMO-014", "nombreproducto": "Cubo RedBlack Love", "proveedorid_default": 1}	4	APROBADO	2026-01-03 19:08:29.186101	2026-01-03 19:08:29.186101	4	1
+58	productos	6	UPDATE	{"activo": true, "reglaid": 1, "productoid": 6, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "AMO-012", "nombreproducto": "Colores"}	{"activo": true, "reglaid": 1, "productoid": 6, "categoriaid": 2, "descripcion": null, "sku_maestro": "AMO-012", "nombreproducto": "Cubo Colores Amor", "proveedorid_default": 1}	4	APROBADO	2026-01-03 19:13:54.91665	2026-01-03 19:13:54.91665	4	1
+59	productos	15	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 15, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "AMO-020", "nombreproducto": "Cubo Friends & Love"}	4	APROBADO	2026-01-03 21:20:40.039006	2026-01-03 21:20:40.039006	4	1
+61	categorias	3	UPDATE	{"activo": true, "nombre": "Toda Ocasión", "categoriaid": 3, "descripcion": null, "parentcategoriaid": null}	{"activo": true, "nombre": "Toda Ocasión", "categoriaid": 3, "descripcion": "Cajas de cumpleaños que dan color a tu regalo", "parentcategoriaid": null}	5	APROBADO	2026-01-03 21:32:20.899793	2026-01-03 21:32:20.899793	5	1
+62	categorias	3	UPDATE	{"activo": true, "nombre": "Toda Ocasión", "categoriaid": 3, "descripcion": "Cajas de cumpleaños que dan color a tu regalo", "parentcategoriaid": null}	{"activo": true, "nombre": "Toda Ocasión", "categoriaid": 3, "descripcion": "Cajas de cumpleaños que dan color a tu regalo 🎁", "parentcategoriaid": null}	5	APROBADO	2026-01-03 21:33:25.852562	2026-01-03 21:33:25.852562	5	1
+63	productos	17	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 17, "categoriaid": 3, "descripcion": "Caja craft de colores, ideal para celebrar el cumpleaños de esa persona especial, colores vibrantes con acabdo mate.", "proveedorid": 1, "sku_maestro": "TOD-001", "nombreproducto": "Cubo cumple craft"}	5	APROBADO	2026-01-03 21:48:33.399514	2026-01-03 21:48:33.399514	5	1
+64	productos	17	UPDATE	{"activo": true, "reglaid": 1, "productoid": 17, "categoriaid": 3, "descripcion": "Caja craft de colores, ideal para celebrar el cumpleaños de esa persona especial, colores vibrantes con acabdo mate.", "proveedorid": 1, "sku_maestro": "TOD-001", "nombreproducto": "Cubo cumple craft"}	{"activo": true, "reglaid": 1, "productoid": 17, "categoriaid": 3, "descripcion": "Caja craft de colores, ideal para celebrar el cumpleaños de esa persona especial, colores vibrantes con acabado mate.", "sku_maestro": "TOD-001", "nombreproducto": "Cubo Cumple Craft", "proveedorid_default": 1}	5	APROBADO	2026-01-03 22:01:05.371984	2026-01-03 22:01:05.371984	5	1
+65	productos	17	UPDATE	{"activo": true, "reglaid": 1, "productoid": 17, "categoriaid": 3, "descripcion": "Caja craft de colores, ideal para celebrar el cumpleaños de esa persona especial, colores vibrantes con acabado mate.", "proveedorid": 1, "sku_maestro": "TOD-001", "nombreproducto": "Cubo Cumple Craft"}	{"activo": true, "reglaid": 1, "productoid": 17, "categoriaid": 3, "descripcion": "Caja craft de colores, ideal para celebrar el cumpleaños de esa persona especial, colores vibrantes con acabado mate.", "sku_maestro": "TOD-001", "nombreproducto": "Cubo Cumple Craft", "proveedorid_default": 1}	5	APROBADO	2026-01-03 23:11:57.313087	2026-01-03 23:11:57.313087	5	1
+66	productos	18	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 18, "categoriaid": 3, "descripcion": "Caja con diseño, ideal para celebrar el cumpleaños de esa persona especial, colores vibrantes acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "TOD-002", "nombreproducto": "Cubo Cumple Graffiti"}	5	APROBADO	2026-01-03 23:33:06.059573	2026-01-03 23:33:06.059573	5	1
+67	productos	19	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 19, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "AMO-022", "nombreproducto": "Cubo Love"}	4	APROBADO	2026-01-03 23:42:01.833775	2026-01-03 23:42:01.833775	4	1
+68	categorias	2	UPDATE	{"activo": true, "nombre": "Amor", "imagen_url": null, "categoriaid": 2, "descripcion": null, "imagen_public_id": null, "parentcategoriaid": null}	{"activo": true, "nombre": "Amor", "imagen_url": "https://res.cloudinary.com/daylne1ml/image/upload/v1767483819/categories/hxivvedrcy19xk06ugjn.png", "categoriaid": 2, "descripcion": null, "imagen_public_id": "categories/hxivvedrcy19xk06ugjn", "parentcategoriaid": null}	2	APROBADO	2026-01-03 23:43:39.569988	2026-01-03 23:43:39.569988	2	1
+69	productos	20	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 20, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "AMO-023", "nombreproducto": "Cubo TQM"}	4	APROBADO	2026-01-03 23:46:45.070513	2026-01-03 23:46:45.070513	4	1
+70	productos	17	UPDATE	{"activo": true, "reglaid": 1, "productoid": 17, "categoriaid": 3, "descripcion": "Caja craft de colores, ideal para celebrar el cumpleaños de esa persona especial, colores vibrantes con acabado mate.", "proveedorid": 1, "sku_maestro": "TOD-001", "nombreproducto": "Cubo Cumple Craft"}	{"activo": true, "reglaid": 1, "productoid": 17, "categoriaid": 3, "descripcion": "Caja craft de colores, ideal para celebrar el cumpleaños de esa persona especial, colores vibrantes con acabado mate.", "sku_maestro": "TOD-001", "nombreproducto": "Cubo Cumple Craft", "proveedorid_default": 1}	5	APROBADO	2026-01-03 23:48:05.98786	2026-01-03 23:48:05.98786	5	1
+71	productos	17	UPDATE	{"activo": true, "reglaid": 1, "productoid": 17, "categoriaid": 3, "descripcion": "Caja craft de colores, ideal para celebrar el cumpleaños de esa persona especial, colores vibrantes con acabado mate.", "proveedorid": 1, "sku_maestro": "TOD-001", "nombreproducto": "Cubo Cumple Craft"}	{"activo": true, "reglaid": 1, "productoid": 17, "categoriaid": 3, "descripcion": "Caja craft de colores, ideal para celebrar el cumpleaños de esa persona especial, colores vibrantes con acabado mate.", "sku_maestro": "TOD-001", "nombreproducto": "Cubo Cumple Craft", "proveedorid_default": 1}	5	APROBADO	2026-01-03 23:55:45.712137	2026-01-03 23:55:45.712137	5	1
+72	categorias	3	UPDATE	{"activo": true, "nombre": "Toda Ocasión", "imagen_url": null, "categoriaid": 3, "descripcion": "Cajas de cumpleaños que dan color a tu regalo 🎁", "imagen_public_id": null, "parentcategoriaid": null}	{"activo": true, "nombre": "Toda ocasión", "imagen_url": "https://res.cloudinary.com/daylne1ml/image/upload/v1767484732/categories/mrfszpgqjl4zvot4bei0.png", "categoriaid": 3, "descripcion": "Cajas de cumpleaños que dan color a tu regalo 🎁", "imagen_public_id": "categories/mrfszpgqjl4zvot4bei0", "parentcategoriaid": null}	2	APROBADO	2026-01-03 23:58:53.327293	2026-01-03 23:58:53.327293	2	1
+73	categorias	1	UPDATE	{"activo": true, "nombre": "Lisas", "imagen_url": null, "categoriaid": 1, "descripcion": "Cajas perfectas para cualquier época del año!", "imagen_public_id": null, "parentcategoriaid": null}	{"activo": true, "nombre": "Lisas", "imagen_url": "https://res.cloudinary.com/daylne1ml/image/upload/v1767484774/categories/idyffvrvkmy3o9dmxsuw.png", "categoriaid": 1, "descripcion": "Cajas perfectas para cualquier época del año!", "imagen_public_id": "categories/idyffvrvkmy3o9dmxsuw", "parentcategoriaid": null}	2	APROBADO	2026-01-03 23:59:35.541278	2026-01-03 23:59:35.541278	2	1
+74	categorias	4	UPDATE	{"activo": true, "nombre": "Natural", "imagen_url": null, "categoriaid": 4, "descripcion": null, "imagen_public_id": null, "parentcategoriaid": null}	{"activo": true, "nombre": "Natural", "imagen_url": "https://res.cloudinary.com/daylne1ml/image/upload/v1767484784/categories/t49i7w3jzlrrtvfgj7bw.png", "categoriaid": 4, "descripcion": null, "imagen_public_id": "categories/t49i7w3jzlrrtvfgj7bw", "parentcategoriaid": null}	2	APROBADO	2026-01-03 23:59:45.019098	2026-01-03 23:59:45.019098	2	1
+90	productos	32	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 32, "categoriaid": 3, "descripcion": "Cajas con diseños y frases divertidas, con las marcas de tus tenis favoritos, colores con acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "TOD-013", "nombreproducto": "Cubo Sports"}	5	APROBADO	2026-01-04 02:46:36.211577	2026-01-04 02:46:36.211577	5	1
+75	productos	18	UPDATE	{"activo": true, "reglaid": 1, "productoid": 18, "categoriaid": 3, "descripcion": "Caja con diseño, ideal para celebrar el cumpleaños de esa persona especial, colores vibrantes acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "TOD-002", "nombreproducto": "Cubo Cumple Graffiti"}	{"activo": true, "reglaid": 1, "productoid": 18, "categoriaid": 3, "descripcion": "Caja con diseño, ideal para celebrar el cumpleaños de esa persona especial, colores vibrantes acabado barniz brillante.", "sku_maestro": "TOD-002", "nombreproducto": "Cubo Cumple Graffiti", "proveedorid_default": 1}	5	APROBADO	2026-01-04 00:06:14.450959	2026-01-04 00:06:14.450959	5	1
+77	productos	21	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 21, "categoriaid": 3, "descripcion": "Caja con diseño, ideal para celebraciones especiales, colores vibrantes con acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "TOD-003", "nombreproducto": "Cubo Cómics"}	5	APROBADO	2026-01-04 00:28:40.120763	2026-01-04 00:28:40.120763	5	1
+78	productos	22	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 22, "categoriaid": 2, "descripcion": "Estas cajas de regalo tipo \\"Camisera\\" son perfectas para quienes buscan un empaque vibrante, alegre y lleno de sentimiento. Su diseño \\"Colors Love\\" destaca por una explosión de colores neón, tipografías estilo pop-art y mensajes románticos que las hacen ideales para San Valentín, aniversarios o cualquier ocasión especial.", "proveedorid": 1, "sku_maestro": "AMO-024", "nombreproducto": "Camisera Colors Love"}	4	APROBADO	2026-01-04 00:35:05.017191	2026-01-04 00:35:05.017191	4	1
+80	productos	22	UPDATE	{"activo": true, "reglaid": 1, "productoid": 22, "categoriaid": 2, "descripcion": "Estas cajas de regalo tipo \\"Camisera\\" son perfectas para quienes buscan un empaque vibrante, alegre y lleno de sentimiento. Su diseño \\"Colors Love\\" destaca por una explosión de colores neón, tipografías estilo pop-art y mensajes románticos que las hacen ideales para San Valentín, aniversarios o cualquier ocasión especial.", "proveedorid": 1, "sku_maestro": "AMO-024", "nombreproducto": "Camisera Colors Love"}	{"activo": true, "reglaid": 1, "productoid": 22, "categoriaid": 2, "descripcion": "Estas cajas de regalo tipo \\"Camisera\\" son perfectas para quienes buscan un empaque vibrante, alegre y lleno de sentimiento. Su diseño \\"Colors Love\\" destaca por una explosión de colores neón, tipografías estilo pop-art y mensajes románticos que las hacen ideales para San Valentín, aniversarios o cualquier ocasión especial.", "sku_maestro": "AMO-024", "nombreproducto": "Camisera Colors Love", "proveedorid_default": 1}	4	APROBADO	2026-01-04 00:42:22.716293	2026-01-04 00:42:22.716293	4	1
+81	productos	24	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 24, "categoriaid": 3, "descripcion": "Caja con diseños espectaculares, felicitaciones increíbles y todo en un solo empaque, colores vibrantes acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "TOD-005", "nombreproducto": "Cubo Felicidades"}	5	APROBADO	2026-01-04 00:53:30.39235	2026-01-04 00:53:30.39235	5	1
+82	productos	18	UPDATE	{"activo": true, "reglaid": 1, "productoid": 18, "categoriaid": 3, "descripcion": "Caja con diseño, ideal para celebrar el cumpleaños de esa persona especial, colores vibrantes acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "TOD-002", "nombreproducto": "Cubo Cumple Graffiti"}	{"activo": true, "reglaid": 1, "productoid": 18, "categoriaid": 3, "descripcion": "Caja con diseño, ideal para celebrar el cumpleaños de esa persona especial, colores vibrantes acabado barniz brillante.", "sku_maestro": "TOD-002", "nombreproducto": "Cubo Cumple Graffiti", "proveedorid_default": 1}	5	APROBADO	2026-01-04 01:02:48.820168	2026-01-04 01:02:48.820168	5	1
+83	productos	25	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 25, "categoriaid": 3, "descripcion": "Caja de colores, empaques perfectos para tus detalles, diseñadas para convertir un regalo en una experiencia inolvidable, colores espectaculares con acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "TOD-006", "nombreproducto": "Cubo Cumple Colors"}	5	APROBADO	2026-01-04 01:10:36.441724	2026-01-04 01:10:36.441724	5	1
+84	productos	26	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 26, "categoriaid": 3, "descripcion": "Cubo craft, bolas y rayas de colores, ideal para cualquier ocasión, colores sobrios en acabado mate.", "proveedorid": 1, "sku_maestro": "TOD-007", "nombreproducto": "Cubo Bolas y Rayas"}	5	APROBADO	2026-01-04 01:23:01.910872	2026-01-04 01:23:01.910872	5	1
+85	productos	27	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 27, "categoriaid": 3, "descripcion": "Cubo con diseños bonitos y tiernos, para toda ocasión, colores con un toque de dulzura, acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "TOD-008", "nombreproducto": "Cubo Paris-London"}	5	APROBADO	2026-01-04 01:32:43.262065	2026-01-04 01:32:43.262065	5	1
+86	productos	28	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 28, "categoriaid": 3, "descripcion": "Cajas con diseño divertido, ideales para cumpleaños ó cualquier celebración especial, colores explosivos con acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "TOD-009", "nombreproducto": "Cubo Feliz"}	5	APROBADO	2026-01-04 01:43:29.696735	2026-01-04 01:43:29.696735	5	1
+87	productos	29	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 29, "categoriaid": 3, "descripcion": "Caja con diseños de marcas aesthetic, divertidas para cualquier ocasión, con acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "TOD-010", "nombreproducto": "Cubo Nice"}	5	APROBADO	2026-01-04 02:03:19.888578	2026-01-04 02:03:19.888578	5	1
+88	productos	30	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 30, "categoriaid": 3, "descripcion": "Caja, que por su medida es perfecta para un regalo increíble, diseños de cumpleaños para esa persona especial, acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "TOD-011", "nombreproducto": "Cubo Cumple White"}	5	APROBADO	2026-01-04 02:14:44.937414	2026-01-04 02:14:44.937414	5	1
+89	productos	31	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 31, "categoriaid": 3, "descripcion": "Cajas de colores divertidos para toda ocasión, en acabado mate.", "proveedorid": 1, "sku_maestro": "TOD-012", "nombreproducto": "Cubo Luxe"}	5	APROBADO	2026-01-04 02:25:32.467718	2026-01-04 02:25:32.467718	5	1
+91	productos	33	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 33, "categoriaid": 3, "descripcion": "Cajas con diseños y frases divertidas, con marcas de cerveza, ideales para caballero, acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "TOD-014", "nombreproducto": "Cubo Marcas"}	5	APROBADO	2026-01-04 02:52:24.060686	2026-01-04 02:52:24.060686	5	1
+92	productos	34	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 34, "categoriaid": 2, "descripcion": "¡Expresa tus sentimientos con una explosión de color! Nuestra línea Corazón Colors Love está diseñada para quienes buscan un empaque dinámico, moderno y lleno de alegría. Estas cajas no son solo un envoltorio, son parte del regalo mismo.", "proveedorid": 1, "sku_maestro": "AMO-025", "nombreproducto": "Corazón Colors Love"}	4	APROBADO	2026-01-04 02:58:59.151672	2026-01-04 02:58:59.151672	4	1
+93	productos	35	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 35, "categoriaid": 3, "descripcion": "Cajas para toda ocasión, con colores básicos, pero divertidos, acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "TOD-015", "nombreproducto": "Cubo Incógnita"}	5	APROBADO	2026-01-04 03:01:17.007599	2026-01-04 03:01:17.007599	5	1
+94	productos	36	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 36, "categoriaid": 3, "descripcion": "Hermosas cajas, en tonos pastel, para celebrar la llegada de un ser pequeñito  y muy especial, acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "TOD-016", "nombreproducto": "Cubo Baby"}	5	APROBADO	2026-01-04 03:13:07.969117	2026-01-04 03:13:07.969117	5	1
+95	productos	3	UPDATE	{"activo": true, "reglaid": 1, "productoid": 3, "categoriaid": 1, "descripcion": null, "proveedorid": 1, "sku_maestro": "AMO-006", "nombreproducto": "Brillo"}	{"activo": true, "reglaid": 2, "productoid": 3, "categoriaid": 1, "descripcion": "Estas cajas no solo son contenedores, son parte del regalo mismo. Gracias a su acabado brillante y su vibrante color negro o rojo, son perfectas para San Valentín, aniversarios, cumpleaños o cualquier ocasión especial donde quieras impresionar.", "sku_maestro": "AMO-006", "nombreproducto": "Cubo Liso Brillo", "proveedorid_default": 1}	4	APROBADO	2026-01-04 03:33:24.419971	2026-01-04 03:33:24.419971	4	1
+96	productos	37	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 37, "categoriaid": 2, "descripcion": "Sorprende a esa persona especial con nuestras Torres RedBlack, cajas de regalo premium diseñadas para cautivar. Con un estilo moderno y una combinación vibrante de colores rojo, blanco y negro, estas torres son más que un empaque: son un mensaje de amor por sí mismas.", "proveedorid": 1, "sku_maestro": "TOR-001", "nombreproducto": "Torre RedBlack"}	4	APROBADO	2026-01-04 03:48:08.714171	2026-01-04 03:48:08.714171	4	1
+97	productos	38	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 38, "categoriaid": 2, "descripcion": "Sorprende a esa persona especial con nuestra Torre Love, una caja de regalo decorativa diseñada para cautivar. Con un estilo moderno y vibrante, es el empaque ideal para arreglos florales, dulces, peluches o cualquier sorpresa inolvidable.", "proveedorid": 1, "sku_maestro": "TOR-002", "nombreproducto": "Torre Love"}	4	APROBADO	2026-01-04 03:50:25.035807	2026-01-04 03:50:25.035807	4	1
+98	productos	39	INSERT	\N	{"activo": true, "reglaid": 2, "productoid": 39, "categoriaid": 2, "descripcion": "¡Dale un toque vibrante y lleno de vida a tus detalles! Nuestra línea de Baúles Colors Love está diseñada para quienes no temen expresar sus sentimientos con fuerza y color. Ideales para envolver regalos, guardar recuerdos o decorar espacios con un estilo moderno y dinámico.", "proveedorid": 1, "sku_maestro": "BAU-001", "nombreproducto": "Baúl Colors Love"}	4	APROBADO	2026-01-04 04:07:58.273793	2026-01-04 04:07:58.273793	4	1
+99	productos	40	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 40, "categoriaid": 2, "descripcion": "Estas cajas de regalo tipo \\"cartón de leche\\" son una opción creativa y encantadora para cualquier detalle especial. Su diseño único combina la nostalgia de un envase clásico con mensajes modernos y románticos.", "proveedorid": 1, "sku_maestro": "MIL-001", "nombreproducto": "Milk Love"}	4	APROBADO	2026-01-04 04:18:06.809342	2026-01-04 04:18:06.809342	4	1
+100	productos	38	UPDATE	{"activo": true, "reglaid": 1, "productoid": 38, "categoriaid": 2, "descripcion": "Sorprende a esa persona especial con nuestra Torre Love, una caja de regalo decorativa diseñada para cautivar. Con un estilo moderno y vibrante, es el empaque ideal para arreglos florales, dulces, peluches o cualquier sorpresa inolvidable.", "proveedorid": 1, "sku_maestro": "TOR-002", "nombreproducto": "Torre Love"}	{"activo": true, "reglaid": 1, "productoid": 38, "categoriaid": 2, "descripcion": "Sorprende a esa persona especial con nuestra Torre Love, una caja de regalo decorativa diseñada para cautivar. Con un estilo moderno y vibrante, es el empaque ideal para arreglos florales, dulces, peluches o cualquier sorpresa inolvidable.", "sku_maestro": "TOR-002", "nombreproducto": "Torre Love", "proveedorid_default": 1}	4	APROBADO	2026-01-04 04:28:28.207964	2026-01-04 04:28:28.207964	4	1
+101	productos	9	UPDATE	{"activo": true, "reglaid": 1, "productoid": 9, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "AMO-018", "nombreproducto": "Cubo Acetato"}	{"activo": true, "reglaid": 1, "productoid": 9, "categoriaid": 2, "descripcion": "¡Eleva tus regalos al siguiente nivel con nuestros Cubos Corazón de Acetato! Diseñados para combinar elegancia y sentimiento, estos cubos son la base ideal para arreglos florales, desayunos sorpresa, dulces o peluches.", "sku_maestro": "AMO-018", "nombreproducto": "Cubo Acetato", "proveedorid_default": 1}	4	APROBADO	2026-01-04 04:46:05.223944	2026-01-04 04:46:05.223944	4	1
+102	productos	6	UPDATE	{"activo": true, "reglaid": 1, "productoid": 6, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "AMO-012", "nombreproducto": "Cubo Colores Amor"}	{"activo": true, "reglaid": 1, "productoid": 6, "categoriaid": 2, "descripcion": "¡Haz que cada detalle cuente! Nuestra colección Colores Amor está diseñada para quienes buscan transformar un simple regalo en una experiencia inolvidable. Estas cajas no son solo empaques, son una declaración de afecto con un diseño vibrante y moderno.", "sku_maestro": "AMO-012", "nombreproducto": "Cubo Colores Amor", "proveedorid_default": 1}	4	APROBADO	2026-01-04 04:47:54.413547	2026-01-04 04:47:54.413547	4	1
+113	productos	20	UPDATE	{"activo": true, "reglaid": 1, "productoid": 20, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "AMO-023", "nombreproducto": "Cubo TQM"}	{"activo": true, "reglaid": 1, "productoid": 20, "categoriaid": 2, "descripcion": "El Cubo TQM es una caja de regalo premium que combina un diseño moderno con mensajes sentimentales. Su forma cúbica y compacta la hace ideal para contener joyería, dulces finos, lociones o pequeños detalles significativos.", "sku_maestro": "AMO-023", "nombreproducto": "Cubo TQM", "proveedorid_default": 1}	4	APROBADO	2026-01-04 04:58:30.150167	2026-01-04 04:58:30.150167	4	1
+103	productos	6	UPDATE	{"activo": true, "reglaid": 1, "productoid": 6, "categoriaid": 2, "descripcion": "¡Haz que cada detalle cuente! Nuestra colección Colores Amor está diseñada para quienes buscan transformar un simple regalo en una experiencia inolvidable. Estas cajas no son solo empaques, son una declaración de afecto con un diseño vibrante y moderno.", "proveedorid": 1, "sku_maestro": "AMO-012", "nombreproducto": "Cubo Colores Amor"}	{"activo": true, "reglaid": 1, "productoid": 6, "categoriaid": 2, "descripcion": "¡Haz que cada detalle cuente! Nuestra colección Colores Amor está diseñada para quienes buscan transformar un simple regalo en una experiencia inolvidable. Estas cajas no son solo empaques, son una declaración de afecto con un diseño vibrante y moderno.", "sku_maestro": "AMO-012", "nombreproducto": "Cubo Colores Amor", "proveedorid_default": 1}	4	APROBADO	2026-01-04 04:48:46.268383	2026-01-04 04:48:46.268383	4	1
+104	productos	1	UPDATE	{"activo": true, "reglaid": 1, "productoid": 1, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "AMO-001", "nombreproducto": "Cubo Colors Love"}	{"activo": true, "reglaid": 1, "productoid": 1, "categoriaid": 2, "descripcion": "Dale un toque de color y alegría a tus detalles con nuestro Cubo Colors Love. Diseñado especialmente para quienes no temen expresar su cariño de forma vibrante, este cubo decorativo es mucho más que una caja: es el complemento ideal que hará que tu regalo destaque desde el primer momento.", "sku_maestro": "AMO-001", "nombreproducto": "Cubo Colors Love", "proveedorid_default": 1}	4	APROBADO	2026-01-04 04:50:03.960348	2026-01-04 04:50:03.960348	4	1
+105	productos	15	UPDATE	{"activo": true, "reglaid": 1, "productoid": 15, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "AMO-020", "nombreproducto": "Cubo Friends & Love"}	{"activo": true, "reglaid": 1, "productoid": 15, "categoriaid": 2, "descripcion": "¡Haz que tu regalo destaque desde el primer momento! Nuestra colección Friends & Love combina un diseño urbano tipo graffiti con mensajes llenos de sentimiento, perfectos para cualquier ocasión especial.", "sku_maestro": "AMO-020", "nombreproducto": "Cubo Friends & Love", "proveedorid_default": 1}	4	APROBADO	2026-01-04 04:51:12.411405	2026-01-04 04:51:12.411405	4	1
+106	productos	8	UPDATE	{"activo": true, "reglaid": 2, "productoid": 8, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "AMO-016", "nombreproducto": "Cubo Hecho en México"}	{"activo": true, "reglaid": 1, "productoid": 8, "categoriaid": 2, "descripcion": "Dale un toque auténtico y vibrante a tus detalles con nuestras cajas de regalo temáticas. Diseñadas con el icónico sello de \\"Hecho en México\\", estas cajas no solo sirven como empaque, sino como un elemento decorativo de alta calidad que resalta el orgullo nacional.", "sku_maestro": "AMO-016", "nombreproducto": "Cubo Hecho en México", "proveedorid_default": 1}	4	APROBADO	2026-01-04 04:52:00.860716	2026-01-04 04:52:00.860716	4	1
+107	productos	19	UPDATE	{"activo": true, "reglaid": 1, "productoid": 19, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "AMO-022", "nombreproducto": "Cubo Love"}	{"activo": true, "reglaid": 1, "productoid": 19, "categoriaid": 2, "descripcion": "¡Haz que cada momento especial sea inolvidable! Nuestro Cubo LOVE no es solo una caja, es una experiencia diseñada para expresar tus sentimientos de la forma más creativa y elegante.", "sku_maestro": "AMO-022", "nombreproducto": "Cubo Love", "proveedorid_default": 1}	4	APROBADO	2026-01-04 04:52:56.576323	2026-01-04 04:52:56.576323	4	1
+108	productos	4	UPDATE	{"activo": true, "reglaid": 1, "productoid": 4, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "AMO-008", "nombreproducto": "Cubo Love Black"}	{"activo": true, "reglaid": 1, "productoid": 4, "categoriaid": 2, "descripcion": "El Cubo Love Black es la opción perfecta para quienes buscan un empaque impactante, moderno y lleno de sentimiento. Diseñada con un fondo negro profundo que hace resaltar colores vibrantes, esta caja no es solo un empaque, sino parte del regalo mismo.", "sku_maestro": "AMO-008", "nombreproducto": "Cubo Love Black", "proveedorid_default": 1}	4	APROBADO	2026-01-04 04:54:05.780054	2026-01-04 04:54:05.780054	4	1
+109	productos	5	UPDATE	{"activo": true, "reglaid": 1, "productoid": 5, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "AMO-010", "nombreproducto": "Cubo Love Craft"}	{"activo": true, "reglaid": 1, "productoid": 5, "categoriaid": 2, "descripcion": "¡Haz que cada regalo sea inolvidable desde el primer vistazo! Nuestra línea de cajas Love Craft está diseñada para quienes buscan salir de lo convencional y entregar un detalle lleno de color, arte y emoción.", "sku_maestro": "AMO-010", "nombreproducto": "Cubo Love Craft", "proveedorid_default": 1}	4	APROBADO	2026-01-04 04:54:51.657231	2026-01-04 04:54:51.657231	4	1
+110	productos	2	UPDATE	{"activo": true, "reglaid": 1, "productoid": 2, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "AMO-003", "nombreproducto": "Cubo LV Oro"}	{"activo": true, "reglaid": 1, "productoid": 2, "categoriaid": 2, "descripcion": "Eleva la presentación de tus detalles con nuestra exclusiva línea de Cajas Cubo LV Oro. Diseñadas con un elegante acabado en color oro y tipografía estilizada, estas cajas son perfectas para San Valentín, aniversarios o cualquier ocasión especial donde el amor sea el protagonista.", "sku_maestro": "AMO-003", "nombreproducto": "Cubo LV Oro", "proveedorid_default": 1}	4	APROBADO	2026-01-04 04:56:02.400255	2026-01-04 04:56:02.400255	4	1
+111	productos	16	UPDATE	{"activo": true, "reglaid": 1, "productoid": 16, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "AMO-021", "nombreproducto": "Cubo Novios Guapos"}	{"activo": true, "reglaid": 1, "productoid": 16, "categoriaid": 2, "descripcion": "¡Lleva tu regalo al siguiente nivel con nuestras cajas decorativas de la línea Novios Guapos! Diseñadas con colores neón, tipografías estilo graffiti y mensajes llenos de amor, estas cajas no son solo un empaque, son parte de la sorpresa.", "sku_maestro": "AMO-021", "nombreproducto": "Cubo Novios Guapos", "proveedorid_default": 1}	4	APROBADO	2026-01-04 04:56:52.472804	2026-01-04 04:56:52.472804	4	1
+112	productos	7	UPDATE	{"activo": true, "reglaid": 1, "productoid": 7, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "AMO-014", "nombreproducto": "Cubo RedBlack Love"}	{"activo": true, "reglaid": 1, "productoid": 7, "categoriaid": 2, "descripcion": "Sorprende a esa persona especial con nuestros elegantes cubos decorativos de la colección RedBlack Love. Diseñados con una combinación clásica de rojo, negro y blanco, estos cubos son el empaque perfecto para regalos inolvidables o como un detalle decorativo lleno de sentimiento.", "sku_maestro": "AMO-014", "nombreproducto": "Cubo RedBlack Love", "proveedorid_default": 1}	4	APROBADO	2026-01-04 04:57:37.585851	2026-01-04 04:57:37.585851	4	1
+114	productos	10	UPDATE	{"activo": true, "reglaid": 5, "productoid": 10, "categoriaid": 2, "descripcion": null, "proveedorid": 1, "sku_maestro": "AMO-019", "nombreproducto": "Libreta"}	{"activo": true, "reglaid": 5, "productoid": 10, "categoriaid": 2, "descripcion": "¡Dale estilo a tus notas con estas libretas de diseño exclusivo! Perfectas para regalo o para uso personal, estas libretas combinan un diseño moderno con materiales de alta resistencia.", "sku_maestro": "AMO-019", "nombreproducto": "Libreta", "proveedorid_default": 1}	4	APROBADO	2026-01-04 05:00:01.850146	2026-01-04 05:00:01.850146	4	1
+115	productos	41	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 41, "categoriaid": 3, "descripcion": "Cajas para caballero toda ocasión, diseños sobrios para festejar a esa persona especial, acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "CUB-001", "nombreproducto": "Cubo Pesca y Cacería"}	5	APROBADO	2026-01-04 05:19:32.525278	2026-01-04 05:19:32.525278	5	1
+116	productos	42	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 42, "categoriaid": 3, "descripcion": "Caja con colores fascinantes, que harán de tu regalo una experiencia única, diseños coloridos para esa celebración especial, en acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "CAM-001", "nombreproducto": "Camisera Grande Cumple"}	5	APROBADO	2026-01-04 13:14:25.899296	2026-01-04 13:14:25.899296	5	1
+117	productos	42	UPDATE	{"activo": true, "reglaid": 1, "productoid": 42, "categoriaid": 3, "descripcion": "Caja con colores fascinantes, que harán de tu regalo una experiencia única, diseños coloridos para esa celebración especial, en acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "CAM-001", "nombreproducto": "Camisera Grande Cumple"}	{"activo": true, "reglaid": 1, "productoid": 42, "categoriaid": 3, "descripcion": "Caja con colores fascinantes, que harán de tu regalo una experiencia única, diseños coloridos para esa celebración especial, en acabado barniz brillante.", "sku_maestro": "CAM-001", "nombreproducto": "Camisera Cumple", "proveedorid_default": 1}	5	APROBADO	2026-01-04 13:24:45.71658	2026-01-04 13:24:45.71658	5	1
+118	productos	42	UPDATE	{"activo": true, "reglaid": 1, "productoid": 42, "categoriaid": 3, "descripcion": "Caja con colores fascinantes, que harán de tu regalo una experiencia única, diseños coloridos para esa celebración especial, en acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "CAM-001", "nombreproducto": "Camisera Cumple"}	{"activo": true, "reglaid": 1, "productoid": 42, "categoriaid": 3, "descripcion": "Caja con colores fascinantes, que harán de tu regalo una experiencia única, diseños coloridos para esa celebración especial, en acabado barniz brillante.", "sku_maestro": "CAM-001", "nombreproducto": "Camisera Cumple", "proveedorid_default": 1}	2	APROBADO	2026-01-04 18:13:54.433485	2026-01-04 18:13:54.433485	2	1
+119	productos	42	UPDATE	{"activo": true, "reglaid": 1, "productoid": 42, "categoriaid": 3, "descripcion": "Caja con colores fascinantes, que harán de tu regalo una experiencia única, diseños coloridos para esa celebración especial, en acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "CAM-001", "nombreproducto": "Camisera Cumple"}	{"activo": true, "reglaid": 1, "productoid": 42, "categoriaid": 3, "descripcion": "Caja con colores fascinantes, que harán de tu regalo una experiencia única, diseños coloridos para esa celebración especial, en acabado barniz brillante.", "sku_maestro": "CAM-001", "nombreproducto": "Camisera Cumple", "proveedorid_default": 1}	5	APROBADO	2026-01-04 19:21:52.400226	2026-01-04 19:21:52.400226	5	1
+120	productos	43	INSERT	\N	{"activo": true, "reglaid": 5, "productoid": 43, "categoriaid": 3, "descripcion": "Caja con colores intensos, ideal para cualquier ocasión, hotstampin, acabado mate.", "proveedorid": 1, "sku_maestro": "PAS-001", "nombreproducto": "Pastelera De Luxe"}	5	APROBADO	2026-01-04 19:43:54.498723	2026-01-04 19:43:54.498723	5	1
+121	productos	44	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 44, "categoriaid": 4, "descripcion": "Caja de regalo kraft natural 10 x 10 cm, simple y bonita. Ideal para envolver detalles pequeños con un toque natural y moderno. Resistente, práctica y fácil de personalizar.", "proveedorid": 1, "sku_maestro": "CAJ-001", "nombreproducto": "Caja cubo 10x10"}	7	APROBADO	2026-01-04 21:56:20.938851	2026-01-04 21:56:20.938851	7	1
+122	productos	44	UPDATE	{"activo": true, "reglaid": 1, "productoid": 44, "categoriaid": 4, "descripcion": "Caja de regalo kraft natural 10 x 10 cm, simple y bonita. Ideal para envolver detalles pequeños con un toque natural y moderno. Resistente, práctica y fácil de personalizar.", "proveedorid": 1, "sku_maestro": "CAJ-001", "nombreproducto": "Caja cubo 10x10"}	{"activo": true, "reglaid": 1, "productoid": 44, "categoriaid": 4, "descripcion": "Caja de regalo kraft natural 10 x 10 cm, simple y bonita. Ideal para envolver detalles pequeños con un toque natural y moderno. Resistente, práctica y fácil de personalizar.", "sku_maestro": "CAJ-001", "nombreproducto": "Caja cubo 10x10", "proveedorid_default": 1}	7	APROBADO	2026-01-04 21:58:16.910759	2026-01-04 21:58:16.910759	7	1
+123	productos	44	UPDATE	{"activo": true, "reglaid": 1, "productoid": 44, "categoriaid": 4, "descripcion": "Caja de regalo kraft natural 10 x 10 cm, simple y bonita. Ideal para envolver detalles pequeños con un toque natural y moderno. Resistente, práctica y fácil de personalizar.", "proveedorid": 1, "sku_maestro": "CAJ-001", "nombreproducto": "Caja cubo 10x10"}	{"activo": true, "reglaid": 1, "productoid": 44, "categoriaid": 4, "descripcion": "Caja de regalo kraft natural tipo cubo, simple, bonita y con mucho estilo. Ideal para presentar tus detalles con un look natural y moderno. Resistente, práctica y fácil de personalizar. Disponible en tamaños desde 10 x 10 x 10 cm hasta 65 x 65 x 65 cm ✨🎁", "sku_maestro": "CAJ-001", "nombreproducto": "Caja cubo", "proveedorid_default": 1}	7	APROBADO	2026-01-04 22:01:21.583169	2026-01-04 22:01:21.583169	7	1
+124	productos	44	UPDATE	{"activo": true, "reglaid": 1, "productoid": 44, "categoriaid": 4, "descripcion": "Caja de regalo kraft natural tipo cubo, simple, bonita y con mucho estilo. Ideal para presentar tus detalles con un look natural y moderno. Resistente, práctica y fácil de personalizar. Disponible en tamaños desde 10 x 10 x 10 cm hasta 65 x 65 x 65 cm ✨🎁", "proveedorid": 1, "sku_maestro": "CAJ-001", "nombreproducto": "Caja cubo"}	{"activo": true, "reglaid": 1, "productoid": 44, "categoriaid": 4, "descripcion": "Caja de regalo kraft natural tipo cubo, simple, bonita y con mucho estilo. Ideal para presentar tus detalles con un look natural y moderno. Resistente, práctica y fácil de personalizar. Disponible en tamaños desde 10 x 10 x 10 cm hasta 65 x 65 x 65 cm ✨🎁", "sku_maestro": "CAJ-001", "nombreproducto": "Caja cubo", "proveedorid_default": 1}	7	APROBADO	2026-01-04 22:07:36.550678	2026-01-04 22:07:36.550678	7	1
+125	productos	45	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 45, "categoriaid": 4, "descripcion": "Caja camisera de regalo kraft color natural, elegante y funcional. Ideal para presentar prendas y regalos con un estilo limpio y moderno. Resistente, práctica y fácil de personalizar. Disponible en diferentes tamaños para adaptarse a cada detalle 🎁✨", "proveedorid": 1, "sku_maestro": "CAJ-002", "nombreproducto": "Caja camisera"}	7	APROBADO	2026-01-04 22:10:51.299318	2026-01-04 22:10:51.299318	7	1
+126	productos	46	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 46, "categoriaid": 4, "descripcion": "Caja baúl de regalo kraft color natural, con un diseño original y funcional. Perfecta para presentar regalos especiales con un toque natural y moderno. Resistente, fácil de armar y personalizar. Disponible en varios tamaños 🎁✨", "proveedorid": 1, "sku_maestro": "CAJ-003", "nombreproducto": "Caja baul"}	7	APROBADO	2026-01-04 22:14:39.015287	2026-01-04 22:14:39.015287	7	1
+127	productos	47	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 47, "categoriaid": 3, "descripcion": "Caja para celebrar a esa persona especial, color, diseño y tamaño perfecto para un regalo espectacular, con acabado barniz brillante", "proveedorid": 1, "sku_maestro": "BAU-002", "nombreproducto": "Baúl Cumple"}	5	APROBADO	2026-01-04 22:15:48.777274	2026-01-04 22:15:48.777274	5	1
+128	productos	13	UPDATE	{"activo": true, "reglaid": 1, "productoid": 13, "categoriaid": 4, "descripcion": null, "proveedorid": 1, "sku_maestro": "NAT-002", "nombreproducto": "Camisera Natural"}	{"activo": true, "reglaid": 1, "productoid": 13, "categoriaid": 4, "descripcion": "Caja camisera de regalo kraft color natural, elegante y funcional. Ideal para presentar prendas y regalos con un estilo limpio y moderno. Resistente, práctica y fácil de personalizar. Disponible en diferentes tamaños para adaptarse a cada detalle 🎁✨", "sku_maestro": "NAT-002", "nombreproducto": "Camisera Natural", "proveedorid_default": 1}	7	APROBADO	2026-01-04 22:17:44.600314	2026-01-04 22:17:44.600314	7	1
+129	productos	48	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 48, "categoriaid": 4, "descripcion": "Caja tipo lunch kraft natural, práctica y con mucho estilo. Ideal para armar desayunos sorpresa y detalles especiales. Resistente, fácil de armar y perfecta para personalizar y sorprender 🎁✨", "proveedorid": 1, "sku_maestro": "CAJ-004", "nombreproducto": "Caja lunch kraft"}	7	APROBADO	2026-01-04 22:20:08.881175	2026-01-04 22:20:08.881175	7	1
+130	productos	49	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 49, "categoriaid": 4, "descripcion": "Caja de regalo tipo torre kraft, original y llamativa. Ideal para armar regalos en capas y crear una presentación impactante. Resistente, fácil de armar y perfecta para personalizar con un estilo natural y moderno 🎁✨", "proveedorid": 1, "sku_maestro": "CAJ-005", "nombreproducto": "Caja torre natural"}	7	APROBADO	2026-01-04 22:23:05.031916	2026-01-04 22:23:05.031916	7	1
+131	productos	50	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 50, "categoriaid": 3, "descripcion": "Caja para celebrar a esa persona especial, color, diseño y tamaño perfecto para un regalo espectacular, con acabado barniz brillante", "proveedorid": 1, "sku_maestro": "BAU-003", "nombreproducto": "Baúl Colors Cumple"}	5	APROBADO	2026-01-04 22:24:01.818454	2026-01-04 22:24:01.818454	5	1
+132	productos	51	INSERT	\N	{"activo": true, "reglaid": 2, "productoid": 51, "categoriaid": 4, "descripcion": "Caja six pack kraft natural, perfecta para cervezas o bebidas. Resistente, con estilo y ese look natural que siempre queda bien. Ideal para armar regalos cool y sorprender 🍺✨", "proveedorid": 1, "sku_maestro": "SIX-001", "nombreproducto": "Six pack natural"}	7	APROBADO	2026-01-04 22:30:13.875708	2026-01-04 22:30:13.875708	7	1
+133	productos	52	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 52, "categoriaid": 4, "descripcion": "Caja de regalo en forma de corazón, elaborada en cartón kraft natural. Bonita, resistente y con un toque romántico y moderno. Ideal para detalles especiales, fácil de personalizar y perfecta para sorprender 💛🎁", "proveedorid": 1, "sku_maestro": "CAJ-006", "nombreproducto": "Caja corazon natural"}	7	APROBADO	2026-01-04 22:33:15.169906	2026-01-04 22:33:15.169906	7	1
+134	productos	53	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 53, "categoriaid": 3, "descripcion": "Caja para celebrar a esa persona especial, ideal para un desayuno sorpresa ó si lo prefieres retiras el interior y colocas tu regalo, color, diseño y tamaño perfecto, con acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "LUN-001", "nombreproducto": "Lunch Party"}	5	APROBADO	2026-01-04 22:34:17.923262	2026-01-04 22:34:17.923262	5	1
+135	productos	54	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 54, "categoriaid": 3, "descripcion": "Caja para celebrar a esa persona especial, color, diseño y tamaño perfecto para un regalo espectacular, con acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "TOR-003", "nombreproducto": "Torre Cumple Colors"}	5	APROBADO	2026-01-04 22:55:01.231357	2026-01-04 22:55:01.231357	5	1
+136	productos	55	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 55, "categoriaid": 3, "descripcion": "Caja para celebrar a esa persona especial, color, diseño y tamaño perfecto para una botella de vino, con acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "BOT-001", "nombreproducto": "Botella Cumple"}	5	APROBADO	2026-01-04 23:06:53.641059	2026-01-04 23:06:53.641059	5	1
+137	productos	56	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 56, "categoriaid": 3, "descripcion": "Caja para celebrar a esa persona especial, diseño divertido y tamaño perfecto para un regalo espectacular, con acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "PAL-001", "nombreproducto": "Palomita"}	5	APROBADO	2026-01-04 23:12:58.654783	2026-01-04 23:12:58.654783	5	1
+138	productos	57	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 57, "categoriaid": 3, "descripcion": "Caja con diseño divertido, ideal para celebrar el cumpleaños de esa persona especial, colores vibrantes acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "MIL-002", "nombreproducto": "Milk Cumple Colors"}	5	APROBADO	2026-01-04 23:59:53.437413	2026-01-04 23:59:53.437413	5	1
+139	productos	58	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 58, "categoriaid": 3, "descripcion": "Caja con diseños divertidos, perfecta para cervezas ó bebidas, resistente, con estilo y ese look que siempre queda bien. Ideal para armar regalos cool y sorprender, acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "SIX-002", "nombreproducto": "Six Pack Men"}	5	APROBADO	2026-01-05 00:30:01.777644	2026-01-05 00:30:01.777644	5	1
+140	productos	59	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 59, "categoriaid": 3, "descripcion": "Caja con un diseño original y funcional. Perfecta para entregar regalos especiales con un toque moderno y divertido. Resistente, fácil de armar, con asas, acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "CER-001", "nombreproducto": "Cerillo Party"}	5	APROBADO	2026-01-05 04:48:32.969775	2026-01-05 04:48:32.969775	5	1
+141	productos	60	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 60, "categoriaid": 3, "descripcion": "Bolsa Kraft de material resistente, con diseños únicos, ideal para sorprender a esa persona especial, acabado mate.", "proveedorid": 1, "sku_maestro": "BOL-001", "nombreproducto": "Bolsa Guapos"}	5	APROBADO	2026-01-05 05:05:37.351594	2026-01-05 05:05:37.351594	5	1
+142	productos	61	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 61, "categoriaid": 3, "descripcion": "Sobre de dinero, ideal para cuando no sabes que regalar, diseños alegres y divertidos, con acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "SOB-001", "nombreproducto": "Sobre Cumple"}	5	APROBADO	2026-01-05 05:28:54.66734	2026-01-05 05:28:54.66734	5	1
+143	productos	14	UPDATE	{"activo": true, "reglaid": 1, "productoid": 14, "categoriaid": 1, "descripcion": null, "proveedorid": 1, "sku_maestro": "LIS-002", "nombreproducto": "Línea Metalizada"}	{"activo": true, "reglaid": 1, "productoid": 14, "categoriaid": 1, "descripcion": null, "sku_maestro": "LIS-002", "nombreproducto": "Línea Metalizada", "proveedorid_default": 1}	2	APROBADO	2026-01-05 05:38:48.391989	2026-01-05 05:38:48.391989	2	1
+144	productos	46	UPDATE	{"activo": true, "reglaid": 1, "productoid": 46, "categoriaid": 4, "descripcion": "Caja baúl de regalo kraft color natural, con un diseño original y funcional. Perfecta para presentar regalos especiales con un toque natural y moderno. Resistente, fácil de armar y personalizar. Disponible en varios tamaños 🎁✨", "proveedorid": 1, "sku_maestro": "CAJ-003", "nombreproducto": "Caja baul"}	{"activo": true, "reglaid": 1, "productoid": 46, "categoriaid": 4, "descripcion": "Caja baúl de regalo kraft color natural, con un diseño original y funcional. Perfecta para presentar regalos especiales con un toque natural y moderno. Resistente, fácil de armar y personalizar. Disponible en varios tamaños 🎁✨", "sku_maestro": "CAJ-003", "nombreproducto": "Caja baul", "proveedorid_default": 1}	7	APROBADO	2026-01-05 19:20:47.345742	2026-01-05 19:20:47.345742	7	1
+145	productos	45	UPDATE	{"activo": true, "reglaid": 1, "productoid": 45, "categoriaid": 4, "descripcion": "Caja camisera de regalo kraft color natural, elegante y funcional. Ideal para presentar prendas y regalos con un estilo limpio y moderno. Resistente, práctica y fácil de personalizar. Disponible en diferentes tamaños para adaptarse a cada detalle 🎁✨", "proveedorid": 1, "sku_maestro": "CAJ-002", "nombreproducto": "Caja camisera"}	{"activo": true, "reglaid": 1, "productoid": 45, "categoriaid": 4, "descripcion": "Camisera de regalo kraft color natural, elegante y funcional. Ideal para presentar prendas y regalos con un estilo limpio y moderno. Resistente, práctica y fácil de personalizar. Disponible en diferentes tamaños para adaptarse a cada detalle 🎁✨", "sku_maestro": "CAJ-002", "nombreproducto": "Caja camisera", "proveedorid_default": 1}	7	APROBADO	2026-01-05 19:22:06.208084	2026-01-05 19:22:06.208084	7	1
+146	productos	46	UPDATE	{"activo": true, "reglaid": 1, "productoid": 46, "categoriaid": 4, "descripcion": "Caja baúl de regalo kraft color natural, con un diseño original y funcional. Perfecta para presentar regalos especiales con un toque natural y moderno. Resistente, fácil de armar y personalizar. Disponible en varios tamaños 🎁✨", "proveedorid": 1, "sku_maestro": "CAJ-003", "nombreproducto": "Caja baul"}	{"activo": true, "reglaid": 1, "productoid": 46, "categoriaid": 4, "descripcion": "Baúl de regalo kraft color natural, con un diseño original y funcional. Perfecta para presentar regalos especiales con un toque natural y moderno. Resistente, fácil de armar y personalizar. Disponible en varios tamaños 🎁✨", "sku_maestro": "CAJ-003", "nombreproducto": "Caja baul", "proveedorid_default": 1}	7	APROBADO	2026-01-05 19:22:29.216803	2026-01-05 19:22:29.216803	7	1
+147	productos	44	UPDATE	{"activo": true, "reglaid": 1, "productoid": 44, "categoriaid": 4, "descripcion": "Caja de regalo kraft natural tipo cubo, simple, bonita y con mucho estilo. Ideal para presentar tus detalles con un look natural y moderno. Resistente, práctica y fácil de personalizar. Disponible en tamaños desde 10 x 10 x 10 cm hasta 65 x 65 x 65 cm ✨🎁", "proveedorid": 1, "sku_maestro": "CAJ-001", "nombreproducto": "Caja cubo"}	{"activo": true, "reglaid": 1, "productoid": 44, "categoriaid": 4, "descripcion": "Cubo kraft natural, simple, bonita y con mucho estilo. Ideal para presentar tus detalles con un look natural y moderno. Resistente, práctica y fácil de personalizar. Disponible en tamaños desde 10 x 10 x 10 cm hasta 65 x 65 x 65 cm ✨🎁", "sku_maestro": "CAJ-001", "nombreproducto": "Caja cubo", "proveedorid_default": 1}	7	APROBADO	2026-01-05 19:24:13.920061	2026-01-05 19:24:13.920061	7	1
+148	productos	51	UPDATE	{"activo": true, "reglaid": 2, "productoid": 51, "categoriaid": 4, "descripcion": "Caja six pack kraft natural, perfecta para cervezas o bebidas. Resistente, con estilo y ese look natural que siempre queda bien. Ideal para armar regalos cool y sorprender 🍺✨", "proveedorid": 1, "sku_maestro": "SIX-001", "nombreproducto": "Six pack natural"}	{"activo": true, "reglaid": 1, "productoid": 51, "categoriaid": 4, "descripcion": "Six pack kraft natural, perfecta para cervezas o bebidas. Resistente, con estilo y ese look natural que siempre queda bien. Ideal para armar regalos cool y sorprender 🍺✨", "sku_maestro": "SIX-001", "nombreproducto": "Six pack natural", "proveedorid_default": 1}	7	APROBADO	2026-01-05 19:25:16.852431	2026-01-05 19:25:16.852431	7	1
+149	productos	62	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 62, "categoriaid": 1, "descripcion": "Dale a tus regalos el empaque que merecen con nuestra línea de cajas pasteleras. Diseñadas para combinar resistencia, estilo y practicidad, estas cajas son ideales para regalos especiales.", "proveedorid": 1, "sku_maestro": "PAS-002", "nombreproducto": "Pastelera Toda Ocasión"}	4	APROBADO	2026-01-05 21:44:09.257478	2026-01-05 21:44:09.257478	4	1
+150	productos	63	INSERT	\N	{"activo": true, "reglaid": 2, "productoid": 63, "categoriaid": 1, "descripcion": "¡Dale un toque de elegancia y ternura a tus detalles! Esta hermosa caja con forma de corazón en colores rosa, lila, rojo y negro, es la opción perfecta para empaques de San Valentín, aniversarios, cumpleaños o cualquier ocasión especial. Su acabado liso y minimalista permite que el regalo sea el verdadero protagonista.", "proveedorid": 1, "sku_maestro": "COR-001", "nombreproducto": "Corazón Liso"}	4	APROBADO	2026-01-05 22:42:21.260266	2026-01-05 22:42:21.260266	4	1
+186	productos	50	UPDATE	{"activo": true, "reglaid": 1, "productoid": 50, "categoriaid": 3, "descripcion": "Caja para celebrar a esa persona especial, color, diseño y tamaño perfecto para un regalo espectacular, con acabado barniz brillante", "proveedorid": 1, "sku_maestro": "BAU-003", "nombreproducto": "Baúl Colors Cumple"}	{"activo": true, "reglaid": 1, "productoid": 50, "categoriaid": 3, "descripcion": "Caja para celebrar a esa persona especial, color, diseño y tamaño perfecto para un regalo espectacular, con acabado barniz brillante", "sku_maestro": "BAU-003", "nombreproducto": "Baúl Colors", "proveedorid_default": 1}	2	APROBADO	2026-01-08 01:10:47.495876	2026-01-08 01:10:47.495876	2	1
+151	productos	34	UPDATE	{"activo": true, "reglaid": 1, "productoid": 34, "categoriaid": 2, "descripcion": "¡Expresa tus sentimientos con una explosión de color! Nuestra línea Corazón Colors Love está diseñada para quienes buscan un empaque dinámico, moderno y lleno de alegría. Estas cajas no son solo un envoltorio, son parte del regalo mismo.", "proveedorid": 1, "sku_maestro": "AMO-025", "nombreproducto": "Corazón Colors Love"}	{"activo": true, "reglaid": 1, "productoid": 34, "categoriaid": 2, "descripcion": "¡Expresa tus sentimientos con una explosión de color! Nuestra línea Corazón Colors Love está diseñada para quienes buscan un empaque dinámico, moderno y lleno de alegría. Estas cajas no son solo un envoltorio, son parte del regalo mismo.", "sku_maestro": "AMO-025", "nombreproducto": "Corazón Colors Love", "proveedorid_default": 1}	4	APROBADO	2026-01-05 22:57:42.399531	2026-01-05 22:57:42.399531	4	1
+152	productos	64	INSERT	\N	{"activo": true, "reglaid": 2, "productoid": 64, "categoriaid": 1, "descripcion": "Eleva la presentación de tus arreglos florales con nuestras cajas exclusivas. Diseñadas específicamente para proteger y resaltar la belleza de las rosas, estas cajas en colores magenta, rosa, lila, rojo y negro,  son la opción perfecta para San Valentín, aniversarios o cualquier ocasión especial.", "proveedorid": 1, "sku_maestro": "CAJ-006", "nombreproducto": "Caja para Rosas"}	4	APROBADO	2026-01-05 23:15:31.257044	2026-01-05 23:15:31.257044	4	1
+190	producto_variantes	169	UPDATE	{"sku": "MIL-002-23X17X32-GRANDE", "campo": "Dimensiones", "productoId": 57, "varianteId": 169, "medidaNombre": null, "valorAnterior": "23x17x32"}	{"sku": "MIL-002-23X17X32-GRANDE", "campo": "Dimensiones", "productoId": 57, "valorNuevo": "Grande", "varianteId": 169, "descripcion": "Producto [57] - Variante [SKU: MIL-002-23X17X32-GRANDE]: Cambio en Dimensiones de '23x17x32' a 'Grande'"}	5	APROBADO	2026-01-08 03:21:18.50097	2026-01-08 03:21:18.50097	5	1
+153	productos	64	UPDATE	{"activo": true, "reglaid": 2, "productoid": 64, "categoriaid": 1, "descripcion": "Eleva la presentación de tus arreglos florales con nuestras cajas exclusivas. Diseñadas específicamente para proteger y resaltar la belleza de las rosas, estas cajas en colores magenta, rosa, lila, rojo y negro,  son la opción perfecta para San Valentín, aniversarios o cualquier ocasión especial.", "proveedorid": 1, "sku_maestro": "CAJ-006", "nombreproducto": "Caja para Rosas"}	{"activo": true, "reglaid": 2, "productoid": 64, "categoriaid": 1, "descripcion": "Eleva la presentación de tus arreglos florales con nuestras cajas exclusivas. Diseñadas específicamente para proteger y resaltar la belleza de las rosas, estas cajas en colores magenta, rosa, lila, rojo y negro,  son la opción perfecta para San Valentín, aniversarios o cualquier ocasión especial.", "sku_maestro": "CAJ-006", "nombreproducto": "Caja para Rosas", "proveedorid_default": 1}	4	APROBADO	2026-01-06 04:25:11.845515	2026-01-06 04:25:11.845515	4	1
+154	productos	65	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 65, "categoriaid": 1, "descripcion": "Dale un toque vibrante y profesional a tus regalos con nuestras cajas tipo \\"milk box\\". Ahora con un acabado mejorado en barniz, estas cajas no solo lucen increíbles, sino que ofrecen una textura premium y mayor durabilidad.", "proveedorid": 1, "sku_maestro": "MIL-003", "nombreproducto": "Milk Lisa Colores"}	4	APROBADO	2026-01-06 04:37:09.896437	2026-01-06 04:37:09.896437	4	1
+155	productos	66	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 66, "categoriaid": 1, "descripcion": "Dale a tus regalos una presentación inolvidable con nuestra Cajabolsa, el híbrido perfecto entre una caja resistente y una bolsa práctica. Este modelo destaca por su vibrante color rojo y un acabado de alta calidad diseñado para sorprender.", "proveedorid": 1, "sku_maestro": "CAJ-007", "nombreproducto": "Caja Bolsa"}	4	APROBADO	2026-01-06 04:38:59.992287	2026-01-06 04:38:59.992287	4	1
+156	productos	67	INSERT	\N	{"activo": true, "reglaid": null, "productoid": 67, "categoriaid": 1, "descripcion": "¡Dale un toque de color y estilo a tus entregas! Estas bolsas de color son ideales para quienes buscan resistencia y una presentación impecable. Su diseño vibrante y moderno las hace perfectas para boutiques, papelerías o eventos especiales.", "proveedorid": 1, "sku_maestro": "BOL-002", "nombreproducto": "Bolsa Boutique Colores"}	4	APROBADO	2026-01-06 04:42:48.36018	2026-01-06 04:42:48.36018	4	1
+157	agentes	2	INSERT	\N	{"email": "jofegara.78@gmail.com", "activo": true, "nombre": "José", "esadmin": false, "adminrol": null, "agenteid": 2, "apellido": "García", "codigoagente": "AG0002"}	4	APROBADO	2026-01-06 04:55:41.470809	2026-01-06 04:55:41.470809	4	1
+158	productos	3	UPDATE	{"activo": true, "reglaid": 2, "productoid": 3, "categoriaid": 1, "descripcion": "Estas cajas no solo son contenedores, son parte del regalo mismo. Gracias a su acabado brillante y su vibrante color negro o rojo, son perfectas para San Valentín, aniversarios, cumpleaños o cualquier ocasión especial donde quieras impresionar.", "proveedorid": 1, "sku_maestro": "AMO-006", "nombreproducto": "Cubo Liso Brillo"}	{"activo": true, "reglaid": 2, "productoid": 3, "categoriaid": 1, "descripcion": "Estas cajas no solo son contenedores, son parte del regalo mismo. Gracias a su acabado brillante y su vibrante color negro o rojo, son perfectas para San Valentín, aniversarios, cumpleaños o cualquier ocasión especial donde quieras impresionar.", "sku_maestro": "AMO-006", "nombreproducto": "Cubo Liso Brillo", "proveedorid_default": 1}	4	APROBADO	2026-01-06 05:43:09.801925	2026-01-06 05:43:09.801925	4	1
+159	productos	3	UPDATE	{"activo": true, "reglaid": 2, "productoid": 3, "categoriaid": 1, "descripcion": "Estas cajas no solo son contenedores, son parte del regalo mismo. Gracias a su acabado brillante y su vibrante color negro o rojo, son perfectas para San Valentín, aniversarios, cumpleaños o cualquier ocasión especial donde quieras impresionar.", "proveedorid": 1, "sku_maestro": "AMO-006", "nombreproducto": "Cubo Liso Brillo"}	{"activo": true, "reglaid": 2, "productoid": 3, "categoriaid": 1, "descripcion": "Estas cajas no solo son contenedores, son parte del regalo mismo. Gracias a su acabado brillante y su vibrante color negro o rojo, son perfectas para San Valentín, aniversarios, cumpleaños o cualquier ocasión especial donde quieras impresionar.", "sku_maestro": "AMO-006", "nombreproducto": "Cubo Liso Brillo", "proveedorid_default": 1}	4	APROBADO	2026-01-06 05:46:41.779808	2026-01-06 05:46:41.779808	4	1
+160	productos	3	UPDATE	{"activo": true, "reglaid": 2, "productoid": 3, "categoriaid": 1, "descripcion": "Estas cajas no solo son contenedores, son parte del regalo mismo. Gracias a su acabado brillante y su vibrante color negro o rojo, son perfectas para San Valentín, aniversarios, cumpleaños o cualquier ocasión especial donde quieras impresionar.", "proveedorid": 1, "sku_maestro": "AMO-006", "nombreproducto": "Cubo Liso Brillo"}	{"activo": true, "reglaid": 2, "productoid": 3, "categoriaid": 1, "descripcion": "Estas cajas no solo son contenedores, son parte del regalo mismo. Gracias a su acabado brillante y su vibrante color negro o rojo, son perfectas para San Valentín, aniversarios, cumpleaños o cualquier ocasión especial donde quieras impresionar.", "sku_maestro": "AMO-006", "nombreproducto": "Cubo Liso Brillo", "proveedorid_default": 1}	4	APROBADO	2026-01-06 05:47:46.005621	2026-01-06 05:47:46.005621	4	1
+161	productos	3	UPDATE	{"activo": true, "reglaid": 2, "productoid": 3, "categoriaid": 1, "descripcion": "Estas cajas no solo son contenedores, son parte del regalo mismo. Gracias a su acabado brillante y su vibrante color negro o rojo, son perfectas para San Valentín, aniversarios, cumpleaños o cualquier ocasión especial donde quieras impresionar.", "proveedorid": 1, "sku_maestro": "AMO-006", "nombreproducto": "Cubo Liso Brillo"}	{"activo": true, "reglaid": 2, "productoid": 3, "categoriaid": 1, "descripcion": "Estas cajas no solo son contenedores, son parte del regalo mismo. Gracias a su acabado brillante y su vibrante color negro o rojo, son perfectas para San Valentín, aniversarios, cumpleaños o cualquier ocasión especial donde quieras impresionar.", "sku_maestro": "AMO-006", "nombreproducto": "Cubo Liso Brillo", "proveedorid_default": 1}	4	APROBADO	2026-01-06 05:48:39.014008	2026-01-06 05:48:39.014008	4	1
+162	productos	3	UPDATE	{"activo": true, "reglaid": 2, "productoid": 3, "categoriaid": 1, "descripcion": "Estas cajas no solo son contenedores, son parte del regalo mismo. Gracias a su acabado brillante y su vibrante color negro o rojo, son perfectas para San Valentín, aniversarios, cumpleaños o cualquier ocasión especial donde quieras impresionar.", "proveedorid": 1, "sku_maestro": "AMO-006", "nombreproducto": "Cubo Liso Brillo"}	{"activo": true, "reglaid": 1, "productoid": 3, "categoriaid": 1, "descripcion": "Estas cajas no solo son contenedores, son parte del regalo mismo. Gracias a su acabado brillante y su vibrante color negro o rojo, son perfectas para San Valentín, aniversarios, cumpleaños o cualquier ocasión especial donde quieras impresionar.", "sku_maestro": "AMO-006", "nombreproducto": "Cubo Liso Bri", "proveedorid_default": 1}	2	APROBADO	2026-01-06 05:49:50.591563	2026-01-06 05:49:50.591563	2	1
+163	productos	3	UPDATE	{"activo": true, "reglaid": 1, "productoid": 3, "categoriaid": 1, "descripcion": "Estas cajas no solo son contenedores, son parte del regalo mismo. Gracias a su acabado brillante y su vibrante color negro o rojo, son perfectas para San Valentín, aniversarios, cumpleaños o cualquier ocasión especial donde quieras impresionar.", "proveedorid": 1, "sku_maestro": "AMO-006", "nombreproducto": "Cubo Liso Bri"}	{"activo": true, "reglaid": 1, "productoid": 3, "categoriaid": 1, "descripcion": "Estas cajas no solo son contenedores, son parte del regalo mismo. Gracias a su acabado brillante y su vibrante color negro o rojo, son perfectas para San Valentín, aniversarios, cumpleaños o cualquier ocasión especial donde quieras impresionar.", "sku_maestro": "AMO-006", "nombreproducto": "Cubo Liso Brillo", "proveedorid_default": 1}	2	APROBADO	2026-01-06 05:50:09.747911	2026-01-06 05:50:09.747911	2	1
+164	productos	3	UPDATE	{"activo": true, "reglaid": 1, "productoid": 3, "categoriaid": 1, "descripcion": "Estas cajas no solo son contenedores, son parte del regalo mismo. Gracias a su acabado brillante y su vibrante color negro o rojo, son perfectas para San Valentín, aniversarios, cumpleaños o cualquier ocasión especial donde quieras impresionar.", "proveedorid": 1, "sku_maestro": "AMO-006", "nombreproducto": "Cubo Liso Brillo"}	{"activo": true, "reglaid": 2, "productoid": 3, "categoriaid": 1, "descripcion": "Estas cajas no solo son contenedores, son parte del regalo mismo. Gracias a su acabado brillante y su vibrante color negro o rojo, son perfectas para San Valentín, aniversarios, cumpleaños o cualquier ocasión especial donde quieras impresionar.", "sku_maestro": "AMO-006", "nombreproducto": "Cubo Liso Brillo", "proveedorid_default": 1}	2	APROBADO	2026-01-06 05:51:16.96787	2026-01-06 05:51:16.96787	2	1
+165	productos	3	UPDATE	{"activo": true, "reglaid": 2, "productoid": 3, "categoriaid": 1, "descripcion": "Estas cajas no solo son contenedores, son parte del regalo mismo. Gracias a su acabado brillante y su vibrante color negro o rojo, son perfectas para San Valentín, aniversarios, cumpleaños o cualquier ocasión especial donde quieras impresionar.", "proveedorid": 1, "sku_maestro": "AMO-006", "nombreproducto": "Cubo Liso Brillo"}	{"activo": true, "reglaid": 2, "productoid": 3, "categoriaid": 1, "descripcion": "Estas cajas no solo son contenedores, son parte del regalo mismo. Gracias a su acabado brillante y su vibrante color negro o rojo, son perfectas para San Valentín, aniversarios, cumpleaños o cualquier ocasión especial donde quieras impresionar.", "sku_maestro": "AMO-006", "nombreproducto": "Cubo Liso Brillo", "proveedorid_default": 1}	4	APROBADO	2026-01-06 05:53:20.948703	2026-01-06 05:53:20.948703	4	1
+166	productos	67	UPDATE	{"activo": true, "reglaid": null, "productoid": 67, "categoriaid": 1, "descripcion": "¡Dale un toque de color y estilo a tus entregas! Estas bolsas de color son ideales para quienes buscan resistencia y una presentación impecable. Su diseño vibrante y moderno las hace perfectas para boutiques, papelerías o eventos especiales.", "proveedorid": 1, "sku_maestro": "BOL-002", "nombreproducto": "Bolsa Boutique Colores"}	{"activo": true, "reglaid": null, "productoid": 67, "categoriaid": 1, "descripcion": "¡Dale un toque de color y estilo a tus entregas! Estas bolsas de color son ideales para quienes buscan resistencia y una presentación impecable. Su diseño vibrante y moderno las hace perfectas para boutiques, papelerías o eventos especiales.", "sku_maestro": "BOL-002", "nombreproducto": "Bolsa Boutique Colores", "proveedorid_default": 1}	4	APROBADO	2026-01-06 06:13:31.356954	2026-01-06 06:13:31.356954	4	1
+167	productos	67	UPDATE	{"activo": true, "reglaid": null, "productoid": 67, "categoriaid": 1, "descripcion": "¡Dale un toque de color y estilo a tus entregas! Estas bolsas de color son ideales para quienes buscan resistencia y una presentación impecable. Su diseño vibrante y moderno las hace perfectas para boutiques, papelerías o eventos especiales.", "proveedorid": 1, "sku_maestro": "BOL-002", "nombreproducto": "Bolsa Boutique Colores"}	{"activo": true, "reglaid": 1, "productoid": 67, "categoriaid": 1, "descripcion": "¡Dale un toque de color y estilo a tus entregas! Estas bolsas de color son ideales para quienes buscan resistencia y una presentación impecable. Su diseño vibrante y moderno las hace perfectas para boutiques, papelerías o eventos especiales.", "sku_maestro": "BOL-002", "nombreproducto": "Bolsa Boutique Colores", "proveedorid_default": 1}	4	APROBADO	2026-01-06 06:17:45.483564	2026-01-06 06:17:45.483564	4	1
+176	productos	48	UPDATE	{"activo": true, "reglaid": 1, "productoid": 48, "categoriaid": 4, "descripcion": "Caja tipo lunch kraft natural, práctica y con mucho estilo. Ideal para armar desayunos sorpresa y detalles especiales. Resistente, fácil de armar y perfecta para personalizar y sorprender 🎁✨", "proveedorid": 1, "sku_maestro": "CAJ-004", "nombreproducto": "Caja lunch kraft"}	{"activo": true, "reglaid": 1, "productoid": 48, "categoriaid": 4, "descripcion": "Caja tipo lunch kraft natural, práctica y con mucho estilo. Ideal para armar desayunos sorpresa y detalles especiales. Resistente, fácil de armar y perfecta para personalizar y sorprender 🎁✨", "sku_maestro": "CAJ-004", "nombreproducto": "Lunch Natural", "proveedorid_default": 1}	4	APROBADO	2026-01-06 07:21:27.225091	2026-01-06 07:21:27.225091	4	1
+168	productos	39	UPDATE	{"activo": true, "reglaid": 2, "productoid": 39, "categoriaid": 2, "descripcion": "¡Dale un toque vibrante y lleno de vida a tus detalles! Nuestra línea de Baúles Colors Love está diseñada para quienes no temen expresar sus sentimientos con fuerza y color. Ideales para envolver regalos, guardar recuerdos o decorar espacios con un estilo moderno y dinámico.", "proveedorid": 1, "sku_maestro": "BAU-001", "nombreproducto": "Baúl Colors Love"}	{"activo": true, "reglaid": 1, "productoid": 39, "categoriaid": 2, "descripcion": "¡Dale un toque vibrante y lleno de vida a tus detalles! Nuestra línea de Baúles Colors Love está diseñada para quienes no temen expresar sus sentimientos con fuerza y color. Ideales para envolver regalos, guardar recuerdos o decorar espacios con un estilo moderno y dinámico.", "sku_maestro": "BAU-001", "nombreproducto": "Baúl Colors Love", "proveedorid_default": 1}	4	APROBADO	2026-01-06 06:40:00.539096	2026-01-06 06:40:00.539096	4	1
+169	productos	43	UPDATE	{"activo": true, "reglaid": 5, "productoid": 43, "categoriaid": 3, "descripcion": "Caja con colores intensos, ideal para cualquier ocasión, hotstampin, acabado mate.", "proveedorid": 1, "sku_maestro": "PAS-001", "nombreproducto": "Pastelera De Luxe"}	{"activo": true, "reglaid": 1, "productoid": 43, "categoriaid": 3, "descripcion": "Caja con colores intensos, ideal para cualquier ocasión, hotstampin, acabado mate.", "sku_maestro": "PAS-001", "nombreproducto": "Pastelera De Luxe", "proveedorid_default": 1}	4	APROBADO	2026-01-06 06:47:28.176135	2026-01-06 06:47:28.176135	4	1
+170	productos	46	UPDATE	{"activo": true, "reglaid": 1, "productoid": 46, "categoriaid": 4, "descripcion": "Baúl de regalo kraft color natural, con un diseño original y funcional. Perfecta para presentar regalos especiales con un toque natural y moderno. Resistente, fácil de armar y personalizar. Disponible en varios tamaños 🎁✨", "proveedorid": 1, "sku_maestro": "CAJ-003", "nombreproducto": "Caja baul"}	{"activo": true, "reglaid": 1, "productoid": 46, "categoriaid": 4, "descripcion": "Baúl de regalo kraft color natural, con un diseño original y funcional. Perfecta para presentar regalos especiales con un toque natural y moderno. Resistente, fácil de armar y personalizar. Disponible en varios tamaños 🎁✨", "sku_maestro": "CAJ-003", "nombreproducto": "Baúl Natural", "proveedorid_default": 1}	5	APROBADO	2026-01-06 07:01:02.533405	2026-01-06 07:01:02.533405	5	1
+171	productos	46	UPDATE	{"activo": true, "reglaid": 1, "productoid": 46, "categoriaid": 4, "descripcion": "Baúl de regalo kraft color natural, con un diseño original y funcional. Perfecta para presentar regalos especiales con un toque natural y moderno. Resistente, fácil de armar y personalizar. Disponible en varios tamaños 🎁✨", "proveedorid": 1, "sku_maestro": "CAJ-003", "nombreproducto": "Baúl Natural"}	{"activo": true, "reglaid": 1, "productoid": 46, "categoriaid": 4, "descripcion": "Baúl de regalo kraft color natural, con un diseño original y funcional. Perfecta para presentar regalos especiales con un toque natural y moderno. Resistente, fácil de armar y personalizar. Disponible en varios tamaños 🎁✨", "sku_maestro": "CAJ-003", "nombreproducto": "Baúl Natural", "proveedorid_default": 1}	5	APROBADO	2026-01-06 07:07:01.703903	2026-01-06 07:07:01.703903	5	1
+172	productos	46	UPDATE	{"activo": true, "reglaid": 1, "productoid": 46, "categoriaid": 4, "descripcion": "Baúl de regalo kraft color natural, con un diseño original y funcional. Perfecta para presentar regalos especiales con un toque natural y moderno. Resistente, fácil de armar y personalizar. Disponible en varios tamaños 🎁✨", "proveedorid": 1, "sku_maestro": "CAJ-003", "nombreproducto": "Baúl Natural"}	{"activo": true, "reglaid": 1, "productoid": 46, "categoriaid": 4, "descripcion": "Baúl de regalo kraft color natural, con un diseño original y funcional. Perfecta para presentar regalos especiales con un toque natural y moderno. Resistente, fácil de armar y personalizar. Disponible en varios tamaños 🎁✨", "sku_maestro": "CAJ-003", "nombreproducto": "Baúl Natural", "proveedorid_default": 1}	4	APROBADO	2026-01-06 07:08:39.064796	2026-01-06 07:08:39.064796	4	1
+173	productos	46	UPDATE	{"activo": true, "reglaid": 1, "productoid": 46, "categoriaid": 4, "descripcion": "Baúl de regalo kraft color natural, con un diseño original y funcional. Perfecta para presentar regalos especiales con un toque natural y moderno. Resistente, fácil de armar y personalizar. Disponible en varios tamaños 🎁✨", "proveedorid": 1, "sku_maestro": "CAJ-003", "nombreproducto": "Baúl Natural"}	{"activo": true, "reglaid": 1, "productoid": 46, "categoriaid": 4, "descripcion": "Baúl de regalo kraft color natural, con un diseño original y funcional. Perfecta para presentar regalos especiales con un toque natural y moderno. Resistente, fácil de armar y personalizar. Disponible en varios tamaños 🎁✨", "sku_maestro": "CAJ-003", "nombreproducto": "Baúl Natural", "proveedorid_default": 1}	4	APROBADO	2026-01-06 07:09:42.459039	2026-01-06 07:09:42.459039	4	1
+174	productos	44	UPDATE	{"activo": true, "reglaid": 1, "productoid": 44, "categoriaid": 4, "descripcion": "Cubo kraft natural, simple, bonita y con mucho estilo. Ideal para presentar tus detalles con un look natural y moderno. Resistente, práctica y fácil de personalizar. Disponible en tamaños desde 10 x 10 x 10 cm hasta 65 x 65 x 65 cm ✨🎁", "proveedorid": 1, "sku_maestro": "CAJ-001", "nombreproducto": "Caja cubo"}	{"activo": true, "reglaid": 1, "productoid": 44, "categoriaid": 4, "descripcion": "Cubo kraft natural, simple, bonita y con mucho estilo. Ideal para presentar tus detalles con un look natural y moderno. Resistente, práctica y fácil de personalizar. Disponible en tamaños desde 10 x 10 x 10 cm hasta 65 x 65 x 65 cm ✨🎁", "sku_maestro": "CAJ-001", "nombreproducto": "Cubo Natural", "proveedorid_default": 1}	4	APROBADO	2026-01-06 07:14:36.638619	2026-01-06 07:14:36.638619	4	1
+175	productos	44	UPDATE	{"activo": true, "reglaid": 1, "productoid": 44, "categoriaid": 4, "descripcion": "Cubo kraft natural, simple, bonita y con mucho estilo. Ideal para presentar tus detalles con un look natural y moderno. Resistente, práctica y fácil de personalizar. Disponible en tamaños desde 10 x 10 x 10 cm hasta 65 x 65 x 65 cm ✨🎁", "proveedorid": 1, "sku_maestro": "CAJ-001", "nombreproducto": "Cubo Natural"}	{"activo": true, "reglaid": 1, "productoid": 44, "categoriaid": 4, "descripcion": "Cubo kraft natural, simple, bonita y con mucho estilo. Ideal para presentar tus detalles con un look natural y moderno. Resistente, práctica y fácil de personalizar. Disponible en tamaños desde 10 x 10 x 10 cm hasta 65 x 65 x 65 cm ✨🎁", "sku_maestro": "CAJ-001", "nombreproducto": "Cubo Natural", "proveedorid_default": 1}	4	APROBADO	2026-01-06 07:15:58.338953	2026-01-06 07:15:58.338953	4	1
+177	productos	49	UPDATE	{"activo": true, "reglaid": 1, "productoid": 49, "categoriaid": 4, "descripcion": "Caja de regalo tipo torre kraft, original y llamativa. Ideal para armar regalos en capas y crear una presentación impactante. Resistente, fácil de armar y perfecta para personalizar con un estilo natural y moderno 🎁✨", "proveedorid": 1, "sku_maestro": "CAJ-005", "nombreproducto": "Caja torre natural"}	{"activo": true, "reglaid": 1, "productoid": 49, "categoriaid": 4, "descripcion": "Caja de regalo tipo torre kraft, original y llamativa. Ideal para armar regalos en capas y crear una presentación impactante. Resistente, fácil de armar y perfecta para personalizar con un estilo natural y moderno 🎁✨", "sku_maestro": "CAJ-005", "nombreproducto": "Torre Natural", "proveedorid_default": 1}	4	APROBADO	2026-01-06 07:23:42.474727	2026-01-06 07:23:42.474727	4	1
+178	productos	49	UPDATE	{"activo": true, "reglaid": 1, "productoid": 49, "categoriaid": 4, "descripcion": "Caja de regalo tipo torre kraft, original y llamativa. Ideal para armar regalos en capas y crear una presentación impactante. Resistente, fácil de armar y perfecta para personalizar con un estilo natural y moderno 🎁✨", "proveedorid": 1, "sku_maestro": "CAJ-005", "nombreproducto": "Torre Natural"}	{"activo": true, "reglaid": 1, "productoid": 49, "categoriaid": 4, "descripcion": "Caja de regalo tipo torre kraft, original y llamativa. Ideal para armar regalos en capas y crear una presentación impactante. Resistente, fácil de armar y perfecta para personalizar con un estilo natural y moderno 🎁✨", "sku_maestro": "CAJ-005", "nombreproducto": "Torre Natural", "proveedorid_default": 1}	4	APROBADO	2026-01-06 07:24:15.210238	2026-01-06 07:24:15.210238	4	1
+179	productos	51	UPDATE	{"activo": true, "reglaid": 1, "productoid": 51, "categoriaid": 4, "descripcion": "Six pack kraft natural, perfecta para cervezas o bebidas. Resistente, con estilo y ese look natural que siempre queda bien. Ideal para armar regalos cool y sorprender 🍺✨", "proveedorid": 1, "sku_maestro": "SIX-001", "nombreproducto": "Six pack natural"}	{"activo": true, "reglaid": 1, "productoid": 51, "categoriaid": 4, "descripcion": "Six pack kraft natural, perfecta para cervezas o bebidas. Resistente, con estilo y ese look natural que siempre queda bien. Ideal para armar regalos cool y sorprender 🍺✨", "sku_maestro": "SIX-001", "nombreproducto": "Sixpack Natural", "proveedorid_default": 1}	4	APROBADO	2026-01-06 07:29:32.945352	2026-01-06 07:29:32.945352	4	1
+180	productos	51	UPDATE	{"activo": true, "reglaid": 1, "productoid": 51, "categoriaid": 4, "descripcion": "Six pack kraft natural, perfecta para cervezas o bebidas. Resistente, con estilo y ese look natural que siempre queda bien. Ideal para armar regalos cool y sorprender 🍺✨", "proveedorid": 1, "sku_maestro": "SIX-001", "nombreproducto": "Sixpack Natural"}	{"activo": true, "reglaid": 1, "productoid": 51, "categoriaid": 4, "descripcion": "Six pack kraft natural, perfecta para cervezas o bebidas. Resistente, con estilo y ese look natural que siempre queda bien. Ideal para armar regalos cool y sorprender 🍺✨", "sku_maestro": "SIX-001", "nombreproducto": "Six Pack Natural", "proveedorid_default": 1}	4	APROBADO	2026-01-06 07:29:55.847825	2026-01-06 07:29:55.847825	4	1
+181	productos	13	UPDATE	{"activo": true, "reglaid": 1, "productoid": 13, "categoriaid": 4, "descripcion": "Caja camisera de regalo kraft color natural, elegante y funcional. Ideal para presentar prendas y regalos con un estilo limpio y moderno. Resistente, práctica y fácil de personalizar. Disponible en diferentes tamaños para adaptarse a cada detalle 🎁✨", "proveedorid": 1, "sku_maestro": "NAT-002", "nombreproducto": "Camisera Natural"}	{"activo": true, "reglaid": 1, "productoid": 13, "categoriaid": 4, "descripcion": "Camisera de regalo natural, elegante y funcional. Ideal para presentar prendas y regalos con un estilo limpio y moderno. Resistente, práctica y fácil de personalizar. Disponible en diferentes tamaños para adaptarse a cada detalle 🎁✨", "sku_maestro": "NAT-002", "nombreproducto": "Camisera Natural", "proveedorid_default": 1}	7	APROBADO	2026-01-06 18:20:13.192577	2026-01-06 18:20:13.192577	7	1
+182	productos	48	UPDATE	{"activo": true, "reglaid": 1, "productoid": 48, "categoriaid": 4, "descripcion": "Caja tipo lunch kraft natural, práctica y con mucho estilo. Ideal para armar desayunos sorpresa y detalles especiales. Resistente, fácil de armar y perfecta para personalizar y sorprender 🎁✨", "proveedorid": 1, "sku_maestro": "CAJ-004", "nombreproducto": "Lunch Natural"}	{"activo": true, "reglaid": 1, "productoid": 48, "categoriaid": 4, "descripcion": "Caja tipo lunch kraft natural, práctica y con mucho estilo. Ideal para armar desayunos sorpresa y detalles especiales. Resistente, fácil de armar y perfecta para personalizar y sorprender 🎁✨", "sku_maestro": "CAJ-004", "nombreproducto": "Lunch Natural", "proveedorid_default": 1}	7	APROBADO	2026-01-06 18:25:45.403717	2026-01-06 18:25:45.403717	7	1
+183	productos	46	UPDATE	{"activo": true, "reglaid": 1, "productoid": 46, "categoriaid": 4, "descripcion": "Baúl de regalo kraft color natural, con un diseño original y funcional. Perfecta para presentar regalos especiales con un toque natural y moderno. Resistente, fácil de armar y personalizar. Disponible en varios tamaños 🎁✨", "proveedorid": 1, "sku_maestro": "CAJ-003", "nombreproducto": "Baúl Natural"}	{"activo": true, "reglaid": 1, "productoid": 46, "categoriaid": 4, "descripcion": "Caja baúl de regalo kraft color natural, con un diseño original y funcional. Perfecta para presentar regalos especiales con un toque natural y moderno. Resistente, fácil de armar y personalizar. Disponible en varios tamaños 🎁✨", "sku_maestro": "CAJ-003", "nombreproducto": "Baúl Natural", "proveedorid_default": 1}	7	APROBADO	2026-01-06 18:27:37.855563	2026-01-06 18:27:37.855563	7	1
+184	productos	13	UPDATE	{"activo": true, "reglaid": 1, "productoid": 13, "categoriaid": 4, "descripcion": "Camisera de regalo natural, elegante y funcional. Ideal para presentar prendas y regalos con un estilo limpio y moderno. Resistente, práctica y fácil de personalizar. Disponible en diferentes tamaños para adaptarse a cada detalle 🎁✨", "proveedorid": 1, "sku_maestro": "NAT-002", "nombreproducto": "Camisera Natural"}	{"activo": true, "reglaid": 1, "productoid": 13, "categoriaid": 4, "descripcion": "Caja camisera de regalo natural, elegante y funcional. Ideal para presentar prendas y regalos con un estilo limpio y moderno. Resistente, práctica y fácil de personalizar. Disponible en diferentes tamaños para adaptarse a cada detalle 🎁✨", "sku_maestro": "NAT-002", "nombreproducto": "Camisera Natural", "proveedorid_default": 1}	7	APROBADO	2026-01-06 18:28:58.864888	2026-01-06 18:28:58.864888	7	1
+185	productos	11	UPDATE	{"activo": true, "reglaid": 2, "productoid": 11, "categoriaid": 1, "descripcion": null, "proveedorid": 1, "sku_maestro": "LIS-001", "nombreproducto": "Cubo Liso"}	{"activo": true, "reglaid": 1, "productoid": 11, "categoriaid": 1, "descripcion": null, "sku_maestro": "LIS-001", "nombreproducto": "Cubo Liso", "proveedorid_default": 1}	5	APROBADO	2026-01-07 00:52:36.983021	2026-01-07 00:52:36.983021	5	1
+187	productos	50	UPDATE	{"activo": true, "reglaid": 1, "productoid": 50, "categoriaid": 3, "descripcion": "Caja para celebrar a esa persona especial, color, diseño y tamaño perfecto para un regalo espectacular, con acabado barniz brillante", "proveedorid": 1, "sku_maestro": "BAU-003", "nombreproducto": "Baúl Colors"}	{"activo": true, "reglaid": 1, "productoid": 50, "categoriaid": 3, "descripcion": "Caja para celebrar a esa persona especial, color, diseño y tamaño perfecto para un regalo espectacular, con acabado barniz brillante", "sku_maestro": "BAU-003", "nombreproducto": "Baúl Colors Cumple", "proveedorid_default": 1}	2	APROBADO	2026-01-08 01:11:06.583567	2026-01-08 01:11:06.583567	2	1
+188	producto_variantes	168	UPDATE	{"sku": "PAL-001-30X50-GRANDE", "campo": "Dimensiones", "productoId": 56, "varianteId": 168, "medidaNombre": null, "valorAnterior": "30x50"}	{"sku": "PAL-001-30X50-GRANDE", "campo": "Dimensiones", "productoId": 56, "valorNuevo": "Grande", "varianteId": 168, "descripcion": "Producto [56] - Variante [SKU: PAL-001-30X50-GRANDE]: Cambio en Dimensiones de '30x50' a 'Grande'"}	5	APROBADO	2026-01-08 02:02:38.444425	2026-01-08 02:02:38.444425	5	1
+189	producto_variantes	168	UPDATE	{"sku": "PAL-001-30X50-GRANDE", "campo": "Color", "productoId": 56, "varianteId": 168, "medidaNombre": null, "valorAnterior": "Grande"}	{"sku": "PAL-001-30X50-GRANDE", "campo": "Color", "productoId": 56, "valorNuevo": "Sin color", "varianteId": 168, "descripcion": "Producto [56] - Variante [SKU: PAL-001-30X50-GRANDE]: Cambio en Color de 'Grande' a 'Sin color'"}	5	APROBADO	2026-01-08 02:02:38.444425	2026-01-08 02:02:38.444425	5	1
+191	producto_variantes	169	UPDATE	{"sku": "MIL-002-23X17X32-GRANDE", "campo": "Color", "productoId": 57, "varianteId": 169, "medidaNombre": null, "valorAnterior": "Grande"}	{"sku": "MIL-002-23X17X32-GRANDE", "campo": "Color", "productoId": 57, "valorNuevo": "Sin color", "varianteId": 169, "descripcion": "Producto [57] - Variante [SKU: MIL-002-23X17X32-GRANDE]: Cambio en Color de 'Grande' a 'Sin color'"}	5	APROBADO	2026-01-08 03:21:18.50097	2026-01-08 03:21:18.50097	5	1
+192	productos	7	UPDATE	{"activo": true, "reglaid": 1, "productoid": 7, "categoriaid": 2, "descripcion": "Sorprende a esa persona especial con nuestros elegantes cubos decorativos de la colección RedBlack Love. Diseñados con una combinación clásica de rojo, negro y blanco, estos cubos son el empaque perfecto para regalos inolvidables o como un detalle decorativo lleno de sentimiento.", "proveedorid": 1, "sku_maestro": "AMO-014", "nombreproducto": "Cubo RedBlack Love"}	{"activo": true, "reglaid": 1, "productoid": 7, "categoriaid": 2, "descripcion": "Sorprende a esa persona especial con nuestros elegantes cubos decorativos de la colección RedBlack Love. Diseñados con una combinación clásica de rojo, negro y blanco, estos cubos son el empaque perfecto para regalos inolvidables o como un detalle decorativo lleno de sentimiento.", "sku_maestro": "AMO-014", "nombreproducto": "Cubo RedBlack Love", "proveedorid_default": 1}	4	APROBADO	2026-01-08 04:29:57.292141	2026-01-08 04:29:57.292141	4	1
+193	productos	5	UPDATE	{"activo": true, "reglaid": 1, "productoid": 5, "categoriaid": 2, "descripcion": "¡Haz que cada regalo sea inolvidable desde el primer vistazo! Nuestra línea de cajas Love Craft está diseñada para quienes buscan salir de lo convencional y entregar un detalle lleno de color, arte y emoción.", "proveedorid": 1, "sku_maestro": "AMO-010", "nombreproducto": "Cubo Love Craft"}	{"activo": true, "reglaid": 1, "productoid": 5, "categoriaid": 2, "descripcion": "¡Haz que cada regalo sea inolvidable desde el primer vistazo! Nuestra línea de cajas Love Craft está diseñada para quienes buscan salir de lo convencional y entregar un detalle lleno de color, arte y emoción.", "sku_maestro": "AMO-010", "nombreproducto": "Cubo Love Craft", "proveedorid_default": 1}	4	APROBADO	2026-01-08 04:30:30.7431	2026-01-08 04:30:30.7431	4	1
+194	productos	50	UPDATE	{"activo": true, "reglaid": 1, "productoid": 50, "categoriaid": 3, "descripcion": "Caja para celebrar a esa persona especial, color, diseño y tamaño perfecto para un regalo espectacular, con acabado barniz brillante", "proveedorid": 1, "sku_maestro": "BAU-003", "nombreproducto": "Baúl Colors Cumple"}	{"activo": true, "reglaid": 1, "productoid": 50, "categoriaid": 3, "descripcion": "Caja para celebrar a esa persona especial, color, diseño y tamaño perfecto para un regalo espectacular, con acabado barniz brillante", "sku_maestro": "BAU-003", "nombreproducto": "Baúl Colors Cumple", "proveedorid_default": 1}	5	APROBADO	2026-01-08 06:59:55.033811	2026-01-08 06:59:55.033811	5	1
+195	productos	47	UPDATE	{"activo": true, "reglaid": 1, "productoid": 47, "categoriaid": 3, "descripcion": "Caja para celebrar a esa persona especial, color, diseño y tamaño perfecto para un regalo espectacular, con acabado barniz brillante", "proveedorid": 1, "sku_maestro": "BAU-002", "nombreproducto": "Baúl Cumple"}	{"activo": true, "reglaid": 1, "productoid": 47, "categoriaid": 3, "descripcion": "Caja para celebrar a esa persona especial, color, diseño y tamaño perfecto para un regalo espectacular, con acabado barniz brillante", "sku_maestro": "BAU-002", "nombreproducto": "Baúl Cumple", "proveedorid_default": 1}	5	APROBADO	2026-01-08 07:06:23.966923	2026-01-08 07:06:23.966923	5	1
+196	productos	55	UPDATE	{"activo": true, "reglaid": 1, "productoid": 55, "categoriaid": 3, "descripcion": "Caja para celebrar a esa persona especial, color, diseño y tamaño perfecto para una botella de vino, con acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "BOT-001", "nombreproducto": "Botella Cumple"}	{"activo": true, "reglaid": 1, "productoid": 55, "categoriaid": 3, "descripcion": "Caja para celebrar a esa persona especial, color, diseño y tamaño perfecto para una botella de vino, con acabado barniz brillante.", "sku_maestro": "BOT-001", "nombreproducto": "Botella Cumple", "proveedorid_default": 1}	5	APROBADO	2026-01-08 07:08:30.927937	2026-01-08 07:08:30.927937	5	1
+197	productos	42	UPDATE	{"activo": true, "reglaid": 1, "productoid": 42, "categoriaid": 3, "descripcion": "Caja con colores fascinantes, que harán de tu regalo una experiencia única, diseños coloridos para esa celebración especial, en acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "CAM-001", "nombreproducto": "Camisera Cumple"}	{"activo": true, "reglaid": 1, "productoid": 42, "categoriaid": 3, "descripcion": "Caja con colores fascinantes, que harán de tu regalo una experiencia única, diseños coloridos para esa celebración especial, en acabado barniz brillante.", "sku_maestro": "CAM-001", "nombreproducto": "Camisera Cumple", "proveedorid_default": 1}	5	APROBADO	2026-01-08 07:09:10.716959	2026-01-08 07:09:10.716959	5	1
+198	productos	55	UPDATE	{"activo": true, "reglaid": 1, "productoid": 55, "categoriaid": 3, "descripcion": "Caja para celebrar a esa persona especial, color, diseño y tamaño perfecto para una botella de vino, con acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "BOT-001", "nombreproducto": "Botella Cumple"}	{"activo": true, "reglaid": 1, "productoid": 55, "categoriaid": 3, "descripcion": "Caja para celebrar a esa persona especial, color, diseño y tamaño perfecto para una botella de vino, con acabado barniz brillante.", "sku_maestro": "BOT-001", "nombreproducto": "Botella Cumple", "proveedorid_default": 1}	5	APROBADO	2026-01-08 07:10:01.260282	2026-01-08 07:10:01.260282	5	1
+199	productos	42	UPDATE	{"activo": true, "reglaid": 1, "productoid": 42, "categoriaid": 3, "descripcion": "Caja con colores fascinantes, que harán de tu regalo una experiencia única, diseños coloridos para esa celebración especial, en acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "CAM-001", "nombreproducto": "Camisera Cumple"}	{"activo": true, "reglaid": 1, "productoid": 42, "categoriaid": 3, "descripcion": "Caja con colores fascinantes, que harán de tu regalo una experiencia única, diseños coloridos para esa celebración especial, en acabado barniz brillante.", "sku_maestro": "CAM-001", "nombreproducto": "Camisera Cumple", "proveedorid_default": 1}	5	APROBADO	2026-01-08 07:10:39.404341	2026-01-08 07:10:39.404341	5	1
+259	productos	61	UPDATE	{"activo": true, "reglaid": 8, "productoid": 61, "categoriaid": 3, "descripcion": "Sobre de dinero, ideal para cuando no sabes que regalar, diseños alegres y divertidos, con acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "COD-00061", "nombreproducto": "Sobre Cumple"}	{"activo": true, "reglaid": 8, "productoid": 61, "categoriaid": 3, "descripcion": "Sobre de dinero, ideal para cuando no sabes que regalar, diseños alegres y divertidos, con acabado barniz brillante.", "sku_maestro": "COD-00061", "nombreproducto": "Sobre Cumple", "proveedorid_default": 1}	2	APROBADO	2026-01-09 08:12:03.00022	2026-01-09 08:12:03.00022	2	1
+200	productos	59	UPDATE	{"activo": true, "reglaid": 1, "productoid": 59, "categoriaid": 3, "descripcion": "Caja con un diseño original y funcional. Perfecta para entregar regalos especiales con un toque moderno y divertido. Resistente, fácil de armar, con asas, acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "CER-001", "nombreproducto": "Cerillo Party"}	{"activo": true, "reglaid": 1, "productoid": 59, "categoriaid": 3, "descripcion": "Caja con un diseño original y funcional. Perfecta para entregar regalos especiales con un toque moderno y divertido. Resistente, fácil de armar, con asas, acabado barniz brillante.", "sku_maestro": "CER-001", "nombreproducto": "Cerillo Party", "proveedorid_default": 1}	5	APROBADO	2026-01-08 07:11:24.765865	2026-01-08 07:11:24.765865	5	1
+201	productos	36	UPDATE	{"activo": true, "reglaid": 1, "productoid": 36, "categoriaid": 3, "descripcion": "Hermosas cajas, en tonos pastel, para celebrar la llegada de un ser pequeñito  y muy especial, acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "TOD-016", "nombreproducto": "Cubo Baby"}	{"activo": true, "reglaid": 1, "productoid": 36, "categoriaid": 3, "descripcion": "Hermosas cajas, en tonos pastel, para celebrar la llegada de un ser pequeñito  y muy especial, acabado barniz brillante.", "sku_maestro": "TOD-016", "nombreproducto": "Cubo Baby", "proveedorid_default": 1}	5	APROBADO	2026-01-08 07:12:07.624045	2026-01-08 07:12:07.624045	5	1
+202	productos	26	UPDATE	{"activo": true, "reglaid": 1, "productoid": 26, "categoriaid": 3, "descripcion": "Cubo craft, bolas y rayas de colores, ideal para cualquier ocasión, colores sobrios en acabado mate.", "proveedorid": 1, "sku_maestro": "TOD-007", "nombreproducto": "Cubo Bolas y Rayas"}	{"activo": true, "reglaid": 1, "productoid": 26, "categoriaid": 3, "descripcion": "Cubo craft, bolas y rayas de colores, ideal para cualquier ocasión, colores sobrios en acabado mate.", "sku_maestro": "TOD-007", "nombreproducto": "Cubo Bolas y Rayas", "proveedorid_default": 1}	5	APROBADO	2026-01-08 07:12:35.044299	2026-01-08 07:12:35.044299	5	1
+203	productos	23	UPDATE	{"activo": true, "reglaid": 1, "productoid": 23, "categoriaid": 3, "descripcion": "Caja con diseños divertidos, ideal para esa persona tan especial, colores vibrantes acabado barniz brillante", "proveedorid": 1, "sku_maestro": "TOD-004", "nombreproducto": "Cubo Botana"}	{"activo": true, "reglaid": 1, "productoid": 23, "categoriaid": 3, "descripcion": "Caja con diseños divertidos, ideal para esa persona tan especial, colores vibrantes acabado barniz brillante", "sku_maestro": "TOD-004", "nombreproducto": "Cubo Botana", "proveedorid_default": 1}	5	APROBADO	2026-01-08 07:13:25.626135	2026-01-08 07:13:25.626135	5	1
+204	productos	21	UPDATE	{"activo": true, "reglaid": 1, "productoid": 21, "categoriaid": 3, "descripcion": "Caja con diseño, ideal para celebraciones especiales, colores vibrantes con acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "TOD-003", "nombreproducto": "Cubo Cómics"}	{"activo": true, "reglaid": 1, "productoid": 21, "categoriaid": 3, "descripcion": "Caja con diseño, ideal para celebraciones especiales, colores vibrantes con acabado barniz brillante.", "sku_maestro": "TOD-003", "nombreproducto": "Cubo Cómics", "proveedorid_default": 1}	5	APROBADO	2026-01-08 07:13:55.043641	2026-01-08 07:13:55.043641	5	1
+205	productos	25	UPDATE	{"activo": true, "reglaid": 1, "productoid": 25, "categoriaid": 3, "descripcion": "Caja de colores, empaques perfectos para tus detalles, diseñadas para convertir un regalo en una experiencia inolvidable, colores espectaculares con acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "TOD-006", "nombreproducto": "Cubo Cumple Colors"}	{"activo": true, "reglaid": 1, "productoid": 25, "categoriaid": 3, "descripcion": "Caja de colores, empaques perfectos para tus detalles, diseñadas para convertir un regalo en una experiencia inolvidable, colores espectaculares con acabado barniz brillante.", "sku_maestro": "TOD-006", "nombreproducto": "Cubo Cumple Colors", "proveedorid_default": 1}	5	APROBADO	2026-01-08 07:15:00.486969	2026-01-08 07:15:00.486969	5	1
+206	productos	17	UPDATE	{"activo": true, "reglaid": 1, "productoid": 17, "categoriaid": 3, "descripcion": "Caja craft de colores, ideal para celebrar el cumpleaños de esa persona especial, colores vibrantes con acabado mate.", "proveedorid": 1, "sku_maestro": "TOD-001", "nombreproducto": "Cubo Cumple Craft"}	{"activo": true, "reglaid": 1, "productoid": 17, "categoriaid": 3, "descripcion": "Caja craft de colores, ideal para celebrar el cumpleaños de esa persona especial, colores vibrantes con acabado mate.", "sku_maestro": "TOD-001", "nombreproducto": "Cubo Cumple Craft", "proveedorid_default": 1}	5	APROBADO	2026-01-08 07:15:28.852651	2026-01-08 07:15:28.852651	5	1
+207	productos	18	UPDATE	{"activo": true, "reglaid": 1, "productoid": 18, "categoriaid": 3, "descripcion": "Caja con diseño, ideal para celebrar el cumpleaños de esa persona especial, colores vibrantes acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "TOD-002", "nombreproducto": "Cubo Cumple Graffiti"}	{"activo": true, "reglaid": 1, "productoid": 18, "categoriaid": 3, "descripcion": "Caja con diseño, ideal para celebrar el cumpleaños de esa persona especial, colores vibrantes acabado barniz brillante.", "sku_maestro": "TOD-002", "nombreproducto": "Cubo Cumple Graffiti", "proveedorid_default": 1}	5	APROBADO	2026-01-08 07:16:16.414227	2026-01-08 07:16:16.414227	5	1
+208	productos	30	UPDATE	{"activo": true, "reglaid": 1, "productoid": 30, "categoriaid": 3, "descripcion": "Caja, que por su medida es perfecta para un regalo increíble, diseños de cumpleaños para esa persona especial, acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "TOD-011", "nombreproducto": "Cubo Cumple White"}	{"activo": true, "reglaid": 1, "productoid": 30, "categoriaid": 3, "descripcion": "Caja, que por su medida es perfecta para un regalo increíble, diseños de cumpleaños para esa persona especial, acabado barniz brillante.", "sku_maestro": "TOD-011", "nombreproducto": "Cubo Cumple White", "proveedorid_default": 1}	5	APROBADO	2026-01-08 07:16:39.159425	2026-01-08 07:16:39.159425	5	1
+209	productos	24	UPDATE	{"activo": true, "reglaid": 1, "productoid": 24, "categoriaid": 3, "descripcion": "Caja con diseños espectaculares, felicitaciones increíbles y todo en un solo empaque, colores vibrantes acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "TOD-005", "nombreproducto": "Cubo Felicidades"}	{"activo": true, "reglaid": 1, "productoid": 24, "categoriaid": 3, "descripcion": "Caja con diseños espectaculares, felicitaciones increíbles y todo en un solo empaque, colores vibrantes acabado barniz brillante.", "sku_maestro": "TOD-005", "nombreproducto": "Cubo Felicidades", "proveedorid_default": 1}	5	APROBADO	2026-01-08 07:17:00.988659	2026-01-08 07:17:00.988659	5	1
+210	productos	28	UPDATE	{"activo": true, "reglaid": 1, "productoid": 28, "categoriaid": 3, "descripcion": "Cajas con diseño divertido, ideales para cumpleaños ó cualquier celebración especial, colores explosivos con acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "TOD-009", "nombreproducto": "Cubo Feliz"}	{"activo": true, "reglaid": 1, "productoid": 28, "categoriaid": 3, "descripcion": "Cajas con diseño divertido, ideales para cumpleaños ó cualquier celebración especial, colores explosivos con acabado barniz brillante.", "sku_maestro": "TOD-009", "nombreproducto": "Cubo Feliz", "proveedorid_default": 1}	5	APROBADO	2026-01-08 07:17:25.924287	2026-01-08 07:17:25.924287	5	1
+211	productos	35	UPDATE	{"activo": true, "reglaid": 1, "productoid": 35, "categoriaid": 3, "descripcion": "Cajas para toda ocasión, con colores básicos, pero divertidos, acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "TOD-015", "nombreproducto": "Cubo Incógnita"}	{"activo": true, "reglaid": 1, "productoid": 35, "categoriaid": 3, "descripcion": "Cajas para toda ocasión, con colores básicos, pero divertidos, acabado barniz brillante.", "sku_maestro": "TOD-015", "nombreproducto": "Cubo Incógnita", "proveedorid_default": 1}	5	APROBADO	2026-01-08 07:18:01.663543	2026-01-08 07:18:01.663543	5	1
+212	productos	31	UPDATE	{"activo": true, "reglaid": 1, "productoid": 31, "categoriaid": 3, "descripcion": "Cajas de colores divertidos para toda ocasión, en acabado mate.", "proveedorid": 1, "sku_maestro": "TOD-012", "nombreproducto": "Cubo Luxe"}	{"activo": true, "reglaid": 1, "productoid": 31, "categoriaid": 3, "descripcion": "Cajas de colores divertidos para toda ocasión, en acabado mate.", "sku_maestro": "TOD-012", "nombreproducto": "Cubo Luxe", "proveedorid_default": 1}	5	APROBADO	2026-01-08 07:19:10.609653	2026-01-08 07:19:10.609653	5	1
+213	productos	33	UPDATE	{"activo": true, "reglaid": 1, "productoid": 33, "categoriaid": 3, "descripcion": "Cajas con diseños y frases divertidas, con marcas de cerveza, ideales para caballero, acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "TOD-014", "nombreproducto": "Cubo Marcas"}	{"activo": true, "reglaid": 1, "productoid": 33, "categoriaid": 3, "descripcion": "Cajas con diseños y frases divertidas, con marcas de cerveza, ideales para caballero, acabado barniz brillante.", "sku_maestro": "TOD-014", "nombreproducto": "Cubo Marcas", "proveedorid_default": 1}	5	APROBADO	2026-01-08 07:19:33.462089	2026-01-08 07:19:33.462089	5	1
+214	productos	29	UPDATE	{"activo": true, "reglaid": 1, "productoid": 29, "categoriaid": 3, "descripcion": "Caja con diseños de marcas aesthetic, divertidas para cualquier ocasión, con acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "TOD-010", "nombreproducto": "Cubo Nice"}	{"activo": true, "reglaid": 1, "productoid": 29, "categoriaid": 3, "descripcion": "Caja con diseños de marcas aesthetic, divertidas para cualquier ocasión, con acabado barniz brillante.", "sku_maestro": "TOD-010", "nombreproducto": "Cubo Nice", "proveedorid_default": 1}	5	APROBADO	2026-01-08 07:19:55.717895	2026-01-08 07:19:55.717895	5	1
+215	productos	27	UPDATE	{"activo": true, "reglaid": 1, "productoid": 27, "categoriaid": 3, "descripcion": "Cubo con diseños bonitos y tiernos, para toda ocasión, colores con un toque de dulzura, acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "TOD-008", "nombreproducto": "Cubo Paris-London"}	{"activo": true, "reglaid": 1, "productoid": 27, "categoriaid": 3, "descripcion": "Cubo con diseños bonitos y tiernos, para toda ocasión, colores con un toque de dulzura, acabado barniz brillante.", "sku_maestro": "TOD-008", "nombreproducto": "Cubo Paris-London", "proveedorid_default": 1}	5	APROBADO	2026-01-08 07:20:20.923651	2026-01-08 07:20:20.923651	5	1
+216	productos	41	UPDATE	{"activo": true, "reglaid": 1, "productoid": 41, "categoriaid": 3, "descripcion": "Cajas para caballero toda ocasión, diseños sobrios para festejar a esa persona especial, acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "CUB-001", "nombreproducto": "Cubo Pesca y Cacería"}	{"activo": true, "reglaid": 1, "productoid": 41, "categoriaid": 3, "descripcion": "Cajas para caballero toda ocasión, diseños sobrios para festejar a esa persona especial, acabado barniz brillante.", "sku_maestro": "CUB-001", "nombreproducto": "Cubo Pesca y Cacería", "proveedorid_default": 1}	5	APROBADO	2026-01-08 07:20:52.018866	2026-01-08 07:20:52.018866	5	1
+217	productos	32	UPDATE	{"activo": true, "reglaid": 1, "productoid": 32, "categoriaid": 3, "descripcion": "Cajas con diseños y frases divertidas, con las marcas de tus tenis favoritos, colores con acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "TOD-013", "nombreproducto": "Cubo Sports"}	{"activo": true, "reglaid": 1, "productoid": 32, "categoriaid": 3, "descripcion": "Cajas con diseños y frases divertidas, con las marcas de tus tenis favoritos, colores con acabado barniz brillante.", "sku_maestro": "TOD-013", "nombreproducto": "Cubo Sports", "proveedorid_default": 1}	5	APROBADO	2026-01-08 07:21:21.058693	2026-01-08 07:21:21.058693	5	1
+230	producto_variantes	174	UPDATE	{"sku": "BOL-001-35X39X25-GIGANT", "campo": "Color", "productoId": 60, "varianteId": 174, "medidaNombre": null, "valorAnterior": "Gigante"}	{"sku": "BOL-001-35X39X25-GIGANT", "campo": "Color", "productoId": 60, "valorNuevo": "Sin color", "varianteId": 174, "descripcion": "Producto [60] - Variante [SKU: BOL-001-35X39X25-GIGANT]: Cambio en Color de 'Gigante' a 'Sin color'"}	5	APROBADO	2026-01-08 08:21:08.840329	2026-01-08 08:21:08.840329	5	1
+218	productos	53	UPDATE	{"activo": true, "reglaid": 1, "productoid": 53, "categoriaid": 3, "descripcion": "Caja para celebrar a esa persona especial, ideal para un desayuno sorpresa ó si lo prefieres retiras el interior y colocas tu regalo, color, diseño y tamaño perfecto, con acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "LUN-001", "nombreproducto": "Lunch Party"}	{"activo": true, "reglaid": 1, "productoid": 53, "categoriaid": 3, "descripcion": "Caja para celebrar a esa persona especial, ideal para un desayuno sorpresa ó si lo prefieres retiras el interior y colocas tu regalo, color, diseño y tamaño perfecto, con acabado barniz brillante.", "sku_maestro": "LUN-001", "nombreproducto": "Lunch Party", "proveedorid_default": 1}	5	APROBADO	2026-01-08 07:21:58.778038	2026-01-08 07:21:58.778038	5	1
+219	productos	57	UPDATE	{"activo": true, "reglaid": 1, "productoid": 57, "categoriaid": 3, "descripcion": "Caja con diseño divertido, ideal para celebrar el cumpleaños de esa persona especial, colores vibrantes acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "MIL-002", "nombreproducto": "Milk Cumple Colors"}	{"activo": true, "reglaid": 1, "productoid": 57, "categoriaid": 3, "descripcion": "Caja con diseño divertido, ideal para celebrar el cumpleaños de esa persona especial, colores vibrantes acabado barniz brillante.", "sku_maestro": "MIL-002", "nombreproducto": "Milk Cumple Colors", "proveedorid_default": 1}	5	APROBADO	2026-01-08 07:22:29.607972	2026-01-08 07:22:29.607972	5	1
+220	productos	56	UPDATE	{"activo": true, "reglaid": 1, "productoid": 56, "categoriaid": 3, "descripcion": "Caja para celebrar a esa persona especial, diseño divertido y tamaño perfecto para un regalo espectacular, con acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "PAL-001", "nombreproducto": "Palomita"}	{"activo": true, "reglaid": 1, "productoid": 56, "categoriaid": 3, "descripcion": "Caja para celebrar a esa persona especial, diseño divertido y tamaño perfecto para un regalo espectacular, con acabado barniz brillante.", "sku_maestro": "PAL-001", "nombreproducto": "Palomita", "proveedorid_default": 1}	5	APROBADO	2026-01-08 07:23:36.323145	2026-01-08 07:23:36.323145	5	1
+221	productos	58	UPDATE	{"activo": true, "reglaid": 1, "productoid": 58, "categoriaid": 3, "descripcion": "Caja con diseños divertidos, perfecta para cervezas ó bebidas, resistente, con estilo y ese look que siempre queda bien. Ideal para armar regalos cool y sorprender, acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "SIX-002", "nombreproducto": "Six Pack Men"}	{"activo": true, "reglaid": 1, "productoid": 58, "categoriaid": 3, "descripcion": "Caja con diseños divertidos, perfecta para cervezas ó bebidas, resistente, con estilo y ese look que siempre queda bien. Ideal para armar regalos cool y sorprender, acabado barniz brillante.", "sku_maestro": "SIX-002", "nombreproducto": "Six Pack Men", "proveedorid_default": 1}	5	APROBADO	2026-01-08 07:33:34.946504	2026-01-08 07:33:34.946504	5	1
+222	productos	54	UPDATE	{"activo": true, "reglaid": 1, "productoid": 54, "categoriaid": 3, "descripcion": "Caja para celebrar a esa persona especial, color, diseño y tamaño perfecto para un regalo espectacular, con acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "TOR-003", "nombreproducto": "Torre Cumple Colors"}	{"activo": true, "reglaid": 1, "productoid": 54, "categoriaid": 3, "descripcion": "Caja para celebrar a esa persona especial, color, diseño y tamaño perfecto para un regalo espectacular, con acabado barniz brillante.", "sku_maestro": "TOR-003", "nombreproducto": "Torre Cumple Colors", "proveedorid_default": 1}	5	APROBADO	2026-01-08 07:36:27.250865	2026-01-08 07:36:27.250865	5	1
+223	producto_variantes	171	UPDATE	{"sku": "BOL-001-23X18X10-MEDIAN", "campo": "Dimensiones", "productoId": 60, "varianteId": 171, "medidaNombre": null, "valorAnterior": "23x18x10"}	{"sku": "BOL-001-23X18X10-MEDIAN", "campo": "Dimensiones", "productoId": 60, "valorNuevo": "Mediana", "varianteId": 171, "descripcion": "Producto [60] - Variante [SKU: BOL-001-23X18X10-MEDIAN]: Cambio en Dimensiones de '23x18x10' a 'Mediana'"}	5	APROBADO	2026-01-08 08:18:47.31038	2026-01-08 08:18:47.31038	5	1
+224	producto_variantes	171	UPDATE	{"sku": "BOL-001-23X18X10-MEDIAN", "campo": "Color", "productoId": 60, "varianteId": 171, "medidaNombre": null, "valorAnterior": "Mediana"}	{"sku": "BOL-001-23X18X10-MEDIAN", "campo": "Color", "productoId": 60, "valorNuevo": "Sin color", "varianteId": 171, "descripcion": "Producto [60] - Variante [SKU: BOL-001-23X18X10-MEDIAN]: Cambio en Color de 'Mediana' a 'Sin color'"}	5	APROBADO	2026-01-08 08:18:47.31038	2026-01-08 08:18:47.31038	5	1
+225	producto_variantes	172	UPDATE	{"sku": "BOL-001-26X33X13-GRANDE", "campo": "Dimensiones", "productoId": 60, "varianteId": 172, "medidaNombre": null, "valorAnterior": "26x33x13"}	{"sku": "BOL-001-26X33X13-GRANDE", "campo": "Dimensiones", "productoId": 60, "valorNuevo": "Grande", "varianteId": 172, "descripcion": "Producto [60] - Variante [SKU: BOL-001-26X33X13-GRANDE]: Cambio en Dimensiones de '26x33x13' a 'Grande'"}	5	APROBADO	2026-01-08 08:19:44.638792	2026-01-08 08:19:44.638792	5	1
+226	producto_variantes	172	UPDATE	{"sku": "BOL-001-26X33X13-GRANDE", "campo": "Color", "productoId": 60, "varianteId": 172, "medidaNombre": null, "valorAnterior": "Grande"}	{"sku": "BOL-001-26X33X13-GRANDE", "campo": "Color", "productoId": 60, "valorNuevo": "Sin color", "varianteId": 172, "descripcion": "Producto [60] - Variante [SKU: BOL-001-26X33X13-GRANDE]: Cambio en Color de 'Grande' a 'Sin color'"}	5	APROBADO	2026-01-08 08:19:44.638792	2026-01-08 08:19:44.638792	5	1
+227	producto_variantes	173	UPDATE	{"sku": "BOL-001-33X44X13-JUMBO", "campo": "Dimensiones", "productoId": 60, "varianteId": 173, "medidaNombre": null, "valorAnterior": "33x44x13"}	{"sku": "BOL-001-33X44X13-JUMBO", "campo": "Dimensiones", "productoId": 60, "valorNuevo": "Jumbo", "varianteId": 173, "descripcion": "Producto [60] - Variante [SKU: BOL-001-33X44X13-JUMBO]: Cambio en Dimensiones de '33x44x13' a 'Jumbo'"}	5	APROBADO	2026-01-08 08:20:31.46318	2026-01-08 08:20:31.46318	5	1
+228	producto_variantes	173	UPDATE	{"sku": "BOL-001-33X44X13-JUMBO", "campo": "Color", "productoId": 60, "varianteId": 173, "medidaNombre": null, "valorAnterior": "Jumbo"}	{"sku": "BOL-001-33X44X13-JUMBO", "campo": "Color", "productoId": 60, "valorNuevo": "Sin color", "varianteId": 173, "descripcion": "Producto [60] - Variante [SKU: BOL-001-33X44X13-JUMBO]: Cambio en Color de 'Jumbo' a 'Sin color'"}	5	APROBADO	2026-01-08 08:20:31.46318	2026-01-08 08:20:31.46318	5	1
+229	producto_variantes	174	UPDATE	{"sku": "BOL-001-35X39X25-GIGANT", "campo": "Dimensiones", "productoId": 60, "varianteId": 174, "medidaNombre": null, "valorAnterior": "35x39x25"}	{"sku": "BOL-001-35X39X25-GIGANT", "campo": "Dimensiones", "productoId": 60, "valorNuevo": "Gigante", "varianteId": 174, "descripcion": "Producto [60] - Variante [SKU: BOL-001-35X39X25-GIGANT]: Cambio en Dimensiones de '35x39x25' a 'Gigante'"}	5	APROBADO	2026-01-08 08:21:08.840329	2026-01-08 08:21:08.840329	5	1
+231	productos	17	UPDATE	{"activo": true, "reglaid": 1, "productoid": 17, "categoriaid": 3, "descripcion": "Caja craft de colores, ideal para celebrar el cumpleaños de esa persona especial, colores vibrantes con acabado mate.", "proveedorid": 1, "sku_maestro": "TOD-001", "nombreproducto": "Cubo Cumple Craft"}	{"activo": true, "reglaid": 1, "productoid": 17, "categoriaid": 3, "descripcion": "Caja craft de colores, ideal para celebrar el cumpleaños de esa persona especial, colores vibrantes con acabado mate.", "sku_maestro": "TOD-001", "nombreproducto": "Cubo Cumple Craft", "proveedorid_default": 1}	5	APROBADO	2026-01-08 20:59:01.269237	2026-01-08 20:59:01.269237	5	1
+232	productos	11	UPDATE	{"activo": true, "reglaid": 1, "productoid": 11, "categoriaid": 1, "descripcion": null, "proveedorid": 1, "sku_maestro": "LIS-001", "nombreproducto": "Cubo Liso"}	{"activo": true, "reglaid": 1, "productoid": 11, "categoriaid": 1, "descripcion": "¡Dale un toque de color y estilo a tus regalos! Estas cajas de color son ideales para quienes buscan resistencia y una presentación impecable. Su diseño vibrante y moderno las hace perfectas, con acabado mate.", "sku_maestro": "LIS-001", "nombreproducto": "Cubo Liso", "proveedorid_default": 1}	5	APROBADO	2026-01-08 23:58:37.153346	2026-01-08 23:58:37.153346	5	1
+260	producto_variantes	220	UPDATE	{"sku": "COD-00003-00220", "campo": "Color", "productoId": 3, "varianteId": 220, "medidaNombre": null, "valorAnterior": "Azul oscuro"}	{"sku": "COD-00003-00220", "campo": "Color", "productoId": 3, "valorNuevo": "Azul Oscuro", "varianteId": 220, "descripcion": "Producto [3] - Variante [SKU: COD-00003-00220]: Cambio en Color de 'Azul oscuro' a 'Azul Oscuro'"}	5	APROBADO	2026-01-09 17:08:59.174014	2026-01-09 17:08:59.174014	5	1
+233	productos	67	UPDATE	{"activo": true, "reglaid": 1, "productoid": 67, "categoriaid": 1, "descripcion": "¡Dale un toque de color y estilo a tus entregas! Estas bolsas de color son ideales para quienes buscan resistencia y una presentación impecable. Su diseño vibrante y moderno las hace perfectas para boutiques, papelerías o eventos especiales.", "proveedorid": 1, "sku_maestro": "BOL-002", "nombreproducto": "Bolsa Boutique Colores"}	{"activo": true, "reglaid": 6, "productoid": 67, "categoriaid": 1, "descripcion": "¡Dale un toque de color y estilo a tus entregas! Estas bolsas de color son ideales para quienes buscan resistencia y una presentación impecable. Su diseño vibrante y moderno las hace perfectas para boutiques, papelerías o eventos especiales.", "sku_maestro": "BOL-002", "nombreproducto": "Bolsa Boutique Colores", "proveedorid_default": 1}	2	APROBADO	2026-01-09 00:02:37.429502	2026-01-09 00:02:37.429502	2	1
+234	productos	60	UPDATE	{"activo": true, "reglaid": 1, "productoid": 60, "categoriaid": 3, "descripcion": "Bolsa Kraft de material resistente, con diseños únicos, ideal para sorprender a esa persona especial, acabado mate.", "proveedorid": 1, "sku_maestro": "BOL-001", "nombreproducto": "Bolsa Guapos"}	{"activo": true, "reglaid": 6, "productoid": 60, "categoriaid": 3, "descripcion": "Bolsa Kraft de material resistente, con diseños únicos, ideal para sorprender a esa persona especial, acabado mate.", "sku_maestro": "BOL-001", "nombreproducto": "Bolsa Guapos", "proveedorid_default": 1}	2	APROBADO	2026-01-09 00:02:46.003932	2026-01-09 00:02:46.003932	2	1
+235	productos	66	UPDATE	{"activo": true, "reglaid": 1, "productoid": 66, "categoriaid": 1, "descripcion": "Dale a tus regalos una presentación inolvidable con nuestra Cajabolsa, el híbrido perfecto entre una caja resistente y una bolsa práctica. Este modelo destaca por su vibrante color rojo y un acabado de alta calidad diseñado para sorprender.", "proveedorid": 1, "sku_maestro": "CAJ-007", "nombreproducto": "Caja Bolsa"}	{"activo": true, "reglaid": 6, "productoid": 66, "categoriaid": 1, "descripcion": "Dale a tus regalos una presentación inolvidable con nuestra Cajabolsa, el híbrido perfecto entre una caja resistente y una bolsa práctica. Este modelo destaca por su vibrante color rojo y un acabado de alta calidad diseñado para sorprender.", "sku_maestro": "CAJ-007", "nombreproducto": "Caja Bolsa", "proveedorid_default": 1}	2	APROBADO	2026-01-09 00:02:59.177456	2026-01-09 00:02:59.177456	2	1
+236	productos	68	INSERT	\N	{"activo": true, "reglaid": 1, "productoid": 68, "categoriaid": 1, "descripcion": "¡Haz que cada momento especial sea inolvidable! Nuestro Cubo Gis no es solo una caja, es una experiencia diseñada para expresar tus sentimientos de la forma más creativa. Pinta de colores tu caja y haz de ese obsequio  algo muy especial. No incluye gises. Acabado mate.", "proveedorid": 1, "sku_maestro": "CUB-002", "nombreproducto": "Cubo Gis"}	5	APROBADO	2026-01-09 03:26:25.602286	2026-01-09 03:26:25.602286	5	1
+237	productos	9	UPDATE	{"activo": true, "reglaid": 1, "productoid": 9, "categoriaid": 2, "descripcion": "¡Eleva tus regalos al siguiente nivel con nuestros Cubos Corazón de Acetato! Diseñados para combinar elegancia y sentimiento, estos cubos son la base ideal para arreglos florales, desayunos sorpresa, dulces o peluches.", "proveedorid": 1, "sku_maestro": "AMO-018", "nombreproducto": "Cubo Acetato"}	{"activo": true, "reglaid": 1, "productoid": 9, "categoriaid": 2, "descripcion": "¡Eleva tus regalos al siguiente nivel con nuestros Cubos Corazón de Acetato! Diseñados para combinar elegancia y sentimiento, estos cubos son la base ideal para arreglos florales, desayunos sorpresa, dulces o peluches.", "sku_maestro": "AMO-018", "nombreproducto": "Cubo Acetato", "proveedorid_default": 1}	4	APROBADO	2026-01-09 04:27:54.556431	2026-01-09 04:27:54.556431	4	1
+238	productos	9	UPDATE	{"activo": true, "reglaid": 1, "productoid": 9, "categoriaid": 2, "descripcion": "¡Eleva tus regalos al siguiente nivel con nuestros Cubos Corazón de Acetato! Diseñados para combinar elegancia y sentimiento, estos cubos son la base ideal para arreglos florales, desayunos sorpresa, dulces o peluches.", "proveedorid": 1, "sku_maestro": "AMO-018", "nombreproducto": "Cubo Acetato"}	{"activo": true, "reglaid": 1, "productoid": 9, "categoriaid": 2, "descripcion": "¡Eleva tus regalos al siguiente nivel con nuestros Cubos Corazón de Acetato! Diseñados para combinar elegancia y sentimiento, estos cubos son la base ideal para arreglos florales, desayunos sorpresa, dulces o peluches.", "sku_maestro": "AMO-018", "nombreproducto": "Cubo Acetato", "proveedorid_default": 1}	4	APROBADO	2026-01-09 04:29:09.656146	2026-01-09 04:29:09.656146	4	1
+239	productos	6	UPDATE	{"activo": true, "reglaid": 1, "productoid": 6, "categoriaid": 2, "descripcion": "¡Haz que cada detalle cuente! Nuestra colección Colores Amor está diseñada para quienes buscan transformar un simple regalo en una experiencia inolvidable. Estas cajas no son solo empaques, son una declaración de afecto con un diseño vibrante y moderno.", "proveedorid": 1, "sku_maestro": "AMO-012", "nombreproducto": "Cubo Colores Amor"}	{"activo": true, "reglaid": 1, "productoid": 6, "categoriaid": 2, "descripcion": "¡Haz que cada detalle cuente! Nuestra colección Colores Amor está diseñada para quienes buscan transformar un simple regalo en una experiencia inolvidable. Estas cajas no son solo empaques, son una declaración de afecto con un diseño vibrante y moderno.", "sku_maestro": "AMO-012", "nombreproducto": "Cubo Colores Amor", "proveedorid_default": 1}	4	APROBADO	2026-01-09 04:43:20.559675	2026-01-09 04:43:20.559675	4	1
+240	productos	6	UPDATE	{"activo": true, "reglaid": 1, "productoid": 6, "categoriaid": 2, "descripcion": "¡Haz que cada detalle cuente! Nuestra colección Colores Amor está diseñada para quienes buscan transformar un simple regalo en una experiencia inolvidable. Estas cajas no son solo empaques, son una declaración de afecto con un diseño vibrante y moderno.", "proveedorid": 1, "sku_maestro": "AMO-012", "nombreproducto": "Cubo Colores Amor"}	{"activo": true, "reglaid": 1, "productoid": 6, "categoriaid": 2, "descripcion": "¡Haz que cada detalle cuente! Nuestra colección Colores Amor está diseñada para quienes buscan transformar un simple regalo en una experiencia inolvidable. Estas cajas no son solo empaques, son una declaración de afecto con un diseño vibrante y moderno.", "sku_maestro": "AMO-012", "nombreproducto": "Cubo Colores Amor", "proveedorid_default": 1}	4	APROBADO	2026-01-09 05:17:50.941758	2026-01-09 05:17:50.941758	4	1
+241	productos	1	UPDATE	{"activo": true, "reglaid": 1, "productoid": 1, "categoriaid": 2, "descripcion": "Dale un toque de color y alegría a tus detalles con nuestro Cubo Colors Love. Diseñado especialmente para quienes no temen expresar su cariño de forma vibrante, este cubo decorativo es mucho más que una caja: es el complemento ideal que hará que tu regalo destaque desde el primer momento.", "proveedorid": 1, "sku_maestro": "AMO-001", "nombreproducto": "Cubo Colors Love"}	{"activo": true, "reglaid": 1, "productoid": 1, "categoriaid": 2, "descripcion": "Dale un toque de color y alegría a tus detalles con nuestro Cubo Colors Love. Diseñado especialmente para quienes no temen expresar su cariño de forma vibrante, este cubo decorativo es mucho más que una caja: es el complemento ideal que hará que tu regalo destaque desde el primer momento.", "sku_maestro": "AMO-001", "nombreproducto": "Cubo Colors Love", "proveedorid_default": 1}	4	APROBADO	2026-01-09 05:20:12.208654	2026-01-09 05:20:12.208654	4	1
+242	productos	8	UPDATE	{"activo": true, "reglaid": 1, "productoid": 8, "categoriaid": 2, "descripcion": "Dale un toque auténtico y vibrante a tus detalles con nuestras cajas de regalo temáticas. Diseñadas con el icónico sello de \\"Hecho en México\\", estas cajas no solo sirven como empaque, sino como un elemento decorativo de alta calidad que resalta el orgullo nacional.", "proveedorid": 1, "sku_maestro": "AMO-016", "nombreproducto": "Cubo Hecho en México"}	{"activo": true, "reglaid": 1, "productoid": 8, "categoriaid": 2, "descripcion": "Dale un toque auténtico y vibrante a tus detalles con nuestras cajas de regalo temáticas. Diseñadas con el icónico sello de \\"Hecho en México\\", estas cajas no solo sirven como empaque, sino como un elemento decorativo de alta calidad que resalta el orgullo nacional.", "sku_maestro": "AMO-016", "nombreproducto": "Cubo Hecho en México", "proveedorid_default": 1}	4	APROBADO	2026-01-09 05:22:00.297927	2026-01-09 05:22:00.297927	4	1
+243	productos	3	UPDATE	{"activo": true, "reglaid": 2, "productoid": 3, "categoriaid": 1, "descripcion": "Estas cajas no solo son contenedores, son parte del regalo mismo. Gracias a su acabado brillante y su vibrante color negro o rojo, son perfectas para San Valentín, aniversarios, cumpleaños o cualquier ocasión especial donde quieras impresionar.", "proveedorid": 1, "sku_maestro": "AMO-006", "nombreproducto": "Cubo Liso Brillo"}	{"activo": true, "reglaid": 1, "productoid": 3, "categoriaid": 1, "descripcion": "Estas cajas no solo son contenedores, son parte del regalo mismo. Gracias a su acabado brillante y su vibrante color negro o rojo, son perfectas para San Valentín, aniversarios, cumpleaños o cualquier ocasión especial donde quieras impresionar.", "sku_maestro": "AMO-006", "nombreproducto": "Cubo Liso Brillo", "proveedorid_default": 1}	4	APROBADO	2026-01-09 05:23:11.067513	2026-01-09 05:23:11.067513	4	1
+244	productos	4	UPDATE	{"activo": true, "reglaid": 1, "productoid": 4, "categoriaid": 2, "descripcion": "El Cubo Love Black es la opción perfecta para quienes buscan un empaque impactante, moderno y lleno de sentimiento. Diseñada con un fondo negro profundo que hace resaltar colores vibrantes, esta caja no es solo un empaque, sino parte del regalo mismo.", "proveedorid": 1, "sku_maestro": "AMO-008", "nombreproducto": "Cubo Love Black"}	{"activo": true, "reglaid": 1, "productoid": 4, "categoriaid": 2, "descripcion": "El Cubo Love Black es la opción perfecta para quienes buscan un empaque impactante, moderno y lleno de sentimiento. Diseñada con un fondo negro profundo que hace resaltar colores vibrantes, esta caja no es solo un empaque, sino parte del regalo mismo.", "sku_maestro": "AMO-008", "nombreproducto": "Cubo Love Black", "proveedorid_default": 1}	4	APROBADO	2026-01-09 05:39:04.361288	2026-01-09 05:39:04.361288	4	1
+245	productos	5	UPDATE	{"activo": true, "reglaid": 1, "productoid": 5, "categoriaid": 2, "descripcion": "¡Haz que cada regalo sea inolvidable desde el primer vistazo! Nuestra línea de cajas Love Craft está diseñada para quienes buscan salir de lo convencional y entregar un detalle lleno de color, arte y emoción.", "proveedorid": 1, "sku_maestro": "AMO-010", "nombreproducto": "Cubo Love Craft"}	{"activo": true, "reglaid": 1, "productoid": 5, "categoriaid": 2, "descripcion": "¡Haz que cada regalo sea inolvidable desde el primer vistazo! Nuestra línea de cajas Love Craft está diseñada para quienes buscan salir de lo convencional y entregar un detalle lleno de color, arte y emoción.", "sku_maestro": "AMO-010", "nombreproducto": "Cubo Love Craft", "proveedorid_default": 1}	4	APROBADO	2026-01-09 05:42:25.427513	2026-01-09 05:42:25.427513	4	1
+246	productos	5	UPDATE	{"activo": true, "reglaid": 1, "productoid": 5, "categoriaid": 2, "descripcion": "¡Haz que cada regalo sea inolvidable desde el primer vistazo! Nuestra línea de cajas Love Craft está diseñada para quienes buscan salir de lo convencional y entregar un detalle lleno de color, arte y emoción.", "proveedorid": 1, "sku_maestro": "AMO-010", "nombreproducto": "Cubo Love Craft"}	{"activo": true, "reglaid": 1, "productoid": 5, "categoriaid": 2, "descripcion": "¡Haz que cada regalo sea inolvidable desde el primer vistazo! Nuestra línea de cajas Love Craft está diseñada para quienes buscan salir de lo convencional y entregar un detalle lleno de color, arte y emoción.", "sku_maestro": "AMO-010", "nombreproducto": "Cubo Love Craft", "proveedorid_default": 1}	4	APROBADO	2026-01-09 05:43:55.714702	2026-01-09 05:43:55.714702	4	1
+247	productos	5	UPDATE	{"activo": true, "reglaid": 1, "productoid": 5, "categoriaid": 2, "descripcion": "¡Haz que cada regalo sea inolvidable desde el primer vistazo! Nuestra línea de cajas Love Craft está diseñada para quienes buscan salir de lo convencional y entregar un detalle lleno de color, arte y emoción.", "proveedorid": 1, "sku_maestro": "AMO-010", "nombreproducto": "Cubo Love Craft"}	{"activo": true, "reglaid": 1, "productoid": 5, "categoriaid": 2, "descripcion": "¡Haz que cada regalo sea inolvidable desde el primer vistazo! Nuestra línea de cajas Love Craft está diseñada para quienes buscan salir de lo convencional y entregar un detalle lleno de color, arte y emoción.", "sku_maestro": "AMO-010", "nombreproducto": "Cubo Love Craft", "proveedorid_default": 1}	4	APROBADO	2026-01-09 05:44:37.504534	2026-01-09 05:44:37.504534	4	1
+248	productos	2	UPDATE	{"activo": true, "reglaid": 1, "productoid": 2, "categoriaid": 2, "descripcion": "Eleva la presentación de tus detalles con nuestra exclusiva línea de Cajas Cubo LV Oro. Diseñadas con un elegante acabado en color oro y tipografía estilizada, estas cajas son perfectas para San Valentín, aniversarios o cualquier ocasión especial donde el amor sea el protagonista.", "proveedorid": 1, "sku_maestro": "AMO-003", "nombreproducto": "Cubo LV Oro"}	{"activo": true, "reglaid": 1, "productoid": 2, "categoriaid": 2, "descripcion": "Eleva la presentación de tus detalles con nuestra exclusiva línea de Cajas Cubo LV Oro. Diseñadas con un elegante acabado en color oro y tipografía estilizada, estas cajas son perfectas para San Valentín, aniversarios o cualquier ocasión especial donde el amor sea el protagonista.", "sku_maestro": "AMO-003", "nombreproducto": "Cubo LV Oro", "proveedorid_default": 1}	4	APROBADO	2026-01-09 05:45:48.444528	2026-01-09 05:45:48.444528	4	1
+249	productos	7	UPDATE	{"activo": true, "reglaid": 1, "productoid": 7, "categoriaid": 2, "descripcion": "Sorprende a esa persona especial con nuestros elegantes cubos decorativos de la colección RedBlack Love. Diseñados con una combinación clásica de rojo, negro y blanco, estos cubos son el empaque perfecto para regalos inolvidables o como un detalle decorativo lleno de sentimiento.", "proveedorid": 1, "sku_maestro": "AMO-014", "nombreproducto": "Cubo RedBlack Love"}	{"activo": true, "reglaid": 1, "productoid": 7, "categoriaid": 2, "descripcion": "Sorprende a esa persona especial con nuestros elegantes cubos decorativos de la colección RedBlack Love. Diseñados con una combinación clásica de rojo, negro y blanco, estos cubos son el empaque perfecto para regalos inolvidables o como un detalle decorativo lleno de sentimiento.", "sku_maestro": "AMO-014", "nombreproducto": "Cubo RedBlack Love", "proveedorid_default": 1}	4	APROBADO	2026-01-09 05:47:44.406035	2026-01-09 05:47:44.406035	4	1
+250	productos	10	UPDATE	{"activo": true, "reglaid": 5, "productoid": 10, "categoriaid": 2, "descripcion": "¡Dale estilo a tus notas con estas libretas de diseño exclusivo! Perfectas para regalo o para uso personal, estas libretas combinan un diseño moderno con materiales de alta resistencia.", "proveedorid": 1, "sku_maestro": "AMO-019", "nombreproducto": "Libreta"}	{"activo": true, "reglaid": 5, "productoid": 10, "categoriaid": 2, "descripcion": "¡Dale estilo a tus notas con estas libretas de diseño exclusivo! Perfectas para regalo o para uso personal, estas libretas combinan un diseño moderno con materiales de alta resistencia.", "sku_maestro": "AMO-019", "nombreproducto": "Libreta", "proveedorid_default": 1}	4	APROBADO	2026-01-09 05:48:42.046711	2026-01-09 05:48:42.046711	4	1
+251	productos	13	UPDATE	{"activo": true, "reglaid": 1, "productoid": 13, "categoriaid": 4, "descripcion": "Caja camisera de regalo natural, elegante y funcional. Ideal para presentar prendas y regalos con un estilo limpio y moderno. Resistente, práctica y fácil de personalizar. Disponible en diferentes tamaños para adaptarse a cada detalle 🎁✨", "proveedorid": 1, "sku_maestro": "NAT-002", "nombreproducto": "Camisera Natural"}	{"activo": true, "reglaid": 1, "productoid": 13, "categoriaid": 4, "descripcion": "Caja camisera de regalo natural, elegante y funcional. Ideal para presentar prendas y regalos con un estilo limpio y moderno. Resistente, práctica y fácil de personalizar. Disponible en diferentes tamaños para adaptarse a cada detalle 🎁✨", "sku_maestro": "NAT-002", "nombreproducto": "Camisera Natural", "proveedorid_default": 1}	4	APROBADO	2026-01-09 05:51:16.066524	2026-01-09 05:51:16.066524	4	1
+252	producto_variantes	217	UPDATE	{"sku": "SIX-001-6-DISENO", "campo": "Costo Unitario", "productoId": 51, "varianteId": 217, "medidaNombre": null, "valorAnterior": "$20.93"}	{"sku": "SIX-001-6-DISENO", "campo": "Costo Unitario", "productoId": 51, "valorNuevo": "$13.93", "varianteId": 217, "descripcion": "Producto [51] - Variante [SKU: SIX-001-6-DISENO]: Cambio en Costo Unitario de '$20.93' a '$13.93'"}	4	APROBADO	2026-01-09 05:58:31.443537	2026-01-09 05:58:31.443537	4	1
+253	producto_variantes	217	UPDATE	{"sku": "SIX-001-6-DISENO", "campo": "Precio Unitario", "productoId": 51, "varianteId": 217, "medidaNombre": null, "valorAnterior": "$32.90"}	{"sku": "SIX-001-6-DISENO", "campo": "Precio Unitario", "productoId": 51, "valorNuevo": "$22.90", "varianteId": 217, "descripcion": "Producto [51] - Variante [SKU: SIX-001-6-DISENO]: Cambio en Precio Unitario de '$32.90' a '$22.90'"}	4	APROBADO	2026-01-09 05:58:31.443537	2026-01-09 05:58:31.443537	4	1
+254	producto_variantes	217	UPDATE	{"sku": "SIX-001-6-DISENO", "campo": "Color", "productoId": 51, "varianteId": 217, "medidaNombre": null, "valorAnterior": "Diseño"}	{"sku": "SIX-001-6-DISENO", "campo": "Color", "productoId": 51, "valorNuevo": "Natural", "varianteId": 217, "descripcion": "Producto [51] - Variante [SKU: SIX-001-6-DISENO]: Cambio en Color de 'Diseño' a 'Natural'"}	4	APROBADO	2026-01-09 05:58:31.443537	2026-01-09 05:58:31.443537	4	1
+255	productos	13	UPDATE	{"activo": true, "reglaid": 1, "productoid": 13, "categoriaid": 4, "descripcion": "Caja camisera de regalo natural, elegante y funcional. Ideal para presentar prendas y regalos con un estilo limpio y moderno. Resistente, práctica y fácil de personalizar. Disponible en diferentes tamaños para adaptarse a cada detalle 🎁✨", "proveedorid": 1, "sku_maestro": "NAT-002", "nombreproducto": "Camisera Natural"}	{"activo": true, "reglaid": 1, "productoid": 13, "categoriaid": 4, "descripcion": "Caja camisera de regalo natural, elegante y funcional. Ideal para presentar prendas y regalos con un estilo limpio y moderno. Resistente, práctica y fácil de personalizar. Disponible en diferentes tamaños para adaptarse a cada detalle 🎁✨", "sku_maestro": "NAT-002", "nombreproducto": "Camisera Natural", "proveedorid_default": 1}	4	APROBADO	2026-01-09 06:15:11.697858	2026-01-09 06:15:11.697858	4	1
+256	productos	61	UPDATE	{"activo": true, "reglaid": 1, "productoid": 61, "categoriaid": 3, "descripcion": "Sobre de dinero, ideal para cuando no sabes que regalar, diseños alegres y divertidos, con acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "SOB-001", "nombreproducto": "Sobre Cumple"}	{"activo": true, "reglaid": 8, "productoid": 61, "categoriaid": 3, "descripcion": "Sobre de dinero, ideal para cuando no sabes que regalar, diseños alegres y divertidos, con acabado barniz brillante.", "sku_maestro": "SOB-001", "nombreproducto": "Sobre Cumple", "proveedorid_default": 1}	2	APROBADO	2026-01-09 06:31:07.71101	2026-01-09 06:31:07.71101	2	1
+257	productos	61	UPDATE	{"activo": true, "reglaid": 8, "productoid": 61, "categoriaid": 3, "descripcion": "Sobre de dinero, ideal para cuando no sabes que regalar, diseños alegres y divertidos, con acabado barniz brillante.", "proveedorid": 1, "sku_maestro": "SOB-001", "nombreproducto": "Sobre Cumple"}	{"activo": true, "reglaid": 8, "productoid": 61, "categoriaid": 3, "descripcion": "Sobre de dinero, ideal para cuando no sabes que regalar, diseños alegres y divertidos, con acabado barniz brillante.", "sku_maestro": "SOB-001", "nombreproducto": "Sobre Cumple", "proveedorid_default": 1}	4	APROBADO	2026-01-09 06:38:26.620648	2026-01-09 06:38:26.620648	4	1
+258	productos	3	UPDATE	{"activo": true, "reglaid": 1, "productoid": 3, "categoriaid": 1, "descripcion": "Estas cajas no solo son contenedores, son parte del regalo mismo. Gracias a su acabado brillante y su vibrante color negro o rojo, son perfectas para San Valentín, aniversarios, cumpleaños o cualquier ocasión especial donde quieras impresionar.", "proveedorid": 1, "sku_maestro": "AMO-006", "nombreproducto": "Cubo Liso Brillo"}	{"activo": true, "reglaid": 2, "productoid": 3, "categoriaid": 1, "descripcion": "Estas cajas no solo son empaques, son parte del regalo mismo. Gracias a su acabado brillante y sus vibrantes colores, son perfectas para San Valentín, aniversarios, cumpleaños o cualquier ocasión especial, en donde quieras impresionar.", "sku_maestro": "AMO-006", "nombreproducto": "Cubo Liso Brillo", "proveedorid_default": 1}	5	APROBADO	2026-01-09 06:48:26.682908	2026-01-09 06:48:26.682908	5	1
+261	productos	3	UPDATE	{"activo": true, "reglaid": 2, "productoid": 3, "categoriaid": 1, "descripcion": "Estas cajas no solo son empaques, son parte del regalo mismo. Gracias a su acabado brillante y sus vibrantes colores, son perfectas para San Valentín, aniversarios, cumpleaños o cualquier ocasión especial, en donde quieras impresionar.", "proveedorid": 1, "sku_maestro": "COD-00003", "nombreproducto": "Cubo Liso Brillo"}	{"activo": true, "reglaid": 1, "productoid": 3, "categoriaid": 1, "descripcion": "Estas cajas no solo son empaques, son parte del regalo mismo. Gracias a su acabado brillante y sus vibrantes colores, son perfectas para San Valentín, aniversarios, cumpleaños o cualquier ocasión especial, en donde quieras impresionar.", "sku_maestro": "COD-00003", "nombreproducto": "Cubo Liso Brillo", "proveedorid_default": 1}	5	APROBADO	2026-01-09 17:12:29.856776	2026-01-09 17:12:29.856776	5	1
+262	productos	3	UPDATE	{"activo": true, "reglaid": 1, "productoid": 3, "categoriaid": 1, "descripcion": "Estas cajas no solo son empaques, son parte del regalo mismo. Gracias a su acabado brillante y sus vibrantes colores, son perfectas para San Valentín, aniversarios, cumpleaños o cualquier ocasión especial, en donde quieras impresionar.", "proveedorid": 1, "sku_maestro": "COD-00003", "nombreproducto": "Cubo Liso Brillo"}	{"activo": true, "reglaid": 1, "productoid": 3, "categoriaid": 1, "descripcion": "Estas cajas no solo son empaques, son parte del regalo mismo. Gracias a su acabado brillante y sus vibrantes colores, son perfectas para San Valentín, aniversarios, cumpleaños o cualquier ocasión especial, en donde quieras impresionar.", "sku_maestro": "COD-00003", "nombreproducto": "Cubo Liso Brillo", "proveedorid_default": 1}	5	APROBADO	2026-01-09 17:14:46.292233	2026-01-09 17:14:46.292233	5	1
+263	productos	69	INSERT	\N	{"activo": true, "reglaid": 2, "productoid": 69, "categoriaid": 1, "descripcion": "¡Haz que cada regalo sea inolvidable desde el primer vistazo! Nuestra línea de cajas Bolas Brillo, está diseñada para quienes buscan salir de lo convencional y entregar un detalle lleno de color.", "proveedorid": 1, "sku_maestro": "CUB-001", "nombreproducto": "Cubo Bolas Brillo"}	5	APROBADO	2026-01-09 17:29:12.096616	2026-01-09 17:29:12.096616	5	1
+264	productos	14	UPDATE	{"activo": true, "reglaid": 1, "productoid": 14, "categoriaid": 1, "descripcion": null, "proveedorid": 1, "sku_maestro": "COD-00014", "nombreproducto": "Línea Metalizada"}	{"activo": true, "reglaid": 2, "productoid": 14, "categoriaid": 1, "descripcion": "¡Haz que cada regalo sea inolvidable! Nuestra línea de cajas Metaliadas está diseñada para quienes buscan salir de lo convencional y entregar un detalle lleno de color, elegancia y emoción.", "sku_maestro": "COD-00014", "nombreproducto": "Cubo Metalizado", "proveedorid_default": 1}	5	APROBADO	2026-01-09 17:41:24.093999	2026-01-09 17:41:24.093999	5	1
+265	productos	14	UPDATE	{"activo": true, "reglaid": 2, "productoid": 14, "categoriaid": 1, "descripcion": "¡Haz que cada regalo sea inolvidable! Nuestra línea de cajas Metaliadas está diseñada para quienes buscan salir de lo convencional y entregar un detalle lleno de color, elegancia y emoción.", "proveedorid": 1, "sku_maestro": "COD-00014", "nombreproducto": "Cubo Metalizado"}	{"activo": true, "reglaid": 2, "productoid": 14, "categoriaid": 1, "descripcion": "¡Haz que cada regalo sea inolvidable! Nuestra línea de cajas Metaliadas está diseñada para quienes buscan salir de lo convencional y entregar un detalle lleno de color, elegancia y emoción.", "sku_maestro": "COD-00014", "nombreproducto": "Cubo Metalizado", "proveedorid_default": 1}	5	APROBADO	2026-01-09 17:49:10.295439	2026-01-09 17:49:10.295439	5	1
+266	agentes	3	INSERT	\N	{"email": "", "activo": true, "nombre": "Fernando", "esadmin": false, "adminrol": null, "agenteid": 3, "apellido": "García", "codigoagente": "AG0003"}	2	APROBADO	2026-01-09 20:09:28.121981	2026-01-09 20:09:28.121981	2	1
+267	proveedores	4	INSERT	\N	{"rfc": null, "banco": null, "calle": null, "clabe": null, "email": null, "ciudad": null, "estado": null, "colonia": null, "telefono": null, "tenant_id": 1, "diascredito": null, "emailventas": null, "proveedorid": 4, "razonsocial": null, "codigopostal": null, "minimocompra": null, "numerocuenta": null, "celularventas": null, "emailcobranza": null, "limitecredito": null, "nombreempresa": "Envolturas Ferrusca", "regimenfiscal": null, "contactonombre": null, "referenciapago": null, "telefonocobranza": null, "aceptadevoluciones": false, "descuentofinanciero": null, "nombrecontactocobranza": null, "nombrerepresentanteventas": null}	5	APROBADO	2026-01-10 00:26:51.929216	2026-01-10 00:26:51.929216	5	1
 \.
 
 
 --
--- TOC entry 4968 (class 0 OID 25110)
+-- TOC entry 5072 (class 0 OID 25110)
 -- Dependencies: 249
 -- Data for Name: credito_movimientos; Type: TABLE DATA; Schema: public; Owner: ferram
 --
 
-COPY public.credito_movimientos (movimiento_id, credito_id, tipo_movimiento, monto, referencia_id, descripcion, fecha_movimiento, saldo_despues_movimiento, registrado_por, admin_id, agente_id) FROM stdin;
-1	2	CARGO	2989.20	PED-1	Compra realizada (Pedido #1)	2026-01-10 02:19:20.708121	2989.20	\N	\N	\N
-2	3	CARGO	3318.00	PED-2	Compra realizada (Pedido #2)	2026-01-10 04:11:53.991453	3318.00	\N	\N	\N
-3	4	CARGO	3220.80	PED-3	Compra realizada (Pedido #3)	2026-01-10 04:48:32.370162	3220.80	\N	\N	\N
+COPY public.credito_movimientos (movimiento_id, credito_id, tipo_movimiento, monto, referencia_id, descripcion, fecha_movimiento, saldo_despues_movimiento, registrado_por, admin_id, agente_id, tenant_id) FROM stdin;
+1	2	CARGO	2989.20	PED-1	Compra realizada (Pedido #1)	2026-01-10 02:19:20.708121	2989.20	\N	\N	\N	1
+2	3	CARGO	3318.00	PED-2	Compra realizada (Pedido #2)	2026-01-10 04:11:53.991453	3318.00	\N	\N	\N	1
+3	4	CARGO	3220.80	PED-3	Compra realizada (Pedido #3)	2026-01-10 04:48:32.370162	3220.80	\N	\N	\N	1
+4	5	CARGO	1892.80	PED-4	Compra realizada (Pedido #4)	2026-01-10 20:16:43.838777	1892.80	\N	\N	\N	1
 \.
 
 
 --
--- TOC entry 4970 (class 0 OID 25117)
+-- TOC entry 5074 (class 0 OID 25117)
 -- Dependencies: 251
 -- Data for Name: cuentas_por_cobrar; Type: TABLE DATA; Schema: public; Owner: ferram
 --
 
-COPY public.cuentas_por_cobrar (cxcid, pedido_id, cliente_id, tipo_movimiento, monto, descripcion, fecha_movimiento, tenant_id) FROM stdin;
+COPY public.cuentas_por_cobrar (cxcid, pedido_id, cliente_id, tipo_movimiento, monto, descripcion, fecha_movimiento, tenant_id, remision_id) FROM stdin;
 \.
 
 
 --
--- TOC entry 4972 (class 0 OID 25122)
+-- TOC entry 5076 (class 0 OID 25122)
 -- Dependencies: 253
 -- Data for Name: cuentas_por_pagar; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -4038,7 +4410,7 @@ COPY public.cuentas_por_pagar (cxp_id, proveedor_id, orden_compra_id, fecha_emis
 
 
 --
--- TOC entry 5030 (class 0 OID 25893)
+-- TOC entry 5134 (class 0 OID 25893)
 -- Dependencies: 313
 -- Data for Name: cupones; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -4048,67 +4420,89 @@ COPY public.cupones (cuponid, codigo, descripcion, tipo_descuento, valor, fecha_
 
 
 --
--- TOC entry 4974 (class 0 OID 25135)
+-- TOC entry 5078 (class 0 OID 25135)
 -- Dependencies: 255
 -- Data for Name: cxp_etiquetas_asignadas; Type: TABLE DATA; Schema: public; Owner: ferram
 --
 
-COPY public.cxp_etiquetas_asignadas (asignacion_id, cxp_id, etiqueta_id, fecha_asignacion) FROM stdin;
+COPY public.cxp_etiquetas_asignadas (asignacion_id, cxp_id, etiqueta_id, fecha_asignacion, tenant_id) FROM stdin;
 \.
 
 
 --
--- TOC entry 4976 (class 0 OID 25140)
+-- TOC entry 5080 (class 0 OID 25140)
 -- Dependencies: 257
 -- Data for Name: datos_bancarios_empresa; Type: TABLE DATA; Schema: public; Owner: ferram
 --
 
-COPY public.datos_bancarios_empresa (id, banco, numero_cuenta, clabe, titular, ultima_actualizacion, es_principal) FROM stdin;
-2	PRUEBA	21321321323112	123132131231231232	Prueba 1	2025-12-26 17:22:59.337362	t
+COPY public.datos_bancarios_empresa (id, banco, numero_cuenta, clabe, titular, ultima_actualizacion, es_principal, tenant_id) FROM stdin;
+2	PRUEBA	21321321323112	123132131231231232	Prueba 1	2025-12-26 17:22:59.337362	t	1
 \.
 
 
 --
--- TOC entry 4978 (class 0 OID 25146)
+-- TOC entry 5147 (class 0 OID 26969)
+-- Dependencies: 327
+-- Data for Name: detalles_remision; Type: TABLE DATA; Schema: public; Owner: ferram
+--
+
+COPY public.detalles_remision (detalle_remision_id, remision_id, detalle_pedido_id, variante_id, cantidad_paquetes_surtidos, piezas_surtidas, precio_unitario, tamano_id, subtotal, tenant_id) FROM stdin;
+\.
+
+
+--
+-- TOC entry 5082 (class 0 OID 25146)
 -- Dependencies: 259
 -- Data for Name: detallesdelpedido; Type: TABLE DATA; Schema: public; Owner: ferram
 --
 
-COPY public.detallesdelpedido (detalleid, pedidoid, varianteid, cantidadpaquetes, precioporpaquete, piezastotales, preciounitario, tamanoid, esbackorder, cantidadsurtida, cantidadbackorder, tenant_id) FROM stdin;
-1	1	104	1	389.40	6	64.90	3	t	0	1	1
-2	1	88	1	389.40	6	64.90	3	t	0	1	1
-3	1	114	1	389.40	6	64.90	3	t	0	1	1
-4	1	134	1	317.40	6	52.90	3	t	0	1	1
-5	1	138	1	419.40	6	69.90	3	t	0	1	1
-6	1	167	1	377.40	6	62.90	3	t	0	1	1
-7	1	13	1	317.40	6	52.90	3	t	0	1	1
-8	1	56	1	389.40	6	64.90	3	t	0	1	1
-9	2	3	1	185.40	6	30.90	3	t	0	1	1
-10	2	4	1	257.40	6	42.90	3	t	0	1	1
-11	2	5	1	317.40	6	52.90	3	t	0	1	1
-12	2	56	1	389.40	6	64.90	3	t	0	1	1
-13	2	175	1	269.40	6	44.90	3	t	0	1	1
-14	2	176	1	407.40	6	67.90	3	t	0	1	1
-15	2	87	1	317.40	6	52.90	3	t	0	1	1
-16	2	88	1	389.40	6	64.90	3	t	0	1	1
-17	2	77	1	317.40	6	52.90	3	t	0	1	1
-18	2	78	1	467.40	6	77.90	3	t	0	1	1
-19	3	73	1	238.80	12	19.90	4	t	0	1	1
-20	3	206	1	1294.80	12	107.90	4	t	0	1	1
-21	3	205	1	838.80	12	69.90	4	t	0	1	1
-22	3	10	1	238.80	12	19.90	4	t	0	1	1
-23	3	207	1	238.80	12	19.90	4	t	0	1	1
-24	3	208	1	370.80	12	30.90	4	t	0	1	1
+COPY public.detallesdelpedido (detalleid, pedidoid, varianteid, cantidadpaquetes, precioporpaquete, piezastotales, preciounitario, tamanoid, esbackorder, cantidadsurtida, cantidadbackorder, tenant_id, cantidad_surtida_remisiones) FROM stdin;
+1	1	104	1	389.40	6	64.90	3	t	0	1	1	0
+2	1	88	1	389.40	6	64.90	3	t	0	1	1	0
+3	1	114	1	389.40	6	64.90	3	t	0	1	1	0
+4	1	134	1	317.40	6	52.90	3	t	0	1	1	0
+5	1	138	1	419.40	6	69.90	3	t	0	1	1	0
+6	1	167	1	377.40	6	62.90	3	t	0	1	1	0
+7	1	13	1	317.40	6	52.90	3	t	0	1	1	0
+8	1	56	1	389.40	6	64.90	3	t	0	1	1	0
+9	2	3	1	185.40	6	30.90	3	t	0	1	1	0
+10	2	4	1	257.40	6	42.90	3	t	0	1	1	0
+11	2	5	1	317.40	6	52.90	3	t	0	1	1	0
+12	2	56	1	389.40	6	64.90	3	t	0	1	1	0
+13	2	175	1	269.40	6	44.90	3	t	0	1	1	0
+14	2	176	1	407.40	6	67.90	3	t	0	1	1	0
+15	2	87	1	317.40	6	52.90	3	t	0	1	1	0
+16	2	88	1	389.40	6	64.90	3	t	0	1	1	0
+17	2	77	1	317.40	6	52.90	3	t	0	1	1	0
+18	2	78	1	467.40	6	77.90	3	t	0	1	1	0
+19	3	73	1	238.80	12	19.90	4	t	0	1	1	0
+20	3	206	1	1294.80	12	107.90	4	t	0	1	1	0
+21	3	205	1	838.80	12	69.90	4	t	0	1	1	0
+22	3	10	1	238.80	12	19.90	4	t	0	1	1	0
+23	3	207	1	238.80	12	19.90	4	t	0	1	1	0
+24	3	208	1	370.80	12	30.90	4	t	0	1	1	0
+25	4	114	1	778.80	12	64.90	4	t	0	1	1	0
+26	4	96	2	211.60	8	52.90	5	t	0	2	1	0
+27	4	99	2	211.60	8	52.90	5	t	0	2	1	0
+28	4	100	2	259.60	8	64.90	5	t	0	2	1	0
+29	4	98	2	171.60	8	42.90	5	t	0	2	1	0
+30	4	97	2	259.60	8	64.90	5	t	0	2	1	0
 \.
 
 
 --
--- TOC entry 4980 (class 0 OID 25153)
+-- TOC entry 5084 (class 0 OID 25153)
 -- Dependencies: 261
 -- Data for Name: detallesordencompra; Type: TABLE DATA; Schema: public; Owner: ferram
 --
 
 COPY public.detallesordencompra (detalleoc_id, ordencompraid, varianteid, cantidadsolicitada, cantidadrecibida, piezasporpaquete, costounitario, piezasrecibidas, tenant_id) FROM stdin;
+142	10	114	12	0	1	0.00	0	1
+143	10	96	12	0	1	0.00	0	1
+144	10	99	12	0	1	0.00	0	1
+145	10	100	12	0	1	0.00	0	1
+146	10	98	12	0	1	0.00	0	1
+147	10	97	12	0	1	0.00	0	1
 1	1	40	4	0	12	13.93	0	1
 2	1	41	5	0	12	20.93	0	1
 3	1	42	2	0	12	32.13	0	1
@@ -4254,7 +4648,7 @@ COPY public.detallesordencompra (detalleoc_id, ordencompraid, varianteid, cantid
 
 
 --
--- TOC entry 5038 (class 0 OID 26155)
+-- TOC entry 5142 (class 0 OID 26155)
 -- Dependencies: 321
 -- Data for Name: developers; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -4265,7 +4659,7 @@ COPY public.developers (dev_id, username, password_hash, created_at) FROM stdin;
 
 
 --
--- TOC entry 4983 (class 0 OID 25179)
+-- TOC entry 5087 (class 0 OID 25179)
 -- Dependencies: 265
 -- Data for Name: estados; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -4307,7 +4701,7 @@ COPY public.estados (estadoid, nombre, abreviatura) FROM stdin;
 
 
 --
--- TOC entry 5032 (class 0 OID 25938)
+-- TOC entry 5136 (class 0 OID 25938)
 -- Dependencies: 315
 -- Data for Name: inventarios_admin; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -4317,53 +4711,48 @@ COPY public.inventarios_admin (inventario_id, admin_id, variante_id, cantidad, u
 
 
 --
--- TOC entry 4985 (class 0 OID 25183)
+-- TOC entry 5089 (class 0 OID 25183)
 -- Dependencies: 267
 -- Data for Name: itemsdelcarrito; Type: TABLE DATA; Schema: public; Owner: ferram
 --
 
-COPY public.itemsdelcarrito (itemid, carritoid, varianteid, cantidadpaquetes, tamanoid, cantidad) FROM stdin;
-1	2	205	1	4	1
-4	4	70	1	3	1
-10	4	14	1	4	1
-11	6	181	1	2	1
-12	6	170	2	5	2
-13	6	201	13	3	13
-15	2	198	2	5	2
-56	11	4	1	3	1
-57	11	56	1	3	1
-58	11	154	1	3	1
-59	11	172	1	4	1
-14	2	201	3	3	3
-22	2	171	1	4	1
-60	4	15	1	3	1
-23	5	201	1	3	1
-24	5	198	1	5	1
-61	4	58	1	4	1
-21	7	114	1	4	1
-25	7	96	1	5	1
-62	4	49	1	5	1
-63	4	43	2	3	2
-64	4	44	1	3	1
-65	4	121	1	2	1
-66	4	142	1	3	1
-67	4	143	1	3	1
-68	4	144	1	3	1
-69	4	145	1	3	1
-28	7	99	1	5	1
-70	4	77	1	4	1
-71	4	78	1	4	1
-73	4	254	1	3	1
-74	4	41	1	4	1
-75	4	42	2	4	2
-29	7	100	1	5	1
-27	7	98	1	5	1
-26	7	97	1	5	1
+COPY public.itemsdelcarrito (itemid, carritoid, varianteid, cantidadpaquetes, tamanoid, cantidad, tenant_id) FROM stdin;
+82	5	241	1	2	1	1
+83	5	253	1	2	1	1
+84	5	251	1	2	1	1
+1	2	205	1	4	1	1
+4	4	70	1	3	1	1
+10	4	14	1	4	1	1
+12	6	170	2	5	2	1
+15	2	198	2	5	2	1
+56	11	4	1	3	1	1
+57	11	56	1	3	1	1
+58	11	154	1	3	1	1
+59	11	172	1	4	1	1
+14	2	201	3	3	3	1
+22	2	171	1	4	1	1
+60	4	15	1	3	1	1
+23	5	201	1	3	1	1
+24	5	198	1	5	1	1
+61	4	58	1	4	1	1
+62	4	49	1	5	1	1
+63	4	43	2	3	2	1
+64	4	44	1	3	1	1
+65	4	121	1	2	1	1
+66	4	142	1	3	1	1
+67	4	143	1	3	1	1
+68	4	144	1	3	1	1
+69	4	145	1	3	1	1
+70	4	77	1	4	1	1
+71	4	78	1	4	1	1
+73	4	254	1	3	1	1
+74	4	41	1	4	1	1
+75	4	42	2	4	2	1
 \.
 
 
 --
--- TOC entry 5034 (class 0 OID 26114)
+-- TOC entry 5138 (class 0 OID 26114)
 -- Dependencies: 317
 -- Data for Name: landing_page_config; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -4433,17 +4822,17 @@ COPY public.landing_page_config (config_id, section_key, content_type, value_dra
 
 
 --
--- TOC entry 4987 (class 0 OID 25187)
+-- TOC entry 5091 (class 0 OID 25187)
 -- Dependencies: 269
 -- Data for Name: log_eventosusuario; Type: TABLE DATA; Schema: public; Owner: ferram
 --
 
-COPY public.log_eventosusuario (eventoid, "timestamp", clienteid, sessionid, tipoevento, varianteid, contextojson) FROM stdin;
+COPY public.log_eventosusuario (eventoid, "timestamp", clienteid, sessionid, tipoevento, varianteid, contextojson, tenant_id) FROM stdin;
 \.
 
 
 --
--- TOC entry 4989 (class 0 OID 25194)
+-- TOC entry 5093 (class 0 OID 25194)
 -- Dependencies: 271
 -- Data for Name: log_inventario; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -4453,7 +4842,7 @@ COPY public.log_inventario (logid, varianteid, fecha, cantidadcambiado, nuevosto
 
 
 --
--- TOC entry 4991 (class 0 OID 25200)
+-- TOC entry 5095 (class 0 OID 25200)
 -- Dependencies: 273
 -- Data for Name: log_movimientos; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -4801,11 +5190,16 @@ COPY public.log_movimientos (logid, usuarioid, nombreusuario, rol, accion, entid
 349	2	Fernando Garcia	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	189.128.58.98:49667	2026-01-10 04:02:37.980873	1
 350	4	Alejandra Calderón	admin	LOGIN	Admin	4	{"email": "alecaja.19@gmail.com", "origen": "admin"}	187.145.85.16:49893	2026-01-10 05:00:19.899631	1
 351	4	Alejandra Calderón	admin	LOGIN	Admin	4	{"email": "alecaja.19@gmail.com", "origen": "admin"}	187.145.85.16:49893	2026-01-10 05:07:48.459389	1
+352	2	Fernando Garcia	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	189.128.58.98:59878	2026-01-10 06:39:07.889814	1
+353	5	Lupita García	admin	LOGIN	Admin	5	{"email": "pupis_gr@icloud.com", "origen": "admin"}	189.128.58.98:56782	2026-01-10 12:50:34.728169	1
+354	2	Fernando Garcia	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	189.128.58.98:59890	2026-01-10 15:43:11.13912	1
+355	2	Fernando Garcia	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	200.68.168.34:5605	2026-01-10 16:57:00.231106	1
+356	2	Fernando Garcia	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	189.128.58.98:35293	2026-01-10 19:53:57.359759	1
 \.
 
 
 --
--- TOC entry 4993 (class 0 OID 25208)
+-- TOC entry 5097 (class 0 OID 25208)
 -- Dependencies: 275
 -- Data for Name: medidas; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -4815,7 +5209,7 @@ COPY public.medidas (medidaid, tipoproductoid, nombremedida, descripcion, alto, 
 
 
 --
--- TOC entry 4982 (class 0 OID 25162)
+-- TOC entry 5086 (class 0 OID 25162)
 -- Dependencies: 263
 -- Data for Name: notificaciones; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -4952,7 +5346,7 @@ COPY public.notificaciones (notificacionid, clienteid, tipo, titulo, mensaje, le
 
 
 --
--- TOC entry 4996 (class 0 OID 25217)
+-- TOC entry 5100 (class 0 OID 25217)
 -- Dependencies: 278
 -- Data for Name: ordenesdecompra; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -4967,11 +5361,12 @@ COPY public.ordenesdecompra (ordencompraid, proveedorid, fechacreacion, fechaent
 7	1	2026-01-10 04:48:32.370162	2026-01-24	Pendiente	backorder	2026-01-10 04:48:32.370162	0.00	\N	\N	\N	1	3
 8	1	2026-01-10 04:48:32.370162	2026-01-24	Pendiente	backorder	2026-01-10 04:48:32.370162	0.00	\N	\N	\N	1	3
 9	1	2026-01-10 04:55:02.875726	\N	Pendiente	backorder	2026-01-10 04:55:02.875726	681.24	2	\N	\N	1	\N
+10	1	2026-01-10 20:16:43.838777	2026-01-24	Pendiente	backorder	2026-01-10 20:16:43.838777	0.00	\N	\N	\N	1	4
 \.
 
 
 --
--- TOC entry 4998 (class 0 OID 25227)
+-- TOC entry 5102 (class 0 OID 25227)
 -- Dependencies: 280
 -- Data for Name: pagos_clientes; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -4981,7 +5376,7 @@ COPY public.pagos_clientes (pago_id, cliente_id, credito_id, monto, tipo_pago, e
 
 
 --
--- TOC entry 5000 (class 0 OID 25239)
+-- TOC entry 5104 (class 0 OID 25239)
 -- Dependencies: 282
 -- Data for Name: pagos_cxp; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -4991,36 +5386,37 @@ COPY public.pagos_cxp (pago_id, cxp_id, fecha_pago, monto, metodo_pago, referenc
 
 
 --
--- TOC entry 5002 (class 0 OID 25247)
+-- TOC entry 5106 (class 0 OID 25247)
 -- Dependencies: 284
 -- Data for Name: passwordresettokens; Type: TABLE DATA; Schema: public; Owner: ferram
 --
 
-COPY public.passwordresettokens (tokenid, token, clienteid, agenteid, expiraen) FROM stdin;
-1	9b6a0f868284ac32906eb0257ea57950a6c7567757fd101cace17f76af542495	1	\N	2026-01-07 18:22:15.256
-2	8f48dd28be333a414c917552981931b65a8afba66f1ef61c90a5ecc55634bdc1	1	\N	2026-01-09 17:31:41.179
-3	440cfc3aba7b81f578ad05c03cabebc92fe59aea12f18783267c5826c82c05df	1	\N	2026-01-09 17:32:23.462
-4	6eca9dcffa978d425c229aa77b451b24edb5e701726fe52fbbff4986f87ea904	1	\N	2026-01-09 17:40:06.574
-5	1030b41815a76a8881e3d61fe3bb2e4ec6db816acb6c5bb0ebc201d69b350868	1	\N	2026-01-09 17:42:00.18
-6	8154a50b5465ecf66e5b94f743a7f7a8b6e24c82b035c8d4326545ce3124a07f	1	\N	2026-01-09 17:51:17.502
+COPY public.passwordresettokens (tokenid, token, clienteid, agenteid, expiraen, tenant_id) FROM stdin;
+1	9b6a0f868284ac32906eb0257ea57950a6c7567757fd101cace17f76af542495	1	\N	2026-01-07 18:22:15.256	1
+2	8f48dd28be333a414c917552981931b65a8afba66f1ef61c90a5ecc55634bdc1	1	\N	2026-01-09 17:31:41.179	1
+3	440cfc3aba7b81f578ad05c03cabebc92fe59aea12f18783267c5826c82c05df	1	\N	2026-01-09 17:32:23.462	1
+4	6eca9dcffa978d425c229aa77b451b24edb5e701726fe52fbbff4986f87ea904	1	\N	2026-01-09 17:40:06.574	1
+5	1030b41815a76a8881e3d61fe3bb2e4ec6db816acb6c5bb0ebc201d69b350868	1	\N	2026-01-09 17:42:00.18	1
+6	8154a50b5465ecf66e5b94f743a7f7a8b6e24c82b035c8d4326545ce3124a07f	1	\N	2026-01-09 17:51:17.502	1
 \.
 
 
 --
--- TOC entry 5004 (class 0 OID 25252)
+-- TOC entry 5108 (class 0 OID 25252)
 -- Dependencies: 286
 -- Data for Name: pedidos; Type: TABLE DATA; Schema: public; Owner: ferram
 --
 
-COPY public.pedidos (pedidoid, clienteid, agenteid, direccionenvioid, fechapedido, montototal, estatus, costoenvio, es_credito, fecha_vencimiento, pagado, transaccion_id, comprobante_url, metodo_pago, cupon_id, monto_descuento, saldo_pendiente, url_evidencia_entrega, fecha_entrega_real, tenant_id, estatus_deuda, dias_atraso) FROM stdin;
-1	13	1	2	2026-01-10 02:19:20.708121	2989.20	Parcialmente Surtido	0.00	t	2026-01-25 02:19:20.708121	f	\N	\N	credito	\N	0.00	2989.20	\N	\N	1	PENDIENTE	0
-2	14	\N	3	2026-01-10 04:11:53.991453	3318.00	Parcialmente Surtido	0.00	t	2026-01-25 04:11:53.991453	f	\N	\N	credito	\N	0.00	3318.00	\N	\N	1	PENDIENTE	0
-3	5	2	4	2026-01-10 04:48:32.370162	3220.80	Parcialmente Surtido	0.00	t	2026-01-25 04:48:32.370162	f	\N	\N	credito	\N	0.00	3220.80	\N	\N	1	PENDIENTE	0
+COPY public.pedidos (pedidoid, clienteid, agenteid, direccionenvioid, fechapedido, montototal, estatus, costoenvio, es_credito, fecha_vencimiento, pagado, transaccion_id, comprobante_url, metodo_pago, cupon_id, monto_descuento, saldo_pendiente, url_evidencia_entrega, fecha_entrega_real, tenant_id, estatus_deuda, dias_atraso, tiene_remisiones, completamente_surtido) FROM stdin;
+1	13	1	2	2026-01-10 02:19:20.708121	2989.20	Parcialmente Surtido	0.00	t	2026-01-25 02:19:20.708121	f	\N	\N	credito	\N	0.00	2989.20	\N	\N	1	PENDIENTE	0	f	f
+2	14	\N	3	2026-01-10 04:11:53.991453	3318.00	Parcialmente Surtido	0.00	t	2026-01-25 04:11:53.991453	f	\N	\N	credito	\N	0.00	3318.00	\N	\N	1	PENDIENTE	0	f	f
+3	5	2	4	2026-01-10 04:48:32.370162	3220.80	Parcialmente Surtido	0.00	t	2026-01-25 04:48:32.370162	f	\N	\N	credito	\N	0.00	3220.80	\N	\N	1	PENDIENTE	0	f	f
+4	11	3	1	2026-01-10 20:16:43.838777	1892.80	Parcialmente Surtido	0.00	t	2026-01-25 20:16:43.838777	f	\N	\N	credito	\N	0.00	1892.80	\N	\N	1	PENDIENTE	0	f	f
 \.
 
 
 --
--- TOC entry 5006 (class 0 OID 25263)
+-- TOC entry 5110 (class 0 OID 25263)
 -- Dependencies: 288
 -- Data for Name: producto_imagenes; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -5285,349 +5681,349 @@ COPY public.producto_imagenes (imagenid, url_imagen, textoalternativo, orden, pr
 
 
 --
--- TOC entry 5028 (class 0 OID 25877)
+-- TOC entry 5132 (class 0 OID 25877)
 -- Dependencies: 311
 -- Data for Name: producto_imagenes_color; Type: TABLE DATA; Schema: public; Owner: ferram
 --
 
-COPY public.producto_imagenes_color (imagencolorid, productoid, color_nombre, url_imagen_cloudinary, public_id_cloudinary, fechacreacion) FROM stdin;
+COPY public.producto_imagenes_color (imagencolorid, productoid, color_nombre, url_imagen_cloudinary, public_id_cloudinary, fechacreacion, tenant_id) FROM stdin;
 \.
 
 
 --
--- TOC entry 5008 (class 0 OID 25270)
+-- TOC entry 5112 (class 0 OID 25270)
 -- Dependencies: 290
 -- Data for Name: producto_tamanosdisponibles; Type: TABLE DATA; Schema: public; Owner: ferram
 --
 
-COPY public.producto_tamanosdisponibles (productoid, tamanoid) FROM stdin;
-54	3
-54	4
-54	5
-17	3
-17	4
-11	3
-11	4
-67	3
-67	4
-60	4
-66	3
-15	5
-15	3
-15	4
-16	5
-16	3
-16	4
-66	4
-66	5
-68	5
-68	3
-19	5
-19	3
-19	4
-20	5
-20	3
-20	4
-68	4
-9	3
-9	4
-9	5
-6	3
-6	4
-6	5
-1	3
-1	4
-1	5
-8	3
-8	4
-8	5
-4	3
-4	4
-34	5
-34	3
-34	4
-4	5
-37	5
-37	3
-37	4
-38	5
-38	3
-38	4
-39	5
-39	3
-39	4
-40	5
-40	3
-40	4
-43	3
-5	3
-5	4
-5	5
-2	3
-2	4
-7	3
-7	4
-7	5
-10	3
-61	6
-3	2
-62	3
-62	4
-63	2
-63	3
-64	2
-64	3
-65	3
-65	4
-3	3
-69	2
-69	3
-14	2
-14	3
-70	2
-70	3
-50	3
-50	4
-50	5
-47	3
-47	4
-47	5
-71	4
-22	3
-22	4
-22	5
-55	3
-55	4
-55	5
-42	3
-42	4
-42	5
-59	3
-59	4
-59	5
-36	3
-36	4
-36	5
-26	3
-26	4
-26	5
-23	3
-23	4
-23	5
-21	3
-21	4
-21	5
-25	3
-25	4
-25	5
-18	3
-18	4
-18	5
-30	3
-30	4
-30	5
-24	3
-24	4
-24	5
-28	3
-28	4
-28	5
-35	3
-35	4
-35	5
-31	3
-31	4
-31	5
-33	3
-33	4
-33	5
-29	3
-29	4
-29	5
-27	3
-27	4
-27	5
-41	3
-41	4
-41	5
-32	3
-32	4
-32	5
-53	3
-53	4
-53	5
-57	3
-57	4
-57	5
-56	3
-56	4
-56	5
-58	3
-58	4
-58	5
-46	3
-46	4
-13	3
-13	4
-44	3
-44	4
-48	3
-48	4
-51	3
-51	4
-49	3
-49	4
+COPY public.producto_tamanosdisponibles (productoid, tamanoid, tenant_id) FROM stdin;
+54	3	1
+54	4	1
+54	5	1
+17	3	1
+17	4	1
+11	3	1
+11	4	1
+67	3	1
+67	4	1
+60	4	1
+66	3	1
+15	5	1
+15	3	1
+15	4	1
+16	5	1
+16	3	1
+16	4	1
+66	4	1
+66	5	1
+68	5	1
+68	3	1
+19	5	1
+19	3	1
+19	4	1
+20	5	1
+20	3	1
+20	4	1
+68	4	1
+9	3	1
+9	4	1
+9	5	1
+6	3	1
+6	4	1
+6	5	1
+1	3	1
+1	4	1
+1	5	1
+8	3	1
+8	4	1
+8	5	1
+4	3	1
+4	4	1
+34	5	1
+34	3	1
+34	4	1
+4	5	1
+37	5	1
+37	3	1
+37	4	1
+38	5	1
+38	3	1
+38	4	1
+39	5	1
+39	3	1
+39	4	1
+40	5	1
+40	3	1
+40	4	1
+43	3	1
+5	3	1
+5	4	1
+5	5	1
+2	3	1
+2	4	1
+7	3	1
+7	4	1
+7	5	1
+10	3	1
+61	6	1
+3	2	1
+62	3	1
+62	4	1
+63	2	1
+63	3	1
+64	2	1
+64	3	1
+65	3	1
+65	4	1
+3	3	1
+69	2	1
+69	3	1
+14	2	1
+14	3	1
+70	2	1
+70	3	1
+50	3	1
+50	4	1
+50	5	1
+47	3	1
+47	4	1
+47	5	1
+71	4	1
+22	3	1
+22	4	1
+22	5	1
+55	3	1
+55	4	1
+55	5	1
+42	3	1
+42	4	1
+42	5	1
+59	3	1
+59	4	1
+59	5	1
+36	3	1
+36	4	1
+36	5	1
+26	3	1
+26	4	1
+26	5	1
+23	3	1
+23	4	1
+23	5	1
+21	3	1
+21	4	1
+21	5	1
+25	3	1
+25	4	1
+25	5	1
+18	3	1
+18	4	1
+18	5	1
+30	3	1
+30	4	1
+30	5	1
+24	3	1
+24	4	1
+24	5	1
+28	3	1
+28	4	1
+28	5	1
+35	3	1
+35	4	1
+35	5	1
+31	3	1
+31	4	1
+31	5	1
+33	3	1
+33	4	1
+33	5	1
+29	3	1
+29	4	1
+29	5	1
+27	3	1
+27	4	1
+27	5	1
+41	3	1
+41	4	1
+41	5	1
+32	3	1
+32	4	1
+32	5	1
+53	3	1
+53	4	1
+53	5	1
+57	3	1
+57	4	1
+57	5	1
+56	3	1
+56	4	1
+56	5	1
+58	3	1
+58	4	1
+58	5	1
+46	3	1
+46	4	1
+13	3	1
+13	4	1
+44	3	1
+44	4	1
+48	3	1
+48	4	1
+51	3	1
+51	4	1
+49	3	1
+49	4	1
 \.
 
 
 --
--- TOC entry 5009 (class 0 OID 25273)
+-- TOC entry 5113 (class 0 OID 25273)
 -- Dependencies: 291
 -- Data for Name: producto_variante_imagenes; Type: TABLE DATA; Schema: public; Owner: ferram
 --
 
-COPY public.producto_variante_imagenes (imagenid, url_imagen, textoalternativo, orden, varianteid) FROM stdin;
-14	https://res.cloudinary.com/daylne1ml/image/upload/v1767487055/razoconnect_productos/fkrsv0rzmvocki94wl4k.jpg	\N	3	77
-20	https://res.cloudinary.com/daylne1ml/image/upload/v1767487176/razoconnect_productos/io1gj59xwhqhwrbg3rjn.jpg	\N	4	78
-21	https://res.cloudinary.com/daylne1ml/image/upload/v1767487176/razoconnect_productos/nfgelqburchikgkvprh4.jpg	\N	5	78
-22	https://res.cloudinary.com/daylne1ml/image/upload/v1767500637/razoconnect_productos/cmokapigivyvckyqcp3w.jpg	\N	1	129
-23	https://res.cloudinary.com/daylne1ml/image/upload/v1767500638/razoconnect_productos/rueioanqdit4735rinso.jpg	\N	2	129
-24	https://res.cloudinary.com/daylne1ml/image/upload/v1767500638/razoconnect_productos/dantvngqgtwagkpguoyl.jpg	\N	3	129
-25	https://res.cloudinary.com/daylne1ml/image/upload/v1767500725/razoconnect_productos/ky1qslcdy6gavta4opm1.jpg	\N	1	130
-26	https://res.cloudinary.com/daylne1ml/image/upload/v1767500726/razoconnect_productos/zhdyeo2zjllj9e38blqm.jpg	\N	2	130
-27	https://res.cloudinary.com/daylne1ml/image/upload/v1767500726/razoconnect_productos/gifdicnn69jbcvfdefgh.jpg	\N	3	130
-41	https://res.cloudinary.com/daylne1ml/image/upload/v1767564247/razoconnect_productos/jcdkweubcf4nhveqfr4i.jpg	\N	1	144
-39	https://res.cloudinary.com/daylne1ml/image/upload/v1767564170/razoconnect_productos/ubt2xwmqjzsrjtg2psoe.jpg	\N	1	141
-38	https://res.cloudinary.com/daylne1ml/image/upload/v1767564146/razoconnect_productos/kjbvt7j1jnhjd0p1pozb.jpg	\N	1	140
-40	https://res.cloudinary.com/daylne1ml/image/upload/v1767564214/razoconnect_productos/ocsd8fz3j56ek71os1bh.jpg	\N	1	142
-42	https://res.cloudinary.com/daylne1ml/image/upload/v1767564269/razoconnect_productos/waytozimectzhlba6k7q.jpg	\N	1	145
-43	https://res.cloudinary.com/daylne1ml/image/upload/v1767564296/razoconnect_productos/k5luph889wvhqf7ssxo9.jpg	\N	1	146
-44	https://res.cloudinary.com/daylne1ml/image/upload/v1767564332/razoconnect_productos/b5gywh8roo3xjsoz2d0p.jpg	\N	1	147
-51	https://res.cloudinary.com/daylne1ml/image/upload/v1767565256/razoconnect_productos/qvfzt6prs2g4xyxd29ld.png	\N	1	155
-52	https://res.cloudinary.com/daylne1ml/image/upload/v1767565289/razoconnect_productos/frt2swzbfo4vyncbuu3k.png	\N	1	156
-53	https://res.cloudinary.com/daylne1ml/image/upload/v1767565415/razoconnect_productos/r4upp5auwhbdiayesocd.png	\N	1	157
-54	https://res.cloudinary.com/daylne1ml/image/upload/v1767565612/razoconnect_productos/prhxb37t0mzqcgpk9oma.png	\N	1	159
-55	https://res.cloudinary.com/daylne1ml/image/upload/v1767565639/razoconnect_productos/euif0qjmqhfjuuvng9ts.png	\N	1	160
-28	https://res.cloudinary.com/daylne1ml/image/upload/v1767554798/razoconnect_productos/d23p1sejbdacwdommcmh.jpg	\N	1	134
-29	https://res.cloudinary.com/daylne1ml/image/upload/v1767554799/razoconnect_productos/k1yswxtpxrelpvakl9el.jpg	\N	2	134
-30	https://res.cloudinary.com/daylne1ml/image/upload/v1767554800/razoconnect_productos/wqnrnhs0eogxekfqxz5w.jpg	\N	3	134
-31	https://res.cloudinary.com/daylne1ml/image/upload/v1767554801/razoconnect_productos/t0bsczddl6ea63yslwrc.jpg	\N	4	134
-32	https://res.cloudinary.com/daylne1ml/image/upload/v1767554801/razoconnect_productos/pgchphk9wrtkq6wckboe.jpg	\N	5	134
-33	https://res.cloudinary.com/daylne1ml/image/upload/v1767554819/razoconnect_productos/r97hnsbuyikoeqvlsdai.jpg	\N	1	135
-34	https://res.cloudinary.com/daylne1ml/image/upload/v1767554820/razoconnect_productos/xfparecsg7l7zpa5hyrz.jpg	\N	2	135
-35	https://res.cloudinary.com/daylne1ml/image/upload/v1767554821/razoconnect_productos/ubh2vwjqwimydtruj8ws.jpg	\N	3	135
-36	https://res.cloudinary.com/daylne1ml/image/upload/v1767554821/razoconnect_productos/z09ouacqaetjmalx5oey.jpg	\N	4	135
-37	https://res.cloudinary.com/daylne1ml/image/upload/v1767554822/razoconnect_productos/edrgaxmmhxnzmgmzdyhy.jpg	\N	5	135
-12	https://res.cloudinary.com/daylne1ml/image/upload/v1767487053/razoconnect_productos/ynl4n9m3hjsi2elrwpkr.jpg	\N	1	77
-13	https://res.cloudinary.com/daylne1ml/image/upload/v1767487054/razoconnect_productos/ivuvk1swstrlouoykuwg.jpg	\N	2	77
-15	https://res.cloudinary.com/daylne1ml/image/upload/v1767487056/razoconnect_productos/bhnrdvdsbdda2u51bxlw.jpg	\N	4	77
-16	https://res.cloudinary.com/daylne1ml/image/upload/v1767487057/razoconnect_productos/tgzmyix9ph5twlauif4l.jpg	\N	5	77
-17	https://res.cloudinary.com/daylne1ml/image/upload/v1767487174/razoconnect_productos/qxjgiedlbsytuwkj1r15.jpg	\N	1	78
-18	https://res.cloudinary.com/daylne1ml/image/upload/v1767487174/razoconnect_productos/n27tslr2n647yx27c5we.jpg	\N	2	78
-19	https://res.cloudinary.com/daylne1ml/image/upload/v1767487175/razoconnect_productos/xn9osvqqghspegnqpvhe.jpg	\N	3	78
-59	https://res.cloudinary.com/daylne1ml/image/upload/v1767644870/razoconnect_productos/frtawfp6gpgibd0v2qas.jpg	\N	1	175
-60	https://res.cloudinary.com/daylne1ml/image/upload/v1767644870/razoconnect_productos/pf43oxapykf5l1jkw0fg.jpg	\N	2	175
-61	https://res.cloudinary.com/daylne1ml/image/upload/v1767644871/razoconnect_productos/uv5frsxqsvzarbikkn0z.jpg	\N	3	175
-62	https://res.cloudinary.com/daylne1ml/image/upload/v1767644871/razoconnect_productos/wkbvxdrnn6xqnpkahgcx.jpg	\N	4	175
-63	https://res.cloudinary.com/daylne1ml/image/upload/v1767644872/razoconnect_productos/c5n4vpabe6dqho723ayd.jpg	\N	5	175
-64	https://res.cloudinary.com/daylne1ml/image/upload/v1767644979/razoconnect_productos/bfkmii1plv7i4qrtzats.jpg	\N	1	176
-65	https://res.cloudinary.com/daylne1ml/image/upload/v1767644979/razoconnect_productos/cuqbr09f8ethygphwy6w.jpg	\N	2	176
-66	https://res.cloudinary.com/daylne1ml/image/upload/v1767644980/razoconnect_productos/wlthletb2kcxere6zdx9.jpg	\N	3	176
-67	https://res.cloudinary.com/daylne1ml/image/upload/v1767644981/razoconnect_productos/ejpe6k5sefrgojbtprcp.jpg	\N	4	176
-68	https://res.cloudinary.com/daylne1ml/image/upload/v1767644981/razoconnect_productos/zn6ucqslnnvkj7whoem2.jpg	\N	5	176
-70	https://res.cloudinary.com/daylne1ml/image/upload/v1767654279/razoconnect_productos/msmpdg3wjg01wgogkyyl.jpg	\N	1	182
-69	https://res.cloudinary.com/daylne1ml/image/upload/v1767654228/razoconnect_productos/lkb894x6fwcpcq40nsps.jpg	\N	1	181
-71	https://res.cloudinary.com/daylne1ml/image/upload/v1767654364/razoconnect_productos/rsjcbhdsyn6fpcbmwvkp.jpg	\N	1	183
-72	https://res.cloudinary.com/daylne1ml/image/upload/v1767654438/razoconnect_productos/orasyknkfkwetmtzbfqt.jpg	\N	1	184
-73	https://res.cloudinary.com/daylne1ml/image/upload/v1767654491/razoconnect_productos/ck4huo31mqwxoe9xdghe.jpg	\N	1	185
-74	https://res.cloudinary.com/daylne1ml/image/upload/v1767654534/razoconnect_productos/nr3xy55lbh9gtsmtbqow.jpg	\N	1	186
-75	https://res.cloudinary.com/daylne1ml/image/upload/v1767673684/razoconnect_productos/hh8wrpotrbjr6qzqwmnk.jpg	\N	1	187
-76	https://res.cloudinary.com/daylne1ml/image/upload/v1767673770/razoconnect_productos/kxde05jpzbebigdgcewu.jpg	\N	1	189
-77	https://res.cloudinary.com/daylne1ml/image/upload/v1767673866/razoconnect_productos/hffzgmk9sqfes2mcnhkr.jpg	\N	1	191
-78	https://res.cloudinary.com/daylne1ml/image/upload/v1767673982/razoconnect_productos/mrysigy76xvbi6zysvh4.jpg	\N	1	193
-79	https://res.cloudinary.com/daylne1ml/image/upload/v1767674051/razoconnect_productos/etaetbflozsc47nwnphc.jpg	\N	1	195
-80	https://res.cloudinary.com/daylne1ml/image/upload/v1767674625/razoconnect_productos/wj5pkpcyeya0m9jltlwu.jpg	\N	1	201
-81	https://res.cloudinary.com/daylne1ml/image/upload/v1767674673/razoconnect_productos/td8hn5reb9dyp4zjog0b.jpg	\N	1	202
-82	https://res.cloudinary.com/daylne1ml/image/upload/v1767674716/razoconnect_productos/puvlsvt2rhnnp8ydg9zi.jpg	\N	1	203
-97	https://res.cloudinary.com/daylne1ml/image/upload/v1767679781/razoconnect_productos/tacvfvno2scv31iyy0ql.jpg	\N	1	204
-98	https://res.cloudinary.com/daylne1ml/image/upload/v1767681399/razoconnect_productos/gmkh2jfiaxamzvgaezj6.jpg	\N	1	205
-99	https://res.cloudinary.com/daylne1ml/image/upload/v1767681399/razoconnect_productos/hqz5argzeogvawfabplu.jpg	\N	2	205
-100	https://res.cloudinary.com/daylne1ml/image/upload/v1767681400/razoconnect_productos/jxljw9wmqopruiddu5l3.jpg	\N	3	205
-101	https://res.cloudinary.com/daylne1ml/image/upload/v1767681400/razoconnect_productos/fglshni8hrlkbxyt94ek.jpg	\N	4	205
-102	https://res.cloudinary.com/daylne1ml/image/upload/v1767681401/razoconnect_productos/zy2m0obllxsqhuza3ncm.jpg	\N	5	205
-103	https://res.cloudinary.com/daylne1ml/image/upload/v1767681473/razoconnect_productos/s6y2qdaoxdiuaiku3bez.jpg	\N	1	206
-104	https://res.cloudinary.com/daylne1ml/image/upload/v1767681474/razoconnect_productos/kny6nv1zwlpxiakupjhm.jpg	\N	2	206
-105	https://res.cloudinary.com/daylne1ml/image/upload/v1767681474/razoconnect_productos/fgyffkhntyh30idjsutl.jpg	\N	3	206
-106	https://res.cloudinary.com/daylne1ml/image/upload/v1767681475/razoconnect_productos/irggflgqdnluzen1z2cj.jpg	\N	4	206
-107	https://res.cloudinary.com/daylne1ml/image/upload/v1767681475/razoconnect_productos/qjksahsiglufebteh3rg.jpg	\N	5	206
-56	https://res.cloudinary.com/daylne1ml/image/upload/v1767565665/razoconnect_productos/hgo9cpzrcszvftlfacek.png	\N	1	161
-108	https://res.cloudinary.com/daylne1ml/image/upload/v1767834468/razoconnect_productos/eb5w1nshgloskoyjp6w1.jpg	\N	1	165
-109	https://res.cloudinary.com/daylne1ml/image/upload/v1767834468/razoconnect_productos/kct3gq8mnowebvio3yud.jpg	\N	2	165
-110	https://res.cloudinary.com/daylne1ml/image/upload/v1767834469/razoconnect_productos/cqubmvm6eyr7bynehppj.jpg	\N	3	165
-111	https://res.cloudinary.com/daylne1ml/image/upload/v1767834470/razoconnect_productos/fzoegptweteuxt0mdtus.jpg	\N	4	165
-112	https://res.cloudinary.com/daylne1ml/image/upload/v1767834471/razoconnect_productos/hc7ahxihdiqz9fpjkvko.jpg	\N	5	165
-113	https://res.cloudinary.com/daylne1ml/image/upload/v1767834555/razoconnect_productos/vpvimkb4v3g6cqy8hrly.jpg	\N	1	166
-114	https://res.cloudinary.com/daylne1ml/image/upload/v1767834556/razoconnect_productos/ktvbeya2qf73ctuef2wt.jpg	\N	2	166
-115	https://res.cloudinary.com/daylne1ml/image/upload/v1767834557/razoconnect_productos/dfmerqaouk7kt3qw2jup.jpg	\N	3	166
-116	https://res.cloudinary.com/daylne1ml/image/upload/v1767834558/razoconnect_productos/rwbbfj3usj64t5tytsaa.jpg	\N	4	166
-117	https://res.cloudinary.com/daylne1ml/image/upload/v1767834559/razoconnect_productos/ujum4kks47ecoqmwxs51.jpg	\N	5	166
-118	https://res.cloudinary.com/daylne1ml/image/upload/v1767932933/razoconnect_productos/rio3fzaorprjiin9c4pt.jpg	\N	1	23
-119	https://res.cloudinary.com/daylne1ml/image/upload/v1767933031/razoconnect_productos/bqqner1wppu2ne5lzzjx.jpg	\N	1	18
-120	https://res.cloudinary.com/daylne1ml/image/upload/v1767933032/razoconnect_productos/rj0zt4tgb6cyi9dtcvng.jpg	\N	2	18
-121	https://res.cloudinary.com/daylne1ml/image/upload/v1767933032/razoconnect_productos/nxiwkaad1bhcutyoyuno.jpg	\N	3	18
-122	https://res.cloudinary.com/daylne1ml/image/upload/v1767933033/razoconnect_productos/fyw0uexthz29jxljqviq.jpg	\N	4	18
-123	https://res.cloudinary.com/daylne1ml/image/upload/v1767933034/razoconnect_productos/w9zriq5ngzze6wgnt5xo.jpg	\N	5	18
-124	https://res.cloudinary.com/daylne1ml/image/upload/v1767933354/razoconnect_productos/vsnxk1wuzgvsnrmknqxe.jpg	\N	1	19
-125	https://res.cloudinary.com/daylne1ml/image/upload/v1767933355/razoconnect_productos/owe4seqyqgzarshpi19c.jpg	\N	2	19
-126	https://res.cloudinary.com/daylne1ml/image/upload/v1767933355/razoconnect_productos/nzsvyfpbx3jisnmuyadg.jpg	\N	3	19
-127	https://res.cloudinary.com/daylne1ml/image/upload/v1767933356/razoconnect_productos/jrhh7af2bsuvzhlnhw9v.jpg	\N	4	19
-128	https://res.cloudinary.com/daylne1ml/image/upload/v1767933356/razoconnect_productos/ryrtomsdcdlq2zfxutav.jpg	\N	5	19
-129	https://res.cloudinary.com/daylne1ml/image/upload/v1767933383/razoconnect_productos/holqpvheij0ouht86lln.jpg	\N	1	25
-130	https://res.cloudinary.com/daylne1ml/image/upload/v1767933405/razoconnect_productos/ckyzu2plfyejsj9fh6ny.jpg	\N	1	26
-131	https://res.cloudinary.com/daylne1ml/image/upload/v1767933428/razoconnect_productos/ptkyqlyuehsxpakgerxl.jpg	\N	1	27
-132	https://res.cloudinary.com/daylne1ml/image/upload/v1767936492/razoconnect_productos/rwutmkkjsmwvipfbmyji.jpg	\N	1	124
-133	https://res.cloudinary.com/daylne1ml/image/upload/v1767936535/razoconnect_productos/bwebqrrtkxmaghrh2huk.jpg	\N	1	123
-134	https://res.cloudinary.com/daylne1ml/image/upload/v1767936600/razoconnect_productos/s8puwnpoh11ogcetuge3.jpg	\N	1	122
-135	https://res.cloudinary.com/daylne1ml/image/upload/v1767936680/razoconnect_productos/fgulxj9rwqed7dlmakrb.jpg	\N	1	121
-136	https://res.cloudinary.com/daylne1ml/image/upload/v1767936716/razoconnect_productos/bebn6cpbpvugt6mzlkvz.jpg	\N	1	120
-138	https://res.cloudinary.com/daylne1ml/image/upload/v1767936780/razoconnect_productos/ptoxohrbbbwtgs8giaht.jpg	\N	1	119
-139	https://res.cloudinary.com/daylne1ml/image/upload/v1767936812/razoconnect_productos/vnhxia19lclnuyvyu5ak.jpg	\N	1	118
-140	https://res.cloudinary.com/daylne1ml/image/upload/v1767936866/razoconnect_productos/xosfvoem6fyxdhprjgob.jpg	\N	1	44
-141	https://res.cloudinary.com/daylne1ml/image/upload/v1767936897/razoconnect_productos/r4kmb7vg0dxqaoxwbzx2.jpg	\N	1	116
-142	https://res.cloudinary.com/daylne1ml/image/upload/v1767936926/razoconnect_productos/zzqewxuqnauwulafgvus.jpg	\N	1	43
-143	https://res.cloudinary.com/daylne1ml/image/upload/v1767936953/razoconnect_productos/czcfynxua4qqfqvzcmco.jpg	\N	1	117
-144	https://res.cloudinary.com/daylne1ml/image/upload/v1767936985/razoconnect_productos/oayb6c7hhipowvi1qfsy.jpg	\N	1	115
-145	https://res.cloudinary.com/daylne1ml/image/upload/v1767937011/razoconnect_productos/jgjrtdigsbuxqj6folfm.jpg	\N	1	7
-146	https://res.cloudinary.com/daylne1ml/image/upload/v1767937045/razoconnect_productos/yp2ltusnrlsxndqygzkg.jpg	\N	1	6
-148	https://res.cloudinary.com/daylne1ml/image/upload/v1767976625/razoconnect_productos/pc6lebxjc8gmqoqdnhak.jpg	\N	1	223
-149	https://res.cloudinary.com/daylne1ml/image/upload/v1767976817/razoconnect_productos/vatqs57ym5arle17qyzh.jpg	\N	1	226
-150	https://res.cloudinary.com/daylne1ml/image/upload/v1767977091/razoconnect_productos/k5a1fzzhzzecjdygtim5.jpg	\N	1	229
-151	https://res.cloudinary.com/daylne1ml/image/upload/v1767977481/razoconnect_productos/aetfajdprh9nqs3gcszl.jpg	\N	1	232
-158	https://res.cloudinary.com/daylne1ml/image/upload/v1767977091/razoconnect_productos/k5a1fzzhzzecjdygtim5.jpg	\N	1	230
-147	https://res.cloudinary.com/daylne1ml/image/upload/v1767947038/razoconnect_productos/knys6u7oudalppsi5ig4.jpg	\N	1	220
-152	https://res.cloudinary.com/daylne1ml/image/upload/v1767947038/razoconnect_productos/knys6u7oudalppsi5ig4.jpg	\N	1	221
-153	https://res.cloudinary.com/daylne1ml/image/upload/v1767947038/razoconnect_productos/knys6u7oudalppsi5ig4.jpg	\N	1	222
-154	https://res.cloudinary.com/daylne1ml/image/upload/v1767976625/razoconnect_productos/pc6lebxjc8gmqoqdnhak.jpg	\N	1	224
-155	https://res.cloudinary.com/daylne1ml/image/upload/v1767976625/razoconnect_productos/pc6lebxjc8gmqoqdnhak.jpg	\N	1	225
-156	https://res.cloudinary.com/daylne1ml/image/upload/v1767976817/razoconnect_productos/vatqs57ym5arle17qyzh.jpg	\N	1	227
-157	https://res.cloudinary.com/daylne1ml/image/upload/v1767976817/razoconnect_productos/vatqs57ym5arle17qyzh.jpg	\N	1	228
-159	https://res.cloudinary.com/daylne1ml/image/upload/v1767977091/razoconnect_productos/k5a1fzzhzzecjdygtim5.jpg	\N	1	231
-160	https://res.cloudinary.com/daylne1ml/image/upload/v1767977481/razoconnect_productos/aetfajdprh9nqs3gcszl.jpg	\N	1	233
-161	https://res.cloudinary.com/daylne1ml/image/upload/v1767977481/razoconnect_productos/aetfajdprh9nqs3gcszl.jpg	\N	1	234
-162	https://res.cloudinary.com/daylne1ml/image/upload/v1767986734/razoconnect_productos/jxfemyrler9ypbei8elg.jpg	\N	1	45
-163	https://res.cloudinary.com/daylne1ml/image/upload/v1767986868/razoconnect_productos/ohlnjkko7u08zmafarep.jpg	\N	1	46
-164	https://res.cloudinary.com/daylne1ml/image/upload/v1767999752/razoconnect_productos/a5jsmwqcs3wfe8lora7g.jpg	\N	1	241
-165	https://res.cloudinary.com/daylne1ml/image/upload/v1767999865/razoconnect_productos/mss59bmmxsruzrvjlipg.jpg	\N	1	243
-166	https://res.cloudinary.com/daylne1ml/image/upload/v1767999981/razoconnect_productos/ymoqh7l5a4rrlausgqs8.jpg	\N	1	245
-167	https://res.cloudinary.com/daylne1ml/image/upload/v1768000107/razoconnect_productos/tfjlhmarxezx8jxvtutm.jpg	\N	1	247
-168	https://res.cloudinary.com/daylne1ml/image/upload/v1768000260/razoconnect_productos/fe7sjt0zsk32ibvkpdy9.jpg	\N	1	249
-169	https://res.cloudinary.com/daylne1ml/image/upload/v1768000384/razoconnect_productos/eoyk6x2awo1dqjo88gti.jpg	\N	1	251
-170	https://res.cloudinary.com/daylne1ml/image/upload/v1768000483/razoconnect_productos/vywl0kyy3afxaawsui1o.jpg	\N	1	253
+COPY public.producto_variante_imagenes (imagenid, url_imagen, textoalternativo, orden, varianteid, tenant_id) FROM stdin;
+14	https://res.cloudinary.com/daylne1ml/image/upload/v1767487055/razoconnect_productos/fkrsv0rzmvocki94wl4k.jpg	\N	3	77	1
+20	https://res.cloudinary.com/daylne1ml/image/upload/v1767487176/razoconnect_productos/io1gj59xwhqhwrbg3rjn.jpg	\N	4	78	1
+21	https://res.cloudinary.com/daylne1ml/image/upload/v1767487176/razoconnect_productos/nfgelqburchikgkvprh4.jpg	\N	5	78	1
+22	https://res.cloudinary.com/daylne1ml/image/upload/v1767500637/razoconnect_productos/cmokapigivyvckyqcp3w.jpg	\N	1	129	1
+23	https://res.cloudinary.com/daylne1ml/image/upload/v1767500638/razoconnect_productos/rueioanqdit4735rinso.jpg	\N	2	129	1
+24	https://res.cloudinary.com/daylne1ml/image/upload/v1767500638/razoconnect_productos/dantvngqgtwagkpguoyl.jpg	\N	3	129	1
+25	https://res.cloudinary.com/daylne1ml/image/upload/v1767500725/razoconnect_productos/ky1qslcdy6gavta4opm1.jpg	\N	1	130	1
+26	https://res.cloudinary.com/daylne1ml/image/upload/v1767500726/razoconnect_productos/zhdyeo2zjllj9e38blqm.jpg	\N	2	130	1
+59	https://res.cloudinary.com/daylne1ml/image/upload/v1767644870/razoconnect_productos/frtawfp6gpgibd0v2qas.jpg	\N	1	175	1
+60	https://res.cloudinary.com/daylne1ml/image/upload/v1767644870/razoconnect_productos/pf43oxapykf5l1jkw0fg.jpg	\N	2	175	1
+61	https://res.cloudinary.com/daylne1ml/image/upload/v1767644871/razoconnect_productos/uv5frsxqsvzarbikkn0z.jpg	\N	3	175	1
+62	https://res.cloudinary.com/daylne1ml/image/upload/v1767644871/razoconnect_productos/wkbvxdrnn6xqnpkahgcx.jpg	\N	4	175	1
+63	https://res.cloudinary.com/daylne1ml/image/upload/v1767644872/razoconnect_productos/c5n4vpabe6dqho723ayd.jpg	\N	5	175	1
+27	https://res.cloudinary.com/daylne1ml/image/upload/v1767500726/razoconnect_productos/gifdicnn69jbcvfdefgh.jpg	\N	3	130	1
+41	https://res.cloudinary.com/daylne1ml/image/upload/v1767564247/razoconnect_productos/jcdkweubcf4nhveqfr4i.jpg	\N	1	144	1
+39	https://res.cloudinary.com/daylne1ml/image/upload/v1767564170/razoconnect_productos/ubt2xwmqjzsrjtg2psoe.jpg	\N	1	141	1
+38	https://res.cloudinary.com/daylne1ml/image/upload/v1767564146/razoconnect_productos/kjbvt7j1jnhjd0p1pozb.jpg	\N	1	140	1
+40	https://res.cloudinary.com/daylne1ml/image/upload/v1767564214/razoconnect_productos/ocsd8fz3j56ek71os1bh.jpg	\N	1	142	1
+42	https://res.cloudinary.com/daylne1ml/image/upload/v1767564269/razoconnect_productos/waytozimectzhlba6k7q.jpg	\N	1	145	1
+43	https://res.cloudinary.com/daylne1ml/image/upload/v1767564296/razoconnect_productos/k5luph889wvhqf7ssxo9.jpg	\N	1	146	1
+44	https://res.cloudinary.com/daylne1ml/image/upload/v1767564332/razoconnect_productos/b5gywh8roo3xjsoz2d0p.jpg	\N	1	147	1
+51	https://res.cloudinary.com/daylne1ml/image/upload/v1767565256/razoconnect_productos/qvfzt6prs2g4xyxd29ld.png	\N	1	155	1
+52	https://res.cloudinary.com/daylne1ml/image/upload/v1767565289/razoconnect_productos/frt2swzbfo4vyncbuu3k.png	\N	1	156	1
+53	https://res.cloudinary.com/daylne1ml/image/upload/v1767565415/razoconnect_productos/r4upp5auwhbdiayesocd.png	\N	1	157	1
+54	https://res.cloudinary.com/daylne1ml/image/upload/v1767565612/razoconnect_productos/prhxb37t0mzqcgpk9oma.png	\N	1	159	1
+55	https://res.cloudinary.com/daylne1ml/image/upload/v1767565639/razoconnect_productos/euif0qjmqhfjuuvng9ts.png	\N	1	160	1
+28	https://res.cloudinary.com/daylne1ml/image/upload/v1767554798/razoconnect_productos/d23p1sejbdacwdommcmh.jpg	\N	1	134	1
+29	https://res.cloudinary.com/daylne1ml/image/upload/v1767554799/razoconnect_productos/k1yswxtpxrelpvakl9el.jpg	\N	2	134	1
+30	https://res.cloudinary.com/daylne1ml/image/upload/v1767554800/razoconnect_productos/wqnrnhs0eogxekfqxz5w.jpg	\N	3	134	1
+31	https://res.cloudinary.com/daylne1ml/image/upload/v1767554801/razoconnect_productos/t0bsczddl6ea63yslwrc.jpg	\N	4	134	1
+32	https://res.cloudinary.com/daylne1ml/image/upload/v1767554801/razoconnect_productos/pgchphk9wrtkq6wckboe.jpg	\N	5	134	1
+33	https://res.cloudinary.com/daylne1ml/image/upload/v1767554819/razoconnect_productos/r97hnsbuyikoeqvlsdai.jpg	\N	1	135	1
+34	https://res.cloudinary.com/daylne1ml/image/upload/v1767554820/razoconnect_productos/xfparecsg7l7zpa5hyrz.jpg	\N	2	135	1
+35	https://res.cloudinary.com/daylne1ml/image/upload/v1767554821/razoconnect_productos/ubh2vwjqwimydtruj8ws.jpg	\N	3	135	1
+36	https://res.cloudinary.com/daylne1ml/image/upload/v1767554821/razoconnect_productos/z09ouacqaetjmalx5oey.jpg	\N	4	135	1
+37	https://res.cloudinary.com/daylne1ml/image/upload/v1767554822/razoconnect_productos/edrgaxmmhxnzmgmzdyhy.jpg	\N	5	135	1
+12	https://res.cloudinary.com/daylne1ml/image/upload/v1767487053/razoconnect_productos/ynl4n9m3hjsi2elrwpkr.jpg	\N	1	77	1
+13	https://res.cloudinary.com/daylne1ml/image/upload/v1767487054/razoconnect_productos/ivuvk1swstrlouoykuwg.jpg	\N	2	77	1
+15	https://res.cloudinary.com/daylne1ml/image/upload/v1767487056/razoconnect_productos/bhnrdvdsbdda2u51bxlw.jpg	\N	4	77	1
+16	https://res.cloudinary.com/daylne1ml/image/upload/v1767487057/razoconnect_productos/tgzmyix9ph5twlauif4l.jpg	\N	5	77	1
+17	https://res.cloudinary.com/daylne1ml/image/upload/v1767487174/razoconnect_productos/qxjgiedlbsytuwkj1r15.jpg	\N	1	78	1
+18	https://res.cloudinary.com/daylne1ml/image/upload/v1767487174/razoconnect_productos/n27tslr2n647yx27c5we.jpg	\N	2	78	1
+19	https://res.cloudinary.com/daylne1ml/image/upload/v1767487175/razoconnect_productos/xn9osvqqghspegnqpvhe.jpg	\N	3	78	1
+64	https://res.cloudinary.com/daylne1ml/image/upload/v1767644979/razoconnect_productos/bfkmii1plv7i4qrtzats.jpg	\N	1	176	1
+65	https://res.cloudinary.com/daylne1ml/image/upload/v1767644979/razoconnect_productos/cuqbr09f8ethygphwy6w.jpg	\N	2	176	1
+66	https://res.cloudinary.com/daylne1ml/image/upload/v1767644980/razoconnect_productos/wlthletb2kcxere6zdx9.jpg	\N	3	176	1
+67	https://res.cloudinary.com/daylne1ml/image/upload/v1767644981/razoconnect_productos/ejpe6k5sefrgojbtprcp.jpg	\N	4	176	1
+68	https://res.cloudinary.com/daylne1ml/image/upload/v1767644981/razoconnect_productos/zn6ucqslnnvkj7whoem2.jpg	\N	5	176	1
+70	https://res.cloudinary.com/daylne1ml/image/upload/v1767654279/razoconnect_productos/msmpdg3wjg01wgogkyyl.jpg	\N	1	182	1
+69	https://res.cloudinary.com/daylne1ml/image/upload/v1767654228/razoconnect_productos/lkb894x6fwcpcq40nsps.jpg	\N	1	181	1
+71	https://res.cloudinary.com/daylne1ml/image/upload/v1767654364/razoconnect_productos/rsjcbhdsyn6fpcbmwvkp.jpg	\N	1	183	1
+72	https://res.cloudinary.com/daylne1ml/image/upload/v1767654438/razoconnect_productos/orasyknkfkwetmtzbfqt.jpg	\N	1	184	1
+73	https://res.cloudinary.com/daylne1ml/image/upload/v1767654491/razoconnect_productos/ck4huo31mqwxoe9xdghe.jpg	\N	1	185	1
+74	https://res.cloudinary.com/daylne1ml/image/upload/v1767654534/razoconnect_productos/nr3xy55lbh9gtsmtbqow.jpg	\N	1	186	1
+75	https://res.cloudinary.com/daylne1ml/image/upload/v1767673684/razoconnect_productos/hh8wrpotrbjr6qzqwmnk.jpg	\N	1	187	1
+76	https://res.cloudinary.com/daylne1ml/image/upload/v1767673770/razoconnect_productos/kxde05jpzbebigdgcewu.jpg	\N	1	189	1
+77	https://res.cloudinary.com/daylne1ml/image/upload/v1767673866/razoconnect_productos/hffzgmk9sqfes2mcnhkr.jpg	\N	1	191	1
+78	https://res.cloudinary.com/daylne1ml/image/upload/v1767673982/razoconnect_productos/mrysigy76xvbi6zysvh4.jpg	\N	1	193	1
+79	https://res.cloudinary.com/daylne1ml/image/upload/v1767674051/razoconnect_productos/etaetbflozsc47nwnphc.jpg	\N	1	195	1
+80	https://res.cloudinary.com/daylne1ml/image/upload/v1767674625/razoconnect_productos/wj5pkpcyeya0m9jltlwu.jpg	\N	1	201	1
+81	https://res.cloudinary.com/daylne1ml/image/upload/v1767674673/razoconnect_productos/td8hn5reb9dyp4zjog0b.jpg	\N	1	202	1
+82	https://res.cloudinary.com/daylne1ml/image/upload/v1767674716/razoconnect_productos/puvlsvt2rhnnp8ydg9zi.jpg	\N	1	203	1
+97	https://res.cloudinary.com/daylne1ml/image/upload/v1767679781/razoconnect_productos/tacvfvno2scv31iyy0ql.jpg	\N	1	204	1
+98	https://res.cloudinary.com/daylne1ml/image/upload/v1767681399/razoconnect_productos/gmkh2jfiaxamzvgaezj6.jpg	\N	1	205	1
+99	https://res.cloudinary.com/daylne1ml/image/upload/v1767681399/razoconnect_productos/hqz5argzeogvawfabplu.jpg	\N	2	205	1
+100	https://res.cloudinary.com/daylne1ml/image/upload/v1767681400/razoconnect_productos/jxljw9wmqopruiddu5l3.jpg	\N	3	205	1
+101	https://res.cloudinary.com/daylne1ml/image/upload/v1767681400/razoconnect_productos/fglshni8hrlkbxyt94ek.jpg	\N	4	205	1
+102	https://res.cloudinary.com/daylne1ml/image/upload/v1767681401/razoconnect_productos/zy2m0obllxsqhuza3ncm.jpg	\N	5	205	1
+103	https://res.cloudinary.com/daylne1ml/image/upload/v1767681473/razoconnect_productos/s6y2qdaoxdiuaiku3bez.jpg	\N	1	206	1
+104	https://res.cloudinary.com/daylne1ml/image/upload/v1767681474/razoconnect_productos/kny6nv1zwlpxiakupjhm.jpg	\N	2	206	1
+105	https://res.cloudinary.com/daylne1ml/image/upload/v1767681474/razoconnect_productos/fgyffkhntyh30idjsutl.jpg	\N	3	206	1
+106	https://res.cloudinary.com/daylne1ml/image/upload/v1767681475/razoconnect_productos/irggflgqdnluzen1z2cj.jpg	\N	4	206	1
+107	https://res.cloudinary.com/daylne1ml/image/upload/v1767681475/razoconnect_productos/qjksahsiglufebteh3rg.jpg	\N	5	206	1
+56	https://res.cloudinary.com/daylne1ml/image/upload/v1767565665/razoconnect_productos/hgo9cpzrcszvftlfacek.png	\N	1	161	1
+108	https://res.cloudinary.com/daylne1ml/image/upload/v1767834468/razoconnect_productos/eb5w1nshgloskoyjp6w1.jpg	\N	1	165	1
+109	https://res.cloudinary.com/daylne1ml/image/upload/v1767834468/razoconnect_productos/kct3gq8mnowebvio3yud.jpg	\N	2	165	1
+110	https://res.cloudinary.com/daylne1ml/image/upload/v1767834469/razoconnect_productos/cqubmvm6eyr7bynehppj.jpg	\N	3	165	1
+111	https://res.cloudinary.com/daylne1ml/image/upload/v1767834470/razoconnect_productos/fzoegptweteuxt0mdtus.jpg	\N	4	165	1
+112	https://res.cloudinary.com/daylne1ml/image/upload/v1767834471/razoconnect_productos/hc7ahxihdiqz9fpjkvko.jpg	\N	5	165	1
+113	https://res.cloudinary.com/daylne1ml/image/upload/v1767834555/razoconnect_productos/vpvimkb4v3g6cqy8hrly.jpg	\N	1	166	1
+114	https://res.cloudinary.com/daylne1ml/image/upload/v1767834556/razoconnect_productos/ktvbeya2qf73ctuef2wt.jpg	\N	2	166	1
+115	https://res.cloudinary.com/daylne1ml/image/upload/v1767834557/razoconnect_productos/dfmerqaouk7kt3qw2jup.jpg	\N	3	166	1
+116	https://res.cloudinary.com/daylne1ml/image/upload/v1767834558/razoconnect_productos/rwbbfj3usj64t5tytsaa.jpg	\N	4	166	1
+117	https://res.cloudinary.com/daylne1ml/image/upload/v1767834559/razoconnect_productos/ujum4kks47ecoqmwxs51.jpg	\N	5	166	1
+118	https://res.cloudinary.com/daylne1ml/image/upload/v1767932933/razoconnect_productos/rio3fzaorprjiin9c4pt.jpg	\N	1	23	1
+119	https://res.cloudinary.com/daylne1ml/image/upload/v1767933031/razoconnect_productos/bqqner1wppu2ne5lzzjx.jpg	\N	1	18	1
+120	https://res.cloudinary.com/daylne1ml/image/upload/v1767933032/razoconnect_productos/rj0zt4tgb6cyi9dtcvng.jpg	\N	2	18	1
+121	https://res.cloudinary.com/daylne1ml/image/upload/v1767933032/razoconnect_productos/nxiwkaad1bhcutyoyuno.jpg	\N	3	18	1
+122	https://res.cloudinary.com/daylne1ml/image/upload/v1767933033/razoconnect_productos/fyw0uexthz29jxljqviq.jpg	\N	4	18	1
+123	https://res.cloudinary.com/daylne1ml/image/upload/v1767933034/razoconnect_productos/w9zriq5ngzze6wgnt5xo.jpg	\N	5	18	1
+124	https://res.cloudinary.com/daylne1ml/image/upload/v1767933354/razoconnect_productos/vsnxk1wuzgvsnrmknqxe.jpg	\N	1	19	1
+125	https://res.cloudinary.com/daylne1ml/image/upload/v1767933355/razoconnect_productos/owe4seqyqgzarshpi19c.jpg	\N	2	19	1
+126	https://res.cloudinary.com/daylne1ml/image/upload/v1767933355/razoconnect_productos/nzsvyfpbx3jisnmuyadg.jpg	\N	3	19	1
+127	https://res.cloudinary.com/daylne1ml/image/upload/v1767933356/razoconnect_productos/jrhh7af2bsuvzhlnhw9v.jpg	\N	4	19	1
+128	https://res.cloudinary.com/daylne1ml/image/upload/v1767933356/razoconnect_productos/ryrtomsdcdlq2zfxutav.jpg	\N	5	19	1
+129	https://res.cloudinary.com/daylne1ml/image/upload/v1767933383/razoconnect_productos/holqpvheij0ouht86lln.jpg	\N	1	25	1
+130	https://res.cloudinary.com/daylne1ml/image/upload/v1767933405/razoconnect_productos/ckyzu2plfyejsj9fh6ny.jpg	\N	1	26	1
+131	https://res.cloudinary.com/daylne1ml/image/upload/v1767933428/razoconnect_productos/ptkyqlyuehsxpakgerxl.jpg	\N	1	27	1
+132	https://res.cloudinary.com/daylne1ml/image/upload/v1767936492/razoconnect_productos/rwutmkkjsmwvipfbmyji.jpg	\N	1	124	1
+133	https://res.cloudinary.com/daylne1ml/image/upload/v1767936535/razoconnect_productos/bwebqrrtkxmaghrh2huk.jpg	\N	1	123	1
+134	https://res.cloudinary.com/daylne1ml/image/upload/v1767936600/razoconnect_productos/s8puwnpoh11ogcetuge3.jpg	\N	1	122	1
+135	https://res.cloudinary.com/daylne1ml/image/upload/v1767936680/razoconnect_productos/fgulxj9rwqed7dlmakrb.jpg	\N	1	121	1
+136	https://res.cloudinary.com/daylne1ml/image/upload/v1767936716/razoconnect_productos/bebn6cpbpvugt6mzlkvz.jpg	\N	1	120	1
+138	https://res.cloudinary.com/daylne1ml/image/upload/v1767936780/razoconnect_productos/ptoxohrbbbwtgs8giaht.jpg	\N	1	119	1
+139	https://res.cloudinary.com/daylne1ml/image/upload/v1767936812/razoconnect_productos/vnhxia19lclnuyvyu5ak.jpg	\N	1	118	1
+140	https://res.cloudinary.com/daylne1ml/image/upload/v1767936866/razoconnect_productos/xosfvoem6fyxdhprjgob.jpg	\N	1	44	1
+141	https://res.cloudinary.com/daylne1ml/image/upload/v1767936897/razoconnect_productos/r4kmb7vg0dxqaoxwbzx2.jpg	\N	1	116	1
+142	https://res.cloudinary.com/daylne1ml/image/upload/v1767936926/razoconnect_productos/zzqewxuqnauwulafgvus.jpg	\N	1	43	1
+143	https://res.cloudinary.com/daylne1ml/image/upload/v1767936953/razoconnect_productos/czcfynxua4qqfqvzcmco.jpg	\N	1	117	1
+144	https://res.cloudinary.com/daylne1ml/image/upload/v1767936985/razoconnect_productos/oayb6c7hhipowvi1qfsy.jpg	\N	1	115	1
+145	https://res.cloudinary.com/daylne1ml/image/upload/v1767937011/razoconnect_productos/jgjrtdigsbuxqj6folfm.jpg	\N	1	7	1
+146	https://res.cloudinary.com/daylne1ml/image/upload/v1767937045/razoconnect_productos/yp2ltusnrlsxndqygzkg.jpg	\N	1	6	1
+148	https://res.cloudinary.com/daylne1ml/image/upload/v1767976625/razoconnect_productos/pc6lebxjc8gmqoqdnhak.jpg	\N	1	223	1
+149	https://res.cloudinary.com/daylne1ml/image/upload/v1767976817/razoconnect_productos/vatqs57ym5arle17qyzh.jpg	\N	1	226	1
+150	https://res.cloudinary.com/daylne1ml/image/upload/v1767977091/razoconnect_productos/k5a1fzzhzzecjdygtim5.jpg	\N	1	229	1
+151	https://res.cloudinary.com/daylne1ml/image/upload/v1767977481/razoconnect_productos/aetfajdprh9nqs3gcszl.jpg	\N	1	232	1
+158	https://res.cloudinary.com/daylne1ml/image/upload/v1767977091/razoconnect_productos/k5a1fzzhzzecjdygtim5.jpg	\N	1	230	1
+147	https://res.cloudinary.com/daylne1ml/image/upload/v1767947038/razoconnect_productos/knys6u7oudalppsi5ig4.jpg	\N	1	220	1
+152	https://res.cloudinary.com/daylne1ml/image/upload/v1767947038/razoconnect_productos/knys6u7oudalppsi5ig4.jpg	\N	1	221	1
+153	https://res.cloudinary.com/daylne1ml/image/upload/v1767947038/razoconnect_productos/knys6u7oudalppsi5ig4.jpg	\N	1	222	1
+154	https://res.cloudinary.com/daylne1ml/image/upload/v1767976625/razoconnect_productos/pc6lebxjc8gmqoqdnhak.jpg	\N	1	224	1
+155	https://res.cloudinary.com/daylne1ml/image/upload/v1767976625/razoconnect_productos/pc6lebxjc8gmqoqdnhak.jpg	\N	1	225	1
+156	https://res.cloudinary.com/daylne1ml/image/upload/v1767976817/razoconnect_productos/vatqs57ym5arle17qyzh.jpg	\N	1	227	1
+157	https://res.cloudinary.com/daylne1ml/image/upload/v1767976817/razoconnect_productos/vatqs57ym5arle17qyzh.jpg	\N	1	228	1
+159	https://res.cloudinary.com/daylne1ml/image/upload/v1767977091/razoconnect_productos/k5a1fzzhzzecjdygtim5.jpg	\N	1	231	1
+160	https://res.cloudinary.com/daylne1ml/image/upload/v1767977481/razoconnect_productos/aetfajdprh9nqs3gcszl.jpg	\N	1	233	1
+161	https://res.cloudinary.com/daylne1ml/image/upload/v1767977481/razoconnect_productos/aetfajdprh9nqs3gcszl.jpg	\N	1	234	1
+162	https://res.cloudinary.com/daylne1ml/image/upload/v1767986734/razoconnect_productos/jxfemyrler9ypbei8elg.jpg	\N	1	45	1
+163	https://res.cloudinary.com/daylne1ml/image/upload/v1767986868/razoconnect_productos/ohlnjkko7u08zmafarep.jpg	\N	1	46	1
+164	https://res.cloudinary.com/daylne1ml/image/upload/v1767999752/razoconnect_productos/a5jsmwqcs3wfe8lora7g.jpg	\N	1	241	1
+165	https://res.cloudinary.com/daylne1ml/image/upload/v1767999865/razoconnect_productos/mss59bmmxsruzrvjlipg.jpg	\N	1	243	1
+166	https://res.cloudinary.com/daylne1ml/image/upload/v1767999981/razoconnect_productos/ymoqh7l5a4rrlausgqs8.jpg	\N	1	245	1
+167	https://res.cloudinary.com/daylne1ml/image/upload/v1768000107/razoconnect_productos/tfjlhmarxezx8jxvtutm.jpg	\N	1	247	1
+168	https://res.cloudinary.com/daylne1ml/image/upload/v1768000260/razoconnect_productos/fe7sjt0zsk32ibvkpdy9.jpg	\N	1	249	1
+169	https://res.cloudinary.com/daylne1ml/image/upload/v1768000384/razoconnect_productos/eoyk6x2awo1dqjo88gti.jpg	\N	1	251	1
+170	https://res.cloudinary.com/daylne1ml/image/upload/v1768000483/razoconnect_productos/vywl0kyy3afxaawsui1o.jpg	\N	1	253	1
 \.
 
 
 --
--- TOC entry 5011 (class 0 OID 25280)
+-- TOC entry 5115 (class 0 OID 25280)
 -- Dependencies: 293
 -- Data for Name: producto_variantes; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -5878,7 +6274,7 @@ COPY public.producto_variantes (varianteid, sku, dimensiones, costounitario, sto
 
 
 --
--- TOC entry 5013 (class 0 OID 25293)
+-- TOC entry 5117 (class 0 OID 25293)
 -- Dependencies: 295
 -- Data for Name: productos; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -5956,26 +6352,26 @@ COPY public.productos (productoid, categoriaid, nombreproducto, descripcion, act
 
 
 --
--- TOC entry 5015 (class 0 OID 25300)
+-- TOC entry 5119 (class 0 OID 25300)
 -- Dependencies: 297
 -- Data for Name: proveedor_reglas_empaque; Type: TABLE DATA; Schema: public; Owner: ferram
 --
 
-COPY public.proveedor_reglas_empaque (reglaid, proveedorid, tipoproductoid, cantidadempaque, descripcion, nombre_regla) FROM stdin;
-3	3	1	12	Caja (12)	\N
-4	3	1	10	Caja (10)	\N
-2	1	1	6	Caja (6)	\N
-1	1	1	12	Caja (12)	\N
-6	1	3	12	Bolsa (12)	\N
-5	1	4	6	Libretas (6)	\N
-8	1	6	30	Sobres (30)	\N
-10	4	1	6	Caja (6)	\N
-9	4	3	12	Bolsa (12)	\N
+COPY public.proveedor_reglas_empaque (reglaid, proveedorid, tipoproductoid, cantidadempaque, descripcion, nombre_regla, tenant_id) FROM stdin;
+3	3	1	12	Caja (12)	\N	1
+4	3	1	10	Caja (10)	\N	1
+2	1	1	6	Caja (6)	\N	1
+1	1	1	12	Caja (12)	\N	1
+6	1	3	12	Bolsa (12)	\N	1
+5	1	4	6	Libretas (6)	\N	1
+8	1	6	30	Sobres (30)	\N	1
+10	4	1	6	Caja (6)	\N	1
+9	4	3	12	Bolsa (12)	\N	1
 \.
 
 
 --
--- TOC entry 5017 (class 0 OID 25305)
+-- TOC entry 5121 (class 0 OID 25305)
 -- Dependencies: 299
 -- Data for Name: proveedores; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -5988,7 +6384,17 @@ COPY public.proveedores (proveedorid, nombreempresa, contactonombre, email, tele
 
 
 --
--- TOC entry 5039 (class 0 OID 26350)
+-- TOC entry 5145 (class 0 OID 26936)
+-- Dependencies: 325
+-- Data for Name: remisiones; Type: TABLE DATA; Schema: public; Owner: ferram
+--
+
+COPY public.remisiones (remision_id, pedido_id, cliente_id, agente_id, folio, fecha_emision, total_remision, estado, pdf_url, notas, tenant_id, created_at, updated_at) FROM stdin;
+\.
+
+
+--
+-- TOC entry 5143 (class 0 OID 26350)
 -- Dependencies: 322
 -- Data for Name: session; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -6207,14 +6613,16 @@ OD7UReFd09tNJ-vs1sRg-RBcVmxTjdhj	{"cookie":{"originalMaxAge":604800000,"expires"
 cH6qWmel9lY0UaRLoE33rwlzt1XU-93v	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T03:07:09.849Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 03:07:10
 YV360mRb5r-qsFfN3Z5czS4E-TSqfjBG	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T04:32:59.596Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":3}	2026-01-17 04:33:00
 MTqSB3FRDEzcKxDqUn0FFfk_XTzrCVl8	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T04:45:00.095Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":3}	2026-01-17 04:45:01
+lwgcf3B2v9c8QnBWMnA1Ae72rCh9IDuj	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T09:54:48.723Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 09:54:49
 f0JPC9_U1hW9BDpq0lf662MhPXcQcjZT	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T02:58:23.259Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 02:58:48
 wK3BcxvmNKv_N7yQ_DMNh39Het8Vz9JZ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T19:38:01.004Z","secure":false,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1,"userId":2,"user":{"id":2,"email":"fegarcia@hotmail.com","nombre":"Fernando","apellido":"Garcia","rol":"superadmin","tipo":"admin","adminSource":"admin","tenant_id":1}}	2026-01-16 19:38:06
 bw_5kvyt4J7ImokjGML-jJ0sIqhAWP1s	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T10:00:51.233Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 10:00:54
 B78Wi_ohfBn7XrnriooR8iBV6PC_vo9g	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T02:29:05.919Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 02:29:09
 -eAdIQUsGvU5yjrnP8uHRjocXk7jYvGW	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T05:04:00.972Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":3}	2026-01-17 05:04:01
 gsxjJArwefujgQ47j0cwu65drjNcz0WQ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T05:11:37.016Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":3}	2026-01-17 05:11:38
+tgO7kqSe5lGHb17EmUyzKiQcdVj7k0Y0	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T05:32:57.329Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":3}	2026-01-17 05:32:58
+06eVHFIfkAWv-8oFWbx0m_vr0GBqqZBT	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T05:48:32.313Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 05:48:33
 h3KSKH39wLbA-yA1v1aDIg7RNMwICNvo	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T06:10:52.328Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1,"userId":2,"user":{"id":2,"email":"fegarcia@hotmail.com","nombre":"Fernando","apellido":"Garcia","rol":"superadmin","tipo":"admin","adminSource":"admin","tenant_id":1}}	2026-01-16 22:31:56
-hb7i80M283bW32R-Mhy7w5SMeKFTKqUl	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T02:07:55.911Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 17:34:52
 KB7zaRFmpO-W07gbnBKLt9ljbQEtcKyT	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T20:39:15.168Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 20:39:34
 E2uOgtZcdbqBoonjGsONN_wDDk-6UHCW	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T17:53:27.916Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":3}	2026-01-16 17:53:28
 5ZtY3DU_MeV-MmCxbWy2b2LhlAloQhhG	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T01:15:29.053Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 01:16:13
@@ -6250,6 +6658,7 @@ Bh8K1dlAHwa0dE1IoszOwRL_RTUhnx3N	{"cookie":{"originalMaxAge":604800000,"expires"
 8G0hTroJSxX_VvppWlO3JpG2CRfm6t4i	{"cookie":{"originalMaxAge":604799999,"expires":"2026-01-16T19:39:35.900Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":3}	2026-01-16 19:39:36
 6ZD44V0J7TCkkHZMBF4dF79WccFTlgFI	{"cookie":{"originalMaxAge":604799999,"expires":"2026-01-16T22:24:39.272Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 22:24:40
 pRIL-ELyY8RKfM3KUG-Orbwepl55oP0d	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T22:32:28.953Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 22:32:29
+b8aGHV2KnDpZZmNGxeXK5A_IWepdmtnf	{"cookie":{"originalMaxAge":604799999,"expires":"2026-01-17T20:05:14.203Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 20:05:15
 Z5brqQArn3hmxMSKDiOjXZiFtupHxnyk	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T18:38:23.034Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 18:38:24
 42ddBJ4erNQWgqLRk5cp44LGJvgZ-HjA	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T22:32:29.247Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 22:32:30
 7lalDoyJdm7LITQHDIJ4o3RAej7xFCTq	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T10:14:56.135Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 23:48:38
@@ -6258,7 +6667,6 @@ g2fHUGfuwJAZVr0AilGfxmL3oxJVgTsd	{"cookie":{"originalMaxAge":604800000,"expires"
 ltBW2UCMXJdPJF92j3Dj-L0rMFtVavsK	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T10:14:55.962Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 23:48:39
 qhEV8xp2sXUoFEdxtnE0OWndV9T6umqT	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T01:16:34.949Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 01:16:35
 3LrvrCYJVaTUKhsULyGkUiPqHZOE5ZtD	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T17:54:50.523Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 17:55:10
-F2puZnCW64-sv6DPMScnXXMFIzuKfKiN	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T18:38:14.739Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 18:38:49
 SldWVJjJ8EiiVomMErzLXe9UOubw99O2	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T20:30:50.537Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 20:30:51
 V-nK4HXC12R0qJc8VUKHQ-BmX3WFeOil	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T16:32:31.666Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 16:33:34
 ljmHsHMSLahysyXkcYNQ9givlLbw8SwT	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T22:24:39.813Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 22:25:14
@@ -6272,24 +6680,441 @@ uwVlPLZefQdrucxBMoPMLlXI5EX8xWzM	{"cookie":{"originalMaxAge":604800000,"expires"
 rRoZA5GDXimIBfsLzBw_9NrjJufyx7hd	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T19:37:10.826Z","secure":false,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 19:37:11
 3t1IoClbE6hw5UgMFO12giyEwJBqaUht	{"cookie":{"originalMaxAge":604799999,"expires":"2026-01-16T19:40:56.134Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 19:40:57
 str2vmS7C2FM_sIzunNvCNvU7WTwzsbP	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T19:53:47.380Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":3}	2026-01-16 19:53:48
-j0yVoOAcwbfjBDVqAg6cVN_xbSOQVqhF	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T02:56:29.312Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 20:33:17
-JDzVi7LtcQ1WGc9ie-IgwzwbICM2Z27k	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T03:08:21.049Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 03:09:59
-H87Z0QE7jZq6S22lRTjYuFonEBa0LNEI	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T03:12:08.635Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1,"userId":5,"user":{"id":5,"email":"pupis_gr@icloud.com","nombre":"Lupita García","apellido":"","rol":"admin","tipo":"admin","adminSource":"admin","tenant_id":1}}	2026-01-17 04:45:00
+7KRFG1KpAmlKexHfJbuDvIT8oy8Wj4QA	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T06:20:23.504Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 06:20:24
+TZVfMq2gXGFze8w03GjbPQzgpw8tXmo1	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T10:24:13.982Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 10:24:14
+lseNP8xkCCTW-Znv_q-BGsA26COoBHpF	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T17:19:17.184Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 17:19:18
+7gNU9nE2lUeOpBVoT30jfMbCYr0RrmP8	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T18:44:51.033Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 18:44:52
+v_qgOZ3h-YOThqt6QDJp6ndBYDyU5gnI	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T20:06:04.063Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 20:06:05
+vnMzRaVFhddARd4taiWmk9i1BtqaQt0h	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T18:44:52.426Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 18:44:53
+2AyDD1lgZnXZj66Pz8Gc7oQYPhrQfODu	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T18:44:52.379Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 18:44:54
 2QHO0tnsBRx7vhUuCw_kV4fKpcEBRkZQ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T04:48:17.357Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":3}	2026-01-17 04:48:18
 onVJq3TdIPCS38qkYr06cgb8NPnP4pK0	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T03:35:16.991Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 03:35:19
 TfyAFfvNmC5mz6U1y8fj0AQwswNqbjdD	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T03:10:46.342Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 03:10:49
 f8uUvH8bs4TyXg9IBRMuPArAaIO8O2MZ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T00:49:32.329Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":3}	2026-01-17 00:49:33
 Kc8HxA7_OKCK05EhTbT8oTxAjf7P0ANO	{"cookie":{"originalMaxAge":604799999,"expires":"2026-01-17T04:19:50.393Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 04:19:54
 MXErnUKierG1v5MgD1M2l-enRronxHCs	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T23:55:17.355Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-16 23:55:18
+T72uNWKwG_IvfhF121jE1uArOIMCHzyJ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T05:42:05.235Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 05:42:06
 CbMC1xu9g7CVpqJf6fgIrs62zGmacw0n	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T03:32:16.272Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1,"userId":4,"user":{"id":4,"email":"alecaja.19@gmail.com","nombre":"Alejandra Calderón","apellido":"","rol":"admin","tipo":"admin","adminSource":"admin","tenant_id":1}}	2026-01-17 05:18:49
-TthvLclBs3svB7belqFrMkenRCMWlxjk	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T06:20:53.194Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1,"isDeveloper":true,"developerId":2,"developerUsername":"ferram_dev","userId":2,"user":{"id":2,"email":"fegarcia@hotmail.com","nombre":"Fernando","apellido":"Garcia","rol":"superadmin","tipo":"admin","adminSource":"admin","tenant_id":1}}	2026-01-17 05:24:24
 Q5acKlvNEwTbQPbRtOd8Sja5PXNBR8ny	{"cookie":{"originalMaxAge":604799999,"expires":"2026-01-17T02:56:15.039Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 02:56:16
 fenbM7DjvBkQ9CrmmjiftTt1FUgHwYhp	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T02:15:42.345Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":3}	2026-01-17 02:15:43
+KPFhyXOzskjIlEYgDGI51cYeiZ_yUh16	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T05:42:05.862Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 05:42:31
+jvK1RhqJFXetMHOxmeNiotAKhv7H_5XA	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T05:49:53.308Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 05:49:54
+cuwIh2zAAZhKOSh1qyDmkbCNRPlw4ZHw	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T05:50:19.433Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 05:50:20
+rvNzfLAAF3bDV6Q0KLKt7-bXbfXKP6fX	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T05:51:58.144Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 05:51:59
+BMFvfgvvpqysFQeTcH-20LSX6a-qBg_f	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T05:51:58.239Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 05:51:59
+qKsZNH1hppywc2W_VHi-twiGPFXedva4	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T05:53:50.235Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 05:53:51
+jNCNKfOD-W4T4EsqUzMI3EfCpuy0O73p	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T05:47:09.745Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 05:47:10
+Bcvf5VQiKoqz5wSyFWQVTJ9x1E8Nd9gS	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T05:51:22.883Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 05:51:23
+jfysHN5BXtnXxefDuuruqLj6zdKDJUXM	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T05:52:56.081Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 05:52:57
+4-kxrJ_80oY6TKO7Yt_LX-xbHJKmxMXe	{"cookie":{"originalMaxAge":604799990,"expires":"2026-01-17T06:29:16.533Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 06:29:17
+95OZi3cMDdQtplKjz3Tf8_pdOEtOQqZX	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T06:35:53.543Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":3}	2026-01-17 06:35:54
+08t_0TF5Ozh3uR_ntiI1zYFC5NYsCZ3i	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T10:39:42.973Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 10:39:43
+hp9nDazCDa516aa4Sed57Lt5AxsteUSH	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T10:39:44.001Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 10:39:45
+dYKibBlo-KMV6M5neVIrJOIlE3m2wKPd	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T20:06:04.101Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 20:06:05
+6RJ0hIBvmm_BsjhDV6Evwh6npou7uA8P	{"cookie":{"originalMaxAge":604799999,"expires":"2026-01-17T13:04:02.859Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 13:04:03
+hm-VtbchO7UAsRnroGFT3svtmbGlTQ6U	{"cookie":{"originalMaxAge":604799993,"expires":"2026-01-17T11:22:36.259Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 11:22:37
+4r3pL3K5Sx_GZTOJA3N2zavOJvVO8HR4	{"cookie":{"originalMaxAge":604799992,"expires":"2026-01-17T05:29:06.636Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 05:29:07
+MXN5EoUZabCcEox9lJBAdGNiNpMnVyFn	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T06:10:55.761Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 06:11:00
+aHujUn9ctLeLLzwdeoxFliTE3H9gSqPA	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T18:44:58.738Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 18:45:04
+1jDxgNbXmb1xyazQ9BT-3F5RxwDiRDGc	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T05:29:06.927Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 05:29:07
+zBseNiGv2aNXFDOB1s2KWB6WZNPhtx39	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T05:29:07.328Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 05:29:08
+gni17sekG1IS99FeKD8TbRZxKtbpyKWI	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T11:22:36.631Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 11:27:25
+0b7xwtQjJ8Az1zl8dubPbTruFpCUoA_M	{"cookie":{"originalMaxAge":604799999,"expires":"2026-01-17T12:38:50.543Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 12:38:51
+pBiWi07UxaJe-b6SDE2uokNRKTn3MwYh	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T05:29:07.608Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 05:29:08
+NwI25A9JFZ0OXsOXEapcCZbsaHrqUX_U	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T07:31:43.333Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":3}	2026-01-17 07:31:44
+K58HMkHk_aGjiWCvYqq6r-y4Y8Xek7Fh	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T06:46:27.489Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":3}	2026-01-17 06:46:28
+hb7i80M283bW32R-Mhy7w5SMeKFTKqUl	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T02:07:55.911Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 07:37:13
+GrknO4DgZlPKob-upGPbULgS6_x0mOHK	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T07:38:26.844Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":3}	2026-01-17 07:38:27
+ohJAKRJ1e1jvnGS8qWocJIbWH6nSIW7H	{"cookie":{"originalMaxAge":604799991,"expires":"2026-01-17T07:38:48.495Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 07:38:49
+QC2Lxb02sCU42Dhs9-syq6eVZSwWN1Cp	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T07:52:10.927Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":3}	2026-01-17 07:52:11
+4IfAnxUb4nQmmbYX8KPq8FJDNUrUetge	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T08:21:39.405Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 08:21:40
+G3rbgudFVWE5fq8pVaCR1co0F3MJDMK6	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T08:21:57.402Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 08:21:58
+26cYZeBDKFFv77WuBL-SpZZtZnNMpjFT	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T08:21:58.265Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 08:21:59
+9zR8YW-0oHpr49TKUYo3cIzfBy9SkiV4	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T08:21:58.353Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 08:21:59
+XEJFMR-jTDkMaLAfbXlDvcilPgSqOx44	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T08:21:58.375Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 08:21:59
+xcQm740UXu0SBBijStxQXbN4dbnH66Mt	{"cookie":{"originalMaxAge":604799996,"expires":"2026-01-17T08:51:46.453Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 08:51:48
+_ovDHKWIpghll2_iHIK-7rmO_Lfzszu8	{"cookie":{"originalMaxAge":604799999,"expires":"2026-01-17T09:20:13.688Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 09:20:17
+VyxkIQ9iltOxi1M7J4nraiffK8qJAu9g	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T08:21:59.189Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 08:22:01
+V8k68O72rRWRHpyCHy-5zo0o0ysSz95-	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T08:46:04.052Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 08:46:05
+R59PjX56cOE2qOjukXcN54OTFCQH9PF9	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T08:46:04.804Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 08:46:05
+IYhwnDwXRzyLbC72MtfqZkWXoh2R7by0	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T10:43:23.334Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 10:43:24
+5UbfIqUNbyhNbsZXcdXWPVboe8lgCjgV	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T20:06:04.102Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 20:06:05
+hSRc1mSein5sQWjVfeJ1LFOEGq8hdXlv	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T09:20:16.511Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 09:20:20
+NW5tigGe1sGSKmZ0rEJfgaW35g_nrG6C	{"cookie":{"originalMaxAge":604799999,"expires":"2026-01-17T09:51:17.159Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 09:51:18
+YgwwJI_rwIdjIA72Dv07wCA_-4NQcUKJ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T17:26:37.255Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 17:26:39
+3u2APOZ_L0j-CuH0SEt296yBoOQmCYgy	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T21:30:23.159Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 21:30:24
+yB2FDf3eWqzxMJrJcIYGRCIEcrf1izFr	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T21:30:24.687Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 21:30:25
+RhKllydRskkWQMEVZbas-Vt5ogLJR3Vh	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T22:10:33.467Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 22:10:34
+GmPud_1YPz1ya2YBsUw821XwGYkvsX0F	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T09:51:17.658Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 09:51:38
+3IS0F6qe6hfglMdcCVV9QhNRveav6F_G	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T22:10:33.556Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 22:10:35
+MN7vW_HIXr6MV2u2mcNN2u_67wxcASoI	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T22:14:36.602Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 22:14:37
+KZzWAVu3-nUWYA5HHfe95zqflgSkw0oB	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T18:45:23.133Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 18:45:24
+QpVGiuPvNf-U7KtesxQrl30aS-ET2TTs	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T12:50:09.897Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 12:50:11
+oT-diLPxZVv6pcp9Cr9kFXh3Y8BsrPOu	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T12:38:51.152Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 12:39:47
+Ng36cslFdmTvYfFG5vvCjHeQPLm4sknL	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T11:25:42.058Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 11:25:43
+H87Z0QE7jZq6S22lRTjYuFonEBa0LNEI	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T03:12:08.635Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1,"userId":5,"user":{"id":5,"email":"pupis_gr@icloud.com","nombre":"Lupita García","apellido":"","rol":"admin","tipo":"admin","adminSource":"admin","tenant_id":1}}	2026-01-17 12:58:42
+YAdMRe79xZVNiFx5zX1-eTzXQlYkc4Y-	{"cookie":{"originalMaxAge":604799999,"expires":"2026-01-17T13:29:09.405Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 13:29:10
+O3Kqtz65hNMOycwWEwy9SZ0FuUj3i8t9	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T13:29:09.674Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 13:29:10
+vYrMnq4rDY0HCvl0YkrmWmSYOvqjMIub	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T13:29:10.054Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 13:29:11
+e9hu-roVAeEbSrihrKtCtecQ0nI_7Dbt	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T13:29:10.307Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 13:29:11
+bcyZiNChIxnGF1FTZ9SgBl0_1JI1Rd6F	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:24.663Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:25
+Avf-78bGF8bYeWqwcJDfW93sqPSJz-2y	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:25.183Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:26
+81uu6JRYbTItqvPasl5eUJJzpF5efsvp	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:25.570Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:26
+iemdEdZMUH9VaHAqMnkvNyS5myDSdN0e	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:25.977Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:26
+R5Q9FuEtaQxGBCZ47iwoxLmRSjcuBNaY	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:26.496Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:27
+LgJTF-Yq2pWiJFCpBoP3MbcwW6GJA44D	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:26.963Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:27
+qS7huhPoMdDno5gagZD0kMLs7arOh6sb	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:27.477Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:28
+MiI2Q6vyuvi-diljP7bTToMMtUKl-8_A	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:27.893Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:28
+FJuag4Jm7odMujenJZlq6xhi9MJI8r68	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:28.400Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:29
+xJPunplihbYFWgJGcCZ2Afv0bVv_Rtr8	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T11:25:42.461Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 11:27:08
+NRXKmIMSBluWEcKvs9bs-chpXUV1ATau	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:28.817Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:29
+Xi8yMNDKXVIocxfzY1p93LReIgSJHHDN	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:29.207Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:30
+xveXViwF39idPTFhU6xMIXoYb8LWZnC4	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:29.624Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:30
+O36Xspu1xSFWFMIBVX1AgwzORbEAyCe4	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:30.029Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:31
+7YE219A4BmPJhzggNUBbnT1p2MAvF4wn	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:30.428Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:31
+agK9cs8Ef58Xx8CbgKBJhyueR4WAvUFp	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:30.742Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:31
+gsUABatDvejROeLtUrBBxJyqziyujbws	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:31.131Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:32
+v9vqo7Juz9pIjqoVX1qREHzrizg5-Mw-	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:31.537Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:32
+vLfnQzqK7qZUsus9G4jYpA7JWhfI3fXZ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:31.928Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:32
+TeDW9Iedr22cCJ8NpCyRH5GSqS_K-2dg	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:32.323Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:33
+fizgVQ_AMT_RaweLNMUKVe-_AZsWN_h1	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:32.669Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:33
+GHvR6jCDO5RG_if5JFO1z3_CP8OQNfu6	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:33.171Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:34
+OYocgiEbsS0X83Mb-dFM7z9erlolI7Yn	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:33.594Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:34
+OSXs-ZtKV0j_DBondNEoX6s7J2yr5AcT	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:33.976Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:34
+OeZB3pDEa2_SaepvXfFybu3VzIltOGO9	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:34.374Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:35
+OuLhrCKBDGj0LDrP50XlPrbI9Bz1pVUJ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:34.865Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:35
+IX0v19E9ZzcG5MaeDh1nSrimLxEpom3R	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:35.362Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:36
+6TZYwCt0koyQTjb9mXgbugB-xs0Teiz8	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:35.776Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:36
+KuU6uF6VoUs4Kf466CAOlKFihjhf0421	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:36.167Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:37
+P3kSQTZZgWxxijTwdQxSX0DC8mIy1bER	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:36.587Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:37
+z4R0XdEFUMo_ahhuP6phfooX91xeff9V	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:36.985Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:37
+0K1lPCSJwUiYYbyuWueh1pOb8udwYlFI	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:37.484Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:38
+rZE_YiZkwS9vgXUOCLL7z7-52MQbrJi9	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:37.900Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:38
+6P8mSeB9s05_UNpNe0HtbBSaSRxnWIw-	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:38.305Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:39
+kXexL4JGrZOEq3eL45gOv_9ZUCYKKtHZ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:38.805Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:39
+ymX86PPwsW8vgHUdGY3QdcJJSbM3qHQj	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:39.235Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:40
+UetdqfuTm5uTOZBH971w04ubwgWpcFGl	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:39.619Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:40
+P_tJWZKP1LVCkdRIGqR4AbvMovPPjpJr	{"cookie":{"originalMaxAge":604799999,"expires":"2026-01-17T14:28:40.005Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:41
+mtVuDwkYH9mxHLbjkqoEg_ecGmHer5UE	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:40.420Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:41
+n4g6qTNsMFh9OE2D-tKKbdyK5YLi4eWV	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:40.807Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:41
+MAbW8VUYLB8RFAJ-Hp11PxdVVbV2Jifd	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:41.196Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:42
+I9Q8Fm1LWGE2qN_a8N8MtlIxcHcZqUTp	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:41.579Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:42
+qt2Qd72T8weyzuMk8V2ojJ9nRE032h2-	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:41.966Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:42
+sJPeIkQSY5yB1pc7OFnqC5J61zHBYHRP	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:42.364Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:43
+fhmkhWDwfH9LQZ39tm3jbPC6oxkstiqz	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:42.751Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:43
+x7WVOfz6opME4S8pKK9wZdklbmlYhupt	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:43.165Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:44
+_3m6nsT1Ia-5nbt0B__J0MV32YkW-LBj	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:43.562Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:44
+T1QjyUhgeTjKZS13dMWXh3vpeKoK0SFy	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:43.964Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:44
+Ev6zQkt7UgkADriNSly8dZHOq_8yVlcV	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:44.428Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:45
+2NBy2nxygRimiPacBNQFDCuUvBcWuQrV	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:44.916Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:45
+uXvPXLX6RUBKDsaU02qud97PawuAYomd	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:45.347Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:46
+3dmjzMRwBqTrSYNQzPvGYUwFB72nPt1C	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:45.750Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:46
+MkGVPu7pibl0zQaNXN6MWcw9COj4Ax9W	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:46.233Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:47
+j35ildeSCY6DxWaO7Tm85zZNLo6hbl97	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:46.643Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:47
+oNp6A-Vcc1Cp_RpPNTvnJLjQJD3lxydx	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:47.038Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:48
+LSYN4GZWDOFKGHscw5OWMX4oYucomJ0W	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:47.430Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:48
+Om5clSmr7pM3XNjIQE10hRvkAsyTG4f-	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:47.815Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:48
+N7n0nxd6YPFDtrcTBn6e50ZOGzSEb8Xn	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:48.199Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:49
+2JA_Y_eaNwQzTN8Uv9prKABUggPhsvhG	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:48.588Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:49
+JvazkmHUcXmluRXCLSaBiyTIUtVH9qQ4	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:48.992Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:49
+Woeh-rY1ff0wHddQZrp1rdJpuH6KPnUV	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:49.390Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:50
+7a7eCBq7xpayfyHwuzWeO_36kUyZT8jI	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:49.810Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:50
+X1rHEEJ1tTcmq8AG0ugnxS9i-dccwz0a	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:50.193Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:51
+ImyPgSzrvdIBS81iQqGfSkvmti1oltZX	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:50.683Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:51
+9NkVi9Gxr2VTv4d7zfkgRU3q3Z8czm38	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:51.120Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:52
+VpQBG8BqOX6FKB0h-bP3JWzVmr3Aj1ez	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:51.510Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:52
+GANTRGwOotyCVDPTuiEBnPhVoQ_10pd8	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:51.907Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:52
+6TK7lGcRhLQIm9YNZaDF1TiKqADcBg67	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:52.313Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:53
+QVKDQInkwjqVGeJh-gRQMS7Kr_1t6Axy	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:52.813Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:53
+KYRmzrBfoU-H8BgO27Lv0SzxvfZj5uYM	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:53.240Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:54
+3p1bBc4xbxR_V1C7d2bkhuf7aCYb6xZh	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:53.649Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:54
+uK4gCrag9krGc1ErKW85eWqoIv1Q8WBE	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:54.068Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:55
+IImQme59EXtJuCmSvshbpHIAk4NlnqTq	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:54.471Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:55
+6td3ehQclddCv9xj2mQ0pxiLDyraiGuH	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:54.872Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:55
+2_pv8fsCadD7zd_53FghtLcSymkxB2rf	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:55.265Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:56
+kjWOftZjyuaqm2HUG3_PgbzMMB4zvwkt	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:55.599Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:56
+bk9v4jqjHKpjKVNp2kn4oNb8Zq04wcaW	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:56.109Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:57
+iHFTyxhv6LevLfXSlzSfqavsawAkefD6	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:56.526Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:57
+nLqF-Vpvc8HaediFWsAilAvlyXMiXg-h	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:56.913Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:57
+ve5jCmScn3klL-Z04Ve81qQucaZ-0GTZ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:57.301Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:58
+mHYX9Irg1Ryi4MhQMsxuzD8DG90RlQo8	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:57.712Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:58
+qL4Z5BmfXVB_fSV5c2wuAcfwFm0KGKfz	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:58.131Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:59
+UuUwirOhgvSgpp-oR5NQhTrxabhyrBcn	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:58.531Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:28:59
+m8dIviJZO_LeVhjj0CAgiByeOSgx2qlB	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:59.011Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:29:00
+SzqYkpPwvbs-w_GllEQYeqyi4LhIdY0U	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:59.451Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:29:00
+ujdo1ILVay_Qz11XRlBlOT8kQ4eNptxU	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:28:59.999Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:29:00
+GUvYF9B_pNjjaY6ydipgCKbel9NW97bi	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:29:00.429Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:29:01
+6r_MoHJEXWGsNstXloEfBWWevKpyD8yO	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:29:00.937Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:29:01
+AfRSRVFfhBEgs05_1qYQvIpX7iFNOskQ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:29:01.395Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:29:02
+WmNzykNZA0WN4Xfn9bH2Fu_4MZZLggdg	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:29:01.940Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:29:02
+hndbjXC6bbqDG2MX0idDaHTOJp6eeIgR	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:29:02.376Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:29:03
+y1e8VwMyDmnpxLsCcPZua11Sgw864ygh	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:29:02.865Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:29:03
+gu_TG7wZoNiAFueriBfqooK62w4RNom_	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:29:03.190Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:29:04
+pcQh_OzznyMq5za9BpOb5WAtloq-REmu	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:29:03.680Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:29:04
+20eDsjqE-mFQv1QTbJjsdzbKOY4ZV6WZ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:29:04.099Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:29:05
+BERaIhlm-kOYVG7QY6yWgAH6TDjZF5CA	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:29:04.434Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:29:05
+BBSpY80yT8QILyaqaxXfZr5Em04elMjL	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:29:04.822Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:29:05
+LgRuzynttm8lQt8apVVK9B9Y6DVCrlBw	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:29:05.311Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:29:06
+yi848am2-N7nFehjUZ6AIQyD-v0hBjx8	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:29:05.728Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:29:06
+S6SM4NH-JFgviizPSo0EslUgzU946Y4R	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:29:06.131Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:29:07
+x2Dm9dlQy5likKBgzL_9k8z1A61UPi4L	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:29:06.519Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:29:07
+RsZXSbySXj18F10FZJDeGinXHyI-uOHa	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:29:06.918Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:29:07
+G7NcEQGNyWMhtYFKpipeFitjMYWZrbaf	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:29:07.333Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:29:08
+Grw5t2JZ2TRfBhs68lrm5Duun3Yett5X	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:29:07.742Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:29:08
+Oqe1-gFhKWhBYNSC1bd62nFlQKYrNgDw	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:29:08.139Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:29:09
+EAiZQ6m347pGwo63eA27YQd0j7M1AiBk	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:29:08.552Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:29:09
+OVYdS5XcDyWksGmpMDhQbFOpGbmzvpr6	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:29:08.962Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:29:09
+MqW9RqjXy2xcZ1W_9-hiOWnf06uMtNFK	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:29:09.365Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:29:10
+Qx1SRtctzNKg0ceoiqI3CzK3gWcq_YBW	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:29:09.770Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:29:10
+_iwjjFuLfZxbwM2D2anLenxzBL2aJb4n	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:29:10.163Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:29:11
+Ik-82p86GSacsXGEyeiA0zpZgtnYEHBW	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:29:10.556Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:29:11
+ue9TosRCaEfqEwKlDUzRi8-DOWxdN37q	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:29:10.937Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:29:11
+D15RZVBlwlZTA0rtxuywPfAlpaDlrkKO	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:29:11.331Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:29:12
+B54bMu6QE86ZWk_rIzU8jXre3cdq_iVD	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:29:11.723Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:29:12
+wIvDPNIYUUn-sJvFZx19YZRPCeE6HVKD	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:29:12.120Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:29:13
+2h98OlEvhENLmQHwzWq_1vYRp3mx1Apx	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:29:12.527Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:29:13
+OTyr515G1vu9HbER3cgNs1p_uiEChBZQ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:29:12.916Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:29:13
+P5XrKWtEVoydZRTUu1O7vaRWPUBxCjpS	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:29:13.424Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:29:14
+UeqmkCIjDKuOCW_cufWU63jvKFDBBNSY	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:29:13.858Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:29:14
+672ixT4NovG7rQK_cNEgAVONr2nncRoZ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:29:14.255Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:29:15
+YlL8SqIS04nN7Fn0V6SLBy6bsmjKL19j	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:29:14.763Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:29:15
+WONrYcFyYsbuvux7r1eWpWLtlKizYqI-	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:29:15.184Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:29:16
+VP0jD5fkadDg8IJHDFKxBsPJf6tPfQoW	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:29:15.589Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:29:16
+iul17oxM4g54hzQwinhrvnWnj3iiEzcP	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:29:15.982Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:29:16
+JwKRPkfQqhQA3dmoDlr87lZXxX25JRYe	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:29:16.421Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:29:17
+Svw7Ddm8s0Cxm4E45Fhs3i23_SGR9Xd6	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:29:16.826Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:29:17
+o3cpw7DguRsre7rPBtbhKPT8G4N0XNR2	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:29:17.212Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:29:18
+uj-jyoMhnEOa2vStwpwXwCWsmHKGxScD	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:29:17.604Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:29:18
+mXOXNxGQKsNTzW8sAj7eWCWNCQuSO2i_	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:29:17.997Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:29:18
+fhxpQv2aDFdAkoo-sEoW3fAy0EFyF8uq	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:29:18.387Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:29:19
+v6P5rFzd_Q8Ly86P5gIjqdvZwtgbsLPI	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:29:18.776Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:29:19
+oIRnvPP-O-k9Y8dKLt82Upip06juoc47	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:29:19.170Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:29:20
+1QYHY3T9y_XyVikrpWb-Wp4T7wtEQ-r6	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:29:19.576Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:29:20
+O75f2SHts-rFeIGuP6w3ufbQjuEYKIDY	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:29:19.975Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:29:20
+eE2Xfu4gzsHyNve4qC1AlFMWxDo0N7wS	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:29:20.372Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:29:21
+7-qzbkVny2112mQr6MEY-BtlPbueUY3H	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:29:20.760Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:29:21
+ZXR4TKHQosi7ZfQ1FG44jrSrMos18pho	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:29:21.155Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:29:22
+s8G96XnKjPFwOmKc6Syedk277X81awhx	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:29:21.552Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:29:22
+fQAZ96DjpQsGn8BSl8bj1d5WRMjGxlLC	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:29:21.942Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:29:22
+modzIoes1ktR8xPM63-jrCA_kNkD4J7M	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:29:22.339Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:29:23
+8icOsFvX0wn3umyOhNSV0BCI89nv-11i	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:29:22.739Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:29:23
+7XqGmr9sQREQ0B7gHedqj7awcGoCMQ9Z	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:29:23.238Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:29:24
+umRlpCHpMwqD2NWXmB2OGVbtyvb02Fr6	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:29:23.764Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:29:24
+rqK5cTGxSciJ0IAQASN-vFPRn_DMl4LE	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:29:24.202Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:29:25
+XIO0wAnprom6ww-EFcz5Qc2jQPzXnFaW	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:29:24.596Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:29:25
+mvJ0M90HuT7Pq9K1Pza_obNyZKxH3ofI	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:29:24.994Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:29:25
+fEjVjCv8Jr0tiK85D41Gxvz9xiWgQBG0	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:29:25.401Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:29:26
+DhlpZ84JdjNQemIZfNNjJ9KncVvq1yL5	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:29:25.804Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:29:26
+XqnHGQ0FbPgLMaHccKlOYgV8m2rmQG8T	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:29:26.214Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:29:27
+l3GlDYxefu3UMCdqoK0gmEglE1VDPwPb	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:29:26.611Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:29:27
+QY7p6oE-TlpCbnPl78WfVfPpeRkImtkq	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:29:26.998Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:29:27
+0fPj-b4eOG2Z25mQhi3NFKY0-4z017X2	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:29:27.497Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:29:28
+Ow21B5ABoLRwdHwrJvktR3xJIHsDUQuV	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:29:27.915Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:29:28
+90EpWXKoTwE8xtMkQh4FGv8uQeS3cbUK	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:29:28.313Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:29:29
+bXnIZMEy14_gtwR4m1kS9CC_3CHX3zQd	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:29:28.707Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:29:29
+sCu9GEgsIgT-7Tl5fi5eAu0djpTiHGJQ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:29:29.105Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:29:30
+qajLme6nUnCyUe4V420TBxh2k1PIv1Z-	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:29:29.521Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:29:30
+KmHUj3Q4GaTGPNzOgydeomolaXkn8Iev	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:29:29.930Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:29:30
+7VqNR_y-IQpdQIarCyOXp9IthkEEFmmU	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:29:30.329Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:29:31
+8MvpBXHa3UVVnepyeVcW_mu_Cu5K2XW3	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:29:30.655Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:29:31
+YKBSW17SA6f_vIj8JLaRBhhk8ZKgkDqC	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T14:29:30.982Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 14:29:31
+r0HRyFBNFUdimk5oLCf4ZbX4_3tRvc3u	{"cookie":{"originalMaxAge":604799998,"expires":"2026-01-17T15:09:00.467Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 15:09:01
+0vsvMgnAiuNqay0mQ-imYTU3iJ2NdGwG	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T20:13:36.682Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 20:13:37
+WbPTVccyg8w5bEPLq3I_-gd0uLkpCEfL	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T17:28:00.151Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 17:28:03
+ln3eDu7hIr5LOKKwmBIq4A84Mqlqbamn	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T18:52:38.822Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 18:52:39
+XRSXiSNuvswBeJuiWUFJO6PDrO8Hf0TS	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T18:52:38.854Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 18:52:39
+5WlCla_1b27aHTu9RgmRJz9wp77IzUAj	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T18:52:38.917Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 18:52:39
+KW0a28LVx35lUmC_7wmhpvtIqnY5pv9A	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T21:55:59.976Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 21:56:03
+PUIY3XEiJOF1da9uNi3_jnECFTqJitjd	{"cookie":{"originalMaxAge":604799992,"expires":"2026-01-17T16:07:15.143Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":3}	2026-01-17 16:07:16
+IqbGKAkl58ppBVDyLGaux75HEaPEf1Uu	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:15:37.278Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:15:56
+pn2eNm_c6kZhIT4DFB7sQCTL_rxPHgC1	{"cookie":{"originalMaxAge":604799999,"expires":"2026-01-17T16:23:32.289Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:23:33
+ZGEmHgK_kRS3Ul3tzLuMPdZS24EJE3Zb	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:23:33.568Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:23:34
+YzVN_QFQrV6AfvlqcdFnFnRTpp6UeGbO	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:23:34.779Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:23:35
+iHV3KXG2Jh0xKef_mwv8fQmBd2HrnSAG	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:23:36.112Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:23:37
+wczr2jLFYQEEfPaZ7dzlhDIOtl8lGJa0	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:23:37.389Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:23:38
+s_FediOgQBVgWxs1uANH42RfTkYB25c4	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:23:38.601Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:23:39
+f-rrIAMI5Z8Z_ky85lxNjx0bQoN3eo_z	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:23:39.765Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:23:40
+_ynTlPFWR1rr_PRQqTSS7sjvDeWX-zsD	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:23:41.004Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:23:42
+_A8qze1Q4ogF4c-EPX2SVDLLxRWjMdfv	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:23:42.253Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:23:43
+_F2JNGtzv6Zy2mxD2qGSl_y-Xfl3uDjF	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:23:43.506Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:23:44
+DaAffWgkWCBVcGwaThKogWgaqClZlfMk	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:23:44.784Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:23:45
+Mlz1Ot2wxmoaM8gG2rMa2u2X5tu7MauE	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:23:45.973Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:23:46
+SJlBwHjgqqHpX2h8kxodf3VxHSj2XRro	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:23:47.212Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:23:48
+NnteNJ9Z5DYLcNFlG2mq5JEIoHOWFkhN	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:23:48.440Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:23:49
+Q6dZu3HTa7wj5InG6FTyIxMqQQ1dSJ-A	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:23:49.422Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:23:50
+QtjjVpBeqBvVxL7YUaaDIuKPVd8D5Na5	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:23:50.614Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:23:51
+DtAzGtMJutVR-j-m7kcYzgY0Ys5EFOhU	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:23:51.784Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:23:52
+lg7OWq8QC5LbjB9I2yyPtUeJHkm8VXWI	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:23:52.975Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:23:53
+BfrQBuQt0e9sAQ5CwapI1yf8nASUWWTe	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:23:54.162Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:23:55
+lmVvv56tWXep6H8eRK-AaqY7dbqUnTdw	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:23:55.139Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:23:56
+DDayTscOSczQgiiL22I3080bP7lQx0jb	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:23:56.359Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:23:57
+zhHzl_iGhqprF7ISIHzpQPpp0KfAYx3R	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:23:57.643Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:23:58
+OLhHOFZD2l0x1My_XOFxF3a5b5cGobLF	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:23:58.908Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:23:59
+B-5szvKKtuAGTltKXu2NaRmVtQwkIrqW	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:24:00.100Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:24:01
+gMEcVMrNvSgCd2Cmprm6bETnYo26Fq9g	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:24:01.275Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:24:02
+l_4dQDL078_FGdUQbQ4SBkiGmRWYvUXT	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:24:02.513Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:24:03
+R3jEvx3k2I2IyxOqzU4B8k8Q_26pdLw4	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:24:03.744Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:24:04
+tDuXaoGLjIkwBibFkUlJOS0us-FxJhi2	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:24:04.950Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:24:05
+jKXOgsm1RR1slZeeDIifleF2f393qaTb	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:24:06.140Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:24:07
+BmOc3X9ur4tJMDtrRY1sJ3PqSwsHPTPY	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:24:07.355Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:24:08
+By-SyAtgrDodQvgxoYwRqj7CBDQ_2rXO	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:24:08.644Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:24:09
+liTr7POutbMhN0kX2fKXpAvfyMuBUfQZ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:24:09.897Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:24:10
+yyy_AbHShnXCvaOXcl4BJ3i5YcJNdfks	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:24:11.081Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:24:12
+LiK7NpvJjXqCuwrHQBvQBA6c-l182Il3	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:24:12.265Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:24:13
+FxbWRKXKkxlO4Bfx0O3TiVGII_tBitza	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:24:13.430Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:24:14
+gLHG0D_UCsl3Y4GjSESPBzxxpYgaZ-1g	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:24:14.576Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:24:15
+zVhH1PhXD4Ay-nb2fITJfaFWY36VC6ny	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:24:15.722Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:24:16
+CrNx7h_Ck_uoz_2R3NBmCVtCDr5IFhsr	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:24:16.943Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:24:17
+L5GaipiyGiaBaS0qU1NQyZwDK_-xBL-6	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:24:18.139Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:24:19
+Z-Af-R_5oMy0-3ZfL_UxvMlqZGph4x-H	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:24:19.297Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:24:20
+-QCKCZ10aa8GAFKma6xnGpHxlyk01hum	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:24:20.456Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:24:21
+rftpl_Cji3vYBhAH4tH50BgYZ6xoLEKm	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:24:21.624Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:24:22
+51X0BD9IzNFZko2D1UBVYnub1jyVCq4g	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:24:22.832Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:24:23
+qwa2EnHgpdS1UNm7DT-0Ezu8UYMy6SSI	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:24:24.027Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:24:25
+exVC6b2dRE6I6YXvsQEXFmw892n_19VQ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:24:25.183Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:24:26
+_41DU99UE0K6PrGxXoMXUQUtwj5zF_3a	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:24:26.370Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:24:27
+5KFFbIww50qncFD3kqo8TZaWOQtB3k1p	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:24:27.542Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:24:28
+U2OdXKTEwfZSbBEeiShF9qvySrAqjms3	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:24:28.720Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:24:29
+rKlPlmtMy6RcHNJrUAwj8w7vvFBen7W8	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:24:29.890Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:24:30
+Y8ZEPzGyYg0N-zWslkEtJdGYv28BVX8G	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:24:31.130Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:24:32
+-Wdvzc0zepy8UF-PcE5sffVB2D_3D42i	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:24:32.369Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:24:33
+eOWS50vpmovOlJ7a3CGfNSvJvYTz2CB6	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:24:33.570Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:24:34
+HBpyvsvB8Ku3nDUHzX8AK7UM9tbe7co-	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:24:34.790Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:24:35
+8ISvefemrDVnnjXaeUJwqcpkGbDh10IH	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:24:35.971Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:24:36
+oSzmFn9eF1NugBlAnA56p3oP4NQGCvGs	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:24:37.159Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:24:38
+BvKLw11-GlIMpr6MUeWeUGr8khZ8B5yX	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:24:38.329Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:24:39
+VdJ5s9PJhXmlo127_DSgDqAyPSjglbND	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:24:39.490Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:24:40
+o9XLDSRX6R_XsDHSVN21zFKUbmfJAbJB	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:24:40.692Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:24:41
+95D1yDDRR-jnHsqZmjlvb6Ce1Fh2NMmN	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:24:41.903Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:24:42
+pPVrkRPKnKcI6FkE-nuF_JubQq0Mfmhr	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:24:43.082Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:24:44
+x2CMIASMGkdZt52b4ovcdt0GucB_t5zE	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:24:44.262Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:24:45
+ieVZaUBO3RNyOtC_rNS-oMWLZrUQB5dO	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:24:45.454Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:24:46
+CzJxcgdhI2uJ0U0AstpmmMvMWuNXSwJO	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:24:46.617Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:24:47
+MEmE0zwsEP0g_bqp_nbOooVfHsm0Bc2r	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:24:47.784Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:24:48
+dBRXiyZH_iHzf6Qve8IVw0mvNVQ3-j2W	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:24:48.954Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:24:49
+Xqx1REP7Vv0HKZEE7ylhBRS0dMs_58eX	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:24:50.174Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:24:51
+IDRQLwEWJOcillfP7yovHwlI2KwEzYua	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:24:51.427Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:24:52
+zN1TgbHBG7GChgbpYs3NXMsBDEXn8TOf	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:24:52.647Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:24:53
+v_jehLAaPuUEx_6J0v27__UOpq6DVzVA	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:24:53.833Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:24:54
+DcsLWvDeAFSwvUjA-VidjxcDTU8vLlMa	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:24:55.066Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:24:56
+M5w48t0kcXemzLk4yoSiDVYtoeeMIbfJ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:24:56.267Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:24:57
+8aHhWSIjFlLTTtdvU8DnpiJEhmNTdQHq	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:24:57.426Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:24:58
+TUijNRQgj8jiTOTfkzM6OBfYkEo1QvwS	{"cookie":{"originalMaxAge":604799999,"expires":"2026-01-17T16:24:58.587Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:24:59
+EJaASP067C6IQK1CKDhiK2jam7TKEZnV	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:24:59.753Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:25:00
+SYqarngYbuBiKADOkhb0C4sKPwR1OSC6	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:25:00.679Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:25:01
+spZGqo7CePRUw5JCPXgioJ8cheaWqCBf	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:25:01.947Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:25:02
+Guae3XmL7j-hiwa3Z0iI1_GSLHyDwGaY	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:25:03.153Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:25:04
+Ismj4Lu6X2us7ioX54U5JFzDiyPTs8ma	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:25:04.361Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:25:05
+ry7hSBRZcf3kd07cyHUuvB1APSB6ZQ1L	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:25:05.552Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:25:06
+TolLpE3mcVUat51_fzLxdzoMyTtau4Bt	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:25:06.775Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:25:07
+XAqciTpbI87hXmZ5YAxQuZVTyTpUmVP7	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:25:07.966Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:25:08
+L0fXLf895G7L-6qiJRpd0wKutRiuF4Lq	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:25:09.174Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:25:10
+Q5MXyE6eP-g5YAVx11WGjj5SlJZdISTJ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:25:10.366Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:25:11
+B0FMOTFXFm1lIJ4AhEHR5dzpaxqrjG0D	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:25:11.563Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:25:12
+HnqA9dKHorMqBdTLfwp_PEpduM_qdRv5	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:25:12.753Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:25:13
+xCocOfc59MduozR5-jdk1MGdevvQ1XX0	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:25:13.916Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:25:14
+6RbKuJxYvGUn7XoxbtqFXosnkiSf3S4Y	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:25:15.095Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:25:16
+y9a3yUu9pdPAAVcLchOHvsZ8M-ViqJly	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:25:16.270Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:25:17
+hVhSstQscGuK9o5njn_3EJuV8bjBGp-X	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:25:17.445Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:25:18
+sP1uWvUhJHqo7nNyIZlKwIh9-oWEIveC	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:25:18.697Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:25:19
+1jf1SrPUJQ3CpvYyQuocpv3Mk8uoNiWi	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:25:19.912Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:25:20
+PhC4ztOv9XQuJ_5sA2sQadv-cdMLTiLg	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:25:20.894Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:25:21
+Xo8VgZ3zpOpr5B_Af4RqI_JYYm3BVpZ-	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:25:22.109Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:25:23
+mU-jOJ3aLtWh5sWEKFJ9LQJezLFF5pZH	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:25:23.325Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:25:24
+EMkGOnWQgJo2nCWe6fs2SA2pAPnRfHn3	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:25:24.269Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:25:25
+5m2IeaA2USricqg8fdhkxHsAWdg2JNY3	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:25:25.490Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:25:26
+wysJx3ac-7j-gvfO2HO2YPSwuKbLi7Os	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:25:26.669Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:25:27
+X2WD8CsXiyWSPy-u75Vrd7pfZD--FBUv	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:25:27.831Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:25:28
+ysEe3zQEo_9fUXaX_o9B-65WyfYdQJzY	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:25:28.999Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:25:29
+stO22ZB95wXX5Q2gXot9fY6mzzlOMMSf	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:25:30.174Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:25:31
+8b1f8trQ15nwYWS5LxLf6gSjnf7CQK-y	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:25:31.343Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:25:32
+2DgPzLiquU8ecGoeI5UJWX0bUlXQNaAP	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:25:32.521Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:25:33
+oS030hkFseLievg2J7BcOy_6VAXeGeGp	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:25:33.683Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:25:34
+jvnaUxjjVZ_BEMwHd-QZy_96GDDtLJYA	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:25:34.887Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:25:35
+wgyyqMclfSgxq_9Z9mwEUnkXCQmMw2Mh	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:25:36.059Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:25:37
+ycq-oyf0xZSuuPH5KkNdZLI1iAoESvUt	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:25:37.231Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:25:38
+VLDxhfLNM1OITQko_yr8jtWp6Z5odROP	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:25:38.390Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:25:39
+ZxZ6duRya1Rrd2kEZxHOmIGHZi2nfmsb	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:25:39.621Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:25:40
+68qqczhBEirFI4lFft06-fZu5yCkRxid	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:25:40.858Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:25:41
+ME-vsMMzZQfcBtuzOKzPBy6zb_nFW0ab	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:25:42.117Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:25:43
+S9GNdaxDAIO46OUioAAH9NPgCxbjanYT	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:25:43.359Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:25:44
+0E26T1WFUEXhC01Il0SOOLtJyKRlStXE	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:25:44.587Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:25:45
+nUlHOUvxWPoLYmkSjlEkCWBy6x4i8xsk	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:25:45.837Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:25:46
+ctApO3QxOSONkIWis-b6VMzCKyfyP8-g	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:25:47.038Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:25:48
+cTOZ4dygFye3aIhbxmWI_dTOvDLlR_ff	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:25:48.237Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:25:49
+dUxCMfLlCGKCnuCiGpIcaASEbmdDyz5P	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:25:49.480Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:25:50
+pQ-fIy3pM46cn1qv4dp6oReqzx5tqlpA	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:25:50.720Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:25:51
+CtqI2iCLG7nOlNXtA_fotLj1t2AII39j	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:25:51.957Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:25:52
+NincyUjXq0OqeAh-DgngcIdAgfThvp4k	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:25:53.320Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:25:54
+4aZlZVpJpTBOeDzsrtkqSW5bl-3JqZuN	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:25:54.505Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:25:55
+YrnHZOx-INuy9tkuJDrUQH8USGh1hFGE	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:25:55.682Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:25:56
+nSjXyyaom1Pv-beynLXS1DFP0fQmIYEu	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:25:56.892Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:25:57
+Y2ovDlcj-7Ko-3gAPkPEXwSGs-TWLGwV	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:25:58.110Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:25:59
+rgzgGFOwQhXg2veMjMfCZDgatX-4rF4m	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:25:59.381Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:26:00
+dmNYWHyO_DdECs_GHyqO5227IXaSBa8D	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:26:00.595Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:26:01
+rJkmmG2nyY4HM-9_rDB_UIEbTMJJdLLb	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:26:01.776Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:26:02
+JM59LyFToS8Jrp-3P_zchG1mU91Q7UbH	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:26:02.989Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:26:03
+Vgr7T6Py1DcHu1XVeE0eGfIw840Of11l	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:26:04.213Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:26:05
+Ww2UjZxNmH5WXUCQEBBmbTtkb8UdOy4c	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:26:05.460Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:26:06
+Rhc6yfYDEe2Zxqq7JcNeQEn1UFzjx0C2	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:26:06.674Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:26:07
+c8jAU4AMqL9O-5HPdPAXFndguy-7uHCt	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:26:07.879Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:26:08
+EYAAHoTFyS2zASv8Y6pdNkCX1AmATe6i	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:26:09.086Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:26:10
+gM1osRJ8e8P0G30a_ycbdaVXzweBUBIt	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:26:10.297Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:26:11
+uIgwnPJE95XccnKSnkkvMrLdaT9U1S4c	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:26:11.481Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:26:12
+LK4mkbJWSHw98iuRQBJFGEe0c4ZqVATb	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:26:12.652Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:26:13
+JvvMosnipjoXnwuorbwZOhSZocZnUZMW	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:26:13.832Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:26:14
+WKzwFsLl9gwngZmacFRZOfbrkrJnNr-r	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:26:15.002Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:26:16
+qq8Fng9TZOjheeZAIbi6NkvPJHDFupoF	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:26:16.247Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:26:17
+Z-NR_d_I96qBG64561HrmhtIRGHrRg32	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:26:17.461Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:26:18
+gxLIkNqhJ8v5yPrDOOwYhWfcDkv4rA8_	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:26:18.694Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:26:19
+Uxs5NZHEyy2Yu4uP11WAhveOM5wc2cXj	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:26:19.885Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:26:20
+yYTavfvCyW4o89Iz_ahbAIYiaiZY0UEq	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:26:21.047Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:26:22
+OzoSuPIz6-iETy-y3zI304KAF7zpUzNY	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:26:22.196Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:26:23
+5AFngZ98e1RJkx9_uE1Z8sAEvqWJ0Hy8	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:26:23.363Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:26:24
+YgisBFNMh4q2ARHQO0T2vjyxQNzNWj1w	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:26:24.522Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:26:25
+wZ1PoqsMsva_Cc8sq_yfPH_jM6vD1-NM	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:26:25.691Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:26:26
+tVeyJVNi9I-89dpCBIPvz4BELw05pKZg	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:26:26.860Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:26:27
+qL5WHt31WSh4da9r6MANHjLoDiJ9br0_	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:26:28.033Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:26:29
+PpSKowSYJ5sKIK79eIVJFc4cVJzCpK9C	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:26:29.201Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:26:30
+-QyzWqo2oYQ0f7OlLOvL4tg1UyIdRH2a	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:26:30.387Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:26:31
+DH-4MpZI3-3Nhuq62lSrjridwYRkbRxE	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:26:31.603Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:26:32
+wn7lb9NXdSdLQdn9sqEdtZctAyS1zKO0	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:26:32.802Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:26:33
+OM7UDlLlIYlwyVJNcZKVFcCgNex-hdns	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:26:33.974Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:26:34
+Aybwm43dL9GbquTi3xOEjynbV_aENjEV	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:26:35.183Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:26:36
+5itebjxBh3vbaP9GTYvaUxAxUu6ijt3g	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:26:36.397Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:26:37
+vYaHxFOGIc9WOW5LemUdDWK7LLrTSqhn	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:26:37.556Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:26:38
+L1GrUefeui00MWAC-aLqe8L1Ju_BgsS_	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:26:38.726Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:26:39
+Fq1gFqsHc9MePQXDWBXpAm_agRfbXTab	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:26:39.884Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:26:40
+_YwJCwgjjvRsRuAZgswts59x6ip_GbqY	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:26:40.857Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:26:41
+Q_vyLGddKx_ggEwOidL9SHdIXqejhGrt	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:26:41.854Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:26:42
+F2puZnCW64-sv6DPMScnXXMFIzuKfKiN	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T18:38:14.739Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 18:52:51
+JDzVi7LtcQ1WGc9ie-IgwzwbICM2Z27k	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T03:08:21.049Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 20:17:22
+NXeTUZc0MebS5rGl9R6NBjunGl8WmU8y	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T20:52:21.702Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 20:52:22
+ViKu2fKdSHhzdenTbRGmrRBkMa_zmDNc	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T20:52:22.573Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 20:52:49
+ntxI_fhcKRK-IUd9PmRaVOTb7NRfZMj8	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T22:07:30.622Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 22:07:31
+tBDJKi_S9A2PYlyeWVv-ekf5P-v7cYtj	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T22:11:23.672Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 22:11:24
+hZmHHWuaQyYQ0U82t_QcxwLMXlNbZVi1	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T22:25:15.629Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 22:25:16
+qrGTlCzkFIWpBYzeBZSIEie1D6LqtE5j	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T22:25:15.987Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 22:25:16
+TthvLclBs3svB7belqFrMkenRCMWlxjk	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-16T06:20:53.194Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1,"isDeveloper":true,"developerId":2,"developerUsername":"ferram_dev","userId":2,"user":{"id":2,"email":"fegarcia@hotmail.com","nombre":"Fernando","apellido":"Garcia","rol":"superadmin","tipo":"admin","adminSource":"admin","tenant_id":1}}	2026-01-17 22:43:44
+rcoh0_W3n9iNn-LScXC_ILizqm0L6NuK	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T20:00:37.116Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 20:00:38
+t9VXo1P6phnGmCPw8J3x6XKGT-LMjhL4	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T21:29:11.905Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 21:29:12
+2TwZ1coFir8J35Qqvh2Qp6_JEyYX4xfT	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T21:29:12.176Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 21:29:13
+MiyIia7pqhLLd437lDysclmsCIyy9W1s	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T21:29:12.568Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 21:29:13
+Nhiw0nrIQ1cAzK4Z60O2t5BlMLu5sXcQ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T21:29:12.847Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 21:29:13
+-cdRbWYyD883pwiQJ0Gac6bJ5CIDbEDu	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T22:08:37.793Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 22:08:38
+ZGVpz9tiIB21z-WnYmDH5Wt6ZgMSedMp	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T22:08:52.447Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 22:08:53
+05C27H5lj-6fLkVjcXI5867jwKsO-_PD	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T22:12:37.383Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 22:12:38
+qFdDXGK-wKSHfYc_1xeoIkJtllOWeDO_	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T22:12:37.473Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 22:12:38
+zKw1y3rjYspaMFh4Arls-lF-X6G4kQ54	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T22:43:42.018Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":3}	2026-01-17 22:43:43
+j0yVoOAcwbfjBDVqAg6cVN_xbSOQVqhF	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:57:00.223Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1,"userId":2,"user":{"id":2,"email":"fegarcia@hotmail.com","nombre":"Fernando","apellido":"Garcia","rol":"superadmin","tipo":"admin","adminSource":"admin","tenant_id":1}}	2026-01-17 17:11:44
+YCfbXiw-3HjUiHZ2ye1WsicgwiXX5uzh	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T16:59:17.710Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 16:59:41
+YZ7GcxYwK0uMaQ0Xh_vI8PNlcG93BoYZ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T18:44:13.809Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 18:44:16
+IEjRATsvP8uDY9PmTyB8BXGEEGR5KuMr	{"cookie":{"originalMaxAge":604800000,"expires":"2026-01-17T19:31:21.722Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-01-17 19:31:23
 \.
 
 
 --
--- TOC entry 5019 (class 0 OID 25311)
+-- TOC entry 5123 (class 0 OID 25311)
 -- Dependencies: 301
 -- Data for Name: solicitudes_credito; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -6300,11 +7125,12 @@ COPY public.solicitudes_credito (solicitud_id, cliente_id, monto_solicitado, mot
 3	13	4000.00	Crédito para compras dentro de la tienda	APROBADO	2026-01-10 01:58:06.839175	\N	1	20000.00	15
 4	14	9000.00	Para compras en tienda	APROBADO	2026-01-10 03:11:58.208317	\N	1	20000.00	30
 5	5	20000.00	Para tener productos nuevos en existencia e inventario suficiente en mi negocio.	APROBADO	2026-01-10 04:15:08.783127	\N	1	35000.00	30
+6	11	5000.00	Xxxx	APROBADO	2026-01-10 19:57:48.857523	\N	1	30000.00	15
 \.
 
 
 --
--- TOC entry 5036 (class 0 OID 26144)
+-- TOC entry 5140 (class 0 OID 26144)
 -- Dependencies: 319
 -- Data for Name: tenants; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -6318,7 +7144,7 @@ COPY public.tenants (tenant_id, nombre_cliente, dominio, is_active, created_at, 
 
 
 --
--- TOC entry 5021 (class 0 OID 25319)
+-- TOC entry 5125 (class 0 OID 25319)
 -- Dependencies: 303
 -- Data for Name: tipoproducto; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -6330,33 +7156,31 @@ COPY public.tipoproducto (tipoproductoid, nombre, descripcion, activo, fechacrea
 4	Cuadernos	\N	t	2025-12-12 18:57:10.106707	1
 5	Sobre	\N	t	2026-01-09 06:05:03.199575	1
 6	Sobres	\N	t	2026-01-09 06:05:20.334008	1
-7	Bolsas	\N	t	2026-01-10 00:28:38.534204	1
-8	7	\N	t	2026-01-10 00:29:39.16653	1
 \.
 
 
 --
--- TOC entry 5023 (class 0 OID 25327)
+-- TOC entry 5127 (class 0 OID 25327)
 -- Dependencies: 305
 -- Data for Name: toma_inventario_conteos; Type: TABLE DATA; Schema: public; Owner: ferram
 --
 
-COPY public.toma_inventario_conteos (conteoid, sesionid, varianteid, conteo_a, usuario_a_id, conteo_b, usuario_b_id, cantidad_final, estatus_fila, estatus_aplicacion) FROM stdin;
+COPY public.toma_inventario_conteos (conteoid, sesionid, varianteid, conteo_a, usuario_a_id, conteo_b, usuario_b_id, cantidad_final, estatus_fila, estatus_aplicacion, tenant_id) FROM stdin;
 \.
 
 
 --
--- TOC entry 5025 (class 0 OID 25334)
+-- TOC entry 5129 (class 0 OID 25334)
 -- Dependencies: 307
 -- Data for Name: toma_inventario_sesiones; Type: TABLE DATA; Schema: public; Owner: ferram
 --
 
-COPY public.toma_inventario_sesiones (sesionid, nombre, fechainicio, fechacierre, estatus, usuario_creador_id) FROM stdin;
+COPY public.toma_inventario_sesiones (sesionid, nombre, fechainicio, fechacierre, estatus, usuario_creador_id, tenant_id) FROM stdin;
 \.
 
 
 --
--- TOC entry 5223 (class 0 OID 0)
+-- TOC entry 5349 (class 0 OID 0)
 -- Dependencies: 221
 -- Name: jobid_seq; Type: SEQUENCE SET; Schema: cron; Owner: azuresu
 --
@@ -6365,7 +7189,7 @@ SELECT pg_catalog.setval('cron.jobid_seq', 1, true);
 
 
 --
--- TOC entry 5224 (class 0 OID 0)
+-- TOC entry 5350 (class 0 OID 0)
 -- Dependencies: 223
 -- Name: runid_seq; Type: SEQUENCE SET; Schema: cron; Owner: azuresu
 --
@@ -6374,7 +7198,7 @@ SELECT pg_catalog.setval('cron.runid_seq', 1, false);
 
 
 --
--- TOC entry 5225 (class 0 OID 0)
+-- TOC entry 5351 (class 0 OID 0)
 -- Dependencies: 226
 -- Name: administradores_adminid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -6383,7 +7207,7 @@ SELECT pg_catalog.setval('public.administradores_adminid_seq', 8, true);
 
 
 --
--- TOC entry 5226 (class 0 OID 0)
+-- TOC entry 5352 (class 0 OID 0)
 -- Dependencies: 228
 -- Name: agentesdeventas_agenteid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -6392,7 +7216,7 @@ SELECT pg_catalog.setval('public.agentesdeventas_agenteid_seq', 3, true);
 
 
 --
--- TOC entry 5227 (class 0 OID 0)
+-- TOC entry 5353 (class 0 OID 0)
 -- Dependencies: 230
 -- Name: carritodecompra_carritoid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -6401,7 +7225,7 @@ SELECT pg_catalog.setval('public.carritodecompra_carritoid_seq', 11, true);
 
 
 --
--- TOC entry 5228 (class 0 OID 0)
+-- TOC entry 5354 (class 0 OID 0)
 -- Dependencies: 232
 -- Name: cat_cxp_etiquetas_etiqueta_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -6410,7 +7234,7 @@ SELECT pg_catalog.setval('public.cat_cxp_etiquetas_etiqueta_id_seq', 1, false);
 
 
 --
--- TOC entry 5229 (class 0 OID 0)
+-- TOC entry 5355 (class 0 OID 0)
 -- Dependencies: 234
 -- Name: cat_tamanopaquetes_tamanoid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -6419,7 +7243,7 @@ SELECT pg_catalog.setval('public.cat_tamanopaquetes_tamanoid_seq', 6, true);
 
 
 --
--- TOC entry 5230 (class 0 OID 0)
+-- TOC entry 5356 (class 0 OID 0)
 -- Dependencies: 236
 -- Name: categorias_categoriaid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -6428,16 +7252,16 @@ SELECT pg_catalog.setval('public.categorias_categoriaid_seq', 4, true);
 
 
 --
--- TOC entry 5231 (class 0 OID 0)
+-- TOC entry 5357 (class 0 OID 0)
 -- Dependencies: 238
 -- Name: cliente_creditos_credito_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.cliente_creditos_credito_id_seq', 4, true);
+SELECT pg_catalog.setval('public.cliente_creditos_credito_id_seq', 5, true);
 
 
 --
--- TOC entry 5232 (class 0 OID 0)
+-- TOC entry 5358 (class 0 OID 0)
 -- Dependencies: 240
 -- Name: cliente_direcciones_direccionid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -6446,7 +7270,7 @@ SELECT pg_catalog.setval('public.cliente_direcciones_direccionid_seq', 5, true);
 
 
 --
--- TOC entry 5233 (class 0 OID 0)
+-- TOC entry 5359 (class 0 OID 0)
 -- Dependencies: 242
 -- Name: clientes_clienteid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -6455,25 +7279,25 @@ SELECT pg_catalog.setval('public.clientes_clienteid_seq', 15, true);
 
 
 --
--- TOC entry 5234 (class 0 OID 0)
+-- TOC entry 5360 (class 0 OID 0)
 -- Dependencies: 244
 -- Name: comisiones_comisionid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.comisiones_comisionid_seq', 2, true);
+SELECT pg_catalog.setval('public.comisiones_comisionid_seq', 3, true);
 
 
 --
--- TOC entry 5235 (class 0 OID 0)
+-- TOC entry 5361 (class 0 OID 0)
 -- Dependencies: 246
 -- Name: communicationlogs_logid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.communicationlogs_logid_seq', 14, true);
+SELECT pg_catalog.setval('public.communicationlogs_logid_seq', 16, true);
 
 
 --
--- TOC entry 5236 (class 0 OID 0)
+-- TOC entry 5362 (class 0 OID 0)
 -- Dependencies: 248
 -- Name: control_cambios_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -6482,16 +7306,16 @@ SELECT pg_catalog.setval('public.control_cambios_id_seq', 267, true);
 
 
 --
--- TOC entry 5237 (class 0 OID 0)
+-- TOC entry 5363 (class 0 OID 0)
 -- Dependencies: 250
 -- Name: credito_movimientos_movimiento_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.credito_movimientos_movimiento_id_seq', 3, true);
+SELECT pg_catalog.setval('public.credito_movimientos_movimiento_id_seq', 4, true);
 
 
 --
--- TOC entry 5238 (class 0 OID 0)
+-- TOC entry 5364 (class 0 OID 0)
 -- Dependencies: 252
 -- Name: cuentas_por_cobrar_cxcid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -6500,7 +7324,7 @@ SELECT pg_catalog.setval('public.cuentas_por_cobrar_cxcid_seq', 1, false);
 
 
 --
--- TOC entry 5239 (class 0 OID 0)
+-- TOC entry 5365 (class 0 OID 0)
 -- Dependencies: 254
 -- Name: cuentas_por_pagar_cxp_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -6509,7 +7333,7 @@ SELECT pg_catalog.setval('public.cuentas_por_pagar_cxp_id_seq', 1, false);
 
 
 --
--- TOC entry 5240 (class 0 OID 0)
+-- TOC entry 5366 (class 0 OID 0)
 -- Dependencies: 312
 -- Name: cupones_cuponid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -6518,7 +7342,7 @@ SELECT pg_catalog.setval('public.cupones_cuponid_seq', 1, false);
 
 
 --
--- TOC entry 5241 (class 0 OID 0)
+-- TOC entry 5367 (class 0 OID 0)
 -- Dependencies: 256
 -- Name: cxp_etiquetas_asignadas_asignacion_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -6527,7 +7351,7 @@ SELECT pg_catalog.setval('public.cxp_etiquetas_asignadas_asignacion_id_seq', 1, 
 
 
 --
--- TOC entry 5242 (class 0 OID 0)
+-- TOC entry 5368 (class 0 OID 0)
 -- Dependencies: 258
 -- Name: datos_bancarios_empresa_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -6536,25 +7360,34 @@ SELECT pg_catalog.setval('public.datos_bancarios_empresa_id_seq', 2, true);
 
 
 --
--- TOC entry 5243 (class 0 OID 0)
+-- TOC entry 5369 (class 0 OID 0)
+-- Dependencies: 326
+-- Name: detalles_remision_detalle_remision_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
+--
+
+SELECT pg_catalog.setval('public.detalles_remision_detalle_remision_id_seq', 1, false);
+
+
+--
+-- TOC entry 5370 (class 0 OID 0)
 -- Dependencies: 260
 -- Name: detallesdelpedido_detalleid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.detallesdelpedido_detalleid_seq', 24, true);
+SELECT pg_catalog.setval('public.detallesdelpedido_detalleid_seq', 30, true);
 
 
 --
--- TOC entry 5244 (class 0 OID 0)
+-- TOC entry 5371 (class 0 OID 0)
 -- Dependencies: 262
 -- Name: detallesordencompra_detalleoc_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.detallesordencompra_detalleoc_id_seq', 141, true);
+SELECT pg_catalog.setval('public.detallesordencompra_detalleoc_id_seq', 147, true);
 
 
 --
--- TOC entry 5245 (class 0 OID 0)
+-- TOC entry 5372 (class 0 OID 0)
 -- Dependencies: 320
 -- Name: developers_dev_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -6563,7 +7396,7 @@ SELECT pg_catalog.setval('public.developers_dev_id_seq', 2, true);
 
 
 --
--- TOC entry 5246 (class 0 OID 0)
+-- TOC entry 5373 (class 0 OID 0)
 -- Dependencies: 266
 -- Name: estados_estadoid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -6572,7 +7405,7 @@ SELECT pg_catalog.setval('public.estados_estadoid_seq', 32, true);
 
 
 --
--- TOC entry 5247 (class 0 OID 0)
+-- TOC entry 5374 (class 0 OID 0)
 -- Dependencies: 314
 -- Name: inventarios_admin_inventario_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -6581,16 +7414,16 @@ SELECT pg_catalog.setval('public.inventarios_admin_inventario_id_seq', 1, false)
 
 
 --
--- TOC entry 5248 (class 0 OID 0)
+-- TOC entry 5375 (class 0 OID 0)
 -- Dependencies: 268
 -- Name: itemsdelcarrito_itemid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.itemsdelcarrito_itemid_seq', 80, true);
+SELECT pg_catalog.setval('public.itemsdelcarrito_itemid_seq', 85, true);
 
 
 --
--- TOC entry 5249 (class 0 OID 0)
+-- TOC entry 5376 (class 0 OID 0)
 -- Dependencies: 316
 -- Name: landing_page_config_config_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -6599,7 +7432,7 @@ SELECT pg_catalog.setval('public.landing_page_config_config_id_seq', 60, true);
 
 
 --
--- TOC entry 5250 (class 0 OID 0)
+-- TOC entry 5377 (class 0 OID 0)
 -- Dependencies: 270
 -- Name: log_eventosusuario_eventoid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -6608,7 +7441,7 @@ SELECT pg_catalog.setval('public.log_eventosusuario_eventoid_seq', 1, false);
 
 
 --
--- TOC entry 5251 (class 0 OID 0)
+-- TOC entry 5378 (class 0 OID 0)
 -- Dependencies: 272
 -- Name: log_inventario_logid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -6617,16 +7450,16 @@ SELECT pg_catalog.setval('public.log_inventario_logid_seq', 1, false);
 
 
 --
--- TOC entry 5252 (class 0 OID 0)
+-- TOC entry 5379 (class 0 OID 0)
 -- Dependencies: 274
 -- Name: log_movimientos_logid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.log_movimientos_logid_seq', 351, true);
+SELECT pg_catalog.setval('public.log_movimientos_logid_seq', 356, true);
 
 
 --
--- TOC entry 5253 (class 0 OID 0)
+-- TOC entry 5380 (class 0 OID 0)
 -- Dependencies: 276
 -- Name: medidas_medidaid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -6635,7 +7468,7 @@ SELECT pg_catalog.setval('public.medidas_medidaid_seq', 1, false);
 
 
 --
--- TOC entry 5254 (class 0 OID 0)
+-- TOC entry 5381 (class 0 OID 0)
 -- Dependencies: 277
 -- Name: notificaciones_notificacionid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -6644,16 +7477,16 @@ SELECT pg_catalog.setval('public.notificaciones_notificacionid_seq', 130, true);
 
 
 --
--- TOC entry 5255 (class 0 OID 0)
+-- TOC entry 5382 (class 0 OID 0)
 -- Dependencies: 279
 -- Name: ordenesdecompra_ordencompraid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.ordenesdecompra_ordencompraid_seq', 9, true);
+SELECT pg_catalog.setval('public.ordenesdecompra_ordencompraid_seq', 10, true);
 
 
 --
--- TOC entry 5256 (class 0 OID 0)
+-- TOC entry 5383 (class 0 OID 0)
 -- Dependencies: 281
 -- Name: pagos_clientes_pago_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -6662,7 +7495,7 @@ SELECT pg_catalog.setval('public.pagos_clientes_pago_id_seq', 1, false);
 
 
 --
--- TOC entry 5257 (class 0 OID 0)
+-- TOC entry 5384 (class 0 OID 0)
 -- Dependencies: 283
 -- Name: pagos_cxp_pago_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -6671,7 +7504,7 @@ SELECT pg_catalog.setval('public.pagos_cxp_pago_id_seq', 1, false);
 
 
 --
--- TOC entry 5258 (class 0 OID 0)
+-- TOC entry 5385 (class 0 OID 0)
 -- Dependencies: 285
 -- Name: passwordresettokens_tokenid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -6680,16 +7513,16 @@ SELECT pg_catalog.setval('public.passwordresettokens_tokenid_seq', 6, true);
 
 
 --
--- TOC entry 5259 (class 0 OID 0)
+-- TOC entry 5386 (class 0 OID 0)
 -- Dependencies: 287
 -- Name: pedidos_pedidoid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.pedidos_pedidoid_seq', 3, true);
+SELECT pg_catalog.setval('public.pedidos_pedidoid_seq', 4, true);
 
 
 --
--- TOC entry 5260 (class 0 OID 0)
+-- TOC entry 5387 (class 0 OID 0)
 -- Dependencies: 310
 -- Name: producto_imagenes_color_imagencolorid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -6698,7 +7531,7 @@ SELECT pg_catalog.setval('public.producto_imagenes_color_imagencolorid_seq', 1, 
 
 
 --
--- TOC entry 5261 (class 0 OID 0)
+-- TOC entry 5388 (class 0 OID 0)
 -- Dependencies: 289
 -- Name: producto_imagenes_imagenid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -6707,7 +7540,7 @@ SELECT pg_catalog.setval('public.producto_imagenes_imagenid_seq', 339, true);
 
 
 --
--- TOC entry 5262 (class 0 OID 0)
+-- TOC entry 5389 (class 0 OID 0)
 -- Dependencies: 292
 -- Name: producto_variante_imagenes_imagenid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -6716,7 +7549,7 @@ SELECT pg_catalog.setval('public.producto_variante_imagenes_imagenid_seq', 170, 
 
 
 --
--- TOC entry 5263 (class 0 OID 0)
+-- TOC entry 5390 (class 0 OID 0)
 -- Dependencies: 294
 -- Name: producto_variantes_varianteid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -6725,7 +7558,7 @@ SELECT pg_catalog.setval('public.producto_variantes_varianteid_seq', 257, true);
 
 
 --
--- TOC entry 5264 (class 0 OID 0)
+-- TOC entry 5391 (class 0 OID 0)
 -- Dependencies: 296
 -- Name: productos_productoid_seq1; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -6734,7 +7567,7 @@ SELECT pg_catalog.setval('public.productos_productoid_seq1', 71, true);
 
 
 --
--- TOC entry 5265 (class 0 OID 0)
+-- TOC entry 5392 (class 0 OID 0)
 -- Dependencies: 298
 -- Name: proveedor_reglas_empaque_reglaid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -6743,7 +7576,7 @@ SELECT pg_catalog.setval('public.proveedor_reglas_empaque_reglaid_seq', 10, true
 
 
 --
--- TOC entry 5266 (class 0 OID 0)
+-- TOC entry 5393 (class 0 OID 0)
 -- Dependencies: 300
 -- Name: proveedores_proveedorid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -6752,16 +7585,25 @@ SELECT pg_catalog.setval('public.proveedores_proveedorid_seq', 4, true);
 
 
 --
--- TOC entry 5267 (class 0 OID 0)
+-- TOC entry 5394 (class 0 OID 0)
+-- Dependencies: 324
+-- Name: remisiones_remision_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
+--
+
+SELECT pg_catalog.setval('public.remisiones_remision_id_seq', 1, false);
+
+
+--
+-- TOC entry 5395 (class 0 OID 0)
 -- Dependencies: 302
 -- Name: solicitudes_credito_solicitud_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.solicitudes_credito_solicitud_id_seq', 5, true);
+SELECT pg_catalog.setval('public.solicitudes_credito_solicitud_id_seq', 6, true);
 
 
 --
--- TOC entry 5268 (class 0 OID 0)
+-- TOC entry 5396 (class 0 OID 0)
 -- Dependencies: 318
 -- Name: tenants_tenant_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -6770,7 +7612,7 @@ SELECT pg_catalog.setval('public.tenants_tenant_id_seq', 5, true);
 
 
 --
--- TOC entry 5269 (class 0 OID 0)
+-- TOC entry 5397 (class 0 OID 0)
 -- Dependencies: 304
 -- Name: tipoproducto_tipoproductoid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -6779,7 +7621,7 @@ SELECT pg_catalog.setval('public.tipoproducto_tipoproductoid_seq', 8, true);
 
 
 --
--- TOC entry 5270 (class 0 OID 0)
+-- TOC entry 5398 (class 0 OID 0)
 -- Dependencies: 306
 -- Name: toma_inventario_conteos_conteoid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -6788,7 +7630,7 @@ SELECT pg_catalog.setval('public.toma_inventario_conteos_conteoid_seq', 1, false
 
 
 --
--- TOC entry 5271 (class 0 OID 0)
+-- TOC entry 5399 (class 0 OID 0)
 -- Dependencies: 308
 -- Name: toma_inventario_sesiones_sesionid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -6797,7 +7639,7 @@ SELECT pg_catalog.setval('public.toma_inventario_sesiones_sesionid_seq', 1, fals
 
 
 --
--- TOC entry 4461 (class 2606 OID 25389)
+-- TOC entry 4510 (class 2606 OID 25389)
 -- Name: administradores administradores_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6806,7 +7648,7 @@ ALTER TABLE ONLY public.administradores
 
 
 --
--- TOC entry 4466 (class 2606 OID 25395)
+-- TOC entry 4515 (class 2606 OID 25395)
 -- Name: agentesdeventas agentesdeventas_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6815,7 +7657,7 @@ ALTER TABLE ONLY public.agentesdeventas
 
 
 --
--- TOC entry 4468 (class 2606 OID 26523)
+-- TOC entry 4517 (class 2606 OID 26523)
 -- Name: agentesdeventas agentesdeventas_telefono_key; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6824,7 +7666,7 @@ ALTER TABLE ONLY public.agentesdeventas
 
 
 --
--- TOC entry 4476 (class 2606 OID 25397)
+-- TOC entry 4525 (class 2606 OID 25397)
 -- Name: carritodecompra carritodecompra_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6833,7 +7675,7 @@ ALTER TABLE ONLY public.carritodecompra
 
 
 --
--- TOC entry 4478 (class 2606 OID 25399)
+-- TOC entry 4528 (class 2606 OID 25399)
 -- Name: cat_cxp_etiquetas cat_cxp_etiquetas_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6842,7 +7684,7 @@ ALTER TABLE ONLY public.cat_cxp_etiquetas
 
 
 --
--- TOC entry 4481 (class 2606 OID 25403)
+-- TOC entry 4531 (class 2606 OID 25403)
 -- Name: cat_tamanopaquetes cat_tamanopaquetes_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6851,7 +7693,7 @@ ALTER TABLE ONLY public.cat_tamanopaquetes
 
 
 --
--- TOC entry 4486 (class 2606 OID 25405)
+-- TOC entry 4536 (class 2606 OID 25405)
 -- Name: categorias categorias_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6860,7 +7702,7 @@ ALTER TABLE ONLY public.categorias
 
 
 --
--- TOC entry 4490 (class 2606 OID 25407)
+-- TOC entry 4540 (class 2606 OID 25407)
 -- Name: cliente_creditos cliente_creditos_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6869,7 +7711,7 @@ ALTER TABLE ONLY public.cliente_creditos
 
 
 --
--- TOC entry 4495 (class 2606 OID 25409)
+-- TOC entry 4545 (class 2606 OID 25409)
 -- Name: cliente_direcciones cliente_direcciones_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6878,7 +7720,7 @@ ALTER TABLE ONLY public.cliente_direcciones
 
 
 --
--- TOC entry 4498 (class 2606 OID 25415)
+-- TOC entry 4548 (class 2606 OID 25415)
 -- Name: clientes clientes_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6887,7 +7729,7 @@ ALTER TABLE ONLY public.clientes
 
 
 --
--- TOC entry 4500 (class 2606 OID 25920)
+-- TOC entry 4550 (class 2606 OID 25920)
 -- Name: clientes clientes_telefono_key; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6896,7 +7738,7 @@ ALTER TABLE ONLY public.clientes
 
 
 --
--- TOC entry 4509 (class 2606 OID 25417)
+-- TOC entry 4559 (class 2606 OID 25417)
 -- Name: comisiones comisiones_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6905,7 +7747,7 @@ ALTER TABLE ONLY public.comisiones
 
 
 --
--- TOC entry 4512 (class 2606 OID 25419)
+-- TOC entry 4562 (class 2606 OID 25419)
 -- Name: communicationlogs communicationlogs_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6914,7 +7756,7 @@ ALTER TABLE ONLY public.communicationlogs
 
 
 --
--- TOC entry 4514 (class 2606 OID 25421)
+-- TOC entry 4565 (class 2606 OID 25421)
 -- Name: control_cambios control_cambios_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6923,7 +7765,7 @@ ALTER TABLE ONLY public.control_cambios
 
 
 --
--- TOC entry 4518 (class 2606 OID 25423)
+-- TOC entry 4570 (class 2606 OID 25423)
 -- Name: credito_movimientos credito_movimientos_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6932,7 +7774,7 @@ ALTER TABLE ONLY public.credito_movimientos
 
 
 --
--- TOC entry 4520 (class 2606 OID 25425)
+-- TOC entry 4573 (class 2606 OID 25425)
 -- Name: cuentas_por_cobrar cuentas_por_cobrar_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6941,7 +7783,7 @@ ALTER TABLE ONLY public.cuentas_por_cobrar
 
 
 --
--- TOC entry 4523 (class 2606 OID 25427)
+-- TOC entry 4577 (class 2606 OID 25427)
 -- Name: cuentas_por_pagar cuentas_por_pagar_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6950,7 +7792,7 @@ ALTER TABLE ONLY public.cuentas_por_pagar
 
 
 --
--- TOC entry 4660 (class 2606 OID 25905)
+-- TOC entry 4725 (class 2606 OID 25905)
 -- Name: cupones cupones_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6959,7 +7801,7 @@ ALTER TABLE ONLY public.cupones
 
 
 --
--- TOC entry 4533 (class 2606 OID 25429)
+-- TOC entry 4587 (class 2606 OID 25429)
 -- Name: cxp_etiquetas_asignadas cxp_etiquetas_asignadas_cxp_id_etiqueta_id_key; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6968,7 +7810,7 @@ ALTER TABLE ONLY public.cxp_etiquetas_asignadas
 
 
 --
--- TOC entry 4535 (class 2606 OID 25431)
+-- TOC entry 4589 (class 2606 OID 25431)
 -- Name: cxp_etiquetas_asignadas cxp_etiquetas_asignadas_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6977,7 +7819,7 @@ ALTER TABLE ONLY public.cxp_etiquetas_asignadas
 
 
 --
--- TOC entry 4537 (class 2606 OID 25433)
+-- TOC entry 4592 (class 2606 OID 25433)
 -- Name: datos_bancarios_empresa datos_bancarios_empresa_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6986,7 +7828,16 @@ ALTER TABLE ONLY public.datos_bancarios_empresa
 
 
 --
--- TOC entry 4540 (class 2606 OID 25435)
+-- TOC entry 4763 (class 2606 OID 26978)
+-- Name: detalles_remision detalles_remision_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
+--
+
+ALTER TABLE ONLY public.detalles_remision
+    ADD CONSTRAINT detalles_remision_pkey PRIMARY KEY (detalle_remision_id);
+
+
+--
+-- TOC entry 4596 (class 2606 OID 25435)
 -- Name: detallesdelpedido detallesdelpedido_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -6995,7 +7846,7 @@ ALTER TABLE ONLY public.detallesdelpedido
 
 
 --
--- TOC entry 4543 (class 2606 OID 25437)
+-- TOC entry 4599 (class 2606 OID 25437)
 -- Name: detallesordencompra detallesordencompra_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7004,7 +7855,7 @@ ALTER TABLE ONLY public.detallesordencompra
 
 
 --
--- TOC entry 4682 (class 2606 OID 26161)
+-- TOC entry 4747 (class 2606 OID 26161)
 -- Name: developers developers_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7013,7 +7864,7 @@ ALTER TABLE ONLY public.developers
 
 
 --
--- TOC entry 4684 (class 2606 OID 26163)
+-- TOC entry 4749 (class 2606 OID 26163)
 -- Name: developers developers_username_key; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7022,7 +7873,7 @@ ALTER TABLE ONLY public.developers
 
 
 --
--- TOC entry 4502 (class 2606 OID 26362)
+-- TOC entry 4552 (class 2606 OID 26362)
 -- Name: clientes email_tenant_unique; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7031,7 +7882,7 @@ ALTER TABLE ONLY public.clientes
 
 
 --
--- TOC entry 4553 (class 2606 OID 25439)
+-- TOC entry 4609 (class 2606 OID 25439)
 -- Name: estados estados_abreviatura_key; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7040,7 +7891,7 @@ ALTER TABLE ONLY public.estados
 
 
 --
--- TOC entry 4555 (class 2606 OID 25441)
+-- TOC entry 4611 (class 2606 OID 25441)
 -- Name: estados estados_nombre_key; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7049,7 +7900,7 @@ ALTER TABLE ONLY public.estados
 
 
 --
--- TOC entry 4557 (class 2606 OID 25443)
+-- TOC entry 4613 (class 2606 OID 25443)
 -- Name: estados estados_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7058,7 +7909,7 @@ ALTER TABLE ONLY public.estados
 
 
 --
--- TOC entry 4669 (class 2606 OID 25946)
+-- TOC entry 4734 (class 2606 OID 25946)
 -- Name: inventarios_admin inventarios_admin_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7067,7 +7918,7 @@ ALTER TABLE ONLY public.inventarios_admin
 
 
 --
--- TOC entry 4559 (class 2606 OID 25445)
+-- TOC entry 4616 (class 2606 OID 25445)
 -- Name: itemsdelcarrito itemsdelcarrito_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7076,7 +7927,7 @@ ALTER TABLE ONLY public.itemsdelcarrito
 
 
 --
--- TOC entry 4674 (class 2606 OID 26125)
+-- TOC entry 4739 (class 2606 OID 26125)
 -- Name: landing_page_config landing_page_config_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7085,7 +7936,7 @@ ALTER TABLE ONLY public.landing_page_config
 
 
 --
--- TOC entry 4565 (class 2606 OID 25447)
+-- TOC entry 4623 (class 2606 OID 25447)
 -- Name: log_eventosusuario log_eventosusuario_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7094,7 +7945,7 @@ ALTER TABLE ONLY public.log_eventosusuario
 
 
 --
--- TOC entry 4570 (class 2606 OID 25449)
+-- TOC entry 4628 (class 2606 OID 25449)
 -- Name: log_inventario log_inventario_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7103,7 +7954,7 @@ ALTER TABLE ONLY public.log_inventario
 
 
 --
--- TOC entry 4576 (class 2606 OID 25451)
+-- TOC entry 4634 (class 2606 OID 25451)
 -- Name: log_movimientos log_movimientos_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7112,7 +7963,7 @@ ALTER TABLE ONLY public.log_movimientos
 
 
 --
--- TOC entry 4580 (class 2606 OID 25453)
+-- TOC entry 4638 (class 2606 OID 25453)
 -- Name: medidas medidas_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7121,7 +7972,7 @@ ALTER TABLE ONLY public.medidas
 
 
 --
--- TOC entry 4551 (class 2606 OID 25457)
+-- TOC entry 4607 (class 2606 OID 25457)
 -- Name: notificaciones notificaciones_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7130,7 +7981,7 @@ ALTER TABLE ONLY public.notificaciones
 
 
 --
--- TOC entry 4588 (class 2606 OID 25459)
+-- TOC entry 4646 (class 2606 OID 25459)
 -- Name: ordenesdecompra ordenesdecompra_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7139,7 +7990,7 @@ ALTER TABLE ONLY public.ordenesdecompra
 
 
 --
--- TOC entry 4595 (class 2606 OID 25461)
+-- TOC entry 4653 (class 2606 OID 25461)
 -- Name: pagos_clientes pagos_clientes_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7148,7 +7999,7 @@ ALTER TABLE ONLY public.pagos_clientes
 
 
 --
--- TOC entry 4599 (class 2606 OID 25463)
+-- TOC entry 4657 (class 2606 OID 25463)
 -- Name: pagos_cxp pagos_cxp_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7157,7 +8008,7 @@ ALTER TABLE ONLY public.pagos_cxp
 
 
 --
--- TOC entry 4601 (class 2606 OID 25465)
+-- TOC entry 4660 (class 2606 OID 25465)
 -- Name: passwordresettokens passwordresettokens_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7166,7 +8017,7 @@ ALTER TABLE ONLY public.passwordresettokens
 
 
 --
--- TOC entry 4603 (class 2606 OID 25467)
+-- TOC entry 4662 (class 2606 OID 25467)
 -- Name: passwordresettokens passwordresettokens_token_key; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7175,7 +8026,7 @@ ALTER TABLE ONLY public.passwordresettokens
 
 
 --
--- TOC entry 4608 (class 2606 OID 25469)
+-- TOC entry 4667 (class 2606 OID 25469)
 -- Name: pedidos pedidos_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7184,7 +8035,7 @@ ALTER TABLE ONLY public.pedidos
 
 
 --
--- TOC entry 4658 (class 2606 OID 25885)
+-- TOC entry 4723 (class 2606 OID 25885)
 -- Name: producto_imagenes_color producto_imagenes_color_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7193,7 +8044,7 @@ ALTER TABLE ONLY public.producto_imagenes_color
 
 
 --
--- TOC entry 4611 (class 2606 OID 25471)
+-- TOC entry 4670 (class 2606 OID 25471)
 -- Name: producto_imagenes producto_imagenes_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7202,7 +8053,7 @@ ALTER TABLE ONLY public.producto_imagenes
 
 
 --
--- TOC entry 4613 (class 2606 OID 25473)
+-- TOC entry 4673 (class 2606 OID 25473)
 -- Name: producto_tamanosdisponibles producto_tamanosdisponibles_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7211,7 +8062,7 @@ ALTER TABLE ONLY public.producto_tamanosdisponibles
 
 
 --
--- TOC entry 4617 (class 2606 OID 25475)
+-- TOC entry 4678 (class 2606 OID 25475)
 -- Name: producto_variante_imagenes producto_variante_imagenes_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7220,7 +8071,7 @@ ALTER TABLE ONLY public.producto_variante_imagenes
 
 
 --
--- TOC entry 4624 (class 2606 OID 25477)
+-- TOC entry 4685 (class 2606 OID 25477)
 -- Name: producto_variantes productos_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7229,7 +8080,7 @@ ALTER TABLE ONLY public.producto_variantes
 
 
 --
--- TOC entry 4632 (class 2606 OID 25479)
+-- TOC entry 4693 (class 2606 OID 25479)
 -- Name: productos productos_pkey1; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7238,7 +8089,7 @@ ALTER TABLE ONLY public.productos
 
 
 --
--- TOC entry 4636 (class 2606 OID 25485)
+-- TOC entry 4698 (class 2606 OID 25485)
 -- Name: proveedor_reglas_empaque proveedor_reglas_empaque_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7247,7 +8098,7 @@ ALTER TABLE ONLY public.proveedor_reglas_empaque
 
 
 --
--- TOC entry 4639 (class 2606 OID 25487)
+-- TOC entry 4701 (class 2606 OID 25487)
 -- Name: proveedores proveedores_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7256,7 +8107,25 @@ ALTER TABLE ONLY public.proveedores
 
 
 --
--- TOC entry 4687 (class 2606 OID 26356)
+-- TOC entry 4759 (class 2606 OID 26952)
+-- Name: remisiones remisiones_folio_key; Type: CONSTRAINT; Schema: public; Owner: ferram
+--
+
+ALTER TABLE ONLY public.remisiones
+    ADD CONSTRAINT remisiones_folio_key UNIQUE (folio);
+
+
+--
+-- TOC entry 4761 (class 2606 OID 26950)
+-- Name: remisiones remisiones_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
+--
+
+ALTER TABLE ONLY public.remisiones
+    ADD CONSTRAINT remisiones_pkey PRIMARY KEY (remision_id);
+
+
+--
+-- TOC entry 4752 (class 2606 OID 26356)
 -- Name: session session_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7265,7 +8134,7 @@ ALTER TABLE ONLY public.session
 
 
 --
--- TOC entry 4641 (class 2606 OID 25489)
+-- TOC entry 4703 (class 2606 OID 25489)
 -- Name: solicitudes_credito solicitudes_credito_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7274,7 +8143,7 @@ ALTER TABLE ONLY public.solicitudes_credito
 
 
 --
--- TOC entry 4679 (class 2606 OID 26151)
+-- TOC entry 4744 (class 2606 OID 26151)
 -- Name: tenants tenants_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7283,7 +8152,7 @@ ALTER TABLE ONLY public.tenants
 
 
 --
--- TOC entry 4644 (class 2606 OID 25493)
+-- TOC entry 4706 (class 2606 OID 25493)
 -- Name: tipoproducto tipoproducto_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7292,7 +8161,7 @@ ALTER TABLE ONLY public.tipoproducto
 
 
 --
--- TOC entry 4651 (class 2606 OID 25495)
+-- TOC entry 4714 (class 2606 OID 25495)
 -- Name: toma_inventario_conteos toma_inventario_conteos_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7301,7 +8170,7 @@ ALTER TABLE ONLY public.toma_inventario_conteos
 
 
 --
--- TOC entry 4655 (class 2606 OID 25497)
+-- TOC entry 4719 (class 2606 OID 25497)
 -- Name: toma_inventario_sesiones toma_inventario_sesiones_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7310,7 +8179,7 @@ ALTER TABLE ONLY public.toma_inventario_sesiones
 
 
 --
--- TOC entry 4671 (class 2606 OID 25948)
+-- TOC entry 4736 (class 2606 OID 25948)
 -- Name: inventarios_admin uk_admin_variante; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7319,7 +8188,7 @@ ALTER TABLE ONLY public.inventarios_admin
 
 
 --
--- TOC entry 4464 (class 2606 OID 26172)
+-- TOC entry 4513 (class 2606 OID 26172)
 -- Name: administradores unique_admin_email_per_tenant; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7328,7 +8197,7 @@ ALTER TABLE ONLY public.administradores
 
 
 --
--- TOC entry 4472 (class 2606 OID 26183)
+-- TOC entry 4521 (class 2606 OID 26183)
 -- Name: agentesdeventas unique_agente_codigo_per_tenant; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7337,7 +8206,7 @@ ALTER TABLE ONLY public.agentesdeventas
 
 
 --
--- TOC entry 4474 (class 2606 OID 26181)
+-- TOC entry 4523 (class 2606 OID 26181)
 -- Name: agentesdeventas unique_agente_email_per_tenant; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7346,7 +8215,7 @@ ALTER TABLE ONLY public.agentesdeventas
 
 
 --
--- TOC entry 4493 (class 2606 OID 25499)
+-- TOC entry 4543 (class 2606 OID 25499)
 -- Name: cliente_creditos unique_cliente_credito; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7355,7 +8224,7 @@ ALTER TABLE ONLY public.cliente_creditos
 
 
 --
--- TOC entry 4507 (class 2606 OID 26192)
+-- TOC entry 4557 (class 2606 OID 26192)
 -- Name: clientes unique_cliente_email_per_tenant; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7364,7 +8233,7 @@ ALTER TABLE ONLY public.clientes
 
 
 --
--- TOC entry 4663 (class 2606 OID 26260)
+-- TOC entry 4728 (class 2606 OID 26260)
 -- Name: cupones unique_cupon_per_tenant; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7373,7 +8242,7 @@ ALTER TABLE ONLY public.cupones
 
 
 --
--- TOC entry 4676 (class 2606 OID 26330)
+-- TOC entry 4741 (class 2606 OID 26330)
 -- Name: landing_page_config unique_landing_section_per_tenant; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7382,7 +8251,7 @@ ALTER TABLE ONLY public.landing_page_config
 
 
 --
--- TOC entry 4582 (class 2606 OID 26233)
+-- TOC entry 4640 (class 2606 OID 26233)
 -- Name: medidas unique_medida_per_tenant; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7391,7 +8260,7 @@ ALTER TABLE ONLY public.medidas
 
 
 --
--- TOC entry 4634 (class 2606 OID 26242)
+-- TOC entry 4695 (class 2606 OID 26242)
 -- Name: productos unique_sku_maestro_per_tenant; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7400,7 +8269,7 @@ ALTER TABLE ONLY public.productos
 
 
 --
--- TOC entry 4626 (class 2606 OID 26251)
+-- TOC entry 4687 (class 2606 OID 26251)
 -- Name: producto_variantes unique_sku_variante_per_tenant; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7409,7 +8278,7 @@ ALTER TABLE ONLY public.producto_variantes
 
 
 --
--- TOC entry 4484 (class 2606 OID 26224)
+-- TOC entry 4534 (class 2606 OID 26224)
 -- Name: cat_tamanopaquetes unique_tamano_per_tenant; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7418,7 +8287,7 @@ ALTER TABLE ONLY public.cat_tamanopaquetes
 
 
 --
--- TOC entry 4646 (class 2606 OID 26215)
+-- TOC entry 4708 (class 2606 OID 26215)
 -- Name: tipoproducto unique_tipoproducto_per_tenant; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7427,7 +8296,7 @@ ALTER TABLE ONLY public.tipoproducto
 
 
 --
--- TOC entry 4531 (class 2606 OID 25501)
+-- TOC entry 4585 (class 2606 OID 25501)
 -- Name: cuentas_por_pagar unq_orden_referencia; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7436,7 +8305,7 @@ ALTER TABLE ONLY public.cuentas_por_pagar
 
 
 --
--- TOC entry 4653 (class 2606 OID 25503)
+-- TOC entry 4716 (class 2606 OID 25503)
 -- Name: toma_inventario_conteos unq_sesion_variante; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -7445,7 +8314,7 @@ ALTER TABLE ONLY public.toma_inventario_conteos
 
 
 --
--- TOC entry 4685 (class 1259 OID 26357)
+-- TOC entry 4750 (class 1259 OID 26357)
 -- Name: IDX_session_expire; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7453,7 +8322,7 @@ CREATE INDEX "IDX_session_expire" ON public.session USING btree (expire);
 
 
 --
--- TOC entry 4462 (class 1259 OID 26173)
+-- TOC entry 4511 (class 1259 OID 26173)
 -- Name: idx_administradores_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7461,7 +8330,7 @@ CREATE INDEX idx_administradores_tenant ON public.administradores USING btree (t
 
 
 --
--- TOC entry 4469 (class 1259 OID 26524)
+-- TOC entry 4518 (class 1259 OID 26524)
 -- Name: idx_agentes_telefono; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7469,7 +8338,7 @@ CREATE INDEX idx_agentes_telefono ON public.agentesdeventas USING btree (telefon
 
 
 --
--- TOC entry 4470 (class 1259 OID 26184)
+-- TOC entry 4519 (class 1259 OID 26184)
 -- Name: idx_agentes_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7477,7 +8346,15 @@ CREATE INDEX idx_agentes_tenant ON public.agentesdeventas USING btree (tenant_id
 
 
 --
--- TOC entry 4479 (class 1259 OID 26691)
+-- TOC entry 4526 (class 1259 OID 26702)
+-- Name: idx_carrito_tenant; Type: INDEX; Schema: public; Owner: ferram
+--
+
+CREATE INDEX idx_carrito_tenant ON public.carritodecompra USING btree (tenant_id);
+
+
+--
+-- TOC entry 4529 (class 1259 OID 26691)
 -- Name: idx_cat_cxp_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7485,7 +8362,7 @@ CREATE INDEX idx_cat_cxp_tenant ON public.cat_cxp_etiquetas USING btree (tenant_
 
 
 --
--- TOC entry 4487 (class 1259 OID 25504)
+-- TOC entry 4537 (class 1259 OID 25504)
 -- Name: idx_categoria_activo; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7493,7 +8370,7 @@ CREATE INDEX idx_categoria_activo ON public.categorias USING btree (activo);
 
 
 --
--- TOC entry 4488 (class 1259 OID 26207)
+-- TOC entry 4538 (class 1259 OID 26207)
 -- Name: idx_categorias_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7501,7 +8378,7 @@ CREATE INDEX idx_categorias_tenant ON public.categorias USING btree (tenant_id);
 
 
 --
--- TOC entry 4503 (class 1259 OID 25505)
+-- TOC entry 4553 (class 1259 OID 25505)
 -- Name: idx_cliente_agente; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7509,7 +8386,7 @@ CREATE INDEX idx_cliente_agente ON public.clientes USING btree (agenteid);
 
 
 --
--- TOC entry 4491 (class 1259 OID 25506)
+-- TOC entry 4541 (class 1259 OID 25506)
 -- Name: idx_cliente_creditos_exportacion; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7517,7 +8394,7 @@ CREATE INDEX idx_cliente_creditos_exportacion ON public.cliente_creditos USING b
 
 
 --
--- TOC entry 4504 (class 1259 OID 26193)
+-- TOC entry 4554 (class 1259 OID 26193)
 -- Name: idx_clientes_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7525,7 +8402,7 @@ CREATE INDEX idx_clientes_tenant ON public.clientes USING btree (tenant_id);
 
 
 --
--- TOC entry 4510 (class 1259 OID 26656)
+-- TOC entry 4560 (class 1259 OID 26656)
 -- Name: idx_comisiones_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7533,7 +8410,15 @@ CREATE INDEX idx_comisiones_tenant ON public.comisiones USING btree (tenant_id);
 
 
 --
--- TOC entry 4647 (class 1259 OID 25507)
+-- TOC entry 4563 (class 1259 OID 26760)
+-- Name: idx_commlog_tenant; Type: INDEX; Schema: public; Owner: ferram
+--
+
+CREATE INDEX idx_commlog_tenant ON public.communicationlogs USING btree (tenant_id);
+
+
+--
+-- TOC entry 4709 (class 1259 OID 25507)
 -- Name: idx_conteos_estatus; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7541,7 +8426,7 @@ CREATE INDEX idx_conteos_estatus ON public.toma_inventario_conteos USING btree (
 
 
 --
--- TOC entry 4648 (class 1259 OID 25508)
+-- TOC entry 4710 (class 1259 OID 25508)
 -- Name: idx_conteos_estatus_aplicacion; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7549,7 +8434,7 @@ CREATE INDEX idx_conteos_estatus_aplicacion ON public.toma_inventario_conteos US
 
 
 --
--- TOC entry 4649 (class 1259 OID 25509)
+-- TOC entry 4711 (class 1259 OID 25509)
 -- Name: idx_conteos_sesion; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7557,7 +8442,7 @@ CREATE INDEX idx_conteos_sesion ON public.toma_inventario_conteos USING btree (s
 
 
 --
--- TOC entry 4515 (class 1259 OID 25510)
+-- TOC entry 4566 (class 1259 OID 25510)
 -- Name: idx_control_cambios_entidad; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7565,7 +8450,7 @@ CREATE INDEX idx_control_cambios_entidad ON public.control_cambios USING btree (
 
 
 --
--- TOC entry 4516 (class 1259 OID 25511)
+-- TOC entry 4567 (class 1259 OID 25511)
 -- Name: idx_control_cambios_estado; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7573,7 +8458,23 @@ CREATE INDEX idx_control_cambios_estado ON public.control_cambios USING btree (e
 
 
 --
--- TOC entry 4661 (class 1259 OID 26261)
+-- TOC entry 4571 (class 1259 OID 26725)
+-- Name: idx_credmov_tenant; Type: INDEX; Schema: public; Owner: ferram
+--
+
+CREATE INDEX idx_credmov_tenant ON public.credito_movimientos USING btree (tenant_id);
+
+
+--
+-- TOC entry 4568 (class 1259 OID 26767)
+-- Name: idx_ctrlcambios_tenant; Type: INDEX; Schema: public; Owner: ferram
+--
+
+CREATE INDEX idx_ctrlcambios_tenant ON public.control_cambios USING btree (tenant_id);
+
+
+--
+-- TOC entry 4726 (class 1259 OID 26261)
 -- Name: idx_cupones_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7581,7 +8482,15 @@ CREATE INDEX idx_cupones_tenant ON public.cupones USING btree (tenant_id);
 
 
 --
--- TOC entry 4521 (class 1259 OID 26296)
+-- TOC entry 4574 (class 1259 OID 27029)
+-- Name: idx_cxc_remision; Type: INDEX; Schema: public; Owner: ferram
+--
+
+CREATE INDEX idx_cxc_remision ON public.cuentas_por_cobrar USING btree (remision_id);
+
+
+--
+-- TOC entry 4575 (class 1259 OID 26296)
 -- Name: idx_cxc_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7589,7 +8498,7 @@ CREATE INDEX idx_cxc_tenant ON public.cuentas_por_cobrar USING btree (tenant_id)
 
 
 --
--- TOC entry 4524 (class 1259 OID 25512)
+-- TOC entry 4578 (class 1259 OID 25512)
 -- Name: idx_cxp_estatus; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7597,7 +8506,7 @@ CREATE INDEX idx_cxp_estatus ON public.cuentas_por_pagar USING btree (estatus);
 
 
 --
--- TOC entry 4525 (class 1259 OID 25513)
+-- TOC entry 4579 (class 1259 OID 25513)
 -- Name: idx_cxp_exportacion; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7605,7 +8514,7 @@ CREATE INDEX idx_cxp_exportacion ON public.cuentas_por_pagar USING btree (export
 
 
 --
--- TOC entry 4526 (class 1259 OID 25514)
+-- TOC entry 4580 (class 1259 OID 25514)
 -- Name: idx_cxp_fecha_cierre; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7613,7 +8522,7 @@ CREATE INDEX idx_cxp_fecha_cierre ON public.cuentas_por_pagar USING btree (fecha
 
 
 --
--- TOC entry 4527 (class 1259 OID 25515)
+-- TOC entry 4581 (class 1259 OID 25515)
 -- Name: idx_cxp_proveedor; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7621,7 +8530,7 @@ CREATE INDEX idx_cxp_proveedor ON public.cuentas_por_pagar USING btree (proveedo
 
 
 --
--- TOC entry 4528 (class 1259 OID 26289)
+-- TOC entry 4582 (class 1259 OID 26289)
 -- Name: idx_cxp_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7629,7 +8538,7 @@ CREATE INDEX idx_cxp_tenant ON public.cuentas_por_pagar USING btree (tenant_id);
 
 
 --
--- TOC entry 4529 (class 1259 OID 25516)
+-- TOC entry 4583 (class 1259 OID 25516)
 -- Name: idx_cxp_vencimiento; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7637,7 +8546,15 @@ CREATE INDEX idx_cxp_vencimiento ON public.cuentas_por_pagar USING btree (fecha_
 
 
 --
--- TOC entry 4538 (class 1259 OID 25517)
+-- TOC entry 4590 (class 1259 OID 26781)
+-- Name: idx_cxpetiqasig_tenant; Type: INDEX; Schema: public; Owner: ferram
+--
+
+CREATE INDEX idx_cxpetiqasig_tenant ON public.cxp_etiquetas_asignadas USING btree (tenant_id);
+
+
+--
+-- TOC entry 4593 (class 1259 OID 25517)
 -- Name: idx_datos_bancarios_principal; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7645,7 +8562,39 @@ CREATE INDEX idx_datos_bancarios_principal ON public.datos_bancarios_empresa USI
 
 
 --
--- TOC entry 4544 (class 1259 OID 26677)
+-- TOC entry 4594 (class 1259 OID 26732)
+-- Name: idx_datosbanco_tenant; Type: INDEX; Schema: public; Owner: ferram
+--
+
+CREATE INDEX idx_datosbanco_tenant ON public.datos_bancarios_empresa USING btree (tenant_id);
+
+
+--
+-- TOC entry 4764 (class 1259 OID 27005)
+-- Name: idx_detalles_remision_detalle_pedido; Type: INDEX; Schema: public; Owner: ferram
+--
+
+CREATE INDEX idx_detalles_remision_detalle_pedido ON public.detalles_remision USING btree (detalle_pedido_id);
+
+
+--
+-- TOC entry 4765 (class 1259 OID 27004)
+-- Name: idx_detalles_remision_remision; Type: INDEX; Schema: public; Owner: ferram
+--
+
+CREATE INDEX idx_detalles_remision_remision ON public.detalles_remision USING btree (remision_id);
+
+
+--
+-- TOC entry 4766 (class 1259 OID 27006)
+-- Name: idx_detalles_remision_tenant; Type: INDEX; Schema: public; Owner: ferram
+--
+
+CREATE INDEX idx_detalles_remision_tenant ON public.detalles_remision USING btree (tenant_id);
+
+
+--
+-- TOC entry 4600 (class 1259 OID 26677)
 -- Name: idx_detallesoc_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7653,7 +8602,7 @@ CREATE INDEX idx_detallesoc_tenant ON public.detallesordencompra USING btree (te
 
 
 --
--- TOC entry 4541 (class 1259 OID 26670)
+-- TOC entry 4597 (class 1259 OID 26670)
 -- Name: idx_detallespedido_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7661,7 +8610,7 @@ CREATE INDEX idx_detallespedido_tenant ON public.detallesdelpedido USING btree (
 
 
 --
--- TOC entry 4496 (class 1259 OID 26663)
+-- TOC entry 4546 (class 1259 OID 26663)
 -- Name: idx_direcciones_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7669,7 +8618,15 @@ CREATE INDEX idx_direcciones_tenant ON public.cliente_direcciones USING btree (t
 
 
 --
--- TOC entry 4664 (class 1259 OID 25959)
+-- TOC entry 4712 (class 1259 OID 26746)
+-- Name: idx_invconteo_tenant; Type: INDEX; Schema: public; Owner: ferram
+--
+
+CREATE INDEX idx_invconteo_tenant ON public.toma_inventario_conteos USING btree (tenant_id);
+
+
+--
+-- TOC entry 4729 (class 1259 OID 25959)
 -- Name: idx_inventarios_admin_admin_id; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7677,7 +8634,7 @@ CREATE INDEX idx_inventarios_admin_admin_id ON public.inventarios_admin USING bt
 
 
 --
--- TOC entry 4665 (class 1259 OID 25961)
+-- TOC entry 4730 (class 1259 OID 25961)
 -- Name: idx_inventarios_admin_cantidad; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7685,7 +8642,7 @@ CREATE INDEX idx_inventarios_admin_cantidad ON public.inventarios_admin USING bt
 
 
 --
--- TOC entry 4666 (class 1259 OID 25960)
+-- TOC entry 4731 (class 1259 OID 25960)
 -- Name: idx_inventarios_admin_variante_id; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7693,7 +8650,7 @@ CREATE INDEX idx_inventarios_admin_variante_id ON public.inventarios_admin USING
 
 
 --
--- TOC entry 4667 (class 1259 OID 26268)
+-- TOC entry 4732 (class 1259 OID 26268)
 -- Name: idx_inventarios_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7701,7 +8658,23 @@ CREATE INDEX idx_inventarios_tenant ON public.inventarios_admin USING btree (ten
 
 
 --
--- TOC entry 4672 (class 1259 OID 26128)
+-- TOC entry 4717 (class 1259 OID 26739)
+-- Name: idx_invsesion_tenant; Type: INDEX; Schema: public; Owner: ferram
+--
+
+CREATE INDEX idx_invsesion_tenant ON public.toma_inventario_sesiones USING btree (tenant_id);
+
+
+--
+-- TOC entry 4614 (class 1259 OID 26709)
+-- Name: idx_itemscarrito_tenant; Type: INDEX; Schema: public; Owner: ferram
+--
+
+CREATE INDEX idx_itemscarrito_tenant ON public.itemsdelcarrito USING btree (tenant_id);
+
+
+--
+-- TOC entry 4737 (class 1259 OID 26128)
 -- Name: idx_landing_config_section; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7709,7 +8682,7 @@ CREATE INDEX idx_landing_config_section ON public.landing_page_config USING btre
 
 
 --
--- TOC entry 4571 (class 1259 OID 25518)
+-- TOC entry 4629 (class 1259 OID 25518)
 -- Name: idx_log_accion; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7717,7 +8690,7 @@ CREATE INDEX idx_log_accion ON public.log_movimientos USING btree (accion);
 
 
 --
--- TOC entry 4560 (class 1259 OID 25519)
+-- TOC entry 4617 (class 1259 OID 25519)
 -- Name: idx_log_clienteid; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7725,7 +8698,7 @@ CREATE INDEX idx_log_clienteid ON public.log_eventosusuario USING btree (cliente
 
 
 --
--- TOC entry 4572 (class 1259 OID 25520)
+-- TOC entry 4630 (class 1259 OID 25520)
 -- Name: idx_log_entidad; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7733,7 +8706,7 @@ CREATE INDEX idx_log_entidad ON public.log_movimientos USING btree (entidad, ent
 
 
 --
--- TOC entry 4573 (class 1259 OID 25521)
+-- TOC entry 4631 (class 1259 OID 25521)
 -- Name: idx_log_fecha; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7741,7 +8714,7 @@ CREATE INDEX idx_log_fecha ON public.log_movimientos USING btree (fecha DESC);
 
 
 --
--- TOC entry 4566 (class 1259 OID 25522)
+-- TOC entry 4624 (class 1259 OID 25522)
 -- Name: idx_log_inventario_cxp; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7749,7 +8722,7 @@ CREATE INDEX idx_log_inventario_cxp ON public.log_inventario USING btree (cxp_id
 
 
 --
--- TOC entry 4567 (class 1259 OID 25523)
+-- TOC entry 4625 (class 1259 OID 25523)
 -- Name: idx_log_inventario_cxp_id; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7757,7 +8730,7 @@ CREATE INDEX idx_log_inventario_cxp_id ON public.log_inventario USING btree (cxp
 
 
 --
--- TOC entry 4568 (class 1259 OID 25524)
+-- TOC entry 4626 (class 1259 OID 25524)
 -- Name: idx_log_inventario_excepcion; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7765,7 +8738,7 @@ CREATE INDEX idx_log_inventario_excepcion ON public.log_inventario USING btree (
 
 
 --
--- TOC entry 4561 (class 1259 OID 25525)
+-- TOC entry 4618 (class 1259 OID 25525)
 -- Name: idx_log_timestamp; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7773,7 +8746,7 @@ CREATE INDEX idx_log_timestamp ON public.log_eventosusuario USING btree ("timest
 
 
 --
--- TOC entry 4562 (class 1259 OID 25526)
+-- TOC entry 4619 (class 1259 OID 25526)
 -- Name: idx_log_tipoevento; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7781,7 +8754,7 @@ CREATE INDEX idx_log_tipoevento ON public.log_eventosusuario USING btree (tipoev
 
 
 --
--- TOC entry 4574 (class 1259 OID 25527)
+-- TOC entry 4632 (class 1259 OID 25527)
 -- Name: idx_log_usuario; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7789,7 +8762,7 @@ CREATE INDEX idx_log_usuario ON public.log_movimientos USING btree (usuarioid);
 
 
 --
--- TOC entry 4563 (class 1259 OID 25528)
+-- TOC entry 4620 (class 1259 OID 25528)
 -- Name: idx_log_varianteid; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7797,7 +8770,15 @@ CREATE INDEX idx_log_varianteid ON public.log_eventosusuario USING btree (varian
 
 
 --
--- TOC entry 4577 (class 1259 OID 26234)
+-- TOC entry 4621 (class 1259 OID 26774)
+-- Name: idx_logevent_tenant; Type: INDEX; Schema: public; Owner: ferram
+--
+
+CREATE INDEX idx_logevent_tenant ON public.log_eventosusuario USING btree (tenant_id);
+
+
+--
+-- TOC entry 4635 (class 1259 OID 26234)
 -- Name: idx_medidas_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7805,7 +8786,7 @@ CREATE INDEX idx_medidas_tenant ON public.medidas USING btree (tenant_id);
 
 
 --
--- TOC entry 4578 (class 1259 OID 25529)
+-- TOC entry 4636 (class 1259 OID 25529)
 -- Name: idx_medidas_tipoproducto; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7813,7 +8794,7 @@ CREATE INDEX idx_medidas_tipoproducto ON public.medidas USING btree (tipoproduct
 
 
 --
--- TOC entry 4545 (class 1259 OID 25530)
+-- TOC entry 4601 (class 1259 OID 25530)
 -- Name: idx_notificaciones_clienteid; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7821,7 +8802,7 @@ CREATE INDEX idx_notificaciones_clienteid ON public.notificaciones USING btree (
 
 
 --
--- TOC entry 4546 (class 1259 OID 25531)
+-- TOC entry 4602 (class 1259 OID 25531)
 -- Name: idx_notificaciones_fecha; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7829,7 +8810,7 @@ CREATE INDEX idx_notificaciones_fecha ON public.notificaciones USING btree (fech
 
 
 --
--- TOC entry 4547 (class 1259 OID 25532)
+-- TOC entry 4603 (class 1259 OID 25532)
 -- Name: idx_notificaciones_leida; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7837,7 +8818,7 @@ CREATE INDEX idx_notificaciones_leida ON public.notificaciones USING btree (leid
 
 
 --
--- TOC entry 4548 (class 1259 OID 26337)
+-- TOC entry 4604 (class 1259 OID 26337)
 -- Name: idx_notificaciones_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7845,7 +8826,7 @@ CREATE INDEX idx_notificaciones_tenant ON public.notificaciones USING btree (ten
 
 
 --
--- TOC entry 4549 (class 1259 OID 25533)
+-- TOC entry 4605 (class 1259 OID 25533)
 -- Name: idx_notificaciones_tipo; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7853,7 +8834,7 @@ CREATE INDEX idx_notificaciones_tipo ON public.notificaciones USING btree (tipo)
 
 
 --
--- TOC entry 4505 (class 1259 OID 26566)
+-- TOC entry 4555 (class 1259 OID 26566)
 -- Name: idx_numero_cliente; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7861,7 +8842,7 @@ CREATE UNIQUE INDEX idx_numero_cliente ON public.clientes USING btree (numero_cl
 
 
 --
--- TOC entry 4583 (class 1259 OID 25534)
+-- TOC entry 4641 (class 1259 OID 25534)
 -- Name: idx_ordenes_exportacion_pendientes; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7869,7 +8850,7 @@ CREATE INDEX idx_ordenes_exportacion_pendientes ON public.ordenesdecompra USING 
 
 
 --
--- TOC entry 4584 (class 1259 OID 26282)
+-- TOC entry 4642 (class 1259 OID 26282)
 -- Name: idx_ordenes_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7877,7 +8858,7 @@ CREATE INDEX idx_ordenes_tenant ON public.ordenesdecompra USING btree (tenant_id
 
 
 --
--- TOC entry 4585 (class 1259 OID 25535)
+-- TOC entry 4643 (class 1259 OID 25535)
 -- Name: idx_ordenesdecompra_origenoc; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7885,7 +8866,7 @@ CREATE INDEX idx_ordenesdecompra_origenoc ON public.ordenesdecompra USING btree 
 
 
 --
--- TOC entry 4586 (class 1259 OID 26633)
+-- TOC entry 4644 (class 1259 OID 26633)
 -- Name: idx_ordenesdecompra_pedido_origen; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7893,7 +8874,7 @@ CREATE INDEX idx_ordenesdecompra_pedido_origen ON public.ordenesdecompra USING b
 
 
 --
--- TOC entry 4589 (class 1259 OID 25536)
+-- TOC entry 4647 (class 1259 OID 25536)
 -- Name: idx_pagos_clientes_cliente; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7901,7 +8882,7 @@ CREATE INDEX idx_pagos_clientes_cliente ON public.pagos_clientes USING btree (cl
 
 
 --
--- TOC entry 4590 (class 1259 OID 25537)
+-- TOC entry 4648 (class 1259 OID 25537)
 -- Name: idx_pagos_clientes_credito; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7909,7 +8890,7 @@ CREATE INDEX idx_pagos_clientes_credito ON public.pagos_clientes USING btree (cr
 
 
 --
--- TOC entry 4591 (class 1259 OID 25538)
+-- TOC entry 4649 (class 1259 OID 25538)
 -- Name: idx_pagos_clientes_estatus; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7917,7 +8898,7 @@ CREATE INDEX idx_pagos_clientes_estatus ON public.pagos_clientes USING btree (es
 
 
 --
--- TOC entry 4592 (class 1259 OID 25539)
+-- TOC entry 4650 (class 1259 OID 25539)
 -- Name: idx_pagos_clientes_fecha; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7925,7 +8906,7 @@ CREATE INDEX idx_pagos_clientes_fecha ON public.pagos_clientes USING btree (fech
 
 
 --
--- TOC entry 4593 (class 1259 OID 26303)
+-- TOC entry 4651 (class 1259 OID 26303)
 -- Name: idx_pagos_clientes_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7933,7 +8914,7 @@ CREATE INDEX idx_pagos_clientes_tenant ON public.pagos_clientes USING btree (ten
 
 
 --
--- TOC entry 4596 (class 1259 OID 26310)
+-- TOC entry 4654 (class 1259 OID 26310)
 -- Name: idx_pagos_cxp_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7941,7 +8922,7 @@ CREATE INDEX idx_pagos_cxp_tenant ON public.pagos_cxp USING btree (tenant_id);
 
 
 --
--- TOC entry 4597 (class 1259 OID 25540)
+-- TOC entry 4655 (class 1259 OID 25540)
 -- Name: idx_pagos_historial; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7949,7 +8930,7 @@ CREATE INDEX idx_pagos_historial ON public.pagos_cxp USING btree (cxp_id);
 
 
 --
--- TOC entry 4604 (class 1259 OID 26597)
+-- TOC entry 4663 (class 1259 OID 26597)
 -- Name: idx_pedidos_credito_pendiente; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7957,7 +8938,7 @@ CREATE INDEX idx_pedidos_credito_pendiente ON public.pedidos USING btree (client
 
 
 --
--- TOC entry 4605 (class 1259 OID 26596)
+-- TOC entry 4664 (class 1259 OID 26596)
 -- Name: idx_pedidos_fecha_vencimiento; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7965,7 +8946,7 @@ CREATE INDEX idx_pedidos_fecha_vencimiento ON public.pedidos USING btree (fecha_
 
 
 --
--- TOC entry 4606 (class 1259 OID 26275)
+-- TOC entry 4665 (class 1259 OID 26275)
 -- Name: idx_pedidos_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7973,7 +8954,23 @@ CREATE INDEX idx_pedidos_tenant ON public.pedidos USING btree (tenant_id);
 
 
 --
--- TOC entry 4627 (class 1259 OID 25541)
+-- TOC entry 4720 (class 1259 OID 26788)
+-- Name: idx_prodimgcolor_tenant; Type: INDEX; Schema: public; Owner: ferram
+--
+
+CREATE INDEX idx_prodimgcolor_tenant ON public.producto_imagenes_color USING btree (tenant_id);
+
+
+--
+-- TOC entry 4671 (class 1259 OID 26718)
+-- Name: idx_prodtamanos_tenant; Type: INDEX; Schema: public; Owner: ferram
+--
+
+CREATE INDEX idx_prodtamanos_tenant ON public.producto_tamanosdisponibles USING btree (tenant_id);
+
+
+--
+-- TOC entry 4688 (class 1259 OID 25541)
 -- Name: idx_producto_activo; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7981,7 +8978,7 @@ CREATE INDEX idx_producto_activo ON public.productos USING btree (activo);
 
 
 --
--- TOC entry 4656 (class 1259 OID 25891)
+-- TOC entry 4721 (class 1259 OID 25891)
 -- Name: idx_producto_color_busqueda; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7989,7 +8986,7 @@ CREATE INDEX idx_producto_color_busqueda ON public.producto_imagenes_color USING
 
 
 --
--- TOC entry 4618 (class 1259 OID 25542)
+-- TOC entry 4679 (class 1259 OID 25542)
 -- Name: idx_producto_oferta; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -7997,7 +8994,7 @@ CREATE INDEX idx_producto_oferta ON public.producto_variantes USING btree (preci
 
 
 --
--- TOC entry 4614 (class 1259 OID 25543)
+-- TOC entry 4674 (class 1259 OID 25543)
 -- Name: idx_producto_variante_imagenes_varianteid; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -8005,7 +9002,7 @@ CREATE INDEX idx_producto_variante_imagenes_varianteid ON public.producto_varian
 
 
 --
--- TOC entry 4615 (class 1259 OID 25544)
+-- TOC entry 4675 (class 1259 OID 25544)
 -- Name: idx_producto_variante_imagenes_varianteid_orden; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -8013,7 +9010,7 @@ CREATE INDEX idx_producto_variante_imagenes_varianteid_orden ON public.producto_
 
 
 --
--- TOC entry 4609 (class 1259 OID 26684)
+-- TOC entry 4668 (class 1259 OID 26684)
 -- Name: idx_productoimg_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -8021,7 +9018,7 @@ CREATE INDEX idx_productoimg_tenant ON public.producto_imagenes USING btree (ten
 
 
 --
--- TOC entry 4628 (class 1259 OID 25935)
+-- TOC entry 4689 (class 1259 OID 25935)
 -- Name: idx_productos_admin_creator; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -8029,7 +9026,7 @@ CREATE INDEX idx_productos_admin_creator ON public.productos USING btree (create
 
 
 --
--- TOC entry 4629 (class 1259 OID 26464)
+-- TOC entry 4690 (class 1259 OID 26464)
 -- Name: idx_productos_sku_maestro; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -8037,7 +9034,7 @@ CREATE INDEX idx_productos_sku_maestro ON public.productos USING btree (sku_maes
 
 
 --
--- TOC entry 4630 (class 1259 OID 26243)
+-- TOC entry 4691 (class 1259 OID 26243)
 -- Name: idx_productos_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -8045,7 +9042,7 @@ CREATE INDEX idx_productos_tenant ON public.productos USING btree (tenant_id);
 
 
 --
--- TOC entry 4619 (class 1259 OID 25545)
+-- TOC entry 4680 (class 1259 OID 25545)
 -- Name: idx_productos_tipoproducto; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -8053,7 +9050,15 @@ CREATE INDEX idx_productos_tipoproducto ON public.producto_variantes USING btree
 
 
 --
--- TOC entry 4637 (class 1259 OID 26200)
+-- TOC entry 4676 (class 1259 OID 26795)
+-- Name: idx_prodvarimg_tenant; Type: INDEX; Schema: public; Owner: ferram
+--
+
+CREATE INDEX idx_prodvarimg_tenant ON public.producto_variante_imagenes USING btree (tenant_id);
+
+
+--
+-- TOC entry 4699 (class 1259 OID 26200)
 -- Name: idx_proveedores_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -8061,7 +9066,63 @@ CREATE INDEX idx_proveedores_tenant ON public.proveedores USING btree (tenant_id
 
 
 --
--- TOC entry 4482 (class 1259 OID 26225)
+-- TOC entry 4696 (class 1259 OID 26753)
+-- Name: idx_provreglas_tenant; Type: INDEX; Schema: public; Owner: ferram
+--
+
+CREATE INDEX idx_provreglas_tenant ON public.proveedor_reglas_empaque USING btree (tenant_id);
+
+
+--
+-- TOC entry 4658 (class 1259 OID 26802)
+-- Name: idx_pwreset_tenant; Type: INDEX; Schema: public; Owner: ferram
+--
+
+CREATE INDEX idx_pwreset_tenant ON public.passwordresettokens USING btree (tenant_id);
+
+
+--
+-- TOC entry 4753 (class 1259 OID 27000)
+-- Name: idx_remisiones_cliente; Type: INDEX; Schema: public; Owner: ferram
+--
+
+CREATE INDEX idx_remisiones_cliente ON public.remisiones USING btree (cliente_id);
+
+
+--
+-- TOC entry 4754 (class 1259 OID 27001)
+-- Name: idx_remisiones_estado; Type: INDEX; Schema: public; Owner: ferram
+--
+
+CREATE INDEX idx_remisiones_estado ON public.remisiones USING btree (estado);
+
+
+--
+-- TOC entry 4755 (class 1259 OID 27003)
+-- Name: idx_remisiones_folio; Type: INDEX; Schema: public; Owner: ferram
+--
+
+CREATE INDEX idx_remisiones_folio ON public.remisiones USING btree (folio);
+
+
+--
+-- TOC entry 4756 (class 1259 OID 26999)
+-- Name: idx_remisiones_pedido; Type: INDEX; Schema: public; Owner: ferram
+--
+
+CREATE INDEX idx_remisiones_pedido ON public.remisiones USING btree (pedido_id);
+
+
+--
+-- TOC entry 4757 (class 1259 OID 27002)
+-- Name: idx_remisiones_tenant; Type: INDEX; Schema: public; Owner: ferram
+--
+
+CREATE INDEX idx_remisiones_tenant ON public.remisiones USING btree (tenant_id);
+
+
+--
+-- TOC entry 4532 (class 1259 OID 26225)
 -- Name: idx_tamanopaquetes_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -8069,7 +9130,7 @@ CREATE INDEX idx_tamanopaquetes_tenant ON public.cat_tamanopaquetes USING btree 
 
 
 --
--- TOC entry 4677 (class 1259 OID 26371)
+-- TOC entry 4742 (class 1259 OID 26371)
 -- Name: idx_tenants_dominio; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -8077,7 +9138,7 @@ CREATE INDEX idx_tenants_dominio ON public.tenants USING btree (dominio) WHERE (
 
 
 --
--- TOC entry 4642 (class 1259 OID 26216)
+-- TOC entry 4704 (class 1259 OID 26216)
 -- Name: idx_tipoproducto_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -8085,7 +9146,7 @@ CREATE INDEX idx_tipoproducto_tenant ON public.tipoproducto USING btree (tenant_
 
 
 --
--- TOC entry 4620 (class 1259 OID 25546)
+-- TOC entry 4681 (class 1259 OID 25546)
 -- Name: idx_variantes_color_nombre; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -8093,7 +9154,7 @@ CREATE INDEX idx_variantes_color_nombre ON public.producto_variantes USING btree
 
 
 --
--- TOC entry 4621 (class 1259 OID 26465)
+-- TOC entry 4682 (class 1259 OID 26465)
 -- Name: idx_variantes_sku; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -8101,7 +9162,7 @@ CREATE INDEX idx_variantes_sku ON public.producto_variantes USING btree (sku);
 
 
 --
--- TOC entry 4622 (class 1259 OID 26252)
+-- TOC entry 4683 (class 1259 OID 26252)
 -- Name: idx_variantes_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -8109,7 +9170,7 @@ CREATE INDEX idx_variantes_tenant ON public.producto_variantes USING btree (tena
 
 
 --
--- TOC entry 4680 (class 1259 OID 26373)
+-- TOC entry 4745 (class 1259 OID 26373)
 -- Name: unique_tenant_dominio_production; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -8117,7 +9178,7 @@ CREATE UNIQUE INDEX unique_tenant_dominio_production ON public.tenants USING btr
 
 
 --
--- TOC entry 4793 (class 2620 OID 26602)
+-- TOC entry 4895 (class 2620 OID 26602)
 -- Name: pedidos trg_actualizar_estatus_deuda; Type: TRIGGER; Schema: public; Owner: ferram
 --
 
@@ -8125,7 +9186,7 @@ CREATE TRIGGER trg_actualizar_estatus_deuda BEFORE UPDATE ON public.pedidos FOR 
 
 
 --
--- TOC entry 4794 (class 2620 OID 25963)
+-- TOC entry 4896 (class 2620 OID 25963)
 -- Name: inventarios_admin trg_update_inventarios_admin_timestamp; Type: TRIGGER; Schema: public; Owner: ferram
 --
 
@@ -8133,7 +9194,7 @@ CREATE TRIGGER trg_update_inventarios_admin_timestamp BEFORE UPDATE ON public.in
 
 
 --
--- TOC entry 4792 (class 2620 OID 25547)
+-- TOC entry 4894 (class 2620 OID 25547)
 -- Name: notificaciones trigger_limitar_notificaciones; Type: TRIGGER; Schema: public; Owner: ferram
 --
 
@@ -8141,7 +9202,7 @@ CREATE TRIGGER trigger_limitar_notificaciones AFTER INSERT ON public.notificacio
 
 
 --
--- TOC entry 4791 (class 2620 OID 25548)
+-- TOC entry 4893 (class 2620 OID 25548)
 -- Name: cliente_creditos trigger_update_credito_fecha; Type: TRIGGER; Schema: public; Owner: ferram
 --
 
@@ -8149,7 +9210,7 @@ CREATE TRIGGER trigger_update_credito_fecha BEFORE UPDATE ON public.cliente_cred
 
 
 --
--- TOC entry 4795 (class 2620 OID 26130)
+-- TOC entry 4897 (class 2620 OID 26130)
 -- Name: landing_page_config trigger_update_landing_config_timestamp; Type: TRIGGER; Schema: public; Owner: ferram
 --
 
@@ -8157,7 +9218,15 @@ CREATE TRIGGER trigger_update_landing_config_timestamp BEFORE UPDATE ON public.l
 
 
 --
--- TOC entry 4688 (class 2606 OID 26166)
+-- TOC entry 4898 (class 2620 OID 27020)
+-- Name: remisiones trigger_update_remision_timestamp; Type: TRIGGER; Schema: public; Owner: ferram
+--
+
+CREATE TRIGGER trigger_update_remision_timestamp BEFORE UPDATE ON public.remisiones FOR EACH ROW EXECUTE FUNCTION public.update_remision_timestamp();
+
+
+--
+-- TOC entry 4767 (class 2606 OID 26166)
 -- Name: administradores administradores_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8166,7 +9235,7 @@ ALTER TABLE ONLY public.administradores
 
 
 --
--- TOC entry 4689 (class 2606 OID 26175)
+-- TOC entry 4768 (class 2606 OID 26175)
 -- Name: agentesdeventas agentesdeventas_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8175,7 +9244,7 @@ ALTER TABLE ONLY public.agentesdeventas
 
 
 --
--- TOC entry 4690 (class 2606 OID 25549)
+-- TOC entry 4769 (class 2606 OID 25549)
 -- Name: carritodecompra carritodecompra_clienteid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8184,7 +9253,7 @@ ALTER TABLE ONLY public.carritodecompra
 
 
 --
--- TOC entry 4692 (class 2606 OID 26218)
+-- TOC entry 4772 (class 2606 OID 26218)
 -- Name: cat_tamanopaquetes cat_tamanopaquetes_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8193,7 +9262,7 @@ ALTER TABLE ONLY public.cat_tamanopaquetes
 
 
 --
--- TOC entry 4693 (class 2606 OID 25554)
+-- TOC entry 4773 (class 2606 OID 25554)
 -- Name: categorias categorias_parentcategoriaid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8202,7 +9271,7 @@ ALTER TABLE ONLY public.categorias
 
 
 --
--- TOC entry 4694 (class 2606 OID 26202)
+-- TOC entry 4774 (class 2606 OID 26202)
 -- Name: categorias categorias_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8211,7 +9280,7 @@ ALTER TABLE ONLY public.categorias
 
 
 --
--- TOC entry 4695 (class 2606 OID 26312)
+-- TOC entry 4775 (class 2606 OID 26312)
 -- Name: cliente_creditos cliente_creditos_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8220,7 +9289,7 @@ ALTER TABLE ONLY public.cliente_creditos
 
 
 --
--- TOC entry 4697 (class 2606 OID 25559)
+-- TOC entry 4777 (class 2606 OID 25559)
 -- Name: cliente_direcciones cliente_direcciones_clienteid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8229,7 +9298,7 @@ ALTER TABLE ONLY public.cliente_direcciones
 
 
 --
--- TOC entry 4700 (class 2606 OID 26186)
+-- TOC entry 4780 (class 2606 OID 26186)
 -- Name: clientes clientes_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8238,7 +9307,7 @@ ALTER TABLE ONLY public.clientes
 
 
 --
--- TOC entry 4702 (class 2606 OID 25564)
+-- TOC entry 4782 (class 2606 OID 25564)
 -- Name: comisiones comisiones_agenteid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8247,7 +9316,7 @@ ALTER TABLE ONLY public.comisiones
 
 
 --
--- TOC entry 4703 (class 2606 OID 25569)
+-- TOC entry 4783 (class 2606 OID 25569)
 -- Name: comisiones comisiones_pedidoid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8256,7 +9325,7 @@ ALTER TABLE ONLY public.comisiones
 
 
 --
--- TOC entry 4711 (class 2606 OID 25574)
+-- TOC entry 4794 (class 2606 OID 25574)
 -- Name: cuentas_por_cobrar cuentas_por_cobrar_cliente_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8265,7 +9334,7 @@ ALTER TABLE ONLY public.cuentas_por_cobrar
 
 
 --
--- TOC entry 4712 (class 2606 OID 25579)
+-- TOC entry 4795 (class 2606 OID 25579)
 -- Name: cuentas_por_cobrar cuentas_por_cobrar_pedido_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8274,7 +9343,16 @@ ALTER TABLE ONLY public.cuentas_por_cobrar
 
 
 --
--- TOC entry 4713 (class 2606 OID 26291)
+-- TOC entry 4796 (class 2606 OID 27024)
+-- Name: cuentas_por_cobrar cuentas_por_cobrar_remision_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
+--
+
+ALTER TABLE ONLY public.cuentas_por_cobrar
+    ADD CONSTRAINT cuentas_por_cobrar_remision_id_fkey FOREIGN KEY (remision_id) REFERENCES public.remisiones(remision_id) ON DELETE SET NULL;
+
+
+--
+-- TOC entry 4797 (class 2606 OID 26291)
 -- Name: cuentas_por_cobrar cuentas_por_cobrar_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8283,7 +9361,7 @@ ALTER TABLE ONLY public.cuentas_por_cobrar
 
 
 --
--- TOC entry 4714 (class 2606 OID 25584)
+-- TOC entry 4798 (class 2606 OID 25584)
 -- Name: cuentas_por_pagar cuentas_por_pagar_orden_compra_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8292,7 +9370,7 @@ ALTER TABLE ONLY public.cuentas_por_pagar
 
 
 --
--- TOC entry 4715 (class 2606 OID 25589)
+-- TOC entry 4799 (class 2606 OID 25589)
 -- Name: cuentas_por_pagar cuentas_por_pagar_proveedor_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8301,7 +9379,7 @@ ALTER TABLE ONLY public.cuentas_por_pagar
 
 
 --
--- TOC entry 4716 (class 2606 OID 26284)
+-- TOC entry 4800 (class 2606 OID 26284)
 -- Name: cuentas_por_pagar cuentas_por_pagar_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8310,7 +9388,7 @@ ALTER TABLE ONLY public.cuentas_por_pagar
 
 
 --
--- TOC entry 4784 (class 2606 OID 25914)
+-- TOC entry 4879 (class 2606 OID 25914)
 -- Name: cupones cupones_agente_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8319,7 +9397,7 @@ ALTER TABLE ONLY public.cupones
 
 
 --
--- TOC entry 4785 (class 2606 OID 26254)
+-- TOC entry 4880 (class 2606 OID 26254)
 -- Name: cupones cupones_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8328,7 +9406,7 @@ ALTER TABLE ONLY public.cupones
 
 
 --
--- TOC entry 4717 (class 2606 OID 25594)
+-- TOC entry 4801 (class 2606 OID 25594)
 -- Name: cxp_etiquetas_asignadas cxp_etiquetas_asignadas_cxp_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8337,7 +9415,7 @@ ALTER TABLE ONLY public.cxp_etiquetas_asignadas
 
 
 --
--- TOC entry 4718 (class 2606 OID 25599)
+-- TOC entry 4802 (class 2606 OID 25599)
 -- Name: cxp_etiquetas_asignadas cxp_etiquetas_asignadas_etiqueta_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8346,7 +9424,43 @@ ALTER TABLE ONLY public.cxp_etiquetas_asignadas
 
 
 --
--- TOC entry 4719 (class 2606 OID 25604)
+-- TOC entry 4889 (class 2606 OID 26984)
+-- Name: detalles_remision detalles_remision_detalle_pedido_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
+--
+
+ALTER TABLE ONLY public.detalles_remision
+    ADD CONSTRAINT detalles_remision_detalle_pedido_id_fkey FOREIGN KEY (detalle_pedido_id) REFERENCES public.detallesdelpedido(detalleid) ON DELETE CASCADE;
+
+
+--
+-- TOC entry 4890 (class 2606 OID 26979)
+-- Name: detalles_remision detalles_remision_remision_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
+--
+
+ALTER TABLE ONLY public.detalles_remision
+    ADD CONSTRAINT detalles_remision_remision_id_fkey FOREIGN KEY (remision_id) REFERENCES public.remisiones(remision_id) ON DELETE CASCADE;
+
+
+--
+-- TOC entry 4891 (class 2606 OID 26994)
+-- Name: detalles_remision detalles_remision_tamano_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
+--
+
+ALTER TABLE ONLY public.detalles_remision
+    ADD CONSTRAINT detalles_remision_tamano_id_fkey FOREIGN KEY (tamano_id) REFERENCES public.cat_tamanopaquetes(tamanoid) ON DELETE SET NULL;
+
+
+--
+-- TOC entry 4892 (class 2606 OID 26989)
+-- Name: detalles_remision detalles_remision_variante_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
+--
+
+ALTER TABLE ONLY public.detalles_remision
+    ADD CONSTRAINT detalles_remision_variante_id_fkey FOREIGN KEY (variante_id) REFERENCES public.producto_variantes(varianteid) ON DELETE RESTRICT;
+
+
+--
+-- TOC entry 4805 (class 2606 OID 25604)
 -- Name: detallesdelpedido detallesdelpedido_pedidoid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8355,7 +9469,7 @@ ALTER TABLE ONLY public.detallesdelpedido
 
 
 --
--- TOC entry 4723 (class 2606 OID 25609)
+-- TOC entry 4809 (class 2606 OID 25609)
 -- Name: detallesordencompra detallesordencompra_ordencompraid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8364,7 +9478,7 @@ ALTER TABLE ONLY public.detallesordencompra
 
 
 --
--- TOC entry 4708 (class 2606 OID 25614)
+-- TOC entry 4790 (class 2606 OID 25614)
 -- Name: credito_movimientos fk_admin_registro; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8373,7 +9487,7 @@ ALTER TABLE ONLY public.credito_movimientos
 
 
 --
--- TOC entry 4709 (class 2606 OID 25619)
+-- TOC entry 4791 (class 2606 OID 25619)
 -- Name: credito_movimientos fk_agente_registro; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8382,7 +9496,16 @@ ALTER TABLE ONLY public.credito_movimientos
 
 
 --
--- TOC entry 4691 (class 2606 OID 26692)
+-- TOC entry 4770 (class 2606 OID 26703)
+-- Name: carritodecompra fk_carrito_tenant; Type: FK CONSTRAINT; Schema: public; Owner: ferram
+--
+
+ALTER TABLE ONLY public.carritodecompra
+    ADD CONSTRAINT fk_carrito_tenant FOREIGN KEY (tenant_id) REFERENCES public.tenants(tenant_id);
+
+
+--
+-- TOC entry 4771 (class 2606 OID 26692)
 -- Name: cat_cxp_etiquetas fk_cat_cxp_tenant; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8391,7 +9514,7 @@ ALTER TABLE ONLY public.cat_cxp_etiquetas
 
 
 --
--- TOC entry 4705 (class 2606 OID 25624)
+-- TOC entry 4785 (class 2606 OID 25624)
 -- Name: communicationlogs fk_cliente; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8400,7 +9523,7 @@ ALTER TABLE ONLY public.communicationlogs
 
 
 --
--- TOC entry 4701 (class 2606 OID 25629)
+-- TOC entry 4781 (class 2606 OID 25629)
 -- Name: clientes fk_cliente_agente; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8409,7 +9532,7 @@ ALTER TABLE ONLY public.clientes
 
 
 --
--- TOC entry 4696 (class 2606 OID 25634)
+-- TOC entry 4776 (class 2606 OID 25634)
 -- Name: cliente_creditos fk_cliente_credito; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8418,7 +9541,7 @@ ALTER TABLE ONLY public.cliente_creditos
 
 
 --
--- TOC entry 4698 (class 2606 OID 25639)
+-- TOC entry 4778 (class 2606 OID 25639)
 -- Name: cliente_direcciones fk_cliente_estado; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8427,7 +9550,7 @@ ALTER TABLE ONLY public.cliente_direcciones
 
 
 --
--- TOC entry 4704 (class 2606 OID 26657)
+-- TOC entry 4784 (class 2606 OID 26657)
 -- Name: comisiones fk_comisiones_tenant; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8436,7 +9559,52 @@ ALTER TABLE ONLY public.comisiones
 
 
 --
--- TOC entry 4720 (class 2606 OID 25644)
+-- TOC entry 4786 (class 2606 OID 26761)
+-- Name: communicationlogs fk_commlog_tenant; Type: FK CONSTRAINT; Schema: public; Owner: ferram
+--
+
+ALTER TABLE ONLY public.communicationlogs
+    ADD CONSTRAINT fk_commlog_tenant FOREIGN KEY (tenant_id) REFERENCES public.tenants(tenant_id);
+
+
+--
+-- TOC entry 4792 (class 2606 OID 26726)
+-- Name: credito_movimientos fk_credmov_tenant; Type: FK CONSTRAINT; Schema: public; Owner: ferram
+--
+
+ALTER TABLE ONLY public.credito_movimientos
+    ADD CONSTRAINT fk_credmov_tenant FOREIGN KEY (tenant_id) REFERENCES public.tenants(tenant_id);
+
+
+--
+-- TOC entry 4789 (class 2606 OID 26768)
+-- Name: control_cambios fk_ctrlcambios_tenant; Type: FK CONSTRAINT; Schema: public; Owner: ferram
+--
+
+ALTER TABLE ONLY public.control_cambios
+    ADD CONSTRAINT fk_ctrlcambios_tenant FOREIGN KEY (tenant_id) REFERENCES public.tenants(tenant_id);
+
+
+--
+-- TOC entry 4803 (class 2606 OID 26782)
+-- Name: cxp_etiquetas_asignadas fk_cxpetiqasig_tenant; Type: FK CONSTRAINT; Schema: public; Owner: ferram
+--
+
+ALTER TABLE ONLY public.cxp_etiquetas_asignadas
+    ADD CONSTRAINT fk_cxpetiqasig_tenant FOREIGN KEY (tenant_id) REFERENCES public.tenants(tenant_id);
+
+
+--
+-- TOC entry 4804 (class 2606 OID 26733)
+-- Name: datos_bancarios_empresa fk_datosbanco_tenant; Type: FK CONSTRAINT; Schema: public; Owner: ferram
+--
+
+ALTER TABLE ONLY public.datos_bancarios_empresa
+    ADD CONSTRAINT fk_datosbanco_tenant FOREIGN KEY (tenant_id) REFERENCES public.tenants(tenant_id);
+
+
+--
+-- TOC entry 4806 (class 2606 OID 25644)
 -- Name: detallesdelpedido fk_detalles_tamano; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8445,7 +9613,7 @@ ALTER TABLE ONLY public.detallesdelpedido
 
 
 --
--- TOC entry 4721 (class 2606 OID 25649)
+-- TOC entry 4807 (class 2606 OID 25649)
 -- Name: detallesdelpedido fk_detallesdelpedido_varianteid; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8454,7 +9622,7 @@ ALTER TABLE ONLY public.detallesdelpedido
 
 
 --
--- TOC entry 4724 (class 2606 OID 26678)
+-- TOC entry 4810 (class 2606 OID 26678)
 -- Name: detallesordencompra fk_detallesoc_tenant; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8463,7 +9631,7 @@ ALTER TABLE ONLY public.detallesordencompra
 
 
 --
--- TOC entry 4725 (class 2606 OID 25654)
+-- TOC entry 4811 (class 2606 OID 25654)
 -- Name: detallesordencompra fk_detallesordencompra_varianteid; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8472,7 +9640,7 @@ ALTER TABLE ONLY public.detallesordencompra
 
 
 --
--- TOC entry 4722 (class 2606 OID 26671)
+-- TOC entry 4808 (class 2606 OID 26671)
 -- Name: detallesdelpedido fk_detallespedido_tenant; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8481,7 +9649,7 @@ ALTER TABLE ONLY public.detallesdelpedido
 
 
 --
--- TOC entry 4699 (class 2606 OID 26664)
+-- TOC entry 4779 (class 2606 OID 26664)
 -- Name: cliente_direcciones fk_direcciones_tenant; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8490,7 +9658,7 @@ ALTER TABLE ONLY public.cliente_direcciones
 
 
 --
--- TOC entry 4760 (class 2606 OID 25659)
+-- TOC entry 4849 (class 2606 OID 25659)
 -- Name: producto_imagenes fk_imagen_producto_maestro; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8499,7 +9667,7 @@ ALTER TABLE ONLY public.producto_imagenes
 
 
 --
--- TOC entry 4783 (class 2606 OID 25886)
+-- TOC entry 4877 (class 2606 OID 25886)
 -- Name: producto_imagenes_color fk_imagencolor_producto; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8508,7 +9676,16 @@ ALTER TABLE ONLY public.producto_imagenes_color
 
 
 --
--- TOC entry 4786 (class 2606 OID 25949)
+-- TOC entry 4872 (class 2606 OID 26747)
+-- Name: toma_inventario_conteos fk_invconteo_tenant; Type: FK CONSTRAINT; Schema: public; Owner: ferram
+--
+
+ALTER TABLE ONLY public.toma_inventario_conteos
+    ADD CONSTRAINT fk_invconteo_tenant FOREIGN KEY (tenant_id) REFERENCES public.tenants(tenant_id);
+
+
+--
+-- TOC entry 4881 (class 2606 OID 25949)
 -- Name: inventarios_admin fk_inventarios_admin_admin; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8517,7 +9694,7 @@ ALTER TABLE ONLY public.inventarios_admin
 
 
 --
--- TOC entry 4787 (class 2606 OID 25966)
+-- TOC entry 4882 (class 2606 OID 25966)
 -- Name: inventarios_admin fk_inventarios_admin_registrado_por; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8526,7 +9703,7 @@ ALTER TABLE ONLY public.inventarios_admin
 
 
 --
--- TOC entry 4788 (class 2606 OID 25954)
+-- TOC entry 4883 (class 2606 OID 25954)
 -- Name: inventarios_admin fk_inventarios_admin_variante; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8535,7 +9712,16 @@ ALTER TABLE ONLY public.inventarios_admin
 
 
 --
--- TOC entry 4730 (class 2606 OID 25664)
+-- TOC entry 4875 (class 2606 OID 26740)
+-- Name: toma_inventario_sesiones fk_invsesion_tenant; Type: FK CONSTRAINT; Schema: public; Owner: ferram
+--
+
+ALTER TABLE ONLY public.toma_inventario_sesiones
+    ADD CONSTRAINT fk_invsesion_tenant FOREIGN KEY (tenant_id) REFERENCES public.tenants(tenant_id);
+
+
+--
+-- TOC entry 4816 (class 2606 OID 25664)
 -- Name: itemsdelcarrito fk_items_tamano; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8544,7 +9730,16 @@ ALTER TABLE ONLY public.itemsdelcarrito
 
 
 --
--- TOC entry 4731 (class 2606 OID 25669)
+-- TOC entry 4817 (class 2606 OID 26710)
+-- Name: itemsdelcarrito fk_itemscarrito_tenant; Type: FK CONSTRAINT; Schema: public; Owner: ferram
+--
+
+ALTER TABLE ONLY public.itemsdelcarrito
+    ADD CONSTRAINT fk_itemscarrito_tenant FOREIGN KEY (tenant_id) REFERENCES public.tenants(tenant_id);
+
+
+--
+-- TOC entry 4818 (class 2606 OID 25669)
 -- Name: itemsdelcarrito fk_itemsdelcarrito_varianteid; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8553,7 +9748,7 @@ ALTER TABLE ONLY public.itemsdelcarrito
 
 
 --
--- TOC entry 4733 (class 2606 OID 25674)
+-- TOC entry 4820 (class 2606 OID 25674)
 -- Name: log_eventosusuario fk_log_cliente; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8562,7 +9757,7 @@ ALTER TABLE ONLY public.log_eventosusuario
 
 
 --
--- TOC entry 4738 (class 2606 OID 25679)
+-- TOC entry 4826 (class 2606 OID 25679)
 -- Name: log_movimientos fk_log_usuario; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8571,7 +9766,7 @@ ALTER TABLE ONLY public.log_movimientos
 
 
 --
--- TOC entry 4734 (class 2606 OID 25684)
+-- TOC entry 4821 (class 2606 OID 25684)
 -- Name: log_eventosusuario fk_log_variante; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8580,7 +9775,16 @@ ALTER TABLE ONLY public.log_eventosusuario
 
 
 --
--- TOC entry 4735 (class 2606 OID 25689)
+-- TOC entry 4822 (class 2606 OID 26775)
+-- Name: log_eventosusuario fk_logevent_tenant; Type: FK CONSTRAINT; Schema: public; Owner: ferram
+--
+
+ALTER TABLE ONLY public.log_eventosusuario
+    ADD CONSTRAINT fk_logevent_tenant FOREIGN KEY (tenant_id) REFERENCES public.tenants(tenant_id);
+
+
+--
+-- TOC entry 4823 (class 2606 OID 25689)
 -- Name: log_inventario fk_loginventario_varianteid; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8589,7 +9793,7 @@ ALTER TABLE ONLY public.log_inventario
 
 
 --
--- TOC entry 4710 (class 2606 OID 25694)
+-- TOC entry 4793 (class 2606 OID 25694)
 -- Name: credito_movimientos fk_movimiento_credito; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8598,7 +9802,7 @@ ALTER TABLE ONLY public.credito_movimientos
 
 
 --
--- TOC entry 4742 (class 2606 OID 26634)
+-- TOC entry 4830 (class 2606 OID 26634)
 -- Name: ordenesdecompra fk_ordenesdecompra_pedido; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8607,7 +9811,7 @@ ALTER TABLE ONLY public.ordenesdecompra
 
 
 --
--- TOC entry 4746 (class 2606 OID 25699)
+-- TOC entry 4834 (class 2606 OID 25699)
 -- Name: pagos_clientes fk_pagos_clientes_cliente; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8616,7 +9820,7 @@ ALTER TABLE ONLY public.pagos_clientes
 
 
 --
--- TOC entry 4747 (class 2606 OID 25704)
+-- TOC entry 4835 (class 2606 OID 25704)
 -- Name: pagos_clientes fk_pagos_clientes_credito; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8625,7 +9829,7 @@ ALTER TABLE ONLY public.pagos_clientes
 
 
 --
--- TOC entry 4748 (class 2606 OID 25709)
+-- TOC entry 4836 (class 2606 OID 25709)
 -- Name: pagos_clientes fk_pagos_clientes_validador; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8634,7 +9838,7 @@ ALTER TABLE ONLY public.pagos_clientes
 
 
 --
--- TOC entry 4750 (class 2606 OID 25714)
+-- TOC entry 4838 (class 2606 OID 25714)
 -- Name: pagos_cxp fk_pagos_cxp; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8643,7 +9847,7 @@ ALTER TABLE ONLY public.pagos_cxp
 
 
 --
--- TOC entry 4751 (class 2606 OID 25719)
+-- TOC entry 4839 (class 2606 OID 25719)
 -- Name: pagos_cxp fk_pagos_usuario; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8652,7 +9856,7 @@ ALTER TABLE ONLY public.pagos_cxp
 
 
 --
--- TOC entry 4753 (class 2606 OID 25724)
+-- TOC entry 4841 (class 2606 OID 25724)
 -- Name: passwordresettokens fk_passwordreset_agente; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8661,7 +9865,7 @@ ALTER TABLE ONLY public.passwordresettokens
 
 
 --
--- TOC entry 4754 (class 2606 OID 25729)
+-- TOC entry 4842 (class 2606 OID 25729)
 -- Name: passwordresettokens fk_passwordreset_cliente; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8670,7 +9874,7 @@ ALTER TABLE ONLY public.passwordresettokens
 
 
 --
--- TOC entry 4706 (class 2606 OID 25734)
+-- TOC entry 4787 (class 2606 OID 25734)
 -- Name: communicationlogs fk_pedido; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8679,7 +9883,25 @@ ALTER TABLE ONLY public.communicationlogs
 
 
 --
--- TOC entry 4769 (class 2606 OID 25930)
+-- TOC entry 4878 (class 2606 OID 26789)
+-- Name: producto_imagenes_color fk_prodimgcolor_tenant; Type: FK CONSTRAINT; Schema: public; Owner: ferram
+--
+
+ALTER TABLE ONLY public.producto_imagenes_color
+    ADD CONSTRAINT fk_prodimgcolor_tenant FOREIGN KEY (tenant_id) REFERENCES public.tenants(tenant_id);
+
+
+--
+-- TOC entry 4851 (class 2606 OID 26719)
+-- Name: producto_tamanosdisponibles fk_prodtamanos_tenant; Type: FK CONSTRAINT; Schema: public; Owner: ferram
+--
+
+ALTER TABLE ONLY public.producto_tamanosdisponibles
+    ADD CONSTRAINT fk_prodtamanos_tenant FOREIGN KEY (tenant_id) REFERENCES public.tenants(tenant_id);
+
+
+--
+-- TOC entry 4860 (class 2606 OID 25930)
 -- Name: productos fk_producto_admin_creator; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8688,7 +9910,7 @@ ALTER TABLE ONLY public.productos
 
 
 --
--- TOC entry 4765 (class 2606 OID 25739)
+-- TOC entry 4856 (class 2606 OID 25739)
 -- Name: producto_variantes fk_producto_maestro; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8697,7 +9919,7 @@ ALTER TABLE ONLY public.producto_variantes
 
 
 --
--- TOC entry 4770 (class 2606 OID 25744)
+-- TOC entry 4861 (class 2606 OID 25744)
 -- Name: productos fk_producto_regla_empaque; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8706,7 +9928,7 @@ ALTER TABLE ONLY public.productos
 
 
 --
--- TOC entry 4761 (class 2606 OID 26685)
+-- TOC entry 4850 (class 2606 OID 26685)
 -- Name: producto_imagenes fk_productoimg_tenant; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8715,7 +9937,16 @@ ALTER TABLE ONLY public.producto_imagenes
 
 
 --
--- TOC entry 4707 (class 2606 OID 25749)
+-- TOC entry 4854 (class 2606 OID 26796)
+-- Name: producto_variante_imagenes fk_prodvarimg_tenant; Type: FK CONSTRAINT; Schema: public; Owner: ferram
+--
+
+ALTER TABLE ONLY public.producto_variante_imagenes
+    ADD CONSTRAINT fk_prodvarimg_tenant FOREIGN KEY (tenant_id) REFERENCES public.tenants(tenant_id);
+
+
+--
+-- TOC entry 4788 (class 2606 OID 25749)
 -- Name: communicationlogs fk_proveedor; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8724,7 +9955,7 @@ ALTER TABLE ONLY public.communicationlogs
 
 
 --
--- TOC entry 4771 (class 2606 OID 25754)
+-- TOC entry 4862 (class 2606 OID 25754)
 -- Name: productos fk_proveedor_default; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8733,7 +9964,25 @@ ALTER TABLE ONLY public.productos
 
 
 --
--- TOC entry 4774 (class 2606 OID 25759)
+-- TOC entry 4865 (class 2606 OID 26754)
+-- Name: proveedor_reglas_empaque fk_provreglas_tenant; Type: FK CONSTRAINT; Schema: public; Owner: ferram
+--
+
+ALTER TABLE ONLY public.proveedor_reglas_empaque
+    ADD CONSTRAINT fk_provreglas_tenant FOREIGN KEY (tenant_id) REFERENCES public.tenants(tenant_id);
+
+
+--
+-- TOC entry 4843 (class 2606 OID 26803)
+-- Name: passwordresettokens fk_pwreset_tenant; Type: FK CONSTRAINT; Schema: public; Owner: ferram
+--
+
+ALTER TABLE ONLY public.passwordresettokens
+    ADD CONSTRAINT fk_pwreset_tenant FOREIGN KEY (tenant_id) REFERENCES public.tenants(tenant_id);
+
+
+--
+-- TOC entry 4866 (class 2606 OID 25759)
 -- Name: proveedor_reglas_empaque fk_regla_proveedor; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8742,7 +9991,7 @@ ALTER TABLE ONLY public.proveedor_reglas_empaque
 
 
 --
--- TOC entry 4775 (class 2606 OID 25764)
+-- TOC entry 4867 (class 2606 OID 25764)
 -- Name: proveedor_reglas_empaque fk_regla_tipo; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8751,7 +10000,7 @@ ALTER TABLE ONLY public.proveedor_reglas_empaque
 
 
 --
--- TOC entry 4777 (class 2606 OID 25769)
+-- TOC entry 4869 (class 2606 OID 25769)
 -- Name: solicitudes_credito fk_solicitud_cliente; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8760,7 +10009,7 @@ ALTER TABLE ONLY public.solicitudes_credito
 
 
 --
--- TOC entry 4762 (class 2606 OID 25774)
+-- TOC entry 4852 (class 2606 OID 25774)
 -- Name: producto_tamanosdisponibles fk_tamanos_producto; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8769,7 +10018,7 @@ ALTER TABLE ONLY public.producto_tamanosdisponibles
 
 
 --
--- TOC entry 4763 (class 2606 OID 25779)
+-- TOC entry 4853 (class 2606 OID 25779)
 -- Name: producto_tamanosdisponibles fk_tamanos_tamano; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8778,7 +10027,7 @@ ALTER TABLE ONLY public.producto_tamanosdisponibles
 
 
 --
--- TOC entry 4789 (class 2606 OID 26263)
+-- TOC entry 4884 (class 2606 OID 26263)
 -- Name: inventarios_admin inventarios_admin_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8787,7 +10036,7 @@ ALTER TABLE ONLY public.inventarios_admin
 
 
 --
--- TOC entry 4732 (class 2606 OID 25784)
+-- TOC entry 4819 (class 2606 OID 25784)
 -- Name: itemsdelcarrito itemsdelcarrito_carritoid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8796,7 +10045,7 @@ ALTER TABLE ONLY public.itemsdelcarrito
 
 
 --
--- TOC entry 4790 (class 2606 OID 26324)
+-- TOC entry 4885 (class 2606 OID 26324)
 -- Name: landing_page_config landing_page_config_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8805,7 +10054,7 @@ ALTER TABLE ONLY public.landing_page_config
 
 
 --
--- TOC entry 4736 (class 2606 OID 25789)
+-- TOC entry 4824 (class 2606 OID 25789)
 -- Name: log_inventario log_inventario_cxp_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8814,7 +10063,7 @@ ALTER TABLE ONLY public.log_inventario
 
 
 --
--- TOC entry 4737 (class 2606 OID 26345)
+-- TOC entry 4825 (class 2606 OID 26345)
 -- Name: log_inventario log_inventario_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8823,7 +10072,7 @@ ALTER TABLE ONLY public.log_inventario
 
 
 --
--- TOC entry 4739 (class 2606 OID 26339)
+-- TOC entry 4827 (class 2606 OID 26339)
 -- Name: log_movimientos log_movimientos_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8832,7 +10081,7 @@ ALTER TABLE ONLY public.log_movimientos
 
 
 --
--- TOC entry 4740 (class 2606 OID 26227)
+-- TOC entry 4828 (class 2606 OID 26227)
 -- Name: medidas medidas_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8841,7 +10090,7 @@ ALTER TABLE ONLY public.medidas
 
 
 --
--- TOC entry 4741 (class 2606 OID 25794)
+-- TOC entry 4829 (class 2606 OID 25794)
 -- Name: medidas medidas_tipoproductoid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8850,7 +10099,7 @@ ALTER TABLE ONLY public.medidas
 
 
 --
--- TOC entry 4726 (class 2606 OID 25799)
+-- TOC entry 4812 (class 2606 OID 25799)
 -- Name: notificaciones notificaciones_administrador_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8859,7 +10108,7 @@ ALTER TABLE ONLY public.notificaciones
 
 
 --
--- TOC entry 4727 (class 2606 OID 25804)
+-- TOC entry 4813 (class 2606 OID 25804)
 -- Name: notificaciones notificaciones_agente_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8868,7 +10117,7 @@ ALTER TABLE ONLY public.notificaciones
 
 
 --
--- TOC entry 4728 (class 2606 OID 25809)
+-- TOC entry 4814 (class 2606 OID 25809)
 -- Name: notificaciones notificaciones_clienteid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8877,7 +10126,7 @@ ALTER TABLE ONLY public.notificaciones
 
 
 --
--- TOC entry 4729 (class 2606 OID 26332)
+-- TOC entry 4815 (class 2606 OID 26332)
 -- Name: notificaciones notificaciones_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8886,7 +10135,7 @@ ALTER TABLE ONLY public.notificaciones
 
 
 --
--- TOC entry 4743 (class 2606 OID 25814)
+-- TOC entry 4831 (class 2606 OID 25814)
 -- Name: ordenesdecompra ordenesdecompra_proveedorid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8895,7 +10144,7 @@ ALTER TABLE ONLY public.ordenesdecompra
 
 
 --
--- TOC entry 4744 (class 2606 OID 26277)
+-- TOC entry 4832 (class 2606 OID 26277)
 -- Name: ordenesdecompra ordenesdecompra_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8904,7 +10153,7 @@ ALTER TABLE ONLY public.ordenesdecompra
 
 
 --
--- TOC entry 4745 (class 2606 OID 25819)
+-- TOC entry 4833 (class 2606 OID 25819)
 -- Name: ordenesdecompra ordenesdecompra_usuario_creador_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8913,7 +10162,7 @@ ALTER TABLE ONLY public.ordenesdecompra
 
 
 --
--- TOC entry 4749 (class 2606 OID 26298)
+-- TOC entry 4837 (class 2606 OID 26298)
 -- Name: pagos_clientes pagos_clientes_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8922,7 +10171,7 @@ ALTER TABLE ONLY public.pagos_clientes
 
 
 --
--- TOC entry 4752 (class 2606 OID 26305)
+-- TOC entry 4840 (class 2606 OID 26305)
 -- Name: pagos_cxp pagos_cxp_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8931,7 +10180,7 @@ ALTER TABLE ONLY public.pagos_cxp
 
 
 --
--- TOC entry 4755 (class 2606 OID 25824)
+-- TOC entry 4844 (class 2606 OID 25824)
 -- Name: pedidos pedidos_agenteid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8940,7 +10189,7 @@ ALTER TABLE ONLY public.pedidos
 
 
 --
--- TOC entry 4756 (class 2606 OID 25829)
+-- TOC entry 4845 (class 2606 OID 25829)
 -- Name: pedidos pedidos_clienteid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8949,7 +10198,7 @@ ALTER TABLE ONLY public.pedidos
 
 
 --
--- TOC entry 4757 (class 2606 OID 25908)
+-- TOC entry 4846 (class 2606 OID 25908)
 -- Name: pedidos pedidos_cupon_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8958,7 +10207,7 @@ ALTER TABLE ONLY public.pedidos
 
 
 --
--- TOC entry 4758 (class 2606 OID 25834)
+-- TOC entry 4847 (class 2606 OID 25834)
 -- Name: pedidos pedidos_direccionenvioid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8967,7 +10216,7 @@ ALTER TABLE ONLY public.pedidos
 
 
 --
--- TOC entry 4759 (class 2606 OID 26270)
+-- TOC entry 4848 (class 2606 OID 26270)
 -- Name: pedidos pedidos_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8976,7 +10225,7 @@ ALTER TABLE ONLY public.pedidos
 
 
 --
--- TOC entry 4764 (class 2606 OID 25839)
+-- TOC entry 4855 (class 2606 OID 25839)
 -- Name: producto_variante_imagenes producto_variante_imagenes_varianteid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8985,7 +10234,7 @@ ALTER TABLE ONLY public.producto_variante_imagenes
 
 
 --
--- TOC entry 4766 (class 2606 OID 26245)
+-- TOC entry 4857 (class 2606 OID 26245)
 -- Name: producto_variantes producto_variantes_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -8994,7 +10243,7 @@ ALTER TABLE ONLY public.producto_variantes
 
 
 --
--- TOC entry 4772 (class 2606 OID 25844)
+-- TOC entry 4863 (class 2606 OID 25844)
 -- Name: productos productos_categoriaid_fkey1; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -9003,7 +10252,7 @@ ALTER TABLE ONLY public.productos
 
 
 --
--- TOC entry 4767 (class 2606 OID 25849)
+-- TOC entry 4858 (class 2606 OID 25849)
 -- Name: producto_variantes productos_medidaid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -9012,7 +10261,7 @@ ALTER TABLE ONLY public.producto_variantes
 
 
 --
--- TOC entry 4773 (class 2606 OID 26236)
+-- TOC entry 4864 (class 2606 OID 26236)
 -- Name: productos productos_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -9021,7 +10270,7 @@ ALTER TABLE ONLY public.productos
 
 
 --
--- TOC entry 4768 (class 2606 OID 25854)
+-- TOC entry 4859 (class 2606 OID 25854)
 -- Name: producto_variantes productos_tipoproductoid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -9030,7 +10279,7 @@ ALTER TABLE ONLY public.producto_variantes
 
 
 --
--- TOC entry 4776 (class 2606 OID 26195)
+-- TOC entry 4868 (class 2606 OID 26195)
 -- Name: proveedores proveedores_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -9039,7 +10288,34 @@ ALTER TABLE ONLY public.proveedores
 
 
 --
--- TOC entry 4778 (class 2606 OID 26318)
+-- TOC entry 4886 (class 2606 OID 26963)
+-- Name: remisiones remisiones_agente_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
+--
+
+ALTER TABLE ONLY public.remisiones
+    ADD CONSTRAINT remisiones_agente_id_fkey FOREIGN KEY (agente_id) REFERENCES public.agentesdeventas(agenteid) ON DELETE SET NULL;
+
+
+--
+-- TOC entry 4887 (class 2606 OID 26958)
+-- Name: remisiones remisiones_cliente_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
+--
+
+ALTER TABLE ONLY public.remisiones
+    ADD CONSTRAINT remisiones_cliente_id_fkey FOREIGN KEY (cliente_id) REFERENCES public.clientes(clienteid) ON DELETE CASCADE;
+
+
+--
+-- TOC entry 4888 (class 2606 OID 26953)
+-- Name: remisiones remisiones_pedido_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
+--
+
+ALTER TABLE ONLY public.remisiones
+    ADD CONSTRAINT remisiones_pedido_id_fkey FOREIGN KEY (pedido_id) REFERENCES public.pedidos(pedidoid) ON DELETE CASCADE;
+
+
+--
+-- TOC entry 4870 (class 2606 OID 26318)
 -- Name: solicitudes_credito solicitudes_credito_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -9048,7 +10324,7 @@ ALTER TABLE ONLY public.solicitudes_credito
 
 
 --
--- TOC entry 4779 (class 2606 OID 26209)
+-- TOC entry 4871 (class 2606 OID 26209)
 -- Name: tipoproducto tipoproducto_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -9057,7 +10333,7 @@ ALTER TABLE ONLY public.tipoproducto
 
 
 --
--- TOC entry 4780 (class 2606 OID 25859)
+-- TOC entry 4873 (class 2606 OID 25859)
 -- Name: toma_inventario_conteos toma_inventario_conteos_sesionid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -9066,7 +10342,7 @@ ALTER TABLE ONLY public.toma_inventario_conteos
 
 
 --
--- TOC entry 4781 (class 2606 OID 25864)
+-- TOC entry 4874 (class 2606 OID 25864)
 -- Name: toma_inventario_conteos toma_inventario_conteos_varianteid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -9075,7 +10351,7 @@ ALTER TABLE ONLY public.toma_inventario_conteos
 
 
 --
--- TOC entry 4782 (class 2606 OID 25869)
+-- TOC entry 4876 (class 2606 OID 25869)
 -- Name: toma_inventario_sesiones toma_inventario_sesiones_usuario_creador_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -9084,7 +10360,7 @@ ALTER TABLE ONLY public.toma_inventario_sesiones
 
 
 --
--- TOC entry 5046 (class 0 OID 0)
+-- TOC entry 5154 (class 0 OID 0)
 -- Dependencies: 9
 -- Name: SCHEMA cron; Type: ACL; Schema: -; Owner: azuresu
 --
@@ -9093,8 +10369,8 @@ GRANT USAGE ON SCHEMA cron TO azure_pg_admin WITH GRANT OPTION;
 
 
 --
--- TOC entry 5049 (class 0 OID 0)
--- Dependencies: 359
+-- TOC entry 5157 (class 0 OID 0)
+-- Dependencies: 364
 -- Name: FUNCTION alter_job(job_id bigint, schedule text, command text, database text, username text, active boolean); Type: ACL; Schema: cron; Owner: azuresu
 --
 
@@ -9102,8 +10378,8 @@ GRANT ALL ON FUNCTION cron.alter_job(job_id bigint, schedule text, command text,
 
 
 --
--- TOC entry 5050 (class 0 OID 0)
--- Dependencies: 358
+-- TOC entry 5158 (class 0 OID 0)
+-- Dependencies: 363
 -- Name: FUNCTION job_cache_invalidate(); Type: ACL; Schema: cron; Owner: azuresu
 --
 
@@ -9111,8 +10387,8 @@ GRANT ALL ON FUNCTION cron.job_cache_invalidate() TO azure_pg_admin WITH GRANT O
 
 
 --
--- TOC entry 5051 (class 0 OID 0)
--- Dependencies: 356
+-- TOC entry 5159 (class 0 OID 0)
+-- Dependencies: 361
 -- Name: FUNCTION schedule(schedule text, command text); Type: ACL; Schema: cron; Owner: azuresu
 --
 
@@ -9120,8 +10396,8 @@ GRANT ALL ON FUNCTION cron.schedule(schedule text, command text) TO azure_pg_adm
 
 
 --
--- TOC entry 5052 (class 0 OID 0)
--- Dependencies: 330
+-- TOC entry 5160 (class 0 OID 0)
+-- Dependencies: 335
 -- Name: FUNCTION schedule(job_name text, schedule text, command text); Type: ACL; Schema: cron; Owner: azuresu
 --
 
@@ -9129,8 +10405,8 @@ GRANT ALL ON FUNCTION cron.schedule(job_name text, schedule text, command text) 
 
 
 --
--- TOC entry 5053 (class 0 OID 0)
--- Dependencies: 360
+-- TOC entry 5161 (class 0 OID 0)
+-- Dependencies: 365
 -- Name: FUNCTION schedule_in_database(job_name text, schedule text, command text, database text, username text, active boolean); Type: ACL; Schema: cron; Owner: azuresu
 --
 
@@ -9138,8 +10414,8 @@ GRANT ALL ON FUNCTION cron.schedule_in_database(job_name text, schedule text, co
 
 
 --
--- TOC entry 5054 (class 0 OID 0)
--- Dependencies: 357
+-- TOC entry 5162 (class 0 OID 0)
+-- Dependencies: 362
 -- Name: FUNCTION unschedule(job_id bigint); Type: ACL; Schema: cron; Owner: azuresu
 --
 
@@ -9147,8 +10423,8 @@ GRANT ALL ON FUNCTION cron.unschedule(job_id bigint) TO azure_pg_admin WITH GRAN
 
 
 --
--- TOC entry 5055 (class 0 OID 0)
--- Dependencies: 361
+-- TOC entry 5163 (class 0 OID 0)
+-- Dependencies: 366
 -- Name: FUNCTION unschedule(job_name text); Type: ACL; Schema: cron; Owner: azuresu
 --
 
@@ -9156,8 +10432,8 @@ GRANT ALL ON FUNCTION cron.unschedule(job_name text) TO azure_pg_admin WITH GRAN
 
 
 --
--- TOC entry 5056 (class 0 OID 0)
--- Dependencies: 331
+-- TOC entry 5164 (class 0 OID 0)
+-- Dependencies: 336
 -- Name: FUNCTION pg_replication_origin_advance(text, pg_lsn); Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
 
@@ -9165,8 +10441,8 @@ GRANT ALL ON FUNCTION pg_catalog.pg_replication_origin_advance(text, pg_lsn) TO 
 
 
 --
--- TOC entry 5057 (class 0 OID 0)
--- Dependencies: 332
+-- TOC entry 5165 (class 0 OID 0)
+-- Dependencies: 337
 -- Name: FUNCTION pg_replication_origin_create(text); Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
 
@@ -9174,8 +10450,8 @@ GRANT ALL ON FUNCTION pg_catalog.pg_replication_origin_create(text) TO azure_pg_
 
 
 --
--- TOC entry 5058 (class 0 OID 0)
--- Dependencies: 333
+-- TOC entry 5166 (class 0 OID 0)
+-- Dependencies: 338
 -- Name: FUNCTION pg_replication_origin_drop(text); Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
 
@@ -9183,8 +10459,8 @@ GRANT ALL ON FUNCTION pg_catalog.pg_replication_origin_drop(text) TO azure_pg_ad
 
 
 --
--- TOC entry 5059 (class 0 OID 0)
--- Dependencies: 324
+-- TOC entry 5167 (class 0 OID 0)
+-- Dependencies: 329
 -- Name: FUNCTION pg_replication_origin_oid(text); Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
 
@@ -9192,8 +10468,8 @@ GRANT ALL ON FUNCTION pg_catalog.pg_replication_origin_oid(text) TO azure_pg_adm
 
 
 --
--- TOC entry 5060 (class 0 OID 0)
--- Dependencies: 325
+-- TOC entry 5168 (class 0 OID 0)
+-- Dependencies: 330
 -- Name: FUNCTION pg_replication_origin_progress(text, boolean); Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
 
@@ -9201,8 +10477,8 @@ GRANT ALL ON FUNCTION pg_catalog.pg_replication_origin_progress(text, boolean) T
 
 
 --
--- TOC entry 5061 (class 0 OID 0)
--- Dependencies: 334
+-- TOC entry 5169 (class 0 OID 0)
+-- Dependencies: 339
 -- Name: FUNCTION pg_replication_origin_session_is_setup(); Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
 
@@ -9210,8 +10486,8 @@ GRANT ALL ON FUNCTION pg_catalog.pg_replication_origin_session_is_setup() TO azu
 
 
 --
--- TOC entry 5062 (class 0 OID 0)
--- Dependencies: 335
+-- TOC entry 5170 (class 0 OID 0)
+-- Dependencies: 340
 -- Name: FUNCTION pg_replication_origin_session_progress(boolean); Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
 
@@ -9219,8 +10495,8 @@ GRANT ALL ON FUNCTION pg_catalog.pg_replication_origin_session_progress(boolean)
 
 
 --
--- TOC entry 5063 (class 0 OID 0)
--- Dependencies: 336
+-- TOC entry 5171 (class 0 OID 0)
+-- Dependencies: 341
 -- Name: FUNCTION pg_replication_origin_session_reset(); Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
 
@@ -9228,8 +10504,8 @@ GRANT ALL ON FUNCTION pg_catalog.pg_replication_origin_session_reset() TO azure_
 
 
 --
--- TOC entry 5064 (class 0 OID 0)
--- Dependencies: 337
+-- TOC entry 5172 (class 0 OID 0)
+-- Dependencies: 342
 -- Name: FUNCTION pg_replication_origin_session_setup(text); Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
 
@@ -9237,8 +10513,8 @@ GRANT ALL ON FUNCTION pg_catalog.pg_replication_origin_session_setup(text) TO az
 
 
 --
--- TOC entry 5065 (class 0 OID 0)
--- Dependencies: 340
+-- TOC entry 5173 (class 0 OID 0)
+-- Dependencies: 345
 -- Name: FUNCTION pg_replication_origin_xact_reset(); Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
 
@@ -9246,8 +10522,8 @@ GRANT ALL ON FUNCTION pg_catalog.pg_replication_origin_xact_reset() TO azure_pg_
 
 
 --
--- TOC entry 5066 (class 0 OID 0)
--- Dependencies: 338
+-- TOC entry 5174 (class 0 OID 0)
+-- Dependencies: 343
 -- Name: FUNCTION pg_replication_origin_xact_setup(pg_lsn, timestamp with time zone); Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
 
@@ -9255,8 +10531,8 @@ GRANT ALL ON FUNCTION pg_catalog.pg_replication_origin_xact_setup(pg_lsn, timest
 
 
 --
--- TOC entry 5067 (class 0 OID 0)
--- Dependencies: 339
+-- TOC entry 5175 (class 0 OID 0)
+-- Dependencies: 344
 -- Name: FUNCTION pg_show_replication_origin_status(OUT local_id oid, OUT external_id text, OUT remote_lsn pg_lsn, OUT local_lsn pg_lsn); Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
 
@@ -9264,8 +10540,8 @@ GRANT ALL ON FUNCTION pg_catalog.pg_show_replication_origin_status(OUT local_id 
 
 
 --
--- TOC entry 5068 (class 0 OID 0)
--- Dependencies: 327
+-- TOC entry 5176 (class 0 OID 0)
+-- Dependencies: 332
 -- Name: FUNCTION pg_stat_reset(); Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
 
@@ -9273,8 +10549,8 @@ GRANT ALL ON FUNCTION pg_catalog.pg_stat_reset() TO azure_pg_admin;
 
 
 --
--- TOC entry 5069 (class 0 OID 0)
--- Dependencies: 326
+-- TOC entry 5177 (class 0 OID 0)
+-- Dependencies: 331
 -- Name: FUNCTION pg_stat_reset_shared(target text); Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
 
@@ -9282,8 +10558,8 @@ GRANT ALL ON FUNCTION pg_catalog.pg_stat_reset_shared(target text) TO azure_pg_a
 
 
 --
--- TOC entry 5070 (class 0 OID 0)
--- Dependencies: 329
+-- TOC entry 5178 (class 0 OID 0)
+-- Dependencies: 334
 -- Name: FUNCTION pg_stat_reset_single_function_counters(oid); Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
 
@@ -9291,8 +10567,8 @@ GRANT ALL ON FUNCTION pg_catalog.pg_stat_reset_single_function_counters(oid) TO 
 
 
 --
--- TOC entry 5071 (class 0 OID 0)
--- Dependencies: 328
+-- TOC entry 5179 (class 0 OID 0)
+-- Dependencies: 333
 -- Name: FUNCTION pg_stat_reset_single_table_counters(oid); Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
 
@@ -9300,7 +10576,7 @@ GRANT ALL ON FUNCTION pg_catalog.pg_stat_reset_single_table_counters(oid) TO azu
 
 
 --
--- TOC entry 5074 (class 0 OID 0)
+-- TOC entry 5183 (class 0 OID 0)
 -- Dependencies: 102
 -- Name: COLUMN pg_config.name; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -9309,7 +10585,7 @@ GRANT SELECT(name) ON TABLE pg_catalog.pg_config TO azure_pg_admin;
 
 
 --
--- TOC entry 5075 (class 0 OID 0)
+-- TOC entry 5184 (class 0 OID 0)
 -- Dependencies: 102
 -- Name: COLUMN pg_config.setting; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -9318,7 +10594,7 @@ GRANT SELECT(setting) ON TABLE pg_catalog.pg_config TO azure_pg_admin;
 
 
 --
--- TOC entry 5076 (class 0 OID 0)
+-- TOC entry 5185 (class 0 OID 0)
 -- Dependencies: 98
 -- Name: COLUMN pg_hba_file_rules.line_number; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -9327,7 +10603,7 @@ GRANT SELECT(line_number) ON TABLE pg_catalog.pg_hba_file_rules TO azure_pg_admi
 
 
 --
--- TOC entry 5077 (class 0 OID 0)
+-- TOC entry 5186 (class 0 OID 0)
 -- Dependencies: 98
 -- Name: COLUMN pg_hba_file_rules.type; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -9336,7 +10612,7 @@ GRANT SELECT(type) ON TABLE pg_catalog.pg_hba_file_rules TO azure_pg_admin;
 
 
 --
--- TOC entry 5078 (class 0 OID 0)
+-- TOC entry 5187 (class 0 OID 0)
 -- Dependencies: 98
 -- Name: COLUMN pg_hba_file_rules.database; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -9345,7 +10621,7 @@ GRANT SELECT(database) ON TABLE pg_catalog.pg_hba_file_rules TO azure_pg_admin;
 
 
 --
--- TOC entry 5079 (class 0 OID 0)
+-- TOC entry 5188 (class 0 OID 0)
 -- Dependencies: 98
 -- Name: COLUMN pg_hba_file_rules.user_name; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -9354,7 +10630,7 @@ GRANT SELECT(user_name) ON TABLE pg_catalog.pg_hba_file_rules TO azure_pg_admin;
 
 
 --
--- TOC entry 5080 (class 0 OID 0)
+-- TOC entry 5189 (class 0 OID 0)
 -- Dependencies: 98
 -- Name: COLUMN pg_hba_file_rules.address; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -9363,7 +10639,7 @@ GRANT SELECT(address) ON TABLE pg_catalog.pg_hba_file_rules TO azure_pg_admin;
 
 
 --
--- TOC entry 5081 (class 0 OID 0)
+-- TOC entry 5190 (class 0 OID 0)
 -- Dependencies: 98
 -- Name: COLUMN pg_hba_file_rules.netmask; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -9372,7 +10648,7 @@ GRANT SELECT(netmask) ON TABLE pg_catalog.pg_hba_file_rules TO azure_pg_admin;
 
 
 --
--- TOC entry 5082 (class 0 OID 0)
+-- TOC entry 5191 (class 0 OID 0)
 -- Dependencies: 98
 -- Name: COLUMN pg_hba_file_rules.auth_method; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -9381,7 +10657,7 @@ GRANT SELECT(auth_method) ON TABLE pg_catalog.pg_hba_file_rules TO azure_pg_admi
 
 
 --
--- TOC entry 5083 (class 0 OID 0)
+-- TOC entry 5192 (class 0 OID 0)
 -- Dependencies: 98
 -- Name: COLUMN pg_hba_file_rules.options; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -9390,7 +10666,7 @@ GRANT SELECT(options) ON TABLE pg_catalog.pg_hba_file_rules TO azure_pg_admin;
 
 
 --
--- TOC entry 5084 (class 0 OID 0)
+-- TOC entry 5193 (class 0 OID 0)
 -- Dependencies: 98
 -- Name: COLUMN pg_hba_file_rules.error; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -9399,7 +10675,7 @@ GRANT SELECT(error) ON TABLE pg_catalog.pg_hba_file_rules TO azure_pg_admin;
 
 
 --
--- TOC entry 5085 (class 0 OID 0)
+-- TOC entry 5194 (class 0 OID 0)
 -- Dependencies: 149
 -- Name: COLUMN pg_replication_origin_status.local_id; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -9408,7 +10684,7 @@ GRANT SELECT(local_id) ON TABLE pg_catalog.pg_replication_origin_status TO azure
 
 
 --
--- TOC entry 5086 (class 0 OID 0)
+-- TOC entry 5195 (class 0 OID 0)
 -- Dependencies: 149
 -- Name: COLUMN pg_replication_origin_status.external_id; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -9417,7 +10693,7 @@ GRANT SELECT(external_id) ON TABLE pg_catalog.pg_replication_origin_status TO az
 
 
 --
--- TOC entry 5087 (class 0 OID 0)
+-- TOC entry 5196 (class 0 OID 0)
 -- Dependencies: 149
 -- Name: COLUMN pg_replication_origin_status.remote_lsn; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -9426,7 +10702,7 @@ GRANT SELECT(remote_lsn) ON TABLE pg_catalog.pg_replication_origin_status TO azu
 
 
 --
--- TOC entry 5088 (class 0 OID 0)
+-- TOC entry 5197 (class 0 OID 0)
 -- Dependencies: 149
 -- Name: COLUMN pg_replication_origin_status.local_lsn; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -9435,7 +10711,7 @@ GRANT SELECT(local_lsn) ON TABLE pg_catalog.pg_replication_origin_status TO azur
 
 
 --
--- TOC entry 5089 (class 0 OID 0)
+-- TOC entry 5198 (class 0 OID 0)
 -- Dependencies: 103
 -- Name: COLUMN pg_shmem_allocations.name; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -9444,7 +10720,7 @@ GRANT SELECT(name) ON TABLE pg_catalog.pg_shmem_allocations TO azure_pg_admin;
 
 
 --
--- TOC entry 5090 (class 0 OID 0)
+-- TOC entry 5199 (class 0 OID 0)
 -- Dependencies: 103
 -- Name: COLUMN pg_shmem_allocations.off; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -9453,7 +10729,7 @@ GRANT SELECT(off) ON TABLE pg_catalog.pg_shmem_allocations TO azure_pg_admin;
 
 
 --
--- TOC entry 5091 (class 0 OID 0)
+-- TOC entry 5200 (class 0 OID 0)
 -- Dependencies: 103
 -- Name: COLUMN pg_shmem_allocations.size; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -9462,7 +10738,7 @@ GRANT SELECT(size) ON TABLE pg_catalog.pg_shmem_allocations TO azure_pg_admin;
 
 
 --
--- TOC entry 5092 (class 0 OID 0)
+-- TOC entry 5201 (class 0 OID 0)
 -- Dependencies: 103
 -- Name: COLUMN pg_shmem_allocations.allocated_size; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -9471,7 +10747,7 @@ GRANT SELECT(allocated_size) ON TABLE pg_catalog.pg_shmem_allocations TO azure_p
 
 
 --
--- TOC entry 5093 (class 0 OID 0)
+-- TOC entry 5202 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.starelid; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -9480,7 +10756,7 @@ GRANT SELECT(starelid) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5094 (class 0 OID 0)
+-- TOC entry 5203 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.staattnum; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -9489,7 +10765,7 @@ GRANT SELECT(staattnum) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5095 (class 0 OID 0)
+-- TOC entry 5204 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.stainherit; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -9498,7 +10774,7 @@ GRANT SELECT(stainherit) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5096 (class 0 OID 0)
+-- TOC entry 5205 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.stanullfrac; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -9507,7 +10783,7 @@ GRANT SELECT(stanullfrac) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5097 (class 0 OID 0)
+-- TOC entry 5206 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.stawidth; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -9516,7 +10792,7 @@ GRANT SELECT(stawidth) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5098 (class 0 OID 0)
+-- TOC entry 5207 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.stadistinct; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -9525,7 +10801,7 @@ GRANT SELECT(stadistinct) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5099 (class 0 OID 0)
+-- TOC entry 5208 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.stakind1; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -9534,7 +10810,7 @@ GRANT SELECT(stakind1) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5100 (class 0 OID 0)
+-- TOC entry 5209 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.stakind2; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -9543,7 +10819,7 @@ GRANT SELECT(stakind2) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5101 (class 0 OID 0)
+-- TOC entry 5210 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.stakind3; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -9552,7 +10828,7 @@ GRANT SELECT(stakind3) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5102 (class 0 OID 0)
+-- TOC entry 5211 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.stakind4; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -9561,7 +10837,7 @@ GRANT SELECT(stakind4) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5103 (class 0 OID 0)
+-- TOC entry 5212 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.stakind5; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -9570,7 +10846,7 @@ GRANT SELECT(stakind5) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5104 (class 0 OID 0)
+-- TOC entry 5213 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.staop1; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -9579,7 +10855,7 @@ GRANT SELECT(staop1) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5105 (class 0 OID 0)
+-- TOC entry 5214 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.staop2; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -9588,7 +10864,7 @@ GRANT SELECT(staop2) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5106 (class 0 OID 0)
+-- TOC entry 5215 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.staop3; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -9597,7 +10873,7 @@ GRANT SELECT(staop3) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5107 (class 0 OID 0)
+-- TOC entry 5216 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.staop4; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -9606,7 +10882,7 @@ GRANT SELECT(staop4) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5108 (class 0 OID 0)
+-- TOC entry 5217 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.staop5; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -9615,7 +10891,7 @@ GRANT SELECT(staop5) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5109 (class 0 OID 0)
+-- TOC entry 5218 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.stacoll1; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -9624,7 +10900,7 @@ GRANT SELECT(stacoll1) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5110 (class 0 OID 0)
+-- TOC entry 5219 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.stacoll2; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -9633,7 +10909,7 @@ GRANT SELECT(stacoll2) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5111 (class 0 OID 0)
+-- TOC entry 5220 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.stacoll3; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -9642,7 +10918,7 @@ GRANT SELECT(stacoll3) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5112 (class 0 OID 0)
+-- TOC entry 5221 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.stacoll4; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -9651,7 +10927,7 @@ GRANT SELECT(stacoll4) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5113 (class 0 OID 0)
+-- TOC entry 5222 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.stacoll5; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -9660,7 +10936,7 @@ GRANT SELECT(stacoll5) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5114 (class 0 OID 0)
+-- TOC entry 5223 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.stanumbers1; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -9669,7 +10945,7 @@ GRANT SELECT(stanumbers1) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5115 (class 0 OID 0)
+-- TOC entry 5224 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.stanumbers2; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -9678,7 +10954,7 @@ GRANT SELECT(stanumbers2) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5116 (class 0 OID 0)
+-- TOC entry 5225 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.stanumbers3; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -9687,7 +10963,7 @@ GRANT SELECT(stanumbers3) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5117 (class 0 OID 0)
+-- TOC entry 5226 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.stanumbers4; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -9696,7 +10972,7 @@ GRANT SELECT(stanumbers4) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5118 (class 0 OID 0)
+-- TOC entry 5227 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.stanumbers5; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -9705,7 +10981,7 @@ GRANT SELECT(stanumbers5) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5119 (class 0 OID 0)
+-- TOC entry 5228 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.stavalues1; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -9714,7 +10990,7 @@ GRANT SELECT(stavalues1) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5120 (class 0 OID 0)
+-- TOC entry 5229 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.stavalues2; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -9723,7 +10999,7 @@ GRANT SELECT(stavalues2) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5121 (class 0 OID 0)
+-- TOC entry 5230 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.stavalues3; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -9732,7 +11008,7 @@ GRANT SELECT(stavalues3) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5122 (class 0 OID 0)
+-- TOC entry 5231 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.stavalues4; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -9741,7 +11017,7 @@ GRANT SELECT(stavalues4) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5123 (class 0 OID 0)
+-- TOC entry 5232 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.stavalues5; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -9750,7 +11026,7 @@ GRANT SELECT(stavalues5) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5124 (class 0 OID 0)
+-- TOC entry 5233 (class 0 OID 0)
 -- Dependencies: 68
 -- Name: COLUMN pg_subscription.oid; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -9759,7 +11035,7 @@ GRANT SELECT(oid) ON TABLE pg_catalog.pg_subscription TO azure_pg_admin;
 
 
 --
--- TOC entry 5125 (class 0 OID 0)
+-- TOC entry 5234 (class 0 OID 0)
 -- Dependencies: 68
 -- Name: COLUMN pg_subscription.subdbid; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -9768,7 +11044,7 @@ GRANT SELECT(subdbid) ON TABLE pg_catalog.pg_subscription TO azure_pg_admin;
 
 
 --
--- TOC entry 5126 (class 0 OID 0)
+-- TOC entry 5235 (class 0 OID 0)
 -- Dependencies: 68
 -- Name: COLUMN pg_subscription.subname; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -9777,7 +11053,7 @@ GRANT SELECT(subname) ON TABLE pg_catalog.pg_subscription TO azure_pg_admin;
 
 
 --
--- TOC entry 5127 (class 0 OID 0)
+-- TOC entry 5236 (class 0 OID 0)
 -- Dependencies: 68
 -- Name: COLUMN pg_subscription.subowner; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -9786,7 +11062,7 @@ GRANT SELECT(subowner) ON TABLE pg_catalog.pg_subscription TO azure_pg_admin;
 
 
 --
--- TOC entry 5128 (class 0 OID 0)
+-- TOC entry 5237 (class 0 OID 0)
 -- Dependencies: 68
 -- Name: COLUMN pg_subscription.subenabled; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -9795,7 +11071,7 @@ GRANT SELECT(subenabled) ON TABLE pg_catalog.pg_subscription TO azure_pg_admin;
 
 
 --
--- TOC entry 5129 (class 0 OID 0)
+-- TOC entry 5238 (class 0 OID 0)
 -- Dependencies: 68
 -- Name: COLUMN pg_subscription.subconninfo; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -9804,7 +11080,7 @@ GRANT SELECT(subconninfo) ON TABLE pg_catalog.pg_subscription TO azure_pg_admin;
 
 
 --
--- TOC entry 5130 (class 0 OID 0)
+-- TOC entry 5239 (class 0 OID 0)
 -- Dependencies: 68
 -- Name: COLUMN pg_subscription.subslotname; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -9813,7 +11089,7 @@ GRANT SELECT(subslotname) ON TABLE pg_catalog.pg_subscription TO azure_pg_admin;
 
 
 --
--- TOC entry 5131 (class 0 OID 0)
+-- TOC entry 5240 (class 0 OID 0)
 -- Dependencies: 68
 -- Name: COLUMN pg_subscription.subsynccommit; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -9822,7 +11098,7 @@ GRANT SELECT(subsynccommit) ON TABLE pg_catalog.pg_subscription TO azure_pg_admi
 
 
 --
--- TOC entry 5132 (class 0 OID 0)
+-- TOC entry 5241 (class 0 OID 0)
 -- Dependencies: 68
 -- Name: COLUMN pg_subscription.subpublications; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -9830,7 +11106,7 @@ GRANT SELECT(subsynccommit) ON TABLE pg_catalog.pg_subscription TO azure_pg_admi
 GRANT SELECT(subpublications) ON TABLE pg_catalog.pg_subscription TO azure_pg_admin;
 
 
--- Completed on 2026-01-09 23:26:25
+-- Completed on 2026-01-10 16:46:02
 
 --
 -- PostgreSQL database dump complete

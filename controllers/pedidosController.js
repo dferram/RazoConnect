@@ -1041,7 +1041,21 @@ const crearPedido = async (req, res) => {
     // 8. Crear comisión si se usó código de agente
     let comision = null;
     if (agenteId) {
-      const montoComision = montoTotalFinal * 0.2; // 20% de comisión
+      // Obtener el porcentaje de comisión del agente desde la base de datos
+      const agenteResult = await client.query(
+        `SELECT porcentaje_comision FROM agentesdeventas WHERE agenteid = $1`,
+        [agenteId]
+      );
+      
+      // Usar el porcentaje configurado o default 5% si no existe
+      const porcentajeComision = agenteResult.rows.length > 0 && agenteResult.rows[0].porcentaje_comision 
+        ? parseFloat(agenteResult.rows[0].porcentaje_comision) 
+        : 5.00;
+      
+      // Calcular comisión: (Total - Costo Envío) * (Porcentaje / 100)
+      const baseComision = montoTotalFinal - (costoEnvio || 0);
+      const montoComision = baseComision * (porcentajeComision / 100);
+      
       const comisionResult = await client.query(
         `INSERT INTO Comisiones (PedidoID, AgenteID, MontoComision, Estatus, tenant_id)
          VALUES ($1, $2, $3, 'Pendiente', $4)
@@ -1053,6 +1067,7 @@ const crearPedido = async (req, res) => {
         comisionId: comisionResult.rows[0].comisionid,
         agenteId: agenteId,
         montoComision: parseFloat(comisionResult.rows[0].montocomision),
+        porcentajeAplicado: porcentajeComision,
         fechaCalculo: comisionResult.rows[0].fechacalculo,
         estatus: "Pendiente",
       };
