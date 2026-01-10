@@ -5104,7 +5104,7 @@ const refreshAdminToken = async (req, res) => {
 
 
 
-const devolverStockPedido = async (client, pedidoId, usuarioId) => {
+const devolverStockPedido = async (client, pedidoId, usuarioId, tenant_id = 1) => {
   const motivoVenta = `Venta Pedido #${pedidoId}`;
 
   const movimientosResult = await client.query(
@@ -5160,20 +5160,21 @@ const devolverStockPedido = async (client, pedidoId, usuarioId) => {
     );
 
     await client.query(
-      `INSERT INTO Log_Inventario (VarianteID, CantidadCambiado, NuevoStock, Motivo, UsuarioID)
-       VALUES ($1, $2, $3, $4, $5)`,
+      `INSERT INTO Log_Inventario (VarianteID, CantidadCambiado, NuevoStock, Motivo, UsuarioID, tenant_id)
+       VALUES ($1, $2, $3, $4, $5, $6)`,
       [
         varianteId,
         piezasADevolver,
         nuevoStock,
         `Devolución Pedido Cancelado #${pedidoId}`,
         usuarioId || null,
+        tenant_id,
       ]
     );
   }
 };
 
-const reducirStockPedido = async (client, pedidoId, usuarioId) => {
+const reducirStockPedido = async (client, pedidoId, usuarioId, tenant_id = 1) => {
   const motivoVenta = `Venta Pedido #${pedidoId}`;
 
   const movimientosResult = await client.query(
@@ -5248,14 +5249,15 @@ const reducirStockPedido = async (client, pedidoId, usuarioId) => {
     );
 
     await client.query(
-      `INSERT INTO Log_Inventario (VarianteID, CantidadCambiado, NuevoStock, Motivo, UsuarioID)
-       VALUES ($1, $2, $3, $4, $5)`,
+      `INSERT INTO Log_Inventario (VarianteID, CantidadCambiado, NuevoStock, Motivo, UsuarioID, tenant_id)
+       VALUES ($1, $2, $3, $4, $5, $6)`,
       [
         varianteId,
         -piezasADescontar,
         nuevoStock,
         `Reactivación Pedido #${pedidoId}`,
         usuarioId || null,
+        tenant_id,
       ]
     );
   }
@@ -5944,14 +5946,15 @@ const crearProducto = async (req, res) => {
 
     if (stockTotalInicial > 0) {
       await client.query(
-        `INSERT INTO Log_Inventario (VarianteID, CantidadCambiado, NuevoStock, Motivo, UsuarioID)
-         VALUES ($1, $2, $3, $4, $5)`,
+        `INSERT INTO Log_Inventario (VarianteID, CantidadCambiado, NuevoStock, Motivo, UsuarioID, tenant_id)
+         VALUES ($1, $2, $3, $4, $5, $6)`,
         [
           varianteMaestra.varianteid,
           stockTotalInicial,
           stockTotalInicial,
           "Stock inicial variante maestra (1 pieza)",
           userId,
+          tenant_id,
         ]
       );
     }
@@ -9718,7 +9721,7 @@ const actualizarProveedor = async (req, res) => {
            descuentofinanciero = $25,
            minimocompra = $26,
            aceptadevoluciones = $27
-       WHERE proveedorid = $28
+       WHERE proveedorid = $28 AND tenant_id = $29
        RETURNING *`,
       [
         datosNuevosProveedor.NombreEmpresa,
@@ -9749,6 +9752,7 @@ const actualizarProveedor = async (req, res) => {
         datosNuevosProveedor.MinimoCompra,
         datosNuevosProveedor.AceptaDevoluciones,
         proveedorId,
+        tenant_id,
       ]
     );
 
@@ -10669,21 +10673,21 @@ const recibirInventario = async (req, res) => {
 
       if (adminIdRegistro) {
         await client.query(
-          `INSERT INTO inventarios_admin (admin_id, variante_id, cantidad, registrado_por, ultima_actualizacion)
-           VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)
+          `INSERT INTO inventarios_admin (admin_id, variante_id, cantidad, registrado_por, ultima_actualizacion, tenant_id)
+           VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP, $5)
            ON CONFLICT (admin_id, variante_id)
            DO UPDATE SET 
              cantidad = inventarios_admin.cantidad + $3,
              ultima_actualizacion = CURRENT_TIMESTAMP`,
-          [adminIdRegistro, detalle.varianteid, cantidadAumentar, adminIdRegistro]
+          [adminIdRegistro, detalle.varianteid, cantidadAumentar, adminIdRegistro, tenant_id]
         );
       }
 
       // 4. Registrar movimiento en Log_Inventario
       await client.query(
         `INSERT INTO Log_Inventario 
-         (VarianteID, CantidadCambiado, NuevoStock, Motivo, UsuarioID) 
-         VALUES ($1, $2, $3, $4, $5)`,
+         (VarianteID, CantidadCambiado, NuevoStock, Motivo, UsuarioID, tenant_id) 
+         VALUES ($1, $2, $3, $4, $5, $6)`,
         [
           detalle.varianteid,
           cantidadAumentar,
@@ -10694,6 +10698,7 @@ const recibirInventario = async (req, res) => {
           Number.isInteger(usuarioRecibeId) && usuarioRecibeId > 0
             ? usuarioRecibeId
             : adminId || null,
+          tenant_id,
         ]
       );
 
@@ -11007,14 +11012,15 @@ const recibirItemOrdenCompra = async (req, res) => {
 
     await client.query(
       `INSERT INTO Log_Inventario 
-       (VarianteID, CantidadCambiado, NuevoStock, Motivo, UsuarioID) 
-       VALUES ($1, $2, $3, $4, $5)`,
+       (VarianteID, CantidadCambiado, NuevoStock, Motivo, UsuarioID, tenant_id) 
+       VALUES ($1, $2, $3, $4, $5, $6)`,
       [
         varianteId,
         cantidadAumentar,
         nuevoStock,
         `Recepción OC #${ordenCompraId}`,
         Number.isInteger(usuarioRecibeId) && usuarioRecibeId > 0 ? usuarioRecibeId : null,
+        req.tenant.tenant_id,
       ]
     );
 
@@ -11148,10 +11154,12 @@ const crearOrdenCompra = async (req, res) => {
       }
     }
 
-    // Verificar que el proveedor existe
+    const tenant_id = req.tenant?.tenant_id || 1;
+    
+    // Verificar que el proveedor existe y pertenece al tenant
     const proveedorCheck = await client.query(
-      "SELECT ProveedorID FROM Proveedores WHERE ProveedorID = $1",
-      [proveedorId]
+      "SELECT ProveedorID FROM Proveedores WHERE ProveedorID = $1 AND tenant_id = $2",
+      [proveedorId, tenant_id]
     );
 
     if (proveedorCheck.rows.length === 0) {
@@ -11166,8 +11174,8 @@ const crearOrdenCompra = async (req, res) => {
 
     // 1. Crear la orden de compra
     const ordenQuery = `
-      INSERT INTO OrdenesDeCompra (ProveedorID, FechaEntregaEsperada, Estatus, usuario_creador_id)
-      VALUES ($1, $2, 'Pendiente', $3)
+      INSERT INTO OrdenesDeCompra (ProveedorID, FechaEntregaEsperada, Estatus, usuario_creador_id, tenant_id)
+      VALUES ($1, $2, 'Pendiente', $3, $4)
       RETURNING OrdenCompraID, ProveedorID, FechaCreacion, FechaEntregaEsperada, Estatus
     `;
 
@@ -11175,6 +11183,7 @@ const crearOrdenCompra = async (req, res) => {
       proveedorId,
       fechaEntregaEsperada,
       req.user.id,
+      tenant_id,
     ]);
 
     const ordenCompra = ordenResult.rows[0];
@@ -11186,13 +11195,13 @@ const crearOrdenCompra = async (req, res) => {
     let totalCents = 0;
 
     for (const producto of productos) {
-      // Verificar que la variante existe
+      // Verificar que la variante existe y pertenece al tenant
       const varianteResult = await client.query(
         `SELECT pv.VarianteID, pv.ProductoID, pv.SKU, pv.Dimensiones, pv.MedidaID, pv.CostoUnitario, pr.NombreProducto
          FROM Producto_Variantes pv
          INNER JOIN Productos pr ON pv.ProductoID = pr.ProductoID
-         WHERE pv.VarianteID = $1`,
-        [producto.varianteId]
+         WHERE pv.VarianteID = $1 AND pr.tenant_id = $2`,
+        [producto.varianteId, tenant_id]
       );
 
       if (varianteResult.rows.length === 0) {
@@ -11234,8 +11243,8 @@ const crearOrdenCompra = async (req, res) => {
       }
 
       const detalleQuery = `
-        INSERT INTO DetallesOrdenCompra (OrdenCompraID, VarianteID, CantidadSolicitada, CantidadRecibida, PiezasPorPaquete, CostoUnitario)
-        VALUES ($1, $2, $3, 0, $4, $5)
+        INSERT INTO DetallesOrdenCompra (OrdenCompraID, VarianteID, CantidadSolicitada, CantidadRecibida, PiezasPorPaquete, CostoUnitario, tenant_id)
+        VALUES ($1, $2, $3, 0, $4, $5, $6)
         RETURNING DetalleOC_ID, VarianteID, CantidadSolicitada, CantidadRecibida
       `;
 
@@ -11245,6 +11254,7 @@ const crearOrdenCompra = async (req, res) => {
         producto.cantidadSolicitada,
         piezasPorPaquete,
         costoUnitario,
+        tenant_id,
       ]);
 
       detallesInsertados.push({
