@@ -11,12 +11,31 @@
    * Genera un resumen inteligente de las variantes de un producto
    * @param {Array} variantes - Array de variantes del producto
    * @param {Number} totalVariantes - Número total de variantes (fallback si array vacío)
+   * @param {Number} coloresUnicos - Número de colores únicos (del backend)
+   * @param {Number} medidasUnicas - Número de medidas únicas (del backend)
    * @returns {string} - Resumen legible para el cliente
    */
-  function generarResumenVariantes(variantes, totalVariantes) {
-    // Si no hay array de variantes pero sí un conteo, usar mensaje genérico
+  function generarResumenVariantes(variantes, totalVariantes, coloresUnicos, medidasUnicas) {
+    // Si no hay array de variantes pero sí conteos del backend, usar esos datos
     if ((!Array.isArray(variantes) || variantes.length === 0) && totalVariantes > 0) {
-      return `${totalVariantes} ${totalVariantes === 1 ? 'opción disponible' : 'opciones disponibles'}`;
+      const numColores = parseInt(coloresUnicos, 10) || 0;
+      const numMedidas = parseInt(medidasUnicas, 10) || 0;
+
+      if (totalVariantes === 1) {
+        return 'Variante disponible';
+      }
+
+      // Generar resumen basado en conteos reales del backend
+      if (numColores > 0 && numMedidas > 0) {
+        return `${numColores} ${numColores === 1 ? 'Color' : 'Colores'} | ${numMedidas} ${numMedidas === 1 ? 'Medida' : 'Medidas'}`;
+      } else if (numColores > 0) {
+        return `${numColores} ${numColores === 1 ? 'Color disponible' : 'Colores disponibles'}`;
+      } else if (numMedidas > 0) {
+        return `${numMedidas} ${numMedidas === 1 ? 'Medida disponible' : 'Medidas disponibles'}`;
+      }
+
+      // Fallback si no hay conteos específicos
+      return 'Colores y Medidas disponibles';
     }
     
     if (!Array.isArray(variantes) || variantes.length === 0) {

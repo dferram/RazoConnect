@@ -393,7 +393,9 @@ const obtenerProductos = async (req, res) => {
         SELECT
           pv.productoid,
           COUNT(*) AS total_variantes,
-          SUM(CASE WHEN pv.stock > 0 THEN 1 ELSE 0 END) AS variantes_con_stock
+          SUM(CASE WHEN pv.stock > 0 THEN 1 ELSE 0 END) AS variantes_con_stock,
+          COUNT(DISTINCT CASE WHEN pv.color_nombre IS NOT NULL AND TRIM(pv.color_nombre) <> '' THEN pv.color_nombre END) AS colores_unicos,
+          COUNT(DISTINCT CASE WHEN pv.dimensiones IS NOT NULL AND TRIM(pv.dimensiones) <> '' THEN pv.dimensiones END) AS medidas_unicas
         FROM producto_variantes pv
         GROUP BY pv.productoid
       ) stats ON stats.productoid = p.productoid
@@ -578,6 +580,10 @@ const obtenerProductos = async (req, res) => {
         row.variantes_con_stock !== null
           ? parseInt(row.variantes_con_stock, 10)
           : 0;
+      const coloresUnicos =
+        row.colores_unicos !== null ? parseInt(row.colores_unicos, 10) : 0;
+      const medidasUnicas =
+        row.medidas_unicas !== null ? parseInt(row.medidas_unicas, 10) : 0;
 
       const precioOferta =
         row.preciooferta !== null && row.preciooferta !== undefined
@@ -703,6 +709,8 @@ const obtenerProductos = async (req, res) => {
         imagenAlt: row.textoalternativo || null,
         totalVariantes,
         variantesConStock,
+        coloresUnicos,
+        medidasUnicas,
         varianteDestacada,
       };
     });

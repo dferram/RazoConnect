@@ -537,8 +537,10 @@
 
         // Generar resumen inteligente de variantes
         const totalVariantes = producto.totalVariantes || producto.variantesConStock || variantes.length || 0;
+        const coloresUnicos = producto.coloresUnicos || 0;
+        const medidasUnicas = producto.medidasUnicas || 0;
         const resumenVariantes = window.VariantSummaryUtils 
-          ? window.VariantSummaryUtils.generarResumenVariantes(variantes, totalVariantes)
+          ? window.VariantSummaryUtils.generarResumenVariantes(variantes, totalVariantes, coloresUnicos, medidasUnicas)
           : `${variantes.length} variantes`;
 
         const filtroMedidaNormalizado = normalizarTexto(filtroMedidaActivo);
