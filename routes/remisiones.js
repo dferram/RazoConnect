@@ -1,12 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const remisionesController = require('../controllers/remisionesController');
-const { authenticate } = require('../middlewares/authMiddleware');
-const { authorizeAdmin } = require('../middlewares/authorizeAdmin');
-const { extractTenant } = require('../middlewares/extractTenant');
+const { authenticate, authorizeAdmin } = require('../middlewares/authMiddleware');
 
 router.use(authenticate);
-router.use(extractTenant);
 router.use(authorizeAdmin);
 
 router.post('/generar', remisionesController.generarRemision);
