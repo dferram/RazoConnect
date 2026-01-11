@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const pedidosController = require("../controllers/pedidosController");
+const pdfController = require("../controllers/pdfController");
 const { authenticate, authorize } = require("../middlewares/authMiddleware");
 const checkCreditStatus = require("../middlewares/checkCreditStatus");
 const uploadComprobante = require("../middlewares/uploadComprobante");
@@ -43,6 +44,18 @@ router.post(
   uploadComprobante.single("comprobante"),
   checkCreditStatus(),
   pedidosController.crearPedido
+);
+
+/**
+ * @route   GET /api/pedidos/:id/pdf
+ * @desc    Generar PDF de remisión para un pedido
+ * @access  Private (Cliente propietario o Admin)
+ */
+router.get(
+  "/pedidos/:id/pdf",
+  authenticate,
+  authorize(["cliente", "admin", "superadmin"]),
+  pdfController.generarPDFPedido
 );
 
 module.exports = router;

@@ -926,6 +926,19 @@
                           p.montoTotal
                         )}</span>
                       </div>
+
+                      <!-- Botón Descargar PDF -->
+                      <div style="margin-top: 1rem;">
+                        <button 
+                          onclick="descargarPDFPedido(${p.pedidoId})"
+                          style="width: 100%; padding: 0.875rem; background: white; border: 2px solid var(--razo-orange); color: var(--razo-orange); border-radius: 0.75rem; font-weight: 700; font-size: 1rem; cursor: pointer; transition: all 0.3s; display: flex; align-items: center; justify-content: center; gap: 0.5rem;"
+                          onmouseover="this.style.background='var(--razo-orange)'; this.style.color='white';"
+                          onmouseout="this.style.background='white'; this.style.color='var(--razo-orange)';"
+                        >
+                          <span style="font-size: 1.25rem;">📄</span>
+                          <span>Descargar Remisión (PDF)</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1308,6 +1321,21 @@
         }
       }
     </style>
+
+    <script>
+      // Función para descargar PDF de remisión
+      function descargarPDFPedido(pedidoId) {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          showToast('Debes iniciar sesión para descargar el PDF', 'error');
+          return;
+        }
+
+        // Abrir el PDF en una nueva pestaña
+        const url = `/api/pedidos/${pedidoId}/pdf`;
+        window.open(url, '_blank');
+      }
+    </script>
 
     <!-- Sistema de Temas Estacionales -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

@@ -9,6 +9,11 @@ let itemsPendientes = [];
 async function abrirModalGenerarRemision(pedidoId) {
     try {
         const response = await fetch(`/api/remisiones/pedido/${pedidoId}/pendiente`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
             credentials: 'include'
         });
 
@@ -285,7 +290,8 @@ async function generarRemisionAPI(datos) {
         const response = await fetch('/api/remisiones/generar', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
             },
             credentials: 'include',
             body: JSON.stringify(datos)
