@@ -10298,11 +10298,14 @@ const getAllOrdenesCompra = async (req, res) => {
         oc.usuario_creador_id,
         p.NombreEmpresa as ProveedorNombre,
         COUNT(doc.DetalleOC_ID) as TotalProductos,
-        a.nombre as PropietarioNombre
+        a.nombre as PropietarioNombre,
+        CONCAT(c.Nombre, ' ', c.Apellido) as NombreCliente
       FROM OrdenesDeCompra oc
       INNER JOIN Proveedores p ON oc.ProveedorID = p.ProveedorID
       LEFT JOIN DetallesOrdenCompra doc ON oc.OrdenCompraID = doc.OrdenCompraID
       LEFT JOIN Administradores a ON oc.usuario_creador_id = a.adminid
+      LEFT JOIN Pedidos ped ON oc.pedido_origen_id = ped.PedidoID
+      LEFT JOIN Clientes c ON ped.ClienteID = c.ClienteID
       WHERE oc.tenant_id = $1
     `;
 
@@ -10337,7 +10340,7 @@ const getAllOrdenesCompra = async (req, res) => {
     query += `
       GROUP BY oc.OrdenCompraID, oc.ProveedorID, oc.FechaCreacion, 
                oc.FechaEntregaEsperada, oc.Estatus, oc.OrigenOC, oc.usuario_creador_id,
-               p.NombreEmpresa, a.nombre
+               p.NombreEmpresa, a.nombre, c.Nombre, c.Apellido
       ORDER BY oc.FechaCreacion DESC
     `;
 
@@ -10358,6 +10361,7 @@ const getAllOrdenesCompra = async (req, res) => {
           totalProductos: parseInt(row.totalproductos),
           usuarioCreadorId: row.usuario_creador_id,
           propietarioNombre: row.propietarionombre || 'Sin asignar',
+          nombreCliente: row.nombrecliente || null,
         })),
         total: result.rows.length,
       },

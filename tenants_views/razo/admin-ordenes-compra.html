@@ -146,6 +146,7 @@
                     <th>Fecha Creación</th>
                     <th>Entrega Esperada</th>
                     <th>Productos</th>
+                    <th>Cliente</th>
                     <th>Estatus</th>
                     <th id="thPropietario" style="display: none;">Propietario</th>
                     <th style="width: 280px">Acciones</th>
@@ -752,6 +753,11 @@
               ? `<td style="color: #6b7280; font-size: 0.875rem;">${orden.propietarioNombre || 'Sin asignar'}</td>`
               : '';
 
+            // Determinar el texto del cliente
+            const clienteTexto = orden.origenOC === 'backorder' && orden.nombreCliente 
+              ? orden.nombreCliente 
+              : (orden.origenOC === 'manual' ? 'Stock General' : '-');
+
             row.innerHTML = `
               <td style="font-weight: 600; color: #374151;">#${
                 orden.ordenCompraId
@@ -767,6 +773,7 @@
               <td style="text-align: center; color: #374151;">${
                 orden.totalProductos
               }</td>
+              <td style="color: #374151; font-weight: 500;">${clienteTexto}</td>
               <td><span class="admin-badge ${estatusBadgeClass}">${
                 estatusTexto
               }</span></td>
