@@ -55,6 +55,11 @@ async function cargarRemisiones() {
         });
 
         const response = await fetch(`/api/remisiones?${params.toString()}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
             credentials: 'include'
         });
 
@@ -209,6 +214,11 @@ async function verDetalleRemision(remisionId) {
 
     try {
         const response = await fetch(`/api/remisiones/${remisionId}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
             credentials: 'include'
         });
 
@@ -374,7 +384,8 @@ async function cancelarRemision() {
         const response = await fetch(`/api/remisiones/${currentRemisionId}/cancelar`, {
             method: 'PUT',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
             },
             credentials: 'include',
             body: JSON.stringify({ motivo })
@@ -425,6 +436,11 @@ async function exportarExcel() {
         });
 
         const response = await fetch(`/api/remisiones?${params.toString()}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
             credentials: 'include'
         });
 
