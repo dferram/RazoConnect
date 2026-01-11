@@ -1,4 +1,4 @@
-# RazoConnect
+# RazoConnect by xCore
 
 ![Node.js](https://img.shields.io/badge/Node.js-v18+-green.svg)
 ![Express](https://img.shields.io/badge/Express-4.18.2-blue.svg)
@@ -10,7 +10,7 @@ Sistema SaaS Multi-Tenant de E-commerce y gestión de inventario B2B diseñado p
 
 ## Descripción
 
-RazoConnect es una plataforma integral que permite a múltiples empresas (tenants) gestionar sus operaciones de venta, inventario, créditos y comisiones desde una única instancia de la aplicación, manteniendo un aislamiento total de datos entre clientes.
+RazoConnect es una plataforma integral desarrollada por la empresa xCore que permite a múltiples empresas (tenants) gestionar sus operaciones de venta, inventario, créditos y comisiones desde una única instancia de la aplicación, manteniendo un aislamiento total de datos entre clientes.
 
 ### Características Destacadas
 
@@ -38,10 +38,6 @@ Documentación técnica detallada sobre la arquitectura Multi-Tenant:
 - Diagramas de arquitectura y flujo de datos
 - Consideraciones de escalabilidad
 
-**Ideal para**: Desarrolladores que necesitan entender la arquitectura técnica del sistema.
-
-### 2. [Guía Funcional](docs/GUIA_FUNCIONAL.md)
-
 Guía completa de funcionalidades y flujos de negocio:
 
 - Roles del sistema: Super Admin, Admin, Agente, Cliente
@@ -53,125 +49,6 @@ Guía completa de funcionalidades y flujos de negocio:
 - Casos de uso detallados paso a paso
 
 **Ideal para**: Administradores, usuarios finales y analistas de negocio.
-
-### 3. [Despliegue y Troubleshooting](docs/DESPLIEGUE_Y_TROUBLESHOOTING.md)
-
-Guía práctica de despliegue y solución de problemas:
-
-- Configuración del entorno de desarrollo local
-- Despliegue paso a paso en Azure App Service
-- Configuración de Azure Database for PostgreSQL
-- Configuración de dominios personalizados y SSL
-- CI/CD con GitHub Actions
-- Problemas comunes y soluciones (encoding UTF-8, sesiones, performance)
-- Monitoreo con Azure Monitor
-- Plan de recuperación ante desastres
-- Mantenimiento y backups
-
-**Ideal para**: DevOps, administradores de sistemas y desarrolladores.
-
-### 4. [Reactivación de MercadoPago](docs/MERCADOPAGO_REACTIVACION.md)
-
-Guía específica para la integración con MercadoPago (no modificar).
-
-## Inicio Rápido
-
-### Requisitos Previos
-
-- Node.js v18 o superior
-- PostgreSQL v17 o superior
-- Git
-- Cuenta de Azure (para producción)
-
-### Instalación Local
-
-```bash
-# Clonar el repositorio
-git clone https://github.com/tu-usuario/RazoConnect.git
-cd RazoConnect
-
-# Instalar dependencias
-npm install
-
-# Configurar variables de entorno
-cp .env.example .env
-# Editar .env con tus credenciales
-```
-
-### Configurar Variables de Entorno
-
-Crear archivo `.env` en la raíz:
-
-```env
-# Entorno
-NODE_ENV=development
-
-# Base de Datos
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=razoconnect
-DB_USER=postgres
-DB_PASSWORD=tu_password
-DB_SSL=false
-
-# Seguridad
-JWT_SECRET=tu_jwt_secret_muy_seguro_minimo_32_caracteres
-SESSION_SECRET=tu_session_secret_muy_seguro
-
-# Desarrollo Local
-FORCE_TENANT_ID=1
-
-# Puerto
-PORT=3000
-
-# Cloudinary (Imágenes)
-CLOUDINARY_CLOUD_NAME=tu_cloud_name
-CLOUDINARY_API_KEY=tu_api_key
-CLOUDINARY_API_SECRET=tu_api_secret
-
-# Email
-EMAIL_HOST=smtp.gmail.com
-EMAIL_PORT=587
-EMAIL_USER=tu_email@gmail.com
-EMAIL_PASSWORD=tu_password_app
-EMAIL_FROM=noreply@tudominio.com
-
-# MercadoPago
-MERCADOPAGO_ACCESS_TOKEN=tu_access_token
-
-# Frontend
-FRONTEND_BASE_URL=http://localhost:3000
-
-# Super Admin
-SUPER_ADMIN_KEY=tu_clave_super_secreta
-```
-
-### Configurar Base de Datos
-
-```bash
-# Crear base de datos
-psql -U postgres
-CREATE DATABASE razoconnect;
-\q
-
-# Restaurar backup (si existe)
-psql -U postgres -d razoconnect -f backup/backup11.sql
-
-# Crear tenant de prueba
-psql -U postgres -d razoconnect -c "INSERT INTO tenants (nombre_cliente, dominio, tema, is_active) VALUES ('Razo', 'localhost', 'razo', true);"
-```
-
-### Iniciar Servidor
-
-```bash
-npm start
-```
-
-El servidor estará disponible en `http://localhost:3000`
-
-Verificar endpoints:
-- `http://localhost:3000/api` - Mensaje de bienvenida
-- `http://localhost:3000/api/health` - Estado de la base de datos
 
 ## Tecnologías
 
@@ -292,37 +169,6 @@ El sistema implementa múltiples capas de seguridad:
 5. **Sesiones Persistentes**: Almacenadas en PostgreSQL con aislamiento por dominio
 6. **HTTPS**: Forzado en producción con certificados SSL de Azure
 
-## Despliegue en Producción
-
-Para desplegar en Azure App Service:
-
-1. Crear recursos en Azure (App Service, PostgreSQL)
-2. Configurar variables de entorno en Azure
-3. Configurar base de datos y restaurar backup
-4. Configurar GitHub Actions para CI/CD
-5. Configurar dominios personalizados y SSL
-6. Verificar funcionamiento
-
-Ver guía completa en [Despliegue y Troubleshooting](docs/DESPLIEGUE_Y_TROUBLESHOOTING.md).
-
-## Problemas Comunes
-
-### Error de Encoding (Acentos)
-**Solución**: Configurar UTF-8 en PostgreSQL y en la conexión de Node.js
-```sql
-ALTER DATABASE razoconnect SET client_encoding TO 'UTF8';
-```
-
-### Sesión No Persiste
-**Solución**: Verificar configuración de CORS con `credentials: true` y cookie `sameSite: 'lax'`
-
-### Tenant No Encontrado
-**Solución**: Verificar que el dominio esté registrado en la tabla `tenants`
-
-Ver más soluciones en [Despliegue y Troubleshooting](docs/DESPLIEGUE_Y_TROUBLESHOOTING.md).
-
-## Mantenimiento
-
 ### Tareas Automatizadas
 El sistema ejecuta diariamente:
 - Limpieza de sesiones expiradas
@@ -330,39 +176,7 @@ El sistema ejecuta diariamente:
 - Alertas de stock bajo
 - Generación de reportes automáticos
 
-### Backups
-Configurar backups automáticos en Azure Database for PostgreSQL:
-- Retención: 7-35 días
-- Geo-redundancia según necesidad
-
-### Monitoreo
-Configurar alertas en Azure Monitor para:
-- CPU > 80%
-- Memoria > 80%
-- Tiempo de respuesta > 5s
-- Errores HTTP 5xx
-
-## Contribución
-
-Este es un proyecto privado. Para contribuir:
-
-1. Crear branch desde `main`
-2. Realizar cambios y commits
-3. Crear Pull Request
-4. Esperar revisión y aprobación
-5. GitHub Actions desplegará automáticamente a producción
-
-## Soporte
-
-Para soporte técnico o preguntas:
-- Revisar la documentación en la carpeta `docs/`
-- Consultar la sección de problemas comunes
-- Revisar logs en Azure Portal
 
 ## Licencia
 
-Este proyecto está bajo la Licencia ISC.
-
-## Contacto
-
-Para más información sobre el proyecto, contactar al equipo de desarrollo.
+Este proyecto está bajo la Licencia ISC y es desarrollado por xCore.
