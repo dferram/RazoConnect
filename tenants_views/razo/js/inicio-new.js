@@ -229,8 +229,9 @@
 
     // Generar resumen inteligente de variantes
     const variantes = producto.variantes || [];
+    const totalVariantes = producto.totalVariantes || producto.variantesConStock || variantes.length || 0;
     const resumenVariantes = window.VariantSummaryUtils 
-      ? window.VariantSummaryUtils.generarResumenVariantes(variantes)
+      ? window.VariantSummaryUtils.generarResumenVariantes(variantes, totalVariantes)
       : null;
 
     const dimensionLabel =

@@ -486,9 +486,10 @@
                 
                 // Generar resumen inteligente de variantes
                 const variantes = producto.variantes || [];
+                const totalVariantes = producto.totalVariantes || producto.variantesConStock || 0;
                 const resumenVariantes = window.VariantSummaryUtils 
-                  ? window.VariantSummaryUtils.generarResumenVariantes(variantes)
-                  : `${producto.totalVariantes || 0} variantes`;
+                  ? window.VariantSummaryUtils.generarResumenVariantes(variantes, totalVariantes)
+                  : `${totalVariantes} variantes`;
 
                 return `
               <div class="featured-card">

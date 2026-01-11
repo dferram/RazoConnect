@@ -10,9 +10,15 @@
   /**
    * Genera un resumen inteligente de las variantes de un producto
    * @param {Array} variantes - Array de variantes del producto
+   * @param {Number} totalVariantes - Número total de variantes (fallback si array vacío)
    * @returns {string} - Resumen legible para el cliente
    */
-  function generarResumenVariantes(variantes) {
+  function generarResumenVariantes(variantes, totalVariantes) {
+    // Si no hay array de variantes pero sí un conteo, usar mensaje genérico
+    if ((!Array.isArray(variantes) || variantes.length === 0) && totalVariantes > 0) {
+      return `${totalVariantes} ${totalVariantes === 1 ? 'opción disponible' : 'opciones disponibles'}`;
+    }
+    
     if (!Array.isArray(variantes) || variantes.length === 0) {
       return 'Sin variantes disponibles';
     }
