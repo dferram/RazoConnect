@@ -16,12 +16,14 @@
    * @returns {string} - Resumen legible para el cliente
    */
   function generarResumenVariantes(variantes, totalVariantes, coloresUnicos, medidasUnicas) {
-    // Si no hay array de variantes pero sí conteos del backend, usar esos datos
-    if ((!Array.isArray(variantes) || variantes.length === 0) && totalVariantes > 0) {
-      const numColores = parseInt(coloresUnicos, 10) || 0;
-      const numMedidas = parseInt(medidasUnicas, 10) || 0;
+    // PRIORIDAD 1: Usar conteos del backend (coloresUnicos y medidasUnicas)
+    // Estos valores vienen directamente de la base de datos y son más confiables
+    const numColores = parseInt(coloresUnicos, 10) || 0;
+    const numMedidas = parseInt(medidasUnicas, 10) || 0;
+    const numTotal = parseInt(totalVariantes, 10) || 0;
 
-      // Generar resumen basado en conteos reales del backend
+    // Si tenemos conteos del backend, usarlos primero
+    if (numColores > 0 || numMedidas > 0) {
       if (numColores > 0 && numMedidas > 0) {
         return `${numColores} ${numColores === 1 ? 'Color' : 'Colores'} | ${numMedidas} ${numMedidas === 1 ? 'Medida' : 'Medidas'}`;
       } else if (numColores > 0) {
@@ -29,15 +31,17 @@
       } else if (numMedidas > 0) {
         return `${numMedidas} ${numMedidas === 1 ? 'Medida disponible' : 'Medidas disponibles'}`;
       }
+    }
 
-      // Fallback: Si no hay conteos específicos pero hay totalVariantes,
-      // asumir que hay colores y medidas disponibles
-      if (totalVariantes === 1) {
+    // PRIORIDAD 2: Si hay totalVariantes pero no conteos específicos
+    if (numTotal > 0) {
+      if (numTotal === 1) {
         return 'Opción disponible';
       }
-      return 'Colores y Medidas disponibles';
+      return `${numTotal} opciones disponibles`;
     }
     
+    // PRIORIDAD 3: Intentar analizar el array de variantes si está disponible
     if (!Array.isArray(variantes) || variantes.length === 0) {
       return 'Sin opciones disponibles';
     }
@@ -58,32 +62,32 @@
       return 'Variante única';
     }
 
-    // Extraer valores únicos de colores y medidas
-    const coloresUnicos = new Set();
-    const medidasUnicas = new Set();
+    // Extraer valores únicos de colores y medidas del array
+    const coloresSet = new Set();
+    const medidasSet = new Set();
 
     variantes.forEach(variante => {
       const color = extraerColor(variante);
       const medida = extraerMedida(variante);
 
       if (color) {
-        coloresUnicos.add(color);
+        coloresSet.add(color);
       }
       if (medida) {
-        medidasUnicas.add(medida);
+        medidasSet.add(medida);
       }
     });
 
-    const numColores = coloresUnicos.size;
-    const numMedidas = medidasUnicas.size;
+    const numColoresArray = coloresSet.size;
+    const numMedidasArray = medidasSet.size;
 
     // Generar resumen según lo que tengamos
-    if (numColores > 0 && numMedidas > 0) {
-      return `${numColores} ${numColores === 1 ? 'Color' : 'Colores'} | ${numMedidas} ${numMedidas === 1 ? 'Medida' : 'Medidas'}`;
-    } else if (numColores > 0) {
-      return `${numColores} ${numColores === 1 ? 'Color disponible' : 'Colores disponibles'}`;
-    } else if (numMedidas > 0) {
-      return `${numMedidas} ${numMedidas === 1 ? 'Medida disponible' : 'Medidas disponibles'}`;
+    if (numColoresArray > 0 && numMedidasArray > 0) {
+      return `${numColoresArray} ${numColoresArray === 1 ? 'Color' : 'Colores'} | ${numMedidasArray} ${numMedidasArray === 1 ? 'Medida' : 'Medidas'}`;
+    } else if (numColoresArray > 0) {
+      return `${numColoresArray} ${numColoresArray === 1 ? 'Color disponible' : 'Colores disponibles'}`;
+    } else if (numMedidasArray > 0) {
+      return `${numMedidasArray} ${numMedidasArray === 1 ? 'Medida disponible' : 'Medidas disponibles'}`;
     }
 
     // Fallback: mostrar número de variantes
