@@ -431,6 +431,13 @@ const API = {
     });
   },
 
+  actualizarDireccion: async (direccionId, formData) => {
+    return apiCall(`/direcciones/${direccionId}`, {
+      method: "PUT",
+      body: JSON.stringify(formData),
+    });
+  },
+
   // Agentes endpoints
   vincularClienteAgente: async (clienteId) => {
     return apiCall("/agentes/vincular-cliente", {

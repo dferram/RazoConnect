@@ -18,4 +18,12 @@ router.get('/direcciones', authenticate, authorize(['cliente']), direccionesCont
  */
 router.post('/direcciones', authenticate, authorize(['cliente']), direccionesController.crearDireccion);
 
+/**
+ * @route   PUT /api/direcciones/:id
+ * @desc    Actualizar una dirección existente
+ * @access  Private (Cliente)
+ * @body    { Etiqueta, Receptor, Calle, NumeroExt, NumeroInt, Colonia, Ciudad, EstadoID, CodigoPostal, TelefonoContacto }
+ */
+router.put('/direcciones/:id', authenticate, authorize(['cliente']), direccionesController.actualizarDireccion);
+
 module.exports = router;

@@ -213,8 +213,141 @@ const crearDireccion = async (req, res) => {
   }
 };
 
+/**
+ * Actualizar una dirección existente
+ * PUT /api/direcciones/:id
+ */
+const actualizarDireccion = async (req, res) => {
+  try {
+    const clienteId = req.user.userId;
+    const tenant_id = req.tenant?.tenant_id || req.user?.tenantId || 1;
+    const direccionId = parseInt(req.params.id, 10);
+    
+    const {
+      Etiqueta,
+      Receptor,
+      Calle,
+      NumeroExt,
+      NumeroInt,
+      Colonia,
+      Ciudad,
+      EstadoID,
+      CodigoPostal,
+      TelefonoContacto
+    } = req.body;
+
+    // Validar que el ID sea válido
+    if (Number.isNaN(direccionId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID de dirección inválido'
+      });
+    }
+
+    // Validar campos requeridos
+    const estadoId = parseInt(EstadoID, 10);
+
+    if (!Receptor || !Calle || !Ciudad || Number.isNaN(estadoId) || !CodigoPostal) {
+      return res.status(400).json({
+        success: false,
+        message: 'Receptor, Calle, Ciudad, EstadoID y Código Postal son requeridos'
+      });
+    }
+
+    // SEGURIDAD CRÍTICA: Verificar que la dirección pertenece al cliente autenticado
+    const ownershipCheck = await db.query(
+      `SELECT cd.DireccionID 
+       FROM Cliente_Direcciones cd
+       INNER JOIN Clientes c ON cd.ClienteID = c.ClienteID
+       WHERE cd.DireccionID = $1 AND cd.ClienteID = $2 AND c.tenant_id = $3`,
+      [direccionId, clienteId, tenant_id]
+    );
+
+    if (!ownershipCheck.rows.length) {
+      return res.status(403).json({
+        success: false,
+        message: 'No tienes permiso para editar esta dirección'
+      });
+    }
+
+    // Ejecutar UPDATE
+    const updateQuery = `
+      UPDATE Cliente_Direcciones
+      SET 
+        Etiqueta = $1,
+        Receptor = $2,
+        Calle = $3,
+        NumeroExt = $4,
+        NumeroInt = $5,
+        Colonia = $6,
+        Ciudad = $7,
+        EstadoID = $8,
+        CodigoPostal = $9,
+        TelefonoContacto = $10
+      WHERE DireccionID = $11
+      RETURNING DireccionID
+    `;
+
+    await db.query(updateQuery, [
+      Etiqueta || null,
+      Receptor,
+      Calle,
+      NumeroExt || null,
+      NumeroInt || null,
+      Colonia || null,
+      Ciudad,
+      estadoId,
+      CodigoPostal,
+      TelefonoContacto || null,
+      direccionId
+    ]);
+
+    // Obtener la dirección actualizada con el nombre del estado
+    const direccionResult = await db.query(
+      `SELECT 
+          cd.DireccionID,
+          cd.Etiqueta,
+          cd.Receptor,
+          cd.Calle,
+          cd.NumeroExt,
+          cd.NumeroInt,
+          cd.Colonia,
+          cd.Ciudad,
+          cd.EstadoID,
+          cd.CodigoPostal,
+          cd.TelefonoContacto,
+          e.Nombre AS EstadoNombre
+        FROM Cliente_Direcciones cd
+        LEFT JOIN Estados e ON cd.EstadoID = e.EstadoID
+        WHERE cd.DireccionID = $1`,
+      [direccionId]
+    );
+
+    const direccion = direccionResult.rows[0];
+
+    res.status(200).json({
+      success: true,
+      message: 'Dirección actualizada exitosamente',
+      data: {
+        direccion: {
+          ...mapDireccionRow(direccion)
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('Error al actualizar dirección:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al actualizar la dirección',
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   obtenerEstados,
   obtenerDirecciones,
-  crearDireccion
+  crearDireccion,
+  actualizarDireccion
 };

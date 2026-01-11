@@ -540,6 +540,10 @@
       const btnGuardarSpinner = document.getElementById("btnGuardarSpinner");
       const logoutBtn = document.getElementById("logoutBtn");
       const estadoSelect = document.getElementById("estadoSelect");
+      const modalDireccionTitle = document.getElementById("modalDireccionTitle");
+
+      // Variable para rastrear el ID de dirección en modo edición
+      let direccionIdEnEdicion = null;
 
       const estadoOptionPlaceholder =
         '<option value="" disabled selected>Selecciona un estado</option>';
@@ -716,7 +720,7 @@
               direccionesList.innerHTML = direcciones
                 .map(
                   (d) => `
-              <div class="direccion-card">
+              <div class="direccion-card" data-direccion='${JSON.stringify(d)}'>
                 <!-- Header con etiqueta -->
                 <div style="background: linear-gradient(135deg, var(--razo-turquoise) 0%, var(--razo-blue) 100%); padding: 1rem 1.5rem; display: flex; align-items: center; justify-content: space-between;">
                   <div style="display: flex; align-items: center; gap: 0.75rem;">
@@ -730,6 +734,16 @@
                       <div style="color: rgba(255,255,255,0.8); font-size: 0.875rem;">Dirección de envío</div>
                     </div>
                   </div>
+                  <button 
+                    class="btn btn-sm" 
+                    onclick="editarDireccion(${d.direccionId})"
+                    style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 0.5rem 1rem; border-radius: 0.5rem; font-size: 0.875rem; font-weight: 600; transition: all 0.2s; display: flex; align-items: center; gap: 0.5rem;"
+                    onmouseover="this.style.background='rgba(255,255,255,0.3)'"
+                    onmouseout="this.style.background='rgba(255,255,255,0.2)'"
+                  >
+                    <i class="fas fa-pencil-alt"></i>
+                    <span>Editar</span>
+                  </button>
                 </div>
                 
                 <!-- Contenido -->
@@ -1170,16 +1184,76 @@
         }
       }
 
-      // Modal handlers
-      btnNuevaDireccion.addEventListener("click", () => {
+      // Función para abrir modal en modo crear
+      function abrirModalCrear() {
+        direccionIdEnEdicion = null;
+        formDireccion.reset();
+        resetEstadoSelect();
+        document.querySelector("#modalDireccion h2").textContent = "Nueva Dirección";
+        document.querySelector("#modalDireccion p").textContent = "Agrega una dirección para realizar tus pedidos";
         modalDireccion.classList.add("show");
         loadEstados();
-      });
+      }
+
+      // Función para editar dirección existente
+      window.editarDireccion = function(direccionId) {
+        // Buscar la dirección en el DOM
+        const cards = document.querySelectorAll('.direccion-card');
+        let direccion = null;
+        
+        for (const card of cards) {
+          try {
+            const data = JSON.parse(card.getAttribute('data-direccion'));
+            if (data.direccionId === direccionId) {
+              direccion = data;
+              break;
+            }
+          } catch (e) {
+            console.error('Error parsing direccion data:', e);
+          }
+        }
+
+        if (!direccion) {
+          showToast('No se encontró la dirección', 'error');
+          return;
+        }
+
+        // Guardar el ID para el submit
+        direccionIdEnEdicion = direccionId;
+
+        // Cambiar título del modal
+        document.querySelector("#modalDireccion h2").textContent = "Editar Dirección";
+        document.querySelector("#modalDireccion p").textContent = "Modifica los datos de tu dirección";
+
+        // Rellenar el formulario con los datos existentes
+        document.getElementById("etiqueta").value = direccion.etiqueta || '';
+        document.getElementById("receptor").value = direccion.receptor || '';
+        document.getElementById("calle").value = direccion.calle || '';
+        document.getElementById("numeroExt").value = direccion.numeroExt || '';
+        document.getElementById("numeroInt").value = direccion.numeroInt || '';
+        document.getElementById("colonia").value = direccion.colonia || '';
+        document.getElementById("ciudad").value = direccion.ciudad || '';
+        document.getElementById("codigoPostal").value = direccion.codigoPostal || '';
+        document.getElementById("telefonoContacto").value = direccion.telefonoContacto || '';
+
+        // Abrir modal y cargar estados
+        modalDireccion.classList.add("show");
+        loadEstados().then(() => {
+          // Seleccionar el estado después de cargar la lista
+          if (direccion.estadoId) {
+            document.getElementById("estadoSelect").value = direccion.estadoId;
+          }
+        });
+      };
+
+      // Modal handlers
+      btnNuevaDireccion.addEventListener("click", abrirModalCrear);
 
       btnCancelarDireccion.addEventListener("click", () => {
         modalDireccion.classList.remove("show");
         formDireccion.reset();
         resetEstadoSelect();
+        direccionIdEnEdicion = null;
       });
 
       // Cerrar modal al hacer clic fuera del contenido
@@ -1188,6 +1262,7 @@
           modalDireccion.classList.remove("show");
           formDireccion.reset();
           resetEstadoSelect();
+          direccionIdEnEdicion = null;
         }
       });
 
@@ -1196,6 +1271,7 @@
         if (e.key === "Escape" && modalDireccion.classList.contains("show")) {
           modalDireccion.classList.remove("show");
           formDireccion.reset();
+          direccionIdEnEdicion = null;
         }
       });
 
@@ -1231,14 +1307,27 @@
             return;
           }
 
-          const response = await API.crearDireccion(formData);
+          let response;
+          
+          // Determinar si es creación o actualización
+          if (direccionIdEnEdicion) {
+            // Modo EDICIÓN: PUT
+            response = await API.actualizarDireccion(direccionIdEnEdicion, formData);
+          } else {
+            // Modo CREACIÓN: POST
+            response = await API.crearDireccion(formData);
+          }
 
           if (response.ok && response.data.success) {
-            showToast("Dirección guardada exitosamente", "success");
+            const mensaje = direccionIdEnEdicion 
+              ? "Dirección actualizada exitosamente" 
+              : "Dirección guardada exitosamente";
+            showToast(mensaje, "success");
             modalDireccion.classList.remove("show");
             formDireccion.reset();
             loadDirecciones();
             resetEstadoSelect();
+            direccionIdEnEdicion = null;
           } else {
             showToast(
               response.data.message || "Error al guardar dirección",
