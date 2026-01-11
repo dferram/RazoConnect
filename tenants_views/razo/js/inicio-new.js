@@ -12,7 +12,7 @@
   // ========================================
   const CONFIG = {
     flashSaleEndTime: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 horas desde ahora
-    sliderInterval: 5000, // 5 segundos entre slides
+    sliderInterval: 3000, // 3 segundos entre slides (auto-swipe para indicar más contenido)
     categorias: [
       {
         id: 1,
