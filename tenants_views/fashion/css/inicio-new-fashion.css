@@ -854,6 +854,13 @@ body.theme-navidad .flash-subtitle {
     font-size: 2.5rem;
   }
 
+  /* SOLUCIÓN: Ocultar controles de navegación del carrusel en móvil 
+     para evitar superposición con el botón CTA. El usuario usa swipe. */
+  .slider-controls,
+  .slider-dot {
+    display: none !important;
+  }
+
   .categories-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 1.5rem;
