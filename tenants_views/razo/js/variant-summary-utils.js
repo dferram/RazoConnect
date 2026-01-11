@@ -21,10 +21,6 @@
       const numColores = parseInt(coloresUnicos, 10) || 0;
       const numMedidas = parseInt(medidasUnicas, 10) || 0;
 
-      if (totalVariantes === 1) {
-        return 'Variante disponible';
-      }
-
       // Generar resumen basado en conteos reales del backend
       if (numColores > 0 && numMedidas > 0) {
         return `${numColores} ${numColores === 1 ? 'Color' : 'Colores'} | ${numMedidas} ${numMedidas === 1 ? 'Medida' : 'Medidas'}`;
@@ -34,12 +30,16 @@
         return `${numMedidas} ${numMedidas === 1 ? 'Medida disponible' : 'Medidas disponibles'}`;
       }
 
-      // Fallback si no hay conteos específicos
+      // Fallback: Si no hay conteos específicos pero hay totalVariantes,
+      // asumir que hay colores y medidas disponibles
+      if (totalVariantes === 1) {
+        return 'Opción disponible';
+      }
       return 'Colores y Medidas disponibles';
     }
     
     if (!Array.isArray(variantes) || variantes.length === 0) {
-      return 'Sin variantes disponibles';
+      return 'Sin opciones disponibles';
     }
 
     // Si solo hay una variante, mostrar su información específica

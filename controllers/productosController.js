@@ -394,8 +394,18 @@ const obtenerProductos = async (req, res) => {
           pv.productoid,
           COUNT(*) AS total_variantes,
           SUM(CASE WHEN pv.stock > 0 THEN 1 ELSE 0 END) AS variantes_con_stock,
-          COUNT(DISTINCT CASE WHEN pv.color_nombre IS NOT NULL AND TRIM(pv.color_nombre) <> '' THEN pv.color_nombre END) AS colores_unicos,
-          COUNT(DISTINCT CASE WHEN pv.dimensiones IS NOT NULL AND TRIM(pv.dimensiones) <> '' THEN pv.dimensiones END) AS medidas_unicas
+          COUNT(DISTINCT CASE 
+            WHEN pv.color_nombre IS NOT NULL 
+            AND TRIM(pv.color_nombre) <> '' 
+            AND LOWER(TRIM(pv.color_nombre)) <> 'sin color'
+            THEN pv.color_nombre 
+          END) AS colores_unicos,
+          COUNT(DISTINCT CASE 
+            WHEN pv.dimensiones IS NOT NULL 
+            AND TRIM(pv.dimensiones) <> '' 
+            AND LOWER(TRIM(pv.dimensiones)) NOT IN ('sin medida', 'n/a', 'na')
+            THEN pv.dimensiones 
+          END) AS medidas_unicas
         FROM producto_variantes pv
         GROUP BY pv.productoid
       ) stats ON stats.productoid = p.productoid
