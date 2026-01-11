@@ -170,6 +170,7 @@
     <div id="footer-container"></div>
 
     <script src="js/api.js"></script>
+    <script src="js/variant-summary-utils.js"></script>
     <script src="/js/components/footer-loader.js"></script>
     <script>
       // Redirect to home if already logged in
@@ -482,7 +483,12 @@
                 const imagenUrl =
                   producto.imagenUrl ||
                   "https://images.unsplash.com/photo-1607344645866-009c320b63e0?w=400&h=400&fit=crop";
-                const totalVariantes = producto.totalVariantes || 0;
+                
+                // Generar resumen inteligente de variantes
+                const variantes = producto.variantes || [];
+                const resumenVariantes = window.VariantSummaryUtils 
+                  ? window.VariantSummaryUtils.generarResumenVariantes(variantes)
+                  : `${producto.totalVariantes || 0} variantes`;
 
                 return `
               <div class="featured-card">
@@ -500,9 +506,7 @@
                   }</h3>
                   <p class="featured-card-price">${precioFormateado}</p>
                   <p class="featured-card-details">
-                    ${totalVariantes} variante${
-                  totalVariantes !== 1 ? "s" : ""
-                } disponible${totalVariantes !== 1 ? "s" : ""}
+                    ${resumenVariantes}
                   </p>
                   <a 
                     href="/producto-detalle.html?id=${producto.productoId}" 

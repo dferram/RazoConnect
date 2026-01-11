@@ -227,6 +227,12 @@
       producto.imagenUrl ||
       "https://images.unsplash.com/photo-1607344645866-009c320b63e0?w=400&h=400&fit=crop";
 
+    // Generar resumen inteligente de variantes
+    const variantes = producto.variantes || [];
+    const resumenVariantes = window.VariantSummaryUtils 
+      ? window.VariantSummaryUtils.generarResumenVariantes(variantes)
+      : null;
+
     const dimensionLabel =
       type === "flash"
         ? producto.varianteDimensiones ||
@@ -250,7 +256,9 @@
           <div class="flash-product-info">
             <h3 class="flash-product-title">${producto.nombreProducto}</h3>
             ${
-              dimensionLabel
+              resumenVariantes
+                ? `<p class="flash-product-dimension" style="font-size: 0.85rem; color: #6b7280; margin: 0.25rem 0;">${resumenVariantes}</p>`
+                : dimensionLabel
                 ? `<p class="flash-product-dimension">${dimensionLabel}</p>`
                 : ""
             }
@@ -281,6 +289,11 @@
           </div>
           <div class="arrival-info">
             <h3 class="arrival-title">${producto.nombreProducto}</h3>
+            ${
+              resumenVariantes
+                ? `<p class="arrival-variants" style="font-size: 0.85rem; color: #6b7280; margin: 0.25rem 0;">${resumenVariantes}</p>`
+                : ""
+            }
             <p class="arrival-price">${precioFormateado}</p>
             <p class="arrival-details">
               ${

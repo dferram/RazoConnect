@@ -248,6 +248,7 @@
     <!-- Scripts -->
     <script src="js/auth-guard.js"></script>
     <script src="js/api.js"></script>
+    <script src="js/variant-summary-utils.js"></script>
     <script>
       // ========================================
       // OBTENER ID DE PROVEEDOR DE LA URL
@@ -453,6 +454,12 @@
           ? `<img src="${imagenUrl}" alt="${imagenAlt}" class="product-media" loading="lazy" />`
           : `<div class="product-fallback">📦</div>`;
 
+        // Generar resumen inteligente de variantes
+        const variantes = producto.variantes || [];
+        const resumenVariantes = window.VariantSummaryUtils 
+          ? window.VariantSummaryUtils.generarResumenVariantes(variantes)
+          : `${variantes.length} variantes`;
+
         return `
           <a href="/producto-detalle.html?id=${producto.productoId}" class="product-card">
             <div class="imagen-wrapper">
@@ -467,6 +474,7 @@
             <div class="product-info">
               <span class="product-category">${producto.categoria?.nombre || "Sin categoría"}</span>
               <h3 class="product-title">${producto.nombreProducto}</h3>
+              <p class="product-variants-summary" style="font-size: 0.85rem; color: var(--text-secondary); margin: 0.25rem 0;">${resumenVariantes}</p>
               <div class="product-price">
                 ${precioHTML}
               </div>
