@@ -112,7 +112,7 @@ function renderizarTabla(remisiones) {
                 </td>
                 <td>
                     <div>
-                        <strong>${remision.cliente_nombre || remision.cliente_razon_social}</strong>
+                        <strong>${remision.cliente_razon_social || `${remision.cliente_nombre || ''} ${remision.cliente_apellido || ''}`.trim()}</strong>
                         ${remision.agente_nombre ? `<br><small class="text-muted">Agente: ${remision.agente_nombre}</small>` : ''}
                     </div>
                 </td>
@@ -288,7 +288,7 @@ function renderizarDetalleRemision(remision) {
                     <div class="card-body">
                         <h6 class="text-muted mb-3">Cliente</h6>
                         <div class="mb-2">
-                            <strong>Nombre:</strong> ${remision.cliente_nombre || remision.cliente_razon_social}
+                            <strong>Nombre:</strong> ${remision.cliente_razon_social || `${remision.cliente_nombre || ''} ${remision.cliente_apellido || ''}`.trim()}
                         </div>
                         ${remision.cliente_rfc ? `
                             <div class="mb-2">
@@ -439,7 +439,7 @@ async function exportarExcel() {
             ...data.remisiones.map(r => [
                 r.folio,
                 `PED-${r.pedidoid}`,
-                r.cliente_nombre || r.cliente_razon_social,
+                r.cliente_razon_social || `${r.cliente_nombre || ''} ${r.cliente_apellido || ''}`.trim(),
                 new Date(r.fecha_emision).toLocaleDateString('es-MX'),
                 parseFloat(r.total_remision).toFixed(2),
                 r.estado,

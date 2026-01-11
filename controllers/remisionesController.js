@@ -272,6 +272,8 @@ exports.obtenerRemision = async (req, res) => {
         c.clienteid,
         c.nombre AS cliente_nombre,
         c.apellido AS cliente_apellido,
+        c.razonsocial AS cliente_razon_social,
+        c.rfc AS cliente_rfc,
         a.agenteid,
         a.nombre AS agente_nombre
        FROM remisiones r
@@ -381,6 +383,8 @@ exports.listarRemisiones = async (req, res) => {
         c.clienteid,
         c.nombre AS cliente_nombre,
         c.apellido AS cliente_apellido,
+        c.razonsocial AS cliente_razon_social,
+        c.rfc AS cliente_rfc,
         a.nombre AS agente_nombre,
         COUNT(dr.detalle_remision_id) AS total_items
       FROM remisiones r
@@ -390,7 +394,7 @@ exports.listarRemisiones = async (req, res) => {
       LEFT JOIN detalles_remision dr ON r.remision_id = dr.remision_id
       WHERE ${whereConditions.join(' AND ')}
       GROUP BY r.remision_id, r.folio, r.fecha_emision, r.total_remision, r.estado, 
-               r.pdf_url, p.pedidoid, c.clienteid, c.nombre, c.apellido, a.nombre
+               r.pdf_url, p.pedidoid, c.clienteid, c.nombre, c.apellido, c.razonsocial, c.rfc, a.nombre
       ORDER BY r.fecha_emision DESC
       LIMIT $${limitParam} OFFSET $${offsetParam}
     `;
