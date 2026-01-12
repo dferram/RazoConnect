@@ -1130,6 +1130,22 @@
                 </section>
 
                 <section class="payment-info-card" id="info-credito" style="display: none;">
+                  <!-- Alerta informativa sobre cargo diferido -->
+                  <div class="alert alert-info" style="margin-bottom: 1.5rem; border-radius: 0.75rem; border-left: 4px solid #3b82f6; background: #eff6ff; padding: 1rem 1.25rem;">
+                    <div style="display: flex; align-items: flex-start; gap: 0.75rem;">
+                      <div style="font-size: 1.25rem; color: #3b82f6; margin-top: 0.1rem;">ℹ️</div>
+                      <div style="flex: 1;">
+                        <strong style="color: #1e40af; display: block; margin-bottom: 0.35rem;">Información importante sobre el cargo a crédito</strong>
+                        <p style="margin: 0; color: #1e3a8a; font-size: 0.9rem; line-height: 1.5;">
+                          Al seleccionar crédito, <strong>tu saldo disponible no se verá afectado de inmediato</strong>. 
+                          El cargo oficial se realizará únicamente hasta que nuestro equipo de almacén confirme la 
+                          disponibilidad de tus productos y procese la orden. De esta forma, solo pagas por lo que 
+                          realmente se te enviará.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
                   <div class="credit-summary-card">
                     <div class="credit-summary-row">
                       <div>
@@ -1137,7 +1153,7 @@
                         <strong id="credito-saldo-actual">Loading...</strong>
                       </div>
                       <div>
-                        <span>Saldo final estimado</span>
+                        <span>Saldo disponible</span>
                         <strong id="credito-saldo-final">Calculando...</strong>
                       </div>
                     </div>
@@ -1147,12 +1163,12 @@
                         <strong id="credito-fecha-limite">--/--/--</strong>
                       </div>
                       <div>
-                        <span>Monto de esta compra</span>
+                        <span>Monto estimado de compra</span>
                         <strong id="creditMontoCompra">$0.00</strong>
                       </div>
                     </div>
                     <p class="credit-summary-helper">
-                      Confirmaremos tu compra y actualizaremos tu línea al instante.
+                      El cargo se aplicará cuando se confirme tu pedido y se genere la remisión.
                     </p>
                   </div>
                 </section>

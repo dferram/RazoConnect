@@ -225,6 +225,52 @@ exports.generarRemision = async (req, res) => {
           tenant_id
         ]
       );
+
+      // 10. NUEVO: Aplicar cargo real al saldo de crédito del cliente
+      // Obtener información de crédito del cliente
+      const creditoQuery = await client.query(
+        `SELECT credito_id, saldo_deudor, limite_credito
+         FROM cliente_creditos
+         WHERE cliente_id = $1
+         FOR UPDATE`,
+        [pedido.clienteid]
+      );
+
+      if (creditoQuery.rows.length > 0) {
+        const creditoInfo = creditoQuery.rows[0];
+        const saldoActual = parseFloat(creditoInfo.saldo_deudor || 0);
+        const nuevoSaldo = parseFloat((saldoActual + totalRemision).toFixed(2));
+
+        // Actualizar saldo deudor
+        await client.query(
+          `UPDATE cliente_creditos
+           SET saldo_deudor = $1, ultima_actualizacion = NOW()
+           WHERE credito_id = $2`,
+          [nuevoSaldo, creditoInfo.credito_id]
+        );
+
+        // Registrar movimiento de crédito
+        await client.query(
+          `INSERT INTO credito_movimientos (
+             credito_id,
+             tipo_movimiento,
+             monto,
+             referencia_id,
+             descripcion,
+             saldo_despues_movimiento,
+             tenant_id
+           )
+           VALUES ($1, 'CARGO', $2, $3, $4, $5, $6)`,
+          [
+            creditoInfo.credito_id,
+            totalRemision.toFixed(2),
+            `REM-${remision.remision_id}`,
+            `Cargo por remisión ${folio} (Pedido #${pedido_id})`,
+            nuevoSaldo.toFixed(2),
+            tenant_id
+          ]
+        );
+      }
     }
 
     await client.query('COMMIT');

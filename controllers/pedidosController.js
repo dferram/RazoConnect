@@ -729,40 +729,17 @@ const crearPedido = async (req, res) => {
     }
 
     async function aplicarCargoCredito(info) {
+      // REFACTORIZACIÓN: Ya NO se cobra el crédito al crear el pedido.
+      // El cargo real se aplicará cuando el admin genere la remisión.
+      // Esta función se mantiene por compatibilidad pero ya no ejecuta el cargo.
       if (!info) return null;
 
-      await client.query(
-        `UPDATE cliente_creditos
-         SET saldo_deudor = $1, ultima_actualizacion = NOW()
-         WHERE credito_id = $2`,
-        [info.nuevoSaldo, info.creditoId]
-      );
-
-      await client.query(
-        `INSERT INTO credito_movimientos (
-           credito_id,
-           tipo_movimiento,
-           monto,
-           referencia_id,
-           descripcion,
-           saldo_despues_movimiento,
-           tenant_id
-         )
-         VALUES ($1, 'CARGO', $2, $3, $4, $5, $6)`,
-        [
-          info.creditoId,
-          montoTotalFinal.toFixed(2),
-          `PED-${pedidoId}`,
-          `Compra realizada (Pedido #${pedidoId})`,
-          info.nuevoSaldo.toFixed(2),
-          tenant_id,
-        ]
-      );
-
+      // Solo retornamos información sin modificar saldo
       return {
         creditoId: info.creditoId,
         saldoAnterior: info.saldoActual,
-        saldoActual: info.nuevoSaldo,
+        saldoActual: info.saldoActual, // Mantener el saldo sin cambios
+        cargoDiferido: true, // Indicador de que el cargo está pendiente
       };
     }
 
@@ -1073,6 +1050,8 @@ const crearPedido = async (req, res) => {
       };
     }
 
+    // REFACTORIZACIÓN: El cargo de crédito ya NO se aplica aquí.
+    // Se aplicará cuando el admin confirme el pedido vía remisión.
     let resultadoCredito = null;
     if (metodoPagoEsCredito) {
       resultadoCredito = await aplicarCargoCredito(creditoInfo);
