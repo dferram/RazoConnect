@@ -638,14 +638,16 @@ const crearPedido = async (req, res) => {
         ? req.file.path
         : null;
 
-    if (metodoPago === "transferencia" && !comprobanteUrl) {
-      removeUploadedComprobante();
-      return res.status(400).json({
-        success: false,
-        message:
-          "Debes adjuntar el comprobante de pago en formato de imagen para finalizar por transferencia.",
-      });
-    }
+    // REFACTORIZACIÓN: Ya NO se requiere comprobante al crear el pedido
+    // El comprobante se subirá cuando el cliente pague después de la remisión
+    // if (metodoPago === "transferencia" && !comprobanteUrl) {
+    //   removeUploadedComprobante();
+    //   return res.status(400).json({
+    //     success: false,
+    //     message:
+    //       "Debes adjuntar el comprobante de pago en formato de imagen para finalizar por transferencia.",
+    //   });
+    // }
 
     let pedido;
     let pedidoId;
@@ -654,13 +656,17 @@ const crearPedido = async (req, res) => {
     let pedidoEstatus = "Pendiente";
     let pedidoPagado = false;
 
+    // NUEVA LÓGICA: Pago Post-Surtido para métodos de contado
+    // Los pedidos de contado (mercadopago/transferencia) se crean como "Esperando Surtido"
+    // El pago se procesa DESPUÉS de que el admin genere la remisión
     if (metodoPago === "mercadopago") {
-      pedidoPagado = true;
-      pedidoEstatus = "Pagado";
-      pedidoTransaccionId = metodoPagoReferencia || null;
+      pedidoPagado = false;
+      pedidoEstatus = "Esperando Surtido";
+      pedidoTransaccionId = null; // No se procesa pago aún
     } else if (metodoPago === "transferencia") {
       pedidoPagado = false;
-      pedidoEstatus = "Pendiente de Validación";
+      pedidoEstatus = "Esperando Surtido";
+      pedidoComprobanteUrl = null; // No se requiere comprobante aún
     } else if (metodoPagoEsCredito) {
       pedidoPagado = false;
       pedidoEstatus = "Aprobado";
@@ -1604,8 +1610,165 @@ const obtenerPedidoPorId = async (req, res) => {
   }
 };
 
+/**
+ * GET /api/pedidos/:id/payment-trigger
+ * Verifica si el pedido tiene remisión y genera datos de pago
+ * LÓGICA: Solo permite pago cuando existe remisión (stock confirmado)
+ */
+const obtenerDatosPago = async (req, res) => {
+  try {
+    const { tenant_id } = req.tenant;
+    const clienteId = req.user.userId;
+    const pedidoId = parseInt(req.params.id, 10);
+
+    if (!Number.isInteger(pedidoId) || pedidoId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "ID de pedido inválido",
+      });
+    }
+
+    // 1. Verificar que el pedido existe y pertenece al cliente
+    const pedidoQuery = await db.query(
+      `SELECT 
+        p.pedidoid,
+        p.clienteid,
+        p.montototal,
+        p.estatus,
+        p.metodo_pago,
+        p.pagado,
+        p.es_credito,
+        c.nombre AS cliente_nombre,
+        c.email AS cliente_email
+       FROM pedidos p
+       INNER JOIN clientes c ON p.clienteid = c.clienteid
+       WHERE p.pedidoid = $1 AND p.clienteid = $2 AND p.tenant_id = $3`,
+      [pedidoId, clienteId, tenant_id]
+    );
+
+    if (pedidoQuery.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Pedido no encontrado",
+      });
+    }
+
+    const pedido = pedidoQuery.rows[0];
+
+    // 2. Verificar si ya está pagado
+    if (pedido.pagado) {
+      return res.status(400).json({
+        success: false,
+        message: "Este pedido ya ha sido pagado",
+      });
+    }
+
+    // 3. Verificar si es pedido a crédito (no aplica pago post-surtido)
+    if (pedido.es_credito) {
+      return res.status(400).json({
+        success: false,
+        message: "Los pedidos a crédito no requieren pago inmediato",
+      });
+    }
+
+    // 4. Verificar si existe remisión para este pedido
+    const remisionQuery = await db.query(
+      `SELECT 
+        remision_id,
+        folio,
+        total_remision,
+        estado,
+        fecha_emision
+       FROM remisiones
+       WHERE pedido_id = $1 AND tenant_id = $2 AND estado = 'EMITIDA'
+       ORDER BY fecha_emision DESC
+       LIMIT 1`,
+      [pedidoId, tenant_id]
+    );
+
+    // 5. Si NO hay remisión, el pedido está en proceso de validación
+    if (remisionQuery.rows.length === 0) {
+      return res.status(200).json({
+        success: true,
+        paymentReady: false,
+        message: "Tu pedido está en proceso de validación de stock. Te notificaremos cuando esté listo para pago.",
+        data: {
+          pedidoId: pedido.pedidoid,
+          estatus: pedido.estatus,
+          montoOriginal: parseFloat(pedido.montototal),
+        },
+      });
+    }
+
+    // 6. Si hay remisión, generar datos de pago según método
+    const remision = remisionQuery.rows[0];
+    const montoAPagar = parseFloat(remision.total_remision);
+    const metodoPago = pedido.metodo_pago || 'transferencia';
+
+    const responseData = {
+      success: true,
+      paymentReady: true,
+      message: "Tu pedido está listo para pago",
+      data: {
+        pedidoId: pedido.pedidoid,
+        remisionId: remision.remision_id,
+        folioRemision: remision.folio,
+        montoAPagar: montoAPagar,
+        montoOriginal: parseFloat(pedido.montototal),
+        metodoPago: metodoPago,
+        estatus: pedido.estatus,
+      },
+    };
+
+    // 7. Si es Mercado Pago, generar preferencia de pago
+    if (metodoPago === 'mercadopago') {
+      // TODO: Integrar con Mercado Pago SDK para generar preferencia
+      // Por ahora retornamos la estructura básica
+      responseData.data.mercadoPago = {
+        publicKey: process.env.MERCADOPAGO_PUBLIC_KEY || null,
+        preferenceId: null, // Se generará cuando se integre MP
+        amount: montoAPagar,
+      };
+    }
+
+    // 8. Si es transferencia, obtener datos bancarios
+    if (metodoPago === 'transferencia') {
+      const datosBancariosQuery = await db.query(
+        `SELECT banco, cuenta, clabe, titular, referencia
+         FROM configuracion_bancaria
+         WHERE tenant_id = $1 AND activo = true
+         LIMIT 1`,
+        [tenant_id]
+      );
+
+      if (datosBancariosQuery.rows.length > 0) {
+        responseData.data.datosBancarios = datosBancariosQuery.rows[0];
+      } else {
+        responseData.data.datosBancarios = {
+          banco: "Información no disponible",
+          cuenta: "Contacta a soporte",
+          clabe: "Contacta a soporte",
+          titular: "RazoConnect",
+          referencia: `PED-${pedidoId}`,
+        };
+      }
+    }
+
+    return res.status(200).json(responseData);
+
+  } catch (error) {
+    console.error("Error al obtener datos de pago:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error al procesar la solicitud de pago",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   crearPedido,
   obtenerPedidos,
   obtenerPedidoPorId,
+  obtenerDatosPago,
 };

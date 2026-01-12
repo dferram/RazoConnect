@@ -198,16 +198,23 @@ exports.generarRemision = async (req, res) => {
 
     const completamenteSurtido = pedidoCompletoQuery.rows[0].completamente_surtido;
 
+    // NUEVA LÓGICA: Para pedidos de contado (no crédito), cambiar estatus a 'Listo para Pago'
+    let nuevoEstatus;
+    if (pedido.es_credito) {
+      // Pedidos a crédito: mantener lógica original
+      nuevoEstatus = completamenteSurtido ? 'Completado' : 'Parcial';
+    } else {
+      // Pedidos de contado: cambiar a 'Listo para Pago' para habilitar checkout
+      nuevoEstatus = 'Listo para Pago';
+    }
+
     await client.query(
       `UPDATE pedidos 
        SET tiene_remisiones = TRUE,
            completamente_surtido = $1,
-           estatus = CASE 
-             WHEN $1 = TRUE THEN 'Completado'
-             ELSE 'Parcial'
-           END
-       WHERE pedidoid = $2 AND tenant_id = $3`,
-      [completamenteSurtido, pedido_id, tenant_id]
+           estatus = $2
+       WHERE pedidoid = $3 AND tenant_id = $4`,
+      [completamenteSurtido, nuevoEstatus, pedido_id, tenant_id]
     );
 
     // 9. CRÍTICO: Generar movimiento en CXC solo si la remisión se emite y el cliente es de crédito
@@ -273,6 +280,29 @@ exports.generarRemision = async (req, res) => {
       }
     }
 
+    // 11. NUEVO: Crear notificación in-app para pedidos de contado
+    if (!pedido.es_credito && emitir_inmediatamente) {
+      await client.query(
+        `INSERT INTO notificaciones (
+           cliente_id,
+           tipo,
+           titulo,
+           mensaje,
+           referencia_tipo,
+           referencia_id,
+           tenant_id
+         )
+         VALUES ($1, 'PAGO_DISPONIBLE', $2, $3, 'PEDIDO', $4, $5)`,
+        [
+          pedido.clienteid,
+          '¡Tu pedido está listo para pago!',
+          `Tu pedido #${pedido_id} ya fue surtido. Puedes proceder al pago por el monto de $${totalRemision.toFixed(2)}. Haz clic aquí para pagar.`,
+          pedido_id,
+          tenant_id
+        ]
+      );
+    }
+
     await client.query('COMMIT');
 
     res.status(201).json({
@@ -285,9 +315,27 @@ exports.generarRemision = async (req, res) => {
         total_remision: totalRemision.toFixed(2),
         estado: remision.estado,
         items_surtidos: itemsValidados.length,
-        cxc_generado: emitir_inmediatamente && pedido.es_credito
+        cxc_generado: emitir_inmediatamente && pedido.es_credito,
+        pago_habilitado: !pedido.es_credito
       }
     });
+
+    // 12. NUEVO: Enviar email de notificación para pedidos de contado (async, no bloquea respuesta)
+    if (!pedido.es_credito && emitir_inmediatamente && clienteEmail) {
+      const { sendTemplatedEmail } = require('../services/emailService');
+      const frontendUrl = process.env.FRONTEND_BASE_URL || 'http://localhost:3000';
+      
+      sendTemplatedEmail(clienteEmail, '¡Tu pedido está listo para pago!', {
+        title: '¡Buenas noticias!',
+        name: pedido.cliente_nombre || 'Cliente',
+        message: `Tu pedido #${pedido_id} ya fue surtido por nuestro equipo de almacén. Ahora puedes proceder al pago por el monto final de $${totalRemision.toFixed(2)}.`,
+        buttonText: 'Pagar Ahora',
+        buttonUrl: `${frontendUrl}/dashboard?tab=pedidos&pedido=${pedido_id}&action=pagar`,
+        additionalInfo: `<strong>Remisión:</strong> ${folio}<br><strong>Monto a pagar:</strong> $${totalRemision.toFixed(2)}<br><strong>Método de pago:</strong> ${pedido.metodo_pago || 'Por definir'}`
+      }).catch(err => {
+        console.error('Error enviando email de pago disponible:', err);
+      });
+    }
 
   } catch (error) {
     await client.query('ROLLBACK');

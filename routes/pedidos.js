@@ -47,6 +47,18 @@ router.post(
 );
 
 /**
+ * @route   GET /api/pedidos/:id/payment-trigger
+ * @desc    Verificar si el pedido tiene remisión y obtener datos de pago
+ * @access  Private (Cliente propietario)
+ */
+router.get(
+  "/pedidos/:id/payment-trigger",
+  authenticate,
+  authorize(["cliente"]),
+  pedidosController.obtenerDatosPago
+);
+
+/**
  * @route   GET /api/pedidos/:id/pdf
  * @desc    Generar PDF de remisión para un pedido
  * @access  Private (Cliente propietario o Admin)
