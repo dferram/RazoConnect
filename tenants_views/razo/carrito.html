@@ -1046,6 +1046,29 @@
                     >SPEI / Depósito</span
                   >
                 </label>
+
+                <label
+                  class="payment-option-card"
+                  id="paymentOptionContraEntrega"
+                  data-method="contra_entrega"
+                  style="display: none;"
+                >
+                  <div class="payment-option-top">
+                    <div class="payment-option-icon">🚚</div>
+                    <input
+                      type="radio"
+                      name="metodo_pago"
+                      value="contra_entrega"
+                    />
+                  </div>
+                  <div class="payment-option-content">
+                    <h5>Pago contra entrega</h5>
+                    <p>Paga directamente a tu agente al recibir la mercancía.</p>
+                  </div>
+                  <span class="payment-option-chip payment-chip-cash"
+                    >Pago al recibir</span
+                  >
+                </label>
               </div>
 
               <div class="payment-error" id="paymentError">
@@ -1225,6 +1248,21 @@
                         </button>
                       </div>
                       <small>Sube una foto clara de tu comprobante para validar el pedido.</small>
+                    </div>
+                  </div>
+                </section>
+
+                <section class="payment-info-card" id="info-contra-entrega" style="display: none;">
+                  <div class="alert alert-warning" style="margin-bottom: 0; border-radius: 0.75rem; border-left: 4px solid #f59e0b; background: #fffbeb; padding: 1rem 1.25rem;">
+                    <div style="display: flex; align-items: flex-start; gap: 0.75rem;">
+                      <div style="font-size: 1.25rem; color: #f59e0b; margin-top: 0.1rem;">⚠️</div>
+                      <div style="flex: 1;">
+                        <strong style="color: #92400e; display: block; margin-bottom: 0.35rem;">Nota importante sobre el pago contra entrega</strong>
+                        <p style="margin: 0; color: #78350f; font-size: 0.9rem; line-height: 1.5;">
+                          Al elegir este método, <strong>el pago se realizará directamente con tu agente al momento de recibir la mercancía</strong>. 
+                          Es indispensable entregar la remisión firmada como comprobante de recepción y pago.
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </section>
@@ -1421,11 +1459,13 @@
         mercadopago: document.getElementById("paymentOptionMercadoPago"),
         credito: document.getElementById("paymentOptionCredito"),
         transferencia: document.getElementById("paymentOptionTransferencia"),
+        contra_entrega: document.getElementById("paymentOptionContraEntrega"),
       };
       const paymentPanels = {
         mercadopago: document.getElementById("info-mercadopago"),
         credito: document.getElementById("info-credito"),
         transferencia: document.getElementById("info-transferencia"),
+        contra_entrega: document.getElementById("info-contra-entrega"),
       };
       const paymentSection = document.getElementById("paymentSection");
       const creditCardBalanceText = document.getElementById(
@@ -1517,6 +1557,7 @@
       let transferInfoError = null;
       let paymentProfileLoaded = false;
       let paymentProfileLoading = false;
+      let clienteTieneAgente = false;
 
       if (inputComprobante) {
         inputComprobante.addEventListener("change", handleTransferFileChange);
@@ -3058,6 +3099,41 @@
         }
       }
 
+      // Check if client has agent assigned
+      async function checkClienteAgente() {
+        try {
+          const user = typeof getUserData === 'function' ? getUserData() : null;
+          if (!user || !user.userId) {
+            clienteTieneAgente = false;
+            return;
+          }
+
+          const response = await fetch('/api/auth/perfil', {
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('token')}`,
+              'Content-Type': 'application/json'
+            }
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            const agenteId = data?.data?.agente?.agenteId || data?.data?.agenteId || null;
+            clienteTieneAgente = agenteId !== null && agenteId !== undefined;
+          }
+        } catch (error) {
+          console.error('Error checking agent status:', error);
+          clienteTieneAgente = false;
+        }
+      }
+
+      // Show/hide contra entrega payment option based on agent status
+      function updateContraEntregaVisibility() {
+        const contraEntregaCard = paymentCards.contra_entrega;
+        if (contraEntregaCard) {
+          contraEntregaCard.style.display = clienteTieneAgente ? 'flex' : 'none';
+        }
+      }
+
       // Handle checkout
       checkoutBtn.addEventListener("click", async () => {
         if (!carritoData || carritoData.items.length === 0) {
@@ -3065,6 +3141,8 @@
           return;
         }
 
+        await checkClienteAgente();
+        updateContraEntregaVisibility();
         await initPaymentMethods(true);
         modalCheckout.classList.add("show");
         loadDireccionesCheckout();

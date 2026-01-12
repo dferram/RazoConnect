@@ -299,25 +299,49 @@ exports.generarRemision = async (req, res) => {
 
     // 11. NUEVO: Crear notificación in-app para pedidos de contado
     if (!pedido.es_credito && emitir_inmediatamente) {
-      await client.query(
-        `INSERT INTO notificaciones (
-           cliente_id,
-           tipo,
-           titulo,
-           mensaje,
-           referencia_tipo,
-           referencia_id,
-           tenant_id
-         )
-         VALUES ($1, 'PAGO_DISPONIBLE', $2, $3, 'PEDIDO', $4, $5)`,
-        [
-          pedido.clienteid,
-          '¡Tu pedido está listo para pago!',
-          `Tu pedido #${pedido_id} ya fue surtido. Puedes proceder al pago por el monto de $${totalRemision.toFixed(2)}. Haz clic aquí para pagar.`,
-          pedido_id,
-          tenant_id
-        ]
-      );
+      // Para pedidos de pago contra entrega, notificar al agente
+      if (pedido.metodo_pago === 'contra_entrega' && pedido.agenteid) {
+        await client.query(
+          `INSERT INTO notificaciones (
+             agente_id,
+             tipo,
+             titulo,
+             mensaje,
+             referencia_tipo,
+             referencia_id,
+             tenant_id
+           )
+           VALUES ($1, 'ENTREGA_PENDIENTE', $2, $3, 'PEDIDO', $4, $5)`,
+          [
+            pedido.agenteid,
+            '🔔 Nueva entrega pendiente de Pago contra entrega',
+            `Tienes una nueva entrega pendiente de Pago contra entrega para el cliente ${pedido.cliente_nombre} ${pedido.cliente_apellido || ''}. Monto: $${totalRemision.toFixed(2)}`,
+            pedido_id,
+            tenant_id
+          ]
+        );
+      } else {
+        // Para otros métodos de pago de contado
+        await client.query(
+          `INSERT INTO notificaciones (
+             cliente_id,
+             tipo,
+             titulo,
+             mensaje,
+             referencia_tipo,
+             referencia_id,
+             tenant_id
+           )
+           VALUES ($1, 'PAGO_DISPONIBLE', $2, $3, 'PEDIDO', $4, $5)`,
+          [
+            pedido.clienteid,
+            '¡Tu pedido está listo para pago!',
+            `Tu pedido #${pedido_id} ya fue surtido. Puedes proceder al pago por el monto de $${totalRemision.toFixed(2)}. Haz clic aquí para pagar.`,
+            pedido_id,
+            tenant_id
+          ]
+        );
+      }
     }
 
     await client.query('COMMIT');

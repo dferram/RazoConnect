@@ -667,6 +667,12 @@ const crearPedido = async (req, res) => {
       pedidoPagado = false;
       pedidoEstatus = "Esperando Surtido";
       pedidoComprobanteUrl = null; // No se requiere comprobante aún
+    } else if (metodoPago === "contra_entrega") {
+      // NUEVO: Pago contra entrega - se paga al agente al recibir
+      pedidoPagado = false;
+      pedidoEstatus = "Confirmado"; // Listo para surtir
+      pedidoTransaccionId = null;
+      pedidoComprobanteUrl = null;
     } else if (metodoPagoEsCredito) {
       pedidoPagado = false;
       pedidoEstatus = "Aprobado";
@@ -1208,7 +1214,21 @@ const crearPedido = async (req, res) => {
     }
 
     if (agenteEmail) {
-      const asuntoAgente = `🔔 Tu cliente ${clienteNombre} ha realizado un pedido (#${pedido.pedidoid})`;
+      const esContraEntrega = metodoPago === 'contra_entrega';
+      const asuntoAgente = esContraEntrega 
+        ? `🚚 PAGO CONTRA ENTREGA - Nuevo pedido de ${clienteNombre} (#${pedido.pedidoid})`
+        : `🔔 Tu cliente ${clienteNombre} ha realizado un pedido (#${pedido.pedidoid})`;
+      
+      const mensajeEspecial = esContraEntrega
+        ? `<div style="background: #fffbeb; border-left: 4px solid #f59e0b; padding: 1rem; margin: 1rem 0; border-radius: 0.5rem;">
+             <p style="margin: 0; color: #92400e; font-weight: bold;">⚠️ IMPORTANTE: Pago contra entrega</p>
+             <p style="margin: 0.5rem 0 0; color: #78350f; font-size: 0.9rem;">
+               Este pedido requiere que cobres el monto directamente al cliente al momento de la entrega. 
+               <strong>Recuerda subir la foto de la remisión firmada como comprobante.</strong>
+             </p>
+           </div>`
+        : '';
+      
       const cuerpoAgente = `
         <div style="font-family: Arial, sans-serif; color: #1f2937;">
           <h2 style=\"color:#2563eb;\">Nuevo pedido de tu cliente</h2>
@@ -1217,6 +1237,8 @@ const crearPedido = async (req, res) => {
           <p>Monto total: <strong>$${parseFloat(pedido.montototal).toFixed(
             2
           )}</strong></p>
+          <p>Método de pago: <strong>${esContraEntrega ? 'Pago contra entrega' : metodoPago === 'credito' ? 'Crédito' : metodoPago === 'transferencia' ? 'Transferencia' : 'Efectivo'}</strong></p>
+          ${mensajeEspecial}
           <p>Revisa tus comisiones para más detalles.</p>
           <p style=\"margin-top: 1.5rem;\">Sistema RazoConnect</p>
         </div>
