@@ -689,6 +689,8 @@ const crearPedido = async (req, res) => {
            Cupon_ID,
            Monto_Descuento,
            Saldo_Pendiente,
+           monto_surtido,
+           monto_backorder,
            tenant_id
          )
          VALUES (
@@ -709,6 +711,8 @@ const crearPedido = async (req, res) => {
            $12,
            $13,
            $14,
+           0,
+           $4,
            $15
          )
          RETURNING PedidoID, FechaPedido, MontoTotal, Estatus, Fecha_Vencimiento, Es_Credito, Pagado, Metodo_Pago, Transaccion_ID, Comprobante_URL, Cupon_ID, Monto_Descuento, Saldo_Pendiente`,

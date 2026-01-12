@@ -187,16 +187,30 @@ exports.generarRemision = async (req, res) => {
       );
     }
 
-    // 8. Actualizar estado del pedido
-    const pedidoCompletoQuery = await client.query(
+    // 8. Actualizar estado del pedido con MONTOS REALES
+    // Obtener monto total del pedido y monto ya surtido
+    const pedidoMontoQuery = await client.query(
       `SELECT 
-        BOOL_AND(dp.cantidadpaquetes <= COALESCE(dp.cantidad_surtida_remisiones, 0)) AS completamente_surtido
-       FROM detallesdelpedido dp
-       WHERE dp.pedidoid = $1 AND dp.tenant_id = $2`,
+        montototal,
+        COALESCE(monto_surtido, 0) AS monto_surtido_actual,
+        COALESCE(monto_descuento, 0) AS monto_descuento
+       FROM pedidos
+       WHERE pedidoid = $1 AND tenant_id = $2`,
       [pedido_id, tenant_id]
     );
 
-    const completamenteSurtido = pedidoCompletoQuery.rows[0].completamente_surtido;
+    const montoTotalPedido = parseFloat(pedidoMontoQuery.rows[0].montototal || 0);
+    const montoSurtidoAnterior = parseFloat(pedidoMontoQuery.rows[0].monto_surtido_actual || 0);
+    const montoDescuento = parseFloat(pedidoMontoQuery.rows[0].monto_descuento || 0);
+    
+    // Calcular nuevo monto surtido (acumulativo)
+    const nuevoMontoSurtido = parseFloat((montoSurtidoAnterior + totalRemision).toFixed(2));
+    
+    // Calcular monto pendiente (backorder)
+    const montoBackorder = parseFloat((montoTotalPedido - nuevoMontoSurtido).toFixed(2));
+    
+    // Determinar si está completamente surtido comparando MONTOS (con tolerancia de 1 centavo)
+    const completamenteSurtido = Math.abs(nuevoMontoSurtido - montoTotalPedido) < 0.01;
 
     // NUEVA LÓGICA: Para pedidos de contado (no crédito), cambiar estatus a 'Listo para Pago'
     let nuevoEstatus;
@@ -208,13 +222,16 @@ exports.generarRemision = async (req, res) => {
       nuevoEstatus = 'Listo para Pago';
     }
 
+    // CRÍTICO: Actualizar con montos reales, no solo banderas booleanas
     await client.query(
       `UPDATE pedidos 
        SET tiene_remisiones = TRUE,
            completamente_surtido = $1,
-           estatus = $2
-       WHERE pedidoid = $3 AND tenant_id = $4`,
-      [completamenteSurtido, nuevoEstatus, pedido_id, tenant_id]
+           estatus = $2,
+           monto_surtido = $3,
+           monto_backorder = $4
+       WHERE pedidoid = $5 AND tenant_id = $6`,
+      [completamenteSurtido, nuevoEstatus, nuevoMontoSurtido, montoBackorder, pedido_id, tenant_id]
     );
 
     // 9. CRÍTICO: Generar movimiento en CXC solo si la remisión se emite y el cliente es de crédito
