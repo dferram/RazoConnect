@@ -215,24 +215,31 @@
 
     const hasSession = Boolean(usuario) || Boolean(getTokenCliente());
 
-    if (hasSession && nombreEl) {
-      nombreEl.textContent = nombre ? `Hola, ${nombre.split(" ")[0]}` : "Mi cuenta";
-    } else if (nombreEl) {
-      nombreEl.textContent = "Iniciar Sesión";
-    }
+    // Update all data-auth elements visibility
+    const loginElements = document.querySelectorAll('[data-auth="login"]');
+    const dashboardElements = document.querySelectorAll('[data-auth="dashboard"]');
+    const logoutElements = document.querySelectorAll('[data-auth="logout"]');
 
-    if (cuentaLink) {
-      cuentaLink.href = hasSession ? "/dashboard.html" : "#";
-      if (!hasSession) {
-        cuentaLink.addEventListener("click", (e) => {
-          e.preventDefault();
-          const modalAuth = document.getElementById("modalAuth");
-          if (modalAuth) {
-            modalAuth.style.display = "flex";
-          } else {
-            window.location.href = "/login.html";
-          }
-        });
+    if (hasSession) {
+      // User is logged in - show dashboard and logout, hide login
+      loginElements.forEach(el => el.style.display = 'none');
+      dashboardElements.forEach(el => el.style.display = 'list-item');
+      logoutElements.forEach(el => el.style.display = 'list-item');
+      
+      if (nombreEl) {
+        nombreEl.textContent = nombre ? `Hola, ${nombre.split(" ")[0]}` : "Mi cuenta";
+      }
+      if (cuentaLink) {
+        cuentaLink.href = "/dashboard.html";
+      }
+    } else {
+      // User is NOT logged in - show login, hide dashboard and logout
+      loginElements.forEach(el => el.style.display = 'list-item');
+      dashboardElements.forEach(el => el.style.display = 'none');
+      logoutElements.forEach(el => el.style.display = 'none');
+      
+      if (nombreEl) {
+        nombreEl.textContent = "Iniciar Sesión";
       }
     }
 
@@ -240,17 +247,17 @@
     if (loginLink) {
       loginLink.addEventListener("click", (e) => {
         e.preventDefault();
-        const modalAuth = document.getElementById("modalAuth");
-        if (modalAuth) {
-          modalAuth.style.display = "flex";
+        if (typeof window.openAuthModal === 'function') {
+          window.openAuthModal();
         } else {
-          window.location.href = "/login.html";
+          const modalAuth = document.getElementById("modalAuth");
+          if (modalAuth) {
+            modalAuth.style.display = "flex";
+          } else {
+            window.location.href = "/login.html";
+          }
         }
       });
-    }
-
-    if (logoutItem) {
-      logoutItem.style.display = hasSession ? "list-item" : "none";
     }
 
     if (logoutLink) {
@@ -274,6 +281,13 @@
         window.location.href = "/login.html";
       });
     }
+
+    // Listen for auth changes
+    window.addEventListener('razoconnect:auth-changed', () => {
+      setTimeout(() => {
+        location.reload();
+      }, 500);
+    });
   }
 
   async function actualizarNotificaciones() {

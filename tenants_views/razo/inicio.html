@@ -255,52 +255,11 @@
     <!-- Footer Dinámico -->
     <div id="footer-container"></div>
 
-    <!-- Modal: Autenticación (Login/Registro) -->
-    <div id="modalAuth" class="modal" style="z-index: 2000; display: none; position: fixed; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px); justify-content: center; align-items: center; padding: 1rem;">
-      <div class="modal-content" style="max-width: 500px; width: 95%; padding: 2rem; border-radius: 1rem; background: white;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-          <h2 style="font-size: 1.5rem; font-weight: 700; margin: 0; color: #111827;">Inicia sesión</h2>
-          <button id="btnCerrarAuthInicio" style="border: none; background: transparent; font-size: 1.5rem; cursor: pointer; color: #6b7280;" aria-label="Cerrar">×</button>
-        </div>
-        <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 2px solid #e5e7eb;">
-          <button id="tabLoginInicio" class="auth-tab active" style="flex: 1; padding: 0.75rem; border: none; background: transparent; cursor: pointer; font-weight: 600; border-bottom: 3px solid var(--razo-orange); color: var(--razo-orange);">Iniciar Sesión</button>
-          <button id="tabRegistroInicio" class="auth-tab" style="flex: 1; padding: 0.75rem; border: none; background: transparent; cursor: pointer; font-weight: 600; border-bottom: 3px solid transparent; color: #6b7280;">Registrarse</button>
-        </div>
-        <form id="formLoginInicio" style="display: block;">
-          <div style="margin-bottom: 1rem;">
-            <label for="loginEmailInicio" style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #374151;">Email</label>
-            <input type="email" id="loginEmailInicio" required style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.5rem; font-size: 1rem;" placeholder="tu@email.com">
-          </div>
-          <div style="margin-bottom: 1.5rem;">
-            <label for="loginPasswordInicio" style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #374151;">Contraseña</label>
-            <input type="password" id="loginPasswordInicio" required style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.5rem; font-size: 1rem;" placeholder="••••••••">
-          </div>
-          <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.875rem; font-size: 1rem; font-weight: 600; background: var(--razo-orange); border: none;">Iniciar Sesión</button>
-        </form>
-        <form id="formRegistroInicio" style="display: none;">
-          <div style="margin-bottom: 1rem;">
-            <label for="regNombreInicio" style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #374151;">Nombre Completo</label>
-            <input type="text" id="regNombreInicio" required style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.5rem; font-size: 1rem;" placeholder="Juan Pérez">
-          </div>
-          <div style="margin-bottom: 1rem;">
-            <label for="regEmailInicio" style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #374151;">Email</label>
-            <input type="email" id="regEmailInicio" required style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.5rem; font-size: 1rem;" placeholder="tu@email.com">
-          </div>
-          <div style="margin-bottom: 1rem;">
-            <label for="regTelefonoInicio" style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #374151;">Teléfono</label>
-            <input type="tel" id="regTelefonoInicio" required style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.5rem; font-size: 1rem;" placeholder="5512345678">
-          </div>
-          <div style="margin-bottom: 1.5rem;">
-            <label for="regPasswordInicio" style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #374151;">Contraseña</label>
-            <input type="password" id="regPasswordInicio" required style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.5rem; font-size: 1rem;" placeholder="••••••••">
-          </div>
-          <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.875rem; font-size: 1rem; font-weight: 600; background: var(--razo-orange); border: none;">Crear Cuenta</button>
-        </form>
-      </div>
-    </div>
+    <!-- Auth Modal Component (loaded via auth-modal-loader.js) -->
 
     <!-- Scripts -->
     <script src="/js/api.js"></script>
+    <script src="/js/components/auth-modal-loader.js"></script>
     <script src="/js/public-auth-handler.js"></script>
     <script src="/js/variant-summary-utils.js"></script>
     <script src="/js/inicio-new.js"></script>
@@ -314,95 +273,6 @@
 
     <!-- Lógica de Contenido Dinámico -->
     <script src="/js/inicio-seasonal.js"></script>
-
-    <!-- Modal Auth Logic -->
-    <script>
-      (function() {
-        const modalAuth = document.getElementById('modalAuth');
-        const btnCerrar = document.getElementById('btnCerrarAuthInicio');
-        const tabLogin = document.getElementById('tabLoginInicio');
-        const tabRegistro = document.getElementById('tabRegistroInicio');
-        const formLogin = document.getElementById('formLoginInicio');
-        const formRegistro = document.getElementById('formRegistroInicio');
-
-        function switchToLogin() {
-          tabLogin.style.borderBottomColor = 'var(--razo-orange)';
-          tabLogin.style.color = 'var(--razo-orange)';
-          tabRegistro.style.borderBottomColor = 'transparent';
-          tabRegistro.style.color = '#6b7280';
-          formLogin.style.display = 'block';
-          formRegistro.style.display = 'none';
-        }
-
-        function switchToRegistro() {
-          tabRegistro.style.borderBottomColor = 'var(--razo-orange)';
-          tabRegistro.style.color = 'var(--razo-orange)';
-          tabLogin.style.borderBottomColor = 'transparent';
-          tabLogin.style.color = '#6b7280';
-          formRegistro.style.display = 'block';
-          formLogin.style.display = 'none';
-        }
-
-        tabLogin.addEventListener('click', switchToLogin);
-        tabRegistro.addEventListener('click', switchToRegistro);
-        btnCerrar.addEventListener('click', () => {
-          modalAuth.style.display = 'none';
-          formLogin.reset();
-          formRegistro.reset();
-        });
-
-        formLogin.addEventListener('submit', async (e) => {
-          e.preventDefault();
-          const email = document.getElementById('loginEmailInicio').value.trim();
-          const password = document.getElementById('loginPasswordInicio').value;
-          try {
-            const response = await API.login(email, password);
-            if (response.ok && response.data.success) {
-              localStorage.setItem('razoconnect_token', response.data.token);
-              localStorage.setItem('razoconnect_user', JSON.stringify(response.data.cliente));
-              modalAuth.style.display = 'none';
-              window.dispatchEvent(new Event('razoconnect:auth-changed'));
-              window.location.href = '/dashboard.html';
-            } else {
-              alert(response.data.message || 'Credenciales incorrectas');
-            }
-          } catch (error) {
-            console.error('Login error:', error);
-            alert('Error al iniciar sesión');
-          }
-        });
-
-        formRegistro.addEventListener('submit', async (e) => {
-          e.preventDefault();
-          const nombre = document.getElementById('regNombreInicio').value.trim();
-          const email = document.getElementById('regEmailInicio').value.trim();
-          const telefono = document.getElementById('regTelefonoInicio').value.trim();
-          const password = document.getElementById('regPasswordInicio').value;
-          try {
-            const response = await API.registroCliente({ Nombre: nombre, Email: email, Telefono: telefono, Password: password });
-            if (response.ok && response.data.success) {
-              const loginResponse = await API.login(email, password);
-              if (loginResponse.ok && loginResponse.data.success) {
-                localStorage.setItem('razoconnect_token', loginResponse.data.token);
-                localStorage.setItem('razoconnect_user', JSON.stringify(loginResponse.data.cliente));
-                modalAuth.style.display = 'none';
-                window.dispatchEvent(new Event('razoconnect:auth-changed'));
-                window.location.href = '/dashboard.html';
-              }
-            } else {
-              alert(response.data.message || 'Error al crear cuenta');
-            }
-          } catch (error) {
-            console.error('Registration error:', error);
-            alert('Error al registrar usuario');
-          }
-        });
-
-        window.addEventListener('click', (e) => {
-          if (e.target === modalAuth) modalAuth.style.display = 'none';
-        });
-      })();
-    </script>
   
     <!-- Cargador de Contenido Dinámico desde API -->
     <script src="/js/inicio-dynamic-content.js"></script>
