@@ -17,6 +17,10 @@
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
       rel="stylesheet"
     />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
     <link rel="stylesheet" href="css/styles.css" />
     <style>
       .tabs {
@@ -250,7 +254,17 @@
       <!-- Tab: Perfil -->
       <div class="tab-content active" id="perfil">
         <div class="card">
-          <h2 class="card-header">Información personal</h2>
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 1.5rem; border-bottom: 2px solid var(--razo-gray-light);">
+            <h2 style="margin: 0; font-size: 1.5rem; font-weight: 600;">Información personal</h2>
+            <button 
+              class="btn btn-primary" 
+              id="btnEditarPerfil"
+              style="display: flex; align-items: center; gap: 0.5rem;"
+            >
+              <i class="fas fa-edit"></i>
+              <span>Editar Información</span>
+            </button>
+          </div>
           <div id="perfilContent"></div>
         </div>
       </div>
@@ -340,6 +354,163 @@
             Te notificaremos cuando haya cambios en tus pedidos o nuevas ofertas
           </p>
         </div>
+      </div>
+    </div>
+
+    <!-- Modal: Editar Perfil -->
+    <div id="modalEditarPerfil" class="modal">
+      <div
+        class="modal-content"
+        style="
+          background: white;
+          padding: 2rem;
+          border-radius: 1rem;
+          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+          max-width: 1200px;
+          width: 95%;
+        "
+      >
+        <h2
+          style="
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            color: #2d3748;
+          "
+        >
+          Editar Información Personal
+        </h2>
+        <p style="color: #718096; font-size: 0.875rem; margin-bottom: 1.5rem">
+          Actualiza tu información de perfil y contraseña
+        </p>
+
+        <form id="formEditarPerfil">
+          <!-- Información Personal -->
+          <div style="background: var(--razo-cream); padding: 1.5rem; border-radius: 0.75rem; margin-bottom: 1.5rem;">
+            <h3 style="font-size: 1.125rem; font-weight: 600; margin-bottom: 1rem; color: var(--razo-gray-dark); display: flex; align-items: center; gap: 0.5rem;">
+              <span style="font-size: 1.25rem;">👤</span>
+              Información Personal
+            </h3>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+              <div class="form-group">
+                <label class="form-label" for="editNombre">Nombre *</label>
+                <input
+                  type="text"
+                  id="editNombre"
+                  class="form-input"
+                  placeholder="Tu nombre"
+                  required
+                />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="editApellido">Apellido *</label>
+                <input
+                  type="text"
+                  id="editApellido"
+                  class="form-input"
+                  placeholder="Tu apellido"
+                  required
+                />
+              </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+              <div class="form-group">
+                <label class="form-label" for="editEmail">Email</label>
+                <input
+                  type="email"
+                  id="editEmail"
+                  class="form-input"
+                  placeholder="tu@email.com"
+                />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="editTelefono">Teléfono</label>
+                <input
+                  type="tel"
+                  id="editTelefono"
+                  class="form-input"
+                  placeholder="5551234567"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- Cambio de Contraseña -->
+          <div style="background: var(--razo-orange-light); padding: 1.5rem; border-radius: 0.75rem; margin-bottom: 1.5rem;">
+            <h3 style="font-size: 1.125rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--razo-gray-dark); display: flex; align-items: center; gap: 0.5rem;">
+              <span style="font-size: 1.25rem;">🔒</span>
+              Cambio de Contraseña
+            </h3>
+            <p style="color: var(--razo-gray-warm); font-size: 0.875rem; margin-bottom: 1rem;">
+              Deja estos campos vacíos si no deseas cambiar tu contraseña
+            </p>
+            
+            <div class="form-group">
+              <label class="form-label" for="passwordActual">Contraseña Actual</label>
+              <input
+                type="password"
+                id="passwordActual"
+                class="form-input"
+                placeholder="Tu contraseña actual"
+              />
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+              <div class="form-group">
+                <label class="form-label" for="passwordNueva">Contraseña Nueva</label>
+                <input
+                  type="password"
+                  id="passwordNueva"
+                  class="form-input"
+                  placeholder="Mínimo 6 caracteres"
+                />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="passwordConfirmar">Confirmar Contraseña Nueva</label>
+                <input
+                  type="password"
+                  id="passwordConfirmar"
+                  class="form-input"
+                  placeholder="Repite la contraseña nueva"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 1rem; margin-top: 1.5rem; margin-bottom: 1rem;">
+            <button
+              type="submit"
+              class="btn btn-primary"
+              style="flex: 1"
+              id="btnGuardarPerfil"
+            >
+              <span id="btnGuardarPerfilText">Guardar Cambios</span>
+              <div
+                class="spinner"
+                id="btnGuardarPerfilSpinner"
+                style="
+                  display: none;
+                  width: 20px;
+                  height: 20px;
+                  border-width: 2px;
+                "
+              ></div>
+            </button>
+            <button
+              type="button"
+              class="btn btn-secondary"
+              style="flex: 1"
+              id="btnCancelarPerfil"
+            >
+              Cancelar
+            </button>
+          </div>
+        </form>
       </div>
     </div>
 
@@ -1353,6 +1524,184 @@
           btnGuardarDireccion.disabled = false;
           btnGuardarText.style.display = "inline";
           btnGuardarSpinner.style.display = "none";
+        }
+      });
+
+      // ========== EDITAR PERFIL ==========
+      const modalEditarPerfil = document.getElementById("modalEditarPerfil");
+      const formEditarPerfil = document.getElementById("formEditarPerfil");
+      const btnEditarPerfil = document.getElementById("btnEditarPerfil");
+      const btnCancelarPerfil = document.getElementById("btnCancelarPerfil");
+      const btnGuardarPerfil = document.getElementById("btnGuardarPerfil");
+      const btnGuardarPerfilText = document.getElementById("btnGuardarPerfilText");
+      const btnGuardarPerfilSpinner = document.getElementById("btnGuardarPerfilSpinner");
+
+      // Abrir modal de editar perfil
+      btnEditarPerfil.addEventListener("click", () => {
+        const userData = getUserData() || {};
+        
+        // Cargar datos actuales en el formulario
+        document.getElementById("editNombre").value = userData.nombre || "";
+        document.getElementById("editApellido").value = userData.apellido || "";
+        document.getElementById("editEmail").value = userData.email || "";
+        document.getElementById("editTelefono").value = userData.telefono || "";
+        
+        // Limpiar campos de contraseña
+        document.getElementById("passwordActual").value = "";
+        document.getElementById("passwordNueva").value = "";
+        document.getElementById("passwordConfirmar").value = "";
+        
+        modalEditarPerfil.classList.add("show");
+      });
+
+      // Cerrar modal
+      btnCancelarPerfil.addEventListener("click", () => {
+        modalEditarPerfil.classList.remove("show");
+        formEditarPerfil.reset();
+      });
+
+      // Cerrar modal al hacer clic fuera
+      modalEditarPerfil.addEventListener("click", (e) => {
+        if (e.target === modalEditarPerfil) {
+          modalEditarPerfil.classList.remove("show");
+          formEditarPerfil.reset();
+        }
+      });
+
+      // Cerrar modal con Escape
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && modalEditarPerfil.classList.contains("show")) {
+          modalEditarPerfil.classList.remove("show");
+          formEditarPerfil.reset();
+        }
+      });
+
+      // Guardar cambios de perfil
+      formEditarPerfil.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const nombre = document.getElementById("editNombre").value.trim();
+        const apellido = document.getElementById("editApellido").value.trim();
+        const email = document.getElementById("editEmail").value.trim();
+        const telefono = document.getElementById("editTelefono").value.trim();
+        const passwordActual = document.getElementById("passwordActual").value;
+        const passwordNueva = document.getElementById("passwordNueva").value;
+        const passwordConfirmar = document.getElementById("passwordConfirmar").value;
+
+        // Validación de campos obligatorios
+        if (!nombre || !apellido) {
+          showToast("Nombre y apellido son obligatorios", "warning");
+          return;
+        }
+
+        // Validación de contraseñas
+        const cambiarPassword = passwordNueva.length > 0 || passwordConfirmar.length > 0;
+        
+        if (cambiarPassword) {
+          if (!passwordActual) {
+            showToast("Debes ingresar tu contraseña actual para cambiarla", "warning");
+            return;
+          }
+          
+          if (passwordNueva !== passwordConfirmar) {
+            showToast("Las contraseñas nuevas no coinciden", "warning");
+            return;
+          }
+          
+          if (passwordNueva.length < 6) {
+            showToast("La contraseña nueva debe tener al menos 6 caracteres", "warning");
+            return;
+          }
+        }
+
+        btnGuardarPerfil.disabled = true;
+        btnGuardarPerfilText.style.display = "none";
+        btnGuardarPerfilSpinner.style.display = "block";
+
+        try {
+          // 1. Actualizar perfil
+          const perfilData = {
+            nombre,
+            apellido,
+            email: email || null,
+            telefono: telefono || null,
+          };
+
+          const perfilResponse = await API.apiCall("/clientes/perfil", {
+            method: "PUT",
+            body: JSON.stringify(perfilData),
+          });
+
+          if (!perfilResponse.ok || !perfilResponse.data.success) {
+            throw new Error(perfilResponse.data.message || "Error al actualizar perfil");
+          }
+
+          // 2. Cambiar contraseña si se proporcionó
+          if (cambiarPassword) {
+            const passwordData = {
+              passwordActual,
+              passwordNueva,
+            };
+
+            const passwordResponse = await API.apiCall("/clientes/cambiar-password", {
+              method: "PUT",
+              body: JSON.stringify(passwordData),
+            });
+
+            if (!passwordResponse.ok || !passwordResponse.data.success) {
+              throw new Error(passwordResponse.data.message || "Error al cambiar contraseña");
+            }
+          }
+
+          // Actualizar datos en localStorage
+          const userData = getUserData() || {};
+          const updatedData = {
+            ...userData,
+            nombre,
+            apellido,
+            email: email || userData.email,
+            telefono: telefono || userData.telefono,
+          };
+          localStorage.setItem("razoconnect_user", JSON.stringify(updatedData));
+
+          // Mostrar mensaje de éxito
+          const mensaje = cambiarPassword 
+            ? "Perfil y contraseña actualizados correctamente" 
+            : "Perfil actualizado correctamente";
+          
+          if (typeof Swal !== "undefined" && Swal && typeof Swal.fire === "function") {
+            await Swal.fire({
+              icon: "success",
+              title: "¡Éxito!",
+              text: mensaje,
+              confirmButtonColor: "#F97316",
+            });
+          } else {
+            showToast(mensaje, "success");
+          }
+
+          // Cerrar modal y actualizar vista
+          modalEditarPerfil.classList.remove("show");
+          formEditarPerfil.reset();
+          displayPerfil();
+
+        } catch (error) {
+          console.error("Error:", error);
+          
+          if (typeof Swal !== "undefined" && Swal && typeof Swal.fire === "function") {
+            await Swal.fire({
+              icon: "error",
+              title: "Error",
+              text: error.message || "Error al actualizar la información",
+              confirmButtonColor: "#F97316",
+            });
+          } else {
+            showToast(error.message || "Error al actualizar la información", "error");
+          }
+        } finally {
+          btnGuardarPerfil.disabled = false;
+          btnGuardarPerfilText.style.display = "inline";
+          btnGuardarPerfilSpinner.style.display = "none";
         }
       });
 

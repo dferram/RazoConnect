@@ -13,6 +13,10 @@ const {
   obtenerMovimientosPendientes,
   enviarSolicitudCredito,
 } = require("../controllers/clientes/creditoController");
+const {
+  actualizarPerfil,
+  cambiarPassword,
+} = require("../controllers/clientes/perfilController");
 const { authenticate } = require("../middlewares/authMiddleware");
 
 router.get("/notificaciones", authenticate, obtenerNotificacionesCliente);
@@ -21,6 +25,9 @@ router.get(
   authenticate,
   obtenerConteoNotificacionesNoLeidas
 );
+
+router.put("/perfil", authenticate, actualizarPerfil);
+router.put("/cambiar-password", authenticate, cambiarPassword);
 
 router.get("/check-auth-credit", authenticate, checkAuthCredit);
 router.get("/perfil-credito", authenticate, obtenerPerfilCredito);
