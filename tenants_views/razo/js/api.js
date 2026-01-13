@@ -241,7 +241,7 @@ const API = {
   login: async (email, password) => {
     return apiCall("/login", {
       method: "POST",
-      body: JSON.stringify({ Email: email, Password: password }),
+      body: JSON.stringify({ email, password }),
     });
   },
 
