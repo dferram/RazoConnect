@@ -176,14 +176,17 @@
         if (response.ok && response.data.success) {
           localStorage.setItem('razoconnect_token', response.data.token);
           localStorage.setItem('razoconnect_user', JSON.stringify(response.data.cliente));
-          window.closeAuthModal();
+          
           showToast('Sesión iniciada correctamente', 'success');
           
           // Dispatch event for UI updates
           window.dispatchEvent(new CustomEvent('razoconnect:auth-changed'));
           
-          // Reload page to update content
-          setTimeout(() => location.reload(), 500);
+          // Close modal and reload after a short delay to ensure token is saved
+          setTimeout(() => {
+            window.closeAuthModal();
+            location.reload();
+          }, 800);
         } else {
           showToast(response.data.message || 'Credenciales incorrectas', 'error');
         }
@@ -236,13 +239,17 @@
           if (loginResponse.ok && loginResponse.data.success) {
             localStorage.setItem('razoconnect_token', loginResponse.data.token);
             localStorage.setItem('razoconnect_user', JSON.stringify(loginResponse.data.cliente));
-            window.closeAuthModal();
+            
+            showToast('Bienvenido a RazoConnect', 'success');
             
             // Dispatch event for UI updates
             window.dispatchEvent(new CustomEvent('razoconnect:auth-changed'));
             
-            // Reload page to update content
-            setTimeout(() => location.reload(), 500);
+            // Close modal and reload after a short delay to ensure token is saved
+            setTimeout(() => {
+              window.closeAuthModal();
+              location.reload();
+            }, 800);
           }
         } else {
           showToast(response.data.message || 'Error al crear cuenta', 'error');
