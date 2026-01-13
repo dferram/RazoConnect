@@ -1,4 +1,6 @@
 const CarritoService = (() => {
+  const GUEST_CART_KEY = 'guest_cart';
+
   // Requiere: varianteId (VarianteID), cantidad (Cantidad) y tamanoId (TamanoID)
   // para alinearse con carritoController.agregarAlCarrito.
   function getCarritoCache() {
@@ -92,7 +94,46 @@ const CarritoService = (() => {
     setCarritoCache(cache.key, items);
   }
 
-  async function agregarItem({ varianteId, cantidad = 1, tamanoId } = {}) {
+  function getGuestCart() {
+    try {
+      const cart = localStorage.getItem(GUEST_CART_KEY);
+      return cart ? JSON.parse(cart) : [];
+    } catch {
+      return [];
+    }
+  }
+
+  function saveGuestCart(items) {
+    try {
+      localStorage.setItem(GUEST_CART_KEY, JSON.stringify(items));
+    } catch (error) {
+      console.error('Error guardando carrito de invitado:', error);
+    }
+  }
+
+  function addToGuestCart(varianteId, cantidad, tamanoId, productoData = {}) {
+    const cart = getGuestCart();
+    const existingIndex = cart.findIndex(
+      item => item.varianteId === varianteId && item.tamanoId === tamanoId
+    );
+
+    if (existingIndex >= 0) {
+      cart[existingIndex].cantidad += cantidad;
+    } else {
+      cart.push({
+        varianteId,
+        tamanoId,
+        cantidad,
+        productoData,
+        addedAt: new Date().toISOString()
+      });
+    }
+
+    saveGuestCart(cart);
+    return cart;
+  }
+
+  async function agregarItem({ varianteId, cantidad = 1, tamanoId, productoData } = {}) {
     if (!varianteId || !tamanoId) {
       showToast(
         "Faltan datos para agregar al carrito (variante o presentación).",
@@ -101,6 +142,28 @@ const CarritoService = (() => {
       return;
     }
 
+    // Check if user is authenticated
+    const token = typeof getToken === 'function' ? getToken() : localStorage.getItem('razoconnect_token');
+    
+    if (!token) {
+      // Guest mode - save to localStorage
+      try {
+        addToGuestCart(varianteId, cantidad, tamanoId, productoData);
+        showToast("Producto agregado al carrito. Inicia sesión para finalizar tu compra.", "success");
+        
+        if (typeof window.updateCartBadge === "function") {
+          window.updateCartBadge();
+        }
+        
+        return { success: true, guest: true };
+      } catch (error) {
+        console.error("Error agregando al carrito de invitado:", error);
+        showToast("Error al agregar al carrito.", "error");
+        throw error;
+      }
+    }
+
+    // Authenticated mode - use API
     try {
       // API.agregarAlCarrito ya envía { VarianteID, Cantidad, TamanoID }
       const response = await API.agregarAlCarrito(
@@ -134,5 +197,8 @@ const CarritoService = (() => {
 
   return {
     agregarItem,
+    getGuestCart,
+    saveGuestCart,
+    clearGuestCart: () => localStorage.removeItem(GUEST_CART_KEY)
   };
 })();

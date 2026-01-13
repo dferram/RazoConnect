@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const path = require('path');
-const { authenticate, authorizeRoles } = require('../middlewares/authMiddleware');
+const { authenticate, authorize } = require('../middlewares/authMiddleware');
 const entregasController = require('../controllers/agentes/entregasController');
 
 // Configurar multer para subida de evidencias
@@ -34,7 +34,7 @@ const upload = multer({
 
 // Todas las rutas requieren autenticación de agente
 router.use(authenticate);
-router.use(authorizeRoles(['agente', 'admin']));
+router.use(authorize(['agente', 'admin']));
 
 /**
  * POST /api/agente/entregas/confirmar

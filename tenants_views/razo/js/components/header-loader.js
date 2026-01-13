@@ -147,7 +147,10 @@
   }
 
   async function verificarCreditoCliente(token) {
-    if (!token) return false;
+    // Don't make API calls if no token (guest user)
+    if (!token) {
+      return false;
+    }
 
     try {
       const res = await fetch("/api/cliente/check-auth-credit", {
@@ -163,7 +166,8 @@
       const data = await res.json();
       return Boolean(data?.hasCredit);
     } catch (error) {
-      console.error("Error verificando crédito del cliente:", error);
+      // Silently fail for guest users
+      console.debug("Credit check skipped or failed:", error.message);
       return false;
     }
   }
@@ -201,6 +205,7 @@
     const logoutItem = document.getElementById("headerLogoutItem");
     const logoutLink = document.getElementById("logoutBtn");
     const cuentaLink = document.getElementById("userGreeting");
+    const loginLink = document.getElementById("loginLink");
 
     const usuario = getUsuarioLocal();
 
@@ -217,7 +222,31 @@
     }
 
     if (cuentaLink) {
-      cuentaLink.href = hasSession ? "/dashboard.html" : "/login.html";
+      cuentaLink.href = hasSession ? "/dashboard.html" : "#";
+      if (!hasSession) {
+        cuentaLink.addEventListener("click", (e) => {
+          e.preventDefault();
+          const modalAuth = document.getElementById("modalAuth");
+          if (modalAuth) {
+            modalAuth.style.display = "flex";
+          } else {
+            window.location.href = "/login.html";
+          }
+        });
+      }
+    }
+
+    // Handle login link click to open modal
+    if (loginLink) {
+      loginLink.addEventListener("click", (e) => {
+        e.preventDefault();
+        const modalAuth = document.getElementById("modalAuth");
+        if (modalAuth) {
+          modalAuth.style.display = "flex";
+        } else {
+          window.location.href = "/login.html";
+        }
+      });
     }
 
     if (logoutItem) {
@@ -252,6 +281,7 @@
     if (!badge) return;
 
     const token = getTokenCliente();
+    // Don't make API calls if no token (guest user)
     if (!token) {
       badge.classList.add("d-none");
       return;
@@ -281,7 +311,8 @@
         badge.classList.add("d-none");
       }
     } catch (error) {
-      console.error("Error obteniendo conteo de notificaciones:", error);
+      // Silently fail for guest users
+      console.debug("Notifications check skipped or failed:", error.message);
       badge.classList.add("d-none");
     }
   }

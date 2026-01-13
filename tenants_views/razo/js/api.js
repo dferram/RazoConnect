@@ -165,6 +165,7 @@ if (typeof window !== 'undefined') {
 // API call wrapper con manejo automático de token y sesión expirada
 const apiCall = async (endpoint, options = {}) => {
   const token = getEffectiveToken();
+  const isPublicEndpoint = options.public === true;
 
   const config = {
     headers: {
@@ -184,8 +185,9 @@ const apiCall = async (endpoint, options = {}) => {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
     const data = await response.json();
 
-    // Manejo centralizado de sesión expirada (401)
-    if (response.status === 401) {
+    // Manejo centralizado de sesión expirada (401) - solo si no es endpoint público Y había un token
+    if (response.status === 401 && !isPublicEndpoint && token) {
+      // Solo mostrar modal de sesión expirada si el usuario tenía un token que expiró
       clearAuthData();
 
       if (!sessionExpiredHandled) {
@@ -211,6 +213,15 @@ const apiCall = async (endpoint, options = {}) => {
       }
 
       throw new Error("Sesión expirada. Por favor, inicia sesión nuevamente.");
+    }
+
+    // Si es 401 pero no había token (usuario invitado), simplemente retornar el error sin modal
+    if (response.status === 401 && !token) {
+      return {
+        ok: false,
+        status: response.status,
+        data,
+      };
     }
 
     return {
@@ -245,18 +256,21 @@ const API = {
   getProductos: async (queryString = "") => {
     return apiCall(`/productos${queryString}`, {
       method: "GET",
+      public: true,
     });
   },
 
   getDimensiones: async () => {
     return apiCall("/productos/dimensiones", {
       method: "GET",
+      public: true,
     });
   },
 
   getProductoById: async (id) => {
     return apiCall(`/productos/${id}`, {
       method: "GET",
+      public: true,
     });
   },
 
