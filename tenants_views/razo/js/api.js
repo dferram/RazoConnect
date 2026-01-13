@@ -176,8 +176,8 @@ const apiCall = async (endpoint, options = {}) => {
     ...options,
   };
 
-  // Add authorization header if token exists
-  if (token) {
+  // Add authorization header ONLY if token exists and is not null/undefined
+  if (token && token !== 'null' && token !== 'undefined') {
     config.headers["Authorization"] = `Bearer ${token}`;
   }
 
@@ -543,7 +543,8 @@ const fetchWithAuth = async (url, options = {}) => {
     credentials: 'include',
   };
 
-  if (token) {
+  // Only add Authorization header if token exists and is not null/undefined
+  if (token && token !== 'null' && token !== 'undefined') {
     config.headers['Authorization'] = `Bearer ${token}`;
   }
 

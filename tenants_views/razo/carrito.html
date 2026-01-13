@@ -1487,9 +1487,11 @@
       </div>
     </div>
 
-    <script src="js/carritoService.js"></script>
+    <!-- CRITICAL: Load in this exact order -->
     <script src="js/api.js"></script>
+    <script src="js/carritoService.js"></script>
     <script src="js/pack-helpers.js"></script>
+    <script src="js/carrito-auth-modal.js"></script>
     <script>
       const loadingState = document.getElementById("loadingState");
       const emptyState = document.getElementById("emptyState");
@@ -1696,9 +1698,13 @@
         if (transferInfoLoaded && !force) return;
 
         // Don't load transfer info for guest users
-        if (!localStorage.getItem('razoconnect_token')) {
+        const token = localStorage.getItem('razoconnect_token');
+        if (!token || token === 'null' || token === 'undefined') {
           if (transferInfoMessage) {
             transferInfoMessage.textContent = "Inicia sesión para ver la información de transferencia.";
+          }
+          if (transferInfoSpinner) {
+            transferInfoSpinner.style.display = "none";
           }
           return;
         }
@@ -1770,7 +1776,8 @@
         if (!paymentSection) return;
 
         // Don't load payment methods for guest users
-        if (!localStorage.getItem('razoconnect_token')) {
+        const token = localStorage.getItem('razoconnect_token');
+        if (!token || token === 'null' || token === 'undefined') {
           return;
         }
 
