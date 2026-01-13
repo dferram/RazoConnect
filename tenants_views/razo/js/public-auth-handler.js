@@ -62,11 +62,18 @@
 
   // Open authentication modal (if exists on page)
   function openAuthModal() {
+    // Usar función global si existe (definida en catalogo.html o carrito.html)
+    if (typeof window.openAuthModal === 'function') {
+      window.openAuthModal();
+      return;
+    }
+    
+    // Fallback: intentar abrir modal directamente
     const modalAuth = document.getElementById('modalAuth');
     if (modalAuth) {
-      modalAuth.classList.add('show');
+      modalAuth.style.display = 'flex';
     } else {
-      // Fallback: redirect to login page
+      // Último recurso: redirect to login page
       window.location.href = '/login.html';
     }
   }
@@ -104,6 +111,11 @@
     window.addEventListener('razoconnect:auth-changed', () => {
       updateAuthUI();
     });
+
+    // Verificar cambios de autenticación periódicamente (para detectar login en otra pestaña)
+    setInterval(() => {
+      updateAuthUI();
+    }, 1000);
   });
 
   // Export functions for use in other scripts

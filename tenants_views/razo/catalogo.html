@@ -1237,10 +1237,15 @@
           margin-bottom: 1.5rem;
         }
       }
+
+      /* Modal styles */
+      .modal {
+        display: none;
+      }
     </style>
 
     <!-- Modal: Autenticación (Login/Registro) -->
-    <div id="modalAuth" class="modal" style="z-index: 2000; display: none; position: fixed; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px); justify-content: center; align-items: center; padding: 1rem;">
+    <div id="modalAuth" class="modal" style="z-index: 2000; position: fixed; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px); justify-content: center; align-items: center; padding: 1rem;">
       <div class="modal-content" style="max-width: 500px; width: 95%; padding: 2rem; border-radius: 1rem; background: white;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
           <h2 style="font-size: 1.5rem; font-weight: 700; margin: 0; color: #111827;">Inicia sesión</h2>
@@ -1312,11 +1317,19 @@
 
         tabLogin.addEventListener('click', switchToLogin);
         tabRegistro.addEventListener('click', switchToRegistro);
-        btnCerrar.addEventListener('click', () => {
+        // Exponer función global para que public-auth-handler pueda abrirlo
+        window.openAuthModal = function() {
+          modalAuth.style.display = 'flex';
+          switchToLogin();
+        };
+
+        window.closeAuthModal = function() {
           modalAuth.style.display = 'none';
           formLogin.reset();
           formRegistro.reset();
-        });
+        };
+
+        btnCerrar.addEventListener('click', window.closeAuthModal);
 
         formLogin.addEventListener('submit', async (e) => {
           e.preventDefault();
@@ -1327,10 +1340,10 @@
             if (response.ok && response.data.success) {
               localStorage.setItem('razoconnect_token', response.data.token);
               localStorage.setItem('razoconnect_user', JSON.stringify(response.data.cliente));
-              modalAuth.style.display = 'none';
-              window.dispatchEvent(new Event('razoconnect:auth-changed'));
+              window.closeAuthModal();
               showToast('Sesión iniciada correctamente', 'success');
-              setTimeout(() => location.reload(), 500);
+              // Recargar inmediatamente para actualizar header y productos
+              location.reload();
             } else {
               showToast(response.data.message || 'Credenciales incorrectas', 'error');
             }
@@ -1353,10 +1366,10 @@
               if (loginResponse.ok && loginResponse.data.success) {
                 localStorage.setItem('razoconnect_token', loginResponse.data.token);
                 localStorage.setItem('razoconnect_user', JSON.stringify(loginResponse.data.cliente));
-                modalAuth.style.display = 'none';
-                window.dispatchEvent(new Event('razoconnect:auth-changed'));
+                window.closeAuthModal();
                 showToast('Cuenta creada exitosamente', 'success');
-                setTimeout(() => location.reload(), 500);
+                // Recargar inmediatamente para actualizar header y productos
+                location.reload();
               }
             } else {
               showToast(response.data.message || 'Error al crear cuenta', 'error');
@@ -1368,7 +1381,7 @@
         });
 
         window.addEventListener('click', (e) => {
-          if (e.target === modalAuth) modalAuth.style.display = 'none';
+          if (e.target === modalAuth) window.closeAuthModal();
         });
       })();
     </script>
