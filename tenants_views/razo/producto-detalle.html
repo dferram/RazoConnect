@@ -579,12 +579,11 @@
     <script src="js/carritoService.js"></script>
     <script src="js/variant-summary-utils.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/components/auth-modal-loader.js"></script>
+    <script src="/js/public-auth-handler.js"></script>
     <script src="/js/components/header-loader.js"></script>
     <script>
-      // Check authentication
-      if (!requireAuth()) {
-        // User is not authenticated, redirected to login
-      }
+      // Public page - guests can view products
 
       const loadingState = document.getElementById("loadingState");
       const productDetails = document.getElementById("productDetails");
