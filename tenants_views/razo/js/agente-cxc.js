@@ -44,10 +44,10 @@
 
   async function loadCxCData() {
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("razoconnect_admin_token");
       if (!token) {
         console.warn("No se encontró token de autenticación. Redirigiendo a login...");
-        window.location.href = "/login-agente.html";
+        window.location.href = "/login.html";
         return;
       }
 
@@ -62,13 +62,39 @@
       });
 
       if (!response.ok) {
-        if (response.status === 401 || response.status === 403) {
+        if (response.status === 401) {
           console.warn("Sesión expirada. Redirigiendo a login...");
-          localStorage.removeItem("token");
+          localStorage.removeItem("razoconnect_admin_token");
           localStorage.removeItem("razoconnect_admin");
-          window.location.href = "/login-agente.html";
+          
+          if (typeof Swal !== "undefined" && Swal && typeof Swal.fire === "function") {
+            Swal.fire({
+              icon: "warning",
+              title: "Sesión Expirada",
+              text: "Tu sesión ha expirado. Por favor, inicia sesión nuevamente.",
+              confirmButtonText: "Ir al Login",
+              confirmButtonColor: "#F97316",
+              allowOutsideClick: false,
+            }).then(() => {
+              window.location.href = "/login.html";
+            });
+          } else {
+            window.location.href = "/login.html";
+          }
           return;
         }
+        
+        if (response.status === 403) {
+          console.error("Acceso denegado a CxC");
+          Swal.fire({
+            icon: "error",
+            title: "Acceso Denegado",
+            text: "No tienes permisos para acceder a esta sección. Contacta al administrador.",
+            confirmButtonColor: "#F97316",
+          });
+          return;
+        }
+        
         throw new Error(`Error al cargar datos: ${response.status}`);
       }
 

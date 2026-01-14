@@ -185,6 +185,27 @@ const apiCall = async (endpoint, options = {}) => {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
     const data = await response.json();
 
+    // Manejo de 403 Forbidden (sin permisos) - NO cerrar sesión, solo mostrar alerta
+    if (response.status === 403) {
+      console.error("❌ [API] Acceso denegado (403):", endpoint);
+      
+      if (typeof Swal !== "undefined" && Swal && typeof Swal.fire === "function") {
+        Swal.fire({
+          icon: "error",
+          title: "Acceso Denegado",
+          text: "No tienes permisos para acceder a este recurso. Si crees que esto es un error, contacta al administrador.",
+          confirmButtonText: "Entendido",
+          confirmButtonColor: "#F97316",
+        });
+      }
+      
+      return {
+        ok: false,
+        status: 403,
+        data,
+      };
+    }
+
     // Manejo centralizado de sesión expirada (401) - solo si no es endpoint público Y había un token
     if (response.status === 401 && !isPublicEndpoint && token) {
       // Solo mostrar modal de sesión expirada si el usuario tenía un token que expiró
@@ -559,7 +580,24 @@ const fetchWithAuth = async (url, options = {}) => {
   try {
     const response = await fetch(url, config);
 
-    // Handle 401 Unauthorized
+    // Handle 403 Forbidden (permission denied) - show alert but don't logout
+    if (response.status === 403) {
+      console.error("❌ [FETCH] Acceso denegado (403):", url);
+      
+      if (typeof Swal !== "undefined" && Swal && typeof Swal.fire === "function") {
+        Swal.fire({
+          icon: "error",
+          title: "Acceso Denegado",
+          text: "No tienes permisos para acceder a este recurso. Si crees que esto es un error, contacta al administrador.",
+          confirmButtonText: "Entendido",
+          confirmButtonColor: "#F97316",
+        });
+      }
+      
+      return response;
+    }
+
+    // Handle 401 Unauthorized (expired token) - logout and redirect
     if (response.status === 401) {
       clearAuthData();
       
