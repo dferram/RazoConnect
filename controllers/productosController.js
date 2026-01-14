@@ -1170,16 +1170,16 @@ const obtenerAgentesPublicos = async (req, res) => {
  */
 const buscarProductosAutocomplete = async (req, res) => {
   try {
-    const { tenant_id } = req.tenant || {};
-    const { q } = req.query;
-
-    if (!tenant_id) {
+    if (!req.tenant || !req.tenant.tenant_id) {
       return res.status(500).json({
         success: false,
-        message: "Error: tenant_id no disponible",
+        message: "Error: tenant no disponible",
         error: "Middleware tenantGuard no adjuntó req.tenant correctamente"
       });
     }
+
+    const { tenant_id } = req.tenant;
+    const { q } = req.query;
 
     if (!q || !q.trim()) {
       return res.status(200).json({
@@ -1205,7 +1205,7 @@ const buscarProductosAutocomplete = async (req, res) => {
           SELECT pi.url_imagen
           FROM producto_imagenes pi
           WHERE pi.productoid = p.productoid
-          ORDER BY pi.orden ASC, pi.imagenid ASC
+          ORDER BY pi.orden ASC
           LIMIT 1
         ) as imagen_url
       FROM productos p
