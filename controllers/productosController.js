@@ -1185,10 +1185,6 @@ const buscarProductosAutocomplete = async (req, res) => {
     }
 
     const searchTerm = q.trim();
-    const normalizedSearch = searchTerm
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "");
 
     const query = `
       SELECT DISTINCT
@@ -1210,29 +1206,20 @@ const buscarProductosAutocomplete = async (req, res) => {
       WHERE p.tenant_id = $1
         AND COALESCE(p.activo, TRUE) = TRUE
         AND (
-          LOWER(TRANSLATE(p.nombreproducto, 
-            'áéíóúÁÉÍÓÚàèìòùÀÈÌÒÙäëïöüÄËÏÖÜâêîôûÂÊÎÔÛñÑ',
-            'aeiouAEIOUaeiouAEIOUaeiouAEIOUaeiouAEIOUnN'
-          )) LIKE $2
-          OR LOWER(TRANSLATE(COALESCE(p.sku_maestro, ''), 
-            'áéíóúÁÉÍÓÚàèìòùÀÈÌÒÙäëïöüÄËÏÖÜâêîôûÂÊÎÔÛñÑ',
-            'aeiouAEIOUaeiouAEIOUaeiouAEIOUaeiouAEIOUnN'
-          )) LIKE $2
+          p.nombreproducto ILIKE $2
+          OR COALESCE(p.sku_maestro, '') ILIKE $2
           OR EXISTS (
             SELECT 1
             FROM producto_variantes pv2
             WHERE pv2.productoid = p.productoid
-              AND LOWER(TRANSLATE(pv2.sku, 
-                'áéíóúÁÉÍÓÚàèìòùÀÈÌÒÙäëïöüÄËÏÖÜâêîôûÂÊÎÔÛñÑ',
-                'aeiouAEIOUaeiouAEIOUaeiouAEIOUaeiouAEIOUnN'
-              )) LIKE $2
+              AND pv2.sku ILIKE $2
           )
         )
       GROUP BY p.productoid, p.nombreproducto, p.sku_maestro, c.nombre
       ORDER BY 
         CASE 
-          WHEN LOWER(p.nombreproducto) LIKE $3 THEN 1
-          WHEN LOWER(p.nombreproducto) LIKE $2 THEN 2
+          WHEN p.nombreproducto ILIKE $3 THEN 1
+          WHEN p.nombreproducto ILIKE $2 THEN 2
           ELSE 3
         END,
         p.nombreproducto ASC
@@ -1241,8 +1228,8 @@ const buscarProductosAutocomplete = async (req, res) => {
 
     const result = await db.query(query, [
       tenant_id,
-      `%${normalizedSearch}%`,
-      `${normalizedSearch}%`,
+      `%${searchTerm}%`,
+      `${searchTerm}%`,
     ]);
 
     const productos = result.rows.map((row) => ({
