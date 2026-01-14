@@ -1170,10 +1170,29 @@ const obtenerAgentesPublicos = async (req, res) => {
  */
 const buscarProductosAutocomplete = async (req, res) => {
   try {
-    const { tenant_id } = req.tenant;
+    console.log('========================================');
+    console.log('[SEARCH BACKEND] Nueva búsqueda iniciada');
+    console.log('[SEARCH BACKEND] req.tenant:', req.tenant);
+    console.log('[SEARCH BACKEND] req.query:', req.query);
+    
+    const { tenant_id } = req.tenant || {};
     const { q } = req.query;
 
+    console.log('[SEARCH BACKEND] tenant_id extraído:', tenant_id);
+    console.log('[SEARCH BACKEND] query (q) extraído:', q);
+
+    if (!tenant_id) {
+      console.error('[SEARCH BACKEND] ❌ KILLER FILTER: tenant_id es undefined/null');
+      console.error('[SEARCH BACKEND] req.tenant completo:', JSON.stringify(req.tenant));
+      return res.status(500).json({
+        success: false,
+        message: "Error: tenant_id no disponible",
+        error: "Middleware tenantGuard no adjuntó req.tenant correctamente"
+      });
+    }
+
     if (!q || !q.trim()) {
+      console.log('[SEARCH BACKEND] Query vacío, retornando array vacío');
       return res.status(200).json({
         success: true,
         message: "Búsqueda vacía",
@@ -1185,12 +1204,15 @@ const buscarProductosAutocomplete = async (req, res) => {
     }
 
     const searchTerm = q.trim();
+    console.log('[SEARCH BACKEND] Término de búsqueda limpio:', searchTerm);
 
     const query = `
       SELECT DISTINCT
         p.productoid,
         p.nombreproducto,
         p.sku_maestro,
+        p.activo,
+        p.tenant_id as producto_tenant_id,
         c.nombre as categoria_nombre,
         MIN(pv.preciounitario) as precio_min,
         (
@@ -1215,7 +1237,7 @@ const buscarProductosAutocomplete = async (req, res) => {
               AND pv2.sku ILIKE $2
           )
         )
-      GROUP BY p.productoid, p.nombreproducto, p.sku_maestro, c.nombre
+      GROUP BY p.productoid, p.nombreproducto, p.sku_maestro, p.activo, p.tenant_id, c.nombre
       ORDER BY 
         CASE 
           WHEN p.nombreproducto ILIKE $3 THEN 1
@@ -1226,11 +1248,32 @@ const buscarProductosAutocomplete = async (req, res) => {
       LIMIT 8
     `;
 
-    const result = await db.query(query, [
+    const params = [
       tenant_id,
       `%${searchTerm}%`,
       `${searchTerm}%`,
-    ]);
+    ];
+
+    console.log('[SEARCH BACKEND] Ejecutando query SQL con parámetros:');
+    console.log('[SEARCH BACKEND] $1 (tenant_id):', params[0]);
+    console.log('[SEARCH BACKEND] $2 (búsqueda):', params[1]);
+    console.log('[SEARCH BACKEND] $3 (búsqueda exacta):', params[2]);
+
+    const result = await db.query(query, params);
+    
+    console.log('[SEARCH BACKEND] Query ejecutado. Filas retornadas:', result.rows.length);
+    
+    if (result.rows.length > 0) {
+      console.log('[SEARCH BACKEND] Productos encontrados:');
+      result.rows.forEach((row, index) => {
+        console.log(`  ${index + 1}. ${row.nombreproducto} (ID: ${row.productoid}, tenant_id: ${row.producto_tenant_id}, activo: ${row.activo})`);
+      });
+    } else {
+      console.log('[SEARCH BACKEND] ⚠️ CERO RESULTADOS - Verificar:');
+      console.log('  1. ¿Los productos tienen tenant_id =', tenant_id, '?');
+      console.log('  2. ¿Los productos tienen activo = TRUE o NULL?');
+      console.log('  3. ¿El nombre contiene "' + searchTerm + '"?');
+    }
 
     const productos = result.rows.map((row) => ({
       productoId: row.productoid,
