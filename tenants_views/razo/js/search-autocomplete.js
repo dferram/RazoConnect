@@ -161,32 +161,18 @@ class SearchAutocomplete {
 
   async search(query) {
     try {
-      console.log('[SEARCH] Iniciando búsqueda para:', query);
-      const url = `/api/productos/search?q=${encodeURIComponent(query)}`;
-      console.log('[SEARCH] URL:', url);
-      
-      const response = await fetch(url);
-      console.log('[SEARCH] Response status:', response.status);
-      
+      const response = await fetch(`/api/productos/search?q=${encodeURIComponent(query)}`);
       const data = await response.json();
-      console.log('[SEARCH] Response data:', data);
-      console.log('[SEARCH] Productos encontrados:', data.data?.productos?.length || 0);
-      
-      if (data.data && data.data.productos) {
-        console.log('[SEARCH] Lista de productos:', data.data.productos);
-      }
 
       if (data.success && data.data.productos && data.data.productos.length > 0) {
-        console.log('[SEARCH] Renderizando', data.data.productos.length, 'resultados');
         this.renderResults(data.data.productos);
         this.open();
       } else {
-        console.log('[SEARCH] Sin resultados, mostrando mensaje vacío');
         this.renderEmpty(query);
         this.open();
       }
     } catch (error) {
-      console.error('[SEARCH] Error en búsqueda:', error);
+      console.error('Error en búsqueda:', error);
       this.close();
     }
   }
