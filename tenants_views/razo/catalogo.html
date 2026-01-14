@@ -17,6 +17,7 @@
     <link rel="stylesheet" href="css/catalogo-profesional.css" />
     <link rel="stylesheet" href="css/components/sidebar-filtros.css" />
     <link rel="stylesheet" href="css/mobile-responsive.css" />
+    <link rel="stylesheet" href="css/search-autocomplete.css" />
   </head>
   <body>
     <div id="header-container"></div>
@@ -189,6 +190,23 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://sdk.mercadopago.com/js/v2"></script>
     <script src="js/api.js"></script>
+    <script src="js/search-autocomplete.js"></script>
+
+    <script>
+      // Initialize search autocomplete
+      document.addEventListener('DOMContentLoaded', () => {
+        const searchInput = document.getElementById('search-bar');
+        if (searchInput) {
+          new SearchAutocomplete(searchInput, {
+            minChars: 2,
+            debounceMs: 300,
+            onSelect: (productoId) => {
+              window.location.href = `/producto-detalle.html?id=${productoId}`;
+            }
+          });
+        }
+      });
+    </script>
 
     <script>
       // Utility function to show toast notifications

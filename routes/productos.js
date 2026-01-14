@@ -61,6 +61,13 @@ router.get("/productos/tipos", productosController.obtenerTiposProducto);
 router.get("/productos/dimensiones", productosController.obtenerDimensiones);
 
 /**
+ * @route   GET /api/productos/search
+ * @desc    Búsqueda inteligente con autocomplete (tolerante a acentos)
+ * @access  Public
+ */
+router.get("/productos/search", productosController.buscarProductosAutocomplete);
+
+/**
  * @route   GET /api/productos/:id
  * @desc    Obtener un producto específico con todas sus imágenes
  * @access  Public

@@ -1164,6 +1164,115 @@ const obtenerAgentesPublicos = async (req, res) => {
   }
 };
 
+/**
+ * Búsqueda inteligente de productos con autocomplete
+ * GET /api/productos/search?q=...
+ */
+const buscarProductosAutocomplete = async (req, res) => {
+  try {
+    const { tenant_id } = req.tenant;
+    const { q } = req.query;
+
+    if (!q || !q.trim()) {
+      return res.status(200).json({
+        success: true,
+        message: "Búsqueda vacía",
+        data: {
+          productos: [],
+          total: 0,
+        },
+      });
+    }
+
+    const searchTerm = q.trim();
+    const normalizedSearch = searchTerm
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
+
+    const query = `
+      SELECT DISTINCT
+        p.productoid,
+        p.nombreproducto,
+        p.sku_maestro,
+        c.nombre as categoria_nombre,
+        MIN(pv.preciounitario) as precio_min,
+        (
+          SELECT pi.url_imagen_cloudinary
+          FROM producto_imagenes pi
+          WHERE pi.productoid = p.productoid
+          ORDER BY pi.fechacreacion ASC
+          LIMIT 1
+        ) as imagen_url
+      FROM productos p
+      LEFT JOIN categorias c ON c.categoriaid = p.categoriaid
+      LEFT JOIN producto_variantes pv ON pv.productoid = p.productoid
+      WHERE p.tenant_id = $1
+        AND COALESCE(p.activo, TRUE) = TRUE
+        AND (
+          LOWER(TRANSLATE(p.nombreproducto, 
+            'áéíóúÁÉÍÓÚàèìòùÀÈÌÒÙäëïöüÄËÏÖÜâêîôûÂÊÎÔÛñÑ',
+            'aeiouAEIOUaeiouAEIOUaeiouAEIOUaeiouAEIOUnN'
+          )) LIKE $2
+          OR LOWER(TRANSLATE(COALESCE(p.sku_maestro, ''), 
+            'áéíóúÁÉÍÓÚàèìòùÀÈÌÒÙäëïöüÄËÏÖÜâêîôûÂÊÎÔÛñÑ',
+            'aeiouAEIOUaeiouAEIOUaeiouAEIOUaeiouAEIOUnN'
+          )) LIKE $2
+          OR EXISTS (
+            SELECT 1
+            FROM producto_variantes pv2
+            WHERE pv2.productoid = p.productoid
+              AND LOWER(TRANSLATE(pv2.sku, 
+                'áéíóúÁÉÍÓÚàèìòùÀÈÌÒÙäëïöüÄËÏÖÜâêîôûÂÊÎÔÛñÑ',
+                'aeiouAEIOUaeiouAEIOUaeiouAEIOUaeiouAEIOUnN'
+              )) LIKE $2
+          )
+        )
+      GROUP BY p.productoid, p.nombreproducto, p.sku_maestro, c.nombre
+      ORDER BY 
+        CASE 
+          WHEN LOWER(p.nombreproducto) LIKE $3 THEN 1
+          WHEN LOWER(p.nombreproducto) LIKE $2 THEN 2
+          ELSE 3
+        END,
+        p.nombreproducto ASC
+      LIMIT 8
+    `;
+
+    const result = await db.query(query, [
+      tenant_id,
+      `%${normalizedSearch}%`,
+      `${normalizedSearch}%`,
+    ]);
+
+    const productos = result.rows.map((row) => ({
+      productoId: row.productoid,
+      nombreProducto: row.nombreproducto,
+      skuMaestro: row.sku_maestro,
+      categoria: row.categoria_nombre,
+      precio: row.precio_min ? parseFloat(row.precio_min) : null,
+      imagenUrl: row.imagen_url,
+    }));
+
+    res.status(200).json({
+      success: true,
+      message: "Búsqueda completada",
+      data: {
+        productos,
+        total: productos.length,
+        query: searchTerm,
+      },
+    });
+  } catch (error) {
+    console.error("Error en búsqueda de productos:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error al buscar productos",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   obtenerProveedoresPublicos,
   obtenerTiposProductoPublicos,
@@ -1173,4 +1282,5 @@ module.exports = {
   obtenerProductoPorId,
   obtenerCategorias,
   obtenerAgentesPublicos,
+  buscarProductosAutocomplete,
 };
