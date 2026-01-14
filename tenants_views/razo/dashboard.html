@@ -1045,9 +1045,12 @@
                         .map(
                           (item) => `
                         <div class="pedido-item">
-                          <div class="pedido-item-img">
-                            ${getProductEmoji(item.nombreProducto)}
-                          </div>
+                          <img 
+                            src="${item.imagenUrl || '/icon/Logo_Razo.png'}" 
+                            alt="${item.nombreProducto}" 
+                            class="pedido-item-img"
+                            onerror="this.src='/icon/Logo_Razo.png'"
+                          />
                           <div>
                             <div style="font-weight: 700; margin-bottom: 0.5rem; color: var(--razo-gray-dark); font-size: 1rem;">${
                               item.nombreProducto

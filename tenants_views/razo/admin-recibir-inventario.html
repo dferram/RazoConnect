@@ -259,7 +259,8 @@
     </div>
     
     <script src="js/admin-recibir-inventario.js" defer></script>
-    <script src="js/layout.js" defer></script>`n    <script src="js/sidebar-toggle.js" defer></script>
+    <script src="js/layout.js" defer></script>
+    <script src="js/sidebar-toggle.js" defer></script>
     <script src="js/api.js"></script>
     <script src="js/admin-header-dropdown.js"></script>
     <script src="js/components/admin-header-loader.js"></script>
@@ -701,8 +702,6 @@
         tbodyPendiente.innerHTML = "";
         tbodyRecibido.innerHTML = "";
 
-        const baseUrl = `${window.location.protocol}//${window.location.host}`;
-
         for (const item of pendientes) {
           const piezas = piezasPorPaqueteValue(item);
           const solicitadoPzas = solicitadoPzasValue(item);
@@ -717,9 +716,10 @@
           const tdImg = document.createElement("td");
           const img = document.createElement("img");
           img.alt = safeText(item.nombreProducto);
-          img.src = item.imagen ? `${baseUrl}${item.imagen}` : "/icon/Logo_Razo.png";
+          img.src = item.imagen || '/icon/Logo_Razo.png';
           img.className = "img-mini-tabla";
           img.style.border = "1px solid rgba(0,0,0,0.06)";
+          img.onerror = function() { this.src = '/icon/Logo_Razo.png'; };
           tdImg.appendChild(img);
 
           const tdSku = document.createElement("td");
@@ -810,9 +810,10 @@
           const tdImg = document.createElement("td");
           const img = document.createElement("img");
           img.alt = safeText(item.nombreProducto);
-          img.src = item.imagen ? `${baseUrl}${item.imagen}` : "/icon/Logo_Razo.png";
+          img.src = item.imagen || '/icon/Logo_Razo.png';
           img.className = "img-mini-tabla";
           img.style.border = "1px solid rgba(0,0,0,0.06)";
+          img.onerror = function() { this.src = '/icon/Logo_Razo.png'; };
           tdImg.appendChild(img);
 
           const tdSku = document.createElement("td");
