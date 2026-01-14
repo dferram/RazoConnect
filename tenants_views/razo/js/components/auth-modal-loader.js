@@ -158,20 +158,33 @@
       }
     });
 
+    // Validate email or phone format
+    function validateIdentifier(identifier) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      const phoneRegex = /^\d{10}$/;
+      return emailRegex.test(identifier) || phoneRegex.test(identifier);
+    }
+
     // Login form handler
     formLogin.addEventListener('submit', async (e) => {
       e.preventDefault();
       
-      const email = document.getElementById('loginEmailModal').value.trim();
+      const identifier = document.getElementById('loginEmailModal').value.trim();
       const password = document.getElementById('loginPasswordModal').value;
 
-      if (!email || !password) {
+      if (!identifier || !password) {
         showToast('Por favor completa todos los campos', 'error');
         return;
       }
 
+      // Validate format
+      if (!validateIdentifier(identifier)) {
+        showToast('Formato inválido. Ingresa un correo válido o 10 dígitos', 'error');
+        return;
+      }
+
       try {
-        const response = await API.login(email, password);
+        const response = await API.login(identifier, password);
 
         if (response.ok && response.data.success) {
           localStorage.setItem('razoconnect_token', response.data.token);
@@ -234,7 +247,7 @@
         if (response.ok && response.data.success) {
           showToast('Cuenta creada exitosamente', 'success');
           
-          // Auto-login after registration
+          // Auto-login after registration (use email since registration requires it)
           const loginResponse = await API.login(email, password);
           if (loginResponse.ok && loginResponse.data.success) {
             localStorage.setItem('razoconnect_token', loginResponse.data.token);
