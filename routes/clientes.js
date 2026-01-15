@@ -18,22 +18,24 @@ const {
   cambiarPassword,
 } = require("../controllers/clientes/perfilController");
 const { authenticate } = require("../middlewares/authMiddleware");
+const verifyTenantContext = require("../middlewares/verifyTenantContext");
 
-router.get("/notificaciones", authenticate, obtenerNotificacionesCliente);
+router.get("/notificaciones", authenticate, verifyTenantContext, obtenerNotificacionesCliente);
 router.get(
   "/notificaciones/count",
   authenticate,
+  verifyTenantContext,
   obtenerConteoNotificacionesNoLeidas
 );
 
-router.put("/perfil", authenticate, actualizarPerfil);
-router.put("/cambiar-password", authenticate, cambiarPassword);
+router.put("/perfil", authenticate, verifyTenantContext, actualizarPerfil);
+router.put("/cambiar-password", authenticate, verifyTenantContext, cambiarPassword);
 
-router.get("/check-auth-credit", authenticate, checkAuthCredit);
-router.get("/perfil-credito", authenticate, obtenerPerfilCredito);
-router.get("/credito", authenticate, obtenerMovimientosCredito);
-router.get("/credito/pendientes", authenticate, obtenerMovimientosPendientes);
-router.post("/pagar-credito", authenticate, registrarPagoCliente);
-router.post("/solicitar-credito", authenticate, enviarSolicitudCredito);
+router.get("/check-auth-credit", authenticate, verifyTenantContext, checkAuthCredit);
+router.get("/perfil-credito", authenticate, verifyTenantContext, obtenerPerfilCredito);
+router.get("/credito", authenticate, verifyTenantContext, obtenerMovimientosCredito);
+router.get("/credito/pendientes", authenticate, verifyTenantContext, obtenerMovimientosPendientes);
+router.post("/pagar-credito", authenticate, verifyTenantContext, registrarPagoCliente);
+router.post("/solicitar-credito", authenticate, verifyTenantContext, enviarSolicitudCredito);
 
 module.exports = router;
