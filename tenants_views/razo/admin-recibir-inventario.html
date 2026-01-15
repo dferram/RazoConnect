@@ -734,7 +734,8 @@
 
           const tdDimensiones = document.createElement("td");
           tdDimensiones.innerHTML = `
-            <div style="font-size: 0.875rem; color: #6b7280;">${piezas} pzas/paq</div>
+            <div style="font-weight: 600; font-size: 0.875rem; color: #111827;">${safeText(item.dimensiones || 'N/A')}</div>
+            ${item.color ? `<div style="font-size: 0.75rem; color: #6b7280;">${safeText(item.color)}</div>` : ''}
           `;
 
           const tdSol = document.createElement("td");
@@ -832,7 +833,8 @@
 
           const tdDimensiones = document.createElement("td");
           tdDimensiones.innerHTML = `
-            <div style="font-size: 0.875rem; color: #6b7280;">${piezas} pzas/paq</div>
+            <div style="font-weight: 600; font-size: 0.875rem; color: #111827;">${safeText(item.dimensiones || 'N/A')}</div>
+            ${item.color ? `<div style="font-size: 0.75rem; color: #6b7280;">${safeText(item.color)}</div>` : ''}
           `;
 
           const tdRec = document.createElement("td");

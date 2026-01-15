@@ -81,12 +81,15 @@ const authenticate = async (req, res, next) => {
         });
       }
 
+      // Preservar todos los roles del token (puede incluir 'admin' para agentes con permisos de admin)
+      const preservedRoles = rolesFromToken.length > 0 ? rolesFromToken : ["agente"];
+
       req.user = {
         ...decoded,
         id: userId,
         userId,
-        rol: "agente",
-        roles: ["agente"],
+        rol: decoded?.rol || "agente",
+        roles: preservedRoles,
         email: decoded?.email || agenteResult.rows[0].email || null,
         codigoAgente: decoded?.codigoAgente || agenteResult.rows[0].codigoagente || null,
       };
@@ -160,12 +163,17 @@ const authenticate = async (req, res, next) => {
         ? "superadmin"
         : "admin";
 
+      // Preservar roles del token si existen, sino usar rol de BD
+      const rolesFromToken = Array.isArray(decoded?.roles) && decoded.roles.length > 0
+        ? decoded.roles
+        : [rolFinal];
+
       req.user = {
         ...decoded,
         id: userId,
         userId,
-        rol: rolFinal,
-        roles: [rolFinal],
+        rol: decoded?.rol || rolFinal,
+        roles: rolesFromToken,
         email: decoded?.email || adminResult.rows[0].email || null,
         tenant_id: adminResult.rows[0].tenant_id,
       };
@@ -181,12 +189,17 @@ const authenticate = async (req, res, next) => {
     );
 
     if (agenteFallback.rows.length) {
+      // Preservar roles del token (puede incluir 'admin' si es agente con permisos de admin)
+      const rolesFromToken = Array.isArray(decoded?.roles) && decoded.roles.length > 0
+        ? decoded.roles
+        : ["agente"];
+
       req.user = {
         ...decoded,
         id: userId,
         userId,
-        rol: "agente",
-        roles: ["agente"],
+        rol: decoded?.rol || "agente",
+        roles: rolesFromToken,
         email: decoded?.email || agenteFallback.rows[0].email || null,
         codigoAgente: decoded?.codigoAgente || agenteFallback.rows[0].codigoagente || null,
       };
@@ -239,7 +252,8 @@ const authorize = (roles = []) => {
 
 /**
  * Middleware específico para verificar que el usuario es un administrador
- * Verifica que el token tenga el campo 'tipo' = 'admin'
+ * Verifica que el token tenga el campo 'tipo' = 'admin' o que tenga rol admin/superadmin
+ * También permite agentes con permisos de admin (EsAdmin=true) que tienen ['admin'] en roles
  */
 const authorizeAdmin = (req, res, next) => {
   if (!req.user) {
@@ -249,8 +263,15 @@ const authorizeAdmin = (req, res, next) => {
     });
   }
 
+  // Verificar rol principal
   const rol = normalizeRole(req.user.rol);
-  if (rol !== "admin" && rol !== "superadmin") {
+  const isAdminByRol = rol === "admin" || rol === "superadmin";
+
+  // Verificar array de roles (para agentes con permisos de admin)
+  const userRoles = getUserRoles(req);
+  const isAdminByRoles = userRoles.includes("admin") || userRoles.includes("superadmin");
+
+  if (!isAdminByRol && !isAdminByRoles) {
     return res.status(403).json({
       success: false,
       message: "Acceso denegado. Solo administradores",

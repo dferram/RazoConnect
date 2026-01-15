@@ -320,7 +320,7 @@ async function getMetricasCobranza(req, res) {
                 SELECT COALESCE(SUM(saldo_deudor), 0) as total
                 FROM cliente_creditos
                 WHERE saldo_deudor > 0
-                AND exportado_en >= date_trunc('month', CURRENT_DATE)
+                AND ultima_actualizacion >= date_trunc('month', CURRENT_DATE)
             `),
             
             // Clientes en mora

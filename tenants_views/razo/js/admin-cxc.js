@@ -803,6 +803,13 @@
 
     pagoActualDetalle = pago;
     
+    // Mostrar modal inmediatamente para evitar que se vea el contenido al fondo
+    const modalElement = document.getElementById('modalDetallePago');
+    if (modalElement) {
+      modalElement.style.display = "flex";
+      document.body.classList.add("modal-open");
+    }
+    
     const clienteEl = document.getElementById("comprobanteCliente");
     const montoEl = document.getElementById("comprobanteMonto");
     const contenidoEl = document.getElementById("comprobanteContenido");
@@ -849,6 +856,7 @@
       }
     }
 
+    // Renderizar contenido del modal
     contenidoEl.innerHTML = `
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
         <!-- COLUMNA IZQUIERDA: Datos del Pago -->
@@ -965,14 +973,6 @@
         }
       </style>
     `;
-
-    // Mostrar modal usando el sistema personalizado
-    const modalElement = document.getElementById('modalDetallePago');
-    if (modalElement) {
-      modalElement.style.display = "flex";
-    } else {
-      console.error("Modal element 'modalDetallePago' no encontrado");
-    }
   };
 
   window.verComprobante = function(pagoId, nombreCliente, monto, comprobanteUrl) {
@@ -1112,13 +1112,19 @@
   // Event listeners para cerrar modal de detalle
   document.getElementById("btnCerrarModalDetalle")?.addEventListener("click", () => {
     const modal = document.getElementById("modalDetallePago");
-    if (modal) modal.style.display = "none";
+    if (modal) {
+      modal.style.display = "none";
+      document.body.classList.remove("modal-open");
+    }
     pagoActualDetalle = null;
   });
 
   document.getElementById("btnCerrarDetalle")?.addEventListener("click", () => {
     const modal = document.getElementById("modalDetallePago");
-    if (modal) modal.style.display = "none";
+    if (modal) {
+      modal.style.display = "none";
+      document.body.classList.remove("modal-open");
+    }
     pagoActualDetalle = null;
   });
 
@@ -1126,6 +1132,7 @@
   document.getElementById("modalDetallePago")?.addEventListener("click", (e) => {
     if (e.target.id === "modalDetallePago") {
       e.target.style.display = "none";
+      document.body.classList.remove("modal-open");
       pagoActualDetalle = null;
     }
   });
@@ -1148,6 +1155,7 @@
     const modalElement = document.getElementById('modalDetallePago');
     if (modalElement) {
       modalElement.style.display = "none";
+      document.body.classList.remove("modal-open");
     }
     
     // Llamar a la función de aprobar
@@ -1173,6 +1181,7 @@
     const modalElement = document.getElementById('modalDetallePago');
     if (modalElement) {
       modalElement.style.display = "none";
+      document.body.classList.remove("modal-open");
     }
     
     // Llamar a la función de rechazar
