@@ -1228,7 +1228,8 @@ const getCurrentUser = async (req, res) => {
             Nombre,
             Apellido,
             Email,
-            NombreEmpresa
+            NombreEmpresa,
+            AgenteID
           FROM clientes
           WHERE ClienteID = $1 AND tenant_id = $2
         `;
@@ -1250,6 +1251,7 @@ const getCurrentUser = async (req, res) => {
           iniciales: getIniciales(nombreCliente || cliente.nombreempresa),
           tipo: "cliente",
           empresa: cliente.nombreempresa,
+          agenteid: cliente.agenteid,
         };
         break;
 

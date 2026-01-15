@@ -2006,6 +2006,9 @@ const crearTipoProductoAdmin = async (req, res) => {
 
 const buscarProductosCompra = async (req, res) => {
   try {
+    console.log("\n=== INICIO buscarProductosCompra ===");
+    console.log("req.query:", JSON.stringify(req.query, null, 2));
+    
     // Validación defensiva: verificar que req.tenant existe
     if (!req.tenant || !req.tenant.tenant_id) {
       console.error("ERROR CRÍTICO: req.tenant no está definido o no tiene tenant_id");
@@ -2016,6 +2019,8 @@ const buscarProductosCompra = async (req, res) => {
     }
     
     const { tenant_id } = req.tenant;
+    console.log("tenant_id:", tenant_id);
+    
     const qRaw = (req.query.q || "").toString().trim();
     const allRaw = (req.query.all || "").toString().trim().toLowerCase();
     const all = allRaw === "1" || allRaw === "true";
@@ -2103,8 +2108,12 @@ const buscarProductosCompra = async (req, res) => {
 
     const limit = all ? 5000 : 50;
 
-    const result = await db.query(
-      `SELECT
+    console.log("\n=== QUERY PARAMS ===");
+    console.log("whereParts:", whereParts);
+    console.log("params:", params);
+    console.log("limit:", limit);
+
+    const sqlQuery = `SELECT
          pv.varianteid,
          pv.sku,
          pv.productoid,
@@ -2147,9 +2156,15 @@ const buscarProductosCompra = async (req, res) => {
        ) img_variante ON true
        WHERE ${whereParts.join(" AND ")}
        ORDER BY p.nombreproducto ASC, pv.varianteid ASC
-       LIMIT ${limit}`,
-      params
-    );
+       LIMIT ${limit}`;
+
+    console.log("\n=== SQL QUERY ===");
+    console.log(sqlQuery);
+
+    const result = await db.query(sqlQuery, params);
+    
+    console.log("\n=== QUERY RESULT ===");
+    console.log("Rows returned:", result.rows?.length || 0);
 
     const resultados = (result.rows || []).map((row) => {
       const nombreProducto = (row.nombreproducto || "").toString().trim();
@@ -2193,16 +2208,20 @@ const buscarProductosCompra = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("=== ERROR en buscarProductosCompra ===");
+    console.error("\n=== ERROR en buscarProductosCompra ===");
     console.error("Error completo:", error);
     console.error("Stack trace:", error.stack);
     console.error("Error message:", error.message);
     console.error("Error code:", error.code);
+    console.error("Error detail:", error.detail);
+    console.error("Error hint:", error.hint);
+    console.error("Error position:", error.position);
     return res.status(500).json({
       success: false,
       message: "Error en el servidor",
       error: error.message,
-      code: error.code
+      code: error.code,
+      detail: error.detail
     });
   }
 };
