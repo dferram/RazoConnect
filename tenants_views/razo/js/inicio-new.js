@@ -578,12 +578,12 @@
           
           // Redirigir al login
           setTimeout(() => {
-            window.location.href = "/login.html";
+            window.location.replace("/login.html");
           }, 500);
         } catch (error) {
           console.error('Error al cerrar sesión:', error);
           // Forzar redirect incluso si hay error
-          window.location.href = "/login.html";
+          window.location.replace("/login.html");
         }
       });
     }

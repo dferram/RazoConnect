@@ -187,7 +187,7 @@
         }
 
         const url = await getAgentLoginUrl();
-        window.location.href = url;
+        window.location.replace(url);
       });
 
       const itemsFragment = document.createDocumentFragment();

@@ -30,14 +30,33 @@
     }
   })();
 
-  const adminToken = localStorage.getItem("razoconnect_admin_token");
+  // Función de validación de token
+  function checkAdminToken() {
+    const adminToken = localStorage.getItem("razoconnect_admin_token");
+    
+    // Si no hay token, redirigir sin mostrar alerta (usuario no ha iniciado sesión)
+    if (!adminToken) {
+      console.warn("No admin token found. Redirecting to login...");
+      window.location.replace("/login.html");
+      return false;
+    }
+    return true;
+  }
 
-  // Si no hay token, redirigir sin mostrar alerta (usuario no ha iniciado sesión)
-  if (!adminToken) {
-    console.warn("No admin token found. Redirecting to login...");
-    window.location.replace("/login.html");
+  // Evento pageshow: se dispara siempre, incluso cuando se carga desde caché (BFCache)
+  // Esto previene el acceso mediante el botón "Atrás" del navegador
+  window.addEventListener("pageshow", function (event) {
+    if (!checkAdminToken()) {
+      return;
+    }
+  });
+
+  // Validación inicial
+  if (!checkAdminToken()) {
     return;
   }
+
+  const adminToken = localStorage.getItem("razoconnect_admin_token");
 
   // Verificar token con el servidor de forma asíncrona
   const apiBaseUrl = window.API_BASE_URL || `${window.location.origin}/api`;

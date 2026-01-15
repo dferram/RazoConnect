@@ -279,7 +279,7 @@
           // Fallback si logout no está definido
           localStorage.removeItem("razoconnect_token");
           localStorage.removeItem("razoconnect_user");
-          window.location.href = "/login.html";
+          window.location.replace("/login.html");
         }
       });
     }

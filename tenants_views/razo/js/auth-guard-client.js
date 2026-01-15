@@ -29,12 +29,31 @@
     return null;
   };
 
-  const effectiveToken = getEffectiveToken();
-  if (!effectiveToken) {
-    console.warn("No auth token found. Redirecting to login...");
-    window.location.replace("/login.html");
+  // Función de validación de token
+  function checkClientToken() {
+    const effectiveToken = getEffectiveToken();
+    if (!effectiveToken) {
+      console.warn("No auth token found. Redirecting to login...");
+      window.location.replace("/login.html");
+      return false;
+    }
+    return true;
+  }
+
+  // Evento pageshow: se dispara siempre, incluso cuando se carga desde caché (BFCache)
+  // Esto previene el acceso mediante el botón "Atrás" del navegador
+  window.addEventListener("pageshow", function (event) {
+    if (!checkClientToken()) {
+      return;
+    }
+  });
+
+  // Validación inicial
+  if (!checkClientToken()) {
     return;
   }
+
+  const effectiveToken = getEffectiveToken();
 
   const adminToken = getAdminToken();
   const adminData = getAdminData();

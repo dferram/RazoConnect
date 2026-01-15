@@ -57,7 +57,7 @@
 
     // Si no hay sesión, redirigir (Protección básica)
     if (!adminData) {
-      window.location.href = "/login.html";
+      window.location.replace("/login.html");
       return;
     }
 
@@ -162,7 +162,7 @@
         e.preventDefault();
         localStorage.removeItem("razoconnect_admin");
         localStorage.removeItem("razoconnect_admin_token");
-        window.location.href = "/login.html";
+        window.location.replace("/login.html");
       });
 
       itemsFragment.appendChild(divider2);

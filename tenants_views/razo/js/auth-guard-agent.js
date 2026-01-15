@@ -16,23 +16,44 @@
     }
   };
 
+  // Función de validación de token de agente
+  function checkAgentToken() {
+    const adminToken = getAdminToken();
+    const adminData = getAdminData();
+
+    // Verificar que existe un token de admin
+    if (!adminToken) {
+      console.warn("No admin token found. Redirecting to login...");
+      window.location.replace("/login.html");
+      return false;
+    }
+
+    // Verificar que el admin tiene rol de agente
+    const isAgent = adminData?.rol === "agente" || adminData?.esAgente === true;
+    if (!isAgent) {
+      console.warn("User is not an agent. Redirecting to login...");
+      window.location.replace("/login.html");
+      return false;
+    }
+
+    return true;
+  }
+
+  // Evento pageshow: se dispara siempre, incluso cuando se carga desde caché (BFCache)
+  // Esto previene el acceso mediante el botón "Atrás" del navegador
+  window.addEventListener("pageshow", function (event) {
+    if (!checkAgentToken()) {
+      return;
+    }
+  });
+
+  // Validación inicial
+  if (!checkAgentToken()) {
+    return;
+  }
+
   const adminToken = getAdminToken();
   const adminData = getAdminData();
-
-  // Verificar que existe un token de admin
-  if (!adminToken) {
-    console.warn("No admin token found. Redirecting to login...");
-    window.location.replace("/login.html");
-    return;
-  }
-
-  // Verificar que el admin tiene rol de agente
-  const isAgent = adminData?.rol === "agente" || adminData?.esAgente === true;
-  if (!isAgent) {
-    console.warn("User is not an agent. Redirecting to login...");
-    window.location.replace("/login.html");
-    return;
-  }
 
   // Verificar token con el servidor
   // Los agentes usan el endpoint de clientes para verificación

@@ -1630,7 +1630,7 @@
             telefono: telefono || null,
           };
 
-          const perfilResponse = await API.apiCall("/clientes/perfil", {
+          const perfilResponse = await API.apiCall("/cliente/perfil", {
             method: "PUT",
             body: JSON.stringify(perfilData),
           });
@@ -1646,7 +1646,7 @@
               passwordNueva,
             };
 
-            const passwordResponse = await API.apiCall("/clientes/cambiar-password", {
+            const passwordResponse = await API.apiCall("/cliente/cambiar-password", {
               method: "PUT",
               body: JSON.stringify(passwordData),
             });

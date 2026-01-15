@@ -278,7 +278,7 @@
           console.error("Error al cerrar sesión:", error);
         }
 
-        window.location.href = "/login.html";
+        window.location.replace("/login.html");
       });
     }
 

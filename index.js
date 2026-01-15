@@ -40,6 +40,7 @@ const agenteRoutes = require("./routes/agente");
 const tenantGuard = require("./middlewares/tenantGuard");
 const validateUserTenant = require("./middlewares/validateUserTenant");
 const createDynamicSessionMiddleware = require("./middlewares/dynamicSessionConfig");
+const noCacheMiddleware = require("./middlewares/noCacheMiddleware");
 
 // Inicializar la aplicación Express
 const app = express();
@@ -147,6 +148,34 @@ app.use(tenantGuard);
 // Este middleware valida que usuarios autenticados pertenezcan al tenant correcto
 // Se ejecuta DESPUÉS de tenantGuard (que detecta el tenant) y passport.session() (que carga el usuario)
 app.use(validateUserTenant);
+
+// ============================================================================
+// NO-CACHE MIDDLEWARE PARA PÁGINAS PROTEGIDAS
+// ============================================================================
+// Aplica headers de no-caché a páginas HTML protegidas para prevenir acceso
+// mediante el botón "Atrás" del navegador después de cerrar sesión
+app.use((req, res, next) => {
+  // Lista de rutas protegidas que requieren no-caché
+  const protectedRoutes = [
+    '/dashboard.html',
+    '/admin-',
+    '/agente-',
+    '/staff-',
+    '/perfil',
+    '/carrito.html',
+    '/pedidos',
+    '/credito'
+  ];
+
+  // Verificar si la ruta actual es una página protegida
+  const isProtectedPage = protectedRoutes.some(route => req.path.includes(route));
+
+  if (isProtectedPage) {
+    noCacheMiddleware(req, res, next);
+  } else {
+    next();
+  }
+});
 
 // ============================================================================
 // ARCHIVOS ESTÁTICOS (PROTEGIDOS POR TENANT GUARD)

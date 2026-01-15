@@ -8,13 +8,32 @@
 (function () {
   "use strict";
 
-  const token = localStorage.getItem("razoconnect_admin_token");
+  // Función de validación de token
+  function checkStaffToken() {
+    const token = localStorage.getItem("razoconnect_admin_token");
 
-  if (!token) {
-    console.warn("No staff token found. Redirecting to login...");
-    window.location.replace("/login.html");
+    if (!token) {
+      console.warn("No staff token found. Redirecting to login...");
+      window.location.replace("/login.html");
+      return false;
+    }
+    return true;
+  }
+
+  // Evento pageshow: se dispara siempre, incluso cuando se carga desde caché (BFCache)
+  // Esto previene el acceso mediante el botón "Atrás" del navegador
+  window.addEventListener("pageshow", function (event) {
+    if (!checkStaffToken()) {
+      return;
+    }
+  });
+
+  // Validación inicial
+  if (!checkStaffToken()) {
     return;
   }
+
+  const token = localStorage.getItem("razoconnect_admin_token");
 
   async function safeJson(res) {
     try {
