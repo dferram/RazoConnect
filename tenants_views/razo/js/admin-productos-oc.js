@@ -228,12 +228,23 @@ function renderGrid() {
   grid.innerHTML = resultados
     .map((p) => {
       // ESTRATEGIA DE FALLBACK DE IMAGEN (3 niveles):
-      // 1. Imagen de variante (si existe)
-      // 2. Imagen maestra del producto (si existe)
+      // 1. Primera variante con imagen de variante
+      // 2. Primera variante con imagen de producto
       // 3. Placeholder por defecto
-      const imagenVariante = p.imagenUrl || null;
-      const imagenMaestra = (p.variantes && p.variantes[0]?.url_imagen_producto) || null;
-      const img = imagenVariante || imagenMaestra || "/images/default-product.png";
+      let img = "/images/default-product.png";
+      if (p.variantes && p.variantes.length > 0) {
+        // Buscar primera variante con imagen de variante
+        const varianteConImagen = p.variantes.find(v => v.url_imagen_variante);
+        if (varianteConImagen) {
+          img = varianteConImagen.url_imagen_variante;
+        } else {
+          // Si no hay imagen de variante, usar imagen de producto de la primera variante
+          const primeraVariante = p.variantes[0];
+          if (primeraVariante?.url_imagen_producto) {
+            img = primeraVariante.url_imagen_producto;
+          }
+        }
+      }
       
       const nombre = p.nombreproducto || "(Sin nombre)";
       const skuMaestro = p.sku_maestro || "—";
@@ -314,7 +325,7 @@ async function loadCatalogoCompleto() {
       }
 
       const p = productoById.get(pid);
-      if (!p.imagenUrl && v.url_imagen_variante) p.imagenUrl = v.url_imagen_variante;
+      // No necesitamos imagenUrl en el objeto maestro, usaremos las variantes directamente
       if (v.medidas) p.medidasSet.add(String(v.medidas));
       p.variantes.push(v);
     }
@@ -535,7 +546,68 @@ function goBackToOC() {
   window.location.href = "/admin-crear-oc.html";
 }
 
+function exportarAExcel() {
+  if (!Array.isArray(resultados) || resultados.length === 0) {
+    if (typeof showToast === "function") {
+      showToast("No hay productos para exportar", "warning");
+    } else {
+      alert("No hay productos para exportar");
+    }
+    return;
+  }
+
+  const rows = [];
+  rows.push(["Producto", "SKU Maestro", "Variante", "SKU Variante", "Medidas", "Stock", "Costo Unitario", "Empaque"]);
+
+  for (const p of resultados) {
+    const nombreProducto = p.nombreproducto || "(Sin nombre)";
+    const skuMaestro = p.sku_maestro || "—";
+    const variantes = p.variantes || [];
+
+    if (variantes.length === 0) {
+      rows.push([nombreProducto, skuMaestro, "-", "-", "-", "-", "-", "-"]);
+    } else {
+      for (const v of variantes) {
+        const medidas = v.medidas || "-";
+        const sku = v.sku || "Sin SKU";
+        const stock = Number.isFinite(Number(v.stock)) ? Number(v.stock) : 0;
+        const costo = Number.isFinite(Number(v.costounitario)) ? Number(v.costounitario).toFixed(2) : "0.00";
+        const regla = Number.parseInt(v.cantidad_empaque, 10);
+        const empaque = Number.isInteger(regla) && regla > 0 ? regla : 1;
+        const empaqueLabel = empaque === 1 ? "Unidad" : `Paquete de ${empaque} pzas`;
+
+        rows.push([
+          nombreProducto,
+          skuMaestro,
+          medidas,
+          sku,
+          medidas,
+          stock,
+          `$${costo}`,
+          empaqueLabel
+        ]);
+      }
+    }
+  }
+
+  let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
+  csvContent += rows.map(e => e.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(",")).join("\n");
+
+  const encodedUri = encodeURI(csvContent);
+  const link = document.createElement("a");
+  link.setAttribute("href", encodedUri);
+  link.setAttribute("download", `productos_oc_${new Date().toISOString().split('T')[0]}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+
+  if (typeof showToast === "function") {
+    showToast("Archivo exportado exitosamente", "success");
+  }
+}
+
 function wireEvents() {
+  document.getElementById("btn-exportar")?.addEventListener("click", exportarAExcel);
   document.getElementById("btnVolverOC")?.addEventListener("click", goBackToOC);
 
   const qEl = document.getElementById("q");
