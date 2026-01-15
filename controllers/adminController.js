@@ -2119,7 +2119,7 @@ const buscarProductosCompra = async (req, res) => {
        LEFT JOIN LATERAL (
          SELECT pre.cantidadempaque
          FROM proveedor_reglas_empaque pre
-         WHERE pre.reglaid = p.reglaid
+         WHERE pre.reglaid = p.reglaid AND p.reglaid IS NOT NULL
          LIMIT 1
        ) regla ON true
        LEFT JOIN LATERAL (
