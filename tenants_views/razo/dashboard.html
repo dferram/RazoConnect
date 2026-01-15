@@ -1583,6 +1583,8 @@
       formEditarPerfil.addEventListener("submit", async (e) => {
         e.preventDefault();
 
+        console.log('\n🎯 [FRONTEND DEBUG] Form submit - INICIO');
+
         const nombre = document.getElementById("editNombre").value.trim();
         const apellido = document.getElementById("editApellido").value.trim();
         const email = document.getElementById("editEmail").value.trim();
@@ -1591,8 +1593,18 @@
         const passwordNueva = document.getElementById("passwordNueva").value;
         const passwordConfirmar = document.getElementById("passwordConfirmar").value;
 
+        console.log('📋 [FRONTEND DEBUG] Datos del formulario:');
+        console.log('  - nombre:', nombre);
+        console.log('  - apellido:', apellido);
+        console.log('  - email:', email);
+        console.log('  - telefono:', telefono);
+        console.log('  - passwordActual:', passwordActual ? '***' : '(vacío)');
+        console.log('  - passwordNueva:', passwordNueva ? '***' : '(vacío)');
+        console.log('  - passwordConfirmar:', passwordConfirmar ? '***' : '(vacío)');
+
         // Validación de campos obligatorios
         if (!nombre || !apellido) {
+          console.log('❌ [FRONTEND DEBUG] Validación fallida: nombre o apellido vacío');
           showToast("Nombre y apellido son obligatorios", "warning");
           return;
         }
@@ -1630,14 +1642,22 @@
             telefono: telefono || null,
           };
 
+          console.log('📤 [FRONTEND DEBUG] Preparando datos para enviar:', JSON.stringify(perfilData, null, 2));
+          console.log('🌐 [FRONTEND DEBUG] Llamando API.apiCall("/cliente/perfil", PUT)...');
+
           const perfilResponse = await API.apiCall("/cliente/perfil", {
             method: "PUT",
             body: JSON.stringify(perfilData),
           });
 
+          console.log('📥 [FRONTEND DEBUG] Respuesta recibida de API:', JSON.stringify(perfilResponse, null, 2));
+
           if (!perfilResponse.ok || !perfilResponse.data.success) {
+            console.log('❌ [FRONTEND DEBUG] Respuesta no exitosa');
             throw new Error(perfilResponse.data.message || "Error al actualizar perfil");
           }
+
+          console.log('✅ [FRONTEND DEBUG] Perfil actualizado exitosamente');
 
           // 2. Cambiar contraseña si se proporcionó
           if (cambiarPassword) {
@@ -1689,7 +1709,9 @@
           displayPerfil();
 
         } catch (error) {
-          console.error("Error:", error);
+          console.error("❌ [FRONTEND DEBUG] Error capturado:", error);
+          console.error("❌ [FRONTEND DEBUG] Error message:", error.message);
+          console.error("❌ [FRONTEND DEBUG] Error stack:", error.stack);
           
           if (typeof Swal !== "undefined" && Swal && typeof Swal.fire === "function") {
             await Swal.fire({
@@ -1702,6 +1724,7 @@
             showToast(error.message || "Error al actualizar la información", "error");
           }
         } finally {
+          console.log('🏁 [FRONTEND DEBUG] Form submit - FIN\n');
           btnGuardarPerfil.disabled = false;
           btnGuardarPerfilText.style.display = "inline";
           btnGuardarPerfilSpinner.style.display = "none";
