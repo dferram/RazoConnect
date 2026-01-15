@@ -16,6 +16,21 @@
   ],
   "author": "",
   "license": "ISC",
+  "supportedArchitectures": {
+    "libc": [
+      "glibc",
+      "musl"
+    ],
+    "os": [
+      "linux",
+      "win32",
+      "darwin"
+    ],
+    "cpu": [
+      "x64",
+      "arm64"
+    ]
+  },
   "dependencies": {
     "bcrypt": "^5.1.1",
     "cloudinary": "^1.41.3",
