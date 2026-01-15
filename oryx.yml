@@ -1,0 +1,12 @@
+# Azure Oryx Build Configuration
+# https://github.com/microsoft/Oryx/blob/main/doc/configuration.md
+
+build:
+  # Forzar instalación de dependencias de producción
+  npm:
+    prune-dev-dependencies: true
+    run-build: false
+    
+run:
+  # Comando de inicio
+  start-command: "node index.js"
