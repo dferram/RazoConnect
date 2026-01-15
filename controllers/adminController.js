@@ -3658,12 +3658,48 @@ const updatePedidoEstatus = async (req, res) => {
 };
 
 /**
- * Obtener medidas existentes (alias para getMedidas)
+ * Obtener medidas existentes (dimensiones únicas de variantes)
  * GET /api/admin/medidas-existentes
  */
 const getMedidasExistentes = async (req, res) => {
-  // Esta función es un alias de getMedidas para compatibilidad
-  return getMedidas(req, res);
+  try {
+    console.log("\n=== INICIO getMedidasExistentes ===");
+    const { tenant_id } = req.tenant;
+    console.log("tenant_id:", tenant_id);
+
+    const result = await db.query(
+      `SELECT DISTINCT TRIM(pv.dimensiones) as dimension
+       FROM producto_variantes pv
+       INNER JOIN productos p ON p.productoid = pv.productoid
+       WHERE p.tenant_id = $1 
+         AND pv.dimensiones IS NOT NULL 
+         AND TRIM(pv.dimensiones) != ''
+       ORDER BY dimension ASC`,
+      [tenant_id]
+    );
+
+    console.log("Dimensiones únicas encontradas:", result.rows.length);
+
+    // Retornar array simple de strings
+    const medidas = result.rows.map(row => row.dimension);
+
+    res.json({
+      success: true,
+      data: {
+        medidas
+      },
+    });
+  } catch (error) {
+    console.error("\n=== ERROR en getMedidasExistentes ===");
+    console.error("Error completo:", error);
+    console.error("Error message:", error.message);
+    console.error("Error code:", error.code);
+    res.status(500).json({
+      success: false,
+      message: "Error en el servidor",
+      error: error.message
+    });
+  }
 };
 
 const getReglasEmpaqueProveedor = async (req, res) => {
@@ -4867,31 +4903,47 @@ const actualizarEstadoCliente = async (req, res) => {
  */
 const getMedidas = async (req, res) => {
   try {
+    console.log("\n=== INICIO getMedidas ===");
     const { tenant_id } = req.tenant;
+    console.log("tenant_id:", tenant_id);
 
     const result = await db.query(
-      `SELECT MedidaID, Nombre, Abreviatura
-       FROM Medidas
-       WHERE tenant_id = $1
-       ORDER BY Nombre ASC`,
+      `SELECT medidaid, tipoproductoid, nombremedida, descripcion, 
+              alto, ancho, profundidad, unidadmedida, activo, orden
+       FROM medidas
+       WHERE tenant_id = $1 AND activo = true
+       ORDER BY orden ASC, nombremedida ASC`,
       [tenant_id]
     );
+
+    console.log("Medidas encontradas:", result.rows.length);
 
     res.json({
       success: true,
       data: {
         medidas: result.rows.map((row) => ({
           medidaId: row.medidaid,
-          nombre: row.nombre,
-          abreviatura: row.abreviatura,
+          tipoProductoId: row.tipoproductoid,
+          nombreMedida: row.nombremedida,
+          descripcion: row.descripcion,
+          alto: row.alto,
+          ancho: row.ancho,
+          profundidad: row.profundidad,
+          unidadMedida: row.unidadmedida,
+          activo: row.activo,
+          orden: row.orden
         })),
       },
     });
   } catch (error) {
-    console.error("Error al obtener medidas:", error);
+    console.error("\n=== ERROR en getMedidas ===");
+    console.error("Error completo:", error);
+    console.error("Error message:", error.message);
+    console.error("Error code:", error.code);
     res.status(500).json({
       success: false,
       message: "Error en el servidor",
+      error: error.message
     });
   }
 };
@@ -7710,23 +7762,28 @@ const getAllProductos = async (req, res) => {
  */
 const getCategorias = async (req, res) => {
   try {
+    console.log("\n=== INICIO getCategorias ===");
     const { tenant_id } = req.tenant;
+    console.log("tenant_id:", tenant_id);
+    
     const result = await db.query(
       `SELECT 
-        c.CategoriaID,
-        c.Nombre,
-        c.Descripcion,
-        c.ParentCategoriaID,
-        c.Activo,
+        c.categoriaid,
+        c.nombre,
+        c.descripcion,
+        c.parentcategoriaid,
+        c.activo,
         c.imagen_url,
         c.imagen_public_id,
-        p.Nombre AS ParentNombre
-      FROM Categorias c
-      LEFT JOIN Categorias p ON c.ParentCategoriaID = p.CategoriaID
+        p.nombre AS parentnombre
+      FROM categorias c
+      LEFT JOIN categorias p ON c.parentcategoriaid = p.categoriaid
       WHERE c.tenant_id = $1
-      ORDER BY c.Nombre`,
+      ORDER BY c.nombre`,
       [tenant_id]
     );
+
+    console.log("Categorías encontradas:", result.rows.length);
 
     res.json({
       success: true,
@@ -7744,10 +7801,14 @@ const getCategorias = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error al obtener categorías:", error);
+    console.error("\n=== ERROR en getCategorias ===");
+    console.error("Error completo:", error);
+    console.error("Error message:", error.message);
+    console.error("Error code:", error.code);
     res.status(500).json({
       success: false,
       message: "Error en el servidor",
+      error: error.message
     });
   }
 };
@@ -9280,44 +9341,47 @@ const getPedidoDetalle = async (req, res) => {
  */
 const getAllProveedores = async (req, res) => {
   try {
+    console.log("\n=== INICIO getAllProveedores ===");
     const { tenant_id } = req.tenant;
+    console.log("tenant_id:", tenant_id);
 
     const query = `
-      SELECT DISTINCT ON (ProveedorID)
-        ProveedorID,
-        NombreEmpresa,
-        ContactoNombre,
-        Email,
-        Telefono,
-        RazonSocial,
-        RFC,
-        RegimenFiscal,
-        Calle,
-        Colonia,
-        CodigoPostal,
-        Ciudad,
-        Estado,
-        NombreRepresentanteVentas,
-        CelularVentas,
-        EmailVentas,
-        NombreContactoCobranza,
-        TelefonoCobranza,
-        EmailCobranza,
-        Banco,
-        NumeroCuenta,
-        CLABE,
-        ReferenciaPago,
-        DiasCredito,
-        LimiteCredito,
-        DescuentoFinanciero,
-        MinimoCompra,
-        AceptaDevoluciones
-      FROM Proveedores
+      SELECT DISTINCT ON (proveedorid)
+        proveedorid,
+        nombreempresa,
+        contactonombre,
+        email,
+        telefono,
+        razonsocial,
+        rfc,
+        regimenfiscal,
+        calle,
+        colonia,
+        codigopostal,
+        ciudad,
+        estado,
+        nombrerepresentanteventas,
+        celularventas,
+        emailventas,
+        nombrecontactocobranza,
+        telefonocobranza,
+        emailcobranza,
+        banco,
+        numerocuenta,
+        clabe,
+        referenciapago,
+        diascredito,
+        limitecredito,
+        descuentofinanciero,
+        minimocompra,
+        aceptadevoluciones
+      FROM proveedores
       WHERE tenant_id = $1
-      ORDER BY ProveedorID, NombreEmpresa ASC
+      ORDER BY proveedorid, nombreempresa ASC
     `;
 
     const result = await db.query(query, [tenant_id]);
+    console.log("Proveedores encontrados:", result.rows.length);
     const proveedores = result.rows;
 
     res.json({
@@ -9329,10 +9393,14 @@ const getAllProveedores = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error al obtener proveedores:", error);
+    console.error("\n=== ERROR en getAllProveedores ===");
+    console.error("Error completo:", error);
+    console.error("Error message:", error.message);
+    console.error("Error code:", error.code);
     res.status(500).json({
       success: false,
       message: "Error al obtener proveedores",
+      error: error.message
     });
   }
 };
