@@ -2,7 +2,7 @@ const pool = require("../../db");
 const bcrypt = require("bcrypt");
 
 async function actualizarPerfil(req, res) {
-  const clienteId = req.user.clienteId;
+  const clienteId = req.user.userId;
   const { nombre, apellido, email, telefono } = req.body;
 
   if (!nombre || !apellido) {
@@ -88,7 +88,7 @@ async function actualizarPerfil(req, res) {
 }
 
 async function cambiarPassword(req, res) {
-  const clienteId = req.user.clienteId;
+  const clienteId = req.user.userId;
   const { passwordActual, passwordNueva } = req.body;
 
   if (!passwordActual || !passwordNueva) {

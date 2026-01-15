@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="css/styles.css" />
     <link rel="stylesheet" href="css/admin.css" />
     <link rel="stylesheet" href="css/mobile-responsive.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" />
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body data-page-title="Gestión de Remisiones">
@@ -24,18 +25,16 @@
             <div id="admin-header-container"></div>
 
             <div class="admin-content">
-                <div class="admin-card">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h5 class="mb-0">
-                            <i class="bi bi-filter"></i>
-                            Filtros de Búsqueda
-                        </h5>
-                    </div>
+                <div class="admin-table-container" style="margin-bottom: 1.5rem; padding: 1.5rem;">
+                    <h2 style="margin: 0 0 1.5rem 0; font-size: 1.25rem; color: var(--razo-orange, #F97316);">
+                        <i class="bi bi-filter"></i>
+                        Filtros de Búsqueda
+                    </h2>
 
-                    <div class="row g-3">
-                        <div class="col-md-3">
-                            <label class="form-label">Estado</label>
-                            <select id="filtro-estado" class="form-select" aria-label="Filtrar por estado de remisión">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; align-items: end;">
+                        <div>
+                            <label class="form-label" style="font-weight: 600; margin-bottom: 0.5rem; display: block;">Estado</label>
+                            <select id="filtro-estado" class="form-input" style="width: 100%; padding: 0.75rem; border: 2px solid var(--razo-gray-light); border-radius: 0.5rem;" aria-label="Filtrar por estado de remisión">
                                 <option value="">Todos</option>
                                 <option value="BORRADOR">Borrador</option>
                                 <option value="EMITIDA">Emitida</option>
@@ -43,17 +42,16 @@
                                 <option value="CANCELADA">Cancelada</option>
                             </select>
                         </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Fecha Desde</label>
-                            <input type="date" id="filtro-fecha-desde" class="form-control" placeholder="Seleccionar fecha inicial" aria-label="Fecha inicial del rango de búsqueda">
+                        <div>
+                            <label class="form-label" style="font-weight: 600; margin-bottom: 0.5rem; display: block;">Fecha Desde</label>
+                            <input type="date" id="filtro-fecha-desde" class="form-input" style="width: 100%; padding: 0.75rem; border: 2px solid var(--razo-gray-light); border-radius: 0.5rem;" aria-label="Fecha inicial del rango de búsqueda">
                         </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Fecha Hasta</label>
-                            <input type="date" id="filtro-fecha-hasta" class="form-control" placeholder="Seleccionar fecha final" aria-label="Fecha final del rango de búsqueda">
+                        <div>
+                            <label class="form-label" style="font-weight: 600; margin-bottom: 0.5rem; display: block;">Fecha Hasta</label>
+                            <input type="date" id="filtro-fecha-hasta" class="form-input" style="width: 100%; padding: 0.75rem; border: 2px solid var(--razo-gray-light); border-radius: 0.5rem;" aria-label="Fecha final del rango de búsqueda">
                         </div>
-                        <div class="col-md-3">
-                            <label class="form-label">&nbsp;</label>
-                            <button id="btn-buscar" class="btn btn-primary w-100">
+                        <div>
+                            <button id="btn-buscar" class="btn btn-primary" style="width: 100%; padding: 0.75rem 1.5rem;">
                                 <i class="bi bi-search"></i>
                                 Buscar
                             </button>
@@ -61,30 +59,30 @@
                     </div>
                 </div>
 
-                <div class="admin-card">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h5 class="mb-0">
+                <div class="admin-content" style="margin-top: 1rem;">
+                    <div class="d-flex justify-content-end" style="padding: 1rem; background: white; border-radius: 0.75rem; border: 1px solid rgba(0,0,0,0.1);">
+                        <button id="btn-exportar" type="button" class="btn btn-success">
+                            <i class="bi bi-file-earmark-excel"></i>
+                            <span class="ms-1">Exportar a Excel</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="admin-table-container" style="margin-top: 1.5rem;">
+                    <div class="admin-table-header">
+                        <h2 class="admin-table-title">
                             <i class="bi bi-list-ul"></i>
                             Listado de Remisiones
-                        </h5>
-                        <div class="d-flex gap-2">
-                            <button id="btn-exportar" class="btn btn-success">
-                                <i class="bi bi-file-earmark-excel"></i>
-                                Exportar
-                            </button>
-                        </div>
+                        </h2>
                     </div>
 
-                    <div id="loading-spinner" class="text-center py-5" style="display: none;">
-                        <div class="spinner-border text-primary" role="status">
-                            <span class="visually-hidden">Cargando...</span>
-                        </div>
-                        <p class="mt-2 text-muted">Cargando remisiones...</p>
+                    <div id="loading-spinner" class="loading" style="display: none;">
+                        <div class="spinner"></div>
                     </div>
 
                     <div id="tabla-container">
-                        <div class="table-responsive">
-                            <table class="admin-table">
+                        <div style="overflow-x: auto;">
+                            <table class="admin-table" style="display: none;" id="remisiones-table">
                                 <thead>
                                     <tr>
                                         <th>Folio</th>
@@ -97,20 +95,20 @@
                                         <th>Acciones</th>
                                     </tr>
                                 </thead>
-                                <tbody id="tabla-remisiones">
-                                    <tr>
-                                        <td colspan="8" class="text-center text-muted py-4">
-                                            No hay remisiones para mostrar
-                                        </td>
-                                    </tr>
-                                </tbody>
+                                <tbody id="tabla-remisiones"></tbody>
                             </table>
                         </div>
 
-                        <div id="pagination-container" class="d-flex justify-content-between align-items-center mt-4">
-                            <div id="pagination-info" class="text-muted"></div>
+                        <div id="empty-remisiones" class="empty-state" style="display: none;">
+                            <div class="empty-state-icon">📄</div>
+                            <h3 class="empty-state-title">No hay remisiones</h3>
+                            <p class="empty-state-text">Las remisiones aparecerán aquí cuando se generen desde los pedidos</p>
+                        </div>
+
+                        <div id="pagination-container" style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; padding: 1rem 0;">
+                            <div id="pagination-info" style="color: var(--razo-gray-warm); font-size: 0.875rem;"></div>
                             <nav>
-                                <ul id="pagination-controls" class="pagination mb-0"></ul>
+                                <ul id="pagination-controls" class="pagination" style="margin: 0; padding: 0; list-style: none; display: flex; gap: 0.5rem;"></ul>
                             </nav>
                         </div>
                     </div>
@@ -157,9 +155,8 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="/js/auth-guard-admin.js"></script>
-    <script src="/js/components/admin-header-loader.js"></script>
-    <script src="/js/components/admin-sidebar-loader.js"></script>
-    <script src="/js/admin-remisiones.js"></script>
+    <script src="js/components/admin-header-loader.js"></script>
+    <script src="js/components/admin-sidebar-loader.js"></script>
+    <script src="js/admin-remisiones.js"></script>
 </body>
 </html>

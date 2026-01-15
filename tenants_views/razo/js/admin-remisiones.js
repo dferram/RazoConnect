@@ -36,10 +36,12 @@ function aplicarFiltros() {
 
 async function cargarRemisiones() {
     const loadingSpinner = document.getElementById('loading-spinner');
-    const tablaContainer = document.getElementById('tabla-container');
+    const remisionesTable = document.getElementById('remisiones-table');
+    const emptyRemisiones = document.getElementById('empty-remisiones');
     
-    loadingSpinner.style.display = 'block';
-    tablaContainer.style.display = 'none';
+    loadingSpinner.style.display = 'flex';
+    if (remisionesTable) remisionesTable.style.display = 'none';
+    if (emptyRemisiones) emptyRemisiones.style.display = 'none';
 
     try {
         const params = new URLSearchParams({
@@ -78,26 +80,26 @@ async function cargarRemisiones() {
             title: 'Error',
             text: 'No se pudieron cargar las remisiones'
         });
+        const emptyRemisiones = document.getElementById('empty-remisiones');
+        if (emptyRemisiones) emptyRemisiones.style.display = 'block';
     } finally {
         loadingSpinner.style.display = 'none';
-        tablaContainer.style.display = 'block';
     }
 }
 
 function renderizarTabla(remisiones) {
     const tbody = document.getElementById('tabla-remisiones');
+    const remisionesTable = document.getElementById('remisiones-table');
+    const emptyRemisiones = document.getElementById('empty-remisiones');
     
     if (remisiones.length === 0) {
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="8" class="text-center text-muted py-4">
-                    <i class="bi bi-inbox" style="font-size: 3rem; opacity: 0.3;"></i>
-                    <p class="mt-2">No se encontraron remisiones</p>
-                </td>
-            </tr>
-        `;
+        if (remisionesTable) remisionesTable.style.display = 'none';
+        if (emptyRemisiones) emptyRemisiones.style.display = 'block';
         return;
     }
+    
+    if (remisionesTable) remisionesTable.style.display = 'table';
+    if (emptyRemisiones) emptyRemisiones.style.display = 'none';
 
     tbody.innerHTML = remisiones.map(remision => {
         const estadoBadge = obtenerBadgeEstado(remision.estado);
@@ -110,32 +112,30 @@ function renderizarTabla(remisiones) {
         return `
             <tr>
                 <td>
-                    <strong class="text-primary">${remision.folio}</strong>
+                    <strong style="color: var(--razo-orange);">${remision.folio}</strong>
                 </td>
                 <td>
-                    <span class="badge bg-secondary">PED-${remision.pedidoid}</span>
+                    <span class="badge" style="background: var(--razo-gray-warm); color: white; padding: 0.25rem 0.75rem; border-radius: 0.5rem; font-size: 0.75rem;">PED-${remision.pedidoid}</span>
                 </td>
                 <td>
-                    <div>
-                        <strong>${remision.cliente_nombre || ''} ${remision.cliente_apellido || ''}</strong>
-                        ${remision.agente_nombre ? `<br><small class="text-muted">Agente: ${remision.agente_nombre}</small>` : ''}
-                    </div>
+                    <div style="font-weight: 600;">${remision.cliente_nombre || ''} ${remision.cliente_apellido || ''}</div>
+                    ${remision.agente_nombre ? `<div style="font-size: 0.875rem; color: var(--razo-gray-warm);">Agente: ${remision.agente_nombre}</div>` : ''}
                 </td>
                 <td>${fecha}</td>
                 <td>
-                    <strong class="text-success">$${parseFloat(remision.total_remision).toLocaleString('es-MX', { minimumFractionDigits: 2 })}</strong>
+                    <strong style="color: #10b981;">$${parseFloat(remision.total_remision).toLocaleString('es-MX', { minimumFractionDigits: 2 })}</strong>
                 </td>
                 <td>${estadoBadge}</td>
                 <td>
-                    <span class="badge bg-info">${remision.total_items} items</span>
+                    <span style="background: #e0f2fe; color: #0369a1; padding: 0.25rem 0.75rem; border-radius: 0.5rem; font-size: 0.75rem; font-weight: 600;">${remision.total_items} items</span>
                 </td>
                 <td>
-                    <div class="btn-group btn-group-sm">
-                        <button class="btn btn-outline-primary" onclick="verDetalleRemision(${remision.remision_id})" title="Ver detalle">
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.875rem;" onclick="verDetalleRemision(${remision.remision_id})" title="Ver detalle">
                             <i class="bi bi-eye"></i>
                         </button>
                         ${remision.pdf_url ? `
-                            <a href="${remision.pdf_url}" target="_blank" class="btn btn-outline-success" title="Ver PDF">
+                            <a href="${remision.pdf_url}" target="_blank" class="btn btn-success" style="padding: 0.5rem 1rem; font-size: 0.875rem; text-decoration: none;" title="Ver PDF">
                                 <i class="bi bi-file-pdf"></i>
                             </a>
                         ` : ''}
@@ -148,12 +148,12 @@ function renderizarTabla(remisiones) {
 
 function obtenerBadgeEstado(estado) {
     const badges = {
-        'BORRADOR': '<span class="badge bg-secondary">Borrador</span>',
-        'EMITIDA': '<span class="badge bg-primary">Emitida</span>',
-        'ENTREGADA': '<span class="badge bg-success">Entregada</span>',
-        'CANCELADA': '<span class="badge bg-danger">Cancelada</span>'
+        'BORRADOR': '<span class="pedido-estatus-badge" style="background: #6b7280; color: white;">Borrador</span>',
+        'EMITIDA': '<span class="pedido-estatus-badge" style="background: #3b82f6; color: white;">Emitida</span>',
+        'ENTREGADA': '<span class="pedido-estatus-badge" style="background: #10b981; color: white;">Entregada</span>',
+        'CANCELADA': '<span class="pedido-estatus-badge" style="background: #ef4444; color: white;">Cancelada</span>'
     };
-    return badges[estado] || `<span class="badge bg-secondary">${estado}</span>`;
+    return badges[estado] || `<span class="pedido-estatus-badge" style="background: #6b7280; color: white;">${estado}</span>`;
 }
 
 function renderizarPaginacion(pagination) {
@@ -173,19 +173,19 @@ function renderizarPaginacion(pagination) {
     let html = '';
 
     if (pagination.page > 1) {
-        html += `<li class="page-item"><a class="page-link" href="#" onclick="cambiarPagina(${pagination.page - 1}); return false;">Anterior</a></li>`;
+        html += `<li><a href="#" onclick="cambiarPagina(${pagination.page - 1}); return false;" style="padding: 0.5rem 1rem; background: white; border: 1px solid #d1d5db; border-radius: 0.5rem; text-decoration: none; color: var(--razo-orange);">Anterior</a></li>`;
     }
 
     const startPage = Math.max(1, pagination.page - 2);
     const endPage = Math.min(pagination.pages, pagination.page + 2);
 
     for (let i = startPage; i <= endPage; i++) {
-        const active = i === pagination.page ? 'active' : '';
-        html += `<li class="page-item ${active}"><a class="page-link" href="#" onclick="cambiarPagina(${i}); return false;">${i}</a></li>`;
+        const activeStyle = i === pagination.page ? 'background: var(--razo-orange); color: white; font-weight: 600;' : 'background: white; color: var(--razo-gray-warm);';
+        html += `<li><a href="#" onclick="cambiarPagina(${i}); return false;" style="padding: 0.5rem 1rem; border: 1px solid #d1d5db; border-radius: 0.5rem; text-decoration: none; ${activeStyle}">${i}</a></li>`;
     }
 
     if (pagination.page < pagination.pages) {
-        html += `<li class="page-item"><a class="page-link" href="#" onclick="cambiarPagina(${pagination.page + 1}); return false;">Siguiente</a></li>`;
+        html += `<li><a href="#" onclick="cambiarPagina(${pagination.page + 1}); return false;" style="padding: 0.5rem 1rem; background: white; border: 1px solid #d1d5db; border-radius: 0.5rem; text-decoration: none; color: var(--razo-orange);">Siguiente</a></li>`;
     }
 
     controlsUl.innerHTML = html;
