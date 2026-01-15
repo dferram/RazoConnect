@@ -32,11 +32,11 @@
       }
 
       #tablaCxC thead th {
-        padding: 12px 8px;
+        padding: 8px 4px;
         font-weight: 600;
-        font-size: 0.75rem;
+        font-size: 0.7rem;
         text-transform: uppercase;
-        letter-spacing: 0.03em;
+        letter-spacing: 0.01em;
         color: #6b7280;
         background: #f9fafb;
         border-bottom: 2px solid #e5e7eb;
@@ -56,10 +56,10 @@
       }
 
       #tablaCxC tbody td {
-        padding: 12px 8px;
+        padding: 8px 4px;
         vertical-align: middle;
         color: #374151;
-        font-size: 0.8125rem;
+        font-size: 0.75rem;
       }
 
       /* Alineación de columnas numéricas */
@@ -80,30 +80,30 @@
       #tablaCxC tbody td:first-child .fw-semibold {
         font-weight: 600;
         color: #111827;
-        font-size: 0.8125rem;
+        font-size: 0.75rem;
         display: block;
         margin-bottom: 2px;
       }
 
       #tablaCxC tbody td:first-child .text-muted {
         color: #9ca3af;
-        font-size: 0.75rem;
+        font-size: 0.7rem;
       }
 
       /* Badges mejorados */
       #tablaCxC .badge {
-        padding: 4px 8px;
+        padding: 3px 6px;
         font-weight: 500;
-        font-size: 0.75rem;
+        font-size: 0.7rem;
         border-radius: 4px;
       }
 
       /* Botones de acción */
       #tablaCxC .btn-sm {
-        padding: 6px 10px;
-        font-size: 0.75rem;
+        padding: 5px 8px;
+        font-size: 0.7rem;
         font-weight: 500;
-        border-radius: 6px;
+        border-radius: 4px;
         transition: all 0.2s ease;
       }
 
@@ -131,16 +131,53 @@
       }
 
       /* Optimización de columnas para mejor ajuste */
-      #tablaCxC tbody td:nth-child(1) { max-width: 180px; }
-      #tablaCxC tbody td:nth-child(2),
-      #tablaCxC tbody td:nth-child(3),
-      #tablaCxC tbody td:nth-child(4),
-      #tablaCxC tbody td:nth-child(5),
-      #tablaCxC tbody td:nth-child(6),
-      #tablaCxC tbody td:nth-child(7) { white-space: nowrap; }
-      #tablaCxC tbody td:nth-child(8) { max-width: 140px; font-size: 0.75rem; }
-      #tablaCxC tbody td:nth-child(9) { max-width: 100px; }
-      #tablaCxC tbody td:nth-child(10) { max-width: 140px; }
+      #tablaCxC tbody td:nth-child(1) { 
+        max-width: 150px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      #tablaCxC tbody td:nth-child(2) { 
+        max-width: 90px;
+        white-space: nowrap;
+        text-align: right;
+      }
+      #tablaCxC tbody td:nth-child(3) { 
+        max-width: 90px;
+        white-space: nowrap;
+        text-align: right;
+      }
+      #tablaCxC tbody td:nth-child(4) { 
+        max-width: 85px;
+        white-space: nowrap;
+        text-align: right;
+      }
+      #tablaCxC tbody td:nth-child(5) { 
+        max-width: 85px;
+        white-space: nowrap;
+        text-align: right;
+      }
+      #tablaCxC tbody td:nth-child(6) { 
+        max-width: 85px;
+        white-space: nowrap;
+        text-align: right;
+      }
+      #tablaCxC tbody td:nth-child(7) { 
+        max-width: 85px;
+        white-space: nowrap;
+        text-align: right;
+      }
+      #tablaCxC tbody td:nth-child(8) { 
+        max-width: 120px;
+        font-size: 0.7rem;
+      }
+      #tablaCxC tbody td:nth-child(9) { 
+        max-width: 80px;
+        text-align: center;
+      }
+      #tablaCxC tbody td:nth-child(10) { 
+        min-width: 120px;
+        max-width: 130px;
+      }
 
       /* Responsive: reducir padding en pantallas pequeñas */
       @media (max-width: 768px) {
