@@ -216,6 +216,20 @@ const apiCall = async (endpoint, options = {}) => {
     console.log('📄 [API DEBUG] Response text (raw):', responseText);
     console.log('📏 [API DEBUG] Response text length:', responseText.length);
 
+    // VALIDACIÓN CRÍTICA: Verificar que el servidor envió contenido
+    if (!responseText || responseText.length === 0) {
+      console.error('❌ [API DEBUG] CRÍTICO: El servidor devolvió una respuesta vacía');
+      console.error('❌ [API DEBUG] Status:', response.status);
+      console.error('❌ [API DEBUG] StatusText:', response.statusText);
+      console.error('❌ [API DEBUG] Endpoint:', endpoint);
+      console.error('❌ [API DEBUG] Method:', options.method || 'GET');
+      
+      throw new Error(
+        `El servidor devolvió una respuesta vacía (HTTP ${response.status}). ` +
+        `Esto indica un error interno del servidor. Por favor, revisa los logs del backend.`
+      );
+    }
+
     let data;
     try {
       console.log('🔄 [API DEBUG] Intentando parsear JSON...');
@@ -224,7 +238,13 @@ const apiCall = async (endpoint, options = {}) => {
     } catch (jsonError) {
       console.error('❌ [API DEBUG] Error parseando JSON:', jsonError);
       console.error('❌ [API DEBUG] Response text era:', responseText);
-      throw new Error(`Failed to parse JSON response: ${jsonError.message}. Response: ${responseText}`);
+      console.error('❌ [API DEBUG] Response status:', response.status);
+      console.error('❌ [API DEBUG] Response headers:', Object.fromEntries(response.headers.entries()));
+      
+      throw new Error(
+        `Error al parsear respuesta JSON del servidor: ${jsonError.message}. ` +
+        `Respuesta recibida: "${responseText.substring(0, 200)}${responseText.length > 200 ? '...' : ''}"`
+      );
     }
 
     // Manejo de 403 Forbidden (sin permisos) - NO cerrar sesión, solo mostrar alerta

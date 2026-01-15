@@ -1652,6 +1652,17 @@
 
           console.log('📥 [FRONTEND DEBUG] Respuesta recibida de API:', JSON.stringify(perfilResponse, null, 2));
 
+          // Validar que la respuesta tenga la estructura esperada
+          if (!perfilResponse) {
+            console.error('❌ [FRONTEND DEBUG] Respuesta nula o indefinida');
+            throw new Error("No se recibió respuesta del servidor");
+          }
+
+          if (!perfilResponse.data) {
+            console.error('❌ [FRONTEND DEBUG] Respuesta sin data');
+            throw new Error("Respuesta del servidor sin datos");
+          }
+
           if (!perfilResponse.ok || !perfilResponse.data.success) {
             console.log('❌ [FRONTEND DEBUG] Respuesta no exitosa');
             throw new Error(perfilResponse.data.message || "Error al actualizar perfil");
