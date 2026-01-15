@@ -2006,6 +2006,15 @@ const crearTipoProductoAdmin = async (req, res) => {
 
 const buscarProductosCompra = async (req, res) => {
   try {
+    // Validación defensiva: verificar que req.tenant existe
+    if (!req.tenant || !req.tenant.tenant_id) {
+      console.error("ERROR CRÍTICO: req.tenant no está definido o no tiene tenant_id");
+      return res.status(500).json({
+        success: false,
+        message: "Error de configuración del servidor: tenant no detectado"
+      });
+    }
+    
     const { tenant_id } = req.tenant;
     const qRaw = (req.query.q || "").toString().trim();
     const allRaw = (req.query.all || "").toString().trim().toLowerCase();
@@ -2184,10 +2193,16 @@ const buscarProductosCompra = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error al buscar productos para compra:", error);
+    console.error("=== ERROR en buscarProductosCompra ===");
+    console.error("Error completo:", error);
+    console.error("Stack trace:", error.stack);
+    console.error("Error message:", error.message);
+    console.error("Error code:", error.code);
     return res.status(500).json({
       success: false,
       message: "Error en el servidor",
+      error: error.message,
+      code: error.code
     });
   }
 };

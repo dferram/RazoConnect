@@ -3157,7 +3157,7 @@
 
           const response = await fetch('/api/auth/perfil', {
             headers: {
-              'Authorization': `Bearer ${localStorage.getItem('token')}`,
+              'Authorization': `Bearer ${localStorage.getItem('razoconnect_token')}`,
               'Content-Type': 'application/json'
             }
           });
@@ -3166,6 +3166,7 @@
             const data = await response.json();
             const agenteId = data?.data?.agente?.agenteId || data?.data?.agenteId || null;
             clienteTieneAgente = agenteId !== null && agenteId !== undefined;
+            console.log('Cliente tiene agente asignado:', clienteTieneAgente, 'AgenteID:', agenteId);
           }
         } catch (error) {
           console.error('Error checking agent status:', error);

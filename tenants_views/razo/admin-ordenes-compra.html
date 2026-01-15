@@ -136,20 +136,20 @@
               <table
                 class="admin-table"
                 id="ordenesTable"
-                style="display: none"
+                style="display: none; font-size: 0.875rem;"
               >
                 <thead>
                   <tr>
-                    <th>ID</th>
-                    <th>Origen</th>
-                    <th>Proveedor</th>
-                    <th>Fecha Creación</th>
-                    <th>Entrega Esperada</th>
-                    <th>Productos</th>
-                    <th>Cliente</th>
-                    <th>Estatus</th>
-                    <th id="thPropietario" style="display: none;">Propietario</th>
-                    <th style="width: 280px">Acciones</th>
+                    <th style="width: 50px;">ID</th>
+                    <th style="width: 90px;">Origen</th>
+                    <th style="width: 110px;">Proveedor</th>
+                    <th style="width: 90px;">Creación</th>
+                    <th style="width: 90px;">Entrega</th>
+                    <th style="width: 60px; text-align: center;">Prods</th>
+                    <th style="width: 120px;">Cliente</th>
+                    <th style="width: 110px;">Estatus</th>
+                    <th id="thPropietario" style="display: none; width: 100px;">Admin</th>
+                    <th style="width: 200px;">Acciones</th>
                   </tr>
                 </thead>
                 <tbody id="ordenesTableBody">
@@ -727,64 +727,74 @@
 
             const fechaCreacion = orden.fechaCreacion
               ? new Date(orden.fechaCreacion).toLocaleDateString("es-MX", {
-                  year: "numeric",
-                  month: "short",
                   day: "numeric",
+                  month: "short",
                 })
               : "-";
 
             const fechaEntrega = orden.fechaEntregaEsperada
               ? new Date(orden.fechaEntregaEsperada).toLocaleDateString("es-MX", {
-                  year: "numeric",
-                  month: "short",
                   day: "numeric",
+                  month: "short",
                 })
               : "-";
 
             const estatusTexto = (() => {
               const val = (orden.estatus || "").toString();
-              if (val === "Pendiente") return "Pendiente (Preliminar)";
-              if (val === "Recibido") return "Recibido (Real/Cerrada)";
-              if (val === "Completada") return "Completada (Real/Cerrada)";
+              if (val === "Pendiente") return "Pendiente";
+              if (val === "Recibido") return "Recibido";
+              if (val === "Completada") return "Completada";
               return val;
             })();
 
             const propietarioCell = currentUserRole === 'superadmin' 
-              ? `<td style="color: #6b7280; font-size: 0.875rem;">${orden.propietarioNombre || 'Sin asignar'}</td>`
+              ? `<td style="color: #6b7280; font-size: 0.8rem;">${(orden.propietarioNombre || 'N/A').split(' ')[0]}</td>`
               : '';
 
-            // Determinar el texto del cliente
-            const clienteTexto = orden.origenOC === 'backorder' && orden.nombreCliente 
+            // Determinar el texto del cliente (truncar si es muy largo)
+            let clienteTexto = orden.origenOC === 'backorder' && orden.nombreCliente 
               ? orden.nombreCliente 
               : (orden.origenOC === 'manual' ? 'Stock General' : '-');
+            
+            // Truncar nombres largos
+            if (clienteTexto.length > 18) {
+              clienteTexto = clienteTexto.substring(0, 15) + '...';
+            }
+
+            // Truncar nombre de proveedor si es muy largo
+            let proveedorNombre = (orden.proveedorNombre || "").toString();
+            if (proveedorNombre.length > 15) {
+              proveedorNombre = proveedorNombre.substring(0, 12) + '...';
+            }
 
             row.innerHTML = `
-              <td style="font-weight: 600; color: #374151;">#${
+              <td style="font-weight: 600; color: #374151; font-size: 0.875rem;">#${
                 orden.ordenCompraId
               }</td>
-              <td><span class="admin-badge ${origenInfo.className}">${
+              <td><span class="admin-badge ${origenInfo.className}" style="font-size: 0.75rem; padding: 0.25rem 0.5rem;">${
                 origenInfo.label
               }</span></td>
-              <td style="font-weight: 500;">${
-                (orden.proveedorNombre || "").toString()
+              <td style="font-weight: 500; font-size: 0.875rem;" title="${orden.proveedorNombre || ''}">${
+                proveedorNombre
               }</td>
-              <td style="color: #6b7280;">${fechaCreacion}</td>
-              <td style="color: #6b7280;">${fechaEntrega}</td>
-              <td style="text-align: center; color: #374151;">${
+              <td style="color: #6b7280; font-size: 0.875rem;">${fechaCreacion}</td>
+              <td style="color: #6b7280; font-size: 0.875rem;">${fechaEntrega}</td>
+              <td style="text-align: center; color: #374151; font-weight: 600;">${
                 orden.totalProductos
               }</td>
-              <td style="color: #374151; font-weight: 500;">${clienteTexto}</td>
-              <td><span class="admin-badge ${estatusBadgeClass}">${
+              <td style="color: #374151; font-weight: 500; font-size: 0.875rem;" title="${orden.origenOC === 'backorder' && orden.nombreCliente ? orden.nombreCliente : ''}">${clienteTexto}</td>
+              <td><span class="admin-badge ${estatusBadgeClass}" style="font-size: 0.75rem; padding: 0.25rem 0.5rem;">${
                 estatusTexto
               }</span></td>
               ${propietarioCell}
               <td>
-                <div style="display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap;">
+                <div style="display: flex; gap: 0.25rem; justify-content: center; flex-wrap: wrap;">
                   <button 
                     class="btn btn-secondary" 
                     onclick="verDetalle(${orden.ordenCompraId})"
-                    style="padding: 0.5rem 1rem; font-size: 0.875rem; flex: 1; min-width: 120px;">
-                    Ver Detalle
+                    title="Ver Detalle"
+                    style="padding: 0.4rem 0.6rem; font-size: 0.75rem; min-width: 60px;">
+                    👁️
                   </button>
                   ${
                     ['Pendiente', 'Confirmada'].includes(orden.estatus)
@@ -792,8 +802,9 @@
                     <button 
                       class="btn" 
                       onclick="editarOrden(${orden.ordenCompraId})"
-                      style="padding: 0.5rem 1rem; font-size: 0.875rem; flex: 1; min-width: 120px; background: #f97316; color: white;">
-                      ✏️ Editar
+                      title="Editar"
+                      style="padding: 0.4rem 0.6rem; font-size: 0.75rem; min-width: 60px; background: #f97316; color: white;">
+                      ✏️
                     </button>
                   `
                       : ""
@@ -801,8 +812,9 @@
                   <button 
                     class="btn btn-success" 
                     onclick="exportarOrdenExcel(${orden.ordenCompraId})"
-                    style="padding: 0.5rem 1rem; font-size: 0.875rem; flex: 1; min-width: 120px;">
-                    📄 Excel
+                    title="Exportar Excel"
+                    style="padding: 0.4rem 0.6rem; font-size: 0.75rem; min-width: 60px;">
+                    📄
                   </button>
                   ${
                     orden.estatus === "Pendiente"
@@ -810,8 +822,9 @@
                     <button 
                       class="btn btn-primary" 
                       onclick="confirmarPedido(${orden.ordenCompraId})"
-                      style="padding: 0.5rem 1rem; font-size: 0.875rem; flex: 1; min-width: 120px;">
-                      Confirmar Pedido
+                      title="Confirmar Pedido"
+                      style="padding: 0.4rem 0.6rem; font-size: 0.75rem; min-width: 60px;">
+                      ✓
                     </button>
                   `
                       : ""
