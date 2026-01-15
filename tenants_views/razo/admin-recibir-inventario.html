@@ -104,92 +104,92 @@
             </div>
 
             <div id="recepcionSplit" style="display: none">
-              <div class="row g-3">
-                <div class="col-12 col-xl-6">
-                  <div class="recepcion-panel">
-                  <div
-                    style="
-                      display: flex;
-                      justify-content: space-between;
-                      align-items: center;
-                      flex-wrap: wrap;
-                      gap: 0.5rem;
-                      margin-bottom: 0.75rem;
-                    "
-                  >
-                    <div style="font-weight: 800; color: #111827">
-                      📜 Ordenado (Pendiente)
-                    </div>
-                    <div id="pendienteBadge" class="admin-badge info">0 PENDIENTES</div>
+              <!-- Tabla 1: Productos Pendientes de Recibir (100% ancho) -->
+              <div class="recepcion-panel" style="margin-bottom: 2rem;">
+                <div
+                  style="
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    flex-wrap: wrap;
+                    gap: 0.5rem;
+                    margin-bottom: 0.75rem;
+                  "
+                >
+                  <div style="font-weight: 800; color: #111827">
+                    📜 Productos en la Orden de Compra (Pendientes de Recibir)
                   </div>
-                  <div class="table-responsive">
-                    <table class="admin-table" id="tablaPendiente">
-                      <thead class="thead-sticky thead-pendiente">
-                        <tr>
-                          <th style="width: 56px">Imagen</th>
-                          <th>Producto</th>
-                          <th style="text-align: center; width: 130px">Solicitado (pzas)</th>
-                          <th style="text-align: center; width: 130px">Por recibir (pzas)</th>
-                          <th style="width: 140px">Cantidad hoy (pzas)</th>
-                          <th style="width: 140px"></th>
-                        </tr>
-                      </thead>
-                      <tbody id="tbodyPendiente"></tbody>
-                    </table>
-                  </div>
-                  <div
-                    id="footer-resumen-pendiente"
-                    class="d-flex justify-content-between align-items-center mt-3 p-3 bg-light rounded border"
-                  >
-                    <span class="fw-bold text-muted">Total Orden:</span>
-                    <span class="fs-5 fw-bold text-primary" id="lbl-total-solicitado">$0.00</span>
-                  </div>
-                  </div>
+                  <div id="pendienteBadge" class="admin-badge info">0 PENDIENTES</div>
                 </div>
-
-                <div class="col-12 col-xl-6">
-                  <div class="recepcion-panel">
-                  <div
-                    style="
-                      display: flex;
-                      justify-content: space-between;
-                      align-items: center;
-                      flex-wrap: wrap;
-                      gap: 0.5rem;
-                      margin-bottom: 0.75rem;
-                    "
-                  >
-                    <div style="font-weight: 800; color: #111827">
-                      ✅ Recibido (Confirmado)
-                    </div>
-                    <div id="recibidoBadge" class="admin-badge secondary">0 RECIBIDOS</div>
-                  </div>
-                  <div class="table-responsive">
-                    <table class="admin-table" id="tablaRecibido">
-                      <thead class="thead-sticky thead-recibido">
-                        <tr>
-                          <th style="width: 56px">Imagen</th>
-                          <th>Producto</th>
-                          <th style="text-align: center; width: 160px">Total recibido (pzas)</th>
-                          <th>Progreso</th>
-                        </tr>
-                      </thead>
-                      <tbody id="tbodyRecibido"></tbody>
-                    </table>
-                  </div>
-                  <div
-                    id="footer-resumen-recibido"
-                    class="d-flex justify-content-between align-items-center mt-3 p-3 bg-light rounded border"
-                  >
-                    <span class="fw-bold text-muted">Valor Recibido:</span>
-                    <span class="fs-5 fw-bold text-success" id="lbl-total-recibido">$0.00</span>
-                  </div>
-                  </div>
+                <div class="table-responsive">
+                  <table class="admin-table" id="tablaPendiente">
+                    <thead class="thead-sticky thead-pendiente">
+                      <tr>
+                        <th style="width: 60px">Imagen</th>
+                        <th style="min-width: 200px">Producto</th>
+                        <th style="min-width: 120px">SKU</th>
+                        <th style="min-width: 150px">Dimensiones</th>
+                        <th style="text-align: center; width: 120px">Solicitado (pzas)</th>
+                        <th style="text-align: center; width: 120px">Por recibir (pzas)</th>
+                        <th style="width: 140px">Cantidad hoy (pzas)</th>
+                        <th style="width: 140px"></th>
+                      </tr>
+                    </thead>
+                    <tbody id="tbodyPendiente"></tbody>
+                  </table>
+                </div>
+                <div
+                  id="footer-resumen-pendiente"
+                  class="d-flex justify-content-between align-items-center mt-3 p-3 bg-light rounded border"
+                >
+                  <span class="fw-bold text-muted">Total Orden:</span>
+                  <span class="fs-5 fw-bold text-primary" id="lbl-total-solicitado">$0.00</span>
                 </div>
               </div>
 
-              <div class="mt-3">
-                <div class="recepcion-panel">
+              <!-- Tabla 2: Productos Ya Recibidos (100% ancho) -->
+              <div class="recepcion-panel" style="margin-bottom: 2rem;">
+                <div
+                  style="
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    flex-wrap: wrap;
+                    gap: 0.5rem;
+                    margin-bottom: 0.75rem;
+                  "
+                >
+                  <div style="font-weight: 800; color: #111827">
+                    ✅ Recepción de Mercancía (Confirmado)
+                  </div>
+                  <div id="recibidoBadge" class="admin-badge secondary">0 RECIBIDOS</div>
+                </div>
+                <div class="table-responsive">
+                  <table class="admin-table" id="tablaRecibido">
+                    <thead class="thead-sticky thead-recibido">
+                      <tr>
+                        <th style="width: 60px">Imagen</th>
+                        <th style="min-width: 200px">Producto</th>
+                        <th style="min-width: 120px">SKU</th>
+                        <th style="min-width: 150px">Dimensiones</th>
+                        <th style="text-align: center; width: 140px">Total recibido (pzas)</th>
+                        <th style="min-width: 200px">Progreso</th>
+                      </tr>
+                    </thead>
+                    <tbody id="tbodyRecibido"></tbody>
+                  </table>
+                </div>
+                <div
+                  id="footer-resumen-recibido"
+                  class="d-flex justify-content-between align-items-center mt-3 p-3 bg-light rounded border"
+                >
+                  <span class="fw-bold text-muted">Valor Recibido:</span>
+                  <span class="fs-5 fw-bold text-success" id="lbl-total-recibido">$0.00</span>
+                </div>
+              </div>
+
+              <!-- Tabla 3: Resumen de Sesión -->
+              <div class="recepcion-panel">
                   <div
                     style="
                       display: flex;
@@ -722,17 +722,19 @@
           img.onerror = function() { this.src = '/icon/Logo_Razo.png'; };
           tdImg.appendChild(img);
 
+          const tdProducto = document.createElement("td");
+          tdProducto.innerHTML = `
+            <div style="font-weight: 800; color: #111827;">${safeText(item.nombreProducto)}</div>
+          `;
+
           const tdSku = document.createElement("td");
           tdSku.innerHTML = `
-            <div style="display:grid; gap: 0.25rem;">
-              <div class="td-truncado" title="${safeText(item.nombreProducto)}" style="font-weight: 800; color: #111827;">${safeText(
-                item.nombreProducto
-              )}</div>
-              <div><code style="background:#f3f4f6; padding: 0.25rem 0.5rem; border-radius: 0.375rem;">${safeText(
-                item.sku
-              )}</code></div>
-              <div style="font-size: 0.85rem; color: #6b7280;">${piezas} pzas/paq</div>
-            </div>
+            <code style="background:#f3f4f6; padding: 0.25rem 0.5rem; border-radius: 0.375rem;">${safeText(item.sku)}</code>
+          `;
+
+          const tdDimensiones = document.createElement("td");
+          tdDimensiones.innerHTML = `
+            <div style="font-size: 0.875rem; color: #6b7280;">${piezas} pzas/paq</div>
           `;
 
           const tdSol = document.createElement("td");
@@ -789,7 +791,9 @@
           tdBtn.appendChild(btn);
 
           tr.appendChild(tdImg);
+          tr.appendChild(tdProducto);
           tr.appendChild(tdSku);
+          tr.appendChild(tdDimensiones);
           tr.appendChild(tdSol);
           tr.appendChild(tdPen);
           tr.appendChild(tdInput);
@@ -816,19 +820,19 @@
           img.onerror = function() { this.src = '/icon/Logo_Razo.png'; };
           tdImg.appendChild(img);
 
+          const tdProducto = document.createElement("td");
+          tdProducto.innerHTML = `
+            <div style="font-weight: 800; color: #111827;">${safeText(item.nombreProducto)}</div>
+          `;
+
           const tdSku = document.createElement("td");
-          tdSku.className = "td-truncado";
-          tdSku.title = safeText(item.nombreProducto);
           tdSku.innerHTML = `
-            <div style="display:grid; gap: 0.25rem;">
-              <div class="td-truncado" title="${safeText(item.nombreProducto)}" style="font-weight: 800; color: #111827;">${safeText(
-                item.nombreProducto
-              )}</div>
-              <div><code style="background:#f3f4f6; padding: 0.25rem 0.5rem; border-radius: 0.375rem;">${safeText(
-                item.sku
-              )}</code></div>
-              <div style="font-size: 0.85rem; color: #6b7280;">${piezas} pzas/paq</div>
-            </div>
+            <code style="background:#f3f4f6; padding: 0.25rem 0.5rem; border-radius: 0.375rem;">${safeText(item.sku)}</code>
+          `;
+
+          const tdDimensiones = document.createElement("td");
+          tdDimensiones.innerHTML = `
+            <div style="font-size: 0.875rem; color: #6b7280;">${piezas} pzas/paq</div>
           `;
 
           const tdRec = document.createElement("td");
@@ -865,7 +869,9 @@
           tdProg.appendChild(wrap);
 
           tr.appendChild(tdImg);
+          tr.appendChild(tdProducto);
           tr.appendChild(tdSku);
+          tr.appendChild(tdDimensiones);
           tr.appendChild(tdRec);
           tr.appendChild(tdProg);
           tbodyRecibido.appendChild(tr);
@@ -874,7 +880,7 @@
         if (!pendientes.length) {
           const tr = document.createElement("tr");
           const td = document.createElement("td");
-          td.colSpan = 6;
+          td.colSpan = 8;
           td.style.textAlign = "center";
           td.style.color = "#6b7280";
           td.style.padding = "1rem";
@@ -1442,37 +1448,31 @@
         background: #ecfdf5;
       }
 
-      /* Asegurar grid responsivo aunque Bootstrap no esté cargado */
-      #recepcionSplit .row {
+      /* Tablas ahora ocupan 100% del ancho - sin grid de 2 columnas */
+      #recepcionSplit {
         display: flex;
-        flex-wrap: wrap;
-        gap: 1rem;
+        flex-direction: column;
+        gap: 0;
       }
 
-      #recepcionSplit .col-12 {
-        flex: 1 1 100%;
-        max-width: 100%;
-      }
-
-      @media (min-width: 1200px) {
-        #recepcionSplit .col-xl-6 {
-          flex: 1 1 calc(50% - 1rem);
-          max-width: calc(50% - 1rem);
-        }
-      }
-
-      /* Compactar celdas para evitar overflow */
+      /* Optimizar celdas con más espacio horizontal */
       #tablaPendiente th,
       #tablaPendiente td,
       #tablaRecibido th,
       #tablaRecibido td {
-        padding: 0.5rem 0.5rem;
+        padding: 0.75rem 0.75rem;
         font-size: 0.875rem;
         vertical-align: middle;
       }
 
       .table-responsive {
         overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      /* Mejorar legibilidad de las tablas */
+      .admin-table {
+        min-width: 900px;
       }
 
       .recepcion-progress-outer {
