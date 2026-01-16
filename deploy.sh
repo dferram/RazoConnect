@@ -45,10 +45,9 @@ if [ -d "node_modules" ]; then
   rm -rf node_modules
 fi
 
-# 5. Limpiar package-lock.json si existe
-if [ -f "package-lock.json" ]; then
-  echo "🧹 Limpiando package-lock.json..."
-  rm -f package-lock.json
+# 5. Verificar package-lock.json existe
+if [ ! -f "package-lock.json" ]; then
+  echo "⚠️  WARNING: package-lock.json no encontrado"
 fi
 
 # 6. Instalar dependencias
