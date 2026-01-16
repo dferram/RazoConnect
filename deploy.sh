@@ -56,6 +56,11 @@ echo "📥 Instalando dependencias con npm install..."
 echo "⚠️  IMPORTANTE: Instalando con --include=optional para Sharp"
 npm install --production --include=optional --loglevel=verbose
 
+# 6.1. Recompilar módulos nativos para Azure Linux
+echo ""
+echo "🔨 Recompilando módulos nativos (bcrypt, sharp) para Azure Linux..."
+npm rebuild bcrypt sharp --build-from-source
+
 # 7. Verificar que dotenv se instaló
 echo ""
 echo "🔍 Verificando instalación de dotenv..."
