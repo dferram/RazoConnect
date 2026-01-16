@@ -54,7 +54,8 @@ fi
 # 6. Instalar dependencias
 echo ""
 echo "📥 Instalando dependencias con npm install..."
-npm install --production --no-optional --loglevel=verbose
+echo "⚠️  IMPORTANTE: Instalando con --include=optional para Sharp"
+npm install --production --include=optional --loglevel=verbose
 
 # 7. Verificar que dotenv se instaló
 echo ""
@@ -72,7 +73,7 @@ fi
 # 8. Verificar módulos críticos
 echo ""
 echo "🔍 Verificando módulos críticos..."
-CRITICAL_MODULES=("express" "pg" "bcrypt" "jsonwebtoken" "cors")
+CRITICAL_MODULES=("express" "pg" "bcrypt" "jsonwebtoken" "cors" "sharp")
 for module in "${CRITICAL_MODULES[@]}"; do
   if [ -d "node_modules/$module" ]; then
     echo "✅ $module instalado"
@@ -82,7 +83,25 @@ for module in "${CRITICAL_MODULES[@]}"; do
   fi
 done
 
-# 9. Mostrar estadísticas
+# 9. Verificar binarios de Sharp para Linux
+echo ""
+echo "🔍 Verificando binarios de Sharp para linux-x64..."
+if [ -d "node_modules/@img/sharp-linux-x64" ]; then
+  echo "✅ sharp-linux-x64 binarios encontrados"
+  ls -la node_modules/@img/sharp-linux-x64/
+else
+  echo "❌ ERROR: sharp-linux-x64 binarios NO encontrados"
+  echo "Intentando reinstalar Sharp con flags específicos..."
+  npm install --os=linux --cpu=x64 sharp --include=optional
+  if [ -d "node_modules/@img/sharp-linux-x64" ]; then
+    echo "✅ sharp-linux-x64 instalado exitosamente en segundo intento"
+  else
+    echo "❌ ERROR CRÍTICO: No se pudo instalar Sharp para Linux"
+    exit 1
+  fi
+fi
+
+# 10. Mostrar estadísticas
 echo ""
 echo "📊 Estadísticas de instalación:"
 echo "Total de módulos instalados: $(ls -1 node_modules | wc -l)"
