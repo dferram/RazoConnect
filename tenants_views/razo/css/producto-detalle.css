@@ -1,0 +1,38 @@
+/* Producto Detalle - Estilos específicos para la página de detalle de producto */
+
+/* Contenedor principal */
+.producto-detalle-container {
+  padding-top: 2rem;
+  padding-bottom: 3rem;
+}
+
+/* Sección de detalles del producto */
+.producto-details-hidden {
+  display: none;
+}
+
+/* Selector de Nike oculto */
+.producto-nike-selector-hidden {
+  display: none;
+}
+
+/* Spinner del botón */
+.producto-btn-spinner {
+  display: none;
+  width: 20px;
+  height: 20px;
+  border-width: 2px;
+}
+
+/* Estado de error oculto */
+.producto-error-hidden {
+  display: none;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .producto-detalle-container {
+    padding-top: 1rem;
+    padding-bottom: 2rem;
+  }
+}

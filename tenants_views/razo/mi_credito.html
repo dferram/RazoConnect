@@ -15,6 +15,7 @@
     />
     <link rel="stylesheet" href="css/styles.css" />
     <link rel="stylesheet" href="css/admin.css" />
+    <link rel="stylesheet" href="css/mi-credito.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
     <style>
       /* Modal Styles */
@@ -427,30 +428,22 @@
   <body>
     <div id="header-container"></div>
 
-    <main class="container" style="padding-top: 2rem; padding-bottom: 3rem;">
-      <header style="margin-bottom: 2rem;">
-        <p
-          style="
-            text-transform: uppercase;
-            letter-spacing: 0.15em;
-            font-size: 0.85rem;
-            color: var(--razo-gray-warm);
-            margin-bottom: 0.5rem;
-          "
-        >
+    <main class="container credito-main-container">
+      <header class="credito-page-header">
+        <p class="credito-page-subtitle">
           Finanzas del cliente
         </p>
-        <h1 style="font-size: 2.25rem; font-weight: 700; margin-bottom: 0.5rem;">
+        <h1 class="credito-page-title">
           Mi crédito
         </h1>
-        <p style="color: var(--razo-gray-warm); max-width: 620px;">
+        <p class="credito-page-description">
           Consulta tu línea de crédito, saldo deudor y movimientos más recientes.
           Mantente al día y liquida tu saldo cuando lo necesites.
         </p>
       </header>
 
       <div id="creditOverviewSection">
-        <section class="admin-stats-grid" style="margin-bottom: 2rem;">
+        <section class="admin-stats-grid credito-stats-section">
           <article class="admin-stat-card">
             <div class="admin-stat-header">
               <div class="admin-stat-content">
@@ -477,29 +470,29 @@
             </div>
           </article>
 
-          <article class="admin-stat-card" id="cardPagosEnRevision" style="display: none;">
+          <article class="admin-stat-card credito-stat-card-hidden" id="cardPagosEnRevision">
             <div class="admin-stat-header">
               <div class="admin-stat-content">
                 <h3>Pagos en revisión</h3>
                 <div class="admin-stat-value" id="saldoEnRevision">$0.00</div>
-                <div class="admin-stat-change" style="color: #f59e0b;">
+                <div class="admin-stat-change credito-stat-change-warning">
                   🕒 Pendiente de validación
                 </div>
               </div>
-              <div class="admin-stat-icon" style="background: rgba(245, 158, 11, 0.12); color: #f59e0b;">⏳</div>
+              <div class="admin-stat-icon credito-stat-icon-warning">⏳</div>
             </div>
           </article>
 
-          <article class="admin-stat-card" id="cardSaldoEstimado" style="display: none;">
+          <article class="admin-stat-card credito-stat-card-hidden" id="cardSaldoEstimado">
             <div class="admin-stat-header">
               <div class="admin-stat-content">
                 <h3>Saldo estimado</h3>
                 <div class="admin-stat-value" id="saldoEstimado">$0.00</div>
-                <div class="admin-stat-change" style="color: #6b7280;">
+                <div class="admin-stat-change credito-stat-change-neutral">
                   Tras aplicar pagos pendientes
                 </div>
               </div>
-              <div class="admin-stat-icon" style="background: rgba(107, 114, 128, 0.12); color: #6b7280;">📊</div>
+              <div class="admin-stat-icon credito-stat-icon-neutral">📊</div>
             </div>
           </article>
 
@@ -521,7 +514,7 @@
           <div class="admin-table-header">
             <div>
               <h2 class="admin-table-title">Movimientos de crédito</h2>
-              <p class="admin-table-subtitle" style="margin: 0; color: var(--razo-gray-warm);">
+              <p class="admin-table-subtitle credito-table-subtitle">
                 Últimas operaciones registradas en tu estado de cuenta.
               </p>
             </div>
@@ -530,8 +523,7 @@
 
           <div
             id="creditError"
-            class="alert alert-error"
-            style="display: none;"
+            class="alert alert-error credito-error-hidden"
           >
             No fue posible obtener la información de tu crédito. Intenta recargar la
             página.
@@ -557,8 +549,7 @@
 
           <div
             id="movimientosEmpty"
-            class="empty-state"
-            style="display: none;"
+            class="empty-state credito-empty-hidden"
           >
             <div class="empty-state-icon">📄</div>
             <h3 class="empty-state-title">Sin movimientos registrados</h3>
@@ -570,8 +561,7 @@
           <!-- Paginación de movimientos -->
           <div 
             id="movimientosPagination" 
-            class="d-flex justify-content-between align-items-center mt-3"
-            style="display: none !important;"
+            class="d-flex justify-content-between align-items-center mt-3 credito-pagination-hidden"
           >
           </div>
         </section>
@@ -579,13 +569,12 @@
 
       <section
         id="solicitudCreditoSection"
-        class="admin-table-container"
-        style="display: none; margin-top: 2rem;"
+        class="admin-table-container credito-solicitud-section"
       >
         <div class="admin-table-header">
           <div>
             <h2 class="admin-table-title">Solicitud de crédito</h2>
-            <p class="admin-table-subtitle" style="margin: 0; color: var(--razo-gray-warm);">
+            <p class="admin-table-subtitle credito-table-subtitle">
               Completa los datos y nuestro equipo validará tu línea de crédito.
             </p>
           </div>
@@ -655,37 +644,15 @@
     </main>
 
     <!-- Modal de Pago de Crédito -->
-    <div id="modalPagoCredito" class="modal" style="display: none;">
-      <div
-        class="modal-content"
-        style="
-          background: white;
-          padding: 2rem;
-          border-radius: 1rem;
-          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-          max-width: 600px;
-        "
-      >
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-          <h2 style="font-size: 1.5rem; font-weight: bold; margin: 0;">
+    <div id="modalPagoCredito" class="modal credito-modal-hidden">
+      <div class="modal-content credito-modal-content">
+        <div class="credito-modal-header">
+          <h2 class="credito-modal-title">
             Pagar saldo de crédito
           </h2>
           <button
             id="btnCerrarModalPago"
-            style="
-              background: #f3f4f6;
-              border: none;
-              width: 40px;
-              height: 40px;
-              border-radius: 50%;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              cursor: pointer;
-              transition: all 0.2s ease;
-              color: #6b7280;
-              font-size: 1.25rem;
-            "
+            class="credito-modal-close-btn"
             aria-label="Cerrar modal"
           >
             <i class="bi bi-x-lg"></i>
@@ -694,20 +661,14 @@
 
         <div id="pagoContent">
           <!-- Sección de selección de deuda -->
-          <div id="debtSelectionSection" style="margin-bottom: 2rem;">
-            <h4 style="font-weight: 600; margin-bottom: 1rem;">Selecciona qué deseas pagar</h4>
-            <div style="
-              background: #f9fafb;
-              border: 1px solid #e5e7eb;
-              border-radius: 0.75rem;
-              padding: 1rem;
-              margin-bottom: 1rem;
-            ">
-              <table class="table table-sm" style="margin-bottom: 0;">
+          <div id="debtSelectionSection" class="credito-debt-section">
+            <h4 class="credito-debt-section-title">Selecciona qué deseas pagar</h4>
+            <div class="credito-debt-table-container">
+              <table class="table table-sm credito-debt-table">
                 <thead>
                   <tr>
-                    <th style="width: 40px;">
-                      <input type="checkbox" id="selectAllDebts" style="cursor: pointer;" />
+                    <th class="credito-debt-th-checkbox">
+                      <input type="checkbox" id="selectAllDebts" class="credito-debt-checkbox" />
                     </th>
                     <th>Concepto</th>
                     <th>Fecha</th>
@@ -725,61 +686,43 @@
             </div>
             
             <!-- Monto a pagar -->
-            <div style="
-              display: flex;
-              justify-content: space-between;
-              align-items: center;
-              padding: 1rem;
-              background: linear-gradient(135deg, #fff7ed 0%, #fff 100%);
-              border: 2px solid var(--razo-orange);
-              border-radius: 0.75rem;
-              margin-bottom: 1rem;
-            ">
+            <div class="credito-amount-container">
               <div>
-                <label for="montoAPagar" style="font-weight: 600; margin-bottom: 0.25rem; display: block;">
+                <label for="montoAPagar" class="credito-amount-label">
                   Monto a pagar
                 </label>
-                <small style="color: #6b7280;">Puedes editar para abono parcial</small>
+                <small class="credito-amount-hint">Puedes editar para abono parcial</small>
               </div>
-              <div style="display: flex; align-items: center; gap: 0.5rem;">
-                <span style="font-size: 1.5rem; font-weight: 700;">$</span>
+              <div class="credito-amount-input-group">
+                <span class="credito-amount-currency">$</span>
                 <input
                   type="number"
                   id="montoAPagar"
                   min="0"
                   step="0.01"
                   value="0.00"
-                  style="
-                    width: 180px;
-                    font-size: 1.5rem;
-                    font-weight: 700;
-                    text-align: right;
-                    border: 2px solid #e5e7eb;
-                    border-radius: 0.5rem;
-                    padding: 0.5rem;
-                  "
+                  class="credito-amount-input"
                 />
               </div>
             </div>
           </div>
 
           <div id="paymentSection">
-            <div class="payment-section-header" style="margin-bottom: 1.5rem;">
-              <h4 style="font-weight: 600; margin-bottom: 0.5rem;">Selecciona método de pago</h4>
-              <span style="color: #6b7280; font-size: 0.875rem;">
+            <div class="payment-section-header credito-payment-section-header">
+              <h4 class="credito-payment-section-title">Selecciona método de pago</h4>
+              <span class="credito-payment-section-description">
                 Elige la opción que mejor se adapte para liquidar tu saldo.
               </span>
             </div>
 
             <div class="payment-options-grid" id="paymentOptionsPagoCredito">
               <label
-                class="payment-option-card disabled"
+                class="payment-option-card disabled credito-payment-option-disabled"
                 id="paymentOptionMercadoPagoPago"
                 data-method="mercadopago"
-                style="pointer-events: none;"
               >
                 <div class="payment-option-top">
-                  <div class="payment-option-icon" style="opacity: 0.5;">💳</div>
+                  <div class="payment-option-icon credito-payment-icon-disabled">💳</div>
                   <input
                     type="radio"
                     name="metodo_pago_credito"
@@ -788,14 +731,14 @@
                   />
                 </div>
                 <div class="payment-option-content">
-                  <h5 style="opacity: 0.6;">Mercado Pago</h5>
-                  <p style="opacity: 0.6;">Paga con tarjeta o saldo digital y recibe confirmación inmediata.</p>
-                  <div style="margin-top: 0.75rem; padding: 0.5rem 0.75rem; background: #fef3c7; border: 1px solid #fbbf24; border-radius: 0.5rem; font-size: 0.85rem; color: #92400e;">
+                  <h5 class="credito-payment-content-disabled">Mercado Pago</h5>
+                  <p class="credito-payment-content-disabled">Paga con tarjeta o saldo digital y recibe confirmación inmediata.</p>
+                  <div class="credito-payment-warning-box">
                     ⚠️ <strong>Temporalmente no disponible.</strong><br>
                     Por favor, utiliza transferencia bancaria.
                   </div>
                 </div>
-                <span class="payment-option-chip payment-chip-digital" style="opacity: 0.5;">
+                <span class="payment-option-chip payment-chip-digital credito-payment-chip-disabled">
                   No disponible
                 </span>
               </label>
@@ -822,7 +765,7 @@
               </label>
             </div>
 
-            <div class="payment-error" id="paymentErrorPago" style="display: none;">
+            <div class="payment-error credito-payment-error-hidden" id="paymentErrorPago">
               <i class="bi bi-exclamation-triangle-fill"></i>
               <div id="paymentErrorMessagePago"></div>
             </div>
@@ -831,7 +774,7 @@
               <section class="payment-info-card" id="info-mercadopago-pago">
                 <div class="mercadopago-form-container">
                   <h5>Ingresa los datos de tu tarjeta</h5>
-                  <p style="color: #6b7280; font-size: 0.875rem; margin-bottom: 1rem;">
+                  <p class="credito-mp-description">
                     Procesaremos el pago de tu saldo de crédito de forma segura.
                   </p>
                   <div class="mp-form-grid">
@@ -891,7 +834,7 @@
                       />
                     </div>
                   </div>
-                  <div class="mp-form-field" style="margin-top: 0.25rem">
+                  <div class="mp-form-field credito-mp-field-mt">
                     <label for="mpIdentificationNumberPago">Documento (opcional)</label>
                     <input
                       type="text"
@@ -903,7 +846,7 @@
                 </div>
               </section>
 
-              <section class="payment-info-card" id="info-transferencia-pago" style="display: none;">
+              <section class="payment-info-card credito-transfer-section-hidden" id="info-transferencia-pago">
                 <div class="bank-info-card">
                   <div class="bank-info-header">
                     <div>
@@ -929,24 +872,18 @@
                       <strong>Razo Connect S.A. de C.V.</strong>
                     </div>
                   </div>
-                  <div style="margin-top: 1rem;">
-                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">
+                  <div class="credito-comprobante-container">
+                    <label class="credito-comprobante-label">
                       Adjuntar comprobante(s)
                     </label>
                     <input
                       type="file"
                       id="comprobanteTransferencia"
                       accept="image/*,.pdf"
-                      style="
-                        width: 100%;
-                        padding: 0.75rem;
-                        border: 2px dashed #e5e7eb;
-                        border-radius: 0.5rem;
-                        cursor: pointer;
-                      "
+                      class="credito-comprobante-input"
                     />
-                    <div id="comprobantesPreviews" style="display: none;"></div>
-                    <small style="color: #6b7280; display: block; margin-top: 0.5rem;">
+                    <div id="comprobantesPreviews" class="credito-comprobante-previews-hidden"></div>
+                    <small class="credito-comprobante-hint">
                       Puedes seleccionar múltiples archivos. Máx. 8MB por archivo.
                     </small>
                   </div>
@@ -954,18 +891,16 @@
               </section>
             </div>
 
-            <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+            <div class="credito-modal-actions">
               <button
                 id="btnCancelarPago"
-                class="btn btn-secondary"
-                style="flex: 1;"
+                class="btn btn-secondary credito-modal-btn-flex"
               >
                 Cancelar
               </button>
               <button
                 id="btnConfirmarPago"
-                class="btn btn-primary"
-                style="flex: 1;"
+                class="btn btn-primary credito-modal-btn-flex"
               >
                 Confirmar pago
               </button>

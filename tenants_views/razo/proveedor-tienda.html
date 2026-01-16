@@ -14,6 +14,7 @@
       href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
     />
     <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/proveedor-tienda.css" />
     <link rel="stylesheet" href="css/catalogo-profesional.css" />
     <link rel="stylesheet" href="css/components/sidebar-filtros.css" />
     <style>
@@ -203,12 +204,12 @@
     </section>
 
     <!-- Contenedor Principal -->
-    <div class="container" style="padding-bottom: 4rem">
+    <div class="container proveedor-container">
       <div class="brand-page-layout">
         <div id="sidebar-filters-container"></div>
 
         <section>
-          <div class="catalog-toolbar" style="margin-top: 0">
+          <div class="catalog-toolbar proveedor-toolbar-no-margin">
             <div class="product-count-text">
               Mostrando <span id="productCountShown">0</span> productos
             </div>
@@ -224,11 +225,11 @@
       <!-- Loading State -->
       <div id="loadingState" class="loading-container">
         <div class="loading-spinner"></div>
-        <p style="color: #999">Cargando productos...</p>
+        <p class="proveedor-loading-text">Cargando productos...</p>
       </div>
 
       <!-- Empty State -->
-      <div id="emptyState" class="empty-state" style="display: none">
+      <div id="emptyState" class="empty-state proveedor-empty-hidden">
         <div class="empty-state-icon">📦</div>
         <h2 class="empty-state-title">No hay productos disponibles</h2>
         <p class="empty-state-text">
@@ -240,7 +241,7 @@
       </div>
 
       <!-- Grid de Productos -->
-      <div id="productsGrid" class="products-grid" style="display: none"></div>
+      <div id="productsGrid" class="products-grid proveedor-grid-hidden"></div>
         </section>
       </div>
     </div>

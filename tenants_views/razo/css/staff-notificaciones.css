@@ -1,0 +1,18 @@
+/* Staff Notificaciones - Estilos específicos para la página de notificaciones del staff */
+
+/* Indicador de alerta del usuario */
+.staff-indicador-alerta {
+  margin-left: -10px;
+  margin-top: 10px;
+}
+
+/* Lista de notificaciones oculta */
+.staff-lista-hidden {
+  display: none;
+  margin-top: 1rem;
+}
+
+/* Empty state oculto */
+.staff-empty-hidden {
+  display: none;
+}

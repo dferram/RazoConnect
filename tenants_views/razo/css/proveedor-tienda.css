@@ -1,0 +1,33 @@
+/* Proveedor Tienda - Estilos específicos para la página de tienda por proveedor */
+
+/* Contenedor principal */
+.proveedor-container {
+  padding-bottom: 4rem;
+}
+
+/* Toolbar del catálogo */
+.proveedor-toolbar-no-margin {
+  margin-top: 0;
+}
+
+/* Loading state */
+.proveedor-loading-text {
+  color: #999;
+}
+
+/* Empty state oculto */
+.proveedor-empty-hidden {
+  display: none;
+}
+
+/* Grid de productos oculto */
+.proveedor-grid-hidden {
+  display: none;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .proveedor-container {
+    padding-bottom: 2rem;
+  }
+}

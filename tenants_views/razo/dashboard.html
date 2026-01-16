@@ -22,6 +22,7 @@
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     />
     <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/dashboard.css" />
     <style>
       .tabs {
         display: flex;
@@ -235,8 +236,8 @@
   <body>
     <div id="header-container"></div>
 
-    <div class="container main-content-spacer" style="padding-bottom: 3rem">
-      <h1 style="font-size: 2.5rem; font-weight: bold; margin-bottom: 0.5rem">
+    <div class="container main-content-spacer dashboard-container">
+      <h1 class="dashboard-title">
         Mi cuenta
       </h1>
 
@@ -247,19 +248,18 @@
         <button class="tab" data-tab="pedidos">📦 Pedidos</button>
         <button class="tab" data-tab="notificaciones">
           🔔 Notificaciones
-          <span id="notifBadge" class="notif-badge" style="display: none;">0</span>
+          <span id="notifBadge" class="notif-badge notif-badge-hidden">0</span>
         </button>
       </div>
 
       <!-- Tab: Perfil -->
       <div class="tab-content active" id="perfil">
         <div class="card">
-          <div style="display: flex; justify-content: space-between; align-items: center; padding: 1.5rem; border-bottom: 2px solid var(--razo-gray-light);">
-            <h2 style="margin: 0; font-size: 1.5rem; font-weight: 600;">Información personal</h2>
+          <div class="dashboard-card-header">
+            <h2>Información personal</h2>
             <button 
-              class="btn btn-primary" 
+              class="btn btn-primary dashboard-btn-with-icon" 
               id="btnEditarPerfil"
-              style="display: flex; align-items: center; gap: 0.5rem;"
             >
               <i class="fas fa-edit"></i>
               <span>Editar Información</span>
@@ -271,15 +271,8 @@
 
       <!-- Tab: Direcciones -->
       <div class="tab-content" id="direcciones">
-        <div
-          style="
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.5rem;
-          "
-        >
-          <h2 style="font-size: 1.5rem; font-weight: 600">Mis direcciones</h2>
+        <div class="dashboard-section-header">
+          <h2 class="dashboard-section-title">Mis direcciones</h2>
           <button
             class="btn btn-primary"
             id="btnNuevaDireccion"
@@ -295,7 +288,7 @@
 
         <div id="direccionesList"></div>
 
-        <div id="emptyDirecciones" class="empty-state" style="display: none">
+        <div id="emptyDirecciones" class="empty-state dashboard-empty-state">
           <div class="empty-state-icon">📍</div>
           <h3 class="empty-state-title">No tienes direcciones guardadas</h3>
           <p class="empty-state-text">
@@ -306,7 +299,7 @@
 
       <!-- Tab: Pedidos -->
       <div class="tab-content" id="pedidos">
-        <h2 style="font-size: 1.5rem; font-weight: 600; margin-bottom: 1rem">
+        <h2 class="dashboard-section-title-mb">
           Mis pedidos
         </h2>
 
@@ -316,7 +309,7 @@
 
         <div id="pedidosList"></div>
 
-        <div id="emptyPedidos" class="empty-state" style="display: none">
+        <div id="emptyPedidos" class="empty-state dashboard-empty-state">
           <div class="empty-state-icon">📦</div>
           <h3 class="empty-state-title">No tienes pedidos aún</h3>
           <p class="empty-state-text">
@@ -328,14 +321,14 @@
 
       <!-- Tab: Notificaciones -->
       <div class="tab-content" id="notificaciones">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-          <h2 style="font-size: 1.5rem; font-weight: 600;">
+        <div class="dashboard-section-header-notif">
+          <h2 class="dashboard-section-title">
             🔔 Mis Notificaciones
           </h2>
           <button 
             class="btn btn-secondary" 
             id="btnMarcarTodasLeidas"
-            style="display: none;"
+            class="notif-badge-hidden"
           >
             Marcar todas como leídas
           </button>
@@ -347,7 +340,7 @@
 
         <div id="notificacionesList"></div>
 
-        <div id="emptyNotificaciones" class="empty-state" style="display: none">
+        <div id="emptyNotificaciones" class="empty-state dashboard-empty-state">
           <div class="empty-state-icon">🔔</div>
           <h3 class="empty-state-title">No tienes notificaciones</h3>
           <p class="empty-state-text">
@@ -359,40 +352,23 @@
 
     <!-- Modal: Editar Perfil -->
     <div id="modalEditarPerfil" class="modal">
-      <div
-        class="modal-content"
-        style="
-          background: white;
-          padding: 2rem;
-          border-radius: 1rem;
-          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-          max-width: 1200px;
-          width: 95%;
-        "
-      >
-        <h2
-          style="
-            font-size: 1.5rem;
-            font-weight: bold;
-            margin-bottom: 0.5rem;
-            color: #2d3748;
-          "
-        >
+      <div class="modal-content dashboard-modal-content">
+        <h2 class="dashboard-modal-title">
           Editar Información Personal
         </h2>
-        <p style="color: #718096; font-size: 0.875rem; margin-bottom: 1.5rem">
+        <p class="dashboard-modal-subtitle">
           Actualiza tu información de perfil y contraseña
         </p>
 
         <form id="formEditarPerfil">
           <!-- Información Personal -->
-          <div style="background: var(--razo-cream); padding: 1.5rem; border-radius: 0.75rem; margin-bottom: 1.5rem;">
-            <h3 style="font-size: 1.125rem; font-weight: 600; margin-bottom: 1rem; color: var(--razo-gray-dark); display: flex; align-items: center; gap: 0.5rem;">
-              <span style="font-size: 1.25rem;">👤</span>
+          <div class="dashboard-form-section">
+            <h3 class="dashboard-form-section-title">
+              <span class="dashboard-form-section-icon">👤</span>
               Información Personal
             </h3>
             
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div class="dashboard-form-grid-2col">
               <div class="form-group">
                 <label class="form-label" for="editNombre">Nombre *</label>
                 <input
@@ -416,7 +392,7 @@
               </div>
             </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div class="dashboard-form-grid-2col">
               <div class="form-group">
                 <label class="form-label" for="editEmail">Email</label>
                 <input
@@ -440,12 +416,12 @@
           </div>
 
           <!-- Cambio de Contraseña -->
-          <div style="background: var(--razo-orange-light); padding: 1.5rem; border-radius: 0.75rem; margin-bottom: 1.5rem;">
-            <h3 style="font-size: 1.125rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--razo-gray-dark); display: flex; align-items: center; gap: 0.5rem;">
-              <span style="font-size: 1.25rem;">🔒</span>
+          <div class="dashboard-form-section-alt">
+            <h3 class="dashboard-form-section-title-mb-small">
+              <span class="dashboard-form-section-icon">🔒</span>
               Cambio de Contraseña
             </h3>
-            <p style="color: var(--razo-gray-warm); font-size: 0.875rem; margin-bottom: 1rem;">
+            <p class="dashboard-form-section-description">
               Deja estos campos vacíos si no deseas cambiar tu contraseña
             </p>
             
@@ -459,7 +435,7 @@
               />
             </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div class="dashboard-form-grid-2col">
               <div class="form-group">
                 <label class="form-label" for="passwordNueva">Contraseña Nueva</label>
                 <input
@@ -482,29 +458,21 @@
             </div>
           </div>
 
-          <div style="display: flex; gap: 1rem; margin-top: 1.5rem; margin-bottom: 1rem;">
+          <div class="dashboard-form-actions">
             <button
               type="submit"
-              class="btn btn-primary"
-              style="flex: 1"
+              class="btn btn-primary dashboard-btn-flex"
               id="btnGuardarPerfil"
             >
               <span id="btnGuardarPerfilText">Guardar Cambios</span>
               <div
-                class="spinner"
+                class="spinner dashboard-btn-spinner"
                 id="btnGuardarPerfilSpinner"
-                style="
-                  display: none;
-                  width: 20px;
-                  height: 20px;
-                  border-width: 2px;
-                "
               ></div>
             </button>
             <button
               type="button"
-              class="btn btn-secondary"
-              style="flex: 1"
+              class="btn btn-secondary dashboard-btn-flex"
               id="btnCancelarPerfil"
             >
               Cancelar
@@ -516,27 +484,11 @@
 
     <!-- Modal: Nueva Dirección -->
     <div id="modalDireccion" class="modal">
-      <div
-        class="modal-content"
-        style="
-          background: white;
-          padding: 2rem;
-          border-radius: 1rem;
-          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-          max-width: 650px;
-        "
-      >
-        <h2
-          style="
-            font-size: 1.5rem;
-            font-weight: bold;
-            margin-bottom: 0.5rem;
-            color: #2d3748;
-          "
-        >
+      <div class="modal-content dashboard-modal-content-small">
+        <h2 class="dashboard-modal-title">
           Nueva Dirección
         </h2>
-        <p style="color: #718096; font-size: 0.875rem; margin-bottom: 1.5rem">
+        <p class="dashboard-modal-subtitle">
           Agrega una dirección para realizar tus pedidos
         </p>
 
@@ -573,7 +525,7 @@
             />
           </div>
 
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem">
+          <div class="dashboard-direccion-grid-2col">
             <div class="form-group">
               <label class="form-label" for="numeroExt">Número Exterior</label>
               <input
@@ -605,7 +557,7 @@
             />
           </div>
 
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem">
+          <div class="dashboard-direccion-grid-2col">
             <div class="form-group">
               <label class="form-label" for="ciudad">Ciudad *</label>
               <input
@@ -625,7 +577,7 @@
             </div>
           </div>
 
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem">
+          <div class="dashboard-direccion-grid-2col">
             <div class="form-group">
               <label class="form-label" for="codigoPostal"
                 >Código Postal *</label
@@ -650,29 +602,21 @@
             </div>
           </div>
 
-          <div style="display: flex; gap: 1rem; margin-top: 1.5rem">
+          <div class="dashboard-form-actions">
             <button
               type="submit"
-              class="btn btn-primary"
-              style="flex: 1"
+              class="btn btn-primary dashboard-btn-flex"
               id="btnGuardarDireccion"
             >
               <span id="btnGuardarText">Guardar Dirección</span>
               <div
-                class="spinner"
+                class="spinner dashboard-btn-spinner"
                 id="btnGuardarSpinner"
-                style="
-                  display: none;
-                  width: 20px;
-                  height: 20px;
-                  border-width: 2px;
-                "
               ></div>
             </button>
             <button
               type="button"
-              class="btn btn-secondary"
-              style="flex: 1"
+              class="btn btn-secondary dashboard-btn-flex"
               id="btnCancelarDireccion"
             >
               Cancelar

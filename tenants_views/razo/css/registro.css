@@ -1,0 +1,80 @@
+/* Registro - Estilos específicos para la página de registro */
+
+/* Alerta oculta */
+.registro-alert-hidden {
+  display: none;
+}
+
+/* Hint text */
+.registro-hint-text {
+  color: #6b7280;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+  display: block;
+}
+
+/* Contenedor de password con botón */
+.registro-password-container {
+  position: relative;
+}
+
+.registro-password-input {
+  padding-right: 45px;
+}
+
+.registro-toggle-password {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 5px;
+  color: #6b7280;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Contenedor de checkbox */
+.registro-checkbox-container {
+  position: relative;
+  padding-left: 30px;
+  cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+  font-size: 0.9rem;
+  color: var(--text-color);
+  line-height: 1.5;
+}
+
+/* Botón de submit con spinner */
+.registro-btn-spinner {
+  display: none;
+  width: 20px;
+  height: 20px;
+  border-width: 2px;
+}
+
+/* Texto de pie de página */
+.registro-footer-text {
+  color: var(--text-secondary);
+}
+
+.registro-footer-link {
+  color: var(--primary-color);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.registro-footer-link:hover {
+  text-decoration: underline;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .registro-hint-text {
+    font-size: 0.8rem;
+  }
+}

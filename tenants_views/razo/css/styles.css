@@ -546,11 +546,13 @@ h3 {
   overflow-x: auto;
   scroll-behavior: smooth;
   padding: 20px 0;
-  scrollbar-width: none; /* Firefox */
+  /* Ocultar scrollbar en todos los navegadores */
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox (modern) */
 }
 
 #ofertasTrack::-webkit-scrollbar {
-  display: none; /* Chrome, Safari */
+  display: none; /* Chrome, Safari, Edge (Chromium) */
 }
 
 .flash-product-card {

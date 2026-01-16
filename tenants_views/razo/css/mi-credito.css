@@ -1,0 +1,327 @@
+/* Mi Crédito - Estilos específicos para la página de crédito del cliente */
+
+/* Contenedor principal */
+.credito-main-container {
+  padding-top: 2rem;
+  padding-bottom: 3rem;
+}
+
+/* Header de página */
+.credito-page-header {
+  margin-bottom: 2rem;
+}
+
+.credito-page-subtitle {
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  font-size: 0.85rem;
+  color: var(--razo-gray-warm);
+  margin-bottom: 0.5rem;
+}
+
+.credito-page-title {
+  font-size: 2.25rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.credito-page-description {
+  color: var(--razo-gray-warm);
+  max-width: 620px;
+}
+
+/* Stats grid */
+.credito-stats-section {
+  margin-bottom: 2rem;
+}
+
+/* Tarjetas de estadísticas personalizadas */
+.credito-stat-card-hidden {
+  display: none;
+}
+
+.credito-stat-change-warning {
+  color: #f59e0b;
+}
+
+.credito-stat-change-neutral {
+  color: #6b7280;
+}
+
+.credito-stat-icon-warning {
+  background: rgba(245, 158, 11, 0.12);
+  color: #f59e0b;
+}
+
+.credito-stat-icon-neutral {
+  background: rgba(107, 114, 128, 0.12);
+  color: #6b7280;
+}
+
+/* Subtítulos de tabla */
+.credito-table-subtitle {
+  margin: 0;
+  color: var(--razo-gray-warm);
+}
+
+/* Estados vacíos y alertas */
+.credito-error-hidden {
+  display: none;
+}
+
+.credito-empty-hidden {
+  display: none;
+}
+
+.credito-pagination-hidden {
+  display: none !important;
+}
+
+/* Sección de solicitud */
+.credito-solicitud-section {
+  display: none;
+  margin-top: 2rem;
+}
+
+/* Modal de pago */
+.credito-modal-hidden {
+  display: none;
+}
+
+.credito-modal-content {
+  background: white;
+  padding: 2rem;
+  border-radius: 1rem;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  max-width: 600px;
+}
+
+.credito-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.credito-modal-title {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin: 0;
+}
+
+.credito-modal-close-btn {
+  background: #f3f4f6;
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: #6b7280;
+  font-size: 1.25rem;
+}
+
+.credito-modal-close-btn:hover {
+  background: #e5e7eb;
+}
+
+/* Sección de selección de deuda */
+.credito-debt-section {
+  margin-bottom: 2rem;
+}
+
+.credito-debt-section-title {
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.credito-debt-table-container {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.credito-debt-table {
+  margin-bottom: 0;
+}
+
+.credito-debt-checkbox {
+  cursor: pointer;
+}
+
+/* Monto a pagar */
+.credito-amount-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background: linear-gradient(135deg, #fff7ed 0%, #fff 100%);
+  border: 2px solid var(--razo-orange);
+  border-radius: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.credito-amount-label {
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+  display: block;
+}
+
+.credito-amount-hint {
+  color: #6b7280;
+}
+
+.credito-amount-input-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.credito-amount-currency {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.credito-amount-input {
+  width: 180px;
+  font-size: 1.5rem;
+  font-weight: 700;
+  text-align: right;
+  border: 2px solid #e5e7eb;
+  border-radius: 0.5rem;
+  padding: 0.5rem;
+}
+
+/* Sección de método de pago */
+.credito-payment-section-header {
+  margin-bottom: 1.5rem;
+}
+
+.credito-payment-section-title {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.credito-payment-section-description {
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+.credito-payment-option-disabled {
+  pointer-events: none;
+}
+
+.credito-payment-icon-disabled {
+  opacity: 0.5;
+}
+
+.credito-payment-content-disabled {
+  opacity: 0.6;
+}
+
+.credito-payment-warning-box {
+  margin-top: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  background: #fef3c7;
+  border: 1px solid #fbbf24;
+  border-radius: 0.5rem;
+  font-size: 0.85rem;
+  color: #92400e;
+}
+
+.credito-payment-chip-disabled {
+  opacity: 0.5;
+}
+
+.credito-debt-th-checkbox {
+  width: 40px;
+}
+
+/* Sección de error de pago */
+.credito-payment-error-hidden {
+  display: none;
+}
+
+/* Descripción de MercadoPago */
+.credito-mp-description {
+  color: #6b7280;
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+}
+
+/* Campo de formulario con margen superior */
+.credito-mp-field-mt {
+  margin-top: 0.25rem;
+}
+
+/* Sección de transferencia oculta */
+.credito-transfer-section-hidden {
+  display: none;
+}
+
+/* Contenedor de comprobante */
+.credito-comprobante-container {
+  margin-top: 1rem;
+}
+
+.credito-comprobante-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.credito-comprobante-input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 2px dashed #e5e7eb;
+  border-radius: 0.5rem;
+  cursor: pointer;
+}
+
+.credito-comprobante-previews-hidden {
+  display: none;
+}
+
+.credito-comprobante-hint {
+  color: #6b7280;
+  display: block;
+  margin-top: 0.5rem;
+}
+
+/* Botones de acción del modal */
+.credito-modal-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.credito-modal-btn-flex {
+  flex: 1;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .credito-page-title {
+    font-size: 1.75rem;
+  }
+  
+  .credito-modal-content {
+    width: 95%;
+    padding: 1.5rem;
+  }
+  
+  .credito-amount-container {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
+  .credito-amount-input {
+    width: 100%;
+  }
+}

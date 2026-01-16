@@ -241,6 +241,7 @@
   border-radius: 0.5rem;
   font-size: 0.75rem;
   font-weight: 600;
+  -webkit-backdrop-filter: blur(4px);
   backdrop-filter: blur(4px);
 }
 
@@ -318,6 +319,7 @@
   right: 0;
   bottom: 0;
   background: rgba(0, 0, 0, 0.75);
+  -webkit-backdrop-filter: blur(4px);
   backdrop-filter: blur(4px);
   animation: fadeIn 0.2s ease-out;
 }

@@ -24,6 +24,7 @@
 
     <link rel="stylesheet" href="css/styles.css" />
     <link rel="stylesheet" href="css/admin.css" />
+    <link rel="stylesheet" href="css/staff-notificaciones.css" />
       <link rel="stylesheet" href="css/mobile-responsive.css" />
   </head>
   <body>
@@ -61,8 +62,7 @@
                     </div>
                     <span
                       id="indicadorAlertaUsuario"
-                      class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle d-none"
-                      style="margin-left: -10px; margin-top: 10px"
+                      class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle d-none staff-indicador-alerta"
                     >
                       <span class="visually-hidden">Alertas</span>
                     </span>
@@ -120,13 +120,12 @@
 
               <div
                 id="listaNotificaciones"
-                style="display: none; margin-top: 1rem"
+                class="staff-lista-hidden"
               ></div>
 
               <div
                 id="emptyNotificaciones"
-                class="empty-state"
-                style="display: none"
+                class="empty-state staff-empty-hidden"
               >
                 <div class="empty-state-icon">🔔</div>
                 <h3 class="empty-state-title">Sin notificaciones</h3>

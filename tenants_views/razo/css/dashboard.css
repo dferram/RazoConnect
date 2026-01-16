@@ -1,0 +1,197 @@
+/* Dashboard - Estilos específicos para la página de cuenta del cliente */
+
+/* Contenedor principal */
+.dashboard-container {
+  padding-bottom: 3rem;
+}
+
+/* Encabezados */
+.dashboard-title {
+  font-size: 2.5rem;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+
+.dashboard-section-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.dashboard-section-title-mb {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+/* Header de secciones con botón */
+.dashboard-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.dashboard-section-header-notif {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+/* Card header con borde inferior */
+.dashboard-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border-bottom: 2px solid var(--razo-gray-light);
+}
+
+.dashboard-card-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+/* Botones con iconos */
+.dashboard-btn-with-icon {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Badge de notificaciones en tab */
+.notif-badge-hidden {
+  display: none;
+}
+
+/* Estados vacíos */
+.dashboard-empty-state {
+  display: none;
+}
+
+/* Modales */
+.dashboard-modal-content {
+  background: white;
+  padding: 2rem;
+  border-radius: 1rem;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  max-width: 1200px;
+  width: 95%;
+}
+
+.dashboard-modal-content-small {
+  background: white;
+  padding: 2rem;
+  border-radius: 1rem;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  max-width: 650px;
+}
+
+.dashboard-modal-title {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+  color: #2d3748;
+}
+
+.dashboard-modal-subtitle {
+  color: #718096;
+  font-size: 0.875rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Secciones del formulario */
+.dashboard-form-section {
+  background: var(--razo-cream);
+  padding: 1.5rem;
+  border-radius: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.dashboard-form-section-alt {
+  background: var(--razo-orange-light);
+  padding: 1.5rem;
+  border-radius: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.dashboard-form-section-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: var(--razo-gray-dark);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.dashboard-form-section-title-mb-small {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: var(--razo-gray-dark);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.dashboard-form-section-icon {
+  font-size: 1.25rem;
+}
+
+.dashboard-form-section-description {
+  color: var(--razo-gray-warm);
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+}
+
+/* Grid de 2 columnas para formularios */
+.dashboard-form-grid-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.dashboard-direccion-grid-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+/* Botones de formulario */
+.dashboard-form-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.dashboard-btn-flex {
+  flex: 1;
+}
+
+/* Spinner en botón */
+.dashboard-btn-spinner {
+  display: none;
+  width: 20px;
+  height: 20px;
+  border-width: 2px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .dashboard-title {
+    font-size: 2rem;
+  }
+  
+  .dashboard-form-grid-2col {
+    grid-template-columns: 1fr;
+  }
+  
+  .dashboard-modal-content,
+  .dashboard-modal-content-small {
+    width: 95%;
+    padding: 1.5rem;
+  }
+}
