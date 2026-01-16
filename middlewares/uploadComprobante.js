@@ -4,9 +4,11 @@ const cloudinary = require("../config/cloudinary");
 const path = require("path");
 
 // Configuración de almacenamiento en Cloudinary para comprobantes
+// IMPORTANTE: processImages: false porque los comprobantes pueden ser PDFs
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   folder: "razoconnect_comprobantes",
+  processImages: false, // No procesar porque pueden ser PDFs
 });
 
 const fileFilter = (req, file, cb) => {

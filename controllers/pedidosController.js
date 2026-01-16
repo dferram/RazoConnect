@@ -638,44 +638,61 @@ const crearPedido = async (req, res) => {
         ? req.file.path
         : null;
 
-    // REFACTORIZACIÓN: Ya NO se requiere comprobante al crear el pedido
-    // El comprobante se subirá cuando el cliente pague después de la remisión
-    // if (metodoPago === "transferencia" && !comprobanteUrl) {
-    //   removeUploadedComprobante();
-    //   return res.status(400).json({
-    //     success: false,
-    //     message:
-    //       "Debes adjuntar el comprobante de pago en formato de imagen para finalizar por transferencia.",
-    //   });
-    // }
+    // Validar que si se sube comprobante, el método de pago sea transferencia
+    if (comprobanteUrl && metodoPago !== "transferencia") {
+      removeUploadedComprobante();
+      return res.status(400).json({
+        success: false,
+        message: "Solo se puede subir comprobante para pagos por transferencia.",
+      });
+    }
+
+    // Si es transferencia Y se subió comprobante, validar que exista
+    if (metodoPago === "transferencia" && comprobanteUrl) {
+      // Validar que el archivo se subió correctamente
+      if (!req.file || !req.file.path) {
+        removeUploadedComprobante();
+        return res.status(400).json({
+          success: false,
+          message: "Error al procesar el comprobante de pago. Inténtalo de nuevo.",
+        });
+      }
+    }
 
     let pedido;
     let pedidoId;
     let pedidoTransaccionId = null;
-    let pedidoComprobanteUrl = metodoPago === "transferencia" ? comprobanteUrl : null;
+    let pedidoComprobanteUrl = null;
     let pedidoEstatus = "Pendiente";
     let pedidoPagado = false;
 
-    // NUEVA LÓGICA: Pago Post-Surtido para métodos de contado
-    // Los pedidos de contado (mercadopago/transferencia) se crean como "Esperando Surtido"
-    // El pago se procesa DESPUÉS de que el admin genere la remisión
+    // Lógica de estatus según método de pago
     if (metodoPago === "mercadopago") {
       pedidoPagado = false;
       pedidoEstatus = "Esperando Surtido";
-      pedidoTransaccionId = null; // No se procesa pago aún
+      pedidoTransaccionId = null;
+      pedidoComprobanteUrl = null;
     } else if (metodoPago === "transferencia") {
-      pedidoPagado = false;
-      pedidoEstatus = "Esperando Surtido";
-      pedidoComprobanteUrl = null; // No se requiere comprobante aún
+      // Si se subió comprobante, el pedido está pagado y confirmado
+      if (comprobanteUrl) {
+        pedidoPagado = true;
+        pedidoEstatus = "Confirmado";
+        pedidoComprobanteUrl = comprobanteUrl;
+      } else {
+        // Si NO se subió comprobante, se espera pago post-surtido
+        pedidoPagado = false;
+        pedidoEstatus = "Esperando Surtido";
+        pedidoComprobanteUrl = null;
+      }
     } else if (metodoPago === "contra_entrega") {
-      // NUEVO: Pago contra entrega - se paga al agente al recibir
       pedidoPagado = false;
-      pedidoEstatus = "Confirmado"; // Listo para surtir
+      pedidoEstatus = "Confirmado";
       pedidoTransaccionId = null;
       pedidoComprobanteUrl = null;
     } else if (metodoPagoEsCredito) {
       pedidoPagado = false;
       pedidoEstatus = "Aprobado";
+      pedidoComprobanteUrl = null;
     }
 
     async function registrarPedido() {
@@ -1124,11 +1141,15 @@ const crearPedido = async (req, res) => {
         return sum + (parseFloat(d.precioPorPaquete || 0) * (d.cantidad || 0));
       }, 0);
 
+      // Calcular costo de envío (diferencia entre total y subtotal si aplica descuento)
+      const costoEnvio = 0; // Por ahora el sistema no cobra envío
+      const descuentoAplicado = montoDescuento || 0;
+
       const orderDetails = {
         id: pedido.pedidoid,
         items: productosParaEmail,
         subtotal: `$${subtotalCalculado.toFixed(2)}`,
-        shipping: costoEnvio ? `$${parseFloat(costoEnvio).toFixed(2)}` : '$0.00',
+        shipping: `$${costoEnvio.toFixed(2)}`,
         total: `$${parseFloat(pedido.montototal).toFixed(2)}`
       };
 

@@ -1228,7 +1228,6 @@ const getCurrentUser = async (req, res) => {
             Nombre,
             Apellido,
             Email,
-            NombreEmpresa,
             AgenteID
           FROM clientes
           WHERE ClienteID = $1 AND tenant_id = $2
@@ -1245,12 +1244,12 @@ const getCurrentUser = async (req, res) => {
         const cliente = clienteResult.rows[0];
         const nombreCliente = `${cliente.nombre} ${cliente.apellido}`.trim();
         userData = {
-          nombre: nombreCliente || cliente.nombreempresa,
+          nombre: nombreCliente,
           email: cliente.email,
-          rol: cliente.nombreempresa ? "Cliente - " + cliente.nombreempresa : "Cliente",
-          iniciales: getIniciales(nombreCliente || cliente.nombreempresa),
+          rol: "Cliente",
+          iniciales: getIniciales(nombreCliente),
           tipo: "cliente",
-          empresa: cliente.nombreempresa,
+          empresa: null, // La tabla clientes no tiene campo nombreempresa
           agenteid: cliente.agenteid,
         };
         break;
