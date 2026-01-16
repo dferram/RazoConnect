@@ -1,4 +1,4 @@
-const pool = require("../../db");
+const { pool } = require("../../db");
 const bcrypt = require("bcrypt");
 
 async function actualizarPerfil(req, res) {
