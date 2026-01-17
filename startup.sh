@@ -17,38 +17,37 @@ if [ ! -f "package.json" ]; then
   exit 1
 fi
 
-echo "package.json encontrado"
+echo "✓ package.json encontrado"
 
-# Verificar si node_modules existe
-if [ ! -d "node_modules" ]; then
-  echo "node_modules no encontrado. Instalando dependencias..."
-  npm install --production --no-optional
-else
-  echo "node_modules encontrado"
+# SIEMPRE reinstalar dependencias para asegurar que estén actualizadas
+echo "Instalando/Actualizando dependencias..."
+npm install --production --omit=dev 2>&1 | tee /tmp/npm-install.log
+
+# Verificar que la instalación fue exitosa
+if [ $? -ne 0 ]; then
+  echo "❌ ERROR: npm install falló"
+  cat /tmp/npm-install.log
+  exit 1
 fi
 
 # Verificar que dotenv está instalado
 if [ ! -d "node_modules/dotenv" ]; then
-  echo "❌ ERROR: dotenv no encontrado. Reinstalando dependencias..."
-  rm -rf node_modules package-lock.json
-  npm install --production --no-optional
-fi
-
-# Verificar nuevamente
-if [ ! -d "node_modules/dotenv" ]; then
-  echo "❌ ERROR CRÍTICO: No se pudo instalar dotenv"
+  echo "❌ ERROR CRÍTICO: dotenv no se instaló correctamente"
   echo "Contenido de node_modules:"
   ls -la node_modules/ 2>/dev/null || echo "node_modules no existe"
+  echo ""
+  echo "Log de npm install:"
+  cat /tmp/npm-install.log
   exit 1
 fi
 
-echo "Todas las dependencias verificadas"
+echo "✓ Todas las dependencias instaladas correctamente"
 echo ""
 echo "Información del sistema:"
 echo "Node version: $(node --version)"
 echo "NPM version: $(npm --version)"
 echo "Working directory: $(pwd)"
-echo "Total modules: $(ls -1 node_modules 2>/dev/null | wc -l)"
+echo "Total modules instalados: $(ls -1 node_modules 2>/dev/null | wc -l)"
 echo ""
 echo "Iniciando servidor Node.js..."
 
