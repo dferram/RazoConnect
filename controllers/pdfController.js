@@ -21,7 +21,6 @@ async function generarPDFPedido(req, res) {
                 p.estatus,
                 c.nombre AS cliente_nombre,
                 c.apellido AS cliente_apellido,
-                c.razonsocial AS cliente_razon_social,
                 c.telefono AS cliente_telefono,
                 c.email AS cliente_email,
                 cd.calle,
@@ -52,14 +51,14 @@ async function generarPDFPedido(req, res) {
 
         const detallesQuery = await db.query(
             `SELECT 
-                dp.cantidad,
+                dp.cantidadpaquetes AS cantidad,
                 dp.preciounitario,
-                dp.subtotal,
-                p.nombre AS producto_nombre,
-                pv.nombre AS variante_nombre,
+                dp.piezastotales,
+                (dp.preciounitario * dp.piezastotales) AS subtotal,
+                p.nombreproducto AS producto_nombre,
+                COALESCE(pv.dimensiones, pv.color_nombre, 'Estándar') AS variante_nombre,
                 pv.sku,
-                t.etiqueta AS tamano_etiqueta,
-                t.valor AS tamano_valor
+                t.cantidad AS tamano_cantidad
             FROM detallesdelpedido dp
             INNER JOIN producto_variantes pv ON dp.varianteid = pv.varianteid
             INNER JOIN productos p ON pv.productoid = p.productoid AND p.tenant_id = $2
@@ -131,8 +130,7 @@ async function generarPDFPedido(req, res) {
            .fillColor('#F97316')
            .text('INFORMACIÓN DEL CLIENTE', 50, 150);
 
-        const clienteNombre = pedido.cliente_razon_social || 
-                             `${pedido.cliente_nombre || ''} ${pedido.cliente_apellido || ''}`.trim();
+        const clienteNombre = `${pedido.cliente_nombre || ''} ${pedido.cliente_apellido || ''}`.trim();
 
         doc.fontSize(10)
            .font('Helvetica')
@@ -202,7 +200,7 @@ async function generarPDFPedido(req, res) {
                .text(item.cantidad, 55, yPosition)
                .text(`${item.producto_nombre}`, 110, yPosition, { width: 230 })
                .text(`${item.variante_nombre}`, 110, yPosition + 10, { width: 230 })
-               .text(item.tamano_etiqueta || 'N/A', 350, yPosition)
+               .text(item.tamano_cantidad ? `Pack ${item.tamano_cantidad}` : 'Unitario', 350, yPosition)
                .text(`$${parseFloat(item.preciounitario).toFixed(2)}`, 420, yPosition)
                .text(`$${parseFloat(item.subtotal).toFixed(2)}`, 510, yPosition, { align: 'right', width: 50 });
 
