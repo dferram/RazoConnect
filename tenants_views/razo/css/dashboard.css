@@ -189,9 +189,61 @@
     grid-template-columns: 1fr;
   }
   
+  .dashboard-direccion-grid-2col {
+    grid-template-columns: 1fr;
+  }
+  
   .dashboard-modal-content,
   .dashboard-modal-content-small {
     width: 95%;
     padding: 1.5rem;
+  }
+  
+  /* Fix card header on mobile - stack vertically */
+  .dashboard-card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
+  .dashboard-btn-with-icon {
+    width: 100%;
+    justify-content: center;
+    margin-top: 0.5rem;
+  }
+  
+  /* Fix section headers on mobile */
+  .dashboard-section-header,
+  .dashboard-section-header-notif {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
+  .dashboard-section-header button,
+  .dashboard-section-header-notif button {
+    width: 100%;
+  }
+  
+  /* Fix tabs on mobile - prevent overflow */
+  .tabs {
+    flex-wrap: wrap;
+    gap: 0.25rem;
+  }
+  
+  .tab {
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+    flex: 1 1 auto;
+    min-width: fit-content;
+  }
+  
+  /* Fix form actions on mobile */
+  .dashboard-form-actions {
+    flex-direction: column;
+  }
+  
+  .dashboard-btn-flex {
+    width: 100%;
   }
 }

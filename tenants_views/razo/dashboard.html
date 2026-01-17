@@ -166,13 +166,14 @@
       }
 
       .modal-content {
-        background: var(--surface);
-        border-radius: 0.5rem;
+        background: #ffffff;
+        border-radius: 15px;
         padding: 2rem;
         max-width: 600px;
         width: 90%;
         max-height: 90vh;
         overflow-y: auto;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
       }
 
       /* Notificaciones */
@@ -1774,11 +1775,25 @@
           });
 
           if (!response.ok) {
-            throw new Error('Error al generar el PDF');
+            // Intentar obtener el mensaje de error del servidor
+            const contentType = response.headers.get('content-type');
+            if (contentType && contentType.includes('application/json')) {
+              const errorData = await response.json();
+              const errorMsg = errorData.message || errorData.error || 'Error al generar el PDF';
+              console.error('Error del servidor:', errorData);
+              throw new Error(errorMsg);
+            } else {
+              throw new Error(`Error del servidor: ${response.status} ${response.statusText}`);
+            }
           }
 
           // Convertir respuesta a blob
           const blob = await response.blob();
+          
+          // Verificar que el blob no esté vacío
+          if (blob.size === 0) {
+            throw new Error('El PDF generado está vacío');
+          }
           
           // Crear URL temporal del blob
           const blobUrl = window.URL.createObjectURL(blob);
@@ -1792,7 +1807,7 @@
           showToast('PDF generado correctamente', 'success');
         } catch (error) {
           console.error('Error al descargar PDF:', error);
-          showToast('Error al generar el PDF. Intenta de nuevo.', 'error');
+          showToast(error.message || 'Error al generar el PDF. Intenta de nuevo.', 'error');
         }
       }
     </script>

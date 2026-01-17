@@ -275,8 +275,20 @@ async function generarPDFPedido(req, res) {
 
     } catch (error) {
         console.error('Error generando PDF:', error);
+        console.error('Stack trace:', error.stack);
+        console.error('Error details:', {
+            message: error.message,
+            code: error.code,
+            name: error.name
+        });
+        
         if (!res.headersSent) {
-            res.status(500).json({ error: 'Error al generar el PDF' });
+            res.status(500).json({ 
+                success: false,
+                error: 'Error al generar el PDF',
+                message: error.message,
+                details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+            });
         }
     }
 }

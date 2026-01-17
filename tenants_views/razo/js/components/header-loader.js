@@ -283,10 +283,21 @@
     }
 
     // Listen for auth changes
-    window.addEventListener('razoconnect:auth-changed', () => {
-      setTimeout(() => {
-        location.reload();
-      }, 500);
+    window.addEventListener('razoconnect:auth-changed', async () => {
+      // Update header dynamically without full page reload
+      const tokenCliente = getTokenCliente();
+      const hasCreditAccess = await verificarCreditoCliente(tokenCliente);
+      
+      actualizarIndicadorCredito({
+        hasCreditAccess,
+        isAuthenticated: Boolean(tokenCliente),
+      });
+      
+      inicializarUsuario();
+      actualizarNotificaciones();
+      actualizarBadgeCarrito();
+      
+      console.log('✅ Header actualizado tras login');
     });
   }
 
