@@ -14,6 +14,7 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/carrito-styles.css" />
     <link rel="stylesheet" href="css/mobile-responsive.css" />
     <style>
       .modal {
@@ -651,13 +652,13 @@
   <body>
     <div id="header-container"></div>
 
-    <div class="container main-content-spacer" style="padding-bottom: 3rem">
+    <div class="container main-content-spacer cart-page-container">
       <!-- Header -->
-      <div style="margin-bottom: 2rem">
-        <h1 style="font-size: 2rem; font-weight: bold; margin-bottom: 0.5rem">
+      <div class="cart-page-header">
+        <h1 class="cart-page-title">
           Mi carrito de compras
         </h1>
-        <p style="color: #6b7280; font-size: 0.95rem">
+        <p class="cart-page-subtitle">
           Revisa y confirma tus productos antes de finalizar tu pedido
         </p>
       </div>
@@ -668,7 +669,7 @@
       </div>
 
       <!-- Empty State -->
-      <div id="emptyState" class="empty-state" style="display: none">
+      <div id="emptyState" class="empty-state cart-empty-state">
         <div class="empty-state-icon">🛒</div>
         <h2 class="empty-state-title">Tu carrito está vacío</h2>
         <p class="empty-state-text">Agrega productos para comenzar tu compra</p>
@@ -676,30 +677,17 @@
       </div>
 
       <!-- Cart Content -->
-      <div id="cartContent" style="display: none">
-        <div
-          style="
-            display: grid;
-            grid-template-columns: 1fr 350px;
-            gap: 2rem;
-            align-items: start;
-          "
-        >
+      <div id="cartContent" class="cart-content-wrapper">
+        <div class="cart-main-grid">
           <!-- Cart Items -->
           <div>
             <div id="cartItems"></div>
           </div>
 
           <!-- Summary -->
-          <div style="position: sticky; top: 100px">
+          <div class="cart-summary-sticky">
             <div class="summary">
-              <h3
-                style="
-                  font-size: 1.25rem;
-                  font-weight: 600;
-                  margin-bottom: 1rem;
-                "
-              >
+              <h3 class="cart-summary-title">
                 Resumen del pedido
               </h3>
 
@@ -714,27 +702,25 @@
               </div>
 
               <!-- Cupón de descuento -->
-              <div style="margin: 1rem 0; padding-top: 1rem; border-top: 1px solid #e5e7eb;">
-                <label style="font-size: 0.9rem; font-weight: 600; color: #374151; margin-bottom: 0.5rem; display: block;">¿Tienes un cupón?</label>
-                <div style="display: flex; gap: 0.5rem; width: 100%;">
+              <div class="cupon-section">
+                <label class="cupon-label">¿Tienes un cupón?</label>
+                <div class="cupon-input-wrapper">
                   <input 
                     type="text" 
                     id="cupon-input" 
-                    placeholder="Código de cupón" 
-                    style="flex: 1; min-width: 0; padding: 0.6rem 0.75rem; border: 1px solid #d1d5db; border-radius: 0.5rem; font-size: 0.9rem; text-transform: uppercase;"
+                    placeholder="Código de cupón"
                   />
                   <button 
                     id="btn-aplicar-cupon" 
-                    class="btn btn-outline-primary" 
-                    style="padding: 0.6rem 0.75rem; white-space: nowrap; flex-shrink: 0;"
+                    class="btn btn-outline-primary"
                   >
                     Aplicar
                   </button>
                 </div>
-                <div id="cupon-mensaje" style="margin-top: 0.5rem; font-size: 0.85rem; display: none;"></div>
+                <div id="cupon-mensaje"></div>
               </div>
 
-              <div id="descuento-row" class="summary-row" style="display: none; color: #059669;">
+              <div id="descuento-row" class="summary-row">
                 <span>Descuento:</span>
                 <span id="summaryDescuento">-$0.00</span>
               </div>
@@ -750,18 +736,13 @@
 
               <a
                 href="/catalogo.html"
-                class="btn btn-secondary btn-block mt-2"
-                style="
-                  text-decoration: none;
-                  display: block;
-                  text-align: center;
-                "
+                class="btn btn-secondary btn-block mt-2 cart-action-link"
               >
                 Agregar más productos
               </a>
             </div>
 
-            <div class="alert alert-info mt-3" style="font-size: 0.875rem">
+            <div class="alert alert-info mt-3 cart-info-alert">
               💡 <strong>Nota:</strong> Los precios son por paquete. Cada
               paquete contiene múltiples piezas según el producto.
             </div>
@@ -772,51 +753,26 @@
 
     <!-- Modal: Success -->
     <div id="modalSuccess" class="modal">
-      <div
-        class="modal-content"
-        style="
-          background: white;
-          padding: 3rem;
-          border-radius: 1rem;
-          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-          max-width: 500px;
-          text-align: center;
-        "
-      >
-        <div style="font-size: 4rem; margin-bottom: 1rem">✅</div>
-        <h2
-          style="
-            font-size: 2rem;
-            font-weight: bold;
-            margin-bottom: 1rem;
-            color: var(--success-color);
-          "
-        >
+      <div class="modal-content modal-success-content">
+        <div class="modal-success-icon">✅</div>
+        <h2 class="modal-success-title">
           ¡Pedido confirmado!
         </h2>
-        <p
-          style="
-            font-size: 1rem;
-            color: var(--text-secondary);
-            margin-bottom: 2rem;
-          "
-        >
+        <p class="modal-success-text">
           Tu pedido ha sido creado exitosamente. Pronto recibirás una
           confirmación.
         </p>
 
-        <div style="display: flex; flex-direction: column; gap: 1rem">
+        <div class="modal-success-actions">
           <a
             href="/catalogo.html"
-            class="btn btn-primary"
-            style="width: 100%; text-decoration: none; text-align: center"
+            class="btn btn-primary modal-success-link"
           >
             Seguir comprando
           </a>
           <a
             href="/dashboard.html"
-            class="btn btn-secondary"
-            style="width: 100%; text-decoration: none; text-align: center"
+            class="btn btn-secondary modal-success-link"
           >
             Ver mis pedidos
           </a>
@@ -826,95 +782,35 @@
 
     <!-- Modal: Confirm Delete -->
     <div id="modalEliminar" class="modal">
-      <div
-        class="modal-content"
-        style="
-          background: white;
-          padding: 2.5rem;
-          border-radius: 1.5rem;
-          box-shadow: 0 25px 70px rgba(0, 0, 0, 0.3);
-          max-width: 420px;
-          text-align: center;
-          position: relative;
-        "
-      >
-        <div style="margin-bottom: 1.5rem">
-          <div
-            style="
-              width: 70px;
-              height: 70px;
-              background: linear-gradient(
-                135deg,
-                var(--razo-orange) 0%,
-                var(--razo-orange-dark) 100%
-              );
-              border-radius: 50%;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              margin: 0 auto 1.25rem;
-              font-size: 2rem;
-              box-shadow: 0 10px 25px rgba(255, 119, 51, 0.35);
-            "
-          >
+      <div class="modal-content modal-eliminar-content">
+        <div class="modal-eliminar-body">
+          <div class="modal-eliminar-icon-wrapper">
             🗑️
           </div>
-          <h2
-            style="
-              font-size: 1.5rem;
-              font-weight: 700;
-              margin-bottom: 0.75rem;
-              color: #2d3748;
-            "
-          >
+          <h2 class="modal-eliminar-title">
             ¿Eliminar producto?
           </h2>
-          <p style="color: #718096; font-size: 1rem; line-height: 1.5">
+          <p class="modal-eliminar-text">
             ¿Deseas eliminar "<span id="modalEliminarNombre"></span>" del
             carrito?
           </p>
         </div>
 
-        <div
-          style="
-            display: flex;
-            gap: 0.75rem;
-            justify-content: center;
-            flex-wrap: wrap;
-          "
-        >
+        <div class="modal-eliminar-actions">
           <button
-            class="btn btn-secondary"
+            class="btn btn-secondary modal-eliminar-btn"
             id="btnCancelarEliminar"
-            style="
-              flex: 1;
-              min-width: 160px;
-              padding: 0.875rem 1.5rem;
-              font-size: 0.9375rem;
-            "
           >
             Cancelar
           </button>
           <button
-            class="btn btn-danger"
+            class="btn btn-danger modal-eliminar-btn"
             id="btnConfirmarEliminar"
-            style="
-              flex: 1;
-              min-width: 160px;
-              padding: 0.875rem 1.5rem;
-              font-size: 0.9375rem;
-            "
           >
             <span id="btnEliminarText">Eliminar producto</span>
             <div
-              class="spinner"
+              class="spinner modal-eliminar-spinner"
               id="btnEliminarSpinner"
-              style="
-                display: none;
-                width: 20px;
-                height: 20px;
-                border-width: 2px;
-              "
             ></div>
           </button>
         </div>
@@ -923,24 +819,15 @@
 
     <!-- Modal: Checkout -->
     <div id="modalCheckout" class="modal">
-      <div
-        class="modal-content"
-        style="
-          background: white;
-          padding: 2rem;
-          border-radius: 1rem;
-          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-          max-width: 600px;
-        "
-      >
-        <h2 style="font-size: 1.5rem; font-weight: bold; margin-bottom: 1.5rem">
+      <div class="modal-content modal-checkout-content">
+        <h2 class="modal-checkout-title">
           Finalizar pedido
         </h2>
 
         <div id="checkoutContent">
           <!-- Step 1: Select Address -->
           <div id="stepDireccion">
-            <h3 style="font-weight: 600; margin-bottom: 1rem">
+            <h3 class="modal-checkout-section-title">
               Selecciona tu dirección de envío
             </h3>
 
@@ -950,34 +837,31 @@
 
             <div id="direccionesList" class="direcciones-container"></div>
 
-            <div id="noDirecciones" style="display: none">
+            <div id="noDirecciones" class="modal-checkout-no-direcciones">
               <div class="alert alert-info">
                 No tienes direcciones guardadas.
-                <a
-                  href="/dashboard.html"
-                  style="color: var(--primary-color); font-weight: 600"
-                  >Agregar una dirección</a
-                >
+                <a href="/dashboard.html" class="alert-link">
+                  Agregar una dirección
+                </a>
               </div>
             </div>
 
-            <div id="paymentSection" style="margin-top: 1.75rem">
+            <div id="paymentSection" class="modal-checkout-payment-section">
               <div class="payment-section-header">
                 <h4>Selecciona método de pago</h4>
-                <span class="payment-inline-helper"
+                <span class="modal-checkout-payment-helper"
                   >Puedes elegir la opción que mejor se adapte a esta compra.</span
                 >
               </div>
 
               <div class="payment-options-grid" id="paymentOptions">
                 <label
-                  class="payment-option-card disabled"
+                  class="payment-option-card disabled payment-option-mercadopago-disabled"
                   id="paymentOptionMercadoPago"
                   data-method="mercadopago"
-                  style="pointer-events: none;"
                 >
                   <div class="payment-option-top">
-                    <div class="payment-option-icon" style="opacity: 0.5;">💳</div>
+                    <div class="payment-option-icon payment-option-mercadopago-icon-disabled">💳</div>
                     <input
                       type="radio"
                       name="metodo_pago"
@@ -986,14 +870,14 @@
                     />
                   </div>
                   <div class="payment-option-content">
-                    <h5 style="opacity: 0.6;">Mercado Pago</h5>
-                    <p style="opacity: 0.6;">Paga con tarjeta o saldo digital y recibe confirmación inmediata.</p>
-                    <div style="margin-top: 0.75rem; padding: 0.5rem 0.75rem; background: #fef3c7; border: 1px solid #fbbf24; border-radius: 0.5rem; font-size: 0.85rem; color: #92400e;">
+                    <h5 class="payment-option-mercadopago-title-disabled">Mercado Pago</h5>
+                    <p class="payment-option-mercadopago-text-disabled">Paga con tarjeta o saldo digital y recibe confirmación inmediata.</p>
+                    <div class="payment-option-mercadopago-warning">
                       ⚠️ <strong>Temporalmente no disponible.</strong><br>
                       Por favor, utiliza Crédito Razo o transferencia.
                     </div>
                   </div>
-                  <span class="payment-option-chip payment-chip-digital" style="opacity: 0.5;">
+                  <span class="payment-option-chip payment-chip-digital payment-option-mercadopago-chip-disabled">
                     No disponible
                   </span>
                 </label>
@@ -1008,13 +892,13 @@
                     <input type="radio" name="metodo_pago" value="credito" checked />
                   </div>
                   <div class="payment-option-content">
-                    <h5 style="margin-bottom: 0.5rem;">Crédito Razo</h5>
+                    <h5 class="payment-option-credito-title">Crédito Razo</h5>
                     <div class="credit-amount-display" id="creditAmountDisplay">
                       <div class="credit-amount-value" id="creditCardBalanceText">$0.00</div>
                       <div class="credit-amount-label">Disponible para comprar ahora</div>
                     </div>
                     <div class="credit-capacity-bar" id="creditCapacityBar">
-                      <div class="credit-capacity-fill" id="creditCapacityFill" style="width: 0%"></div>
+                      <div class="credit-capacity-fill" id="creditCapacityFill"></div>
                     </div>
                   </div>
                   <span class="credit-status-badge" id="badge-estado-credito"></span>
@@ -1043,10 +927,9 @@
                 </label>
 
                 <label
-                  class="payment-option-card"
+                  class="payment-option-card payment-option-contra-entrega"
                   id="paymentOptionContraEntrega"
                   data-method="contra_entrega"
-                  style="display: none;"
                 >
                   <div class="payment-option-top">
                     <div class="payment-option-icon">🚚</div>
@@ -1142,7 +1025,7 @@
                         />
                       </div>
                     </div>
-                    <div class="mp-form-field" style="margin-top: 0.25rem">
+                    <div class="mp-form-field">
                       <label for="mpIdentificationNumber">Documento (opcional)</label>
                       <input
                         type="text"
@@ -1153,20 +1036,20 @@
                         readonly
                       />
                     </div>
-                    <small style="color: #6b7280"
+                    <small class="mp-form-helper"
                       >Este formulario usa la Public Key de prueba suministrada por Mercado Pago.</small
                     >
                   </div>
                 </section>
 
-                <section class="payment-info-card" id="info-credito" style="display: none;">
+                <section class="payment-info-card" id="info-credito">
                   <!-- Alerta informativa sobre cargo diferido -->
-                  <div class="alert alert-info" style="margin-bottom: 1.5rem; border-radius: 0.75rem; border-left: 4px solid #3b82f6; background: #eff6ff; padding: 1rem 1.25rem;">
-                    <div style="display: flex; align-items: flex-start; gap: 0.75rem;">
-                      <div style="font-size: 1.25rem; color: #3b82f6; margin-top: 0.1rem;">ℹ️</div>
-                      <div style="flex: 1;">
-                        <strong style="color: #1e40af; display: block; margin-bottom: 0.35rem;">Información importante sobre el cargo a crédito</strong>
-                        <p style="margin: 0; color: #1e3a8a; font-size: 0.9rem; line-height: 1.5;">
+                  <div class="alert alert-info credit-info-alert">
+                    <div>
+                      <div class="credit-info-icon">ℹ️</div>
+                      <div>
+                        <strong>Información importante sobre el cargo a crédito</strong>
+                        <p>
                           Al seleccionar crédito, <strong>tu saldo disponible no se verá afectado de inmediato</strong>. 
                           El cargo oficial se realizará únicamente hasta que nuestro equipo de almacén confirme la 
                           disponibilidad de tus productos y procese la orden. De esta forma, solo pagas por lo que 
@@ -1203,7 +1086,7 @@
                   </div>
                 </section>
 
-                <section class="payment-info-card" id="info-transferencia" style="display: none;">
+                <section class="payment-info-card" id="info-transferencia">
                   <div class="bank-info-card">
                     <div class="bank-info-header">
                       <div>
@@ -1247,7 +1130,7 @@
                         accept="image/*"
                         class="form-control"
                       />
-                      <div class="upload-chip" id="transferFileChip" style="display: none">
+                      <div class="upload-chip" id="transferFileChip">
                         <i class="bi bi-paperclip"></i>
                         <span id="transferFileName"></span>
                         <button type="button" id="btnRemoveTransferFile" aria-label="Eliminar archivo">
@@ -1259,13 +1142,13 @@
                   </div>
                 </section>
 
-                <section class="payment-info-card" id="info-contra-entrega" style="display: none;">
-                  <div class="alert alert-warning" style="margin-bottom: 0; border-radius: 0.75rem; border-left: 4px solid #f59e0b; background: #fffbeb; padding: 1rem 1.25rem;">
-                    <div style="display: flex; align-items: flex-start; gap: 0.75rem;">
-                      <div style="font-size: 1.25rem; color: #f59e0b; margin-top: 0.1rem;">⚠️</div>
-                      <div style="flex: 1;">
-                        <strong style="color: #92400e; display: block; margin-bottom: 0.35rem;">Nota importante sobre el pago contra entrega</strong>
-                        <p style="margin: 0; color: #78350f; font-size: 0.9rem; line-height: 1.5;">
+                <section class="payment-info-card" id="info-contra-entrega">
+                  <div class="alert alert-warning contra-entrega-alert">
+                    <div>
+                      <div class="contra-entrega-alert-icon">⚠️</div>
+                      <div>
+                        <strong>Nota importante sobre el pago contra entrega</strong>
+                        <p>
                           Al elegir este método, <strong>el pago se realizará directamente con tu agente al momento de recibir la mercancía</strong>. 
                           Es indispensable entregar la remisión firmada como comprobante de recepción y pago.
                         </p>
@@ -1277,27 +1160,19 @@
             </div>
 
             <!-- Buttons -->
-            <div style="display: flex; gap: 1rem; margin-top: 1.5rem">
+            <div class="checkout-actions">
               <button
                 class="btn btn-success"
-                style="flex: 1"
                 id="btnConfirmarPedido"
               >
                 <span id="btnConfirmarText">Confirmar pedido</span>
                 <div
-                  class="spinner"
+                  class="spinner modal-checkout-btn-spinner"
                   id="btnConfirmarSpinner"
-                  style="
-                    display: none;
-                    width: 20px;
-                    height: 20px;
-                    border-width: 2px;
-                  "
                 ></div>
               </button>
               <button
                 class="btn btn-secondary"
-                style="flex: 1"
                 id="btnCancelarCheckout"
               >
                 Cancelar
@@ -1309,72 +1184,31 @@
     </div>
     <!-- Modal: Cambiar Variante -->
     <div id="modalCambiarVariante" class="modal">
-      <div
-        class="modal-content"
-        style="
-          background: white;
-          padding: 2.5rem 2.5rem 2.25rem;
-          border-radius: 1rem;
-          box-shadow: 0 24px 60px rgba(15, 23, 42, 0.45);
-          max-width: 900px;
-          width: 95%;
-        "
-      >
-        <div
-          style="
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.75rem;
-          "
-        >
+      <div class="modal-content modal-cambiar-variante-content">
+        <div class="modal-cambiar-variante-header">
           <h2
             id="modalCambiarVarianteTitle"
-            style="font-size: 1.35rem; font-weight: 700; margin: 0; color: #111827;"
+            class="modal-cambiar-variante-title"
           >
             Cambiar medida
           </h2>
           <button
             id="btnCerrarCambiarVariante"
-            style="
-              border: none;
-              background: transparent;
-              font-size: 1.25rem;
-              cursor: pointer;
-              color: var(--text-secondary);
-            "
+            class="modal-cambiar-variante-close"
             aria-label="Cerrar"
           >
             ×
           </button>
         </div>
 
-        <div
-          style="
-            display: grid;
-            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-            gap: 2rem;
-            align-items: stretch;
-          "
-        >
+        <div class="modal-cambiar-variante-grid">
           <div>
-            <div
-              style="
-                border-radius: 0.75rem;
-                overflow: hidden;
-                background: var(--razo-gray-light, #f3f4f6);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                height: 100%;
-                min-height: 260px;
-              "
-            >
+            <div class="modal-cambiar-variante-image-wrapper">
               <img
                 id="modalCambiarVarianteImage"
                 src=""
                 alt=""
-                style="width: 100%; height: 100%; object-fit: contain; display: block;"
+                class="modal-cambiar-variante-image"
               />
             </div>
           </div>
@@ -1382,22 +1216,10 @@
           <div>
             <p
               id="modalCambiarVariantePrecio"
-              style="
-                font-weight: 700;
-                font-size: 1.25rem;
-                margin-bottom: 1.25rem;
-                color: #111827;
-              "
+              class="modal-cambiar-variante-precio"
             ></p>
 
-            <p
-              style="
-                font-size: 0.9rem;
-                color: var(--text-secondary);
-                margin-bottom: 0.5rem;
-              "
-            >
-              Selecciona una medida:
+            <p class="modal-cambiar-variante-label">  Selecciona una medida:
             </p>
 
             <div
@@ -1407,8 +1229,7 @@
 
             <button
               id="btnActualizarVariante"
-              class="btn btn-primary"
-              style="margin-top: 2.5rem; width: 100%"
+              class="btn btn-primary modal-cambiar-variante-btn"
               disabled
             >
               Actualizar producto

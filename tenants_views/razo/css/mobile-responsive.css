@@ -706,6 +706,51 @@ html, body {
     position: static !important;
     width: 100% !important;
     margin-bottom: 1.5rem !important;
+    padding: 1rem !important;
+  }
+
+  /* Coupon section - mobile optimizations */
+  .cupon-section {
+    margin-left: -0.5rem !important;
+    margin-right: -0.5rem !important;
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
+  }
+
+  .cupon-input-wrapper {
+    display: grid !important;
+    grid-template-columns: 1fr auto !important;
+    gap: 0.5rem !important;
+    width: 100% !important;
+  }
+
+  #cupon-input {
+    font-size: 14px !important;
+    padding: 0.65rem 0.75rem !important;
+    min-width: 0 !important;
+    width: 100% !important;
+    border: 1px solid #d1d5db !important;
+    border-radius: 0.5rem !important;
+    background: white !important;
+    position: relative !important;
+    z-index: 1 !important;
+    pointer-events: auto !important;
+  }
+
+  #cupon-input:focus {
+    outline: none !important;
+    border-color: var(--razo-orange, #F97316) !important;
+    box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.2) !important;
+  }
+
+  #btn-aplicar-cupon {
+    font-size: 14px !important;
+    padding: 0.65rem 0.85rem !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+    min-width: -webkit-fit-content !important;
+    min-width: -moz-fit-content !important;
+    min-width: fit-content !important;
   }
 
   /* ========== PRODUCT GRID - NIKE STYLE 2 COLUMNS ========== */
@@ -1177,6 +1222,58 @@ html, body {
   .swiper-button-next::after,
   .swiper-button-prev::after {
     font-size: 1rem !important;
+  }
+
+  /* ========== PRODUCT DETAIL - VARIANT CAROUSEL ========== */
+  
+  /* Nike variant selector - horizontal scroll on mobile */
+  .nike-thumbnails-row {
+    display: flex !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    white-space: nowrap !important;
+    -webkit-overflow-scrolling: touch !important;
+    scroll-behavior: smooth !important;
+    padding-bottom: 10px !important;
+    gap: 0.65rem !important;
+  }
+
+  /* Remove any flex-wrap that forces items to wrap */
+  .nike-thumbnails-row {
+    flex-wrap: nowrap !important;
+  }
+
+  /* Ensure thumbnails don't shrink */
+  .nike-thumb {
+    flex: 0 0 auto !important;
+    width: 60px !important;
+    height: 60px !important;
+    min-width: 60px !important;
+  }
+
+  /* Main product gallery thumbnails - horizontal scroll */
+  .galeria-thumbnails {
+    display: flex !important;
+    flex-direction: row !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    white-space: nowrap !important;
+    -webkit-overflow-scrolling: touch !important;
+    scroll-behavior: smooth !important;
+    padding-bottom: 10px !important;
+    width: 100% !important;
+    max-height: none !important;
+  }
+
+  .galeria-thumbnails {
+    flex-wrap: nowrap !important;
+  }
+
+  .thumb-img {
+    flex: 0 0 auto !important;
+    width: 80px !important;
+    height: 80px !important;
+    min-width: 80px !important;
   }
 
   /* ========== SPACING UTILITIES ========== */

@@ -1,0 +1,21 @@
+{
+  "extends": [
+    "development"
+  ],
+  "hints": {
+    "compat-api/css": [
+      "default",
+      {
+        "ignore": [
+          "min-width: fit-content",
+          "-webkit-overflow-scrolling",
+          "text-size-adjust",
+          "scrollbar-width",
+          "scrollbar-width: none",
+          "scrollbar-color",
+          "scrollbar-width: thin"
+        ]
+      }
+    ]
+  }
+}
