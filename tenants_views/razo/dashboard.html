@@ -1755,16 +1755,45 @@
 
     <script>
       // Función para descargar PDF de remisión
-      function descargarPDFPedido(pedidoId) {
+      async function descargarPDFPedido(pedidoId) {
         const token = localStorage.getItem('token');
         if (!token) {
           showToast('Debes iniciar sesión para descargar el PDF', 'error');
           return;
         }
 
-        // Abrir el PDF en una nueva pestaña
-        const url = `/api/pedidos/${pedidoId}/pdf`;
-        window.open(url, '_blank');
+        try {
+          showToast('Generando PDF...', 'info');
+          
+          // Hacer petición con token de autenticación
+          const response = await fetch(`/api/pedidos/${pedidoId}/pdf`, {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+
+          if (!response.ok) {
+            throw new Error('Error al generar el PDF');
+          }
+
+          // Convertir respuesta a blob
+          const blob = await response.blob();
+          
+          // Crear URL temporal del blob
+          const blobUrl = window.URL.createObjectURL(blob);
+          
+          // Abrir en nueva pestaña
+          window.open(blobUrl, '_blank');
+          
+          // Liberar URL después de un tiempo
+          setTimeout(() => window.URL.revokeObjectURL(blobUrl), 100);
+          
+          showToast('PDF generado correctamente', 'success');
+        } catch (error) {
+          console.error('Error al descargar PDF:', error);
+          showToast('Error al generar el PDF. Intenta de nuevo.', 'error');
+        }
       }
     </script>
 
