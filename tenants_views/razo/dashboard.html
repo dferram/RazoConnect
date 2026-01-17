@@ -1756,7 +1756,7 @@
     <script>
       // Función para descargar PDF de remisión
       async function descargarPDFPedido(pedidoId) {
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem('razoconnect_token');
         if (!token) {
           showToast('Debes iniciar sesión para descargar el PDF', 'error');
           return;
