@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "build": "echo 'No build needed' && exit 0",
+    "build": "npm install --production",
     "test": "echo \"No test specified\" && exit 0"
   },
   "keywords": [

@@ -15,10 +15,9 @@ async function generarPDFPedido(req, res) {
                 p.pedidoid,
                 p.clienteid,
                 p.fechapedido,
-                p.total,
-                p.subtotal,
+                p.montototal,
                 p.costoenvio,
-                p.descuento,
+                p.monto_descuento,
                 p.estatus,
                 c.nombre AS cliente_nombre,
                 c.apellido AS cliente_apellido,
@@ -35,7 +34,7 @@ async function generarPDFPedido(req, res) {
                 e.nombre AS estado_nombre
             FROM pedidos p
             INNER JOIN clientes c ON p.clienteid = c.clienteid
-            LEFT JOIN cliente_direcciones cd ON p.direccionid = cd.direccionid
+            LEFT JOIN cliente_direcciones cd ON p.direccionenvioid = cd.direccionid
             LEFT JOIN estados e ON cd.estadoid = e.estadoid
             WHERE p.pedidoid = $1 AND p.tenant_id = $2`,
             [pedidoId, tenant_id]
@@ -63,11 +62,11 @@ async function generarPDFPedido(req, res) {
                 t.valor AS tamano_valor
             FROM detallesdelpedido dp
             INNER JOIN producto_variantes pv ON dp.varianteid = pv.varianteid
-            INNER JOIN productos p ON pv.productoid = p.productoid
+            INNER JOIN productos p ON pv.productoid = p.productoid AND p.tenant_id = $2
             LEFT JOIN cat_tamanopaquetes t ON dp.tamanoid = t.tamanoid
             WHERE dp.pedidoid = $1
             ORDER BY dp.detalleid`,
-            [pedidoId]
+            [pedidoId, tenant_id]
         );
 
         const detalles = detallesQuery.rows;
@@ -220,11 +219,13 @@ async function generarPDFPedido(req, res) {
 
         yPosition += 15;
 
+        const subtotal = parseFloat(pedido.montototal) - parseFloat(pedido.costoenvio || 0) + parseFloat(pedido.monto_descuento || 0);
+
         doc.fontSize(10)
            .font('Helvetica')
            .fillColor('#333333')
            .text('Subtotal:', 400, yPosition)
-           .text(`$${parseFloat(pedido.subtotal).toFixed(2)}`, 510, yPosition, { align: 'right', width: 50 });
+           .text(`$${subtotal.toFixed(2)}`, 510, yPosition, { align: 'right', width: 50 });
 
         yPosition += 20;
 
@@ -234,10 +235,10 @@ async function generarPDFPedido(req, res) {
             yPosition += 20;
         }
 
-        if (pedido.descuento && parseFloat(pedido.descuento) > 0) {
+        if (pedido.monto_descuento && parseFloat(pedido.monto_descuento) > 0) {
             doc.fillColor('#DC2626')
                .text('Descuento:', 400, yPosition)
-               .text(`-$${parseFloat(pedido.descuento).toFixed(2)}`, 510, yPosition, { align: 'right', width: 50 });
+               .text(`-$${parseFloat(pedido.monto_descuento).toFixed(2)}`, 510, yPosition, { align: 'right', width: 50 });
             yPosition += 20;
         }
 
@@ -253,7 +254,7 @@ async function generarPDFPedido(req, res) {
            .font('Helvetica-Bold')
            .fillColor('#F97316')
            .text('TOTAL:', 400, yPosition)
-           .text(`$${parseFloat(pedido.total).toFixed(2)}`, 510, yPosition, { align: 'right', width: 50 });
+           .text(`$${parseFloat(pedido.montototal).toFixed(2)}`, 510, yPosition, { align: 'right', width: 50 });
 
         yPosition += 40;
 

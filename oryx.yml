@@ -5,7 +5,7 @@ build:
   # Forzar instalación de dependencias de producción
   npm:
     prune-dev-dependencies: true
-    run-build: false
+    run-build: true
     
 run:
   # Comando de inicio
