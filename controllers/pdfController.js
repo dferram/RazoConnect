@@ -54,6 +54,9 @@ async function generarPDFPedido(req, res) {
                 dp.preciounitario,
                 dp.piezastotales,
                 (dp.preciounitario * dp.piezastotales) AS subtotal,
+                dp.esbackorder,
+                dp.cantidadsurtida,
+                dp.cantidadbackorder,
                 p.nombreproducto AS producto_nombre,
                 COALESCE(pv.dimensiones, pv.color_nombre, 'Estándar') AS variante_nombre,
                 pv.sku,
@@ -99,8 +102,8 @@ async function generarPDFPedido(req, res) {
            .font('Helvetica')
            .fillColor('#333333')
            .text('Sistema de Gestión Comercial', logoExists ? 140 : 50, 75)
-           .text('Tel: (123) 456-7890', logoExists ? 140 : 50, 90)
-           .text('contacto@razoconnect.com', logoExists ? 140 : 50, 105);
+           .text('Tel: 55 6098 9524', logoExists ? 140 : 50, 90)
+           .text('fegarcia@hotmail.com', logoExists ? 140 : 50, 105);
 
         doc.fontSize(16)
            .font('Helvetica-Bold')
@@ -212,30 +215,71 @@ async function generarPDFPedido(req, res) {
 
         yPosition += 15;
 
-        const subtotal = parseFloat(pedido.montototal) - parseFloat(pedido.costoenvio || 0) + parseFloat(pedido.monto_descuento || 0);
+        // Calculate totals by stock status
+        let totalEnStock = 0;
+        let totalSinStock = 0;
 
+        detalles.forEach((item) => {
+            const itemSubtotal = parseFloat(item.subtotal);
+            
+            // If esbackorder is true, it's out of stock
+            if (item.esbackorder === true) {
+                totalSinStock += itemSubtotal;
+            } else {
+                totalEnStock += itemSubtotal;
+            }
+        });
+
+        const subtotalProductos = totalEnStock + totalSinStock;
+
+        // Display Total in Stock
         doc.fontSize(10)
            .font('Helvetica')
            .fillColor('#333333')
-           .text('Subtotal:', 400, yPosition)
-           .text(`$${subtotal.toFixed(2)}`, 510, yPosition, { align: 'right', width: 50 });
+           .text('Total Productos en Existencia:', 350, yPosition)
+           .text(`$${totalEnStock.toFixed(2)} MXN`, 510, yPosition, { align: 'right', width: 50 });
+
+        yPosition += 20;
+
+        // Display Total Pending (Out of Stock)
+        doc.fillColor('#DC2626')
+           .text('Total Productos bajo Pedido:', 350, yPosition)
+           .fillColor('#333333')
+           .text(`$${totalSinStock.toFixed(2)} MXN`, 510, yPosition, { align: 'right', width: 50 });
+
+        yPosition += 20;
+
+        // Separator line
+        doc.moveTo(350, yPosition)
+           .lineTo(562, yPosition)
+           .strokeColor('#CCCCCC')
+           .lineWidth(1)
+           .stroke();
+
+        yPosition += 10;
+
+        // Display Subtotal
+        doc.fillColor('#333333')
+           .text('Subtotal:', 350, yPosition)
+           .text(`$${subtotalProductos.toFixed(2)} MXN`, 510, yPosition, { align: 'right', width: 50 });
 
         yPosition += 20;
 
         if (pedido.costoenvio && parseFloat(pedido.costoenvio) > 0) {
-            doc.text('Costo de Envío:', 400, yPosition)
-               .text(`$${parseFloat(pedido.costoenvio).toFixed(2)}`, 510, yPosition, { align: 'right', width: 50 });
+            doc.fillColor('#333333')
+               .text('Costo de Envío:', 350, yPosition)
+               .text(`$${parseFloat(pedido.costoenvio).toFixed(2)} MXN`, 510, yPosition, { align: 'right', width: 50 });
             yPosition += 20;
         }
 
         if (pedido.monto_descuento && parseFloat(pedido.monto_descuento) > 0) {
             doc.fillColor('#DC2626')
-               .text('Descuento:', 400, yPosition)
-               .text(`-$${parseFloat(pedido.monto_descuento).toFixed(2)}`, 510, yPosition, { align: 'right', width: 50 });
+               .text('Descuento:', 350, yPosition)
+               .text(`-$${parseFloat(pedido.monto_descuento).toFixed(2)} MXN`, 510, yPosition, { align: 'right', width: 50 });
             yPosition += 20;
         }
 
-        doc.moveTo(400, yPosition)
+        doc.moveTo(350, yPosition)
            .lineTo(562, yPosition)
            .strokeColor('#F97316')
            .lineWidth(2)
@@ -246,10 +290,32 @@ async function generarPDFPedido(req, res) {
         doc.fontSize(12)
            .font('Helvetica-Bold')
            .fillColor('#F97316')
-           .text('TOTAL:', 400, yPosition)
-           .text(`$${parseFloat(pedido.montototal).toFixed(2)}`, 510, yPosition, { align: 'right', width: 50 });
+           .text('TOTAL DE LA ORDEN:', 350, yPosition)
+           .text(`$${parseFloat(pedido.montototal).toFixed(2)} MXN`, 510, yPosition, { align: 'right', width: 50 });
 
-        yPosition += 40;
+        yPosition += 30;
+
+        // Add informative note if there are backorder items
+        if (totalSinStock > 0) {
+            doc.fontSize(9)
+               .font('Helvetica-Bold')
+               .fillColor('#DC2626')
+               .text('NOTA IMPORTANTE:', 50, yPosition);
+            
+            yPosition += 15;
+            
+            doc.fontSize(8)
+               .font('Helvetica')
+               .fillColor('#666666')
+               .text('Los productos marcados como "bajo pedido" serán fabricados especialmente para usted y se entregarán en una fecha posterior. Se le notificará cuando estén listos.', 50, yPosition, {
+                   width: 512,
+                   align: 'left'
+               });
+            
+            yPosition += 25;
+        } else {
+            yPosition += 10;
+        }
 
         doc.fontSize(8)
            .font('Helvetica')
