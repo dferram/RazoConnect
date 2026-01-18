@@ -1260,7 +1260,7 @@ const buscarProductosAutocomplete = async (req, res) => {
     console.log(`🔍 Buscando productos con término: "${searchTerm}" para tenant_id: ${tenant_id}`);
 
     const query = `
-      SELECT DISTINCT
+      SELECT
         p.productoid,
         p.nombreproducto,
         p.sku_maestro,

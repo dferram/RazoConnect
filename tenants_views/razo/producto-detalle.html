@@ -378,11 +378,24 @@
         color: var(--text-primary);
       }
 
+      .nike-carousel-wrapper {
+        position: relative;
+        width: 100%;
+      }
+
       .nike-thumbnails-row {
         display: flex;
         gap: 0.65rem;
         overflow-x: auto;
         padding-bottom: 0.35rem;
+        scroll-behavior: smooth;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+      }
+
+      .nike-thumbnails-row::-webkit-scrollbar {
+        display: none;
       }
 
       .nike-thumb {
@@ -403,6 +416,66 @@
       .nike-thumb:hover {
         opacity: 0.85;
         transform: scale(1.03);
+      }
+
+      .carousel-arrow {
+        display: none;
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 32px;
+        height: 32px;
+        background: rgba(255, 255, 255, 0.95);
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        border-radius: 50%;
+        cursor: pointer;
+        z-index: 10;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        transition: all 0.2s ease;
+        -webkit-user-select: none;
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      .carousel-arrow:active {
+        transform: translateY(-50%) scale(0.95);
+        background: rgba(255, 255, 255, 1);
+      }
+
+      .carousel-arrow.hidden {
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .carousel-arrow-left {
+        left: -8px;
+      }
+
+      .carousel-arrow-right {
+        right: -8px;
+      }
+
+      .carousel-arrow i {
+        font-size: 14px;
+        color: #333;
+      }
+
+      @media (max-width: 768px) {
+        .carousel-arrow {
+          display: flex;
+        }
+
+        .nike-thumbnails-row {
+          flex-wrap: nowrap;
+          overflow-x: auto;
+        }
+
+        .nike-thumb {
+          width: 55px;
+          height: 55px;
+        }
       }
     </style>
     <link rel="stylesheet" href="css/mobile-responsive.css" />
@@ -435,7 +508,15 @@
                 class="nike-selector-container producto-nike-selector-hidden"
               >
                 <p class="nike-label" id="nikeSelectedColorLabel"></p>
-                <div class="nike-thumbnails-row" id="nikeThumbnailsRow"></div>
+                <div class="nike-carousel-wrapper">
+                  <button class="carousel-arrow carousel-arrow-left hidden" id="carouselArrowLeft" aria-label="Anterior">
+                    <i class="bi bi-chevron-left"></i>
+                  </button>
+                  <div class="nike-thumbnails-row" id="nikeThumbnailsRow"></div>
+                  <button class="carousel-arrow carousel-arrow-right hidden" id="carouselArrowRight" aria-label="Siguiente">
+                    <i class="bi bi-chevron-right"></i>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -790,6 +871,75 @@
             }
           });
           nikeThumbnailsRow.appendChild(thumb);
+        });
+
+        // Initialize carousel controls after rendering thumbnails
+        initCarouselControls();
+      }
+
+      // Carousel navigation logic
+      function initCarouselControls() {
+        const carouselRow = document.getElementById('nikeThumbnailsRow');
+        const leftArrow = document.getElementById('carouselArrowLeft');
+        const rightArrow = document.getElementById('carouselArrowRight');
+
+        if (!carouselRow || !leftArrow || !rightArrow) return;
+
+        // Update arrow visibility based on scroll position
+        function updateArrowVisibility() {
+          const scrollLeft = carouselRow.scrollLeft;
+          const maxScroll = carouselRow.scrollWidth - carouselRow.clientWidth;
+
+          // Hide left arrow if at start
+          if (scrollLeft <= 5) {
+            leftArrow.classList.add('hidden');
+          } else {
+            leftArrow.classList.remove('hidden');
+          }
+
+          // Hide right arrow if at end
+          if (scrollLeft >= maxScroll - 5) {
+            rightArrow.classList.add('hidden');
+          } else {
+            rightArrow.classList.remove('hidden');
+          }
+        }
+
+        // Scroll carousel by a fixed amount
+        function scrollCarousel(direction) {
+          const scrollAmount = 200; // Pixels to scroll
+          const targetScroll = carouselRow.scrollLeft + (direction === 'right' ? scrollAmount : -scrollAmount);
+          
+          carouselRow.scrollTo({
+            left: targetScroll,
+            behavior: 'smooth'
+          });
+        }
+
+        // Event listeners for arrows
+        leftArrow.addEventListener('click', (e) => {
+          e.preventDefault();
+          scrollCarousel('left');
+        });
+
+        rightArrow.addEventListener('click', (e) => {
+          e.preventDefault();
+          scrollCarousel('right');
+        });
+
+        // Update visibility on scroll (with debounce for performance)
+        let scrollTimeout;
+        carouselRow.addEventListener('scroll', () => {
+          clearTimeout(scrollTimeout);
+          scrollTimeout = setTimeout(updateArrowVisibility, 50);
+        });
+
+        // Initial visibility check
+        setTimeout(updateArrowVisibility, 100);
+
+        // Re-check on window resize (for orientation changes on mobile)
+        window.addEventListener('resize', () => {
+          setTimeout(updateArrowVisibility, 100);
         });
       }
 
