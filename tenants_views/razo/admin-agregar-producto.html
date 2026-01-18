@@ -22,6 +22,7 @@
 
     <link rel="stylesheet" href="css/styles.css" />
     <link rel="stylesheet" href="css/admin.css" />
+    <link rel="stylesheet" href="css/utility-classes.css" />
     <style>
       .checkbox-grid {
         display: grid;
@@ -386,18 +387,12 @@
                 <h2 class="admin-table-title">Información del producto</h2>
               </div>
 
-              <form id="productoForm" style="padding: 1.5rem">
-                <div style="display: grid; gap: 1.5rem">
+              <form id="productoForm" class="u-padding-1-5">
+                <div class="u-grid-gap-1-5">
                   <input type="hidden" id="inputProductoIdEditando" />
                   <div class="alert alert-info">
                     <strong>Nuevo flujo maestro/variante:</strong>
-                    <p
-                      style="
-                        margin-top: 0.5rem;
-                        font-size: 0.9rem;
-                        line-height: 1.5;
-                      "
-                    >
+                    <p class="u-alert-text">
                       Primero crea el <strong>producto maestro</strong> con su
                       información general. Después se te redirigirá a la
                       pantalla para agregar las variantes (SKU, precios, stock).
@@ -482,10 +477,9 @@
                       type="file"
                       id="input-imagen-maestro"
                       name="imagenMaestro"
-                      class="form-input"
+                      class="form-input u-padding-file-input"
                       accept="image/png,image/jpeg,image/jpg,image/webp,image/heic,image/heif"
                       multiple
-                      style="padding: 1rem; cursor: pointer; font-weight: 500;"
                     />
                     <small class="form-hint"
                       >Sube las imágenes del producto (portada + galería). Puedes seleccionar archivos en múltiples tandas y se acumularán. La primera imagen será la portada. Formatos: JPG, PNG, WEBP, HEIC (iOS). Máximo 15MB c/u, hasta 12 imágenes total. Las imágenes se optimizan automáticamente.</small
@@ -503,8 +497,8 @@
                         </div>
                       </div>
                       <div id="galeria-imagenes-server" class="sortable-grid"></div>
-                      <div style="margin-top: 1rem; padding: 0.75rem; background: #dbeafe; border-left: 4px solid #3b82f6; border-radius: 6px;">
-                        <p style="font-size: 0.8rem; color: #1e40af; margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+                      <div class="u-info-box-blue">
+                        <p>
                           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <circle cx="12" cy="12" r="10"></circle>
                             <line x1="12" y1="8" x2="12" y2="12"></line>
@@ -515,7 +509,7 @@
                       </div>
                     </div>
 
-                    <div id="preview-container" class="preview-section" style="display: none;">
+                    <div id="preview-container" class="preview-section u-display-none">
                       <div class="preview-header">
                         <div class="preview-title">
                           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -528,9 +522,8 @@
                         </div>
                         <button
                           type="button"
-                          class="btn btn-secondary btn-sm"
+                          class="btn btn-secondary btn-sm u-flex-center-gap-sm"
                           id="btn-clear-images"
-                          style="display: flex; align-items: center; gap: 0.5rem;"
                         >
                           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <polyline points="3 6 5 6 21 6"></polyline>
@@ -540,8 +533,8 @@
                         </button>
                       </div>
                       <div id="imagenes-preview" class="sortable-grid"></div>
-                      <div style="margin-top: 1rem; padding: 0.75rem; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 6px;">
-                        <p style="font-size: 0.8rem; color: #92400e; margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+                      <div class="u-info-box-yellow">
+                        <p>
                           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <circle cx="12" cy="12" r="10"></circle>
                             <line x1="12" y1="8" x2="12" y2="12"></line>
@@ -553,7 +546,7 @@
                     </div>
                   </div>
 
-                  <div class="form-group" id="imagenes-color-container" style="display: none;">
+                  <div class="form-group u-display-none" id="imagenes-color-container">
                     <label class="form-label">
                       Imágenes por Color de Variante
                     </label>
@@ -582,9 +575,9 @@
                     </small>
                   </div>
 
-                  <div class="alert alert-warning" style="margin-top: 0.5rem">
+                  <div class="alert alert-warning u-margin-top-0-5">
                     <strong>Después de guardar:</strong>
-                    <ul style="margin: 0.5rem 0 0 1.2rem; font-size: 0.9rem">
+                    <ul class="u-margin-list">
                       <li>
                         Define las variantes (SKU, precio, stock) en la
                         siguiente pantalla.
@@ -595,14 +588,7 @@
                     </ul>
                   </div>
 
-                  <div
-                    style="
-                      display: flex;
-                      gap: 1rem;
-                      justify-content: flex-end;
-                      margin-top: 1.5rem;
-                    "
-                  >
+                  <div class="u-flex-end">
                     <button
                       type="button"
                       class="btn btn-secondary"
@@ -612,28 +598,20 @@
                     </button>
                     <button
                       type="button"
-                      class="btn btn-outline-secondary"
+                      class="btn btn-outline-secondary u-display-none"
                       id="btnCancelarEdicion"
-                      style="display: none"
                     >
                       Cancelar Edición
                     </button>
                     <button
                       type="submit"
-                      class="btn btn-primary"
+                      class="btn btn-primary u-flex-center-gap"
                       id="submitBtn"
-                      style="
-                        display: inline-flex;
-                        align-items: center;
-                        justify-content: center;
-                        gap: 0.75rem;
-                      "
                     >
                       <span id="btnText">Guardar producto maestro</span>
                       <div
-                        class="spinner"
+                        class="spinner u-display-none"
                         id="btnSpinner"
-                        style="display: none"
                       ></div>
                     </button>
                   </div>
@@ -642,29 +620,22 @@
             </div>
 
             <section
-              class="admin-table-container"
-              style="min-width: 380px; margin-top: 2rem"
+              class="admin-table-container u-min-width-380 u-margin-top-2"
             >
               <div
-                class="admin-table-header"
-                style="
-                  display: flex;
-                  justify-content: space-between;
-                  align-items: center;
-                "
+                class="admin-table-header u-flex-between"
               >
                 <h2 class="admin-table-title">Productos maestros existentes</h2>
                 <button
                   type="button"
-                  class="btn btn-secondary"
+                  class="btn btn-secondary u-padding-btn-sm"
                   id="refreshMastersBtn"
-                  style="padding: 0.35rem 0.75rem"
                 >
                   Actualizar
                 </button>
               </div>
 
-              <div style="padding: 1.5rem">
+              <div class="u-padding-1-5">
                 <form
                   id="mastersSearchForm"
                   class="admin-search admin-search--compact admin-search--spaced"
@@ -680,10 +651,9 @@
                     />
                     <select
                       id="backorderFilter"
-                      class="form-control"
+                      class="form-control u-max-width-230"
                       title="Filtrar por tipo de venta"
                       aria-label="Filtro de tipo de venta"
-                      style="max-width: 230px"
                     >
                       <option value="ALL" selected>Todos</option>
                       <option value="UNITARIO">Venta Unitaria</option>
@@ -701,24 +671,23 @@
                     </button>
                   </div>
                 </form>
-                <div id="mastersLoading" class="loading" style="display: none">
+                <div id="mastersLoading" class="loading u-display-none">
                   <div class="spinner"></div>
                 </div>
 
-                <div style="overflow-x: auto">
+                <div class="u-overflow-x-auto">
                   <table
-                    class="admin-table"
+                    class="admin-table u-display-none"
                     id="mastersTable"
-                    style="display: none"
                   >
                     <thead>
                       <tr>
-                        <th style="width: 70px;">Imagen</th>
-                        <th style="width: 35%;">Detalles del Producto</th>
-                        <th style="width: 18%;">Categoría</th>
-                        <th style="width: 15%;">Venta</th>
-                        <th style="width: 14%;">Estado</th>
-                        <th style="width: 180px;">Acciones</th>
+                        <th class="u-width-70">Imagen</th>
+                        <th class="u-width-35-pct">Detalles del Producto</th>
+                        <th class="u-width-18-pct">Categoría</th>
+                        <th class="u-width-15-pct">Venta</th>
+                        <th class="u-width-14-pct">Estado</th>
+                        <th class="u-width-180">Acciones</th>
                       </tr>
                     </thead>
                     <tbody id="mastersTableBody"></tbody>
@@ -726,9 +695,8 @@
                 </div>
 
                 <div
-                  class="empty-state"
+                  class="empty-state u-display-none"
                   id="mastersEmpty"
-                  style="display: none"
                 >
                   <div class="empty-state-icon">📦</div>
                   <h3 class="empty-state-title">Sin productos maestros</h3>

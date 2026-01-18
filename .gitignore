@@ -46,3 +46,6 @@ docs/
 
 # Backups de la base de datos
 backup/
+
+#Windsurf
+.windsurf/

@@ -15,7 +15,8 @@
 
     <link rel="stylesheet" href="css/styles.css" />
     <link rel="stylesheet" href="css/admin.css" />
-      <link rel="stylesheet" href="css/mobile-responsive.css" />
+    <link rel="stylesheet" href="css/utility-classes.css" />
+    <link rel="stylesheet" href="css/mobile-responsive.css" />
     <style>
       /* Estilos para la tarjeta de Proyección de Stock */
       .inventory-summary-card {
@@ -131,31 +132,30 @@
           <div class="detalle-modal-body">
             <div
               id="detalleModalSummary"
-              class="detalle-summary"
-              style="display: none"
+              class="detalle-summary u-display-none"
             >
               <!-- Información del Producto -->
-              <div style="background: #f8fafc; border-radius: 0.75rem; padding: 1.25rem; margin-bottom: 1.5rem; border: 1px solid #e2e8f0;">
-                <h3 style="font-size: 0.875rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1rem;">
+              <div class="modal-info-section">
+                <h3 class="modal-section-title">
                   📋 Información del Producto
                 </h3>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                <div class="modal-info-grid">
                   <div>
-                    <div style="font-size: 0.75rem; color: #64748b; font-weight: 600; margin-bottom: 0.25rem;">SKU Maestro</div>
-                    <div id="modalSkuMaestro" style="font-size: 0.95rem; font-weight: 600; color: #1e293b;">Sin SKU</div>
+                    <div class="modal-field-label">SKU Maestro</div>
+                    <div id="modalSkuMaestro" class="modal-field-value">Sin SKU</div>
                   </div>
                   <div>
-                    <div style="font-size: 0.75rem; color: #64748b; font-weight: 600; margin-bottom: 0.25rem;">Proveedor</div>
-                    <div id="modalProveedor" style="font-size: 0.95rem; font-weight: 600; color: #1e293b;">Sin asignar</div>
+                    <div class="modal-field-label">Proveedor</div>
+                    <div id="modalProveedor" class="modal-field-value">Sin asignar</div>
                   </div>
                   <div>
-                    <div style="font-size: 0.75rem; color: #64748b; font-weight: 600; margin-bottom: 0.25rem;">Categoría</div>
-                    <div id="modalCategoria" style="font-size: 0.95rem; font-weight: 600; color: #1e293b;">Sin categoría</div>
+                    <div class="modal-field-label">Categoría</div>
+                    <div id="modalCategoria" class="modal-field-value">Sin categoría</div>
                   </div>
                 </div>
-                <div style="margin-top: 1rem;">
-                  <div style="font-size: 0.75rem; color: #64748b; font-weight: 600; margin-bottom: 0.25rem;">Descripción</div>
-                  <div id="modalDescripcion" style="font-size: 0.9rem; color: #475569; line-height: 1.5;">Sin descripción</div>
+                <div class="u-margin-top-1">
+                  <div class="modal-field-label">Descripción</div>
+                  <div id="modalDescripcion" class="modal-field-description">Sin descripción</div>
                 </div>
               </div>
 
@@ -199,14 +199,13 @@
             </div>
 
             <!-- Tarjeta de Proyección de Stock -->
-            <div id="stockProjectionCard" class="inventory-summary-card" style="display: none;" aria-live="polite">
+            <div id="stockProjectionCard" class="inventory-summary-card u-display-none" aria-live="polite">
               <div class="stock-projection-header">
                 <div>
                   <h3 class="stock-projection-title">📊 Proyección de Stock</h3>
                   <p
                     id="stockProjectionSubtitle"
-                    class="form-hint"
-                    style="margin: 0; font-size: 0.8rem; color: #6b7280;"
+                    class="form-hint u-margin-0 u-font-size-0-8"
                   >
                     Paquetes disponibles según el stock actual de cada variante.
                   </p>
@@ -236,14 +235,12 @@
 
             <div
               id="detalleModalFeedback"
-              class="modal-feedback"
-              style="display: none"
+              class="modal-feedback u-display-none"
             ></div>
 
             <div
               id="detalleModalTableWrapper"
-              class="modal-table-wrapper"
-              style="display: none"
+              class="modal-table-wrapper u-display-none"
             >
               <table id="tabla-variantes" class="modal-table">
                 <thead>
@@ -253,7 +250,7 @@
                     <th>Precio/Paquete</th>
                     <th>Stock</th>
                     <th>Estado</th>
-                    <th style="text-align: center">Acciones</th>
+                    <th class="text-center">Acciones</th>
                   </tr>
                 </thead>
                 <tbody></tbody>
@@ -275,29 +272,12 @@
 
       <!-- Modal recepción de mercancía -->
       <div id="recepcionModal" class="modal">
-        <div
-          class="modal-content"
-          style="
-            background: white;
-            padding: 2rem;
-            border-radius: 1rem;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            max-width: 600px;
-          "
-        >
-          <div style="margin-bottom: 1.5rem">
-            <h2
-              id="recepcionModalTitle"
-              style="
-                font-size: 1.5rem;
-                font-weight: 700;
-                color: #2d3748;
-                margin-bottom: 0.25rem;
-              "
-            >
+        <div class="modal-content modal-content-medium">
+          <div class="u-margin-bottom-1-5">
+            <h2 id="recepcionModalTitle" class="modal-title">
               Recepción
             </h2>
-            <p id="recepcionModalSubtitle" style="color: #718096; font-size: 0.875rem">
+            <p id="recepcionModalSubtitle" class="modal-subtitle">
               Registra la entrada de mercancía por bultos/cajas.
             </p>
           </div>
@@ -316,20 +296,20 @@
             />
             <div
               id="recepcionPreview"
-              style="margin-top: 0.5rem; color: #4b5563; font-size: 0.9rem"
+              class="u-margin-top-0-5 u-font-size-0-9"
             >
               Se ingresarán +0 unidades al inventario.
             </div>
           </div>
 
-          <div class="form-group" style="margin-top: 1rem">
-            <label class="switch-label" style="display:flex; gap:0.75rem; align-items:center;">
+          <div class="form-group u-margin-top-1">
+            <label class="switch-label switch-label-flex">
               <input type="checkbox" id="recepcionEsExcepcion" />
               <span>¿Registrar Excepción/Anomalía?</span>
             </label>
           </div>
 
-          <div class="form-group" id="recepcionDetalleExcepcionGroup" style="display:none;">
+          <div class="form-group u-display-none" id="recepcionDetalleExcepcionGroup">
             <label for="recepcionDetalleExcepcion" class="form-label"
               >Detalle del problema (obligatorio):</label
             >
@@ -341,7 +321,7 @@
             />
           </div>
 
-          <div class="form-group" style="margin-top: 0.5rem">
+          <div class="form-group u-margin-top-0-5">
             <label for="recepcionComentarios" class="form-label">Comentarios (opcional):</label>
             <input
               type="text"
@@ -351,30 +331,27 @@
             />
           </div>
 
-          <div class="alert alert-info" style="font-size: 0.875rem">
+          <div class="alert alert-info u-font-size-0-8">
             <strong>ℹ️ Nota:</strong> Esta recepción se registrará en el log de
             inventario.
           </div>
 
-          <div style="display: flex; gap: 1rem; margin-top: 1.5rem">
+          <div class="modal-footer-actions">
             <button
-              class="btn btn-primary"
+              class="btn btn-primary flex-1 btn-indigo"
               id="btnConfirmarRecepcion"
-              style="flex: 1; background: #4f46e5; border-color: #4f46e5"
               type="button"
             >
               <span id="btnRecepcionText">Confirmar recepción</span>
               <div
-                class="spinner"
+                class="spinner u-display-none"
                 id="btnRecepcionSpinner"
-                style="display: none"
               ></div>
             </button>
             <button
-              class="btn btn-secondary"
+              class="btn btn-secondary flex-1"
               id="btnCancelarRecepcion"
               type="button"
-              style="flex: 1"
             >
               Cancelar
             </button>
@@ -391,23 +368,16 @@
           <div class="admin-table-container">
             <div class="admin-table-header">
               <h2 class="admin-table-title">Productos en inventario</h2>
-              <div style="display: flex; gap: 1rem">
+              <div class="header-actions">
                 <input
                   type="text"
                   id="searchInput"
                   placeholder="Buscar producto..."
-                  style="
-                    padding: 0.5rem 1rem;
-                    border: 2px solid var(--razo-gray-light);
-                    border-radius: 0.5rem;
-                    font-family: 'Inter', sans-serif;
-                    width: 250px;
-                  "
+                  class="search-input"
                 />
                 <button
-                  class="btn btn-secondary"
+                  class="btn btn-secondary btn-refresh"
                   onclick="loadProductos()"
-                  style="padding: 0.5rem 1.5rem"
                 >
                   Actualizar
                 </button>
@@ -418,11 +388,10 @@
               <div class="spinner"></div>
             </div>
 
-            <div style="overflow-x: auto">
+            <div class="u-overflow-x-auto">
               <table
-                class="admin-table"
+                class="admin-table u-display-none"
                 id="productsTable"
-                style="display: none"
               >
                 <thead>
                   <tr>
@@ -430,7 +399,7 @@
                     <th>Categoría</th>
                     <th>Estado</th>
                     <th>Variantes</th>
-                    <th id="thAdministrador" style="display: none;">Administrador</th>
+                    <th id="thAdministrador" class="u-display-none">Administrador</th>
                     <th>Acciones</th>
                   </tr>
                 </thead>
@@ -440,7 +409,7 @@
               </table>
             </div>
 
-            <div id="emptyProducts" class="empty-state" style="display: none">
+            <div id="emptyProducts" class="empty-state u-display-none">
               <div class="empty-state-icon">📦</div>
               <h3 class="empty-state-title">No hay productos</h3>
               <p class="empty-state-text">
@@ -448,8 +417,7 @@
               </p>
               <a
                 href="/admin-agregar-producto.html"
-                class="btn btn-primary"
-                style="text-decoration: none; display: inline-block"
+                class="btn btn-primary btn-link"
               >
                 + Agregar Producto
               </a>
@@ -458,62 +426,35 @@
             <!-- Paginación -->
             <div
               id="paginationContainer"
-              style="
-                display: none;
-                margin-top: 1.5rem;
-                padding: 1rem;
-                border-top: 1px solid #e5e7eb;
-              "
+              class="pagination-container u-display-none"
             >
-              <div
-                style="
-                  display: flex;
-                  justify-content: space-between;
-                  align-items: center;
-                  flex-wrap: wrap;
-                  gap: 1rem;
-                "
-              >
+              <div class="pagination-wrapper">
                 <!-- Información de registros -->
-                <div style="color: var(--razo-gray-warm); font-size: 0.875rem">
+                <div class="pagination-info">
                   Mostrando <strong id="pageStart">1</strong> a
                   <strong id="pageEnd">10</strong> de
                   <strong id="totalRecords">0</strong> productos
                 </div>
 
                 <!-- Controles de paginación -->
-                <div style="display: flex; gap: 0.5rem; align-items: center">
+                <div class="pagination-controls">
                   <button
                     id="btnPrevPage"
                     onclick="cambiarPagina('prev')"
-                    class="btn btn-secondary"
-                    style="
-                      padding: 0.5rem 1rem;
-                      font-size: 0.875rem;
-                      display: flex;
-                      align-items: center;
-                      gap: 0.5rem;
-                    "
+                    class="btn btn-secondary pagination-btn"
                     disabled
                   >
                     ← Anterior
                   </button>
 
-                  <div id="pageNumbers" style="display: flex; gap: 0.25rem">
+                  <div id="pageNumbers" class="page-numbers">
                     <!-- Los números de página se generarán dinámicamente -->
                   </div>
 
                   <button
                     id="btnNextPage"
                     onclick="cambiarPagina('next')"
-                    class="btn btn-secondary"
-                    style="
-                      padding: 0.5rem 1rem;
-                      font-size: 0.875rem;
-                      display: flex;
-                      align-items: center;
-                      gap: 0.5rem;
-                    "
+                    class="btn btn-secondary pagination-btn"
                   >
                     Siguiente →
                   </button>
@@ -527,39 +468,23 @@
 
     <!-- Modal para ajustar stock -->
     <div id="ajusteModal" class="modal">
-      <div
-        class="modal-content"
-        style="
-          background: white;
-          padding: 2rem;
-          border-radius: 1rem;
-          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-          max-width: 550px;
-        "
-      >
-        <div style="margin-bottom: 1.5rem">
-          <h2
-            style="
-              font-size: 1.5rem;
-              font-weight: 700;
-              color: #2d3748;
-              margin-bottom: 0.25rem;
-            "
-          >
+      <div class="modal-content modal-content-medium">
+        <div class="u-margin-bottom-1-5">
+          <h2 class="modal-title">
             Ajustar stock
           </h2>
-          <p style="color: #718096; font-size: 0.875rem">
+          <p class="modal-subtitle">
             Modifica el inventario del producto
           </p>
         </div>
         <div>
-          <p style="margin-bottom: 1rem">
+          <p class="u-margin-bottom-1">
             <strong><span id="modalProductoNombre"></span></strong><br />
-            <span style="color: var(--razo-gray-warm)"
+            <span class="u-color-gray-warm"
               >Variante seleccionada:
               <span id="modalVarianteResumen"></span></span
             ><br />
-            <span style="color: var(--razo-gray-warm)"
+            <span class="u-color-gray-warm"
               >Stock actual:
               <strong id="modalStockActual">0</strong> piezas</span
             >
@@ -574,20 +499,18 @@
 
           <div class="form-group">
             <label class="form-label">Tipo de Ajuste:</label>
-            <div style="display: flex; gap: 1rem; margin-bottom: 1rem">
+            <div class="ajuste-buttons">
               <button
-                class="btn btn-success"
+                class="btn btn-success flex-1 btn-ajuste"
                 id="btnEntrada"
                 onclick="setTipoAjuste('entrada')"
-                style="flex: 1; padding: 0.75rem"
               >
                 ➕ Entrada
               </button>
               <button
-                class="btn btn-danger"
+                class="btn btn-danger flex-1 btn-ajuste"
                 id="btnSalida"
                 onclick="setTipoAjuste('salida')"
-                style="flex: 1; padding: 0.75rem"
               >
                 ➖ Salida
               </button>
@@ -617,7 +540,7 @@
             </select>
           </div>
 
-          <div class="form-group" id="motivoOtroGroup" style="display: none">
+          <div class="form-group u-display-none" id="motivoOtroGroup">
             <label for="modalMotivoOtro" class="form-label"
               >Especificar motivo:</label
             >
@@ -629,29 +552,26 @@
             />
           </div>
 
-          <div class="alert alert-info" style="font-size: 0.875rem">
+          <div class="alert alert-info u-font-size-0-8">
             <strong>ℹ️ Nota:</strong> Este ajuste se registrará en el log de
             inventario con tu ID de administrador.
           </div>
 
-          <div style="display: flex; gap: 1rem; margin-top: 1.5rem">
+          <div class="modal-footer-actions">
             <button
-              class="btn btn-primary"
+              class="btn btn-primary flex-1"
               onclick="realizarAjuste()"
               id="btnConfirmarAjuste"
-              style="flex: 1"
             >
               <span id="btnAjusteText">Confirmar ajuste</span>
               <div
-                class="spinner"
+                class="spinner u-display-none"
                 id="btnAjusteSpinner"
-                style="display: none"
               ></div>
             </button>
             <button
-              class="btn btn-secondary"
+              class="btn btn-secondary flex-1"
               onclick="closeAjusteModal()"
-              style="flex: 1"
             >
               Cancelar
             </button>
