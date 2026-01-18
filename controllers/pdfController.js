@@ -106,21 +106,22 @@ async function generarPDFPedido(req, res) {
            .text('Tel: 55 6098 9524', logoExists ? 140 : 50, 90)
            .text('fegarcia@hotmail.com', logoExists ? 140 : 50, 105);
 
-        doc.fontSize(16)
+        // Header derecho - ajustado para evitar solapamiento
+        doc.fontSize(14)
            .font('Helvetica-Bold')
            .fillColor('#F97316')
-           .text('REMISIÓN DE VENTA', 400, 50, { align: 'right' });
+           .text('REMISIÓN DE VENTA', 350, 50, { width: 212, align: 'right' });
 
-        doc.fontSize(10)
+        doc.fontSize(9)
            .font('Helvetica')
            .fillColor('#333333')
-           .text(`Folio: ${String(pedidoId).padStart(6, '0')}`, 400, 75, { align: 'right' })
+           .text(`Folio: ${String(pedidoId).padStart(6, '0')}`, 350, 70, { width: 212, align: 'right' })
            .text(`Fecha: ${new Date(pedido.fechapedido).toLocaleDateString('es-MX', { 
                year: 'numeric', 
                month: 'long', 
                day: 'numeric' 
-           })}`, 400, 90, { align: 'right' })
-           .text(`Estatus: ${pedido.estatus}`, 400, 105, { align: 'right' });
+           })}`, 350, 85, { width: 212, align: 'right' })
+           .text(`Estatus: ${pedido.estatus}`, 350, 100, { width: 212, align: 'right' });
 
         doc.moveTo(50, 135)
            .lineTo(562, 135)
@@ -173,9 +174,9 @@ async function generarPDFPedido(req, res) {
         doc.fillColor('#FFFFFF')
            .text('CANT.', 55, headerY + 6)
            .text('DESCRIPCIÓN', 110, headerY + 6)
-           .text('TAMAÑO', 350, headerY + 6)
-           .text('PRECIO UNIT.', 420, headerY + 6)
-           .text('TOTAL', 510, headerY + 6, { align: 'right', width: 50 });
+           .text('TAMAÑO', 340, headerY + 6)
+           .text('PRECIO UNIT.', 410, headerY + 6)
+           .text('TOTAL', 480, headerY + 6, { align: 'right', width: 75 });
 
         let yPosition = headerY + 30;
         const rowHeight = 25;
@@ -197,11 +198,11 @@ async function generarPDFPedido(req, res) {
             doc.fillColor('#333333')
                .fontSize(9)
                .text(item.cantidad, 55, yPosition)
-               .text(`${item.producto_nombre}`, 110, yPosition, { width: 230 })
-               .text(`${item.variante_nombre}`, 110, yPosition + 10, { width: 230 })
-               .text(item.tamano_cantidad ? `Pack ${item.tamano_cantidad}` : 'Unitario', 350, yPosition)
-               .text(`$${parseFloat(item.preciounitario).toFixed(2)}`, 420, yPosition)
-               .text(`$${parseFloat(item.subtotal).toFixed(2)}`, 510, yPosition, { align: 'right', width: 50 });
+               .text(`${item.producto_nombre}`, 110, yPosition, { width: 220 })
+               .text(`${item.variante_nombre}`, 110, yPosition + 10, { width: 220 })
+               .text(item.tamano_cantidad ? `Pack ${item.tamano_cantidad}` : 'Unitario', 340, yPosition)
+               .text(`$${parseFloat(item.preciounitario).toFixed(2)}`, 410, yPosition)
+               .text(`$${parseFloat(item.subtotal).toFixed(2)}`, 480, yPosition, { align: 'right', width: 75 });
 
             yPosition += rowHeight;
         });
@@ -251,21 +252,21 @@ async function generarPDFPedido(req, res) {
         doc.fontSize(10)
            .font('Helvetica')
            .fillColor('#333333')
-           .text('Total Productos en Existencia:', 350, yPosition)
-           .text(`$${totalEnStock.toFixed(2)} MXN`, 510, yPosition, { align: 'right', width: 50 });
+           .text('Total Productos en Existencia:', 320, yPosition)
+           .text(`$${totalEnStock.toFixed(2)} MXN`, 440, yPosition, { align: 'right', width: 122 });
 
         yPosition += 20;
 
         // Display Total Pending (Out of Stock)
         doc.fillColor('#DC2626')
-           .text('Total Productos bajo Pedido:', 350, yPosition)
+           .text('Total Productos bajo Pedido:', 320, yPosition)
            .fillColor('#333333')
-           .text(`$${totalSinStock.toFixed(2)} MXN`, 510, yPosition, { align: 'right', width: 50 });
+           .text(`$${totalSinStock.toFixed(2)} MXN`, 440, yPosition, { align: 'right', width: 122 });
 
         yPosition += 20;
 
         // Separator line
-        doc.moveTo(350, yPosition)
+        doc.moveTo(320, yPosition)
            .lineTo(562, yPosition)
            .strokeColor('#CCCCCC')
            .lineWidth(1)
@@ -275,27 +276,27 @@ async function generarPDFPedido(req, res) {
 
         // Display Subtotal
         doc.fillColor('#333333')
-           .text('Subtotal:', 350, yPosition)
-           .text(`$${subtotalProductos.toFixed(2)} MXN`, 510, yPosition, { align: 'right', width: 50 });
+           .text('Subtotal:', 320, yPosition)
+           .text(`$${subtotalProductos.toFixed(2)} MXN`, 440, yPosition, { align: 'right', width: 122 });
 
         yPosition += 20;
 
         if (costoEnvio > 0) {
             doc.fillColor('#333333')
-               .text('Costo de Envío:', 350, yPosition)
-               .text(`$${costoEnvio.toFixed(2)} MXN`, 510, yPosition, { align: 'right', width: 50 });
+               .text('Costo de Envío:', 320, yPosition)
+               .text(`$${costoEnvio.toFixed(2)} MXN`, 440, yPosition, { align: 'right', width: 122 });
             yPosition += 20;
         }
 
         // Only show discount if there's a coupon applied
         if (tieneCupon && montoDescuento > 0) {
             doc.fillColor('#DC2626')
-               .text('Descuento por Cupón:', 350, yPosition)
-               .text(`-$${montoDescuento.toFixed(2)} MXN`, 510, yPosition, { align: 'right', width: 50 });
+               .text('Descuento por Cupón:', 320, yPosition)
+               .text(`-$${montoDescuento.toFixed(2)} MXN`, 440, yPosition, { align: 'right', width: 122 });
             yPosition += 20;
         }
 
-        doc.moveTo(350, yPosition)
+        doc.moveTo(320, yPosition)
            .lineTo(562, yPosition)
            .strokeColor('#F97316')
            .lineWidth(2)
@@ -306,8 +307,8 @@ async function generarPDFPedido(req, res) {
         doc.fontSize(12)
            .font('Helvetica-Bold')
            .fillColor('#F97316')
-           .text('TOTAL DE LA ORDEN:', 350, yPosition)
-           .text(`$${totalCalculado.toFixed(2)} MXN`, 510, yPosition, { align: 'right', width: 50 });
+           .text('TOTAL DE LA ORDEN:', 320, yPosition)
+           .text(`$${totalCalculado.toFixed(2)} MXN`, 440, yPosition, { align: 'right', width: 122 });
 
         yPosition += 30;
 

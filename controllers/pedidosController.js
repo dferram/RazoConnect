@@ -162,6 +162,14 @@ const crearPedido = async (req, res) => {
   };
 
   try {
+    if (!req.tenant || !req.tenant.tenant_id) {
+      removeUploadedComprobante();
+      client.release();
+      return res.status(500).json({
+        success: false,
+        message: "Error: tenant no disponible"
+      });
+    }
     const { tenant_id } = req.tenant;
     const clienteId = req.user.userId;
     const rawDireccionEnvioId =
@@ -1309,6 +1317,12 @@ const crearPedido = async (req, res) => {
  */
 const obtenerPedidos = async (req, res) => {
   try {
+    if (!req.tenant || !req.tenant.tenant_id) {
+      return res.status(500).json({
+        success: false,
+        message: "Error: tenant no disponible"
+      });
+    }
     const { tenant_id } = req.tenant;
     const clienteId = req.user.userId;
 
@@ -1498,6 +1512,12 @@ const obtenerPedidos = async (req, res) => {
  */
 const obtenerPedidoPorId = async (req, res) => {
   try {
+    if (!req.tenant || !req.tenant.tenant_id) {
+      return res.status(500).json({
+        success: false,
+        message: "Error: tenant no disponible"
+      });
+    }
     const { tenant_id } = req.tenant;
     const clienteId = req.user.userId;
     const pedidoId = parseInt(req.params.id, 10);
@@ -1690,6 +1710,12 @@ const obtenerPedidoPorId = async (req, res) => {
  */
 const obtenerDatosPago = async (req, res) => {
   try {
+    if (!req.tenant || !req.tenant.tenant_id) {
+      return res.status(500).json({
+        success: false,
+        message: "Error: tenant no disponible"
+      });
+    }
     const { tenant_id } = req.tenant;
     const clienteId = req.user.userId;
     const pedidoId = parseInt(req.params.id, 10);

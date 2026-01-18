@@ -199,6 +199,12 @@ const validateAgregarAlCarritoInput = ({ VarianteID, Cantidad, TamanoID }) => {
  */
 const obtenerCarrito = async (req, res) => {
   try {
+    if (!req.tenant || !req.tenant.tenant_id) {
+      return res.status(500).json({
+        success: false,
+        message: "Error: tenant no disponible"
+      });
+    }
     const { tenant_id } = req.tenant;
     const clienteId = req.user.userId;
 
@@ -493,6 +499,12 @@ const obtenerCarrito = async (req, res) => {
  */
 const agregarAlCarrito = async (req, res) => {
   try {
+    if (!req.tenant || !req.tenant.tenant_id) {
+      return res.status(500).json({
+        success: false,
+        message: "Error: tenant no disponible"
+      });
+    }
     const { tenant_id } = req.tenant;
     const clienteId = req.user.userId;
     const { VarianteID, Cantidad, TamanoID } = req.body;
@@ -719,6 +731,12 @@ const agregarAlCarrito = async (req, res) => {
  */
 const actualizarCarrito = async (req, res) => {
   try {
+    if (!req.tenant || !req.tenant.tenant_id) {
+      return res.status(500).json({
+        success: false,
+        message: "Error: tenant no disponible"
+      });
+    }
     const { tenant_id } = req.tenant;
     const clienteId = req.user.userId;
     const varianteId = parseInt(req.params.varianteId);
@@ -921,6 +939,12 @@ const actualizarCarrito = async (req, res) => {
  */
 const cambiarVarianteItemCarrito = async (req, res) => {
   try {
+    if (!req.tenant || !req.tenant.tenant_id) {
+      return res.status(500).json({
+        success: false,
+        message: "Error: tenant no disponible"
+      });
+    }
     const { tenant_id } = req.tenant;
     const clienteId = req.user.userId;
     const itemId = parseInt(req.params.itemId, 10);
@@ -1174,6 +1198,12 @@ const cambiarVarianteItemCarrito = async (req, res) => {
  */
 const eliminarDelCarrito = async (req, res) => {
   try {
+    if (!req.tenant || !req.tenant.tenant_id) {
+      return res.status(500).json({
+        success: false,
+        message: "Error: tenant no disponible"
+      });
+    }
     const { tenant_id } = req.tenant;
     const clienteId = req.user.userId;
     const itemId = parseInt(req.params.itemId, 10);

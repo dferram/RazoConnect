@@ -6,6 +6,12 @@ const db = require("../db");
  */
 const obtenerProveedoresPublicos = async (req, res) => {
   try {
+    if (!req.tenant || !req.tenant.tenant_id) {
+      return res.status(500).json({
+        success: false,
+        message: "Error: tenant no disponible"
+      });
+    }
     const { tenant_id } = req.tenant;
     const query = `
       SELECT DISTINCT
@@ -61,6 +67,12 @@ const obtenerProveedoresPublicos = async (req, res) => {
 
 const obtenerTiposProducto = async (req, res) => {
   try {
+    if (!req.tenant || !req.tenant.tenant_id) {
+      return res.status(500).json({
+        success: false,
+        message: "Error: tenant no disponible"
+      });
+    }
     const { tenant_id } = req.tenant;
     const result = await db.query(
       `SELECT DISTINCT tp.nombre
@@ -101,6 +113,12 @@ const obtenerTiposProducto = async (req, res) => {
  */
 const obtenerTiposProductoPublicos = async (req, res) => {
   try {
+    if (!req.tenant || !req.tenant.tenant_id) {
+      return res.status(500).json({
+        success: false,
+        message: "Error: tenant no disponible"
+      });
+    }
     const { tenant_id } = req.tenant;
     const result = await db.query(
       `SELECT tp.tipoproductoid, tp.nombre, tp.descripcion
@@ -141,6 +159,12 @@ const obtenerTiposProductoPublicos = async (req, res) => {
  */
 const obtenerProductos = async (req, res) => {
   try {
+    if (!req.tenant || !req.tenant.tenant_id) {
+      return res.status(500).json({
+        success: false,
+        message: "Error: tenant no disponible"
+      });
+    }
     const { tenant_id } = req.tenant;
     const {
       search,
@@ -749,6 +773,12 @@ const obtenerProductos = async (req, res) => {
  */
 const obtenerDimensiones = async (req, res) => {
   try {
+    if (!req.tenant || !req.tenant.tenant_id) {
+      return res.status(500).json({
+        success: false,
+        message: "Error: tenant no disponible"
+      });
+    }
     const { tenant_id } = req.tenant;
     const result = await db.query(
       `SELECT DISTINCT pv.dimensiones
@@ -787,6 +817,12 @@ const obtenerDimensiones = async (req, res) => {
  */
 const obtenerProductoPorId = async (req, res) => {
   try {
+    if (!req.tenant || !req.tenant.tenant_id) {
+      return res.status(500).json({
+        success: false,
+        message: "Error: tenant no disponible"
+      });
+    }
     const { tenant_id } = req.tenant;
     const id = parseInt(req.params.id, 10);
 
@@ -1076,6 +1112,12 @@ const obtenerProductoPorId = async (req, res) => {
  */
 const obtenerCategorias = async (req, res) => {
   try {
+    if (!req.tenant || !req.tenant.tenant_id) {
+      return res.status(500).json({
+        success: false,
+        message: "Error: tenant no disponible"
+      });
+    }
     const { tenant_id } = req.tenant;
     const query = `
       SELECT 
@@ -1123,6 +1165,12 @@ const obtenerCategorias = async (req, res) => {
  */
 const obtenerAgentesPublicos = async (req, res) => {
   try {
+    if (!req.tenant || !req.tenant.tenant_id) {
+      return res.status(500).json({
+        success: false,
+        message: "Error: tenant no disponible"
+      });
+    }
     const { tenant_id } = req.tenant;
     const query = `
       SELECT 
@@ -1170,11 +1218,27 @@ const obtenerAgentesPublicos = async (req, res) => {
  */
 const buscarProductosAutocomplete = async (req, res) => {
   try {
+    // Logging detallado para diagnosticar problemas de tenant
+    console.log('🔍 [SEARCH DEBUG] Búsqueda de productos iniciada');
+    console.log('   Path:', req.path);
+    console.log('   Query:', req.query);
+    console.log('   Tenant:', req.tenant ? `${req.tenant.nombre_cliente} (ID: ${req.tenant.tenant_id})` : 'UNDEFINED');
+    console.log('   Headers:', req.headers.host);
+
     if (!req.tenant || !req.tenant.tenant_id) {
+      console.error('❌ [SEARCH ERROR] req.tenant no está disponible');
+      console.error('   Esto indica que tenantGuard no se ejecutó correctamente');
+      console.error('   Headers completos:', JSON.stringify(req.headers, null, 2));
+      
       return res.status(500).json({
         success: false,
         message: "Error: tenant no disponible",
-        error: "Middleware tenantGuard no adjuntó req.tenant correctamente"
+        error: "Middleware tenantGuard no adjuntó req.tenant correctamente",
+        debug: {
+          path: req.path,
+          hostname: req.hostname,
+          headers: req.headers.host
+        }
       });
     }
 
@@ -1193,6 +1257,7 @@ const buscarProductosAutocomplete = async (req, res) => {
     }
 
     const searchTerm = q.trim();
+    console.log(`🔍 Buscando productos con término: "${searchTerm}" para tenant_id: ${tenant_id}`);
 
     const query = `
       SELECT DISTINCT
@@ -1209,8 +1274,8 @@ const buscarProductosAutocomplete = async (req, res) => {
           LIMIT 1
         ) as imagen_url
       FROM productos p
-      LEFT JOIN categorias c ON c.categoriaid = p.categoriaid
-      LEFT JOIN producto_variantes pv ON pv.productoid = p.productoid
+      LEFT JOIN categorias c ON c.categoriaid = p.categoriaid AND c.tenant_id = $1
+      LEFT JOIN producto_variantes pv ON pv.productoid = p.productoid AND pv.tenant_id = $1
       WHERE p.tenant_id = $1
         AND COALESCE(p.activo, TRUE) = TRUE
         AND (
@@ -1220,6 +1285,7 @@ const buscarProductosAutocomplete = async (req, res) => {
             SELECT 1
             FROM producto_variantes pv2
             WHERE pv2.productoid = p.productoid
+              AND pv2.tenant_id = $1
               AND pv2.sku ILIKE $2
           )
         )
@@ -1240,6 +1306,8 @@ const buscarProductosAutocomplete = async (req, res) => {
       `${searchTerm}%`,
     ]);
 
+    console.log(`✅ Búsqueda completada: ${result.rows.length} productos encontrados`);
+
     const productos = result.rows.map((row) => ({
       productoId: row.productoid,
       nombreProducto: row.nombreproducto,
@@ -1259,11 +1327,13 @@ const buscarProductosAutocomplete = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error en búsqueda de productos:", error);
+    console.error("❌ Error en búsqueda de productos:", error);
+    console.error("   Stack:", error.stack);
     res.status(500).json({
       success: false,
       message: "Error al buscar productos",
       error: error.message,
+      stack: process.env.NODE_ENV !== 'production' ? error.stack : undefined
     });
   }
 };
