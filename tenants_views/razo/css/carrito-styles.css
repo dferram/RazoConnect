@@ -116,7 +116,7 @@
 
 /* Modal Success */
 .modal-success-content {
-  background: white;
+  background: #ffffff;
   padding: 3rem;
   border-radius: 1rem;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
@@ -156,7 +156,7 @@
 
 /* Modal Eliminar */
 .modal-eliminar-content {
-  background: white;
+  background: #ffffff;
   padding: 2.5rem;
   border-radius: 1.5rem;
   box-shadow: 0 25px 70px rgba(0, 0, 0, 0.3);
@@ -218,7 +218,7 @@
 
 /* Modal Checkout */
 .modal-checkout-content {
-  background: white;
+  background: #ffffff;
   padding: 2rem;
   border-radius: 1rem;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
@@ -295,11 +295,45 @@
   margin-top: 1.5rem;
   border-radius: 1rem;
   border: 1px solid #e5e7eb;
-  background: #f9fafb;
+  background: #ffffff;
   padding: 1.25rem;
   display: none;
   flex-direction: column;
   gap: 1rem;
+}
+
+/* Transfer Upload */
+.transfer-upload {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+  background: #ffffff;
+}
+
+.transfer-upload label {
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 0.5rem;
+}
+
+.upload-box {
+  border: 2px dashed #d1d5db;
+  border-radius: 0.85rem;
+  padding: 1rem;
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.upload-box input[type="file"] {
+  font-size: 0.9rem;
+}
+
+.upload-box small {
+  font-size: 0.85rem;
+  color: #6b7280;
 }
 
 .transfer-details-wrapper.show {
@@ -356,6 +390,86 @@
   padding: 1rem 1.25rem;
 }
 
+/* Credit Summary Card */
+.credit-summary-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+}
+
+.credit-summary-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.credit-summary-row:last-of-type {
+  margin-bottom: 0.5rem;
+}
+
+.credit-summary-row > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.credit-summary-row span {
+  font-size: 0.85rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.credit-summary-row strong {
+  font-size: 1.1rem;
+  color: #111827;
+  font-weight: 700;
+}
+
+.credit-summary-helper {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #e5e7eb;
+  font-size: 0.85rem;
+  color: #6b7280;
+  margin-bottom: 0;
+}
+
+/* Bank Info Header */
+.bank-info-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+  gap: 1rem;
+}
+
+.bank-info-header h5 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 0.25rem 0;
+}
+
+.bank-info-header p {
+  font-size: 0.9rem;
+  color: #6b7280;
+  margin: 0;
+}
+
+.bank-status-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: #f3f4f6;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  color: #374151;
+  white-space: nowrap;
+}
+
 .credit-info-alert > div {
   display: flex;
   align-items: flex-start;
@@ -388,6 +502,45 @@
 /* Payment Info Card */
 .payment-info-card {
   display: none;
+  background: #ffffff;
+  padding: 1.5rem;
+  border-radius: 0.75rem;
+}
+
+/* Payment Info Panels Container */
+.payment-info-panels {
+  margin-top: 1.5rem;
+}
+
+/* Bank Info Grid */
+.bank-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1.25rem;
+  margin-top: 1rem;
+  background: #ffffff;
+}
+
+.bank-info-grid > div {
+  padding: 0.5rem;
+  background: #ffffff;
+}
+
+.bank-info-grid span {
+  display: block;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  color: #9ca3af;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.4rem;
+}
+
+.bank-info-grid strong {
+  font-weight: 600;
+  color: #111827;
+  font-size: 0.95rem;
+  display: block;
+  margin-bottom: 0.25rem;
 }
 
 /* Mercado Pago Form Helper */
@@ -401,7 +554,7 @@
   border: 1px solid #e5e7eb;
   border-radius: 1rem;
   padding: 1.25rem;
-  background: #fff;
+  background: #ffffff;
   box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
   display: none;
   flex-direction: column;
@@ -465,7 +618,7 @@
 
 /* Modal Cambiar Variante */
 .modal-cambiar-variante-content {
-  background: white;
+  background: #ffffff;
   padding: 2.5rem 2.5rem 2.25rem;
   border-radius: 1rem;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);

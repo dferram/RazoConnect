@@ -24,7 +24,7 @@
       }
 
       .product-info-card {
-        background: var(--surface);
+        background: #ffffff;
         border-radius: 0.75rem;
         box-shadow: var(--shadow);
         padding: 1rem 1.25rem;
@@ -401,36 +401,27 @@
       .nike-carousel-wrapper {
         position: relative;
         width: 100%;
+        min-height: 50px;
+        height: auto;
       }
 
       .nike-thumbnails-row {
         display: flex !important;
-        flex-wrap: nowrap !important;
-        gap: 0.65rem;
-        overflow-x: auto !important;
-        overflow-y: hidden;
+        flex-wrap: wrap !important;
+        gap: 8px;
+        justify-content: flex-start;
         padding-bottom: 0.35rem;
-        scroll-behavior: smooth;
-        -webkit-overflow-scrolling: touch;
-        scroll-snap-type: x mandatory;
-        scrollbar-width: none;
-        -ms-overflow-style: none;
-      }
-
-      .nike-thumbnails-row::-webkit-scrollbar {
-        display: none;
       }
 
       .nike-thumb {
-        width: 60px;
-        height: 60px;
+        width: 50px;
+        height: 50px;
         object-fit: cover;
         border-radius: 0.6rem;
         cursor: pointer;
         border: 1px solid rgba(0, 0, 0, 0.15);
         transition: transform 0.15s ease, opacity 0.15s ease, border 0.15s ease;
-        flex: 0 0 auto !important;
-        scroll-snap-align: start;
+        flex-shrink: 0;
       }
 
       .nike-thumb.active {
@@ -443,24 +434,7 @@
       }
 
       .carousel-arrow {
-        display: flex;
-        position: absolute;
-        top: 50%;
-        transform: translateY(-50%);
-        width: 36px;
-        height: 36px;
-        background: rgba(255, 255, 255, 0.98);
-        border: 2px solid rgba(0, 0, 0, 0.2);
-        border-radius: 50%;
-        cursor: pointer;
-        z-index: 100;
-        align-items: center;
-        justify-content: center;
-        box-shadow: 0 3px 12px rgba(0, 0, 0, 0.25);
-        transition: all 0.2s ease;
-        -webkit-user-select: none;
-        user-select: none;
-        -webkit-tap-highlight-color: transparent;
+        display: none !important;
       }
 
       .carousel-arrow:hover {
@@ -511,21 +485,21 @@
 
         .nike-carousel-wrapper {
           padding: 0 8px;
+          min-height: 50px;
+          height: auto;
         }
 
         .nike-thumbnails-row {
           display: flex !important;
-          flex-wrap: nowrap !important;
-          overflow-x: scroll !important;
-          overflow-y: hidden !important;
-          -webkit-overflow-scrolling: touch !important;
+          flex-wrap: wrap !important;
+          gap: 8px;
+          justify-content: flex-start;
         }
 
         .nike-thumb {
-          width: 55px;
-          height: 55px;
-          flex: 0 0 auto !important;
-          min-width: 55px;
+          width: 50px;
+          height: 50px;
+          flex-shrink: 0;
         }
 
         .galeria-main {
