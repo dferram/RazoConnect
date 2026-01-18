@@ -24,12 +24,11 @@ async function generarPDFPedido(req, res) {
                 c.telefono AS cliente_telefono,
                 c.email AS cliente_email,
                 cd.calle,
-                cd.numeroexterior,
-                cd.numerointerior,
+                cd.numeroext,
+                cd.numeroint,
                 cd.colonia,
                 cd.codigopostal,
                 cd.ciudad,
-                cd.referencias,
                 e.nombre AS estado_nombre
             FROM pedidos p
             INNER JOIN clientes c ON p.clienteid = c.clienteid
@@ -140,18 +139,14 @@ async function generarPDFPedido(req, res) {
            .text(`Email: ${pedido.cliente_email || 'N/A'}`, 50, 200);
 
         if (pedido.calle) {
-            const direccion = `${pedido.calle} ${pedido.numeroexterior || ''}${pedido.numerointerior ? ' Int. ' + pedido.numerointerior : ''}, ${pedido.colonia || ''}`;
+            const direccion = `${pedido.calle} ${pedido.numeroext || ''}${pedido.numeroint ? ' Int. ' + pedido.numeroint : ''}, ${pedido.colonia || ''}`;
             const ciudadEstado = `${pedido.ciudad || ''}, ${pedido.estado_nombre || ''} CP ${pedido.codigopostal || ''}`;
             
             doc.text(`Dirección: ${direccion}`, 50, 215)
                .text(ciudadEstado, 50, 230);
-            
-            if (pedido.referencias) {
-                doc.text(`Referencias: ${pedido.referencias}`, 50, 245);
-            }
         }
 
-        const tableTop = pedido.referencias ? 275 : 260;
+        const tableTop = 260;
 
         doc.moveTo(50, tableTop - 10)
            .lineTo(562, tableTop - 10)
