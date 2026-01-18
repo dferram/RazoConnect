@@ -109,106 +109,84 @@
             <div class="tab-content" style="padding-top: 1rem">
               <!-- Operador -->
               <div class="tab-pane fade show active" id="operador" role="tabpanel">
+                <!-- Filtros de Búsqueda -->
                 <div
                   style="
-                    display: grid;
-                    gap: 1rem;
-                    grid-template-columns: 1fr;
+                    background: #fff;
+                    border: 1px solid var(--razo-gray-light);
+                    border-radius: 0.75rem;
+                    padding: 1rem;
+                    margin-bottom: 1rem;
                   "
                 >
                   <div
                     style="
                       display: grid;
+                      grid-template-columns: 1.5fr 1fr 1fr;
                       gap: 0.75rem;
-                      grid-template-columns: 1fr 180px 160px;
                       align-items: end;
                     "
                   >
-                    <div>
-                      <label class="form-label" for="skuInput">SKU</label>
-                      <div style="position: relative">
-                        <input
-                          id="skuInput"
-                          type="text"
-                          class="form-input"
-                          placeholder="Busca por SKU o nombre…"
-                          autocomplete="off"
-                          style="font-size: 1.1rem; padding: 0.85rem"
-                        />
-                        <input type="hidden" id="varianteIdSeleccionada" />
-                        <div
-                          id="resultadosBusqueda"
-                          style="
-                            position: absolute;
-                            top: calc(100% + 6px);
-                            left: 0;
-                            right: 0;
-                            z-index: 50;
-                            background: #ffffff;
-                            border: 1px solid rgba(0, 0, 0, 0.08);
-                            border-radius: 0.75rem;
-                            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.10);
-                            max-height: 320px;
-                            overflow-x: hidden;
-                            overflow-y: auto;
-                            display: none;
-                          "
-                        ></div>
-                      </div>
-                    </div>
-                    <div>
-                      <label class="form-label" for="cantidadInput">Cantidad</label>
+                    <div class="form-group" style="margin: 0">
+                      <label for="searchInput" class="form-label">Buscar</label>
                       <input
-                        id="cantidadInput"
-                        type="number"
-                        min="0"
-                        step="1"
+                        id="searchInput"
+                        type="text"
                         class="form-input"
-                        value="0"
-                        style="font-size: 1.1rem; padding: 0.85rem"
+                        placeholder="Buscar por SKU o nombre..."
+                        style="padding: 0.8rem 0.9rem"
                       />
                     </div>
-                    <div>
-                      <button
-                        type="button"
-                        id="btnRegistrar"
-                        class="btn btn-primary"
-                        style="
-                          width: 100%;
-                          background: var(--razo-orange, #f97316);
-                          border: none;
-                          padding: 0.85rem;
-                        "
-                        disabled
-                      >
-                        Registrar
-                      </button>
+
+                    <div class="form-group" style="margin: 0">
+                      <label for="filterCategoria" class="form-label">Categoría</label>
+                      <select id="filterCategoria" class="form-input form-select">
+                        <option value="">Todas</option>
+                      </select>
+                    </div>
+
+                    <div class="form-group" style="margin: 0">
+                      <label for="filterMedida" class="form-label">Medidas</label>
+                      <select id="filterMedida" class="form-input form-select">
+                        <option value="">Todas</option>
+                      </select>
                     </div>
                   </div>
+                </div>
 
-                  <div
-                    style="
-                      padding: 0.75rem 1rem;
-                      background: #f0f9ff;
-                      border-radius: 0.75rem;
-                      border-left: 4px solid #0ea5e9;
-                      color: #0369a1;
-                    "
-                  >
-                    Al enviar, el formulario se limpia y vuelve el foco a SKU.
-                    No se muestra el conteo del otro equipo.
-                  </div>
+                <!-- Indicador de Último Registro -->
+                <div
+                  id="ultimoRegistro"
+                  style="
+                    padding: 0.75rem 1rem;
+                    background: #f0f9ff;
+                    border: 1px solid #bae6fd;
+                    border-radius: 0.75rem;
+                    color: #0369a1;
+                    margin-bottom: 1rem;
+                    display: none;
+                  "
+                >
+                  <strong>✓ Último registro:</strong> <span id="ultimoRegistroTexto">—</span>
+                </div>
 
-                  <div
-                    id="ultimoRegistro"
-                    style="
-                      padding: 0.75rem 1rem;
-                      border: 1px solid rgba(0, 0, 0, 0.06);
-                      border-radius: 0.75rem;
-                      color: #6b7280;
-                    "
-                  >
-                    Último registro: —
+                <!-- Loading Spinner -->
+                <div id="shelfLoading" class="loading" style="display: none">
+                  <div class="spinner"></div>
+                </div>
+
+                <!-- Resumen de Resultados -->
+                <div id="shelfSummary" style="color: var(--razo-gray-warm); font-size: 0.9rem; margin-bottom: 0.75rem"></div>
+
+                <!-- Grilla de Productos (Estantería) -->
+                <div id="productShelf" class="inventory-shelf-grid"></div>
+
+                <!-- Estado Vacío -->
+                <div id="emptyShelf" style="display: none">
+                  <div class="empty-state">
+                    <div class="empty-state-icon">📦</div>
+                    <h3 class="empty-state-title">No se encontraron productos</h3>
+                    <p class="empty-state-text">Prueba con otro término o ajusta los filtros.</p>
                   </div>
                 </div>
               </div>
@@ -277,11 +255,136 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="js/layout.js" defer></script>`n    <script src="js/sidebar-toggle.js" defer></script>
+    <script src="js/layout.js" defer></script>
+    <script src="js/sidebar-toggle.js" defer></script>
     <script src="js/api.js"></script>
     <script src="js/components/admin-header-loader.js"></script>
     <script src="js/components/user-profile.js"></script>
     <script src="js/admin-header-dropdown.js"></script>
+
+    <style>
+      .inventory-shelf-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1rem;
+      }
+
+      .inventory-card {
+        background: #ffffff;
+        border: 1px solid var(--razo-gray-light);
+        border-radius: 0.85rem;
+        overflow: hidden;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06);
+        display: flex;
+        flex-direction: column;
+        transition: all 0.2s ease;
+      }
+
+      .inventory-card.registered {
+        border: 2px solid #22c55e;
+        box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1);
+      }
+
+      .inventory-card-img {
+        width: 100%;
+        height: 180px;
+        background: #f3f4f6;
+        object-fit: cover;
+        display: block;
+      }
+
+      .inventory-card-body {
+        padding: 0.85rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        flex: 1;
+      }
+
+      .inventory-card-title {
+        margin: 0;
+        font-weight: 800;
+        color: var(--razo-gray-dark);
+        font-size: 1rem;
+        line-height: 1.2;
+      }
+
+      .inventory-card-meta {
+        font-size: 0.85rem;
+        color: var(--razo-gray-warm);
+      }
+
+      .inventory-card-footer {
+        padding: 0.75rem 0.85rem;
+        border-top: 1px solid var(--razo-gray-light);
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+      }
+
+      .inventory-qty-input {
+        flex: 1;
+        padding: 0.6rem;
+        border: 1px solid #d1d5db;
+        border-radius: 0.5rem;
+        font-size: 1rem;
+        text-align: center;
+        font-weight: 700;
+      }
+
+      .inventory-qty-input:focus {
+        outline: none;
+        border-color: var(--razo-orange);
+        box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
+      }
+
+      .inventory-register-btn {
+        padding: 0.6rem 1rem;
+        background: var(--razo-orange);
+        color: white;
+        border: none;
+        border-radius: 0.5rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        white-space: nowrap;
+      }
+
+      .inventory-register-btn:hover {
+        background: #ea580c;
+        transform: translateY(-1px);
+      }
+
+      .inventory-register-btn:disabled {
+        background: #d1d5db;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      .inventory-registered-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.35rem 0.75rem;
+        background: #dcfce7;
+        color: #166534;
+        border-radius: 0.5rem;
+        font-size: 0.8rem;
+        font-weight: 700;
+      }
+
+      @media (max-width: 768px) {
+        .inventory-shelf-grid {
+          grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        }
+      }
+
+      @media (max-width: 520px) {
+        .inventory-shelf-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
 
     <script>
       const crearSesionBlock = document.getElementById("crearSesionBlock");
@@ -293,14 +396,15 @@
       const sesionEstatus = document.getElementById("sesionEstatus");
       const sesionStats = document.getElementById("sesionStats");
 
-      const skuInput = document.getElementById("skuInput");
-      const varianteIdSeleccionada = document.getElementById(
-        "varianteIdSeleccionada"
-      );
-      const resultadosBusqueda = document.getElementById("resultadosBusqueda");
-      const cantidadInput = document.getElementById("cantidadInput");
-      const btnRegistrar = document.getElementById("btnRegistrar");
+      const searchInput = document.getElementById("searchInput");
+      const filterCategoria = document.getElementById("filterCategoria");
+      const filterMedida = document.getElementById("filterMedida");
+      const productShelf = document.getElementById("productShelf");
+      const emptyShelf = document.getElementById("emptyShelf");
+      const shelfLoading = document.getElementById("shelfLoading");
+      const shelfSummary = document.getElementById("shelfSummary");
       const ultimoRegistro = document.getElementById("ultimoRegistro");
+      const ultimoRegistroTexto = document.getElementById("ultimoRegistroTexto");
 
       const btnRefrescar = document.getElementById("btnRefrescar");
       const btnAplicar = document.getElementById("btnAplicar");
@@ -314,6 +418,9 @@
         sesionEstatus: null,
         filas: [],
         isAgente: false,
+        catalogo: [],
+        filteredProducts: [],
+        registeredVariants: new Set(),
       };
 
       const getAdminDataForAudit = () => {
@@ -387,129 +494,256 @@
 
       const safeText = (v) => (v == null ? "" : String(v));
 
-      const clearResultadosBusqueda = () => {
-        if (!resultadosBusqueda) return;
-        resultadosBusqueda.innerHTML = "";
-        resultadosBusqueda.style.display = "none";
-      };
-
-      const renderResultadosBusqueda = (resultados) => {
-        if (!resultadosBusqueda) return;
-        resultadosBusqueda.innerHTML = "";
-
-        if (!Array.isArray(resultados) || resultados.length === 0) {
-          resultadosBusqueda.style.display = "none";
-          return;
-        }
-
-        for (const item of resultados) {
-          const row = document.createElement("div");
-          row.style.display = "flex";
-          row.style.alignItems = "center";
-          row.style.gap = "0.75rem";
-          row.style.padding = "0.6rem 0.75rem";
-          row.style.cursor = "pointer";
-          row.style.borderBottom = "1px solid rgba(0,0,0,0.06)";
-
-          row.addEventListener("mouseenter", () => {
-            row.style.background = "rgba(249, 115, 22, 0.08)";
-          });
-          row.addEventListener("mouseleave", () => {
-            row.style.background = "transparent";
-          });
-
-          const img = document.createElement("img");
-          img.src = item.imagen || "/icon/Logo_Razo.png";
-          img.alt = safeText(item.nombreProducto);
-          img.style.width = "40px";
-          img.style.height = "40px";
-          img.style.objectFit = "cover";
-          img.style.borderRadius = "0.75rem";
-          img.style.border = "1px solid rgba(0,0,0,0.06)";
-
-          const text = document.createElement("div");
-          text.style.display = "grid";
-          text.style.lineHeight = "1.1";
-
-          const sku = document.createElement("div");
-          sku.style.fontWeight = "700";
-          sku.textContent = safeText(item.sku);
-
-          const name = document.createElement("div");
-          name.style.fontSize = "0.9rem";
-          name.style.color = "#6b7280";
-          const varianteLabel = safeText(item.nombreVariante).trim();
-          name.textContent = varianteLabel
-            ? `${safeText(item.nombreProducto)} (${varianteLabel})`
-            : safeText(item.nombreProducto);
-
-          text.appendChild(sku);
-          text.appendChild(name);
-
-          row.appendChild(img);
-          row.appendChild(text);
-
-          row.addEventListener("click", () => {
-            skuInput.value = safeText(item.sku);
-            varianteIdSeleccionada.value = String(item.varianteId || "");
-            clearResultadosBusqueda();
-            cantidadInput.focus();
-          });
-
-          resultadosBusqueda.appendChild(row);
-        }
-
-        // Quitar borde final
-        const last = resultadosBusqueda.lastElementChild;
-        if (last) last.style.borderBottom = "none";
-
-        resultadosBusqueda.style.display = "block";
-      };
-
-      let searchTimer = null;
-      const buscarConDebounce = () => {
-        if (!skuInput || !resultadosBusqueda) return;
-        const q = safeText(skuInput.value).trim();
-
-        // Al cambiar texto, invalidar selección previa
-        varianteIdSeleccionada.value = "";
-
-        if (searchTimer) {
-          clearTimeout(searchTimer);
-        }
-
-        if (q.length < 2) {
-          clearResultadosBusqueda();
-          return;
-        }
-
-        searchTimer = setTimeout(async () => {
-          try {
-            const resp = await apiCall(
-              `/admin/auditoria-inventario/buscar-productos?q=${encodeURIComponent(
-                q
-              )}`,
-              { method: "GET" }
-            );
-
-            if (!resp.ok) {
-              clearResultadosBusqueda();
-              return;
-            }
-
-            const resultados = Array.isArray(resp.data?.data?.resultados)
-              ? resp.data.data.resultados
-              : [];
-            renderResultadosBusqueda(resultados);
-          } catch (e) {
-            clearResultadosBusqueda();
+      const escapeHtml = (value) => {
+        return (value || "").toString().replace(/[&<>"']/g, (c) => {
+          switch (c) {
+            case "&": return "&amp;";
+            case "<": return "&lt;";
+            case ">": return "&gt;";
+            case '"': return "&quot;";
+            case "'": return "&#39;";
+            default: return c;
           }
-        }, 300);
+        });
+      };
+
+      const setShelfLoading = (loading) => {
+        if (shelfLoading) shelfLoading.style.display = loading ? "flex" : "none";
+      };
+
+      const normalizeText = (value) => {
+        return (value || "").toString().trim().toLowerCase();
+      };
+
+      async function loadCategorias() {
+        try {
+          const resp = await apiCall("/admin/categorias", { method: "GET" });
+          if (!resp.ok) return;
+          
+          const categorias = Array.isArray(resp.data?.data?.categorias) ? resp.data.data.categorias : [];
+          
+          if (filterCategoria) {
+            categorias.forEach((c) => {
+              const opt = document.createElement("option");
+              opt.value = c.categoriaId;
+              opt.textContent = c.nombre;
+              filterCategoria.appendChild(opt);
+            });
+          }
+        } catch (e) {
+          console.error("Error cargando categorías:", e);
+        }
+      }
+
+      async function loadMedidas() {
+        try {
+          const resp = await apiCall("/admin/medidas-existentes", { method: "GET" });
+          if (!resp.ok) return;
+          
+          const medidas = Array.isArray(resp.data?.data?.medidas) ? resp.data.data.medidas : [];
+          
+          if (filterMedida) {
+            medidas.forEach((m) => {
+              const opt = document.createElement("option");
+              opt.value = m;
+              opt.textContent = m;
+              filterMedida.appendChild(opt);
+            });
+          }
+        } catch (e) {
+          console.error("Error cargando medidas:", e);
+        }
+      }
+
+      async function loadProductCatalog() {
+        setShelfLoading(true);
+        try {
+          const resp = await apiCall(
+            "/admin/auditoria-inventario/buscar-productos?q=",
+            { method: "GET" }
+          );
+
+          if (!resp.ok) {
+            throw new Error(resp.data?.message || "Error al cargar catálogo");
+          }
+
+          const resultados = Array.isArray(resp.data?.data?.resultados)
+            ? resp.data.data.resultados
+            : [];
+
+          state.catalogo = resultados;
+          applyFilters();
+        } catch (e) {
+          console.error("Error cargando catálogo:", e);
+          state.catalogo = [];
+          state.filteredProducts = [];
+          renderShelf();
+        } finally {
+          setShelfLoading(false);
+        }
+      }
+
+      function applyFilters() {
+        const q = normalizeText(searchInput?.value || "");
+        const categoriaId = (filterCategoria?.value || "").trim();
+        const medida = (filterMedida?.value || "").trim();
+
+        state.filteredProducts = state.catalogo.filter((item) => {
+          if (categoriaId && String(item.categoriaId || "") !== categoriaId) return false;
+          if (medida && normalizeText(item.medidas || "") !== normalizeText(medida)) return false;
+
+          if (q) {
+            const searchText = normalizeText(
+              `${item.nombreProducto} ${item.sku} ${item.nombreVariante || ""}`
+            );
+            return searchText.includes(q);
+          }
+
+          return true;
+        });
+
+        renderShelf();
+      }
+
+      function renderShelf() {
+        if (!productShelf || !emptyShelf) return;
+
+        if (shelfSummary) {
+          shelfSummary.textContent = `${state.filteredProducts.length} producto(s) encontrado(s)`;
+        }
+
+        if (state.filteredProducts.length === 0) {
+          productShelf.innerHTML = "";
+          emptyShelf.style.display = "block";
+          return;
+        }
+
+        emptyShelf.style.display = "none";
+
+        productShelf.innerHTML = state.filteredProducts
+          .map((item) => {
+            const varianteId = item.varianteId || 0;
+            const isRegistered = state.registeredVariants.has(varianteId);
+            const img = item.imagen || "/icon/Logo_Razo.png";
+            const nombre = item.nombreProducto || "(Sin nombre)";
+            const sku = item.sku || "—";
+            const medidas = item.medidas || "—";
+            const varianteLabel = item.nombreVariante ? ` (${item.nombreVariante})` : "";
+
+            return `
+              <div class="inventory-card ${isRegistered ? 'registered' : ''}" data-variante-id="${varianteId}">
+                <img
+                  src="${img}"
+                  class="inventory-card-img"
+                  alt="${escapeHtml(nombre)}"
+                  loading="lazy"
+                  onerror="this.src='/icon/Logo_Razo.png'; this.onerror=null;"
+                />
+                <div class="inventory-card-body">
+                  <h3 class="inventory-card-title">${escapeHtml(nombre)}${escapeHtml(varianteLabel)}</h3>
+                  <div class="inventory-card-meta">SKU: <code>${escapeHtml(sku)}</code></div>
+                  <div class="inventory-card-meta">Medidas: <strong>${escapeHtml(medidas)}</strong></div>
+                  ${isRegistered ? '<div class="inventory-registered-badge">✓ Registrado</div>' : ''}
+                </div>
+                <div class="inventory-card-footer">
+                  <input
+                    type="number"
+                    class="inventory-qty-input"
+                    id="qty-${varianteId}"
+                    min="0"
+                    step="1"
+                    value="0"
+                    placeholder="Cantidad"
+                    ${!state.sesionId ? 'disabled' : ''}
+                  />
+                  <button
+                    type="button"
+                    class="inventory-register-btn"
+                    onclick="registrarProducto(${varianteId})"
+                    ${!state.sesionId ? 'disabled' : ''}
+                  >
+                    Registrar
+                  </button>
+                </div>
+              </div>
+            `;
+          })
+          .join("");
+      }
+
+      let searchDebounce = null;
+      function onSearchChange() {
+        if (searchDebounce) clearTimeout(searchDebounce);
+        searchDebounce = setTimeout(() => applyFilters(), 300);
+      }
+
+      window.registrarProducto = async function(varianteId) {
+        if (!state.sesionId) {
+          toast("warning", "Selecciona una sesión");
+          return;
+        }
+
+        const vid = Number.parseInt(varianteId, 10);
+        if (!Number.isInteger(vid) || vid <= 0) {
+          toast("warning", "Variante inválida");
+          return;
+        }
+
+        const qtyInput = document.getElementById(`qty-${vid}`);
+        if (!qtyInput) {
+          toast("warning", "No se encontró el input de cantidad");
+          return;
+        }
+
+        const cantidad = Number.parseInt(qtyInput.value || "0", 10) || 0;
+
+        if (cantidad < 0) {
+          toast("warning", "Cantidad inválida");
+          qtyInput.focus();
+          return;
+        }
+
+        try {
+          const resp = await apiCall("/admin/auditoria-inventario/registrar-conteo", {
+            method: "POST",
+            body: JSON.stringify({
+              sesionId: state.sesionId,
+              varianteId: vid,
+              cantidad,
+              usuarioId: null,
+            }),
+          });
+
+          if (!resp.ok) {
+            throw new Error(resp.data?.message || "No se pudo registrar");
+          }
+
+          const producto = state.catalogo.find(p => p.varianteId === vid);
+          const nombreProducto = producto ? `${producto.nombreProducto} (${producto.sku})` : `Variante ${vid}`;
+
+          toast("success", `Registrado: ${nombreProducto} (${cantidad})`);
+          
+          state.registeredVariants.add(vid);
+          
+          if (ultimoRegistro && ultimoRegistroTexto) {
+            ultimoRegistroTexto.textContent = `${nombreProducto} · Cantidad: ${cantidad}`;
+            ultimoRegistro.style.display = "block";
+          }
+
+          qtyInput.value = "0";
+          
+          renderShelf();
+          loadDashboard();
+        } catch (error) {
+          console.error(error);
+          toast("error", error.message || "Error al registrar");
+        }
       };
 
       const updateControls = () => {
         const hasSesion = Boolean(state.sesionId);
-        btnRegistrar.disabled = !hasSesion;
+        
+        renderShelf();
 
         const validados = state.filas.filter((f) => f.estatusFila === "VALIDADO").length;
         const conflictos = state.filas.filter((f) => f.estatusFila === "CONFLICTO").length;
@@ -724,8 +958,8 @@
           toast("success", "Sesión creada");
           sesionNombre.value = "";
 
-          skuInput.focus();
           await loadDashboard();
+          updateControls();
         } catch (error) {
           console.error(error);
           toast("error", error.message || "Error al crear sesión");
@@ -735,74 +969,6 @@
         }
       };
 
-      const registrarConteo = async () => {
-        if (!state.sesionId) {
-          toast("warning", "Selecciona una sesión");
-          return;
-        }
-
-        const sku = safeText(skuInput.value).trim();
-        const varianteId = Number.parseInt(varianteIdSeleccionada.value, 10);
-        const cantidad = Number.parseInt(cantidadInput.value || "0", 10) || 0;
-
-        if (!sku) {
-          toast("warning", "Busca y selecciona un producto");
-          skuInput.focus();
-          return;
-        }
-
-        if (!Number.isInteger(varianteId) || varianteId <= 0) {
-          toast("warning", "Selecciona un resultado del buscador");
-          skuInput.focus();
-          return;
-        }
-
-        if (cantidad < 0) {
-          toast("warning", "Cantidad inválida");
-          cantidadInput.focus();
-          return;
-        }
-
-        try {
-          btnRegistrar.disabled = true;
-
-          const resp = await apiCall("/admin/auditoria-inventario/registrar-conteo", {
-            method: "POST",
-            body: JSON.stringify({
-              sesionId: state.sesionId,
-              varianteId,
-              cantidad,
-              usuarioId: null,
-            }),
-          });
-
-          if (!resp.ok) {
-            throw new Error(resp.data?.message || "No se pudo registrar");
-          }
-
-          toast("success", `Registrado: ${sku} (${cantidad})`);
-          ultimoRegistro.textContent = `Último registro: ${safeText(
-            sku
-          )} · Cantidad: ${cantidad} · Estatus: ${safeText(
-            resp.data?.data?.conteo?.estatusFila
-          )}`;
-
-          skuInput.value = "";
-          varianteIdSeleccionada.value = "";
-          clearResultadosBusqueda();
-          cantidadInput.value = "0";
-          skuInput.focus();
-
-          // refrescar tablero de fondo
-          loadDashboard();
-        } catch (error) {
-          console.error(error);
-          toast("error", error.message || "Error al registrar");
-          skuInput.focus();
-        } finally {
-          btnRegistrar.disabled = false;
-        }
-      };
 
       const aplicarInventario = async () => {
         if (!state.sesionId) return;
@@ -891,40 +1057,25 @@
         const id = Number.parseInt(sesionSelect.value, 10);
         if (!id) {
           state.sesionId = null;
-          state.sesionEstatus = null;
-          state.filas = [];
-          sesionEstatus.textContent = "—";
-          sesionStats.textContent = "—";
-          dashboardTable.style.display = "none";
           updateControls();
           return;
         }
-
         state.sesionId = id;
-        await loadDashboard();
-        skuInput.focus();
-      });
-
-      btnRegistrar.addEventListener("click", registrarConteo);
-      skuInput.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") {
-          if (resultadosBusqueda && resultadosBusqueda.style.display === "block") {
-            return;
-          }
-          registrarConteo();
+        updateControls();
+        if (!state.isAgente) {
+          await loadDashboard();
         }
       });
-      skuInput.addEventListener("input", buscarConDebounce);
-      document.addEventListener("click", (e) => {
-        const target = e.target;
-        if (!target) return;
-        if (resultadosBusqueda && resultadosBusqueda.contains(target)) return;
-        if (skuInput && (target === skuInput || skuInput.contains(target))) return;
-        clearResultadosBusqueda();
-      });
-      cantidadInput.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") registrarConteo();
-      });
+
+      if (searchInput) {
+        searchInput.addEventListener("input", onSearchChange);
+      }
+      if (filterCategoria) {
+        filterCategoria.addEventListener("change", applyFilters);
+      }
+      if (filterMedida) {
+        filterMedida.addEventListener("change", applyFilters);
+      }
 
       btnRefrescar.addEventListener("click", loadDashboard);
       btnAplicar.addEventListener("click", aplicarInventario);
@@ -932,24 +1083,26 @@
       updateControls();
       applyRoleRestrictions();
 
-      // Auto-seleccionar sesión desde querystring (?sesionId=123)
-      try {
-        const params = new URLSearchParams(window.location.search);
-        const sesionIdParam = Number.parseInt(params.get("sesionId"), 10);
-        if (Number.isInteger(sesionIdParam) && sesionIdParam > 0) {
-          loadSesiones(sesionIdParam).then(() => {
+      (async function init() {
+        await loadCategorias();
+        await loadMedidas();
+        await loadProductCatalog();
+
+        try {
+          const params = new URLSearchParams(window.location.search);
+          const sesionIdParam = Number.parseInt(params.get("sesionId"), 10);
+          if (Number.isInteger(sesionIdParam) && sesionIdParam > 0) {
+            await loadSesiones(sesionIdParam);
             if (state.sesionId && !state.isAgente) {
-              loadDashboard();
+              await loadDashboard();
             }
-          });
-        } else {
-          loadSesiones(null);
+          } else {
+            await loadSesiones(null);
+          }
+        } catch (e) {
+          await loadSesiones(null);
         }
-      } catch (e) {
-        // ignore
-        loadSesiones(null);
-      }
-      skuInput.focus();
+      })();
     </script>
   </body>
 </html>
