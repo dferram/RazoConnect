@@ -443,64 +443,89 @@
       }
 
       .carousel-arrow {
-        display: none;
+        display: flex;
         position: absolute;
         top: 50%;
         transform: translateY(-50%);
-        width: 32px;
-        height: 32px;
-        background: rgba(255, 255, 255, 0.95);
-        border: 1px solid rgba(0, 0, 0, 0.1);
+        width: 36px;
+        height: 36px;
+        background: rgba(255, 255, 255, 0.98);
+        border: 2px solid rgba(0, 0, 0, 0.2);
         border-radius: 50%;
         cursor: pointer;
-        z-index: 10;
+        z-index: 100;
         align-items: center;
         justify-content: center;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        box-shadow: 0 3px 12px rgba(0, 0, 0, 0.25);
         transition: all 0.2s ease;
         -webkit-user-select: none;
         user-select: none;
         -webkit-tap-highlight-color: transparent;
       }
 
+      .carousel-arrow:hover {
+        background: rgba(255, 255, 255, 1);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+        transform: translateY(-50%) scale(1.05);
+      }
+
       .carousel-arrow:active {
         transform: translateY(-50%) scale(0.95);
-        background: rgba(255, 255, 255, 1);
+        background: rgba(240, 240, 240, 1);
       }
 
       .carousel-arrow.hidden {
         opacity: 0;
         pointer-events: none;
+        display: none;
       }
 
       .carousel-arrow-left {
-        left: -8px;
+        left: -12px;
       }
 
       .carousel-arrow-right {
-        right: -8px;
+        right: -12px;
       }
 
       .carousel-arrow i {
-        font-size: 14px;
-        color: #333;
+        font-size: 16px;
+        font-weight: bold;
+        color: #111;
       }
 
       @media (max-width: 768px) {
         .carousel-arrow {
-          display: flex;
+          display: flex !important;
+          width: 32px;
+          height: 32px;
+        }
+
+        .carousel-arrow-left {
+          left: -8px;
+        }
+
+        .carousel-arrow-right {
+          right: -8px;
+        }
+
+        .nike-carousel-wrapper {
+          padding: 0 8px;
         }
 
         .nike-thumbnails-row {
           display: flex !important;
           flex-wrap: nowrap !important;
-          overflow-x: auto !important;
+          overflow-x: scroll !important;
+          overflow-y: hidden !important;
+          -webkit-overflow-scrolling: touch !important;
         }
 
         .nike-thumb {
           width: 55px;
           height: 55px;
           flex: 0 0 auto !important;
+          min-width: 55px;
         }
 
         .galeria-main {
@@ -519,7 +544,7 @@
         }
       }
     </style>
-    <link rel="stylesheet" href="css/mobile-responsive.css" />
+    <link rel="stylesheet" href="css/mobile-responsive.css?v=1.2" />
   </head>
   <body>
     <div id="header-container"></div>
@@ -924,22 +949,36 @@
         const leftArrow = document.getElementById('carouselArrowLeft');
         const rightArrow = document.getElementById('carouselArrowRight');
 
-        if (!carouselRow || !leftArrow || !rightArrow) return;
+        if (!carouselRow || !leftArrow || !rightArrow) {
+          console.log('⚠️ Carousel elements not found');
+          return;
+        }
+
+        console.log('🎠 Initializing carousel controls');
 
         // Update arrow visibility based on scroll position
         function updateArrowVisibility() {
-          const scrollLeft = carouselRow.scrollLeft;
-          const maxScroll = carouselRow.scrollWidth - carouselRow.clientWidth;
+          const scrollLeft = Math.round(carouselRow.scrollLeft);
+          const maxScroll = Math.round(carouselRow.scrollWidth - carouselRow.clientWidth);
+          const hasOverflow = carouselRow.scrollWidth > carouselRow.clientWidth;
 
-          // Hide left arrow if at start
-          if (scrollLeft <= 5) {
+          console.log('Scroll info:', { scrollLeft, maxScroll, hasOverflow, scrollWidth: carouselRow.scrollWidth, clientWidth: carouselRow.clientWidth });
+
+          if (!hasOverflow) {
+            leftArrow.classList.add('hidden');
+            rightArrow.classList.add('hidden');
+            return;
+          }
+
+          // Show/hide left arrow
+          if (scrollLeft <= 10) {
             leftArrow.classList.add('hidden');
           } else {
             leftArrow.classList.remove('hidden');
           }
 
-          // Hide right arrow if at end
-          if (scrollLeft >= maxScroll - 5) {
+          // Show/hide right arrow
+          if (scrollLeft >= maxScroll - 10) {
             rightArrow.classList.add('hidden');
           } else {
             rightArrow.classList.remove('hidden');
@@ -948,39 +987,63 @@
 
         // Scroll carousel by a fixed amount
         function scrollCarousel(direction) {
-          const scrollAmount = 200; // Pixels to scroll
-          const targetScroll = carouselRow.scrollLeft + (direction === 'right' ? scrollAmount : -scrollAmount);
+          const scrollAmount = 150;
+          const currentScroll = carouselRow.scrollLeft;
+          const targetScroll = direction === 'right' 
+            ? currentScroll + scrollAmount 
+            : currentScroll - scrollAmount;
+          
+          console.log(`Scrolling ${direction}:`, { currentScroll, targetScroll });
           
           carouselRow.scrollTo({
             left: targetScroll,
             behavior: 'smooth'
           });
+
+          setTimeout(updateArrowVisibility, 300);
         }
 
         // Event listeners for arrows
         leftArrow.addEventListener('click', (e) => {
           e.preventDefault();
+          e.stopPropagation();
+          console.log('⬅️ Left arrow clicked');
           scrollCarousel('left');
         });
 
         rightArrow.addEventListener('click', (e) => {
           e.preventDefault();
+          e.stopPropagation();
+          console.log('➡️ Right arrow clicked');
           scrollCarousel('right');
         });
 
-        // Update visibility on scroll (with debounce for performance)
+        // Touch events for mobile
+        leftArrow.addEventListener('touchstart', (e) => {
+          e.preventDefault();
+          scrollCarousel('left');
+        });
+
+        rightArrow.addEventListener('touchstart', (e) => {
+          e.preventDefault();
+          scrollCarousel('right');
+        });
+
+        // Update visibility on scroll
         let scrollTimeout;
         carouselRow.addEventListener('scroll', () => {
           clearTimeout(scrollTimeout);
-          scrollTimeout = setTimeout(updateArrowVisibility, 50);
+          scrollTimeout = setTimeout(updateArrowVisibility, 100);
         });
 
-        // Initial visibility check
-        setTimeout(updateArrowVisibility, 100);
+        // Initial visibility check with multiple retries
+        setTimeout(() => updateArrowVisibility(), 100);
+        setTimeout(() => updateArrowVisibility(), 300);
+        setTimeout(() => updateArrowVisibility(), 500);
 
-        // Re-check on window resize (for orientation changes on mobile)
+        // Re-check on window resize
         window.addEventListener('resize', () => {
-          setTimeout(updateArrowVisibility, 100);
+          setTimeout(updateArrowVisibility, 200);
         });
       }
 

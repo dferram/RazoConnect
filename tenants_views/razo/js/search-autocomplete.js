@@ -97,6 +97,71 @@ class SearchAutocomplete {
       display: none;
     `;
 
+    // Add mobile-specific styles
+    const style = document.createElement('style');
+    style.textContent = `
+      .search-result-item-mobile {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem 1rem;
+        border: none;
+        border-bottom: 1px solid #f0f0f0;
+        background: white;
+        width: 100%;
+        text-align: left;
+        transition: background 0.2s;
+      }
+      .search-result-item-mobile:active {
+        background: #f8f8f8;
+      }
+      .search-result-image-mobile {
+        width: 50px;
+        height: 50px;
+        flex-shrink: 0;
+        border-radius: 0.5rem;
+        overflow: hidden;
+        background: #f5f5f5;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .search-result-image-mobile img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .search-result-placeholder-mobile {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #999;
+        font-size: 20px;
+      }
+      .search-result-info-mobile {
+        flex: 1;
+        min-width: 0;
+      }
+      .search-result-item-mobile .search-result-name {
+        font-size: 0.95rem;
+        font-weight: 500;
+        color: #333;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+      }
+      .search-result-item-mobile .bi-chevron-right {
+        color: #999;
+        font-size: 1rem;
+        flex-shrink: 0;
+      }
+    `;
+    document.head.appendChild(style);
+
     document.body.appendChild(this.dropdown);
 
     const closeBtn = this.dropdown.querySelector('.search-drawer-close');
@@ -185,12 +250,16 @@ class SearchAutocomplete {
     if (this.isMobile) {
       resultsContainer.innerHTML = productos.map((producto, index) => `
         <button type="button" class="search-result-item-mobile" data-index="${index}" data-producto-id="${producto.productoId}">
-          <div class="search-result-info">
-            <div class="search-result-name">${this.highlightMatch(producto.nombreProducto)}</div>
-            <div class="search-result-meta">
-              ${producto.categoria ? `<span>${producto.categoria}</span>` : ''}
-              ${producto.precio ? `<span class="search-result-price">$${producto.precio.toFixed(2)}</span>` : ''}
+          <div class="search-result-image-mobile">
+            ${producto.imagenUrl 
+              ? `<img src="${producto.imagenUrl}" alt="${producto.nombreProducto}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />` 
+              : ''}
+            <div class="search-result-placeholder-mobile" style="${producto.imagenUrl ? 'display: none;' : ''}">
+              <i class="bi bi-box-seam"></i>
             </div>
+          </div>
+          <div class="search-result-info-mobile">
+            <div class="search-result-name">${this.highlightMatch(producto.nombreProducto)}</div>
           </div>
           <i class="bi bi-chevron-right"></i>
         </button>
@@ -200,16 +269,14 @@ class SearchAutocomplete {
         <button type="button" class="search-result-item" data-index="${index}" data-producto-id="${producto.productoId}">
           <div class="search-result-image">
             ${producto.imagenUrl 
-              ? `<img src="${producto.imagenUrl}" alt="${producto.nombreProducto}" />` 
-              : `<div class="search-result-placeholder">📦</div>`
-            }
+              ? `<img src="${producto.imagenUrl}" alt="${producto.nombreProducto}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />` 
+              : ''}
+            <div class="search-result-placeholder" style="${producto.imagenUrl ? 'display: none;' : 'display: flex;'}">
+              <i class="bi bi-box-seam" style="font-size: 24px; color: #999;"></i>
+            </div>
           </div>
           <div class="search-result-info">
             <div class="search-result-name">${this.highlightMatch(producto.nombreProducto)}</div>
-            <div class="search-result-meta">
-              ${producto.categoria ? `<span class="search-result-category">${producto.categoria}</span>` : ''}
-              ${producto.precio ? `<span class="search-result-price">$${producto.precio.toFixed(2)}</span>` : ''}
-            </div>
           </div>
         </button>
       `).join('');
