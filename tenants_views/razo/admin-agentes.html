@@ -170,18 +170,12 @@
 
         <div class="admin-content">
           <!-- Form to Create Agent -->
-          <div class="admin-table-container" style="margin-bottom: 2rem">
+          <div class="admin-table-container agent-form-container">
             <div class="admin-table-header">
               <h2 class="admin-table-title">Agregar nuevo agente</h2>
             </div>
-            <form id="agenteForm" style="padding: 1.5rem">
-              <div
-                style="
-                  display: grid;
-                  grid-template-columns: repeat(2, 1fr);
-                  gap: 1rem;
-                "
-              >
+            <form id="agenteForm" class="agent-form">
+              <div class="agent-form-grid">
                 <div class="form-group">
                   <label for="nombre" class="form-label">Nombre *</label>
                   <input type="text" id="nombre" class="form-input" required />
@@ -220,7 +214,7 @@
                 <div class="form-group">
                   <label for="porcentaje_comision" class="form-label">
                     Porcentaje de Comisión (%)
-                    <span style="color: var(--razo-gray-warm); font-weight: normal; font-size: 0.875rem;">
+                    <span class="form-label-hint">
                       (Default: 5%)
                     </span>
                   </label>
@@ -235,22 +229,11 @@
                   />
                 </div>
               </div>
-              <div
-                style="
-                  display: flex;
-                  justify-content: flex-end;
-                  gap: 1rem;
-                  margin-top: 1rem;
-                "
-              >
+              <div class="agent-form-actions">
                 <button type="reset" class="btn btn-secondary">Limpiar</button>
                 <button type="submit" class="btn btn-primary" id="submitBtn">
                   <span id="btnText">Crear agente</span>
-                  <div
-                    class="spinner"
-                    id="btnSpinner"
-                    style="display: none"
-                  ></div>
+                  <div class="spinner d-none" id="btnSpinner"></div>
                 </button>
               </div>
             </form>
@@ -267,8 +250,8 @@
             <div id="loadingAgents" class="loading">
               <div class="spinner"></div>
             </div>
-            <div style="overflow-x: auto">
-              <table class="admin-table" id="agentsTable" style="display: none">
+            <div class="table-scroll-wrapper">
+              <table class="admin-table table-hidden" id="agentsTable">
                 <thead>
                   <tr>
                     <th>Nombre</th>
@@ -286,71 +269,41 @@
                 <tbody id="agentsTableBody"></tbody>
               </table>
             </div>
-            <div id="emptyAgents" class="empty-state" style="display: none">
+            <div id="emptyAgents" class="empty-state d-none">
               <div class="empty-state-icon">💼</div>
               <h3 class="empty-state-title">No hay agentes</h3>
               <p class="empty-state-text">Crea tu primer agente de ventas</p>
             </div>
 
             <!-- Paginación -->
-            <div
-              id="paginationContainer"
-              style="
-                display: none;
-                margin-top: 1.5rem;
-                padding: 1rem;
-                border-top: 1px solid #e5e7eb;
-              "
-            >
-              <div
-                style="
-                  display: flex;
-                  justify-content: space-between;
-                  align-items: center;
-                  flex-wrap: wrap;
-                  gap: 1rem;
-                "
-              >
+            <div id="paginationContainer" class="pagination-container">
+              <div class="pagination-wrapper">
                 <!-- Información de registros -->
-                <div style="color: var(--razo-gray-warm); font-size: 0.875rem">
+                <div class="pagination-info">
                   Mostrando <strong id="pageStart">1</strong> a
                   <strong id="pageEnd">10</strong> de
                   <strong id="totalRecords">0</strong> agentes
                 </div>
 
                 <!-- Controles de paginación -->
-                <div style="display: flex; gap: 0.5rem; align-items: center">
+                <div class="pagination-controls">
                   <button
                     id="btnPrevPage"
                     onclick="cambiarPagina('prev')"
-                    class="btn btn-secondary"
-                    style="
-                      padding: 0.5rem 1rem;
-                      font-size: 0.875rem;
-                      display: flex;
-                      align-items: center;
-                      gap: 0.5rem;
-                    "
+                    class="btn btn-secondary pagination-btn"
                     disabled
                   >
                     ← Anterior
                   </button>
 
-                  <div id="pageNumbers" style="display: flex; gap: 0.25rem">
+                  <div id="pageNumbers" class="page-numbers">
                     <!-- Los números de página se generarán dinámicamente -->
                   </div>
 
                   <button
                     id="btnNextPage"
                     onclick="cambiarPagina('next')"
-                    class="btn btn-secondary"
-                    style="
-                      padding: 0.5rem 1rem;
-                      font-size: 0.875rem;
-                      display: flex;
-                      align-items: center;
-                      gap: 0.5rem;
-                    "
+                    class="btn btn-secondary pagination-btn"
                   >
                     Siguiente →
                   </button>
@@ -362,94 +315,89 @@
       </main>
     </div>
 
+    <!-- Modal para editar agente -->
+    <div id="editarAgenteModal" class="agent-edit-modal">
+      <div class="agent-edit-modal-content">
+        <div class="agent-edit-modal-header">
+          <h2 class="agent-edit-modal-title">
+            ✏️ Editar Agente
+          </h2>
+          <button class="agent-edit-modal-close" onclick="closeEditarAgenteModal()">
+            &times;
+          </button>
+        </div>
+        <form id="editarAgenteForm" class="agent-edit-form">
+          <input type="hidden" id="edit_agente_id" />
+          <div class="agent-edit-form-grid">
+            <div class="form-group">
+              <label for="edit_nombre" class="form-label">Nombre *</label>
+              <input type="text" id="edit_nombre" class="form-input" required />
+            </div>
+            <div class="form-group">
+              <label for="edit_apellido" class="form-label">Apellido *</label>
+              <input type="text" id="edit_apellido" class="form-input" required />
+            </div>
+            <div class="form-group">
+              <label for="edit_telefono" class="form-label">Teléfono</label>
+              <input
+                type="tel"
+                id="edit_telefono"
+                class="form-input"
+                placeholder="Ej: 5551234567"
+              />
+            </div>
+            <div class="form-group">
+              <label for="edit_email" class="form-label">Email</label>
+              <input type="email" id="edit_email" class="form-input" />
+            </div>
+            <div class="form-group">
+              <label for="edit_porcentaje_comision" class="form-label">
+                Porcentaje de Comisión (%)
+                <span style="color: var(--razo-gray-warm); font-weight: normal; font-size: 0.875rem;">
+                  (Default: 5%)
+                </span>
+              </label>
+              <input
+                type="number"
+                id="edit_porcentaje_comision"
+                class="form-input"
+                min="0"
+                max="100"
+                step="0.01"
+                placeholder="5.00"
+              />
+            </div>
+          </div>
+          <div class="agent-edit-form-actions">
+            <button type="button" class="btn btn-secondary" onclick="closeEditarAgenteModal()">
+              Cancelar
+            </button>
+            <button type="submit" class="btn btn-primary" id="editSubmitBtn">
+              <span id="editBtnText">Guardar Cambios</span>
+              <div class="spinner d-none" id="editBtnSpinner"></div>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
     <!-- Modal para ver detalle del agente -->
-    <div
-      id="detalleAgenteModal"
-      class="modal"
-      style="
-        display: none;
-        position: fixed;
-        z-index: 1000;
-        left: 0;
-        top: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.5);
-        align-items: center;
-        justify-content: center;
-      "
-    >
-      <div
-        class="modal-content"
-        style="
-          background: white;
-          padding: 2rem;
-          border-radius: 1rem;
-          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-          max-width: 850px;
-          width: 90%;
-          max-height: 85vh;
-          overflow-y: auto;
-          margin: auto;
-        "
-      >
-        <div
-          style="
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-            padding-bottom: 1rem;
-            border-bottom: 2px solid #f5f1ed;
-          "
-        >
-          <h2
-            style="
-              margin: 0;
-              font-size: 1.5rem;
-              color: var(--razo-orange);
-              font-weight: 600;
-            "
-          >
+    <div id="detalleAgenteModal" class="detail-modal">
+      <div class="detail-modal-content">
+        <div class="detail-modal-header">
+          <h2 class="detail-modal-title">
             👤 Detalle del Agente
           </h2>
-          <div style="display: flex; align-items: center; gap: 0.75rem">
+          <div class="detail-modal-header-actions">
             <a
               id="btn-ir-detalle-completo"
               href="#"
-              class="btn btn-primary"
-              style="
-                display: inline-flex;
-                align-items: center;
-                gap: 0.5rem;
-                padding: 0.5rem 1rem;
-                text-decoration: none;
-              "
+              class="btn btn-primary detail-modal-link"
             >
               <span aria-hidden="true">🔗</span>
               <span>Ver Perfil Completo</span>
             </a>
-            <button
-              class="modal-close"
-              onclick="closeDetalleAgenteModal()"
-              style="
-                background: none;
-                border: none;
-                font-size: 2rem;
-                cursor: pointer;
-                color: #6b5d57;
-                line-height: 1;
-                padding: 0;
-                width: 32px;
-                height: 32px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                border-radius: 50%;
-                transition: all 0.2s;
-              "
-            >
+            <button class="detail-modal-close" onclick="closeDetalleAgenteModal()">
               &times;
             </button>
           </div>
@@ -622,9 +570,9 @@
         const empty = document.getElementById("emptyAgents");
 
         try {
-          loading.style.display = "flex";
-          table.style.display = "none";
-          empty.style.display = "none";
+          loading.classList.remove("d-none");
+          table.classList.add("table-hidden");
+          empty.classList.add("d-none");
 
           const response = await fetch(`${API_BASE_URL}/admin/agentes`, {
             headers: {
@@ -639,13 +587,13 @@
             paginaActual = 1;
             renderAgentes();
           } else {
-            empty.style.display = "block";
+            empty.classList.remove("d-none");
           }
         } catch (error) {
           console.error("Error:", error);
           showToast("Error al cargar agentes", "error");
         } finally {
-          loading.style.display = "none";
+          loading.classList.add("d-none");
         }
       }
 
@@ -720,23 +668,22 @@
               a.activo ? "Activo" : "Inactivo"
             }</span></td>
           <td>
-            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+            <div class="agent-actions-container">
               <button 
-                class="btn btn-primary" 
-                style="padding: 0.625rem 1.25rem; font-size: 0.875rem; border-radius: 0.5rem; display: inline-flex; align-items: center; gap: 0.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: all 0.2s;" 
-                onclick="verDetalleAgente(${a.agenteId})"
-                onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.15)'"
-                onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)'">
+                class="btn btn-primary agent-action-btn" 
+                onclick="verDetalleAgente(${a.agenteId})">
                 Ver Detalle
+              </button>
+              <button 
+                class="btn btn-secondary agent-action-btn" 
+                onclick="editarAgente(${a.agenteId})">
+                Editar
               </button>
               ${
                 a.activo
                   ? `<button 
-                class="btn btn-danger" 
-                style="padding: 0.625rem 1.25rem; font-size: 0.875rem; border-radius: 0.5rem; display: inline-flex; align-items: center; gap: 0.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: all 0.2s;" 
-                onclick="desactivarAgente(${a.agenteId}, '${a.nombre} ${a.apellido}')"
-                onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(220,38,38,0.3)'"
-                onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)'">
+                class="btn btn-danger agent-action-btn" 
+                onclick="desactivarAgente(${a.agenteId}, '${a.nombre} ${a.apellido}')">
                 Desactivar
               </button>`
                   : ""
@@ -748,8 +695,8 @@
           })
           .join("");
 
-        table.style.display = "table";
-        pagination.style.display = "block";
+        table.classList.remove("table-hidden");
+        pagination.classList.add("show");
         actualizarPaginacion();
       }
 
@@ -852,8 +799,8 @@
 
           try {
             btn.disabled = true;
-            btnText.style.display = "none";
-            btnSpinner.style.display = "block";
+            btnText.classList.add("d-none");
+            btnSpinner.classList.remove("d-none");
 
             const porcentajeComision = document.getElementById("porcentaje_comision").value;
             
@@ -887,20 +834,18 @@
             } else {
               const errorMessage = data.message || "Error al crear agente";
               
-              // Detectar si es error de email duplicado o correo ya registrado
               if (response.status === 400 && 
                   (errorMessage.toLowerCase().includes("correo") || 
                    errorMessage.toLowerCase().includes("email"))) {
                 Swal.fire({
                   title: 'Correo no disponible',
                   html: `<p>${errorMessage}</p>
-                         <p style="margin-top: 1rem; color: #6b7280;">Por favor, utiliza un email diferente o verifica si ya existe en el sistema.</p>`,
+                         <p class="swal-error-hint">Por favor, utiliza un email diferente o verifica si ya existe en el sistema.</p>`,
                   icon: 'warning',
                   confirmButtonText: 'Entendido',
                   confirmButtonColor: '#f97316'
                 });
               } else {
-                // Otros errores
                 Swal.fire({
                   title: 'Error',
                   text: errorMessage,
@@ -921,58 +866,10 @@
             });
           } finally {
             btn.disabled = false;
-            btnText.style.display = "inline";
-            btnSpinner.style.display = "none";
+            btnText.classList.remove("d-none");
+            btnSpinner.classList.add("d-none");
           }
         });
-
-      async function desactivarAgente(id, nombre) {
-        if (typeof Swal !== "undefined" && Swal && typeof Swal.fire === "function") {
-          const result = await Swal.fire({
-            title: "¿Desactivar agente?",
-            text: `¿Desactivar al agente ${nombre}?`,
-            icon: "warning",
-            showCancelButton: true,
-            confirmButtonText: "Sí, desactivar",
-            cancelButtonText: "Cancelar",
-            confirmButtonColor: "#F97316",
-            cancelButtonColor: "#6b7280",
-          });
-
-          if (!result.isConfirmed) {
-            return;
-          }
-        } else {
-          console.warn(
-            "SweetAlert2 no disponible; acción de desactivarAgente cancelada."
-          );
-          return;
-        }
-
-        try {
-          const response = await fetch(
-            `${API_BASE_URL}/admin/agentes/${id}/desactivar`,
-            {
-              method: "PUT",
-              headers: {
-                Authorization: `Bearer ${adminToken}`,
-                "Content-Type": "application/json",
-              },
-            }
-          );
-          const data = await response.json();
-
-          if (response.ok && data.success) {
-            showToast(data.message, "success");
-            loadAgentes();
-          } else {
-            showToast(data.message || "Error", "error");
-          }
-        } catch (error) {
-          console.error("Error:", error);
-          showToast("Error al conectar", "error");
-        }
-      }
 
       // Ver detalle del agente en modal
       async function verDetalleAgente(agenteId) {
@@ -1155,7 +1052,7 @@
             document.getElementById("detalleAgenteModalBody").innerHTML =
               contenido;
             const modal = document.getElementById("detalleAgenteModal");
-            modal.style.display = "flex";
+            modal.classList.add("show");
           }
         } catch (error) {
           console.error("Error:", error);
@@ -1166,7 +1063,7 @@
       // Cerrar modal de detalle
       function closeDetalleAgenteModal() {
         const modal = document.getElementById("detalleAgenteModal");
-        modal.style.display = "none";
+        modal.classList.remove("show");
       }
 
       // Cerrar modal al hacer click fuera
@@ -1190,6 +1087,139 @@
             );
           });
         });
+
+      // Editar agente
+      async function editarAgente(agenteId) {
+        try {
+          const response = await fetch(`${API_BASE_URL}/admin/agentes/${agenteId}`, {
+            headers: {
+              Authorization: `Bearer ${adminToken}`,
+              "Content-Type": "application/json",
+            },
+          });
+
+          if (!response.ok) throw new Error("Error al cargar agente");
+
+          const data = await response.json();
+
+          if (data.success) {
+            const { agente } = data.data;
+            
+            document.getElementById("edit_agente_id").value = agente.agenteId || agente.agenteid;
+            document.getElementById("edit_nombre").value = agente.nombre || "";
+            document.getElementById("edit_apellido").value = agente.apellido || "";
+            document.getElementById("edit_telefono").value = agente.telefono || "";
+            document.getElementById("edit_email").value = agente.email || "";
+            document.getElementById("edit_porcentaje_comision").value = agente.porcentajeComision || agente.porcentaje_comision || 5.00;
+
+            const modal = document.getElementById("editarAgenteModal");
+            modal.classList.add("show");
+          }
+        } catch (error) {
+          console.error("Error:", error);
+          showToast("Error al cargar datos del agente", "error");
+        }
+      }
+
+      function closeEditarAgenteModal() {
+        const modal = document.getElementById("editarAgenteModal");
+        modal.classList.remove("show");
+        document.getElementById("editarAgenteForm").reset();
+      }
+
+      document.getElementById("editarAgenteForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById("editSubmitBtn");
+        const btnText = document.getElementById("editBtnText");
+        const btnSpinner = document.getElementById("editBtnSpinner");
+
+        const agenteId = document.getElementById("edit_agente_id").value;
+        const telefono = document.getElementById("edit_telefono").value.trim();
+        const email = document.getElementById("edit_email").value.trim();
+
+        if (!telefono && !email) {
+          Swal.fire({
+            title: 'Datos incompletos',
+            text: 'Debes proporcionar al menos un teléfono o un email para el agente.',
+            icon: 'warning',
+            confirmButtonText: 'Entendido',
+            confirmButtonColor: '#f97316'
+          });
+          return;
+        }
+
+        try {
+          btn.disabled = true;
+          btnText.classList.add("d-none");
+          btnSpinner.classList.remove("d-none");
+
+          const porcentajeComision = document.getElementById("edit_porcentaje_comision").value;
+
+          const response = await fetch(`${API_BASE_URL}/admin/agentes/${agenteId}`, {
+            method: "PUT",
+            headers: {
+              Authorization: `Bearer ${adminToken}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              nombre: document.getElementById("edit_nombre").value,
+              apellido: document.getElementById("edit_apellido").value,
+              telefono: document.getElementById("edit_telefono").value,
+              email: document.getElementById("edit_email").value,
+              porcentaje_comision: porcentajeComision || null,
+            }),
+          });
+          const data = await response.json();
+
+          if (response.ok && data.success) {
+            await Swal.fire({
+              title: '¡Agente actualizado!',
+              html: `<p>El agente <strong>${document.getElementById("edit_nombre").value} ${document.getElementById("edit_apellido").value}</strong> ha sido actualizado exitosamente.</p>`,
+              icon: 'success',
+              confirmButtonText: 'Continuar',
+              confirmButtonColor: '#10b981'
+            });
+            closeEditarAgenteModal();
+            await loadAgentes();
+          } else {
+            const errorMessage = data.message || "Error al actualizar agente";
+            
+            if (response.status === 400 && 
+                (errorMessage.toLowerCase().includes("correo") || 
+                 errorMessage.toLowerCase().includes("email"))) {
+              Swal.fire({
+                title: 'Correo no disponible',
+                html: `<p>${errorMessage}</p>
+                       <p class="swal-error-hint">Por favor, utiliza un email diferente o verifica si ya existe en el sistema.</p>`,
+                icon: 'warning',
+                confirmButtonText: 'Entendido',
+                confirmButtonColor: '#f97316'
+              });
+            } else {
+              Swal.fire({
+                title: 'Error',
+                text: errorMessage,
+                icon: 'error',
+                confirmButtonText: 'Entendido',
+                confirmButtonColor: '#ef4444'
+              });
+            }
+          }
+        } catch (error) {
+          console.error("Error:", error);
+          Swal.fire({
+            title: 'Error de conexión',
+            text: 'No se pudo conectar con el servidor. Por favor, verifica tu conexión a internet e intenta nuevamente.',
+            icon: 'error',
+            confirmButtonText: 'Entendido',
+            confirmButtonColor: '#ef4444'
+          });
+        } finally {
+          btn.disabled = false;
+          btnText.classList.remove("d-none");
+          btnSpinner.classList.add("d-none");
+        }
+      });
 
       init();
     </script>

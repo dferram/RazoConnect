@@ -1785,3 +1785,338 @@ body.sidebar-collapsed .admin-main {
     transform: translateY(0);
   }
 }
+
+/* ============================================
+   AGENT EDIT MODAL
+   ============================================ */
+.agent-edit-modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  align-items: center;
+  justify-content: center;
+}
+
+.agent-edit-modal.show {
+  display: flex;
+}
+
+.agent-edit-modal-content {
+  background: white;
+  padding: 2rem;
+  border-radius: 1rem;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  max-width: 1200px;
+  width: 95%;
+  max-height: 85vh;
+  overflow-y: auto;
+  margin: auto;
+}
+
+.agent-edit-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #f5f1ed;
+}
+
+.agent-edit-modal-title {
+  margin: 0;
+  font-size: 1.5rem;
+  color: var(--razo-orange);
+  font-weight: 600;
+}
+
+.agent-edit-modal-close {
+  background: none;
+  border: none;
+  font-size: 2rem;
+  cursor: pointer;
+  color: #6b5d57;
+  line-height: 1;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s;
+}
+
+.agent-edit-modal-close:hover {
+  background: rgba(107, 93, 87, 0.1);
+  transform: scale(1.1);
+}
+
+.agent-edit-form {
+  padding: 0;
+}
+
+.agent-edit-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+.agent-edit-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+/* Agent Actions Buttons */
+.agent-actions-container {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.agent-action-btn {
+  padding: 0.625rem 1.25rem;
+  font-size: 0.875rem;
+  border-radius: 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s;
+  border: none;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.agent-action-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.agent-action-btn.btn-danger:hover {
+  box-shadow: 0 4px 8px rgba(220, 38, 38, 0.3);
+}
+
+@media (max-width: 768px) {
+  .agent-edit-modal-content {
+    width: 98%;
+    padding: 1.5rem;
+    max-height: 90vh;
+  }
+
+  .agent-edit-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .agent-action-btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.8125rem;
+  }
+}
+
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+.swal-error-hint {
+  margin-top: 1rem;
+  color: #6b7280;
+}
+
+.d-none {
+  display: none !important;
+}
+
+/* ============================================
+   AGENT FORM SECTION
+   ============================================ */
+.agent-form-container {
+  margin-bottom: 2rem;
+}
+
+.agent-form {
+  padding: 1.5rem;
+}
+
+.agent-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+.agent-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.form-label-hint {
+  color: var(--razo-gray-warm);
+  font-weight: normal;
+  font-size: 0.875rem;
+}
+
+/* ============================================
+   PAGINATION SECTION
+   ============================================ */
+.pagination-container {
+  display: none;
+  margin-top: 1.5rem;
+  padding: 1rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.pagination-container.show {
+  display: block;
+}
+
+.pagination-wrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.pagination-info {
+  color: var(--razo-gray-warm);
+  font-size: 0.875rem;
+}
+
+.pagination-controls {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.pagination-btn {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.page-numbers {
+  display: flex;
+  gap: 0.25rem;
+}
+
+/* ============================================
+   TABLE UTILITIES
+   ============================================ */
+.table-scroll-wrapper {
+  overflow-x: auto;
+}
+
+.table-hidden {
+  display: none;
+}
+
+/* ============================================
+   DETAIL MODAL STYLES
+   ============================================ */
+.detail-modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  align-items: center;
+  justify-content: center;
+}
+
+.detail-modal.show {
+  display: flex;
+}
+
+.detail-modal-content {
+  background: white;
+  padding: 2rem;
+  border-radius: 1rem;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  max-width: 850px;
+  width: 90%;
+  max-height: 85vh;
+  overflow-y: auto;
+  margin: auto;
+}
+
+.detail-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #f5f1ed;
+}
+
+.detail-modal-title {
+  margin: 0;
+  font-size: 1.5rem;
+  color: var(--razo-orange);
+  font-weight: 600;
+}
+
+.detail-modal-close {
+  background: none;
+  border: none;
+  font-size: 2rem;
+  cursor: pointer;
+  color: #6b5d57;
+  line-height: 1;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s;
+}
+
+.detail-modal-close:hover {
+  background: rgba(107, 93, 87, 0.1);
+  transform: scale(1.1);
+}
+
+.detail-modal-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.detail-modal-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  text-decoration: none;
+}
+
+@media (max-width: 768px) {
+  .agent-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .pagination-wrapper {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .pagination-controls {
+    justify-content: center;
+  }
+}

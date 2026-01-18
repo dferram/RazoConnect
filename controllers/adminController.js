@@ -8439,7 +8439,7 @@ const crearAgente = async (req, res) => {
     if (allowDirect) {
       const insertRes = await db.query(
         "INSERT INTO agentesdeventas (nombre, apellido, email, telefono, passwordhash, codigoagente, activo, esadmin, adminrol, tenant_id, porcentaje_comision) VALUES ($1, $2, $3, $4, $5, $6, TRUE, FALSE, NULL, $7, $8) RETURNING agenteid, nombre, apellido, email, telefono, codigoagente, activo, esadmin, adminrol, porcentaje_comision",
-        [nombre.trim(), apellido.trim(), email, telefono, hashedPassword, nuevoCodigoAgente, tenant_id, porcentajeComision]
+        [nombre.trim(), apellido.trim(), email?.trim() || null, telefono?.trim() || null, hashedPassword, nuevoCodigoAgente, tenant_id, porcentajeComision]
       );
 
       const row = insertRes.rows[0];
@@ -8955,6 +8955,169 @@ const desactivarAgente = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Error en el servidor",
+    });
+  }
+};
+
+/**
+ * Actualizar información de un agente
+ * PUT /api/admin/agentes/:id
+ */
+const actualizarAgente = async (req, res) => {
+  try {
+    const agenteId = parseInt(req.params.id);
+    const { nombre, apellido, email, telefono, porcentaje_comision } = req.body;
+
+    // CRITICAL: Filter by tenant_id for multi-tenant isolation
+    const { tenant_id } = req.tenant;
+
+    // Obtener agente actual
+    const snapshotResult = await db.query(
+      "SELECT * FROM AgentesDeVentas WHERE AgenteID = $1 AND tenant_id = $2",
+      [agenteId, tenant_id]
+    );
+
+    if (snapshotResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Agente no encontrado",
+      });
+    }
+
+    const agenteActual = snapshotResult.rows[0];
+
+    // Validaciones
+    if (!nombre || !apellido) {
+      return res.status(400).json({
+        success: false,
+        message: "Nombre y apellido son obligatorios",
+      });
+    }
+
+    // Validar que al menos teléfono o email estén presentes
+    const emailProvided = email && email.trim() !== "";
+    const telefonoProvided = telefono && telefono.trim() !== "";
+
+    if (!emailProvided && !telefonoProvided) {
+      return res.status(400).json({
+        success: false,
+        message: "Debes proporcionar al menos un teléfono o un email para el agente",
+      });
+    }
+
+    // Verificar unicidad del email si cambió
+    if (emailProvided && email !== agenteActual.email) {
+      const emailCheckGlobal = await checkEmailGlobalUniqueness(email, "agentesdeventas", agenteId);
+
+      if (emailCheckGlobal.exists) {
+        const errorMessage = getContextualErrorMessage(
+          emailCheckGlobal.table,
+          "agentesdeventas"
+        );
+        return res.status(400).json({
+          success: false,
+          message: errorMessage,
+        });
+      }
+    }
+
+    // Validar porcentaje de comisión
+    let porcentajeComision = agenteActual.porcentaje_comision || 5.00;
+    if (porcentaje_comision !== undefined && porcentaje_comision !== null && porcentaje_comision !== '') {
+      porcentajeComision = parseFloat(porcentaje_comision);
+      if (isNaN(porcentajeComision) || porcentajeComision < 0 || porcentajeComision > 100) {
+        return res.status(400).json({
+          success: false,
+          message: "El porcentaje de comisión debe estar entre 0 y 100",
+        });
+      }
+    }
+
+    const rol = (req?.user?.rol || "").toString().trim().toLowerCase();
+    const allowDirect = rol === "admin" || rol === "superadmin";
+
+    if (allowDirect) {
+      const updateRes = await db.query(
+        `UPDATE agentesdeventas 
+         SET nombre = $1, apellido = $2, email = $3, telefono = $4, porcentaje_comision = $5
+         WHERE agenteid = $6 AND tenant_id = $7 
+         RETURNING agenteid, nombre, apellido, email, telefono, codigoagente, activo, porcentaje_comision`,
+        [nombre.trim(), apellido.trim(), email?.trim() || null, telefono?.trim() || null, porcentajeComision, agenteId, tenant_id]
+      );
+
+      if (!updateRes.rows.length) {
+        return res.status(404).json({
+          success: false,
+          message: "Agente no encontrado",
+        });
+      }
+
+      const row = updateRes.rows[0];
+
+      await auditService.registrarCambioPasivo(
+        req,
+        "agentes",
+        agenteId,
+        "UPDATE",
+        agenteActual,
+        {
+          agenteid: row.agenteid,
+          nombre: row.nombre,
+          apellido: row.apellido,
+          email: row.email,
+          telefono: row.telefono,
+          porcentaje_comision: row.porcentaje_comision,
+        }
+      );
+
+      return res.json({
+        success: true,
+        message: `Agente ${row.nombre} ${row.apellido} actualizado exitosamente.`,
+        data: {
+          agenteId: row.agenteid,
+          nombre: row.nombre,
+          apellido: row.apellido,
+          email: row.email,
+          telefono: row.telefono,
+          codigoAgente: row.codigoagente,
+          porcentajeComision: row.porcentaje_comision,
+        },
+      });
+    }
+
+    // Si no es admin directo, usar sistema de solicitudes
+    const datosNuevos = {
+      Nombre: nombre.trim(),
+      Apellido: apellido.trim(),
+      Email: email?.trim() || null,
+      Telefono: telefono?.trim() || null,
+      PorcentajeComision: porcentajeComision,
+    };
+
+    const resultado = await solicitarCambio(
+      req,
+      "agentes",
+      agenteId,
+      "UPDATE",
+      datosNuevos,
+      agenteActual
+    );
+
+    return res.json({
+      success: true,
+      message: resultado.mensaje,
+      data: {
+        agenteId,
+        solicitudId: resultado.solicitudId,
+        estado: resultado.estado,
+      },
+    });
+  } catch (error) {
+    console.error("Error al actualizar agente:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error en el servidor",
+      error: error.message,
     });
   }
 };
@@ -14347,6 +14510,7 @@ module.exports = {
   crearVariante,
   actualizarVariante,
   crearAgente,
+  actualizarAgente,
   getAllAgentes,
   getAgenteDetalle,
   getAgenteClientes,

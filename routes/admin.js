@@ -586,6 +586,12 @@ router.get(
   adminController.getAgenteClientes
 );
 router.put(
+  "/agentes/:id",
+  authenticate,
+  authorizeAdmin,
+  adminController.actualizarAgente
+);
+router.put(
   "/agentes/:id/desactivar",
   authenticate,
   authorizeAdmin,
