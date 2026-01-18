@@ -1437,8 +1437,9 @@ const obtenerPedidos = async (req, res) => {
         // Parse shipping y descuento
         const costoEnvio = parseFloat(pedido.costoenvio) || 0;
         
-        // Solo aplicar descuento si hay cupón
-        const tieneCupon = pedido.cupon_id !== null && pedido.cupon_id !== undefined;
+        // Solo aplicar descuento si hay un cupón válido (ID numérico positivo)
+        const cuponIdNumerico = parseInt(pedido.cupon_id);
+        const tieneCupon = !isNaN(cuponIdNumerico) && cuponIdNumerico > 0;
         const montoDescuento = tieneCupon ? (parseFloat(pedido.monto_descuento) || 0) : 0;
         
         // Calcular total real: Subtotal + Envío - Descuento (solo si hay cupón)

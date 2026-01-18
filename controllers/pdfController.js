@@ -238,9 +238,10 @@ async function generarPDFPedido(req, res) {
         // Parse shipping with fallback to 0
         const costoEnvio = parseFloat(pedido.costoenvio) || 0;
         
-        // Only apply discount if there's a coupon (cupon_id)
+        // Only apply discount if there's a valid coupon ID (must be a positive integer)
         // Product offers are already reflected in preciounitario
-        const tieneCupon = pedido.cupon_id !== null && pedido.cupon_id !== undefined;
+        const cuponIdNumerico = parseInt(pedido.cupon_id);
+        const tieneCupon = !isNaN(cuponIdNumerico) && cuponIdNumerico > 0;
         const montoDescuento = tieneCupon ? (parseFloat(pedido.monto_descuento) || 0) : 0;
         
         // Calculate REAL total: Subtotal + Shipping - Discount (only if coupon exists)
