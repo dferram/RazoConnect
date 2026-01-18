@@ -1,9 +1,4 @@
 require("dotenv").config();
-console.log('--- DEBUG DE VARIABLES ---');
-console.log('1. Valor crudo de NODE_ENV:', process.env.NODE_ENV);
-console.log('2. Tipo de dato:', typeof process.env.NODE_ENV);
-console.log('3. ¿Es production?:', process.env.NODE_ENV === 'production');
-console.log('--------------------------');
 
 const express = require("express");
 const path = require("path");

@@ -18,7 +18,9 @@ async function exportarEntradasAlmacen(req, res) {
                 oc.fecha_recepcion,
                 doc.sku,
                 p.descripcion,
-                doc.cantidad_recibida,
+                doc.cantidad_recibida as paquetes_recibidos,
+                doc.piezasporpaquete,
+                doc.piezasrecibidas,
                 doc.costo_unitario
             FROM ordenesdecompra oc
             INNER JOIN detallesordencompra doc ON doc.ordenid = oc.ordenid
@@ -68,7 +70,7 @@ async function exportarEntradasAlmacen(req, res) {
                 pedido: record.ordenid,
                 codigo: record.sku,
                 descripcion: record.descripcion,
-                cantidad: record.cantidad_recibida,
+                cantidad: record.paquetes_recibidos, // Paquetes, no piezas totales
                 precio: record.costo_unitario
             });
 

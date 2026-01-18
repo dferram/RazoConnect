@@ -1071,7 +1071,8 @@ const crearPedido = async (req, res) => {
         : 5.00;
       
       // Calcular comisión: (Total - Costo Envío) * (Porcentaje / 100)
-      const baseComision = montoTotalFinal - (costoEnvio || 0);
+      const costoEnvio = 0; // El sistema no cobra envío por ahora
+      const baseComision = montoTotalFinal - costoEnvio;
       const montoComision = baseComision * (porcentajeComision / 100);
       
       const comisionResult = await client.query(

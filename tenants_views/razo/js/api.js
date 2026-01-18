@@ -164,15 +164,8 @@ if (typeof window !== 'undefined') {
 
 // API call wrapper con manejo automático de token y sesión expirada
 const apiCall = async (endpoint, options = {}) => {
-  console.log('\n🌐 [API DEBUG] apiCall - INICIO');
-  console.log('📍 [API DEBUG] Endpoint:', endpoint);
-  console.log('⚙️ [API DEBUG] Options:', JSON.stringify(options, null, 2));
-  
   const token = getEffectiveToken();
   const isPublicEndpoint = options.public === true;
-
-  console.log('🔑 [API DEBUG] Token obtenido:', token ? `${token.substring(0, 20)}...` : 'null');
-  console.log('🔓 [API DEBUG] Es endpoint público:', isPublicEndpoint);
 
   const config = {
     headers: {
@@ -186,44 +179,17 @@ const apiCall = async (endpoint, options = {}) => {
   // Add authorization header ONLY if token exists and is not null/undefined
   if (token && token !== 'null' && token !== 'undefined') {
     config.headers["Authorization"] = `Bearer ${token}`;
-    console.log('✅ [API DEBUG] Authorization header agregado');
-  }
-
-  console.log('📦 [API DEBUG] Config final:', JSON.stringify({
-    url: `${API_BASE_URL}${endpoint}`,
-    method: config.method || 'GET',
-    headers: config.headers,
-    hasBody: !!config.body
-  }, null, 2));
-
-  if (config.body) {
-    console.log('📄 [API DEBUG] Body enviado:', config.body);
   }
 
   try {
-    console.log('🚀 [API DEBUG] Ejecutando fetch...');
     const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
     
-    console.log('📥 [API DEBUG] Respuesta recibida:');
-    console.log('  - Status:', response.status);
-    console.log('  - StatusText:', response.statusText);
-    console.log('  - OK:', response.ok);
-    console.log('  - Headers:', Object.fromEntries(response.headers.entries()));
-
     // Clone response para poder leer el texto sin consumir el stream
     const responseClone = response.clone();
     const responseText = await responseClone.text();
-    console.log('📄 [API DEBUG] Response text (raw):', responseText);
-    console.log('📏 [API DEBUG] Response text length:', responseText.length);
 
     // VALIDACIÓN CRÍTICA: Verificar que el servidor envió contenido
     if (!responseText || responseText.length === 0) {
-      console.error('❌ [API DEBUG] CRÍTICO: El servidor devolvió una respuesta vacía');
-      console.error('❌ [API DEBUG] Status:', response.status);
-      console.error('❌ [API DEBUG] StatusText:', response.statusText);
-      console.error('❌ [API DEBUG] Endpoint:', endpoint);
-      console.error('❌ [API DEBUG] Method:', options.method || 'GET');
-      
       throw new Error(
         `El servidor devolvió una respuesta vacía (HTTP ${response.status}). ` +
         `Esto indica un error interno del servidor. Por favor, revisa los logs del backend.`
@@ -232,14 +198,8 @@ const apiCall = async (endpoint, options = {}) => {
 
     let data;
     try {
-      console.log('🔄 [API DEBUG] Intentando parsear JSON...');
       data = await response.json();
-      console.log('✅ [API DEBUG] JSON parseado exitosamente:', JSON.stringify(data, null, 2));
     } catch (jsonError) {
-      console.error('❌ [API DEBUG] Error parseando JSON:', jsonError);
-      console.error('❌ [API DEBUG] Response text era:', responseText);
-      console.error('❌ [API DEBUG] Response status:', response.status);
-      console.error('❌ [API DEBUG] Response headers:', Object.fromEntries(response.headers.entries()));
       
       throw new Error(
         `Error al parsear respuesta JSON del servidor: ${jsonError.message}. ` +
@@ -249,8 +209,6 @@ const apiCall = async (endpoint, options = {}) => {
 
     // Manejo de 403 Forbidden (sin permisos) - NO cerrar sesión, solo mostrar alerta
     if (response.status === 403) {
-      console.error("❌ [API DEBUG] Acceso denegado (403):", endpoint);
-      console.error("❌ [API DEBUG] Data:", data);
       
       if (typeof Swal !== "undefined" && Swal && typeof Swal.fire === "function") {
         Swal.fire({
@@ -271,7 +229,6 @@ const apiCall = async (endpoint, options = {}) => {
 
     // Manejo centralizado de sesión expirada (401) - solo si no es endpoint público Y había un token
     if (response.status === 401 && !isPublicEndpoint && token) {
-      console.warn('⚠️ [API DEBUG] Sesión expirada (401) detectada');
       // Solo mostrar modal de sesión expirada si el usuario tenía un token que expiró
       clearAuthData();
 
@@ -315,14 +272,9 @@ const apiCall = async (endpoint, options = {}) => {
       data,
     };
     
-    console.log('✅ [API DEBUG] Retornando resultado:', JSON.stringify(result, null, 2));
-    console.log('✅ [API DEBUG] apiCall - FIN\n');
-    
     return result;
   } catch (error) {
-    console.error("❌ [API DEBUG] Error en apiCall:", error);
-    console.error("❌ [API DEBUG] Error stack:", error.stack);
-    console.log('❌ [API DEBUG] apiCall - FIN CON ERROR\n');
+    console.error("Error en apiCall:", error);
     throw error;
   }
 };

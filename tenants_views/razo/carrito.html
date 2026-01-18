@@ -3148,13 +3148,6 @@
 
             const payload = buildPedidoPayload(extraMetodoFields);
             
-            // 🔍 DEBUG: Ver exactamente qué se envía al backend
-            console.log("=== DEBUG CHECKOUT ===");
-            console.log("Método de pago:", metodoPagoSeleccionado);
-            console.log("Monto total del carrito:", getCarritoTotal());
-            console.log("Payload completo:", JSON.stringify(payload, null, 2));
-            console.log("=====================");
-            
             const response = await API.finalizarPedido(payload);
 
             if (!response.ok || !response.data?.success) {
