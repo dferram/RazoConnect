@@ -1317,7 +1317,13 @@ const obtenerPedidos = async (req, res) => {
         p.PedidoID,
         p.FechaPedido,
         p.MontoTotal,
+        p.CostoEnvio,
+        p.Monto_Descuento,
+        p.Cupon_ID,
         p.Estatus,
+        p.Es_Credito,
+        p.Pagado,
+        p.Metodo_Pago,
         d.Receptor,
         d.Calle,
         d.Ciudad,
@@ -1376,10 +1382,75 @@ const obtenerPedidos = async (req, res) => {
 
         const detallesResult = await db.query(detallesQuery, [pedido.pedidoid, tenant_id]);
 
+        // Recalcular total desde items (NO confiar en montototal de BD)
+        const items = detallesResult.rows.map((item) => {
+          const { valor: tamanoValor } = extraerInfoTamano(item.tamano_info);
+          const precioUnitarioAplicado =
+            item.preciounitarioaplicado !== null
+              ? parseFloat(item.preciounitarioaplicado)
+              : null;
+          const precioPorPaquete =
+            item.precioporpaquete !== null
+              ? parseFloat(item.precioporpaquete)
+              : null;
+          const cantidad =
+            item.cantidad !== null ? parseInt(item.cantidad, 10) : null;
+          const subtotal =
+            tamanoValor !== null &&
+            cantidad !== null &&
+            precioUnitarioAplicado !== null
+              ? parseFloat(
+                  (tamanoValor * cantidad * precioUnitarioAplicado).toFixed(2)
+                )
+              : null;
+
+          return {
+            detalleId: item.detalleid,
+            varianteId: item.varianteid,
+            productoId: item.productoid,
+            sku: item.sku,
+            nombreProducto: item.nombreproducto,
+            tamanoId: item.tamanoid,
+            piezasPorTamano: tamanoValor,
+            cantidad,
+            esBackorder: item.esbackorder === true,
+            cantidadSurtida:
+              item.cantidadsurtida !== null
+                ? parseInt(item.cantidadsurtida, 10)
+                : null,
+            cantidadBackorder:
+              item.cantidadbackorder !== null
+                ? parseInt(item.cantidadbackorder, 10)
+                : null,
+            precioUnitario: precioUnitarioAplicado,
+            precioPorPaquete,
+            subtotal,
+            piezasTotales: item.piezastotales,
+            dimensiones: item.dimensiones,
+            imagenUrl: item.imagenurl,
+          };
+        });
+
+        // Calcular subtotal desde items reales
+        const subtotalProductos = items.reduce((sum, item) => sum + (parseFloat(item.subtotal) || 0), 0);
+        
+        // Parse shipping y descuento
+        const costoEnvio = parseFloat(pedido.costoenvio) || 0;
+        
+        // Solo aplicar descuento si hay cupón
+        const tieneCupon = pedido.cupon_id !== null && pedido.cupon_id !== undefined;
+        const montoDescuento = tieneCupon ? (parseFloat(pedido.monto_descuento) || 0) : 0;
+        
+        // Calcular total real: Subtotal + Envío - Descuento (solo si hay cupón)
+        const montoTotalCalculado = subtotalProductos + costoEnvio - montoDescuento;
+
         return {
           pedidoId: pedido.pedidoid,
           fechaPedido: pedido.fechapedido,
-          montoTotal: parseFloat(pedido.montototal),
+          montoTotal: parseFloat(montoTotalCalculado.toFixed(2)),
+          esCredito: pedido.es_credito || false,
+          pagado: pedido.pagado || false,
+          metodoPago: pedido.metodo_pago || null,
           estatus: pedido.estatus,
           direccion: {
             receptor: pedido.receptor,
@@ -1397,53 +1468,7 @@ const obtenerPedidos = async (req, res) => {
                 codigoAgente: pedido.codigoagente,
               }
             : null,
-          items: detallesResult.rows.map((item) => {
-            const { valor: tamanoValor } = extraerInfoTamano(item.tamano_info);
-            const precioUnitarioAplicado =
-              item.preciounitarioaplicado !== null
-                ? parseFloat(item.preciounitarioaplicado)
-                : null;
-            const precioPorPaquete =
-              item.precioporpaquete !== null
-                ? parseFloat(item.precioporpaquete)
-                : null;
-            const cantidad =
-              item.cantidad !== null ? parseInt(item.cantidad, 10) : null;
-            const subtotal =
-              tamanoValor !== null &&
-              cantidad !== null &&
-              precioUnitarioAplicado !== null
-                ? parseFloat(
-                    (tamanoValor * cantidad * precioUnitarioAplicado).toFixed(2)
-                  )
-                : null;
-
-            return {
-              detalleId: item.detalleid,
-              varianteId: item.varianteid,
-              productoId: item.productoid,
-              sku: item.sku,
-              nombreProducto: item.nombreproducto,
-              tamanoId: item.tamanoid,
-              piezasPorTamano: tamanoValor,
-              cantidad,
-              esBackorder: item.esbackorder === true,
-              cantidadSurtida:
-                item.cantidadsurtida !== null
-                  ? parseInt(item.cantidadsurtida, 10)
-                  : null,
-              cantidadBackorder:
-                item.cantidadbackorder !== null
-                  ? parseInt(item.cantidadbackorder, 10)
-                  : null,
-              precioUnitario: precioUnitarioAplicado,
-              precioPorPaquete,
-              subtotal,
-              piezasTotales: item.piezastotales,
-              dimensiones: item.dimensiones,
-              imagenUrl: item.url_imagen,
-            };
-          }),
+          items,
         };
       })
     );

@@ -18,6 +18,7 @@ async function generarPDFPedido(req, res) {
                 p.montototal,
                 p.costoenvio,
                 p.monto_descuento,
+                p.cupon_id,
                 p.estatus,
                 c.nombre AS cliente_nombre,
                 c.apellido AS cliente_apellido,
@@ -215,12 +216,13 @@ async function generarPDFPedido(req, res) {
 
         yPosition += 15;
 
-        // Calculate totals by stock status
+        // Calculate totals by stock status - FORCED RECALCULATION
         let totalEnStock = 0;
         let totalSinStock = 0;
 
         detalles.forEach((item) => {
-            const itemSubtotal = parseFloat(item.subtotal);
+            // Force parseFloat to avoid string concatenation errors
+            const itemSubtotal = parseFloat(item.subtotal) || 0;
             
             // If esbackorder is true, it's out of stock
             if (item.esbackorder === true) {
@@ -230,7 +232,19 @@ async function generarPDFPedido(req, res) {
             }
         });
 
+        // Recalculate subtotal from actual items (DO NOT trust database montototal)
         const subtotalProductos = totalEnStock + totalSinStock;
+        
+        // Parse shipping with fallback to 0
+        const costoEnvio = parseFloat(pedido.costoenvio) || 0;
+        
+        // Only apply discount if there's a coupon (cupon_id)
+        // Product offers are already reflected in preciounitario
+        const tieneCupon = pedido.cupon_id !== null && pedido.cupon_id !== undefined;
+        const montoDescuento = tieneCupon ? (parseFloat(pedido.monto_descuento) || 0) : 0;
+        
+        // Calculate REAL total: Subtotal + Shipping - Discount (only if coupon exists)
+        const totalCalculado = subtotalProductos + costoEnvio - montoDescuento;
 
         // Display Total in Stock
         doc.fontSize(10)
@@ -265,17 +279,18 @@ async function generarPDFPedido(req, res) {
 
         yPosition += 20;
 
-        if (pedido.costoenvio && parseFloat(pedido.costoenvio) > 0) {
+        if (costoEnvio > 0) {
             doc.fillColor('#333333')
                .text('Costo de Envío:', 350, yPosition)
-               .text(`$${parseFloat(pedido.costoenvio).toFixed(2)} MXN`, 510, yPosition, { align: 'right', width: 50 });
+               .text(`$${costoEnvio.toFixed(2)} MXN`, 510, yPosition, { align: 'right', width: 50 });
             yPosition += 20;
         }
 
-        if (pedido.monto_descuento && parseFloat(pedido.monto_descuento) > 0) {
+        // Only show discount if there's a coupon applied
+        if (tieneCupon && montoDescuento > 0) {
             doc.fillColor('#DC2626')
-               .text('Descuento:', 350, yPosition)
-               .text(`-$${parseFloat(pedido.monto_descuento).toFixed(2)} MXN`, 510, yPosition, { align: 'right', width: 50 });
+               .text('Descuento por Cupón:', 350, yPosition)
+               .text(`-$${montoDescuento.toFixed(2)} MXN`, 510, yPosition, { align: 'right', width: 50 });
             yPosition += 20;
         }
 
@@ -291,7 +306,7 @@ async function generarPDFPedido(req, res) {
            .font('Helvetica-Bold')
            .fillColor('#F97316')
            .text('TOTAL DE LA ORDEN:', 350, yPosition)
-           .text(`$${parseFloat(pedido.montototal).toFixed(2)} MXN`, 510, yPosition, { align: 'right', width: 50 });
+           .text(`$${totalCalculado.toFixed(2)} MXN`, 510, yPosition, { align: 'right', width: 50 });
 
         yPosition += 30;
 
