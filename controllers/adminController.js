@@ -3442,12 +3442,14 @@ const loginAdmin = async (req, res) => {
 const getDashboardStats = async (req, res) => {
   try {
     const { tenant_id } = req.tenant;
+    console.log('📊 [Dashboard Stats] Tenant ID:', tenant_id);
 
     // Obtener total de pedidos
     const pedidosResult = await db.query(
       `SELECT COUNT(*) as total FROM pedidos WHERE tenant_id = $1`,
       [tenant_id]
     );
+    console.log('📦 Total Pedidos:', pedidosResult.rows[0]);
 
     // Obtener pedidos pendientes (no confirmados, no entregados, no cancelados)
     const pedidosPendientesResult = await db.query(
@@ -3456,6 +3458,7 @@ const getDashboardStats = async (req, res) => {
        AND estatus NOT IN ('Confirmado', 'Entregado', 'Cancelado')`,
       [tenant_id]
     );
+    console.log('⏳ Pedidos Pendientes:', pedidosPendientesResult.rows[0]);
 
     // Obtener pedidos entregados
     const pedidosEntregadosResult = await db.query(
@@ -3463,6 +3466,7 @@ const getDashboardStats = async (req, res) => {
        WHERE tenant_id = $1 AND estatus = 'Entregado'`,
       [tenant_id]
     );
+    console.log('✅ Pedidos Entregados:', pedidosEntregadosResult.rows[0]);
 
     // Obtener total de clientes activos
     const clientesResult = await db.query(
@@ -3470,6 +3474,7 @@ const getDashboardStats = async (req, res) => {
        WHERE tenant_id = $1 AND activo = TRUE`,
       [tenant_id]
     );
+    console.log('👥 Clientes Activos:', clientesResult.rows[0]);
 
     // Obtener agentes activos
     const agentesResult = await db.query(
@@ -3477,6 +3482,7 @@ const getDashboardStats = async (req, res) => {
        WHERE tenant_id = $1 AND activo = TRUE`,
       [tenant_id]
     );
+    console.log('💼 Agentes Activos:', agentesResult.rows[0]);
 
     // Obtener venta total (suma de todos los pedidos no cancelados)
     const ventaTotalResult = await db.query(
@@ -3486,44 +3492,50 @@ const getDashboardStats = async (req, res) => {
        AND estatus NOT IN ('Cancelado')`,
       [tenant_id]
     );
+    console.log('💵 Venta Total:', ventaTotalResult.rows[0]);
 
     // Calcular utilidad total (precio - costo) de todos los pedidos no cancelados
     const utilidadTotalResult = await db.query(
       `SELECT COALESCE(SUM(
-        (dp.preciounitario - COALESCE(pv.costo, p.costo, 0)) * dp.piezastotales
+        (dp.preciounitario - pv.costounitario) * dp.piezastotales
        ), 0) as utilidad
        FROM detallesdelpedido dp
        INNER JOIN pedidos ped ON dp.pedidoid = ped.pedidoid
        INNER JOIN producto_variantes pv ON dp.varianteid = pv.varianteid
-       INNER JOIN productos p ON pv.productoid = p.productoid
        WHERE ped.tenant_id = $1 
        AND ped.estatus NOT IN ('Cancelado')`,
       [tenant_id]
     );
+    console.log('💰 Utilidad Total:', utilidadTotalResult.rows[0]);
 
     // Obtener comisiones pendientes
     const comisionesPendientesResult = await db.query(
       `SELECT COALESCE(SUM(montocomision), 0) as total 
        FROM comisiones 
-       WHERE tenant_id = $1 AND pagado = FALSE`,
+       WHERE tenant_id = $1 AND estatus = 'Pendiente'`,
       [tenant_id]
     );
+    console.log('💳 Comisiones Pendientes:', comisionesPendientesResult.rows[0]);
+
+    const responseData = {
+      totalPedidos: parseInt(pedidosResult.rows[0].total),
+      pedidosPendientes: parseInt(pedidosPendientesResult.rows[0].total),
+      pedidosEntregados: parseInt(pedidosEntregadosResult.rows[0].total),
+      clientesActivos: parseInt(clientesResult.rows[0].total),
+      agentesActivos: parseInt(agentesResult.rows[0].total),
+      ventaTotal: parseFloat(ventaTotalResult.rows[0].total),
+      ingresosTotales: parseFloat(utilidadTotalResult.rows[0].utilidad),
+      comisionesPendientes: parseFloat(comisionesPendientesResult.rows[0].total)
+    };
+
+    console.log('📤 Response Data:', responseData);
 
     res.json({
       success: true,
-      data: {
-        totalPedidos: parseInt(pedidosResult.rows[0].total),
-        pedidosPendientes: parseInt(pedidosPendientesResult.rows[0].total),
-        pedidosEntregados: parseInt(pedidosEntregadosResult.rows[0].total),
-        clientesActivos: parseInt(clientesResult.rows[0].total),
-        agentesActivos: parseInt(agentesResult.rows[0].total),
-        ventaTotal: parseFloat(ventaTotalResult.rows[0].total),
-        ingresosTotales: parseFloat(utilidadTotalResult.rows[0].utilidad),
-        comisionesPendientes: parseFloat(comisionesPendientesResult.rows[0].total)
-      }
+      data: responseData
     });
   } catch (error) {
-    console.error("Error al obtener estadísticas del dashboard:", error);
+    console.error("❌ Error al obtener estadísticas del dashboard:", error);
     res.status(500).json({
       success: false,
       message: "Error al obtener estadísticas",
