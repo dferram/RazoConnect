@@ -3445,67 +3445,67 @@ const getDashboardStats = async (req, res) => {
 
     // Obtener total de pedidos
     const pedidosResult = await db.query(
-      `SELECT COUNT(*) as total FROM Pedidos WHERE tenant_id = $1`,
+      `SELECT COUNT(*) as total FROM pedidos WHERE tenant_id = $1`,
       [tenant_id]
     );
 
     // Obtener pedidos pendientes (no confirmados, no entregados, no cancelados)
     const pedidosPendientesResult = await db.query(
-      `SELECT COUNT(*) as total FROM Pedidos 
+      `SELECT COUNT(*) as total FROM pedidos 
        WHERE tenant_id = $1 
-       AND Estatus NOT IN ('Confirmado', 'Entregado', 'Cancelado')`,
+       AND estatus NOT IN ('Confirmado', 'Entregado', 'Cancelado')`,
       [tenant_id]
     );
 
     // Obtener pedidos entregados
     const pedidosEntregadosResult = await db.query(
-      `SELECT COUNT(*) as total FROM Pedidos 
-       WHERE tenant_id = $1 AND Estatus = 'Entregado'`,
+      `SELECT COUNT(*) as total FROM pedidos 
+       WHERE tenant_id = $1 AND estatus = 'Entregado'`,
       [tenant_id]
     );
 
     // Obtener total de clientes activos
     const clientesResult = await db.query(
-      `SELECT COUNT(*) as total FROM Clientes 
-       WHERE tenant_id = $1 AND Activo = TRUE`,
+      `SELECT COUNT(*) as total FROM clientes 
+       WHERE tenant_id = $1 AND activo = TRUE`,
       [tenant_id]
     );
 
     // Obtener agentes activos
     const agentesResult = await db.query(
-      `SELECT COUNT(*) as total FROM AgentesDeVentas 
-       WHERE tenant_id = $1 AND Activo = TRUE`,
+      `SELECT COUNT(*) as total FROM agentesdeventas 
+       WHERE tenant_id = $1 AND activo = TRUE`,
       [tenant_id]
     );
 
     // Obtener venta total (suma de todos los pedidos no cancelados)
     const ventaTotalResult = await db.query(
-      `SELECT COALESCE(SUM(MontoTotal), 0) as total 
-       FROM Pedidos 
+      `SELECT COALESCE(SUM(montototal), 0) as total 
+       FROM pedidos 
        WHERE tenant_id = $1 
-       AND Estatus NOT IN ('Cancelado')`,
+       AND estatus NOT IN ('Cancelado')`,
       [tenant_id]
     );
 
     // Calcular utilidad total (precio - costo) de todos los pedidos no cancelados
     const utilidadTotalResult = await db.query(
       `SELECT COALESCE(SUM(
-        (dp.PrecioUnitario - COALESCE(pv.Costo, p.Costo, 0)) * dp.Cantidad
+        (dp.preciounitario - COALESCE(pv.costo, p.costo, 0)) * dp.piezastotales
        ), 0) as utilidad
-       FROM DetallesDelPedido dp
-       INNER JOIN Pedidos ped ON dp.PedidoID = ped.PedidoID
-       INNER JOIN Producto_Variantes pv ON dp.VarianteID = pv.VarianteID
-       INNER JOIN Productos p ON pv.ProductoID = p.ProductoID
+       FROM detallesdelpedido dp
+       INNER JOIN pedidos ped ON dp.pedidoid = ped.pedidoid
+       INNER JOIN producto_variantes pv ON dp.varianteid = pv.varianteid
+       INNER JOIN productos p ON pv.productoid = p.productoid
        WHERE ped.tenant_id = $1 
-       AND ped.Estatus NOT IN ('Cancelado')`,
+       AND ped.estatus NOT IN ('Cancelado')`,
       [tenant_id]
     );
 
     // Obtener comisiones pendientes
     const comisionesPendientesResult = await db.query(
-      `SELECT COALESCE(SUM(MontoComision), 0) as total 
-       FROM Comisiones 
-       WHERE tenant_id = $1 AND Pagado = FALSE`,
+      `SELECT COALESCE(SUM(montocomision), 0) as total 
+       FROM comisiones 
+       WHERE tenant_id = $1 AND pagado = FALSE`,
       [tenant_id]
     );
 
@@ -8891,7 +8891,7 @@ const desactivarAgente = async (req, res) => {
     const { tenant_id } = req.tenant;
 
     const snapshotResult = await db.query(
-      "SELECT * FROM AgentesDeVentas WHERE AgenteID = $1 AND tenant_id = $2",
+      "SELECT * FROM agentesdeventas WHERE agenteid = $1 AND tenant_id = $2",
       [agenteId, tenant_id]
     );
 

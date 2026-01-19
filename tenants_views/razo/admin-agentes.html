@@ -1221,6 +1221,63 @@
         }
       });
 
+      // Desactivar agente
+      async function desactivarAgente(agenteId, nombreCompleto) {
+        const result = await Swal.fire({
+          title: '¿Desactivar agente?',
+          html: `<p>¿Estás seguro de que deseas desactivar a <strong>${nombreCompleto}</strong>?</p>
+                 <p class="text-muted" style="font-size: 0.875rem; margin-top: 0.5rem;">El agente no podrá acceder al sistema hasta que sea reactivado.</p>`,
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonText: 'Sí, desactivar',
+          cancelButtonText: 'Cancelar',
+          confirmButtonColor: '#ef4444',
+          cancelButtonColor: '#6b7280'
+        });
+
+        if (!result.isConfirmed) return;
+
+        try {
+          const response = await fetch(`${API_BASE_URL}/admin/agentes/${agenteId}/desactivar`, {
+            method: "PUT",
+            headers: {
+              Authorization: `Bearer ${adminToken}`,
+              "Content-Type": "application/json",
+            },
+          });
+
+          const data = await response.json();
+
+          if (response.ok && data.success) {
+            await Swal.fire({
+              title: '¡Agente desactivado!',
+              text: data.message || `${nombreCompleto} ha sido desactivado exitosamente.`,
+              icon: 'success',
+              confirmButtonText: 'Continuar',
+              confirmButtonColor: '#10b981'
+            });
+            await loadAgentes();
+          } else {
+            Swal.fire({
+              title: 'Error',
+              text: data.message || 'No se pudo desactivar el agente',
+              icon: 'error',
+              confirmButtonText: 'Entendido',
+              confirmButtonColor: '#ef4444'
+            });
+          }
+        } catch (error) {
+          console.error("Error:", error);
+          Swal.fire({
+            title: 'Error de conexión',
+            text: 'No se pudo conectar con el servidor. Por favor, verifica tu conexión a internet e intenta nuevamente.',
+            icon: 'error',
+            confirmButtonText: 'Entendido',
+            confirmButtonColor: '#ef4444'
+          });
+        }
+      }
+
       init();
     </script>
   </body>
