@@ -6,7 +6,7 @@ async function loginPage(req, res) {
   if (req.session && req.session.isDeveloper) {
     return res.redirect('/developer/dashboard');
   }
-  res.sendFile(path.join(__dirname, '../tenants_views/razo/developer-login.html'));
+  res.sendFile(path.join(__dirname, '../developer_panel/developer-login.html'));
 }
 
 async function login(req, res) {
@@ -89,7 +89,7 @@ async function logout(req, res) {
 }
 
 async function dashboardPage(req, res) {
-  res.sendFile(path.join(__dirname, '../tenants_views/razo/developer-dashboard.html'));
+  res.sendFile(path.join(__dirname, '../developer_panel/developer-dashboard.html'));
 }
 
 async function getTenants(req, res) {

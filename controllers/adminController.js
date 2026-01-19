@@ -2145,6 +2145,7 @@ const buscarProductosCompra = async (req, res) => {
          SELECT pi.url_imagen
          FROM producto_imagenes pi
          WHERE pi.productoid = p.productoid
+           AND pi.tenant_id = $2
          ORDER BY pi.orden ASC NULLS LAST, pi.imagenid ASC
          LIMIT 1
        ) img_producto ON true
@@ -2152,6 +2153,7 @@ const buscarProductosCompra = async (req, res) => {
          SELECT pvi.url_imagen
          FROM producto_variante_imagenes pvi
          WHERE pvi.varianteid = pv.varianteid
+           AND pvi.tenant_id = $2
          ORDER BY pvi.orden ASC NULLS LAST, pvi.imagenid ASC
          LIMIT 1
        ) img_variante ON true
