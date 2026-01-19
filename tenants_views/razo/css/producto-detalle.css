@@ -35,4 +35,34 @@
     padding-top: 1rem;
     padding-bottom: 2rem;
   }
+
+  /* Centrado de imagen principal en móvil */
+  .galeria-main {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+  }
+
+  .galeria-main img {
+    margin: 0 auto;
+    display: block;
+  }
+
+  /* Cuadrícula de variantes 6xN en móvil */
+  .nike-thumbnails-row {
+    display: grid !important;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 8px;
+    width: 100%;
+    flex-wrap: nowrap !important;
+  }
+
+  .nike-thumb {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
+    flex-shrink: 1;
+  }
 }

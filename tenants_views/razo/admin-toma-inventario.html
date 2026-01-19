@@ -254,6 +254,94 @@
       </main>
     </div>
 
+    <!-- Modal de Variantes -->
+    <div id="variantesModal" class="modal">
+      <div class="modal-dialog modal-xl">
+        <div
+          class="modal-content"
+          style="
+            background: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 1200px;
+          "
+        >
+          <div
+            class="modal-header"
+            style="
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              margin-bottom: 1.5rem;
+              padding-bottom: 1rem;
+              border-bottom: 2px solid #f5f1ed;
+            "
+          >
+            <div>
+              <h2 id="variantesModalTitle" style="margin: 0; font-size: 1.35rem; color: #2d3748">
+                Variantes
+              </h2>
+              <div id="variantesModalSubtitle" style="margin-top: 0.35rem; font-size: 0.9rem; color: var(--razo-gray-warm)">
+                Registra la cantidad en existencia de cada variante.
+              </div>
+            </div>
+            <button
+              class="modal-close"
+              onclick="closeVariantesModal()"
+              style="
+                background: none;
+                border: none;
+                font-size: 2rem;
+                cursor: pointer;
+                color: #6b5d57;
+                line-height: 1;
+                padding: 0;
+                width: 32px;
+                height: 32px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 50%;
+                transition: all 0.2s;
+              "
+            >
+              &times;
+            </button>
+          </div>
+
+          <div class="modal-body">
+            <div id="variantesModalBody" style="overflow-x: auto">
+              <table class="admin-table" style="min-width: 760px">
+                <thead>
+                  <tr>
+                    <th>Imagen</th>
+                    <th>Variante / SKU</th>
+                    <th style="width: 140px">Stock Actual</th>
+                    <th style="width: 150px">Cantidad</th>
+                    <th style="width: 120px">Acción</th>
+                  </tr>
+                </thead>
+                <tbody id="variantesTableBody"></tbody>
+              </table>
+            </div>
+
+            <div style="margin-top: 1.5rem; margin-bottom: 1rem; display: flex; justify-content: flex-end;">
+              <button
+                type="button"
+                class="btn btn-secondary"
+                onclick="closeVariantesModal()"
+                style="padding: 0.7rem 1.2rem"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="js/layout.js" defer></script>
     <script src="js/sidebar-toggle.js" defer></script>
@@ -384,6 +472,46 @@
           grid-template-columns: 1fr;
         }
       }
+
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.6);
+        -webkit-backdrop-filter: blur(4px);
+        backdrop-filter: blur(4px);
+        justify-content: center;
+        align-items: center;
+        padding: 1rem;
+        overflow-y: auto;
+      }
+
+      .modal-content {
+        animation: modalSlideIn 0.3s ease-out;
+        max-height: 90vh;
+        overflow-y: auto;
+        position: relative;
+      }
+
+      .modal-close:hover {
+        background-color: var(--razo-gray-light);
+        color: var(--razo-orange);
+      }
+
+      @keyframes modalSlideIn {
+        from {
+          opacity: 0;
+          transform: translateY(-20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
     </style>
 
     <script>
@@ -421,6 +549,10 @@
         catalogo: [],
         filteredProducts: [],
         registeredVariants: new Set(),
+        variantesPorProducto: new Map(),
+        varianteById: new Map(),
+        productoById: new Map(),
+        productoModalActualId: null,
       };
 
       const getAdminDataForAudit = () => {
@@ -559,7 +691,7 @@
         setShelfLoading(true);
         try {
           const resp = await apiCall(
-            "/admin/auditoria-inventario/buscar-productos?q=",
+            "/admin/productos/buscar-compra?all=1",
             { method: "GET" }
           );
 
@@ -571,7 +703,47 @@
             ? resp.data.data.resultados
             : [];
 
-          state.catalogo = resultados;
+          state.variantesPorProducto = new Map();
+          state.varianteById = new Map();
+          state.productoById = new Map();
+
+          for (const v of resultados) {
+            const pid = Number.parseInt(v.productoid, 10);
+            const vid = Number.parseInt(v.varianteid, 10);
+            if (!Number.isInteger(pid) || pid <= 0) continue;
+
+            if (Number.isInteger(vid) && vid > 0) {
+              state.varianteById.set(vid, v);
+            }
+
+            if (!state.variantesPorProducto.has(pid)) state.variantesPorProducto.set(pid, []);
+            state.variantesPorProducto.get(pid).push(v);
+
+            if (!state.productoById.has(pid)) {
+              state.productoById.set(pid, {
+                productoid: pid,
+                proveedorid: v.proveedorid ?? null,
+                categoriaid: v.categoriaid ?? null,
+                nombreproducto: v.nombreproducto || null,
+                sku_maestro: v.sku_maestro || null,
+                medidasSet: new Set(),
+                variantes: [],
+                searchText: "",
+              });
+            }
+
+            const p = state.productoById.get(pid);
+            if (v.medidas) p.medidasSet.add(String(v.medidas));
+            p.variantes.push(v);
+          }
+
+          state.catalogo = Array.from(state.productoById.values()).map((p) => {
+            const skus = (p.variantes || []).map((vv) => (vv.sku || "").toString()).join(" ");
+            const base = `${p.nombreproducto || ""} ${p.sku_maestro || ""} ${skus}`;
+            p.searchText = base;
+            return p;
+          });
+
           applyFilters();
         } catch (e) {
           console.error("Error cargando catálogo:", e);
@@ -589,13 +761,15 @@
         const medida = (filterMedida?.value || "").trim();
 
         state.filteredProducts = state.catalogo.filter((item) => {
-          if (categoriaId && String(item.categoriaId || "") !== categoriaId) return false;
-          if (medida && normalizeText(item.medidas || "") !== normalizeText(medida)) return false;
+          if (categoriaId && String(item.categoriaid || "") !== categoriaId) return false;
+          
+          if (medida) {
+            const medidas = Array.from(item.medidasSet || []);
+            if (!medidas.some(m => normalizeText(m) === normalizeText(medida))) return false;
+          }
 
           if (q) {
-            const searchText = normalizeText(
-              `${item.nombreProducto} ${item.sku} ${item.nombreVariante || ""}`
-            );
+            const searchText = normalizeText(item.searchText || "");
             return searchText.includes(q);
           }
 
@@ -621,17 +795,32 @@
         emptyShelf.style.display = "none";
 
         productShelf.innerHTML = state.filteredProducts
-          .map((item) => {
-            const varianteId = item.varianteId || 0;
-            const isRegistered = state.registeredVariants.has(varianteId);
-            const img = item.imagen || "/icon/Logo_Razo.png";
-            const nombre = item.nombreProducto || "(Sin nombre)";
-            const sku = item.sku || "—";
-            const medidas = item.medidas || "—";
-            const varianteLabel = item.nombreVariante ? ` (${item.nombreVariante})` : "";
+          .map((p) => {
+            let img = "/icon/Logo_Razo.png";
+            if (p.variantes && p.variantes.length > 0) {
+              const varianteConImagen = p.variantes.find(v => v.url_imagen_variante);
+              if (varianteConImagen) {
+                img = varianteConImagen.url_imagen_variante;
+              } else {
+                const primeraVariante = p.variantes[0];
+                if (primeraVariante?.url_imagen_producto) {
+                  img = primeraVariante.url_imagen_producto;
+                }
+              }
+            }
+            
+            const nombre = p.nombreproducto || "(Sin nombre)";
+            const skuMaestro = p.sku_maestro || "—";
+            const medidas = Array.from(p.medidasSet || []);
+            const medidasLabel = (() => {
+              if (!medidas.length) return "-";
+              if (medidas.length <= 3) return medidas.join(", ");
+              return `${medidas.slice(0, 3).join(", ")} +${medidas.length - 3}`;
+            })();
+            const variantesCount = Array.isArray(p.variantes) ? p.variantes.length : 0;
 
             return `
-              <div class="inventory-card ${isRegistered ? 'registered' : ''}" data-variante-id="${varianteId}">
+              <div class="inventory-card" onclick="openVariantesModal(${p.productoid})" style="cursor: pointer;" title="Ver variantes">
                 <img
                   src="${img}"
                   class="inventory-card-img"
@@ -640,30 +829,13 @@
                   onerror="this.src='/icon/Logo_Razo.png'; this.onerror=null;"
                 />
                 <div class="inventory-card-body">
-                  <h3 class="inventory-card-title">${escapeHtml(nombre)}${escapeHtml(varianteLabel)}</h3>
-                  <div class="inventory-card-meta">SKU: <code>${escapeHtml(sku)}</code></div>
-                  <div class="inventory-card-meta">Medidas: <strong>${escapeHtml(medidas)}</strong></div>
-                  ${isRegistered ? '<div class="inventory-registered-badge">✓ Registrado</div>' : ''}
+                  <h3 class="inventory-card-title">${escapeHtml(nombre)}</h3>
+                  <div class="inventory-card-meta">SKU Maestro: <code>${escapeHtml(skuMaestro)}</code></div>
+                  <div class="inventory-card-meta">Medidas: <strong>${escapeHtml(medidasLabel)}</strong></div>
                 </div>
                 <div class="inventory-card-footer">
-                  <input
-                    type="number"
-                    class="inventory-qty-input"
-                    id="qty-${varianteId}"
-                    min="0"
-                    step="1"
-                    value="0"
-                    placeholder="Cantidad"
-                    ${!state.sesionId ? 'disabled' : ''}
-                  />
-                  <button
-                    type="button"
-                    class="inventory-register-btn"
-                    onclick="registrarProducto(${varianteId})"
-                    ${!state.sesionId ? 'disabled' : ''}
-                  >
-                    Registrar
-                  </button>
+                  <div class="inventory-card-meta">Variantes: <strong>${variantesCount}</strong></div>
+                  <div class="inventory-card-meta" style="color: var(--razo-orange); font-weight: 800;">Ver detalles</div>
                 </div>
               </div>
             `;
@@ -677,7 +849,113 @@
         searchDebounce = setTimeout(() => applyFilters(), 300);
       }
 
-      window.registrarProducto = async function(varianteId) {
+      window.openVariantesModal = function(productoId) {
+        const pid = Number.parseInt(productoId, 10);
+        if (!Number.isInteger(pid) || pid <= 0) return;
+
+        const modal = document.getElementById("variantesModal");
+        if (!modal) return;
+
+        state.productoModalActualId = pid;
+
+        const p = state.productoById.get(pid);
+        const titleEl = document.getElementById("variantesModalTitle");
+        const subEl = document.getElementById("variantesModalSubtitle");
+        if (titleEl) titleEl.textContent = p?.nombreproducto || "Variantes";
+        if (subEl) {
+          const skuM = p?.sku_maestro ? `SKU Maestro: ${p.sku_maestro}` : "";
+          subEl.textContent = skuM || "Registra la cantidad en existencia de cada variante.";
+        }
+
+        renderVariantesModal(pid);
+        modal.style.display = "flex";
+      };
+
+      window.closeVariantesModal = function() {
+        const modal = document.getElementById("variantesModal");
+        if (!modal) return;
+        modal.style.display = "none";
+        state.productoModalActualId = null;
+      };
+
+      function renderVariantesModal(productoId) {
+        const pid = Number.parseInt(productoId, 10);
+        const tbody = document.getElementById("variantesTableBody");
+        if (!tbody) return;
+
+        const variantes = state.variantesPorProducto.get(pid) || [];
+        if (!variantes.length) {
+          tbody.innerHTML =
+            '<tr><td colspan="5" style="padding: 1rem; color: var(--razo-gray-warm); text-align: center;">No hay variantes para este producto</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = variantes
+          .map((v) => {
+            const imagenVariante = v.url_imagen_variante || null;
+            const imagenMaestra = v.url_imagen_producto || null;
+            const img = imagenVariante || imagenMaestra || "/icon/Logo_Razo.png";
+            
+            const vid = Number.parseInt(v.varianteid, 10);
+            const sku = v.sku || "Sin SKU";
+            const medidas = v.medidas || "-";
+            const stock = Number.isFinite(Number(v.stock)) ? Number(v.stock) : 0;
+            const isRegistered = state.registeredVariants.has(vid);
+
+            return `
+              <tr ${isRegistered ? 'style="background: #dcfce7;"' : ''}>
+                <td style="width: 70px;">
+                  <div style="width: 56px; height: 56px; border-radius: 4px; overflow: hidden; background: #f3f4f6;">
+                    <img
+                      src="${img}"
+                      alt="${escapeHtml(sku)}"
+                      style="width: 100%; height: 100%; object-fit: cover;"
+                      loading="lazy"
+                      onerror="this.src='/icon/Logo_Razo.png'; this.onerror=null;"
+                    />
+                  </div>
+                </td>
+                <td>
+                  <div style="font-weight: 800; color: var(--razo-gray-dark);">${escapeHtml(medidas)}</div>
+                  <div style="font-size: 0.8rem; color: var(--razo-gray-warm); margin-top: 0.25rem;">
+                    SKU: <code>${escapeHtml(sku)}</code>
+                  </div>
+                  ${isRegistered ? '<div style="margin-top: 0.25rem; color: #166534; font-weight: 700; font-size: 0.75rem;">✓ Registrado</div>' : ''}
+                </td>
+                <td style="text-align: center;">
+                  <span style="font-weight: 700; color: ${stock > 0 ? '#059669' : '#dc2626'};">${stock}</span>
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    id="modalVarQty-${vid}"
+                    min="0"
+                    step="1"
+                    value="0"
+                    placeholder="0"
+                    style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.5rem; text-align: center; font-weight: 700;"
+                    ${!state.sesionId ? 'disabled' : ''}
+                  />
+                </td>
+                <td style="text-align: center;">
+                  <button
+                    type="button"
+                    onclick="registrarVariante(${vid})"
+                    style="padding: 0.5rem 1rem; background: var(--razo-orange); color: white; border: none; border-radius: 0.5rem; font-weight: 700; cursor: pointer; transition: all 0.15s ease;"
+                    onmouseover="this.style.background='#ea580c'"
+                    onmouseout="this.style.background='var(--razo-orange)'"
+                    ${!state.sesionId ? 'disabled' : ''}
+                  >
+                    Registrar
+                  </button>
+                </td>
+              </tr>
+            `;
+          })
+          .join("");
+      }
+
+      window.registrarVariante = async function(varianteId) {
         if (!state.sesionId) {
           toast("warning", "Selecciona una sesión");
           return;
@@ -689,7 +967,7 @@
           return;
         }
 
-        const qtyInput = document.getElementById(`qty-${vid}`);
+        const qtyInput = document.getElementById(`modalVarQty-${vid}`);
         if (!qtyInput) {
           toast("warning", "No se encontró el input de cantidad");
           return;
@@ -718,8 +996,8 @@
             throw new Error(resp.data?.message || "No se pudo registrar");
           }
 
-          const producto = state.catalogo.find(p => p.varianteId === vid);
-          const nombreProducto = producto ? `${producto.nombreProducto} (${producto.sku})` : `Variante ${vid}`;
+          const variante = state.varianteById.get(vid);
+          const nombreProducto = variante ? `${variante.nombreproducto} (${variante.sku})` : `Variante ${vid}`;
 
           toast("success", `Registrado: ${nombreProducto} (${cantidad})`);
           
@@ -732,7 +1010,9 @@
 
           qtyInput.value = "0";
           
-          renderShelf();
+          if (state.productoModalActualId) {
+            renderVariantesModal(state.productoModalActualId);
+          }
           loadDashboard();
         } catch (error) {
           console.error(error);
