@@ -1,11 +1,12 @@
 const bcrypt = require('bcrypt');
 const db = require('../db');
+const path = require('path');
 
 async function loginPage(req, res) {
   if (req.session && req.session.isDeveloper) {
     return res.redirect('/developer/dashboard');
   }
-  res.sendFile('developer-login.html', { root: './public' });
+  res.sendFile(path.join(__dirname, '../tenants_views/razo/developer-login.html'));
 }
 
 async function login(req, res) {
@@ -88,7 +89,7 @@ async function logout(req, res) {
 }
 
 async function dashboardPage(req, res) {
-  res.sendFile('developer-dashboard.html', { root: './public' });
+  res.sendFile(path.join(__dirname, '../tenants_views/razo/developer-dashboard.html'));
 }
 
 async function getTenants(req, res) {
