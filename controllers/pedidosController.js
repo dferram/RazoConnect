@@ -1921,8 +1921,7 @@ const cancelarPedido = async (req, res) => {
     // Actualizar estatus del pedido a Cancelado
     await client.query(
       `UPDATE pedidos
-       SET estatus = 'Cancelado',
-           fechaactualizacion = NOW()
+       SET estatus = 'Cancelado'
        WHERE pedidoid = $1 AND tenant_id = $2`,
       [id, tenant_id]
     );
