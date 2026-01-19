@@ -717,6 +717,334 @@ html, body {
     padding-right: 0.5rem !important;
   }
 
+  /* ========== CARRITO.HTML - MODAL DE PAGO OPTIMIZADO PARA MÓVILES ========== */
+  
+  /* Modal Checkout - Ajustes generales */
+  .modal-checkout-content {
+    width: 95vw !important;
+    max-width: 95vw !important;
+    padding: 1rem !important;
+    margin: 0.5rem auto !important;
+    max-height: 95vh !important;
+    overflow-y: auto !important;
+  }
+
+  /* Título del modal - más compacto */
+  .modal-checkout-title {
+    font-size: 1.2rem !important;
+    margin-bottom: 1rem !important;
+    line-height: 1.3 !important;
+  }
+
+  /* Subtítulos de sección - reducidos */
+  .modal-checkout-section-title {
+    font-size: 1rem !important;
+    margin-bottom: 0.75rem !important;
+    line-height: 1.3 !important;
+  }
+
+  /* Helper text - más pequeño */
+  .modal-checkout-payment-helper {
+    font-size: 0.8rem !important;
+    line-height: 1.4 !important;
+  }
+
+  /* ========== TARJETAS DE DIRECCIÓN - MÓVIL ========== */
+  
+  .direccion-option {
+    padding: 0.75rem !important;
+    margin-bottom: 0.75rem !important;
+    border-radius: 0.5rem !important;
+  }
+
+  .direccion-info {
+    grid-template-columns: 1fr !important;
+    gap: 0.25rem !important;
+  }
+
+  .direccion-header {
+    font-size: 0.9rem !important;
+    margin-bottom: 0.25rem !important;
+  }
+
+  .direccion-etiqueta {
+    font-size: 0.75rem !important;
+    padding: 0.15rem 0.5rem !important;
+  }
+
+  .direccion-datos,
+  .direccion-contacto {
+    font-size: 0.85rem !important;
+    line-height: 1.3 !important;
+  }
+
+  /* ========== OPCIONES DE PAGO - GRID MÓVIL ========== */
+  
+  .payment-options-grid {
+    grid-template-columns: 1fr !important;
+    gap: 0.75rem !important;
+  }
+
+  .payment-option-card {
+    padding: 0.85rem 1rem !important;
+    border-radius: 0.75rem !important;
+  }
+
+  .payment-option-icon {
+    width: 36px !important;
+    height: 36px !important;
+    font-size: 1.1rem !important;
+  }
+
+  .payment-option-content h5 {
+    font-size: 0.9rem !important;
+    margin-bottom: 0.25rem !important;
+  }
+
+  .payment-option-content p {
+    font-size: 0.85rem !important;
+    line-height: 1.3 !important;
+  }
+
+  .payment-option-chip {
+    font-size: 0.75rem !important;
+    padding: 0.2rem 0.6rem !important;
+  }
+
+  /* ========== CRÉDITO RAZO - DISPLAY COMPACTO ========== */
+  
+  .credit-amount-display {
+    margin-bottom: 0.5rem !important;
+  }
+
+  .credit-amount-value {
+    font-size: 1.4rem !important;
+    line-height: 1.2 !important;
+    margin-bottom: 0.25rem !important;
+  }
+
+  .credit-amount-label {
+    font-size: 0.75rem !important;
+  }
+
+  .credit-capacity-bar {
+    height: 5px !important;
+    margin-top: 0.35rem !important;
+  }
+
+  /* ========== ALERTAS INFORMATIVAS - COMPACTAS ========== */
+  
+  .credit-info-alert,
+  .contra-entrega-alert {
+    padding: 0.75rem 1rem !important;
+    margin-bottom: 1rem !important;
+    border-radius: 0.5rem !important;
+  }
+
+  .credit-info-alert > div,
+  .contra-entrega-alert > div {
+    gap: 0.5rem !important;
+  }
+
+  .credit-info-icon,
+  .contra-entrega-alert-icon {
+    font-size: 1rem !important;
+  }
+
+  .credit-info-alert strong,
+  .contra-entrega-alert strong {
+    font-size: 0.85rem !important;
+    margin-bottom: 0.25rem !important;
+  }
+
+  .credit-info-alert p,
+  .contra-entrega-alert p {
+    font-size: 0.8rem !important;
+    line-height: 1.4 !important;
+  }
+
+  /* ========== TARJETA RESUMEN DE CRÉDITO ========== */
+  
+  .credit-summary-card {
+    padding: 1rem !important;
+    border-radius: 0.5rem !important;
+  }
+
+  .credit-summary-row {
+    grid-template-columns: 1fr !important;
+    gap: 0.75rem !important;
+    margin-bottom: 0.75rem !important;
+  }
+
+  .credit-summary-row span {
+    font-size: 0.8rem !important;
+  }
+
+  .credit-summary-row strong {
+    font-size: 1rem !important;
+  }
+
+  .credit-summary-helper {
+    font-size: 0.8rem !important;
+    padding-top: 0.5rem !important;
+    margin-top: 0.5rem !important;
+  }
+
+  /* ========== DATOS BANCARIOS - FIX CRÍTICO ========== */
+  
+  .bank-info-card {
+    padding: 1rem !important;
+    border-radius: 0.5rem !important;
+  }
+
+  .bank-info-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 0.75rem !important;
+    margin-bottom: 1rem !important;
+  }
+
+  .bank-info-header h5 {
+    font-size: 1rem !important;
+    margin-bottom: 0.25rem !important;
+  }
+
+  .bank-info-header p {
+    font-size: 0.85rem !important;
+  }
+
+  .bank-status-pill {
+    padding: 0.4rem 0.65rem !important;
+    font-size: 0.8rem !important;
+    width: 100% !important;
+    justify-content: center !important;
+  }
+
+  /* Grid de datos bancarios - una columna */
+  .bank-info-grid {
+    grid-template-columns: 1fr !important;
+    gap: 0.75rem !important;
+    margin-top: 0.75rem !important;
+  }
+
+  .bank-info-grid > div {
+    padding: 0.5rem 0 !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important;
+  }
+
+  .bank-info-grid > div:last-child {
+    border-bottom: none !important;
+  }
+
+  .bank-info-grid span {
+    font-size: 0.7rem !important;
+    margin-bottom: 0.3rem !important;
+  }
+
+  /* CRÍTICO: Números largos (CLABE, Cuenta) - word break */
+  .bank-info-grid strong {
+    font-size: 0.85rem !important;
+    word-break: break-all !important;
+    line-height: 1.4 !important;
+    display: block !important;
+  }
+
+  /* ========== UPLOAD DE COMPROBANTE ========== */
+  
+  .transfer-upload {
+    margin-top: 1rem !important;
+  }
+
+  .transfer-upload label {
+    font-size: 0.9rem !important;
+    margin-bottom: 0.5rem !important;
+  }
+
+  .upload-box {
+    padding: 0.75rem !important;
+    border-radius: 0.5rem !important;
+  }
+
+  .upload-box input[type="file"] {
+    font-size: 0.85rem !important;
+  }
+
+  .upload-box small {
+    font-size: 0.75rem !important;
+  }
+
+  /* ========== BOTONES DE ACCIÓN DEL MODAL ========== */
+  
+  .checkout-actions {
+    flex-direction: column !important;
+    gap: 0.75rem !important;
+    margin-top: 1.5rem !important;
+    margin-bottom: 1rem !important;
+  }
+
+  .checkout-actions .btn {
+    width: 100% !important;
+    min-height: 48px !important;
+    padding: 0.875rem 1.5rem !important;
+    font-size: 0.95rem !important;
+    border-radius: 0.5rem !important;
+  }
+
+  /* ========== PAYMENT INFO PANELS ========== */
+  
+  .payment-info-panels {
+    margin-top: 1rem !important;
+  }
+
+  .payment-info-card {
+    padding: 1rem !important;
+    border-radius: 0.5rem !important;
+  }
+
+  /* ========== MERCADO PAGO WARNING ========== */
+  
+  .payment-option-mercadopago-warning {
+    margin-top: 0.5rem !important;
+    padding: 0.5rem 0.65rem !important;
+    font-size: 0.8rem !important;
+    border-radius: 0.5rem !important;
+  }
+
+  /* ========== PAYMENT ERROR MESSAGE ========== */
+  
+  .payment-error {
+    padding: 0.75rem 1rem !important;
+    font-size: 0.85rem !important;
+    border-radius: 0.5rem !important;
+    margin-top: 0.75rem !important;
+  }
+
+  /* ========== MODAL BODY PADDING ========== */
+  
+  #checkoutContent {
+    padding: 0 !important;
+  }
+
+  #stepDireccion {
+    padding: 0 !important;
+  }
+
+  #paymentSection {
+    margin-top: 1.25rem !important;
+  }
+
+  .payment-section-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 0.5rem !important;
+    margin-bottom: 0.75rem !important;
+  }
+
+  .payment-section-header h4 {
+    font-size: 1rem !important;
+    margin: 0 !important;
+  }
+
   .cupon-input-wrapper {
     display: grid !important;
     grid-template-columns: 1fr auto !important;
@@ -1226,55 +1554,8 @@ html, body {
 
   /* ========== PRODUCT DETAIL - VARIANT CAROUSEL ========== */
   
-  /* Nike variant selector - horizontal scroll on mobile */
-  .nike-thumbnails-row {
-    display: flex !important;
-    overflow-x: auto !important;
-    overflow-y: hidden !important;
-    white-space: nowrap !important;
-    -webkit-overflow-scrolling: touch !important;
-    scroll-behavior: smooth !important;
-    padding-bottom: 10px !important;
-    gap: 0.65rem !important;
-  }
-
-  /* Remove any flex-wrap that forces items to wrap */
-  .nike-thumbnails-row {
-    flex-wrap: nowrap !important;
-  }
-
-  /* Ensure thumbnails don't shrink */
-  .nike-thumb {
-    flex: 0 0 auto !important;
-    width: 60px !important;
-    height: 60px !important;
-    min-width: 60px !important;
-  }
-
-  /* Main product gallery thumbnails - horizontal scroll */
-  .galeria-thumbnails {
-    display: flex !important;
-    flex-direction: row !important;
-    overflow-x: auto !important;
-    overflow-y: hidden !important;
-    white-space: nowrap !important;
-    -webkit-overflow-scrolling: touch !important;
-    scroll-behavior: smooth !important;
-    padding-bottom: 10px !important;
-    width: 100% !important;
-    max-height: none !important;
-  }
-
-  .galeria-thumbnails {
-    flex-wrap: nowrap !important;
-  }
-
-  .thumb-img {
-    flex: 0 0 auto !important;
-    width: 80px !important;
-    height: 80px !important;
-    min-width: 80px !important;
-  }
+  /* NOTE: Product detail page has its own specific mobile styles in producto-detalle.css
+     Do not override them here to avoid conflicts */
 
   /* ========== SPACING UTILITIES ========== */
   
