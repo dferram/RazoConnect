@@ -59,6 +59,18 @@ router.get(
 );
 
 /**
+ * @route   PUT /api/pedidos/:id/cancelar
+ * @desc    Cancelar un pedido (solo si no está confirmado)
+ * @access  Private (Cliente propietario)
+ */
+router.put(
+  "/pedidos/:id/cancelar",
+  authenticate,
+  authorize(["cliente"]),
+  pedidosController.cancelarPedido
+);
+
+/**
  * @route   GET /api/pedidos/:id/pdf
  * @desc    Generar PDF de remisión para un pedido
  * @access  Private (Cliente propietario o Admin)

@@ -60,6 +60,7 @@ async function generarPDFPedido(req, res) {
                 dp.cantidadbackorder,
                 p.nombreproducto AS producto_nombre,
                 COALESCE(pv.dimensiones, pv.color_nombre, 'Estándar') AS variante_nombre,
+                pv.color_nombre,
                 pv.sku,
                 t.cantidad AS tamano_cantidad
             FROM detallesdelpedido dp
@@ -195,11 +196,16 @@ async function generarPDFPedido(req, res) {
                    .fillAndStroke('#F9F9F9', '#F9F9F9');
             }
 
+            const descripcionLinea1 = `${item.producto_nombre}`;
+            const descripcionLinea2 = item.color_nombre 
+                ? `${item.variante_nombre} - Color: ${item.color_nombre}`
+                : `${item.variante_nombre}`;
+
             doc.fillColor('#333333')
                .fontSize(9)
                .text(item.cantidad, 55, yPosition)
-               .text(`${item.producto_nombre}`, 110, yPosition, { width: 220 })
-               .text(`${item.variante_nombre}`, 110, yPosition + 10, { width: 220 })
+               .text(descripcionLinea1, 110, yPosition, { width: 220 })
+               .text(descripcionLinea2, 110, yPosition + 10, { width: 220 })
                .text(item.tamano_cantidad ? `Pack ${item.tamano_cantidad}` : 'Unitario', 340, yPosition)
                .text(`$${parseFloat(item.preciounitario).toFixed(2)}`, 410, yPosition)
                .text(`$${parseFloat(item.subtotal).toFixed(2)}`, 480, yPosition, { align: 'right', width: 75 });

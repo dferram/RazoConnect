@@ -1072,8 +1072,8 @@
                         )}</span>
                       </div>
 
-                      <!-- Botón Descargar PDF -->
-                      <div style="margin-top: 1rem;">
+                      <!-- Botones de acción -->
+                      <div style="margin-top: 1rem; display: grid; gap: 0.75rem;">
                         <button 
                           onclick="descargarPDFPedido(${p.pedidoId})"
                           style="width: 100%; padding: 0.875rem; background: white; border: 2px solid var(--razo-orange); color: var(--razo-orange); border-radius: 0.75rem; font-weight: 700; font-size: 1rem; cursor: pointer; transition: all 0.3s; display: flex; align-items: center; justify-content: center; gap: 0.5rem;"
@@ -1083,6 +1083,17 @@
                           <span style="font-size: 1.25rem;">📄</span>
                           <span>Descargar Remisión (PDF)</span>
                         </button>
+                        ${p.estatus !== 'Confirmado' && p.estatus !== 'Completado' && p.estatus !== 'Cancelado' && p.estatus !== 'Entregado' ? `
+                        <button 
+                          onclick="cancelarPedido(${p.pedidoId})"
+                          style="width: 100%; padding: 0.875rem; background: white; border: 2px solid #dc2626; color: #dc2626; border-radius: 0.75rem; font-weight: 700; font-size: 1rem; cursor: pointer; transition: all 0.3s; display: flex; align-items: center; justify-content: center; gap: 0.5rem;"
+                          onmouseover="this.style.background='#dc2626'; this.style.color='white';"
+                          onmouseout="this.style.background='white'; this.style.color='#dc2626';"
+                        >
+                          <span style="font-size: 1.25rem;">❌</span>
+                          <span>Cancelar Pedido</span>
+                        </button>
+                        ` : ''}
                       </div>
                     </div>
                   </div>
@@ -1780,6 +1791,48 @@
         } catch (error) {
           console.error('Error al descargar PDF:', error);
           showToast(error.message || 'Error al generar el PDF. Intenta de nuevo.', 'error');
+        }
+      }
+
+      // Función para cancelar pedido
+      async function cancelarPedido(pedidoId) {
+        const mensaje = "¿Estás seguro de que deseas cancelar este pedido? Esta acción no se puede deshacer.";
+        let confirmado = false;
+
+        if (typeof Swal !== "undefined" && Swal && typeof Swal.fire === "function") {
+          const result = await Swal.fire({
+            icon: "warning",
+            title: "Cancelar Pedido",
+            text: mensaje,
+            showCancelButton: true,
+            confirmButtonText: "Sí, cancelar pedido",
+            cancelButtonText: "No, mantener pedido",
+            confirmButtonColor: "#dc2626",
+            cancelButtonColor: "#6b7280",
+          });
+          confirmado = !!result.isConfirmed;
+        } else {
+          confirmado = window.confirm(mensaje);
+        }
+
+        if (!confirmado) {
+          return;
+        }
+
+        try {
+          const response = await API.apiCall(`/pedidos/${pedidoId}/cancelar`, {
+            method: 'PUT'
+          });
+
+          if (response.ok && response.data.success) {
+            showToast("Pedido cancelado exitosamente", "success");
+            loadPedidos(); // Recargar lista de pedidos
+          } else {
+            throw new Error(response.data.message || "Error al cancelar el pedido");
+          }
+        } catch (error) {
+          console.error("Error al cancelar pedido:", error);
+          showToast(error.message || "Error al cancelar el pedido", "error");
         }
       }
     </script>

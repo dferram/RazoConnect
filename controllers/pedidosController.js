@@ -1866,9 +1866,177 @@ const obtenerDatosPago = async (req, res) => {
   }
 };
 
+/**
+ * PUT /api/pedidos/:id/cancelar
+ * Cancela un pedido del cliente
+ * Solo se puede cancelar si el pedido no está confirmado, completado, cancelado o entregado
+ */
+const cancelarPedido = async (req, res) => {
+  const client = await db.pool.connect();
+  
+  try {
+    const { id } = req.params;
+    const { tenant_id } = req.tenant;
+    const clienteId = req.user.id;
+
+    await client.query('BEGIN');
+
+    // Verificar que el pedido existe y pertenece al cliente
+    const pedidoQuery = await client.query(
+      `SELECT pedidoid, clienteid, estatus, es_credito, montototal
+       FROM pedidos
+       WHERE pedidoid = $1 AND tenant_id = $2`,
+      [id, tenant_id]
+    );
+
+    if (pedidoQuery.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ 
+        success: false,
+        error: 'Pedido no encontrado' 
+      });
+    }
+
+    const pedido = pedidoQuery.rows[0];
+
+    // Verificar que el pedido pertenece al cliente autenticado
+    if (pedido.clienteid !== clienteId) {
+      await client.query('ROLLBACK');
+      return res.status(403).json({ 
+        success: false,
+        error: 'No tienes permiso para cancelar este pedido' 
+      });
+    }
+
+    // Verificar que el pedido puede ser cancelado
+    const estatusNoCancelables = ['Confirmado', 'Completado', 'Cancelado', 'Entregado'];
+    if (estatusNoCancelables.includes(pedido.estatus)) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ 
+        success: false,
+        error: `No se puede cancelar un pedido con estatus "${pedido.estatus}"` 
+      });
+    }
+
+    // Actualizar estatus del pedido a Cancelado
+    await client.query(
+      `UPDATE pedidos
+       SET estatus = 'Cancelado',
+           fechaactualizacion = NOW()
+       WHERE pedidoid = $1 AND tenant_id = $2`,
+      [id, tenant_id]
+    );
+
+    // Si el pedido era a crédito y ya tenía cargo aplicado, revertirlo
+    // (esto solo aplica si hubo remisiones emitidas)
+    if (pedido.es_credito) {
+      // Verificar si hay CXC asociados
+      const cxcQuery = await client.query(
+        `SELECT SUM(monto) as total_cargado
+         FROM cuentas_por_cobrar
+         WHERE pedido_id = $1 AND tipo_movimiento = 'CARGO' AND tenant_id = $2`,
+        [id, tenant_id]
+      );
+
+      const totalCargado = parseFloat(cxcQuery.rows[0]?.total_cargado || 0);
+
+      if (totalCargado > 0) {
+        // Obtener información de crédito del cliente
+        const creditoQuery = await client.query(
+          `SELECT credito_id, saldo_deudor
+           FROM cliente_creditos
+           WHERE cliente_id = $1
+           FOR UPDATE`,
+          [pedido.clienteid]
+        );
+
+        if (creditoQuery.rows.length > 0) {
+          const creditoInfo = creditoQuery.rows[0];
+          const saldoActual = parseFloat(creditoInfo.saldo_deudor || 0);
+          const nuevoSaldo = parseFloat((saldoActual - totalCargado).toFixed(2));
+
+          // Actualizar saldo deudor (restar el cargo)
+          await client.query(
+            `UPDATE cliente_creditos
+             SET saldo_deudor = $1, ultima_actualizacion = NOW()
+             WHERE credito_id = $2`,
+            [nuevoSaldo, creditoInfo.credito_id]
+          );
+
+          // Registrar movimiento de crédito (ABONO por cancelación)
+          await client.query(
+            `INSERT INTO credito_movimientos (
+               credito_id,
+               tipo_movimiento,
+               monto,
+               referencia_id,
+               descripcion,
+               saldo_despues_movimiento,
+               tenant_id
+             )
+             VALUES ($1, 'ABONO', $2, $3, $4, $5, $6)`,
+            [
+              creditoInfo.credito_id,
+              totalCargado.toFixed(2),
+              `PED-${id}`,
+              `Abono por cancelación de pedido #${id}`,
+              nuevoSaldo.toFixed(2),
+              tenant_id
+            ]
+          );
+        }
+
+        // Marcar los CXC como cancelados
+        await client.query(
+          `UPDATE cuentas_por_cobrar
+           SET descripcion = descripcion || ' (CANCELADO)'
+           WHERE pedido_id = $1 AND tenant_id = $2`,
+          [id, tenant_id]
+        );
+      }
+    }
+
+    // Devolver stock al inventario (revertir descuento de stock)
+    const detallesQuery = await client.query(
+      `SELECT dp.varianteid, dp.piezastotales
+       FROM detallesdelpedido dp
+       WHERE dp.pedidoid = $1 AND dp.tenant_id = $2`,
+      [id, tenant_id]
+    );
+
+    for (const detalle of detallesQuery.rows) {
+      await client.query(
+        `UPDATE producto_variantes
+         SET stock_piezas = stock_piezas + $1
+         WHERE varianteid = $2 AND tenant_id = $3`,
+        [detalle.piezastotales, detalle.varianteid, tenant_id]
+      );
+    }
+
+    await client.query('COMMIT');
+
+    res.json({
+      success: true,
+      message: 'Pedido cancelado exitosamente'
+    });
+
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Error al cancelar pedido:', error);
+    res.status(500).json({ 
+      success: false,
+      error: 'Error al cancelar pedido',
+      detalle: error.message 
+    });
+  } finally {
+    client.release();
+  }
+};
+
 module.exports = {
   crearPedido,
   obtenerPedidos,
   obtenerPedidoPorId,
   obtenerDatosPago,
+  cancelarPedido,
 };
