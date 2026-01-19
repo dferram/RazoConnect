@@ -8,7 +8,10 @@
 
   async function loadAdminSidebar() {
     const container = document.getElementById('admin-sidebar-container');
-    if (!container) return;
+    if (!container) {
+      console.warn('⚠️ admin-sidebar-container not found in DOM');
+      return;
+    }
 
     try {
       const response = await fetch('/components/sidebar-admin.html');
@@ -19,10 +22,11 @@
       const html = await response.text();
       container.innerHTML = html;
 
+      console.log('✅ Admin sidebar loaded successfully');
       highlightActiveLink();
       setupRoleBasedVisibility();
     } catch (error) {
-      console.error('Error cargando sidebar admin:', error);
+      console.error('❌ Error cargando sidebar admin:', error);
     }
   }
 

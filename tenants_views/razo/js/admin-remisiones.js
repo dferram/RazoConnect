@@ -44,6 +44,15 @@ async function cargarRemisiones() {
     if (emptyRemisiones) emptyRemisiones.style.display = 'none';
 
     try {
+        const token = localStorage.getItem('razoconnect_admin_token');
+        
+        if (!token) {
+            console.warn('⚠️ No admin token found in localStorage');
+            console.warn('Available localStorage keys:', Object.keys(localStorage));
+            window.location.href = '/login.html?error=session_expired';
+            return;
+        }
+
         const params = new URLSearchParams({
             page: currentPage,
             limit: 50,
@@ -60,13 +69,31 @@ async function cargarRemisiones() {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
+                'Authorization': `Bearer ${token}`
             },
             credentials: 'include'
         });
 
+        if (response.status === 401) {
+            console.error('❌ 401 Unauthorized - Token inválido o expirado');
+            localStorage.removeItem('razoconnect_admin_token');
+            localStorage.removeItem('razoconnect_admin');
+            
+            await Swal.fire({
+                icon: 'warning',
+                title: 'Sesión Expirada',
+                text: 'Tu sesión ha expirado. Por favor inicia sesión nuevamente.',
+                confirmButtonText: 'Ir al Login',
+                allowOutsideClick: false
+            });
+            
+            window.location.href = '/login.html?error=session_expired';
+            return;
+        }
+
         if (!response.ok) {
-            throw new Error('Error al cargar remisiones');
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.message || 'Error al cargar remisiones');
         }
 
         const data = await response.json();
@@ -78,7 +105,7 @@ async function cargarRemisiones() {
         Swal.fire({
             icon: 'error',
             title: 'Error',
-            text: 'No se pudieron cargar las remisiones'
+            text: error.message || 'No se pudieron cargar las remisiones'
         });
         const emptyRemisiones = document.getElementById('empty-remisiones');
         if (emptyRemisiones) emptyRemisiones.style.display = 'block';
@@ -213,14 +240,40 @@ async function verDetalleRemision(remisionId) {
     modal.show();
 
     try {
+        const token = localStorage.getItem('razoconnect_admin_token');
+        
+        if (!token) {
+            console.warn('⚠️ No admin token found in localStorage');
+            window.location.href = '/login.html?error=session_expired';
+            return;
+        }
+
         const response = await fetch(`/api/remisiones/${remisionId}`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
+                'Authorization': `Bearer ${token}`
             },
             credentials: 'include'
         });
+
+        if (response.status === 401) {
+            console.error('❌ 401 Unauthorized - Token inválido o expirado');
+            localStorage.removeItem('razoconnect_admin_token');
+            localStorage.removeItem('razoconnect_admin');
+            modal.hide();
+            
+            await Swal.fire({
+                icon: 'warning',
+                title: 'Sesión Expirada',
+                text: 'Tu sesión ha expirado. Por favor inicia sesión nuevamente.',
+                confirmButtonText: 'Ir al Login',
+                allowOutsideClick: false
+            });
+            
+            window.location.href = '/login.html?error=session_expired';
+            return;
+        }
 
         if (!response.ok) {
             throw new Error('Error al cargar detalle');
@@ -376,15 +429,40 @@ async function cancelarRemision() {
     if (!motivo) return;
 
     try {
+        const token = localStorage.getItem('razoconnect_admin_token');
+        
+        if (!token) {
+            console.warn('⚠️ No admin token found in localStorage');
+            window.location.href = '/login.html?error=session_expired';
+            return;
+        }
+
         const response = await fetch(`/api/remisiones/${currentRemisionId}/cancelar`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
+                'Authorization': `Bearer ${token}`
             },
             credentials: 'include',
             body: JSON.stringify({ motivo })
         });
+
+        if (response.status === 401) {
+            console.error('❌ 401 Unauthorized - Token inválido o expirado');
+            localStorage.removeItem('razoconnect_admin_token');
+            localStorage.removeItem('razoconnect_admin');
+            
+            await Swal.fire({
+                icon: 'warning',
+                title: 'Sesión Expirada',
+                text: 'Tu sesión ha expirado. Por favor inicia sesión nuevamente.',
+                confirmButtonText: 'Ir al Login',
+                allowOutsideClick: false
+            });
+            
+            window.location.href = '/login.html?error=session_expired';
+            return;
+        }
 
         if (!response.ok) {
             const error = await response.json();
@@ -419,6 +497,14 @@ function imprimirRemision() {
 
 async function exportarExcel() {
     try {
+        const token = localStorage.getItem('razoconnect_admin_token');
+        
+        if (!token) {
+            console.warn('⚠️ No admin token found in localStorage');
+            window.location.href = '/login.html?error=session_expired';
+            return;
+        }
+
         const params = new URLSearchParams({
             ...currentFilters,
             limit: 10000
@@ -434,10 +520,27 @@ async function exportarExcel() {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
+                'Authorization': `Bearer ${token}`
             },
             credentials: 'include'
         });
+
+        if (response.status === 401) {
+            console.error('❌ 401 Unauthorized - Token inválido o expirado');
+            localStorage.removeItem('razoconnect_admin_token');
+            localStorage.removeItem('razoconnect_admin');
+            
+            await Swal.fire({
+                icon: 'warning',
+                title: 'Sesión Expirada',
+                text: 'Tu sesión ha expirado. Por favor inicia sesión nuevamente.',
+                confirmButtonText: 'Ir al Login',
+                allowOutsideClick: false
+            });
+            
+            window.location.href = '/login.html?error=session_expired';
+            return;
+        }
 
         if (!response.ok) {
             throw new Error('Error al exportar');
