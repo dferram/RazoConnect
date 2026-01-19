@@ -2068,6 +2068,7 @@ const buscarProductosCompra = async (req, res) => {
       "COALESCE(pv.activo, TRUE) = TRUE",
       "COALESCE(p.activo, TRUE) = TRUE",
       "p.tenant_id = $2",
+      "pv.tenant_id = $2",
     ];
     const params = [reglasProveedorId, tenant_id];
     let i = 3;
@@ -2124,7 +2125,7 @@ const buscarProductosCompra = async (req, res) => {
          COALESCE(regla.cantidadempaque, 1) AS regla_empaque,
          COALESCE(regla.cantidadempaque, 1) AS cantidad_empaque,
          pv.dimensiones,
-         m.nombremedida,
+         COALESCE(m.nombremedida, pv.dimensiones) AS nombremedida,
          pv.color_nombre,
          pv.costounitario,
          pv.stock,
@@ -2132,7 +2133,7 @@ const buscarProductosCompra = async (req, res) => {
          img_producto.url_imagen AS url_imagen_producto,
          img_variante.url_imagen AS url_imagen_variante
        FROM producto_variantes pv
-       INNER JOIN productos p ON p.productoid = pv.productoid
+       INNER JOIN productos p ON p.productoid = pv.productoid AND pv.tenant_id = p.tenant_id
        LEFT JOIN medidas m ON m.medidaid = pv.medidaid
        LEFT JOIN LATERAL (
          SELECT pre.cantidadempaque
