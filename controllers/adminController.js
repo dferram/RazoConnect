@@ -3449,10 +3449,18 @@ const getDashboardStats = async (req, res) => {
       [tenant_id]
     );
 
-    // Obtener pedidos pendientes
+    // Obtener pedidos pendientes (no confirmados, no entregados, no cancelados)
     const pedidosPendientesResult = await db.query(
       `SELECT COUNT(*) as total FROM Pedidos 
-       WHERE tenant_id = $1 AND Estatus IN ('Pendiente', 'Procesando')`,
+       WHERE tenant_id = $1 
+       AND Estatus NOT IN ('Confirmado', 'Entregado', 'Cancelado')`,
+      [tenant_id]
+    );
+
+    // Obtener pedidos entregados
+    const pedidosEntregadosResult = await db.query(
+      `SELECT COUNT(*) as total FROM Pedidos 
+       WHERE tenant_id = $1 AND Estatus = 'Entregado'`,
       [tenant_id]
     );
 
@@ -3463,14 +3471,41 @@ const getDashboardStats = async (req, res) => {
       [tenant_id]
     );
 
-    // Obtener ventas del mes actual
-    const ventasMesResult = await db.query(
+    // Obtener agentes activos
+    const agentesResult = await db.query(
+      `SELECT COUNT(*) as total FROM AgentesDeVentas 
+       WHERE tenant_id = $1 AND Activo = TRUE`,
+      [tenant_id]
+    );
+
+    // Obtener venta total (suma de todos los pedidos no cancelados)
+    const ventaTotalResult = await db.query(
       `SELECT COALESCE(SUM(MontoTotal), 0) as total 
        FROM Pedidos 
        WHERE tenant_id = $1 
-       AND EXTRACT(MONTH FROM FechaPedido) = EXTRACT(MONTH FROM CURRENT_DATE)
-       AND EXTRACT(YEAR FROM FechaPedido) = EXTRACT(YEAR FROM CURRENT_DATE)
        AND Estatus NOT IN ('Cancelado')`,
+      [tenant_id]
+    );
+
+    // Calcular utilidad total (precio - costo) de todos los pedidos no cancelados
+    const utilidadTotalResult = await db.query(
+      `SELECT COALESCE(SUM(
+        (dp.PrecioUnitario - COALESCE(pv.Costo, p.Costo, 0)) * dp.Cantidad
+       ), 0) as utilidad
+       FROM DetallesDelPedido dp
+       INNER JOIN Pedidos ped ON dp.PedidoID = ped.PedidoID
+       INNER JOIN Producto_Variantes pv ON dp.VarianteID = pv.VarianteID
+       INNER JOIN Productos p ON pv.ProductoID = p.ProductoID
+       WHERE ped.tenant_id = $1 
+       AND ped.Estatus NOT IN ('Cancelado')`,
+      [tenant_id]
+    );
+
+    // Obtener comisiones pendientes
+    const comisionesPendientesResult = await db.query(
+      `SELECT COALESCE(SUM(MontoComision), 0) as total 
+       FROM Comisiones 
+       WHERE tenant_id = $1 AND Pagado = FALSE`,
       [tenant_id]
     );
 
@@ -3479,8 +3514,12 @@ const getDashboardStats = async (req, res) => {
       data: {
         totalPedidos: parseInt(pedidosResult.rows[0].total),
         pedidosPendientes: parseInt(pedidosPendientesResult.rows[0].total),
+        pedidosEntregados: parseInt(pedidosEntregadosResult.rows[0].total),
         clientesActivos: parseInt(clientesResult.rows[0].total),
-        ventasMes: parseFloat(ventasMesResult.rows[0].total)
+        agentesActivos: parseInt(agentesResult.rows[0].total),
+        ventaTotal: parseFloat(ventaTotalResult.rows[0].total),
+        ingresosTotales: parseFloat(utilidadTotalResult.rows[0].utilidad),
+        comisionesPendientes: parseFloat(comisionesPendientesResult.rows[0].total)
       }
     });
   } catch (error) {

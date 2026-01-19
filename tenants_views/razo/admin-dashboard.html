@@ -103,6 +103,45 @@
                 <div class="admin-stat-icon red">🏷️</div>
               </div>
             </div>
+
+            <div class="admin-stat-card">
+              <div class="admin-stat-header">
+                <div class="admin-stat-content">
+                  <h3>Venta Total</h3>
+                  <div class="admin-stat-value" id="ventaTotal">$0</div>
+                  <div class="admin-stat-change neutral">
+                    Total de pedidos no cancelados
+                  </div>
+                </div>
+                <div class="admin-stat-icon blue">💵</div>
+              </div>
+            </div>
+
+            <div class="admin-stat-card">
+              <div class="admin-stat-header">
+                <div class="admin-stat-content">
+                  <h3>Pedidos Pendientes</h3>
+                  <div class="admin-stat-value" id="pedidosPendientesCount">0</div>
+                  <div class="admin-stat-change neutral">
+                    Sin confirmar o entregar
+                  </div>
+                </div>
+                <div class="admin-stat-icon yellow">⏳</div>
+              </div>
+            </div>
+
+            <div class="admin-stat-card">
+              <div class="admin-stat-header">
+                <div class="admin-stat-content">
+                  <h3>Pedidos Entregados</h3>
+                  <div class="admin-stat-value" id="pedidosEntregados">0</div>
+                  <div class="admin-stat-change positive">
+                    ✓ Completados exitosamente
+                  </div>
+                </div>
+                <div class="admin-stat-icon green">✅</div>
+              </div>
+            </div>
           </div>
 
           <!-- Recent Orders Table -->
@@ -186,7 +225,7 @@
                 "pedidosCambio"
               ).textContent = `${stats.pedidosPendientes} pendientes`;
 
-              // Ingresos totales
+              // Ingresos totales (utilidad)
               document.getElementById("ingresosTotales").textContent =
                 formatCurrency(stats.ingresosTotales);
               document.getElementById("ingresosCambio").textContent =
@@ -205,6 +244,18 @@
               document.getElementById(
                 "agentesCambio"
               ).textContent = `Total activos`;
+
+              // Venta Total
+              document.getElementById("ventaTotal").textContent =
+                formatCurrency(stats.ventaTotal);
+
+              // Pedidos Pendientes
+              document.getElementById("pedidosPendientesCount").textContent =
+                stats.pedidosPendientes || "0";
+
+              // Pedidos Entregados
+              document.getElementById("pedidosEntregados").textContent =
+                stats.pedidosEntregados || "0";
 
               // Alerta de stock bajo
               if (stats.productosStockBajo > 0) {
