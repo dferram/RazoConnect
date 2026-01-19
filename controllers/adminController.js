@@ -2212,20 +2212,35 @@ const buscarProductosCompra = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("\n=== ERROR en buscarProductosCompra ===");
-    console.error("Error completo:", error);
-    console.error("Stack trace:", error.stack);
-    console.error("Error message:", error.message);
-    console.error("Error code:", error.code);
-    console.error("Error detail:", error.detail);
-    console.error("Error hint:", error.hint);
-    console.error("Error position:", error.position);
+    console.error("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    console.error("❌ ERROR CRÍTICO en buscarProductosCompra");
+    console.error("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    console.error("Timestamp:", new Date().toISOString());
+    console.error("Tenant ID:", req.tenant?.tenant_id || "NO DETECTADO");
+    console.error("Query params:", JSON.stringify(req.query, null, 2));
+    console.error("\n--- Error de PostgreSQL ---");
+    console.error("Message:", error.message);
+    console.error("Code:", error.code);
+    console.error("Detail:", error.detail);
+    console.error("Hint:", error.hint);
+    console.error("Position:", error.position);
+    console.error("Where:", error.where);
+    console.error("Schema:", error.schema);
+    console.error("Table:", error.table);
+    console.error("Column:", error.column);
+    console.error("DataType:", error.dataType);
+    console.error("Constraint:", error.constraint);
+    console.error("\n--- Stack Trace ---");
+    console.error(error.stack);
+    console.error("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
+    
     return res.status(500).json({
       success: false,
-      message: "Error en el servidor",
+      message: "Error al buscar productos",
       error: error.message,
       code: error.code,
-      detail: error.detail
+      detail: error.detail,
+      hint: error.hint
     });
   }
 };

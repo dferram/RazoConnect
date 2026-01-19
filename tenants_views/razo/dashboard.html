@@ -1828,11 +1828,33 @@
             showToast("Pedido cancelado exitosamente", "success");
             loadPedidos(); // Recargar lista de pedidos
           } else {
-            throw new Error(response.data.message || "Error al cancelar el pedido");
+            // Extraer mensaje de error detallado del servidor
+            const errorMsg = response.data?.error || response.data?.message || "Error al cancelar el pedido";
+            const errorDetalle = response.data?.detalle;
+            const errorCodigo = response.data?.codigo;
+            
+            // Log detallado para debugging
+            console.error("[Cancelar Pedido] Error del servidor:", {
+              mensaje: errorMsg,
+              detalle: errorDetalle,
+              codigo: errorCodigo,
+              respuestaCompleta: response.data
+            });
+            
+            // Mostrar mensaje completo al usuario
+            const mensajeUsuario = errorDetalle 
+              ? `${errorMsg}: ${errorDetalle}` 
+              : errorMsg;
+            
+            showToast(mensajeUsuario, "error");
           }
         } catch (error) {
-          console.error("Error al cancelar pedido:", error);
-          showToast(error.message || "Error al cancelar el pedido", "error");
+          console.error("[Cancelar Pedido] Error de red o excepción:", {
+            mensaje: error.message,
+            stack: error.stack,
+            error: error
+          });
+          showToast(error.message || "Error de conexión al cancelar el pedido", "error");
         }
       }
     </script>

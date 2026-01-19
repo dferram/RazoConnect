@@ -2016,16 +2016,37 @@ const cancelarPedido = async (req, res) => {
       [id, tenant_id]
     );
 
+    console.log(`[Cancelar Pedido] Restaurando stock para ${detallesQuery.rows.length} variantes`);
+
     for (const detalle of detallesQuery.rows) {
+      const { varianteid, piezastotales } = detalle;
+      
+      // Verificar que la variante existe antes de actualizar
+      const varianteCheck = await client.query(
+        `SELECT varianteid, stock FROM producto_variantes 
+         WHERE varianteid = $1 AND tenant_id = $2`,
+        [varianteid, tenant_id]
+      );
+
+      if (varianteCheck.rows.length === 0) {
+        console.warn(`[Cancelar Pedido] Variante ${varianteid} no encontrada - omitiendo restauración de stock`);
+        continue;
+      }
+
+      const stockActual = varianteCheck.rows[0].stock;
+      console.log(`[Cancelar Pedido] Variante ${varianteid}: Stock actual=${stockActual}, Restaurando=${piezastotales} piezas`);
+
       await client.query(
         `UPDATE producto_variantes
-         SET stock_piezas = stock_piezas + $1
+         SET stock = stock + $1
          WHERE varianteid = $2 AND tenant_id = $3`,
-        [detalle.piezastotales, detalle.varianteid, tenant_id]
+        [piezastotales, varianteid, tenant_id]
       );
     }
 
     await client.query('COMMIT');
+
+    console.log(`[Cancelar Pedido] Pedido ${id} cancelado exitosamente`);
 
     res.json({
       success: true,
@@ -2034,11 +2055,19 @@ const cancelarPedido = async (req, res) => {
 
   } catch (error) {
     await client.query('ROLLBACK');
-    console.error('Error al cancelar pedido:', error);
+    console.error('[Cancelar Pedido] Error crítico:', {
+      pedidoId: req.params.id,
+      clienteId: req.user?.id,
+      error: error.message,
+      stack: error.stack,
+      code: error.code
+    });
+    
     res.status(500).json({ 
       success: false,
       error: 'Error al cancelar pedido',
-      detalle: error.message 
+      detalle: error.message,
+      codigo: error.code || 'UNKNOWN'
     });
   } finally {
     client.release();

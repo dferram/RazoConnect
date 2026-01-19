@@ -689,19 +689,26 @@
 
       async function loadProductCatalog() {
         setShelfLoading(true);
+        let resp = null;
+        
         try {
-          const resp = await apiCall(
+          resp = await apiCall(
             "/admin/productos/buscar-compra?all=1",
             { method: "GET" }
           );
 
           if (!resp.ok) {
+            console.error("❌ Respuesta no exitosa del servidor:");
+            console.error("Status:", resp.status);
+            console.error("Response data:", JSON.stringify(resp.data, null, 2));
             throw new Error(resp.data?.message || "Error al cargar catálogo");
           }
 
           const resultados = Array.isArray(resp.data?.data?.resultados)
             ? resp.data.data.resultados
             : [];
+
+          console.log(`✅ Catálogo cargado: ${resultados.length} variantes encontradas`);
 
           state.variantesPorProducto = new Map();
           state.varianteById = new Map();
@@ -744,25 +751,33 @@
             return p;
           });
 
+          console.log(`✅ Catálogo procesado: ${state.catalogo.length} productos únicos`);
           applyFilters();
         } catch (e) {
-          console.error("❌ Error cargando catálogo de productos:");
+          console.error("❌ ERROR CRÍTICO cargando catálogo de productos:");
+          console.error("Error type:", e.constructor.name);
           console.error("Error message:", e.message);
           console.error("Error stack:", e.stack);
           
-          if (resp && !resp.ok) {
+          if (resp) {
             console.error("Response status:", resp.status);
-            console.error("Response data:", JSON.stringify(resp.data, null, 2));
-            console.error("Response error:", resp.data?.error);
-            console.error("Response code:", resp.data?.code);
-            console.error("Response detail:", resp.data?.detail);
+            console.error("Response ok:", resp.ok);
+            if (resp.data) {
+              console.error("Response data:", JSON.stringify(resp.data, null, 2));
+              console.error("Response error:", resp.data?.error);
+              console.error("Response code:", resp.data?.code);
+              console.error("Response detail:", resp.data?.detail);
+            }
+          } else {
+            console.error("No se recibió respuesta del servidor (posible error de red o timeout)");
           }
           
           state.catalogo = [];
           state.filteredProducts = [];
           renderShelf();
           
-          toast("error", "Error al cargar el catálogo de productos. Revisa la consola para más detalles.");
+          const errorMsg = resp?.data?.message || e.message || "Error desconocido al cargar el catálogo";
+          toast("error", `Error: ${errorMsg}. Revisa la consola para más detalles.`);
         } finally {
           setShelfLoading(false);
         }
