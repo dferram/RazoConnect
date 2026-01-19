@@ -352,7 +352,7 @@
                     }</div>
                   </td>
                   <td>${fecha}</td>
-                  <td>${order.totalItems} items</td>
+                  <td>${order.totalItems ? order.totalItems + ' items' : '-'}</td>
                   <td><strong>${formatCurrency(order.montoTotal)}</strong></td>
                   <td>${order.agenteNombre || "-"}</td>
                   <td><span class="${badgeClass}">${order.estatus}</span></td>
@@ -375,8 +375,8 @@
                       <button
                         class="btn btn-info"
                         style="padding: 0.5rem 1rem; font-size: 0.875rem; background: #17a2b8; color: white;"
-                        onclick="abrirModalGenerarRemision(${order.pedidoId})"
-                        title="Generar remisión de entrega">
+                        onclick="descargarPDFPedido(${order.pedidoId})"
+                        title="Descargar remisión en PDF">
                         📄 Generar Remisión
                       </button>
                       ${order.urlEvidenciaEntrega ? `
@@ -387,15 +387,7 @@
                           title="Ver evidencia de entrega">
                           ✅ Ver Firma
                         </button>
-                      ` : `
-                        <button
-                          class="btn"
-                          style="padding: 0.5rem 1rem; font-size: 0.875rem; background: #ffc107; color: #000;"
-                          onclick="abrirModalSubirEvidencia(${order.pedidoId})"
-                          title="Subir foto de remisión firmada">
-                          📷 Subir Firma
-                        </button>
-                      `}
+                      ` : ''}
                     </div>
                   </td>
                 </tr>
@@ -457,7 +449,11 @@
 
       // Update order status
       async function updateOrderStatus() {
-        if (!selectedOrderId) return;
+        if (!selectedOrderId) {
+          console.error("No order ID selected");
+          showToast("Error: No se seleccionó ningún pedido", "error");
+          return;
+        }
 
         const modalNuevoEstatus = document.getElementById("modalNuevoEstatus");
         const btnConfirmar = document.getElementById("btnConfirmar");
@@ -467,10 +463,16 @@
         // Validate elements exist
         if (!modalNuevoEstatus || !btnConfirmar) {
           console.error("Required elements not found in DOM");
+          showToast("Error: Elementos del formulario no encontrados", "error");
           return;
         }
 
         const nuevoEstatus = modalNuevoEstatus.value;
+        if (!nuevoEstatus) {
+          showToast("Por favor selecciona un estatus", "warning");
+          return;
+        }
+
         const estatusActual = selectedOrderStatus || "";
         const nuevoLower = (nuevoEstatus || "").toString().toLowerCase();
         const actualLower = (estatusActual || "").toString().toLowerCase();
@@ -543,6 +545,8 @@
           if (btnConfirmarText) btnConfirmarText.style.display = "none";
           if (btnConfirmarSpinner) btnConfirmarSpinner.style.display = "block";
 
+          console.log(`Updating order ${selectedOrderId} to status: ${nuevoEstatus}`);
+
           const response = await fetch(
             `${API_BASE_URL}/admin/pedidos/${selectedOrderId}`,
             {
@@ -555,7 +559,15 @@
             }
           );
 
-          const data = await response.json();
+          let data;
+          try {
+            data = await response.json();
+          } catch (parseError) {
+            console.error("Error parsing response:", parseError);
+            throw new Error("Respuesta inválida del servidor");
+          }
+
+          console.log("Server response:", data);
 
           if (response.ok && data.success) {
             showToast(
@@ -565,11 +577,22 @@
             closeStatusModal();
             loadOrders(); // Reload orders
           } else {
-            showToast(data.message || "Error al actualizar pedido", "error");
+            const errorMsg = data.message || data.error || "Error al actualizar pedido";
+            console.error("Update failed:", errorMsg);
+            showToast(errorMsg, "error");
           }
         } catch (error) {
           console.error("Error updating order:", error);
-          showToast("Error al conectar con el servidor", "error");
+          const errorMessage = error.message || "Error al conectar con el servidor";
+          showToast(errorMessage, "error");
+          
+          // Show detailed error in console for debugging
+          console.error("Full error details:", {
+            message: error.message,
+            stack: error.stack,
+            orderId: selectedOrderId,
+            newStatus: nuevoEstatus
+          });
         } finally {
           if (btnConfirmar) btnConfirmar.disabled = false;
           if (btnConfirmarText) btnConfirmarText.style.display = "inline";
@@ -704,6 +727,67 @@
         } catch (error) {
           console.error("Error al generar remisión:", error);
           showToast("Error al generar remisión", "error");
+        }
+      }
+
+      // Función para descargar PDF de remisión (igual que en dashboard.html)
+      async function descargarPDFPedido(pedidoId) {
+        const token = localStorage.getItem('razoconnect_admin_token');
+        if (!token) {
+          showToast('Debes iniciar sesión para descargar el PDF', 'error');
+          return;
+        }
+
+        try {
+          showToast('Generando PDF...', 'info');
+          
+          // Hacer petición con token de autenticación
+          const response = await fetch(`${API_BASE_URL}/pedidos/${pedidoId}/pdf`, {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+
+          if (!response.ok) {
+            // Intentar obtener el mensaje de error del servidor
+            const contentType = response.headers.get('content-type');
+            if (contentType && contentType.includes('application/json')) {
+              const errorData = await response.json();
+              const errorMsg = errorData.message || errorData.error || 'Error al generar el PDF';
+              console.error('Error del servidor:', errorData);
+              throw new Error(errorMsg);
+            } else {
+              throw new Error(`Error del servidor: ${response.status} ${response.statusText}`);
+            }
+          }
+
+          // Convertir respuesta a blob
+          const blob = await response.blob();
+          
+          // Verificar que el blob no esté vacío
+          if (blob.size === 0) {
+            throw new Error('El PDF generado está vacío');
+          }
+          
+          // Crear URL temporal del blob
+          const blobUrl = window.URL.createObjectURL(blob);
+          
+          // Crear elemento <a> para descargar
+          const link = document.createElement('a');
+          link.href = blobUrl;
+          link.download = `Remision_Pedido_${pedidoId}.pdf`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          
+          // Liberar URL después de un tiempo
+          setTimeout(() => window.URL.revokeObjectURL(blobUrl), 100);
+          
+          showToast('PDF descargado correctamente', 'success');
+        } catch (error) {
+          console.error('Error al descargar PDF:', error);
+          showToast(error.message || 'Error al generar el PDF. Intenta de nuevo.', 'error');
         }
       }
 

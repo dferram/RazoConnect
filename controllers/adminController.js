@@ -3594,6 +3594,8 @@ const updatePedidoEstatus = async (req, res) => {
     const pedidoId = parseInt(req.params.id);
     const { estatus } = req.body;
 
+    console.log(`[updatePedidoEstatus] Updating order ${pedidoId} to status: ${estatus}`);
+
     if (!estatus) {
       return res.status(400).json({
         success: false,
@@ -3601,11 +3603,13 @@ const updatePedidoEstatus = async (req, res) => {
       });
     }
 
-    const estatusValidos = ['Pendiente', 'Procesando', 'Enviado', 'Entregado', 'Cancelado'];
+    // FIXED: Added 'Confirmado' to valid statuses
+    const estatusValidos = ['Pendiente', 'Confirmado', 'Procesando', 'Enviado', 'Entregado', 'Cancelado', 'Completado', 'Parcial'];
     if (!estatusValidos.includes(estatus)) {
+      console.error(`[updatePedidoEstatus] Invalid status: ${estatus}. Valid: ${estatusValidos.join(', ')}`);
       return res.status(400).json({
         success: false,
-        message: "Estatus inválido"
+        message: `Estatus inválido. Valores permitidos: ${estatusValidos.join(', ')}`
       });
     }
 
@@ -3618,11 +3622,14 @@ const updatePedidoEstatus = async (req, res) => {
     );
 
     if (result.rows.length === 0) {
+      console.error(`[updatePedidoEstatus] Order ${pedidoId} not found`);
       return res.status(404).json({
         success: false,
         message: "Pedido no encontrado"
       });
     }
+
+    console.log(`[updatePedidoEstatus] Order ${pedidoId} updated successfully to ${estatus}`);
 
     // Crear notificación para el cliente
     try {
@@ -3637,6 +3644,7 @@ const updatePedidoEstatus = async (req, res) => {
       });
     } catch (notifError) {
       console.error("Error al crear notificación:", notifError);
+      // Don't fail the request if notification fails
     }
 
     res.json({
@@ -3648,11 +3656,13 @@ const updatePedidoEstatus = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error("Error al actualizar estatus del pedido:", error);
+    console.error("[updatePedidoEstatus] Error:", error);
+    console.error("Error stack:", error.stack);
     res.status(500).json({
       success: false,
       message: "Error al actualizar estatus",
-      error: error.message
+      error: error.message,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 };
