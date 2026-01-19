@@ -76,7 +76,6 @@
                     <th>#ID</th>
                     <th>Cliente</th>
                     <th>Fecha</th>
-                    <th>Items</th>
                     <th>Total</th>
                     <th>Agente</th>
                     <th>Estado</th>
@@ -101,7 +100,10 @@
       </main>
     </div>
 
-    <!-- Modal para subir evidencia de entrega -->
+    <!-- ============================================================ -->
+    <!-- MODALS FOR PROOF OF DELIVERY - COMMENTED OUT FOR FUTURE USE -->
+    <!-- ============================================================ -->
+    <!--
     <div id="evidenciaModal" class="modal">
       <div class="modal-content modal-content--xl">
         <div class="modal-header">
@@ -148,7 +150,6 @@
       </div>
     </div>
 
-    <!-- Modal para ver evidencia de entrega -->
     <div id="verEvidenciaModal" class="modal">
       <div class="modal-content modal-content--xl">
         <div class="modal-header">
@@ -170,6 +171,7 @@
         </div>
       </div>
     </div>
+    -->
 
     <!-- Modal para cambiar estatus -->
     <div id="statusModal" class="modal">
@@ -352,9 +354,8 @@
                     }</div>
                   </td>
                   <td>${fecha}</td>
-                  <td>${order.totalItems ? order.totalItems + ' items' : '-'}</td>
                   <td><strong>${formatCurrency(order.montoTotal)}</strong></td>
-                  <td>${order.agenteNombre || "-"}</td>
+                  <td>${order.agente ? `${order.agente.nombre} ${order.agente.apellido || ''}`.trim() : "-"}</td>
                   <td><span class="${badgeClass}">${order.estatus}</span></td>
                   <td>
                     <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
@@ -617,7 +618,10 @@
         });
       });
 
-      // Proof of Delivery Functions
+      // ============================================================
+      // PROOF OF DELIVERY FUNCTIONS - COMMENTED OUT FOR FUTURE USE
+      // ============================================================
+      /*
       let selectedPedidoIdEvidencia = null;
 
       function abrirModalSubirEvidencia(pedidoId) {
@@ -690,7 +694,9 @@
           btnSubirSpinner.style.display = "none";
         }
       }
+      */
 
+      /*
       function verEvidencia(url) {
         document.getElementById("evidenciaImagen").src = url;
         document.getElementById("evidenciaDownloadLink").href = url;
@@ -700,6 +706,7 @@
       function cerrarModalVerEvidencia() {
         document.getElementById("verEvidenciaModal").style.display = "none";
       }
+      */
 
       async function generarRemision(pedidoId) {
         try {
@@ -730,7 +737,7 @@
         }
       }
 
-      // Función para descargar PDF de remisión (igual que en dashboard.html)
+      // Función para descargar PDF de remisión
       async function descargarPDFPedido(pedidoId) {
         const token = localStorage.getItem('razoconnect_admin_token');
         if (!token) {
@@ -741,11 +748,15 @@
         try {
           showToast('Generando PDF...', 'info');
           
-          // Hacer petición con token de autenticación
+          console.log('Downloading PDF for order:', pedidoId);
+          console.log('Using admin token:', token.substring(0, 20) + '...');
+          
+          // Hacer petición con token de autenticación de admin
           const response = await fetch(`${API_BASE_URL}/pedidos/${pedidoId}/pdf`, {
             method: 'GET',
             headers: {
-              'Authorization': `Bearer ${token}`
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
             }
           });
 
@@ -1049,18 +1060,19 @@
       // Close modal when clicking outside
       window.onclick = function (event) {
         const statusModal = document.getElementById("statusModal");
-        const evidenciaModal = document.getElementById("evidenciaModal");
-        const verEvidenciaModal = document.getElementById("verEvidenciaModal");
+        // Commented out evidencia modals - not in use
+        // const evidenciaModal = document.getElementById("evidenciaModal");
+        // const verEvidenciaModal = document.getElementById("verEvidenciaModal");
 
         if (event.target == statusModal) {
           closeStatusModal();
         }
-        if (event.target == evidenciaModal) {
-          cerrarModalEvidencia();
-        }
-        if (event.target == verEvidenciaModal) {
-          cerrarModalVerEvidencia();
-        }
+        // if (event.target == evidenciaModal) {
+        //   cerrarModalEvidencia();
+        // }
+        // if (event.target == verEvidenciaModal) {
+        //   cerrarModalVerEvidencia();
+        // }
       };
     </script>
 

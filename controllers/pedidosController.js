@@ -1930,69 +1930,81 @@ const cancelarPedido = async (req, res) => {
     // Si el pedido era a crédito y ya tenía cargo aplicado, revertirlo
     // (esto solo aplica si hubo remisiones emitidas)
     if (pedido.es_credito) {
-      // Verificar si hay CXC asociados
-      const cxcQuery = await client.query(
-        `SELECT SUM(monto) as total_cargado
-         FROM cuentas_por_cobrar
-         WHERE pedido_id = $1 AND tipo_movimiento = 'CARGO' AND tenant_id = $2`,
+      // Buscar remisiones asociadas al pedido
+      const remisionesQuery = await client.query(
+        `SELECT remision_id
+         FROM remisiones
+         WHERE pedido_id = $1 AND tenant_id = $2`,
         [id, tenant_id]
       );
 
-      const totalCargado = parseFloat(cxcQuery.rows[0]?.total_cargado || 0);
+      if (remisionesQuery.rows.length > 0) {
+        const remisionIds = remisionesQuery.rows.map(r => r.remision_id);
 
-      if (totalCargado > 0) {
-        // Obtener información de crédito del cliente
-        const creditoQuery = await client.query(
-          `SELECT credito_id, saldo_deudor
-           FROM cliente_creditos
-           WHERE cliente_id = $1
-           FOR UPDATE`,
-          [pedido.clienteid]
+        // Verificar si hay CXC asociados a las remisiones
+        const cxcQuery = await client.query(
+          `SELECT SUM(monto) as total_cargado
+           FROM cuentas_por_cobrar
+           WHERE remision_id = ANY($1) AND tenant_id = $2`,
+          [remisionIds, tenant_id]
         );
 
-        if (creditoQuery.rows.length > 0) {
-          const creditoInfo = creditoQuery.rows[0];
-          const saldoActual = parseFloat(creditoInfo.saldo_deudor || 0);
-          const nuevoSaldo = parseFloat((saldoActual - totalCargado).toFixed(2));
+        const totalCargado = parseFloat(cxcQuery.rows[0]?.total_cargado || 0);
 
-          // Actualizar saldo deudor (restar el cargo)
-          await client.query(
-            `UPDATE cliente_creditos
-             SET saldo_deudor = $1, ultima_actualizacion = NOW()
-             WHERE credito_id = $2`,
-            [nuevoSaldo, creditoInfo.credito_id]
+        if (totalCargado > 0) {
+          // Obtener información de crédito del cliente
+          const creditoQuery = await client.query(
+            `SELECT credito_id, saldo_deudor
+             FROM cliente_creditos
+             WHERE cliente_id = $1
+             FOR UPDATE`,
+            [pedido.clienteid]
           );
 
-          // Registrar movimiento de crédito (ABONO por cancelación)
+          if (creditoQuery.rows.length > 0) {
+            const creditoInfo = creditoQuery.rows[0];
+            const saldoActual = parseFloat(creditoInfo.saldo_deudor || 0);
+            const nuevoSaldo = parseFloat((saldoActual - totalCargado).toFixed(2));
+
+            // Actualizar saldo deudor (restar el cargo)
+            await client.query(
+              `UPDATE cliente_creditos
+               SET saldo_deudor = $1, ultima_actualizacion = NOW()
+               WHERE credito_id = $2`,
+              [nuevoSaldo, creditoInfo.credito_id]
+            );
+
+            // Registrar movimiento de crédito (ABONO por cancelación)
+            await client.query(
+              `INSERT INTO credito_movimientos (
+                 credito_id,
+                 tipo_movimiento,
+                 monto,
+                 referencia_id,
+                 descripcion,
+                 saldo_despues_movimiento,
+                 tenant_id
+               )
+               VALUES ($1, 'ABONO', $2, $3, $4, $5, $6)`,
+              [
+                creditoInfo.credito_id,
+                totalCargado.toFixed(2),
+                `PED-${id}`,
+                `Abono por cancelación de pedido #${id}`,
+                nuevoSaldo.toFixed(2),
+                tenant_id
+              ]
+            );
+          }
+
+          // Marcar los CXC como cancelados
           await client.query(
-            `INSERT INTO credito_movimientos (
-               credito_id,
-               tipo_movimiento,
-               monto,
-               referencia_id,
-               descripcion,
-               saldo_despues_movimiento,
-               tenant_id
-             )
-             VALUES ($1, 'ABONO', $2, $3, $4, $5, $6)`,
-            [
-              creditoInfo.credito_id,
-              totalCargado.toFixed(2),
-              `PED-${id}`,
-              `Abono por cancelación de pedido #${id}`,
-              nuevoSaldo.toFixed(2),
-              tenant_id
-            ]
+            `UPDATE cuentas_por_cobrar
+             SET descripcion = descripcion || ' (CANCELADO)'
+             WHERE remision_id = ANY($1) AND tenant_id = $2`,
+            [remisionIds, tenant_id]
           );
         }
-
-        // Marcar los CXC como cancelados
-        await client.query(
-          `UPDATE cuentas_por_cobrar
-           SET descripcion = descripcion || ' (CANCELADO)'
-           WHERE pedido_id = $1 AND tenant_id = $2`,
-          [id, tenant_id]
-        );
       }
     }
 

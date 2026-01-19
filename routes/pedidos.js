@@ -73,12 +73,12 @@ router.put(
 /**
  * @route   GET /api/pedidos/:id/pdf
  * @desc    Generar PDF de remisión para un pedido
- * @access  Private (Cliente propietario o Admin)
+ * @access  Private (Cliente propietario, Admin, Agente o SuperAdmin)
  */
 router.get(
   "/pedidos/:id/pdf",
   authenticate,
-  authorize(["cliente", "admin", "superadmin"]),
+  authorize(["cliente", "admin", "agente", "superadmin"]),
   pdfController.generarPDFPedido
 );
 

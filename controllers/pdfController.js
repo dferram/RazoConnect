@@ -45,7 +45,7 @@ async function generarPDFPedido(req, res) {
 
         const pedido = pedidoQuery.rows[0];
 
-        if (userRole !== 'admin' && userRole !== 'superadmin' && pedido.clienteid !== userId) {
+        if (userRole !== 'admin' && userRole !== 'superadmin' && userRole !== 'agente' && pedido.clienteid !== userId) {
             return res.status(403).json({ error: 'No tienes permiso para acceder a este pedido' });
         }
 
