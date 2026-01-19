@@ -2088,7 +2088,7 @@ const buscarProductosCompra = async (req, res) => {
     }
 
     if (hasProveedorFiltro) {
-      whereParts.push("p.proveedorid_default = $1");
+      whereParts.push("p.proveedorid_default = $1::INTEGER");
     }
 
     if (hasCategoria) {
@@ -2139,6 +2139,7 @@ const buscarProductosCompra = async (req, res) => {
          SELECT pre.cantidadempaque
          FROM proveedor_reglas_empaque pre
          WHERE pre.reglaid = p.reglaid AND p.reglaid IS NOT NULL
+           AND ($1::INTEGER IS NULL OR pre.proveedorid = $1::INTEGER)
          LIMIT 1
        ) regla ON true
        LEFT JOIN LATERAL (

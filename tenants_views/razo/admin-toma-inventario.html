@@ -746,10 +746,23 @@
 
           applyFilters();
         } catch (e) {
-          console.error("Error cargando catálogo:", e);
+          console.error("❌ Error cargando catálogo de productos:");
+          console.error("Error message:", e.message);
+          console.error("Error stack:", e.stack);
+          
+          if (resp && !resp.ok) {
+            console.error("Response status:", resp.status);
+            console.error("Response data:", JSON.stringify(resp.data, null, 2));
+            console.error("Response error:", resp.data?.error);
+            console.error("Response code:", resp.data?.code);
+            console.error("Response detail:", resp.data?.detail);
+          }
+          
           state.catalogo = [];
           state.filteredProducts = [];
           renderShelf();
+          
+          toast("error", "Error al cargar el catálogo de productos. Revisa la consola para más detalles.");
         } finally {
           setShelfLoading(false);
         }

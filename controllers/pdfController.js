@@ -45,7 +45,22 @@ async function generarPDFPedido(req, res) {
 
         const pedido = pedidoQuery.rows[0];
 
-        if (userRole !== 'admin' && userRole !== 'superadmin' && userRole !== 'agente' && pedido.clienteid !== userId) {
+        // Validar permisos según el rol
+        const isAdmin = userRole === 'admin' || userRole === 'superadmin';
+        const isClienteOwner = pedido.clienteid === userId;
+        
+        // Si es agente, verificar que el cliente del pedido esté asignado a este agente
+        let isAgenteAutorizado = false;
+        if (userRole === 'agente') {
+            const agenteClienteCheck = await db.query(
+                'SELECT 1 FROM clientes WHERE clienteid = $1 AND agenteid = $2 LIMIT 1',
+                [pedido.clienteid, userId]
+            );
+            isAgenteAutorizado = agenteClienteCheck.rows.length > 0;
+        }
+
+        // Permitir acceso si es admin, cliente propietario, o agente autorizado
+        if (!isAdmin && !isClienteOwner && !isAgenteAutorizado) {
             return res.status(403).json({ error: 'No tienes permiso para acceder a este pedido' });
         }
 

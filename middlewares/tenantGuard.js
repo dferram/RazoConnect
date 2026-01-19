@@ -29,9 +29,15 @@ function normalizeDomain(hostname) {
 async function tenantGuard(req, res, next) {
   const path = req.path;
 
-  if (WHITELISTED_PATHS.some(whitelisted => path.startsWith(whitelisted))) {
+  // Verificar whitelist
+  const isWhitelisted = WHITELISTED_PATHS.some(whitelisted => path.startsWith(whitelisted));
+  
+  if (isWhitelisted) {
+    console.log(`✅ [tenantGuard] Ruta en whitelist: ${path} - BYPASS`);
     return next();
   }
+  
+  console.log(`🔍 [tenantGuard] Procesando ruta: ${path}`);
 
   try {
     let tenant;
@@ -98,8 +104,11 @@ async function tenantGuard(req, res, next) {
     if (tenant.is_active === false) {
       console.warn(`🚫 Servicio suspendido para tenant: ${tenant.nombre_cliente}`);
       if (path !== '/suspended' && path !== '/suspended.html') {
+        console.log(`🔄 Redirigiendo a /suspended.html`);
         return res.redirect('/suspended.html');
       }
+      // Si ya está en /suspended o /suspended.html, NO asignar tenant y dejar que la ruta específica maneje
+      console.log(`✅ Permitiendo acceso a página de suspensión sin asignar tenant`);
       return next();
     }
 

@@ -272,9 +272,15 @@ app.use("/api/*", (req, res) => {
 
 // Redirigir rutas no encontradas a index
 app.get("*", (req, res) => {
+  // Si no hay tenant asignado (bloqueado o no encontrado), redirigir a suspended
+  if (!req.tenant) {
+    console.warn(`⚠️ [Catch-all] No hay tenant asignado para ${req.path}, redirigiendo a /suspended.html`);
+    return res.redirect('/suspended.html');
+  }
+  
   // Determinar carpeta del tenant dinámicamente desde la base de datos
   // El campo 'tema' en la tabla tenants define qué carpeta usar ('razo' o 'fashion')
-  const tenantFolder = req.tenant?.tema || 'razo'; // Default a 'razo' si no hay tema
+  const tenantFolder = req.tenant.tema || 'razo'; // Default a 'razo' si no hay tema
   res.sendFile(path.join(__dirname, "tenants_views", tenantFolder, "index.html"));
 });
 
