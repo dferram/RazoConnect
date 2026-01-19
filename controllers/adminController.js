@@ -9432,7 +9432,10 @@ const getPedidoDetalle = async (req, res) => {
         pv.SKU,
         pv.Dimensiones,
         pv.ProductoID,
+        pv.color_nombre,
+        pv.color_hex,
         pr.NombreProducto,
+        pr.ImagenURL,
         row_to_json(ct) as tamano_info
       FROM detallesdelpedido dp
       INNER JOIN producto_variantes pv ON dp.varianteid = pv.varianteid
@@ -9505,6 +9508,9 @@ const getPedidoDetalle = async (req, res) => {
               : 0,
             piezasTotales: parseInt(row.piezastotales, 10),
             dimensiones: row.dimensiones || null,
+            colorNombre: row.color_nombre || null,
+            colorHex: row.color_hex || null,
+            imagenUrl: row.imagenurl || null,
             subtotal: row.precioporpaquete
               ? parseFloat((row.cantidadpaquetes || 0) * row.precioporpaquete)
               : 0,

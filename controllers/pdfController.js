@@ -7,7 +7,8 @@ async function generarPDFPedido(req, res) {
     const pedidoId = parseInt(req.params.id);
     const { tenant_id } = req.tenant;
     const userId = req.user?.id;
-    const userRole = req.user?.role;
+    const userRole = req.user?.rol;
+    const userRoles = Array.isArray(req.user?.roles) ? req.user.roles : [userRole];
 
     try {
         const pedidoQuery = await db.query(
@@ -46,12 +47,12 @@ async function generarPDFPedido(req, res) {
         const pedido = pedidoQuery.rows[0];
 
         // Validar permisos según el rol
-        const isAdmin = userRole === 'admin' || userRole === 'superadmin';
-        const isClienteOwner = pedido.clienteid === userId;
+        const isAdmin = userRoles.some(role => ['admin', 'superadmin'].includes(role?.toLowerCase()));
+        const isClienteOwner = userRole === 'cliente' && pedido.clienteid === userId;
         
         // Si es agente, verificar que el cliente del pedido esté asignado a este agente
         let isAgenteAutorizado = false;
-        if (userRole === 'agente') {
+        if (userRoles.includes('agente')) {
             const agenteClienteCheck = await db.query(
                 'SELECT 1 FROM clientes WHERE clienteid = $1 AND agenteid = $2 LIMIT 1',
                 [pedido.clienteid, userId]

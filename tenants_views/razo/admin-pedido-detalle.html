@@ -650,11 +650,20 @@
               .map(
                 (item) => `
               <div class="item-row">
-                <div class="item-image-placeholder">📦</div>
+                ${
+                  item.imagenUrl
+                    ? `<img src="${item.imagenUrl}" alt="${item.nombre}" class="item-image-placeholder" style="object-fit: cover; border-radius: 0.5rem;" />`
+                    : '<div class="item-image-placeholder">📦</div>'
+                }
                 <div class="item-info">
                   <p class="item-name">${item.nombre}</p>
                   <p class="item-meta">
                     <span>SKU: ${item.sku || "N/A"}</span>
+                    ${
+                      item.colorNombre && item.colorNombre !== 'Sin color'
+                        ? `<span>Color: ${item.colorNombre}</span>`
+                        : ""
+                    }
                     ${
                       item.dimensiones ? `<span>${item.dimensiones}</span>` : ""
                     }
