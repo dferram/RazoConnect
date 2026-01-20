@@ -659,14 +659,8 @@
                   <p class="item-name">${item.nombre}</p>
                   <p class="item-meta">
                     <span>SKU: ${item.sku || "N/A"}</span>
-                    ${
-                      item.colorNombre && item.colorNombre !== 'Sin color'
-                        ? `<span>Color: ${item.colorNombre}</span>`
-                        : ""
-                    }
-                    ${
-                      item.dimensiones ? `<span>${item.dimensiones}</span>` : ""
-                    }
+                    <span>Color: ${item.colorNombre && item.colorNombre !== 'Sin color' ? item.colorNombre : '-'}</span>
+                    <span>Medida: ${item.dimensiones || '-'}</span>
                     ${
                       item.piezasPorPaquete
                         ? `<span>${item.piezasPorPaquete} pzas/paquete</span>`
