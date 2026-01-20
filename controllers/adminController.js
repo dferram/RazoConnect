@@ -9427,6 +9427,8 @@ const getPedidoDetalle = async (req, res) => {
     const pedidoId = parseInt(req.params.id);
 
     // Obtener información del pedido
+    const { tenant_id } = req.tenant;
+
     const pedidoResult = await db.query(
       `SELECT 
         p.*,
@@ -9448,12 +9450,12 @@ const getPedidoDetalle = async (req, res) => {
         d.codigopostal,
         d.telefonocontacto as referencias
       FROM pedidos p
-      INNER JOIN clientes c ON p.clienteid = c.clienteid
-      LEFT JOIN agentesdeventas a ON p.agenteid = a.agenteid
-      LEFT JOIN cliente_direcciones d ON p.direccionenvioid = d.direccionid
+      INNER JOIN clientes c ON p.clienteid = c.clienteid AND c.tenant_id = $2
+      LEFT JOIN agentesdeventas a ON p.agenteid = a.agenteid AND a.tenant_id = $2
+      LEFT JOIN cliente_direcciones d ON p.direccionenvioid = d.direccionid AND d.tenant_id = $2
       LEFT JOIN estados e ON d.estadoid = e.estadoid
-      WHERE p.pedidoid = $1`,
-      [pedidoId]
+      WHERE p.pedidoid = $1 AND p.tenant_id = $2`,
+      [pedidoId, tenant_id]
     );
 
     if (pedidoResult.rows.length === 0) {
@@ -9486,14 +9488,21 @@ const getPedidoDetalle = async (req, res) => {
         pv.color_nombre,
         pv.color_hex,
         pr.nombreproducto,
-        pr.imagenurl,
+        (
+          SELECT pvi.url_imagen 
+          FROM producto_variante_imagenes pvi 
+          WHERE pvi.varianteid = pv.varianteid 
+            AND pvi.tenant_id = $2
+          ORDER BY pvi.orden ASC 
+          LIMIT 1
+        ) as imagenurl,
         row_to_json(ct) as tamano_info
       FROM detallesdelpedido dp
-      INNER JOIN producto_variantes pv ON dp.varianteid = pv.varianteid
-      INNER JOIN productos pr ON pv.productoid = pr.productoid
-      LEFT JOIN cat_tamanopaquetes ct ON dp.tamanoid = ct.tamanoid
-      WHERE dp.pedidoid = $1`,
-      [pedidoId]
+      INNER JOIN producto_variantes pv ON dp.varianteid = pv.varianteid AND pv.tenant_id = $2
+      INNER JOIN productos pr ON pv.productoid = pr.productoid AND pr.tenant_id = $2
+      LEFT JOIN cat_tamanopaquetes ct ON dp.tamanoid = ct.tamanoid AND ct.tenant_id = $2
+      WHERE dp.pedidoid = $1 AND dp.tenant_id = $2`,
+      [pedidoId, tenant_id]
     );
 
     res.json({
