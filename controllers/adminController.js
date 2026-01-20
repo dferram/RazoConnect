@@ -9488,13 +9488,23 @@ const getPedidoDetalle = async (req, res) => {
         pv.color_nombre,
         pv.color_hex,
         pr.nombreproducto,
-        (
-          SELECT pvi.url_imagen 
-          FROM producto_variante_imagenes pvi 
-          WHERE pvi.varianteid = pv.varianteid 
-            AND pvi.tenant_id = $2
-          ORDER BY pvi.orden ASC 
-          LIMIT 1
+        COALESCE(
+          (
+            SELECT pvi.url_imagen 
+            FROM producto_variante_imagenes pvi 
+            WHERE pvi.varianteid = pv.varianteid 
+              AND pvi.tenant_id = $2
+            ORDER BY pvi.orden ASC 
+            LIMIT 1
+          ),
+          (
+            SELECT pi.url_imagen 
+            FROM producto_imagenes pi 
+            WHERE pi.productoid = pv.productoid 
+              AND pi.tenant_id = $2
+            ORDER BY pi.orden ASC 
+            LIMIT 1
+          )
         ) as imagenurl,
         row_to_json(ct) as tamano_info
       FROM detallesdelpedido dp
