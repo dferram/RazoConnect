@@ -9430,29 +9430,29 @@ const getPedidoDetalle = async (req, res) => {
     const pedidoResult = await db.query(
       `SELECT 
         p.*,
-        c.Nombre as ClienteNombre,
-        c.Apellido as ClienteApellido,
-        c.Email as ClienteEmail,
-        c.Telefono as ClienteTelefono,
-        a.Nombre as AgenteNombre,
-        a.Apellido as AgenteApellido,
-        a.CodigoAgente,
-        d.Calle,
-        d.NumeroExt,
-        d.NumeroInt,
-        d.Colonia,
-        d.Ciudad,
-        d.EstadoID,
-        e.Nombre as EstadoNombre,
-        e.Abreviatura as EstadoAbreviatura,
-        d.CodigoPostal,
-        d.TelefonoContacto as Referencias
-      FROM Pedidos p
-      INNER JOIN Clientes c ON p.ClienteID = c.ClienteID
-      LEFT JOIN AgentesDeVentas a ON p.AgenteID = a.AgenteID
-      LEFT JOIN Cliente_Direcciones d ON p.DireccionEnvioID = d.DireccionID
-      LEFT JOIN Estados e ON d.EstadoID = e.EstadoID
-      WHERE p.PedidoID = $1`,
+        c.nombre as clientenombre,
+        c.apellido as clienteapellido,
+        c.email as clienteemail,
+        c.telefono as clientetelefono,
+        a.nombre as agentenombre,
+        a.apellido as agenteapellido,
+        a.codigoagente,
+        d.calle,
+        d.numeroext,
+        d.numeroint,
+        d.colonia,
+        d.ciudad,
+        d.estadoid,
+        e.nombre as estadonombre,
+        e.abreviatura as estadoabreviatura,
+        d.codigopostal,
+        d.telefonocontacto as referencias
+      FROM pedidos p
+      INNER JOIN clientes c ON p.clienteid = c.clienteid
+      LEFT JOIN agentesdeventas a ON p.agenteid = a.agenteid
+      LEFT JOIN cliente_direcciones d ON p.direccionenvioid = d.direccionid
+      LEFT JOIN estados e ON d.estadoid = e.estadoid
+      WHERE p.pedidoid = $1`,
       [pedidoId]
     );
 
@@ -9468,25 +9468,25 @@ const getPedidoDetalle = async (req, res) => {
     // Obtener detalles de productos del pedido
     const detallesResult = await db.query(
       `SELECT 
-        dp.DetalleID,
-        dp.PedidoID,
-        dp.VarianteID,
-        dp.TamanoID,
-        dp.CantidadPaquetes,
-        dp.PrecioPorPaquete,
-        dp.PiezasTotales,
-        dp.PrecioUnitario,
+        dp.detalleid,
+        dp.pedidoid,
+        dp.varianteid,
+        dp.tamanoid,
+        dp.cantidadpaquetes,
+        dp.precioporpaquete,
+        dp.piezastotales,
+        dp.preciounitario,
         COALESCE(
-          dp.PrecioUnitario, 
-          ROUND(dp.PrecioPorPaquete / NULLIF((dp.PiezasTotales / NULLIF(dp.CantidadPaquetes, 0)), 0), 2)
-        ) as PrecioUnitarioCalculado,
-        pv.SKU,
-        pv.Dimensiones,
-        pv.ProductoID,
+          dp.preciounitario, 
+          ROUND(dp.precioporpaquete / NULLIF((dp.piezastotales / NULLIF(dp.cantidadpaquetes, 0)), 0), 2)
+        ) as preciounitariocalculado,
+        pv.sku,
+        pv.dimensiones,
+        pv.productoid,
         pv.color_nombre,
         pv.color_hex,
-        pr.NombreProducto,
-        pr.ImagenURL,
+        pr.nombreproducto,
+        pr.imagenurl,
         row_to_json(ct) as tamano_info
       FROM detallesdelpedido dp
       INNER JOIN producto_variantes pv ON dp.varianteid = pv.varianteid
