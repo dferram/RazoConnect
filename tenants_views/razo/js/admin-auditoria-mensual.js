@@ -52,7 +52,7 @@ async function cargarSesiones() {
     try {
         const response = await fetch('/api/admin/auditoria/sesiones', {
             headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
+                'Authorization': `Bearer ${localStorage.getItem('razoconnect_admin_token')}`
             }
         });
 
@@ -136,7 +136,7 @@ async function crearNuevaSesion() {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
+                'Authorization': `Bearer ${localStorage.getItem('razoconnect_admin_token')}`
             },
             body: JSON.stringify({ nombre })
         });
@@ -206,7 +206,7 @@ async function registrarConteo() {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
+                'Authorization': `Bearer ${localStorage.getItem('razoconnect_admin_token')}`
             },
             body: JSON.stringify({ sku, cantidadFisica })
         });
@@ -300,7 +300,7 @@ async function cargarEstadisticasSesion() {
     try {
         const response = await fetch(`/api/admin/auditoria/sesiones/${sesionActualId}/reconciliacion`, {
             headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
+                'Authorization': `Bearer ${localStorage.getItem('razoconnect_admin_token')}`
             }
         });
 
@@ -337,7 +337,7 @@ async function cargarReconciliacion() {
     try {
         const response = await fetch(`/api/admin/auditoria/sesiones/${sesionActualId}/reconciliacion`, {
             headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
+                'Authorization': `Bearer ${localStorage.getItem('razoconnect_admin_token')}`
             }
         });
 
@@ -444,7 +444,7 @@ async function guardarComentario() {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
+                'Authorization': `Bearer ${localStorage.getItem('razoconnect_admin_token')}`
             },
             body: JSON.stringify({ comentario })
         });
@@ -495,7 +495,7 @@ async function cerrarYSincronizarAuditoria() {
         const response = await fetch(`/api/admin/auditoria/sesiones/${sesionActualId}/cerrar`, {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
+                'Authorization': `Bearer ${localStorage.getItem('razoconnect_admin_token')}`
             }
         });
 
@@ -527,7 +527,7 @@ async function verReporteSesion(sesionId) {
     try {
         const response = await fetch(`/api/admin/auditoria/sesiones/${sesionId}/reporte`, {
             headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
+                'Authorization': `Bearer ${localStorage.getItem('razoconnect_admin_token')}`
             }
         });
 
