@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ajuste de Inventario - RazoConnect</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="css/admin-styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+    <div id="admin-header-container"></div>
+    
+    <div class="admin-layout">
+        <div id="admin-sidebar-container"></div>
+        
+        <div class="admin-main-content">
+            <div class="admin-content">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h2 class="admin-page-title mb-2">
+                            <i class="bi bi-clipboard-check"></i>
+                            Ajuste de Inventario
+                        </h2>
+                        <p class="text-muted mb-0">
+                            Registra mermas o adiciones de stock con trazabilidad completa
+                        </p>
+                    </div>
+                    <a href="admin-historial-ajustes.html" class="btn btn-outline-primary">
+                        <i class="bi bi-clock-history"></i>
+                        Ver Historial
+                    </a>
+                </div>
+
+                <div class="alert alert-info d-flex align-items-start">
+                    <i class="bi bi-info-circle-fill me-3 fs-4"></i>
+                    <div>
+                        <strong>Seguridad Ciega:</strong> Por razones de integridad, el stock actual no se muestra en este formulario. 
+                        Registra únicamente lo que observas físicamente sin intentar "ajustar" números.
+                    </div>
+                </div>
+
+                <div class="admin-stat-card">
+                    <form id="form-ajuste-inventario">
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <label for="sku-search" class="form-label fw-bold">
+                                    <i class="bi bi-search"></i> Buscar Producto por SKU
+                                </label>
+                                <div class="input-group">
+                                    <input 
+                                        type="text" 
+                                        class="form-control" 
+                                        id="sku-search" 
+                                        placeholder="Escribe el SKU del producto..."
+                                        autocomplete="off"
+                                        required>
+                                    <button class="btn btn-primary" type="button" id="btn-buscar-sku">
+                                        <i class="bi bi-search"></i> Buscar
+                                    </button>
+                                </div>
+                                <div id="sku-results" class="mt-2"></div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">
+                                    <i class="bi bi-box-seam"></i> Producto Seleccionado
+                                </label>
+                                <div id="producto-seleccionado" class="p-3 bg-light rounded">
+                                    <p class="text-muted mb-0">
+                                        <i class="bi bi-arrow-left"></i> Busca y selecciona un producto
+                                    </p>
+                                </div>
+                                <input type="hidden" id="sku-seleccionado" required>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label for="tipo-ajuste" class="form-label fw-bold">
+                                    <i class="bi bi-arrow-down-up"></i> Tipo de Ajuste
+                                </label>
+                                <select class="form-select" id="tipo-ajuste" required>
+                                    <option value="">Selecciona el tipo...</option>
+                                    <option value="MERMA">🔻 Merma (-) - Reducción de Stock</option>
+                                    <option value="ADICION">🔺 Adición (+) - Incremento de Stock</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label for="cantidad" class="form-label fw-bold">
+                                    <i class="bi bi-123"></i> Cantidad
+                                </label>
+                                <input 
+                                    type="number" 
+                                    class="form-control" 
+                                    id="cantidad" 
+                                    placeholder="Ingresa la cantidad..."
+                                    min="1"
+                                    required>
+                                <small class="text-muted">Solo números enteros positivos</small>
+                            </div>
+
+                            <div class="col-md-12">
+                                <label for="motivo" class="form-label fw-bold">
+                                    <i class="bi bi-tag"></i> Motivo del Ajuste
+                                </label>
+                                <select class="form-select" id="motivo" required>
+                                    <option value="">Primero selecciona el tipo de ajuste...</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-12">
+                                <label for="observaciones" class="form-label fw-bold">
+                                    <i class="bi bi-chat-left-text"></i> Observaciones (Opcional)
+                                </label>
+                                <textarea 
+                                    class="form-control" 
+                                    id="observaciones" 
+                                    rows="3"
+                                    placeholder="Agrega detalles adicionales sobre este ajuste..."></textarea>
+                                <small class="text-muted">Máximo 500 caracteres</small>
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-3 justify-content-end" style="margin-top: 2rem;">
+                            <button type="button" class="btn btn-secondary" id="btn-limpiar">
+                                <i class="bi bi-x-circle"></i> Limpiar Formulario
+                            </button>
+                            <button type="submit" class="btn btn-success" id="btn-registrar">
+                                <i class="bi bi-check-circle"></i> Registrar Ajuste
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="alert alert-warning mt-4">
+                    <strong><i class="bi bi-shield-lock"></i> Auditoría Completa:</strong> 
+                    Todos los ajustes quedan registrados con tu usuario, fecha, hora e IP. 
+                    Los Super Admins pueden revisar el historial completo en cualquier momento.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/components/admin-header-loader.js"></script>
+    <script src="js/components/admin-sidebar-loader.js"></script>
+    <script src="js/admin-ajuste-inventario.js"></script>
+</body>
+</html>

@@ -18,6 +18,7 @@ const inventarioController = require("../controllers/inventarioController");
 const numCuentaController = require("../controllers/numCuentaController");
 const migrationController = require("../controllers/migrationController");
 const landingEditorController = require("../controllers/landingEditorController");
+const inventarioAjusteController = require("../controllers/inventarioAjusteController");
 const upload = require("../middlewares/upload");
 const uploadComprobante = require("../middlewares/uploadComprobante");
 const uploadProductImages = require("../middlewares/uploadProductImages");
@@ -1229,6 +1230,50 @@ router.post(
   authenticate,
   authorizeAdmin,
   landingEditorController.resetDraft
+);
+
+// =====================================================
+// RUTAS DE AJUSTES DE INVENTARIO (AUDITORÍA)
+// =====================================================
+
+// Registrar ajuste de inventario (Merma/Adición)
+router.post(
+  "/inventario/ajuste",
+  authenticate,
+  authorizeAdmin,
+  inventarioAjusteController.registrarAjusteInventario
+);
+
+// Obtener historial de movimientos (con filtros)
+router.get(
+  "/inventario/movimientos",
+  authenticate,
+  authorizeAdmin,
+  inventarioAjusteController.obtenerHistorialMovimientos
+);
+
+// Obtener catálogo de motivos de ajuste
+router.get(
+  "/inventario/motivos-ajuste",
+  authenticate,
+  authorizeAdmin,
+  inventarioAjusteController.obtenerMotivosAjuste
+);
+
+// Obtener estadísticas de ajustes
+router.get(
+  "/inventario/estadisticas-ajustes",
+  authenticate,
+  authorizeAdmin,
+  inventarioAjusteController.obtenerEstadisticasAjustes
+);
+
+// Buscar producto por SKU (para formulario de ajuste)
+router.get(
+  "/inventario/buscar-producto",
+  authenticate,
+  authorizeAdmin,
+  inventarioAjusteController.buscarProductoPorSKU
 );
 
 module.exports = router;

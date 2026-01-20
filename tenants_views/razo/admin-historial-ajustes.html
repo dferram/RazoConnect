@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Historial de Ajustes - RazoConnect</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="css/admin-styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+    <div id="admin-header-container"></div>
+    
+    <div class="admin-layout">
+        <div id="admin-sidebar-container"></div>
+        
+        <div class="admin-main-content">
+            <div class="admin-content">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h2 class="admin-page-title mb-2">
+                            <i class="bi bi-clock-history"></i>
+                            Historial de Ajustes de Inventario
+                        </h2>
+                        <p class="text-muted mb-0">
+                            Auditoría completa de mermas y adiciones
+                        </p>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-success" id="btn-exportar-excel">
+                            <i class="bi bi-file-earmark-excel"></i>
+                            Exportar a Excel
+                        </button>
+                        <a href="admin-ajuste-inventario.html" class="btn btn-primary">
+                            <i class="bi bi-plus-circle"></i>
+                            Nuevo Ajuste
+                        </a>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-md-3">
+                        <div class="admin-stat-card text-center">
+                            <div class="stat-icon bg-danger bg-opacity-10 text-danger">
+                                <i class="bi bi-arrow-down-circle"></i>
+                            </div>
+                            <h3 class="stat-value text-danger" id="total-mermas">-</h3>
+                            <p class="stat-label">Total Mermas</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="admin-stat-card text-center">
+                            <div class="stat-icon bg-success bg-opacity-10 text-success">
+                                <i class="bi bi-arrow-up-circle"></i>
+                            </div>
+                            <h3 class="stat-value text-success" id="total-adiciones">-</h3>
+                            <p class="stat-label">Total Adiciones</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="admin-stat-card text-center">
+                            <div class="stat-icon bg-primary bg-opacity-10 text-primary">
+                                <i class="bi bi-people"></i>
+                            </div>
+                            <h3 class="stat-value" id="total-admins">-</h3>
+                            <p class="stat-label">Admins Involucrados</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="admin-stat-card text-center">
+                            <div class="stat-icon bg-warning bg-opacity-10 text-warning">
+                                <i class="bi bi-box-seam"></i>
+                            </div>
+                            <h3 class="stat-value" id="total-productos">-</h3>
+                            <p class="stat-label">Productos Afectados</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="admin-stat-card mb-4">
+                    <h5 class="mb-3">
+                        <i class="bi bi-funnel"></i> Filtros de Búsqueda
+                    </h5>
+                    <form id="form-filtros">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label for="filtro-fecha-inicio" class="form-label">Fecha Inicio</label>
+                                <input type="date" class="form-control" id="filtro-fecha-inicio">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="filtro-fecha-fin" class="form-label">Fecha Fin</label>
+                                <input type="date" class="form-control" id="filtro-fecha-fin">
+                            </div>
+                            <div class="col-md-2">
+                                <label for="filtro-tipo" class="form-label">Tipo</label>
+                                <select class="form-select" id="filtro-tipo">
+                                    <option value="">Todos</option>
+                                    <option value="MERMA">Mermas</option>
+                                    <option value="ADICION">Adiciones</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label for="filtro-motivo" class="form-label">Motivo</label>
+                                <select class="form-select" id="filtro-motivo">
+                                    <option value="">Todos</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label for="filtro-sku" class="form-label">SKU</label>
+                                <input type="text" class="form-control" id="filtro-sku" placeholder="Buscar...">
+                            </div>
+                        </div>
+                        <div class="d-flex gap-2 mt-3">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-search"></i> Aplicar Filtros
+                            </button>
+                            <button type="button" class="btn btn-secondary" id="btn-limpiar-filtros">
+                                <i class="bi bi-x-circle"></i> Limpiar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="admin-stat-card">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="mb-0">
+                            <i class="bi bi-list-ul"></i> Movimientos Registrados
+                        </h5>
+                        <span class="badge bg-secondary" id="total-registros">0 registros</span>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table admin-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Fecha/Hora</th>
+                                    <th>Tipo</th>
+                                    <th>SKU</th>
+                                    <th>Producto</th>
+                                    <th>Cantidad</th>
+                                    <th>Stock Previo</th>
+                                    <th>Stock Posterior</th>
+                                    <th>Motivo</th>
+                                    <th>Admin</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-movimientos">
+                                <tr>
+                                    <td colspan="11" class="text-center py-5">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Cargando...</span>
+                                        </div>
+                                        <p class="text-muted mt-2">Cargando historial...</p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <nav aria-label="Paginación" id="paginacion-container" class="mt-3"></nav>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modal-detalle-movimiento" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-info-circle"></i> Detalle del Movimiento
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" title="Cerrar"></button>
+                </div>
+                <div class="modal-body" id="modal-detalle-content">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/components/admin-header-loader.js"></script>
+    <script src="js/components/admin-sidebar-loader.js"></script>
+    <script src="js/admin-historial-ajustes.js"></script>
+</body>
+</html>
