@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auditoría Mensual de Inventario - RazoConnect</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/admin-styles.css">
+    <style>
+        .semaforo-verde {
+            background-color: #d4edda;
+            border-left: 4px solid #28a745;
+        }
+        .semaforo-amarillo {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+        }
+        .semaforo-rojo {
+            background-color: #f8d7da;
+            border-left: 4px solid #dc3545;
+        }
+        .badge-semaforo {
+            font-size: 0.75rem;
+            padding: 0.35rem 0.65rem;
+        }
+        .conteo-card {
+            transition: all 0.3s ease;
+            margin-bottom: 1rem;
+        }
+        .conteo-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .blind-count-input {
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-align: center;
+        }
+        .sku-input {
+            font-size: 1.2rem;
+            text-transform: uppercase;
+        }
+        .stat-icon {
+            font-size: 2rem;
+            opacity: 0.8;
+        }
+        .reconciliation-table {
+            font-size: 0.9rem;
+        }
+        .reconciliation-table th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .impact-positive {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .impact-negative {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .session-badge {
+            font-size: 0.85rem;
+        }
+        .workflow-step {
+            padding: 1.5rem;
+            border-radius: 1rem;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .workflow-step.active {
+            border: 2px solid var(--razo-orange, #F97316);
+        }
+        .step-number {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--razo-orange, #F97316);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+    </style>
+</head>
+<body>
+    <div id="sidebar-container"></div>
+
+    <div class="main-content">
+        <div id="header-container"></div>
+
+        <div class="admin-content">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="mb-1"><i class="bi bi-clipboard-check"></i> Auditoría Mensual de Inventario</h2>
+                    <p class="text-muted mb-0">Conciliación de stock físico vs teórico</p>
+                </div>
+                <button class="btn btn-primary" id="btn-nueva-sesion">
+                    <i class="bi bi-plus-circle"></i> Nueva Auditoría
+                </button>
+            </div>
+
+            <div id="vista-sesiones">
+                <div class="row mb-4">
+                    <div class="col-md-12">
+                        <div class="admin-stat-card">
+                            <h5 class="mb-3">Sesiones de Auditoría Recientes</h5>
+                            <div class="table-responsive">
+                                <table class="table admin-table">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Nombre</th>
+                                            <th>Fecha Inicio</th>
+                                            <th>Fecha Cierre</th>
+                                            <th>Estatus</th>
+                                            <th>Conteos</th>
+                                            <th>Aplicados</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tabla-sesiones">
+                                        <tr>
+                                            <td colspan="8" class="text-center text-muted">
+                                                <i class="bi bi-hourglass-split"></i> Cargando sesiones...
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="vista-conteo" class="d-none">
+                <div class="mb-3">
+                    <button class="btn btn-outline-secondary" id="btn-volver-sesiones">
+                        <i class="bi bi-arrow-left"></i> Volver a Sesiones
+                    </button>
+                </div>
+
+                <div class="row mb-4">
+                    <div class="col-md-12">
+                        <div class="admin-stat-card">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h4 class="mb-1" id="nombre-sesion-actual">Sesión de Auditoría</h4>
+                                    <p class="text-muted mb-0" id="info-sesion-actual">Información de la sesión</p>
+                                </div>
+                                <span class="badge session-badge" id="badge-estatus-sesion">ABIERTA</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-4" id="workflow-conteo">
+                    <div class="col-md-6 mb-3">
+                        <div class="workflow-step active" id="step-conteo-ciego">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="step-number me-3">1</div>
+                                <div>
+                                    <h5 class="mb-0">Conteo Ciego</h5>
+                                    <small class="text-muted">Ingresa SKU y cantidad física sin ver el teórico</small>
+                                </div>
+                            </div>
+                            <form id="form-conteo-ciego">
+                                <div class="mb-3">
+                                    <label class="form-label">SKU del Producto</label>
+                                    <input type="text" class="form-control sku-input" id="input-sku" placeholder="Ej: PROD-001" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Cantidad Física Contada</label>
+                                    <input type="number" class="form-control blind-count-input" id="input-cantidad-fisica" placeholder="0" min="0" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i class="bi bi-check-circle"></i> Registrar Conteo
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <div class="workflow-step" id="step-resultado">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="step-number me-3" style="background: #6c757d;">2</div>
+                                <div>
+                                    <h5 class="mb-0">Resultado del Conteo</h5>
+                                    <small class="text-muted">Comparación automática y alertas</small>
+                                </div>
+                            </div>
+                            <div id="resultado-conteo" class="text-center text-muted">
+                                <i class="bi bi-info-circle stat-icon"></i>
+                                <p class="mt-2">Registra un conteo para ver el resultado</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-4">
+                    <div class="col-md-12">
+                        <div class="admin-stat-card">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="mb-0">Tabla de Reconciliación</h5>
+                                <button class="btn btn-success btn-sm" id="btn-ver-reconciliacion">
+                                    <i class="bi bi-table"></i> Ver Reconciliación Completa
+                                </button>
+                            </div>
+                            <div id="resumen-conteos" class="row text-center">
+                                <div class="col-md-3">
+                                    <div class="stat-icon text-primary"><i class="bi bi-box-seam"></i></div>
+                                    <h3 id="stat-total-productos">0</h3>
+                                    <small class="text-muted">Productos Contados</small>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="stat-icon text-success"><i class="bi bi-check-circle"></i></div>
+                                    <h3 id="stat-conciliados">0</h3>
+                                    <small class="text-muted">Conciliados</small>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="stat-icon text-warning"><i class="bi bi-exclamation-triangle"></i></div>
+                                    <h3 id="stat-con-diferencia">0</h3>
+                                    <small class="text-muted">Con Diferencia</small>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="stat-icon text-danger"><i class="bi bi-currency-dollar"></i></div>
+                                    <h3 id="stat-impacto-economico">$0.00</h3>
+                                    <small class="text-muted">Impacto Económico</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row" id="seccion-cierre">
+                    <div class="col-md-12">
+                        <div class="admin-stat-card text-center">
+                            <h5 class="mb-3">Finalizar Auditoría</h5>
+                            <p class="text-muted mb-4">Al cerrar la auditoría, el stock del sistema se sincronizará con los conteos físicos registrados.</p>
+                            <button class="btn btn-danger btn-lg" id="btn-cerrar-auditoria" disabled>
+                                <i class="bi bi-lock"></i> Cerrar y Sincronizar (Solo Super Admin)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modal-nueva-sesion" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Nueva Sesión de Auditoría</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="form-nueva-sesion">
+                        <div class="mb-3">
+                            <label class="form-label">Nombre de la Sesión</label>
+                            <input type="text" class="form-control" id="input-nombre-sesion" placeholder="Ej: Auditoría Enero 2025" required>
+                            <small class="text-muted">Usa un nombre descriptivo que incluya el mes/año</small>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="btn-crear-sesion">Crear Sesión</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modal-reconciliacion" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Tabla de Reconciliación Completa</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+                    <div class="mb-3">
+                        <input type="text" class="form-control" id="input-filtro-reconciliacion" placeholder="Buscar por SKU o nombre de producto...">
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table reconciliation-table">
+                            <thead>
+                                <tr>
+                                    <th>SKU</th>
+                                    <th>Producto</th>
+                                    <th>Dimensiones</th>
+                                    <th>Stock Teórico</th>
+                                    <th>Stock Físico</th>
+                                    <th>Diferencia</th>
+                                    <th>Impacto ($)</th>
+                                    <th>Semáforo</th>
+                                    <th>Comentario</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-reconciliacion">
+                                <tr>
+                                    <td colspan="10" class="text-center text-muted">No hay datos disponibles</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer" style="margin-top: 1.5rem; margin-bottom: 1rem;">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="button" class="btn btn-success" id="btn-exportar-reconciliacion">
+                        <i class="bi bi-file-earmark-excel"></i> Exportar a Excel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modal-comentario" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Agregar Comentario de Justificación</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted mb-3">Este producto tiene una diferencia significativa. Por favor, justifica la discrepancia.</p>
+                    <div class="mb-3">
+                        <label class="form-label">SKU</label>
+                        <input type="text" class="form-control" id="comentario-sku" readonly aria-label="SKU del producto">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Diferencia</label>
+                        <input type="text" class="form-control" id="comentario-diferencia" readonly aria-label="Diferencia detectada">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Comentario / Justificación *</label>
+                        <textarea class="form-control" id="input-comentario" rows="4" placeholder="Explica la razón de la diferencia (ej: producto dañado, error de registro previo, etc.)" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="btn-guardar-comentario">Guardar Comentario</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="/js/components/sidebar-admin-loader.js"></script>
+    <script src="/js/components/header-admin-loader.js"></script>
+    <script src="/js/admin-auditoria-mensual.js"></script>
+</body>
+</html>

@@ -19,6 +19,7 @@ const numCuentaController = require("../controllers/numCuentaController");
 const migrationController = require("../controllers/migrationController");
 const landingEditorController = require("../controllers/landingEditorController");
 const inventarioAjusteController = require("../controllers/inventarioAjusteController");
+const auditController = require("../controllers/auditController");
 const upload = require("../middlewares/upload");
 const uploadComprobante = require("../middlewares/uploadComprobante");
 const uploadProductImages = require("../middlewares/uploadProductImages");
@@ -1274,6 +1275,80 @@ router.get(
   authenticate,
   authorizeAdmin,
   inventarioAjusteController.buscarProductoPorSKU
+);
+
+// ============================================
+// RUTAS DE AUDITORÍA MENSUAL DE INVENTARIO
+// ============================================
+
+router.post(
+  "/auditoria/sesiones",
+  authenticate,
+  authorizeAdmin,
+  auditController.crearSesionAuditoria
+);
+
+router.get(
+  "/auditoria/sesiones",
+  authenticate,
+  authorizeAdmin,
+  auditController.obtenerSesionesAuditoria
+);
+
+router.get(
+  "/auditoria/sesiones/:sesionId",
+  authenticate,
+  authorizeAdmin,
+  auditController.obtenerSesionDetalle
+);
+
+router.post(
+  "/auditoria/sesiones/:sesionId/conteos",
+  authenticate,
+  authorizeAdmin,
+  auditController.registrarConteo
+);
+
+router.get(
+  "/auditoria/sesiones/:sesionId/reconciliacion",
+  authenticate,
+  authorizeAdmin,
+  auditController.obtenerReconciliacion
+);
+
+router.post(
+  "/auditoria/conteos/:conteoId/comentario",
+  authenticate,
+  authorizeAdmin,
+  auditController.agregarComentario
+);
+
+router.post(
+  "/auditoria/sesiones/:sesionId/cerrar",
+  authenticate,
+  authorizeSuperAdmin,
+  auditController.cerrarYSincronizarAuditoria
+);
+
+router.get(
+  "/auditoria/sesiones/:sesionId/reporte",
+  authenticate,
+  authorizeAdmin,
+  auditController.generarReporteAuditoria
+);
+
+router.get(
+  "/auditoria/stock-teorico/:sku",
+  authenticate,
+  authorizeAdmin,
+  auditController.obtenerStockTeorico
+);
+
+router.get(
+  "/auditoria/stock-teorico-masivo",
+  authenticate,
+  authorizeAdmin,
+  auditController.calcularStockTeoricoMasivo
 );
 
 module.exports = router;
