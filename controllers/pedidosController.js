@@ -1868,7 +1868,7 @@ const obtenerDatosPago = async (req, res) => {
 
 /**
  * PUT /api/pedidos/:id/cancelar
- * Cancela un pedido del cliente
+ * Cancela un pedido del cliente con manejo de backorders en cascada
  * Solo se puede cancelar si el pedido no está confirmado, completado, cancelado o entregado
  */
 const cancelarPedido = async (req, res) => {
@@ -1883,9 +1883,11 @@ const cancelarPedido = async (req, res) => {
 
     // Verificar que el pedido existe y pertenece al cliente
     const pedidoQuery = await client.query(
-      `SELECT pedidoid, clienteid, estatus, es_credito, montototal
-       FROM pedidos
-       WHERE pedidoid = $1 AND tenant_id = $2`,
+      `SELECT p.pedidoid, p.clienteid, p.estatus, p.es_credito, p.montototal, p.agenteid,
+              c.nombre as cliente_nombre, c.email as cliente_email
+       FROM pedidos p
+       JOIN clientes c ON p.clienteid = c.clienteid
+       WHERE p.pedidoid = $1 AND p.tenant_id = $2`,
       [id, tenant_id]
     );
 
@@ -1918,16 +1920,115 @@ const cancelarPedido = async (req, res) => {
       });
     }
 
+    // Obtener detalles del pedido con información de backorders
+    const detallesQuery = await client.query(
+      `SELECT 
+         dp.detalleid,
+         dp.varianteid, 
+         dp.piezastotales,
+         dp.esbackorder,
+         dp.cantidadbackorder,
+         dp.cantidadsurtida,
+         dp.cantidadpaquetes,
+         pv.sku,
+         pv.dimensiones,
+         p.nombre as producto_nombre
+       FROM detallesdelpedido dp
+       JOIN producto_variantes pv ON dp.varianteid = pv.varianteid
+       JOIN productos p ON pv.productoid = p.productoid
+       WHERE dp.pedidoid = $1 AND dp.tenant_id = $2`,
+      [id, tenant_id]
+    );
+
+    // Contadores para el reporte
+    let itemsEnStock = 0;
+    let itemsEnBackorder = 0;
+    let piezasRestauradas = 0;
+    let backordersCancelados = 0;
+
+    console.log(`[Cancelar Pedido] Procesando ${detallesQuery.rows.length} ítems del pedido ${id}`);
+
+    // Procesar cada ítem del pedido
+    for (const detalle of detallesQuery.rows) {
+      const { varianteid, piezastotales, esbackorder, cantidadbackorder, cantidadsurtida } = detalle;
+      
+      // Verificar que la variante existe antes de actualizar
+      const varianteCheck = await client.query(
+        `SELECT varianteid, stock FROM producto_variantes 
+         WHERE varianteid = $1 AND tenant_id = $2
+         FOR UPDATE`,
+        [varianteid, tenant_id]
+      );
+
+      if (varianteCheck.rows.length === 0) {
+        console.warn(`[Cancelar Pedido] Variante ${varianteid} no encontrada - omitiendo`);
+        continue;
+      }
+
+      const stockActual = varianteCheck.rows[0].stock;
+
+      if (esbackorder) {
+        // Este ítem estaba en backorder
+        itemsEnBackorder++;
+        
+        // Calcular cuántas piezas estaban realmente en backorder (no surtidas)
+        const piezasBackorderPendientes = piezastotales - (cantidadsurtida || 0);
+        
+        if (piezasBackorderPendientes > 0) {
+          backordersCancelados++;
+          console.log(`[Cancelar Pedido] Variante ${varianteid}: Backorder cancelado (${piezasBackorderPendientes} piezas pendientes)`);
+        }
+
+        // Si había piezas ya surtidas, restaurarlas al stock
+        if (cantidadsurtida > 0) {
+          await client.query(
+            `UPDATE producto_variantes
+             SET stock = stock + $1
+             WHERE varianteid = $2 AND tenant_id = $3`,
+            [cantidadsurtida, varianteid, tenant_id]
+          );
+          piezasRestauradas += cantidadsurtida;
+          console.log(`[Cancelar Pedido] Variante ${varianteid}: Stock restaurado=${cantidadsurtida} piezas (de backorder parcialmente surtido)`);
+        }
+
+        // Actualizar el detalle para marcar backorder como cancelado
+        await client.query(
+          `UPDATE detallesdelpedido
+           SET cantidadbackorder = 0,
+               esbackorder = false
+           WHERE detalleid = $1 AND tenant_id = $2`,
+          [detalle.detalleid, tenant_id]
+        );
+
+      } else {
+        // Este ítem estaba en stock normal
+        itemsEnStock++;
+        
+        // Restaurar todas las piezas al stock
+        await client.query(
+          `UPDATE producto_variantes
+           SET stock = stock + $1
+           WHERE varianteid = $2 AND tenant_id = $3`,
+          [piezastotales, varianteid, tenant_id]
+        );
+        
+        piezasRestauradas += piezastotales;
+        console.log(`[Cancelar Pedido] Variante ${varianteid}: Stock actual=${stockActual}, Restaurando=${piezastotales} piezas`);
+      }
+    }
+
     // Actualizar estatus del pedido a Cancelado
     await client.query(
       `UPDATE pedidos
-       SET estatus = 'Cancelado'
+       SET estatus = 'Cancelado',
+           completamente_surtido = false,
+           monto_backorder = 0
        WHERE pedidoid = $1 AND tenant_id = $2`,
       [id, tenant_id]
     );
 
     // Si el pedido era a crédito y ya tenía cargo aplicado, revertirlo
-    // (esto solo aplica si hubo remisiones emitidas)
+    let montoRevertido = 0;
     if (pedido.es_credito) {
       // Buscar remisiones asociadas al pedido
       const remisionesQuery = await client.query(
@@ -1951,6 +2052,8 @@ const cancelarPedido = async (req, res) => {
         const totalCargado = parseFloat(cxcQuery.rows[0]?.total_cargado || 0);
 
         if (totalCargado > 0) {
+          montoRevertido = totalCargado;
+          
           // Obtener información de crédito del cliente
           const creditoQuery = await client.query(
             `SELECT credito_id, saldo_deudor
@@ -2007,49 +2110,71 @@ const cancelarPedido = async (req, res) => {
       }
     }
 
-    // Devolver stock al inventario (revertir descuento de stock)
-    const detallesQuery = await client.query(
-      `SELECT dp.varianteid, dp.piezastotales
-       FROM detallesdelpedido dp
-       WHERE dp.pedidoid = $1 AND dp.tenant_id = $2`,
-      [id, tenant_id]
+    // Crear notificación para el administrador
+    const notificacionTitulo = `Pedido #${id} cancelado por cliente`;
+    const notificacionMensaje = `El cliente ${pedido.cliente_nombre} (${pedido.cliente_email}) ha cancelado el pedido #${id}.\n\n` +
+      `📊 Resumen de cancelación:\n` +
+      `• Ítems en stock: ${itemsEnStock}\n` +
+      `• Ítems en backorder: ${itemsEnBackorder}\n` +
+      `• Backorders cancelados: ${backordersCancelados}\n` +
+      `• Piezas restauradas al inventario: ${piezasRestauradas}\n` +
+      (montoRevertido > 0 ? `• Crédito revertido: $${montoRevertido.toFixed(2)}\n` : '') +
+      `\nEstatus anterior: ${pedido.estatus}`;
+
+    // Obtener todos los administradores del tenant para notificarles
+    const adminsQuery = await client.query(
+      `SELECT adminid FROM administradores WHERE tenant_id = $1`,
+      [tenant_id]
     );
 
-    console.log(`[Cancelar Pedido] Restaurando stock para ${detallesQuery.rows.length} variantes`);
-
-    for (const detalle of detallesQuery.rows) {
-      const { varianteid, piezastotales } = detalle;
-      
-      // Verificar que la variante existe antes de actualizar
-      const varianteCheck = await client.query(
-        `SELECT varianteid, stock FROM producto_variantes 
-         WHERE varianteid = $1 AND tenant_id = $2`,
-        [varianteid, tenant_id]
-      );
-
-      if (varianteCheck.rows.length === 0) {
-        console.warn(`[Cancelar Pedido] Variante ${varianteid} no encontrada - omitiendo restauración de stock`);
-        continue;
-      }
-
-      const stockActual = varianteCheck.rows[0].stock;
-      console.log(`[Cancelar Pedido] Variante ${varianteid}: Stock actual=${stockActual}, Restaurando=${piezastotales} piezas`);
-
+    // Crear notificación para cada administrador
+    for (const admin of adminsQuery.rows) {
       await client.query(
-        `UPDATE producto_variantes
-         SET stock = stock + $1
-         WHERE varianteid = $2 AND tenant_id = $3`,
-        [piezastotales, varianteid, tenant_id]
+        `INSERT INTO notificaciones (
+           administrador_id,
+           tipo,
+           titulo,
+           mensaje,
+           prioridad,
+           metadata,
+           tenant_id
+         )
+         VALUES ($1, 'pedido', $2, $3, 'alta', $4, $5)`,
+        [
+          admin.adminid,
+          notificacionTitulo,
+          notificacionMensaje,
+          JSON.stringify({
+            pedido_id: id,
+            cliente_id: pedido.clienteid,
+            monto_total: pedido.montototal,
+            items_stock: itemsEnStock,
+            items_backorder: itemsEnBackorder,
+            backorders_cancelados: backordersCancelados,
+            piezas_restauradas: piezasRestauradas,
+            monto_revertido: montoRevertido,
+            accion: 'cancelacion_pedido'
+          }),
+          tenant_id
+        ]
       );
     }
 
     await client.query('COMMIT');
 
-    console.log(`[Cancelar Pedido] Pedido ${id} cancelado exitosamente`);
+    console.log(`[Cancelar Pedido] Pedido ${id} cancelado exitosamente - Stock: ${itemsEnStock}, Backorder: ${itemsEnBackorder}, Cancelados: ${backordersCancelados}`);
 
     res.json({
       success: true,
-      message: 'Pedido cancelado exitosamente'
+      message: 'Pedido y backorders asociados cancelados correctamente',
+      detalles: {
+        pedido_id: id,
+        items_en_stock: itemsEnStock,
+        items_en_backorder: itemsEnBackorder,
+        backorders_cancelados: backordersCancelados,
+        piezas_restauradas: piezasRestauradas,
+        credito_revertido: montoRevertido > 0 ? `$${montoRevertido.toFixed(2)}` : null
+      }
     });
 
   } catch (error) {
