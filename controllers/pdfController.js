@@ -168,68 +168,128 @@ async function generarPDFPedido(req, res) {
                .text(ciudadEstado, 50, 230);
         }
 
-        const tableTop = 260;
+        // Separate items by availability
+        const itemsEnExistencia = detalles.filter(item => !item.esbackorder);
+        const itemsBajoPedido = detalles.filter(item => item.esbackorder);
 
-        doc.moveTo(50, tableTop - 10)
-           .lineTo(562, tableTop - 10)
-           .strokeColor('#CCCCCC')
-           .lineWidth(1)
-           .stroke();
-
-        doc.fontSize(12)
-           .font('Helvetica-Bold')
-           .fillColor('#F97316')
-           .text('PRODUCTOS', 50, tableTop);
-
-        const headerY = tableTop + 25;
-        doc.fontSize(9)
-           .font('Helvetica-Bold')
-           .fillColor('#FFFFFF')
-           .rect(50, headerY, 512, 20)
-           .fillAndStroke('#F97316', '#F97316');
-
-        doc.fillColor('#FFFFFF')
-           .text('CANT.', 55, headerY + 6)
-           .text('DESCRIPCIÓN', 110, headerY + 6)
-           .text('TAMAÑO', 340, headerY + 6)
-           .text('PRECIO UNIT.', 410, headerY + 6)
-           .text('TOTAL', 480, headerY + 6, { align: 'right', width: 75 });
-
-        let yPosition = headerY + 30;
+        let yPosition = 260;
         const rowHeight = 25;
 
-        doc.font('Helvetica')
-           .fillColor('#333333');
+        // Helper function to render table header
+        const renderTableHeader = (title, yPos, headerColor = '#F97316') => {
+            doc.moveTo(50, yPos - 10)
+               .lineTo(562, yPos - 10)
+               .strokeColor('#CCCCCC')
+               .lineWidth(1)
+               .stroke();
 
-        detalles.forEach((item, index) => {
-            if (yPosition > 700) {
-                doc.addPage();
-                yPosition = 50;
+            doc.fontSize(12)
+               .font('Helvetica-Bold')
+               .fillColor(headerColor)
+               .text(title, 50, yPos);
+
+            const headerY = yPos + 25;
+            doc.fontSize(9)
+               .font('Helvetica-Bold')
+               .fillColor('#FFFFFF')
+               .rect(50, headerY, 512, 20)
+               .fillAndStroke(headerColor, headerColor);
+
+            doc.fillColor('#FFFFFF')
+               .text('CANT.', 55, headerY + 6)
+               .text('DESCRIPCIÓN', 110, headerY + 6)
+               .text('TAMAÑO', 340, headerY + 6)
+               .text('PRECIO UNIT.', 410, headerY + 6)
+               .text('TOTAL', 480, headerY + 6, { align: 'right', width: 75 });
+
+            return headerY + 30;
+        };
+
+        // Helper function to render items
+        const renderItems = (items, startY, alternateColor = '#F9F9F9') => {
+            let currentY = startY;
+            doc.font('Helvetica').fillColor('#333333');
+
+            items.forEach((item, index) => {
+                if (currentY > 700) {
+                    doc.addPage();
+                    currentY = 50;
+                }
+
+                if (index % 2 === 0) {
+                    doc.rect(50, currentY - 5, 512, rowHeight)
+                       .fillAndStroke(alternateColor, alternateColor);
+                }
+
+                const descripcionLinea1 = `${item.producto_nombre}`;
+                const descripcionLinea2 = item.color_nombre 
+                    ? `${item.variante_nombre} - Color: ${item.color_nombre}`
+                    : `${item.variante_nombre}`;
+
+                doc.fillColor('#333333')
+                   .fontSize(9)
+                   .text(item.cantidad, 55, currentY)
+                   .text(descripcionLinea1, 110, currentY, { width: 220 })
+                   .text(descripcionLinea2, 110, currentY + 10, { width: 220 })
+                   .text(item.tamano_cantidad ? `Pack ${item.tamano_cantidad}` : 'Unitario', 340, currentY)
+                   .text(`$${parseFloat(item.preciounitario).toFixed(2)}`, 410, currentY)
+                   .text(`$${parseFloat(item.subtotal).toFixed(2)}`, 480, currentY, { align: 'right', width: 75 });
+
+                currentY += rowHeight;
+            });
+
+            return currentY;
+        };
+
+        // Render IN-STOCK items section
+        if (itemsEnExistencia.length > 0) {
+            yPosition = renderTableHeader('PRODUCTOS LISTOS PARA ENTREGA', yPosition, '#F97316');
+            yPosition = renderItems(itemsEnExistencia, yPosition, '#F9F9F9');
+            yPosition += 20;
+        }
+
+        // Render BACKORDER items section with distinct styling
+        if (itemsBajoPedido.length > 0) {
+            // Add spacing if there were in-stock items
+            if (itemsEnExistencia.length > 0) {
+                yPosition += 10;
             }
 
-            if (index % 2 === 0) {
-                doc.rect(50, yPosition - 5, 512, rowHeight)
-                   .fillAndStroke('#F9F9F9', '#F9F9F9');
-            }
+            yPosition = renderTableHeader('PRODUCTOS BAJO PEDIDO (PENDIENTES)', yPosition, '#DC2626');
+            yPosition = renderItems(itemsBajoPedido, yPosition, '#FEE2E2');
+            
+            // Add informative note immediately after backorder table
+            yPosition += 10;
+            
+            // Dashed border box for the note
+            doc.save();
+            doc.strokeColor('#DC2626')
+               .lineWidth(1)
+               .dash(5, { space: 3 })
+               .rect(50, yPosition, 512, 50)
+               .stroke();
+            doc.restore();
 
-            const descripcionLinea1 = `${item.producto_nombre}`;
-            const descripcionLinea2 = item.color_nombre 
-                ? `${item.variante_nombre} - Color: ${item.color_nombre}`
-                : `${item.variante_nombre}`;
+            doc.fontSize(8)
+               .font('Helvetica-Bold')
+               .fillColor('#DC2626')
+               .text('ℹ️ NOTA IMPORTANTE:', 60, yPosition + 10);
+            
+            doc.fontSize(8)
+               .font('Helvetica')
+               .fillColor('#666666')
+               .text(
+                   'Los productos marcados como BAJO PEDIDO tienen un tiempo estimado de fabricación de 7-15 días hábiles. ' +
+                   'Se le notificará vía correo electrónico cuando estén listos para su entrega.',
+                   60,
+                   yPosition + 25,
+                   { width: 492, align: 'left', lineGap: 2 }
+               );
+            
+            yPosition += 60;
+        }
 
-            doc.fillColor('#333333')
-               .fontSize(9)
-               .text(item.cantidad, 55, yPosition)
-               .text(descripcionLinea1, 110, yPosition, { width: 220 })
-               .text(descripcionLinea2, 110, yPosition + 10, { width: 220 })
-               .text(item.tamano_cantidad ? `Pack ${item.tamano_cantidad}` : 'Unitario', 340, yPosition)
-               .text(`$${parseFloat(item.preciounitario).toFixed(2)}`, 410, yPosition)
-               .text(`$${parseFloat(item.subtotal).toFixed(2)}`, 480, yPosition, { align: 'right', width: 75 });
-
-            yPosition += rowHeight;
-        });
-
-        yPosition += 20;
+        yPosition += 10;
 
         doc.moveTo(50, yPosition)
            .lineTo(562, yPosition)
@@ -333,28 +393,6 @@ async function generarPDFPedido(req, res) {
            .text(`$${totalCalculado.toFixed(2)} MXN`, 440, yPosition, { align: 'right', width: 122 });
 
         yPosition += 30;
-
-        // Add informative note if there are backorder items
-        if (totalSinStock > 0) {
-            doc.fontSize(9)
-               .font('Helvetica-Bold')
-               .fillColor('#DC2626')
-               .text('NOTA IMPORTANTE:', 50, yPosition);
-            
-            yPosition += 15;
-            
-            doc.fontSize(8)
-               .font('Helvetica')
-               .fillColor('#666666')
-               .text('Los productos marcados como "bajo pedido" serán fabricados especialmente para usted y se entregarán en una fecha posterior. Se le notificará cuando estén listos.', 50, yPosition, {
-                   width: 512,
-                   align: 'left'
-               });
-            
-            yPosition += 25;
-        } else {
-            yPosition += 10;
-        }
 
         doc.fontSize(8)
            .font('Helvetica')
