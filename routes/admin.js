@@ -20,6 +20,7 @@ const migrationController = require("../controllers/migrationController");
 const landingEditorController = require("../controllers/landingEditorController");
 const inventarioAjusteController = require("../controllers/inventarioAjusteController");
 const auditController = require("../controllers/auditController");
+const ajustePedidosController = require("../controllers/ajustePedidosController");
 const upload = require("../middlewares/upload");
 const uploadComprobante = require("../middlewares/uploadComprobante");
 const uploadProductImages = require("../middlewares/uploadProductImages");
@@ -1349,6 +1350,13 @@ router.get(
   authenticate,
   authorizeAdmin,
   auditController.calcularStockTeoricoMasivo
+);
+
+router.put(
+  "/pedidos/:id/ajustar",
+  authenticate,
+  authorizeAdmin,
+  ajustePedidosController.ajustarPedido
 );
 
 module.exports = router;

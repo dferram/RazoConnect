@@ -173,6 +173,104 @@
     </div>
     -->
 
+    <!-- Modal para ajustar pedido -->
+    <div id="ajusteModal" class="modal">
+      <div class="modal-content modal-content--xl" style="max-width: 1200px; width: 95%;">
+        <div class="modal-header">
+          <h2 class="modal-title">Ajustar Pedido #<span id="ajustePedidoId"></span></h2>
+          <button class="modal-close-btn" onclick="cerrarModalAjuste()">&times;</button>
+        </div>
+        <div class="modal-body">
+          
+          <div style="background: #fff3cd; padding: 1rem; border-radius: 0.5rem; border-left: 4px solid #ffc107; margin-bottom: 1.5rem;">
+            <p style="font-size: 0.875rem; margin: 0;">
+              <strong>⚠️ Importante:</strong> Los cambios afectarán el inventario y el total del pedido. El sistema sincronizará automáticamente el stock.
+            </p>
+          </div>
+
+          <!-- Productos actuales del pedido -->
+          <div style="margin-bottom: 2rem;">
+            <h3 style="font-size: 1.125rem; margin-bottom: 1rem; color: var(--razo-gray-dark);">Productos en el Pedido</h3>
+            <div id="loadingProductosActuales" class="loading" style="display: none;">
+              <div class="spinner"></div>
+            </div>
+            <div style="overflow-x: auto;">
+              <table class="admin-table" id="tablaProductosActuales" style="display: none;">
+                <thead>
+                  <tr>
+                    <th>SKU</th>
+                    <th>Producto</th>
+                    <th>Presentación</th>
+                    <th>Cantidad</th>
+                    <th>Precio Unit.</th>
+                    <th>Subtotal</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="productosActualesBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Agregar productos -->
+          <div style="margin-bottom: 2rem;">
+            <h3 style="font-size: 1.125rem; margin-bottom: 1rem; color: var(--razo-gray-dark);">Agregar Productos</h3>
+            
+            <div style="display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap;">
+              <div style="flex: 1; min-width: 250px;">
+                <label class="form-label" style="font-weight: 600; margin-bottom: 0.5rem; display: block;">Buscar Producto (SKU o Nombre):</label>
+                <input 
+                  type="text" 
+                  id="buscarProductoInput" 
+                  class="form-input" 
+                  placeholder="Escribe para buscar..."
+                  style="width: 100%; padding: 0.75rem; font-size: 1rem;"
+                />
+              </div>
+            </div>
+
+            <div id="resultadosBusqueda" style="display: none; margin-bottom: 1rem; max-height: 300px; overflow-y: auto; border: 1px solid var(--razo-gray-light); border-radius: 0.5rem; padding: 0.5rem;"></div>
+
+            <div id="productosParaAgregar" style="display: none; margin-top: 1rem;">
+              <h4 style="font-size: 1rem; margin-bottom: 0.75rem;">Productos Seleccionados para Agregar:</h4>
+              <div style="overflow-x: auto;">
+                <table class="admin-table">
+                  <thead>
+                    <tr>
+                      <th>SKU</th>
+                      <th>Producto</th>
+                      <th>Presentación</th>
+                      <th>Cantidad</th>
+                      <th>Stock Disponible</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody id="productosAgregarBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Resumen de cambios -->
+          <div id="resumenCambios" style="display: none; background: var(--razo-cream); padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem;">
+            <h3 style="font-size: 1.125rem; margin-bottom: 0.75rem; color: var(--razo-gray-dark);">Resumen de Cambios</h3>
+            <div id="resumenCambiosContenido"></div>
+          </div>
+
+          <div style="display: flex; gap: 1rem; margin-top: 1.5rem; margin-bottom: 1rem;">
+            <button type="button" class="btn btn-secondary" onclick="cerrarModalAjuste()" style="flex: 1;">
+              Cancelar
+            </button>
+            <button class="btn btn-primary" onclick="aplicarAjustePedido()" id="btnAplicarAjuste" style="flex: 1;">
+              <span id="btnAplicarAjusteText">Aplicar Ajustes</span>
+              <div class="spinner" id="btnAplicarAjusteSpinner" style="display: none;"></div>
+            </button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
     <!-- Modal para cambiar estatus -->
     <div id="statusModal" class="modal">
       <div class="modal-content modal-content--xl">
@@ -257,6 +355,7 @@
     <script src="js/components/user-profile.js"></script>
     <script src="js/admin-header-dropdown.js"></script>
     <script src="js/admin-generar-remision.js"></script>
+    <script src="js/admin-ajuste-pedidos.js"></script>
     <script>
       // Authentication check
       const adminToken = localStorage.getItem("razoconnect_admin_token");
@@ -379,6 +478,13 @@
                         onclick="descargarPDFPedido(${order.pedidoId})"
                         title="Descargar remisión en PDF">
                         📄 Generar Remisión
+                      </button>
+                      <button
+                        class="btn btn-warning"
+                        style="padding: 0.5rem 1rem; font-size: 0.875rem; background: #ffc107; color: #000;"
+                        onclick="abrirModalAjuste(${order.pedidoId})"
+                        title="Ajustar productos del pedido">
+                        ✏️ Ajustar Pedido
                       </button>
                       ${order.urlEvidenciaEntrega ? `
                         <button
