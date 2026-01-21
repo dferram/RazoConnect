@@ -1,3 +1,25 @@
+const API_BASE_URL = '/api';
+
+// Función auxiliar para mostrar mensajes toast
+function showToast(message, type = 'info') {
+  const iconMap = {
+    success: 'success',
+    error: 'error',
+    warning: 'warning',
+    info: 'info'
+  };
+
+  Swal.fire({
+    toast: true,
+    position: 'top-end',
+    icon: iconMap[type] || 'info',
+    title: message,
+    showConfirmButton: false,
+    timer: 3000,
+    timerProgressBar: true
+  });
+}
+
 let pedidoAjusteActual = null;
 let productosActualesPedido = [];
 let productosParaAgregarLista = [];
@@ -32,6 +54,8 @@ function cerrarModalAjuste() {
 }
 
 async function cargarProductosPedido(pedidoId) {
+  console.log('🔍 Cargando productos para pedido:', pedidoId);
+  
   const loadingEl = document.getElementById('loadingProductosActuales');
   const tablaEl = document.getElementById('tablaProductosActuales');
   const bodyEl = document.getElementById('productosActualesBody');
@@ -41,7 +65,10 @@ async function cargarProductosPedido(pedidoId) {
 
   try {
     const token = localStorage.getItem('razoconnect_admin_token');
-    const response = await fetch(`${API_BASE_URL}/admin/pedidos/${pedidoId}`, {
+    const url = `${API_BASE_URL}/admin/pedidos/${pedidoId}/detalle`;
+    console.log('📡 URL de petición:', url);
+    
+    const response = await fetch(url, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
@@ -51,8 +78,25 @@ async function cargarProductosPedido(pedidoId) {
     if (!response.ok) throw new Error('Error al cargar pedido');
 
     const data = await response.json();
+    console.log('📦 Datos recibidos:', data);
+    
     if (data.success && data.data) {
-      productosActualesPedido = data.data.items || [];
+      // El backend devuelve data.data.productos, no items
+      const productos = data.data.productos || [];
+      
+      // Mapear los campos del backend al formato que espera el frontend
+      productosActualesPedido = productos.map(p => ({
+        detalleId: p.detalleId,
+        varianteId: p.varianteId,
+        sku: p.sku,
+        nombreProducto: p.nombre,
+        presentacion: p.dimensiones || 'N/A',
+        cantidad: p.cantidadPaquetes,
+        precioPorPaquete: p.precioPorPaquete,
+        subtotal: p.subtotal
+      }));
+      
+      console.log('✅ Productos mapeados:', productosActualesPedido);
       renderizarProductosActuales();
       tablaEl.style.display = 'table';
     }

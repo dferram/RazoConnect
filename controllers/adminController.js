@@ -3560,6 +3560,8 @@ const getAllPedidos = async (req, res) => {
         p.MontoTotal,
         p.Estatus,
         p.CostoEnvio,
+        p.Monto_Descuento,
+        p.Cupon_ID,
         c.Nombre as ClienteNombre,
         c.Apellido as ClienteApellido,
         c.Email as ClienteEmail,
@@ -3614,34 +3616,90 @@ const getAllPedidos = async (req, res) => {
 
     const result = await db.query(query, params);
 
-    const pedidos = result.rows.map(row => ({
-      pedidoId: row.pedidoid,
-      fechaPedido: row.fechapedido,
-      montoTotal: parseFloat(row.montototal),
-      costoEnvio: row.costoenvio ? parseFloat(row.costoenvio) : 0,
-      estatus: row.estatus,
-      clienteNombre: `${row.clientenombre || ''} ${row.clienteapellido || ''}`.trim(),
-      cliente: {
-        nombre: row.clientenombre,
-        apellido: row.clienteapellido,
-        email: row.clienteemail
-      },
-      agente: row.agentenombre ? {
-        nombre: row.agentenombre,
-        apellido: row.agenteapellido,
-        codigoAgente: row.codigoagente
-      } : null,
-      direccion: {
-        ciudad: row.ciudad,
-        estadoId: row.estadoid,
-        estado: row.estadonombre
+    // VALIDACIÓN DE INTEGRIDAD FINANCIERA: Recalcular totales desde items
+    const pedidos = await Promise.all(result.rows.map(async (row) => {
+      // Obtener detalles del pedido para validar el total
+      const detallesQuery = `
+        SELECT 
+          CantidadPaquetes,
+          PrecioPorPaquete
+        FROM DetallesDelPedido
+        WHERE PedidoID = $1
+      `;
+      
+      const detallesResult = await db.query(detallesQuery, [row.pedidoid]);
+      
+      // Calcular subtotal desde items
+      const subtotalItems = detallesResult.rows.reduce((sum, detalle) => {
+        const cantidad = parseFloat(detalle.cantidadpaquetes || 0);
+        const precio = parseFloat(detalle.precioporpaquete || 0);
+        return sum + (cantidad * precio);
+      }, 0);
+
+      const costoEnvio = parseFloat(row.costoenvio || 0);
+      
+      // Solo aplicar descuento si hay cupón válido
+      const cuponId = parseInt(row.cupon_id);
+      const tieneCupon = !isNaN(cuponId) && cuponId > 0;
+      const descuento = tieneCupon ? parseFloat(row.monto_descuento || 0) : 0;
+      
+      // Total esperado: Subtotal + Envío - Descuento
+      const montoEsperado = subtotalItems + costoEnvio - descuento;
+      const montoRegistrado = parseFloat(row.montototal);
+      
+      // Detectar discrepancia (tolerancia de 1 centavo)
+      const diferencia = Math.abs(montoRegistrado - montoEsperado);
+      const tieneDiscrepancia = diferencia > 0.01;
+
+      // ALERTA: Si hay discrepancia, loguear en consola
+      if (tieneDiscrepancia) {
+        console.warn(`⚠️  DISCREPANCIA DETECTADA en Pedido #${row.pedidoid}: Registrado=$${montoRegistrado.toFixed(2)}, Esperado=$${montoEsperado.toFixed(2)}, Diferencia=$${diferencia.toFixed(2)}`);
       }
+
+      return {
+        pedidoId: row.pedidoid,
+        fechaPedido: row.fechapedido,
+        montoTotal: parseFloat(montoRegistrado.toFixed(2)),
+        montoEsperado: parseFloat(montoEsperado.toFixed(2)),
+        tieneDiscrepancia,
+        diferencia: tieneDiscrepancia ? parseFloat(diferencia.toFixed(2)) : 0,
+        costoEnvio,
+        estatus: row.estatus,
+        clienteNombre: `${row.clientenombre || ''} ${row.clienteapellido || ''}`.trim(),
+        cliente: {
+          nombre: row.clientenombre,
+          apellido: row.clienteapellido,
+          email: row.clienteemail
+        },
+        agente: row.agentenombre ? {
+          nombre: row.agentenombre,
+          apellido: row.agenteapellido,
+          codigoAgente: row.codigoagente
+        } : null,
+        direccion: {
+          ciudad: row.ciudad,
+          estadoId: row.estadoid,
+          estado: row.estadonombre
+        }
+      };
     }));
+
+    // Contar pedidos con discrepancia
+    const pedidosConDiscrepancia = pedidos.filter(p => p.tieneDiscrepancia);
+    
+    if (pedidosConDiscrepancia.length > 0) {
+      console.warn(`\n⚠️  RESUMEN: ${pedidosConDiscrepancia.length} de ${pedidos.length} pedidos tienen discrepancias financieras.\n`);
+    }
 
     res.json({
       success: true,
       data: {
-        pedidos: pedidos
+        pedidos: pedidos,
+        integridad: {
+          total: pedidos.length,
+          conDiscrepancia: pedidosConDiscrepancia.length,
+          validos: pedidos.length - pedidosConDiscrepancia.length
+        }
       }
     });
   } catch (error) {
