@@ -1590,20 +1590,29 @@ const obtenerPedidoPorId = async (req, res) => {
         pv.sku,
         pv.dimensiones,
         pv.preciounitario,
+        pv.color_nombre,
+        pv.color_hex,
         prod.nombreproducto,
         row_to_json(t) AS tamano_info,
-        imagen.url_imagen
+        COALESCE(imagen_variante.url_imagen, imagen_producto.url_imagen) AS url_imagen
       FROM detallesdelpedido dp
       INNER JOIN producto_variantes pv ON pv.varianteid = dp.varianteid
       INNER JOIN productos prod ON prod.productoid = pv.productoid
       LEFT JOIN cat_tamanopaquetes t ON t.tamanoid = dp.tamanoid
+      LEFT JOIN LATERAL (
+        SELECT pvi.url_imagen
+        FROM producto_variante_imagenes pvi
+        WHERE pvi.varianteid = pv.varianteid
+        ORDER BY pvi.orden ASC NULLS LAST, pvi.imagenid ASC
+        LIMIT 1
+      ) imagen_variante ON TRUE
       LEFT JOIN LATERAL (
         SELECT pi.url_imagen
         FROM producto_imagenes pi
         WHERE pi.productoid = pv.productoid
         ORDER BY pi.orden ASC NULLS LAST, pi.imagenid ASC
         LIMIT 1
-      ) imagen ON TRUE
+      ) imagen_producto ON TRUE
       WHERE dp.pedidoid = $1
         AND prod.tenant_id = $2
         AND (t.tenant_id = $2 OR t.tenant_id IS NULL)
@@ -1675,6 +1684,8 @@ const obtenerPedidoPorId = async (req, res) => {
         piezasTotales: item.piezastotales,
         dimensiones: item.dimensiones,
         imagenUrl: item.url_imagen,
+        colorNombre: item.color_nombre || null,
+        colorHex: item.color_hex || null,
       };
     });
 

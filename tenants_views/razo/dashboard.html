@@ -997,9 +997,14 @@
                             onerror="this.src='/icon/Logo_Razo.png'"
                           />
                           <div>
-                            <div style="font-weight: 700; margin-bottom: 0.5rem; color: var(--razo-gray-dark); font-size: 1rem;">${
+                            <div style="font-weight: 700; margin-bottom: 0.25rem; color: var(--razo-gray-dark); font-size: 1rem;">${
                               item.nombreProducto
                             }</div>
+                            ${item.colorNombre ? `<div style="font-size: 0.875rem; color: var(--razo-gray-warm); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                              <strong>Color:</strong> 
+                              <span>${item.colorNombre}</span>
+                              ${item.colorHex ? `<span style="display: inline-block; width: 16px; height: 16px; border-radius: 50%; background-color: ${item.colorHex}; border: 1px solid var(--razo-gray-light);"></span>` : ''}
+                            </div>` : '<div style="font-size: 0.875rem; color: var(--razo-gray-warm); margin-bottom: 0.5rem;"><strong>Color:</strong> -</div>'}
                             <div style="display: flex; flex-wrap: wrap; gap: 1rem; font-size: 0.875rem; color: var(--razo-gray-warm);">
                               <div><strong>SKU:</strong> ${item.sku}</div>
                               <div><strong>${
@@ -1738,7 +1743,7 @@
     </style>
 
     <script>
-      // Función para descargar PDF de remisión
+      // Función para descargar PDF de remisión (Descarga directa vía Blob)
       async function descargarPDFPedido(pedidoId) {
         const token = localStorage.getItem('razoconnect_token');
         if (!token) {
@@ -1746,9 +1751,20 @@
           return;
         }
 
+        // Buscar el botón de descarga para este pedido y cambiar su texto
+        const botonDescarga = event?.target?.closest('button');
+        let textoOriginal = null;
+        
+        if (botonDescarga) {
+          const spanTexto = botonDescarga.querySelector('span:last-child');
+          if (spanTexto) {
+            textoOriginal = spanTexto.textContent;
+            spanTexto.textContent = 'Generando...';
+            botonDescarga.disabled = true;
+          }
+        }
+
         try {
-          showToast('Generando PDF...', 'info');
-          
           // Hacer petición con token de autenticación
           const response = await fetch(`/api/pedidos/${pedidoId}/pdf`, {
             method: 'GET',
@@ -1770,7 +1786,7 @@
             }
           }
 
-          // Convertir respuesta a blob
+          // Convertir respuesta a blob de tipo PDF
           const blob = await response.blob();
           
           // Verificar que el blob no esté vacío
@@ -1781,16 +1797,33 @@
           // Crear URL temporal del blob
           const blobUrl = window.URL.createObjectURL(blob);
           
-          // Abrir en nueva pestaña
-          window.open(blobUrl, '_blank');
+          // Crear elemento <a> invisible para descarga directa
+          const link = document.createElement('a');
+          link.href = blobUrl;
+          link.download = `Pedido_#${pedidoId}.pdf`;
+          link.style.display = 'none';
           
-          // Liberar URL después de un tiempo
+          // Agregar al DOM, simular clic y eliminar
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          
+          // Liberar URL después de un pequeño retraso (compatibilidad Safari/iPad)
           setTimeout(() => window.URL.revokeObjectURL(blobUrl), 100);
           
-          showToast('PDF generado correctamente', 'success');
+          showToast('PDF descargado correctamente', 'success');
         } catch (error) {
           console.error('Error al descargar PDF:', error);
           showToast(error.message || 'Error al generar el PDF. Intenta de nuevo.', 'error');
+        } finally {
+          // Restaurar texto y estado del botón
+          if (botonDescarga && textoOriginal) {
+            const spanTexto = botonDescarga.querySelector('span:last-child');
+            if (spanTexto) {
+              spanTexto.textContent = textoOriginal;
+            }
+            botonDescarga.disabled = false;
+          }
         }
       }
 
