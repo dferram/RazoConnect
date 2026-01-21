@@ -2049,6 +2049,45 @@ const cancelarPedido = async (req, res) => {
       [id, tenant_id]
     );
 
+    // CASCADA: Cancelar Órdenes de Compra asociadas a este pedido
+    let ordenesCompraCanceladas = 0;
+    try {
+      // Buscar todas las OCs generadas por este pedido que estén en estatus PENDIENTE
+      const ocQuery = await client.query(
+        `SELECT ordencompraid, estatus, origenoc
+         FROM ordenesdecompra
+         WHERE pedido_origen_id = $1 
+           AND tenant_id = $2
+           AND estatus = 'Pendiente'
+         FOR UPDATE`,
+        [id, tenant_id]
+      );
+
+      if (ocQuery.rows.length > 0) {
+        console.log(`[Cancelar Pedido] Encontradas ${ocQuery.rows.length} Órdenes de Compra pendientes asociadas al pedido ${id}`);
+
+        // Cancelar cada OC encontrada
+        for (const oc of ocQuery.rows) {
+          await client.query(
+            `UPDATE ordenesdecompra
+             SET estatus = 'Cancelada',
+                 fechaentregaesperada = NULL
+             WHERE ordencompraid = $1 AND tenant_id = $2`,
+            [oc.ordencompraid, tenant_id]
+          );
+
+          ordenesCompraCanceladas++;
+          console.log(`[Cancelar Pedido] OC #${oc.ordencompraid} (${oc.origenoc}) cancelada automáticamente`);
+        }
+      } else {
+        console.log(`[Cancelar Pedido] No se encontraron Órdenes de Compra pendientes para el pedido ${id}`);
+      }
+    } catch (ocError) {
+      console.error('[Cancelar Pedido] Error al cancelar OCs en cascada:', ocError);
+      // No lanzar el error para no interrumpir la cancelación del pedido
+      // El pedido se cancela de todas formas, pero se registra el error
+    }
+
     // Si el pedido era a crédito y ya tenía cargo aplicado, revertirlo
     let montoRevertido = 0;
     if (pedido.es_credito) {
@@ -2140,6 +2179,7 @@ const cancelarPedido = async (req, res) => {
       `• Ítems en backorder: ${itemsEnBackorder}\n` +
       `• Backorders cancelados: ${backordersCancelados}\n` +
       `• Piezas restauradas al inventario: ${piezasRestauradas}\n` +
+      (ordenesCompraCanceladas > 0 ? `• Órdenes de Compra canceladas: ${ordenesCompraCanceladas}\n` : '') +
       (montoRevertido > 0 ? `• Crédito revertido: $${montoRevertido.toFixed(2)}\n` : '') +
       `\nEstatus anterior: ${pedido.estatus}`;
 
@@ -2184,17 +2224,18 @@ const cancelarPedido = async (req, res) => {
 
     await client.query('COMMIT');
 
-    console.log(`[Cancelar Pedido] Pedido ${id} cancelado exitosamente - Stock: ${itemsEnStock}, Backorder: ${itemsEnBackorder}, Cancelados: ${backordersCancelados}`);
+    console.log(`[Cancelar Pedido] Pedido ${id} cancelado exitosamente - Stock: ${itemsEnStock}, Backorder: ${itemsEnBackorder}, Cancelados: ${backordersCancelados}, OCs Canceladas: ${ordenesCompraCanceladas}`);
 
     res.json({
       success: true,
-      message: 'Pedido y backorders asociados cancelados correctamente',
+      message: 'Pedido, backorders y órdenes de compra asociadas cancelados correctamente',
       detalles: {
         pedido_id: id,
         items_en_stock: itemsEnStock,
         items_en_backorder: itemsEnBackorder,
         backorders_cancelados: backordersCancelados,
         piezas_restauradas: piezasRestauradas,
+        ordenes_compra_canceladas: ordenesCompraCanceladas,
         credito_revertido: montoRevertido > 0 ? `$${montoRevertido.toFixed(2)}` : null
       }
     });

@@ -747,10 +747,6 @@
               return val;
             })();
 
-            const propietarioCell = currentUserRole === 'superadmin' 
-              ? `<td style="color: #6b7280; font-size: 0.8rem;">${(orden.propietarioNombre || 'N/A').split(' ')[0]}</td>`
-              : '';
-
             // Determinar el texto del cliente (truncar si es muy largo)
             let clienteTexto = orden.origenOC === 'backorder' && orden.nombreCliente 
               ? orden.nombreCliente 
@@ -766,6 +762,9 @@
             if (proveedorNombre.length > 15) {
               proveedorNombre = proveedorNombre.substring(0, 12) + '...';
             }
+
+            // Determinar el nombre del admin para la columna ADMIN
+            const adminNombre = orden.admin_nombre || orden.propietarioNombre || '-';
 
             row.innerHTML = `
               <td style="font-weight: 600; color: #374151; font-size: 0.875rem;">#${
@@ -786,7 +785,7 @@
               <td><span class="admin-badge ${estatusBadgeClass}" style="font-size: 0.75rem; padding: 0.25rem 0.5rem;">${
                 estatusTexto
               }</span></td>
-              ${propietarioCell}
+              ${currentUserRole === 'superadmin' ? `<td style="color: #6b7280; font-size: 0.8rem;">${adminNombre.split(' ')[0]}</td>` : ''}
               <td>
                 <div style="display: flex; gap: 0.25rem; justify-content: center; flex-wrap: wrap;">
                   <button 

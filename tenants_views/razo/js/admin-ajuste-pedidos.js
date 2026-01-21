@@ -1,22 +1,6 @@
-// Función auxiliar para mostrar mensajes toast
-function showToast(message, type = 'info') {
-  const iconMap = {
-    success: 'success',
-    error: 'error',
-    warning: 'warning',
-    info: 'info'
-  };
-
-  Swal.fire({
-    toast: true,
-    position: 'top-end',
-    icon: iconMap[type] || 'info',
-    title: message,
-    showConfirmButton: false,
-    timer: 3000,
-    timerProgressBar: true
-  });
-}
+const API_BASE_URL = window.location.hostname === 'localhost' 
+  ? 'http://localhost:3000/api' 
+  : '/api';
 
 let pedidoAjusteActual = null;
 let productosActualesPedido = [];
