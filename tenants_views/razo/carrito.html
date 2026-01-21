@@ -720,14 +720,25 @@
                 <div id="cupon-mensaje"></div>
               </div>
 
-              <div id="descuento-row" class="summary-row">
-                <span>Descuento:</span>
-                <span id="summaryDescuento">-$0.00</span>
+              <!-- Desglose de descuento (visible solo con cupón) -->
+              <div id="descuento-desglose" style="display: none; margin-top: 1rem; padding: 1rem; background: #fef3c7; border-radius: 0.5rem; border: 1px solid #fbbf24;">
+                <div class="summary-row" style="margin-bottom: 0.5rem;">
+                  <span style="font-weight: 500;">Precio original:</span>
+                  <span id="precioOriginal" style="text-decoration: line-through; color: #6b7280;">$0.00</span>
+                </div>
+                <div class="summary-row" style="margin-bottom: 0.5rem;">
+                  <span style="font-weight: 500; color: #059669;">Descuento aplicado:</span>
+                  <span id="descuentoPorcentaje" style="color: #059669; font-weight: 600;">0%</span>
+                </div>
+                <div class="summary-row">
+                  <span style="font-weight: 500;">Ahorras:</span>
+                  <span id="montoAhorrado" style="color: #dc2626; font-weight: 600;">-$0.00</span>
+                </div>
               </div>
 
               <div class="summary-row total">
-                <span>Total:</span>
-                <span id="summaryTotal">$0.00</span>
+                <span style="font-size: 1.25rem; font-weight: 600;">Total a pagar:</span>
+                <span id="summaryTotal" style="font-size: 1.5rem; font-weight: 700;">$0.00</span>
               </div>
 
               <button class="btn btn-success btn-block mt-3" id="checkoutBtn">
@@ -1672,6 +1683,12 @@
       async function handleCheckoutSuccess() {
         closeCheckoutModal();
         clearLocalCartCache();
+        
+        // Limpiar cupón después de confirmar pedido (no debe persistir)
+        if (typeof window.limpiarCupon === "function") {
+          window.limpiarCupon();
+        }
+        
         if (typeof window.updateCartBadge === "function") {
           window.updateCartBadge();
         }
@@ -1744,6 +1761,9 @@
         const total = Number.parseFloat(carritoData.montoTotal);
         return Number.isFinite(total) ? total : 0;
       }
+
+      // Exponer globalmente para que carrito-cupones.js pueda acceder
+      window.getCarritoTotal = getCarritoTotal;
 
       function initializeMercadoPago() {
         if (mpInstance) {

@@ -33,7 +33,7 @@ const cargarEstadisticas = async () => {
 
         const response = await fetch(url, {
             headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
+                'Authorization': `Bearer ${localStorage.getItem('razoconnect_admin_token')}`
             }
         });
 
@@ -79,7 +79,7 @@ const cargarMotivos = async () => {
     try {
         const response = await fetch(`${API_BASE_URL}/inventario/motivos-ajuste`, {
             headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
+                'Authorization': `Bearer ${localStorage.getItem('razoconnect_admin_token')}`
             }
         });
 
@@ -122,7 +122,7 @@ const cargarMovimientos = async () => {
 
         const response = await fetch(url, {
             headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
+                'Authorization': `Bearer ${localStorage.getItem('razoconnect_admin_token')}`
             }
         });
 

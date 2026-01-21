@@ -33,9 +33,9 @@ async function aplicarCupon() {
     return;
   }
 
-  const subtotalElement = document.getElementById("summarySubtotal");
-  const subtotalText = subtotalElement.textContent.replace(/[$,]/g, "");
-  const subtotal = parseFloat(subtotalText);
+  // CRÍTICO: Usar carritoData.montoTotal como fuente de verdad
+  // NO leer del DOM porque puede contener valores ya modificados
+  const subtotal = window.getCarritoTotal ? window.getCarritoTotal() : 0;
 
   if (!subtotal || subtotal <= 0) {
     mostrarMensajeCupon("El carrito está vacío", "error");
@@ -94,13 +94,44 @@ async function aplicarCupon() {
 }
 
 function actualizarResumenConDescuento(dataCupon) {
-  const descuentoRow = document.getElementById("descuento-row");
-  const summaryDescuento = document.getElementById("summaryDescuento");
+  const descuentoDesglose = document.getElementById("descuento-desglose");
+  const precioOriginal = document.getElementById("precioOriginal");
+  const descuentoPorcentaje = document.getElementById("descuentoPorcentaje");
+  const montoAhorrado = document.getElementById("montoAhorrado");
   const summaryTotal = document.getElementById("summaryTotal");
 
-  descuentoRow.style.display = "flex";
-  summaryDescuento.textContent = `-$${dataCupon.montoDescuento.toFixed(2)}`;
-  summaryTotal.textContent = `$${dataCupon.nuevoTotal.toFixed(2)}`;
+  // Mostrar desglose visual
+  if (descuentoDesglose) {
+    descuentoDesglose.style.display = "block";
+  }
+
+  // Precio original (tachado)
+  if (precioOriginal) {
+    precioOriginal.textContent = `$${dataCupon.subtotal.toFixed(2)}`;
+  }
+
+  // Porcentaje de descuento
+  if (descuentoPorcentaje) {
+    if (dataCupon.tipoDescuento === "PORCENTAJE") {
+      descuentoPorcentaje.textContent = `-${dataCupon.valor}%`;
+    } else {
+      // Si es descuento fijo, calcular el porcentaje equivalente
+      const porcentajeEquivalente = ((dataCupon.montoDescuento / dataCupon.subtotal) * 100).toFixed(1);
+      descuentoPorcentaje.textContent = `-${porcentajeEquivalente}% (Descuento fijo)`;
+    }
+  }
+
+  // Monto ahorrado
+  if (montoAhorrado) {
+    montoAhorrado.textContent = `-$${dataCupon.montoDescuento.toFixed(2)}`;
+  }
+
+  // Total final en ROJO (color de oferta)
+  if (summaryTotal) {
+    summaryTotal.textContent = `$${dataCupon.nuevoTotal.toFixed(2)}`;
+    summaryTotal.style.color = "#dc2626"; // Rojo de oferta
+    summaryTotal.style.fontWeight = "700";
+  }
 }
 
 function limpiarCupon() {
@@ -108,18 +139,31 @@ function limpiarCupon() {
 
   const cuponInput = document.getElementById("cupon-input");
   const btnAplicar = document.getElementById("btn-aplicar-cupon");
-  const descuentoRow = document.getElementById("descuento-row");
+  const descuentoDesglose = document.getElementById("descuento-desglose");
   const cuponMensaje = document.getElementById("cupon-mensaje");
-  const summarySubtotal = document.getElementById("summarySubtotal");
   const summaryTotal = document.getElementById("summaryTotal");
 
   cuponInput.value = "";
   cuponInput.disabled = false;
-  descuentoRow.style.display = "none";
-  cuponMensaje.style.display = "none";
+  
+  // Ocultar desglose de descuento
+  if (descuentoDesglose) {
+    descuentoDesglose.style.display = "none";
+  }
+  
+  if (cuponMensaje) {
+    cuponMensaje.style.display = "none";
+  }
 
-  const subtotalText = summarySubtotal.textContent;
-  summaryTotal.textContent = subtotalText;
+  // CRÍTICO: Usar getCarritoTotal() como fuente de verdad
+  const subtotalReal = window.getCarritoTotal ? window.getCarritoTotal() : 0;
+  
+  // Restaurar total a color normal (negro)
+  if (summaryTotal) {
+    summaryTotal.textContent = `$${subtotalReal.toFixed(2)}`;
+    summaryTotal.style.color = "#111827"; // Negro normal
+    summaryTotal.style.fontWeight = "700";
+  }
 
   btnAplicar.textContent = "Aplicar";
   btnAplicar.classList.remove("btn-outline-danger");
