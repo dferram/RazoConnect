@@ -988,7 +988,9 @@
                     <div class="pedido-items">
                       ${p.items
                         .map(
-                          (item) => `
+                          (item) => {
+                            console.log('🔍 Datos del item recibido:', item);
+                            return `
                         <div class="pedido-item">
                           <img 
                             src="${item.imagenUrl || '/icon/Logo_Razo.png'}" 
@@ -1026,7 +1028,8 @@
                             </div>
                           </div>
                         </div>
-                      `
+                      `;
+                          }
                         )
                         .join("")}
                     </div>
