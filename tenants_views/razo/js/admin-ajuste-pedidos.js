@@ -1,5 +1,3 @@
-const API_BASE_URL = '/api';
-
 // Función auxiliar para mostrar mensajes toast
 function showToast(message, type = 'info') {
   const iconMap = {
