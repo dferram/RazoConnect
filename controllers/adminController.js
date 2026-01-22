@@ -14592,6 +14592,7 @@ const obtenerRemisionPedido = async (req, res) => {
         dp.piezastotales,
         pv.sku,
         pv.dimensiones,
+        pv.stock AS stock_real_variante,
         prod.nombreproducto,
         t.etiqueta as tamano_etiqueta,
         t.valor as tamano_valor
@@ -14613,6 +14614,7 @@ const obtenerRemisionPedido = async (req, res) => {
       cantidad: parseInt(item.cantidadpaquetes, 10),
       precioUnitario: parseFloat(item.preciounitario),
       piezasTotales: item.piezastotales,
+      stockReal: parseInt(item.stock_real_variante || 0, 10),
       subtotal: parseFloat(
         (parseInt(item.cantidadpaquetes, 10) * 
          (item.tamano_valor || 1) * 

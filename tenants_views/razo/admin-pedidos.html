@@ -1026,6 +1026,16 @@
                 margin-top: 0.25rem;
               }
               
+              .badge-backorder {
+                background: #dc3545;
+                color: white;
+                padding: 0.15rem 0.4rem;
+                border-radius: 0.25rem;
+                font-size: 0.75rem;
+                font-weight: bold;
+                margin-left: 0.5rem;
+              }
+              
               .firma-section { 
                 margin-top: 1.5rem; 
                 padding-top: 1rem;
@@ -1210,10 +1220,14 @@
                   <th>Cantidad</th>
                   <th>Precio Unit.</th>
                   <th>Subtotal</th>
+                  <th>Estado</th>
                 </tr>
               </thead>
               <tbody>
-                ${pedido.items.map(item => `
+                ${pedido.items.map(item => {
+                  const stockReal = item.stockReal || 0;
+                  const esBajoPedido = stockReal === 0;
+                  return `
                   <tr>
                     <td>${item.sku}</td>
                     <td>${item.nombreProducto}</td>
@@ -1221,8 +1235,10 @@
                     <td>${item.cantidad}</td>
                     <td>$${item.precioUnitario.toFixed(2)}</td>
                     <td>$${item.subtotal.toFixed(2)}</td>
+                    <td>${esBajoPedido ? '<span class="badge-backorder">BAJO PEDIDO</span>' : '<span style="color: #28a745; font-weight: bold;">✓ Disponible</span>'}</td>
                   </tr>
-                `).join('')}
+                `;
+                }).join('')}
               </tbody>
             </table>
 

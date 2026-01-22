@@ -374,6 +374,7 @@ const crearPedido = async (req, res) => {
     }
 
     // 4. Calcular el monto total CON LÓGICA DE OFERTAS + split (stock + backorder)
+    // CRÍTICO: El servidor SIEMPRE recalcula el total. NUNCA confiar en el total del cliente.
     const montoTotal = items.reduce((total, item, index) => {
 
       const precioBase =
@@ -404,11 +405,23 @@ const crearPedido = async (req, res) => {
           ) || 1,
       });
 
+      // FÓRMULA DE ORO: Subtotal = (PrecioPieza × PiezasPorPaquete) × CantidadPaquetes
       const precioPaquete = precioUnitario * tamanoValor;
       const subtotal = parseFloat((precioPaquete * split.cantidadTotalCobrar).toFixed(2));
       
       return total + (Number.isFinite(subtotal) ? subtotal : 0);
     }, 0);
+
+    // PROTECCIÓN FINANCIERA: Validar si el cliente envió un total y comparar
+    const totalClienteEnviado = req.body.montoTotal ? parseFloat(req.body.montoTotal) : null;
+    if (totalClienteEnviado !== null && Math.abs(totalClienteEnviado - montoTotal) > 0.02) {
+      console.error(`🚨 [ERROR FINANCIERO] Discrepancia detectada en Pedido`);
+      console.error(`   Total calculado por servidor: $${montoTotal.toFixed(2)}`);
+      console.error(`   Total enviado por cliente: $${totalClienteEnviado.toFixed(2)}`);
+      console.error(`   Diferencia: $${Math.abs(totalClienteEnviado - montoTotal).toFixed(2)}`);
+      console.error(`   Cliente ID: ${clienteId}, Tenant: ${tenant_id}`);
+      // NO rechazar el pedido, pero usar el total del servidor
+    }
 
     // Validar que el monto total sea válido
     if (!Number.isFinite(montoTotal) || montoTotal <= 0) {
