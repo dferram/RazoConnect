@@ -111,6 +111,13 @@ router.post(
   inventoryAuditController.aplicarSesion
 );
 
+router.get(
+  "/auditoria-inventario/diagnostico-sesiones",
+  authenticate,
+  authorizeAdminOnly,
+  inventoryAuditController.diagnosticoSesiones
+);
+
 /**
  * Rutas de super-admin (requieren autenticación y rol super-admin)
  */

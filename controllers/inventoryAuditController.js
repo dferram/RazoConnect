@@ -621,6 +621,29 @@ const aplicarSesion = async (req, res) => {
       });
     }
 
+    // VALIDACIÓN CRÍTICA: Verificar que no haya ítems ya aplicados (prevenir doble aplicación)
+    const yaAplicadosCheck = await client.query(
+      `SELECT COUNT(*)::int AS total
+       FROM toma_inventario_conteos
+       WHERE sesionid = $1
+         AND estatus_aplicacion = 'APLICADO'`,
+      [sesionId]
+    );
+
+    const totalYaAplicados = Number.parseInt(yaAplicadosCheck.rows?.[0]?.total, 10) || 0;
+    if (totalYaAplicados > 0) {
+      await client.query("ROLLBACK");
+      return res.status(409).json({
+        success: false,
+        message: `INTEGRIDAD VIOLADA: Esta sesión ya tiene ${totalYaAplicados} ítem(s) aplicado(s). No se puede aplicar nuevamente.`,
+        data: {
+          sesionId,
+          itemsYaAplicados: totalYaAplicados,
+          estatusSesion: sesionLock.rows[0].estatus,
+        },
+      });
+    }
+
     // Contar validados para verificar que hay al menos uno
     const validadosCount = await client.query(
       `SELECT COUNT(*)::int AS total
@@ -732,24 +755,33 @@ const aplicarSesion = async (req, res) => {
       }
     }
 
-    // Cerrar la sesión (APLICADA si todo fue validado, APLICADA_PARCIAL si hubo conflictos)
-    // Intentar usar APLICADA_PARCIAL, si falla usar APLICADA (migración pendiente)
+    // CRÍTICO: Cerrar la sesión ANTES del COMMIT para garantizar atomicidad
+    // Si el UPDATE falla, el COMMIT no se ejecutará y se hará ROLLBACK
     let estatusFinal = noAplicadas.length > 0 ? 'APLICADA_PARCIAL' : 'APLICADA';
     try {
       await client.query(
-        "UPDATE toma_inventario_sesiones SET estatus = $1 WHERE sesionid = $2",
+        `UPDATE toma_inventario_sesiones 
+         SET estatus = $1, 
+             fechacierre = NOW()
+         WHERE sesionid = $2`,
         [estatusFinal, sesionId]
       );
     } catch (enumErr) {
       // APLICADA_PARCIAL no existe en el enum, usar APLICADA
       estatusFinal = 'APLICADA';
       await client.query(
-        "UPDATE toma_inventario_sesiones SET estatus = $1 WHERE sesionid = $2",
+        `UPDATE toma_inventario_sesiones 
+         SET estatus = $1, 
+             fechacierre = NOW()
+         WHERE sesionid = $2`,
         [estatusFinal, sesionId]
       );
     }
 
+    // COMMIT: Solo se ejecuta si todo lo anterior fue exitoso
     await client.query("COMMIT");
+    
+    console.log(`✅ [Auditoría] Sesión #${sesionId} aplicada exitosamente. Estatus: ${estatusFinal}. Movimientos: ${movimientosGenerados}`);
 
     const message = noAplicadas.length > 0
       ? `Auditoría aplicada parcialmente: ${aplicadas.length} producto(s) actualizado(s), ${noAplicadas.length} ítem(s) no aplicado(s) registrados`
@@ -788,6 +820,97 @@ const aplicarSesion = async (req, res) => {
   }
 };
 
+/**
+ * GET /diagnostico-sesiones
+ * Detecta sesiones huérfanas (ABIERTA pero con ítems aplicados)
+ */
+const diagnosticoSesiones = async (req, res) => {
+  try {
+    const tenant_id = req.tenant?.tenant_id || req.user?.tenantId || 1;
+    
+    // Buscar sesiones ABIERTA con ítems APLICADOS (inconsistencia crítica)
+    const sesionesHuerfanas = await db.query(
+      `SELECT 
+         s.sesionid,
+         s.nombre,
+         s.estatus AS estatus_sesion,
+         s.fechainicio,
+         s.fechacierre,
+         COUNT(c.conteoid) AS total_items,
+         COUNT(CASE WHEN c.estatus_aplicacion = 'APLICADO' THEN 1 END) AS items_aplicados,
+         COUNT(CASE WHEN c.estatus_fila = 'VALIDADO' THEN 1 END) AS items_validados
+       FROM toma_inventario_sesiones s
+       LEFT JOIN toma_inventario_conteos c ON c.sesionid = s.sesionid
+       WHERE s.tenant_id = $1
+         AND s.estatus = 'ABIERTA'
+       GROUP BY s.sesionid, s.nombre, s.estatus, s.fechainicio, s.fechacierre
+       HAVING COUNT(CASE WHEN c.estatus_aplicacion = 'APLICADO' THEN 1 END) > 0
+       ORDER BY s.sesionid DESC`,
+      [tenant_id]
+    );
+
+    // Buscar todas las sesiones ABIERTA (para contexto)
+    const sesionesAbiertas = await db.query(
+      `SELECT 
+         s.sesionid,
+         s.nombre,
+         s.estatus,
+         s.fechainicio,
+         COUNT(c.conteoid) AS total_items,
+         COUNT(CASE WHEN c.estatus_fila = 'VALIDADO' THEN 1 END) AS items_validados,
+         COUNT(CASE WHEN c.estatus_fila = 'CONFLICTO' THEN 1 END) AS items_conflicto,
+         COUNT(CASE WHEN c.estatus_fila IN ('PENDIENTE_A', 'PENDIENTE_B') THEN 1 END) AS items_pendientes
+       FROM toma_inventario_sesiones s
+       LEFT JOIN toma_inventario_conteos c ON c.sesionid = s.sesionid
+       WHERE s.tenant_id = $1
+         AND s.estatus = 'ABIERTA'
+       GROUP BY s.sesionid, s.nombre, s.estatus, s.fechainicio
+       ORDER BY s.sesionid DESC`,
+      [tenant_id]
+    );
+
+    const hayProblemas = sesionesHuerfanas.rows.length > 0;
+
+    return res.json({
+      success: true,
+      integridad: hayProblemas ? 'VIOLADA' : 'OK',
+      data: {
+        sesionesHuerfanas: sesionesHuerfanas.rows.map(r => ({
+          sesionId: r.sesionid,
+          nombre: r.nombre,
+          estatusSesion: r.estatus_sesion,
+          fechaInicio: r.fechainicio,
+          fechaCierre: r.fechacierre,
+          totalItems: parseInt(r.total_items),
+          itemsAplicados: parseInt(r.items_aplicados),
+          itemsValidados: parseInt(r.items_validados),
+          problema: `Sesión ABIERTA con ${r.items_aplicados} ítem(s) ya aplicado(s) al inventario`,
+        })),
+        sesionesAbiertas: sesionesAbiertas.rows.map(r => ({
+          sesionId: r.sesionid,
+          nombre: r.nombre,
+          estatus: r.estatus,
+          fechaInicio: r.fechainicio,
+          totalItems: parseInt(r.total_items),
+          itemsValidados: parseInt(r.items_validados),
+          itemsConflicto: parseInt(r.items_conflicto),
+          itemsPendientes: parseInt(r.items_pendientes),
+        })),
+      },
+      mensaje: hayProblemas
+        ? `⚠️ ALERTA: ${sesionesHuerfanas.rows.length} sesión(es) huérfana(s) detectada(s). El stock ya fue modificado pero la sesión no se cerró.`
+        : '✅ No se detectaron inconsistencias. Todas las sesiones ABIERTA tienen integridad correcta.',
+    });
+  } catch (error) {
+    console.error("Error en diagnosticoSesiones:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error al ejecutar diagnóstico",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   crearSesion,
   registrarConteo,
@@ -796,4 +919,5 @@ module.exports = {
   getVariantePorSku,
   buscarProductos,
   listarSesiones,
+  diagnosticoSesiones,
 };
