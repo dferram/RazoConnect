@@ -14,6 +14,130 @@
     <link rel="stylesheet" href="css/mobile-responsive.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" />
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <style>
+        @page {
+            margin: 1cm;
+            size: letter;
+        }
+        
+        @media print {
+            body {
+                padding: 0.5rem;
+                line-height: 1.3;
+            }
+            
+            .admin-layout,
+            .admin-main,
+            .admin-content {
+                display: block !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            
+            #admin-sidebar-container,
+            #admin-header-container,
+            .admin-table-container:first-child,
+            .admin-content > div:first-child,
+            .btn,
+            button,
+            .modal-header,
+            .modal-footer,
+            .no-print {
+                display: none !important;
+            }
+            
+            .modal-dialog {
+                max-width: 100% !important;
+                margin: 0 !important;
+            }
+            
+            .modal-content {
+                border: none !important;
+                box-shadow: none !important;
+                border-radius: 0 !important;
+            }
+            
+            .modal-body {
+                padding: 0.5rem !important;
+            }
+            
+            .card,
+            .card-body {
+                border: none !important;
+                background: transparent !important;
+                padding: 0.25rem !important;
+                margin-bottom: 0.4rem !important;
+                page-break-inside: avoid;
+            }
+            
+            h6 {
+                font-size: 0.9rem !important;
+                margin-bottom: 0.25rem !important;
+            }
+            
+            .mb-2,
+            .mb-3,
+            .mb-4 {
+                margin-bottom: 0.25rem !important;
+            }
+            
+            .row {
+                margin: 0 !important;
+                page-break-inside: avoid;
+            }
+            
+            .col-md-6 {
+                width: 50% !important;
+                float: left !important;
+                padding: 0 0.25rem !important;
+            }
+            
+            .alert {
+                padding: 0.5rem !important;
+                margin-bottom: 0.5rem !important;
+                page-break-inside: avoid;
+            }
+            
+            table {
+                page-break-before: avoid;
+                page-break-after: avoid;
+                margin: 0.25rem 0 !important;
+                font-size: 0.85rem !important;
+            }
+            
+            th, td {
+                padding: 0.35rem 0.5rem !important;
+            }
+            
+            thead {
+                page-break-after: avoid;
+            }
+            
+            tbody tr {
+                page-break-inside: avoid;
+            }
+            
+            tfoot {
+                page-break-before: avoid;
+                page-break-inside: avoid;
+            }
+            
+            .table-responsive {
+                overflow: visible !important;
+            }
+            
+            .badge {
+                padding: 0.15rem 0.5rem !important;
+                font-size: 0.75rem !important;
+            }
+            
+            .text-success,
+            .fs-5 {
+                font-size: 1.1rem !important;
+            }
+        }
+    </style>
 </head>
 <body data-page-title="Gestión de Remisiones">
     <div class="admin-layout">

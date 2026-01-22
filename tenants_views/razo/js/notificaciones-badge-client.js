@@ -29,7 +29,6 @@
       const count = Number.parseInt(data?.count, 10) || 0;
 
       if (count > 0) {
-        badge.textContent = String(count);
         badge.classList.remove("d-none");
       } else {
         badge.classList.add("d-none");

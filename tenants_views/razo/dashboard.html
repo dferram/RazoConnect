@@ -180,14 +180,16 @@
       .notif-badge {
         display: inline-block;
         background: #dc2626;
-        color: white;
-        font-size: 0.75rem;
-        font-weight: 600;
-        padding: 0.125rem 0.5rem;
-        border-radius: 1rem;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
         margin-left: 0.5rem;
-        min-width: 20px;
-        text-align: center;
+        position: relative;
+        top: -2px;
+      }
+      
+      .notif-badge-hidden {
+        display: none !important;
       }
 
       .notificacion-card {
@@ -231,6 +233,50 @@
       .btn-link:hover {
         opacity: 0.7;
       }
+      
+      /* Estilos de impresión */
+      @page {
+        margin: 1cm;
+        size: letter;
+      }
+      
+      @media print {
+        body {
+          padding: 0.5rem;
+          line-height: 1.3;
+        }
+        
+        #header-container,
+        .tabs,
+        .btn,
+        button,
+        .dashboard-card-header button,
+        .dashboard-section-header button,
+        .no-print {
+          display: none !important;
+        }
+        
+        .tab-content {
+          display: block !important;
+        }
+        
+        .card,
+        .pedido-card,
+        .direccion-card,
+        .notificacion-card {
+          page-break-inside: avoid;
+          margin-bottom: 0.5rem !important;
+        }
+        
+        .pedido-items,
+        .pedido-item {
+          page-break-inside: avoid;
+        }
+        
+        h1, h2, h3 {
+          page-break-after: avoid;
+        }
+      }
     </style>
     <link rel="stylesheet" href="css/mobile-responsive.css" />
   </head>
@@ -249,7 +295,7 @@
         <button class="tab" data-tab="pedidos">📦 Pedidos</button>
         <button class="tab" data-tab="notificaciones">
           🔔 Notificaciones
-          <span id="notifBadge" class="notif-badge notif-badge-hidden">0</span>
+          <span id="notifBadge" class="notif-badge notif-badge-hidden"></span>
         </button>
       </div>
 
@@ -1145,13 +1191,12 @@
             }));
             const noLeidas = notificaciones.filter(n => !n.leida).length;
 
-            // Actualizar badge
+            // Actualizar badge (solo punto rojo, sin números)
             if (noLeidas > 0) {
-              notifBadge.textContent = noLeidas;
-              notifBadge.style.display = "inline-block";
+              notifBadge.classList.remove("notif-badge-hidden");
               btnMarcarTodasLeidas.style.display = "inline-block";
             } else {
-              notifBadge.style.display = "none";
+              notifBadge.classList.add("notif-badge-hidden");
               btnMarcarTodasLeidas.style.display = "none";
             }
 

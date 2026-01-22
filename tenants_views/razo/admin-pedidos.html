@@ -919,132 +919,201 @@
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>Remisión - Pedido #${pedido.pedidoId}</title>
             <style>
-              * { margin: 0; padding: 0; box-sizing: border-box; }
+              * { 
+                margin: 0; 
+                padding: 0; 
+                box-sizing: border-box; 
+              }
+              
+              @page {
+                margin: 1cm;
+                size: letter;
+              }
+              
               body { 
                 font-family: Arial, sans-serif; 
-                padding: 2rem; 
+                padding: 1rem; 
                 max-width: 800px; 
                 margin: 0 auto;
-                line-height: 1.6;
-                display: block;
+                line-height: 1.4;
               }
+              
               .header { 
                 text-align: center; 
-                margin-bottom: 1.5rem; 
+                margin-bottom: 0.75rem; 
                 border-bottom: 3px solid #F97316;
-                padding-bottom: 1rem;
-                page-break-inside: avoid;
-                page-break-after: avoid;
+                padding-bottom: 0.5rem;
               }
-              .header h1 { color: #F97316; font-size: 2rem; margin-bottom: 0.5rem; }
+              
+              .header h1 { 
+                color: #F97316; 
+                font-size: 1.75rem; 
+                margin-bottom: 0.25rem; 
+              }
+              
               .info-section { 
-                margin-bottom: 1rem;
+                margin-bottom: 0.5rem;
                 page-break-inside: avoid;
               }
+              
               .info-section h2 { 
                 color: #333; 
-                font-size: 1.2rem; 
-                margin-bottom: 0.5rem;
-                border-bottom: 2px solid #eee;
-                padding-bottom: 0.25rem;
+                font-size: 1rem; 
+                margin-bottom: 0.25rem;
+                border-bottom: 1px solid #eee;
+                padding-bottom: 0.15rem;
               }
+              
               .info-row { 
-                display: block;
-                margin-bottom: 0.3rem;
-                padding: 0.15rem 0;
+                margin-bottom: 0.15rem;
+                font-size: 0.9rem;
               }
+              
               .info-label { 
                 font-weight: bold; 
                 display: inline-block;
-                width: 150px; 
+                width: 140px; 
                 color: #555;
               }
+              
               .info-value { 
-                display: inline-block;
+                display: inline;
               }
-              .productos-container {
-                display: block;
-                page-break-inside: avoid;
+              
+              .info-section:last-of-type {
+                margin-bottom: 0.75rem;
               }
+              
               table { 
                 width: 100%; 
                 border-collapse: collapse; 
-                margin: 0.5rem 0;
-                page-break-inside: avoid;
+                margin: 0.5rem 0 0 0;
+                font-size: 0.85rem;
               }
+              
               th, td { 
                 border: 1px solid #ddd; 
-                padding: 0.5rem; 
+                padding: 0.35rem 0.5rem; 
                 text-align: left;
               }
+              
               th { 
                 background-color: #F97316; 
                 color: white; 
                 font-weight: bold;
               }
-              tr:nth-child(even) { background-color: #f9f9f9; }
-              .total-container {
-                display: block;
-                page-break-inside: avoid;
-                margin-top: 0.5rem;
+              
+              tr:nth-child(even) { 
+                background-color: #f9f9f9; 
               }
+              
               .total { 
                 text-align: right; 
-                font-size: 1.2rem; 
+                font-size: 1rem; 
                 font-weight: bold; 
-                margin-top: 0;
-                padding: 0.75rem;
+                margin: 0.5rem 0 0 0;
+                padding: 0.5rem;
                 background: #f5f5f5;
-                border-radius: 0.5rem;
-                page-break-inside: avoid;
-                page-break-before: avoid;
+                border-radius: 0.25rem;
               }
+              
+              .total > div:last-child {
+                font-size: 1.25rem;
+                color: #F97316;
+                margin-top: 0.25rem;
+              }
+              
               .firma-section { 
-                margin-top: 2rem; 
-                padding-top: 1.5rem;
+                margin-top: 1.5rem; 
+                padding-top: 1rem;
                 border-top: 2px solid #eee;
                 page-break-before: auto;
               }
+              
+              .firma-section h2 {
+                font-size: 1rem;
+                margin-bottom: 0.5rem;
+              }
+              
+              .firma-section p {
+                margin: 0.5rem 0;
+                font-size: 0.9rem;
+              }
+              
               .firma-box { 
-                margin-top: 2rem; 
+                margin-top: 1.5rem; 
                 border-top: 2px solid #333; 
                 padding-top: 0.5rem;
                 text-align: center;
               }
+              
               .firma-label { 
                 font-weight: bold; 
                 margin-top: 0.5rem;
+                font-size: 0.9rem;
               }
+              
               .firma-grid {
-                display: block;
-                margin-top: 1.5rem;
+                margin-top: 1rem;
               }
+              
               .firma-grid > div {
                 display: inline-block;
                 width: 48%;
                 margin: 0 1%;
+                vertical-align: top;
               }
+              
               @media print {
-                body { padding: 1rem; }
-                .no-print { display: none; }
-                .header { page-break-after: avoid; }
-                .info-section { page-break-inside: avoid; }
-                .productos-container { page-break-inside: avoid; }
-                table { page-break-inside: avoid; }
-                .total-container { page-break-inside: avoid; page-break-before: avoid; }
-                .total { page-break-before: avoid; page-break-inside: avoid; }
+                body { 
+                  padding: 0.5rem;
+                  line-height: 1.3;
+                }
+                .no-print { 
+                  display: none !important; 
+                }
+                .header { 
+                  page-break-after: avoid;
+                  margin-bottom: 0.5rem;
+                }
+                .info-section { 
+                  page-break-inside: avoid;
+                  margin-bottom: 0.4rem;
+                }
+                table { 
+                  page-break-before: avoid;
+                  page-break-after: avoid;
+                  margin-top: 0.25rem;
+                }
+                .total { 
+                  page-break-before: avoid;
+                  page-break-inside: avoid;
+                  margin-top: 0.25rem;
+                }
+                .firma-section {
+                  margin-top: 1rem;
+                  padding-top: 0.75rem;
+                }
+                .firma-box {
+                  margin-top: 1rem;
+                }
               }
-              .btn-print {
-                background: #F97316;
-                color: white;
-                border: none;
-                padding: 1rem 2rem;
-                font-size: 1rem;
-                border-radius: 0.5rem;
-                cursor: pointer;
-                margin: 1rem 0;
+              
+              @media screen {
+                .btn-print {
+                  background: #F97316;
+                  color: white;
+                  border: none;
+                  padding: 1rem 2rem;
+                  font-size: 1rem;
+                  border-radius: 0.5rem;
+                  cursor: pointer;
+                  margin: 1rem 0;
+                }
+                .btn-print:hover { 
+                  background: #e86305; 
+                }
               }
-              .btn-print:hover { background: #e86305; }
             </style>
           </head>
           <body>
@@ -1125,43 +1194,38 @@
             </div>
             ` : ''}
 
-            <div class="productos-container">
-              <div class="info-section">
-                <h2>Detalle de Productos</h2>
-                <table>
-                  <thead>
-                    <tr>
-                      <th>SKU</th>
-                      <th>Producto</th>
-                      <th>Tamaño</th>
-                      <th>Cantidad</th>
-                      <th>Precio Unit.</th>
-                      <th>Subtotal</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    ${pedido.items.map(item => `
-                      <tr>
-                        <td>${item.sku}</td>
-                        <td>${item.nombreProducto}</td>
-                        <td>${item.tamano}</td>
-                        <td>${item.cantidad}</td>
-                        <td>$${item.precioUnitario.toFixed(2)}</td>
-                        <td>$${item.subtotal.toFixed(2)}</td>
-                      </tr>
-                    `).join('')}
-                  </tbody>
-                </table>
-              </div>
+            <div class="info-section">
+              <h2>Detalle de Productos</h2>
+            </div>
 
-              <div class="total-container">
-                <div class="total">
-                  <div>Costo de Envío: $${pedido.costoEnvio.toFixed(2)}</div>
-                  <div style="font-size: 1.5rem; color: #F97316; margin-top: 0.5rem;">
-                    Total: $${pedido.montoTotal.toFixed(2)} MXN
-                  </div>
-                </div>
-              </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>SKU</th>
+                  <th>Producto</th>
+                  <th>Tamaño</th>
+                  <th>Cantidad</th>
+                  <th>Precio Unit.</th>
+                  <th>Subtotal</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${pedido.items.map(item => `
+                  <tr>
+                    <td>${item.sku}</td>
+                    <td>${item.nombreProducto}</td>
+                    <td>${item.tamano}</td>
+                    <td>${item.cantidad}</td>
+                    <td>$${item.precioUnitario.toFixed(2)}</td>
+                    <td>$${item.subtotal.toFixed(2)}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+
+            <div class="total">
+              <div>Costo de Envío: $${pedido.costoEnvio.toFixed(2)}</div>
+              <div>Total: $${pedido.montoTotal.toFixed(2)} MXN</div>
             </div>
 
             <div class="firma-section">
