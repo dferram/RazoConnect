@@ -9,7 +9,7 @@ const {
   crearNotificacion: crearNotificacionServicio,
 } = require("../services/notificacionesService");
 const { checkStockBajo } = require("../utils/stockAlerts");
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { generateCodigoAgente } = require("../utils/agentCode");
 const { registrarLog } = require("../services/loggerService");
