@@ -57,11 +57,13 @@ exports.generarRemision = async (req, res) => {
     const pedido = pedidoQuery.rows[0];
 
     // 2. Obtener detalles del pedido con información completa
+    // CRÍTICO: Incluir stock REAL desde producto_variantes (NO desde sesiones de inventario)
     const detallesQuery = await client.query(
       `SELECT 
         dp.*,
         pv.sku,
         pv.nombre AS variante_nombre,
+        pv.stock AS stock_real_variante,
         p.nombre AS producto_nombre,
         tp.tamanopaquete,
         COALESCE(dp.cantidad_surtida_remisiones, 0) AS ya_surtido
@@ -81,7 +83,9 @@ exports.generarRemision = async (req, res) => {
     const detallesPedido = detallesQuery.rows;
 
     // 3. Validar que los items a surtir son válidos y hay stock disponible
+    // CRÍTICO: Validar contra stock REAL de producto_variantes, NO contra sesiones de inventario
     const itemsValidados = [];
+    const itemsBackorder = [];
     let totalRemision = 0;
 
     for (const item of items_a_surtir) {
@@ -93,6 +97,9 @@ exports.generarRemision = async (req, res) => {
           error: `Detalle de pedido ${item.detalle_pedido_id} no encontrado en este pedido` 
         });
       }
+
+      // DEBUG: Log del stock real detectado
+      console.log(`[DEBUG] Stock real detectado para ID ${detalle.varianteid} (SKU: ${detalle.sku}): ${detalle.stock_real_variante} piezas`);
 
       const cantidadDisponible = detalle.cantidadpaquetes - detalle.ya_surtido;
       
@@ -116,6 +123,78 @@ exports.generarRemision = async (req, res) => {
       const precioUnitario = detalle.preciounitario || (detalle.precioporpaquete / piezasPorPaquete);
       const subtotal = precioUnitario * piezasSurtidas;
 
+      // VALIDACIÓN CRÍTICA: Comparar contra stock REAL de producto_variantes
+      const stockRealPiezas = parseInt(detalle.stock_real_variante || 0);
+      
+      if (stockRealPiezas <= 0) {
+        // Si el stock real es 0, este producto debe ir a backorder automáticamente
+        console.log(`⚠️ [REMISIÓN] SKU ${detalle.sku}: Stock real es 0. Moviendo a BACKORDER automáticamente.`);
+        
+        itemsBackorder.push({
+          detalle_pedido_id: item.detalle_pedido_id,
+          variante_id: detalle.varianteid,
+          sku: detalle.sku,
+          cantidad_paquetes: item.cantidad_paquetes,
+          piezas_solicitadas: piezasSurtidas,
+          precio_unitario: precioUnitario,
+          tamano_id: detalle.tamanoid,
+          subtotal: subtotal
+        });
+        
+        // Actualizar el detalle del pedido para marcarlo como backorder
+        await client.query(
+          `UPDATE detallesdelpedido 
+           SET esbackorder = TRUE
+           WHERE detalleid = $1 AND tenant_id = $2`,
+          [item.detalle_pedido_id, tenant_id]
+        );
+        
+        continue; // No agregar a itemsValidados, saltar al siguiente
+      }
+      
+      if (piezasSurtidas > stockRealPiezas) {
+        // Stock insuficiente: solo surtir lo disponible, el resto a backorder
+        const paquetesSurtibles = Math.floor(stockRealPiezas / piezasPorPaquete);
+        const piezasRealmenteSurtidas = paquetesSurtibles * piezasPorPaquete;
+        const paquetesBackorder = item.cantidad_paquetes - paquetesSurtibles;
+        const piezasBackorder = paquetesBackorder * piezasPorPaquete;
+        
+        console.log(`⚠️ [REMISIÓN] SKU ${detalle.sku}: Stock insuficiente. Surtiendo ${paquetesSurtibles} paquetes (${piezasRealmenteSurtidas} pzs), ${paquetesBackorder} paquetes (${piezasBackorder} pzs) a BACKORDER.`);
+        
+        if (paquetesSurtibles > 0) {
+          const subtotalSurtido = precioUnitario * piezasRealmenteSurtidas;
+          itemsValidados.push({
+            detalle_pedido_id: item.detalle_pedido_id,
+            variante_id: detalle.varianteid,
+            cantidad_paquetes: paquetesSurtibles,
+            piezas_surtidas: piezasRealmenteSurtidas,
+            precio_unitario: precioUnitario,
+            tamano_id: detalle.tamanoid,
+            subtotal: subtotalSurtido
+          });
+          totalRemision += subtotalSurtido;
+        }
+        
+        if (paquetesBackorder > 0) {
+          const subtotalBackorder = precioUnitario * piezasBackorder;
+          itemsBackorder.push({
+            detalle_pedido_id: item.detalle_pedido_id,
+            variante_id: detalle.varianteid,
+            sku: detalle.sku,
+            cantidad_paquetes: paquetesBackorder,
+            piezas_solicitadas: piezasBackorder,
+            precio_unitario: precioUnitario,
+            tamano_id: detalle.tamanoid,
+            subtotal: subtotalBackorder
+          });
+        }
+        
+        continue;
+      }
+      
+      // Stock suficiente: proceder normalmente
+      console.log(`✅ [REMISIÓN] SKU ${detalle.sku}: Stock suficiente (${stockRealPiezas} pzs disponibles, ${piezasSurtidas} pzs solicitadas).`);
+
       itemsValidados.push({
         detalle_pedido_id: item.detalle_pedido_id,
         variante_id: detalle.varianteid,
@@ -127,6 +206,15 @@ exports.generarRemision = async (req, res) => {
       });
 
       totalRemision += subtotal;
+    }
+    
+    // Si no hay items validados (todo fue a backorder), informar al usuario
+    if (itemsValidados.length === 0 && itemsBackorder.length > 0) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ 
+        error: 'No hay stock disponible para generar la remisión. Todos los productos han sido movidos a BACKORDER.',
+        items_backorder: itemsBackorder.map(i => ({ sku: i.sku, cantidad: i.cantidad_paquetes }))
+      });
     }
 
     // 4. Generar folio único

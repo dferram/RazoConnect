@@ -3517,6 +3517,22 @@ const getDashboardStats = async (req, res) => {
     );
     console.log('💳 Comisiones Pendientes:', comisionesPendientesResult.rows[0]);
 
+    // CRÍTICO: Calcular valor de inventario usando SOLO stock real de producto_variantes
+    // NO usar inventario_sesion ni ninguna otra fuente de stock temporal
+    const valorInventarioResult = await db.query(
+      `SELECT 
+        COALESCE(SUM(pv.stock * pv.preciounitario), 0) as valor_venta,
+        COALESCE(SUM(pv.stock * pv.costounitario), 0) as valor_costo,
+        COUNT(*) as total_variantes_con_stock
+       FROM producto_variantes pv
+       INNER JOIN productos p ON pv.productoid = p.productoid
+       WHERE p.tenant_id = $1 
+       AND pv.stock > 0`,
+      [tenant_id]
+    );
+    console.log('📦 [DEBUG] Valor Inventario desde producto_variantes.stock:', valorInventarioResult.rows[0]);
+    console.log('📦 [DEBUG] Total variantes con stock > 0:', valorInventarioResult.rows[0].total_variantes_con_stock);
+
     const responseData = {
       totalPedidos: parseInt(pedidosResult.rows[0].total),
       pedidosPendientes: parseInt(pedidosPendientesResult.rows[0].total),
@@ -3525,7 +3541,9 @@ const getDashboardStats = async (req, res) => {
       agentesActivos: parseInt(agentesResult.rows[0].total),
       ventaTotal: parseFloat(ventaTotalResult.rows[0].total),
       ingresosTotales: parseFloat(utilidadTotalResult.rows[0].utilidad),
-      comisionesPendientes: parseFloat(comisionesPendientesResult.rows[0].total)
+      comisionesPendientes: parseFloat(comisionesPendientesResult.rows[0].total),
+      valorInventarioVenta: parseFloat(valorInventarioResult.rows[0].valor_venta || 0),
+      valorInventarioCosto: parseFloat(valorInventarioResult.rows[0].valor_costo || 0)
     };
 
     console.log('📤 Response Data:', responseData);

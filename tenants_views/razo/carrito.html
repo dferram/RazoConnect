@@ -2335,8 +2335,8 @@
         const subtotal =
           item.subtotal !== null && item.subtotal !== undefined
             ? parseFloat(item.subtotal)
-            : Number.isFinite(precioPaquete)
-            ? precioPaquete * cantidadCobrar
+            : Number.isFinite(precioPaquete) && cantidadCobrar
+            ? parseFloat((precioPaquete * cantidadCobrar).toFixed(2))
             : null;
 
         const reglaBackorder = (item.reglaBackorder || "UNITARIO")

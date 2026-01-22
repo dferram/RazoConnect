@@ -396,25 +396,21 @@ const obtenerCarrito = async (req, res) => {
         multiploBackorder,
       });
 
+      const precioPorPieza = precioUnitario !== null ? precioUnitario : null;
+      
       const precioPaquete =
         precioUnitario !== null && tamanoCantidad
-          ? parseFloat((precioUnitario * tamanoCantidad).toFixed(2))
+          ? precioUnitario * tamanoCantidad
           : null;
-      const precioPorPieza = precioUnitario !== null ? precioUnitario : null;
+      
       const subtotalCalculado =
-        precioUnitario !== null && tamanoCantidad
-          ? parseFloat((precioUnitario * tamanoCantidad * cantidad).toFixed(2))
+        precioPaquete !== null && cantidad
+          ? parseFloat((precioPaquete * cantidad).toFixed(2))
           : null;
 
       const subtotalCobrar =
-        precioUnitario !== null && tamanoCantidad
-          ? parseFloat(
-              (
-                precioUnitario *
-                tamanoCantidad *
-                split.cantidadTotalCobrar
-              ).toFixed(2)
-            )
+        precioPaquete !== null && split.cantidadTotalCobrar
+          ? parseFloat((precioPaquete * split.cantidadTotalCobrar).toFixed(2))
           : null;
 
       return {
@@ -668,12 +664,14 @@ const agregarAlCarrito = async (req, res) => {
       variante.preciounitario !== null
         ? parseFloat(variante.preciounitario)
         : null;
-    const subtotal =
-      precioUnitario !== null
-        ? parseFloat(
-            (item.cantidad * piezasPorTamano * precioUnitario).toFixed(2)
-          )
-        : null;
+    
+    const precioPaquete = precioUnitario !== null && piezasPorTamano
+      ? precioUnitario * piezasPorTamano
+      : null;
+    
+    const subtotal = precioPaquete !== null && item.cantidad
+      ? parseFloat((precioPaquete * item.cantidad).toFixed(2))
+      : null;
 
     const cantidadFinal =
       item.cantidad_paquetes !== null && item.cantidad_paquetes !== undefined
@@ -877,14 +875,12 @@ const actualizarCarrito = async (req, res) => {
 
     const precioPaquete =
       precioUnitario !== null && piezasPorPaqueteActual
-        ? parseFloat((precioUnitario * piezasPorPaqueteActual).toFixed(2))
+        ? precioUnitario * piezasPorPaqueteActual
         : null;
 
     const subtotal =
-      precioPaquete !== null
-        ? parseFloat(
-            (item.cantidadpaquetes * precioPaquete).toFixed(2)
-          )
+      precioPaquete !== null && item.cantidadpaquetes
+        ? parseFloat((precioPaquete * item.cantidadpaquetes).toFixed(2))
         : null;
 
     const multiploBackorder = await obtenerMultiploBackorderDesdeReglaEmpaque({

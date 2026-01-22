@@ -343,6 +343,12 @@ const crearPedido = async (req, res) => {
         [productosEnPedido, tenant_id]
       );
 
+      // DEBUG: Log stock source verification
+      console.log('[DEBUG] Stock cargado desde producto_variantes.stock para cálculo de pedido:');
+      masterVariantsResult.rows.forEach(row => {
+        console.log(`  - Variante ID ${row.varianteid} (Producto ${row.productoid}): ${row.stock} piezas`);
+      });
+
       masterVariantsMap = new Map(
         masterVariantsResult.rows.map((row) => [
           row.productoid,
@@ -398,7 +404,8 @@ const crearPedido = async (req, res) => {
           ) || 1,
       });
 
-      const subtotal = split.cantidadTotalCobrar * tamanoValor * precioUnitario;
+      const precioPaquete = precioUnitario * tamanoValor;
+      const subtotal = parseFloat((precioPaquete * split.cantidadTotalCobrar).toFixed(2));
       
       return total + (Number.isFinite(subtotal) ? subtotal : 0);
     }, 0);
@@ -813,9 +820,7 @@ const crearPedido = async (req, res) => {
           : null;
       // Si existe precio de oferta, úsalo. Si no, usa precio base.
       const precioUnitario = precioOferta || precioBase;
-      const precioPorPaquete = parseFloat(
-        (precioUnitario * tamanoValor).toFixed(2)
-      );
+      const precioPorPaquete = precioUnitario * tamanoValor;
       // Calcular cantidades requeridas y disponibles
       const cantidadRequerida = item.cantidad; // Paquetes que pide el cliente
       const masterInfo = masterVariantsMap.get(item.productoid);
@@ -843,10 +848,10 @@ const crearPedido = async (req, res) => {
       const piezasTotalesCobrar = tamanoValor * split.cantidadTotalCobrar;
 
       const subtotalSolicitado = parseFloat(
-        (precioUnitario * piezasTotalesCobrar).toFixed(2)
+        (precioPorPaquete * split.cantidadTotalCobrar).toFixed(2)
       );
       const subtotalSurtido = parseFloat(
-        (precioUnitario * piezasSurtidas).toFixed(2)
+        (precioPorPaquete * cantidadSurtida).toFixed(2)
       );
 
       // PUNTO CLAVE: Si hay backorder, acumular para procesamiento agrupado
