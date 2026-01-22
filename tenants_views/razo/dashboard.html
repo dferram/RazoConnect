@@ -244,6 +244,7 @@
         body {
           padding: 0.5rem;
           line-height: 1.3;
+          height: auto !important;
         }
         
         #header-container,
@@ -258,23 +259,24 @@
         
         .tab-content {
           display: block !important;
+          height: auto !important;
         }
         
         .card,
         .pedido-card,
         .direccion-card,
         .notificacion-card {
-          page-break-inside: avoid;
+          display: block;
           margin-bottom: 0.5rem !important;
         }
         
         .pedido-items,
         .pedido-item {
-          page-break-inside: avoid;
+          display: block;
         }
         
         h1, h2, h3 {
-          page-break-after: avoid;
+          display: block;
         }
       }
     </style>
