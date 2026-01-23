@@ -343,20 +343,37 @@ const crearPedido = async (req, res) => {
         [productosEnPedido, tenant_id]
       );
 
-      // DEBUG: Log stock source verification
-      console.log('[DEBUG] Stock cargado desde producto_variantes.stock para cálculo de pedido:');
+      // CRITICAL: Log stock source verification and validate integrity
+      console.log('🔍 [STOCK AUDIT] Stock cargado desde producto_variantes.stock para cálculo de pedido:');
       masterVariantsResult.rows.forEach(row => {
-        console.log(`  - Variante ID ${row.varianteid} (Producto ${row.productoid}): ${row.stock} piezas`);
+        const stockValue = parseInt(row.stock, 10);
+        if (stockValue < 0) {
+          console.error(`❌ [STOCK ERROR] Variante ${row.varianteid} tiene stock NEGATIVO: ${stockValue}`);
+        } else if (stockValue === 0) {
+          console.warn(`⚠️ [STOCK WARNING] Variante ${row.varianteid} tiene stock CERO`);
+        }
+        console.log(`  - Variante ID ${row.varianteid} (Producto ${row.productoid}): ${stockValue} piezas`);
       });
 
       masterVariantsMap = new Map(
-        masterVariantsResult.rows.map((row) => [
-          row.productoid,
-          {
-            varianteId: row.varianteid,
-            stock: Math.max(parseInt(row.stock, 10), 0),
-          },
-        ])
+        masterVariantsResult.rows.map((row) => {
+          const stockParsed = parseInt(row.stock, 10);
+          const stockFinal = Math.max(isNaN(stockParsed) ? 0 : stockParsed, 0);
+          
+          // CRITICAL: Validate stock integrity
+          if (stockParsed < 0) {
+            console.error(`🚨 [INTEGRITY ERROR] Variante ${row.varianteid} tiene stock negativo en DB: ${stockParsed}. Forzando a 0.`);
+          }
+          
+          return [
+            row.productoid,
+            {
+              varianteId: row.varianteid,
+              stock: stockFinal,
+              stockOriginal: stockParsed, // Guardar valor original para auditoría
+            },
+          ];
+        })
       );
     }
 
@@ -394,6 +411,11 @@ const crearPedido = async (req, res) => {
       const masterInfo = masterVariantsMap.get(item.productoid);
       const stockActual =
         masterInfo && typeof masterInfo.stock === "number" ? masterInfo.stock : 0;
+
+      // CRITICAL: Log stock calculation for each item
+      console.log(`📦 [ITEM ${index + 1}] ${item.nombreproducto} (SKU: ${item.sku})`);
+      console.log(`   Stock disponible: ${stockActual} piezas`);
+      console.log(`   Cantidad solicitada: ${item.cantidad} paquetes (${item.cantidad * tamanoValor} piezas)`);
 
       const split = calcularSplitBackorder({
         cantidadSolicitada: item.cantidad,
@@ -857,6 +879,19 @@ const crearPedido = async (req, res) => {
       const piezasSurtidas = cantidadSurtida * tamanoValor;
       const piezasBackorder = cantidadBackorder * tamanoValor;
 
+      // CRITICAL: Validate split calculation integrity
+      if (stockActual === 0 && cantidadSurtida > 0) {
+        console.error(`🚨 [LOGIC ERROR] Stock es 0 pero cantidadSurtida es ${cantidadSurtida}!`);
+        console.error(`   Producto: ${item.nombreproducto} (ID: ${item.productoid})`);
+        console.error(`   Variante: ${item.varianteid}`);
+        console.error(`   FORZANDO cantidadSurtida a 0 y todo a backorder`);
+        // FORCE CORRECTION
+        split.cantidadSurtida = 0;
+        split.cantidadBackorderAjustada = item.cantidad;
+      }
+
+      console.log(`   ✅ Split calculado: ${cantidadSurtida} surtido + ${cantidadBackorder} backorder`);
+
       const piezasSolicitadasOriginal = tamanoValor * cantidadRequerida;
       const piezasTotalesCobrar = tamanoValor * split.cantidadTotalCobrar;
 
@@ -882,8 +917,21 @@ const crearPedido = async (req, res) => {
         });
       }
 
+      // CRITICAL: Re-validate stock before inserting surtido detail
+      const stockFinalValidation = masterInfo ? masterInfo.stock : 0;
+      const debeSerBackorder = stockFinalValidation === 0 || stockFinalValidation < piezasSurtidas;
+      
+      if (debeSerBackorder && cantidadSurtida > 0) {
+        console.error(`🚨 [VALIDATION FAILED] Intentando surtr ${cantidadSurtida} paquetes pero stock es ${stockFinalValidation}`);
+        console.error(`   CORRECCIÓN: Moviendo todo a backorder`);
+        // Move everything to backorder
+        const cantidadOriginalSurtida = cantidadSurtida;
+        split.cantidadSurtida = 0;
+        split.cantidadBackorderAjustada = cantidadRequerida;
+      }
+
       // Insertar detalle surtido (si aplica)
-      if (cantidadSurtida > 0) {
+      if (split.cantidadSurtida > 0) {
         const detalleResult = await client.query(
           `INSERT INTO DetallesDelPedido (
              PedidoID,
@@ -904,7 +952,7 @@ const crearPedido = async (req, res) => {
             pedidoId,
             item.varianteid,
             item.tamanoid,
-            cantidadSurtida,
+            split.cantidadSurtida,
             precioPorPaquete,
             piezasSurtidas,
             precioUnitario.toFixed(2),
@@ -918,16 +966,16 @@ const crearPedido = async (req, res) => {
           productoId: item.productoid,
           nombreProducto: item.nombreproducto,
           tamanoId: item.tamanoid,
-          cantidad: cantidadSurtida,
+          cantidad: split.cantidadSurtida,
           esBackorder: false,
-          cantidadSurtida,
+          cantidadSurtida: split.cantidadSurtida,
           cantidadBackorder: 0,
           piezasPorPaquete: tamanoValor,
           presentacion: item.tamano_etiqueta || null,
           precioUnitario,
           precioPorPaquete,
           piezasSolicitadas: piezasSolicitadasOriginal,
-          piezasSurtidas,
+          piezasSurtidas: split.cantidadSurtida * tamanoValor,
           piezasBackorder: 0,
           subtotalSolicitado,
           subtotalSurtido,
@@ -941,7 +989,7 @@ const crearPedido = async (req, res) => {
       }
 
       // Insertar detalle backorder (si aplica)
-      if (cantidadBackorder > 0) {
+      if (split.cantidadBackorderAjustada > 0) {
         const detalleBackorderResult = await client.query(
           `INSERT INTO DetallesDelPedido (
              PedidoID,
@@ -962,7 +1010,7 @@ const crearPedido = async (req, res) => {
             pedidoId,
             item.varianteid,
             item.tamanoid,
-            cantidadBackorder,
+            split.cantidadBackorderAjustada,
             precioPorPaquete,
             piezasBackorder,
             precioUnitario.toFixed(2),
@@ -976,17 +1024,17 @@ const crearPedido = async (req, res) => {
           productoId: item.productoid,
           nombreProducto: item.nombreproducto,
           tamanoId: item.tamanoid,
-          cantidad: cantidadBackorder,
+          cantidad: split.cantidadBackorderAjustada,
           esBackorder: true,
           cantidadSurtida: 0,
-          cantidadBackorder,
+          cantidadBackorder: split.cantidadBackorderAjustada,
           piezasPorPaquete: tamanoValor,
           presentacion: item.tamano_etiqueta || null,
           precioUnitario,
           precioPorPaquete,
           piezasSolicitadas: piezasSolicitadasOriginal,
           piezasSurtidas: 0,
-          piezasBackorder,
+          piezasBackorder: split.cantidadBackorderAjustada * tamanoValor,
           subtotalSolicitado,
           subtotalSurtido: 0,
           sku: item.sku,
@@ -999,9 +1047,12 @@ const crearPedido = async (req, res) => {
       }
 
       // Actualizar stock del producto (solo se descuenta lo efectivamente surtido en PIEZAS)
-      if (piezasSurtidas > 0 && masterInfo) {
-        const nuevoStockMaestro = Math.max(stockActual - piezasSurtidas, 0);
+      const piezasRealmenteSurtidas = split.cantidadSurtida * tamanoValor;
+      if (piezasRealmenteSurtidas > 0 && masterInfo) {
+        const nuevoStockMaestro = Math.max(stockActual - piezasRealmenteSurtidas, 0);
         masterInfo.stock = nuevoStockMaestro;
+
+        console.log(`📉 [STOCK UPDATE] Variante ${masterInfo.varianteId}: ${stockActual} → ${nuevoStockMaestro} (descontó ${piezasRealmenteSurtidas} piezas)`);
 
         await client.query(
           "UPDATE producto_variantes SET Stock = $1 WHERE VarianteID = $2",
@@ -1013,7 +1064,7 @@ const crearPedido = async (req, res) => {
            VALUES ($1, $2, $3, $4, $5, $6)`,
           [
             masterInfo.varianteId,
-            -piezasSurtidas,
+            -piezasRealmenteSurtidas,
             nuevoStockMaestro,
             `Venta Pedido #${pedidoId}`,
             clienteId,
