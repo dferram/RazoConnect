@@ -1051,8 +1051,8 @@
                               console.error(`[ERROR DE INTEGRIDAD] El producto SKU: ${item.sku} muestra stock fantasma.`);
                             }
                             
-                            const badgeClass = enStock ? 'badge-stock-ok' : 'badge-stock-empty';
-                            const badgeText = enStock ? 'EN STOCK' : 'BAJO PEDIDO';
+                            const badgeClass = enStock ? 'badge-stock surtido' : 'badge-stock bajo-pedido';
+                            const badgeText = enStock ? 'SURTIDO' : 'BAJO PEDIDO';
                             
                             return `
                         <div class="pedido-item">

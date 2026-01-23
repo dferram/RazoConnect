@@ -211,7 +211,7 @@ async function generarPDFPedido(req, res) {
             doc.font('Helvetica').fillColor('#333333');
 
             items.forEach((item, index) => {
-                if (currentY > 700) {
+                if (currentY > 720) {
                     doc.addPage();
                     currentY = 50;
                 }
@@ -245,21 +245,21 @@ async function generarPDFPedido(req, res) {
         if (itemsEnExistencia.length > 0) {
             yPosition = renderTableHeader('PRODUCTOS LISTOS PARA ENTREGA', yPosition, '#F97316');
             yPosition = renderItems(itemsEnExistencia, yPosition, '#F9F9F9');
-            yPosition += 20;
+            yPosition += 10;
         }
 
         // Render BACKORDER items section with distinct styling
         if (itemsBajoPedido.length > 0) {
-            // Add spacing if there were in-stock items
+            // Add minimal spacing if there were in-stock items
             if (itemsEnExistencia.length > 0) {
-                yPosition += 10;
+                yPosition += 5;
             }
 
             yPosition = renderTableHeader('PRODUCTOS BAJO PEDIDO (PENDIENTES)', yPosition, '#DC2626');
             yPosition = renderItems(itemsBajoPedido, yPosition, '#FEE2E2');
             
             // Add informative note immediately after backorder table
-            yPosition += 10;
+            yPosition += 5;
             
             // Dashed border box for the note
             doc.save();
@@ -273,7 +273,7 @@ async function generarPDFPedido(req, res) {
             doc.fontSize(8)
                .font('Helvetica-Bold')
                .fillColor('#DC2626')
-               .text('ℹ️ NOTA IMPORTANTE:', 60, yPosition + 10);
+               .text('NOTA IMPORTANTE:', 60, yPosition + 10);
             
             doc.fontSize(8)
                .font('Helvetica')
@@ -286,10 +286,16 @@ async function generarPDFPedido(req, res) {
                    { width: 492, align: 'left', lineGap: 2 }
                );
             
-            yPosition += 60;
+            yPosition += 55;
         }
 
-        yPosition += 10;
+        // Check if we need a new page for totals section (needs ~150px)
+        if (yPosition > 650) {
+            doc.addPage();
+            yPosition = 50;
+        }
+
+        yPosition += 5;
 
         doc.moveTo(50, yPosition)
            .lineTo(562, yPosition)
@@ -297,7 +303,7 @@ async function generarPDFPedido(req, res) {
            .lineWidth(1)
            .stroke();
 
-        yPosition += 15;
+        yPosition += 10;
 
         // Calculate totals by stock status - FORCED RECALCULATION
         let totalEnStock = 0;
@@ -337,7 +343,7 @@ async function generarPDFPedido(req, res) {
            .text('Total Productos en Existencia:', 320, yPosition)
            .text(`$${totalEnStock.toFixed(2)} MXN`, 440, yPosition, { align: 'right', width: 122 });
 
-        yPosition += 20;
+        yPosition += 18;
 
         // Display Total Pending (Out of Stock)
         doc.fillColor('#DC2626')
@@ -345,7 +351,7 @@ async function generarPDFPedido(req, res) {
            .fillColor('#333333')
            .text(`$${totalSinStock.toFixed(2)} MXN`, 440, yPosition, { align: 'right', width: 122 });
 
-        yPosition += 20;
+        yPosition += 18;
 
         // Separator line
         doc.moveTo(320, yPosition)
@@ -361,13 +367,13 @@ async function generarPDFPedido(req, res) {
            .text('Subtotal:', 320, yPosition)
            .text(`$${subtotalProductos.toFixed(2)} MXN`, 440, yPosition, { align: 'right', width: 122 });
 
-        yPosition += 20;
+        yPosition += 18;
 
         if (costoEnvio > 0) {
             doc.fillColor('#333333')
                .text('Costo de Envío:', 320, yPosition)
                .text(`$${costoEnvio.toFixed(2)} MXN`, 440, yPosition, { align: 'right', width: 122 });
-            yPosition += 20;
+            yPosition += 18;
         }
 
         // Only show discount if there's a coupon applied
@@ -375,7 +381,7 @@ async function generarPDFPedido(req, res) {
             doc.fillColor('#DC2626')
                .text('Descuento por Cupón:', 320, yPosition)
                .text(`-$${montoDescuento.toFixed(2)} MXN`, 440, yPosition, { align: 'right', width: 122 });
-            yPosition += 20;
+            yPosition += 18;
         }
 
         doc.moveTo(320, yPosition)
@@ -392,7 +398,7 @@ async function generarPDFPedido(req, res) {
            .text('TOTAL DE LA ORDEN:', 320, yPosition)
            .text(`$${totalCalculado.toFixed(2)} MXN`, 440, yPosition, { align: 'right', width: 122 });
 
-        yPosition += 30;
+        yPosition += 25;
 
         doc.fontSize(8)
            .font('Helvetica')

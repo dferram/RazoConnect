@@ -14,24 +14,26 @@
 /* ============================================
    STOCK AVAILABILITY BADGES
    ============================================ */
-.badge-stock-ok {
-  background: #d4edda;
-  color: #155724;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-weight: bold;
-  font-size: 0.75rem;
+.badge-stock {
   display: inline-block;
+  padding: 0.4em 0.8em;
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1;
+  color: #fff;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: baseline;
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.badge-stock-empty {
-  background: #f8d7da;
-  color: #721c24;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-weight: bold;
-  font-size: 0.75rem;
-  display: inline-block;
+.badge-stock.bajo-pedido {
+  background-color: #dc3545;
+}
+
+.badge-stock.surtido {
+  background-color: var(--razo-orange, #F97316);
 }
 
 /* ============================================
