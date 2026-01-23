@@ -9563,6 +9563,7 @@ const getPedidoDetalle = async (req, res) => {
         pv.productoid,
         pv.color_nombre,
         pv.color_hex,
+        pv.stock,
         pr.nombreproducto,
         COALESCE(
           (
@@ -9657,6 +9658,7 @@ const getPedidoDetalle = async (req, res) => {
             colorNombre: row.color_nombre || null,
             colorHex: row.color_hex || null,
             imagenUrl: row.imagenurl || null,
+            stock: row.stock !== null ? parseInt(row.stock, 10) : 0,
             subtotal: row.precioporpaquete
               ? parseFloat((row.cantidadpaquetes || 0) * row.precioporpaquete)
               : 0,

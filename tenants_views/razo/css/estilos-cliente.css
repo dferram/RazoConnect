@@ -568,6 +568,34 @@ body {
   animation-delay: 0.4s;
 }
 
+/* ============================================
+   RAZOCONNECT - ESTILOS CLIENTE
+   Estilos generales para todas las páginas del cliente
+   ============================================ */
+
+/* ============================================
+   STOCK AVAILABILITY BADGES
+   ============================================ */
+.badge-stock-ok {
+  background: #d4edda;
+  color: #155724;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-weight: bold;
+  font-size: 0.75rem;
+  display: inline-block;
+}
+
+.badge-stock-empty {
+  background: #f8d7da;
+  color: #721c24;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-weight: bold;
+  font-size: 0.75rem;
+  display: inline-block;
+}
+
 /* ========================================
    BOTONES ESTILO NIKE
    ======================================== */

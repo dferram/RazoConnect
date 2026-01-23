@@ -648,7 +648,23 @@
             const itemsContainer = document.getElementById("itemsContainer");
             itemsContainer.innerHTML = productos
               .map(
-                (item) => `
+                (item) => {
+                  // Calculate stock availability
+                  const stock = item.stock !== undefined ? item.stock : 0;
+                  const piezasPorPaquete = item.piezasPorPaquete || 1;
+                  const cantidadSolicitada = item.cantidadPaquetes || 0;
+                  const piezasNecesarias = cantidadSolicitada * piezasPorPaquete;
+                  const enStock = stock >= piezasNecesarias;
+                  
+                  // Integrity check
+                  if (enStock && stock === 0) {
+                    console.error(`[ERROR DE INTEGRIDAD] El producto SKU: ${item.sku} muestra stock fantasma.`);
+                  }
+                  
+                  const badgeClass = enStock ? 'badge-stock-ok' : 'badge-stock-empty';
+                  const badgeText = enStock ? 'EN STOCK' : 'BAJO PEDIDO';
+                  
+                  return `
               <div class="item-row">
                 ${
                   item.imagenUrl
@@ -666,6 +682,7 @@
                         ? `<span>${item.piezasPorPaquete} pzas/paquete</span>`
                         : ""
                     }
+                    <span><span class="${badgeClass}">${badgeText}</span></span>
                   </p>
                 </div>
                 <div class="item-pricing">
@@ -675,7 +692,8 @@
                   } paquetes × ${formatCurrency(item.precioPorPaquete)}</p>
                 </div>
               </div>
-            `
+            `;
+                }
               )
               .join("");
 

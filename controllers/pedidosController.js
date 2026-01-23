@@ -1621,6 +1621,7 @@ const obtenerPedidoPorId = async (req, res) => {
         pv.preciounitario,
         pv.color_nombre,
         pv.color_hex,
+        pv.stock,
         prod.nombreproducto,
         row_to_json(t) AS tamano_info,
         COALESCE(imagen_variante.url_imagen, imagen_producto.url_imagen) AS url_imagen
@@ -1715,6 +1716,7 @@ const obtenerPedidoPorId = async (req, res) => {
         imagenUrl: item.url_imagen,
         colorNombre: item.color_nombre || null,
         colorHex: item.color_hex || null,
+        stock: item.stock !== null ? parseInt(item.stock, 10) : 0,
       };
     });
 

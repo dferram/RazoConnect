@@ -1038,6 +1038,22 @@
                         .map(
                           (item) => {
                             console.log('🔍 Datos del item recibido:', item);
+                            
+                            // Calculate stock availability
+                            const stock = item.stock !== undefined ? item.stock : 0;
+                            const piezasPorTamano = item.piezasPorTamano || 1;
+                            const cantidadSolicitada = item.cantidad || 0;
+                            const piezasNecesarias = cantidadSolicitada * piezasPorTamano;
+                            const enStock = stock >= piezasNecesarias;
+                            
+                            // Integrity check
+                            if (enStock && stock === 0) {
+                              console.error(`[ERROR DE INTEGRIDAD] El producto SKU: ${item.sku} muestra stock fantasma.`);
+                            }
+                            
+                            const badgeClass = enStock ? 'badge-stock-ok' : 'badge-stock-empty';
+                            const badgeText = enStock ? 'EN STOCK' : 'BAJO PEDIDO';
+                            
                             return `
                         <div class="pedido-item">
                           <img 
@@ -1065,6 +1081,7 @@
                               <div><strong>Total piezas:</strong> ${
                                 item.piezasTotales || 0
                               }</div>
+                              <div><span class="${badgeClass}">${badgeText}</span></div>
                             </div>
                           </div>
                           <div style="text-align: right;">
