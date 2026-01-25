@@ -230,7 +230,7 @@ router.get(
 router.get(
   "/productos/buscar-compra",
   authenticate,
-  authorizeAdmin,
+  authorizeAdminOrAgente,
   adminController.buscarProductosCompra
 );
 router.get(
@@ -487,7 +487,7 @@ router.get(
 router.get(
   "/categorias",
   authenticate,
-  authorizeAdmin,
+  authorizeAdminOrAgente,
   adminController.getCategorias
 );
 router.post(
@@ -519,7 +519,7 @@ router.get(
 router.get(
   "/medidas-existentes",
   authenticate,
-  authorizeAdmin,
+  authorizeAdminOrAgente,
   adminController.getMedidasExistentes
 );
 
