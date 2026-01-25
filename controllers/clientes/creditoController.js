@@ -582,6 +582,161 @@ async function obtenerMovimientosPendientes(req, res) {
   }
 }
 
+const obtenerEstadoCuentaMensual = async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: "No autenticado",
+      });
+    }
+
+    if (!isCliente(req)) {
+      return res.status(403).json({
+        success: false,
+        message: "Acceso denegado",
+      });
+    }
+
+    const clienteId = normalizeClienteId(req);
+    if (!clienteId) {
+      return res.status(400).json({
+        success: false,
+        message: "Identificador de cliente inválido",
+      });
+    }
+
+    const { mes, anio } = req.params;
+    const mesNum = parseInt(mes, 10);
+    const anioNum = parseInt(anio, 10);
+
+    if (!mesNum || mesNum < 1 || mesNum > 12 || !anioNum || anioNum < 2000) {
+      return res.status(400).json({
+        success: false,
+        message: "Mes o año inválido",
+      });
+    }
+
+    const tenant_id = req.tenant?.tenant_id || 1;
+
+    // Verificar que el cliente tenga crédito activo
+    const creditoActivo = await fetchCreditoActivo(clienteId, tenant_id);
+    if (!creditoActivo) {
+      return res.status(404).json({
+        success: false,
+        message: "No tienes una línea de crédito activa",
+      });
+    }
+
+    const creditoId = creditoActivo.credito_id;
+
+    // Calcular fechas del periodo
+    const fechaInicio = new Date(anioNum, mesNum - 1, 1);
+    const fechaFin = new Date(anioNum, mesNum, 0, 23, 59, 59);
+
+    // Obtener saldo inicial (acumulado de meses anteriores)
+    const saldoInicialQuery = `
+      SELECT COALESCE(
+        (SELECT saldo_despues_movimiento 
+         FROM credito_movimientos 
+         WHERE credito_id = $1 
+           AND tenant_id = $2
+           AND fecha_movimiento < $3
+         ORDER BY fecha_movimiento DESC, movimiento_id DESC
+         LIMIT 1
+        ), 0
+      ) as saldo_inicial
+    `;
+    const saldoInicialResult = await db.query(saldoInicialQuery, [
+      creditoId,
+      tenant_id,
+      fechaInicio,
+    ]);
+    const saldoInicial = parseFloat(saldoInicialResult.rows[0]?.saldo_inicial || 0);
+
+    // Obtener movimientos del mes
+    const movimientosQuery = `
+      SELECT 
+        cm.movimiento_id,
+        cm.tipo_movimiento,
+        cm.monto,
+        cm.saldo_despues_movimiento,
+        cm.referencia_id,
+        cm.descripcion,
+        cm.fecha_movimiento
+      FROM credito_movimientos cm
+      WHERE cm.credito_id = $1
+        AND cm.tenant_id = $2
+        AND cm.fecha_movimiento >= $3
+        AND cm.fecha_movimiento <= $4
+      ORDER BY cm.fecha_movimiento ASC, cm.movimiento_id ASC
+    `;
+
+    const movimientosResult = await db.query(movimientosQuery, [
+      creditoId,
+      tenant_id,
+      fechaInicio,
+      fechaFin,
+    ]);
+
+    const movimientos = movimientosResult.rows.map((mov) => ({
+      movimientoId: mov.movimiento_id,
+      tipo: mov.tipo_movimiento,
+      monto: parseFloat(mov.monto),
+      saldoDespues: parseFloat(mov.saldo_despues_movimiento || 0),
+      referenciaId: mov.referencia_id,
+      descripcion: mov.descripcion,
+      fecha: mov.fecha_movimiento,
+    }));
+
+    // Calcular saldo final del mes
+    const saldoFinal = movimientos.length > 0 
+      ? movimientos[movimientos.length - 1].saldoDespues 
+      : saldoInicial;
+
+    // Obtener información del cliente
+    const clienteQuery = `
+      SELECT 
+        c.nombre,
+        c.email,
+        c.telefono,
+        cc.limite_credito
+      FROM clientes c
+      LEFT JOIN cliente_creditos cc ON c.clienteid = cc.cliente_id
+      WHERE c.clienteid = $1 AND c.tenant_id = $2
+    `;
+    const clienteResult = await db.query(clienteQuery, [clienteId, tenant_id]);
+    const clienteInfo = clienteResult.rows[0] || {};
+
+    return res.json({
+      success: true,
+      data: {
+        periodo: {
+          mes: mesNum,
+          anio: anioNum,
+          fechaInicio,
+          fechaFin,
+        },
+        cliente: {
+          nombre: clienteInfo.nombre,
+          email: clienteInfo.email,
+          telefono: clienteInfo.telefono,
+          limiteCredito: parseFloat(clienteInfo.limite_credito || 0),
+        },
+        saldoInicial,
+        saldoFinal,
+        movimientos,
+      },
+    });
+  } catch (error) {
+    console.error("Error obteniendo estado de cuenta mensual:", error);
+    return res.status(500).json({
+      success: false,
+      message: "No fue posible obtener el estado de cuenta",
+    });
+  }
+};
+
 module.exports = {
   checkAuthCredit,
   obtenerPerfilCredito,
@@ -589,4 +744,5 @@ module.exports = {
   registrarPagoCliente,
   obtenerMovimientosPendientes,
   enviarSolicitudCredito,
+  obtenerEstadoCuentaMensual,
 };

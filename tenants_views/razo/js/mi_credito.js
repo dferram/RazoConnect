@@ -806,6 +806,140 @@
     // FIN FUNCIONES MODAL DE PAGO
     // ========================================
 
+    // ========================================
+    // ESTADOS DE CUENTA MENSUALES
+    // ========================================
+
+    function generarUltimos4Meses() {
+      const meses = [];
+      const hoy = new Date();
+      
+      for (let i = 0; i < 4; i++) {
+        const fecha = new Date(hoy.getFullYear(), hoy.getMonth() - i, 1);
+        const mes = fecha.getMonth() + 1;
+        const anio = fecha.getFullYear();
+        
+        const nombresMeses = [
+          'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+          'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+        ];
+        
+        meses.push({
+          mes,
+          anio,
+          nombre: `${nombresMeses[mes - 1]} ${anio}`
+        });
+      }
+      
+      return meses;
+    }
+
+    function renderEstadosCuenta() {
+      const container = document.getElementById('estadosCuentaContainer');
+      if (!container) return;
+      
+      const meses = generarUltimos4Meses();
+      
+      container.innerHTML = meses.map(periodo => `
+        <div class="col-12 col-md-6 col-lg-3">
+          <div class="admin-stat-card" style="cursor: default;">
+            <div class="admin-stat-header">
+              <div class="admin-stat-content">
+                <h3 style="font-size: 1rem; margin-bottom: 0.5rem;">${periodo.nombre}</h3>
+                <button 
+                  class="btn btn-sm btn-primary w-100 btn-descargar-estado"
+                  data-mes="${periodo.mes}"
+                  data-anio="${periodo.anio}"
+                  style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.6rem 1rem; font-size: 0.9rem;"
+                >
+                  <i class="bi bi-file-earmark-pdf-fill"></i>
+                  <span>Descargar Estado de Cuenta</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `).join('');
+      
+      container.querySelectorAll('.btn-descargar-estado').forEach(btn => {
+        btn.addEventListener('click', async function() {
+          const mes = this.dataset.mes;
+          const anio = this.dataset.anio;
+          await descargarEstadoCuenta(mes, anio);
+        });
+      });
+    }
+
+    async function descargarEstadoCuenta(mes, anio) {
+      try {
+        const nombresMeses = [
+          'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+          'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+        ];
+        
+        const nombreMes = nombresMeses[parseInt(mes) - 1];
+        
+        Swal.fire({
+          title: 'Generando PDF...',
+          html: `Preparando estado de cuenta de <strong>${nombreMes} ${anio}</strong>`,
+          allowOutsideClick: false,
+          didOpen: () => {
+            Swal.showLoading();
+          }
+        });
+
+        const token = localStorage.getItem('token');
+        if (!token) {
+          throw new Error('No hay sesión activa');
+        }
+
+        const response = await fetch(`/api/clientes/estado-cuenta/${mes}/${anio}/pdf`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/pdf'
+          }
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.message || 'Error al generar el PDF');
+        }
+
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Estado-Cuenta-${nombreMes}-${anio}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+
+        Swal.fire({
+          icon: 'success',
+          title: 'PDF Descargado',
+          text: `Estado de cuenta de ${nombreMes} ${anio} descargado exitosamente`,
+          confirmButtonColor: '#F97316',
+          timer: 2000
+        });
+
+      } catch (error) {
+        console.error('Error descargando estado de cuenta:', error);
+        Swal.fire({
+          icon: 'error',
+          title: 'Error al descargar',
+          text: error.message || 'No fue posible generar el estado de cuenta',
+          confirmButtonColor: '#F97316'
+        });
+      }
+    }
+
+    // ========================================
+    // FIN ESTADOS DE CUENTA MENSUALES
+    // ========================================
+
     loadCredito();
+    renderEstadosCuenta();
   });
 })();
