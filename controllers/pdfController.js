@@ -169,21 +169,31 @@ async function generarPDFPedido(req, res) {
                .text(ciudadEstado, 50, 230);
         }
 
-        // Separate items by REAL stock availability (not esbackorder flag)
+        // Separate items by REAL stock availability (FIXED CALCULATION)
         const itemsEnExistencia = detalles.filter(item => {
-            const esRealmenteBackorder = parseInt(item.stock_actual_variante) <= 0;
-            return !esRealmenteBackorder;
+            const stockActual = parseInt(item.stock_actual_variante) || 0;
+            const cantidadRequerida = parseInt(item.cantidad) * parseInt(item.tamano_cantidad || 1);
+            const esBajoPedido = stockActual < cantidadRequerida;
+            return !esBajoPedido;
         });
         const itemsBajoPedido = detalles.filter(item => {
-            const esRealmenteBackorder = parseInt(item.stock_actual_variante) <= 0;
-            return esRealmenteBackorder;
+            const stockActual = parseInt(item.stock_actual_variante) || 0;
+            const cantidadRequerida = parseInt(item.cantidad) * parseInt(item.tamano_cantidad || 1);
+            const esBajoPedido = stockActual < cantidadRequerida;
+            return esBajoPedido;
         });
 
         let yPosition = 260;
         const rowHeight = 25;
 
-        // Helper function to render table header
+        // Helper function to render table header (SMART PAGINATION)
         const renderTableHeader = (title, yPos, headerColor = '#F97316') => {
+            // Check if there's enough space for header + at least one row (minimum 100pts)
+            if (yPos > 680) {
+                doc.addPage();
+                yPos = 50;
+            }
+
             doc.moveTo(50, yPos - 10)
                .lineTo(562, yPos - 10)
                .strokeColor('#CCCCCC')
@@ -212,13 +222,14 @@ async function generarPDFPedido(req, res) {
             return headerY + 30;
         };
 
-        // Helper function to render items
-        const renderItems = (items, startY, alternateColor = '#F9F9F9') => {
+        // Helper function to render items (SMART PAGINATION + BACKORDER BADGE)
+        const renderItems = (items, startY, alternateColor = '#F9F9F9', showBackorderBadge = false) => {
             let currentY = startY;
             doc.font('Helvetica').fillColor('#333333');
 
             items.forEach((item, index) => {
-                if (currentY > 740) {
+                // Check if there's space for complete item block (description line 1 + line 2 = ~30pts)
+                if (currentY > 720) {
                     doc.addPage();
                     currentY = 50;
                 }
@@ -228,6 +239,18 @@ async function generarPDFPedido(req, res) {
                        .fillAndStroke(alternateColor, alternateColor);
                 }
 
+                // BACKORDER BADGE: Draw before product name if needed
+                let descripcionX = 110;
+                if (showBackorderBadge) {
+                    doc.roundedRect(110, currentY - 2, 60, 12, 3)
+                       .fillAndStroke('#FEE2E2', '#DC2626');
+                    doc.fontSize(7)
+                       .font('Helvetica-Bold')
+                       .fillColor('#DC2626')
+                       .text('PENDIENTE', 112, currentY + 1, { width: 56, align: 'center' });
+                    descripcionX = 175;
+                }
+
                 const descripcionLinea1 = `${item.producto_nombre}`;
                 const descripcionLinea2 = item.color_nombre 
                     ? `${item.variante_nombre} - Color: ${item.color_nombre}`
@@ -235,9 +258,10 @@ async function generarPDFPedido(req, res) {
 
                 doc.fillColor('#333333')
                    .fontSize(9)
+                   .font('Helvetica')
                    .text(item.cantidad, 55, currentY)
-                   .text(descripcionLinea1, 110, currentY, { width: 220 })
-                   .text(descripcionLinea2, 110, currentY + 10, { width: 220 })
+                   .text(descripcionLinea1, descripcionX, currentY, { width: 220 - (descripcionX - 110) })
+                   .text(descripcionLinea2, descripcionX, currentY + 10, { width: 220 - (descripcionX - 110) })
                    .text(item.tamano_cantidad ? `Pack ${item.tamano_cantidad}` : 'Unitario', 340, currentY)
                    .text(`$${parseFloat(item.preciounitario).toFixed(2)}`, 410, currentY)
                    .text(`$${parseFloat(item.subtotal).toFixed(2)}`, 480, currentY, { align: 'right', width: 75 });
@@ -251,7 +275,7 @@ async function generarPDFPedido(req, res) {
         // Render IN-STOCK items section
         if (itemsEnExistencia.length > 0) {
             yPosition = renderTableHeader('PRODUCTOS LISTOS PARA ENTREGA', yPosition, '#F97316');
-            yPosition = renderItems(itemsEnExistencia, yPosition, '#F9F9F9');
+            yPosition = renderItems(itemsEnExistencia, yPosition, '#F9F9F9', false);
             yPosition += 10;
         }
 
@@ -263,7 +287,7 @@ async function generarPDFPedido(req, res) {
             }
 
             yPosition = renderTableHeader('PRODUCTOS BAJO PEDIDO (PENDIENTES)', yPosition, '#DC2626');
-            yPosition = renderItems(itemsBajoPedido, yPosition, '#FEE2E2');
+            yPosition = renderItems(itemsBajoPedido, yPosition, '#FEE2E2', true);
             
             // Add informative note immediately after backorder table
             yPosition += 5;
@@ -296,8 +320,8 @@ async function generarPDFPedido(req, res) {
             yPosition += 55;
         }
 
-        // Check if we need a new page for totals section (needs ~150px)
-        if (yPosition > 710) {
+        // Check if we need a new page for totals + signatures section (needs ~200px)
+        if (yPosition > 650) {
             doc.addPage();
             yPosition = 50;
         }
@@ -312,17 +336,23 @@ async function generarPDFPedido(req, res) {
 
         yPosition += 10;
 
-        // Calculate totals by stock status - FORCED RECALCULATION
+        // Calculate totals by stock status - FORCED RECALCULATION WITH CORRECT FORMULA
         let totalEnStock = 0;
         let totalSinStock = 0;
 
         detalles.forEach((item) => {
-            // Force parseFloat to avoid string concatenation errors
-            const itemSubtotal = parseFloat(item.subtotal) || 0;
+            // CORRECT SUBTOTAL CALCULATION: (precioUnitario * tamano_cantidad) * cantidad
+            const precioUnitario = parseFloat(item.preciounitario) || 0;
+            const tamanoCantidad = parseInt(item.tamano_cantidad || 1);
+            const cantidad = parseInt(item.cantidad) || 0;
+            const itemSubtotal = parseFloat(((precioUnitario * tamanoCantidad) * cantidad).toFixed(2));
             
             // Use REAL stock to determine backorder status
-            const esRealmenteBackorder = parseInt(item.stock_actual_variante) <= 0;
-            if (esRealmenteBackorder) {
+            const stockActual = parseInt(item.stock_actual_variante) || 0;
+            const cantidadRequerida = cantidad * tamanoCantidad;
+            const esBajoPedido = stockActual < cantidadRequerida;
+            
+            if (esBajoPedido) {
                 totalSinStock += itemSubtotal;
             } else {
                 totalEnStock += itemSubtotal;
@@ -330,19 +360,19 @@ async function generarPDFPedido(req, res) {
         });
 
         // Recalculate subtotal from actual items (DO NOT trust database montototal)
-        const subtotalProductos = totalEnStock + totalSinStock;
+        const subtotalProductos = parseFloat((totalEnStock + totalSinStock).toFixed(2));
         
         // Parse shipping with fallback to 0
         const costoEnvio = parseFloat(pedido.costoenvio) || 0;
         
-        // Only apply discount if there's a valid coupon ID (must be a positive integer)
-        // Product offers are already reflected in preciounitario
+        // CRITICAL FIX: Only apply discount if there's a valid coupon ID (must be a positive integer)
+        // This prevents 'phantom discounts' on orders without promotions
         const cuponIdNumerico = parseInt(pedido.cupon_id);
         const tieneCupon = !isNaN(cuponIdNumerico) && cuponIdNumerico > 0;
         const montoDescuento = tieneCupon ? (parseFloat(pedido.monto_descuento) || 0) : 0;
         
         // Calculate REAL total: Subtotal + Shipping - Discount (only if coupon exists)
-        const totalCalculado = subtotalProductos + costoEnvio - montoDescuento;
+        const totalCalculado = parseFloat((subtotalProductos + costoEnvio - montoDescuento).toFixed(2));
 
         // Display Total in Stock
         doc.fontSize(10)
@@ -644,7 +674,8 @@ async function generarPDFEstadoCuenta(req, res) {
             yPosition = tableTop + 25;
 
             movimientos.forEach((mov, index) => {
-                if (yPosition > 700) {
+                // Smart pagination: Check space for complete row (30pts)
+                if (yPosition > 710) {
                     doc.addPage();
                     yPosition = 50;
                 }
@@ -698,7 +729,8 @@ async function generarPDFEstadoCuenta(req, res) {
 
         yPosition += 20;
 
-        if (yPosition > 680) {
+        // Smart pagination: Ensure footer block stays together (needs ~50pts)
+        if (yPosition > 700) {
             doc.addPage();
             yPosition = 50;
         }
