@@ -181,11 +181,16 @@
     badge.className = "badge rounded-pill";
 
     if (!isAuthenticated) {
+      // Hide credit link for guests
+      linkWrapper.style.display = "none";
       label.textContent = "Mi Crédito";
       badge.textContent = "";
       badge.classList.add("d-none");
       return;
     }
+
+    // Show credit link for authenticated users
+    linkWrapper.style.display = "list-item";
 
     if (hasCreditAccess) {
       label.textContent = "Mi Crédito";

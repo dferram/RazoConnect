@@ -5054,6 +5054,186 @@ const actualizarEstadoCliente = async (req, res) => {
 };
 
 /**
+ * Actualizar configuración de crédito de un cliente
+ * PUT /api/admin/clientes/:id/credito
+ */
+const actualizarCreditoCliente = async (req, res) => {
+  try {
+    const clienteId = parseInt(req.params.id, 10);
+    const { limiteCredito, diasGracia, activo } = req.body;
+
+    if (!Number.isInteger(clienteId)) {
+      return res.status(400).json({
+        success: false,
+        message: "ClienteID inválido",
+      });
+    }
+
+    const { tenant_id } = req.tenant;
+
+    // Validar que el cliente existe y pertenece al tenant
+    const clienteCheck = await db.query(
+      "SELECT ClienteID FROM Clientes WHERE ClienteID = $1 AND tenant_id = $2",
+      [clienteId, tenant_id]
+    );
+
+    if (clienteCheck.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Cliente no encontrado",
+      });
+    }
+
+    // Verificar si ya existe un registro de crédito
+    const creditoExistente = await db.query(
+      "SELECT credito_id FROM cliente_creditos WHERE cliente_id = $1",
+      [clienteId]
+    );
+
+    let resultado;
+
+    if (creditoExistente.rows.length === 0) {
+      // Crear nuevo registro de crédito
+      const limiteValidado = parseFloat(limiteCredito) || 0;
+      const diasValidados = parseInt(diasGracia, 10) || 30;
+      const activoValidado = typeof activo === "boolean" ? activo : true;
+
+      resultado = await db.query(
+        `INSERT INTO cliente_creditos 
+         (cliente_id, limite_credito, saldo_deudor, dias_gracia, activo, fecha_creacion)
+         VALUES ($1, $2, 0, $3, $4, CURRENT_TIMESTAMP)
+         RETURNING credito_id, limite_credito, saldo_deudor, dias_gracia, activo`,
+        [clienteId, limiteValidado, diasValidados, activoValidado]
+      );
+    } else {
+      // Actualizar registro existente
+      const updates = [];
+      const values = [];
+      let paramIndex = 1;
+
+      if (limiteCredito !== undefined) {
+        updates.push(`limite_credito = $${paramIndex++}`);
+        values.push(parseFloat(limiteCredito) || 0);
+      }
+
+      if (diasGracia !== undefined) {
+        updates.push(`dias_gracia = $${paramIndex++}`);
+        values.push(parseInt(diasGracia, 10) || 30);
+      }
+
+      if (activo !== undefined) {
+        updates.push(`activo = $${paramIndex++}`);
+        values.push(Boolean(activo));
+      }
+
+      if (updates.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: "No se proporcionaron campos para actualizar",
+        });
+      }
+
+      values.push(clienteId);
+
+      resultado = await db.query(
+        `UPDATE cliente_creditos 
+         SET ${updates.join(", ")}
+         WHERE cliente_id = $${paramIndex}
+         RETURNING credito_id, limite_credito, saldo_deudor, dias_gracia, activo`,
+        values
+      );
+    }
+
+    const credito = resultado.rows[0];
+
+    res.json({
+      success: true,
+      message: "Configuración de crédito actualizada correctamente",
+      data: {
+        creditoId: credito.credito_id,
+        limiteCredito: parseFloat(credito.limite_credito),
+        saldoDeudor: parseFloat(credito.saldo_deudor),
+        diasGracia: parseInt(credito.dias_gracia, 10),
+        activo: credito.activo,
+      },
+    });
+  } catch (error) {
+    console.error("Error al actualizar crédito del cliente:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error en el servidor",
+    });
+  }
+};
+
+/**
+ * Obtener información de crédito de un cliente
+ * GET /api/admin/clientes/:id/credito
+ */
+const getClienteCreditoInfo = async (req, res) => {
+  try {
+    const clienteId = parseInt(req.params.id, 10);
+
+    if (!Number.isInteger(clienteId)) {
+      return res.status(400).json({
+        success: false,
+        message: "ClienteID inválido",
+      });
+    }
+
+    const { tenant_id } = req.tenant;
+
+    // Validar que el cliente existe y pertenece al tenant
+    const clienteCheck = await db.query(
+      "SELECT ClienteID FROM Clientes WHERE ClienteID = $1 AND tenant_id = $2",
+      [clienteId, tenant_id]
+    );
+
+    if (clienteCheck.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Cliente no encontrado",
+      });
+    }
+
+    // Obtener información de crédito
+    const creditoResult = await db.query(
+      `SELECT credito_id, limite_credito, saldo_deudor, dias_gracia, activo, fecha_creacion
+       FROM cliente_creditos
+       WHERE cliente_id = $1`,
+      [clienteId]
+    );
+
+    if (creditoResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Cliente no tiene línea de crédito asignada",
+      });
+    }
+
+    const credito = creditoResult.rows[0];
+
+    res.json({
+      success: true,
+      data: {
+        creditoId: credito.credito_id,
+        limiteCredito: parseFloat(credito.limite_credito),
+        saldoDeudor: parseFloat(credito.saldo_deudor),
+        diasGracia: parseInt(credito.dias_gracia, 10),
+        activo: credito.activo,
+        fechaCreacion: credito.fecha_creacion,
+      },
+    });
+  } catch (error) {
+    console.error("Error al obtener información de crédito:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error en el servidor",
+    });
+  }
+};
+
+/**
  * Obtener catálogo de medidas disponibles
  * GET /api/admin/medidas
  */
@@ -14706,6 +14886,8 @@ module.exports = {
   getClienteDetalle,
   actualizarEstadoCliente,
   desvincularClienteDeAgente,
+  actualizarCreditoCliente,
+  getClienteCreditoInfo,
   getAllProveedores,
   getProveedorById,
   crearProveedor,

@@ -829,6 +829,18 @@ router.put(
   authorizeAdmin,
   authController.adminResetPassword
 );
+router.get(
+  "/clientes/:id/credito",
+  authenticate,
+  authorizeAdmin,
+  adminController.getClienteCreditoInfo
+);
+router.put(
+  "/clientes/:id/credito",
+  authenticate,
+  authorizeAdmin,
+  adminController.actualizarCreditoCliente
+);
 
 /**
  * Detalle de pedido

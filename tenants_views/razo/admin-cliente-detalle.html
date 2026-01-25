@@ -116,6 +116,96 @@
               </div>
             </section>
 
+            <!-- Gestión de Crédito -->
+            <section class="admin-card u-padding-1-75" id="creditoSection">
+              <div class="u-flex-between u-margin-bottom-1">
+                <div>
+                  <h2 class="u-title-no-margin u-font-size-1-25 u-color-orange">
+                    💳 Gestión de Crédito
+                  </h2>
+                  <p class="u-subtitle u-font-size-0-9">
+                    Configura la línea de crédito del cliente
+                  </p>
+                </div>
+                <span id="creditoStatusBadge" class="admin-badge secondary">Sin crédito</span>
+              </div>
+
+              <div id="creditoNoAsignado" class="empty-state u-padding-1-5">
+                <div class="empty-state-icon">💰</div>
+                <div>
+                  <h3 class="empty-state-title">Sin línea de crédito asignada</h3>
+                  <p class="empty-state-text u-margin-bottom-1">
+                    Este cliente aún no tiene una línea de crédito configurada.
+                  </p>
+                  <button
+                    class="btn btn-primary"
+                    onclick="asignarLineaCredito()"
+                  >
+                    Asignar Línea de Crédito
+                  </button>
+                </div>
+              </div>
+
+              <div id="creditoFormulario" class="u-display-none">
+                <div class="admin-info-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+                  <div>
+                    <h3 class="admin-info-label">Límite de Crédito ($)</h3>
+                    <input
+                      type="number"
+                      id="inputLimiteCredito"
+                      class="form-control"
+                      placeholder="0.00"
+                      step="0.01"
+                      min="0"
+                    />
+                  </div>
+                  <div>
+                    <h3 class="admin-info-label">Saldo Deudor Actual</h3>
+                    <p class="admin-info-value" id="saldoDeudor" style="color: #dc2626; font-weight: 600;">
+                      $0.00
+                    </p>
+                  </div>
+                  <div>
+                    <h3 class="admin-info-label">Saldo Disponible</h3>
+                    <p class="admin-info-value" id="saldoDisponible" style="color: #16a34a; font-weight: 600;">
+                      $0.00
+                    </p>
+                  </div>
+                  <div>
+                    <h3 class="admin-info-label">Días de Crédito</h3>
+                    <select id="inputDiasCredito" class="form-control" aria-label="Días de crédito">
+                      <option value="15">15 días</option>
+                      <option value="30" selected>30 días</option>
+                      <option value="45">45 días</option>
+                      <option value="60">60 días</option>
+                      <option value="90">90 días</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="u-flex-between u-margin-top-1-5" style="align-items: center;">
+                  <div class="form-check" style="display: flex; align-items: center; gap: 0.5rem;">
+                    <input
+                      type="checkbox"
+                      id="inputCreditoActivo"
+                      class="form-check-input"
+                      style="margin: 0; width: 20px; height: 20px; cursor: pointer;"
+                    />
+                    <label for="inputCreditoActivo" style="margin: 0; cursor: pointer; font-weight: 500;">
+                      Crédito Activo
+                    </label>
+                  </div>
+                  <button
+                    class="btn btn-primary"
+                    onclick="guardarConfiguracionCredito()"
+                    style="padding: 0.75rem 2rem;"
+                  >
+                    Guardar Cambios
+                  </button>
+                </div>
+              </div>
+            </section>
+
             <!-- Historial de Pedidos -->
             <section class="admin-card u-padding-1-75">
               <div class="u-flex-between u-margin-bottom-1">
@@ -336,7 +426,183 @@
 
         renderPedidos(pedidos || []);
         renderDirecciones(direcciones || []);
+        loadCreditoInfo();
       }
+
+      let creditoData = null;
+
+      async function loadCreditoInfo() {
+        try {
+          const response = await fetch(
+            `${API_BASE_URL}/admin/clientes/${clienteId}/credito`,
+            {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${adminToken}`,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+
+          if (response.status === 404 || !response.ok) {
+            mostrarCreditoNoAsignado();
+            return;
+          }
+
+          const data = await response.json();
+          if (data.success && data.data) {
+            creditoData = data.data;
+            mostrarFormularioCredito(data.data);
+          } else {
+            mostrarCreditoNoAsignado();
+          }
+        } catch (error) {
+          console.error("Error loading credit info:", error);
+          mostrarCreditoNoAsignado();
+        }
+      }
+
+      function mostrarCreditoNoAsignado() {
+        document.getElementById("creditoNoAsignado").style.display = "flex";
+        document.getElementById("creditoFormulario").style.display = "none";
+        document.getElementById("creditoStatusBadge").textContent = "Sin crédito";
+        document.getElementById("creditoStatusBadge").className = "admin-badge secondary";
+      }
+
+      function mostrarFormularioCredito(credito) {
+        document.getElementById("creditoNoAsignado").style.display = "none";
+        document.getElementById("creditoFormulario").style.display = "block";
+
+        const limiteCredito = parseFloat(credito.limiteCredito || 0);
+        const saldoDeudor = parseFloat(credito.saldoDeudor || 0);
+        const saldoDisponible = limiteCredito - saldoDeudor;
+
+        document.getElementById("inputLimiteCredito").value = limiteCredito.toFixed(2);
+        document.getElementById("saldoDeudor").textContent = `$${saldoDeudor.toFixed(2)}`;
+        document.getElementById("saldoDisponible").textContent = `$${saldoDisponible.toFixed(2)}`;
+        document.getElementById("inputDiasCredito").value = credito.diasGracia || 30;
+        document.getElementById("inputCreditoActivo").checked = credito.activo || false;
+
+        const statusBadge = document.getElementById("creditoStatusBadge");
+        if (credito.activo) {
+          statusBadge.textContent = "Crédito Activo";
+          statusBadge.className = "admin-badge success";
+        } else {
+          statusBadge.textContent = "Crédito Inactivo";
+          statusBadge.className = "admin-badge danger";
+        }
+      }
+
+      async function asignarLineaCredito() {
+        const result = await Swal.fire({
+          title: "Asignar Línea de Crédito",
+          html: `
+            <div style="text-align: left;">
+              <p style="margin-bottom: 1rem;">Configura la línea de crédito inicial para este cliente:</p>
+              <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Límite de Crédito ($)</label>
+              <input id="swal-limite" type="number" class="swal2-input" placeholder="0.00" step="0.01" min="0" style="width: 90%;">
+              <label style="display: block; margin-top: 1rem; margin-bottom: 0.5rem; font-weight: 500;">Días de Crédito</label>
+              <select id="swal-dias" class="swal2-input" style="width: 90%;">
+                <option value="15">15 días</option>
+                <option value="30" selected>30 días</option>
+                <option value="45">45 días</option>
+                <option value="60">60 días</option>
+                <option value="90">90 días</option>
+              </select>
+            </div>
+          `,
+          icon: "question",
+          showCancelButton: true,
+          confirmButtonText: "Asignar Crédito",
+          cancelButtonText: "Cancelar",
+          confirmButtonColor: "#F97316",
+          preConfirm: () => {
+            const limite = document.getElementById("swal-limite").value;
+            const dias = document.getElementById("swal-dias").value;
+            if (!limite || parseFloat(limite) <= 0) {
+              Swal.showValidationMessage("Ingresa un límite de crédito válido");
+              return false;
+            }
+            return { limite: parseFloat(limite), dias: parseInt(dias, 10) };
+          },
+        });
+
+        if (result.isConfirmed) {
+          await guardarConfiguracionCredito(result.value.limite, result.value.dias, true);
+        }
+      }
+
+      async function guardarConfiguracionCredito(limiteInicial = null, diasInicial = null, activoInicial = null) {
+        try {
+          const limiteCredito = limiteInicial !== null 
+            ? limiteInicial 
+            : parseFloat(document.getElementById("inputLimiteCredito").value);
+          const diasGracia = diasInicial !== null 
+            ? diasInicial 
+            : parseInt(document.getElementById("inputDiasCredito").value, 10);
+          const activo = activoInicial !== null 
+            ? activoInicial 
+            : document.getElementById("inputCreditoActivo").checked;
+
+          if (isNaN(limiteCredito) || limiteCredito < 0) {
+            Swal.fire({
+              icon: "error",
+              title: "Error de validación",
+              text: "El límite de crédito debe ser un número válido mayor o igual a 0",
+              confirmButtonColor: "#F97316",
+            });
+            return;
+          }
+
+          const response = await fetch(
+            `${API_BASE_URL}/admin/clientes/${clienteId}/credito`,
+            {
+              method: "PUT",
+              headers: {
+                Authorization: `Bearer ${adminToken}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                limiteCredito,
+                diasGracia,
+                activo,
+              }),
+            }
+          );
+
+          const data = await response.json();
+
+          if (!response.ok || !data.success) {
+            throw new Error(data.message || "Error al guardar configuración de crédito");
+          }
+
+          Swal.fire({
+            icon: "success",
+            title: "Crédito actualizado",
+            text: "La configuración de crédito se guardó correctamente",
+            confirmButtonColor: "#F97316",
+          });
+
+          creditoData = data.data;
+          mostrarFormularioCredito(data.data);
+        } catch (error) {
+          console.error("Error saving credit config:", error);
+          Swal.fire({
+            icon: "error",
+            title: "Error",
+            text: error.message || "No se pudo guardar la configuración de crédito",
+            confirmButtonColor: "#F97316",
+          });
+        }
+      }
+
+      document.getElementById("inputLimiteCredito")?.addEventListener("input", function() {
+        if (!creditoData) return;
+        const nuevoLimite = parseFloat(this.value) || 0;
+        const saldoDeudor = parseFloat(creditoData.saldoDeudor || 0);
+        const saldoDisponible = nuevoLimite - saldoDeudor;
+        document.getElementById("saldoDisponible").textContent = `$${saldoDisponible.toFixed(2)}`;
+      });
 
       function renderPedidos(pedidos) {
         const pedidosTableBody = document.getElementById("pedidosTableBody");

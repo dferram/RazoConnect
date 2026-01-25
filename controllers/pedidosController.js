@@ -775,7 +775,7 @@ const crearPedido = async (req, res) => {
            $6,
            $7,
            CASE
-             WHEN $6 THEN CURRENT_TIMESTAMP + ($8 * INTERVAL '1 day')
+             WHEN $6 THEN (CURRENT_DATE + ($8 * INTERVAL '1 day'))::TIMESTAMP + INTERVAL '23 hours 59 minutes 59 seconds'
              ELSE NULL
            END,
            $9,
