@@ -1690,6 +1690,49 @@
         }
       }
 
+      function ordenarTamanos(tamanos) {
+        const ordenTextos = {
+          'chica': 1,
+          'pequeña': 1,
+          'pequeño': 1,
+          'small': 1,
+          'mediana': 2,
+          'mediano': 2,
+          'medium': 2,
+          'grande': 3,
+          'large': 3,
+          'extra grande': 4,
+          'xl': 4,
+          'xxl': 5
+        };
+
+        return [...tamanos].sort((a, b) => {
+          const etiquetaA = (a.etiqueta || a.nombre || '').toLowerCase().trim();
+          const etiquetaB = (b.etiqueta || b.nombre || '').toLowerCase().trim();
+
+          const matchNumA = etiquetaA.match(/^(\d+)\s*x\s*(\d+)$/i);
+          const matchNumB = etiquetaB.match(/^(\d+)\s*x\s*(\d+)$/i);
+
+          if (matchNumA && matchNumB) {
+            const numA = parseInt(matchNumA[1], 10);
+            const numB = parseInt(matchNumB[1], 10);
+            return numA - numB;
+          }
+
+          if (matchNumA) return -1;
+          if (matchNumB) return 1;
+
+          const ordenA = ordenTextos[etiquetaA] || 999;
+          const ordenB = ordenTextos[etiquetaB] || 999;
+
+          if (ordenA !== ordenB) {
+            return ordenA - ordenB;
+          }
+
+          return etiquetaA.localeCompare(etiquetaB);
+        });
+      }
+
       function renderTamanos() {
         if (!Array.isArray(tamanosDisponibles) || !tamanoButtons) {
           return;
@@ -1703,7 +1746,9 @@
           return;
         }
 
-        const usarBotones = tamanosDisponibles.length <= 4;
+        const tamanosOrdenados = ordenarTamanos(tamanosDisponibles);
+
+        const usarBotones = tamanosOrdenados.length <= 4;
         tamanoButtons.style.display = usarBotones ? "flex" : "none";
         tamanoSelect.style.display = usarBotones ? "none" : "block";
 
@@ -1720,7 +1765,7 @@
           return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
         };
 
-        const piezasLista = tamanosDisponibles
+        const piezasLista = tamanosOrdenados
           .map((t) => obtenerPiezasTamano(t))
           .filter((v) => Number.isInteger(v) && v > 0);
 
@@ -1747,7 +1792,7 @@
 
         if (usarBotones) {
           tamanoButtons.innerHTML = "";
-          tamanosDisponibles.forEach((tamano) => {
+          tamanosOrdenados.forEach((tamano) => {
             const button = document.createElement("button");
             button.type = "button";
             button.className = "btn btn-secondary tamano-btn";
@@ -1764,7 +1809,7 @@
         } else {
           // Para el select, solo mostrar la cantidad de piezas por paquete
           // usando la etiqueta simple del pack (sin precio ni stock).
-          const optionsHtml = tamanosDisponibles
+          const optionsHtml = tamanosOrdenados
             .map((tamano) => {
               const etiquetaSimple = generarEtiqueta(tamano);
               return `<option value="${tamano.tamanoId}">${etiquetaSimple}</option>`;
@@ -1774,7 +1819,7 @@
           tamanoSelect.innerHTML = optionsHtml;
           tamanoSelect.onchange = (event) => {
             const valor = parseInt(event.target.value, 10);
-            const encontrado = tamanosDisponibles.find(
+            const encontrado = tamanosOrdenados.find(
               (tam) => tam.tamanoId === valor
             );
             if (encontrado) {
@@ -1784,7 +1829,7 @@
           };
         }
 
-        tamanoSeleccionado = tamanosDisponibles[0];
+        tamanoSeleccionado = tamanosOrdenados[0];
         actualizarSeleccionTamano();
       }
 
