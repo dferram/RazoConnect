@@ -26,125 +26,282 @@
       <main class="admin-main">
         <div id="admin-header-container"></div>
 
-        <div class="admin-content" style="display: grid; gap: 1.25rem">
-          <section class="admin-card" style="padding: 1.25rem">
-            <div style="display: grid; gap: 1rem">
-              <div>
-                <h2 class="admin-card-title" style="margin: 0">Auditoría de Inventario</h2>
-                <p class="admin-card-subtitle" style="margin: 0.25rem 0 0 0">
-                  Registra conteos por SKU seleccionando una sesión activa.
-                </p>
-              </div>
+        <div class="admin-content">
+          <!-- Formulario de Auditoría -->
+          <div class="admin-table-container" style="margin-bottom: 1.5rem">
+            <div class="admin-table-header">
+              <h2 class="admin-table-title">Auditoría de Inventario</h2>
+              <p style="color: #64748b; font-size: 0.875rem; margin: 0.5rem 0 0 0; font-weight: 400">
+                Registra conteos por SKU seleccionando una sesión activa
+              </p>
+            </div>
 
-              <div style="display: grid; gap: 0.75rem; grid-template-columns: 1fr;">
-                <div style="min-width: 280px">
-                  <label for="sesionSelect" class="form-label">Sesión activa</label>
-                  <select id="sesionSelect" class="form-input">
-                    <option value="">Selecciona una sesión…</option>
-                  </select>
-                </div>
-
-                <div
+            <div style="padding: 1.5rem">
+              <!-- Selector de Sesión -->
+              <div style="margin-bottom: 1.5rem">
+                <label for="sesionSelect" style="display: block; font-weight: 600; color: #1e293b; margin-bottom: 0.5rem; font-size: 0.875rem">
+                  Sesión Activa
+                </label>
+                <select 
+                  id="sesionSelect" 
                   style="
-                    display: grid;
-                    gap: 0.75rem;
-                    grid-template-columns: 1fr 180px 170px;
-                    align-items: end;
+                    width: 100%;
+                    padding: 0.75rem 1rem;
+                    border: 1px solid #e2e8f0;
+                    border-radius: 0.5rem;
+                    font-family: 'Inter', sans-serif;
+                    font-size: 0.9375rem;
+                    color: #1e293b;
+                    background: white;
+                    transition: all 0.2s;
                   "
                 >
-                  <div>
-                    <label class="form-label" for="skuInput">SKU</label>
-                    <div style="position: relative">
-                      <input
-                        id="skuInput"
-                        type="text"
-                        class="form-input"
-                        placeholder="Busca por SKU o nombre…"
-                        autocomplete="off"
-                        style="font-size: 1.1rem; padding: 0.85rem"
-                      />
-                      <input type="hidden" id="varianteIdSeleccionada" />
-                      <div
-                        id="resultadosBusqueda"
-                        style="
-                          position: absolute;
-                          top: calc(100% + 6px);
-                          left: 0;
-                          right: 0;
-                          z-index: 50;
-                          background: #ffffff;
-                          border: 1px solid rgba(0, 0, 0, 0.08);
-                          border-radius: 0.75rem;
-                          box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
-                          max-height: 320px;
-                          overflow-x: hidden;
-                          overflow-y: auto;
-                          display: none;
-                        "
-                      ></div>
-                    </div>
-                  </div>
+                  <option value="">Selecciona una sesión…</option>
+                </select>
+              </div>
 
-                  <div>
-                    <label class="form-label" for="cantidadInput">Cantidad</label>
+              <!-- Grid de Inputs -->
+              <div style="display: grid; grid-template-columns: 1fr 200px 200px; gap: 1rem; align-items: end; margin-bottom: 1.5rem">
+                <!-- SKU Input -->
+                <div>
+                  <label for="skuInput" style="display: block; font-weight: 600; color: #1e293b; margin-bottom: 0.5rem; font-size: 0.875rem">
+                    SKU del Producto
+                  </label>
+                  <div style="position: relative">
                     <input
-                      id="cantidadInput"
-                      type="number"
-                      min="0"
-                      step="1"
-                      class="form-input"
-                      value="0"
-                      style="font-size: 1.1rem; padding: 0.85rem"
-                    />
-                  </div>
-
-                  <div>
-                    <button
-                      type="button"
-                      id="btnRegistrar"
-                      class="btn btn-primary"
+                      id="skuInput"
+                      type="text"
+                      placeholder="Busca por SKU o nombre del producto…"
+                      autocomplete="off"
                       style="
                         width: 100%;
-                        background: var(--razo-orange, #f97316);
-                        border: none;
-                        padding: 0.85rem;
+                        padding: 0.75rem 1rem;
+                        border: 1px solid #e2e8f0;
+                        border-radius: 0.5rem;
+                        font-family: 'Inter', sans-serif;
+                        font-size: 0.9375rem;
+                        color: #1e293b;
+                        transition: all 0.2s;
                       "
-                      disabled
-                    >
-                      Registrar Conteo
-                    </button>
+                    />
+                    <input type="hidden" id="varianteIdSeleccionada" />
+                    <div
+                      id="resultadosBusqueda"
+                      style="
+                        position: absolute;
+                        top: calc(100% + 8px);
+                        left: 0;
+                        right: 0;
+                        z-index: 1000;
+                        background: white;
+                        border: 1px solid #e2e8f0;
+                        border-radius: 0.75rem;
+                        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+                        max-height: 400px;
+                        overflow-y: auto;
+                        display: none;
+                      "
+                    ></div>
                   </div>
                 </div>
 
-                <div
-                  style="
-                    padding: 0.75rem 1rem;
-                    background: #f0f9ff;
-                    border-radius: 0.75rem;
-                    border-left: 4px solid #0ea5e9;
-                    color: #0369a1;
-                  "
-                >
-                  Al enviar, el formulario se limpia y vuelve el foco a SKU.
+                <!-- Cantidad Input -->
+                <div>
+                  <label for="cantidadInput" style="display: block; font-weight: 600; color: #1e293b; margin-bottom: 0.5rem; font-size: 0.875rem">
+                    Cantidad
+                  </label>
+                  <input
+                    id="cantidadInput"
+                    type="number"
+                    min="0"
+                    step="1"
+                    value="0"
+                    style="
+                      width: 100%;
+                      padding: 0.75rem 1rem;
+                      border: 1px solid #e2e8f0;
+                      border-radius: 0.5rem;
+                      font-family: 'Inter', sans-serif;
+                      font-size: 0.9375rem;
+                      color: #1e293b;
+                      transition: all 0.2s;
+                    "
+                  />
                 </div>
 
-                <div
-                  id="ultimoRegistro"
-                  style="
-                    padding: 0.75rem 1rem;
-                    border: 1px solid rgba(0, 0, 0, 0.06);
-                    border-radius: 0.75rem;
-                    color: #6b7280;
-                  "
-                >
-                  Último registro: —
+                <!-- Botón Registrar -->
+                <div>
+                  <button
+                    type="button"
+                    id="btnRegistrar"
+                    disabled
+                    style="
+                      width: 100%;
+                      padding: 0.75rem 1.5rem;
+                      background: #f97316;
+                      color: white;
+                      border: none;
+                      border-radius: 0.5rem;
+                      font-family: 'Inter', sans-serif;
+                      font-size: 0.9375rem;
+                      font-weight: 600;
+                      cursor: pointer;
+                      transition: all 0.2s;
+                    "
+                  >
+                    Registrar Conteo
+                  </button>
                 </div>
               </div>
+
+              <!-- Info Alert -->
+              <div
+                style="
+                  padding: 1rem 1.25rem;
+                  background: #eff6ff;
+                  border-left: 4px solid #3b82f6;
+                  border-radius: 0.5rem;
+                  margin-bottom: 1rem;
+                "
+              >
+                <div style="display: flex; align-items: center; gap: 0.75rem">
+                  <span style="font-size: 1.25rem">ℹ️</span>
+                  <span style="color: #1e40af; font-size: 0.875rem">
+                    Al registrar el conteo, el formulario se limpiará automáticamente y el cursor volverá al campo SKU
+                  </span>
+                </div>
+              </div>
+
+              <!-- Último Registro -->
+              <div
+                id="ultimoRegistro"
+                style="
+                  padding: 1rem 1.25rem;
+                  background: #f8fafc;
+                  border: 1px solid #e2e8f0;
+                  border-radius: 0.5rem;
+                  color: #64748b;
+                  font-size: 0.875rem;
+                "
+              >
+                <strong style="color: #475569">Último registro:</strong> —
+              </div>
             </div>
-          </section>
+          </div>
+
+          <!-- Tabla de Conteos Recientes -->
+          <div class="admin-table-container">
+            <div class="admin-table-header">
+              <h2 class="admin-table-title">Conteos Recientes</h2>
+              <button
+                id="btnRefrescarConteos"
+                style="
+                  padding: 0.5rem 1rem;
+                  background: white;
+                  color: #64748b;
+                  border: 1px solid #e2e8f0;
+                  border-radius: 0.5rem;
+                  font-family: 'Inter', sans-serif;
+                  font-size: 0.875rem;
+                  font-weight: 500;
+                  cursor: pointer;
+                  transition: all 0.2s;
+                "
+              >
+                🔄 Actualizar
+              </button>
+            </div>
+
+            <div id="loadingConteos" style="display: none; padding: 3rem; text-align: center">
+              <div style="display: inline-block; width: 40px; height: 40px; border: 4px solid #f3f4f6; border-top-color: #f97316; border-radius: 50%; animation: spin 1s linear infinite"></div>
+            </div>
+
+            <div style="overflow-x: auto">
+              <table class="admin-table" id="conteosTable">
+                <thead>
+                  <tr>
+                    <th style="text-align: left">#ID</th>
+                    <th style="text-align: left">SKU</th>
+                    <th style="text-align: left">Producto</th>
+                    <th style="text-align: center">Cantidad</th>
+                    <th style="text-align: left">Fecha/Hora</th>
+                    <th style="text-align: left">Sesión</th>
+                  </tr>
+                </thead>
+                <tbody id="conteosTableBody">
+                  <!-- Los conteos se cargarán aquí -->
+                </tbody>
+              </table>
+            </div>
+
+            <div id="emptyConteos" style="display: none; padding: 3rem; text-align: center">
+              <div style="font-size: 3rem; margin-bottom: 1rem">📋</div>
+              <h3 style="color: #1e293b; font-size: 1.125rem; font-weight: 600; margin-bottom: 0.5rem">
+                No hay conteos registrados
+              </h3>
+              <p style="color: #64748b; font-size: 0.875rem">
+                Los conteos que registres aparecerán aquí
+              </p>
+            </div>
+          </div>
         </div>
       </main>
     </div>
+
+    <style>
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+
+      #sesionSelect:focus,
+      #skuInput:focus,
+      #cantidadInput:focus {
+        outline: none;
+        border-color: #f97316;
+        box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
+      }
+
+      #btnRegistrar:hover:not(:disabled) {
+        background: #ea580c;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
+      }
+
+      #btnRegistrar:disabled {
+        background: #cbd5e1;
+        cursor: not-allowed;
+      }
+
+      #btnRefrescarConteos:hover {
+        background: #f8fafc;
+        border-color: #cbd5e1;
+      }
+
+      .admin-table th {
+        background: #f8fafc;
+        color: #475569;
+        font-weight: 600;
+        font-size: 0.8125rem;
+        text-transform: uppercase;
+        letter-spacing: 0.025em;
+        padding: 1rem;
+      }
+
+      .admin-table td {
+        padding: 1rem;
+        color: #1e293b;
+        font-size: 0.875rem;
+        border-bottom: 1px solid #f1f5f9;
+      }
+
+      .admin-table tbody tr:hover {
+        background: #f8fafc;
+      }
+
+      .admin-table tbody tr:last-child td {
+        border-bottom: none;
+      }
+    </style>
 
     <script src="js/layout.js" defer></script>
     <script src="js/api.js"></script>
@@ -180,40 +337,60 @@
 
         for (const item of resultados) {
           const row = document.createElement("div");
-          row.style.display = "flex";
-          row.style.alignItems = "center";
-          row.style.gap = "0.75rem";
-          row.style.padding = "0.6rem 0.75rem";
-          row.style.cursor = "pointer";
-          row.style.borderBottom = "1px solid rgba(0,0,0,0.06)";
+          row.style.cssText = `
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.875rem 1rem;
+            cursor: pointer;
+            border-bottom: 1px solid #f1f5f9;
+            transition: background 0.15s;
+          `;
 
           row.addEventListener("mouseenter", () => {
-            row.style.background = "rgba(249, 115, 22, 0.08)";
+            row.style.background = "#fef3f2";
           });
           row.addEventListener("mouseleave", () => {
-            row.style.background = "transparent";
+            row.style.background = "white";
           });
 
           const img = document.createElement("img");
           img.src = item.imagen || "/icon/Logo_Razo.png";
           img.alt = safeText(item.nombreProducto);
-          img.style.width = "40px";
-          img.style.height = "40px";
-          img.style.objectFit = "cover";
-          img.style.borderRadius = "0.75rem";
-          img.style.border = "1px solid rgba(0,0,0,0.06)";
+          img.style.cssText = `
+            width: 48px;
+            height: 48px;
+            object-fit: cover;
+            border-radius: 0.5rem;
+            border: 1px solid #e2e8f0;
+            flex-shrink: 0;
+          `;
 
           const text = document.createElement("div");
-          text.style.display = "grid";
-          text.style.lineHeight = "1.1";
+          text.style.cssText = `
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            flex: 1;
+            min-width: 0;
+          `;
 
           const sku = document.createElement("div");
-          sku.style.fontWeight = "700";
+          sku.style.cssText = `
+            font-weight: 600;
+            color: #1e293b;
+            font-size: 0.875rem;
+          `;
           sku.textContent = safeText(item.sku);
 
           const name = document.createElement("div");
-          name.style.fontSize = "0.9rem";
-          name.style.color = "#6b7280";
+          name.style.cssText = `
+            font-size: 0.8125rem;
+            color: #64748b;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+          `;
           const varianteLabel = safeText(item.nombreVariante).trim();
           name.textContent = varianteLabel
             ? `${safeText(item.nombreProducto)} (${varianteLabel})`
@@ -338,6 +515,94 @@
         window.location.replace("/login.html");
       };
 
+      const loadConteosRecientes = async () => {
+        const loadingConteos = document.getElementById("loadingConteos");
+        const conteosTable = document.getElementById("conteosTable");
+        const conteosTableBody = document.getElementById("conteosTableBody");
+        const emptyConteos = document.getElementById("emptyConteos");
+
+        if (!conteosTableBody) return;
+
+        try {
+          loadingConteos.style.display = "block";
+          conteosTable.style.display = "none";
+          emptyConteos.style.display = "none";
+
+          const resp = await apiCall(
+            `/admin/auditoria-inventario/conteos-recientes?limit=20`,
+            { method: "GET" }
+          );
+
+          loadingConteos.style.display = "none";
+
+          const conteos = Array.isArray(resp.data?.data?.conteos)
+            ? resp.data.data.conteos
+            : [];
+
+          if (conteos.length === 0) {
+            emptyConteos.style.display = "block";
+            return;
+          }
+
+          conteosTableBody.innerHTML = "";
+
+          for (const conteo of conteos) {
+            const tr = document.createElement("tr");
+
+            const tdId = document.createElement("td");
+            tdId.textContent = `#${safeText(conteo.conteoId)}`;
+            tdId.style.fontWeight = "600";
+
+            const tdSku = document.createElement("td");
+            tdSku.textContent = safeText(conteo.sku);
+            tdSku.style.fontFamily = "'Courier New', monospace";
+            tdSku.style.color = "#f97316";
+            tdSku.style.fontWeight = "600";
+
+            const tdProducto = document.createElement("td");
+            const varianteLabel = safeText(conteo.nombreVariante).trim();
+            tdProducto.textContent = varianteLabel
+              ? `${safeText(conteo.nombreProducto)} (${varianteLabel})`
+              : safeText(conteo.nombreProducto);
+
+            const tdCantidad = document.createElement("td");
+            tdCantidad.textContent = safeText(conteo.cantidad);
+            tdCantidad.style.textAlign = "center";
+            tdCantidad.style.fontWeight = "600";
+            tdCantidad.style.color = "#1e293b";
+
+            const tdFecha = document.createElement("td");
+            const fecha = new Date(conteo.fechaConteo);
+            tdFecha.textContent = fecha.toLocaleString("es-MX", {
+              year: "numeric",
+              month: "short",
+              day: "numeric",
+              hour: "2-digit",
+              minute: "2-digit"
+            });
+            tdFecha.style.color = "#64748b";
+
+            const tdSesion = document.createElement("td");
+            tdSesion.textContent = `${safeText(conteo.nombreSesion)} (#${safeText(conteo.sesionId)})`;
+            tdSesion.style.fontSize = "0.8125rem";
+
+            tr.appendChild(tdId);
+            tr.appendChild(tdSku);
+            tr.appendChild(tdProducto);
+            tr.appendChild(tdCantidad);
+            tr.appendChild(tdFecha);
+            tr.appendChild(tdSesion);
+
+            conteosTableBody.appendChild(tr);
+          }
+
+          conteosTable.style.display = "table";
+        } catch (e) {
+          loadingConteos.style.display = "none";
+          emptyConteos.style.display = "block";
+        }
+      };
+
       const registrarConteo = async () => {
         const token = getAgenteToken();
         console.log("Token enviado:", token);
@@ -424,9 +689,13 @@
             return;
           }
 
-          ultimoRegistro.textContent = `Último registro: SKU ${safeText(
+          ultimoRegistro.innerHTML = `<strong style="color: #475569">Último registro:</strong> SKU <strong style="color: #f97316">${safeText(
             skuInput.value
-          )} · Cantidad ${safeText(cantidad)} · ${new Date().toLocaleString()}`;
+          )}</strong> · Cantidad <strong>${safeText(cantidad)}</strong> · ${new Date().toLocaleString("es-MX", {
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit"
+          })}`;
 
           Swal.fire({
             toast: true,
@@ -444,6 +713,7 @@
           clearResultadosBusqueda();
           skuInput.focus();
 
+          loadConteosRecientes();
           updateControls();
         } catch (e) {
           Swal.fire({
@@ -474,7 +744,13 @@
       });
       btnRegistrar.addEventListener("click", registrarConteo);
 
+      const btnRefrescarConteos = document.getElementById("btnRefrescarConteos");
+      if (btnRefrescarConteos) {
+        btnRefrescarConteos.addEventListener("click", loadConteosRecientes);
+      }
+
       loadSesionesAbiertas();
+      loadConteosRecientes();
       updateControls();
     </script>
   </body>
