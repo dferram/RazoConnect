@@ -78,6 +78,7 @@ async function generarPDFPedido(req, res) {
                 COALESCE(pv.dimensiones, pv.color_nombre, 'Estándar') AS variante_nombre,
                 pv.color_nombre,
                 pv.sku,
+                pv.stock AS stock_actual_variante,
                 t.cantidad AS tamano_cantidad
             FROM detallesdelpedido dp
             INNER JOIN producto_variantes pv ON dp.varianteid = pv.varianteid
@@ -168,9 +169,15 @@ async function generarPDFPedido(req, res) {
                .text(ciudadEstado, 50, 230);
         }
 
-        // Separate items by availability
-        const itemsEnExistencia = detalles.filter(item => !item.esbackorder);
-        const itemsBajoPedido = detalles.filter(item => item.esbackorder);
+        // Separate items by REAL stock availability (not esbackorder flag)
+        const itemsEnExistencia = detalles.filter(item => {
+            const esRealmenteBackorder = parseInt(item.stock_actual_variante) <= 0;
+            return !esRealmenteBackorder;
+        });
+        const itemsBajoPedido = detalles.filter(item => {
+            const esRealmenteBackorder = parseInt(item.stock_actual_variante) <= 0;
+            return esRealmenteBackorder;
+        });
 
         let yPosition = 260;
         const rowHeight = 25;
@@ -211,7 +218,7 @@ async function generarPDFPedido(req, res) {
             doc.font('Helvetica').fillColor('#333333');
 
             items.forEach((item, index) => {
-                if (currentY > 720) {
+                if (currentY > 740) {
                     doc.addPage();
                     currentY = 50;
                 }
@@ -290,7 +297,7 @@ async function generarPDFPedido(req, res) {
         }
 
         // Check if we need a new page for totals section (needs ~150px)
-        if (yPosition > 650) {
+        if (yPosition > 710) {
             doc.addPage();
             yPosition = 50;
         }
@@ -313,8 +320,9 @@ async function generarPDFPedido(req, res) {
             // Force parseFloat to avoid string concatenation errors
             const itemSubtotal = parseFloat(item.subtotal) || 0;
             
-            // If esbackorder is true, it's out of stock
-            if (item.esbackorder === true) {
+            // Use REAL stock to determine backorder status
+            const esRealmenteBackorder = parseInt(item.stock_actual_variante) <= 0;
+            if (esRealmenteBackorder) {
                 totalSinStock += itemSubtotal;
             } else {
                 totalEnStock += itemSubtotal;
