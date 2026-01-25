@@ -222,8 +222,8 @@ async function generarPDFPedido(req, res) {
             return headerY + 30;
         };
 
-        // Helper function to render items (SMART PAGINATION + BACKORDER BADGE)
-        const renderItems = (items, startY, alternateColor = '#F9F9F9', showBackorderBadge = false) => {
+        // Helper function to render items (SMART PAGINATION)
+        const renderItems = (items, startY, alternateColor = '#F9F9F9') => {
             let currentY = startY;
             doc.font('Helvetica').fillColor('#333333');
 
@@ -239,18 +239,6 @@ async function generarPDFPedido(req, res) {
                        .fillAndStroke(alternateColor, alternateColor);
                 }
 
-                // BACKORDER BADGE: Draw before product name if needed
-                let descripcionX = 110;
-                if (showBackorderBadge) {
-                    doc.roundedRect(110, currentY - 2, 60, 12, 3)
-                       .fillAndStroke('#FEE2E2', '#DC2626');
-                    doc.fontSize(7)
-                       .font('Helvetica-Bold')
-                       .fillColor('#DC2626')
-                       .text('PENDIENTE', 112, currentY + 1, { width: 56, align: 'center' });
-                    descripcionX = 175;
-                }
-
                 const descripcionLinea1 = `${item.producto_nombre}`;
                 const descripcionLinea2 = item.color_nombre 
                     ? `${item.variante_nombre} - Color: ${item.color_nombre}`
@@ -260,8 +248,8 @@ async function generarPDFPedido(req, res) {
                    .fontSize(9)
                    .font('Helvetica')
                    .text(item.cantidad, 55, currentY)
-                   .text(descripcionLinea1, descripcionX, currentY, { width: 220 - (descripcionX - 110) })
-                   .text(descripcionLinea2, descripcionX, currentY + 10, { width: 220 - (descripcionX - 110) })
+                   .text(descripcionLinea1, 110, currentY, { width: 220 })
+                   .text(descripcionLinea2, 110, currentY + 10, { width: 220 })
                    .text(item.tamano_cantidad ? `Pack ${item.tamano_cantidad}` : 'Unitario', 340, currentY)
                    .text(`$${parseFloat(item.preciounitario).toFixed(2)}`, 410, currentY)
                    .text(`$${parseFloat(item.subtotal).toFixed(2)}`, 480, currentY, { align: 'right', width: 75 });
@@ -275,7 +263,7 @@ async function generarPDFPedido(req, res) {
         // Render IN-STOCK items section
         if (itemsEnExistencia.length > 0) {
             yPosition = renderTableHeader('PRODUCTOS LISTOS PARA ENTREGA', yPosition, '#F97316');
-            yPosition = renderItems(itemsEnExistencia, yPosition, '#F9F9F9', false);
+            yPosition = renderItems(itemsEnExistencia, yPosition, '#F9F9F9');
             yPosition += 10;
         }
 
@@ -287,7 +275,7 @@ async function generarPDFPedido(req, res) {
             }
 
             yPosition = renderTableHeader('PRODUCTOS BAJO PEDIDO (PENDIENTES)', yPosition, '#DC2626');
-            yPosition = renderItems(itemsBajoPedido, yPosition, '#FEE2E2', true);
+            yPosition = renderItems(itemsBajoPedido, yPosition, '#FEE2E2');
             
             // Add informative note immediately after backorder table
             yPosition += 5;
