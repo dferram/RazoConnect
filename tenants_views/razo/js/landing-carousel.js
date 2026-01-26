@@ -196,28 +196,10 @@ async function loadCategoriesCarousel() {
   try {
     let categories = [];
     
-    try {
-      const dbResponse = await fetch('/api/admin/landing-config', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      
-      if (dbResponse.ok) {
-        const dbData = await dbResponse.json();
-        if (dbData.success && dbData.data.categories && dbData.data.categories.length > 0) {
-          categories = dbData.data.categories;
-        }
-      }
-    } catch (dbError) {
-      console.log('No se pudo cargar desde BD, usando JSON estático');
-    }
-    
-    if (categories.length === 0) {
-      const jsonResponse = await fetch('/landing_config.json');
-      const config = await jsonResponse.json();
-      categories = config.categories || [];
-    }
+    // Cargar desde JSON estático (página pública)
+    const jsonResponse = await fetch('landing_config.json');
+    const config = await jsonResponse.json();
+    categories = config.categories || [];
     
     if (categories.length > 0) {
       container.innerHTML = categories.map(category => `
@@ -265,27 +247,42 @@ async function loadBrandsCarousel() {
   if (!container) return;
 
   try {
-    const response = await fetch('/api/public/proveedores');
-    const data = await response.json();
-
-    if (data.success && data.data && data.data.proveedores && data.data.proveedores.length > 0) {
-      const proveedores = data.data.proveedores;
+    let proveedores = [];
+    
+    // Intentar cargar desde API pública
+    try {
+      const response = await fetch('/api/public/proveedores');
+      const data = await response.json();
       
+      if (data.success && data.data && data.data.proveedores && data.data.proveedores.length > 0) {
+        proveedores = data.data.proveedores;
+      }
+    } catch (apiError) {
+      console.log('No se pudo cargar proveedores desde API, usando JSON estático');
+      // Fallback a JSON estático
+      const jsonResponse = await fetch('landing_config.json');
+      const config = await jsonResponse.json();
+      proveedores = config.brands || [];
+    }
+    
+    if (proveedores.length > 0) {
       container.innerHTML = proveedores.map(proveedor => {
-        const initial = proveedor.nombre.charAt(0).toUpperCase();
-        const imageUrl = proveedor.imagenUrl || `https://images.unsplash.com/photo-1607344645866-009c320b63e0?w=800&h=600&fit=crop&q=80`;
+        const nombre = proveedor.nombre || proveedor.name || 'Marca';
+        const initial = nombre.charAt(0).toUpperCase();
+        const imageUrl = proveedor.imagenUrl || proveedor.image || `https://images.unsplash.com/photo-1607344645866-009c320b63e0?w=800&h=600&fit=crop&q=80`;
+        const href = proveedor.href || `/proveedor-tienda.html?id=${proveedor.proveedorId || proveedor.id || ''}`;
         
         return `
-          <a href="/proveedor-tienda.html?id=${proveedor.proveedorId}" class="carousel-card brand-card" role="button" tabindex="0" aria-label="Ver productos de ${proveedor.nombre}">
+          <a href="${href}" class="carousel-card brand-card" role="button" tabindex="0" aria-label="Ver productos de ${nombre}">
             <div class="carousel-card-image">
               <img 
                 src="${imageUrl}" 
-                alt="${proveedor.nombre}"
+                alt="${nombre}"
                 loading="lazy"
               />
               <div class="carousel-card-overlay"></div>
               <div class="brand-icon-overlay">${initial}</div>
-              <div class="carousel-card-badge">${proveedor.nombre}</div>
+              <div class="carousel-card-badge">${nombre}</div>
             </div>
           </a>
         `;
