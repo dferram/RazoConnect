@@ -874,21 +874,22 @@ const crearPedido = async (req, res) => {
           ) || 1,
       });
 
+      // CRITICAL FIX: Validate and correct split BEFORE extracting to local variables
+      // This prevents the bug where stock=0 but split returns cantidadSurtida > 0
+      if (stockActual === 0 && split.cantidadSurtida > 0) {
+        console.error(`🚨 [LOGIC ERROR] Stock es 0 pero cantidadSurtida es ${split.cantidadSurtida}!`);
+        console.error(`   Producto: ${item.nombreproducto} (ID: ${item.productoid})`);
+        console.error(`   Variante: ${item.varianteid}`);
+        console.error(`   CORRECCIÓN: Forzando cantidadSurtida a 0 y todo a backorder`);
+        split.cantidadSurtida = 0;
+        split.cantidadBackorderAjustada = cantidadRequerida;
+      }
+
+      // CRITICAL FIX: Extract values AFTER validation to ensure consistency
       const cantidadSurtida = split.cantidadSurtida;
       const cantidadBackorder = split.cantidadBackorderAjustada;
       const piezasSurtidas = cantidadSurtida * tamanoValor;
       const piezasBackorder = cantidadBackorder * tamanoValor;
-
-      // CRITICAL: Validate split calculation integrity
-      if (stockActual === 0 && cantidadSurtida > 0) {
-        console.error(`🚨 [LOGIC ERROR] Stock es 0 pero cantidadSurtida es ${cantidadSurtida}!`);
-        console.error(`   Producto: ${item.nombreproducto} (ID: ${item.productoid})`);
-        console.error(`   Variante: ${item.varianteid}`);
-        console.error(`   FORZANDO cantidadSurtida a 0 y todo a backorder`);
-        // FORCE CORRECTION
-        split.cantidadSurtida = 0;
-        split.cantidadBackorderAjustada = item.cantidad;
-      }
 
       console.log(`   ✅ Split calculado: ${cantidadSurtida} surtido + ${cantidadBackorder} backorder`);
 
@@ -917,21 +918,19 @@ const crearPedido = async (req, res) => {
         });
       }
 
-      // CRITICAL: Re-validate stock before inserting surtido detail
+      // CRITICAL FIX: Prevent duplicate inserts with explicit validation
+      // Ensure that if stock is 0, we NEVER insert a surtido row
       const stockFinalValidation = masterInfo ? masterInfo.stock : 0;
-      const debeSerBackorder = stockFinalValidation === 0 || stockFinalValidation < piezasSurtidas;
+      const puedeSerSurtido = stockFinalValidation > 0 && cantidadSurtida > 0 && piezasSurtidas <= stockFinalValidation;
       
-      if (debeSerBackorder && cantidadSurtida > 0) {
-        console.error(`🚨 [VALIDATION FAILED] Intentando surtr ${cantidadSurtida} paquetes pero stock es ${stockFinalValidation}`);
-        console.error(`   CORRECCIÓN: Moviendo todo a backorder`);
-        // Move everything to backorder
-        const cantidadOriginalSurtida = cantidadSurtida;
-        split.cantidadSurtida = 0;
-        split.cantidadBackorderAjustada = cantidadRequerida;
+      if (!puedeSerSurtido && cantidadSurtida > 0) {
+        console.error(`🚨 [DUPLICATION PREVENTED] Stock insuficiente para surtir ${cantidadSurtida} paquetes`);
+        console.error(`   Stock disponible: ${stockFinalValidation} piezas, necesario: ${piezasSurtidas} piezas`);
+        console.error(`   ACCIÓN: Saltando INSERT de surtido, todo irá a backorder`);
       }
 
-      // Insertar detalle surtido (si aplica)
-      if (split.cantidadSurtida > 0) {
+      // Insertar detalle surtido (SOLO si hay stock real disponible)
+      if (puedeSerSurtido) {
         const detalleResult = await client.query(
           `INSERT INTO DetallesDelPedido (
              PedidoID,
@@ -988,8 +987,12 @@ const crearPedido = async (req, res) => {
         });
       }
 
-      // Insertar detalle backorder (si aplica)
-      if (split.cantidadBackorderAjustada > 0) {
+      // CRITICAL FIX: Insertar detalle backorder (SOLO si hay cantidad pendiente)
+      // Asegurar que no duplicamos si ya se insertó como surtido
+      const cantidadRealBackorder = cantidadRequerida - cantidadSurtida;
+      const debeInsertarBackorder = cantidadRealBackorder > 0 && cantidadBackorder > 0;
+      
+      if (debeInsertarBackorder) {
         const detalleBackorderResult = await client.query(
           `INSERT INTO DetallesDelPedido (
              PedidoID,

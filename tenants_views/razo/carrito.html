@@ -3058,12 +3058,25 @@
       async function procesarCompra(event) {
         event?.preventDefault?.();
 
+        // CRITICAL FIX: Prevent double-submission with immediate button disable
+        if (isConfirmingPedido) {
+          console.warn("⚠️ [DOUBLE-CLICK PREVENTED] Pedido ya está siendo procesado");
+          return;
+        }
+        
+        // Disable button IMMEDIATELY to prevent rapid double-clicks
+        if (btnConfirmarPedido) {
+          btnConfirmarPedido.disabled = true;
+        }
+
         if (!selectedDireccionId) {
           showToast("Por favor selecciona una dirección de envío", "warning");
+          if (btnConfirmarPedido) btnConfirmarPedido.disabled = false;
           return;
         }
 
         if (!validatePaymentConstraints()) {
+          if (btnConfirmarPedido) btnConfirmarPedido.disabled = false;
           return;
         }
 
@@ -3078,6 +3091,7 @@
             showErrorAlert(
               "Debes subir el comprobante de pago para finalizar por transferencia."
             );
+            if (btnConfirmarPedido) btnConfirmarPedido.disabled = false;
             return;
           }
         }
@@ -3087,16 +3101,18 @@
             showErrorAlert(
               "Tu línea de crédito no está disponible. Selecciona otro método de pago."
             );
+            if (btnConfirmarPedido) btnConfirmarPedido.disabled = false;
             return;
           }
 
           const confirmado = await confirmarUsoCredito();
           if (!confirmado) {
+            if (btnConfirmarPedido) btnConfirmarPedido.disabled = false;
             return;
           }
         }
 
-        if (isConfirmingPedido) return;
+        // Set flag AFTER all validations pass
         isConfirmingPedido = true;
         setConfirmarPedidoLoading(true);
 
