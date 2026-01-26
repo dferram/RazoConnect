@@ -259,10 +259,13 @@ async function loadCategoriesCarousel() {
   try {
     let categories = [];
     
-    // Cargar desde JSON estático (página pública)
-    const jsonResponse = await fetch('landing_config.json');
-    const config = await jsonResponse.json();
-    categories = config.categories || [];
+    // ✅ MISIÓN 3: Cargar desde base de datos
+    const response = await fetch('/api/public/landing-items');
+    const data = await response.json();
+    
+    if (data.success && data.data.categories) {
+      categories = data.data.categories;
+    }
     
     if (categories.length > 0) {
       container.innerHTML = categories.map(category => `
@@ -312,28 +315,20 @@ async function loadBrandsCarousel() {
   try {
     let proveedores = [];
     
-    // Intentar cargar desde API pública
-    try {
-      const response = await fetch('/api/public/proveedores');
-      const data = await response.json();
-      
-      if (data.success && data.data && data.data.proveedores && data.data.proveedores.length > 0) {
-        proveedores = data.data.proveedores;
-      }
-    } catch (apiError) {
-      console.log('No se pudo cargar proveedores desde API, usando JSON estático');
-      // Fallback a JSON estático
-      const jsonResponse = await fetch('landing_config.json');
-      const config = await jsonResponse.json();
-      proveedores = config.brands || [];
+    // ✅ MISIÓN 3: Cargar desde base de datos
+    const response = await fetch('/api/public/landing-items');
+    const data = await response.json();
+    
+    if (data.success && data.data.brands) {
+      proveedores = data.data.brands;
     }
     
     if (proveedores.length > 0) {
       container.innerHTML = proveedores.map(proveedor => {
-        const nombre = proveedor.nombre || proveedor.name || 'Marca';
+        const nombre = proveedor.name || proveedor.nombre || 'Marca';
         const initial = nombre.charAt(0).toUpperCase();
-        const imageUrl = proveedor.imagenUrl || proveedor.image || `https://images.unsplash.com/photo-1607344645866-009c320b63e0?w=800&h=600&fit=crop&q=80`;
-        const href = proveedor.href || `/proveedor-tienda.html?id=${proveedor.proveedorId || proveedor.id || ''}`;
+        const imageUrl = proveedor.image || `https://images.unsplash.com/photo-1607344645866-009c320b63e0?w=800&h=600&fit=crop&q=80`;
+        const href = proveedor.href || `/proveedor-tienda.html?id=${proveedor.id || ''}`;
         
         return `
           <a href="${href}" class="carousel-card brand-card" role="button" tabindex="0" aria-label="Ver productos de ${nombre}">

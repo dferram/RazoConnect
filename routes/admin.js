@@ -19,6 +19,7 @@ const numCuentaController = require("../controllers/numCuentaController");
 const migrationController = require("../controllers/migrationController");
 const landingEditorController = require("../controllers/landingEditorController");
 const landingConfigController = require("../controllers/landingConfigController");
+const landingItemsController = require("../controllers/landingItemsController");
 const inventarioAjusteController = require("../controllers/inventarioAjusteController");
 const auditController = require("../controllers/auditController");
 const ajustePedidosController = require("../controllers/ajustePedidosController");
@@ -1412,6 +1413,21 @@ router.post(
   authenticate,
   authorizeAdmin,
   landingConfigController.reorderLandingItems
+);
+
+// ✅ MISIÓN 2: Categories and Brands Landing Management
+router.put(
+  "/categorias/:id/landing",
+  authenticate,
+  authorizeAdmin,
+  landingItemsController.updateCategoryLanding
+);
+
+router.put(
+  "/proveedores/:id/landing",
+  authenticate,
+  authorizeAdmin,
+  landingItemsController.updateProveedorLanding
 );
 
 module.exports = router;

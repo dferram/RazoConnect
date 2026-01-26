@@ -48,7 +48,9 @@
       
       await Promise.all([
         loadConfig(),
-        loadCategories()
+        loadCategories(),
+        loadCategoriesManager(),
+        loadBrandsManager()
       ]);
 
       setupEventListeners();
@@ -579,16 +581,46 @@
         body: JSON.stringify({ updates })
       });
 
+      // ✅ MISIÓN 4: Validar conexión con servidor
+      if (!response.ok) {
+        if (response.status === 0 || !navigator.onLine) {
+          throw new Error('NETWORK_ERROR: No hay conexión con el servidor. Verifica tu conexión a internet.');
+        }
+        if (response.status === 500) {
+          throw new Error('SERVER_ERROR: El servidor de base de datos no está disponible. Contacta al administrador.');
+        }
+        throw new Error(`HTTP ${response.status}: Error del servidor`);
+      }
+
       const data = await response.json();
 
       if (!data.success) {
         throw new Error(data.message || 'Error al guardar borrador');
       }
 
+      console.log('✅ Borrador guardado exitosamente:', updates.length, 'campos');
       showAutoSaveIndicator('saved');
       reloadPreview();
     } catch (error) {
-      console.error('Error saving draft:', error);
+      console.error('❌ Error saving draft:', error);
+      
+      // ✅ Mostrar alerta específica según el tipo de error
+      if (error.message.includes('NETWORK_ERROR')) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Sin conexión al servidor',
+          text: 'No se pudo guardar. Verifica tu conexión a internet y vuelve a intentar.',
+          confirmButtonColor: '#F97316'
+        });
+      } else if (error.message.includes('SERVER_ERROR')) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error de base de datos',
+          text: 'El servidor de base de datos no está disponible. Los cambios NO se guardaron. Contacta al administrador del sistema.',
+          confirmButtonColor: '#ef4444'
+        });
+      }
+      
       showAutoSaveIndicator('error');
     }
   }
@@ -608,10 +640,24 @@
       fields.forEach(field => {
         const element = document.getElementById(`hero_slide_${i}_${field}`);
         if (element) {
+          const value = element.value || null;
+          
+          // ✅ MISIÓN 1: Log detallado para debugging de enlaces de botones
+          if (field === 'cta_link') {
+            console.log(`🔗 [SLIDE ${i}] Enlace del botón:`, {
+              elementId: element.id,
+              value: value,
+              sectionKey: `${pagePrefix}hero_slide_${i}_${field}`,
+              isEmpty: !value || value === ''
+            });
+          }
+          
           updates.push({
             section_key: `${pagePrefix}hero_slide_${i}_${field}`,
-            value: element.value || null
+            value: value
           });
+        } else {
+          console.warn(`⚠️ Elemento no encontrado: hero_slide_${i}_${field}`);
         }
       });
     }
@@ -714,6 +760,17 @@
         }
       });
 
+      // ✅ MISIÓN 4: Validar conexión con servidor
+      if (!response.ok) {
+        if (response.status === 0 || !navigator.onLine) {
+          throw new Error('NETWORK_ERROR: No hay conexión con el servidor');
+        }
+        if (response.status === 500) {
+          throw new Error('SERVER_ERROR: Error de base de datos (VNETFailure). El servidor no pudo conectarse a la base de datos.');
+        }
+        throw new Error(`HTTP ${response.status}: Error del servidor`);
+      }
+
       const data = await response.json();
 
       if (!data.success) {
@@ -732,13 +789,26 @@
 
       await loadConfig();
     } catch (error) {
-      console.error('Error publishing changes:', error);
+      console.error('❌ Error publishing changes:', error);
       showLoading(false);
+      
+      // ✅ Mensaje específico según el tipo de error
+      let errorTitle = 'Error al publicar';
+      let errorText = error.message || 'No se pudieron publicar los cambios';
+      
+      if (error.message.includes('NETWORK_ERROR')) {
+        errorTitle = '❌ Sin conexión al servidor';
+        errorText = 'No se pudo conectar con el servidor. Verifica tu conexión a internet.';
+      } else if (error.message.includes('SERVER_ERROR') || error.message.includes('VNETFailure')) {
+        errorTitle = '❌ Error de Base de Datos';
+        errorText = 'El servidor no pudo conectarse a la base de datos. Los cambios NO se publicaron. Contacta al administrador del sistema.';
+      }
       
       Swal.fire({
         icon: 'error',
-        title: 'Error al publicar',
-        text: error.message || 'No se pudieron publicar los cambios'
+        title: errorTitle,
+        text: errorText,
+        confirmButtonColor: '#ef4444'
       });
     }
   }
@@ -1443,6 +1513,402 @@
     // Open modal
     if (imageEditModal) {
       imageEditModal.show();
+    }
+  }
+
+  // ============================================
+  // ✅ MISIÓN 2: CATEGORIES & BRANDS MANAGEMENT
+  // ============================================
+
+  async function loadCategoriesManager() {
+    const container = document.getElementById('categoriesManager');
+    if (!container) return;
+
+    try {
+      const response = await fetch('/api/categorias');
+      const data = await response.json();
+
+      if (!data.success || !data.data.categorias) {
+        throw new Error('No se pudieron cargar las categorías');
+      }
+
+      const categories = data.data.categorias;
+      
+      container.innerHTML = categories.map(cat => {
+        const catId = cat.categoriaid || cat.categoriaId;
+        const catName = cat.nombre || cat.Nombre;
+        const currentImage = cat.imagen_landing || cat.imagenUrl || '';
+        const currentLink = cat.link_landing || `/catalogo.html?categoria=${catId}`;
+
+        return `
+          <div class="slide-group" data-category-id="${catId}">
+            <div class="slide-group-header">🏷️ ${catName}</div>
+            
+            <div class="mb-3">
+              <label class="form-label">Imagen del Carrusel</label>
+              <div class="image-upload-area ${currentImage ? 'has-image' : ''}" 
+                   id="categoryImage_${catId}" 
+                   data-category-id="${catId}">
+                ${currentImage ? `
+                  <img src="${currentImage}" alt="${catName}" class="image-preview" />
+                  <div style="position: absolute; top: 0.5rem; right: 0.5rem; background: rgba(0,0,0,0.7); color: white; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem;">
+                    <i class="bi bi-pencil"></i> Cambiar
+                  </div>
+                ` : `
+                  <i class="bi bi-cloud-upload upload-icon"></i>
+                  <p class="upload-text mb-0">Click para subir imagen<br><small>800x600px recomendado</small></p>
+                `}
+              </div>
+              <input type="hidden" id="category_image_${catId}" value="${currentImage}" />
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Enlace de Destino</label>
+              <input type="text" 
+                     class="form-control" 
+                     id="category_link_${catId}" 
+                     value="${currentLink}"
+                     placeholder="/catalogo.html?categoria=${catId}" />
+              <small class="text-muted">URL a la que redirigirá al hacer clic en la categoría</small>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // Attach click handlers for image upload
+      categories.forEach(cat => {
+        const catId = cat.categoriaid || cat.categoriaId;
+        const uploadArea = document.getElementById(`categoryImage_${catId}`);
+        
+        if (uploadArea) {
+          uploadArea.addEventListener('click', () => openCategoryImageUpload(catId));
+        }
+
+        // Track changes for auto-save
+        const linkInput = document.getElementById(`category_link_${catId}`);
+        if (linkInput) {
+          linkInput.addEventListener('input', () => {
+            isDirty = true;
+            triggerAutoSave();
+          });
+        }
+      });
+
+    } catch (error) {
+      console.error('Error loading categories manager:', error);
+      container.innerHTML = `
+        <div class="alert alert-danger">
+          <i class="bi bi-exclamation-triangle"></i>
+          Error al cargar categorías: ${error.message}
+        </div>
+      `;
+    }
+  }
+
+  async function loadBrandsManager() {
+    const container = document.getElementById('brandsManager');
+    if (!container) return;
+
+    try {
+      const token = localStorage.getItem('razoconnect_admin_token');
+      const response = await fetch('/api/admin/proveedores', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await response.json();
+
+      if (!data.success || !data.data) {
+        throw new Error('No se pudieron cargar las marcas');
+      }
+
+      const brands = data.data;
+      
+      container.innerHTML = brands.map(brand => {
+        const brandId = brand.proveedorid || brand.proveedorId;
+        const brandName = brand.nombre || brand.Nombre;
+        const currentImage = brand.imagen_landing || brand.imagenUrl || '';
+        const currentLink = brand.link_landing || `/proveedor-tienda.html?id=${brandId}`;
+
+        return `
+          <div class="slide-group" data-brand-id="${brandId}">
+            <div class="slide-group-header">🏪 ${brandName}</div>
+            
+            <div class="mb-3">
+              <label class="form-label">Imagen del Carrusel</label>
+              <div class="image-upload-area ${currentImage ? 'has-image' : ''}" 
+                   id="brandImage_${brandId}" 
+                   data-brand-id="${brandId}">
+                ${currentImage ? `
+                  <img src="${currentImage}" alt="${brandName}" class="image-preview" />
+                  <div style="position: absolute; top: 0.5rem; right: 0.5rem; background: rgba(0,0,0,0.7); color: white; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem;">
+                    <i class="bi bi-pencil"></i> Cambiar
+                  </div>
+                ` : `
+                  <i class="bi bi-cloud-upload upload-icon"></i>
+                  <p class="upload-text mb-0">Click para subir imagen<br><small>800x600px recomendado</small></p>
+                `}
+              </div>
+              <input type="hidden" id="brand_image_${brandId}" value="${currentImage}" />
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Enlace de Destino</label>
+              <input type="text" 
+                     class="form-control" 
+                     id="brand_link_${brandId}" 
+                     value="${currentLink}"
+                     placeholder="/proveedor-tienda.html?id=${brandId}" />
+              <small class="text-muted">URL a la que redirigirá al hacer clic en la marca</small>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // Attach click handlers
+      brands.forEach(brand => {
+        const brandId = brand.proveedorid || brand.proveedorId;
+        const uploadArea = document.getElementById(`brandImage_${brandId}`);
+        
+        if (uploadArea) {
+          uploadArea.addEventListener('click', () => openBrandImageUpload(brandId));
+        }
+
+        const linkInput = document.getElementById(`brand_link_${brandId}`);
+        if (linkInput) {
+          linkInput.addEventListener('input', () => {
+            isDirty = true;
+            triggerAutoSave();
+          });
+        }
+      });
+
+    } catch (error) {
+      console.error('Error loading brands manager:', error);
+      container.innerHTML = `
+        <div class="alert alert-danger">
+          <i class="bi bi-exclamation-triangle"></i>
+          Error al cargar marcas: ${error.message}
+        </div>
+      `;
+    }
+  }
+
+  async function openCategoryImageUpload(categoryId) {
+    const { value: file } = await Swal.fire({
+      title: 'Subir Imagen de Categoría',
+      input: 'file',
+      inputAttributes: {
+        accept: 'image/*',
+        'aria-label': 'Subir imagen de categoría'
+      },
+      showCancelButton: true,
+      confirmButtonText: 'Subir',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#F97316'
+    });
+
+    if (file) {
+      await uploadCategoryImage(file, categoryId);
+    }
+  }
+
+  async function openBrandImageUpload(brandId) {
+    const { value: file } = await Swal.fire({
+      title: 'Subir Imagen de Marca',
+      input: 'file',
+      inputAttributes: {
+        accept: 'image/*',
+        'aria-label': 'Subir imagen de marca'
+      },
+      showCancelButton: true,
+      confirmButtonText: 'Subir',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#F97316'
+    });
+
+    if (file) {
+      await uploadBrandImage(file, brandId);
+    }
+  }
+
+  async function uploadCategoryImage(file, categoryId) {
+    showLoading(true);
+
+    try {
+      const token = localStorage.getItem('razoconnect_admin_token');
+      const formData = new FormData();
+      formData.append('image', file);
+
+      const response = await fetch('/api/admin/landing/upload-image', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: formData
+      });
+
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.message || 'Error al subir imagen');
+      }
+
+      const imageUrl = data.data.url;
+
+      // Update hidden input
+      const hiddenInput = document.getElementById(`category_image_${categoryId}`);
+      if (hiddenInput) {
+        hiddenInput.value = imageUrl;
+      }
+
+      // Update preview
+      const uploadArea = document.getElementById(`categoryImage_${categoryId}`);
+      if (uploadArea) {
+        uploadArea.classList.add('has-image');
+        uploadArea.innerHTML = `
+          <img src="${imageUrl}" alt="Categoría" class="image-preview" />
+          <div style="position: absolute; top: 0.5rem; right: 0.5rem; background: rgba(0,0,0,0.7); color: white; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem;">
+            <i class="bi bi-pencil"></i> Cambiar
+          </div>
+        `;
+      }
+
+      // Save to database
+      await saveCategoryImageToDB(categoryId, imageUrl);
+
+      showLoading(false);
+      
+      Swal.fire({
+        icon: 'success',
+        title: 'Imagen subida',
+        text: 'La imagen se guardó correctamente',
+        timer: 2000,
+        showConfirmButton: false
+      });
+
+      isDirty = true;
+      triggerAutoSave();
+
+    } catch (error) {
+      console.error('Error uploading category image:', error);
+      showLoading(false);
+      
+      Swal.fire({
+        icon: 'error',
+        title: 'Error al subir imagen',
+        text: error.message
+      });
+    }
+  }
+
+  async function uploadBrandImage(file, brandId) {
+    showLoading(true);
+
+    try {
+      const token = localStorage.getItem('razoconnect_admin_token');
+      const formData = new FormData();
+      formData.append('image', file);
+
+      const response = await fetch('/api/admin/landing/upload-image', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: formData
+      });
+
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.message || 'Error al subir imagen');
+      }
+
+      const imageUrl = data.data.url;
+
+      // Update hidden input
+      const hiddenInput = document.getElementById(`brand_image_${brandId}`);
+      if (hiddenInput) {
+        hiddenInput.value = imageUrl;
+      }
+
+      // Update preview
+      const uploadArea = document.getElementById(`brandImage_${brandId}`);
+      if (uploadArea) {
+        uploadArea.classList.add('has-image');
+        uploadArea.innerHTML = `
+          <img src="${imageUrl}" alt="Marca" class="image-preview" />
+          <div style="position: absolute; top: 0.5rem; right: 0.5rem; background: rgba(0,0,0,0.7); color: white; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem;">
+            <i class="bi bi-pencil"></i> Cambiar
+          </div>
+        `;
+      }
+
+      // Save to database
+      await saveBrandImageToDB(brandId, imageUrl);
+
+      showLoading(false);
+      
+      Swal.fire({
+        icon: 'success',
+        title: 'Imagen subida',
+        text: 'La imagen se guardó correctamente',
+        timer: 2000,
+        showConfirmButton: false
+      });
+
+      isDirty = true;
+      triggerAutoSave();
+
+    } catch (error) {
+      console.error('Error uploading brand image:', error);
+      showLoading(false);
+      
+      Swal.fire({
+        icon: 'error',
+        title: 'Error al subir imagen',
+        text: error.message
+      });
+    }
+  }
+
+  async function saveCategoryImageToDB(categoryId, imageUrl) {
+    const token = localStorage.getItem('razoconnect_admin_token');
+    const linkInput = document.getElementById(`category_link_${categoryId}`);
+    const linkUrl = linkInput ? linkInput.value : '';
+
+    const response = await fetch(`/api/admin/categorias/${categoryId}/landing`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        imagen_landing: imageUrl,
+        link_landing: linkUrl
+      })
+    });
+
+    const data = await response.json();
+    if (!data.success) {
+      throw new Error(data.message || 'Error al guardar en base de datos');
+    }
+  }
+
+  async function saveBrandImageToDB(brandId, imageUrl) {
+    const token = localStorage.getItem('razoconnect_admin_token');
+    const linkInput = document.getElementById(`brand_link_${brandId}`);
+    const linkUrl = linkInput ? linkInput.value : '';
+
+    const response = await fetch(`/api/admin/proveedores/${brandId}/landing`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        imagen_landing: imageUrl,
+        link_landing: linkUrl
+      })
+    });
+
+    const data = await response.json();
+    if (!data.success) {
+      throw new Error(data.message || 'Error al guardar en base de datos');
     }
   }
 
