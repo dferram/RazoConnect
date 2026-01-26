@@ -8,6 +8,7 @@ const {
   generarBackordersAgrupados,
 } = require("../services/ordenesService");
 const { checkStockBajo } = require("../utils/stockAlerts");
+const { calcularTotalPedido, validarConsistenciaTotales } = require("../utils/calculadoraPedidos");
 
 const TAMANO_VALUE_KEYS = [
   "valor",
@@ -392,25 +393,15 @@ const crearPedido = async (req, res) => {
 
     // 4. Calcular el monto total CON LÓGICA DE OFERTAS + split (stock + backorder)
     // CRÍTICO: El servidor SIEMPRE recalcula el total. NUNCA confiar en el total del cliente.
-    const montoTotal = items.reduce((total, item, index) => {
-
-      const precioBase =
-        item.preciounitario !== null ? parseFloat(item.preciounitario) : 0;
-      const precioOferta =
-        item.precioofertaunitario !== null
-          ? parseFloat(item.precioofertaunitario)
-          : null;
-      const precioUnitario = precioOferta || precioBase;
-      const tamanoValor =
-        item.tamano_valor !== null ? parseInt(item.tamano_valor, 10) : 0;
-
-      if (!tamanoValor || tamanoValor <= 0) {
-        return total;
-      }
-
+    // NUEVO: Preparar items para la función centralizada de cálculo
+    const itemsParaCalculadora = items.map((item, index) => {
+      const precioBase = item.preciounitario !== null ? parseFloat(item.preciounitario) : 0;
+      const precioOferta = item.precioofertaunitario !== null
+        ? parseFloat(item.precioofertaunitario)
+        : null;
+      const tamanoValor = item.tamano_valor !== null ? parseInt(item.tamano_valor, 10) : 0;
       const masterInfo = masterVariantsMap.get(item.productoid);
-      const stockActual =
-        masterInfo && typeof masterInfo.stock === "number" ? masterInfo.stock : 0;
+      const stockActual = masterInfo && typeof masterInfo.stock === "number" ? masterInfo.stock : 0;
 
       // CRITICAL: Log stock calculation for each item
       console.log(`📦 [ITEM ${index + 1}] ${item.nombreproducto} (SKU: ${item.sku})`);
@@ -427,22 +418,54 @@ const crearPedido = async (req, res) => {
           ) || 1,
       });
 
-      // FÓRMULA DE ORO: Subtotal = (PrecioPieza × PiezasPorPaquete) × CantidadPaquetes
-      const precioPaquete = precioUnitario * tamanoValor;
-      const subtotal = parseFloat((precioPaquete * split.cantidadTotalCobrar).toFixed(2));
-      
-      return total + (Number.isFinite(subtotal) ? subtotal : 0);
-    }, 0);
+      return {
+        ...item,
+        precioBase,
+        precioOferta,
+        piezasPorPaquete: tamanoValor,
+        cantidad: split.cantidadTotalCobrar,
+        split,
+        stockActual,
+        masterInfo
+      };
+    });
+
+    // Calcular total SIN cupón primero (para validaciones)
+    const calculoSinCupon = calcularTotalPedido({
+      items: itemsParaCalculadora,
+      cupon: null,
+      aplicarDescuentoEnDetalles: false
+    });
+
+    const montoTotal = calculoSinCupon.totalFinal;
 
     // PROTECCIÓN FINANCIERA: Validar si el cliente envió un total y comparar
     const totalClienteEnviado = req.body.montoTotal ? parseFloat(req.body.montoTotal) : null;
-    if (totalClienteEnviado !== null && Math.abs(totalClienteEnviado - montoTotal) > 0.02) {
-      console.error(`🚨 [ERROR FINANCIERO] Discrepancia detectada en Pedido`);
-      console.error(`   Total calculado por servidor: $${montoTotal.toFixed(2)}`);
-      console.error(`   Total enviado por cliente: $${totalClienteEnviado.toFixed(2)}`);
-      console.error(`   Diferencia: $${Math.abs(totalClienteEnviado - montoTotal).toFixed(2)}`);
-      console.error(`   Cliente ID: ${clienteId}, Tenant: ${tenant_id}`);
-      // NO rechazar el pedido, pero usar el total del servidor
+    if (totalClienteEnviado !== null) {
+      const validacion = validarConsistenciaTotales(totalClienteEnviado, montoTotal, 0.50);
+      
+      if (!validacion.esConsistente) {
+        console.error(`🚨 [ERROR FINANCIERO] Discrepancia detectada en Pedido`);
+        console.error(`   Total calculado por servidor: $${validacion.total2}`);
+        console.error(`   Total enviado por cliente: $${validacion.total1}`);
+        console.error(`   Diferencia: $${validacion.diferencia}`);
+        console.error(`   Cliente ID: ${clienteId}, Tenant: ${tenant_id}`);
+        
+        // NUEVO: Rechazar pedido si la diferencia es significativa (>$0.50)
+        await client.query("ROLLBACK");
+        transactionStarted = false;
+        removeUploadedComprobante();
+        return res.status(409).json({
+          success: false,
+          message: "El total del carrito ha cambiado. Por favor, revisa tu carrito y vuelve a intentar.",
+          data: {
+            totalEsperado: validacion.total1,
+            totalActual: validacion.total2,
+            diferencia: validacion.diferencia,
+            razon: "Los precios o el stock han cambiado desde que agregaste los productos."
+          }
+        });
+      }
     }
 
     // Validar que el monto total sea válido
@@ -554,24 +577,50 @@ const crearPedido = async (req, res) => {
         });
       }
 
-      const tipoDescuento = (cupon.tipo_descuento || "PORCENTAJE").toUpperCase();
-      const valor = parseFloat(cupon.valor || 0);
+      // NUEVO: Usar función centralizada para calcular descuento Y prorratear en items
+      const cuponData = {
+        cuponId: cupon.cuponid,
+        codigo: cupon.codigo,
+        tipoDescuento: (cupon.tipo_descuento || "PORCENTAJE").toUpperCase(),
+        valor: parseFloat(cupon.valor || 0)
+      };
 
-      if (tipoDescuento === "PORCENTAJE") {
-        montoDescuento = (montoTotal * valor) / 100;
-      } else if (tipoDescuento === "FIJO") {
-        montoDescuento = valor;
-      }
+      const calculoConCupon = calcularTotalPedido({
+        items: itemsParaCalculadora,
+        cupon: cuponData,
+        aplicarDescuentoEnDetalles: true // CRÍTICO: Prorratear descuento
+      });
 
-      montoDescuento = Math.min(montoDescuento, montoTotal);
-      montoDescuento = parseFloat(montoDescuento.toFixed(2));
-      montoTotalFinal = parseFloat((montoTotal - montoDescuento).toFixed(2));
+      montoDescuento = calculoConCupon.montoDescuento;
+      montoTotalFinal = calculoConCupon.totalFinal;
       cuponId = cupon.cuponid;
+
+      // Actualizar items con precios prorrateados
+      itemsParaCalculadora.forEach((item, index) => {
+        const itemCalculado = calculoConCupon.items[index];
+        item.precioPaqueteConDescuento = itemCalculado.precioPaqueteConDescuento;
+        item.subtotalConDescuento = itemCalculado.subtotalConDescuento;
+        item.descuentoAplicado = itemCalculado.descuentoAplicado;
+      });
+
+      console.log(`✅ [CUPÓN APLICADO] Código: ${cupon.codigo}`);
+      console.log(`   Total bruto: $${calculoConCupon.totalBruto.toFixed(2)}`);
+      console.log(`   Descuento: -$${montoDescuento.toFixed(2)}`);
+      console.log(`   Total final: $${montoTotalFinal.toFixed(2)}`);
+      console.log(`   Factor descuento: ${calculoConCupon.factorDescuento}`);
 
       await client.query(
         "UPDATE cupones SET usos_actuales = usos_actuales + 1 WHERE cuponid = $1",
         [cuponId]
       );
+    } else {
+      // Sin cupón: mantener precios originales
+      itemsParaCalculadora.forEach(item => {
+        const precioUnitario = item.precioOferta || item.precioBase;
+        item.precioPaqueteConDescuento = precioUnitario * item.piezasPorPaquete;
+        item.subtotalConDescuento = item.subtotal;
+        item.descuentoAplicado = 0;
+      });
     }
 
     // 5. Obtener el agente asignado al cliente (si existe)
@@ -833,7 +882,11 @@ const crearPedido = async (req, res) => {
     const backordersGenerados = [];
     const itemsConBackorder = []; // Acumular items para procesamiento agrupado
     let pedidoTieneBackorder = false;
-    for (const item of items) {
+    
+    // NUEVO: Iterar sobre itemsParaCalculadora que ya tiene precios prorrateados
+    for (let itemIndex = 0; itemIndex < items.length; itemIndex++) {
+      const item = items[itemIndex];
+      const itemCalculado = itemsParaCalculadora[itemIndex];
       const tamanoValor =
         item.tamano_valor !== null ? parseInt(item.tamano_valor, 10) : 0;
 
@@ -846,16 +899,14 @@ const crearPedido = async (req, res) => {
         });
       }
 
-      // LÓGICA DE PRECIOS CON OFERTA
-      const precioBase =
-        item.preciounitario !== null ? parseFloat(item.preciounitario) : 0;
-      const precioOferta =
-        item.precioofertaunitario !== null
-          ? parseFloat(item.precioofertaunitario)
-          : null;
-      // Si existe precio de oferta, úsalo. Si no, usa precio base.
+      // NUEVO: Usar precios del itemCalculado (ya incluye prorrateo de descuento)
+      const precioBase = itemCalculado.precioBase;
+      const precioOferta = itemCalculado.precioOferta;
       const precioUnitario = precioOferta || precioBase;
-      const precioPorPaquete = precioUnitario * tamanoValor;
+      
+      // CRÍTICO: Usar precio CON descuento prorrateado
+      const precioPorPaquete = itemCalculado.precioPaqueteConDescuento || (precioUnitario * tamanoValor);
+      const precioPorPaqueteSinDescuento = precioUnitario * tamanoValor;
       // Calcular cantidades requeridas y disponibles
       const cantidadRequerida = item.cantidad; // Paquetes que pide el cliente
       const masterInfo = masterVariantsMap.get(item.productoid);
@@ -864,15 +915,8 @@ const crearPedido = async (req, res) => {
           ? masterInfo.stock
           : 0;
 
-      const split = calcularSplitBackorder({
-        cantidadSolicitada: cantidadRequerida,
-        stockPiezas: stockActual,
-        piezasPorPaquete: tamanoValor,
-        multiploBackorder:
-          multiploPorKey.get(
-            `${item.proveedorid_default || 0}:${item.tipoproductoid || 0}`
-          ) || 1,
-      });
+      // NUEVO: Reutilizar split ya calculado en itemCalculado
+      const split = itemCalculado.split;
 
       // CRITICAL FIX: Validate and correct split BEFORE extracting to local variables
       // This prevents the bug where stock=0 but split returns cantidadSurtida > 0
@@ -896,12 +940,20 @@ const crearPedido = async (req, res) => {
       const piezasSolicitadasOriginal = tamanoValor * cantidadRequerida;
       const piezasTotalesCobrar = tamanoValor * split.cantidadTotalCobrar;
 
-      const subtotalSolicitado = parseFloat(
-        (precioPorPaquete * split.cantidadTotalCobrar).toFixed(2)
-      );
-      const subtotalSurtido = parseFloat(
-        (precioPorPaquete * cantidadSurtida).toFixed(2)
-      );
+      // NUEVO: Usar subtotales con descuento prorrateado
+      const subtotalConDescuento = itemCalculado.subtotalConDescuento || 0;
+      const subtotalSurtido = cantidadSurtida > 0
+        ? parseFloat((precioPorPaquete * cantidadSurtida).toFixed(2))
+        : 0;
+      const subtotalBackorder = cantidadBackorder > 0
+        ? parseFloat((precioPorPaquete * cantidadBackorder).toFixed(2))
+        : 0;
+      
+      console.log(`💰 [PRECIOS] Item: ${item.sku}`);
+      console.log(`   Precio paquete sin descuento: $${precioPorPaqueteSinDescuento.toFixed(2)}`);
+      console.log(`   Precio paquete CON descuento: $${precioPorPaquete.toFixed(2)}`);
+      console.log(`   Descuento aplicado: $${itemCalculado.descuentoAplicado || 0}`);
+      console.log(`   Subtotal con descuento: $${subtotalConDescuento.toFixed(2)}`);
 
       // PUNTO CLAVE: Si hay backorder, acumular para procesamiento agrupado
       if (cantidadBackorder > 0) {
@@ -930,6 +982,7 @@ const crearPedido = async (req, res) => {
       }
 
       // Insertar detalle surtido (SOLO si hay stock real disponible)
+      // CRÍTICO: Usar precioPorPaquete CON descuento prorrateado
       if (puedeSerSurtido) {
         const detalleResult = await client.query(
           `INSERT INTO DetallesDelPedido (
@@ -952,9 +1005,9 @@ const crearPedido = async (req, res) => {
             item.varianteid,
             item.tamanoid,
             split.cantidadSurtida,
-            precioPorPaquete,
+            precioPorPaquete, // Ya incluye descuento prorrateado
             piezasSurtidas,
-            precioUnitario.toFixed(2),
+            parseFloat((precioPorPaquete / tamanoValor).toFixed(2)), // PrecioUnitario con descuento
             tenant_id,
           ]
         );
@@ -989,6 +1042,7 @@ const crearPedido = async (req, res) => {
 
       // CRITICAL FIX: Insertar detalle backorder (SOLO si hay cantidad pendiente)
       // Asegurar que no duplicamos si ya se insertó como surtido
+      // CRÍTICO: Usar precioPorPaquete CON descuento prorrateado
       const cantidadRealBackorder = cantidadRequerida - cantidadSurtida;
       const debeInsertarBackorder = cantidadRealBackorder > 0 && cantidadBackorder > 0;
       
@@ -1014,9 +1068,9 @@ const crearPedido = async (req, res) => {
             item.varianteid,
             item.tamanoid,
             split.cantidadBackorderAjustada,
-            precioPorPaquete,
+            precioPorPaquete, // Ya incluye descuento prorrateado
             piezasBackorder,
-            precioUnitario.toFixed(2),
+            parseFloat((precioPorPaquete / tamanoValor).toFixed(2)), // PrecioUnitario con descuento
             tenant_id,
           ]
         );

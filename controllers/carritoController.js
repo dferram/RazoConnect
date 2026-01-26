@@ -1,4 +1,5 @@
 const db = require("../db");
+const { calcularTotalPedido } = require("../utils/calculadoraPedidos");
 
 const TAMANO_VALUE_KEYS = [
   "valor",
@@ -461,13 +462,19 @@ const obtenerCarrito = async (req, res) => {
       };
     }));
 
-    const montoTotal = items.reduce((total, item) => {
-      const subtotal =
-        item.subtotal !== null && !Number.isNaN(item.subtotal)
-          ? item.subtotal
-          : 0;
-      return total + subtotal;
-    }, 0);
+    // NUEVO: Usar función centralizada para calcular total
+    const itemsParaCalculadora = items.map(item => ({
+      precioBase: item.precioBase,
+      precioOferta: item.precioOferta,
+      piezasPorPaquete: item.piezasPorPaquete,
+      cantidad: item.cantidadPaquetesCobrar || item.cantidadPaquetes
+    }));
+
+    const calculo = calcularTotalPedido({
+      items: itemsParaCalculadora,
+      cupon: null,
+      aplicarDescuentoEnDetalles: false
+    });
 
     res.status(200).json({
       success: true,
@@ -476,7 +483,7 @@ const obtenerCarrito = async (req, res) => {
         carritoId,
         items,
         totalItems: items.length,
-        montoTotal: parseFloat(montoTotal.toFixed(2)),
+        montoTotal: calculo.totalFinal,
       },
     });
   } catch (error) {
