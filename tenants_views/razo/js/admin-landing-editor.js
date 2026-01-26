@@ -1572,6 +1572,21 @@
       btnAddBrand.addEventListener('click', addBrandItem);
     }
 
+    // Event delegation para botones de eliminar
+    document.addEventListener('click', (e) => {
+      const deleteBtn = e.target.closest('.btn-delete-item');
+      if (deleteBtn) {
+        const itemId = deleteBtn.getAttribute('data-item-id');
+        const type = deleteBtn.getAttribute('data-type');
+        
+        if (type === 'category') {
+          deleteCategoryItem(itemId);
+        } else if (type === 'brand') {
+          deleteBrandItem(itemId);
+        }
+      }
+    });
+
     loadExistingCategoryItems();
     loadExistingBrandItems();
   }
@@ -1624,7 +1639,7 @@
             <i class="bi bi-tag"></i>
             <span>Categoría ${existingData ? itemData.name : `#${dynamicCategoryItems.length + 1}`}</span>
           </div>
-          <button type="button" class="btn-delete-item" onclick="deleteCategoryItem('${itemId}')">
+          <button type="button" class="btn-delete-item" data-item-id="${itemId}" data-type="category">
             <i class="bi bi-trash"></i> Eliminar
           </button>
         </div>
@@ -1643,8 +1658,7 @@
           <label class="form-label">Imagen de Portada</label>
           <div class="image-upload-area ${itemData.image ? 'has-image' : ''}" 
                data-item-id="${itemId}"
-               data-type="category"
-               onclick="openItemImageUpload('${itemId}', 'category')">
+               data-type="category">
             ${itemData.image ? `
               <img src="${itemData.image}" class="item-image-preview" alt="Preview" />
               <div style="position: absolute; top: 0.5rem; right: 0.5rem; background: rgba(0,0,0,0.7); color: white; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem;">
@@ -1662,11 +1676,11 @@
           <label class="form-label">Selector de Destino</label>
           <select class="form-select category-selector" data-item-id="${itemId}">
             <option value="">Seleccionar categoría...</option>
-            ${availableCategories.map(cat => `
+            ${Array.isArray(availableCategories) ? availableCategories.map(cat => `
               <option value="${cat.id}" ${itemData.href && itemData.href.includes(`categoria=${cat.id}`) ? 'selected' : ''}>
                 ${cat.display_name || cat.nombre}
               </option>
-            `).join('')}
+            `).join('') : ''}
           </select>
           <div class="smart-select-label">
             <i class="bi bi-link-45deg"></i>
@@ -1703,7 +1717,7 @@
             <i class="bi bi-shop"></i>
             <span>Marca ${existingData ? itemData.name : `#${dynamicBrandItems.length + 1}`}</span>
           </div>
-          <button type="button" class="btn-delete-item" onclick="deleteBrandItem('${itemId}')">
+          <button type="button" class="btn-delete-item" data-item-id="${itemId}" data-type="brand">
             <i class="bi bi-trash"></i> Eliminar
           </button>
         </div>
@@ -1722,8 +1736,7 @@
           <label class="form-label">Imagen de Portada</label>
           <div class="image-upload-area ${itemData.image ? 'has-image' : ''}" 
                data-item-id="${itemId}"
-               data-type="brand"
-               onclick="openItemImageUpload('${itemId}', 'brand')">
+               data-type="brand">
             ${itemData.image ? `
               <img src="${itemData.image}" class="item-image-preview" alt="Preview" />
               <div style="position: absolute; top: 0.5rem; right: 0.5rem; background: rgba(0,0,0,0.7); color: white; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem;">
@@ -1741,11 +1754,11 @@
           <label class="form-label">Selector de Destino</label>
           <select class="form-select brand-selector" data-item-id="${itemId}">
             <option value="">Seleccionar marca...</option>
-            ${availableBrands.map(brand => `
+            ${Array.isArray(availableBrands) ? availableBrands.map(brand => `
               <option value="${brand.id}" ${itemData.href && itemData.href.includes(`id=${brand.id}`) ? 'selected' : ''}>
                 ${brand.display_name || brand.nombre}
               </option>
-            `).join('')}
+            `).join('') : ''}
           </select>
           <div class="smart-select-label">
             <i class="bi bi-link-45deg"></i>
@@ -1767,6 +1780,7 @@
   function attachCategoryItemListeners(itemId) {
     const selector = document.querySelector(`.category-selector[data-item-id="${itemId}"]`);
     const nameInput = document.querySelector(`.category-name-input[data-item-id="${itemId}"]`);
+    const uploadArea = document.querySelector(`.image-upload-area[data-item-id="${itemId}"][data-type="category"]`);
 
     if (selector) {
       selector.addEventListener('change', (e) => {
@@ -1789,11 +1803,18 @@
         triggerAutoSave();
       });
     }
+
+    if (uploadArea) {
+      uploadArea.addEventListener('click', () => {
+        openItemImageUpload(itemId, 'category');
+      });
+    }
   }
 
   function attachBrandItemListeners(itemId) {
     const selector = document.querySelector(`.brand-selector[data-item-id="${itemId}"]`);
     const nameInput = document.querySelector(`.brand-name-input[data-item-id="${itemId}"]`);
+    const uploadArea = document.querySelector(`.image-upload-area[data-item-id="${itemId}"][data-type="brand"]`);
 
     if (selector) {
       selector.addEventListener('change', (e) => {
@@ -1816,9 +1837,15 @@
         triggerAutoSave();
       });
     }
+
+    if (uploadArea) {
+      uploadArea.addEventListener('click', () => {
+        openItemImageUpload(itemId, 'brand');
+      });
+    }
   }
 
-  window.deleteCategoryItem = function(itemId) {
+  function deleteCategoryItem(itemId) {
     Swal.fire({
       icon: 'warning',
       title: '¿Eliminar categoría?',
@@ -1838,9 +1865,9 @@
         triggerAutoSave();
       }
     });
-  };
+  }
 
-  window.deleteBrandItem = function(itemId) {
+  function deleteBrandItem(itemId) {
     Swal.fire({
       icon: 'warning',
       title: '¿Eliminar marca?',
@@ -1860,9 +1887,9 @@
         triggerAutoSave();
       }
     });
-  };
+  }
 
-  window.openItemImageUpload = async function(itemId, type) {
+  async function openItemImageUpload(itemId, type) {
     const { value: file } = await Swal.fire({
       title: `Subir Imagen de ${type === 'category' ? 'Categoría' : 'Marca'}`,
       input: 'file',
@@ -1879,7 +1906,7 @@
     if (file) {
       await uploadItemImage(file, itemId, type);
     }
-  };
+  }
 
   async function uploadItemImage(file, itemId, type) {
     showLoading(true);

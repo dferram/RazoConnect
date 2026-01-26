@@ -330,22 +330,22 @@ exports.getSmartSelectorData = async (req, res) => {
 
     const categoriesResult = await db.query(`
       SELECT 
-        categoriaid as id,
-        nombre,
-        COALESCE(nombre_landing, nombre) as display_name
-      FROM categorias
-      WHERE activo = true AND tenant_id = $1
-      ORDER BY nombre
+        CategoriaID as id,
+        Nombre as nombre,
+        COALESCE(nombre_landing, Nombre) as display_name
+      FROM Categorias
+      WHERE Activo = true AND tenant_id = $1
+      ORDER BY Nombre
     `, [tenant_id]);
 
     const brandsResult = await db.query(`
       SELECT 
-        proveedorid as id,
-        nombre,
-        COALESCE(nombre_landing, nombre) as display_name
-      FROM proveedores
-      WHERE activo = true AND tenant_id = $1
-      ORDER BY nombre
+        ProveedorID as id,
+        Nombre as nombre,
+        COALESCE(nombre_landing, Nombre) as display_name
+      FROM Proveedores
+      WHERE Activo = true AND tenant_id = $1
+      ORDER BY Nombre
     `, [tenant_id]);
 
     return res.status(200).json({
