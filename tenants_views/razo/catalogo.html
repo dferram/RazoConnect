@@ -350,6 +350,11 @@
         const params = new URLSearchParams();
         const filtros = obtenerFiltrosSeleccionados();
 
+        // ✅ MISIÓN 1: Enviar categoría al backend
+        if (categoriaSeleccionada !== null && categoriaSeleccionada > 0) {
+          params.append("categoria", categoriaSeleccionada);
+        }
+
         if (tipoSeleccionado) {
           params.append("tipo", tipoSeleccionado);
         }
@@ -853,20 +858,16 @@
             : null;
         nombreCategoriaSeleccionada = null;
 
-        mostrarProductos();
+        // ✅ MISIÓN 1: Recargar productos desde backend con filtro de categoría
+        aplicarFiltrosDesdeUI();
       });
 
-      // Mostrar productos filtrados
+      // ✅ MISIÓN 1: Mostrar productos (ya filtrados por el backend)
       function mostrarProductos() {
         let productosFiltrados = todosLosProductos;
 
-        // Filtrar por categoría si hay una seleccionada
-        if (categoriaSeleccionada !== null) {
-          productosFiltrados = todosLosProductos.filter(
-            (p) =>
-              p.categoria && p.categoria.categoriaId === categoriaSeleccionada
-          );
-        }
+        // El filtrado por categoría ahora lo hace el backend
+        // Solo mantenemos filtrado local para dimensiones si es necesario
 
         // Actualizar contador de productos
         if (productCount) {

@@ -14,7 +14,7 @@ exports.updateCategoryLanding = async (req, res) => {
   
   try {
     const { id } = req.params;
-    const { imagen_landing, link_landing } = req.body;
+    const { imagen_landing, link_landing, nombre_landing } = req.body;
     const { tenant_id } = req.tenant;
 
     await client.query('BEGIN');
@@ -33,25 +33,27 @@ exports.updateCategoryLanding = async (req, res) => {
       });
     }
 
-    // Update category with landing page data
+    // ✅ MISIÓN 3: Update category with landing page data including nombre_landing
     await client.query(
       `UPDATE categorias 
        SET imagen_landing = $1, 
            link_landing = $2,
+           nombre_landing = $3,
            updated_at = CURRENT_TIMESTAMP
-       WHERE categoriaid = $3 AND tenant_id = $4`,
-      [imagen_landing, link_landing, id, tenant_id]
+       WHERE categoriaid = $4 AND tenant_id = $5`,
+      [imagen_landing, link_landing, nombre_landing, id, tenant_id]
     );
 
     await client.query('COMMIT');
 
     return res.status(200).json({
       success: true,
-      message: 'Imagen y enlace de categoría actualizados correctamente',
+      message: 'Imagen, enlace y nombre de categoría actualizados correctamente',
       data: {
         categoriaId: id,
         imagen_landing,
-        link_landing
+        link_landing,
+        nombre_landing
       }
     });
 
@@ -77,7 +79,7 @@ exports.updateProveedorLanding = async (req, res) => {
   
   try {
     const { id } = req.params;
-    const { imagen_landing, link_landing } = req.body;
+    const { imagen_landing, link_landing, nombre_landing } = req.body;
     const { tenant_id } = req.tenant;
 
     await client.query('BEGIN');
@@ -96,25 +98,27 @@ exports.updateProveedorLanding = async (req, res) => {
       });
     }
 
-    // Update proveedor with landing page data
+    // ✅ MISIÓN 3: Update proveedor with landing page data including nombre_landing
     await client.query(
       `UPDATE proveedores 
        SET imagen_landing = $1, 
            link_landing = $2,
+           nombre_landing = $3,
            updated_at = CURRENT_TIMESTAMP
-       WHERE proveedorid = $3 AND tenant_id = $4`,
-      [imagen_landing, link_landing, id, tenant_id]
+       WHERE proveedorid = $4 AND tenant_id = $5`,
+      [imagen_landing, link_landing, nombre_landing, id, tenant_id]
     );
 
     await client.query('COMMIT');
 
     return res.status(200).json({
       success: true,
-      message: 'Imagen y enlace de proveedor actualizados correctamente',
+      message: 'Imagen, enlace y nombre de proveedor actualizados correctamente',
       data: {
         proveedorId: id,
         imagen_landing,
-        link_landing
+        link_landing,
+        nombre_landing
       }
     });
 
@@ -139,13 +143,12 @@ exports.getPublicLandingItems = async (req, res) => {
   try {
     const { tenant_id } = req.tenant;
 
-    // Get categories with landing data
+    // ✅ MISIÓN 4: Get categories with landing data including nombre_landing
     const categoriesResult = await db.query(
       `SELECT 
         categoriaid as id,
-        nombre as name,
+        COALESCE(nombre_landing, nombre) as name,
         imagen_landing as image,
-        link_landing as href,
         COALESCE(link_landing, '/catalogo.html?categoria=' || categoriaid) as href
        FROM categorias
        WHERE activo = true 
@@ -155,13 +158,12 @@ exports.getPublicLandingItems = async (req, res) => {
       [tenant_id]
     );
 
-    // Get proveedores with landing data
+    // ✅ MISIÓN 4: Get proveedores with landing data including nombre_landing
     const proveedoresResult = await db.query(
       `SELECT 
         proveedorid as id,
-        nombre as name,
+        COALESCE(nombre_landing, nombre) as name,
         imagen_landing as image,
-        link_landing as href,
         COALESCE(link_landing, '/proveedor-tienda.html?id=' || proveedorid) as href
        FROM proveedores
        WHERE activo = true 
