@@ -11,6 +11,7 @@
     />
     <link rel="stylesheet" href="css/styles.css" />
     <link rel="stylesheet" href="css/landing-dynamic.css" />
+    <link rel="stylesheet" href="css/landing-carousel.css" />
     <link rel="stylesheet" href="css/mobile-responsive.css" />
   </head>
   <body>
@@ -123,19 +124,57 @@
       </div>
     </section>
 
-    <!-- Sección: Nuestras Marcas -->
-    <section class="landing-brands">
+    <!-- Sección: Categorías -->
+    <section class="carousel-section">
       <div class="container">
-        <h2 class="landing-section-title">Explora por Marca</h2>
-        <p class="landing-section-subtitle">
-          Descubre nuestros proveedores de confianza
-        </p>
+        <div class="carousel-header">
+          <div class="carousel-header-content">
+            <h2 class="carousel-title">Explora por Categoría</h2>
+            <p class="carousel-subtitle">Encuentra el regalo perfecto para cada ocasión</p>
+          </div>
+          <div class="carousel-nav">
+            <button class="carousel-arrow prev" aria-label="Anterior">
+              ←
+            </button>
+            <button class="carousel-arrow next" aria-label="Siguiente">
+              →
+            </button>
+          </div>
+        </div>
+        <div id="categoriesCarousel" class="carousel-wrapper">
+          <div id="categoriesCarouselTrack" class="carousel-track">
+            <div class="carousel-loading">
+              <div class="spinner"></div>
+              <p>Cargando categorías...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
 
-        <div id="brandsGrid" class="landing-brands-grid">
-          <!-- Loading -->
-          <div class="landing-loader">
-            <div class="spinner"></div>
-            <p>Cargando marcas...</p>
+    <!-- Sección: Nuestras Marcas -->
+    <section class="carousel-section alt-bg">
+      <div class="container">
+        <div class="carousel-header">
+          <div class="carousel-header-content">
+            <h2 class="carousel-title">Explora por Marca</h2>
+            <p class="carousel-subtitle">Descubre nuestros proveedores de confianza</p>
+          </div>
+          <div class="carousel-nav">
+            <button class="carousel-arrow prev" aria-label="Anterior">
+              ←
+            </button>
+            <button class="carousel-arrow next" aria-label="Siguiente">
+              →
+            </button>
+          </div>
+        </div>
+        <div id="brandsCarousel" class="carousel-wrapper">
+          <div id="brandsCarouselTrack" class="carousel-track">
+            <div class="carousel-loading">
+              <div class="spinner"></div>
+              <p>Cargando marcas...</p>
+            </div>
           </div>
         </div>
       </div>
@@ -391,60 +430,6 @@
         });
       }
 
-      // ========================================
-      // CARGAR PROVEEDORES (MARCAS)
-      // ========================================
-      async function loadBrands() {
-        const brandsGrid = document.getElementById("brandsGrid");
-
-        try {
-          const response = await fetch("/api/public/proveedores");
-          const data = await response.json();
-
-          // El backend devuelve: { success, data: { proveedores: [...] } }
-          if (
-            data.success &&
-            data.data &&
-            data.data.proveedores &&
-            data.data.proveedores.length > 0
-          ) {
-            brandsGrid.innerHTML = data.data.proveedores
-              .map(
-                (proveedor) => `
-              <div class="brand-card">
-                <div class="brand-card-header">
-                  <div class="brand-icon">${proveedor.nombre
-                    .charAt(0)
-                    .toUpperCase()}</div>
-                  <h3 class="brand-name">${proveedor.nombre}</h3>
-                </div>
-                <p class="brand-contact">Productos disponibles</p>
-                <a 
-                  href="/proveedor-tienda.html?id=${proveedor.proveedorId}" 
-                  class="brand-btn"
-                >
-                  Ver Productos →
-                </a>
-              </div>
-            `
-              )
-              .join("");
-          } else {
-            brandsGrid.innerHTML = `
-              <div class="landing-empty">
-                <p>No hay proveedores disponibles en este momento.</p>
-              </div>
-            `;
-          }
-        } catch (error) {
-          console.error("Error cargando proveedores:", error);
-          brandsGrid.innerHTML = `
-            <div class="landing-error">
-              <p>⚠️ Error al cargar las marcas. Por favor intenta más tarde.</p>
-            </div>
-          `;
-        }
-      }
 
       // ========================================
       // CARGAR PRODUCTOS DESTACADOS (DINÁMICO POR TEMA)
@@ -543,7 +528,6 @@
       // INICIALIZAR AL CARGAR LA PÁGINA
       // ========================================
       document.addEventListener("DOMContentLoaded", () => {
-        loadBrands();
         
         // Cargar productos según el tema actual
         setTimeout(() => {
@@ -568,5 +552,7 @@
 
     <!-- Sistema de Temas Estacionales -->
     <script src="/js/theme-manager.js"></script>
+    <!-- Carousel Manager -->
+    <script src="js/landing-carousel.js"></script>
   </body>
 </html>

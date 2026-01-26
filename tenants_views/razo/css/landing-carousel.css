@@ -1,0 +1,444 @@
+/**
+ * RazoConnect - Landing Carousel Sections
+ * Modern card-based carousel design for Categories and Brands
+ * @version 1.0.0
+ */
+
+/* ============================================
+   CAROUSEL CONTAINER
+   ============================================ */
+
+.carousel-section {
+  padding: 6rem 0;
+  background: var(--theme-bg-primary);
+  position: relative;
+  overflow: hidden;
+}
+
+.carousel-section.alt-bg {
+  background: var(--theme-bg-secondary);
+}
+
+.carousel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 3rem;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+}
+
+.carousel-header-content {
+  flex: 1;
+}
+
+.carousel-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--theme-primary);
+  margin-bottom: 0.5rem;
+}
+
+.carousel-subtitle {
+  font-size: 1.25rem;
+  color: var(--theme-secondary);
+  opacity: 0.8;
+}
+
+/* ============================================
+   NAVIGATION ARROWS
+   ============================================ */
+
+.carousel-nav {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.carousel-arrow {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: var(--theme-surface);
+  border: 2px solid var(--theme-bg-tertiary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  color: var(--theme-primary);
+  font-size: 1.25rem;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.carousel-arrow:hover:not(.disabled) {
+  background: var(--theme-primary);
+  color: white;
+  border-color: var(--theme-primary);
+  transform: scale(1.1);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.carousel-arrow:active:not(.disabled) {
+  transform: scale(0.95);
+}
+
+.carousel-arrow.disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* ============================================
+   CAROUSEL WRAPPER
+   ============================================ */
+
+.carousel-wrapper {
+  position: relative;
+  overflow: hidden;
+  margin: 0 -1rem;
+  padding: 0 1rem;
+}
+
+.carousel-track {
+  display: flex;
+  gap: 2rem;
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
+}
+
+/* Touch scrolling for mobile */
+@media (max-width: 768px) {
+  .carousel-wrapper {
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .carousel-wrapper::-webkit-scrollbar {
+    display: none;
+  }
+
+  .carousel-track {
+    transition: none;
+  }
+
+  .carousel-nav {
+    display: none;
+  }
+}
+
+/* ============================================
+   CAROUSEL CARDS - LARGE IMAGE STYLE
+   ============================================ */
+
+.carousel-card {
+  flex: 0 0 calc(33.333% - 1.5rem);
+  min-width: 320px;
+  max-width: 450px;
+  position: relative;
+  border-radius: 1.5rem;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  scroll-snap-align: start;
+}
+
+.carousel-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+}
+
+/* Card Image Container */
+.carousel-card-image {
+  position: relative;
+  width: 100%;
+  height: 350px;
+  overflow: hidden;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.carousel-card-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.carousel-card:hover .carousel-card-image img {
+  transform: scale(1.05);
+}
+
+/* Image Overlay */
+.carousel-card-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0) 0%,
+    rgba(0, 0, 0, 0.3) 50%,
+    rgba(0, 0, 0, 0.7) 100%
+  );
+  transition: background 0.3s;
+}
+
+.carousel-card:hover .carousel-card-overlay {
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0) 0%,
+    rgba(0, 0, 0, 0.4) 50%,
+    rgba(0, 0, 0, 0.8) 100%
+  );
+}
+
+/* Badge Label */
+.carousel-card-badge {
+  position: absolute;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: white;
+  color: #1a1a1a;
+  padding: 0.75rem 2rem;
+  border-radius: 50px;
+  font-size: 1.125rem;
+  font-weight: 700;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 2;
+  white-space: nowrap;
+}
+
+.carousel-card:hover .carousel-card-badge {
+  background: var(--razo-orange, #F97316);
+  color: white;
+  transform: translateX(-50%) scale(1.05);
+  box-shadow: 0 6px 24px rgba(249, 115, 22, 0.4);
+}
+
+/* ============================================
+   BRAND CARDS - VARIATION
+   ============================================ */
+
+.carousel-card.brand-card .carousel-card-image {
+  height: 300px;
+}
+
+.carousel-card.brand-card .carousel-card-badge {
+  padding: 0.625rem 1.75rem;
+  font-size: 1rem;
+}
+
+/* Brand Icon Overlay */
+.brand-icon-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.95);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--theme-primary);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s;
+  z-index: 1;
+}
+
+.carousel-card.brand-card:hover .brand-icon-overlay {
+  transform: translate(-50%, -50%) scale(1.1);
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.3);
+}
+
+/* ============================================
+   LOADING STATE
+   ============================================ */
+
+.carousel-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  color: var(--theme-secondary);
+}
+
+.carousel-loading .spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid var(--theme-bg-tertiary);
+  border-top-color: var(--theme-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-bottom: 1.5rem;
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+
+@media (max-width: 1200px) {
+  .carousel-card {
+    flex: 0 0 calc(50% - 1rem);
+    min-width: 280px;
+  }
+}
+
+@media (max-width: 768px) {
+  .carousel-section {
+    padding: 4rem 0;
+  }
+
+  .carousel-header {
+    margin-bottom: 2rem;
+  }
+
+  .carousel-title {
+    font-size: 2rem;
+  }
+
+  .carousel-subtitle {
+    font-size: 1.125rem;
+  }
+
+  .carousel-card {
+    flex: 0 0 85%;
+    min-width: 280px;
+    max-width: 400px;
+  }
+
+  .carousel-card-image {
+    height: 300px;
+  }
+
+  .carousel-card.brand-card .carousel-card-image {
+    height: 250px;
+  }
+
+  .carousel-card-badge {
+    font-size: 1rem;
+    padding: 0.625rem 1.5rem;
+  }
+
+  .carousel-wrapper {
+    margin: 0 -0.5rem;
+    padding: 0 0.5rem;
+  }
+
+  .carousel-track {
+    gap: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .carousel-section {
+    padding: 3rem 0;
+  }
+
+  .carousel-title {
+    font-size: 1.75rem;
+  }
+
+  .carousel-subtitle {
+    font-size: 1rem;
+  }
+
+  .carousel-card {
+    flex: 0 0 90%;
+    min-width: 260px;
+  }
+
+  .carousel-card-image {
+    height: 250px;
+  }
+
+  .carousel-card.brand-card .carousel-card-image {
+    height: 220px;
+  }
+
+  .carousel-card-badge {
+    font-size: 0.9375rem;
+    padding: 0.5rem 1.25rem;
+    bottom: 1rem;
+  }
+
+  .brand-icon-overlay {
+    width: 80px;
+    height: 80px;
+    font-size: 2rem;
+  }
+}
+
+/* ============================================
+   ACCESSIBILITY
+   ============================================ */
+
+.carousel-card:focus {
+  outline: 3px solid var(--theme-primary);
+  outline-offset: 4px;
+}
+
+.carousel-arrow:focus {
+  outline: 3px solid var(--theme-primary);
+  outline-offset: 2px;
+}
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .carousel-track,
+  .carousel-card,
+  .carousel-card-image img,
+  .carousel-card-badge,
+  .carousel-arrow {
+    transition: none;
+  }
+
+  .carousel-card:hover .carousel-card-image img {
+    transform: none;
+  }
+}
+
+/* ============================================
+   EMPTY STATE
+   ============================================ */
+
+.carousel-empty {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: var(--theme-secondary);
+  opacity: 0.7;
+}
+
+.carousel-empty p {
+  font-size: 1.125rem;
+  margin-bottom: 1.5rem;
+}
+
+.carousel-empty a {
+  display: inline-block;
+  padding: 0.875rem 2rem;
+  background: var(--theme-primary);
+  color: white;
+  text-decoration: none;
+  border-radius: 50px;
+  font-weight: 600;
+  transition: all 0.3s;
+}
+
+.carousel-empty a:hover {
+  background: var(--theme-primary-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}

@@ -1,0 +1,61 @@
+{
+  "categories": [
+    {
+      "id": 1,
+      "name": "Navidad",
+      "image": "https://images.unsplash.com/photo-1512389142860-9c449e58a543?w=800&h=600&fit=crop&q=80",
+      "href": "/catalogo.html?categoria=7",
+      "description": "Empaques festivos para la temporada navideña"
+    },
+    {
+      "id": 2,
+      "name": "San Valentín",
+      "image": "https://images.unsplash.com/photo-1518199266791-5375a83190b7?w=800&h=600&fit=crop&q=80",
+      "href": "/catalogo.html?categoria=san-valentin",
+      "description": "Regalos románticos para el día del amor"
+    },
+    {
+      "id": 3,
+      "name": "Día de la Madre",
+      "image": "https://images.unsplash.com/photo-1522673607200-164d1b6ce486?w=800&h=600&fit=crop&q=80",
+      "href": "/catalogo.html?categoria=dia-madre",
+      "description": "Detalles especiales para mamá"
+    },
+    {
+      "id": 4,
+      "name": "Día del Padre",
+      "image": "https://images.unsplash.com/photo-1473093295043-cdd812d0e601?w=800&h=600&fit=crop&q=80",
+      "href": "/catalogo.html?categoria=dia-padre",
+      "description": "Regalos elegantes para papá"
+    },
+    {
+      "id": 5,
+      "name": "Graduaciones",
+      "image": "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=800&h=600&fit=crop&q=80",
+      "href": "/catalogo.html?categoria=graduaciones",
+      "description": "Celebra el éxito académico"
+    },
+    {
+      "id": 6,
+      "name": "Cumpleaños",
+      "image": "https://images.unsplash.com/photo-1464349095431-e9a21285b5f3?w=800&h=600&fit=crop&q=80",
+      "href": "/catalogo.html?categoria=cumpleanos",
+      "description": "Sorpresas para celebrar la vida"
+    },
+    {
+      "id": 7,
+      "name": "Bodas",
+      "image": "https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=800&h=600&fit=crop&q=80",
+      "href": "/catalogo.html?categoria=bodas",
+      "description": "Detalles elegantes para el gran día"
+    },
+    {
+      "id": 8,
+      "name": "Baby Shower",
+      "image": "https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=800&h=600&fit=crop&q=80",
+      "href": "/catalogo.html?categoria=baby-shower",
+      "description": "Regalos tiernos para la llegada del bebé"
+    }
+  ],
+  "brands": []
+}

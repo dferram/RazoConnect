@@ -20,6 +20,7 @@
     />
     <link rel="stylesheet" href="/css/styles.css" />
     <link rel="stylesheet" href="/css/inicio-new.css" />
+    <link rel="stylesheet" href="css/landing-carousel.css" />
     <link rel="stylesheet" href="/css/mobile-responsive.css" />
   </head>
   <body>
@@ -144,20 +145,58 @@
       </div>
     </section>
 
-    <!-- Categorías Visuales -->
-    <section class="categories-section">
+    <!-- Sección: Categorías -->
+    <section class="carousel-section">
       <div class="container">
-        <div class="section-header">
-          <h2 class="section-title">Explora por categoría</h2>
-          <p class="section-subtitle">Encuentra lo que necesitas rápidamente</p>
+        <div class="carousel-header">
+          <div class="carousel-header-content">
+            <h2 class="carousel-title">Explora por Categoría</h2>
+            <p class="carousel-subtitle">Encuentra el regalo perfecto para cada ocasión</p>
+          </div>
+          <div class="carousel-nav">
+            <button class="carousel-arrow prev" aria-label="Anterior">
+              ←
+            </button>
+            <button class="carousel-arrow next" aria-label="Siguiente">
+              →
+            </button>
+          </div>
         </div>
+        <div id="categoriesCarousel" class="carousel-wrapper">
+          <div id="categoriesCarouselTrack" class="carousel-track">
+            <div class="carousel-loading">
+              <div class="spinner"></div>
+              <p>Cargando categorías...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
 
-        <div class="categories-grid" id="categoriesGrid">
-          <!-- Loading -->
-          <div class="loading-skeleton" style="height: 180px"></div>
-          <div class="loading-skeleton" style="height: 180px"></div>
-          <div class="loading-skeleton" style="height: 180px"></div>
-          <div class="loading-skeleton" style="height: 180px"></div>
+    <!-- Sección: Nuestras Marcas -->
+    <section class="carousel-section alt-bg">
+      <div class="container">
+        <div class="carousel-header">
+          <div class="carousel-header-content">
+            <h2 class="carousel-title">Explora por Marca</h2>
+            <p class="carousel-subtitle">Descubre nuestros proveedores de confianza</p>
+          </div>
+          <div class="carousel-nav">
+            <button class="carousel-arrow prev" aria-label="Anterior">
+              ←
+            </button>
+            <button class="carousel-arrow next" aria-label="Siguiente">
+              →
+            </button>
+          </div>
+        </div>
+        <div id="brandsCarousel" class="carousel-wrapper">
+          <div id="brandsCarouselTrack" class="carousel-track">
+            <div class="carousel-loading">
+              <div class="spinner"></div>
+              <p>Cargando marcas...</p>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -270,6 +309,8 @@
 
     <!-- Sistema de Temas Estacionales -->
     <script src="/js/theme-manager.js"></script>
+    <!-- Carousel Manager -->
+    <script src="js/landing-carousel.js"></script>
 
     <!-- Lógica de Contenido Dinámico -->
     <script src="/js/inicio-seasonal.js"></script>
