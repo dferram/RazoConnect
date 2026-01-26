@@ -13,8 +13,24 @@ class CarouselManager {
     }
 
     this.track = this.container.querySelector('.carousel-track');
-    this.prevBtn = this.container.querySelector('.carousel-arrow.prev');
-    this.nextBtn = this.container.querySelector('.carousel-arrow.next');
+    
+    // Los botones están en el section padre, no dentro del carousel-wrapper
+    const section = this.container.closest('.carousel-section');
+    if (section) {
+      const navContainer = section.querySelector('.carousel-nav');
+      if (navContainer) {
+        this.prevBtn = navContainer.querySelector('.carousel-arrow.prev');
+        this.nextBtn = navContainer.querySelector('.carousel-arrow.next');
+      }
+    }
+    
+    // Fallback: buscar en el contenedor directo
+    if (!this.prevBtn) {
+      this.prevBtn = this.container.querySelector('.carousel-arrow.prev');
+    }
+    if (!this.nextBtn) {
+      this.nextBtn = this.container.querySelector('.carousel-arrow.next');
+    }
     
     this.currentIndex = 0;
     this.itemsPerView = options.itemsPerView || 3;
@@ -29,7 +45,17 @@ class CarouselManager {
   }
 
   init() {
-    if (!this.track) return;
+    if (!this.track) {
+      console.error('Carousel track not found');
+      return;
+    }
+
+    console.log('🎪 Inicializando carrusel:', {
+      container: this.container.id,
+      hasPrevBtn: !!this.prevBtn,
+      hasNextBtn: !!this.nextBtn,
+      hasTrack: !!this.track
+    });
 
     this.updateItemsPerView();
     this.attachEventListeners();
@@ -57,11 +83,23 @@ class CarouselManager {
 
   attachEventListeners() {
     if (this.prevBtn) {
-      this.prevBtn.addEventListener('click', () => this.prev());
+      this.prevBtn.addEventListener('click', () => {
+        console.log('← Click en botón anterior');
+        this.prev();
+      });
+      console.log('✅ Evento click agregado al botón anterior');
+    } else {
+      console.warn('⚠️ Botón anterior no encontrado');
     }
     
     if (this.nextBtn) {
-      this.nextBtn.addEventListener('click', () => this.next());
+      this.nextBtn.addEventListener('click', () => {
+        console.log('→ Click en botón siguiente');
+        this.next();
+      });
+      console.log('✅ Evento click agregado al botón siguiente');
+    } else {
+      console.warn('⚠️ Botón siguiente no encontrado');
     }
 
     if (this.track) {
@@ -101,32 +139,57 @@ class CarouselManager {
 
   updateItems() {
     this.items = Array.from(this.track.querySelectorAll('.carousel-card'));
+    console.log('📋 Items actualizados:', this.items.length);
     this.updateNavigation();
+    
+    // Asegurar que el slide inicial funcione
+    if (this.items.length > 0) {
+      this.slide();
+    }
   }
 
   prev() {
+    console.log('🔙 Prev llamado. Index actual:', this.currentIndex);
     if (this.currentIndex > 0) {
       this.currentIndex--;
+      console.log('✅ Moviendo a index:', this.currentIndex);
       this.slide();
       this.resetAutoScroll();
+    } else {
+      console.log('⚠️ Ya está en el inicio');
     }
   }
 
   next() {
     const maxIndex = Math.max(0, this.items.length - Math.floor(this.itemsPerView));
+    console.log('🔜 Next llamado. Index actual:', this.currentIndex, 'Max:', maxIndex);
     
     if (this.currentIndex < maxIndex) {
       this.currentIndex++;
+      console.log('✅ Moviendo a index:', this.currentIndex);
       this.slide();
       this.resetAutoScroll();
+    } else {
+      console.log('⚠️ Ya está en el final');
     }
   }
 
   slide() {
-    if (!this.track || this.items.length === 0) return;
+    if (!this.track || this.items.length === 0) {
+      console.warn('⚠️ No se puede hacer slide: track o items vacíos');
+      return;
+    }
 
     const cardWidth = this.items[0].offsetWidth;
     const offset = -(this.currentIndex * (cardWidth + this.gap));
+    
+    console.log('🎠 Sliding:', {
+      currentIndex: this.currentIndex,
+      cardWidth,
+      gap: this.gap,
+      offset,
+      itemsCount: this.items.length
+    });
     
     this.track.style.transform = `translateX(${offset}px)`;
     this.updateNavigation();
