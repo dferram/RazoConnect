@@ -21,6 +21,11 @@
   let cropperReady = false; // ✅ Bandera de control de inicialización
   let currentImageFile = null;
   let availableCategories = [];
+  let availableBrands = [];
+  let dynamicCategoryItems = [];
+  let dynamicBrandItems = [];
+  let categoryItemCounter = 0;
+  let brandItemCounter = 0;
 
   // ============================================
   // INITIALIZATION
@@ -49,9 +54,10 @@
       await Promise.all([
         loadConfig(),
         loadCategories(),
-        loadCategoriesManager(),
-        loadBrandsManager()
+        loadSmartSelectorData()
       ]);
+
+      initializeDynamicItemManagers();
 
       setupEventListeners();
       setupPageSelector();
@@ -1517,7 +1523,429 @@
   }
 
   // ============================================
-  // ✅ MISIÓN 2: CATEGORIES & BRANDS MANAGEMENT
+  // ✅ NUEVO: SMART SELECTOR DATA LOADING
+  // ============================================
+
+  async function loadSmartSelectorData() {
+    try {
+      const token = localStorage.getItem('razoconnect_admin_token');
+      const response = await fetch('/api/admin/landing/smart-selector-data', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.message || 'Error al cargar datos');
+      }
+
+      availableCategories = data.data.categories || [];
+      availableBrands = data.data.brands || [];
+
+      console.log('✅ Smart selector data loaded:', {
+        categories: availableCategories.length,
+        brands: availableBrands.length
+      });
+    } catch (error) {
+      console.error('Error loading smart selector data:', error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error al cargar datos',
+        text: error.message
+      });
+    }
+  }
+
+  // ============================================
+  // ✅ NUEVO: DYNAMIC ITEM MANAGERS
+  // ============================================
+
+  function initializeDynamicItemManagers() {
+    const btnAddCategory = document.getElementById('btnAddCategory');
+    const btnAddBrand = document.getElementById('btnAddBrand');
+
+    if (btnAddCategory) {
+      btnAddCategory.addEventListener('click', addCategoryItem);
+    }
+
+    if (btnAddBrand) {
+      btnAddBrand.addEventListener('click', addBrandItem);
+    }
+
+    loadExistingCategoryItems();
+    loadExistingBrandItems();
+  }
+
+  async function loadExistingCategoryItems() {
+    try {
+      const response = await fetch('/api/public/landing-items');
+      const data = await response.json();
+
+      if (data.success && data.data.categories) {
+        data.data.categories.forEach(cat => {
+          addCategoryItem(cat);
+        });
+      }
+    } catch (error) {
+      console.error('Error loading existing category items:', error);
+    }
+  }
+
+  async function loadExistingBrandItems() {
+    try {
+      const response = await fetch('/api/public/landing-items');
+      const data = await response.json();
+
+      if (data.success && data.data.brands) {
+        data.data.brands.forEach(brand => {
+          addBrandItem(brand);
+        });
+      }
+    } catch (error) {
+      console.error('Error loading existing brand items:', error);
+    }
+  }
+
+  function addCategoryItem(existingData = null) {
+    const container = document.getElementById('categoriesItemsContainer');
+    if (!container) return;
+
+    const itemId = existingData ? existingData.id : `new_${categoryItemCounter++}`;
+    const itemData = existingData || {
+      name: '',
+      image: '',
+      href: ''
+    };
+
+    const itemHTML = `
+      <div class="dynamic-item-card" data-item-id="${itemId}" data-type="category">
+        <div class="dynamic-item-header">
+          <div class="dynamic-item-title">
+            <i class="bi bi-tag"></i>
+            <span>Categoría ${existingData ? itemData.name : `#${dynamicCategoryItems.length + 1}`}</span>
+          </div>
+          <button type="button" class="btn-delete-item" onclick="deleteCategoryItem('${itemId}')">
+            <i class="bi bi-trash"></i> Eliminar
+          </button>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Nombre Visual</label>
+          <input type="text" 
+                 class="form-control category-name-input" 
+                 data-item-id="${itemId}"
+                 value="${itemData.name || ''}"
+                 placeholder="Ej: Amor, Navidad, Graduaciones" />
+          <small class="text-muted">Este nombre aparecerá en el badge de la tarjeta</small>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Imagen de Portada</label>
+          <div class="image-upload-area ${itemData.image ? 'has-image' : ''}" 
+               data-item-id="${itemId}"
+               data-type="category"
+               onclick="openItemImageUpload('${itemId}', 'category')">
+            ${itemData.image ? `
+              <img src="${itemData.image}" class="item-image-preview" alt="Preview" />
+              <div style="position: absolute; top: 0.5rem; right: 0.5rem; background: rgba(0,0,0,0.7); color: white; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem;">
+                <i class="bi bi-pencil"></i> Cambiar
+              </div>
+            ` : `
+              <i class="bi bi-cloud-upload upload-icon"></i>
+              <p class="upload-text mb-0">Click para subir imagen<br><small>800x600px recomendado</small></p>
+            `}
+          </div>
+          <input type="hidden" class="category-image-input" data-item-id="${itemId}" value="${itemData.image || ''}" />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Selector de Destino</label>
+          <select class="form-select category-selector" data-item-id="${itemId}">
+            <option value="">Seleccionar categoría...</option>
+            ${availableCategories.map(cat => `
+              <option value="${cat.id}" ${itemData.href && itemData.href.includes(`categoria=${cat.id}`) ? 'selected' : ''}>
+                ${cat.display_name || cat.nombre}
+              </option>
+            `).join('')}
+          </select>
+          <div class="smart-select-label">
+            <i class="bi bi-link-45deg"></i>
+            <span class="generated-url" data-item-id="${itemId}">
+              ${itemData.href || 'Selecciona una categoría para generar el enlace'}
+            </span>
+          </div>
+        </div>
+      </div>
+    `;
+
+    container.insertAdjacentHTML('beforeend', itemHTML);
+    dynamicCategoryItems.push({ id: itemId, data: itemData });
+
+    attachCategoryItemListeners(itemId);
+    isDirty = true;
+  }
+
+  function addBrandItem(existingData = null) {
+    const container = document.getElementById('brandsItemsContainer');
+    if (!container) return;
+
+    const itemId = existingData ? existingData.id : `new_${brandItemCounter++}`;
+    const itemData = existingData || {
+      name: '',
+      image: '',
+      href: ''
+    };
+
+    const itemHTML = `
+      <div class="dynamic-item-card" data-item-id="${itemId}" data-type="brand">
+        <div class="dynamic-item-header">
+          <div class="dynamic-item-title">
+            <i class="bi bi-shop"></i>
+            <span>Marca ${existingData ? itemData.name : `#${dynamicBrandItems.length + 1}`}</span>
+          </div>
+          <button type="button" class="btn-delete-item" onclick="deleteBrandItem('${itemId}')">
+            <i class="bi bi-trash"></i> Eliminar
+          </button>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Nombre Visual</label>
+          <input type="text" 
+                 class="form-control brand-name-input" 
+                 data-item-id="${itemId}"
+                 value="${itemData.name || ''}"
+                 placeholder="Ej: Nike, Adidas, Puma" />
+          <small class="text-muted">Este nombre aparecerá en el badge de la tarjeta</small>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Imagen de Portada</label>
+          <div class="image-upload-area ${itemData.image ? 'has-image' : ''}" 
+               data-item-id="${itemId}"
+               data-type="brand"
+               onclick="openItemImageUpload('${itemId}', 'brand')">
+            ${itemData.image ? `
+              <img src="${itemData.image}" class="item-image-preview" alt="Preview" />
+              <div style="position: absolute; top: 0.5rem; right: 0.5rem; background: rgba(0,0,0,0.7); color: white; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem;">
+                <i class="bi bi-pencil"></i> Cambiar
+              </div>
+            ` : `
+              <i class="bi bi-cloud-upload upload-icon"></i>
+              <p class="upload-text mb-0">Click para subir imagen<br><small>800x600px recomendado</small></p>
+            `}
+          </div>
+          <input type="hidden" class="brand-image-input" data-item-id="${itemId}" value="${itemData.image || ''}" />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Selector de Destino</label>
+          <select class="form-select brand-selector" data-item-id="${itemId}">
+            <option value="">Seleccionar marca...</option>
+            ${availableBrands.map(brand => `
+              <option value="${brand.id}" ${itemData.href && itemData.href.includes(`id=${brand.id}`) ? 'selected' : ''}>
+                ${brand.display_name || brand.nombre}
+              </option>
+            `).join('')}
+          </select>
+          <div class="smart-select-label">
+            <i class="bi bi-link-45deg"></i>
+            <span class="generated-url" data-item-id="${itemId}">
+              ${itemData.href || 'Selecciona una marca para generar el enlace'}
+            </span>
+          </div>
+        </div>
+      </div>
+    `;
+
+    container.insertAdjacentHTML('beforeend', itemHTML);
+    dynamicBrandItems.push({ id: itemId, data: itemData });
+
+    attachBrandItemListeners(itemId);
+    isDirty = true;
+  }
+
+  function attachCategoryItemListeners(itemId) {
+    const selector = document.querySelector(`.category-selector[data-item-id="${itemId}"]`);
+    const nameInput = document.querySelector(`.category-name-input[data-item-id="${itemId}"]`);
+
+    if (selector) {
+      selector.addEventListener('change', (e) => {
+        const selectedId = e.target.value;
+        if (selectedId) {
+          const generatedUrl = `/catalogo.html?categoria=${selectedId}`;
+          const urlDisplay = document.querySelector(`.generated-url[data-item-id="${itemId}"]`);
+          if (urlDisplay) {
+            urlDisplay.textContent = generatedUrl;
+          }
+        }
+        isDirty = true;
+        triggerAutoSave();
+      });
+    }
+
+    if (nameInput) {
+      nameInput.addEventListener('input', () => {
+        isDirty = true;
+        triggerAutoSave();
+      });
+    }
+  }
+
+  function attachBrandItemListeners(itemId) {
+    const selector = document.querySelector(`.brand-selector[data-item-id="${itemId}"]`);
+    const nameInput = document.querySelector(`.brand-name-input[data-item-id="${itemId}"]`);
+
+    if (selector) {
+      selector.addEventListener('change', (e) => {
+        const selectedId = e.target.value;
+        if (selectedId) {
+          const generatedUrl = `/proveedor-tienda.html?id=${selectedId}`;
+          const urlDisplay = document.querySelector(`.generated-url[data-item-id="${itemId}"]`);
+          if (urlDisplay) {
+            urlDisplay.textContent = generatedUrl;
+          }
+        }
+        isDirty = true;
+        triggerAutoSave();
+      });
+    }
+
+    if (nameInput) {
+      nameInput.addEventListener('input', () => {
+        isDirty = true;
+        triggerAutoSave();
+      });
+    }
+  }
+
+  window.deleteCategoryItem = function(itemId) {
+    Swal.fire({
+      icon: 'warning',
+      title: '¿Eliminar categoría?',
+      text: 'Esta acción no se puede deshacer',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#ef4444'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        const card = document.querySelector(`.dynamic-item-card[data-item-id="${itemId}"][data-type="category"]`);
+        if (card) {
+          card.remove();
+        }
+        dynamicCategoryItems = dynamicCategoryItems.filter(item => item.id !== itemId);
+        isDirty = true;
+        triggerAutoSave();
+      }
+    });
+  };
+
+  window.deleteBrandItem = function(itemId) {
+    Swal.fire({
+      icon: 'warning',
+      title: '¿Eliminar marca?',
+      text: 'Esta acción no se puede deshacer',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#ef4444'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        const card = document.querySelector(`.dynamic-item-card[data-item-id="${itemId}"][data-type="brand"]`);
+        if (card) {
+          card.remove();
+        }
+        dynamicBrandItems = dynamicBrandItems.filter(item => item.id !== itemId);
+        isDirty = true;
+        triggerAutoSave();
+      }
+    });
+  };
+
+  window.openItemImageUpload = async function(itemId, type) {
+    const { value: file } = await Swal.fire({
+      title: `Subir Imagen de ${type === 'category' ? 'Categoría' : 'Marca'}`,
+      input: 'file',
+      inputAttributes: {
+        accept: 'image/*',
+        'aria-label': 'Subir imagen'
+      },
+      showCancelButton: true,
+      confirmButtonText: 'Subir',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#F97316'
+    });
+
+    if (file) {
+      await uploadItemImage(file, itemId, type);
+    }
+  };
+
+  async function uploadItemImage(file, itemId, type) {
+    showLoading(true);
+
+    try {
+      const token = localStorage.getItem('razoconnect_admin_token');
+      const formData = new FormData();
+      formData.append('image', file);
+
+      const response = await fetch('/api/admin/landing/upload-image', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: formData
+      });
+
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.message || 'Error al subir imagen');
+      }
+
+      const imageUrl = data.data.url;
+
+      const imageInput = document.querySelector(`.${type}-image-input[data-item-id="${itemId}"]`);
+      if (imageInput) {
+        imageInput.value = imageUrl;
+      }
+
+      const uploadArea = document.querySelector(`.image-upload-area[data-item-id="${itemId}"][data-type="${type}"]`);
+      if (uploadArea) {
+        uploadArea.classList.add('has-image');
+        uploadArea.innerHTML = `
+          <img src="${imageUrl}" class="item-image-preview" alt="Preview" />
+          <div style="position: absolute; top: 0.5rem; right: 0.5rem; background: rgba(0,0,0,0.7); color: white; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem;">
+            <i class="bi bi-pencil"></i> Cambiar
+          </div>
+        `;
+      }
+
+      showLoading(false);
+      
+      Swal.fire({
+        icon: 'success',
+        title: 'Imagen subida',
+        text: 'La imagen se guardó correctamente',
+        timer: 2000,
+        showConfirmButton: false
+      });
+
+      isDirty = true;
+      triggerAutoSave();
+
+    } catch (error) {
+      console.error('Error uploading item image:', error);
+      showLoading(false);
+      
+      Swal.fire({
+        icon: 'error',
+        title: 'Error al subir imagen',
+        text: error.message
+      });
+    }
+  }
+
+  // ============================================
+  // ✅ LEGACY: OLD CATEGORIES & BRANDS MANAGEMENT (DEPRECATED)
   // ============================================
 
   async function loadCategoriesManager() {
@@ -1629,11 +2057,11 @@
       });
       const data = await response.json();
 
-      if (!data.success || !data.data) {
+      if (!data.success || !data.data || !data.data.proveedores) {
         throw new Error('No se pudieron cargar las marcas');
       }
 
-      const brands = data.data;
+      const brands = data.data.proveedores;
       
       container.innerHTML = brands.map(brand => {
         const brandId = brand.proveedorid || brand.proveedorId;

@@ -319,3 +319,48 @@ exports.resetDraft = async (req, res) => {
     });
   }
 };
+
+/**
+ * GET /api/admin/landing/smart-selector-data
+ * Get categories and brands for smart selector dropdown
+ */
+exports.getSmartSelectorData = async (req, res) => {
+  try {
+    const { tenant_id } = req.tenant;
+
+    const categoriesResult = await db.query(`
+      SELECT 
+        categoriaid as id,
+        nombre,
+        COALESCE(nombre_landing, nombre) as display_name
+      FROM categorias
+      WHERE activo = true AND tenant_id = $1
+      ORDER BY nombre
+    `, [tenant_id]);
+
+    const brandsResult = await db.query(`
+      SELECT 
+        proveedorid as id,
+        nombre,
+        COALESCE(nombre_landing, nombre) as display_name
+      FROM proveedores
+      WHERE activo = true AND tenant_id = $1
+      ORDER BY nombre
+    `, [tenant_id]);
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        categories: categoriesResult.rows,
+        brands: brandsResult.rows
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching smart selector data:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al obtener datos para selector',
+      error: error.message
+    });
+  }
+};

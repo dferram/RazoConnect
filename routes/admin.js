@@ -1255,6 +1255,13 @@ router.post(
   landingEditorController.resetDraft
 );
 
+router.get(
+  "/landing/smart-selector-data",
+  authenticate,
+  authorizeAdmin,
+  landingEditorController.getSmartSelectorData
+);
+
 // =====================================================
 // RUTAS DE AJUSTES DE INVENTARIO (AUDITORÍA)
 // =====================================================
