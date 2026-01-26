@@ -105,69 +105,87 @@ async function generarPDFPedido(req, res) {
         let logoExists = false;
         try {
             if (fs.existsSync(logoPath)) {
-                doc.image(logoPath, 50, 45, { width: 80 });
                 logoExists = true;
             }
         } catch (err) {
             console.log('Logo no encontrado, usando texto');
         }
 
-        doc.fontSize(20)
-           .font('Helvetica-Bold')
-           .fillColor('#F97316')
-           .text('RazoConnect', logoExists ? 140 : 50, 50);
+        // Function to render header on each page
+        const renderHeader = (doc, pedido, logoPath, logoExists) => {
+            // Logo
+            if (logoExists && fs.existsSync(logoPath)) {
+                doc.image(logoPath, 50, 45, { width: 80 });
+            }
 
-        doc.fontSize(10)
-           .font('Helvetica')
-           .fillColor('#333333')
-           .text('Sistema de Gestión Comercial', logoExists ? 140 : 50, 75)
-           .text('Tel: 55 6098 9524', logoExists ? 140 : 50, 90)
-           .text('fegarcia@hotmail.com', logoExists ? 140 : 50, 105);
+            // Company info - left side
+            doc.fontSize(20)
+               .font('Helvetica-Bold')
+               .fillColor('#F97316')
+               .text('RazoConnect', logoExists ? 140 : 50, 50);
 
-        // Header derecho - ajustado para evitar solapamiento
-        doc.fontSize(14)
-           .font('Helvetica-Bold')
-           .fillColor('#F97316')
-           .text('REMISIÓN DE VENTA', 350, 50, { width: 212, align: 'right' });
+            doc.fontSize(10)
+               .font('Helvetica')
+               .fillColor('#333333')
+               .text('Sistema de Gestión Comercial', logoExists ? 140 : 50, 75)
+               .text('Tel: 55 6098 9524', logoExists ? 140 : 50, 90)
+               .text('fegarcia@hotmail.com', logoExists ? 140 : 50, 105);
 
-        doc.fontSize(9)
-           .font('Helvetica')
-           .fillColor('#333333')
-           .text(`Folio: ${String(pedidoId).padStart(6, '0')}`, 350, 70, { width: 212, align: 'right' })
-           .text(`Fecha: ${new Date(pedido.fechapedido).toLocaleDateString('es-MX', { 
-               year: 'numeric', 
-               month: 'long', 
-               day: 'numeric' 
-           })}`, 350, 85, { width: 212, align: 'right' })
-           .text(`Estatus: ${pedido.estatus}`, 350, 100, { width: 212, align: 'right' });
+            // Header derecho - Folio, Fecha, Estatus
+            doc.fontSize(14)
+               .font('Helvetica-Bold')
+               .fillColor('#F97316')
+               .text('REMISIÓN DE VENTA', 350, 50, { width: 212, align: 'right' });
 
-        doc.moveTo(50, 135)
-           .lineTo(562, 135)
-           .strokeColor('#F97316')
-           .lineWidth(2)
-           .stroke();
+            doc.fontSize(9)
+               .font('Helvetica')
+               .fillColor('#333333')
+               .text(`Folio: ${String(pedido.pedidoid).padStart(6, '0')}`, 350, 70, { width: 212, align: 'right' })
+               .text(`Fecha: ${new Date(pedido.fechapedido).toLocaleDateString('es-MX', { 
+                   year: 'numeric', 
+                   month: 'long', 
+                   day: 'numeric' 
+               })}`, 350, 85, { width: 212, align: 'right' })
+               .text(`Estatus: ${pedido.estatus}`, 350, 100, { width: 212, align: 'right' });
 
-        doc.fontSize(12)
-           .font('Helvetica-Bold')
-           .fillColor('#F97316')
-           .text('INFORMACIÓN DEL CLIENTE', 50, 150);
+            // Separator line
+            doc.moveTo(50, 135)
+               .lineTo(562, 135)
+               .strokeColor('#F97316')
+               .lineWidth(2)
+               .stroke();
 
-        const clienteNombre = `${pedido.cliente_nombre || ''} ${pedido.cliente_apellido || ''}`.trim();
+            // Client information section
+            doc.fontSize(12)
+               .font('Helvetica-Bold')
+               .fillColor('#F97316')
+               .text('INFORMACIÓN DEL CLIENTE', 50, 150);
 
-        doc.fontSize(10)
-           .font('Helvetica')
-           .fillColor('#333333')
-           .text(`Cliente: ${clienteNombre}`, 50, 170)
-           .text(`Teléfono: ${pedido.cliente_telefono || 'N/A'}`, 50, 185)
-           .text(`Email: ${pedido.cliente_email || 'N/A'}`, 50, 200);
+            const clienteNombre = `${pedido.cliente_nombre || ''} ${pedido.cliente_apellido || ''}`.trim();
 
-        if (pedido.calle) {
-            const direccion = `${pedido.calle} ${pedido.numeroext || ''}${pedido.numeroint ? ' Int. ' + pedido.numeroint : ''}, ${pedido.colonia || ''}`;
-            const ciudadEstado = `${pedido.ciudad || ''}, ${pedido.estado_nombre || ''} CP ${pedido.codigopostal || ''}`;
-            
-            doc.text(`Dirección: ${direccion}`, 50, 215)
-               .text(ciudadEstado, 50, 230);
-        }
+            doc.fontSize(10)
+               .font('Helvetica')
+               .fillColor('#333333')
+               .text(`Cliente: ${clienteNombre}`, 50, 170)
+               .text(`Teléfono: ${pedido.cliente_telefono || 'N/A'}`, 50, 185)
+               .text(`Email: ${pedido.cliente_email || 'N/A'}`, 50, 200);
+
+            if (pedido.calle) {
+                const direccion = `${pedido.calle} ${pedido.numeroext || ''}${pedido.numeroint ? ' Int. ' + pedido.numeroint : ''}, ${pedido.colonia || ''}`;
+                const ciudadEstado = `${pedido.ciudad || ''}, ${pedido.estado_nombre || ''} CP ${pedido.codigopostal || ''}`;
+                
+                doc.text(`Dirección: ${direccion}`, 50, 215)
+                   .text(ciudadEstado, 50, 230);
+            }
+        };
+
+        // Event listener for automatic header rendering on new pages
+        doc.on('pageAdded', () => {
+            renderHeader(doc, pedido, logoPath, logoExists);
+        });
+
+        // Render header on first page manually
+        renderHeader(doc, pedido, logoPath, logoExists);
 
         // Separate items by REAL stock availability (FIXED CALCULATION)
         const itemsEnExistencia = detalles.filter(item => {
@@ -191,7 +209,7 @@ async function generarPDFPedido(req, res) {
             // Check if there's enough space for header + at least one row (minimum 100pts)
             if (yPos > 680) {
                 doc.addPage();
-                yPos = 50;
+                yPos = 260; // Start below header on new page
             }
 
             doc.moveTo(50, yPos - 10)
@@ -231,7 +249,7 @@ async function generarPDFPedido(req, res) {
                 // Check if there's space for complete item block (description line 1 + line 2 = ~30pts)
                 if (currentY > 720) {
                     doc.addPage();
-                    currentY = 50;
+                    currentY = 260; // Start below header on new page
                 }
 
                 if (index % 2 === 0) {
@@ -311,7 +329,7 @@ async function generarPDFPedido(req, res) {
         // Check if we need a new page for totals + signatures section (needs ~200px)
         if (yPosition > 650) {
             doc.addPage();
-            yPosition = 50;
+            yPosition = 260; // Start below header on new page
         }
 
         yPosition += 5;
