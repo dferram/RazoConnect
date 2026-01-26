@@ -194,11 +194,33 @@ async function loadCategoriesCarousel() {
   if (!container) return;
 
   try {
-    const response = await fetch('/landing_config.json');
-    const config = await response.json();
+    let categories = [];
     
-    if (config.categories && config.categories.length > 0) {
-      container.innerHTML = config.categories.map(category => `
+    try {
+      const dbResponse = await fetch('/api/admin/landing-config', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      if (dbResponse.ok) {
+        const dbData = await dbResponse.json();
+        if (dbData.success && dbData.data.categories && dbData.data.categories.length > 0) {
+          categories = dbData.data.categories;
+        }
+      }
+    } catch (dbError) {
+      console.log('No se pudo cargar desde BD, usando JSON estático');
+    }
+    
+    if (categories.length === 0) {
+      const jsonResponse = await fetch('/landing_config.json');
+      const config = await jsonResponse.json();
+      categories = config.categories || [];
+    }
+    
+    if (categories.length > 0) {
+      container.innerHTML = categories.map(category => `
         <a href="${category.href}" class="carousel-card" role="button" tabindex="0" aria-label="Ver ${category.name}">
           <div class="carousel-card-image">
             <img 

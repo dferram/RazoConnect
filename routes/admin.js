@@ -18,6 +18,7 @@ const inventarioController = require("../controllers/inventarioController");
 const numCuentaController = require("../controllers/numCuentaController");
 const migrationController = require("../controllers/migrationController");
 const landingEditorController = require("../controllers/landingEditorController");
+const landingConfigController = require("../controllers/landingConfigController");
 const inventarioAjusteController = require("../controllers/inventarioAjusteController");
 const auditController = require("../controllers/auditController");
 const ajustePedidosController = require("../controllers/ajustePedidosController");
@@ -1376,6 +1377,41 @@ router.put(
   authenticate,
   authorizeAdmin,
   ajustePedidosController.ajustarPedido
+);
+
+router.get(
+  "/landing-config",
+  authenticate,
+  authorizeAdmin,
+  landingConfigController.getLandingConfig
+);
+
+router.post(
+  "/landing-config",
+  authenticate,
+  authorizeAdmin,
+  landingConfigController.createLandingItem
+);
+
+router.put(
+  "/landing-config/:id",
+  authenticate,
+  authorizeAdmin,
+  landingConfigController.updateLandingItem
+);
+
+router.delete(
+  "/landing-config/:id",
+  authenticate,
+  authorizeAdmin,
+  landingConfigController.deleteLandingItem
+);
+
+router.post(
+  "/landing-config/reorder",
+  authenticate,
+  authorizeAdmin,
+  landingConfigController.reorderLandingItems
 );
 
 module.exports = router;

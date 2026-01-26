@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Editor de Landing - RazoConnect</title>
+  <link rel="icon" type="image/png" href="/icon/Logo_Razo.png">
+  
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="css/admin-styles.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.css">
+  
+  <style>
+    .landing-editor-container {
+      padding: 2rem;
+      background: #f5f1ed;
+      min-height: 100vh;
+    }
+
+    .editor-header {
+      background: white;
+      padding: 2rem;
+      border-radius: 1rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .editor-header h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #2d2d2d;
+      margin-bottom: 0.5rem;
+    }
+
+    .editor-header p {
+      color: #6b5d57;
+      margin: 0;
+    }
+
+    .nav-tabs {
+      border-bottom: 2px solid #e0e0e0;
+      margin-bottom: 2rem;
+    }
+
+    .nav-tabs .nav-link {
+      color: #6b5d57;
+      font-weight: 600;
+      border: none;
+      padding: 1rem 2rem;
+      position: relative;
+    }
+
+    .nav-tabs .nav-link:hover {
+      color: #F97316;
+      border: none;
+    }
+
+    .nav-tabs .nav-link.active {
+      color: #F97316;
+      background: transparent;
+      border: none;
+      border-bottom: 3px solid #F97316;
+    }
+
+    .items-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .landing-item-card {
+      background: white;
+      border-radius: 1rem;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      transition: all 0.3s;
+      cursor: move;
+    }
+
+    .landing-item-card:hover {
+      box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+      transform: translateY(-4px);
+    }
+
+    .landing-item-card.sortable-ghost {
+      opacity: 0.4;
+    }
+
+    .landing-item-card.sortable-drag {
+      opacity: 0.8;
+    }
+
+    .item-image {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    .item-content {
+      padding: 1.5rem;
+    }
+
+    .item-name {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #2d2d2d;
+      margin-bottom: 0.5rem;
+    }
+
+    .item-href {
+      font-size: 0.875rem;
+      color: #6b5d57;
+      margin-bottom: 1rem;
+      word-break: break-all;
+    }
+
+    .item-actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .btn-edit, .btn-delete {
+      flex: 1;
+      padding: 0.5rem;
+      border-radius: 0.5rem;
+      font-weight: 600;
+      transition: all 0.3s;
+    }
+
+    .btn-edit {
+      background: #F97316;
+      color: white;
+      border: none;
+    }
+
+    .btn-edit:hover {
+      background: #ea580c;
+    }
+
+    .btn-delete {
+      background: #ef4444;
+      color: white;
+      border: none;
+    }
+
+    .btn-delete:hover {
+      background: #dc2626;
+    }
+
+    .btn-add-item {
+      background: #F97316;
+      color: white;
+      padding: 1rem 2rem;
+      border-radius: 0.75rem;
+      border: none;
+      font-weight: 600;
+      font-size: 1rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.3s;
+    }
+
+    .btn-add-item:hover {
+      background: #ea580c;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 4rem 2rem;
+      background: white;
+      border-radius: 1rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .empty-state i {
+      font-size: 4rem;
+      color: #e0e0e0;
+      margin-bottom: 1rem;
+    }
+
+    .empty-state h3 {
+      color: #6b5d57;
+      margin-bottom: 0.5rem;
+    }
+
+    .empty-state p {
+      color: #9ca3af;
+    }
+
+    .modal-content {
+      border-radius: 1rem;
+      border: none;
+    }
+
+    .modal-header {
+      background: #F97316;
+      color: white;
+      border-radius: 1rem 1rem 0 0;
+      padding: 1.5rem;
+    }
+
+    .modal-header .btn-close {
+      filter: brightness(0) invert(1);
+    }
+
+    .modal-body {
+      padding: 2rem;
+    }
+
+    .form-label {
+      font-weight: 600;
+      color: #2d2d2d;
+      margin-bottom: 0.5rem;
+    }
+
+    .form-control, .form-select {
+      border-radius: 0.5rem;
+      border: 2px solid #e0e0e0;
+      padding: 0.75rem;
+    }
+
+    .form-control:focus, .form-select:focus {
+      border-color: #F97316;
+      box-shadow: 0 0 0 0.2rem rgba(249, 115, 22, 0.25);
+    }
+
+    .image-preview {
+      width: 100%;
+      height: 200px;
+      border-radius: 0.5rem;
+      object-fit: cover;
+      margin-top: 1rem;
+      border: 2px solid #e0e0e0;
+    }
+
+    .image-input-group {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .btn-image-option {
+      flex: 1;
+      padding: 0.75rem;
+      border: 2px solid #e0e0e0;
+      background: white;
+      border-radius: 0.5rem;
+      font-weight: 600;
+      transition: all 0.3s;
+    }
+
+    .btn-image-option.active {
+      border-color: #F97316;
+      background: #fff7ed;
+      color: #F97316;
+    }
+
+    .drag-handle {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: rgba(0,0,0,0.5);
+      color: white;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: move;
+    }
+
+    .item-order-badge {
+      position: absolute;
+      top: 1rem;
+      left: 1rem;
+      background: #F97316;
+      color: white;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 1.125rem;
+    }
+
+    .save-order-btn {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      background: #10b981;
+      color: white;
+      padding: 1rem 2rem;
+      border-radius: 50px;
+      border: none;
+      font-weight: 700;
+      font-size: 1.125rem;
+      box-shadow: 0 4px 16px rgba(16, 185, 129, 0.4);
+      display: none;
+      align-items: center;
+      gap: 0.5rem;
+      z-index: 1000;
+      transition: all 0.3s;
+    }
+
+    .save-order-btn.show {
+      display: flex;
+    }
+
+    .save-order-btn:hover {
+      background: #059669;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(16, 185, 129, 0.5);
+    }
+  </style>
+</head>
+<body>
+  <div id="admin-header-container"></div>
+  <div id="admin-sidebar-container"></div>
+
+  <div class="admin-main-content">
+    <div class="landing-editor-container">
+      <div class="editor-header">
+        <h1><i class="bi bi-palette"></i> Editor de Landing Page</h1>
+        <p>Gestiona las secciones destacadas de Categorías y Marcas en la página principal</p>
+      </div>
+
+      <ul class="nav nav-tabs" id="editorTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+          <button class="nav-link active" id="categories-tab" data-bs-toggle="tab" data-bs-target="#categories" type="button" role="tab">
+            <i class="bi bi-grid-3x3-gap"></i> Categorías Principales
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="brands-tab" data-bs-toggle="tab" data-bs-target="#brands" type="button" role="tab">
+            <i class="bi bi-shop"></i> Marcas Destacadas
+          </button>
+        </li>
+      </ul>
+
+      <div class="tab-content" id="editorTabContent">
+        <div class="tab-pane fade show active" id="categories" role="tabpanel">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h3>Categorías</h3>
+            <button class="btn-add-item" onclick="openAddModal('categories')">
+              <i class="bi bi-plus-circle"></i> Agregar Categoría
+            </button>
+          </div>
+          <div id="categoriesGrid" class="items-grid"></div>
+        </div>
+
+        <div class="tab-pane fade" id="brands" role="tabpanel">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h3>Marcas</h3>
+            <button class="btn-add-item" onclick="openAddModal('brands')">
+              <i class="bi bi-plus-circle"></i> Agregar Marca
+            </button>
+          </div>
+          <div id="brandsGrid" class="items-grid"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <button class="save-order-btn" id="saveOrderBtn" onclick="saveOrder()">
+    <i class="bi bi-check-circle"></i> Guardar Orden
+  </button>
+
+  <div class="modal fade" id="itemModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalTitle">Agregar Item</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          <form id="itemForm">
+            <input type="hidden" id="itemId">
+            <input type="hidden" id="itemSection">
+
+            <div class="mb-3">
+              <label for="itemName" class="form-label">Nombre *</label>
+              <input type="text" class="form-control" id="itemName" required placeholder="Ej: Navidad, Nike, etc.">
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Imagen *</label>
+              <div class="image-input-group">
+                <button type="button" class="btn-image-option active" id="btnUrlOption" onclick="toggleImageInput('url')">
+                  <i class="bi bi-link-45deg"></i> URL
+                </button>
+                <button type="button" class="btn-image-option" id="btnUploadOption" onclick="toggleImageInput('upload')">
+                  <i class="bi bi-cloud-upload"></i> Subir Archivo
+                </button>
+              </div>
+
+              <div id="urlInput">
+                <input type="url" class="form-control" id="itemImageUrl" placeholder="https://ejemplo.com/imagen.jpg">
+              </div>
+
+              <div id="uploadInput" style="display: none;">
+                <input type="file" class="form-control" id="itemImageFile" accept="image/*">
+              </div>
+
+              <img id="imagePreview" class="image-preview" style="display: none;">
+            </div>
+
+            <div class="mb-3">
+              <label for="itemHref" class="form-label">Enlace de Destino *</label>
+              <input type="text" class="form-control" id="itemHref" required placeholder="/catalogo.html?categoria=navidad">
+              <small class="text-muted">URL a la que redirigirá al hacer clic</small>
+            </div>
+
+            <div class="mb-3">
+              <label for="itemDescription" class="form-label">Descripción (Opcional)</label>
+              <textarea class="form-control" id="itemDescription" rows="3" placeholder="Descripción breve del item"></textarea>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer" style="padding: 1.5rem; margin-top: 1.5rem; margin-bottom: 1rem;">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="button" class="btn btn-primary" onclick="saveItem()" style="background: #F97316; border: none;">
+            <i class="bi bi-save"></i> Guardar Cambios
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="/js/components/admin-header-loader.js"></script>
+  <script src="/js/components/admin-sidebar-loader.js"></script>
+  <script src="js/admin-editor-landing.js"></script>
+</body>
+</html>
