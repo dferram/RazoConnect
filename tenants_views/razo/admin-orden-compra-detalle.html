@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalle de Orden de Compra - RazoConnect</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="css/admin-styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+    <div id="admin-header-container"></div>
+    <div id="admin-sidebar-container"></div>
+
+    <div class="admin-main-content">
+        <div class="admin-content">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="admin-page-title mb-2">Detalle de Orden de Compra</h2>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a href="admin-dashboard.html">Dashboard</a></li>
+                            <li class="breadcrumb-item"><a href="admin-ordenes-compra.html">Órdenes de Compra</a></li>
+                            <li class="breadcrumb-item active" aria-current="page">Detalle</li>
+                        </ol>
+                    </nav>
+                </div>
+                <button type="button" class="btn btn-secondary" onclick="window.history.back()">
+                    <i class="bi bi-arrow-left"></i> Volver
+                </button>
+            </div>
+
+            <!-- Información de la OC -->
+            <div class="admin-stat-card mb-4" id="oc-info-card">
+                <div class="row">
+                    <div class="col-md-3">
+                        <p class="text-muted mb-1">OC #</p>
+                        <h4 id="oc-numero">-</h4>
+                    </div>
+                    <div class="col-md-3">
+                        <p class="text-muted mb-1">Proveedor</p>
+                        <h5 id="oc-proveedor">-</h5>
+                    </div>
+                    <div class="col-md-2">
+                        <p class="text-muted mb-1">Estatus</p>
+                        <span id="oc-estatus-badge" class="badge">-</span>
+                    </div>
+                    <div class="col-md-2">
+                        <p class="text-muted mb-1">Fecha Entrega</p>
+                        <p id="oc-fecha-entrega">-</p>
+                    </div>
+                    <div class="col-md-2">
+                        <p class="text-muted mb-1">Total</p>
+                        <h5 id="oc-total" class="text-success">$0.00</h5>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Alerta de edición -->
+            <div id="alert-editable" class="alert alert-info d-none" role="alert">
+                <i class="bi bi-info-circle"></i>
+                Esta orden está en estatus <strong id="alert-estatus-text"></strong> y puede ser editada. 
+                Puedes agregar, modificar o eliminar productos antes de recibir el inventario.
+            </div>
+
+            <div id="alert-no-editable" class="alert alert-warning d-none" role="alert">
+                <i class="bi bi-exclamation-triangle"></i>
+                Esta orden no puede ser editada porque ya está en estatus <strong id="alert-estatus-no-edit"></strong>.
+            </div>
+
+            <!-- Tabla de productos -->
+            <div class="admin-stat-card">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0">Productos de la Orden</h5>
+                    <button type="button" class="btn btn-primary btn-sm" id="btn-agregar-producto" disabled>
+                        <i class="bi bi-plus-circle"></i> Agregar Producto
+                    </button>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table admin-table" id="tabla-productos">
+                        <thead>
+                            <tr>
+                                <th>SKU</th>
+                                <th>Producto</th>
+                                <th>Dimensiones</th>
+                                <th>Piezas/Paq</th>
+                                <th>Cantidad Solicitada</th>
+                                <th>Cantidad Recibida</th>
+                                <th>Costo Unitario</th>
+                                <th>Subtotal</th>
+                                <th class="text-center acciones-column">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-productos">
+                            <tr>
+                                <td colspan="9" class="text-center text-muted">Cargando productos...</td>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="7" class="text-end"><strong>Total:</strong></td>
+                                <td><strong id="total-oc-footer">$0.00</strong></td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Agregar Producto -->
+    <div class="modal fade" id="modalAgregarProducto" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Agregar Producto a la Orden</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Buscar Producto</label>
+                        <input type="text" class="form-control" id="input-buscar-producto" placeholder="Buscar por SKU o nombre...">
+                    </div>
+                    <div id="resultados-busqueda" class="list-group mb-3" style="max-height: 300px; overflow-y: auto;">
+                        <div class="text-muted text-center py-3">Escribe para buscar productos</div>
+                    </div>
+                    <div id="producto-seleccionado" class="d-none">
+                        <hr>
+                        <h6>Producto Seleccionado</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>SKU:</strong> <span id="selected-sku"></span></p>
+                                <p><strong>Nombre:</strong> <span id="selected-nombre"></span></p>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-2">
+                                    <label class="form-label" for="input-cantidad-nueva">Cantidad Solicitada (paquetes)</label>
+                                    <input type="number" class="form-control" id="input-cantidad-nueva" min="1" value="1" aria-label="Cantidad solicitada en paquetes">
+                                </div>
+                                <div class="mb-2">
+                                    <label class="form-label" for="input-piezas-nueva">Piezas por Paquete</label>
+                                    <input type="number" class="form-control" id="input-piezas-nueva" min="1" value="1" aria-label="Piezas por paquete">
+                                </div>
+                                <div class="mb-2">
+                                    <label class="form-label" for="input-costo-nueva">Costo Unitario</label>
+                                    <input type="number" class="form-control" id="input-costo-nueva" min="0" step="0.01" value="0" aria-label="Costo unitario">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="btn-confirmar-agregar" disabled>Agregar a la Orden</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Editar Producto -->
+    <div class="modal fade" id="modalEditarProducto" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Editar Producto</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="edit-detalle-id">
+                    <input type="hidden" id="edit-variante-id">
+                    <div class="mb-3">
+                        <label class="form-label">Producto</label>
+                        <p id="edit-producto-nombre" class="form-control-plaintext"></p>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="edit-cantidad">Cantidad Solicitada (paquetes)</label>
+                        <input type="number" class="form-control" id="edit-cantidad" min="1" aria-label="Cantidad solicitada en paquetes">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="edit-piezas">Piezas por Paquete</label>
+                        <input type="number" class="form-control" id="edit-piezas" min="1" aria-label="Piezas por paquete">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="edit-costo">Costo Unitario</label>
+                        <input type="number" class="form-control" id="edit-costo" min="0" step="0.01" aria-label="Costo unitario">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="btn-confirmar-editar">Guardar Cambios</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/components/admin-header-loader.js"></script>
+    <script src="js/components/admin-sidebar-loader.js"></script>
+    <script src="js/admin-orden-compra-detalle.js"></script>
+</body>
+</html>
