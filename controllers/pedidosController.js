@@ -247,6 +247,7 @@ const crearPedido = async (req, res) => {
     // 3. Obtener los items del carrito con información de productos
     // 🚨 CRITICAL FIX: Added DISTINCT ON (ic.itemid) to prevent duplicate rows
     // This prevents the "factor 4" bug where JOIN conditions create multiple rows
+    // Note: FOR UPDATE cannot be used with DISTINCT ON in PostgreSQL
     const itemsResult = await client.query(
       `SELECT DISTINCT ON (ic.itemid)
         ic.itemid,
@@ -271,12 +272,10 @@ const crearPedido = async (req, res) => {
       INNER JOIN producto_variantes pv ON pv.varianteid = ic.varianteid
       INNER JOIN productos p ON p.productoid = pv.productoid
       LEFT JOIN proveedor_reglas_empaque pre ON pre.reglaid = p.reglaid
-      LEFT JOIN cat_tamanopaquetes t ON t.tamanoid = ic.tamanoid
+      LEFT JOIN cat_tamanopaquetes t ON t.tamanoid = ic.tamanoid AND t.tenant_id = $2
       WHERE ic.carritoid = $1
         AND p.tenant_id = $2
-        AND (t.tenant_id = $2 OR t.tenant_id IS NULL)
-      ORDER BY ic.itemid
-      FOR UPDATE OF pv`,
+      ORDER BY ic.itemid`,
       [carritoId, tenant_id]
     );
 
