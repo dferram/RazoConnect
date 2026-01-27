@@ -61,7 +61,7 @@ async function cargarCupones() {
     if (tabla) tabla.style.display = "none";
     
     const token = localStorage.getItem("razoconnect_admin_token");
-    const response = await fetch(`${API_BASE}/cupones/admin/cupones`, {
+    const response = await fetch(`${API_BASE}/admin/cupones`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -198,7 +198,7 @@ async function editarCupon(cuponId) {
   try {
     const token = localStorage.getItem("razoconnect_admin_token");
     const response = await fetch(
-      `${API_BASE}/cupones/admin/cupones/${cuponId}`,
+      `${API_BASE}/admin/cupones/${cuponId}`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -317,8 +317,8 @@ async function guardarCupon(e) {
   try {
     const token = localStorage.getItem("razoconnect_admin_token");
     const url = editandoCuponId
-      ? `${API_BASE}/cupones/admin/cupones/${editandoCuponId}`
-      : `${API_BASE}/cupones/admin/cupones`;
+      ? `${API_BASE}/admin/cupones/${editandoCuponId}`
+      : `${API_BASE}/admin/cupones`;
     const method = editandoCuponId ? "PUT" : "POST";
 
     const response = await fetch(url, {
@@ -375,7 +375,7 @@ async function desactivarCupon(cuponId) {
   try {
     const token = localStorage.getItem("razoconnect_admin_token");
     const response = await fetch(
-      `${API_BASE}/cupones/admin/cupones/${cuponId}`,
+      `${API_BASE}/admin/cupones/${cuponId}`,
       {
         method: "DELETE",
         headers: {
@@ -411,7 +411,7 @@ async function activarCupon(cuponId) {
   try {
     const token = localStorage.getItem("razoconnect_admin_token");
     const response = await fetch(
-      `${API_BASE}/cupones/admin/cupones/${cuponId}`,
+      `${API_BASE}/admin/cupones/${cuponId}`,
       {
         method: "PUT",
         headers: {
