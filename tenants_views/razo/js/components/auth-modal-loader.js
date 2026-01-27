@@ -137,9 +137,17 @@
     }
 
     // Global functions to open/close modal
-    window.openAuthModal = function() {
+    window.openAuthModal = function(options = {}) {
       modalAuth.style.display = 'flex';
       switchToLogin();
+      
+      // Store purchase intent if provided (for guest checkout flow)
+      if (options.redirectAfterLogin) {
+        sessionStorage.setItem('razoconnect_redirect_after_login', options.redirectAfterLogin);
+      }
+      if (options.message) {
+        sessionStorage.setItem('razoconnect_login_message', options.message);
+      }
     };
 
     window.closeAuthModal = function() {
@@ -183,6 +191,12 @@
         return;
       }
 
+      // Disable submit button to prevent double submission
+      const submitBtn = formLogin.querySelector('button[type="submit"]');
+      const originalText = submitBtn.textContent;
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Iniciando sesión...';
+
       try {
         const response = await API.login(identifier, password);
 
@@ -195,16 +209,29 @@
           // Dispatch event for UI updates
           window.dispatchEvent(new CustomEvent('razoconnect:auth-changed'));
           
-          // Close modal and reload after a short delay to ensure token is saved
+          // Check for redirect intent (guest checkout flow)
+          const redirectUrl = sessionStorage.getItem('razoconnect_redirect_after_login');
+          sessionStorage.removeItem('razoconnect_redirect_after_login');
+          sessionStorage.removeItem('razoconnect_login_message');
+          
+          // Close modal and redirect/reload after a short delay
           setTimeout(() => {
             window.closeAuthModal();
-            location.reload();
+            if (redirectUrl) {
+              window.location.href = redirectUrl;
+            } else {
+              location.reload();
+            }
           }, 800);
         } else {
+          submitBtn.disabled = false;
+          submitBtn.textContent = originalText;
           showToast(response.data.message || 'Credenciales incorrectas', 'error');
         }
       } catch (error) {
         console.error('Login error:', error);
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalText;
         showToast('Error al iniciar sesión. Por favor intenta nuevamente.', 'error');
       }
     });
@@ -236,6 +263,18 @@
         return;
       }
 
+      // Validate phone format (10 digits)
+      if (!/^\d{10}$/.test(telefono)) {
+        showToast('El teléfono debe tener 10 dígitos', 'error');
+        return;
+      }
+
+      // Disable submit button to prevent double submission
+      const submitBtn = formRegistro.querySelector('button[type="submit"]');
+      const originalText = submitBtn.textContent;
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Creando cuenta...';
+
       try {
         const response = await API.registroCliente({
           Nombre: nombre,
@@ -258,17 +297,30 @@
             // Dispatch event for UI updates
             window.dispatchEvent(new CustomEvent('razoconnect:auth-changed'));
             
-            // Close modal and reload after a short delay to ensure token is saved
+            // Check for redirect intent (guest checkout flow)
+            const redirectUrl = sessionStorage.getItem('razoconnect_redirect_after_login');
+            sessionStorage.removeItem('razoconnect_redirect_after_login');
+            sessionStorage.removeItem('razoconnect_login_message');
+            
+            // Close modal and redirect/reload after a short delay
             setTimeout(() => {
               window.closeAuthModal();
-              location.reload();
+              if (redirectUrl) {
+                window.location.href = redirectUrl;
+              } else {
+                location.reload();
+              }
             }, 800);
           }
         } else {
+          submitBtn.disabled = false;
+          submitBtn.textContent = originalText;
           showToast(response.data.message || 'Error al crear cuenta', 'error');
         }
       } catch (error) {
         console.error('Registration error:', error);
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalText;
         showToast('Error al registrar usuario. Por favor intenta nuevamente.', 'error');
       }
     });

@@ -1,0 +1,105 @@
+/**
+ * AUTH MODAL STYLES
+ * Enhanced UX for login/registration modal
+ */
+
+/* Input focus states with orange accent */
+#modalAuth input:focus {
+  outline: none;
+  border-color: var(--razo-orange, #F97316) !important;
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
+}
+
+/* Hover effect on inputs */
+#modalAuth input:hover:not(:focus) {
+  border-color: #9ca3af;
+}
+
+/* Tab hover effects */
+#modalAuth .auth-tab:hover {
+  background-color: rgba(249, 115, 22, 0.05);
+}
+
+/* Button hover effects */
+#modalAuth button[type="submit"]:hover:not(:disabled) {
+  background: #ea580c !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
+}
+
+#modalAuth button[type="submit"]:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+#modalAuth button[type="submit"]:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Password toggle button hover */
+#modalAuth button[id^="toggle"]:hover {
+  color: var(--razo-orange, #F97316);
+}
+
+/* Close button hover */
+#btnCerrarAuthModal:hover {
+  color: #dc2626;
+  transform: scale(1.1);
+}
+
+/* Modal backdrop animation */
+#modalAuth {
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Modal content animation */
+#modalAuth .modal-content {
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 576px) {
+  #modalAuth .modal-content {
+    max-width: 100% !important;
+    margin: 1rem;
+    padding: 1.5rem !important;
+  }
+  
+  #modalAuth h2 {
+    font-size: 1.25rem !important;
+  }
+  
+  #modalAuth input,
+  #modalAuth button[type="submit"] {
+    font-size: 0.95rem !important;
+  }
+}
+
+/* Invalid input state */
+#modalAuth input:invalid:not(:placeholder-shown) {
+  border-color: #ef4444;
+}
+
+#modalAuth input:valid:not(:placeholder-shown) {
+  border-color: #10b981;
+}
