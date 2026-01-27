@@ -1585,6 +1585,22 @@
           deleteBrandItem(itemId);
         }
       }
+
+      // MISIÓN 2b: Event listeners para mover arriba
+      const moveUpBtn = e.target.closest('.btn-move-up');
+      if (moveUpBtn) {
+        const itemId = moveUpBtn.getAttribute('data-item-id');
+        const type = moveUpBtn.getAttribute('data-type');
+        moveItemUp(itemId, type);
+      }
+
+      // MISIÓN 2b: Event listeners para mover abajo
+      const moveDownBtn = e.target.closest('.btn-move-down');
+      if (moveDownBtn) {
+        const itemId = moveDownBtn.getAttribute('data-item-id');
+        const type = moveDownBtn.getAttribute('data-type');
+        moveItemDown(itemId, type);
+      }
     });
 
     loadExistingCategoryItems();
@@ -1637,7 +1653,8 @@
     const container = document.getElementById('categoriesItemsContainer');
     if (!container) return;
 
-    const itemId = existingData ? existingData.id : `new_${categoryItemCounter++}`;
+    // MISIÓN 1: Usar Date.now() para IDs temporales únicos
+    const itemId = existingData?.id ? existingData.id : `new_${Date.now()}`;
     const itemData = existingData || {
       name: '',
       image: '',
@@ -1651,11 +1668,19 @@
         <div class="dynamic-item-header">
           <div class="dynamic-item-title">
             <i class="bi bi-tag"></i>
-            <span>Categoría ${existingData ? itemData.name : `#${dynamicCategoryItems.length + 1}`}</span>
+            <span>Categoría ${existingData && itemData.name ? itemData.name : `#${dynamicCategoryItems.length + 1}`}</span>
           </div>
-          <button type="button" class="btn-delete-item" data-item-id="${itemId}" data-type="category">
-            <i class="bi bi-trash"></i> Eliminar
-          </button>
+          <div class="dynamic-item-actions">
+            <button type="button" class="btn-move-up" data-item-id="${itemId}" data-type="category" title="Subir">
+              <i class="bi bi-arrow-up"></i>
+            </button>
+            <button type="button" class="btn-move-down" data-item-id="${itemId}" data-type="category" title="Bajar">
+              <i class="bi bi-arrow-down"></i>
+            </button>
+            <button type="button" class="btn-delete-item" data-item-id="${itemId}" data-type="category">
+              <i class="bi bi-trash"></i> Eliminar
+            </button>
+          </div>
         </div>
 
         <div class="mb-3">
@@ -1717,7 +1742,8 @@
     const container = document.getElementById('brandsItemsContainer');
     if (!container) return;
 
-    const itemId = existingData ? existingData.id : `new_${brandItemCounter++}`;
+    // MISIÓN 1: Usar Date.now() para IDs temporales únicos
+    const itemId = existingData?.id ? existingData.id : `new_${Date.now()}`;
     const itemData = existingData || {
       name: '',
       image: '',
@@ -1731,11 +1757,19 @@
         <div class="dynamic-item-header">
           <div class="dynamic-item-title">
             <i class="bi bi-shop"></i>
-            <span>Marca ${existingData ? itemData.name : `#${dynamicBrandItems.length + 1}`}</span>
+            <span>Marca ${existingData && itemData.name ? itemData.name : `#${dynamicBrandItems.length + 1}`}</span>
           </div>
-          <button type="button" class="btn-delete-item" data-item-id="${itemId}" data-type="brand">
-            <i class="bi bi-trash"></i> Eliminar
-          </button>
+          <div class="dynamic-item-actions">
+            <button type="button" class="btn-move-up" data-item-id="${itemId}" data-type="brand" title="Subir">
+              <i class="bi bi-arrow-up"></i>
+            </button>
+            <button type="button" class="btn-move-down" data-item-id="${itemId}" data-type="brand" title="Bajar">
+              <i class="bi bi-arrow-down"></i>
+            </button>
+            <button type="button" class="btn-delete-item" data-item-id="${itemId}" data-type="brand">
+              <i class="bi bi-trash"></i> Eliminar
+            </button>
+          </div>
         </div>
 
         <div class="mb-3">
@@ -2262,6 +2296,80 @@
         text: error.message
       });
     }
+  }
+
+  // ============================================
+  // MISIÓN 2b: FUNCIONES PARA REORDENAR ITEMS
+  // ============================================
+
+  function moveItemUp(itemId, type) {
+    const container = type === 'category' 
+      ? document.getElementById('categoriesItemsContainer')
+      : document.getElementById('brandsItemsContainer');
+    
+    if (!container) return;
+
+    const card = container.querySelector(`.dynamic-item-card[data-item-id="${itemId}"]`);
+    if (!card) return;
+
+    const previousCard = card.previousElementSibling;
+    if (!previousCard) {
+      console.log('⚠️ Item already at the top');
+      return;
+    }
+
+    // Mover en el DOM
+    container.insertBefore(card, previousCard);
+
+    // Actualizar orden en el array
+    const array = type === 'category' ? dynamicCategoryItems : dynamicBrandItems;
+    const currentIndex = array.findIndex(item => item.id == itemId);
+    
+    if (currentIndex > 0) {
+      const temp = array[currentIndex];
+      array[currentIndex] = array[currentIndex - 1];
+      array[currentIndex - 1] = temp;
+    }
+
+    console.log(`⬆️ Moved ${type} item up:`, itemId);
+    
+    // Marcar como modificado para guardar el nuevo orden
+    isDirty = true;
+  }
+
+  function moveItemDown(itemId, type) {
+    const container = type === 'category' 
+      ? document.getElementById('categoriesItemsContainer')
+      : document.getElementById('brandsItemsContainer');
+    
+    if (!container) return;
+
+    const card = container.querySelector(`.dynamic-item-card[data-item-id="${itemId}"]`);
+    if (!card) return;
+
+    const nextCard = card.nextElementSibling;
+    if (!nextCard) {
+      console.log('⚠️ Item already at the bottom');
+      return;
+    }
+
+    // Mover en el DOM
+    container.insertBefore(nextCard, card);
+
+    // Actualizar orden en el array
+    const array = type === 'category' ? dynamicCategoryItems : dynamicBrandItems;
+    const currentIndex = array.findIndex(item => item.id == itemId);
+    
+    if (currentIndex < array.length - 1) {
+      const temp = array[currentIndex];
+      array[currentIndex] = array[currentIndex + 1];
+      array[currentIndex + 1] = temp;
+    }
+
+    console.log(`⬇️ Moved ${type} item down:`, itemId);
+    
+    // Marcar como modificado para guardar el nuevo orden
+    isDirty = true;
   }
 
   // ============================================

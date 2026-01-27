@@ -259,8 +259,9 @@ async function loadCategoriesCarousel() {
   try {
     let categories = [];
     
-    // ✅ MISIÓN 3: Cargar desde base de datos
-    const response = await fetch('/api/public/landing-items');
+    // ✅ MISIÓN 3: Cargar desde base de datos con cache-busting
+    const timestamp = Date.now();
+    const response = await fetch(`/api/public/landing-items?t=${timestamp}`);
     const data = await response.json();
     
     if (data.success && data.data.categories) {
@@ -315,8 +316,9 @@ async function loadBrandsCarousel() {
   try {
     let proveedores = [];
     
-    // ✅ MISIÓN 3: Cargar desde base de datos
-    const response = await fetch('/api/public/landing-items');
+    // ✅ MISIÓN 3: Cargar desde base de datos con cache-busting
+    const timestamp = Date.now();
+    const response = await fetch(`/api/public/landing-items?t=${timestamp}`);
     const data = await response.json();
     
     if (data.success && data.data.brands) {
