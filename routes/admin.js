@@ -25,6 +25,7 @@ const auditController = require("../controllers/auditController");
 const ajustePedidosController = require("../controllers/ajustePedidosController");
 const cuponesController = require("../controllers/cuponesController");
 const inventarioReportesController = require("../controllers/inventarioReportesController");
+const ordenCompraPDFController = require("../controllers/ordenCompraPDFController");
 const upload = require("../middlewares/upload");
 const uploadComprobante = require("../middlewares/uploadComprobante");
 const uploadProductImages = require("../middlewares/uploadProductImages");
@@ -1059,6 +1060,12 @@ router.get(
   authenticate,
   authorizeAdmin,
   adminController.getOrderDetailsForExcel
+);
+router.get(
+  "/ordenes-compra/:id/pdf",
+  authenticate,
+  authorizeAdmin,
+  ordenCompraPDFController.generarPDFOrdenCompra
 );
 router.post(
   "/ordenes-compra/recibir",

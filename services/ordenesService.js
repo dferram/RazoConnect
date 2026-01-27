@@ -281,27 +281,46 @@ async function generarBackorderProveedor(
       );
     }
 
-    // PASO 2: CREAR NUEVA ORDEN DE COMPRA (Trazabilidad 1:1)
-    // NOTA: Se eliminó la búsqueda de órdenes pendientes para garantizar
-    // que cada backorder genere una orden independiente con trazabilidad al pedido origen
+    // PASO 2: BUSCAR ORDEN DE COMPRA ABIERTA PARA CONSOLIDACIÓN
+    // REGLA DE NEGOCIO: Consolidar backorders del mismo proveedor en una orden existente
+    // hasta que la mercancía llegue físicamente (estatus < 'RECIBIDA_ALMACEN')
     let ordenCompraID;
-    const esOrdenNueva = true;
+    let esOrdenNueva = false;
 
-    const nuevaOrdenResult = await client.query(
-      `INSERT INTO OrdenesDeCompra (
-        ProveedorID, 
-        FechaEntregaEsperada, 
-        Estatus, 
-        OrigenOC, 
-        usuario_creador_id,
-        pedido_origen_id,
-        tenant_id
-      )
-      VALUES ($1, NOW() + INTERVAL '14 days', 'Pendiente', 'backorder', $2, $3, $4)
-      RETURNING OrdenCompraID`,
-      [proveedorID, usuarioCreadorId, pedidoOrigenId, tenantId]
+    const ordenAbiertalResult = await client.query(
+      `SELECT ordencompraid 
+       FROM ordenesdecompra 
+       WHERE proveedorid = $1 
+         AND estatus NOT IN ('RECIBIDA_ALMACEN', 'CANCELADA', 'COMPLETADA')
+         AND tenant_id = $2
+       ORDER BY fechacreacion ASC
+       LIMIT 1`,
+      [proveedorID, tenantId]
     );
-    ordenCompraID = nuevaOrdenResult.rows[0].ordencompraid;
+
+    if (ordenAbiertalResult.rows.length > 0) {
+      // Consolidar en orden existente
+      ordenCompraID = ordenAbiertalResult.rows[0].ordencompraid;
+      console.log(`🔄 [CONSOLIDACIÓN] Backorder consolidado en OC #${ordenCompraID} existente`);
+    } else {
+      // Crear nueva orden de compra
+      esOrdenNueva = true;
+      const nuevaOrdenResult = await client.query(
+        `INSERT INTO OrdenesDeCompra (
+          ProveedorID, 
+          FechaEntregaEsperada, 
+          Estatus, 
+          OrigenOC, 
+          usuario_creador_id,
+          tenant_id
+        )
+        VALUES ($1, NOW() + INTERVAL '14 days', 'Pendiente', 'backorder', $2, $3)
+        RETURNING OrdenCompraID`,
+        [proveedorID, usuarioCreadorId, tenantId]
+      );
+      ordenCompraID = nuevaOrdenResult.rows[0].ordencompraid;
+      console.log(`✨ [NUEVA OC] Orden de compra #${ordenCompraID} creada para proveedor ${proveedorID}`);
+    }
 
     // PASO 3: SMART REORDERING - Normalizar cantidad según regla de empaque
     const normalizacionResult = await normalizarCantidadPorReglaEmpaque(
@@ -312,17 +331,47 @@ async function generarBackorderProveedor(
 
     const cantidadNormalizada = normalizacionResult.cantidadNormalizada;
 
-    // PASO 4: Agregar Producto en DetallesOrdenCompra
-    // NOTA: Como siempre creamos una orden nueva, no necesitamos verificar existencia
-    const insertResult = await client.query(
-      `INSERT INTO DetallesOrdenCompra 
-       (OrdenCompraID, VarianteID, CantidadSolicitada, CantidadRecibida)
-       VALUES ($1, $2, $3, 0)
-       RETURNING DetalleOC_ID, CantidadSolicitada`,
-      [ordenCompraID, varianteIdNumero, cantidadNormalizada]
+    // PASO 4: Agregar o actualizar producto en DetallesOrdenCompra
+    // CRÍTICO: Siempre guardar pedido_original_id para trazabilidad
+    const detalleExistenteResult = await client.query(
+      `SELECT detalleoc_id, cantidadsolicitada
+       FROM detallesordencompra
+       WHERE ordencompraid = $1 
+         AND varianteid = $2 
+         AND pedido_original_id = $3
+       LIMIT 1`,
+      [ordenCompraID, varianteIdNumero, pedidoOrigenId]
     );
-    const detalleOrdenID = insertResult.rows[0].detalleoc_id;
-    const cantidadTotal = insertResult.rows[0].cantidadsolicitada;
+
+    let detalleOrdenID;
+    let cantidadTotal;
+
+    if (detalleExistenteResult.rows.length > 0) {
+      // Actualizar cantidad en detalle existente del mismo pedido
+      const detalleExistente = detalleExistenteResult.rows[0];
+      const updateResult = await client.query(
+        `UPDATE detallesordencompra
+         SET cantidadsolicitada = cantidadsolicitada + $1
+         WHERE detalleoc_id = $2
+         RETURNING detalleoc_id, cantidadsolicitada`,
+        [cantidadNormalizada, detalleExistente.detalleoc_id]
+      );
+      detalleOrdenID = updateResult.rows[0].detalleoc_id;
+      cantidadTotal = updateResult.rows[0].cantidadsolicitada;
+      console.log(`📦 [ACTUALIZADO] Detalle #${detalleOrdenID} actualizado (+${cantidadNormalizada} piezas)`);
+    } else {
+      // Insertar nuevo detalle con pedido_original_id
+      const insertResult = await client.query(
+        `INSERT INTO DetallesOrdenCompra 
+         (OrdenCompraID, VarianteID, CantidadSolicitada, CantidadRecibida, pedido_original_id)
+         VALUES ($1, $2, $3, 0, $4)
+         RETURNING DetalleOC_ID, CantidadSolicitada`,
+        [ordenCompraID, varianteIdNumero, cantidadNormalizada, pedidoOrigenId]
+      );
+      detalleOrdenID = insertResult.rows[0].detalleoc_id;
+      cantidadTotal = insertResult.rows[0].cantidadsolicitada;
+      console.log(`➕ [NUEVO DETALLE] Detalle #${detalleOrdenID} creado (Pedido #${pedidoOrigenId})`);
+    }
 
     return {
       success: true,
@@ -338,7 +387,10 @@ async function generarBackorderProveedor(
       sobranteStock: normalizacionResult.sobranteStock,
       detalleOrdenID,
       esOrdenNueva,
-      mensaje: `Orden de compra ${ordenCompraID} creada para proveedor ${proveedorID}${pedidoOrigenId ? ` (Pedido #${pedidoOrigenId})` : ''} - Trazabilidad 1:1`,
+      mensaje: esOrdenNueva 
+        ? `Orden de compra ${ordenCompraID} creada para proveedor ${proveedorID}${pedidoOrigenId ? ` (Pedido #${pedidoOrigenId})` : ''}` 
+        : `Backorder consolidado en OC #${ordenCompraID} existente (Pedido #${pedidoOrigenId})`,
+      consolidada: !esOrdenNueva,
       pedidoOrigenId,
     };
   } catch (error) {
@@ -389,27 +441,49 @@ async function generarBackordersAgrupados(
       productosPorProveedor.get(proveedorID).push(item);
     }
 
-    // PASO 2: Crear UNA orden de compra por cada proveedor
+    // PASO 2: Buscar o crear UNA orden de compra por cada proveedor
     const ordenesGeneradas = [];
 
     for (const [proveedorID, productos] of productosPorProveedor.entries()) {
-      // Crear la orden de compra con tenant_id para aislamiento
-      const nuevaOrdenResult = await client.query(
-        `INSERT INTO OrdenesDeCompra (
-          ProveedorID, 
-          FechaEntregaEsperada, 
-          Estatus, 
-          OrigenOC, 
-          usuario_creador_id,
-          pedido_origen_id,
-          tenant_id
-        )
-        VALUES ($1, NOW() + INTERVAL '14 days', 'Pendiente', 'backorder', $2, $3, $4)
-        RETURNING OrdenCompraID`,
-        [proveedorID, usuarioCreadorId, pedidoOrigenId, tenantId]
+      // Buscar orden abierta existente para consolidación
+      let ordenCompraID;
+      let esOrdenNueva = false;
+
+      const ordenAbiertalResult = await client.query(
+        `SELECT ordencompraid 
+         FROM ordenesdecompra 
+         WHERE proveedorid = $1 
+           AND estatus NOT IN ('RECIBIDA_ALMACEN', 'CANCELADA', 'COMPLETADA')
+           AND tenant_id = $2
+         ORDER BY fechacreacion ASC
+         LIMIT 1`,
+        [proveedorID, tenantId]
       );
+
+      if (ordenAbiertalResult.rows.length > 0) {
+        // Consolidar en orden existente
+        ordenCompraID = ordenAbiertalResult.rows[0].ordencompraid;
+        console.log(`🔄 [CONSOLIDACIÓN AGRUPADA] Backorders consolidados en OC #${ordenCompraID} para proveedor ${proveedorID}`);
+      } else {
+        // Crear nueva orden de compra
+        esOrdenNueva = true;
+        const nuevaOrdenResult = await client.query(
+          `INSERT INTO OrdenesDeCompra (
+            ProveedorID, 
+            FechaEntregaEsperada, 
+            Estatus, 
+            OrigenOC, 
+            usuario_creador_id,
+            tenant_id
+          )
+          VALUES ($1, NOW() + INTERVAL '14 days', 'Pendiente', 'backorder', $2, $3)
+          RETURNING OrdenCompraID`,
+          [proveedorID, usuarioCreadorId, tenantId]
+        );
+        ordenCompraID = nuevaOrdenResult.rows[0].ordencompraid;
+        console.log(`✨ [NUEVA OC AGRUPADA] Orden #${ordenCompraID} creada para proveedor ${proveedorID}`);
+      }
       
-      const ordenCompraID = nuevaOrdenResult.rows[0].ordencompraid;
       const detallesInsertados = [];
 
       // PASO 3: Insertar TODOS los productos de este proveedor en la orden
@@ -427,14 +501,38 @@ async function generarBackordersAgrupados(
 
         const cantidadNormalizada = normalizacionResult.cantidadNormalizada;
 
-        // Insertar detalle en la orden
-        const insertResult = await client.query(
-          `INSERT INTO DetallesOrdenCompra 
-           (OrdenCompraID, VarianteID, CantidadSolicitada, CantidadRecibida)
-           VALUES ($1, $2, $3, 0)
-           RETURNING DetalleOC_ID, CantidadSolicitada`,
-          [ordenCompraID, varianteIdNumero, cantidadNormalizada]
+        // Verificar si ya existe un detalle para esta variante y pedido
+        const detalleExistenteResult = await client.query(
+          `SELECT detalleoc_id, cantidadsolicitada
+           FROM detallesordencompra
+           WHERE ordencompraid = $1 
+             AND varianteid = $2 
+             AND pedido_original_id = $3
+           LIMIT 1`,
+          [ordenCompraID, varianteIdNumero, pedidoOrigenId]
         );
+
+        let insertResult;
+        if (detalleExistenteResult.rows.length > 0) {
+          // Actualizar cantidad en detalle existente
+          const detalleExistente = detalleExistenteResult.rows[0];
+          insertResult = await client.query(
+            `UPDATE detallesordencompra
+             SET cantidadsolicitada = cantidadsolicitada + $1
+             WHERE detalleoc_id = $2
+             RETURNING detalleoc_id, cantidadsolicitada`,
+            [cantidadNormalizada, detalleExistente.detalleoc_id]
+          );
+        } else {
+          // Insertar nuevo detalle con pedido_original_id
+          insertResult = await client.query(
+            `INSERT INTO DetallesOrdenCompra 
+             (OrdenCompraID, VarianteID, CantidadSolicitada, CantidadRecibida, pedido_original_id)
+             VALUES ($1, $2, $3, 0, $4)
+             RETURNING DetalleOC_ID, CantidadSolicitada`,
+            [ordenCompraID, varianteIdNumero, cantidadNormalizada, pedidoOrigenId]
+          );
+        }
 
         detallesInsertados.push({
           detalleOrdenID: insertResult.rows[0].detalleoc_id,
@@ -453,7 +551,11 @@ async function generarBackordersAgrupados(
         pedidoOrigenId,
         totalProductos: productos.length,
         detalles: detallesInsertados,
-        mensaje: `Orden de compra ${ordenCompraID} creada para proveedor ${proveedorID} con ${productos.length} producto(s) del Pedido #${pedidoOrigenId}`,
+        esOrdenNueva,
+        consolidada: !esOrdenNueva,
+        mensaje: esOrdenNueva
+          ? `Orden de compra ${ordenCompraID} creada para proveedor ${proveedorID} con ${productos.length} producto(s) del Pedido #${pedidoOrigenId}`
+          : `Backorders consolidados en OC #${ordenCompraID} existente: ${productos.length} producto(s) del Pedido #${pedidoOrigenId}`,
       });
     }
 
