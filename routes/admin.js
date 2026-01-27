@@ -23,6 +23,7 @@ const landingItemsController = require("../controllers/landingItemsController");
 const inventarioAjusteController = require("../controllers/inventarioAjusteController");
 const auditController = require("../controllers/auditController");
 const ajustePedidosController = require("../controllers/ajustePedidosController");
+const cuponesController = require("../controllers/cuponesController");
 const upload = require("../middlewares/upload");
 const uploadComprobante = require("../middlewares/uploadComprobante");
 const uploadProductImages = require("../middlewares/uploadProductImages");
@@ -1435,6 +1436,44 @@ router.put(
   authenticate,
   authorizeAdmin,
   landingItemsController.updateProveedorLanding
+);
+
+/**
+ * Gestión de cupones
+ */
+router.get(
+  "/cupones",
+  authenticate,
+  authorizeAdmin,
+  cuponesController.listarCupones
+);
+
+router.get(
+  "/cupones/:id",
+  authenticate,
+  authorizeAdmin,
+  cuponesController.obtenerCupon
+);
+
+router.post(
+  "/cupones",
+  authenticate,
+  authorizeAdmin,
+  cuponesController.crearCupon
+);
+
+router.put(
+  "/cupones/:id",
+  authenticate,
+  authorizeAdmin,
+  cuponesController.actualizarCupon
+);
+
+router.delete(
+  "/cupones/:id",
+  authenticate,
+  authorizeAdmin,
+  cuponesController.desactivarCupon
 );
 
 module.exports = router;
