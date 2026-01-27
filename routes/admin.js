@@ -24,6 +24,7 @@ const inventarioAjusteController = require("../controllers/inventarioAjusteContr
 const auditController = require("../controllers/auditController");
 const ajustePedidosController = require("../controllers/ajustePedidosController");
 const cuponesController = require("../controllers/cuponesController");
+const inventarioReportesController = require("../controllers/inventarioReportesController");
 const upload = require("../middlewares/upload");
 const uploadComprobante = require("../middlewares/uploadComprobante");
 const uploadProductImages = require("../middlewares/uploadProductImages");
@@ -1510,6 +1511,23 @@ router.delete(
   authenticate,
   authorizeAdmin,
   cuponesController.desactivarCupon
+);
+
+/**
+ * Reportes de Inventario - Historial de Sesiones
+ */
+router.get(
+  "/inventario/sesiones",
+  authenticate,
+  authorizeAdmin,
+  inventarioReportesController.obtenerSesionesInventario
+);
+
+router.get(
+  "/inventario/reporte/:sesionId",
+  authenticate,
+  authorizeAdmin,
+  inventarioReportesController.generarReportePDF
 );
 
 module.exports = router;
