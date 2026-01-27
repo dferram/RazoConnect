@@ -681,7 +681,7 @@ const crearPedido = async (req, res) => {
     if (metodoPagoEsCredito) {
       const creditoResult = await client.query(
         `
-          SELECT credito_id, limite_credito, saldo_deudor, dias_gracia
+          SELECT credito_id, limite_credito, saldo_deudor, dias_credito
           FROM cliente_creditos
           WHERE cliente_id = $1
           FOR UPDATE
@@ -717,7 +717,7 @@ const crearPedido = async (req, res) => {
         });
       }
 
-      const diasRaw = Number.parseInt(creditoRow.dias_gracia, 10);
+      const diasRaw = Number.parseInt(creditoRow.dias_credito, 10);
       diasGracia =
         !Number.isNaN(diasRaw) && diasRaw > 0 ? diasRaw : 30;
 

@@ -146,30 +146,29 @@ exports.getPublicLandingItems = async (req, res) => {
     // ✅ MISIÓN 4: Get categories with landing data including nombre_landing
     const categoriesResult = await db.query(
       `SELECT 
-        CategoriaID as id,
-        COALESCE(nombre_landing, Nombre) as name,
+        categoriaid as id,
+        COALESCE(nombre_landing, nombre) as name,
         imagen_landing as image,
-        COALESCE(link_landing, '/catalogo.html?categoria=' || CategoriaID) as href
-       FROM Categorias
-       WHERE Activo = true 
+        COALESCE(link_landing, '/catalogo.html?categoria=' || categoriaid) as href
+       FROM categorias
+       WHERE activo = true 
          AND tenant_id = $1
          AND imagen_landing IS NOT NULL
-       ORDER BY Nombre`,
+       ORDER BY nombre`,
       [tenant_id]
     );
 
     // ✅ MISIÓN 4: Get proveedores with landing data including nombre_landing
     const proveedoresResult = await db.query(
       `SELECT 
-        ProveedorID as id,
-        COALESCE(nombre_landing, Nombre) as name,
+        proveedorid as id,
+        COALESCE(nombre_landing, nombreempresa) as name,
         imagen_landing as image,
-        COALESCE(link_landing, '/proveedor-tienda.html?id=' || ProveedorID) as href
-       FROM Proveedores
-       WHERE Activo = true 
-         AND tenant_id = $1
+        COALESCE(link_landing, '/proveedor-tienda.html?id=' || proveedorid) as href
+       FROM proveedores
+       WHERE tenant_id = $1
          AND imagen_landing IS NOT NULL
-       ORDER BY Nombre`,
+       ORDER BY nombreempresa`,
       [tenant_id]
     );
 
