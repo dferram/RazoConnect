@@ -39,7 +39,7 @@ const validarCupon = async (req, res) => {
         usos_actuales,
         activo,
         monto_minimo_compra,
-        agenteid
+        agente_id
       FROM cupones
       WHERE UPPER(codigo) = $1 AND tenant_id = $2`,
       [codigoUpper, tenant_id]
@@ -323,7 +323,7 @@ const crearCupon = async (req, res) => {
         uso_maximo,
         monto_minimo_compra,
         activo,
-        agenteid,
+        agente_id,
         tenant_id
       )
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, true, $9, $10)
@@ -339,7 +339,7 @@ const crearCupon = async (req, res) => {
         usos_actuales,
         activo,
         monto_minimo_compra,
-        agenteid`,
+        agente_id`,
       [
         codigoUpper,
         descripcion || null,
@@ -601,9 +601,9 @@ const listarMisCupones = async (req, res) => {
         usos_actuales,
         activo,
         monto_minimo_compra,
-        agenteid
+        agente_id
       FROM cupones
-      WHERE agenteid = $1 AND tenant_id = $2
+      WHERE agente_id = $1 AND tenant_id = $2
       ORDER BY cuponid DESC`,
       [agenteId, tenant_id]
     );

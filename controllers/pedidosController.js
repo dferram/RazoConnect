@@ -245,8 +245,10 @@ const crearPedido = async (req, res) => {
     const variantesAfectadas = new Set();
 
     // 3. Obtener los items del carrito con información de productos
+    // 🚨 CRITICAL FIX: Added DISTINCT ON (ic.itemid) to prevent duplicate rows
+    // This prevents the "factor 4" bug where JOIN conditions create multiple rows
     const itemsResult = await client.query(
-      `SELECT 
+      `SELECT DISTINCT ON (ic.itemid)
         ic.itemid,
         ic.varianteid,
         ic.cantidad,
@@ -273,6 +275,7 @@ const crearPedido = async (req, res) => {
       WHERE ic.carritoid = $1
         AND p.tenant_id = $2
         AND (t.tenant_id = $2 OR t.tenant_id IS NULL)
+      ORDER BY ic.itemid
       FOR UPDATE OF pv`,
       [carritoId, tenant_id]
     );
@@ -287,7 +290,25 @@ const crearPedido = async (req, res) => {
       });
     }
 
-    const items = itemsResult.rows.map((row) => {
+    // 🔍 DIAGNOSTIC: Log raw query results to detect duplicates
+    console.log(`\n🛒 [CART ITEMS] Retrieved ${itemsResult.rows.length} rows from database`);
+    itemsResult.rows.forEach((row, idx) => {
+      console.log(`   Row ${idx + 1}: ItemID=${row.itemid}, VarianteID=${row.varianteid}, TamanoID=${row.tamanoid}, Cantidad=${row.cantidad}`);
+    });
+
+    // 🚨 CRITICAL FIX: Deduplicate items by ItemID to prevent double insertion
+    // This prevents the bug where the same cart item appears twice due to JOIN issues
+    const uniqueItemsMap = new Map();
+    itemsResult.rows.forEach((row) => {
+      const itemId = row.itemid;
+      if (!uniqueItemsMap.has(itemId)) {
+        uniqueItemsMap.set(itemId, row);
+      } else {
+        console.warn(`⚠️ [DUPLICATE DETECTED] ItemID ${itemId} appears multiple times in query result - using first occurrence`);
+      }
+    });
+
+    const items = Array.from(uniqueItemsMap.values()).map((row) => {
       const tamanoInfo = extraerInfoTamano(row.tamano_info);
       return {
         ...row,
@@ -295,6 +316,8 @@ const crearPedido = async (req, res) => {
         tamano_etiqueta: tamanoInfo.etiqueta,
       };
     });
+
+    console.log(`✅ [CART ITEMS] After deduplication: ${items.length} unique items`);
 
     // Validar que todos los items tengan tamano_valor válido
     const itemsInvalidos = items.filter(item => !item.tamano_valor || item.tamano_valor <= 0);
@@ -884,9 +907,11 @@ const crearPedido = async (req, res) => {
     let pedidoTieneBackorder = false;
     
     // NUEVO: Iterar sobre itemsParaCalculadora que ya tiene precios prorrateados
+    console.log(`\n🔄 [PROCESSING] Starting loop for ${items.length} items`);
     for (let itemIndex = 0; itemIndex < items.length; itemIndex++) {
       const item = items[itemIndex];
       const itemCalculado = itemsParaCalculadora[itemIndex];
+      console.log(`\n📦 [ITEM ${itemIndex + 1}/${items.length}] Processing: ${item.nombreproducto} (ItemID: ${item.itemid})`);
       const tamanoValor =
         item.tamano_valor !== null ? parseInt(item.tamano_valor, 10) : 0;
 
@@ -984,7 +1009,9 @@ const crearPedido = async (req, res) => {
 
       // Insertar detalle surtido (SOLO si hay stock real disponible)
       // CRÍTICO: Usar precioPorPaquete CON descuento prorrateado
+      console.log(`   🔍 [SURTIDO CHECK] puedeSerSurtido=${puedeSerSurtido}, cantidadSurtida=${cantidadSurtida}, stock=${stockFinalValidation}`);
       if (puedeSerSurtido) {
+        console.log(`   ✅ [INSERTING SURTIDO] Cantidad: ${split.cantidadSurtida} paquetes`);
         const detalleResult = await client.query(
           `INSERT INTO DetallesDelPedido (
              PedidoID,
@@ -1047,7 +1074,9 @@ const crearPedido = async (req, res) => {
       const cantidadRealBackorder = cantidadRequerida - cantidadSurtida;
       const debeInsertarBackorder = cantidadRealBackorder > 0 && cantidadBackorder > 0;
       
+      console.log(`   🔍 [BACKORDER CHECK] debeInsertarBackorder=${debeInsertarBackorder}, cantidadRealBackorder=${cantidadRealBackorder}, cantidadBackorder=${cantidadBackorder}`);
       if (debeInsertarBackorder) {
+        console.log(`   ✅ [INSERTING BACKORDER] Cantidad: ${split.cantidadBackorderAjustada} paquetes`);
         const detalleBackorderResult = await client.query(
           `INSERT INTO DetallesDelPedido (
              PedidoID,
@@ -1487,8 +1516,9 @@ const obtenerPedidos = async (req, res) => {
     // Para cada pedido, obtener sus detalles
     const pedidos = await Promise.all(
       result.rows.map(async (pedido) => {
+        // 🚨 CRITICAL FIX: Added DISTINCT ON to prevent duplicate rows from cat_tamanopaquetes JOIN
         const detallesQuery = `
-        SELECT
+        SELECT DISTINCT ON (dp.detalleid)
           dp.detalleid,
           dp.varianteid,
           dp.cantidadpaquetes AS cantidad,
@@ -1510,7 +1540,7 @@ const obtenerPedidos = async (req, res) => {
         FROM detallesdelpedido dp
         LEFT JOIN producto_variantes pv ON dp.varianteid = pv.varianteid
         LEFT JOIN productos pr ON pv.productoid = pr.productoid
-        LEFT JOIN cat_tamanopaquetes ct ON dp.tamanoid = ct.tamanoid
+        LEFT JOIN cat_tamanopaquetes ct ON dp.tamanoid = ct.tamanoid AND (ct.tenant_id = $2 OR ct.tenant_id IS NULL)
         LEFT JOIN LATERAL (
           SELECT pvi.url_imagen
           FROM producto_variante_imagenes pvi
@@ -1527,7 +1557,6 @@ const obtenerPedidos = async (req, res) => {
         ) imagen_producto ON TRUE
         WHERE dp.pedidoid = $1
           AND (pr.tenant_id = $2 OR pr.tenant_id IS NULL)
-          AND (ct.tenant_id = $2 OR ct.tenant_id IS NULL)
         ORDER BY dp.detalleid ASC
       `;
 
@@ -1712,8 +1741,9 @@ const obtenerPedidoPorId = async (req, res) => {
 
     const pedido = pedidoResult.rows[0];
 
+    // 🚨 CRITICAL FIX: Added DISTINCT ON to prevent duplicate rows from cat_tamanopaquetes JOIN
     const detallesQuery = `
-      SELECT
+      SELECT DISTINCT ON (dp.detalleid)
         dp.detalleid,
         dp.varianteid,
         dp.cantidadpaquetes AS cantidad,
@@ -1737,7 +1767,7 @@ const obtenerPedidoPorId = async (req, res) => {
       FROM detallesdelpedido dp
       INNER JOIN producto_variantes pv ON pv.varianteid = dp.varianteid
       INNER JOIN productos prod ON prod.productoid = pv.productoid
-      LEFT JOIN cat_tamanopaquetes t ON t.tamanoid = dp.tamanoid
+      LEFT JOIN cat_tamanopaquetes t ON t.tamanoid = dp.tamanoid AND (t.tenant_id = $2 OR t.tenant_id IS NULL)
       LEFT JOIN LATERAL (
         SELECT pvi.url_imagen
         FROM producto_variante_imagenes pvi
@@ -1754,7 +1784,6 @@ const obtenerPedidoPorId = async (req, res) => {
       ) imagen_producto ON TRUE
       WHERE dp.pedidoid = $1
         AND prod.tenant_id = $2
-        AND (t.tenant_id = $2 OR t.tenant_id IS NULL)
       ORDER BY dp.detalleid ASC
     `;
 

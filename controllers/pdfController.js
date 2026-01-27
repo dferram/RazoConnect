@@ -65,8 +65,11 @@ async function generarPDFPedido(req, res) {
             return res.status(403).json({ error: 'No tienes permiso para acceder a este pedido' });
         }
 
+        // 🚨 CRITICAL FIX: Added DISTINCT ON to prevent duplicate rows from JOIN
+        // This fixes the "factor 4" bug where cat_tamanopaquetes duplicates cause double counting
         const detallesQuery = await db.query(
-            `SELECT 
+            `SELECT DISTINCT ON (dp.detalleid)
+                dp.detalleid,
                 dp.cantidadpaquetes AS cantidad,
                 dp.preciounitario,
                 dp.piezastotales,
@@ -83,7 +86,7 @@ async function generarPDFPedido(req, res) {
             FROM detallesdelpedido dp
             INNER JOIN producto_variantes pv ON dp.varianteid = pv.varianteid
             INNER JOIN productos p ON pv.productoid = p.productoid AND p.tenant_id = $2
-            LEFT JOIN cat_tamanopaquetes t ON dp.tamanoid = t.tamanoid
+            LEFT JOIN cat_tamanopaquetes t ON dp.tamanoid = t.tamanoid AND (t.tenant_id = $2 OR t.tenant_id IS NULL)
             WHERE dp.pedidoid = $1
             ORDER BY dp.detalleid`,
             [pedidoId, tenant_id]
@@ -262,13 +265,17 @@ async function generarPDFPedido(req, res) {
                     ? `${item.variante_nombre} - Color: ${item.color_nombre}`
                     : `${item.variante_nombre}`;
 
+                // 🚨 MISIÓN 4: Use Math.round() to prevent decimal issues in cantidad
+                const cantidadSegura = Math.round(parseInt(item.cantidad) || 0);
+                const tamanoSeguro = Math.round(parseInt(item.tamano_cantidad) || 1);
+                
                 doc.fillColor('#333333')
                    .fontSize(9)
                    .font('Helvetica')
-                   .text(item.cantidad, 55, currentY)
+                   .text(cantidadSegura, 55, currentY)
                    .text(descripcionLinea1, 110, currentY, { width: 220 })
                    .text(descripcionLinea2, 110, currentY + 10, { width: 220 })
-                   .text(item.tamano_cantidad ? `Pack ${item.tamano_cantidad}` : 'Unitario', 340, currentY)
+                   .text(tamanoSeguro > 1 ? `Pack ${tamanoSeguro}` : 'Unitario', 340, currentY)
                    .text(`$${parseFloat(item.preciounitario).toFixed(2)}`, 410, currentY)
                    .text(`$${parseFloat(item.subtotal).toFixed(2)}`, 480, currentY, { align: 'right', width: 75 });
 
