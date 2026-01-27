@@ -1599,8 +1599,11 @@
       });
       const data = await response.json();
 
+      console.log('📦 Categories loaded from API:', data.data?.categories);
+
       if (data.success && data.data.categories) {
         data.data.categories.forEach(cat => {
+          console.log('➕ Adding category item:', cat);
           addCategoryItem(cat);
         });
       }
@@ -1617,8 +1620,11 @@
       });
       const data = await response.json();
 
+      console.log('📦 Brands loaded from API:', data.data?.brands);
+
       if (data.success && data.data.brands) {
         data.data.brands.forEach(brand => {
+          console.log('➕ Adding brand item:', brand);
           addBrandItem(brand);
         });
       }
@@ -1637,6 +1643,8 @@
       image: '',
       href: ''
     };
+
+    console.log('🏗️ Building category card with ID:', itemId, 'Data:', itemData);
 
     const itemHTML = `
       <div class="dynamic-item-card" data-item-id="${itemId}" data-type="category">
@@ -1715,6 +1723,8 @@
       image: '',
       href: ''
     };
+
+    console.log('🏗️ Building brand card with ID:', itemId, 'Data:', itemData);
 
     const itemHTML = `
       <div class="dynamic-item-card" data-item-id="${itemId}" data-type="brand">
@@ -1902,6 +1912,23 @@
           nameInput?.setAttribute('data-item-id', data.data.id);
           imageInput?.setAttribute('data-item-id', data.data.id);
           urlDisplay?.setAttribute('data-item-id', data.data.id);
+          
+          // Actualizar también el botón de eliminar
+          const deleteBtn = card.querySelector('.btn-delete-item');
+          if (deleteBtn) {
+            deleteBtn.setAttribute('data-item-id', data.data.id);
+          }
+          
+          // Actualizar selector y área de imagen
+          const selector = card.querySelector('.category-selector');
+          if (selector) {
+            selector.setAttribute('data-item-id', data.data.id);
+          }
+          
+          const uploadArea = card.querySelector('.image-upload-area');
+          if (uploadArea) {
+            uploadArea.setAttribute('data-item-id', data.data.id);
+          }
         }
         
         // Actualizar en el array
@@ -1909,6 +1936,8 @@
         if (itemIndex !== -1) {
           dynamicCategoryItems[itemIndex].id = data.data.id;
         }
+        
+        console.log(`✅ Updated category ID from ${itemId} to ${data.data.id}`);
       }
 
       console.log('✅ Category item saved:', data.data);
@@ -1968,6 +1997,23 @@
           nameInput?.setAttribute('data-item-id', data.data.id);
           imageInput?.setAttribute('data-item-id', data.data.id);
           urlDisplay?.setAttribute('data-item-id', data.data.id);
+          
+          // Actualizar también el botón de eliminar
+          const deleteBtn = card.querySelector('.btn-delete-item');
+          if (deleteBtn) {
+            deleteBtn.setAttribute('data-item-id', data.data.id);
+          }
+          
+          // Actualizar selector y área de imagen
+          const selector = card.querySelector('.brand-selector');
+          if (selector) {
+            selector.setAttribute('data-item-id', data.data.id);
+          }
+          
+          const uploadArea = card.querySelector('.image-upload-area');
+          if (uploadArea) {
+            uploadArea.setAttribute('data-item-id', data.data.id);
+          }
         }
         
         // Actualizar en el array
@@ -1975,6 +2021,8 @@
         if (itemIndex !== -1) {
           dynamicBrandItems[itemIndex].id = data.data.id;
         }
+        
+        console.log(`✅ Updated brand ID from ${itemId} to ${data.data.id}`);
       }
 
       console.log('✅ Brand item saved:', data.data);
@@ -1984,6 +2032,18 @@
   }
 
   async function deleteCategoryItem(itemId) {
+    console.log('🗑️ Attempting to delete category with ID:', itemId, 'Type:', typeof itemId);
+
+    if (!itemId || itemId === 'undefined') {
+      console.error('❌ Invalid itemId:', itemId);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'ID de categoría inválido'
+      });
+      return;
+    }
+
     const result = await Swal.fire({
       icon: 'warning',
       title: '¿Eliminar categoría?',
@@ -2008,6 +2068,7 @@
     try {
       showLoading(true);
       const token = localStorage.getItem('razoconnect_admin_token');
+      console.log('🌐 DELETE request to:', `/api/admin/landing-config/${itemId}`);
       const response = await fetch(`/api/admin/landing-config/${itemId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
@@ -2043,6 +2104,18 @@
   }
 
   async function deleteBrandItem(itemId) {
+    console.log('🗑️ Attempting to delete brand with ID:', itemId, 'Type:', typeof itemId);
+
+    if (!itemId || itemId === 'undefined') {
+      console.error('❌ Invalid itemId:', itemId);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'ID de marca inválido'
+      });
+      return;
+    }
+
     const result = await Swal.fire({
       icon: 'warning',
       title: '¿Eliminar marca?',
@@ -2067,6 +2140,7 @@
     try {
       showLoading(true);
       const token = localStorage.getItem('razoconnect_admin_token');
+      console.log('🌐 DELETE request to:', `/api/admin/landing-config/${itemId}`);
       const response = await fetch(`/api/admin/landing-config/${itemId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }

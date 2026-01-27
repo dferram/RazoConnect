@@ -21,6 +21,7 @@ exports.getConfig = async (req, res) => {
         content_type,
         value_draft,
         value_published,
+        
         metadata,
         updated_at
       FROM landing_page_config
@@ -493,6 +494,13 @@ exports.updateLandingItem = async (req, res) => {
     const { id } = req.params;
     const { name, image, href, description } = req.body;
 
+    if (!id || id === 'undefined') {
+      return res.status(400).json({
+        success: false,
+        message: 'ID inválido o no proporcionado'
+      });
+    }
+
     if (!name || !image || !href) {
       return res.status(400).json({
         success: false,
@@ -542,6 +550,13 @@ exports.deleteLandingItem = async (req, res) => {
   try {
     const { tenant_id } = req.tenant;
     const { id } = req.params;
+
+    if (!id || id === 'undefined') {
+      return res.status(400).json({
+        success: false,
+        message: 'ID inválido o no proporcionado'
+      });
+    }
 
     const result = await db.query(`
       DELETE FROM landing_page_config
