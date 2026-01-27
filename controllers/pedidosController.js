@@ -719,7 +719,7 @@ const crearPedido = async (req, res) => {
 
       const diasRaw = Number.parseInt(creditoRow.dias_gracia, 10);
       diasGracia =
-        !Number.isNaN(diasRaw) && diasRaw > 0 ? diasRaw : 15;
+        !Number.isNaN(diasRaw) && diasRaw > 0 ? diasRaw : 30;
 
       creditoInfo = {
         creditoId: creditoRow.credito_id,
@@ -942,6 +942,7 @@ const crearPedido = async (req, res) => {
 
       // NUEVO: Usar subtotales con descuento prorrateado
       const subtotalConDescuento = itemCalculado.subtotalConDescuento || 0;
+      const subtotalSolicitado = parseFloat((precioPorPaquete * cantidadRequerida).toFixed(2));
       const subtotalSurtido = cantidadSurtida > 0
         ? parseFloat((precioPorPaquete * cantidadSurtida).toFixed(2))
         : 0;
