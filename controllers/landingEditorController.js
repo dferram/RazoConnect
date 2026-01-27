@@ -330,22 +330,22 @@ exports.getSmartSelectorData = async (req, res) => {
 
     const categoriesResult = await db.query(`
       SELECT 
-        CategoriaID as id,
-        Nombre as nombre,
-        COALESCE(nombre_landing, Nombre) as display_name
-      FROM Categorias
-      WHERE Activo = true AND tenant_id = $1
-      ORDER BY Nombre
+        categoriaid as id,
+        nombre,
+        nombre as display_name
+      FROM categorias
+      WHERE activo = true AND tenant_id = $1
+      ORDER BY nombre
     `, [tenant_id]);
 
     const brandsResult = await db.query(`
       SELECT 
-        ProveedorID as id,
-        Nombre as nombre,
-        COALESCE(nombre_landing, Nombre) as display_name
-      FROM Proveedores
-      WHERE Activo = true AND tenant_id = $1
-      ORDER BY Nombre
+        proveedorid as id,
+        nombreempresa as nombre,
+        nombreempresa as display_name
+      FROM proveedores
+      WHERE tenant_id = $1
+      ORDER BY nombreempresa
     `, [tenant_id]);
 
     return res.status(200).json({
@@ -360,6 +360,302 @@ exports.getSmartSelectorData = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: 'Error al obtener datos para selector',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * GET /api/admin/landing-config
+ * Get all landing carousel items (categories and brands)
+ */
+exports.getLandingItems = async (req, res) => {
+  try {
+    const { tenant_id } = req.tenant;
+
+    const result = await db.query(`
+      SELECT 
+        config_id as id,
+        section,
+        name,
+        image,
+        href,
+        description,
+        orden
+      FROM landing_page_config
+      WHERE tenant_id = $1 
+        AND section IN ('categories', 'brands')
+      ORDER BY section, orden ASC, config_id ASC
+    `, [tenant_id]);
+
+    const categories = result.rows.filter(item => item.section === 'categories');
+    const brands = result.rows.filter(item => item.section === 'brands');
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        categories,
+        brands
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching landing items:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al obtener items de landing',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * POST /api/admin/landing-config
+ * Create new carousel item (category or brand)
+ * Body: { section, name, image, href, description }
+ */
+exports.createLandingItem = async (req, res) => {
+  try {
+    const { tenant_id } = req.tenant;
+    const { section, name, image, href, description } = req.body;
+
+    if (!section || !name || !image || !href) {
+      return res.status(400).json({
+        success: false,
+        message: 'Campos requeridos: section, name, image, href'
+      });
+    }
+
+    if (!['categories', 'brands'].includes(section)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Section debe ser "categories" o "brands"'
+      });
+    }
+
+    // Get max orden for the section
+    const maxOrdenResult = await db.query(`
+      SELECT COALESCE(MAX(orden), -1) as max_orden
+      FROM landing_page_config
+      WHERE tenant_id = $1 AND section = $2
+    `, [tenant_id, section]);
+
+    const newOrden = maxOrdenResult.rows[0].max_orden + 1;
+
+    const result = await db.query(`
+      INSERT INTO landing_page_config (
+        section_key,
+        content_type,
+        tenant_id,
+        section,
+        name,
+        image,
+        href,
+        description,
+        orden
+      ) VALUES (
+        $1, 'json', $2, $3, $4, $5, $6, $7, $8
+      )
+      RETURNING config_id as id, section, name, image, href, description, orden
+    `, [
+      `${section}_item_${Date.now()}`,
+      tenant_id,
+      section,
+      name,
+      image,
+      href,
+      description || null,
+      newOrden
+    ]);
+
+    return res.status(201).json({
+      success: true,
+      message: 'Item creado exitosamente',
+      data: result.rows[0]
+    });
+  } catch (error) {
+    console.error('Error creating landing item:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al crear item',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * PUT /api/admin/landing-config/:id
+ * Update carousel item
+ * Body: { name, image, href, description }
+ */
+exports.updateLandingItem = async (req, res) => {
+  try {
+    const { tenant_id } = req.tenant;
+    const { id } = req.params;
+    const { name, image, href, description } = req.body;
+
+    if (!name || !image || !href) {
+      return res.status(400).json({
+        success: false,
+        message: 'Campos requeridos: name, image, href'
+      });
+    }
+
+    const result = await db.query(`
+      UPDATE landing_page_config
+      SET 
+        name = $1,
+        image = $2,
+        href = $3,
+        description = $4,
+        updated_at = CURRENT_TIMESTAMP
+      WHERE config_id = $5 AND tenant_id = $6
+      RETURNING config_id as id, section, name, image, href, description, orden
+    `, [name, image, href, description || null, id, tenant_id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Item no encontrado'
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Item actualizado exitosamente',
+      data: result.rows[0]
+    });
+  } catch (error) {
+    console.error('Error updating landing item:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al actualizar item',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * DELETE /api/admin/landing-config/:id
+ * Delete carousel item
+ */
+exports.deleteLandingItem = async (req, res) => {
+  try {
+    const { tenant_id } = req.tenant;
+    const { id } = req.params;
+
+    const result = await db.query(`
+      DELETE FROM landing_page_config
+      WHERE config_id = $1 AND tenant_id = $2
+      RETURNING section
+    `, [id, tenant_id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Item no encontrado'
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Item eliminado exitosamente'
+    });
+  } catch (error) {
+    console.error('Error deleting landing item:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al eliminar item',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * POST /api/admin/landing-config/reorder
+ * Reorder carousel items
+ * Body: { section, items: [{ id, orden }] }
+ */
+exports.reorderLandingItems = async (req, res) => {
+  const client = await db.getClient();
+  
+  try {
+    const { tenant_id } = req.tenant;
+    const { section, items } = req.body;
+
+    if (!section || !Array.isArray(items)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Se requiere section y array de items'
+      });
+    }
+
+    await client.query('BEGIN');
+
+    for (const item of items) {
+      await client.query(`
+        UPDATE landing_page_config
+        SET orden = $1, updated_at = CURRENT_TIMESTAMP
+        WHERE config_id = $2 AND tenant_id = $3 AND section = $4
+      `, [item.orden, item.id, tenant_id, section]);
+    }
+
+    await client.query('COMMIT');
+
+    return res.status(200).json({
+      success: true,
+      message: 'Orden actualizado exitosamente'
+    });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Error reordering landing items:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al actualizar orden',
+      error: error.message
+    });
+  } finally {
+    client.release();
+  }
+};
+
+/**
+ * GET /api/public/landing-items
+ * Public endpoint - Get carousel items for landing page (categories and brands)
+ */
+exports.getPublicLandingItems = async (req, res) => {
+  try {
+    const { tenant_id } = req.tenant;
+
+    const result = await db.query(`
+      SELECT 
+        config_id as id,
+        section,
+        name,
+        image,
+        href,
+        description,
+        orden
+      FROM landing_page_config
+      WHERE tenant_id = $1 
+        AND section IN ('categories', 'brands')
+      ORDER BY section, orden ASC, config_id ASC
+    `, [tenant_id]);
+
+    const categories = result.rows.filter(item => item.section === 'categories');
+    const brands = result.rows.filter(item => item.section === 'brands');
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        categories,
+        brands
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching public landing items:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al obtener items de landing',
       error: error.message
     });
   }

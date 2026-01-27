@@ -2,7 +2,6 @@ const express = require('express');
 const router = express.Router();
 const { obtenerEstados } = require('../controllers/direccionesController');
 const landingEditorController = require('../controllers/landingEditorController');
-const landingItemsController = require('../controllers/landingItemsController');
 const { authenticate } = require('../middlewares/authMiddleware');
 
 /**
@@ -29,6 +28,6 @@ router.get('/landing-content', (req, res, next) => {
  * @desc    Obtener categorías y marcas con imágenes para landing page
  * @access  Public
  */
-router.get('/landing-items', landingItemsController.getPublicLandingItems);
+router.get('/landing-items', landingEditorController.getPublicLandingItems);
 
 module.exports = router;

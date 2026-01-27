@@ -1263,6 +1263,42 @@ router.get(
   landingEditorController.getSmartSelectorData
 );
 
+// Landing carousel items CRUD
+router.get(
+  "/landing-config",
+  authenticate,
+  authorizeAdmin,
+  landingEditorController.getLandingItems
+);
+
+router.post(
+  "/landing-config",
+  authenticate,
+  authorizeAdmin,
+  landingEditorController.createLandingItem
+);
+
+router.put(
+  "/landing-config/:id",
+  authenticate,
+  authorizeAdmin,
+  landingEditorController.updateLandingItem
+);
+
+router.delete(
+  "/landing-config/:id",
+  authenticate,
+  authorizeAdmin,
+  landingEditorController.deleteLandingItem
+);
+
+router.post(
+  "/landing-config/reorder",
+  authenticate,
+  authorizeAdmin,
+  landingEditorController.reorderLandingItems
+);
+
 // =====================================================
 // RUTAS DE AJUSTES DE INVENTARIO (AUDITORÍA)
 // =====================================================

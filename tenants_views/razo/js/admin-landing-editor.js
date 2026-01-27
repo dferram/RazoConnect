@@ -1593,7 +1593,10 @@
 
   async function loadExistingCategoryItems() {
     try {
-      const response = await fetch('/api/public/landing-items');
+      const token = localStorage.getItem('razoconnect_admin_token');
+      const response = await fetch('/api/admin/landing-config', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
       const data = await response.json();
 
       if (data.success && data.data.categories) {
@@ -1608,7 +1611,10 @@
 
   async function loadExistingBrandItems() {
     try {
-      const response = await fetch('/api/public/landing-items');
+      const token = localStorage.getItem('razoconnect_admin_token');
+      const response = await fetch('/api/admin/landing-config', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
       const data = await response.json();
 
       if (data.success && data.data.brands) {
@@ -1791,16 +1797,16 @@
           if (urlDisplay) {
             urlDisplay.textContent = generatedUrl;
           }
+          // Guardar automáticamente cuando se selecciona una categoría
+          saveCategoryItem(itemId);
         }
-        isDirty = true;
-        triggerAutoSave();
       });
     }
 
     if (nameInput) {
-      nameInput.addEventListener('input', () => {
-        isDirty = true;
-        triggerAutoSave();
+      nameInput.addEventListener('blur', () => {
+        // Guardar cuando se pierde el foco del input
+        saveCategoryItem(itemId);
       });
     }
 
@@ -1825,16 +1831,16 @@
           if (urlDisplay) {
             urlDisplay.textContent = generatedUrl;
           }
+          // Guardar automáticamente cuando se selecciona una marca
+          saveBrandItem(itemId);
         }
-        isDirty = true;
-        triggerAutoSave();
       });
     }
 
     if (nameInput) {
-      nameInput.addEventListener('input', () => {
-        isDirty = true;
-        triggerAutoSave();
+      nameInput.addEventListener('blur', () => {
+        // Guardar cuando se pierde el foco del input
+        saveBrandItem(itemId);
       });
     }
 
@@ -1845,8 +1851,140 @@
     }
   }
 
-  function deleteCategoryItem(itemId) {
-    Swal.fire({
+  async function saveCategoryItem(itemId) {
+    const nameInput = document.querySelector(`.category-name-input[data-item-id="${itemId}"]`);
+    const imageInput = document.querySelector(`.category-image-input[data-item-id="${itemId}"]`);
+    const urlDisplay = document.querySelector(`.generated-url[data-item-id="${itemId}"]`);
+
+    const name = nameInput?.value?.trim();
+    const image = imageInput?.value?.trim();
+    const href = urlDisplay?.textContent?.trim();
+
+    if (!name || !image || !href || href === 'Selecciona una categoría para generar el enlace') {
+      console.log('Category item incomplete, skipping save:', { name, image, href });
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('razoconnect_admin_token');
+      const isNew = String(itemId).startsWith('new_');
+      const url = isNew ? '/api/admin/landing-config' : `/api/admin/landing-config/${itemId}`;
+      const method = isNew ? 'POST' : 'PUT';
+
+      const body = {
+        section: 'categories',
+        name,
+        image,
+        href,
+        description: ''
+      };
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(body)
+      });
+
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.message || 'Error al guardar');
+      }
+
+      // Si era nuevo, actualizar el ID en el DOM
+      if (isNew && data.data.id) {
+        const card = document.querySelector(`.dynamic-item-card[data-item-id="${itemId}"]`);
+        if (card) {
+          card.setAttribute('data-item-id', data.data.id);
+          nameInput?.setAttribute('data-item-id', data.data.id);
+          imageInput?.setAttribute('data-item-id', data.data.id);
+          urlDisplay?.setAttribute('data-item-id', data.data.id);
+        }
+        
+        // Actualizar en el array
+        const itemIndex = dynamicCategoryItems.findIndex(item => item.id === itemId);
+        if (itemIndex !== -1) {
+          dynamicCategoryItems[itemIndex].id = data.data.id;
+        }
+      }
+
+      console.log('✅ Category item saved:', data.data);
+    } catch (error) {
+      console.error('Error saving category item:', error);
+    }
+  }
+
+  async function saveBrandItem(itemId) {
+    const nameInput = document.querySelector(`.brand-name-input[data-item-id="${itemId}"]`);
+    const imageInput = document.querySelector(`.brand-image-input[data-item-id="${itemId}"]`);
+    const urlDisplay = document.querySelector(`.generated-url[data-item-id="${itemId}"]`);
+
+    const name = nameInput?.value?.trim();
+    const image = imageInput?.value?.trim();
+    const href = urlDisplay?.textContent?.trim();
+
+    if (!name || !image || !href || href === 'Selecciona una marca para generar el enlace') {
+      console.log('Brand item incomplete, skipping save:', { name, image, href });
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('razoconnect_admin_token');
+      const isNew = String(itemId).startsWith('new_');
+      const url = isNew ? '/api/admin/landing-config' : `/api/admin/landing-config/${itemId}`;
+      const method = isNew ? 'POST' : 'PUT';
+
+      const body = {
+        section: 'brands',
+        name,
+        image,
+        href,
+        description: ''
+      };
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(body)
+      });
+
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.message || 'Error al guardar');
+      }
+
+      // Si era nuevo, actualizar el ID en el DOM
+      if (isNew && data.data.id) {
+        const card = document.querySelector(`.dynamic-item-card[data-item-id="${itemId}"]`);
+        if (card) {
+          card.setAttribute('data-item-id', data.data.id);
+          nameInput?.setAttribute('data-item-id', data.data.id);
+          imageInput?.setAttribute('data-item-id', data.data.id);
+          urlDisplay?.setAttribute('data-item-id', data.data.id);
+        }
+        
+        // Actualizar en el array
+        const itemIndex = dynamicBrandItems.findIndex(item => item.id === itemId);
+        if (itemIndex !== -1) {
+          dynamicBrandItems[itemIndex].id = data.data.id;
+        }
+      }
+
+      console.log('✅ Brand item saved:', data.data);
+    } catch (error) {
+      console.error('Error saving brand item:', error);
+    }
+  }
+
+  async function deleteCategoryItem(itemId) {
+    const result = await Swal.fire({
       icon: 'warning',
       title: '¿Eliminar categoría?',
       text: 'Esta acción no se puede deshacer',
@@ -1854,21 +1992,58 @@
       confirmButtonText: 'Sí, eliminar',
       cancelButtonText: 'Cancelar',
       confirmButtonColor: '#ef4444'
-    }).then((result) => {
-      if (result.isConfirmed) {
-        const card = document.querySelector(`.dynamic-item-card[data-item-id="${itemId}"][data-type="category"]`);
-        if (card) {
-          card.remove();
-        }
-        dynamicCategoryItems = dynamicCategoryItems.filter(item => item.id !== itemId);
-        isDirty = true;
-        triggerAutoSave();
-      }
     });
+
+    if (!result.isConfirmed) return;
+
+    // Si es un item nuevo (no guardado en DB), solo eliminarlo del DOM
+    if (String(itemId).startsWith('new_')) {
+      const card = document.querySelector(`.dynamic-item-card[data-item-id="${itemId}"][data-type="category"]`);
+      if (card) card.remove();
+      dynamicCategoryItems = dynamicCategoryItems.filter(item => item.id !== itemId);
+      return;
+    }
+
+    // Si es un item existente, llamar al endpoint DELETE
+    try {
+      showLoading(true);
+      const token = localStorage.getItem('razoconnect_admin_token');
+      const response = await fetch(`/api/admin/landing-config/${itemId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.message || 'Error al eliminar');
+      }
+
+      const card = document.querySelector(`.dynamic-item-card[data-item-id="${itemId}"][data-type="category"]`);
+      if (card) card.remove();
+      dynamicCategoryItems = dynamicCategoryItems.filter(item => item.id !== itemId);
+
+      Swal.fire({
+        icon: 'success',
+        title: 'Eliminado',
+        text: 'La categoría ha sido eliminada',
+        timer: 2000,
+        showConfirmButton: false
+      });
+    } catch (error) {
+      console.error('Error deleting category:', error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: error.message || 'No se pudo eliminar la categoría'
+      });
+    } finally {
+      showLoading(false);
+    }
   }
 
-  function deleteBrandItem(itemId) {
-    Swal.fire({
+  async function deleteBrandItem(itemId) {
+    const result = await Swal.fire({
       icon: 'warning',
       title: '¿Eliminar marca?',
       text: 'Esta acción no se puede deshacer',
@@ -1876,17 +2051,54 @@
       confirmButtonText: 'Sí, eliminar',
       cancelButtonText: 'Cancelar',
       confirmButtonColor: '#ef4444'
-    }).then((result) => {
-      if (result.isConfirmed) {
-        const card = document.querySelector(`.dynamic-item-card[data-item-id="${itemId}"][data-type="brand"]`);
-        if (card) {
-          card.remove();
-        }
-        dynamicBrandItems = dynamicBrandItems.filter(item => item.id !== itemId);
-        isDirty = true;
-        triggerAutoSave();
-      }
     });
+
+    if (!result.isConfirmed) return;
+
+    // Si es un item nuevo (no guardado en DB), solo eliminarlo del DOM
+    if (String(itemId).startsWith('new_')) {
+      const card = document.querySelector(`.dynamic-item-card[data-item-id="${itemId}"][data-type="brand"]`);
+      if (card) card.remove();
+      dynamicBrandItems = dynamicBrandItems.filter(item => item.id !== itemId);
+      return;
+    }
+
+    // Si es un item existente, llamar al endpoint DELETE
+    try {
+      showLoading(true);
+      const token = localStorage.getItem('razoconnect_admin_token');
+      const response = await fetch(`/api/admin/landing-config/${itemId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.message || 'Error al eliminar');
+      }
+
+      const card = document.querySelector(`.dynamic-item-card[data-item-id="${itemId}"][data-type="brand"]`);
+      if (card) card.remove();
+      dynamicBrandItems = dynamicBrandItems.filter(item => item.id !== itemId);
+
+      Swal.fire({
+        icon: 'success',
+        title: 'Eliminado',
+        text: 'La marca ha sido eliminada',
+        timer: 2000,
+        showConfirmButton: false
+      });
+    } catch (error) {
+      console.error('Error deleting brand:', error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: error.message || 'No se pudo eliminar la marca'
+      });
+    } finally {
+      showLoading(false);
+    }
   }
 
   async function openItemImageUpload(itemId, type) {
@@ -1944,6 +2156,13 @@
             <i class="bi bi-pencil"></i> Cambiar
           </div>
         `;
+      }
+
+      // Guardar el item automáticamente después de subir la imagen
+      if (type === 'category') {
+        await saveCategoryItem(itemId);
+      } else if (type === 'brand') {
+        await saveBrandItem(itemId);
       }
 
       showLoading(false);

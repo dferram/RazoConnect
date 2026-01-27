@@ -7363,8 +7363,45 @@ const ajustarInventario = async (req, res) => {
  */
 const getInventarioResumen = async (req, res) => {
   try {
+    const { tenant_id } = req.tenant;
     const userRol = req.user?.rol?.toLowerCase();
     const isSuperAdmin = userRol === 'superadmin' || userRol === 'super-admin';
+
+    const { stock, categoria, proveedor, search } = req.query;
+
+    const whereClauses = [`p.tenant_id = $1`];
+    const params = [tenant_id];
+    let paramIndex = 2;
+
+    if (search && search.trim()) {
+      whereClauses.push(`(
+        LOWER(p.NombreProducto) LIKE LOWER($${paramIndex}) OR
+        CAST(p.ProductoID AS TEXT) LIKE $${paramIndex}
+      )`);
+      params.push(`%${search.trim()}%`);
+      paramIndex++;
+    }
+
+    if (categoria && categoria !== 'todos') {
+      whereClauses.push(`p.CategoriaID = $${paramIndex}`);
+      params.push(parseInt(categoria, 10));
+      paramIndex++;
+    }
+
+    if (proveedor && proveedor !== 'todos') {
+      whereClauses.push(`p.ProveedorID_Default = $${paramIndex}`);
+      params.push(parseInt(proveedor, 10));
+      paramIndex++;
+    }
+
+    const whereClause = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
+
+    let havingClause = '';
+    if (stock === 'con') {
+      havingClause = 'HAVING SUM(COALESCE(v.Stock, 0)) > 0';
+    } else if (stock === 'sin') {
+      havingClause = 'HAVING SUM(COALESCE(v.Stock, 0)) = 0';
+    }
 
     const query = `
       SELECT
@@ -7372,22 +7409,25 @@ const getInventarioResumen = async (req, res) => {
         p.NombreProducto,
         p.Activo,
         c.Nombre AS NombreCategoria,
-        COUNT(v.VarianteID) AS TotalVariantes
+        COUNT(v.VarianteID) AS TotalVariantes,
+        SUM(COALESCE(v.Stock, 0)) AS StockTotal
         ${isSuperAdmin ? `,
         STRING_AGG(DISTINCT CONCAT(a.Nombre, ' ', COALESCE(a.Apellido, '')), ', ') AS AdminsRegistrados
         ` : ''}
       FROM Productos p
-      LEFT JOIN Categorias c ON c.CategoriaID = p.CategoriaID
+      LEFT JOIN Categorias c ON c.CategoriaID = p.CategoriaID AND c.tenant_id = $1
       LEFT JOIN Producto_Variantes v ON v.ProductoID = p.ProductoID
       ${isSuperAdmin ? `
       LEFT JOIN inventarios_admin ia ON ia.variante_id = v.VarianteID
-      LEFT JOIN administradores a ON a.AdminID = ia.registrado_por
+      LEFT JOIN administradores a ON a.AdminID = ia.registrado_por AND a.tenant_id = $1
       ` : ''}
+      ${whereClause}
       GROUP BY p.ProductoID, p.NombreProducto, p.Activo, c.Nombre
+      ${havingClause}
       ORDER BY p.NombreProducto ASC
     `;
 
-    const result = await db.query(query);
+    const result = await db.query(query, params);
 
     const productos = result.rows.map((row) => ({
       productoId: row.productoid,
@@ -7396,6 +7436,7 @@ const getInventarioResumen = async (req, res) => {
       nombreCategoria: row.nombrecategoria || "Sin categoría",
       totalVariantes:
         row.totalvariantes !== null ? parseInt(row.totalvariantes, 10) : 0,
+      stockTotal: row.stocktotal !== null ? parseInt(row.stocktotal, 10) : 0,
       ...(isSuperAdmin && { adminsRegistrados: row.adminsregistrados || 'N/A' })
     }));
 

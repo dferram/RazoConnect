@@ -384,6 +384,65 @@
               </div>
             </div>
 
+            <!-- Panel de Filtros -->
+            <div class="admin-filters-panel" style="background: #f8fafc; border-radius: 0.75rem; padding: 1.25rem; margin-bottom: 1.5rem; border: 1px solid rgba(0,0,0,0.08);">
+              <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">
+                <span style="font-size: 1.125rem;">🔍</span>
+                <h3 style="margin: 0; font-size: 1rem; font-weight: 600; color: #1f2937;">Filtros de Búsqueda</h3>
+              </div>
+              
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem;">
+                <!-- Filtro de Existencia -->
+                <div class="form-group" style="margin: 0;">
+                  <label for="filtroStock" class="form-label" style="font-size: 0.875rem; font-weight: 500; color: #374151; margin-bottom: 0.5rem;">
+                    Existencia
+                  </label>
+                  <select id="filtroStock" class="form-input" style="font-size: 0.9rem;">
+                    <option value="todos">Todos los productos</option>
+                    <option value="con">Con inventario (stock > 0)</option>
+                    <option value="sin">Sin inventario (stock = 0)</option>
+                  </select>
+                </div>
+
+                <!-- Filtro de Categoría -->
+                <div class="form-group" style="margin: 0;">
+                  <label for="filtroCategoria" class="form-label" style="font-size: 0.875rem; font-weight: 500; color: #374151; margin-bottom: 0.5rem;">
+                    Categoría
+                  </label>
+                  <select id="filtroCategoria" class="form-input" style="font-size: 0.9rem;">
+                    <option value="todos">Todas las categorías</option>
+                  </select>
+                </div>
+
+                <!-- Filtro de Proveedor/Marca -->
+                <div class="form-group" style="margin: 0;">
+                  <label for="filtroProveedor" class="form-label" style="font-size: 0.875rem; font-weight: 500; color: #374151; margin-bottom: 0.5rem;">
+                    Proveedor/Marca
+                  </label>
+                  <select id="filtroProveedor" class="form-input" style="font-size: 0.9rem;">
+                    <option value="todos">Todos los proveedores</option>
+                  </select>
+                </div>
+
+                <!-- Botón de Aplicar Filtros -->
+                <div style="display: flex; align-items: flex-end;">
+                  <button
+                    type="button"
+                    class="btn btn-primary"
+                    onclick="aplicarFiltros()"
+                    style="width: 100%; background: #F97316; border-color: #F97316; padding: 0.625rem 1rem; font-size: 0.9rem; font-weight: 500;"
+                  >
+                    Aplicar Filtros
+                  </button>
+                </div>
+              </div>
+
+              <!-- Contador de resultados -->
+              <div id="contadorResultados" class="u-margin-top-1" style="font-size: 0.875rem; color: #6b7280; font-weight: 500;">
+                <span id="totalProductos">0</span> producto(s) encontrado(s)
+              </div>
+            </div>
+
             <div id="loadingProducts" class="loading">
               <div class="spinner"></div>
             </div>
@@ -742,14 +801,78 @@
         }
       }
 
-      // Load products
-      async function loadProductos() {
+      // Load filter options (categories and providers)
+      async function cargarOpcionesFiltros() {
+        try {
+          // Cargar categorías
+          const categoriasResponse = await fetch(`${API_BASE_URL}/admin/categorias`, {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${adminToken}`,
+              "Content-Type": "application/json",
+            },
+          });
+
+          if (categoriasResponse.ok) {
+            const categoriasData = await categoriasResponse.json();
+            if (categoriasData.success && categoriasData.data.categorias) {
+              const filtroCategoria = document.getElementById('filtroCategoria');
+              categoriasData.data.categorias.forEach(cat => {
+                const option = document.createElement('option');
+                option.value = cat.categoriaid;
+                option.textContent = cat.nombre;
+                filtroCategoria.appendChild(option);
+              });
+            }
+          }
+
+          // Cargar proveedores
+          const proveedoresResponse = await fetch(`${API_BASE_URL}/admin/proveedores`, {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${adminToken}`,
+              "Content-Type": "application/json",
+            },
+          });
+
+          if (proveedoresResponse.ok) {
+            const proveedoresData = await proveedoresResponse.json();
+            if (proveedoresData.success && proveedoresData.data.proveedores) {
+              const filtroProveedor = document.getElementById('filtroProveedor');
+              proveedoresData.data.proveedores.forEach(prov => {
+                const option = document.createElement('option');
+                option.value = prov.proveedorid;
+                option.textContent = prov.nombreempresa;
+                filtroProveedor.appendChild(option);
+              });
+            }
+          }
+        } catch (error) {
+          console.error("Error cargando opciones de filtros:", error);
+        }
+      }
+
+      // Apply filters and reload products
+      async function aplicarFiltros() {
         try {
           loadingProducts.style.display = "flex";
           productsTable.style.display = "none";
           emptyProducts.style.display = "none";
 
-          const response = await fetch(`${API_BASE_URL}/admin/inventario`, {
+          const stock = document.getElementById('filtroStock').value;
+          const categoria = document.getElementById('filtroCategoria').value;
+          const proveedor = document.getElementById('filtroProveedor').value;
+          const search = document.getElementById('searchInput').value.trim();
+
+          const params = new URLSearchParams();
+          if (stock && stock !== 'todos') params.append('stock', stock);
+          if (categoria && categoria !== 'todos') params.append('categoria', categoria);
+          if (proveedor && proveedor !== 'todos') params.append('proveedor', proveedor);
+          if (search) params.append('search', search);
+
+          const url = `${API_BASE_URL}/admin/inventario${params.toString() ? '?' + params.toString() : ''}`;
+
+          const response = await fetch(url, {
             method: "GET",
             headers: {
               Authorization: `Bearer ${adminToken}`,
@@ -772,6 +895,9 @@
               thAdministrador.style.display = isSuperAdmin ? 'table-cell' : 'none';
             }
             
+            // Actualizar contador de resultados
+            document.getElementById('totalProductos').textContent = data.data.total;
+            
             paginaActual = 1;
             renderProducts();
           }
@@ -784,8 +910,34 @@
         }
       }
 
+      // Load products (wrapper for aplicarFiltros)
+      async function loadProductos() {
+        await aplicarFiltros();
+      }
+
       // Variable global para saber si es Super Admin
       let isSuperAdmin = false;
+
+      // Event listeners para filtros
+      document.addEventListener('DOMContentLoaded', () => {
+        // Cargar opciones de filtros al inicio
+        cargarOpcionesFiltros();
+
+        // Event listener para búsqueda en tiempo real
+        const searchInput = document.getElementById('searchInput');
+        let searchTimeout;
+        searchInput.addEventListener('input', (e) => {
+          clearTimeout(searchTimeout);
+          searchTimeout = setTimeout(() => {
+            aplicarFiltros();
+          }, 500);
+        });
+
+        // Event listeners para cambios en filtros (aplicar automáticamente)
+        document.getElementById('filtroStock').addEventListener('change', aplicarFiltros);
+        document.getElementById('filtroCategoria').addEventListener('change', aplicarFiltros);
+        document.getElementById('filtroProveedor').addEventListener('change', aplicarFiltros);
+      });
 
       // Render products
       function renderProducts(products = null) {
