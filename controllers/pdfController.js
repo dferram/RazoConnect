@@ -86,7 +86,7 @@ async function generarPDFPedido(req, res) {
             FROM detallesdelpedido dp
             INNER JOIN producto_variantes pv ON dp.varianteid = pv.varianteid
             INNER JOIN productos p ON pv.productoid = p.productoid AND p.tenant_id = $2
-            LEFT JOIN cat_tamanopaquetes t ON dp.tamanoid = t.tamanoid AND (t.tenant_id = $2 OR t.tenant_id IS NULL)
+            LEFT JOIN cat_tamanopaquetes t ON dp.tamanoid = t.tamanoid AND t.tenant_id = $2
             WHERE dp.pedidoid = $1
             ORDER BY dp.detalleid`,
             [pedidoId, tenant_id]

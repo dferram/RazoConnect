@@ -1540,7 +1540,7 @@ const obtenerPedidos = async (req, res) => {
         FROM detallesdelpedido dp
         LEFT JOIN producto_variantes pv ON dp.varianteid = pv.varianteid
         LEFT JOIN productos pr ON pv.productoid = pr.productoid
-        LEFT JOIN cat_tamanopaquetes ct ON dp.tamanoid = ct.tamanoid AND (ct.tenant_id = $2 OR ct.tenant_id IS NULL)
+        LEFT JOIN cat_tamanopaquetes ct ON dp.tamanoid = ct.tamanoid AND ct.tenant_id = $2
         LEFT JOIN LATERAL (
           SELECT pvi.url_imagen
           FROM producto_variante_imagenes pvi
@@ -1767,7 +1767,7 @@ const obtenerPedidoPorId = async (req, res) => {
       FROM detallesdelpedido dp
       INNER JOIN producto_variantes pv ON pv.varianteid = dp.varianteid
       INNER JOIN productos prod ON prod.productoid = pv.productoid
-      LEFT JOIN cat_tamanopaquetes t ON t.tamanoid = dp.tamanoid AND (t.tenant_id = $2 OR t.tenant_id IS NULL)
+      LEFT JOIN cat_tamanopaquetes t ON t.tamanoid = dp.tamanoid AND t.tenant_id = $2
       LEFT JOIN LATERAL (
         SELECT pvi.url_imagen
         FROM producto_variante_imagenes pvi

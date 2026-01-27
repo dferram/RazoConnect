@@ -59,7 +59,7 @@ exports.generarRemision = async (req, res) => {
     // 2. Obtener detalles del pedido con información completa
     // CRÍTICO: Incluir stock REAL desde producto_variantes (NO desde sesiones de inventario)
     const detallesQuery = await client.query(
-      `SELECT 
+      `SELECT DISTINCT ON (dp.detalleid)
         dp.*,
         pv.sku,
         pv.nombre AS variante_nombre,
@@ -70,8 +70,9 @@ exports.generarRemision = async (req, res) => {
        FROM detallesdelpedido dp
        INNER JOIN producto_variantes pv ON dp.varianteid = pv.varianteid
        INNER JOIN productos p ON pv.productoid = p.productoid
-       LEFT JOIN cat_tamanopaquetes tp ON dp.tamanoid = tp.tamanoid
-       WHERE dp.pedidoid = $1 AND dp.tenant_id = $2`,
+       LEFT JOIN cat_tamanopaquetes tp ON dp.tamanoid = tp.tamanoid AND tp.tenant_id = $2
+       WHERE dp.pedidoid = $1 AND dp.tenant_id = $2
+       ORDER BY dp.detalleid`,
       [pedido_id, tenant_id]
     );
 
@@ -772,7 +773,7 @@ exports.obtenerItemsPendientesSurtir = async (req, res) => {
     const { tenant_id } = req.tenant;
 
     const query = await pool.query(
-      `SELECT 
+      `SELECT DISTINCT ON (dp.detalleid)
         dp.detalleid,
         dp.varianteid,
         dp.cantidadpaquetes AS cantidad_pedida,
@@ -791,7 +792,7 @@ exports.obtenerItemsPendientesSurtir = async (req, res) => {
        FROM detallesdelpedido dp
        INNER JOIN producto_variantes pv ON dp.varianteid = pv.varianteid
        INNER JOIN productos p ON pv.productoid = p.productoid
-       LEFT JOIN cat_tamanopaquetes tp ON dp.tamanoid = tp.tamanoid
+       LEFT JOIN cat_tamanopaquetes tp ON dp.tamanoid = tp.tamanoid AND tp.tenant_id = $2
        WHERE dp.pedidoid = $1 
          AND dp.tenant_id = $2
          AND dp.cantidadpaquetes > COALESCE(dp.cantidad_surtida_remisiones, 0)

@@ -9725,7 +9725,7 @@ const getPedidoDetalle = async (req, res) => {
 
     // Obtener detalles de productos del pedido
     const detallesResult = await db.query(
-      `SELECT 
+      `SELECT DISTINCT ON (dp.detalleid)
         dp.detalleid,
         dp.pedidoid,
         dp.varianteid,
@@ -9768,7 +9768,8 @@ const getPedidoDetalle = async (req, res) => {
       INNER JOIN producto_variantes pv ON dp.varianteid = pv.varianteid AND pv.tenant_id = $2
       INNER JOIN productos pr ON pv.productoid = pr.productoid AND pr.tenant_id = $2
       LEFT JOIN cat_tamanopaquetes ct ON dp.tamanoid = ct.tamanoid AND ct.tenant_id = $2
-      WHERE dp.pedidoid = $1 AND dp.tenant_id = $2`,
+      WHERE dp.pedidoid = $1 AND dp.tenant_id = $2
+      ORDER BY dp.detalleid`,
       [pedidoId, tenant_id]
     );
 
@@ -14768,7 +14769,8 @@ const obtenerRemisionPedido = async (req, res) => {
     const pedido = pedidoResult.rows[0];
 
     const detallesQuery = `
-      SELECT 
+      SELECT DISTINCT ON (dp.detalleid)
+        dp.detalleid,
         dp.cantidadpaquetes,
         dp.preciounitario,
         dp.piezastotales,
@@ -14781,7 +14783,7 @@ const obtenerRemisionPedido = async (req, res) => {
       FROM detallesdelpedido dp
       INNER JOIN producto_variantes pv ON pv.varianteid = dp.varianteid
       INNER JOIN productos prod ON prod.productoid = pv.productoid
-      LEFT JOIN cat_tamanopaquetes t ON t.tamanoid = dp.tamanoid
+      LEFT JOIN cat_tamanopaquetes t ON t.tamanoid = dp.tamanoid AND t.tenant_id = dp.tenant_id
       WHERE dp.pedidoid = $1
       ORDER BY dp.detalleid ASC
     `;

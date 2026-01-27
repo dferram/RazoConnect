@@ -540,7 +540,7 @@ const obtenerPedidoDetalleAgente = async (req, res) => {
 
     // Obtener detalles del pedido
     const detallesResult = await db.query(
-      `SELECT 
+      `SELECT DISTINCT ON (dp.detalleid)
         dp.detalleid,
         dp.cantidadpaquetes,
         dp.precioporpaquete,
@@ -558,7 +558,7 @@ const obtenerPedidoDetalleAgente = async (req, res) => {
       FROM detallesdelpedido dp
       INNER JOIN producto_variantes pv ON dp.varianteid = pv.varianteid
       INNER JOIN productos pr ON pv.productoid = pr.productoid
-      LEFT JOIN cat_tamanopaquetes ct ON dp.tamanoid = ct.tamanoid
+      LEFT JOIN cat_tamanopaquetes ct ON dp.tamanoid = ct.tamanoid AND ct.tenant_id = dp.tenant_id
       WHERE dp.pedidoid = $1
       ORDER BY dp.detalleid ASC`,
       [pedidoId]
