@@ -1070,12 +1070,14 @@ const crearPedido = async (req, res) => {
       // CRITICAL FIX: Insertar detalle backorder (SOLO si hay cantidad pendiente)
       // Asegurar que no duplicamos si ya se insertó como surtido
       // CRÍTICO: Usar precioPorPaquete CON descuento prorrateado
+      // CRÍTICO: Usar cantidadRealBackorder (lo que pidió el cliente), NO split.cantidadBackorderAjustada (que es para OC de proveedor)
       const cantidadRealBackorder = cantidadRequerida - cantidadSurtida;
       const debeInsertarBackorder = cantidadRealBackorder > 0 && cantidadBackorder > 0;
       
       console.log(`   🔍 [BACKORDER CHECK] debeInsertarBackorder=${debeInsertarBackorder}, cantidadRealBackorder=${cantidadRealBackorder}, cantidadBackorder=${cantidadBackorder}`);
       if (debeInsertarBackorder) {
-        console.log(`   ✅ [INSERTING BACKORDER] Cantidad: ${split.cantidadBackorderAjustada} paquetes`);
+        console.log(`   ✅ [INSERTING BACKORDER] Cantidad CLIENTE: ${cantidadRealBackorder} paquetes (OC proveedor: ${split.cantidadBackorderAjustada})`);
+        const piezasBackorderReal = cantidadRealBackorder * tamanoValor;
         const detalleBackorderResult = await client.query(
           `INSERT INTO DetallesDelPedido (
              PedidoID,
@@ -1096,9 +1098,9 @@ const crearPedido = async (req, res) => {
             pedidoId,
             item.varianteid,
             item.tamanoid,
-            split.cantidadBackorderAjustada,
+            cantidadRealBackorder, // FIX: Usar cantidad real del cliente, NO la ajustada para proveedor
             precioPorPaquete, // Ya incluye descuento prorrateado
-            piezasBackorder,
+            piezasBackorderReal, // FIX: Calcular piezas basado en cantidad real
             parseFloat((precioPorPaquete / tamanoValor).toFixed(2)), // PrecioUnitario con descuento
             tenant_id,
           ]
@@ -1110,17 +1112,17 @@ const crearPedido = async (req, res) => {
           productoId: item.productoid,
           nombreProducto: item.nombreproducto,
           tamanoId: item.tamanoid,
-          cantidad: split.cantidadBackorderAjustada,
+          cantidad: cantidadRealBackorder, // FIX: Usar cantidad real del cliente
           esBackorder: true,
           cantidadSurtida: 0,
-          cantidadBackorder: split.cantidadBackorderAjustada,
+          cantidadBackorder: cantidadRealBackorder, // FIX: Usar cantidad real del cliente
           piezasPorPaquete: tamanoValor,
           presentacion: item.tamano_etiqueta || null,
           precioUnitario,
           precioPorPaquete,
           piezasSolicitadas: piezasSolicitadasOriginal,
           piezasSurtidas: 0,
-          piezasBackorder: split.cantidadBackorderAjustada * tamanoValor,
+          piezasBackorder: piezasBackorderReal, // FIX: Usar piezas reales calculadas
           subtotalSolicitado,
           subtotalSurtido: 0,
           sku: item.sku,
