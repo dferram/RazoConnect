@@ -1238,14 +1238,92 @@
             console.log(`🔄 [CAMBIO SESIÓN] De ${state.sesionId} a ${newSesionId}`);
             
             state.sesionId = newSesionId;
-            updateAgenteDisplay();
+            
+            // MISIÓN 1 CRÍTICA: Consulta fresca a DB para obtener agente asignado actual
+            await loadSesionDetailFromDB(newSesionId);
+            
             await loadDashboard();
           } else {
             state.sesionId = null;
             console.log('🔄 [CAMBIO SESIÓN] Sesión deseleccionada');
+            
+            // Limpiar display de agente
+            const agenteNombreEl = document.getElementById('agenteAsignadoNombre');
+            const btnAsignar = document.getElementById('btnAsignarAgente');
+            if (agenteNombreEl) {
+              agenteNombreEl.textContent = '—';
+              agenteNombreEl.style.color = '#6b7280';
+            }
+            if (btnAsignar) {
+              btnAsignar.style.display = 'none';
+            }
           }
           updateControls();
         });
+      };
+
+      // MISIÓN 1: Función para cargar detalles frescos de la sesión desde DB
+      const loadSesionDetailFromDB = async (sesionId) => {
+        try {
+          console.log(`🔍 [DB QUERY] Cargando detalles frescos de sesión ${sesionId}...`);
+          
+          const resp = await apiCall(`/inventario/sesiones/${sesionId}`, {
+            method: "GET"
+          });
+
+          // Validación estricta de respuesta
+          if (!resp) {
+            throw new Error("No se recibió respuesta del servidor");
+          }
+
+          if (!resp.ok) {
+            const errorMsg = resp.data?.message || "Error al cargar sesión";
+            console.error('❌ [SESIÓN ERROR]', { status: resp.status, error: errorMsg });
+            throw new Error(errorMsg);
+          }
+
+          const sesion = resp.data?.data;
+          if (!sesion) {
+            throw new Error("Datos de sesión incompletos");
+          }
+
+          // Actualizar UI con datos frescos de la DB
+          const agenteNombreEl = document.getElementById('agenteAsignadoNombre');
+          const btnAsignar = document.getElementById('btnAsignarAgente');
+          
+          const agenteNombre = sesion.agente_nombre || '';
+          
+          if (agenteNombreEl) {
+            if (agenteNombre && agenteNombre !== 'Sin Asignar') {
+              agenteNombreEl.textContent = agenteNombre;
+              agenteNombreEl.style.color = '#F97316';
+              console.log(`✅ [AGENTE CARGADO] ${agenteNombre} asignado a sesión ${sesionId}`);
+            } else {
+              agenteNombreEl.textContent = 'Sin asignar';
+              agenteNombreEl.style.color = '#dc2626';
+              console.log(`⚠️ [SIN AGENTE] Sesión ${sesionId} no tiene agente asignado`);
+            }
+          }
+          
+          if (btnAsignar) {
+            btnAsignar.style.display = 'block';
+            btnAsignar.textContent = (agenteNombre && agenteNombre !== 'Sin Asignar') ? 'Reasignar Agente' : 'Asignar Agente';
+          }
+
+          // Guardar en state para referencia
+          state.sesionEstatus = sesion.estatus;
+          
+        } catch (error) {
+          console.error('❌ [ERROR CARGA SESIÓN]', error);
+          toast("error", error.message || "Error al cargar detalles de la sesión");
+          
+          // Mostrar estado de error en UI
+          const agenteNombreEl = document.getElementById('agenteAsignadoNombre');
+          if (agenteNombreEl) {
+            agenteNombreEl.textContent = 'Error al cargar';
+            agenteNombreEl.style.color = '#dc2626';
+          }
+        }
       };
 
       const updateAgenteDisplay = () => {
@@ -1585,25 +1663,15 @@
             confirmButtonColor: "#F97316"
           });
 
-          // CRÍTICO: Recargar sesiones para persistir la asignación
+          // MISIÓN 1 CRÍTICA: Cargar detalles frescos desde DB para confirmar persistencia
+          await loadSesionDetailFromDB(state.sesionId);
+          
+          // También recargar la lista de sesiones para actualizar el dropdown
           await loadSesiones(state.sesionId);
-
-          // Actualizar UI
-          const agenteNombreEl = document.getElementById('agenteAsignadoNombre');
-          if (agenteNombreEl) {
-            agenteNombreEl.textContent = data.agenteNombre;
-            agenteNombreEl.style.color = '#F97316';
-          }
-
-          const btnAsignar = document.getElementById('btnAsignarAgente');
-          if (btnAsignar) {
-            btnAsignar.textContent = 'Reasignar Agente';
-            btnAsignar.style.display = 'block';
-          }
 
           toast("success", "Agente asignado correctamente");
 
-          console.log(`✅ [PERSISTENCIA] Agente ${data.agenteNombre} asignado a sesión ${state.sesionId}`);
+          console.log(`✅ [PERSISTENCIA CONFIRMADA] Agente ${data.agenteNombre} asignado a sesión ${state.sesionId} y verificado en DB`);
 
         } catch (error) {
           console.error('❌ [ERROR ASIGNACIÓN]', error);

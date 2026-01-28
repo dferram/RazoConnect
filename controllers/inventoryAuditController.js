@@ -290,6 +290,18 @@ const registrarConteo = async (req, res) => {
       });
     }
 
+    // CRÍTICO: Determinar el tipo de usuario (admin o agente)
+    // Esto previene falsos positivos cuando adminid y agenteid coinciden numéricamente
+    const userRoles = req.user?.roles || [];
+    const isAdmin = userRoles.includes('admin') || userRoles.includes('superadmin') || userRoles.includes('super-admin');
+    const isAgente = userRoles.includes('agente');
+    
+    // Crear identificador único: "admin:5" o "agente:5"
+    const tipoUsuario = isAdmin ? 'admin' : (isAgente ? 'agente' : 'unknown');
+    const usuarioIdentificador = `${tipoUsuario}:${usuarioId}`;
+    
+    console.log(`🔐 [AUTH] Usuario identificado: ${usuarioIdentificador} (ID: ${usuarioId}, Roles: ${userRoles.join(', ')})`);
+
     if (
       usuarioIdBody !== undefined &&
       usuarioIdBody !== null &&
@@ -331,7 +343,7 @@ const registrarConteo = async (req, res) => {
     }
 
     const existing = await client.query(
-      `SELECT conteoid, sesionid, varianteid, conteo_a, usuario_a_id, conteo_b, usuario_b_id, cantidad_final, estatus_fila
+      `SELECT conteoid, sesionid, varianteid, conteo_a, usuario_a_id, usuario_a_tipo, conteo_b, usuario_b_id, usuario_b_tipo, cantidad_final, estatus_fila
        FROM toma_inventario_conteos
        WHERE sesionid = $1 AND varianteid = $2
        FOR UPDATE`,
@@ -356,25 +368,36 @@ const registrarConteo = async (req, res) => {
       });
     }
     
+    // LÓGICA MEJORADA: Permitir que múltiples agentes trabajen en la misma sesión
+    // - Si NO existe registro: Crear Conteo A
+    // - Si existe Conteo A pero NO Conteo B: Permitir que OTRO usuario registre Conteo B
+    // - Si ya existe Conteo B: Rechazar (producto ya validado)
+    
     if (!existing.rows.length) {
+      // CASO 1: Primer conteo de este producto en esta sesión (CONTEO A)
+      console.log(`📝 [CONTEO A] ${usuarioIdentificador} registra primer conteo de variante ${varianteId} en sesión ${sesionId}`);
+      
       const inserted = await client.query(
-        `INSERT INTO toma_inventario_conteos (sesionid, varianteid, conteo_a, usuario_a_id, estatus_fila, tenant_id)
-         VALUES ($1, $2, $3, $4, 'PENDIENTE_B', $5)
-         RETURNING conteoid, sesionid, varianteid, conteo_a, usuario_a_id, conteo_b, usuario_b_id, cantidad_final, estatus_fila`,
-        [sesionId, varianteId, cantidad, usuarioId, sesionLock.rows[0].tenant_id]
+        `INSERT INTO toma_inventario_conteos (sesionid, varianteid, conteo_a, usuario_a_id, usuario_a_tipo, estatus_fila, tenant_id)
+         VALUES ($1, $2, $3, $4, $5, 'PENDIENTE_B', $6)
+         RETURNING conteoid, sesionid, varianteid, conteo_a, usuario_a_id, usuario_a_tipo, conteo_b, usuario_b_id, usuario_b_tipo, cantidad_final, estatus_fila`,
+        [sesionId, varianteId, cantidad, usuarioId, tipoUsuario, sesionLock.rows[0].tenant_id]
       );
 
       row = inserted.rows[0];
     } else {
+      // CASO 2: Ya existe un Conteo A, intentando registrar Conteo B
       row = existing.rows[0];
 
       const conteoBExiste = row.conteo_b !== null && row.conteo_b !== undefined;
 
       if (conteoBExiste) {
+        // Producto ya tiene ambos conteos (A y B)
         await client.query("ROLLBACK");
+        console.warn(`⚠️ [CONTEO DUPLICADO] Variante ${varianteId} en sesión ${sesionId} ya tiene Conteo A y Conteo B completos`);
         return res.status(409).json({
           success: false,
-          message: "Esta variante ya tiene conteo B registrado",
+          message: "Esta variante ya fue contada dos veces y está validada. No se pueden registrar más conteos.",
         });
       }
 
@@ -382,15 +405,35 @@ const registrarConteo = async (req, res) => {
         row.usuario_a_id !== null && row.usuario_a_id !== undefined
           ? Number.parseInt(row.usuario_a_id, 10)
           : null;
+      
+      const usuarioATipo = row.usuario_a_tipo || 'unknown';
+      const usuarioAIdentificador = `${usuarioATipo}:${usuarioAId}`;
 
-      if (usuarioAId && usuarioAId === usuarioId) {
+      // VALIDACIÓN CRÍTICA CORREGIDA: Comparar ID Y TIPO de usuario
+      // Esto previene falsos positivos cuando adminid=5 y agenteid=5 (diferentes usuarios)
+      const mismaTipoUsuario = usuarioATipo === tipoUsuario;
+      const mismoId = usuarioAId === usuarioId;
+      const esElMismoUsuario = mismaTipoUsuario && mismoId;
+
+      if (esElMismoUsuario) {
         await client.query("ROLLBACK");
+        console.warn(`❌ [CONTEO CIEGO VIOLADO] ${usuarioIdentificador} intentó hacer Conteo B de variante ${varianteId} en sesión ${sesionId}, pero ya hizo el Conteo A`);
         return res.status(403).json({
           success: false,
-          message: "Mismo usuario no puede contar dos veces",
+          message: "No puedes hacer el segundo conteo de un producto que ya contaste. Debe hacerlo otro agente para garantizar la validación ciega.",
+          debug: {
+            sesionId,
+            varianteId,
+            usuarioActual: usuarioIdentificador,
+            usuarioConteoA: usuarioAIdentificador,
+            conteoAExistente: row.conteo_a
+          }
         });
       }
 
+      // CASO 2B: Usuario diferente registra Conteo B (validación ciega)
+      console.log(`✅ [CONTEO B] ${usuarioIdentificador} registra segundo conteo de variante ${varianteId} en sesión ${sesionId} (Conteo A fue hecho por ${usuarioAIdentificador})`);
+      
       const conteoA = Number.parseInt(row.conteo_a, 10);
       const igual = Number.isInteger(conteoA) && conteoA === cantidad;
 
@@ -398,13 +441,15 @@ const registrarConteo = async (req, res) => {
         `UPDATE toma_inventario_conteos
          SET conteo_b = $1,
              usuario_b_id = $2,
-             estatus_fila = $3,
-             cantidad_final = $4
-         WHERE conteoid = $5
-         RETURNING conteoid, sesionid, varianteid, conteo_a, usuario_a_id, conteo_b, usuario_b_id, cantidad_final, estatus_fila`,
+             usuario_b_tipo = $3,
+             estatus_fila = $4,
+             cantidad_final = $5
+         WHERE conteoid = $6
+         RETURNING conteoid, sesionid, varianteid, conteo_a, usuario_a_id, usuario_a_tipo, conteo_b, usuario_b_id, usuario_b_tipo, cantidad_final, estatus_fila`,
         [
           cantidad,
           usuarioId,
+          tipoUsuario,
           igual ? "VALIDADO" : "CONFLICTO",
           igual ? cantidad : null,
           row.conteoid,
@@ -412,6 +457,12 @@ const registrarConteo = async (req, res) => {
       );
 
       row = updated.rows[0];
+      
+      if (igual) {
+        console.log(`🎯 [VALIDADO] Conteo A (${conteoA}) y Conteo B (${cantidad}) coinciden para variante ${varianteId}`);
+      } else {
+        console.log(`⚠️ [CONFLICTO] Conteo A (${conteoA}) y Conteo B (${cantidad}) NO coinciden para variante ${varianteId}`);
+      }
     }
 
     await client.query("COMMIT");
@@ -480,11 +531,23 @@ const getDashboardSesion = async (req, res) => {
     }
 
     const tenant_id = req.tenant?.tenant_id || req.user?.tenantId || 1;
+    const userId = req.user?.id || req.user?.userId;
+    const userRoles = req.user?.roles || [];
+    
+    // MISIÓN 4: Validación de seguridad por rol
+    const isSuperAdmin = userRoles.includes('superadmin') || userRoles.includes('super-admin');
+    const isAdmin = userRoles.includes('admin');
+    const isAgent = userRoles.includes('agente');
     
     const sesionResult = await db.query(
-      `SELECT sesionid, nombre, estatus, usuario_creador_id
-       FROM toma_inventario_sesiones
-       WHERE sesionid = $1 AND tenant_id = $2`,
+      `SELECT 
+        si.sesionid, 
+        si.nombre, 
+        si.estatus, 
+        si.usuario_creador_id,
+        si.agente_asignado_id
+       FROM toma_inventario_sesiones si
+       WHERE si.sesionid = $1 AND si.tenant_id = $2`,
       [sesionId, tenant_id]
     );
 
@@ -493,6 +556,30 @@ const getDashboardSesion = async (req, res) => {
         success: false,
         message: "Sesión no encontrada",
       });
+    }
+
+    const sesion = sesionResult.rows[0];
+
+    // MISIÓN 4: Validación 403 - Agentes solo pueden ver sus sesiones asignadas
+    if (isAgent && !isAdmin && !isSuperAdmin) {
+      if (sesion.agente_asignado_id !== userId) {
+        console.warn(`⚠️ [ACCESO DENEGADO] Agente ${userId} intentó acceder a sesión ${sesionId} asignada a agente ${sesion.agente_asignado_id}`);
+        return res.status(403).json({
+          success: false,
+          message: 'No tienes permiso para acceder a esta sesión de inventario. Solo puedes ver sesiones asignadas a ti.'
+        });
+      }
+    }
+    
+    // Admins regulares solo pueden ver sesiones que crearon
+    if (isAdmin && !isSuperAdmin) {
+      if (sesion.usuario_creador_id !== userId) {
+        console.warn(`⚠️ [ACCESO DENEGADO] Admin ${userId} intentó acceder a sesión ${sesionId} creada por admin ${sesion.usuario_creador_id}`);
+        return res.status(403).json({
+          success: false,
+          message: 'No tienes permiso para acceder a esta sesión de inventario. Solo puedes ver sesiones que tú creaste.'
+        });
+      }
     }
 
     const filasResult = await db.query(
@@ -531,9 +618,9 @@ const getDashboardSesion = async (req, res) => {
     }));
 
     const rol = (req.user?.rol || "").toString().trim().toLowerCase();
-    const isSuperAdmin = rol === "superadmin";
+    const isSuperAdminForBlindCount = rol === "superadmin";
 
-    if (!isSuperAdmin) {
+    if (!isSuperAdminForBlindCount) {
       for (const fila of filas) {
         if (
           fila.estatusFila === "CONFLICTO" ||
