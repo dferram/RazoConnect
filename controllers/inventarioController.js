@@ -181,7 +181,7 @@ async function getOrdenesPendientes(req, res) {
 async function crearSesionInventario(req, res) {
     const { nombre, descripcion, notas } = req.body;
     const { tenant_id } = req.tenant;
-    const adminId = req.user.adminId || req.user.agenteId;
+    const adminId = req.user.id || req.user.userId;
     const isAdmin = req.user.roles && req.user.roles.includes('admin');
 
     if (!isAdmin) {
@@ -252,7 +252,7 @@ async function crearSesionInventario(req, res) {
  */
 async function listarSesionesInventario(req, res) {
     const { tenant_id } = req.tenant;
-    const userId = req.user.adminId || req.user.agenteId;
+    const userId = req.user.id || req.user.userId;
     const isAdmin = req.user.roles && req.user.roles.includes('admin');
     const isAgent = req.user.roles && req.user.roles.includes('agente');
 
@@ -348,7 +348,7 @@ async function listarSesionesInventario(req, res) {
 async function obtenerSesionInventario(req, res) {
     const { sesionId } = req.params;
     const { tenant_id } = req.tenant;
-    const userId = req.user.adminId || req.user.agenteId;
+    const userId = req.user.id || req.user.userId;
     const isAdmin = req.user.roles && req.user.roles.includes('admin');
     const isAgent = req.user.roles && req.user.roles.includes('agente');
 
