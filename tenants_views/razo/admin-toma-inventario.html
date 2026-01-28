@@ -569,6 +569,38 @@
         productoModalActualId: null,
       };
 
+      // MISIÓN 2: Función para limpiar completamente el estado de la sesión anterior
+      const clearSessionState = () => {
+        console.log('🧹 [AISLAMIENTO] Limpiando estado de sesión anterior...');
+        
+        // Limpiar datos de auditoría
+        state.filas = [];
+        state.registeredVariants.clear();
+        
+        // Limpiar dashboard
+        if (dashboardTbody) {
+          dashboardTbody.innerHTML = '';
+        }
+        
+        // Limpiar último registro
+        const ultimoRegistro = document.getElementById('ultimoRegistro');
+        if (ultimoRegistro) {
+          ultimoRegistro.style.display = 'none';
+        }
+        
+        // Limpiar localStorage de sesión anterior
+        const keysToRemove = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && key.startsWith('sesion_')) {
+            keysToRemove.push(key);
+          }
+        }
+        keysToRemove.forEach(key => localStorage.removeItem(key));
+        
+        console.log('✅ [AISLAMIENTO] Estado limpiado correctamente');
+      };
+
       const getAdminDataForAudit = () => {
         if (typeof window.getAdminData === "function") {
           return window.getAdminData();
@@ -1195,6 +1227,25 @@
             updateAgenteDisplay();
           }
         }
+        sesionSelect.addEventListener("change", async () => {
+          const val = sesionSelect.value;
+          
+          // MISIÓN 2: Limpiar estado antes de cambiar de sesión
+          clearSessionState();
+          
+          if (val) {
+            const newSesionId = Number.parseInt(val, 10);
+            console.log(`🔄 [CAMBIO SESIÓN] De ${state.sesionId} a ${newSesionId}`);
+            
+            state.sesionId = newSesionId;
+            updateAgenteDisplay();
+            await loadDashboard();
+          } else {
+            state.sesionId = null;
+            console.log('🔄 [CAMBIO SESIÓN] Sesión deseleccionada');
+          }
+          updateControls();
+        });
       };
 
       const updateAgenteDisplay = () => {
@@ -1249,20 +1300,43 @@
         if (state.isAgente) return;
         setDashboardLoading(true);
 
+        const targetSesionId = state.sesionId; // Capturar ID antes de la llamada async
+
         try {
           const resp = await apiCall(
-            `/admin/auditoria-inventario/dashboard/${encodeURIComponent(state.sesionId)}`,
+            `/admin/auditoria-inventario/dashboard/${encodeURIComponent(targetSesionId)}`,
             { method: "GET" }
           );
 
-          if (!resp.ok) {
-            throw new Error(resp.data?.message || "Error al cargar dashboard");
+          // MISIÓN 4: Validación estricta de respuesta
+          if (!resp) {
+            throw new Error("No se recibió respuesta del servidor. Verifica tu conexión.");
           }
 
-          renderDashboard(resp.data?.data);
+          if (!resp.ok) {
+            const errorMsg = resp.data?.message || resp.error || "Error al cargar dashboard";
+            console.error('❌ [DASHBOARD ERROR]', { status: resp.status, error: errorMsg });
+            throw new Error(errorMsg);
+          }
+
+          // MISIÓN 2: Verificar que no cambió la sesión durante la carga
+          if (state.sesionId !== targetSesionId) {
+            console.warn('⚠️ [RACE CONDITION] Sesión cambió durante carga, descartando datos');
+            return;
+          }
+
+          // Validar estructura de datos
+          const data = resp.data?.data;
+          if (!data || !data.sesion) {
+            console.error('❌ [INVALID DASHBOARD DATA]', resp.data);
+            throw new Error("Datos de dashboard incompletos");
+          }
+
+          console.log(`✅ [DASHBOARD] Cargado para sesión ${targetSesionId}`);
+          renderDashboard(data);
         } catch (error) {
-          console.error(error);
-          toast("error", error.message || "Error al cargar");
+          console.error('❌ [DASHBOARD LOAD ERROR]', error);
+          toast("error", error.message || "Error al cargar dashboard");
         } finally {
           setDashboardLoading(false);
         }
@@ -1486,11 +1560,23 @@
             body: JSON.stringify({ agenteId })
           });
 
-          if (!resp.ok) {
-            throw new Error(resp.data?.message || "No se pudo asignar el agente");
+          // MISIÓN 4: Validación estricta de respuesta de API
+          if (!resp) {
+            throw new Error("No se recibió respuesta del servidor. Verifica tu conexión a internet.");
           }
 
+          if (!resp.ok) {
+            const errorMsg = resp.data?.message || resp.error || "No se pudo asignar el agente";
+            console.error('❌ [API ERROR]', { status: resp.status, error: errorMsg, data: resp.data });
+            throw new Error(errorMsg);
+          }
+
+          // Validar que la respuesta tenga los datos esperados
           const data = resp.data?.data;
+          if (!data || !data.agenteId || !data.agenteNombre) {
+            console.error('❌ [INVALID RESPONSE]', resp.data);
+            throw new Error("Respuesta del servidor incompleta. La asignación puede no haberse guardado.");
+          }
           
           await Swal.fire({
             icon: "success",
@@ -1499,10 +1585,14 @@
             confirmButtonColor: "#F97316"
           });
 
+          // CRÍTICO: Recargar sesiones para persistir la asignación
+          await loadSesiones(state.sesionId);
+
           // Actualizar UI
           const agenteNombreEl = document.getElementById('agenteAsignadoNombre');
           if (agenteNombreEl) {
             agenteNombreEl.textContent = data.agenteNombre;
+            agenteNombreEl.style.color = '#F97316';
           }
 
           const btnAsignar = document.getElementById('btnAsignarAgente');
@@ -1513,12 +1603,14 @@
 
           toast("success", "Agente asignado correctamente");
 
+          console.log(`✅ [PERSISTENCIA] Agente ${data.agenteNombre} asignado a sesión ${state.sesionId}`);
+
         } catch (error) {
-          console.error(error);
+          console.error('❌ [ERROR ASIGNACIÓN]', error);
           await Swal.fire({
             icon: "error",
-            title: "Error",
-            text: error.message || "No se pudo asignar el agente",
+            title: "Error al Asignar Agente",
+            text: error.message || "No se pudo asignar el agente. Verifica tu conexión e intenta nuevamente.",
             confirmButtonColor: "#F97316"
           });
         }

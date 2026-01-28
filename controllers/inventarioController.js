@@ -303,6 +303,7 @@ async function listarSesionesInventario(req, res) {
         `, params);
 
         // Obtener sesiones con información del agente y admin
+        // MISIÓN 3: NULL Safety - manejar sesiones sin agente asignado (legadas)
         const { rows: sesiones } = await client.query(`
             SELECT 
                 si.sesion_id,
@@ -316,15 +317,17 @@ async function listarSesionesInventario(req, res) {
                 si.fecha_actualizacion,
                 si.agente_asignado_id,
                 CASE 
-                    WHEN si.agente_asignado_id IS NOT NULL 
+                    WHEN si.agente_asignado_id IS NOT NULL AND a.agenteid IS NOT NULL
                     THEN a.nombre || ' ' || a.apellido
-                    ELSE NULL
+                    WHEN si.agente_asignado_id IS NULL
+                    THEN 'Sin Asignar'
+                    ELSE 'Agente No Disponible'
                 END as agente_nombre,
                 a.email as agente_email,
-                adm.nombre || ' ' || adm.apellido as admin_creador
+                COALESCE(adm.nombre || ' ' || adm.apellido, 'Admin Desconocido') as admin_creador
             FROM sesiones_inventario si
-            LEFT JOIN agentesdeventas a ON si.agente_asignado_id = a.agenteid
-            INNER JOIN administradores adm ON si.admin_creador_id = adm.adminid
+            LEFT JOIN agentesdeventas a ON si.agente_asignado_id = a.agenteid AND a.activo = true
+            LEFT JOIN administradores adm ON si.admin_creador_id = adm.adminid
             WHERE ${whereClause}
             ORDER BY si.fecha_creacion DESC
             LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
@@ -374,6 +377,7 @@ async function obtenerSesionInventario(req, res) {
     const client = await db.getClient();
     
     try {
+        // MISIÓN 3: NULL Safety - manejar sesiones sin agente asignado (legadas)
         const { rows } = await client.query(`
             SELECT 
                 si.sesion_id,
@@ -388,15 +392,17 @@ async function obtenerSesionInventario(req, res) {
                 si.agente_asignado_id,
                 si.admin_creador_id,
                 CASE 
-                    WHEN si.agente_asignado_id IS NOT NULL 
+                    WHEN si.agente_asignado_id IS NOT NULL AND a.agenteid IS NOT NULL
                     THEN a.nombre || ' ' || a.apellido
-                    ELSE NULL
+                    WHEN si.agente_asignado_id IS NULL
+                    THEN 'Sin Asignar'
+                    ELSE 'Agente No Disponible'
                 END as agente_nombre,
                 a.email as agente_email,
-                adm.nombre || ' ' || adm.apellido as admin_creador
+                COALESCE(adm.nombre || ' ' || adm.apellido, 'Admin Desconocido') as admin_creador
             FROM sesiones_inventario si
-            LEFT JOIN agentesdeventas a ON si.agente_asignado_id = a.agenteid
-            INNER JOIN administradores adm ON si.admin_creador_id = adm.adminid
+            LEFT JOIN agentesdeventas a ON si.agente_asignado_id = a.agenteid AND a.activo = true
+            LEFT JOIN administradores adm ON si.admin_creador_id = adm.adminid
             WHERE si.sesion_id = $1 AND si.tenant_id = $2
         `, [sesionId, tenant_id]);
 
