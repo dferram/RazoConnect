@@ -1224,46 +1224,20 @@
           if (exists) {
             sesionSelect.value = String(targetId);
             state.sesionId = targetId;
-            updateAgenteDisplay();
+            // Cargar detalles frescos de la sesión seleccionada
+            loadSesionDetailFromDB(targetId);
           }
         }
-        sesionSelect.addEventListener("change", async () => {
-          const val = sesionSelect.value;
-          
-          // MISIÓN 2: Limpiar estado antes de cambiar de sesión
-          clearSessionState();
-          
-          if (val) {
-            const newSesionId = Number.parseInt(val, 10);
-            console.log(`🔄 [CAMBIO SESIÓN] De ${state.sesionId} a ${newSesionId}`);
-            
-            state.sesionId = newSesionId;
-            
-            // MISIÓN 1 CRÍTICA: Consulta fresca a DB para obtener agente asignado actual
-            await loadSesionDetailFromDB(newSesionId);
-            
-            await loadDashboard();
-          } else {
-            state.sesionId = null;
-            console.log('🔄 [CAMBIO SESIÓN] Sesión deseleccionada');
-            
-            // Limpiar display de agente
-            const agenteNombreEl = document.getElementById('agenteAsignadoNombre');
-            const btnAsignar = document.getElementById('btnAsignarAgente');
-            if (agenteNombreEl) {
-              agenteNombreEl.textContent = '—';
-              agenteNombreEl.style.color = '#6b7280';
-            }
-            if (btnAsignar) {
-              btnAsignar.style.display = 'none';
-            }
-          }
-          updateControls();
-        });
       };
 
       // MISIÓN 1: Función para cargar detalles frescos de la sesión desde DB
       const loadSesionDetailFromDB = async (sesionId) => {
+        // Validación crítica: evitar llamadas con undefined
+        if (!sesionId || !Number.isInteger(sesionId) || sesionId <= 0) {
+          console.warn(`⚠️ [VALIDACIÓN] sesionId inválido: ${sesionId}`);
+          return;
+        }
+        
         try {
           console.log(`🔍 [DB QUERY] Cargando detalles frescos de sesión ${sesionId}...`);
           
@@ -1769,19 +1743,38 @@
       });
 
       sesionSelect.addEventListener("change", async () => {
-        const id = Number.parseInt(sesionSelect.value, 10);
-        if (!id) {
+        const val = sesionSelect.value;
+        
+        // MISIÓN 2: Limpiar estado antes de cambiar de sesión
+        clearSessionState();
+        
+        if (!val) {
           state.sesionId = null;
+          console.log('🔄 [CAMBIO SESIÓN] Sesión deseleccionada');
+          
           const agenteNombreEl = document.getElementById('agenteAsignadoNombre');
           const btnAsignar = document.getElementById('btnAsignarAgente');
-          if (agenteNombreEl) agenteNombreEl.textContent = '—';
-          if (btnAsignar) btnAsignar.style.display = 'none';
+          if (agenteNombreEl) {
+            agenteNombreEl.textContent = '—';
+            agenteNombreEl.style.color = '#6b7280';
+          }
+          if (btnAsignar) {
+            btnAsignar.style.display = 'none';
+          }
           updateControls();
           return;
         }
-        state.sesionId = id;
-        updateAgenteDisplay();
+        
+        const newSesionId = Number.parseInt(val, 10);
+        console.log(`🔄 [CAMBIO SESIÓN] De ${state.sesionId} a ${newSesionId}`);
+        
+        state.sesionId = newSesionId;
+        
+        // MISIÓN 1 CRÍTICA: Consulta fresca a DB para obtener agente asignado actual
+        await loadSesionDetailFromDB(newSesionId);
+        
         updateControls();
+        
         if (!state.isAgente) {
           await loadDashboard();
         }
