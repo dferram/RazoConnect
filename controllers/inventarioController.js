@@ -1,12 +1,12 @@
 const ExcelJS = require('exceljs');
-const pool = require('../db');
+const db = require('../db');
 const { format } = require('date-fns');
 
 /**
  * Exporta entradas de almacén a Excel y las marca como exportadas
  */
 async function exportarEntradasAlmacen(req, res) {
-    const client = await pool.connect();
+    const client = await db.getClient();
     
     try {
         await client.query('BEGIN');
@@ -198,7 +198,7 @@ async function crearSesionInventario(req, res) {
         });
     }
 
-    const client = await pool.connect();
+    const client = await db.getClient();
     
     try {
         await client.query('BEGIN');
@@ -259,7 +259,7 @@ async function listarSesionesInventario(req, res) {
     const { estatus, page = 1, limit = 20 } = req.query;
     const offset = (parseInt(page) - 1) * parseInt(limit);
 
-    const client = await pool.connect();
+    const client = await db.getClient();
     
     try {
         let whereClause = 'si.tenant_id = $1';
@@ -352,7 +352,7 @@ async function obtenerSesionInventario(req, res) {
     const isAdmin = req.user.roles && req.user.roles.includes('admin');
     const isAgent = req.user.roles && req.user.roles.includes('agente');
 
-    const client = await pool.connect();
+    const client = await db.getClient();
     
     try {
         const { rows } = await client.query(`
@@ -426,7 +426,7 @@ async function asignarAgenteASesion(req, res) {
     if (!isAdmin) {
         return res.status(403).json({
             success: false,
-            message: 'Solo administradores pueden asignar agentes a sesiones'
+            message: 'Solo administradores pueden asignar agentes'
         });
     }
 
@@ -437,7 +437,7 @@ async function asignarAgenteASesion(req, res) {
         });
     }
 
-    const client = await pool.connect();
+    const client = await db.getClient();
     
     try {
         await client.query('BEGIN');
@@ -522,7 +522,7 @@ async function obtenerAgentesDisponibles(req, res) {
         });
     }
 
-    const client = await pool.connect();
+    const client = await db.getClient();
     
     try {
         const { rows: agentes } = await client.query(`
@@ -579,7 +579,7 @@ async function actualizarEstatusSesion(req, res) {
         });
     }
 
-    const client = await pool.connect();
+    const client = await db.getClient();
     
     try {
         await client.query('BEGIN');
