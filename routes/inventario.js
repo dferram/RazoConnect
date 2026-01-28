@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const inventarioController = require('../controllers/inventarioController');
+const inventoryAuditController = require('../controllers/inventoryAuditController');
 const { authenticate, authorizeAdmin } = require('../middlewares/authMiddleware');
 
 // ============================================================================
@@ -10,42 +11,55 @@ const { authenticate, authorizeAdmin } = require('../middlewares/authMiddleware'
 /**
  * POST /api/inventario/sesiones
  * Crear nueva sesión de inventario (Solo Admin)
+ * REDIRIGIDO: Usa inventoryAuditController (tabla: toma_inventario_sesiones)
  */
-router.post('/sesiones', authenticate, authorizeAdmin, inventarioController.crearSesionInventario);
+router.post('/sesiones', authenticate, authorizeAdmin, inventoryAuditController.crearSesion);
 
 /**
  * GET /api/inventario/sesiones
  * Listar sesiones de inventario con control de acceso
  * - Admin: Ve todas las sesiones
  * - Agente: Solo ve sus sesiones asignadas
+ * REDIRIGIDO: Usa inventoryAuditController (tabla: toma_inventario_sesiones)
  */
-router.get('/sesiones', authenticate, inventarioController.listarSesionesInventario);
+router.get('/sesiones', authenticate, inventoryAuditController.listarSesiones);
 
 /**
  * GET /api/inventario/sesiones/:sesionId
  * Obtener detalle de una sesión específica
  * - Valida que el agente solo pueda ver sus sesiones asignadas
  * - Retorna 403 si el agente intenta acceder a sesión no asignada
+ * REDIRIGIDO: Usa inventoryAuditController (tabla: toma_inventario_sesiones)
  */
-router.get('/sesiones/:sesionId', authenticate, inventarioController.obtenerSesionInventario);
+router.get('/sesiones/:sesionId/dashboard', authenticate, inventoryAuditController.getDashboardSesion);
 
 /**
- * PUT /api/inventario/sesiones/:sesionId/asignar-agente
- * Asignar agente a una sesión de inventario (Solo Admin)
+ * POST /api/inventario/sesiones/:sesionId/aplicar
+ * Aplicar los resultados de una sesión de inventario al stock (Solo Admin)
+ * REDIRIGIDO: Usa inventoryAuditController (tabla: toma_inventario_sesiones)
  */
-router.put('/sesiones/:sesionId/asignar-agente', authenticate, authorizeAdmin, inventarioController.asignarAgenteASesion);
+router.post('/sesiones/:sesionId/aplicar', authenticate, authorizeAdmin, inventoryAuditController.aplicarSesion);
 
 /**
- * GET /api/inventario/agentes-disponibles
- * Obtener lista de agentes activos para asignación (Solo Admin)
+ * POST /api/inventario/registrar-conteo
+ * Registrar conteo de un producto en una sesión (Admin o Agente)
+ * REDIRIGIDO: Usa inventoryAuditController (tabla: toma_inventario_conteos)
  */
-router.get('/agentes-disponibles', authenticate, authorizeAdmin, inventarioController.obtenerAgentesDisponibles);
+router.post('/registrar-conteo', authenticate, inventoryAuditController.registrarConteo);
 
 /**
- * PUT /api/inventario/sesiones/:sesionId/estatus
- * Actualizar estatus de una sesión (Solo Admin)
+ * GET /api/inventario/buscar-productos
+ * Buscar productos para registrar en inventario
+ * REDIRIGIDO: Usa inventoryAuditController
  */
-router.put('/sesiones/:sesionId/estatus', authenticate, authorizeAdmin, inventarioController.actualizarEstatusSesion);
+router.get('/buscar-productos', authenticate, inventoryAuditController.buscarProductos);
+
+/**
+ * GET /api/inventario/variante-por-sku
+ * Obtener variante de producto por SKU
+ * REDIRIGIDO: Usa inventoryAuditController
+ */
+router.get('/variante-por-sku', authenticate, inventoryAuditController.getVariantePorSku);
 
 // ============================================================================
 // RUTAS DE GESTIÓN DE INVENTARIO (Existentes)
