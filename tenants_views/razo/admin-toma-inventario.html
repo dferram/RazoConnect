@@ -31,59 +31,56 @@
         <div id="admin-header-container"></div>
 
         <div class="admin-content" style="display: grid; gap: 1.25rem">
-          <section class="admin-card" style="padding: 1.25rem">
-            <div
-              style="
-                display: flex;
-                flex-wrap: wrap;
-                gap: 1rem;
-                align-items: end;
-                justify-content: space-between;
-              "
-            >
-              <div style="min-width: 280px; flex: 1" id="crearSesionBlock">
-                <label for="sesionNombre" class="form-label">Nueva sesión</label>
-                <div style="display: flex; gap: 0.75rem; flex-wrap: wrap">
+          <section class="admin-card" style="padding: 1.5rem">
+            <h2 style="margin: 0 0 1.5rem 0; font-size: 1.75rem; font-weight: 800; color: #1f2937;">Auditoría de Inventario</h2>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+              <!-- Columna Izquierda: Crear Sesión -->
+              <div id="crearSesionBlock">
+                <label for="sesionNombre" class="form-label" style="font-weight: 600; color: #374151; margin-bottom: 0.5rem;">Nueva sesión</label>
+                <div style="display: flex; gap: 0.75rem;">
                   <input
                     id="sesionNombre"
                     class="form-input"
                     placeholder="Ej: Auditoría Sucursal Centro"
-                    style="min-width: 260px; flex: 1"
+                    style="flex: 1; padding: 0.75rem 1rem; border-radius: 0.5rem; border: 1px solid #d1d5db;"
                   />
                   <button
                     type="button"
                     id="btnCrearSesion"
                     class="btn btn-primary"
-                    style="background: var(--razo-orange, #f97316); border: none"
+                    style="background: #F97316; border: none; padding: 0.75rem 1.5rem; border-radius: 0.5rem; font-weight: 600; white-space: nowrap;"
                   >
                     Crear
                   </button>
                 </div>
               </div>
 
-              <div style="min-width: 280px">
-                <label for="sesionSelect" class="form-label">Sesión activa</label>
-                <select id="sesionSelect" class="form-input">
+              <!-- Columna Derecha: Sesión Activa -->
+              <div>
+                <label for="sesionSelect" class="form-label" style="font-weight: 600; color: #374151; margin-bottom: 0.5rem;">Sesión activa</label>
+                <select id="sesionSelect" class="form-input" style="max-width: 100%; padding: 0.75rem 1rem; border-radius: 0.5rem; border: 1px solid #d1d5db;">
                   <option value="">Selecciona una sesión…</option>
                 </select>
               </div>
+            </div>
 
-              <div style="display: grid; gap: 0.25rem; min-width: 280px">
-                <div style="font-size: 0.85rem; color: #6b7280">Estatus</div>
-                <div id="sesionEstatus" style="font-weight: 700">—</div>
-                <div id="sesionStats" style="font-size: 0.85rem; color: #6b7280">
-                  —
-                </div>
+            <!-- Información de Sesión -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; padding: 1rem; background: #f9fafb; border-radius: 0.75rem;">
+              <div>
+                <div style="font-size: 0.75rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.25rem;">Estatus</div>
+                <div id="sesionEstatus" style="font-weight: 700; font-size: 1rem; color: #1f2937;">—</div>
+                <div id="sesionStats" style="font-size: 0.85rem; color: #6b7280; margin-top: 0.25rem;">—</div>
               </div>
 
-              <div style="display: grid; gap: 0.25rem; min-width: 280px" id="agenteAsignadoBlock">
-                <div style="font-size: 0.85rem; color: #6b7280">Agente Asignado</div>
-                <div id="agenteAsignadoNombre" style="font-weight: 700; color: #F97316">—</div>
+              <div id="agenteAsignadoBlock">
+                <div style="font-size: 0.75rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.25rem;">Agente Asignado</div>
+                <div id="agenteAsignadoNombre" style="font-weight: 700; font-size: 1rem; color: #F97316;">—</div>
                 <button
                   type="button"
                   id="btnAsignarAgente"
                   class="btn btn-sm"
-                  style="background: #F97316; color: white; border: none; padding: 0.4rem 0.8rem; font-size: 0.85rem; margin-top: 0.25rem; display: none;"
+                  style="background: #F97316; color: white; border: none; padding: 0.5rem 1rem; font-size: 0.85rem; margin-top: 0.5rem; border-radius: 0.375rem; font-weight: 600; display: none;"
                   onclick="mostrarModalAsignarAgente()"
                 >
                   Asignar Agente
@@ -92,76 +89,56 @@
             </div>
           </section>
 
-          <section class="admin-card" style="padding: 1.25rem">
-            <ul class="nav nav-tabs" id="auditTabs" role="tablist">
-              <li class="nav-item" role="presentation">
-                <button
-                  class="nav-link active"
-                  id="operador-tab"
-                  data-bs-toggle="tab"
-                  data-bs-target="#operador"
-                  type="button"
-                  role="tab"
-                >
-                  Modo Operador
-                </button>
-              </li>
-              <li class="nav-item" role="presentation" id="auditorTabLi">
-                <button
-                  class="nav-link"
-                  id="auditor-tab"
-                  data-bs-toggle="tab"
-                  data-bs-target="#auditor"
-                  type="button"
-                  role="tab"
-                >
-                  Modo Auditor (Tablero)
-                </button>
-              </li>
-            </ul>
+          <section class="admin-card" style="padding: 1.5rem">
+            <!-- Pill Buttons para Modos -->
+            <div style="display: flex; gap: 0.75rem; margin-bottom: 1.5rem; padding: 0.5rem; background: #f9fafb; border-radius: 0.75rem; width: fit-content;">
+              <button
+                class="mode-pill-btn active"
+                id="operador-tab"
+                data-bs-toggle="tab"
+                data-bs-target="#operador"
+                type="button"
+              >
+                Modo Operador
+              </button>
+              <button
+                class="mode-pill-btn"
+                id="auditor-tab"
+                data-bs-toggle="tab"
+                data-bs-target="#auditor"
+                type="button"
+              >
+                Modo Auditor (Tablero)
+              </button>
+            </div>
 
             <div class="tab-content" style="padding-top: 1rem">
               <!-- Operador -->
               <div class="tab-pane fade show active" id="operador" role="tabpanel">
-                <!-- Filtros de Búsqueda -->
-                <div
-                  style="
-                    background: #fff;
-                    border: 1px solid var(--razo-gray-light);
-                    border-radius: 0.75rem;
-                    padding: 1rem;
-                    margin-bottom: 1rem;
-                  "
-                >
-                  <div
-                    style="
-                      display: grid;
-                      grid-template-columns: 1.5fr 1fr 1fr;
-                      gap: 0.75rem;
-                      align-items: end;
-                    "
-                  >
+                <!-- Barra de Filtros Unificada -->
+                <div class="filters-bar">
+                  <div class="filters-grid">
                     <div class="form-group" style="margin: 0">
-                      <label for="searchInput" class="form-label">Buscar</label>
+                      <label for="searchInput" class="form-label" style="font-weight: 600; color: #374151; font-size: 0.875rem;">Buscar</label>
                       <input
                         id="searchInput"
                         type="text"
                         class="form-input"
                         placeholder="Buscar por SKU o nombre..."
-                        style="padding: 0.8rem 0.9rem"
+                        style="padding: 0.75rem 1rem; border-radius: 0.5rem; border: 1px solid #d1d5db;"
                       />
                     </div>
 
                     <div class="form-group" style="margin: 0">
-                      <label for="filterCategoria" class="form-label">Categoría</label>
-                      <select id="filterCategoria" class="form-input form-select">
+                      <label for="filterCategoria" class="form-label" style="font-weight: 600; color: #374151; font-size: 0.875rem;">Categoría</label>
+                      <select id="filterCategoria" class="form-input form-select" style="padding: 0.75rem 1rem; border-radius: 0.5rem; border: 1px solid #d1d5db;">
                         <option value="">Todas</option>
                       </select>
                     </div>
 
                     <div class="form-group" style="margin: 0">
-                      <label for="filterMedida" class="form-label">Medidas</label>
-                      <select id="filterMedida" class="form-input form-select">
+                      <label for="filterMedida" class="form-label" style="font-weight: 600; color: #374151; font-size: 0.875rem;">Medidas</label>
+                      <select id="filterMedida" class="form-input form-select" style="padding: 0.75rem 1rem; border-radius: 0.5rem; border: 1px solid #d1d5db;">
                         <option value="">Todas</option>
                       </select>
                     </div>
@@ -190,7 +167,7 @@
                 </div>
 
                 <!-- Resumen de Resultados -->
-                <div id="shelfSummary" style="color: var(--razo-gray-warm); font-size: 0.9rem; margin-bottom: 0.75rem"></div>
+                <div id="shelfSummary" style="color: #6b7280; font-size: 0.875rem; font-weight: 600; margin-bottom: 1rem; padding-left: 0.25rem;"></div>
 
                 <!-- Grilla de Productos (Estantería) -->
                 <div id="productShelf" class="inventory-shelf-grid"></div>
@@ -365,38 +342,91 @@
     <script src="js/admin-header-dropdown.js"></script>
 
     <style>
+      /* Pill Buttons para Modos */
+      .mode-pill-btn {
+        padding: 0.625rem 1.5rem;
+        border: 2px solid #e5e7eb;
+        background: white;
+        color: #6b7280;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        font-size: 0.9375rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+
+      .mode-pill-btn:hover {
+        border-color: #F97316;
+        color: #F97316;
+        background: #fff7ed;
+      }
+
+      .mode-pill-btn.active {
+        background: #F97316;
+        color: white;
+        border-color: #F97316;
+      }
+
+      /* Barra de Filtros Unificada */
+      .filters-bar {
+        background: #f8fafc;
+        border-radius: 0.75rem;
+        padding: 1.25rem;
+        margin-bottom: 1.5rem;
+      }
+
+      .filters-grid {
+        display: grid;
+        grid-template-columns: 1.5fr 1fr 1fr;
+        gap: 1rem;
+        align-items: end;
+      }
+
+      @media (max-width: 768px) {
+        .filters-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      /* Grid de Productos */
       .inventory-shelf-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-        gap: 1rem;
+        gap: 1.25rem;
       }
 
+      /* Tarjetas de Producto - Estilo Nike/RazoConnect */
       .inventory-card {
         background: #ffffff;
-        border: 1px solid var(--razo-gray-light);
-        border-radius: 0.85rem;
+        border-radius: 12px;
         overflow: hidden;
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
         display: flex;
         flex-direction: column;
-        transition: all 0.2s ease;
+        transition: all 0.3s ease;
+        cursor: pointer;
+      }
+
+      .inventory-card:hover {
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+        transform: translateY(-4px);
       }
 
       .inventory-card.registered {
         border: 2px solid #22c55e;
-        box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1);
+        box-shadow: 0 4px 12px rgba(34, 197, 94, 0.2);
       }
 
       .inventory-card-img {
         width: 100%;
-        height: 180px;
-        background: #f3f4f6;
+        height: 200px;
+        background: #f9fafb;
         object-fit: cover;
         display: block;
       }
 
       .inventory-card-body {
-        padding: 0.85rem;
+        padding: 1rem 1.25rem;
         display: flex;
         flex-direction: column;
         gap: 0.5rem;
@@ -405,23 +435,26 @@
 
       .inventory-card-title {
         margin: 0;
-        font-weight: 800;
-        color: var(--razo-gray-dark);
-        font-size: 1rem;
-        line-height: 1.2;
+        font-weight: 700;
+        color: #111827;
+        font-size: 1.0625rem;
+        line-height: 1.3;
+        min-height: 2.6rem;
       }
 
       .inventory-card-meta {
-        font-size: 0.85rem;
-        color: var(--razo-gray-warm);
+        font-size: 0.875rem;
+        color: #6b7280;
+        line-height: 1.5;
       }
 
       .inventory-card-footer {
-        padding: 0.75rem 0.85rem;
-        border-top: 1px solid var(--razo-gray-light);
+        padding: 0.875rem 1.25rem;
+        background: #f9fafb;
         display: flex;
-        gap: 0.5rem;
+        justify-content: space-between;
         align-items: center;
+        gap: 0.75rem;
       }
 
       .inventory-qty-input {
@@ -484,6 +517,10 @@
       @media (max-width: 520px) {
         .inventory-shelf-grid {
           grid-template-columns: 1fr;
+        }
+        
+        .filters-bar {
+          padding: 1rem;
         }
       }
 
@@ -1792,6 +1829,22 @@
 
       btnRefrescar.addEventListener("click", loadDashboard);
       btnAplicar.addEventListener("click", aplicarInventario);
+
+      // Manejar estados activos de pill buttons
+      const operadorTab = document.getElementById('operador-tab');
+      const auditorTab = document.getElementById('auditor-tab');
+      
+      if (operadorTab && auditorTab) {
+        operadorTab.addEventListener('shown.bs.tab', function() {
+          operadorTab.classList.add('active');
+          auditorTab.classList.remove('active');
+        });
+        
+        auditorTab.addEventListener('shown.bs.tab', function() {
+          auditorTab.classList.add('active');
+          operadorTab.classList.remove('active');
+        });
+      }
 
       updateControls();
       applyRoleRestrictions();
