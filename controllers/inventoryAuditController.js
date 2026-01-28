@@ -127,6 +127,33 @@ const listarSesiones = async (req, res) => {
     const estatus = estatusMap[estatusRaw] || 'ABIERTA';
 
     const tenant_id = req.tenant?.tenant_id || req.user?.tenantId || 1;
+    const userId = req.user?.id || req.user?.userId;
+    const userRoles = req.user?.roles || [];
+    
+    // Control de acceso por rol
+    const isSuperAdmin = userRoles.includes('superadmin') || userRoles.includes('super-admin');
+    const isAdmin = userRoles.includes('admin');
+    const isAgent = userRoles.includes('agente');
+    
+    // Construir query dinámico según el rol
+    let whereClause = `WHERE ($1::text IS NULL OR si.estatus = $1::estatus_sesion_enum) AND si.tenant_id = $2`;
+    const queryParams = [estatus, tenant_id];
+    
+    if (!isSuperAdmin) {
+      if (isAgent && !isAdmin) {
+        // Agente: Solo sesiones asignadas a él
+        whereClause += ` AND si.agente_asignado_id = $3`;
+        queryParams.push(userId);
+        console.log(`📋 [listarSesiones] Agente ${userId} - Filtrando solo sesiones asignadas`);
+      } else if (isAdmin && !isSuperAdmin) {
+        // Admin regular: Solo sesiones que él creó
+        whereClause += ` AND si.usuario_creador_id = $3`;
+        queryParams.push(userId);
+        console.log(`📋 [listarSesiones] Admin ${userId} - Filtrando solo sesiones creadas por él`);
+      }
+    } else {
+      console.log(`📋 [listarSesiones] Super Admin - Mostrando todas las sesiones`);
+    }
     
     const result = await db.query(
       `SELECT 
@@ -144,11 +171,10 @@ const listarSesiones = async (req, res) => {
         END as agente_nombre
        FROM toma_inventario_sesiones si
        LEFT JOIN agentesdeventas a ON si.agente_asignado_id = a.agenteid AND a.activo = true
-       WHERE ($1::text IS NULL OR si.estatus = $1::estatus_sesion_enum)
-         AND si.tenant_id = $2
+       ${whereClause}
        ORDER BY si.sesionid DESC
        LIMIT 50`,
-      [estatus, tenant_id]
+      queryParams
     );
 
     return res.json({
@@ -351,7 +377,7 @@ const registrarConteo = async (req, res) => {
     await client.query("BEGIN");
 
     const sesionLock = await client.query(
-      `SELECT sesionid, nombre, estatus, tenant_id
+      `SELECT sesionid, nombre, estatus, tenant_id, agente_asignado_id, usuario_creador_id
        FROM toma_inventario_sesiones
        WHERE sesionid = $1 AND tenant_id = $2
        FOR UPDATE`,
@@ -366,11 +392,40 @@ const registrarConteo = async (req, res) => {
       });
     }
 
-    if (sesionLock.rows[0].estatus !== "ABIERTA") {
+    const sesion = sesionLock.rows[0];
+
+    // VALIDACIÓN DE ACCESO POR ROL
+    const isSuperAdmin = userRoles.includes('superadmin') || userRoles.includes('super-admin');
+    
+    if (!isSuperAdmin) {
+      if (isAgente && !isAdmin) {
+        // Agente: Solo puede registrar conteos en sesiones asignadas a él
+        if (sesion.agente_asignado_id !== usuarioId) {
+          await client.query("ROLLBACK");
+          console.warn(`⚠️ [ACCESO DENEGADO] Agente ${usuarioId} intentó registrar conteo en sesión ${sesionId} asignada a agente ${sesion.agente_asignado_id}`);
+          return res.status(403).json({
+            success: false,
+            message: 'No tienes permiso para registrar conteos en esta sesión. Solo puedes trabajar en sesiones asignadas a ti.'
+          });
+        }
+      } else if (isAdmin && !isSuperAdmin) {
+        // Admin regular: Solo puede registrar conteos en sesiones que él creó
+        if (sesion.usuario_creador_id !== usuarioId) {
+          await client.query("ROLLBACK");
+          console.warn(`⚠️ [ACCESO DENEGADO] Admin ${usuarioId} intentó registrar conteo en sesión ${sesionId} creada por admin ${sesion.usuario_creador_id}`);
+          return res.status(403).json({
+            success: false,
+            message: 'No tienes permiso para registrar conteos en esta sesión. Solo puedes trabajar en sesiones que tú creaste.'
+          });
+        }
+      }
+    }
+
+    if (sesion.estatus !== "ABIERTA") {
       await client.query("ROLLBACK");
       return res.status(409).json({
         success: false,
-        message: `La sesión está en estatus '${sesionLock.rows[0].estatus}'`,
+        message: `La sesión está en estatus '${sesion.estatus}'`,
       });
     }
 
