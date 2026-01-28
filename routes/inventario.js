@@ -1,4 +1,4 @@
-const express = require('express');
+ const express = require('express');
 const router = express.Router();
 const inventarioController = require('../controllers/inventarioController');
 const inventoryAuditController = require('../controllers/inventoryAuditController');
@@ -60,6 +60,18 @@ router.get('/buscar-productos', authenticate, inventoryAuditController.buscarPro
  * REDIRIGIDO: Usa inventoryAuditController
  */
 router.get('/variante-por-sku', authenticate, inventoryAuditController.getVariantePorSku);
+
+/**
+ * PUT /api/inventario/sesiones/:sesionId/asignar-agente
+ * Asignar agente a una sesión de inventario (Solo Admin)
+ */
+router.put('/sesiones/:sesionId/asignar-agente', authenticate, authorizeAdmin, inventoryAuditController.asignarAgenteASesion);
+
+/**
+ * GET /api/inventario/agentes-disponibles
+ * Obtener lista de agentes activos para asignación (Solo Admin)
+ */
+router.get('/agentes-disponibles', authenticate, authorizeAdmin, inventoryAuditController.obtenerAgentesDisponibles);
 
 // ============================================================================
 // RUTAS DE GESTIÓN DE INVENTARIO (Existentes)

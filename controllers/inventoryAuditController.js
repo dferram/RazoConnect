@@ -36,9 +36,9 @@ const crearSesion = async (req, res) => {
     }
 
     const result = await db.query(
-      `INSERT INTO toma_inventario_sesiones (nombre, estatus, usuario_creador_id, tenant_id)
-       VALUES ($1, 'ABIERTA', $2, $3)
-       RETURNING sesionid, nombre, estatus, usuario_creador_id`,
+      `INSERT INTO toma_inventario_sesiones (nombre, estatus, usuario_creador_id, tenant_id, agente_asignado_id)
+       VALUES ($1, 'ABIERTA', $2, $3, NULL)
+       RETURNING sesionid, nombre, estatus, usuario_creador_id, agente_asignado_id`,
       [nombre, usuarioCreadorId, tenant_id]
     );
 
@@ -88,6 +88,7 @@ const crearSesion = async (req, res) => {
           nombre: result.rows[0].nombre,
           estatus: result.rows[0].estatus,
           usuarioCreadorId: result.rows[0].usuario_creador_id,
+          agenteAsignadoId: result.rows[0].agente_asignado_id,
         },
       },
     });
@@ -106,13 +107,29 @@ const crearSesion = async (req, res) => {
  */
 const listarSesiones = async (req, res) => {
   try {
-    const estatusRaw = (req.query?.estatus || "ABIERTA").toString().trim();
-    const estatus = estatusRaw || "ABIERTA";
+    const estatusRaw = (req.query?.estatus || "ABIERTA").toString().trim().toUpperCase();
+    
+    // Mapeo de valores incorrectos a valores válidos del ENUM
+    // ENUM válido: ABIERTA, CERRADA, APLICADA, APLICADA_PARCIAL
+    const estatusMap = {
+      'ACTIVA': 'ABIERTA',
+      'ACTIVE': 'ABIERTA',
+      'ABIERTA': 'ABIERTA',
+      'CERRADA': 'CERRADA',
+      'CLOSED': 'CERRADA',
+      'APLICADA': 'APLICADA',
+      'APPLIED': 'APLICADA',
+      'APLICADA_PARCIAL': 'APLICADA_PARCIAL',
+      'PARTIAL': 'APLICADA_PARCIAL',
+      'PARCIAL': 'APLICADA_PARCIAL'
+    };
+    
+    const estatus = estatusMap[estatusRaw] || 'ABIERTA';
 
     const tenant_id = req.tenant?.tenant_id || req.user?.tenantId || 1;
     
     const result = await db.query(
-      `SELECT sesionid, nombre, estatus, usuario_creador_id
+      `SELECT sesionid, nombre, estatus, usuario_creador_id, agente_asignado_id
        FROM toma_inventario_sesiones
        WHERE ($1::text IS NULL OR estatus = $1::estatus_sesion_enum)
          AND tenant_id = $2
@@ -129,6 +146,7 @@ const listarSesiones = async (req, res) => {
           nombre: r.nombre,
           estatus: r.estatus,
           usuarioCreadorId: r.usuario_creador_id,
+          agenteAsignadoId: r.agente_asignado_id,
         })),
       },
     });
@@ -998,6 +1016,121 @@ const diagnosticoSesiones = async (req, res) => {
   }
 };
 
+/**
+ * PUT /sesiones/:sesionId/asignar-agente
+ * Body: { agenteId }
+ */
+const asignarAgenteASesion = async (req, res) => {
+  try {
+    const sesionId = parsePositiveInt(req.params.sesionId);
+    const agenteId = parsePositiveInt(req.body?.agenteId);
+
+    if (!sesionId) {
+      return res.status(400).json({
+        success: false,
+        message: "sesionId inválido",
+      });
+    }
+
+    if (!agenteId) {
+      return res.status(400).json({
+        success: false,
+        message: "agenteId inválido",
+      });
+    }
+
+    const tenant_id = req.tenant?.tenant_id || req.user?.tenantId || 1;
+
+    // Verificar que el agente existe y está activo
+    const agenteCheck = await db.query(
+      "SELECT agenteid, nombre, apellido FROM agentesdeventas WHERE agenteid = $1 AND activo = TRUE",
+      [agenteId]
+    );
+
+    if (!agenteCheck.rows.length) {
+      return res.status(404).json({
+        success: false,
+        message: "Agente no encontrado o inactivo",
+      });
+    }
+
+    // Actualizar la sesión
+    const result = await db.query(
+      `UPDATE toma_inventario_sesiones 
+       SET agente_asignado_id = $1 
+       WHERE sesionid = $2 AND tenant_id = $3
+       RETURNING sesionid, nombre, estatus, usuario_creador_id, agente_asignado_id`,
+      [agenteId, sesionId, tenant_id]
+    );
+
+    if (!result.rows.length) {
+      return res.status(404).json({
+        success: false,
+        message: "Sesión no encontrada",
+      });
+    }
+
+    const agente = agenteCheck.rows[0];
+
+    return res.json({
+      success: true,
+      message: `Agente ${agente.nombre} ${agente.apellido} asignado correctamente`,
+      data: {
+        sesion: {
+          sesionId: result.rows[0].sesionid,
+          nombre: result.rows[0].nombre,
+          estatus: result.rows[0].estatus,
+          usuarioCreadorId: result.rows[0].usuario_creador_id,
+          agenteAsignadoId: result.rows[0].agente_asignado_id,
+        },
+      },
+    });
+  } catch (error) {
+    console.error("Error en asignarAgenteASesion:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error al asignar agente",
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * GET /agentes-disponibles
+ * Obtener lista de agentes activos para asignación
+ */
+const obtenerAgentesDisponibles = async (req, res) => {
+  try {
+    const result = await db.query(
+      `SELECT agenteid, nombre, apellido, email, codigoagente 
+       FROM agentesdeventas 
+       WHERE activo = TRUE 
+       ORDER BY nombre, apellido`
+    );
+
+    return res.json({
+      success: true,
+      data: {
+        agentes: result.rows.map((r) => ({
+          agenteId: r.agenteid,
+          nombre: r.nombre,
+          apellido: r.apellido,
+          nombreCompleto: `${r.nombre} ${r.apellido}`,
+          email: r.email,
+          codigoAgente: r.codigoagente,
+        })),
+      },
+    });
+  } catch (error) {
+    console.error("Error en obtenerAgentesDisponibles:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error al obtener agentes",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   crearSesion,
   registrarConteo,
@@ -1007,4 +1140,6 @@ module.exports = {
   buscarProductos,
   listarSesiones,
   diagnosticoSesiones,
+  asignarAgenteASesion,
+  obtenerAgentesDisponibles,
 };

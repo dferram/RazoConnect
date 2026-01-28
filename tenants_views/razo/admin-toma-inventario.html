@@ -1353,7 +1353,7 @@
         try {
           // Usar el nuevo endpoint de inventario con control de acceso
           const resp = await apiCall(
-            "/inventario/sesiones?estatus=ACTIVA&limit=50",
+            "/inventario/sesiones?estatus=ABIERTA&limit=50",
             { method: "GET" }
           );
 
