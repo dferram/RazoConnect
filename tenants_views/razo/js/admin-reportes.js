@@ -126,13 +126,23 @@ function renderTable(data) {
   let totalCostoEnvio = 0;
   let totalGananciaNeta = 0;
 
+  // Track unique orders to avoid counting commission and shipping multiple times
+  const ordersProcessed = new Map();
+
   data.forEach((item) => {
     totalVenta += item.ventaBruta || 0;
     totalCosto += item.costoTotal || 0;
     totalGananciaBruta += item.gananciaBruta || 0;
-    totalComisiones += item.comision || 0;
-    totalCostoEnvio += item.costoEnvio || 0;
-    totalGananciaNeta += item.gananciaNeta || 0;
+    
+    // Only count commission and shipping once per order
+    if (!ordersProcessed.has(item.pedidoId)) {
+      totalComisiones += item.comision || 0;
+      totalCostoEnvio += item.costoEnvio || 0;
+      ordersProcessed.set(item.pedidoId, {
+        comision: item.comision || 0,
+        costoEnvio: item.costoEnvio || 0
+      });
+    }
 
     const tr = document.createElement("tr");
     tr.innerHTML = `
@@ -154,6 +164,9 @@ function renderTable(data) {
     `;
     tableBodyEl.appendChild(tr);
   });
+
+  // Calculate net profit: Gross Profit - Commissions - Shipping
+  totalGananciaNeta = totalGananciaBruta - totalComisiones - totalCostoEnvio;
 
   totalVentaEl.textContent = formatCurrency(totalVenta);
   totalCostoEl.textContent = formatCurrency(totalCosto);

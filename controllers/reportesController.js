@@ -65,18 +65,16 @@ const getReporteRentabilidad = async (req, res) => {
         pv.PrecioUnitario AS PrecioUnitarioAplicado,
         pv.CostoUnitario,
         pv.PrecioUnitario AS PrecioUnitarioActual,
-        c.MontoComision,
+        (SELECT COALESCE(SUM(c.MontoComision), 0) FROM comisiones c WHERE c.pedidoid = p.pedidoid) AS MontoComisionPedido,
         (pv.PrecioUnitario * dp.PiezasTotales) AS VentaBruta,
         (pv.CostoUnitario * dp.PiezasTotales) AS CostoTotal,
-        (pv.PrecioUnitario * dp.PiezasTotales) - (pv.CostoUnitario * dp.PiezasTotales) AS GananciaBruta,
-        ((pv.PrecioUnitario * dp.PiezasTotales) - (pv.CostoUnitario * dp.PiezasTotales)) - COALESCE(p.CostoEnvio, 0) - COALESCE(c.MontoComision, 0) AS GananciaNeta
+        (pv.PrecioUnitario * dp.PiezasTotales) - (pv.CostoUnitario * dp.PiezasTotales) AS GananciaBruta
       FROM detallesdelpedido dp
       INNER JOIN pedidos p ON dp.pedidoid = p.pedidoid
       ${estadoJoinClause}
       INNER JOIN producto_variantes pv ON dp.varianteid = pv.varianteid
       INNER JOIN productos pr ON pv.productoid = pr.productoid
       LEFT JOIN cat_tamanopaquetes t ON t.tamanoid = dp.tamanoid
-      LEFT JOIN comisiones c ON dp.pedidoid = c.pedidoid
       ${whereClause}
       ORDER BY p.fechapedido DESC, dp.detalleid ASC
     `;
@@ -158,7 +156,7 @@ const getReporteRentabilidad = async (req, res) => {
           fechaPedido: row.fechapedido,
           costoEnvio: row.costoenvio !== null ? parseFloat(row.costoenvio) : 0,
           comision:
-            row.montocomision !== null ? parseFloat(row.montocomision) : 0,
+            row.montocomisionpedido !== null ? parseFloat(row.montocomisionpedido) : 0,
           cantidadPaquetes: cantidadDerivada !== null ? cantidadDerivada : 0,
           tamanoId: row.tamanoid !== null ? parseInt(row.tamanoid, 10) : null,
           tamanoValor,
@@ -175,7 +173,7 @@ const getReporteRentabilidad = async (req, res) => {
           ventaBruta: row.ventabruta ? parseFloat(row.ventabruta) : 0,
           costoTotal: row.costototal ? parseFloat(row.costototal) : 0,
           gananciaBruta: row.gananciabruta ? parseFloat(row.gananciabruta) : 0,
-          gananciaNeta: row.ganancianeta ? parseFloat(row.ganancianeta) : 0,
+          gananciaNeta: row.gananciabruta ? parseFloat(row.gananciabruta) : 0,
         };
       }),
     });
