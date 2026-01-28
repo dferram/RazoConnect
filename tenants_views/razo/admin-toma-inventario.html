@@ -75,6 +75,20 @@
                   —
                 </div>
               </div>
+
+              <div style="display: grid; gap: 0.25rem; min-width: 280px" id="agenteAsignadoBlock">
+                <div style="font-size: 0.85rem; color: #6b7280">Agente Asignado</div>
+                <div id="agenteAsignadoNombre" style="font-weight: 700; color: #F97316">—</div>
+                <button
+                  type="button"
+                  id="btnAsignarAgente"
+                  class="btn btn-sm"
+                  style="background: #F97316; color: white; border: none; padding: 0.4rem 0.8rem; font-size: 0.85rem; margin-top: 0.25rem; display: none;"
+                  onclick="mostrarModalAsignarAgente()"
+                >
+                  Asignar Agente
+                </button>
+              </div>
             </div>
           </section>
 
@@ -1161,10 +1175,12 @@
 
         for (const s of sesiones) {
           const option = document.createElement("option");
-          option.value = String(s.sesionId);
-          option.textContent = `#${s.sesionId} — ${safeText(s.nombre)} (${safeText(
+          option.value = String(s.sesion_id);
+          const agenteInfo = s.agente_nombre ? ` [${s.agente_nombre}]` : '';
+          option.textContent = `#${s.sesion_id} — ${safeText(s.nombre)} (${safeText(
             s.estatus
-          )})`;
+          )})${agenteInfo}`;
+          option.setAttribute('data-agente-nombre', s.agente_nombre || '');
           sesionSelect.appendChild(option);
         }
 
@@ -1176,14 +1192,39 @@
           if (exists) {
             sesionSelect.value = String(targetId);
             state.sesionId = targetId;
+            updateAgenteDisplay();
           }
+        }
+      };
+
+      const updateAgenteDisplay = () => {
+        const selectedOption = sesionSelect.options[sesionSelect.selectedIndex];
+        const agenteNombre = selectedOption ? selectedOption.getAttribute('data-agente-nombre') : '';
+        
+        const agenteNombreEl = document.getElementById('agenteAsignadoNombre');
+        const btnAsignar = document.getElementById('btnAsignarAgente');
+        
+        if (agenteNombreEl) {
+          if (agenteNombre) {
+            agenteNombreEl.textContent = agenteNombre;
+            agenteNombreEl.style.color = '#F97316';
+          } else {
+            agenteNombreEl.textContent = 'Sin asignar';
+            agenteNombreEl.style.color = '#dc2626';
+          }
+        }
+        
+        if (btnAsignar && state.sesionId) {
+          btnAsignar.style.display = 'block';
+          btnAsignar.textContent = agenteNombre ? 'Reasignar Agente' : 'Asignar Agente';
         }
       };
 
       const loadSesiones = async (preferId) => {
         try {
+          // Usar el nuevo endpoint de inventario con control de acceso
           const resp = await apiCall(
-            "/admin/auditoria-inventario/sesiones?estatus=ABIERTA",
+            "/inventario/sesiones?estatus=ACTIVA&limit=50",
             { method: "GET" }
           );
 
@@ -1199,7 +1240,7 @@
           updateControls();
         } catch (error) {
           console.error(error);
-          // Mantener placeholder si falla
+          toast("warning", "No se pudieron cargar las sesiones");
         }
       };
 
@@ -1240,7 +1281,9 @@
 
         try {
           btnCrearSesion.disabled = true;
-          const resp = await apiCall("/admin/auditoria-inventario/crear-sesion", {
+          
+          // Crear sesión en el nuevo endpoint de inventario
+          const resp = await apiCall("/inventario/sesiones", {
             method: "POST",
             body: JSON.stringify({ nombre }),
           });
@@ -1250,21 +1293,24 @@
           }
 
           const sesion = resp.data?.data?.sesion;
-          if (!sesion?.sesionId) {
+          if (!sesion?.sesion_id) {
             throw new Error("Respuesta inválida del servidor");
           }
 
           const option = document.createElement("option");
-          option.value = String(sesion.sesionId);
-          option.textContent = `#${sesion.sesionId} — ${safeText(sesion.nombre)}`;
+          option.value = String(sesion.sesion_id);
+          option.textContent = `#${sesion.sesion_id} — ${safeText(sesion.nombre)}`;
           sesionSelect.appendChild(option);
 
-          sesionSelect.value = String(sesion.sesionId);
-          state.sesionId = sesion.sesionId;
+          sesionSelect.value = String(sesion.sesion_id);
+          state.sesionId = sesion.sesion_id;
           state.sesionEstatus = sesion.estatus;
 
-          toast("success", "Sesión creada");
+          toast("success", "Sesión creada exitosamente");
           sesionNombre.value = "";
+
+          // IMPORTANTE: Mostrar modal de asignación de agente
+          await mostrarModalAsignarAgente();
 
           await loadDashboard();
           updateControls();
@@ -1276,6 +1322,207 @@
           updateControls();
         }
       };
+
+      // Función para mostrar modal de asignación de agente
+      window.mostrarModalAsignarAgente = async function() {
+        if (!state.sesionId) {
+          toast("warning", "Selecciona una sesión primero");
+          return;
+        }
+
+        try {
+          // Obtener lista de agentes disponibles
+          const resp = await apiCall("/inventario/agentes-disponibles", {
+            method: "GET"
+          });
+
+          if (!resp.ok) {
+            throw new Error(resp.data?.message || "No se pudieron cargar los agentes");
+          }
+
+          const agentes = Array.isArray(resp.data?.data?.agentes) ? resp.data.data.agentes : [];
+
+          if (agentes.length === 0) {
+            await Swal.fire({
+              icon: "warning",
+              title: "No hay agentes disponibles",
+              text: "No se encontraron agentes activos para asignar a esta sesión.",
+              confirmButtonColor: "#F97316"
+            });
+            return;
+          }
+
+          // Crear HTML para la lista de agentes
+          const agentesHTML = agentes.map(agente => {
+            const iniciales = `${agente.nombre.charAt(0)}${agente.apellido.charAt(0)}`.toUpperCase();
+            return `
+              <div class="agente-selectable" data-agente-id="${agente.agenteid}" style="
+                background: white;
+                border: 2px solid #e5e7eb;
+                border-radius: 0.75rem;
+                padding: 1rem;
+                margin-bottom: 0.75rem;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+              ">
+                <div style="
+                  width: 48px;
+                  height: 48px;
+                  border-radius: 50%;
+                  background: #F97316;
+                  color: white;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  font-weight: 700;
+                  font-size: 1.125rem;
+                  flex-shrink: 0;
+                ">${iniciales}</div>
+                <div style="flex: 1;">
+                  <div style="font-weight: 600; color: #1f2937; font-size: 1rem;">${escapeHtml(agente.nombre)} ${escapeHtml(agente.apellido)}</div>
+                  <div style="font-size: 0.875rem; color: #6b7280; margin-top: 0.25rem;">${escapeHtml(agente.email || 'Sin email')}</div>
+                  <div style="font-size: 0.8rem; color: #9ca3af; margin-top: 0.125rem;">Código: ${escapeHtml(agente.codigoagente || 'N/A')}</div>
+                </div>
+                <i class="bi bi-check-circle" style="font-size: 1.5rem; color: #10b981; display: none;"></i>
+              </div>
+            `;
+          }).join('');
+
+          const result = await Swal.fire({
+            title: '<strong style="color: #1f2937;">Asignar Agente a Sesión</strong>',
+            html: `
+              <div style="text-align: left; margin-bottom: 1rem;">
+                <p style="color: #6b7280; font-size: 0.95rem; margin: 0;">Selecciona el agente responsable de esta sesión de inventario. El agente recibirá una notificación y solo él podrá acceder a esta sesión.</p>
+              </div>
+              <div id="agentesContainer" style="max-height: 400px; overflow-y: auto; text-align: left;">
+                ${agentesHTML}
+              </div>
+            `,
+            showCancelButton: true,
+            confirmButtonText: 'Asignar Agente',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#F97316',
+            cancelButtonColor: '#6b7280',
+            width: '600px',
+            didOpen: () => {
+              let selectedAgenteId = null;
+              
+              // Agregar event listeners a cada agente
+              const agenteDivs = document.querySelectorAll('.agente-selectable');
+              agenteDivs.forEach(div => {
+                div.addEventListener('click', function() {
+                  // Remover selección previa
+                  agenteDivs.forEach(d => {
+                    d.style.borderColor = '#e5e7eb';
+                    d.style.background = 'white';
+                    d.querySelector('i').style.display = 'none';
+                  });
+                  
+                  // Marcar como seleccionado
+                  this.style.borderColor = '#F97316';
+                  this.style.background = 'linear-gradient(135deg, #fff7ed 0%, #ffffff 100%)';
+                  this.querySelector('i').style.display = 'block';
+                  
+                  selectedAgenteId = parseInt(this.getAttribute('data-agente-id'));
+                });
+                
+                // Efecto hover
+                div.addEventListener('mouseenter', function() {
+                  if (this.style.borderColor !== 'rgb(249, 115, 22)') {
+                    this.style.borderColor = '#F97316';
+                    this.style.background = '#fff7ed';
+                  }
+                });
+                
+                div.addEventListener('mouseleave', function() {
+                  if (this.style.borderColor !== 'rgb(249, 115, 22)') {
+                    this.style.borderColor = '#e5e7eb';
+                    this.style.background = 'white';
+                  }
+                });
+              });
+              
+              // Guardar el ID seleccionado en el botón de confirmar
+              const confirmButton = Swal.getConfirmButton();
+              confirmButton.onclick = async () => {
+                if (!selectedAgenteId) {
+                  Swal.showValidationMessage('Por favor selecciona un agente');
+                  return false;
+                }
+                
+                Swal.close();
+                await asignarAgenteASesion(selectedAgenteId);
+              };
+            },
+            preConfirm: () => {
+              return true;
+            }
+          });
+
+        } catch (error) {
+          console.error(error);
+          await Swal.fire({
+            icon: "error",
+            title: "Error",
+            text: error.message || "No se pudo cargar la lista de agentes",
+            confirmButtonColor: "#F97316"
+          });
+        }
+      };
+
+      // Función para asignar agente a la sesión
+      async function asignarAgenteASesion(agenteId) {
+        if (!state.sesionId) {
+          toast("warning", "No hay sesión seleccionada");
+          return;
+        }
+
+        try {
+          const resp = await apiCall(`/inventario/sesiones/${state.sesionId}/asignar-agente`, {
+            method: "PUT",
+            body: JSON.stringify({ agenteId })
+          });
+
+          if (!resp.ok) {
+            throw new Error(resp.data?.message || "No se pudo asignar el agente");
+          }
+
+          const data = resp.data?.data;
+          
+          await Swal.fire({
+            icon: "success",
+            title: "Agente Asignado",
+            html: `<p style="color: #6b7280;">${escapeHtml(data.agenteNombre)} ha sido asignado exitosamente a esta sesión.</p><p style="color: #9ca3af; font-size: 0.9rem; margin-top: 0.5rem;">El agente recibirá una notificación en su dashboard.</p>`,
+            confirmButtonColor: "#F97316"
+          });
+
+          // Actualizar UI
+          const agenteNombreEl = document.getElementById('agenteAsignadoNombre');
+          if (agenteNombreEl) {
+            agenteNombreEl.textContent = data.agenteNombre;
+          }
+
+          const btnAsignar = document.getElementById('btnAsignarAgente');
+          if (btnAsignar) {
+            btnAsignar.textContent = 'Reasignar Agente';
+            btnAsignar.style.display = 'block';
+          }
+
+          toast("success", "Agente asignado correctamente");
+
+        } catch (error) {
+          console.error(error);
+          await Swal.fire({
+            icon: "error",
+            title: "Error",
+            text: error.message || "No se pudo asignar el agente",
+            confirmButtonColor: "#F97316"
+          });
+        }
+      }
 
 
       const aplicarInventario = async () => {
@@ -1365,10 +1612,15 @@
         const id = Number.parseInt(sesionSelect.value, 10);
         if (!id) {
           state.sesionId = null;
+          const agenteNombreEl = document.getElementById('agenteAsignadoNombre');
+          const btnAsignar = document.getElementById('btnAsignarAgente');
+          if (agenteNombreEl) agenteNombreEl.textContent = '—';
+          if (btnAsignar) btnAsignar.style.display = 'none';
           updateControls();
           return;
         }
         state.sesionId = id;
+        updateAgenteDisplay();
         updateControls();
         if (!state.isAgente) {
           await loadDashboard();

@@ -175,7 +175,472 @@ async function getOrdenesPendientes(req, res) {
     }
 }
 
+/**
+ * Crear nueva sesión de inventario
+ */
+async function crearSesionInventario(req, res) {
+    const { nombre, descripcion, notas } = req.body;
+    const { tenant_id } = req.tenant;
+    const adminId = req.user.adminId || req.user.agenteId;
+    const isAdmin = req.user.roles && req.user.roles.includes('admin');
+
+    if (!isAdmin) {
+        return res.status(403).json({
+            success: false,
+            message: 'Solo administradores pueden crear sesiones de inventario'
+        });
+    }
+
+    if (!nombre || nombre.trim() === '') {
+        return res.status(400).json({
+            success: false,
+            message: 'El nombre de la sesión es obligatorio'
+        });
+    }
+
+    const client = await pool.connect();
+    
+    try {
+        await client.query('BEGIN');
+
+        const { rows } = await client.query(`
+            INSERT INTO sesiones_inventario (
+                nombre, 
+                descripcion, 
+                notas,
+                admin_creador_id,
+                tenant_id,
+                estatus
+            )
+            VALUES ($1, $2, $3, $4, $5, 'ACTIVA')
+            RETURNING sesion_id, nombre, descripcion, fecha_inicio, estatus, fecha_creacion
+        `, [nombre.trim(), descripcion || null, notas || null, adminId, tenant_id]);
+
+        await client.query('COMMIT');
+
+        res.status(201).json({
+            success: true,
+            message: 'Sesión de inventario creada exitosamente',
+            data: {
+                sesion: rows[0]
+            }
+        });
+
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('Error al crear sesión de inventario:', error);
+        
+        if (error.code === '23505') {
+            return res.status(409).json({
+                success: false,
+                message: 'Ya existe una sesión con ese nombre en la misma fecha'
+            });
+        }
+        
+        res.status(500).json({
+            success: false,
+            message: 'Error al crear la sesión de inventario',
+            error: error.message
+        });
+    } finally {
+        client.release();
+    }
+}
+
+/**
+ * Listar sesiones de inventario con control de acceso por rol
+ */
+async function listarSesionesInventario(req, res) {
+    const { tenant_id } = req.tenant;
+    const userId = req.user.adminId || req.user.agenteId;
+    const isAdmin = req.user.roles && req.user.roles.includes('admin');
+    const isAgent = req.user.roles && req.user.roles.includes('agente');
+
+    const { estatus, page = 1, limit = 20 } = req.query;
+    const offset = (parseInt(page) - 1) * parseInt(limit);
+
+    const client = await pool.connect();
+    
+    try {
+        let whereClause = 'si.tenant_id = $1';
+        let params = [tenant_id];
+        let paramIndex = 2;
+
+        // CONTROL DE ACCESO: Agentes solo ven sus sesiones asignadas
+        if (isAgent && !isAdmin) {
+            whereClause += ` AND si.agente_asignado_id = $${paramIndex}`;
+            params.push(userId);
+            paramIndex++;
+        }
+
+        // Filtro por estatus
+        if (estatus && ['ACTIVA', 'PAUSADA', 'FINALIZADA', 'CANCELADA'].includes(estatus.toUpperCase())) {
+            whereClause += ` AND si.estatus = $${paramIndex}`;
+            params.push(estatus.toUpperCase());
+            paramIndex++;
+        }
+
+        // Contar total de registros
+        const { rows: [countRow] } = await client.query(`
+            SELECT COUNT(*) as total
+            FROM sesiones_inventario si
+            WHERE ${whereClause}
+        `, params);
+
+        // Obtener sesiones con información del agente y admin
+        const { rows: sesiones } = await client.query(`
+            SELECT 
+                si.sesion_id,
+                si.nombre,
+                si.descripcion,
+                si.fecha_inicio,
+                si.fecha_fin,
+                si.estatus,
+                si.notas,
+                si.fecha_creacion,
+                si.fecha_actualizacion,
+                si.agente_asignado_id,
+                CASE 
+                    WHEN si.agente_asignado_id IS NOT NULL 
+                    THEN a.nombre || ' ' || a.apellido
+                    ELSE NULL
+                END as agente_nombre,
+                a.email as agente_email,
+                adm.nombre || ' ' || adm.apellido as admin_creador
+            FROM sesiones_inventario si
+            LEFT JOIN agentesdeventas a ON si.agente_asignado_id = a.agenteid
+            INNER JOIN administradores adm ON si.admin_creador_id = adm.adminid
+            WHERE ${whereClause}
+            ORDER BY si.fecha_creacion DESC
+            LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
+        `, [...params, parseInt(limit), offset]);
+
+        const totalPages = Math.ceil(countRow.total / parseInt(limit));
+
+        res.json({
+            success: true,
+            data: {
+                sesiones,
+                pagination: {
+                    total: parseInt(countRow.total),
+                    page: parseInt(page),
+                    limit: parseInt(limit),
+                    totalPages
+                }
+            }
+        });
+
+    } catch (error) {
+        console.error('Error al listar sesiones de inventario:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error al obtener las sesiones de inventario',
+            error: error.message
+        });
+    } finally {
+        client.release();
+    }
+}
+
+/**
+ * Obtener detalle de una sesión específica con validación de acceso
+ */
+async function obtenerSesionInventario(req, res) {
+    const { sesionId } = req.params;
+    const { tenant_id } = req.tenant;
+    const userId = req.user.adminId || req.user.agenteId;
+    const isAdmin = req.user.roles && req.user.roles.includes('admin');
+    const isAgent = req.user.roles && req.user.roles.includes('agente');
+
+    const client = await pool.connect();
+    
+    try {
+        const { rows } = await client.query(`
+            SELECT 
+                si.sesion_id,
+                si.nombre,
+                si.descripcion,
+                si.fecha_inicio,
+                si.fecha_fin,
+                si.estatus,
+                si.notas,
+                si.fecha_creacion,
+                si.fecha_actualizacion,
+                si.agente_asignado_id,
+                CASE 
+                    WHEN si.agente_asignado_id IS NOT NULL 
+                    THEN a.nombre || ' ' || a.apellido
+                    ELSE NULL
+                END as agente_nombre,
+                a.email as agente_email,
+                adm.nombre || ' ' || adm.apellido as admin_creador
+            FROM sesiones_inventario si
+            LEFT JOIN agentesdeventas a ON si.agente_asignado_id = a.agenteid
+            INNER JOIN administradores adm ON si.admin_creador_id = adm.adminid
+            WHERE si.sesion_id = $1 AND si.tenant_id = $2
+        `, [sesionId, tenant_id]);
+
+        if (rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Sesión de inventario no encontrada'
+            });
+        }
+
+        const sesion = rows[0];
+
+        // VALIDACIÓN DE SEGURIDAD: Agentes solo pueden ver sus sesiones asignadas
+        if (isAgent && !isAdmin && sesion.agente_asignado_id !== userId) {
+            return res.status(403).json({
+                success: false,
+                message: 'No tienes permiso para acceder a esta sesión de inventario'
+            });
+        }
+
+        res.json({
+            success: true,
+            data: { sesion }
+        });
+
+    } catch (error) {
+        console.error('Error al obtener sesión de inventario:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error al obtener la sesión de inventario',
+            error: error.message
+        });
+    } finally {
+        client.release();
+    }
+}
+
+/**
+ * Asignar agente a una sesión de inventario
+ */
+async function asignarAgenteASesion(req, res) {
+    const { sesionId } = req.params;
+    const { agenteId } = req.body;
+    const { tenant_id } = req.tenant;
+    const isAdmin = req.user.roles && req.user.roles.includes('admin');
+
+    if (!isAdmin) {
+        return res.status(403).json({
+            success: false,
+            message: 'Solo administradores pueden asignar agentes a sesiones'
+        });
+    }
+
+    if (!agenteId) {
+        return res.status(400).json({
+            success: false,
+            message: 'El ID del agente es obligatorio'
+        });
+    }
+
+    const client = await pool.connect();
+    
+    try {
+        await client.query('BEGIN');
+
+        // Verificar que la sesión existe y pertenece al tenant
+        const { rows: sesionRows } = await client.query(`
+            SELECT sesion_id, nombre, estatus 
+            FROM sesiones_inventario 
+            WHERE sesion_id = $1 AND tenant_id = $2
+        `, [sesionId, tenant_id]);
+
+        if (sesionRows.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({
+                success: false,
+                message: 'Sesión de inventario no encontrada'
+            });
+        }
+
+        // Verificar que el agente existe, está activo y pertenece al tenant
+        const { rows: agenteRows } = await client.query(`
+            SELECT agenteid, nombre, apellido, email 
+            FROM agentesdeventas 
+            WHERE agenteid = $1 AND tenant_id = $2 AND activo = true
+        `, [agenteId, tenant_id]);
+
+        if (agenteRows.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({
+                success: false,
+                message: 'Agente no encontrado o inactivo'
+            });
+        }
+
+        const agente = agenteRows[0];
+        const sesion = sesionRows[0];
+
+        // Actualizar la sesión con el agente asignado
+        await client.query(`
+            UPDATE sesiones_inventario 
+            SET agente_asignado_id = $1
+            WHERE sesion_id = $2 AND tenant_id = $3
+        `, [agenteId, sesionId, tenant_id]);
+
+        await client.query('COMMIT');
+
+        res.json({
+            success: true,
+            message: `Agente ${agente.nombre} ${agente.apellido} asignado exitosamente a la sesión "${sesion.nombre}"`,
+            data: {
+                sesionId: sesion.sesion_id,
+                agenteId: agente.agenteid,
+                agenteNombre: `${agente.nombre} ${agente.apellido}`,
+                agenteEmail: agente.email
+            }
+        });
+
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('Error al asignar agente a sesión:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error al asignar el agente a la sesión',
+            error: error.message
+        });
+    } finally {
+        client.release();
+    }
+}
+
+/**
+ * Obtener lista de agentes disponibles para asignación
+ */
+async function obtenerAgentesDisponibles(req, res) {
+    const { tenant_id } = req.tenant;
+    const isAdmin = req.user.roles && req.user.roles.includes('admin');
+
+    if (!isAdmin) {
+        return res.status(403).json({
+            success: false,
+            message: 'Solo administradores pueden ver la lista de agentes'
+        });
+    }
+
+    const client = await pool.connect();
+    
+    try {
+        const { rows: agentes } = await client.query(`
+            SELECT 
+                agenteid,
+                nombre,
+                apellido,
+                email,
+                telefono,
+                codigoagente
+            FROM agentesdeventas
+            WHERE tenant_id = $1 AND activo = true
+            ORDER BY nombre, apellido
+        `, [tenant_id]);
+
+        res.json({
+            success: true,
+            data: { agentes }
+        });
+
+    } catch (error) {
+        console.error('Error al obtener agentes disponibles:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error al obtener la lista de agentes',
+            error: error.message
+        });
+    } finally {
+        client.release();
+    }
+}
+
+/**
+ * Actualizar estatus de una sesión de inventario
+ */
+async function actualizarEstatusSesion(req, res) {
+    const { sesionId } = req.params;
+    const { estatus, notas } = req.body;
+    const { tenant_id } = req.tenant;
+    const isAdmin = req.user.roles && req.user.roles.includes('admin');
+
+    if (!isAdmin) {
+        return res.status(403).json({
+            success: false,
+            message: 'Solo administradores pueden actualizar el estatus de sesiones'
+        });
+    }
+
+    const estatusValidos = ['ACTIVA', 'PAUSADA', 'FINALIZADA', 'CANCELADA'];
+    if (!estatus || !estatusValidos.includes(estatus.toUpperCase())) {
+        return res.status(400).json({
+            success: false,
+            message: `Estatus inválido. Debe ser uno de: ${estatusValidos.join(', ')}`
+        });
+    }
+
+    const client = await pool.connect();
+    
+    try {
+        await client.query('BEGIN');
+
+        const updateFields = ['estatus = $1'];
+        const params = [estatus.toUpperCase()];
+        let paramIndex = 2;
+
+        if (notas !== undefined) {
+            updateFields.push(`notas = $${paramIndex}`);
+            params.push(notas);
+            paramIndex++;
+        }
+
+        if (estatus.toUpperCase() === 'FINALIZADA') {
+            updateFields.push(`fecha_fin = NOW()`);
+        }
+
+        params.push(sesionId, tenant_id);
+
+        const { rowCount } = await client.query(`
+            UPDATE sesiones_inventario 
+            SET ${updateFields.join(', ')}
+            WHERE sesion_id = $${paramIndex} AND tenant_id = $${paramIndex + 1}
+        `, params);
+
+        if (rowCount === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({
+                success: false,
+                message: 'Sesión de inventario no encontrada'
+            });
+        }
+
+        await client.query('COMMIT');
+
+        res.json({
+            success: true,
+            message: 'Estatus de la sesión actualizado exitosamente'
+        });
+
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('Error al actualizar estatus de sesión:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error al actualizar el estatus de la sesión',
+            error: error.message
+        });
+    } finally {
+        client.release();
+    }
+}
+
 module.exports = {
     exportarEntradasAlmacen,
-    getOrdenesPendientes
+    getOrdenesPendientes,
+    crearSesionInventario,
+    listarSesionesInventario,
+    obtenerSesionInventario,
+    asignarAgenteASesion,
+    obtenerAgentesDisponibles,
+    actualizarEstatusSesion
 };
