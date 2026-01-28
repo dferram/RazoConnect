@@ -69,14 +69,22 @@
     },
   })
     .then((response) => {
+      // Capture status before processing
+      const status = response.status;
+      
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        // Create error with status code for proper handling
+        const error = new Error(`HTTP error! status: ${status}`);
+        error.status = status;
+        throw error;
       }
       return response.json();
     })
     .then((data) => {
       if (!data.success) {
-        throw new Error("Invalid token");
+        const error = new Error("Invalid token");
+        error.status = 401;
+        throw error;
       }
 
       // Token válido - guardar info del admin si viene en la respuesta
@@ -88,31 +96,61 @@
       }
     })
     .catch((error) => {
-      console.error(" Admin authentication failed:", error);
+      console.error("⚠️ Admin authentication check failed:", error);
       console.error("Error details:", error.message);
 
-      // Limpiar tokens inválidos
-      localStorage.removeItem("razoconnect_admin_token");
-      localStorage.removeItem("razoconnect_admin");
+      // Check if it's a network error (no response from server)
+      const isNetworkError = 
+        error.message.includes("Failed to fetch") ||
+        error.message.includes("NetworkError") ||
+        error.message.includes("ECONNREFUSED") ||
+        error.message.includes("EAI_AGAIN") ||
+        error.message.includes("fetch failed") ||
+        !error.status; // No status means network issue
 
-      // Solo mostrar aviso si había un token que resultó ser inválido
-      if (typeof Swal !== "undefined" && Swal && typeof Swal.fire === "function") {
-        Swal.fire({
-          icon: "warning",
-          title: "Sesión Expirada",
-          text:
-            "Tu sesión ha expirado o es inválida. Por favor, inicia sesión nuevamente.",
-          confirmButtonText: "Ir al Login",
-          confirmButtonColor: "#F97316",
-          allowOutsideClick: false,
-        }).then(() => {
+      // Only redirect to login on explicit auth failures (401, 403)
+      const isAuthFailure = error.status === 401 || error.status === 403;
+
+      if (isNetworkError) {
+        // Network error - don't redirect, just warn
+        console.warn("🌐 Error de conexión con el servidor. La sesión se mantendrá.");
+        
+        if (typeof Swal !== "undefined" && Swal && typeof Swal.fire === "function") {
+          Swal.fire({
+            icon: "error",
+            title: "Error de Conexión",
+            text: "No se pudo conectar con el servidor. Por favor, verifica tu conexión a internet e intenta recargar la página.",
+            confirmButtonText: "Entendido",
+            confirmButtonColor: "#F97316",
+            allowOutsideClick: true,
+          });
+        }
+        return; // Don't redirect
+      }
+
+      if (isAuthFailure) {
+        // Explicit auth failure - clean tokens and redirect
+        localStorage.removeItem("razoconnect_admin_token");
+        localStorage.removeItem("razoconnect_admin");
+
+        if (typeof Swal !== "undefined" && Swal && typeof Swal.fire === "function") {
+          Swal.fire({
+            icon: "warning",
+            title: "Sesión Expirada",
+            text: "Tu sesión ha expirado o es inválida. Por favor, inicia sesión nuevamente.",
+            confirmButtonText: "Ir al Login",
+            confirmButtonColor: "#F97316",
+            allowOutsideClick: false,
+          }).then(() => {
+            window.location.replace("/login.html");
+          });
+        } else {
+          console.warn("Sesión de administrador expirada o inválida. Redirigiendo a login...");
           window.location.replace("/login.html");
-        });
+        }
       } else {
-        console.warn(
-          "Sesión de administrador expirada o inválida. Redirigiendo a login..."
-        );
-        window.location.replace("/login.html");
+        // Other server errors (500, etc.) - don't redirect
+        console.warn("⚠️ Error del servidor. La sesión se mantendrá.");
       }
     });
 })();

@@ -1140,11 +1140,14 @@ const asignarAgenteASesion = async (req, res) => {
     }
 
     const agente = agenteCheck.rows[0];
+    const agenteNombreCompleto = `${agente.nombre} ${agente.apellido}`;
 
     return res.json({
       success: true,
-      message: `Agente ${agente.nombre} ${agente.apellido} asignado correctamente`,
+      message: `Agente ${agenteNombreCompleto} asignado correctamente`,
       data: {
+        agenteId: agente.agenteid,
+        agenteNombre: agenteNombreCompleto,
         sesion: {
           sesionId: result.rows[0].sesionid,
           nombre: result.rows[0].nombre,

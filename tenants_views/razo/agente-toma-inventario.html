@@ -736,7 +736,6 @@
                     value="0"
                     placeholder="0"
                     style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.5rem; text-align: center; font-weight: 700;"
-                    ${!state.sesionId ? 'disabled' : ''}
                   />
                 </td>
                 <td style="text-align: center;">
@@ -746,7 +745,6 @@
                     style="padding: 0.5rem 1rem; background: var(--razo-orange); color: white; border: none; border-radius: 0.5rem; font-weight: 700; cursor: pointer; transition: all 0.15s ease;"
                     onmouseover="this.style.background='#ea580c'"
                     onmouseout="this.style.background='var(--razo-orange)'"
-                    ${!state.sesionId ? 'disabled' : ''}
                   >
                     Registrar
                   </button>
@@ -793,8 +791,18 @@
             }),
           });
 
+          // MISIÓN 4: Manejo de errores de red (EAI_AGAIN, timeout, etc.)
+          if (!resp) {
+            throw new Error("Error de conexión con el servidor. Verifica tu conexión a internet e intenta nuevamente.");
+          }
+
           if (!resp.ok) {
-            throw new Error(resp.data?.message || "No se pudo registrar");
+            const errorMsg = resp.data?.message || "No se pudo registrar";
+            // Detectar error de duplicado y mostrar mensaje más claro
+            if (errorMsg.includes("mismo usuario") || errorMsg.includes("dos veces") || errorMsg.includes("conteo ciego")) {
+              throw new Error("Ya registraste el primer conteo de este producto. Otro agente debe hacer el segundo conteo para validación.");
+            }
+            throw new Error(errorMsg);
           }
 
           const variante = state.varianteById.get(vid);
@@ -815,8 +823,21 @@
             renderVariantesModal(state.productoModalActualId);
           }
         } catch (error) {
-          console.error(error);
-          toast("error", error.message || "Error al registrar");
+          console.error('❌ [ERROR REGISTRO]', error);
+          
+          // MISIÓN 4: Mensajes de error más descriptivos
+          let errorMessage = error.message || "Error al registrar";
+          
+          // Detectar errores de red específicos
+          if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+            errorMessage = "La solicitud tardó demasiado. Verifica tu conexión e intenta nuevamente.";
+          } else if (error.code === 'EAI_AGAIN' || error.message.includes('getaddrinfo')) {
+            errorMessage = "Error de conexión con el servidor. Verifica tu conexión a internet.";
+          } else if (!navigator.onLine) {
+            errorMessage = "Sin conexión a internet. Verifica tu red e intenta nuevamente.";
+          }
+          
+          toast("error", errorMessage);
         }
       };
 

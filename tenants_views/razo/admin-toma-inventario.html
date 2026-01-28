@@ -1326,7 +1326,17 @@
           
         } catch (error) {
           console.error('❌ [ERROR CARGA SESIÓN]', error);
-          toast("error", error.message || "Error al cargar detalles de la sesión");
+          
+          // MISIÓN 4: Manejo de errores de red
+          let errorMessage = error.message || "Error al cargar detalles de la sesión";
+          
+          if (error.code === 'EAI_AGAIN' || error.message.includes('getaddrinfo')) {
+            errorMessage = "Error de conexión con el servidor. Verifica tu conexión a internet.";
+          } else if (!navigator.onLine) {
+            errorMessage = "Sin conexión a internet. Verifica tu red.";
+          }
+          
+          toast("error", errorMessage);
           
           // Mostrar estado de error en UI
           const agenteNombreEl = document.getElementById('agenteAsignadoNombre');
@@ -1397,14 +1407,22 @@
             { method: "GET" }
           );
 
-          // MISIÓN 4: Validación estricta de respuesta
+          // MISIÓN 4: Validación estricta de respuesta con manejo de errores de red
           if (!resp) {
-            throw new Error("No se recibió respuesta del servidor. Verifica tu conexión.");
+            throw new Error("Error de conexión con el servidor. Verifica tu conexión a internet e intenta nuevamente.");
           }
 
           if (!resp.ok) {
             const errorMsg = resp.data?.message || resp.error || "Error al cargar dashboard";
             console.error('❌ [DASHBOARD ERROR]', { status: resp.status, error: errorMsg });
+            
+            // Detectar errores específicos
+            if (resp.status === 403) {
+              throw new Error("No tienes permiso para acceder a esta sesión de inventario.");
+            } else if (resp.status === 404) {
+              throw new Error("Sesión de inventario no encontrada.");
+            }
+            
             throw new Error(errorMsg);
           }
 
@@ -1425,7 +1443,20 @@
           renderDashboard(data);
         } catch (error) {
           console.error('❌ [DASHBOARD LOAD ERROR]', error);
-          toast("error", error.message || "Error al cargar dashboard");
+          
+          // MISIÓN 4: Mensajes de error más descriptivos
+          let errorMessage = error.message || "Error al cargar dashboard";
+          
+          // Detectar errores de red específicos
+          if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+            errorMessage = "La solicitud tardó demasiado. Verifica tu conexión e intenta nuevamente.";
+          } else if (error.code === 'EAI_AGAIN' || error.message.includes('getaddrinfo')) {
+            errorMessage = "Error de conexión con el servidor Azure. Verifica tu conexión a internet.";
+          } else if (!navigator.onLine) {
+            errorMessage = "Sin conexión a internet. Verifica tu red e intenta nuevamente.";
+          }
+          
+          toast("error", errorMessage);
         } finally {
           setDashboardLoading(false);
         }
@@ -1686,10 +1717,22 @@
 
         } catch (error) {
           console.error('❌ [ERROR ASIGNACIÓN]', error);
+          
+          // MISIÓN 4: Mensajes de error específicos
+          let errorMessage = error.message || "No se pudo asignar el agente.";
+          
+          if (error.code === 'EAI_AGAIN' || error.message.includes('getaddrinfo')) {
+            errorMessage = "Error de conexión con el servidor Azure. Verifica tu conexión a internet e intenta nuevamente.";
+          } else if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+            errorMessage = "La solicitud tardó demasiado. Verifica tu conexión e intenta nuevamente.";
+          } else if (!navigator.onLine) {
+            errorMessage = "Sin conexión a internet. Verifica tu red e intenta nuevamente.";
+          }
+          
           await Swal.fire({
             icon: "error",
             title: "Error al Asignar Agente",
-            text: error.message || "No se pudo asignar el agente. Verifica tu conexión e intenta nuevamente.",
+            text: errorMessage,
             confirmButtonColor: "#F97316"
           });
         }
@@ -1830,7 +1873,7 @@
       btnRefrescar.addEventListener("click", loadDashboard);
       btnAplicar.addEventListener("click", aplicarInventario);
 
-      // Manejar estados activos de pill buttons
+      // MISIÓN 3: Manejar estados activos de pill buttons con limpieza de datos
       const operadorTab = document.getElementById('operador-tab');
       const auditorTab = document.getElementById('auditor-tab');
       
@@ -1838,11 +1881,21 @@
         operadorTab.addEventListener('shown.bs.tab', function() {
           operadorTab.classList.add('active');
           auditorTab.classList.remove('active');
+          console.log('🔄 [TAB SWITCH] Cambiando a Modo Operador');
         });
         
-        auditorTab.addEventListener('shown.bs.tab', function() {
+        auditorTab.addEventListener('shown.bs.tab', async function() {
           auditorTab.classList.add('active');
           operadorTab.classList.remove('active');
+          console.log('🔄 [TAB SWITCH] Cambiando a Modo Auditor');
+          
+          // MISIÓN 3: Cargar datos frescos del dashboard al cambiar a modo auditor
+          if (state.sesionId) {
+            console.log(`📊 [AUDITOR MODE] Cargando dashboard fresco para sesión ${state.sesionId}`);
+            await loadDashboard();
+          } else {
+            console.warn('⚠️ [AUDITOR MODE] No hay sesión seleccionada');
+          }
         });
       }
 

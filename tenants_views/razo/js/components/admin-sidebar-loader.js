@@ -7,9 +7,9 @@
   'use strict';
 
   async function loadAdminSidebar() {
-    const container = document.getElementById('admin-sidebar-container');
+    const container = document.getElementById('sidebar-container');
     if (!container) {
-      console.warn('⚠️ admin-sidebar-container not found in DOM');
+      console.warn('⚠️ sidebar-container not found in DOM');
       return;
     }
 

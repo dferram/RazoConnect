@@ -377,20 +377,16 @@ async function obtenerSesionInventario(req, res) {
     const client = await db.getClient();
     
     try {
-        // MISIÓN 3: NULL Safety - manejar sesiones sin agente asignado (legadas)
+        // MISIÓN 1: Usar tabla correcta toma_inventario_sesiones
         const { rows } = await client.query(`
             SELECT 
-                si.sesion_id,
+                si.sesionid as sesion_id,
                 si.nombre,
-                si.descripcion,
-                si.fecha_inicio,
-                si.fecha_fin,
                 si.estatus,
-                si.notas,
-                si.fecha_creacion,
-                si.fecha_actualizacion,
+                si.fechainicio as fecha_inicio,
+                si.fechacierre as fecha_cierre,
                 si.agente_asignado_id,
-                si.admin_creador_id,
+                si.usuario_creador_id,
                 CASE 
                     WHEN si.agente_asignado_id IS NOT NULL AND a.agenteid IS NOT NULL
                     THEN a.nombre || ' ' || a.apellido
@@ -398,12 +394,10 @@ async function obtenerSesionInventario(req, res) {
                     THEN 'Sin Asignar'
                     ELSE 'Agente No Disponible'
                 END as agente_nombre,
-                a.email as agente_email,
-                COALESCE(adm.nombre || ' ' || adm.apellido, 'Admin Desconocido') as admin_creador
-            FROM sesiones_inventario si
+                a.email as agente_email
+            FROM toma_inventario_sesiones si
             LEFT JOIN agentesdeventas a ON si.agente_asignado_id = a.agenteid AND a.activo = true
-            LEFT JOIN administradores adm ON si.admin_creador_id = adm.adminid
-            WHERE si.sesion_id = $1 AND si.tenant_id = $2
+            WHERE si.sesionid = $1 AND si.tenant_id = $2
         `, [sesionId, tenant_id]);
 
         if (rows.length === 0) {
@@ -422,7 +416,7 @@ async function obtenerSesionInventario(req, res) {
         
         if (isSuperAdmin) {
             // Super Admin tiene acceso total, continuar
-        } else if (isAdmin && sesion.admin_creador_id !== userId) {
+        } else if (isAdmin && sesion.usuario_creador_id !== userId) {
             // Admin regular intentando acceder a sesión que no creó
             return res.status(403).json({
                 success: false,
@@ -438,7 +432,7 @@ async function obtenerSesionInventario(req, res) {
 
         res.json({
             success: true,
-            data: { sesion }
+            data: sesion
         });
 
     } catch (error) {
