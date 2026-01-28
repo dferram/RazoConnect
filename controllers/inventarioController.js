@@ -253,8 +253,12 @@ async function crearSesionInventario(req, res) {
 async function listarSesionesInventario(req, res) {
     const { tenant_id } = req.tenant;
     const userId = req.user.id || req.user.userId;
-    const isAdmin = req.user.roles && req.user.roles.includes('admin');
-    const isAgent = req.user.roles && req.user.roles.includes('agente');
+    const userRoles = req.user.roles || [];
+    
+    // Determinar el rol del usuario
+    const isSuperAdmin = userRoles.includes('superadmin') || userRoles.includes('super-admin');
+    const isAdmin = userRoles.includes('admin');
+    const isAgent = userRoles.includes('agente');
 
     const { estatus, page = 1, limit = 20 } = req.query;
     const offset = (parseInt(page) - 1) * parseInt(limit);
@@ -266,12 +270,23 @@ async function listarSesionesInventario(req, res) {
         let params = [tenant_id];
         let paramIndex = 2;
 
-        // CONTROL DE ACCESO: Agentes solo ven sus sesiones asignadas
-        if (isAgent && !isAdmin) {
+        // CONTROL DE ACCESO POR ROL:
+        // 1. Super Admin: Ve TODAS las sesiones del tenant (sin filtro adicional)
+        // 2. Admin regular: Solo ve las sesiones que él creó
+        // 3. Agente: Solo ve las sesiones asignadas a él
+        
+        if (isAgent && !isAdmin && !isSuperAdmin) {
+            // Agente: Solo sesiones asignadas a él
             whereClause += ` AND si.agente_asignado_id = $${paramIndex}`;
             params.push(userId);
             paramIndex++;
+        } else if (isAdmin && !isSuperAdmin) {
+            // Admin regular: Solo sesiones que él creó
+            whereClause += ` AND si.admin_creador_id = $${paramIndex}`;
+            params.push(userId);
+            paramIndex++;
         }
+        // Super Admin: No se agrega filtro adicional, ve todas las sesiones
 
         // Filtro por estatus
         if (estatus && ['ACTIVA', 'PAUSADA', 'FINALIZADA', 'CANCELADA'].includes(estatus.toUpperCase())) {
@@ -349,8 +364,12 @@ async function obtenerSesionInventario(req, res) {
     const { sesionId } = req.params;
     const { tenant_id } = req.tenant;
     const userId = req.user.id || req.user.userId;
-    const isAdmin = req.user.roles && req.user.roles.includes('admin');
-    const isAgent = req.user.roles && req.user.roles.includes('agente');
+    const userRoles = req.user.roles || [];
+    
+    // Determinar el rol del usuario
+    const isSuperAdmin = userRoles.includes('superadmin') || userRoles.includes('super-admin');
+    const isAdmin = userRoles.includes('admin');
+    const isAgent = userRoles.includes('agente');
 
     const client = await db.getClient();
     
@@ -367,6 +386,7 @@ async function obtenerSesionInventario(req, res) {
                 si.fecha_creacion,
                 si.fecha_actualizacion,
                 si.agente_asignado_id,
+                si.admin_creador_id,
                 CASE 
                     WHEN si.agente_asignado_id IS NOT NULL 
                     THEN a.nombre || ' ' || a.apellido
@@ -389,8 +409,21 @@ async function obtenerSesionInventario(req, res) {
 
         const sesion = rows[0];
 
-        // VALIDACIÓN DE SEGURIDAD: Agentes solo pueden ver sus sesiones asignadas
-        if (isAgent && !isAdmin && sesion.agente_asignado_id !== userId) {
+        // VALIDACIÓN DE SEGURIDAD POR ROL:
+        // 1. Super Admin: Acceso total
+        // 2. Admin regular: Solo sesiones que él creó
+        // 3. Agente: Solo sesiones asignadas a él
+        
+        if (isSuperAdmin) {
+            // Super Admin tiene acceso total, continuar
+        } else if (isAdmin && sesion.admin_creador_id !== userId) {
+            // Admin regular intentando acceder a sesión que no creó
+            return res.status(403).json({
+                success: false,
+                message: 'No tienes permiso para acceder a esta sesión de inventario'
+            });
+        } else if (isAgent && !isAdmin && sesion.agente_asignado_id !== userId) {
+            // Agente intentando acceder a sesión no asignada a él
             return res.status(403).json({
                 success: false,
                 message: 'No tienes permiso para acceder a esta sesión de inventario'
