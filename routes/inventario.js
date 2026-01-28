@@ -1,8 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const inventarioController = require('../controllers/inventarioController');
-const { authenticate } = require('../middlewares/authenticate');
-const { authorizeAdmin } = require('../middlewares/authorizeAdmin');
+const { authenticate, authorizeAdmin } = require('../middlewares/authMiddleware');
 
 // ============================================================================
 // RUTAS DE SESIONES DE INVENTARIO
