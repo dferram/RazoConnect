@@ -129,11 +129,24 @@ const listarSesiones = async (req, res) => {
     const tenant_id = req.tenant?.tenant_id || req.user?.tenantId || 1;
     
     const result = await db.query(
-      `SELECT sesionid, nombre, estatus, usuario_creador_id, agente_asignado_id
-       FROM toma_inventario_sesiones
-       WHERE ($1::text IS NULL OR estatus = $1::estatus_sesion_enum)
-         AND tenant_id = $2
-       ORDER BY sesionid DESC
+      `SELECT 
+        si.sesionid, 
+        si.nombre, 
+        si.estatus, 
+        si.usuario_creador_id, 
+        si.agente_asignado_id,
+        CASE 
+          WHEN si.agente_asignado_id IS NOT NULL AND a.agenteid IS NOT NULL
+          THEN a.nombre || ' ' || a.apellido
+          WHEN si.agente_asignado_id IS NULL
+          THEN NULL
+          ELSE 'Agente No Disponible'
+        END as agente_nombre
+       FROM toma_inventario_sesiones si
+       LEFT JOIN agentesdeventas a ON si.agente_asignado_id = a.agenteid AND a.activo = true
+       WHERE ($1::text IS NULL OR si.estatus = $1::estatus_sesion_enum)
+         AND si.tenant_id = $2
+       ORDER BY si.sesionid DESC
        LIMIT 50`,
       [estatus, tenant_id]
     );
@@ -142,11 +155,12 @@ const listarSesiones = async (req, res) => {
       success: true,
       data: {
         sesiones: (result.rows || []).map((r) => ({
-          sesionId: r.sesionid,
+          sesion_id: r.sesionid,  // snake_case para frontend
           nombre: r.nombre,
           estatus: r.estatus,
-          usuarioCreadorId: r.usuario_creador_id,
-          agenteAsignadoId: r.agente_asignado_id,
+          usuario_creador_id: r.usuario_creador_id,
+          agente_asignado_id: r.agente_asignado_id,
+          agente_nombre: r.agente_nombre  // Campo faltante
         })),
       },
     });

@@ -29,7 +29,13 @@ router.get('/sesiones', authenticate, inventoryAuditController.listarSesiones);
  * Obtener detalle de una sesión específica
  * - Valida que el agente solo pueda ver sus sesiones asignadas
  * - Retorna 403 si el agente intenta acceder a sesión no asignada
- * REDIRIGIDO: Usa inventoryAuditController (tabla: toma_inventario_sesiones)
+ */
+router.get('/sesiones/:sesionId', authenticate, inventarioController.obtenerSesionInventario);
+
+/**
+ * GET /api/inventario/sesiones/:sesionId/dashboard
+ * Obtener dashboard de una sesión con todos los conteos
+ * REDIRIGIDO: Usa inventoryAuditController (tabla: toma_inventario_conteos)
  */
 router.get('/sesiones/:sesionId/dashboard', authenticate, inventoryAuditController.getDashboardSesion);
 
