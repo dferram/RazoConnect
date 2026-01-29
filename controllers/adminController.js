@@ -7398,9 +7398,9 @@ const getInventarioResumen = async (req, res) => {
 
     let havingClause = '';
     if (stock === 'con') {
-      havingClause = 'HAVING SUM(COALESCE(v.Stock, 0)) > 0';
+      havingClause = 'HAVING SUM(COALESCE(ia.cantidad, 0)) > 0';
     } else if (stock === 'sin') {
-      havingClause = 'HAVING SUM(COALESCE(v.Stock, 0)) = 0';
+      havingClause = 'HAVING SUM(COALESCE(ia.cantidad, 0)) = 0';
     }
 
     const query = `
@@ -7409,16 +7409,16 @@ const getInventarioResumen = async (req, res) => {
         p.NombreProducto,
         p.Activo,
         c.Nombre AS NombreCategoria,
-        COUNT(v.VarianteID) AS TotalVariantes,
-        SUM(COALESCE(v.Stock, 0)) AS StockTotal
+        COUNT(DISTINCT v.VarianteID) AS TotalVariantes,
+        SUM(COALESCE(ia.cantidad, 0)) AS StockTotal
         ${isSuperAdmin ? `,
         STRING_AGG(DISTINCT CONCAT(a.Nombre, ' ', COALESCE(a.Apellido, '')), ', ') AS AdminsRegistrados
         ` : ''}
       FROM Productos p
       LEFT JOIN Categorias c ON c.CategoriaID = p.CategoriaID AND c.tenant_id = $1
       LEFT JOIN Producto_Variantes v ON v.ProductoID = p.ProductoID
-      ${isSuperAdmin ? `
       LEFT JOIN inventarios_admin ia ON ia.variante_id = v.VarianteID
+      ${isSuperAdmin ? `
       LEFT JOIN administradores a ON a.AdminID = ia.registrado_por AND a.tenant_id = $1
       ` : ''}
       ${whereClause}
@@ -8984,6 +8984,9 @@ const getAllAgentes = async (req, res) => {
     // CRITICAL: Filter by tenant_id for multi-tenant isolation
     const { tenant_id } = req.tenant;
 
+    // ✅ FIXED: Use subqueries to avoid Cartesian product duplication
+    // Previous bug: LEFT JOIN with both Pedidos AND Comisiones caused each pedido
+    // to be multiplied by the number of comisiones, inflating totals by orders of magnitude
     const result = await db.query(
       `SELECT 
         a.AgenteID,
@@ -8994,14 +8997,29 @@ const getAllAgentes = async (req, res) => {
         a.Activo,
         a.Telefono,
         a.porcentaje_comision,
-        COUNT(DISTINCT p.PedidoID) as TotalVentas,
-        COALESCE(SUM(p.MontoTotal), 0) as MontoTotalVentas,
-        COALESCE(SUM(c.MontoComision), 0) as ComisionesTotales
+        COALESCE(pedidos_stats.total_ventas, 0) as TotalVentas,
+        COALESCE(pedidos_stats.monto_total_ventas, 0) as MontoTotalVentas,
+        COALESCE(comisiones_stats.comisiones_totales, 0) as ComisionesTotales
       FROM AgentesDeVentas a
-      LEFT JOIN Pedidos p ON a.AgenteID = p.AgenteID
-      LEFT JOIN Comisiones c ON a.AgenteID = c.AgenteID
+      LEFT JOIN (
+        SELECT 
+          p.AgenteID,
+          COUNT(p.PedidoID) as total_ventas,
+          SUM(p.MontoTotal) as monto_total_ventas
+        FROM Pedidos p
+        WHERE p.tenant_id = $1
+          AND p.Estatus NOT IN ('Cancelado')
+        GROUP BY p.AgenteID
+      ) pedidos_stats ON a.AgenteID = pedidos_stats.AgenteID
+      LEFT JOIN (
+        SELECT 
+          c.AgenteID,
+          SUM(c.MontoComision) as comisiones_totales
+        FROM Comisiones c
+        WHERE c.tenant_id = $1
+        GROUP BY c.AgenteID
+      ) comisiones_stats ON a.AgenteID = comisiones_stats.AgenteID
       WHERE a.tenant_id = $1
-      GROUP BY a.AgenteID, a.Nombre, a.Apellido, a.Email, a.CodigoAgente, a.Activo, a.Telefono, a.porcentaje_comision
       ORDER BY a.AgenteID DESC`,
       [tenant_id]
     );
