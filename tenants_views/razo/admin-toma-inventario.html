@@ -95,8 +95,6 @@
               <button
                 class="mode-pill-btn active"
                 id="operador-tab"
-                data-bs-toggle="tab"
-                data-bs-target="#operador"
                 type="button"
               >
                 Modo Operador
@@ -104,8 +102,6 @@
               <button
                 class="mode-pill-btn"
                 id="auditor-tab"
-                data-bs-toggle="tab"
-                data-bs-target="#auditor"
                 type="button"
               >
                 Modo Auditor (Tablero)
@@ -679,15 +675,26 @@
           if (btnRefrescar) btnRefrescar.style.display = "none";
           if (auditorTabLi) auditorTabLi.style.display = "none";
 
-          // Forzar pestaña Operador
+          // Forzar pestaña Operador usando implementación manual
           try {
             const opTabBtn = document.getElementById("operador-tab");
-            if (opTabBtn) {
-              const tab = bootstrap.Tab.getOrCreateInstance(opTabBtn);
-              tab.show();
+            const audTabBtn = document.getElementById("auditor-tab");
+            const operadorPanel = document.getElementById('operador');
+            const auditorPanel = document.getElementById('auditor');
+            
+            if (opTabBtn && audTabBtn && operadorPanel && auditorPanel) {
+              // Activar tab operador
+              opTabBtn.classList.add('active');
+              audTabBtn.classList.remove('active');
+              
+              // Mostrar panel operador
+              operadorPanel.classList.add('show', 'active');
+              operadorPanel.classList.remove('fade');
+              auditorPanel.classList.remove('show', 'active');
+              auditorPanel.classList.add('fade');
             }
           } catch (e) {
-            // ignore
+            console.error('Error al forzar tab operador:', e);
           }
         }
       };
@@ -1327,7 +1334,7 @@
         } catch (error) {
           console.error('❌ [ERROR CARGA SESIÓN]', error);
           
-          // MISIÓN 4: Manejo de errores de red
+          // MISIÓN 3: Manejo de errores con botón de reintentar
           let errorMessage = error.message || "Error al cargar detalles de la sesión";
           
           if (error.code === 'EAI_AGAIN' || error.message.includes('getaddrinfo')) {
@@ -1338,11 +1345,30 @@
           
           toast("error", errorMessage);
           
-          // Mostrar estado de error en UI
+          // MISIÓN 3: Mostrar botón de reintentar en lugar de solo texto de error
           const agenteNombreEl = document.getElementById('agenteAsignadoNombre');
           if (agenteNombreEl) {
-            agenteNombreEl.textContent = 'Error al cargar';
-            agenteNombreEl.style.color = '#dc2626';
+            agenteNombreEl.innerHTML = `
+              <span style="color: #dc2626; font-size: 0.875rem;">Error al cargar</span>
+              <button 
+                onclick="loadSesionDetailFromDB(${sesionId})" 
+                style="
+                  margin-left: 0.5rem;
+                  padding: 0.25rem 0.5rem;
+                  font-size: 0.75rem;
+                  background: #F97316;
+                  color: white;
+                  border: none;
+                  border-radius: 0.375rem;
+                  cursor: pointer;
+                  font-weight: 600;
+                "
+                onmouseover="this.style.background='#ea580c'"
+                onmouseout="this.style.background='#F97316'"
+              >
+                🔄 Reintentar
+              </button>
+            `;
           }
         }
       };
@@ -1823,9 +1849,15 @@
       });
 
       sesionSelect.addEventListener("change", async () => {
-        const val = sesionSelect.value;
+        let val = sesionSelect.value;
         
-        // MISIÓN 2: Limpiar estado antes de cambiar de sesión
+        // MISIÓN 1: Limpiar formato compuesto si existe (ej: "1:1" -> "1")
+        if (val && val.includes(':')) {
+          val = val.split(':')[0];
+          console.warn(`⚠️ [FORMATO CORREGIDO] Valor compuesto detectado, usando solo ID: ${val}`);
+        }
+        
+        // Limpiar estado antes de cambiar de sesión
         clearSessionState();
         
         if (!val) {
@@ -1846,6 +1878,14 @@
         }
         
         const newSesionId = Number.parseInt(val, 10);
+        
+        // MISIÓN 1: Validación estricta del ID parseado
+        if (!Number.isInteger(newSesionId) || newSesionId <= 0) {
+          console.error(`❌ [ERROR PARSING] sesionId inválido: ${val} -> ${newSesionId}`);
+          toast('error', 'ID de sesión inválido');
+          return;
+        }
+        
         console.log(`🔄 [CAMBIO SESIÓN] De ${state.sesionId} a ${newSesionId}`);
         
         state.sesionId = newSesionId;
@@ -1873,28 +1913,45 @@
       btnRefrescar.addEventListener("click", loadDashboard);
       btnAplicar.addEventListener("click", aplicarInventario);
 
-      // MISIÓN 3: Manejar estados activos de pill buttons con limpieza de datos
+      // MISIÓN 2: Simplificar cambio de tabs sin Bootstrap para evitar "Illegal invocation"
       const operadorTab = document.getElementById('operador-tab');
       const auditorTab = document.getElementById('auditor-tab');
+      const operadorPanel = document.getElementById('operador');
+      const auditorPanel = document.getElementById('auditor');
       
-      if (operadorTab && auditorTab) {
-        operadorTab.addEventListener('shown.bs.tab', function() {
-          operadorTab.classList.add('active');
-          auditorTab.classList.remove('active');
+      if (operadorTab && auditorTab && operadorPanel && auditorPanel) {
+        // Función helper para cambiar tabs
+        const switchToTab = (activeBtn, inactiveBtn, activePanel, inactivePanel) => {
+          // Actualizar botones
+          activeBtn.classList.add('active');
+          inactiveBtn.classList.remove('active');
+          
+          // Actualizar paneles
+          activePanel.classList.add('show', 'active');
+          activePanel.classList.remove('fade');
+          inactivePanel.classList.remove('show', 'active');
+          inactivePanel.classList.add('fade');
+        };
+        
+        // MISIÓN 2: Event listeners simples sin Bootstrap Tab API
+        operadorTab.addEventListener('click', function(e) {
+          e.preventDefault();
+          switchToTab(operadorTab, auditorTab, operadorPanel, auditorPanel);
           console.log('🔄 [TAB SWITCH] Cambiando a Modo Operador');
         });
         
-        auditorTab.addEventListener('shown.bs.tab', async function() {
-          auditorTab.classList.add('active');
-          operadorTab.classList.remove('active');
+        auditorTab.addEventListener('click', async function(e) {
+          e.preventDefault();
+          switchToTab(auditorTab, operadorTab, auditorPanel, operadorPanel);
           console.log('🔄 [TAB SWITCH] Cambiando a Modo Auditor');
           
-          // MISIÓN 3: Cargar datos frescos del dashboard al cambiar a modo auditor
+          // Cargar datos frescos del dashboard al cambiar a modo auditor
           if (state.sesionId) {
             console.log(`📊 [AUDITOR MODE] Cargando dashboard fresco para sesión ${state.sesionId}`);
             await loadDashboard();
           } else {
             console.warn('⚠️ [AUDITOR MODE] No hay sesión seleccionada');
+            toast('warning', 'Selecciona una sesión primero');
           }
         });
       }
