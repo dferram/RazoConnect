@@ -71,7 +71,8 @@ async function cargarProductosPedido(pedidoId) {
         presentacion: p.dimensiones || 'N/A',
         cantidad: p.cantidadPaquetes,
         precioPorPaquete: p.precioPorPaquete,
-        subtotal: p.subtotal
+        subtotal: p.subtotal,
+        esBackorder: p.esBackorder || false
       }));
       
       console.log('✅ Productos mapeados:', productosActualesPedido);
@@ -90,7 +91,7 @@ function renderizarProductosActuales() {
   const bodyEl = document.getElementById('productosActualesBody');
   
   if (productosActualesPedido.length === 0) {
-    bodyEl.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 2rem; color: var(--razo-gray-warm);">No hay productos en el pedido</td></tr>';
+    bodyEl.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 2rem; color: var(--razo-gray-warm);">No hay productos en el pedido</td></tr>';
     return;
   }
 
@@ -99,12 +100,19 @@ function renderizarProductosActuales() {
     const itemEliminado = itemsParaEliminar.includes(item.detalleId);
     const cantidadActual = itemModificado ? itemModificado.cantidad : item.cantidad;
     const subtotal = cantidadActual * parseFloat(item.precioPorPaquete || 0);
+    
+    // Determinar si es backorder o surtido
+    const esBackorder = item.esBackorder || false;
+    const badgeEstado = esBackorder
+      ? '<span style="background: #f59e0b; color: white; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: 600;">⚠ Bajo Pedido</span>'
+      : '<span style="background: #10b981; color: white; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: 600;">✓ Surtido</span>';
 
     return `
       <tr style="${itemEliminado ? 'opacity: 0.5; text-decoration: line-through;' : ''}">
         <td>${item.sku}</td>
         <td>${item.nombreProducto}</td>
         <td>${item.presentacion || 'N/A'}</td>
+        <td>${badgeEstado}</td>
         <td>
           ${!itemEliminado ? `
             <input 
@@ -231,27 +239,39 @@ function mostrarResultadosBusqueda(productos) {
   resultadosEl.innerHTML = productos.map(producto => {
     return producto.variantes.map(variante => {
       return variante.tamanos.map(tamano => {
-        const yaAgregado = productosParaAgregarLista.some(p => 
+        // Verificar si ya está en la lista de agregar
+        const yaEnListaAgregar = productosParaAgregarLista.some(p => 
           p.varianteId === variante.varianteId && p.tamanoId === tamano.tamanoId
         );
 
+        // Verificar si ya está en el pedido actual
+        const yaEnPedido = productosActualesPedido.some(p => 
+          p.varianteId === variante.varianteId
+        );
+
+        const stockDisponible = variante.stock > 0;
+        const badgeStock = stockDisponible 
+          ? '<span style="background: #10b981; color: white; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: 600;">✓ Stock Disponible</span>'
+          : '<span style="background: #f59e0b; color: white; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: 600;">⚠ Bajo Pedido</span>';
+
         return `
-          <div style="padding: 0.75rem; border-bottom: 1px solid var(--razo-gray-light); display: flex; justify-content: space-between; align-items: center;">
+          <div style="padding: 0.75rem; border-bottom: 1px solid var(--razo-gray-light); display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
             <div style="flex: 1;">
-              <div style="font-weight: 600;">${producto.nombreProducto}</div>
-              <div style="font-size: 0.875rem; color: var(--razo-gray-warm);">
+              <div style="font-weight: 600; margin-bottom: 0.25rem;">${producto.nombreProducto}</div>
+              <div style="font-size: 0.875rem; color: var(--razo-gray-warm); margin-bottom: 0.25rem;">
                 SKU: ${variante.sku} | ${variante.dimensiones} | ${tamano.etiqueta}
               </div>
-              <div style="font-size: 0.875rem; color: ${variante.stock > 0 ? 'green' : 'red'};">
-                Stock: ${variante.stock} piezas
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                ${badgeStock}
+                <span style="font-size: 0.875rem; color: var(--razo-gray-warm);">${variante.stock} piezas</span>
               </div>
             </div>
             <button 
-              class="btn btn-primary" 
-              style="padding: 0.5rem 1rem; font-size: 0.875rem;"
-              onclick="agregarProductoALista(${variante.varianteId}, ${tamano.tamanoId}, '${variante.sku}', '${producto.nombreProducto.replace(/'/g, "\\'")}', '${tamano.etiqueta}', ${variante.stock})"
-              ${yaAgregado ? 'disabled' : ''}>
-              ${yaAgregado ? '✓ Agregado' : '+ Agregar'}
+              class="btn btn-success" 
+              style="padding: 0.5rem 1.25rem; font-size: 0.875rem; white-space: nowrap; min-width: 120px;"
+              onclick="agregarOIncrementarProducto(${variante.varianteId}, ${tamano.tamanoId}, '${variante.sku}', '${producto.nombreProducto.replace(/'/g, "\\'")}'  '${tamano.etiqueta}', ${variante.stock}, ${variante.precioUnitario || 0}, ${variante.piezasPorPaquete || 1})"
+              ${yaEnListaAgregar ? 'disabled' : ''}>
+              ${yaEnListaAgregar ? '✓ Agregado' : yaEnPedido ? '+ Incrementar' : '+ Agregar'}
             </button>
           </div>
         `;
@@ -260,16 +280,31 @@ function mostrarResultadosBusqueda(productos) {
   }).join('');
 }
 
-function agregarProductoALista(varianteId, tamanoId, sku, nombreProducto, presentacion, stock) {
-  const yaExiste = productosParaAgregarLista.some(p => 
-    p.varianteId === varianteId && p.tamanoId === tamanoId
-  );
-
-  if (yaExiste) {
-    showToast('Este producto ya está en la lista', 'warning');
+function agregarOIncrementarProducto(varianteId, tamanoId, sku, nombreProducto, presentacion, stock, precioUnitario, piezasPorPaquete) {
+  // Verificar si ya está en el pedido actual
+  const itemEnPedido = productosActualesPedido.find(p => p.varianteId === varianteId);
+  
+  if (itemEnPedido) {
+    // Si ya está en el pedido, incrementar cantidad
+    const nuevaCantidad = itemEnPedido.cantidad + 1;
+    modificarCantidadItem(itemEnPedido.detalleId, nuevaCantidad);
+    showToast(`Cantidad incrementada: ${nombreProducto}`, 'success');
+    document.getElementById('buscarProductoInput').value = '';
+    document.getElementById('resultadosBusqueda').style.display = 'none';
     return;
   }
 
+  // Verificar si ya está en la lista de agregar
+  const yaEnLista = productosParaAgregarLista.some(p => 
+    p.varianteId === varianteId && p.tamanoId === tamanoId
+  );
+
+  if (yaEnLista) {
+    showToast('Este producto ya está en la lista para agregar', 'warning');
+    return;
+  }
+
+  // Agregar a la lista
   productosParaAgregarLista.push({
     varianteId,
     tamanoId,
@@ -277,6 +312,8 @@ function agregarProductoALista(varianteId, tamanoId, sku, nombreProducto, presen
     nombreProducto,
     presentacion,
     stock,
+    precioUnitario,
+    piezasPorPaquete,
     cantidad: 1
   });
 
@@ -284,6 +321,7 @@ function agregarProductoALista(varianteId, tamanoId, sku, nombreProducto, presen
   document.getElementById('buscarProductoInput').value = '';
   document.getElementById('resultadosBusqueda').style.display = 'none';
   actualizarResumen();
+  showToast(`Producto agregado: ${nombreProducto}`, 'success');
 }
 
 function renderizarProductosParaAgregar() {

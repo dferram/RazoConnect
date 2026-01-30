@@ -9900,6 +9900,7 @@ const getPedidoDetalle = async (req, res) => {
         dp.precioporpaquete,
         dp.piezastotales,
         dp.preciounitario,
+        dp.esbackorder,
         COALESCE(
           dp.preciounitario, 
           ROUND(dp.precioporpaquete / NULLIF((dp.piezastotales / NULLIF(dp.cantidadpaquetes, 0)), 0), 2)
