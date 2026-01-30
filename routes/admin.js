@@ -233,11 +233,19 @@ router.get(
 );
 
 router.get(
+  "/productos/buscar",
+  authenticate,
+  authorizeAdmin,
+  adminController.buscarProductosAjuste
+);
+
+router.get(
   "/productos/buscar-compra",
   authenticate,
   authorizeAdminOrAgente,
   adminController.buscarProductosCompra
 );
+
 router.get(
   "/productos/:id",
   authenticate,

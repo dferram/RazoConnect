@@ -2004,6 +2004,113 @@ const crearTipoProductoAdmin = async (req, res) => {
   }
 };
 
+const buscarProductosAjuste = async (req, res) => {
+  try {
+    if (!req.tenant || !req.tenant.tenant_id) {
+      return res.status(500).json({
+        success: false,
+        message: "Error: tenant no disponible"
+      });
+    }
+
+    const { tenant_id } = req.tenant;
+    const q = (req.query.q || "").toString().trim();
+
+    if (!q || q.length < 2) {
+      return res.json({
+        success: true,
+        data: []
+      });
+    }
+
+    const searchPattern = `%${q}%`;
+
+    const query = `
+      SELECT 
+        p.productoid,
+        p.nombreproducto,
+        pv.varianteid,
+        pv.sku,
+        pv.dimensiones,
+        pv.color_nombre,
+        pv.stock,
+        pv.preciounitario,
+        pv.precioofertaunitario,
+        pv.piezasporpaquete,
+        COALESCE(
+          (SELECT json_agg(
+            json_build_object(
+              'tamanoId', t.tamanoid,
+              'etiqueta', t.etiqueta,
+              'piezas', t.piezas
+            )
+          )
+          FROM cat_tamanopaquetes t
+          WHERE t.tenant_id = $2
+          ORDER BY t.piezas ASC
+          ), '[]'::json
+        ) as tamanos
+      FROM productos p
+      INNER JOIN producto_variantes pv ON pv.productoid = p.productoid
+      WHERE p.tenant_id = $2
+        AND pv.tenant_id = $2
+        AND COALESCE(p.activo, TRUE) = TRUE
+        AND COALESCE(pv.activo, TRUE) = TRUE
+        AND (
+          pv.sku ILIKE $1
+          OR p.nombreproducto ILIKE $1
+          OR COALESCE(pv.color_nombre, '') ILIKE $1
+        )
+      ORDER BY p.nombreproducto ASC, pv.varianteid ASC
+      LIMIT 20
+    `;
+
+    const result = await db.query(query, [searchPattern, tenant_id]);
+
+    const productosMap = new Map();
+
+    for (const row of result.rows) {
+      const productId = row.productoid;
+      
+      if (!productosMap.has(productId)) {
+        productosMap.set(productId, {
+          productoId: productId,
+          nombreProducto: row.nombreproducto,
+          variantes: []
+        });
+      }
+
+      const producto = productosMap.get(productId);
+      producto.variantes.push({
+        varianteId: row.varianteid,
+        sku: row.sku,
+        dimensiones: row.dimensiones || 'N/A',
+        colorNombre: row.color_nombre || '',
+        stock: parseInt(row.stock, 10) || 0,
+        precioUnitario: parseFloat(row.preciounitario) || 0,
+        precioOfertaUnitario: row.precioofertaunitario ? parseFloat(row.precioofertaunitario) : null,
+        piezasPorPaquete: parseInt(row.piezasporpaquete, 10) || 1,
+        tamanos: row.tamanos || []
+      });
+    }
+
+    const productos = Array.from(productosMap.values());
+
+    return res.json({
+      success: true,
+      data: productos
+    });
+
+  } catch (error) {
+    console.error("Error en buscarProductosAjuste:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error al buscar productos",
+      error: error.message
+    });
+  }
+};
+
 const buscarProductosCompra = async (req, res) => {
   try {
     console.log("\n=== INICIO buscarProductosCompra ===");
@@ -14919,6 +15026,7 @@ module.exports = {
   ajustarInventario,
   getInventarioResumen,
   getProductoDetalleInventario,
+  buscarProductosAjuste,
   buscarProductosCompra,
   getProductoDetalle,
   getVariantesPendientesProducto,

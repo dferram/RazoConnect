@@ -211,10 +211,12 @@ async function buscarProductos(query) {
     const data = await response.json();
     if (data.success && data.data) {
       mostrarResultadosBusqueda(data.data);
+    } else {
+      resultadosEl.innerHTML = '<div style="padding: 1rem; text-align: center; color: var(--razo-gray-warm);">No se encontraron productos</div>';
     }
   } catch (error) {
     console.error('Error:', error);
-    resultadosEl.innerHTML = '<div style="padding: 1rem; text-align: center; color: red;">Error al buscar productos</div>';
+    resultadosEl.innerHTML = '<div style="padding: 1rem; text-align: center; color: var(--razo-gray-warm);">No se encontraron productos. Intenta con otro término.</div>';
   }
 }
 

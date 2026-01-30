@@ -454,6 +454,44 @@ async function ajustarPedido(req, res) {
       ]
     );
 
+    // Crear notificación para el cliente usando el sistema existente
+    const diferenciaMonto = montoTotalNuevo - parseFloat(pedido.montototal);
+    const signo = diferenciaMonto >= 0 ? '+' : '';
+    const tituloNotificacion = '⚠️ Pedido Modificado';
+    const mensajeNotificacion = `Tu pedido #${pedidoId} ha sido modificado por el administrador. El monto cambió de $${parseFloat(pedido.montototal).toFixed(2)} a $${montoTotalNuevo.toFixed(2)} (${signo}$${diferenciaMonto.toFixed(2)}). Revisa los detalles actualizados.`;
+
+    await client.query(
+      `INSERT INTO notificaciones (
+        clienteid,
+        tipo,
+        titulo,
+        mensaje,
+        url,
+        prioridad,
+        metadata,
+        tenant_id
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+      [
+        pedido.clienteid,
+        'pedido',
+        tituloNotificacion,
+        mensajeNotificacion,
+        `/dashboard.html?tab=pedidos&pedido=${pedidoId}`,
+        'alta',
+        JSON.stringify({
+          pedidoId,
+          monto_anterior: parseFloat(pedido.montototal),
+          monto_nuevo: montoTotalNuevo,
+          diferencia: diferenciaMonto,
+          cambios_realizados: cambiosRealizados.length,
+          items_agregados: itemsAgregar.length,
+          items_eliminados: itemsEliminar.length,
+          items_modificados: itemsModificar.length
+        }),
+        tenant_id
+      ]
+    );
+
     await client.query("COMMIT");
     transactionStarted = false;
 
