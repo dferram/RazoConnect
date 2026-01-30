@@ -110,7 +110,7 @@
 
             <div class="tab-content" style="padding-top: 1rem">
               <!-- Operador -->
-              <div class="tab-pane fade show active" id="operador" role="tabpanel">
+              <div id="operador" role="tabpanel">
                 <!-- Barra de Filtros Unificada -->
                 <div class="filters-bar">
                   <div class="filters-grid">
@@ -179,7 +179,7 @@
               </div>
 
               <!-- Auditor -->
-              <div class="tab-pane fade" id="auditor" role="tabpanel">
+              <div id="auditor" role="tabpanel" class="d-none">
                 <div
                   style="
                     display: flex;
@@ -675,23 +675,23 @@
           if (btnRefrescar) btnRefrescar.style.display = "none";
           if (auditorTabLi) auditorTabLi.style.display = "none";
 
-          // Forzar pestaña Operador usando implementación manual
+          // Forzar pestaña Operador para agentes
           try {
-            const opTabBtn = document.getElementById("operador-tab");
-            const audTabBtn = document.getElementById("auditor-tab");
-            const operadorPanel = document.getElementById('operador');
-            const auditorPanel = document.getElementById('auditor');
-            
-            if (opTabBtn && audTabBtn && operadorPanel && auditorPanel) {
-              // Activar tab operador
-              opTabBtn.classList.add('active');
-              audTabBtn.classList.remove('active');
+            if (typeof cambiarVistaInventario === 'function') {
+              cambiarVistaInventario('operador');
+            } else {
+              // Fallback manual si la función aún no está definida
+              const opTabBtn = document.getElementById("operador-tab");
+              const audTabBtn = document.getElementById("auditor-tab");
+              const operadorPanel = document.getElementById('operador');
+              const auditorPanel = document.getElementById('auditor');
               
-              // Mostrar panel operador
-              operadorPanel.classList.add('show', 'active');
-              operadorPanel.classList.remove('fade');
-              auditorPanel.classList.remove('show', 'active');
-              auditorPanel.classList.add('fade');
+              if (opTabBtn && audTabBtn && operadorPanel && auditorPanel) {
+                opTabBtn.classList.add('active');
+                audTabBtn.classList.remove('active');
+                operadorPanel.classList.remove('d-none');
+                auditorPanel.classList.add('d-none');
+              }
             }
           } catch (e) {
             console.error('Error al forzar tab operador:', e);
@@ -1913,47 +1913,65 @@
       btnRefrescar.addEventListener("click", loadDashboard);
       btnAplicar.addEventListener("click", aplicarInventario);
 
-      // MISIÓN 2: Simplificar cambio de tabs sin Bootstrap para evitar "Illegal invocation"
-      const operadorTab = document.getElementById('operador-tab');
-      const auditorTab = document.getElementById('auditor-tab');
-      const operadorPanel = document.getElementById('operador');
-      const auditorPanel = document.getElementById('auditor');
+      // MISIÓN CRÍTICA: Switcheo manual 100% JavaScript puro (Bypass total de Bootstrap)
+      const btnOperador = document.getElementById('operador-tab');
+      const btnAuditor = document.getElementById('auditor-tab');
+      const contenedorOperador = document.getElementById('operador');
+      const contenedorAuditor = document.getElementById('auditor');
       
-      if (operadorTab && auditorTab && operadorPanel && auditorPanel) {
-        // Función helper para cambiar tabs
-        const switchToTab = (activeBtn, inactiveBtn, activePanel, inactivePanel) => {
-          // Actualizar botones
-          activeBtn.classList.add('active');
-          inactiveBtn.classList.remove('active');
+      // Función para alternar visibilidad y estilos manualmente
+      function cambiarVistaInventario(modo) {
+        if (modo === 'auditor') {
+          // 1. Ocultar operador, mostrar auditor
+          contenedorOperador.classList.add('d-none');
+          contenedorAuditor.classList.remove('d-none');
           
-          // Actualizar paneles
-          activePanel.classList.add('show', 'active');
-          activePanel.classList.remove('fade');
-          inactivePanel.classList.remove('show', 'active');
-          inactivePanel.classList.add('fade');
-        };
-        
-        // MISIÓN 2: Event listeners simples sin Bootstrap Tab API
-        operadorTab.addEventListener('click', function(e) {
-          e.preventDefault();
-          switchToTab(operadorTab, auditorTab, operadorPanel, auditorPanel);
-          console.log('🔄 [TAB SWITCH] Cambiando a Modo Operador');
-        });
-        
-        auditorTab.addEventListener('click', async function(e) {
-          e.preventDefault();
-          switchToTab(auditorTab, operadorTab, auditorPanel, operadorPanel);
+          // 2. Actualizar feedback visual de botones
+          btnOperador.classList.remove('active');
+          btnAuditor.classList.add('active');
+          
           console.log('🔄 [TAB SWITCH] Cambiando a Modo Auditor');
           
-          // Cargar datos frescos del dashboard al cambiar a modo auditor
+          // 3. Cargar datos frescos del dashboard
           if (state.sesionId) {
             console.log(`📊 [AUDITOR MODE] Cargando dashboard fresco para sesión ${state.sesionId}`);
-            await loadDashboard();
+            loadDashboard().catch(err => {
+              console.error('Error al cargar dashboard:', err);
+              toast('error', 'Error al cargar el dashboard');
+            });
           } else {
             console.warn('⚠️ [AUDITOR MODE] No hay sesión seleccionada');
             toast('warning', 'Selecciona una sesión primero');
           }
+        } else {
+          // Modo Operador (Inverso)
+          contenedorAuditor.classList.add('d-none');
+          contenedorOperador.classList.remove('d-none');
+          
+          btnAuditor.classList.remove('active');
+          btnOperador.classList.add('active');
+          
+          console.log('🔄 [TAB SWITCH] Cambiando a Modo Operador');
+        }
+      }
+      
+      // Event Listeners Directos (Sin Bootstrap)
+      if (btnOperador && btnAuditor && contenedorOperador && contenedorAuditor) {
+        btnOperador.addEventListener('click', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          cambiarVistaInventario('operador');
         });
+        
+        btnAuditor.addEventListener('click', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          cambiarVistaInventario('auditor');
+        });
+        
+        console.log('✅ [INIT] Sistema de tabs manual inicializado correctamente');
+      } else {
+        console.error('❌ [INIT] No se encontraron todos los elementos necesarios para tabs');
       }
 
       updateControls();
