@@ -260,7 +260,8 @@ app.use("/api/admin/reportes", reportesRoutes);
 app.use("/api/staff", staffRoutes);
 app.use("/api/pagos", pagosRoutes);
 app.use("/api/cupones", cuponesRoutes);
-app.use("/api/remisiones", remisionesRoutes);
+// COMENTADO TEMPORALMENTE - Remisiones no se usarán por el momento pero se conservan para uso futuro
+// app.use("/api/remisiones", remisionesRoutes);
 app.use("/api/agente", agenteRoutes);
 app.use("/api/inventario", inventarioRoutes);
 
