@@ -3845,7 +3845,7 @@ const updatePedidoEstatus = async (req, res) => {
   try {
     const { tenant_id } = req.tenant;
     const pedidoId = parseInt(req.params.id);
-    const { estatus } = req.body;
+    const { estatus, confirmarBackorder } = req.body;
 
     console.log(`[updatePedidoEstatus] Updating order ${pedidoId} to status: ${estatus}`);
 
@@ -3864,6 +3864,63 @@ const updatePedidoEstatus = async (req, res) => {
         success: false,
         message: `Estatus inválido. Valores permitidos: ${estatusValidos.join(', ')}`
       });
+    }
+
+    // MISIÓN 2: Validar stock antes de cambiar a Enviado o Entregado
+    if ((estatus === 'Enviado' || estatus === 'Entregado') && !confirmarBackorder) {
+      console.log(`[updatePedidoEstatus] Validating stock for order ${pedidoId}`);
+      
+      // Obtener detalles del pedido con stock actual
+      const detallesResult = await db.query(
+        `SELECT 
+          d.detalleid,
+          d.varianteid,
+          d.cantidadpaquetes,
+          pv.sku,
+          p.nombre as producto_nombre,
+          pv.dimensiones,
+          COALESCE(pv.stock, 0) as stock_actual
+         FROM detallesdelpedido d
+         INNER JOIN producto_variantes pv ON pv.varianteid = d.varianteid
+         INNER JOIN productos p ON p.productoid = pv.productoid
+         WHERE d.pedidoid = $1 AND p.tenant_id = $2`,
+        [pedidoId, tenant_id]
+      );
+
+      if (detallesResult.rows.length > 0) {
+        const itemsConStockInsuficiente = [];
+        
+        for (const item of detallesResult.rows) {
+          const stockNecesario = item.cantidadpaquetes;
+          const stockDisponible = item.stock_actual;
+          
+          if (stockDisponible < stockNecesario) {
+            itemsConStockInsuficiente.push({
+              sku: item.sku,
+              producto: item.producto_nombre,
+              dimensiones: item.dimensiones,
+              necesario: stockNecesario,
+              disponible: stockDisponible,
+              faltante: stockNecesario - stockDisponible
+            });
+          }
+        }
+
+        // Si hay items con stock insuficiente, requerir confirmación
+        if (itemsConStockInsuficiente.length > 0) {
+          console.warn(`[updatePedidoEstatus] Stock insuficiente detectado para ${itemsConStockInsuficiente.length} items`);
+          return res.status(409).json({
+            success: false,
+            requiresConfirmation: true,
+            message: "ATENCIÓN: Stock insuficiente detectado",
+            data: {
+              itemsConStockInsuficiente,
+              totalItems: detallesResult.rows.length,
+              itemsConProblemas: itemsConStockInsuficiente.length
+            }
+          });
+        }
+      }
     }
 
     const result = await db.query(

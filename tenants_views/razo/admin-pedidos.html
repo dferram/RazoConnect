@@ -31,31 +31,50 @@
             class="admin-table-container"
             style="margin-bottom: 1.5rem; padding: 1rem"
           >
-            <div style="display: flex; gap: 1rem; align-items: center">
-              <label for="statusFilter" style="font-weight: 600">Filtrar por estatus:</label>
-              <select
-                id="statusFilter"
-                style="
-                  padding: 0.5rem 1rem;
-                  border: 2px solid var(--razo-gray-light);
-                  border-radius: 0.5rem;
-                  font-family: 'Inter', sans-serif;
-                "
-              >
-                <option value="">Todos</option>
-                <option value="Pendiente">Pendiente</option>
-                <option value="Confirmado">Confirmado</option>
-                <option value="Enviado">Enviado</option>
-                <option value="Entregado">Entregado</option>
-                <option value="Cancelado">Cancelado</option>
-              </select>
-              <button
-                class="btn btn-secondary"
-                onclick="loadOrders()"
-                style="padding: 0.5rem 1.5rem"
-              >
-                Actualizar
-              </button>
+            <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+              <div style="flex: 1; min-width: 250px;">
+                <label for="clientSearchFilter" style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Buscar por cliente:</label>
+                <input
+                  type="text"
+                  id="clientSearchFilter"
+                  placeholder="Escribe el nombre del cliente..."
+                  style="
+                    width: 100%;
+                    padding: 0.5rem 1rem;
+                    border: 2px solid var(--razo-gray-light);
+                    border-radius: 0.5rem;
+                    font-family: 'Inter', sans-serif;
+                  "
+                />
+              </div>
+              <div>
+                <label for="statusFilter" style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Filtrar por estatus:</label>
+                <select
+                  id="statusFilter"
+                  style="
+                    padding: 0.5rem 1rem;
+                    border: 2px solid var(--razo-gray-light);
+                    border-radius: 0.5rem;
+                    font-family: 'Inter', sans-serif;
+                  "
+                >
+                  <option value="">Todos</option>
+                  <option value="Pendiente">Pendiente</option>
+                  <option value="Confirmado">Confirmado</option>
+                  <option value="Enviado">Enviado</option>
+                  <option value="Entregado">Entregado</option>
+                  <option value="Cancelado">Cancelado</option>
+                </select>
+              </div>
+              <div style="align-self: flex-end;">
+                <button
+                  class="btn btn-secondary"
+                  onclick="loadOrders()"
+                  style="padding: 0.5rem 1.5rem"
+                >
+                  Actualizar
+                </button>
+              </div>
             </div>
           </div>
 
@@ -396,6 +415,7 @@
         document.getElementById("emptyOrders").style.display = "none";
         const ordersTableBody = document.getElementById("ordersTableBody");
         const statusFilterEl = document.getElementById("statusFilter");
+        const clientSearchEl = document.getElementById("clientSearchFilter");
 
         if (!ordersTableBody || !statusFilterEl) {
           console.error("Required elements not found in DOM");
@@ -403,6 +423,7 @@
         }
 
         const statusFilter = statusFilterEl ? statusFilterEl.value : "";
+        const clientSearch = clientSearchEl ? clientSearchEl.value.toLowerCase().trim() : "";
 
         try {
           loadingOrders.style.display = "flex";
@@ -425,11 +446,18 @@
           if (data.success) {
             currentOrders = data.data.pedidos;
 
-            // Filter by status if selected
+            // Filter by status and client name
             let filteredOrders = currentOrders;
+            
             if (statusFilter) {
-              filteredOrders = currentOrders.filter(
+              filteredOrders = filteredOrders.filter(
                 (order) => order.estatus === statusFilter
+              );
+            }
+            
+            if (clientSearch) {
+              filteredOrders = filteredOrders.filter(
+                (order) => (order.clienteNombre || '').toLowerCase().includes(clientSearch)
               );
             }
 
@@ -449,9 +477,7 @@
                   <td><strong>#${order.pedidoId}</strong></td>
                   <td>
                     <div style="font-weight: 600;">${order.clienteNombre}</div>
-                    <div style="font-size: 0.875rem; color: var(--razo-gray-warm);">${
-                      order.clienteEmail
-                    }</div>
+                    ${order.clienteEmail ? `<div style="font-size: 0.875rem; color: var(--razo-gray-warm);">${order.clienteEmail}</div>` : ''}
                   </td>
                   <td>${fecha}</td>
                   <td><strong>${formatCurrency(order.montoTotal)}</strong></td>
@@ -508,7 +534,13 @@
           }
         } catch (error) {
           console.error("Error loading orders:", error);
-          showToast("Error al cargar pedidos", "error");
+          
+          // MISIÓN 5: Handle network errors specifically
+          if (error.message.includes('EAI_AGAIN') || error.message.includes('ENOTFOUND') || error.message.includes('fetch')) {
+            showToast("Error de red: No se pudo conectar al servidor. Verifica tu conexión.", "error");
+          } else {
+            showToast("Error al cargar pedidos", "error");
+          }
           emptyOrders.style.display = "block";
         } finally {
           loadingOrders.style.display = "none";
@@ -556,7 +588,7 @@
       }
 
       // Update order status
-      async function updateOrderStatus() {
+      async function updateOrderStatus(confirmarBackorder = false) {
         if (!selectedOrderId) {
           console.error("No order ID selected");
           showToast("Error: No se seleccionó ningún pedido", "error");
@@ -663,7 +695,10 @@
                 Authorization: `Bearer ${adminToken}`,
                 "Content-Type": "application/json",
               },
-              body: JSON.stringify({ estatus: nuevoEstatus }),
+              body: JSON.stringify({ 
+                estatus: nuevoEstatus,
+                confirmarBackorder: confirmarBackorder
+              }),
             }
           );
 
@@ -676,6 +711,68 @@
           }
 
           console.log("Server response:", data);
+
+          // MISIÓN 2: Handle stock validation response (409 Conflict)
+          if (response.status === 409 && data.requiresConfirmation) {
+            // Re-enable button for retry
+            if (btnConfirmar) btnConfirmar.disabled = false;
+            if (btnConfirmarText) btnConfirmarText.style.display = "inline";
+            if (btnConfirmarSpinner) btnConfirmarSpinner.style.display = "none";
+
+            // Build HTML table with stock issues
+            const itemsHtml = data.data.itemsConStockInsuficiente.map(item => `
+              <tr>
+                <td style="padding: 0.5rem; border: 1px solid #ddd;">${item.sku}</td>
+                <td style="padding: 0.5rem; border: 1px solid #ddd;">${item.producto}</td>
+                <td style="padding: 0.5rem; border: 1px solid #ddd; text-align: center;">${item.necesario}</td>
+                <td style="padding: 0.5rem; border: 1px solid #ddd; text-align: center; color: red; font-weight: bold;">${item.disponible}</td>
+                <td style="padding: 0.5rem; border: 1px solid #ddd; text-align: center; color: red;">${item.faltante}</td>
+              </tr>
+            `).join('');
+
+            const confirmResult = await Swal.fire({
+              icon: 'warning',
+              title: '⚠️ ATENCIÓN: Stock Insuficiente',
+              html: `
+                <div style="text-align: left;">
+                  <p style="margin-bottom: 1rem; font-weight: bold; color: #dc3545;">
+                    Se detectaron ${data.data.itemsConProblemas} productos con stock insuficiente:
+                  </p>
+                  <div style="max-height: 300px; overflow-y: auto; margin-bottom: 1rem;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.875rem;">
+                      <thead>
+                        <tr style="background: #f8f9fa;">
+                          <th style="padding: 0.5rem; border: 1px solid #ddd; text-align: left;">SKU</th>
+                          <th style="padding: 0.5rem; border: 1px solid #ddd; text-align: left;">Producto</th>
+                          <th style="padding: 0.5rem; border: 1px solid #ddd; text-align: center;">Necesario</th>
+                          <th style="padding: 0.5rem; border: 1px solid #ddd; text-align: center;">Disponible</th>
+                          <th style="padding: 0.5rem; border: 1px solid #ddd; text-align: center;">Faltante</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        ${itemsHtml}
+                      </tbody>
+                    </table>
+                  </div>
+                  <p style="background: #fff3cd; padding: 1rem; border-radius: 0.5rem; border-left: 4px solid #ffc107;">
+                    <strong>¿Confirmas que este Backorder ya fue gestionado manualmente para envío?</strong>
+                  </p>
+                </div>
+              `,
+              showCancelButton: true,
+              confirmButtonText: 'Sí, confirmar envío de Backorder',
+              cancelButtonText: 'No, cancelar',
+              confirmButtonColor: '#dc3545',
+              cancelButtonColor: '#6c757d',
+              width: '800px'
+            });
+
+            if (confirmResult.isConfirmed) {
+              // Retry with confirmation flag
+              return updateOrderStatus(true);
+            }
+            return;
+          }
 
           if (response.ok && data.success) {
             showToast(
@@ -710,6 +807,11 @@
 
       // Status filter change
       document.getElementById("statusFilter").addEventListener("change", () => {
+        loadOrders();
+      });
+
+      // Client search filter - real-time filtering
+      document.getElementById("clientSearchFilter").addEventListener("input", () => {
         loadOrders();
       });
 

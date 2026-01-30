@@ -269,7 +269,7 @@ function mostrarResultadosBusqueda(productos) {
             <button 
               class="btn btn-success" 
               style="padding: 0.5rem 1.25rem; font-size: 0.875rem; white-space: nowrap; min-width: 120px;"
-              onclick="agregarOIncrementarProducto(${variante.varianteId}, ${tamano.tamanoId}, '${variante.sku}', '${producto.nombreProducto.replace(/'/g, "\\'")}'  '${tamano.etiqueta}', ${variante.stock}, ${variante.precioUnitario || 0}, ${variante.piezasPorPaquete || 1})"
+              onclick="agregarOIncrementarProducto(${variante.varianteId}, ${tamano.tamanoId}, '${variante.sku}', '${producto.nombreProducto.replace(/'/g, "\\'")}', '${tamano.etiqueta}', ${variante.stock}, ${variante.precioUnitario || 0}, ${variante.piezasPorPaquete || 1})"
               ${yaEnListaAgregar ? 'disabled' : ''}>
               ${yaEnListaAgregar ? '✓ Agregado' : yaEnPedido ? '+ Incrementar' : '+ Agregar'}
             </button>
