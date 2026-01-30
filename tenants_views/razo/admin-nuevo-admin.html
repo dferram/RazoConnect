@@ -18,25 +18,14 @@
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   </head>
-  <body>
+  <body data-sidebar="admin" data-page-title="Crear administrador">
     <div class="admin-layout">
       <!-- Sidebar -->
       <div id="sidebar-container"></div>
 
       <!-- Main Content -->
       <main class="admin-main">
-        <header class="admin-header">
-          <h1 class="admin-header-title">Crear administrador</h1>
-          <div class="admin-header-actions">
-            <div class="admin-user-info">
-              <div class="admin-user-avatar" id="userAvatar">A</div>
-              <div class="admin-user-details">
-                <div class="admin-user-name" id="userName">Administrador</div>
-                <div class="admin-user-role" id="userRole">Admin</div>
-              </div>
-            </div>
-          </div>
-        </header>
+        <div id="admin-header-container"></div>
 
         <div class="admin-content">
           <!-- Alert Container -->
@@ -205,22 +194,7 @@
     <!-- Scripts -->
     <script src="js/layout.js" defer></script>
     <script src="js/sidebar-toggle.js" defer></script>
-    <script src="js/admin-header-dropdown.js"></script>
+    <script src="js/components/admin-header-loader.js"></script>
     <script src="js/admin-nuevo-admin.js"></script>
-    <script>
-      // Update header with admin info
-      const adminData = localStorage.getItem("razoconnect_admin");
-      if (adminData) {
-        const admin = JSON.parse(adminData);
-        document.getElementById("userName").textContent =
-          admin.nombre || "Administrador";
-        document.getElementById("userRole").textContent = admin.rol || "Admin";
-        document.getElementById("userAvatar").textContent = (
-          admin.nombre || "A"
-        )
-          .charAt(0)
-          .toUpperCase();
-      }
-    </script>
   </body>
 </html>

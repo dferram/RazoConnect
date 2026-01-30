@@ -1768,7 +1768,7 @@ body.sidebar-collapsed .admin-main {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   border-radius: 8px;
   padding: 0.5rem 0;
-  z-index: 1000;
+  z-index: 9999;
   margin-top: 10px;
   border: 1px solid #eee;
 }
