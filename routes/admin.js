@@ -123,6 +123,27 @@ router.get(
   inventoryAuditController.diagnosticoSesiones
 );
 
+router.get(
+  "/auditoria-inventario/sesiones/:sesionId",
+  authenticate,
+  authorizeAdminOrAgente,
+  inventoryAuditController.getSesionDetalle
+);
+
+router.put(
+  "/auditoria-inventario/sesiones/:sesionId/asignar-agente",
+  authenticate,
+  authorizeAdminOnly,
+  inventoryAuditController.asignarAgenteASesion
+);
+
+router.get(
+  "/auditoria-inventario/agentes-disponibles",
+  authenticate,
+  authorizeAdmin,
+  inventoryAuditController.obtenerAgentesDisponibles
+);
+
 /**
  * Rutas de super-admin (requieren autenticación y rol super-admin)
  */

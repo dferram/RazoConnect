@@ -1278,7 +1278,7 @@
         try {
           console.log(`🔍 [DB QUERY] Cargando detalles frescos de sesión ${sesionId}...`);
           
-          const resp = await apiCall(`/inventario/sesiones/${sesionId}`, {
+          const resp = await apiCall(`/admin/auditoria-inventario/sesiones/${sesionId}`, {
             method: "GET"
           });
 
@@ -1374,7 +1374,7 @@
         try {
           // Usar el nuevo endpoint de inventario con control de acceso
           const resp = await apiCall(
-            "/inventario/sesiones?estatus=ABIERTA&limit=50",
+            "/admin/auditoria-inventario/sesiones?estatus=ABIERTA&limit=50",
             { method: "GET" }
           );
 
@@ -1476,8 +1476,8 @@
         try {
           btnCrearSesion.disabled = true;
           
-          // Crear sesión en el nuevo endpoint de inventario
-          const resp = await apiCall("/inventario/sesiones", {
+          // Crear sesión en el endpoint de auditoría de inventario
+          const resp = await apiCall("/admin/auditoria-inventario/crear-sesion", {
             method: "POST",
             body: JSON.stringify({ nombre }),
           });
@@ -1526,7 +1526,7 @@
 
         try {
           // Obtener lista de agentes disponibles
-          const resp = await apiCall("/inventario/agentes-disponibles", {
+          const resp = await apiCall("/admin/auditoria-inventario/agentes-disponibles", {
             method: "GET"
           });
 
@@ -1550,7 +1550,7 @@
           const agentesHTML = agentes.map(agente => {
             const iniciales = `${agente.nombre.charAt(0)}${agente.apellido.charAt(0)}`.toUpperCase();
             return `
-              <div class="agente-selectable" data-agente-id="${agente.agenteid}" style="
+              <div class="agente-selectable" data-agente-id="${agente.agenteId}" style="
                 background: white;
                 border: 2px solid #e5e7eb;
                 border-radius: 0.75rem;
@@ -1578,7 +1578,7 @@
                 <div style="flex: 1;">
                   <div style="font-weight: 600; color: #1f2937; font-size: 1rem;">${escapeHtml(agente.nombre)} ${escapeHtml(agente.apellido)}</div>
                   <div style="font-size: 0.875rem; color: #6b7280; margin-top: 0.25rem;">${escapeHtml(agente.email || 'Sin email')}</div>
-                  <div style="font-size: 0.8rem; color: #9ca3af; margin-top: 0.125rem;">Código: ${escapeHtml(agente.codigoagente || 'N/A')}</div>
+                  <div style="font-size: 0.8rem; color: #9ca3af; margin-top: 0.125rem;">Código: ${escapeHtml(agente.codigoAgente || 'N/A')}</div>
                 </div>
                 <i class="bi bi-check-circle" style="font-size: 1.5rem; color: #10b981; display: none;"></i>
               </div>
@@ -1675,7 +1675,7 @@
         }
 
         try {
-          const resp = await apiCall(`/inventario/sesiones/${state.sesionId}/asignar-agente`, {
+          const resp = await apiCall(`/admin/auditoria-inventario/sesiones/${state.sesionId}/asignar-agente`, {
             method: "PUT",
             body: JSON.stringify({ agenteId })
           });

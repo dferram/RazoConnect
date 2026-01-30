@@ -139,20 +139,14 @@ const listarSesiones = async (req, res) => {
     let whereClause = `WHERE ($1::text IS NULL OR si.estatus = $1::estatus_sesion_enum) AND si.tenant_id = $2`;
     const queryParams = [estatus, tenant_id];
     
-    if (!isSuperAdmin) {
-      if (isAgent && !isAdmin) {
-        // Agente: Solo sesiones asignadas a él
-        whereClause += ` AND si.agente_asignado_id = $3`;
-        queryParams.push(userId);
-        console.log(`📋 [listarSesiones] Agente ${userId} - Filtrando solo sesiones asignadas`);
-      } else if (isAdmin && !isSuperAdmin) {
-        // Admin regular: Solo sesiones que él creó
-        whereClause += ` AND si.usuario_creador_id = $3`;
-        queryParams.push(userId);
-        console.log(`📋 [listarSesiones] Admin ${userId} - Filtrando solo sesiones creadas por él`);
-      }
-    } else {
-      console.log(`📋 [listarSesiones] Super Admin - Mostrando todas las sesiones`);
+    if (isAgent && !isAdmin && !isSuperAdmin) {
+      // Agente: Solo sesiones asignadas a él
+      whereClause += ` AND si.agente_asignado_id = $3`;
+      queryParams.push(userId);
+      console.log(`📋 [listarSesiones] Agente ${userId} - Filtrando solo sesiones asignadas`);
+    } else if (isAdmin || isSuperAdmin) {
+      // Admin o Super Admin: Pueden ver TODAS las sesiones del tenant
+      console.log(`📋 [listarSesiones] Admin/SuperAdmin ${userId} - Mostrando todas las sesiones del tenant`);
     }
     
     const result = await db.query(
@@ -397,29 +391,18 @@ const registrarConteo = async (req, res) => {
     // VALIDACIÓN DE ACCESO POR ROL
     const isSuperAdmin = userRoles.includes('superadmin') || userRoles.includes('super-admin');
     
-    if (!isSuperAdmin) {
-      if (isAgente && !isAdmin) {
-        // Agente: Solo puede registrar conteos en sesiones asignadas a él
-        if (sesion.agente_asignado_id !== usuarioId) {
-          await client.query("ROLLBACK");
-          console.warn(`⚠️ [ACCESO DENEGADO] Agente ${usuarioId} intentó registrar conteo en sesión ${sesionId} asignada a agente ${sesion.agente_asignado_id}`);
-          return res.status(403).json({
-            success: false,
-            message: 'No tienes permiso para registrar conteos en esta sesión. Solo puedes trabajar en sesiones asignadas a ti.'
-          });
-        }
-      } else if (isAdmin && !isSuperAdmin) {
-        // Admin regular: Solo puede registrar conteos en sesiones que él creó
-        if (sesion.usuario_creador_id !== usuarioId) {
-          await client.query("ROLLBACK");
-          console.warn(`⚠️ [ACCESO DENEGADO] Admin ${usuarioId} intentó registrar conteo en sesión ${sesionId} creada por admin ${sesion.usuario_creador_id}`);
-          return res.status(403).json({
-            success: false,
-            message: 'No tienes permiso para registrar conteos en esta sesión. Solo puedes trabajar en sesiones que tú creaste.'
-          });
-        }
+    if (isAgente && !isAdmin && !isSuperAdmin) {
+      // Agente: Solo puede registrar conteos en sesiones asignadas a él
+      if (sesion.agente_asignado_id !== usuarioId) {
+        await client.query("ROLLBACK");
+        console.warn(`⚠️ [ACCESO DENEGADO] Agente ${usuarioId} intentó registrar conteo en sesión ${sesionId} asignada a agente ${sesion.agente_asignado_id}`);
+        return res.status(403).json({
+          success: false,
+          message: 'No tienes permiso para registrar conteos en esta sesión. Solo puedes trabajar en sesiones asignadas a ti.'
+        });
       }
     }
+    // Admins y Super Admins pueden registrar conteos en CUALQUIER sesión del tenant
 
     if (sesion.estatus !== "ABIERTA") {
       await client.query("ROLLBACK");
@@ -658,16 +641,8 @@ const getDashboardSesion = async (req, res) => {
       }
     }
     
-    // Admins regulares solo pueden ver sesiones que crearon
-    if (isAdmin && !isSuperAdmin) {
-      if (sesion.usuario_creador_id !== userId) {
-        console.warn(`⚠️ [ACCESO DENEGADO] Admin ${userId} intentó acceder a sesión ${sesionId} creada por admin ${sesion.usuario_creador_id}`);
-        return res.status(403).json({
-          success: false,
-          message: 'No tienes permiso para acceder a esta sesión de inventario. Solo puedes ver sesiones que tú creaste.'
-        });
-      }
-    }
+    // Admins y Super Admins pueden ver TODAS las sesiones del tenant
+    // No hay restricción adicional para admins
 
     const filasResult = await db.query(
       `SELECT
@@ -1086,6 +1061,93 @@ const diagnosticoSesiones = async (req, res) => {
 };
 
 /**
+ * GET /sesiones/:sesionId
+ * Obtener detalles de una sesión específica
+ */
+const getSesionDetalle = async (req, res) => {
+  try {
+    const sesionId = parsePositiveInt(req.params.sesionId);
+    
+    if (!sesionId) {
+      return res.status(400).json({
+        success: false,
+        message: "sesionId inválido",
+      });
+    }
+
+    const tenant_id = req.tenant?.tenant_id || req.user?.tenantId || 1;
+    const userId = req.user?.id || req.user?.userId;
+    const userRoles = req.user?.roles || [];
+    
+    // Control de acceso por rol
+    const isSuperAdmin = userRoles.includes('superadmin') || userRoles.includes('super-admin');
+    const isAdmin = userRoles.includes('admin');
+    const isAgent = userRoles.includes('agente');
+    
+    const result = await db.query(
+      `SELECT 
+        si.sesionid, 
+        si.nombre, 
+        si.estatus, 
+        si.usuario_creador_id, 
+        si.agente_asignado_id,
+        si.fechainicio,
+        CASE 
+          WHEN si.agente_asignado_id IS NOT NULL AND a.agenteid IS NOT NULL
+          THEN a.nombre || ' ' || a.apellido
+          WHEN si.agente_asignado_id IS NULL
+          THEN 'Sin Asignar'
+          ELSE 'Agente No Disponible'
+        END as agente_nombre
+       FROM toma_inventario_sesiones si
+       LEFT JOIN agentesdeventas a ON si.agente_asignado_id = a.agenteid AND a.activo = true
+       WHERE si.sesionid = $1 AND si.tenant_id = $2`,
+      [sesionId, tenant_id]
+    );
+
+    if (!result.rows.length) {
+      return res.status(404).json({
+        success: false,
+        message: "Sesión no encontrada",
+      });
+    }
+
+    const sesion = result.rows[0];
+
+    // Validación de acceso: Agentes solo pueden ver sus sesiones asignadas
+    if (isAgent && !isAdmin && !isSuperAdmin) {
+      if (sesion.agente_asignado_id !== userId) {
+        console.warn(`⚠️ [ACCESO DENEGADO] Agente ${userId} intentó acceder a sesión ${sesionId} asignada a agente ${sesion.agente_asignado_id}`);
+        return res.status(403).json({
+          success: false,
+          message: 'No tienes permiso para acceder a esta sesión de inventario. Solo puedes ver sesiones asignadas a ti.'
+        });
+      }
+    }
+
+    return res.json({
+      success: true,
+      data: {
+        sesion_id: sesion.sesionid,
+        nombre: sesion.nombre,
+        estatus: sesion.estatus,
+        usuario_creador_id: sesion.usuario_creador_id,
+        agente_asignado_id: sesion.agente_asignado_id,
+        agente_nombre: sesion.agente_nombre,
+        fechainicio: sesion.fechainicio,
+      },
+    });
+  } catch (error) {
+    console.error("Error en getSesionDetalle:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error al obtener detalles de la sesión",
+      error: error.message,
+    });
+  }
+};
+
+/**
  * PUT /sesiones/:sesionId/asignar-agente
  * Body: { agenteId }
  */
@@ -1212,6 +1274,7 @@ module.exports = {
   buscarProductos,
   listarSesiones,
   diagnosticoSesiones,
+  getSesionDetalle,
   asignarAgenteASesion,
   obtenerAgentesDisponibles,
 };
