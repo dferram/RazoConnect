@@ -28,86 +28,62 @@
 
         <div class="admin-content" style="display: grid; gap: 1.25rem">
           <!-- Session Selector -->
-          <section class="admin-card" style="padding: 1.25rem">
+          <section class="admin-card" style="padding: 1.5rem">
             <div style="min-width: 280px">
-              <label for="sesionSelect" class="form-label">Sesión activa</label>
-              <select id="sesionSelect" class="form-input">
+              <label for="sesionSelect" class="form-label" style="font-weight: 600; color: #374151; margin-bottom: 0.5rem;">Sesión activa</label>
+              <select id="sesionSelect" class="form-input" style="max-width: 100%; padding: 0.75rem 1rem; border-radius: 0.5rem; border: 1px solid #d1d5db;">
                 <option value="">Selecciona una sesión…</option>
               </select>
             </div>
           </section>
 
           <!-- Tab System -->
-          <section class="admin-card" style="padding: 1.25rem">
-            <ul class="nav nav-tabs" id="auditTabs" role="tablist">
-              <li class="nav-item" role="presentation">
-                <button
-                  class="nav-link active"
-                  id="operador-tab"
-                  data-bs-toggle="tab"
-                  data-bs-target="#operador"
-                  type="button"
-                  role="tab"
-                >
-                  Modo Operador
-                </button>
-              </li>
-              <li class="nav-item" role="presentation">
-                <button
-                  class="nav-link"
-                  id="resultados-tab"
-                  data-bs-toggle="tab"
-                  data-bs-target="#resultados"
-                  type="button"
-                  role="tab"
-                >
-                  Mis Resultados
-                </button>
-              </li>
-            </ul>
+          <section class="admin-card" style="padding: 1.5rem">
+            <!-- Pill Buttons para Modos -->
+            <div style="display: flex; gap: 0.75rem; margin-bottom: 1.5rem; padding: 0.5rem; background: #f9fafb; border-radius: 0.75rem; width: fit-content;">
+              <button
+                class="mode-pill-btn active"
+                id="operador-tab"
+                type="button"
+              >
+                Modo Operador
+              </button>
+              <button
+                class="mode-pill-btn"
+                id="tablero-tab"
+                type="button"
+              >
+                Tablero
+              </button>
+            </div>
 
             <div class="tab-content" style="padding-top: 1rem">
-              <!-- Operador Tab -->
-              <div class="tab-pane fade show active" id="operador" role="tabpanel">
-                <!-- Filtros de Búsqueda -->
-                <div
-                  style="
-                    background: #fff;
-                    border: 1px solid var(--razo-gray-light);
-                    border-radius: 0.75rem;
-                    padding: 1rem;
-                    margin-bottom: 1rem;
-                  "
-                >
-                  <div
-                    style="
-                      display: grid;
-                      grid-template-columns: 1.5fr 1fr 1fr;
-                      gap: 0.75rem;
-                      align-items: end;
-                    "
-                  >
+              <!-- Operador -->
+              <div id="operador" role="tabpanel">
+                <!-- Barra de Filtros Unificada -->
+                <div class="filters-bar">
+                  <div class="filters-grid">
                     <div class="form-group" style="margin: 0">
-                      <label for="searchInput" class="form-label">Buscar</label>
+                      <label for="searchInput" class="form-label" style="font-weight: 600; color: #374151; font-size: 0.875rem;">Buscar</label>
                       <input
                         id="searchInput"
                         type="text"
                         class="form-input"
                         placeholder="Buscar por SKU o nombre..."
-                        style="padding: 0.8rem 0.9rem"
+                        style="padding: 0.75rem 1rem; border-radius: 0.5rem; border: 1px solid #d1d5db;"
                       />
                     </div>
 
                     <div class="form-group" style="margin: 0">
-                      <label for="filterCategoria" class="form-label">Categoría</label>
-                      <select id="filterCategoria" class="form-input form-select">
+                      <label for="filterCategoria" class="form-label" style="font-weight: 600; color: #374151; font-size: 0.875rem;">Categoría</label>
+                      <select id="filterCategoria" class="form-input form-select" style="padding: 0.75rem 1rem; border-radius: 0.5rem; border: 1px solid #d1d5db;">
                         <option value="">Todas</option>
                       </select>
                     </div>
 
                     <div class="form-group" style="margin: 0">
-                      <label for="filterMedida" class="form-label">Medidas</label>
-                      <select id="filterMedida" class="form-input form-select">
+                      <label for="filterMedida" class="form-label" style="font-weight: 600; color: #374151; font-size: 0.875rem;">Medidas</label>
+                      <select id="filterMedida" class="form-input form-select" style="padding: 0.75rem 1rem; border-radius: 0.5rem; border: 1px solid #d1d5db;">
                         <option value="">Todas</option>
                       </select>
                     </div>
@@ -151,8 +127,8 @@
                 </div>
               </div>
 
-              <!-- MISIÓN 2: Resultados Tab (Agent's audit results) -->
-              <div class="tab-pane fade" id="resultados" role="tabpanel">
+              <!-- Tablero (Agent's audit dashboard) -->
+              <div id="tablero" role="tabpanel" class="d-none">
                 <div style="margin-bottom: 1rem;">
                   <button
                     type="button"
@@ -185,8 +161,8 @@
                 <div id="emptyResultados" style="display: none;">
                   <div class="empty-state">
                     <div class="empty-state-icon">📋</div>
-                    <h3 class="empty-state-title">No hay resultados aún</h3>
-                    <p class="empty-state-text">Comienza a registrar productos en el Modo Operador.</p>
+                    <h3 class="empty-state-title">No hay productos asignados</h3>
+                    <p class="empty-state-text">Aún no se han asignado productos para contar en esta sesión.</p>
                   </div>
                 </div>
               </div>
@@ -292,6 +268,52 @@
     <script src="js/mobile-nav.js"></script>
 
     <style>
+      /* Pill Buttons para Modos */
+      .mode-pill-btn {
+        padding: 0.625rem 1.5rem;
+        border: 2px solid #e5e7eb;
+        background: white;
+        color: #6b7280;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        font-size: 0.9375rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+
+      .mode-pill-btn:hover {
+        border-color: #F97316;
+        color: #F97316;
+        background: #fff7ed;
+      }
+
+      .mode-pill-btn.active {
+        background: #F97316;
+        color: white;
+        border-color: #F97316;
+      }
+
+      /* Barra de Filtros Unificada */
+      .filters-bar {
+        background: #f8fafc;
+        border-radius: 0.75rem;
+        padding: 1.25rem;
+        margin-bottom: 1.5rem;
+      }
+
+      .filters-grid {
+        display: grid;
+        grid-template-columns: 1.5fr 1fr 1fr;
+        gap: 1rem;
+        align-items: end;
+      }
+
+      @media (max-width: 768px) {
+        .filters-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
       .inventory-shelf-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -940,8 +962,38 @@
         }
       };
 
-      // MISIÓN 2: Load agent's audit results
-      const loadResultados = async () => {
+      // Función para cambiar entre vistas (idéntica al admin)
+      const cambiarVistaInventario = (vista) => {
+        const operadorTab = document.getElementById('operador-tab');
+        const tableroTab = document.getElementById('tablero-tab');
+        const operadorPanel = document.getElementById('operador');
+        const tableroPanel = document.getElementById('tablero');
+
+        if (vista === 'operador') {
+          operadorTab.classList.add('active');
+          tableroTab.classList.remove('active');
+          operadorPanel.classList.remove('d-none');
+          tableroPanel.classList.add('d-none');
+        } else if (vista === 'tablero') {
+          operadorTab.classList.remove('active');
+          tableroTab.classList.add('active');
+          operadorPanel.classList.add('d-none');
+          tableroPanel.classList.remove('d-none');
+          loadTablero();
+        }
+      };
+
+      // Event listeners para pill buttons
+      document.getElementById('operador-tab')?.addEventListener('click', () => {
+        cambiarVistaInventario('operador');
+      });
+
+      document.getElementById('tablero-tab')?.addEventListener('click', () => {
+        cambiarVistaInventario('tablero');
+      });
+
+      // Load agent's audit dashboard (productos a contar - SIN cantidades)
+      const loadTablero = async () => {
         if (!state.sesionId) {
           document.getElementById('emptyResultados').style.display = 'block';
           document.getElementById('resultadosTable').style.display = 'none';
@@ -962,7 +1014,7 @@
           );
 
           if (!resp || !resp.ok) {
-            throw new Error(resp?.data?.message || "Error al cargar resultados");
+            throw new Error(resp?.data?.message || "Error al cargar tablero");
           }
 
           const data = resp.data?.data;
@@ -983,7 +1035,7 @@
             for (const f of filas) {
               const tr = document.createElement("tr");
 
-              // Color coding
+              // Color coding basado en estatus
               if (f.estatusFila === "VALIDADO") {
                 tr.style.background = "rgba(34, 197, 94, 0.10)";
               } else if (f.estatusFila === "CONFLICTO") {
@@ -1024,10 +1076,21 @@
               tdColor.textContent = colorText;
               tdColor.style.fontWeight = "600";
 
+              // Estatus simplificado (sin detalles de cantidades)
               const tdEstatus = document.createElement("td");
-              tdEstatus.textContent = safeText(f.estatusFila);
+              let estatusText = "";
+              if (f.estatusFila === "VALIDADO") {
+                estatusText = "✓ Contado";
+              } else if (f.estatusFila === "PENDIENTE") {
+                estatusText = "⏳ Pendiente";
+              } else if (f.estatusFila === "CONFLICTO") {
+                estatusText = "⚠️ En revisión";
+              } else {
+                estatusText = safeText(f.estatusFila);
+              }
+              tdEstatus.textContent = estatusText;
 
-              // PRIVACY: NO Detalle column for agents
+              // PRIVACY: NO se muestra columna de Detalle (cantidades, discrepancias, etc.)
 
               tr.appendChild(tdSku);
               tr.appendChild(tdProd);
@@ -1038,8 +1101,8 @@
             }
           }
         } catch (error) {
-          console.error('Error cargando resultados:', error);
-          toast("error", error.message || "Error al cargar resultados");
+          console.error('Error cargando tablero:', error);
+          toast("error", error.message || "Error al cargar tablero");
           if (emptyResultados) emptyResultados.style.display = 'block';
           if (resultadosTable) resultadosTable.style.display = 'none';
         } finally {
@@ -1087,21 +1150,12 @@
           return;
         }
         state.sesionId = id;
-        loadResultados();
       });
 
-      // MISIÓN 2: Refresh button for results
+      // Refresh button for tablero
       const btnRefrescarResultados = document.getElementById('btnRefrescarResultados');
       if (btnRefrescarResultados) {
-        btnRefrescarResultados.addEventListener('click', loadResultados);
-      }
-
-      // MISIÓN 2: Auto-load results when switching to Resultados tab
-      const resultadosTab = document.getElementById('resultados-tab');
-      if (resultadosTab) {
-        resultadosTab.addEventListener('shown.bs.tab', () => {
-          loadResultados();
-        });
+        btnRefrescarResultados.addEventListener('click', loadTablero);
       }
 
       if (searchInput) {
