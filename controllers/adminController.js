@@ -3840,6 +3840,7 @@ const getAllPedidos = async (req, res) => {
 /**
  * Actualizar estatus de un pedido
  * PUT /api/admin/pedidos/:id
+ * FIX: Validación de stock mejorada para prevenir Error 500
  */
 const updatePedidoEstatus = async (req, res) => {
   try {
@@ -3856,8 +3857,8 @@ const updatePedidoEstatus = async (req, res) => {
       });
     }
 
-    // FIXED: Added 'Confirmado' to valid statuses
-    const estatusValidos = ['Pendiente', 'Confirmado', 'Procesando', 'Enviado', 'Entregado', 'Cancelado', 'Completado', 'Parcial'];
+    // Validar estatus permitidos
+    const estatusValidos = ['Pendiente', 'Confirmado', 'Procesando', 'Enviado', 'Entregado', 'Cancelado', 'Completado', 'Parcial', 'Parcialmente Surtido'];
     if (!estatusValidos.includes(estatus)) {
       console.error(`[updatePedidoEstatus] Invalid status: ${estatus}. Valid: ${estatusValidos.join(', ')}`);
       return res.status(400).json({
@@ -3866,9 +3867,11 @@ const updatePedidoEstatus = async (req, res) => {
       });
     }
 
-    // MISIÓN 2: Validar stock antes de cambiar a Enviado o Entregado
-    if ((estatus === 'Enviado' || estatus === 'Entregado') && !confirmarBackorder) {
-      console.log(`[updatePedidoEstatus] Validating stock for order ${pedidoId}`);
+    // ✅ PROBLEMA 2: Validar stock antes de cambiar a Confirmado, Enviado o Entregado
+    const estatusQueRequierenStock = ['Confirmado', 'Enviado', 'Entregado'];
+    
+    if (estatusQueRequierenStock.includes(estatus) && !confirmarBackorder) {
+      console.log(`[updatePedidoEstatus] 🔍 Validating stock for order ${pedidoId} before changing to ${estatus}`);
       
       // Obtener detalles del pedido con stock actual
       const detallesResult = await db.query(
@@ -3887,42 +3890,59 @@ const updatePedidoEstatus = async (req, res) => {
         [pedidoId, tenant_id]
       );
 
-      if (detallesResult.rows.length > 0) {
-        const itemsConStockInsuficiente = [];
-        
-        for (const item of detallesResult.rows) {
-          const stockNecesario = item.cantidadpaquetes;
-          const stockDisponible = item.stock_actual;
-          
-          if (stockDisponible < stockNecesario) {
-            itemsConStockInsuficiente.push({
-              sku: item.sku,
-              producto: item.producto_nombre,
-              dimensiones: item.dimensiones,
-              necesario: stockNecesario,
-              disponible: stockDisponible,
-              faltante: stockNecesario - stockDisponible
-            });
-          }
-        }
+      if (detallesResult.rows.length === 0) {
+        console.error(`[updatePedidoEstatus] ❌ No se encontraron productos para el pedido ${pedidoId}`);
+        return res.status(400).json({
+          success: false,
+          message: "No se encontraron productos en el pedido"
+        });
+      }
 
-        // Si hay items con stock insuficiente, requerir confirmación
-        if (itemsConStockInsuficiente.length > 0) {
-          console.warn(`[updatePedidoEstatus] Stock insuficiente detectado para ${itemsConStockInsuficiente.length} items`);
-          return res.status(409).json({
-            success: false,
-            requiresConfirmation: true,
-            message: "ATENCIÓN: Stock insuficiente detectado",
-            data: {
-              itemsConStockInsuficiente,
-              totalItems: detallesResult.rows.length,
-              itemsConProblemas: itemsConStockInsuficiente.length
-            }
+      const itemsConStockInsuficiente = [];
+      
+      for (const item of detallesResult.rows) {
+        const stockNecesario = parseInt(item.cantidadpaquetes) || 0;
+        const stockDisponible = parseInt(item.stock_actual) || 0;
+        
+        console.log(`[updatePedidoEstatus] 📦 ${item.sku}: Necesario=${stockNecesario}, Disponible=${stockDisponible}`);
+        
+        if (stockDisponible < stockNecesario) {
+          itemsConStockInsuficiente.push({
+            sku: item.sku,
+            producto: item.producto_nombre,
+            dimensiones: item.dimensiones || 'N/A',
+            necesario: stockNecesario,
+            disponible: stockDisponible,
+            faltante: stockNecesario - stockDisponible
           });
         }
       }
+
+      // Si hay items con stock insuficiente, RECHAZAR la operación
+      if (itemsConStockInsuficiente.length > 0) {
+        console.warn(`[updatePedidoEstatus] ⚠️ Stock insuficiente detectado para ${itemsConStockInsuficiente.length} items`);
+        
+        // Construir mensaje detallado
+        const detalleProductos = itemsConStockInsuficiente.map(item => 
+          `${item.producto} (${item.sku}): Necesitas ${item.necesario}, disponible ${item.disponible}`
+        ).join('; ');
+        
+        return res.status(400).json({
+          success: false,
+          message: `Stock insuficiente para el producto: ${itemsConStockInsuficiente[0].producto}`,
+          error: `No hay suficiente inventario para completar este pedido. ${detalleProductos}`,
+          data: {
+            itemsConStockInsuficiente,
+            totalItems: detallesResult.rows.length,
+            itemsConProblemas: itemsConStockInsuficiente.length
+          }
+        });
+      }
+
+      console.log(`[updatePedidoEstatus] ✅ Stock validado correctamente para todos los productos`);
     }
 
+    // Actualizar el estatus del pedido
     const result = await db.query(
       `UPDATE Pedidos 
        SET Estatus = $1, FechaActualizacion = NOW()
@@ -3939,7 +3959,7 @@ const updatePedidoEstatus = async (req, res) => {
       });
     }
 
-    console.log(`[updatePedidoEstatus] Order ${pedidoId} updated successfully to ${estatus}`);
+    console.log(`[updatePedidoEstatus] ✅ Order ${pedidoId} updated successfully to ${estatus}`);
 
     // Crear notificación para el cliente
     try {
@@ -3954,7 +3974,6 @@ const updatePedidoEstatus = async (req, res) => {
       });
     } catch (notifError) {
       console.error("Error al crear notificación:", notifError);
-      // Don't fail the request if notification fails
     }
 
     res.json({
@@ -3966,11 +3985,11 @@ const updatePedidoEstatus = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error("[updatePedidoEstatus] Error:", error);
+    console.error("[updatePedidoEstatus] ❌ Error:", error);
     console.error("Error stack:", error.stack);
     res.status(500).json({
       success: false,
-      message: "Error al actualizar estatus",
+      message: "Error al actualizar estatus del pedido",
       error: error.message,
       details: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });

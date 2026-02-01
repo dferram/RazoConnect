@@ -276,6 +276,47 @@
           border-top: 1px dashed var(--border-color);
         }
       }
+
+      /* FIX: Modal scroll interno - Problema 1 */
+      .modal-content--xl {
+        display: flex;
+        flex-direction: column;
+        max-height: 90vh;
+      }
+
+      .modal-header {
+        flex-shrink: 0;
+        position: sticky;
+        top: 0;
+        background: white;
+        z-index: 10;
+      }
+
+      .modal-body {
+        flex: 1;
+        overflow-y: auto;
+        overflow-x: hidden;
+        max-height: calc(90vh - 120px);
+        padding: 1.5rem;
+      }
+
+      .modal-body::-webkit-scrollbar {
+        width: 8px;
+      }
+
+      .modal-body::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 4px;
+      }
+
+      .modal-body::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 4px;
+      }
+
+      .modal-body::-webkit-scrollbar-thumb:hover {
+        background: #555;
+      }
     </style>
       <link rel="stylesheet" href="css/mobile-responsive.css" />
   </head>
