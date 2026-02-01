@@ -1137,9 +1137,22 @@
         const id = Number.parseInt(sesionSelect.value, 10);
         if (!id) {
           state.sesionId = null;
+          // Clear table when no session selected
+          const emptyResultados = document.getElementById('emptyResultados');
+          const resultadosTable = document.getElementById('resultadosTable');
+          if (emptyResultados) emptyResultados.style.display = 'block';
+          if (resultadosTable) resultadosTable.style.display = 'none';
           return;
         }
         state.sesionId = id;
+        
+        // MISIÓN 2: Automatically load tablero when session is selected
+        // Check if we're on the tablero tab, if so reload it
+        const tableroTab = document.getElementById('tablero-tab');
+        const tableroPanel = document.getElementById('tablero');
+        if (tableroTab && tableroPanel && !tableroPanel.classList.contains('d-none')) {
+          loadTablero();
+        }
       });
 
       // Refresh button for tablero
