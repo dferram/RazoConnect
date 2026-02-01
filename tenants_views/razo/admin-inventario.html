@@ -376,6 +376,14 @@
                   class="search-input"
                 />
                 <button
+                  class="btn btn-danger"
+                  onclick="downloadStockReport()"
+                  id="btnDescargarPDF"
+                  style="background: #991b1b; border-color: #991b1b;"
+                >
+                  <i class="fas fa-file-pdf"></i> Descargar Stock
+                </button>
+                <button
                   class="btn btn-secondary btn-refresh"
                   onclick="loadProductos()"
                 >
@@ -2168,10 +2176,178 @@
         }
       }
 
+      /**
+       * Descargar reporte de inventario en PDF
+       * Obtiene todos los productos con stock > 0 y genera un PDF profesional
+       */
+      async function downloadStockReport() {
+        const btnPDF = document.getElementById('btnDescargarPDF');
+        
+        try {
+          // Deshabilitar botón y mostrar loading
+          btnPDF.disabled = true;
+          btnPDF.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generando...';
+
+          // Obtener datos completos del inventario desde el backend
+          const response = await fetch(`${API_BASE_URL}/admin/inventario/exportar-pdf`, {
+            method: 'GET',
+            headers: {
+              Authorization: `Bearer ${adminToken}`,
+              'Content-Type': 'application/json',
+            },
+          });
+
+          if (!response.ok) {
+            throw new Error('Error al obtener datos del inventario');
+          }
+
+          const data = await response.json();
+          
+          if (!data.success || !data.data || data.data.length === 0) {
+            showToast('No hay productos con stock disponible para exportar', 'warning');
+            return;
+          }
+
+          const inventario = data.data;
+
+          // Verificar que jsPDF esté disponible
+          if (typeof window.jspdf === 'undefined') {
+            throw new Error('Librería jsPDF no disponible');
+          }
+
+          const { jsPDF } = window.jspdf;
+          const doc = new jsPDF('portrait', 'mm', 'a4');
+
+          // Configuración de colores corporativos
+          const colorNaranja = [249, 115, 22]; // #F97316
+          const colorGris = [107, 114, 128];
+          const colorNegro = [31, 41, 55];
+
+          // ENCABEZADO DEL DOCUMENTO
+          const pageWidth = doc.internal.pageSize.getWidth();
+          const pageHeight = doc.internal.pageSize.getHeight();
+
+          // Logo y título
+          doc.setFontSize(22);
+          doc.setTextColor(...colorNaranja);
+          doc.setFont('helvetica', 'bold');
+          doc.text('RazoConnect', 15, 20);
+
+          // Fecha y hora de generación
+          const ahora = new Date();
+          const fechaFormato = ahora.toLocaleDateString('es-MX', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+          });
+          const horaFormato = ahora.toLocaleTimeString('es-MX', {
+            hour: '2-digit',
+            minute: '2-digit'
+          });
+
+          doc.setFontSize(9);
+          doc.setTextColor(...colorGris);
+          doc.setFont('helvetica', 'normal');
+          doc.text(`Generado: ${fechaFormato} - ${horaFormato}`, pageWidth - 15, 20, { align: 'right' });
+
+          // Título del reporte
+          doc.setFontSize(16);
+          doc.setTextColor(...colorNegro);
+          doc.setFont('helvetica', 'bold');
+          doc.text('Reporte de Existencias Físicas', 15, 32);
+
+          // Subtítulo
+          doc.setFontSize(10);
+          doc.setTextColor(...colorGris);
+          doc.setFont('helvetica', 'normal');
+          doc.text(`Total de productos con stock: ${inventario.length}`, 15, 39);
+
+          // Línea separadora
+          doc.setDrawColor(...colorNaranja);
+          doc.setLineWidth(0.5);
+          doc.line(15, 42, pageWidth - 15, 42);
+
+          // TABLA DE INVENTARIO
+          const tableData = inventario.map(item => [
+            item.sku || 'Sin SKU',
+            item.producto || 'Sin nombre',
+            item.variante || 'Estándar',
+            item.ubicacion || 'N/A',
+            item.stock.toString()
+          ]);
+
+          doc.autoTable({
+            startY: 47,
+            head: [['SKU', 'Producto', 'Variante', 'Ubicación', 'Stock']],
+            body: tableData,
+            theme: 'striped',
+            headStyles: {
+              fillColor: colorNaranja,
+              textColor: [255, 255, 255],
+              fontSize: 9,
+              fontStyle: 'bold',
+              halign: 'left'
+            },
+            bodyStyles: {
+              fontSize: 8,
+              textColor: colorNegro,
+              cellPadding: 3
+            },
+            columnStyles: {
+              0: { cellWidth: 30, fontStyle: 'bold' }, // SKU
+              1: { cellWidth: 60 }, // Producto
+              2: { cellWidth: 35 }, // Variante
+              3: { cellWidth: 30 }, // Ubicación
+              4: { cellWidth: 20, halign: 'right', fontStyle: 'bold' } // Stock
+            },
+            alternateRowStyles: {
+              fillColor: [249, 250, 251]
+            },
+            margin: { left: 15, right: 15 },
+            didDrawPage: function(data) {
+              // PIE DE PÁGINA en cada página
+              const pageCount = doc.internal.getNumberOfPages();
+              const currentPage = doc.internal.getCurrentPageInfo().pageNumber;
+
+              doc.setFontSize(8);
+              doc.setTextColor(...colorGris);
+              doc.setFont('helvetica', 'normal');
+              
+              // Número de página
+              const pageText = `Página ${currentPage} de ${pageCount}`;
+              doc.text(pageText, pageWidth / 2, pageHeight - 10, { align: 'center' });
+
+              // Texto de auditoría
+              doc.text('RazoConnect - Sistema de Gestión de Inventario', 15, pageHeight - 10);
+            }
+          });
+
+          // Generar nombre de archivo con fecha
+          const nombreArchivo = `Inventario_RazoConnect_${ahora.getFullYear()}${String(ahora.getMonth() + 1).padStart(2, '0')}${String(ahora.getDate()).padStart(2, '0')}.pdf`;
+
+          // Descargar el PDF
+          doc.save(nombreArchivo);
+
+          showToast(`PDF generado exitosamente: ${inventario.length} productos`, 'success');
+
+        } catch (error) {
+          console.error('Error al generar PDF:', error);
+          showToast(error.message || 'Error al generar el reporte PDF', 'error');
+        } finally {
+          // Restaurar botón
+          btnPDF.disabled = false;
+          btnPDF.innerHTML = '<i class="fas fa-file-pdf"></i> Descargar Stock';
+        }
+      }
+
       // Initialize
       verifyAndLoadAdmin();
       loadProductos();
     </script>
+
+    <!-- jsPDF y autoTable para generación de PDFs -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
 
     <style>
       /* Modal styles */

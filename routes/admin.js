@@ -568,6 +568,13 @@ router.get(
 );
 
 router.get(
+  "/inventario/exportar-pdf",
+  authenticate,
+  authorizeAdmin,
+  inventarioController.obtenerInventarioParaPDF
+);
+
+router.get(
   "/inventario/producto-detalle/:id",
   authenticate,
   authorizeAdmin,

@@ -667,6 +667,49 @@ async function actualizarEstatusSesion(req, res) {
     }
 }
 
+/**
+ * Obtener todo el inventario con stock > 0 para exportación a PDF
+ */
+async function obtenerInventarioParaPDF(req, res) {
+    try {
+        const tenant_id = req.tenant?.tenant_id || req.user?.tenantId || 1;
+
+        const query = `
+            SELECT 
+                pv.sku,
+                p.nombreproducto,
+                pv.dimensiones,
+                pv.stock,
+                COALESCE(pv.ubicacion_almacen, '') as ubicacion
+            FROM producto_variantes pv
+            INNER JOIN productos p ON p.productoid = pv.productoid
+            WHERE p.tenant_id = $1
+              AND pv.stock > 0
+            ORDER BY p.nombreproducto ASC, pv.sku ASC
+        `;
+
+        const { rows } = await db.query(query, [tenant_id]);
+
+        return res.json({
+            success: true,
+            data: rows.map(row => ({
+                sku: row.sku || 'Sin SKU',
+                producto: row.nombreproducto || 'Sin nombre',
+                variante: row.dimensiones || 'Estándar',
+                ubicacion: row.ubicacion || 'N/A',
+                stock: row.stock || 0
+            }))
+        });
+    } catch (error) {
+        console.error('Error al obtener inventario para PDF:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Error al obtener inventario',
+            error: error.message
+        });
+    }
+}
+
 module.exports = {
     exportarEntradasAlmacen,
     getOrdenesPendientes,
@@ -675,5 +718,6 @@ module.exports = {
     obtenerSesionInventario,
     asignarAgenteASesion,
     obtenerAgentesDisponibles,
-    actualizarEstatusSesion
+    actualizarEstatusSesion,
+    obtenerInventarioParaPDF
 };
