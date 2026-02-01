@@ -202,7 +202,14 @@ document.getElementById('buscarProductoInput')?.addEventListener('input', functi
 
 async function buscarProductos(query) {
   const resultadosEl = document.getElementById('resultadosBusqueda');
-  resultadosEl.innerHTML = '<div style="padding: 1rem; text-align: center;">Buscando...</div>';
+  
+  // Mostrar spinner de carga
+  resultadosEl.innerHTML = `
+    <div class="search-loading">
+      <div class="search-spinner"></div>
+      <p style="margin-top: 0.5rem;">Buscando productos...</p>
+    </div>
+  `;
   resultadosEl.style.display = 'block';
 
   try {
@@ -214,17 +221,32 @@ async function buscarProductos(query) {
       }
     });
 
-    if (!response.ok) throw new Error('Error en búsqueda');
+    if (!response.ok) {
+      throw new Error(`Error ${response.status}: ${response.statusText}`);
+    }
 
     const data = await response.json();
-    if (data.success && data.data) {
+    
+    if (data.success && data.data && data.data.length > 0) {
       mostrarResultadosBusqueda(data.data);
     } else {
-      resultadosEl.innerHTML = '<div style="padding: 1rem; text-align: center; color: var(--razo-gray-warm);">No se encontraron productos</div>';
+      resultadosEl.innerHTML = `
+        <div class="search-empty">
+          <p style="font-size: 1.5rem; margin-bottom: 0.5rem;">🔍</p>
+          <p>No se encontraron productos</p>
+          <p style="font-size: 0.875rem; margin-top: 0.25rem;">Intenta con otro término de búsqueda</p>
+        </div>
+      `;
     }
   } catch (error) {
-    console.error('Error:', error);
-    resultadosEl.innerHTML = '<div style="padding: 1rem; text-align: center; color: var(--razo-gray-warm);">No se encontraron productos. Intenta con otro término.</div>';
+    console.error('❌ Error en búsqueda:', error);
+    resultadosEl.innerHTML = `
+      <div class="search-empty">
+        <p style="font-size: 1.5rem; margin-bottom: 0.5rem; color: #dc2626;">⚠️</p>
+        <p style="color: #dc2626; font-weight: 600;">Error al buscar productos</p>
+        <p style="font-size: 0.875rem; margin-top: 0.25rem;">${error.message}</p>
+      </div>
+    `;
   }
 }
 
@@ -232,7 +254,12 @@ function mostrarResultadosBusqueda(productos) {
   const resultadosEl = document.getElementById('resultadosBusqueda');
 
   if (!productos || productos.length === 0) {
-    resultadosEl.innerHTML = '<div style="padding: 1rem; text-align: center; color: var(--razo-gray-warm);">No se encontraron productos</div>';
+    resultadosEl.innerHTML = `
+      <div class="search-empty">
+        <p style="font-size: 1.5rem; margin-bottom: 0.5rem;">🔍</p>
+        <p>No se encontraron productos</p>
+      </div>
+    `;
     return;
   }
 
@@ -250,29 +277,38 @@ function mostrarResultadosBusqueda(productos) {
         );
 
         const stockDisponible = variante.stock > 0;
-        const badgeStock = stockDisponible 
-          ? '<span style="background: #10b981; color: white; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: 600;">✓ Stock Disponible</span>'
-          : '<span style="background: #f59e0b; color: white; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: 600;">⚠ Bajo Pedido</span>';
+        const badgeClass = stockDisponible ? 'badge-stock-ok' : 'badge-stock-low';
+        const badgeIcon = stockDisponible ? '✓' : '⚠';
+        const badgeText = stockDisponible ? 'En Stock' : 'Bajo Pedido';
 
         return `
-          <div style="padding: 0.75rem; border-bottom: 1px solid var(--razo-gray-light); display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
-            <div style="flex: 1;">
-              <div style="font-weight: 600; margin-bottom: 0.25rem;">${producto.nombreProducto}</div>
-              <div style="font-size: 0.875rem; color: var(--razo-gray-warm); margin-bottom: 0.25rem;">
-                SKU: ${variante.sku} | ${variante.dimensiones} | ${tamano.etiqueta}
+          <div class="search-result-item">
+            <div class="search-result-image">
+              📦
+            </div>
+            <div class="search-result-info">
+              <div class="search-result-title">${producto.nombreProducto}</div>
+              <div class="search-result-meta">
+                <span><strong>SKU:</strong> ${variante.sku}</span>
+                <span>•</span>
+                <span>${variante.dimensiones}</span>
+                <span>•</span>
+                <span>${tamano.etiqueta}</span>
               </div>
-              <div style="display: flex; align-items: center; gap: 0.5rem;">
-                ${badgeStock}
-                <span style="font-size: 0.875rem; color: var(--razo-gray-warm);">${variante.stock} piezas</span>
+              <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem;">
+                <span class="search-result-badge ${badgeClass}">${badgeIcon} ${badgeText}</span>
+                <span style="font-size: 0.875rem; color: var(--razo-gray-warm);">${variante.stock} piezas disponibles</span>
               </div>
             </div>
-            <button 
-              class="btn btn-success" 
-              style="padding: 0.5rem 1.25rem; font-size: 0.875rem; white-space: nowrap; min-width: 120px;"
-              onclick="agregarOIncrementarProducto(${variante.varianteId}, ${tamano.tamanoId}, '${variante.sku}', '${producto.nombreProducto.replace(/'/g, "\\'")}', '${tamano.etiqueta}', ${variante.stock}, ${variante.precioUnitario || 0}, ${variante.piezasPorPaquete || 1})"
-              ${yaEnListaAgregar ? 'disabled' : ''}>
-              ${yaEnListaAgregar ? '✓ Agregado' : yaEnPedido ? '+ Incrementar' : '+ Agregar'}
-            </button>
+            <div class="search-result-action">
+              <button 
+                class="btn ${yaEnListaAgregar ? 'btn-secondary' : 'btn-success'}" 
+                style="padding: 0.5rem 1.25rem; font-size: 0.875rem; white-space: nowrap; min-width: 120px;"
+                onclick="agregarOIncrementarProducto(${variante.varianteId}, ${tamano.tamanoId}, '${variante.sku}', '${producto.nombreProducto.replace(/'/g, "\\'")}', '${tamano.etiqueta}', ${variante.stock}, ${variante.precioUnitario || 0}, ${variante.piezasPorPaquete || 1})"
+                ${yaEnListaAgregar ? 'disabled' : ''}>
+                ${yaEnListaAgregar ? '✓ Agregado' : yaEnPedido ? '+ Incrementar' : '+ Agregar'}
+              </button>
+            </div>
           </div>
         `;
       }).join('');
@@ -323,6 +359,16 @@ function agregarOIncrementarProducto(varianteId, tamanoId, sku, nombreProducto, 
   actualizarResumen();
   showToast(`Producto agregado: ${nombreProducto}`, 'success');
 }
+
+// Cerrar dropdown al hacer clic fuera
+document.addEventListener('click', function(e) {
+  const searchContainer = document.querySelector('.search-container');
+  const resultadosEl = document.getElementById('resultadosBusqueda');
+  
+  if (searchContainer && resultadosEl && !searchContainer.contains(e.target)) {
+    resultadosEl.style.display = 'none';
+  }
+});
 
 function renderizarProductosParaAgregar() {
   const containerEl = document.getElementById('productosParaAgregar');

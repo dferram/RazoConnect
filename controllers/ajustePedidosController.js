@@ -5,6 +5,10 @@ async function ajustarPedido(req, res) {
   let transactionStarted = false;
 
   try {
+    console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('🔧 [AJUSTE PEDIDO] Inicio de ajuste');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
     if (!req.tenant || !req.tenant.tenant_id) {
       client.release();
       return res.status(500).json({
@@ -17,11 +21,35 @@ async function ajustarPedido(req, res) {
     const pedidoId = parseInt(req.params.id, 10);
     const { itemsAgregar = [], itemsEliminar = [], itemsModificar = [] } = req.body;
 
+    console.log(`📋 Pedido ID: ${pedidoId}`);
+    console.log(`📦 Items a agregar: ${itemsAgregar.length}`);
+    console.log(`🗑️  Items a eliminar: ${itemsEliminar.length}`);
+    console.log(`✏️  Items a modificar: ${itemsModificar.length}`);
+
+    // Validación de datos de entrada
     if (!Number.isInteger(pedidoId) || pedidoId <= 0) {
       client.release();
       return res.status(400).json({
         success: false,
         message: "ID de pedido inválido"
+      });
+    }
+
+    // Validar que los arrays sean realmente arrays
+    if (!Array.isArray(itemsAgregar) || !Array.isArray(itemsEliminar) || !Array.isArray(itemsModificar)) {
+      client.release();
+      return res.status(400).json({
+        success: false,
+        message: "Formato de datos inválido. Se esperan arrays para itemsAgregar, itemsEliminar e itemsModificar"
+      });
+    }
+
+    // Validar que haya al menos un cambio
+    if (itemsAgregar.length === 0 && itemsEliminar.length === 0 && itemsModificar.length === 0) {
+      client.release();
+      return res.status(400).json({
+        success: false,
+        message: "No se detectaron cambios para aplicar"
       });
     }
 
