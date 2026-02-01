@@ -221,14 +221,16 @@
                   <div class="spinner"></div>
                 </div>
 
-                <div style="overflow-x: auto">
-                  <table class="admin-table" id="dashboardTable" style="display: none">
+                <div class="table-responsive" style="overflow-x: auto; border-radius: 0.75rem;">
+                  <table class="admin-table" id="dashboardTable" style="display: none; min-width: 800px;">
                     <thead>
                       <tr>
-                        <th>SKU</th>
-                        <th>Producto</th>
-                        <th>Estatus</th>
-                        <th style="width: 220px">Detalle</th>
+                        <th style="white-space: nowrap;">SKU</th>
+                        <th style="white-space: nowrap;">Producto</th>
+                        <th style="white-space: nowrap;">Medida</th>
+                        <th style="white-space: nowrap;">Color</th>
+                        <th style="white-space: nowrap;">Estatus</th>
+                        <th style="width: 220px; white-space: nowrap;">Detalle</th>
                       </tr>
                     </thead>
                     <tbody id="dashboardTbody"></tbody>
@@ -517,6 +519,38 @@
         
         .filters-bar {
           padding: 1rem;
+        }
+      }
+
+      /* MISIÓN 3: Responsive table styling */
+      .table-responsive {
+        -webkit-overflow-scrolling: touch;
+      }
+
+      @media (max-width: 992px) {
+        .admin-table {
+          font-size: 0.875rem;
+        }
+
+        .admin-table th,
+        .admin-table td {
+          padding: 0.65rem 0.75rem;
+        }
+      }
+
+      @media (max-width: 768px) {
+        .admin-table {
+          font-size: 0.8125rem;
+        }
+
+        .admin-table th,
+        .admin-table td {
+          padding: 0.5rem 0.6rem;
+        }
+
+        .table-responsive {
+          border: 1px solid #e5e7eb;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         }
       }
 
@@ -1216,6 +1250,32 @@
           const tdProd = document.createElement("td");
           tdProd.textContent = safeText(f.nombreProducto);
 
+          // MISIÓN 1: Extract Medida from variant data
+          const tdMedida = document.createElement("td");
+          let medidaText = "-";
+          if (f.medidas) {
+            medidaText = safeText(f.medidas);
+          } else if (f.dimension) {
+            medidaText = safeText(f.dimension);
+          } else if (f.varianteId && state.varianteById.has(f.varianteId)) {
+            const variante = state.varianteById.get(f.varianteId);
+            medidaText = variante.medidas || variante.dimension || "-";
+          }
+          tdMedida.textContent = medidaText;
+          tdMedida.style.fontWeight = "600";
+
+          // MISIÓN 1: Extract Color from variant data
+          const tdColor = document.createElement("td");
+          let colorText = "-";
+          if (f.color) {
+            colorText = safeText(f.color);
+          } else if (f.varianteId && state.varianteById.has(f.varianteId)) {
+            const variante = state.varianteById.get(f.varianteId);
+            colorText = variante.color || "-";
+          }
+          tdColor.textContent = colorText;
+          tdColor.style.fontWeight = "600";
+
           const tdEstatus = document.createElement("td");
           tdEstatus.textContent = safeText(f.estatusFila);
 
@@ -1232,6 +1292,8 @@
 
           tr.appendChild(tdSku);
           tr.appendChild(tdProd);
+          tr.appendChild(tdMedida);
+          tr.appendChild(tdColor);
           tr.appendChild(tdEstatus);
           tr.appendChild(tdDetalle);
           dashboardTbody.appendChild(tr);
