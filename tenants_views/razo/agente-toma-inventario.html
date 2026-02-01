@@ -1076,19 +1076,9 @@
               tdColor.textContent = colorText;
               tdColor.style.fontWeight = "600";
 
-              // Estatus simplificado (sin detalles de cantidades)
+              // Estatus (mismo formato que admin, sin simplificar)
               const tdEstatus = document.createElement("td");
-              let estatusText = "";
-              if (f.estatusFila === "VALIDADO") {
-                estatusText = "✓ Contado";
-              } else if (f.estatusFila === "PENDIENTE") {
-                estatusText = "⏳ Pendiente";
-              } else if (f.estatusFila === "CONFLICTO") {
-                estatusText = "⚠️ En revisión";
-              } else {
-                estatusText = safeText(f.estatusFila);
-              }
-              tdEstatus.textContent = estatusText;
+              tdEstatus.textContent = safeText(f.estatusFila);
 
               // PRIVACY: NO se muestra columna de Detalle (cantidades, discrepancias, etc.)
 
