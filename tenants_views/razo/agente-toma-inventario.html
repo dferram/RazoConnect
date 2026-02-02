@@ -135,7 +135,7 @@
                       type="text"
                       id="tableroSearchInput"
                       class="form-control"
-                      placeholder="🔍 Buscar producto por nombre..."
+                      placeholder="🔍 Buscar por nombre, medida, color o SKU..."
                       style="border-radius: 0.5rem; border: 1px solid #ddd; padding: 0.6rem 1rem;"
                     />
                   </div>
@@ -851,7 +851,7 @@
                   </div>
                 </td>
                 <td>
-                  <div style="font-weight: 800; color: var(--razo-gray-dark);">${escapeHtml(medidas)}</div>
+                  <div style="font-weight: 800; color: var(--razo-gray-dark); font-size: 1.1rem;">${escapeHtml(medidas)}${v.color ? ` - ${escapeHtml(v.color)}` : ''}</div>
                   <div style="font-size: 0.8rem; color: var(--razo-gray-warm); margin-top: 0.25rem;">
                     SKU: <code>${escapeHtml(sku)}</code>
                   </div>
@@ -1178,7 +1178,15 @@
 
         const filasFiltradas = state.tableroFilas.filter(f => {
           const nombreProducto = (f.nombreProducto || '').toLowerCase();
-          return nombreProducto.includes(searchTerm);
+          const medida = (f.medidas || f.dimension || '').toLowerCase();
+          const color = (f.color || '').toLowerCase();
+          const sku = (f.sku || '').toLowerCase();
+          
+          // Buscar en nombre, medida, color y SKU
+          return nombreProducto.includes(searchTerm) || 
+                 medida.includes(searchTerm) || 
+                 color.includes(searchTerm) ||
+                 sku.includes(searchTerm);
         });
 
         if (filasFiltradas.length === 0) {
