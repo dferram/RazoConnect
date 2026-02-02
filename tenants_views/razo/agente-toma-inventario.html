@@ -903,7 +903,7 @@
         }
 
         try {
-          const resp = await apiCall("/admin/auditoria-inventario/registrar-conteo", {
+          const resp = await apiCall("/agente/auditoria-inventario/registrar-conteo", {
             method: "POST",
             body: JSON.stringify({
               sesionId: state.sesionId,
@@ -1009,7 +1009,7 @@
 
         try {
           const resp = await apiCall(
-            `/admin/auditoria-inventario/dashboard/${encodeURIComponent(state.sesionId)}`,
+            `/agente/auditoria-inventario/dashboard/${encodeURIComponent(state.sesionId)}`,
             { method: "GET" }
           );
 
@@ -1103,7 +1103,7 @@
       const loadSesiones = async () => {
         try {
           const resp = await apiCall(
-            "/admin/auditoria-inventario/sesiones?estatus=ABIERTA",
+            "/agente/auditoria-inventario/sesiones?estatus=ABIERTA",
             { method: "GET" }
           );
 

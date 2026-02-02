@@ -4,6 +4,7 @@ const multer = require('multer');
 const path = require('path');
 const { authenticate, authorize } = require('../middlewares/authMiddleware');
 const entregasController = require('../controllers/agentes/entregasController');
+const inventoryAuditController = require('../controllers/inventoryAuditController');
 
 // Configurar multer para subida de evidencias
 const storage = multer.diskStorage({
@@ -47,5 +48,23 @@ router.post('/entregas/confirmar', upload.single('foto_evidencia'), entregasCont
  * Obtiene la lista de entregas pendientes del agente
  */
 router.get('/entregas/pendientes', entregasController.obtenerEntregasPendientes);
+
+/**
+ * GET /api/agente/auditoria-inventario/sesiones
+ * Obtiene las sesiones de inventario asignadas al agente
+ */
+router.get('/auditoria-inventario/sesiones', inventoryAuditController.listarSesiones);
+
+/**
+ * GET /api/agente/auditoria-inventario/dashboard/:sesionId
+ * Obtiene el dashboard de una sesión (solo si está asignada al agente)
+ */
+router.get('/auditoria-inventario/dashboard/:sesionId', inventoryAuditController.getDashboardSesion);
+
+/**
+ * POST /api/agente/auditoria-inventario/registrar-conteo
+ * Registra un conteo de inventario
+ */
+router.post('/auditoria-inventario/registrar-conteo', inventoryAuditController.registrarConteo);
 
 module.exports = router;
