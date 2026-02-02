@@ -3897,6 +3897,31 @@ const updatePedidoEstatus = async (req, res) => {
       });
     }
 
+    // Obtener el estatus actual del pedido para validar transiciones
+    const pedidoActualResult = await db.query(
+      `SELECT estatus FROM pedidos WHERE pedidoid = $1 AND tenant_id = $2`,
+      [pedidoId, tenant_id]
+    );
+
+    if (pedidoActualResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Pedido no encontrado"
+      });
+    }
+
+    const estatusActual = pedidoActualResult.rows[0].estatus;
+
+    // Validar que Enviado/Entregado solo se puedan marcar después de Confirmado
+    if ((estatus === 'Enviado' || estatus === 'Entregado') && estatusActual !== 'Confirmado' && estatusActual !== 'Enviado') {
+      return res.status(400).json({
+        success: false,
+        message: `No se puede cambiar a "${estatus}" sin haber confirmado el pedido primero. El pedido debe estar en estado "Confirmado" antes de marcarlo como "${estatus}".`,
+        estatusActual: estatusActual,
+        estatusRequerido: 'Confirmado'
+      });
+    }
+
     // ✅ PROBLEMA 2: Validar stock antes de cambiar a Confirmado, Enviado o Entregado
     const estatusQueRequierenStock = ['Confirmado', 'Enviado', 'Entregado'];
     
@@ -3972,11 +3997,11 @@ const updatePedidoEstatus = async (req, res) => {
       console.log(`[updatePedidoEstatus] ✅ Stock validado correctamente para todos los productos`);
     }
 
-    // Actualizar el estatus del pedido
+    // Actualizar el estatus del pedido (sin FechaActualizacion que no existe)
     const result = await db.query(
-      `UPDATE Pedidos 
-       SET Estatus = $1, FechaActualizacion = NOW()
-       WHERE PedidoID = $2 AND tenant_id = $3
+      `UPDATE pedidos 
+       SET estatus = $1
+       WHERE pedidoid = $2 AND tenant_id = $3
        RETURNING *`,
       [estatus, pedidoId, tenant_id]
     );
