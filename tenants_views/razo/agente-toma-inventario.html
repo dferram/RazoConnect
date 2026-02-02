@@ -1124,8 +1124,9 @@
 
           for (const s of sesiones) {
             const option = document.createElement("option");
-            option.value = String(s.sesionId);
-            option.textContent = `#${s.sesionId} — ${safeText(s.nombre)} (${safeText(s.estatus)})`;
+            const sesionId = s.sesion_id || s.sesionId;
+            option.value = String(sesionId);
+            option.textContent = `#${sesionId} — ${safeText(s.nombre)} (${safeText(s.estatus)})`;
             sesionSelect.appendChild(option);
           }
         } catch (error) {
@@ -1146,13 +1147,9 @@
         }
         state.sesionId = id;
         
-        // MISIÓN 2: Automatically load tablero when session is selected
-        // Check if we're on the tablero tab, if so reload it
-        const tableroTab = document.getElementById('tablero-tab');
-        const tableroPanel = document.getElementById('tablero');
-        if (tableroTab && tableroPanel && !tableroPanel.classList.contains('d-none')) {
-          loadTablero();
-        }
+        // MISIÓN 2 & 3: Automatically load tablero when session is selected
+        // Always reload the tablero data when session changes
+        loadTablero();
       });
 
       // Refresh button for tablero
