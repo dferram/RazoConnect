@@ -488,9 +488,15 @@ const registrarConteo = async (req, res) => {
       if (esElMismoUsuario) {
         await client.query("ROLLBACK");
         console.warn(`❌ [CONTEO CIEGO VIOLADO] ${usuarioIdentificador} intentó hacer Conteo B de variante ${varianteId} en sesión ${sesionId}, pero ya hizo el Conteo A`);
+        
+        // Mensaje personalizado según el rol del usuario
+        const mensajeError = isAgente 
+          ? "Ya registraste el primer conteo de este producto. Otro agente debe hacer el segundo conteo para validación."
+          : "No puedes hacer el segundo conteo de un producto que ya contaste. Debe hacerlo otro usuario para garantizar la validación ciega.";
+        
         return res.status(403).json({
           success: false,
-          message: "No puedes hacer el segundo conteo de un producto que ya contaste. Debe hacerlo otro agente para garantizar la validación ciega.",
+          message: mensajeError,
           debug: {
             sesionId,
             varianteId,

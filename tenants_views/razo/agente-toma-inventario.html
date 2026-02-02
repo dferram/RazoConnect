@@ -919,10 +919,6 @@
 
           if (!resp.ok) {
             const errorMsg = resp.data?.message || "No se pudo registrar";
-            // Detectar error de duplicado y mostrar mensaje más claro
-            if (errorMsg.includes("mismo usuario") || errorMsg.includes("dos veces") || errorMsg.includes("conteo ciego")) {
-              throw new Error("Ya registraste el primer conteo de este producto. Otro agente debe hacer el segundo conteo para validación.");
-            }
             throw new Error(errorMsg);
           }
 
@@ -1048,7 +1044,25 @@
               tdSku.textContent = safeText(f.sku);
 
               const tdProd = document.createElement("td");
-              tdProd.textContent = safeText(f.nombreProducto);
+              const productLink = document.createElement("a");
+              productLink.href = "#";
+              productLink.textContent = safeText(f.nombreProducto);
+              productLink.style.textDecoration = "underline";
+              productLink.style.color = "var(--razo-orange)";
+              productLink.style.fontWeight = "600";
+              productLink.style.cursor = "pointer";
+              productLink.addEventListener("click", (e) => {
+                e.preventDefault();
+                // Switch to Modo Operador tab
+                cambiarVistaInventario('operador');
+                // Search for the product
+                if (searchInput) {
+                  searchInput.value = safeText(f.nombreProducto);
+                  applyFilters();
+                  searchInput.focus();
+                }
+              });
+              tdProd.appendChild(productLink);
 
               // Extract Medida
               const tdMedida = document.createElement("td");
