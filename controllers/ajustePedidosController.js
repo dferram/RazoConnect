@@ -213,7 +213,7 @@ async function ajustarPedido(req, res) {
           pv.sku,
           pv.stock,
           p.nombreproducto,
-          t.piezas AS tamano_piezas
+          t.cantidad AS tamano_piezas
         FROM detallesdelpedido d
         INNER JOIN producto_variantes pv ON pv.varianteid = d.varianteid
         INNER JOIN productos p ON p.productoid = pv.productoid
@@ -353,7 +353,7 @@ async function ajustarPedido(req, res) {
           pv.precioofertaunitario,
           p.productoid,
           p.nombreproducto,
-          t.piezas AS tamano_piezas
+          t.cantidad AS tamano_piezas
         FROM producto_variantes pv
         INNER JOIN productos p ON p.productoid = pv.productoid
         LEFT JOIN cat_tamanopaquetes t ON t.tamanoid = $2

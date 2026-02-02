@@ -2041,13 +2041,12 @@ const buscarProductosAjuste = async (req, res) => {
           (SELECT json_agg(
             json_build_object(
               'tamanoId', t.tamanoid,
-              'etiqueta', t.etiqueta,
-              'piezas', t.piezas
+              'cantidad', t.cantidad
             )
           )
           FROM cat_tamanopaquetes t
           WHERE t.tenant_id = $2
-          ORDER BY t.piezas ASC
+          ORDER BY t.cantidad ASC
           ), '[]'::json
         ) as tamanos
       FROM productos p
