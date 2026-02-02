@@ -7,16 +7,17 @@
 (function() {
   "use strict";
 
-  // Guardar referencia original de removeItem
+  // Guardar referencias originales
   const originalRemoveItem = Storage.prototype.removeItem;
+  const originalGetItem = Storage.prototype.getItem;
 
   // Sobrescribir removeItem para proteger tokens de agente
   Storage.prototype.removeItem = function(key) {
     // Solo proteger tokens de admin (que usan los agentes)
     if (key === "razoconnect_admin_token" || key === "razoconnect_admin") {
       try {
-        // Verificar si el usuario actual es un agente (sin modificar el storage)
-        const adminDataStr = localStorage.getItem("razoconnect_admin");
+        // Verificar si el usuario actual es un agente (usando método original para evitar recursión)
+        const adminDataStr = originalGetItem.call(localStorage, "razoconnect_admin");
         const adminData = adminDataStr ? JSON.parse(adminDataStr) : null;
         
         const isAgent = adminData?.rol === "agente" || adminData?.esAgente === true;
