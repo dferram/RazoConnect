@@ -17,16 +17,40 @@
    * @returns {Object} { token, tipo }
    */
   function getAuthToken() {
-    // Intentar token de admin primero
+    // Detectar contexto para priorizar token correcto
+    const path = window.location.pathname.toLowerCase();
+    
+    // Contexto de agente - priorizar token de agente
+    if (path.includes('/agente')) {
+      const agentToken = localStorage.getItem("razoconnect_agent_token");
+      if (agentToken) {
+        return { token: agentToken, tipo: "agente" };
+      }
+    }
+    
+    // Contexto de admin
+    if (path.startsWith('/admin')) {
+      const adminToken = localStorage.getItem("razoconnect_admin_token");
+      if (adminToken) {
+        return { token: adminToken, tipo: "admin" };
+      }
+    }
+    
+    // Contexto de cliente o fallback
+    const clienteToken = localStorage.getItem("razoconnect_token");
+    if (clienteToken) {
+      return { token: clienteToken, tipo: "cliente" };
+    }
+    
+    // Fallback: intentar cualquier token disponible
     const adminToken = localStorage.getItem("razoconnect_admin_token");
     if (adminToken) {
       return { token: adminToken, tipo: "admin" };
     }
-
-    // Intentar token de cliente/agente
-    const clienteToken = localStorage.getItem("razoconnect_cliente_token");
-    if (clienteToken) {
-      return { token: clienteToken, tipo: "cliente" };
+    
+    const agentToken = localStorage.getItem("razoconnect_agent_token");
+    if (agentToken) {
+      return { token: agentToken, tipo: "agente" };
     }
 
     return { token: null, tipo: null };

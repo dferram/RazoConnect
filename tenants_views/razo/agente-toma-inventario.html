@@ -912,6 +912,13 @@
         }
 
         try {
+          // DEBUGGING: Verificar qué token se está enviando
+          const agentToken = localStorage.getItem('razoconnect_agent_token');
+          const adminToken = localStorage.getItem('razoconnect_admin_token');
+          console.log('🔍 [DEBUG] Token de agente:', agentToken ? `${agentToken.substring(0, 20)}...` : 'NULL');
+          console.log('🔍 [DEBUG] Token de admin:', adminToken ? `${adminToken.substring(0, 20)}...` : 'NULL');
+          console.log('🔍 [DEBUG] Contexto URL:', window.location.pathname);
+          
           const resp = await apiCall("/agente/auditoria-inventario/registrar-conteo", {
             method: "POST",
             body: JSON.stringify({

@@ -453,7 +453,7 @@ const login = async (req, res) => {
         });
       }
 
-      // Generar token JWT
+      // Generar token JWT con duración de 1 año para sesión persistente
       const token = generateToken({
         userId: agente.agenteid,
         rol: "agente",
@@ -462,7 +462,7 @@ const login = async (req, res) => {
         telefono: agente.telefono || null,
         codigoAgente: agente.codigoagente,
         tenant_id: tenant_id,
-      });
+      }, '365d');
 
       return res.status(200).json({
         success: true,

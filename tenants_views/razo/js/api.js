@@ -233,6 +233,13 @@ const apiCall = async (endpoint, options = {}) => {
   const token = getEffectiveToken();
   const isPublicEndpoint = options.public === true;
 
+  // DEBUGGING: Log token info for agent endpoints
+  if (endpoint.includes('/agente/')) {
+    console.log('🔍 [apiCall] Endpoint:', endpoint);
+    console.log('🔍 [apiCall] Token obtenido:', token ? `${token.substring(0, 20)}...` : 'NULL');
+    console.log('🔍 [apiCall] Contexto:', window.location.pathname);
+  }
+
   const config = {
     headers: {
       "Content-Type": "application/json",
@@ -245,6 +252,13 @@ const apiCall = async (endpoint, options = {}) => {
   // Add authorization header ONLY if token exists and is not null/undefined
   if (token && token !== 'null' && token !== 'undefined') {
     config.headers["Authorization"] = `Bearer ${token}`;
+    
+    // DEBUGGING: Confirm header was set for agent endpoints
+    if (endpoint.includes('/agente/')) {
+      console.log('✅ [apiCall] Header Authorization configurado correctamente');
+    }
+  } else if (endpoint.includes('/agente/')) {
+    console.error('❌ [apiCall] NO SE PUDO OBTENER TOKEN para endpoint de agente!');
   }
 
   try {
