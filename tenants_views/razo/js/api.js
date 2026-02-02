@@ -85,19 +85,34 @@ const saveAuthData = (token, userData) => {
 
 // Utility function to clear auth data
 const clearAuthData = () => {
-  // Verificar si es un agente antes de limpiar tokens de admin
-  const adminData = getAdminData();
-  const isAgent = adminData?.rol === "agente" || adminData?.esAgente === true;
-  
-  // Si es agente, NO limpiar tokens de admin (que usa el agente)
-  if (!isAgent) {
-    localStorage.removeItem(ADMIN_TOKEN_KEY);
-    localStorage.removeItem(ADMIN_DATA_KEY);
-  }
+  // Usar función segura para limpiar tokens de admin (verifica si es agente)
+  window.safeClearAdminTokens();
   
   // Siempre limpiar tokens de cliente
   localStorage.removeItem("razoconnect_token");
   localStorage.removeItem("razoconnect_user");
+};
+
+// GLOBAL: Safe function to clear admin tokens (checks if agent first)
+// Esta función debe usarse en TODOS los lugares que limpien tokens de admin
+window.safeClearAdminTokens = () => {
+  try {
+    const adminDataStr = localStorage.getItem("razoconnect_admin");
+    const adminData = adminDataStr ? JSON.parse(adminDataStr) : null;
+    const isAgent = adminData?.rol === "agente" || adminData?.esAgente === true;
+    
+    if (isAgent) {
+      console.warn("🛡️ safeClearAdminTokens: Usuario es agente - NO se limpiarán tokens");
+      return false; // No limpiado
+    }
+    
+    localStorage.removeItem("razoconnect_admin_token");
+    localStorage.removeItem("razoconnect_admin");
+    return true; // Limpiado exitosamente
+  } catch (error) {
+    console.error("Error en safeClearAdminTokens:", error);
+    return false;
+  }
 };
 
 // Utility function to check if user is logged in

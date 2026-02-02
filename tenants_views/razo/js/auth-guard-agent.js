@@ -126,25 +126,15 @@
 })();
 
 // Helper function to clear auth
-// CRÍTICO: Esta función ahora verifica que realmente deba limpiar
 const clearAgentAuth = () => {
-  // Verificar si es un agente activo antes de limpiar
-  try {
-    const adminData = JSON.parse(localStorage.getItem("razoconnect_admin") || "null");
-    const isAgent = adminData?.rol === "agente" || adminData?.esAgente === true;
-    
-    if (isAgent) {
-      console.warn("🛡️ clearAgentAuth: Protección activada - NO se limpiarán tokens de agente activo");
-      console.warn("Si necesitas cerrar sesión, usa el botón de logout en el header");
-      return; // NO limpiar tokens de agente activo
-    }
-  } catch (error) {
-    console.error("Error verificando rol antes de limpiar:", error);
+  // Usar función global segura que verifica si es agente
+  if (typeof window.safeClearAdminTokens === 'function') {
+    window.safeClearAdminTokens();
+  } else {
+    // Fallback si api.js no está cargado
+    localStorage.removeItem("razoconnect_admin_token");
+    localStorage.removeItem("razoconnect_admin");
   }
-  
-  // Solo limpiar si NO es agente o si hubo error
-  localStorage.removeItem("razoconnect_admin_token");
-  localStorage.removeItem("razoconnect_admin");
 };
 
 // Global function for agent auth check (used by page scripts)

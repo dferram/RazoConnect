@@ -49,8 +49,14 @@ const AuthHandler = {
     if (response.status === 401) {
       console.error('❌ 401 Unauthorized - Token inválido o expirado');
       
-      localStorage.removeItem('razoconnect_admin_token');
-      localStorage.removeItem('razoconnect_admin');
+      // Usar función segura que verifica si es agente antes de limpiar
+      const cleared = window.safeClearAdminTokens ? window.safeClearAdminTokens() : true;
+      
+      // Si no se limpiaron tokens (es agente), no redirigir
+      if (!cleared) {
+        console.warn('⚠️ Error 401 pero usuario es agente - manteniendo sesión');
+        return true;
+      }
       
       await Swal.fire({
         icon: 'warning',
