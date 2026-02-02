@@ -7,10 +7,10 @@
 (function () {
   "use strict";
 
-  const getAgentToken = () => localStorage.getItem("razoconnect_token");
+  const getAgentToken = () => localStorage.getItem("razoconnect_admin_token");
   const getAgentData = () => {
     try {
-      return JSON.parse(localStorage.getItem("razoconnect_user") || "null");
+      return JSON.parse(localStorage.getItem("razoconnect_admin") || "null");
     } catch {
       return null;
     }
@@ -99,7 +99,7 @@
 
       // Actualizar datos del agente en localStorage
       localStorage.setItem(
-        "razoconnect_user",
+        "razoconnect_admin",
         JSON.stringify({
           ...userData,
           rol: "agente",
@@ -112,8 +112,8 @@
 
       // Verificar si es error de tenant mismatch
       if (error.status === 401 && error.data?.code === 'TENANT_MISMATCH') {
-        localStorage.removeItem("razoconnect_token");
-        localStorage.removeItem("razoconnect_user");
+        localStorage.removeItem("razoconnect_admin_token");
+        localStorage.removeItem("razoconnect_admin");
         
         if (typeof Swal !== "undefined" && Swal && typeof Swal.fire === "function") {
           Swal.fire({
@@ -140,8 +140,8 @@
         error.status === 401 ||
         error.status === 403
       ) {
-        localStorage.removeItem("razoconnect_token");
-        localStorage.removeItem("razoconnect_user");
+        localStorage.removeItem("razoconnect_admin_token");
+        localStorage.removeItem("razoconnect_admin");
 
         // Esperar a que api.js se cargue si existe showToast
         setTimeout(() => {
@@ -165,16 +165,16 @@
 
 // Helper function to clear auth
 const clearAgentAuth = () => {
-  localStorage.removeItem("razoconnect_token");
-  localStorage.removeItem("razoconnect_user");
+  localStorage.removeItem("razoconnect_admin_token");
+  localStorage.removeItem("razoconnect_admin");
 };
 
 // Global function for agent auth check (used by page scripts)
 const requireAgentAuth = () => {
-  const agentToken = localStorage.getItem("razoconnect_token");
+  const agentToken = localStorage.getItem("razoconnect_admin_token");
   const agentData = (() => {
     try {
-      return JSON.parse(localStorage.getItem("razoconnect_user") || "null");
+      return JSON.parse(localStorage.getItem("razoconnect_admin") || "null");
     } catch {
       return null;
     }
