@@ -84,18 +84,21 @@ const saveAuthData = (token, userData) => {
 };
 
 // Utility function to clear auth data
+// CRÍTICO: Esta función NUNCA debe limpiar tokens de agente
 const clearAuthData = () => {
   // Verificar si es un agente antes de limpiar
   const adminData = getAdminData();
   const isAgent = adminData?.rol === "agente" || adminData?.esAgente === true;
   
-  // Si es agente, NO limpiar los tokens de admin (que usa el agente)
-  if (!isAgent) {
-    localStorage.removeItem(ADMIN_TOKEN_KEY);
-    localStorage.removeItem(ADMIN_DATA_KEY);
+  // PROTECCIÓN: Si es agente, NO limpiar NINGÚN token
+  if (isAgent) {
+    console.warn("🛡️ Protección de sesión de agente: NO se limpiarán tokens");
+    return; // Salir sin limpiar nada
   }
   
-  // Siempre limpiar tokens de cliente
+  // Solo limpiar si NO es agente
+  localStorage.removeItem(ADMIN_TOKEN_KEY);
+  localStorage.removeItem(ADMIN_DATA_KEY);
   localStorage.removeItem("razoconnect_token");
   localStorage.removeItem("razoconnect_user");
 };
@@ -124,41 +127,72 @@ const requireAuth = () => {
 let sessionExpiredHandled = false;
 
 // Validate token structure on page load
+// CRÍTICO: Validar tokens de cliente Y admin por separado
 const validateTokenStructure = () => {
-  const token = getToken();
-  if (!token) return true; // No token is valid state
+  let clientTokenValid = true;
+  let adminTokenValid = true;
   
-  try {
-    // Decode JWT payload (without verification - just structure check)
-    const parts = token.split('.');
-    if (parts.length !== 3) {
-      console.warn('⚠️  Token malformado detectado (partes incorrectas). Limpiando...');
-      clearAuthData();
-      return false;
+  // Validar token de cliente
+  const clientToken = getToken();
+  if (clientToken) {
+    try {
+      const parts = clientToken.split('.');
+      if (parts.length !== 3) {
+        console.warn('⚠️ Token de cliente malformado. Limpiando solo token de cliente...');
+        localStorage.removeItem("razoconnect_token");
+        localStorage.removeItem("razoconnect_user");
+        clientTokenValid = false;
+      } else {
+        const payload = JSON.parse(atob(parts[1]));
+        
+        if (payload.rol === 'cliente' && !payload.tenant_id) {
+          console.warn('⚠️ Token de cliente sin tenant_id. Limpiando solo token de cliente...');
+          localStorage.removeItem("razoconnect_token");
+          localStorage.removeItem("razoconnect_user");
+          clientTokenValid = false;
+        }
+        
+        if (payload.exp && payload.exp * 1000 < Date.now()) {
+          console.warn('⚠️ Token de cliente expirado. Limpiando solo token de cliente...');
+          localStorage.removeItem("razoconnect_token");
+          localStorage.removeItem("razoconnect_user");
+          clientTokenValid = false;
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error validando token de cliente:', error);
+      localStorage.removeItem("razoconnect_token");
+      localStorage.removeItem("razoconnect_user");
+      clientTokenValid = false;
     }
-    
-    const payload = JSON.parse(atob(parts[1]));
-    
-    // Check for required fields based on role
-    if (payload.rol === 'cliente' && !payload.tenant_id) {
-      console.warn('⚠️  Token de cliente sin tenant_id detectado. Limpiando...');
-      clearAuthData();
-      return false;
-    }
-    
-    // Check token expiration
-    if (payload.exp && payload.exp * 1000 < Date.now()) {
-      console.warn('⚠️  Token expirado detectado. Limpiando...');
-      clearAuthData();
-      return false;
-    }
-    
-    return true;
-  } catch (error) {
-    console.error('❌ Error validando estructura del token:', error);
-    clearAuthData();
-    return false;
   }
+  
+  // Validar token de admin/agente
+  const adminToken = getAdminToken();
+  if (adminToken) {
+    try {
+      const parts = adminToken.split('.');
+      if (parts.length !== 3) {
+        console.warn('⚠️ Token de admin/agente malformado.');
+        // NO limpiar automáticamente - dejar que auth guard lo maneje
+        adminTokenValid = false;
+      } else {
+        const payload = JSON.parse(atob(parts[1]));
+        
+        if (payload.exp && payload.exp * 1000 < Date.now()) {
+          console.warn('⚠️ Token de admin/agente expirado.');
+          // NO limpiar automáticamente - dejar que auth guard lo maneje
+          adminTokenValid = false;
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error validando token de admin/agente:', error);
+      // NO limpiar automáticamente - dejar que auth guard lo maneje
+      adminTokenValid = false;
+    }
+  }
+  
+  return clientTokenValid && adminTokenValid;
 };
 
 // Run validation on script load
@@ -235,8 +269,16 @@ const apiCall = async (endpoint, options = {}) => {
 
     // Manejo centralizado de sesión expirada (401) - solo si no es endpoint público Y había un token
     if (response.status === 401 && !isPublicEndpoint && token) {
-      // Solo mostrar modal de sesión expirada si el usuario tenía un token que expiró
-      clearAuthData();
+      // CRÍTICO: Verificar si es agente antes de limpiar
+      const adminData = getAdminData();
+      const isAgent = adminData?.rol === "agente" || adminData?.esAgente === true;
+      
+      if (!isAgent) {
+        // Solo limpiar si NO es agente
+        clearAuthData();
+      } else {
+        console.warn("🛡️ Error 401 para agente - NO se limpiará sesión (dejar que auth guard lo maneje)");
+      }
 
       if (!sessionExpiredHandled) {
         sessionExpiredHandled = true;
@@ -437,7 +479,16 @@ const API = {
 
       // Manejo de sesión expirada sin limpiar auth si la respuesta es exitosa
       if (response.status === 401) {
-        clearAuthData();
+        // CRÍTICO: Verificar si es agente antes de limpiar
+        const adminData = getAdminData();
+        const isAgent = adminData?.rol === "agente" || adminData?.esAgente === true;
+        
+        if (!isAgent) {
+          clearAuthData();
+        } else {
+          console.warn("🛡️ Error 401 para agente - NO se limpiará sesión (dejar que auth guard lo maneje)");
+        }
+        
         if (!sessionExpiredHandled) {
           sessionExpiredHandled = true;
           if (typeof Swal !== "undefined" && Swal && typeof Swal.fire === "function") {
@@ -628,7 +679,15 @@ const fetchWithAuth = async (url, options = {}) => {
 
     // Handle 401 Unauthorized (expired token) - logout and redirect
     if (response.status === 401) {
-      clearAuthData();
+      // CRÍTICO: Verificar si es agente antes de limpiar
+      const adminData = getAdminData();
+      const isAgent = adminData?.rol === "agente" || adminData?.esAgente === true;
+      
+      if (!isAgent) {
+        clearAuthData();
+      } else {
+        console.warn("🛡️ Error 401 para agente - NO se limpiará sesión (dejar que auth guard lo maneje)");
+      }
       
       if (!sessionExpiredHandled) {
         sessionExpiredHandled = true;
