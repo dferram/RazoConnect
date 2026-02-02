@@ -2334,6 +2334,7 @@ const buscarProductosCompra = async (req, res) => {
           : Number.parseInt(row.cantidad_empaque, 10) || 1,
         nombre_completo: partes.join(" "),
         medidas: medidaLabel || null,
+        color: color || null,
         costounitario: row.costounitario ? Number.parseFloat(row.costounitario) : 0,
         url_imagen_variante: row.url_imagen_variante || null,
         url_imagen_producto: row.url_imagen_producto || null,
