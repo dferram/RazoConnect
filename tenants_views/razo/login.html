@@ -444,13 +444,13 @@
                 };
 
                 if (rol === "agente") {
-                  // AGENTE: Guardar como admin token para el panel de agente
+                  // AGENTE: Guardar en token separado (razoconnect_agent_token)
                   localStorage.setItem(
-                    "razoconnect_admin_token",
+                    "razoconnect_agent_token",
                     clientData.data.token
                   );
                   localStorage.setItem(
-                    "razoconnect_admin",
+                    "razoconnect_agent",
                     JSON.stringify({
                       ...usuario,
                       rol: "agente",
@@ -460,7 +460,7 @@
 
                   showToast("¡Bienvenido Agente!", "success");
                   setTimeout(() => {
-                    sessionStorage.setItem("_navigating", "true");
+                    // MISIÓN 4: NO usar sessionStorage - solo localStorage
                     window.location.href = "/agente-dashboard.html";
                   }, 500);
                 } else {

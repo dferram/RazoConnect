@@ -44,7 +44,7 @@
 
   async function loadCxCData() {
     try {
-      const token = localStorage.getItem("razoconnect_admin_token");
+      const token = localStorage.getItem("razoconnect_agent_token");
       if (!token) {
         console.warn("No se encontró token de autenticación. Redirigiendo a login...");
         window.location.href = "/login.html";

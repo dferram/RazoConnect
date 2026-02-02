@@ -47,7 +47,7 @@
   }
 
   function getAgenteInfo() {
-    const raw = localStorage.getItem("razoconnect_admin");
+    const raw = localStorage.getItem("razoconnect_agent");
     if (!raw) return null;
     try {
       const data = JSON.parse(raw);
@@ -175,10 +175,10 @@
         e.preventDefault();
 
         try {
-          // Logout explícito - sí limpiar tokens
-          localStorage.removeItem("razoconnect_admin_token");
-          localStorage.removeItem("razoconnect_admin");
-          sessionStorage.clear();
+          // Logout explícito - limpiar tokens de agente
+          localStorage.removeItem("razoconnect_agent_token");
+          localStorage.removeItem("razoconnect_agent");
+          // MISIÓN 4: NO usar sessionStorage
         } catch (error) {
           console.error("Error limpiando sesión de agente:", error);
         }

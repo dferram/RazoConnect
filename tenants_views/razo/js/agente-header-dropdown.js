@@ -81,10 +81,10 @@
    */
   function handleLogout() {
     try {
-      // Logout explícito - sí limpiar tokens
-      localStorage.removeItem("razoconnect_admin_token");
-      localStorage.removeItem("razoconnect_admin");
-      sessionStorage.clear();
+      // Logout explícito - limpiar tokens de agente
+      localStorage.removeItem("razoconnect_agent_token");
+      localStorage.removeItem("razoconnect_agent");
+      // MISIÓN 4: NO usar sessionStorage
     } catch (error) {
       console.error("Error limpiando sesión de agente:", error);
     }

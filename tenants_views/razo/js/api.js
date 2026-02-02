@@ -3,6 +3,8 @@ const API_BASE_URL = `${window.location.origin}/api`;
 
 const ADMIN_TOKEN_KEY = "razoconnect_admin_token";
 const ADMIN_DATA_KEY = "razoconnect_admin";
+const AGENT_TOKEN_KEY = "razoconnect_agent_token";
+const AGENT_DATA_KEY = "razoconnect_agent";
 
 // Utility function to get JWT token from localStorage
 const getToken = () => {
@@ -11,6 +13,21 @@ const getToken = () => {
 
 const getAdminToken = () => {
   return localStorage.getItem(ADMIN_TOKEN_KEY);
+};
+
+const getAgentToken = () => {
+  return localStorage.getItem(AGENT_TOKEN_KEY);
+};
+
+const getAgentData = () => {
+  const raw = localStorage.getItem(AGENT_DATA_KEY);
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw);
+  } catch (error) {
+    console.warn("No se pudo parsear razoconnect_agent:", error);
+    return null;
+  }
 };
 
 const getAdminData = () => {
@@ -52,23 +69,30 @@ const adminHasAgentRole = () => {
 };
 
 const getEffectiveToken = () => {
-  const clientToken = getToken(); // razoconnect_token (usado por clientes)
-  const adminToken = getAdminToken(); // razoconnect_admin_token (usado por admins Y agentes)
-
-  const sidebarType = (document.body?.dataset?.sidebar || "").toString().toLowerCase();
   const path = (window.location?.pathname || "").toString().toLowerCase();
+  const sidebarType = (document.body?.dataset?.sidebar || "").toString().toLowerCase();
 
-  const isAdminContext = sidebarType === "admin" || path.startsWith("/admin");
-  const isAgentContext = sidebarType === "agent" || path.startsWith("/agente");
-  const isStaffContext = isAdminContext || isAgentContext || path.startsWith("/staff");
-
-  // En contexto ADMIN o AGENTE, usar token admin (ambos usan razoconnect_admin_token)
-  if (isStaffContext) {
-    return adminToken || clientToken || null;
+  // CRÍTICO: Detectar contexto de agente PRIMERO
+  const isAgentContext = path.includes('/agente') || sidebarType === "agent";
+  if (isAgentContext) {
+    const agentToken = getAgentToken();
+    if (agentToken) {
+      return agentToken; // Token separado para agente
+    }
   }
 
-  // En contexto cliente, preferir token cliente
-  return clientToken || adminToken || null;
+  // Contexto de admin
+  const isAdminContext = path.startsWith("/admin") || sidebarType === "admin";
+  if (isAdminContext) {
+    const adminToken = getAdminToken();
+    if (adminToken) {
+      return adminToken;
+    }
+  }
+
+  // Contexto de cliente o fallback
+  const clientToken = getToken();
+  return clientToken || getAdminToken() || getAgentToken() || null;
 };
 
 // Utility function to get user data from localStorage
@@ -85,35 +109,56 @@ const saveAuthData = (token, userData) => {
 
 // Utility function to clear auth data
 const clearAuthData = () => {
-  // Usar función segura para limpiar tokens de admin (verifica si es agente)
-  window.safeClearAdminTokens();
+  // Detectar contexto para limpiar tokens apropiados
+  const path = (window.location?.pathname || "").toLowerCase();
   
-  // Siempre limpiar tokens de cliente
-  localStorage.removeItem("razoconnect_token");
-  localStorage.removeItem("razoconnect_user");
+  if (path.includes('/agente')) {
+    // Contexto de agente - solo limpiar tokens de agente
+    localStorage.removeItem(AGENT_TOKEN_KEY);
+    localStorage.removeItem(AGENT_DATA_KEY);
+  } else if (path.startsWith('/admin')) {
+    // Contexto de admin - solo limpiar tokens de admin
+    localStorage.removeItem(ADMIN_TOKEN_KEY);
+    localStorage.removeItem(ADMIN_DATA_KEY);
+  } else {
+    // Contexto de cliente - limpiar tokens de cliente
+    localStorage.removeItem("razoconnect_token");
+    localStorage.removeItem("razoconnect_user");
+  }
 };
 
-// GLOBAL: Safe function to clear admin tokens (checks if agent first)
-// Esta función debe usarse en TODOS los lugares que limpien tokens de admin
-window.safeClearAdminTokens = () => {
+// GLOBAL: Safe function to clear tokens based on context
+window.safeClearTokens = () => {
   try {
-    const adminDataStr = localStorage.getItem("razoconnect_admin");
-    const adminData = adminDataStr ? JSON.parse(adminDataStr) : null;
-    const isAgent = adminData?.rol === "agente" || adminData?.esAgente === true;
+    const path = (window.location?.pathname || "").toLowerCase();
     
-    if (isAgent) {
-      console.warn("🛡️ safeClearAdminTokens: Usuario es agente - NO se limpiarán tokens");
-      return false; // No limpiado
+    if (path.includes('/agente')) {
+      // Contexto de agente - limpiar solo tokens de agente
+      localStorage.removeItem(AGENT_TOKEN_KEY);
+      localStorage.removeItem(AGENT_DATA_KEY);
+      console.log("🔐 Tokens de agente limpiados");
+      return true;
+    } else if (path.startsWith('/admin')) {
+      // Contexto de admin - limpiar solo tokens de admin
+      localStorage.removeItem(ADMIN_TOKEN_KEY);
+      localStorage.removeItem(ADMIN_DATA_KEY);
+      console.log("� Tokens de admin limpiados");
+      return true;
+    } else {
+      // Contexto de cliente
+      localStorage.removeItem("razoconnect_token");
+      localStorage.removeItem("razoconnect_user");
+      console.log("🔐 Tokens de cliente limpiados");
+      return true;
     }
-    
-    localStorage.removeItem("razoconnect_admin_token");
-    localStorage.removeItem("razoconnect_admin");
-    return true; // Limpiado exitosamente
   } catch (error) {
-    console.error("Error en safeClearAdminTokens:", error);
+    console.error("Error en safeClearTokens:", error);
     return false;
   }
 };
+
+// Backward compatibility
+window.safeClearAdminTokens = window.safeClearTokens;
 
 // Utility function to check if user is logged in
 const isAuthenticated = () => {
@@ -250,16 +295,24 @@ const apiCall = async (endpoint, options = {}) => {
 
     // Manejo centralizado de sesión expirada (401) - solo si no es endpoint público Y había un token
     if (response.status === 401 && !isPublicEndpoint && token) {
-      // CRÍTICO: Verificar si es agente antes de limpiar
-      const adminData = getAdminData();
-      const isAgent = adminData?.rol === "agente" || adminData?.esAgente === true;
+      const path = (window.location?.pathname || "").toLowerCase();
       
-      if (!isAgent) {
-        // Solo limpiar si NO es agente
-        clearAuthData();
-      } else {
-        console.warn("🛡️ Error 401 para agente - NO se limpiará sesión (dejar que auth guard lo maneje)");
+      // CRÍTICO: En contexto de agente, NO limpiar tokens ni redirigir
+      if (path.includes('/agente')) {
+        console.warn('⚠️ Error 401 en contexto de agente - Bloqueando limpieza de sesión');
+        console.warn('El agente puede seguir trabajando. Auth guard manejará validación real.');
+        
+        // Retornar error sin limpiar sesión ni redirigir
+        return {
+          ok: false,
+          status: 401,
+          data,
+          error: 'Error de autenticación temporal'
+        };
       }
+      
+      // Para admin/cliente: comportamiento normal
+      clearAuthData();
 
       if (!sessionExpiredHandled) {
         sessionExpiredHandled = true;
