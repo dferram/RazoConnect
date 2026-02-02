@@ -85,10 +85,19 @@ const saveAuthData = (token, userData) => {
 
 // Utility function to clear auth data
 const clearAuthData = () => {
+  // Verificar si es un agente antes de limpiar
+  const adminData = getAdminData();
+  const isAgent = adminData?.rol === "agente" || adminData?.esAgente === true;
+  
+  // Si es agente, NO limpiar los tokens de admin (que usa el agente)
+  if (!isAgent) {
+    localStorage.removeItem(ADMIN_TOKEN_KEY);
+    localStorage.removeItem(ADMIN_DATA_KEY);
+  }
+  
+  // Siempre limpiar tokens de cliente
   localStorage.removeItem("razoconnect_token");
   localStorage.removeItem("razoconnect_user");
-  localStorage.removeItem(ADMIN_TOKEN_KEY);
-  localStorage.removeItem(ADMIN_DATA_KEY);
 };
 
 // Utility function to check if user is logged in
@@ -164,13 +173,6 @@ const apiCall = async (endpoint, options = {}) => {
   const token = getEffectiveToken();
   const isPublicEndpoint = options.public === true;
 
-  // DIAGNÓSTICO: Log del token
-  console.log(`🔍 [API DEBUG] Endpoint: ${endpoint}`);
-  console.log(`   Token obtenido:`, token ? `${token.substring(0, 20)}...` : 'null');
-  console.log(`   Token length:`, token ? token.length : 0);
-  console.log(`   Sidebar type:`, document.body?.dataset?.sidebar);
-  console.log(`   Path:`, window.location?.pathname);
-
   const config = {
     headers: {
       "Content-Type": "application/json",
@@ -183,9 +185,6 @@ const apiCall = async (endpoint, options = {}) => {
   // Add authorization header ONLY if token exists and is not null/undefined
   if (token && token !== 'null' && token !== 'undefined') {
     config.headers["Authorization"] = `Bearer ${token}`;
-    console.log(`   ✅ Authorization header agregado`);
-  } else {
-    console.warn(`   ⚠️ NO se agregó Authorization header - token inválido`);
   }
 
   try {

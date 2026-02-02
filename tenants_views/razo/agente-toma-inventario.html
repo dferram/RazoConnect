@@ -129,7 +129,16 @@
 
               <!-- Tablero (Agent's audit dashboard) -->
               <div id="tablero" role="tabpanel" class="d-none">
-                <div style="margin-bottom: 1rem;">
+                <div style="margin-bottom: 1rem; display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+                  <div style="flex: 1; min-width: 250px;">
+                    <input
+                      type="text"
+                      id="tableroSearchInput"
+                      class="form-control"
+                      placeholder="🔍 Buscar producto por nombre..."
+                      style="border-radius: 0.5rem; border: 1px solid #ddd; padding: 0.6rem 1rem;"
+                    />
+                  </div>
                   <button
                     type="button"
                     id="btnRefrescarResultados"
@@ -1025,6 +1034,9 @@
           if (emptyResultados) emptyResultados.style.display = 'none';
           if (resultadosTable) resultadosTable.style.display = 'table';
 
+          // Guardar filas en state para filtrado
+          state.tableroFilas = filas;
+
           if (resultadosTbody) {
             resultadosTbody.innerHTML = "";
 
@@ -1147,6 +1159,106 @@
           console.error(error);
         }
       };
+
+      // Función para filtrar la tabla del Tablero
+      const filterTablero = () => {
+        const searchTerm = (document.getElementById('tableroSearchInput')?.value || '').toLowerCase().trim();
+        const tbody = document.getElementById('resultadosTbody');
+        
+        if (!tbody || !state.tableroFilas) return;
+
+        tbody.innerHTML = "";
+
+        const filasFiltradas = state.tableroFilas.filter(f => {
+          const nombreProducto = (f.nombreProducto || '').toLowerCase();
+          return nombreProducto.includes(searchTerm);
+        });
+
+        if (filasFiltradas.length === 0) {
+          const tr = document.createElement("tr");
+          const td = document.createElement("td");
+          td.colSpan = 5;
+          td.textContent = "No se encontraron productos con ese nombre";
+          td.style.textAlign = "center";
+          td.style.padding = "2rem";
+          td.style.color = "#6b7280";
+          tr.appendChild(td);
+          tbody.appendChild(tr);
+          return;
+        }
+
+        for (const f of filasFiltradas) {
+          const tr = document.createElement("tr");
+
+          // Color coding basado en estatus
+          if (f.estatusFila === "VALIDADO") {
+            tr.style.background = "rgba(34, 197, 94, 0.10)";
+          } else if (f.estatusFila === "CONFLICTO") {
+            tr.style.background = "rgba(239, 68, 68, 0.10)";
+          } else {
+            tr.style.background = "rgba(245, 158, 11, 0.10)";
+          }
+
+          const tdSku = document.createElement("td");
+          tdSku.textContent = safeText(f.sku);
+
+          const tdProd = document.createElement("td");
+          const productLink = document.createElement("a");
+          productLink.href = "#";
+          productLink.textContent = safeText(f.nombreProducto);
+          productLink.style.textDecoration = "underline";
+          productLink.style.color = "var(--razo-orange)";
+          productLink.style.fontWeight = "600";
+          productLink.style.cursor = "pointer";
+          productLink.addEventListener("click", (e) => {
+            e.preventDefault();
+            cambiarVistaInventario('operador');
+            if (searchInput) {
+              searchInput.value = safeText(f.nombreProducto);
+              applyFilters();
+              searchInput.focus();
+            }
+          });
+          tdProd.appendChild(productLink);
+
+          const tdMedida = document.createElement("td");
+          let medidaText = "-";
+          if (f.medidas) {
+            medidaText = safeText(f.medidas);
+          } else if (f.dimension) {
+            medidaText = safeText(f.dimension);
+          } else if (f.varianteId && state.varianteById.has(f.varianteId)) {
+            const variante = state.varianteById.get(f.varianteId);
+            medidaText = variante.medidas || variante.dimension || "-";
+          }
+          tdMedida.textContent = medidaText;
+          tdMedida.style.fontWeight = "600";
+
+          const tdColor = document.createElement("td");
+          let colorText = "-";
+          if (f.color) {
+            colorText = safeText(f.color);
+          } else if (f.varianteId && state.varianteById.has(f.varianteId)) {
+            const variante = state.varianteById.get(f.varianteId);
+            colorText = variante.color || "-";
+          }
+          tdColor.textContent = colorText;
+          tdColor.style.fontWeight = "600";
+
+          const tdEstatus = document.createElement("td");
+          tdEstatus.textContent = safeText(f.estatusFila);
+
+          tr.appendChild(tdSku);
+          tr.appendChild(tdProd);
+          tr.appendChild(tdMedida);
+          tr.appendChild(tdColor);
+          tr.appendChild(tdEstatus);
+          tbody.appendChild(tr);
+        }
+      };
+
+      // Event listener para el buscador del Tablero
+      document.getElementById('tableroSearchInput')?.addEventListener('input', filterTablero);
 
       sesionSelect.addEventListener("change", () => {
         const id = Number.parseInt(sesionSelect.value, 10);

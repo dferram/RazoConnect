@@ -23,10 +23,6 @@ const authenticate = async (req, res, next) => {
     // Obtener el token del header
     const authHeader = req.headers.authorization;
 
-    console.log(`🔍 [AUTH DEBUG] Path: ${req.path}`);
-    console.log(`   Authorization header presente:`, !!authHeader);
-    console.log(`   Authorization header:`, authHeader ? authHeader.substring(0, 50) + '...' : 'null');
-
     if (!authHeader) {
       console.warn(`⚠️  [AUTH] Token no proporcionado - Path: ${req.path}`);
       return res.status(401).json({

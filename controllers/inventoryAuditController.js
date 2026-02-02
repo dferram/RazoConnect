@@ -336,17 +336,7 @@ const registrarConteo = async (req, res) => {
       ? Number.parseInt(usuarioIdReq, 10)
       : null;
 
-    console.log(`🔍 [DEBUG registrarConteo] req.user:`, {
-      userId: req.user?.userId,
-      id: req.user?.id,
-      userid: req.user?.userid,
-      rol: req.user?.rol,
-      roles: req.user?.roles,
-      usuarioIdFinal: usuarioId
-    });
-
     if (!usuarioId) {
-      console.error(`❌ [ERROR] No se pudo extraer usuarioId de req.user:`, req.user);
       return res.status(401).json({
         success: false,
         message: "Usuario no autenticado",
