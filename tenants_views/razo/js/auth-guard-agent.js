@@ -108,18 +108,48 @@
       );
     })
     .catch((error) => {
-      console.error("❌ Agent authentication failed:", error);
+      console.error("⚠️ Agent authentication check failed:", error);
+      console.error("Error details:", error.message);
 
-      // Verificar si es error de tenant mismatch
-      if (error.status === 401 && error.data?.code === 'TENANT_MISMATCH') {
-        localStorage.removeItem("razoconnect_admin_token");
-        localStorage.removeItem("razoconnect_admin");
+      // Check if it's a network error (no response from server)
+      const isNetworkError = 
+        error.message?.includes("Failed to fetch") ||
+        error.message?.includes("NetworkError") ||
+        error.message?.includes("ECONNREFUSED") ||
+        error.message?.includes("EAI_AGAIN") ||
+        error.message?.includes("fetch failed") ||
+        !error.status; // No status means network issue
+
+      // Only redirect to login on explicit auth failures (401, 403)
+      const isAuthFailure = error.status === 401 || error.status === 403;
+
+      if (isNetworkError) {
+        // Network error - don't redirect, just warn
+        console.warn("🌐 Error de conexión con el servidor. La sesión se mantendrá.");
         
         if (typeof Swal !== "undefined" && Swal && typeof Swal.fire === "function") {
           Swal.fire({
+            icon: "error",
+            title: "Error de Conexión",
+            text: "No se pudo conectar con el servidor. Por favor, verifica tu conexión a internet e intenta recargar la página.",
+            confirmButtonText: "Entendido",
+            confirmButtonColor: "#F97316",
+            allowOutsideClick: true,
+          });
+        }
+        return; // Don't redirect, don't clear tokens
+      }
+
+      if (isAuthFailure) {
+        // Explicit auth failure - clean tokens and redirect
+        localStorage.removeItem("razoconnect_admin_token");
+        localStorage.removeItem("razoconnect_admin");
+
+        if (typeof Swal !== "undefined" && Swal && typeof Swal.fire === "function") {
+          Swal.fire({
             icon: "warning",
-            title: "Sesión de Otro Sitio",
-            text: "Tu sesión pertenece a otro sitio. Por favor inicia sesión nuevamente en este sitio.",
+            title: "Sesión Expirada",
+            text: "Tu sesión ha expirado o es inválida. Por favor, inicia sesión nuevamente.",
             confirmButtonText: "Ir al Login",
             confirmButtonColor: "#F97316",
             allowOutsideClick: false,
@@ -127,38 +157,12 @@
             window.location.replace("/login.html");
           });
         } else {
+          console.warn("Sesión de agente expirada o inválida. Redirigiendo a login...");
           window.location.replace("/login.html");
         }
-        return;
-      }
-
-      // Solo redirigir si es un error de autenticación real, no de red
-      if (
-        error.message?.includes("403") ||
-        error.message?.includes("401") ||
-        error.message?.includes("Invalid token") ||
-        error.status === 401 ||
-        error.status === 403
-      ) {
-        localStorage.removeItem("razoconnect_admin_token");
-        localStorage.removeItem("razoconnect_admin");
-
-        // Esperar a que api.js se cargue si existe showToast
-        setTimeout(() => {
-          if (typeof showToast === "function") {
-            showToast(
-              "Tu sesión ha expirado. Por favor, inicia sesión nuevamente.",
-              "warning"
-            );
-          }
-        }, 100);
-
-        setTimeout(() => {
-          window.location.replace("/login.html");
-        }, 1500);
       } else {
-        console.warn("⚠️ Error de red o temporal, manteniendo sesión");
-        // No redirigir si es error de red temporal
+        // Other server errors (500, etc.) - don't redirect, don't clear tokens
+        console.warn("⚠️ Error del servidor. La sesión se mantendrá.");
       }
     });
 })();
