@@ -330,12 +330,23 @@ const registrarConteo = async (req, res) => {
     }
 
     const usuarioIdBody = req.body?.usuarioId;
-    const usuarioIdReq = req.user?.id;
+    // Intentar obtener userId de múltiples campos posibles
+    const usuarioIdReq = req.user?.userId ?? req.user?.id ?? req.user?.userid;
     const usuarioId = Number.isInteger(Number.parseInt(usuarioIdReq, 10))
       ? Number.parseInt(usuarioIdReq, 10)
       : null;
 
+    console.log(`🔍 [DEBUG registrarConteo] req.user:`, {
+      userId: req.user?.userId,
+      id: req.user?.id,
+      userid: req.user?.userid,
+      rol: req.user?.rol,
+      roles: req.user?.roles,
+      usuarioIdFinal: usuarioId
+    });
+
     if (!usuarioId) {
+      console.error(`❌ [ERROR] No se pudo extraer usuarioId de req.user:`, req.user);
       return res.status(401).json({
         success: false,
         message: "Usuario no autenticado",

@@ -903,23 +903,6 @@
         }
 
         try {
-          // DIAGNÓSTICO: Verificar token antes de la llamada
-          const tokenCheck = localStorage.getItem("razoconnect_admin_token");
-          const dataCheck = localStorage.getItem("razoconnect_admin");
-          console.log("🔍 [DEBUG] Token check antes de registrar conteo:");
-          console.log("   Token existe:", !!tokenCheck);
-          console.log("   Token length:", tokenCheck ? tokenCheck.length : 0);
-          console.log("   Data existe:", !!dataCheck);
-          if (dataCheck) {
-            try {
-              const parsed = JSON.parse(dataCheck);
-              console.log("   Rol en data:", parsed.rol);
-              console.log("   Es agente:", parsed.esAgente);
-            } catch (e) {
-              console.error("   Error parseando data:", e);
-            }
-          }
-
           const resp = await apiCall("/agente/auditoria-inventario/registrar-conteo", {
             method: "POST",
             body: JSON.stringify({
