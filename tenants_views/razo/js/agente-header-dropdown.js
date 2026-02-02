@@ -81,6 +81,7 @@
    */
   function handleLogout() {
     try {
+      // Logout explícito - sí limpiar tokens
       localStorage.removeItem("razoconnect_admin_token");
       localStorage.removeItem("razoconnect_admin");
       sessionStorage.clear();

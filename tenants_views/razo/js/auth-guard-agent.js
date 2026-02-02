@@ -111,25 +111,13 @@
       }
 
       if (isAuthFailure) {
-        // Explicit auth failure - clean tokens and redirect
-        localStorage.removeItem("razoconnect_admin_token");
-        localStorage.removeItem("razoconnect_admin");
-
-        if (typeof Swal !== "undefined" && Swal && typeof Swal.fire === "function") {
-          Swal.fire({
-            icon: "warning",
-            title: "Sesión Expirada",
-            text: "Tu sesión ha expirado o es inválida. Por favor, inicia sesión nuevamente.",
-            confirmButtonText: "Ir al Login",
-            confirmButtonColor: "#F97316",
-            allowOutsideClick: false,
-          }).then(() => {
-            window.location.replace("/login.html");
-          });
-        } else {
-          console.warn("Sesión de agente expirada o inválida. Redirigiendo a login...");
-          window.location.replace("/login.html");
-        }
+        // CRÍTICO: NO limpiar tokens aquí - dejar que api.js lo maneje con protección de agente
+        // Solo mostrar advertencia y permitir que el usuario continúe
+        console.warn("⚠️ Error de autenticación detectado, pero manteniendo sesión de agente.");
+        console.warn("Si el token está realmente expirado, api.js lo manejará correctamente.");
+        
+        // NO redirigir, NO limpiar tokens - la sesión se mantiene
+        // El usuario puede seguir trabajando y api.js manejará errores futuros
       } else {
         // Other server errors (500, etc.) - don't redirect
         console.warn("⚠️ Error del servidor. La sesión se mantendrá.");
@@ -138,7 +126,23 @@
 })();
 
 // Helper function to clear auth
+// CRÍTICO: Esta función ahora verifica que realmente deba limpiar
 const clearAgentAuth = () => {
+  // Verificar si es un agente activo antes de limpiar
+  try {
+    const adminData = JSON.parse(localStorage.getItem("razoconnect_admin") || "null");
+    const isAgent = adminData?.rol === "agente" || adminData?.esAgente === true;
+    
+    if (isAgent) {
+      console.warn("🛡️ clearAgentAuth: Protección activada - NO se limpiarán tokens de agente activo");
+      console.warn("Si necesitas cerrar sesión, usa el botón de logout en el header");
+      return; // NO limpiar tokens de agente activo
+    }
+  } catch (error) {
+    console.error("Error verificando rol antes de limpiar:", error);
+  }
+  
+  // Solo limpiar si NO es agente o si hubo error
   localStorage.removeItem("razoconnect_admin_token");
   localStorage.removeItem("razoconnect_admin");
 };

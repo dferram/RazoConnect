@@ -175,12 +175,9 @@
         e.preventDefault();
 
         try {
-          if (typeof clearAgentAuth === "function") {
-            clearAgentAuth();
-          } else {
-            localStorage.removeItem("razoconnect_admin_token");
-            localStorage.removeItem("razoconnect_admin");
-          }
+          // Logout explícito - sí limpiar tokens
+          localStorage.removeItem("razoconnect_admin_token");
+          localStorage.removeItem("razoconnect_admin");
           sessionStorage.clear();
         } catch (error) {
           console.error("Error limpiando sesión de agente:", error);

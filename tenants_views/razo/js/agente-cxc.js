@@ -63,25 +63,9 @@
 
       if (!response.ok) {
         if (response.status === 401) {
-          console.warn("Sesión expirada. Redirigiendo a login...");
-          localStorage.removeItem("razoconnect_admin_token");
-          localStorage.removeItem("razoconnect_admin");
-          
-          if (typeof Swal !== "undefined" && Swal && typeof Swal.fire === "function") {
-            Swal.fire({
-              icon: "warning",
-              title: "Sesión Expirada",
-              text: "Tu sesión ha expirado. Por favor, inicia sesión nuevamente.",
-              confirmButtonText: "Ir al Login",
-              confirmButtonColor: "#F97316",
-              allowOutsideClick: false,
-            }).then(() => {
-              window.location.href = "/login.html";
-            });
-          } else {
-            window.location.href = "/login.html";
-          }
-          return;
+          // CRÍTICO: NO limpiar tokens ni redirigir - api.js maneja esto con protección de agente
+          console.warn("⚠️ Error 401 detectado - manteniendo sesión de agente");
+          throw new Error("Error de autenticación - intenta recargar la página");
         }
         
         if (response.status === 403) {
