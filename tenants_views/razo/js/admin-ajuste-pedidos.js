@@ -281,30 +281,36 @@ function mostrarResultadosBusqueda(productos) {
         const badgeIcon = stockDisponible ? '✓' : '⚠';
         const badgeText = stockDisponible ? 'En Stock' : 'Bajo Pedido';
 
+        const imagenUrl = variante.imagenUrl;
+        const imagenHtml = imagenUrl 
+          ? `<img src="${imagenUrl}" alt="${producto.nombreProducto}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 0.5rem;" onerror="this.onerror=null; this.parentElement.innerHTML='📦';">`
+          : '📦';
+
         return `
           <div class="search-result-item">
-            <div class="search-result-image">
-              📦
-            </div>
             <div class="search-result-info">
               <div class="search-result-title">${producto.nombreProducto}</div>
               <div class="search-result-meta">
                 <span><strong>SKU:</strong> ${variante.sku}</span>
                 <span>•</span>
                 <span>${variante.dimensiones}</span>
+                ${variante.colorNombre ? `<span>•</span><span>${variante.colorNombre}</span>` : ''}
                 <span>•</span>
-                <span>${tamano.etiqueta}</span>
+                <span>${tamano.cantidad} piezas</span>
               </div>
               <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem;">
                 <span class="search-result-badge ${badgeClass}">${badgeIcon} ${badgeText}</span>
                 <span style="font-size: 0.875rem; color: var(--razo-gray-warm);">${variante.stock} piezas disponibles</span>
               </div>
             </div>
+            <div class="search-result-image">
+              ${imagenHtml}
+            </div>
             <div class="search-result-action">
               <button 
                 class="btn ${yaEnListaAgregar ? 'btn-secondary' : 'btn-success'}" 
                 style="padding: 0.5rem 1.25rem; font-size: 0.875rem; white-space: nowrap; min-width: 120px;"
-                onclick="agregarOIncrementarProducto(${variante.varianteId}, ${tamano.tamanoId}, '${variante.sku}', '${producto.nombreProducto.replace(/'/g, "\\'")}', '${tamano.etiqueta}', ${variante.stock}, ${variante.precioUnitario || 0}, ${variante.piezasPorPaquete || 1})"
+                onclick="agregarOIncrementarProducto(${variante.varianteId}, ${tamano.tamanoId}, '${variante.sku}', '${producto.nombreProducto.replace(/'/g, "\\'")}', '${tamano.cantidad} piezas', ${variante.stock}, ${variante.precioUnitario || 0}, ${variante.piezasPorPaquete || 1})"
                 ${yaEnListaAgregar ? 'disabled' : ''}>
                 ${yaEnListaAgregar ? '✓ Agregado' : yaEnPedido ? '+ Incrementar' : '+ Agregar'}
               </button>

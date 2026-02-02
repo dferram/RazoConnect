@@ -2025,6 +2025,21 @@ const buscarProductosAjuste = async (req, res) => {
 
     const searchPattern = `%${q}%`;
 
+    const tamanosQuery = `
+      SELECT 
+        tamanoid,
+        cantidad
+      FROM cat_tamanopaquetes
+      WHERE tenant_id = $1
+      ORDER BY cantidad ASC
+    `;
+
+    const tamanosResult = await db.query(tamanosQuery, [tenant_id]);
+    const tamanos = tamanosResult.rows.map(t => ({
+      tamanoId: t.tamanoid,
+      cantidad: t.cantidad
+    }));
+
     const query = `
       SELECT 
         p.productoid,
@@ -2037,18 +2052,20 @@ const buscarProductosAjuste = async (req, res) => {
         pv.preciounitario,
         pv.precioofertaunitario,
         pv.piezasporpaquete,
+        (SELECT pvi.url_imagen FROM producto_variante_imagenes pvi 
+         WHERE pvi.varianteid = pv.varianteid AND pvi.tenant_id = $2 
+         ORDER BY pvi.orden ASC LIMIT 1) as imagen_variante,
+        (SELECT pi.url_imagen FROM producto_imagenes pi 
+         WHERE pi.productoid = p.productoid AND pi.tenant_id = $2 
+         ORDER BY pi.orden ASC LIMIT 1) as imagen_producto,
         COALESCE(
-          (SELECT json_agg(
-            json_build_object(
-              'tamanoId', t.tamanoid,
-              'cantidad', t.cantidad
-            )
-          )
-          FROM cat_tamanopaquetes t
-          WHERE t.tenant_id = $2
-          ORDER BY t.cantidad ASC
-          ), '[]'::json
-        ) as tamanos
+          (SELECT pvi.url_imagen FROM producto_variante_imagenes pvi 
+           WHERE pvi.varianteid = pv.varianteid AND pvi.tenant_id = $2 
+           ORDER BY pvi.orden ASC LIMIT 1),
+          (SELECT pi.url_imagen FROM producto_imagenes pi 
+           WHERE pi.productoid = p.productoid AND pi.tenant_id = $2 
+           ORDER BY pi.orden ASC LIMIT 1)
+        ) as imagen_url
       FROM productos p
       INNER JOIN producto_variantes pv ON pv.productoid = p.productoid
       WHERE p.tenant_id = $2
@@ -2059,12 +2076,25 @@ const buscarProductosAjuste = async (req, res) => {
           pv.sku ILIKE $1
           OR p.nombreproducto ILIKE $1
           OR COALESCE(pv.color_nombre, '') ILIKE $1
+          OR COALESCE(pv.dimensiones, '') ILIKE $1
+          OR CONCAT_WS(' ', p.nombreproducto, pv.dimensiones, pv.color_nombre) ILIKE $1
         )
       ORDER BY p.nombreproducto ASC, pv.varianteid ASC
       LIMIT 20
     `;
 
     const result = await db.query(query, [searchPattern, tenant_id]);
+    
+    console.log(`🔍 [BÚSQUEDA AJUSTE] Resultados encontrados: ${result.rows.length}`);
+    if (result.rows.length > 0) {
+      result.rows.forEach(row => {
+        console.log(`   📦 ${row.nombreproducto} - ${row.sku}`);
+        console.log(`      Color: ${row.color_nombre || 'Sin color'}`);
+        console.log(`      Imagen variante: ${row.imagen_variante ? '✅ SÍ' : '❌ NO'}`);
+        console.log(`      Imagen producto: ${row.imagen_producto ? '✅ SÍ' : '❌ NO'}`);
+        console.log(`      Imagen final: ${row.imagen_url ? '✅ SÍ' : '❌ NO'}`);
+      });
+    }
 
     const productosMap = new Map();
 
@@ -2089,7 +2119,8 @@ const buscarProductosAjuste = async (req, res) => {
         precioUnitario: parseFloat(row.preciounitario) || 0,
         precioOfertaUnitario: row.precioofertaunitario ? parseFloat(row.precioofertaunitario) : null,
         piezasPorPaquete: parseInt(row.piezasporpaquete, 10) || 1,
-        tamanos: row.tamanos || []
+        imagenUrl: row.imagen_url || null,
+        tamanos: tamanos
       });
     }
 
