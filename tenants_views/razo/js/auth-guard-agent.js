@@ -7,10 +7,10 @@
 (function () {
   "use strict";
 
-  const getAdminToken = () => localStorage.getItem("razoconnect_admin_token");
-  const getAdminData = () => {
+  const getAgentToken = () => localStorage.getItem("razoconnect_token");
+  const getAgentData = () => {
     try {
-      return JSON.parse(localStorage.getItem("razoconnect_admin") || "null");
+      return JSON.parse(localStorage.getItem("razoconnect_user") || "null");
     } catch {
       return null;
     }
@@ -18,18 +18,18 @@
 
   // Función de validación de token de agente
   function checkAgentToken() {
-    const adminToken = getAdminToken();
-    const adminData = getAdminData();
+    const agentToken = getAgentToken();
+    const agentData = getAgentData();
 
-    // Verificar que existe un token de admin
-    if (!adminToken) {
-      console.warn("No admin token found. Redirecting to login...");
+    // Verificar que existe un token
+    if (!agentToken) {
+      console.warn("No agent token found. Redirecting to login...");
       window.location.replace("/login.html");
       return false;
     }
 
-    // Verificar que el admin tiene rol de agente
-    const isAgent = adminData?.rol === "agente" || adminData?.esAgente === true;
+    // Verificar que el usuario tiene rol de agente
+    const isAgent = agentData?.rol === "agente" || agentData?.esAgente === true;
     if (!isAgent) {
       console.warn("User is not an agent. Redirecting to login...");
       window.location.replace("/login.html");
@@ -52,15 +52,15 @@
     return;
   }
 
-  const adminToken = getAdminToken();
-  const adminData = getAdminData();
+  const agentToken = getAgentToken();
+  const agentData = getAgentData();
 
   // Verificar token con el servidor
   // Los agentes usan el endpoint de clientes para verificación
   fetch("/api/clientes/verify", {
     method: "GET",
     headers: {
-      Authorization: `Bearer ${adminToken}`,
+      Authorization: `Bearer ${agentToken}`,
       "Content-Type": "application/json",
     },
   })
@@ -99,7 +99,7 @@
 
       // Actualizar datos del agente en localStorage
       localStorage.setItem(
-        "razoconnect_admin",
+        "razoconnect_user",
         JSON.stringify({
           ...userData,
           rol: "agente",
@@ -112,8 +112,8 @@
 
       // Verificar si es error de tenant mismatch
       if (error.status === 401 && error.data?.code === 'TENANT_MISMATCH') {
-        localStorage.removeItem("razoconnect_admin_token");
-        localStorage.removeItem("razoconnect_admin");
+        localStorage.removeItem("razoconnect_token");
+        localStorage.removeItem("razoconnect_user");
         
         if (typeof Swal !== "undefined" && Swal && typeof Swal.fire === "function") {
           Swal.fire({
@@ -140,8 +140,8 @@
         error.status === 401 ||
         error.status === 403
       ) {
-        localStorage.removeItem("razoconnect_admin_token");
-        localStorage.removeItem("razoconnect_admin");
+        localStorage.removeItem("razoconnect_token");
+        localStorage.removeItem("razoconnect_user");
 
         // Esperar a que api.js se cargue si existe showToast
         setTimeout(() => {
@@ -165,27 +165,27 @@
 
 // Helper function to clear auth
 const clearAgentAuth = () => {
-  localStorage.removeItem("razoconnect_admin_token");
-  localStorage.removeItem("razoconnect_admin");
+  localStorage.removeItem("razoconnect_token");
+  localStorage.removeItem("razoconnect_user");
 };
 
 // Global function for agent auth check (used by page scripts)
 const requireAgentAuth = () => {
-  const adminToken = localStorage.getItem("razoconnect_admin_token");
-  const adminData = (() => {
+  const agentToken = localStorage.getItem("razoconnect_token");
+  const agentData = (() => {
     try {
-      return JSON.parse(localStorage.getItem("razoconnect_admin") || "null");
+      return JSON.parse(localStorage.getItem("razoconnect_user") || "null");
     } catch {
       return null;
     }
   })();
 
-  if (!adminToken) {
+  if (!agentToken) {
     window.location.replace("/login.html");
     return false;
   }
 
-  const isAgent = adminData?.rol === "agente" || adminData?.esAgente === true;
+  const isAgent = agentData?.rol === "agente" || agentData?.esAgente === true;
   if (!isAgent) {
     window.location.replace("/login.html");
     return false;

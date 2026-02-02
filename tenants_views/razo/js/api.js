@@ -52,20 +52,27 @@ const adminHasAgentRole = () => {
 };
 
 const getEffectiveToken = () => {
-  const clientToken = getToken();
-  const adminToken = getAdminToken();
+  const clientToken = getToken(); // razoconnect_token (usado por clientes Y agentes)
+  const adminToken = getAdminToken(); // razoconnect_admin_token (solo admins)
 
   const sidebarType = (document.body?.dataset?.sidebar || "").toString().toLowerCase();
   const path = (window.location?.pathname || "").toString().toLowerCase();
 
-  const isStaffContext =
-    sidebarType === "admin" ||
-    sidebarType === "agent" ||
-    path.startsWith("/admin") ||
-    path.startsWith("/agente") ||
-    path.startsWith("/staff");
+  const isAdminContext = sidebarType === "admin" || path.startsWith("/admin");
+  const isAgentContext = sidebarType === "agent" || path.startsWith("/agente");
+  const isStaffContext = isAdminContext || isAgentContext || path.startsWith("/staff");
 
-  // En contexto admin/agente, SIEMPRE preferir token admin para evitar 401 en /api/admin/*
+  // En contexto ADMIN, preferir token admin
+  if (isAdminContext) {
+    return adminToken || clientToken || null;
+  }
+
+  // En contexto AGENTE, usar token unificado (razoconnect_token)
+  if (isAgentContext) {
+    return clientToken || null;
+  }
+
+  // En otros contextos staff, intentar ambos
   if (isStaffContext) {
     return adminToken || clientToken || null;
   }
