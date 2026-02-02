@@ -7,35 +7,16 @@
 (function () {
   "use strict";
 
-  const getAgentToken = () => localStorage.getItem("razoconnect_admin_token");
-  const getAgentData = () => {
-    try {
-      return JSON.parse(localStorage.getItem("razoconnect_admin") || "null");
-    } catch {
-      return null;
-    }
-  };
-
-  // Función de validación de token de agente
+  // Función de validación de token
   function checkAgentToken() {
-    const agentToken = getAgentToken();
-    const agentData = getAgentData();
-
-    // Verificar que existe un token
+    const agentToken = localStorage.getItem("razoconnect_admin_token");
+    
+    // Si no hay token, redirigir sin mostrar alerta (usuario no ha iniciado sesión)
     if (!agentToken) {
       console.warn("No agent token found. Redirecting to login...");
       window.location.replace("/login.html");
       return false;
     }
-
-    // Verificar que el usuario tiene rol de agente
-    const isAgent = agentData?.rol === "agente" || agentData?.esAgente === true;
-    if (!isAgent) {
-      console.warn("User is not an agent. Redirecting to login...");
-      window.location.replace("/login.html");
-      return false;
-    }
-
     return true;
   }
 
@@ -52,12 +33,12 @@
     return;
   }
 
-  const agentToken = getAgentToken();
-  const agentData = getAgentData();
+  const agentToken = localStorage.getItem("razoconnect_admin_token");
 
-  // Verificar token con el servidor
-  // Los agentes usan el endpoint de clientes para verificación
-  fetch("/api/clientes/verify", {
+  // Verificar token con el servidor de forma asíncrona
+  const apiBaseUrl = window.API_BASE_URL || `${window.location.origin}/api`;
+
+  fetch(`${apiBaseUrl}/clientes/verify`, {
     method: "GET",
     headers: {
       Authorization: `Bearer ${agentToken}`,
@@ -65,47 +46,36 @@
     },
   })
     .then((response) => {
+      // Capture status before processing
+      const status = response.status;
+      
       if (!response.ok) {
-        console.error(
-          "❌ Response not OK:",
-          response.status,
-          response.statusText
-        );
-        return response.json().then(data => {
-          throw { status: response.status, data, message: `HTTP error! status: ${response.status}` };
-        }).catch(err => {
-          if (err.status) throw err;
-          throw { status: response.status, data: null, message: `HTTP error! status: ${response.status}` };
-        });
+        // Create error with status code for proper handling
+        const error = new Error(`HTTP error! status: ${status}`);
+        error.status = status;
+        throw error;
       }
       return response.json();
     })
     .then((data) => {
       if (!data.success) {
-        throw new Error("Invalid token");
+        const error = new Error("Invalid token");
+        error.status = 401;
+        throw error;
       }
 
-      // Verificar que sea agente
-      const userRol = data.data?.rol;
-      const userData = data.data?.agente || data.data?.cliente;
-
-      if (userRol !== "agente") {
-        throw new Error("Usuario no es agente");
+      // Token válido - guardar info del agente si viene en la respuesta
+      if (data.data && (data.data.agente || data.data.cliente)) {
+        const userData = data.data.agente || data.data.cliente;
+        localStorage.setItem(
+          "razoconnect_admin",
+          JSON.stringify({
+            ...userData,
+            rol: "agente",
+            esAgente: true,
+          })
+        );
       }
-
-      if (!userData) {
-        throw new Error("No se recibieron datos del usuario");
-      }
-
-      // Actualizar datos del agente en localStorage
-      localStorage.setItem(
-        "razoconnect_admin",
-        JSON.stringify({
-          ...userData,
-          rol: "agente",
-          esAgente: true,
-        })
-      );
     })
     .catch((error) => {
       console.error("⚠️ Agent authentication check failed:", error);
@@ -113,11 +83,11 @@
 
       // Check if it's a network error (no response from server)
       const isNetworkError = 
-        error.message?.includes("Failed to fetch") ||
-        error.message?.includes("NetworkError") ||
-        error.message?.includes("ECONNREFUSED") ||
-        error.message?.includes("EAI_AGAIN") ||
-        error.message?.includes("fetch failed") ||
+        error.message.includes("Failed to fetch") ||
+        error.message.includes("NetworkError") ||
+        error.message.includes("ECONNREFUSED") ||
+        error.message.includes("EAI_AGAIN") ||
+        error.message.includes("fetch failed") ||
         !error.status; // No status means network issue
 
       // Only redirect to login on explicit auth failures (401, 403)
@@ -137,7 +107,7 @@
             allowOutsideClick: true,
           });
         }
-        return; // Don't redirect, don't clear tokens
+        return; // Don't redirect
       }
 
       if (isAuthFailure) {
@@ -161,7 +131,7 @@
           window.location.replace("/login.html");
         }
       } else {
-        // Other server errors (500, etc.) - don't redirect, don't clear tokens
+        // Other server errors (500, etc.) - don't redirect
         console.warn("⚠️ Error del servidor. La sesión se mantendrá.");
       }
     });
@@ -176,21 +146,8 @@ const clearAgentAuth = () => {
 // Global function for agent auth check (used by page scripts)
 const requireAgentAuth = () => {
   const agentToken = localStorage.getItem("razoconnect_admin_token");
-  const agentData = (() => {
-    try {
-      return JSON.parse(localStorage.getItem("razoconnect_admin") || "null");
-    } catch {
-      return null;
-    }
-  })();
 
   if (!agentToken) {
-    window.location.replace("/login.html");
-    return false;
-  }
-
-  const isAgent = agentData?.rol === "agente" || agentData?.esAgente === true;
-  if (!isAgent) {
     window.location.replace("/login.html");
     return false;
   }
