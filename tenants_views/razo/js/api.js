@@ -164,6 +164,13 @@ const apiCall = async (endpoint, options = {}) => {
   const token = getEffectiveToken();
   const isPublicEndpoint = options.public === true;
 
+  // DIAGNÓSTICO: Log del token
+  console.log(`🔍 [API DEBUG] Endpoint: ${endpoint}`);
+  console.log(`   Token obtenido:`, token ? `${token.substring(0, 20)}...` : 'null');
+  console.log(`   Token length:`, token ? token.length : 0);
+  console.log(`   Sidebar type:`, document.body?.dataset?.sidebar);
+  console.log(`   Path:`, window.location?.pathname);
+
   const config = {
     headers: {
       "Content-Type": "application/json",
@@ -176,6 +183,9 @@ const apiCall = async (endpoint, options = {}) => {
   // Add authorization header ONLY if token exists and is not null/undefined
   if (token && token !== 'null' && token !== 'undefined') {
     config.headers["Authorization"] = `Bearer ${token}`;
+    console.log(`   ✅ Authorization header agregado`);
+  } else {
+    console.warn(`   ⚠️ NO se agregó Authorization header - token inválido`);
   }
 
   try {
