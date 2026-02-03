@@ -283,7 +283,7 @@ function actualizarPaginacion(pagination) {
     btnNextPage.style.cursor = currentPage === totalPages ? 'not-allowed' : 'pointer';
 }
 
-// MISIÓN 3: Función para navegar a la página de detalle de sesión
+// Función para navegar a la página de detalle de sesión
 function verDetalleSesion(sesionId) {
     if (!sesionId) {
         console.error('❌ [NAVEGACIÓN] sesionId inválido:', sesionId);
@@ -296,7 +296,6 @@ function verDetalleSesion(sesionId) {
         return;
     }
 
-    // CRÍTICO: Verificar que el token de admin esté presente
     const token = localStorage.getItem('razoconnect_admin_token');
     if (!token) {
         console.error('❌ [AUTH] Token de admin no encontrado');
@@ -311,9 +310,8 @@ function verDetalleSesion(sesionId) {
         return;
     }
 
-    // Navegar a la página de toma de inventario con el sesionId como parámetro
-    console.log(`🔄 [NAVEGACIÓN] Redirigiendo a sesión ${sesionId}`);
-    window.location.href = `/admin-toma-inventario.html?sesionId=${sesionId}`;
+    console.log(`🔄 [NAVEGACIÓN] Redirigiendo a detalle de sesión ${sesionId}`);
+    window.location.href = `/admin-inventario-detalle.html?sesionId=${sesionId}`;
 }
 
 async function descargarReportePDF(sesionId, nombreSesion) {

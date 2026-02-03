@@ -1587,6 +1587,13 @@ router.get(
 );
 
 router.get(
+  "/inventario/sesiones/:sesionId/detalle",
+  authenticate,
+  authorizeAdmin,
+  inventarioReportesController.obtenerDetalleSesion
+);
+
+router.get(
   "/inventario/reporte/:sesionId",
   authenticate,
   authorizeAdmin,

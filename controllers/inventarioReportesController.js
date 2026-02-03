@@ -380,7 +380,86 @@ async function generarReportePDF(req, res) {
     }
 }
 
+/**
+ * GET /api/admin/inventario/sesiones/:sesionId/detalle
+ * Obtiene el detalle completo de una sesión con todos los conteos
+ */
+async function obtenerDetalleSesion(req, res) {
+    const { tenant_id } = req.tenant;
+    const { sesionId } = req.params;
+
+    try {
+        const sesionQuery = `
+            SELECT 
+                s.sesionid,
+                s.nombre,
+                s.fechainicio,
+                s.fechacierre,
+                s.estatus,
+                a.nombre AS admin_nombre,
+                a.apellido AS admin_apellido
+            FROM toma_inventario_sesiones s
+            LEFT JOIN administradores a ON a.adminid = s.usuario_creador_id
+            WHERE s.sesionid = $1 AND s.tenant_id = $2
+        `;
+
+        const sesionResult = await pool.query(sesionQuery, [sesionId, tenant_id]);
+
+        if (sesionResult.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Sesión de inventario no encontrada'
+            });
+        }
+
+        const sesion = sesionResult.rows[0];
+
+        const conteosQuery = `
+            SELECT 
+                c.conteoid,
+                pv.sku,
+                p.descripcion AS producto_nombre,
+                ia.cantidad AS stock_teorico,
+                c.conteo_a,
+                c.conteo_b,
+                c.cantidad_final,
+                c.estatus_fila,
+                COALESCE(c.cantidad_final, c.conteo_a, c.conteo_b, 0) - COALESCE(ia.cantidad, 0) AS diferencia
+            FROM toma_inventario_conteos c
+            INNER JOIN producto_variantes pv ON pv.varianteid = c.varianteid
+            INNER JOIN productos p ON p.productoid = pv.productoid
+            LEFT JOIN inventarios_admin ia ON ia.variante_id = c.varianteid AND ia.admin_id = $3
+            WHERE c.sesionid = $1 AND c.tenant_id = $2
+            ORDER BY 
+                CASE 
+                    WHEN c.estatus_fila = 'VALIDADO' AND c.conteo_a = c.conteo_b THEN 1
+                    ELSE 2
+                END,
+                pv.sku
+        `;
+
+        const conteosResult = await pool.query(conteosQuery, [sesionId, tenant_id, req.user.userId]);
+
+        res.json({
+            success: true,
+            data: {
+                sesion,
+                conteos: conteosResult.rows
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ [ERROR] obtenerDetalleSesion:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error al obtener detalle de sesión',
+            error: error.message
+        });
+    }
+}
+
 module.exports = {
     obtenerSesionesInventario,
-    generarReportePDF
+    generarReportePDF,
+    obtenerDetalleSesion
 };
