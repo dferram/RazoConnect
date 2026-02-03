@@ -623,9 +623,9 @@ const getDashboardSesion = async (req, res) => {
         si.estatus, 
         si.usuario_creador_id,
         si.agente_asignado_id,
-        u.nombre AS creador_nombre
+        a.nombre AS creador_nombre
        FROM toma_inventario_sesiones si
-       LEFT JOIN usuarios u ON u.usuarioid = si.usuario_creador_id
+       LEFT JOIN administradores a ON a.adminid = si.usuario_creador_id
        WHERE si.sesionid = $1 AND si.tenant_id = $2`,
       [sesionId, tenant_id]
     );
