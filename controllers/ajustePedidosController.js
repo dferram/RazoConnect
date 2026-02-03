@@ -197,6 +197,7 @@ async function ajustarPedido(req, res) {
     for (const modificacion of itemsModificar) {
       const detalleId = parseInt(modificacion.detalleId, 10);
       const nuevaCantidad = parseInt(modificacion.cantidad, 10);
+      const nuevoTamanoId = modificacion.tamanoId ? parseInt(modificacion.tamanoId, 10) : null;
 
       if (!Number.isInteger(detalleId) || detalleId <= 0) continue;
       if (!Number.isInteger(nuevaCantidad) || nuevaCantidad <= 0) continue;
@@ -207,11 +208,14 @@ async function ajustarPedido(req, res) {
           d.varianteid,
           d.cantidadpaquetes,
           d.precioporpaquete,
+          d.preciounitario,
           d.piezastotales,
           d.tamanoid,
           d.esbackorder,
           pv.sku,
           pv.stock,
+          pv.preciounitario as precio_unitario_variante,
+          pv.precioofertaunitario,
           p.nombreproducto,
           t.cantidad AS tamano_piezas
         FROM detallesdelpedido d
@@ -227,14 +231,48 @@ async function ajustarPedido(req, res) {
 
       const detalle = detalleResult.rows[0];
       const cantidadAnterior = parseInt(detalle.cantidadpaquetes, 10);
+      const tamanoAnterior = detalle.tamanoid;
       const diferenciaCantidad = nuevaCantidad - cantidadAnterior;
+      const cambioTamano = nuevoTamanoId && nuevoTamanoId !== tamanoAnterior;
 
-      if (diferenciaCantidad === 0) continue;
+      // Si no hay cambios, continuar
+      if (diferenciaCantidad === 0 && !cambioTamano) continue;
 
-      const tamanoPiezas = parseInt(detalle.tamano_piezas, 10) || 1;
+      let tamanoPiezas = parseInt(detalle.tamano_piezas, 10) || 1;
+      let nuevoPrecioPorPaquete = parseFloat(detalle.precioporpaquete);
+      let nuevoPrecioUnitario = parseFloat(detalle.preciounitario);
+
+      // Si cambió el tamaño, obtener el nuevo precio
+      if (cambioTamano) {
+        const nuevoTamanoResult = await client.query(
+          `SELECT cantidad FROM cat_tamanopaquetes WHERE tamanoid = $1`,
+          [nuevoTamanoId]
+        );
+
+        if (nuevoTamanoResult.rows.length === 0) {
+          console.error(`Tamaño ${nuevoTamanoId} no encontrado`);
+          continue;
+        }
+
+        tamanoPiezas = parseInt(nuevoTamanoResult.rows[0].cantidad, 10);
+        const precioBase = parseFloat(detalle.precioofertaunitario || detalle.precio_unitario_variante);
+        nuevoPrecioPorPaquete = parseFloat((precioBase * tamanoPiezas).toFixed(2));
+        nuevoPrecioUnitario = precioBase;
+
+        console.log(`📦 Cambio de tamaño detectado:`, {
+          detalleId,
+          tamanoAnterior,
+          nuevoTamanoId,
+          piezasAnterior: detalle.tamano_piezas,
+          piezasNuevo: tamanoPiezas,
+          precioAnterior: detalle.precioporpaquete,
+          precioNuevo: nuevoPrecioPorPaquete
+        });
+      }
+
       const diferenciaPiezas = diferenciaCantidad * tamanoPiezas;
       const subtotalAnterior = cantidadAnterior * parseFloat(detalle.precioporpaquete);
-      const subtotalNuevo = nuevaCantidad * parseFloat(detalle.precioporpaquete);
+      const subtotalNuevo = nuevaCantidad * nuevoPrecioPorPaquete;
       const diferenciaSubtotal = subtotalNuevo - subtotalAnterior;
 
       if (!detalle.esbackorder) {
@@ -313,12 +351,26 @@ async function ajustarPedido(req, res) {
         }
       }
 
-      await client.query(
-        `UPDATE detallesdelpedido 
-        SET cantidadpaquetes = $1, piezastotales = $2
-        WHERE detalleid = $3`,
-        [nuevaCantidad, nuevaCantidad * tamanoPiezas, detalleId]
-      );
+      // Actualizar detalle del pedido con nuevos valores
+      if (cambioTamano) {
+        await client.query(
+          `UPDATE detallesdelpedido 
+          SET cantidadpaquetes = $1, 
+              piezastotales = $2, 
+              tamanoid = $3,
+              precioporpaquete = $4,
+              preciounitario = $5
+          WHERE detalleid = $6`,
+          [nuevaCantidad, nuevaCantidad * tamanoPiezas, nuevoTamanoId, nuevoPrecioPorPaquete, nuevoPrecioUnitario, detalleId]
+        );
+      } else {
+        await client.query(
+          `UPDATE detallesdelpedido 
+          SET cantidadpaquetes = $1, piezastotales = $2
+          WHERE detalleid = $3`,
+          [nuevaCantidad, nuevaCantidad * tamanoPiezas, detalleId]
+        );
+      }
 
       montoTotalNuevo += diferenciaSubtotal;
 
@@ -329,6 +381,9 @@ async function ajustarPedido(req, res) {
         cantidadAnterior,
         cantidadNueva: nuevaCantidad,
         diferencia: diferenciaCantidad,
+        cambioTamano: cambioTamano,
+        tamanoAnterior: tamanoAnterior,
+        tamanoNuevo: nuevoTamanoId,
         subtotalAnterior,
         subtotalNuevo,
         diferenciaSubtotal

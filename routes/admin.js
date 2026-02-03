@@ -525,6 +525,13 @@ router.get(
   authorizeAdmin,
   adminController.getTamanosPaquetes
 );
+
+router.get(
+  "/productos/:id/tamanos-disponibles",
+  authenticate,
+  authorizeAdmin,
+  adminController.getTamanosDisponiblesProducto
+);
 router.get(
   "/categorias",
   authenticate,

@@ -59,21 +59,28 @@ async function cargarProductosPedido(pedidoId) {
     console.log('📦 Datos recibidos:', data);
     
     if (data.success && data.data) {
-      // El backend devuelve data.data.productos, no items
       const productos = data.data.productos || [];
       
       // Mapear los campos del backend al formato que espera el frontend
       productosActualesPedido = productos.map(p => ({
         detalleId: p.detalleId,
         varianteId: p.varianteId,
+        productoId: p.productoId,
         sku: p.sku,
         nombreProducto: p.nombre,
         presentacion: p.dimensiones || 'N/A',
         cantidad: p.cantidadPaquetes,
         precioPorPaquete: p.precioPorPaquete,
+        precioUnitario: p.precioUnitario,
+        piezasPorPaquete: p.piezasPorPaquete,
+        tamanoId: p.tamanoId || null,
         subtotal: p.subtotal,
-        esBackorder: p.esBackorder || false
+        esBackorder: p.esBackorder || false,
+        paquetesDisponibles: []
       }));
+      
+      // Cargar paquetes disponibles para cada producto
+      await cargarPaquetesDisponibles();
       
       console.log('✅ Productos mapeados:', productosActualesPedido);
       renderizarProductosActuales();
@@ -84,6 +91,52 @@ async function cargarProductosPedido(pedidoId) {
     showToast('Error al cargar productos del pedido', 'error');
   } finally {
     loadingEl.style.display = 'none';
+  }
+}
+
+async function cargarPaquetesDisponibles() {
+  const token = localStorage.getItem('razoconnect_admin_token');
+  
+  // Cargar paquetes específicos para cada producto
+  for (let item of productosActualesPedido) {
+    if (!item.productoId || !item.precioUnitario || item.precioUnitario <= 0) {
+      console.warn(`⚠️ Item ${item.sku} no tiene productoId o precioUnitario válido`);
+      item.paquetesDisponibles = [];
+      continue;
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/admin/productos/${item.productoId}/tamanos-disponibles`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        console.error(`Error al cargar paquetes para producto ${item.productoId}:`, response.status);
+        item.paquetesDisponibles = [];
+        continue;
+      }
+      
+      const result = await response.json();
+      
+      if (result.success && Array.isArray(result.data)) {
+        item.paquetesDisponibles = result.data.map(t => ({
+          tamanoId: t.tamanoId,
+          nombre: t.nombre || `Pack ${t.cantidad}`,
+          cantidad: t.cantidad,
+          precioPaquete: parseFloat((item.precioUnitario * t.cantidad).toFixed(2))
+        }));
+        
+        console.log(`✅ Paquetes disponibles para ${item.sku} (Producto ${item.productoId}):`, item.paquetesDisponibles);
+      } else {
+        item.paquetesDisponibles = [];
+      }
+    } catch (error) {
+      console.error(`Error al cargar paquetes para ${item.sku}:`, error);
+      item.paquetesDisponibles = [];
+    }
   }
 }
 
@@ -99,19 +152,82 @@ function renderizarProductosActuales() {
     const itemModificado = itemsParaModificar.find(m => m.detalleId === item.detalleId);
     const itemEliminado = itemsParaEliminar.includes(item.detalleId);
     const cantidadActual = itemModificado ? itemModificado.cantidad : item.cantidad;
-    const subtotal = cantidadActual * parseFloat(item.precioPorPaquete || 0);
+    const tamanoActual = itemModificado ? itemModificado.tamanoId : item.tamanoId;
+    const precioActual = itemModificado ? itemModificado.precioPorPaquete : item.precioPorPaquete;
+    const subtotal = cantidadActual * parseFloat(precioActual || 0);
     
     // Determinar si es backorder o surtido
     const esBackorder = item.esBackorder || false;
     const badgeEstado = esBackorder
-      ? '<span style="background: #f59e0b; color: white; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: 600;">⚠ Bajo Pedido</span>'
-      : '<span style="background: #10b981; color: white; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: 600;">✓ Surtido</span>';
+      ? `<span style="
+          display: inline-flex;
+          align-items: center;
+          gap: 0.375rem;
+          background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);
+          color: white;
+          padding: 0.5rem 0.875rem;
+          border-radius: 0.5rem;
+          font-size: 0.8125rem;
+          font-weight: 600;
+          box-shadow: 0 2px 4px rgba(245, 158, 11, 0.2);
+          white-space: nowrap;
+          letter-spacing: 0.01em;
+        ">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+            <line x1="12" y1="9" x2="12" y2="13"></line>
+            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+          </svg>
+          Bajo Pedido
+        </span>`
+      : `<span style="
+          display: inline-flex;
+          align-items: center;
+          gap: 0.375rem;
+          background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+          color: white;
+          padding: 0.5rem 0.875rem;
+          border-radius: 0.5rem;
+          font-size: 0.8125rem;
+          font-weight: 600;
+          box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
+          white-space: nowrap;
+          letter-spacing: 0.01em;
+        ">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+          Surtido
+        </span>`;
+
+    // Generar opciones de paquetes disponibles
+    let presentacionHtml = '';
+    if (!itemEliminado && item.paquetesDisponibles && item.paquetesDisponibles.length > 0) {
+      presentacionHtml = `
+        <select 
+          class="form-select form-select-sm presenta-selector" 
+          onchange="cambiarPresentacion(${item.detalleId}, this.value)"
+          style="min-width: 120px; padding: 0.5rem; border: 1px solid var(--razo-gray-light); border-radius: 0.25rem;">
+          ${item.paquetesDisponibles.map(paq => `
+            <option 
+              value="${paq.tamanoId}" 
+              data-precio="${paq.precioPaquete}"
+              data-cantidad="${paq.cantidad}"
+              ${tamanoActual == paq.tamanoId ? 'selected' : ''}>
+              ${paq.nombre} (${paq.cantidad} pzs)
+            </option>
+          `).join('')}
+        </select>
+      `;
+    } else {
+      presentacionHtml = item.presentacion || 'N/A';
+    }
 
     return `
-      <tr style="${itemEliminado ? 'opacity: 0.5; text-decoration: line-through;' : ''}">
+      <tr style="${itemEliminado ? 'opacity: 0.5; text-decoration: line-through;' : ''}" data-detalle-id="${item.detalleId}">
         <td>${item.sku}</td>
         <td>${item.nombreProducto}</td>
-        <td>${item.presentacion || 'N/A'}</td>
+        <td>${presentacionHtml}</td>
         <td>${badgeEstado}</td>
         <td>
           ${!itemEliminado ? `
@@ -124,8 +240,8 @@ function renderizarProductosActuales() {
             />
           ` : cantidadActual}
         </td>
-        <td>$${parseFloat(item.precioPorPaquete || 0).toFixed(2)}</td>
-        <td><strong>$${subtotal.toFixed(2)}</strong></td>
+        <td class="precio-unitario-cell">$${parseFloat(precioActual || 0).toFixed(2)}</td>
+        <td class="subtotal-cell"><strong>$${subtotal.toFixed(2)}</strong></td>
         <td>
           ${!itemEliminado ? `
             <button 
@@ -150,6 +266,45 @@ function renderizarProductosActuales() {
   actualizarResumen();
 }
 
+function cambiarPresentacion(detalleId, nuevoTamanoId) {
+  const tamanoId = parseInt(nuevoTamanoId, 10);
+  const item = productosActualesPedido.find(p => p.detalleId === detalleId);
+  if (!item) return;
+
+  // Buscar el paquete seleccionado
+  const paqueteSeleccionado = item.paquetesDisponibles.find(p => p.tamanoId === tamanoId);
+  if (!paqueteSeleccionado) {
+    console.error('Paquete no encontrado:', tamanoId);
+    return;
+  }
+
+  console.log(`📦 Cambiando presentación para ${item.sku}:`, {
+    tamanoAnterior: item.tamanoId,
+    tamanoNuevo: tamanoId,
+    precioAnterior: item.precioPorPaquete,
+    precioNuevo: paqueteSeleccionado.precioPaquete
+  });
+
+  // Actualizar o crear modificación
+  const existente = itemsParaModificar.find(m => m.detalleId === detalleId);
+  if (existente) {
+    existente.tamanoId = tamanoId;
+    existente.precioPorPaquete = paqueteSeleccionado.precioPaquete;
+    existente.piezasPorPaquete = paqueteSeleccionado.cantidad;
+  } else {
+    itemsParaModificar.push({
+      detalleId,
+      cantidad: item.cantidad,
+      tamanoId: tamanoId,
+      precioPorPaquete: paqueteSeleccionado.precioPaquete,
+      piezasPorPaquete: paqueteSeleccionado.cantidad
+    });
+  }
+
+  renderizarProductosActuales();
+  showToast(`Presentación actualizada: ${paqueteSeleccionado.nombre}`, 'success');
+}
+
 function modificarCantidadItem(detalleId, nuevaCantidad) {
   const cantidad = parseInt(nuevaCantidad, 10);
   if (!cantidad || cantidad <= 0) {
@@ -161,14 +316,21 @@ function modificarCantidadItem(detalleId, nuevaCantidad) {
   const item = productosActualesPedido.find(p => p.detalleId === detalleId);
   if (!item) return;
 
-  if (cantidad === item.cantidad) {
+  const existente = itemsParaModificar.find(m => m.detalleId === detalleId);
+  
+  // Si la cantidad vuelve al original y no hay cambio de tamaño, eliminar de modificaciones
+  if (cantidad === item.cantidad && (!existente || !existente.tamanoId)) {
     itemsParaModificar = itemsParaModificar.filter(m => m.detalleId !== detalleId);
   } else {
-    const existente = itemsParaModificar.find(m => m.detalleId === detalleId);
     if (existente) {
       existente.cantidad = cantidad;
     } else {
-      itemsParaModificar.push({ detalleId, cantidad });
+      itemsParaModificar.push({ 
+        detalleId, 
+        cantidad,
+        tamanoId: item.tamanoId,
+        precioPorPaquete: item.precioPorPaquete
+      });
     }
   }
 

@@ -6930,24 +6930,69 @@ const getTamanosPaquetes = async (req, res) => {
 
     const tamanos = result.rows.map((row) => ({
       tamanoId: row.tamanoid,
+      nombre: `Pack ${row.cantidad}`,
       cantidad: row.cantidad,
-      valor: row.cantidad, // Alias para compatibilidad con frontend
+      valor: row.cantidad,
       etiqueta: `${row.cantidad} ${row.cantidad === 1 ? 'pieza' : 'piezas'}`,
       tenant_id: row.tenant_id
     }));
 
     res.json({
       success: true,
-      data: {
-        tamanos,
-        total: tamanos.length,
-      },
+      data: tamanos,
     });
   } catch (error) {
     console.error("Error al obtener tamaños de paquetes:", error);
     res.status(500).json({
       success: false,
       message: "Error al obtener los tamaños de paquetes",
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Obtener tamaños de paquetes disponibles para un producto específico
+ * GET /api/admin/productos/:id/tamanos-disponibles
+ */
+const getTamanosDisponiblesProducto = async (req, res) => {
+  try {
+    const { tenant_id } = req.tenant;
+    const productoId = parseInt(req.params.id, 10);
+
+    if (!Number.isInteger(productoId) || productoId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "ProductoID inválido"
+      });
+    }
+
+    const result = await db.query(
+      `SELECT 
+        ct.tamanoid,
+        ct.cantidad
+      FROM producto_tamanosdisponibles ptd
+      INNER JOIN cat_tamanopaquetes ct ON ct.tamanoid = ptd.tamanoid AND ct.tenant_id = $2
+      WHERE ptd.productoid = $1 AND ptd.tenant_id = $2
+      ORDER BY ct.cantidad ASC`,
+      [productoId, tenant_id]
+    );
+
+    const tamanos = result.rows.map((row) => ({
+      tamanoId: row.tamanoid,
+      nombre: `Pack ${row.cantidad}`,
+      cantidad: row.cantidad
+    }));
+
+    res.json({
+      success: true,
+      data: tamanos
+    });
+  } catch (error) {
+    console.error("Error al obtener tamaños disponibles del producto:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error al obtener los tamaños disponibles",
       error: error.message
     });
   }
@@ -10123,6 +10168,7 @@ const getPedidoDetalle = async (req, res) => {
             detalleId: row.detalleid,
             productoId: row.productoid,
             varianteId: row.varianteid,
+            tamanoId: row.tamanoid || null,
             nombre: row.nombreproducto,
             sku: row.sku,
             cantidadPaquetes: parseInt(row.cantidadpaquetes, 10),
@@ -10139,6 +10185,7 @@ const getPedidoDetalle = async (req, res) => {
             colorHex: row.color_hex || null,
             imagenUrl: row.imagenurl || null,
             stock: row.stock !== null ? parseInt(row.stock, 10) : 0,
+            esBackorder: row.esbackorder || false,
             subtotal: row.precioporpaquete
               ? parseFloat((row.cantidadpaquetes || 0) * row.precioporpaquete)
               : 0,
@@ -15168,6 +15215,7 @@ module.exports = {
   actualizarProducto,
   toggleProductoVisibilidad,
   getTamanosPaquetes,
+  getTamanosDisponiblesProducto,
   getCategorias,
   crearCategoria,
   actualizarCategoria,
