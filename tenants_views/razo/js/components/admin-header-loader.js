@@ -47,48 +47,88 @@
   }
 
   async function initializeHeader() {
-    // 1. Cargar Datos del Usuario (LocalStorage)
+    // MISIÓN 1: Blindaje completo con try-catch y fallback a localStorage
     let adminData = null;
+    
     try {
-      adminData = JSON.parse(localStorage.getItem("razoconnect_admin"));
-    } catch {
-      adminData = null;
-    }
-
-    // Si no hay sesión, redirigir (Protección básica)
-    if (!adminData) {
-      window.location.replace("/login.html");
-      return;
-    }
-
-    // 2. Verificar y actualizar datos del usuario desde el servidor
-    const token = localStorage.getItem("razoconnect_admin_token");
-    if (token) {
+      // 1. Cargar Datos del Usuario (LocalStorage)
       try {
-        const response = await fetch("/api/admin/verify", {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        });
+        adminData = JSON.parse(localStorage.getItem("razoconnect_admin"));
+      } catch (parseError) {
+        console.warn("⚠️ Error parseando razoconnect_admin:", parseError);
+        adminData = null;
+      }
 
-        if (response.ok) {
-          const data = await response.json();
-          if (data.success && data.data.admin) {
-            // Actualizar localStorage con datos frescos
-            adminData = {
-              ...adminData,
-              nombre: data.data.admin.nombre,
-              rol: data.data.admin.rol,
-              origen: data.data.admin.origen,
-            };
-            localStorage.setItem("razoconnect_admin", JSON.stringify(adminData));
+      // Si no hay sesión, redirigir (Protección básica)
+      if (!adminData) {
+        console.warn("⚠️ No hay datos de admin en localStorage, redirigiendo...");
+        window.location.replace("/login.html");
+        return;
+      }
+
+      // 2. Verificar y actualizar datos del usuario desde el servidor
+      const token = localStorage.getItem("razoconnect_admin_token");
+      if (token) {
+        try {
+          const response = await fetch("/api/admin/verify", {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            if (data.success && data.data.admin) {
+              // Actualizar localStorage con datos frescos
+              adminData = {
+                ...adminData,
+                nombre: data.data.admin.nombre,
+                rol: data.data.admin.rol,
+                origen: data.data.admin.origen,
+              };
+              localStorage.setItem("razoconnect_admin", JSON.stringify(adminData));
+              console.log("✅ Datos de admin actualizados desde servidor");
+            }
+          } else {
+            console.warn(`⚠️ Verify API retornó status ${response.status}, usando caché`);
+          }
+        } catch (fetchError) {
+          // MISIÓN 1: Fallback silencioso - continuar con localStorage
+          console.warn("⚠️ Failed to fetch /api/admin/verify, usando datos de caché:", fetchError.message);
+          console.log("📦 Continuando con datos de localStorage:", adminData);
+          
+          // Mostrar notificación discreta al usuario (opcional)
+          if (typeof Swal !== 'undefined') {
+            Swal.fire({
+              icon: 'info',
+              title: 'Modo sin conexión',
+              text: 'Trabajando con datos locales. Algunas funciones pueden estar limitadas.',
+              toast: true,
+              position: 'top-end',
+              showConfirmButton: false,
+              timer: 3000,
+              timerProgressBar: true
+            });
           }
         }
-      } catch (error) {
-        console.error("Error al verificar admin:", error);
-        // Continuar con los datos del localStorage si falla la verificación
+      }
+    } catch (criticalError) {
+      // MISIÓN 1: Último recurso - intentar renderizar con datos básicos
+      console.error("❌ Error crítico en initializeHeader:", criticalError);
+      
+      // Intentar recuperar datos básicos de localStorage
+      try {
+        adminData = JSON.parse(localStorage.getItem("razoconnect_admin"));
+        if (!adminData) {
+          throw new Error("No hay datos de respaldo");
+        }
+        console.log("🔄 Recuperación exitosa desde localStorage");
+      } catch (recoveryError) {
+        console.error("❌ No se pudo recuperar datos, redirigiendo al login");
+        window.location.replace("/login.html");
+        return;
       }
     }
 

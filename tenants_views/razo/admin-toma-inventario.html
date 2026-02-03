@@ -77,6 +77,15 @@
                 <div id="sesionStats" style="font-size: 0.85rem; color: #6b7280; margin-top: 0.25rem;">—</div>
               </div>
 
+              <!-- MISIÓN 3: Admin Responsable -->
+              <div>
+                <div style="font-size: 0.75rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.25rem;">Admin Responsable</div>
+                <div id="sesionAdminResponsable" style="font-weight: 600; font-size: 0.95rem; color: #1f2937;">
+                  <i class="bi bi-person-badge" style="color: #f97316; margin-right: 0.25rem;"></i>
+                  <span>—</span>
+                </div>
+              </div>
+
               <div id="agenteAsignadoBlock">
                 <div style="font-size: 0.75rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.25rem;">Agente Asignado</div>
                 <div id="agenteAsignadoNombre" style="font-weight: 700; font-size: 1rem; color: #F97316;">—</div>
@@ -1401,6 +1410,14 @@
           stats.pendientes || 0
         )}`;
 
+        // MISIÓN 3: Mostrar admin responsable
+        const sesionAdminResponsable = document.getElementById("sesionAdminResponsable");
+        if (sesionAdminResponsable) {
+          const adminData = JSON.parse(localStorage.getItem('razoconnect_admin') || '{}');
+          const adminNombre = adminData.nombre || 'Administrador';
+          sesionAdminResponsable.querySelector('span').textContent = adminNombre;
+        }
+
         // MISIÓN 4: Poblar filtro de categorías dinámicamente
         if (filterCategoriaAuditor && state.catalogo.length > 0) {
           const categoriasUnicas = new Set();
@@ -2085,17 +2102,73 @@
             minute: '2-digit'
           });
 
-          // Encabezado del documento
-          doc.setFontSize(18);
-          doc.setFont('helvetica', 'bold');
-          doc.text('Reporte de Auditoría de Inventario', 148, 15, { align: 'center' });
-          
-          doc.setFontSize(11);
-          doc.setFont('helvetica', 'normal');
-          doc.text(`${sesionNombre}`, 148, 22, { align: 'center' });
-          doc.text(`Generado: ${fechaGeneracion}`, 148, 28, { align: 'center' });
+          // MISIÓN 1: Cargar logo una sola vez y guardarlo para reutilizar
+          let logoImgData = null;
+          try {
+            const logoImg = new Image();
+            logoImg.src = '/icon/Logo_Razo.png';
+            
+            // Esperar a que la imagen cargue
+            await new Promise((resolve, reject) => {
+              logoImg.onload = () => {
+                // Convertir imagen a data URL para reutilizar
+                const canvas = document.createElement('canvas');
+                canvas.width = logoImg.width;
+                canvas.height = logoImg.height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(logoImg, 0, 0);
+                logoImgData = canvas.toDataURL('image/png');
+                console.log('✅ Logo cargado correctamente');
+                resolve();
+              };
+              logoImg.onerror = () => {
+                console.warn('⚠️ No se pudo cargar el logo, continuando sin él');
+                resolve();
+              };
+              setTimeout(() => resolve(), 2000);
+            });
+          } catch (error) {
+            console.warn('Error al cargar logo:', error);
+          }
 
-          let yPosition = 35;
+          // MISIÓN 3: Obtener nombre del admin responsable
+          const adminData = JSON.parse(localStorage.getItem('razoconnect_admin') || '{}');
+          const adminNombre = adminData.nombre || 'Administrador';
+
+          // MISIÓN 1: Función para dibujar encabezado (se llamará en cada página)
+          const dibujarEncabezado = (doc) => {
+            // Logo en esquina superior izquierda
+            if (logoImgData) {
+              try {
+                doc.addImage(logoImgData, 'PNG', 14, 8, 20, 20);
+              } catch (e) {
+                console.warn('Error al agregar logo:', e);
+              }
+            }
+
+            // Título centrado
+            doc.setFontSize(18);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(0, 0, 0);
+            doc.text('Reporte de Auditoría de Inventario', 148, 15, { align: 'center' });
+            
+            // Información de sesión
+            doc.setFontSize(11);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`${sesionNombre}`, 148, 22, { align: 'center' });
+            doc.text(`Generado: ${fechaGeneracion}`, 148, 28, { align: 'center' });
+            
+            // MISIÓN 3: Nombre del admin responsable
+            doc.setFontSize(9);
+            doc.setTextColor(100, 100, 100);
+            doc.text(`Responsable: ${adminNombre}`, 148, 33, { align: 'center' });
+          };
+
+          // Dibujar encabezado en la primera página
+          dibujarEncabezado(doc);
+
+          // MISIÓN 2: Ajustar posición inicial para evitar solapamiento (después del encabezado)
+          let yPosition = 40;
 
           // Función helper para crear tabla
           const crearTabla = (titulo, datos, colorFondo, colorTexto) => {
@@ -2131,7 +2204,12 @@
               ];
             });
 
-            // Generar tabla con autoTable
+            // MISIÓN 1: Calcular ancho total de la tabla
+            const anchoTabla = 30 + 60 + 25 + 25 + 25 + 25 + 25; // 215mm
+            const anchoPagina = 297; // A4 landscape
+            const margenIzquierdo = (anchoPagina - anchoTabla) / 2; // Centrar
+
+            // Generar tabla con autoTable (centrada con didDrawPage)
             doc.autoTable({
               startY: yPosition,
               head: [['SKU', 'Producto', 'Medida', 'Color', 'Conteo Admin', 'Conteo Agente', 'Diferencia']],
@@ -2157,8 +2235,18 @@
                 5: { cellWidth: 25, halign: 'center' },  // Conteo Agente
                 6: { cellWidth: 25, halign: 'center' }   // Diferencia
               },
-              margin: { left: 14, right: 14 },
+              // MISIÓN 2: Margin top 50 para respetar encabezado en TODAS las páginas
+              margin: { 
+                left: margenIzquierdo, 
+                right: margenIzquierdo,
+                top: 50  // Espacio reservado para el encabezado
+              },
+              // MISIÓN 1: Hook didDrawPage para encabezado en TODAS las páginas
               didDrawPage: (data) => {
+                // Si es una página nueva (no la primera), dibujar encabezado
+                if (data.pageNumber > 1) {
+                  dibujarEncabezado(doc);
+                }
                 yPosition = data.cursor.y + 8;
               }
             });
@@ -2169,7 +2257,7 @@
           // TABLA VERDE: Validados
           if (validados.length > 0) {
             yPosition = crearTabla(
-              `✓ Validado (${validados.length} productos)`,
+              `Validado (${validados.length} productos)`,
               validados,
               [34, 197, 94],  // Verde
               [22, 163, 74]   // Verde oscuro para texto
@@ -2185,7 +2273,7 @@
           // TABLA ROJA: En Conflicto
           if (conflictos.length > 0) {
             yPosition = crearTabla(
-              `⚠ En Conflicto (${conflictos.length} productos)`,
+              `En Conflicto (${conflictos.length} productos)`,
               conflictos,
               [239, 68, 68],  // Rojo
               [220, 38, 38]   // Rojo oscuro para texto
@@ -2201,7 +2289,7 @@
           // TABLA AMARILLA: Pendiente 2do Conteo
           if (pendientes.length > 0) {
             yPosition = crearTabla(
-              `⏳ Pendiente 2do Conteo (${pendientes.length} productos)`,
+              `Pendiente 2do Conteo (${pendientes.length} productos)`,
               pendientes,
               [245, 158, 11], // Naranja/Amarillo
               [217, 119, 6]   // Naranja oscuro para texto
