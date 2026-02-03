@@ -585,7 +585,7 @@ router.get(
   "/inventario/exportar-pdf",
   authenticate,
   authorizeAdmin,
-  inventarioController.obtenerInventarioParaPDF
+  adminController.exportarInventarioPDF
 );
 
 router.get(

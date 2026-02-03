@@ -7682,9 +7682,9 @@ const getInventarioResumen = async (req, res) => {
 
     let havingClause = '';
     if (stock === 'con') {
-      havingClause = 'HAVING SUM(COALESCE(ia.cantidad, 0)) > 0';
+      havingClause = 'HAVING SUM(COALESCE(v.stock, 0)) > 0';
     } else if (stock === 'sin') {
-      havingClause = 'HAVING SUM(COALESCE(ia.cantidad, 0)) = 0';
+      havingClause = 'HAVING SUM(COALESCE(v.stock, 0)) = 0';
     }
 
     const query = `
@@ -7694,16 +7694,19 @@ const getInventarioResumen = async (req, res) => {
         p.Activo,
         c.Nombre AS NombreCategoria,
         COUNT(DISTINCT v.VarianteID) AS TotalVariantes,
-        SUM(COALESCE(ia.cantidad, 0)) AS StockTotal
+        SUM(COALESCE(v.stock, 0)) AS StockTotal
         ${isSuperAdmin ? `,
         STRING_AGG(DISTINCT CONCAT(a.Nombre, ' ', COALESCE(a.Apellido, '')), ', ') AS AdminsRegistrados
         ` : ''}
       FROM Productos p
       LEFT JOIN Categorias c ON c.CategoriaID = p.CategoriaID AND c.tenant_id = $1
       LEFT JOIN Producto_Variantes v ON v.ProductoID = p.ProductoID
-      LEFT JOIN inventarios_admin ia ON ia.variante_id = v.VarianteID
       ${isSuperAdmin ? `
-      LEFT JOIN administradores a ON a.AdminID = ia.registrado_por AND a.tenant_id = $1
+      LEFT JOIN (
+        SELECT DISTINCT ia.variante_id, ia.registrado_por
+        FROM inventarios_admin ia
+      ) ia_agg ON ia_agg.variante_id = v.VarianteID
+      LEFT JOIN administradores a ON a.AdminID = ia_agg.registrado_por AND a.tenant_id = $1
       ` : ''}
       ${whereClause}
       GROUP BY p.ProductoID, p.NombreProducto, p.Activo, c.Nombre
@@ -7797,12 +7800,11 @@ const getProductoDetalleInventario = async (req, res) => {
               'dimensiones', pv.dimensiones,
               'colorNombre', pv.color_nombre,
               'precioUnitario', pv.preciounitario,
-              'stock', COALESCE(ia.cantidad, 0),
+              'stock', COALESCE(pv.stock, 0),
               'activo', pv.activo
             )
           )
           FROM producto_variantes pv
-          LEFT JOIN inventarios_admin ia ON ia.variante_id = pv.varianteid AND ia.admin_id = $2
           WHERE pv.productoid = p.productoid
         ) AS lista_variantes,
         (
@@ -7811,9 +7813,8 @@ const getProductoDetalleInventario = async (req, res) => {
           WHERE pv.productoid = p.productoid
         ) AS total_variantes,
         (
-          SELECT COALESCE(SUM(ia.cantidad), 0)
+          SELECT COALESCE(SUM(pv.stock), 0)
           FROM producto_variantes pv
-          LEFT JOIN inventarios_admin ia ON ia.variante_id = pv.varianteid AND ia.admin_id = $2
           WHERE pv.productoid = p.productoid
         ) AS total_stock
       FROM productos p
@@ -7822,7 +7823,7 @@ const getProductoDetalleInventario = async (req, res) => {
       WHERE p.productoid = $1
     `;
 
-    const result = await db.query(productoQuery, [productoId, adminId]);
+    const result = await db.query(productoQuery, [productoId]);
 
     if (result.rows.length === 0) {
       return res.status(404).json({
@@ -15228,6 +15229,46 @@ const obtenerRemisionPedido = async (req, res) => {
   }
 };
 
+/**
+ * Exportar inventario para PDF
+ * GET /api/admin/inventario/exportar-pdf
+ * Retorna datos de todas las variantes con stock > 0
+ */
+const exportarInventarioPDF = async (req, res) => {
+  try {
+    const { tenant_id } = req.tenant;
+
+    const query = `
+      SELECT
+        pv.sku,
+        p.nombreproducto AS producto,
+        pv.dimensiones AS variante,
+        COALESCE(pv.stock, 0) AS stock,
+        'N/A' AS ubicacion
+      FROM producto_variantes pv
+      INNER JOIN productos p ON p.productoid = pv.productoid
+      WHERE p.tenant_id = $1
+        AND pv.stock > 0
+      ORDER BY p.nombreproducto, pv.sku
+    `;
+
+    const result = await db.query(query, [tenant_id]);
+
+    res.json({
+      success: true,
+      data: result.rows,
+      total: result.rows.length
+    });
+  } catch (error) {
+    console.error("Error al exportar inventario para PDF:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error al obtener datos del inventario",
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   loginAdmin,
   verifyAdmin,
@@ -15244,6 +15285,7 @@ module.exports = {
   ajustarInventario,
   getInventarioResumen,
   getProductoDetalleInventario,
+  exportarInventarioPDF,
   buscarProductosAjuste,
   buscarProductosCompra,
   getProductoDetalle,

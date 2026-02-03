@@ -897,6 +897,12 @@
             allProducts = data.data.productos;
             isSuperAdmin = data.data.isSuperAdmin || false;
             
+            // 📦 DEBUGGING: Log first product to identify stock property
+            if (allProducts.length > 0) {
+              console.log('📦 Primer producto recibido (RAW):', allProducts[0]);
+              console.log('📦 Stock property:', allProducts[0].stockTotal);
+            }
+            
             // Mostrar/ocultar columna de administrador según rol
             const thAdministrador = document.getElementById('thAdministrador');
             if (thAdministrador) {
