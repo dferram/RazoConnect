@@ -1064,6 +1064,12 @@ router.get(
   adminController.getAllOrdenesCompra
 );
 router.get(
+  "/ordenes-compra/administradores",
+  authenticate,
+  authorizeAdmin,
+  adminController.getAdministradoresOrdenesCompra
+);
+router.get(
   "/ordenes-compra/:id/detalles",
   authenticate,
   authorizeAdmin,

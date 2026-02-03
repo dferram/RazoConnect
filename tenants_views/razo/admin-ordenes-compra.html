@@ -634,9 +634,9 @@
         // Cargar lista de administradores para el filtro
         async function loadAdminList() {
           try {
-            const response = await API.apiCall('/admin/administradores', { method: 'GET' });
-            if (response.ok && response.data.data) {
-              const admins = response.data.data;
+            const response = await API.apiCall('/admin/ordenes-compra/administradores', { method: 'GET' });
+            if (response.ok && response.data) {
+              const admins = response.data;
               filtroAdmin.innerHTML = '<option value="">Todos los administradores</option>';
               admins.forEach(admin => {
                 const option = document.createElement('option');
@@ -793,7 +793,7 @@
                     onclick="verDetalle(${orden.ordenCompraId})"
                     title="Ver Detalle"
                     style="padding: 0.4rem 0.6rem; font-size: 0.75rem; min-width: 60px;">
-                    👁️
+                    Ver
                   </button>
                   ${
                     ['Pendiente', 'Confirmada'].includes(orden.estatus)
@@ -803,7 +803,7 @@
                       onclick="editarOrden(${orden.ordenCompraId})"
                       title="Editar"
                       style="padding: 0.4rem 0.6rem; font-size: 0.75rem; min-width: 60px; background: #f97316; color: white;">
-                      ✏️
+                      Editar
                     </button>
                   `
                       : ""
@@ -813,7 +813,7 @@
                     onclick="exportarOrdenExcel(${orden.ordenCompraId})"
                     title="Exportar Excel"
                     style="padding: 0.4rem 0.6rem; font-size: 0.75rem; min-width: 60px;">
-                    📄
+                    Excel
                   </button>
                   ${
                     orden.estatus === "Pendiente"
@@ -823,7 +823,7 @@
                       onclick="confirmarPedido(${orden.ordenCompraId})"
                       title="Confirmar Pedido"
                       style="padding: 0.4rem 0.6rem; font-size: 0.75rem; min-width: 60px;">
-                      ✓
+                      Recibir
                     </button>
                   `
                       : ""

@@ -11351,6 +11351,44 @@ const getAllOrdenesCompra = async (req, res) => {
 };
 
 /**
+ * Obtener lista de administradores que han creado órdenes de compra
+ * GET /api/admin/ordenes-compra/administradores
+ */
+const getAdministradoresOrdenesCompra = async (req, res) => {
+  try {
+    const { tenant_id } = req.tenant;
+
+    const query = `
+      SELECT DISTINCT
+        a.adminid,
+        a.nombre,
+        a.rol
+      FROM Administradores a
+      INNER JOIN OrdenesDeCompra oc ON a.adminid = oc.usuario_creador_id
+      WHERE oc.tenant_id = $1
+      ORDER BY a.nombre ASC
+    `;
+
+    const result = await db.query(query, [tenant_id]);
+
+    res.json({
+      success: true,
+      data: result.rows.map(row => ({
+        adminid: row.adminid,
+        nombre: row.nombre,
+        rol: row.rol
+      }))
+    });
+  } catch (error) {
+    console.error("Error al obtener administradores de órdenes de compra:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error al obtener administradores"
+    });
+  }
+};
+
+/**
  * Obtener detalles de una orden de compra específica
  * GET /api/admin/ordenes-compra/:id/detalles
  */
@@ -15250,6 +15288,7 @@ module.exports = {
   getTiposProductoAdmin,
   crearTipoProductoAdmin,
   getAllOrdenesCompra,
+  getAdministradoresOrdenesCompra,
   getDetallesOrdenCompra,
   getRecepcionOrdenCompra,
   getComprasPendientes,
