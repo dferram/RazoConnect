@@ -116,6 +116,13 @@ router.post(
   inventoryAuditController.aplicarSesion
 );
 
+router.post(
+  "/auditoria-inventario/finalizar-sesion/:sesionId",
+  authenticate,
+  authorizeAdminOnly,
+  inventoryAuditController.finalizarSesion
+);
+
 router.get(
   "/auditoria-inventario/diagnostico-sesiones",
   authenticate,

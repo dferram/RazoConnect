@@ -8,6 +8,10 @@
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
+    <!-- MISIÓN 1: jsPDF para generación de reportes PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+
     <!-- PROTECCIÓN DE AUTENTICACIÓN ADMIN -->
     <script src="js/auth-guard-admin.js"></script>
 
@@ -180,6 +184,28 @@
 
               <!-- Auditor -->
               <div id="auditor" role="tabpanel" class="d-none">
+                <!-- MISIÓN 2: Banner de Modo Histórico (Read-Only) -->
+                <div
+                  id="bannerHistorico"
+                  style="
+                    display: none;
+                    padding: 1rem 1.5rem;
+                    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+                    color: white;
+                    border-radius: 0.75rem;
+                    margin-bottom: 1rem;
+                    font-weight: 600;
+                    text-align: center;
+                    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+                  "
+                >
+                  <i class="bi bi-lock-fill" style="margin-right: 0.5rem;"></i>
+                  VISUALIZANDO HISTÓRICO - SESIÓN CERRADA
+                  <div style="font-size: 0.85rem; font-weight: 400; margin-top: 0.25rem; opacity: 0.9;">
+                    Esta sesión está cerrada y no permite ediciones
+                  </div>
+                </div>
+
                 <div
                   style="
                     display: flex;
@@ -207,6 +233,26 @@
                     >
                       Aplicar Inventario
                     </button>
+                    <!-- MISIÓN 2: Botón Cerrar Inventario Final -->
+                    <button
+                      type="button"
+                      id="btnCerrarSesion"
+                      class="btn btn-success"
+                      style="background: #10b981; border: none; display: none;"
+                      disabled
+                    >
+                      <i class="bi bi-check-circle-fill"></i> Cerrar Inventario Final
+                    </button>
+                    <!-- MISIÓN 1: Botón Descargar PDF -->
+                    <button
+                      type="button"
+                      id="btnDescargarPDF"
+                      class="btn btn-info"
+                      style="background: #3b82f6; border: none; color: white; display: none;"
+                      disabled
+                    >
+                      <i class="bi bi-file-earmark-pdf-fill"></i> Descargar PDF
+                    </button>
                   </div>
 
                   <div
@@ -219,6 +265,30 @@
 
                 <div id="dashboardLoading" class="loading" style="display: none">
                   <div class="spinner"></div>
+                </div>
+
+                <!-- MISIÓN 4: Barra de Filtros Avanzados -->
+                <div id="filtrosAvanzados" style="display: none; background: #f8fafc; border-radius: 0.75rem; padding: 1rem; margin-bottom: 1rem;">
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; align-items: end;">
+                    <div>
+                      <label for="filterCategoriaAuditor" style="display: block; font-weight: 600; color: #374151; font-size: 0.875rem; margin-bottom: 0.5rem;">
+                        Filtrar por Categoría
+                      </label>
+                      <select id="filterCategoriaAuditor" class="form-select" style="padding: 0.5rem; border-radius: 0.5rem; border: 1px solid #d1d5db;">
+                        <option value="">Todas las categorías</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label for="filterOrden" style="display: block; font-weight: 600; color: #374151; font-size: 0.875rem; margin-bottom: 0.5rem;">
+                        Ordenar por
+                      </label>
+                      <select id="filterOrden" class="form-select" style="padding: 0.5rem; border-radius: 0.5rem; border: 1px solid #d1d5db;">
+                        <option value="cronologico">Cronológico (orden de registro)</option>
+                        <option value="az">A-Z (Nombre)</option>
+                        <option value="za">Z-A (Nombre)</option>
+                      </select>
+                    </div>
+                  </div>
                 </div>
 
                 <div class="table-responsive" style="overflow-x: auto; border-radius: 0.75rem;">
@@ -617,15 +687,24 @@
 
       const btnRefrescar = document.getElementById("btnRefrescar");
       const btnAplicar = document.getElementById("btnAplicar");
+      const btnCerrarSesion = document.getElementById("btnCerrarSesion");
+      const btnDescargarPDF = document.getElementById("btnDescargarPDF");
+      const bannerHistorico = document.getElementById("bannerHistorico");
       const aplicarHint = document.getElementById("aplicarHint");
       const dashboardLoading = document.getElementById("dashboardLoading");
       const dashboardTable = document.getElementById("dashboardTable");
       const dashboardTbody = document.getElementById("dashboardTbody");
+      
+      // MISIÓN 4: Referencias a filtros avanzados
+      const filtrosAvanzados = document.getElementById("filtrosAvanzados");
+      const filterCategoriaAuditor = document.getElementById("filterCategoriaAuditor");
+      const filterOrden = document.getElementById("filterOrden");
 
       const state = {
         sesionId: null,
         sesionEstatus: null,
         filas: [],
+        filasOriginales: [], // MISIÓN 4: Guardar orden original
         isAgente: false,
         catalogo: [],
         filteredProducts: [],
@@ -1186,12 +1265,57 @@
 
         const validados = state.filas.filter((f) => f.estatusFila === "VALIDADO").length;
         const conflictos = state.filas.filter((f) => f.estatusFila === "CONFLICTO").length;
+        const pendientes = state.filas.filter((f) => f.estatusFila === "PENDIENTE_A" || f.estatusFila === "PENDIENTE_B").length;
+        
+        // MISIÓN 2: Detectar si la sesión está cerrada (modo histórico)
+        const esSesionCerrada = state.sesionEstatus === "CERRADA" || state.sesionEstatus === "APLICADA" || state.sesionEstatus === "APLICADA_PARCIAL";
+        
+        // MISIÓN 2: Mostrar/ocultar banner de modo histórico
+        if (bannerHistorico) {
+          bannerHistorico.style.display = esSesionCerrada && hasSesion ? "block" : "none";
+        }
+        
+        // MISIÓN 2: Deshabilitar controles en modo histórico
+        if (esSesionCerrada) {
+          if (btnAplicar) btnAplicar.disabled = true;
+          if (btnCerrarSesion) {
+            btnCerrarSesion.style.display = "none";
+            btnCerrarSesion.disabled = true;
+          }
+          if (btnRefrescar) btnRefrescar.disabled = false; // Permitir refrescar en modo histórico
+          
+          aplicarHint.textContent = `Sesión ${safeText(state.sesionEstatus)} - Solo lectura`;
+          return;
+        }
+        
         const canApply =
           hasSesion &&
           state.sesionEstatus === "ABIERTA" &&
           validados > 0 &&
           !state.isAgente;
         btnAplicar.disabled = !canApply;
+        
+        // MISIÓN 2: Lógica del botón "Cerrar Inventario Final"
+        // Solo visible si: sesión ABIERTA, no hay conflictos (o bajo confirmación), y no es agente
+        const canClose = 
+          hasSesion &&
+          state.sesionEstatus === "ABIERTA" &&
+          !state.isAgente &&
+          state.filas.length > 0; // Debe tener al menos un producto contado
+        
+        if (btnCerrarSesion) {
+          btnCerrarSesion.style.display = canClose ? "inline-block" : "none";
+          btnCerrarSesion.disabled = !canClose;
+        }
+        
+        // MISIÓN 1: Lógica del botón "Descargar PDF"
+        // Visible si hay datos en la sesión (independiente del estatus)
+        const canDownloadPDF = hasSesion && state.filas.length > 0 && !state.isAgente;
+        
+        if (btnDescargarPDF) {
+          btnDescargarPDF.style.display = canDownloadPDF ? "inline-block" : "none";
+          btnDescargarPDF.disabled = !canDownloadPDF;
+        }
 
         if (!hasSesion) {
           aplicarHint.textContent = "Selecciona una sesión.";
@@ -1216,10 +1340,56 @@
         aplicarHint.textContent = `Listo para aplicar ${validados} producto(s) validado(s).`;
       };
 
+      // MISIÓN 4: Función para filtrar y ordenar la tabla del dashboard
+      const filtrarYOrdenarTabla = () => {
+        if (!state.filasOriginales || state.filasOriginales.length === 0) {
+          return;
+        }
+
+        let filasFiltradas = [...state.filasOriginales];
+
+        // Filtrar por categoría
+        const categoriaSeleccionada = filterCategoriaAuditor?.value || "";
+        if (categoriaSeleccionada) {
+          filasFiltradas = filasFiltradas.filter(f => {
+            // Buscar la categoría del producto en el catálogo
+            const variante = state.varianteById.get(f.varianteId);
+            return variante && String(variante.categoriaid) === categoriaSeleccionada;
+          });
+        }
+
+        // Ordenar según selección
+        const ordenSeleccionado = filterOrden?.value || "cronologico";
+        
+        if (ordenSeleccionado === "az") {
+          // A-Z por nombre de producto
+          filasFiltradas.sort((a, b) => {
+            const nombreA = (a.nombreProducto || "").toLowerCase();
+            const nombreB = (b.nombreProducto || "").toLowerCase();
+            return nombreA.localeCompare(nombreB);
+          });
+        } else if (ordenSeleccionado === "za") {
+          // Z-A por nombre de producto
+          filasFiltradas.sort((a, b) => {
+            const nombreA = (a.nombreProducto || "").toLowerCase();
+            const nombreB = (b.nombreProducto || "").toLowerCase();
+            return nombreB.localeCompare(nombreA);
+          });
+        }
+        // Si es "cronologico", mantener el orden original (no hacer nada)
+
+        // Actualizar state.filas con las filas filtradas/ordenadas
+        state.filas = filasFiltradas;
+
+        // Re-renderizar la tabla
+        renderDashboardTable();
+      };
+
       const renderDashboard = (data) => {
         dashboardTbody.innerHTML = "";
         const filas = Array.isArray(data?.filas) ? data.filas : [];
         state.filas = filas;
+        state.filasOriginales = [...filas]; // MISIÓN 4: Guardar copia del orden original
         state.sesionEstatus = data?.sesion?.estatus || null;
 
         sesionEstatus.textContent = safeText(state.sesionEstatus || "—");
@@ -1231,6 +1401,44 @@
           stats.pendientes || 0
         )}`;
 
+        // MISIÓN 4: Poblar filtro de categorías dinámicamente
+        if (filterCategoriaAuditor && state.catalogo.length > 0) {
+          const categoriasUnicas = new Set();
+          state.filasOriginales.forEach(f => {
+            const variante = state.varianteById.get(f.varianteId);
+            if (variante && variante.categoriaid) {
+              categoriasUnicas.add(variante.categoriaid);
+            }
+          });
+
+          // Limpiar opciones existentes (excepto "Todas")
+          filterCategoriaAuditor.innerHTML = '<option value="">Todas las categorías</option>';
+          
+          // Agregar categorías únicas
+          const categorias = Array.from(state.productoById.values())
+            .filter(p => categoriasUnicas.has(p.categoriaid))
+            .reduce((acc, p) => {
+              if (!acc.has(p.categoriaid)) {
+                acc.set(p.categoriaid, p);
+              }
+              return acc;
+            }, new Map());
+
+          // Obtener nombres de categorías del catálogo
+          categorias.forEach((producto, categoriaId) => {
+            const opt = document.createElement("option");
+            opt.value = categoriaId;
+            // Intentar obtener el nombre de la categoría del producto
+            opt.textContent = `Categoría ${categoriaId}`;
+            filterCategoriaAuditor.appendChild(opt);
+          });
+        }
+
+        // Mostrar filtros avanzados si hay datos
+        if (filtrosAvanzados) {
+          filtrosAvanzados.style.display = filas.length > 0 ? "block" : "none";
+        }
+
         if (!filas.length) {
           dashboardTable.style.display = "none";
           updateControls();
@@ -1238,8 +1446,15 @@
         }
 
         dashboardTable.style.display = "table";
+        renderDashboardTable();
+        updateControls();
+      };
 
-        for (const f of filas) {
+      // MISIÓN 4: Función separada para renderizar la tabla (permite re-renderizar sin recargar datos)
+      const renderDashboardTable = () => {
+        dashboardTbody.innerHTML = "";
+        
+        for (const f of state.filas) {
           const tr = document.createElement("tr");
 
           // Colores: Validado (verde), Conflicto (rojo), Pendiente (amarillo)
@@ -1305,8 +1520,6 @@
           tr.appendChild(tdDetalle);
           dashboardTbody.appendChild(tr);
         }
-
-        updateControls();
       };
 
       const fillSesionesSelect = (sesiones, preferId) => {
@@ -1834,6 +2047,309 @@
       }
 
 
+      // MISIÓN 1: Función para generar PDF con 3 tablas clasificadas por semáforo
+      const descargarPDFClasificado = async () => {
+        if (!state.sesionId || !state.filas || state.filas.length === 0) {
+          toast("warning", "No hay datos para generar el PDF");
+          return;
+        }
+
+        try {
+          // Clasificar productos en 3 categorías
+          const validados = state.filas.filter(f => 
+            f.estatusFila === "VALIDADO" && 
+            f.conteoA !== null && 
+            f.conteoB !== null
+          );
+          
+          const conflictos = state.filas.filter(f => 
+            f.estatusFila === "CONFLICTO"
+          );
+          
+          const pendientes = state.filas.filter(f => 
+            f.estatusFila === "PENDIENTE_A" || 
+            f.estatusFila === "PENDIENTE_B"
+          );
+
+          // Inicializar jsPDF
+          const { jsPDF } = window.jspdf;
+          const doc = new jsPDF('landscape', 'mm', 'a4');
+          
+          // Obtener información de la sesión
+          const sesionNombre = document.querySelector('#sesionSelect option:checked')?.textContent || `Sesión #${state.sesionId}`;
+          const fechaGeneracion = new Date().toLocaleDateString('es-MX', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          });
+
+          // Encabezado del documento
+          doc.setFontSize(18);
+          doc.setFont('helvetica', 'bold');
+          doc.text('Reporte de Auditoría de Inventario', 148, 15, { align: 'center' });
+          
+          doc.setFontSize(11);
+          doc.setFont('helvetica', 'normal');
+          doc.text(`${sesionNombre}`, 148, 22, { align: 'center' });
+          doc.text(`Generado: ${fechaGeneracion}`, 148, 28, { align: 'center' });
+
+          let yPosition = 35;
+
+          // Función helper para crear tabla
+          const crearTabla = (titulo, datos, colorFondo, colorTexto) => {
+            if (datos.length === 0) {
+              return yPosition;
+            }
+
+            // Título de la sección
+            doc.setFontSize(14);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(colorTexto[0], colorTexto[1], colorTexto[2]);
+            doc.text(titulo, 14, yPosition);
+            yPosition += 2;
+
+            // Preparar datos para la tabla
+            const tableData = datos.map(f => {
+              const medida = f.medidas || f.dimension || '-';
+              const color = f.color || '-';
+              const conteoAdmin = f.conteoA !== null ? f.conteoA : '-';
+              const conteoAgente = f.conteoB !== null ? f.conteoB : '-';
+              const diferencia = (f.conteoA !== null && f.conteoB !== null) 
+                ? (f.conteoA - f.conteoB) 
+                : '-';
+
+              return [
+                f.sku || '-',
+                f.nombreProducto || '-',
+                medida,
+                color,
+                conteoAdmin,
+                conteoAgente,
+                diferencia
+              ];
+            });
+
+            // Generar tabla con autoTable
+            doc.autoTable({
+              startY: yPosition,
+              head: [['SKU', 'Producto', 'Medida', 'Color', 'Conteo Admin', 'Conteo Agente', 'Diferencia']],
+              body: tableData,
+              theme: 'grid',
+              headStyles: {
+                fillColor: colorFondo,
+                textColor: [255, 255, 255],
+                fontStyle: 'bold',
+                fontSize: 9,
+                halign: 'center'
+              },
+              bodyStyles: {
+                fontSize: 8,
+                cellPadding: 2
+              },
+              columnStyles: {
+                0: { cellWidth: 30 },  // SKU
+                1: { cellWidth: 60 },  // Producto
+                2: { cellWidth: 25 },  // Medida
+                3: { cellWidth: 25 },  // Color
+                4: { cellWidth: 25, halign: 'center' },  // Conteo Admin
+                5: { cellWidth: 25, halign: 'center' },  // Conteo Agente
+                6: { cellWidth: 25, halign: 'center' }   // Diferencia
+              },
+              margin: { left: 14, right: 14 },
+              didDrawPage: (data) => {
+                yPosition = data.cursor.y + 8;
+              }
+            });
+
+            return yPosition;
+          };
+
+          // TABLA VERDE: Validados
+          if (validados.length > 0) {
+            yPosition = crearTabla(
+              `✓ Validado (${validados.length} productos)`,
+              validados,
+              [34, 197, 94],  // Verde
+              [22, 163, 74]   // Verde oscuro para texto
+            );
+          }
+
+          // Verificar si necesitamos nueva página
+          if (yPosition > 180 && (conflictos.length > 0 || pendientes.length > 0)) {
+            doc.addPage();
+            yPosition = 15;
+          }
+
+          // TABLA ROJA: En Conflicto
+          if (conflictos.length > 0) {
+            yPosition = crearTabla(
+              `⚠ En Conflicto (${conflictos.length} productos)`,
+              conflictos,
+              [239, 68, 68],  // Rojo
+              [220, 38, 38]   // Rojo oscuro para texto
+            );
+          }
+
+          // Verificar si necesitamos nueva página
+          if (yPosition > 180 && pendientes.length > 0) {
+            doc.addPage();
+            yPosition = 15;
+          }
+
+          // TABLA AMARILLA: Pendiente 2do Conteo
+          if (pendientes.length > 0) {
+            yPosition = crearTabla(
+              `⏳ Pendiente 2do Conteo (${pendientes.length} productos)`,
+              pendientes,
+              [245, 158, 11], // Naranja/Amarillo
+              [217, 119, 6]   // Naranja oscuro para texto
+            );
+          }
+
+          // Pie de página en todas las páginas
+          const pageCount = doc.internal.getNumberOfPages();
+          for (let i = 1; i <= pageCount; i++) {
+            doc.setPage(i);
+            doc.setFontSize(8);
+            doc.setTextColor(150, 150, 150);
+            doc.text(
+              `RazoConnect - Página ${i} de ${pageCount}`,
+              148,
+              200,
+              { align: 'center' }
+            );
+          }
+
+          // Descargar PDF
+          const fileName = `Inventario_Sesion_${state.sesionId}_${new Date().toISOString().split('T')[0]}.pdf`;
+          doc.save(fileName);
+
+          toast("success", "PDF generado exitosamente");
+
+        } catch (error) {
+          console.error("Error generando PDF:", error);
+          await Swal.fire({
+            icon: "error",
+            title: "Error al generar PDF",
+            text: error.message || "No se pudo generar el reporte PDF",
+            confirmButtonColor: "#F97316"
+          });
+        }
+      };
+
+      // MISIÓN 2: Función para cerrar sesión de inventario
+      const cerrarSesion = async () => {
+        if (!state.sesionId) return;
+        if (state.isAgente) {
+          toast("error", "No tienes permisos para cerrar sesiones");
+          return;
+        }
+
+        const validados = state.filas.filter((f) => f.estatusFila === "VALIDADO").length;
+        const conflictos = state.filas.filter((f) => f.estatusFila === "CONFLICTO").length;
+        const pendientes = state.filas.filter((f) => f.estatusFila === "PENDIENTE_A" || f.estatusFila === "PENDIENTE_B").length;
+
+        // Validar que haya al menos productos validados
+        if (validados === 0 && conflictos === 0 && pendientes === 0) {
+          toast("warning", "No hay productos contados en esta sesión");
+          return;
+        }
+
+        let confirmText = `¿Deseas cerrar esta sesión de inventario?<br><br>`;
+        confirmText += `<strong>Resumen:</strong><br>`;
+        confirmText += `✅ ${validados} producto(s) validado(s)<br>`;
+        if (conflictos > 0) {
+          confirmText += `⚠️ ${conflictos} producto(s) en conflicto<br>`;
+        }
+        if (pendientes > 0) {
+          confirmText += `⏳ ${pendientes} producto(s) pendientes<br>`;
+        }
+        confirmText += `<br><small style="color: #6b7280;">Una vez cerrada, la sesión no permitirá más ediciones y podrás generar el reporte PDF.</small>`;
+
+        const confirm = await Swal.fire({
+          icon: conflictos > 0 ? "warning" : "question",
+          title: "Cerrar Sesión de Inventario",
+          html: confirmText,
+          showCancelButton: true,
+          confirmButtonText: conflictos > 0 ? "Cerrar de todas formas" : "Cerrar Sesión",
+          cancelButtonText: "Cancelar",
+          confirmButtonColor: conflictos > 0 ? "#f59e0b" : "#10b981",
+        });
+
+        if (!confirm.isConfirmed) return;
+
+        try {
+          btnCerrarSesion.disabled = true;
+          const resp = await apiCall(
+            `/admin/auditoria-inventario/finalizar-sesion/${encodeURIComponent(state.sesionId)}`,
+            { 
+              method: "POST",
+              body: JSON.stringify({ forzar: conflictos > 0 })
+            }
+          );
+
+          if (!resp.ok) {
+            if (resp.status === 409 && resp.data?.data?.requiereConfirmacion) {
+              // Mostrar confirmación adicional si hay conflictos
+              const stats = resp.data.data.stats;
+              const reconfirm = await Swal.fire({
+                icon: "warning",
+                title: "Hay productos en conflicto",
+                html: `Esta sesión tiene <strong>${stats.conflictos}</strong> producto(s) con diferencias entre conteos.<br><br>¿Confirmas que deseas cerrar la sesión de todas formas?`,
+                showCancelButton: true,
+                confirmButtonText: "Sí, cerrar",
+                cancelButtonText: "Cancelar",
+                confirmButtonColor: "#f59e0b",
+              });
+
+              if (!reconfirm.isConfirmed) {
+                btnCerrarSesion.disabled = false;
+                return;
+              }
+
+              // Reintentar con forzar = true
+              const resp2 = await apiCall(
+                `/admin/auditoria-inventario/finalizar-sesion/${encodeURIComponent(state.sesionId)}`,
+                { 
+                  method: "POST",
+                  body: JSON.stringify({ forzar: true })
+                }
+              );
+
+              if (!resp2.ok) {
+                throw new Error(resp2.data?.message || "Error al cerrar sesión");
+              }
+            } else {
+              throw new Error(resp.data?.message || "Error al cerrar sesión");
+            }
+          }
+
+          await Swal.fire({
+            icon: "success",
+            title: "Sesión Cerrada",
+            html: "La sesión de inventario ha sido cerrada exitosamente.<br><br>Ahora puedes generar el reporte PDF desde el historial de sesiones.",
+            confirmButtonColor: "#10b981",
+          });
+
+          // Recargar dashboard para mostrar modo histórico
+          await loadDashboard();
+          await loadSesiones(state.sesionId);
+        } catch (error) {
+          console.error(error);
+          await Swal.fire({
+            icon: "error",
+            title: "Error",
+            text: error.message || "No se pudo cerrar la sesión",
+            confirmButtonColor: "#F97316",
+          });
+          btnCerrarSesion.disabled = false;
+        } finally {
+          updateControls();
+        }
+      };
+
       const aplicarInventario = async () => {
         if (!state.sesionId) return;
         if (state.isAgente) {
@@ -1981,6 +2497,20 @@
 
       btnRefrescar.addEventListener("click", loadDashboard);
       btnAplicar.addEventListener("click", aplicarInventario);
+      if (btnCerrarSesion) {
+        btnCerrarSesion.addEventListener("click", cerrarSesion);
+      }
+      if (btnDescargarPDF) {
+        btnDescargarPDF.addEventListener("click", descargarPDFClasificado);
+      }
+
+      // MISIÓN 4: Event listeners para filtros avanzados
+      if (filterCategoriaAuditor) {
+        filterCategoriaAuditor.addEventListener("change", filtrarYOrdenarTabla);
+      }
+      if (filterOrden) {
+        filterOrden.addEventListener("change", filtrarYOrdenarTabla);
+      }
 
       // MISIÓN CRÍTICA: Switcheo manual 100% JavaScript puro (Bypass total de Bootstrap)
       const btnOperador = document.getElementById('operador-tab');

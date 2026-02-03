@@ -158,24 +158,44 @@ function renderizarTabla(sesiones) {
             </td>
             <td>${estatusBadge}</td>
             <td style="text-align: center;">
-                <button
-                    onclick="descargarReportePDF(${sesion.sesionid}, '${sesion.nombre}')"
-                    style="
-                        background: var(--razo-orange);
-                        color: white;
-                        border: none;
-                        padding: 0.5rem 0.75rem;
-                        border-radius: 0.5rem;
-                        cursor: pointer;
-                        font-size: 1.1rem;
-                        transition: all 0.3s ease;
-                    "
-                    onmouseover="this.style.background='#ea580c'; this.style.transform='scale(1.1)'"
-                    onmouseout="this.style.background='var(--razo-orange)'; this.style.transform='scale(1)'"
-                    title="Descargar reporte PDF"
-                >
-                    <i class="bi bi-file-earmark-pdf-fill"></i>
-                </button>
+                <div style="display: flex; gap: 0.5rem; justify-content: center;">
+                    <button
+                        onclick="verDetalleSesion(${sesion.sesionid})"
+                        style="
+                            background: #3b82f6;
+                            color: white;
+                            border: none;
+                            padding: 0.5rem 0.75rem;
+                            border-radius: 0.5rem;
+                            cursor: pointer;
+                            font-size: 1.1rem;
+                            transition: all 0.3s ease;
+                        "
+                        onmouseover="this.style.background='#2563eb'; this.style.transform='scale(1.1)'"
+                        onmouseout="this.style.background='#3b82f6'; this.style.transform='scale(1)'"
+                        title="Ver detalles de la sesión"
+                    >
+                        <i class="bi bi-eye-fill"></i>
+                    </button>
+                    <button
+                        onclick="descargarReportePDF(${sesion.sesionid}, '${sesion.nombre}')"
+                        style="
+                            background: var(--razo-orange);
+                            color: white;
+                            border: none;
+                            padding: 0.5rem 0.75rem;
+                            border-radius: 0.5rem;
+                            cursor: pointer;
+                            font-size: 1.1rem;
+                            transition: all 0.3s ease;
+                        "
+                        onmouseover="this.style.background='#ea580c'; this.style.transform='scale(1.1)'"
+                        onmouseout="this.style.background='var(--razo-orange)'; this.style.transform='scale(1)'"
+                        title="Descargar reporte PDF"
+                    >
+                        <i class="bi bi-file-earmark-pdf-fill"></i>
+                    </button>
+                </div>
             </td>
         `;
 
@@ -261,6 +281,39 @@ function actualizarPaginacion(pagination) {
     btnNextPage.style.opacity = currentPage === totalPages ? '0.5' : '1';
     btnPrevPage.style.cursor = currentPage === 1 ? 'not-allowed' : 'pointer';
     btnNextPage.style.cursor = currentPage === totalPages ? 'not-allowed' : 'pointer';
+}
+
+// MISIÓN 3: Función para navegar a la página de detalle de sesión
+function verDetalleSesion(sesionId) {
+    if (!sesionId) {
+        console.error('❌ [NAVEGACIÓN] sesionId inválido:', sesionId);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'ID de sesión inválido',
+            confirmButtonColor: '#F97316'
+        });
+        return;
+    }
+
+    // CRÍTICO: Verificar que el token de admin esté presente
+    const token = localStorage.getItem('token');
+    if (!token) {
+        console.error('❌ [AUTH] Token de admin no encontrado');
+        Swal.fire({
+            icon: 'warning',
+            title: 'Sesión expirada',
+            text: 'Tu sesión ha expirado. Serás redirigido al login.',
+            confirmButtonColor: '#F97316'
+        }).then(() => {
+            window.location.href = '/login-admin.html';
+        });
+        return;
+    }
+
+    // Navegar a la página de toma de inventario con el sesionId como parámetro
+    console.log(`🔄 [NAVEGACIÓN] Redirigiendo a sesión ${sesionId}`);
+    window.location.href = `/admin-toma-inventario.html?sesionId=${sesionId}`;
 }
 
 async function descargarReportePDF(sesionId, nombreSesion) {

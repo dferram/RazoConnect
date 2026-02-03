@@ -1276,6 +1276,136 @@ const obtenerAgentesDisponibles = async (req, res) => {
   }
 };
 
+/**
+ * POST /finalizar-sesion/:sesionId
+ * Cierra una sesión de inventario (cambia estatus a CERRADA y guarda fechacierre)
+ * Solo Admin puede cerrar sesiones
+ * Validación: No debe tener conflictos pendientes (opcional bajo confirmación)
+ */
+const finalizarSesion = async (req, res) => {
+  const client = await db.pool.connect();
+
+  try {
+    const sesionId = parsePositiveInt(req.params.sesionId);
+    if (!sesionId) {
+      return res.status(400).json({
+        success: false,
+        message: "sesionId inválido",
+      });
+    }
+
+    const tenant_id = req.tenant?.tenant_id || req.user?.tenantId || 1;
+    
+    await client.query("BEGIN");
+
+    // Bloquear sesión para actualización
+    const sesionLock = await client.query(
+      `SELECT sesionid, nombre, estatus, tenant_id
+       FROM toma_inventario_sesiones
+       WHERE sesionid = $1 AND tenant_id = $2
+       FOR UPDATE`,
+      [sesionId, tenant_id]
+    );
+
+    if (!sesionLock.rows.length) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({
+        success: false,
+        message: "Sesión no encontrada",
+      });
+    }
+
+    const sesion = sesionLock.rows[0];
+
+    // Validar que la sesión esté ABIERTA
+    if (sesion.estatus !== "ABIERTA") {
+      await client.query("ROLLBACK");
+      return res.status(409).json({
+        success: false,
+        message: `La sesión ya está en estatus '${sesion.estatus}'. Solo se pueden cerrar sesiones ABIERTAS.`,
+      });
+    }
+
+    // Obtener estadísticas de la sesión
+    const statsResult = await client.query(
+      `SELECT
+         COUNT(*)::int AS total,
+         COUNT(CASE WHEN estatus_fila = 'VALIDADO' THEN 1 END)::int AS validados,
+         COUNT(CASE WHEN estatus_fila = 'CONFLICTO' THEN 1 END)::int AS conflictos,
+         COUNT(CASE WHEN estatus_fila IN ('PENDIENTE_A', 'PENDIENTE_B') THEN 1 END)::int AS pendientes
+       FROM toma_inventario_conteos
+       WHERE sesionid = $1`,
+      [sesionId]
+    );
+
+    const stats = statsResult.rows[0] || { total: 0, validados: 0, conflictos: 0, pendientes: 0 };
+
+    // VALIDACIÓN OPCIONAL: Verificar que no haya conflictos
+    // (El usuario puede forzar el cierre con confirmación en frontend)
+    const forzarCierre = req.body?.forzar === true;
+    
+    if (stats.conflictos > 0 && !forzarCierre) {
+      await client.query("ROLLBACK");
+      return res.status(409).json({
+        success: false,
+        message: `No se puede cerrar la sesión: hay ${stats.conflictos} producto(s) en CONFLICTO. Resuelve los conflictos o confirma el cierre forzado.`,
+        data: {
+          stats,
+          requiereConfirmacion: true,
+        },
+      });
+    }
+
+    // Cerrar la sesión
+    const updateResult = await client.query(
+      `UPDATE toma_inventario_sesiones 
+       SET estatus = 'CERRADA', 
+           fechacierre = NOW()
+       WHERE sesionid = $1
+       RETURNING sesionid, nombre, estatus, fechainicio, fechacierre`,
+      [sesionId]
+    );
+
+    await client.query("COMMIT");
+
+    const sesionCerrada = updateResult.rows[0];
+
+    console.log(`✅ [SESIÓN CERRADA] Sesión #${sesionId} cerrada exitosamente. Stats: ${stats.validados} validados, ${stats.conflictos} conflictos, ${stats.pendientes} pendientes`);
+
+    return res.json({
+      success: true,
+      message: `Sesión "${sesion.nombre}" cerrada exitosamente`,
+      data: {
+        sesion: {
+          sesionId: sesionCerrada.sesionid,
+          nombre: sesionCerrada.nombre,
+          estatus: sesionCerrada.estatus,
+          fechaInicio: sesionCerrada.fechainicio,
+          fechaCierre: sesionCerrada.fechacierre,
+        },
+        stats,
+      },
+    });
+  } catch (error) {
+    try {
+      await client.query("ROLLBACK");
+    } catch (e) {
+      // ignore
+    }
+
+    console.error("Error en finalizarSesion:", error);
+    const status = error && Number.isInteger(error.status) ? error.status : 500;
+    return res.status(status).json({
+      success: false,
+      message: error.message || "Error al cerrar sesión",
+      error: error.message,
+      code: error.code,
+    });
+  } finally {
+    client.release();
+  }
+};
+
 module.exports = {
   crearSesion,
   registrarConteo,
@@ -1288,4 +1418,5 @@ module.exports = {
   getSesionDetalle,
   asignarAgenteASesion,
   obtenerAgentesDisponibles,
+  finalizarSesion,
 };
