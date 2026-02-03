@@ -59,114 +59,23 @@
         adminData = null;
       }
 
-      // Si no hay sesión, redirigir (Protección básica)
-      if (!adminData) {
+      // Si no hay sesión, redirigir (Protección básica) y DETENER ejecución
+      if (!adminData || !adminData.nombre) {
         console.warn("⚠️ No hay datos de admin en localStorage, redirigiendo...");
-        window.location.replace("/login.html");
-        return;
-      }
-
-      // 2. Verificar y actualizar datos del usuario desde el servidor
-      const token = localStorage.getItem("razoconnect_admin_token") || localStorage.getItem("token");
-      if (token) {
-        try {
-          // MISIÓN 1: URL correcta con origin completo
-          const apiUrl = `${window.location.origin}/api/admin/verify`;
-          console.log('🔐 Verificando admin en:', apiUrl);
-          
-          const response = await fetch(apiUrl, {
-            method: "GET",
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          });
-
-          if (response.ok) {
-            const data = await response.json();
-            console.log('✅ Respuesta de verify:', data);
-            
-            if (data.success && data.data && data.data.admin) {
-              // Actualizar localStorage con datos frescos
-              adminData = {
-                ...adminData,
-                nombre: data.data.admin.nombre,
-                rol: data.data.admin.rol,
-                origen: data.data.admin.origen,
-              };
-              localStorage.setItem("razoconnect_admin", JSON.stringify(adminData));
-              console.log("✅ Datos de admin actualizados desde servidor");
-              
-              // MISIÓN 1: Validación estricta de rol para páginas sensibles
-              const currentPage = window.location.pathname;
-              const paginasRestringidas = ['/admin-inventario-reportes.html', '/admin-reportes.html'];
-              
-              if (paginasRestringidas.some(p => currentPage.includes(p))) {
-                const rol = (data.data.admin.rol || '').toString().toLowerCase().trim();
-                const isSuperAdmin = rol === 'superadmin' || rol === 'super admin' || rol === 'super-admin';
-                
-                if (!isSuperAdmin) {
-                  console.warn('🚫 Acceso denegado: Se requieren permisos de Superadmin');
-                  Swal.fire({
-                    icon: 'error',
-                    title: 'Acceso Denegado',
-                    text: 'Se requieren permisos de Superadmin para acceder a esta sección.',
-                    confirmButtonColor: '#F97316'
-                  }).then(() => {
-                    window.location.href = '/admin-dashboard.html';
-                  });
-                  return;
-                }
-              }
-            }
-          } else {
-            console.warn(`⚠️ Verify API retornó status ${response.status}`);
-            
-            // Si es 401/403, redirigir al login (sesión inválida)
-            if (response.status === 401 || response.status === 403) {
-              console.error('❌ Token inválido o expirado, redirigiendo al login');
-              localStorage.removeItem("razoconnect_admin");
-              localStorage.removeItem("razoconnect_admin_token");
-              localStorage.removeItem("token");
-              window.location.replace("/login-admin.html");
-              return;
-            }
-            
-            // Otros errores: usar caché
-            console.log("📦 Continuando con datos de localStorage");
-          }
-        } catch (fetchError) {
-          console.error("❌ Error en fetch /api/admin/verify:", fetchError);
-          
-          // MISIÓN 1: Si es error de red real, redirigir al login (comportamiento seguro)
-          if (fetchError.message.includes('Failed to fetch') || fetchError.message.includes('NetworkError')) {
-            console.error('🔴 Error de red crítico, redirigiendo al login');
-            
-            if (typeof Swal !== 'undefined') {
-              Swal.fire({
-                icon: 'error',
-                title: 'Error de Conexión',
-                text: 'No se pudo verificar tu sesión. Por favor, inicia sesión nuevamente.',
-                confirmButtonColor: '#F97316'
-              }).then(() => {
-                localStorage.removeItem("razoconnect_admin");
-                localStorage.removeItem("razoconnect_admin_token");
-                localStorage.removeItem("token");
-                window.location.replace("/login-admin.html");
-              });
-            } else {
-              localStorage.removeItem("razoconnect_admin");
-              localStorage.removeItem("razoconnect_admin_token");
-              localStorage.removeItem("token");
-              window.location.replace("/login-admin.html");
-            }
-            return;
-          }
-          
-          // Otros errores: continuar con caché
-          console.log("📦 Continuando con datos de localStorage:", adminData);
+        
+        // Limpiar cualquier intento de carga
+        const container = document.getElementById("admin-header-container");
+        if (container) {
+          container.innerHTML = '';
         }
+        
+        window.location.replace("/login-admin.html");
+        return; // CRÍTICO: Detener ejecución aquí
       }
+
+      // MISIÓN 1: NO hacer fetch redundante - auth-guard ya validó la sesión
+      // Simplemente usar los datos de localStorage que auth-guard refrescó
+      console.log("✅ Usando datos de sesión validados por auth-guard:", adminData.nombre);
     } catch (criticalError) {
       // MISIÓN 1: Último recurso - intentar renderizar con datos básicos
       console.error("❌ Error crítico en initializeHeader:", criticalError);
@@ -188,8 +97,11 @@
     const nombre = (adminData.nombre || "Admin").toString().trim();
     const rolSession = (adminData.rol || adminData.role || "").toString().trim();
     const rolRaw = rolSession.toLowerCase();
-    const isSuperAdmin = rolRaw === "super admin" || rolRaw === "superadmin";
+    const isSuperAdmin = rolRaw === "super admin" || rolRaw === "superadmin" || rolRaw === "super-admin";
     const rolTexto = isSuperAdmin ? "Super Admin" : "Administrador";
+    
+    // Sin restricciones de rol - Admin y SuperAdmin tienen acceso a todas las páginas
+    console.log('✅ Usuario autenticado:', nombre, '| Rol:', rolTexto);
 
     // Llenar datos en el Header
     const headerUserName = document.getElementById("headerUserName");

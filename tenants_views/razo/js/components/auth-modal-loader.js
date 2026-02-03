@@ -200,34 +200,40 @@
       try {
         const response = await API.login(identifier, password);
         
-        // MISIÓN 2: Debug - Imprimir respuesta completa
-        console.log('📦 Respuesta Login:', response);
+        // MISIÓN 2: Debug detallado - Imprimir estructura completa
+        console.log('📦 Respuesta Login completa:', response);
         console.log('📦 Response.data:', response.data);
+        console.log('📦 Response.ok:', response.ok);
+        console.log('📦 Estructura de data:', JSON.stringify(response.data, null, 2));
 
         if (response.ok && response.data.success) {
-          // MISIÓN 2: Buscar token en todas las estructuras posibles
-          const token = response.data.token || 
-                       (response.data.data && response.data.data.token) || 
-                       response.data.access_token || 
-                       (response.body && response.body.token) ||
-                       (response.data.cliente && response.data.cliente.token);
+          // MISIÓN 2: Búsqueda profunda del token en todas las variantes posibles
+          let token = response.data.token || response.data.access_token;
           
-          // MISIÓN 2: Validar que se encontró el token
-          if (!token) {
-            console.error('❌ No se recibió token del servidor');
-            console.error('📦 Estructura de respuesta:', JSON.stringify(response.data, null, 2));
-            submitBtn.disabled = false;
-            submitBtn.textContent = originalText;
-            showToast('No se recibió token del servidor. Por favor contacta soporte.', 'error');
-            return;
+          // Buscar en data.data si existe
+          if (!token && response.data.data) {
+            token = response.data.data.token || response.data.data.access_token;
           }
           
-          // Validación estricta de JWT
-          if (typeof token !== 'string') {
-            console.error('❌ Token inválido: no es string', { token, type: typeof token });
+          // Buscar en body si existe
+          if (!token && response.body) {
+            token = response.body.token || response.body.access_token;
+          }
+          
+          // Buscar en data.cliente si existe
+          if (!token && response.data.cliente) {
+            token = response.data.cliente.token;
+          }
+          
+          console.log('🔍 Token encontrado:', token ? `Sí (${token.substring(0, 20)}...)` : 'NO');
+          
+          // MISIÓN 2: Validación final del token
+          if (!token || typeof token !== 'string') {
+            console.error('❌ Token no encontrado o inválido');
+            console.error('📦 Estructura completa de respuesta:', JSON.stringify(response, null, 2));
             submitBtn.disabled = false;
             submitBtn.textContent = originalText;
-            showToast('Error en el formato del token. Contacta soporte.', 'error');
+            showToast('La respuesta del servidor no contiene un token válido.', 'error');
             return;
           }
 

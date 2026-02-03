@@ -48,9 +48,9 @@ async function cargarSesiones() {
     paginationDiv.style.display = 'none';
 
     try {
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem('razoconnect_admin_token');
         if (!token) {
-            window.location.href = '/login-admin.html';
+            window.location.href = '/login.html';
             return;
         }
 
@@ -297,7 +297,7 @@ function verDetalleSesion(sesionId) {
     }
 
     // CRÍTICO: Verificar que el token de admin esté presente
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('razoconnect_admin_token');
     if (!token) {
         console.error('❌ [AUTH] Token de admin no encontrado');
         Swal.fire({
@@ -306,7 +306,7 @@ function verDetalleSesion(sesionId) {
             text: 'Tu sesión ha expirado. Serás redirigido al login.',
             confirmButtonColor: '#F97316'
         }).then(() => {
-            window.location.href = '/login-admin.html';
+            window.location.href = '/login.html';
         });
         return;
     }
@@ -335,9 +335,9 @@ async function descargarReportePDF(sesionId, nombreSesion) {
     });
 
     try {
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem('razoconnect_admin_token');
         if (!token) {
-            window.location.href = '/login-admin.html';
+            window.location.href = '/login.html';
             return;
         }
 
