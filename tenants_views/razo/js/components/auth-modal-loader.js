@@ -199,14 +199,32 @@
 
       try {
         const response = await API.login(identifier, password);
+        
+        // MISIÓN 2: Debug - Imprimir respuesta completa
+        console.log('📦 Respuesta Login:', response);
+        console.log('📦 Response.data:', response.data);
 
         if (response.ok && response.data.success) {
-          // MISIÓN 2: Validar estructura del token antes de guardar
-          const token = response.data.token;
+          // MISIÓN 2: Buscar token en todas las estructuras posibles
+          const token = response.data.token || 
+                       (response.data.data && response.data.data.token) || 
+                       response.data.access_token || 
+                       (response.body && response.body.token) ||
+                       (response.data.cliente && response.data.cliente.token);
+          
+          // MISIÓN 2: Validar que se encontró el token
+          if (!token) {
+            console.error('❌ No se recibió token del servidor');
+            console.error('📦 Estructura de respuesta:', JSON.stringify(response.data, null, 2));
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+            showToast('No se recibió token del servidor. Por favor contacta soporte.', 'error');
+            return;
+          }
           
           // Validación estricta de JWT
-          if (!token || typeof token !== 'string') {
-            console.error('❌ Token inválido: no es string', token);
+          if (typeof token !== 'string') {
+            console.error('❌ Token inválido: no es string', { token, type: typeof token });
             submitBtn.disabled = false;
             submitBtn.textContent = originalText;
             showToast('Error en el formato del token. Contacta soporte.', 'error');
@@ -326,9 +344,16 @@
           
           // Auto-login after registration (use email since registration requires it)
           const loginResponse = await API.login(email, password);
+          
+          console.log('📦 Respuesta Auto-Login:', loginResponse);
+          
           if (loginResponse.ok && loginResponse.data.success) {
-            // MISIÓN 2: Validar token en auto-login también
-            const token = loginResponse.data.token;
+            // MISIÓN 2: Buscar token en todas las estructuras posibles (auto-login)
+            const token = loginResponse.data.token || 
+                         (loginResponse.data.data && loginResponse.data.data.token) || 
+                         loginResponse.data.access_token || 
+                         (loginResponse.body && loginResponse.body.token) ||
+                         (loginResponse.data.cliente && loginResponse.data.cliente.token);
             
             if (!token || typeof token !== 'string' || token.split('.').length !== 3) {
               console.error('❌ Token malformado en auto-login:', token);

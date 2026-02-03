@@ -622,8 +622,10 @@ const getDashboardSesion = async (req, res) => {
         si.nombre, 
         si.estatus, 
         si.usuario_creador_id,
-        si.agente_asignado_id
+        si.agente_asignado_id,
+        u.nombre AS creador_nombre
        FROM toma_inventario_sesiones si
+       LEFT JOIN usuarios u ON u.usuarioid = si.usuario_creador_id
        WHERE si.sesionid = $1 AND si.tenant_id = $2`,
       [sesionId, tenant_id]
     );
@@ -723,6 +725,7 @@ const getDashboardSesion = async (req, res) => {
           nombre: sesionResult.rows[0].nombre,
           estatus: sesionResult.rows[0].estatus,
           usuarioCreadorId: sesionResult.rows[0].usuario_creador_id,
+          creadorNombre: sesionResult.rows[0].creador_nombre || 'Administrador',
         },
         stats,
         filas,

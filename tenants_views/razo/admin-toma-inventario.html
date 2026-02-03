@@ -712,6 +712,7 @@
       const state = {
         sesionId: null,
         sesionEstatus: null,
+        sesionCreadorNombre: null, // Nombre del admin que creó la sesión
         filas: [],
         filasOriginales: [], // MISIÓN 4: Guardar orden original
         isAgente: false,
@@ -1400,6 +1401,7 @@
         state.filas = filas;
         state.filasOriginales = [...filas]; // MISIÓN 4: Guardar copia del orden original
         state.sesionEstatus = data?.sesion?.estatus || null;
+        state.sesionCreadorNombre = data?.sesion?.creadorNombre || 'Administrador'; // Guardar nombre del creador
 
         sesionEstatus.textContent = safeText(state.sesionEstatus || "—");
 
@@ -1410,12 +1412,11 @@
           stats.pendientes || 0
         )}`;
 
-        // MISIÓN 3: Mostrar admin responsable
+        // MISIÓN 3: Mostrar admin responsable (desde el backend, no localStorage)
         const sesionAdminResponsable = document.getElementById("sesionAdminResponsable");
         if (sesionAdminResponsable) {
-          const adminData = JSON.parse(localStorage.getItem('razoconnect_admin') || '{}');
-          const adminNombre = adminData.nombre || 'Administrador';
-          sesionAdminResponsable.querySelector('span').textContent = adminNombre;
+          const creadorNombre = data?.sesion?.creadorNombre || 'Administrador';
+          sesionAdminResponsable.querySelector('span').textContent = creadorNombre;
         }
 
         // MISIÓN 4: Poblar filtro de categorías dinámicamente
@@ -2131,9 +2132,8 @@
             console.warn('Error al cargar logo:', error);
           }
 
-          // MISIÓN 3: Obtener nombre del admin responsable
-          const adminData = JSON.parse(localStorage.getItem('razoconnect_admin') || '{}');
-          const adminNombre = adminData.nombre || 'Administrador';
+          // MISIÓN 3: Obtener nombre del admin responsable desde state (viene del backend)
+          const adminNombre = state.sesionCreadorNombre || 'Administrador';
 
           // MISIÓN 1: Función para dibujar encabezado (se llamará en cada página)
           const dibujarEncabezado = (doc) => {

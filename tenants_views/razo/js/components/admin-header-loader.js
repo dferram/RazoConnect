@@ -67,10 +67,14 @@
       }
 
       // 2. Verificar y actualizar datos del usuario desde el servidor
-      const token = localStorage.getItem("razoconnect_admin_token");
+      const token = localStorage.getItem("razoconnect_admin_token") || localStorage.getItem("token");
       if (token) {
         try {
-          const response = await fetch("/api/admin/verify", {
+          // MISIÓN 1: URL correcta con origin completo
+          const apiUrl = `${window.location.origin}/api/admin/verify`;
+          console.log('🔐 Verificando admin en:', apiUrl);
+          
+          const response = await fetch(apiUrl, {
             method: "GET",
             headers: {
               Authorization: `Bearer ${token}`,
@@ -80,7 +84,9 @@
 
           if (response.ok) {
             const data = await response.json();
-            if (data.success && data.data.admin) {
+            console.log('✅ Respuesta de verify:', data);
+            
+            if (data.success && data.data && data.data.admin) {
               // Actualizar localStorage con datos frescos
               adminData = {
                 ...adminData,
@@ -90,28 +96,75 @@
               };
               localStorage.setItem("razoconnect_admin", JSON.stringify(adminData));
               console.log("✅ Datos de admin actualizados desde servidor");
+              
+              // MISIÓN 1: Validación estricta de rol para páginas sensibles
+              const currentPage = window.location.pathname;
+              const paginasRestringidas = ['/admin-inventario-reportes.html', '/admin-reportes.html'];
+              
+              if (paginasRestringidas.some(p => currentPage.includes(p))) {
+                const rol = (data.data.admin.rol || '').toString().toLowerCase().trim();
+                const isSuperAdmin = rol === 'superadmin' || rol === 'super admin' || rol === 'super-admin';
+                
+                if (!isSuperAdmin) {
+                  console.warn('🚫 Acceso denegado: Se requieren permisos de Superadmin');
+                  Swal.fire({
+                    icon: 'error',
+                    title: 'Acceso Denegado',
+                    text: 'Se requieren permisos de Superadmin para acceder a esta sección.',
+                    confirmButtonColor: '#F97316'
+                  }).then(() => {
+                    window.location.href = '/admin-dashboard.html';
+                  });
+                  return;
+                }
+              }
             }
           } else {
-            console.warn(`⚠️ Verify API retornó status ${response.status}, usando caché`);
+            console.warn(`⚠️ Verify API retornó status ${response.status}`);
+            
+            // Si es 401/403, redirigir al login (sesión inválida)
+            if (response.status === 401 || response.status === 403) {
+              console.error('❌ Token inválido o expirado, redirigiendo al login');
+              localStorage.removeItem("razoconnect_admin");
+              localStorage.removeItem("razoconnect_admin_token");
+              localStorage.removeItem("token");
+              window.location.replace("/login-admin.html");
+              return;
+            }
+            
+            // Otros errores: usar caché
+            console.log("📦 Continuando con datos de localStorage");
           }
         } catch (fetchError) {
-          // MISIÓN 1: Fallback silencioso - continuar con localStorage
-          console.warn("⚠️ Failed to fetch /api/admin/verify, usando datos de caché:", fetchError.message);
-          console.log("📦 Continuando con datos de localStorage:", adminData);
+          console.error("❌ Error en fetch /api/admin/verify:", fetchError);
           
-          // Mostrar notificación discreta al usuario (opcional)
-          if (typeof Swal !== 'undefined') {
-            Swal.fire({
-              icon: 'info',
-              title: 'Modo sin conexión',
-              text: 'Trabajando con datos locales. Algunas funciones pueden estar limitadas.',
-              toast: true,
-              position: 'top-end',
-              showConfirmButton: false,
-              timer: 3000,
-              timerProgressBar: true
-            });
+          // MISIÓN 1: Si es error de red real, redirigir al login (comportamiento seguro)
+          if (fetchError.message.includes('Failed to fetch') || fetchError.message.includes('NetworkError')) {
+            console.error('🔴 Error de red crítico, redirigiendo al login');
+            
+            if (typeof Swal !== 'undefined') {
+              Swal.fire({
+                icon: 'error',
+                title: 'Error de Conexión',
+                text: 'No se pudo verificar tu sesión. Por favor, inicia sesión nuevamente.',
+                confirmButtonColor: '#F97316'
+              }).then(() => {
+                localStorage.removeItem("razoconnect_admin");
+                localStorage.removeItem("razoconnect_admin_token");
+                localStorage.removeItem("token");
+                window.location.replace("/login-admin.html");
+              });
+            } else {
+              localStorage.removeItem("razoconnect_admin");
+              localStorage.removeItem("razoconnect_admin_token");
+              localStorage.removeItem("token");
+              window.location.replace("/login-admin.html");
+            }
+            return;
           }
+          
+          // Otros errores: continuar con caché
+          console.log("📦 Continuando con datos de localStorage:", adminData);
         }
       }
     } catch (criticalError) {
