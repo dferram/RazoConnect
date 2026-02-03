@@ -201,7 +201,45 @@
         const response = await API.login(identifier, password);
 
         if (response.ok && response.data.success) {
-          localStorage.setItem('razoconnect_token', response.data.token);
+          // MISIÓN 2: Validar estructura del token antes de guardar
+          const token = response.data.token;
+          
+          // Validación estricta de JWT
+          if (!token || typeof token !== 'string') {
+            console.error('❌ Token inválido: no es string', token);
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+            showToast('Error en el formato del token. Contacta soporte.', 'error');
+            return;
+          }
+
+          // Validar estructura JWT (3 partes separadas por puntos)
+          const tokenParts = token.split('.');
+          if (tokenParts.length !== 3) {
+            console.error('❌ Token malformado: no tiene 3 partes', { token, parts: tokenParts.length });
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+            showToast('Token malformado. Por favor intenta nuevamente.', 'error');
+            return;
+          }
+
+          // Validar que cada parte tenga contenido
+          if (!tokenParts[0] || !tokenParts[1] || !tokenParts[2]) {
+            console.error('❌ Token malformado: partes vacías', tokenParts);
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+            showToast('Token incompleto. Por favor intenta nuevamente.', 'error');
+            return;
+          }
+
+          // Token válido - guardar en localStorage
+          console.log('✅ Token válido recibido:', { 
+            length: token.length, 
+            parts: tokenParts.length,
+            preview: `${token.substring(0, 20)}...${token.substring(token.length - 20)}`
+          });
+
+          localStorage.setItem('razoconnect_token', token);
           localStorage.setItem('razoconnect_user', JSON.stringify(response.data.cliente));
           
           showToast('Sesión iniciada correctamente', 'success');
@@ -289,7 +327,20 @@
           // Auto-login after registration (use email since registration requires it)
           const loginResponse = await API.login(email, password);
           if (loginResponse.ok && loginResponse.data.success) {
-            localStorage.setItem('razoconnect_token', loginResponse.data.token);
+            // MISIÓN 2: Validar token en auto-login también
+            const token = loginResponse.data.token;
+            
+            if (!token || typeof token !== 'string' || token.split('.').length !== 3) {
+              console.error('❌ Token malformado en auto-login:', token);
+              submitBtn.disabled = false;
+              submitBtn.textContent = originalText;
+              showToast('Error al iniciar sesión automática. Por favor inicia sesión manualmente.', 'error');
+              switchToLogin();
+              return;
+            }
+
+            console.log('✅ Auto-login exitoso con token válido');
+            localStorage.setItem('razoconnect_token', token);
             localStorage.setItem('razoconnect_user', JSON.stringify(loginResponse.data.cliente));
             
             showToast('Bienvenido a RazoConnect', 'success');
