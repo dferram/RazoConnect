@@ -2049,7 +2049,6 @@ const buscarProductosAjuste = async (req, res) => {
         pv.sku,
         pv.dimensiones,
         pv.color_nombre,
-        pv.stock,
         pv.preciounitario,
         pv.precioofertaunitario,
         pv.piezasporpaquete,
@@ -2087,10 +2086,23 @@ const buscarProductosAjuste = async (req, res) => {
     const result = await db.query(query, [searchPattern, tenant_id]);
     
     console.log(`🔍 [BÚSQUEDA AJUSTE] Resultados encontrados: ${result.rows.length}`);
+
+    const varianteIds = result.rows.map(row => row.varianteid);
+    
+    const SmartStockService = require('../services/SmartStockService');
+    const stockMap = await SmartStockService.getBulkStock({
+      varianteIds,
+      userId: req.user.userId,
+      userRole: req.user.role,
+      tenantId: tenant_id
+    });
+
     if (result.rows.length > 0) {
       result.rows.forEach(row => {
+        const stock = stockMap.get(row.varianteid) || 0;
         console.log(`   📦 ${row.nombreproducto} - ${row.sku}`);
         console.log(`      Color: ${row.color_nombre || 'Sin color'}`);
+        console.log(`      Stock disponible: ${stock} piezas`);
         console.log(`      Imagen variante: ${row.imagen_variante ? '✅ SÍ' : '❌ NO'}`);
         console.log(`      Imagen producto: ${row.imagen_producto ? '✅ SÍ' : '❌ NO'}`);
         console.log(`      Imagen final: ${row.imagen_url ? '✅ SÍ' : '❌ NO'}`);
@@ -2116,7 +2128,7 @@ const buscarProductosAjuste = async (req, res) => {
         sku: row.sku,
         dimensiones: row.dimensiones || 'N/A',
         colorNombre: row.color_nombre || '',
-        stock: parseInt(row.stock, 10) || 0,
+        stock: stockMap.get(row.varianteid) || 0,
         precioUnitario: parseFloat(row.preciounitario) || 0,
         precioOfertaUnitario: row.precioofertaunitario ? parseFloat(row.precioofertaunitario) : null,
         piezasPorPaquete: parseInt(row.piezasporpaquete, 10) || 1,

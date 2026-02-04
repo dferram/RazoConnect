@@ -663,6 +663,9 @@
           new SearchAutocomplete(searchInput, {
             minChars: 2,
             debounceMs: 300,
+            additionalParams: {
+              proveedorID: proveedorId
+            },
             onSelect: (producto) => {
               if (producto && producto.productoId) {
                 window.location.href = `/producto-detalle.html?id=${producto.productoId}`;

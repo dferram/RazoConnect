@@ -226,7 +226,15 @@ class SearchAutocomplete {
 
   async search(query) {
     try {
-      const response = await fetch(`/api/productos/search?q=${encodeURIComponent(query)}`);
+      let searchUrl = `/api/productos/search?q=${encodeURIComponent(query)}`;
+      
+      // Agregar parámetros adicionales si existen
+      if (this.options.additionalParams) {
+        const params = new URLSearchParams(this.options.additionalParams);
+        searchUrl += `&${params.toString()}`;
+      }
+      
+      const response = await fetch(searchUrl);
       const data = await response.json();
 
       if (data.success && data.data.productos && data.data.productos.length > 0) {
