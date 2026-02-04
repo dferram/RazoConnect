@@ -2026,21 +2026,6 @@ const buscarProductosAjuste = async (req, res) => {
 
     const searchPattern = `%${q}%`;
 
-    const tamanosQuery = `
-      SELECT 
-        tamanoid,
-        cantidad
-      FROM cat_tamanopaquetes
-      WHERE tenant_id = $1
-      ORDER BY cantidad ASC
-    `;
-
-    const tamanosResult = await db.query(tamanosQuery, [tenant_id]);
-    const tamanos = tamanosResult.rows.map(t => ({
-      tamanoId: t.tamanoid,
-      cantidad: t.cantidad
-    }));
-
     const query = `
       SELECT 
         p.productoid,
@@ -2088,6 +2073,7 @@ const buscarProductosAjuste = async (req, res) => {
     console.log(`🔍 [BÚSQUEDA AJUSTE] Resultados encontrados: ${result.rows.length}`);
 
     const varianteIds = result.rows.map(row => row.varianteid);
+    const productoIds = [...new Set(result.rows.map(row => row.productoid))];
     
     const SmartStockService = require('../services/SmartStockService');
     const stockMap = await SmartStockService.getBulkStock({
@@ -2097,14 +2083,42 @@ const buscarProductosAjuste = async (req, res) => {
       tenantId: tenant_id
     });
 
+    const tamanosQuery = `
+      SELECT 
+        ptd.productoid,
+        ptd.tamanoid,
+        ctp.cantidad
+      FROM producto_tamanosdisponibles ptd
+      INNER JOIN cat_tamanopaquetes ctp ON ctp.tamanoid = ptd.tamanoid
+      WHERE ptd.productoid = ANY($1::int[]) 
+        AND ptd.tenant_id = $2
+        AND ctp.tenant_id = $2
+      ORDER BY ctp.cantidad ASC
+    `;
+
+    const tamanosResult = await db.query(tamanosQuery, [productoIds, tenant_id]);
+    
+    const tamanosPorProducto = new Map();
+    tamanosResult.rows.forEach(row => {
+      if (!tamanosPorProducto.has(row.productoid)) {
+        tamanosPorProducto.set(row.productoid, []);
+      }
+      tamanosPorProducto.get(row.productoid).push({
+        tamanoId: row.tamanoid,
+        cantidad: row.cantidad,
+        nombre: `Pack ${row.cantidad}`
+      });
+    });
+
     if (result.rows.length > 0) {
       result.rows.forEach(row => {
         const stock = stockMap.get(row.varianteid) || 0;
+        const tamanos = tamanosPorProducto.get(row.productoid) || [];
         console.log(`   📦 ${row.nombreproducto} - ${row.sku}`);
         console.log(`      Color: ${row.color_nombre || 'Sin color'}`);
+        console.log(`      Dimensiones: ${row.dimensiones || 'N/A'}`);
         console.log(`      Stock disponible: ${stock} piezas`);
-        console.log(`      Imagen variante: ${row.imagen_variante ? '✅ SÍ' : '❌ NO'}`);
-        console.log(`      Imagen producto: ${row.imagen_producto ? '✅ SÍ' : '❌ NO'}`);
+        console.log(`      Paquetes disponibles: ${tamanos.map(t => `${t.cantidad} pzs`).join(', ') || 'Ninguno'}`);
         console.log(`      Imagen final: ${row.imagen_url ? '✅ SÍ' : '❌ NO'}`);
       });
     }
@@ -2123,6 +2137,8 @@ const buscarProductosAjuste = async (req, res) => {
       }
 
       const producto = productosMap.get(productId);
+      const tamanosDisponibles = tamanosPorProducto.get(productId) || [];
+      
       producto.variantes.push({
         varianteId: row.varianteid,
         sku: row.sku,
@@ -2133,7 +2149,7 @@ const buscarProductosAjuste = async (req, res) => {
         precioOfertaUnitario: row.precioofertaunitario ? parseFloat(row.precioofertaunitario) : null,
         piezasPorPaquete: parseInt(row.piezasporpaquete, 10) || 1,
         imagenUrl: row.imagen_url || null,
-        tamanos: tamanos
+        tamanos: tamanosDisponibles
       });
     }
 
@@ -2671,16 +2687,16 @@ const recepcionarMercancia = async (req, res) => {
       if (piezasPorPaquete === 1) {
         try {
           const cat = await client.query(
-            `SELECT valor
-             FROM cat_tamanopaquetes
+            `SELECT cantidadempaque
+             FROM proveedor_reglas_empaque
              WHERE tipoproductoid = $1
-             ORDER BY valor DESC
+             ORDER BY cantidadempaque DESC
              LIMIT 1`,
             [tipoProductoId]
           );
 
           if (cat.rows.length) {
-            const factor = Number.parseInt(cat.rows[0].valor, 10);
+            const factor = Number.parseInt(cat.rows[0].cantidadempaque, 10);
             if (Number.isInteger(factor) && factor > 0) {
               piezasPorPaquete = factor;
             }

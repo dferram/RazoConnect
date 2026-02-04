@@ -292,6 +292,36 @@
       </div>
     </div>
 
+    <!-- Modal para seleccionar presentación -->
+    <div id="modalSeleccionPaquete" class="modal">
+      <div class="modal-content" style="max-width: 500px; width: 90%;">
+        <div class="modal-header">
+          <h2 class="modal-title">Seleccionar Presentación</h2>
+          <button class="modal-close-btn" onclick="cerrarModalSeleccionPaquete()">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div style="margin-bottom: 1.5rem;">
+            <div style="font-weight: 600; font-size: 1rem; margin-bottom: 0.5rem;" id="modalPaqueteProducto"></div>
+            <div style="font-size: 0.875rem; color: var(--razo-gray-warm);" id="modalPaqueteSKU"></div>
+          </div>
+
+          <div style="margin-bottom: 1.5rem;">
+            <label class="form-label" style="font-weight: 600; margin-bottom: 0.75rem; display: block;">Selecciona el tamaño de paquete:</label>
+            <div id="modalPaqueteOpciones" style="display: flex; flex-direction: column; gap: 0.75rem;"></div>
+          </div>
+
+          <div style="display: flex; gap: 1rem; margin-top: 1.5rem; margin-bottom: 1rem;">
+            <button type="button" class="btn btn-secondary" onclick="cerrarModalSeleccionPaquete()" style="flex: 1;">
+              Cancelar
+            </button>
+            <button class="btn btn-primary" onclick="confirmarSeleccionPaquete()" id="btnConfirmarPaquete" style="flex: 1;">
+              Agregar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Modal para cambiar estatus -->
     <div id="statusModal" class="modal">
       <div class="modal-content modal-content--xl">

@@ -427,69 +427,188 @@ function mostrarResultadosBusqueda(productos) {
 
   resultadosEl.innerHTML = productos.map(producto => {
     return producto.variantes.map(variante => {
-      return variante.tamanos.map(tamano => {
-        // Verificar si ya está en la lista de agregar
-        const yaEnListaAgregar = productosParaAgregarLista.some(p => 
-          p.varianteId === variante.varianteId && p.tamanoId === tamano.tamanoId
-        );
+      const yaEnPedido = productosActualesPedido.some(p => 
+        p.varianteId === variante.varianteId
+      );
 
-        // Verificar si ya está en el pedido actual
-        const yaEnPedido = productosActualesPedido.some(p => 
-          p.varianteId === variante.varianteId
-        );
+      const stockDisponible = variante.stock > 0;
+      const badgeClass = stockDisponible ? 'badge-stock-ok' : 'badge-stock-low';
+      const badgeIcon = stockDisponible ? '✓' : '⚠';
+      const badgeText = stockDisponible ? 'En Stock' : 'Bajo Pedido';
 
-        const stockDisponible = variante.stock > 0;
-        const badgeClass = stockDisponible ? 'badge-stock-ok' : 'badge-stock-low';
-        const badgeIcon = stockDisponible ? '✓' : '⚠';
-        const badgeText = stockDisponible ? 'En Stock' : 'Bajo Pedido';
+      const imagenUrl = variante.imagenUrl;
+      const imagenHtml = imagenUrl 
+        ? `<img src="${imagenUrl}" alt="${producto.nombreProducto}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 0.5rem;" onerror="this.onerror=null; this.parentElement.innerHTML='📦';">`
+        : '📦';
 
-        const imagenUrl = variante.imagenUrl;
-        const imagenHtml = imagenUrl 
-          ? `<img src="${imagenUrl}" alt="${producto.nombreProducto}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 0.5rem;" onerror="this.onerror=null; this.parentElement.innerHTML='📦';">`
-          : '📦';
+      const varianteData = JSON.stringify({
+        varianteId: variante.varianteId,
+        sku: variante.sku,
+        nombreProducto: producto.nombreProducto,
+        dimensiones: variante.dimensiones,
+        colorNombre: variante.colorNombre,
+        stock: variante.stock,
+        precioUnitario: variante.precioUnitario,
+        tamanos: variante.tamanos
+      }).replace(/"/g, '&quot;');
 
-        return `
-          <div class="search-result-item">
-            <div class="search-result-info">
-              <div class="search-result-title">${producto.nombreProducto}</div>
-              <div class="search-result-meta">
-                <span><strong>SKU:</strong> ${variante.sku}</span>
-                <span>•</span>
-                <span>${variante.dimensiones}</span>
-                ${variante.colorNombre ? `<span>•</span><span>${variante.colorNombre}</span>` : ''}
-                <span>•</span>
-                <span>${tamano.cantidad} piezas</span>
-              </div>
-              <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem;">
-                <span class="search-result-badge ${badgeClass}">${badgeIcon} ${badgeText}</span>
-                <span style="font-size: 0.875rem; color: var(--razo-gray-warm);">${variante.stock} piezas disponibles</span>
-              </div>
+      return `
+        <div class="search-result-item">
+          <div class="search-result-info">
+            <div class="search-result-title">${producto.nombreProducto}</div>
+            <div class="search-result-meta">
+              <span><strong>SKU:</strong> ${variante.sku}</span>
+              <span>•</span>
+              <span>${variante.dimensiones}</span>
+              ${variante.colorNombre ? `<span>•</span><span>${variante.colorNombre}</span>` : ''}
             </div>
-            <div class="search-result-image">
-              ${imagenHtml}
-            </div>
-            <div class="search-result-action">
-              <button 
-                class="btn ${yaEnListaAgregar ? 'btn-secondary' : 'btn-success'}" 
-                style="padding: 0.5rem 1.25rem; font-size: 0.875rem; white-space: nowrap; min-width: 120px;"
-                onclick="agregarOIncrementarProducto(${variante.varianteId}, ${tamano.tamanoId}, '${variante.sku}', '${producto.nombreProducto.replace(/'/g, "\\'")}', '${tamano.cantidad} piezas', ${variante.stock}, ${variante.precioUnitario || 0}, ${variante.piezasPorPaquete || 1})"
-                ${yaEnListaAgregar ? 'disabled' : ''}>
-                ${yaEnListaAgregar ? '✓ Agregado' : yaEnPedido ? '+ Incrementar' : '+ Agregar'}
-              </button>
+            <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem;">
+              <span class="search-result-badge ${badgeClass}">${badgeIcon} ${badgeText}</span>
+              <span style="font-size: 0.875rem; color: var(--razo-gray-warm);">${variante.stock} piezas disponibles</span>
             </div>
           </div>
-        `;
-      }).join('');
+          <div class="search-result-image">
+            ${imagenHtml}
+          </div>
+          <div class="search-result-action">
+            <button 
+              class="btn btn-success" 
+              style="padding: 0.5rem 1.25rem; font-size: 0.875rem; white-space: nowrap; min-width: 120px;"
+              onclick='abrirModalSeleccionPaquete(${varianteData})'>
+              ${yaEnPedido ? '+ Incrementar' : '+ Agregar'}
+            </button>
+          </div>
+        </div>
+      `;
     }).join('');
   }).join('');
 }
 
+let varianteSeleccionadaModal = null;
+let tamanoSeleccionadoModal = null;
+
+function abrirModalSeleccionPaquete(varianteData) {
+  varianteSeleccionadaModal = varianteData;
+  tamanoSeleccionadoModal = null;
+  
+  document.getElementById('modalPaqueteProducto').textContent = varianteData.nombreProducto;
+  document.getElementById('modalPaqueteSKU').textContent = `SKU: ${varianteData.sku} • ${varianteData.dimensiones}${varianteData.colorNombre ? ' • ' + varianteData.colorNombre : ''}`;
+  
+  const opcionesContainer = document.getElementById('modalPaqueteOpciones');
+  
+  if (!varianteData.tamanos || varianteData.tamanos.length === 0) {
+    opcionesContainer.innerHTML = `
+      <div style="padding: 1rem; text-align: center; color: var(--razo-gray-warm);">
+        <p>⚠️ Este producto no tiene presentaciones configuradas</p>
+      </div>
+    `;
+    document.getElementById('btnConfirmarPaquete').disabled = true;
+    document.getElementById('modalSeleccionPaquete').style.display = 'flex';
+    return;
+  }
+  
+  opcionesContainer.innerHTML = varianteData.tamanos.map(tamano => {
+    const precioPaquete = (varianteData.precioUnitario * tamano.cantidad).toFixed(2);
+    return `
+      <label style="
+        display: flex;
+        align-items: center;
+        padding: 1rem;
+        border: 2px solid var(--razo-gray-light);
+        border-radius: 0.5rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      " 
+      onmouseover="this.style.borderColor='var(--razo-orange)'; this.style.background='var(--razo-cream)';"
+      onmouseout="if(!this.querySelector('input').checked) { this.style.borderColor='var(--razo-gray-light)'; this.style.background='white'; }"
+      >
+        <input 
+          type="radio" 
+          name="tamanoSeleccion" 
+          value="${tamano.tamanoId}"
+          data-cantidad="${tamano.cantidad}"
+          data-nombre="${tamano.nombre || 'Pack ' + tamano.cantidad}"
+          style="margin-right: 1rem; width: 20px; height: 20px; cursor: pointer;"
+          onchange="seleccionarTamano(${tamano.tamanoId}, ${tamano.cantidad}, '${tamano.nombre || 'Pack ' + tamano.cantidad}')"
+        />
+        <div style="flex: 1;">
+          <div style="font-weight: 600; margin-bottom: 0.25rem;">${tamano.nombre || 'Pack ' + tamano.cantidad}</div>
+          <div style="font-size: 0.875rem; color: var(--razo-gray-warm);">${tamano.cantidad} piezas • $${precioPaquete} por paquete</div>
+        </div>
+      </label>
+    `;
+  }).join('');
+  
+  document.getElementById('btnConfirmarPaquete').disabled = true;
+  document.getElementById('modalSeleccionPaquete').style.display = 'flex';
+}
+
+function seleccionarTamano(tamanoId, cantidad, nombre) {
+  tamanoSeleccionadoModal = {
+    tamanoId,
+    cantidad,
+    nombre
+  };
+  document.getElementById('btnConfirmarPaquete').disabled = false;
+}
+
+function cerrarModalSeleccionPaquete() {
+  document.getElementById('modalSeleccionPaquete').style.display = 'none';
+  varianteSeleccionadaModal = null;
+  tamanoSeleccionadoModal = null;
+}
+
+function confirmarSeleccionPaquete() {
+  if (!varianteSeleccionadaModal || !tamanoSeleccionadoModal) {
+    showToast('Selecciona una presentación', 'warning');
+    return;
+  }
+
+  const itemEnPedido = productosActualesPedido.find(p => p.varianteId === varianteSeleccionadaModal.varianteId);
+  
+  if (itemEnPedido) {
+    const nuevaCantidad = itemEnPedido.cantidad + 1;
+    modificarCantidadItem(itemEnPedido.detalleId, nuevaCantidad);
+    showToast(`Cantidad incrementada: ${varianteSeleccionadaModal.nombreProducto}`, 'success');
+    cerrarModalSeleccionPaquete();
+    document.getElementById('buscarProductoInput').value = '';
+    document.getElementById('resultadosBusqueda').style.display = 'none';
+    return;
+  }
+
+  const yaEnLista = productosParaAgregarLista.some(p => 
+    p.varianteId === varianteSeleccionadaModal.varianteId && p.tamanoId === tamanoSeleccionadoModal.tamanoId
+  );
+
+  if (yaEnLista) {
+    showToast('Este producto con esta presentación ya está en la lista', 'warning');
+    return;
+  }
+
+  productosParaAgregarLista.push({
+    varianteId: varianteSeleccionadaModal.varianteId,
+    tamanoId: tamanoSeleccionadoModal.tamanoId,
+    sku: varianteSeleccionadaModal.sku,
+    nombreProducto: varianteSeleccionadaModal.nombreProducto,
+    presentacion: tamanoSeleccionadoModal.nombre,
+    stock: varianteSeleccionadaModal.stock,
+    precioUnitario: varianteSeleccionadaModal.precioUnitario,
+    piezasPorPaquete: tamanoSeleccionadoModal.cantidad,
+    cantidad: 1
+  });
+
+  renderizarProductosParaAgregar();
+  cerrarModalSeleccionPaquete();
+  document.getElementById('buscarProductoInput').value = '';
+  document.getElementById('resultadosBusqueda').style.display = 'none';
+  actualizarResumen();
+  showToast(`Producto agregado: ${varianteSeleccionadaModal.nombreProducto} - ${tamanoSeleccionadoModal.nombre}`, 'success');
+}
+
 function agregarOIncrementarProducto(varianteId, tamanoId, sku, nombreProducto, presentacion, stock, precioUnitario, piezasPorPaquete) {
-  // Verificar si ya está en el pedido actual
   const itemEnPedido = productosActualesPedido.find(p => p.varianteId === varianteId);
   
   if (itemEnPedido) {
-    // Si ya está en el pedido, incrementar cantidad
     const nuevaCantidad = itemEnPedido.cantidad + 1;
     modificarCantidadItem(itemEnPedido.detalleId, nuevaCantidad);
     showToast(`Cantidad incrementada: ${nombreProducto}`, 'success');
@@ -498,7 +617,6 @@ function agregarOIncrementarProducto(varianteId, tamanoId, sku, nombreProducto, 
     return;
   }
 
-  // Verificar si ya está en la lista de agregar
   const yaEnLista = productosParaAgregarLista.some(p => 
     p.varianteId === varianteId && p.tamanoId === tamanoId
   );
@@ -508,7 +626,6 @@ function agregarOIncrementarProducto(varianteId, tamanoId, sku, nombreProducto, 
     return;
   }
 
-  // Agregar a la lista
   productosParaAgregarLista.push({
     varianteId,
     tamanoId,

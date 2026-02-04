@@ -1312,7 +1312,7 @@ const buscarProductosAutocomplete = async (req, res) => {
     }
 
     const { tenant_id } = req.tenant;
-    const { q } = req.query;
+    const { q, proveedorID } = req.query;
 
     if (!q || !q.trim()) {
       return res.status(200).json({
@@ -1326,7 +1326,47 @@ const buscarProductosAutocomplete = async (req, res) => {
     }
 
     const searchTerm = q.trim();
+    const proveedorIdNum = proveedorID ? parseInt(proveedorID, 10) : null;
+    
     console.log(`🔍 Buscando productos con término: "${searchTerm}" para tenant_id: ${tenant_id}`);
+    if (proveedorIdNum) {
+      console.log(`   🏢 Filtrado por proveedor ID: ${proveedorIdNum}`);
+    }
+
+    // Construir query dinámicamente según si hay filtro de proveedor
+    let whereClause = `
+      WHERE p.tenant_id = $1
+        AND COALESCE(p.activo, TRUE) = TRUE
+    `;
+    
+    const queryParams = [tenant_id];
+    let paramIndex = 2;
+    
+    // Agregar filtro de proveedor si existe
+    if (proveedorIdNum) {
+      whereClause += ` AND p.proveedorid = $${paramIndex}`;
+      queryParams.push(proveedorIdNum);
+      paramIndex++;
+    }
+    
+    // Agregar condiciones de búsqueda
+    whereClause += `
+        AND (
+          p.nombreproducto ILIKE $${paramIndex}
+          OR COALESCE(p.sku_maestro, '') ILIKE $${paramIndex}
+          OR EXISTS (
+            SELECT 1
+            FROM producto_variantes pv2
+            WHERE pv2.productoid = p.productoid
+              AND pv2.tenant_id = $1
+              AND pv2.sku ILIKE $${paramIndex}
+          )
+        )
+    `;
+    
+    queryParams.push(`%${searchTerm}%`);
+    const searchStartParam = paramIndex + 1;
+    queryParams.push(`${searchTerm}%`);
 
     const query = `
       SELECT
@@ -1345,35 +1385,19 @@ const buscarProductosAutocomplete = async (req, res) => {
       FROM productos p
       LEFT JOIN categorias c ON c.categoriaid = p.categoriaid AND c.tenant_id = $1
       LEFT JOIN producto_variantes pv ON pv.productoid = p.productoid AND pv.tenant_id = $1
-      WHERE p.tenant_id = $1
-        AND COALESCE(p.activo, TRUE) = TRUE
-        AND (
-          p.nombreproducto ILIKE $2
-          OR COALESCE(p.sku_maestro, '') ILIKE $2
-          OR EXISTS (
-            SELECT 1
-            FROM producto_variantes pv2
-            WHERE pv2.productoid = p.productoid
-              AND pv2.tenant_id = $1
-              AND pv2.sku ILIKE $2
-          )
-        )
+      ${whereClause}
       GROUP BY p.productoid, p.nombreproducto, p.sku_maestro, c.nombre
       ORDER BY 
         CASE 
-          WHEN p.nombreproducto ILIKE $3 THEN 1
-          WHEN p.nombreproducto ILIKE $2 THEN 2
+          WHEN p.nombreproducto ILIKE $${searchStartParam} THEN 1
+          WHEN p.nombreproducto ILIKE $${paramIndex} THEN 2
           ELSE 3
         END,
         p.nombreproducto ASC
       LIMIT 8
     `;
 
-    const result = await db.query(query, [
-      tenant_id,
-      `%${searchTerm}%`,
-      `${searchTerm}%`,
-    ]);
+    const result = await db.query(query, queryParams);
 
     console.log(`✅ Búsqueda completada: ${result.rows.length} productos encontrados`);
 

@@ -25,6 +25,9 @@
         padding: 3rem 0 2.5rem;
         margin-bottom: 2.5rem;
         border-bottom: 1px solid #eee;
+        overflow: visible;
+        position: relative;
+        z-index: 10;
       }
 
       .brand-hero-content {
@@ -202,6 +205,13 @@
         position: relative;
         width: 100%;
         max-width: 600px;
+        z-index: 100;
+      }
+      
+      /* Asegurar que el dropdown flote sobre el contenido */
+      .search-autocomplete-dropdown {
+        position: absolute !important;
+        z-index: 1000 !important;
       }
 
       .search-input-modern {
