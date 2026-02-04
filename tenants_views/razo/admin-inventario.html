@@ -101,6 +101,39 @@
       <!-- Sidebar -->
       <div id="sidebar-container"></div>
 
+      <!-- Modal de Distribución de Stock (Super Admin) -->
+      <div id="stockDistribucionModal" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+          <div class="u-margin-bottom-1-5">
+            <h2 class="modal-title">📊 Distribución de Stock</h2>
+            <p class="modal-subtitle" id="stockDistribucionSubtitle">
+              Desglose de inventario por responsable
+            </p>
+          </div>
+          <div id="stockDistribucionContent">
+            <table class="admin-table" style="margin-bottom: 0;">
+              <thead>
+                <tr>
+                  <th>Responsable</th>
+                  <th style="text-align: right;">Cantidad</th>
+                </tr>
+              </thead>
+              <tbody id="stockDistribucionTableBody">
+                <!-- Se llenará dinámicamente -->
+              </tbody>
+            </table>
+          </div>
+          <div class="modal-footer-actions" style="margin-top: 1.5rem;">
+            <button
+              class="btn btn-secondary flex-1"
+              onclick="closeStockDistribucionModal()"
+            >
+              Cerrar
+            </button>
+          </div>
+        </div>
+      </div>
+
       <!-- Modal detalle de variantes -->
       <div id="detalleModal" class="modal">
         <div class="modal-content modal-detalle">
@@ -740,6 +773,7 @@
 
       let recepcionVarianteActual = null;
       let recepcionProductoActual = null;
+      let isSuperAdminGlobal = false; // Flag para saber si el usuario es Super Admin
 
       const detalleModal = document.getElementById("detalleModal");
       const detalleModalTitle = document.getElementById("detalleModalTitle");
@@ -792,6 +826,10 @@
             if (roleEl) {
               roleEl.textContent = admin.rol === "superadmin" ? "Super Admin" : "Admin";
             }
+
+            // ✅ Detectar si es Super Admin para mostrar distribución de stock
+            isSuperAdminGlobal = admin.rol === "superadmin" || admin.rol === "super-admin" || admin.rol === "developer";
+            console.log(`📊 Usuario es Super Admin: ${isSuperAdminGlobal}`);
 
             const words = admin.nombre.split(" ");
             const initials =
@@ -1351,7 +1389,8 @@
               stock: v.stock,
               precioUnitario: v.precio,
               precioPaquete: v.precio,
-              activo: v.activo
+              activo: v.activo,
+              stock_distribucion: v.stock_distribucion || [] // ✅ Incluir distribución si existe
             })),
           };
 
@@ -1439,7 +1478,7 @@
                 <td>${escapeHtml(variant.caracteristica)}</td>
                 <td style="font-weight: 600; color: #f97316;">${precio}</td>
                 <td class="stock-variante-${variant.varianteId}" style="font-weight: ${stockWeight}; color: ${stockColor};">
-                  ${stock} pzas
+                  ${renderStockCell(variant, stock)}
                 </td>
                 <td>
                   <span class="status-badge ${stock > 0 ? 'en-stock' : 'sin-stock'}">
@@ -1552,7 +1591,7 @@
                 <span style="font-size:0.75rem; color: var(--text-secondary);">${presentacionSafe}</span>
               </div>
             </td>
-            <td class="stock-variante-${variant.varianteId}">${stock} ${unidadStock}</td>
+            <td class="stock-variante-${variant.varianteId}">${renderStockCellDetalle(variant, stock, unidadStock)}</td>
             <td>
               <span class="status-badge ${estadoClase}">${estadoTexto}</span>
             </td>
@@ -2332,6 +2371,113 @@
           btnPDF.innerHTML = '<i class="fas fa-file-pdf"></i> Descargar Stock';
         }
       }
+
+      // Función para renderizar celda de stock con botón de distribución (tabla simple)
+      function renderStockCell(variant, stock) {
+        if (!isSuperAdminGlobal || !variant.stock_distribucion || variant.stock_distribucion.length === 0) {
+          return `${stock} pzas`;
+        }
+
+        return `
+          <div style="display: flex; align-items: center; gap: 0.5rem; justify-content: space-between;">
+            <span>${stock} pzas</span>
+            <button
+              type="button"
+              class="btn-icon-toggle"
+              onclick="showStockDistribucion(${variant.varianteId})"
+              title="Ver distribución de stock"
+              style="cursor: pointer; background: none; border: none; font-size: 1rem; padding: 0.25rem; opacity: 0.7; transition: all 0.2s;"
+              onmouseover="this.style.opacity='1'; this.style.transform='scale(1.1)'"
+              onmouseout="this.style.opacity='0.7'; this.style.transform='scale(1)'"
+            >
+              👁️
+            </button>
+          </div>
+        `;
+      }
+
+      // Función para renderizar celda de stock con botón de distribución (tabla detalle)
+      function renderStockCellDetalle(variant, stock, unidadStock) {
+        if (!isSuperAdminGlobal || !variant.stock_distribucion || variant.stock_distribucion.length === 0) {
+          return `${stock} ${unidadStock}`;
+        }
+
+        return `
+          <div style="display: flex; align-items: center; gap: 0.5rem; justify-content: space-between;">
+            <span>${stock} ${unidadStock}</span>
+            <button
+              type="button"
+              class="btn-icon-toggle"
+              onclick="showStockDistribucion(${variant.varianteId})"
+              title="Ver distribución de stock"
+              style="cursor: pointer; background: none; border: none; font-size: 1rem; padding: 0.25rem; opacity: 0.7; transition: all 0.2s;"
+              onmouseover="this.style.opacity='1'; this.style.transform='scale(1.1)'"
+              onmouseout="this.style.opacity='0.7'; this.style.transform='scale(1)'"
+            >
+              👁️
+            </button>
+          </div>
+        `;
+      }
+
+      // Función para mostrar modal de distribución de stock
+      function showStockDistribucion(varianteId) {
+        if (!detalleProductoActual || !detalleProductoActual.variantes) {
+          showToast('No hay información de distribución disponible', 'warning');
+          return;
+        }
+
+        const variante = detalleProductoActual.variantes.find(v => v.varianteId === varianteId);
+        if (!variante || !variante.stock_distribucion || variante.stock_distribucion.length === 0) {
+          showToast('No hay distribución de stock para esta variante', 'info');
+          return;
+        }
+
+        const modal = document.getElementById('stockDistribucionModal');
+        const subtitle = document.getElementById('stockDistribucionSubtitle');
+        const tbody = document.getElementById('stockDistribucionTableBody');
+
+        subtitle.textContent = `${variante.sku || 'Variante'} - ${variante.dimensiones || 'Sin dimensiones'}`;
+
+        // Renderizar tabla de distribución
+        tbody.innerHTML = variante.stock_distribucion
+          .map(item => {
+            const iconoBadge = item.tipo === 'bodega' 
+              ? '<span style="background: #f97316; color: white; padding: 0.25rem 0.5rem; border-radius: 0.375rem; font-size: 0.75rem; font-weight: 600;">🏢 Central</span>'
+              : '<span style="background: #6366f1; color: white; padding: 0.25rem 0.5rem; border-radius: 0.375rem; font-size: 0.75rem; font-weight: 600;">👤 Admin</span>';
+            
+            return `
+              <tr>
+                <td>
+                  <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    ${iconoBadge}
+                    <span style="font-weight: 500;">${escapeHtml(item.nombre)}</span>
+                  </div>
+                </td>
+                <td style="text-align: right; font-weight: 600; color: #f97316;">
+                  ${item.cantidad}
+                </td>
+              </tr>
+            `;
+          })
+          .join('');
+
+        modal.style.display = 'flex';
+      }
+
+      // Función para cerrar modal de distribución
+      function closeStockDistribucionModal() {
+        const modal = document.getElementById('stockDistribucionModal');
+        modal.style.display = 'none';
+      }
+
+      // Cerrar modal al hacer clic fuera
+      window.addEventListener('click', (event) => {
+        const modal = document.getElementById('stockDistribucionModal');
+        if (event.target === modal) {
+          closeStockDistribucionModal();
+        }
+      });
 
       // Initialize
       verifyAndLoadAdmin();

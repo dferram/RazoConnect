@@ -719,15 +719,55 @@ async function obtenerInventarioParaPDF(req, res) {
                 producto: row.nombreproducto || 'Sin nombre',
                 variante: row.dimensiones || 'Estándar',
                 ubicacion: row.ubicacion || 'N/A',
-                stock: stockMap.get(row.varianteid) || 0
+                stock: stockMap.get(row.varianteid) || 0,
+                varianteId: row.varianteid // Agregar ID para desglose
             }))
             .filter(item => item.stock > 0);
+
+        // ✅ SMART STOCK: Si es Super Admin, agregar distribución de stock
+        const isSuperAdmin = userRoles.some(r => 
+            r === 'superadmin' || r === 'super-admin' || r === 'developer'
+        );
+
+        if (isSuperAdmin && inventarioConStock.length > 0) {
+            // Obtener distribución de stock para cada variante
+            for (const item of inventarioConStock) {
+                try {
+                    const breakdown = await SmartStockService.getGlobalStockBreakdown(
+                        item.varianteId,
+                        tenant_id
+                    );
+
+                    // Agregar campo stock_distribucion con el desglose
+                    item.stock_distribucion = [
+                        // Bodega Central (diferencia entre global y distribuido)
+                        ...(breakdown.diferencia > 0 ? [{
+                            nombre: 'Bodega Central',
+                            cantidad: breakdown.diferencia,
+                            tipo: 'bodega'
+                        }] : []),
+                        // Stock de cada admin
+                        ...breakdown.stockPorAdmin.map(admin => ({
+                            nombre: admin.adminNombre,
+                            cantidad: admin.cantidad,
+                            tipo: 'admin',
+                            adminId: admin.adminId
+                        }))
+                    ];
+                } catch (error) {
+                    console.error(`[InventarioController] Error al obtener distribución para variante ${item.varianteId}:`, error);
+                    item.stock_distribucion = [];
+                }
+            }
+            console.log(`📊 [InventarioController] Distribución de stock agregada para Super Admin`);
+        }
 
         console.log(`📊 [InventarioController] Inventario filtrado: ${inventarioConStock.length} variantes con stock`);
 
         return res.json({
             success: true,
-            data: inventarioConStock
+            data: inventarioConStock,
+            isSuperAdmin // Indicar al frontend si es Super Admin
         });
     } catch (error) {
         console.error('Error al obtener inventario para PDF:', error);
