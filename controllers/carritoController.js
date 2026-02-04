@@ -1,5 +1,6 @@
 const db = require("../db");
 const { calcularTotalPedido } = require("../utils/calculadoraPedidos");
+const SmartStockService = require("../services/SmartStockService");
 
 const TAMANO_VALUE_KEYS = [
   "valor",
@@ -288,10 +289,12 @@ const obtenerCarrito = async (req, res) => {
       ...new Set(itemsResult.rows.map((row) => row.productoid).filter(Boolean)),
     ];
 
+    // ✅ SMART STOCK: Obtener stock dinámico para variantes maestras
     let masterVariantsMap = new Map();
+    
     if (productosEnCarrito.length) {
       const masterVariantsResult = await db.query(
-        `SELECT pv.ProductoID, pv.VarianteID, COALESCE(pv.Stock, 0) AS Stock
+        `SELECT pv.ProductoID, pv.VarianteID
          FROM Producto_Variantes pv
          INNER JOIN Productos p ON p.ProductoID = pv.ProductoID
          WHERE pv.ProductoID = ANY($1::int[])
@@ -300,12 +303,32 @@ const obtenerCarrito = async (req, res) => {
         [productosEnCarrito, tenant_id]
       );
 
+      // Obtener IDs de variantes maestras
+      const masterVarianteIds = masterVariantsResult.rows.map(r => r.varianteid);
+      
+      // Obtener stock dinámico en bulk
+      let stockMapBulk = new Map();
+      if (masterVarianteIds.length > 0 && req.user && req.user.id) {
+        try {
+          stockMapBulk = await SmartStockService.getBulkStock({
+            varianteIds: masterVarianteIds,
+            userId: req.user.id,
+            userRole: req.user.roles || ['cliente'],
+            tenantId: tenant_id
+          });
+          console.log(`✅ [CarritoController] Stock bulk obtenido para ${masterVarianteIds.length} variantes maestras`);
+        } catch (stockError) {
+          console.error('[CarritoController] Error al obtener stock bulk:', stockError);
+        }
+      }
+      
+      // Construir mapa con stock dinámico
       masterVariantsMap = new Map(
         masterVariantsResult.rows.map((row) => [
           row.productoid,
           {
             varianteId: row.varianteid,
-            stock: Math.max(parseInt(row.stock, 10), 0),
+            stock: stockMapBulk.get(row.varianteid) || 0,
           },
         ])
       );

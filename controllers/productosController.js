@@ -1,4 +1,5 @@
 const db = require("../db");
+const SmartStockService = require("../services/SmartStockService");
 
 /**
  * Obtener proveedores con productos activos
@@ -487,6 +488,25 @@ const obtenerProductos = async (req, res) => {
       });
     }
 
+    // ✅ SMART STOCK: Obtener stock real según rol del usuario
+    const varianteIds = Array.from(piezasPorVarianteMap.keys());
+    let stockMapByRole = new Map();
+    
+    if (varianteIds.length > 0 && req.user && req.user.id && req.tenant) {
+      try {
+        stockMapByRole = await SmartStockService.getBulkStock({
+          varianteIds,
+          userId: req.user.id,
+          userRole: req.user.roles || ['cliente'],
+          tenantId: req.tenant.tenant_id
+        });
+        console.log(`✅ [ProductosController] Stock obtenido para ${varianteIds.length} variantes (Usuario: ${req.user.id})`);
+      } catch (stockError) {
+        console.error('[ProductosController] Error al obtener stock dinámico:', stockError);
+        // Fallback: usar stock de BD si falla el servicio
+      }
+    }
+
     const variantPriceMap = new Map();
     const minSellingPriceMap = new Map();
     const maxSellingPriceMap = new Map();
@@ -633,20 +653,36 @@ const obtenerProductos = async (req, res) => {
             ? piezasInfo.piezasPorPaquete
             : null;
 
-        let stockVariante =
-          piezasInfo?.stockFisico ??
-          (row.stock_precio_min !== null
-            ? Math.max(parseInt(row.stock_precio_min, 10), 0)
-            : null);
+        // ✅ SMART STOCK: Usar stock dinámico si está disponible
+        let stockVariante = null;
+        
+        if (stockMapByRole.has(row.varianteid_precio_min)) {
+          // Stock calculado por SmartStockService según rol
+          const stockReal = stockMapByRole.get(row.varianteid_precio_min);
+          
+          if (piezasPorPaquete && piezasPorPaquete > 1) {
+            // Para packs, el stock ya viene en piezas, dividir por piezasPorPaquete
+            stockVariante = Math.floor(stockReal / piezasPorPaquete);
+          } else {
+            stockVariante = stockReal;
+          }
+        } else {
+          // Fallback: usar stock de BD si no hay SmartStock
+          stockVariante =
+            piezasInfo?.stockFisico ??
+            (row.stock_precio_min !== null
+              ? Math.max(parseInt(row.stock_precio_min, 10), 0)
+              : null);
 
-        if (
-          piezasPorPaquete &&
-          piezasPorPaquete > 1 &&
-          stockMaestroMap.has(productId)
-        ) {
-          stockVariante = Math.floor(
-            stockMaestroMap.get(productId) / piezasPorPaquete
-          );
+          if (
+            piezasPorPaquete &&
+            piezasPorPaquete > 1 &&
+            stockMaestroMap.has(productId)
+          ) {
+            stockVariante = Math.floor(
+              stockMaestroMap.get(productId) / piezasPorPaquete
+            );
+          }
         }
 
         varianteDestacada = {
@@ -921,6 +957,24 @@ const obtenerProductoPorId = async (req, res) => {
         ? Math.max(parseInt(varianteMaestra.stock, 10), 0)
         : null;
 
+    // ✅ SMART STOCK: Obtener stock dinámico para detalle de producto
+    const varianteIdsDetalle = variantesRaw.map(v => v.varianteid);
+    let stockMapDetalle = new Map();
+    
+    if (varianteIdsDetalle.length > 0 && req.user && req.user.id && req.tenant) {
+      try {
+        stockMapDetalle = await SmartStockService.getBulkStock({
+          varianteIds: varianteIdsDetalle,
+          userId: req.user.id,
+          userRole: req.user.roles || ['cliente'],
+          tenantId: req.tenant.tenant_id
+        });
+        console.log(`✅ [ProductosController] Stock detalle obtenido para producto ${id}`);
+      } catch (stockError) {
+        console.error('[ProductosController] Error al obtener stock detalle:', stockError);
+      }
+    }
+
     const variantes = variantesRaw.map((row) => {
       const precioUnitario =
         row.preciounitario !== null ? parseFloat(row.preciounitario) : null;
@@ -932,14 +986,29 @@ const obtenerProductoPorId = async (req, res) => {
         row.piezasporpaquete !== null
           ? parseInt(row.piezasporpaquete, 10)
           : null;
-      let stockCalculado =
-        row.stock !== null ? Math.max(parseInt(row.stock, 10), 0) : null;
-      if (
-        piezasPorPaquete &&
-        piezasPorPaquete > 1 &&
-        typeof stockMaestro === "number"
-      ) {
-        stockCalculado = Math.floor(stockMaestro / piezasPorPaquete);
+      
+      // ✅ SMART STOCK: Usar stock dinámico según rol del usuario
+      let stockCalculado = null;
+      
+      if (stockMapDetalle.has(row.varianteid)) {
+        const stockReal = stockMapDetalle.get(row.varianteid);
+        
+        if (piezasPorPaquete && piezasPorPaquete > 1) {
+          stockCalculado = Math.floor(stockReal / piezasPorPaquete);
+        } else {
+          stockCalculado = stockReal;
+        }
+      } else {
+        // Fallback: usar stock de BD
+        stockCalculado =
+          row.stock !== null ? Math.max(parseInt(row.stock, 10), 0) : null;
+        if (
+          piezasPorPaquete &&
+          piezasPorPaquete > 1 &&
+          typeof stockMaestro === "number"
+        ) {
+          stockCalculado = Math.floor(stockMaestro / piezasPorPaquete);
+        }
       }
 
       const imagenes = Array.isArray(row.imagenes)
