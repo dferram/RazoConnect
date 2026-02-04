@@ -1,6 +1,7 @@
 const ExcelJS = require('exceljs');
 const db = require('../db');
 const { format } = require('date-fns');
+const SmartStockService = require('../services/SmartStockService');
 
 /**
  * Exporta entradas de almacén a Excel y las marca como exportadas
@@ -673,32 +674,60 @@ async function actualizarEstatusSesion(req, res) {
 async function obtenerInventarioParaPDF(req, res) {
     try {
         const tenant_id = req.tenant?.tenant_id || req.user?.tenantId || 1;
+        const userId = req.user?.id || req.user?.userId;
+        const userRoles = req.user?.roles || [];
 
+        // ✅ SMART STOCK: Obtener variantes sin filtro de stock
         const query = `
             SELECT 
+                pv.varianteid,
                 pv.sku,
                 p.nombreproducto,
                 pv.dimensiones,
-                pv.stock,
                 COALESCE(pv.ubicacion_almacen, '') as ubicacion
             FROM producto_variantes pv
             INNER JOIN productos p ON p.productoid = pv.productoid
             WHERE p.tenant_id = $1
-              AND pv.stock > 0
             ORDER BY p.nombreproducto ASC, pv.sku ASC
         `;
 
         const { rows } = await db.query(query, [tenant_id]);
 
-        return res.json({
-            success: true,
-            data: rows.map(row => ({
+        // ✅ SMART STOCK: Obtener stock dinámico según rol del usuario
+        const varianteIds = rows.map(r => r.varianteid);
+        let stockMap = new Map();
+
+        if (varianteIds.length > 0 && userId) {
+            try {
+                stockMap = await SmartStockService.getBulkStock({
+                    varianteIds,
+                    userId,
+                    userRole: userRoles,
+                    tenantId: tenant_id
+                });
+                console.log(`✅ [InventarioController] Stock obtenido para ${varianteIds.length} variantes (Usuario: ${userId})`);
+            } catch (stockError) {
+                console.error('[InventarioController] Error al obtener stock dinámico:', stockError);
+                // Fallback: retornar sin stock si falla
+            }
+        }
+
+        // Filtrar solo variantes con stock > 0 y mapear con stock dinámico
+        const inventarioConStock = rows
+            .map(row => ({
                 sku: row.sku || 'Sin SKU',
                 producto: row.nombreproducto || 'Sin nombre',
                 variante: row.dimensiones || 'Estándar',
                 ubicacion: row.ubicacion || 'N/A',
-                stock: row.stock || 0
+                stock: stockMap.get(row.varianteid) || 0
             }))
+            .filter(item => item.stock > 0);
+
+        console.log(`📊 [InventarioController] Inventario filtrado: ${inventarioConStock.length} variantes con stock`);
+
+        return res.json({
+            success: true,
+            data: inventarioConStock
         });
     } catch (error) {
         console.error('Error al obtener inventario para PDF:', error);

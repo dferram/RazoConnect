@@ -1,11 +1,13 @@
 const pool = require('../db');
+const SmartStockService = require('../services/SmartStockService');
 
 const registrarAjusteInventario = async (req, res) => {
     const client = await pool.connect();
     
     try {
         const { sku, tipo, cantidad, motivo, observaciones } = req.body;
-        const adminId = req.user.adminId;
+        const userId = req.user?.id || req.user?.adminId || req.user?.userId;
+        const userRoles = req.user?.roles || ['admin'];
         const { tenant_id } = req.tenant;
         const ipOrigen = req.ip || req.connection.remoteAddress;
 
@@ -48,70 +50,74 @@ const registrarAjusteInventario = async (req, res) => {
         const variante = varianteQuery.rows[0];
         const varianteId = variante.varianteid;
 
-        const inventarioQuery = await client.query(
-            `SELECT inventario_id, cantidad
-             FROM inventarios_admin
-             WHERE admin_id = $1 AND variante_id = $2 AND tenant_id = $3
-             FOR UPDATE`,
-            [adminId, varianteId, tenant_id]
-        );
-
+        // ✅ SMART STOCK: Obtener stock actual antes del ajuste
         let stockPrevio = 0;
-        let inventarioId = null;
-
-        if (inventarioQuery.rows.length > 0) {
-            stockPrevio = parseInt(inventarioQuery.rows[0].cantidad);
-            inventarioId = inventarioQuery.rows[0].inventario_id;
+        try {
+            stockPrevio = await SmartStockService.getStock({
+                varianteId,
+                userId,
+                userRole: userRoles,
+                tenantId: tenant_id
+            });
+        } catch (stockError) {
+            console.error('[InventarioAjusteController] Error al obtener stock:', stockError);
         }
 
-        let stockPosterior;
-        if (tipo === 'MERMA') {
-            stockPosterior = stockPrevio - cantidadNum;
-            
-            if (stockPosterior < 0) {
+        // Calcular cantidad de ajuste (MERMA = negativo, ADICION = positivo)
+        const cantidadAjuste = tipo === 'MERMA' ? -cantidadNum : cantidadNum;
+
+        // ✅ SMART STOCK: Aplicar ajuste usando SmartStockService
+        let resultado;
+        try {
+            resultado = await SmartStockService.adjustStock({
+                varianteId,
+                cantidad: cantidadAjuste,
+                userId,
+                userRole: userRoles,
+                tenantId: tenant_id,
+                motivo: `${tipo}: ${motivo}`,
+                client // ✅ Usar misma transacción
+            });
+
+            if (!resultado.success) {
                 await client.query('ROLLBACK');
                 return res.status(400).json({ 
-                    error: `Stock insuficiente. No se puede aplicar merma de ${cantidadNum} unidades.`,
+                    error: resultado.message,
                     stockActual: stockPrevio
                 });
             }
-        } else {
-            stockPosterior = stockPrevio + cantidadNum;
+        } catch (stockError) {
+            await client.query('ROLLBACK');
+            console.error('❌ [SmartStock] Error al ajustar inventario:', stockError);
+            return res.status(400).json({ 
+                error: stockError.message || 'Error al ajustar el inventario',
+                stockActual: stockPrevio
+            });
         }
 
+        const stockPosterior = resultado.newStock;
+
+        // Registrar movimiento en tabla de auditoría
         const movimientoResult = await client.query(
             `INSERT INTO movimientos_inventario 
              (admin_id, variante_id, tenant_id, tipo, cantidad, stock_previo, stock_posterior, motivo, observaciones, ip_origen)
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
              RETURNING movimiento_id, fecha_movimiento`,
-            [adminId, varianteId, tenant_id, tipo, cantidadNum, stockPrevio, stockPosterior, motivo, observaciones || null, ipOrigen]
+            [userId, varianteId, tenant_id, tipo, cantidadNum, stockPrevio, stockPosterior, motivo, observaciones || null, ipOrigen]
         );
 
         const movimientoId = movimientoResult.rows[0].movimiento_id;
         const fechaMovimiento = movimientoResult.rows[0].fecha_movimiento;
 
-        if (inventarioId) {
-            await client.query(
-                `UPDATE inventarios_admin 
-                 SET cantidad = $1, ultima_actualizacion = CURRENT_TIMESTAMP
-                 WHERE inventario_id = $2`,
-                [stockPosterior, inventarioId]
-            );
-        } else {
-            await client.query(
-                `INSERT INTO inventarios_admin (admin_id, variante_id, cantidad, registrado_por, tenant_id)
-                 VALUES ($1, $2, $3, $4, $5)`,
-                [adminId, varianteId, stockPosterior, adminId, tenant_id]
-            );
-        }
-
         await client.query('COMMIT');
 
         const adminQuery = await client.query(
             'SELECT nombre, email FROM administradores WHERE adminid = $1',
-            [adminId]
+            [userId]
         );
         const adminNombre = adminQuery.rows[0]?.nombre || 'Desconocido';
+
+        console.log(`✅ [SmartStock] Ajuste registrado: ${tipo} de ${cantidadNum} unidades - Variante ${varianteId} (${stockPrevio} → ${stockPosterior})`);
 
         res.json({
             success: true,

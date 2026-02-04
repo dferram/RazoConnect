@@ -9,6 +9,7 @@ const {
 } = require("../services/ordenesService");
 const { checkStockBajo } = require("../utils/stockAlerts");
 const { calcularTotalPedido, validarConsistenciaTotales } = require("../utils/calculadoraPedidos");
+const SmartStockService = require("../services/SmartStockService");
 
 const TAMANO_VALUE_KEYS = [
   "valor",
@@ -354,9 +355,10 @@ const crearPedido = async (req, res) => {
 
     let masterVariantsMap = new Map();
 
+    // ✅ SMART STOCK: Obtener variantes maestras y stock dinámico según rol
     if (productosEnPedido.length) {
       const masterVariantsResult = await client.query(
-        `SELECT pv.ProductoID, pv.VarianteID, COALESCE(pv.Stock, 0) AS Stock
+        `SELECT pv.ProductoID, pv.VarianteID
          FROM Producto_Variantes pv
          INNER JOIN Productos p ON p.ProductoID = pv.ProductoID
          WHERE pv.ProductoID = ANY($1::int[])
@@ -366,10 +368,37 @@ const crearPedido = async (req, res) => {
         [productosEnPedido, tenant_id]
       );
 
-      // CRITICAL: Log stock source verification and validate integrity
-      console.log('🔍 [STOCK AUDIT] Stock cargado desde producto_variantes.stock para cálculo de pedido:');
+      // Obtener IDs de variantes maestras
+      const masterVarianteIds = masterVariantsResult.rows.map(r => r.varianteid);
+      
+      // ✅ SMART STOCK: Obtener stock dinámico según rol del cliente
+      let stockMapBulk = new Map();
+      if (masterVarianteIds.length > 0) {
+        try {
+          stockMapBulk = await SmartStockService.getBulkStock({
+            varianteIds: masterVarianteIds,
+            userId: req.user.id || clienteId,
+            userRole: req.user.roles || ['cliente'],
+            tenantId: tenant_id
+          });
+          console.log(`✅ [SmartStock] Stock obtenido para ${masterVarianteIds.length} variantes maestras (Cliente: ${clienteId})`);
+        } catch (stockError) {
+          console.error('[PedidosController] Error al obtener stock dinámico:', stockError);
+          // Si falla SmartStock, rechazar pedido (seguro)
+          await client.query("ROLLBACK");
+          transactionStarted = false;
+          removeUploadedComprobante();
+          return res.status(500).json({
+            success: false,
+            message: "Error al validar disponibilidad de stock. Por favor, intenta nuevamente."
+          });
+        }
+      }
+
+      // CRITICAL: Log stock source verification
+      console.log('🔍 [STOCK AUDIT] Stock dinámico cargado según rol del cliente:');
       masterVariantsResult.rows.forEach(row => {
-        const stockValue = parseInt(row.stock, 10);
+        const stockValue = stockMapBulk.get(row.varianteid) || 0;
         if (stockValue < 0) {
           console.error(`❌ [STOCK ERROR] Variante ${row.varianteid} tiene stock NEGATIVO: ${stockValue}`);
         } else if (stockValue === 0) {
@@ -380,20 +409,15 @@ const crearPedido = async (req, res) => {
 
       masterVariantsMap = new Map(
         masterVariantsResult.rows.map((row) => {
-          const stockParsed = parseInt(row.stock, 10);
-          const stockFinal = Math.max(isNaN(stockParsed) ? 0 : stockParsed, 0);
-          
-          // CRITICAL: Validate stock integrity
-          if (stockParsed < 0) {
-            console.error(`🚨 [INTEGRITY ERROR] Variante ${row.varianteid} tiene stock negativo en DB: ${stockParsed}. Forzando a 0.`);
-          }
+          const stockDinamico = stockMapBulk.get(row.varianteid) || 0;
+          const stockFinal = Math.max(stockDinamico, 0);
           
           return [
             row.productoid,
             {
               varianteId: row.varianteid,
               stock: stockFinal,
-              stockOriginal: stockParsed, // Guardar valor original para auditoría
+              stockOriginal: stockDinamico,
             },
           ];
         })
@@ -1134,33 +1158,48 @@ const crearPedido = async (req, res) => {
         });
       }
 
-      // Actualizar stock del producto (solo se descuenta lo efectivamente surtido en PIEZAS)
+      // ✅ SMART STOCK: Descontar stock usando SmartStockService
       const piezasRealmenteSurtidas = split.cantidadSurtida * tamanoValor;
       if (piezasRealmenteSurtidas > 0 && masterInfo) {
-        const nuevoStockMaestro = Math.max(stockActual - piezasRealmenteSurtidas, 0);
-        masterInfo.stock = nuevoStockMaestro;
+        try {
+          const resultado = await SmartStockService.adjustStock({
+            varianteId: masterInfo.varianteId,
+            cantidad: -piezasRealmenteSurtidas, // Negativo = decremento
+            userId: req.user.id || clienteId,
+            userRole: req.user.roles || ['cliente'],
+            tenantId: tenant_id,
+            motivo: `Venta Pedido #${pedidoId}`,
+            client // ✅ Usar misma transacción
+          });
 
-        console.log(`📉 [STOCK UPDATE] Variante ${masterInfo.varianteId}: ${stockActual} → ${nuevoStockMaestro} (descontó ${piezasRealmenteSurtidas} piezas)`);
+          if (!resultado.success) {
+            throw new Error(`Stock insuficiente para variante ${masterInfo.varianteId}`);
+          }
 
-        await client.query(
-          "UPDATE producto_variantes SET Stock = $1 WHERE VarianteID = $2",
-          [nuevoStockMaestro, masterInfo.varianteId]
-        );
+          // Actualizar stock local para cálculos posteriores
+          masterInfo.stock = resultado.newStock;
 
-        await client.query(
-          `INSERT INTO Log_Inventario (VarianteID, CantidadCambiado, NuevoStock, Motivo, UsuarioID, tenant_id)
-           VALUES ($1, $2, $3, $4, $5, $6)`,
-          [
-            masterInfo.varianteId,
-            -piezasRealmenteSurtidas,
-            nuevoStockMaestro,
-            `Venta Pedido #${pedidoId}`,
-            clienteId,
-            tenant_id,
-          ]
-        );
+          console.log(`✅ [SmartStock] Variante ${masterInfo.varianteId}: ${stockActual} → ${resultado.newStock} (descontó ${piezasRealmenteSurtidas} piezas)`);
 
-        variantesAfectadas.add(masterInfo.varianteId);
+          // Log de auditoría
+          await client.query(
+            `INSERT INTO Log_Inventario (VarianteID, CantidadCambiado, NuevoStock, Motivo, UsuarioID, tenant_id)
+             VALUES ($1, $2, $3, $4, $5, $6)`,
+            [
+              masterInfo.varianteId,
+              -piezasRealmenteSurtidas,
+              resultado.newStock,
+              `Venta Pedido #${pedidoId}`,
+              clienteId,
+              tenant_id,
+            ]
+          );
+
+          variantesAfectadas.add(masterInfo.varianteId);
+        } catch (stockError) {
+          console.error(`❌ [SmartStock] Error al descontar stock:`, stockError);
+          throw new Error('Stock insuficiente. El pedido no pudo ser procesado.');
+        }
       }
 
       // detallesPedido se llena con las líneas insertadas (surtido / backorder)
