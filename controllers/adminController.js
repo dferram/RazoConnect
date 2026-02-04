@@ -16,6 +16,7 @@ const { registrarLog } = require("../services/loggerService");
 const inventoryService = require("../services/inventoryService");
 const auditService = require("../services/auditService");
 const auditLogger = require("../services/auditLogger");
+const SmartStockService = require("../services/SmartStockService");
 const {
   procesarImagenesColor,
   guardarImagenesColor,
@@ -7648,6 +7649,8 @@ const ajustarInventario = async (req, res) => {
 const getInventarioResumen = async (req, res) => {
   try {
     const { tenant_id } = req.tenant;
+    const userId = req.user?.id;
+    const userRoles = req.user?.roles || [req.user?.rol];
     const userRol = req.user?.rol?.toLowerCase();
     const isSuperAdmin = userRol === 'superadmin' || userRol === 'super-admin';
 
@@ -7680,47 +7683,87 @@ const getInventarioResumen = async (req, res) => {
 
     const whereClause = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
 
-    let havingClause = '';
-    if (stock === 'con') {
-      havingClause = 'HAVING SUM(COALESCE(v.stock, 0)) > 0';
-    } else if (stock === 'sin') {
-      havingClause = 'HAVING SUM(COALESCE(v.stock, 0)) = 0';
-    }
-
+    // ✅ SMART STOCK: Obtener productos con sus variantes (sin filtrar por stock aún)
     const query = `
       SELECT
         p.ProductoID,
         p.NombreProducto,
         p.Activo,
         c.Nombre AS NombreCategoria,
-        COUNT(DISTINCT v.VarianteID) AS TotalVariantes,
-        SUM(COALESCE(v.stock, 0)) AS StockTotal
+        ARRAY_AGG(v.VarianteID) FILTER (WHERE v.VarianteID IS NOT NULL) AS VarianteIDs,
+        COUNT(DISTINCT v.VarianteID) AS TotalVariantes
       FROM Productos p
       LEFT JOIN Categorias c ON c.CategoriaID = p.CategoriaID AND c.tenant_id = $1
       LEFT JOIN Producto_Variantes v ON v.ProductoID = p.ProductoID
       ${whereClause}
       GROUP BY p.ProductoID, p.NombreProducto, p.Activo, c.Nombre
-      ${havingClause}
       ORDER BY p.NombreProducto ASC
     `;
 
     const result = await db.query(query, params);
 
-    const productos = result.rows.map((row) => ({
-      productoId: row.productoid,
-      nombreProducto: row.nombreproducto,
-      activo: row.activo !== undefined ? row.activo : true,
-      nombreCategoria: row.nombrecategoria || "Sin categoría",
-      totalVariantes:
-        row.totalvariantes !== null ? parseInt(row.totalvariantes, 10) : 0,
-      stockTotal: row.stocktotal !== null ? parseInt(row.stocktotal, 10) : 0
-    }));
+    // ✅ SMART STOCK: Obtener stock dinámico para cada producto
+    const productosConStock = [];
+    
+    for (const row of result.rows) {
+      const varianteIds = row.varianteids || [];
+      
+      if (varianteIds.length === 0) {
+        // Producto sin variantes
+        productosConStock.push({
+          productoId: row.productoid,
+          nombreProducto: row.nombreproducto,
+          activo: row.activo !== undefined ? row.activo : true,
+          nombreCategoria: row.nombrecategoria || "Sin categoría",
+          totalVariantes: 0,
+          stockTotal: 0
+        });
+        continue;
+      }
+
+      // Obtener stock dinámico según rol del usuario
+      let stockMap = new Map();
+      try {
+        stockMap = await SmartStockService.getBulkStock({
+          varianteIds,
+          userId,
+          userRole: userRoles,
+          tenantId: tenant_id
+        });
+      } catch (error) {
+        console.error(`[getInventarioResumen] Error al obtener stock para producto ${row.productoid}:`, error);
+      }
+
+      // Calcular stock total del producto
+      const stockTotal = varianteIds.reduce((sum, varianteId) => {
+        return sum + (stockMap.get(varianteId) || 0);
+      }, 0);
+
+      productosConStock.push({
+        productoId: row.productoid,
+        nombreProducto: row.nombreproducto,
+        activo: row.activo !== undefined ? row.activo : true,
+        nombreCategoria: row.nombrecategoria || "Sin categoría",
+        totalVariantes: parseInt(row.totalvariantes, 10) || 0,
+        stockTotal
+      });
+    }
+
+    // ✅ Aplicar filtro de stock después de calcular con SmartStockService
+    let productosFiltrados = productosConStock;
+    if (stock === 'con') {
+      productosFiltrados = productosConStock.filter(p => p.stockTotal > 0);
+    } else if (stock === 'sin') {
+      productosFiltrados = productosConStock.filter(p => p.stockTotal === 0);
+    }
+
+    console.log(`📊 [getInventarioResumen] Usuario ${userId} (${userRol}): ${productosFiltrados.length} productos`);
 
     res.json({
       success: true,
       data: {
-        productos,
-        total: productos.length,
+        productos: productosFiltrados,
+        total: productosFiltrados.length,
         isSuperAdmin
       },
     });
@@ -7741,7 +7784,9 @@ const getInventarioResumen = async (req, res) => {
 const getProductoDetalleInventario = async (req, res) => {
   try {
     const productoId = parseInt(req.params.id, 10);
-    const adminId = req.user?.id;
+    const userId = req.user?.id;
+    const userRoles = req.user?.roles || [req.user?.rol];
+    const { tenant_id } = req.tenant;
 
     if (Number.isNaN(productoId)) {
       return res.status(400).json({
@@ -7750,14 +7795,14 @@ const getProductoDetalleInventario = async (req, res) => {
       });
     }
 
-    if (!adminId) {
+    if (!userId) {
       return res.status(401).json({
         success: false,
         message: "Usuario no autenticado",
       });
     }
 
-    // Consulta principal con JOINs optimizados
+    // ✅ SMART STOCK: Consulta sin stock directo (se obtiene después con SmartStockService)
     const productoQuery = `
       SELECT
         p.productoid,
@@ -7789,7 +7834,6 @@ const getProductoDetalleInventario = async (req, res) => {
               'dimensiones', pv.dimensiones,
               'colorNombre', pv.color_nombre,
               'precioUnitario', pv.preciounitario,
-              'stock', COALESCE(pv.stock, 0),
               'activo', pv.activo
             )
           )
@@ -7800,12 +7844,7 @@ const getProductoDetalleInventario = async (req, res) => {
           SELECT COUNT(*)
           FROM producto_variantes pv
           WHERE pv.productoid = p.productoid
-        ) AS total_variantes,
-        (
-          SELECT COALESCE(SUM(pv.stock), 0)
-          FROM producto_variantes pv
-          WHERE pv.productoid = p.productoid
-        ) AS total_stock
+        ) AS total_variantes
       FROM productos p
       LEFT JOIN proveedores prov ON prov.proveedorid = p.proveedorid_default
       LEFT JOIN categorias c ON c.categoriaid = p.categoriaid
@@ -7825,8 +7864,28 @@ const getProductoDetalleInventario = async (req, res) => {
     const variantes = row.lista_variantes || [];
     const imagenes = row.imagenes || [];
 
-    // Debug: Log raw data
-    console.log('Raw variantes data:', JSON.stringify(variantes, null, 2));
+    // ✅ SMART STOCK: Obtener stock dinámico para todas las variantes
+    const varianteIds = variantes.map(v => v.varianteId || v.varianteid).filter(Boolean);
+    let stockMap = new Map();
+    
+    if (varianteIds.length > 0) {
+      try {
+        stockMap = await SmartStockService.getBulkStock({
+          varianteIds,
+          userId,
+          userRole: userRoles,
+          tenantId: tenant_id
+        });
+        console.log(`✅ [getProductoDetalleInventario] Stock obtenido para ${varianteIds.length} variantes (Usuario: ${userId})`);
+      } catch (error) {
+        console.error('[getProductoDetalleInventario] Error al obtener stock dinámico:', error);
+      }
+    }
+
+    // Calcular total de stock
+    const totalStock = varianteIds.reduce((sum, varianteId) => {
+      return sum + (stockMap.get(varianteId) || 0);
+    }, 0);
 
     const productoDetalle = {
       productoId: row.productoid,
@@ -7837,7 +7896,7 @@ const getProductoDetalleInventario = async (req, res) => {
       categoria: row.categoria_nombre || "Sin categoría",
       activo: row.activo,
       totalVariantes: parseInt(row.total_variantes, 10) || 0,
-      totalStock: parseInt(row.total_stock, 10) || 0,
+      totalStock,
       imagenes: imagenes.map(img => ({
         imagenId: img.imagenid,
         url: img.url,
@@ -7845,25 +7904,26 @@ const getProductoDetalleInventario = async (req, res) => {
         orden: img.orden !== null && img.orden !== undefined ? parseInt(img.orden, 10) : null
       })),
       variantes: variantes.map(v => {
-        // PostgreSQL devuelve las claves en minúsculas desde JSON_BUILD_OBJECT
+        const varianteId = v.varianteId || v.varianteid;
         const precioRaw = v.precioUnitario || v.preciounitario;
         const precio = precioRaw !== null && precioRaw !== undefined 
           ? parseFloat(precioRaw) 
           : 0;
-        console.log(`Variante ${v.sku}: precioUnitario=${v.precioUnitario}, preciounitario=${v.preciounitario}, parsed=${precio}`);
         
-        // Extract medida and color separately
         const medida = v.dimensiones || null;
         const color = v.colorNombre || v.colornombre || null;
         
+        // ✅ SMART STOCK: Usar stock dinámico del mapa
+        const stockDinamico = stockMap.get(varianteId) || 0;
+        
         return {
-          varianteId: v.varianteId || v.varianteid,
+          varianteId,
           sku: v.sku || "Sin SKU",
           medida: medida,
           color: color,
           caracteristica: color || medida || "Sin especificar",
           precio: precio,
-          stock: parseInt(v.stock, 10) || 0,
+          stock: stockDinamico,
           activo: v.activo !== false
         };
       })
