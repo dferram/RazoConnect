@@ -103,7 +103,7 @@ async function generarReportePDF(req, res) {
                 s.estatus,
                 a.nombre AS admin_nombre,
                 a.apellido AS admin_apellido,
-                t.nombre_comercial AS tenant_nombre
+                t.nombre_cliente AS tenant_nombre
             FROM toma_inventario_sesiones s
             LEFT JOIN administradores a ON a.adminid = s.usuario_creador_id
             LEFT JOIN tenants t ON t.tenant_id = s.tenant_id
@@ -157,6 +157,7 @@ async function generarReportePDF(req, res) {
                 c.conteoid,
                 pv.sku,
                 p.descripcion AS producto_nombre,
+                pv.color_nombre,
                 ia.cantidad AS stock_teorico,
                 c.conteo_a,
                 c.conteo_b,
@@ -166,7 +167,7 @@ async function generarReportePDF(req, res) {
             FROM toma_inventario_conteos c
             INNER JOIN producto_variantes pv ON pv.varianteid = c.varianteid
             INNER JOIN productos p ON p.productoid = pv.productoid
-            LEFT JOIN inventarios_admin ia ON ia.variante_id = c.varianteid AND ia.admin_id = $3
+            LEFT JOIN stock_admin ia ON ia.variante_id = c.varianteid AND ia.admin_id = $3
             WHERE c.sesionid = $1 AND c.tenant_id = $2
             ORDER BY 
                 CASE 
@@ -198,8 +199,8 @@ async function generarReportePDF(req, res) {
         let currentPage = 1;
 
         function addHeader() {
-            doc.fontSize(18).fillColor('#F97316').text('REPORTE DE INVENTARIO', 50, 50, { align: 'center' });
-            doc.fontSize(10).fillColor('#666666').text(sesion.tenant_nombre || 'RazoConnect', 50, 75, { align: 'center' });
+            doc.fontSize(18).fillColor('#F97316').text(`INVENTARIO DE ${(sesion.tenant_nombre || 'RazoConnect').toUpperCase()}`, 50, 50, { align: 'center' });
+            doc.fontSize(10).fillColor('#666666').text('Reporte de Toma de Inventario', 50, 75, { align: 'center' });
             doc.moveTo(50, 95).lineTo(562, 95).stroke('#F97316');
         }
 
@@ -260,8 +261,8 @@ async function generarReportePDF(req, res) {
         if (coincidencias.length > 0) {
             yPos = 140;
 
-            const tableHeaders = ['SKU', 'Producto', 'Teórico', 'Contado'];
-            const colWidths = [80, 280, 70, 70];
+            const tableHeaders = ['SKU', 'Producto', 'Color', 'Teórico', 'Contado'];
+            const colWidths = [70, 220, 80, 60, 60];
             let xPos = 50;
 
             doc.fontSize(9).fillColor('#FFFFFF').fillOpacity(1);
@@ -294,9 +295,11 @@ async function generarReportePDF(req, res) {
                 xPos += colWidths[0];
                 doc.text(item.producto_nombre || 'Sin nombre', xPos + 5, yPos + 4, { width: colWidths[1], ellipsis: true });
                 xPos += colWidths[1];
-                doc.text(String(item.stock_teorico || 0), xPos + 5, yPos + 4, { width: colWidths[2], align: 'center' });
+                doc.text(item.color_nombre || 'N/A', xPos + 5, yPos + 4, { width: colWidths[2] });
                 xPos += colWidths[2];
-                doc.text(String(item.cantidad_final || 0), xPos + 5, yPos + 4, { width: colWidths[3], align: 'center' });
+                doc.text(String(item.stock_teorico || 0), xPos + 5, yPos + 4, { width: colWidths[3], align: 'center' });
+                xPos += colWidths[3];
+                doc.text(String(item.cantidad_final || 0), xPos + 5, yPos + 4, { width: colWidths[4], align: 'center' });
 
                 yPos += 18;
             });
@@ -314,8 +317,8 @@ async function generarReportePDF(req, res) {
         if (discrepancias.length > 0) {
             yPos = 140;
 
-            const tableHeaders = ['SKU', 'Producto', 'Teórico', 'Contado', 'Diferencia'];
-            const colWidths = [70, 240, 60, 60, 70];
+            const tableHeaders = ['SKU', 'Producto', 'Color', 'Teórico', 'Contado', 'Diferencia'];
+            const colWidths = [60, 180, 70, 60, 60, 70];
             let xPos = 50;
 
             doc.fontSize(9).fillColor('#FFFFFF').fillOpacity(1);
@@ -348,15 +351,17 @@ async function generarReportePDF(req, res) {
                 xPos += colWidths[0];
                 doc.text(item.producto_nombre || 'Sin nombre', xPos + 5, yPos + 4, { width: colWidths[1], ellipsis: true });
                 xPos += colWidths[1];
-                doc.text(String(item.stock_teorico || 0), xPos + 5, yPos + 4, { width: colWidths[2], align: 'center' });
+                doc.text(item.color_nombre || 'N/A', xPos + 5, yPos + 4, { width: colWidths[2] });
                 xPos += colWidths[2];
-                doc.text(String(item.cantidad_final || 0), xPos + 5, yPos + 4, { width: colWidths[3], align: 'center' });
+                doc.text(String(item.stock_teorico || 0), xPos + 5, yPos + 4, { width: colWidths[3], align: 'center' });
                 xPos += colWidths[3];
+                doc.text(String(item.cantidad_final || 0), xPos + 5, yPos + 4, { width: colWidths[4], align: 'center' });
+                xPos += colWidths[4];
 
                 const diff = item.diferencia || 0;
                 const diffText = diff > 0 ? `+${diff}` : String(diff);
                 const diffColor = diff > 0 ? '#10B981' : '#EF4444';
-                doc.fillColor(diffColor).text(diffText, xPos + 5, yPos + 4, { width: colWidths[4], align: 'center' });
+                doc.fillColor(diffColor).text(diffText, xPos + 5, yPos + 4, { width: colWidths[5], align: 'center' });
 
                 yPos += 18;
             });
@@ -419,6 +424,7 @@ async function obtenerDetalleSesion(req, res) {
                 c.conteoid,
                 pv.sku,
                 p.descripcion AS producto_nombre,
+                pv.color_nombre,
                 ia.cantidad AS stock_teorico,
                 c.conteo_a,
                 c.conteo_b,
@@ -428,7 +434,7 @@ async function obtenerDetalleSesion(req, res) {
             FROM toma_inventario_conteos c
             INNER JOIN producto_variantes pv ON pv.varianteid = c.varianteid
             INNER JOIN productos p ON p.productoid = pv.productoid
-            LEFT JOIN inventarios_admin ia ON ia.variante_id = c.varianteid AND ia.admin_id = $3
+            LEFT JOIN stock_admin ia ON ia.variante_id = c.varianteid AND ia.admin_id = $3
             WHERE c.sesionid = $1 AND c.tenant_id = $2
             ORDER BY 
                 CASE 

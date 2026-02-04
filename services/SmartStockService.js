@@ -153,9 +153,9 @@ async function getStock({ varianteId, userId, userRole, tenantId }) {
   if (context.isSuperAdmin) {
     try {
       const { rows } = await db.query(
-        `SELECT COALESCE(cantidad, 0) as stock 
+        `SELECT COALESCE(stock, 0) as stock 
          FROM producto_variantes 
-         WHERE id = $1`,
+         WHERE varianteid = $1`,
         [varianteId]
       );
       
@@ -234,14 +234,14 @@ async function getBulkStock({ varianteIds, userId, userRole, tenantId }) {
   if (context.isSuperAdmin) {
     try {
       const { rows } = await db.query(
-        `SELECT id, COALESCE(cantidad, 0) as stock 
+        `SELECT varianteid, COALESCE(stock, 0) as stock 
          FROM producto_variantes 
-         WHERE id = ANY($1::int[])`,
+         WHERE varianteid = ANY($1::int[])`,
         [varianteIds]
       );
       
       rows.forEach(row => {
-        stockMap.set(parseInt(row.id, 10), parseInt(row.stock, 10));
+        stockMap.set(parseInt(row.varianteid, 10), parseInt(row.stock, 10));
       });
       
       console.log(`✅ [SmartStock] Super Admin - Bulk: ${rows.length} variantes (GLOBAL)`);
@@ -323,9 +323,9 @@ async function adjustStock({
     try {
       const { rows } = await dbClient.query(
         `UPDATE producto_variantes 
-         SET cantidad = GREATEST(cantidad + $1, 0)
-         WHERE id = $2
-         RETURNING cantidad`,
+         SET stock = GREATEST(stock + $1, 0)
+         WHERE varianteid = $2
+         RETURNING stock`,
         [cantidad, varianteId]
       );
 
@@ -337,7 +337,7 @@ async function adjustStock({
         };
       }
 
-      const newStock = parseInt(rows[0].cantidad, 10);
+      const newStock = parseInt(rows[0].stock, 10);
       console.log(`✅ [SmartStock] Super Admin ajustó variante ${varianteId}: ${cantidad > 0 ? '+' : ''}${cantidad} → ${newStock} (GLOBAL)`);
       
       return { 
@@ -451,9 +451,9 @@ async function getGlobalStockBreakdown(varianteId, tenantId) {
   try {
     // Stock global de producto_variantes
     const { rows: globalRows } = await db.query(
-      `SELECT COALESCE(cantidad, 0) as stock_global 
+      `SELECT COALESCE(stock, 0) as stock_global 
        FROM producto_variantes 
-       WHERE id = $1`,
+       WHERE varianteid = $1`,
       [varianteId]
     );
 

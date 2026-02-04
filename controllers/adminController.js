@@ -7697,15 +7697,21 @@ const getInventarioResumen = async (req, res) => {
     }
 
     if (categoria && categoria !== 'todos') {
-      whereClauses.push(`p.CategoriaID = $${paramIndex}`);
-      params.push(parseInt(categoria, 10));
-      paramIndex++;
+      const categoriaId = parseInt(categoria, 10);
+      if (!isNaN(categoriaId)) {
+        whereClauses.push(`p.CategoriaID = $${paramIndex}`);
+        params.push(categoriaId);
+        paramIndex++;
+      }
     }
 
     if (proveedor && proveedor !== 'todos') {
-      whereClauses.push(`p.ProveedorID_Default = $${paramIndex}`);
-      params.push(parseInt(proveedor, 10));
-      paramIndex++;
+      const proveedorId = parseInt(proveedor, 10);
+      if (!isNaN(proveedorId)) {
+        whereClauses.push(`p.ProveedorID_Default = $${paramIndex}`);
+        params.push(proveedorId);
+        paramIndex++;
+      }
     }
 
     const whereClause = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
@@ -7729,52 +7735,46 @@ const getInventarioResumen = async (req, res) => {
 
     const result = await db.query(query, params);
 
-    // ✅ SMART STOCK: Obtener stock dinámico para cada producto
-    const productosConStock = [];
-    
-    for (const row of result.rows) {
+    // ✅ OPTIMIZACIÓN: Recolectar TODOS los variant IDs de una vez
+    const allVarianteIds = [];
+    result.rows.forEach(row => {
       const varianteIds = row.varianteids || [];
-      
-      if (varianteIds.length === 0) {
-        // Producto sin variantes
-        productosConStock.push({
-          productoId: row.productoid,
-          nombreProducto: row.nombreproducto,
-          activo: row.activo !== undefined ? row.activo : true,
-          nombreCategoria: row.nombrecategoria || "Sin categoría",
-          totalVariantes: 0,
-          stockTotal: 0
-        });
-        continue;
-      }
+      allVarianteIds.push(...varianteIds);
+    });
 
-      // Obtener stock dinámico según rol del usuario
-      let stockMap = new Map();
+    // ✅ SMART STOCK: Una sola llamada bulk para TODAS las variantes
+    let globalStockMap = new Map();
+    if (allVarianteIds.length > 0) {
       try {
-        stockMap = await SmartStockService.getBulkStock({
-          varianteIds,
+        globalStockMap = await SmartStockService.getBulkStock({
+          varianteIds: allVarianteIds,
           userId,
           userRole: userRoles,
           tenantId: tenant_id
         });
       } catch (error) {
-        console.error(`[getInventarioResumen] Error al obtener stock para producto ${row.productoid}:`, error);
+        console.error(`[getInventarioResumen] Error al obtener stock bulk:`, error);
       }
+    }
 
-      // Calcular stock total del producto
+    // ✅ Construir productos con stock desde el mapa global
+    const productosConStock = result.rows.map(row => {
+      const varianteIds = row.varianteids || [];
+      
+      // Calcular stock total del producto desde el mapa global
       const stockTotal = varianteIds.reduce((sum, varianteId) => {
-        return sum + (stockMap.get(varianteId) || 0);
+        return sum + (globalStockMap.get(varianteId) || 0);
       }, 0);
 
-      productosConStock.push({
+      return {
         productoId: row.productoid,
         nombreProducto: row.nombreproducto,
         activo: row.activo !== undefined ? row.activo : true,
         nombreCategoria: row.nombrecategoria || "Sin categoría",
         totalVariantes: parseInt(row.totalvariantes, 10) || 0,
         stockTotal
-      });
-    }
+      };
+    });
 
     // ✅ Aplicar filtro de stock después de calcular con SmartStockService
     let productosFiltrados = productosConStock;
