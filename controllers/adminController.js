@@ -7695,19 +7695,9 @@ const getInventarioResumen = async (req, res) => {
         c.Nombre AS NombreCategoria,
         COUNT(DISTINCT v.VarianteID) AS TotalVariantes,
         SUM(COALESCE(v.stock, 0)) AS StockTotal
-        ${isSuperAdmin ? `,
-        STRING_AGG(DISTINCT CONCAT(a.Nombre, ' ', COALESCE(a.Apellido, '')), ', ') AS AdminsRegistrados
-        ` : ''}
       FROM Productos p
       LEFT JOIN Categorias c ON c.CategoriaID = p.CategoriaID AND c.tenant_id = $1
       LEFT JOIN Producto_Variantes v ON v.ProductoID = p.ProductoID
-      ${isSuperAdmin ? `
-      LEFT JOIN (
-        SELECT DISTINCT ia.variante_id, ia.registrado_por
-        FROM inventarios_admin ia
-      ) ia_agg ON ia_agg.variante_id = v.VarianteID
-      LEFT JOIN administradores a ON a.AdminID = ia_agg.registrado_por AND a.tenant_id = $1
-      ` : ''}
       ${whereClause}
       GROUP BY p.ProductoID, p.NombreProducto, p.Activo, c.Nombre
       ${havingClause}
@@ -7723,8 +7713,7 @@ const getInventarioResumen = async (req, res) => {
       nombreCategoria: row.nombrecategoria || "Sin categoría",
       totalVariantes:
         row.totalvariantes !== null ? parseInt(row.totalvariantes, 10) : 0,
-      stockTotal: row.stocktotal !== null ? parseInt(row.stocktotal, 10) : 0,
-      ...(isSuperAdmin && { adminsRegistrados: row.adminsregistrados || 'N/A' })
+      stockTotal: row.stocktotal !== null ? parseInt(row.stocktotal, 10) : 0
     }));
 
     res.json({

@@ -466,7 +466,6 @@
                     <th>Categoría</th>
                     <th>Estado</th>
                     <th>Variantes</th>
-                    <th id="thAdministrador" class="u-display-none">Administrador</th>
                     <th>Acciones</th>
                   </tr>
                 </thead>
@@ -903,11 +902,7 @@
               console.log('📦 Stock property:', allProducts[0].stockTotal);
             }
             
-            // Mostrar/ocultar columna de administrador según rol
-            const thAdministrador = document.getElementById('thAdministrador');
-            if (thAdministrador) {
-              thAdministrador.style.display = isSuperAdmin ? 'table-cell' : 'none';
-            }
+            // Column visibility logic removed - adminsRegistrados no longer available
             
             // Actualizar contador de resultados
             document.getElementById('totalProductos').textContent = data.data.total;
@@ -978,9 +973,6 @@
 
             const nombreProductoSafe = escapeHtml(product.nombreProducto || "");
             const nombreCategoriaSafe = escapeHtml(product.nombreCategoria || "Sin categoría");
-            const adminsRegistrados = isSuperAdmin && product.adminsRegistrados 
-              ? escapeHtml(product.adminsRegistrados) 
-              : '';
             
             return `
           <tr>
@@ -1014,11 +1006,6 @@
                 product.totalVariantes
               }</span>
             </td>
-            ${isSuperAdmin ? `
-            <td style="font-size: 0.875rem; color: var(--razo-gray-warm);">
-              ${adminsRegistrados || 'N/A'}
-            </td>
-            ` : ''}
             <td>
               <button
                 type="button"
