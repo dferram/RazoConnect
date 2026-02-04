@@ -21,6 +21,24 @@
     STATE.page.proveedorTiendaId = STATE.page.isProveedorTienda
       ? params.get("id")
       : null;
+
+    // ✅ Leer categoría desde URL
+    const categoriaParam = params.get("categoria");
+    if (categoriaParam) {
+      const categoriaId = parseInt(categoriaParam, 10);
+      if (!isNaN(categoriaId)) {
+        STATE.categoriaId = categoriaId;
+      }
+    }
+
+    // ✅ Leer proveedor desde URL
+    const proveedorParam = params.get("proveedor");
+    if (proveedorParam) {
+      const proveedorId = parseInt(proveedorParam, 10);
+      if (!isNaN(proveedorId)) {
+        STATE.proveedorId = proveedorId;
+      }
+    }
   }
 
   function emitirCambio(origen = "ui") {
@@ -127,6 +145,14 @@
 
       ul.innerHTML = itemsHtml.join("");
 
+      // ✅ Pre-seleccionar categoría desde URL
+      if (STATE.categoriaId) {
+        const radioToCheck = document.getElementById(`cat_${STATE.categoriaId}`);
+        if (radioToCheck) {
+          radioToCheck.checked = true;
+        }
+      }
+
       ul.querySelectorAll('input[name="sidebarCategoria"]').forEach((input) => {
         input.addEventListener("change", (e) => {
           const raw = (e.target.value || "").toString().trim();
@@ -192,6 +218,14 @@
       ul.innerHTML = itemsHtml.join("");
 
       section.style.display = STATE.page.isProveedorTienda ? "none" : "block";
+
+      // ✅ Pre-seleccionar proveedor desde URL
+      if (STATE.proveedorId) {
+        const radioToCheck = document.getElementById(`marca_${STATE.proveedorId}`);
+        if (radioToCheck) {
+          radioToCheck.checked = true;
+        }
+      }
 
       ul.querySelectorAll('input[name="sidebarMarca"]').forEach((input) => {
         input.addEventListener("change", (e) => {

@@ -17,6 +17,7 @@
     <link rel="stylesheet" href="css/proveedor-tienda.css" />
     <link rel="stylesheet" href="css/catalogo-profesional.css" />
     <link rel="stylesheet" href="css/components/sidebar-filtros.css" />
+    <link rel="stylesheet" href="css/search-autocomplete.css" />
     <style>
       /* Banner de Marca - Minimalista Moderno */
       .brand-hero {
@@ -160,6 +161,16 @@
         .products-grid {
           grid-template-columns: 1fr;
         }
+
+        /* Ocultar carrito y buscador en móviles - están en el header */
+        .brand-hero .cart-modern,
+        .brand-hero .search-container-modern {
+          display: none;
+        }
+
+        .brand-hero > .container > div {
+          justify-content: flex-start !important;
+        }
       }
 
       /* Layout filtros + productos */
@@ -185,6 +196,102 @@
           top: auto;
         }
       }
+
+      /* Estilos para buscador moderno */
+      .search-container-modern {
+        position: relative;
+        width: 100%;
+        max-width: 600px;
+      }
+
+      .search-input-modern {
+        width: 100%;
+        padding: 0.875rem 3rem 0.875rem 1.25rem;
+        border: 2px solid #e5e7eb;
+        border-radius: 12px;
+        font-size: 1rem;
+        transition: all 0.2s;
+        background: white;
+      }
+
+      .search-input-modern:focus {
+        outline: none;
+        border-color: var(--razo-orange, #f97316);
+        box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
+      }
+
+      .search-icon-modern {
+        position: absolute;
+        right: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #9ca3af;
+        pointer-events: none;
+      }
+
+      /* Botón toggle filtros móvil */
+      .btn-toggle-filtros {
+        display: none;
+        width: 100%;
+        padding: 1rem 1.25rem;
+        background: white;
+        border: 2px solid #e5e7eb;
+        border-radius: 0.75rem;
+        font-size: 1rem;
+        font-weight: 600;
+        color: #374151;
+        cursor: pointer;
+        transition: all 0.2s;
+        margin-bottom: 1rem;
+        align-items: center;
+        gap: 0.75rem;
+      }
+
+      @media (max-width: 992px) {
+        .btn-toggle-filtros {
+          display: flex;
+        }
+
+        .sidebar-filters-wrapper {
+          display: none;
+          max-height: 0;
+          overflow: hidden;
+          transition: max-height 0.4s ease, opacity 0.3s ease;
+          opacity: 0;
+        }
+
+        .sidebar-filters-wrapper.filtros-abiertos {
+          display: block;
+          max-height: 2000px;
+          opacity: 1;
+          margin-bottom: 1.5rem;
+          padding: 1.25rem;
+          background: white;
+          border: 2px solid #e5e7eb;
+          border-radius: 0.75rem;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+      }
+
+      .btn-toggle-filtros:hover {
+        border-color: var(--razo-orange, #f97316);
+        background: rgba(249, 115, 22, 0.02);
+      }
+
+      .btn-toggle-filtros span {
+        flex: 1;
+        text-align: left;
+        margin-left: 0.75rem;
+      }
+
+      .btn-toggle-filtros-chevron {
+        transition: transform 0.3s ease;
+        color: var(--razo-orange, #f97316);
+      }
+
+      .btn-toggle-filtros[aria-expanded="true"] .btn-toggle-filtros-chevron {
+        transform: rotate(180deg);
+      }
     </style>
       <link rel="stylesheet" href="css/mobile-responsive.css" />
   </head>
@@ -193,20 +300,63 @@
 
     <!-- Banner de Marca Moderno -->
     <section class="brand-hero">
-      <div class="container brand-hero-content">
-        <div class="brand-hero-left">
-          <h1 class="brand-hero-title" id="brandName"></h1>
-          <p class="brand-hero-subtitle">
-            Catálogo Oficial • <span id="productCount">0</span> productos disponibles
-          </p>
+      <div class="container">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div class="brand-hero-left">
+            <h1 class="brand-hero-title" id="brandName"></h1>
+            <p class="brand-hero-subtitle">
+              Catálogo Oficial • <span id="productCount">0</span> productos disponibles
+            </p>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 1rem; align-items: flex-end;">
+            <a href="/carrito.html" class="cart-modern" title="Ver carrito">
+              🛒
+              <span class="sr-only">Ver carrito</span>
+            </a>
+
+            <form id="searchForm" class="search-container-modern" onsubmit="return false;">
+              <label for="search-bar" style="display: none">Buscar producto</label>
+              <input
+                type="search"
+                id="search-bar"
+                class="search-input-modern"
+                placeholder="Buscar por nombre/SKU"
+              />
+              <svg
+                class="search-icon-modern"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2" />
+                <path d="M16.5 16.5L21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+              </svg>
+            </form>
+          </div>
         </div>
       </div>
     </section>
 
     <!-- Contenedor Principal -->
     <div class="container proveedor-container">
+
+      <!-- Botón Toggle Filtros (Solo Móvil) -->
+      <button 
+        id="btn-toggle-filtros" 
+        class="btn-toggle-filtros"
+        type="button"
+        aria-expanded="false"
+        aria-controls="sidebar-filters-container"
+      >
+        <i class="bi bi-funnel"></i>
+        <span>Filtrar y Ordenar</span>
+        <i class="bi bi-chevron-down btn-toggle-filtros-chevron"></i>
+      </button>
+
       <div class="brand-page-layout">
-        <div id="sidebar-filters-container"></div>
+        <div id="sidebar-filters-container" class="sidebar-filters-wrapper"></div>
 
         <section>
           <div class="catalog-toolbar proveedor-toolbar-no-margin">
@@ -250,6 +400,7 @@
     <script src="js/auth-guard.js"></script>
     <script src="js/api.js"></script>
     <script src="js/variant-summary-utils.js"></script>
+    <script src="js/search-autocomplete.js"></script>
     <script>
       // ========================================
       // OBTENER ID DE PROVEEDOR DE LA URL
@@ -509,6 +660,43 @@
 
         aplicarFiltrosSidebar();
       });
+
+      // Toggle filtros móvil
+      const btnToggleFiltros = document.getElementById('btn-toggle-filtros');
+      const sidebarFiltersWrapper = document.getElementById('sidebar-filters-container');
+
+      if (btnToggleFiltros && sidebarFiltersWrapper) {
+        btnToggleFiltros.addEventListener('click', () => {
+          const isExpanded = btnToggleFiltros.getAttribute('aria-expanded') === 'true';
+          btnToggleFiltros.setAttribute('aria-expanded', !isExpanded);
+          sidebarFiltersWrapper.classList.toggle('filtros-abiertos');
+        });
+      }
+
+      // Buscador inteligente con autocompletado
+      const searchInput = document.getElementById('search-bar');
+      if (searchInput && typeof SearchAutocomplete !== 'undefined') {
+        new SearchAutocomplete(searchInput, {
+          minChars: 2,
+          debounceMs: 300,
+          onSelect: (producto) => {
+            if (producto && producto.productoId) {
+              window.location.href = `/producto-detalle.html?id=${producto.productoId}`;
+            }
+          }
+        });
+
+        searchInput.addEventListener('input', (e) => {
+          filtrosSidebar.search = e.target.value.trim();
+          aplicarFiltrosSidebar();
+        });
+      } else if (searchInput) {
+        // Fallback si no hay autocompletado
+        searchInput.addEventListener('input', (e) => {
+          filtrosSidebar.search = e.target.value.trim();
+          aplicarFiltrosSidebar();
+        });
+      }
     </script>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

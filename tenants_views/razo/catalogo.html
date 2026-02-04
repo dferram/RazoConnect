@@ -803,6 +803,8 @@
         window.location.href = `/producto-detalle.html?id=${id}`;
       }
 
+      let sidebarInicializado = false;
+
       document.addEventListener("filtroCambiado", (event) => {
         const detail = event?.detail || {};
         if (searchBar && typeof detail.search === "string") {
@@ -820,6 +822,11 @@
             ? parseInt(detail.categoriaId, 10)
             : null;
         nombreCategoriaSeleccionada = null;
+
+        // ✅ Marcar sidebar como inicializado cuando recibimos el evento "init"
+        if (detail.origen === "init") {
+          sidebarInicializado = true;
+        }
 
         // ✅ MISIÓN 1: Recargar productos desde backend con filtro de categoría
         aplicarFiltrosDesdeUI();
@@ -1006,8 +1013,8 @@
       loadDimensiones();
       tipoSeleccionado = obtenerTipoDesdeUrl();
       actualizarTituloPorTipo();
-      filtrosQueryActual = construirQueryString();
-      loadProductos(filtrosQueryActual);
+      // ✅ No cargar productos aquí - esperar a que el sidebar emita el evento "init"
+      // Los productos se cargarán cuando el sidebar lea la URL y dispare filtroCambiado
 
       // ========================================
       // TOGGLE DE FILTROS PARA MÓVILES
