@@ -872,6 +872,8 @@ const aplicarSesion = async (req, res) => {
             motivo: `Auditoría Inventario - Sesión #${sesionId}`,
             usuarioId: req.user?.id,
             esExcepcion: false,
+            tenantId: tenant_id,
+            userRole: req.user?.roles || [req.user?.rol || 'admin']
           });
           movimientosGenerados += 1;
         }

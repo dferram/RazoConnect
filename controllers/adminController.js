@@ -2716,6 +2716,8 @@ const recepcionarMercancia = async (req, res) => {
         motivo,
         usuarioId: req.user.id,
         esExcepcion: flagExcepcion,
+        tenantId: req.tenant?.tenant_id || 1,
+        userRole: req.user?.roles || [req.user?.rol || 'admin']
       }
     );
 
@@ -3656,21 +3658,45 @@ const getDashboardStats = async (req, res) => {
     );
     console.log('💳 Comisiones Pendientes:', comisionesPendientesResult.rows[0]);
 
-    // CRÍTICO: Calcular valor de inventario usando SOLO stock real de producto_variantes
-    // NO usar inventario_sesion ni ninguna otra fuente de stock temporal
-    const valorInventarioResult = await db.query(
-      `SELECT 
-        COALESCE(SUM(pv.stock * pv.preciounitario), 0) as valor_venta,
-        COALESCE(SUM(pv.stock * pv.costounitario), 0) as valor_costo,
-        COUNT(*) as total_variantes_con_stock
-       FROM producto_variantes pv
-       INNER JOIN productos p ON pv.productoid = p.productoid
-       WHERE p.tenant_id = $1 
-       AND pv.stock > 0`,
-      [tenant_id]
-    );
-    console.log('📦 [DEBUG] Valor Inventario desde producto_variantes.stock:', valorInventarioResult.rows[0]);
-    console.log('📦 [DEBUG] Total variantes con stock > 0:', valorInventarioResult.rows[0].total_variantes_con_stock);
+    // ✅ SMART STOCK: Calcular valor de inventario usando stock_admin (por administrador)
+    const userId = req.user?.id;
+    const userRoles = req.user?.roles || [req.user?.rol];
+    const userRol = req.user?.rol?.toLowerCase();
+    const isSuperAdmin = userRol === 'superadmin' || userRol === 'super-admin' || userRol === 'developer';
+
+    let valorInventarioResult;
+    
+    if (isSuperAdmin) {
+      // Super Admin: Ver valor de inventario GLOBAL (producto_variantes.stock)
+      valorInventarioResult = await db.query(
+        `SELECT 
+          COALESCE(SUM(pv.stock * pv.preciounitario), 0) as valor_venta,
+          COALESCE(SUM(pv.stock * pv.costounitario), 0) as valor_costo,
+          COUNT(*) as total_variantes_con_stock
+         FROM producto_variantes pv
+         INNER JOIN productos p ON pv.productoid = p.productoid
+         WHERE p.tenant_id = $1 
+         AND pv.stock > 0`,
+        [tenant_id]
+      );
+      console.log('📦 [Dashboard] Super Admin - Valor Inventario GLOBAL:', valorInventarioResult.rows[0]);
+    } else {
+      // Admin regular: Ver valor de inventario de SU STOCK (stock_admin)
+      valorInventarioResult = await db.query(
+        `SELECT 
+          COALESCE(SUM(sa.cantidad * pv.preciounitario), 0) as valor_venta,
+          COALESCE(SUM(sa.cantidad * pv.costounitario), 0) as valor_costo,
+          COUNT(DISTINCT sa.variante_id) as total_variantes_con_stock
+         FROM stock_admin sa
+         INNER JOIN producto_variantes pv ON sa.variante_id = pv.varianteid
+         INNER JOIN productos p ON pv.productoid = p.productoid
+         WHERE sa.tenant_id = $1 
+         AND sa.admin_id = $2
+         AND sa.cantidad > 0`,
+        [tenant_id, userId]
+      );
+      console.log(`📦 [Dashboard] Admin ${userId} - Valor Inventario LOCAL:`, valorInventarioResult.rows[0]);
+    }
 
     const responseData = {
       totalPedidos: parseInt(pedidosResult.rows[0].total),
@@ -3682,7 +3708,8 @@ const getDashboardStats = async (req, res) => {
       ingresosTotales: parseFloat(utilidadTotalResult.rows[0].utilidad),
       comisionesPendientes: parseFloat(comisionesPendientesResult.rows[0].total),
       valorInventarioVenta: parseFloat(valorInventarioResult.rows[0].valor_venta || 0),
-      valorInventarioCosto: parseFloat(valorInventarioResult.rows[0].valor_costo || 0)
+      valorInventarioCosto: parseFloat(valorInventarioResult.rows[0].valor_costo || 0),
+      isSuperAdmin // ✅ Indicar al frontend si es Super Admin
     };
 
     console.log('📤 Response Data:', responseData);

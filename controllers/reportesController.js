@@ -190,22 +190,57 @@ const getReporteRentabilidad = async (req, res) => {
  * GET /api/admin/reportes/valuacion-inventario
  * Devuelve el valor total del inventario disponible.
  */
+/**
+ * GET /api/admin/reportes/valuacion-inventario
+ * Devuelve el valor total del inventario disponible.
+ * ✅ CORREGIDO: Ahora usa stock_admin para admin regular, stock global para Super Admin
+ */
 const getValuacionInventario = async (req, res) => {
   try {
-    const query = `
-      SELECT 
-        COALESCE(SUM(Stock * CostoUnitario), 0) AS valor_costo,
-        COALESCE(SUM(Stock * PrecioUnitario), 0) AS valor_venta
-      FROM Producto_Variantes
-      WHERE Stock > 0
-    `;
+    const { tenant_id } = req.tenant;
+    const userId = req.user?.id;
+    const userRol = req.user?.rol?.toLowerCase();
+    const isSuperAdmin = userRol === 'superadmin' || userRol === 'super-admin' || userRol === 'developer';
 
-    const result = await db.query(query);
+    let result;
+
+    if (isSuperAdmin) {
+      // ✅ Super Admin: Ver valuación de inventario GLOBAL
+      const query = `
+        SELECT 
+          COALESCE(SUM(pv.Stock * pv.CostoUnitario), 0) AS valor_costo,
+          COALESCE(SUM(pv.Stock * pv.PrecioUnitario), 0) AS valor_venta
+        FROM Producto_Variantes pv
+        INNER JOIN Productos p ON pv.ProductoID = p.ProductoID
+        WHERE pv.Stock > 0
+        AND p.tenant_id = $1
+      `;
+      result = await db.query(query, [tenant_id]);
+      console.log(`📊 [Valuación] Super Admin - Inventario GLOBAL`);
+    } else {
+      // ✅ Admin regular: Ver valuación de SU inventario (stock_admin)
+      const query = `
+        SELECT 
+          COALESCE(SUM(sa.cantidad * pv.CostoUnitario), 0) AS valor_costo,
+          COALESCE(SUM(sa.cantidad * pv.PrecioUnitario), 0) AS valor_venta
+        FROM stock_admin sa
+        INNER JOIN Producto_Variantes pv ON sa.variante_id = pv.VarianteID
+        INNER JOIN Productos p ON pv.ProductoID = p.ProductoID
+        WHERE sa.cantidad > 0
+        AND sa.tenant_id = $1
+        AND sa.admin_id = $2
+      `;
+      result = await db.query(query, [tenant_id, userId]);
+      console.log(`📊 [Valuación] Admin ${userId} - Inventario LOCAL`);
+    }
+
     const row = result.rows[0] || {};
     const valorCosto =
       row.valor_costo !== undefined ? parseFloat(row.valor_costo) : 0;
     const valorVenta =
       row.valor_venta !== undefined ? parseFloat(row.valor_venta) : 0;
+
+    console.log(`📊 [Valuación] Resultado: Venta=$${valorVenta}, Costo=$${valorCosto}`);
 
     return res.json({
       success: true,
@@ -213,10 +248,11 @@ const getValuacionInventario = async (req, res) => {
         valorTotal: valorVenta,
         valorVenta,
         valorCosto,
+        isSuperAdmin // ✅ Indicar al frontend si es Super Admin
       },
     });
   } catch (error) {
-    console.error("Error al calcular la valuación de inventario:", error);
+    console.error("❌ Error al calcular la valuación de inventario:", error);
     return res.status(500).json({
       success: false,
       message: "Error al calcular la valuación de inventario",

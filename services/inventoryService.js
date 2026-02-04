@@ -1,3 +1,5 @@
+const SmartStockService = require('./SmartStockService');
+
 function createServiceError(message, status = 500, code = "INVENTORY_SERVICE_ERROR") {
   const err = new Error(message);
   err.status = status;
@@ -5,9 +7,24 @@ function createServiceError(message, status = 500, code = "INVENTORY_SERVICE_ERR
   return err;
 }
 
+/**
+ * Registrar movimiento de inventario usando SmartStockService
+ * ✅ REFACTORIZADO: Ahora usa SmartStockService.adjustStock para registrar en stock_admin
+ * 
+ * @param {Object} client - Cliente de transacción PostgreSQL
+ * @param {Object} params - Parámetros del movimiento
+ * @param {number} params.varianteId - ID de la variante
+ * @param {number} params.cantidadDelta - Cantidad a ajustar (positivo=entrada, negativo=salida)
+ * @param {string} params.motivo - Motivo del movimiento
+ * @param {number} params.usuarioId - ID del usuario que registra el movimiento
+ * @param {boolean} params.esExcepcion - Si es una excepción
+ * @param {number} params.tenantId - ID del tenant (requerido para SmartStockService)
+ * @param {Array<string>} params.userRole - Roles del usuario (requerido para SmartStockService)
+ * @returns {Promise<{stockAnterior: number, stockNuevo: number}>}
+ */
 async function registrarMovimiento(
   client,
-  { varianteId, cantidadDelta, motivo, usuarioId, esExcepcion }
+  { varianteId, cantidadDelta, motivo, usuarioId, esExcepcion, tenantId, userRole }
 ) {
   const id = Number.parseInt(varianteId, 10);
   if (!Number.isInteger(id) || id <= 0) {
@@ -31,31 +48,55 @@ async function registrarMovimiento(
   const userIdParsed = Number.parseInt(usuarioId, 10);
   const userId = Number.isInteger(userIdParsed) ? userIdParsed : null;
 
-  const { rows } = await client.query(
-    "SELECT stock FROM producto_variantes WHERE varianteid = $1 FOR UPDATE",
-    [id]
-  );
-
-  if (!rows.length) {
-    throw createServiceError("Variante no encontrada", 404, "VARIANTE_NO_ENCONTRADA");
+  if (!userId) {
+    throw createServiceError("usuarioId es requerido", 400, "USUARIO_ID_REQUERIDO");
   }
 
-  const stockAnterior = Number.parseInt(rows[0].stock, 10) || 0;
-  const stockNuevo = stockAnterior + delta;
+  // ✅ SMART STOCK: Obtener stock actual antes del ajuste
+  let stockAnterior = 0;
+  try {
+    stockAnterior = await SmartStockService.getStock({
+      varianteId: id,
+      userId,
+      userRole: userRole || ['admin'],
+      tenantId: tenantId || 1
+    });
+  } catch (error) {
+    console.error('[inventoryService] Error al obtener stock previo:', error);
+  }
 
-  if (stockNuevo < 0) {
+  // ✅ SMART STOCK: Aplicar ajuste usando SmartStockService
+  let resultado;
+  try {
+    resultado = await SmartStockService.adjustStock({
+      varianteId: id,
+      cantidad: delta,
+      userId,
+      userRole: userRole || ['admin'],
+      tenantId: tenantId || 1,
+      motivo: motivoNormalizado,
+      client // ✅ Usar misma transacción
+    });
+
+    if (!resultado.success) {
+      throw createServiceError(
+        resultado.message || 'Error al ajustar stock',
+        400,
+        "AJUSTE_STOCK_FALLIDO"
+      );
+    }
+  } catch (error) {
+    console.error('❌ [inventoryService] Error al ajustar stock con SmartStockService:', error);
     throw createServiceError(
-      `Stock insuficiente. Stock actual: ${stockAnterior}, cambio solicitado: ${delta}`,
+      error.message || 'Error al ajustar inventario',
       400,
-      "STOCK_INSUFICIENTE"
+      "SMART_STOCK_ERROR"
     );
   }
 
-  await client.query(
-    "UPDATE producto_variantes SET stock = $1 WHERE varianteid = $2",
-    [stockNuevo, id]
-  );
+  const stockNuevo = resultado.newStock;
 
+  // ✅ Registrar en log_inventario para auditoría
   const excepcion = Boolean(esExcepcion);
 
   try {
@@ -70,9 +111,12 @@ async function registrarMovimiento(
         [id, delta, stockNuevo, motivoNormalizado, userId]
       );
     } else {
-      throw error;
+      // No fallar si log_inventario falla (es solo auditoría)
+      console.error('[inventoryService] Error al insertar en log_inventario:', error);
     }
   }
+
+  console.log(`✅ [inventoryService] Movimiento registrado: ${delta > 0 ? 'ENTRADA' : 'SALIDA'} de ${Math.abs(delta)} unidades - Variante ${id} (${stockAnterior} → ${stockNuevo})`);
 
   return { stockAnterior, stockNuevo };
 }
