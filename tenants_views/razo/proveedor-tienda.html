@@ -253,7 +253,6 @@
         }
 
         .sidebar-filters-wrapper {
-          display: none;
           max-height: 0;
           overflow: hidden;
           transition: max-height 0.4s ease, opacity 0.3s ease;
@@ -261,7 +260,6 @@
         }
 
         .sidebar-filters-wrapper.filtros-abiertos {
-          display: block;
           max-height: 2000px;
           opacity: 1;
           margin-bottom: 1.5rem;
@@ -646,6 +644,43 @@
         const sortSelect = document.getElementById("brandSortSelect");
 
         sortSelect?.addEventListener("change", () => aplicarFiltrosSidebar());
+
+        // Toggle filtros móvil
+        const btnToggleFiltros = document.getElementById('btn-toggle-filtros');
+        const sidebarFiltersWrapper = document.getElementById('sidebar-filters-container');
+
+        if (btnToggleFiltros && sidebarFiltersWrapper) {
+          btnToggleFiltros.addEventListener('click', () => {
+            const isExpanded = btnToggleFiltros.getAttribute('aria-expanded') === 'true';
+            btnToggleFiltros.setAttribute('aria-expanded', !isExpanded);
+            sidebarFiltersWrapper.classList.toggle('filtros-abiertos');
+          });
+        }
+
+        // Buscador inteligente con autocompletado
+        const searchInput = document.getElementById('search-bar');
+        if (searchInput && typeof SearchAutocomplete !== 'undefined') {
+          new SearchAutocomplete(searchInput, {
+            minChars: 2,
+            debounceMs: 300,
+            onSelect: (producto) => {
+              if (producto && producto.productoId) {
+                window.location.href = `/producto-detalle.html?id=${producto.productoId}`;
+              }
+            }
+          });
+
+          searchInput.addEventListener('input', (e) => {
+            filtrosSidebar.search = e.target.value.trim();
+            aplicarFiltrosSidebar();
+          });
+        } else if (searchInput) {
+          // Fallback si no hay autocompletado
+          searchInput.addEventListener('input', (e) => {
+            filtrosSidebar.search = e.target.value.trim();
+            aplicarFiltrosSidebar();
+          });
+        }
       });
 
       document.addEventListener("filtroCambiado", (event) => {
@@ -660,43 +695,6 @@
 
         aplicarFiltrosSidebar();
       });
-
-      // Toggle filtros móvil
-      const btnToggleFiltros = document.getElementById('btn-toggle-filtros');
-      const sidebarFiltersWrapper = document.getElementById('sidebar-filters-container');
-
-      if (btnToggleFiltros && sidebarFiltersWrapper) {
-        btnToggleFiltros.addEventListener('click', () => {
-          const isExpanded = btnToggleFiltros.getAttribute('aria-expanded') === 'true';
-          btnToggleFiltros.setAttribute('aria-expanded', !isExpanded);
-          sidebarFiltersWrapper.classList.toggle('filtros-abiertos');
-        });
-      }
-
-      // Buscador inteligente con autocompletado
-      const searchInput = document.getElementById('search-bar');
-      if (searchInput && typeof SearchAutocomplete !== 'undefined') {
-        new SearchAutocomplete(searchInput, {
-          minChars: 2,
-          debounceMs: 300,
-          onSelect: (producto) => {
-            if (producto && producto.productoId) {
-              window.location.href = `/producto-detalle.html?id=${producto.productoId}`;
-            }
-          }
-        });
-
-        searchInput.addEventListener('input', (e) => {
-          filtrosSidebar.search = e.target.value.trim();
-          aplicarFiltrosSidebar();
-        });
-      } else if (searchInput) {
-        // Fallback si no hay autocompletado
-        searchInput.addEventListener('input', (e) => {
-          filtrosSidebar.search = e.target.value.trim();
-          aplicarFiltrosSidebar();
-        });
-      }
     </script>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

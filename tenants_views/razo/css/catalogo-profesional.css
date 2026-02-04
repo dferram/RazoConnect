@@ -217,25 +217,23 @@
 .search-container-modern {
   position: relative;
   width: 100%;
-  max-width: 520px;
+  max-width: 600px;
 }
 
 .search-input-modern {
   width: 100%;
-  padding: 0.875rem 3.5rem 0.875rem 1.5rem;
-  border: 1px solid #e0e0e0;
-  border-radius: 50px;
-  font-size: 0.95rem;
-  color: #111;
+  padding: 0.875rem 3rem 0.875rem 1.25rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  font-size: 1rem;
+  transition: all 0.2s;
   background: white;
-  outline: none;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 .search-input-modern:focus {
-  border-color: #FF8C00;
-  box-shadow: 0 4px 12px rgba(255, 140, 0, 0.15);
+  outline: none;
+  border-color: var(--razo-orange, #f97316);
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
 }
 
 .search-input-modern::placeholder {
