@@ -152,7 +152,10 @@
       const urlParams = new URLSearchParams(window.location.search);
       const proveedorId = urlParams.get("id");
 
+      console.log('🔍 [Proveedor-Tienda] proveedorId obtenido de URL:', proveedorId);
+
       if (!proveedorId) {
+        console.error('❌ [Proveedor-Tienda] No se encontró proveedorId en URL, redirigiendo...');
         window.location.href = "/catalogo.html";
       }
 
@@ -184,10 +187,11 @@
       // Initialize search autocomplete
       document.addEventListener('DOMContentLoaded', () => {
         const searchInput = document.getElementById('search-bar');
-        if (searchInput) {
+        if (searchInput && proveedorId) {
           new SearchAutocomplete(searchInput, {
             minChars: 2,
             debounceMs: 300,
+            additionalParams: { proveedorID: proveedorId },
             onSelect: (productoId) => {
               window.location.href = `/producto-detalle.html?id=${productoId}`;
             }
@@ -261,7 +265,10 @@
 
         // CRÍTICO: Siempre incluir el proveedor ID
         if (proveedorId) {
-          params.append("proveedor", proveedorId);
+          params.append("proveedorID", proveedorId);
+          console.log('✅ [Proveedor-Tienda] Agregando proveedorID al query:', proveedorId);
+        } else {
+          console.error('❌ [Proveedor-Tienda] proveedorId es null/undefined en construirQueryString');
         }
 
         if (categoriaSeleccionada !== null && categoriaSeleccionada > 0) {
@@ -596,9 +603,11 @@
 
         if (detail.origen === "init") {
           sidebarInicializado = true;
+          // Cargar productos con filtro de proveedor en la carga inicial
+          aplicarFiltrosDesdeUI();
+        } else {
+          aplicarFiltrosDesdeUI();
         }
-
-        aplicarFiltrosDesdeUI();
       });
 
       function mostrarProductos() {
@@ -703,11 +712,13 @@
 
       async function loadProductos(queryString = "") {
         try {
+          console.log('📡 [Proveedor-Tienda] Cargando productos con query:', queryString);
           loadingState.style.display = "flex";
           productGrid.style.display = "none";
           emptyState.style.display = "none";
 
           const response = await API.getProductos(queryString);
+          console.log('📦 [Proveedor-Tienda] Productos recibidos:', response.data?.data?.productos?.length || 0);
 
           if (response.ok && response.data.success) {
             todosLosProductos = response.data.data.productos;

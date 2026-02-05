@@ -1344,7 +1344,7 @@ const buscarProductosAutocomplete = async (req, res) => {
     
     // Agregar filtro de proveedor si existe
     if (proveedorIdNum) {
-      whereClause += ` AND p.proveedorid = $${paramIndex}`;
+      whereClause += ` AND p.proveedorid_default = $${paramIndex}`;
       queryParams.push(proveedorIdNum);
       paramIndex++;
     }
