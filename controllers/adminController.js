@@ -7726,7 +7726,7 @@ const getInventarioResumen = async (req, res) => {
       paramIndex++;
     }
 
-    if (categoria && categoria !== 'todos') {
+    if (categoria && categoria !== 'todos' && categoria !== 'undefined') {
       const categoriaId = parseInt(categoria, 10);
       if (!isNaN(categoriaId)) {
         whereClauses.push(`p.CategoriaID = $${paramIndex}`);
@@ -7735,7 +7735,7 @@ const getInventarioResumen = async (req, res) => {
       }
     }
 
-    if (proveedor && proveedor !== 'todos') {
+    if (proveedor && proveedor !== 'todos' && proveedor !== 'undefined') {
       const proveedorId = parseInt(proveedor, 10);
       if (!isNaN(proveedorId)) {
         whereClauses.push(`p.ProveedorID_Default = $${paramIndex}`);
@@ -7746,7 +7746,7 @@ const getInventarioResumen = async (req, res) => {
 
     // Filtro por administrador (solo para super admin)
     let adminFilterJoin = '';
-    if (admin_id && admin_id !== 'todos') {
+    if (admin_id && admin_id !== 'todos' && admin_id !== 'undefined') {
       const adminIdInt = parseInt(admin_id, 10);
       if (!isNaN(adminIdInt)) {
         // JOIN con stock_admin para filtrar por admin
@@ -15425,7 +15425,7 @@ const exportarInventarioPDF = async (req, res) => {
       paramIndex++;
     }
 
-    if (categoria && categoria !== 'todos') {
+    if (categoria && categoria !== 'todos' && categoria !== 'undefined') {
       const categoriaId = parseInt(categoria, 10);
       if (!isNaN(categoriaId)) {
         whereClauses.push(`p.CategoriaID = $${paramIndex}`);
@@ -15434,7 +15434,7 @@ const exportarInventarioPDF = async (req, res) => {
       }
     }
 
-    if (proveedor && proveedor !== 'todos') {
+    if (proveedor && proveedor !== 'todos' && proveedor !== 'undefined') {
       const proveedorId = parseInt(proveedor, 10);
       if (!isNaN(proveedorId)) {
         whereClauses.push(`p.ProveedorID_Default = $${paramIndex}`);
@@ -15445,7 +15445,7 @@ const exportarInventarioPDF = async (req, res) => {
 
     // Filtro por administrador (solo para super admin)
     let adminFilterJoin = '';
-    if (admin_id && admin_id !== 'todos') {
+    if (admin_id && admin_id !== 'todos' && admin_id !== 'undefined') {
       const adminIdInt = parseInt(admin_id, 10);
       if (!isNaN(adminIdInt)) {
         adminFilterJoin = `

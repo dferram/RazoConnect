@@ -874,7 +874,7 @@
               const filtroCategoria = document.getElementById('filtroCategoria');
               categoriasData.data.categorias.forEach(cat => {
                 const option = document.createElement('option');
-                option.value = cat.categoriaid;
+                option.value = cat.categoriaId; // ✅ Corregido: usar camelCase
                 option.textContent = cat.nombre;
                 filtroCategoria.appendChild(option);
               });
@@ -944,19 +944,41 @@
           productsTable.style.display = "none";
           emptyProducts.style.display = "none";
 
-          const stock = document.getElementById('filtroStock').value;
-          const categoria = document.getElementById('filtroCategoria').value;
-          const proveedor = document.getElementById('filtroProveedor').value;
-          const admin = document.getElementById('filtroAdmin')?.value;
-          const search = document.getElementById('searchInput').value.trim();
+          const stockEl = document.getElementById('filtroStock');
+          const categoriaEl = document.getElementById('filtroCategoria');
+          const proveedorEl = document.getElementById('filtroProveedor');
+          const adminEl = document.getElementById('filtroAdmin');
+          const searchEl = document.getElementById('searchInput');
+
+          const stock = stockEl?.value;
+          const categoria = categoriaEl?.value;
+          const proveedor = proveedorEl?.value;
+          const admin = adminEl?.value;
+          const search = searchEl?.value.trim();
+
+          console.log('🔍 [FILTROS DEBUG] Elementos encontrados:', {
+            stockEl: !!stockEl,
+            categoriaEl: !!categoriaEl,
+            proveedorEl: !!proveedorEl,
+            adminEl: !!adminEl,
+            searchEl: !!searchEl
+          });
+
+          console.log('🔍 [FILTROS DEBUG] Select de categoría:', {
+            existe: !!categoriaEl,
+            value: categoriaEl?.value,
+            selectedIndex: categoriaEl?.selectedIndex,
+            options: categoriaEl?.options.length,
+            selectedOption: categoriaEl?.options[categoriaEl?.selectedIndex]?.text
+          });
 
           console.log('🔍 [FILTROS] Valores capturados:', { stock, categoria, proveedor, admin, search });
 
           const params = new URLSearchParams();
-          if (stock && stock !== 'todos') params.append('stock', stock);
-          if (categoria && categoria !== 'todos') params.append('categoria', categoria);
-          if (proveedor && proveedor !== 'todos') params.append('proveedor', proveedor);
-          if (admin && admin !== 'todos') params.append('admin_id', admin);
+          if (stock && stock !== 'todos' && stock !== 'undefined') params.append('stock', stock);
+          if (categoria && categoria !== 'todos' && categoria !== 'undefined') params.append('categoria', categoria);
+          if (proveedor && proveedor !== 'todos' && proveedor !== 'undefined') params.append('proveedor', proveedor);
+          if (admin && admin !== 'todos' && admin !== 'undefined') params.append('admin_id', admin);
           if (search) params.append('search', search);
 
           const url = `${API_BASE_URL}/admin/inventario${params.toString() ? '?' + params.toString() : ''}`;
