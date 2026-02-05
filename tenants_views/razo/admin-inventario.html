@@ -468,7 +468,7 @@
                 <!-- Filtro de Administrador (Solo Super Admin) -->
                 <div class="form-group" id="filtroAdminContainer" style="margin: 0; display: none;">
                   <label for="filtroAdmin" class="form-label" style="font-size: 0.875rem; font-weight: 500; color: #374151; margin-bottom: 0.5rem;">
-                    👑 Administrador
+                    Administrador
                   </label>
                   <select id="filtroAdmin" class="form-input" style="font-size: 0.9rem;">
                     <option value="todos">Todos los administradores</option>
@@ -2247,12 +2247,72 @@
         const btnPDF = document.getElementById('btnDescargarPDF');
         
         try {
+          // Obtener filtros activos
+          const stockFilter = document.getElementById('filtroStock').value;
+          const categoriaFilter = document.getElementById('filtroCategoria').value;
+          const proveedorFilter = document.getElementById('filtroProveedor').value;
+          const adminFilter = document.getElementById('filtroAdmin')?.value || 'todos';
+          const searchFilter = document.getElementById('searchInput').value.trim();
+
+          // Construir mensaje de filtros aplicados
+          const filtrosAplicados = [];
+          if (stockFilter !== 'todos') {
+            filtrosAplicados.push(`Stock: ${stockFilter === 'con' ? 'Con existencias' : 'Sin existencias'}`);
+          }
+          if (categoriaFilter !== 'todos') {
+            const categoriaSelect = document.getElementById('filtroCategoria');
+            const categoriaTexto = categoriaSelect.options[categoriaSelect.selectedIndex].text;
+            filtrosAplicados.push(`Categoría: ${categoriaTexto}`);
+          }
+          if (proveedorFilter !== 'todos') {
+            const proveedorSelect = document.getElementById('filtroProveedor');
+            const proveedorTexto = proveedorSelect.options[proveedorSelect.selectedIndex].text;
+            filtrosAplicados.push(`Proveedor: ${proveedorTexto}`);
+          }
+          if (adminFilter !== 'todos') {
+            const adminSelect = document.getElementById('filtroAdmin');
+            const adminTexto = adminSelect.options[adminSelect.selectedIndex].text;
+            filtrosAplicados.push(`Administrador: ${adminTexto}`);
+          }
+          if (searchFilter) {
+            filtrosAplicados.push(`Búsqueda: "${searchFilter}"`);
+          }
+
+          // Mostrar alerta de confirmación con filtros aplicados
+          const mensajeFiltros = filtrosAplicados.length > 0
+            ? `<strong>Filtros aplicados:</strong><br>${filtrosAplicados.join('<br>')}`
+            : '<strong>Sin filtros aplicados</strong><br>Se exportará todo el inventario con stock disponible.';
+
+          const confirmacion = await Swal.fire({
+            title: '📄 Exportar Inventario a PDF',
+            html: `${mensajeFiltros}<br><br>¿Deseas continuar con la exportación?`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#F97316',
+            cancelButtonColor: '#6b7280',
+            confirmButtonText: 'Sí, exportar',
+            cancelButtonText: 'Cancelar'
+          });
+
+          if (!confirmacion.isConfirmed) {
+            return;
+          }
+
           // Deshabilitar botón y mostrar loading
           btnPDF.disabled = true;
           btnPDF.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generando...';
 
+          // Construir URL con parámetros de filtro
+          const params = new URLSearchParams();
+          if (categoriaFilter !== 'todos') params.append('categoria', categoriaFilter);
+          if (proveedorFilter !== 'todos') params.append('proveedor', proveedorFilter);
+          if (adminFilter !== 'todos') params.append('admin_id', adminFilter);
+          if (searchFilter) params.append('search', searchFilter);
+
+          const url = `${API_BASE_URL}/admin/inventario/exportar-pdf${params.toString() ? '?' + params.toString() : ''}`;
+
           // Obtener datos completos del inventario desde el backend
-          const response = await fetch(`${API_BASE_URL}/admin/inventario/exportar-pdf`, {
+          const response = await fetch(url, {
             method: 'GET',
             headers: {
               Authorization: `Bearer ${adminToken}`,

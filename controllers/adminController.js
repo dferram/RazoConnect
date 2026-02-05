@@ -7749,11 +7749,11 @@ const getInventarioResumen = async (req, res) => {
     if (admin_id && admin_id !== 'todos') {
       const adminIdInt = parseInt(admin_id, 10);
       if (!isNaN(adminIdInt)) {
-        // JOIN con inventarios_admin para filtrar por admin
+        // JOIN con stock_admin para filtrar por admin
         adminFilterJoin = `
-          INNER JOIN inventarios_admin ia ON ia.variante_id = v.VarianteID
+          INNER JOIN stock_admin sa ON sa.variante_id = v.VarianteID AND sa.tenant_id = $1
         `;
-        whereClauses.push(`ia.admin_id = $${paramIndex}`);
+        whereClauses.push(`sa.admin_id = $${paramIndex}`);
         params.push(adminIdInt);
         paramIndex++;
       }
@@ -15398,35 +15398,123 @@ const getAllAdministradores = async (req, res) => {
 /**
  * Exportar inventario para PDF
  * GET /api/admin/inventario/exportar-pdf
- * Retorna datos de todas las variantes con stock > 0
+ * Retorna datos de variantes con stock > 0, respetando filtros aplicados
  */
 const exportarInventarioPDF = async (req, res) => {
   try {
     const { tenant_id } = req.tenant;
+    const userId = req.user?.id;
+    const userRoles = req.user?.roles || [req.user?.rol];
+    const userRol = req.user?.rol?.toLowerCase();
+    const isSuperAdmin = userRol === 'superadmin' || userRol === 'super-admin';
+
+    const { categoria, proveedor, admin_id, search } = req.query;
+    
+    console.log('📄 [exportarInventarioPDF] Filtros recibidos:', { categoria, proveedor, admin_id, search });
+
+    const whereClauses = [`p.tenant_id = $1`];
+    const params = [tenant_id];
+    let paramIndex = 2;
+
+    if (search && search.trim()) {
+      whereClauses.push(`(
+        LOWER(p.NombreProducto) LIKE LOWER($${paramIndex}) OR
+        LOWER(pv.sku) LIKE LOWER($${paramIndex})
+      )`);
+      params.push(`%${search.trim()}%`);
+      paramIndex++;
+    }
+
+    if (categoria && categoria !== 'todos') {
+      const categoriaId = parseInt(categoria, 10);
+      if (!isNaN(categoriaId)) {
+        whereClauses.push(`p.CategoriaID = $${paramIndex}`);
+        params.push(categoriaId);
+        paramIndex++;
+      }
+    }
+
+    if (proveedor && proveedor !== 'todos') {
+      const proveedorId = parseInt(proveedor, 10);
+      if (!isNaN(proveedorId)) {
+        whereClauses.push(`p.ProveedorID_Default = $${paramIndex}`);
+        params.push(proveedorId);
+        paramIndex++;
+      }
+    }
+
+    // Filtro por administrador (solo para super admin)
+    let adminFilterJoin = '';
+    if (admin_id && admin_id !== 'todos') {
+      const adminIdInt = parseInt(admin_id, 10);
+      if (!isNaN(adminIdInt)) {
+        adminFilterJoin = `
+          INNER JOIN stock_admin sa ON sa.variante_id = pv.VarianteID AND sa.tenant_id = $1
+        `;
+        whereClauses.push(`sa.admin_id = $${paramIndex}`);
+        params.push(adminIdInt);
+        paramIndex++;
+      }
+    }
+
+    const whereClause = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
 
     const query = `
       SELECT
+        pv.VarianteID,
         pv.sku,
         p.nombreproducto AS producto,
         pv.dimensiones AS variante,
         COALESCE(m.nombremedida, 'N/A') AS medida,
         COALESCE(pv.color_nombre, 'Sin color') AS color,
-        COALESCE(pv.stock, 0) AS stock,
         'N/A' AS ubicacion
       FROM producto_variantes pv
       INNER JOIN productos p ON p.productoid = pv.productoid
       LEFT JOIN medidas m ON m.medidaid = pv.medidaid
-      WHERE p.tenant_id = $1
-        AND pv.stock > 0
+      ${adminFilterJoin}
+      ${whereClause}
       ORDER BY p.nombreproducto, pv.sku
     `;
 
-    const result = await db.query(query, [tenant_id]);
+    console.log('📋 [exportarInventarioPDF] Query construido con filtros');
+    const result = await db.query(query, params);
+
+    // ✅ SMART STOCK: Obtener stock real según rol del usuario
+    const varianteIds = result.rows.map(row => row.varianteid);
+    let stockMap = new Map();
+
+    if (varianteIds.length > 0) {
+      try {
+        stockMap = await SmartStockService.getBulkStock({
+          varianteIds,
+          userId,
+          userRole: userRoles,
+          tenantId: tenant_id
+        });
+      } catch (error) {
+        console.error('[exportarInventarioPDF] Error al obtener stock:', error);
+      }
+    }
+
+    // Construir datos con stock real y filtrar solo con stock > 0
+    const datosConStock = result.rows
+      .map(row => ({
+        sku: row.sku,
+        producto: row.producto,
+        variante: row.variante,
+        medida: row.medida,
+        color: row.color,
+        stock: stockMap.get(row.varianteid) || 0,
+        ubicacion: row.ubicacion
+      }))
+      .filter(item => item.stock > 0);
+
+    console.log(`📄 [exportarInventarioPDF] ${datosConStock.length} variantes con stock para PDF`);
 
     res.json({
       success: true,
-      data: result.rows,
-      total: result.rows.length
+      data: datosConStock,
+      total: datosConStock.length
     });
   } catch (error) {
     console.error("Error al exportar inventario para PDF:", error);
