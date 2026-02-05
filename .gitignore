@@ -1,51 +1,145 @@
-# Dependencias
+# ============================================
+# DEPENDENCIAS
+# ============================================
 node_modules/
-# package-lock.json
 yarn.lock
+pnpm-lock.yaml
+.pnp
+.pnp.js
 
-# Variables de entorno
+# ============================================
+# VARIABLES DE ENTORNO Y CONFIGURACIÓN SENSIBLE
+# ============================================
 .env
 .env.local
+.env.development.local
+.env.test.local
+.env.production.local
 .env.*.local
+*.env
 
-# Logs
+# Archivos de configuración con credenciales
+config/database.json
+config/secrets.json
+
+# ============================================
+# LOGS Y DEBUGGING
+# ============================================
 logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
 
-# Sistema operativo
+# ============================================
+# SISTEMA OPERATIVO
+# ============================================
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
+Desktop.ini
 
-# IDEs
+# ============================================
+# IDEs Y EDITORES
+# ============================================
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+.history/
 
-# Build
+# ============================================
+# BUILD Y DISTRIBUCIÓN
+# ============================================
 dist/
 build/
+out/
+*.tsbuildinfo
 
-# Testing
+# ============================================
+# TESTING
+# ============================================
 coverage/
 .nyc_output/
+*.lcov
+.jest/
 
-# Temporal
+# ============================================
+# ARCHIVOS TEMPORALES
+# ============================================
 tmp/
 temp/
+*.tmp
+*.temp
+*.cache
 
-# Product images
+# ============================================
+# BACKUPS DE BASE DE DATOS
+# ============================================
+backup/*.sql
+backup/*.dump
+backup/*.backup
+*.sql.gz
+*.dump.gz
+
+# IMPORTANTE: Mantener backup.sql en el repo como schema de referencia
+!backup/backup.sql
+
+# ============================================
+# UPLOADS Y ARCHIVOS DE USUARIO
+# ============================================
 product_images/
+uploads/
+public/uploads/
 
-# Documentación
-docs/
+# ============================================
+# CERTIFICADOS Y LLAVES
+# ============================================
+*.pem
+*.key
+*.cert
+*.crt
+*.p12
+*.pfx
 
-# Backups de la base de datos
-backup/
+# ============================================
+# ARCHIVOS DE SESIÓN
+# ============================================
+sessions/
+*.session
 
-#Windsurf
+# ============================================
+# DEPLOYMENT
+# ============================================
+.deployment.bak
+*.deploy.log
+
+# ============================================
+# DOCUMENTACIÓN GENERADA
+# ============================================
+docs/generated/
+
+# ============================================
+# HERRAMIENTAS DE DESARROLLO
+# ============================================
 .windsurf/
+.cascade/
+
+# ============================================
+# ARCHIVOS ESPECÍFICOS DEL PROYECTO
+# ============================================
+# Mantener Excel-templates en el repo (son plantillas, no datos)
+# Mantener migrations/ vacío pero trackeado
