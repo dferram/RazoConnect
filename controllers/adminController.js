@@ -7709,7 +7709,9 @@ const getInventarioResumen = async (req, res) => {
     const userRol = req.user?.rol?.toLowerCase();
     const isSuperAdmin = userRol === 'superadmin' || userRol === 'super-admin';
 
-    const { stock, categoria, proveedor, search } = req.query;
+    const { stock, categoria, proveedor, admin_id, search } = req.query;
+    
+    console.log('🔍 [getInventarioResumen] Query params recibidos:', { stock, categoria, proveedor, admin_id, search });
 
     const whereClauses = [`p.tenant_id = $1`];
     const params = [tenant_id];
@@ -7742,7 +7744,25 @@ const getInventarioResumen = async (req, res) => {
       }
     }
 
+    // Filtro por administrador (solo para super admin)
+    let adminFilterJoin = '';
+    if (admin_id && admin_id !== 'todos') {
+      const adminIdInt = parseInt(admin_id, 10);
+      if (!isNaN(adminIdInt)) {
+        // JOIN con inventarios_admin para filtrar por admin
+        adminFilterJoin = `
+          INNER JOIN inventarios_admin ia ON ia.variante_id = v.VarianteID
+        `;
+        whereClauses.push(`ia.admin_id = $${paramIndex}`);
+        params.push(adminIdInt);
+        paramIndex++;
+      }
+    }
+
     const whereClause = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
+    
+    console.log('📋 [getInventarioResumen] WHERE clause construido:', whereClause);
+    console.log('📋 [getInventarioResumen] Params para query:', params);
 
     // ✅ SMART STOCK: Obtener productos con sus variantes (sin filtrar por stock aún)
     const query = `
@@ -7751,11 +7771,12 @@ const getInventarioResumen = async (req, res) => {
         p.NombreProducto,
         p.Activo,
         c.Nombre AS NombreCategoria,
-        ARRAY_AGG(v.VarianteID) FILTER (WHERE v.VarianteID IS NOT NULL) AS VarianteIDs,
+        ARRAY_AGG(DISTINCT v.VarianteID) FILTER (WHERE v.VarianteID IS NOT NULL) AS VarianteIDs,
         COUNT(DISTINCT v.VarianteID) AS TotalVariantes
       FROM Productos p
       LEFT JOIN Categorias c ON c.CategoriaID = p.CategoriaID AND c.tenant_id = $1
       LEFT JOIN Producto_Variantes v ON v.ProductoID = p.ProductoID
+      ${adminFilterJoin}
       ${whereClause}
       GROUP BY p.ProductoID, p.NombreProducto, p.Activo, c.Nombre
       ORDER BY p.NombreProducto ASC
@@ -15334,6 +15355,47 @@ const obtenerRemisionPedido = async (req, res) => {
 };
 
 /**
+ * Obtener lista de todos los administradores
+ * GET /api/admin/administradores
+ * Para filtro de inventario (solo super admin)
+ */
+const getAllAdministradores = async (req, res) => {
+  try {
+    const { tenant_id } = req.tenant;
+
+    const query = `
+      SELECT
+        adminid,
+        nombre,
+        apellido,
+        email,
+        rol,
+        activo
+      FROM Administradores
+      WHERE tenant_id = $1
+        AND activo = true
+      ORDER BY nombre ASC
+    `;
+
+    const result = await db.query(query, [tenant_id]);
+
+    res.json({
+      success: true,
+      data: {
+        administradores: result.rows
+      }
+    });
+  } catch (error) {
+    console.error("Error al obtener administradores:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error al obtener administradores",
+      error: error.message
+    });
+  }
+};
+
+/**
  * Exportar inventario para PDF
  * GET /api/admin/inventario/exportar-pdf
  * Retorna datos de todas las variantes con stock > 0
@@ -15347,10 +15409,13 @@ const exportarInventarioPDF = async (req, res) => {
         pv.sku,
         p.nombreproducto AS producto,
         pv.dimensiones AS variante,
+        COALESCE(m.nombremedida, 'N/A') AS medida,
+        COALESCE(pv.color_nombre, 'Sin color') AS color,
         COALESCE(pv.stock, 0) AS stock,
         'N/A' AS ubicacion
       FROM producto_variantes pv
       INNER JOIN productos p ON p.productoid = pv.productoid
+      LEFT JOIN medidas m ON m.medidaid = pv.medidaid
       WHERE p.tenant_id = $1
         AND pv.stock > 0
       ORDER BY p.nombreproducto, pv.sku
@@ -15389,6 +15454,7 @@ module.exports = {
   ajustarInventario,
   getInventarioResumen,
   getProductoDetalleInventario,
+  getAllAdministradores,
   exportarInventarioPDF,
   buscarProductosAjuste,
   buscarProductosCompra,

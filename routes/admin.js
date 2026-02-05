@@ -582,6 +582,13 @@ router.get(
 );
 
 router.get(
+  "/administradores",
+  authenticate,
+  authorizeAdmin,
+  adminController.getAllAdministradores
+);
+
+router.get(
   "/inventario/exportar-pdf",
   authenticate,
   authorizeAdmin,

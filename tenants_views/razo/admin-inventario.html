@@ -465,6 +465,16 @@
                   </select>
                 </div>
 
+                <!-- Filtro de Administrador (Solo Super Admin) -->
+                <div class="form-group" id="filtroAdminContainer" style="margin: 0; display: none;">
+                  <label for="filtroAdmin" class="form-label" style="font-size: 0.875rem; font-weight: 500; color: #374151; margin-bottom: 0.5rem;">
+                    👑 Administrador
+                  </label>
+                  <select id="filtroAdmin" class="form-input" style="font-size: 0.9rem;">
+                    <option value="todos">Todos los administradores</option>
+                  </select>
+                </div>
+
                 <!-- Botón de Aplicar Filtros -->
                 <div style="display: flex; align-items: flex-end;">
                   <button
@@ -892,6 +902,36 @@
               });
             }
           }
+
+          // Cargar administradores (solo para super admin)
+          if (isSuperAdminGlobal) {
+            const adminsResponse = await fetch(`${API_BASE_URL}/admin/administradores`, {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${adminToken}`,
+                "Content-Type": "application/json",
+              },
+            });
+
+            if (adminsResponse.ok) {
+              const adminsData = await adminsResponse.json();
+              if (adminsData.success && adminsData.data) {
+                const filtroAdmin = document.getElementById('filtroAdmin');
+                const filtroAdminContainer = document.getElementById('filtroAdminContainer');
+                
+                const admins = adminsData.data.administradores || adminsData.data;
+                admins.forEach(admin => {
+                  const option = document.createElement('option');
+                  option.value = admin.adminid;
+                  option.textContent = `${admin.nombre} ${admin.apellido || ''}`.trim();
+                  filtroAdmin.appendChild(option);
+                });
+                
+                // Mostrar el filtro de admin
+                filtroAdminContainer.style.display = 'block';
+              }
+            }
+          }
         } catch (error) {
           console.error("Error cargando opciones de filtros:", error);
         }
@@ -907,15 +947,20 @@
           const stock = document.getElementById('filtroStock').value;
           const categoria = document.getElementById('filtroCategoria').value;
           const proveedor = document.getElementById('filtroProveedor').value;
+          const admin = document.getElementById('filtroAdmin')?.value;
           const search = document.getElementById('searchInput').value.trim();
+
+          console.log('🔍 [FILTROS] Valores capturados:', { stock, categoria, proveedor, admin, search });
 
           const params = new URLSearchParams();
           if (stock && stock !== 'todos') params.append('stock', stock);
           if (categoria && categoria !== 'todos') params.append('categoria', categoria);
           if (proveedor && proveedor !== 'todos') params.append('proveedor', proveedor);
+          if (admin && admin !== 'todos') params.append('admin_id', admin);
           if (search) params.append('search', search);
 
           const url = `${API_BASE_URL}/admin/inventario${params.toString() ? '?' + params.toString() : ''}`;
+          console.log('🌐 [FILTROS] URL de consulta:', url);
 
           const response = await fetch(url, {
             method: "GET",
@@ -933,6 +978,8 @@
           if (data.success) {
             allProducts = data.data.productos;
             isSuperAdmin = data.data.isSuperAdmin || false;
+            
+            console.log(`✅ [FILTROS] Respuesta recibida: ${allProducts.length} productos`);
             
             // 📦 DEBUGGING: Log first product to identify stock property
             if (allProducts.length > 0) {
@@ -984,6 +1031,12 @@
         document.getElementById('filtroStock').addEventListener('change', aplicarFiltros);
         document.getElementById('filtroCategoria').addEventListener('change', aplicarFiltros);
         document.getElementById('filtroProveedor').addEventListener('change', aplicarFiltros);
+        
+        // Event listener para filtro de admin (si existe)
+        const filtroAdmin = document.getElementById('filtroAdmin');
+        if (filtroAdmin) {
+          filtroAdmin.addEventListener('change', aplicarFiltros);
+        }
       });
 
       // Render products
@@ -1225,28 +1278,6 @@
         stockProjectionCard.style.display = "block";
       }
 
-      // Search filter
-      document.getElementById("searchInput").addEventListener("input", (e) => {
-        const searchTerm = e.target.value.toLowerCase();
-
-        if (searchTerm === "") {
-          // Si no hay búsqueda, mostrar todos con paginación
-          paginaActual = 1;
-          renderProducts();
-        } else {
-          // Si hay búsqueda, mostrar filtrados sin paginación
-          const filtered = allProducts.filter((p) => {
-            const matchesNombre = p.nombreProducto
-              .toLowerCase()
-              .includes(searchTerm);
-            const matchesCategoria = (p.nombreCategoria || "")
-              .toLowerCase()
-              .includes(searchTerm);
-            return matchesNombre || matchesCategoria;
-          });
-          renderProducts(filtered);
-        }
-      });
 
       // Eventos de botones de detalle y ajuste
       productsTableBody.addEventListener("click", (event) => {
@@ -2304,13 +2335,13 @@
             item.sku || 'Sin SKU',
             item.producto || 'Sin nombre',
             item.variante || 'Estándar',
-            item.ubicacion || 'N/A',
+            item.color || 'Sin color',
             item.stock.toString()
           ]);
 
           doc.autoTable({
             startY: 47,
-            head: [['SKU', 'Producto', 'Variante', 'Ubicación', 'Stock']],
+            head: [['SKU', 'Producto', 'Medida', 'Color', 'Stock']],
             body: tableData,
             theme: 'striped',
             headStyles: {
@@ -2326,11 +2357,11 @@
               cellPadding: 3
             },
             columnStyles: {
-              0: { cellWidth: 30, fontStyle: 'bold' }, // SKU
-              1: { cellWidth: 60 }, // Producto
-              2: { cellWidth: 35 }, // Variante
-              3: { cellWidth: 30 }, // Ubicación
-              4: { cellWidth: 20, halign: 'right', fontStyle: 'bold' } // Stock
+              0: { cellWidth: 32, fontStyle: 'bold' }, // SKU
+              1: { cellWidth: 65 }, // Producto
+              2: { cellWidth: 30 }, // Medida (era Variante)
+              3: { cellWidth: 35 }, // Color
+              4: { cellWidth: 18, halign: 'right', fontStyle: 'bold' } // Stock
             },
             alternateRowStyles: {
               fillColor: [249, 250, 251]
