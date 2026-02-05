@@ -15467,10 +15467,12 @@ const exportarInventarioPDF = async (req, res) => {
         pv.dimensiones AS variante,
         COALESCE(m.nombremedida, 'N/A') AS medida,
         COALESCE(pv.color_nombre, 'Sin color') AS color,
+        COALESCE(c.nombre, 'Sin categoría') AS categoria,
         'N/A' AS ubicacion
       FROM producto_variantes pv
       INNER JOIN productos p ON p.productoid = pv.productoid
       LEFT JOIN medidas m ON m.medidaid = pv.medidaid
+      LEFT JOIN categorias c ON c.categoriaid = p.categoriaid AND c.tenant_id = $1
       ${adminFilterJoin}
       ${whereClause}
       ORDER BY p.nombreproducto, pv.sku
@@ -15478,6 +15480,41 @@ const exportarInventarioPDF = async (req, res) => {
 
     console.log('📋 [exportarInventarioPDF] Query construido con filtros');
     const result = await db.query(query, params);
+
+    // Obtener información del administrador responsable del inventario
+    let adminInfo = null;
+    if (admin_id && admin_id !== 'todos' && admin_id !== 'undefined') {
+      const adminIdInt = parseInt(admin_id, 10);
+      if (!isNaN(adminIdInt)) {
+        const adminResult = await db.query(
+          `SELECT nombre, apellido, email FROM administradores WHERE adminid = $1 AND tenant_id = $2`,
+          [adminIdInt, tenant_id]
+        );
+        if (adminResult.rows.length > 0) {
+          adminInfo = {
+            nombre: adminResult.rows[0].nombre,
+            apellido: adminResult.rows[0].apellido || '',
+            email: adminResult.rows[0].email
+          };
+        }
+      }
+    }
+
+    // Obtener información del usuario que genera el reporte
+    let generadoPor = null;
+    if (userId) {
+      const userResult = await db.query(
+        `SELECT nombre, apellido, email FROM administradores WHERE adminid = $1 AND tenant_id = $2`,
+        [userId, tenant_id]
+      );
+      if (userResult.rows.length > 0) {
+        generadoPor = {
+          nombre: userResult.rows[0].nombre,
+          apellido: userResult.rows[0].apellido || '',
+          email: userResult.rows[0].email
+        };
+      }
+    }
 
     // ✅ SMART STOCK: Obtener stock real según rol del usuario
     const varianteIds = result.rows.map(row => row.varianteid);
@@ -15504,6 +15541,7 @@ const exportarInventarioPDF = async (req, res) => {
         variante: row.variante,
         medida: row.medida,
         color: row.color,
+        categoria: row.categoria,
         stock: stockMap.get(row.varianteid) || 0,
         ubicacion: row.ubicacion
       }))
@@ -15514,7 +15552,15 @@ const exportarInventarioPDF = async (req, res) => {
     res.json({
       success: true,
       data: datosConStock,
-      total: datosConStock.length
+      total: datosConStock.length,
+      adminInfo: adminInfo,
+      generadoPor: generadoPor,
+      filtrosAplicados: {
+        categoria: categoria && categoria !== 'todos' && categoria !== 'undefined' ? categoria : null,
+        proveedor: proveedor && proveedor !== 'todos' && proveedor !== 'undefined' ? proveedor : null,
+        admin_id: admin_id && admin_id !== 'todos' && admin_id !== 'undefined' ? admin_id : null,
+        search: search && search.trim() ? search.trim() : null
+      }
     });
   } catch (error) {
     console.error("Error al exportar inventario para PDF:", error);

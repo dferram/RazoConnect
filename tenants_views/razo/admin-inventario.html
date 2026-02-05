@@ -2354,6 +2354,8 @@
           }
 
           const inventario = data.data;
+          const adminInfo = data.adminInfo;
+          const generadoPor = data.generadoPor;
 
           // Verificar que jsPDF esté disponible
           if (typeof window.jspdf === 'undefined') {
@@ -2372,12 +2374,6 @@
           const pageWidth = doc.internal.pageSize.getWidth();
           const pageHeight = doc.internal.pageSize.getHeight();
 
-          // Logo y título
-          doc.setFontSize(22);
-          doc.setTextColor(...colorNaranja);
-          doc.setFont('helvetica', 'bold');
-          doc.text('RazoConnect', 15, 20);
-
           // Fecha y hora de generación
           const ahora = new Date();
           const fechaFormato = ahora.toLocaleDateString('es-MX', {
@@ -2390,66 +2386,122 @@
             minute: '2-digit'
           });
 
-          doc.setFontSize(9);
-          doc.setTextColor(...colorGris);
-          doc.setFont('helvetica', 'normal');
-          doc.text(`Generado: ${fechaFormato} - ${horaFormato}`, pageWidth - 15, 20, { align: 'right' });
+          // Construir título con filtros aplicados
+          let tituloReporte = 'Reporte de Existencias Físicas';
+          if (categoriaFilter !== 'todos' && categoriaFilter !== 'undefined') {
+            const categoriaSelect = document.getElementById('filtroCategoria');
+            const categoriaTexto = categoriaSelect.options[categoriaSelect.selectedIndex].text;
+            tituloReporte += `: ${categoriaTexto}`;
+          }
+          if (proveedorFilter !== 'todos' && proveedorFilter !== 'undefined') {
+            const proveedorSelect = document.getElementById('filtroProveedor');
+            const proveedorTexto = proveedorSelect.options[proveedorSelect.selectedIndex].text;
+            tituloReporte += tituloReporte.includes(':') ? ` - ${proveedorTexto}` : `: ${proveedorTexto}`;
+          }
+
+          // Función para dibujar encabezado en cada página
+          const drawHeader = () => {
+            // Logo de Razo (texto estilizado)
+            doc.setFontSize(22);
+            doc.setTextColor(...colorNaranja);
+            doc.setFont('helvetica', 'bold');
+            doc.text('RazoConnect', 15, 15);
+
+            // Fecha y hora en esquina superior derecha
+            doc.setFontSize(8);
+            doc.setTextColor(...colorGris);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`Generado: ${fechaFormato} - ${horaFormato}`, pageWidth - 15, 15, { align: 'right' });
+          };
+
+          // Dibujar encabezado inicial
+          drawHeader();
+
+          let currentY = 25;
 
           // Título del reporte
-          doc.setFontSize(16);
+          doc.setFontSize(14);
           doc.setTextColor(...colorNegro);
           doc.setFont('helvetica', 'bold');
-          doc.text('Reporte de Existencias Físicas', 15, 32);
+          doc.text(tituloReporte, 15, currentY);
+          currentY += 7;
 
-          // Subtítulo
+          // Información del administrador responsable del inventario
+          if (adminInfo) {
+            doc.setFontSize(9);
+            doc.setTextColor(...colorGris);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`Inventario de: ${adminInfo.nombre} ${adminInfo.apellido}`, 15, currentY);
+            currentY += 5;
+          }
+
+          // Información de quién generó el reporte (si es diferente)
+          if (generadoPor && (!adminInfo || generadoPor.email !== adminInfo.email)) {
+            doc.setFontSize(9);
+            doc.setTextColor(...colorGris);
+            doc.setFont('helvetica', 'italic');
+            doc.text(`Generado por: ${generadoPor.nombre} ${generadoPor.apellido}`, 15, currentY);
+            currentY += 5;
+          }
+
+          // Subtítulo con total
           doc.setFontSize(10);
           doc.setTextColor(...colorGris);
           doc.setFont('helvetica', 'normal');
-          doc.text(`Total de productos con stock: ${inventario.length}`, 15, 39);
+          doc.text(`Total de productos con stock: ${inventario.length}`, 15, currentY);
+          currentY += 2;
 
           // Línea separadora
           doc.setDrawColor(...colorNaranja);
           doc.setLineWidth(0.5);
-          doc.line(15, 42, pageWidth - 15, 42);
+          doc.line(15, currentY, pageWidth - 15, currentY);
+          currentY += 5;
 
-          // TABLA DE INVENTARIO
+          // TABLA DE INVENTARIO con columna de categoría
           const tableData = inventario.map(item => [
             item.sku || 'Sin SKU',
             item.producto || 'Sin nombre',
-            item.variante || 'Estándar',
+            item.categoria || 'Sin categoría',
+            item.medida || 'N/A',
             item.color || 'Sin color',
             item.stock.toString()
           ]);
 
           doc.autoTable({
-            startY: 47,
-            head: [['SKU', 'Producto', 'Medida', 'Color', 'Stock']],
+            startY: currentY,
+            head: [['SKU', 'Producto', 'Categoría', 'Medida', 'Color', 'Stock']],
             body: tableData,
             theme: 'striped',
             headStyles: {
               fillColor: colorNaranja,
               textColor: [255, 255, 255],
-              fontSize: 9,
+              fontSize: 8,
               fontStyle: 'bold',
               halign: 'left'
             },
             bodyStyles: {
-              fontSize: 8,
+              fontSize: 7,
               textColor: colorNegro,
-              cellPadding: 3
+              cellPadding: 2
             },
             columnStyles: {
-              0: { cellWidth: 32, fontStyle: 'bold' }, // SKU
-              1: { cellWidth: 65 }, // Producto
-              2: { cellWidth: 30 }, // Medida (era Variante)
-              3: { cellWidth: 35 }, // Color
-              4: { cellWidth: 18, halign: 'right', fontStyle: 'bold' } // Stock
+              0: { cellWidth: 28, fontStyle: 'bold' }, // SKU
+              1: { cellWidth: 50 }, // Producto
+              2: { cellWidth: 30 }, // Categoría
+              3: { cellWidth: 22 }, // Medida
+              4: { cellWidth: 28 }, // Color
+              5: { cellWidth: 15, halign: 'right', fontStyle: 'bold' } // Stock
             },
             alternateRowStyles: {
               fillColor: [249, 250, 251]
             },
-            margin: { left: 15, right: 15 },
+            margin: { left: 15, right: 15, top: 20 },
             didDrawPage: function(data) {
+              // Dibujar encabezado en cada página (excepto la primera)
+              if (doc.internal.getCurrentPageInfo().pageNumber > 1) {
+                drawHeader();
+              }
+
               // PIE DE PÁGINA en cada página
               const pageCount = doc.internal.getNumberOfPages();
               const currentPage = doc.internal.getCurrentPageInfo().pageNumber;
