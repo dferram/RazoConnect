@@ -2512,4 +2512,80 @@ html, body {
     min-width: 120px;
     padding: 0.75rem 1.25rem !important;
   }
+
+  /* ========================================
+     BOTÓN TOGGLE FILTROS - SOLO MÓVIL
+     ======================================== */
+  .btn-toggle-filtros {
+    display: flex !important;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 1rem 1.25rem;
+    background: white;
+    border: 2px solid #e5e7eb;
+    border-radius: 0.75rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #374151;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  }
+
+  .btn-toggle-filtros:hover {
+    border-color: var(--razo-orange, #f97316);
+    box-shadow: 0 4px 8px rgba(249, 115, 22, 0.15);
+  }
+
+  .btn-toggle-filtros:active {
+    transform: scale(0.98);
+  }
+
+  .btn-toggle-filtros span {
+    flex: 1;
+    text-align: left;
+    margin-left: 0.75rem;
+  }
+
+  .btn-toggle-filtros-chevron {
+    transition: transform 0.3s ease;
+    color: var(--razo-orange, #f97316);
+  }
+
+  .btn-toggle-filtros[aria-expanded="true"] {
+    border-color: var(--razo-orange, #f97316);
+    background: rgba(249, 115, 22, 0.05);
+  }
+
+  /* Sidebar de filtros colapsado por defecto en móvil */
+  .sidebar-filters-wrapper {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease, opacity 0.3s ease;
+    opacity: 0;
+    width: 100% !important;
+    float: none !important;
+    margin: 0 !important;
+  }
+  
+  /* Asegurar que el contenido interno esté siempre presente */
+  .sidebar-filters-wrapper > * {
+    visibility: visible !important;
+    display: block !important;
+  }
+
+  /* Sidebar de filtros abierto */
+  .sidebar-filters-wrapper.filtros-abiertos {
+    max-height: 2000px;
+    opacity: 1;
+    width: 100% !important;
+    margin-bottom: 1.5rem;
+    padding: 1.25rem;
+    background: white;
+    border: 2px solid var(--razo-gray-light, #e5e7eb);
+    border-radius: 0.75rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  }
 }

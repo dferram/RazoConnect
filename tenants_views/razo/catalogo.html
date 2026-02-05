@@ -1044,8 +1044,11 @@
         });
 
         // Cerrar filtros al hacer clic fuera (solo en móvil)
+        // Usar matchMedia para que funcione correctamente en DevTools
+        const mobileQuery = window.matchMedia('(max-width: 768px)');
+        
         document.addEventListener('click', (event) => {
-          if (window.innerWidth <= 768) {
+          if (mobileQuery.matches) {
             const isClickInsideButton = btnToggleFiltros.contains(event.target);
             const isClickInsideSidebar = sidebarFiltersWrapper.contains(event.target);
             

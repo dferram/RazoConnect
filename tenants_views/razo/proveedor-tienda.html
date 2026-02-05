@@ -14,323 +14,58 @@
       href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
     />
     <link rel="stylesheet" href="css/styles.css" />
-    <link rel="stylesheet" href="css/proveedor-tienda.css" />
     <link rel="stylesheet" href="css/catalogo-profesional.css" />
     <link rel="stylesheet" href="css/components/sidebar-filtros.css" />
+    <link rel="stylesheet" href="css/mobile-responsive.css" />
     <link rel="stylesheet" href="css/search-autocomplete.css" />
-    <style>
-      /* Banner de Marca - Minimalista Moderno */
-      .brand-hero {
-        background: #f9f9f9;
-        padding: 3rem 0 2.5rem;
-        margin-bottom: 2.5rem;
-        border-bottom: 1px solid #eee;
-        overflow: visible;
-        position: relative;
-        z-index: 10;
-      }
-
-      .brand-hero-content {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 2rem;
-      }
-
-      .brand-hero-left {
-        flex: 1;
-      }
-
-      .brand-back-link {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        color: #666;
-        text-decoration: none;
-        font-weight: 500;
-        font-size: 0.875rem;
-        margin-bottom: 1rem;
-        transition: all 0.2s;
-      }
-
-      .brand-back-link:hover {
-        color: #FF8C00;
-        transform: translateX(-3px);
-      }
-
-      .brand-hero-title {
-        font-size: 2.5rem;
-        font-weight: 700;
-        margin-bottom: 0.5rem;
-        color: #111;
-        letter-spacing: -0.02em;
-      }
-
-      .brand-hero-subtitle {
-        font-size: 1rem;
-        color: #666;
-        font-weight: 400;
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-      }
-
-      .brand-hero-subtitle span {
-        color: #FF8C00;
-        font-weight: 600;
-      }
-
-      .brand-hero-icon {
-        width: 80px;
-        height: 80px;
-        background: white;
-        border-radius: 16px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 2.5rem;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-      }
-
-      /* Grid de Productos - Igual que Catálogo */
-      .products-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-        gap: 2rem;
-        margin-top: 2rem;
-      }
-      
-      /* Usar product-grid del catálogo */
-      #productsGrid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-        gap: 2rem;
-      }
-
-      /* Loading y Estados */
-      .loading-container {
-        text-align: center;
-        padding: 4rem 2rem;
-      }
-
-      .loading-spinner {
-        width: 50px;
-        height: 50px;
-        border: 4px solid #f0f0f0;
-        border-top-color: var(--razo-turquoise);
-        border-radius: 50%;
-        animation: spin 0.8s linear infinite;
-        margin: 0 auto 1.5rem;
-      }
-
-      @keyframes spin {
-        to {
-          transform: rotate(360deg);
-        }
-      }
-
-      .empty-state {
-        text-align: center;
-        padding: 4rem 2rem;
-      }
-
-      .empty-state-icon {
-        font-size: 4rem;
-        margin-bottom: 1rem;
-        opacity: 0.5;
-      }
-
-      .empty-state-title {
-        font-size: 1.5rem;
-        color: var(--razo-gray-warm);
-        margin-bottom: 0.5rem;
-      }
-
-      .empty-state-text {
-        color: #999;
-        margin-bottom: 2rem;
-      }
-
-      /* Responsive */
-      @media (max-width: 768px) {
-        .brand-hero-title {
-          font-size: 2rem;
-        }
-
-        .brand-hero-subtitle {
-          font-size: 1rem;
-        }
-
-        .products-grid {
-          grid-template-columns: 1fr;
-        }
-
-        /* Ocultar carrito y buscador en móviles - están en el header */
-        .brand-hero .cart-modern,
-        .brand-hero .search-container-modern {
-          display: none;
-        }
-
-        .brand-hero > .container > div {
-          justify-content: flex-start !important;
-        }
-      }
-
-      /* Layout filtros + productos */
-      .brand-page-layout {
-        display: grid;
-        grid-template-columns: 260px 1fr;
-        gap: 2rem;
-        align-items: start;
-      }
-
-      #sidebar-filters-container {
-        position: sticky;
-        top: 110px;
-      }
-
-      @media (max-width: 992px) {
-        .brand-page-layout {
-          grid-template-columns: 1fr;
-        }
-
-        #sidebar-filters-container {
-          position: relative;
-          top: auto;
-        }
-      }
-
-      /* Estilos para buscador moderno */
-      .search-container-modern {
-        position: relative;
-        width: 100%;
-        max-width: 600px;
-        z-index: 100;
-      }
-      
-      /* Asegurar que el dropdown flote sobre el contenido */
-      .search-autocomplete-dropdown {
-        position: absolute !important;
-        z-index: 1000 !important;
-      }
-
-      .search-input-modern {
-        width: 100%;
-        padding: 0.875rem 3rem 0.875rem 1.25rem;
-        border: 2px solid #e5e7eb;
-        border-radius: 12px;
-        font-size: 1rem;
-        transition: all 0.2s;
-        background: white;
-      }
-
-      .search-input-modern:focus {
-        outline: none;
-        border-color: var(--razo-orange, #f97316);
-        box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
-      }
-
-      .search-icon-modern {
-        position: absolute;
-        right: 1rem;
-        top: 50%;
-        transform: translateY(-50%);
-        color: #9ca3af;
-        pointer-events: none;
-      }
-
-      /* Botón toggle filtros móvil */
-      .btn-toggle-filtros {
-        display: none;
-        width: 100%;
-        padding: 1rem 1.25rem;
-        background: white;
-        border: 2px solid #e5e7eb;
-        border-radius: 0.75rem;
-        font-size: 1rem;
-        font-weight: 600;
-        color: #374151;
-        cursor: pointer;
-        transition: all 0.2s;
-        margin-bottom: 1rem;
-        align-items: center;
-        gap: 0.75rem;
-      }
-
-      @media (max-width: 992px) {
-        .btn-toggle-filtros {
-          display: flex;
-        }
-
-        .sidebar-filters-wrapper {
-          max-height: 0;
-          overflow: hidden;
-          transition: max-height 0.4s ease, opacity 0.3s ease;
-          opacity: 0;
-        }
-
-        .sidebar-filters-wrapper.filtros-abiertos {
-          max-height: 2000px;
-          opacity: 1;
-          margin-bottom: 1.5rem;
-          padding: 1.25rem;
-          background: white;
-          border: 2px solid #e5e7eb;
-          border-radius: 0.75rem;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-        }
-      }
-
-      .btn-toggle-filtros:hover {
-        border-color: var(--razo-orange, #f97316);
-        background: rgba(249, 115, 22, 0.02);
-      }
-
-      .btn-toggle-filtros span {
-        flex: 1;
-        text-align: left;
-        margin-left: 0.75rem;
-      }
-
-      .btn-toggle-filtros-chevron {
-        transition: transform 0.3s ease;
-        color: var(--razo-orange, #f97316);
-      }
-
-      .btn-toggle-filtros[aria-expanded="true"] .btn-toggle-filtros-chevron {
-        transform: rotate(180deg);
-      }
-    </style>
-      <link rel="stylesheet" href="css/mobile-responsive.css" />
   </head>
   <body>
     <div id="header-container"></div>
 
-    <!-- Banner de Marca Moderno -->
-    <section class="brand-hero">
-      <div class="container">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-          <div class="brand-hero-left">
-            <h1 class="brand-hero-title" id="brandName"></h1>
-            <p class="brand-hero-subtitle">
-              Catálogo Oficial • <span id="productCount">0</span> productos disponibles
-            </p>
-          </div>
-          <div style="display: flex; flex-direction: column; gap: 1rem; align-items: flex-end;">
-            <a href="/carrito.html" class="cart-modern" title="Ver carrito">
-              🛒
-              <span class="sr-only">Ver carrito</span>
-            </a>
+    <div class="container main-content-spacer" style="padding-bottom: 3rem">
+      <!-- Header -->
+      <div
+        style="
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 2rem;
+        "
+      >
+        <div>
+          <h1 id="brandName" class="catalog-main-title">
+            Cargando...
+          </h1>
+          <p class="catalog-subtitle">
+            Catálogo Oficial • <span id="productCount">0</span> productos disponibles
+          </p>
+        </div>
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            align-items: flex-end;
+          "
+        >
+          <a href="/carrito.html" class="cart-modern" title="Ver carrito">
+            🛒
+            <span class="sr-only">Ver carrito</span>
+          </a>
 
-            <form id="searchForm" class="search-container-modern" onsubmit="return false;">
-              <label for="search-bar" style="display: none">Buscar producto</label>
-              <input
-                type="search"
-                id="search-bar"
-                class="search-input-modern"
-                placeholder="Buscar por nombre/SKU"
-              />
-              <svg
+          <form
+            id="searchForm"
+            class="search-container-modern"
+            onsubmit="return false;"
+          >
+            <label for="search-bar" style="display: none">Buscar producto</label>
+            <input
+              type="search"
+              id="search-bar"
+              class="search-input-modern"
+              placeholder="Buscar por nombre/SKU"
+            />
+            <svg
                 class="search-icon-modern"
                 width="20"
                 height="20"
@@ -341,14 +76,9 @@
                 <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2" />
                 <path d="M16.5 16.5L21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
               </svg>
-            </form>
-          </div>
+          </form>
         </div>
       </div>
-    </section>
-
-    <!-- Contenedor Principal -->
-    <div class="container proveedor-container">
 
       <!-- Botón Toggle Filtros (Solo Móvil) -->
       <button 
@@ -363,52 +93,58 @@
         <i class="bi bi-chevron-down btn-toggle-filtros-chevron"></i>
       </button>
 
-      <div class="brand-page-layout">
+      <!-- Layout con Sidebar y Contenido -->
+      <div style="display: grid; grid-template-columns: 200px 1fr; gap: 3rem">
         <div id="sidebar-filters-container" class="sidebar-filters-wrapper"></div>
 
-        <section>
-          <div class="catalog-toolbar proveedor-toolbar-no-margin">
-            <div class="product-count-text">
-              Mostrando <span id="productCountShown">0</span> productos
-            </div>
-            <select id="brandSortSelect" class="sort-select" aria-label="Ordenar">
-              <option value="">Ordenar</option>
-              <option value="precio_asc">Precio: menor a mayor</option>
-              <option value="precio_desc">Precio: mayor a menor</option>
-              <option value="nombre_asc">Nombre: A-Z</option>
-              <option value="nombre_desc">Nombre: Z-A</option>
+        <!-- Contenido Principal -->
+        <main>
+          <!-- Toolbar de Ordenamiento -->
+          <div class="catalog-toolbar" id="catalogToolbar" style="display: none">
+            <span class="product-count-text" id="productCountToolbar">
+              Mostrando <span id="productCountNumber">0</span> productos
+            </span>
+            <select class="sort-select" id="sortSelect">
+              <option value="recommended">Ordenar por: Recomendados</option>
+              <option value="price-asc">Precio: Menor a Mayor</option>
+              <option value="price-desc">Precio: Mayor a Menor</option>
+              <option value="newest">Más Recientes</option>
+              <option value="name-asc">Nombre: A-Z</option>
+              <option value="name-desc">Nombre: Z-A</option>
             </select>
           </div>
 
-      <!-- Loading State -->
-      <div id="loadingState" class="loading-container">
-        <div class="loading-spinner"></div>
-        <p class="proveedor-loading-text">Cargando productos...</p>
-      </div>
+          <!-- Loading State -->
+          <div id="loadingState" class="loading">
+            <div class="spinner"></div>
+          </div>
 
-      <!-- Empty State -->
-      <div id="emptyState" class="empty-state proveedor-empty-hidden">
-        <div class="empty-state-icon">📦</div>
-        <h2 class="empty-state-title">No hay productos disponibles</h2>
-        <p class="empty-state-text">
-          Esta marca aún no tiene productos en stock.
-        </p>
-        <a href="/catalogo.html" class="btn btn-primary">
-          Ver Catálogo Completo
-        </a>
-      </div>
+          <!-- Product Grid -->
+          <div
+            id="productGrid"
+            class="product-grid"
+            style="display: none"
+          ></div>
 
-      <!-- Grid de Productos -->
-      <div id="productsGrid" class="products-grid proveedor-grid-hidden"></div>
-        </section>
+          <!-- Empty State -->
+          <div id="emptyState" class="empty-state" style="display: none">
+            <div class="empty-state-icon">📦</div>
+            <h2 class="empty-state-title">No hay productos disponibles</h2>
+            <p class="empty-state-text">
+              Esta marca aún no tiene productos en stock.
+            </p>
+          </div>
+        </main>
       </div>
     </div>
 
-    <!-- Scripts -->
-    <script src="js/auth-guard.js"></script>
+    <script src="js/layout.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://sdk.mercadopago.com/js/v2"></script>
     <script src="js/api.js"></script>
-    <script src="js/variant-summary-utils.js"></script>
     <script src="js/search-autocomplete.js"></script>
+    <script src="js/variant-summary-utils.js"></script>
+
     <script>
       // ========================================
       // OBTENER ID DE PROVEEDOR DE LA URL
@@ -434,188 +170,187 @@
             );
 
             if (proveedor) {
-              document.getElementById(
-                "brandName"
-              ).textContent = `Colección ${proveedor.nombre}`;
+              document.getElementById("brandName").textContent = `Colección ${proveedor.nombre}`;
               document.title = `${proveedor.nombre} - RazoConnect`;
             } else {
-              document.getElementById("brandName").textContent =
-                "Marca no encontrada";
-              document.getElementById("brandSubtitle").textContent = "";
+              document.getElementById("brandName").textContent = "Marca no encontrada";
             }
           }
         } catch (error) {
-          console.error("Error cargando info del proveedor:", error);
-          document.getElementById("brandName").textContent =
-            "Error al cargar marca";
+          console.error("Error loading proveedor:", error);
         }
       }
 
-      // ========================================
-      // CARGAR PRODUCTOS DEL PROVEEDOR
-      // ========================================
-      let todosLosProductos = [];
-      let productosMostrados = [];
-
-      const filtrosSidebar = {
-        search: "",
-        categoriaId: null,
-        precioMin: "",
-        precioMax: "",
-      };
-      
-      async function loadProductos() {
-        const loadingState = document.getElementById("loadingState");
-        const emptyState = document.getElementById("emptyState");
-        const productsGrid = document.getElementById("productsGrid");
-        const productCount = document.getElementById("productCount");
-
-        try {
-          const response = await fetch(`/api/productos?proveedorID=${proveedorId}`);
-          const data = await response.json();
-
-          loadingState.style.display = "none";
-
-          // El backend devuelve: { success, data: { productos: [...] } }
-          if (data.success && data.data && data.data.productos && data.data.productos.length > 0) {
-            todosLosProductos = data.data.productos;
-            aplicarFiltrosSidebar();
-            productCount.textContent = todosLosProductos.length;
-          } else {
-            emptyState.style.display = "block";
-            productCount.textContent = "0";
-            document.getElementById("productCountShown").textContent = "0";
-          }
-        } catch (error) {
-          console.error("Error cargando productos:", error);
-          loadingState.style.display = "none";
-          emptyState.style.display = "block";
-          productCount.textContent = "0";
-          document.getElementById("productCountShown").textContent = "0";
-        }
-      }
-
-      // Renderizar productos
-      function renderProductos(productos) {
-        const productsGrid = document.getElementById("productsGrid");
-        const emptyState = document.getElementById("emptyState");
-        const shownEl = document.getElementById("productCountShown");
-
-        if (shownEl) {
-          shownEl.textContent = String(Array.isArray(productos) ? productos.length : 0);
-        }
-
-        if (productos.length === 0) {
-          productsGrid.style.display = "none";
-          emptyState.style.display = "block";
-        } else {
-          productsGrid.style.display = "grid";
-          productsGrid.innerHTML = productos.map(producto => renderProductCard(producto)).join("");
-          emptyState.style.display = "none";
-        }
-      }
-
-      function getProductoPrecioNumero(producto) {
-        const base = producto?.precioDesde !== null && producto?.precioDesde !== undefined
-          ? parseFloat(producto.precioDesde)
-          : 0;
-        const oferta = producto?.precioOferta !== null && producto?.precioOferta !== undefined
-          ? parseFloat(producto.precioOferta)
-          : 0;
-        const tieneOferta = oferta > 0 && oferta < base;
-        const precio = tieneOferta ? oferta : base;
-        return Number.isFinite(precio) ? precio : 0;
-      }
-
-      function aplicarFiltrosSidebar() {
-        const term = (filtrosSidebar.search || "").toLowerCase().trim();
-        const categoriaId =
-          typeof filtrosSidebar.categoriaId === "number"
-            ? filtrosSidebar.categoriaId
-            : filtrosSidebar.categoriaId
-              ? parseInt(filtrosSidebar.categoriaId, 10)
-              : null;
-        const min = filtrosSidebar.precioMin ? parseFloat(filtrosSidebar.precioMin) : null;
-        const max = filtrosSidebar.precioMax ? parseFloat(filtrosSidebar.precioMax) : null;
-        const sortSelect = document.getElementById("brandSortSelect");
-        const sort = (sortSelect?.value || "").trim();
-
-        let filtered = (todosLosProductos || []).filter((p) => {
-          const nombre = (p.nombreProducto || "").toLowerCase();
-          const catNombre = (p.categoria?.nombre || "").toLowerCase();
-          const matchesTerm = !term || nombre.includes(term) || catNombre.includes(term);
-
-          const matchesCategory =
-            categoriaId === null || (p.categoria && p.categoria.categoriaId === categoriaId);
-
-          const precio = getProductoPrecioNumero(p);
-          const matchesMin = min === null || (!Number.isNaN(min) && precio >= min);
-          const matchesMax = max === null || (!Number.isNaN(max) && precio <= max);
-
-          return matchesTerm && matchesCategory && matchesMin && matchesMax;
-        });
-
-        if (sort === "precio_asc") {
-          filtered.sort((a, b) => getProductoPrecioNumero(a) - getProductoPrecioNumero(b));
-        } else if (sort === "precio_desc") {
-          filtered.sort((a, b) => getProductoPrecioNumero(b) - getProductoPrecioNumero(a));
-        } else if (sort === "nombre_asc") {
-          filtered.sort((a, b) =>
-            (a.nombreProducto || "").localeCompare(b.nombreProducto || "", "es", {
-              sensitivity: "base",
-            })
-          );
-        } else if (sort === "nombre_desc") {
-          filtered.sort((a, b) =>
-            (b.nombreProducto || "").localeCompare(a.nombreProducto || "", "es", {
-              sensitivity: "base",
-            })
-          );
-        }
-
-        productosMostrados = filtered;
-        renderProductos(productosMostrados);
-      }
-
-      // ========================================
-      // RENDERIZAR TARJETA DE PRODUCTO (ESTILO CATALOGO.HTML)
-      // ========================================
-      function renderProductCard(producto) {
-        const formatCurrency = (valor) => {
-          return valor.toLocaleString("es-MX", {
-            style: "currency",
-            currency: "MXN",
+      // Initialize search autocomplete
+      document.addEventListener('DOMContentLoaded', () => {
+        const searchInput = document.getElementById('search-bar');
+        if (searchInput) {
+          new SearchAutocomplete(searchInput, {
+            minChars: 2,
+            debounceMs: 300,
+            onSelect: (productoId) => {
+              window.location.href = `/producto-detalle.html?id=${productoId}`;
+            }
           });
+        }
+      });
+
+      function handleCardButtonClick(event) {
+        const button = event.currentTarget;
+        const productoId = Number.parseInt(button.dataset.productoId, 10);
+        const varianteId = Number.parseInt(button.dataset.varianteId, 10);
+        const esBotonCarrito = button.dataset.onclick === "carrito";
+
+        if (!esBotonCarrito) return;
+
+        event.preventDefault();
+
+        if (!varianteId) {
+          if (productoId) {
+            window.location.href = `/producto-detalle.html?id=${productoId}`;
+          }
+          return;
+        }
+
+        if (button.disabled) {
+          showToast("Sin stock disponible para esta medida.", "warning");
+          return;
+        }
+
+        CarritoService.agregarItem({
+          productoId,
+          varianteId,
+          cantidad: 1,
+        });
+      }
+
+      document.addEventListener("click", (event) => {
+        const button = event.target.closest("[data-onclick='carrito']");
+        if (!button) return;
+        handleCardButtonClick(event);
+      });
+
+      const loadingState = document.getElementById("loadingState");
+      const productGrid = document.getElementById("productGrid");
+      const emptyState = document.getElementById("emptyState");
+      const searchForm = document.getElementById("searchForm");
+      const searchBar = document.getElementById("search-bar");
+      const precioMinInput = document.getElementById("sidebarPrecioMin");
+      const precioMaxInput = document.getElementById("sidebarPrecioMax");
+      const dimensionesSelect = document.getElementById("filtro-dimensiones");
+      const stockCheckbox = document.getElementById("filtro-stock");
+      const productCount = document.getElementById("productCount");
+
+      let todosLosProductos = [];
+      let categoriaSeleccionada = null;
+      let filtrosQueryActual = "";
+
+      function obtenerFiltrosSeleccionados() {
+        return {
+          search: searchBar ? searchBar.value.trim() : "",
+          precioMin: precioMinInput ? precioMinInput.value : "",
+          precioMax: precioMaxInput ? precioMaxInput.value : "",
+          dimension: dimensionesSelect ? dimensionesSelect.value : "",
+          stock: stockCheckbox ? stockCheckbox.checked : false,
+        };
+      }
+
+      function construirQueryString() {
+        const params = new URLSearchParams();
+        const filtros = obtenerFiltrosSeleccionados();
+
+        // CRÍTICO: Siempre incluir el proveedor ID
+        if (proveedorId) {
+          params.append("proveedor", proveedorId);
+        }
+
+        if (categoriaSeleccionada !== null && categoriaSeleccionada > 0) {
+          params.append("categoria", categoriaSeleccionada);
+        }
+
+        if (filtros.search) {
+          params.append("search", filtros.search);
+        }
+
+        if (filtros.precioMin) {
+          params.append("precioMin", filtros.precioMin);
+        }
+
+        if (filtros.precioMax) {
+          params.append("precioMax", filtros.precioMax);
+        }
+
+        if (filtros.dimension) {
+          params.append("dimension", filtros.dimension);
+        }
+
+        if (stockCheckbox && stockCheckbox.checked) {
+          params.append("stock", "true");
+        }
+
+        const queryString = params.toString();
+        return queryString ? `?${queryString}` : "";
+      }
+
+      // Format currency
+      function formatCurrency(amount) {
+        return new Intl.NumberFormat("es-MX", {
+          style: "currency",
+          currency: "MXN",
+        }).format(amount);
+      }
+
+      // Render product card (copiado de catalogo.html)
+      function renderProductCard(producto, filtroMedidaActivo = "") {
+        const normalizarTexto = (valor) => {
+          if (typeof valor === "number") {
+            return String(valor).trim().toLowerCase();
+          }
+          return typeof valor === "string" ? valor.trim().toLowerCase() : "";
+        };
+        const parseNumero = (valor) => {
+          const numero = parseFloat(valor);
+          return Number.isFinite(numero) ? numero : null;
+        };
+        const parseEnteroSeguro = (valor) => {
+          if (valor === null || valor === undefined) return null;
+          const directo = Number(valor);
+          if (Number.isFinite(directo)) return parseInt(directo, 10);
+          const fallback = parseInt(valor, 10);
+          return Number.isFinite(fallback) ? fallback : null;
         };
 
-        // Precios con lógica de oferta
-        const precioBase = parseFloat(producto.precioDesde || 0);
-        const precioOferta = parseFloat(producto.precioOferta || 0);
-        const tieneOferta = precioOferta > 0 && precioOferta < precioBase;
+        const categoriaEmojis = {
+          "ropa dama": "👗",
+          "ropa caballero": "👔",
+          accesorios: "👜",
+          calzado: "👟",
+          infantil: "👶",
+        };
 
-        // HTML de precio según si hay oferta
-        const precioHTML = tieneOferta
-          ? `<div class="precio-contenedor">
-               <span class="precio-original">${formatCurrency(precioBase)}</span>
-               <span class="precio-oferta">${formatCurrency(precioOferta)}</span>
-             </div>`
-          : `<span class="precio-normal">${formatCurrency(precioBase)}</span>`;
-
-        // Badge según oferta
-        const badge = tieneOferta
-          ? '<span class="product-badge product-badge--oferta">Oferta</span>'
-          : '<span class="product-badge product-badge--nuevo">Nuevo</span>';
-
-        // Imagen del producto
-        const imagenUrl = producto.imagenUrl || "/images/default-product.png";
-        const imagenAlt = producto.imagenAlt || producto.nombreProducto;
+        const categoriaNombre = producto.categoria?.nombre
+          ? producto.categoria.nombre.toLowerCase()
+          : "";
+        const emoji = categoriaEmojis[categoriaNombre] || "📦";
         
-        const mediaContent = imagenUrl
-          ? `<img src="${imagenUrl}" alt="${imagenAlt}" class="product-media" loading="lazy" />`
-          : `<div class="product-fallback">📦</div>`;
+        const imagenVariante = producto.imagenUrl || null;
+        const imagenesMaestro = Array.isArray(producto.imagenes) ? producto.imagenes : [];
+        const imagenMaestra = imagenesMaestro.length > 0 
+          ? (imagenesMaestro[0]?.url || imagenesMaestro[0]?.urlCompleta || null)
+          : null;
+        const imagenUrl = imagenVariante || imagenMaestra;
+        const imagenAlt = producto.imagenAlt || producto.nombreProducto;
 
-        // Generar resumen inteligente de variantes
-        const variantes = producto.variantes || [];
+        const isCatalogPage = false; // Siempre mostrar precios en tienda de proveedor
+
+        const mediaContent = imagenUrl
+          ? `<img src="${imagenUrl}" alt="${imagenAlt}" class="product-media" />`
+          : `<div class="product-media product-media--fallback">${emoji}</div>`;
+
+        const variantes = Array.isArray(producto.variantes)
+          ? producto.variantes
+          : [];
+
         const totalVariantes = producto.totalVariantes || producto.variantesConStock || variantes.length || 0;
         const coloresUnicos = producto.coloresUnicos || 0;
         const medidasUnicas = producto.medidasUnicas || 0;
@@ -623,93 +358,517 @@
           ? window.VariantSummaryUtils.generarResumenVariantes(variantes, totalVariantes, coloresUnicos, medidasUnicas)
           : `${variantes.length} variantes`;
 
-        return `
-          <a href="/producto-detalle.html?id=${producto.productoId}" class="product-card">
-            <div class="imagen-wrapper">
-              ${badge}
-              ${mediaContent}
-              <button class="cart-floating-btn" onclick="event.preventDefault(); console.log('Añadir al carrito:', ${producto.productoId});" title="Añadir al carrito">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M9 2L9 22M2 9L22 9"/>
-                </svg>
-              </button>
-            </div>
-            <div class="product-info">
-              <span class="product-category">${producto.categoria?.nombre || "Sin categoría"}</span>
-              <h3 class="product-title">${producto.nombreProducto}</h3>
-              <div class="product-price">
-                ${precioHTML}
+        const filtroMedidaNormalizado = normalizarTexto(filtroMedidaActivo);
+
+        const varianteFiltrada =
+          filtroMedidaNormalizado && variantes.length
+            ? variantes.find((variante) => {
+                const candidatos = [
+                  variante?.dimensiones,
+                  variante?.Dimensiones,
+                  variante?.dimension,
+                  variante?.Dimension,
+                  variante?.medida,
+                  variante?.Medida,
+                  variante?.tamano,
+                  variante?.Tamano,
+                  variante?.tamanoEtiqueta,
+                  variante?.presentacion,
+                  variante?.Presentacion,
+                ];
+                return candidatos.some(
+                  (valor) => normalizarTexto(valor) === filtroMedidaNormalizado
+                );
+              })
+            : null;
+        const usandoVarianteEspecifica = Boolean(varianteFiltrada);
+
+        const precioPaqueteMin = Number.isFinite(producto.precioPaqueteMin)
+          ? producto.precioPaqueteMin
+          : null;
+        const precioPaqueteMax = Number.isFinite(producto.precioPaqueteMax)
+          ? producto.precioPaqueteMax
+          : null;
+
+        const mostrarRango =
+          precioPaqueteMin !== null && precioPaqueteMax !== null;
+
+        const precioBaseGeneral = parseNumero(producto.precioDesde) || 0;
+        const precioOfertaGeneral = parseNumero(producto.precioOferta);
+
+        const minSellingPriceAgg = parseNumero(producto.minSellingPrice);
+        const maxSellingPriceAgg = parseNumero(producto.maxSellingPrice);
+        const hasActiveOfferAgg = Boolean(producto.hasActiveOffer);
+
+        const extraerPrecioVariante = (variante, llaves) => {
+          for (const llave of llaves) {
+            const valor = variante?.[llave];
+            const numero = parseNumero(valor);
+            if (numero !== null) {
+              return numero;
+            }
+          }
+          return null;
+        };
+
+        const precioVariante = usandoVarianteEspecifica
+          ? extraerPrecioVariante(varianteFiltrada, [
+              "precioUnitario",
+              "PrecioUnitario",
+              "precio",
+              "Precio",
+            ])
+          : null;
+        const precioOfertaVariante = usandoVarianteEspecifica
+          ? extraerPrecioVariante(varianteFiltrada, [
+              "precioOfertaUnitario",
+              "PrecioOfertaUnitario",
+              "precioOferta",
+              "PrecioOferta",
+            ])
+          : null;
+
+        const tieneOfertaVariante =
+          precioVariante !== null &&
+          precioOfertaVariante !== null &&
+          precioOfertaVariante < precioVariante;
+        const tieneOfertaGeneral =
+          precioOfertaGeneral !== null &&
+          precioOfertaGeneral > 0 &&
+          precioOfertaGeneral < precioBaseGeneral;
+
+        const precioHTML = (() => {
+          if (usandoVarianteEspecifica && precioVariante !== null) {
+            if (tieneOfertaVariante) {
+              return `
+                <div class="precio-contenedor">
+                  <span class="precio-original">${formatCurrency(
+                    precioVariante
+                  )}</span>
+                  <span class="precio-oferta">${formatCurrency(
+                    precioOfertaVariante
+                  )}</span>
+                </div>
+              `;
+            }
+            return `<span class="precio-normal">${formatCurrency(
+              precioVariante
+            )}</span>`;
+          }
+
+          if (minSellingPriceAgg !== null) {
+            return `<span class="precio-normal">Desde ${formatCurrency(
+              minSellingPriceAgg
+            )}</span>`;
+          }
+
+          if (tieneOfertaGeneral) {
+            return `
+              <div class="precio-contenedor">
+                <span class="precio-original">${formatCurrency(
+                  precioBaseGeneral
+                )}</span>
+                <span class="precio-oferta">${formatCurrency(
+                  precioOfertaGeneral
+                )}</span>
               </div>
-            </div>
-          </a>
+            `;
+          }
+
+          return precioBaseGeneral > 0
+            ? `<span class="precio-normal">${formatCurrency(
+                precioBaseGeneral
+              )}</span>`
+            : '<span class="precio-normal">Precio no disponible</span>';
+        })();
+
+        const badge = (() => {
+          if (usandoVarianteEspecifica && tieneOfertaVariante) {
+            return '<span class="product-badge product-badge--oferta">Oferta</span>';
+          }
+          if (!usandoVarianteEspecifica && hasActiveOfferAgg) {
+            return '<span class="product-badge product-badge--oferta">Oferta</span>';
+          }
+          return '<span class="product-badge product-badge--nuevo">Nuevo</span>';
+        })();
+
+        const stockVariante = usandoVarianteEspecifica
+          ? Math.max(parseEnteroSeguro(varianteFiltrada.stock) || 0, 0)
+          : null;
+        const sinStockVariante =
+          usandoVarianteEspecifica && (!stockVariante || stockVariante < 1);
+        const stockInfoHTML = usandoVarianteEspecifica
+          ? `<small class="product-stock ${
+              sinStockVariante ? "product-stock--agotado" : ""
+            }">
+              ${
+                sinStockVariante
+                  ? "Sin disponibilidad"
+                  : `Disponibles: ${stockVariante}`
+              }
+            </small>`
+          : "";
+
+        const botonAgregarDisabled = usandoVarianteEspecifica
+          ? sinStockVariante
+          : false;
+        const botonAgregarTexto = usandoVarianteEspecifica
+          ? sinStockVariante
+            ? "Agotado"
+            : "Agregar al carrito"
+          : "Ver detalles";
+
+        const medidaBadgeHTML = usandoVarianteEspecifica
+          ? `<span class="product-badge product-badge--medida">Medida: ${filtroMedidaActivo}</span>`
+          : "";
+
+        const productoId = producto.productoId;
+        const varianteSeleccionadaId = usandoVarianteEspecifica
+          ? varianteFiltrada?.varianteId || varianteFiltrada?.VarianteID
+          : null;
+
+        const zonaPrecioOAccion = `
+          <div class="product-price">
+            ${precioHTML}
+          </div>
+          ${stockInfoHTML}
         `;
+
+        return `
+        <a href="/producto-detalle.html?id=${productoId}" class="product-card">
+          <div class="imagen-wrapper">
+            ${badge}
+            ${mediaContent}
+            <button class="cart-floating-btn ${
+              botonAgregarDisabled ? "cart-floating-btn--disabled" : ""
+            }"
+              type="button"
+              ${botonAgregarDisabled ? "disabled aria-disabled=\"true\"" : ""}
+              data-producto-id="${productoId}"
+              data-variante-id="${varianteSeleccionadaId || ""}"
+              data-onclick="carrito"
+              title="${botonAgregarTexto}">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M9 2L9 22M2 9L22 9"/>
+              </svg>
+              <span class="sr-only">${botonAgregarTexto}</span>
+            </button>
+          </div>
+          <div class="product-info">
+            <span class="product-category">${producto.categoria?.nombre || "Sin categoría"}</span>
+            <h3 class="product-title">${producto.nombreProducto}</h3>
+            ${medidaBadgeHTML}
+            ${zonaPrecioOAccion}
+          </div>
+        </a>
+      `;
       }
 
-      // ========================================
-      // INICIALIZAR PÁGINA
-      // ========================================
-      document.addEventListener("DOMContentLoaded", () => {
-        loadProveedorInfo();
-        loadProductos();
-        const sortSelect = document.getElementById("brandSortSelect");
+      function renderProductos(productos = [], filtroMedidaActivo = "") {
+        if (!Array.isArray(productos)) return "";
+        return productos
+          .map((producto) => renderProductCard(producto, filtroMedidaActivo))
+          .join("");
+      }
 
-        sortSelect?.addEventListener("change", () => aplicarFiltrosSidebar());
+      function goToProduct(id) {
+        window.location.href = `/producto-detalle.html?id=${id}`;
+      }
 
-        // Toggle filtros móvil
-        const btnToggleFiltros = document.getElementById('btn-toggle-filtros');
-        const sidebarFiltersWrapper = document.getElementById('sidebar-filters-container');
-
-        if (btnToggleFiltros && sidebarFiltersWrapper) {
-          btnToggleFiltros.addEventListener('click', () => {
-            const isExpanded = btnToggleFiltros.getAttribute('aria-expanded') === 'true';
-            btnToggleFiltros.setAttribute('aria-expanded', !isExpanded);
-            sidebarFiltersWrapper.classList.toggle('filtros-abiertos');
-          });
-        }
-
-        // Buscador inteligente con autocompletado
-        const searchInput = document.getElementById('search-bar');
-        if (searchInput && typeof SearchAutocomplete !== 'undefined') {
-          new SearchAutocomplete(searchInput, {
-            minChars: 2,
-            debounceMs: 300,
-            additionalParams: {
-              proveedorID: proveedorId
-            },
-            onSelect: (producto) => {
-              if (producto && producto.productoId) {
-                window.location.href = `/producto-detalle.html?id=${producto.productoId}`;
-              }
-            }
-          });
-
-          searchInput.addEventListener('input', (e) => {
-            filtrosSidebar.search = e.target.value.trim();
-            aplicarFiltrosSidebar();
-          });
-        } else if (searchInput) {
-          // Fallback si no hay autocompletado
-          searchInput.addEventListener('input', (e) => {
-            filtrosSidebar.search = e.target.value.trim();
-            aplicarFiltrosSidebar();
-          });
-        }
-      });
+      let sidebarInicializado = false;
 
       document.addEventListener("filtroCambiado", (event) => {
         const detail = event?.detail || {};
-        filtrosSidebar.search = detail.search || "";
-        filtrosSidebar.categoriaId =
+        if (searchBar && typeof detail.search === "string") {
+          searchBar.value = detail.search;
+        }
+        if (precioMinInput && detail.precioMin !== undefined) {
+          precioMinInput.value = detail.precioMin || "";
+        }
+        if (precioMaxInput && detail.precioMax !== undefined) {
+          precioMaxInput.value = detail.precioMax || "";
+        }
+
+        categoriaSeleccionada =
           detail.categoriaId !== undefined && detail.categoriaId !== null
             ? parseInt(detail.categoriaId, 10)
             : null;
-        filtrosSidebar.precioMin = detail.precioMin || "";
-        filtrosSidebar.precioMax = detail.precioMax || "";
 
-        aplicarFiltrosSidebar();
+        if (detail.origen === "init") {
+          sidebarInicializado = true;
+        }
+
+        aplicarFiltrosDesdeUI();
       });
+
+      function mostrarProductos() {
+        let productosFiltrados = todosLosProductos;
+
+        if (productCount) {
+          productCount.textContent = productosFiltrados.length;
+        }
+
+        const catalogToolbar = document.getElementById("catalogToolbar");
+        const productCountNumber = document.getElementById("productCountNumber");
+        
+        if (productosFiltrados.length === 0) {
+          if (catalogToolbar) catalogToolbar.style.display = "none";
+          productGrid.style.display = "none";
+          emptyState.style.display = "block";
+        } else {
+          if (catalogToolbar) {
+            catalogToolbar.style.display = "flex";
+            if (productCountNumber) {
+              productCountNumber.textContent = productosFiltrados.length;
+            }
+          }
+          const filtroMedidaActivo =
+          dimensionesSelect && dimensionesSelect.value
+            ? dimensionesSelect.value
+            : "";
+        productGrid.innerHTML = renderProductos(
+          productosFiltrados,
+          filtroMedidaActivo
+        );
+          productGrid.style.display = "grid";
+          emptyState.style.display = "none";
+        }
+      }
+
+      async function aplicarFiltrosDesdeUI() {
+        filtrosQueryActual = construirQueryString();
+        await loadProductos(filtrosQueryActual);
+      }
+
+      if (dimensionesSelect) {
+        dimensionesSelect.addEventListener("change", () => {
+          mostrarProductos();
+        });
+      }
+
+      if (searchForm) {
+        searchForm.addEventListener("submit", (event) => {
+          event.preventDefault();
+          aplicarFiltrosDesdeUI();
+        });
+      }
+
+      const sortSelect = document.getElementById("sortSelect");
+      if (sortSelect) {
+        sortSelect.addEventListener("change", (event) => {
+          sortProductos(event.target.value);
+        });
+      }
+
+      function sortProductos(sortType) {
+        if (!todosLosProductos || todosLosProductos.length === 0) return;
+
+        let sortedProducts = [...todosLosProductos];
+
+        switch (sortType) {
+          case "price-asc":
+            sortedProducts.sort((a, b) => {
+              const priceA = a.precioOferta || a.precioDesde || 0;
+              const priceB = b.precioOferta || b.precioDesde || 0;
+              return priceA - priceB;
+            });
+            break;
+          case "price-desc":
+            sortedProducts.sort((a, b) => {
+              const priceA = a.precioOferta || a.precioDesde || 0;
+              const priceB = b.precioOferta || b.precioDesde || 0;
+              return priceB - priceA;
+            });
+            break;
+          case "newest":
+            sortedProducts.sort((a, b) => b.productoId - a.productoId);
+            break;
+          case "name-asc":
+            sortedProducts.sort((a, b) =>
+              a.nombreProducto.localeCompare(b.nombreProducto)
+            );
+            break;
+          case "name-desc":
+            sortedProducts.sort((a, b) =>
+              b.nombreProducto.localeCompare(a.nombreProducto)
+            );
+            break;
+          default:
+            break;
+        }
+
+        todosLosProductos = sortedProducts;
+        mostrarProductos();
+      }
+
+      async function loadProductos(queryString = "") {
+        try {
+          loadingState.style.display = "flex";
+          productGrid.style.display = "none";
+          emptyState.style.display = "none";
+
+          const response = await API.getProductos(queryString);
+
+          if (response.ok && response.data.success) {
+            todosLosProductos = response.data.data.productos;
+            loadingState.style.display = "none";
+            mostrarProductos();
+          } else {
+            throw new Error(
+              response.data.message || "Error al cargar productos"
+            );
+          }
+        } catch (error) {
+          console.error("Error loading products:", error);
+          loadingState.style.display = "none";
+          showToast(
+            "Error al cargar los productos. Intenta recargar la página.",
+            "error"
+          );
+        }
+      }
+
+      // Cargar información del proveedor
+      loadProveedorInfo();
+
+      // ========================================
+      // TOGGLE DE FILTROS PARA MÓVILES
+      // ========================================
+      const btnToggleFiltros = document.getElementById('btn-toggle-filtros');
+      const sidebarFiltersWrapper = document.getElementById('sidebar-filters-container');
+
+      if (btnToggleFiltros && sidebarFiltersWrapper) {
+        btnToggleFiltros.addEventListener('click', () => {
+          const isExpanded = btnToggleFiltros.getAttribute('aria-expanded') === 'true';
+          
+          btnToggleFiltros.setAttribute('aria-expanded', !isExpanded);
+          sidebarFiltersWrapper.classList.toggle('filtros-abiertos');
+          
+          const chevron = btnToggleFiltros.querySelector('.btn-toggle-filtros-chevron');
+          if (chevron) {
+            if (isExpanded) {
+              chevron.classList.remove('bi-chevron-up');
+              chevron.classList.add('bi-chevron-down');
+            } else {
+              chevron.classList.remove('bi-chevron-down');
+              chevron.classList.add('bi-chevron-up');
+            }
+          }
+        });
+
+        const mobileQuery = window.matchMedia('(max-width: 768px)');
+        
+        document.addEventListener('click', (event) => {
+          if (mobileQuery.matches) {
+            const isClickInsideButton = btnToggleFiltros.contains(event.target);
+            const isClickInsideSidebar = sidebarFiltersWrapper.contains(event.target);
+            
+            if (!isClickInsideButton && !isClickInsideSidebar) {
+              if (sidebarFiltersWrapper.classList.contains('filtros-abiertos')) {
+                btnToggleFiltros.setAttribute('aria-expanded', 'false');
+                sidebarFiltersWrapper.classList.remove('filtros-abiertos');
+                
+                const chevron = btnToggleFiltros.querySelector('.btn-toggle-filtros-chevron');
+                if (chevron) {
+                  chevron.classList.remove('bi-chevron-up');
+                  chevron.classList.add('bi-chevron-down');
+                }
+              }
+            }
+          }
+        });
+      }
     </script>
 
+    <style>
+      /* ========================================
+         BOTÓN TOGGLE FILTROS - SOLO MÓVIL
+         ======================================== */
+      .btn-toggle-filtros {
+        display: none;
+      }
+
+      @media (max-width: 768px) {
+        .btn-toggle-filtros {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          width: 100%;
+          padding: 1rem 1.25rem;
+          margin-bottom: 1.5rem;
+          background: white;
+          border: 2px solid var(--razo-gray-light, #e5e7eb);
+          border-radius: 0.75rem;
+          font-size: 1rem;
+          font-weight: 600;
+          color: var(--razo-gray-dark, #374151);
+          cursor: pointer;
+          transition: all 0.3s ease;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .btn-toggle-filtros:hover {
+          border-color: var(--razo-orange, #f97316);
+          box-shadow: 0 4px 8px rgba(249, 115, 22, 0.15);
+        }
+
+        .btn-toggle-filtros:active {
+          transform: scale(0.98);
+        }
+
+        .btn-toggle-filtros span {
+          flex: 1;
+          text-align: left;
+          margin-left: 0.75rem;
+        }
+
+        .btn-toggle-filtros-chevron {
+          transition: transform 0.3s ease;
+          color: var(--razo-orange, #f97316);
+        }
+
+        .btn-toggle-filtros[aria-expanded="true"] {
+          border-color: var(--razo-orange, #f97316);
+          background: rgba(249, 115, 22, 0.05);
+        }
+
+        .sidebar-filters-wrapper {
+          max-height: 0;
+          overflow: hidden;
+          transition: max-height 0.4s ease, opacity 0.3s ease;
+          opacity: 0;
+          width: 100% !important;
+          float: none !important;
+          margin: 0 !important;
+        }
+
+        .sidebar-filters-wrapper.filtros-abiertos {
+          max-height: 2000px;
+          opacity: 1;
+          width: 100% !important;
+          margin-bottom: 1.5rem;
+          padding: 1.25rem;
+          background: white;
+          border: 2px solid var(--razo-gray-light, #e5e7eb);
+          border-radius: 0.75rem;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+      }
+
+      @media (max-width: 768px) {
+        .container > div {
+          grid-template-columns: 1fr !important;
+        }
+
+        aside {
+          position: static !important;
+          margin-bottom: 1.5rem;
+        }
+      }
+    </style>
+
+    <script src="/js/components/auth-modal-loader.js"></script>
+    <script src="/js/public-auth-handler.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="/js/components/header-loader.js"></script>
     <script src="/js/components/sidebar-filtros-loader.js"></script>
