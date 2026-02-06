@@ -156,8 +156,12 @@ async function generarReportePDF(req, res) {
             SELECT 
                 c.conteoid,
                 pv.sku,
-                p.descripcion AS producto_nombre,
+                p.nombreproducto AS producto_nombre,
                 pv.color_nombre,
+                pv.dimensiones,
+                pv.costounitario,
+                pv.preciounitario,
+                cat.nombre AS categoria_nombre,
                 ia.cantidad AS stock_teorico,
                 c.conteo_a,
                 c.conteo_b,
@@ -167,6 +171,7 @@ async function generarReportePDF(req, res) {
             FROM toma_inventario_conteos c
             INNER JOIN producto_variantes pv ON pv.varianteid = c.varianteid
             INNER JOIN productos p ON p.productoid = pv.productoid
+            LEFT JOIN categorias cat ON cat.categoriaid = p.categoriaid
             LEFT JOIN stock_admin ia ON ia.variante_id = c.varianteid AND ia.admin_id = $3
             WHERE c.sesionid = $1 AND c.tenant_id = $2
             ORDER BY 
@@ -423,8 +428,12 @@ async function obtenerDetalleSesion(req, res) {
             SELECT 
                 c.conteoid,
                 pv.sku,
-                p.descripcion AS producto_nombre,
+                p.nombreproducto AS producto_nombre,
                 pv.color_nombre,
+                pv.dimensiones,
+                pv.costounitario,
+                pv.preciounitario,
+                cat.nombre AS categoria_nombre,
                 ia.cantidad AS stock_teorico,
                 c.conteo_a,
                 c.conteo_b,
@@ -434,6 +443,7 @@ async function obtenerDetalleSesion(req, res) {
             FROM toma_inventario_conteos c
             INNER JOIN producto_variantes pv ON pv.varianteid = c.varianteid
             INNER JOIN productos p ON p.productoid = pv.productoid
+            LEFT JOIN categorias cat ON cat.categoriaid = p.categoriaid
             LEFT JOIN stock_admin ia ON ia.variante_id = c.varianteid AND ia.admin_id = $3
             WHERE c.sesionid = $1 AND c.tenant_id = $2
             ORDER BY 

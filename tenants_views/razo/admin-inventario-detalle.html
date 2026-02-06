@@ -13,6 +13,10 @@
   <link rel="stylesheet" href="css/mobile-responsive.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" />
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  
+  <!-- jsPDF para generación de reportes PDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body data-page-title="Detalle de Sesión de Inventario">
   <div class="admin-layout">
@@ -118,6 +122,71 @@
             </div>
 
             <div style="padding: 1.5rem; background: white; border-radius: 0.75rem; border: 1px solid rgba(0,0,0,0.1); margin-bottom: 1.5rem;">
+              <h3 style="font-size: 1.1rem; font-weight: 700; color: #333; margin-bottom: 1rem;">
+                <i class="bi bi-funnel-fill" style="color: var(--razo-orange);"></i> Ordenar Datos
+              </h3>
+              <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                <button
+                  onclick="aplicarOrdenamiento('categoria')"
+                  style="
+                    padding: 0.75rem 1.5rem;
+                    background: white;
+                    border: 2px solid #E5E7EB;
+                    border-radius: 0.5rem;
+                    cursor: pointer;
+                    font-weight: 600;
+                    transition: all 0.3s ease;
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 0.5rem;
+                  "
+                  onmouseover="this.style.borderColor='var(--razo-orange)'; this.style.color='var(--razo-orange)'"
+                  onmouseout="this.style.borderColor='#E5E7EB'; this.style.color='inherit'"
+                >
+                  <i class="bi bi-tag-fill"></i> Por Categoría
+                </button>
+                <button
+                  onclick="aplicarOrdenamiento('medida')"
+                  style="
+                    padding: 0.75rem 1.5rem;
+                    background: white;
+                    border: 2px solid #E5E7EB;
+                    border-radius: 0.5rem;
+                    cursor: pointer;
+                    font-weight: 600;
+                    transition: all 0.3s ease;
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 0.5rem;
+                  "
+                  onmouseover="this.style.borderColor='var(--razo-orange)'; this.style.color='var(--razo-orange)'"
+                  onmouseout="this.style.borderColor='#E5E7EB'; this.style.color='inherit'"
+                >
+                  <i class="bi bi-rulers"></i> Por Medida
+                </button>
+                <button
+                  onclick="aplicarOrdenamiento('color')"
+                  style="
+                    padding: 0.75rem 1.5rem;
+                    background: white;
+                    border: 2px solid #E5E7EB;
+                    border-radius: 0.5rem;
+                    cursor: pointer;
+                    font-weight: 600;
+                    transition: all 0.3s ease;
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 0.5rem;
+                  "
+                  onmouseover="this.style.borderColor='var(--razo-orange)'; this.style.color='var(--razo-orange)'"
+                  onmouseout="this.style.borderColor='#E5E7EB'; this.style.color='inherit'"
+                >
+                  <i class="bi bi-palette-fill"></i> Por Color
+                </button>
+              </div>
+            </div>
+
+            <div style="padding: 1.5rem; background: white; border-radius: 0.75rem; border: 1px solid rgba(0,0,0,0.1); margin-bottom: 1.5rem;">
               <h3 style="font-size: 1.25rem; font-weight: 700; color: #10B981; margin-bottom: 1rem;">
                 <i class="bi bi-check-circle-fill"></i> Coincidencias
               </h3>
@@ -125,11 +194,14 @@
                 <table class="admin-table" id="tablaCoincidencias">
                   <thead>
                     <tr>
-                      <th style="width: 15%;">SKU</th>
-                      <th style="width: 45%;">Producto</th>
-                      <th style="width: 15%; text-align: center;">Stock Teórico</th>
-                      <th style="width: 15%; text-align: center;">Conteo Final</th>
-                      <th style="width: 10%; text-align: center;">Estado</th>
+                      <th style="width: 10%;">SKU</th>
+                      <th style="width: 22%;">Producto</th>
+                      <th style="width: 10%; text-align: center;">Medida</th>
+                      <th style="width: 10%; text-align: center;">Color</th>
+                      <th style="width: 10%; text-align: center;">Conteo 1</th>
+                      <th style="width: 10%; text-align: center;">Conteo 2</th>
+                      <th style="width: 10%; text-align: center;">Conteo Final</th>
+                      <th style="width: 8%; text-align: center;">Estado</th>
                     </tr>
                   </thead>
                   <tbody id="tbodyCoincidencias">
@@ -142,7 +214,7 @@
               </div>
             </div>
 
-            <div style="padding: 1.5rem; background: white; border-radius: 0.75rem; border: 1px solid rgba(0,0,0,0.1);">
+            <div style="padding: 1.5rem; background: white; border-radius: 0.75rem; border: 1px solid rgba(0,0,0,0.1); margin-bottom: 1.5rem;">
               <h3 style="font-size: 1.25rem; font-weight: 700; color: #EF4444; margin-bottom: 1rem;">
                 <i class="bi bi-exclamation-triangle-fill"></i> Discrepancias
               </h3>
@@ -150,12 +222,15 @@
                 <table class="admin-table" id="tablaDiscrepancias">
                   <thead>
                     <tr>
-                      <th style="width: 12%;">SKU</th>
-                      <th style="width: 38%;">Producto</th>
-                      <th style="width: 12%; text-align: center;">Stock Teórico</th>
-                      <th style="width: 12%; text-align: center;">Conteo Final</th>
-                      <th style="width: 13%; text-align: center;">Diferencia</th>
-                      <th style="width: 13%; text-align: center;">Estado</th>
+                      <th style="width: 10%;">SKU</th>
+                      <th style="width: 18%;">Producto</th>
+                      <th style="width: 9%; text-align: center;">Medida</th>
+                      <th style="width: 9%; text-align: center;">Color</th>
+                      <th style="width: 9%; text-align: center;">Conteo 1</th>
+                      <th style="width: 9%; text-align: center;">Conteo 2</th>
+                      <th style="width: 9%; text-align: center;">Conteo Final</th>
+                      <th style="width: 9%; text-align: center;">Diferencia</th>
+                      <th style="width: 8%; text-align: center;">Estado</th>
                     </tr>
                   </thead>
                   <tbody id="tbodyDiscrepancias">
@@ -167,6 +242,32 @@
                 <h3 class="empty-state-title">No hay discrepancias</h3>
               </div>
             </div>
+
+            <div style="padding: 1.5rem; background: white; border-radius: 0.75rem; border: 1px solid rgba(0,0,0,0.1);">
+              <h3 style="font-size: 1.25rem; font-weight: 700; color: #F59E0B; margin-bottom: 1rem;">
+                <i class="bi bi-clock-fill"></i> Pendiente 2do Conteo
+              </h3>
+              <div style="overflow-x: auto;">
+                <table class="admin-table" id="tablaPendientes">
+                  <thead>
+                    <tr>
+                      <th style="width: 15%;">SKU</th>
+                      <th style="width: 30%;">Producto</th>
+                      <th style="width: 12%; text-align: center;">Medida</th>
+                      <th style="width: 12%; text-align: center;">Color</th>
+                      <th style="width: 12%; text-align: center;">Conteo 1</th>
+                      <th style="width: 10%; text-align: center;">Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tbodyPendientes">
+                  </tbody>
+                </table>
+              </div>
+              <div id="emptyPendientes" class="empty-state" style="display: none;">
+                <div class="empty-state-icon">✓</div>
+                <h3 class="empty-state-title">No hay productos pendientes</h3>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -175,6 +276,6 @@
 
   <script src="js/components/admin-sidebar-loader.js?v=2.0"></script>
   <script src="js/components/admin-header-loader.js?v=2.0"></script>
-  <script src="js/admin-inventario-detalle.js?v=2.0"></script>
+  <script src="js/admin-inventario-detalle.js?v=5.0"></script>
 </body>
 </html>

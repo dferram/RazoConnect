@@ -339,25 +339,300 @@ async function descargarReportePDF(sesionId, nombreSesion) {
             return;
         }
 
-        const response = await fetch(`/api/admin/inventario/reporte/${sesionId}`, {
+        const response = await fetch(`/api/admin/inventario/sesiones/${sesionId}/detalle`, {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
         });
 
         if (!response.ok) {
-            throw new Error('Error al generar el reporte');
+            throw new Error('Error al obtener datos de la sesión');
         }
 
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `Reporte_Inventario_${sesionId}_${new Date().toISOString().split('T')[0]}.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
+        const data = await response.json();
+        const { sesion, conteos } = data.data;
+
+        if (!conteos || conteos.length === 0) {
+            loadingAlert.close();
+            Swal.fire({
+                icon: 'warning',
+                title: 'Sin datos',
+                text: 'No hay datos para generar el PDF',
+                confirmButtonColor: '#F97316'
+            });
+            return;
+        }
+
+        const validados = conteos.filter(c => c.estatus_fila === 'VALIDADO');
+        const conflictos = conteos.filter(c => c.estatus_fila === 'CONFLICTO');
+        const pendientes = conteos.filter(c => c.estatus_fila === 'PENDIENTE_B' || c.estatus_fila === 'PENDIENTE_A');
+
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('landscape', 'mm', 'a4');
+        
+        const fechaGeneracion = new Date().toLocaleDateString('es-MX', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+
+        let logoImgData = null;
+        try {
+            const logoImg = new Image();
+            logoImg.src = '/icon/Logo_Razo.png';
+            
+            await new Promise((resolve) => {
+                logoImg.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = logoImg.width;
+                    canvas.height = logoImg.height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(logoImg, 0, 0);
+                    logoImgData = canvas.toDataURL('image/png');
+                    resolve();
+                };
+                logoImg.onerror = () => resolve();
+                setTimeout(() => resolve(), 2000);
+            });
+        } catch (error) {
+            console.warn('Error al cargar logo:', error);
+        }
+
+        const responsableNombre = `${sesion.admin_nombre || ''} ${sesion.admin_apellido || ''}`.trim() || 'Administrador';
+
+        const dibujarEncabezado = (doc) => {
+            if (logoImgData) {
+                try {
+                    doc.addImage(logoImgData, 'PNG', 14, 8, 20, 20);
+                } catch (e) {
+                    console.warn('Error al agregar logo:', e);
+                }
+            }
+
+            doc.setFontSize(18);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(0, 0, 0);
+            doc.text('Reporte de Conteo de Inventario', 148, 15, { align: 'center' });
+            
+            doc.setFontSize(11);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`Sesión: ${nombreSesion}`, 148, 22, { align: 'center' });
+            doc.text(`Generado: ${fechaGeneracion}`, 148, 28, { align: 'center' });
+            
+            doc.setFontSize(9);
+            doc.setTextColor(100, 100, 100);
+            doc.text(`Responsable: ${responsableNombre}`, 148, 33, { align: 'center' });
+        };
+
+        dibujarEncabezado(doc);
+
+        let yPosition = 40;
+
+        const crearTabla = (titulo, datos, colorFondo, colorTexto, incluirDiferencia = false) => {
+            if (datos.length === 0) {
+                return yPosition;
+            }
+
+            doc.setFontSize(14);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(colorTexto[0], colorTexto[1], colorTexto[2]);
+            doc.text(titulo, 14, yPosition);
+            yPosition += 2;
+
+            let totalCosto = 0;
+            let totalVenta = 0;
+
+            const tableData = datos.map(item => {
+                const categoria = item.categoria_nombre || '-';
+                const medida = item.dimensiones || '-';
+                const color = item.color_nombre || '-';
+                const conteoA = item.conteo_a || 0;
+                const conteoB = item.conteo_b || 0;
+                const cantidad = item.cantidad_final || conteoA;
+                const costo = parseFloat(item.costounitario) || 0;
+                const precio = parseFloat(item.preciounitario) || 0;
+                const diferencia = conteoA - conteoB;
+
+                totalCosto += cantidad * costo;
+                totalVenta += cantidad * precio;
+
+                if (incluirDiferencia) {
+                    return [
+                        item.sku || '-',
+                        item.producto_nombre || '-',
+                        categoria,
+                        medida,
+                        color,
+                        conteoA,
+                        conteoB,
+                        cantidad,
+                        diferencia
+                    ];
+                } else {
+                    return [
+                        item.sku || '-',
+                        item.producto_nombre || '-',
+                        categoria,
+                        medida,
+                        color,
+                        conteoA,
+                        conteoB,
+                        cantidad
+                    ];
+                }
+            });
+
+            const headers = incluirDiferencia 
+                ? [['SKU', 'Producto', 'Categoría', 'Medida', 'Color', 'Conteo 1', 'Conteo 2', 'Conteo Final', 'Diferencia']]
+                : [['SKU', 'Producto', 'Categoría', 'Medida', 'Color', 'Conteo 1', 'Conteo 2', 'Conteo Final']];
+
+            const columnStyles = incluirDiferencia
+                ? {
+                    0: { cellWidth: 22 },
+                    1: { cellWidth: 45 },
+                    2: { cellWidth: 28 },
+                    3: { cellWidth: 20 },
+                    4: { cellWidth: 20 },
+                    5: { cellWidth: 20, halign: 'center' },
+                    6: { cellWidth: 20, halign: 'center' },
+                    7: { cellWidth: 20, halign: 'center' },
+                    8: { cellWidth: 20, halign: 'center' }
+                }
+                : {
+                    0: { cellWidth: 25 },
+                    1: { cellWidth: 50 },
+                    2: { cellWidth: 30 },
+                    3: { cellWidth: 22 },
+                    4: { cellWidth: 22 },
+                    5: { cellWidth: 22, halign: 'center' },
+                    6: { cellWidth: 22, halign: 'center' },
+                    7: { cellWidth: 22, halign: 'center' }
+                };
+
+            const anchoTabla = incluirDiferencia ? 230 : 225;
+            const anchoPagina = 297;
+            const margenIzquierdo = (anchoPagina - anchoTabla) / 2;
+
+            doc.autoTable({
+                startY: yPosition,
+                head: headers,
+                body: tableData,
+                theme: 'grid',
+                headStyles: {
+                    fillColor: colorFondo,
+                    textColor: [255, 255, 255],
+                    fontStyle: 'bold',
+                    fontSize: 9,
+                    halign: 'center'
+                },
+                bodyStyles: {
+                    fontSize: 8,
+                    cellPadding: 2
+                },
+                columnStyles: columnStyles,
+                margin: { 
+                    left: margenIzquierdo, 
+                    right: margenIzquierdo,
+                    top: 50
+                },
+                didDrawPage: (data) => {
+                    if (data.pageNumber > 1) {
+                        dibujarEncabezado(doc);
+                    }
+                    yPosition = data.cursor.y;
+                }
+            });
+
+            yPosition += 5;
+            
+            const xDerecha = 200;
+            doc.setDrawColor(200, 200, 200);
+            doc.rect(xDerecha, yPosition - 3, 85, 20, 'S');
+            
+            doc.setFontSize(9);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(0, 0, 0);
+            doc.text('TOTALES FINANCIEROS', xDerecha + 3, yPosition + 2);
+            
+            doc.setFontSize(8);
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(100, 100, 100);
+            doc.text('Costo:', xDerecha + 3, yPosition + 7);
+            doc.setTextColor(220, 38, 38);
+            doc.setFont('helvetica', 'bold');
+            doc.text(`$${totalCosto.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, xDerecha + 45, yPosition + 7, { align: 'right' });
+            
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(100, 100, 100);
+            doc.text('Venta:', xDerecha + 3, yPosition + 12);
+            doc.setTextColor(22, 163, 74);
+            doc.setFont('helvetica', 'bold');
+            doc.text(`$${totalVenta.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, xDerecha + 45, yPosition + 12, { align: 'right' });
+
+            yPosition += 25;
+
+            return yPosition;
+        };
+
+        if (validados.length > 0) {
+            yPosition = crearTabla(
+                `Validados (${validados.length} productos)`,
+                validados,
+                [34, 197, 94],
+                [22, 163, 74],
+                false
+            );
+        }
+
+        if (yPosition > 160 && (conflictos.length > 0 || pendientes.length > 0)) {
+            doc.addPage();
+            dibujarEncabezado(doc);
+            yPosition = 40;
+        }
+
+        if (conflictos.length > 0) {
+            yPosition = crearTabla(
+                `Conflictos (${conflictos.length} productos)`,
+                conflictos,
+                [239, 68, 68],
+                [220, 38, 38],
+                true
+            );
+        }
+
+        if (yPosition > 160 && pendientes.length > 0) {
+            doc.addPage();
+            dibujarEncabezado(doc);
+            yPosition = 40;
+        }
+
+        if (pendientes.length > 0) {
+            yPosition = crearTabla(
+                `Pendiente 2do Conteo (${pendientes.length} productos)`,
+                pendientes,
+                [245, 158, 11],
+                [217, 119, 6],
+                false
+            );
+        }
+
+        const pageCount = doc.internal.getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+            doc.setPage(i);
+            doc.setFontSize(8);
+            doc.setTextColor(150, 150, 150);
+            doc.text(
+                `RazoConnect - Página ${i} de ${pageCount}`,
+                148,
+                200,
+                { align: 'center' }
+            );
+        }
+
+        const fileName = `Reporte_Conteo_Sesion_${sesionId}_${new Date().toISOString().split('T')[0]}.pdf`;
+        doc.save(fileName);
 
         loadingAlert.close();
 
@@ -376,7 +651,7 @@ async function descargarReportePDF(sesionId, nombreSesion) {
         Swal.fire({
             icon: 'error',
             title: 'Error',
-            text: 'No se pudo generar el reporte PDF. Intenta nuevamente.',
+            text: error.message || 'No se pudo generar el reporte PDF. Intenta nuevamente.',
             confirmButtonColor: '#F97316'
         });
     }
