@@ -6,6 +6,7 @@
 // Global state for filtering
 const filtrosState = {
   texto: '',
+  categoria: '',
   color: '',
   medida: '',
   itemsOriginales: [],
@@ -26,6 +27,24 @@ function inicializarFiltros() {
   document.getElementById('exportButtonsContainer').style.display = 'block';
 
   filtrosState.itemsOriginales = [...state.items];
+  
+  // Populate categoria dropdown
+  const categoriasUnicas = new Set();
+  state.items.forEach(item => {
+    const categoria = (item.categoria || '').toString().trim();
+    if (categoria && categoria !== 'N/A') {
+      categoriasUnicas.add(categoria);
+    }
+  });
+
+  const filtroCategoria = document.getElementById('filtroCategoria');
+  filtroCategoria.innerHTML = '<option value="">Todas las categorías</option>';
+  Array.from(categoriasUnicas).sort().forEach(categoria => {
+    const option = document.createElement('option');
+    option.value = categoria;
+    option.textContent = categoria;
+    filtroCategoria.appendChild(option);
+  });
   
   // Populate color dropdown
   const coloresUnicos = new Set();
@@ -73,6 +92,7 @@ function aplicarFiltros() {
   }
 
   const textoLower = filtrosState.texto.toLowerCase();
+  const categoriaSeleccionada = filtrosState.categoria;
   const colorSeleccionado = filtrosState.color;
   const medidaSeleccionada = filtrosState.medida;
 
@@ -82,6 +102,14 @@ function aplicarFiltros() {
       const nombre = (item.nombreProducto || '').toLowerCase();
       const sku = (item.sku || '').toLowerCase();
       if (!nombre.includes(textoLower) && !sku.includes(textoLower)) {
+        return false;
+      }
+    }
+
+    // Filter by categoria
+    if (categoriaSeleccionada) {
+      const itemCategoria = (item.categoria || '').toString().trim();
+      if (itemCategoria !== categoriaSeleccionada) {
         return false;
       }
     }
@@ -119,10 +147,12 @@ function aplicarFiltros() {
  */
 function limpiarFiltros() {
   filtrosState.texto = '';
+  filtrosState.categoria = '';
   filtrosState.color = '';
   filtrosState.medida = '';
 
   document.getElementById('filtroTexto').value = '';
+  document.getElementById('filtroCategoria').value = '';
   document.getElementById('filtroColor').value = '';
   document.getElementById('filtroMedida').value = '';
 
@@ -157,6 +187,7 @@ function prepararDatosReporte() {
     datos.push({
       sku: item.sku || '',
       producto: item.nombreProducto || '',
+      categoria: item.categoria || 'Sin categoría',
       variante: `${item.color || 'Sin color'} / ${item.dimensiones || 'Sin medida'}`,
       cantidadPiezas: cantidadPiezas,
       costoUnitario: costoUnitario,
@@ -200,12 +231,13 @@ async function exportarExcel() {
     worksheet.columns = [
       { key: 'A', width: 15 },   // SKU
       { key: 'B', width: 30 },   // Producto
-      { key: 'C', width: 20 },   // Variante
-      { key: 'D', width: 12 },   // Cantidad
-      { key: 'E', width: 15 },   // Costo Unit.
-      { key: 'F', width: 15 },   // Total Costo
-      { key: 'G', width: 15 },   // Precio Venta
-      { key: 'H', width: 15 }    // Total Venta
+      { key: 'C', width: 18 },   // Categoría
+      { key: 'D', width: 20 },   // Variante
+      { key: 'E', width: 12 },   // Cantidad
+      { key: 'F', width: 15 },   // Costo Unit.
+      { key: 'G', width: 15 },   // Total Costo
+      { key: 'H', width: 15 },   // Precio Venta
+      { key: 'I', width: 15 }    // Total Venta
     ];
 
     // Add logo
@@ -268,12 +300,13 @@ async function exportarExcel() {
     const headers = [
       { col: 'A', text: 'SKU' },
       { col: 'B', text: 'Producto' },
-      { col: 'C', text: 'Variante' },
-      { col: 'D', text: 'Cantidad (Piezas)' },
-      { col: 'E', text: 'Costo Unit.' },
-      { col: 'F', text: 'Total Costo' },
-      { col: 'G', text: 'Precio Venta' },
-      { col: 'H', text: 'Total Venta' }
+      { col: 'C', text: 'Categoría' },
+      { col: 'D', text: 'Variante' },
+      { col: 'E', text: 'Cantidad (Piezas)' },
+      { col: 'F', text: 'Costo Unit.' },
+      { col: 'G', text: 'Total Costo' },
+      { col: 'H', text: 'Precio Venta' },
+      { col: 'I', text: 'Total Venta' }
     ];
 
     headers.forEach(h => {
@@ -316,45 +349,51 @@ async function exportarExcel() {
       cellB.alignment = { horizontal: 'left', vertical: 'middle' };
       cellB.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
 
-      // Variante
+      // Categoría
       const cellC = worksheet.getCell(`C${currentRow}`);
-      cellC.value = item.variante;
+      cellC.value = item.categoria;
       cellC.alignment = { horizontal: 'left', vertical: 'middle' };
       cellC.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
 
-      // Cantidad
+      // Variante
       const cellD = worksheet.getCell(`D${currentRow}`);
-      cellD.value = item.cantidadPiezas;
-      cellD.alignment = { horizontal: 'center', vertical: 'middle' };
+      cellD.value = item.variante;
+      cellD.alignment = { horizontal: 'left', vertical: 'middle' };
       cellD.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
 
-      // Costo Unitario
+      // Cantidad
       const cellE = worksheet.getCell(`E${currentRow}`);
-      cellE.value = item.costoUnitario;
-      cellE.numFmt = '$#,##0.00';
-      cellE.alignment = { horizontal: 'right', vertical: 'middle' };
+      cellE.value = item.cantidadPiezas;
+      cellE.alignment = { horizontal: 'center', vertical: 'middle' };
       cellE.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
 
-      // Total Costo
+      // Costo Unitario
       const cellF = worksheet.getCell(`F${currentRow}`);
-      cellF.value = item.totalCosto;
+      cellF.value = item.costoUnitario;
       cellF.numFmt = '$#,##0.00';
       cellF.alignment = { horizontal: 'right', vertical: 'middle' };
       cellF.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
 
-      // Precio Venta
+      // Total Costo
       const cellG = worksheet.getCell(`G${currentRow}`);
-      cellG.value = item.precioVenta;
+      cellG.value = item.totalCosto;
       cellG.numFmt = '$#,##0.00';
       cellG.alignment = { horizontal: 'right', vertical: 'middle' };
       cellG.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
 
-      // Total Venta
+      // Precio Venta
       const cellH = worksheet.getCell(`H${currentRow}`);
-      cellH.value = item.totalVenta;
+      cellH.value = item.precioVenta;
       cellH.numFmt = '$#,##0.00';
       cellH.alignment = { horizontal: 'right', vertical: 'middle' };
       cellH.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+
+      // Total Venta
+      const cellI = worksheet.getCell(`I${currentRow}`);
+      cellI.value = item.totalVenta;
+      cellI.numFmt = '$#,##0.00';
+      cellI.alignment = { horizontal: 'right', vertical: 'middle' };
+      cellI.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
 
       totalPiezas += item.cantidadPiezas;
       totalInversion += item.totalCosto;
@@ -367,7 +406,7 @@ async function exportarExcel() {
     const totalsRow = worksheet.getRow(currentRow);
     totalsRow.height = 25;
     
-    worksheet.mergeCells(`A${currentRow}:C${currentRow}`);
+    worksheet.mergeCells(`A${currentRow}:D${currentRow}`);
     const totalLabelCell = worksheet.getCell(`A${currentRow}`);
     totalLabelCell.value = 'TOTALES';
     totalLabelCell.font = { name: 'Arial', size: 12, bold: true };
@@ -375,17 +414,17 @@ async function exportarExcel() {
     totalLabelCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF9FAFB' } };
     totalLabelCell.border = { top: { style: 'medium' }, left: { style: 'thin' }, bottom: { style: 'medium' }, right: { style: 'thin' } };
 
-    const totalPiezasCell = worksheet.getCell(`D${currentRow}`);
+    const totalPiezasCell = worksheet.getCell(`E${currentRow}`);
     totalPiezasCell.value = totalPiezas;
     totalPiezasCell.font = { name: 'Arial', size: 12, bold: true };
     totalPiezasCell.alignment = { horizontal: 'center', vertical: 'middle' };
     totalPiezasCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF9FAFB' } };
     totalPiezasCell.border = { top: { style: 'medium' }, left: { style: 'thin' }, bottom: { style: 'medium' }, right: { style: 'thin' } };
 
-    worksheet.getCell(`E${currentRow}`).border = { top: { style: 'medium' }, left: { style: 'thin' }, bottom: { style: 'medium' }, right: { style: 'thin' } };
-    worksheet.getCell(`E${currentRow}`).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF9FAFB' } };
+    worksheet.getCell(`F${currentRow}`).border = { top: { style: 'medium' }, left: { style: 'thin' }, bottom: { style: 'medium' }, right: { style: 'thin' } };
+    worksheet.getCell(`F${currentRow}`).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF9FAFB' } };
 
-    const totalInversionCell = worksheet.getCell(`F${currentRow}`);
+    const totalInversionCell = worksheet.getCell(`G${currentRow}`);
     totalInversionCell.value = totalInversion;
     totalInversionCell.numFmt = '$#,##0.00';
     totalInversionCell.font = { name: 'Arial', size: 12, bold: true, color: { argb: 'FFDC2626' } };
@@ -393,10 +432,10 @@ async function exportarExcel() {
     totalInversionCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF9FAFB' } };
     totalInversionCell.border = { top: { style: 'medium' }, left: { style: 'thin' }, bottom: { style: 'medium' }, right: { style: 'thin' } };
 
-    worksheet.getCell(`G${currentRow}`).border = { top: { style: 'medium' }, left: { style: 'thin' }, bottom: { style: 'medium' }, right: { style: 'thin' } };
-    worksheet.getCell(`G${currentRow}`).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF9FAFB' } };
+    worksheet.getCell(`H${currentRow}`).border = { top: { style: 'medium' }, left: { style: 'thin' }, bottom: { style: 'medium' }, right: { style: 'thin' } };
+    worksheet.getCell(`H${currentRow}`).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF9FAFB' } };
 
-    const totalVentaCell = worksheet.getCell(`H${currentRow}`);
+    const totalVentaCell = worksheet.getCell(`I${currentRow}`);
     totalVentaCell.value = totalVentaEsperada;
     totalVentaCell.numFmt = '$#,##0.00';
     totalVentaCell.font = { name: 'Arial', size: 12, bold: true, color: { argb: 'FF10B981' } };
@@ -532,6 +571,7 @@ async function exportarPDF() {
     const tableData = datos.map(item => [
       item.sku,
       item.producto,
+      item.categoria,
       item.variante,
       item.cantidadPiezas.toLocaleString('es-MX'),
       `$${item.costoUnitario.toFixed(2)}`,
@@ -554,10 +594,10 @@ async function exportarPDF() {
     // Add table
     doc.autoTable({
       startY: 35,
-      head: [['SKU', 'Producto', 'Variante', 'Cantidad\n(Piezas)', 'Costo\nUnit.', 'Total\nCosto', 'Precio\nVenta', 'Total\nVenta']],
+      head: [['SKU', 'Producto', 'Categoría', 'Variante', 'Cantidad\n(Piezas)', 'Costo\nUnit.', 'Total\nCosto', 'Precio\nVenta', 'Total\nVenta']],
       body: tableData,
       foot: [[
-        { content: 'TOTALES', colSpan: 3, styles: { halign: 'center', fontStyle: 'bold' } },
+        { content: 'TOTALES', colSpan: 4, styles: { halign: 'center', fontStyle: 'bold' } },
         { content: totalPiezas.toLocaleString('es-MX'), styles: { halign: 'center', fontStyle: 'bold' } },
         '',
         { content: `$${totalInversion.toFixed(2)}`, styles: { halign: 'right', fontStyle: 'bold', textColor: [220, 38, 38] } },
@@ -584,14 +624,15 @@ async function exportarPDF() {
         fontStyle: 'bold'
       },
       columnStyles: {
-        0: { cellWidth: 25 },
-        1: { cellWidth: 50 },
-        2: { cellWidth: 40 },
-        3: { halign: 'center', cellWidth: 20 },
-        4: { halign: 'right', cellWidth: 22 },
-        5: { halign: 'right', cellWidth: 25 },
-        6: { halign: 'right', cellWidth: 22 },
-        7: { halign: 'right', cellWidth: 25 }
+        0: { cellWidth: 22 },
+        1: { cellWidth: 45 },
+        2: { cellWidth: 30 },
+        3: { cellWidth: 35 },
+        4: { halign: 'center', cellWidth: 18 },
+        5: { halign: 'right', cellWidth: 20 },
+        6: { halign: 'right', cellWidth: 23 },
+        7: { halign: 'right', cellWidth: 20 },
+        8: { halign: 'right', cellWidth: 23 }
       }
     });
 
@@ -667,6 +708,14 @@ document.addEventListener('DOMContentLoaded', () => {
   if (filtroTexto) {
     filtroTexto.addEventListener('input', (e) => {
       filtrosState.texto = e.target.value;
+      aplicarFiltros();
+    });
+  }
+
+  const filtroCategoria = document.getElementById('filtroCategoria');
+  if (filtroCategoria) {
+    filtroCategoria.addEventListener('change', (e) => {
+      filtrosState.categoria = e.target.value;
       aplicarFiltros();
     });
   }

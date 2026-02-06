@@ -1663,10 +1663,13 @@ const getRecepcionOrdenCompra = async (req, res) => {
          pv.precioofertaunitario,
          COALESCE(pv.stock, 0) AS stockvariante,
          pr.nombreproducto,
+         pr.categoriaid,
+         cat.nombre AS categoria_nombre,
          pi.url_imagen AS imagen
        FROM detallesordencompra doc
        INNER JOIN producto_variantes pv ON doc.varianteid = pv.varianteid
        INNER JOIN productos pr ON pv.productoid = pr.productoid
+       LEFT JOIN categorias cat ON pr.categoriaid = cat.categoriaid
        LEFT JOIN producto_imagenes pi ON pi.productoid = pr.productoid AND pi.orden = 1
        WHERE doc.ordencompraid = $1
        ORDER BY pr.nombreproducto ASC`,
@@ -1714,6 +1717,8 @@ const getRecepcionOrdenCompra = async (req, res) => {
         dimensiones: row.dimensiones,
         medidaId: row.medidaid,
         tipoProductoId,
+        categoriaId: row.categoriaid || null,
+        categoria: row.categoria_nombre || null,
         color: row.color_nombre || null,
         imagen: row.imagen || null,
         cantidadSolicitada: solicitadoPzas,
