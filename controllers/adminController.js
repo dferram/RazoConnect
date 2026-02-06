@@ -1658,6 +1658,9 @@ const getRecepcionOrdenCompra = async (req, res) => {
          pv.medidaid,
          pv.tipoproductoid,
          pv.piezasporpaquete AS variante_piezasporpaquete,
+         pv.color_nombre,
+         pv.preciounitario,
+         pv.precioofertaunitario,
          COALESCE(pv.stock, 0) AS stockvariante,
          pr.nombreproducto,
          pi.url_imagen AS imagen
@@ -1711,6 +1714,7 @@ const getRecepcionOrdenCompra = async (req, res) => {
         dimensiones: row.dimensiones,
         medidaId: row.medidaid,
         tipoProductoId,
+        color: row.color_nombre || null,
         imagen: row.imagen || null,
         cantidadSolicitada: solicitadoPzas,
         cantidadRecibida: recibidoPzas,
@@ -1720,6 +1724,8 @@ const getRecepcionOrdenCompra = async (req, res) => {
         cantidadPendiente: Math.max(solicitadoPzas - recibidoPzas, 0),
         piezasPorPaquete,
         costounitario: row.costounitario !== null ? Number.parseFloat(row.costounitario) : 0,
+        preciounitario: row.preciounitario !== null ? Number.parseFloat(row.preciounitario) : 0,
+        precioofertaunitario: row.precioofertaunitario !== null ? Number.parseFloat(row.precioofertaunitario) : null,
         stockVariante: Number.parseInt(row.stockvariante, 10) || 0,
         reglas_empaque: {
           cantidadEmpaque: piezasPorPaquete,

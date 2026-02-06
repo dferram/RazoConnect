@@ -1,0 +1,711 @@
+/**
+ * Enhanced Inventory Reception Module
+ * Adds filtering and comprehensive Excel/PDF export functionality
+ */
+
+// Global state for filtering
+const filtrosState = {
+  texto: '',
+  color: '',
+  medida: '',
+  itemsOriginales: [],
+  itemsFiltrados: []
+};
+
+/**
+ * Initialize filter dropdowns with unique values from items
+ */
+function inicializarFiltros() {
+  if (!Array.isArray(state.items) || state.items.length === 0) {
+    document.getElementById('filtrosContainer').style.display = 'none';
+    document.getElementById('exportButtonsContainer').style.display = 'none';
+    return;
+  }
+
+  document.getElementById('filtrosContainer').style.display = 'block';
+  document.getElementById('exportButtonsContainer').style.display = 'block';
+
+  filtrosState.itemsOriginales = [...state.items];
+  
+  // Populate color dropdown
+  const coloresUnicos = new Set();
+  state.items.forEach(item => {
+    const color = (item.color || '').toString().trim();
+    if (color && color !== 'N/A') {
+      coloresUnicos.add(color);
+    }
+  });
+
+  const filtroColor = document.getElementById('filtroColor');
+  filtroColor.innerHTML = '<option value="">Todos los colores</option>';
+  Array.from(coloresUnicos).sort().forEach(color => {
+    const option = document.createElement('option');
+    option.value = color;
+    option.textContent = color;
+    filtroColor.appendChild(option);
+  });
+
+  // Populate medida dropdown
+  const medidasUnicas = new Set();
+  state.items.forEach(item => {
+    const medida = (item.dimensiones || '').toString().trim();
+    if (medida && medida !== 'N/A') {
+      medidasUnicas.add(medida);
+    }
+  });
+
+  const filtroMedida = document.getElementById('filtroMedida');
+  filtroMedida.innerHTML = '<option value="">Todas las medidas</option>';
+  Array.from(medidasUnicas).sort().forEach(medida => {
+    const option = document.createElement('option');
+    option.value = medida;
+    option.textContent = medida;
+    filtroMedida.appendChild(option);
+  });
+}
+
+/**
+ * Apply filters to items and re-render tables
+ */
+function aplicarFiltros() {
+  if (!Array.isArray(filtrosState.itemsOriginales) || filtrosState.itemsOriginales.length === 0) {
+    return;
+  }
+
+  const textoLower = filtrosState.texto.toLowerCase();
+  const colorSeleccionado = filtrosState.color;
+  const medidaSeleccionada = filtrosState.medida;
+
+  filtrosState.itemsFiltrados = filtrosState.itemsOriginales.filter(item => {
+    // Filter by text (product name or SKU)
+    if (textoLower) {
+      const nombre = (item.nombreProducto || '').toLowerCase();
+      const sku = (item.sku || '').toLowerCase();
+      if (!nombre.includes(textoLower) && !sku.includes(textoLower)) {
+        return false;
+      }
+    }
+
+    // Filter by color
+    if (colorSeleccionado) {
+      const itemColor = (item.color || '').toString().trim();
+      if (itemColor !== colorSeleccionado) {
+        return false;
+      }
+    }
+
+    // Filter by medida
+    if (medidaSeleccionada) {
+      const itemMedida = (item.dimensiones || '').toString().trim();
+      if (itemMedida !== medidaSeleccionada) {
+        return false;
+      }
+    }
+
+    return true;
+  });
+
+  // Update state.items with filtered items
+  state.items = filtrosState.itemsFiltrados;
+  
+  // Re-render tables
+  if (typeof renderSplit === 'function') {
+    renderSplit();
+  }
+}
+
+/**
+ * Clear all filters and restore original items
+ */
+function limpiarFiltros() {
+  filtrosState.texto = '';
+  filtrosState.color = '';
+  filtrosState.medida = '';
+
+  document.getElementById('filtroTexto').value = '';
+  document.getElementById('filtroColor').value = '';
+  document.getElementById('filtroMedida').value = '';
+
+  state.items = [...filtrosState.itemsOriginales];
+  
+  if (typeof renderSplit === 'function') {
+    renderSplit();
+  }
+}
+
+/**
+ * Prepare unified data for reports (Excel and PDF)
+ * Returns array with complete financial information
+ */
+function prepararDatosReporte() {
+  if (!state.orden || !Array.isArray(state.items) || state.items.length === 0) {
+    return [];
+  }
+
+  const datos = [];
+  
+  state.items.forEach(item => {
+    const piezasPorPaquete = getPiezasPorPaquete(item);
+    const cantidadPiezas = solicitadoPzasValue(item);
+    const costoUnitario = costoUnitarioValue(item);
+    const precioVenta = item.precioofertaunitario || item.preciounitario || 0;
+    
+    // Calculate totals
+    const totalCosto = cantidadPiezas * costoUnitario;
+    const totalVenta = cantidadPiezas * precioVenta;
+    
+    datos.push({
+      sku: item.sku || '',
+      producto: item.nombreProducto || '',
+      variante: `${item.color || 'Sin color'} / ${item.dimensiones || 'Sin medida'}`,
+      cantidadPiezas: cantidadPiezas,
+      costoUnitario: costoUnitario,
+      totalCosto: totalCosto,
+      precioVenta: precioVenta,
+      totalVenta: totalVenta
+    });
+  });
+
+  return datos;
+}
+
+/**
+ * Export to Excel with comprehensive financial summary
+ */
+async function exportarExcel() {
+  const datos = prepararDatosReporte();
+  
+  if (datos.length === 0) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Sin Datos',
+      text: 'No hay productos para exportar.',
+      confirmButtonColor: '#F97316'
+    });
+    return;
+  }
+
+  try {
+    Swal.fire({
+      title: 'Generando Excel...',
+      text: 'Por favor espera mientras se genera el archivo.',
+      allowOutsideClick: false,
+      didOpen: () => { Swal.showLoading(); }
+    });
+
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Recepción OC');
+
+    // Configure column widths
+    worksheet.columns = [
+      { key: 'A', width: 15 },   // SKU
+      { key: 'B', width: 30 },   // Producto
+      { key: 'C', width: 20 },   // Variante
+      { key: 'D', width: 12 },   // Cantidad
+      { key: 'E', width: 15 },   // Costo Unit.
+      { key: 'F', width: 15 },   // Total Costo
+      { key: 'G', width: 15 },   // Precio Venta
+      { key: 'H', width: 15 }    // Total Venta
+    ];
+
+    // Add logo
+    try {
+      const logoResponse = await fetch('/icon/Logo_Razo.png');
+      const logoBlob = await logoResponse.blob();
+      const logoBuffer = await logoBlob.arrayBuffer();
+      const imageId = workbook.addImage({
+        buffer: logoBuffer,
+        extension: 'png',
+      });
+      worksheet.addImage(imageId, {
+        tl: { col: 0.1, row: 0.1 },
+        ext: { width: 45, height: 45 },
+        editAs: 'oneCell'
+      });
+    } catch (logoError) {
+      console.warn('No se pudo cargar el logo:', logoError);
+    }
+
+    // Header rows
+    worksheet.getRow(1).height = 30;
+    worksheet.mergeCells('B1:E1');
+    const titleCell = worksheet.getCell('B1');
+    titleCell.value = 'REPORTE DE RECEPCIÓN / ORDEN DE COMPRA';
+    titleCell.font = { name: 'Arial', size: 16, bold: true };
+    titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+
+    // OC Info
+    worksheet.getCell('G1').value = 'OC #';
+    worksheet.getCell('G1').font = { name: 'Arial', size: 10, bold: true };
+    worksheet.getCell('G1').alignment = { horizontal: 'right', vertical: 'middle' };
+    
+    worksheet.getCell('H1').value = state.orden.ordenCompraId || '';
+    worksheet.getCell('H1').font = { name: 'Arial', size: 14, bold: true, color: { argb: 'FFFF0000' } };
+    worksheet.getCell('H1').alignment = { horizontal: 'center', vertical: 'middle' };
+
+    // Date
+    worksheet.getRow(2).height = 20;
+    worksheet.getCell('B2').value = 'Fecha:';
+    worksheet.getCell('B2').font = { name: 'Arial', size: 10, bold: true };
+    worksheet.getCell('C2').value = new Date().toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' });
+    worksheet.getCell('C2').font = { name: 'Arial', size: 10 };
+
+    // Supplier
+    worksheet.getRow(3).height = 20;
+    worksheet.getCell('B3').value = 'Proveedor:';
+    worksheet.getCell('B3').font = { name: 'Arial', size: 10, bold: true };
+    worksheet.mergeCells('C3:H3');
+    worksheet.getCell('C3').value = state.orden.proveedorNombre || 'N/A';
+    worksheet.getCell('C3').font = { name: 'Arial', size: 10 };
+
+    // Space
+    worksheet.getRow(4).height = 10;
+
+    // Table headers
+    const headerRow = worksheet.getRow(5);
+    headerRow.height = 25;
+    
+    const headers = [
+      { col: 'A', text: 'SKU' },
+      { col: 'B', text: 'Producto' },
+      { col: 'C', text: 'Variante' },
+      { col: 'D', text: 'Cantidad (Piezas)' },
+      { col: 'E', text: 'Costo Unit.' },
+      { col: 'F', text: 'Total Costo' },
+      { col: 'G', text: 'Precio Venta' },
+      { col: 'H', text: 'Total Venta' }
+    ];
+
+    headers.forEach(h => {
+      const cell = worksheet.getCell(`${h.col}5`);
+      cell.value = h.text;
+      cell.font = { name: 'Arial', size: 11, bold: true };
+      cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+      cell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFEEEEEE' }
+      };
+      cell.border = {
+        top: { style: 'thin' },
+        left: { style: 'thin' },
+        bottom: { style: 'thin' },
+        right: { style: 'thin' }
+      };
+    });
+
+    // Data rows
+    let currentRow = 6;
+    let totalPiezas = 0;
+    let totalInversion = 0;
+    let totalVentaEsperada = 0;
+
+    datos.forEach(item => {
+      const row = worksheet.getRow(currentRow);
+      row.height = 20;
+
+      // SKU
+      const cellA = worksheet.getCell(`A${currentRow}`);
+      cellA.value = item.sku;
+      cellA.alignment = { horizontal: 'left', vertical: 'middle' };
+      cellA.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+
+      // Producto
+      const cellB = worksheet.getCell(`B${currentRow}`);
+      cellB.value = item.producto;
+      cellB.alignment = { horizontal: 'left', vertical: 'middle' };
+      cellB.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+
+      // Variante
+      const cellC = worksheet.getCell(`C${currentRow}`);
+      cellC.value = item.variante;
+      cellC.alignment = { horizontal: 'left', vertical: 'middle' };
+      cellC.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+
+      // Cantidad
+      const cellD = worksheet.getCell(`D${currentRow}`);
+      cellD.value = item.cantidadPiezas;
+      cellD.alignment = { horizontal: 'center', vertical: 'middle' };
+      cellD.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+
+      // Costo Unitario
+      const cellE = worksheet.getCell(`E${currentRow}`);
+      cellE.value = item.costoUnitario;
+      cellE.numFmt = '$#,##0.00';
+      cellE.alignment = { horizontal: 'right', vertical: 'middle' };
+      cellE.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+
+      // Total Costo
+      const cellF = worksheet.getCell(`F${currentRow}`);
+      cellF.value = item.totalCosto;
+      cellF.numFmt = '$#,##0.00';
+      cellF.alignment = { horizontal: 'right', vertical: 'middle' };
+      cellF.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+
+      // Precio Venta
+      const cellG = worksheet.getCell(`G${currentRow}`);
+      cellG.value = item.precioVenta;
+      cellG.numFmt = '$#,##0.00';
+      cellG.alignment = { horizontal: 'right', vertical: 'middle' };
+      cellG.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+
+      // Total Venta
+      const cellH = worksheet.getCell(`H${currentRow}`);
+      cellH.value = item.totalVenta;
+      cellH.numFmt = '$#,##0.00';
+      cellH.alignment = { horizontal: 'right', vertical: 'middle' };
+      cellH.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+
+      totalPiezas += item.cantidadPiezas;
+      totalInversion += item.totalCosto;
+      totalVentaEsperada += item.totalVenta;
+
+      currentRow++;
+    });
+
+    // Totals row
+    const totalsRow = worksheet.getRow(currentRow);
+    totalsRow.height = 25;
+    
+    worksheet.mergeCells(`A${currentRow}:C${currentRow}`);
+    const totalLabelCell = worksheet.getCell(`A${currentRow}`);
+    totalLabelCell.value = 'TOTALES';
+    totalLabelCell.font = { name: 'Arial', size: 12, bold: true };
+    totalLabelCell.alignment = { horizontal: 'center', vertical: 'middle' };
+    totalLabelCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF9FAFB' } };
+    totalLabelCell.border = { top: { style: 'medium' }, left: { style: 'thin' }, bottom: { style: 'medium' }, right: { style: 'thin' } };
+
+    const totalPiezasCell = worksheet.getCell(`D${currentRow}`);
+    totalPiezasCell.value = totalPiezas;
+    totalPiezasCell.font = { name: 'Arial', size: 12, bold: true };
+    totalPiezasCell.alignment = { horizontal: 'center', vertical: 'middle' };
+    totalPiezasCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF9FAFB' } };
+    totalPiezasCell.border = { top: { style: 'medium' }, left: { style: 'thin' }, bottom: { style: 'medium' }, right: { style: 'thin' } };
+
+    worksheet.getCell(`E${currentRow}`).border = { top: { style: 'medium' }, left: { style: 'thin' }, bottom: { style: 'medium' }, right: { style: 'thin' } };
+    worksheet.getCell(`E${currentRow}`).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF9FAFB' } };
+
+    const totalInversionCell = worksheet.getCell(`F${currentRow}`);
+    totalInversionCell.value = totalInversion;
+    totalInversionCell.numFmt = '$#,##0.00';
+    totalInversionCell.font = { name: 'Arial', size: 12, bold: true, color: { argb: 'FFDC2626' } };
+    totalInversionCell.alignment = { horizontal: 'right', vertical: 'middle' };
+    totalInversionCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF9FAFB' } };
+    totalInversionCell.border = { top: { style: 'medium' }, left: { style: 'thin' }, bottom: { style: 'medium' }, right: { style: 'thin' } };
+
+    worksheet.getCell(`G${currentRow}`).border = { top: { style: 'medium' }, left: { style: 'thin' }, bottom: { style: 'medium' }, right: { style: 'thin' } };
+    worksheet.getCell(`G${currentRow}`).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF9FAFB' } };
+
+    const totalVentaCell = worksheet.getCell(`H${currentRow}`);
+    totalVentaCell.value = totalVentaEsperada;
+    totalVentaCell.numFmt = '$#,##0.00';
+    totalVentaCell.font = { name: 'Arial', size: 12, bold: true, color: { argb: 'FF10B981' } };
+    totalVentaCell.alignment = { horizontal: 'right', vertical: 'middle' };
+    totalVentaCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF9FAFB' } };
+    totalVentaCell.border = { top: { style: 'medium' }, left: { style: 'thin' }, bottom: { style: 'medium' }, right: { style: 'thin' } };
+
+    // Financial summary
+    currentRow += 2;
+    worksheet.getRow(currentRow).height = 25;
+    worksheet.mergeCells(`A${currentRow}:E${currentRow}`);
+    const summaryLabelCell = worksheet.getCell(`A${currentRow}`);
+    summaryLabelCell.value = 'RESUMEN FINANCIERO';
+    summaryLabelCell.font = { name: 'Arial', size: 14, bold: true };
+    summaryLabelCell.alignment = { horizontal: 'center', vertical: 'middle' };
+    summaryLabelCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF97316' } };
+    summaryLabelCell.font = { ...summaryLabelCell.font, color: { argb: 'FFFFFFFF' } };
+
+    currentRow++;
+    worksheet.getCell(`B${currentRow}`).value = 'Total Piezas Recibidas:';
+    worksheet.getCell(`B${currentRow}`).font = { bold: true };
+    worksheet.getCell(`C${currentRow}`).value = totalPiezas;
+    worksheet.getCell(`C${currentRow}`).alignment = { horizontal: 'right' };
+
+    currentRow++;
+    worksheet.getCell(`B${currentRow}`).value = 'Valor Total de Compra:';
+    worksheet.getCell(`B${currentRow}`).font = { bold: true };
+    worksheet.getCell(`C${currentRow}`).value = totalInversion;
+    worksheet.getCell(`C${currentRow}`).numFmt = '$#,##0.00';
+    worksheet.getCell(`C${currentRow}`).font = { bold: true, color: { argb: 'FFDC2626' } };
+    worksheet.getCell(`C${currentRow}`).alignment = { horizontal: 'right' };
+
+    currentRow++;
+    worksheet.getCell(`B${currentRow}`).value = 'Valor Total de Venta Esperado:';
+    worksheet.getCell(`B${currentRow}`).font = { bold: true };
+    worksheet.getCell(`C${currentRow}`).value = totalVentaEsperada;
+    worksheet.getCell(`C${currentRow}`).numFmt = '$#,##0.00';
+    worksheet.getCell(`C${currentRow}`).font = { bold: true, color: { argb: 'FF10B981' } };
+    worksheet.getCell(`C${currentRow}`).alignment = { horizontal: 'right' };
+
+    currentRow++;
+    const margen = totalVentaEsperada - totalInversion;
+    worksheet.getCell(`B${currentRow}`).value = 'Margen Esperado:';
+    worksheet.getCell(`B${currentRow}`).font = { bold: true };
+    worksheet.getCell(`C${currentRow}`).value = margen;
+    worksheet.getCell(`C${currentRow}`).numFmt = '$#,##0.00';
+    worksheet.getCell(`C${currentRow}`).font = { bold: true, color: { argb: margen >= 0 ? 'FF10B981' : 'FFDC2626' } };
+    worksheet.getCell(`C${currentRow}`).alignment = { horizontal: 'right' };
+
+    // Generate file
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Recepcion_OC_${state.orden.ordenCompraId}_${new Date().toISOString().slice(0, 10)}.xlsx`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+
+    Swal.fire({
+      icon: 'success',
+      title: '✅ Excel Generado',
+      text: 'El reporte ha sido descargado exitosamente.',
+      confirmButtonColor: '#F97316'
+    });
+
+  } catch (error) {
+    console.error('Error generando Excel:', error);
+    Swal.fire({
+      icon: 'error',
+      title: 'Error',
+      text: 'No se pudo generar el archivo Excel. Por favor intenta nuevamente.',
+      confirmButtonColor: '#F97316'
+    });
+  }
+}
+
+/**
+ * Export to PDF with comprehensive financial summary
+ */
+async function exportarPDF() {
+  const datos = prepararDatosReporte();
+  
+  if (datos.length === 0) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Sin Datos',
+      text: 'No hay productos para exportar.',
+      confirmButtonColor: '#F97316'
+    });
+    return;
+  }
+
+  try {
+    Swal.fire({
+      title: 'Generando PDF...',
+      text: 'Por favor espera mientras se genera el archivo.',
+      allowOutsideClick: false,
+      didOpen: () => { Swal.showLoading(); }
+    });
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('l', 'mm', 'a4'); // Landscape orientation
+
+    // Add logo
+    try {
+      const logoResponse = await fetch('/icon/Logo_Razo.png');
+      const logoBlob = await logoResponse.blob();
+      const logoBase64 = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.readAsDataURL(logoBlob);
+      });
+      doc.addImage(logoBase64, 'PNG', 10, 10, 20, 20);
+    } catch (logoError) {
+      console.warn('No se pudo cargar el logo:', logoError);
+    }
+
+    // Header
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.text('REPORTE DE RECEPCIÓN / ORDEN DE COMPRA', 148, 15, { align: 'center' });
+
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`OC #${state.orden.ordenCompraId || ''}`, 260, 15);
+    doc.text(`Fecha: ${new Date().toLocaleDateString('es-MX')}`, 260, 20);
+    doc.text(`Proveedor: ${state.orden.proveedorNombre || 'N/A'}`, 40, 25);
+
+    // Table data
+    const tableData = datos.map(item => [
+      item.sku,
+      item.producto,
+      item.variante,
+      item.cantidadPiezas.toLocaleString('es-MX'),
+      `$${item.costoUnitario.toFixed(2)}`,
+      `$${item.totalCosto.toFixed(2)}`,
+      `$${item.precioVenta.toFixed(2)}`,
+      `$${item.totalVenta.toFixed(2)}`
+    ]);
+
+    // Calculate totals
+    let totalPiezas = 0;
+    let totalInversion = 0;
+    let totalVentaEsperada = 0;
+
+    datos.forEach(item => {
+      totalPiezas += item.cantidadPiezas;
+      totalInversion += item.totalCosto;
+      totalVentaEsperada += item.totalVenta;
+    });
+
+    // Add table
+    doc.autoTable({
+      startY: 35,
+      head: [['SKU', 'Producto', 'Variante', 'Cantidad\n(Piezas)', 'Costo\nUnit.', 'Total\nCosto', 'Precio\nVenta', 'Total\nVenta']],
+      body: tableData,
+      foot: [[
+        { content: 'TOTALES', colSpan: 3, styles: { halign: 'center', fontStyle: 'bold' } },
+        { content: totalPiezas.toLocaleString('es-MX'), styles: { halign: 'center', fontStyle: 'bold' } },
+        '',
+        { content: `$${totalInversion.toFixed(2)}`, styles: { halign: 'right', fontStyle: 'bold', textColor: [220, 38, 38] } },
+        '',
+        { content: `$${totalVentaEsperada.toFixed(2)}`, styles: { halign: 'right', fontStyle: 'bold', textColor: [16, 185, 129] } }
+      ]],
+      theme: 'grid',
+      styles: {
+        fontSize: 8,
+        cellPadding: 2,
+        lineColor: [200, 200, 200],
+        lineWidth: 0.1
+      },
+      headStyles: {
+        fillColor: [238, 238, 238],
+        textColor: [0, 0, 0],
+        fontStyle: 'bold',
+        halign: 'center',
+        valign: 'middle'
+      },
+      footStyles: {
+        fillColor: [249, 250, 251],
+        textColor: [0, 0, 0],
+        fontStyle: 'bold'
+      },
+      columnStyles: {
+        0: { cellWidth: 25 },
+        1: { cellWidth: 50 },
+        2: { cellWidth: 40 },
+        3: { halign: 'center', cellWidth: 20 },
+        4: { halign: 'right', cellWidth: 22 },
+        5: { halign: 'right', cellWidth: 25 },
+        6: { halign: 'right', cellWidth: 22 },
+        7: { halign: 'right', cellWidth: 25 }
+      }
+    });
+
+    // Financial summary
+    const finalY = doc.lastAutoTable.finalY + 10;
+    
+    doc.setFillColor(249, 115, 22);
+    doc.rect(10, finalY, 120, 10, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('RESUMEN FINANCIERO', 70, finalY + 7, { align: 'center' });
+
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    
+    let summaryY = finalY + 15;
+    doc.text('Total Piezas Recibidas:', 15, summaryY);
+    doc.setFont('helvetica', 'normal');
+    doc.text(totalPiezas.toLocaleString('es-MX'), 80, summaryY);
+
+    summaryY += 7;
+    doc.setFont('helvetica', 'bold');
+    doc.text('Valor Total de Compra:', 15, summaryY);
+    doc.setTextColor(220, 38, 38);
+    doc.text(`$${totalInversion.toFixed(2)}`, 80, summaryY);
+
+    summaryY += 7;
+    doc.setTextColor(0, 0, 0);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Valor Total de Venta Esperado:', 15, summaryY);
+    doc.setTextColor(16, 185, 129);
+    doc.text(`$${totalVentaEsperada.toFixed(2)}`, 80, summaryY);
+
+    summaryY += 7;
+    const margen = totalVentaEsperada - totalInversion;
+    doc.setTextColor(0, 0, 0);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Margen Esperado:', 15, summaryY);
+    doc.setTextColor(margen >= 0 ? 16 : 220, margen >= 0 ? 185 : 38, margen >= 0 ? 129 : 38);
+    doc.text(`$${margen.toFixed(2)}`, 80, summaryY);
+
+    // Save PDF
+    doc.save(`Recepcion_OC_${state.orden.ordenCompraId}_${new Date().toISOString().slice(0, 10)}.pdf`);
+
+    Swal.fire({
+      icon: 'success',
+      title: '✅ PDF Generado',
+      text: 'El reporte ha sido descargado exitosamente.',
+      confirmButtonColor: '#F97316'
+    });
+
+  } catch (error) {
+    console.error('Error generando PDF:', error);
+    Swal.fire({
+      icon: 'error',
+      title: 'Error',
+      text: 'No se pudo generar el archivo PDF. Por favor intenta nuevamente.',
+      confirmButtonColor: '#F97316'
+    });
+  }
+}
+
+// Event listeners
+document.addEventListener('DOMContentLoaded', () => {
+  // Filter event listeners
+  const filtroTexto = document.getElementById('filtroTexto');
+  const filtroColor = document.getElementById('filtroColor');
+  const filtroMedida = document.getElementById('filtroMedida');
+  const btnLimpiarFiltros = document.getElementById('btnLimpiarFiltros');
+
+  if (filtroTexto) {
+    filtroTexto.addEventListener('input', (e) => {
+      filtrosState.texto = e.target.value;
+      aplicarFiltros();
+    });
+  }
+
+  if (filtroColor) {
+    filtroColor.addEventListener('change', (e) => {
+      filtrosState.color = e.target.value;
+      aplicarFiltros();
+    });
+  }
+
+  if (filtroMedida) {
+    filtroMedida.addEventListener('change', (e) => {
+      filtrosState.medida = e.target.value;
+      aplicarFiltros();
+    });
+  }
+
+  if (btnLimpiarFiltros) {
+    btnLimpiarFiltros.addEventListener('click', limpiarFiltros);
+  }
+
+  // Export event listeners
+  const btnExportarExcel = document.getElementById('btn-exportar-excel');
+  const btnExportarPDF = document.getElementById('btn-exportar-pdf');
+
+  if (btnExportarExcel) {
+    btnExportarExcel.addEventListener('click', exportarExcel);
+  }
+
+  if (btnExportarPDF) {
+    btnExportarPDF.addEventListener('click', exportarPDF);
+  }
+});
+
+// Expose functions globally
+window.inicializarFiltros = inicializarFiltros;
+window.aplicarFiltros = aplicarFiltros;
+window.limpiarFiltros = limpiarFiltros;
+window.prepararDatosReporte = prepararDatosReporte;
+window.exportarExcel = exportarExcel;
+window.exportarPDF = exportarPDF;
