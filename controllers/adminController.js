@@ -15476,7 +15476,7 @@ const exportarInventarioPDF = async (req, res) => {
         pv.sku,
         p.nombreproducto AS producto,
         pv.dimensiones AS variante,
-        COALESCE(m.nombremedida, 'N/A') AS medida,
+        COALESCE(m.nombremedida, pv.dimensiones, 'N/A') AS medida,
         COALESCE(pv.color_nombre, 'Sin color') AS color,
         COALESCE(c.nombre, 'Sin categoría') AS categoria,
         'N/A' AS ubicacion
