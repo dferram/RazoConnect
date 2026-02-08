@@ -15217,6 +15217,25 @@ const subirEvidenciaEntrega = async (req, res) => {
       { estatus: "Entregado", url_evidencia_entrega: urlEvidencia }
     );
 
+    // 🚀 FIFO HOOK: Recalcular pedidos posteriores que ahora podrían tener stock disponible
+    try {
+      const FIFOAllocationService = require('../services/FIFOAllocationService');
+      const { tenant_id } = req.tenant;
+      
+      const recalcResult = await FIFOAllocationService.onPedidoEntregado({
+        pedidoId: pedidoId,
+        tenantId: tenant_id,
+        client: db
+      });
+      
+      if (recalcResult.success) {
+        console.log(`[Evidencia Entrega] ✅ Recálculo FIFO completado - Pedidos posteriores actualizados`);
+      }
+    } catch (fifoError) {
+      console.warn('[Evidencia Entrega] ⚠️ Error en recálculo FIFO (no crítico):', fifoError.message);
+      // No interrumpir la operación si falla el recálculo
+    }
+
     res.json({
       success: true,
       message: "Evidencia de entrega subida exitosamente",

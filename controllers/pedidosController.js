@@ -2452,6 +2452,23 @@ const cancelarPedido = async (req, res) => {
       );
     }
 
+    // 🚀 FIFO HOOK: Recalcular pedidos posteriores que ahora podrían tener stock disponible
+    try {
+      const FIFOAllocationService = require('../services/FIFOAllocationService');
+      const recalcResult = await FIFOAllocationService.onPedidoCancelado({
+        pedidoId: id,
+        tenantId: tenant_id,
+        client: client
+      });
+      
+      if (recalcResult.success) {
+        console.log(`[Cancelar Pedido] ✅ Recálculo FIFO completado - Pedidos posteriores actualizados`);
+      }
+    } catch (fifoError) {
+      console.warn('[Cancelar Pedido] ⚠️ Error en recálculo FIFO (no crítico):', fifoError.message);
+      // No interrumpir la cancelación si falla el recálculo
+    }
+
     await client.query('COMMIT');
 
     console.log(`[Cancelar Pedido] Pedido ${id} cancelado exitosamente - Stock: ${itemsEnStock}, Backorder: ${itemsEnBackorder}, Cancelados: ${backordersCancelados}, OCs Canceladas: ${ordenesCompraCanceladas}`);
