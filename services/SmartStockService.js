@@ -662,6 +662,257 @@ async function calculateAllocationStatus({
   }
 }
 
+/**
+ * ALLOCATION AUTOMÁTICA DE STOCK DESDE MÚLTIPLES ADMINS
+ * 
+ * Esta función permite que clientes sin admin asignado puedan comprar
+ * del "pool general" de inventario. El sistema busca automáticamente
+ * qué administradores tienen stock disponible y lo asigna dinámicamente.
+ * 
+ * @param {Object} params
+ * @param {number} params.varianteId - ID de la variante de producto
+ * @param {number} params.cantidadRequerida - Cantidad de piezas necesarias
+ * @param {number} params.tenantId - ID del tenant
+ * @param {string} params.estrategia - 'DESC' (más stock primero) o 'ASC' (menos stock primero)
+ * @returns {Promise<Object>} { 
+ *   success: boolean,
+ *   totalAsignado: number,
+ *   faltante: number,
+ *   allocations: [{ adminId, adminNombre, cantidad, stockDisponible }],
+ *   message: string
+ * }
+ */
+async function allocateStockAutomatically({ 
+  varianteId, 
+  cantidadRequerida, 
+  tenantId,
+  estrategia = 'DESC' // DESC = admin con más stock primero (evita fragmentación)
+}) {
+  try {
+    console.log(`\n🔍 [AutoAllocation] Iniciando para Variante ${varianteId}: ${cantidadRequerida} piezas requeridas`);
+
+    // VALIDACIÓN DE PARÁMETROS
+    if (!varianteId || !cantidadRequerida || !tenantId) {
+      return {
+        success: false,
+        totalAsignado: 0,
+        faltante: cantidadRequerida || 0,
+        allocations: [],
+        message: 'Parámetros inválidos para allocation'
+      };
+    }
+
+    const cantidadReq = parseInt(cantidadRequerida, 10);
+    if (cantidadReq <= 0) {
+      return {
+        success: false,
+        totalAsignado: 0,
+        faltante: 0,
+        allocations: [],
+        message: 'Cantidad requerida debe ser mayor a 0'
+      };
+    }
+
+    // PASO 1: Obtener todos los admins con stock disponible
+    const ordenamiento = estrategia === 'DESC' ? 'DESC' : 'ASC';
+    const query = `
+      SELECT 
+        sa.admin_id,
+        sa.cantidad as stock_disponible,
+        COALESCE(a.nombre || ' ' || a.apellido, 'Admin ID ' || sa.admin_id) as admin_nombre
+      FROM stock_admin sa
+      LEFT JOIN administradores a ON a.adminid = sa.admin_id AND a.tenant_id = sa.tenant_id
+      WHERE sa.variante_id = $1 
+        AND sa.tenant_id = $2
+        AND sa.cantidad > 0
+      ORDER BY sa.cantidad ${ordenamiento}, sa.admin_id ASC
+    `;
+
+    const { rows: adminsConStock } = await db.query(query, [varianteId, tenantId]);
+
+    console.log(`📊 [AutoAllocation] Encontrados ${adminsConStock.length} admins con stock disponible`);
+
+    if (adminsConStock.length === 0) {
+      return {
+        success: false,
+        totalAsignado: 0,
+        faltante: cantidadReq,
+        allocations: [],
+        message: 'No hay stock disponible en ningún administrador'
+      };
+    }
+
+    // PASO 2: Algoritmo de Asignación - Llenar desde los admins disponibles
+    let cantidadRestante = cantidadReq;
+    const allocations = [];
+
+    for (const admin of adminsConStock) {
+      if (cantidadRestante <= 0) break;
+
+      const cantidadDeEsteAdmin = Math.min(
+        parseInt(admin.stock_disponible, 10), 
+        cantidadRestante
+      );
+
+      allocations.push({
+        adminId: parseInt(admin.admin_id, 10),
+        adminNombre: admin.admin_nombre,
+        cantidad: cantidadDeEsteAdmin,
+        stockDisponible: parseInt(admin.stock_disponible, 10)
+      });
+
+      cantidadRestante -= cantidadDeEsteAdmin;
+
+      console.log(`   ✅ Admin ${admin.admin_id} (${admin.admin_nombre}): ${cantidadDeEsteAdmin} piezas asignadas`);
+    }
+
+    // PASO 3: Verificar si se pudo cumplir la demanda
+    const totalAsignado = allocations.reduce((sum, a) => sum + a.cantidad, 0);
+    const success = totalAsignado >= cantidadReq;
+    const faltante = Math.max(cantidadReq - totalAsignado, 0);
+
+    if (success) {
+      console.log(`✅ [AutoAllocation] ÉXITO: ${totalAsignado} piezas asignadas desde ${allocations.length} admin(s)`);
+    } else {
+      console.log(`⚠️ [AutoAllocation] PARCIAL: Solo ${totalAsignado}/${cantidadReq} disponibles (faltan ${faltante})`);
+    }
+
+    return {
+      success,
+      totalAsignado,
+      faltante,
+      allocations,
+      message: success 
+        ? `Stock asignado desde ${allocations.length} administrador(es)` 
+        : `Stock insuficiente: solo ${totalAsignado}/${cantidadReq} disponibles`
+    };
+
+  } catch (error) {
+    console.error('❌ [AutoAllocation] Error crítico:', error);
+    return {
+      success: false,
+      totalAsignado: 0,
+      faltante: cantidadRequerida || 0,
+      allocations: [],
+      message: `Error al asignar stock: ${error.message}`
+    };
+  }
+}
+
+/**
+ * DESCUENTO DE STOCK DESDE MÚLTIPLES ADMINS
+ * 
+ * Ejecuta los UPDATEs de stock_admin para cada allocation dentro de una transacción.
+ * Registra la trazabilidad en pedido_surtido_detalle.
+ * 
+ * @param {Object} params
+ * @param {Array} params.allocations - Array de { adminId, cantidad }
+ * @param {number} params.varianteId - ID de la variante
+ * @param {number} params.pedidoId - ID del pedido
+ * @param {number} params.detalleId - ID del detalle del pedido
+ * @param {number} params.tenantId - ID del tenant
+ * @param {string} params.motivo - Motivo del ajuste (para logging)
+ * @param {Object} params.client - Cliente de DB (transacción)
+ * @returns {Promise<Object>} { success, results, message }
+ */
+async function adjustStockMultiAdmin({ 
+  allocations,
+  varianteId,
+  pedidoId,
+  detalleId,
+  tenantId,
+  motivo = 'Venta Multi-Admin',
+  client = null 
+}) {
+  if (!allocations || allocations.length === 0) {
+    return { 
+      success: false, 
+      results: [], 
+      message: 'No hay allocations para procesar' 
+    };
+  }
+
+  const dbClient = client || db;
+  const results = [];
+
+  console.log(`\n💰 [MultiAdmin] Procesando ${allocations.length} allocations para Variante ${varianteId}`);
+
+  try {
+    for (const alloc of allocations) {
+      const { adminId, cantidad } = alloc;
+
+      // PASO 1: Descontar stock del admin
+      const { rows: stockRows } = await dbClient.query(
+        `UPDATE stock_admin 
+         SET cantidad = GREATEST(cantidad - $1, 0),
+             updated_at = CURRENT_TIMESTAMP
+         WHERE variante_id = $2 
+           AND admin_id = $3 
+           AND tenant_id = $4
+         RETURNING cantidad, admin_id`,
+        [cantidad, varianteId, adminId, tenantId]
+      );
+
+      if (stockRows.length === 0) {
+        console.error(`❌ [MultiAdmin] Admin ${adminId} no encontrado en stock_admin`);
+        results.push({
+          adminId,
+          success: false,
+          error: 'Admin no encontrado en stock_admin'
+        });
+        continue;
+      }
+
+      const newStock = parseInt(stockRows[0].cantidad, 10);
+      
+      // PASO 2: Registrar trazabilidad en pedido_surtido_detalle
+      await dbClient.query(
+        `INSERT INTO pedido_surtido_detalle 
+         (pedido_id, detalle_id, variante_id, admin_id, cantidad, tenant_id)
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        [pedidoId, detalleId, varianteId, adminId, cantidad, tenantId]
+      );
+
+      results.push({
+        adminId,
+        success: true,
+        newStock,
+        cantidadDescontada: cantidad
+      });
+
+      console.log(`   ✅ Admin ${adminId}: -${cantidad} piezas → Stock restante: ${newStock}`);
+    }
+
+    const allSuccess = results.every(r => r.success);
+    const totalDescontado = results
+      .filter(r => r.success)
+      .reduce((sum, r) => sum + r.cantidadDescontada, 0);
+
+    if (allSuccess) {
+      console.log(`✅ [MultiAdmin] ÉXITO: ${totalDescontado} piezas descontadas de ${results.length} admin(s)`);
+    } else {
+      console.warn(`⚠️ [MultiAdmin] PARCIAL: Algunos admins fallaron`);
+    }
+
+    return { 
+      success: allSuccess, 
+      results,
+      totalDescontado,
+      message: allSuccess 
+        ? `Stock descontado exitosamente de ${results.length} admin(s)` 
+        : 'Algunos descuentos fallaron'
+    };
+
+  } catch (error) {
+    console.error('❌ [MultiAdmin] Error crítico:', error);
+    return { 
+      success: false, 
+      results,
+      message: `Error al descontar stock: ${error.message}` 
+    };
+  }
+}
+
 module.exports = {
   determineUserContext,
   getStock,
@@ -669,5 +920,7 @@ module.exports = {
   adjustStock,
   validateStock,
   getGlobalStockBreakdown,
-  calculateAllocationStatus
+  calculateAllocationStatus,
+  allocateStockAutomatically,
+  adjustStockMultiAdmin
 };

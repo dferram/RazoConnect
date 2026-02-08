@@ -1095,8 +1095,10 @@ const crearPedido = async (req, res) => {
           ]
         );
 
+        const detalleIdSurtido = detalleResult.rows[0].detalleid;
+
         detallesPedido.push({
-          detalleId: detalleResult.rows[0].detalleid,
+          detalleId: detalleIdSurtido,
           varianteId: item.varianteid,
           productoId: item.productoid,
           nombreProducto: item.nombreproducto,
@@ -1121,6 +1123,75 @@ const crearPedido = async (req, res) => {
           ajusteAplicado: split.ajusteAplicado,
           cantidadTotalCobrar: split.cantidadTotalCobrar,
         });
+
+        // ✅ ALLOCATION AUTOMÁTICA: Descontar stock del pool general
+        // IMPORTANTE: Esto se ejecuta DESPUÉS de insertar el detalle para tener el detalleId
+        const piezasRealmenteSurtidas = split.cantidadSurtida * tamanoValor;
+        if (piezasRealmenteSurtidas > 0 && masterInfo) {
+          try {
+            console.log(`\n🔄 [Pedido ${pedidoId}] Procesando allocation para Variante ${masterInfo.varianteId}: ${piezasRealmenteSurtidas} piezas`);
+
+            // PASO 1: Allocation automática desde admins disponibles
+            const allocationResult = await SmartStockService.allocateStockAutomatically({
+              varianteId: masterInfo.varianteId,
+              cantidadRequerida: piezasRealmenteSurtidas,
+              tenantId: tenant_id,
+              estrategia: 'DESC' // Admin con más stock primero (evita fragmentación)
+            });
+
+            if (!allocationResult.success) {
+              console.error(`❌ [Allocation] Insuficiente para Variante ${masterInfo.varianteId}: ${allocationResult.message}`);
+              throw new Error(`Stock insuficiente para ${item.nombreproducto}: ${allocationResult.message}`);
+            }
+
+            console.log(`✅ [Allocation] ${allocationResult.totalAsignado} piezas asignadas desde ${allocationResult.allocations.length} admin(s)`);
+            allocationResult.allocations.forEach(a => {
+              console.log(`   📦 Admin ${a.adminId} (${a.adminNombre}): ${a.cantidad} piezas`);
+            });
+
+            // PASO 2: Descontar stock de cada admin y registrar trazabilidad
+            const adjustResult = await SmartStockService.adjustStockMultiAdmin({
+              allocations: allocationResult.allocations,
+              varianteId: masterInfo.varianteId,
+              pedidoId: pedidoId,
+              detalleId: detalleIdSurtido, // ✅ Ahora tenemos el ID del detalle
+              tenantId: tenant_id,
+              motivo: `Venta Pedido #${pedidoId}`,
+              client // ✅ Usar misma transacción
+            });
+
+            if (!adjustResult.success) {
+              console.error(`❌ [MultiAdmin] Error al descontar stock:`, adjustResult.message);
+              throw new Error('Error al descontar stock de administradores');
+            }
+
+            console.log(`✅ [MultiAdmin] ${adjustResult.totalDescontado} piezas descontadas exitosamente`);
+
+            // PASO 3: Log de auditoría (agregado para cada admin)
+            for (const result of adjustResult.results) {
+              if (result.success) {
+                await client.query(
+                  `INSERT INTO Log_Inventario (VarianteID, CantidadCambiado, NuevoStock, Motivo, UsuarioID, tenant_id)
+                   VALUES ($1, $2, $3, $4, $5, $6)`,
+                  [
+                    masterInfo.varianteId,
+                    -result.cantidadDescontada,
+                    result.newStock,
+                    `Venta Pedido #${pedidoId} - Admin ${result.adminId}`,
+                    clienteId,
+                    tenant_id,
+                  ]
+                );
+              }
+            }
+
+            variantesAfectadas.add(masterInfo.varianteId);
+
+          } catch (stockError) {
+            console.error(`❌ [Allocation] Error crítico:`, stockError);
+            throw new Error(stockError.message || 'Stock insuficiente. El pedido no pudo ser procesado.');
+          }
+        }
       }
 
       // CRITICAL FIX: Insertar detalle backorder (SOLO si hay cantidad pendiente)
@@ -1188,50 +1259,6 @@ const crearPedido = async (req, res) => {
           ajusteAplicado: split.ajusteAplicado,
           cantidadTotalCobrar: split.cantidadTotalCobrar,
         });
-      }
-
-      // ✅ SMART STOCK: Descontar stock usando SmartStockService
-      const piezasRealmenteSurtidas = split.cantidadSurtida * tamanoValor;
-      if (piezasRealmenteSurtidas > 0 && masterInfo) {
-        try {
-          const resultado = await SmartStockService.adjustStock({
-            varianteId: masterInfo.varianteId,
-            cantidad: -piezasRealmenteSurtidas, // Negativo = decremento
-            userId: req.user.id || clienteId,
-            userRole: req.user.roles || ['cliente'],
-            tenantId: tenant_id,
-            motivo: `Venta Pedido #${pedidoId}`,
-            client // ✅ Usar misma transacción
-          });
-
-          if (!resultado.success) {
-            throw new Error(`Stock insuficiente para variante ${masterInfo.varianteId}`);
-          }
-
-          // Actualizar stock local para cálculos posteriores
-          masterInfo.stock = resultado.newStock;
-
-          console.log(`✅ [SmartStock] Variante ${masterInfo.varianteId}: ${stockActual} → ${resultado.newStock} (descontó ${piezasRealmenteSurtidas} piezas)`);
-
-          // Log de auditoría
-          await client.query(
-            `INSERT INTO Log_Inventario (VarianteID, CantidadCambiado, NuevoStock, Motivo, UsuarioID, tenant_id)
-             VALUES ($1, $2, $3, $4, $5, $6)`,
-            [
-              masterInfo.varianteId,
-              -piezasRealmenteSurtidas,
-              resultado.newStock,
-              `Venta Pedido #${pedidoId}`,
-              clienteId,
-              tenant_id,
-            ]
-          );
-
-          variantesAfectadas.add(masterInfo.varianteId);
-        } catch (stockError) {
-          console.error(`❌ [SmartStock] Error al descontar stock:`, stockError);
-          throw new Error('Stock insuficiente. El pedido no pudo ser procesado.');
-        }
       }
 
       // detallesPedido se llena con las líneas insertadas (surtido / backorder)
