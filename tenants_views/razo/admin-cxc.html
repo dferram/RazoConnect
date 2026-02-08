@@ -245,6 +245,47 @@
             </div>
           </section>
 
+          <!-- SECCIÓN: PAGOS DE CLIENTES POR VALIDAR (tabla pagos_clientes) -->
+          <section class="admin-card" id="seccionPagosValidar" style="display: none;">
+            <div style="padding: 1.5rem; border-bottom: 1px solid #e5e7eb;">
+              <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                <div>
+                  <h3 style="margin: 0; font-size: 1.25rem; font-weight: 700; color: #111827;">
+                    <i class="bi bi-clock-history" style="color: #f59e0b;"></i>
+                    Pagos de Clientes por Validar
+                  </h3>
+                  <p style="margin: 0.25rem 0 0; color: #6b7280; font-size: 0.9rem;">
+                    Pagos generales para liquidar saldo deudor (tabla pagos_clientes)
+                  </p>
+                </div>
+                <span id="badgePagosPendientes" class="admin-badge warning" style="font-size: 0.875rem;">
+                  0 PENDIENTES
+                </span>
+              </div>
+            </div>
+
+            <div class="table-wrapper">
+              <table class="admin-table" id="tablaPagosPendientes">
+                <thead>
+                  <tr>
+                    <th>Fecha</th>
+                    <th>Cliente</th>
+                    <th style="text-align: right;">Monto</th>
+                    <th>Referencia</th>
+                    <th style="text-align: center; width: 200px;">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="tablaPagosPendientesTbody">
+                  <tr>
+                    <td colspan="5" style="text-align: center; padding: 2rem; color: #9ca3af;">
+                      Cargando pagos pendientes...
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
           <section class="admin-card">
             <div class="table-toolbar" style="padding: 1.5rem; margin-bottom: 1rem;">
               <div class="toolbar-left">

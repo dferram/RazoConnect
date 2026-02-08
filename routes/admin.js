@@ -744,18 +744,23 @@ router.get(
   cxcController.exportarLoteCxC
 );
 
+// ========================================
+// PAGOS DE CLIENTES (tabla pagos_clientes)
+// ========================================
+const pagosClientesController = require("../controllers/admin/pagosClientesController");
+
 router.get(
-  "/cxc/pagos-pendientes",
+  "/pagos-clientes/pendientes",
   authenticate,
   authorizeAdmin,
-  cxcController.obtenerPagosPendientes
+  pagosClientesController.obtenerPagosPendientes
 );
 
 router.post(
-  "/cxc/pagos/:id/gestionar",
+  "/pagos-clientes/:id/gestionar",
   authenticate,
   authorizeAdmin,
-  cxcController.gestionarPago
+  pagosClientesController.gestionarPago
 );
 
 router.get(
