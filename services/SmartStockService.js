@@ -497,11 +497,177 @@ async function getGlobalStockBreakdown(varianteId, tenantId) {
   }
 }
 
+/**
+ * FIFO ALLOCATION LOGIC - Calcula el estatus de surtido basado en la antigüedad del pedido
+ * 
+ * Este método implementa una cola FIFO (First In, First Out) para asignar stock físico
+ * a pedidos de manera cronológica, evitando race conditions donde múltiples pedidos
+ * reclaman el mismo inventario.
+ * 
+ * @param {Object} params
+ * @param {number} params.varianteId - ID de la variante de producto
+ * @param {number} params.cantidadRequerida - Cantidad de paquetes solicitados en este pedido
+ * @param {Date|string} params.orderDate - Fecha de creación del pedido (para determinar prioridad)
+ * @param {number} params.adminId - ID del admin responsable del inventario
+ * @param {number} params.tenantId - ID del tenant
+ * @param {number} params.pedidoId - ID del pedido actual (opcional, para excluirlo de cálculos)
+ * @param {number} params.piezasPorPaquete - Piezas por paquete (para convertir a unidades físicas)
+ * @returns {Promise<Object>} { 
+ *   estatus: 'surtido'|'parcial'|'backorder',
+ *   stockDisponible: number,
+ *   cantidadSurtible: number,
+ *   cantidadBackorder: number,
+ *   deudaPrevia: number,
+ *   stockFisico: number
+ * }
+ */
+async function calculateAllocationStatus({
+  varianteId,
+  cantidadRequerida,
+  orderDate,
+  adminId,
+  tenantId,
+  pedidoId = null,
+  piezasPorPaquete = 1
+}) {
+  try {
+    // VALIDACIÓN DE PARÁMETROS
+    if (!varianteId || !tenantId || !orderDate) {
+      console.error('[FIFO] Parámetros inválidos:', { varianteId, tenantId, orderDate });
+      return {
+        estatus: 'backorder',
+        stockDisponible: 0,
+        cantidadSurtible: 0,
+        cantidadBackorder: cantidadRequerida || 0,
+        deudaPrevia: 0,
+        stockFisico: 0
+      };
+    }
+
+    const cantidadReq = parseInt(cantidadRequerida, 10) || 0;
+    const piezasPorPaq = parseInt(piezasPorPaquete, 10) || 1;
+
+    // PASO 1: OBTENER STOCK FÍSICO
+    // Determinar si usamos stock global (super admin) o stock local (admin específico)
+    let stockFisico = 0;
+    
+    if (adminId) {
+      // Stock local del admin
+      const { rows: stockRows } = await db.query(
+        `SELECT COALESCE(cantidad, 0) as stock 
+         FROM stock_admin 
+         WHERE variante_id = $1 AND admin_id = $2 AND tenant_id = $3`,
+        [varianteId, adminId, tenantId]
+      );
+      stockFisico = stockRows.length > 0 ? parseInt(stockRows[0].stock, 10) : 0;
+    } else {
+      // Stock global (para super admin o casos sin admin específico)
+      const { rows: stockRows } = await db.query(
+        `SELECT COALESCE(stock, 0) as stock 
+         FROM producto_variantes 
+         WHERE varianteid = $1`,
+        [varianteId]
+      );
+      stockFisico = stockRows.length > 0 ? parseInt(stockRows[0].stock, 10) : 0;
+    }
+
+    console.log(`🔍 [FIFO] Variante ${varianteId} - Stock físico: ${stockFisico} piezas`);
+
+    // PASO 2: OBTENER "DEUDA" DE PEDIDOS ANTERIORES
+    // Consultar todos los pedidos activos MÁS ANTIGUOS que el actual
+    // que solicitaron esta misma variante
+    const queryParams = [varianteId, orderDate, tenantId];
+    let adminFilter = '';
+    
+    if (adminId) {
+      queryParams.push(adminId);
+      adminFilter = `AND p.admin_responsable_id = $${queryParams.length}`;
+    }
+
+    // Excluir el pedido actual si se proporciona su ID
+    let excludeCurrentOrder = '';
+    if (pedidoId) {
+      queryParams.push(pedidoId);
+      excludeCurrentOrder = `AND p.pedidoid != $${queryParams.length}`;
+    }
+
+    const deudaQuery = `
+      SELECT 
+        COALESCE(SUM(d.cantidadpaquetes), 0) as total_paquetes_anteriores,
+        COALESCE(SUM(d.piezastotales), 0) as total_piezas_anteriores,
+        COUNT(DISTINCT p.pedidoid) as num_pedidos_anteriores
+      FROM detallesdelpedido d
+      INNER JOIN pedidos p ON p.pedidoid = d.pedidoid
+      WHERE d.varianteid = $1
+        AND p.fechapedido < $2
+        AND p.tenant_id = $3
+        AND p.estatus NOT IN ('Cancelado', 'Entregado')
+        AND d.esbackorder = false
+        ${adminFilter}
+        ${excludeCurrentOrder}
+    `;
+
+    const { rows: deudaRows } = await db.query(queryParams.length > 3 ? deudaQuery : deudaQuery, queryParams);
+    
+    const deudaPreviaEnPiezas = parseInt(deudaRows[0]?.total_piezas_anteriores || 0, 10);
+    const numPedidosAnteriores = parseInt(deudaRows[0]?.num_pedidos_anteriores || 0, 10);
+
+    console.log(`📊 [FIFO] Deuda previa: ${deudaPreviaEnPiezas} piezas (${numPedidosAnteriores} pedidos anteriores)`);
+
+    // PASO 3: CÁLCULO FIFO
+    // Stock disponible para ESTE pedido = Stock físico - Deuda de pedidos anteriores
+    const stockDisponibleParaEstePedido = Math.max(stockFisico - deudaPreviaEnPiezas, 0);
+    
+    // Convertir a paquetes
+    const paquetesDisponibles = Math.floor(stockDisponibleParaEstePedido / piezasPorPaq);
+    
+    // Determinar cuánto se puede surtir
+    const cantidadSurtible = Math.min(cantidadReq, paquetesDisponibles);
+    const cantidadBackorder = Math.max(cantidadReq - cantidadSurtible, 0);
+
+    // PASO 4: DETERMINAR ESTATUS
+    let estatus;
+    if (cantidadSurtible >= cantidadReq) {
+      estatus = 'surtido';
+    } else if (cantidadSurtible > 0) {
+      estatus = 'parcial';
+    } else {
+      estatus = 'backorder';
+    }
+
+    console.log(`✅ [FIFO] Resultado: ${estatus.toUpperCase()} - Surtible: ${cantidadSurtible}/${cantidadReq} paquetes`);
+
+    return {
+      estatus,
+      stockDisponible: stockDisponibleParaEstePedido,
+      cantidadSurtible,
+      cantidadBackorder,
+      deudaPrevia: deudaPreviaEnPiezas,
+      stockFisico,
+      paquetesDisponibles,
+      numPedidosAnteriores
+    };
+
+  } catch (error) {
+    console.error('[FIFO] Error al calcular allocation status:', error);
+    return {
+      estatus: 'backorder',
+      stockDisponible: 0,
+      cantidadSurtible: 0,
+      cantidadBackorder: cantidadRequerida || 0,
+      deudaPrevia: 0,
+      stockFisico: 0,
+      error: error.message
+    };
+  }
+}
+
 module.exports = {
   determineUserContext,
   getStock,
   getBulkStock,
   adjustStock,
   validateStock,
-  getGlobalStockBreakdown
+  getGlobalStockBreakdown,
+  calculateAllocationStatus
 };

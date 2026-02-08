@@ -440,7 +440,10 @@ const crearPedido = async (req, res) => {
     // 4. Calcular el monto total CON LÓGICA DE OFERTAS + split (stock + backorder)
     // CRÍTICO: El servidor SIEMPRE recalcula el total. NUNCA confiar en el total del cliente.
     // NUEVO: Preparar items para la función centralizada de cálculo
-    const itemsParaCalculadora = items.map((item, index) => {
+    // 🚀 FIFO ALLOCATION: Usar fecha actual como referencia para este pedido
+    const orderDate = new Date();
+    
+    const itemsParaCalculadora = await Promise.all(items.map(async (item, index) => {
       const precioBase = item.preciounitario !== null ? parseFloat(item.preciounitario) : 0;
       const precioOferta = item.precioofertaunitario !== null
         ? parseFloat(item.precioofertaunitario)
@@ -451,18 +454,47 @@ const crearPedido = async (req, res) => {
 
       // CRITICAL: Log stock calculation for each item
       console.log(`📦 [ITEM ${index + 1}] ${item.nombreproducto} (SKU: ${item.sku})`);
-      console.log(`   Stock disponible: ${stockActual} piezas`);
+      console.log(`   Stock físico disponible: ${stockActual} piezas`);
       console.log(`   Cantidad solicitada: ${item.cantidad} paquetes (${item.cantidad * tamanoValor} piezas)`);
 
-      const split = calcularSplitBackorder({
-        cantidadSolicitada: item.cantidad,
-        stockPiezas: stockActual,
-        piezasPorPaquete: tamanoValor,
-        multiploBackorder:
-          multiploPorKey.get(
-            `${item.proveedorid_default || 0}:${item.tipoproductoid || 0}`
-          ) || 1,
+      // 🚀 FIFO ALLOCATION: Calcular disponibilidad real considerando pedidos anteriores
+      const fifoAllocation = await SmartStockService.calculateAllocationStatus({
+        varianteId: item.varianteid,
+        cantidadRequerida: item.cantidad,
+        orderDate: orderDate,
+        adminId: req.user?.adminId || null,
+        tenantId: tenant_id,
+        pedidoId: null,
+        piezasPorPaquete: tamanoValor
       });
+
+      console.log(`   🔍 [FIFO] Estatus: ${fifoAllocation.estatus.toUpperCase()}`);
+      console.log(`   🔍 [FIFO] Deuda previa: ${fifoAllocation.deudaPrevia} piezas (${fifoAllocation.numPedidosAnteriores} pedidos)`);
+      console.log(`   🔍 [FIFO] Stock disponible para este pedido: ${fifoAllocation.stockDisponible} piezas`);
+      console.log(`   🔍 [FIFO] Puede surtir: ${fifoAllocation.cantidadSurtible}/${item.cantidad} paquetes`);
+
+      // Usar el resultado FIFO para crear el split
+      const multiploBackorder = multiploPorKey.get(
+        `${item.proveedorid_default || 0}:${item.tipoproductoid || 0}`
+      ) || 1;
+
+      // Calcular backorder ajustado según regla de empaque
+      let cantidadBackorderAjustada = fifoAllocation.cantidadBackorder;
+      if (fifoAllocation.cantidadBackorder > 0 && multiploBackorder > 1) {
+        const piezasPendientes = fifoAllocation.cantidadBackorder * tamanoValor;
+        const piezasBackorderAjustadas = Math.ceil(piezasPendientes / multiploBackorder) * multiploBackorder;
+        cantidadBackorderAjustada = Math.ceil(piezasBackorderAjustadas / tamanoValor);
+      }
+
+      const split = {
+        cantidadSurtida: fifoAllocation.cantidadSurtible,
+        cantidadPendiente: fifoAllocation.cantidadBackorder,
+        cantidadBackorderAjustada: cantidadBackorderAjustada,
+        cantidadTotalCobrar: item.cantidad,
+        ajusteAplicado: cantidadBackorderAjustada !== fifoAllocation.cantidadBackorder,
+        reglaBackorder: multiploBackorder > 1 ? "PAQUETE" : "UNITARIO",
+        fifoInfo: fifoAllocation
+      };
 
       return {
         ...item,
@@ -474,7 +506,7 @@ const crearPedido = async (req, res) => {
         stockActual,
         masterInfo
       };
-    });
+    }));
 
     // Calcular total SIN cupón primero (para validaciones)
     const calculoSinCupon = calcularTotalPedido({

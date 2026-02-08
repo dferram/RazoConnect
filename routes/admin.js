@@ -26,6 +26,7 @@ const ajustePedidosController = require("../controllers/ajustePedidosController"
 const cuponesController = require("../controllers/cuponesController");
 const inventarioReportesController = require("../controllers/inventarioReportesController");
 const ordenCompraPDFController = require("../controllers/ordenCompraPDFController");
+const fifoRecalculationController = require("../controllers/fifoRecalculationController");
 const upload = require("../middlewares/upload");
 const uploadComprobante = require("../middlewares/uploadComprobante");
 const uploadProductImages = require("../middlewares/uploadProductImages");
@@ -1605,6 +1606,31 @@ router.get(
   authenticate,
   authorizeAdmin,
   inventarioReportesController.generarReportePDF
+);
+
+/**
+ * FIFO Allocation Recalculation
+ * Endpoints para recalcular el estatus de surtido de pedidos usando lógica FIFO
+ */
+router.post(
+  "/fifo/recalcular",
+  authenticate,
+  authorizeAdminOnly,
+  fifoRecalculationController.recalcularTodosPedidos
+);
+
+router.post(
+  "/fifo/recalcular/:pedidoId",
+  authenticate,
+  authorizeAdmin,
+  fifoRecalculationController.recalcularPedidoEspecifico
+);
+
+router.get(
+  "/fifo/conflictos",
+  authenticate,
+  authorizeAdmin,
+  fifoRecalculationController.obtenerConflictosAllocation
 );
 
 module.exports = router;
