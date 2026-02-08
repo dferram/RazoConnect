@@ -685,12 +685,15 @@
   }
 
   // ========================================
-  // GESTIÓN DE PAGOS PENDIENTES
+  // GESTIÓN DE PAGOS DE CLIENTES PENDIENTES (tabla pagos_clientes)
   // ========================================
+  // IMPORTANTE: Esto es diferente de admin-validar-pagos.html
+  // - admin-validar-pagos.html: Valida transferencias de PEDIDOS específicos (tabla: pedidos)
+  // - admin-cxc.html: Valida pagos generales de CLIENTES para liquidar saldo (tabla: pagos_clientes)
 
   async function cargarPagosPendientes() {
     try {
-      const response = await API.apiCall("/admin/cxc/pagos-pendientes", {
+      const response = await API.apiCall("/admin/pagos-clientes/pendientes", {
         method: "GET",
       });
 
@@ -698,11 +701,11 @@
         const pagos = response.data.data || [];
         renderPagosPendientes(pagos);
       } else {
-        console.error("Error cargando pagos pendientes:", response.data?.message);
+        console.error("Error cargando pagos de clientes pendientes:", response.data?.message);
         renderPagosPendientes([]);
       }
     } catch (error) {
-      console.error("Error cargando pagos pendientes:", error);
+      console.error("Error cargando pagos de clientes pendientes:", error);
       renderPagosPendientes([]);
     }
   }
@@ -721,7 +724,6 @@
       return;
     }
 
-    // Guardar en cache para acceso posterior
     pagosPendientesCache = pagos;
 
     seccion.style.display = "";
@@ -754,23 +756,15 @@
           <td style="text-align: center;">
             <div style="display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap;">
               <button
-                class="btn btn-sm btn-primary text-white shadow-sm"
-                onclick="abrirModalDetalle(${pago.pago_id})"
-                title="Ver detalle completo"
-                style="background: var(--razo-orange, #F97316); border-color: var(--razo-orange, #F97316);"
-              >
-                <i class="bi bi-eye"></i> Ver detalle
-              </button>
-              <button
                 class="btn btn-sm btn-success"
-                onclick="aprobarPago(${pago.pago_id}, '${nombreCliente}', ${pago.monto})"
+                onclick="aprobarPagoCliente(${pago.pago_id}, '${nombreCliente}', ${pago.monto})"
                 title="Aprobar pago"
               >
                 <i class="bi bi-check-circle"></i> Aprobar
               </button>
               <button
                 class="btn btn-sm btn-danger"
-                onclick="rechazarPago(${pago.pago_id}, '${nombreCliente}')"
+                onclick="rechazarPagoCliente(${pago.pago_id}, '${nombreCliente}')"
                 title="Rechazar pago"
               >
                 <i class="bi bi-x-circle"></i> Rechazar
@@ -784,225 +778,7 @@
     tbody.innerHTML = html;
   }
 
-  let pagoActualDetalle = null;
-
-  window.abrirModalDetalle = function(pagoId) {
-    // Buscar el pago en el cache
-    const pago = pagosPendientesCache.find(p => p.pago_id === pagoId);
-    
-    if (!pago) {
-      console.error("Pago no encontrado:", pagoId);
-      Swal.fire({
-        icon: "error",
-        title: "Error",
-        text: "No se pudo cargar la información del pago",
-        confirmButtonColor: "#F97316",
-      });
-      return;
-    }
-
-    pagoActualDetalle = pago;
-    
-    // Mostrar modal inmediatamente para evitar que se vea el contenido al fondo
-    const modalElement = document.getElementById('modalDetallePago');
-    if (modalElement) {
-      modalElement.style.display = "flex";
-      document.body.classList.add("modal-open");
-    }
-    
-    const clienteEl = document.getElementById("comprobanteCliente");
-    const montoEl = document.getElementById("comprobanteMonto");
-    const contenidoEl = document.getElementById("comprobanteContenido");
-
-    if (!clienteEl || !montoEl || !contenidoEl) {
-      console.error("Elementos del modal no encontrados");
-      return;
-    }
-
-    const nombreCliente = `${pago.nombre || ''} ${pago.apellido || ''}`.trim() || "Sin nombre";
-    clienteEl.textContent = nombreCliente;
-    montoEl.textContent = formatCurrency(pago.monto);
-
-    const fecha = pago.fecha_pago
-      ? new Date(pago.fecha_pago).toLocaleString("es-MX", {
-          year: "numeric",
-          month: "long",
-          day: "numeric",
-          hour: "2-digit",
-          minute: "2-digit",
-        })
-      : "—";
-
-    let movimientosInfo = '';
-    if (pago.movimientos_aplicados) {
-      try {
-        const movimientos = typeof pago.movimientos_aplicados === 'string' 
-          ? JSON.parse(pago.movimientos_aplicados) 
-          : pago.movimientos_aplicados;
-        if (Array.isArray(movimientos) && movimientos.length > 0) {
-          movimientosInfo = `
-            <div style="margin-top: 0.75rem; padding: 0.75rem; background: #f0f9ff; border-left: 3px solid #0ea5e9; border-radius: 0.375rem;">
-              <div style="font-weight: 600; color: #0c4a6e; font-size: 0.875rem; margin-bottom: 0.25rem;">
-                <i class="bi bi-link-45deg"></i> Movimientos asociados
-              </div>
-              <div style="color: #0369a1; font-size: 0.8125rem;">
-                ${movimientos.map(id => `#${id}`).join(', ')}
-              </div>
-            </div>
-          `;
-        }
-      } catch (e) {
-        console.error("Error parseando movimientos:", e);
-      }
-    }
-
-    // Renderizar contenido del modal
-    contenidoEl.innerHTML = `
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
-        <!-- COLUMNA IZQUIERDA: Datos del Pago -->
-        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-          <div style="padding: 0.875rem; background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%); border-left: 4px solid #f97316; border-radius: 0.5rem;">
-            <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #9a3412; font-weight: 600; margin-bottom: 0.25rem;">
-              ID Pago
-            </div>
-            <div style="font-size: 1.25rem; font-weight: 700; color: #c2410c; font-family: monospace;">
-              #${pago.pago_id}
-            </div>
-          </div>
-
-          <div style="padding: 0.875rem; background: #f9fafb; border-radius: 0.5rem; border: 1px solid #e5e7eb;">
-            <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #6b7280; font-weight: 600; margin-bottom: 0.5rem;">
-              <i class="bi bi-person-circle"></i> Cliente
-            </div>
-            <div style="font-weight: 600; color: #111827; margin-bottom: 0.25rem;">${nombreCliente}</div>
-            <div style="color: #6b7280; font-size: 0.8125rem;">${pago.email || 'Sin email'}</div>
-          </div>
-
-          <div style="padding: 0.875rem; background: #f9fafb; border-radius: 0.5rem; border: 1px solid #e5e7eb;">
-            <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #6b7280; font-weight: 600; margin-bottom: 0.5rem;">
-              <i class="bi bi-calendar-event"></i> Fecha de pago
-            </div>
-            <div style="color: #111827; font-weight: 500;">${fecha}</div>
-          </div>
-
-          <div style="padding: 0.875rem; background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border-left: 4px solid #10b981; border-radius: 0.5rem;">
-            <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #065f46; font-weight: 600; margin-bottom: 0.25rem;">
-              <i class="bi bi-cash-coin"></i> Monto
-            </div>
-            <div style="font-size: 1.5rem; font-weight: 800; color: #047857;">${formatCurrency(pago.monto)}</div>
-          </div>
-
-          <div style="padding: 0.875rem; background: #f9fafb; border-radius: 0.5rem; border: 1px solid #e5e7eb;">
-            <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #6b7280; font-weight: 600; margin-bottom: 0.5rem;">
-              <i class="bi bi-credit-card"></i> Tipo de pago
-            </div>
-            <div style="color: #111827; font-weight: 500;">${pago.tipo_pago || 'TRANSFERENCIA'}</div>
-          </div>
-
-          <div style="padding: 0.875rem; background: #f9fafb; border-radius: 0.5rem; border: 1px solid #e5e7eb;">
-            <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #6b7280; font-weight: 600; margin-bottom: 0.5rem;">
-              <i class="bi bi-hash"></i> Referencia
-            </div>
-            <div style="color: #111827; font-weight: 500; word-break: break-all;">${pago.referencia_bancaria || 'Sin referencia'}</div>
-          </div>
-
-          ${pago.transaccion_id ? `
-            <div style="padding: 0.875rem; background: #f9fafb; border-radius: 0.5rem; border: 1px solid #e5e7eb;">
-              <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #6b7280; font-weight: 600; margin-bottom: 0.5rem;">
-                <i class="bi bi-receipt"></i> ID Transacción
-              </div>
-              <div style="color: #111827; font-family: monospace; font-size: 0.8125rem; word-break: break-all;">${pago.transaccion_id}</div>
-            </div>
-          ` : ''}
-
-          ${pago.saldo_deudor ? `
-            <div style="padding: 0.875rem; background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-left: 4px solid #f59e0b; border-radius: 0.5rem;">
-              <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #92400e; font-weight: 600; margin-bottom: 0.25rem;">
-                <i class="bi bi-wallet2"></i> Saldo actual del cliente
-              </div>
-              <div style="font-size: 1.25rem; font-weight: 700; color: #b45309;">${formatCurrency(pago.saldo_deudor)}</div>
-            </div>
-          ` : ''}
-
-          ${movimientosInfo}
-        </div>
-
-        <!-- COLUMNA DERECHA: Comprobante -->
-        <div style="display: flex; flex-direction: column;">
-          <div style="font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em; color: #6b7280; font-weight: 700; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid #e5e7eb;">
-            <i class="bi bi-file-earmark-image"></i> Comprobante de Pago
-          </div>
-          
-          ${pago.comprobante_url ? `
-            <div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #f9fafb; border-radius: 0.75rem; padding: 1rem; border: 2px dashed #d1d5db;">
-              <img 
-                src="${pago.comprobante_url}" 
-                alt="Comprobante de pago" 
-                style="max-width: 100%; max-height: 400px; height: auto; border-radius: 0.5rem; box-shadow: 0 10px 25px rgba(0,0,0,0.15); cursor: pointer; transition: transform 0.2s ease;"
-                onclick="window.open('${pago.comprobante_url}', '_blank')"
-                onmouseover="this.style.transform='scale(1.02)'"
-                onmouseout="this.style.transform='scale(1)'"
-                onerror="this.onerror=null; this.style.display='none'; this.parentElement.innerHTML='<div style=\\'text-align: center; padding: 2rem;\\'><i class=\\'bi bi-exclamation-circle\\' style=\\'font-size: 3rem; color: #ef4444;\\'></i><p style=\\'color: #ef4444; margin-top: 1rem; font-weight: 500;\\'>Error al cargar el comprobante</p></div>';"
-              />
-              <div style="margin-top: 1rem; text-align: center;">
-                <button 
-                  onclick="window.open('${pago.comprobante_url}', '_blank')"
-                  class="btn btn-sm"
-                  style="background: #f97316; color: white; border: none; padding: 0.5rem 1rem; border-radius: 0.5rem; font-weight: 500; box-shadow: 0 2px 8px rgba(249, 115, 22, 0.3);"
-                >
-                  <i class="bi bi-zoom-in"></i> Abrir en nueva pestaña
-                </button>
-              </div>
-            </div>
-          ` : `
-            <div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-radius: 0.75rem; padding: 2rem; border: 2px dashed #f59e0b;">
-              <i class="bi bi-exclamation-triangle-fill" style="font-size: 3rem; color: #d97706; margin-bottom: 1rem;"></i>
-              <p style="color: #92400e; font-weight: 600; font-size: 1rem; margin: 0;">Sin comprobante adjunto</p>
-              <p style="color: #b45309; font-size: 0.875rem; margin-top: 0.5rem;">El cliente no adjuntó evidencia de pago</p>
-            </div>
-          `}
-        </div>
-      </div>
-
-      <!-- Responsive: Stack en móvil -->
-      <style>
-        @media (max-width: 768px) {
-          #comprobanteContenido > div {
-            grid-template-columns: 1fr !important;
-          }
-        }
-      </style>
-    `;
-  };
-
-  window.verComprobante = function(pagoId, nombreCliente, monto, comprobanteUrl) {
-    const modal = document.getElementById("comprobanteModal");
-    const clienteEl = document.getElementById("comprobanteCliente");
-    const montoEl = document.getElementById("comprobanteMonto");
-    const contenidoEl = document.getElementById("comprobanteContenido");
-
-    if (!modal || !clienteEl || !montoEl || !contenidoEl) return;
-
-    clienteEl.textContent = nombreCliente;
-    montoEl.textContent = formatCurrency(monto);
-
-    if (comprobanteUrl) {
-      contenidoEl.innerHTML = `
-        <img 
-          src="${comprobanteUrl}" 
-          alt="Comprobante de pago" 
-          style="max-width: 100%; height: auto; border-radius: 0.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1);"
-          onerror="this.onerror=null; this.src=''; this.alt='Error al cargar imagen'; this.style.display='none'; this.parentElement.innerHTML='<p style=\\'color: #ef4444;\\'>No se pudo cargar el comprobante</p>';"
-        />
-      `;
-    } else {
-      contenidoEl.innerHTML = '<p style="color: #9ca3af;">No hay comprobante adjunto</p>';
-    }
-
-    modal.style.display = "flex";
-  };
-
-  window.aprobarPago = async function(pagoId, nombreCliente, monto) {
+  window.aprobarPagoCliente = async function(pagoId, nombreCliente, monto) {
     const result = await Swal.fire({
       icon: "question",
       title: "¿Aprobar este pago?",
@@ -1023,7 +799,7 @@
     if (!result.isConfirmed) return;
 
     try {
-      const response = await API.apiCall(`/admin/cxc/pagos/${pagoId}/gestionar`, {
+      const response = await API.apiCall(`/admin/pagos-clientes/${pagoId}/gestionar`, {
         method: "POST",
         body: JSON.stringify({
           accion: "aprobar",
@@ -1045,7 +821,7 @@
         throw new Error(response.data?.message || "Error al aprobar el pago");
       }
     } catch (error) {
-      console.error("Error aprobando pago:", error);
+      console.error("Error aprobando pago de cliente:", error);
       Swal.fire({
         icon: "error",
         title: "Error al aprobar",
@@ -1055,7 +831,7 @@
     }
   };
 
-  window.rechazarPago = async function(pagoId, nombreCliente) {
+  window.rechazarPagoCliente = async function(pagoId, nombreCliente) {
     const result = await Swal.fire({
       icon: "warning",
       title: "¿Rechazar este pago?",
@@ -1078,7 +854,7 @@
     if (!result.isConfirmed) return;
 
     try {
-      const response = await API.apiCall(`/admin/cxc/pagos/${pagoId}/gestionar`, {
+      const response = await API.apiCall(`/admin/pagos-clientes/${pagoId}/gestionar`, {
         method: "POST",
         body: JSON.stringify({
           accion: "rechazar",
@@ -1099,7 +875,7 @@
         throw new Error(response.data?.message || "Error al rechazar el pago");
       }
     } catch (error) {
-      console.error("Error rechazando pago:", error);
+      console.error("Error rechazando pago de cliente:", error);
       Swal.fire({
         icon: "error",
         title: "Error al rechazar",
@@ -1108,87 +884,6 @@
       });
     }
   };
-
-  // Event listeners para cerrar modal de detalle
-  document.getElementById("btnCerrarModalDetalle")?.addEventListener("click", () => {
-    const modal = document.getElementById("modalDetallePago");
-    if (modal) {
-      modal.style.display = "none";
-      document.body.classList.remove("modal-open");
-    }
-    pagoActualDetalle = null;
-  });
-
-  document.getElementById("btnCerrarDetalle")?.addEventListener("click", () => {
-    const modal = document.getElementById("modalDetallePago");
-    if (modal) {
-      modal.style.display = "none";
-      document.body.classList.remove("modal-open");
-    }
-    pagoActualDetalle = null;
-  });
-
-  // Cerrar modal al hacer clic en el overlay
-  document.getElementById("modalDetallePago")?.addEventListener("click", (e) => {
-    if (e.target.id === "modalDetallePago") {
-      e.target.style.display = "none";
-      document.body.classList.remove("modal-open");
-      pagoActualDetalle = null;
-    }
-  });
-
-  // Event listeners para botones de acción rápida en el modal
-  document.getElementById("btnAprobarDesdeModal")?.addEventListener("click", async () => {
-    if (!pagoActualDetalle) {
-      Swal.fire({
-        icon: "error",
-        title: "Error",
-        text: "No hay pago seleccionado",
-        confirmButtonColor: "#F97316",
-      });
-      return;
-    }
-
-    const nombreCliente = `${pagoActualDetalle.nombre || ''} ${pagoActualDetalle.apellido || ''}`.trim() || "Sin nombre";
-    
-    // Cerrar modal
-    const modalElement = document.getElementById('modalDetallePago');
-    if (modalElement) {
-      modalElement.style.display = "none";
-      document.body.classList.remove("modal-open");
-    }
-    
-    // Llamar a la función de aprobar
-    await aprobarPago(pagoActualDetalle.pago_id, nombreCliente, pagoActualDetalle.monto);
-    
-    pagoActualDetalle = null;
-  });
-
-  document.getElementById("btnRechazarDesdeModal")?.addEventListener("click", async () => {
-    if (!pagoActualDetalle) {
-      Swal.fire({
-        icon: "error",
-        title: "Error",
-        text: "No hay pago seleccionado",
-        confirmButtonColor: "#F97316",
-      });
-      return;
-    }
-
-    const nombreCliente = `${pagoActualDetalle.nombre || ''} ${pagoActualDetalle.apellido || ''}`.trim() || "Sin nombre";
-    
-    // Cerrar modal
-    const modalElement = document.getElementById('modalDetallePago');
-    if (modalElement) {
-      modalElement.style.display = "none";
-      document.body.classList.remove("modal-open");
-    }
-    
-    // Llamar a la función de rechazar
-    await rechazarPago(pagoActualDetalle.pago_id, nombreCliente);
-    
-    pagoActualDetalle = null;
-  });
 
   // ========================================
   // HISTORIAL DE MOVIMIENTOS FINANCIEROS
@@ -1678,4 +1373,381 @@
     cargarPagosPendientes();
     cargarHistorialMovimientos();
   });
+})();
+
+  // ========================================
+  // FUNCIONES AUXILIARES PARA FILTROS
+  // ========================================
+
+  async function cargarClientesConCredito() {
+    try {
+      const response = await API.apiCall("/admin/cxc/clientes-con-credito", {
+        method: "GET",
+      });
+
+      if (response.ok && response.data?.success) {
+        const clientes = response.data.data || [];
+        renderClientesSelector(clientes);
+      } else {
+        console.error("Error cargando clientes:", response.data?.message);
+      }
+    } catch (error) {
+      console.error("Error cargando clientes con crédito:", error);
+    }
+  }
+
+  function renderClientesSelector(clientes) {
+    const selector = elements.filtroCliente;
+    if (!selector) return;
+
+    // Limpiar opciones existentes excepto "Todos"
+    selector.innerHTML = '<option value="">Todos los clientes</option>';
+
+    // Agregar clientes
+    clientes.forEach((cliente) => {
+      const option = document.createElement("option");
+      option.value = cliente.clienteid;
+      const nombreCompleto = `${cliente.nombre || ''} ${cliente.apellido || ''}`.trim();
+      const saldo = formatCurrency(cliente.saldo_deudor || 0);
+      option.textContent = `${nombreCompleto} (${saldo})`;
+      selector.appendChild(option);
+    });
+  }
+
+  function setDefaultDates() {
+    if (!elements.filtroFechaDesde || !elements.filtroFechaHasta) return;
+
+    // Establecer fecha hasta como hoy
+    const hoy = new Date();
+    elements.filtroFechaHasta.value = hoy.toISOString().split('T')[0];
+
+    // Establecer fecha desde como hace 30 días
+    const hace30Dias = new Date();
+    hace30Dias.setDate(hace30Dias.getDate() - 30);
+    elements.filtroFechaDesde.value = hace30Dias.toISOString().split('T')[0];
+  }
+
+  // ========================================
+  // MODAL: ESTADO DE CUENTA (DRILL-DOWN)
+  // ========================================
+
+  async function abrirEstadoCuenta(clienteId) {
+    const modal = document.getElementById("modalEstadoCuenta");
+    if (!modal) return;
+
+    modal.style.display = "flex";
+
+    try {
+      const response = await API.apiCall(`/admin/cxc/estado-cuenta/${clienteId}`, {
+        method: "GET",
+      });
+
+      if (!response.ok || !response.data?.success) {
+        throw new Error(response.data?.message || "Error al cargar estado de cuenta");
+      }
+
+      const { cliente, pedidos, abonos } = response.data.data;
+
+      // Actualizar encabezado
+      document.getElementById("estadoCuentaCliente").textContent = 
+        `${cliente.nombre || ''} ${cliente.apellido || ''}`.trim();
+      document.getElementById("estadoCuentaSaldo").textContent = 
+        formatCurrency(cliente.saldo_deudor);
+
+      // Información del cliente
+      document.getElementById("estadoCuentaInfoCliente").innerHTML = `
+        <div style="margin-bottom: 0.5rem;"><strong>Email:</strong> ${cliente.email || 'N/A'}</div>
+        <div style="margin-bottom: 0.5rem;"><strong>Teléfono:</strong> ${cliente.telefono || 'N/A'}</div>
+        <div><strong>Estado:</strong> <span class="badge ${cliente.estado_credito === 'ACTIVO' ? 'bg-success' : 'bg-danger'}">${cliente.estado_credito}</span></div>
+      `;
+
+      // Resumen de crédito
+      const disponible = parseFloat(cliente.limite_credito) - parseFloat(cliente.saldo_deudor);
+      document.getElementById("estadoCuentaResumenCredito").innerHTML = `
+        <div style="margin-bottom: 0.5rem;"><strong>Límite de Crédito:</strong> ${formatCurrency(cliente.limite_credito)}</div>
+        <div style="margin-bottom: 0.5rem;"><strong>Saldo Deudor:</strong> ${formatCurrency(cliente.saldo_deudor)}</div>
+        <div style="margin-bottom: 0.5rem;"><strong>Disponible:</strong> ${formatCurrency(disponible)}</div>
+        <div><strong>Días de Gracia:</strong> ${cliente.dias_gracia || 0} días</div>
+      `;
+
+      // Renderizar pedidos pendientes
+      renderPedidosPendientes(pedidos);
+
+      // Renderizar últimos abonos
+      renderUltimosAbonos(abonos);
+
+    } catch (error) {
+      console.error("Error cargando estado de cuenta:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: error.message || "No se pudo cargar el estado de cuenta",
+        confirmButtonColor: "#F97316",
+      });
+      modal.style.display = "none";
+    }
+  }
+
+  function renderPedidosPendientes(pedidos) {
+    const tbody = document.getElementById("tablaPedidosPendientesTbody");
+    if (!tbody) return;
+
+    if (pedidos.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="7" style="text-align: center; padding: 2rem; color: #9ca3af;">
+            No hay pedidos pendientes
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    tbody.innerHTML = pedidos.map(pedido => {
+      const fecha = pedido.fechapedido ? new Date(pedido.fechapedido).toLocaleDateString("es-MX") : "—";
+      const vencimiento = pedido.fecha_vencimiento ? new Date(pedido.fecha_vencimiento).toLocaleDateString("es-MX") : "Sin vencimiento";
+      const diasVencido = parseInt(pedido.dias_vencido) || 0;
+      const categoria = pedido.categoria_aging || "—";
+      
+      let categoriaColor = "#6b7280";
+      let categoriaBg = "#f9fafb";
+      if (categoria.includes("1-30")) {
+        categoriaColor = "#d97706";
+        categoriaBg = "#fef3c7";
+      } else if (categoria.includes("+30")) {
+        categoriaColor = "#dc2626";
+        categoriaBg = "#fee2e2";
+      } else if (categoria.includes("corriente")) {
+        categoriaColor = "#10b981";
+        categoriaBg = "#d1fae5";
+      }
+
+      return `
+        <tr>
+          <td><strong>#${pedido.pedidoid}</strong></td>
+          <td>${fecha}</td>
+          <td style="text-align: right;">${formatCurrency(pedido.montototal)}</td>
+          <td style="text-align: right; font-weight: 700; color: #dc2626;">${formatCurrency(pedido.saldo_pendiente)}</td>
+          <td>${vencimiento}</td>
+          <td style="text-align: center;">${diasVencido > 0 ? `<span style="color: #dc2626; font-weight: 600;">${diasVencido}</span>` : '0'}</td>
+          <td>
+            <span style="padding: 0.25rem 0.75rem; border-radius: 0.375rem; font-size: 0.8125rem; font-weight: 600; background: ${categoriaBg}; color: ${categoriaColor};">
+              ${categoria}
+            </span>
+          </td>
+        </tr>
+      `;
+    }).join("");
+  }
+
+  function renderUltimosAbonos(abonos) {
+    const tbody = document.getElementById("tablaUltimosAbonosTbody");
+    if (!tbody) return;
+
+    if (abonos.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="7" style="text-align: center; padding: 2rem; color: #9ca3af;">
+            No hay abonos registrados
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    tbody.innerHTML = abonos.map(abono => {
+      const fecha = abono.fecha_movimiento ? new Date(abono.fecha_movimiento).toLocaleString("es-MX", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+      }) : "—";
+
+      return `
+        <tr>
+          <td style="white-space: nowrap;">${fecha}</td>
+          <td><span class="badge bg-success">${abono.tipo_movimiento}</span></td>
+          <td style="text-align: right; font-weight: 700; color: #16a34a;">${formatCurrency(abono.monto)}</td>
+          <td style="font-size: 0.875rem;">${abono.referencia_id || "—"}</td>
+          <td style="font-size: 0.875rem; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${abono.descripcion || ''}">${abono.descripcion || "—"}</td>
+          <td style="font-size: 0.875rem;">${abono.registrado_por || "Sistema"}</td>
+          <td style="text-align: right; font-weight: 600;">${formatCurrency(abono.saldo_despues_movimiento)}</td>
+        </tr>
+      `;
+    }).join("");
+  }
+
+  // Event listeners para cerrar modal Estado de Cuenta
+  document.getElementById("btnCerrarModalEstadoCuenta")?.addEventListener("click", () => {
+    document.getElementById("modalEstadoCuenta").style.display = "none";
+  });
+
+  document.getElementById("btnCerrarEstadoCuenta")?.addEventListener("click", () => {
+    document.getElementById("modalEstadoCuenta").style.display = "none";
+  });
+
+  document.getElementById("modalEstadoCuenta")?.addEventListener("click", (e) => {
+    if (e.target.id === "modalEstadoCuenta") {
+      e.target.style.display = "none";
+    }
+  });
+
+  // ========================================
+  // MODAL: PAGO MANUAL
+  // ========================================
+
+  let currentPagoManualData = null;
+
+  function abrirModalPagoManual(creditoId, clienteId, saldo) {
+    const cliente = state.cartera.find((item) => item.clienteId === clienteId);
+    if (!cliente) return;
+
+    currentPagoManualData = { creditoId, clienteId, saldo };
+
+    document.getElementById("pagoManualCliente").textContent = 
+      `${cliente.clienteNombre || ''} ${cliente.apellido || ''}`.trim();
+    document.getElementById("pagoManualSaldo").textContent = formatCurrency(saldo);
+
+    // Limpiar formulario
+    document.getElementById("pagoManualMonto").value = "";
+    document.getElementById("pagoManualMetodo").value = "";
+    document.getElementById("pagoManualReferencia").value = "";
+    document.getElementById("pagoManualNotas").value = "";
+
+    document.getElementById("modalPagoManual").style.display = "flex";
+  }
+
+  function cerrarModalPagoManual() {
+    currentPagoManualData = null;
+    document.getElementById("modalPagoManual").style.display = "none";
+  }
+
+  async function procesarPagoManual() {
+    if (!currentPagoManualData) return;
+
+    const monto = parseFloat(document.getElementById("pagoManualMonto").value);
+    const metodoPago = document.getElementById("pagoManualMetodo").value;
+    const referencia = document.getElementById("pagoManualReferencia").value.trim();
+    const notas = document.getElementById("pagoManualNotas").value.trim();
+
+    // Validaciones
+    if (!monto || monto <= 0) {
+      Swal.fire({
+        icon: "warning",
+        title: "Monto inválido",
+        text: "Introduce un monto mayor a 0",
+        confirmButtonColor: "#F97316",
+      });
+      return;
+    }
+
+    if (!metodoPago) {
+      Swal.fire({
+        icon: "warning",
+        title: "Método de pago requerido",
+        text: "Selecciona un método de pago",
+        confirmButtonColor: "#F97316",
+      });
+      return;
+    }
+
+    if (monto > currentPagoManualData.saldo) {
+      Swal.fire({
+        icon: "warning",
+        title: "Monto excede el saldo",
+        text: `El monto ($${monto.toFixed(2)}) no puede ser mayor al saldo deudor ($${currentPagoManualData.saldo.toFixed(2)})`,
+        confirmButtonColor: "#F97316",
+      });
+      return;
+    }
+
+    // Confirmar con el usuario
+    const result = await Swal.fire({
+      icon: "question",
+      title: "¿Confirmar registro de pago?",
+      html: `
+        <div style="text-align: left; padding: 1rem; background: #f9fafb; border-radius: 0.5rem; margin-top: 1rem;">
+          <p style="margin: 0.5rem 0;"><strong>Monto:</strong> ${formatCurrency(monto)}</p>
+          <p style="margin: 0.5rem 0;"><strong>Método:</strong> ${metodoPago}</p>
+          ${referencia ? `<p style="margin: 0.5rem 0;"><strong>Referencia:</strong> ${referencia}</p>` : ''}
+          <p style="margin: 0.5rem 0; color: #dc2626; font-weight: 600;">Este pago se aplicará inmediatamente y no se puede revertir.</p>
+        </div>
+      `,
+      showCancelButton: true,
+      confirmButtonText: "Sí, registrar pago",
+      cancelButtonText: "Cancelar",
+      confirmButtonColor: "#10b981",
+      cancelButtonColor: "#6b7280",
+    });
+
+    if (!result.isConfirmed) return;
+
+    // Deshabilitar botón y mostrar spinner
+    const btnConfirmar = document.getElementById("btnConfirmarPagoManual");
+    const txtGuardar = document.getElementById("pagoManualGuardarTxt");
+    const spinner = document.getElementById("pagoManualGuardarSpinner");
+    
+    btnConfirmar.disabled = true;
+    txtGuardar.style.display = "none";
+    spinner.style.display = "inline-flex";
+
+    try {
+      const response = await API.apiCall("/admin/cxc/registrar-pago-manual", {
+        method: "POST",
+        body: JSON.stringify({
+          creditoId: currentPagoManualData.creditoId,
+          monto,
+          metodoPago,
+          referencia: referencia || null,
+          notas: notas || null,
+        }),
+      });
+
+      if (!response.ok || !response.data?.success) {
+        throw new Error(response.data?.message || "Error al registrar el pago");
+      }
+
+      await Swal.fire({
+        icon: "success",
+        title: "Pago Registrado",
+        html: `
+          <p>El pago de <strong>${formatCurrency(monto)}</strong> ha sido registrado exitosamente.</p>
+          <p style="margin-top: 0.5rem; font-size: 0.875rem; color: #6b7280;">
+            Nuevo saldo: <strong>${formatCurrency(response.data.data.saldoNuevo)}</strong>
+          </p>
+        `,
+        confirmButtonColor: "#F97316",
+      });
+
+      cerrarModalPagoManual();
+      await loadCartera(true);
+      cargarMetricas();
+
+    } catch (error) {
+      console.error("Error registrando pago manual:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: error.message || "No se pudo registrar el pago. Intenta nuevamente.",
+        confirmButtonColor: "#F97316",
+      });
+    } finally {
+      btnConfirmar.disabled = false;
+      txtGuardar.style.display = "inline-flex";
+      spinner.style.display = "none";
+    }
+  }
+
+  // Event listeners para modal Pago Manual
+  document.getElementById("btnCerrarModalPagoManual")?.addEventListener("click", cerrarModalPagoManual);
+  document.getElementById("btnCancelarPagoManual")?.addEventListener("click", cerrarModalPagoManual);
+  document.getElementById("btnConfirmarPagoManual")?.addEventListener("click", procesarPagoManual);
+
+  document.getElementById("modalPagoManual")?.addEventListener("click", (e) => {
+    if (e.target.id === "modalPagoManual") {
+      cerrarModalPagoManual();
+    }
+  });
+
 })();
