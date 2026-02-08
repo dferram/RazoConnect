@@ -1633,4 +1633,32 @@ router.get(
   fifoRecalculationController.obtenerConflictosAllocation
 );
 
+/**
+ * ✅ NUEVO: Rutas de Visibilidad de Ventas por Admin
+ */
+
+// Ver mis ventas (cada admin ve solo sus ventas)
+router.get(
+  "/mis-ventas",
+  authenticate,
+  authorizeAdmin,
+  adminController.getMisVentas
+);
+
+// Ver breakdown de allocation de un pedido (Super Admin)
+router.get(
+  "/pedidos/:pedidoId/allocation",
+  authenticate,
+  authorizeAdmin,
+  adminController.getPedidoAllocation
+);
+
+// Reporte de ventas por administrador (Super Admin)
+router.get(
+  "/reportes/ventas-por-admin",
+  authenticate,
+  authorizeAdmin,
+  adminController.getReporteVentasPorAdmin
+);
+
 module.exports = router;
