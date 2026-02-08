@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Devoluciones - Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="css/admin-styles.css">
+</head>
+<body>
+    <div id="admin-header-container"></div>
+    <div class="admin-layout">
+        <div id="admin-sidebar-container"></div>
+        <main class="admin-main">
+            <div class="admin-content">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h1 class="admin-title"><i class="bi bi-arrow-return-left"></i> Gestión de Devoluciones (RMA)</h1>
+                </div>
+
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="admin-stat-card">
+                            <div class="stat-icon bg-warning"><i class="bi bi-clock-history"></i></div>
+                            <div class="stat-info">
+                                <h3 id="stat-pendientes">0</h3>
+                                <p>Pendientes</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="admin-stat-card">
+                            <div class="stat-icon bg-info"><i class="bi bi-eye"></i></div>
+                            <div class="stat-info">
+                                <h3 id="stat-revision">0</h3>
+                                <p>En Revisión</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="admin-stat-card">
+                            <div class="stat-icon bg-success"><i class="bi bi-check-circle"></i></div>
+                            <div class="stat-info">
+                                <h3 id="stat-aprobadas">0</h3>
+                                <p>Aprobadas</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="admin-stat-card">
+                            <div class="stat-icon bg-danger"><i class="bi bi-x-circle"></i></div>
+                            <div class="stat-info">
+                                <h3 id="stat-rechazadas">0</h3>
+                                <p>Rechazadas</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="admin-table-container">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5>Solicitudes de Devolución</h5>
+                        <div class="d-flex gap-2">
+                            <select id="filtro-estado" class="form-select form-select-sm" style="width: 200px;" aria-label="Filtrar por estado">
+                                <option value="">Todos los estados</option>
+                                <option value="PENDIENTE">Pendientes</option>
+                                <option value="EN_REVISION">En Revisión</option>
+                                <option value="APROBADA">Aprobadas</option>
+                                <option value="RECHAZADA">Rechazadas</option>
+                            </select>
+                        </div>
+                    </div>
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Pedido</th>
+                                <th>Cliente</th>
+                                <th>Fecha Solicitud</th>
+                                <th>Monto</th>
+                                <th>Items</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-devoluciones"></tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div class="modal fade" id="modalDetalle" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Detalle de Devolución</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body" id="detalle-content"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="js/components/admin-header-loader.js"></script>
+    <script src="js/components/admin-sidebar-loader.js"></script>
+    <script src="js/admin-devoluciones.js"></script>
+</body>
+</html>
