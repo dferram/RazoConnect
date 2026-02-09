@@ -266,6 +266,7 @@ async function exportarExcelEntrada() {
         // MISIÓN 3: Datos de productos usando valores de sesión (input values)
         let currentRow = 7;
         let totalPiezasSesion = 0;
+        let totalPaquetesSesion = 0;
         let totalMontoSesion = 0;
 
         for (const item of sesionRecepcion) {
@@ -274,11 +275,14 @@ async function exportarExcelEntrada() {
 
             // Obtener cantidad de la sesión (lo que el usuario ingresó)
             const cantidadRecibida = parseInt(item.cantidad, 10) || 0;
+            const piezasPorPaquete = parseInt(item.piezasPorPaquete || item.piezasporpaquete, 10) || 1;
             const costoUnitario = parseFloat(item.costoUnitario || item.costounitario || 0);
             const subtotal = cantidadRecibida * costoUnitario;
+            const paquetes = Math.ceil(cantidadRecibida / piezasPorPaquete);
 
             // Acumular totales
             totalPiezasSesion += cantidadRecibida;
+            totalPaquetesSesion += paquetes;
             totalMontoSesion += subtotal;
 
             // Pedido (ID Orden)
@@ -355,7 +359,7 @@ async function exportarExcelEntrada() {
 
         // MISIÓN 4: Agregar fila de TOTALES al final (solo una vez)
         const totalsRow = worksheet.getRow(currentRow);
-        totalsRow.height = 25;
+        totalsRow.height = 35;
 
         // Combinar celdas A-E para etiqueta "TOTALES"
         worksheet.mergeCells(`A${currentRow}:E${currentRow}`);
@@ -375,11 +379,11 @@ async function exportarExcelEntrada() {
             right: { style: 'thin', color: { argb: 'FF000000' } }
         };
 
-        // Total Piezas (columna F)
+        // Total Piezas (columna F) - Mostrar piezas y paquetes
         const totalPiezasCell = worksheet.getCell(`F${currentRow}`);
-        totalPiezasCell.value = totalPiezasSesion;
-        totalPiezasCell.font = { name: 'Arial', size: 12, bold: true };
-        totalPiezasCell.alignment = { horizontal: 'center', vertical: 'middle' };
+        totalPiezasCell.value = `${totalPiezasSesion.toLocaleString('es-MX')} pzas\n(${totalPaquetesSesion.toLocaleString('es-MX')} paq)`;
+        totalPiezasCell.font = { name: 'Arial', size: 11, bold: true };
+        totalPiezasCell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
         totalPiezasCell.fill = {
             type: 'pattern',
             pattern: 'solid',

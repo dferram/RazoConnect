@@ -586,8 +586,19 @@ async function exportarPDF() {
 
     // Calculate totals
     let totalPiezas = 0;
+    let totalPaquetes = 0;
     let totalInversion = 0;
     let totalVentaEsperada = 0;
+
+    // Calcular totales desde sesionRecepcion para obtener paquetes
+    if (Array.isArray(window.sesionRecepcion)) {
+      window.sesionRecepcion.forEach(item => {
+        const cantidadPiezas = parseInt(item.cantidad, 10) || 0;
+        const piezasPorPaquete = parseInt(item.piezasPorPaquete || item.piezasporpaquete, 10) || 1;
+        const paquetes = Math.ceil(cantidadPiezas / piezasPorPaquete);
+        totalPaquetes += paquetes;
+      });
+    }
 
     datos.forEach(item => {
       totalPiezas += item.cantidadPiezas;
@@ -635,7 +646,7 @@ async function exportarPDF() {
       startY: finalY,
       head: [[
         { content: 'TOTALES', colSpan: 4, styles: { halign: 'center', fontStyle: 'bold', fillColor: [249, 250, 251] } },
-        { content: totalPiezas.toLocaleString('es-MX'), styles: { halign: 'center', fontStyle: 'bold', fillColor: [249, 250, 251] } },
+        { content: `${totalPiezas.toLocaleString('es-MX')} pzas\n(${totalPaquetes.toLocaleString('es-MX')} paq)`, styles: { halign: 'center', fontStyle: 'bold', fillColor: [249, 250, 251], fontSize: 9 } },
         { content: '', styles: { fillColor: [249, 250, 251] } },
         { content: `$${totalInversion.toFixed(2)}`, styles: { halign: 'right', fontStyle: 'bold', textColor: [220, 38, 38], fillColor: [249, 250, 251] } },
         { content: '', styles: { fillColor: [249, 250, 251] } },
@@ -660,7 +671,7 @@ async function exportarPDF() {
     const summaryY = doc.lastAutoTable.finalY + 10;
     
     doc.setFillColor(249, 115, 22);
-    doc.rect(10, finalY, 120, 10, 'F');
+    doc.rect(10, summaryY, 120, 10, 'F');
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
@@ -673,7 +684,7 @@ async function exportarPDF() {
     let detailY = summaryY + 15;
     doc.text('Total Piezas Recibidas:', 15, detailY);
     doc.setFont('helvetica', 'normal');
-    doc.text(totalPiezas.toLocaleString('es-MX'), 80, detailY);
+    doc.text(`${totalPiezas.toLocaleString('es-MX')} piezas (${totalPaquetes.toLocaleString('es-MX')} paquetes)`, 80, detailY);
 
     detailY += 7;
     doc.setFont('helvetica', 'bold');
