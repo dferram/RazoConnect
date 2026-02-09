@@ -15848,6 +15848,7 @@ const getVariantesProveedor = async (req, res) => {
         pv.costounitario,
         pv.stock,
         pv.preciounitario,
+        pv.piezasporpaquete,
         pv.color_nombre,
         pv.color_hex,
         pv.medidaid,
@@ -15856,13 +15857,16 @@ const getVariantesProveedor = async (req, res) => {
         p.nombreproducto,
         p.descripcion,
         p.categoriaid,
+        p.reglaid,
         c.nombre AS categoria_nombre,
+        pre.cantidadempaque,
         pi.url_imagen,
         pi.textoalternativo
       FROM producto_variantes pv
       INNER JOIN productos p ON p.productoid = pv.productoid
       LEFT JOIN categorias c ON c.categoriaid = p.categoriaid AND c.tenant_id = $1
       LEFT JOIN medidas m ON m.medidaid = pv.medidaid
+      LEFT JOIN proveedor_reglas_empaque pre ON pre.reglaid = p.reglaid
       LEFT JOIN LATERAL (
         SELECT url_imagen, textoalternativo
         FROM producto_imagenes
@@ -15885,6 +15889,8 @@ const getVariantesProveedor = async (req, res) => {
       costounitario: parseFloat(row.costounitario || 0),
       stock: parseInt(row.stock || 0, 10),
       preciounitario: parseFloat(row.preciounitario || 0),
+      piezasporpaquete: parseInt(row.piezasporpaquete || 1, 10),
+      cantidadempaque: parseInt(row.cantidadempaque || 1, 10),
       color_nombre: row.color_nombre || null,
       color_hex: row.color_hex || null,
       medidaid: row.medidaid,
@@ -16006,6 +16012,34 @@ const agregarProductoAOrdenCompra = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: "El producto no pertenece al proveedor de esta orden",
+      });
+    }
+
+    // Obtener regla de empaque del proveedor para este tipo de producto
+    let cantidadEmpaque = 1; // Default si no hay regla
+    if (variante.reglaid) {
+      const reglaResult = await client.query(
+        `SELECT cantidadempaque 
+         FROM proveedor_reglas_empaque 
+         WHERE reglaid = $1`,
+        [variante.reglaid]
+      );
+      
+      if (reglaResult.rows.length > 0) {
+        cantidadEmpaque = Number.parseInt(reglaResult.rows[0].cantidadempaque, 10) || 1;
+      }
+    }
+
+    // Validar que la cantidad sea múltiplo de la cantidad de empaque
+    if (cantidad % cantidadEmpaque !== 0) {
+      await client.query("ROLLBACK");
+      return res.status(400).json({
+        success: false,
+        message: `La cantidad debe ser múltiplo de ${cantidadEmpaque} (regla de empaque del proveedor)`,
+        data: {
+          cantidadEmpaque,
+          cantidadSolicitada: cantidad,
+        },
       });
     }
 
