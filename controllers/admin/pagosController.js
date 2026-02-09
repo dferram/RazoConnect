@@ -26,8 +26,8 @@ async function getPagosPendientes(req, res) {
       FROM pedidos p
       INNER JOIN clientes c ON c.clienteid = p.clienteid
       WHERE p.pagado = false
-        AND p.metodo_pago ILIKE '%transferencia%'
         AND p.comprobante_url IS NOT NULL
+        AND p.estatus NOT IN ('Cancelado', 'Rechazado')
         AND p.tenant_id = $1
         AND c.tenant_id = $1
       ORDER BY p.fechapedido DESC

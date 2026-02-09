@@ -747,20 +747,19 @@ router.get(
 // ========================================
 // PAGOS DE CLIENTES (tabla pagos_clientes)
 // ========================================
-const pagosClientesController = require("../controllers/admin/pagosClientesController");
 
 router.get(
   "/pagos-clientes/pendientes",
   authenticate,
   authorizeAdmin,
-  pagosClientesController.obtenerPagosPendientes
+  cxcController.getPagosClientesPendientes
 );
 
 router.post(
-  "/pagos-clientes/:id/gestionar",
+  "/pagos-clientes/:pagoId/gestionar",
   authenticate,
   authorizeAdmin,
-  pagosClientesController.gestionarPago
+  cxcController.gestionarPagoCliente
 );
 
 router.get(
@@ -788,7 +787,7 @@ router.get(
   "/cxc/summary-aging",
   authenticate,
   authorizeAdmin,
-  cxcEnhancedController.getCxcSummaryWithAging
+  cxcController.getSummaryAging
 );
 
 router.get(

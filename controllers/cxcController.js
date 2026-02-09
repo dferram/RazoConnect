@@ -455,11 +455,317 @@ async function obtenerHistorialMovimientos(req, res) {
     }
 }
 
+/**
+ * Obtiene resumen de cartera con aging (antigüedad de saldos)
+ * @route GET /api/admin/cxc/summary-aging
+ */
+async function getSummaryAging(req, res) {
+    const client = await db.pool.connect();
+    const tenant_id = req.tenant?.tenant_id || 1;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const offset = (page - 1) * limit;
+
+    try {
+        // Obtener cartera activa con aging
+        const { rows } = await client.query(`
+            WITH pedidos_aging AS (
+                SELECT 
+                    p.clienteid,
+                    p.pedidoid,
+                    p.montototal,
+                    p.saldo_pendiente,
+                    p.fecha_vencimiento,
+                    p.fechapedido,
+                    CASE 
+                        WHEN p.fecha_vencimiento IS NULL THEN 0
+                        WHEN p.fecha_vencimiento::date >= CURRENT_DATE THEN 0
+                        ELSE CURRENT_DATE - p.fecha_vencimiento::date
+                    END as dias_vencido
+                FROM pedidos p
+                WHERE p.es_credito = true
+                    AND p.saldo_pendiente > 0
+                    AND p.estatus NOT IN ('Cancelado', 'Rechazado')
+                    AND p.tenant_id = $1
+            )
+            SELECT 
+                cc.credito_id as "creditoId",
+                c.clienteid as "clienteId",
+                c.nombre as "clienteNombre",
+                c.apellido,
+                c.email,
+                cc.limite_credito as "limiteCredito",
+                cc.saldo_deudor as "saldoDeudor",
+                (cc.limite_credito - cc.saldo_deudor) as disponible,
+                cc.estado_credito as estado,
+                cc.ultimo_movimiento as "ultimoMovimiento",
+                -- Aging buckets
+                COALESCE(SUM(CASE WHEN pa.dias_vencido = 0 THEN pa.saldo_pendiente ELSE 0 END), 0) as "alCorriente",
+                COALESCE(SUM(CASE WHEN pa.dias_vencido BETWEEN 1 AND 30 THEN pa.saldo_pendiente ELSE 0 END), 0) as "vencido1a30",
+                COALESCE(SUM(CASE WHEN pa.dias_vencido > 30 THEN pa.saldo_pendiente ELSE 0 END), 0) as "vencidoMas30",
+                COALESCE(MAX(pa.dias_vencido), 0) as "maxDiasVencido"
+            FROM cliente_creditos cc
+            INNER JOIN clientes c ON c.clienteid = cc.cliente_id
+            LEFT JOIN pedidos_aging pa ON pa.clienteid = c.clienteid
+            WHERE cc.saldo_deudor > 0
+                AND cc.tenant_id = $1
+                AND c.tenant_id = $1
+            GROUP BY cc.credito_id, c.clienteid, c.nombre, c.apellido, c.email, 
+                     cc.limite_credito, cc.saldo_deudor, cc.estado_credito, cc.ultimo_movimiento
+            ORDER BY cc.saldo_deudor DESC
+            LIMIT $2 OFFSET $3
+        `, [tenant_id, limit, offset]);
+
+        // Total de registros
+        const { rows: [count] } = await client.query(`
+            SELECT COUNT(DISTINCT cc.credito_id) as total
+            FROM cliente_creditos cc
+            INNER JOIN clientes c ON c.clienteid = cc.cliente_id
+            WHERE cc.saldo_deudor > 0
+                AND cc.tenant_id = $1
+                AND c.tenant_id = $1
+        `, [tenant_id]);
+
+        // Métricas agregadas
+        const { rows: [metrics] } = await client.query(`
+            SELECT 
+                COALESCE(SUM(cc.saldo_deudor), 0) as total_cobrar,
+                COALESCE(SUM(CASE WHEN cc.estado_credito = 'SUSPENDIDO' THEN cc.saldo_deudor ELSE 0 END), 0) as total_vencido,
+                COUNT(*) as conteo_clientes
+            FROM cliente_creditos cc
+            INNER JOIN clientes c ON c.clienteid = cc.cliente_id
+            WHERE cc.saldo_deudor > 0
+                AND cc.tenant_id = $1
+                AND c.tenant_id = $1
+        `, [tenant_id]);
+
+        const totalPages = Math.ceil(parseInt(count.total) / limit);
+
+        res.json({
+            success: true,
+            data: {
+                cartera: rows,
+                totalCobrar: parseFloat(metrics.total_cobrar),
+                totalVencido: parseFloat(metrics.total_vencido),
+                conteoClientes: parseInt(metrics.conteo_clientes),
+                currentPage: page,
+                totalPages,
+                totalRecords: parseInt(count.total)
+            }
+        });
+
+    } catch (error) {
+        console.error('Error obteniendo summary aging:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error al obtener resumen de cartera'
+        });
+    } finally {
+        client.release();
+    }
+}
+
+/**
+ * Obtiene pagos de clientes pendientes de validación (tabla pagos_clientes)
+ * @route GET /api/admin/pagos-clientes/pendientes
+ */
+async function getPagosClientesPendientes(req, res) {
+    const tenant_id = req.tenant?.tenant_id || 1;
+
+    try {
+        const { rows } = await db.query(`
+            SELECT 
+                pc.pago_id,
+                pc.cliente_id,
+                pc.monto,
+                pc.tipo_pago,
+                pc.estatus,
+                pc.comprobante_url,
+                pc.referencia_bancaria,
+                pc.transaccion_id,
+                pc.fecha_pago,
+                pc.notas,
+                c.nombre,
+                c.apellido,
+                c.email
+            FROM pagos_clientes pc
+            INNER JOIN clientes c ON c.clienteid = pc.cliente_id
+            WHERE pc.estatus = 'PENDIENTE'
+                AND pc.tenant_id = $1
+                AND c.tenant_id = $1
+            ORDER BY pc.fecha_pago DESC
+        `, [tenant_id]);
+
+        res.json({
+            success: true,
+            data: rows
+        });
+
+    } catch (error) {
+        console.error('Error obteniendo pagos de clientes pendientes:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error al obtener pagos pendientes'
+        });
+    }
+}
+
+/**
+ * Gestiona un pago de cliente (aprobar o rechazar)
+ * @route POST /api/admin/pagos-clientes/:pagoId/gestionar
+ */
+async function gestionarPagoCliente(req, res) {
+    const client = await db.pool.connect();
+    const { pagoId } = req.params;
+    const { accion, motivo } = req.body;
+    const adminId = req.user?.adminId || req.user?.userId;
+    const tenant_id = req.tenant?.tenant_id || 1;
+
+    if (!['aprobar', 'rechazar'].includes(accion)) {
+        return res.status(400).json({
+            success: false,
+            message: 'Acción inválida. Debe ser "aprobar" o "rechazar"'
+        });
+    }
+
+    try {
+        await client.query('BEGIN');
+
+        // Obtener información del pago
+        const { rows: [pago] } = await client.query(`
+            SELECT 
+                pc.*,
+                c.nombre,
+                c.apellido,
+                cc.credito_id,
+                cc.saldo_deudor
+            FROM pagos_clientes pc
+            INNER JOIN clientes c ON c.clienteid = pc.cliente_id
+            INNER JOIN cliente_creditos cc ON cc.cliente_id = pc.cliente_id
+            WHERE pc.pago_id = $1 
+                AND pc.tenant_id = $2
+                AND c.tenant_id = $2
+            FOR UPDATE
+        `, [pagoId, tenant_id]);
+
+        if (!pago) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({
+                success: false,
+                message: 'Pago no encontrado'
+            });
+        }
+
+        if (pago.estatus !== 'PENDIENTE') {
+            await client.query('ROLLBACK');
+            return res.status(400).json({
+                success: false,
+                message: `Este pago ya fue ${pago.estatus.toLowerCase()}`
+            });
+        }
+
+        if (accion === 'aprobar') {
+            // Actualizar estado del pago
+            await client.query(`
+                UPDATE pagos_clientes
+                SET estatus = 'APROBADO',
+                    fecha_validacion = NOW(),
+                    validado_por = $1
+                WHERE pago_id = $2 AND tenant_id = $3
+            `, [adminId, pagoId, tenant_id]);
+
+            // Actualizar saldo del cliente (ABONO)
+            const nuevoSaldo = parseFloat(pago.saldo_deudor) - parseFloat(pago.monto);
+            await client.query(`
+                UPDATE cliente_creditos
+                SET saldo_deudor = GREATEST(0, $1),
+                    ultimo_movimiento = NOW()
+                WHERE credito_id = $2 AND tenant_id = $3
+            `, [nuevoSaldo, pago.credito_id, tenant_id]);
+
+            // Registrar movimiento de crédito
+            await client.query(`
+                INSERT INTO credito_movimientos (
+                    credito_id, tipo_movimiento, monto, referencia_id, 
+                    descripcion, saldo_despues_movimiento, tenant_id
+                )
+                VALUES ($1, 'ABONO', $2, $3, $4, GREATEST(0, $5), $6)
+            `, [
+                pago.credito_id,
+                pago.monto,
+                `PAGO-${pagoId}`,
+                `Pago validado: ${pago.tipo_pago} - Ref: ${pago.referencia_bancaria || 'N/A'}`,
+                nuevoSaldo,
+                tenant_id
+            ]);
+
+            // Notificar al cliente
+            await client.query(`
+                INSERT INTO notificaciones (clienteid, tipo, titulo, mensaje, prioridad, tenant_id)
+                VALUES ($1, 'sistema', 'Pago Aprobado', $2, 'normal', $3)
+            `, [
+                pago.cliente_id,
+                `Tu pago de ${new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(pago.monto)} ha sido validado exitosamente.`,
+                tenant_id
+            ]);
+
+            await client.query('COMMIT');
+
+            res.json({
+                success: true,
+                message: 'Pago aprobado exitosamente',
+                data: {
+                    nuevoSaldo: Math.max(0, nuevoSaldo)
+                }
+            });
+
+        } else if (accion === 'rechazar') {
+            // Actualizar estado del pago
+            await client.query(`
+                UPDATE pagos_clientes
+                SET estatus = 'RECHAZADO',
+                    fecha_validacion = NOW(),
+                    validado_por = $1,
+                    notas = COALESCE(notas || ' | ', '') || 'Motivo rechazo: ' || $2
+                WHERE pago_id = $3 AND tenant_id = $4
+            `, [adminId, motivo || 'No especificado', pagoId, tenant_id]);
+
+            // Notificar al cliente
+            const mensajeRechazo = motivo
+                ? `Tu pago fue rechazado. Motivo: ${motivo}. Por favor, contacta con soporte.`
+                : 'Tu pago fue rechazado. Por favor, contacta con soporte para más información.';
+
+            await client.query(`
+                INSERT INTO notificaciones (clienteid, tipo, titulo, mensaje, prioridad, tenant_id)
+                VALUES ($1, 'sistema', 'Pago Rechazado', $2, 'alta', $3)
+            `, [pago.cliente_id, mensajeRechazo, tenant_id]);
+
+            await client.query('COMMIT');
+
+            res.json({
+                success: true,
+                message: 'Pago rechazado'
+            });
+        }
+
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('Error gestionando pago de cliente:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error al gestionar el pago'
+        });
+    } finally {
+        client.release();
+    }
+}
+
 module.exports = {
     exportarLoteCxC,
     getMetricasCobranza,
     getClientesCredito,
-    // obtenerPagosPendientes - REMOVIDO: Movido a validación de pagos
-    // gestionarPago - REMOVIDO: Movido a validación de pagos
+    getSummaryAging,
+    getPagosClientesPendientes,
+    gestionarPagoCliente,
     obtenerHistorialMovimientos
 };
