@@ -164,31 +164,35 @@ function limpiarFiltros() {
 }
 
 /**
- * Prepare unified data for reports (Excel and PDF)
- * Returns array with complete financial information
+ * MISIÓN 3: Prepare unified data for reports using SESSION data (input values)
+ * Returns array with complete financial information from sesionRecepcion
  */
 function prepararDatosReporte() {
-  if (!state.orden || !Array.isArray(state.items) || state.items.length === 0) {
+  if (!state.orden || !Array.isArray(window.sesionRecepcion) || window.sesionRecepcion.length === 0) {
     return [];
   }
 
   const datos = [];
   
-  state.items.forEach(item => {
-    const piezasPorPaquete = getPiezasPorPaquete(item);
-    const cantidadPiezas = solicitadoPzasValue(item);
-    const costoUnitario = costoUnitarioValue(item);
-    const precioVenta = item.precioofertaunitario || item.preciounitario || 0;
+  // Usar sesionRecepcion en lugar de state.items para obtener cantidades reales ingresadas
+  window.sesionRecepcion.forEach(item => {
+    const cantidadPiezas = parseInt(item.cantidad, 10) || 0;
+    const costoUnitario = parseFloat(item.costoUnitario || item.costounitario || 0);
+    const piezasPorPaquete = parseInt(item.piezasPorPaquete || item.piezasporpaquete, 10) || 1;
     
-    // Calculate totals
+    // Calculate totals usando la cantidad de la sesión
     const totalCosto = cantidadPiezas * costoUnitario;
+    
+    // Buscar información adicional del producto en state.items si está disponible
+    const itemInfo = Array.isArray(state.items) ? state.items.find(x => String(x.detalleId) === String(item.detalleId)) : null;
+    const precioVenta = itemInfo?.precioofertaunitario || itemInfo?.preciounitario || 0;
     const totalVenta = cantidadPiezas * precioVenta;
     
     datos.push({
       sku: item.sku || '',
       producto: item.nombreProducto || '',
-      categoria: item.categoria || 'Sin categoría',
-      variante: `${item.color || 'Sin color'} / ${item.dimensiones || 'Sin medida'}`,
+      categoria: itemInfo?.categoria || 'Sin categoría',
+      variante: itemInfo ? `${itemInfo.color || 'Sin color'} / ${itemInfo.dimensiones || 'Sin medida'}` : 'N/A',
       cantidadPiezas: cantidadPiezas,
       costoUnitario: costoUnitario,
       totalCosto: totalCosto,
@@ -591,19 +595,11 @@ async function exportarPDF() {
       totalVentaEsperada += item.totalVenta;
     });
 
-    // Add table
+    // MISIÓN 4: Add table WITHOUT footer (totals will be added separately at the end)
     doc.autoTable({
       startY: 35,
       head: [['SKU', 'Producto', 'Categoría', 'Variante', 'Cantidad\n(Piezas)', 'Costo\nUnit.', 'Total\nCosto', 'Precio\nVenta', 'Total\nVenta']],
       body: tableData,
-      foot: [[
-        { content: 'TOTALES', colSpan: 4, styles: { halign: 'center', fontStyle: 'bold' } },
-        { content: totalPiezas.toLocaleString('es-MX'), styles: { halign: 'center', fontStyle: 'bold' } },
-        '',
-        { content: `$${totalInversion.toFixed(2)}`, styles: { halign: 'right', fontStyle: 'bold', textColor: [220, 38, 38] } },
-        '',
-        { content: `$${totalVentaEsperada.toFixed(2)}`, styles: { halign: 'right', fontStyle: 'bold', textColor: [16, 185, 129] } }
-      ]],
       theme: 'grid',
       styles: {
         fontSize: 8,
@@ -618,11 +614,35 @@ async function exportarPDF() {
         halign: 'center',
         valign: 'middle'
       },
-      footStyles: {
-        fillColor: [249, 250, 251],
-        textColor: [0, 0, 0],
-        fontStyle: 'bold'
-      },
+      columnStyles: {
+        0: { cellWidth: 22 },
+        1: { cellWidth: 45 },
+        2: { cellWidth: 30 },
+        3: { cellWidth: 35 },
+        4: { halign: 'center', cellWidth: 18 },
+        5: { halign: 'right', cellWidth: 20 },
+        6: { halign: 'right', cellWidth: 23 },
+        7: { halign: 'right', cellWidth: 20 },
+        8: { halign: 'right', cellWidth: 23 }
+      }
+    });
+
+    // MISIÓN 4: Add TOTALS row at the end using finalY
+    const finalY = doc.lastAutoTable.finalY + 2;
+    
+    // Draw totals table
+    doc.autoTable({
+      startY: finalY,
+      head: [[
+        { content: 'TOTALES', colSpan: 4, styles: { halign: 'center', fontStyle: 'bold', fillColor: [249, 250, 251] } },
+        { content: totalPiezas.toLocaleString('es-MX'), styles: { halign: 'center', fontStyle: 'bold', fillColor: [249, 250, 251] } },
+        { content: '', styles: { fillColor: [249, 250, 251] } },
+        { content: `$${totalInversion.toFixed(2)}`, styles: { halign: 'right', fontStyle: 'bold', textColor: [220, 38, 38], fillColor: [249, 250, 251] } },
+        { content: '', styles: { fillColor: [249, 250, 251] } },
+        { content: `$${totalVentaEsperada.toFixed(2)}`, styles: { halign: 'right', fontStyle: 'bold', textColor: [16, 185, 129], fillColor: [249, 250, 251] } }
+      ]],
+      body: [],
+      theme: 'grid',
       columnStyles: {
         0: { cellWidth: 22 },
         1: { cellWidth: 45 },
@@ -637,44 +657,44 @@ async function exportarPDF() {
     });
 
     // Financial summary
-    const finalY = doc.lastAutoTable.finalY + 10;
+    const summaryY = doc.lastAutoTable.finalY + 10;
     
     doc.setFillColor(249, 115, 22);
     doc.rect(10, finalY, 120, 10, 'F');
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
-    doc.text('RESUMEN FINANCIERO', 70, finalY + 7, { align: 'center' });
+    doc.text('RESUMEN FINANCIERO', 70, summaryY + 7, { align: 'center' });
 
     doc.setTextColor(0, 0, 0);
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
     
-    let summaryY = finalY + 15;
-    doc.text('Total Piezas Recibidas:', 15, summaryY);
+    let detailY = summaryY + 15;
+    doc.text('Total Piezas Recibidas:', 15, detailY);
     doc.setFont('helvetica', 'normal');
-    doc.text(totalPiezas.toLocaleString('es-MX'), 80, summaryY);
+    doc.text(totalPiezas.toLocaleString('es-MX'), 80, detailY);
 
-    summaryY += 7;
+    detailY += 7;
     doc.setFont('helvetica', 'bold');
-    doc.text('Valor Total de Compra:', 15, summaryY);
+    doc.text('Valor Total de Compra:', 15, detailY);
     doc.setTextColor(220, 38, 38);
-    doc.text(`$${totalInversion.toFixed(2)}`, 80, summaryY);
+    doc.text(`$${totalInversion.toFixed(2)}`, 80, detailY);
 
-    summaryY += 7;
+    detailY += 7;
     doc.setTextColor(0, 0, 0);
     doc.setFont('helvetica', 'bold');
-    doc.text('Valor Total de Venta Esperado:', 15, summaryY);
+    doc.text('Valor Total de Venta Esperado:', 15, detailY);
     doc.setTextColor(16, 185, 129);
-    doc.text(`$${totalVentaEsperada.toFixed(2)}`, 80, summaryY);
+    doc.text(`$${totalVentaEsperada.toFixed(2)}`, 80, detailY);
 
-    summaryY += 7;
+    detailY += 7;
     const margen = totalVentaEsperada - totalInversion;
     doc.setTextColor(0, 0, 0);
     doc.setFont('helvetica', 'bold');
-    doc.text('Margen Esperado:', 15, summaryY);
+    doc.text('Margen Esperado:', 15, detailY);
     doc.setTextColor(margen >= 0 ? 16 : 220, margen >= 0 ? 185 : 38, margen >= 0 ? 129 : 38);
-    doc.text(`$${margen.toFixed(2)}`, 80, summaryY);
+    doc.text(`$${margen.toFixed(2)}`, 80, detailY);
 
     // Save PDF
     doc.save(`Recepcion_OC_${state.orden.ordenCompraId}_${new Date().toISOString().slice(0, 10)}.pdf`);

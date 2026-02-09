@@ -263,11 +263,23 @@ async function exportarExcelEntrada() {
             };
         });
 
-        // Datos de productos
+        // MISIÓN 3: Datos de productos usando valores de sesión (input values)
         let currentRow = 7;
+        let totalPiezasSesion = 0;
+        let totalMontoSesion = 0;
+
         for (const item of sesionRecepcion) {
             const row = worksheet.getRow(currentRow);
             row.height = 20;
+
+            // Obtener cantidad de la sesión (lo que el usuario ingresó)
+            const cantidadRecibida = parseInt(item.cantidad, 10) || 0;
+            const costoUnitario = parseFloat(item.costoUnitario || item.costounitario || 0);
+            const subtotal = cantidadRecibida * costoUnitario;
+
+            // Acumular totales
+            totalPiezasSesion += cantidadRecibida;
+            totalMontoSesion += subtotal;
 
             // Pedido (ID Orden)
             const pedidoCell = worksheet.getCell(`A${currentRow}`);
@@ -303,9 +315,9 @@ async function exportarExcelEntrada() {
                 right: { style: 'thin' }
             };
 
-            // Cantidad (piezas recibidas)
+            // Cantidad (piezas recibidas de la sesión)
             const cantidadCell = worksheet.getCell(`F${currentRow}`);
-            cantidadCell.value = parseInt(item.cantidad, 10) || 0;
+            cantidadCell.value = cantidadRecibida;
             cantidadCell.alignment = { horizontal: 'center', vertical: 'middle' };
             cantidadCell.border = {
                 top: { style: 'thin' },
@@ -316,7 +328,7 @@ async function exportarExcelEntrada() {
 
             // Precio Unitario
             const precioCell = worksheet.getCell(`G${currentRow}`);
-            precioCell.value = parseFloat(item.costoUnitario || item.costounitario || 0);
+            precioCell.value = costoUnitario;
             precioCell.numFmt = '$#,##0.00';
             precioCell.alignment = { horizontal: 'right', vertical: 'middle' };
             precioCell.border = {
@@ -326,9 +338,9 @@ async function exportarExcelEntrada() {
                 right: { style: 'thin' }
             };
 
-            // TOTAL (fórmula dinámica)
+            // TOTAL (valor calculado, no fórmula)
             const totalCell = worksheet.getCell(`H${currentRow}`);
-            totalCell.value = { formula: `F${currentRow}*G${currentRow}` };
+            totalCell.value = subtotal;
             totalCell.numFmt = '$#,##0.00';
             totalCell.alignment = { horizontal: 'right', vertical: 'middle' };
             totalCell.border = {
@@ -340,6 +352,77 @@ async function exportarExcelEntrada() {
 
             currentRow++;
         }
+
+        // MISIÓN 4: Agregar fila de TOTALES al final (solo una vez)
+        const totalsRow = worksheet.getRow(currentRow);
+        totalsRow.height = 25;
+
+        // Combinar celdas A-E para etiqueta "TOTALES"
+        worksheet.mergeCells(`A${currentRow}:E${currentRow}`);
+        const totalsLabelCell = worksheet.getCell(`A${currentRow}`);
+        totalsLabelCell.value = 'TOTALES';
+        totalsLabelCell.font = { name: 'Arial', size: 12, bold: true };
+        totalsLabelCell.alignment = { horizontal: 'center', vertical: 'middle' };
+        totalsLabelCell.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFF9FAFB' }
+        };
+        totalsLabelCell.border = {
+            top: { style: 'medium', color: { argb: 'FF000000' } },
+            left: { style: 'thin', color: { argb: 'FF000000' } },
+            bottom: { style: 'medium', color: { argb: 'FF000000' } },
+            right: { style: 'thin', color: { argb: 'FF000000' } }
+        };
+
+        // Total Piezas (columna F)
+        const totalPiezasCell = worksheet.getCell(`F${currentRow}`);
+        totalPiezasCell.value = totalPiezasSesion;
+        totalPiezasCell.font = { name: 'Arial', size: 12, bold: true };
+        totalPiezasCell.alignment = { horizontal: 'center', vertical: 'middle' };
+        totalPiezasCell.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFF9FAFB' }
+        };
+        totalPiezasCell.border = {
+            top: { style: 'medium', color: { argb: 'FF000000' } },
+            left: { style: 'thin', color: { argb: 'FF000000' } },
+            bottom: { style: 'medium', color: { argb: 'FF000000' } },
+            right: { style: 'thin', color: { argb: 'FF000000' } }
+        };
+
+        // Celda vacía G (Precio Unitario)
+        const emptyGCell = worksheet.getCell(`G${currentRow}`);
+        emptyGCell.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFF9FAFB' }
+        };
+        emptyGCell.border = {
+            top: { style: 'medium', color: { argb: 'FF000000' } },
+            left: { style: 'thin', color: { argb: 'FF000000' } },
+            bottom: { style: 'medium', color: { argb: 'FF000000' } },
+            right: { style: 'thin', color: { argb: 'FF000000' } }
+        };
+
+        // Total Monto (columna H)
+        const totalMontoCell = worksheet.getCell(`H${currentRow}`);
+        totalMontoCell.value = totalMontoSesion;
+        totalMontoCell.numFmt = '$#,##0.00';
+        totalMontoCell.font = { name: 'Arial', size: 12, bold: true, color: { argb: 'FFF97316' } };
+        totalMontoCell.alignment = { horizontal: 'right', vertical: 'middle' };
+        totalMontoCell.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFF9FAFB' }
+        };
+        totalMontoCell.border = {
+            top: { style: 'medium', color: { argb: 'FF000000' } },
+            left: { style: 'thin', color: { argb: 'FF000000' } },
+            bottom: { style: 'medium', color: { argb: 'FF000000' } },
+            right: { style: 'thin', color: { argb: 'FF000000' } }
+        };
 
         // Generar archivo
         const buffer = await workbook.xlsx.writeBuffer();
