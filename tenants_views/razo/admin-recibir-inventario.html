@@ -204,7 +204,8 @@
               </div>
 
               <!-- Tabla 2: Productos Ya Recibidos (100% ancho) -->
-              <div class="recepcion-panel" style="margin-bottom: 2rem;">
+              <!-- OCULTA TEMPORALMENTE - No se está utilizando actualmente -->
+              <div class="recepcion-panel d-none" style="margin-bottom: 2rem;">
                 <div
                   style="
                     display: flex;
@@ -1332,7 +1333,15 @@
         }
 
         try {
-          if (btnFinalizarRecepcion) btnFinalizarRecepcion.disabled = true;
+          // MISIÓN 2: Anti-double-click protection
+          const btnToDisable = btnConfirmarGenerarCxp || btnFinalizarRecepcion;
+          if (btnToDisable) {
+            btnToDisable.disabled = true;
+            const originalHTML = btnToDisable.innerHTML;
+            btnToDisable.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Procesando...';
+            btnToDisable.dataset.originalHtml = originalHTML;
+          }
+
           const resp = await apiCallFormData("/admin/recepcion-masiva", fd);
           if (!resp.ok) {
             throw new Error(resp.data?.message || "No se pudo finalizar recepción");
@@ -1345,11 +1354,20 @@
           renderizarTablaSesion();
           await loadRecepcion(state.orden.ordenCompraId);
           showToastSuccess("Recepción finalizada");
+          
+          // NO re-habilitar el botón en caso de éxito (la página se recarga)
         } catch (error) {
           console.error(error);
           showToastError(error.message || "Error al finalizar");
-        } finally {
-          if (btnFinalizarRecepcion) btnFinalizarRecepcion.disabled = false;
+          
+          // Solo re-habilitar el botón si hay error
+          const btnToEnable = btnConfirmarGenerarCxp || btnFinalizarRecepcion;
+          if (btnToEnable) {
+            btnToEnable.disabled = false;
+            if (btnToEnable.dataset.originalHtml) {
+              btnToEnable.innerHTML = btnToEnable.dataset.originalHtml;
+            }
+          }
         }
       };
 
