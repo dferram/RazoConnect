@@ -367,10 +367,15 @@
           return;
         }
 
-        const input = inputEl;
+        const input = inputEl || tbodyPendiente.querySelector(`.input-qty-recibida[data-detalle-id="${detalleId}"]`);
+        if (!input) {
+          showToastError("No se encontró el campo de cantidad");
+          return;
+        }
+
         const piezas = getPiezasPorPaquete(item);
-        let cantidad = Number.parseInt(input?.value, 10);
-        const max = Number.parseInt(input?.dataset?.pendiente, 10) || 0;
+        let cantidad = Number.parseInt(input.value, 10);
+        const max = Number.parseInt(input.dataset.pendiente, 10) || 0;
 
         if (!Number.isInteger(cantidad) || cantidad <= 0) {
           showToastError("Ingresa una cantidad válida");
@@ -391,8 +396,6 @@
             if (!resp.isConfirmed) {
               return;
             }
-
-            cantidad = max;
           } else {
             return;
           }
@@ -421,7 +424,9 @@
           });
         }
 
-        if (input) input.value = "";
+        const solicitado = Number.parseInt(input.dataset.pendiente, 10) || 0;
+        input.value = String(solicitado);
+        
         hasSessionData = true;
         showToastSuccess("Agregado a sesión");
         persistSesionRecepcion();
@@ -801,39 +806,99 @@
           tdPen.innerHTML = `<strong>${pendientePzas}</strong>`;
 
           const tdInput = document.createElement("td");
-          const input = document.createElement("input");
-          input.type = "number";
-          input.min = "1";
-          input.max = String(pendientePzas);
-          input.step = "1";
-          input.placeholder = "0";
-          input.className = "form-input input-mini-tabla cantidad-hoy";
+          tdInput.className = "text-center";
+          
+          const draft = drafts.get(String(item.detalleId));
+          const initialValue = draft || pendientePzas;
+          
+          tdInput.innerHTML = `
+            <small class="text-muted d-block" style="font-size: 0.75rem; margin-bottom: 0.25rem;">
+              Solicitado: <span class="qty-original">${pendientePzas}</span>
+            </small>
+            <div class="input-group input-group-sm quantity-adjuster" style="width: 140px; margin: 0 auto;">
+              <button class="btn btn-outline-secondary btn-minus" type="button" style="padding: 0.25rem 0.5rem;">−</button>
+              <input type="number" class="form-control text-center input-qty-recibida cantidad-hoy" value="${initialValue}" min="0" style="padding: 0.25rem 0.5rem; font-weight: 700;">
+              <button class="btn btn-outline-secondary btn-plus" type="button" style="padding: 0.25rem 0.5rem;">+</button>
+            </div>
+          `;
+          
+          const input = tdInput.querySelector(".input-qty-recibida");
           input.dataset.detalleId = String(item.detalleId);
           input.dataset.varianteId = String(item.varianteId);
           input.dataset.pendiente = String(pendientePzas);
           input.dataset.piezas = String(piezas);
-          const draft = drafts.get(String(item.detalleId));
-          if (draft) {
-            input.value = String(draft);
-          }
-          tdInput.appendChild(input);
+          input.dataset.costoUnitario = String(costoUnitarioValue(item));
+          
+          const btnMinus = tdInput.querySelector(".btn-minus");
+          const btnPlus = tdInput.querySelector(".btn-plus");
 
           const renderColor = () => {
             const val = Number.parseInt(input.value, 10);
+            const solicitado = Number.parseInt(input.dataset.pendiente, 10);
+            
             if (!Number.isInteger(val) || val <= 0) {
-              input.style.borderColor = "";
+              input.style.borderColor = "#dc3545";
+              input.style.borderWidth = "2px";
               return;
             }
-            if (val < pendientePzas) {
-              input.style.borderColor = "#f59e0b";
+            
+            if (val < solicitado) {
+              input.style.borderColor = "#fbbf24";
+              input.style.borderWidth = "2px";
+            } else if (val > solicitado) {
+              input.style.borderColor = "#3b82f6";
+              input.style.borderWidth = "2px";
             } else {
               input.style.borderColor = "#10b981";
+              input.style.borderWidth = "2px";
             }
           };
 
-          input.addEventListener("input", renderColor);
-          input.addEventListener("change", renderColor);
-          renderColor();
+          const recalcularTotales = () => {
+            renderColor();
+            
+            let totalPiezas = 0;
+            let totalMonto = 0;
+            
+            const allInputs = tbodyPendiente.querySelectorAll(".input-qty-recibida");
+            for (const inp of allInputs) {
+              const qty = Number.parseInt(inp.value, 10) || 0;
+              const piezas = Number.parseInt(inp.dataset.piezas, 10) || 1;
+              const costo = Number.parseFloat(inp.dataset.costoUnitario) || 0;
+              
+              if (qty > 0) {
+                totalPiezas += qty;
+                totalMonto += montoDePiezas(qty, piezas, costo);
+              }
+            }
+            
+            if (lblTotalSolicitado) {
+              const totalOrden = items.reduce((acc, item) => {
+                const piezas = piezasPorPaqueteValue(item);
+                const costo = costoUnitarioValue(item);
+                return acc + montoDePiezas(solicitadoPzasValue(item), piezas, costo);
+              }, 0);
+              lblTotalSolicitado.textContent = formatMoneyMx(totalOrden);
+            }
+          };
+
+          btnMinus.addEventListener("click", () => {
+            const currentVal = Number.parseInt(input.value, 10) || 0;
+            if (currentVal > 0) {
+              input.value = String(currentVal - 1);
+              recalcularTotales();
+            }
+          });
+
+          btnPlus.addEventListener("click", () => {
+            const currentVal = Number.parseInt(input.value, 10) || 0;
+            input.value = String(currentVal + 1);
+            recalcularTotales();
+          });
+
+          input.addEventListener("input", recalcularTotales);
+          input.addEventListener("change", recalcularTotales);
+          recalcularTotales();
 
           const tdBtn = document.createElement("td");
           const btn = document.createElement("button");

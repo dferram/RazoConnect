@@ -37,6 +37,61 @@
 }
 
 /* ============================================
+   QUANTITY ADJUSTER (STEPPER)
+   ============================================ */
+.quantity-adjuster {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.quantity-adjuster .btn-minus,
+.quantity-adjuster .btn-plus {
+  flex: 0 0 auto;
+  min-width: 32px;
+  font-size: 1rem;
+  font-weight: 700;
+  transition: all 0.2s ease;
+  border-color: #d1d5db;
+}
+
+.quantity-adjuster .btn-minus:hover,
+.quantity-adjuster .btn-plus:hover {
+  background-color: var(--razo-orange);
+  border-color: var(--razo-orange);
+  color: white;
+  transform: scale(1.05);
+}
+
+.quantity-adjuster .btn-minus:active,
+.quantity-adjuster .btn-plus:active {
+  transform: scale(0.95);
+}
+
+.quantity-adjuster .input-qty-recibida {
+  flex: 1 1 auto;
+  border-left: none;
+  border-right: none;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.quantity-adjuster .input-qty-recibida:focus {
+  box-shadow: 0 0 0 0.2rem rgba(249, 115, 22, 0.25);
+  z-index: 3;
+}
+
+.input-qty-recibida::-webkit-outer-spin-button,
+.input-qty-recibida::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.input-qty-recibida[type=number] {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+/* ============================================
    ADMIN LOGIN PAGE
    ============================================ */
 .admin-login-container {
