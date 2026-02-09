@@ -318,6 +318,99 @@
         </div>
       </main>
     </div>
+
+    <!-- Modal: Agregar Producto a la Orden -->
+    <div id="modalAgregarProducto" class="modal" style="display: none;">
+      <div class="modal-content" style="max-width: 1200px; width: 95%; background: white; border-radius: 1rem; padding: 2rem; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 2px solid #f3f4f6;">
+          <h3 style="margin: 0; font-size: 1.25rem; font-weight: 800; color: #111827;">
+            <i class="bi bi-plus-circle" style="color: var(--razo-orange);"></i> Agregar Producto a la Orden
+          </h3>
+          <button type="button" class="modal-close" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #6b7280; padding: 0.25rem 0.5rem; border-radius: 0.375rem;">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+
+        <div style="margin-bottom: 1rem;">
+          <input type="text" id="buscarProductoAgregar" class="form-input" placeholder="Buscar por nombre o SKU..." style="width: 100%;">
+        </div>
+
+        <div style="max-height: 500px; overflow-y: auto; margin-bottom: 1.5rem;">
+          <table class="admin-table" id="tablaProductosProveedor">
+            <thead>
+              <tr>
+                <th style="width: 60px;">Imagen</th>
+                <th>Producto</th>
+                <th style="width: 150px;">SKU</th>
+                <th style="width: 120px;">Categoría</th>
+                <th style="width: 100px;">Stock</th>
+                <th style="width: 140px;">Cantidad (pzas)</th>
+                <th style="width: 100px;"></th>
+              </tr>
+            </thead>
+            <tbody id="tbodyProductosProveedor">
+              <tr>
+                <td colspan="7" style="text-align: center; padding: 2rem; color: #6b7280;">
+                  Cargando productos del proveedor...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #e5e7eb;">
+          <button type="button" class="btn btn-secondary modal-close">
+            Cancelar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Quitar Producto de la Orden -->
+    <div id="modalQuitarProducto" class="modal" style="display: none;">
+      <div class="modal-content" style="max-width: 1000px; width: 95%; background: white; border-radius: 1rem; padding: 2rem; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 2px solid #f3f4f6;">
+          <h3 style="margin: 0; font-size: 1.25rem; font-weight: 800; color: #111827;">
+            <i class="bi bi-trash" style="color: #dc3545;"></i> Quitar Producto de la Orden
+          </h3>
+          <button type="button" class="modal-close" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #6b7280; padding: 0.25rem 0.5rem; border-radius: 0.375rem;">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+
+        <div style="margin-bottom: 1rem; padding: 0.75rem; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 0.375rem;">
+          <strong>⚠️ Advertencia:</strong> Solo puedes quitar productos que NO hayan sido recibidos aún.
+        </div>
+
+        <div style="max-height: 400px; overflow-y: auto; margin-bottom: 1.5rem;">
+          <table class="admin-table" id="tablaProductosOrden">
+            <thead>
+              <tr>
+                <th style="width: 60px;">Imagen</th>
+                <th>Producto</th>
+                <th style="width: 150px;">SKU</th>
+                <th style="width: 120px;">Solicitado</th>
+                <th style="width: 120px;">Recibido</th>
+                <th style="width: 100px;"></th>
+              </tr>
+            </thead>
+            <tbody id="tbodyProductosOrden">
+              <tr>
+                <td colspan="6" style="text-align: center; padding: 2rem; color: #6b7280;">
+                  Cargando productos de la orden...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #e5e7eb;">
+          <button type="button" class="btn btn-secondary modal-close">
+            Cancelar
+          </button>
+        </div>
+      </div>
+    </div>
     
     <script src="js/admin-recibir-inventario.js" defer></script>
     <script src="js/admin-recibir-inventario-enhanced.js" defer></script>
@@ -354,11 +447,13 @@
       const btnConfirmarGenerarCxp = document.getElementById("btnConfirmarGenerarCxp");
       const sesionFloatingCounter = document.getElementById("sesionFloatingCounter");
 
-      const state = {
+      // Exponer state globalmente para que las funciones de modales puedan acceder
+      window.recepcionState = {
         ordenes: [],
         orden: null,
         items: [],
       };
+      const state = window.recepcionState;
 
       const getPiezasPorPaquete = (item) => {
         const piezasRaw =
@@ -1405,19 +1500,20 @@
 
       // Abrir modal de agregar producto
       const abrirModalAgregarProducto = async () => {
-        console.log('🔍 [DEBUG] state.orden:', state.orden);
+        const currentState = window.recepcionState || state;
+        console.log('🔍 [DEBUG] currentState.orden:', currentState.orden);
         
-        if (!state.orden) {
+        if (!currentState.orden) {
           showToastError("No hay orden de compra seleccionada");
           return;
         }
 
         // Intentar obtener proveedorId de múltiples formas
-        const proveedorId = state.orden.proveedorId || state.orden.proveedorid || state.orden.ProveedorID;
+        const proveedorId = currentState.orden.proveedorId || currentState.orden.proveedorid || currentState.orden.ProveedorID;
         
         if (!proveedorId) {
           showToastError("No se pudo obtener el proveedor de la orden");
-          console.error('❌ [ERROR] No se encontró proveedorId en:', state.orden);
+          console.error('❌ [ERROR] No se encontró proveedorId en:', currentState.orden);
           return;
         }
 
@@ -1501,6 +1597,7 @@
           const btn = e.target.closest('.btn-agregar-a-orden');
           if (!btn) return;
 
+          const currentState = window.recepcionState || state;
           const varianteId = btn.dataset.varianteId;
           const row = btn.closest('tr');
           const input = row.querySelector('input[type="number"]');
@@ -1515,7 +1612,7 @@
             btn.disabled = true;
             btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Agregando...';
 
-            const resp = await apiCall(`/admin/ordenes-compra/${state.orden.ordenCompraId}/agregar-producto`, {
+            const resp = await apiCall(`/admin/ordenes-compra/${currentState.orden.ordenCompraId}/agregar-producto`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -1530,7 +1627,7 @@
 
             showToastSuccess('Producto agregado a la orden');
             modalAgregarProducto.style.display = 'none';
-            await loadRecepcion(state.orden.ordenCompraId);
+            await loadRecepcion(currentState.orden.ordenCompraId);
           } catch (error) {
             console.error(error);
             showToastError(error.message || 'Error al agregar producto');
@@ -1542,7 +1639,10 @@
 
       // Abrir modal de quitar producto
       const abrirModalQuitarProducto = () => {
-        if (!state.orden || !state.items || state.items.length === 0) {
+        const currentState = window.recepcionState || state;
+        console.log('🔍 [DEBUG] abrirModalQuitarProducto - currentState:', currentState);
+        
+        if (!currentState.orden || !currentState.items || currentState.items.length === 0) {
           showToastError("No hay productos en la orden");
           return;
         }
@@ -1553,7 +1653,8 @@
 
       // Renderizar productos de la orden
       const renderizarProductosOrden = () => {
-        const items = Array.isArray(state.items) ? state.items : [];
+        const currentState = window.recepcionState || state;
+        const items = Array.isArray(currentState.items) ? currentState.items : [];
         
         if (items.length === 0) {
           tbodyProductosOrden.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 2rem; color: #6b7280;">No hay productos en la orden</td></tr>';
@@ -1597,8 +1698,9 @@
           const btn = e.target.closest('.btn-quitar-de-orden');
           if (!btn) return;
 
+          const currentState = window.recepcionState || state;
           const detalleId = btn.dataset.detalleId;
-          const item = state.items.find(i => String(i.detalleId) === String(detalleId));
+          const item = currentState.items.find(i => String(i.detalleId) === String(detalleId));
 
           if (!item) {
             showToastError('No se encontró el producto');
@@ -1629,7 +1731,7 @@
             btn.disabled = true;
             btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Quitando...';
 
-            const resp = await apiCall(`/admin/ordenes-compra/${state.orden.ordenCompraId}/quitar-producto/${detalleId}`, {
+            const resp = await apiCall(`/admin/ordenes-compra/${currentState.orden.ordenCompraId}/quitar-producto/${detalleId}`, {
               method: 'DELETE'
             });
 
@@ -1639,7 +1741,7 @@
 
             showToastSuccess('Producto quitado de la orden');
             modalQuitarProducto.style.display = 'none';
-            await loadRecepcion(state.orden.ordenCompraId);
+            await loadRecepcion(currentState.orden.ordenCompraId);
           } catch (error) {
             console.error(error);
             showToastError(error.message || 'Error al quitar producto');
@@ -1882,99 +1984,6 @@
       }
 
     </style>
-
-    <!-- Modal: Agregar Producto a la Orden -->
-    <div id="modalAgregarProducto" class="modal" style="display: none;">
-      <div class="modal-content" style="max-width: 1200px; width: 95%; background: white; border-radius: 1rem; padding: 2rem; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 2px solid #f3f4f6;">
-          <h3 style="margin: 0; font-size: 1.25rem; font-weight: 800; color: #111827;">
-            <i class="bi bi-plus-circle" style="color: var(--razo-orange);"></i> Agregar Producto a la Orden
-          </h3>
-          <button type="button" class="modal-close" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #6b7280; padding: 0.25rem 0.5rem; border-radius: 0.375rem;">
-            <i class="bi bi-x-lg"></i>
-          </button>
-        </div>
-
-        <div style="margin-bottom: 1rem;">
-          <input type="text" id="buscarProductoAgregar" class="form-input" placeholder="Buscar por nombre o SKU..." style="width: 100%;">
-        </div>
-
-        <div style="max-height: 500px; overflow-y: auto; margin-bottom: 1.5rem;">
-          <table class="admin-table" id="tablaProductosProveedor">
-            <thead>
-              <tr>
-                <th style="width: 60px;">Imagen</th>
-                <th>Producto</th>
-                <th style="width: 150px;">SKU</th>
-                <th style="width: 120px;">Categoría</th>
-                <th style="width: 100px;">Stock</th>
-                <th style="width: 140px;">Cantidad (pzas)</th>
-                <th style="width: 100px;"></th>
-              </tr>
-            </thead>
-            <tbody id="tbodyProductosProveedor">
-              <tr>
-                <td colspan="7" style="text-align: center; padding: 2rem; color: #6b7280;">
-                  Cargando productos del proveedor...
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #e5e7eb;">
-          <button type="button" class="btn btn-secondary modal-close">
-            Cancelar
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Modal: Quitar Producto de la Orden -->
-    <div id="modalQuitarProducto" class="modal" style="display: none;">
-      <div class="modal-content" style="max-width: 1000px; width: 95%; background: white; border-radius: 1rem; padding: 2rem; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 2px solid #f3f4f6;">
-          <h3 style="margin: 0; font-size: 1.25rem; font-weight: 800; color: #111827;">
-            <i class="bi bi-trash" style="color: #dc3545;"></i> Quitar Producto de la Orden
-          </h3>
-          <button type="button" class="modal-close" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #6b7280; padding: 0.25rem 0.5rem; border-radius: 0.375rem;">
-            <i class="bi bi-x-lg"></i>
-          </button>
-        </div>
-
-        <div style="margin-bottom: 1rem; padding: 0.75rem; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 0.375rem;">
-          <strong>⚠️ Advertencia:</strong> Solo puedes quitar productos que NO hayan sido recibidos aún.
-        </div>
-
-        <div style="max-height: 400px; overflow-y: auto; margin-bottom: 1.5rem;">
-          <table class="admin-table" id="tablaProductosOrden">
-            <thead>
-              <tr>
-                <th style="width: 60px;">Imagen</th>
-                <th>Producto</th>
-                <th style="width: 150px;">SKU</th>
-                <th style="width: 120px;">Solicitado</th>
-                <th style="width: 120px;">Recibido</th>
-                <th style="width: 100px;"></th>
-              </tr>
-            </thead>
-            <tbody id="tbodyProductosOrden">
-              <tr>
-                <td colspan="6" style="text-align: center; padding: 2rem; color: #6b7280;">
-                  Cargando productos de la orden...
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #e5e7eb;">
-          <button type="button" class="btn btn-secondary modal-close">
-            Cancelar
-          </button>
-        </div>
-      </div>
-    </div>
 
   </body>
 </html>
