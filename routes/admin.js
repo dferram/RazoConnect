@@ -1094,6 +1094,12 @@ router.get(
   authorizeAdmin,
   adminController.getRecepcionOrdenCompra
 );
+router.get(
+  "/productos/variantes-proveedor/:proveedorId",
+  authenticate,
+  authorizeAdmin,
+  adminController.getVariantesProveedor
+);
 router.post(
   "/ordenes-compra/:id/agregar-producto",
   authenticate,

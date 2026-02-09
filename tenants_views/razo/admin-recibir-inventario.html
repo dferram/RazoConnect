@@ -340,11 +340,11 @@
             <thead>
               <tr>
                 <th style="width: 60px;">Imagen</th>
-                <th>Producto</th>
-                <th style="width: 150px;">SKU</th>
+                <th>Producto / Variante</th>
+                <th style="width: 120px;">SKU</th>
                 <th style="width: 120px;">Categoría</th>
-                <th style="width: 100px;">Stock</th>
-                <th style="width: 140px;">Cantidad (pzas)</th>
+                <th style="width: 80px;">Stock</th>
+                <th style="width: 100px;">Cantidad</th>
                 <th style="width: 100px;"></th>
               </tr>
             </thead>
@@ -1520,48 +1520,60 @@
         console.log('✅ [DEBUG] proveedorId:', proveedorId);
 
         modalAgregarProducto.style.display = 'flex';
-        tbodyProductosProveedor.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 2rem; color: #6b7280;">Cargando productos del proveedor...</td></tr>';
+        tbodyProductosProveedor.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 2rem; color: #6b7280;">Cargando productos del proveedor...</td></tr>';
 
         try {
-          const resp = await apiCall(`/admin/productos?proveedorId=${proveedorId}`, { method: 'GET' });
+          const resp = await apiCall(`/admin/productos/variantes-proveedor/${proveedorId}`, { method: 'GET' });
           
           if (!resp.ok) {
             throw new Error(resp.data?.message || 'No se pudieron cargar los productos');
           }
 
-          productosProveedorCache = Array.isArray(resp.data?.data?.productos) ? resp.data.data.productos : [];
+          productosProveedorCache = Array.isArray(resp.data?.data?.variantes) ? resp.data.data.variantes : [];
           renderizarProductosProveedor(productosProveedorCache);
         } catch (error) {
           console.error(error);
-          tbodyProductosProveedor.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 2rem; color: #dc3545;">${error.message || 'Error al cargar productos'}</td></tr>`;
+          tbodyProductosProveedor.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 2rem; color: #dc3545;">${error.message || 'Error al cargar productos'}</td></tr>`;
         }
       };
 
       // Renderizar productos del proveedor
-      const renderizarProductosProveedor = (productos) => {
-        if (!Array.isArray(productos) || productos.length === 0) {
-          tbodyProductosProveedor.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 2rem; color: #6b7280;">No hay productos disponibles de este proveedor</td></tr>';
+      const renderizarProductosProveedor = (variantes) => {
+        if (!Array.isArray(variantes) || variantes.length === 0) {
+          tbodyProductosProveedor.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 2rem; color: #6b7280;">No hay productos disponibles de este proveedor</td></tr>';
           return;
         }
 
         tbodyProductosProveedor.innerHTML = '';
         
-        for (const prod of productos) {
+        for (const variante of variantes) {
           const tr = document.createElement('tr');
           
+          // Construir descripción de la variante
+          const detalles = [];
+          if (variante.dimensiones) detalles.push(variante.dimensiones);
+          if (variante.nombremedida) detalles.push(variante.nombremedida);
+          if (variante.color_nombre) detalles.push(variante.color_nombre);
+          const descripcionVariante = detalles.length > 0 ? detalles.join(' • ') : 'N/A';
+          
           tr.innerHTML = `
-            <td>
-              <img src="${prod.imagen || '/icon/Logo_Razo.png'}" alt="${safeText(prod.nombreproducto)}" class="img-mini-tabla" onerror="this.src='/icon/Logo_Razo.png';">
+            <td style="width: 60px;">
+              <img src="${variante.imagen || '/icon/Logo_Razo.png'}" alt="${safeText(variante.nombreproducto)}" class="img-mini-tabla" onerror="this.src='/icon/Logo_Razo.png';" style="width: 50px; height: 50px; object-fit: cover; border-radius: 0.375rem;">
             </td>
-            <td><strong>${safeText(prod.nombreproducto)}</strong></td>
-            <td><code style="background:#f3f4f6; padding: 0.25rem 0.5rem; border-radius: 0.375rem;">${safeText(prod.sku)}</code></td>
-            <td>${safeText(prod.categoria || 'N/A')}</td>
-            <td style="text-align: center;">${Number.parseInt(prod.stock, 10) || 0}</td>
             <td>
-              <input type="number" class="form-input input-mini-tabla" min="1" value="1" data-variante-id="${prod.varianteid}" style="width: 80px;">
+              <strong>${safeText(variante.nombreproducto)}</strong>
+              <div style="font-size: 0.75rem; color: #6b7280; margin-top: 0.25rem;">${safeText(descripcionVariante)}</div>
             </td>
-            <td style="text-align: center;">
-              <button type="button" class="btn btn-sm btn-primary btn-agregar-a-orden" data-variante-id="${prod.varianteid}">
+            <td style="width: 120px;">
+              <code style="background:#f3f4f6; padding: 0.25rem 0.5rem; border-radius: 0.375rem; font-size: 0.75rem; display: inline-block;">${safeText(variante.sku)}</code>
+            </td>
+            <td style="width: 120px;">${safeText(variante.categoria || 'N/A')}</td>
+            <td style="width: 80px; text-align: center;">${Number.parseInt(variante.stock, 10) || 0}</td>
+            <td style="width: 100px;">
+              <input type="number" class="form-input input-mini-tabla" min="1" value="1" data-variante-id="${variante.varianteid}" style="width: 80px;">
+            </td>
+            <td style="width: 100px; text-align: center;">
+              <button type="button" class="btn btn-sm btn-primary btn-agregar-a-orden" data-variante-id="${variante.varianteid}">
                 <i class="bi bi-plus"></i> Agregar
               </button>
             </td>
@@ -1580,13 +1592,21 @@
             renderizarProductosProveedor(productosProveedorCache);
             return;
           }
-
-          const filtrados = productosProveedorCache.filter(p => {
-            const nombre = (p.nombreproducto || '').toLowerCase();
-            const sku = (p.sku || '').toLowerCase();
-            return nombre.includes(texto) || sku.includes(texto);
+          
+          const filtrados = productosProveedorCache.filter(variante => {
+            const nombre = (variante.nombreproducto || '').toLowerCase();
+            const sku = (variante.sku || '').toLowerCase();
+            const dimensiones = (variante.dimensiones || '').toLowerCase();
+            const color = (variante.color_nombre || '').toLowerCase();
+            const categoria = (variante.categoria || '').toLowerCase();
+            
+            return nombre.includes(texto) || 
+                   sku.includes(texto) || 
+                   dimensiones.includes(texto) || 
+                   color.includes(texto) ||
+                   categoria.includes(texto);
           });
-
+          
           renderizarProductosProveedor(filtrados);
         });
       }

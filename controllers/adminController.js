@@ -15825,6 +15825,97 @@ const getReporteVentasPorAdmin = async (req, res) => {
 };
 
 /**
+ * Obtener variantes de productos por proveedor
+ * GET /api/admin/productos/variantes-proveedor/:proveedorId
+ */
+const getVariantesProveedor = async (req, res) => {
+  try {
+    const { tenant_id } = req.tenant;
+    const proveedorId = Number.parseInt(req.params.proveedorId, 10);
+
+    if (!Number.isInteger(proveedorId) || proveedorId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "ID de proveedor inválido",
+      });
+    }
+
+    const query = `
+      SELECT 
+        pv.varianteid,
+        pv.sku,
+        pv.dimensiones,
+        pv.costounitario,
+        pv.stock,
+        pv.preciounitario,
+        pv.color_nombre,
+        pv.color_hex,
+        pv.medidaid,
+        m.nombremedida,
+        p.productoid,
+        p.nombreproducto,
+        p.descripcion,
+        p.categoriaid,
+        c.nombre AS categoria_nombre,
+        pi.url_imagen,
+        pi.textoalternativo
+      FROM producto_variantes pv
+      INNER JOIN productos p ON p.productoid = pv.productoid
+      LEFT JOIN categorias c ON c.categoriaid = p.categoriaid AND c.tenant_id = $1
+      LEFT JOIN medidas m ON m.medidaid = pv.medidaid
+      LEFT JOIN LATERAL (
+        SELECT url_imagen, textoalternativo
+        FROM producto_imagenes
+        WHERE productoid = p.productoid
+        ORDER BY orden ASC NULLS LAST, imagenid ASC
+        LIMIT 1
+      ) pi ON true
+      WHERE p.proveedorid_default = $2
+        AND p.tenant_id = $1
+        AND pv.activo = true
+      ORDER BY p.nombreproducto ASC, pv.sku ASC
+    `;
+
+    const result = await db.query(query, [tenant_id, proveedorId]);
+
+    const variantes = result.rows.map(row => ({
+      varianteid: row.varianteid,
+      sku: row.sku,
+      dimensiones: row.dimensiones,
+      costounitario: parseFloat(row.costounitario || 0),
+      stock: parseInt(row.stock || 0, 10),
+      preciounitario: parseFloat(row.preciounitario || 0),
+      color_nombre: row.color_nombre || null,
+      color_hex: row.color_hex || null,
+      medidaid: row.medidaid,
+      nombremedida: row.nombremedida || null,
+      productoid: row.productoid,
+      nombreproducto: row.nombreproducto,
+      descripcion: row.descripcion,
+      categoriaid: row.categoriaid,
+      categoria: row.categoria_nombre || 'Sin categoría',
+      imagen: row.url_imagen || null,
+      imagenAlt: row.textoalternativo || null,
+    }));
+
+    res.json({
+      success: true,
+      data: {
+        variantes,
+        total: variantes.length,
+      },
+    });
+  } catch (error) {
+    console.error("Error al obtener variantes del proveedor:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error al obtener variantes del proveedor",
+      error: error.message,
+    });
+  }
+};
+
+/**
  * Agregar producto a una orden de compra existente
  * POST /api/admin/ordenes-compra/:id/agregar-producto
  * Body: { varianteId, cantidad }
@@ -15893,10 +15984,10 @@ const agregarProductoAOrdenCompra = async (req, res) => {
     // Verificar que la variante existe y pertenece al proveedor correcto
     const varianteResult = await client.query(
       `SELECT pv.varianteid, pv.sku, pv.piezasporpaquete, pv.costounitario, pv.productoid,
-              pr.nombreproducto, pr.proveedorid, pr.reglaid
+              p.nombreproducto, p.proveedorid_default, p.reglaid
        FROM producto_variantes pv
-       INNER JOIN productos pr ON pr.productoid = pv.productoid
-       WHERE pv.varianteid = $1 AND pr.tenant_id = $2`,
+       INNER JOIN productos p ON p.productoid = pv.productoid
+       WHERE pv.varianteid = $1 AND p.tenant_id = $2`,
       [varianteId, tenant_id]
     );
 
@@ -15910,7 +16001,7 @@ const agregarProductoAOrdenCompra = async (req, res) => {
 
     const variante = varianteResult.rows[0];
 
-    if (Number.parseInt(variante.proveedorid, 10) !== Number.parseInt(orden.proveedorid, 10)) {
+    if (Number.parseInt(variante.proveedorid_default, 10) !== Number.parseInt(orden.proveedorid, 10)) {
       await client.query("ROLLBACK");
       return res.status(400).json({
         success: false,
@@ -16209,6 +16300,7 @@ module.exports = {
   cancelarOrdenBackorder,
   subirEvidenciaEntrega,
   obtenerRemisionPedido,
+  getVariantesProveedor,
   agregarProductoAOrdenCompra,
   quitarProductoDeOrdenCompra,
 };
