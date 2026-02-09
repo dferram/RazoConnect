@@ -1,8 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const devolucionesController = require('../controllers/devolucionesController');
-const { authenticate } = require('../middlewares/authMiddleware');
-const { authorizeAdmin } = require('../middlewares/authorizeAdmin');
+const { authenticate, authorizeAdmin } = require('../middlewares/authMiddleware');
 
 // =====================================================
 // RUTAS DE CLIENTE
