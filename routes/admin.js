@@ -1095,6 +1095,18 @@ router.get(
   adminController.getRecepcionOrdenCompra
 );
 router.post(
+  "/ordenes-compra/:id/agregar-producto",
+  authenticate,
+  authorizeAdmin,
+  adminController.agregarProductoAOrdenCompra
+);
+router.delete(
+  "/ordenes-compra/:id/quitar-producto/:detalleId",
+  authenticate,
+  authorizeAdmin,
+  adminController.quitarProductoDeOrdenCompra
+);
+router.post(
   "/ordenes-compra/:id/confirmar",
   authenticate,
   authorizeAdmin,

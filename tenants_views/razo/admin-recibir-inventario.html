@@ -90,6 +90,18 @@
               <span id="ocBadge" class="admin-badge secondary">—</span>
             </div>
 
+            <!-- Botones de Gestión de Productos -->
+            <div id="botonesGestion" style="display: none; margin-bottom: 1rem; padding: 0.75rem; background: white; border-radius: 0.75rem; border: 1px solid rgba(0,0,0,0.1);">
+              <div style="display: flex; gap: 0.75rem; justify-content: flex-end; flex-wrap: wrap;">
+                <button id="btnAgregarProducto" type="button" class="btn btn-success" style="font-size: 0.875rem; padding: 0.5rem 1rem;">
+                  <i class="bi bi-plus-circle"></i> Agregar Producto
+                </button>
+                <button id="btnQuitarProducto" type="button" class="btn btn-danger" style="font-size: 0.875rem; padding: 0.5rem 1rem;">
+                  <i class="bi bi-trash"></i> Quitar Producto
+                </button>
+              </div>
+            </div>
+
             <!-- Barra de Filtros -->
             <div id="filtrosContainer" style="display: none; margin-bottom: 1rem; padding: 1rem; background: #f9fafb; border-radius: 0.75rem; border: 1px solid rgba(0,0,0,0.1);">
               <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; align-items: end;">
@@ -806,99 +818,39 @@
           tdPen.innerHTML = `<strong>${pendientePzas}</strong>`;
 
           const tdInput = document.createElement("td");
-          tdInput.className = "text-center";
-          
-          const draft = drafts.get(String(item.detalleId));
-          const initialValue = draft || pendientePzas;
-          
-          tdInput.innerHTML = `
-            <small class="text-muted d-block" style="font-size: 0.75rem; margin-bottom: 0.25rem;">
-              Solicitado: <span class="qty-original">${pendientePzas}</span>
-            </small>
-            <div class="input-group input-group-sm quantity-adjuster" style="width: 140px; margin: 0 auto;">
-              <button class="btn btn-outline-secondary btn-minus" type="button" style="padding: 0.25rem 0.5rem;">−</button>
-              <input type="number" class="form-control text-center input-qty-recibida cantidad-hoy" value="${initialValue}" min="0" style="padding: 0.25rem 0.5rem; font-weight: 700;">
-              <button class="btn btn-outline-secondary btn-plus" type="button" style="padding: 0.25rem 0.5rem;">+</button>
-            </div>
-          `;
-          
-          const input = tdInput.querySelector(".input-qty-recibida");
+          const input = document.createElement("input");
+          input.type = "number";
+          input.min = "1";
+          input.max = String(pendientePzas);
+          input.step = "1";
+          input.placeholder = "0";
+          input.className = "form-input input-mini-tabla cantidad-hoy";
           input.dataset.detalleId = String(item.detalleId);
           input.dataset.varianteId = String(item.varianteId);
           input.dataset.pendiente = String(pendientePzas);
           input.dataset.piezas = String(piezas);
-          input.dataset.costoUnitario = String(costoUnitarioValue(item));
-          
-          const btnMinus = tdInput.querySelector(".btn-minus");
-          const btnPlus = tdInput.querySelector(".btn-plus");
+          const draft = drafts.get(String(item.detalleId));
+          if (draft) {
+            input.value = String(draft);
+          }
+          tdInput.appendChild(input);
 
           const renderColor = () => {
             const val = Number.parseInt(input.value, 10);
-            const solicitado = Number.parseInt(input.dataset.pendiente, 10);
-            
             if (!Number.isInteger(val) || val <= 0) {
-              input.style.borderColor = "#dc3545";
-              input.style.borderWidth = "2px";
+              input.style.borderColor = "";
               return;
             }
-            
-            if (val < solicitado) {
-              input.style.borderColor = "#fbbf24";
-              input.style.borderWidth = "2px";
-            } else if (val > solicitado) {
-              input.style.borderColor = "#3b82f6";
-              input.style.borderWidth = "2px";
+            if (val < pendientePzas) {
+              input.style.borderColor = "#f59e0b";
             } else {
               input.style.borderColor = "#10b981";
-              input.style.borderWidth = "2px";
             }
           };
 
-          const recalcularTotales = () => {
-            renderColor();
-            
-            let totalPiezas = 0;
-            let totalMonto = 0;
-            
-            const allInputs = tbodyPendiente.querySelectorAll(".input-qty-recibida");
-            for (const inp of allInputs) {
-              const qty = Number.parseInt(inp.value, 10) || 0;
-              const piezas = Number.parseInt(inp.dataset.piezas, 10) || 1;
-              const costo = Number.parseFloat(inp.dataset.costoUnitario) || 0;
-              
-              if (qty > 0) {
-                totalPiezas += qty;
-                totalMonto += montoDePiezas(qty, piezas, costo);
-              }
-            }
-            
-            if (lblTotalSolicitado) {
-              const totalOrden = items.reduce((acc, item) => {
-                const piezas = piezasPorPaqueteValue(item);
-                const costo = costoUnitarioValue(item);
-                return acc + montoDePiezas(solicitadoPzasValue(item), piezas, costo);
-              }, 0);
-              lblTotalSolicitado.textContent = formatMoneyMx(totalOrden);
-            }
-          };
-
-          btnMinus.addEventListener("click", () => {
-            const currentVal = Number.parseInt(input.value, 10) || 0;
-            if (currentVal > 0) {
-              input.value = String(currentVal - 1);
-              recalcularTotales();
-            }
-          });
-
-          btnPlus.addEventListener("click", () => {
-            const currentVal = Number.parseInt(input.value, 10) || 0;
-            input.value = String(currentVal + 1);
-            recalcularTotales();
-          });
-
-          input.addEventListener("input", recalcularTotales);
-          input.addEventListener("change", recalcularTotales);
-          recalcularTotales();
+          input.addEventListener("input", renderColor);
+          input.addEventListener("change", renderColor);
+          renderColor();
 
           const tdBtn = document.createElement("td");
           const btn = document.createElement("button");
@@ -1364,6 +1316,11 @@
           if (typeof inicializarFiltros === 'function') {
             inicializarFiltros();
           }
+          
+          // Mostrar botones de gestión si están disponibles
+          if (typeof actualizarBotonesGestion === 'function') {
+            actualizarBotonesGestion();
+          }
         } catch (error) {
           console.error(error);
           setEmpty(error.message || "Error al cargar recepción");
@@ -1421,10 +1378,314 @@
 
       loadOrdenes();
 
+      // ============================================
+      // GESTIÓN DE PRODUCTOS EN LA ORDEN
+      // ============================================
+      
+      const btnAgregarProducto = document.getElementById("btnAgregarProducto");
+      const btnQuitarProducto = document.getElementById("btnQuitarProducto");
+      const botonesGestion = document.getElementById("botonesGestion");
+      const modalAgregarProducto = document.getElementById("modalAgregarProducto");
+      const modalQuitarProducto = document.getElementById("modalQuitarProducto");
+      const tbodyProductosProveedor = document.getElementById("tbodyProductosProveedor");
+      const tbodyProductosOrden = document.getElementById("tbodyProductosOrden");
+      const buscarProductoAgregar = document.getElementById("buscarProductoAgregar");
+
+      let productosProveedorCache = [];
+
+      // Mostrar/Ocultar botones según el estado de la orden
+      const actualizarBotonesGestion = () => {
+        const ordenCargada = state.orden && state.orden.ordenCompraId;
+        const estatusPermitido = ordenCargada && ['Pendiente', 'Parcial'].includes(state.orden.estatus);
+        
+        if (botonesGestion) {
+          botonesGestion.style.display = estatusPermitido ? 'block' : 'none';
+        }
+      };
+
+      // Abrir modal de agregar producto
+      const abrirModalAgregarProducto = async () => {
+        console.log('🔍 [DEBUG] state.orden:', state.orden);
+        
+        if (!state.orden) {
+          showToastError("No hay orden de compra seleccionada");
+          return;
+        }
+
+        // Intentar obtener proveedorId de múltiples formas
+        const proveedorId = state.orden.proveedorId || state.orden.proveedorid || state.orden.ProveedorID;
+        
+        if (!proveedorId) {
+          showToastError("No se pudo obtener el proveedor de la orden");
+          console.error('❌ [ERROR] No se encontró proveedorId en:', state.orden);
+          return;
+        }
+
+        console.log('✅ [DEBUG] proveedorId:', proveedorId);
+
+        modalAgregarProducto.style.display = 'flex';
+        tbodyProductosProveedor.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 2rem; color: #6b7280;">Cargando productos del proveedor...</td></tr>';
+
+        try {
+          const resp = await apiCall(`/admin/productos?proveedorId=${proveedorId}`, { method: 'GET' });
+          
+          if (!resp.ok) {
+            throw new Error(resp.data?.message || 'No se pudieron cargar los productos');
+          }
+
+          productosProveedorCache = Array.isArray(resp.data?.data?.productos) ? resp.data.data.productos : [];
+          renderizarProductosProveedor(productosProveedorCache);
+        } catch (error) {
+          console.error(error);
+          tbodyProductosProveedor.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 2rem; color: #dc3545;">${error.message || 'Error al cargar productos'}</td></tr>`;
+        }
+      };
+
+      // Renderizar productos del proveedor
+      const renderizarProductosProveedor = (productos) => {
+        if (!Array.isArray(productos) || productos.length === 0) {
+          tbodyProductosProveedor.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 2rem; color: #6b7280;">No hay productos disponibles de este proveedor</td></tr>';
+          return;
+        }
+
+        tbodyProductosProveedor.innerHTML = '';
+        
+        for (const prod of productos) {
+          const tr = document.createElement('tr');
+          
+          tr.innerHTML = `
+            <td>
+              <img src="${prod.imagen || '/icon/Logo_Razo.png'}" alt="${safeText(prod.nombreproducto)}" class="img-mini-tabla" onerror="this.src='/icon/Logo_Razo.png';">
+            </td>
+            <td><strong>${safeText(prod.nombreproducto)}</strong></td>
+            <td><code style="background:#f3f4f6; padding: 0.25rem 0.5rem; border-radius: 0.375rem;">${safeText(prod.sku)}</code></td>
+            <td>${safeText(prod.categoria || 'N/A')}</td>
+            <td style="text-align: center;">${Number.parseInt(prod.stock, 10) || 0}</td>
+            <td>
+              <input type="number" class="form-input input-mini-tabla" min="1" value="1" data-variante-id="${prod.varianteid}" style="width: 80px;">
+            </td>
+            <td style="text-align: center;">
+              <button type="button" class="btn btn-sm btn-primary btn-agregar-a-orden" data-variante-id="${prod.varianteid}">
+                <i class="bi bi-plus"></i> Agregar
+              </button>
+            </td>
+          `;
+          
+          tbodyProductosProveedor.appendChild(tr);
+        }
+      };
+
+      // Buscar productos del proveedor
+      if (buscarProductoAgregar) {
+        buscarProductoAgregar.addEventListener('input', (e) => {
+          const texto = e.target.value.toLowerCase().trim();
+          
+          if (!texto) {
+            renderizarProductosProveedor(productosProveedorCache);
+            return;
+          }
+
+          const filtrados = productosProveedorCache.filter(p => {
+            const nombre = (p.nombreproducto || '').toLowerCase();
+            const sku = (p.sku || '').toLowerCase();
+            return nombre.includes(texto) || sku.includes(texto);
+          });
+
+          renderizarProductosProveedor(filtrados);
+        });
+      }
+
+      // Agregar producto a la orden
+      if (tbodyProductosProveedor) {
+        tbodyProductosProveedor.addEventListener('click', async (e) => {
+          const btn = e.target.closest('.btn-agregar-a-orden');
+          if (!btn) return;
+
+          const varianteId = btn.dataset.varianteId;
+          const row = btn.closest('tr');
+          const input = row.querySelector('input[type="number"]');
+          const cantidad = Number.parseInt(input?.value, 10) || 1;
+
+          if (cantidad <= 0) {
+            showToastError('La cantidad debe ser mayor a 0');
+            return;
+          }
+
+          try {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Agregando...';
+
+            const resp = await apiCall(`/admin/ordenes-compra/${state.orden.ordenCompraId}/agregar-producto`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                varianteId: Number.parseInt(varianteId, 10),
+                cantidad
+              })
+            });
+
+            if (!resp.ok) {
+              throw new Error(resp.data?.message || 'No se pudo agregar el producto');
+            }
+
+            showToastSuccess('Producto agregado a la orden');
+            modalAgregarProducto.style.display = 'none';
+            await loadRecepcion(state.orden.ordenCompraId);
+          } catch (error) {
+            console.error(error);
+            showToastError(error.message || 'Error al agregar producto');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-plus"></i> Agregar';
+          }
+        });
+      }
+
+      // Abrir modal de quitar producto
+      const abrirModalQuitarProducto = () => {
+        if (!state.orden || !state.items || state.items.length === 0) {
+          showToastError("No hay productos en la orden");
+          return;
+        }
+
+        modalQuitarProducto.style.display = 'flex';
+        renderizarProductosOrden();
+      };
+
+      // Renderizar productos de la orden
+      const renderizarProductosOrden = () => {
+        const items = Array.isArray(state.items) ? state.items : [];
+        
+        if (items.length === 0) {
+          tbodyProductosOrden.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 2rem; color: #6b7280;">No hay productos en la orden</td></tr>';
+          return;
+        }
+
+        tbodyProductosOrden.innerHTML = '';
+        
+        for (const item of items) {
+          const solicitado = solicitadoPzasValue(item);
+          const recibido = recibidoPzasValue(item);
+          const puedeQuitar = recibido === 0;
+
+          const tr = document.createElement('tr');
+          
+          tr.innerHTML = `
+            <td>
+              <img src="${item.imagen || '/icon/Logo_Razo.png'}" alt="${safeText(item.nombreProducto)}" class="img-mini-tabla" onerror="this.src='/icon/Logo_Razo.png';">
+            </td>
+            <td><strong>${safeText(item.nombreProducto)}</strong></td>
+            <td><code style="background:#f3f4f6; padding: 0.25rem 0.5rem; border-radius: 0.375rem;">${safeText(item.sku)}</code></td>
+            <td style="text-align: center;">${solicitado} pzas</td>
+            <td style="text-align: center; color: ${recibido > 0 ? '#10b981' : '#6b7280'}; font-weight: 700;">${recibido} pzas</td>
+            <td style="text-align: center;">
+              ${puedeQuitar 
+                ? `<button type="button" class="btn btn-sm btn-danger btn-quitar-de-orden" data-detalle-id="${item.detalleId}">
+                     <i class="bi bi-trash"></i> Quitar
+                   </button>`
+                : `<span style="color: #6b7280; font-size: 0.75rem;">Ya recibido</span>`
+              }
+            </td>
+          `;
+          
+          tbodyProductosOrden.appendChild(tr);
+        }
+      };
+
+      // Quitar producto de la orden
+      if (tbodyProductosOrden) {
+        tbodyProductosOrden.addEventListener('click', async (e) => {
+          const btn = e.target.closest('.btn-quitar-de-orden');
+          if (!btn) return;
+
+          const detalleId = btn.dataset.detalleId;
+          const item = state.items.find(i => String(i.detalleId) === String(detalleId));
+
+          if (!item) {
+            showToastError('No se encontró el producto');
+            return;
+          }
+
+          const confirmacion = await Swal.fire({
+            icon: 'warning',
+            title: '¿Quitar producto de la orden?',
+            html: `
+              <p>Estás a punto de quitar el siguiente producto:</p>
+              <p style="margin-top: 1rem;"><strong>${safeText(item.nombreProducto)}</strong></p>
+              <p style="color: #6b7280;">SKU: ${safeText(item.sku)}</p>
+              <p style="margin-top: 1rem; color: #dc3545; font-weight: 600;">Esta acción no se puede deshacer.</p>
+            `,
+            showCancelButton: true,
+            confirmButtonText: 'Sí, quitar',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#dc3545',
+            focusCancel: true
+          });
+
+          if (!confirmacion.isConfirmed) {
+            return;
+          }
+
+          try {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Quitando...';
+
+            const resp = await apiCall(`/admin/ordenes-compra/${state.orden.ordenCompraId}/quitar-producto/${detalleId}`, {
+              method: 'DELETE'
+            });
+
+            if (!resp.ok) {
+              throw new Error(resp.data?.message || 'No se pudo quitar el producto');
+            }
+
+            showToastSuccess('Producto quitado de la orden');
+            modalQuitarProducto.style.display = 'none';
+            await loadRecepcion(state.orden.ordenCompraId);
+          } catch (error) {
+            console.error(error);
+            showToastError(error.message || 'Error al quitar producto');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-trash"></i> Quitar';
+          }
+        });
+      }
+
+      // Event listeners para abrir modales
+      if (btnAgregarProducto) {
+        btnAgregarProducto.addEventListener('click', abrirModalAgregarProducto);
+      }
+
+      if (btnQuitarProducto) {
+        btnQuitarProducto.addEventListener('click', abrirModalQuitarProducto);
+      }
+
+      // Event listeners para cerrar modales
+      document.querySelectorAll('.modal-close').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const modal = e.target.closest('.modal');
+          if (modal) {
+            modal.style.display = 'none';
+          }
+        });
+      });
+
+      // Cerrar modal al hacer clic fuera
+      [modalAgregarProducto, modalQuitarProducto].forEach(modal => {
+        if (modal) {
+          modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+              modal.style.display = 'none';
+            }
+          });
+        }
+      });
+
       // Exponer funciones globalmente para evitar errores de scope
       window.loadOrdenes = loadOrdenes;
       window.finalizarRecepcion = finalizarRecepcion;
       window.agregarItemASesion = agregarItemASesion;
+      window.actualizarBotonesGestion = actualizarBotonesGestion;
+      window.abrirModalAgregarProducto = abrirModalAgregarProducto;
+      window.abrirModalQuitarProducto = abrirModalQuitarProducto;
     </script>
 
     <style>
@@ -1621,5 +1882,99 @@
       }
 
     </style>
+
+    <!-- Modal: Agregar Producto a la Orden -->
+    <div id="modalAgregarProducto" class="modal" style="display: none;">
+      <div class="modal-content" style="max-width: 1200px; width: 95%; background: white; border-radius: 1rem; padding: 2rem; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 2px solid #f3f4f6;">
+          <h3 style="margin: 0; font-size: 1.25rem; font-weight: 800; color: #111827;">
+            <i class="bi bi-plus-circle" style="color: var(--razo-orange);"></i> Agregar Producto a la Orden
+          </h3>
+          <button type="button" class="modal-close" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #6b7280; padding: 0.25rem 0.5rem; border-radius: 0.375rem;">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+
+        <div style="margin-bottom: 1rem;">
+          <input type="text" id="buscarProductoAgregar" class="form-input" placeholder="Buscar por nombre o SKU..." style="width: 100%;">
+        </div>
+
+        <div style="max-height: 500px; overflow-y: auto; margin-bottom: 1.5rem;">
+          <table class="admin-table" id="tablaProductosProveedor">
+            <thead>
+              <tr>
+                <th style="width: 60px;">Imagen</th>
+                <th>Producto</th>
+                <th style="width: 150px;">SKU</th>
+                <th style="width: 120px;">Categoría</th>
+                <th style="width: 100px;">Stock</th>
+                <th style="width: 140px;">Cantidad (pzas)</th>
+                <th style="width: 100px;"></th>
+              </tr>
+            </thead>
+            <tbody id="tbodyProductosProveedor">
+              <tr>
+                <td colspan="7" style="text-align: center; padding: 2rem; color: #6b7280;">
+                  Cargando productos del proveedor...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #e5e7eb;">
+          <button type="button" class="btn btn-secondary modal-close">
+            Cancelar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Quitar Producto de la Orden -->
+    <div id="modalQuitarProducto" class="modal" style="display: none;">
+      <div class="modal-content" style="max-width: 1000px; width: 95%; background: white; border-radius: 1rem; padding: 2rem; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 2px solid #f3f4f6;">
+          <h3 style="margin: 0; font-size: 1.25rem; font-weight: 800; color: #111827;">
+            <i class="bi bi-trash" style="color: #dc3545;"></i> Quitar Producto de la Orden
+          </h3>
+          <button type="button" class="modal-close" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #6b7280; padding: 0.25rem 0.5rem; border-radius: 0.375rem;">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+
+        <div style="margin-bottom: 1rem; padding: 0.75rem; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 0.375rem;">
+          <strong>⚠️ Advertencia:</strong> Solo puedes quitar productos que NO hayan sido recibidos aún.
+        </div>
+
+        <div style="max-height: 400px; overflow-y: auto; margin-bottom: 1.5rem;">
+          <table class="admin-table" id="tablaProductosOrden">
+            <thead>
+              <tr>
+                <th style="width: 60px;">Imagen</th>
+                <th>Producto</th>
+                <th style="width: 150px;">SKU</th>
+                <th style="width: 120px;">Solicitado</th>
+                <th style="width: 120px;">Recibido</th>
+                <th style="width: 100px;"></th>
+              </tr>
+            </thead>
+            <tbody id="tbodyProductosOrden">
+              <tr>
+                <td colspan="6" style="text-align: center; padding: 2rem; color: #6b7280;">
+                  Cargando productos de la orden...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #e5e7eb;">
+          <button type="button" class="btn btn-secondary modal-close">
+            Cancelar
+          </button>
+        </div>
+      </div>
+    </div>
+
   </body>
 </html>
