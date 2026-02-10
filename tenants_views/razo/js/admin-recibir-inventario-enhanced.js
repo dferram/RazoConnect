@@ -578,10 +578,10 @@ async function exportarPDF() {
       item.categoria,
       item.variante,
       item.cantidadPiezas.toLocaleString('es-MX'),
-      `$${item.costoUnitario.toFixed(2)}`,
-      `$${item.totalCosto.toFixed(2)}`,
-      `$${item.precioVenta.toFixed(2)}`,
-      `$${item.totalVenta.toFixed(2)}`
+      `$${item.costoUnitario.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+      `$${item.totalCosto.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+      `$${item.precioVenta.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+      `$${item.totalVenta.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
     ]);
 
     // Calculate totals
@@ -648,9 +648,9 @@ async function exportarPDF() {
         { content: 'TOTALES', colSpan: 4, styles: { halign: 'center', fontStyle: 'bold', fillColor: [249, 250, 251] } },
         { content: `${totalPiezas.toLocaleString('es-MX')} pzas\n(${totalPaquetes.toLocaleString('es-MX')} paq)`, styles: { halign: 'center', fontStyle: 'bold', fillColor: [249, 250, 251], fontSize: 9 } },
         { content: '', styles: { fillColor: [249, 250, 251] } },
-        { content: `$${totalInversion.toFixed(2)}`, styles: { halign: 'right', fontStyle: 'bold', textColor: [220, 38, 38], fillColor: [249, 250, 251] } },
+        { content: `$${totalInversion.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, styles: { halign: 'right', fontStyle: 'bold', textColor: [220, 38, 38], fillColor: [249, 250, 251] } },
         { content: '', styles: { fillColor: [249, 250, 251] } },
-        { content: `$${totalVentaEsperada.toFixed(2)}`, styles: { halign: 'right', fontStyle: 'bold', textColor: [16, 185, 129], fillColor: [249, 250, 251] } }
+        { content: `$${totalVentaEsperada.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, styles: { halign: 'right', fontStyle: 'bold', textColor: [16, 185, 129], fillColor: [249, 250, 251] } }
       ]],
       body: [],
       theme: 'grid',
@@ -690,14 +690,14 @@ async function exportarPDF() {
     doc.setFont('helvetica', 'bold');
     doc.text('Valor Total de Compra:', 15, detailY);
     doc.setTextColor(220, 38, 38);
-    doc.text(`$${totalInversion.toFixed(2)}`, 80, detailY);
+    doc.text(`$${totalInversion.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 80, detailY);
 
     detailY += 7;
     doc.setTextColor(0, 0, 0);
     doc.setFont('helvetica', 'bold');
     doc.text('Valor Total de Venta Esperado:', 15, detailY);
     doc.setTextColor(16, 185, 129);
-    doc.text(`$${totalVentaEsperada.toFixed(2)}`, 80, detailY);
+    doc.text(`$${totalVentaEsperada.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 80, detailY);
 
     detailY += 7;
     const margen = totalVentaEsperada - totalInversion;
@@ -705,7 +705,7 @@ async function exportarPDF() {
     doc.setFont('helvetica', 'bold');
     doc.text('Margen Esperado:', 15, detailY);
     doc.setTextColor(margen >= 0 ? 16 : 220, margen >= 0 ? 185 : 38, margen >= 0 ? 129 : 38);
-    doc.text(`$${margen.toFixed(2)}`, 80, detailY);
+    doc.text(`$${margen.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 80, detailY);
 
     // Save PDF
     doc.save(`Recepcion_OC_${state.orden.ordenCompraId}_${new Date().toISOString().slice(0, 10)}.pdf`);

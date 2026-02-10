@@ -258,8 +258,8 @@ async function generarPDFOrdenCompra(req, res) {
                    .text(descripcion, 180, currentY, { width: 170 })
                    .text(variante, 180, currentY + 10, { width: 170, fontSize: 8 })
                    .text(piezasPorPaquete, 360, currentY)
-                   .text(`$${costoUnitario.toFixed(2)}`, 440, currentY)
-                   .text(`$${subtotal.toFixed(2)}`, 510, currentY, { align: 'right', width: 45 });
+                   .text(`$${costoUnitario.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 440, currentY)
+                   .text(`$${subtotal.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 510, currentY, { align: 'right', width: 45 });
 
                 currentY += 25;
             });
@@ -268,6 +268,8 @@ async function generarPDFOrdenCompra(req, res) {
         };
 
         let totalGeneral = 0;
+        let totalPaquetes = 0;
+        let totalPiezas = 0;
 
         for (const [pedidoKey, items] of gruposPedidos.entries()) {
             if (pedidoKey !== 'MANUAL' && esConsolidada) {
@@ -284,14 +286,18 @@ async function generarPDFOrdenCompra(req, res) {
 
             items.forEach(item => {
                 const cantidadPaquetes = parseInt(item.cantidadsolicitada) || 0;
+                const piezasPorPaquete = parseInt(item.piezasporpaquete) || 1;
                 const costoUnitario = parseFloat(item.costounitario) || 0;
+                
+                totalPaquetes += cantidadPaquetes;
+                totalPiezas += cantidadPaquetes * piezasPorPaquete;
                 totalGeneral += costoUnitario * cantidadPaquetes;
             });
 
             yPosition += 15;
         }
 
-        if (yPosition > 650) {
+        if (yPosition > 600) {
             doc.addPage();
             yPosition = 250;
         }
@@ -306,13 +312,56 @@ async function generarPDFOrdenCompra(req, res) {
 
         yPosition += 15;
 
-        doc.fontSize(12)
+        // Financial Summary Box
+        const boxX = 350;
+        const boxWidth = 212;
+        const boxHeight = 60;
+        
+        doc.save();
+        doc.roundedRect(boxX, yPosition, boxWidth, boxHeight, 5)
+           .fillAndStroke('#FFF7ED', '#F97316');
+        doc.restore();
+        
+        // Box Title
+        doc.fontSize(11)
            .font('Helvetica-Bold')
            .fillColor('#F97316')
-           .text('TOTAL DE LA ORDEN:', 320, yPosition)
-           .text(`$${totalGeneral.toFixed(2)} MXN`, 440, yPosition, { align: 'right', width: 122 });
+           .text('RESUMEN DE LA ORDEN', boxX + 5, yPosition + 8, { width: boxWidth - 10, align: 'center' });
+        
+        // Separator line
+        doc.moveTo(boxX + 10, yPosition + 22)
+           .lineTo(boxX + boxWidth - 10, yPosition + 22)
+           .strokeColor('#F97316')
+           .lineWidth(0.5)
+           .stroke();
+        
+        // Total Pieces
+        doc.fontSize(9)
+           .font('Helvetica')
+           .fillColor('#666666')
+           .text('Total Unidades:', boxX + 10, yPosition + 28);
+        
+        doc.font('Helvetica-Bold')
+           .fillColor('#333333')
+           .text(`${totalPiezas.toLocaleString('es-MX')} pzas`, boxX + boxWidth - 80, yPosition + 28, { width: 70, align: 'right' });
+        
+        doc.font('Helvetica')
+           .fillColor('#999999')
+           .fontSize(7)
+           .text(`(${totalPaquetes.toLocaleString('es-MX')} paquetes)`, boxX + boxWidth - 80, yPosition + 37, { width: 70, align: 'right' });
+        
+        // Total Cost
+        doc.fontSize(9)
+           .font('Helvetica')
+           .fillColor('#666666')
+           .text('Valor Total:', boxX + 10, yPosition + 46);
+        
+        doc.font('Helvetica-Bold')
+           .fillColor('#DC2626')
+           .fontSize(11)
+           .text(`$${totalGeneral.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} MXN`, boxX + boxWidth - 110, yPosition + 45, { width: 100, align: 'right' });
 
-        yPosition += 30;
+        yPosition += boxHeight + 20;
 
         if (esConsolidada) {
             doc.fontSize(8)
