@@ -80,7 +80,7 @@
                   id="btnPDFProveedor"
                   class="btn"
                   style="background: #10b981; color: white;"
-                  title="PDF Consolidado para Proveedor"
+                  title="PDF Consolidado para Proveedor (PIEZAS)"
                 >
                   <i class="bi bi-file-pdf"></i> PDF Proveedor
                 </button>
@@ -88,9 +88,24 @@
                   id="btnPDFInterno"
                   class="btn"
                   style="background: #f97316; color: white;"
-                  title="PDF Desglosado para Administración"
+                  title="PDF Desglosado para Administración (PIEZAS)"
                 >
                   <i class="bi bi-file-pdf"></i> PDF Interno
+                </button>
+                <button
+                  id="btnExcelProveedor"
+                  class="btn btn-success"
+                  title="Excel Consolidado para Proveedor (PIEZAS)"
+                >
+                  <i class="bi bi-file-earmark-excel"></i> Excel Proveedor
+                </button>
+                <button
+                  id="btnExcelInterno"
+                  class="btn"
+                  style="background: #059669; color: white;"
+                  title="Excel Desglosado para Administración (PIEZAS)"
+                >
+                  <i class="bi bi-file-earmark-excel"></i> Excel Interno
                 </button>
                 <button
                   id="btnDesagrupar"
@@ -396,6 +411,8 @@
         function setupEventListeners() {
           document.getElementById("btnPDFProveedor").addEventListener("click", generarPDFProveedor);
           document.getElementById("btnPDFInterno").addEventListener("click", generarPDFInterno);
+          document.getElementById("btnExcelProveedor").addEventListener("click", generarExcelProveedor);
+          document.getElementById("btnExcelInterno").addEventListener("click", generarExcelInterno);
           document.getElementById("btnDesagrupar").addEventListener("click", desagruparOrdenes);
         }
 
@@ -403,252 +420,19 @@
           try {
             Swal.fire({
               title: "Generando PDF...",
-              text: "Consolidando productos para el proveedor",
+              text: "Consolidando productos para el proveedor (PIEZAS)",
               allowOutsideClick: false,
               didOpen: () => {
                 Swal.showLoading();
               },
             });
 
-            // Fetch consolidated data
-            const response = await API.apiCall(
-              `/admin/ordenes-compra/grupos/${grupoId}/consolidado`,
-              { method: "GET" }
+            // Open PDF in new tab using backend endpoint
+            const token = localStorage.getItem('razoconnect_admin_token');
+            window.open(
+              `/api/admin/ordenes-compra/grupos/${grupoId}/pdf-proveedor?token=${token}`,
+              '_blank'
             );
-
-            if (!response.ok) {
-              throw new Error("Error al obtener datos consolidados");
-            }
-
-            const data = response.data;
-
-            // Generate PDF using pdfmake
-            const docDefinition = {
-              pageSize: "LETTER",
-              pageMargins: [40, 60, 40, 60],
-              content: [
-                {
-                  text: "ORDEN DE COMPRA CONSOLIDADA",
-                  style: "header",
-                  alignment: "center",
-                  margin: [0, 0, 0, 10],
-                },
-                {
-                  text: data.grupo.nombre_grupo || `Grupo #${grupoId}`,
-                  style: "subheader",
-                  alignment: "center",
-                  margin: [0, 0, 0, 20],
-                },
-                {
-                  columns: [
-                    {
-                      width: "50%",
-                      stack: [
-                        { text: "PROVEEDOR", style: "label" },
-                        { text: data.grupo.proveedor_nombre || "N/A", style: "value" },
-                        { text: " " },
-                        { text: "CONTACTO", style: "label" },
-                        { text: data.grupo.proveedor_contacto || "N/A", style: "value" },
-                      ],
-                    },
-                    {
-                      width: "50%",
-                      stack: [
-                        { text: "FECHA", style: "label" },
-                        {
-                          text: new Date(data.grupo.created_at).toLocaleDateString("es-MX"),
-                          style: "value",
-                        },
-                        { text: " " },
-                        { text: "TELÉFONO", style: "label" },
-                        { text: data.grupo.proveedor_telefono || "N/A", style: "value" },
-                      ],
-                    },
-                  ],
-                  margin: [0, 0, 0, 20],
-                },
-                {
-                  table: {
-                    headerRows: 1,
-                    widths: ["*", 60, 60, 60, 80],
-                    body: [
-                      [
-                        { text: "PRODUCTO", style: "tableHeader" },
-                        { text: "SKU", style: "tableHeader" },
-                        { text: "PAQUETES", style: "tableHeader", alignment: "center" },
-                        { text: "PIEZAS", style: "tableHeader", alignment: "center" },
-                        { text: "SUBTOTAL", style: "tableHeader", alignment: "right" },
-                      ],
-                      ...data.productos.map((prod) => [
-                        {
-                          text: `${prod.producto_nombre}\n${prod.dimensionesfisicas || ""}${
-                            prod.color ? " - " + prod.color : ""
-                          }`,
-                          fontSize: 9,
-                        },
-                        { text: prod.sku || "N/A", fontSize: 9 },
-                        {
-                          text: prod.total_paquetes.toLocaleString("es-MX"),
-                          fontSize: 9,
-                          alignment: "center",
-                        },
-                        {
-                          text: prod.total_piezas.toLocaleString("es-MX"),
-                          fontSize: 9,
-                          alignment: "center",
-                        },
-                        {
-                          text: `$${prod.subtotal_total.toLocaleString("es-MX", {
-                            minimumFractionDigits: 2,
-                          })}`,
-                          fontSize: 9,
-                          alignment: "right",
-                        },
-                      ]),
-                    ],
-                  },
-                  layout: {
-                    fillColor: function (rowIndex) {
-                      return rowIndex === 0 ? "#FFF7ED" : rowIndex % 2 === 0 ? "#F9FAFB" : null;
-                    },
-                  },
-                },
-                {
-                  columns: [
-                    { width: "*", text: "" },
-                    {
-                      width: 250,
-                      stack: [
-                        {
-                          canvas: [
-                            {
-                              type: "rect",
-                              x: 0,
-                              y: 0,
-                              w: 250,
-                              h: 80,
-                              r: 5,
-                              lineColor: "#F97316",
-                              lineWidth: 2,
-                              color: "#FFF7ED",
-                            },
-                          ],
-                        },
-                        {
-                          text: "RESUMEN DE LA ORDEN",
-                          style: "summaryTitle",
-                          margin: [10, -70, 10, 5],
-                        },
-                        {
-                          columns: [
-                            {
-                              width: "50%",
-                              text: "Total Paquetes:",
-                              style: "summaryLabel",
-                              margin: [10, 0, 0, 3],
-                            },
-                            {
-                              width: "50%",
-                              text: data.totales.totalPaquetes.toLocaleString("es-MX"),
-                              style: "summaryValue",
-                              alignment: "right",
-                              margin: [0, 0, 10, 3],
-                            },
-                          ],
-                        },
-                        {
-                          columns: [
-                            {
-                              width: "50%",
-                              text: "Total Piezas:",
-                              style: "summaryLabel",
-                              margin: [10, 0, 0, 3],
-                            },
-                            {
-                              width: "50%",
-                              text: data.totales.totalPiezas.toLocaleString("es-MX"),
-                              style: "summaryValue",
-                              alignment: "right",
-                              margin: [0, 0, 10, 3],
-                            },
-                          ],
-                        },
-                        {
-                          columns: [
-                            {
-                              width: "50%",
-                              text: "TOTAL:",
-                              style: "summaryTotal",
-                              margin: [10, 5, 0, 0],
-                            },
-                            {
-                              width: "50%",
-                              text: `$${data.totales.totalGeneral.toLocaleString("es-MX", {
-                                minimumFractionDigits: 2,
-                              })}`,
-                              style: "summaryTotal",
-                              alignment: "right",
-                              margin: [0, 5, 10, 0],
-                              color: "#F97316",
-                            },
-                          ],
-                        },
-                      ],
-                      margin: [0, 10, 0, 0],
-                    },
-                  ],
-                },
-              ],
-              styles: {
-                header: {
-                  fontSize: 18,
-                  bold: true,
-                  color: "#F97316",
-                },
-                subheader: {
-                  fontSize: 14,
-                  bold: true,
-                  color: "#374151",
-                },
-                label: {
-                  fontSize: 9,
-                  color: "#6B7280",
-                  bold: true,
-                },
-                value: {
-                  fontSize: 10,
-                  color: "#111827",
-                },
-                tableHeader: {
-                  fontSize: 10,
-                  bold: true,
-                  color: "#F97316",
-                  fillColor: "#FFF7ED",
-                },
-                summaryTitle: {
-                  fontSize: 11,
-                  bold: true,
-                  color: "#F97316",
-                  alignment: "center",
-                },
-                summaryLabel: {
-                  fontSize: 9,
-                  color: "#374151",
-                },
-                summaryValue: {
-                  fontSize: 10,
-                  bold: true,
-                  color: "#111827",
-                },
-                summaryTotal: {
-                  fontSize: 12,
-                  bold: true,
-                  color: "#111827",
-                },
-              },
-            };
-
-            pdfMake.createPdf(docDefinition).download(`Grupo_${grupoId}_Proveedor.pdf`);
 
             Swal.close();
           } catch (error) {
@@ -666,320 +450,19 @@
           try {
             Swal.fire({
               title: "Generando PDF...",
-              text: "Creando reporte desglosado para administración",
+              text: "Creando reporte desglosado para administración (PIEZAS)",
               allowOutsideClick: false,
               didOpen: () => {
                 Swal.showLoading();
               },
             });
 
-            const content = [
-              {
-                text: "REPORTE INTERNO - GRUPO DE ÓRDENES",
-                style: "header",
-                alignment: "center",
-                margin: [0, 0, 0, 10],
-              },
-              {
-                text: grupoData.nombre_grupo || `Grupo #${grupoId}`,
-                style: "subheader",
-                alignment: "center",
-                margin: [0, 0, 0, 20],
-              },
-              {
-                columns: [
-                  {
-                    width: "50%",
-                    stack: [
-                      { text: "PROVEEDOR", style: "label" },
-                      { text: grupoData.proveedor_nombre || "N/A", style: "value" },
-                    ],
-                  },
-                  {
-                    width: "50%",
-                    stack: [
-                      { text: "FECHA CREACIÓN", style: "label" },
-                      {
-                        text: new Date(grupoData.created_at).toLocaleDateString("es-MX"),
-                        style: "value",
-                      },
-                    ],
-                  },
-                ],
-                margin: [0, 0, 0, 20],
-              },
-            ];
-
-            // Add each order as a separate section
-            ordenesData.forEach((orden, index) => {
-              const totalPaquetes = orden.detalles.reduce(
-                (sum, d) => sum + parseInt(d.cantidadpaquetes || 0),
-                0
-              );
-              const totalPiezas = orden.detalles.reduce(
-                (sum, d) =>
-                  sum +
-                  parseInt(d.cantidadpaquetes || 0) * parseInt(d.piezasporpaquete || 1),
-                0
-              );
-
-              content.push(
-                {
-                  text: `ORDEN #${orden.ordencompraid}`,
-                  style: "ordenHeader",
-                  margin: [0, index > 0 ? 20 : 0, 0, 5],
-                },
-                {
-                  text: `Creada por: ${
-                    orden.admin_creador_nombre || orden.usuario_creador_nombre || "Sistema"
-                  } | ${new Date(orden.fechacreacion).toLocaleDateString("es-MX")}`,
-                  fontSize: 9,
-                  color: "#6B7280",
-                  margin: [0, 0, 0, 10],
-                },
-                {
-                  table: {
-                    headerRows: 1,
-                    widths: ["*", 60, 50, 50, 70],
-                    body: [
-                      [
-                        { text: "PRODUCTO", style: "tableHeader" },
-                        { text: "SKU", style: "tableHeader" },
-                        { text: "PAQUETES", style: "tableHeader", alignment: "center" },
-                        { text: "PIEZAS", style: "tableHeader", alignment: "center" },
-                        { text: "SUBTOTAL", style: "tableHeader", alignment: "right" },
-                      ],
-                      ...orden.detalles.map((det) => [
-                        {
-                          text: `${det.producto_nombre}\n${det.dimensionesfisicas || ""}${
-                            det.color ? " - " + det.color : ""
-                          }`,
-                          fontSize: 8,
-                        },
-                        { text: det.sku || "N/A", fontSize: 8 },
-                        {
-                          text: parseInt(det.cantidadpaquetes || 0).toLocaleString("es-MX"),
-                          fontSize: 8,
-                          alignment: "center",
-                        },
-                        {
-                          text: (
-                            parseInt(det.cantidadpaquetes || 0) *
-                            parseInt(det.piezasporpaquete || 1)
-                          ).toLocaleString("es-MX"),
-                          fontSize: 8,
-                          alignment: "center",
-                        },
-                        {
-                          text: `$${parseFloat(det.subtotal || 0).toLocaleString("es-MX", {
-                            minimumFractionDigits: 2,
-                          })}`,
-                          fontSize: 8,
-                          alignment: "right",
-                        },
-                      ]),
-                    ],
-                  },
-                  layout: {
-                    fillColor: function (rowIndex) {
-                      return rowIndex === 0 ? "#FFF7ED" : rowIndex % 2 === 0 ? "#F9FAFB" : null;
-                    },
-                  },
-                },
-                {
-                  columns: [
-                    { width: "*", text: "" },
-                    {
-                      width: 200,
-                      stack: [
-                        {
-                          text: `Paquetes: ${totalPaquetes.toLocaleString(
-                            "es-MX"
-                          )} | Piezas: ${totalPiezas.toLocaleString("es-MX")}`,
-                          fontSize: 9,
-                          alignment: "right",
-                          margin: [0, 5, 0, 2],
-                        },
-                        {
-                          text: `Total: $${parseFloat(orden.total || 0).toLocaleString("es-MX", {
-                            minimumFractionDigits: 2,
-                          })}`,
-                          fontSize: 10,
-                          bold: true,
-                          alignment: "right",
-                          color: "#10B981",
-                        },
-                      ],
-                    },
-                  ],
-                  margin: [0, 5, 0, 0],
-                }
-              );
-            });
-
-            // Add grand total
-            content.push({
-              columns: [
-                { width: "*", text: "" },
-                {
-                  width: 250,
-                  stack: [
-                    {
-                      canvas: [
-                        {
-                          type: "rect",
-                          x: 0,
-                          y: 0,
-                          w: 250,
-                          h: 90,
-                          r: 5,
-                          lineColor: "#F97316",
-                          lineWidth: 2,
-                          color: "#FFF7ED",
-                        },
-                      ],
-                    },
-                    {
-                      text: "TOTALES GENERALES",
-                      style: "summaryTitle",
-                      margin: [10, -80, 10, 5],
-                    },
-                    {
-                      columns: [
-                        {
-                          width: "50%",
-                          text: "Órdenes:",
-                          style: "summaryLabel",
-                          margin: [10, 0, 0, 3],
-                        },
-                        {
-                          width: "50%",
-                          text: grupoData.totalOrdenes.toString(),
-                          style: "summaryValue",
-                          alignment: "right",
-                          margin: [0, 0, 10, 3],
-                        },
-                      ],
-                    },
-                    {
-                      columns: [
-                        {
-                          width: "50%",
-                          text: "Total Paquetes:",
-                          style: "summaryLabel",
-                          margin: [10, 0, 0, 3],
-                        },
-                        {
-                          width: "50%",
-                          text: grupoData.totalPaquetes.toLocaleString("es-MX"),
-                          style: "summaryValue",
-                          alignment: "right",
-                          margin: [0, 0, 10, 3],
-                        },
-                      ],
-                    },
-                    {
-                      columns: [
-                        {
-                          width: "50%",
-                          text: "Total Piezas:",
-                          style: "summaryLabel",
-                          margin: [10, 0, 0, 3],
-                        },
-                        {
-                          width: "50%",
-                          text: grupoData.totalPiezas.toLocaleString("es-MX"),
-                          style: "summaryValue",
-                          alignment: "right",
-                          margin: [0, 0, 10, 3],
-                        },
-                      ],
-                    },
-                    {
-                      columns: [
-                        {
-                          width: "50%",
-                          text: "TOTAL:",
-                          style: "summaryTotal",
-                          margin: [10, 5, 0, 0],
-                        },
-                        {
-                          width: "50%",
-                          text: `$${grupoData.totalGeneral.toLocaleString("es-MX", {
-                            minimumFractionDigits: 2,
-                          })}`,
-                          style: "summaryTotal",
-                          alignment: "right",
-                          margin: [0, 5, 10, 0],
-                          color: "#F97316",
-                        },
-                      ],
-                    },
-                  ],
-                  margin: [0, 20, 0, 0],
-                },
-              ],
-            });
-
-            const docDefinition = {
-              pageSize: "LETTER",
-              pageMargins: [40, 60, 40, 60],
-              content: content,
-              styles: {
-                header: {
-                  fontSize: 18,
-                  bold: true,
-                  color: "#F97316",
-                },
-                subheader: {
-                  fontSize: 14,
-                  bold: true,
-                  color: "#374151",
-                },
-                label: {
-                  fontSize: 9,
-                  color: "#6B7280",
-                  bold: true,
-                },
-                value: {
-                  fontSize: 10,
-                  color: "#111827",
-                },
-                ordenHeader: {
-                  fontSize: 12,
-                  bold: true,
-                  color: "#374151",
-                },
-                tableHeader: {
-                  fontSize: 9,
-                  bold: true,
-                  color: "#F97316",
-                  fillColor: "#FFF7ED",
-                },
-                summaryTitle: {
-                  fontSize: 11,
-                  bold: true,
-                  color: "#F97316",
-                  alignment: "center",
-                },
-                summaryLabel: {
-                  fontSize: 9,
-                  color: "#374151",
-                },
-                summaryValue: {
-                  fontSize: 10,
-                  bold: true,
-                  color: "#111827",
-                },
-                summaryTotal: {
-                  fontSize: 12,
-                  bold: true,
-                  color: "#111827",
-                },
-              },
-            };
-
-            pdfMake.createPdf(docDefinition).download(`Grupo_${grupoId}_Interno.pdf`);
+            // Open PDF in new tab using backend endpoint
+            const token = localStorage.getItem('razoconnect_admin_token');
+            window.open(
+              `/api/admin/ordenes-compra/grupos/${grupoId}/pdf-interno?token=${token}`,
+              '_blank'
+            );
 
             Swal.close();
           } catch (error) {
@@ -988,6 +471,64 @@
               icon: "error",
               title: "Error",
               text: "No se pudo generar el PDF",
+              confirmButtonColor: "#F97316",
+            });
+          }
+        }
+
+        async function generarExcelProveedor() {
+          try {
+            Swal.fire({
+              title: "Generando Excel...",
+              text: "Consolidando productos para el proveedor (PIEZAS)",
+              allowOutsideClick: false,
+              didOpen: () => {
+                Swal.showLoading();
+              },
+            });
+
+            // Download Excel using backend endpoint
+            const token = localStorage.getItem('razoconnect_admin_token');
+            window.location.href = `/api/admin/ordenes-compra/grupos/${grupoId}/excel-proveedor?token=${token}`;
+
+            setTimeout(() => {
+              Swal.close();
+            }, 1000);
+          } catch (error) {
+            console.error("Error generando Excel:", error);
+            Swal.fire({
+              icon: "error",
+              title: "Error",
+              text: "No se pudo generar el Excel",
+              confirmButtonColor: "#F97316",
+            });
+          }
+        }
+
+        async function generarExcelInterno() {
+          try {
+            Swal.fire({
+              title: "Generando Excel...",
+              text: "Creando reporte desglosado para administración (PIEZAS)",
+              allowOutsideClick: false,
+              didOpen: () => {
+                Swal.showLoading();
+              },
+            });
+
+            // Download Excel using backend endpoint
+            const token = localStorage.getItem('razoconnect_admin_token');
+            window.location.href = `/api/admin/ordenes-compra/grupos/${grupoId}/excel-interno?token=${token}`;
+
+            setTimeout(() => {
+              Swal.close();
+            }, 1000);
+          } catch (error) {
+            console.error("Error generando Excel:", error);
+            Swal.fire({
+              icon: "error",
+              title: "Error",
+              text: "No se pudo generar el Excel",
               confirmButtonColor: "#F97316",
             });
           }
