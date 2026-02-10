@@ -1683,4 +1683,17 @@ router.get(
   adminController.getReporteVentasPorAdmin
 );
 
+/**
+ * @route   POST /api/admin/pedidos/:id/toggle-priority
+ * @desc    Toggle priority flag for manual FIFO override (VIP lane)
+ * @access  Private (Admin only)
+ */
+const pedidosController = require("../controllers/pedidosController");
+router.post(
+  "/pedidos/:id/toggle-priority",
+  authenticate,
+  authorizeAdmin,
+  pedidosController.togglePrioridad
+);
+
 module.exports = router;
