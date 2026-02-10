@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Detalle Grupo de Órdenes - Admin RazoConnect</title>
+    <link rel="icon" type="image/png" href="/icon/Logo_Razo.png" />
+
+    <!-- SWEETALERT2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- PDFKIT -->
+    <script src="https://cdn.jsdelivr.net/npm/pdfkit@0.13.0/js/pdfkit.standalone.js"></script>
+    <script src="https://github.com/bpampuch/pdfmake/releases/download/0.2.7/pdfmake.min.js"></script>
+    <script src="https://github.com/bpampuch/pdfmake/releases/download/0.2.7/vfs_fonts.js"></script>
+
+    <!-- PROTECCIÓN DE AUTENTICACIÓN ADMIN -->
+    <script src="js/auth-guard-admin.js"></script>
+
+    <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/admin.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css"
+    />
+    <link rel="stylesheet" href="css/mobile-responsive.css" />
+  </head>
+  <body data-page-title="Detalle Grupo de Órdenes">
+    <div class="admin-layout">
+      <!-- Sidebar -->
+      <div id="sidebar-container"></div>
+
+      <!-- Main Content -->
+      <main class="admin-main">
+        <div id="admin-header-container"></div>
+
+        <div class="admin-content" style="display: grid; gap: 1.5rem">
+          <!-- Loading State -->
+          <div id="loadingState" class="loading" style="min-height: 300px">
+            <div class="spinner"></div>
+          </div>
+
+          <!-- Error State -->
+          <div id="errorState" class="empty-state" style="display: none">
+            <div class="empty-state-icon">⚠️</div>
+            <h3 class="empty-state-title">Error al cargar el grupo</h3>
+            <p class="empty-state-text" id="errorMessage"></p>
+            <button
+              onclick="window.location.href='admin-ordenes-compra.html'"
+              class="btn btn-primary"
+            >
+              Volver a Órdenes
+            </button>
+          </div>
+
+          <!-- Group Header -->
+          <section id="grupoHeader" class="admin-card" style="padding: 1.5rem; display: none">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+              <div>
+                <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+                  <h1 style="margin: 0; font-size: 1.5rem; color: #111827;">
+                    <i class="bi bi-collection"></i> <span id="nombreGrupo"></span>
+                  </h1>
+                  <span id="estatusGrupoBadge" class="admin-badge"></span>
+                </div>
+                <div style="display: flex; gap: 1.5rem; flex-wrap: wrap; color: #6b7280; font-size: 0.875rem;">
+                  <div>
+                    <i class="bi bi-building"></i> <strong>Proveedor:</strong> <span id="proveedorNombre"></span>
+                  </div>
+                  <div>
+                    <i class="bi bi-calendar"></i> <strong>Creado:</strong> <span id="fechaCreacion"></span>
+                  </div>
+                  <div>
+                    <i class="bi bi-person"></i> <strong>Por:</strong> <span id="adminNombre"></span>
+                  </div>
+                </div>
+              </div>
+              <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                <button
+                  id="btnPDFProveedor"
+                  class="btn"
+                  style="background: #10b981; color: white;"
+                  title="PDF Consolidado para Proveedor"
+                >
+                  <i class="bi bi-file-pdf"></i> PDF Proveedor
+                </button>
+                <button
+                  id="btnPDFInterno"
+                  class="btn"
+                  style="background: #f97316; color: white;"
+                  title="PDF Desglosado para Administración"
+                >
+                  <i class="bi bi-file-pdf"></i> PDF Interno
+                </button>
+                <button
+                  id="btnDesagrupar"
+                  class="btn btn-secondary"
+                  title="Desagrupar órdenes"
+                >
+                  <i class="bi bi-x-circle"></i> Desagrupar
+                </button>
+              </div>
+            </div>
+
+            <!-- Summary Cards -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 1.5rem;">
+              <div class="admin-stat-card">
+                <div class="admin-stat-label">Órdenes Agrupadas</div>
+                <div class="admin-stat-value" id="totalOrdenes">0</div>
+              </div>
+              <div class="admin-stat-card">
+                <div class="admin-stat-label">Total Paquetes</div>
+                <div class="admin-stat-value" id="totalPaquetes">0</div>
+              </div>
+              <div class="admin-stat-card">
+                <div class="admin-stat-label">Total Piezas</div>
+                <div class="admin-stat-value" id="totalPiezas">0</div>
+              </div>
+              <div class="admin-stat-card">
+                <div class="admin-stat-label">Valor Total</div>
+                <div class="admin-stat-value" style="color: #10b981;" id="totalGeneral">$0.00</div>
+              </div>
+            </div>
+
+            <!-- Notes -->
+            <div id="notasContainer" style="display: none; margin-top: 1rem; padding: 1rem; background: #f9fafb; border-radius: 0.5rem; border-left: 4px solid #f97316;">
+              <strong style="color: #374151;">Notas:</strong>
+              <p id="notasTexto" style="margin: 0.5rem 0 0 0; color: #6b7280;"></p>
+            </div>
+          </section>
+
+          <!-- Orders List (Multi-Card View) -->
+          <section id="ordenesContainer" style="display: none;">
+            <div style="margin-bottom: 1rem;">
+              <h2 style="margin: 0; font-size: 1.25rem; color: #374151;">
+                Órdenes Individuales del Grupo
+              </h2>
+              <p style="margin: 0.5rem 0 0 0; color: #6b7280; font-size: 0.875rem;">
+                Vista desglosada para administración y auditoría interna
+              </p>
+            </div>
+            <div id="ordenesCards" style="display: grid; gap: 1.5rem;"></div>
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <script src="js/layout.js" defer></script>
+    <script src="js/sidebar-toggle.js" defer></script>
+    <script src="js/api.js"></script>
+    <script src="js/admin-header-dropdown.js"></script>
+    <script src="js/components/admin-header-loader.js"></script>
+    <script src="js/components/user-profile.js"></script>
+    <script>
+      (function () {
+        "use strict";
+
+        // Authentication check
+        const adminToken = localStorage.getItem("razoconnect_admin_token");
+        if (!adminToken) {
+          window.location.href = "/login.html";
+        }
+
+        // Get group ID from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const grupoId = urlParams.get("id");
+
+        if (!grupoId) {
+          showError("No se especificó un ID de grupo válido");
+          return;
+        }
+
+        let grupoData = null;
+        let ordenesData = [];
+
+        // Elements
+        const loadingState = document.getElementById("loadingState");
+        const errorState = document.getElementById("errorState");
+        const grupoHeader = document.getElementById("grupoHeader");
+        const ordenesContainer = document.getElementById("ordenesContainer");
+
+        // Load group data
+        document.addEventListener("DOMContentLoaded", async function () {
+          await loadGrupoDetalle();
+          setupEventListeners();
+        });
+
+        async function loadGrupoDetalle() {
+          try {
+            loadingState.style.display = "flex";
+            errorState.style.display = "none";
+            grupoHeader.style.display = "none";
+            ordenesContainer.style.display = "none";
+
+            const response = await API.apiCall(`/admin/ordenes-compra/grupos/${grupoId}`, {
+              method: "GET",
+            });
+
+            if (!response.ok) {
+              throw new Error(response.data?.message || "Error al cargar el grupo");
+            }
+
+            grupoData = response.data.grupo;
+            ordenesData = response.data.ordenes || [];
+
+            renderGrupoHeader();
+            renderOrdenes();
+
+            loadingState.style.display = "none";
+            grupoHeader.style.display = "block";
+            ordenesContainer.style.display = "block";
+          } catch (error) {
+            console.error("Error cargando grupo:", error);
+            showError(error.message || "Error al cargar los datos del grupo");
+          }
+        }
+
+        function renderGrupoHeader() {
+          document.getElementById("nombreGrupo").textContent =
+            grupoData.nombre_grupo || `Grupo #${grupoData.grupoid}`;
+
+          const estatusBadge = document.getElementById("estatusGrupoBadge");
+          estatusBadge.className = `admin-badge ${getEstatusBadgeClass(grupoData.estatus)}`;
+          estatusBadge.textContent = grupoData.estatus.toUpperCase();
+
+          document.getElementById("proveedorNombre").textContent =
+            grupoData.proveedor_nombre || "N/A";
+
+          const fechaCreacion = new Date(grupoData.created_at).toLocaleDateString("es-MX", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          });
+          document.getElementById("fechaCreacion").textContent = fechaCreacion;
+
+          document.getElementById("adminNombre").textContent =
+            grupoData.admin_nombre || "N/A";
+
+          document.getElementById("totalOrdenes").textContent = grupoData.totalOrdenes || 0;
+          document.getElementById("totalPaquetes").textContent =
+            (grupoData.totalPaquetes || 0).toLocaleString("es-MX");
+          document.getElementById("totalPiezas").textContent =
+            (grupoData.totalPiezas || 0).toLocaleString("es-MX");
+          document.getElementById("totalGeneral").textContent = `$${(
+            grupoData.totalGeneral || 0
+          ).toLocaleString("es-MX", { minimumFractionDigits: 2 })}`;
+
+          if (grupoData.notas) {
+            document.getElementById("notasContainer").style.display = "block";
+            document.getElementById("notasTexto").textContent = grupoData.notas;
+          }
+        }
+
+        function renderOrdenes() {
+          const container = document.getElementById("ordenesCards");
+          container.innerHTML = "";
+
+          ordenesData.forEach((orden, index) => {
+            const card = document.createElement("div");
+            card.className = "admin-card";
+            card.style.padding = "1.5rem";
+
+            const fechaCreacion = new Date(orden.fechacreacion).toLocaleDateString("es-MX", {
+              day: "numeric",
+              month: "short",
+              year: "numeric",
+            });
+
+            const fechaEntrega = orden.fechaentregaesperada
+              ? new Date(orden.fechaentregaesperada).toLocaleDateString("es-MX", {
+                  day: "numeric",
+                  month: "short",
+                  year: "numeric",
+                })
+              : "No especificada";
+
+            const creadorNombre =
+              orden.admin_creador_nombre || orden.usuario_creador_nombre || "Sistema";
+
+            const totalOrden = parseFloat(orden.total || 0);
+            const totalPaquetes = orden.detalles.reduce(
+              (sum, d) => sum + parseInt(d.cantidadpaquetes || 0),
+              0
+            );
+            const totalPiezas = orden.detalles.reduce(
+              (sum, d) =>
+                sum +
+                parseInt(d.cantidadpaquetes || 0) * parseInt(d.piezasporpaquete || 1),
+              0
+            );
+
+            card.innerHTML = `
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+                <div>
+                  <h3 style="margin: 0 0 0.5rem 0; font-size: 1.125rem; color: #111827;">
+                    <i class="bi bi-box-seam"></i> Orden #${orden.ordencompraid}
+                  </h3>
+                  <div style="display: flex; gap: 1rem; flex-wrap: wrap; color: #6b7280; font-size: 0.875rem;">
+                    <div><i class="bi bi-calendar"></i> ${fechaCreacion}</div>
+                    <div><i class="bi bi-truck"></i> Entrega: ${fechaEntrega}</div>
+                    <div><i class="bi bi-person"></i> ${creadorNombre}</div>
+                  </div>
+                </div>
+                <span class="admin-badge ${getEstatusBadgeClass(orden.orden_estatus)}" style="font-size: 0.75rem;">
+                  ${orden.orden_estatus}
+                </span>
+              </div>
+
+              <div style="overflow-x: auto;">
+                <table class="admin-table" style="font-size: 0.875rem;">
+                  <thead>
+                    <tr>
+                      <th style="width: 60px;">Imagen</th>
+                      <th>Producto</th>
+                      <th style="width: 100px;">SKU</th>
+                      <th style="width: 100px;">Variante</th>
+                      <th style="width: 80px; text-align: center;">Paquetes</th>
+                      <th style="width: 80px; text-align: center;">Piezas</th>
+                      <th style="width: 100px; text-align: right;">Costo Unit.</th>
+                      <th style="width: 100px; text-align: right;">Subtotal</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${orden.detalles
+                      .map(
+                        (detalle) => `
+                      <tr>
+                        <td>
+                          <img 
+                            src="${detalle.imagen_url || "/icon/Logo_Razo.png"}" 
+                            alt="${detalle.producto_nombre}"
+                            style="width: 40px; height: 40px; object-fit: cover; border-radius: 0.25rem;"
+                            onerror="this.src='/icon/Logo_Razo.png'"
+                          />
+                        </td>
+                        <td style="font-weight: 500;">${detalle.producto_nombre || "N/A"}</td>
+                        <td style="color: #6b7280;">${detalle.sku || "N/A"}</td>
+                        <td style="color: #6b7280; font-size: 0.8rem;">
+                          ${detalle.dimensionesfisicas || "N/A"}
+                          ${detalle.color ? `<br/><span style="color: #9ca3af;">${detalle.color}</span>` : ""}
+                        </td>
+                        <td style="text-align: center; font-weight: 600;">
+                          ${parseInt(detalle.cantidadpaquetes || 0).toLocaleString("es-MX")}
+                        </td>
+                        <td style="text-align: center; color: #6b7280;">
+                          ${(
+                            parseInt(detalle.cantidadpaquetes || 0) *
+                            parseInt(detalle.piezasporpaquete || 1)
+                          ).toLocaleString("es-MX")}
+                        </td>
+                        <td style="text-align: right; color: #6b7280;">
+                          $${parseFloat(detalle.costounitario || 0).toLocaleString("es-MX", {
+                            minimumFractionDigits: 2,
+                          })}
+                        </td>
+                        <td style="text-align: right; font-weight: 600; color: #111827;">
+                          $${parseFloat(detalle.subtotal || 0).toLocaleString("es-MX", {
+                            minimumFractionDigits: 2,
+                          })}
+                        </td>
+                      </tr>
+                    `
+                      )
+                      .join("")}
+                  </tbody>
+                </table>
+              </div>
+
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-top: 1rem; padding-top: 1rem; border-top: 2px solid #e5e7eb;">
+                <div style="text-align: center;">
+                  <div style="font-size: 0.75rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">Paquetes</div>
+                  <div style="font-size: 1.25rem; font-weight: 700; color: #374151;">${totalPaquetes.toLocaleString(
+                    "es-MX"
+                  )}</div>
+                </div>
+                <div style="text-align: center;">
+                  <div style="font-size: 0.75rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">Piezas</div>
+                  <div style="font-size: 1.25rem; font-weight: 700; color: #374151;">${totalPiezas.toLocaleString(
+                    "es-MX"
+                  )}</div>
+                </div>
+                <div style="text-align: center;">
+                  <div style="font-size: 0.75rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">Total</div>
+                  <div style="font-size: 1.25rem; font-weight: 700; color: #10b981;">$${totalOrden.toLocaleString(
+                    "es-MX",
+                    { minimumFractionDigits: 2 }
+                  )}</div>
+                </div>
+              </div>
+            `;
+
+            container.appendChild(card);
+          });
+        }
+
+        function setupEventListeners() {
+          document.getElementById("btnPDFProveedor").addEventListener("click", generarPDFProveedor);
+          document.getElementById("btnPDFInterno").addEventListener("click", generarPDFInterno);
+          document.getElementById("btnDesagrupar").addEventListener("click", desagruparOrdenes);
+        }
+
+        async function generarPDFProveedor() {
+          try {
+            Swal.fire({
+              title: "Generando PDF...",
+              text: "Consolidando productos para el proveedor",
+              allowOutsideClick: false,
+              didOpen: () => {
+                Swal.showLoading();
+              },
+            });
+
+            // Fetch consolidated data
+            const response = await API.apiCall(
+              `/admin/ordenes-compra/grupos/${grupoId}/consolidado`,
+              { method: "GET" }
+            );
+
+            if (!response.ok) {
+              throw new Error("Error al obtener datos consolidados");
+            }
+
+            const data = response.data;
+
+            // Generate PDF using pdfmake
+            const docDefinition = {
+              pageSize: "LETTER",
+              pageMargins: [40, 60, 40, 60],
+              content: [
+                {
+                  text: "ORDEN DE COMPRA CONSOLIDADA",
+                  style: "header",
+                  alignment: "center",
+                  margin: [0, 0, 0, 10],
+                },
+                {
+                  text: data.grupo.nombre_grupo || `Grupo #${grupoId}`,
+                  style: "subheader",
+                  alignment: "center",
+                  margin: [0, 0, 0, 20],
+                },
+                {
+                  columns: [
+                    {
+                      width: "50%",
+                      stack: [
+                        { text: "PROVEEDOR", style: "label" },
+                        { text: data.grupo.proveedor_nombre || "N/A", style: "value" },
+                        { text: " " },
+                        { text: "CONTACTO", style: "label" },
+                        { text: data.grupo.proveedor_contacto || "N/A", style: "value" },
+                      ],
+                    },
+                    {
+                      width: "50%",
+                      stack: [
+                        { text: "FECHA", style: "label" },
+                        {
+                          text: new Date(data.grupo.created_at).toLocaleDateString("es-MX"),
+                          style: "value",
+                        },
+                        { text: " " },
+                        { text: "TELÉFONO", style: "label" },
+                        { text: data.grupo.proveedor_telefono || "N/A", style: "value" },
+                      ],
+                    },
+                  ],
+                  margin: [0, 0, 0, 20],
+                },
+                {
+                  table: {
+                    headerRows: 1,
+                    widths: ["*", 60, 60, 60, 80],
+                    body: [
+                      [
+                        { text: "PRODUCTO", style: "tableHeader" },
+                        { text: "SKU", style: "tableHeader" },
+                        { text: "PAQUETES", style: "tableHeader", alignment: "center" },
+                        { text: "PIEZAS", style: "tableHeader", alignment: "center" },
+                        { text: "SUBTOTAL", style: "tableHeader", alignment: "right" },
+                      ],
+                      ...data.productos.map((prod) => [
+                        {
+                          text: `${prod.producto_nombre}\n${prod.dimensionesfisicas || ""}${
+                            prod.color ? " - " + prod.color : ""
+                          }`,
+                          fontSize: 9,
+                        },
+                        { text: prod.sku || "N/A", fontSize: 9 },
+                        {
+                          text: prod.total_paquetes.toLocaleString("es-MX"),
+                          fontSize: 9,
+                          alignment: "center",
+                        },
+                        {
+                          text: prod.total_piezas.toLocaleString("es-MX"),
+                          fontSize: 9,
+                          alignment: "center",
+                        },
+                        {
+                          text: `$${prod.subtotal_total.toLocaleString("es-MX", {
+                            minimumFractionDigits: 2,
+                          })}`,
+                          fontSize: 9,
+                          alignment: "right",
+                        },
+                      ]),
+                    ],
+                  },
+                  layout: {
+                    fillColor: function (rowIndex) {
+                      return rowIndex === 0 ? "#FFF7ED" : rowIndex % 2 === 0 ? "#F9FAFB" : null;
+                    },
+                  },
+                },
+                {
+                  columns: [
+                    { width: "*", text: "" },
+                    {
+                      width: 250,
+                      stack: [
+                        {
+                          canvas: [
+                            {
+                              type: "rect",
+                              x: 0,
+                              y: 0,
+                              w: 250,
+                              h: 80,
+                              r: 5,
+                              lineColor: "#F97316",
+                              lineWidth: 2,
+                              color: "#FFF7ED",
+                            },
+                          ],
+                        },
+                        {
+                          text: "RESUMEN DE LA ORDEN",
+                          style: "summaryTitle",
+                          margin: [10, -70, 10, 5],
+                        },
+                        {
+                          columns: [
+                            {
+                              width: "50%",
+                              text: "Total Paquetes:",
+                              style: "summaryLabel",
+                              margin: [10, 0, 0, 3],
+                            },
+                            {
+                              width: "50%",
+                              text: data.totales.totalPaquetes.toLocaleString("es-MX"),
+                              style: "summaryValue",
+                              alignment: "right",
+                              margin: [0, 0, 10, 3],
+                            },
+                          ],
+                        },
+                        {
+                          columns: [
+                            {
+                              width: "50%",
+                              text: "Total Piezas:",
+                              style: "summaryLabel",
+                              margin: [10, 0, 0, 3],
+                            },
+                            {
+                              width: "50%",
+                              text: data.totales.totalPiezas.toLocaleString("es-MX"),
+                              style: "summaryValue",
+                              alignment: "right",
+                              margin: [0, 0, 10, 3],
+                            },
+                          ],
+                        },
+                        {
+                          columns: [
+                            {
+                              width: "50%",
+                              text: "TOTAL:",
+                              style: "summaryTotal",
+                              margin: [10, 5, 0, 0],
+                            },
+                            {
+                              width: "50%",
+                              text: `$${data.totales.totalGeneral.toLocaleString("es-MX", {
+                                minimumFractionDigits: 2,
+                              })}`,
+                              style: "summaryTotal",
+                              alignment: "right",
+                              margin: [0, 5, 10, 0],
+                              color: "#F97316",
+                            },
+                          ],
+                        },
+                      ],
+                      margin: [0, 10, 0, 0],
+                    },
+                  ],
+                },
+              ],
+              styles: {
+                header: {
+                  fontSize: 18,
+                  bold: true,
+                  color: "#F97316",
+                },
+                subheader: {
+                  fontSize: 14,
+                  bold: true,
+                  color: "#374151",
+                },
+                label: {
+                  fontSize: 9,
+                  color: "#6B7280",
+                  bold: true,
+                },
+                value: {
+                  fontSize: 10,
+                  color: "#111827",
+                },
+                tableHeader: {
+                  fontSize: 10,
+                  bold: true,
+                  color: "#F97316",
+                  fillColor: "#FFF7ED",
+                },
+                summaryTitle: {
+                  fontSize: 11,
+                  bold: true,
+                  color: "#F97316",
+                  alignment: "center",
+                },
+                summaryLabel: {
+                  fontSize: 9,
+                  color: "#374151",
+                },
+                summaryValue: {
+                  fontSize: 10,
+                  bold: true,
+                  color: "#111827",
+                },
+                summaryTotal: {
+                  fontSize: 12,
+                  bold: true,
+                  color: "#111827",
+                },
+              },
+            };
+
+            pdfMake.createPdf(docDefinition).download(`Grupo_${grupoId}_Proveedor.pdf`);
+
+            Swal.close();
+          } catch (error) {
+            console.error("Error generando PDF:", error);
+            Swal.fire({
+              icon: "error",
+              title: "Error",
+              text: "No se pudo generar el PDF",
+              confirmButtonColor: "#F97316",
+            });
+          }
+        }
+
+        async function generarPDFInterno() {
+          try {
+            Swal.fire({
+              title: "Generando PDF...",
+              text: "Creando reporte desglosado para administración",
+              allowOutsideClick: false,
+              didOpen: () => {
+                Swal.showLoading();
+              },
+            });
+
+            const content = [
+              {
+                text: "REPORTE INTERNO - GRUPO DE ÓRDENES",
+                style: "header",
+                alignment: "center",
+                margin: [0, 0, 0, 10],
+              },
+              {
+                text: grupoData.nombre_grupo || `Grupo #${grupoId}`,
+                style: "subheader",
+                alignment: "center",
+                margin: [0, 0, 0, 20],
+              },
+              {
+                columns: [
+                  {
+                    width: "50%",
+                    stack: [
+                      { text: "PROVEEDOR", style: "label" },
+                      { text: grupoData.proveedor_nombre || "N/A", style: "value" },
+                    ],
+                  },
+                  {
+                    width: "50%",
+                    stack: [
+                      { text: "FECHA CREACIÓN", style: "label" },
+                      {
+                        text: new Date(grupoData.created_at).toLocaleDateString("es-MX"),
+                        style: "value",
+                      },
+                    ],
+                  },
+                ],
+                margin: [0, 0, 0, 20],
+              },
+            ];
+
+            // Add each order as a separate section
+            ordenesData.forEach((orden, index) => {
+              const totalPaquetes = orden.detalles.reduce(
+                (sum, d) => sum + parseInt(d.cantidadpaquetes || 0),
+                0
+              );
+              const totalPiezas = orden.detalles.reduce(
+                (sum, d) =>
+                  sum +
+                  parseInt(d.cantidadpaquetes || 0) * parseInt(d.piezasporpaquete || 1),
+                0
+              );
+
+              content.push(
+                {
+                  text: `ORDEN #${orden.ordencompraid}`,
+                  style: "ordenHeader",
+                  margin: [0, index > 0 ? 20 : 0, 0, 5],
+                },
+                {
+                  text: `Creada por: ${
+                    orden.admin_creador_nombre || orden.usuario_creador_nombre || "Sistema"
+                  } | ${new Date(orden.fechacreacion).toLocaleDateString("es-MX")}`,
+                  fontSize: 9,
+                  color: "#6B7280",
+                  margin: [0, 0, 0, 10],
+                },
+                {
+                  table: {
+                    headerRows: 1,
+                    widths: ["*", 60, 50, 50, 70],
+                    body: [
+                      [
+                        { text: "PRODUCTO", style: "tableHeader" },
+                        { text: "SKU", style: "tableHeader" },
+                        { text: "PAQUETES", style: "tableHeader", alignment: "center" },
+                        { text: "PIEZAS", style: "tableHeader", alignment: "center" },
+                        { text: "SUBTOTAL", style: "tableHeader", alignment: "right" },
+                      ],
+                      ...orden.detalles.map((det) => [
+                        {
+                          text: `${det.producto_nombre}\n${det.dimensionesfisicas || ""}${
+                            det.color ? " - " + det.color : ""
+                          }`,
+                          fontSize: 8,
+                        },
+                        { text: det.sku || "N/A", fontSize: 8 },
+                        {
+                          text: parseInt(det.cantidadpaquetes || 0).toLocaleString("es-MX"),
+                          fontSize: 8,
+                          alignment: "center",
+                        },
+                        {
+                          text: (
+                            parseInt(det.cantidadpaquetes || 0) *
+                            parseInt(det.piezasporpaquete || 1)
+                          ).toLocaleString("es-MX"),
+                          fontSize: 8,
+                          alignment: "center",
+                        },
+                        {
+                          text: `$${parseFloat(det.subtotal || 0).toLocaleString("es-MX", {
+                            minimumFractionDigits: 2,
+                          })}`,
+                          fontSize: 8,
+                          alignment: "right",
+                        },
+                      ]),
+                    ],
+                  },
+                  layout: {
+                    fillColor: function (rowIndex) {
+                      return rowIndex === 0 ? "#FFF7ED" : rowIndex % 2 === 0 ? "#F9FAFB" : null;
+                    },
+                  },
+                },
+                {
+                  columns: [
+                    { width: "*", text: "" },
+                    {
+                      width: 200,
+                      stack: [
+                        {
+                          text: `Paquetes: ${totalPaquetes.toLocaleString(
+                            "es-MX"
+                          )} | Piezas: ${totalPiezas.toLocaleString("es-MX")}`,
+                          fontSize: 9,
+                          alignment: "right",
+                          margin: [0, 5, 0, 2],
+                        },
+                        {
+                          text: `Total: $${parseFloat(orden.total || 0).toLocaleString("es-MX", {
+                            minimumFractionDigits: 2,
+                          })}`,
+                          fontSize: 10,
+                          bold: true,
+                          alignment: "right",
+                          color: "#10B981",
+                        },
+                      ],
+                    },
+                  ],
+                  margin: [0, 5, 0, 0],
+                }
+              );
+            });
+
+            // Add grand total
+            content.push({
+              columns: [
+                { width: "*", text: "" },
+                {
+                  width: 250,
+                  stack: [
+                    {
+                      canvas: [
+                        {
+                          type: "rect",
+                          x: 0,
+                          y: 0,
+                          w: 250,
+                          h: 90,
+                          r: 5,
+                          lineColor: "#F97316",
+                          lineWidth: 2,
+                          color: "#FFF7ED",
+                        },
+                      ],
+                    },
+                    {
+                      text: "TOTALES GENERALES",
+                      style: "summaryTitle",
+                      margin: [10, -80, 10, 5],
+                    },
+                    {
+                      columns: [
+                        {
+                          width: "50%",
+                          text: "Órdenes:",
+                          style: "summaryLabel",
+                          margin: [10, 0, 0, 3],
+                        },
+                        {
+                          width: "50%",
+                          text: grupoData.totalOrdenes.toString(),
+                          style: "summaryValue",
+                          alignment: "right",
+                          margin: [0, 0, 10, 3],
+                        },
+                      ],
+                    },
+                    {
+                      columns: [
+                        {
+                          width: "50%",
+                          text: "Total Paquetes:",
+                          style: "summaryLabel",
+                          margin: [10, 0, 0, 3],
+                        },
+                        {
+                          width: "50%",
+                          text: grupoData.totalPaquetes.toLocaleString("es-MX"),
+                          style: "summaryValue",
+                          alignment: "right",
+                          margin: [0, 0, 10, 3],
+                        },
+                      ],
+                    },
+                    {
+                      columns: [
+                        {
+                          width: "50%",
+                          text: "Total Piezas:",
+                          style: "summaryLabel",
+                          margin: [10, 0, 0, 3],
+                        },
+                        {
+                          width: "50%",
+                          text: grupoData.totalPiezas.toLocaleString("es-MX"),
+                          style: "summaryValue",
+                          alignment: "right",
+                          margin: [0, 0, 10, 3],
+                        },
+                      ],
+                    },
+                    {
+                      columns: [
+                        {
+                          width: "50%",
+                          text: "TOTAL:",
+                          style: "summaryTotal",
+                          margin: [10, 5, 0, 0],
+                        },
+                        {
+                          width: "50%",
+                          text: `$${grupoData.totalGeneral.toLocaleString("es-MX", {
+                            minimumFractionDigits: 2,
+                          })}`,
+                          style: "summaryTotal",
+                          alignment: "right",
+                          margin: [0, 5, 10, 0],
+                          color: "#F97316",
+                        },
+                      ],
+                    },
+                  ],
+                  margin: [0, 20, 0, 0],
+                },
+              ],
+            });
+
+            const docDefinition = {
+              pageSize: "LETTER",
+              pageMargins: [40, 60, 40, 60],
+              content: content,
+              styles: {
+                header: {
+                  fontSize: 18,
+                  bold: true,
+                  color: "#F97316",
+                },
+                subheader: {
+                  fontSize: 14,
+                  bold: true,
+                  color: "#374151",
+                },
+                label: {
+                  fontSize: 9,
+                  color: "#6B7280",
+                  bold: true,
+                },
+                value: {
+                  fontSize: 10,
+                  color: "#111827",
+                },
+                ordenHeader: {
+                  fontSize: 12,
+                  bold: true,
+                  color: "#374151",
+                },
+                tableHeader: {
+                  fontSize: 9,
+                  bold: true,
+                  color: "#F97316",
+                  fillColor: "#FFF7ED",
+                },
+                summaryTitle: {
+                  fontSize: 11,
+                  bold: true,
+                  color: "#F97316",
+                  alignment: "center",
+                },
+                summaryLabel: {
+                  fontSize: 9,
+                  color: "#374151",
+                },
+                summaryValue: {
+                  fontSize: 10,
+                  bold: true,
+                  color: "#111827",
+                },
+                summaryTotal: {
+                  fontSize: 12,
+                  bold: true,
+                  color: "#111827",
+                },
+              },
+            };
+
+            pdfMake.createPdf(docDefinition).download(`Grupo_${grupoId}_Interno.pdf`);
+
+            Swal.close();
+          } catch (error) {
+            console.error("Error generando PDF:", error);
+            Swal.fire({
+              icon: "error",
+              title: "Error",
+              text: "No se pudo generar el PDF",
+              confirmButtonColor: "#F97316",
+            });
+          }
+        }
+
+        async function desagruparOrdenes() {
+          const result = await Swal.fire({
+            title: "¿Desagrupar órdenes?",
+            text: "Las órdenes volverán a estar separadas y el grupo se eliminará",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonText: "Sí, desagrupar",
+            cancelButtonText: "Cancelar",
+            confirmButtonColor: "#dc2626",
+            cancelButtonColor: "#6b7280",
+          });
+
+          if (!result.isConfirmed) return;
+
+          try {
+            Swal.fire({
+              title: "Desagrupando...",
+              allowOutsideClick: false,
+              didOpen: () => {
+                Swal.showLoading();
+              },
+            });
+
+            const response = await API.apiCall(`/admin/ordenes-compra/grupos/${grupoId}`, {
+              method: "DELETE",
+            });
+
+            if (!response.ok) {
+              throw new Error(response.data?.message || "Error al desagrupar");
+            }
+
+            await Swal.fire({
+              icon: "success",
+              title: "Grupo eliminado",
+              text: "Las órdenes han sido desagrupadas exitosamente",
+              confirmButtonColor: "#F97316",
+            });
+
+            window.location.href = "admin-ordenes-compra.html";
+          } catch (error) {
+            console.error("Error desagrupando:", error);
+            Swal.fire({
+              icon: "error",
+              title: "Error",
+              text: error.message || "No se pudo desagrupar las órdenes",
+              confirmButtonColor: "#F97316",
+            });
+          }
+        }
+
+        function getEstatusBadgeClass(estatus) {
+          const estatusLower = (estatus || "").toLowerCase();
+          if (estatusLower === "borrador") return "secondary";
+          if (estatusLower === "confirmada") return "warning";
+          if (estatusLower === "recibida") return "success";
+          if (estatusLower === "pendiente") return "warning";
+          if (estatusLower === "completada") return "success";
+          return "secondary";
+        }
+
+        function showError(message) {
+          loadingState.style.display = "none";
+          errorState.style.display = "block";
+          document.getElementById("errorMessage").textContent = message;
+        }
+      })();
+    </script>
+  </body>
+</html>
