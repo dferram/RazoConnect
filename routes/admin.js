@@ -1684,11 +1684,23 @@ router.get(
 );
 
 /**
+ * @route   POST /api/admin/pedidos/:id/simulate-priority
+ * @desc    Simulate impact of marking order as priority (dry-run, no DB changes)
+ * @access  Private (Admin only)
+ */
+const pedidosController = require("../controllers/pedidosController");
+router.post(
+  "/pedidos/:id/simulate-priority",
+  authenticate,
+  authorizeAdmin,
+  pedidosController.simulatePriorityImpact
+);
+
+/**
  * @route   POST /api/admin/pedidos/:id/toggle-priority
  * @desc    Toggle priority flag for manual FIFO override (VIP lane)
  * @access  Private (Admin only)
  */
-const pedidosController = require("../controllers/pedidosController");
 router.post(
   "/pedidos/:id/toggle-priority",
   authenticate,

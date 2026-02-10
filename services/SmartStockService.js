@@ -1123,6 +1123,171 @@ async function reallocateStockForVariant(varianteId, tenantId) {
   }
 }
 
+/**
+ * SIMULATION LOGIC - Simula el impacto de marcar un pedido como prioritario SIN modificar la BD
+ * 
+ * Esta función ejecuta el mismo algoritmo de reasignación pero en modo "dry-run".
+ * Retorna qué pedidos serían afectados si se aplicara el cambio de prioridad.
+ * 
+ * @param {number} pedidoId - ID del pedido que se quiere marcar como prioritario
+ * @param {number} tenantId - ID del tenant
+ * @returns {Promise<Object>} { success, impactedOrders[], wouldBeVIP, noImpact }
+ */
+async function simulatePriorityImpact(pedidoId, tenantId) {
+  const client = await db.connect();
+  
+  try {
+    console.log(`\n🔮 [SIMULATION] Simulando impacto para Pedido #${pedidoId}`);
+    
+    // PASO 1: Obtener información del pedido objetivo
+    const { rows: pedidoRows } = await client.query(
+      `SELECT pedidoid, es_prioritario, estatus
+       FROM pedidos
+       WHERE pedidoid = $1 AND tenant_id = $2`,
+      [pedidoId, tenantId]
+    );
+    
+    if (pedidoRows.length === 0) {
+      return {
+        success: false,
+        message: 'Pedido no encontrado',
+        impactedOrders: []
+      };
+    }
+    
+    const pedidoObjetivo = pedidoRows[0];
+    const nuevoEstadoPrioridad = !pedidoObjetivo.es_prioritario;
+    
+    // Si se está REMOVIENDO la prioridad, no hay impacto negativo
+    if (!nuevoEstadoPrioridad) {
+      return {
+        success: true,
+        wouldBeVIP: false,
+        noImpact: true,
+        message: 'Remover prioridad no afecta negativamente a otros pedidos',
+        impactedOrders: []
+      };
+    }
+    
+    // PASO 2: Obtener todas las variantes del pedido objetivo
+    const { rows: variantesRows } = await client.query(
+      `SELECT DISTINCT pv.varianteid, p.nombre as producto_nombre, pv.dimensiones
+       FROM detallesdelpedido ddp
+       INNER JOIN producto_variantes pv ON ddp.varianteid = pv.varianteid
+       INNER JOIN productos p ON pv.productoid = p.productoid
+       WHERE ddp.pedidoid = $1`,
+      [pedidoId]
+    );
+    
+    const impactedOrdersMap = new Map(); // Usar Map para evitar duplicados
+    
+    // PASO 3: Para cada variante, simular la reasignación
+    for (const variante of variantesRows) {
+      const varianteId = variante.varianteid;
+      
+      // Obtener stock físico disponible
+      const { rows: stockRows } = await client.query(
+        `SELECT COALESCE(SUM(cantidad), 0) as stock_total
+         FROM stock_admin
+         WHERE variante_id = $1 AND tenant_id = $2`,
+        [varianteId, tenantId]
+      );
+      
+      const stockFisico = parseInt(stockRows[0]?.stock_total || 0, 10);
+      
+      // Obtener TODOS los pedidos pendientes con esta variante
+      // SIMULANDO que el pedido objetivo YA es prioritario
+      const { rows: pedidosPendientes } = await client.query(
+        `SELECT 
+           p.pedidoid,
+           p.fechapedido,
+           CASE 
+             WHEN p.pedidoid = $3 THEN true 
+             ELSE COALESCE(p.es_prioritario, false)
+           END as es_prioritario_simulado,
+           p.estatus,
+           d.detalleid,
+           d.cantidadpaquetes,
+           d.piezastotales,
+           d.esbackorder as es_backorder_actual,
+           c.nombre as cliente_nombre
+         FROM pedidos p
+         INNER JOIN detallesdelpedido d ON d.pedidoid = p.pedidoid
+         INNER JOIN clientes c ON p.clienteid = c.clienteid
+         WHERE d.varianteid = $1
+           AND p.tenant_id = $2
+           AND p.estatus NOT IN ('Cancelado', 'Entregado')
+         ORDER BY 
+           CASE WHEN p.pedidoid = $3 THEN true ELSE COALESCE(p.es_prioritario, false) END DESC,
+           p.fechapedido ASC
+        `,
+        [varianteId, tenantId, pedidoId]
+      );
+      
+      // Simular la reasignación
+      let stockRestante = stockFisico;
+      
+      for (const detalle of pedidosPendientes) {
+        const piezasRequeridas = parseInt(detalle.piezastotales, 10);
+        const esBackorderActual = detalle.es_backorder_actual;
+        const puedeSerSurtido = stockRestante >= piezasRequeridas;
+        const nuevoEstatus = puedeSerSurtido ? false : true;
+        
+        // Si el estatus cambiaría Y el pedido NO es el objetivo
+        if (esBackorderActual !== nuevoEstatus && detalle.pedidoid !== pedidoId) {
+          // Este pedido sería afectado
+          const key = detalle.pedidoid;
+          
+          if (!impactedOrdersMap.has(key)) {
+            impactedOrdersMap.set(key, {
+              pedidoId: detalle.pedidoid,
+              clienteNombre: detalle.cliente_nombre,
+              estadoAnterior: esBackorderActual ? 'Backorder' : 'Surtido',
+              estadoNuevo: nuevoEstatus ? 'Backorder' : 'Surtido',
+              itemsAfectados: []
+            });
+          }
+          
+          impactedOrdersMap.get(key).itemsAfectados.push({
+            producto: variante.producto_nombre,
+            dimensiones: variante.dimensiones,
+            piezas: piezasRequeridas
+          });
+        }
+        
+        if (puedeSerSurtido) {
+          stockRestante -= piezasRequeridas;
+        }
+      }
+    }
+    
+    const impactedOrders = Array.from(impactedOrdersMap.values());
+    
+    console.log(`🔮 [SIMULATION] ${impactedOrders.length} pedidos serían afectados`);
+    
+    return {
+      success: true,
+      wouldBeVIP: true,
+      noImpact: impactedOrders.length === 0,
+      impactedOrders,
+      message: impactedOrders.length > 0 
+        ? `${impactedOrders.length} pedido(s) pasarían a backorder`
+        : 'No hay impacto negativo en otros pedidos'
+    };
+    
+  } catch (error) {
+    console.error('❌ [SIMULATION] Error:', error);
+    return {
+      success: false,
+      message: 'Error al simular impacto',
+      error: error.message,
+      impactedOrders: []
+    };
+  } finally {
+    client.release();
+  }
+}
+
 module.exports = {
   determineUserContext,
   getStock,
@@ -1133,5 +1298,6 @@ module.exports = {
   calculateAllocationStatus,
   allocateStockAutomatically,
   adjustStockMultiAdmin,
-  reallocateStockForVariant
+  reallocateStockForVariant,
+  simulatePriorityImpact
 };

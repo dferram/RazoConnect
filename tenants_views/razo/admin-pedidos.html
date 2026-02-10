@@ -1493,36 +1493,172 @@
         ventana.document.close();
       }
 
-      // Toggle priority for an order
+      // Toggle priority for an order - NEW FLOW WITH SIMULATION
       async function togglePrioridad(pedidoId, esPrioritarioActual) {
         try {
-          const accion = esPrioritarioActual ? 'remover la prioridad' : 'marcar como prioritario';
-          const titulo = esPrioritarioActual ? 'Remover Prioridad' : 'Marcar como Prioritario';
-          const textoConfirmacion = esPrioritarioActual 
-            ? 'Este pedido volverá al orden FIFO normal según su fecha de creación.'
-            : 'Este pedido se saltará la fila FIFO y tomará prioridad sobre pedidos más antiguos. Si hay stock limitado, otros pedidos podrían pasar a backorder.';
-          
-          const result = await Swal.fire({
-            title: titulo,
-            html: `
-              <p style="margin-bottom: 1rem;">¿Estás seguro de ${accion} del Pedido #${pedidoId}?</p>
-              <p style="font-size: 0.875rem; color: #666; background: #f5f5f5; padding: 1rem; border-radius: 0.5rem;">
-                <strong>⚠️ Efecto:</strong> ${textoConfirmacion}
-              </p>
-            `,
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#F97316',
-            cancelButtonColor: '#6c757d',
-            confirmButtonText: esPrioritarioActual ? 'Sí, remover prioridad' : 'Sí, marcar como VIP',
-            cancelButtonText: 'Cancelar'
+          // STEP 1: If removing priority, no simulation needed
+          if (esPrioritarioActual) {
+            const result = await Swal.fire({
+              title: 'Remover Prioridad',
+              html: `
+                <p style="margin-bottom: 1rem;">¿Estás seguro de remover la prioridad del Pedido #${pedidoId}?</p>
+                <p style="font-size: 0.875rem; color: #666; background: #f0fdf4; padding: 1rem; border-radius: 0.5rem; border-left: 4px solid #16a34a;">
+                  <strong>✅ Sin impacto negativo:</strong> Este pedido volverá al orden FIFO normal. Otros pedidos podrían recuperar stock.
+                </p>
+              `,
+              icon: 'info',
+              showCancelButton: true,
+              confirmButtonColor: '#F97316',
+              cancelButtonColor: '#6c757d',
+              confirmButtonText: 'Sí, remover prioridad',
+              cancelButtonText: 'Cancelar'
+            });
+
+            if (!result.isConfirmed) return;
+            
+            await applyPriorityChange(pedidoId, false);
+            return;
+          }
+
+          // STEP 2: Simulate impact BEFORE showing confirmation
+          Swal.fire({
+            title: 'Analizando impacto...',
+            html: 'Calculando qué pedidos serían afectados...',
+            allowOutsideClick: false,
+            didOpen: () => {
+              Swal.showLoading();
+            }
           });
 
-          if (!result.isConfirmed) return;
+          const token = localStorage.getItem("token");
+          const simulationResponse = await fetch(`/api/admin/pedidos/${pedidoId}/simulate-priority`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          });
 
-          // Show loading
+          const simulationData = await simulationResponse.json();
+
+          if (!simulationResponse.ok) {
+            throw new Error(simulationData.message || "Error al simular impacto");
+          }
+
+          // STEP 3: Show impact modal
+          if (simulationData.noImpact) {
+            // No negative impact - show green confirmation
+            const result = await Swal.fire({
+              title: '✅ Sin Conflictos de Inventario',
+              html: `
+                <p style="margin-bottom: 1rem;">El Pedido #${pedidoId} puede ser marcado como VIP sin afectar a otros pedidos.</p>
+                <p style="font-size: 0.875rem; color: #15803d; background: #f0fdf4; padding: 1rem; border-radius: 0.5rem; border-left: 4px solid #16a34a;">
+                  <strong>✅ Stock suficiente:</strong> Hay inventario disponible para surtir este pedido sin quitar stock de pedidos existentes.
+                </p>
+              `,
+              icon: 'success',
+              showCancelButton: true,
+              confirmButtonColor: '#F97316',
+              cancelButtonColor: '#6c757d',
+              confirmButtonText: 'Sí, marcar como VIP',
+              cancelButtonText: 'Cancelar'
+            });
+
+            if (!result.isConfirmed) return;
+            await applyPriorityChange(pedidoId, true);
+            
+          } else {
+            // IMPACT DETECTED - Show warning modal with affected orders table
+            const impactedOrders = simulationData.impactedOrders || [];
+            
+            const tableRows = impactedOrders.map(order => {
+              const itemsList = order.itemsAfectados.map(item => 
+                `<li style="font-size: 0.8rem;">${item.producto} (${item.dimensiones}) - ${item.piezas} pzs</li>`
+              ).join('');
+              
+              return `
+                <tr>
+                  <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb;">
+                    <strong>#${order.pedidoId}</strong>
+                  </td>
+                  <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb;">
+                    ${order.clienteNombre}
+                  </td>
+                  <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb;">
+                    <span style="color: #16a34a; font-weight: 600;">✅ ${order.estadoAnterior}</span>
+                  </td>
+                  <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb;">
+                    <span style="color: #dc2626; font-weight: 600;">❌ ${order.estadoNuevo}</span>
+                  </td>
+                  <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb; text-align: left;">
+                    <ul style="margin: 0; padding-left: 1.25rem;">${itemsList}</ul>
+                  </td>
+                </tr>
+              `;
+            }).join('');
+
+            const result = await Swal.fire({
+              title: '⚠️ Conflicto de Inventario Detectado',
+              html: `
+                <div style="text-align: left; max-height: 400px; overflow-y: auto;">
+                  <p style="margin-bottom: 1rem; font-size: 0.95rem;">
+                    Si marcas el Pedido #${pedidoId} como VIP, los siguientes <strong>${impactedOrders.length} pedido(s)</strong> perderán su stock asignado:
+                  </p>
+                  
+                  <div style="overflow-x: auto; margin-bottom: 1rem;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.875rem; background: white; border-radius: 0.5rem; overflow: hidden;">
+                      <thead>
+                        <tr style="background: #fef2f2; border-bottom: 2px solid #dc2626;">
+                          <th style="padding: 0.75rem; text-align: left; font-weight: 600;">Pedido</th>
+                          <th style="padding: 0.75rem; text-align: left; font-weight: 600;">Cliente</th>
+                          <th style="padding: 0.75rem; text-align: left; font-weight: 600;">Estado Actual</th>
+                          <th style="padding: 0.75rem; text-align: left; font-weight: 600;">Estado Nuevo</th>
+                          <th style="padding: 0.75rem; text-align: left; font-weight: 600;">Items Afectados</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        ${tableRows}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <div style="background: #fef2f2; padding: 1rem; border-radius: 0.5rem; border-left: 4px solid #dc2626; font-size: 0.875rem;">
+                    <strong>⚠️ Advertencia:</strong> Esta acción redistribuirá el stock disponible. Los pedidos afectados pasarán a backorder hasta que haya más inventario.
+                  </div>
+                </div>
+              `,
+              icon: 'warning',
+              showCancelButton: true,
+              confirmButtonColor: '#dc2626',
+              cancelButtonColor: '#6c757d',
+              confirmButtonText: 'Sí, confirmar prioridad VIP',
+              cancelButtonText: 'Cancelar',
+              width: '900px',
+              customClass: {
+                popup: 'swal-wide'
+              }
+            });
+
+            if (!result.isConfirmed) return;
+            await applyPriorityChange(pedidoId, true);
+          }
+
+        } catch (error) {
+          console.error("Error in priority flow:", error);
           Swal.fire({
-            title: 'Procesando...',
+            title: 'Error',
+            text: error.message || 'No se pudo procesar la solicitud',
+            icon: 'error',
+            confirmButtonColor: '#F97316'
+          });
+        }
+      }
+
+      // Apply the priority change after confirmation
+      async function applyPriorityChange(pedidoId, newPriorityState) {
+        try {
+          Swal.fire({
+            title: 'Aplicando cambios...',
             html: 'Recalculando asignación de stock...',
             allowOutsideClick: false,
             didOpen: () => {
@@ -1545,26 +1681,24 @@
             throw new Error(data.message || "Error al cambiar la prioridad");
           }
 
-          // Success
           await Swal.fire({
             title: '¡Éxito!',
             html: `
               <p>${data.message}</p>
-              ${!esPrioritarioActual ? '<p style="margin-top: 1rem; font-size: 0.875rem; color: #666;">⭐ El sistema está reasignando el stock disponible...</p>' : ''}
+              ${newPriorityState ? '<p style="margin-top: 1rem; font-size: 0.875rem; color: #666;">⭐ La reasignación de stock se completó exitosamente.</p>' : ''}
             `,
             icon: 'success',
             confirmButtonColor: '#F97316',
             timer: 3000
           });
 
-          // Reload orders to show updated priority
           loadOrders();
 
         } catch (error) {
-          console.error("Error toggling priority:", error);
+          console.error("Error applying priority change:", error);
           Swal.fire({
             title: 'Error',
-            text: error.message || 'No se pudo cambiar la prioridad del pedido',
+            text: error.message || 'No se pudo aplicar el cambio de prioridad',
             icon: 'error',
             confirmButtonColor: '#F97316'
           });
