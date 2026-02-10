@@ -252,7 +252,7 @@ function getEstadisticasHTML(sesion) {
         <span style="color: #10B981; font-weight: 600;">
             <i class="bi bi-check-circle-fill"></i> ${coincidencias} coincidencias
         </span>
-        <span style="margin: 0 0.5rem; color: #D1D5DB;">•</span>
+        <span style="margin: 0 0.5rem; color: #D1D5DB;">|</span>
         <span style="color: #EF4444; font-weight: 600;">
             <i class="bi bi-exclamation-triangle-fill"></i> ${discrepancias} discrepancias
         </span>
@@ -430,7 +430,7 @@ async function descargarReportePDF(sesionId, nombreSesion) {
 
         let yPosition = 40;
 
-        const crearTabla = (titulo, datos, colorFondo, colorTexto, incluirDiferencia = false) => {
+        const crearTabla = (titulo, datos, colorFondo, colorTexto, incluirDiferencia = false, mostrarTotalPiezas = false) => {
             if (datos.length === 0) {
                 return yPosition;
             }
@@ -443,6 +443,7 @@ async function descargarReportePDF(sesionId, nombreSesion) {
 
             let totalCosto = 0;
             let totalVenta = 0;
+            let totalPiezas = 0;
 
             const tableData = datos.map(item => {
                 const categoria = item.categoria_nombre || '-';
@@ -457,6 +458,9 @@ async function descargarReportePDF(sesionId, nombreSesion) {
 
                 totalCosto += cantidad * costo;
                 totalVenta += cantidad * precio;
+                if (mostrarTotalPiezas) {
+                    totalPiezas += cantidad;
+                }
 
                 if (incluirDiferencia) {
                     return [
@@ -545,44 +549,74 @@ async function descargarReportePDF(sesionId, nombreSesion) {
                 }
             });
 
-            yPosition += 5;
+            yPosition += 10;
             
-            const xDerecha = 200;
-            doc.setDrawColor(200, 200, 200);
-            doc.rect(xDerecha, yPosition - 3, 85, 20, 'S');
+            if (yPosition > 175) {
+                doc.addPage();
+                dibujarEncabezado(doc);
+                yPosition = 40;
+            }
             
-            doc.setFontSize(9);
+            const xDerecha = 210;
+            const anchoBox = 75;
+            const altoBox = mostrarTotalPiezas ? 32 : 24;
+            
+            doc.setDrawColor(249, 115, 22);
+            doc.setLineWidth(0.5);
+            doc.setFillColor(255, 247, 237);
+            doc.roundedRect(xDerecha, yPosition, anchoBox, altoBox, 2, 2, 'FD');
+            
+            doc.setFontSize(10);
             doc.setFont('helvetica', 'bold');
-            doc.setTextColor(0, 0, 0);
-            doc.text('TOTALES FINANCIEROS', xDerecha + 3, yPosition + 2);
+            doc.setTextColor(249, 115, 22);
+            doc.text('TOTALES', xDerecha + anchoBox / 2, yPosition + 5, { align: 'center' });
+            
+            doc.setDrawColor(230, 230, 230);
+            doc.setLineWidth(0.3);
+            doc.line(xDerecha + 3, yPosition + 7, xDerecha + anchoBox - 3, yPosition + 7);
+            
+            let lineY = yPosition + 12;
+            
+            if (mostrarTotalPiezas) {
+                doc.setFontSize(8);
+                doc.setFont('helvetica', 'normal');
+                doc.setTextColor(80, 80, 80);
+                doc.text('Total Piezas:', xDerecha + 3, lineY);
+                doc.setFont('helvetica', 'bold');
+                doc.setTextColor(0, 0, 0);
+                doc.text(`${totalPiezas.toLocaleString('es-MX')}`, xDerecha + anchoBox - 3, lineY, { align: 'right' });
+                lineY += 6;
+            }
             
             doc.setFontSize(8);
             doc.setFont('helvetica', 'normal');
-            doc.setTextColor(100, 100, 100);
-            doc.text('Costo:', xDerecha + 3, yPosition + 7);
+            doc.setTextColor(80, 80, 80);
+            doc.text('Costo Total:', xDerecha + 3, lineY);
+            doc.setFont('helvetica', 'bold');
             doc.setTextColor(220, 38, 38);
-            doc.setFont('helvetica', 'bold');
-            doc.text(`$${totalCosto.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, xDerecha + 45, yPosition + 7, { align: 'right' });
+            doc.text(`$${totalCosto.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, xDerecha + anchoBox - 3, lineY, { align: 'right' });
             
+            lineY += 6;
             doc.setFont('helvetica', 'normal');
-            doc.setTextColor(100, 100, 100);
-            doc.text('Venta:', xDerecha + 3, yPosition + 12);
-            doc.setTextColor(22, 163, 74);
+            doc.setTextColor(80, 80, 80);
+            doc.text('Venta Total:', xDerecha + 3, lineY);
             doc.setFont('helvetica', 'bold');
-            doc.text(`$${totalVenta.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, xDerecha + 45, yPosition + 12, { align: 'right' });
+            doc.setTextColor(22, 163, 74);
+            doc.text(`$${totalVenta.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, xDerecha + anchoBox - 3, lineY, { align: 'right' });
 
-            yPosition += 25;
+            yPosition += altoBox + 5;
 
             return yPosition;
         };
 
         if (validados.length > 0) {
             yPosition = crearTabla(
-                `Validados (${validados.length} productos)`,
+                `Coincidencias (${validados.length} productos)`,
                 validados,
                 [34, 197, 94],
                 [22, 163, 74],
-                false
+                false,
+                true
             );
         }
 
@@ -594,11 +628,12 @@ async function descargarReportePDF(sesionId, nombreSesion) {
 
         if (conflictos.length > 0) {
             yPosition = crearTabla(
-                `Conflictos (${conflictos.length} productos)`,
+                `Discrepancias (${conflictos.length} productos)`,
                 conflictos,
                 [239, 68, 68],
                 [220, 38, 38],
-                true
+                true,
+                false
             );
         }
 
@@ -614,6 +649,7 @@ async function descargarReportePDF(sesionId, nombreSesion) {
                 pendientes,
                 [245, 158, 11],
                 [217, 119, 6],
+                false,
                 false
             );
         }
