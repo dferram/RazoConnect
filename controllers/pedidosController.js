@@ -2536,6 +2536,51 @@ const cancelarPedido = async (req, res) => {
 };
 
 /**
+ * Simulate the impact of marking an order as priority WITHOUT making changes
+ * Returns which orders would be affected (moved to backorder)
+ */
+const simulatePriorityImpact = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { tenant_id } = req.tenant;
+    const pedidoId = parseInt(id, 10);
+
+    if (!Number.isInteger(pedidoId) || pedidoId <= 0) {
+      return res.status(400).json({ message: "ID de pedido inválido" });
+    }
+
+    console.log(`🔮 [SIMULATE] Pedido #${pedidoId} - Iniciando simulación`);
+
+    const result = await SmartStockService.simulatePriorityImpact(pedidoId, tenant_id);
+
+    if (!result.success) {
+      return res.status(500).json({
+        success: false,
+        message: result.message || "Error al simular impacto",
+        impactedOrders: []
+      });
+    }
+
+    res.json({
+      success: true,
+      wouldBeVIP: result.wouldBeVIP,
+      noImpact: result.noImpact,
+      impactedOrders: result.impactedOrders,
+      message: result.message
+    });
+
+  } catch (error) {
+    console.error("❌ [simulatePriorityImpact] Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error al simular el impacto de prioridad",
+      error: error.message,
+      impactedOrders: []
+    });
+  }
+};
+
+/**
  * Toggle priority flag for a specific order
  * When priority is enabled, the system will reallocate stock to prioritize this order
  */
@@ -2647,5 +2692,6 @@ module.exports = {
   obtenerPedidoPorId,
   obtenerDatosPago,
   cancelarPedido,
+  simulatePriorityImpact,
   togglePrioridad,
 };
