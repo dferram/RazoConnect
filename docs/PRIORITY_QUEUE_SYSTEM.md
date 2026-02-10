@@ -43,7 +43,54 @@ ON pedidos(tenant_id, es_prioritario DESC, fechapedido ASC);
 
 ### 2. Backend
 
-#### 2.1 Endpoint de Toggle
+#### 2.1 Endpoint de Simulación (Nuevo)
+
+**Ruta:** `POST /api/admin/pedidos/:id/simulate-priority`
+
+**Archivo:** `controllers/pedidosController.js`
+
+**Funcionalidad:**
+- Ejecuta el algoritmo de reasignación en modo "dry-run" (sin modificar BD)
+- Retorna qué pedidos serían afectados si se aplicara el cambio
+- Permite al usuario tomar una decisión informada ANTES de aplicar cambios
+
+**Respuesta (Sin impacto):**
+```json
+{
+  "success": true,
+  "wouldBeVIP": true,
+  "noImpact": true,
+  "impactedOrders": [],
+  "message": "No hay impacto negativo en otros pedidos"
+}
+```
+
+**Respuesta (Con impacto):**
+```json
+{
+  "success": true,
+  "wouldBeVIP": true,
+  "noImpact": false,
+  "impactedOrders": [
+    {
+      "pedidoId": 100,
+      "clienteNombre": "Juan Pérez",
+      "estadoAnterior": "Surtido",
+      "estadoNuevo": "Backorder",
+      "itemsAfectados": [
+        {
+          "producto": "Globos Metálicos",
+          "dimensiones": "18 pulgadas",
+          "piezas": 50
+        }
+      ]
+    }
+  ],
+  "message": "1 pedido(s) pasarían a backorder"
+}
+```
+
+#### 2.2 Endpoint de Toggle
 
 **Ruta:** `POST /api/admin/pedidos/:id/toggle-priority`
 
@@ -91,7 +138,34 @@ WHERE d.varianteid = $1
 2. Pedidos normales se ordenan por fecha (FIFO tradicional)
 3. El stock se asigna en ese orden
 
-#### 2.3 Reasignación Automática
+#### 2.3 Simulación de Impacto (Nuevo)
+
+**Función:** `simulatePriorityImpact(pedidoId, tenantId)`
+
+**Archivo:** `services/SmartStockService.js`
+
+**Proceso:**
+1. **Obtener información del pedido objetivo**
+2. **Si se está removiendo prioridad:** Retornar sin impacto (no afecta negativamente)
+3. **Obtener todas las variantes del pedido**
+4. **Para cada variante:**
+   - Obtener stock físico disponible
+   - Simular el orden de pedidos CON el pedido objetivo como VIP
+   - Calcular qué pedidos perderían stock
+5. **Retornar lista de pedidos afectados** con detalles de items
+
+**Características:**
+- ✅ **Dry-run:** NO modifica la base de datos
+- ✅ **Detallado:** Muestra exactamente qué items de qué pedidos serían afectados
+- ✅ **Rápido:** Ejecuta en memoria sin transacciones
+
+**Logging:**
+```
+🔮 [SIMULATION] Simulando impacto para Pedido #123
+🔮 [SIMULATION] 2 pedidos serían afectados
+```
+
+#### 2.4 Reasignación Automática
 
 **Función:** `reallocateStockForVariant(varianteId, tenantId)`
 

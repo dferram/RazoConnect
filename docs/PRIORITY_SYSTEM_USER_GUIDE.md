@@ -61,28 +61,58 @@ El **Sistema de Prioridad VIP** te permite dar prioridad manual a pedidos urgent
 ### Paso 2: Marcar como prioritario
 
 1. Haz clic en la **estrella vacía (☆)** en la columna "Prioridad"
-2. Aparecerá un modal de confirmación:
+2. El sistema **simulará automáticamente** el impacto (2-3 segundos)
+
+#### Escenario A: Sin Conflictos ✅
+
+Si hay stock suficiente, verás:
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│              Marcar como Prioritario                │
+│         ✅ Sin Conflictos de Inventario             │
 │                                                     │
-│  ¿Estás seguro de marcar como prioritario          │
-│  del Pedido #123?                                   │
+│  El Pedido #123 puede ser marcado como VIP sin     │
+│  afectar a otros pedidos.                           │
 │                                                     │
-│  ⚠️ Efecto: Este pedido se saltará la fila FIFO    │
-│  y tomará prioridad sobre pedidos más antiguos.    │
-│  Si hay stock limitado, otros pedidos podrían      │
-│  pasar a backorder.                                 │
+│  ✅ Stock suficiente: Hay inventario disponible    │
+│  para surtir este pedido sin quitar stock de       │
+│  pedidos existentes.                                │
 │                                                     │
 │  [ Cancelar ]  [ Sí, marcar como VIP ]            │
 └─────────────────────────────────────────────────────┘
 ```
 
-3. Haz clic en **"Sí, marcar como VIP"**
-4. El sistema procesará automáticamente (2-3 segundos)
-5. Verás un mensaje de éxito
-6. La estrella cambiará a **⭐** (llena)
+#### Escenario B: Conflicto Detectado ⚠️
+
+Si otros pedidos serían afectados, verás una **tabla detallada**:
+
+```
+┌─────────────────────────────────────────────────────┐
+│      ⚠️ Conflicto de Inventario Detectado          │
+│                                                     │
+│  Si marcas el Pedido #123 como VIP, los            │
+│  siguientes 2 pedido(s) perderán su stock:         │
+│                                                     │
+│  ┌───────────────────────────────────────────────┐ │
+│  │ Pedido │ Cliente  │ Actual │ Nuevo │ Items   │ │
+│  ├───────────────────────────────────────────────┤ │
+│  │ #100   │ Juan P.  │ ✅ Surt│ ❌ Back│ 2 items│ │
+│  │ #102   │ María G. │ ✅ Surt│ ❌ Back│ 1 item │ │
+│  └───────────────────────────────────────────────┘ │
+│                                                     │
+│  ⚠️ Advertencia: Esta acción redistribuirá el      │
+│  stock disponible. Los pedidos afectados pasarán   │
+│  a backorder hasta que haya más inventario.        │
+│                                                     │
+│  [ Cancelar ]  [ Sí, confirmar prioridad VIP ]    │
+└─────────────────────────────────────────────────────┘
+```
+
+3. **Revisa cuidadosamente** la tabla de pedidos afectados
+4. Si estás de acuerdo, haz clic en **"Sí, confirmar prioridad VIP"**
+5. El sistema aplicará los cambios (2-3 segundos)
+6. Verás un mensaje de éxito
+7. La estrella cambiará a **⭐** (llena)
 
 ### Paso 3: Verificar el cambio
 
