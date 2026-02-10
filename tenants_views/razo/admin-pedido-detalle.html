@@ -517,6 +517,13 @@
                   </div>
                   <div class="d-flex align-items-center gap-2">
                     <span
+                      id="pedidoPrioridadBadge"
+                      style="display: none; padding: 0.4rem 0.8rem; border-radius: 2rem; font-weight: 600; font-size: 0.85rem; background: linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 100%); color: var(--razo-orange); border: 2px solid var(--razo-orange);"
+                      title="Este pedido tiene prioridad VIP y se surtirá antes que pedidos más antiguos"
+                    >
+                      ⭐ PRIORITARIO
+                    </span>
+                    <span
                       class="pedido-estatus-badge pendiente"
                       id="pedidoEstatus"
                       >--</span
@@ -565,6 +572,21 @@
                 <div class="items-total">
                   <span class="items-total-label">Total del pedido</span>
                   <span class="items-total-value" id="itemsTotal">$0.00</span>
+                </div>
+              </div>
+
+              <!-- Stock Allocation Info (only shown for multi-admin or priority orders) -->
+              <div id="stockAllocationInfo" style="display: none; margin-top: 1.5rem;">
+                <div class="info-card" style="border-left: 4px solid #3b82f6;">
+                  <div class="info-card-title">📊 Asignación de Stock</div>
+                  <div class="info-card-content">
+                    <p style="margin: 0 0 1rem 0; font-size: 0.875rem; color: var(--text-secondary);">
+                      Este pedido fue surtido con stock de los siguientes administradores:
+                    </p>
+                    <div id="stockAllocationDetails">
+                      <!-- Will be populated dynamically -->
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -902,6 +924,14 @@
             if (btnCambiarEstatus) {
               btnCambiarEstatus.disabled = false;
               btnCambiarEstatus.removeAttribute("disabled");
+            }
+
+            // Show priority badge if order is prioritized
+            const prioridadBadge = document.getElementById("pedidoPrioridadBadge");
+            if (pedido.es_prioritario === true) {
+              prioridadBadge.style.display = "inline-block";
+            } else {
+              prioridadBadge.style.display = "none";
             }
 
             document.getElementById("pedidoMonto").textContent = formatCurrency(

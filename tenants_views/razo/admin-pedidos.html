@@ -27,6 +27,32 @@
         <div id="admin-header-container"></div>
 
         <div class="admin-content">
+          <!-- Priority System Info Panel -->
+          <div class="admin-table-container" style="margin-bottom: 1.5rem; padding: 1.5rem; background: linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 100%); border-left: 4px solid var(--razo-orange);">
+            <div style="display: flex; align-items: start; gap: 1rem;">
+              <div style="font-size: 2rem; flex-shrink: 0;">⭐</div>
+              <div style="flex: 1;">
+                <h3 style="margin: 0 0 0.5rem 0; color: var(--razo-orange); font-size: 1.125rem; display: flex; align-items: center; gap: 0.5rem;">
+                  Sistema de Prioridad VIP
+                  <button onclick="togglePriorityHelp()" style="background: none; border: none; cursor: pointer; font-size: 1.25rem; opacity: 0.7;" title="Ver ayuda">ℹ️</button>
+                </h3>
+                <p style="margin: 0; font-size: 0.875rem; color: #78350f; line-height: 1.5;">
+                  <strong>¿Qué hace?</strong> Permite dar prioridad manual a pedidos urgentes de clientes importantes. Los pedidos VIP (⭐) se surten primero, incluso si hay pedidos más antiguos esperando.
+                </p>
+                <div id="priorityHelpExpanded" style="display: none; margin-top: 1rem; padding: 1rem; background: white; border-radius: 0.5rem; font-size: 0.875rem;">
+                  <p style="margin: 0 0 0.75rem 0;"><strong>📋 Cómo usar:</strong></p>
+                  <ol style="margin: 0; padding-left: 1.5rem; line-height: 1.8;">
+                    <li>Busca el pedido urgente en la tabla</li>
+                    <li>Haz clic en la <strong>estrella vacía (☆)</strong> en la columna "Prioridad"</li>
+                    <li>Confirma la acción en el modal</li>
+                    <li>El sistema reasignará automáticamente el stock disponible</li>
+                  </ol>
+                  <p style="margin: 0.75rem 0 0 0;"><strong>⚠️ Importante:</strong> Si el stock es limitado, otros pedidos pueden pasar a backorder. Verás un resumen de los cambios en el detalle del pedido.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- Filters -->
           <div
             class="admin-table-container"
@@ -65,6 +91,22 @@
                   <option value="Enviado">Enviado</option>
                   <option value="Entregado">Entregado</option>
                   <option value="Cancelado">Cancelado</option>
+                </select>
+              </div>
+              <div>
+                <label for="priorityFilter" style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Filtrar por prioridad:</label>
+                <select
+                  id="priorityFilter"
+                  style="
+                    padding: 0.5rem 1rem;
+                    border: 2px solid var(--razo-gray-light);
+                    border-radius: 0.5rem;
+                    font-family: 'Inter', sans-serif;
+                  "
+                >
+                  <option value="">Todos</option>
+                  <option value="vip">⭐ Solo VIP</option>
+                  <option value="normal">☆ Solo Normales</option>
                 </select>
               </div>
               <div style="align-self: flex-end;">
@@ -478,7 +520,7 @@
           if (data.success) {
             currentOrders = data.data.pedidos;
 
-            // Filter by status and client name
+            // Filter by status, client name, and priority
             let filteredOrders = currentOrders;
             
             if (statusFilter) {
@@ -491,6 +533,14 @@
               filteredOrders = filteredOrders.filter(
                 (order) => (order.clienteNombre || '').toLowerCase().includes(clientSearch)
               );
+            }
+
+            const priorityFilterEl = document.getElementById("priorityFilter");
+            const priorityFilter = priorityFilterEl ? priorityFilterEl.value : "";
+            if (priorityFilter === "vip") {
+              filteredOrders = filteredOrders.filter(order => order.es_prioritario === true);
+            } else if (priorityFilter === "normal") {
+              filteredOrders = filteredOrders.filter(order => !order.es_prioritario);
             }
 
             if (filteredOrders.length === 0) {
@@ -1518,6 +1568,16 @@
             icon: 'error',
             confirmButtonColor: '#F97316'
           });
+        }
+      }
+
+      // Toggle priority help panel
+      function togglePriorityHelp() {
+        const helpPanel = document.getElementById('priorityHelpExpanded');
+        if (helpPanel.style.display === 'none') {
+          helpPanel.style.display = 'block';
+        } else {
+          helpPanel.style.display = 'none';
         }
       }
 
