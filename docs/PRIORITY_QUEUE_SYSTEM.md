@@ -1,6 +1,6 @@
 # Sistema de Prioridad Manual (Priority Queue)
 
-## Resumen Ejecutivo
+## Resumen
 
 El sistema de **Priority Queue** permite al administrador anular el orden FIFO estricto y dar prioridad manual a pedidos urgentes de clientes importantes. Esto resuelve el conflicto entre "Eficiencia Algorítmica" vs "Criterio de Negocio".
 
