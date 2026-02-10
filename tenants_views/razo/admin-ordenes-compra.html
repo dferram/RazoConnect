@@ -822,6 +822,19 @@
                   `
                       : ""
                   }
+                  ${
+                    currentUserRole === 'superadmin' && orden.estatus !== 'Completada' && orden.estatus !== 'Recibido'
+                      ? `
+                    <button 
+                      class="btn" 
+                      onclick="reasignarOrden(${orden.ordenCompraId}, '${adminNombre}')"
+                      title="Reasignar a otro admin"
+                      style="padding: 0.4rem 0.6rem; font-size: 0.75rem; min-width: 60px; background: #8b5cf6; color: white;">
+                      <i class="bi bi-arrow-left-right"></i>
+                    </button>
+                  `
+                      : ""
+                  }
                   <button 
                     class="btn btn-success" 
                     onclick="exportarOrdenExcel(${orden.ordenCompraId})"
@@ -1236,6 +1249,129 @@
           currentEditDetalles = [];
           buscarProductoInput.value = "";
           resultadosBusqueda.style.display = "none";
+        };
+
+        // Reasignar orden de compra a otro admin (solo super admin)
+        window.reasignarOrden = async function(ordenCompraId, adminActual) {
+          try {
+            // Cargar lista de administradores
+            const responseAdmins = await API.apiCall('/admin/ordenes-compra/administradores', { method: 'GET' });
+            
+            if (!responseAdmins.ok || !responseAdmins.data) {
+              throw new Error('No se pudo cargar la lista de administradores');
+            }
+
+            const admins = responseAdmins.data;
+
+            // Crear opciones para el select
+            const adminOptions = {};
+            admins.forEach(admin => {
+              adminOptions[admin.adminid] = `${admin.nombre} (${admin.rol === 'superadmin' ? 'Super Admin' : 'Admin'})`;
+            });
+
+            const { value: nuevoAdminId } = await Swal.fire({
+              title: 'Reasignar Orden de Compra',
+              html: `
+                <p style="margin-bottom: 1rem; color: #6b7280;">
+                  <strong>Orden #${ordenCompraId}</strong><br>
+                  Actualmente asignada a: <strong>${adminActual}</strong>
+                </p>
+                <p style="margin-bottom: 0.5rem; text-align: left; font-size: 0.875rem; color: #374151;">
+                  Selecciona el nuevo administrador:
+                </p>
+              `,
+              input: 'select',
+              inputOptions: adminOptions,
+              inputPlaceholder: 'Selecciona un administrador',
+              showCancelButton: true,
+              confirmButtonText: 'Reasignar',
+              cancelButtonText: 'Cancelar',
+              confirmButtonColor: '#8b5cf6',
+              cancelButtonColor: '#6b7280',
+              inputValidator: (value) => {
+                if (!value) {
+                  return 'Debes seleccionar un administrador';
+                }
+              }
+            });
+
+            if (!nuevoAdminId) return; // Usuario canceló
+
+            // Confirmar reasignación
+            const confirmacion = await Swal.fire({
+              title: '¿Confirmar reasignación?',
+              html: `
+                <p style="color: #6b7280;">
+                  La orden #${ordenCompraId} será reasignada.<br>
+                  El inventario que se reciba de esta orden se asignará al nuevo administrador.
+                </p>
+              `,
+              icon: 'question',
+              showCancelButton: true,
+              confirmButtonText: 'Sí, reasignar',
+              cancelButtonText: 'Cancelar',
+              confirmButtonColor: '#8b5cf6',
+              cancelButtonColor: '#6b7280'
+            });
+
+            if (!confirmacion.isConfirmed) return;
+
+            // Mostrar loading
+            Swal.fire({
+              title: 'Reasignando orden...',
+              allowOutsideClick: false,
+              didOpen: () => {
+                Swal.showLoading();
+              }
+            });
+
+            // Ejecutar reasignación
+            const response = await API.apiCall(
+              `/admin/ordenes-compra/${ordenCompraId}/reasignar`,
+              {
+                method: 'PATCH',
+                body: JSON.stringify({ nuevoAdminId: parseInt(nuevoAdminId) })
+              }
+            );
+
+            if (!response.ok) {
+              throw new Error(response.data?.message || 'Error al reasignar la orden');
+            }
+
+            const { adminAnterior, adminNuevo } = response.data.data;
+
+            await Swal.fire({
+              icon: 'success',
+              title: '✅ Orden Reasignada',
+              html: `
+                <p style="color: #6b7280;">
+                  <strong>Orden #${ordenCompraId}</strong><br>
+                  ${adminAnterior.nombre} → ${adminNuevo.nombre}
+                </p>
+              `,
+              confirmButtonColor: '#8b5cf6'
+            });
+
+            // Recargar lista de órdenes
+            await loadOrdenes();
+
+          } catch (error) {
+            console.error('Error al reasignar orden:', error);
+            
+            let errorMessage = error.message || 'No se pudo reasignar la orden';
+            
+            // Mensaje específico si ya se está recibiendo inventario
+            if (error.message && error.message.includes('recibir inventario')) {
+              errorMessage = 'No se puede reasignar esta orden porque ya se ha comenzado a recibir inventario.';
+            }
+
+            await Swal.fire({
+              icon: 'error',
+              title: 'Error al Reasignar',
+              text: errorMessage,
+              confirmButtonColor: '#F97316'
+            });
+          }
         };
 
         // Renderizar items de la orden en edición
