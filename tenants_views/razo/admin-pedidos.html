@@ -27,6 +27,32 @@
         <div id="admin-header-container"></div>
 
         <div class="admin-content">
+          <!-- Priority System Info Panel -->
+          <div class="admin-table-container" style="margin-bottom: 1.5rem; padding: 1.5rem; background: linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 100%); border-left: 4px solid var(--razo-orange);">
+            <div style="display: flex; align-items: start; gap: 1rem;">
+              <div style="font-size: 2rem; flex-shrink: 0;">⭐</div>
+              <div style="flex: 1;">
+                <h3 style="margin: 0 0 0.5rem 0; color: var(--razo-orange); font-size: 1.125rem; display: flex; align-items: center; gap: 0.5rem;">
+                  Sistema de Prioridad VIP
+                  <button onclick="togglePriorityHelp()" style="background: none; border: none; cursor: pointer; font-size: 1.25rem; opacity: 0.7;" title="Ver ayuda">ℹ️</button>
+                </h3>
+                <p style="margin: 0; font-size: 0.875rem; color: #78350f; line-height: 1.5;">
+                  <strong>¿Qué hace?</strong> Permite dar prioridad manual a pedidos urgentes de clientes importantes. Los pedidos VIP (⭐) se surten primero, incluso si hay pedidos más antiguos esperando.
+                </p>
+                <div id="priorityHelpExpanded" style="display: none; margin-top: 1rem; padding: 1rem; background: white; border-radius: 0.5rem; font-size: 0.875rem;">
+                  <p style="margin: 0 0 0.75rem 0;"><strong>📋 Cómo usar:</strong></p>
+                  <ol style="margin: 0; padding-left: 1.5rem; line-height: 1.8;">
+                    <li>Busca el pedido urgente en la tabla</li>
+                    <li>Haz clic en la <strong>estrella vacía (☆)</strong> en la columna "Prioridad"</li>
+                    <li>Confirma la acción en el modal</li>
+                    <li>El sistema reasignará automáticamente el stock disponible</li>
+                  </ol>
+                  <p style="margin: 0.75rem 0 0 0;"><strong>⚠️ Importante:</strong> Si el stock es limitado, otros pedidos pueden pasar a backorder. Verás un resumen de los cambios en el detalle del pedido.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- Filters -->
           <div
             class="admin-table-container"
@@ -67,6 +93,22 @@
                   <option value="Cancelado">Cancelado</option>
                 </select>
               </div>
+              <div>
+                <label for="priorityFilter" style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Filtrar por prioridad:</label>
+                <select
+                  id="priorityFilter"
+                  style="
+                    padding: 0.5rem 1rem;
+                    border: 2px solid var(--razo-gray-light);
+                    border-radius: 0.5rem;
+                    font-family: 'Inter', sans-serif;
+                  "
+                >
+                  <option value="">Todos</option>
+                  <option value="vip">⭐ Solo VIP</option>
+                  <option value="normal">☆ Solo Normales</option>
+                </select>
+              </div>
               <div style="align-self: flex-end;">
                 <button
                   class="btn btn-secondary"
@@ -94,6 +136,7 @@
                 <thead>
                   <tr>
                     <th>#ID</th>
+                    <th>Prioridad</th>
                     <th>Cliente</th>
                     <th>Fecha</th>
                     <th>Total</th>
@@ -477,7 +520,7 @@
           if (data.success) {
             currentOrders = data.data.pedidos;
 
-            // Filter by status and client name
+            // Filter by status, client name, and priority
             let filteredOrders = currentOrders;
             
             if (statusFilter) {
@@ -492,6 +535,14 @@
               );
             }
 
+            const priorityFilterEl = document.getElementById("priorityFilter");
+            const priorityFilter = priorityFilterEl ? priorityFilterEl.value : "";
+            if (priorityFilter === "vip") {
+              filteredOrders = filteredOrders.filter(order => order.es_prioritario === true);
+            } else if (priorityFilter === "normal") {
+              filteredOrders = filteredOrders.filter(order => !order.es_prioritario);
+            }
+
             if (filteredOrders.length === 0) {
               emptyOrders.style.display = "block";
             } else {
@@ -503,9 +554,33 @@
                     "es-MX"
                   );
 
+                  const esPrioritario = order.es_prioritario || false;
+                  const puedeTogglePrioridad = ['Pendiente', 'Aprobado', 'Parcialmente Surtido'].includes(order.estatus);
+                  
                   return `
                 <tr>
                   <td><strong>#${order.pedidoId}</strong></td>
+                  <td style="text-align: center;">
+                    ${puedeTogglePrioridad ? `
+                      <button 
+                        onclick="togglePrioridad(${order.pedidoId}, ${esPrioritario})"
+                        style="
+                          background: none;
+                          border: none;
+                          cursor: pointer;
+                          font-size: 1.5rem;
+                          padding: 0.25rem;
+                          transition: transform 0.2s;
+                        "
+                        onmouseover="this.style.transform='scale(1.2)'"
+                        onmouseout="this.style.transform='scale(1)'"
+                        title="${esPrioritario ? 'Remover prioridad (volver a FIFO normal)' : 'Marcar como prioritario (saltar fila FIFO)'}">
+                        ${esPrioritario ? '⭐' : '☆'}
+                      </button>
+                    ` : `
+                      <span style="font-size: 1.5rem; opacity: 0.3;" title="No se puede cambiar prioridad en este estado">☆</span>
+                    `}
+                  </td>
                   <td>
                     <div style="font-weight: 600;">${order.clienteNombre}</div>
                     ${order.clienteEmail ? `<div style="font-size: 0.875rem; color: var(--razo-gray-warm);">${order.clienteEmail}</div>` : ''}
@@ -1416,6 +1491,94 @@
 
         ventana.document.write(html);
         ventana.document.close();
+      }
+
+      // Toggle priority for an order
+      async function togglePrioridad(pedidoId, esPrioritarioActual) {
+        try {
+          const accion = esPrioritarioActual ? 'remover la prioridad' : 'marcar como prioritario';
+          const titulo = esPrioritarioActual ? 'Remover Prioridad' : 'Marcar como Prioritario';
+          const textoConfirmacion = esPrioritarioActual 
+            ? 'Este pedido volverá al orden FIFO normal según su fecha de creación.'
+            : 'Este pedido se saltará la fila FIFO y tomará prioridad sobre pedidos más antiguos. Si hay stock limitado, otros pedidos podrían pasar a backorder.';
+          
+          const result = await Swal.fire({
+            title: titulo,
+            html: `
+              <p style="margin-bottom: 1rem;">¿Estás seguro de ${accion} del Pedido #${pedidoId}?</p>
+              <p style="font-size: 0.875rem; color: #666; background: #f5f5f5; padding: 1rem; border-radius: 0.5rem;">
+                <strong>⚠️ Efecto:</strong> ${textoConfirmacion}
+              </p>
+            `,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#F97316',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: esPrioritarioActual ? 'Sí, remover prioridad' : 'Sí, marcar como VIP',
+            cancelButtonText: 'Cancelar'
+          });
+
+          if (!result.isConfirmed) return;
+
+          // Show loading
+          Swal.fire({
+            title: 'Procesando...',
+            html: 'Recalculando asignación de stock...',
+            allowOutsideClick: false,
+            didOpen: () => {
+              Swal.showLoading();
+            }
+          });
+
+          const token = localStorage.getItem("token");
+          const response = await fetch(`/api/admin/pedidos/${pedidoId}/toggle-priority`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          });
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            throw new Error(data.message || "Error al cambiar la prioridad");
+          }
+
+          // Success
+          await Swal.fire({
+            title: '¡Éxito!',
+            html: `
+              <p>${data.message}</p>
+              ${!esPrioritarioActual ? '<p style="margin-top: 1rem; font-size: 0.875rem; color: #666;">⭐ El sistema está reasignando el stock disponible...</p>' : ''}
+            `,
+            icon: 'success',
+            confirmButtonColor: '#F97316',
+            timer: 3000
+          });
+
+          // Reload orders to show updated priority
+          loadOrders();
+
+        } catch (error) {
+          console.error("Error toggling priority:", error);
+          Swal.fire({
+            title: 'Error',
+            text: error.message || 'No se pudo cambiar la prioridad del pedido',
+            icon: 'error',
+            confirmButtonColor: '#F97316'
+          });
+        }
+      }
+
+      // Toggle priority help panel
+      function togglePriorityHelp() {
+        const helpPanel = document.getElementById('priorityHelpExpanded');
+        if (helpPanel.style.display === 'none') {
+          helpPanel.style.display = 'block';
+        } else {
+          helpPanel.style.display = 'none';
+        }
       }
 
       // Initialize

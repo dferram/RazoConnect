@@ -628,7 +628,13 @@ async function calculateAllocationStatus({
       FROM detallesdelpedido d
       INNER JOIN pedidos p ON p.pedidoid = d.pedidoid
       WHERE d.varianteid = $1
-        AND p.fechapedido < $2
+        AND (
+          -- VIP orders always have priority regardless of date
+          (COALESCE(p.es_prioritario, false) = true)
+          OR
+          -- Non-VIP orders only count if they're older
+          (COALESCE(p.es_prioritario, false) = false AND p.fechapedido < $2)
+        )
         AND p.tenant_id = $3
         AND p.estatus NOT IN ('Cancelado', 'Entregado')
         AND d.esbackorder = false
@@ -942,6 +948,181 @@ async function adjustStockMultiAdmin({
   }
 }
 
+/**
+ * REALLOCATION LOGIC - Recalcula la asignación de stock cuando cambia la prioridad
+ * 
+ * Esta función se ejecuta cuando un pedido es marcado como prioritario.
+ * Recalcula el estatus de TODOS los pedidos pendientes que tienen esta variante,
+ * respetando el nuevo orden de prioridad (VIPs primero, luego FIFO).
+ * 
+ * EFECTO DOMINÓ: Si un pedido VIP toma stock de un pedido antiguo, el pedido
+ * antiguo pasará de "Surtido" a "Backorder" automáticamente.
+ * 
+ * @param {number} varianteId - ID de la variante a recalcular
+ * @param {number} tenantId - ID del tenant
+ * @returns {Promise<Object>} { success, pedidosActualizados, cambios[] }
+ */
+async function reallocateStockForVariant(varianteId, tenantId) {
+  const client = await db.connect();
+  
+  try {
+    await client.query('BEGIN');
+    
+    console.log(`\n🔄 [REALLOCATION] Iniciando para Variante ${varianteId}`);
+    
+    // PASO 1: Obtener stock físico disponible
+    const { rows: stockRows } = await client.query(
+      `SELECT COALESCE(SUM(cantidad), 0) as stock_total
+       FROM stock_admin
+       WHERE variante_id = $1 AND tenant_id = $2`,
+      [varianteId, tenantId]
+    );
+    
+    const stockFisico = parseInt(stockRows[0]?.stock_total || 0, 10);
+    console.log(`📦 [REALLOCATION] Stock físico total: ${stockFisico} piezas`);
+    
+    // PASO 2: Obtener TODOS los pedidos pendientes con esta variante
+    // ORDEN CRÍTICO: VIPs primero (por fecha), luego FIFO normal
+    const { rows: pedidosPendientes } = await client.query(
+      `SELECT 
+         p.pedidoid,
+         p.fechapedido,
+         p.es_prioritario,
+         p.estatus,
+         d.detalleid,
+         d.cantidadpaquetes,
+         d.piezastotales,
+         d.esbackorder as es_backorder_actual
+       FROM pedidos p
+       INNER JOIN detallesdelpedido d ON d.pedidoid = p.pedidoid
+       WHERE d.varianteid = $1
+         AND p.tenant_id = $2
+         AND p.estatus NOT IN ('Cancelado', 'Entregado')
+       ORDER BY 
+         COALESCE(p.es_prioritario, false) DESC,  -- VIPs primero
+         p.fechapedido ASC                         -- Luego FIFO
+      `,
+      [varianteId, tenantId]
+    );
+    
+    console.log(`📋 [REALLOCATION] ${pedidosPendientes.length} detalles de pedido a procesar`);
+    
+    if (pedidosPendientes.length === 0) {
+      await client.query('COMMIT');
+      return {
+        success: true,
+        pedidosActualizados: 0,
+        cambios: [],
+        message: 'No hay pedidos pendientes para esta variante'
+      };
+    }
+    
+    // PASO 3: Algoritmo de Reasignación
+    let stockRestante = stockFisico;
+    const cambios = [];
+    
+    for (const detalle of pedidosPendientes) {
+      const piezasRequeridas = parseInt(detalle.piezastotales, 10);
+      const esBackorderActual = detalle.es_backorder_actual;
+      
+      // Determinar si este detalle puede ser surtido con el stock restante
+      const puedeSerSurtido = stockRestante >= piezasRequeridas;
+      const nuevoEstatus = puedeSerSurtido ? false : true; // false = surtido, true = backorder
+      
+      // Solo actualizar si el estatus cambió
+      if (esBackorderActual !== nuevoEstatus) {
+        await client.query(
+          `UPDATE detallesdelpedido
+           SET esbackorder = $1
+           WHERE detalleid = $2`,
+          [nuevoEstatus, detalle.detalleid]
+        );
+        
+        const cambio = {
+          pedidoId: detalle.pedidoid,
+          detalleId: detalle.detalleid,
+          esPrioritario: detalle.es_prioritario,
+          piezasRequeridas,
+          estadoAnterior: esBackorderActual ? 'Backorder' : 'Surtido',
+          estadoNuevo: nuevoEstatus ? 'Backorder' : 'Surtido'
+        };
+        
+        cambios.push(cambio);
+        
+        const emoji = nuevoEstatus ? '🔴' : '🟢';
+        const prioTag = detalle.es_prioritario ? '⭐ VIP' : '';
+        console.log(
+          `   ${emoji} Pedido #${detalle.pedidoid} ${prioTag}: ${cambio.estadoAnterior} → ${cambio.estadoNuevo}`
+        );
+      }
+      
+      // Descontar del stock restante solo si fue surtido
+      if (puedeSerSurtido) {
+        stockRestante -= piezasRequeridas;
+      }
+    }
+    
+    // PASO 4: Actualizar estatus de los pedidos afectados
+    const pedidosAfectados = [...new Set(cambios.map(c => c.pedidoId))];
+    
+    for (const pedidoId of pedidosAfectados) {
+      // Verificar si el pedido está completamente surtido o parcialmente
+      const { rows: estatusRows } = await client.query(
+        `SELECT 
+           COUNT(*) as total_detalles,
+           COUNT(*) FILTER (WHERE esbackorder = false) as detalles_surtidos,
+           COUNT(*) FILTER (WHERE esbackorder = true) as detalles_backorder
+         FROM detallesdelpedido
+         WHERE pedidoid = $1`,
+        [pedidoId]
+      );
+      
+      const { total_detalles, detalles_surtidos, detalles_backorder } = estatusRows[0];
+      
+      let nuevoEstatusPedido;
+      if (detalles_backorder > 0 && detalles_surtidos > 0) {
+        nuevoEstatusPedido = 'Parcialmente Surtido';
+      } else if (detalles_backorder > 0) {
+        nuevoEstatusPedido = 'Backorder';
+      } else {
+        nuevoEstatusPedido = 'Aprobado'; // Totalmente surtido
+      }
+      
+      await client.query(
+        `UPDATE pedidos
+         SET estatus = $1
+         WHERE pedidoid = $2`,
+        [nuevoEstatusPedido, pedidoId]
+      );
+    }
+    
+    await client.query('COMMIT');
+    
+    console.log(`✅ [REALLOCATION] Completada: ${cambios.length} cambios en ${pedidosAfectados.length} pedidos`);
+    
+    return {
+      success: true,
+      pedidosActualizados: pedidosAfectados.length,
+      cambios,
+      stockFisico,
+      message: `Reasignación completada: ${cambios.length} detalles actualizados`
+    };
+    
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('❌ [REALLOCATION] Error:', error);
+    return {
+      success: false,
+      pedidosActualizados: 0,
+      cambios: [],
+      error: error.message,
+      message: 'Error al recalcular asignación de stock'
+    };
+  } finally {
+    client.release();
+  }
+}
+
 module.exports = {
   determineUserContext,
   getStock,
@@ -951,5 +1132,6 @@ module.exports = {
   getGlobalStockBreakdown,
   calculateAllocationStatus,
   allocateStockAutomatically,
-  adjustStockMultiAdmin
+  adjustStockMultiAdmin,
+  reallocateStockForVariant
 };

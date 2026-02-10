@@ -2535,10 +2535,117 @@ const cancelarPedido = async (req, res) => {
   }
 };
 
+/**
+ * Toggle priority flag for a specific order
+ * When priority is enabled, the system will reallocate stock to prioritize this order
+ */
+const togglePrioridad = async (req, res) => {
+  const client = await db.connect();
+  try {
+    const { id } = req.params;
+    const { tenant_id } = req.tenant;
+    const pedidoId = parseInt(id, 10);
+
+    if (!Number.isInteger(pedidoId) || pedidoId <= 0) {
+      return res.status(400).json({ message: "ID de pedido inválido" });
+    }
+
+    await client.query("BEGIN");
+
+    // Get current order state
+    const pedidoResult = await client.query(
+      `SELECT pedidoid, es_prioritario, estatus, tenant_id
+       FROM pedidos
+       WHERE pedidoid = $1 AND tenant_id = $2`,
+      [pedidoId, tenant_id]
+    );
+
+    if (pedidoResult.rows.length === 0) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ message: "Pedido no encontrado" });
+    }
+
+    const pedido = pedidoResult.rows[0];
+    const nuevoEstado = !pedido.es_prioritario;
+
+    // Only allow priority toggle for pending/approved/partially fulfilled orders
+    const estatusPermitidos = ["Pendiente", "Aprobado", "Parcialmente Surtido"];
+    if (!estatusPermitidos.includes(pedido.estatus)) {
+      await client.query("ROLLBACK");
+      return res.status(400).json({
+        message: `No se puede cambiar la prioridad de pedidos con estatus: ${pedido.estatus}`,
+      });
+    }
+
+    // Toggle priority flag
+    await client.query(
+      `UPDATE pedidos 
+       SET es_prioritario = $1
+       WHERE pedidoid = $2 AND tenant_id = $3`,
+      [nuevoEstado, pedidoId, tenant_id]
+    );
+
+    console.log(
+      `⭐ [PRIORIDAD] Pedido #${pedidoId} - Prioridad ${nuevoEstado ? "ACTIVADA" : "DESACTIVADA"}`
+    );
+
+    // Get all variants in this order for reallocation
+    const variantesResult = await client.query(
+      `SELECT DISTINCT pv.varianteid
+       FROM detallesdelpedido ddp
+       INNER JOIN producto_variantes pv ON ddp.varianteid = pv.varianteid
+       WHERE ddp.pedidoid = $1`,
+      [pedidoId]
+    );
+
+    const varianteIds = variantesResult.rows.map((r) => r.varianteid);
+
+    await client.query("COMMIT");
+
+    // Trigger reallocation for affected variants (async, don't wait)
+    if (nuevoEstado && varianteIds.length > 0) {
+      console.log(
+        `🔄 [REALLOCATION] Iniciando reasignación para ${varianteIds.length} variantes...`
+      );
+      
+      // Run reallocation asynchronously
+      setImmediate(async () => {
+        try {
+          for (const varianteId of varianteIds) {
+            await SmartStockService.reallocateStockForVariant(varianteId, tenant_id);
+          }
+          console.log(`✅ [REALLOCATION] Completada para pedido #${pedidoId}`);
+        } catch (error) {
+          console.error(`❌ [REALLOCATION] Error para pedido #${pedidoId}:`, error.message);
+        }
+      });
+    }
+
+    res.json({
+      success: true,
+      message: nuevoEstado
+        ? "Pedido marcado como prioritario. El sistema reasignará el stock disponible."
+        : "Prioridad removida. El pedido volverá al orden FIFO normal.",
+      es_prioritario: nuevoEstado,
+      pedidoid: pedidoId,
+    });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("❌ [togglePrioridad] Error:", error);
+    res.status(500).json({
+      message: "Error al cambiar la prioridad del pedido",
+      error: error.message,
+    });
+  } finally {
+    client.release();
+  }
+};
+
 module.exports = {
   crearPedido,
   obtenerPedidos,
   obtenerPedidoPorId,
   obtenerDatosPago,
   cancelarPedido,
+  togglePrioridad,
 };
