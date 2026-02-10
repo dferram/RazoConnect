@@ -276,8 +276,8 @@ async function generarPDFPedido(req, res) {
                    .text(descripcionLinea1, 110, currentY, { width: 220 })
                    .text(descripcionLinea2, 110, currentY + 10, { width: 220 })
                    .text(tamanoSeguro > 1 ? `Pack ${tamanoSeguro}` : 'Unitario', 340, currentY)
-                   .text(`$${parseFloat(item.preciounitario).toFixed(2)}`, 410, currentY)
-                   .text(`$${parseFloat(item.subtotal).toFixed(2)}`, 480, currentY, { align: 'right', width: 75 });
+                   .text(`$${parseFloat(item.preciounitario).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 410, currentY)
+                   .text(`$${parseFloat(item.subtotal).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 480, currentY, { align: 'right', width: 75 });
 
                 currentY += rowHeight;
             });
@@ -352,6 +352,7 @@ async function generarPDFPedido(req, res) {
         // Calculate totals by stock status - FORCED RECALCULATION WITH CORRECT FORMULA
         let totalEnStock = 0;
         let totalSinStock = 0;
+        let totalPiezasEntregadas = 0;
 
         detalles.forEach((item) => {
             // CORRECT SUBTOTAL CALCULATION: (precioUnitario * tamano_cantidad) * cantidad
@@ -359,6 +360,7 @@ async function generarPDFPedido(req, res) {
             const tamanoCantidad = parseInt(item.tamano_cantidad || 1);
             const cantidad = parseInt(item.cantidad) || 0;
             const itemSubtotal = parseFloat(((precioUnitario * tamanoCantidad) * cantidad).toFixed(2));
+            const piezasTotales = parseInt(item.piezastotales) || 0;
             
             // Use REAL stock to determine backorder status
             const stockActual = parseInt(item.stock_actual_variante) || 0;
@@ -370,6 +372,8 @@ async function generarPDFPedido(req, res) {
             } else {
                 totalEnStock += itemSubtotal;
             }
+            
+            totalPiezasEntregadas += piezasTotales;
         });
 
         // Recalculate subtotal from actual items (DO NOT trust database montototal)
@@ -387,67 +391,147 @@ async function generarPDFPedido(req, res) {
         // Calculate REAL total: Subtotal + Shipping - Discount (only if coupon exists)
         const totalCalculado = parseFloat((subtotalProductos + costoEnvio - montoDescuento).toFixed(2));
 
-        // Display Total in Stock
-        doc.fontSize(10)
-           .font('Helvetica')
-           .fillColor('#333333')
-           .text('Total Productos en Existencia:', 320, yPosition)
-           .text(`$${totalEnStock.toFixed(2)} MXN`, 440, yPosition, { align: 'right', width: 122 });
-
-        yPosition += 18;
-
-        // Display Total Pending (Out of Stock)
-        doc.fillColor('#DC2626')
-           .text('Total Productos bajo Pedido:', 320, yPosition)
-           .fillColor('#333333')
-           .text(`$${totalSinStock.toFixed(2)} MXN`, 440, yPosition, { align: 'right', width: 122 });
-
-        yPosition += 18;
-
-        // Separator line
-        doc.moveTo(320, yPosition)
-           .lineTo(562, yPosition)
-           .strokeColor('#CCCCCC')
-           .lineWidth(1)
-           .stroke();
-
-        yPosition += 10;
-
-        // Display Subtotal
-        doc.fillColor('#333333')
-           .text('Subtotal:', 320, yPosition)
-           .text(`$${subtotalProductos.toFixed(2)} MXN`, 440, yPosition, { align: 'right', width: 122 });
-
-        yPosition += 18;
-
-        if (costoEnvio > 0) {
-            doc.fillColor('#333333')
-               .text('Costo de Envío:', 320, yPosition)
-               .text(`$${costoEnvio.toFixed(2)} MXN`, 440, yPosition, { align: 'right', width: 122 });
-            yPosition += 18;
-        }
-
-        // Only show discount if there's a coupon applied
-        if (tieneCupon && montoDescuento > 0) {
-            doc.fillColor('#DC2626')
-               .text('Descuento por Cupón:', 320, yPosition)
-               .text(`-$${montoDescuento.toFixed(2)} MXN`, 440, yPosition, { align: 'right', width: 122 });
-            yPosition += 18;
-        }
-
-        doc.moveTo(320, yPosition)
-           .lineTo(562, yPosition)
-           .strokeColor('#F97316')
-           .lineWidth(2)
-           .stroke();
-
-        yPosition += 10;
-
-        doc.fontSize(12)
+        // Financial Summary Box - Dynamic height based on content
+        const boxX = 350;
+        const boxWidth = 212;
+        let boxHeight = 28; // Base height for title
+        
+        // Calculate dynamic height
+        boxHeight += 12; // Total Piezas
+        boxHeight += 12; // Total En Stock
+        boxHeight += 12; // Total Backorder
+        boxHeight += 6;  // Separator
+        boxHeight += 12; // Subtotal
+        if (costoEnvio > 0) boxHeight += 12;
+        if (tieneCupon && montoDescuento > 0) boxHeight += 12;
+        boxHeight += 6;  // Separator before total
+        boxHeight += 14; // Total final
+        
+        doc.save();
+        doc.roundedRect(boxX, yPosition, boxWidth, boxHeight, 5)
+           .fillAndStroke('#FFF7ED', '#F97316');
+        doc.restore();
+        
+        // Box Title
+        doc.fontSize(11)
            .font('Helvetica-Bold')
            .fillColor('#F97316')
-           .text('TOTAL DE LA ORDEN:', 320, yPosition)
-           .text(`$${totalCalculado.toFixed(2)} MXN`, 440, yPosition, { align: 'right', width: 122 });
+           .text('RESUMEN FINANCIERO', boxX + 5, yPosition + 8, { width: boxWidth - 10, align: 'center' });
+        
+        // Separator line
+        doc.moveTo(boxX + 10, yPosition + 22)
+           .lineTo(boxX + boxWidth - 10, yPosition + 22)
+           .strokeColor('#F97316')
+           .lineWidth(0.5)
+           .stroke();
+        
+        let lineY = yPosition + 28;
+        
+        // Total Pieces
+        doc.fontSize(9)
+           .font('Helvetica')
+           .fillColor('#666666')
+           .text('Total Piezas:', boxX + 10, lineY);
+        
+        doc.font('Helvetica-Bold')
+           .fillColor('#333333')
+           .text(`${totalPiezasEntregadas.toLocaleString('es-MX')} pzas`, boxX + boxWidth - 70, lineY, { width: 60, align: 'right' });
+        
+        lineY += 12;
+        
+        // Total En Stock (green)
+        doc.fontSize(8)
+           .font('Helvetica')
+           .fillColor('#666666')
+           .text('Productos en Stock:', boxX + 10, lineY);
+        
+        doc.font('Helvetica-Bold')
+           .fillColor('#10B981')
+           .text(`$${totalEnStock.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, boxX + boxWidth - 90, lineY, { width: 80, align: 'right' });
+        
+        lineY += 12;
+        
+        // Total Backorder (red)
+        doc.fontSize(8)
+           .font('Helvetica')
+           .fillColor('#666666')
+           .text('Productos Backorder:', boxX + 10, lineY);
+        
+        doc.font('Helvetica-Bold')
+           .fillColor('#DC2626')
+           .text(`$${totalSinStock.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, boxX + boxWidth - 90, lineY, { width: 80, align: 'right' });
+        
+        lineY += 12;
+        
+        // Separator
+        doc.moveTo(boxX + 10, lineY)
+           .lineTo(boxX + boxWidth - 10, lineY)
+           .strokeColor('#E5E7EB')
+           .lineWidth(0.3)
+           .stroke();
+        
+        lineY += 6;
+        
+        // Subtotal
+        doc.fontSize(9)
+           .font('Helvetica')
+           .fillColor('#666666')
+           .text('Subtotal:', boxX + 10, lineY);
+        
+        doc.font('Helvetica-Bold')
+           .fillColor('#333333')
+           .text(`$${subtotalProductos.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, boxX + boxWidth - 90, lineY, { width: 80, align: 'right' });
+        
+        lineY += 12;
+        
+        // Shipping (if applicable)
+        if (costoEnvio > 0) {
+            doc.fontSize(9)
+               .font('Helvetica')
+               .fillColor('#666666')
+               .text('Envío:', boxX + 10, lineY);
+            
+            doc.font('Helvetica-Bold')
+               .fillColor('#333333')
+               .text(`$${costoEnvio.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, boxX + boxWidth - 90, lineY, { width: 80, align: 'right' });
+            
+            lineY += 12;
+        }
+        
+        // Discount (if applicable)
+        if (tieneCupon && montoDescuento > 0) {
+            doc.fontSize(9)
+               .font('Helvetica')
+               .fillColor('#DC2626')
+               .text('Descuento:', boxX + 10, lineY);
+            
+            doc.font('Helvetica-Bold')
+               .fillColor('#DC2626')
+               .text(`-$${montoDescuento.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, boxX + boxWidth - 90, lineY, { width: 80, align: 'right' });
+            
+            lineY += 12;
+        }
+        
+        // Separator before total
+        doc.moveTo(boxX + 10, lineY)
+           .lineTo(boxX + boxWidth - 10, lineY)
+           .strokeColor('#F97316')
+           .lineWidth(1)
+           .stroke();
+        
+        lineY += 8;
+        
+        // Total
+        doc.fontSize(11)
+           .font('Helvetica-Bold')
+           .fillColor('#F97316')
+           .text('TOTAL:', boxX + 10, lineY);
+        
+        doc.fontSize(12)
+           .fillColor('#F97316')
+           .text(`$${totalCalculado.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} MXN`, boxX + boxWidth - 110, lineY, { width: 100, align: 'right' });
+
+        yPosition += boxHeight + 5;
 
         yPosition += 25;
 
